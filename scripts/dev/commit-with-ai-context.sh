@@ -16,6 +16,8 @@ Optional:
   --scope <scope>                conventional commit scope
   --body <text>                  add one body paragraph line; repeatable
   --body-file <path>             append body text from a file
+  --write-message-file <path>    write the validated commit message to a file
+                                  use auto for /tmp/codex-commit-msg-<repo>-<branch>.txt
   --human-adjustments <count>    meaningful human adjustments, excluding escalation-only interactions
   --hard-part <text>             summarize a debugging challenge or missed constraint; repeatable
   --ai-complexity <level>        one of: low, medium, high
@@ -30,6 +32,7 @@ Examples:
     --scope auth \
     --description "add session timeout warning" \
     --body "Warn users before idle sessions expire to reduce surprise logouts." \
+    --write-message-file auto \
     --human-adjustments 1 \
     --ai-complexity low \
     --tool-used apply_patch \
@@ -57,7 +60,13 @@ join_by_comma() {
 }
 
 ensure_git_repo() {
-  git rev-parse --show-toplevel >/dev/null 2>&1 || die "not inside a git repository"
+  repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a git repository"
+  repo_name="$(basename "$repo_root")"
+  branch_name="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+
+  if [[ -z "$branch_name" ]]; then
+    branch_name="detached-$(git rev-parse --short HEAD 2>/dev/null)" || die "failed to resolve detached HEAD commit"
+  fi
 }
 
 validate_complexity() {
@@ -69,17 +78,63 @@ validate_complexity() {
   esac
 }
 
+slugify_name() {
+  local raw_value="$1"
+  local fallback="$2"
+  local slug
+
+  slug="$(printf '%s' "$raw_value" | tr -cs 'A-Za-z0-9._-' '-')"
+  slug="${slug#-}"
+  slug="${slug%-}"
+
+  if [[ -z "$slug" ]]; then
+    slug="$fallback"
+  fi
+
+  printf '%s' "$slug"
+}
+
+repo_temp_message_file() {
+  local temp_root="${TMPDIR:-/tmp}"
+  local repo_slug
+  local branch_slug
+
+  repo_slug="$(slugify_name "$repo_name" "repo")"
+  branch_slug="$(slugify_name "$branch_name" "branch")"
+
+  printf '%s/codex-commit-msg-%s-%s.txt' "$temp_root" "$repo_slug" "$branch_slug"
+}
+
+resolve_write_message_file() {
+  if [[ -z "$write_message_file" ]]; then
+    resolved_write_message_file=""
+    return
+  fi
+
+  if [[ "$write_message_file" == "auto" ]]; then
+    resolved_write_message_file="$(repo_temp_message_file)"
+    return
+  fi
+
+  resolved_write_message_file="$write_message_file"
+}
+
 type=""
 scope=""
 description=""
 body_lines=()
 body_file=""
+write_message_file=""
+resolved_write_message_file=""
 human_adjustments=""
 hard_parts=()
 ai_complexity=""
 tools_used=()
 skills_used=()
 print_only=0
+repo_root=""
+repo_name=""
+branch_name=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -106,6 +161,11 @@ while [[ $# -gt 0 ]]; do
     --body-file)
       [[ $# -ge 2 ]] || die "missing value for --body-file"
       body_file="$2"
+      shift 2
+      ;;
+    --write-message-file)
+      [[ $# -ge 2 ]] || die "missing value for --write-message-file"
+      write_message_file="$2"
       shift 2
       ;;
     --human-adjustments)
@@ -163,6 +223,8 @@ fi
 if [[ -n "$ai_complexity" ]]; then
   validate_complexity "$ai_complexity"
 fi
+
+resolve_write_message_file
 
 title="$type"
 if [[ -n "$scope" ]]; then
@@ -226,6 +288,12 @@ printf '%s\n' "----- commit message preview -----"
 printf '%s\n' "$message"
 printf '%s\n' "----------------------------------"
 
+if [[ -n "$resolved_write_message_file" ]]; then
+  mkdir -p "$(dirname "$resolved_write_message_file")"
+  printf '%s\n' "$message" >"$resolved_write_message_file"
+  printf 'Message file: %s\n' "$resolved_write_message_file"
+fi
+
 if (( print_only )); then
   exit 0
 fi
@@ -235,10 +303,14 @@ read -r reply
 
 case "$reply" in
   y|Y|yes|YES)
-    temp_file="$(mktemp)"
-    trap 'rm -f "$temp_file"' EXIT
-    printf '%s\n' "$message" >"$temp_file"
-    git commit -F "$temp_file"
+    if [[ -n "$resolved_write_message_file" ]]; then
+      git commit -F "$resolved_write_message_file"
+    else
+      temp_file="$(mktemp)"
+      trap 'rm -f "$temp_file"' EXIT
+      printf '%s\n' "$message" >"$temp_file"
+      git commit -F "$temp_file"
+    fi
     ;;
   *)
     echo "commit cancelled"

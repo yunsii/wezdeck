@@ -201,3 +201,4 @@ BREAKING CHANGE: plugin instances now require an explicit project ID.
 - Before committing runtime changes, confirm required sync and validation steps in [`validation.md`](./validation.md).
 - Preview the full commit message and get human confirmation before running `git commit`.
 - Use [`scripts/dev/commit-with-ai-context.sh`](../../scripts/dev/commit-with-ai-context.sh) when the commit should include AI collaboration metadata.
+- For agent-driven commits that need separate human confirmation before a privileged `git commit`, first run `scripts/dev/commit-with-ai-context.sh --print-only --write-message-file auto`. The script will reuse a repo-and-branch-specific path such as `/tmp/codex-commit-msg-wezterm-config-master.txt` and print the exact file path; after confirmation run `git commit -F <that-path>`.
