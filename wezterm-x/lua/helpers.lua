@@ -1,5 +1,9 @@
 local M = {}
 
+local function trim(value)
+  return (value:gsub('^%s+', ''):gsub('%s+$', ''))
+end
+
 function M.file_exists(path)
   local file = io.open(path, 'r')
   if not file then
@@ -21,6 +25,34 @@ function M.load_optional_table(path)
   end
 
   return value
+end
+
+function M.load_optional_env_file(path)
+  if not M.file_exists(path) then
+    return nil
+  end
+
+  local values = {}
+
+  for line in io.lines(path) do
+    local raw = trim(line)
+    if raw ~= '' and raw:sub(1, 1) ~= '#' then
+      raw = raw:gsub('^export%s+', '', 1)
+      local key, value = raw:match('^([A-Za-z_][A-Za-z0-9_]*)%s*=%s*(.-)%s*$')
+      if not key then
+        error('Failed to parse env line in ' .. path .. ': ' .. line)
+      end
+
+      local quote = value:sub(1, 1)
+      if (#value >= 2) and (quote == "'" or quote == '"') and value:sub(-1) == quote then
+        value = value:sub(2, -2)
+      end
+
+      values[key] = value
+    end
+  end
+
+  return values
 end
 
 function M.deep_copy(value)

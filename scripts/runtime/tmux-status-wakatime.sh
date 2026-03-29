@@ -7,11 +7,22 @@ source "$script_dir/tmux-status-lib.sh"
 
 WAKA_CACHE="${TMUX_STATUS_WAKATIME_CACHE:-/tmp/.tmux-wakatime-cache}"
 WAKA_LOCK="${TMUX_STATUS_WAKATIME_LOCK:-/tmp/.tmux-wakatime.lock}"
-WAKA_API_URL="${TMUX_STATUS_WAKATIME_API_URL:-https://wakatime.com/api/v1/users/current/status_bar/today}"
+WAKA_API_URL="${TMUX_STATUS_WAKATIME_API_URL:-https://api.wakatime.com/api/v1/users/current/status_bar/today}"
 padding="$(tmux_option_or_env TMUX_STATUS_PADDING @tmux_status_padding ' ')"
 separator="$(tmux_option_or_env TMUX_STATUS_SEPARATOR @tmux_status_separator ' · ')"
-api_key="${TMUX_STATUS_WAKATIME_API_KEY:-${WAKATIME_API_KEY:-}}"
 script_path="$script_dir/tmux-status-wakatime.sh"
+repo_root="${WEZTERM_REPO_ROOT:-$(cd "$script_dir/../.." && pwd -P)}"
+shared_env_file="${TMUX_STATUS_SHARED_ENV_FILE:-$repo_root/wezterm-x/local/shared.env}"
+
+load_shared_env() {
+  if [[ -f "$shared_env_file" ]]; then
+    # shellcheck disable=SC1090
+    source "$shared_env_file"
+  fi
+}
+
+load_shared_env
+api_key="${TMUX_STATUS_WAKATIME_API_KEY:-${WAKATIME_API_KEY:-}}"
 
 is_wakatime_available() {
   [[ -n "$api_key" ]] && command -v python3 >/dev/null 2>&1
