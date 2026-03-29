@@ -149,6 +149,24 @@ local base_constants = {
     new_tab_hover_fg = '#2f302c',
     tab_edge = '#ddd8cd',
     tab_accent = '#b07d48',
+    workspace_badges = {
+      default = {
+        bg = '#e5dfd3',
+        fg = '#5f5a52',
+      },
+      managed = {
+        bg = '#ddd0bb',
+        fg = '#614321',
+      },
+      work = {
+        bg = '#dbc39e',
+        fg = '#4f3516',
+      },
+      config = {
+        bg = '#d7dfed',
+        fg = '#294267',
+      },
+    },
   },
   launch_menu = default_launch_menu(host_os),
   integrations = {
