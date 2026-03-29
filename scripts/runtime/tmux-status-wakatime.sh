@@ -5,12 +5,71 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-status-lib.sh"
 
-WAKA_CACHE="/tmp/.tmux-wakatime-cache"
-WAKA_LOCK="/tmp/.tmux-wakatime.lock"
+WAKA_CACHE="${TMUX_STATUS_WAKATIME_CACHE:-/tmp/.tmux-wakatime-cache}"
+WAKA_LOCK="${TMUX_STATUS_WAKATIME_LOCK:-/tmp/.tmux-wakatime.lock}"
+WAKA_API_URL="${TMUX_STATUS_WAKATIME_API_URL:-https://wakatime.com/api/v1/users/current/status_bar/today}"
 padding="$(tmux_option_or_env TMUX_STATUS_PADDING @tmux_status_padding ' ')"
 separator="$(tmux_option_or_env TMUX_STATUS_SEPARATOR @tmux_status_separator ' · ')"
+api_key="${TMUX_STATUS_WAKATIME_API_KEY:-${WAKATIME_API_KEY:-}}"
+script_path="$script_dir/tmux-status-wakatime.sh"
 
-if ! command -v wakatime >/dev/null 2>&1; then
+is_wakatime_available() {
+  [[ -n "$api_key" ]] && command -v python3 >/dev/null 2>&1
+}
+
+fetch_wakatime_today_json() {
+  WAKATIME_API_URL="$WAKA_API_URL" TMUX_STATUS_WAKATIME_API_KEY="$api_key" python3 - <<'PY'
+import base64
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+api_key = os.environ.get("TMUX_STATUS_WAKATIME_API_KEY", "")
+url = os.environ.get("WAKATIME_API_URL", "")
+
+if not api_key or not url:
+    raise SystemExit(1)
+
+token = base64.b64encode(api_key.encode("utf-8")).decode("ascii")
+request = urllib.request.Request(
+    url,
+    headers={
+        "Authorization": f"Basic {token}",
+        "Accept": "application/json",
+        "User-Agent": "wezterm-tmux-status",
+    },
+)
+
+try:
+    with urllib.request.urlopen(request, timeout=10) as response:
+        payload = json.load(response)
+except (OSError, urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError):
+    raise SystemExit(1)
+
+json.dump(payload, sys.stdout, separators=(",", ":"))
+PY
+}
+
+refresh_wakatime_cache() {
+  touch "$WAKA_LOCK"
+  local result=""
+  result="$(fetch_wakatime_today_json 2>/dev/null || true)"
+  if [[ -n "$result" ]]; then
+    printf '%s\n%s' "$(date +%s)" "$result" > "$WAKA_CACHE"
+  fi
+  rm -f "$WAKA_LOCK"
+}
+
+if [[ "${TMUX_STATUS_WAKATIME_REFRESH_ONLY:-0}" == "1" ]]; then
+  if is_wakatime_available; then
+    refresh_wakatime_cache
+  fi
+  exit 0
+fi
+
+if ! is_wakatime_available; then
   printf '%s%s' "$padding" "$(style 'fg=#7f7a72' 'WakaTime unavailable')"
   exit 0
 fi
@@ -42,14 +101,7 @@ if [[ -f "$WAKA_LOCK" ]]; then
 fi
 
 if (( age >= 60 )) && [[ ! -f "$WAKA_LOCK" ]]; then
-  nohup bash -c '
-    touch "'"$WAKA_LOCK"'"
-    result=$(wakatime --today --output raw-json 2>/dev/null)
-    if [[ -n "$result" ]]; then
-      printf "%s\n%s" "$(date +%s)" "$result" > "'"$WAKA_CACHE"'"
-    fi
-    rm -f "'"$WAKA_LOCK"'"
-  ' >/dev/null 2>&1 &
+  TMUX_STATUS_WAKATIME_REFRESH_ONLY=1 nohup bash "$script_path" >/dev/null 2>&1 &
 fi
 
 if [[ -z "$waka_json" ]]; then
@@ -60,8 +112,31 @@ if [[ -z "$waka_json" ]]; then
   exit 0
 fi
 
-ai="$(printf '%s' "$waka_json" | jq -r '.data.categories[]? | select(.name=="AI Coding") | .text' 2>/dev/null || true)"
-code="$(printf '%s' "$waka_json" | jq -r '.data.categories[]? | select(.name=="Coding") | .text' 2>/dev/null || true)"
+mapfile -t wakatime_categories < <(
+  WAKA_JSON="$waka_json" python3 - <<'PY'
+import json
+import os
+import sys
+
+try:
+    payload = json.loads(os.environ.get("WAKA_JSON", ""))
+except json.JSONDecodeError:
+    raise SystemExit(0)
+
+categories = {}
+for item in payload.get("data", {}).get("categories", []) or []:
+    name = item.get("name")
+    text = item.get("text")
+    if isinstance(name, str) and isinstance(text, str):
+        categories[name] = text
+
+print(categories.get("AI Coding", ""))
+print(categories.get("Coding", ""))
+PY
+)
+
+ai="${wakatime_categories[0]:-}"
+code="${wakatime_categories[1]:-}"
 
 parts=()
 
