@@ -24,7 +24,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - In `hybrid-wsl`, `Alt+b` uses the synced Windows PowerShell launcher for the debug Chrome profile.
 - In `posix-local`, `Alt+b` uses the synced shell launcher at `wezterm-x/scripts/focus-or-start-debug-chrome.sh`.
 - The first tmux line renders repo, branch, combined git change counts, tracked-branch sync markers (`^N` ahead, `vN` behind, `=0` synced, `x0` no upstream configured), and Node.js version.
-- The second tmux line renders the repo family's linked worktree count plus the current worktree label, for example `linked:2 · main` or `linked:2 · fix-login`.
+- The second tmux line renders the repo family's linked worktree count plus the current worktree role, for example `linked:2 · primary` in the main worktree or `linked:2 · linked` in a linked worktree.
 - The third tmux line renders whenever the WakaTime toggle is enabled.
 - Any enabled status section keeps a stable on-screen slot. If live data is unavailable, that section renders placeholder text instead of disappearing, which avoids status-bar flicker.
 - A section only disappears completely when its toggle is disabled. If an entire line has no enabled sections, that line does not reserve a status row.
@@ -35,9 +35,11 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - `default` is not managed by `workspaces.lua`; it remains WezTerm's built-in workspace.
 - `Alt+p` uses WezTerm's built-in relative workspace switching, so it includes `default`.
 - `Alt+g` opens a tmux worktree menu for the current repo family, and `Alt+Shift+g` cycles to the next linked worktree in that same tmux session.
+- Successful worktree switches update the active tmux window silently instead of showing a transient tmux banner.
 - WakaTime refresh is cache-backed: tmux repaints every few seconds, while the script reuses cached data for up to 60 seconds and refreshes asynchronously.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values; both sides currently use it for `WAKATIME_API_KEY`.
 - WakaTime status no longer depends on WezTerm injecting the API key into the WSL shell environment; reloading tmux is enough after updating `shared.env`.
+- The first tmux line still shows the active git branch; the second line only distinguishes the current worktree as `primary` or `linked` to avoid repeating the branch or worktree name.
 - Each status section has its own toggle. If a section is disabled, tmux skips that section's script entirely.
 - `@tmux_status_render_repo`, `@tmux_status_render_worktree`, `@tmux_status_render_branch`, `@tmux_status_render_git_changes`, `@tmux_status_render_node`, and `@tmux_status_render_wakatime` all default to `1`.
 - Enabled sections use placeholders when needed: the worktree line shows `no-worktree` outside git worktrees, branch shows `no-branch`, git changes shows `no-git`, Node.js shows `Node unavailable`, and WakaTime stays visible with placeholder text until real data becomes available.

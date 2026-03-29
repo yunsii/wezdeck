@@ -69,4 +69,3 @@ else
 fi
 
 tmux select-window -t "$window_id"
-tmux display-message "Worktree: $worktree_label"

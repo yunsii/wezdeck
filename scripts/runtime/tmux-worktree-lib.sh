@@ -132,6 +132,7 @@ tmux_worktree_repo_label() {
 tmux_worktree_label_for_root() {
   local worktree_root="${1:-}"
   local main_root="${2:-}"
+  local branch=""
 
   if [[ -z "$worktree_root" ]]; then
     printf 'unknown\n'
@@ -139,11 +140,33 @@ tmux_worktree_label_for_root() {
   fi
 
   if [[ -n "$main_root" && "$worktree_root" == "$main_root" ]]; then
-    printf 'main\n'
+    branch="$(tmux_worktree_branch_for_root "$worktree_root")"
+    if [[ -n "$branch" ]]; then
+      printf '%s\n' "$branch"
+    else
+      printf 'main\n'
+    fi
     return 0
   fi
 
   basename "$worktree_root"
+}
+
+tmux_worktree_kind_for_root() {
+  local worktree_root="${1:-}"
+  local main_root="${2:-}"
+
+  if [[ -z "$worktree_root" ]]; then
+    printf 'unknown\n'
+    return 0
+  fi
+
+  if [[ -n "$main_root" && "$worktree_root" == "$main_root" ]]; then
+    printf 'primary\n'
+    return 0
+  fi
+
+  printf 'linked\n'
 }
 
 tmux_worktree_branch_for_root() {
@@ -324,10 +347,16 @@ tmux_worktree_linked_count() {
   local cwd="${1:-$PWD}"
   local count=0
   local label=""
+  local worktree_path=""
+  local main_root=""
 
-  while IFS=$'\t' read -r label _; do
+  if tmux_worktree_in_git_repo "$cwd"; then
+    main_root="$(tmux_worktree_main_root "$(tmux_worktree_common_dir "$cwd")" || true)"
+  fi
+
+  while IFS=$'\t' read -r label worktree_path _; do
     [[ -n "$label" ]] || continue
-    if [[ "$label" != 'main' ]]; then
+    if [[ -n "$main_root" && "$worktree_path" != "$main_root" ]]; then
       ((count += 1))
     fi
   done < <(tmux_worktree_list "$cwd" || true)
