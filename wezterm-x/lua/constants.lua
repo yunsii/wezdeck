@@ -181,6 +181,9 @@ local base_constants = {
     remote_debugging_port = 9222,
     user_data_dir = nil,
   },
+  wakatime = {
+    api_key = nil,
+  },
   diagnostics = {
     wezterm = {
       enabled = false,

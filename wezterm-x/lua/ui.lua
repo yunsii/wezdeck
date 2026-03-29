@@ -262,6 +262,9 @@ function M.apply(opts)
   if constants.shell and constants.shell.program and constants.shell.program ~= '' then
     set_environment_variables.WEZTERM_MANAGED_SHELL = constants.shell.program
   end
+  if constants.wakatime and constants.wakatime.api_key and constants.wakatime.api_key ~= '' then
+    set_environment_variables.TMUX_STATUS_WAKATIME_API_KEY = constants.wakatime.api_key
+  end
   config.set_environment_variables = set_environment_variables
 
   config.window_decorations = 'RESIZE'
