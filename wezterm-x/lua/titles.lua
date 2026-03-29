@@ -20,12 +20,30 @@ function M.register(opts)
   local mux = opts.mux
   local palette = opts.palette
 
+  local function workspace_badge_style(name)
+    local badges = palette.workspace_badges or {}
+    local style = badges[name]
+
+    if not style then
+      style = name == 'default' and badges.default or badges.managed
+    end
+
+    return {
+      bg = style and style.bg or palette.tab_bar_background,
+      fg = style and style.fg or palette.tab_accent,
+    }
+  end
+
   local function format_workspace_label(name)
+    local style = workspace_badge_style(name)
+
     return wezterm.format {
-      { Background = { Color = palette.tab_bar_background } },
-      { Foreground = { Color = palette.tab_accent } },
+      { Background = { Color = style.bg } },
+      { Foreground = { Color = style.fg } },
       { Attribute = { Intensity = 'Bold' } },
       { Text = ' ' .. name .. ' ' },
+      { Background = { Color = palette.tab_bar_background } },
+      { Text = ' ' },
     }
   end
 
