@@ -37,6 +37,44 @@ Recreate affected sessions only if a simple reload is not enough.
 For WakaTime key changes in `wezterm-x/local/shared.env`, a tmux reload is sufficient; that path no longer depends on WezTerm injecting environment variables into WSL.
 6. If runtime shell rc files changed, reload the interactive shell in affected tmux panes or recreate those sessions.
 
+## Worktree Task Skill
+
+Use the `worktree-task` skill when you want a fresh Codex implementation session in a linked worktree instead of continuing in the current worktree.
+
+- Run it from the existing managed tmux/Codex window for the target repository when possible so the new task window can reuse the current repo-family tmux session directly.
+- The skill creates linked worktrees under the primary worktree root's `.worktrees/` directory and stores the cleaned-up task prompt under `.worktrees/.codex-prompts/`.
+- This repository ignores `.worktrees/`, so prompt archives and linked worktree folders do not pollute `git status`.
+
+Example:
+
+```bash
+printf '%s' "$TASK_PROMPT" | skills/worktree-task/scripts/launch-worktree-task.sh --title "short task title"
+```
+
+Useful options:
+
+- `--base-ref <ref>` to branch from something other than the primary worktree `HEAD`
+- `--branch <name>` to force a branch name
+- `--session-name <name>` to target an already running tmux session for that repo family when launching from outside tmux
+- `--variant light|dark|auto` to choose the Codex UI variant for the new window
+- `--no-attach` to prepare the worktree and tmux window without switching the current client, including the first time that task window is created
+
+Reclaim a finished task:
+
+```bash
+skills/worktree-task/scripts/reclaim-worktree-task.sh
+```
+
+Useful reclaim options:
+
+- `--task-slug <slug>` to reclaim `.worktrees/<slug>` from the current repo family
+- `--worktree-root <path>` to reclaim a specific linked task worktree
+- `--force` to discard local changes and pass `-f` to `git worktree remove`
+- `--keep-branch` to keep the task branch even when it is already merged
+- `--keep-prompt` to keep the archived prompt file
+
+Reclaim only removes skill-managed linked worktrees under `.worktrees/`. By default it refuses to remove a dirty worktree, deletes the archived prompt file, closes tmux windows for that worktree, and deletes the task branch only when that branch is already merged into the primary worktree `HEAD`.
+
 ## Diagnostics
 
 - WezTerm-side diagnostics are configured in `wezterm-x/local/constants.lua` under `diagnostics.wezterm`.

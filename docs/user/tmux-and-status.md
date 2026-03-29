@@ -30,6 +30,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Any enabled status section keeps a stable on-screen slot. If live data is unavailable, that section renders placeholder text instead of disappearing, which avoids status-bar flicker.
 - A section only disappears completely when its toggle is disabled. If an entire line has no enabled sections, that line does not reserve a status row.
 - Managed git project tabs keep one tmux session per repo family and use tmux windows, not WezTerm tabs, to switch between linked worktrees.
+- The `worktree-task` skill reuses the current repo family's tmux session for new linked task worktrees and applies the cleaned-up task prompt only to the newly created window.
 
 ## Notes
 

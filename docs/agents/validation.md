@@ -10,6 +10,7 @@ After runtime config changes:
 2. Reload config in WezTerm with `Ctrl+Shift+R`.
 3. Reload tmux config or recreate tmux sessions if tmux styling or startup behavior changed.
 4. Verify workspace shortcuts still match [`../user/keybindings.md`](../user/keybindings.md).
+5. When task-worktree launch behavior changes, verify a new linked task worktree opens as another tmux window in the same repo-family session and that later worktree windows still fall back to the session default launcher instead of replaying the one-shot task prompt.
 
 ## Diagnostics Validation
 

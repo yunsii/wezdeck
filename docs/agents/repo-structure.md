@@ -19,10 +19,13 @@ Use this doc when you need ownership boundaries or file entry points.
 - `wezterm-x/local.example/`: tracked templates for machine-local overrides
 - `wezterm-x/local/`: gitignored machine-local overrides copied by the sync skill when present
 - `skills/wezterm-runtime-sync/`: skill-owned runtime sync workflow, prompt rendering, and prompt regression scripts
+- `skills/worktree-task/`: skill-owned linked worktree task workflow and launch scripts
 - `scripts/runtime/runtime-log-lib.sh`: shared runtime logging helper for WSL-side scripts
 - `scripts/runtime/open-current-dir-in-vscode.sh`: pane-aware VS Code launcher used by tmux `Alt+o`
 - `scripts/runtime/open-project-session.sh`: tmux bootstrap for managed project tabs
 - `scripts/runtime/run-managed-command.sh`: managed startup command launcher
+- `scripts/runtime/start-managed-codex.sh`: managed Codex launcher with optional task-prompt bootstrap
+- `scripts/runtime/tmux-worktree-task-window.sh`: shared-session bootstrap for linked task worktree windows
 - `wezterm-x/scripts/`: runtime launcher scripts copied by the runtime sync skill
 - `scripts/dev/`: repo-local helper scripts that are not synced to Windows
 - `tmux.conf`: tmux layout and status rendering

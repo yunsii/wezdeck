@@ -1,2 +1,3 @@
 .sync-target
+.worktrees/
 wezterm-x/local/

@@ -282,9 +282,23 @@ tmux_worktree_create_window() {
   local worktree_root="${2:?missing worktree root}"
   local primary_shell_command="${3:?missing primary shell command}"
   local worktree_label="${4:?missing worktree label}"
+  local create_mode="${5:-attach}"
   local window_id=""
+  local tmux_args=(new-window -P -F '#{window_id}' -t "$session_name" -c "$worktree_root")
 
-  window_id="$(tmux new-window -P -F '#{window_id}' -t "$session_name" -c "$worktree_root" "$primary_shell_command")"
+  case "$create_mode" in
+    attach)
+      ;;
+    detached)
+      tmux_args+=(-d)
+      ;;
+    *)
+      printf 'invalid create mode: %s\n' "$create_mode" >&2
+      return 1
+      ;;
+  esac
+
+  window_id="$(tmux "${tmux_args[@]}" "$primary_shell_command")"
   tmux_worktree_set_window_metadata "$window_id" "$worktree_root" "$worktree_label"
   tmux rename-window -t "$window_id" "$worktree_label"
   tmux_worktree_ensure_window_panes "$window_id" "$worktree_root"
