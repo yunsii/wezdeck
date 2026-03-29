@@ -1,0 +1,4 @@
+interface:
+  display_name: "Worktree Task"
+  short_description: "Create or reclaim linked task worktrees in the shared Codex tmux session."
+  default_prompt: "Use this skill to create or reclaim a linked git task worktree, keep the cleaned-up prompt under the primary worktree's .worktrees folder, reuse the current repo family's shared tmux session when possible, and clean up task windows, prompt archives, and merged branches safely during reclaim."
