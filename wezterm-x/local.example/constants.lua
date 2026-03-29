@@ -13,10 +13,6 @@ return {
     -- Use a Windows path in hybrid-wsl and a local path in posix-local.
     user_data_dir = '/path/to/chrome-profile',
   },
-  wakatime = {
-    -- Keep your real key only in wezterm-x/local/constants.lua.
-    api_key = 'your-wakatime-api-key',
-  },
   diagnostics = {
     wezterm = {
       enabled = false,

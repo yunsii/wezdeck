@@ -8,6 +8,8 @@ Use this doc when you need to apply or verify changes.
 2. Sync runtime files with the `wezterm-runtime-sync` skill.
 
 Private machine/project config should live in `wezterm-x/local/`, starting from the tracked templates in `wezterm-x/local.example/`.
+Keep simple cross-language values in `wezterm-x/local/shared.env`, and keep Lua-only structured settings in `wezterm-x/local/constants.lua`.
+Use `wezterm-x/local.example/shared.env` as the tracked starting point for shared scalar values such as `WAKATIME_API_KEY`.
 
 The skill's implementation lives under `skills/wezterm-runtime-sync/scripts/`. If repo-root `.sync-target` already points at a valid home, you can sync directly:
 
@@ -32,7 +34,8 @@ scripts/dev/reload-tmux.sh
 ```
 
 Recreate affected sessions only if a simple reload is not enough.
-5. If runtime shell rc files changed, reload the interactive shell in affected tmux panes or recreate those sessions.
+For WakaTime key changes in `wezterm-x/local/shared.env`, a tmux reload is sufficient; that path no longer depends on WezTerm injecting environment variables into WSL.
+6. If runtime shell rc files changed, reload the interactive shell in affected tmux panes or recreate those sessions.
 
 ## Diagnostics
 

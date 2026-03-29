@@ -78,16 +78,6 @@ resolve_login_shell() {
 
   printf '/bin/sh\n'
 }
-
-sync_tmux_runtime_environment() {
-  if [[ -n "${TMUX_STATUS_WAKATIME_API_KEY:-}" ]]; then
-    tmux set-environment -g TMUX_STATUS_WAKATIME_API_KEY "$TMUX_STATUS_WAKATIME_API_KEY"
-    return
-  fi
-
-  tmux set-environment -gu TMUX_STATUS_WAKATIME_API_KEY 2>/dev/null || true
-}
-
 build_primary_shell_command() {
   local command_string=""
   local login_shell quoted_shell
@@ -144,7 +134,6 @@ else
   tmux_worktree_ensure_window_panes "$window_id" "$worktree_root"
 fi
 
-sync_tmux_runtime_environment
 tmux set-option -g @wezterm_repo_root "$(repo_root_path)"
 tmux source-file "$TMUX_CONF"
 tmux select-window -t "$window_id"

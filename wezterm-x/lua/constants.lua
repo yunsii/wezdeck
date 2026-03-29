@@ -91,6 +91,7 @@ local function read_repo_root_override()
 end
 
 local local_constants = helpers.load_optional_table(join_path(runtime_dir, 'local', 'constants.lua')) or {}
+local shared_env = helpers.load_optional_env_file(join_path(runtime_dir, 'local', 'shared.env')) or {}
 local host_os = detect_host_os()
 
 local base_constants = {
@@ -196,6 +197,10 @@ local base_constants = {
 }
 
 local constants = helpers.deep_merge(base_constants, local_constants)
+if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
+  constants.wakatime = constants.wakatime or {}
+  constants.wakatime.api_key = shared_env.WAKATIME_API_KEY
+end
 constants.repo_root = read_repo_root_override() or constants.repo_root
 
 return constants
