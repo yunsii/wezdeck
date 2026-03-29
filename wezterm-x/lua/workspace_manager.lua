@@ -1,8 +1,14 @@
 local wezterm = require 'wezterm'
-local runtime_dir = wezterm.home_dir .. '/.wezterm-x'
+local path_sep = package.config:sub(1, 1)
+
+local function join_path(...)
+  return table.concat({ ... }, path_sep)
+end
+
+local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
 
 local function load_module(name)
-  return dofile(runtime_dir .. '/lua/' .. name .. '.lua')
+  return dofile(join_path(runtime_dir, 'lua', name .. '.lua'))
 end
 
 local helpers = load_module 'helpers'
@@ -14,7 +20,7 @@ function M.new(opts)
   local mux = wezterm.mux
   local config = opts.config
   local constants = opts.constants
-  local workspace_defs = dofile(runtime_dir .. '/workspaces.lua')
+  local workspace_defs = dofile(join_path(runtime_dir, 'workspaces.lua'))
   local logger = load_module('logger').new {
     wezterm = wezterm,
     constants = constants,

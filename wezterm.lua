@@ -1,9 +1,15 @@
 local wezterm = require 'wezterm'
 local config = wezterm.config_builder()
-local runtime_dir = wezterm.home_dir .. '/.wezterm-x'
+local path_sep = package.config:sub(1, 1)
+
+local function join_path(...)
+  return table.concat({ ... }, path_sep)
+end
+
+local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
 
 local function load_module(name)
-  return dofile(runtime_dir .. '/lua/' .. name .. '.lua')
+  return dofile(join_path(runtime_dir, 'lua', name .. '.lua'))
 end
 
 local constants = load_module 'constants'

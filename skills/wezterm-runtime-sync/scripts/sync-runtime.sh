@@ -224,23 +224,30 @@ SYNC_CACHE_FILE="$REPO_ROOT/.sync-target"
 TARGET_HOME="$(choose_target_home)"
 TARGET_FILE="$TARGET_HOME/.wezterm.lua"
 TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
+TEMP_RUNTIME_DIR="$TARGET_HOME/.wezterm-x.sync-tmp.$$"
 
 mkdir -p "$TARGET_HOME"
-cp "$SOURCE_FILE" "$TARGET_FILE"
+rm -rf "$TEMP_RUNTIME_DIR"
+mkdir -p "$TEMP_RUNTIME_DIR"
 
 if [[ -d "$TARGET_HOME/.wezterm-runtime" ]]; then
   rm -rf "$TARGET_HOME/.wezterm-runtime"
 fi
 
-rm -rf "$TARGET_RUNTIME_DIR"
-mkdir -p "$TARGET_RUNTIME_DIR"
-cp -R "$RUNTIME_SOURCE_DIR"/. "$TARGET_RUNTIME_DIR"/
+cp -R "$RUNTIME_SOURCE_DIR"/. "$TEMP_RUNTIME_DIR"/
 
 repo_root_path="${WEZTERM_REPO_ROOT:-}"
 if [[ -z "$repo_root_path" ]]; then
   repo_root_path="$(cd "$REPO_ROOT" && pwd -P)"
 fi
-printf '%s\n' "$repo_root_path" > "$TARGET_RUNTIME_DIR/repo-root.txt"
+printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
+
+mkdir -p "$TARGET_RUNTIME_DIR"
+cp -R "$TEMP_RUNTIME_DIR"/. "$TARGET_RUNTIME_DIR"/
+rm -rf "$TEMP_RUNTIME_DIR"
+
+# Update the main config last so any WezTerm auto-reload sees a complete runtime tree.
+cp "$SOURCE_FILE" "$TARGET_FILE"
 
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"

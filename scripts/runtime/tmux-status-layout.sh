@@ -5,24 +5,29 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-status-lib.sh"
 
-render_repo="${TMUX_STATUS_RENDER_REPO:-1}"
-render_branch="${TMUX_STATUS_RENDER_BRANCH:-1}"
-render_git_changes="${TMUX_STATUS_RENDER_GIT_CHANGES:-1}"
-render_node="${TMUX_STATUS_RENDER_NODE:-1}"
-render_wakatime="${TMUX_STATUS_RENDER_WAKATIME:-1}"
-cwd="${1:-$PWD}"
+render_repo="$(tmux_option_or_env TMUX_STATUS_RENDER_REPO @tmux_status_render_repo '1')"
+render_worktree="$(tmux_option_or_env TMUX_STATUS_RENDER_WORKTREE @tmux_status_render_worktree '1')"
+render_branch="$(tmux_option_or_env TMUX_STATUS_RENDER_BRANCH @tmux_status_render_branch '1')"
+render_git_changes="$(tmux_option_or_env TMUX_STATUS_RENDER_GIT_CHANGES @tmux_status_render_git_changes '1')"
+render_node="$(tmux_option_or_env TMUX_STATUS_RENDER_NODE @tmux_status_render_node '1')"
+render_wakatime="$(tmux_option_or_env TMUX_STATUS_RENDER_WAKATIME @tmux_status_render_wakatime '1')"
+session_name="${1:-}"
+window_id="${2:-}"
+cwd="${3:-$PWD}"
 target_status="off"
 
 line1_enabled=0
 line2_enabled=0
+line3_enabled=0
 main_line=""
+worktree_line=""
 wakatime_line=""
 
 if is_enabled "$render_repo" || is_enabled "$render_branch" || is_enabled "$render_git_changes" || is_enabled "$render_node"; then
   line1_enabled=1
 fi
 
-if is_enabled "$render_wakatime"; then
+if is_enabled "$render_worktree"; then
   line2_enabled=1
 fi
 
@@ -31,13 +36,25 @@ if (( line1_enabled )); then
 fi
 
 if (( line2_enabled )); then
+  worktree_line="$(bash "$script_dir/tmux-status-line-worktree.sh" "$cwd" "$session_name" "$window_id")"
+fi
+
+if is_enabled "$render_wakatime"; then
+  line3_enabled=1
+fi
+
+if (( line3_enabled )); then
   wakatime_line="$(bash "$script_dir/tmux-status-wakatime.sh")"
 fi
 
-if [[ -n "$main_line" && -n "$wakatime_line" ]]; then
+if (( line3_enabled )); then
+  target_status="3"
+elif (( line2_enabled )); then
   target_status="2"
-elif [[ -n "$main_line" || -n "$wakatime_line" ]]; then
+elif (( line1_enabled )); then
   target_status="on"
+else
+  target_status="off"
 fi
 
 current_status="$(tmux show -gv status 2>/dev/null || printf 'on')"

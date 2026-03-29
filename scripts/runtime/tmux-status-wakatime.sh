@@ -7,8 +7,8 @@ source "$script_dir/tmux-status-lib.sh"
 
 WAKA_CACHE="/tmp/.tmux-wakatime-cache"
 WAKA_LOCK="/tmp/.tmux-wakatime.lock"
-padding="${TMUX_STATUS_PADDING:- }"
-separator="${TMUX_STATUS_SEPARATOR:- · }"
+padding="$(tmux_option_or_env TMUX_STATUS_PADDING @tmux_status_padding ' ')"
+separator="$(tmux_option_or_env TMUX_STATUS_SEPARATOR @tmux_status_separator ' · ')"
 
 if ! command -v wakatime >/dev/null 2>&1; then
   printf '%s%s' "$padding" "$(style 'fg=#7f7a72' 'WakaTime unavailable')"

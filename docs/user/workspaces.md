@@ -15,6 +15,8 @@ WezTerm workspaces are the top-level session unit.
 - If the target workspace already exists, the shortcut switches to it.
 - If it does not exist, WezTerm creates it and opens the configured project tabs.
 - Each managed project tab boots through `tmux`.
+- Each managed git project tab now attaches to one tmux session per repo family, even when that repo has multiple linked worktrees.
+- Inside that tmux session, each git worktree gets its own tmux window.
 - The left pane runs the configured primary command.
 - The right pane stays as a shell in the same directory.
 - `work` and `config` default to the managed launcher profile from `managed_cli.default_profile`.

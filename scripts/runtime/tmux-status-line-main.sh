@@ -7,11 +7,12 @@ source "$script_dir/tmux-status-lib.sh"
 
 cwd="${1:-$PWD}"
 padding="${TMUX_STATUS_PADDING:- }"
-separator="${TMUX_STATUS_SEPARATOR:- · }"
-render_repo="${TMUX_STATUS_RENDER_REPO:-1}"
-render_branch="${TMUX_STATUS_RENDER_BRANCH:-1}"
-render_git_changes="${TMUX_STATUS_RENDER_GIT_CHANGES:-1}"
-render_node="${TMUX_STATUS_RENDER_NODE:-1}"
+padding="$(tmux_option_or_env TMUX_STATUS_PADDING @tmux_status_padding ' ')"
+separator="$(tmux_option_or_env TMUX_STATUS_SEPARATOR @tmux_status_separator ' · ')"
+render_repo="$(tmux_option_or_env TMUX_STATUS_RENDER_REPO @tmux_status_render_repo '1')"
+render_branch="$(tmux_option_or_env TMUX_STATUS_RENDER_BRANCH @tmux_status_render_branch '1')"
+render_git_changes="$(tmux_option_or_env TMUX_STATUS_RENDER_GIT_CHANGES @tmux_status_render_git_changes '1')"
+render_node="$(tmux_option_or_env TMUX_STATUS_RENDER_NODE @tmux_status_render_node '1')"
 parts=()
 
 if is_enabled "$render_repo"; then
