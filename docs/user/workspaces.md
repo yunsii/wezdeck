@@ -13,6 +13,8 @@ WezTerm workspaces are the top-level session unit.
 ## Managed Workspace Behavior
 
 - If the target workspace already exists, the shortcut switches to it.
+- When a managed workspace already exists, the shortcut re-syncs its configured project tabs before switching to it.
+- Tabs that no longer belong to the managed workspace definition are removed during that re-sync.
 - If it does not exist, WezTerm creates it and opens the configured project tabs.
 - Each managed project tab boots through `tmux`.
 - Each managed git project tab now attaches to one tmux session per repo family, even when that repo has multiple linked worktrees.
@@ -30,7 +32,8 @@ WezTerm workspaces are the top-level session unit.
 - `wezterm-x/workspaces.lua` is the tracked public baseline.
 - `wezterm-x/local/workspaces.lua` is the gitignored private override file for your real project directories.
 - `wezterm-x/local.example/workspaces.lua` is the tracked template you should copy before editing local values.
-- `config` is defined in the tracked baseline and points at the synced repo root.
+- `config` is defined in the tracked baseline and points at the primary worktree root for the synced repo family.
+- The managed launcher scripts still run from the synced checkout, so testing a linked worktree does not add that linked worktree as another top-level WezTerm tab.
 - `work` is intentionally empty in the tracked baseline until you define your private directories in `wezterm-x/local/workspaces.lua`.
 
 ## Update Workspaces

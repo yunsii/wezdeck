@@ -30,13 +30,15 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Any enabled status section keeps a stable on-screen slot. If live data is unavailable, that section renders placeholder text instead of disappearing, which avoids status-bar flicker.
 - A section only disappears completely when its toggle is disabled. If an entire line has no enabled sections, that line does not reserve a status row.
 - Managed git project tabs keep one tmux session per repo family and use tmux windows, not WezTerm tabs, to switch between linked worktrees.
+- The `config` workspace stays anchored to the repo family's primary worktree tab, even when the synced runtime came from a linked worktree checkout.
 - The `worktree-task` skill reuses the current repo family's tmux session for new linked task worktrees and applies the cleaned-up task prompt only to the newly created window.
 
 ## Notes
 
 - `default` is not managed by `workspaces.lua`; it remains WezTerm's built-in workspace.
 - `Alt+p` uses WezTerm's built-in relative workspace switching, so it includes `default`.
-- `Alt+g` opens a tmux worktree menu for the current repo family, and `Alt+Shift+g` cycles to the next linked worktree in that same tmux session.
+- `Alt+g` opens a centered tmux popup worktree picker for the current repo family, and `Alt+Shift+g` cycles to the next linked worktree in that same tmux session.
+- The `Alt+g` picker runs inside its own tmux popup pane instead of a `display-menu`, which keeps the picker stable even while the active pane is doing full-screen redraws.
 - Successful worktree switches update the active tmux window silently instead of showing a transient tmux banner.
 - WakaTime refresh is cache-backed: tmux repaints every few seconds, while the script reuses cached data for up to 60 seconds and refreshes asynchronously.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values; both sides currently use it for `WAKATIME_API_KEY`.

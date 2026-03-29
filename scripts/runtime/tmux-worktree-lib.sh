@@ -220,6 +220,22 @@ tmux_worktree_window_option() {
   tmux show-options -qv -w -t "$window_target" "$option_name" 2>/dev/null || true
 }
 
+tmux_worktree_current_root_for_context() {
+  local current_window_id="${1:-}"
+  local cwd="${2:-$PWD}"
+  local current_worktree_root=""
+
+  if [[ -n "$current_window_id" ]]; then
+    current_worktree_root="$(tmux_worktree_window_option "$current_window_id" @wezterm_worktree_root)"
+  fi
+
+  if [[ -z "$current_worktree_root" && -d "$cwd" ]] && tmux_worktree_in_git_repo "$cwd"; then
+    current_worktree_root="$(tmux_worktree_repo_root "$cwd")"
+  fi
+
+  printf '%s\n' "$current_worktree_root"
+}
+
 tmux_worktree_set_session_metadata() {
   local session_name="${1:?missing session name}"
   local repo_common_dir="${2:-}"

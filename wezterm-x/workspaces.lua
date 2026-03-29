@@ -25,8 +25,8 @@ local public_workspaces = {
     defaults = {
       launcher = managed_launcher,
     },
-    items = constants.repo_root and {
-      { cwd = constants.repo_root },
+    items = constants.main_repo_root and {
+      { cwd = constants.main_repo_root },
     } or {},
   },
 }

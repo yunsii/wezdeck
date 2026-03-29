@@ -33,6 +33,31 @@ resolve_repo_root() {
   printf '%s\n' "$repo_root"
 }
 
+resolve_main_repo_root() {
+  local repo_root="${1:?missing repo root}"
+  local common_dir=""
+
+  common_dir="$(git -C "$repo_root" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  if [[ -z "$common_dir" ]]; then
+    common_dir="$(git -C "$repo_root" rev-parse --git-common-dir 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$common_dir" ]]; then
+    printf '%s\n' "$repo_root"
+    return 0
+  fi
+
+  if [[ "$common_dir" != /* ]]; then
+    common_dir="$(
+      cd "$repo_root"
+      cd "$common_dir"
+      pwd -P
+    )"
+  fi
+
+  dirname "$common_dir"
+}
+
 append_unique_candidate() {
   local entry="$1"
   local existing
@@ -220,6 +245,7 @@ REPO_ROOT="$(resolve_repo_root)"
 SOURCE_FILE="$REPO_ROOT/wezterm.lua"
 RUNTIME_SOURCE_DIR="$REPO_ROOT/wezterm-x"
 SYNC_CACHE_FILE="$REPO_ROOT/.sync-target"
+MAIN_REPO_ROOT="$(resolve_main_repo_root "$REPO_ROOT")"
 
 TARGET_HOME="$(choose_target_home)"
 TARGET_FILE="$TARGET_HOME/.wezterm.lua"
@@ -241,6 +267,7 @@ if [[ -z "$repo_root_path" ]]; then
   repo_root_path="$(cd "$REPO_ROOT" && pwd -P)"
 fi
 printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
+printf '%s\n' "$MAIN_REPO_ROOT" > "$TEMP_RUNTIME_DIR/repo-main-root.txt"
 
 mkdir -p "$TARGET_RUNTIME_DIR"
 cp -R "$TEMP_RUNTIME_DIR"/. "$TARGET_RUNTIME_DIR"/

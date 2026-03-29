@@ -90,6 +90,20 @@ local function read_repo_root_override()
   return nil
 end
 
+local function read_main_repo_root_override()
+  local override_path = join_path(runtime_dir, 'repo-main-root.txt')
+  local file = io.open(override_path, 'r')
+  if not file then
+    return nil
+  end
+  local value = file:read('*l')
+  file:close()
+  if value and value ~= '' then
+    return value
+  end
+  return nil
+end
+
 local local_constants = helpers.load_optional_table(join_path(runtime_dir, 'local', 'constants.lua')) or {}
 local shared_env = helpers.load_optional_env_file(join_path(runtime_dir, 'local', 'shared.env')) or {}
 local host_os = detect_host_os()
@@ -98,6 +112,7 @@ local base_constants = {
   host_os = host_os,
   runtime_mode = default_runtime_mode(host_os),
   repo_root = nil,
+  main_repo_root = nil,
   default_domain = nil,
   shell = {
     program = nil,
@@ -220,5 +235,6 @@ if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
   constants.wakatime.api_key = shared_env.WAKATIME_API_KEY
 end
 constants.repo_root = read_repo_root_override() or constants.repo_root
+constants.main_repo_root = read_main_repo_root_override() or constants.main_repo_root or constants.repo_root
 
 return constants
