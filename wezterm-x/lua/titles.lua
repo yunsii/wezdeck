@@ -42,8 +42,6 @@ function M.register(opts)
       { Foreground = { Color = style.fg } },
       { Attribute = { Intensity = 'Bold' } },
       { Text = ' ' .. name .. ' ' },
-      { Background = { Color = palette.tab_bar_background } },
-      { Text = ' ' },
     }
   end
 
