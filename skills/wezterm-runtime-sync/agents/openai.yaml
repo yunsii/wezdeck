@@ -1,0 +1,4 @@
+interface:
+  display_name: "WezTerm Runtime Sync"
+  short_description: "Reuse cached home or confirm one and sync runtime."
+  default_prompt: "Use this skill to reuse a valid cached runtime home when available; otherwise list candidate homes, confirm one with the user, and run the skill-owned sync script for this repository."
