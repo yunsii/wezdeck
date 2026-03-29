@@ -1,0 +1,29 @@
+# Validation
+
+Use this doc when you changed runtime config or need release workflow rules.
+
+## Runtime Validation
+
+After runtime config changes:
+
+1. Run the `wezterm-runtime-sync` skill from the repo root. If repo-root `.sync-target` already points at a valid target, `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` is enough; otherwise use `--target-home /absolute/path` after the target has been confirmed.
+2. Reload config in WezTerm with `Ctrl+Shift+R`.
+3. Reload tmux config or recreate tmux sessions if tmux styling or startup behavior changed.
+4. Verify workspace shortcuts still match [`../user/keybindings.md`](../user/keybindings.md).
+
+## Diagnostics Validation
+
+- Keep both WezTerm and runtime diagnostics disabled by default when you are not actively debugging.
+- When you add or change diagnostics, verify that enabling them produces structured lines and that disabling them returns the system to its normal quiet behavior.
+- For keybinding investigations, temporarily set `diagnostics.wezterm.debug_key_events = true`, reproduce the issue, and then turn it back off.
+- For runtime script investigations, use `wezterm-x/local/runtime-logging.sh` to scope logging level, file path, and categories instead of editing individual scripts.
+- If your change introduces a new diagnostics category or log file, update [`../user/maintenance.md`](../user/maintenance.md).
+
+## Doc-Only Changes
+
+- If only documentation changed, runtime sync and reload are not required.
+
+## Commit Rule
+
+- Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
+- If a commit is needed, follow [`commit-guidelines.md`](./commit-guidelines.md).
