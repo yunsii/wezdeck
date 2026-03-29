@@ -7,7 +7,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - The native Windows title bar stays hidden.
 - The tab bar uses the non-fancy style and remains visible at the bottom.
 - The tab bar uses padded labels and stronger background highlighting for hover and active tabs rather than explicit separator characters.
-- The left side of the tab bar shows the current workspace as a tinted badge; `default` stays neutral, while managed workspaces use category-specific background colors when configured.
+- The left side of the tab bar shows the current workspace as a tinted badge that sits flush against the tab strip; `default` stays neutral, while managed workspaces use category-specific background colors when configured.
 - Managed project tabs use stable project directory names as titles.
 - If a managed tab has multiple panes, the title prefers a short summary such as `project +1`.
 - Unmanaged tabs fall back to working-directory-based title inference.
