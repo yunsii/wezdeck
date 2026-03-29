@@ -24,12 +24,7 @@ if [[ -z "$repo_common_dir" ]]; then
 fi
 
 current_worktree_root=""
-if [[ -n "$current_window_id" ]]; then
-  current_worktree_root="$(tmux_worktree_window_option "$current_window_id" @wezterm_worktree_root)"
-fi
-if [[ -z "$current_worktree_root" && -d "$cwd" ]] && tmux_worktree_in_git_repo "$cwd"; then
-  current_worktree_root="$(tmux_worktree_repo_root "$cwd")"
-fi
+current_worktree_root="$(tmux_worktree_current_root_for_context "$current_window_id" "$cwd")"
 
 list_root="$cwd"
 if [[ -n "$main_worktree_root" ]]; then

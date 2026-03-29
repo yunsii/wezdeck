@@ -11,7 +11,7 @@ Use this doc when you need shortcut behavior.
 - `Alt+v`: split vertically
 - `Alt+s`: split horizontally
 - `Alt+o`: open the current WSL working directory in VS Code; when WezTerm only sees the WSL host fallback path, it forwards `Alt+o` to the pane so tmux or the shell can resolve the real cwd
-- `Alt+g`: open a tmux worktree menu for the current repo family; selecting an unopened worktree creates its tmux window on demand
+- `Alt+g`: open a centered tmux popup worktree picker for the current repo family; selecting an unopened worktree creates its tmux window on demand
 - `Alt+Shift+g`: cycle to the next git worktree in the current repo family, creating the tmux window on demand when needed
 - `Alt+b`: open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua`; in `hybrid-wsl` it uses the synced Windows launcher, and in `posix-local` it uses the synced shell launcher
 - `Ctrl+LeftClick`: open the link under the mouse cursor in the system browser
