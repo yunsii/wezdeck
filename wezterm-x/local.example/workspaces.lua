@@ -1,6 +1,12 @@
 local wezterm = require 'wezterm'
-local runtime_dir = wezterm.config_dir .. '/.wezterm-x'
-local constants = dofile(runtime_dir .. '/lua/constants.lua')
+local path_sep = package.config:sub(1, 1)
+
+local function join_path(...)
+  return table.concat({ ... }, path_sep)
+end
+
+local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+local constants = dofile(join_path(runtime_dir, 'lua', 'constants.lua'))
 
 local managed_launcher = nil
 if constants.managed_cli and constants.managed_cli.default_profile then

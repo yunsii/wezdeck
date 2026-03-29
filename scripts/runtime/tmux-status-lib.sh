@@ -6,6 +6,31 @@ is_enabled() {
   [[ "$value" != "0" && "$value" != "false" && "$value" != "off" && "$value" != "no" ]]
 }
 
+tmux_option() {
+  local option_name="$1"
+  local default_value="${2:-}"
+  local value
+
+  value="$(tmux show -gv "$option_name" 2>/dev/null || true)"
+  if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' "$default_value"
+  fi
+}
+
+tmux_option_or_env() {
+  local env_name="$1"
+  local option_name="$2"
+  local default_value="${3:-}"
+
+  if [[ -n "${!env_name+x}" ]]; then
+    printf '%s' "${!env_name}"
+  else
+    tmux_option "$option_name" "$default_value"
+  fi
+}
+
 join_with_separator() {
   local separator="$1"
   shift

@@ -1,6 +1,12 @@
 local wezterm = require 'wezterm'
-local runtime_dir = wezterm.config_dir .. '/.wezterm-x'
-local helpers = dofile(runtime_dir .. '/lua/helpers.lua')
+local path_sep = package.config:sub(1, 1)
+
+local function join_path(...)
+  return table.concat({ ... }, path_sep)
+end
+
+local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
 
 local function detect_host_os()
   local triple = wezterm.target_triple or ''
@@ -64,14 +70,14 @@ end
 
 local function default_diagnostics_file(host_os)
   if host_os == 'windows' then
-    return wezterm.home_dir .. '\\.wezterm-x\\wezterm-debug.log'
+    return wezterm.config_dir .. '\\.wezterm-x\\wezterm-debug.log'
   end
 
-  return wezterm.home_dir .. '/.wezterm-x/wezterm-debug.log'
+  return wezterm.config_dir .. '/.wezterm-x/wezterm-debug.log'
 end
 
 local function read_repo_root_override()
-  local override_path = runtime_dir .. '/repo-root.txt'
+  local override_path = join_path(runtime_dir, 'repo-root.txt')
   local file = io.open(override_path, 'r')
   if not file then
     return nil
@@ -84,7 +90,7 @@ local function read_repo_root_override()
   return nil
 end
 
-local local_constants = helpers.load_optional_table(runtime_dir .. '/local/constants.lua') or {}
+local local_constants = helpers.load_optional_table(join_path(runtime_dir, 'local', 'constants.lua')) or {}
 local host_os = detect_host_os()
 
 local base_constants = {
@@ -152,7 +158,7 @@ local base_constants = {
     chrome_debug = {
       cmd = 'cmd.exe',
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-      runtime_dir = wezterm.home_dir .. '\\.wezterm-x',
+      runtime_dir = wezterm.config_dir .. '\\.wezterm-x',
       script = 'scripts\\focus-or-start-debug-chrome.ps1',
     },
   },

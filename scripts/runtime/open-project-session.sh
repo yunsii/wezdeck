@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMUX_CONF="$SCRIPT_DIR/../../tmux.conf"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/tmux-worktree-lib.sh"
 
 if [[ $# -lt 2 ]]; then
   echo "usage: $0 <workspace> <cwd> [command...]" >&2
@@ -14,10 +16,7 @@ fi
 workspace="$1"
 cwd="$2"
 shift 2
-runtime_log_info workspace "open-project-session invoked" "workspace=$workspace" "cwd=$cwd" "arg_count=$#"
-
-project_name="$(basename "$cwd")"
-session_name="$(printf 'wezterm_%s_%s' "$workspace" "$project_name" | tr '/ .:' '____')"
+cwd="$(tmux_worktree_abs_path "$cwd")"
 
 tmux_version() {
   tmux -V 2>/dev/null | awk '{print $2}' | sed 's/[^0-9.]//g'
@@ -50,16 +49,6 @@ EOF
 }
 
 ensure_tmux_support
-
-ensure_workspace_panes() {
-  local pane_count
-  pane_count=$(tmux list-panes -t "${session_name}:0" 2>/dev/null | wc -l)
-  if [[ $pane_count -lt 2 ]]; then
-    runtime_log_info workspace "adding missing secondary pane" "session_name=$session_name" "cwd=$cwd" "pane_count=$pane_count"
-    tmux split-window -h -t "${session_name}:0.0" -c "$cwd"
-    tmux select-pane -t "${session_name}:0.0"
-  fi
-}
 
 repo_root_path() {
   (
@@ -107,23 +96,48 @@ build_primary_shell_command() {
   printf '%s -l' "$quoted_shell"
 }
 
-if ! tmux has-session -t "$session_name" 2>/dev/null; then
-  primary_shell_command="$(build_primary_shell_command "$@")"
-  runtime_log_info workspace "creating tmux session" "session_name=$session_name" "cwd=$cwd"
+primary_shell_command="$(build_primary_shell_command "$@")"
 
-  tmux new-session -d -s "$session_name" -c "$cwd" "$primary_shell_command"
-  tmux set-option -g @wezterm_repo_root "$(repo_root_path)"
-  tmux source-file "$TMUX_CONF"
-  tmux rename-window -t "${session_name}:0" "$project_name"
-  tmux split-window -h -t "${session_name}:0.0" -c "$cwd"
-  tmux select-pane -t "${session_name}:0.0"
-else
-  runtime_log_info workspace "reusing existing tmux session" "session_name=$session_name" "cwd=$cwd"
-  tmux set-option -g @wezterm_repo_root "$(repo_root_path)"
-  tmux source-file "$TMUX_CONF"
+worktree_root="$cwd"
+repo_common_dir=""
+main_worktree_root=""
+repo_label="$(basename "$cwd")"
+
+if tmux_worktree_in_git_repo "$cwd"; then
+  worktree_root="$(tmux_worktree_repo_root "$cwd")"
+  repo_common_dir="$(tmux_worktree_common_dir "$cwd")"
+  main_worktree_root="$(tmux_worktree_main_root "$repo_common_dir")"
+  repo_label="$(tmux_worktree_repo_label "$worktree_root")"
 fi
 
-ensure_workspace_panes
+worktree_label="$(tmux_worktree_label_for_root "$worktree_root" "$main_worktree_root")"
+session_name="$(tmux_worktree_session_name_for_path "$workspace" "$cwd")"
+runtime_log_info workspace "open-project-session invoked" "workspace=$workspace" "cwd=$cwd" "session_name=$session_name" "worktree_root=$worktree_root" "arg_count=$#"
 
-runtime_log_info workspace "attaching tmux session" "session_name=$session_name"
+window_id=""
+if ! tmux has-session -t "$session_name" 2>/dev/null; then
+  runtime_log_info workspace "creating tmux session" "session_name=$session_name" "worktree_root=$worktree_root"
+  window_id="$(tmux new-session -d -P -F '#{window_id}' -s "$session_name" -c "$worktree_root" "$primary_shell_command")"
+else
+  runtime_log_info workspace "reusing tmux session" "session_name=$session_name" "worktree_root=$worktree_root"
+  window_id="$(tmux_worktree_find_window "$session_name" "$worktree_root" || true)"
+fi
+
+tmux_worktree_set_session_metadata "$session_name" "$repo_common_dir" "$repo_label" "$main_worktree_root" "$primary_shell_command"
+
+if [[ -z "$window_id" ]]; then
+  runtime_log_info worktree "creating worktree window" "session_name=$session_name" "worktree_root=$worktree_root" "worktree_label=$worktree_label"
+  window_id="$(tmux_worktree_create_window "$session_name" "$worktree_root" "$primary_shell_command" "$worktree_label")"
+else
+  runtime_log_info worktree "reusing worktree window" "session_name=$session_name" "window_id=$window_id" "worktree_root=$worktree_root" "worktree_label=$worktree_label"
+  tmux_worktree_set_window_metadata "$window_id" "$worktree_root" "$worktree_label"
+  tmux rename-window -t "$window_id" "$worktree_label"
+  tmux_worktree_ensure_window_panes "$window_id" "$worktree_root"
+fi
+
+tmux set-option -g @wezterm_repo_root "$(repo_root_path)"
+tmux source-file "$TMUX_CONF"
+tmux select-window -t "$window_id"
+
+runtime_log_info workspace "attaching tmux session" "session_name=$session_name" "window_id=$window_id"
 exec tmux attach-session -t "$session_name"

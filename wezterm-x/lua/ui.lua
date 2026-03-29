@@ -1,4 +1,9 @@
 local M = {}
+local path_sep = package.config:sub(1, 1)
+
+local function join_path(...)
+  return table.concat({ ... }, path_sep)
+end
 
 local function workspace_keybinding(wezterm, workspace, key, name)
   return {
@@ -180,7 +185,7 @@ local function open_debug_chrome(wezterm, window, constants, logger)
   end
 
   if runtime_mode == 'hybrid-wsl' then
-    local runtime_dir = integration.runtime_dir or (wezterm.home_dir .. '\\.wezterm-x')
+    local runtime_dir = integration.runtime_dir or (wezterm.config_dir .. '\\.wezterm-x')
     local script_path = integration.script or 'scripts\\focus-or-start-debug-chrome.ps1'
     command = {
       integration.cmd or 'cmd.exe',
@@ -200,7 +205,7 @@ local function open_debug_chrome(wezterm, window, constants, logger)
       chrome.user_data_dir,
     }
   else
-    local runtime_dir = integration.posix_runtime_dir or (wezterm.home_dir .. '/.wezterm-x')
+    local runtime_dir = integration.posix_runtime_dir or (wezterm.config_dir .. '/.wezterm-x')
     local script_path = integration.posix_script or 'scripts/focus-or-start-debug-chrome.sh'
     command = {
       integration.posix_shell or '/bin/sh',
@@ -233,7 +238,8 @@ function M.apply(opts)
   local constants = opts.constants
   local palette = constants.palette
   local workspace = opts.workspace
-  local logger = dofile(wezterm.home_dir .. '/.wezterm-x/lua/logger.lua').new {
+  local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+  local logger = dofile(join_path(runtime_dir, 'lua', 'logger.lua')).new {
     wezterm = wezterm,
     constants = constants,
   }

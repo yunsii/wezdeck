@@ -42,8 +42,8 @@ Recreate affected sessions only if a simple reload is not enough.
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured `file` and also shows them in the Debug Overlay.
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations; it is intentionally noisy.
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.
-- Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace`.
-- Current runtime categories include `alt_o`, `workspace`, and `managed_command`.
+- Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace,worktree`.
+- Current runtime categories include `alt_o`, `workspace`, `worktree`, and `managed_command`.
 
 ## Shell Integration
 
