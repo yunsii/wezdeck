@@ -5,8 +5,8 @@ Use this doc when you are changing runtime behavior.
 ## Managed Startup
 
 - Managed project tabs bootstrap through `scripts/runtime/open-project-session.sh`.
-- Linked task worktree windows bootstrap through `scripts/runtime/tmux-worktree-task-window.sh`.
-- Keep tmux session bootstrap behavior there, not duplicated in WezTerm-side lazy setup.
+- Linked task worktree windows bootstrap through the built-in tmux provider under `skills/worktree-task/scripts/providers/tmux-codex.sh`.
+- Keep task-specific tmux session bootstrap inside the skill provider, not duplicated in WezTerm-side lazy setup.
 - Keep environment bootstrapping and tool-specific startup logic in `scripts/runtime/run-managed-command.sh`, not in `workspaces.lua`.
 
 ## Stable Behavior

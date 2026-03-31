@@ -43,18 +43,21 @@ Use the `worktree-task` skill when you want a fresh Codex implementation session
 
 - Run it from the existing managed tmux/Codex window for the target repository when possible so the new task window can reuse the current repo-family tmux session directly.
 - The skill creates linked worktrees under the primary worktree root's `.worktrees/` directory and stores the cleaned-up task prompt under `.worktrees/.codex-prompts/`.
+- This repository's tracked worktree-task profile lives at `.codex/worktree-task.env`. It enables the built-in `tmux-codex` provider and sources `tmux.conf` for repo-local status and worktree keybindings.
 - This repository ignores `.worktrees/`, so prompt archives and linked worktree folders do not pollute `git status`.
 
 Example:
 
 ```bash
-printf '%s' "$TASK_PROMPT" | skills/worktree-task/scripts/launch-worktree-task.sh --title "short task title"
+printf '%s' "$TASK_PROMPT" | skills/worktree-task/scripts/worktree-task launch --title "short task title"
 ```
 
 Useful options:
 
 - `--base-ref <ref>` to branch from something other than the primary worktree `HEAD`
 - `--branch <name>` to force a branch name
+- `--provider <name|custom:name|/absolute/path>` to override the selected runtime provider
+- `--provider-mode <off|auto|required>` to disable runtime launch, allow fallback, or require provider success
 - `--session-name <name>` to target an already running tmux session for that repo family when launching from outside tmux
 - `--variant light|dark|auto` to choose the Codex UI variant for the new window
 - `--no-attach` to prepare the worktree and tmux window without switching the current client, including the first time that task window is created
@@ -62,13 +65,15 @@ Useful options:
 Reclaim a finished task:
 
 ```bash
-skills/worktree-task/scripts/reclaim-worktree-task.sh
+skills/worktree-task/scripts/worktree-task reclaim
 ```
 
 Useful reclaim options:
 
 - `--task-slug <slug>` to reclaim `.worktrees/<slug>` from the current repo family
 - `--worktree-root <path>` to reclaim a specific linked task worktree
+- `--provider <name|custom:name|/absolute/path>` to override the provider used for cleanup
+- `--provider-mode <off|auto|required>` to disable runtime cleanup, allow fallback, or require provider success
 - `--force` to discard local changes and pass `-f` to `git worktree remove`
 - `--keep-branch` to keep the task branch even when it is already merged
 - `--keep-prompt` to keep the archived prompt file

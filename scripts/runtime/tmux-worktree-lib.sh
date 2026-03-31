@@ -269,7 +269,7 @@ tmux_worktree_current_root_for_context() {
   local current_worktree_root=""
 
   if [[ -n "$current_window_id" ]]; then
-    current_worktree_root="$(tmux_worktree_window_option "$current_window_id" @wezterm_worktree_root)"
+    current_worktree_root="$(tmux_worktree_window_option "$current_window_id" @worktree_task_root)"
   fi
 
   if [[ -z "$current_worktree_root" && -d "$cwd" ]] && tmux_worktree_in_git_repo "$cwd"; then
@@ -286,10 +286,10 @@ tmux_worktree_set_session_metadata() {
   local main_worktree_root="${4:-}"
   local primary_shell_command="${5:-}"
 
-  tmux set-option -q -t "$session_name" @wezterm_repo_common_dir "$repo_common_dir"
-  tmux set-option -q -t "$session_name" @wezterm_repo_label "$repo_label"
-  tmux set-option -q -t "$session_name" @wezterm_main_worktree_root "$main_worktree_root"
-  tmux set-option -q -t "$session_name" @wezterm_primary_shell_command "$primary_shell_command"
+  tmux set-option -q -t "$session_name" @worktree_task_repo_common_dir "$repo_common_dir"
+  tmux set-option -q -t "$session_name" @worktree_task_repo_label "$repo_label"
+  tmux set-option -q -t "$session_name" @worktree_task_main_root "$main_worktree_root"
+  tmux set-option -q -t "$session_name" @worktree_task_primary_command "$primary_shell_command"
 }
 
 tmux_worktree_set_window_metadata() {
@@ -297,8 +297,8 @@ tmux_worktree_set_window_metadata() {
   local worktree_root="${2:-}"
   local worktree_label="${3:-}"
 
-  tmux set-option -q -w -t "$window_target" @wezterm_worktree_root "$worktree_root"
-  tmux set-option -q -w -t "$window_target" @wezterm_worktree_label "$worktree_label"
+  tmux set-option -q -w -t "$window_target" @worktree_task_root "$worktree_root"
+  tmux set-option -q -w -t "$window_target" @worktree_task_label "$worktree_label"
 }
 
 tmux_worktree_ensure_tmux_config_loaded() {
@@ -309,16 +309,16 @@ tmux_worktree_ensure_tmux_config_loaded() {
   local current_mtime=""
 
   desired_mtime="$(tmux_worktree_file_mtime "$tmux_conf" 2>/dev/null || printf '0')"
-  current_repo_root="$(tmux show -gv @wezterm_repo_root 2>/dev/null || true)"
-  current_mtime="$(tmux show -gv @wezterm_tmux_conf_mtime 2>/dev/null || true)"
+  current_repo_root="$(tmux show -gv @worktree_task_repo_root 2>/dev/null || true)"
+  current_mtime="$(tmux show -gv @worktree_task_tmux_conf_mtime 2>/dev/null || true)"
 
   if [[ "$current_repo_root" == "$repo_root" && "$current_mtime" == "$desired_mtime" ]]; then
     return 0
   fi
 
-  tmux set-option -g @wezterm_repo_root "$repo_root"
+  tmux set-option -g @worktree_task_repo_root "$repo_root"
   tmux source-file "$tmux_conf"
-  tmux set-option -gq @wezterm_tmux_conf_mtime "$desired_mtime"
+  tmux set-option -gq @worktree_task_tmux_conf_mtime "$desired_mtime"
 }
 
 tmux_worktree_find_window() {
@@ -330,7 +330,7 @@ tmux_worktree_find_window() {
       printf '%s\n' "$window_id"
       return 0
     fi
-  done < <(tmux list-windows -t "$session_name" -F '#{window_id}	#{@wezterm_worktree_root}' 2>/dev/null || true)
+  done < <(tmux list-windows -t "$session_name" -F '#{window_id}	#{@worktree_task_root}' 2>/dev/null || true)
 
   return 1
 }

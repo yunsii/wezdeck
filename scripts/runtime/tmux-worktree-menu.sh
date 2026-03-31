@@ -16,9 +16,9 @@ if [[ -z "$session_name" ]]; then
   exit 1
 fi
 
-repo_common_dir="$(tmux_worktree_session_option "$session_name" @wezterm_repo_common_dir)"
-repo_label="$(tmux_worktree_session_option "$session_name" @wezterm_repo_label)"
-main_worktree_root="$(tmux_worktree_session_option "$session_name" @wezterm_main_worktree_root)"
+repo_common_dir="$(tmux_worktree_session_option "$session_name" @worktree_task_repo_common_dir)"
+repo_label="$(tmux_worktree_session_option "$session_name" @worktree_task_repo_label)"
+main_worktree_root="$(tmux_worktree_session_option "$session_name" @worktree_task_main_root)"
 
 if [[ -z "$repo_common_dir" ]]; then
   tmux display-message 'Current session is not a git worktree session'

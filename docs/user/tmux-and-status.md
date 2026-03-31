@@ -60,6 +60,6 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Enabled sections use placeholders when needed: the worktree line shows `no-worktree` outside git worktrees, branch shows `no-branch`, git changes shows `no-git`, Node.js shows `Node unavailable`, and WakaTime stays visible with placeholder text until real data becomes available.
 - Node.js version lookup includes an `nvm` fallback so it still renders outside an interactive login shell, and the resolved version is cached to avoid repeated shell bootstrap on every status refresh.
 - `scripts/runtime/open-project-session.sh` remains the stable execution layer for managed project tabs.
-- If tmux is reloaded outside the helper scripts, `tmux.conf` derives `@wezterm_repo_root` from the path of the loaded config file so the status commands can still locate the repository scripts.
+- If tmux is reloaded outside the helper scripts, `tmux.conf` derives `@worktree_task_repo_root` from the path of the loaded config file so the status commands can still locate the repository scripts.
 - If the runtime shell rc changes, reload the shell or recreate affected tmux sessions before expecting WezTerm cwd tracking to update.
 - If `~/.zshrc` or `~/.bashrc` is replaced or reset, re-apply the `OSC 7` integration or WezTerm will fall back to incorrect cwd inference inside tmux.
