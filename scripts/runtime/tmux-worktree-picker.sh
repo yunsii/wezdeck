@@ -22,7 +22,7 @@ if ! tmux has-session -t "$session_name" 2>/dev/null; then
   exit 1
 fi
 
-repo_label="$(tmux_worktree_session_option "$session_name" @wezterm_repo_label)"
+repo_label="$(tmux_worktree_session_option "$session_name" @worktree_task_repo_label)"
 if [[ -z "$repo_label" ]]; then
   repo_label='repo'
 fi
