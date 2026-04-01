@@ -18,22 +18,34 @@ main_worktree_root=""
 list_root=""
 
 if [[ -z "$session_name" ]]; then
+  runtime_log_error worktree "worktree menu failed: missing tmux session" "current_window_id=$current_window_id" "cwd=$cwd"
   tmux display-message 'Worktree menu failed: missing tmux session'
   exit 1
 fi
 
+runtime_log_info worktree "worktree menu invoked" "session_name=$session_name" "current_window_id=$current_window_id" "cwd=$cwd"
+
 context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" || true)"
 if [[ -z "$context" ]]; then
+  runtime_log_warn worktree "worktree menu could not resolve current context" "session_name=$session_name" "current_window_id=$current_window_id" "cwd=$cwd"
   tmux display-message 'Current pane is not inside a git worktree'
   exit 0
 fi
 
 IFS=$'\t' read -r current_worktree_root repo_common_dir main_worktree_root repo_label <<< "$context"
 list_root="$main_worktree_root"
+runtime_log_info worktree "worktree menu resolved current context" \
+  "session_name=$session_name" \
+  "current_window_id=$current_window_id" \
+  "cwd=$cwd" \
+  "current_worktree_root=$current_worktree_root" \
+  "repo_common_dir=$repo_common_dir" \
+  "main_worktree_root=$main_worktree_root" \
+  "repo_label=$repo_label"
 
 picker_command="bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd")"
 
-runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label"
+runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "list_root=$list_root"
 if tmux display-popup -x C -y C -w 70% -h 75% -T "Worktrees: $repo_label" -E "$picker_command"; then
   exit 0
 fi

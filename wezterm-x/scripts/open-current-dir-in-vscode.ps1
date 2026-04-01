@@ -8,7 +8,7 @@ param(
   [string[]]$CodeArg = @()
 )
 
-function Resolve-PrimaryWorktreeDir {
+function Resolve-WorktreeRoot {
   param(
     [string]$Directory,
     [string]$Distribution
@@ -19,22 +19,17 @@ function Resolve-PrimaryWorktreeDir {
   }
 
   try {
-    $commonDir = & wsl.exe --distribution $Distribution --cd $Directory git rev-parse --path-format=absolute --git-common-dir 2>$null
+    $repoRoot = & wsl.exe --distribution $Distribution --cd $Directory git rev-parse --path-format=absolute --show-toplevel 2>$null
     if ($LASTEXITCODE -ne 0) {
       return $Directory
     }
 
-    $commonDir = (($commonDir | Out-String).Trim())
-    if ([string]::IsNullOrWhiteSpace($commonDir)) {
+    $repoRoot = (($repoRoot | Out-String).Trim())
+    if ([string]::IsNullOrWhiteSpace($repoRoot)) {
       return $Directory
     }
 
-    $mainRoot = Split-Path -Parent $commonDir
-    if ([string]::IsNullOrWhiteSpace($mainRoot)) {
-      return $Directory
-    }
-
-    return $mainRoot
+    return $repoRoot
   } catch {
     return $Directory
   }
@@ -62,7 +57,7 @@ if ($CodeArg.Count -eq 0) {
   $CodeArg = @('code')
 }
 
-$targetDir = Resolve-PrimaryWorktreeDir -Directory $RequestedDir -Distribution $Distro
+$targetDir = Resolve-WorktreeRoot -Directory $RequestedDir -Distribution $Distro
 $folderUri = "vscode-remote://wsl+$([Uri]::EscapeDataString($Distro))$(Convert-ToVscodeRemotePath -Path $targetDir)"
 $codeExecutable = $CodeArg[0]
 $codeArguments = @()

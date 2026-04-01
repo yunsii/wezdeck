@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/tmux-worktree-lib.sh"
+
+workspace=""
+cwd="${PWD}"
+
+usage() {
+  cat <<'EOF' >&2
+Usage: resolve-alt-o-target.sh --workspace NAME --cwd PATH
+EOF
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+    --workspace)
+      workspace="${2:-}"
+      shift 2
+      ;;
+    --cwd)
+      cwd="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$cwd" || "$cwd" != /* ]]; then
+  runtime_log_warn alt_o "resolve-alt-o-target received non-absolute cwd" "workspace=$workspace" "cwd=$cwd"
+  exit 1
+fi
+
+target_dir="$cwd"
+session_name=""
+tmux_metadata=""
+resolved_session=""
+resolved_window=""
+resolved_cwd=""
+
+runtime_log_info alt_o "resolve-alt-o-target invoked" "workspace=$workspace" "cwd=$cwd"
+
+if [[ -n "$workspace" && "$workspace" != "default" ]] && tmux_worktree_in_git_repo "$cwd"; then
+  session_name="$(tmux_worktree_session_name_for_path "$workspace" "$cwd" || true)"
+  if [[ -n "$session_name" ]] && tmux has-session -t "$session_name" 2>/dev/null; then
+    tmux_metadata="$(tmux display-message -p -t "$session_name" '#{session_name}	#{window_id}	#{pane_current_path}' 2>/dev/null || true)"
+    if [[ -n "$tmux_metadata" ]]; then
+      IFS=$'\t' read -r resolved_session resolved_window resolved_cwd <<< "$tmux_metadata"
+      if [[ -n "$resolved_cwd" && -d "$resolved_cwd" ]]; then
+        target_dir="$resolved_cwd"
+        runtime_log_info alt_o "resolved Alt+o target from tmux session" \
+          "workspace=$workspace" \
+          "session_name=$resolved_session" \
+          "window_id=$resolved_window" \
+          "resolved_cwd=$resolved_cwd"
+      fi
+    fi
+  else
+    runtime_log_info alt_o "managed workspace tmux session was unavailable during Alt+o resolution" \
+      "workspace=$workspace" \
+      "session_name=${session_name:-missing}" \
+      "cwd=$cwd"
+  fi
+fi
+
+if repo_root="$(tmux_worktree_repo_root "$target_dir" 2>/dev/null || true)" && [[ -n "$repo_root" ]]; then
+  target_dir="$repo_root"
+fi
+
+runtime_log_info alt_o "resolved Alt+o target directory" "workspace=$workspace" "effective_target_dir=$target_dir"
+printf '%s\n' "$target_dir"

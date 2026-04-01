@@ -15,13 +15,14 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 ## Tmux Behavior
 
 - tmux status follows the active pane working directory.
-- WezTerm cwd-dependent actions inside tmux still rely on shell integration emitting `OSC 7` from the interactive runtime shell, except for `Alt+o` fallback handling.
+- WezTerm cwd-dependent actions inside tmux still rely on shell integration emitting `OSC 7` from the interactive runtime shell, except `Alt+o`, which resolves managed-workspace targets from live tmux session state and falls back to pane delegation when WezTerm only sees the WSL host path.
 - Managed workspace creation only requires `default_domain` in `hybrid-wsl` mode.
 - The shell integration currently lives in the runtime shell rc files such as `~/.zshrc` and `~/.bashrc`.
-- In `hybrid-wsl`, `Alt+o` hands the current pane directory to the synced Windows PowerShell launcher, which resolves the repo family's primary worktree and then opens it with VS Code's `--folder-uri vscode-remote://wsl+<distro>/...` entrypoint.
-- In `posix-local`, `Alt+o` hands the current pane directory to the runtime-side VS Code launcher, which resolves the repo family's primary worktree and then launches the configured local VS Code opener there.
+- Outside tmux in `hybrid-wsl`, `Alt+o` hands the current pane directory to the synced Windows PowerShell launcher, which resolves the current worktree root and then opens it with VS Code's `--folder-uri vscode-remote://wsl+<distro>/...` entrypoint.
+- Outside tmux in `posix-local`, `Alt+o` hands the current pane directory to the runtime-side VS Code launcher, which resolves the current worktree root and then launches the configured local VS Code opener there.
 - Outside git worktrees, `Alt+o` still opens the current directory.
-- If WezTerm only sees the WSL host fallback path such as `/C:/Users/...` in `hybrid-wsl`, it forwards `Alt+o` to the pane instead; tmux then resolves `#{pane_current_path}` to the primary worktree before launching `code .`.
+- In managed workspaces, `Alt+o` asks tmux for the active session path before resolving the current worktree root and launching VS Code.
+- If WezTerm only sees the WSL host fallback path such as `/C:/Users/...` in `hybrid-wsl`, `Alt+o` also forwards to the pane instead of using the stale host-side path.
 - If WezTerm only reports `/`, managed workspace tabs still fall back to the tab's configured project directory instead of opening the WSL root.
 - In `hybrid-wsl`, `Alt+b` uses the synced Windows PowerShell launcher for the debug Chrome profile.
 - In `posix-local`, `Alt+b` uses the synced shell launcher at `wezterm-x/scripts/focus-or-start-debug-chrome.sh`.
@@ -54,7 +55,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - The `Alt+g` picker runs inside its own tmux popup pane instead of a `display-menu`, which keeps the picker stable even while the active pane is doing full-screen redraws.
 - Successful worktree switches update the active tmux window silently instead of showing a transient tmux banner.
 - tmux status refresh is hybrid: the draw path reads cached lines, focus and pane/window change hooks trigger debounced background refreshes, and a 30-second `status-interval` acts as a low-frequency fallback poll.
-- `Alt+g` and other tmux worktree switches request a fresh status recompute after selecting the target window, so repo, branch, and git-change state usually update without waiting for the fallback poll.
+- `Alt+g` and other tmux worktree switches force an immediate status recompute after selecting the target window, so repo, branch, and git-change state update without waiting for the fallback poll or force-refresh debounce.
 - WakaTime refresh is cache-backed: the status script reuses cached summary data for up to 60 seconds, refreshes asynchronously, and upgrades older JSON cache entries to the current compact summary format.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values; both sides currently use it for `WAKATIME_API_KEY`.
 - WakaTime status no longer depends on WezTerm injecting the API key into the WSL shell environment; reloading tmux is enough after updating `shared.env`.

@@ -13,6 +13,7 @@ cwd=""
 print_line=""
 force_refresh=0
 refresh_client=0
+no_debounce=0
 
 sanitize_lock_key() {
   printf '%s' "${1:-global}" | tr -c 'A-Za-z0-9._-' '_'
@@ -84,6 +85,7 @@ Options:
   --cwd PATH            pane working directory
   --print-line INDEX    print cached status line 0, 1, or 2
   --force               bypass staleness checks and recompute now
+  --no-debounce         bypass force-refresh debounce checks
   --refresh-client      refresh matching tmux client status line after recompute
 EOF
 }
@@ -181,6 +183,10 @@ should_refresh() {
   fi
 
   if (( force_refresh )); then
+    if (( no_debounce )); then
+      return 0
+    fi
+
     debounce_seconds="$(numeric_option_or_default TMUX_STATUS_FORCE_DEBOUNCE @tmux_status_force_debounce '2')"
     (( now - last_refresh >= debounce_seconds ))
     return
@@ -257,6 +263,10 @@ while (( $# > 0 )); do
       ;;
     --force)
       force_refresh=1
+      shift
+      ;;
+    --no-debounce)
+      no_debounce=1
       shift
       ;;
     --refresh-client)
