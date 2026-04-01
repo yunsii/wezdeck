@@ -10,9 +10,9 @@ Use this doc when you need shortcut behavior.
 - `Alt+Shift+q`: quit WezTerm and close all windows; WezTerm will handle any built-in confirmation
 - `Alt+v`: split vertically
 - `Alt+s`: split horizontally
-- `Alt+o`: open the current worktree root in VS Code; in managed workspaces it resolves the target from the live tmux session path so linked-worktree switches stay in the current worktree instead of jumping back to the repo family's primary worktree, and outside git worktrees it still uses the current directory
-- `Alt+g`: open a centered tmux popup worktree picker for the current repo family; selecting an unopened worktree creates its tmux window on demand
-- `Alt+Shift+g`: cycle to the next git worktree in the current repo family, creating the tmux window on demand when needed
+- `Alt+o`: in `default`, WezTerm opens the current worktree root in VS Code and still falls back to pane handling when it only sees the WSL host path; in non-default managed workspaces, WezTerm forwards the shortcut to tmux so the active tmux window resolves the live worktree before opening VS Code
+- `Alt+g`: only in non-default managed workspaces, open a centered tmux popup worktree picker for the current repo family; selecting an unopened worktree creates its tmux window on demand
+- `Alt+Shift+g`: only in non-default managed workspaces, cycle to the next git worktree in the current repo family, creating the tmux window on demand when needed
 - `Alt+b`: open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua`; in `hybrid-wsl` it uses the synced Windows launcher, and in `posix-local` it uses the synced shell launcher
 - `LeftClick`: inside tmux, use the click only to focus the pane under the mouse; it does not start tmux selection and is not forwarded as a mouse click into the pane application
 - `Shift+LeftDrag`: start a tmux copy-mode selection inside the current pane without crossing into neighboring tmux panes; press `Ctrl+c` or `Enter` to copy and exit copy-mode

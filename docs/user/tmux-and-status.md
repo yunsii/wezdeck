@@ -15,15 +15,14 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 ## Tmux Behavior
 
 - tmux status follows the active pane working directory.
-- WezTerm cwd-dependent actions inside tmux still rely on shell integration emitting `OSC 7` from the interactive runtime shell, except `Alt+o`, which resolves managed-workspace targets from live tmux session state and falls back to pane delegation when WezTerm only sees the WSL host path.
+- `default` stays WezTerm-owned for repo-aware shortcuts, while non-default managed workspaces delegate `Alt+o`, `Alt+g`, and `Alt+Shift+g` straight to tmux.
 - Managed workspace creation only requires `default_domain` in `hybrid-wsl` mode.
 - The shell integration currently lives in the runtime shell rc files such as `~/.zshrc` and `~/.bashrc`.
 - Outside tmux in `hybrid-wsl`, `Alt+o` hands the current pane directory to the synced Windows PowerShell launcher, which resolves the current worktree root and then opens it with VS Code's `--folder-uri vscode-remote://wsl+<distro>/...` entrypoint.
 - Outside tmux in `posix-local`, `Alt+o` hands the current pane directory to the runtime-side VS Code launcher, which resolves the current worktree root and then launches the configured local VS Code opener there.
 - Outside git worktrees, `Alt+o` still opens the current directory.
-- In managed workspaces, `Alt+o` asks tmux for the active session path before resolving the current worktree root and launching VS Code.
+- In managed workspaces, `Alt+o` is forwarded directly to tmux so the active tmux window resolves the live worktree path before launching VS Code.
 - If WezTerm only sees the WSL host fallback path such as `/C:/Users/...` in `hybrid-wsl`, `Alt+o` also forwards to the pane instead of using the stale host-side path.
-- If WezTerm only reports `/`, managed workspace tabs still fall back to the tab's configured project directory instead of opening the WSL root.
 - In `hybrid-wsl`, `Alt+b` uses the synced Windows PowerShell launcher for the debug Chrome profile.
 - In `posix-local`, `Alt+b` uses the synced shell launcher at `wezterm-x/scripts/focus-or-start-debug-chrome.sh`.
 - Mouse drag selection inside tmux copy-mode no longer writes to the system clipboard on release; keep the selection and press `Enter` to copy explicitly instead.
@@ -41,7 +40,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Any enabled status section keeps a stable on-screen slot. If live data is unavailable, that section renders placeholder text instead of disappearing, which avoids status-bar flicker.
 - A section only disappears completely when its toggle is disabled. If an entire line has no enabled sections, that line does not reserve a status row.
 - Managed git project tabs keep one tmux session per repo family and use tmux windows, not WezTerm tabs, to switch between linked worktrees.
-- `Alt+g` and `Alt+Shift+g` work for any tmux window whose current pane or active window layout still resolves to a git worktree, including linked worktrees created outside the managed launcher flow.
+- Within managed workspaces, `Alt+g` and `Alt+Shift+g` work for any tmux window whose current pane or active window layout still resolves to a git worktree, including linked worktrees created outside the managed launcher flow.
 - The `config` workspace stays anchored to the repo family's primary worktree tab, even when the synced runtime came from a linked worktree checkout.
 - If a synced linked checkout disappears after a reclaim, tmux status and `Alt` worktree helpers fall back to that repo family's primary worktree scripts automatically.
 - When `Alt+g` opens a linked worktree that does not already have a tmux window, tmux clones the current window's pane layout and remaps pane directories into the target worktree instead of relying on stored per-session startup metadata.
@@ -51,7 +50,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 
 - `default` is not managed by `workspaces.lua`; it remains WezTerm's built-in workspace.
 - `Alt+p` uses WezTerm's built-in relative workspace switching, so it includes `default`.
-- `Alt+g` opens a centered tmux popup worktree picker for the current repo family, and `Alt+Shift+g` cycles to the next linked worktree in that same tmux session.
+- `Alt+g` opens a centered tmux popup worktree picker for the current repo family, and `Alt+Shift+g` cycles to the next linked worktree in that same tmux session, but only inside non-default managed workspaces.
 - The `Alt+g` picker runs inside its own tmux popup pane instead of a `display-menu`, which keeps the picker stable even while the active pane is doing full-screen redraws.
 - Successful worktree switches update the active tmux window silently instead of showing a transient tmux banner.
 - tmux status refresh is hybrid: the draw path reads cached lines, focus and pane/window change hooks trigger debounced background refreshes, and a 30-second `status-interval` acts as a low-frequency fallback poll.
