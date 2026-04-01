@@ -27,9 +27,10 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - In `posix-local`, `Alt+b` uses the synced shell launcher at `wezterm-x/scripts/focus-or-start-debug-chrome.sh`.
 - Mouse drag selection inside tmux copy-mode no longer writes to the system clipboard on release; keep the selection and press `Enter` to copy explicitly instead.
 - A plain click inside the pane exits tmux copy-mode without copying, so you do not need to use `Esc` just to return to normal interaction.
-- Outside tmux copy-mode, plain left clicks now follow the terminal default path instead of WezTerm's selection-complete binding, so the first click reaches tmux and mouse-aware TUIs as a full click.
+- Outside tmux copy-mode, plain left clicks are consumed by tmux only to focus the pane under the mouse; tmux does not turn that click into a selection, and the pane application does not receive it as a mouse click.
 - Hold `Shift` while dragging to start tmux copy-mode selection inside the current pane; the selection stays pane-local, and `Ctrl+c` or `Enter` copies it and exits copy-mode.
-- Hold `Alt` while dragging to bypass tmux mouse reporting and use WezTerm's terminal-wide text selection path when you intentionally want to select across pane boundaries; copy that selection with `Ctrl+Shift+c`.
+- Outside tmux copy-mode, plain left drag does not start any selection path; use `Shift` for tmux pane-local selection or `Alt` for WezTerm terminal-wide selection.
+- Hold `Alt` while dragging to bypass tmux mouse reporting and use WezTerm's terminal-wide text selection path when you intentionally want to select across pane boundaries; copy that selection with `Ctrl+c` or `Ctrl+Shift+c`.
 - `Ctrl+c` first checks for a WezTerm terminal selection and copies it without forwarding the key; if there is no WezTerm selection, it sends a normal terminal `Ctrl+c`, which lets tmux copy-mode and regular terminal programs handle it normally.
 - tmux now emits terminal focus-in and focus-out events to applications, which helps mouse-aware TUIs recover cleanly when the WezTerm window regains focus.
 - The first tmux line renders repo, branch, combined git change counts, tracked-branch sync markers (`^N` ahead, `vN` behind, `=0` synced, `x0` no upstream configured), and Node.js version.

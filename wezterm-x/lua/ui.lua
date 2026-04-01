@@ -363,6 +363,7 @@ function M.apply(opts)
   config.audible_bell = 'Disabled'
   config.visual_bell = { fade_in_duration_ms = 0, fade_out_duration_ms = 0 }
   config.bypass_mouse_reporting_modifiers = 'ALT'
+  -- Let focus clicks pass through so tmux/TUIs receive the first click too.
   config.swallow_mouse_click_on_window_focus = false
   config.swallow_mouse_click_on_pane_focus = false
   config.launch_menu = constants.launch_menu or {}
