@@ -168,6 +168,8 @@ wt_core_export_provider_env() {
   export WT_REPO_COMMON_DIR
   export WT_MAIN_WORKTREE_ROOT
   export WT_REPO_LABEL
+  export WEZTERM_CONFIG_REPO_ROOT
+  export WEZTERM_CONFIG_REPO
   export WT_WORKTREE_PATH
   export WT_BRANCH_NAME
   export WT_TASK_SLUG
@@ -363,7 +365,7 @@ wt_core_configure() {
   wt_config_set_defaults
 
   [[ -n "$repo_override" ]] || wt_die "configure requires --repo /absolute/path/to/wezterm-config"
-  selected_repo="$(wt_config_resolve_wezterm_repo_root "$PWD" "$repo_override")"
+  selected_repo="$(wt_config_resolve_wezterm_repo_root "$WT_RESOLVED_CWD" "$repo_override")"
 
   wt_config_save_user_wezterm_repo "$selected_repo"
   printf 'wezterm_config_repo=%s\n' "$selected_repo"

@@ -460,7 +460,12 @@ provider_build_pane_command() {
 
 provider_apply_tmux_config() {
   if [[ -n "${WT_PROVIDER_TMUX_CONFIG_FILE_ABS:-}" && -f "${WT_PROVIDER_TMUX_CONFIG_FILE_ABS:-}" ]]; then
-    tmux set-option -g @wezterm_runtime_root "$WT_MAIN_WORKTREE_ROOT"
+    local runtime_root=""
+    runtime_root="${WEZTERM_CONFIG_REPO_ROOT:-}"
+    if [[ -z "$runtime_root" ]]; then
+      runtime_root="$(cd "$(dirname "$WT_PROVIDER_TMUX_CONFIG_FILE_ABS")" && pwd -P)"
+    fi
+    tmux set-option -g @wezterm_runtime_root "$runtime_root"
     tmux source-file "$WT_PROVIDER_TMUX_CONFIG_FILE_ABS"
   fi
 }
