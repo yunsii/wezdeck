@@ -39,6 +39,21 @@ local function basename(path)
   return path:match('([^/\\]+)[/\\]?$') or path
 end
 
+local function foreground_process_basename(pane)
+  if not pane or not pane.get_foreground_process_name then
+    return nil
+  end
+
+  local ok, process_name = pcall(function()
+    return pane:get_foreground_process_name()
+  end)
+  if not ok or not process_name or process_name == '' then
+    return nil
+  end
+
+  return basename(process_name)
+end
+
 local function copy_args(values)
   local result = {}
   for _, value in ipairs(values or {}) do
@@ -53,6 +68,10 @@ local function trim_text(value)
   end
 
   return (value:gsub('^%s+', ''):gsub('%s+$', ''))
+end
+
+local function runtime_repo_root(constants)
+  return constants.main_repo_root or constants.repo_root
 end
 
 local function is_windows_host_path(path)
@@ -101,6 +120,88 @@ local function wsl_distro_from_domain(domain_name)
   end
 
   return domain_name:match '^WSL:(.+)$'
+end
+
+local function resolve_alt_o_target_from_tmux_session(wezterm, constants, workspace_name, cwd, domain_name, logger)
+  if not cwd or cwd == '' or not workspace_name or workspace_name == 'default' then
+    return cwd
+  end
+
+  local repo_root = runtime_repo_root(constants)
+  if not repo_root or repo_root == '' then
+    logger.info('alt_o', 'skipping tmux-session Alt+o resolution because runtime repo root is unavailable', {
+      cwd = cwd,
+      workspace = workspace_name,
+    })
+    return cwd
+  end
+
+  local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
+  local command
+
+  if runtime_mode == 'hybrid-wsl' then
+    local distro = wsl_distro_from_domain(domain_name) or wsl_distro_from_domain(constants.default_domain)
+    if not distro then
+      logger.info('alt_o', 'skipping tmux-session Alt+o resolution because WSL distro is unavailable', {
+        cwd = cwd,
+        domain = domain_name,
+        workspace = workspace_name,
+      })
+      return cwd
+    end
+
+    command = {
+      'wsl.exe',
+      '--distribution',
+      distro,
+      '--cd',
+      repo_root,
+      '/bin/bash',
+      repo_root .. '/scripts/runtime/resolve-alt-o-target.sh',
+      '--workspace',
+      workspace_name,
+      '--cwd',
+      cwd,
+    }
+  else
+    local vscode = constants.integrations and constants.integrations.vscode or {}
+    command = {
+      vscode.posix_shell or '/bin/bash',
+      repo_root .. '/scripts/runtime/resolve-alt-o-target.sh',
+      '--workspace',
+      workspace_name,
+      '--cwd',
+      cwd,
+    }
+  end
+
+  logger.info('alt_o', 'resolving Alt+o target from tmux session state', {
+    command = table.concat(command, ' '),
+    cwd = cwd,
+    domain = domain_name,
+    workspace = workspace_name,
+  })
+
+  local ok, stdout, stderr = wezterm.run_child_process(command)
+  local resolved_cwd = trim_text(stdout and stdout:gsub('\r', ''))
+  local error_text = trim_text(stderr and stderr:gsub('\r', ''))
+
+  if ok and resolved_cwd and resolved_cwd ~= '' and resolved_cwd:sub(1, 1) == '/' then
+    logger.info('alt_o', 'resolved Alt+o target from tmux session state', {
+      cwd = cwd,
+      resolved_cwd = resolved_cwd,
+      workspace = workspace_name,
+    })
+    return resolved_cwd
+  end
+
+  logger.warn('alt_o', 'tmux-session Alt+o resolution failed, falling back to WezTerm cwd', {
+    cwd = cwd,
+    error = error_text,
+    helper_output = resolved_cwd,
+    workspace = workspace_name,
+  })
+  return cwd
 end
 
 local function paste_clipboard_or_image_path(wezterm, window, pane, constants, logger)
@@ -188,10 +289,22 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, work
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
   local integration = constants.integrations and constants.integrations.vscode or {}
 
-  if not cwd or cwd == '/' then
+  local needs_managed_fallback = workspace_name ~= 'default' and (not cwd or cwd == '/' or is_windows_host_path(cwd))
+  if needs_managed_fallback then
+    local fallback_cwd = managed_workspace_cwd_fallback(window, workspace_name, workspace)
+    if fallback_cwd then
+      cwd = fallback_cwd
+      logger.info('alt_o', 'used managed workspace cwd fallback', {
+        cwd = cwd,
+        raw_cwd = tostring(raw_cwd),
+        workspace = workspace_name,
+      })
+    end
+  elseif not cwd or cwd == '/' then
     cwd = managed_workspace_cwd_fallback(window, workspace_name, workspace)
     logger.info('alt_o', 'used managed workspace cwd fallback', {
       cwd = cwd,
+      raw_cwd = tostring(raw_cwd),
       workspace = workspace_name,
     })
   end
@@ -205,6 +318,8 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, work
     window:toast_notification('WezTerm', 'Alt+o failed: current pane working directory is unavailable', nil, 3000)
     return
   end
+
+  cwd = resolve_alt_o_target_from_tmux_session(wezterm, constants, workspace_name, cwd, domain_name, logger)
 
   local command
   if runtime_mode == 'hybrid-wsl' then
@@ -443,8 +558,27 @@ function M.apply(opts)
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
         local cwd = file_path_from_cwd(pane:get_current_working_dir())
+        local mux_window = window:mux_window()
+        local workspace_name = mux_window and mux_window:get_workspace() or window:active_workspace()
+        local foreground_process = foreground_process_basename(pane)
         local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
         local distro = wsl_distro_from_domain(pane:get_domain_name()) or wsl_distro_from_domain(constants.default_domain)
+
+        if workspace_name ~= 'default' then
+          open_current_dir_in_vscode(wezterm, window, pane, constants, workspace, logger)
+          return
+        end
+
+        -- tmux tracks live pane cwd more accurately across window/worktree switches than WezTerm's cached OSC 7 state.
+        if foreground_process == 'tmux' then
+          logger.info('alt_o', 'forwarding Alt+o to pane fallback', {
+            cwd = cwd,
+            domain = pane:get_domain_name(),
+            foreground_process = foreground_process,
+          })
+          window:perform_action(wezterm.action.SendString '\x1bo', pane)
+          return
+        end
 
         -- In WSL panes, WezTerm may only see the host-side fallback cwd like /C:/Users/...
         -- Forward Alt+o to the pane so tmux or the shell can resolve the real working directory.
@@ -452,6 +586,7 @@ function M.apply(opts)
           logger.info('alt_o', 'forwarding Alt+o to pane fallback', {
             cwd = cwd,
             domain = pane:get_domain_name(),
+            foreground_process = foreground_process,
           })
           window:perform_action(wezterm.action.SendString '\x1bo', pane)
           return

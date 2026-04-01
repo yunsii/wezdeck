@@ -60,7 +60,10 @@ if [[ ! -d "$target_dir" ]]; then
   exit 1
 fi
 
-target_dir="$(tmux_worktree_primary_root_for_path "$target_dir")"
+if repo_root="$(tmux_worktree_repo_root "$target_dir" 2>/dev/null || true)" && [[ -n "$repo_root" ]]; then
+  target_dir="$repo_root"
+fi
+
 runtime_log_info alt_o "resolved Alt+o target directory" "effective_target_dir=$target_dir"
 
 if (( ${#code_command[@]} == 0 )); then

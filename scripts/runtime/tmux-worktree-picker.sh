@@ -16,14 +16,18 @@ current_worktree_root=""
 repo_label=""
 
 if [[ -z "$session_name" ]]; then
+  runtime_log_error worktree "worktree picker failed: missing tmux session" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
   printf 'Worktree picker failed: missing tmux session.\n'
   exit 1
 fi
 
 if ! tmux has-session -t "$session_name" 2>/dev/null; then
+  runtime_log_error worktree "worktree picker failed: missing tmux session target" "session_name=$session_name" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
   printf 'Worktree picker failed: missing session %s.\n' "$session_name"
   exit 1
 fi
+
+runtime_log_info worktree "worktree picker invoked" "session_name=$session_name" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
 
 context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" || true)"
 if [[ -n "$context" ]]; then
@@ -32,6 +36,7 @@ else
   current_worktree_root=""
   repo_label='repo'
 fi
+runtime_log_info worktree "worktree picker resolved current context" "session_name=$session_name" "current_window_id=$current_window_id" "current_worktree_root=$current_worktree_root" "repo_label=$repo_label"
 
 accelerators=(1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z)
 item_labels=()
@@ -177,6 +182,14 @@ move_selection() {
 
 open_selection() {
   local worktree_root="${item_paths[$selected_index]}"
+  local window_id="${item_window_ids[$selected_index]}"
+  runtime_log_info worktree "worktree picker opening selection" \
+    "session_name=$session_name" \
+    "current_window_id=$current_window_id" \
+    "selected_index=$selected_index" \
+    "worktree_root=$worktree_root" \
+    "existing_window_id=${window_id:-new}" \
+    "cwd=$cwd"
   bash "$script_dir/tmux-worktree-open.sh" "$session_name" "$worktree_root" "$current_window_id" "$cwd"
 }
 
