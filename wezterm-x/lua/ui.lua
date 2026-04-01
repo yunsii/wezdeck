@@ -15,6 +15,19 @@ local function workspace_keybinding(wezterm, workspace, key, name)
   }
 end
 
+local function active_workspace_name(window)
+  local mux_window = window and window:mux_window()
+  if mux_window then
+    return mux_window:get_workspace()
+  end
+
+  return (window and window:active_workspace()) or 'default'
+end
+
+local function is_managed_workspace(workspace_name)
+  return workspace_name ~= nil and workspace_name ~= 'default'
+end
+
 local function file_path_from_cwd(cwd)
   if not cwd then
     return nil
@@ -70,48 +83,12 @@ local function trim_text(value)
   return (value:gsub('^%s+', ''):gsub('%s+$', ''))
 end
 
-local function runtime_repo_root(constants)
-  return constants.main_repo_root or constants.repo_root
-end
-
 local function is_windows_host_path(path)
   if not path or path == '' then
     return false
   end
 
   return path:match '^/[A-Za-z]:/' ~= nil
-end
-
-local function normalized_managed_tab_title(title)
-  if not title or title == '' then
-    return nil
-  end
-
-  return title:match('^(.-) %+%d+$') or title
-end
-
-local function managed_workspace_cwd_fallback(window, workspace_name, workspace)
-  if not workspace_name or not window or workspace_name == 'default' or not workspace or not workspace.items then
-    return nil
-  end
-
-  local tab = window:active_tab()
-  if not tab then
-    return nil
-  end
-
-  local tab_title = normalized_managed_tab_title(tab:get_title())
-  if not tab_title then
-    return nil
-  end
-
-  for _, item in ipairs(workspace.items(workspace_name) or {}) do
-    if basename(item.cwd) == tab_title then
-      return item.cwd
-    end
-  end
-
-  return nil
 end
 
 local function wsl_distro_from_domain(domain_name)
@@ -122,86 +99,21 @@ local function wsl_distro_from_domain(domain_name)
   return domain_name:match '^WSL:(.+)$'
 end
 
-local function resolve_alt_o_target_from_tmux_session(wezterm, constants, workspace_name, cwd, domain_name, logger)
-  if not cwd or cwd == '' or not workspace_name or workspace_name == 'default' then
-    return cwd
-  end
-
-  local repo_root = runtime_repo_root(constants)
-  if not repo_root or repo_root == '' then
-    logger.info('alt_o', 'skipping tmux-session Alt+o resolution because runtime repo root is unavailable', {
-      cwd = cwd,
-      workspace = workspace_name,
-    })
-    return cwd
-  end
-
-  local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
-  local command
-
-  if runtime_mode == 'hybrid-wsl' then
-    local distro = wsl_distro_from_domain(domain_name) or wsl_distro_from_domain(constants.default_domain)
-    if not distro then
-      logger.info('alt_o', 'skipping tmux-session Alt+o resolution because WSL distro is unavailable', {
-        cwd = cwd,
-        domain = domain_name,
-        workspace = workspace_name,
-      })
-      return cwd
-    end
-
-    command = {
-      'wsl.exe',
-      '--distribution',
-      distro,
-      '--cd',
-      repo_root,
-      '/bin/bash',
-      repo_root .. '/scripts/runtime/resolve-alt-o-target.sh',
-      '--workspace',
-      workspace_name,
-      '--cwd',
-      cwd,
-    }
-  else
-    local vscode = constants.integrations and constants.integrations.vscode or {}
-    command = {
-      vscode.posix_shell or '/bin/bash',
-      repo_root .. '/scripts/runtime/resolve-alt-o-target.sh',
-      '--workspace',
-      workspace_name,
-      '--cwd',
-      cwd,
-    }
-  end
-
-  logger.info('alt_o', 'resolving Alt+o target from tmux session state', {
-    command = table.concat(command, ' '),
-    cwd = cwd,
-    domain = domain_name,
+local function forward_shortcut_to_pane(wezterm, window, pane, shortcut, sequence, logger, category, workspace_name)
+  logger.info(category, 'forwarding shortcut to pane', {
+    shortcut = shortcut,
     workspace = workspace_name,
+    domain = pane:get_domain_name(),
   })
+  window:perform_action(wezterm.action.SendString(sequence), pane)
+end
 
-  local ok, stdout, stderr = wezterm.run_child_process(command)
-  local resolved_cwd = trim_text(stdout and stdout:gsub('\r', ''))
-  local error_text = trim_text(stderr and stderr:gsub('\r', ''))
-
-  if ok and resolved_cwd and resolved_cwd ~= '' and resolved_cwd:sub(1, 1) == '/' then
-    logger.info('alt_o', 'resolved Alt+o target from tmux session state', {
-      cwd = cwd,
-      resolved_cwd = resolved_cwd,
-      workspace = workspace_name,
-    })
-    return resolved_cwd
-  end
-
-  logger.warn('alt_o', 'tmux-session Alt+o resolution failed, falling back to WezTerm cwd', {
-    cwd = cwd,
-    error = error_text,
-    helper_output = resolved_cwd,
-    workspace = workspace_name,
+local function managed_workspace_only_shortcut(window, logger, shortcut)
+  logger.warn('workspace', 'shortcut requires a managed workspace', {
+    shortcut = shortcut,
+    workspace = active_workspace_name(window),
   })
-  return cwd
+  window:toast_notification('WezTerm', shortcut .. ' is only available in managed tmux workspaces', nil, 3000)
 end
 
 local function paste_clipboard_or_image_path(wezterm, window, pane, constants, logger)
@@ -280,36 +192,15 @@ local function paste_clipboard_or_image_path(wezterm, window, pane, constants, l
   window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
 end
 
-local function open_current_dir_in_vscode(wezterm, window, pane, constants, workspace, logger)
+local function open_current_dir_in_vscode(wezterm, window, pane, constants, logger)
   local raw_cwd = pane:get_current_working_dir()
   local cwd = file_path_from_cwd(raw_cwd)
   local domain_name = pane:get_domain_name()
-  local mux_window = window:mux_window()
-  local workspace_name = mux_window and mux_window:get_workspace() or window:active_workspace()
+  local workspace_name = active_workspace_name(window)
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
   local integration = constants.integrations and constants.integrations.vscode or {}
 
-  local needs_managed_fallback = workspace_name ~= 'default' and (not cwd or cwd == '/' or is_windows_host_path(cwd))
-  if needs_managed_fallback then
-    local fallback_cwd = managed_workspace_cwd_fallback(window, workspace_name, workspace)
-    if fallback_cwd then
-      cwd = fallback_cwd
-      logger.info('alt_o', 'used managed workspace cwd fallback', {
-        cwd = cwd,
-        raw_cwd = tostring(raw_cwd),
-        workspace = workspace_name,
-      })
-    end
-  elseif not cwd or cwd == '/' then
-    cwd = managed_workspace_cwd_fallback(window, workspace_name, workspace)
-    logger.info('alt_o', 'used managed workspace cwd fallback', {
-      cwd = cwd,
-      raw_cwd = tostring(raw_cwd),
-      workspace = workspace_name,
-    })
-  end
-
-  if not cwd then
+  if not cwd or cwd == '/' then
     logger.warn('alt_o', 'current pane working directory is unavailable', {
       domain = domain_name,
       raw_cwd = tostring(raw_cwd),
@@ -318,8 +209,6 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, work
     window:toast_notification('WezTerm', 'Alt+o failed: current pane working directory is unavailable', nil, 3000)
     return
   end
-
-  cwd = resolve_alt_o_target_from_tmux_session(wezterm, constants, workspace_name, cwd, domain_name, logger)
 
   local command
   if runtime_mode == 'hybrid-wsl' then
@@ -558,19 +447,18 @@ function M.apply(opts)
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
         local cwd = file_path_from_cwd(pane:get_current_working_dir())
-        local mux_window = window:mux_window()
-        local workspace_name = mux_window and mux_window:get_workspace() or window:active_workspace()
+        local workspace_name = active_workspace_name(window)
         local foreground_process = foreground_process_basename(pane)
         local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
         local distro = wsl_distro_from_domain(pane:get_domain_name()) or wsl_distro_from_domain(constants.default_domain)
 
-        if workspace_name ~= 'default' then
-          open_current_dir_in_vscode(wezterm, window, pane, constants, workspace, logger)
+        if is_managed_workspace(workspace_name) then
+          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+o', '\x1bo', logger, 'alt_o', workspace_name)
           return
         end
 
-        -- tmux tracks live pane cwd more accurately across window/worktree switches than WezTerm's cached OSC 7 state.
-        if foreground_process == 'tmux' then
+        -- Outside managed workspaces, WezTerm owns Alt+o and only delegates when its cwd view is unusable.
+        if foreground_process == 'tmux' and (not cwd or cwd == '/') then
           logger.info('alt_o', 'forwarding Alt+o to pane fallback', {
             cwd = cwd,
             domain = pane:get_domain_name(),
@@ -580,8 +468,6 @@ function M.apply(opts)
           return
         end
 
-        -- In WSL panes, WezTerm may only see the host-side fallback cwd like /C:/Users/...
-        -- Forward Alt+o to the pane so tmux or the shell can resolve the real working directory.
         if runtime_mode == 'hybrid-wsl' and distro and is_windows_host_path(cwd) then
           logger.info('alt_o', 'forwarding Alt+o to pane fallback', {
             cwd = cwd,
@@ -592,7 +478,33 @@ function M.apply(opts)
           return
         end
 
-        open_current_dir_in_vscode(wezterm, window, pane, constants, workspace, logger)
+        open_current_dir_in_vscode(wezterm, window, pane, constants, logger)
+      end),
+    },
+    {
+      key = 'g',
+      mods = 'ALT',
+      action = wezterm.action_callback(function(window, pane)
+        local workspace_name = active_workspace_name(window)
+        if is_managed_workspace(workspace_name) then
+          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+g', '\x1bg', logger, 'workspace', workspace_name)
+          return
+        end
+
+        managed_workspace_only_shortcut(window, logger, 'Alt+g')
+      end),
+    },
+    {
+      key = 'G',
+      mods = 'ALT|SHIFT',
+      action = wezterm.action_callback(function(window, pane)
+        local workspace_name = active_workspace_name(window)
+        if is_managed_workspace(workspace_name) then
+          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+Shift+g', '\x1bG', logger, 'workspace', workspace_name)
+          return
+        end
+
+        managed_workspace_only_shortcut(window, logger, 'Alt+Shift+g')
       end),
     },
     {

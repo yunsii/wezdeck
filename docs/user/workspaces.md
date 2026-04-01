@@ -16,6 +16,7 @@ WezTerm workspaces are the top-level session unit.
 - When a managed workspace already exists, the shortcut re-syncs its configured project tabs before switching to it.
 - Tabs that no longer belong to the managed workspace definition are removed during that re-sync.
 - If it does not exist, WezTerm creates it and opens the configured project tabs.
+- `default` stays WezTerm-owned, while every non-default managed workspace hands repo/worktree shortcuts such as `Alt+o`, `Alt+g`, and `Alt+Shift+g` to tmux.
 - Each managed project tab boots through `tmux`.
 - Each managed git project tab now attaches to one tmux session per repo family, even when that repo has multiple linked worktrees.
 - Inside that tmux session, each git worktree gets its own tmux window.
