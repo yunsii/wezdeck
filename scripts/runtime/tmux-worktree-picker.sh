@@ -14,6 +14,8 @@ cwd="${4:-$PWD}"
 context=""
 current_worktree_root=""
 repo_label=""
+start_ms="$(runtime_log_now_ms)"
+trace_id="$(runtime_log_current_trace_id)"
 
 if [[ -z "$session_name" ]]; then
   runtime_log_error worktree "worktree picker failed: missing tmux session" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
@@ -190,7 +192,7 @@ open_selection() {
     "worktree_root=$worktree_root" \
     "existing_window_id=${window_id:-new}" \
     "cwd=$cwd"
-  bash "$script_dir/tmux-worktree-open.sh" "$session_name" "$worktree_root" "$current_window_id" "$cwd"
+  WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_dir/tmux-worktree-open.sh" "$session_name" "$worktree_root" "$current_window_id" "$cwd"
 }
 
 find_accelerator_index() {
@@ -220,6 +222,7 @@ while true; do
   case "$key" in
     "")
       open_selection
+      runtime_log_info worktree "worktree popup picker completed" "session_name=$session_name" "repo_label=$repo_label" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
       exit 0
       ;;
     $'\033' | $'\003')
@@ -236,6 +239,7 @@ while true; do
       if [[ -n "$accel_index" ]]; then
         selected_index="$accel_index"
         open_selection
+        runtime_log_info worktree "worktree popup picker completed" "session_name=$session_name" "repo_label=$repo_label" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
         exit 0
       fi
       ;;

@@ -13,6 +13,8 @@ if [[ $# -lt 2 ]]; then
   exit 1
 fi
 
+start_ms="$(runtime_log_now_ms)"
+
 workspace="$1"
 cwd="$2"
 shift 2
@@ -155,5 +157,6 @@ fi
 tmux_worktree_ensure_tmux_config_loaded "$TMUX_CONF" "$(repo_root_path)"
 tmux select-window -t "$window_id"
 
+runtime_log_info workspace "open-project-session prepared tmux session" "session_name=$session_name" "window_id=$window_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 runtime_log_info workspace "attaching tmux session" "session_name=$session_name" "window_id=$window_id"
 exec tmux attach-session -t "$session_name"

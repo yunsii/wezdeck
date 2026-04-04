@@ -11,6 +11,8 @@ session_name="${1:-}"
 current_window_id="${2:-}"
 cwd="${3:-$PWD}"
 runtime_mode="$(command_panel_runtime_mode)"
+start_ms="$(runtime_log_now_ms)"
+trace_id="$(runtime_log_current_trace_id)"
 
 if [[ -z "$session_name" ]]; then
   runtime_log_error command_panel "command picker failed: missing tmux session" "current_window_id=$current_window_id" "cwd=$cwd"
@@ -179,7 +181,7 @@ run_selection() {
     "item_id=$item_id" \
     "cwd=$cwd"
 
-  bash "$script_dir/tmux-command-run.sh" "$session_name" "$item_id" "$current_window_id" "$cwd"
+  WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_dir/tmux-command-run.sh" "$session_name" "$item_id" "$current_window_id" "$cwd"
 }
 
 find_accelerator_index() {
@@ -215,6 +217,7 @@ while true; do
         status="$?"
       fi
       if [[ "$status" == "0" ]]; then
+        runtime_log_info command_panel "command popup picker completed" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
         exit 0
       fi
       if [[ "$status" == "2" ]]; then
@@ -241,6 +244,7 @@ while true; do
           status="$?"
         fi
         if [[ "$status" == "0" ]]; then
+          runtime_log_info command_panel "command popup picker completed" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
           exit 0
         fi
         if [[ "$status" == "2" ]]; then

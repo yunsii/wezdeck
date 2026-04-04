@@ -28,6 +28,19 @@ function M.new(opts)
 
   local Workspace = {}
 
+  local function with_trace_id(trace_id, fields)
+    local merged = {}
+
+    for key, value in pairs(fields or {}) do
+      merged[key] = value
+    end
+    if trace_id and trace_id ~= '' then
+      merged.trace_id = trace_id
+    end
+
+    return merged
+  end
+
   local function runtime_script_roots()
     local roots = {}
     local seen = {}
@@ -45,25 +58,35 @@ function M.new(opts)
     return roots
   end
 
-  local function runtime_script_command(script_rel_path, script_args)
+  local function runtime_script_command(script_rel_path, script_args, opts)
+    opts = opts or {}
     local roots = runtime_script_roots()
     local primary_script = roots[1] and (roots[1] .. '/' .. script_rel_path) or ''
     local fallback_script = roots[2] and (roots[2] .. '/' .. script_rel_path) or ''
+    local trace_id = opts.trace_id or ''
     local command = {
       '/bin/sh',
       '-lc',
       [[
 primary_script="$1"
 fallback_script="$2"
-shift 2
+trace_id="$3"
+shift 3
 
-if [ -n "$primary_script" ] && [ -f "$primary_script" ]; then
-  exec bash "$primary_script" "$@"
-fi
+run_script() {
+  script_path="$1"
+  shift
 
-if [ -n "$fallback_script" ] && [ -f "$fallback_script" ]; then
-  exec bash "$fallback_script" "$@"
-fi
+  if [ -n "$script_path" ] && [ -f "$script_path" ]; then
+    if [ -n "$trace_id" ]; then
+      exec env WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_path" "$@"
+    fi
+    exec bash "$script_path" "$@"
+  fi
+}
+
+run_script "$primary_script" "$@"
+run_script "$fallback_script" "$@"
 
 printf 'Managed workspace runtime script is unavailable: %s\n' "$primary_script" >&2
 if [ -n "$fallback_script" ]; then
@@ -74,6 +97,7 @@ exit 1
       'sh',
       primary_script,
       fallback_script,
+      trace_id,
     }
 
     for _, value in ipairs(script_args or {}) do
@@ -95,7 +119,7 @@ exit 1
     return nil
   end
 
-  local function managed_launcher_command(profile_name)
+  local function managed_launcher_command(profile_name, trace_id)
     if not profile_name or profile_name == '' then
       return nil
     end
@@ -121,7 +145,9 @@ exit 1
       return nil, 'Managed launcher profile has no command: ' .. profile_name
     end
 
-    local wrapped = runtime_script_command('scripts/runtime/run-managed-command.sh')
+    local wrapped = runtime_script_command('scripts/runtime/run-managed-command.sh', nil, {
+      trace_id = trace_id,
+    })
     if profile.bootstrap and profile.bootstrap ~= '' then
       wrapped[#wrapped + 1] = '--bootstrap'
       wrapped[#wrapped + 1] = profile.bootstrap
@@ -165,17 +191,27 @@ exit 1
     return items
   end
 
-  local function project_session_args(workspace_name, item)
-    local command = runtime_script_command('scripts/runtime/open-project-session.sh', {
-      workspace_name,
-      item.cwd,
-    })
+  local function project_session_args(workspace_name, item, trace_id)
+    local launch_command = nil
 
-    for _, part in ipairs(item.command or {}) do
-      command[#command + 1] = part
+    if item.launcher then
+      launch_command = managed_launcher_command(item.launcher, trace_id)
+    else
+      launch_command = item.command or {}
     end
 
-    return command
+    local session_command = runtime_script_command('scripts/runtime/open-project-session.sh', {
+      workspace_name,
+      item.cwd,
+    }, {
+      trace_id = trace_id,
+    })
+
+    for _, part in ipairs(launch_command or {}) do
+      session_command[#session_command + 1] = part
+    end
+
+    return session_command
   end
 
   local function workspace_windows(name)
@@ -266,15 +302,15 @@ exit 1
     return { DomainName = config.default_domain }
   end
 
-  local function spawn_workspace_tab(mux_window, item)
-    logger.info('workspace', 'spawning workspace tab', {
+  local function spawn_workspace_tab(mux_window, item, trace_id)
+    logger.info('workspace', 'spawning workspace tab', with_trace_id(trace_id, {
       cwd = item.cwd,
       workspace = mux_window:get_workspace(),
-    })
+    }))
     local tab = mux_window:spawn_tab {
       cwd = item.cwd,
       domain = domain_name(),
-      args = project_session_args(mux_window:get_workspace(), item),
+      args = project_session_args(mux_window:get_workspace(), item, trace_id),
     }
 
     set_project_tab_title(tab, item)
@@ -340,16 +376,16 @@ exit 1
     end
   end
 
-  local function sync_workspace_tabs(name)
+  local function sync_workspace_tabs(name, trace_id)
     local target_window = workspace_windows(name)[1]
     if not target_window then
       return
     end
 
-    logger.info('workspace', 'syncing existing workspace window', {
+    logger.info('workspace', 'syncing existing workspace window', with_trace_id(trace_id, {
       workspace = name,
       window_id = target_window:window_id(),
-    })
+    }))
     mux.set_active_workspace(name)
 
     local gui_window = target_window:gui_window()
@@ -366,7 +402,7 @@ exit 1
       end
 
       if not matched then
-        spawn_workspace_tab(target_window, item)
+        spawn_workspace_tab(target_window, item, trace_id)
 
         for _, info in ipairs(target_window:tabs_with_info()) do
           if tab_matches_item(info.tab, item) then
@@ -391,91 +427,93 @@ exit 1
   end
 
   function Workspace.open(window, pane, name)
+    local trace_id = logger.trace_id('workspace')
     local items = workspace_items(name)
     local prereq_error = managed_workspace_prereq_error()
 
     if prereq_error then
-      logger.warn('workspace', 'managed workspace prerequisites failed', {
+      logger.warn('workspace', 'managed workspace prerequisites failed', with_trace_id(trace_id, {
         error = prereq_error,
         workspace = name,
-      })
+      }))
       window:toast_notification('WezTerm', prereq_error, nil, 4000)
       return
     end
 
     if #items == 0 then
-      logger.warn('workspace', 'workspace has no configured directories', {
+      logger.warn('workspace', 'workspace has no configured directories', with_trace_id(trace_id, {
         workspace = name,
-      })
+      }))
       window:toast_notification('WezTerm', 'No directories configured for workspace: ' .. name, nil, 3000)
       return
     end
 
     for _, item in ipairs(items) do
       if item.command_error then
-        logger.warn('workspace', 'workspace item launcher resolution failed', {
+        logger.warn('workspace', 'workspace item launcher resolution failed', with_trace_id(trace_id, {
           cwd = item.cwd,
           error = item.command_error,
           launcher = item.launcher,
           workspace = name,
-        })
+        }))
         window:toast_notification('WezTerm', item.command_error, nil, 4000)
         return
       end
     end
 
     if #workspace_windows(name) > 0 then
-      logger.info('workspace', 'switching to existing workspace', {
+      logger.info('workspace', 'switching to existing workspace', with_trace_id(trace_id, {
         item_count = #items,
         workspace = name,
-      })
-      sync_workspace_tabs(name)
+      }))
+      sync_workspace_tabs(name, trace_id)
       return
     end
 
-    logger.info('workspace', 'creating new workspace window', {
+    logger.info('workspace', 'creating new workspace window', with_trace_id(trace_id, {
       first_cwd = items[1].cwd,
       item_count = #items,
       workspace = name,
-    })
+    }))
     local initial_tab, _, mux_window = mux.spawn_window {
       workspace = name,
       domain = domain_name(),
       cwd = items[1].cwd,
-      args = project_session_args(name, items[1]),
+      args = project_session_args(name, items[1], trace_id),
     }
     set_project_tab_title(initial_tab, items[1])
 
     for i = 2, #items do
-      spawn_workspace_tab(mux_window, items[i])
+      spawn_workspace_tab(mux_window, items[i], trace_id)
     end
 
     window:perform_action(wezterm.action.SwitchToWorkspace { name = name }, pane)
   end
 
   function Workspace.close(window, pane)
+    local trace_id = logger.trace_id('workspace')
     local mux_window = window:mux_window()
     local workspace = mux_window and mux_window:get_workspace() or window:active_workspace()
 
     if not workspace or workspace == 'default' then
-      logger.warn('workspace', 'refused to close built-in default workspace', {})
+      logger.warn('workspace', 'refused to close built-in default workspace', with_trace_id(trace_id, {}))
       window:toast_notification('WezTerm', 'Refusing to close the built-in default workspace', nil, 3000)
       return
     end
 
     local pane_ids = workspace_pane_ids(workspace)
     if #pane_ids == 0 then
-      logger.warn('workspace', 'no panes found while closing workspace', {
+      logger.warn('workspace', 'no panes found while closing workspace', with_trace_id(trace_id, {
         workspace = workspace,
-      })
+      }))
       window:toast_notification('WezTerm', 'No panes found in workspace: ' .. workspace, nil, 3000)
       return
     end
 
-    logger.info('workspace', 'closing workspace', {
+    logger.info('workspace', 'closing workspace', with_trace_id(trace_id, {
       pane_count = #pane_ids,
       workspace = workspace,
-    })
+    }))
     window:perform_action(wezterm.action.SwitchToWorkspace { name = 'default' }, pane)
 
     for _, pane_id in ipairs(pane_ids) do

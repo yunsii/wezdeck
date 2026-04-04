@@ -15,6 +15,7 @@ EOF
 }
 
 code_command=()
+start_ms="$(runtime_log_now_ms)"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -82,4 +83,11 @@ cd "$target_dir"
 runtime_log_info alt_o "changed to effective directory" "effective_dir=$PWD"
 
 runtime_log_info alt_o "executing code from current directory" "effective_dir=$PWD" "code_command=${code_command[*]}"
-exec "${code_command[@]}" .
+if "${code_command[@]}" .; then
+  runtime_log_info alt_o "open-current-dir-in-vscode completed" "effective_dir=$PWD" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+  exit 0
+fi
+
+status=$?
+runtime_log_error alt_o "open-current-dir-in-vscode failed" "effective_dir=$PWD" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status"
+exit "$status"

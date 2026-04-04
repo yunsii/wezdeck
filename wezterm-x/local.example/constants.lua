@@ -15,11 +15,14 @@ return {
   },
   diagnostics = {
     wezterm = {
-      enabled = false,
+      enabled = true,
       level = 'info',
+      max_bytes = 5242880,
+      max_files = 5,
       debug_key_events = false,
       categories = {
         alt_o = true,
+        clipboard = true,
         command_panel = true,
         chrome = true,
         workspace = true,

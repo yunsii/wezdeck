@@ -242,9 +242,11 @@ local base_constants = {
   },
   diagnostics = {
     wezterm = {
-      enabled = false,
+      enabled = true,
       level = 'info',
       file = default_diagnostics_file(host_os),
+      max_bytes = 5242880,
+      max_files = 5,
       debug_key_events = false,
       categories = {},
     },

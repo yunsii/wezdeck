@@ -12,6 +12,7 @@ item_id="${2:-}"
 current_window_id="${3:-}"
 cwd="${4:-$PWD}"
 runtime_mode="$(command_panel_runtime_mode)"
+start_ms="$(runtime_log_now_ms)"
 
 if [[ -z "$session_name" || -z "$item_id" ]]; then
   runtime_log_error command_panel "command runner failed: missing required arguments" "session_name=$session_name" "item_id=$item_id" "cwd=$cwd"
@@ -52,6 +53,7 @@ runtime_log_info command_panel "running command panel item" \
 
 if [[ "$background" == "1" ]]; then
   "${command[@]}" >/dev/null 2>&1 &
+  runtime_log_info command_panel "command panel item launched in background" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   tmux display-message "${success_message:-Started: $label}"
   exit 0
 fi
@@ -60,13 +62,15 @@ output_file="$(mktemp)"
 trap 'rm -f "$output_file"' EXIT
 
 if "${command[@]}" >"$output_file" 2>&1; then
-  runtime_log_info command_panel "command panel item completed" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name"
+  runtime_log_info command_panel "command panel item completed" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   tmux display-message "${success_message:-Completed: $label}"
   exit 0
+else
+  status=$?
 fi
 
 output="$(tr -d '\r' < "$output_file" | tail -n 20)"
-runtime_log_error command_panel "command panel item failed" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name" "output=$output"
+runtime_log_error command_panel "command panel item failed" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status" "output=$output"
 tmux display-message "${failure_message:-Failed: $label}"
 
 if [[ -t 1 ]]; then
@@ -78,4 +82,4 @@ if [[ -t 1 ]]; then
   IFS= read -rsn1 _ || true
 fi
 
-exit 1
+exit "$status"

@@ -204,16 +204,24 @@ wt_core_run_provider() {
   result_file="$(mktemp "${TMPDIR:-/tmp}/worktree-task-provider.XXXXXX")"
   export WT_RESULT_FILE="$result_file"
   wt_core_export_provider_env
+  runtime_log_info task "invoking provider" "provider=$provider_name" "verb=$verb"
 
   if "$provider_cmd" "$verb"; then
     :
   else
     status=$?
+    runtime_log_error task "provider invocation failed" "provider=$provider_name" "verb=$verb" "exit_code=$status"
     rm -f "$result_file"
     return "$status"
   fi
 
   wt_core_parse_provider_result "$result_file"
+  runtime_log_info task "provider invocation completed" \
+    "provider=$provider_name" \
+    "verb=$verb" \
+    "session_name=${WT_PROVIDER_RESULT_SESSION_NAME:-}" \
+    "window_id=${WT_PROVIDER_RESULT_WINDOW_ID:-}" \
+    "variant=${WT_PROVIDER_RESULT_VARIANT:-}"
   rm -f "$result_file"
   return 0
 }
@@ -267,6 +275,14 @@ wt_core_rollback_launch_failure() {
   local worktree_created="${1:-0}"
   local branch_created="${2:-0}"
   local provider_prompt_created="${3:-0}"
+
+  runtime_log_warn task "rolling back failed launch" \
+    "worktree_created=$worktree_created" \
+    "branch_created=$branch_created" \
+    "provider_prompt_created=$provider_prompt_created" \
+    "worktree_path=${WT_WORKTREE_PATH:-}" \
+    "branch_name=${WT_BRANCH_NAME:-}" \
+    "provider=${WT_SELECTED_PROVIDER:-}"
 
   rm -f "$WT_MANIFEST_FILE" 2>/dev/null || true
 
@@ -337,6 +353,9 @@ wt_core_configure() {
   local cwd="$PWD"
   local repo_override=""
   local selected_repo=""
+  local start_ms
+
+  start_ms="$(runtime_log_now_ms)"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -366,8 +385,10 @@ wt_core_configure() {
 
   [[ -n "$repo_override" ]] || wt_die "configure requires --repo /absolute/path/to/wezterm-config"
   selected_repo="$(wt_config_resolve_wezterm_repo_root "$WT_RESOLVED_CWD" "$repo_override")"
+  runtime_log_info task "configuring worktree-task repo" "cwd=$WT_RESOLVED_CWD" "selected_repo=$selected_repo"
 
   wt_config_save_user_wezterm_repo "$selected_repo"
+  runtime_log_info task "configured worktree-task repo" "selected_repo=$selected_repo" "user_config_file=$WT_CONFIG_USER_FILE" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   printf 'wezterm_config_repo=%s\n' "$selected_repo"
   printf 'user_config_file=%s\n' "$WT_CONFIG_USER_FILE"
 }
@@ -393,6 +414,9 @@ wt_core_launch() {
   local worktree_created=0
   local branch_created=0
   local provider_prompt_created=0
+  local start_ms
+
+  start_ms="$(runtime_log_now_ms)"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -472,6 +496,13 @@ wt_core_launch() {
   wt_config_load
   wt_core_apply_launch_overrides "$provider_override" "$provider_mode_override" "$workspace_override" "$session_name_override" "$variant_override" "$attach_override"
   wt_core_resolve_policy_paths
+  runtime_log_info task "launch requested" \
+    "cwd=$WT_RESOLVED_CWD" \
+    "repo_root=$WT_REPO_ROOT" \
+    "repo_common_dir=$WT_REPO_COMMON_DIR" \
+    "task_title=$task_title" \
+    "provider_mode=$WT_PROVIDER_MODE" \
+    "provider=$WT_PROVIDER"
 
   if [[ -z "$base_ref" ]]; then
     case "$WT_POLICY_BASE_REF_STRATEGY" in
@@ -526,6 +557,7 @@ wt_core_launch() {
     if [[ "$(wt_git_common_dir "$WT_WORKTREE_PATH" || true)" != "$WT_REPO_COMMON_DIR" ]]; then
       wt_die "worktree path already belongs to another repo family: $WT_WORKTREE_PATH"
     fi
+    runtime_log_info task "reusing existing worktree path" "worktree_path=$WT_WORKTREE_PATH" "branch_name=$WT_BRANCH_NAME"
   else
     worktree_created=1
     if wt_git_branch_exists "$WT_MAIN_WORKTREE_ROOT" "$WT_BRANCH_NAME"; then
@@ -534,6 +566,12 @@ wt_core_launch() {
       branch_created=1
       git -C "$WT_MAIN_WORKTREE_ROOT" worktree add -b "$WT_BRANCH_NAME" "$WT_WORKTREE_PATH" "$base_ref"
     fi
+    runtime_log_info task "prepared linked worktree" \
+      "worktree_path=$WT_WORKTREE_PATH" \
+      "branch_name=$WT_BRANCH_NAME" \
+      "base_ref=$base_ref" \
+      "worktree_created=$worktree_created" \
+      "branch_created=$branch_created"
   fi
 
   if [[ "$WT_SELECTED_PROVIDER" != "none" ]]; then
@@ -573,6 +611,14 @@ wt_core_launch() {
     "$WT_PROVIDER_RESULT_SESSION_NAME" \
     "$WT_PROVIDER_RESULT_WINDOW_ID"
 
+  runtime_log_info task "launch completed" \
+    "worktree_path=$WT_WORKTREE_PATH" \
+    "branch_name=$WT_BRANCH_NAME" \
+    "provider=$WT_SELECTED_PROVIDER" \
+    "session_name=${WT_PROVIDER_RESULT_SESSION_NAME:-}" \
+    "window_id=${WT_PROVIDER_RESULT_WINDOW_ID:-}" \
+    "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+
   wt_core_emit_launch_result
 
   if wt_bool_is_true "$WT_RUNTIME_ATTACH"; then
@@ -592,6 +638,9 @@ wt_core_reclaim() {
   local manifest_provider=""
   local manifest_session_name=""
   local manifest_window_id=""
+  local start_ms
+
+  start_ms="$(runtime_log_now_ms)"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -653,6 +702,13 @@ wt_core_reclaim() {
   wt_config_load
   wt_core_apply_reclaim_overrides "$provider_override" "$provider_mode_override"
   wt_core_resolve_policy_paths
+  runtime_log_info task "reclaim requested" \
+    "cwd=$WT_RESOLVED_CWD" \
+    "repo_root=$WT_REPO_ROOT" \
+    "provider_mode=$WT_PROVIDER_MODE" \
+    "provider=${provider_override:-$WT_PROVIDER}" \
+    "force=$force_mode" \
+    "keep_branch=$keep_branch"
 
   if [[ -n "$worktree_root" ]]; then
     WT_WORKTREE_PATH="$(wt_abs_path "$worktree_root")"
@@ -741,6 +797,7 @@ wt_core_reclaim() {
   else
     git -C "$WT_MAIN_WORKTREE_ROOT" worktree remove "$WT_WORKTREE_PATH"
   fi
+  runtime_log_info task "removed linked worktree" "worktree_path=$WT_WORKTREE_PATH" "provider_cleanup_status=$WT_PROVIDER_CLEANUP_STATUS"
 
   if [[ -f "$WT_PROMPT_FILE" ]]; then
     rm -f "$WT_PROMPT_FILE"
@@ -769,6 +826,15 @@ wt_core_reclaim() {
   else
     WT_BRANCH_DELETE_REASON="not-merged"
   fi
+
+  runtime_log_info task "reclaim completed" \
+    "worktree_path=$WT_WORKTREE_PATH" \
+    "branch_name=$WT_BRANCH_NAME" \
+    "provider=$WT_SELECTED_PROVIDER" \
+    "provider_cleanup_status=$WT_PROVIDER_CLEANUP_STATUS" \
+    "branch_deleted=$WT_BRANCH_DELETED" \
+    "branch_delete_reason=$WT_BRANCH_DELETE_REASON" \
+    "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 
   wt_core_emit_reclaim_result
 }

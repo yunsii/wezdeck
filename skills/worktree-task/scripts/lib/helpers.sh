@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 wt_die() {
+  if declare -F runtime_log_error >/dev/null 2>&1; then
+    runtime_log_error task "worktree-task failed" "message=$*"
+  fi
   printf '%s\n' "$*" >&2
   exit 1
 }

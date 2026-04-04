@@ -120,13 +120,15 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 
 - WezTerm-side diagnostics are configured in `wezterm-x/local/constants.lua` under `diagnostics.wezterm`.
 - Runtime shell diagnostics are configured separately in `wezterm-x/local/runtime-logging.sh`, starting from `wezterm-x/local.example/runtime-logging.sh`.
-- Keep both logging systems disabled by default; enable them only while investigating a problem.
+- Both logging systems are enabled by default at the `info` level for control-plane events so normal workspace, tmux, worktree-task, and sync flows leave an audit trail.
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured `file` and also shows them in the Debug Overlay.
 - Current WezTerm-side diagnostics categories include `workspace`, `alt_o`, `chrome`, `clipboard`, and `command_panel`.
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations; it is intentionally noisy.
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.
+- Runtime and WezTerm log lines now include a shared `trace_id` so related subprocesses can be correlated while debugging.
+- Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`; WezTerm-side diagnostics rotate with `diagnostics.wezterm.max_bytes` and `diagnostics.wezterm.max_files`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace,worktree`.
-- Current runtime categories include `alt_o`, `workspace`, `worktree`, `managed_command`, and `command_panel`.
+- Current runtime categories include `alt_o`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
 
 ## Shell Integration
 
