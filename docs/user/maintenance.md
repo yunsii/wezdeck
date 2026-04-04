@@ -39,6 +39,8 @@ Recreate affected sessions only if a simple reload is not enough.
 For WakaTime key changes in `wezterm-x/local/shared.env`, a tmux reload is sufficient; that path no longer depends on WezTerm injecting environment variables into WSL.
 5. If runtime shell rc files changed, reload the interactive shell in affected tmux panes or recreate those sessions.
 
+In `hybrid-wsl`, `Ctrl+v` smart image paste now depends on a background Windows clipboard listener that refreshes `%LOCALAPPDATA%\wezterm-clipboard-cache\state.env`. The same listener appends startup and clipboard-event traces to `%LOCALAPPDATA%\wezterm-clipboard-cache\listener.log`. If text paste is fast but image-path paste stops working, sync the runtime, let WezTerm auto-reload, inspect those two files, and restart WezTerm if needed so the listener is launched again.
+
 ## Renderer Backend
 
 - The tracked config currently sets `front_end = 'WebGpu'` in `wezterm-x/lua/ui.lua`.
