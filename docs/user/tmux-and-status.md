@@ -34,6 +34,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Outside tmux copy-mode, plain left drag does not start any selection path; use `Shift` for tmux pane-local selection or `Alt` for WezTerm terminal-wide selection.
 - Hold `Alt` while dragging to bypass tmux mouse reporting and use WezTerm's terminal-wide text selection path when you intentionally want to select across pane boundaries; copy that selection with `Ctrl+c` or `Ctrl+Shift+c`.
 - `Ctrl+c` first checks for a WezTerm terminal selection and copies it without forwarding the key; if there is no WezTerm selection, it sends a normal terminal `Ctrl+c`, which lets tmux copy-mode and regular terminal programs handle it normally.
+- In `hybrid-wsl`, `Ctrl+v` smart image paste is cache-backed: a background Windows clipboard listener exports bitmap clipboard content ahead of time, so ordinary text paste does not block on synchronous clipboard image checks.
 - tmux now emits terminal focus-in and focus-out events to applications, which helps mouse-aware TUIs recover cleanly when the WezTerm window regains focus.
 - The first tmux line renders repo, branch, combined git change counts, tracked-branch sync markers (`^N` ahead, `vN` behind, `=0` synced, `x0` no upstream configured), and Node.js version.
 - The second tmux line renders the repo family's linked worktree count plus the current worktree role, for example `linked:2 · primary` in the main worktree or `linked:2 · linked` in a linked worktree.

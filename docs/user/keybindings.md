@@ -22,6 +22,6 @@ Use this doc when you need shortcut behavior.
 - `Ctrl+LeftClick`: open the link under the mouse cursor in the system browser
 - `Ctrl+c`: if the current WezTerm pane has a terminal selection, copy it to the system clipboard and clear the selection; otherwise send a normal terminal `Ctrl+c`, which in tmux copy-mode copies the current tmux selection and exits copy-mode
 - `Ctrl+Shift+c`: if the current WezTerm pane has a terminal selection, copy it to the system clipboard and clear the selection; otherwise forward `Ctrl+Shift+c` to the pane
-- `Ctrl+v`: smart paste; in Windows-hosted `hybrid-wsl`, if the current Windows clipboard content is a bitmap image, export it to a temporary `.png` on the Windows host and paste its WSL path into the active pane; otherwise do a normal clipboard paste
+- `Ctrl+v`: smart paste; in Windows-hosted `hybrid-wsl`, a background Windows clipboard listener keeps a cache of exported bitmap images so normal text paste stays low-latency while clipboard images still paste the exported WSL path into the active pane; if that cache is unavailable, fall back to a normal clipboard paste
 - `Ctrl+Shift+v`: force a normal clipboard paste without the image-export helper
 - `Enter` in tmux copy-mode: copy the current tmux selection to the system clipboard and leave copy-mode

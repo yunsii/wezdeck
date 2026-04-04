@@ -1,5 +1,8 @@
 local M = {}
 local path_sep = package.config:sub(1, 1)
+local clipboard_listener_state = {
+  last_start_attempt_s = 0,
+}
 
 local function join_path(...)
   return table.concat({ ... }, path_sep)
@@ -88,12 +91,8 @@ local function merge_fields(trace_id, fields)
   return merged
 end
 
-local function trim_text(value)
-  if not value then
-    return nil
-  end
-
-  return (value:gsub('^%s+', ''):gsub('%s+$', ''))
+local function current_epoch_ms()
+  return os.time() * 1000
 end
 
 local function is_windows_host_path(path)
@@ -110,6 +109,173 @@ local function wsl_distro_from_domain(domain_name)
   end
 
   return domain_name:match '^WSL:(.+)$'
+end
+
+local function windows_path_to_generic_wsl_path(path)
+  if not path or path == '' then
+    return nil
+  end
+
+  local normalized = path:gsub('\\', '/')
+  local drive, remainder = normalized:match '^([A-Za-z]):/?(.*)$'
+  if not drive then
+    return normalized
+  end
+
+  drive = drive:lower()
+  if not remainder or remainder == '' then
+    return '/mnt/' .. drive
+  end
+
+  return '/mnt/' .. drive .. '/' .. remainder
+end
+
+local function clipboard_image_integration(constants)
+  return constants.integrations and constants.integrations.clipboard_image or {}
+end
+
+local function clipboard_image_listener_command(wezterm, constants)
+  local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
+  if runtime_mode ~= 'hybrid-wsl' or constants.host_os ~= 'windows' then
+    return nil, 'unsupported_runtime'
+  end
+
+  local integration = clipboard_image_integration(constants)
+  local runtime_dir = integration.runtime_dir or (wezterm.config_dir .. '\\.wezterm-x')
+  local listener_script = integration.listener_script or 'scripts\\clipboard-image-listener.ps1'
+  local command = {
+    integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+    '-NoProfile',
+    '-NonInteractive',
+    '-STA',
+    '-WindowStyle',
+    'Hidden',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-File',
+    runtime_dir .. '\\' .. listener_script,
+  }
+
+  local distro = wsl_distro_from_domain(constants.default_domain)
+  if distro and distro ~= '' then
+    command[#command + 1] = '-WslDistro'
+    command[#command + 1] = distro
+  end
+
+  if integration.state_path and integration.state_path ~= '' then
+    command[#command + 1] = '-StatePath'
+    command[#command + 1] = integration.state_path
+  end
+
+  if integration.log_path and integration.log_path ~= '' then
+    command[#command + 1] = '-LogPath'
+    command[#command + 1] = integration.log_path
+  end
+
+  if integration.output_dir and integration.output_dir ~= '' then
+    command[#command + 1] = '-OutputDir'
+    command[#command + 1] = integration.output_dir
+  end
+
+  if integration.heartbeat_interval_seconds then
+    command[#command + 1] = '-HeartbeatIntervalSeconds'
+    command[#command + 1] = tostring(integration.heartbeat_interval_seconds)
+  end
+
+  if integration.image_read_retry_count then
+    command[#command + 1] = '-ImageReadRetryCount'
+    command[#command + 1] = tostring(integration.image_read_retry_count)
+  end
+
+  if integration.image_read_retry_delay_ms then
+    command[#command + 1] = '-ImageReadRetryDelayMs'
+    command[#command + 1] = tostring(integration.image_read_retry_delay_ms)
+  end
+
+  if integration.cleanup_max_age_hours then
+    command[#command + 1] = '-CleanupMaxAgeHours'
+    command[#command + 1] = tostring(integration.cleanup_max_age_hours)
+  end
+
+  if integration.cleanup_max_files then
+    command[#command + 1] = '-CleanupMaxFiles'
+    command[#command + 1] = tostring(integration.cleanup_max_files)
+  end
+
+  return command
+end
+
+local function ensure_clipboard_image_listener_running(wezterm, constants, logger, reason, force)
+  local command, command_reason = clipboard_image_listener_command(wezterm, constants)
+  if not command then
+    return false, command_reason
+  end
+
+  local integration = clipboard_image_integration(constants)
+  local restart_interval = tonumber(integration.restart_interval_seconds or 15) or 15
+  local now_s = os.time()
+
+  if not force and clipboard_listener_state.last_start_attempt_s > 0 then
+    if now_s - clipboard_listener_state.last_start_attempt_s < restart_interval then
+      return false, 'throttled'
+    end
+  end
+
+  clipboard_listener_state.last_start_attempt_s = now_s
+  logger.info('clipboard', 'ensuring clipboard image listener is running', {
+    reason = reason,
+  })
+
+  local ok, err = pcall(wezterm.background_child_process, command)
+  if not ok then
+    logger.error('clipboard', 'failed to start clipboard image listener', {
+      error = err,
+      reason = reason,
+    })
+    return false, 'spawn_failed'
+  end
+
+  return true, nil
+end
+
+local function read_cached_clipboard_image_state(helpers, constants, logger, trace_id)
+  local integration = clipboard_image_integration(constants)
+  local state_path = integration.state_path
+  if not state_path or state_path == '' then
+    return nil, 'state_path_unconfigured'
+  end
+
+  local ok, cached_state = pcall(helpers.load_optional_env_file, state_path)
+  if not ok then
+    logger.warn('clipboard', 'failed to parse clipboard image cache', merge_fields(trace_id, {
+      error = cached_state,
+      state_path = state_path,
+    }))
+    return nil, 'cache_parse_failed'
+  end
+
+  if not cached_state or not cached_state.kind or cached_state.kind == '' then
+    return nil, 'cache_missing'
+  end
+
+  cached_state.__state_path = state_path
+  return cached_state, nil
+end
+
+local function clipboard_image_cache_is_fresh(cached_state, constants)
+  local integration = clipboard_image_integration(constants)
+  local heartbeat_timeout = tonumber(integration.heartbeat_timeout_seconds or 3) or 3
+  local heartbeat_at_ms = tonumber(cached_state.heartbeat_at_ms or '') or 0
+
+  if heartbeat_at_ms <= 0 then
+    return false, 'missing_heartbeat'
+  end
+
+  if current_epoch_ms() - heartbeat_at_ms > heartbeat_timeout * 1000 then
+    return false, 'stale_heartbeat'
+  end
+
+  return true, nil
 end
 
 local function forward_shortcut_to_pane(wezterm, window, pane, shortcut, sequence, logger, category, workspace_name, trace_id)
@@ -129,9 +295,9 @@ local function managed_workspace_only_shortcut(window, logger, shortcut, trace_i
   window:toast_notification('WezTerm', shortcut .. ' is only available in managed tmux workspaces', nil, 3000)
 end
 
-local function paste_clipboard_or_image_path(wezterm, window, pane, constants, logger, trace_id)
+local function paste_clipboard_or_image_path(wezterm, window, pane, constants, logger, trace_id, helpers)
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
-  if runtime_mode ~= 'hybrid-wsl' then
+  if runtime_mode ~= 'hybrid-wsl' or constants.host_os ~= 'windows' then
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
@@ -147,62 +313,61 @@ local function paste_clipboard_or_image_path(wezterm, window, pane, constants, l
     return
   end
 
-  local integration = constants.integrations and constants.integrations.clipboard_image or {}
-  local runtime_dir = integration.runtime_dir or (wezterm.config_dir .. '\\.wezterm-x')
-  local script_path = integration.script or 'scripts\\export-clipboard-image-to-wsl.ps1'
-  local command = {
-    integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-    '-NoProfile',
-    '-NonInteractive',
-    '-STA',
-    '-ExecutionPolicy',
-    'Bypass',
-    '-File',
-    runtime_dir .. '\\' .. script_path,
-    '-WslDistro',
-    distro,
-  }
-
-  if integration.output_dir and integration.output_dir ~= '' then
-    command[#command + 1] = '-OutputDir'
-    command[#command + 1] = integration.output_dir
-  end
-
-  logger.info('clipboard', 'checking clipboard image export helper', merge_fields(trace_id, {
-    command = table.concat(command, ' '),
-    distro = distro,
-    domain = domain_name,
-  }))
-
-  local ok, stdout, stderr = wezterm.run_child_process(command)
-  local image_path = trim_text(stdout and stdout:gsub('\r', ''))
-  local error_text = trim_text(stderr and stderr:gsub('\r', ''))
-
-  if ok and image_path and image_path ~= '' and image_path ~= 'NO_IMAGE' then
-    pane:send_paste(image_path)
-    logger.info('clipboard', 'pasted exported clipboard image path', merge_fields(trace_id, {
-      distro = distro,
-      domain = domain_name,
-      image_path = image_path,
-    }))
+  local cached_state, cache_reason = read_cached_clipboard_image_state(helpers, constants, logger, trace_id)
+  if not cached_state then
+    ensure_clipboard_image_listener_running(wezterm, constants, logger, 'cache-' .. cache_reason, false)
+    window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
 
-  if not ok or (error_text and error_text ~= '') then
-    logger.warn('clipboard', 'clipboard image export failed, falling back to plain paste', merge_fields(trace_id, {
-      distro = distro,
-      domain = domain_name,
-      error = error_text,
-      helper_output = image_path,
-    }))
-  else
-    logger.info('clipboard', 'no clipboard image found, falling back to plain paste', merge_fields(trace_id, {
-      distro = distro,
-      domain = domain_name,
-    }))
+  local cache_is_fresh, freshness_reason = clipboard_image_cache_is_fresh(cached_state, constants)
+  if not cache_is_fresh then
+    ensure_clipboard_image_listener_running(wezterm, constants, logger, 'stale-' .. freshness_reason, false)
+    window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
+    return
   end
 
-  window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
+  if cached_state.kind ~= 'image' then
+    window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
+    return
+  end
+
+  local image_path = cached_state.wsl_path
+  if (not image_path or image_path == '') and cached_state.windows_path and cached_state.windows_path ~= '' then
+    image_path = windows_path_to_generic_wsl_path(cached_state.windows_path)
+  end
+
+  if not image_path or image_path == '' then
+    logger.warn('clipboard', 'cached clipboard image is missing a WSL path', merge_fields(trace_id, {
+      domain = domain_name,
+      distro = distro,
+      state_path = cached_state.__state_path,
+    }))
+    ensure_clipboard_image_listener_running(wezterm, constants, logger, 'missing-image-path', false)
+    window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
+    return
+  end
+
+  if cached_state.windows_path and cached_state.windows_path ~= '' and not helpers.file_exists(cached_state.windows_path) then
+    logger.warn('clipboard', 'cached clipboard image file is missing on disk', merge_fields(trace_id, {
+      domain = domain_name,
+      distro = distro,
+      image_path = image_path,
+      windows_path = cached_state.windows_path,
+    }))
+    ensure_clipboard_image_listener_running(wezterm, constants, logger, 'missing-image-file', false)
+    window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
+    return
+  end
+
+  pane:send_paste(image_path)
+  logger.info('clipboard', 'pasted cached clipboard image path', merge_fields(trace_id, {
+    distro = distro,
+    domain = domain_name,
+    image_path = image_path,
+    sequence = cached_state.sequence,
+  }))
+  return
 end
 
 local function open_current_dir_in_vscode(wezterm, window, pane, constants, logger, trace_id)
@@ -366,10 +531,15 @@ function M.apply(opts)
   local palette = constants.palette
   local workspace = opts.workspace
   local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+  local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
   local logger = dofile(join_path(runtime_dir, 'lua', 'logger.lua')).new {
     wezterm = wezterm,
     constants = constants,
   }
+
+  if wezterm.gui then
+    ensure_clipboard_image_listener_running(wezterm, constants, logger, 'config-load', false)
+  end
 
   config.font = constants.fonts.terminal
   config.font_size = 12.0
@@ -611,7 +781,7 @@ function M.apply(opts)
       mods = 'CTRL',
       action = wezterm.action_callback(function(window, pane)
         local trace_id = logger.trace_id('clipboard')
-        paste_clipboard_or_image_path(wezterm, window, pane, constants, logger, trace_id)
+        paste_clipboard_or_image_path(wezterm, window, pane, constants, logger, trace_id, helpers)
       end),
     },
     {
