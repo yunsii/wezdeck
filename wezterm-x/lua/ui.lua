@@ -75,6 +75,19 @@ local function copy_args(values)
   return result
 end
 
+local function merge_fields(trace_id, fields)
+  local merged = {}
+
+  for key, value in pairs(fields or {}) do
+    merged[key] = value
+  end
+  if trace_id and trace_id ~= '' then
+    merged.trace_id = trace_id
+  end
+
+  return merged
+end
+
 local function trim_text(value)
   if not value then
     return nil
@@ -99,24 +112,24 @@ local function wsl_distro_from_domain(domain_name)
   return domain_name:match '^WSL:(.+)$'
 end
 
-local function forward_shortcut_to_pane(wezterm, window, pane, shortcut, sequence, logger, category, workspace_name)
-  logger.info(category, 'forwarding shortcut to pane', {
+local function forward_shortcut_to_pane(wezterm, window, pane, shortcut, sequence, logger, category, workspace_name, trace_id)
+  logger.info(category, 'forwarding shortcut to pane', merge_fields(trace_id, {
     shortcut = shortcut,
     workspace = workspace_name,
     domain = pane:get_domain_name(),
-  })
+  }))
   window:perform_action(wezterm.action.SendString(sequence), pane)
 end
 
-local function managed_workspace_only_shortcut(window, logger, shortcut)
-  logger.warn('workspace', 'shortcut requires a managed workspace', {
+local function managed_workspace_only_shortcut(window, logger, shortcut, trace_id)
+  logger.warn('workspace', 'shortcut requires a managed workspace', merge_fields(trace_id, {
     shortcut = shortcut,
     workspace = active_workspace_name(window),
-  })
+  }))
   window:toast_notification('WezTerm', shortcut .. ' is only available in managed tmux workspaces', nil, 3000)
 end
 
-local function paste_clipboard_or_image_path(wezterm, window, pane, constants, logger)
+local function paste_clipboard_or_image_path(wezterm, window, pane, constants, logger, trace_id)
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
   if runtime_mode ~= 'hybrid-wsl' then
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
@@ -126,10 +139,10 @@ local function paste_clipboard_or_image_path(wezterm, window, pane, constants, l
   local domain_name = pane:get_domain_name()
   local distro = wsl_distro_from_domain(domain_name) or wsl_distro_from_domain(constants.default_domain)
   if not distro then
-    logger.info('clipboard', 'falling back to plain clipboard paste outside WSL', {
+    logger.info('clipboard', 'falling back to plain clipboard paste outside WSL', merge_fields(trace_id, {
       domain = domain_name,
       runtime_mode = runtime_mode,
-    })
+    }))
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
@@ -155,11 +168,11 @@ local function paste_clipboard_or_image_path(wezterm, window, pane, constants, l
     command[#command + 1] = integration.output_dir
   end
 
-  logger.info('clipboard', 'checking clipboard image export helper', {
+  logger.info('clipboard', 'checking clipboard image export helper', merge_fields(trace_id, {
     command = table.concat(command, ' '),
     distro = distro,
     domain = domain_name,
-  })
+  }))
 
   local ok, stdout, stderr = wezterm.run_child_process(command)
   local image_path = trim_text(stdout and stdout:gsub('\r', ''))
@@ -167,32 +180,32 @@ local function paste_clipboard_or_image_path(wezterm, window, pane, constants, l
 
   if ok and image_path and image_path ~= '' and image_path ~= 'NO_IMAGE' then
     pane:send_paste(image_path)
-    logger.info('clipboard', 'pasted exported clipboard image path', {
+    logger.info('clipboard', 'pasted exported clipboard image path', merge_fields(trace_id, {
       distro = distro,
       domain = domain_name,
       image_path = image_path,
-    })
+    }))
     return
   end
 
   if not ok or (error_text and error_text ~= '') then
-    logger.warn('clipboard', 'clipboard image export failed, falling back to plain paste', {
+    logger.warn('clipboard', 'clipboard image export failed, falling back to plain paste', merge_fields(trace_id, {
       distro = distro,
       domain = domain_name,
       error = error_text,
       helper_output = image_path,
-    })
+    }))
   else
-    logger.info('clipboard', 'no clipboard image found, falling back to plain paste', {
+    logger.info('clipboard', 'no clipboard image found, falling back to plain paste', merge_fields(trace_id, {
       distro = distro,
       domain = domain_name,
-    })
+    }))
   end
 
   window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
 end
 
-local function open_current_dir_in_vscode(wezterm, window, pane, constants, logger)
+local function open_current_dir_in_vscode(wezterm, window, pane, constants, logger, trace_id)
   local raw_cwd = pane:get_current_working_dir()
   local cwd = file_path_from_cwd(raw_cwd)
   local domain_name = pane:get_domain_name()
@@ -201,11 +214,11 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, logg
   local integration = constants.integrations and constants.integrations.vscode or {}
 
   if not cwd or cwd == '/' then
-    logger.warn('alt_o', 'current pane working directory is unavailable', {
+    logger.warn('alt_o', 'current pane working directory is unavailable', merge_fields(trace_id, {
       domain = domain_name,
       raw_cwd = tostring(raw_cwd),
       workspace = workspace_name,
-    })
+    }))
     window:toast_notification('WezTerm', 'Alt+o failed: current pane working directory is unavailable', nil, 3000)
     return
   end
@@ -214,10 +227,10 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, logg
   if runtime_mode == 'hybrid-wsl' then
     local distro = wsl_distro_from_domain(domain_name) or wsl_distro_from_domain(constants.default_domain)
     if not distro then
-      logger.warn('alt_o', 'current pane is not backed by a WSL domain', {
+      logger.warn('alt_o', 'current pane is not backed by a WSL domain', merge_fields(trace_id, {
         cwd = cwd,
         domain = domain_name,
-      })
+      }))
       window:toast_notification('WezTerm', 'Alt+o failed: current pane is not backed by a WSL domain', nil, 3000)
       return
     end
@@ -254,6 +267,8 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, logg
     end
 
     command = {
+      'env',
+      'WEZTERM_RUNTIME_TRACE_ID=' .. (trace_id or ''),
       integration.posix_shell or '/bin/bash',
       integration.posix_script or (wezterm.config_dir .. '/scripts/runtime/open-current-dir-in-vscode.sh'),
       '--code-command',
@@ -267,31 +282,31 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, logg
     command[#command + 1] = cwd
   end
 
-  logger.info('alt_o', 'opening current dir via WezTerm', {
+  logger.info('alt_o', 'opening current dir via WezTerm', merge_fields(trace_id, {
     command = table.concat(command, ' '),
     cwd = cwd,
     domain = domain_name,
     runtime_mode = runtime_mode,
-  })
+  }))
   local ok, err = pcall(wezterm.background_child_process, command)
   if not ok then
     window:toast_notification('WezTerm', 'Alt+o failed. Check WezTerm logs.', nil, 3000)
-    logger.error('alt_o', 'background_child_process failed', {
+    logger.error('alt_o', 'background_child_process failed', merge_fields(trace_id, {
       error = err,
-    })
+    }))
   end
 end
 
-local function open_debug_chrome(wezterm, window, constants, logger)
+local function open_debug_chrome(wezterm, window, constants, logger, trace_id)
   local chrome = constants.chrome_debug_browser or {}
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
   local integration = constants.integrations and constants.integrations.chrome_debug or {}
   local command
 
   if not chrome.user_data_dir or chrome.user_data_dir == '' then
-    logger.warn('chrome', 'missing chrome debug browser user_data_dir', {
+    logger.warn('chrome', 'missing chrome debug browser user_data_dir', merge_fields(trace_id, {
       runtime_mode = runtime_mode,
-    })
+    }))
     window:toast_notification('WezTerm', 'Alt+b failed: configure chrome_debug_browser.user_data_dir in wezterm-x/local/constants.lua', nil, 4000)
     return
   end
@@ -328,19 +343,19 @@ local function open_debug_chrome(wezterm, window, constants, logger)
     }
   end
 
-  logger.info('chrome', 'opening or focusing debug chrome', {
+  logger.info('chrome', 'opening or focusing debug chrome', merge_fields(trace_id, {
     command = table.concat(command, ' '),
     executable = chrome.executable,
     port = chrome.remote_debugging_port,
     runtime_mode = runtime_mode,
     user_data_dir = chrome.user_data_dir,
-  })
+  }))
   local ok, err = pcall(wezterm.background_child_process, command)
   if not ok then
     window:toast_notification('WezTerm', 'Alt+b failed. Check WezTerm logs.', nil, 3000)
-    logger.error('chrome', 'background_child_process failed', {
+    logger.error('chrome', 'background_child_process failed', merge_fields(trace_id, {
       error = err,
-    })
+    }))
   end
 end
 
@@ -446,6 +461,7 @@ function M.apply(opts)
       key = 'o',
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('alt_o')
         local cwd = file_path_from_cwd(pane:get_current_working_dir())
         local workspace_name = active_workspace_name(window)
         local foreground_process = foreground_process_basename(pane)
@@ -453,65 +469,68 @@ function M.apply(opts)
         local distro = wsl_distro_from_domain(pane:get_domain_name()) or wsl_distro_from_domain(constants.default_domain)
 
         if is_managed_workspace(workspace_name) then
-          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+o', '\x1bo', logger, 'alt_o', workspace_name)
+          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+o', '\x1bo', logger, 'alt_o', workspace_name, trace_id)
           return
         end
 
         -- Outside managed workspaces, WezTerm owns Alt+o and only delegates when its cwd view is unusable.
         if foreground_process == 'tmux' and (not cwd or cwd == '/') then
-          logger.info('alt_o', 'forwarding Alt+o to pane fallback', {
+          logger.info('alt_o', 'forwarding Alt+o to pane fallback', merge_fields(trace_id, {
             cwd = cwd,
             domain = pane:get_domain_name(),
             foreground_process = foreground_process,
-          })
+          }))
           window:perform_action(wezterm.action.SendString '\x1bo', pane)
           return
         end
 
         if runtime_mode == 'hybrid-wsl' and distro and is_windows_host_path(cwd) then
-          logger.info('alt_o', 'forwarding Alt+o to pane fallback', {
+          logger.info('alt_o', 'forwarding Alt+o to pane fallback', merge_fields(trace_id, {
             cwd = cwd,
             domain = pane:get_domain_name(),
             foreground_process = foreground_process,
-          })
+          }))
           window:perform_action(wezterm.action.SendString '\x1bo', pane)
           return
         end
 
-        open_current_dir_in_vscode(wezterm, window, pane, constants, logger)
+        open_current_dir_in_vscode(wezterm, window, pane, constants, logger, trace_id)
       end),
     },
     {
       key = 'g',
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('workspace')
         local workspace_name = active_workspace_name(window)
         if is_managed_workspace(workspace_name) then
-          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+g', '\x1bg', logger, 'workspace', workspace_name)
+          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+g', '\x1bg', logger, 'workspace', workspace_name, trace_id)
           return
         end
 
-        managed_workspace_only_shortcut(window, logger, 'Alt+g')
+        managed_workspace_only_shortcut(window, logger, 'Alt+g', trace_id)
       end),
     },
     {
       key = 'G',
       mods = 'ALT|SHIFT',
       action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('workspace')
         local workspace_name = active_workspace_name(window)
         if is_managed_workspace(workspace_name) then
-          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+Shift+g', '\x1bG', logger, 'workspace', workspace_name)
+          forward_shortcut_to_pane(wezterm, window, pane, 'Alt+Shift+g', '\x1bG', logger, 'workspace', workspace_name, trace_id)
           return
         end
 
-        managed_workspace_only_shortcut(window, logger, 'Alt+Shift+g')
+        managed_workspace_only_shortcut(window, logger, 'Alt+Shift+g', trace_id)
       end),
     },
     {
       key = 'b',
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
-        open_debug_chrome(wezterm, window, constants, logger)
+        local trace_id = logger.trace_id('chrome')
+        open_debug_chrome(wezterm, window, constants, logger, trace_id)
       end),
     },
     {
@@ -520,16 +539,17 @@ function M.apply(opts)
       action = wezterm.action_callback(function(window, pane)
         local workspace_name = active_workspace_name(window)
         local foreground_process = foreground_process_basename(pane)
+        local trace_id = logger.trace_id('command_panel')
 
         if is_managed_workspace(workspace_name) or foreground_process == 'tmux' then
-          forward_shortcut_to_pane(wezterm, window, pane, 'Ctrl+k', '\x0b', logger, 'command_panel', workspace_name)
+          forward_shortcut_to_pane(wezterm, window, pane, 'Ctrl+k', '\x0b', logger, 'command_panel', workspace_name, trace_id)
           return
         end
 
-        logger.warn('command_panel', 'shortcut requires tmux in current pane', {
+        logger.warn('command_panel', 'shortcut requires tmux in current pane', merge_fields(trace_id, {
           foreground_process = foreground_process,
           workspace = workspace_name,
-        })
+        }))
         window:toast_notification('WezTerm', 'Ctrl+k is only available when the current pane is running tmux', nil, 3000)
       end),
     },
@@ -590,7 +610,8 @@ function M.apply(opts)
       key = 'v',
       mods = 'CTRL',
       action = wezterm.action_callback(function(window, pane)
-        paste_clipboard_or_image_path(wezterm, window, pane, constants, logger)
+        local trace_id = logger.trace_id('clipboard')
+        paste_clipboard_or_image_path(wezterm, window, pane, constants, logger, trace_id)
       end),
     },
     {

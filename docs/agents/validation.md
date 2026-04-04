@@ -14,10 +14,11 @@ After runtime config changes:
 
 ## Diagnostics Validation
 
-- Keep both WezTerm and runtime diagnostics disabled by default when you are not actively debugging.
-- When you add or change diagnostics, verify that enabling them produces structured lines and that disabling them returns the system to its normal quiet behavior.
+- Keep WezTerm and runtime diagnostics enabled at the default `info` level for control-plane events; only high-noise options such as key-event tracing should stay disabled unless actively debugging.
+- When you add or change diagnostics, verify that the default path produces structured lines, trace IDs are propagated across the relevant subprocess chain, and disabling the logger still returns the system to its normal quiet behavior.
 - For keybinding investigations, temporarily set `diagnostics.wezterm.debug_key_events = true`, reproduce the issue, and then turn it back off.
 - For runtime script investigations, use `wezterm-x/local/runtime-logging.sh` to scope logging level, file path, and categories instead of editing individual scripts.
+- Verify log rotation still works when you change file paths or default logging volume.
 - If your change introduces a new diagnostics category or log file, update [`../user/maintenance.md`](../user/maintenance.md).
 
 ## Doc-Only Changes

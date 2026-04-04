@@ -18,6 +18,7 @@ main_worktree_root=""
 worktree_label=""
 window_id=""
 template_window=""
+start_ms="$(runtime_log_now_ms)"
 
 if [[ -z "$session_name" || -z "$worktree_root" ]]; then
   runtime_log_error worktree "worktree switch failed: missing session or worktree path" "session_name=$session_name" "worktree_root=$worktree_root" "source_window_id=$source_window_id" "cwd=$cwd"
@@ -106,3 +107,4 @@ bash "$script_dir/tmux-status-refresh.sh" \
   --force \
   --no-debounce \
   --refresh-client >/dev/null 2>&1 || true
+runtime_log_info worktree "worktree switch completed" "session_name=$session_name" "window_id=$window_id" "worktree_root=$worktree_root" "duration_ms=$(runtime_log_duration_ms "$start_ms")"

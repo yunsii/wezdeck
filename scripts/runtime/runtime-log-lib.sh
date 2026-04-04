@@ -15,10 +15,13 @@ runtime_log_init() {
     source "$config_file"
   fi
 
-  : "${WEZTERM_RUNTIME_LOG_ENABLED:=0}"
+  : "${WEZTERM_RUNTIME_LOG_ENABLED:=1}"
   : "${WEZTERM_RUNTIME_LOG_LEVEL:=info}"
   : "${WEZTERM_RUNTIME_LOG_CATEGORIES:=}"
   : "${WEZTERM_RUNTIME_LOG_FILE:=${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime.log}"
+  : "${WEZTERM_RUNTIME_LOG_ROTATE_BYTES:=5242880}"
+  : "${WEZTERM_RUNTIME_LOG_ROTATE_COUNT:=5}"
+  : "${WEZTERM_RUNTIME_LOG_SOURCE:=$(basename "${0:-runtime}")}"
 
   __WEZTERM_RUNTIME_LOG_INITIALIZED=1
 }
@@ -54,6 +57,126 @@ runtime_log_should_emit() {
   return 0
 }
 
+runtime_log_now_ms() {
+  local now
+
+  now="$(date +%s%3N 2>/dev/null || true)"
+  if [[ "$now" =~ ^[0-9]+$ ]]; then
+    printf '%s\n' "$now"
+    return 0
+  fi
+
+  printf '%s000\n' "$(date +%s)"
+}
+
+runtime_log_duration_ms() {
+  local start_ms="${1:-0}"
+  local end_ms
+
+  end_ms="$(runtime_log_now_ms)"
+  if [[ "$start_ms" =~ ^[0-9]+$ && "$end_ms" =~ ^[0-9]+$ && "$end_ms" -ge "$start_ms" ]]; then
+    printf '%s\n' "$((end_ms - start_ms))"
+    return 0
+  fi
+
+  printf '0\n'
+}
+
+runtime_log_generate_trace_id() {
+  printf '%s-%s-%04d\n' "$(date +%Y%m%dT%H%M%S 2>/dev/null || date +%s)" "$$" "$((RANDOM % 10000))"
+}
+
+runtime_log_current_trace_id() {
+  runtime_log_init
+
+  if [[ -z "${WEZTERM_RUNTIME_TRACE_ID:-}" ]]; then
+    WEZTERM_RUNTIME_TRACE_ID="$(runtime_log_generate_trace_id)"
+    export WEZTERM_RUNTIME_TRACE_ID
+  fi
+
+  printf '%s\n' "$WEZTERM_RUNTIME_TRACE_ID"
+}
+
+runtime_log_escape_value() {
+  local value="${1-}"
+
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/\\r}"
+  value="${value//$'\t'/\\t}"
+  printf '"%s"' "$value"
+}
+
+runtime_log_file_size() {
+  local path="${1:?missing path}"
+
+  if [[ ! -f "$path" ]]; then
+    printf '0\n'
+    return 0
+  fi
+
+  if stat -c %s "$path" >/dev/null 2>&1; then
+    stat -c %s "$path"
+    return 0
+  fi
+
+  stat -f %z "$path"
+}
+
+runtime_log_rotate_if_needed() {
+  runtime_log_init
+
+  local file="${WEZTERM_RUNTIME_LOG_FILE:?missing log file}"
+  local max_bytes="${WEZTERM_RUNTIME_LOG_ROTATE_BYTES:-0}"
+  local max_files="${WEZTERM_RUNTIME_LOG_ROTATE_COUNT:-0}"
+  local size=0
+  local index=0
+  local next_index=0
+
+  [[ "$max_bytes" =~ ^[0-9]+$ ]] || return 0
+  [[ "$max_files" =~ ^[0-9]+$ ]] || return 0
+  (( max_bytes > 0 && max_files > 0 )) || return 0
+  [[ -f "$file" ]] || return 0
+
+  size="$(runtime_log_file_size "$file" 2>/dev/null || printf '0')"
+  [[ "$size" =~ ^[0-9]+$ ]] || return 0
+  (( size >= max_bytes )) || return 0
+
+  if [[ -f "$file.$max_files" ]]; then
+    rm -f "$file.$max_files"
+  fi
+
+  for (( index=max_files-1; index>=1; index-=1 )); do
+    if [[ -f "$file.$index" ]]; then
+      next_index=$((index + 1))
+      mv "$file.$index" "$file.$next_index"
+    fi
+  done
+
+  mv "$file" "$file.1"
+}
+
+runtime_log_format_fields() {
+  local field key value
+  local -a parts=()
+
+  for field in "$@"; do
+    if [[ "$field" == *=* ]]; then
+      key="${field%%=*}"
+      value="${field#*=}"
+    else
+      key="detail"
+      value="$field"
+    fi
+
+    [[ -n "$key" ]] || key="detail"
+    parts+=("${key}=$(runtime_log_escape_value "$value")")
+  done
+
+  printf '%s' "${parts[*]}"
+}
+
 runtime_log_emit() {
   runtime_log_init
 
@@ -65,13 +188,17 @@ runtime_log_emit() {
   runtime_log_should_emit "$level" "$category" || return 0
 
   mkdir -p "$(dirname "$WEZTERM_RUNTIME_LOG_FILE")"
+  runtime_log_rotate_if_needed
 
-  local timestamp line
+  local timestamp line trace_id formatted_fields source_name
   timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
-  line="[$timestamp] [${level^^}] [$category] $message"
+  trace_id="$(runtime_log_current_trace_id)"
+  source_name="${WEZTERM_RUNTIME_LOG_SOURCE:-runtime}"
+  formatted_fields="$(runtime_log_format_fields "$@")"
+  line="ts=$(runtime_log_escape_value "$timestamp") level=$(runtime_log_escape_value "$level") source=$(runtime_log_escape_value "$source_name") category=$(runtime_log_escape_value "$category") trace_id=$(runtime_log_escape_value "$trace_id") message=$(runtime_log_escape_value "$message")"
 
-  if [[ $# -gt 0 ]]; then
-    line="$line $*"
+  if [[ -n "$formatted_fields" ]]; then
+    line="$line $formatted_fields"
   fi
 
   printf '%s\n' "$line" >> "$WEZTERM_RUNTIME_LOG_FILE"

@@ -3,9 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYNC_PROMPT_LIB="$SCRIPT_DIR/sync-prompt-lib.sh"
+RUNTIME_LOG_LIB="$SCRIPT_DIR/../../../scripts/runtime/runtime-log-lib.sh"
 
 # Shared with the prompt test script so output regressions are easy to verify.
 source "$SYNC_PROMPT_LIB"
+# shellcheck disable=SC1091
+source "$RUNTIME_LOG_LIB"
+export WEZTERM_RUNTIME_LOG_SOURCE="sync-runtime"
 
 usage() {
   cat <<'EOF'
@@ -127,6 +131,7 @@ list_candidate_homes() {
 
   detect_candidate_homes
   [[ ${#DETECTED_CANDIDATES[@]} -gt 0 ]] || { sync_prompt_no_dir_message "$lang" >&2; return 1; }
+  runtime_log_info sync "listed sync target candidates" "candidate_count=${#DETECTED_CANDIDATES[@]}"
 
   printf '%s\n' "${DETECTED_CANDIDATES[@]}"
 }
@@ -142,13 +147,18 @@ validate_explicit_target_home() {
 
 load_cached_target() {
   if [[ -n "${WEZTERM_SYNC_TARGET:-}" ]]; then
+    runtime_log_info sync "using sync target from environment" "target_home=$WEZTERM_SYNC_TARGET"
     printf '%s\n' "$WEZTERM_SYNC_TARGET"
     return 0
   fi
   if [[ -f "$SYNC_CACHE_FILE" ]]; then
     local cached
     cached="$(< "$SYNC_CACHE_FILE")"
-    [[ -n "$cached" ]] && printf '%s\n' "$cached" && return 0
+    if [[ -n "$cached" ]]; then
+      runtime_log_info sync "using cached sync target" "target_home=$cached" "cache_file=$SYNC_CACHE_FILE"
+      printf '%s\n' "$cached"
+      return 0
+    fi
   fi
   return 1
 }
@@ -192,6 +202,7 @@ choose_target_home() {
   if [[ -n "${TARGET_HOME_OVERRIDE:-}" ]]; then
     validate_explicit_target_home "$TARGET_HOME_OVERRIDE" || return 1
     printf '%s\n' "$TARGET_HOME_OVERRIDE" > "$SYNC_CACHE_FILE"
+    runtime_log_info sync "using explicit sync target" "target_home=$TARGET_HOME_OVERRIDE" "cache_file=$SYNC_CACHE_FILE"
     printf '%s\n' "$TARGET_HOME_OVERRIDE"
     return 0
   fi
@@ -202,11 +213,13 @@ choose_target_home() {
   fi
   target="$(prompt_user_for_target)" || return 1
   printf '%s\n' "$target" > "$SYNC_CACHE_FILE"
+  runtime_log_info sync "selected sync target interactively" "target_home=$target" "cache_file=$SYNC_CACHE_FILE"
   printf '%s\n' "$target"
 }
 
 LIST_TARGETS=0
 TARGET_HOME_OVERRIDE=""
+start_ms="$(runtime_log_now_ms)"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -252,6 +265,13 @@ TARGET_FILE="$TARGET_HOME/.wezterm.lua"
 TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
 TEMP_RUNTIME_DIR="$TARGET_HOME/.wezterm-x.sync-tmp.$$"
 
+runtime_log_info sync "sync-runtime invoked" \
+  "repo_root=$REPO_ROOT" \
+  "main_repo_root=$MAIN_REPO_ROOT" \
+  "target_home=$TARGET_HOME" \
+  "target_file=$TARGET_FILE" \
+  "target_runtime_dir=$TARGET_RUNTIME_DIR"
+
 mkdir -p "$TARGET_HOME"
 rm -rf "$TEMP_RUNTIME_DIR"
 mkdir -p "$TEMP_RUNTIME_DIR"
@@ -276,5 +296,11 @@ rm -rf "$TEMP_RUNTIME_DIR"
 # Update the main config last so any WezTerm auto-reload sees a complete runtime tree.
 cp "$SOURCE_FILE" "$TARGET_FILE"
 
+runtime_log_info sync "sync-runtime completed" \
+  "repo_root=$REPO_ROOT" \
+  "target_home=$TARGET_HOME" \
+  "target_file=$TARGET_FILE" \
+  "target_runtime_dir=$TARGET_RUNTIME_DIR" \
+  "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"

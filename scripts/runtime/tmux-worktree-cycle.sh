@@ -15,6 +15,8 @@ current_worktree_root=""
 repo_common_dir=""
 main_worktree_root=""
 list_root=""
+start_ms="$(runtime_log_now_ms)"
+trace_id="$(runtime_log_current_trace_id)"
 
 if [[ -z "$session_name" ]]; then
   runtime_log_error worktree "worktree cycle failed: missing tmux session" "current_window_id=$current_window_id" "cwd=$cwd"
@@ -66,4 +68,5 @@ runtime_log_info worktree "cycling worktree window" \
   "target_index=$target_index" \
   "current_worktree_root=$current_worktree_root" \
   "next_worktree_root=$next_worktree_root"
-bash "$script_dir/tmux-worktree-open.sh" "$session_name" "$next_worktree_root" "$current_window_id" "$cwd"
+WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_dir/tmux-worktree-open.sh" "$session_name" "$next_worktree_root" "$current_window_id" "$cwd"
+runtime_log_info worktree "worktree cycle completed" "session_name=$session_name" "next_worktree_root=$next_worktree_root" "duration_ms=$(runtime_log_duration_ms "$start_ms")"

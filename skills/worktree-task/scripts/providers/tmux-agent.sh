@@ -2,6 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUNTIME_LOG_LIB="$SCRIPT_DIR/../../../../scripts/runtime/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$RUNTIME_LOG_LIB"
+export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.tmux-agent"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../lib/helpers.sh"
 # shellcheck disable=SC1091
@@ -26,9 +30,12 @@ provider_validate() {
   fi
 
   if ! provider_agent_has_command_config; then
+    runtime_log_error provider "tmux-agent validation failed: missing agent command config"
     printf 'tmux-agent requires WT_PROVIDER_AGENT_COMMAND or a variant-specific agent command\n' >&2
     return 20
   fi
+
+  runtime_log_info provider "tmux-agent validation completed" "provider=tmux-agent"
 }
 
 provider_context_for_path() {
@@ -483,8 +490,16 @@ provider_launch() {
   local window_id=""
   local worktree_label=""
   local custom_window_command=""
+  local start_ms=""
+
+  start_ms="$(runtime_log_now_ms)"
 
   provider_require_tmux || return $?
+  runtime_log_info provider "tmux-agent launch invoked" \
+    "repo_label=$WT_REPO_LABEL" \
+    "repo_common_dir=$WT_REPO_COMMON_DIR" \
+    "worktree_path=$WT_WORKTREE_PATH" \
+    "workspace=${WT_RUNTIME_WORKSPACE:-task}"
 
   if [[ -n "${TMUX:-}" ]]; then
     current_session_name="$(tmux display-message -p '#{session_name}' 2>/dev/null || true)"
@@ -551,12 +566,23 @@ provider_launch() {
     window_id "$window_id" \
     attached "no" \
     variant "$resolved_variant"
+  runtime_log_info provider "tmux-agent launch completed" \
+    "session_name=$session_name" \
+    "window_id=$window_id" \
+    "variant=$resolved_variant" \
+    "worktree_label=$worktree_label" \
+    "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 }
 
 provider_attach() {
+  local start_ms=""
+
+  start_ms="$(runtime_log_now_ms)"
   provider_require_tmux || return $?
   [[ -n "${WT_PROVIDER_SESSION_NAME:-}" ]] || return 20
   [[ -n "${WT_PROVIDER_WINDOW_ID:-}" ]] || return 20
+
+  runtime_log_info provider "tmux-agent attach invoked" "session_name=$WT_PROVIDER_SESSION_NAME" "window_id=$WT_PROVIDER_WINDOW_ID"
 
   tmux select-window -t "$WT_PROVIDER_WINDOW_ID" >/dev/null 2>&1 || true
 
@@ -568,10 +594,12 @@ provider_attach() {
     fi
     tmux select-window -t "$WT_PROVIDER_WINDOW_ID"
     provider_result attached "yes"
+    runtime_log_info provider "tmux-agent attach completed" "session_name=$WT_PROVIDER_SESSION_NAME" "window_id=$WT_PROVIDER_WINDOW_ID" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
     return 0
   fi
 
   provider_result attached "yes"
+  runtime_log_info provider "tmux-agent attach completed" "session_name=$WT_PROVIDER_SESSION_NAME" "window_id=$WT_PROVIDER_WINDOW_ID" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exec tmux attach-session -t "$WT_PROVIDER_SESSION_NAME"
 }
 
@@ -581,8 +609,12 @@ provider_cleanup() {
   local window_context=""
   local window_root=""
   local closed_windows=0
+  local start_ms=""
+
+  start_ms="$(runtime_log_now_ms)"
 
   provider_require_tmux || return $?
+  runtime_log_info provider "tmux-agent cleanup invoked" "worktree_path=$WT_WORKTREE_PATH" "repo_common_dir=$WT_REPO_COMMON_DIR"
 
   while IFS= read -r session_name; do
     [[ -n "$session_name" ]] || continue
@@ -599,6 +631,7 @@ provider_cleanup() {
   done < <(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)
 
   provider_result windows_closed "$closed_windows"
+  runtime_log_info provider "tmux-agent cleanup completed" "worktree_path=$WT_WORKTREE_PATH" "windows_closed=$closed_windows" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 }
 
 provider_detect_context() {
@@ -645,6 +678,9 @@ provider_run_pane_command() {
   local login_shell=""
   local status=0
   local bootstrap="${WT_PROVIDER_AGENT_BOOTSTRAP:-nvm}"
+  local start_ms=""
+
+  start_ms="$(runtime_log_now_ms)"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -697,6 +733,11 @@ provider_run_pane_command() {
   command_spec="$(provider_agent_command_spec_for_variant "$variant" || true)"
   [[ -n "$command_spec" ]] || exit 20
   provider_parse_command_spec "$command_spec" command || exit 20
+  runtime_log_info provider "tmux-agent pane command starting" \
+    "variant=$variant" \
+    "bootstrap=$bootstrap" \
+    "command_name=${command[0]:-unknown}" \
+    "has_prompt_file=$([[ -n "$prompt_arg" ]] && printf yes || printf no)"
 
   if [[ -n "$prompt_arg" ]]; then
     if [[ -n "${WT_PROVIDER_AGENT_PROMPT_FLAG:-}" ]]; then
@@ -708,7 +749,10 @@ provider_run_pane_command() {
 
   if ! "${command[@]}"; then
     status=$?
+    runtime_log_error provider "tmux-agent pane command failed" "variant=$variant" "command_name=${command[0]:-unknown}" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status"
     printf 'tmux-agent pane command exited with status %s\n' "$status" >&2
+  else
+    runtime_log_info provider "tmux-agent pane command completed" "variant=$variant" "command_name=${command[0]:-unknown}" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   fi
 
   exec "$login_shell" -l

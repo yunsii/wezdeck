@@ -16,6 +16,8 @@ repo_common_dir=""
 repo_label=""
 main_worktree_root=""
 list_root=""
+start_ms="$(runtime_log_now_ms)"
+trace_id="$(runtime_log_current_trace_id)"
 
 if [[ -z "$session_name" ]]; then
   runtime_log_error worktree "worktree menu failed: missing tmux session" "current_window_id=$current_window_id" "cwd=$cwd"
@@ -43,10 +45,11 @@ runtime_log_info worktree "worktree menu resolved current context" \
   "main_worktree_root=$main_worktree_root" \
   "repo_label=$repo_label"
 
-picker_command="bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd")"
+picker_command="WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd")"
 
 runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "list_root=$list_root"
 if tmux display-popup -x C -y C -w 70% -h 75% -T "Worktrees: $repo_label" -E "$picker_command"; then
+  runtime_log_info worktree "worktree popup picker completed" "session_name=$session_name" "repo_label=$repo_label" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0
 fi
 
@@ -77,7 +80,7 @@ while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
     accelerator="${accelerators[$item_count]}"
   fi
 
-  command_string="run-shell 'bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-open.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$worktree_path") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$cwd")'"
+  command_string="run-shell 'WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-open.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$worktree_path") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$cwd")'"
   menu_args+=("$menu_label" "$accelerator" "$command_string")
   ((item_count += 1))
 done < <(tmux_worktree_list "$list_root" || true)
@@ -88,4 +91,5 @@ if (( item_count == 0 )); then
 fi
 
 runtime_log_info worktree "opening worktree menu fallback" "session_name=$session_name" "repo_label=$repo_label" "item_count=$item_count"
+runtime_log_info worktree "worktree menu fallback opened" "session_name=$session_name" "repo_label=$repo_label" "item_count=$item_count" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 tmux "${menu_args[@]}"

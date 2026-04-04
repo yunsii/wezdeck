@@ -9,6 +9,7 @@ source "$script_dir/tmux-worktree-lib.sh"
 
 workspace=""
 cwd="${PWD}"
+start_ms="$(runtime_log_now_ms)"
 
 usage() {
   cat <<'EOF' >&2
@@ -79,4 +80,5 @@ if repo_root="$(tmux_worktree_repo_root "$target_dir" 2>/dev/null || true)" && [
 fi
 
 runtime_log_info alt_o "resolved Alt+o target directory" "workspace=$workspace" "effective_target_dir=$target_dir"
+runtime_log_info alt_o "resolve-alt-o-target completed" "workspace=$workspace" "effective_target_dir=$target_dir" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 printf '%s\n' "$target_dir"

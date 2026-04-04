@@ -96,6 +96,8 @@ if [[ $# -lt 1 ]]; then
   exit 1
 fi
 
+start_ms="$(runtime_log_now_ms)"
+
 if [[ -z "$bootstrap" && "$1" == "codex-github-theme" ]]; then
   runtime_log_info managed_command "translating legacy launcher" "launcher=$1" "arg_count=$#"
   command_parts=()
@@ -111,4 +113,13 @@ command_name="$1"
 runtime_log_info managed_command "run-managed-command invoked" "bootstrap=${bootstrap:-none}" "command=$command_name" "arg_count=$#"
 
 apply_bootstrap "$bootstrap" "$command_name"
-exec "$@"
+runtime_log_info managed_command "executing managed command" "command=$command_name"
+
+if "$@"; then
+  runtime_log_info managed_command "managed command completed" "command=$command_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+  exit 0
+fi
+
+status=$?
+runtime_log_error managed_command "managed command failed" "command=$command_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status"
+exit "$status"
