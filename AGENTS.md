@@ -34,6 +34,6 @@ If the task is narrow, keep the loaded context narrow.
 - [`docs/agents/routing.md`](docs/agents/routing.md): task-to-doc routing and load order
 - [`docs/agents/repo-structure.md`](docs/agents/repo-structure.md): ownership boundaries and entry points
 - [`docs/agents/workspace-rules.md`](docs/agents/workspace-rules.md): workspace model and editing constraints
-- [`docs/agents/runtime-invariants.md`](docs/agents/runtime-invariants.md): tmux, Codex, and UI invariants
+- [`docs/agents/runtime-invariants.md`](docs/agents/runtime-invariants.md): tmux, agent CLI, and UI invariants
 - [`docs/agents/validation.md`](docs/agents/validation.md): sync, reload, and verification rules
 - [`docs/agents/commit-guidelines.md`](docs/agents/commit-guidelines.md): commit format, scopes, and message quality rules

@@ -268,16 +268,13 @@ local base_constants = {
     },
   },
   managed_cli = {
-    default_profile = 'codex',
+    default_profile = 'claude',
     ui_variant = 'light',
     profiles = {
-      codex = {
+      claude = {
         bootstrap = 'nvm',
-        command = { 'codex' },
-        variants = {
-          light = { 'codex', '-c', 'tui.theme="github"' },
-          dark = { 'codex' },
-        },
+        command = { 'claude' },
+        variants = {},
       },
     },
   },

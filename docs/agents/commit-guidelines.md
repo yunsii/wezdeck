@@ -153,7 +153,7 @@ Rules:
 - `hard-parts`: short summaries of non-obvious constraints, missed edge cases, or problems that required repeated debugging to resolve.
 - `ai-complexity`: one of `low`, `medium`, or `high`.
 - `tools-used`: external helpers that materially affected the result, such as MCP tools or repository-specific CLIs.
-- `skills-used`: Codex skills that materially affected the result.
+- `skills-used`: agent skills that materially affected the result.
 
 ### Complexity Guidance
 
@@ -201,4 +201,4 @@ BREAKING CHANGE: plugin instances now require an explicit project ID.
 - Before committing runtime changes, confirm required sync and validation steps in [`validation.md`](./validation.md).
 - Preview the full commit message and get human confirmation before running `git commit`.
 - Use [`scripts/dev/commit-with-ai-context.sh`](../../scripts/dev/commit-with-ai-context.sh) when the commit should include AI collaboration metadata.
-- For agent-driven commits that need separate human confirmation before a privileged `git commit`, first run `scripts/dev/commit-with-ai-context.sh --print-only --write-message-file auto`. The script will reuse a repo-and-branch-specific path such as `/tmp/codex-commit-msg-wezterm-config-master.txt` and print the exact file path; after confirmation run `git commit -F <that-path>`.
+- For agent-driven commits that need separate human confirmation before a privileged `git commit`, first run `scripts/dev/commit-with-ai-context.sh --print-only --write-message-file auto`. The script will reuse a repo-and-branch-specific temp file and print the exact file path; after confirmation run `git commit -F <that-path>`.

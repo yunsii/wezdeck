@@ -25,8 +25,8 @@ WezTerm workspaces are the top-level session unit.
 - The left pane runs the configured primary command.
 - The right pane stays as a shell in the same directory.
 - `work` and `config` default to the managed launcher profile from `managed_cli.default_profile`.
-- The tracked baseline currently uses the `codex` profile.
-- Managed `codex` startup uses the default dark theme in `managed_cli.ui_variant = "dark"` and forces `tui.theme=github` in `managed_cli.ui_variant = "light"`.
+- The tracked baseline uses whichever profile is set in `managed_cli.default_profile` (see `wezterm-x/lua/constants.lua`).
+- The managed agent startup uses the profile's default (dark) variant and switches to the `light` variant when `managed_cli.ui_variant = "light"`.
 - Raw `command = { ... }` overrides still bypass the managed launcher profile entirely.
 
 ## Public Vs Local Config

@@ -10,7 +10,7 @@ Read this file to decide which doc to load next. Do not keep reading every doc o
   Read [`validation.md`](./validation.md) first, then [`repo-structure.md`](./repo-structure.md) for the owning files.
 - WezTerm entry config, Lua modules, or ownership boundaries:
   Read [`repo-structure.md`](./repo-structure.md).
-- tmux layout, status rendering, tab title invariants, or managed Codex behavior:
+- tmux layout, status rendering, tab title invariants, or managed agent CLI behavior:
   Read [`runtime-invariants.md`](./runtime-invariants.md).
 - Sync, reload, validation, or release workflow:
   Read [`validation.md`](./validation.md).

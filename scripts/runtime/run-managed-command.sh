@@ -9,7 +9,6 @@ usage() {
   cat <<'EOF' >&2
 usage:
   run-managed-command.sh [--bootstrap nvm] <command> [args...]
-  run-managed-command.sh codex-github-theme [args...]
 EOF
 }
 
@@ -49,25 +48,6 @@ apply_bootstrap() {
   esac
 }
 
-translate_legacy_launcher() {
-  local launcher="${1:-}"
-  shift || true
-
-  case "$launcher" in
-    codex-github-theme)
-      printf '%s\0' "nvm" "codex" "-c" 'tui.theme="github"'
-      if [[ $# -gt 0 ]]; then
-        printf '%s\0' "$@"
-      fi
-      ;;
-    *)
-      runtime_log_error managed_command "unknown launcher" "launcher=$launcher"
-      printf 'unknown launcher: %s\n' "$launcher" >&2
-      exit 1
-      ;;
-  esac
-}
-
 bootstrap=""
 
 while [[ $# -gt 0 ]]; do
@@ -97,17 +77,6 @@ if [[ $# -lt 1 ]]; then
 fi
 
 start_ms="$(runtime_log_now_ms)"
-
-if [[ -z "$bootstrap" && "$1" == "codex-github-theme" ]]; then
-  runtime_log_info managed_command "translating legacy launcher" "launcher=$1" "arg_count=$#"
-  command_parts=()
-  while IFS= read -r -d '' part; do
-    command_parts+=("$part")
-  done < <(translate_legacy_launcher "$@")
-
-  bootstrap="${command_parts[0]}"
-  set -- "${command_parts[@]:1}"
-fi
 
 command_name="$1"
 runtime_log_info managed_command "run-managed-command invoked" "bootstrap=${bootstrap:-none}" "command=$command_name" "arg_count=$#"
