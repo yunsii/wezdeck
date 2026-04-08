@@ -30,6 +30,25 @@ local function default_runtime_mode(host_os)
   return 'posix-local'
 end
 
+local function default_terminal_font(host_os)
+  local fallbacks = { 'Fira Code Retina' }
+
+  if host_os == 'windows' then
+    fallbacks[#fallbacks + 1] = 'Cascadia Code'
+    fallbacks[#fallbacks + 1] = 'Consolas'
+    fallbacks[#fallbacks + 1] = { family = 'Microsoft YaHei', weight = 'Regular' }
+  elseif host_os == 'macos' then
+    fallbacks[#fallbacks + 1] = 'Menlo'
+    fallbacks[#fallbacks + 1] = { family = 'PingFang SC', weight = 'Regular' }
+    fallbacks[#fallbacks + 1] = { family = 'Hiragino Sans GB', weight = 'Regular' }
+  else
+    fallbacks[#fallbacks + 1] = 'DejaVu Sans Mono'
+  end
+
+  fallbacks[#fallbacks + 1] = { family = 'Noto Sans CJK SC', weight = 'Regular' }
+  return wezterm.font_with_fallback(fallbacks)
+end
+
 local function default_window_font(host_os)
   if host_os == 'windows' then
     return wezterm.font { family = 'Segoe UI', weight = 'Bold' }
@@ -168,7 +187,7 @@ local base_constants = {
     program = nil,
   },
   fonts = {
-    terminal = wezterm.font 'Fira Code Retina',
+    terminal = default_terminal_font(host_os),
     window = default_window_font(host_os),
   },
   palette = {
