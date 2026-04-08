@@ -17,7 +17,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - tmux status follows the active pane working directory.
 - `default` stays WezTerm-owned for repo-aware shortcuts, while non-default managed workspaces delegate `Alt+o`, `Alt+g`, `Alt+Shift+g`, and `Ctrl+k` straight to tmux.
 - Managed workspace creation only requires `default_domain` in `hybrid-wsl` mode.
-- The shell integration currently lives in the runtime shell rc files such as `~/.zshrc` and `~/.bashrc`.
+- Managed tmux flows no longer require shell rc `OSC 7` integration; tmux status and tmux-owned shortcuts resolve cwd from tmux's own `pane_current_path`.
 - Outside tmux in `hybrid-wsl`, `Alt+o` hands the current pane directory to the synced Windows PowerShell launcher, which resolves the current worktree root and then opens it with VS Code's `--folder-uri vscode-remote://wsl+<distro>/...` entrypoint.
 - Outside tmux in `posix-local`, `Alt+o` hands the current pane directory to the runtime-side VS Code launcher, which resolves the current worktree root and then launches the configured local VS Code opener there.
 - Outside git worktrees, `Alt+o` still opens the current directory.
@@ -70,5 +70,4 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Node.js version lookup includes an `nvm` fallback so it still renders outside an interactive login shell, and the resolved version is cached to avoid repeated shell bootstrap on every status refresh.
 - `scripts/runtime/open-project-session.sh` remains the stable execution layer for managed project tabs.
 - If tmux is reloaded outside the helper scripts, `tmux.conf` derives `@wezterm_runtime_root` from the path of the loaded config file so the status commands can still locate the synced runtime scripts.
-- If the runtime shell rc changes, reload the shell or recreate affected tmux sessions before expecting WezTerm cwd tracking to update.
-- If `~/.zshrc` or `~/.bashrc` is replaced or reset, re-apply the `OSC 7` integration or WezTerm will fall back to incorrect cwd inference inside tmux.
+- Optional shell rc `OSC 7` integration can still improve WezTerm-side cwd inference for unmanaged tabs, fallback tab-title inference, and `default` workspace `Alt+o` behavior inside tmux.
