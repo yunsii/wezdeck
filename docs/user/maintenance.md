@@ -134,49 +134,10 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 
 ## Shell Integration
 
-- WezTerm cwd tracking inside tmux depends on `OSC 7` shell integration in `~/.zshrc` and `~/.bashrc`.
-- In `hybrid-wsl`, those files are typically inside the WSL home directory.
-- In `posix-local`, those files live in the local Linux or macOS home directory.
-- If those rc files are reset, merged, or replaced, restore the WezTerm integration before relying on tmux cwd-aware UI or WezTerm-side cwd actions; `Alt+o` falls back to the pane's own handling when WezTerm only sees the WSL host path.
-
-### `~/.zshrc`
-
-```sh
-# WezTerm shell integration: publish cwd via OSC 7, with tmux passthrough.
-__wezterm_osc7_host="${HOSTNAME:-$(hostname)}"
-__wezterm_emit_cwd() {
-  if [ -n "${TMUX-}" ]; then
-    printf '\033Ptmux;\033\033]7;file://%s%s\007\033\\' "$__wezterm_osc7_host" "$PWD"
-  else
-    printf '\033]7;file://%s%s\007' "$__wezterm_osc7_host" "$PWD"
-  fi
-}
-autoload -Uz add-zsh-hook
-add-zsh-hook precmd __wezterm_emit_cwd
-```
-
-### `~/.bashrc`
-
-```sh
-# WezTerm shell integration: publish cwd via OSC 7, with tmux passthrough.
-__wezterm_osc7_host="${HOSTNAME:-$(hostname)}"
-__wezterm_emit_cwd() {
-  if [ -n "${TMUX-}" ]; then
-    printf '\033Ptmux;\033\033]7;file://%s%s\007\033\\' "$__wezterm_osc7_host" "$PWD"
-  else
-    printf '\033]7;file://%s%s\007' "$__wezterm_osc7_host" "$PWD"
-  fi
-}
-case ";${PROMPT_COMMAND:-};" in
-  *";__wezterm_emit_cwd;"*) ;;
-  *) PROMPT_COMMAND="__wezterm_emit_cwd${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
-esac
-```
-
-### After Editing RC Files
-
-- Reload the shell in affected tmux panes with `source ~/.zshrc` or `source ~/.bashrc`.
-- Press Enter once to redraw the prompt so the updated shell emits a fresh `OSC 7` cwd update.
+- Managed tmux flows no longer require shell rc `OSC 7` integration. tmux status and tmux-owned shortcuts resolve cwd from tmux's own `pane_current_path`.
+- In `hybrid-wsl`, `default` workspace `Alt+o` still falls back to the pane when WezTerm only sees a WSL host path such as `/C:/Users/...`.
+- Optional shell rc `OSC 7` integration can still improve WezTerm-side cwd inference for unmanaged tabs, fallback tab-title inference, and `default` workspace `Alt+o` behavior inside tmux.
+- No shell rc edits are required for the managed tmux workflow described in this repository.
 
 ## Validation
 
