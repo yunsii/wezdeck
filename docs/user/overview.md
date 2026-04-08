@@ -9,6 +9,24 @@ Use this doc when you need the minimum setup and navigation context.
 - `tmux` must be available in the runtime environment that will host managed project tabs.
 - WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY` in `wezterm-x/local/shared.env`.
 
+### Fonts
+
+The terminal font uses a platform-aware fallback chain defined in `default_terminal_font()` inside `wezterm-x/lua/constants.lua`. WezTerm tries each font in order and skips any that are not installed.
+
+| Priority | Windows | macOS | Linux |
+|----------|---------|-------|-------|
+| 1 | Fira Code Retina | Fira Code Retina | Fira Code Retina |
+| 2 | Cascadia Code | Menlo | DejaVu Sans Mono |
+| 3 | Consolas | PingFang SC | Noto Sans CJK SC |
+| 4 | Microsoft YaHei | Hiragino Sans GB | — |
+| 5 | Noto Sans CJK SC | Noto Sans CJK SC | — |
+
+- The primary font is Fira Code Retina for code/ASCII glyphs.
+- Each platform falls back to a system-bundled monospace font (Cascadia Code / Menlo / DejaVu Sans Mono) when Fira Code is unavailable.
+- CJK characters fall back to the platform-native CJK font (Microsoft YaHei on Windows, PingFang SC + Hiragino Sans GB on macOS).
+- Noto Sans CJK SC serves as the cross-platform CJK fallback at the end of every chain.
+- Override `fonts.terminal` in `wezterm-x/local/constants.lua` to customize the chain per machine.
+
 ## Local Setup
 
 1. Copy `wezterm-x/local.example/` to `wezterm-x/local/`.
