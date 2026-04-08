@@ -176,7 +176,7 @@ subtitle: WezTerm + tmux + Git Worktree + AI CLI 的一体化终端开发环境
 ```bash
 # .worktree-task/config.env
 WT_PROVIDER=tmux-agent          # 使用 tmux 作为任务载体
-WT_PROVIDER_AGENT_COMMAND=codex  # 默认 AI CLI
+WT_PROVIDER_AGENT_COMMAND=claude  # 默认 AI CLI
 WT_POLICY_BRANCH_PREFIX=task/    # 分支前缀
 WT_POLICY_RECLAIM_DIRTY=refuse   # 未提交的更改拒绝回收
 ```

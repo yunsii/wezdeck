@@ -27,7 +27,7 @@ Use this doc when you need the minimum setup and navigation context.
 - `wezterm-x/local/`: gitignored machine-local overrides that are still copied by the sync skill
 - `.worktree-task/config.env`: tracked repo profile for the self-contained worktree-task skill, including the explicit `wezterm-config` repo pointer used to collect shared task-launch conventions
 - `wezterm-x/lua/`: WezTerm Lua modules synced under the target home directory's `.wezterm-x`
-- `skills/wezterm-runtime-sync/`: Codex skill and scripts that own runtime sync and prompt regression checks
+- `skills/wezterm-runtime-sync/`: agent skill and scripts that own runtime sync and prompt regression checks
 - `skills/worktree-task/`: agent skill, core libraries, and built-in providers for linked task worktrees
 - `tmux.conf`: tmux layout and status line rendering
 - `scripts/runtime/open-project-session.sh`: tmux session bootstrap for managed project tabs

@@ -17,7 +17,7 @@ Optional:
   --body <text>                  add one body paragraph line; repeatable
   --body-file <path>             append body text from a file
   --write-message-file <path>    write the validated commit message to a file
-                                  use auto for /tmp/codex-commit-msg-<repo>-<branch>.txt
+                                  use auto for /tmp/agent-commit-msg-<repo>-<branch>.txt
   --human-adjustments <count>    meaningful human adjustments, excluding escalation-only interactions
   --hard-part <text>             summarize a debugging challenge or missed constraint; repeatable
   --ai-complexity <level>        one of: low, medium, high
@@ -102,7 +102,7 @@ repo_temp_message_file() {
   repo_slug="$(slugify_name "$repo_name" "repo")"
   branch_slug="$(slugify_name "$branch_name" "branch")"
 
-  printf '%s/codex-commit-msg-%s-%s.txt' "$temp_root" "$repo_slug" "$branch_slug"
+  printf '%s/agent-commit-msg-%s-%s.txt' "$temp_root" "$repo_slug" "$branch_slug"
 }
 
 resolve_write_message_file() {
