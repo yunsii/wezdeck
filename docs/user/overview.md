@@ -31,8 +31,8 @@ The terminal font uses a platform-aware fallback chain defined in `default_termi
 
 1. Copy `wezterm-x/local.example/` to `wezterm-x/local/`.
 2. Edit `wezterm-x/local/constants.lua` for your `runtime_mode`, runtime shell, managed CLI theme variant, and any optional OS-specific integrations such as `default_domain` or Chrome debug profile path. `Alt+b` uses the synced launcher scripts under `wezterm-x/scripts/` and requires `chrome_debug_browser.user_data_dir`.
-3. Edit `wezterm-x/local/shared.env` for shared scalar values that both Lua and shell scripts need, such as `WAKATIME_API_KEY`.
-4. Optionally create `~/.config/worktree-task/config.env` when you want one per-user switch for the active agent CLI profile shared by managed WezTerm workspaces and `worktree-task`.
+3. Edit `wezterm-x/local/shared.env` for shared scalar values that both Lua and shell scripts need, such as `WAKATIME_API_KEY` and the machine-local `MANAGED_AGENT_PROFILE`.
+4. Optionally create `~/.config/worktree-task/config.env` when you need to point globally installed `worktree-task` back at a tracked `wezterm-config` repo with `WEZTERM_CONFIG_REPO=/absolute/path`.
 5. Edit `wezterm-x/local/workspaces.lua` for your private project directories.
 6. Optionally edit `wezterm-x/local/command-panel.sh` for machine-local `Ctrl+k` command panel entries.
 

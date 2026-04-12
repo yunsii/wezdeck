@@ -306,6 +306,7 @@ local repo_worktree_task_env = repo_root_override and helpers.load_optional_env_
 local user_worktree_task_env = helpers.load_optional_env_file(default_worktree_task_user_config_path() or '') or {}
 local repo_managed_cli_env = parse_managed_cli_env(repo_worktree_task_env)
 local user_managed_cli_env = parse_managed_cli_env(user_worktree_task_env)
+local local_managed_cli_profile = normalize_agent_profile_name(shared_env.MANAGED_AGENT_PROFILE)
 local host_os = detect_host_os()
 
 local base_constants = {
@@ -464,6 +465,9 @@ if repo_managed_cli_env.active_profile then
 end
 if user_managed_cli_env.active_profile then
   constants.managed_cli.default_profile = user_managed_cli_env.active_profile
+end
+if local_managed_cli_profile then
+  constants.managed_cli.default_profile = local_managed_cli_profile
 end
 if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
   constants.wakatime = constants.wakatime or {}

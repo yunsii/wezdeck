@@ -25,7 +25,7 @@ WezTerm workspaces are the top-level session unit.
 - The left pane runs the configured primary command.
 - The right pane stays as a shell in the same directory.
 - `work` and `config` default to the managed launcher profile from `managed_cli.default_profile`.
-- The tracked baseline resolves `managed_cli.default_profile` from `WT_PROVIDER_AGENT_PROFILE` in the shared `worktree-task` config when present, otherwise it falls back to the built-in Lua default in `wezterm-x/lua/constants.lua`.
+- The tracked baseline resolves `managed_cli.default_profile` from the machine-local `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env` when present; otherwise it falls back through the shared `worktree-task` config and then the built-in Lua default in `wezterm-x/lua/constants.lua`.
 - The managed agent startup uses the profile's default (dark) variant and switches to the `light` variant when `managed_cli.ui_variant = "light"`.
 - In the tracked baseline, the `codex` profile uses `-c 'tui.theme="github"'` for the light variant and bare `codex` for the dark variant.
 - Managed agent commands run inside the resolved login shell so workspace startup sees the same shell environment as your normal terminal sessions.
@@ -82,7 +82,7 @@ return {
 }
 ```
 
-The tracked launcher profiles live in `wezterm-x/lua/constants.lua` under `managed_cli.profiles`. Shared profile selection and extra profile registration may also come from `.worktree-task/config.env` and `~/.config/worktree-task/config.env`, while machine-specific Lua-only overrides still belong in `wezterm-x/local/constants.lua`.
+The tracked launcher profiles live in `wezterm-x/lua/constants.lua` under `managed_cli.profiles`. Machine-local profile selection belongs in `wezterm-x/local/shared.env`, shared profile registration may also come from `.worktree-task/config.env` and `~/.config/worktree-task/config.env`, and machine-specific Lua-only overrides still belong in `wezterm-x/local/constants.lua`.
 
 If you change the local file shape, update `wezterm-x/local.example/workspaces.lua` in the same edit.
 
