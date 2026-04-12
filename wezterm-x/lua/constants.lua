@@ -173,8 +173,139 @@ local function read_main_repo_root_override()
   return nil
 end
 
+local function default_worktree_task_user_config_path()
+  local xdg_config_home = os.getenv 'XDG_CONFIG_HOME'
+  if xdg_config_home and xdg_config_home ~= '' then
+    return join_path(xdg_config_home, 'worktree-task', 'config.env')
+  end
+
+  local home = os.getenv 'HOME'
+  if home and home ~= '' then
+    return join_path(home, '.config', 'worktree-task', 'config.env')
+  end
+
+  return nil
+end
+
+local function normalize_agent_profile_name(name)
+  if not name or name == '' then
+    return nil
+  end
+
+  local normalized = name:lower():gsub('[^a-z0-9]+', '_'):gsub('^_+', ''):gsub('_+$', '')
+  if normalized == '' then
+    return nil
+  end
+
+  return normalized
+end
+
+local function parse_command_spec(spec)
+  if not spec or spec == '' then
+    return nil
+  end
+
+  local parts = {}
+  local current = {}
+  local quote = nil
+  local escape = false
+
+  local function push_current()
+    if #current == 0 then
+      return
+    end
+    parts[#parts + 1] = table.concat(current)
+    current = {}
+  end
+
+  for i = 1, #spec do
+    local char = spec:sub(i, i)
+    if escape then
+      current[#current + 1] = char
+      escape = false
+    elseif char == '\\' and quote ~= "'" then
+      escape = true
+    elseif quote then
+      if char == quote then
+        quote = nil
+      else
+        current[#current + 1] = char
+      end
+    elseif char == '"' or char == "'" then
+      quote = char
+    elseif char:match('%s') then
+      push_current()
+    else
+      current[#current + 1] = char
+    end
+  end
+
+  if escape then
+    current[#current + 1] = '\\'
+  end
+
+  push_current()
+
+  if #parts == 0 then
+    return nil
+  end
+
+  return parts
+end
+
+local function parse_managed_cli_env(env)
+  local parsed = {
+    active_profile = nil,
+    profiles = {},
+  }
+
+  if not env then
+    return parsed
+  end
+
+  parsed.active_profile = normalize_agent_profile_name(env.WT_PROVIDER_AGENT_PROFILE)
+
+  for key, value in pairs(env) do
+    local raw_name, field = key:match('^WT_PROVIDER_AGENT_PROFILE_([A-Z0-9_]+)_(COMMAND|COMMAND_LIGHT|COMMAND_DARK|PROMPT_FLAG)$')
+    if raw_name and field then
+      local profile_name = normalize_agent_profile_name(raw_name)
+      if profile_name then
+        local profile = parsed.profiles[profile_name] or {
+          command = nil,
+          variants = {},
+          prompt_flag = nil,
+        }
+        parsed.profiles[profile_name] = profile
+
+        if field == 'COMMAND' then
+          profile.command = parse_command_spec(value)
+        elseif field == 'COMMAND_LIGHT' then
+          profile.variants.light = parse_command_spec(value)
+        elseif field == 'COMMAND_DARK' then
+          profile.variants.dark = parse_command_spec(value)
+        elseif field == 'PROMPT_FLAG' then
+          profile.prompt_flag = value ~= '' and value or nil
+        end
+      end
+    end
+  end
+
+  for _, profile in pairs(parsed.profiles) do
+    if not next(profile.variants) then
+      profile.variants = {}
+    end
+  end
+
+  return parsed
+end
+
 local local_constants = helpers.load_optional_table(join_path(runtime_dir, 'local', 'constants.lua')) or {}
 local shared_env = helpers.load_optional_env_file(join_path(runtime_dir, 'local', 'shared.env')) or {}
+local repo_root_override = read_repo_root_override()
+local repo_worktree_task_env = repo_root_override and helpers.load_optional_env_file(join_path(repo_root_override, '.worktree-task', 'config.env')) or {}
+local user_worktree_task_env = helpers.load_optional_env_file(default_worktree_task_user_config_path() or '') or {}
+local repo_managed_cli_env = parse_managed_cli_env(repo_worktree_task_env)
+local user_managed_cli_env = parse_managed_cli_env(user_worktree_task_env)
 local host_os = detect_host_os()
 
 local base_constants = {
@@ -291,9 +422,15 @@ local base_constants = {
     ui_variant = 'light',
     profiles = {
       claude = {
-        bootstrap = 'nvm',
         command = { 'claude' },
         variants = {},
+      },
+      codex = {
+        command = { 'codex' },
+        variants = {
+          light = { 'codex', '-c', 'tui.theme="github"' },
+          dark = { 'codex' },
+        },
       },
     },
   },
@@ -319,11 +456,20 @@ local base_constants = {
 }
 
 local constants = helpers.deep_merge(base_constants, local_constants)
+constants.managed_cli = constants.managed_cli or {}
+constants.managed_cli.profiles = helpers.deep_merge(constants.managed_cli.profiles or {}, repo_managed_cli_env.profiles or {})
+constants.managed_cli.profiles = helpers.deep_merge(constants.managed_cli.profiles or {}, user_managed_cli_env.profiles or {})
+if repo_managed_cli_env.active_profile then
+  constants.managed_cli.default_profile = repo_managed_cli_env.active_profile
+end
+if user_managed_cli_env.active_profile then
+  constants.managed_cli.default_profile = user_managed_cli_env.active_profile
+end
 if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
   constants.wakatime = constants.wakatime or {}
   constants.wakatime.api_key = shared_env.WAKATIME_API_KEY
 end
-constants.repo_root = read_repo_root_override() or constants.repo_root
+constants.repo_root = repo_root_override or constants.repo_root
 constants.main_repo_root = read_main_repo_root_override() or constants.main_repo_root or constants.repo_root
 
 return constants
