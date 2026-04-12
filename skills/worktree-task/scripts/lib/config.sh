@@ -17,12 +17,20 @@ wt_config_set_defaults() {
   WT_PROVIDER_ATTACH_DEFAULT="1"
   WT_PROVIDER_SESSION_NAME_OVERRIDE=""
   WT_PROVIDER_TMUX_CONFIG_FILE=""
-  WT_PROVIDER_AGENT_BOOTSTRAP="nvm"
-  WT_PROVIDER_AGENT_COMMAND="claude"
+  WT_PROVIDER_AGENT_PROFILE="claude"
+  WT_PROVIDER_AGENT_COMMAND=""
   WT_PROVIDER_AGENT_COMMAND_LIGHT=""
   WT_PROVIDER_AGENT_COMMAND_DARK=""
   WT_PROVIDER_AGENT_PROMPT_FLAG=""
   WT_PROVIDER_LOGIN_SHELL=""
+  WT_PROVIDER_AGENT_PROFILE_CLAUDE_COMMAND="claude"
+  WT_PROVIDER_AGENT_PROFILE_CLAUDE_COMMAND_LIGHT=""
+  WT_PROVIDER_AGENT_PROFILE_CLAUDE_COMMAND_DARK=""
+  WT_PROVIDER_AGENT_PROFILE_CLAUDE_PROMPT_FLAG=""
+  WT_PROVIDER_AGENT_PROFILE_CODEX_COMMAND="codex"
+  WT_PROVIDER_AGENT_PROFILE_CODEX_COMMAND_LIGHT=""
+  WT_PROVIDER_AGENT_PROFILE_CODEX_COMMAND_DARK=""
+  WT_PROVIDER_AGENT_PROFILE_CODEX_PROMPT_FLAG=""
 
   WT_CONFIG_USER_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env"
   WT_CONFIG_REPO_FILE="$WT_MAIN_WORKTREE_ROOT/.worktree-task/config.env"
@@ -61,7 +69,10 @@ wt_config_apply_setting() {
   local value="${2-}"
 
   case "$key" in
-    WT_POLICY_WORKTREE_DIR|WT_POLICY_METADATA_DIR|WT_POLICY_BRANCH_PREFIX|WT_POLICY_BASE_REF_STRATEGY|WT_POLICY_SLUG_FALLBACK|WT_POLICY_RECLAIM_DIRTY|WT_POLICY_RECLAIM_DELETE_BRANCH|WT_PROVIDER_MODE|WT_PROVIDER|WT_PROVIDER_SEARCH_PATHS|WT_PROVIDER_WORKSPACE|WT_PROVIDER_DEFAULT_VARIANT|WT_PROVIDER_ATTACH_DEFAULT|WT_PROVIDER_SESSION_NAME_OVERRIDE|WT_PROVIDER_TMUX_CONFIG_FILE|WT_PROVIDER_AGENT_BOOTSTRAP|WT_PROVIDER_AGENT_COMMAND|WT_PROVIDER_AGENT_COMMAND_LIGHT|WT_PROVIDER_AGENT_COMMAND_DARK|WT_PROVIDER_AGENT_PROMPT_FLAG|WT_PROVIDER_LOGIN_SHELL)
+    WT_POLICY_WORKTREE_DIR|WT_POLICY_METADATA_DIR|WT_POLICY_BRANCH_PREFIX|WT_POLICY_BASE_REF_STRATEGY|WT_POLICY_SLUG_FALLBACK|WT_POLICY_RECLAIM_DIRTY|WT_POLICY_RECLAIM_DELETE_BRANCH|WT_PROVIDER_MODE|WT_PROVIDER|WT_PROVIDER_SEARCH_PATHS|WT_PROVIDER_WORKSPACE|WT_PROVIDER_DEFAULT_VARIANT|WT_PROVIDER_ATTACH_DEFAULT|WT_PROVIDER_SESSION_NAME_OVERRIDE|WT_PROVIDER_TMUX_CONFIG_FILE|WT_PROVIDER_AGENT_PROFILE|WT_PROVIDER_AGENT_COMMAND|WT_PROVIDER_AGENT_COMMAND_LIGHT|WT_PROVIDER_AGENT_COMMAND_DARK|WT_PROVIDER_AGENT_PROMPT_FLAG|WT_PROVIDER_LOGIN_SHELL)
+      printf -v "$key" '%s' "$value"
+      ;;
+    WT_PROVIDER_AGENT_PROFILE_*_COMMAND|WT_PROVIDER_AGENT_PROFILE_*_COMMAND_LIGHT|WT_PROVIDER_AGENT_PROFILE_*_COMMAND_DARK|WT_PROVIDER_AGENT_PROFILE_*_PROMPT_FLAG)
       printf -v "$key" '%s' "$value"
       ;;
     WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
@@ -241,9 +252,58 @@ wt_config_load() {
   wt_config_load_file "$WEZTERM_CONFIG_REPO_FILE"
   wt_config_load_file "$WT_CONFIG_USER_FILE"
   wt_config_load_file "$WT_CONFIG_REPO_FILE"
+  wt_config_resolve_agent_profile
   if [[ -n "$WEZTERM_CONFIG_REPO_ROOT" ]]; then
     WEZTERM_CONFIG_REPO="$WEZTERM_CONFIG_REPO_ROOT"
   fi
+}
+
+wt_config_normalize_agent_profile_key() {
+  local profile="${1:-}"
+  profile="${profile^^}"
+  profile="${profile//[^A-Z0-9]/_}"
+  printf '%s\n' "$profile"
+}
+
+wt_config_resolve_agent_profile() {
+  local selected="${WT_PROVIDER_AGENT_PROFILE:-}"
+  local normalized=""
+  local prefix=""
+  local command_key=""
+  local prompt_flag_key=""
+  local command_light_key=""
+  local command_dark_key=""
+  local resolved_command=""
+  local resolved_command_light=""
+  local resolved_command_dark=""
+  local resolved_prompt_flag=""
+
+  if [[ -n "${WT_PROVIDER_AGENT_COMMAND:-}" || -n "${WT_PROVIDER_AGENT_COMMAND_LIGHT:-}" || -n "${WT_PROVIDER_AGENT_COMMAND_DARK:-}" ]]; then
+    return 0
+  fi
+
+  [[ -n "$selected" ]] || return 0
+
+  normalized="$(wt_config_normalize_agent_profile_key "$selected")"
+  [[ -n "$normalized" ]] || return 0
+
+  prefix="WT_PROVIDER_AGENT_PROFILE_${normalized}"
+  command_key="${prefix}_COMMAND"
+  command_light_key="${prefix}_COMMAND_LIGHT"
+  command_dark_key="${prefix}_COMMAND_DARK"
+  prompt_flag_key="${prefix}_PROMPT_FLAG"
+
+  resolved_command="${!command_key:-}"
+  resolved_command_light="${!command_light_key:-}"
+  resolved_command_dark="${!command_dark_key:-}"
+  resolved_prompt_flag="${!prompt_flag_key:-}"
+
+  [[ -n "$resolved_command" || -n "$resolved_command_light" || -n "$resolved_command_dark" ]] || return 0
+
+  WT_PROVIDER_AGENT_COMMAND="$resolved_command"
+  WT_PROVIDER_AGENT_COMMAND_LIGHT="$resolved_command_light"
+  WT_PROVIDER_AGENT_COMMAND_DARK="$resolved_command_dark"
+  WT_PROVIDER_AGENT_PROMPT_FLAG="$resolved_prompt_flag"
 }
 
 wt_config_expand_repo_tokens() {

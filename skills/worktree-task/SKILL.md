@@ -81,7 +81,7 @@ Useful options:
 - By default reclaim refuses to remove a dirty worktree. Require `--force` before discarding local changes.
 - Delete the task branch only when it is already merged into the primary worktree `HEAD`; otherwise keep it and report that clearly.
 - The built-in `tmux-agent` provider derives session reuse, existing task-window discovery, and reclaim cleanup from live git context instead of stored tmux worktree metadata.
-- Configure the built-in tmux agent launcher with `WT_PROVIDER_AGENT_BOOTSTRAP`, `WT_PROVIDER_AGENT_COMMAND`, `WT_PROVIDER_AGENT_COMMAND_LIGHT`, `WT_PROVIDER_AGENT_COMMAND_DARK`, and optional `WT_PROVIDER_AGENT_PROMPT_FLAG` in `.worktree-task/config.env` or the user config override file.
+- Configure the built-in tmux agent launcher with `WT_PROVIDER_AGENT_COMMAND`, `WT_PROVIDER_AGENT_COMMAND_LIGHT`, `WT_PROVIDER_AGENT_COMMAND_DARK`, and optional `WT_PROVIDER_AGENT_PROMPT_FLAG` in `.worktree-task/config.env` or the user config override file.
 - Repos that are themselves a `wezterm-config` repo, or a derived repo that carries the same conventions, should track `WEZTERM_CONFIG_REPO=.` in `.worktree-task/config.env`.
 - Built-in providers currently include `none` and `tmux-agent`. External providers can be selected by absolute path or `custom:name` when discoverable through `WT_PROVIDER_SEARCH_PATHS`.
 

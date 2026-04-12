@@ -57,14 +57,30 @@ Use the `worktree-task` skill when you want a fresh agent CLI implementation ses
 - Run it from the existing managed tmux agent window for the target repository when possible so the new task window can reuse the current repo-family tmux session directly from live git context.
 - The skill creates linked worktrees under the repository parent's `.worktrees/<repo>/` directory.
 - `WEZTERM_CONFIG_REPO` is required. In an agent workflow, every `worktree-task` run should first check whether it is configured; if it is missing, the agent should ask which tracked `wezterm-config` repo or derived repo you want, then run `skills/worktree-task/scripts/worktree-task configure --repo /absolute/path` to save the result into `~/.config/worktree-task/config.env`.
-- This repository's tracked worktree-task profile lives at `.worktree-task/config.env`. It enables the built-in `tmux-agent` provider, configures the default agent CLI commands, and points `WEZTERM_CONFIG_REPO=.` back at this repo so shared task-launch conventions are collected explicitly instead of guessed from the target repo.
+- This repository's tracked worktree-task profile lives at `.worktree-task/config.env`. It enables the built-in `tmux-agent` provider, points `WEZTERM_CONFIG_REPO=.` back at this repo, and declares reusable agent launcher profiles such as `claude` and `codex`.
 - Config collection order is: configured `wezterm-config` repo profile, then `~/.config/worktree-task/config.env`, then the target repo's own `.worktree-task/config.env`.
 - Relative repo-managed paths such as `WT_PROVIDER_TMUX_CONFIG_FILE=tmux.conf` resolve against the configured `wezterm-config` repo or derived repo, not against the task repo where you launch the command.
 - Use `configure --repo` as the stable recovery path whenever `WEZTERM_CONFIG_REPO` is missing; `launch` often consumes stdin for the task prompt, so configuration should not depend on waiting for input on that same stream.
 - The built-in `tmux-agent` provider derives session reuse, existing task-window discovery, and reclaim cleanup from live git context instead of stored tmux worktree metadata.
-- Switch the launched agent CLI by editing `WT_PROVIDER_AGENT_COMMAND`, `WT_PROVIDER_AGENT_COMMAND_LIGHT`, `WT_PROVIDER_AGENT_COMMAND_DARK`, and optional `WT_PROVIDER_AGENT_PROMPT_FLAG` in `.worktree-task/config.env` or the user override config.
+- Managed workspace launchers and the built-in `tmux-agent` provider now execute the actual agent CLI inside the resolved login shell so PATH and shell startup files come from one stable source.
+- Switch both managed WezTerm workspaces and the built-in `tmux-agent` provider by setting `WT_PROVIDER_AGENT_PROFILE=claude` or `WT_PROVIDER_AGENT_PROFILE=codex` in `~/.config/worktree-task/config.env`.
+- The tracked `codex` profile keeps bare `codex` for dark mode and uses `codex -c 'tui.theme="github"'` for the light variant, matching the previously validated repo behavior.
+- Add a third-party agent CLI by defining `WT_PROVIDER_AGENT_PROFILE_<NAME>_COMMAND`, optional `_COMMAND_LIGHT`, optional `_COMMAND_DARK`, and optional `_PROMPT_FLAG`, then point `WT_PROVIDER_AGENT_PROFILE` at that profile name.
+- The legacy direct overrides `WT_PROVIDER_AGENT_COMMAND`, `WT_PROVIDER_AGENT_COMMAND_LIGHT`, `WT_PROVIDER_AGENT_COMMAND_DARK`, and `WT_PROVIDER_AGENT_PROMPT_FLAG` still work, but profile-based switching is the preferred path because one selection now drives both launch surfaces.
 - Runtime launch uses a temporary prompt file only long enough for the new pane to start; the repository does not keep a prompt archive.
 - Linked worktree folders live outside the repository working tree, so they do not pollute `git status`.
+
+Example user override:
+
+```bash
+WT_PROVIDER_AGENT_PROFILE=codex
+
+WT_PROVIDER_AGENT_PROFILE_CODEX_COMMAND='codex'
+WT_PROVIDER_AGENT_PROFILE_CODEX_COMMAND_LIGHT='codex -c ''tui.theme="github"'''
+
+WT_PROVIDER_AGENT_PROFILE_GEMINI_COMMAND='gemini --interactive'
+WT_PROVIDER_AGENT_PROFILE_GEMINI_PROMPT_FLAG='--prompt'
+```
 
 If you installed the skill globally and want other repositories to reuse this repo's conventions, point your user config at a `wezterm-config` repo or one of its derived repos:
 

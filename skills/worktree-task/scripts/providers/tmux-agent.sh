@@ -440,7 +440,6 @@ provider_build_pane_command() {
   local prompt_file="${2:-}"
   local command_string="env"
 
-  command_string="$command_string WT_PROVIDER_AGENT_BOOTSTRAP=$(wt_shell_quote "${WT_PROVIDER_AGENT_BOOTSTRAP:-nvm}")"
   if [[ -n "${WT_PROVIDER_AGENT_COMMAND:-}" ]]; then
     command_string="$command_string WT_PROVIDER_AGENT_COMMAND=$(wt_shell_quote "$WT_PROVIDER_AGENT_COMMAND")"
   fi
@@ -675,9 +674,9 @@ provider_run_pane_command() {
   local prompt_arg=""
   local command_spec=""
   local command=()
+  local command_string=""
   local login_shell=""
   local status=0
-  local bootstrap="${WT_PROVIDER_AGENT_BOOTSTRAP:-nvm}"
   local start_ms=""
 
   start_ms="$(runtime_log_now_ms)"
@@ -722,20 +721,11 @@ provider_run_pane_command() {
   esac
   [[ -n "$login_shell" ]] || login_shell="/bin/sh"
 
-  if [[ "$bootstrap" == "nvm" ]]; then
-    export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-    if [[ -s "$NVM_DIR/nvm.sh" ]]; then
-      # shellcheck disable=SC1090
-      source "$NVM_DIR/nvm.sh"
-    fi
-  fi
-
   command_spec="$(provider_agent_command_spec_for_variant "$variant" || true)"
   [[ -n "$command_spec" ]] || exit 20
   provider_parse_command_spec "$command_spec" command || exit 20
   runtime_log_info provider "tmux-agent pane command starting" \
     "variant=$variant" \
-    "bootstrap=$bootstrap" \
     "command_name=${command[0]:-unknown}" \
     "has_prompt_file=$([[ -n "$prompt_arg" ]] && printf yes || printf no)"
 
@@ -747,7 +737,10 @@ provider_run_pane_command() {
     fi
   fi
 
-  if ! "${command[@]}"; then
+  printf -v command_string '%q ' "${command[@]}"
+  command_string="${command_string% }"
+
+  if ! "$login_shell" -lc "$command_string"; then
     status=$?
     runtime_log_error provider "tmux-agent pane command failed" "variant=$variant" "command_name=${command[0]:-unknown}" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status"
     printf 'tmux-agent pane command exited with status %s\n' "$status" >&2

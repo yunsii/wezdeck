@@ -148,10 +148,6 @@ exit 1
     local wrapped = runtime_script_command('scripts/runtime/run-managed-command.sh', nil, {
       trace_id = trace_id,
     })
-    if profile.bootstrap and profile.bootstrap ~= '' then
-      wrapped[#wrapped + 1] = '--bootstrap'
-      wrapped[#wrapped + 1] = profile.bootstrap
-    end
 
     for _, part in ipairs(command) do
       wrapped[#wrapped + 1] = part
