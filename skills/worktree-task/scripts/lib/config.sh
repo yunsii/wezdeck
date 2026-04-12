@@ -17,12 +17,13 @@ wt_config_set_defaults() {
   WT_PROVIDER_ATTACH_DEFAULT="1"
   WT_PROVIDER_SESSION_NAME_OVERRIDE=""
   WT_PROVIDER_TMUX_CONFIG_FILE=""
-  WT_PROVIDER_AGENT_PROFILE="claude"
+  WT_PROVIDER_AGENT_PROFILE=""
   WT_PROVIDER_AGENT_COMMAND=""
   WT_PROVIDER_AGENT_COMMAND_LIGHT=""
   WT_PROVIDER_AGENT_COMMAND_DARK=""
   WT_PROVIDER_AGENT_PROMPT_FLAG=""
   WT_PROVIDER_LOGIN_SHELL=""
+  MANAGED_AGENT_PROFILE=""
   WT_PROVIDER_AGENT_PROFILE_CLAUDE_COMMAND="claude"
   WT_PROVIDER_AGENT_PROFILE_CLAUDE_COMMAND_LIGHT=""
   WT_PROVIDER_AGENT_PROFILE_CLAUDE_COMMAND_DARK=""
@@ -34,6 +35,7 @@ wt_config_set_defaults() {
 
   WT_CONFIG_USER_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env"
   WT_CONFIG_REPO_FILE="$WT_MAIN_WORKTREE_ROOT/.worktree-task/config.env"
+  WEZTERM_SHARED_ENV_FILE=""
   WEZTERM_CONFIG_REPO="${WEZTERM_CONFIG_REPO:-${WT_CONFIG_WEZTERM_REPO:-}}"
   WEZTERM_CONFIG_REPO_ROOT=""
   WEZTERM_CONFIG_REPO_FILE=""
@@ -77,6 +79,9 @@ wt_config_apply_setting() {
       ;;
     WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
       printf -v WEZTERM_CONFIG_REPO '%s' "$value"
+      ;;
+    MANAGED_AGENT_PROFILE)
+      printf -v MANAGED_AGENT_PROFILE '%s' "$value"
       ;;
     *)
       ;;
@@ -239,6 +244,7 @@ wt_config_discover_wezterm_repo() {
 
   if [[ -n "$WEZTERM_CONFIG_REPO_ROOT" ]]; then
     WEZTERM_CONFIG_REPO_FILE="$WEZTERM_CONFIG_REPO_ROOT/.worktree-task/config.env"
+    WEZTERM_SHARED_ENV_FILE="$WEZTERM_CONFIG_REPO_ROOT/wezterm-x/local/shared.env"
     [[ -f "$WEZTERM_CONFIG_REPO_FILE" ]] || wt_die "wezterm config repo is missing .worktree-task/config.env: $WEZTERM_CONFIG_REPO_ROOT"
     return 0
   fi
@@ -252,6 +258,7 @@ wt_config_load() {
   wt_config_load_file "$WEZTERM_CONFIG_REPO_FILE"
   wt_config_load_file "$WT_CONFIG_USER_FILE"
   wt_config_load_file "$WT_CONFIG_REPO_FILE"
+  wt_config_load_file "${WEZTERM_SHARED_ENV_FILE:-}"
   wt_config_resolve_agent_profile
   if [[ -n "$WEZTERM_CONFIG_REPO_ROOT" ]]; then
     WEZTERM_CONFIG_REPO="$WEZTERM_CONFIG_REPO_ROOT"
@@ -280,6 +287,16 @@ wt_config_resolve_agent_profile() {
 
   if [[ -n "${WT_PROVIDER_AGENT_COMMAND:-}" || -n "${WT_PROVIDER_AGENT_COMMAND_LIGHT:-}" || -n "${WT_PROVIDER_AGENT_COMMAND_DARK:-}" ]]; then
     return 0
+  fi
+
+  if [[ -z "$selected" && -n "${MANAGED_AGENT_PROFILE:-}" ]]; then
+    selected="$MANAGED_AGENT_PROFILE"
+    WT_PROVIDER_AGENT_PROFILE="$selected"
+  fi
+
+  if [[ -z "$selected" ]]; then
+    selected="claude"
+    WT_PROVIDER_AGENT_PROFILE="$selected"
   fi
 
   [[ -n "$selected" ]] || return 0
