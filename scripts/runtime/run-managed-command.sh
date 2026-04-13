@@ -19,11 +19,11 @@ command_name="$1"
 runtime_log_info managed_command "run-managed-command invoked" "command=$command_name" "arg_count=$#"
 runtime_log_info managed_command "executing managed command" "command=$command_name"
 
-if "$@"; then
-  runtime_log_info managed_command "managed command completed" "command=$command_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
-  exit 0
-fi
+"$@" && status=0 || status=$?
 
-status=$?
-runtime_log_error managed_command "managed command failed" "command=$command_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status"
+if [[ $status -eq 0 ]]; then
+  runtime_log_info managed_command "managed command completed" "command=$command_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+else
+  runtime_log_error managed_command "managed command failed" "command=$command_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")" "exit_code=$status"
+fi
 exit "$status"
