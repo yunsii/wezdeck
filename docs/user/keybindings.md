@@ -19,7 +19,7 @@ Use this doc when you need shortcut behavior.
 - `Shift+LeftDrag`: start a tmux pane-local selection inside the current pane, including after wheel scrolling has moved tmux into its scrollback mode; press `Ctrl+c` or `Enter` to copy and exit copy-mode
 - `LeftDrag`: plain drag does not start selection, even after wheel scrolling; use `Shift+LeftDrag` for tmux pane-local selection or `Super+LeftDrag` for terminal-wide selection
 - `Super+LeftDrag`: bypass tmux mouse reporting and use WezTerm's terminal-wide text selection when you intentionally want to select across pane boundaries; copy it with `Ctrl+c` or `Ctrl+Shift+c`
-- `LeftClick` after a tmux selection: when copy-mode already has an active selection, a plain click clears that selection without copying if you are still browsing scrollback; if you are already back at the live bottom, the same click exits copy-mode
+- `LeftClick` in tmux scrollback: without an active selection it moves the tmux scrollback cursor to the clicked cell; with an active selection it clears that selection without copying if you are still browsing scrollback, and exits copy-mode once you are already back at the live bottom
 - `Ctrl+LeftClick`: open the link under the mouse cursor in the system browser
 - `Ctrl+c`: if the current WezTerm pane has a terminal selection, copy it to the system clipboard and clear the selection; otherwise send a normal terminal `Ctrl+c`. In tmux copy-mode, `Ctrl+c` keeps the current scrollback position when you are still above the live bottom, and only falls back to copy-and-exit once you are back at the bottom
 - `Ctrl+Shift+c`: if the current WezTerm pane has a terminal selection, copy it to the system clipboard and clear the selection; otherwise forward `Ctrl+Shift+c` to the pane
