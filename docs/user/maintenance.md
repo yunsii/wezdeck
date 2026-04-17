@@ -29,7 +29,7 @@ Run those commands from the repo root, or set `WEZTERM_CONFIG_REPO=/absolute/pat
 
 3. Let WezTerm auto-reload the synced config changes.
    In current WezTerm versions, `automatically_reload_config` defaults to `true`: the loaded config file is watched, `require`-loaded Lua files are also watched, and the majority of options take effect automatically. Use `Ctrl+Shift+R` only to force a reload when needed.
-4. If tmux styling or startup behavior changed, reload tmux config:
+4. The sync script also tries to reload tmux automatically when a tmux server is already running and reachable from the current shell. If you changed tmux styling or startup behavior and that automatic reload was unavailable or not sufficient, reload tmux config manually:
 
 ```bash
 scripts/dev/reload-tmux.sh
@@ -151,6 +151,7 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 - Current WezTerm-side diagnostics categories include `workspace`, `alt_o`, `chrome`, `clipboard`, and `command_panel`.
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations; it is intentionally noisy.
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.
+- `sync-runtime.sh` also prints a one-line tmux reload result to the terminal, while the full structured detail still goes to `WEZTERM_RUNTIME_LOG_FILE`.
 - Runtime and WezTerm log lines now include a shared `trace_id` so related subprocesses can be correlated while debugging.
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`; WezTerm-side diagnostics rotate with `diagnostics.wezterm.max_bytes` and `diagnostics.wezterm.max_files`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace,worktree`.

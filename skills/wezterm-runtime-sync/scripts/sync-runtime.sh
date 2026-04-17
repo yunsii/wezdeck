@@ -28,6 +28,37 @@ Environment:
 EOF
 }
 
+maybe_reload_tmux() {
+  local repo_root="${1:?missing repo root}"
+  local reload_script="$repo_root/scripts/dev/reload-tmux.sh"
+
+  if [[ ! -f "$reload_script" ]]; then
+    runtime_log_info sync "skipped tmux reload after sync" "reason=reload_script_missing" "reload_script=$reload_script"
+    printf 'Skipped tmux reload: missing reload script %s\n' "$reload_script"
+    return 0
+  fi
+
+  if ! command -v tmux >/dev/null 2>&1; then
+    runtime_log_info sync "skipped tmux reload after sync" "reason=tmux_not_installed"
+    printf 'Skipped tmux reload: tmux is not installed\n'
+    return 0
+  fi
+
+  if ! tmux list-sessions >/dev/null 2>&1; then
+    runtime_log_info sync "skipped tmux reload after sync" "reason=no_accessible_tmux_server"
+    printf 'Skipped tmux reload: no accessible tmux server\n'
+    return 0
+  fi
+
+  if bash "$reload_script"; then
+    runtime_log_info sync "reloaded tmux config after sync" "reload_script=$reload_script"
+    return 0
+  fi
+
+  runtime_log_error sync "tmux reload after sync failed" "reload_script=$reload_script"
+  printf 'Warning: synced runtime files, but tmux reload failed: %s\n' "$reload_script" >&2
+}
+
 resolve_repo_root() {
   local repo_root="${WEZTERM_CONFIG_REPO:-$PWD}"
   [[ -d "$repo_root" ]] || { printf 'Repository root does not exist: %s\n' "$repo_root" >&2; return 1; }
@@ -295,6 +326,7 @@ rm -rf "$TEMP_RUNTIME_DIR"
 
 # Update the main config last so any WezTerm auto-reload sees a complete runtime tree.
 cp "$SOURCE_FILE" "$TARGET_FILE"
+maybe_reload_tmux "$REPO_ROOT"
 
 runtime_log_info sync "sync-runtime completed" \
   "repo_root=$REPO_ROOT" \
