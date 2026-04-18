@@ -76,6 +76,25 @@ local function helper_integration(constants)
   return constants.integrations and constants.integrations.vscode or {}
 end
 
+local function hidden_launcher_command(runtime_dir, executable, args, wait)
+  local command = {
+    'C:/Windows/System32/wscript.exe',
+    runtime_dir .. '\\scripts\\launch-hidden.vbs',
+  }
+
+  if wait then
+    command[#command + 1] = '--wait'
+  end
+
+  command[#command + 1] = executable
+
+  for _, value in ipairs(args or {}) do
+    command[#command + 1] = value
+  end
+
+  return command
+end
+
 function M.new(opts)
   return setmetatable({
     wezterm = opts.wezterm,
@@ -117,8 +136,7 @@ function M:windows_notification_command(title, message)
 
   local integration = self:helper_integration()
   local runtime_dir = integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
-  return {
-    integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+  return hidden_launcher_command(runtime_dir, integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe', {
     '-NoProfile',
     '-NonInteractive',
     '-WindowStyle',
@@ -131,7 +149,7 @@ function M:windows_notification_command(title, message)
     title,
     '-Message',
     message,
-  }
+  }, false)
 end
 
 function M:show_windows_notification(category, trace_id, title, message)
@@ -165,8 +183,7 @@ function M:helper_command()
     or diagnostics_capture_enabled(self.constants, 'chrome')
     or diagnostics_capture_enabled(self.constants, 'clipboard')
 
-  return {
-    integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+  return hidden_launcher_command(runtime_dir, integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe', {
     '-NoProfile',
     '-NonInteractive',
     '-WindowStyle',
@@ -221,7 +238,7 @@ function M:helper_command()
     tostring(diagnostics.max_bytes or 0),
     '-DiagnosticsMaxFiles',
     tostring(diagnostics.max_files or 0),
-  }, nil
+  }, true), nil
 end
 
 function M:ensure_helper_running(reason)

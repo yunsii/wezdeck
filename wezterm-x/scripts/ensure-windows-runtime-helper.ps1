@@ -93,6 +93,7 @@ function Read-HelperState {
 
 function Get-HelperProcesses {
   $launcherScriptPath = $PSCommandPath
+  $workerScriptRegex = [Regex]::Escape($WorkerScriptPath)
 
   return @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" | Where-Object {
     if (-not $_.CommandLine) {
@@ -103,7 +104,7 @@ function Get-HelperProcesses {
       return $false
     }
 
-    return $_.CommandLine.Contains("-File $WorkerScriptPath")
+    return $_.CommandLine -match ('-File\s+"?' + $workerScriptRegex + '"?([ \t]|$)')
   })
 }
 
