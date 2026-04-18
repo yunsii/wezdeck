@@ -5,6 +5,15 @@ local function join_path(...)
   return table.concat({ ... }, path_sep)
 end
 
+local function current_runtime_dir(config_dir)
+  local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR')
+  if runtime_dir and runtime_dir ~= '' then
+    return runtime_dir
+  end
+
+  return join_path(config_dir, '.wezterm-x')
+end
+
 local function workspace_keybinding(wezterm, workspace, key, name)
   return {
     key = key,
@@ -314,7 +323,7 @@ local function open_debug_chrome(wezterm, window, constants, logger, trace_id, h
     window:toast_notification('WezTerm', 'Alt+b failed. Check WezTerm logs.', nil, 3000)
     return
   else
-    local runtime_dir = integration.posix_runtime_dir or (wezterm.config_dir .. '/.wezterm-x')
+    local runtime_dir = integration.posix_runtime_dir or current_runtime_dir(wezterm.config_dir)
     local script_path = integration.posix_script or 'scripts/focus-or-start-debug-chrome.sh'
     command = {
       integration.posix_shell or '/bin/sh',
@@ -347,7 +356,7 @@ function M.apply(opts)
   local constants = opts.constants
   local palette = constants.palette
   local workspace = opts.workspace
-  local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+  local runtime_dir = current_runtime_dir(wezterm.config_dir)
   local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
   local logger = dofile(join_path(runtime_dir, 'lua', 'logger.lua')).new {
     wezterm = wezterm,

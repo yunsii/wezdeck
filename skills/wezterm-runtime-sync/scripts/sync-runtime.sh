@@ -28,6 +28,98 @@ Environment:
 EOF
 }
 
+write_text_file_atomic() {
+  local target_path="${1:?missing target path}"
+  local temp_path="${target_path}.tmp.$$"
+  cat > "$temp_path"
+  mv -f "$temp_path" "$target_path"
+}
+
+copy_file_atomic() {
+  local source_path="${1:?missing source path}"
+  local target_path="${2:?missing target path}"
+  local temp_path="${target_path}.tmp.$$"
+  cp "$source_path" "$temp_path"
+  mv -f "$temp_path" "$target_path"
+}
+
+lua_quote() {
+  local value="${1-}"
+  value="${value//\\/\\\\}"
+  value="${value//\'/\\\'}"
+  printf "'%s'" "$value"
+}
+
+lua_runtime_path() {
+  local path="${1:?missing path}"
+  if [[ "$path" =~ ^/mnt/[A-Za-z]/ ]]; then
+    wslpath -w "$path"
+    return 0
+  fi
+
+  printf '%s\n' "$path"
+}
+
+write_current_release_files() {
+  local runtime_state_dir="${1:?missing runtime state dir}"
+  local release_id="${2:?missing release id}"
+  local release_root="${3:?missing release root}"
+  local runtime_dir="${4:?missing runtime dir}"
+  local current_release_file="$runtime_state_dir/current-release.txt"
+  local current_lua_file="$runtime_state_dir/current.lua"
+  local release_root_lua runtime_dir_lua state_dir_lua
+
+  release_root_lua="$(lua_quote "$(lua_runtime_path "$release_root")")"
+  runtime_dir_lua="$(lua_quote "$(lua_runtime_path "$runtime_dir")")"
+  state_dir_lua="$(lua_quote "$(lua_runtime_path "$runtime_state_dir")")"
+
+  write_text_file_atomic "$current_release_file" <<EOF
+$release_id
+EOF
+
+  write_text_file_atomic "$current_lua_file" <<EOF
+return {
+  release_id = $(lua_quote "$release_id"),
+  release_root = $release_root_lua,
+  runtime_dir = $runtime_dir_lua,
+  state_dir = $state_dir_lua,
+}
+EOF
+}
+
+cleanup_old_releases() {
+  local releases_dir="${1:?missing releases dir}"
+  local keep_count="${2:?missing keep count}"
+  local current_release="${3:?missing current release}"
+  local releases=()
+  local release_name
+
+  [[ -d "$releases_dir" ]] || return 0
+
+  while IFS= read -r release_name; do
+    [[ -n "$release_name" ]] || continue
+    releases+=("$release_name")
+  done < <(find "$releases_dir" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r)
+
+  local kept=0
+  for release_name in "${releases[@]}"; do
+    if (( kept < keep_count )) || [[ "$release_name" == "$current_release" ]]; then
+      ((kept += 1))
+      continue
+    fi
+
+    rm -rf "$releases_dir/$release_name"
+  done
+}
+
+generate_release_id() {
+  local repo_root="${1:?missing repo root}"
+  local timestamp git_short
+  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  git_short="$(git -C "$repo_root" rev-parse --short HEAD 2>/dev/null || printf 'nogit')"
+  printf '%s-%s-%s\n' "$timestamp" "$git_short" "$$"
+}
+
 maybe_reload_tmux() {
   local repo_root="${1:?missing repo root}"
   local reload_script="$repo_root/scripts/dev/reload-tmux.sh"
@@ -293,23 +385,27 @@ MAIN_REPO_ROOT="$(resolve_main_repo_root "$REPO_ROOT")"
 
 TARGET_HOME="$(choose_target_home)"
 TARGET_FILE="$TARGET_HOME/.wezterm.lua"
-TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
-TEMP_RUNTIME_DIR="$TARGET_HOME/.wezterm-x.sync-tmp.$$"
+TARGET_RUNTIME_STATE_DIR="$TARGET_HOME/.wezterm-runtime"
+TARGET_RELEASES_DIR="$TARGET_RUNTIME_STATE_DIR/releases"
+RELEASE_ID="$(generate_release_id "$REPO_ROOT")"
+TARGET_RELEASE_ROOT="$TARGET_RELEASES_DIR/$RELEASE_ID"
+TARGET_RUNTIME_DIR="$TARGET_RELEASE_ROOT/wezterm-x"
+TEMP_RELEASE_ROOT="$TARGET_RUNTIME_STATE_DIR/.release-$RELEASE_ID-$$"
+TEMP_RUNTIME_DIR="$TEMP_RELEASE_ROOT/wezterm-x"
 
 runtime_log_info sync "sync-runtime invoked" \
   "repo_root=$REPO_ROOT" \
   "main_repo_root=$MAIN_REPO_ROOT" \
   "target_home=$TARGET_HOME" \
   "target_file=$TARGET_FILE" \
-  "target_runtime_dir=$TARGET_RUNTIME_DIR"
+  "target_runtime_dir=$TARGET_RUNTIME_DIR" \
+  "release_id=$RELEASE_ID"
 
 mkdir -p "$TARGET_HOME"
-rm -rf "$TEMP_RUNTIME_DIR"
+mkdir -p "$TARGET_RUNTIME_STATE_DIR"
+mkdir -p "$TARGET_RELEASES_DIR"
+rm -rf "$TEMP_RELEASE_ROOT"
 mkdir -p "$TEMP_RUNTIME_DIR"
-
-if [[ -d "$TARGET_HOME/.wezterm-runtime" ]]; then
-  rm -rf "$TARGET_HOME/.wezterm-runtime"
-fi
 
 cp -R "$RUNTIME_SOURCE_DIR"/. "$TEMP_RUNTIME_DIR"/
 
@@ -320,12 +416,12 @@ fi
 printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
 printf '%s\n' "$MAIN_REPO_ROOT" > "$TEMP_RUNTIME_DIR/repo-main-root.txt"
 
-mkdir -p "$TARGET_RUNTIME_DIR"
-cp -R "$TEMP_RUNTIME_DIR"/. "$TARGET_RUNTIME_DIR"/
-rm -rf "$TEMP_RUNTIME_DIR"
+mv "$TEMP_RELEASE_ROOT" "$TARGET_RELEASE_ROOT"
 
-# Update the main config last so any WezTerm auto-reload sees a complete runtime tree.
-cp "$SOURCE_FILE" "$TARGET_FILE"
+write_current_release_files "$TARGET_RUNTIME_STATE_DIR" "$RELEASE_ID" "$TARGET_RELEASE_ROOT" "$TARGET_RUNTIME_DIR"
+copy_file_atomic "$SOURCE_FILE" "$TARGET_FILE"
+cleanup_old_releases "$TARGET_RELEASES_DIR" 5 "$RELEASE_ID"
+
 maybe_reload_tmux "$REPO_ROOT"
 
 runtime_log_info sync "sync-runtime completed" \
@@ -333,6 +429,7 @@ runtime_log_info sync "sync-runtime completed" \
   "target_home=$TARGET_HOME" \
   "target_file=$TARGET_FILE" \
   "target_runtime_dir=$TARGET_RUNTIME_DIR" \
+  "release_id=$RELEASE_ID" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"

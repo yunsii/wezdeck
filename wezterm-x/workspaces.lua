@@ -5,7 +5,10 @@ local function join_path(...)
   return table.concat({ ... }, path_sep)
 end
 
-local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR')
+if not runtime_dir or runtime_dir == '' then
+  runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+end
 local constants = dofile(join_path(runtime_dir, 'lua', 'constants.lua'))
 local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
 

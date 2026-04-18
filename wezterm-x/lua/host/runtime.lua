@@ -116,7 +116,7 @@ function M:windows_notification_command(title, message)
   end
 
   local integration = self:helper_integration()
-  local runtime_dir = integration.runtime_dir or (self.wezterm.config_dir .. '\\.wezterm-x')
+  local runtime_dir = integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
   return {
     integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
     '-NoProfile',
@@ -156,7 +156,7 @@ function M:helper_command()
   end
 
   local integration = self:helper_integration()
-  local runtime_dir = integration.runtime_dir or (self.wezterm.config_dir .. '\\.wezterm-x')
+  local runtime_dir = integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
   local helper_script = integration.helper_script or 'scripts\\ensure-windows-runtime-helper.ps1'
   local helper_worker_script = integration.helper_worker_script or 'scripts\\windows-runtime-helper.ps1'
   local diagnostics = self.constants.diagnostics and self.constants.diagnostics.wezterm or {}
