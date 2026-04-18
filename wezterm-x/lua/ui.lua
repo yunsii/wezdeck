@@ -710,7 +710,7 @@ local function open_current_dir_in_vscode(wezterm, window, pane, constants, logg
     }))
 
     local runtime_dir = integration.runtime_dir or (wezterm.config_dir .. '\\.wezterm-x')
-    local script_path = integration.script or 'scripts\\open-current-dir-in-vscode.ps1'
+    local script_path = integration.script or 'scripts\\focus-or-open-vscode.ps1'
     local diagnostics = constants.diagnostics and constants.diagnostics.wezterm or {}
     command = {
       integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',

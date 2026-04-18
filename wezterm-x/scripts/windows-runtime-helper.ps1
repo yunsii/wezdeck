@@ -104,6 +104,37 @@ function Remove-RequestFile {
   }
 }
 
+function Process-PendingRequests {
+  $requestFiles = @(Get-ChildItem -LiteralPath $RequestDir -Filter '*.json' -File -ErrorAction SilentlyContinue | Sort-Object Name)
+  foreach ($requestFile in $requestFiles) {
+    try {
+      $requestText = [System.IO.File]::ReadAllText($requestFile.FullName, [System.Text.Encoding]::UTF8)
+      if ([string]::IsNullOrWhiteSpace($requestText)) {
+        Remove-RequestFile -Path $requestFile.FullName
+        continue
+      }
+
+      $payload = ConvertFrom-Json -InputObject $requestText
+      $requestId = if ($null -ne $payload -and $payload.request_id) { [string]$payload.request_id } else { $requestFile.BaseName }
+      $result = Invoke-AltORequest -Payload $payload
+      Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'helper processed request' -Fields @{
+        request_id = $requestId
+        request_path = $requestFile.FullName
+        status = if ($null -ne $result -and $result.status) { [string]$result.status } else { 'unknown' }
+      }
+      Remove-RequestFile -Path $requestFile.FullName
+    } catch {
+      Write-HelperState -Ready '1' -LastError $_.Exception.Message
+      Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'helper request failed' -Fields @{
+        request_path = $requestFile.FullName
+        error = $_.Exception.Message
+      }
+      Remove-RequestFile -Path $requestFile.FullName
+      Set-HelperLogger
+    }
+  }
+}
+
 function Invoke-AltORequest {
   param(
     [object]$Payload
@@ -121,7 +152,7 @@ function Invoke-AltORequest {
     $codeArgs += [string]$item
   }
 
-  $scriptPath = Join-Path (Split-Path -Parent $PSCommandPath) 'open-current-dir-in-vscode.ps1'
+  $scriptPath = Join-Path (Split-Path -Parent $PSCommandPath) 'focus-or-open-vscode.ps1'
   $result = & $scriptPath `
     -RequestedDir ([string]$Payload.requested_dir) `
     -Distro ([string]$Payload.distro) `
@@ -142,9 +173,26 @@ function Invoke-AltORequest {
 $script:StartedAtMs = Get-NowEpochMilliseconds
 Set-HelperLogger
 
+$watcher = $null
+$eventIds = @()
 try {
   Ensure-Directory -Path (Split-Path -Parent $StatePath)
   Ensure-Directory -Path $RequestDir
+
+  $watcher = New-Object System.IO.FileSystemWatcher
+  $watcher.Path = $RequestDir
+  $watcher.Filter = '*.json'
+  $watcher.IncludeSubdirectories = $false
+  $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite, CreationTime'
+  $watcher.EnableRaisingEvents = $true
+  $eventIds = @(
+    'wezterm-helper-request-created',
+    'wezterm-helper-request-changed',
+    'wezterm-helper-request-renamed'
+  )
+  Register-ObjectEvent -InputObject $watcher -EventName Created -SourceIdentifier $eventIds[0] | Out-Null
+  Register-ObjectEvent -InputObject $watcher -EventName Changed -SourceIdentifier $eventIds[1] | Out-Null
+  Register-ObjectEvent -InputObject $watcher -EventName Renamed -SourceIdentifier $eventIds[2] | Out-Null
 
   Write-HelperState -Ready '1'
   Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'helper started' -Fields @{
@@ -152,8 +200,12 @@ try {
     request_dir = $RequestDir
     pid = $PID
   }
+  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'helper request directory watcher active' -Fields @{
+    request_dir = $RequestDir
+  }
 
-  $lastHeartbeatMs = 0
+  $lastHeartbeatMs = Get-NowEpochMilliseconds
+  Process-PendingRequests
   while ($true) {
     $nowMs = Get-NowEpochMilliseconds
     if ($nowMs - $lastHeartbeatMs -ge $HeartbeatIntervalMs) {
@@ -161,36 +213,15 @@ try {
       $lastHeartbeatMs = $nowMs
     }
 
-    $requestFiles = @(Get-ChildItem -LiteralPath $RequestDir -Filter '*.json' -File -ErrorAction SilentlyContinue | Sort-Object Name)
-    foreach ($requestFile in $requestFiles) {
-      try {
-        $requestText = [System.IO.File]::ReadAllText($requestFile.FullName, [System.Text.Encoding]::UTF8)
-        if ([string]::IsNullOrWhiteSpace($requestText)) {
-          Remove-RequestFile -Path $requestFile.FullName
-          continue
-        }
-
-        $payload = ConvertFrom-Json -InputObject $requestText
-        $requestId = if ($null -ne $payload -and $payload.request_id) { [string]$payload.request_id } else { $requestFile.BaseName }
-        $result = Invoke-AltORequest -Payload $payload
-        Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'helper processed request' -Fields @{
-          request_id = $requestId
-          request_path = $requestFile.FullName
-          status = if ($null -ne $result -and $result.status) { [string]$result.status } else { 'unknown' }
-        }
-        Remove-RequestFile -Path $requestFile.FullName
-      } catch {
-        Write-HelperState -Ready '1' -LastError $_.Exception.Message
-        Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'helper request failed' -Fields @{
-          request_path = $requestFile.FullName
-          error = $_.Exception.Message
-        }
-        Remove-RequestFile -Path $requestFile.FullName
-        Set-HelperLogger
-      }
+    $timeoutSeconds = [Math]::Max([Math]::Ceiling(($HeartbeatIntervalMs - ([Math]::Max(0, ($nowMs - $lastHeartbeatMs)))) / 1000.0), 1)
+    $event = Wait-Event -Timeout $timeoutSeconds
+    if ($null -ne $event) {
+      Remove-Event -EventIdentifier $event.EventIdentifier -ErrorAction SilentlyContinue
+      Process-PendingRequests
+      continue
     }
 
-    Start-Sleep -Milliseconds $PollIntervalMs
+    Process-PendingRequests
   }
 } catch {
   Write-HelperState -Ready '0' -LastError $_.Exception.Message
@@ -200,4 +231,15 @@ try {
     error = $_.Exception.Message
   }
   throw
+} finally {
+  foreach ($eventId in $eventIds) {
+    Unregister-Event -SourceIdentifier $eventId -ErrorAction SilentlyContinue
+  }
+
+  Get-EventSubscriber | Where-Object { $_.SourceObject -eq $watcher } | Unregister-Event -ErrorAction SilentlyContinue
+
+  if ($watcher) {
+    $watcher.EnableRaisingEvents = $false
+    $watcher.Dispose()
+  }
 }
