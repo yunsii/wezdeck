@@ -8,7 +8,8 @@ Use this doc when you need ownership boundaries or file entry points.
 - Windows runtime files are generated from this repo by the `wezterm-runtime-sync` skill in `skills/wezterm-runtime-sync/`.
 - Live targets include:
   - `%USERPROFILE%\.wezterm.lua`
-  - `%USERPROFILE%\.wezterm-x\...`
+  - `%USERPROFILE%\.wezterm-runtime\current.lua`
+  - `%USERPROFILE%\.wezterm-runtime\releases\<release>\wezterm-x\...`
 
 ## Entry Points
 

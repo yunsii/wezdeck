@@ -5,7 +5,14 @@ local function join_path(...)
   return table.concat({ ... }, path_sep)
 end
 
-local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR')
+if not runtime_dir or runtime_dir == '' then
+  runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+end
+local runtime_state_dir = rawget(_G, 'WEZTERM_RUNTIME_STATE_DIR')
+if not runtime_state_dir or runtime_state_dir == '' then
+  runtime_state_dir = join_path(wezterm.config_dir, '.wezterm-runtime')
+end
 local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
 
 local function detect_host_os()
@@ -172,10 +179,10 @@ end
 
 local function default_diagnostics_file(host_os)
   if host_os == 'windows' then
-    return wezterm.config_dir .. '\\.wezterm-x\\wezterm-debug.log'
+    return runtime_state_dir .. '\\wezterm-debug.log'
   end
 
-  return wezterm.config_dir .. '/.wezterm-x/wezterm-debug.log'
+  return runtime_state_dir .. '/wezterm-debug.log'
 end
 
 local function read_repo_root_override()
@@ -423,7 +430,7 @@ local base_constants = {
       hybrid_wsl_command = default_vscode_command(host_os),
       posix_command = { 'code' },
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-      runtime_dir = wezterm.config_dir .. '\\.wezterm-x',
+      runtime_dir = runtime_dir,
       script = 'scripts\\focus-or-open-vscode.ps1',
       helper_script = 'scripts\\ensure-windows-runtime-helper.ps1',
       helper_worker_script = 'scripts\\windows-runtime-helper.ps1',
@@ -440,12 +447,12 @@ local base_constants = {
     chrome_debug = {
       cmd = 'cmd.exe',
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-      runtime_dir = wezterm.config_dir .. '\\.wezterm-x',
+      runtime_dir = runtime_dir,
       script = 'scripts\\focus-or-start-debug-chrome.ps1',
     },
     clipboard_image = {
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-      runtime_dir = wezterm.config_dir .. '\\.wezterm-x',
+      runtime_dir = runtime_dir,
       script = 'scripts\\export-clipboard-image-to-wsl.ps1',
       listener_script = 'scripts\\clipboard-image-listener.ps1',
       output_dir = default_clipboard_image_output_dir(host_os),

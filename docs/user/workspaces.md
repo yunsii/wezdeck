@@ -60,7 +60,7 @@ Example local override:
 
 ```lua
 local wezterm = require 'wezterm'
-local runtime_dir = wezterm.config_dir .. '/.wezterm-x'
+local runtime_dir = _G.WEZTERM_RUNTIME_DIR or (wezterm.config_dir .. '/.wezterm-x')
 local constants = dofile(runtime_dir .. '/lua/constants.lua')
 
 local managed_launcher = nil

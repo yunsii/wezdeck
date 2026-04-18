@@ -43,12 +43,28 @@ detect_windows_paths() {
   HELPER_REQUEST_DIR_WIN="${WINDOWS_LOCALAPPDATA_WIN}\\wezterm-runtime-helper\\requests"
   HELPER_STATE_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/state.env"
   HELPER_REQUEST_DIR_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/requests"
-  WINDOWS_RUNTIME_HOME_WIN="${WINDOWS_USERPROFILE_WIN}\\.wezterm-x"
-  WINDOWS_RUNTIME_HOME_WSL="${WINDOWS_USERPROFILE_WSL}/.wezterm-x"
+  local runtime_state_wsl="${WINDOWS_USERPROFILE_WSL}/.wezterm-runtime"
+  local runtime_state_win="${WINDOWS_USERPROFILE_WIN}\\.wezterm-runtime"
+  local current_release_file_wsl="${runtime_state_wsl}/current-release.txt"
+  local current_release=""
+
+  if [[ -f "$current_release_file_wsl" ]]; then
+    current_release="$(trim_cr "$(< "$current_release_file_wsl")")"
+  fi
+
+  if [[ -n "$current_release" && -d "${runtime_state_wsl}/releases/${current_release}/wezterm-x" ]]; then
+    WINDOWS_RUNTIME_HOME_WIN="${runtime_state_win}\\releases\\${current_release}\\wezterm-x"
+    WINDOWS_RUNTIME_HOME_WSL="${runtime_state_wsl}/releases/${current_release}/wezterm-x"
+    WINDOWS_DIAGNOSTICS_FILE_WIN="${runtime_state_win}\\wezterm-debug.log"
+  else
+    WINDOWS_RUNTIME_HOME_WIN="${WINDOWS_USERPROFILE_WIN}\\.wezterm-x"
+    WINDOWS_RUNTIME_HOME_WSL="${WINDOWS_USERPROFILE_WSL}/.wezterm-x"
+    WINDOWS_DIAGNOSTICS_FILE_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\wezterm-debug.log"
+  fi
+
   WINDOWS_HELPER_ENSURE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\ensure-windows-runtime-helper.ps1"
   WINDOWS_HELPER_WORKER_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\windows-runtime-helper.ps1"
   WINDOWS_VSCODE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\focus-or-open-vscode.ps1"
-  WINDOWS_DIAGNOSTICS_FILE_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\wezterm-debug.log"
 }
 
 detect_code_command() {

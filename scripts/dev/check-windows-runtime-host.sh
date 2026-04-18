@@ -96,14 +96,28 @@ userprofile_win="$(trim_cr "$(cmd.exe /c echo %USERPROFILE% 2>/dev/null || true)
 localappdata_wsl="$(wslpath -u "$localappdata_win")"
 userprofile_wsl="$(wslpath -u "$userprofile_win")"
 
-runtime_home_win="${userprofile_win}\\.wezterm-x"
+runtime_state_win="${userprofile_win}\\.wezterm-runtime"
+runtime_state_wsl="${userprofile_wsl}/.wezterm-runtime"
+current_release_file_wsl="${runtime_state_wsl}/current-release.txt"
+current_release=""
+if [[ -f "$current_release_file_wsl" ]]; then
+  current_release="$(trim_cr "$(< "$current_release_file_wsl")")"
+fi
+
+if [[ -n "$current_release" && -d "${runtime_state_wsl}/releases/${current_release}/wezterm-x" ]]; then
+  runtime_home_win="${runtime_state_win}\\releases\\${current_release}\\wezterm-x"
+  debug_log_wsl="${runtime_state_wsl}/wezterm-debug.log"
+else
+  runtime_home_win="${userprofile_win}\\.wezterm-x"
+  debug_log_wsl="${userprofile_wsl}/.wezterm-x/wezterm-debug.log"
+fi
+
 helper_ensure_win="${runtime_home_win}\\scripts\\ensure-windows-runtime-helper.ps1"
 helper_worker_win="${runtime_home_win}\\scripts\\windows-runtime-helper.ps1"
 helper_state_win="${localappdata_win}\\wezterm-runtime-helper\\state.env"
 helper_request_dir_win="${localappdata_win}\\wezterm-runtime-helper\\requests"
 helper_state_wsl="${localappdata_wsl}/wezterm-runtime-helper/state.env"
 helper_request_dir_wsl="${localappdata_wsl}/wezterm-runtime-helper/requests"
-debug_log_wsl="${userprofile_wsl}/.wezterm-x/wezterm-debug.log"
 
 clipboard_state_win="${localappdata_win}\\wezterm-clipboard-cache\\state.env"
 clipboard_log_win="${localappdata_win}\\wezterm-clipboard-cache\\listener.log"

@@ -5,7 +5,10 @@ local function join_path(...)
   return table.concat({ ... }, path_sep)
 end
 
-local runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR')
+if not runtime_dir or runtime_dir == '' then
+  runtime_dir = join_path(wezterm.config_dir, '.wezterm-x')
+end
 
 local function load_module(name)
   return dofile(join_path(runtime_dir, 'lua', name .. '.lua'))

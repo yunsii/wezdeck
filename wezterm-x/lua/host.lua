@@ -5,8 +5,8 @@ local function join_path(...)
   return table.concat({ ... }, path_sep)
 end
 
-local source = debug.getinfo(1, 'S').source:match '^@(.+)$'
-local module_dir = source and source:match('^(.*)[/\\][^/\\]+$') or '.'
+local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR') or '.'
+local module_dir = join_path(runtime_dir, 'lua')
 
 local function load_module(name)
   return dofile(join_path(module_dir, 'host', name .. '.lua'))
