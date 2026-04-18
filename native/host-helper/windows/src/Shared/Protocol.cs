@@ -53,6 +53,14 @@ internal sealed class HelperResponse
             {
                 Pid = outcome.ProcessId,
                 Hwnd = outcome.WindowHandle,
+                Kind = outcome.ClipboardKind,
+                Sequence = outcome.ClipboardSequence,
+                Formats = outcome.ClipboardFormats,
+                Text = outcome.ClipboardText,
+                WindowsPath = outcome.ClipboardWindowsPath,
+                WslPath = outcome.ClipboardWslPath,
+                Distro = outcome.ClipboardDistro,
+                LastError = outcome.ClipboardLastError,
             },
         };
     }
@@ -81,6 +89,30 @@ internal sealed class HelperResponseResult
 
     [JsonPropertyName("hwnd")]
     public long? Hwnd { get; init; }
+
+    [JsonPropertyName("kind")]
+    public string? Kind { get; init; }
+
+    [JsonPropertyName("sequence")]
+    public string? Sequence { get; init; }
+
+    [JsonPropertyName("formats")]
+    public string? Formats { get; init; }
+
+    [JsonPropertyName("text")]
+    public string? Text { get; init; }
+
+    [JsonPropertyName("windows_path")]
+    public string? WindowsPath { get; init; }
+
+    [JsonPropertyName("wsl_path")]
+    public string? WslPath { get; init; }
+
+    [JsonPropertyName("distro")]
+    public string? Distro { get; init; }
+
+    [JsonPropertyName("last_error")]
+    public string? LastError { get; init; }
 }
 
 internal sealed class HelperError
@@ -96,5 +128,12 @@ internal sealed record RequestOutcome(
     string Status,
     string DecisionPath,
     int? ProcessId = null,
-    long? WindowHandle = null);
-
+    long? WindowHandle = null,
+    string? ClipboardKind = null,
+    string? ClipboardSequence = null,
+    string? ClipboardFormats = null,
+    string? ClipboardText = null,
+    string? ClipboardWindowsPath = null,
+    string? ClipboardWslPath = null,
+    string? ClipboardDistro = null,
+    string? ClipboardLastError = null);

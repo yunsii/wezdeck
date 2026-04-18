@@ -10,7 +10,7 @@ Smoke-test the live Windows runtime host from WSL by:
   1. Ensuring the synced helper is healthy
   2. Sending a VS Code focus/open IPC request
   3. Sending a Chrome focus/start IPC request when chrome_debug_browser.user_data_dir is configured
-  4. Verifying clipboard listener state is fresh
+  4. Verifying clipboard read/write IPC requests for text and image
 EOF
 }
 
@@ -106,13 +106,10 @@ helper_ensure_win="${runtime_home_win}\\scripts\\ensure-windows-runtime-helper.p
 helper_state_win="${localappdata_win}\\wezterm-runtime-helper\\state.env"
 helper_state_wsl="${localappdata_wsl}/wezterm-runtime-helper/state.env"
 helper_window_cache_wsl="${localappdata_wsl}/wezterm-runtime-helper/window-cache.json"
-helper_manager_wsl="${localappdata_wsl}/wezterm-runtime-helper/bin/helper-manager.exe"
+helper_client_wsl="${localappdata_wsl}/wezterm-runtime-helper/bin/helperctl.exe"
 helper_ipc_endpoint='\\.\pipe\wezterm-host-helper-v1'
 
-clipboard_state_win="${localappdata_win}\\wezterm-clipboard-cache\\state.env"
-clipboard_log_win="${localappdata_win}\\wezterm-clipboard-cache\\listener.log"
 clipboard_output_win="${localappdata_win}\\wezterm-clipboard-images"
-clipboard_state_wsl="${localappdata_wsl}/wezterm-clipboard-cache/state.env"
 
 distro="${WSL_DISTRO_NAME:-}"
 [[ -n "$distro" ]] || distro="Ubuntu-22.04"
@@ -132,17 +129,6 @@ helper_state_fresh() {
   now_ms="$(date +%s%3N)"
   [[ "$ready" == "1" ]] || return 1
   [[ "$pid" =~ ^[0-9]+$ && "$pid" -gt 0 ]] || return 1
-  [[ "$heartbeat" =~ ^[0-9]+$ && "$heartbeat" -gt 0 ]] || return 1
-  (( now_ms - heartbeat <= 5000 )) || return 1
-}
-
-clipboard_state_fresh() {
-  [[ -f "$clipboard_state_wsl" ]] || return 1
-  local listener_pid heartbeat now_ms
-  listener_pid="$(state_value listener_pid "$clipboard_state_wsl")"
-  heartbeat="$(state_value heartbeat_at_ms "$clipboard_state_wsl")"
-  now_ms="$(date +%s%3N)"
-  [[ "$listener_pid" =~ ^[0-9]+$ && "$listener_pid" -gt 0 ]] || return 1
   [[ "$heartbeat" =~ ^[0-9]+$ && "$heartbeat" -gt 0 ]] || return 1
   (( now_ms - heartbeat <= 5000 )) || return 1
 }
@@ -220,19 +206,14 @@ ensure_helper() {
   powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
     -File "$helper_ensure_win" \
     -StatePath "$helper_state_win" \
-    -ClipboardStatePath "$clipboard_state_win" \
-    -ClipboardLogPath "$clipboard_log_win" \
     -ClipboardOutputDir "$clipboard_output_win" \
     -ClipboardWslDistro "$distro" \
-    -ClipboardHeartbeatIntervalSeconds 1 \
-    -ClipboardHeartbeatTimeoutSeconds 3 \
     -ClipboardImageReadRetryCount 12 \
     -ClipboardImageReadRetryDelayMs 100 \
     -ClipboardCleanupMaxAgeHours 48 \
     -ClipboardCleanupMaxFiles 32 \
     -HeartbeatTimeoutSeconds 5 \
     -HeartbeatIntervalMs 1000 \
-    -PollIntervalMs 25 \
     -DiagnosticsEnabled 1 \
     -DiagnosticsCategoryEnabled 1 \
     -DiagnosticsLevel info \
@@ -246,7 +227,21 @@ invoke_helper_request() {
   local request_body="$2"
   local request_b64=""
   request_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
-  "$helper_manager_wsl" request --pipe "$helper_ipc_endpoint" --payload-base64 "$request_b64" --timeout-ms $((timeout_seconds * 1000)) >/dev/null 2>&1
+  "$helper_client_wsl" request --pipe "$helper_ipc_endpoint" --payload-base64 "$request_b64" --timeout-ms $((timeout_seconds * 1000)) >/dev/null 2>&1
+}
+
+invoke_helper_request_capture() {
+  local trace_id="$1"
+  local request_body="$2"
+  local request_b64=""
+  request_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
+  "$helper_client_wsl" request --pipe "$helper_ipc_endpoint" --payload-base64 "$request_b64" --timeout-ms $((timeout_seconds * 1000))
+}
+
+env_value_from_text() {
+  local key="$1"
+  local text="$2"
+  awk -F= -v wanted="$key" '$1==wanted {print $2; exit}' <<<"$text" | tr -d '\r'
 }
 
 enqueue_vscode_request() {
@@ -290,6 +285,43 @@ enqueue_chrome_request() {
   return 0
 }
 
+enqueue_clipboard_request() {
+  local trace_id="$1"
+  local test_png="${repo_root}/assets/copy-test.png"
+  local text_payload=""
+  local write_text_response=""
+  local resolve_text_response=""
+  local write_image_response=""
+  local resolve_image_response=""
+
+  [[ -f "$test_png" ]] || return 1
+  text_payload="clipboard-smoke $(date '+%Y-%m-%d %H:%M:%S %z')"
+
+  write_text_response="$(invoke_helper_request_capture "${trace_id}-write-text" "$(printf '{"version":1,"trace_id":%s,"kind":"clipboard_write_text","payload":{"text":%s}}' \
+    "$(json_escape "${trace_id}-write-text")" \
+    "$(json_escape "$text_payload")")")" || return 1
+  [[ "$(env_value_from_text status "$write_text_response")" == "clipboard_written_text" ]] || return 1
+
+  resolve_text_response="$(invoke_helper_request_capture "${trace_id}-resolve-text" "$(printf '{"version":1,"trace_id":%s,"kind":"clipboard_resolve_for_paste","payload":{}}' \
+    "$(json_escape "${trace_id}-resolve-text")")")" || return 1
+  [[ "$(env_value_from_text kind "$resolve_text_response")" == "text" ]] || return 1
+  [[ "$(env_value_from_text text "$resolve_text_response")" == "$text_payload" ]] || return 1
+
+  # Leave a small gap between the text and image writes so clipboard history
+  # tools like Ditto do not coalesce/ignore the second update as "too fast".
+  sleep 1
+
+  write_image_response="$(invoke_helper_request_capture "${trace_id}-write-image" "$(printf '{"version":1,"trace_id":%s,"kind":"clipboard_write_image_file","payload":{"image_path":%s}}' \
+    "$(json_escape "${trace_id}-write-image")" \
+    "$(json_escape "$(wslpath -w "$test_png")")")")" || return 1
+  [[ "$(env_value_from_text status "$write_image_response")" == "clipboard_written_image" ]] || return 1
+
+  resolve_image_response="$(invoke_helper_request_capture "${trace_id}-resolve-image" "$(printf '{"version":1,"trace_id":%s,"kind":"clipboard_resolve_for_paste","payload":{}}' \
+    "$(json_escape "${trace_id}-resolve-image")")")" || return 1
+  [[ "$(env_value_from_text kind "$resolve_image_response")" == "image" ]] || return 1
+  [[ -n "$(env_value_from_text formats "$resolve_image_response")" ]] || return 1
+}
+
 ensure_helper
 helper_state_fresh || die "helper state is not fresh after ensure"
 pass "helper state is fresh"
@@ -307,8 +339,9 @@ if (( skip_chrome == 0 )); then
 fi
 
 if (( skip_clipboard == 0 )); then
-  clipboard_state_fresh || die "clipboard state is not fresh"
-  pass "clipboard listener state is fresh"
+  clipboard_trace="host-check-clipboard-$(date +%Y%m%dT%H%M%S)-$$"
+  enqueue_clipboard_request "$clipboard_trace" || die "clipboard request failed"
+  pass "clipboard helper request processed"
 fi
 
 printf 'host smoke test completed\n'

@@ -29,7 +29,9 @@ Use this doc when you need ownership boundaries or file entry points.
 - `wezterm-x/scripts/`: thin runtime bootstrap/install scripts plus the remaining cross-platform shell helpers copied by the runtime sync skill
   - `wezterm-x/scripts/ensure-windows-runtime-helper.ps1`: stable Windows launcher/bootstrap for the installed native helper
   - `wezterm-x/scripts/install-windows-runtime-helper-manager.ps1`: Windows-native helper installer/build entrypoint
-- `native/host-helper/windows/`: Windows `helper-manager.exe` source for the stable per-user host control plane
+- `native/host-helper/windows/src/HelperManager/`: Windows `helper-manager.exe` server project
+- `native/host-helper/windows/src/HelperCtl/`: Windows `helperctl.exe` console client project
+- `native/host-helper/windows/src/Shared/`: shared Windows host-helper protocol, transport, and support models
 - `native/host-helper/<future-platform>/`: reserved shape for future native macOS/Linux host helpers so platform-native agents stay outside `wezterm-x/scripts/`
 - `scripts/dev/`: repo-local helper scripts that are not synced to Windows
 - `tmux.conf`: tmux layout and status rendering

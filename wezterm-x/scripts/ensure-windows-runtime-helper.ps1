@@ -1,19 +1,9 @@
 param(
-  [int]$Port = 0,
-
   [string]$StatePath = "$env:LOCALAPPDATA\wezterm-runtime-helper\state.env",
-
-  [string]$ClipboardStatePath = '',
-
-  [string]$ClipboardLogPath = '',
 
   [string]$ClipboardOutputDir = '',
 
   [string]$ClipboardWslDistro = '',
-
-  [int]$ClipboardHeartbeatIntervalSeconds = 1,
-
-  [int]$ClipboardHeartbeatTimeoutSeconds = 3,
 
   [int]$ClipboardImageReadRetryCount = 12,
 
@@ -26,8 +16,6 @@ param(
   [int]$HeartbeatTimeoutSeconds = 5,
 
   [int]$HeartbeatIntervalMs = 1000,
-
-  [int]$PollIntervalMs = 25,
 
   [string]$DiagnosticsEnabled = '0',
 
@@ -96,63 +84,11 @@ function Read-HelperState {
   return $state
 }
 
-function Read-ManagerConfig {
-  param(
-    [hashtable]$ManagerPaths
-  )
-
-  if ($null -eq $ManagerPaths -or -not (Test-Path -LiteralPath $ManagerPaths.Config)) {
-    return $null
-  }
-
-  try {
-    return Get-Content -LiteralPath $ManagerPaths.Config -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-  } catch {
-    return $null
-  }
-}
-
-function Test-ManagerConfigMatches {
-  param(
-    [object]$Config,
-    [string]$RuntimeDir
-  )
-
-  if ($null -eq $Config) {
-    return $false
-  }
-
-  if ([string]$Config.runtimeDir -ne $RuntimeDir) {
-    return $false
-  }
-
-  if ([string]$Config.ipcEndpoint -ne (Get-ManagerPaths).IpcEndpoint) {
-    return $false
-  }
-
-  if ([string]$Config.clipboardStatePath -ne $ClipboardStatePath) {
-    return $false
-  }
-
-  if ([string]$Config.clipboardLogPath -ne $ClipboardLogPath) {
-    return $false
-  }
-
-  if ([string]$Config.clipboardOutputDir -ne $ClipboardOutputDir) {
-    return $false
-  }
-
-  if ([string]$Config.clipboardWslDistro -ne $ClipboardWslDistro) {
-    return $false
-  }
-
-  return $true
-}
-
 function Test-HelperStateFresh {
   param(
     [hashtable]$State,
-    [string]$ExpectedRuntimeDir
+    [string]$ExpectedRuntimeDir,
+    [string]$ExpectedConfigHash
   )
 
   if ($null -eq $State) {
@@ -180,6 +116,10 @@ function Test-HelperStateFresh {
   }
 
   if (-not [string]::IsNullOrWhiteSpace($ExpectedRuntimeDir) -and [string]$State.runtime_dir -ne $ExpectedRuntimeDir) {
+    return $false
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($ExpectedConfigHash) -and [string]$State.config_hash -ne $ExpectedConfigHash) {
     return $false
   }
 
@@ -224,21 +164,15 @@ function Write-ManagerConfig {
 
   $config = [ordered]@{
     runtimeDir = $RuntimeDir
-    scriptsDir = Join-Path $RuntimeDir 'scripts'
     statePath = $StatePath
     ipcEndpoint = $ManagerPaths.IpcEndpoint
-    powerShellExe = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
-    clipboardStatePath = $ClipboardStatePath
-    clipboardLogPath = $ClipboardLogPath
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
-    clipboardHeartbeatIntervalSeconds = $ClipboardHeartbeatIntervalSeconds
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
     clipboardImageReadRetryDelayMs = $ClipboardImageReadRetryDelayMs
     clipboardCleanupMaxAgeHours = $ClipboardCleanupMaxAgeHours
     clipboardCleanupMaxFiles = $ClipboardCleanupMaxFiles
     heartbeatIntervalMs = $HeartbeatIntervalMs
-    pollIntervalMs = $PollIntervalMs
     diagnostics = [ordered]@{
       enabled = ($DiagnosticsEnabled -eq '1')
       categoryEnabled = ($DiagnosticsCategoryEnabled -eq '1')
@@ -249,12 +183,23 @@ function Write-ManagerConfig {
     }
   }
 
-  Ensure-ParentDirectory -Path $ManagerPaths.Config
   $json = $config | ConvertTo-Json -Depth 5
-  $tempPath = "$($ManagerPaths.Config).tmp"
   $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  $jsonBytes = $utf8NoBom.GetBytes($json)
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $configHash = ([System.BitConverter]::ToString($sha256.ComputeHash($jsonBytes))).Replace('-', '').ToLowerInvariant()
+  } finally {
+    $sha256.Dispose()
+  }
+
+  $config.configHash = $configHash
+  $json = $config | ConvertTo-Json -Depth 5
+  Ensure-ParentDirectory -Path $ManagerPaths.Config
+  $tempPath = "$($ManagerPaths.Config).tmp"
   [System.IO.File]::WriteAllText($tempPath, $json, $utf8NoBom)
   Move-Item -Force -LiteralPath $tempPath -Destination $ManagerPaths.Config
+  return $configHash
 }
 
 function Ensure-ManagerInstalled {
@@ -281,15 +226,14 @@ function Ensure-ManagerInstalled {
 try {
   $runtimeDir = Get-ExpectedRuntimeDir
   $managerPaths = Get-ManagerPaths
+  $configHash = Write-ManagerConfig -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
   $state = Read-HelperState
-  $managerConfig = Read-ManagerConfig -ManagerPaths $managerPaths
-  if ((Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir) -and (Test-ManagerConfigMatches -Config $managerConfig -RuntimeDir $runtimeDir)) {
+  if (Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir -ExpectedConfigHash $configHash) {
     exit 0
   }
 
   Stop-StaleProcesses -State $state
   Ensure-ManagerInstalled -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
-  Write-ManagerConfig -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
 
   $child = Start-Process -FilePath $managerPaths.Exe -ArgumentList @('--config', $managerPaths.Config) -PassThru
   Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher started helper manager' -Fields @{
@@ -302,7 +246,7 @@ try {
   for ($attempt = 0; $attempt -lt 40; $attempt++) {
     Start-Sleep -Milliseconds 100
     $state = Read-HelperState
-    if (Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir) {
+    if (Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir -ExpectedConfigHash $configHash) {
       exit 0
     }
   }

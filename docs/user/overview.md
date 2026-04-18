@@ -54,7 +54,7 @@ The terminal font uses a platform-aware fallback chain defined in `default_termi
 - `scripts/runtime/run-managed-command.sh`: launcher for managed workspace startup commands
 - `skills/worktree-task/scripts/worktree-task`: unified linked worktree task CLI
 - `wezterm-x/scripts/`: thin runtime bootstrap/install scripts
-- `native/host-helper/windows/`: Windows native host-helper source for `helper-manager.exe`
+- `native/host-helper/windows/`: Windows native host-helper source for `helper-manager.exe` and `helperctl.exe`
 - `scripts/dev/`: repo-local maintenance helpers
 - `skills/wezterm-runtime-sync/scripts/sync-runtime.sh`: skill-owned sync implementation; the public workflow is to use the `wezterm-runtime-sync` skill
 - `skills/worktree-task/scripts/providers/tmux-agent.sh`: built-in tmux agent provider for linked task worktrees

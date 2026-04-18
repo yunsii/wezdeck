@@ -148,60 +148,60 @@ local function paste_clipboard_or_image_path(wezterm, window, pane, constants, l
     return
   end
 
-  local cached_state, cache_reason = host:read_state('clipboard_image', trace_id)
-  if not cached_state then
-    host:recover('clipboard_image', 'cache-' .. cache_reason)
+  local clipboard_feature = host:feature 'clipboard_image'
+  if not clipboard_feature or not clipboard_feature.resolve_for_paste then
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
 
-  local cache_is_fresh, freshness_reason = host:state_is_fresh('clipboard_image', cached_state)
-  if not cache_is_fresh then
-    host:recover('clipboard_image', 'stale-' .. freshness_reason)
+  local resolved_state, resolve_reason = clipboard_feature.resolve_for_paste(trace_id)
+  if not resolved_state then
+    logger.warn('clipboard', 'failed to resolve clipboard state via windows helper', merge_fields(trace_id, {
+      domain = domain_name,
+      distro = distro,
+      reason = resolve_reason,
+    }))
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
 
-  if cached_state.kind ~= 'image' then
+  if resolved_state.kind ~= 'image' then
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
 
-  local image_path = cached_state.wsl_path
-  if (not image_path or image_path == '') and cached_state.windows_path and cached_state.windows_path ~= '' then
-    local clipboard_feature = host:feature 'clipboard_image'
-    image_path = clipboard_feature and clipboard_feature.windows_path_to_wsl_path(cached_state.windows_path) or nil
+  local image_path = resolved_state.wsl_path
+  if (not image_path or image_path == '') and resolved_state.windows_path and resolved_state.windows_path ~= '' then
+    image_path = clipboard_feature.windows_path_to_wsl_path(resolved_state.windows_path)
   end
 
   if not image_path or image_path == '' then
-    logger.warn('clipboard', 'cached clipboard image is missing a WSL path', merge_fields(trace_id, {
+    logger.warn('clipboard', 'resolved clipboard image is missing a WSL path', merge_fields(trace_id, {
       domain = domain_name,
       distro = distro,
-      state_path = cached_state.__state_path,
+      windows_path = resolved_state.windows_path,
     }))
-    host:recover('clipboard_image', 'missing-image-path')
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
 
-  if cached_state.windows_path and cached_state.windows_path ~= '' and not host:file_exists(cached_state.windows_path) then
-    logger.warn('clipboard', 'cached clipboard image file is missing on disk', merge_fields(trace_id, {
+  if resolved_state.windows_path and resolved_state.windows_path ~= '' and not host:file_exists(resolved_state.windows_path) then
+    logger.warn('clipboard', 'resolved clipboard image file is missing on disk', merge_fields(trace_id, {
       domain = domain_name,
       distro = distro,
       image_path = image_path,
-      windows_path = cached_state.windows_path,
+      windows_path = resolved_state.windows_path,
     }))
-    host:recover('clipboard_image', 'missing-image-file')
     window:perform_action(wezterm.action.PasteFrom 'Clipboard', pane)
     return
   end
 
   pane:send_paste(image_path)
-  logger.info('clipboard', 'pasted cached clipboard image path', merge_fields(trace_id, {
+  logger.info('clipboard', 'pasted resolved clipboard image path', merge_fields(trace_id, {
     distro = distro,
     domain = domain_name,
     image_path = image_path,
-    sequence = cached_state.sequence,
+    sequence = resolved_state.sequence,
   }))
   return
 end

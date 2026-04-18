@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -9,6 +8,8 @@ namespace WezTerm.WindowsHostHelper;
 internal sealed record ClipboardState(
     string Kind,
     string Sequence,
+    string Formats,
+    string TextValue,
     string UpdatedAtMs,
     string HeartbeatAtMs,
     string ListenerPid,
@@ -21,6 +22,8 @@ internal sealed record ClipboardState(
     public static ClipboardState Starting() => new(
         Kind: "starting",
         Sequence: string.Empty,
+        Formats: string.Empty,
+        TextValue: string.Empty,
         UpdatedAtMs: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
         HeartbeatAtMs: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
         ListenerPid: Environment.ProcessId.ToString(),
@@ -30,27 +33,31 @@ internal sealed record ClipboardState(
         WslPath: string.Empty,
         LastError: string.Empty);
 
-    public static ClipboardState Text(string sequence) => Starting() with
+    public static ClipboardState Text(string sequence, string formats, string text) => Starting() with
     {
         Kind = "text",
         Sequence = sequence,
+        Formats = formats,
+        TextValue = text,
         UpdatedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
     };
 
-    public static ClipboardState Image(string sequence, string windowsPath, string wslPath, string? distro) => Starting() with
+    public static ClipboardState Image(string sequence, string formats, string windowsPath, string wslPath, string? distro) => Starting() with
     {
         Kind = "image",
         Sequence = sequence,
+        Formats = formats,
         UpdatedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
         Distro = distro ?? string.Empty,
         WindowsPath = windowsPath,
         WslPath = wslPath,
     };
 
-    public static ClipboardState Unknown(string error, string sequence = "") => Starting() with
+    public static ClipboardState Unknown(string error, string sequence = "", string formats = "") => Starting() with
     {
         Kind = "unknown",
         Sequence = sequence,
+        Formats = formats,
         UpdatedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
         LastError = error,
     };
@@ -236,23 +243,18 @@ internal sealed class StructuredLogger
 
 internal sealed class HelperConfig
 {
+    public required string ConfigHash { get; init; }
     public required string RuntimeDir { get; init; }
-    public required string ScriptsDir { get; init; }
     public required string StatePath { get; init; }
     public required string IpcEndpoint { get; init; }
-    public required string PowerShellExe { get; init; }
     public required DiagnosticConfig Diagnostics { get; init; }
-    public string? ClipboardStatePath { get; init; }
-    public string? ClipboardLogPath { get; init; }
     public string? ClipboardOutputDir { get; init; }
     public string? ClipboardWslDistro { get; init; }
-    public int ClipboardHeartbeatIntervalSeconds { get; init; }
     public int ClipboardImageReadRetryCount { get; init; }
     public int ClipboardImageReadRetryDelayMs { get; init; }
     public int ClipboardCleanupMaxAgeHours { get; init; }
     public int ClipboardCleanupMaxFiles { get; init; }
     public int HeartbeatIntervalMs { get; init; }
-    public int PollIntervalMs { get; init; }
 
     public static HelperConfig Load(string path)
     {
@@ -263,7 +265,7 @@ internal sealed class HelperConfig
         }) ?? throw new InvalidOperationException("config file was empty");
 
         if (string.IsNullOrWhiteSpace(config.RuntimeDir) ||
-            string.IsNullOrWhiteSpace(config.ScriptsDir) ||
+            string.IsNullOrWhiteSpace(config.ConfigHash) ||
             string.IsNullOrWhiteSpace(config.StatePath) ||
             string.IsNullOrWhiteSpace(config.IpcEndpoint))
         {
@@ -286,18 +288,29 @@ internal sealed class DiagnosticConfig
 
 internal static class NativeMethods
 {
-    public const int WmClipboardUpdate = 0x031D;
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool AddClipboardFormatListener(IntPtr hwnd);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
+    public const uint CfDib = 8;
+    public const uint GmemMoveable = 0x0002;
 
     [DllImport("user32.dll")]
     public static extern uint GetClipboardSequenceNumber();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool OpenClipboard(IntPtr hWndNewOwner);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool CloseClipboard();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EmptyClipboard();
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern uint RegisterClipboardFormat(string lpszFormat);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -348,6 +361,19 @@ internal static class NativeMethods
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GlobalAlloc(uint uFlags, nuint dwBytes);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GlobalLock(IntPtr hMem);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GlobalUnlock(IntPtr hMem);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GlobalFree(IntPtr hMem);
 
     [DllImport("ntdll.dll")]
     private static extern int NtQueryInformationProcess(
@@ -437,36 +463,22 @@ internal static class NativeMethods
         SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
     }
 
-    public static bool AppActivate(int processId)
+    public static IntPtr TryGetProcessMainWindow(int processId)
     {
         try
         {
-            var shellType = Type.GetTypeFromProgID("WScript.Shell");
-            if (shellType == null)
+            using var process = Process.GetProcessById(processId);
+            process.Refresh();
+            if (process.MainWindowHandle == IntPtr.Zero)
             {
-                return false;
+                return IntPtr.Zero;
             }
 
-            var shell = Activator.CreateInstance(shellType);
-            if (shell == null)
-            {
-                return false;
-            }
-
-            try
-            {
-                shellType.InvokeMember("SendKeys", BindingFlags.InvokeMethod, null, shell, new object[] { "%" });
-                var result = shellType.InvokeMember("AppActivate", BindingFlags.InvokeMethod, null, shell, new object[] { processId });
-                return result is bool ok && ok;
-            }
-            finally
-            {
-                Marshal.FinalReleaseComObject(shell);
-            }
+            return process.MainWindowHandle;
         }
         catch
         {
-            return false;
+            return IntPtr.Zero;
         }
     }
 
