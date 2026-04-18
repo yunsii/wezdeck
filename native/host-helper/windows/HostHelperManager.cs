@@ -9,15 +9,11 @@ internal sealed class HostHelperManager : IDisposable
     private readonly HelperConfig config;
     private readonly StructuredLogger logger;
     private readonly ManualResetEventSlim stopSignal = new(initialState: false);
-    private readonly object requestLock = new();
     private readonly long startedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     private readonly ClipboardService? clipboardService;
     private readonly System.Threading.Timer heartbeatTimer;
-    private readonly System.Threading.Timer requestFallbackTimer;
     private readonly InstanceRegistry instanceRegistry;
-    private FileSystemWatcher? requestWatcher;
     private string lastError = string.Empty;
-    private int requestScanQueued;
     private bool disposed;
 
     public HostHelperManager(HelperConfig config)
@@ -31,27 +27,23 @@ internal sealed class HostHelperManager : IDisposable
         }
 
         heartbeatTimer = new System.Threading.Timer(_ => WriteHelperState("1", lastError), null, Timeout.Infinite, Timeout.Infinite);
-        requestFallbackTimer = new System.Threading.Timer(_ => QueueRequestScan(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
     public void Run()
     {
         EnsureDirectory(Path.GetDirectoryName(config.StatePath));
-        EnsureDirectory(config.RequestDir);
 
         WriteHelperState("1", string.Empty);
         logger.Info("alt_o", "helper manager started", new Dictionary<string, string?>
         {
-            ["request_dir"] = config.RequestDir,
+            ["ipc_endpoint"] = config.IpcEndpoint,
             ["runtime_dir"] = config.RuntimeDir,
             ["state_path"] = config.StatePath,
         });
 
         clipboardService?.Start();
-        StartRequestWatcher();
         heartbeatTimer.Change(config.HeartbeatIntervalMs, config.HeartbeatIntervalMs);
-        requestFallbackTimer.Change(Math.Max(config.PollIntervalMs, 250), Math.Max(config.PollIntervalMs, 250));
-        QueueRequestScan();
+        StartRequestServer();
 
         stopSignal.Wait();
     }
@@ -75,121 +67,94 @@ internal sealed class HostHelperManager : IDisposable
         }
 
         disposed = true;
-        requestWatcher?.Dispose();
         heartbeatTimer.Dispose();
-        requestFallbackTimer.Dispose();
         clipboardService?.Dispose();
         stopSignal.Dispose();
     }
 
-    private void StartRequestWatcher()
+    private void StartRequestServer()
     {
-        requestWatcher = new FileSystemWatcher(config.RequestDir, "*.json")
+        var serverThread = new Thread(RequestServerLoop)
         {
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size,
-            IncludeSubdirectories = false,
-            EnableRaisingEvents = true,
+            IsBackground = true,
+            Name = "wezterm-host-helper-ipc",
         };
-
-        requestWatcher.Created += (_, _) => QueueRequestScan();
-        requestWatcher.Changed += (_, _) => QueueRequestScan();
-        requestWatcher.Renamed += (_, _) => QueueRequestScan();
-        requestWatcher.Error += (_, eventArgs) =>
-        {
-            logger.Warn("alt_o", "request watcher reported an error", new Dictionary<string, string?>
-            {
-                ["error"] = eventArgs.GetException()?.Message,
-                ["request_dir"] = config.RequestDir,
-            });
-            QueueRequestScan();
-        };
+        serverThread.Start();
     }
 
-    private void QueueRequestScan()
+    private void RequestServerLoop()
     {
-        if (Interlocked.Exchange(ref requestScanQueued, 1) == 1)
-        {
-            return;
-        }
-
-        ThreadPool.QueueUserWorkItem(_ =>
+        while (!stopSignal.IsSet)
         {
             try
             {
-                ProcessPendingRequests();
-            }
-            finally
-            {
-                Interlocked.Exchange(ref requestScanQueued, 0);
-            }
-        });
-    }
+                using var server = NamedPipeTransport.CreateServer(config.IpcEndpoint);
+                server.WaitForConnection();
 
-    private void ProcessPendingRequests()
-    {
-        var lockTaken = false;
-        try
-        {
-            Monitor.TryEnter(requestLock, ref lockTaken);
-            if (!lockTaken)
-            {
-                return;
+                var requestJson = NamedPipeTransport.ReadMessage(server);
+                var responseJson = HandleRequestJson(requestJson, $"pipe:{config.IpcEndpoint}");
+                NamedPipeTransport.WriteMessage(server, responseJson);
             }
+            catch (Exception ex)
+            {
+                if (stopSignal.IsSet)
+                {
+                    return;
+                }
 
-            foreach (var requestPath in Directory.EnumerateFiles(config.RequestDir, "*.json").OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
-            {
-                ProcessRequest(requestPath);
-            }
-        }
-        catch (DirectoryNotFoundException)
-        {
-            EnsureDirectory(config.RequestDir);
-        }
-        finally
-        {
-            if (lockTaken)
-            {
-                Monitor.Exit(requestLock);
+                logger.Error("alt_o", "helper ipc server loop failed", new Dictionary<string, string?>
+                {
+                    ["error"] = ex.Message,
+                    ["ipc_endpoint"] = config.IpcEndpoint,
+                });
+                Thread.Sleep(100);
             }
         }
     }
 
-    private void ProcessRequest(string requestPath)
+    private string HandleRequestJson(string requestJson, string transport)
     {
-        string requestKind = "vscode_focus_or_open";
+        string requestKind = "unknown";
         var requestCategory = "alt_o";
-        string? traceId = null;
+        string traceId = string.Empty;
 
         try
         {
-            var requestText = ReadRequestText(requestPath);
-            if (string.IsNullOrWhiteSpace(requestText))
+            var request = JsonSerializer.Deserialize<HelperRequest>(requestJson, new JsonSerializerOptions
             {
-                SafeDelete(requestPath);
-                return;
-            }
+                PropertyNameCaseInsensitive = true,
+            }) ?? throw new InvalidOperationException("request payload was empty");
 
-            using var document = JsonDocument.Parse(requestText);
-            var payload = document.RootElement;
-            requestKind = GetOptionalString(payload, "kind") ?? requestKind;
-            traceId = GetOptionalString(payload, "trace_id") ?? Path.GetFileNameWithoutExtension(requestPath);
+            requestKind = string.IsNullOrWhiteSpace(request.Kind) ? "unknown" : request.Kind;
+            traceId = string.IsNullOrWhiteSpace(request.TraceId) ? Guid.NewGuid().ToString("N") : request.TraceId;
             requestCategory = requestKind == "chrome_focus_or_start" ? "chrome" : "alt_o";
 
-            var status = requestKind switch
+            logger.Info(requestCategory, "helper received request", new Dictionary<string, string?>
             {
-                "vscode_focus_or_open" => InvokeVscodeRequest(payload, traceId),
-                "chrome_focus_or_start" => InvokeChromeRequest(payload, traceId),
+                ["trace_id"] = traceId,
+                ["kind"] = requestKind,
+                ["transport"] = transport,
+            });
+
+            var outcome = requestKind switch
+            {
+                "vscode_focus_or_open" => InvokeVscodeRequest(request.Payload, traceId),
+                "chrome_focus_or_start" => InvokeChromeRequest(request.Payload, traceId),
                 _ => throw new InvalidOperationException($"unknown request kind: {requestKind}"),
             };
 
-            logger.Info(requestCategory, "helper processed request", new Dictionary<string, string?>
+            logger.Info(requestCategory, "helper completed request", new Dictionary<string, string?>
             {
-                ["trace_id"] = traceId,
-                ["request_path"] = requestPath,
                 ["kind"] = requestKind,
-                ["status"] = status,
+                ["trace_id"] = traceId,
+                ["status"] = outcome.Status,
+                ["decision_path"] = outcome.DecisionPath,
+                ["pid"] = outcome.ProcessId?.ToString(),
+                ["hwnd"] = outcome.WindowHandle?.ToString(),
+                ["transport"] = transport,
             });
-            SafeDelete(requestPath);
+
+            return JsonSerializer.Serialize(HelperResponse.Success(traceId, outcome));
         }
         catch (Exception ex)
         {
@@ -198,15 +163,16 @@ internal sealed class HostHelperManager : IDisposable
             logger.Error(requestCategory, "helper request failed", new Dictionary<string, string?>
             {
                 ["trace_id"] = traceId,
-                ["request_path"] = requestPath,
                 ["kind"] = requestKind,
                 ["error"] = ex.Message,
+                ["transport"] = transport,
             });
-            SafeDelete(requestPath);
+
+            return JsonSerializer.Serialize(HelperResponse.Failure(traceId, "request_failed", ex.Message));
         }
     }
 
-    private string InvokeVscodeRequest(JsonElement payload, string traceId)
+    private RequestOutcome InvokeVscodeRequest(JsonElement payload, string traceId)
     {
         var requestedDir = NormalizeWslPath(RequireString(payload, "requested_dir"));
         var distro = RequireString(payload, "distro");
@@ -263,7 +229,11 @@ internal sealed class HostHelperManager : IDisposable
                 ["hwnd"] = reuseDecision.Window.WindowHandle.ToInt64().ToString(),
                 ["decision_path"] = reuseDecision.Path,
             });
-            return "focused_cached_window";
+            return new RequestOutcome(
+                Status: "reused",
+                DecisionPath: reuseDecision.Path,
+                ProcessId: reuseDecision.Window.ProcessId,
+                WindowHandle: reuseDecision.Window.WindowHandle.ToInt64());
         }
 
         var initialForeground = GetForegroundWindowInfo();
@@ -277,10 +247,13 @@ internal sealed class HostHelperManager : IDisposable
             ["decision_path"] = "launch",
         });
 
-        var focusedWindow = WaitForForegroundProcessWindow(processName, initialForeground, 4000);
+        WindowMatch? boundWindow = WaitForForegroundProcessWindow(processName, initialForeground, 4000);
+        string decisionPath;
+        var focusedWindow = boundWindow;
         if (focusedWindow != null)
         {
             instanceRegistry.RememberWindow("vscode", launchKey, focusedWindow);
+            decisionPath = "launch_bind_foreground_window";
             logger.Info("alt_o", "captured vscode window after launch", new Dictionary<string, string?>
             {
                 ["trace_id"] = traceId,
@@ -288,6 +261,7 @@ internal sealed class HostHelperManager : IDisposable
                 ["launch_key"] = launchKey,
                 ["pid"] = focusedWindow.ProcessId.ToString(),
                 ["hwnd"] = focusedWindow.WindowHandle.ToInt64().ToString(),
+                ["decision_path"] = decisionPath,
             });
         }
         else
@@ -296,6 +270,10 @@ internal sealed class HostHelperManager : IDisposable
             launchedWindow ??= WaitForNewProcessWindow(processName, existingVisibleWindowHandles, 4000);
             if (launchedWindow != null && TryActivateWindow(launchedWindow))
             {
+                boundWindow = launchedWindow;
+                decisionPath = existingVisibleWindowHandles.Contains(launchedWindow.WindowHandle)
+                    ? "launch_bind_existing_visible_window"
+                    : "launch_bind_new_visible_window";
                 instanceRegistry.RememberWindow("vscode", launchKey, launchedWindow);
                 logger.Info("alt_o", "focused vscode window after launch fallback", new Dictionary<string, string?>
                 {
@@ -304,27 +282,30 @@ internal sealed class HostHelperManager : IDisposable
                     ["launch_key"] = launchKey,
                     ["pid"] = launchedWindow.ProcessId.ToString(),
                     ["hwnd"] = launchedWindow.WindowHandle.ToInt64().ToString(),
-                    ["decision_path"] = existingVisibleWindowHandles.Contains(launchedWindow.WindowHandle)
-                        ? "launch_bind_existing_visible_window"
-                        : "launch_bind_new_visible_window",
+                    ["decision_path"] = decisionPath,
                 });
             }
             else
             {
+                decisionPath = "launch_unbound";
                 logger.Info("alt_o", "no vscode foreground window captured after launch", new Dictionary<string, string?>
                 {
                     ["trace_id"] = traceId,
                     ["target_dir"] = targetDir,
                     ["launch_key"] = launchKey,
-                    ["decision_path"] = "launch_unbound",
+                    ["decision_path"] = decisionPath,
                 });
             }
         }
 
-        return "launched";
+        return new RequestOutcome(
+            Status: "launched",
+            DecisionPath: boundWindow != null ? decisionPath : "launch_unbound",
+            ProcessId: boundWindow?.ProcessId,
+            WindowHandle: boundWindow?.WindowHandle.ToInt64());
     }
 
-    private string InvokeChromeRequest(JsonElement payload, string traceId)
+    private RequestOutcome InvokeChromeRequest(JsonElement payload, string traceId)
     {
         var chromePath = RequireString(payload, "chrome_path");
         var port = RequireInt(payload, "remote_debugging_port");
@@ -370,7 +351,11 @@ internal sealed class HostHelperManager : IDisposable
                 ["user_data_dir"] = userDataDir,
                 ["decision_path"] = reuseDecision.Path,
             });
-            return "focused_cached_window";
+            return new RequestOutcome(
+                Status: "reused",
+                DecisionPath: reuseDecision.Path,
+                ProcessId: reuseDecision.Window.ProcessId,
+                WindowHandle: reuseDecision.Window.WindowHandle.ToInt64());
         }
 
         LaunchDetachedProcess(chromePath, new[]
@@ -394,6 +379,10 @@ internal sealed class HostHelperManager : IDisposable
         {
             TryActivateWindow(launchedWindow);
             instanceRegistry.RememberWindow("chrome", launchKey, launchedWindow);
+            var boundPidWasPreexisting = reuseDecision.MatchedProcessIds.Contains(launchedWindow.ProcessId);
+            var decisionPath = existingVisibleWindowHandles.Contains(launchedWindow.WindowHandle)
+                ? "launch_bind_existing_visible_window"
+                : "launch_bind_new_visible_window";
             logger.Info("chrome", "bound launched debug chrome window", new Dictionary<string, string?>
             {
                 ["trace_id"] = traceId,
@@ -402,12 +391,14 @@ internal sealed class HostHelperManager : IDisposable
                 ["hwnd"] = launchedWindow.WindowHandle.ToInt64().ToString(),
                 ["port"] = port.ToString(),
                 ["user_data_dir"] = userDataDir,
-                ["decision_path"] = existingVisibleWindowHandles.Contains(launchedWindow.WindowHandle)
-                    ? "launch_bind_existing_visible_window"
-                    : "launch_bind_new_visible_window",
-                ["bound_pid_was_preexisting"] = reuseDecision.MatchedProcessIds.Contains(launchedWindow.ProcessId) ? "1" : "0",
+                ["decision_path"] = decisionPath,
+                ["bound_pid_was_preexisting"] = boundPidWasPreexisting ? "1" : "0",
             });
-            return "launched";
+            return new RequestOutcome(
+                Status: boundPidWasPreexisting ? "launch_handoff_existing" : "launched",
+                DecisionPath: decisionPath,
+                ProcessId: launchedWindow.ProcessId,
+                WindowHandle: launchedWindow.WindowHandle.ToInt64());
         }
 
         logger.Warn("chrome", "launched debug chrome but did not bind a reusable window", new Dictionary<string, string?>
@@ -418,7 +409,9 @@ internal sealed class HostHelperManager : IDisposable
             ["user_data_dir"] = userDataDir,
             ["decision_path"] = "launch_unbound",
         });
-        return "launched_unbound";
+        return new RequestOutcome(
+            Status: "launched",
+            DecisionPath: "launch_unbound");
     }
 
     private static WindowMatch? WaitForAnyProcessWindow(string expectedProcessName, int timeoutMs)
@@ -975,29 +968,12 @@ internal sealed class HostHelperManager : IDisposable
             $"pid={Environment.ProcessId}",
             $"started_at_ms={startedAtMs}",
             $"heartbeat_at_ms={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-            $"request_dir={Sanitize(config.RequestDir)}",
+            $"ipc_endpoint={Sanitize(config.IpcEndpoint)}",
             $"runtime_dir={Sanitize(config.RuntimeDir)}",
             $"last_error={Sanitize(lastErrorValue)}",
         };
 
         WriteAtomicTextFile(config.StatePath, string.Join("\r\n", lines) + "\r\n");
-    }
-
-    private static string ReadRequestText(string requestPath)
-    {
-        for (var attempt = 0; attempt < 5; attempt += 1)
-        {
-            try
-            {
-                return File.ReadAllText(requestPath, new UTF8Encoding(false));
-            }
-            catch (IOException) when (attempt < 4)
-            {
-                Thread.Sleep(20);
-            }
-        }
-
-        return File.ReadAllText(requestPath, new UTF8Encoding(false));
     }
 
     private static string? GetOptionalString(JsonElement payload, string propertyName)
@@ -1064,20 +1040,6 @@ internal sealed class HostHelperManager : IDisposable
         if (!string.IsNullOrWhiteSpace(path))
         {
             Directory.CreateDirectory(path);
-        }
-    }
-
-    private static void SafeDelete(string path)
-    {
-        try
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-        catch
-        {
         }
     }
 

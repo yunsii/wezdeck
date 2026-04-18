@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 
 namespace WezTerm.WindowsHostHelper;
 
@@ -7,7 +8,12 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        if (!TryParseArgs(args, out var configPath, out var parseError))
+        if (args.Length > 0 && string.Equals(args[0], "request", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunRequestMode(args[1..]);
+        }
+
+        if (!TryParseServerArgs(args, out var configPath, out var parseError))
         {
             return ExitWithError(parseError);
         }
@@ -47,7 +53,7 @@ internal static class Program
         }
     }
 
-    private static bool TryParseArgs(string[] args, out string? configPath, out string? error)
+    private static bool TryParseServerArgs(string[] args, out string? configPath, out string? error)
     {
         configPath = null;
         error = null;
@@ -72,6 +78,90 @@ internal static class Program
         if (string.IsNullOrWhiteSpace(configPath))
         {
             error = "usage: helper-manager.exe --config <path>";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static int RunRequestMode(string[] args)
+    {
+        if (!TryParseRequestArgs(args, out var pipeEndpoint, out var payloadBase64, out var timeoutMs, out var parseError))
+        {
+            return ExitWithError(parseError);
+        }
+
+        try
+        {
+            var payloadJson = Encoding.UTF8.GetString(Convert.FromBase64String(payloadBase64!));
+            using var client = NamedPipeTransport.Connect(pipeEndpoint!, timeoutMs);
+            NamedPipeTransport.WriteMessage(client, payloadJson);
+            var responseJson = NamedPipeTransport.ReadMessage(client);
+
+            var response = JsonSerializer.Deserialize<HelperResponse>(responseJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
+
+            return response?.Ok == true ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            return ExitWithError($"request failed: {ex.Message}");
+        }
+    }
+
+    private static bool TryParseRequestArgs(string[] args, out string? pipeEndpoint, out string? payloadBase64, out int timeoutMs, out string? error)
+    {
+        pipeEndpoint = null;
+        payloadBase64 = null;
+        timeoutMs = 5000;
+        error = null;
+
+        for (var index = 0; index < args.Length; index += 1)
+        {
+            var arg = args[index];
+            if (string.Equals(arg, "--pipe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length)
+                {
+                    error = "missing value for --pipe";
+                    return false;
+                }
+
+                pipeEndpoint = args[index + 1];
+                index += 1;
+                continue;
+            }
+
+            if (string.Equals(arg, "--payload-base64", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length)
+                {
+                    error = "missing value for --payload-base64";
+                    return false;
+                }
+
+                payloadBase64 = args[index + 1];
+                index += 1;
+                continue;
+            }
+
+            if (string.Equals(arg, "--timeout-ms", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length || !int.TryParse(args[index + 1], out timeoutMs) || timeoutMs <= 0)
+                {
+                    error = "missing or invalid value for --timeout-ms";
+                    return false;
+                }
+
+                index += 1;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(pipeEndpoint) || string.IsNullOrWhiteSpace(payloadBase64))
+        {
+            error = "usage: helper-manager.exe request --pipe <endpoint> --payload-base64 <payload> [--timeout-ms 5000]";
             return false;
         }
 

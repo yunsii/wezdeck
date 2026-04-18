@@ -24,24 +24,33 @@ local function json_escape(value)
   return '"' .. text .. '"'
 end
 
-local function write_text_file_atomic(path, content)
-  local temp_path = path .. '.tmp'
-  local file, err = io.open(temp_path, 'w')
-  if not file then
-    return false, err
+local function base64_encode(data)
+  local alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  local result = {}
+  local bytes = { data:byte(1, #data) }
+  local padding = (3 - (#bytes % 3)) % 3
+
+  for _ = 1, padding do
+    bytes[#bytes + 1] = 0
   end
 
-  file:write(content)
-  file:close()
-
-  os.remove(path)
-  local renamed, rename_err = os.rename(temp_path, path)
-  if not renamed then
-    os.remove(temp_path)
-    return false, rename_err
+  for index = 1, #bytes, 3 do
+    local chunk = bytes[index] * 65536 + bytes[index + 1] * 256 + bytes[index + 2]
+    local a = math.floor(chunk / 262144) % 64 + 1
+    local b = math.floor(chunk / 4096) % 64 + 1
+    local c = math.floor(chunk / 64) % 64 + 1
+    local d = chunk % 64 + 1
+    result[#result + 1] = alphabet:sub(a, a)
+    result[#result + 1] = alphabet:sub(b, b)
+    result[#result + 1] = alphabet:sub(c, c)
+    result[#result + 1] = alphabet:sub(d, d)
   end
 
-  return true, nil
+  for index = 1, padding do
+    result[#result - index + 1] = '='
+  end
+
+  return table.concat(result)
 end
 
 local function current_epoch_ms()
@@ -74,25 +83,6 @@ end
 
 local function helper_integration(constants)
   return constants.integrations and constants.integrations.vscode or {}
-end
-
-local function hidden_launcher_command(runtime_dir, executable, args, wait)
-  local command = {
-    'C:/Windows/System32/wscript.exe',
-    runtime_dir .. '\\scripts\\launch-hidden.vbs',
-  }
-
-  if wait then
-    command[#command + 1] = '--wait'
-  end
-
-  command[#command + 1] = executable
-
-  for _, value in ipairs(args or {}) do
-    command[#command + 1] = value
-  end
-
-  return command
 end
 
 function M.new(opts)
@@ -129,43 +119,28 @@ function M:supports_windows_helper()
   return runtime_mode == 'hybrid-wsl' and self.constants.host_os == 'windows'
 end
 
-function M:windows_notification_command(title, message)
-  if not self:supports_windows_helper() then
-    return nil
-  end
-
-  local integration = self:helper_integration()
-  local runtime_dir = integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
-  return hidden_launcher_command(runtime_dir, integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe', {
-    '-NoProfile',
-    '-NonInteractive',
-    '-WindowStyle',
-    'Hidden',
-    '-ExecutionPolicy',
-    'Bypass',
-    '-File',
-    runtime_dir .. '\\scripts\\show-windows-notification.ps1',
-    '-Title',
-    title,
-    '-Message',
-    message,
-  }, false)
-end
-
 function M:show_windows_notification(category, trace_id, title, message)
-  local command = self:windows_notification_command(title, message)
-  if not command then
-    return
+  if self.wezterm.gui and self.wezterm.gui.gui_windows then
+    local ok, windows = pcall(self.wezterm.gui.gui_windows)
+    if ok and windows and windows[1] and windows[1].toast_notification then
+      local shown, err = pcall(windows[1].toast_notification, windows[1], title or 'WezTerm', message or '', nil, 4000)
+      if shown then
+        return
+      end
+
+      self.logger.warn(category, 'failed to show wezterm toast notification', merge_fields(trace_id, {
+        error = err,
+        title = title,
+        message = message,
+      }))
+      return
+    end
   end
 
-  local ok, err = pcall(self.wezterm.background_child_process, command)
-  if not ok then
-    self.logger.warn(category, 'failed to show windows notification', merge_fields(trace_id, {
-      error = err,
-      title = title,
-      message = message,
-    }))
-  end
+  self.logger.warn(category, 'wezterm toast notification unavailable', merge_fields(trace_id, {
+    title = title,
+    message = message,
+  }))
 end
 
 function M:helper_command()
@@ -182,11 +157,10 @@ function M:helper_command()
     or diagnostics_capture_enabled(self.constants, 'chrome')
     or diagnostics_capture_enabled(self.constants, 'clipboard')
 
-  return hidden_launcher_command(runtime_dir, integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe', {
+  return {
+    integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
     '-NoProfile',
     '-NonInteractive',
-    '-WindowStyle',
-    'Hidden',
     '-ExecutionPolicy',
     'Bypass',
     '-File',
@@ -195,8 +169,6 @@ function M:helper_command()
     tostring(integration.helper_port or 45921),
     '-StatePath',
     integration.helper_state_path or '',
-    '-RequestDir',
-    integration.helper_request_dir or integration.helper_request_path or '',
     '-ClipboardStatePath',
     clipboard.state_path or '',
     '-ClipboardLogPath',
@@ -233,7 +205,34 @@ function M:helper_command()
     tostring(diagnostics.max_bytes or 0),
     '-DiagnosticsMaxFiles',
     tostring(diagnostics.max_files or 0),
-  }, true), nil
+  }, nil
+end
+
+function M:helper_request_command(payload_json)
+  if not self:supports_windows_helper() then
+    return nil, 'unsupported_runtime'
+  end
+
+  local integration = self:helper_integration()
+  local helper_manager_exe = integration.helper_manager_exe
+  local helper_ipc_endpoint = integration.helper_ipc_endpoint
+  if not helper_manager_exe or helper_manager_exe == '' then
+    return nil, 'manager_exe_unconfigured'
+  end
+  if not helper_ipc_endpoint or helper_ipc_endpoint == '' then
+    return nil, 'ipc_endpoint_unconfigured'
+  end
+
+  return {
+    helper_manager_exe,
+    'request',
+    '--pipe',
+    helper_ipc_endpoint,
+    '--payload-base64',
+    base64_encode(payload_json),
+    '--timeout-ms',
+    tostring(integration.helper_request_timeout_ms or 5000),
+  }, nil
 end
 
 function M:ensure_helper_running(reason)
@@ -338,8 +337,7 @@ function M:helper_state_is_fresh(helper_state)
   return true, nil
 end
 
-function M:write_request(trace_id, category, request_body_factory)
-  local integration = self:helper_integration()
+function M:write_request(trace_id, category, request_kind, payload_body_factory)
   local helper_state, helper_state_reason = self:read_helper_state(trace_id)
   local helper_ready = false
   local helper_ready_reason = helper_state_reason
@@ -367,40 +365,47 @@ function M:write_request(trace_id, category, request_body_factory)
     end
   end
 
-  local request_dir = helper_state.request_dir or helper_state.request_path or integration.helper_request_dir or integration.helper_request_path
-  if not request_dir or request_dir == '' then
-    return false, 'request_dir_unconfigured'
-  end
-  request_dir = request_dir:gsub('[\\/]+$', '')
-
   local request_trace_id = trace_id or tostring(os.time())
-  local request_path = request_dir .. '\\' .. request_trace_id .. '.json'
-  local request_body = request_body_factory(request_trace_id)
+  local payload_body = payload_body_factory(request_trace_id)
+  local request_body = table.concat {
+    '{',
+    '"version":1,',
+    '"trace_id":', json_escape(request_trace_id), ',',
+    '"kind":', json_escape(request_kind), ',',
+    '"payload":', payload_body,
+    '}',
+  }
+  local request_command, request_command_reason = self:helper_request_command(request_body)
+  if not request_command then
+    return false, request_command_reason
+  end
 
-  self.logger.info(category, 'sending request via windows runtime helper', merge_fields(trace_id, {
-    request_dir = request_dir,
-    request_path = request_path,
+  self.logger.info(category, 'sending request via windows runtime helper ipc', merge_fields(trace_id, {
     ensure_reason = ensure_reason or helper_ready_reason or 'ready',
   }))
 
-  local ok, err = write_text_file_atomic(request_path, request_body)
-  if not ok then
-    self:ensure_helper_running_sync 'request-enqueue-retry'
-    helper_state = self:read_helper_state(trace_id)
-    if helper_state and helper_state.request_dir and helper_state.request_dir ~= '' then
-      request_dir = helper_state.request_dir:gsub('[\\/]+$', '')
-      request_path = request_dir .. '\\' .. request_trace_id .. '.json'
-    end
-    ok, err = write_text_file_atomic(request_path, request_body)
+  local ok, success, stdout, stderr = pcall(self.wezterm.run_child_process, request_command)
+  if not ok or not success then
+    self:ensure_helper_running_sync 'request-ipc-retry'
+    ok, success, stdout, stderr = pcall(self.wezterm.run_child_process, request_command)
   end
 
   if not ok then
-    self.logger.warn(category, 'failed to enqueue request for windows runtime helper', merge_fields(trace_id, {
-      error = err,
-      request_path = request_path,
+    self.logger.warn(category, 'windows runtime helper ipc request raised an error', merge_fields(trace_id, {
+      error = success,
     }))
-    return false, 'request_enqueue_failed'
+    return false, 'request_spawn_error'
   end
+
+  if not success then
+    self.logger.warn(category, 'windows runtime helper ipc request failed', merge_fields(trace_id, {
+      stdout = stdout,
+      stderr = stderr,
+    }))
+    return false, 'request_failed'
+  end
+
+  self.logger.info(category, 'windows runtime helper ipc request completed', merge_fields(trace_id, {}))
 
   return true, nil
 end

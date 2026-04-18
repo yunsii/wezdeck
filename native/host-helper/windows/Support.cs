@@ -239,7 +239,7 @@ internal sealed class HelperConfig
     public required string RuntimeDir { get; init; }
     public required string ScriptsDir { get; init; }
     public required string StatePath { get; init; }
-    public required string RequestDir { get; init; }
+    public required string IpcEndpoint { get; init; }
     public required string PowerShellExe { get; init; }
     public required DiagnosticConfig Diagnostics { get; init; }
     public string? ClipboardStatePath { get; init; }
@@ -265,7 +265,7 @@ internal sealed class HelperConfig
         if (string.IsNullOrWhiteSpace(config.RuntimeDir) ||
             string.IsNullOrWhiteSpace(config.ScriptsDir) ||
             string.IsNullOrWhiteSpace(config.StatePath) ||
-            string.IsNullOrWhiteSpace(config.RequestDir))
+            string.IsNullOrWhiteSpace(config.IpcEndpoint))
         {
             throw new InvalidOperationException("config file is missing required paths");
         }

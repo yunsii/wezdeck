@@ -150,17 +150,25 @@ local function default_windows_runtime_helper_state_path(host_os)
   return nil
 end
 
-local function default_windows_runtime_helper_request_dir(host_os)
+local function default_windows_runtime_helper_manager_path(host_os)
   if host_os ~= 'windows' then
     return nil
   end
 
   local local_app_data = os.getenv 'LOCALAPPDATA'
   if local_app_data and local_app_data ~= '' then
-    return local_app_data .. '\\wezterm-runtime-helper\\requests'
+    return local_app_data .. '\\wezterm-runtime-helper\\bin\\helper-manager.exe'
   end
 
   return nil
+end
+
+local function default_windows_runtime_helper_ipc_endpoint(host_os)
+  if host_os ~= 'windows' then
+    return nil
+  end
+
+  return '\\\\.\\pipe\\wezterm-host-helper-v1'
 end
 
 local function default_launch_menu(host_os)
@@ -432,10 +440,12 @@ local base_constants = {
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
       runtime_dir = runtime_dir,
       helper_script = 'scripts\\ensure-windows-runtime-helper.ps1',
+      helper_manager_exe = default_windows_runtime_helper_manager_path(host_os),
+      helper_ipc_endpoint = default_windows_runtime_helper_ipc_endpoint(host_os),
       helper_state_path = default_windows_runtime_helper_state_path(host_os),
-      helper_request_dir = default_windows_runtime_helper_request_dir(host_os),
       helper_port = 0,
       helper_restart_interval_seconds = 15,
+      helper_request_timeout_ms = 5000,
       helper_heartbeat_timeout_seconds = 5,
       helper_heartbeat_interval_ms = 1000,
       helper_poll_interval_ms = 25,

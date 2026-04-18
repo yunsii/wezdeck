@@ -43,26 +43,25 @@ In `hybrid-wsl`, `Ctrl+v` smart image paste now depends on a background Windows 
 
 ## Windows Host Design
 
-- In `hybrid-wsl`, WezTerm Lua is only responsible for request generation, queue writes, and request-side diagnostics.
+- In `hybrid-wsl`, WezTerm Lua is only responsible for request generation, helper bootstrap, and request-side diagnostics.
 - `%LOCALAPPDATA%\wezterm-runtime-helper\bin\helper-manager.exe` is the only active Windows host control plane. It owns VS Code focus/open, Chrome debug-browser reuse, clipboard monitoring, and request-side decision logging.
 - `%USERPROFILE%\.wezterm-native\host-helper\windows\` is the source tree that sync publishes and the installer compiles from; `%LOCALAPPDATA%\wezterm-runtime-helper\bin\` is the stable installed binary location that the runtime actually launches.
-- `wezterm-x/scripts/` is now intentionally thin on Windows. It keeps the helper installer/launcher/bootstrap pieces plus cross-platform shell helpers, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.
-- In `posix-local`, shell launchers such as `wezterm-x/scripts/focus-or-start-debug-chrome.sh` still exist because there is no Windows host helper in that mode.
+- `wezterm-x/scripts/` is now intentionally thin on Windows. It keeps the helper installer/launcher/bootstrap pieces, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.
 
 ### Active Hybrid Flow
 
-- WezTerm Lua writes a request file with a `trace_id` into `%LOCALAPPDATA%\wezterm-runtime-helper\requests\`.
+- WezTerm Lua generates a request payload with a `trace_id` and invokes the native helper client mode against the stable named pipe `\\.\pipe\wezterm-host-helper-v1`.
 - `wezterm-x/scripts/ensure-windows-runtime-helper.ps1` is only a thin bootstrap: it checks the installed helper heartbeat/config, writes `manager-config.json`, and launches the stable native helper if needed.
-- `%LOCALAPPDATA%\wezterm-runtime-helper\bin\helper-manager.exe` consumes requests, evaluates reuse/launch policy, writes decision logs, and updates the persisted instance registry.
+- `%LOCALAPPDATA%\wezterm-runtime-helper\bin\helper-manager.exe` hosts the named-pipe server, evaluates reuse/launch policy, writes decision logs, and updates the persisted instance registry.
 - `%LOCALAPPDATA%\wezterm-runtime-helper\window-cache.json` is the persisted instance registry for reusable app windows.
 - `%USERPROFILE%\.wezterm-runtime\wezterm-debug.log` is the main cross-layer diagnostics file; use one `trace_id` to follow Lua request submission, helper reuse evaluation, and request completion.
 
 ## Posix Host Design
 
-- `posix-local` does not have a native host helper yet. Current desktop integrations still use direct shell launchers.
+- `posix-local` does not have a native host helper yet. Host-integrated shortcuts that depend on the Windows helper model, such as `Alt+b`, should stay unavailable there until a native helper exists.
 - When `posix-local` gets a host helper, it should follow the same split as Windows: WezTerm Lua should remain a request producer, while a stable per-user native agent owns focus/open logic, clipboard monitoring, reuse policy evaluation, and structured decision logging.
 - The preferred install shape is a stable per-user binary outside the synced runtime tree, with platform-specific source under `native/host-helper/<platform>/` and a thin bootstrap/installer layer under `wezterm-x/scripts/`.
-- The preferred IPC/state model should stay aligned with Windows: request queue or equivalent stable request channel, heartbeat/state file, persisted instance registry, and shared `trace_id` propagation for diagnostics.
+- The preferred IPC/state model should stay aligned with Windows: a stable local IPC endpoint, heartbeat/state file, persisted instance registry, and shared `trace_id` propagation for diagnostics.
 - Suggested platform-native service hosts are `launchd`/`LaunchAgent` on macOS and a stable per-user daemon managed directly or via `systemd --user` on Linux, as long as the runtime still sees one stable executable path and one stable state directory.
 
 ## Renderer Backend
@@ -181,7 +180,7 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace,worktree`.
 - Current runtime categories include `alt_o`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
 - In `hybrid-wsl`, the Windows-side `Alt+o` launcher now writes structured `alt_o` lines into the same WezTerm diagnostics file under `%USERPROFILE%\.wezterm-runtime\wezterm-debug.log`, reusing the same `trace_id` and rotation settings as the Lua-side diagnostics path; those lines include millisecond timestamps plus per-phase and total `duration_ms` fields for launch-path profiling.
-- In `hybrid-wsl`, the Windows host control plane is now a stable `%LOCALAPPDATA%\wezterm-runtime-helper\bin\helper-manager.exe` process instead of a versioned PowerShell worker script. It still writes heartbeat state to `%LOCALAPPDATA%\wezterm-runtime-helper\state.env` and still consumes queued request files from `%LOCALAPPDATA%\wezterm-runtime-helper\requests\`.
+- In `hybrid-wsl`, the Windows host control plane is now a stable `%LOCALAPPDATA%\wezterm-runtime-helper\bin\helper-manager.exe` process instead of a versioned PowerShell worker script. It still writes heartbeat state to `%LOCALAPPDATA%\wezterm-runtime-helper\state.env`, but request delivery now goes through the stable named pipe `\\.\pipe\wezterm-host-helper-v1` instead of a queued request directory.
 - `Alt+o` and `Alt+b` requests are now handled directly inside that same `helper-manager.exe` process. The old PowerShell request handlers and worker plugin chain are no longer part of the active Windows hot path.
 - Host-helper reuse diagnostics now emit explicit decision fields such as `decision_path`, `registry_hit`, `matched_process_count`, `matched_process_ids`, and `matched_window_found`, so one `trace_id` is enough to explain why a request reused an existing window or fell through to launch.
 - Clipboard image monitoring now runs inside that same `helper-manager.exe` process and keeps `%LOCALAPPDATA%\wezterm-clipboard-cache\state.env` fresh without launching a second standalone listener PowerShell window.
