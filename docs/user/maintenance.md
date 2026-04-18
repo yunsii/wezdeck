@@ -157,6 +157,27 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace,worktree`.
 - Current runtime categories include `alt_o`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
 
+## Hybrid WSL Agent Startup Measurement
+
+- Use [`scripts/dev/install-hybrid-wsl-agent-startup-desktop-script.sh`](../../scripts/dev/install-hybrid-wsl-agent-startup-desktop-script.sh) from WSL when you want a Windows-side PowerShell test script for the currently configured managed agent CLI across the full hybrid `WSL + login shell + agent CLI` launch path.
+- The generator resolves the current project agent CLI through the same `worktree-task` config chain used by the built-in `tmux-agent` provider, including `.worktree-task/config.env`, `~/.config/worktree-task/config.env`, and `wezterm-x/local/shared.env`.
+- By default it writes `measure-hybrid-wsl-agent-startup-<repo>.ps1` to the Windows Desktop and targets the current WSL distro.
+- The generated PowerShell wrapper invokes the generic [`scripts/dev/measure-hybrid-wsl-agent-startup.ps1`](../../scripts/dev/measure-hybrid-wsl-agent-startup.ps1) template with the resolved agent command baked in, so the wrapper tracks the current project selection instead of hard-coding a specific CLI.
+- Run the generator from the target repo root or pass `--cwd /path/to/repo` to resolve a different project context.
+- Use `--variant light` or `--variant dark` when you want the generated wrapper to measure that specific configured command variant instead of the default/base command.
+
+Example:
+
+```bash
+scripts/dev/install-hybrid-wsl-agent-startup-desktop-script.sh
+```
+
+After the wrapper is placed on the Desktop, run it from Windows PowerShell with execution policy bypass:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\Users\your-user\Desktop\measure-hybrid-wsl-agent-startup-your-repo.ps1 -Pause
+```
+
 ## Shell Integration
 
 - Managed tmux flows no longer require shell rc `OSC 7` integration. tmux status and tmux-owned shortcuts resolve cwd from tmux's own `pane_current_path`.
