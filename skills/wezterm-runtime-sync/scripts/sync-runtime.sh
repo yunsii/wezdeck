@@ -28,36 +28,37 @@ Environment:
 EOF
 }
 
-cleanup_stale_windows_runtime_processes() {
-  local repo_root="${1:?missing repo root}"
-  local target_home="${2:?missing target home}"
-  local release_id="${3:?missing release id}"
-  local cleanup_script="$repo_root/skills/wezterm-runtime-sync/scripts/cleanup-stale-windows-runtime-processes.ps1"
-  local cleanup_script_win="" target_home_win="" killed_count=""
+install_windows_helper_manager() {
+  local target_runtime_dir="${1:?missing target runtime dir}"
+  local install_script="$target_runtime_dir/scripts/install-windows-runtime-helper-manager.ps1"
+  local runtime_dir_win="" install_output="" manager_path=""
 
-  [[ "$target_home" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
+  [[ "$target_runtime_dir" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
   command -v powershell.exe >/dev/null 2>&1 || return 0
   command -v wslpath >/dev/null 2>&1 || return 0
-  [[ -f "$cleanup_script" ]] || return 0
+  [[ -f "$install_script" ]] || return 0
 
-  cleanup_script_win="$(wslpath -w "$cleanup_script" 2>/dev/null || true)"
-  target_home_win="$(wslpath -w "$target_home" 2>/dev/null || true)"
-  [[ -n "$cleanup_script_win" && -n "$target_home_win" ]] || return 0
+  runtime_dir_win="$(wslpath -w "$target_runtime_dir" 2>/dev/null || true)"
+  [[ -n "$runtime_dir_win" ]] || return 0
 
-  if killed_count="$(powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
-    -File "$cleanup_script_win" \
-    -TargetHome "$target_home_win" \
-    -CurrentRelease "$release_id" 2>/dev/null | tr -d '\r' | tail -n 1)"; then
-    runtime_log_info sync "cleaned stale windows runtime processes after sync" \
-      "target_home=$target_home" \
-      "release_id=$release_id" \
-      "killed_count=${killed_count:-0}"
-    return 0
+  printf 'Installing Windows helper manager from %s\n' "$target_runtime_dir"
+  if ! install_output="$(
+    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+      -File "$(wslpath -w "$install_script")" \
+      -RuntimeDir "$runtime_dir_win" 2>&1 | tr -d '\r'
+  )"; then
+    [[ -n "$install_output" ]] && printf '%s\n' "$install_output" >&2
+    runtime_log_error sync "failed to install windows helper manager after sync" \
+      "target_runtime_dir=$target_runtime_dir"
+    return 1
   fi
 
-  runtime_log_warn sync "failed to clean stale windows runtime processes after sync" \
-    "target_home=$target_home" \
-    "release_id=$release_id"
+  [[ -n "$install_output" ]] && printf '%s\n' "$install_output"
+  manager_path="$(printf '%s\n' "$install_output" | tail -n 1)"
+  runtime_log_info sync "installed windows helper manager after sync" \
+    "target_runtime_dir=$target_runtime_dir" \
+    "manager_path=${manager_path:-unknown}"
+  return 0
 }
 
 write_text_file_atomic() {
@@ -93,66 +94,6 @@ lua_runtime_path() {
   fi
 
   printf '%s\n' "$path"
-}
-
-write_current_release_files() {
-  local runtime_state_dir="${1:?missing runtime state dir}"
-  local release_id="${2:?missing release id}"
-  local release_root="${3:?missing release root}"
-  local runtime_dir="${4:?missing runtime dir}"
-  local current_release_file="$runtime_state_dir/current-release.txt"
-  local current_lua_file="$runtime_state_dir/current.lua"
-  local release_root_lua runtime_dir_lua state_dir_lua
-
-  release_root_lua="$(lua_quote "$(lua_runtime_path "$release_root")")"
-  runtime_dir_lua="$(lua_quote "$(lua_runtime_path "$runtime_dir")")"
-  state_dir_lua="$(lua_quote "$(lua_runtime_path "$runtime_state_dir")")"
-
-  write_text_file_atomic "$current_release_file" <<EOF
-$release_id
-EOF
-
-  write_text_file_atomic "$current_lua_file" <<EOF
-return {
-  release_id = $(lua_quote "$release_id"),
-  release_root = $release_root_lua,
-  runtime_dir = $runtime_dir_lua,
-  state_dir = $state_dir_lua,
-}
-EOF
-}
-
-cleanup_old_releases() {
-  local releases_dir="${1:?missing releases dir}"
-  local keep_count="${2:?missing keep count}"
-  local current_release="${3:?missing current release}"
-  local releases=()
-  local release_name
-
-  [[ -d "$releases_dir" ]] || return 0
-
-  while IFS= read -r release_name; do
-    [[ -n "$release_name" ]] || continue
-    releases+=("$release_name")
-  done < <(find "$releases_dir" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r)
-
-  local kept=0
-  for release_name in "${releases[@]}"; do
-    if (( kept < keep_count )) || [[ "$release_name" == "$current_release" ]]; then
-      ((kept += 1))
-      continue
-    fi
-
-    rm -rf "$releases_dir/$release_name"
-  done
-}
-
-generate_release_id() {
-  local repo_root="${1:?missing repo root}"
-  local timestamp git_short
-  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-  git_short="$(git -C "$repo_root" rev-parse --short HEAD 2>/dev/null || printf 'nogit')"
-  printf '%s-%s-%s\n' "$timestamp" "$git_short" "$$"
 }
 
 maybe_reload_tmux() {
@@ -415,34 +356,35 @@ fi
 REPO_ROOT="$(resolve_repo_root)"
 SOURCE_FILE="$REPO_ROOT/wezterm.lua"
 RUNTIME_SOURCE_DIR="$REPO_ROOT/wezterm-x"
+NATIVE_SOURCE_DIR="$REPO_ROOT/native"
 SYNC_CACHE_FILE="$REPO_ROOT/.sync-target"
 MAIN_REPO_ROOT="$(resolve_main_repo_root "$REPO_ROOT")"
 
 TARGET_HOME="$(choose_target_home)"
 TARGET_FILE="$TARGET_HOME/.wezterm.lua"
 TARGET_RUNTIME_STATE_DIR="$TARGET_HOME/.wezterm-runtime"
-TARGET_RELEASES_DIR="$TARGET_RUNTIME_STATE_DIR/releases"
-RELEASE_ID="$(generate_release_id "$REPO_ROOT")"
-TARGET_RELEASE_ROOT="$TARGET_RELEASES_DIR/$RELEASE_ID"
-TARGET_RUNTIME_DIR="$TARGET_RELEASE_ROOT/wezterm-x"
-TEMP_RELEASE_ROOT="$TARGET_RUNTIME_STATE_DIR/.release-$RELEASE_ID-$$"
-TEMP_RUNTIME_DIR="$TEMP_RELEASE_ROOT/wezterm-x"
+TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
+TARGET_NATIVE_DIR="$TARGET_HOME/.wezterm-native"
+TEMP_RUNTIME_DIR="$TARGET_HOME/.wezterm-x.tmp.$$"
+TEMP_NATIVE_DIR="$TARGET_HOME/.wezterm-native.tmp.$$"
 
 runtime_log_info sync "sync-runtime invoked" \
   "repo_root=$REPO_ROOT" \
   "main_repo_root=$MAIN_REPO_ROOT" \
   "target_home=$TARGET_HOME" \
   "target_file=$TARGET_FILE" \
-  "target_runtime_dir=$TARGET_RUNTIME_DIR" \
-  "release_id=$RELEASE_ID"
+  "target_runtime_dir=$TARGET_RUNTIME_DIR"
 
 mkdir -p "$TARGET_HOME"
 mkdir -p "$TARGET_RUNTIME_STATE_DIR"
-mkdir -p "$TARGET_RELEASES_DIR"
-rm -rf "$TEMP_RELEASE_ROOT"
+rm -rf "$TEMP_RUNTIME_DIR" "$TEMP_NATIVE_DIR"
 mkdir -p "$TEMP_RUNTIME_DIR"
+mkdir -p "$TEMP_NATIVE_DIR"
 
 cp -R "$RUNTIME_SOURCE_DIR"/. "$TEMP_RUNTIME_DIR"/
+if [[ -d "$NATIVE_SOURCE_DIR" ]]; then
+  cp -R "$NATIVE_SOURCE_DIR"/. "$TEMP_NATIVE_DIR"/
+fi
 
 repo_root_path="${WEZTERM_REPO_ROOT:-}"
 if [[ -z "$repo_root_path" ]]; then
@@ -451,12 +393,12 @@ fi
 printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
 printf '%s\n' "$MAIN_REPO_ROOT" > "$TEMP_RUNTIME_DIR/repo-main-root.txt"
 
-mv "$TEMP_RELEASE_ROOT" "$TARGET_RELEASE_ROOT"
+rm -rf "$TARGET_RUNTIME_DIR" "$TARGET_NATIVE_DIR"
+mv "$TEMP_RUNTIME_DIR" "$TARGET_RUNTIME_DIR"
+mv "$TEMP_NATIVE_DIR" "$TARGET_NATIVE_DIR"
 
-write_current_release_files "$TARGET_RUNTIME_STATE_DIR" "$RELEASE_ID" "$TARGET_RELEASE_ROOT" "$TARGET_RUNTIME_DIR"
+install_windows_helper_manager "$TARGET_RUNTIME_DIR"
 copy_file_atomic "$SOURCE_FILE" "$TARGET_FILE"
-cleanup_stale_windows_runtime_processes "$REPO_ROOT" "$TARGET_HOME" "$RELEASE_ID"
-cleanup_old_releases "$TARGET_RELEASES_DIR" 5 "$RELEASE_ID"
 
 maybe_reload_tmux "$REPO_ROOT"
 
@@ -465,7 +407,9 @@ runtime_log_info sync "sync-runtime completed" \
   "target_home=$TARGET_HOME" \
   "target_file=$TARGET_FILE" \
   "target_runtime_dir=$TARGET_RUNTIME_DIR" \
-  "release_id=$RELEASE_ID" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"
+if [[ -d "$NATIVE_SOURCE_DIR" ]]; then
+  printf 'Synced %s -> %s\n' "$NATIVE_SOURCE_DIR" "$TARGET_NATIVE_DIR"
+fi

@@ -43,28 +43,12 @@ detect_windows_paths() {
   HELPER_REQUEST_DIR_WIN="${WINDOWS_LOCALAPPDATA_WIN}\\wezterm-runtime-helper\\requests"
   HELPER_STATE_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/state.env"
   HELPER_REQUEST_DIR_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/requests"
-  local runtime_state_wsl="${WINDOWS_USERPROFILE_WSL}/.wezterm-runtime"
   local runtime_state_win="${WINDOWS_USERPROFILE_WIN}\\.wezterm-runtime"
-  local current_release_file_wsl="${runtime_state_wsl}/current-release.txt"
-  local current_release=""
-
-  if [[ -f "$current_release_file_wsl" ]]; then
-    current_release="$(trim_cr "$(< "$current_release_file_wsl")")"
-  fi
-
-  if [[ -n "$current_release" && -d "${runtime_state_wsl}/releases/${current_release}/wezterm-x" ]]; then
-    WINDOWS_RUNTIME_HOME_WIN="${runtime_state_win}\\releases\\${current_release}\\wezterm-x"
-    WINDOWS_RUNTIME_HOME_WSL="${runtime_state_wsl}/releases/${current_release}/wezterm-x"
-    WINDOWS_DIAGNOSTICS_FILE_WIN="${runtime_state_win}\\wezterm-debug.log"
-  else
-    WINDOWS_RUNTIME_HOME_WIN="${WINDOWS_USERPROFILE_WIN}\\.wezterm-x"
-    WINDOWS_RUNTIME_HOME_WSL="${WINDOWS_USERPROFILE_WSL}/.wezterm-x"
-    WINDOWS_DIAGNOSTICS_FILE_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\wezterm-debug.log"
-  fi
+  WINDOWS_RUNTIME_HOME_WIN="${WINDOWS_USERPROFILE_WIN}\\.wezterm-x"
+  WINDOWS_RUNTIME_HOME_WSL="${WINDOWS_USERPROFILE_WSL}/.wezterm-x"
+  WINDOWS_DIAGNOSTICS_FILE_WIN="${runtime_state_win}\\wezterm-debug.log"
 
   WINDOWS_HELPER_ENSURE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\ensure-windows-runtime-helper.ps1"
-  WINDOWS_HELPER_WORKER_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\windows-runtime-helper.ps1"
-  WINDOWS_VSCODE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\focus-or-open-vscode.ps1"
 }
 
 detect_code_command() {
@@ -120,7 +104,6 @@ ensure_helper() {
 
   if ! powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
     -File "$WINDOWS_HELPER_ENSURE_SCRIPT_WIN" \
-    -WorkerScriptPath "$WINDOWS_HELPER_WORKER_SCRIPT_WIN" \
     -StatePath "$HELPER_STATE_WIN" \
     -RequestDir "$HELPER_REQUEST_DIR_WIN" \
     -HeartbeatTimeoutSeconds 5 \
@@ -168,23 +151,12 @@ enqueue_helper_request() {
 
 run_direct_windows_open() {
   local trace_id="$1"
-  local command=(powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass
-    -File "$WINDOWS_VSCODE_SCRIPT_WIN"
-    -RequestedDir "$target_dir"
-    -Distro "$WSL_DISTRO_NAME"
-    -TraceId "$trace_id"
-    -DiagnosticsEnabled 1
-    -DiagnosticsCategoryEnabled 1
-    -DiagnosticsLevel info
-    -DiagnosticsFile "$WINDOWS_DIAGNOSTICS_FILE_WIN"
-    -DiagnosticsMaxBytes 5242880
-    -DiagnosticsMaxFiles 5)
-
-  for arg in "${code_command[@]}"; do
-    command+=(-CodeArg "$arg")
-  done
-
-  "${command[@]}"
+  local folder_uri="vscode-remote://wsl+${WSL_DISTRO_NAME}${target_dir}"
+  local code_exe="${code_command[0]}"
+  local escaped_code="${code_exe//\\/\\\\}"
+  local escaped_uri="${folder_uri//\\/\\\\}"
+  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \
+    "Start-Process -FilePath '$escaped_code' -ArgumentList @('--folder-uri', '$escaped_uri')" >/dev/null 2>&1
 }
 
 code_command=()

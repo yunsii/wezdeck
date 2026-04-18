@@ -98,34 +98,21 @@ userprofile_wsl="$(wslpath -u "$userprofile_win")"
 
 runtime_state_win="${userprofile_win}\\.wezterm-runtime"
 runtime_state_wsl="${userprofile_wsl}/.wezterm-runtime"
-current_release_file_wsl="${runtime_state_wsl}/current-release.txt"
-current_release=""
-if [[ -f "$current_release_file_wsl" ]]; then
-  current_release="$(trim_cr "$(< "$current_release_file_wsl")")"
-fi
-
-if [[ -n "$current_release" && -d "${runtime_state_wsl}/releases/${current_release}/wezterm-x" ]]; then
-  runtime_home_win="${runtime_state_win}\\releases\\${current_release}\\wezterm-x"
-  runtime_home_wsl="${runtime_state_wsl}/releases/${current_release}/wezterm-x"
-  debug_log_wsl="${runtime_state_wsl}/wezterm-debug.log"
-else
-  runtime_home_win="${userprofile_win}\\.wezterm-x"
-  runtime_home_wsl="${userprofile_wsl}/.wezterm-x"
-  debug_log_wsl="${userprofile_wsl}/.wezterm-x/wezterm-debug.log"
-fi
+runtime_home_win="${userprofile_win}\\.wezterm-x"
+runtime_home_wsl="${userprofile_wsl}/.wezterm-x"
+debug_log_wsl="${runtime_state_wsl}/wezterm-debug.log"
 
 helper_ensure_win="${runtime_home_win}\\scripts\\ensure-windows-runtime-helper.ps1"
-helper_worker_win="${runtime_home_win}\\scripts\\windows-runtime-helper.ps1"
 helper_state_win="${localappdata_win}\\wezterm-runtime-helper\\state.env"
 helper_request_dir_win="${localappdata_win}\\wezterm-runtime-helper\\requests"
 helper_state_wsl="${localappdata_wsl}/wezterm-runtime-helper/state.env"
 helper_request_dir_wsl="${localappdata_wsl}/wezterm-runtime-helper/requests"
+helper_window_cache_wsl="${localappdata_wsl}/wezterm-runtime-helper/window-cache.json"
 
 clipboard_state_win="${localappdata_win}\\wezterm-clipboard-cache\\state.env"
 clipboard_log_win="${localappdata_win}\\wezterm-clipboard-cache\\listener.log"
 clipboard_output_win="${localappdata_win}\\wezterm-clipboard-images"
 clipboard_state_wsl="${localappdata_wsl}/wezterm-clipboard-cache/state.env"
-clipboard_listener_win="${runtime_home_win}\\scripts\\clipboard-image-listener.ps1"
 
 distro="${WSL_DISTRO_NAME:-}"
 [[ -n "$distro" ]] || distro="Ubuntu-22.04"
@@ -172,7 +159,41 @@ detect_vscode_exe() {
 detect_chrome_profile_dir() {
   local constants_file="${repo_root}/wezterm-x/local/constants.lua"
   [[ -f "$constants_file" ]] || return 1
-  perl -0ne "if (/chrome_debug_browser\\s*=\\s*\\{.*?user_data_dir\\s*=\\s*'([^']+)'/s) { print \$1 }" "$constants_file"
+  perl -0ne '
+    if (/chrome_debug_browser\s*=\s*\{.*?user_data_dir\s*=\s*'\''([^'\'']+)'\''/s) {
+      my $value = $1;
+      $value =~ s/\\\\/\\/g;
+      $value =~ s/\\'\''/'\''/g;
+      print $value;
+    }
+  ' "$constants_file"
+}
+
+chrome_registry_has_entry() {
+  [[ -f "$helper_window_cache_wsl" ]] || return 1
+  perl -0ne '
+    if (
+      /"Chrome"\s*:\s*\{\s*"[^"]+"/s ||
+      /"Entries"\s*:\s*\{.*?"chrome"\s*:\s*\{\s*"[^"]+"/s
+    ) {
+      exit 0;
+    }
+    exit 1;
+  ' "$helper_window_cache_wsl"
+}
+
+chrome_process_exists() {
+  local chrome_profile="$1"
+  local escaped_profile="${chrome_profile//\\/\\\\}"
+  powershell.exe -NoProfile -NonInteractive -Command "
+    \$profile = '$escaped_profile';
+    \$matches = @(Get-CimInstance Win32_Process -Filter \"Name = 'chrome.exe'\" | Where-Object {
+      \$_.CommandLine -and
+      \$_.CommandLine.IndexOf('--remote-debugging-port=9222', [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+      \$_.CommandLine.IndexOf(\$profile, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+    });
+    if (\$matches.Count -gt 0) { exit 0 } else { exit 1 }
+  " >/dev/null 2>&1
 }
 
 wait_for_request_consumed() {
@@ -209,10 +230,8 @@ wait_for_trace_event() {
 ensure_helper() {
   powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
     -File "$helper_ensure_win" \
-    -WorkerScriptPath "$helper_worker_win" \
     -StatePath "$helper_state_win" \
     -RequestDir "$helper_request_dir_win" \
-    -ClipboardListenerScriptPath "$clipboard_listener_win" \
     -ClipboardStatePath "$clipboard_state_win" \
     -ClipboardLogPath "$clipboard_log_win" \
     -ClipboardOutputDir "$clipboard_output_win" \
@@ -260,6 +279,10 @@ enqueue_chrome_request() {
   fi
 
   local request_path="${helper_request_dir_wsl}/${trace_id}.json"
+  local expect_reuse=0
+  if chrome_registry_has_entry || chrome_process_exists "$chrome_profile"; then
+    expect_reuse=1
+  fi
   mkdir -p "$helper_request_dir_wsl"
   printf '{"kind":"chrome_focus_or_start","trace_id":%s,"chrome_path":%s,"remote_debugging_port":9222,"user_data_dir":%s}' \
     "$(json_escape "$trace_id")" \
@@ -267,7 +290,17 @@ enqueue_chrome_request() {
     "$(json_escape "$chrome_profile")" > "$request_path"
   wait_for_request_consumed "$request_path" || return 1
   wait_for_trace_event "$trace_id" "helper processed request" || return 1
-  wait_for_trace_event "$trace_id" "(focused cached debug chrome window|launched debug chrome)" || return 1
+  if (( expect_reuse == 1 )); then
+    wait_for_trace_event "$trace_id" "(focused cached debug chrome window|rebound existing debug chrome window)" || return 1
+    if wait_for_trace_event "$trace_id" "launched debug chrome"; then
+      return 1
+    fi
+    return 0
+  fi
+
+  wait_for_trace_event "$trace_id" "(focused cached debug chrome window|rebound existing debug chrome window|bound launched debug chrome window|launched debug chrome)" || return 1
+  wait_for_trace_event "$trace_id" "launched debug chrome but did not bind a reusable window" && return 1
+  return 0
 }
 
 ensure_helper

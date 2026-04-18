@@ -1,14 +1,9 @@
 param(
-  [Parameter(Mandatory = $true)]
-  [string]$WorkerScriptPath,
-
   [int]$Port = 0,
 
   [string]$StatePath = "$env:LOCALAPPDATA\wezterm-runtime-helper\state.env",
 
   [string]$RequestDir = "$env:LOCALAPPDATA\wezterm-runtime-helper\requests",
-
-  [string]$ClipboardListenerScriptPath = '',
 
   [string]$ClipboardStatePath = '',
 
@@ -52,7 +47,7 @@ param(
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
-. (Join-Path (Split-Path -Parent $PSCommandPath) 'windows-structured-log.ps1')
+. (Join-Path $PSScriptRoot 'windows-structured-log.ps1')
 Initialize-StructuredLog `
   -FilePath $DiagnosticsFile `
   -Enabled $DiagnosticsEnabled `
@@ -65,6 +60,18 @@ Initialize-StructuredLog `
 
 function Get-NowEpochMilliseconds {
   return [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+}
+
+function Ensure-ParentDirectory {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
+
+  $parent = Split-Path -Parent $Path
+  if (-not [string]::IsNullOrWhiteSpace($parent)) {
+    $null = New-Item -ItemType Directory -Force -Path $parent
+  }
 }
 
 function Read-HelperState {
@@ -91,26 +98,59 @@ function Read-HelperState {
   return $state
 }
 
-function Get-HelperProcesses {
-  $launcherScriptPath = $PSCommandPath
-  $workerScriptRegex = [Regex]::Escape($WorkerScriptPath)
+function Read-ManagerConfig {
+  param(
+    [hashtable]$ManagerPaths
+  )
 
-  return @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" | Where-Object {
-    if (-not $_.CommandLine) {
-      return $false
-    }
+  if ($null -eq $ManagerPaths -or -not (Test-Path -LiteralPath $ManagerPaths.Config)) {
+    return $null
+  }
 
-    if ($_.CommandLine.Contains($launcherScriptPath)) {
-      return $false
-    }
+  try {
+    return Get-Content -LiteralPath $ManagerPaths.Config -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+  } catch {
+    return $null
+  }
+}
 
-    return $_.CommandLine -match ('-File\s+"?' + $workerScriptRegex + '"?([ \t]|$)')
-  })
+function Test-ManagerConfigMatches {
+  param(
+    [object]$Config,
+    [string]$RuntimeDir
+  )
+
+  if ($null -eq $Config) {
+    return $false
+  }
+
+  if ([string]$Config.runtimeDir -ne $RuntimeDir) {
+    return $false
+  }
+
+  if ([string]$Config.clipboardStatePath -ne $ClipboardStatePath) {
+    return $false
+  }
+
+  if ([string]$Config.clipboardLogPath -ne $ClipboardLogPath) {
+    return $false
+  }
+
+  if ([string]$Config.clipboardOutputDir -ne $ClipboardOutputDir) {
+    return $false
+  }
+
+  if ([string]$Config.clipboardWslDistro -ne $ClipboardWslDistro) {
+    return $false
+  }
+
+  return $true
 }
 
 function Test-HelperStateFresh {
   param(
-    [hashtable]$State
+    [hashtable]$State,
+    [string]$ExpectedRuntimeDir
   )
 
   if ($null -eq $State) {
@@ -137,137 +177,139 @@ function Test-HelperStateFresh {
     return $false
   }
 
-  foreach ($process in Get-HelperProcesses) {
-    if ([int]$process.ProcessId -eq $helperPid) {
-      return $true
-    }
+  if (-not [string]::IsNullOrWhiteSpace($ExpectedRuntimeDir) -and [string]$State.runtime_dir -ne $ExpectedRuntimeDir) {
+    return $false
   }
 
-  return $false
+  $process = Get-Process -Id $helperPid -ErrorAction SilentlyContinue
+  return ($null -ne $process)
 }
 
-function Stop-HelperProcesses {
-  $processes = @(Get-HelperProcesses)
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher enumerated helper processes' -Fields @{
-    count = @($processes).Length
-    worker_script_path = $WorkerScriptPath
+function Get-ExpectedRuntimeDir {
+  return Split-Path -Parent $PSScriptRoot
+}
+
+function Get-ManagerPaths {
+  $managerRoot = Join-Path $env:LOCALAPPDATA 'wezterm-runtime-helper'
+  return @{
+    Root = $managerRoot
+    Exe = Join-Path $managerRoot 'bin\helper-manager.exe'
+    Config = Join-Path $managerRoot 'manager-config.json'
   }
-  foreach ($process in $processes) {
-    try {
-      Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop
-      Write-StructuredLog -Level 'warn' -Category 'alt_o' -Message 'stopped windows runtime helper process' -Fields @{
-        pid = $process.ProcessId
-        worker_script_path = $WorkerScriptPath
-      }
-    } catch {
-      Write-StructuredLog -Level 'warn' -Category 'alt_o' -Message 'failed to stop windows runtime helper process' -Fields @{
-        pid = $process.ProcessId
-        worker_script_path = $WorkerScriptPath
-        error = $_.Exception.Message
+}
+
+function Stop-StaleProcesses {
+  param([hashtable]$State)
+
+  if ($null -ne $State) {
+    $helperPid = 0
+    [void][int]::TryParse([string]$State.pid, [ref]$helperPid)
+    if ($helperPid -gt 0) {
+      try {
+        Stop-Process -Id $helperPid -Force -ErrorAction Stop
+      } catch {
       }
     }
+  }
+}
+
+function Write-ManagerConfig {
+  param(
+    [string]$RuntimeDir,
+    [hashtable]$ManagerPaths
+  )
+
+  $config = [ordered]@{
+    runtimeDir = $RuntimeDir
+    scriptsDir = Join-Path $RuntimeDir 'scripts'
+    statePath = $StatePath
+    requestDir = $RequestDir
+    powerShellExe = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+    clipboardStatePath = $ClipboardStatePath
+    clipboardLogPath = $ClipboardLogPath
+    clipboardOutputDir = $ClipboardOutputDir
+    clipboardWslDistro = $ClipboardWslDistro
+    clipboardHeartbeatIntervalSeconds = $ClipboardHeartbeatIntervalSeconds
+    clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
+    clipboardImageReadRetryDelayMs = $ClipboardImageReadRetryDelayMs
+    clipboardCleanupMaxAgeHours = $ClipboardCleanupMaxAgeHours
+    clipboardCleanupMaxFiles = $ClipboardCleanupMaxFiles
+    heartbeatIntervalMs = $HeartbeatIntervalMs
+    pollIntervalMs = $PollIntervalMs
+    diagnostics = [ordered]@{
+      enabled = ($DiagnosticsEnabled -eq '1')
+      categoryEnabled = ($DiagnosticsCategoryEnabled -eq '1')
+      level = $DiagnosticsLevel
+      filePath = $DiagnosticsFile
+      maxBytes = $DiagnosticsMaxBytes
+      maxFiles = $DiagnosticsMaxFiles
+    }
+  }
+
+  Ensure-ParentDirectory -Path $ManagerPaths.Config
+  $json = $config | ConvertTo-Json -Depth 5
+  $tempPath = "$($ManagerPaths.Config).tmp"
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($tempPath, $json, $utf8NoBom)
+  Move-Item -Force -LiteralPath $tempPath -Destination $ManagerPaths.Config
+}
+
+function Ensure-ManagerInstalled {
+  param(
+    [string]$RuntimeDir,
+    [hashtable]$ManagerPaths
+  )
+
+  if (Test-Path -LiteralPath $ManagerPaths.Exe) {
+    return
+  }
+
+  $installerScript = Join-Path $PSScriptRoot 'install-windows-runtime-helper-manager.ps1'
+  if (-not (Test-Path -LiteralPath $installerScript)) {
+    throw "helper manager installer missing: $installerScript"
+  }
+
+  & $installerScript -RuntimeDir $RuntimeDir | Out-Null
+  if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $ManagerPaths.Exe)) {
+    throw 'helper manager install failed'
   }
 }
 
 try {
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher checking helper state' -Fields @{
-    state_path = $StatePath
-    request_dir = $RequestDir
-    worker_script_path = $WorkerScriptPath
-  }
-
-  if (-not (Test-Path -LiteralPath $WorkerScriptPath)) {
-    throw "worker script missing: $WorkerScriptPath"
-  }
-
+  $runtimeDir = Get-ExpectedRuntimeDir
+  $managerPaths = Get-ManagerPaths
   $state = Read-HelperState
-  if (Test-HelperStateFresh -State $state) {
-    Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher found healthy helper' -Fields @{
-      state_path = $StatePath
-      request_dir = $RequestDir
-      pid = $state.pid
-    }
+  $managerConfig = Read-ManagerConfig -ManagerPaths $managerPaths
+  if ((Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir) -and (Test-ManagerConfigMatches -Config $managerConfig -RuntimeDir $runtimeDir)) {
     exit 0
   }
 
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher cleaning stale helper processes' -Fields @{
-    state_path = $StatePath
-    request_dir = $RequestDir
-  }
-  Stop-HelperProcesses
-  Start-Sleep -Milliseconds 100
+  Stop-StaleProcesses -State $state
+  Ensure-ManagerInstalled -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
+  Write-ManagerConfig -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
 
-  $arguments = @(
-    '-NoProfile',
-    '-NonInteractive',
-    '-WindowStyle', 'Hidden',
-    '-ExecutionPolicy', 'Bypass',
-    '-File', $WorkerScriptPath,
-    '-Port', [string]$Port,
-    '-StatePath', $StatePath,
-    '-RequestDir', $RequestDir,
-    '-ClipboardListenerScriptPath', $ClipboardListenerScriptPath,
-    '-ClipboardStatePath', $ClipboardStatePath,
-    '-ClipboardLogPath', $ClipboardLogPath,
-    '-ClipboardOutputDir', $ClipboardOutputDir,
-    '-ClipboardWslDistro', $ClipboardWslDistro,
-    '-ClipboardHeartbeatIntervalSeconds', [string]$ClipboardHeartbeatIntervalSeconds,
-    '-ClipboardHeartbeatTimeoutSeconds', [string]$ClipboardHeartbeatTimeoutSeconds,
-    '-ClipboardImageReadRetryCount', [string]$ClipboardImageReadRetryCount,
-    '-ClipboardImageReadRetryDelayMs', [string]$ClipboardImageReadRetryDelayMs,
-    '-ClipboardCleanupMaxAgeHours', [string]$ClipboardCleanupMaxAgeHours,
-    '-ClipboardCleanupMaxFiles', [string]$ClipboardCleanupMaxFiles,
-    '-HeartbeatIntervalMs', [string]$HeartbeatIntervalMs,
-    '-PollIntervalMs', [string]$PollIntervalMs,
-    '-DiagnosticsEnabled', $DiagnosticsEnabled,
-    '-DiagnosticsCategoryEnabled', $DiagnosticsCategoryEnabled,
-    '-DiagnosticsLevel', $DiagnosticsLevel,
-    '-DiagnosticsFile', $DiagnosticsFile,
-    '-DiagnosticsMaxBytes', [string]$DiagnosticsMaxBytes,
-    '-DiagnosticsMaxFiles', [string]$DiagnosticsMaxFiles
-  )
-
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher about to start helper worker' -Fields @{
-    state_path = $StatePath
-    request_dir = $RequestDir
-    worker_script_path = $WorkerScriptPath
-  }
-  $child = Start-Process -FilePath 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -ArgumentList $arguments -PassThru
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher started helper worker' -Fields @{
-    state_path = $StatePath
-    request_dir = $RequestDir
-    worker_script_path = $WorkerScriptPath
+  $child = Start-Process -FilePath $managerPaths.Exe -ArgumentList @('--config', $managerPaths.Config) -PassThru
+  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher started helper manager' -Fields @{
     child_pid = $child.Id
-  }
-
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher waiting for helper heartbeat' -Fields @{
+    runtime_dir = $runtimeDir
     state_path = $StatePath
     request_dir = $RequestDir
   }
+
   for ($attempt = 0; $attempt -lt 40; $attempt++) {
     Start-Sleep -Milliseconds 100
     $state = Read-HelperState
-    if (Test-HelperStateFresh -State $state) {
-      Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher observed healthy helper' -Fields @{
-        state_path = $StatePath
-        request_dir = $RequestDir
-        pid = $state.pid
-      }
+    if (Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir) {
       exit 0
     }
   }
 
-  Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'launcher timed out waiting for helper heartbeat' -Fields @{
-    state_path = $StatePath
-    request_dir = $RequestDir
-  }
-  exit 1
+  throw 'launcher timed out waiting for helper manager heartbeat'
 } catch {
-  Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'launcher failed' -Fields @{
+  Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'launcher failed to ensure helper manager' -Fields @{
     state_path = $StatePath
     request_dir = $RequestDir
-    worker_script_path = $WorkerScriptPath
     error = $_.Exception.Message
   }
-  exit 1
+  throw
 }
