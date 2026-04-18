@@ -47,7 +47,7 @@ detect_windows_paths() {
   WINDOWS_RUNTIME_HOME_WSL="${WINDOWS_USERPROFILE_WSL}/.wezterm-x"
   WINDOWS_HELPER_ENSURE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\ensure-windows-runtime-helper.ps1"
   WINDOWS_HELPER_WORKER_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\windows-runtime-helper.ps1"
-  WINDOWS_VSCODE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\open-current-dir-in-vscode.ps1"
+  WINDOWS_VSCODE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\focus-or-open-vscode.ps1"
   WINDOWS_DIAGNOSTICS_FILE_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\wezterm-debug.log"
 }
 
