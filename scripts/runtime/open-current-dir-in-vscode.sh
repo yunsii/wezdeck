@@ -41,7 +41,7 @@ detect_windows_paths() {
   WINDOWS_USERPROFILE_WSL="$(wslpath -u "$WINDOWS_USERPROFILE_WIN")"
   HELPER_STATE_WIN="${WINDOWS_LOCALAPPDATA_WIN}\\wezterm-runtime-helper\\state.env"
   HELPER_STATE_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/state.env"
-  HELPER_MANAGER_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/bin/helper-manager.exe"
+  HELPER_CLIENT_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/bin/helperctl.exe"
   HELPER_IPC_ENDPOINT='\\.\pipe\wezterm-host-helper-v1'
   local runtime_state_win="${WINDOWS_USERPROFILE_WIN}\\.wezterm-runtime"
   WINDOWS_RUNTIME_HOME_WIN="${WINDOWS_USERPROFILE_WIN}\\.wezterm-x"
@@ -105,7 +105,6 @@ ensure_helper() {
     -StatePath "$HELPER_STATE_WIN" \
     -HeartbeatTimeoutSeconds 5 \
     -HeartbeatIntervalMs 1000 \
-    -PollIntervalMs 25 \
     -DiagnosticsEnabled 1 \
     -DiagnosticsCategoryEnabled 1 \
     -DiagnosticsLevel info \
@@ -133,7 +132,7 @@ invoke_helper_request() {
 
   request_body="{\"version\":1,\"trace_id\":$(json_escape "$trace_id"),\"kind\":\"vscode_focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]}}"
   request_body_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
-  "$HELPER_MANAGER_WSL" request --pipe "$HELPER_IPC_ENDPOINT" --payload-base64 "$request_body_b64" --timeout-ms 5000 >/dev/null 2>&1
+  "$HELPER_CLIENT_WSL" request --pipe "$HELPER_IPC_ENDPOINT" --payload-base64 "$request_body_b64" --timeout-ms 5000 >/dev/null 2>&1
 }
 
 run_direct_windows_open() {

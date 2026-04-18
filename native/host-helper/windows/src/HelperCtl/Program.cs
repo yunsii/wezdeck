@@ -3,88 +3,9 @@ using System.Text.Json;
 
 namespace WezTerm.WindowsHostHelper;
 
-internal static class Program
+internal static class HelperCtlProgram
 {
-    [STAThread]
     private static int Main(string[] args)
-    {
-        if (args.Length > 0 && string.Equals(args[0], "request", StringComparison.OrdinalIgnoreCase))
-        {
-            return RunRequestMode(args[1..]);
-        }
-
-        if (!TryParseServerArgs(args, out var configPath, out var parseError))
-        {
-            return ExitWithError(parseError);
-        }
-
-        HelperConfig config;
-        try
-        {
-            config = HelperConfig.Load(configPath!);
-        }
-        catch (Exception ex)
-        {
-            return ExitWithError($"failed to load config: {ex.Message}");
-        }
-
-        using var mutex = new Mutex(initiallyOwned: true, name: @"Local\WezTermRuntimeHelperManager", createdNew: out var createdNew);
-        if (!createdNew)
-        {
-            return 0;
-        }
-
-        var manager = new HostHelperManager(config);
-        AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
-        {
-            var ex = eventArgs.ExceptionObject as Exception;
-            manager.ReportFatalError(ex?.ToString() ?? "unknown unhandled exception");
-        };
-
-        try
-        {
-            manager.Run();
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            manager.ReportFatalError(ex.ToString());
-            return ExitWithError(ex.Message);
-        }
-    }
-
-    private static bool TryParseServerArgs(string[] args, out string? configPath, out string? error)
-    {
-        configPath = null;
-        error = null;
-
-        for (var index = 0; index < args.Length; index += 1)
-        {
-            if (!string.Equals(args[index], "--config", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (index + 1 >= args.Length)
-            {
-                error = "missing value for --config";
-                return false;
-            }
-
-            configPath = args[index + 1];
-            index += 1;
-        }
-
-        if (string.IsNullOrWhiteSpace(configPath))
-        {
-            error = "usage: helper-manager.exe --config <path>";
-            return false;
-        }
-
-        return true;
-    }
-
-    private static int RunRequestMode(string[] args)
     {
         if (!TryParseRequestArgs(args, out var pipeEndpoint, out var payloadBase64, out var timeoutMs, out var parseError))
         {
@@ -103,6 +24,7 @@ internal static class Program
                 PropertyNameCaseInsensitive = true,
             });
 
+            WriteResponseEnv(response);
             return response?.Ok == true ? 0 : 1;
         }
         catch (Exception ex)
@@ -121,6 +43,11 @@ internal static class Program
         for (var index = 0; index < args.Length; index += 1)
         {
             var arg = args[index];
+            if (string.Equals(arg, "request", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             if (string.Equals(arg, "--pipe", StringComparison.OrdinalIgnoreCase))
             {
                 if (index + 1 >= args.Length)
@@ -161,20 +88,105 @@ internal static class Program
 
         if (string.IsNullOrWhiteSpace(pipeEndpoint) || string.IsNullOrWhiteSpace(payloadBase64))
         {
-            error = "usage: helper-manager.exe request --pipe <endpoint> --payload-base64 <payload> [--timeout-ms 5000]";
+            error = "usage: helperctl.exe request --pipe <endpoint> --payload-base64 <payload> [--timeout-ms 5000]";
             return false;
         }
 
         return true;
     }
 
+    private static void WriteResponseEnv(HelperResponse? response)
+    {
+        if (response == null)
+        {
+            return;
+        }
+
+        var lines = new List<string>
+        {
+            "version=1",
+            $"ok={(response.Ok ? "1" : "0")}",
+            $"trace_id={Sanitize(response.TraceId)}",
+            $"status={Sanitize(response.Status)}",
+            $"decision_path={Sanitize(response.DecisionPath)}",
+        };
+
+        if (response.Result?.Pid is int pid)
+        {
+            lines.Add($"pid={pid}");
+        }
+
+        if (response.Result?.Hwnd is long hwnd)
+        {
+            lines.Add($"hwnd={hwnd}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.Kind))
+        {
+            lines.Add($"kind={Sanitize(response.Result.Kind)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.Sequence))
+        {
+            lines.Add($"sequence={Sanitize(response.Result.Sequence)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.Formats))
+        {
+            lines.Add($"formats={Sanitize(response.Result.Formats)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.Text))
+        {
+            lines.Add($"text={Sanitize(response.Result.Text)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.WindowsPath))
+        {
+            lines.Add($"windows_path={Sanitize(response.Result.WindowsPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.WslPath))
+        {
+            lines.Add($"wsl_path={Sanitize(response.Result.WslPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.Distro))
+        {
+            lines.Add($"distro={Sanitize(response.Result.Distro)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Result?.LastError))
+        {
+            lines.Add($"last_error={Sanitize(response.Result.LastError)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Error?.Code))
+        {
+            lines.Add($"error_code={Sanitize(response.Error.Code)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+        {
+            lines.Add($"error_message={Sanitize(response.Error.Message)}");
+        }
+
+        Console.Out.Write(string.Join(Environment.NewLine, lines));
+        Console.Out.Write(Environment.NewLine);
+    }
+
+    private static string Sanitize(string? value)
+    {
+        return (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ").Trim();
+    }
+
     private static int ExitWithError(string? message)
     {
         try
         {
-            var text = string.IsNullOrWhiteSpace(message) ? "helper-manager failed" : message;
+            var text = string.IsNullOrWhiteSpace(message) ? "helperctl failed" : message;
             File.AppendAllText(
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "wezterm-runtime-helper", "manager-bootstrap.log"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "wezterm-runtime-helper", "helperctl-bootstrap.log"),
                 $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {text}{Environment.NewLine}",
                 new UTF8Encoding(false));
         }

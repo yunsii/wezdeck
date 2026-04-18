@@ -21,10 +21,7 @@ internal sealed class HostHelperManager : IDisposable
         this.config = config;
         logger = new StructuredLogger(config.Diagnostics);
         instanceRegistry = new InstanceRegistry(Path.Combine(Path.GetDirectoryName(config.StatePath) ?? config.RuntimeDir, "window-cache.json"));
-        if (!string.IsNullOrWhiteSpace(config.ClipboardStatePath))
-        {
-            clipboardService = new ClipboardService(config, logger);
-        }
+        clipboardService = new ClipboardService(config, logger);
 
         heartbeatTimer = new System.Threading.Timer(_ => WriteHelperState("1", lastError), null, Timeout.Infinite, Timeout.Infinite);
     }
@@ -127,7 +124,14 @@ internal sealed class HostHelperManager : IDisposable
 
             requestKind = string.IsNullOrWhiteSpace(request.Kind) ? "unknown" : request.Kind;
             traceId = string.IsNullOrWhiteSpace(request.TraceId) ? Guid.NewGuid().ToString("N") : request.TraceId;
-            requestCategory = requestKind == "chrome_focus_or_start" ? "chrome" : "alt_o";
+            requestCategory = requestKind switch
+            {
+                "chrome_focus_or_start" => "chrome",
+                "clipboard_resolve_for_paste" => "clipboard",
+                "clipboard_write_text" => "clipboard",
+                "clipboard_write_image_file" => "clipboard",
+                _ => "alt_o",
+            };
 
             logger.Info(requestCategory, "helper received request", new Dictionary<string, string?>
             {
@@ -140,6 +144,9 @@ internal sealed class HostHelperManager : IDisposable
             {
                 "vscode_focus_or_open" => InvokeVscodeRequest(request.Payload, traceId),
                 "chrome_focus_or_start" => InvokeChromeRequest(request.Payload, traceId),
+                "clipboard_resolve_for_paste" => InvokeClipboardResolveRequest(traceId),
+                "clipboard_write_text" => InvokeClipboardWriteTextRequest(request.Payload, traceId),
+                "clipboard_write_image_file" => InvokeClipboardWriteImageFileRequest(request.Payload, traceId),
                 _ => throw new InvalidOperationException($"unknown request kind: {requestKind}"),
             };
 
@@ -170,6 +177,104 @@ internal sealed class HostHelperManager : IDisposable
 
             return JsonSerializer.Serialize(HelperResponse.Failure(traceId, "request_failed", ex.Message));
         }
+    }
+
+    private RequestOutcome InvokeClipboardResolveRequest(string traceId)
+    {
+        if (clipboardService == null)
+        {
+            throw new InvalidOperationException("clipboard service is unavailable");
+        }
+
+        var state = clipboardService.ResolveForPaste();
+        logger.Info("clipboard", "resolved clipboard state for paste", new Dictionary<string, string?>
+        {
+            ["trace_id"] = traceId,
+            ["kind"] = state.Kind,
+            ["sequence"] = state.Sequence,
+            ["formats"] = state.Formats,
+            ["text_length"] = string.IsNullOrEmpty(state.TextValue) ? "0" : state.TextValue.Length.ToString(),
+            ["windows_path"] = state.WindowsPath,
+            ["wsl_path"] = state.WslPath,
+            ["last_error"] = state.LastError,
+            ["decision_path"] = "clipboard_service",
+        });
+
+        return new RequestOutcome(
+            Status: state.Kind == "image" ? "resolved_image" : "resolved_text",
+            DecisionPath: "clipboard_service",
+            ClipboardKind: state.Kind,
+            ClipboardSequence: state.Sequence,
+            ClipboardFormats: state.Formats,
+            ClipboardText: state.TextValue,
+            ClipboardWindowsPath: state.WindowsPath,
+            ClipboardWslPath: state.WslPath,
+            ClipboardDistro: state.Distro,
+            ClipboardLastError: state.LastError);
+    }
+
+    private RequestOutcome InvokeClipboardWriteTextRequest(JsonElement payload, string traceId)
+    {
+        if (clipboardService == null)
+        {
+            throw new InvalidOperationException("clipboard service is unavailable");
+        }
+
+        var text = RequireString(payload, "text");
+        var state = clipboardService.WriteText(text);
+        logger.Info("clipboard", "wrote text to clipboard", new Dictionary<string, string?>
+        {
+            ["trace_id"] = traceId,
+            ["text_length"] = text.Length.ToString(),
+            ["kind"] = state.Kind,
+            ["sequence"] = state.Sequence,
+            ["formats"] = state.Formats,
+            ["decision_path"] = "clipboard_service_write_text",
+        });
+
+        return new RequestOutcome(
+            Status: "clipboard_written_text",
+            DecisionPath: "clipboard_service_write_text",
+            ClipboardKind: state.Kind,
+            ClipboardSequence: state.Sequence,
+            ClipboardFormats: state.Formats,
+            ClipboardText: state.TextValue,
+            ClipboardWindowsPath: state.WindowsPath,
+            ClipboardWslPath: state.WslPath,
+            ClipboardDistro: state.Distro,
+            ClipboardLastError: state.LastError);
+    }
+
+    private RequestOutcome InvokeClipboardWriteImageFileRequest(JsonElement payload, string traceId)
+    {
+        if (clipboardService == null)
+        {
+            throw new InvalidOperationException("clipboard service is unavailable");
+        }
+
+        var imagePath = RequireString(payload, "image_path");
+        var state = clipboardService.WriteImageFromFile(imagePath);
+        logger.Info("clipboard", "wrote image file to clipboard", new Dictionary<string, string?>
+        {
+            ["trace_id"] = traceId,
+            ["image_path"] = imagePath,
+            ["kind"] = state.Kind,
+            ["sequence"] = state.Sequence,
+            ["formats"] = state.Formats,
+            ["decision_path"] = "clipboard_service_write_image_file",
+        });
+
+        return new RequestOutcome(
+            Status: "clipboard_written_image",
+            DecisionPath: "clipboard_service_write_image_file",
+            ClipboardKind: state.Kind,
+            ClipboardSequence: state.Sequence,
+            ClipboardFormats: state.Formats,
+            ClipboardText: state.TextValue,
+            ClipboardWindowsPath: state.WindowsPath,
+            ClipboardWslPath: state.WslPath,
+            ClipboardDistro: state.Distro,
+            ClipboardLastError: state.LastError);
     }
 
     private RequestOutcome InvokeVscodeRequest(JsonElement payload, string traceId)
@@ -580,13 +685,21 @@ internal sealed class HostHelperManager : IDisposable
 
         foreach (var processId in matchingProcessIds)
         {
-            if (!NativeMethods.AppActivate(processId))
+            var processWindow = NativeMethods.TryGetProcessMainWindow(processId);
+            if (processWindow == IntPtr.Zero)
+            {
+                continue;
+            }
+
+            var processWindowMatch = new WindowMatch(processId, processWindow);
+            if (!TryActivateWindow(processWindowMatch))
             {
                 continue;
             }
 
             var activatedWindow = WaitForForegroundProcessWindow(spec.ProcessName, initialForeground, timeoutMs)
-                ?? WaitForWindowForProcessIds(spec.ProcessName, matchingProcessIds, timeoutMs);
+                ?? WaitForWindowForProcessIds(spec.ProcessName, matchingProcessIds, timeoutMs)
+                ?? processWindowMatch;
             if (activatedWindow != null)
             {
                 instanceRegistry.RememberWindow(spec.InstanceType, spec.LaunchKey, activatedWindow);
@@ -833,7 +946,10 @@ internal sealed class HostHelperManager : IDisposable
             }
         }
 
-        if (NativeMethods.AppActivate(window.ProcessId) && WaitForWindowForeground(window.WindowHandle, 500))
+        var processMainWindow = NativeMethods.TryGetProcessMainWindow(window.ProcessId);
+        if (processMainWindow != IntPtr.Zero
+            && processMainWindow != window.WindowHandle
+            && TryActivateWindow(new WindowMatch(window.ProcessId, processMainWindow)))
         {
             return true;
         }
@@ -969,6 +1085,7 @@ internal sealed class HostHelperManager : IDisposable
             $"started_at_ms={startedAtMs}",
             $"heartbeat_at_ms={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
             $"ipc_endpoint={Sanitize(config.IpcEndpoint)}",
+            $"config_hash={Sanitize(config.ConfigHash)}",
             $"runtime_dir={Sanitize(config.RuntimeDir)}",
             $"last_error={Sanitize(lastErrorValue)}",
         };

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>helper-manager</AssemblyName>
+    <RootNamespace>WezTerm.WindowsHostHelper</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/NamedPipeTransport.cs" Link="Shared/NamedPipeTransport.cs" />
+    <Compile Include="../Shared/Protocol.cs" Link="Shared/Protocol.cs" />
+    <Compile Include="../Shared/Support.cs" Link="Shared/Support.cs" />
+    <Compile Include="ClipboardService.cs" />
+    <Compile Include="HostHelperManager.cs" />
+    <Compile Include="InstanceRegistry.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

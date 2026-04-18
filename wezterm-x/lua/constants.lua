@@ -111,32 +111,6 @@ local function default_clipboard_image_output_dir(host_os)
   return nil
 end
 
-local function default_clipboard_image_state_path(host_os)
-  if host_os ~= 'windows' then
-    return nil
-  end
-
-  local local_app_data = os.getenv 'LOCALAPPDATA'
-  if local_app_data and local_app_data ~= '' then
-    return local_app_data .. '\\wezterm-clipboard-cache\\state.env'
-  end
-
-  return nil
-end
-
-local function default_clipboard_image_log_path(host_os)
-  if host_os ~= 'windows' then
-    return nil
-  end
-
-  local local_app_data = os.getenv 'LOCALAPPDATA'
-  if local_app_data and local_app_data ~= '' then
-    return local_app_data .. '\\wezterm-clipboard-cache\\listener.log'
-  end
-
-  return nil
-end
-
 local function default_windows_runtime_helper_state_path(host_os)
   if host_os ~= 'windows' then
     return nil
@@ -150,14 +124,14 @@ local function default_windows_runtime_helper_state_path(host_os)
   return nil
 end
 
-local function default_windows_runtime_helper_manager_path(host_os)
+local function default_windows_runtime_helper_client_path(host_os)
   if host_os ~= 'windows' then
     return nil
   end
 
   local local_app_data = os.getenv 'LOCALAPPDATA'
   if local_app_data and local_app_data ~= '' then
-    return local_app_data .. '\\wezterm-runtime-helper\\bin\\helper-manager.exe'
+    return local_app_data .. '\\wezterm-runtime-helper\\bin\\helperctl.exe'
   end
 
   return nil
@@ -440,15 +414,12 @@ local base_constants = {
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
       runtime_dir = runtime_dir,
       helper_script = 'scripts\\ensure-windows-runtime-helper.ps1',
-      helper_manager_exe = default_windows_runtime_helper_manager_path(host_os),
+      helper_client_exe = default_windows_runtime_helper_client_path(host_os),
       helper_ipc_endpoint = default_windows_runtime_helper_ipc_endpoint(host_os),
       helper_state_path = default_windows_runtime_helper_state_path(host_os),
-      helper_port = 0,
-      helper_restart_interval_seconds = 15,
       helper_request_timeout_ms = 5000,
       helper_heartbeat_timeout_seconds = 5,
       helper_heartbeat_interval_ms = 1000,
-      helper_poll_interval_ms = 25,
       posix_shell = '/bin/bash',
       posix_script = wezterm.config_dir .. '/scripts/runtime/open-current-dir-in-vscode.sh',
     },
@@ -461,15 +432,10 @@ local base_constants = {
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
       runtime_dir = runtime_dir,
       output_dir = default_clipboard_image_output_dir(host_os),
-      state_path = default_clipboard_image_state_path(host_os),
-      log_path = default_clipboard_image_log_path(host_os),
-      heartbeat_interval_seconds = 1,
-      heartbeat_timeout_seconds = 3,
       image_read_retry_count = 12,
       image_read_retry_delay_ms = 100,
       cleanup_max_age_hours = 48,
       cleanup_max_files = 32,
-      restart_interval_seconds = 15,
     },
   },
   managed_cli = {

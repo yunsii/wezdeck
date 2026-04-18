@@ -32,15 +32,31 @@ function M.load_optional_env_file(path)
     return nil
   end
 
+  local file = io.open(path, 'r')
+  if not file then
+    return nil
+  end
+
+  local content = file:read '*a'
+  file:close()
+
+  return M.load_env_text(content, path)
+end
+
+function M.load_env_text(content, source)
+  if not content or content == '' then
+    return nil
+  end
+
   local values = {}
 
-  for line in io.lines(path) do
+  for line in tostring(content):gmatch '[^\r\n]+' do
     local raw = trim(line)
     if raw ~= '' and raw:sub(1, 1) ~= '#' then
       raw = raw:gsub('^export%s+', '', 1)
       local key, value = raw:match('^([A-Za-z_][A-Za-z0-9_]*)%s*=%s*(.-)%s*$')
       if not key then
-        error('Failed to parse env line in ' .. path .. ': ' .. line)
+        error('Failed to parse env line in ' .. (source or '<memory>') .. ': ' .. line)
       end
 
       local quote = value:sub(1, 1)

@@ -165,20 +165,12 @@ function M:helper_command()
     'Bypass',
     '-File',
     runtime_dir .. '\\' .. helper_script,
-    '-Port',
-    tostring(integration.helper_port or 45921),
     '-StatePath',
     integration.helper_state_path or '',
-    '-ClipboardStatePath',
-    clipboard.state_path or '',
-    '-ClipboardLogPath',
-    clipboard.log_path or '',
     '-ClipboardOutputDir',
     clipboard.output_dir or '',
     '-ClipboardWslDistro',
     wsl_distro_from_domain(self.constants.default_domain) or '',
-    '-ClipboardHeartbeatIntervalSeconds',
-    tostring(clipboard.heartbeat_interval_seconds or 1),
     '-ClipboardImageReadRetryCount',
     tostring(clipboard.image_read_retry_count or 12),
     '-ClipboardImageReadRetryDelayMs',
@@ -191,8 +183,6 @@ function M:helper_command()
     tostring(integration.helper_heartbeat_timeout_seconds or 5),
     '-HeartbeatIntervalMs',
     tostring(integration.helper_heartbeat_interval_ms or 1000),
-    '-PollIntervalMs',
-    tostring(integration.helper_poll_interval_ms or 25),
     '-DiagnosticsEnabled',
     diagnostics.enabled == true and '1' or '0',
     '-DiagnosticsCategoryEnabled',
@@ -214,17 +204,17 @@ function M:helper_request_command(payload_json)
   end
 
   local integration = self:helper_integration()
-  local helper_manager_exe = integration.helper_manager_exe
+  local helper_client_exe = integration.helper_client_exe
   local helper_ipc_endpoint = integration.helper_ipc_endpoint
-  if not helper_manager_exe or helper_manager_exe == '' then
-    return nil, 'manager_exe_unconfigured'
+  if not helper_client_exe or helper_client_exe == '' then
+    return nil, 'client_exe_unconfigured'
   end
   if not helper_ipc_endpoint or helper_ipc_endpoint == '' then
     return nil, 'ipc_endpoint_unconfigured'
   end
 
   return {
-    helper_manager_exe,
+    helper_client_exe,
     'request',
     '--pipe',
     helper_ipc_endpoint,
@@ -338,6 +328,19 @@ function M:helper_state_is_fresh(helper_state)
 end
 
 function M:write_request(trace_id, category, request_kind, payload_body_factory)
+  local response, reason = self:write_request_with_response(trace_id, category, request_kind, payload_body_factory)
+  if not response then
+    return false, reason
+  end
+
+  if response.ok ~= '1' then
+    return false, response.error_code or response.status or 'request_failed'
+  end
+
+  return true, nil
+end
+
+function M:write_request_with_response(trace_id, category, request_kind, payload_body_factory)
   local helper_state, helper_state_reason = self:read_helper_state(trace_id)
   local helper_ready = false
   local helper_ready_reason = helper_state_reason
@@ -394,7 +397,7 @@ function M:write_request(trace_id, category, request_kind, payload_body_factory)
     self.logger.warn(category, 'windows runtime helper ipc request raised an error', merge_fields(trace_id, {
       error = success,
     }))
-    return false, 'request_spawn_error'
+    return nil, 'request_spawn_error'
   end
 
   if not success then
@@ -402,12 +405,29 @@ function M:write_request(trace_id, category, request_kind, payload_body_factory)
       stdout = stdout,
       stderr = stderr,
     }))
-    return false, 'request_failed'
+    return nil, 'request_failed'
   end
 
-  self.logger.info(category, 'windows runtime helper ipc request completed', merge_fields(trace_id, {}))
+  local response = nil
+  if stdout and stdout ~= '' then
+    local parsed_ok, parsed_response = pcall(self.helpers.load_env_text, stdout, '<helper-response>')
+    if not parsed_ok then
+      self.logger.warn(category, 'failed to parse windows runtime helper ipc response', merge_fields(trace_id, {
+        error = parsed_response,
+        stdout = stdout,
+      }))
+      return nil, 'response_parse_failed'
+    end
 
-  return true, nil
+    response = parsed_response
+  end
+
+  self.logger.info(category, 'windows runtime helper ipc request completed', merge_fields(trace_id, {
+    status = response and response.status or nil,
+    decision_path = response and response.decision_path or nil,
+  }))
+
+  return response or { ok = '1' }, nil
 end
 
 return M

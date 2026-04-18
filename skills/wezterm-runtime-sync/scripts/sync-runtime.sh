@@ -399,6 +399,7 @@ mv "$TEMP_NATIVE_DIR" "$TARGET_NATIVE_DIR"
 
 install_windows_helper_manager "$TARGET_RUNTIME_DIR"
 copy_file_atomic "$SOURCE_FILE" "$TARGET_FILE"
+touch "$TARGET_FILE"
 
 maybe_reload_tmux "$REPO_ROOT"
 

@@ -77,22 +77,4 @@ function M:file_exists(path)
   return self.runtime.helpers.file_exists(path)
 end
 
-function M:read_state(feature_name, trace_id)
-  local feature = self:feature(feature_name)
-  if not feature or not feature.read_state then
-    return nil, 'unsupported_feature'
-  end
-
-  return feature.read_state(trace_id)
-end
-
-function M:state_is_fresh(feature_name, state)
-  local feature = self:feature(feature_name)
-  if not feature or not feature.state_is_fresh then
-    return false, 'unsupported_feature'
-  end
-
-  return feature.state_is_fresh(state)
-end
-
 return M
