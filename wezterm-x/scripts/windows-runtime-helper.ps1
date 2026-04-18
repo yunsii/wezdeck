@@ -205,7 +205,7 @@ function Write-HelperState {
     "last_error=$LastError"
   )
 
-  $tempPath = "$StatePath.tmp"
+  $tempPath = "$StatePath.tmp.$PID"
   $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
   [System.IO.File]::WriteAllText($tempPath, ($lines -join "`r`n") + "`r`n", $utf8NoBom)
   Move-Item -Force -LiteralPath $tempPath -Destination $StatePath

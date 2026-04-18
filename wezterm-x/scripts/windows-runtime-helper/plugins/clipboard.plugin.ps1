@@ -37,6 +37,7 @@ function Get-WindowsRuntimeStandaloneClipboardListenerProcesses {
   )
 
   $listenerScriptPath = [string]$RuntimeContext.Clipboard.ListenerScriptPath
+  $listenerScriptRegex = [Regex]::Escape($listenerScriptPath)
   if ([string]::IsNullOrWhiteSpace($listenerScriptPath)) {
     return @()
   }
@@ -46,7 +47,7 @@ function Get-WindowsRuntimeStandaloneClipboardListenerProcesses {
       return $false
     }
 
-    return $_.CommandLine.Contains("-File $listenerScriptPath")
+    return $_.CommandLine -match ('-File\s+"?' + $listenerScriptRegex + '"?([ \t]|$)')
   })
 }
 
@@ -144,11 +145,17 @@ function Ensure-WindowsRuntimeClipboardListenerRunning {
     '-CleanupMaxFiles', [string]$clipboard.CleanupMaxFiles
   )
 
-  $child = Start-Process -FilePath $RuntimeContext.PowerShellExe -ArgumentList $arguments -PassThru
+  $launcherScriptPath = Join-Path $RuntimeContext.ScriptRoot 'launch-hidden.vbs'
+  $launcherArguments = @(
+    $launcherScriptPath,
+    [string]$RuntimeContext.PowerShellExe
+  ) + $arguments
+  $child = Start-Process -FilePath 'C:\Windows\System32\wscript.exe' -ArgumentList $launcherArguments -PassThru
   Write-StructuredLog -Level 'info' -Category 'clipboard' -Message 'host started clipboard listener' -Fields @{
     child_pid = $child.Id
     listener_script_path = $listenerScriptPath
     state_path = [string]$clipboard.StatePath
+    launcher_script_path = $launcherScriptPath
   }
 }
 

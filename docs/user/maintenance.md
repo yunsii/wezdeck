@@ -158,6 +158,8 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 - Current runtime categories include `alt_o`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
 - In `hybrid-wsl`, the Windows-side `Alt+o` launcher now writes structured `alt_o` lines into the same WezTerm diagnostics file under `%USERPROFILE%\.wezterm-runtime\wezterm-debug.log`, reusing the same `trace_id` and rotation settings as the Lua-side diagnostics path; those lines include millisecond timestamps plus per-phase and total `duration_ms` fields for launch-path profiling.
 - In `hybrid-wsl`, the Windows runtime helper keeps a heartbeat file at `%LOCALAPPDATA%\wezterm-runtime-helper\state.env` and consumes queued request files from `%LOCALAPPDATA%\wezterm-runtime-helper\requests\`; when `Alt+o` is expected to use the helper path, check that heartbeat file first to confirm the helper is alive before reading the shared diagnostics log.
+- The helper launcher and clipboard listener now route PowerShell startup through `wscript.exe` plus the synced `launch-hidden.vbs` wrapper to reduce visible console flashes, although Windows may still briefly show a window when those background processes are restarted.
+- WezTerm no longer prewarms the Windows helper during every GUI config reload; the helper now starts on demand from the first `Alt+o`, `Alt+b`, or clipboard path that actually needs it, which avoids repeated background restarts during config churn.
 - For a repeatable live smoke test of the Windows runtime host, run [`scripts/dev/check-windows-runtime-host.sh`](../../scripts/dev/check-windows-runtime-host.sh) from WSL; it verifies helper health plus the current `Alt+o`, `Alt+b`, and clipboard-listener control paths against the synced Windows runtime.
 
 ## Hybrid WSL Agent Startup Measurement
@@ -205,6 +207,7 @@ The `open-project-session.sh` helper now warns when it detects tmux older than 3
 - The sync step now writes each runtime update to `%USERPROFILE%\.wezterm-runtime\releases\<release>\wezterm-x\...` and only switches the active pointer after that release tree is complete, so WezTerm reloads against a full runtime instead of a half-copied `.wezterm-x`.
 - The stable top-level `%USERPROFILE%\.wezterm.lua` bootstrap is still updated last, so normal WezTerm file watching continues to auto-reload the new release after sync.
 - The sync step still writes `repo-root.txt` and `repo-main-root.txt` into the active release's `wezterm-x` folder so managed runtime code can locate the source repo and main worktree.
+- After switching releases, the sync step also cleans up stale Windows-side helper and clipboard-listener PowerShell processes that still point at older release directories so old host workers do not keep reviving themselves in the background.
 - `.sync-target` is repo-local and gitignored. If you need to change the target home later, delete it and rerun the script to re-prompt.
 
 ## Commit Workflow

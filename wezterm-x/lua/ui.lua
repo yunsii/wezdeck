@@ -369,10 +369,6 @@ function M.apply(opts)
     logger = logger,
   }
 
-  if wezterm.gui then
-    host:ensure_running 'config-load'
-  end
-
   config.font = constants.fonts.terminal
   config.font_size = 12.0
   config.line_height = 1.0

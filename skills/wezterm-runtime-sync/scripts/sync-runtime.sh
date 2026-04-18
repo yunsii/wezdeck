@@ -28,6 +28,38 @@ Environment:
 EOF
 }
 
+cleanup_stale_windows_runtime_processes() {
+  local repo_root="${1:?missing repo root}"
+  local target_home="${2:?missing target home}"
+  local release_id="${3:?missing release id}"
+  local cleanup_script="$repo_root/skills/wezterm-runtime-sync/scripts/cleanup-stale-windows-runtime-processes.ps1"
+  local cleanup_script_win="" target_home_win="" killed_count=""
+
+  [[ "$target_home" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
+  command -v powershell.exe >/dev/null 2>&1 || return 0
+  command -v wslpath >/dev/null 2>&1 || return 0
+  [[ -f "$cleanup_script" ]] || return 0
+
+  cleanup_script_win="$(wslpath -w "$cleanup_script" 2>/dev/null || true)"
+  target_home_win="$(wslpath -w "$target_home" 2>/dev/null || true)"
+  [[ -n "$cleanup_script_win" && -n "$target_home_win" ]] || return 0
+
+  if killed_count="$(powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$cleanup_script_win" \
+    -TargetHome "$target_home_win" \
+    -CurrentRelease "$release_id" 2>/dev/null | tr -d '\r' | tail -n 1)"; then
+    runtime_log_info sync "cleaned stale windows runtime processes after sync" \
+      "target_home=$target_home" \
+      "release_id=$release_id" \
+      "killed_count=${killed_count:-0}"
+    return 0
+  fi
+
+  runtime_log_warn sync "failed to clean stale windows runtime processes after sync" \
+    "target_home=$target_home" \
+    "release_id=$release_id"
+}
+
 write_text_file_atomic() {
   local target_path="${1:?missing target path}"
   local temp_path="${target_path}.tmp.$$"
@@ -38,6 +70,9 @@ write_text_file_atomic() {
 copy_file_atomic() {
   local source_path="${1:?missing source path}"
   local target_path="${2:?missing target path}"
+  if [[ -f "$target_path" ]] && cmp -s "$source_path" "$target_path"; then
+    return 0
+  fi
   local temp_path="${target_path}.tmp.$$"
   cp "$source_path" "$temp_path"
   mv -f "$temp_path" "$target_path"
@@ -420,6 +455,7 @@ mv "$TEMP_RELEASE_ROOT" "$TARGET_RELEASE_ROOT"
 
 write_current_release_files "$TARGET_RUNTIME_STATE_DIR" "$RELEASE_ID" "$TARGET_RELEASE_ROOT" "$TARGET_RUNTIME_DIR"
 copy_file_atomic "$SOURCE_FILE" "$TARGET_FILE"
+cleanup_stale_windows_runtime_processes "$REPO_ROOT" "$TARGET_HOME" "$RELEASE_ID"
 cleanup_old_releases "$TARGET_RELEASES_DIR" 5 "$RELEASE_ID"
 
 maybe_reload_tmux "$REPO_ROOT"

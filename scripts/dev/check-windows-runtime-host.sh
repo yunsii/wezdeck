@@ -106,9 +106,11 @@ fi
 
 if [[ -n "$current_release" && -d "${runtime_state_wsl}/releases/${current_release}/wezterm-x" ]]; then
   runtime_home_win="${runtime_state_win}\\releases\\${current_release}\\wezterm-x"
+  runtime_home_wsl="${runtime_state_wsl}/releases/${current_release}/wezterm-x"
   debug_log_wsl="${runtime_state_wsl}/wezterm-debug.log"
 else
   runtime_home_win="${userprofile_win}\\.wezterm-x"
+  runtime_home_wsl="${userprofile_wsl}/.wezterm-x"
   debug_log_wsl="${userprofile_wsl}/.wezterm-x/wezterm-debug.log"
 fi
 
@@ -227,7 +229,7 @@ ensure_helper() {
     -DiagnosticsEnabled 1 \
     -DiagnosticsCategoryEnabled 1 \
     -DiagnosticsLevel info \
-    -DiagnosticsFile "${runtime_home_win}\\wezterm-debug.log" \
+    -DiagnosticsFile "${runtime_state_win}\\wezterm-debug.log" \
     -DiagnosticsMaxBytes 5242880 \
     -DiagnosticsMaxFiles 5 >/dev/null
 }
