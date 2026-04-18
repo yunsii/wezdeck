@@ -10,7 +10,7 @@ Use this doc when you need shortcut behavior.
 - `Alt+Shift+q`: quit WezTerm and close all windows; WezTerm will handle any built-in confirmation
 - `Alt+v`: split vertically
 - `Alt+s`: split horizontally
-- `Alt+o`: in `default`, WezTerm opens the current worktree root in VS Code and still falls back to pane handling when it only sees the WSL host path; in non-default managed workspaces, WezTerm forwards the shortcut to tmux so the active tmux window resolves the live worktree before opening VS Code
+- `Alt+o`: in `default`, WezTerm opens the current worktree root in VS Code, re-focuses the matching project window when it already has a cached match, and still falls back to pane handling when it only sees the WSL host path; in non-default managed workspaces, WezTerm forwards the shortcut to tmux so the active tmux window resolves the live worktree and, in `hybrid-wsl`, uses the same Windows helper/front-focus path before falling back to a direct Windows open
 - `Alt+g`: only in non-default managed workspaces, open a centered tmux popup worktree picker for the current repo family; selecting an unopened worktree creates its tmux window on demand
 - `Alt+Shift+g`: only in non-default managed workspaces, cycle to the next git worktree in the current repo family, creating the tmux window on demand when needed
 - `Alt+b`: open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua`; in `hybrid-wsl` it uses the synced Windows launcher, and in `posix-local` it uses the synced shell launcher

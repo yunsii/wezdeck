@@ -77,8 +77,15 @@ local function default_vscode_command(host_os)
   if host_os == 'windows' then
     local local_app_data = os.getenv 'LOCALAPPDATA'
     if local_app_data and local_app_data ~= '' then
-      return { local_app_data .. '\\Programs\\Microsoft VS Code\\Code.exe' }
+      local user_install = local_app_data .. '\\Programs\\Microsoft VS Code\\Code.exe'
+      local file = io.open(user_install, 'r')
+      if file then
+        file:close()
+        return { user_install }
+      end
     end
+
+    return { 'C:\\Program Files\\Microsoft VS Code\\Code.exe' }
   end
 
   return { 'code' }
@@ -118,6 +125,32 @@ local function default_clipboard_image_log_path(host_os)
   local local_app_data = os.getenv 'LOCALAPPDATA'
   if local_app_data and local_app_data ~= '' then
     return local_app_data .. '\\wezterm-clipboard-cache\\listener.log'
+  end
+
+  return nil
+end
+
+local function default_windows_runtime_helper_state_path(host_os)
+  if host_os ~= 'windows' then
+    return nil
+  end
+
+  local local_app_data = os.getenv 'LOCALAPPDATA'
+  if local_app_data and local_app_data ~= '' then
+    return local_app_data .. '\\wezterm-runtime-helper\\state.env'
+  end
+
+  return nil
+end
+
+local function default_windows_runtime_helper_request_dir(host_os)
+  if host_os ~= 'windows' then
+    return nil
+  end
+
+  local local_app_data = os.getenv 'LOCALAPPDATA'
+  if local_app_data and local_app_data ~= '' then
+    return local_app_data .. '\\wezterm-runtime-helper\\requests'
   end
 
   return nil
@@ -392,6 +425,15 @@ local base_constants = {
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
       runtime_dir = wezterm.config_dir .. '\\.wezterm-x',
       script = 'scripts\\open-current-dir-in-vscode.ps1',
+      helper_script = 'scripts\\ensure-windows-runtime-helper.ps1',
+      helper_worker_script = 'scripts\\windows-runtime-helper.ps1',
+      helper_state_path = default_windows_runtime_helper_state_path(host_os),
+      helper_request_dir = default_windows_runtime_helper_request_dir(host_os),
+      helper_port = 0,
+      helper_restart_interval_seconds = 15,
+      helper_heartbeat_timeout_seconds = 5,
+      helper_heartbeat_interval_ms = 1000,
+      helper_poll_interval_ms = 25,
       posix_shell = '/bin/bash',
       posix_script = wezterm.config_dir .. '/scripts/runtime/open-current-dir-in-vscode.sh',
     },
