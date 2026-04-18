@@ -176,7 +176,6 @@ function M:helper_command()
   local integration = self:helper_integration()
   local runtime_dir = integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
   local helper_script = integration.helper_script or 'scripts\\ensure-windows-runtime-helper.ps1'
-  local helper_worker_script = integration.helper_worker_script or 'scripts\\windows-runtime-helper.ps1'
   local diagnostics = self.constants.diagnostics and self.constants.diagnostics.wezterm or {}
   local clipboard = self:integration 'clipboard_image'
   local helper_category_enabled = diagnostics_capture_enabled(self.constants, 'alt_o')
@@ -192,16 +191,12 @@ function M:helper_command()
     'Bypass',
     '-File',
     runtime_dir .. '\\' .. helper_script,
-    '-WorkerScriptPath',
-    runtime_dir .. '\\' .. helper_worker_script,
     '-Port',
     tostring(integration.helper_port or 45921),
     '-StatePath',
     integration.helper_state_path or '',
     '-RequestDir',
     integration.helper_request_dir or integration.helper_request_path or '',
-    '-ClipboardListenerScriptPath',
-    runtime_dir .. '\\' .. (clipboard.listener_script or 'scripts\\clipboard-image-listener.ps1'),
     '-ClipboardStatePath',
     clipboard.state_path or '',
     '-ClipboardLogPath',
