@@ -18,10 +18,10 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - `default` stays WezTerm-owned for repo-aware shortcuts, while non-default managed workspaces delegate `Alt+o`, `Alt+g`, `Alt+Shift+g`, and `Ctrl+k` straight to tmux.
 - Managed workspace creation only requires `default_domain` in `hybrid-wsl` mode.
 - Managed tmux flows no longer require shell rc `OSC 7` integration; tmux status and tmux-owned shortcuts resolve cwd from tmux's own `pane_current_path`.
-- Outside tmux in `hybrid-wsl`, `Alt+o` hands the current pane directory to the synced Windows PowerShell launcher, which resolves the current worktree root and then opens it with VS Code's `--folder-uri vscode-remote://wsl+<distro>/...` entrypoint.
+- Outside tmux in `hybrid-wsl`, `Alt+o` hands the current pane directory to the synced Windows PowerShell launcher, which resolves the current worktree root, re-focuses a cached matching VS Code project window when available, and otherwise opens the target with VS Code's `--folder-uri vscode-remote://wsl+<distro>/...` entrypoint.
 - Outside tmux in `posix-local`, `Alt+o` hands the current pane directory to the runtime-side VS Code launcher, which resolves the current worktree root and then launches the configured local VS Code opener there.
 - Outside git worktrees, `Alt+o` still opens the current directory.
-- In managed workspaces, `Alt+o` is forwarded directly to tmux so the active tmux window resolves the live worktree path before launching VS Code.
+- In managed workspaces, `Alt+o` is forwarded directly to tmux so the active tmux window resolves the live worktree path first and, in `hybrid-wsl`, then uses the same Windows helper/front-focus path as the `default` workspace instead of `code .`.
 - If WezTerm only sees the WSL host fallback path such as `/C:/Users/...` in `hybrid-wsl`, `Alt+o` also forwards to the pane instead of using the stale host-side path.
 - In `hybrid-wsl`, `Alt+b` uses the synced Windows PowerShell launcher for the debug Chrome profile.
 - In `posix-local`, `Alt+b` uses the synced shell launcher at `wezterm-x/scripts/focus-or-start-debug-chrome.sh`.
