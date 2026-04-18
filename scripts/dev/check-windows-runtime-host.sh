@@ -8,8 +8,8 @@ usage:
 
 Smoke-test the live Windows runtime host from WSL by:
   1. Ensuring the synced helper is healthy
-  2. Enqueuing a VS Code focus/open request
-  3. Enqueuing a Chrome focus/start request when chrome_debug_browser.user_data_dir is configured
+  2. Sending a VS Code focus/open IPC request
+  3. Sending a Chrome focus/start IPC request when chrome_debug_browser.user_data_dir is configured
   4. Verifying clipboard listener state is fresh
 EOF
 }
@@ -104,10 +104,10 @@ debug_log_wsl="${runtime_state_wsl}/wezterm-debug.log"
 
 helper_ensure_win="${runtime_home_win}\\scripts\\ensure-windows-runtime-helper.ps1"
 helper_state_win="${localappdata_win}\\wezterm-runtime-helper\\state.env"
-helper_request_dir_win="${localappdata_win}\\wezterm-runtime-helper\\requests"
 helper_state_wsl="${localappdata_wsl}/wezterm-runtime-helper/state.env"
-helper_request_dir_wsl="${localappdata_wsl}/wezterm-runtime-helper/requests"
 helper_window_cache_wsl="${localappdata_wsl}/wezterm-runtime-helper/window-cache.json"
+helper_manager_wsl="${localappdata_wsl}/wezterm-runtime-helper/bin/helper-manager.exe"
+helper_ipc_endpoint='\\.\pipe\wezterm-host-helper-v1'
 
 clipboard_state_win="${localappdata_win}\\wezterm-clipboard-cache\\state.env"
 clipboard_log_win="${localappdata_win}\\wezterm-clipboard-cache\\listener.log"
@@ -196,17 +196,6 @@ chrome_process_exists() {
   " >/dev/null 2>&1
 }
 
-wait_for_request_consumed() {
-  local path="$1"
-  local limit=$((timeout_seconds * 20))
-  local i
-  for ((i=0; i<limit; i+=1)); do
-    [[ -f "$path" ]] || return 0
-    sleep 0.05
-  done
-  return 1
-}
-
 wait_for_log_match() {
   local pattern="$1"
   local limit=$((timeout_seconds * 10))
@@ -231,7 +220,6 @@ ensure_helper() {
   powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
     -File "$helper_ensure_win" \
     -StatePath "$helper_state_win" \
-    -RequestDir "$helper_request_dir_win" \
     -ClipboardStatePath "$clipboard_state_win" \
     -ClipboardLogPath "$clipboard_log_win" \
     -ClipboardOutputDir "$clipboard_output_win" \
@@ -253,20 +241,24 @@ ensure_helper() {
     -DiagnosticsMaxFiles 5 >/dev/null
 }
 
+invoke_helper_request() {
+  local trace_id="$1"
+  local request_body="$2"
+  local request_b64=""
+  request_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
+  "$helper_manager_wsl" request --pipe "$helper_ipc_endpoint" --payload-base64 "$request_b64" --timeout-ms $((timeout_seconds * 1000)) >/dev/null 2>&1
+}
+
 enqueue_vscode_request() {
   local trace_id="$1"
-  local request_path="${helper_request_dir_wsl}/${trace_id}.json"
   local code_exe
   code_exe="$(detect_vscode_exe)"
-  mkdir -p "$helper_request_dir_wsl"
-  printf '{"kind":"vscode_focus_or_open","requested_dir":%s,"distro":%s,"trace_id":%s,"code_command":[%s]}' \
+  invoke_helper_request "$trace_id" "$(printf '{"version":1,"trace_id":%s,"kind":"vscode_focus_or_open","payload":{"requested_dir":%s,"distro":%s,"code_command":[%s]}}' \
+    "$(json_escape "$trace_id")" \
     "$(json_escape "$target_dir")" \
     "$(json_escape "$distro")" \
-    "$(json_escape "$trace_id")" \
-    "$(json_escape "$code_exe")" > "$request_path"
-  wait_for_request_consumed "$request_path" || return 1
-  wait_for_trace_event "$trace_id" "helper processed request" || return 1
-  wait_for_trace_event "$trace_id" "(focused cached vscode window|launched vscode)" || return 1
+    "$(json_escape "$code_exe")")" || return 1
+  wait_for_trace_event "$trace_id" "helper completed request.*status=\"(reused|launched)\"" || return 1
 }
 
 enqueue_chrome_request() {
@@ -278,26 +270,21 @@ enqueue_chrome_request() {
     return 0
   fi
 
-  local request_path="${helper_request_dir_wsl}/${trace_id}.json"
   local expect_reuse=0
   if chrome_registry_has_entry || chrome_process_exists "$chrome_profile"; then
     expect_reuse=1
   fi
-  mkdir -p "$helper_request_dir_wsl"
-  printf '{"kind":"chrome_focus_or_start","trace_id":%s,"chrome_path":%s,"remote_debugging_port":9222,"user_data_dir":%s}' \
+  invoke_helper_request "$trace_id" "$(printf '{"version":1,"trace_id":%s,"kind":"chrome_focus_or_start","payload":{"chrome_path":%s,"remote_debugging_port":9222,"user_data_dir":%s}}' \
     "$(json_escape "$trace_id")" \
     "$(json_escape "chrome.exe")" \
-    "$(json_escape "$chrome_profile")" > "$request_path"
-  wait_for_request_consumed "$request_path" || return 1
-  wait_for_trace_event "$trace_id" "helper processed request" || return 1
+    "$(json_escape "$chrome_profile")")" || return 1
   if (( expect_reuse == 1 )); then
+    wait_for_trace_event "$trace_id" "helper completed request.*status=\"reused\"" || return 1
     wait_for_trace_event "$trace_id" "(focused cached debug chrome window|rebound existing debug chrome window)" || return 1
-    if wait_for_trace_event "$trace_id" "launched debug chrome"; then
-      return 1
-    fi
     return 0
   fi
 
+  wait_for_trace_event "$trace_id" "helper completed request.*status=\"(reused|launched|launch_handoff_existing)\"" || return 1
   wait_for_trace_event "$trace_id" "(focused cached debug chrome window|rebound existing debug chrome window|bound launched debug chrome window|launched debug chrome)" || return 1
   wait_for_trace_event "$trace_id" "launched debug chrome but did not bind a reusable window" && return 1
   return 0

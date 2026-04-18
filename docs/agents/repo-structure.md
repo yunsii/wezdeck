@@ -29,8 +29,6 @@ Use this doc when you need ownership boundaries or file entry points.
 - `wezterm-x/scripts/`: thin runtime bootstrap/install scripts plus the remaining cross-platform shell helpers copied by the runtime sync skill
   - `wezterm-x/scripts/ensure-windows-runtime-helper.ps1`: stable Windows launcher/bootstrap for the installed native helper
   - `wezterm-x/scripts/install-windows-runtime-helper-manager.ps1`: Windows-native helper installer/build entrypoint
-  - `wezterm-x/scripts/focus-or-start-debug-chrome.sh`: current `posix-local` debug-browser launcher
-  - `wezterm-x/scripts/launch-hidden.vbs`: hidden-process wrapper still used by WezTerm-side Windows launcher commands
 - `native/host-helper/windows/`: Windows `helper-manager.exe` source for the stable per-user host control plane
 - `native/host-helper/<future-platform>/`: reserved shape for future native macOS/Linux host helpers so platform-native agents stay outside `wezterm-x/scripts/`
 - `scripts/dev/`: repo-local helper scripts that are not synced to Windows

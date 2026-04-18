@@ -297,8 +297,6 @@ end
 local function open_debug_chrome(wezterm, window, constants, logger, trace_id, host)
   local chrome = constants.chrome_debug_browser or {}
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
-  local integration = constants.integrations and constants.integrations.chrome_debug or {}
-  local command
 
   if not chrome.user_data_dir or chrome.user_data_dir == '' then
     logger.warn('chrome', 'missing chrome debug browser user_data_dir', merge_fields(trace_id, {
@@ -322,32 +320,14 @@ local function open_debug_chrome(wezterm, window, constants, logger, trace_id, h
     }))
     window:toast_notification('WezTerm', 'Alt+b failed. Check WezTerm logs.', nil, 3000)
     return
-  else
-    local runtime_dir = integration.posix_runtime_dir or current_runtime_dir(wezterm.config_dir)
-    local script_path = integration.posix_script or 'scripts/focus-or-start-debug-chrome.sh'
-    command = {
-      integration.posix_shell or '/bin/sh',
-      runtime_dir .. '/' .. script_path,
-      chrome.executable,
-      tostring(chrome.remote_debugging_port),
-      chrome.user_data_dir,
-    }
   end
 
-  logger.info('chrome', 'opening or focusing debug chrome', merge_fields(trace_id, {
-    command = table.concat(command, ' '),
+  logger.warn('chrome', 'Alt+b is unavailable without a native host helper', merge_fields(trace_id, {
+    runtime_mode = runtime_mode,
     executable = chrome.executable,
     port = chrome.remote_debugging_port,
-    runtime_mode = runtime_mode,
-    user_data_dir = chrome.user_data_dir,
   }))
-  local ok, err = pcall(wezterm.background_child_process, command)
-  if not ok then
-    window:toast_notification('WezTerm', 'Alt+b failed. Check WezTerm logs.', nil, 3000)
-    logger.error('chrome', 'background_child_process failed', merge_fields(trace_id, {
-      error = err,
-    }))
-  end
+  window:toast_notification('WezTerm', 'Alt+b is only available when a native host helper is configured.', nil, 4000)
 end
 
 function M.apply(opts)

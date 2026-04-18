@@ -40,9 +40,9 @@ detect_windows_paths() {
   WINDOWS_LOCALAPPDATA_WSL="$(wslpath -u "$WINDOWS_LOCALAPPDATA_WIN")"
   WINDOWS_USERPROFILE_WSL="$(wslpath -u "$WINDOWS_USERPROFILE_WIN")"
   HELPER_STATE_WIN="${WINDOWS_LOCALAPPDATA_WIN}\\wezterm-runtime-helper\\state.env"
-  HELPER_REQUEST_DIR_WIN="${WINDOWS_LOCALAPPDATA_WIN}\\wezterm-runtime-helper\\requests"
   HELPER_STATE_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/state.env"
-  HELPER_REQUEST_DIR_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/requests"
+  HELPER_MANAGER_WSL="${WINDOWS_LOCALAPPDATA_WSL}/wezterm-runtime-helper/bin/helper-manager.exe"
+  HELPER_IPC_ENDPOINT='\\.\pipe\wezterm-host-helper-v1'
   local runtime_state_win="${WINDOWS_USERPROFILE_WIN}\\.wezterm-runtime"
   WINDOWS_RUNTIME_HOME_WIN="${WINDOWS_USERPROFILE_WIN}\\.wezterm-x"
   WINDOWS_RUNTIME_HOME_WSL="${WINDOWS_USERPROFILE_WSL}/.wezterm-x"
@@ -93,19 +93,16 @@ helper_state_is_fresh() {
 ensure_helper() {
   if helper_state_is_fresh; then
     runtime_log_info alt_o "tmux Alt+o helper already healthy" \
-      "state_path=$HELPER_STATE_WSL" \
-      "request_dir=$HELPER_REQUEST_DIR_WSL"
+      "state_path=$HELPER_STATE_WSL"
     return 0
   fi
 
   runtime_log_info alt_o "tmux Alt+o ensuring windows helper" \
-    "state_path=$HELPER_STATE_WSL" \
-    "request_dir=$HELPER_REQUEST_DIR_WSL"
+    "state_path=$HELPER_STATE_WSL"
 
   if ! powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
     -File "$WINDOWS_HELPER_ENSURE_SCRIPT_WIN" \
     -StatePath "$HELPER_STATE_WIN" \
-    -RequestDir "$HELPER_REQUEST_DIR_WIN" \
     -HeartbeatTimeoutSeconds 5 \
     -HeartbeatIntervalMs 1000 \
     -PollIntervalMs 25 \
@@ -121,15 +118,11 @@ ensure_helper() {
   helper_state_is_fresh
 }
 
-enqueue_helper_request() {
+invoke_helper_request() {
   local trace_id="$1"
-  local request_path=""
   local request_body=""
+  local request_body_b64=""
   local code_part=""
-  local wait_i=0
-
-  mkdir -p "$HELPER_REQUEST_DIR_WSL"
-  request_path="$HELPER_REQUEST_DIR_WSL/$trace_id.json"
 
   for code_arg in "${code_command[@]}"; do
     if [[ -n "$code_part" ]]; then
@@ -138,15 +131,9 @@ enqueue_helper_request() {
     code_part+="$(json_escape "$code_arg")"
   done
 
-  request_body="{\"kind\":\"vscode_focus_or_open\",\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"trace_id\":$(json_escape "$trace_id"),\"code_command\":[${code_part}]}"
-  printf '%s' "$request_body" > "$request_path"
-
-  for (( wait_i=0; wait_i<20; wait_i+=1 )); do
-    [[ -f "$request_path" ]] || return 0
-    sleep 0.05
-  done
-
-  [[ ! -f "$request_path" ]]
+  request_body="{\"version\":1,\"trace_id\":$(json_escape "$trace_id"),\"kind\":\"vscode_focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]}}"
+  request_body_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
+  "$HELPER_MANAGER_WSL" request --pipe "$HELPER_IPC_ENDPOINT" --payload-base64 "$request_body_b64" --timeout-ms 5000 >/dev/null 2>&1
 }
 
 run_direct_windows_open() {
@@ -246,11 +233,10 @@ fi
 
 detect_code_command
 
-if ensure_helper && enqueue_helper_request "$trace_id"; then
-  runtime_log_info alt_o "tmux Alt+o enqueued helper request" \
+if ensure_helper && invoke_helper_request "$trace_id"; then
+  runtime_log_info alt_o "tmux Alt+o sent helper ipc request" \
     "requested_dir=$requested_dir" \
     "effective_dir=$target_dir" \
-    "request_dir=$HELPER_REQUEST_DIR_WSL" \
     "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0
 fi
@@ -258,7 +244,6 @@ fi
 runtime_log_warn alt_o "tmux Alt+o helper path failed; falling back to direct windows open" \
   "requested_dir=$requested_dir" \
   "effective_dir=$target_dir" \
-  "request_dir=$HELPER_REQUEST_DIR_WSL" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 
 if run_direct_windows_open "$trace_id"; then

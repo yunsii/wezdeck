@@ -3,8 +3,6 @@ param(
 
   [string]$StatePath = "$env:LOCALAPPDATA\wezterm-runtime-helper\state.env",
 
-  [string]$RequestDir = "$env:LOCALAPPDATA\wezterm-runtime-helper\requests",
-
   [string]$ClipboardStatePath = '',
 
   [string]$ClipboardLogPath = '',
@@ -128,6 +126,10 @@ function Test-ManagerConfigMatches {
     return $false
   }
 
+  if ([string]$Config.ipcEndpoint -ne (Get-ManagerPaths).IpcEndpoint) {
+    return $false
+  }
+
   if ([string]$Config.clipboardStatePath -ne $ClipboardStatePath) {
     return $false
   }
@@ -195,6 +197,7 @@ function Get-ManagerPaths {
     Root = $managerRoot
     Exe = Join-Path $managerRoot 'bin\helper-manager.exe'
     Config = Join-Path $managerRoot 'manager-config.json'
+    IpcEndpoint = '\\.\pipe\wezterm-host-helper-v1'
   }
 }
 
@@ -223,7 +226,7 @@ function Write-ManagerConfig {
     runtimeDir = $RuntimeDir
     scriptsDir = Join-Path $RuntimeDir 'scripts'
     statePath = $StatePath
-    requestDir = $RequestDir
+    ipcEndpoint = $ManagerPaths.IpcEndpoint
     powerShellExe = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
     clipboardStatePath = $ClipboardStatePath
     clipboardLogPath = $ClipboardLogPath
@@ -293,7 +296,7 @@ try {
     child_pid = $child.Id
     runtime_dir = $runtimeDir
     state_path = $StatePath
-    request_dir = $RequestDir
+    ipc_endpoint = $managerPaths.IpcEndpoint
   }
 
   for ($attempt = 0; $attempt -lt 40; $attempt++) {
@@ -308,7 +311,7 @@ try {
 } catch {
   Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'launcher failed to ensure helper manager' -Fields @{
     state_path = $StatePath
-    request_dir = $RequestDir
+    ipc_endpoint = $managerPaths.IpcEndpoint
     error = $_.Exception.Message
   }
   throw

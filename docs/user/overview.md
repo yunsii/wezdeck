@@ -6,7 +6,7 @@ Use this doc when you need the minimum setup and navigation context.
 
 - `hybrid-wsl` uses the Windows WezTerm nightly build plus a WSL domain configured in `wezterm-x/local/constants.lua`.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
-- `posix-local` currently uses direct shell launchers for desktop integrations. A future native host-helper should mirror the Windows model: a stable per-user native agent outside the synced runtime, with source under `native/host-helper/<platform>/`.
+- `posix-local` does not yet have a native host-helper for desktop integrations. A future native host-helper should mirror the Windows model: a stable per-user native agent outside the synced runtime, with source under `native/host-helper/<platform>/`.
 - `tmux` must be available in the runtime environment that will host managed project tabs.
 - WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY` in `wezterm-x/local/shared.env`.
 
@@ -31,7 +31,7 @@ The terminal font uses a platform-aware fallback chain defined in `default_termi
 ## Local Setup
 
 1. Copy `wezterm-x/local.example/` to `wezterm-x/local/`.
-2. Edit `wezterm-x/local/constants.lua` for your `runtime_mode`, runtime shell, managed CLI theme variant, and any optional OS-specific integrations such as `default_domain` or Chrome debug profile path. In `hybrid-wsl`, `Alt+b` and `Alt+o` are handled by the native Windows host helper and require `chrome_debug_browser.user_data_dir` for the debug-browser path.
+2. Edit `wezterm-x/local/constants.lua` for your `runtime_mode`, runtime shell, managed CLI theme variant, and any optional OS-specific integrations such as `default_domain` or Chrome debug profile path. In `hybrid-wsl`, `Alt+b` and `Alt+o` are handled by the native Windows host helper over the stable local IPC endpoint and require `chrome_debug_browser.user_data_dir` for the debug-browser path.
 3. Edit `wezterm-x/local/shared.env` for shared scalar values that both Lua and shell scripts need, such as `WAKATIME_API_KEY` and the machine-local `MANAGED_AGENT_PROFILE`.
 4. Optionally create `~/.config/worktree-task/config.env` when you need to point globally installed `worktree-task` back at a tracked `wezterm-config` repo with `WEZTERM_CONFIG_REPO=/absolute/path`.
 5. Edit `wezterm-x/local/workspaces.lua` for your private project directories.
@@ -53,7 +53,7 @@ The terminal font uses a platform-aware fallback chain defined in `default_termi
 - `scripts/runtime/open-project-session.sh`: tmux session bootstrap for managed project tabs
 - `scripts/runtime/run-managed-command.sh`: launcher for managed workspace startup commands
 - `skills/worktree-task/scripts/worktree-task`: unified linked worktree task CLI
-- `wezterm-x/scripts/`: thin runtime bootstrap/install scripts plus the remaining cross-platform shell helpers
+- `wezterm-x/scripts/`: thin runtime bootstrap/install scripts
 - `native/host-helper/windows/`: Windows native host-helper source for `helper-manager.exe`
 - `scripts/dev/`: repo-local maintenance helpers
 - `skills/wezterm-runtime-sync/scripts/sync-runtime.sh`: skill-owned sync implementation; the public workflow is to use the `wezterm-runtime-sync` skill
