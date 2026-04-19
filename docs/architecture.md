@@ -24,6 +24,7 @@ Use this doc when you need ownership boundaries, entry points, or runtime design
 - `native/host-helper/windows/src/HelperManager/`: Windows `helper-manager.exe` server project
 - `native/host-helper/windows/src/HelperCtl/`: Windows `helperctl.exe` console client project
 - `native/host-helper/windows/src/Shared/`: shared Windows host-helper protocol, transport, and support models
+- `native/host-helper/windows/scripts/`: Windows host-helper release packaging scripts used by GitHub Actions
 - `tmux.conf`: tmux layout and status rendering
 - `agent-profiles/`: hosted source for versioned user-level agent profiles; not the project-level instruction source for this repo
 
