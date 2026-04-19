@@ -291,16 +291,23 @@ function M:write_request(trace_id, category, request_kind, payload_body_factory)
   return true, nil
 end
 
-function M:invoke_helper_request(trace_id, category, request_command, phase)
+function M:invoke_helper_request(trace_id, category, request_kind, request_timeout_ms, request_command, phase)
+  local started_at = self:current_epoch_ms()
   self.logger.info(category, 'sending request via windows runtime helper ipc', merge_fields(trace_id, {
+    request_kind = request_kind,
     phase = phase or 'direct',
+    timeout_ms = tostring(request_timeout_ms or 0),
   }))
 
   local ok, success, stdout, stderr = pcall(self.wezterm.run_child_process, request_command)
+  local elapsed_ms = math.max(self:current_epoch_ms() - started_at, 0)
   if not ok then
     self.logger.warn(category, 'windows runtime helper ipc request raised an error', merge_fields(trace_id, {
       error = success,
+      request_kind = request_kind,
       phase = phase or 'direct',
+      elapsed_ms = tostring(elapsed_ms),
+      timeout_ms = tostring(request_timeout_ms or 0),
     }))
     return nil, 'request_spawn_error'
   end
@@ -309,7 +316,10 @@ function M:invoke_helper_request(trace_id, category, request_command, phase)
     self.logger.warn(category, 'windows runtime helper ipc request failed', merge_fields(trace_id, {
       stdout = stdout,
       stderr = stderr,
+      request_kind = request_kind,
       phase = phase or 'direct',
+      elapsed_ms = tostring(elapsed_ms),
+      timeout_ms = tostring(request_timeout_ms or 0),
     }))
     return nil, 'request_failed'
   end
@@ -321,7 +331,10 @@ function M:invoke_helper_request(trace_id, category, request_command, phase)
       self.logger.warn(category, 'failed to parse windows runtime helper ipc response', merge_fields(trace_id, {
         error = parsed_response,
         stdout = stdout,
+        request_kind = request_kind,
         phase = phase or 'direct',
+        elapsed_ms = tostring(elapsed_ms),
+        timeout_ms = tostring(request_timeout_ms or 0),
       }))
       return nil, 'response_parse_failed'
     end
@@ -332,7 +345,11 @@ function M:invoke_helper_request(trace_id, category, request_command, phase)
   self.logger.info(category, 'windows runtime helper ipc request completed', merge_fields(trace_id, {
     status = response and response.status or nil,
     decision_path = response and response.decision_path or nil,
+    request_kind = request_kind,
     phase = phase or 'direct',
+    elapsed_ms = tostring(elapsed_ms),
+    helperctl_elapsed_ms = response and response.helperctl_elapsed_ms or nil,
+    timeout_ms = tostring(request_timeout_ms or 0),
   }))
 
   return response or { ok = '1' }, nil
@@ -353,8 +370,10 @@ function M:write_request_with_response(trace_id, category, request_kind, payload
   if not request_command then
     return false, request_command_reason
   end
+  local helper_integration = self:helper_integration()
+  local request_timeout_ms = helper_integration.helper_request_timeout_ms or 5000
 
-  local response, reason = self:invoke_helper_request(trace_id, category, request_command, 'direct')
+  local response, reason = self:invoke_helper_request(trace_id, category, request_kind, request_timeout_ms, request_command, 'direct')
   if response then
     return response, nil
   end
@@ -364,7 +383,7 @@ function M:write_request_with_response(trace_id, category, request_kind, payload
     return nil, ensured_reason
   end
 
-  return self:invoke_helper_request(trace_id, category, request_command, 'after_ensure')
+  return self:invoke_helper_request(trace_id, category, request_kind, request_timeout_ms, request_command, 'after_ensure')
 end
 
 return M

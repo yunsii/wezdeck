@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace WezTerm.WindowsHostHelper;
 
@@ -7,29 +8,40 @@ internal static class HelperCtlProgram
 {
     private static int Main(string[] args)
     {
+        var stopwatch = Stopwatch.StartNew();
+        var stage = "parse_args";
         if (!TryParseRequestArgs(args, out var pipeEndpoint, out var payloadBase64, out var timeoutMs, out var parseError))
         {
-            return ExitWithError(parseError);
+            return ExitWithError(parseError, stage, stopwatch.ElapsedMilliseconds);
         }
 
         try
         {
+            stage = "decode_payload";
             var payloadJson = Encoding.UTF8.GetString(Convert.FromBase64String(payloadBase64!));
+
+            stage = "connect_pipe";
             using var client = NamedPipeTransport.Connect(pipeEndpoint!, timeoutMs);
+
+            stage = "write_request";
             NamedPipeTransport.WriteMessage(client, payloadJson);
+
+            stage = "read_response";
             var responseJson = NamedPipeTransport.ReadMessage(client);
 
+            stage = "parse_response";
             var response = JsonSerializer.Deserialize<HelperResponse>(responseJson, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
             });
 
-            WriteResponseEnv(response);
+            stage = "write_env";
+            WriteResponseEnv(response, stopwatch.ElapsedMilliseconds);
             return response?.Ok == true ? 0 : 1;
         }
         catch (Exception ex)
         {
-            return ExitWithError($"request failed: {ex.Message}");
+            return ExitWithError(ex, stage, stopwatch.ElapsedMilliseconds);
         }
     }
 
@@ -95,7 +107,7 @@ internal static class HelperCtlProgram
         return true;
     }
 
-    private static void WriteResponseEnv(HelperResponse? response)
+    private static void WriteResponseEnv(HelperResponse? response, long elapsedMs)
     {
         if (response == null)
         {
@@ -109,6 +121,7 @@ internal static class HelperCtlProgram
             $"trace_id={Sanitize(response.TraceId)}",
             $"status={Sanitize(response.Status)}",
             $"decision_path={Sanitize(response.DecisionPath)}",
+            $"helperctl_elapsed_ms={elapsedMs}",
         };
 
         if (response.Result?.Pid is int pid)
@@ -180,14 +193,35 @@ internal static class HelperCtlProgram
         return (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ").Trim();
     }
 
-    private static int ExitWithError(string? message)
+    private static int ExitWithError(Exception ex, string stage, long elapsedMs)
+    {
+        return ExitWithError(
+            $"request failed at {stage}: {ex.Message}",
+            stage,
+            elapsedMs,
+            ex.GetType().FullName,
+            ex.HResult.ToString("X8"));
+    }
+
+    private static int ExitWithError(string? message, string stage, long elapsedMs, string? exceptionType = null, string? hresult = null)
     {
         try
         {
             var text = string.IsNullOrWhiteSpace(message) ? "helperctl failed" : message;
+            var fullText = $"{text} | stage={stage} | elapsed_ms={elapsedMs}";
+            if (!string.IsNullOrWhiteSpace(exceptionType))
+            {
+                fullText += $" | exception_type={exceptionType}";
+            }
+            if (!string.IsNullOrWhiteSpace(hresult))
+            {
+                fullText += $" | hresult={hresult}";
+            }
+
+            Console.Error.WriteLine(fullText);
             File.AppendAllText(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "wezterm-runtime-helper", "helperctl-bootstrap.log"),
-                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {text}{Environment.NewLine}",
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {fullText}{Environment.NewLine}",
                 new UTF8Encoding(false));
         }
         catch

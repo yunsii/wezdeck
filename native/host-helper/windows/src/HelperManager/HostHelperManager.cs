@@ -111,6 +111,7 @@ internal sealed class HostHelperManager : IDisposable
 
     private string HandleRequestJson(string requestJson, string transport)
     {
+        var stopwatch = Stopwatch.StartNew();
         string requestKind = "unknown";
         var requestCategory = "alt_o";
         string traceId = string.Empty;
@@ -159,6 +160,7 @@ internal sealed class HostHelperManager : IDisposable
                 ["pid"] = outcome.ProcessId?.ToString(),
                 ["hwnd"] = outcome.WindowHandle?.ToString(),
                 ["transport"] = transport,
+                ["elapsed_ms"] = stopwatch.ElapsedMilliseconds.ToString(),
             });
 
             return JsonSerializer.Serialize(HelperResponse.Success(traceId, outcome));
@@ -173,6 +175,9 @@ internal sealed class HostHelperManager : IDisposable
                 ["kind"] = requestKind,
                 ["error"] = ex.Message,
                 ["transport"] = transport,
+                ["elapsed_ms"] = stopwatch.ElapsedMilliseconds.ToString(),
+                ["exception_type"] = ex.GetType().FullName,
+                ["hresult"] = ex.HResult.ToString("X8"),
             });
 
             return JsonSerializer.Serialize(HelperResponse.Failure(traceId, "request_failed", ex.Message));
