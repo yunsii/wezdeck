@@ -28,6 +28,7 @@ skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /mnt/c/Users/y
 Run those commands from the repo root, or set `WEZTERM_CONFIG_REPO=/absolute/path/to/repo` before invoking the script from elsewhere.
 
 The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\host-helper\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/host-helper/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
+It also refreshes `~/.wezterm-x/agent-tools.env` in the target home so external agent platforms can discover repo-local wrappers from one stable marker file.
 
 ## Host Helper Release Rollout
 
@@ -70,6 +71,7 @@ scripts/dev/reload-tmux.sh
 - Verify workspace shortcuts still match [`keybindings.md`](./keybindings.md).
 - If workspace behavior changed, verify it still matches [`workspaces.md`](./workspaces.md).
 - If tmux styling or status changed, verify it still matches [`tmux-ui.md`](./tmux-ui.md).
+- When changing repo-local helper wrappers under `scripts/runtime/`, add or update a narrow command-level check before relying on broader host smoke tests.
 - When task-worktree launch behavior changes, verify a new linked task worktree opens as another tmux window in the same repo-family session and later windows still fall back to the session default launcher.
 
 For tmux reset regressions, prefer the isolated repo test suite before touching your live tmux workspace:
@@ -83,6 +85,8 @@ That suite uses a dedicated temporary `tmux -L ...` socket, a temporary `HOME`, 
 ## Common Maintenance Paths
 
 - If text paste is fast but image-path paste stops working in `hybrid-wsl`, sync the runtime, let WezTerm auto-reload, and inspect the shared `trace_id` across `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` and `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log`.
+- If `scripts/runtime/agent-clipboard.sh` fails, first rerun [`scripts/dev/check-agent-clipboard.sh`](../scripts/dev/check-agent-clipboard.sh) to distinguish a wrapper bug from a lower-level helper or clipboard issue.
+- If an external agent platform cannot find the clipboard wrapper, verify that the latest sync wrote `~/.wezterm-x/agent-tools.env` and that its `agent_clipboard` path still exists.
 - The `open-project-session.sh` helper warns when tmux is older than 3.3. Upgrade tmux before relying on the managed theme if passthrough support is missing.
 
 ## Commit Workflow

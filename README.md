@@ -39,6 +39,21 @@ skills/wezterm-runtime-sync/scripts/sync-runtime.sh
 
 The `wezterm-runtime-sync` skill owns runtime sync. It caches the chosen target home in `.sync-target` and publishes the runtime into the target user directory.
 
+## Repo-Local Agent Entry Points
+
+This repo exposes a small number of runtime-facing shell entrypoints directly from the source tree.
+When an AI workspace or local automation can already resolve this repository root, prefer calling these repo-local scripts instead of reconstructing helper IPC details elsewhere.
+
+Current agent-facing entrypoint:
+
+- [`scripts/runtime/agent-clipboard.sh`](scripts/runtime/agent-clipboard.sh): write text or an image file to the Windows clipboard through the synced host helper from WSL
+
+Recommended discovery contract for external agent platforms:
+
+1. Sync this repo so the runtime writes `~/.wezterm-x/agent-tools.env`
+2. Read `agent_clipboard` from that file
+3. Use the wrapper only when the resolved path exists and is executable
+
 ## Read Next
 
 - Project docs start at [`docs/README.md`](docs/README.md).
