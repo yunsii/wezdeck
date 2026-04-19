@@ -19,6 +19,7 @@ Use this doc when you need ownership boundaries, entry points, or runtime design
 - `skills/worktree-task/`: linked worktree task skill with unified CLI, core libraries, and built-in providers
 - `scripts/runtime/open-project-session.sh`: tmux bootstrap for managed project tabs
 - `scripts/runtime/run-managed-command.sh`: managed startup command launcher
+- `scripts/runtime/agent-clipboard.sh`: repo-local WSL wrapper that writes text or image files to the Windows clipboard through the host helper
 - `scripts/runtime/runtime-log-lib.sh`: shared runtime logging helper
 - `wezterm-x/scripts/`: thin runtime bootstrap and install scripts plus remaining cross-platform shell helpers copied by the sync skill
 - `native/host-helper/windows/src/HelperManager/`: Windows `helper-manager.exe` server project
@@ -45,6 +46,8 @@ Use this doc when you need ownership boundaries, entry points, or runtime design
 - `%LOCALAPPDATA%\wezterm-runtime\` is the Windows runtime state root. It keeps `logs/`, `state/`, `cache/`, and `bin/` in one place.
 - `%LOCALAPPDATA%\wezterm-runtime\bin\helper-manager.exe` is the active Windows host control plane.
 - `%LOCALAPPDATA%\wezterm-runtime\bin\helperctl.exe` is the thin console IPC client that WezTerm Lua, tmux-side scripts, and smoke tests invoke when they need a request or response.
+- `scripts/runtime/agent-clipboard.sh` is the repo-local high-level clipboard writer for agent workflows. It stays in WSL, ensures the synced Windows helper is healthy, and then calls `helperctl.exe`; it should be preferred over raw IPC in agent-facing automation.
+- Sync also writes `~/.wezterm-x/agent-tools.env` in the target home so external agent platforms can discover repo-local wrappers such as `agent-clipboard.sh` without inferring repository paths.
 - `%USERPROFILE%\.wezterm-native\host-helper\windows\` is the published source tree that sync installs from; `%LOCALAPPDATA%\wezterm-runtime\bin\` is the stable installed binary location that the runtime actually launches.
 - `native/host-helper/windows/release-manifest.json` is the version-pinned release fallback declaration. When Windows `dotnet` is available, the installer publishes from the synced native source tree; otherwise it downloads and verifies the manifest-selected GitHub release asset before replacing `%LOCALAPPDATA%\wezterm-runtime\bin\`.
 - `wezterm-x/scripts/` is intentionally thin on Windows. It keeps the helper installer, launcher, and bootstrap pieces, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.

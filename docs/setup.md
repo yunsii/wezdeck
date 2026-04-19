@@ -8,6 +8,7 @@ Use this doc when you need prerequisites and local setup.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
 - `tmux` must be available in the runtime environment that will host managed project tabs.
 - WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY` in `wezterm-x/local/shared.env`.
+- Repo-local helper wrappers such as `scripts/runtime/agent-clipboard.sh` require `hybrid-wsl`, `cmd.exe`, `powershell.exe`, `wslpath`, and a synced Windows helper runtime.
 
 ## Local Setup
 
@@ -25,6 +26,14 @@ Use this doc when you need prerequisites and local setup.
 - `wezterm-x/local/shared.env`: shared scalar values used by Lua and shell code
 - `wezterm-x/local/constants.lua`: machine-local structured Lua settings
 - `wezterm-x/local.example/`: tracked templates for `wezterm-x/local/`
+
+## Repo-Local Runtime Wrappers
+
+- When your automation can already resolve the repository root, prefer repo-local wrappers under `scripts/runtime/` over rebuilding helper IPC or Windows bootstrap logic.
+- `scripts/runtime/agent-clipboard.sh` is the current agent-facing clipboard wrapper. It stays in WSL, ensures the Windows helper is healthy, and then writes text or an image file to the Windows clipboard.
+- If that wrapper reports that the helper bootstrap is missing, sync the runtime first, then rerun the command.
+- `sync-runtime.sh` writes `~/.wezterm-x/agent-tools.env` on the target home. That marker is the primary discovery contract for external agent platforms.
+- Read `agent_clipboard` from `~/.wezterm-x/agent-tools.env` instead of inferring wrapper paths from the current task repository or AGENTS symlinks.
 
 ## Read Next
 

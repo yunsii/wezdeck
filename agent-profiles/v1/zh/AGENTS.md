@@ -104,6 +104,7 @@ Source of truth:
 
 阅读 [automation.md](./automation.md) 查看自动化设计规则。
 阅读 [documentation.md](./documentation.md) 查看文档设计和维护规则。
+当任务可能代表用户操作本地宿主环境时，阅读 [platform-actions.md](./platform-actions.md)，例如写剪贴板、聚焦应用、打开浏览器、发送通知或其他宿主侧副作用动作。
 
 ## 汇报
 

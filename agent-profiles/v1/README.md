@@ -20,6 +20,7 @@ Topic files under `en/` and `zh/` are mirrored one-to-one:
 - [en/refactor.md](./en/refactor.md)
 - [en/automation.md](./en/automation.md)
 - [en/documentation.md](./en/documentation.md)
+- [en/platform-actions.md](./en/platform-actions.md)
 - [en/reporting.md](./en/reporting.md)
 - [en/preferences.md](./en/preferences.md)
 

@@ -98,6 +98,7 @@ Use:
 
 Read [automation.md](./automation.md) for automation design rules.
 Read [documentation.md](./documentation.md) for documentation design and maintenance.
+Read [platform-actions.md](./platform-actions.md) when the task may interact with the local machine on the user's behalf, including clipboard writes, app focus, browser launch, notifications, or other host-side side effects.
 
 ## Reporting
 

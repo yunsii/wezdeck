@@ -110,6 +110,19 @@ copy_file_atomic() {
   mv -f "$temp_path" "$target_path"
 }
 
+write_agent_tools_file() {
+  local target_runtime_dir="${1:?missing target runtime dir}"
+  local repo_root_path="${2:?missing repo root path}"
+  local target_file="$target_runtime_dir/agent-tools.env"
+  local clipboard_wrapper="$repo_root_path/scripts/runtime/agent-clipboard.sh"
+
+  write_text_file_atomic "$target_file" <<EOF
+version=1
+repo_root=$repo_root_path
+agent_clipboard=$clipboard_wrapper
+EOF
+}
+
 wait_for_flow() {
   local flow_name="${1:?missing flow name}"
   local pid="${2:-}"
@@ -465,6 +478,7 @@ run_runtime_native_flow() {
   fi
   printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
   printf '%s\n' "$MAIN_REPO_ROOT" > "$TEMP_RUNTIME_DIR/repo-main-root.txt"
+  write_agent_tools_file "$TEMP_RUNTIME_DIR" "$repo_root_path"
   sync_trace "step=write-metadata repo_root_path=$repo_root_path repo_main_root=$MAIN_REPO_ROOT"
 
   rm -rf "$TARGET_RUNTIME_DIR" "$TARGET_NATIVE_DIR"
