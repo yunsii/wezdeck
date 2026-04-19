@@ -39,6 +39,7 @@ install_windows_helper_manager() {
   local target_runtime_dir="${1:?missing target runtime dir}"
   local install_script="$target_runtime_dir/scripts/install-windows-runtime-helper-manager.ps1"
   local install_script_win="" runtime_dir_win="" install_output="" manager_path=""
+  local target_home="" target_home_win="" diagnostics_file_win=""
 
   [[ "$target_runtime_dir" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
   command -v powershell.exe >/dev/null 2>&1 || return 0
@@ -47,12 +48,22 @@ install_windows_helper_manager() {
 
   install_script_win="$(wslpath -w "$install_script" 2>/dev/null || true)"
   runtime_dir_win="$(wslpath -w "$target_runtime_dir" 2>/dev/null || true)"
-  [[ -n "$install_script_win" && -n "$runtime_dir_win" ]] || return 0
+  target_home="$(dirname "$target_runtime_dir")"
+  target_home_win="$(wslpath -w "$target_home" 2>/dev/null || true)"
+  [[ -n "$target_home_win" ]] && diagnostics_file_win="${target_home_win}\\.wezterm-runtime\\wezterm-debug.log"
+  [[ -n "$install_script_win" && -n "$runtime_dir_win" && -n "$diagnostics_file_win" ]] || return 0
 
   sync_trace "step=helper-install status=starting target_runtime_dir=$target_runtime_dir runtime_dir_win=$runtime_dir_win install_script_win=$install_script_win"
   if ! install_output="$(
     windows_run_powershell_script_utf8 "$install_script_win" \
-      -RuntimeDir "$runtime_dir_win" 2>&1 | tr -d '\r'
+      -RuntimeDir "$runtime_dir_win" \
+      -Trigger runtime_sync \
+      -DiagnosticsEnabled 1 \
+      -DiagnosticsCategoryEnabled 1 \
+      -DiagnosticsLevel info \
+      -DiagnosticsFile "$diagnostics_file_win" \
+      -DiagnosticsMaxBytes 5242880 \
+      -DiagnosticsMaxFiles 5 2>&1 | tr -d '\r'
   )"; then
     [[ -n "$install_output" ]] && printf '%s\n' "$install_output" >&2
     sync_trace "step=helper-install status=failed target_runtime_dir=$target_runtime_dir"
