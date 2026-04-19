@@ -23,6 +23,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Outside tmux in `posix-local`, `Alt+v` hands the current pane directory to the runtime-side VS Code launcher, which resolves the current worktree root and then launches the configured local VS Code opener there.
 - Outside git worktrees, `Alt+v` still opens the current directory.
 - In any tmux-backed pane, `Alt+v` is forwarded directly to tmux so the active tmux window resolves the live worktree path first and, in `hybrid-wsl`, then uses the same Windows native helper/front-focus path instead of `code .`.
+- In tmux copy-mode or scrollback, `Alt+v` still runs that same tmux-owned VS Code path instead of falling back to tmux's default `M-v` page-up behavior.
 - If WezTerm only sees the WSL host fallback path such as `/C:/Users/...` in `hybrid-wsl`, `Alt+v` also forwards to the pane instead of using the stale host-side path.
 - In `hybrid-wsl`, `Alt+b` uses the same Windows native helper/front-focus path as `Alt+v` for the debug Chrome profile.
 - In `posix-local`, `Alt+b` stays unavailable until a native host helper exists.
