@@ -31,7 +31,7 @@ internal sealed class HostHelperManager : IDisposable
         EnsureDirectory(Path.GetDirectoryName(config.StatePath));
 
         WriteHelperState("1", string.Empty);
-        logger.Info("alt_o", "helper manager started", new Dictionary<string, string?>
+        logger.Info("host_helper", "helper manager started", new Dictionary<string, string?>
         {
             ["ipc_endpoint"] = config.IpcEndpoint,
             ["runtime_dir"] = config.RuntimeDir,
@@ -49,7 +49,7 @@ internal sealed class HostHelperManager : IDisposable
     {
         lastError = message ?? string.Empty;
         WriteHelperState("0", lastError);
-        logger.Error("alt_o", "helper manager crashed", new Dictionary<string, string?>
+        logger.Error("host_helper", "helper manager crashed", new Dictionary<string, string?>
         {
             ["error"] = lastError,
             ["runtime_dir"] = config.RuntimeDir,
@@ -99,7 +99,7 @@ internal sealed class HostHelperManager : IDisposable
                     return;
                 }
 
-                logger.Error("alt_o", "helper ipc server loop failed", new Dictionary<string, string?>
+                logger.Error("host_helper", "helper ipc server loop failed", new Dictionary<string, string?>
                 {
                     ["error"] = ex.Message,
                     ["ipc_endpoint"] = config.IpcEndpoint,

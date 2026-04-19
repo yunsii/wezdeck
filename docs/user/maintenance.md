@@ -70,7 +70,7 @@ flowchart LR
 
 ### Key Points And Hard Parts
 
-- 热路径现在应该只有一条主链路: `Lua -> helperctl.exe -> named pipe -> helper-manager.exe -> response`。常态请求不该再先读 `state.env`、扫额外目录、等异步落盘结果。
+- 热路径现在应该只有一条主链路: `Lua -> helperctl.exe -> named pipe -> helper-manager.exe -> response`。常态请求仍以 IPC 为主；只有在 helper 心跳明显过期或 bootstrap 状态缺失时，WezTerm 才会先做一次轻量 `state.env` 预检并同步 ensure。
 - `helper-manager.exe` 是唯一决策点: VS Code 目录归一化、Chrome 调试实例复用、剪贴板文本/图片判定都放在这里，避免 Lua、Shell、PowerShell 各自维护一套状态机。
 - 复用逻辑的难点不在“启动应用”，而在“找到正确窗口并置前”: 需要同时结合持久化缓存、进程命令行匹配、`MainWindowHandle` 可见窗口扫描，以及启动后的前台绑定补偿。
 - 剪贴板逻辑的难点不在 IPC，而在 Windows 数据格式: 读的时候要在 STA 线程里拿最新内容，写图片时要同时写 `CF_DIB` 和 `PNG`，这样 Ditto 和目标程序都能稳定识别。
@@ -80,7 +80,7 @@ flowchart LR
 
 - 旧的 PowerShell 请求处理与 worker/plugin 链已经不在 Windows 热路径。
 - `Ctrl+v` 不再依赖独立剪贴板状态文件或 listener log，决策直接来自 helper 的实时请求返回。
-- 请求热路径不再先读取 `state.env` 做心跳判断；现在先直接发 IPC，请求失败时才同步执行一次 ensure 并重试。
+- 请求热路径现在会先做一次轻量 bootstrap 状态预检：当 `state.env` 显示 helper 已过期、未就绪或 runtime 不匹配时，WezTerm 会先同步执行一次 ensure，再发出 IPC 请求；如果 direct IPC 仍然失败，兜底重试逻辑仍然保留。
 - `wezterm-x/scripts/` 在 Windows 侧只保留安装和 bootstrap 脚本，不再承载 VS Code、Chrome、clipboard 的实际业务逻辑。
 
 ### Active Hybrid Flow
@@ -210,7 +210,7 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 - Runtime shell diagnostics are configured separately in `wezterm-x/local/runtime-logging.sh`, starting from `wezterm-x/local.example/runtime-logging.sh`.
 - Both logging systems are enabled by default at the `info` level for control-plane events so normal workspace, tmux, worktree-task, and sync flows leave an audit trail.
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured `file` and also shows them in the Debug Overlay.
-- Current WezTerm-side diagnostics categories include `workspace`, `alt_o`, `chrome`, `clipboard`, and `command_panel`.
+- Current WezTerm-side diagnostics categories include `workspace`, `alt_o`, `chrome`, `clipboard`, `command_panel`, and `host_helper`.
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations; it is intentionally noisy.
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.
 - `sync-runtime.sh` also prints a one-line tmux reload result to the terminal, while the full structured detail still goes to `WEZTERM_RUNTIME_LOG_FILE`.
@@ -226,7 +226,7 @@ Reclaim only removes skill-managed linked worktrees under the repository parent'
 - `Alt+v` and `Alt+b` requests are now handled directly inside that same `helper-manager.exe` process. The old PowerShell request handlers and worker plugin chain are no longer part of the active Windows hot path.
 - Host-helper reuse diagnostics now emit explicit decision fields such as `decision_path`, `registry_hit`, `matched_process_count`, `matched_process_ids`, and `matched_window_found`, so one `trace_id` is enough to explain why a request reused an existing window or fell through to launch.
 - Clipboard image monitoring now runs inside that same `helper-manager.exe` process without launching a second standalone listener PowerShell window. `Ctrl+v` no longer depends on the state-file heartbeat to decide whether to paste an image path; it issues a live clipboard IPC request instead.
-- WezTerm still starts the host helper on demand from the first `Alt+v`, `Alt+b`, or clipboard path that actually needs it; it no longer prewarms the host helper during every GUI config reload.
+- In `hybrid-wsl`, WezTerm now prewarms the host helper once in the background during GUI startup, then still falls back to on-demand ensure when the helper later goes stale or a request path detects missing bootstrap state.
 - For a repeatable live smoke test of the Windows runtime host, run [`scripts/dev/check-windows-runtime-host.sh`](../../scripts/dev/check-windows-runtime-host.sh) from WSL; it verifies helper health plus the current `Alt+v`, `Alt+b`, and clipboard IPC control paths against the synced Windows runtime.
 
 ## Hybrid WSL Agent Startup Measurement

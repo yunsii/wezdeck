@@ -85,6 +85,15 @@ local function helper_integration(constants)
   return constants.integrations and constants.integrations.vscode or {}
 end
 
+local function parse_non_negative_number(value)
+  local numeric = tonumber(value)
+  if not numeric or numeric < 0 then
+    return nil
+  end
+
+  return numeric
+end
+
 function M.new(opts)
   return setmetatable({
     wezterm = opts.wezterm,
@@ -100,6 +109,11 @@ end
 
 function M:helper_integration()
   return helper_integration(self.constants)
+end
+
+function M:helper_runtime_dir()
+  local integration = self:helper_integration()
+  return integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
 end
 
 function M:merge_fields(trace_id, fields)
@@ -149,11 +163,12 @@ function M:helper_command()
   end
 
   local integration = self:helper_integration()
-  local runtime_dir = integration.runtime_dir or rawget(_G, 'WEZTERM_RUNTIME_DIR') or (self.wezterm.config_dir .. '\\.wezterm-x')
+  local runtime_dir = self:helper_runtime_dir()
   local helper_script = integration.helper_script or 'scripts\\ensure-windows-runtime-helper.ps1'
   local diagnostics = self.constants.diagnostics and self.constants.diagnostics.wezterm or {}
   local clipboard = self:integration 'clipboard_image'
-  local helper_category_enabled = diagnostics_capture_enabled(self.constants, 'alt_o')
+  local helper_category_enabled = diagnostics_capture_enabled(self.constants, 'host_helper')
+    or diagnostics_capture_enabled(self.constants, 'alt_o')
     or diagnostics_capture_enabled(self.constants, 'chrome')
     or diagnostics_capture_enabled(self.constants, 'clipboard')
 
@@ -198,6 +213,85 @@ function M:helper_command()
   }, nil
 end
 
+function M:helper_state_snapshot()
+  if not self:supports_windows_helper() then
+    return nil, 'unsupported_runtime'
+  end
+
+  local integration = self:helper_integration()
+  local state_path = integration.helper_state_path
+  if not state_path or state_path == '' then
+    return nil, 'state_path_unconfigured'
+  end
+
+  local state = self.helpers.load_optional_env_file(state_path)
+  if not state then
+    return nil, 'state_unavailable'
+  end
+
+  return state, nil
+end
+
+function M:helper_state_preflight()
+  if not self:supports_windows_helper() then
+    return false, 'unsupported_runtime', {}
+  end
+
+  local integration = self:helper_integration()
+  local expected_runtime_dir = self:helper_runtime_dir()
+  local timeout_ms = (integration.helper_heartbeat_timeout_seconds or 5) * 1000
+  local state, state_reason = self:helper_state_snapshot()
+  if not state then
+    return false, state_reason, {
+      expected_runtime_dir = expected_runtime_dir,
+      timeout_ms = tostring(timeout_ms),
+    }
+  end
+
+  if state.ready ~= '1' then
+    return false, 'state_not_ready', {
+      expected_runtime_dir = expected_runtime_dir,
+      ready = state.ready,
+      timeout_ms = tostring(timeout_ms),
+    }
+  end
+
+  if expected_runtime_dir ~= '' and state.runtime_dir ~= expected_runtime_dir then
+    return false, 'runtime_dir_mismatch', {
+      expected_runtime_dir = expected_runtime_dir,
+      state_runtime_dir = state.runtime_dir,
+      timeout_ms = tostring(timeout_ms),
+    }
+  end
+
+  local heartbeat_at_ms = parse_non_negative_number(state.heartbeat_at_ms)
+  if not heartbeat_at_ms then
+    return false, 'heartbeat_missing', {
+      expected_runtime_dir = expected_runtime_dir,
+      heartbeat_at_ms = state.heartbeat_at_ms,
+      timeout_ms = tostring(timeout_ms),
+    }
+  end
+
+  local heartbeat_age_ms = math.max(self:current_epoch_ms() - heartbeat_at_ms, 0)
+  if heartbeat_age_ms > timeout_ms then
+    return false, 'heartbeat_stale', {
+      expected_runtime_dir = expected_runtime_dir,
+      heartbeat_at_ms = tostring(heartbeat_at_ms),
+      heartbeat_age_ms = tostring(heartbeat_age_ms),
+      timeout_ms = tostring(timeout_ms),
+    }
+  end
+
+  return true, nil, {
+    expected_runtime_dir = expected_runtime_dir,
+    state_runtime_dir = state.runtime_dir,
+    heartbeat_at_ms = tostring(heartbeat_at_ms),
+    heartbeat_age_ms = tostring(heartbeat_age_ms),
+    timeout_ms = tostring(timeout_ms),
+  }
+end
+
 function M:helper_request_command(payload_json)
   if not self:supports_windows_helper() then
     return nil, 'unsupported_runtime'
@@ -231,13 +325,13 @@ function M:ensure_helper_running(reason)
     return false, command_reason
   end
 
-  self.logger.info('alt_o', 'ensuring windows runtime helper is running', {
+  self.logger.info('host_helper', 'ensuring windows runtime helper is running', {
     reason = reason,
   })
 
   local ok, err = pcall(self.wezterm.background_child_process, command)
   if not ok then
-    self.logger.error('alt_o', 'failed to start windows runtime helper', {
+    self.logger.error('host_helper', 'failed to start windows runtime helper', {
       error = err,
       reason = reason,
     })
@@ -253,13 +347,13 @@ function M:ensure_helper_running_sync(reason)
     return false, command_reason
   end
 
-  self.logger.info('alt_o', 'ensuring windows runtime helper synchronously', {
+  self.logger.info('host_helper', 'ensuring windows runtime helper synchronously', {
     reason = reason,
   })
 
   local ok, success, stdout, stderr = pcall(self.wezterm.run_child_process, command)
   if not ok then
-    self.logger.error('alt_o', 'synchronous windows runtime helper launch raised an error', {
+    self.logger.error('host_helper', 'synchronous windows runtime helper launch raised an error', {
       error = success,
       reason = reason,
     })
@@ -267,7 +361,7 @@ function M:ensure_helper_running_sync(reason)
   end
 
   if not success then
-    self.logger.warn('alt_o', 'synchronous windows runtime helper launch failed', {
+    self.logger.warn('host_helper', 'synchronous windows runtime helper launch failed', {
       reason = reason,
       stdout = stdout,
       stderr = stderr,
@@ -372,8 +466,32 @@ function M:write_request_with_response(trace_id, category, request_kind, payload
   end
   local helper_integration = self:helper_integration()
   local request_timeout_ms = helper_integration.helper_request_timeout_ms or 5000
+  local state_is_fresh, state_reason, state_fields = self:helper_state_preflight()
+  local request_phase = 'direct'
 
-  local response, reason = self:invoke_helper_request(trace_id, category, request_kind, request_timeout_ms, request_command, 'direct')
+  if not state_is_fresh then
+    self.logger.info('host_helper', 'windows runtime helper state is stale before request; ensuring synchronously', merge_fields(trace_id, {
+      request_kind = request_kind,
+      preflight_reason = state_reason,
+      phase = 'preflight',
+      timeout_ms = tostring(request_timeout_ms),
+      ready = state_fields.ready,
+      heartbeat_at_ms = state_fields.heartbeat_at_ms,
+      heartbeat_age_ms = state_fields.heartbeat_age_ms,
+      expected_runtime_dir = state_fields.expected_runtime_dir,
+      state_runtime_dir = state_fields.state_runtime_dir,
+      helper_timeout_ms = state_fields.timeout_ms,
+    }))
+
+    local preflight_ensured, preflight_reason = self:ensure_helper_running_sync('preflight-' .. (state_reason or 'stale'))
+    if not preflight_ensured then
+      return nil, preflight_reason
+    end
+
+    request_phase = 'after_preflight_ensure'
+  end
+
+  local response, reason = self:invoke_helper_request(trace_id, category, request_kind, request_timeout_ms, request_command, request_phase)
   if response then
     return response, nil
   end

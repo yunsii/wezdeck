@@ -236,7 +236,7 @@ try {
   Ensure-ManagerInstalled -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
 
   $child = Start-Process -FilePath $managerPaths.Exe -ArgumentList @('--config', $managerPaths.Config) -PassThru
-  Write-StructuredLog -Level 'info' -Category 'alt_o' -Message 'launcher started helper manager' -Fields @{
+  Write-StructuredLog -Level 'info' -Category 'host_helper' -Message 'launcher started helper manager' -Fields @{
     child_pid = $child.Id
     runtime_dir = $runtimeDir
     state_path = $StatePath
@@ -253,7 +253,7 @@ try {
 
   throw 'launcher timed out waiting for helper manager heartbeat'
 } catch {
-  Write-StructuredLog -Level 'error' -Category 'alt_o' -Message 'launcher failed to ensure helper manager' -Fields @{
+  Write-StructuredLog -Level 'error' -Category 'host_helper' -Message 'launcher failed to ensure helper manager' -Fields @{
     state_path = $StatePath
     ipc_endpoint = $managerPaths.IpcEndpoint
     error = $_.Exception.Message
