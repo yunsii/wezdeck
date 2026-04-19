@@ -25,6 +25,7 @@ return {
         clipboard = true,
         command_panel = true,
         chrome = true,
+        host_helper = true,
         workspace = true,
       },
     },

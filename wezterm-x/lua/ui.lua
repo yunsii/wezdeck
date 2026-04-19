@@ -667,6 +667,30 @@ function M.apply(opts)
     {
       key = 'Q',
       mods = 'ALT|SHIFT',
+  local helper_prewarm_started = false
+
+  if constants.runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
+    wezterm.on('gui-startup', function()
+      if helper_prewarm_started then
+        return
+      end
+
+      helper_prewarm_started = true
+      logger.info('host_helper', 'prewarming windows helper in background', {
+        reason = 'gui-startup',
+      })
+
+      local ensured, ensure_reason = host:ensure_running('gui-startup-prewarm', false)
+      if ensured then
+        return
+      end
+
+      logger.warn('host_helper', 'background prewarm for windows helper failed', {
+        reason = 'gui-startup',
+        ensure_reason = ensure_reason,
+      })
+    end)
+  end
       action = wezterm.action.QuitApplication,
     },
     {
