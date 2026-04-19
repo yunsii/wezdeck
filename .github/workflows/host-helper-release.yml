@@ -1,0 +1,75 @@
+name: host-helper-release
+
+on:
+  push:
+    tags:
+      - "host-helper-v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to create or update"
+        required: true
+        type: string
+      release_name:
+        description: "Optional release title"
+        required: false
+        type: string
+      draft:
+        description: "Create as draft release"
+        required: false
+        default: false
+        type: boolean
+      prerelease:
+        description: "Mark release as prerelease"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve release metadata
+        id: meta
+        shell: pwsh
+        run: >
+          & ./native/host-helper/windows/scripts/resolve-release-metadata.ps1
+          -ReleaseTag '${{ inputs.release_tag || github.ref_name }}'
+          -ReleaseName '${{ inputs.release_name }}'
+
+      - name: Publish helper binaries
+        id: package
+        shell: pwsh
+        run: >
+          & ./native/host-helper/windows/scripts/package-release.ps1
+          -ReleaseTag '${{ steps.meta.outputs.release_tag }}'
+          -AssetName '${{ steps.meta.outputs.asset_name }}'
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.release_tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.meta.outputs.release_name }}
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
+          overwrite_files: true
+          files: ${{ steps.package.outputs.archive_path }}
+
+      - name: Write manifest snippet
+        shell: pwsh
+        run: >
+          & ./native/host-helper/windows/scripts/write-release-summary.ps1
+          -ReleaseTag '${{ steps.meta.outputs.release_tag }}'
+          -AssetName '${{ steps.meta.outputs.asset_name }}'
+          -Sha256 '${{ steps.package.outputs.sha256 }}'
+          -Repository '${{ github.repository }}'

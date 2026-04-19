@@ -40,11 +40,19 @@ install_windows_helper_manager() {
   local install_script="$target_runtime_dir/scripts/install-windows-runtime-helper-manager.ps1"
   local install_script_win="" runtime_dir_win="" install_output="" manager_path=""
   local target_home="" target_home_win="" diagnostics_file_win=""
+  local install_source="${WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE:-auto}"
 
   [[ "$target_runtime_dir" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
   command -v powershell.exe >/dev/null 2>&1 || return 0
   command -v wslpath >/dev/null 2>&1 || return 0
   [[ -f "$install_script" ]] || return 0
+  case "$install_source" in
+    auto|local|release) ;;
+    *)
+      printf 'Unsupported WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE: %s\n' "$install_source" >&2
+      return 1
+      ;;
+  esac
 
   install_script_win="$(wslpath -w "$install_script" 2>/dev/null || true)"
   runtime_dir_win="$(wslpath -w "$target_runtime_dir" 2>/dev/null || true)"
@@ -53,10 +61,11 @@ install_windows_helper_manager() {
   [[ -n "$target_home_win" ]] && diagnostics_file_win="${target_home_win}\\AppData\\Local\\wezterm-runtime\\logs\\helper.log"
   [[ -n "$install_script_win" && -n "$runtime_dir_win" && -n "$diagnostics_file_win" ]] || return 0
 
-  sync_trace "step=helper-install status=starting target_runtime_dir=$target_runtime_dir runtime_dir_win=$runtime_dir_win install_script_win=$install_script_win"
+  sync_trace "step=helper-install status=starting target_runtime_dir=$target_runtime_dir runtime_dir_win=$runtime_dir_win install_script_win=$install_script_win install_source=$install_source"
   if ! install_output="$(
     windows_run_powershell_script_utf8 "$install_script_win" \
       -RuntimeDir "$runtime_dir_win" \
+      -InstallSource "$install_source" \
       -Trigger runtime_sync \
       -DiagnosticsEnabled 1 \
       -DiagnosticsCategoryEnabled 1 \
@@ -66,18 +75,20 @@ install_windows_helper_manager() {
       -DiagnosticsMaxFiles 5 2>&1 | tr -d '\r'
   )"; then
     [[ -n "$install_output" ]] && printf '%s\n' "$install_output" >&2
-    sync_trace "step=helper-install status=failed target_runtime_dir=$target_runtime_dir"
+    sync_trace "step=helper-install status=failed target_runtime_dir=$target_runtime_dir install_source=$install_source"
     runtime_log_error sync "failed to install windows helper manager after sync" \
-      "target_runtime_dir=$target_runtime_dir"
+      "target_runtime_dir=$target_runtime_dir" \
+      "install_source=$install_source"
     return 1
   fi
 
   [[ -n "$install_output" ]] && printf '%s\n' "$install_output"
   manager_path="$(printf '%s\n' "$install_output" | tail -n 1)"
-  sync_trace "step=helper-install status=completed manager_path=${manager_path:-unknown}"
+  sync_trace "step=helper-install status=completed manager_path=${manager_path:-unknown} install_source=$install_source"
   runtime_log_info sync "installed windows helper manager after sync" \
     "target_runtime_dir=$target_runtime_dir" \
-    "manager_path=${manager_path:-unknown}"
+    "manager_path=${manager_path:-unknown}" \
+    "install_source=$install_source"
   return 0
 }
 
