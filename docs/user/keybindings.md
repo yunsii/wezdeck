@@ -8,7 +8,7 @@ Use this doc when you need shortcut behavior.
 - `Alt+p`: rotate through all currently known workspaces
 - `Alt+Shift+x`: open a centered WezTerm confirmation overlay to close the current non-default workspace
 - `Alt+Shift+q`: quit WezTerm and close all windows; WezTerm will handle any built-in confirmation
-- `Alt+v`: in any tmux-backed pane, forward to tmux so the active tmux window resolves the live worktree first and, in `hybrid-wsl`, uses the Windows native helper request path; outside tmux, WezTerm opens the current worktree root in VS Code directly and still falls back to pane handling when it only sees the WSL host path
+- `Alt+v`: in any tmux-backed pane, forward to tmux so the active tmux window resolves the live worktree first and, in `hybrid-wsl`, uses the Windows native helper request path; this stays true even while tmux is in copy-mode or scrollback, so `Alt+v` no longer falls back to tmux's default page-up behavior there. Outside tmux, WezTerm opens the current worktree root in VS Code directly and still falls back to pane handling when it only sees the WSL host path
 - `Alt+g`: in any tmux-backed pane, open a centered tmux popup worktree picker for the current repo family; selecting an unopened worktree creates its tmux window on demand
 - `Alt+Shift+g`: in any tmux-backed pane, cycle to the next git worktree in the current repo family, creating the tmux window on demand when needed
 - `Alt+b`: open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua`; in `hybrid-wsl` it uses the same Windows native helper/front-focus path as `Alt+v`, and in `posix-local` it stays unavailable until a native host helper exists
