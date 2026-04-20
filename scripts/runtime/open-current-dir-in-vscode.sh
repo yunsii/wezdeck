@@ -57,12 +57,12 @@ helper_state_is_fresh() {
 
 ensure_helper() {
   if helper_state_is_fresh; then
-    runtime_log_info alt_o "tmux Alt+o helper already healthy" \
+    runtime_log_info vscode "tmux Alt+v helper already healthy" \
       "state_path=$HELPER_STATE_WSL"
     return 0
   fi
 
-  runtime_log_info alt_o "tmux Alt+o ensuring windows helper" \
+  runtime_log_info vscode "tmux Alt+v ensuring windows helper" \
     "state_path=$HELPER_STATE_WSL"
 
   if ! windows_run_powershell_script_utf8 "$WINDOWS_HELPER_ENSURE_SCRIPT_WIN" \
@@ -115,7 +115,7 @@ code_command=()
 tmux_window_id=""
 window_root=""
 start_ms="$(runtime_log_now_ms)"
-trace_id="alt_o-$(runtime_log_generate_trace_id)"
+trace_id="vscode-$(runtime_log_generate_trace_id)"
 export WEZTERM_RUNTIME_TRACE_ID="$trace_id"
 
 while [[ $# -gt 0 ]]; do
@@ -157,12 +157,12 @@ target_dir="${1:-$PWD}"
 requested_dir="$target_dir"
 
 if [[ "$target_dir" != /* ]]; then
-  runtime_log_error alt_o "expected absolute path" "requested_dir=$target_dir"
+  runtime_log_error vscode "expected absolute path" "requested_dir=$target_dir"
   exit 1
 fi
 
 if [[ ! -d "$target_dir" ]]; then
-  runtime_log_error alt_o "directory does not exist" "requested_dir=$target_dir"
+  runtime_log_error vscode "directory does not exist" "requested_dir=$target_dir"
   exit 1
 fi
 
@@ -185,7 +185,7 @@ if [[ -z "${WSL_DISTRO_NAME:-}" ]] || ! command -v powershell.exe >/dev/null 2>&
   if (( ${#code_command[@]} == 0 )); then
     code_bin="$(command -v code || true)"
     if [[ -z "$code_bin" ]]; then
-      runtime_log_error alt_o "code binary was not found" "requested_dir=$requested_dir"
+      runtime_log_error vscode "code binary was not found" "requested_dir=$requested_dir"
       exit 1
     fi
     code_command=("$code_bin")
@@ -199,20 +199,20 @@ fi
 detect_code_command
 
 if ensure_helper && invoke_helper_request "$trace_id"; then
-  runtime_log_info alt_o "tmux Alt+o sent helper ipc request" \
+  runtime_log_info vscode "tmux Alt+v sent helper ipc request" \
     "requested_dir=$requested_dir" \
     "effective_dir=$target_dir" \
     "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0
 fi
 
-runtime_log_warn alt_o "tmux Alt+o helper path failed; falling back to direct windows open" \
+runtime_log_warn vscode "tmux Alt+v helper path failed; falling back to direct windows open" \
   "requested_dir=$requested_dir" \
   "effective_dir=$target_dir" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 
 if run_direct_windows_open "$trace_id"; then
-  runtime_log_info alt_o "tmux Alt+o direct windows open completed" \
+  runtime_log_info vscode "tmux Alt+v direct windows open completed" \
     "requested_dir=$requested_dir" \
     "effective_dir=$target_dir" \
     "duration_ms=$(runtime_log_duration_ms "$start_ms")"
@@ -220,7 +220,7 @@ if run_direct_windows_open "$trace_id"; then
 fi
 
 status=$?
-runtime_log_error alt_o "tmux Alt+o direct windows open failed" \
+runtime_log_error vscode "tmux Alt+v direct windows open failed" \
   "requested_dir=$requested_dir" \
   "effective_dir=$target_dir" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")" \

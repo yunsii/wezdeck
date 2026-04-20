@@ -144,7 +144,7 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
   local command
 
   if not cwd or cwd == '/' then
-    logger.warn('alt_o', 'current pane working directory is unavailable', common.merge_fields(trace_id, {
+    logger.warn('vscode', 'current pane working directory is unavailable', common.merge_fields(trace_id, {
       domain = domain_name,
       raw_cwd = tostring(raw_cwd),
       workspace = workspace_name,
@@ -156,7 +156,7 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
   if runtime_mode == 'hybrid-wsl' then
     local distro = common.wsl_distro_from_domain(domain_name) or common.wsl_distro_from_domain(constants.default_domain)
     if not distro then
-      logger.warn('alt_o', 'current pane is not backed by a WSL domain', common.merge_fields(trace_id, {
+      logger.warn('vscode', 'current pane is not backed by a WSL domain', common.merge_fields(trace_id, {
         cwd = cwd,
         domain = domain_name,
       }))
@@ -178,7 +178,7 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
       return
     end
 
-    logger.error('alt_o', 'windows helper Alt+v request failed', common.merge_fields(trace_id, {
+    logger.error('vscode', 'windows helper Alt+v request failed', common.merge_fields(trace_id, {
       reason = helper_reason,
       cwd = cwd,
       distro = distro,
@@ -207,7 +207,7 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
     command[#command + 1] = cwd
   end
 
-  logger.info('alt_o', 'opening current dir via WezTerm', common.merge_fields(trace_id, {
+  logger.info('vscode', 'opening current dir via WezTerm', common.merge_fields(trace_id, {
     command = table.concat(command, ' '),
     cwd = cwd,
     domain = domain_name,
@@ -216,7 +216,7 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
   local ok, err = pcall(wezterm.background_child_process, command)
   if not ok then
     window:toast_notification('WezTerm', 'Alt+v failed. Check WezTerm logs.', nil, 3000)
-    logger.error('alt_o', 'background_child_process failed', common.merge_fields(trace_id, {
+    logger.error('vscode', 'background_child_process failed', common.merge_fields(trace_id, {
       error = err,
     }))
   end

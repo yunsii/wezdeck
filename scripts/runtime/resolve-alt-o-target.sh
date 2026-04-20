@@ -39,7 +39,7 @@ while (( $# > 0 )); do
 done
 
 if [[ -z "$cwd" || "$cwd" != /* ]]; then
-  runtime_log_warn alt_o "resolve-alt-o-target received non-absolute cwd" "workspace=$workspace" "cwd=$cwd"
+  runtime_log_warn vscode "resolve-alt-o-target received non-absolute cwd" "workspace=$workspace" "cwd=$cwd"
   exit 1
 fi
 
@@ -50,7 +50,7 @@ resolved_session=""
 resolved_window=""
 resolved_cwd=""
 
-runtime_log_info alt_o "resolve-alt-o-target invoked" "workspace=$workspace" "cwd=$cwd"
+runtime_log_info vscode "resolve-alt-o-target invoked" "workspace=$workspace" "cwd=$cwd"
 
 if [[ -n "$workspace" && "$workspace" != "default" ]] && tmux_worktree_in_git_repo "$cwd"; then
   session_name="$(tmux_worktree_session_name_for_path "$workspace" "$cwd" || true)"
@@ -60,7 +60,7 @@ if [[ -n "$workspace" && "$workspace" != "default" ]] && tmux_worktree_in_git_re
       IFS=$'\t' read -r resolved_session resolved_window resolved_cwd <<< "$tmux_metadata"
       if [[ -n "$resolved_cwd" && -d "$resolved_cwd" ]]; then
         target_dir="$resolved_cwd"
-        runtime_log_info alt_o "resolved Alt+o target from tmux session" \
+        runtime_log_info vscode "resolved Alt+v target from tmux session" \
           "workspace=$workspace" \
           "session_name=$resolved_session" \
           "window_id=$resolved_window" \
@@ -68,7 +68,7 @@ if [[ -n "$workspace" && "$workspace" != "default" ]] && tmux_worktree_in_git_re
       fi
     fi
   else
-    runtime_log_info alt_o "managed workspace tmux session was unavailable during Alt+o resolution" \
+    runtime_log_info vscode "managed workspace tmux session was unavailable during Alt+v resolution" \
       "workspace=$workspace" \
       "session_name=${session_name:-missing}" \
       "cwd=$cwd"
@@ -79,6 +79,6 @@ if repo_root="$(tmux_worktree_repo_root "$target_dir" 2>/dev/null || true)" && [
   target_dir="$repo_root"
 fi
 
-runtime_log_info alt_o "resolved Alt+o target directory" "workspace=$workspace" "effective_target_dir=$target_dir"
-runtime_log_info alt_o "resolve-alt-o-target completed" "workspace=$workspace" "effective_target_dir=$target_dir" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+runtime_log_info vscode "resolved Alt+v target directory" "workspace=$workspace" "effective_target_dir=$target_dir"
+runtime_log_info vscode "resolve-alt-o-target completed" "workspace=$workspace" "effective_target_dir=$target_dir" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 printf '%s\n' "$target_dir"

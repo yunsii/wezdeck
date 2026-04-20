@@ -22,7 +22,7 @@ function M.build(opts)
       key = 'v',
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
-        local trace_id = logger.trace_id('alt_o')
+        local trace_id = logger.trace_id('vscode')
         local cwd = common.file_path_from_cwd(pane:get_current_working_dir())
         local workspace_name = common.active_workspace_name(window)
         local foreground_process = common.foreground_process_basename(pane)
@@ -31,19 +31,19 @@ function M.build(opts)
         local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
 
         if tmux_backed then
-          logger.info('alt_o', 'forwarding Alt+v to tmux-backed pane', common.merge_fields(trace_id, {
+          logger.info('vscode', 'forwarding Alt+v to tmux-backed pane', common.merge_fields(trace_id, {
             cwd = cwd,
             decision_path = decision_path,
             domain = pane:get_domain_name(),
             foreground_process = foreground_process,
             workspace = workspace_name,
           }))
-          actions.forward_shortcut_to_pane(wezterm, window, pane, 'Alt+v', '\x1bv', logger, 'alt_o', workspace_name, trace_id)
+          actions.forward_shortcut_to_pane(wezterm, window, pane, 'Alt+v', '\x1bv', logger, 'vscode', workspace_name, trace_id)
           return
         end
 
         if foreground_process == 'tmux' and (not cwd or cwd == '/') then
-          logger.info('alt_o', 'forwarding Alt+v to pane fallback', common.merge_fields(trace_id, {
+          logger.info('vscode', 'forwarding Alt+v to pane fallback', common.merge_fields(trace_id, {
             cwd = cwd,
             domain = pane:get_domain_name(),
             foreground_process = foreground_process,
@@ -53,7 +53,7 @@ function M.build(opts)
         end
 
         if runtime_mode == 'hybrid-wsl' and distro and common.is_windows_host_path(cwd) then
-          logger.info('alt_o', 'forwarding Alt+v to pane fallback', common.merge_fields(trace_id, {
+          logger.info('vscode', 'forwarding Alt+v to pane fallback', common.merge_fields(trace_id, {
             cwd = cwd,
             domain = pane:get_domain_name(),
             foreground_process = foreground_process,

@@ -65,13 +65,13 @@ host_check_helper_state_fresh || host_check_die "helper state is not fresh after
 host_check_pass "helper state is fresh"
 
 if (( skip_vscode == 0 )); then
-  vscode_trace="host-check-alt-o-$(date +%Y%m%dT%H%M%S)-$$"
+  vscode_trace="host-check-vscode-$(date +%Y%m%dT%H%M%S)-$$"
   host_check_run_vscode_case "$vscode_trace" || host_check_die "VS Code request failed"
   host_check_pass "VS Code helper request processed"
 fi
 
 if (( skip_chrome == 0 )); then
-  chrome_trace="host-check-alt-b-$(date +%Y%m%dT%H%M%S)-$$"
+  chrome_trace="host-check-chrome-$(date +%Y%m%dT%H%M%S)-$$"
   host_check_run_chrome_case "$chrome_trace" || host_check_die "Chrome request failed"
   host_check_pass "Chrome helper request processed"
 fi

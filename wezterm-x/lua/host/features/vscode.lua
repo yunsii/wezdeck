@@ -13,14 +13,14 @@ end
 
 return function(runtime)
   return {
-    category = 'alt_o',
-    recover_reason_prefix = 'alt_o',
+    category = 'vscode',
+    recover_reason_prefix = 'vscode',
     failure_notification = {
       title = 'WezTerm Alt+v',
       message = 'Windows helper failed to focus VS Code. Check wezterm diagnostics.',
     },
     request = function(trace_id, payload)
-      return runtime:write_request(trace_id, 'alt_o', 'vscode', 'focus_or_open', function(_)
+      return runtime:write_request(trace_id, 'vscode', 'vscode', 'focus_or_open', function(_)
         return table.concat {
           '{',
           '"requested_dir":', runtime:json_escape(payload.cwd), ',',
