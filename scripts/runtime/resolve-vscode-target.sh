@@ -13,7 +13,7 @@ start_ms="$(runtime_log_now_ms)"
 
 usage() {
   cat <<'EOF' >&2
-Usage: resolve-alt-o-target.sh --workspace NAME --cwd PATH
+Usage: resolve-vscode-target.sh --workspace NAME --cwd PATH
 EOF
 }
 
@@ -39,7 +39,7 @@ while (( $# > 0 )); do
 done
 
 if [[ -z "$cwd" || "$cwd" != /* ]]; then
-  runtime_log_warn vscode "resolve-alt-o-target received non-absolute cwd" "workspace=$workspace" "cwd=$cwd"
+  runtime_log_warn vscode "resolve-vscode-target received non-absolute cwd" "workspace=$workspace" "cwd=$cwd"
   exit 1
 fi
 
@@ -50,7 +50,7 @@ resolved_session=""
 resolved_window=""
 resolved_cwd=""
 
-runtime_log_info vscode "resolve-alt-o-target invoked" "workspace=$workspace" "cwd=$cwd"
+runtime_log_info vscode "resolve-vscode-target invoked" "workspace=$workspace" "cwd=$cwd"
 
 if [[ -n "$workspace" && "$workspace" != "default" ]] && tmux_worktree_in_git_repo "$cwd"; then
   session_name="$(tmux_worktree_session_name_for_path "$workspace" "$cwd" || true)"
@@ -80,5 +80,5 @@ if repo_root="$(tmux_worktree_repo_root "$target_dir" 2>/dev/null || true)" && [
 fi
 
 runtime_log_info vscode "resolved Alt+v target directory" "workspace=$workspace" "effective_target_dir=$target_dir"
-runtime_log_info vscode "resolve-alt-o-target completed" "workspace=$workspace" "effective_target_dir=$target_dir" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+runtime_log_info vscode "resolve-vscode-target completed" "workspace=$workspace" "effective_target_dir=$target_dir" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 printf '%s\n' "$target_dir"
