@@ -35,7 +35,7 @@ bash "$OPEN_PROJECT_SESSION_SCRIPT" \
 tmux has-session -t "$SESSION_NAME"
 
 WINDOW_ID="$(tmux list-windows -t "$SESSION_NAME" -F '#{window_id}' | head -n 1)"
-primary_command_metadata="$(tmux show-window-options -v -t "$WINDOW_ID" @wezterm_window_primary_command 2>/dev/null || true)"
+primary_command_metadata="$(tmux_worktree_window_metadata "$WINDOW_ID" @wezterm_window_primary_command)"
 case "$primary_command_metadata" in
   *"open-project-agent"*)
     ;;

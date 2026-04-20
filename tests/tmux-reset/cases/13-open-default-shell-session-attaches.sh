@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../../../scripts/runtime/tmux-worktree-lib.sh"
 
 tmux_test_setup
 trap tmux_test_teardown EXIT
@@ -55,7 +57,7 @@ SESSION_ROLE="$(tmux show-options -v -t "$SESSION_NAME" @wezterm_session_role 2>
 WINDOW_ROLE="$(tmux show-window-options -v -t "$WINDOW_ID" @wezterm_window_role 2>/dev/null || true)"
 WINDOW_ROOT="$(tmux show-window-options -v -t "$WINDOW_ID" @wezterm_window_root 2>/dev/null || true)"
 WINDOW_LAYOUT="$(tmux show-window-options -v -t "$WINDOW_ID" @wezterm_window_layout 2>/dev/null || true)"
-WINDOW_PRIMARY_COMMAND="$(tmux show-window-options -v -t "$WINDOW_ID" @wezterm_window_primary_command 2>/dev/null || true)"
+WINDOW_PRIMARY_COMMAND="$(tmux_worktree_window_metadata "$WINDOW_ID" @wezterm_window_primary_command)"
 CLIENT_ATTACHED_HOOK="$(tmux show-hooks -t "$SESSION_NAME" client-attached 2>/dev/null || true)"
 
 tmux_test_assert_eq "default" "$SESSION_WORKSPACE" "default open should mark the tmux session as the default workspace"

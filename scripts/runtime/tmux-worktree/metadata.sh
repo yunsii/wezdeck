@@ -1,5 +1,25 @@
 #!/usr/bin/env bash
 
+# tmux's show-options / display-message option readers re-escape `$<letter>`
+# patterns on every retrieval, so storing raw shell code in an option and
+# reading it back mutates the value. Wrap primary-command payloads in
+# base64 so the bytes survive the round trip.
+tmux_worktree_metadata_encode_primary_command() {
+  local value="${1-}"
+  [[ -n "$value" ]] || return 0
+  printf 'b64:%s' "$(printf '%s' "$value" | base64 | tr -d '\n')"
+}
+
+tmux_worktree_metadata_decode_primary_command() {
+  local value="${1-}"
+  [[ -n "$value" ]] || return 0
+  if [[ "${value:0:4}" == "b64:" ]]; then
+    printf '%s' "${value:4}" | base64 -d 2>/dev/null
+    return
+  fi
+  printf '%s' "$value"
+}
+
 tmux_worktree_set_session_metadata() {
   local session_name="${1:?missing session name}"
   local workspace_name="${2:-}"
@@ -41,7 +61,8 @@ tmux_worktree_set_window_metadata() {
   fi
 
   if [[ -n "$primary_command" ]]; then
-    tmux set-window-option -t "$window_target" -q @wezterm_window_primary_command "$primary_command"
+    tmux set-window-option -t "$window_target" -q @wezterm_window_primary_command \
+      "$(tmux_worktree_metadata_encode_primary_command "$primary_command")"
   fi
 
   if [[ -n "$layout" ]]; then
@@ -52,7 +73,13 @@ tmux_worktree_set_window_metadata() {
 tmux_worktree_window_metadata() {
   local window_target="${1:?missing window target}"
   local key="${2:?missing metadata key}"
-  tmux show-window-options -v -t "$window_target" "$key" 2>/dev/null || true
+  local raw
+  raw="$(tmux show-window-options -v -t "$window_target" "$key" 2>/dev/null || true)"
+  if [[ "$key" == "@wezterm_window_primary_command" ]]; then
+    tmux_worktree_metadata_decode_primary_command "$raw"
+    return
+  fi
+  printf '%s' "$raw"
 }
 
 tmux_worktree_find_window() {
