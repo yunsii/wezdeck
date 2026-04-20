@@ -110,7 +110,7 @@ internal sealed class RequestRouter
         {
             "chrome" => "chrome",
             "clipboard" => "clipboard",
-            "vscode" => "alt_o",
+            "vscode" => "vscode",
             _ => "host_helper",
         };
     }

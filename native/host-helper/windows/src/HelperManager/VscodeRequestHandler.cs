@@ -37,7 +37,7 @@ internal sealed class VscodeRequestHandler
             ReuseMode: ReuseMode.Strict);
         var existingVisibleWindowHandles = WindowQuery.CaptureVisibleProcessWindowHandles(processName);
 
-        logger.Info("alt_o", "resolved vscode target", new Dictionary<string, string?>
+        logger.Info("vscode", "resolved vscode target", new Dictionary<string, string?>
         {
             ["trace_id"] = traceId,
             ["requested_dir"] = requestedDir,
@@ -46,7 +46,7 @@ internal sealed class VscodeRequestHandler
         });
 
         var reuseDecision = windowReuseService.EvaluateReuse(matchSpec, WindowQuery.GetForegroundWindowInfo(), 1000);
-        logger.Info("alt_o", "evaluated vscode reuse candidates", new Dictionary<string, string?>
+        logger.Info("vscode", "evaluated vscode reuse candidates", new Dictionary<string, string?>
         {
             ["trace_id"] = traceId,
             ["launch_key"] = launchKey,
@@ -61,7 +61,7 @@ internal sealed class VscodeRequestHandler
         });
         if (reuseDecision.Window != null)
         {
-            logger.Info("alt_o", "focused cached vscode window", new Dictionary<string, string?>
+            logger.Info("vscode", "focused cached vscode window", new Dictionary<string, string?>
             {
                 ["trace_id"] = traceId,
                 ["target_dir"] = targetDir,
@@ -87,7 +87,7 @@ internal sealed class VscodeRequestHandler
 
         var initialForeground = WindowQuery.GetForegroundWindowInfo();
         WindowActivator.LaunchDetachedProcess(codeExecutable, codeArguments.Concat(new[] { "--folder-uri", folderUri }).ToArray());
-        logger.Info("alt_o", "launched vscode", new Dictionary<string, string?>
+        logger.Info("vscode", "launched vscode", new Dictionary<string, string?>
         {
             ["trace_id"] = traceId,
             ["target_dir"] = targetDir,
@@ -103,7 +103,7 @@ internal sealed class VscodeRequestHandler
         {
             windowReuseService.RememberWindow("vscode", launchKey, focusedWindow);
             decisionPath = "launch_bind_foreground_window";
-            logger.Info("alt_o", "captured vscode window after launch", new Dictionary<string, string?>
+            logger.Info("vscode", "captured vscode window after launch", new Dictionary<string, string?>
             {
                 ["trace_id"] = traceId,
                 ["target_dir"] = targetDir,
@@ -124,7 +124,7 @@ internal sealed class VscodeRequestHandler
                     ? "launch_bind_existing_visible_window"
                     : "launch_bind_new_visible_window";
                 windowReuseService.RememberWindow("vscode", launchKey, launchedWindow);
-                logger.Info("alt_o", "focused vscode window after launch fallback", new Dictionary<string, string?>
+                logger.Info("vscode", "focused vscode window after launch fallback", new Dictionary<string, string?>
                 {
                     ["trace_id"] = traceId,
                     ["target_dir"] = targetDir,
@@ -137,7 +137,7 @@ internal sealed class VscodeRequestHandler
             else
             {
                 decisionPath = "launch_unbound";
-                logger.Info("alt_o", "no vscode foreground window captured after launch", new Dictionary<string, string?>
+                logger.Info("vscode", "no vscode foreground window captured after launch", new Dictionary<string, string?>
                 {
                     ["trace_id"] = traceId,
                     ["target_dir"] = targetDir,

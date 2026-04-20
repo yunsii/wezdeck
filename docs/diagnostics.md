@@ -11,7 +11,7 @@ Use this doc when you need logs, smoke tests, or troubleshooting paths.
 ## WezTerm Diagnostics
 
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured file and also shows them in the Debug Overlay.
-- Current WezTerm-side diagnostics categories include `workspace`, `alt_o`, `chrome`, `clipboard`, `command_panel`, and `host_helper`.
+- Current WezTerm-side diagnostics categories include `workspace`, `vscode`, `chrome`, `clipboard`, `command_panel`, and `host_helper`.
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations.
 - WezTerm-side diagnostics rotate with `diagnostics.wezterm.max_bytes` and `diagnostics.wezterm.max_files`.
 
@@ -21,8 +21,8 @@ Use this doc when you need logs, smoke tests, or troubleshooting paths.
 - `sync-runtime.sh` prints a one-line tmux reload result to the terminal, while the full structured detail still goes to `WEZTERM_RUNTIME_LOG_FILE`.
 - `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status.
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`.
-- Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `alt_o,workspace,worktree`.
-- Current runtime categories include `alt_o`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
+- Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
+- Current runtime categories include `vscode`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
 
 ## Traceability
 

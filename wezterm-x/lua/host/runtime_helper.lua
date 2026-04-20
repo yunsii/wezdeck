@@ -40,7 +40,7 @@ function M.build_helper_command(runtime)
   local helper_log_file = integration.helper_log_file or diagnostics.file or ''
   local clipboard = runtime:integration 'clipboard_image'
   local helper_category_enabled = M.diagnostics_capture_enabled(runtime.constants, 'host_helper')
-    or M.diagnostics_capture_enabled(runtime.constants, 'alt_o')
+    or M.diagnostics_capture_enabled(runtime.constants, 'vscode')
     or M.diagnostics_capture_enabled(runtime.constants, 'chrome')
     or M.diagnostics_capture_enabled(runtime.constants, 'clipboard')
 
