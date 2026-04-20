@@ -146,7 +146,9 @@ build_primary_shell_command() {
   if [[ $# -gt 0 ]]; then
     printf -v command_string '%q ' "$@"
     command_string="${command_string% }"
-    command_string="$command_string; exec ${quoted_shell} -l"
+    # Trap INT so a Ctrl+C kill of the agent still falls back to the login
+    # shell instead of letting the outer bash exit and tear down the pane.
+    command_string="trap 'exec ${quoted_shell} -l' INT; $command_string; exec ${quoted_shell} -l"
     printf '%s -lc %q' "$quoted_shell" "$command_string"
     return
   fi
