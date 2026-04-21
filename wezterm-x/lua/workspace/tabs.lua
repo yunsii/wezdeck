@@ -162,9 +162,34 @@ function M.new(opts)
     end
   end
 
+  local function workspace_is_aligned(target_window, desired_items)
+    local infos = target_window:tabs_with_info()
+    if #infos ~= #desired_items then
+      return false
+    end
+    for i, info in ipairs(infos) do
+      if not tab_matches_item(info.tab, desired_items[i]) then
+        return false
+      end
+    end
+    return true
+  end
+
   local function sync_workspace_tabs(name, trace_id)
     local target_window = workspace_windows(name)[1]
     if not target_window then
+      return
+    end
+
+    local desired_items = runtime.workspace_items(name)
+
+    if workspace_is_aligned(target_window, desired_items) then
+      logger.info('workspace', 'workspace already aligned, fast switch', with_trace_id(trace_id, {
+        workspace = name,
+        window_id = target_window:window_id(),
+        item_count = #desired_items,
+      }))
+      mux.set_active_workspace(name)
       return
     end
 
@@ -175,7 +200,6 @@ function M.new(opts)
     mux.set_active_workspace(name)
 
     local gui_window = target_window:gui_window()
-    local desired_items = runtime.workspace_items(name)
 
     for desired_index, item in ipairs(desired_items) do
       local matched
