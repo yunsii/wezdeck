@@ -244,19 +244,18 @@ function M.build(opts)
               tab_seg = tab_seg .. ' ' .. live.tab_title
             end
           end
-          local branch_seg = nonempty(entry.git_branch) and entry.git_branch or '?'
-
-          local prefix = nil
-          if workspace_seg ~= '?' or tab_seg ~= '?' or branch_seg ~= '?' then
-            prefix = workspace_seg .. '/' .. tab_seg .. '/' .. branch_seg
-          end
-
-          local tmux_seg = nil
+          local tmux_seg = '?'
           if nonempty(entry.tmux_window) then
             tmux_seg = entry.tmux_window
             if nonempty(entry.tmux_pane) then
               tmux_seg = tmux_seg .. ':' .. entry.tmux_pane
             end
+          end
+          local branch_seg = nonempty(entry.git_branch) and entry.git_branch or '?'
+
+          local prefix = nil
+          if workspace_seg ~= '?' or tab_seg ~= '?' or tmux_seg ~= '?' or branch_seg ~= '?' then
+            prefix = workspace_seg .. '/' .. tab_seg .. '/' .. tmux_seg .. '/' .. branch_seg
           end
 
           local label
@@ -264,9 +263,6 @@ function M.build(opts)
             label = prefix .. '  ' .. marker .. ' ' .. reason
           else
             label = marker .. ' ' .. reason
-          end
-          if tmux_seg then
-            label = label .. ' — ' .. tmux_seg
           end
           local age_text = format_age(entry.age_ms)
           if not nonempty(entry.wezterm_pane_id) then
