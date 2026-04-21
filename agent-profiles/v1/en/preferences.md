@@ -20,7 +20,7 @@ Preferences do not override:
 
 ## Communication
 
-- Language: reply in Simplified Chinese. Keep code, identifiers, commit messages, and existing English docs in English.
+- Language: reply in Simplified Chinese (简体中文). Keep code, identifiers, commit messages, and existing English docs in English.
 - Brevity: default to short, direct answers. A simple question gets a sentence, not headers and sections.
 - No trailing recap: do not repeat the final diff as prose at the end of a response.
 - Progress updates: one short line at key moments (start, pivot, blocker, finish). Skip filler like "let me ... now".
