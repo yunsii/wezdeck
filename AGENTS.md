@@ -36,6 +36,7 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Keep workspace definitions in `wezterm-x/workspaces.lua`, not inline in `wezterm.lua`.
 - Keep private machine and project overrides in `wezterm-x/local/` and keep tracked templates in `wezterm-x/local.example/`.
 - Prefer updating an existing doc in `docs/` over adding a new sibling file; keep presentations under `docs/presentations/`.
+- Design user-facing features keyboard-first: every new or changed interaction must have a keyboard path, and mouse bindings are only acceptable as fallbacks (for example cross-pane text selection or quick pane focus). Weigh key ergonomics when picking a binding — reachability, OS- / IME-level hotkey conflicts (Ctrl+Space, Alt+Shift, etc.), chord depth, and whether the action already has a keyboard home in `docs/keybindings.md`.
 - If behavior, keybindings, workspace semantics, tmux UI, or diagnostics change, update the matching docs in the same edit.
 - After runtime config changes, run the `wezterm-runtime-sync` skill.
 - Do not run Git commands that can contend on the index lock in parallel.

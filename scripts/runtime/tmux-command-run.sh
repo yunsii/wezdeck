@@ -58,10 +58,18 @@ runtime_log_info command_panel "running command panel item" \
   "client_tty=$client_tty" \
   "cwd=$cwd"
 
+is_display_message_hint=0
+if [[ "${command[0]:-}" == "tmux" && "${command[1]:-}" == "display-message" ]]; then
+  is_display_message_hint=1
+fi
+
 if [[ "$background" == "1" ]]; then
   "${command[@]}" >/dev/null 2>&1 &
   runtime_log_info command_panel "command panel item launched in background" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
-  tmux display-message "${success_message:-Started: $label}"
+  if (( ! is_display_message_hint )); then
+    tmux set-option -gq @wezterm_last_command_id "$item_id" 2>/dev/null || true
+    tmux display-message "${success_message:-Started: $label}"
+  fi
   exit 0
 fi
 
@@ -70,7 +78,10 @@ trap 'rm -f "$output_file"' EXIT
 
 if "${command[@]}" >"$output_file" 2>&1; then
   runtime_log_info command_panel "command panel item completed" "item_id=$item_id" "runtime_mode=$runtime_mode" "session_name=$session_name" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
-  tmux display-message "${success_message:-Completed: $label}"
+  if (( ! is_display_message_hint )); then
+    tmux set-option -gq @wezterm_last_command_id "$item_id" 2>/dev/null || true
+    tmux display-message "${success_message:-Completed: $label}"
+  fi
   exit 0
 else
   status=$?

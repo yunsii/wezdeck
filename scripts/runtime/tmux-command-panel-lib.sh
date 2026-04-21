@@ -175,9 +175,8 @@ command_panel_register_manifest_items() {
   # whitespace characters — which shifted every field past the first empty
   # `confirm_message` by one slot.
   local jq_filter='
-    [.[] | select(has("palette"))]
-    | sort_by(.palette.display_only // false)
-    | .[]
+    .[]
+    | select(has("palette"))
     | [
         .id,
         .label,

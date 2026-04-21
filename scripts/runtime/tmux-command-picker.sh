@@ -47,8 +47,29 @@ item_confirm_messages=()
 item_accelerators=()
 item_hotkeys=()
 
+last_command_id="$(tmux show-option -gv @wezterm_last_command_id 2>/dev/null || true)"
+mru_index=""
+if [[ -n "$last_command_id" ]]; then
+  for list_index in "${!visible_indexes[@]}"; do
+    if [[ "${COMMAND_PANEL_IDS[${visible_indexes[$list_index]}]}" == "$last_command_id" ]]; then
+      mru_index="${visible_indexes[$list_index]}"
+      break
+    fi
+  done
+fi
+
+if [[ -n "$mru_index" ]]; then
+  item_ids+=("${COMMAND_PANEL_IDS[$mru_index]}")
+  item_labels+=("↻ ${COMMAND_PANEL_LABELS[$mru_index]}")
+  item_descriptions+=("${COMMAND_PANEL_DESCRIPTIONS[$mru_index]}")
+  item_confirm_messages+=("${COMMAND_PANEL_CONFIRM_MESSAGES[$mru_index]}")
+  item_accelerators+=("${COMMAND_PANEL_ACCELERATORS[$mru_index],,}")
+  item_hotkeys+=("${COMMAND_PANEL_HOTKEYS[$mru_index]}")
+fi
+
 for list_index in "${!visible_indexes[@]}"; do
   index="${visible_indexes[$list_index]}"
+  [[ "$index" == "$mru_index" ]] && continue
   item_ids+=("${COMMAND_PANEL_IDS[$index]}")
   item_labels+=("${COMMAND_PANEL_LABELS[$index]}")
   item_descriptions+=("${COMMAND_PANEL_DESCRIPTIONS[$index]}")
