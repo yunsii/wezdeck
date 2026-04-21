@@ -160,12 +160,22 @@ function M.new(opts)
     return category_enabled(categories, category)
   end
 
+  local function timestamp_ms()
+    local ok, formatted = pcall(function()
+      return wezterm.time.now():format '%Y-%m-%d %H:%M:%S%.3f'
+    end)
+    if ok and type(formatted) == 'string' and formatted ~= '' then
+      return formatted
+    end
+    return os.date '%Y-%m-%d %H:%M:%S'
+  end
+
   local function emit(level, category, message, fields)
     local capture = should_capture(level, category)
     local field_text = formatted_fields(fields)
     local line = string.format(
       'ts=%s level=%s source=%s category=%s message=%s%s',
-      escaped_value(os.date('%Y-%m-%d %H:%M:%S')),
+      escaped_value(timestamp_ms()),
       escaped_value(level),
       escaped_value(source_name),
       escaped_value(category),

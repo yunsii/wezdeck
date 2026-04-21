@@ -102,6 +102,10 @@ local base_constants = {
     new_tab_hover_fg = '#2f302c',
     tab_edge = '#ddd8cd',
     tab_accent = '#b07d48',
+    tab_attention_waiting_bg = '#c7925b',
+    tab_attention_waiting_fg = '#1f1a11',
+    tab_attention_done_bg = '#a7c89b',
+    tab_attention_done_fg = '#1e2a1c',
     ime_native_bg = '#6b86b7',
     ime_native_fg = '#f8f5ee',
     ime_alpha_bg = '#dbc39e',
@@ -195,6 +199,9 @@ local base_constants = {
       debug_key_events = false,
       categories = {},
     },
+  },
+  attention = {
+    state_file = defaults.default_attention_state_file(runtime_state_dir, join_path),
   },
 }
 

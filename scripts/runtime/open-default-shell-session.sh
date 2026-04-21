@@ -109,7 +109,12 @@ runtime_log_info workspace "opening default WSL tmux session" \
   "window_label=$window_label" \
   "primary_shell_command=$primary_shell_command"
 
+session_env_args=()
+if [[ -n "${WEZTERM_PANE:-}" ]]; then
+  session_env_args+=("-e" "WEZTERM_PANE=$WEZTERM_PANE")
+fi
 window_id="$(tmux new-session -d -P -F '#{window_id}' \
+  "${session_env_args[@]}" \
   -s "$session_name" \
   -n "$window_label" \
   -c "$cwd" \

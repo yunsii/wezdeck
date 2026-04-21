@@ -20,6 +20,7 @@ local helpers = load_module 'helpers'
 local titles = load_module 'titles'
 local ui = load_module 'ui'
 local workspace_manager = load_module 'workspace_manager'
+local attention = load_module 'attention'
 local logger = load_module('logger').new {
   wezterm = wezterm,
   constants = constants,
@@ -45,6 +46,7 @@ local workspace = workspace_manager.new {
 titles.register {
   wezterm = wezterm,
   palette = constants.palette,
+  attention = attention,
   host = host,
 }
 
@@ -53,6 +55,7 @@ ui.apply {
   config = config,
   constants = constants,
   workspace = workspace,
+  attention = attention,
   logger = logger,
   host = host,
 }

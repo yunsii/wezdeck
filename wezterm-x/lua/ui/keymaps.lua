@@ -16,6 +16,39 @@ function M.build(opts)
   local constants = opts.constants
   local logger = opts.logger
   local host = opts.host
+  local attention = opts.attention
+
+  local function attention_jump_args(trailing_args, pane_ref, trace_id)
+    local repo_root = constants.repo_root
+    if not repo_root or repo_root == '' then
+      logger.warn('attention', 'no repo_root to resolve jump script', {
+        trace = trace_id,
+      })
+      return nil
+    end
+    local script_path = repo_root .. '/scripts/runtime/attention-jump.sh'
+    local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
+    if runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
+      local distro = common.wsl_distro_from_domain(pane_ref and pane_ref:get_domain_name())
+        or common.wsl_distro_from_domain(constants.default_domain)
+      if not distro then
+        logger.warn('attention', 'unable to resolve WSL distro for attention jump', {
+          trace = trace_id,
+        })
+        return nil
+      end
+      local args = { 'wsl.exe', '-d', distro, '--', 'bash', script_path }
+      for _, a in ipairs(trailing_args) do
+        table.insert(args, a)
+      end
+      return args
+    end
+    local args = { 'bash', script_path }
+    for _, a in ipairs(trailing_args) do
+      table.insert(args, a)
+    end
+    return args
+  end
 
   return {
     {
@@ -122,6 +155,194 @@ function M.build(opts)
       key = 'N',
       mods = 'ALT|SHIFT',
       action = wezterm.action.ActivateTabRelative(-1),
+    },
+    {
+      key = ',',
+      mods = 'ALT',
+      action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('attention')
+        if not attention then return end
+        attention.reload_state()
+        local current_pane_id = pane and pane:pane_id() or nil
+        local entry = attention.pick_next(attention.STATUS_WAITING, current_pane_id)
+        if not entry then
+          return
+        end
+        logger.info('attention', 'alt-comma jump', {
+          trace = trace_id,
+          session_id = entry.session_id,
+          wezterm_pane_id = entry.wezterm_pane_id,
+        })
+        attention.activate_in_gui(entry.wezterm_pane_id, window, pane)
+        local args = attention_jump_args({ '--session', entry.session_id }, pane, trace_id)
+        if args then wezterm.background_child_process(args) end
+      end),
+    },
+    {
+      key = '.',
+      mods = 'ALT',
+      action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('attention')
+        if not attention then return end
+        attention.reload_state()
+        local current_pane_id = pane and pane:pane_id() or nil
+        local entry = attention.pick_next(attention.STATUS_DONE, current_pane_id)
+        if not entry then
+          return
+        end
+        logger.info('attention', 'alt-dot jump', {
+          trace = trace_id,
+          session_id = entry.session_id,
+          wezterm_pane_id = entry.wezterm_pane_id,
+        })
+        attention.activate_in_gui(entry.wezterm_pane_id, window, pane)
+        local args = attention_jump_args({ '--session', entry.session_id }, pane, trace_id)
+        if args then wezterm.background_child_process(args) end
+      end),
+    },
+    {
+      key = '/',
+      mods = 'ALT',
+      action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('attention')
+        if not attention then
+          return
+        end
+        attention.reload_state()
+        local entries = attention.list()
+        if #entries == 0 then
+          window:toast_notification('WezTerm', 'No pending agent attention', nil, 2000)
+          return
+        end
+
+        local function format_age(ms)
+          local s = math.floor((tonumber(ms) or 0) / 1000)
+          if s < 60 then return s .. 's' end
+          local m = math.floor(s / 60)
+          if m < 60 then return m .. 'm' end
+          local h = math.floor(m / 60)
+          return h .. 'h'
+        end
+
+        local function nonempty(value)
+          if value == nil then return false end
+          if type(value) ~= 'string' then return true end
+          return value ~= ''
+        end
+
+        local choices = {}
+        for _, entry in ipairs(entries) do
+          local marker = entry.status == attention.STATUS_WAITING and '⚠' or '✓'
+          local reason = nonempty(entry.reason) and entry.reason or entry.status
+
+          local live = entry.live or {}
+          local workspace_seg = nonempty(live.workspace) and live.workspace or '?'
+          local tab_seg = '?'
+          if live.tab_index then
+            tab_seg = '#' .. tostring(live.tab_index)
+            if nonempty(live.tab_title) then
+              tab_seg = tab_seg .. ' ' .. live.tab_title
+            end
+          end
+          local branch_seg = nonempty(entry.git_branch) and entry.git_branch or '?'
+
+          local prefix = nil
+          if workspace_seg ~= '?' or tab_seg ~= '?' or branch_seg ~= '?' then
+            prefix = workspace_seg .. '/' .. tab_seg .. '/' .. branch_seg
+          end
+
+          local tmux_seg = nil
+          if nonempty(entry.tmux_window) then
+            tmux_seg = entry.tmux_window
+            if nonempty(entry.tmux_pane) then
+              tmux_seg = tmux_seg .. ':' .. entry.tmux_pane
+            end
+          end
+
+          local label
+          if prefix then
+            label = prefix .. '  ' .. marker .. ' ' .. reason
+          else
+            label = marker .. ' ' .. reason
+          end
+          if tmux_seg then
+            label = label .. ' — ' .. tmux_seg
+          end
+          local age_text = format_age(entry.age_ms)
+          if not nonempty(entry.wezterm_pane_id) then
+            age_text = age_text .. ', no pane'
+          end
+          label = label .. '  (' .. age_text .. ')'
+          table.insert(choices, { label = label, id = entry.session_id })
+        end
+
+        local clear_all_sentinel = '__clear_all__'
+        table.insert(choices, {
+          label = '——  clear all · ' .. #entries .. ' entries  ——',
+          id = clear_all_sentinel,
+        })
+
+        local function inject_tick(inner_pane)
+          local tick
+          local ok_b64, encoded = pcall(wezterm.encode_base64, tostring(os.time()))
+          if ok_b64 and type(encoded) == 'string' then
+            tick = encoded
+          else
+            tick = ''
+          end
+          local osc = '\027]1337;SetUserVar=attention_tick=' .. tick .. '\007'
+          pcall(function() inner_pane:inject_output(osc) end)
+        end
+
+        window:perform_action(
+          wezterm.action.InputSelector {
+            title = 'Agent attention',
+            choices = choices,
+            fuzzy = true,
+            action = wezterm.action_callback(function(inner_window, inner_pane, chosen_id, chosen_label)
+              if not chosen_id or chosen_id == '' then
+                return
+              end
+
+              if chosen_id == clear_all_sentinel then
+                local args = attention_jump_args({ '--clear-all' }, inner_pane, trace_id)
+                if not args then
+                  return
+                end
+                logger.info('attention', 'alt-slash clear-all', { trace = trace_id })
+                wezterm.run_child_process(args)
+                if attention.reload_state then
+                  attention.reload_state()
+                end
+                inject_tick(inner_pane)
+                return
+              end
+
+              local chosen_entry
+              for _, candidate in ipairs(entries) do
+                if candidate.session_id == chosen_id then
+                  chosen_entry = candidate
+                  break
+                end
+              end
+              if chosen_entry then
+                attention.activate_in_gui(chosen_entry.wezterm_pane_id, inner_window, inner_pane)
+              end
+
+              local args = attention_jump_args({ '--session', chosen_id }, inner_pane, trace_id)
+              if not args then
+                return
+              end
+              logger.info('attention', 'alt-slash jump', {
+                trace = trace_id,
+                session_id = chosen_id,
+              })
+              wezterm.background_child_process(args)
+            end),
+          },
+          pane
+        )
+      end),
     },
     {
       key = '1',

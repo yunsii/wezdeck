@@ -24,11 +24,15 @@ function M.apply(opts)
   local constants = opts.constants
   local palette = constants.palette
   local workspace = opts.workspace
+  local attention = opts.attention
   local runtime_dir = current_runtime_dir(wezterm.config_dir)
   local runtime = load_ui_module(runtime_dir, 'runtime')
   local keymaps = load_ui_module(runtime_dir, 'keymaps')
   local logger = opts.logger
   local host = opts.host
+  if attention and attention.register then
+    attention.register { logger = logger, constants = constants }
+  end
   local helper_prewarm_started = false
 
   if constants.runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
@@ -85,6 +89,10 @@ function M.apply(opts)
   local set_environment_variables = {
     COLORFGBG = '0;15',
     WEZTERM_RUNTIME_MODE = constants.runtime_mode or 'hybrid-wsl',
+    -- Forward WEZTERM_PANE into WSL so hooks running under WSL (notably the
+    -- agent-attention writer) can tag state entries with the owning pane id.
+    -- The other four names preserve wsl.exe's default forwarding set.
+    WSLENV = 'TERM:COLORTERM:TERM_PROGRAM:TERM_PROGRAM_VERSION:WEZTERM_PANE/u',
   }
   if constants.shell and constants.shell.program and constants.shell.program ~= '' then
     set_environment_variables.WEZTERM_MANAGED_SHELL = constants.shell.program
@@ -103,7 +111,7 @@ function M.apply(opts)
   config.show_tabs_in_tab_bar = true
   config.tab_bar_at_bottom = true
   config.tab_max_width = 24
-  config.show_new_tab_button_in_tab_bar = true
+  config.show_new_tab_button_in_tab_bar = false
   config.colors = {
     foreground = palette.foreground,
     background = palette.background,
@@ -156,6 +164,7 @@ function M.apply(opts)
     constants = constants,
     logger = logger,
     host = host,
+    attention = attention,
   }
 
   config.mouse_bindings = {

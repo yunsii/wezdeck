@@ -21,8 +21,12 @@ local M = {}
 function M.register(opts)
   local wezterm = opts.wezterm
   local palette = opts.palette
+  local attention = opts.attention
   local host = opts.host
+  local logger = opts.logger
   local workspace_label_cache = {}
+  local badge_last_status = {}
+  local last_rendered_status = nil
 
   local function ime_snapshot()
     if not host or not host.feature then
@@ -148,12 +152,41 @@ function M.register(opts)
       fg = palette.tab_hover_fg
     end
 
-    return {
-      { Background = { Color = bg } },
-      { Foreground = { Color = fg } },
-      { Attribute = { Intensity = tab.is_active and 'Bold' or 'Normal' } },
-      { Text = ' ' .. title .. ' ' },
-    }
+    local badge = attention and attention.tab_badge(tab) or nil
+    local segments = {}
+    if badge then
+      local badge_bg, badge_fg = attention.badge_colors(palette, badge.status)
+      table.insert(segments, { Background = { Color = badge_bg } })
+      table.insert(segments, { Foreground = { Color = badge_fg } })
+      table.insert(segments, { Attribute = { Intensity = 'Bold' } })
+      table.insert(segments, { Text = ' ' .. badge.marker .. ' ' })
+    end
+    if logger then
+      local tab_id = tab.tab_id
+      local active_pane_id = tab.active_pane and tab.active_pane.pane_id or nil
+      local current = badge and badge.status or nil
+      if tab_id and badge_last_status[tab_id] ~= current then
+        badge_last_status[tab_id] = current
+        if current then
+          logger.info('attention', 'render_tab badge applied', {
+            tab_id = tab_id,
+            pane_id = active_pane_id,
+            status = current,
+          })
+        else
+          logger.info('attention', 'render_tab badge cleared', {
+            tab_id = tab_id,
+            pane_id = active_pane_id,
+          })
+        end
+      end
+    end
+    table.insert(segments, { Background = { Color = bg } })
+    table.insert(segments, { Foreground = { Color = fg } })
+    table.insert(segments, { Attribute = { Intensity = tab.is_active and 'Bold' or 'Normal' } })
+    table.insert(segments, { Text = ' ' .. title .. ' ' })
+
+    return segments
   end)
 
   wezterm.on('update-status', function(window, pane)
@@ -166,8 +199,39 @@ function M.register(opts)
     local workspace = window:active_workspace() or 'default'
     window:set_left_status(format_workspace_label(workspace))
 
+    local right_segments = {}
     local ime_segment = render_ime_segment()
-    window:set_right_status(ime_segment or '')
+    if ime_segment then
+      table.insert(right_segments, ime_segment)
+    end
+    if attention and attention.reload_state then
+      attention.reload_state()
+    end
+    local attention_waiting, attention_done
+    if attention then
+      attention_waiting, attention_done = attention.collect()
+    end
+    local attention_segment = attention and attention.render_status_segment(palette) or nil
+    if attention_segment then
+      table.insert(right_segments, attention_segment)
+    end
+    window:set_right_status(table.concat(right_segments, ' '))
+
+    if logger and attention then
+      local waiting_count = attention_waiting and #attention_waiting or 0
+      local done_count = attention_done and #attention_done or 0
+      local signature = waiting_count == 0 and done_count == 0
+          and 'empty'
+        or string.format('w=%d,d=%d', waiting_count, done_count)
+      if last_rendered_status ~= signature then
+        last_rendered_status = signature
+        logger.info('attention', 'render_status', {
+          waiting = waiting_count,
+          done = done_count,
+          window_id = window:window_id(),
+        })
+      end
+    end
   end)
 end
 
