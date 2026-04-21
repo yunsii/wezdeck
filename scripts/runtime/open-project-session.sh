@@ -139,17 +139,19 @@ resolve_login_shell() {
 }
 build_primary_shell_command() {
   local command_string=""
-  local login_shell quoted_shell
+  local login_shell quoted_shell quoted_wrapper
   login_shell="$(resolve_login_shell)"
   quoted_shell="$(printf '%q' "$login_shell")"
 
   if [[ $# -gt 0 ]]; then
+    # primary-pane-wrapper.sh runs the agent under INT/HUP/TERM traps and execs
+    # the login shell after the agent returns, so the pane survives both normal
+    # exits and Ctrl+C kills. Each transition is logged to category=primary_pane
+    # for post-mortem diagnosis of pane deaths.
+    quoted_wrapper="$(printf '%q' "$SCRIPT_DIR/primary-pane-wrapper.sh")"
     printf -v command_string '%q ' "$@"
     command_string="${command_string% }"
-    # Trap INT so a Ctrl+C kill of the agent still falls back to the login
-    # shell instead of letting the outer bash exit and tear down the pane.
-    command_string="trap 'exec ${quoted_shell} -l' INT; $command_string; exec ${quoted_shell} -l"
-    printf '%s -lc %q' "$quoted_shell" "$command_string"
+    printf 'bash %s %s' "$quoted_wrapper" "$command_string"
     return
   fi
 
