@@ -91,6 +91,11 @@ attention_state_upsert() {
     flock -x 9
     local current next
     current="$(attention_state_read)"
+    # One tmux pane hosts at most one active attention entry, so drop any
+    # other entry that shares this (tmux_socket, tmux_pane) before the
+    # upsert — old sessions left behind by a killed agent or an
+    # un-consumed `done` do not double-count in the counter. Falls back to
+    # session_id-only dedup when the new entry has no tmux coords.
     next="$(
       jq --arg sid "$session_id" \
          --arg wp "$wezterm_pane" \
@@ -102,18 +107,31 @@ attention_state_upsert() {
          --arg rs "$reason" \
          --arg gb "$git_branch" \
          --argjson ts "$ts" \
-         '.entries[$sid] = {
-            session_id: $sid,
-            wezterm_pane_id: $wp,
-            tmux_socket: $tsk,
-            tmux_session: $tses,
-            tmux_window: $tw,
-            tmux_pane: $tp,
-            status: $st,
-            reason: $rs,
-            git_branch: $gb,
-            ts: $ts
-          }' <<<"$current"
+         '
+           .entries = (
+             .entries
+             | to_entries
+             | map(select(
+                 .key == $sid
+                 or $tsk == "" or $tp == ""
+                 or (.value.tmux_socket // "") != $tsk
+                 or (.value.tmux_pane // "") != $tp
+               ))
+             | from_entries
+           )
+           | .entries[$sid] = {
+               session_id: $sid,
+               wezterm_pane_id: $wp,
+               tmux_socket: $tsk,
+               tmux_session: $tses,
+               tmux_window: $tw,
+               tmux_pane: $tp,
+               status: $st,
+               reason: $rs,
+               git_branch: $gb,
+               ts: $ts
+             }
+         ' <<<"$current"
     )"
     attention_state_write "$next"
   ) 9>"$lock"
