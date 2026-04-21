@@ -1,6 +1,12 @@
 # Implementation
 
-Read this file when choosing structure, abstractions, module boundaries, reliability patterns, or performance tradeoffs.
+## When To Read
+
+When choosing structure, abstractions, module boundaries, reliability patterns, or performance tradeoffs.
+
+## When Not To Read
+
+When the change is a localized bug fix with no design decision, or pure text/comment edits. The AGENTS.md one-liner covers those.
 
 ## Default
 

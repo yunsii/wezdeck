@@ -1,6 +1,12 @@
 # Documentation
 
-Read this file when creating, splitting, or revising agent-facing documentation.
+## When To Read
+
+When creating, splitting, or revising agent-facing documentation.
+
+## When Not To Read
+
+When editing code without touching its docs, or when only fixing typos / small wording inside an existing doc that already follows the layering rules.
 
 ## Default
 

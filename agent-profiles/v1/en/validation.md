@@ -1,6 +1,12 @@
 # Validation
 
-Read this file when the task involves correctness, completion criteria, testing strategy, rollout confidence, or whether to ask the user to verify something manually.
+## When To Read
+
+When the task involves correctness, completion criteria, testing strategy, rollout confidence, or whether to ask the user to verify something manually.
+
+## When Not To Read
+
+When the change has no observable behavior surface and no validation decision is in scope. The one-liner in AGENTS.md is enough for those cases.
 
 ## Default
 
