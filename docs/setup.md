@@ -80,7 +80,17 @@ Install at the user level by adding these entries to `~/.claude/settings.json` (
 }
 ```
 
-Substitute the absolute path for your clone if different. `jq` is optional — with it installed, the hook extracts the Notification `.message` as `agent_reason`; without it, the reason falls back to a canned per-status label. There is no Windows dependency; the script writes only to `/dev/tty` in the enclosing WezTerm pane.
+Substitute the absolute path for your clone if different. `jq` is optional — with it, the hook reads `.session_id` from the piped hook payload and extracts `.message` / `.stop_reason` as the state entry's `reason`; without it, the hook still writes the entry but keys it to `pane:<WEZTERM_PANE>` and uses canned per-status labels. There is no Windows dependency; the hook script writes only the `attention_tick` OSC to `/dev/tty` in the enclosing WezTerm pane.
+
+### Codex integration
+
+Codex's hook surface is narrower than Claude Code's: `~/.codex/config.toml`'s `notify` fires once per `agent-turn-complete`, equivalent to Claude's `Stop` hook, and there is no stable event yet for permission prompts or for the user submitting the next prompt. Codex's `hooks.json` lifecycle system, which would let us wire `waiting` and `cleared`, is still under development upstream (tracked in [openai/codex#2150](https://github.com/openai/codex/discussions/2150) and [#15497](https://github.com/openai/codex/issues/15497)).
+
+Practical consequence for this repo:
+
+- Wiring `notify` to `emit-agent-status.sh done` would give a half-integration — `done` badges and counts work, but those entries would never auto-clear on the next prompt. You would rely on the 30-minute TTL, a fresh `Stop` overwrite, or the `Alt+/` clear-all sentinel.
+- Codex's `notify` payload does not publish a stable `session_id` today, so the hook's fallback key (`pane:<WEZTERM_PANE>`) would be used. In the hybrid-wsl one-agent-per-pane layout this still dedupes correctly; mixing Claude and Codex in the same WezTerm pane is not supported in that mode.
+- Nothing Codex-specific ships in `~/.codex/config.toml` from this repo. When the upstream lifecycle hooks GA and cover the `waiting` / `cleared` equivalents, integration collapses to adding three `notify`/`hooks.json` entries that call the same `emit-agent-status.sh waiting|done|cleared` interface — no changes in the hook script or Lua side.
 
 ## Tmux Status Prompt Hook
 
