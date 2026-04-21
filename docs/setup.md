@@ -46,6 +46,19 @@ For `hybrid-wsl` on Windows, pin WezTerm to the taskbar together with the two ap
 
 Pin each app, then drag the icons so WezTerm sits in slot 1, the browser in slot 2, and the IM client in slot 3. The binding survives reboots, needs no extra tooling, and stays out of the in-WezTerm keymap documented in [`keybindings.md`](./keybindings.md).
 
+## Tmux Status Prompt Hook
+
+The tmux status line polls git state on a 30-second timer and also refreshes when you switch pane, window, or client. Neither path fires right after you run a `git` command from the shell, so branch and change counters can lag up to 30s behind reality. Installing a prompt hook closes that gap: every time the shell returns to the prompt, it asks tmux to force-refresh (debounced to 2s by `@tmux_status_force_debounce`, so rapid commands do not stampede).
+
+The hook ships at `scripts/runtime/tmux-status-prompt-hook.sh`. It is safe to re-source, a no-op outside tmux, and self-locates through the tmux `@wezterm_runtime_root` option so the sourcing line does not hardcode a repo path. Add one line to your shell rc:
+
+```sh
+# ~/.zshrc (zsh) or ~/.bashrc (bash)
+[ -n "$TMUX" ] && . /home/yuns/github/wezterm-config/scripts/runtime/tmux-status-prompt-hook.sh
+```
+
+Substitute the absolute path for your clone if different. Without the hook, the 30s poll and pane-switch hooks keep working unchanged.
+
 ## IME State Indicator
 
 In `hybrid-wsl` the WezTerm right status bar renders a compact IME state badge so keyboard-first interactions (chord prefixes, `y/n` confirmations, single-letter shortcuts) do not have to guess which input mode is active.
