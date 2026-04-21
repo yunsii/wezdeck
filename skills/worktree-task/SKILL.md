@@ -98,3 +98,9 @@ Config command:
 ```bash
 bash {{skill_path}}/scripts/worktree-task configure --repo /absolute/path/to/wezterm-config
 ```
+
+Quick-create a task workspace without supplying a prompt. The script forwards `<name>` to `worktree-task launch` as the task title (stripping one optional `task/` prefix so `fix-auth` and `task/fix-auth` land on the same slug), then starts the configured agent with `--provider tmux-agent --no-prompt` so the agent comes up idle in the new tmux window. Collisions bump to `<slug>-2`, `<slug>-3`, etc. — reopening an existing task worktree belongs to `Alt+g` / `Alt+Shift+g`:
+
+```bash
+bash {{skill_path}}/scripts/open-task-window <name>
+```

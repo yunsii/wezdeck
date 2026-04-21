@@ -226,6 +226,26 @@
     "palette": { "display_only": true }
   },
   {
+    "id": "worktree.quick-create",
+    "label": "Worktree: Quick-create task workspace",
+    "description": "Open a `branch:` prompt; the entered name is forwarded to `worktree-task launch --provider tmux-agent --no-prompt` so slug and branch follow the skill's `task/<slug>` convention and the configured agent starts idle in the new tmux window. Collisions bump to `<slug>-2`, `<slug>-3`.",
+    "scope": "project-navigation",
+    "context": "tmux-backed",
+    "hotkeys": [
+      { "keys": "Ctrl+k g", "layer": "tmux-chord" }
+    ],
+    "palette": {
+      "accelerator": "g",
+      "command": [
+        "bash",
+        "-lc",
+        "tmux command-prompt -p 'branch:' \"run-shell -b 'bash {repo_root}/scripts/runtime/open-task-window.sh \\\"%1\\\" >/dev/null 2>&1'\""
+      ],
+      "success_message": "Opened branch prompt.",
+      "failure_message": "Failed to open branch prompt."
+    }
+  },
+  {
     "id": "chrome.open-debug-profile",
     "label": "Chrome: Open debug profile",
     "description": "Open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua` via the Windows native helper.",
