@@ -1,9 +1,8 @@
 # Platform Actions
 
-Read this file when the task may trigger a host-side side effect on the user's local machine.
+## When To Read
 
-This file defines policy, not guaranteed capability availability.
-Whether an action is actually possible depends on the active platform, installed wrappers, and project-local integrations.
+When the task may trigger a host-side side effect on the user's local machine.
 
 Examples:
 
@@ -12,6 +11,15 @@ Examples:
 - opening a browser or URL
 - showing a local notification
 - revealing a file in the OS shell
+
+## When Not To Read
+
+When the task stays entirely within the repository (file edits, code analysis, running tests in-process) and produces no host-side effect.
+
+## Scope
+
+This file defines policy, not guaranteed capability availability.
+Whether an action is actually possible depends on the active platform, installed wrappers, and project-local integrations.
 
 ## Default
 
@@ -42,18 +50,19 @@ If no stable wrapper or owned command boundary exists for a given action, treat 
 ## Wrapper Discovery
 
 Use an explicit marker file instead of guessing paths.
+Do not infer wrappers from the current task repository, AGENTS symlinks, or unrelated environment details.
 
-Default contract:
+A marker file should declare:
 
-- read `~/.wezterm-x/agent-tools.env`
-- if the file is missing, treat host-side wrappers as unavailable
-- do not infer wrappers from the current task repository, AGENTS symlinks, or unrelated environment details
+- which capabilities are available (e.g. clipboard, notification, app focus)
+- the absolute path to each wrapper
+- enough context to verify the wrapper is current
 
-For the clipboard wrapper:
+If the marker file is missing, treat host-side wrappers as unavailable.
+If a referenced wrapper does not exist or is not executable, treat that specific capability as unavailable.
 
-- read `agent_clipboard` from `~/.wezterm-x/agent-tools.env`
-- only use it when the file exists and is executable
-- if the key is missing or the file is not executable, treat the clipboard capability as unavailable
+The concrete marker contract is environment-specific and lives in the project that ships the wrappers, not in this user-level profile.
+The active environment's project documentation is the source of truth for the marker path and the keys it exposes.
 
 ## Clipboard
 
