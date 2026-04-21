@@ -1,6 +1,12 @@
 # Reporting
 
-Read this file when preparing the final response or intermediate progress updates.
+## When To Read
+
+When preparing the final response or intermediate progress updates.
+
+## When Not To Read
+
+When you have already internalized the three-tier confidence vocabulary and the change is small enough that the AGENTS.md one-liner ("state what changed, how it was verified, what remains uncertain") is sufficient.
 
 ## Default
 
@@ -30,12 +36,7 @@ Avoid filler and repeated status phrasing.
 ## Honesty
 
 Be precise about certainty.
-
-Say:
-- `verified`
-- `inferred`
-- `not verified`
-
+Use the three-tier confidence vocabulary defined in [validation.md](./validation.md) (`verified`, `inferred`, `not verified`).
 Do not imply that something was tested if it was only reasoned about.
 
 ## Risk

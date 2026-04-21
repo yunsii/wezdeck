@@ -1,6 +1,12 @@
 # Automation
 
-Read this file when deciding whether a rule belongs in documentation, a script, a hook, a skill, or a plugin.
+## When To Read
+
+When deciding whether a rule belongs in documentation, a script, a hook, a skill, or a plugin.
+
+## When Not To Read
+
+When the task is a one-off action that will not recur, or when the rule already lives in a stable layer and only needs to be applied — not relocated.
 
 ## Default
 

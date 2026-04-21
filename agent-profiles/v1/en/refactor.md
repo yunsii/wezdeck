@@ -1,6 +1,12 @@
 # Refactor
 
-Read this file before restructuring existing code, replacing a subsystem, or simplifying complex logic.
+## When To Read
+
+Before restructuring existing code, replacing a subsystem, or simplifying complex logic.
+
+## When Not To Read
+
+When adding a new feature without touching existing structure, or when fixing a bug without restructuring its surroundings.
 
 ## Default
 
