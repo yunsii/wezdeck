@@ -38,6 +38,7 @@ WezTerm process
 - Cross-tab and cross-workspace navigation lives in `wezterm-x/lua/ui/keymaps.lua`. `Alt+n` / `Alt+Shift+n` / `Alt+1..9` switch WezTerm tabs; `Alt+d` / `Alt+w` / `Alt+c` / `Alt+p` switch workspaces.
 - `tmux.conf` only owns behavior that happens inside one WezTerm tab — pane splits, copy-mode, mouse handling, chord dispatch, worktree-window switching, and status-line rendering.
 - WezTerm keys that mutate tmux state (`Alt+v` / `Alt+g` / `Alt+Shift+g` / `Ctrl+k` / `Ctrl+Shift+P`) are still declared in `keymaps.lua`; they forward into the active tmux-backed pane via short escape sequences so tmux owns the execution.
+- Agent attention is layered: hooks (`scripts/claude-hooks/emit-agent-status.sh`) write a shared JSON file at `$runtime_state_dir/state/agent-attention/attention.json` via `scripts/runtime/attention-state-lib.sh` and nudge WezTerm with an OSC 1337 `attention_tick`. `wezterm-x/lua/attention.lua` reads the file on every tick / `update-status` and renders tab badges plus the right-status counter — no pane walking, no user_var state. Jump is Lua-driven: `Alt+,` / `Alt+.` (and `Alt+/` selection) pick a target from state, issue `SwitchToWorkspace` + mux `tab:activate()` + `pane:activate()` for cross-workspace GUI focus, and spawn `scripts/runtime/attention-jump.sh --session <id>` in the background for `tmux select-window`/`select-pane`.
 
 ### Naming guidance for code and docs
 
@@ -74,6 +75,10 @@ Invariants:
 - `wezterm-x/workspaces.lua`: managed workspace definitions
 - `wezterm-x/commands/manifest.json`: single source of truth for invocable commands (see `Command Manifest`)
 - `wezterm-x/lua/logger.lua`: WezTerm-side structured diagnostics helper
+- `wezterm-x/lua/attention.lua`: reads the shared agent-attention state file and renders tab badges + right-status counter (render-only; no jump logic)
+- `scripts/runtime/attention-state-lib.sh`: shared bash helpers for read / upsert / remove / prune of the attention state file, with flock for concurrent writes
+- `scripts/claude-hooks/emit-agent-status.sh`: user-level Claude Code hook emitter that updates state.json and sends the OSC 1337 `attention_tick` nudge
+- `scripts/runtime/attention-jump.sh`: WSL-side orchestrator for attention jumps — runs `tmux select-window`/`select-pane`, recovers a missing `wezterm_pane_id` from tmux session env when needed, and falls back to `wezterm.exe cli activate-pane` for contexts where Lua isn't driving the GUI side (explicit CLI invocation, `--clear-all`)
 - `wezterm-x/local/`: gitignored machine-local overrides copied by the sync skill when present
 - `config/worktree-task.env`: tracked repo profile for the self-contained `worktree-task` skill
 - `skills/wezterm-runtime-sync/`: runtime sync workflow, prompt rendering, and prompt regression scripts

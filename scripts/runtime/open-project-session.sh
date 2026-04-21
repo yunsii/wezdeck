@@ -177,11 +177,24 @@ runtime_log_info workspace "open-project-session invoked" "workspace=$workspace"
 if ! tmux has-session -t "$session_name" 2>/dev/null; then
   startup_step="create_session"
   runtime_log_info workspace "creating tmux session" "session_name=$session_name" "worktree_root=$worktree_root"
-  window_id="$(tmux new-session -d -P -F '#{window_id}' -s "$session_name" -c "$worktree_root" "$primary_shell_command")"
+  # Pass WEZTERM_PANE directly into the new session's environment via -e so
+  # the initial pane and every subsequent pane in this session inherit it.
+  # Attention hooks read $WEZTERM_PANE to key state entries to a WezTerm
+  # pane id; without this, tmux's default env-propagation would strip it.
+  session_env_args=()
+  if [[ -n "${WEZTERM_PANE:-}" ]]; then
+    session_env_args+=("-e" "WEZTERM_PANE=$WEZTERM_PANE")
+  fi
+  window_id="$(tmux new-session -d -P -F '#{window_id}' "${session_env_args[@]}" -s "$session_name" -c "$worktree_root" "$primary_shell_command")"
   session_created=1
 else
   startup_step="reuse_session"
   runtime_log_info workspace "reusing tmux session" "session_name=$session_name" "worktree_root=$worktree_root"
+  # Refresh the session-level WEZTERM_PANE each time a managed tab
+  # re-bootstraps; new panes spawned afterwards pick up the current value.
+  if [[ -n "${WEZTERM_PANE:-}" ]]; then
+    tmux set-environment -t "$session_name" WEZTERM_PANE "$WEZTERM_PANE" 2>/dev/null || true
+  fi
   window_id="$(tmux_worktree_find_window "$session_name" "$worktree_root" || true)"
 fi
 

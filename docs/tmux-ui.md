@@ -35,6 +35,43 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - `Ctrl+c` first checks for a WezTerm terminal selection and copies it if one exists; otherwise it sends a normal terminal `Ctrl+c`.
 - tmux emits terminal focus-in and focus-out events to applications, which helps mouse-aware TUIs recover cleanly when the WezTerm window regains focus.
 
+## Agent Attention
+
+### State file
+
+- State lives in a shared JSON file at `$runtime_state_dir/state/agent-attention/attention.json` keyed by `session_id`. Each entry stores `wezterm_pane_id`, tmux `socket`/`session`/`window`/`pane`, a `status` of `waiting` or `done`, a free-text `reason`, the `git_branch` captured at hook-fire time (resolved from `$CLAUDE_PROJECT_DIR` → tmux `pane_current_path` → `$PWD`), and an epoch-ms `ts`. Writes are serialized by flock and land via atomic tmp-rename; entries older than 30 minutes are pruned on every write.
+
+### Transitions
+
+- `scripts/claude-hooks/emit-agent-status.sh` is the sole writer. Claude Code hooks (configured in user-level `~/.claude/settings.json`) map events to statuses: `Notification` → `waiting`, `Stop` → `done`, `UserPromptSubmit` → `cleared` (which removes the entry).
+- After every write the hook emits OSC 1337 `SetUserVar=attention_tick=<ms>` (tmux DCS-wrapped when inside tmux) so the renderer reloads immediately; the `update-status` tick at `status_update_interval` acts as a fallback refresh.
+- An entry can exit state.json through four paths: (1) a `UserPromptSubmit` on the same session, (2) the 30-minute TTL at the next prune, (3) the `Alt+/` clear-all sentinel, or (4) a fresh `Notification`/`Stop` with the same session_id that overwrites it.
+
+### Rendering
+
+- `wezterm-x/lua/attention.lua` is render-only; it owns no mutation path. On `user-var-changed` for `attention_tick` (and as a fallback on every `update-status`) it re-parses state.json into an in-memory cache.
+- A tab gets a warm-orange `●` badge (`tab_attention_waiting_*`) when any entry's `wezterm_pane_id` matches the tab's active pane and the status is `waiting`; muted-green `○` (`tab_attention_done_*`) when the status is `done`. The right-status segment aggregates `⚠ N waiting` and `✓ N done` across every entry in the file and hides itself when both counts are zero.
+- Multi-agent within one WezTerm pane is supported: each agent has its own `session_id`, so entries never collide. The right-status counter reflects real tasks, not panes.
+
+### Keyboard
+
+- `Alt+,` / `Alt+.` are Lua `action_callback`s (not tmux forwarders). They call `attention.pick_next` on the current state, then `attention.activate_in_gui` performs `SwitchToWorkspace` when needed, plus mux-level `tab:activate()` and `pane:activate()` so the target becomes visible even across WezTerm OS windows and workspaces. The tmux `select-window`/`select-pane` runs in the background via `scripts/runtime/attention-jump.sh --session <id>` spawned through `wsl.exe` from Lua.
+- `Alt+/` opens a `InputSelector` whose rows read `<workspace>/<tab>/<branch>  <marker> <reason> — <tmux_window>:<tmux_pane>  (<age>[, no pane])`. The workspace / tab prefix is resolved live from the mux on open, so the label tracks the current WezTerm layout. A trailing `——  clear all · N entries  ——` sentinel truncates state.json and injects an `attention_tick` OSC into the current pane for immediate repaint.
+
+### WEZTERM_PANE propagation
+
+- The state entry's `wezterm_pane_id` comes from `$WEZTERM_PANE` in the hook's env. For the value to survive the hybrid-wsl boundary, four links must line up:
+  1. `wezterm-x/lua/ui.lua` sets `WSLENV=TERM:COLORTERM:TERM_PROGRAM:TERM_PROGRAM_VERSION:WEZTERM_PANE/u` so `wsl.exe` forwards the variable into WSL.
+  2. `scripts/runtime/open-project-session.sh` seeds `tmux new-session -e WEZTERM_PANE=$WEZTERM_PANE` on create and `tmux set-environment` on reuse.
+  3. `scripts/runtime/open-default-shell-session.sh` does the same for the default-workspace fallback session.
+  4. `tmux.conf` sets `update-environment WEZTERM_PANE` as a last-resort copy on client attach.
+- Existing agent processes do **not** inherit env changes retroactively. To pick up `WEZTERM_PANE` after configuring the chain, the agent (or its hosting pane) has to restart into a shell that inherits the refreshed session env.
+
+### Stale-entry recovery
+
+- When an entry's `wezterm_pane_id` is empty, `attention-jump.sh` falls back to `tmux -S <socket> show-environment -t <session> WEZTERM_PANE` to recover the pane id from session env. `Alt+/` rows mark such entries with a trailing `no pane` suffix so the user sees up front which ones will go tmux-only if fallback fails.
+- Ghost entries from WezTerm restarts (stale pane ids) drift out on the 30-minute TTL or can be wiped immediately via the `Alt+/` clear-all sentinel. Agents that resume with the same `session_id` self-heal their entry on the next hook fire.
+
 ## Status Lines
 
 - The first tmux line renders repo, branch, combined git change counts, tracked-branch sync markers, and Node.js version.

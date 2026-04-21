@@ -46,6 +46,42 @@ For `hybrid-wsl` on Windows, pin WezTerm to the taskbar together with the two ap
 
 Pin each app, then drag the icons so WezTerm sits in slot 1, the browser in slot 2, and the IM client in slot 3. The binding survives reboots, needs no extra tooling, and stays out of the in-WezTerm keymap documented in [`keybindings.md`](./keybindings.md).
 
+## Claude Agent Attention Hooks
+
+The agent-attention feature (see [`tmux-ui.md`](./tmux-ui.md#agent-attention) and [`keybindings.md`](./keybindings.md#agent-attention)) expects Claude Code to emit OSC 1337 user vars from three hook events. The hook script ships in this repo at `scripts/claude-hooks/emit-agent-status.sh` and is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals.
+
+Install at the user level by adding these entries to `~/.claude/settings.json` (merge into any existing `hooks` block; do not replace):
+
+```json
+{
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh waiting" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh done" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh cleared" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Substitute the absolute path for your clone if different. `jq` is optional — with it installed, the hook extracts the Notification `.message` as `agent_reason`; without it, the reason falls back to a canned per-status label. There is no Windows dependency; the script writes only to `/dev/tty` in the enclosing WezTerm pane.
+
 ## Tmux Status Prompt Hook
 
 The tmux status line polls git state on a 30-second timer and also refreshes when you switch pane, window, or client. Neither path fires right after you run a `git` command from the shell, so branch and change counters can lag up to 30s behind reality. Installing a prompt hook closes that gap: every time the shell returns to the prompt, it asks tmux to force-refresh (debounced to 2s by `@tmux_status_force_debounce`, so rapid commands do not stampede).
@@ -70,7 +106,7 @@ The badge reflects what the Windows host-helper reads from the foreground window
 - `EN`: the active keyboard layout is a non-CJK language (e.g. `en-US`); IMM composition is not in play.
 - `中?` (italic, dim): the helper is unreachable or the IME did not expose a conversion state. Usually transient while the helper is restarting.
 
-The badge is hidden entirely in `posix-local` because no Windows host-helper is running to query IMM. On Windows the helper samples state every heartbeat via `GetForegroundWindow` → `GetKeyboardLayout` → `ImmGetDefaultIMEWnd` + `SendMessage(WM_IME_CONTROL)` and writes `ime_mode` / `ime_lang` / `ime_reason` into `state.env`. Lua reads the existing state snapshot on every `update-status` tick, so toggling the IME (e.g. `Shift` on Microsoft Pinyin or Rime) updates the badge within ~250–500ms without any additional IPC spawn.
+The badge is hidden entirely in `posix-local` because no Windows host-helper is running to query IMM. On Windows the helper pulls state via `GetForegroundWindow` → `GetKeyboardLayout` → `ImmGetConversionStatus`, so tapping `Shift` (or your IME's own toggle key) updates the badge within the next `update-status` tick. There is no WezTerm-managed override: the OS IME and this badge agree by construction.
 
 ## Windows Script Execution
 
