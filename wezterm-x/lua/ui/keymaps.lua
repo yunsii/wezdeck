@@ -114,6 +114,80 @@ function M.build(opts)
       end),
     },
     {
+      key = 'n',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTabRelative(1),
+    },
+    {
+      key = 'N',
+      mods = 'ALT|SHIFT',
+      action = wezterm.action.ActivateTabRelative(-1),
+    },
+    {
+      key = '1',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(0),
+    },
+    {
+      key = '2',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(1),
+    },
+    {
+      key = '3',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(2),
+    },
+    {
+      key = '4',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(3),
+    },
+    {
+      key = '5',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(4),
+    },
+    {
+      key = '6',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(5),
+    },
+    {
+      key = '7',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(6),
+    },
+    {
+      key = '8',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(7),
+    },
+    {
+      key = '9',
+      mods = 'ALT',
+      action = wezterm.action.ActivateTab(8),
+    },
+    {
+      key = 'l',
+      mods = 'ALT',
+      action = wezterm.action.QuickSelectArgs {
+        label = 'open url',
+        patterns = {
+          'https?://\\S+',
+        },
+        action = wezterm.action_callback(function(window, pane)
+          local url = window:get_selection_text_for_pane(pane)
+          if not url or url == '' then
+            return
+          end
+          local trace_id = logger.trace_id('link')
+          logger.info('link', 'opening url via QuickSelect', common.merge_fields(trace_id, { url = url }))
+          wezterm.open_with(url)
+        end),
+      },
+    },
+    {
       key = 'P',
       mods = 'CTRL|SHIFT',
       action = wezterm.action_callback(function(window, pane)
