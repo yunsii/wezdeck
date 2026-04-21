@@ -84,6 +84,7 @@ Invariants:
 - `skills/wezterm-runtime-sync/`: runtime sync workflow, prompt rendering, and prompt regression scripts
 - `skills/worktree-task/`: linked worktree task skill with unified CLI, core libraries, and built-in providers
 - `scripts/runtime/open-project-session.sh`: tmux bootstrap for managed project tabs
+- `scripts/runtime/primary-pane-wrapper.sh`: traps INT/HUP/TERM around the managed agent and execs the login shell on exit so the primary pane survives agent death
 - `scripts/runtime/run-managed-command.sh`: managed startup command launcher
 - `scripts/runtime/agent-clipboard.sh`: repo-local WSL wrapper that writes text or image files to the Windows clipboard through the host helper
 - `scripts/runtime/runtime-log-lib.sh`: shared runtime logging helper
@@ -101,6 +102,7 @@ Invariants:
 - Linked task worktree windows bootstrap through the built-in tmux provider under `skills/worktree-task/scripts/providers/tmux-agent.sh`.
 - The built-in task-worktree tmux provider must derive repo-family session reuse and task-window ownership from live git context instead of stored tmux metadata.
 - `open-project-session.sh` launches managed commands inside an interactive login shell so the environment matches the right-side shell pane.
+- The managed command runs under `primary-pane-wrapper.sh`, which traps INT/HUP/TERM and execs the user's login shell after the agent returns. Logs each transition under `category=primary_pane` so pane deaths can be diagnosed post-mortem.
 - `run-managed-command.sh` is a thin wrapper that logs and execs the command.
 - Managed launcher profiles live in `wezterm-x/lua/constants.lua` and resolve to concrete startup commands before tmux session creation.
 - The tmux layout is the stable execution layer: left pane runs the configured primary command and right pane remains a shell in the same directory.
