@@ -26,6 +26,7 @@ options:
   --branch VALUE        Explicit branch name. Default: WT_POLICY_BRANCH_PREFIX + slug
   --base-ref VALUE      Base ref for the new branch. Default: primary worktree HEAD
   --prompt-file FILE    Read the cleaned-up task prompt from FILE instead of stdin
+  --no-prompt           Skip the stdin prompt entirely (agent starts idle)
   --provider VALUE      Provider name or path. Builtins: none, tmux-agent
   --provider-mode MODE  off, auto, or required
   --workspace NAME      Provider workspace/session namespace override
@@ -399,6 +400,7 @@ wt_core_launch() {
   local branch_name=""
   local base_ref=""
   local prompt_file=""
+  local no_prompt="0"
   local provider_override=""
   local provider_mode_override=""
   local workspace_override=""
@@ -448,6 +450,10 @@ wt_core_launch() {
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
         prompt_file="$2"
         shift 2
+        ;;
+      --no-prompt)
+        no_prompt="1"
+        shift
         ;;
       --provider)
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
@@ -514,7 +520,12 @@ wt_core_launch() {
     esac
   fi
 
-  prompt_content="$(wt_core_read_prompt "$prompt_file")"
+  if [[ "$no_prompt" == "1" ]]; then
+    [[ -z "$prompt_file" ]] || wt_die "--no-prompt cannot be combined with --prompt-file"
+    prompt_content=""
+  else
+    prompt_content="$(wt_core_read_prompt "$prompt_file")"
+  fi
 
   base_slug="$(wt_slugify "${task_slug:-$task_title}" "$WT_POLICY_SLUG_FALLBACK")"
   resolved_slug="$base_slug"
@@ -573,7 +584,7 @@ wt_core_launch() {
       "branch_created=$branch_created"
   fi
 
-  if [[ "$WT_SELECTED_PROVIDER" != "none" ]]; then
+  if [[ "$WT_SELECTED_PROVIDER" != "none" && -n "$prompt_content" ]]; then
     WT_PROMPT_FILE="$(wt_core_provider_prompt_path "$WT_TASK_SLUG")"
     mkdir -p "$(wt_core_provider_prompt_dir)"
     printf '%s\n' "$prompt_content" > "$WT_PROMPT_FILE"

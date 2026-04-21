@@ -30,6 +30,7 @@ This workspace is designed keyboard-first: every feature is expected to have a k
 - `Ctrl+k` `h`: horizontal split of the current pane at its working directory
 - `Ctrl+k` `o`: in any tmux-backed pane, rotate focus to the next pane in the current window (same semantics as tmux's `prefix o`)
 - `Ctrl+k` `x`: close the current tmux pane; if it is the last pane in its window the window also closes
+- `Ctrl+k` `g`: quick-create a task workspace for the current repo family. Opens a tmux `command-prompt` labeled `branch:`; the entered name is forwarded to `skills/worktree-task/scripts/open-task-window`, which execs `worktree-task launch --provider tmux-agent --no-prompt --title <name>` so slug and branch follow the skill's `wt_slugify` / `task/<slug>` convention (leading `task/` is stripped). The agent starts idle in the new window. Colliding names bump to `<slug>-2`, `<slug>-3`, etc.; reopening an existing task worktree belongs to `Alt+g` / `Alt+Shift+g`.
 - `LeftClick`: inside tmux, use the click only to focus the pane under the mouse; it does not start tmux selection and is not forwarded as a mouse click into the pane application
 
 ## Tabs
