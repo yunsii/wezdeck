@@ -18,6 +18,7 @@
 #   test-agent-attention.sh waiting [reason]
 #   test-agent-attention.sh done    [reason]
 #   test-agent-attention.sh cleared
+#   test-agent-attention.sh resolved        # PostToolUse: clear only if waiting
 #   test-agent-attention.sh clear-all       # truncate state.json + nudge
 #   test-agent-attention.sh show            # print current state.json
 
@@ -213,11 +214,11 @@ cmd_show() {
 }
 
 case "${1:-self-test}" in
-  self-test|"")          cmd_self_test ;;
-  cycle-visual)          cmd_cycle_visual ;;
-  waiting|done|cleared)  cmd_single "$1" "${2:-}" ;;
-  clear-all)             cmd_clear_all ;;
-  show)                  cmd_show ;;
+  self-test|"")                   cmd_self_test ;;
+  cycle-visual)                   cmd_cycle_visual ;;
+  waiting|done|cleared|resolved)  cmd_single "$1" "${2:-}" ;;
+  clear-all)                      cmd_clear_all ;;
+  show)                           cmd_show ;;
   -h|--help)
     sed -n '3,19p' "$0"
     ;;

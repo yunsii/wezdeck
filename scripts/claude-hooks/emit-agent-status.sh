@@ -7,6 +7,7 @@
 #   emit-agent-status.sh waiting   # Notification hook
 #   emit-agent-status.sh done      # Stop hook
 #   emit-agent-status.sh cleared   # UserPromptSubmit hook (drops the entry)
+#   emit-agent-status.sh resolved  # PostToolUse hook (drops only if waiting)
 #
 # Optional stdin: the hook JSON payload. When jq is available and stdin
 # carries JSON, the script extracts .session_id for keying and .message /
@@ -32,10 +33,11 @@ if [[ -z "$status" ]]; then
 fi
 
 case "$status" in
-  waiting) default_reason="input required" ;;
-  done)    default_reason="task done" ;;
-  cleared) default_reason="" ;;
-  *)       exit 0 ;;
+  waiting)  default_reason="input required" ;;
+  done)     default_reason="task done" ;;
+  cleared)  default_reason="" ;;
+  resolved) default_reason="" ;;
+  *)        exit 0 ;;
 esac
 
 session_id=""
@@ -122,6 +124,13 @@ attention_state_prune 1800000 2>/dev/null || true
 
 if [[ "$status" == "cleared" ]]; then
   attention_state_remove "$session_id" 2>/dev/null || true
+elif [[ "$status" == "resolved" ]]; then
+  # No-op when there was no waiting to clear (auto-allowed tools hit this
+  # on every PostToolUse). Exit silent so we do not nudge wezterm or log
+  # on every tool call.
+  if ! attention_state_clear_if_waiting "$session_id" 2>/dev/null; then
+    exit 0
+  fi
 else
   attention_state_upsert \
     "$session_id" \

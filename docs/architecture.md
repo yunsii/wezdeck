@@ -75,10 +75,11 @@ Invariants:
 - `wezterm-x/workspaces.lua`: managed workspace definitions
 - `wezterm-x/commands/manifest.json`: single source of truth for invocable commands (see `Command Manifest`)
 - `wezterm-x/lua/logger.lua`: WezTerm-side structured diagnostics helper
-- `wezterm-x/lua/attention.lua`: reads the shared agent-attention state file and renders tab badges + right-status counter (render-only; no jump logic)
+- `wezterm-x/lua/attention.lua`: reads the shared agent-attention state file, renders tab badges + right-status counter, and schedules the background delayed `--forget` for focus-based auto-ack when the currently-focused WezTerm pane **and** active tmux pane match a live `done` entry (render-owning; delegates all mutation to `attention-jump.sh`)
 - `scripts/runtime/attention-state-lib.sh`: shared bash helpers for read / upsert / remove / prune of the attention state file, with flock for concurrent writes
 - `scripts/claude-hooks/emit-agent-status.sh`: user-level Claude Code hook emitter that updates state.json and sends the OSC 1337 `attention_tick` nudge
-- `scripts/runtime/attention-jump.sh`: WSL-side orchestrator for attention jumps — runs `tmux select-window`/`select-pane`, recovers a missing `wezterm_pane_id` from tmux session env when needed, and falls back to `wezterm.exe cli activate-pane` for contexts where Lua isn't driving the GUI side (explicit CLI invocation, `--clear-all`)
+- `scripts/runtime/attention-jump.sh`: WSL-side orchestrator for attention jumps — runs `tmux select-window`/`select-pane`, recovers a missing `wezterm_pane_id` from tmux session env when needed, and falls back to `wezterm.exe cli activate-pane` for contexts where Lua isn't driving the GUI side (explicit CLI invocation, `--clear-all`). Also owns the `--forget` and `--prune` entrypoints that implement the delayed auto-clear (used by both `Alt+.`/`Alt+/` jumps and the focus-based auto-ack) and the periodic TTL sweep
+- `scripts/runtime/tmux-focus-emit.sh`: wired from tmux `pane-focus-in` / `after-select-pane` hooks to record the currently-active tmux pane per `(socket, session)` into a per-session file, so `attention.maybe_ack_focused` can require tmux-pane-level focus (not just WezTerm pane focus) before auto-acking a `done` entry
 - `wezterm-x/local/`: gitignored machine-local overrides copied by the sync skill when present
 - `config/worktree-task.env`: tracked repo profile for the self-contained `worktree-task` skill
 - `skills/wezterm-runtime-sync/`: runtime sync workflow, prompt rendering, and prompt regression scripts
