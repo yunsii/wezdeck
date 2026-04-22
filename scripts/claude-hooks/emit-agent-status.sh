@@ -37,6 +37,7 @@ esac
 
 session_id=""
 reason="$default_reason"
+notification_type=""
 if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
   stdin_payload="$(cat || true)"
   if [[ -n "$stdin_payload" ]]; then
@@ -45,7 +46,26 @@ if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
     if [[ -n "$extracted" ]]; then
       reason="$extracted"
     fi
+    notification_type="$(printf '%s' "$stdin_payload" | jq -r '.notification_type // empty' 2>/dev/null || true)"
   fi
+fi
+
+# Notification hook disambiguation: only permission_prompt / elicitation_dialog
+# actually require user action. idle_prompt fires after Claude has been idle
+# for a while and would otherwise overwrite the done that Stop just wrote,
+# making Alt+, chase empty chats. auth_success is one-shot UI confirmation,
+# not a per-session state transition.
+if [[ "$status" == "waiting" && -n "$notification_type" ]]; then
+  case "$notification_type" in
+    permission_prompt|elicitation_dialog) ;;
+    idle_prompt)
+      status="done"
+      reason="task done"
+      ;;
+    auth_success)
+      exit 0
+      ;;
+  esac
 fi
 
 # Fallback key when hooks run outside Claude's piped payload (e.g. test

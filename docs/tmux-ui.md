@@ -44,7 +44,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 
 ### Transitions
 
-- `scripts/claude-hooks/emit-agent-status.sh` is the sole writer. Claude Code hooks (configured in user-level `~/.claude/settings.json`) map events to statuses: `Notification` → `waiting`, `Stop` → `done`, `UserPromptSubmit` → `cleared` (which removes the entry).
+- `scripts/claude-hooks/emit-agent-status.sh` is the sole writer. Claude Code hooks (configured in user-level `~/.claude/settings.json`) map events to statuses: `Stop` → `done`, `UserPromptSubmit` → `cleared` (which removes the entry), and `Notification` branches on `notification_type` — `permission_prompt` / `elicitation_dialog` → `waiting`, `idle_prompt` → `done` (since it fires on post-Stop idle and would otherwise re-raise waiting), `auth_success` is ignored. This keeps `waiting` meaning "Claude needs user action" rather than "Claude is idle after a turn".
 - After every write the hook emits OSC 1337 `SetUserVar=attention_tick=<ms>` (tmux DCS-wrapped when inside tmux) so the renderer reloads immediately; the `update-status` tick at `status_update_interval` acts as a fallback refresh.
 - An entry can exit state.json through five paths: (1) a `UserPromptSubmit` on the same session, (2) the 30-minute TTL at the next prune, (3) the `Alt+/` clear-all sentinel, (4) a fresh `Notification`/`Stop` with the same session_id that overwrites it, or (5) an upsert from a *different* session_id that lands on the same `(tmux_socket, tmux_pane)` — a pane hosts at most one active attention entry, so restarting an agent in place evicts the prior one instead of double-counting.
 
