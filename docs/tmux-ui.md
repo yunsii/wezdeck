@@ -35,6 +35,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - This config does not expose a normal WezTerm cross-pane drag-selection path by default; terminal-wide selection is still available when you hold `SUPER`.
 - `Ctrl+c` first checks for a WezTerm terminal selection and copies it if one exists; otherwise it sends a normal terminal `Ctrl+c`.
 - tmux emits terminal focus-in and focus-out events to applications, which helps mouse-aware TUIs recover cleanly when the WezTerm window regains focus.
+- The active pane keeps the base cream background (`#f1f0e9`) while inactive panes render a slightly darker cream (`#eae9e1`), so the focused pane is visually distinct via body tint rather than border color. Pane borders stay muted beige in both states.
 
 ## Agent Attention
 
