@@ -49,7 +49,7 @@ Pin each app, then drag the icons so WezTerm sits in slot 1, the browser in slot
 
 ## Claude Agent Attention Hooks
 
-The agent-attention feature (see [`tmux-ui.md`](./tmux-ui.md#agent-attention) and [`keybindings.md`](./keybindings.md#agent-attention)) expects Claude Code to emit OSC 1337 user vars from three hook events. The hook script ships in this repo at `scripts/claude-hooks/emit-agent-status.sh` and is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals.
+The agent-attention feature (see [`tmux-ui.md`](./tmux-ui.md#agent-attention) and [`keybindings.md`](./keybindings.md#agent-attention)) expects Claude Code to emit OSC 1337 user vars from four hook events (`Notification`, `Stop`, `UserPromptSubmit`, `PostToolUse`). The hook script ships in this repo at `scripts/claude-hooks/emit-agent-status.sh` and is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals.
 
 Install at the user level by adding these entries to `~/.claude/settings.json` (merge into any existing `hooks` block; do not replace):
 
@@ -76,12 +76,19 @@ Install at the user level by adding these entries to `~/.claude/settings.json` (
           { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh cleared" }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh resolved" }
+        ]
+      }
     ]
   }
 }
 ```
 
-Substitute the absolute path for your clone if different. `jq` is optional — with it, the hook reads `.session_id` from the piped hook payload and extracts `.message` / `.stop_reason` as the state entry's `reason`; without it, the hook still writes the entry but keys it to `pane:<WEZTERM_PANE>` and uses canned per-status labels. There is no Windows dependency; the hook script writes only the `attention_tick` OSC to `/dev/tty` in the enclosing WezTerm pane.
+Substitute the absolute path for your clone if different. `jq` is optional — with it, the hook reads `.session_id` from the piped hook payload and extracts `.message` / `.stop_reason` as the state entry's `reason`; without it, the hook still writes the entry but keys it to `pane:<WEZTERM_PANE>` and uses canned per-status labels. There is no Windows dependency; the hook script writes only the `attention_tick` OSC to `/dev/tty` in the enclosing WezTerm pane. The `PostToolUse` entry is what closes the `⚠ waiting` counter the moment the user allows a permission prompt (the tool runs and completes, so `resolved` conditionally drops the entry); without it, `waiting` would linger from the prompt all the way until `Stop` fires at the end of the turn.
 
 ### Codex integration
 
@@ -91,7 +98,7 @@ Practical consequence for this repo:
 
 - Wiring `notify` to `emit-agent-status.sh done` would give a half-integration — `done` badges and counts work, but those entries would never auto-clear on the next prompt. You would rely on the 30-minute TTL, a fresh `Stop` overwrite, or the `Alt+/` clear-all sentinel.
 - Codex's `notify` payload does not publish a stable `session_id` today, so the hook's fallback key (`pane:<WEZTERM_PANE>`) would be used. In the hybrid-wsl one-agent-per-pane layout this still dedupes correctly; mixing Claude and Codex in the same WezTerm pane is not supported in that mode.
-- Nothing Codex-specific ships in `~/.codex/config.toml` from this repo. When the upstream lifecycle hooks GA and cover the `waiting` / `cleared` equivalents, integration collapses to adding three `notify`/`hooks.json` entries that call the same `emit-agent-status.sh waiting|done|cleared` interface — no changes in the hook script or Lua side.
+- Nothing Codex-specific ships in `~/.codex/config.toml` from this repo. When the upstream lifecycle hooks GA and cover the `waiting` / `cleared` / `resolved` equivalents, integration collapses to adding the matching `notify`/`hooks.json` entries that call the same `emit-agent-status.sh waiting|done|cleared|resolved` interface — no changes in the hook script or Lua side.
 
 ## Tmux Status Prompt Hook
 
