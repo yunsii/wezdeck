@@ -19,6 +19,7 @@ Use this doc when you need prerequisites and local setup.
 5. Optionally create `~/.config/worktree-task/config.env` when you need to point globally installed `worktree-task` back at a tracked `wezterm-config` repo with `WEZTERM_CONFIG_REPO=/absolute/path`.
 6. Optionally edit `wezterm-x/local/command-panel.sh` for machine-local tmux command palette entries exposed through `Ctrl+Shift+P`.
 7. One-time: in VS Code, open Profiles → Import Profile → select `wezterm-x/local.example/vscode/ai-dev.code-profile` (or your customized `wezterm-x/local/vscode/ai-dev.code-profile`). `Alt+v` and `scripts/runtime/open-current-dir-in-vscode.sh` read `WEZTERM_VSCODE_PROFILE` from `wezterm-x/local/shared.env` (default `ai-dev`); set it to empty to use VS Code's default profile instead. After import, open the target WSL folder once in the new profile and click "Install in WSL" for each workspace extension you want enabled (GitLens, etc.) — VS Code tracks WSL-remote extensions per profile and does not replicate them automatically. The Windows helper's window-reuse key is `distro + folder`, not profile; if the folder is already open in another profile, `Alt+v` focuses that window instead of launching a new one — close the existing window first.
+8. Recommended: source `scripts/runtime/tmux-status-prompt-hook.sh` from your shell rc so the tmux status line reflects local `git` commands immediately instead of lagging up to 30s on the fallback poll. See [Tmux Status Prompt Hook](#tmux-status-prompt-hook) for the source line and a verification command.
 
 ## File Boundaries
 
@@ -94,7 +95,7 @@ Practical consequence for this repo:
 
 ## Tmux Status Prompt Hook
 
-The tmux status line polls git state on a 30-second timer and also refreshes when you switch pane, window, or client. Neither path fires right after you run a `git` command from the shell, so branch and change counters can lag up to 30s behind reality. Installing a prompt hook closes that gap: every time the shell returns to the prompt, it asks tmux to force-refresh (debounced to 2s by `@tmux_status_force_debounce`, so rapid commands do not stampede).
+This is a **recommended** part of local setup. The tmux status line polls git state on a 30-second timer and refreshes when you switch pane, window, or client. Neither path fires right after you run a `git` command from the shell, so branch and change counters can lag up to 30s behind reality. The prompt hook closes that gap: every time the shell returns to the prompt, it asks tmux to force-refresh (debounced to 2s by `@tmux_status_force_debounce`, so rapid commands do not stampede).
 
 The hook ships at `scripts/runtime/tmux-status-prompt-hook.sh`. It is safe to re-source, a no-op outside tmux, and self-locates through the tmux `@wezterm_runtime_root` option so the sourcing line does not hardcode a repo path. Add one line to your shell rc:
 
@@ -103,7 +104,15 @@ The hook ships at `scripts/runtime/tmux-status-prompt-hook.sh`. It is safe to re
 [ -n "$TMUX" ] && . /home/yuns/github/wezterm-config/scripts/runtime/tmux-status-prompt-hook.sh
 ```
 
-Substitute the absolute path for your clone if different. Without the hook, the 30s poll and pane-switch hooks keep working unchanged.
+Substitute the absolute path for your clone if different. Existing shells also need `source ~/.zshrc` (or a restart) to pick up the new line.
+
+Verify the hook is active from a tmux pane running the shell you configured:
+
+```sh
+typeset -f __tmux_status_prompt_refresh >/dev/null && echo ok || echo missing
+```
+
+If it prints `missing`, the rc did not source the hook. Without the hook, the 30s poll and pane-switch hooks keep working unchanged, so `git` state can lag up to 30s before the status line updates.
 
 ## IME State Indicator
 
