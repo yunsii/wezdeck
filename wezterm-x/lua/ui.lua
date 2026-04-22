@@ -61,7 +61,6 @@ function M.apply(opts)
   config.font = constants.fonts.terminal
   config.font_size = 12.0
   config.line_height = 1.0
-  config.front_end = 'WebGpu'
   if constants.default_domain and constants.default_domain ~= '' then
     config.default_domain = constants.default_domain
   end
