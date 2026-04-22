@@ -22,6 +22,7 @@ Topic files under `en/`:
 - [en/tool-use.md](./en/tool-use.md)
 - [en/documentation.md](./en/documentation.md)
 - [en/platform-actions.md](./en/platform-actions.md)
+- [en/clipboard.md](./en/clipboard.md)
 - [en/vcs.md](./en/vcs.md)
 - [en/reporting.md](./en/reporting.md)
 - [en/preferences.md](./en/preferences.md)
