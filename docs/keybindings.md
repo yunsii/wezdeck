@@ -19,9 +19,9 @@ This workspace is designed keyboard-first: every feature is expected to have a k
 
 ## Scrollback
 
-- `PageUp`: in a tmux-backed pane that is on the main screen and not already in copy-mode, enter tmux copy-mode with the cursor parked at the live bottom; subsequent `PageUp` inside copy-mode uses tmux's default page-up. In alt-screen TUIs and once copy-mode is active, the key is forwarded so the app or copy-mode's own paging takes over
-- `Shift+Up` / `Shift+Down`: from a main-screen tmux pane, enter copy-mode and scroll 3 lines up or down for fine-grained adjustment from the live prompt; once copy-mode is active the same key keeps scrolling 3 lines in both emacs and vi tables; in alt-screen TUIs the key is forwarded to the app
-- `WheelUp` in tmux on an unfocused pane: first retarget tmux to the pane under the mouse, then enter scrollback or copy-mode there
+- `PageUp` / `Shift+Up`: upward scroll keys share one entry model. From a main-screen tmux pane that is not yet in copy-mode, the first press enters copy-mode with the cursor parked at the live bottom and does not scroll; subsequent presses inside copy-mode scroll up (one page for `PageUp`, 3 lines for `Shift+Up`). In alt-screen TUIs the key is forwarded to the app
+- `PageDown` / `Shift+Down`: at the live prompt these are forwarded as plain terminal keys; inside copy-mode they scroll down (one page / 3 lines) while above the live bottom, and at the live bottom a single press exits copy-mode — mirroring the "one extra press at the boundary to switch mode" rule on entry. If a selection is active at the live bottom, the same press exits and discards the selection (use `Ctrl+c` or `Enter` first if you need to keep it)
+- `WheelUp` in tmux on an unfocused pane: first retarget tmux to the pane under the mouse, then enter copy-mode; reaching the live bottom via wheel no longer auto-exits, so one additional wheel-down tick at the bottom is needed to leave, matching the keyboard paths
 - `LeftClick` in tmux scrollback: without an active selection it moves the tmux scrollback cursor to the clicked cell; with an active selection it clears that selection without copying if you are still browsing scrollback, and exits copy-mode once you are already back at the live bottom
 
 ## Panes
