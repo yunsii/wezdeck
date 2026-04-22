@@ -5,10 +5,15 @@
 #   run-shell -b "bash .../attention-jump.sh next-waiting"
 #   run-shell -b "bash .../attention-jump.sh next-done"
 #
-# Invoked from the WezTerm Alt+/ InputSelector (explicit target):
+# Invoked from the WezTerm Alt+,/Alt+./Alt+/ fast path (Lua already
+# activated the WezTerm pane via mux, so we just sync tmux):
+#   bash .../attention-jump.sh --direct \
+#     --tmux-socket <path> --tmux-window <id> [--tmux-pane <id>]
+#
+# Invoked from tooling or recovery flows that still need a state lookup:
 #   bash .../attention-jump.sh --session <session_id>
 #
-# Resolution:
+# Resolution (slow path):
 #   1. Prune stale entries (30 min TTL).
 #   2. Pick target — by explicit session id, or the next entry matching
 #      the requested kind (preferring a wezterm pane different from the
@@ -19,10 +24,41 @@
 #   4. Run `wezterm.exe cli activate-pane --pane-id <N>` so WezTerm
 #      focuses the right pane. tmux-first ordering means the WezTerm pane
 #      already shows the correct tmux window when it becomes active.
+#
+# The fast `--direct` path skips steps 1, 2, and 4 entirely: the caller
+# is responsible for WezTerm pane activation and already has the tmux
+# coordinates, so this script just issues the two tmux commands.
 
 set -u
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Fast path: caller already has the tmux coordinates (Lua looked them up
+# from the in-process state cache) and has already activated the WezTerm
+# pane. We only need to sync tmux's selection. Skip the state lib, jq,
+# and wezterm.exe invocations entirely so this returns in one tmux
+# round-trip.
+if [[ "${1:-}" == "--direct" ]]; then
+  shift
+  direct_socket=''
+  direct_window=''
+  direct_pane=''
+  while (( $# )); do
+    case "$1" in
+      --tmux-socket) direct_socket="${2:-}"; shift 2 ;;
+      --tmux-window) direct_window="${2:-}"; shift 2 ;;
+      --tmux-pane)   direct_pane="${2:-}";   shift 2 ;;
+      *) printf 'unknown --direct arg: %s\n' "$1" >&2; exit 1 ;;
+    esac
+  done
+  if [[ -n "$direct_socket" && -n "$direct_window" ]]; then
+    tmux -S "$direct_socket" select-window -t "$direct_window" 2>/dev/null || true
+    if [[ -n "$direct_pane" ]]; then
+      tmux -S "$direct_socket" select-pane -t "$direct_pane" 2>/dev/null || true
+    fi
+  fi
+  exit 0
+fi
 
 # shellcheck disable=SC1091
 . "$script_dir/attention-state-lib.sh"
@@ -44,11 +80,11 @@ case "${1:-next-waiting}" in
     ;;
   --clear-all) clear_all=1 ;;
   -h|--help)
-    sed -n '3,19p' "$0"
+    sed -n '3,27p' "$0"
     exit 0
     ;;
   *)
-    printf 'usage: %s next-waiting|next-done|--session <id>|--clear-all\n' "$0" >&2
+    printf 'usage: %s next-waiting|next-done|--session <id>|--clear-all|--direct ...\n' "$0" >&2
     exit 1
     ;;
 esac

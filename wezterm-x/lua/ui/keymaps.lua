@@ -50,6 +50,30 @@ function M.build(opts)
     return args
   end
 
+  -- Build fast-path args when the entry carries tmux coordinates. The
+  -- caller will have already activated the WezTerm pane via the mux, so
+  -- the script only needs to sync tmux selection — no state re-read, no
+  -- jq, no wezterm.exe round-trip. Falls back to `--session` when the
+  -- coordinates are missing (legacy entries without tmux bootstrap).
+  local function attention_direct_args(entry, pane_ref, trace_id)
+    local socket = entry.tmux_socket
+    local window = entry.tmux_window
+    if type(socket) == 'string' and socket ~= ''
+      and type(window) == 'string' and window ~= '' then
+      local trailing = {
+        '--direct',
+        '--tmux-socket', socket,
+        '--tmux-window', window,
+      }
+      if type(entry.tmux_pane) == 'string' and entry.tmux_pane ~= '' then
+        table.insert(trailing, '--tmux-pane')
+        table.insert(trailing, entry.tmux_pane)
+      end
+      return attention_jump_args(trailing, pane_ref, trace_id)
+    end
+    return attention_jump_args({ '--session', entry.session_id }, pane_ref, trace_id)
+  end
+
   return {
     {
       key = 'v',
@@ -174,7 +198,7 @@ function M.build(opts)
           wezterm_pane_id = entry.wezterm_pane_id,
         })
         attention.activate_in_gui(entry.wezterm_pane_id, window, pane)
-        local args = attention_jump_args({ '--session', entry.session_id }, pane, trace_id)
+        local args = attention_direct_args(entry, pane, trace_id)
         if args then wezterm.background_child_process(args) end
       end),
     },
@@ -196,7 +220,7 @@ function M.build(opts)
           wezterm_pane_id = entry.wezterm_pane_id,
         })
         attention.activate_in_gui(entry.wezterm_pane_id, window, pane)
-        local args = attention_jump_args({ '--session', entry.session_id }, pane, trace_id)
+        local args = attention_direct_args(entry, pane, trace_id)
         if args then wezterm.background_child_process(args) end
       end),
     },
@@ -329,7 +353,12 @@ function M.build(opts)
                 attention.activate_in_gui(chosen_entry.wezterm_pane_id, inner_window, inner_pane)
               end
 
-              local args = attention_jump_args({ '--session', chosen_id }, inner_pane, trace_id)
+              local args
+              if chosen_entry then
+                args = attention_direct_args(chosen_entry, inner_pane, trace_id)
+              else
+                args = attention_jump_args({ '--session', chosen_id }, inner_pane, trace_id)
+              end
               if not args then
                 return
               end
