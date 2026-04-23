@@ -89,7 +89,7 @@
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
     "hotkeys": [
-      { "keys": "Ctrl+k o", "layer": "tmux-chord" }
+      { "keys": "Alt+o", "layer": "wezterm" }
     ],
     "palette": { "display_only": true }
   },
@@ -149,7 +149,7 @@
   {
     "id": "command-palette.chord-prefix",
     "label": "Command chord: Activate prefix",
-    "description": "Forward `Ctrl+k` to a tmux-backed pane so the follow-up chord keys (`v` / `h` / `o` / `x`) resolve in the tmux `command-chord` table; toast when the current pane is not running tmux.",
+    "description": "Forward `Ctrl+k` to a tmux-backed pane so the follow-up chord keys (`v` / `h` / `x` / `g`) resolve in the tmux `command-chord` table; toast when the current pane is not running tmux.",
     "scope": "commands-and-splits",
     "context": "tmux-backed",
     "hotkeys": [
