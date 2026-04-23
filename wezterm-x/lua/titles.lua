@@ -22,6 +22,7 @@ function M.register(opts)
   local wezterm = opts.wezterm
   local palette = opts.palette
   local attention = opts.attention
+  local chrome_debug_status = opts.chrome_debug_status
   local host = opts.host
   local logger = opts.logger
   local workspace_label_cache = {}
@@ -203,6 +204,10 @@ function M.register(opts)
     local ime_segment = render_ime_segment()
     if ime_segment then
       table.insert(right_segments, ime_segment)
+    end
+    local chrome_debug_segment = chrome_debug_status and chrome_debug_status.render_status_segment(palette) or nil
+    if chrome_debug_segment then
+      table.insert(right_segments, chrome_debug_segment)
     end
     if attention and attention.reload_state then
       attention.reload_state()

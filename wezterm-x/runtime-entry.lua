@@ -21,6 +21,7 @@ local titles = load_module 'titles'
 local ui = load_module 'ui'
 local workspace_manager = load_module 'workspace_manager'
 local attention = load_module 'attention'
+local chrome_debug_status = load_module 'chrome_debug_status'
 local logger = load_module('logger').new {
   wezterm = wezterm,
   constants = constants,
@@ -43,10 +44,16 @@ local workspace = workspace_manager.new {
   constants = constants,
 }
 
+chrome_debug_status.configure {
+  state_file = constants.chrome_debug_browser and constants.chrome_debug_browser.state_file,
+  fallback_port = constants.chrome_debug_browser and constants.chrome_debug_browser.remote_debugging_port,
+}
+
 titles.register {
   wezterm = wezterm,
   palette = constants.palette,
   attention = attention,
+  chrome_debug_status = chrome_debug_status,
   host = host,
   logger = logger,
 }
