@@ -17,6 +17,21 @@ function M.build(opts)
   local logger = opts.logger
   local host = opts.host
   local attention = opts.attention
+  local usage = opts.usage
+
+  -- Wrap a keymap entry so pressing the key first fires a fire-and-forget
+  -- bump to the aggregate counter, then performs the original action. The
+  -- bump is non-blocking, so the nested perform_action path still receives
+  -- focus events in the same frame as an un-instrumented binding would.
+  local function inst(hotkey_id, entry)
+    if not usage or not usage.bump then return entry end
+    local original_action = entry.action
+    entry.action = wezterm.action_callback(function(window, pane)
+      usage.bump(hotkey_id)
+      window:perform_action(original_action, pane)
+    end)
+    return entry
+  end
 
   local function attention_jump_args(trailing_args, pane_ref, trace_id)
     return actions.attention_jump_args(constants, pane_ref, trailing_args, logger, trace_id)
@@ -65,7 +80,7 @@ function M.build(opts)
     return attention_jump_args(trailing, pane_ref, trace_id)
   end
 
-  return {
+  local entries = {
     {
       key = 'v',
       mods = 'ALT',
@@ -591,6 +606,59 @@ function M.build(opts)
       action = wezterm.action.PasteFrom 'Clipboard',
     },
   }
+
+  -- Paired with `entries` above in 1:1 order. When you add / remove /
+  -- reorder an entry, update this list. Unknown ids still render in the
+  -- report (as `(unregistered)`), but they won't cross-reference to
+  -- manifest.json labels.
+  local entry_ids = {
+    'vscode.open-current-dir',          -- Alt+v
+    'worktree.picker',                  -- Alt+g
+    'worktree.cycle-next',              -- Alt+Shift+G
+    'chrome.open-debug-profile',        -- Alt+b
+    'pane.rotate-next',                 -- Alt+o
+    'tab.next',                         -- Alt+n
+    'tab.previous',                     -- Alt+Shift+N
+    'attention.jump-waiting',           -- Alt+,
+    'attention.jump-done',              -- Alt+.
+    'attention.overlay',                -- Alt+/
+    'tab.select-by-index',              -- Alt+1
+    'tab.select-by-index',              -- Alt+2
+    'tab.select-by-index',              -- Alt+3
+    'tab.select-by-index',              -- Alt+4
+    'tab.select-by-index',              -- Alt+5
+    'tab.select-by-index',              -- Alt+6
+    'tab.select-by-index',              -- Alt+7
+    'tab.select-by-index',              -- Alt+8
+    'tab.select-by-index',              -- Alt+9
+    'link.open-in-viewport',            -- Alt+l
+    'command-palette.open',             -- Ctrl+Shift+P
+    'command-palette.chord-prefix',     -- Ctrl+k
+    'command-palette.open-native',      -- Ctrl+Shift+;
+    'command-palette.open-native',      -- Ctrl+Shift+:
+    'workspace.switch-work',            -- Alt+w
+    'workspace.switch-default',         -- Alt+d
+    'workspace.cycle-next',             -- Alt+p
+    'workspace.switch-config',          -- Alt+c
+    'workspace.close-current',          -- Alt+Shift+X
+    'app.quit',                         -- Alt+Shift+Q
+    'clipboard.copy-or-sigint',         -- Ctrl+c
+    'clipboard.copy-selection-strict',  -- Ctrl+Shift+C
+    'clipboard.paste-smart',            -- Ctrl+v
+    'clipboard.paste-plain',            -- Ctrl+Shift+V
+  }
+
+  if #entries ~= #entry_ids then
+    logger.warn('usage', 'keymap entries/entry_ids length mismatch', {
+      entries = #entries,
+      entry_ids = #entry_ids,
+    })
+  end
+
+  for i, entry in ipairs(entries) do
+    inst(entry_ids[i], entry)
+  end
+  return entries
 end
 
 return M

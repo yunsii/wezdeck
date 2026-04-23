@@ -32,6 +32,34 @@ Use this doc when you need logs, smoke tests, or troubleshooting paths.
 - The helper installer prints and records its chosen source as `install_source=local|release`, and writes the last installed release metadata to `%LOCALAPPDATA%\wezterm-runtime\bin\helper-install-state.json`.
 - Release installs also report `release_archive_source`, `release_archive_path`, and `release_download_url` so you can distinguish cache hits, manually preloaded archives, URL overrides, and direct manifest downloads.
 
+## Hotkey Usage Counter
+
+Aggregate press counts — no event log — for every WezTerm keymap entry and the tmux command-chord actions. The counter is meant for "do I press this often enough to deserve a better key" decisions, not forensics.
+
+- Storage: `$WEZTERM_RUNTIME_STATE_DIR/hotkey-usage.json` (under `%LOCALAPPDATA%\wezterm-runtime\` in hybrid-wsl). Single JSON file, no rotation.
+- File layout (versioned):
+
+```json
+{
+  "schema_version": 1,
+  "updated_at": "<ISO8601 UTC>",
+  "hotkeys": {
+    "<manifest.id>": {
+      "count": <int>,
+      "first_seen": "<ISO8601 UTC>",
+      "last_seen":  "<ISO8601 UTC>"
+    }
+  }
+}
+```
+
+- Writers (both take the same `<hotkey_id>` argument and share a file lock):
+  - WezTerm side: [`wezterm-x/lua/usage.lua`](../wezterm-x/lua/usage.lua) spawns [`scripts/runtime/hotkey-usage-bump.sh`](../scripts/runtime/hotkey-usage-bump.sh) via `background_child_process` (fire-and-forget; no blocking on the keypress path).
+  - tmux chord side: each `command-chord` binding in `tmux.conf` prefixes the action with `run-shell -b "bash .../hotkey-usage-bump.sh <id>"`.
+- Ids are the manifest entry ids from [`wezterm-x/commands/manifest.json`](../wezterm-x/commands/manifest.json). A few Lua-only shortcuts that are not in the manifest (attention jumps, overlay) use ad-hoc ids like `attention.jump-waiting`; those render with label `(unregistered)` in the report.
+- Run [`scripts/dev/hotkey-usage-report.sh`](../scripts/dev/hotkey-usage-report.sh) for a sorted table (count, keys, id, label, first-seen, last-seen ages). `--json` dumps the raw counter, `--path` prints the resolved file path.
+- Deleting the counter file is safe and resets all counts; the bump script recreates it on the next press.
+
 ## Smoke Tests
 
 - For a repeatable live smoke test of the Windows runtime host, run [`scripts/dev/check-windows-runtime-host.sh`](../scripts/dev/check-windows-runtime-host.sh) from WSL.
