@@ -260,15 +260,25 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
   end
 end
 
-function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host)
-  local chrome = constants.chrome_debug_browser or {}
+function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host, override_headless)
+  local chrome_source = constants.chrome_debug_browser or {}
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
+
+  local chrome = {}
+  for k, v in pairs(chrome_source) do
+    chrome[k] = v
+  end
+  if override_headless ~= nil then
+    chrome.headless = override_headless
+  end
+  local shortcut_label = chrome.headless and 'Alt+b' or 'Alt+Shift+b'
 
   if not chrome.user_data_dir or chrome.user_data_dir == '' then
     logger.warn('chrome', 'missing chrome debug browser user_data_dir', common.merge_fields(trace_id, {
       runtime_mode = runtime_mode,
+      headless = chrome.headless,
     }))
-    window:toast_notification('WezTerm', 'Alt+b failed: configure chrome_debug_browser.user_data_dir in wezterm-x/local/constants.lua', nil, 4000)
+    window:toast_notification('WezTerm', shortcut_label .. ' failed: configure chrome_debug_browser.user_data_dir in wezterm-x/local/constants.lua', nil, 4000)
     return
   end
 
@@ -278,22 +288,24 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host)
       return
     end
 
-    logger.error('chrome', 'windows helper Alt+b request failed', common.merge_fields(trace_id, {
+    logger.error('chrome', 'windows helper chrome request failed', common.merge_fields(trace_id, {
       reason = helper_reason,
       runtime_mode = runtime_mode,
       port = chrome.remote_debugging_port,
       user_data_dir = chrome.user_data_dir,
+      headless = chrome.headless,
     }))
-    window:toast_notification('WezTerm', 'Alt+b failed. Check WezTerm logs.', nil, 3000)
+    window:toast_notification('WezTerm', shortcut_label .. ' failed. Check WezTerm logs.', nil, 3000)
     return
   end
 
-  logger.warn('chrome', 'Alt+b is unavailable without a native host helper', common.merge_fields(trace_id, {
+  logger.warn('chrome', 'chrome debug shortcut is unavailable without a native host helper', common.merge_fields(trace_id, {
     runtime_mode = runtime_mode,
     executable = chrome.executable,
     port = chrome.remote_debugging_port,
+    headless = chrome.headless,
   }))
-  window:toast_notification('WezTerm', 'Alt+b is only available when a native host helper is configured.', nil, 4000)
+  window:toast_notification('WezTerm', shortcut_label .. ' is only available when a native host helper is configured.', nil, 4000)
 end
 
 return M

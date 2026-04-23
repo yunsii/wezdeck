@@ -104,6 +104,8 @@ local base_constants = {
     tab_accent = '#b07d48',
     tab_attention_waiting_bg = '#c7925b',
     tab_attention_waiting_fg = '#1f1a11',
+    tab_attention_running_bg = '#a5bbd4',
+    tab_attention_running_fg = '#1b2534',
     tab_attention_done_bg = '#a7c89b',
     tab_attention_done_fg = '#1e2a1c',
     ime_native_bg = '#6b86b7',
@@ -185,6 +187,8 @@ local base_constants = {
     executable = defaults.default_chrome_debug_executable(host_os),
     remote_debugging_port = 9222,
     user_data_dir = nil,
+    headless = true,
+    state_file = defaults.default_chrome_debug_state_file(runtime_state_dir, join_path),
   },
   wakatime = {
     api_key = nil,

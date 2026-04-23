@@ -25,6 +25,21 @@ internal static class RequestPayloadReader
         return value;
     }
 
+    public static bool GetOptionalBool(JsonElement payload, string propertyName, bool defaultValue = false)
+    {
+        if (!payload.TryGetProperty(propertyName, out var property))
+        {
+            return defaultValue;
+        }
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            _ => defaultValue,
+        };
+    }
+
     public static IEnumerable<string> GetStringArray(JsonElement payload, string propertyName)
     {
         if (!payload.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.Array)
@@ -41,7 +56,7 @@ internal static class RequestPayloadReader
         }
     }
 
-    private static string? GetOptionalString(JsonElement payload, string propertyName)
+    public static string? GetOptionalString(JsonElement payload, string propertyName)
     {
         if (!payload.TryGetProperty(propertyName, out var property))
         {

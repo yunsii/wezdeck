@@ -173,7 +173,15 @@ function M.build(opts)
       mods = 'ALT',
       action = wezterm.action_callback(function(window, pane)
         local trace_id = logger.trace_id('chrome')
-        actions.open_debug_chrome(wezterm, window, constants, logger, trace_id, host)
+        actions.open_debug_chrome(wezterm, window, constants, logger, trace_id, host, true)
+      end),
+    },
+    {
+      key = 'B',
+      mods = 'ALT|SHIFT',
+      action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('chrome')
+        actions.open_debug_chrome(wezterm, window, constants, logger, trace_id, host, false)
       end),
     },
     {
