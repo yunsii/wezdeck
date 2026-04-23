@@ -162,6 +162,26 @@ function M.build(opts)
       end),
     },
     {
+      key = 'o',
+      mods = 'ALT',
+      action = wezterm.action_callback(function(window, pane)
+        local trace_id = logger.trace_id('command_panel')
+        local workspace_name = common.active_workspace_name(window)
+        local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+        if tmux_backed then
+          logger.info('command_panel', 'forwarding Alt+o to tmux-backed pane', common.merge_fields(trace_id, {
+            decision_path = decision_path,
+            domain = pane:get_domain_name(),
+            workspace = workspace_name,
+          }))
+          actions.forward_shortcut_to_pane(wezterm, window, pane, 'Alt+o', '\x1bo', logger, 'command_panel', workspace_name, trace_id)
+          return
+        end
+
+        actions.tmux_only_shortcut(window, logger, 'Alt+o', trace_id)
+      end),
+    },
+    {
       key = 'n',
       mods = 'ALT',
       action = wezterm.action.ActivateTabRelative(1),

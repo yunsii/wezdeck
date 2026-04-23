@@ -26,9 +26,9 @@ This workspace is designed keyboard-first: every feature is expected to have a k
 
 ## Panes
 
+- `Alt+o`: in any tmux-backed pane, rotate focus to the next pane in the current window (same semantics as tmux's `prefix o`); in non-tmux panes it shows the standard forwarding toast
 - `Ctrl+k` `v`: vertical split of the current pane at its working directory
 - `Ctrl+k` `h`: horizontal split of the current pane at its working directory
-- `Ctrl+k` `o`: in any tmux-backed pane, rotate focus to the next pane in the current window (same semantics as tmux's `prefix o`)
 - `Ctrl+k` `x`: close the current tmux pane; if it is the last pane in its window the window also closes
 - `Ctrl+k` `g`: quick-create a task workspace for the current repo family. Opens a tmux `command-prompt` labeled `branch:`; the entered name is forwarded to `skills/worktree-task/scripts/open-task-window`, which execs `worktree-task launch --provider tmux-agent --no-prompt --title <name>` so slug and branch follow the skill's `wt_slugify` / `task/<slug>` convention (leading `task/` is stripped). The agent starts idle in the new window. Colliding names bump to `<slug>-2`, `<slug>-3`, etc.; reopening an existing task worktree belongs to `Alt+g` / `Alt+Shift+g`.
 - `LeftClick`: inside tmux, use the click only to focus the pane under the mouse; it does not start tmux selection and is not forwarded as a mouse click into the pane application
@@ -43,7 +43,7 @@ These shortcuts switch WezTerm tabs inside the current workspace; they are owned
 
 ## Agent Attention
 
-These shortcuts jump to the next agent task that needs attention, using the shared state file described in [`tmux-ui.md`](./tmux-ui.md#agent-attention). Both are keyboard-first and require a tmux-backed pane — WezTerm forwards the key into tmux, which executes `scripts/runtime/attention-jump.sh`. Outside tmux the key shows a toast explaining the requirement, consistent with the other forwarding shortcuts (`Alt+v`, `Alt+g`, `Ctrl+k`, `Ctrl+Shift+P`).
+These shortcuts jump to the next agent task that needs attention, using the shared state file described in [`tmux-ui.md`](./tmux-ui.md#agent-attention). Both are keyboard-first and require a tmux-backed pane — WezTerm forwards the key into tmux, which executes `scripts/runtime/attention-jump.sh`. Outside tmux the key shows a toast explaining the requirement, consistent with the other forwarding shortcuts (`Alt+v`, `Alt+g`, `Alt+o`, `Ctrl+k`, `Ctrl+Shift+P`).
 
 - `Alt+,`: jump to the next task whose status is `waiting`. Runs entirely in Lua — `attention.pick_next` chooses a target different from the current pane so repeated presses cycle, `attention.activate_in_gui` issues `SwitchToWorkspace` when needed and activates the target tab + pane via the mux, then `attention-jump.sh --direct …` is spawned in the background to `select-window` / `select-pane` against the target's tmux socket (fast path — no state re-read, no `wezterm.exe` round-trip). Silent when there is no waiting task. No auto-clear: `waiting` means "user action still required", so the entry persists until the PostToolUse hook fires `resolved` on tool completion, a fresh `Stop` transitions it to `done`, or `UserPromptSubmit` clears it.
 - `Alt+.`: jump to the next task whose status is `done`. Same Lua-driven flow as `Alt+,`. On a successful jump the Lua side additionally spawns `attention-jump.sh --forget <session_id> --delay 3 --only-if-ts <ts>` so the `done` entry self-clears three seconds later (the `--only-if-ts` guard keeps a fresher `done` that the same `session_id` re-raised within the grace window from being wiped). Even without `Alt+.`, sitting on the matching tmux pane for ~3s lets the focus-based auto-ack in `attention.maybe_ack_focused` take the same delayed-forget path — the two routes share one clearance pipeline.

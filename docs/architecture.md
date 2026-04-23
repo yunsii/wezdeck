@@ -37,7 +37,7 @@ WezTerm process
 
 - Cross-tab and cross-workspace navigation lives in `wezterm-x/lua/ui/keymaps.lua`. `Alt+n` / `Alt+Shift+n` / `Alt+1..9` switch WezTerm tabs; `Alt+d` / `Alt+w` / `Alt+c` / `Alt+p` switch workspaces.
 - `tmux.conf` only owns behavior that happens inside one WezTerm tab — pane splits, copy-mode, mouse handling, chord dispatch, worktree-window switching, and status-line rendering.
-- WezTerm keys that mutate tmux state (`Alt+v` / `Alt+g` / `Alt+Shift+g` / `Ctrl+k` / `Ctrl+Shift+P`) are still declared in `keymaps.lua`; they forward into the active tmux-backed pane via short escape sequences so tmux owns the execution.
+- WezTerm keys that mutate tmux state (`Alt+v` / `Alt+g` / `Alt+Shift+g` / `Alt+o` / `Ctrl+k` / `Ctrl+Shift+P`) are still declared in `keymaps.lua`; they forward into the active tmux-backed pane via short escape sequences so tmux owns the execution.
 - Agent attention is layered: hooks (`scripts/claude-hooks/emit-agent-status.sh`) write a shared JSON file at `$runtime_state_dir/state/agent-attention/attention.json` via `scripts/runtime/attention-state-lib.sh` and nudge WezTerm with an OSC 1337 `attention_tick`. `wezterm-x/lua/attention.lua` reads the file on every tick / `update-status` and renders tab badges plus the right-status counter — no pane walking, no user_var state. Jump is Lua-driven: `Alt+,` / `Alt+.` (and `Alt+/` selection) pick a target from state, issue `SwitchToWorkspace` + mux `tab:activate()` + `pane:activate()` for cross-workspace GUI focus, and spawn `scripts/runtime/attention-jump.sh --session <id>` in the background for `tmux select-window`/`select-pane`.
 
 ### Naming guidance for code and docs
@@ -58,7 +58,7 @@ Entry schema:
 - `description` string. One-line explainer reused by the palette popup and docs.
 - `scope` string. Docs/UI grouping. One of: `workspaces`, `project-navigation`, `commands-and-splits`, `window-and-pane-navigation`, `clipboard`, `session-maintenance`.
 - `context` string. Where the command is usable. One of: `any`, `tmux-backed`, `hybrid-wsl`.
-- `hotkeys` array. Zero or more bindings; each item has `keys` (e.g. `Alt+v`, `Ctrl+k o`) and `layer` (`wezterm`, `tmux`, or `tmux-chord`) so codegen can dispatch into the right layer.
+- `hotkeys` array. Zero or more bindings; each item has `keys` (e.g. `Alt+v`, `Ctrl+k v`) and `layer` (`wezterm`, `tmux`, or `tmux-chord`) so codegen can dispatch into the right layer.
 - `hotkey_display` string, optional. Render-only override for the palette hotkey column; when present, replaces the comma-joined `hotkeys[].keys` text (e.g. `Alt+1..9` instead of `Alt+1,Alt+2,...,Alt+9`). Does not affect codegen — the real bindings still come from `hotkeys[]`.
 - `palette` object, optional. Present only when the command should appear in the tmux command palette. Either `display_only: true` (the entry is rendered for search/discovery and running it prints a toast asking the user to use the hotkey), or a real entry with `accelerator` (single-char hint), `command` (argv array executed by `tmux-command-run.sh`; elements may contain the `{repo_root}` placeholder which is replaced with the current repository root at register time), and optional `confirm_message`, `success_message`, `failure_message`.
 
