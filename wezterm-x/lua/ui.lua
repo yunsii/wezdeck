@@ -29,6 +29,11 @@ function M.apply(opts)
   local runtime = load_ui_module(runtime_dir, 'runtime')
   local keymaps = load_ui_module(runtime_dir, 'keymaps')
   local actions = load_ui_module(runtime_dir, 'actions')
+  local usage_module = dofile(join_path(runtime_dir, 'lua', 'usage.lua'))
+  local usage = usage_module.new {
+    wezterm = wezterm,
+    constants = constants,
+  }
   local logger = opts.logger
   local host = opts.host
   if attention and attention.register then
@@ -180,6 +185,7 @@ function M.apply(opts)
     logger = logger,
     host = host,
     attention = attention,
+    usage = usage,
   }
 
   config.mouse_bindings = {
