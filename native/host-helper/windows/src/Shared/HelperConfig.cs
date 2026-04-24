@@ -10,6 +10,7 @@ internal sealed class HelperConfig
     public required string StatePath { get; init; }
     public string? WindowCachePath { get; init; }
     public required string IpcEndpoint { get; init; }
+    public string? ChromeDebugStatePath { get; init; }
     public required DiagnosticConfig Diagnostics { get; init; }
     public string? ClipboardOutputDir { get; init; }
     public string? ClipboardWslDistro { get; init; }
@@ -42,6 +43,7 @@ internal sealed class HelperConfig
             StatePath = parsed.StatePath,
             WindowCachePath = ResolveWindowCachePath(parsed.WindowCachePath),
             IpcEndpoint = parsed.IpcEndpoint,
+            ChromeDebugStatePath = string.IsNullOrWhiteSpace(parsed.ChromeDebugStatePath) ? null : parsed.ChromeDebugStatePath,
             Diagnostics = parsed.Diagnostics,
             ClipboardOutputDir = ResolveClipboardOutputDir(parsed.ClipboardOutputDir),
             ClipboardWslDistro = parsed.ClipboardWslDistro,

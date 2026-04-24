@@ -47,6 +47,15 @@ internal sealed class HostHelperManager : IDisposable
 
         clipboardService?.Start();
         heartbeatTimer.Change(config.HeartbeatIntervalMs, config.HeartbeatIntervalMs);
+
+        // Reconcile chrome state file before serving requests so a helper
+        // restart does not leave the right-status segment lying about a
+        // process that died with the previous helper.
+        if (!string.IsNullOrWhiteSpace(config.ChromeDebugStatePath))
+        {
+            ChromeLivenessWatcher.ReconcileOnStartup(logger, config.ChromeDebugStatePath);
+        }
+
         StartRequestServer();
 
         stopSignal.Wait();

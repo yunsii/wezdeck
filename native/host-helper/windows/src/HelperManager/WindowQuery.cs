@@ -101,6 +101,23 @@ internal static class WindowQuery
         return matchingProcessIds;
     }
 
+    public static List<int> WaitForMatchingProcessIds(LaunchMatchSpec spec, int timeoutMs)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < timeoutMs)
+        {
+            var matched = FindMatchingProcessIds(spec);
+            if (matched.Count > 0)
+            {
+                return matched;
+            }
+
+            Thread.Sleep(50);
+        }
+
+        return new List<int>();
+    }
+
     public static WindowMatch? WaitForWindowForMatchingProcessIds(LaunchMatchSpec spec, int timeoutMs)
     {
         var stopwatch = Stopwatch.StartNew();
