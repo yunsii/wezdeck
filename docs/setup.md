@@ -49,13 +49,15 @@ Pin each app, then drag the icons so WezTerm sits in slot 1, the browser in slot
 
 ## Claude Agent Attention Hooks
 
-The agent-attention feature (see [`tmux-ui.md`](./tmux-ui.md#agent-attention) and [`keybindings.md`](./keybindings.md#agent-attention)) expects Claude Code to emit OSC 1337 user vars from four hook events (`UserPromptSubmit`, `Notification`, `Stop`, `PostToolUse`). The hook script ships in this repo at `scripts/claude-hooks/emit-agent-status.sh` and is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals.
+The agent-attention feature (see [`tmux-ui.md`](./tmux-ui.md#agent-attention) and [`keybindings.md`](./keybindings.md#agent-attention)) expects Claude Code to emit OSC 1337 user vars from five hook events (`UserPromptSubmit`, `Notification`, `Stop`, `PostToolUse`, `SessionStart`). The hook script ships in this repo at `scripts/claude-hooks/emit-agent-status.sh` and is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals.
 
 > **Upgrading from an earlier version of this doc** — the hook argument for `UserPromptSubmit` changed from `cleared` to `running`. If your existing `~/.claude/settings.json` still points at `... emit-agent-status.sh cleared`, swap it for `running`. Claude Code re-reads `settings.json` on every hook firing, so the change takes effect on the next event (send a fresh prompt to exercise `UserPromptSubmit`) — no Claude restart needed. Use the verification command at the bottom of this section to confirm the new command is firing.
 
+> **Upgrading from a four-hook install** — a fifth hook, `SessionStart` with `matcher: "clear"`, was added to drop the discarded session's `running` entry when the user runs `/clear`. Without it, the ⟳ counter stays stuck for up to 30 minutes (or until the next `UserPromptSubmit` on the same pane triggers same-pane eviction). Merge the `SessionStart` block from the template below; no Claude restart needed. To confirm it is wired, run `/clear` in a pane that currently shows a ⟳, and watch the badge drop within one WezTerm status tick.
+
 ### Install / update
 
-Merge the block below into the `hooks` section of `~/.claude/settings.json` (do not replace the file). Four hook events, each with one shell invocation:
+Merge the block below into the `hooks` section of `~/.claude/settings.json` (do not replace the file). Five hook events, each with one shell invocation:
 
 ```json
 {
@@ -87,6 +89,14 @@ Merge the block below into the `hooks` section of `~/.claude/settings.json` (do 
           { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh resolved" }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "clear",
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/claude-hooks/emit-agent-status.sh pane-evict" }
+        ]
+      }
     ]
   }
 }
@@ -100,8 +110,9 @@ Substitute the absolute path for your clone if different. `jq` is optional — w
 - `Notification → waiting` raises the `⚠ N waiting` counter only for `permission_prompt` / `elicitation_dialog` notifications (other notification types, notably `idle_prompt`, are re-routed to `done` so they do not re-raise a stale waiting). Sticky: a second `waiting` on a session whose current status is already `waiting` is a no-op, so repeated prompts inside one turn do not oscillate the counter.
 - `Stop → done` flips the entry to `done` when the turn ends, so the `✓ N done` counter surfaces work that finished while you were elsewhere.
 - `PostToolUse → resolved` flips `waiting` back to `running` the moment a permission prompt is allowed (the tool runs and completes, so the `⚠` counter drains immediately into `⟳`); no-op for any other current status, so auto-allowed tools do not churn the state.
+- `SessionStart (matcher: "clear") → pane-evict` drops every entry on the current `(tmux_socket, tmux_pane)` when the user runs `/clear`. Without this hook, the discarded session's `running` entry has no mechanism of its own to leave state.json — `/clear` does not fire `Stop` and the session_id resets, so the stale `⟳` sits until the 30-minute TTL or until the next `UserPromptSubmit` on the same pane triggers same-pane eviction. The matcher is scoped to `clear` so `startup` / `resume` / `compact` SessionStart variants do not touch pane state.
 
-Without `UserPromptSubmit → running` the `⟳ running` counter will never light up, and without `PostToolUse → resolved` the `⚠ waiting` counter will linger from the permission prompt all the way until `Stop` fires at the end of the turn.
+Without `UserPromptSubmit → running` the `⟳ running` counter will never light up, and without `PostToolUse → resolved` the `⚠ waiting` counter will linger from the permission prompt all the way until `Stop` fires at the end of the turn. Without `SessionStart → pane-evict`, `/clear` mid-turn will leave a stuck `⟳` for minutes.
 
 ### After editing settings.json
 
