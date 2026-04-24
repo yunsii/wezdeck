@@ -28,7 +28,7 @@ author: 结合 git 记录整理
 | `v2` | 年后 | 终端原生 Agent CLI 成熟（Claude Code、Codex CLI 等） | 在 Windows Terminal 里直接跑 Agent CLI | WT 对长会话 / 高频重绘不稳（[microsoft/terminal#19772](https://github.com/microsoft/terminal/issues/19772#issuecomment-3790206055)） |
 | `v3` | `v2` 短暂之后 | 需要更稳的终端 | 换到 WezTerm，仅作为"更好的终端" | 只替换了终端，没有平台能力 |
 | `v4` | 2026-03-28 → 2026-04-17 | 发现 WezTerm 是**编程式配置** | 基于 WezTerm 搭工作区管理 + 贴图，靠人找 tmux pane 续任务 | 宿主动作靠脚本堆叠；多任务要人脑保存状态 |
-| `v5` | 2026-04-18 → 现在 | 宿主链路不稳、任务状态散 | Native helper + Agent CLI hook 驱动的 attention pipeline | 继续收口、继续抬高验证标准 |
+| `v5` | 2026-04-18 → 现在 | 宿主链路不稳、任务状态散、协作规则靠个人标准 | Native helper + Agent CLI hook 驱动的 attention pipeline + 可版本化的用户级 agent profile | 继续收口、继续抬高验证标准 |
 
 下面每一段逐个展开，有 commit 的版本附上关键 commit 作为证据。
 
@@ -241,6 +241,30 @@ Windows 侧从"每次调用都起一次 PowerShell"升级为**长期存活的 C#
 
 **这一步的本质**：平台第一次拥有"Agent 端的事实视图" —— 哪个 pane 的 Agent 在跑、在等我、跑完了、卡死了，全部由 hook 事件推来，不再需要人去 pane 里扫。多任务并行的"人脑调度成本"被真正摊掉了。
 
+### 子阶段 C：User-Level Agent Profile 基础设施（2026-04-19 起）
+
+A 收口**宿主动作链路**，B 收口**Agent 状态感知**；C 收口的是**协作规则本身** —— 把过去在每次对话里反复复述的"验证纪律 / 授权边界 / 工具使用节奏 / VCS 硬底线"等用户级共识，固化为一个**可版本化、跨 agent 家族自动注入**的契约层。
+
+关键 commit：
+
+- [`f62233c`](https://github.com/yunsii/wezterm-config/commit/f62233c) `docs(agent-profiles): add versioned user agent profile`（2026-04-19）—— `agent-profiles/v1/` 版本化目录诞生，profile 作为独立资产，不再散在 `CLAUDE.md` 里。
+- 04-21 一批（[`1f973d6`](https://github.com/yunsii/wezterm-config/commit/1f973d6) / [`77198f2`](https://github.com/yunsii/wezterm-config/commit/77198f2) / [`84de5d8`](https://github.com/yunsii/wezterm-config/commit/84de5d8) / [`10ce5c5`](https://github.com/yunsii/wezterm-config/commit/10ce5c5) / [`286f326`](https://github.com/yunsii/wezterm-config/commit/286f326) / [`0f9f44f`](https://github.com/yunsii/wezterm-config/commit/0f9f44f)）—— vcs / tool-use / platform-actions / preferences 等 topic 成形；入口 `AGENTS.md` 瘦身为 **Task Routing + Default Posture** 的两阶段结构。
+- [`34e23e4`](https://github.com/yunsii/wezterm-config/commit/34e23e4) `refactor(agent-profiles): add frontmatter and stable rule IDs to v1/en`（2026-04-22）—— 每条规则拿到 `[topic-NN]` 稳定标识符。此后 feedback、memory、交叉引用都用 ID 精确锚定，不再模糊复述。
+- [`50a0f5c`](https://github.com/yunsii/wezterm-config/commit/50a0f5c) `refactor(agent-profiles): split clipboard policy into its own topic`（2026-04-22）—— 分文件渐进披露定型：每个 topic 独立文件 + frontmatter triggers，按任务路由加载，不预加载全文。
+- [`30b0b01`](https://github.com/yunsii/wezterm-config/commit/30b0b01) `feat(agents): auto-link user profile into ~/.claude and ~/.codex`（2026-04-24）—— `scripts/dev/link-agent-profile.sh` 落地。入口和 11 个 topic 一次性镜像到两种 host 的配置根（入口文件名按各自惯例映射：Claude `CLAUDE.md`、Codex `AGENTS.md`）。此前只镜像入口一个文件，入口里的 `./validation.md` 等相对路径在外部目录**解析不到**，规则整整两天没实际生效 —— 这次修复的直接触发点就是"使用上觉得不对劲来排查"。
+- [`a932582`](https://github.com/yunsii/wezterm-config/commit/a932582) `docs(agents): extend user-level profile with secrets and safety rules`（2026-04-24）—— 对照 2026 年公开的 AGENTS.md / CLAUDE.md 实践（OpenAI、Anthropic、GitHub 2500+ repo 统计），补齐原本缺失的共识：`secrets.md`、`Untrusted Input`、`Subagent Briefing`、`Error Handling`、`Large Output`、`Bug Diagnosis`、`Blast Radius`、`Plan-Time Validation`。
+- [`51802b2`](https://github.com/yunsii/wezterm-config/commit/51802b2) `docs(agents): add authority boundaries and subagent permission rules`（2026-04-24）—— 安全面闭合：sudo / `--force` / `--no-verify` 类闸门绕过要显式授权、授权 scope 不自动扩展、从只读调查切到副作用动作前要显式声明。
+
+**三个子阶段的分工**：
+
+| 子阶段 | 收口对象 | 产出 |
+|---|---|---|
+| A | 宿主动作链路（VS Code focus、Chrome、剪贴板、通知） | Native helper + IPC |
+| B | Agent 运行状态 | Hook 驱动的 attention pipeline |
+| C | **协作规则本身** | 可版本化、跨 agent 家族自动注入的 user-level profile |
+
+**隐性收益：CLI 无关性**。v5 A/B 的直接收益是**单 agent**（Claude Code）上的流畅度；C 带来了**跨 CLI 的一致性** —— 同一套规则同时作用在 Claude Code 和 Codex CLI 上，不需要各自维护。当未来再出新的终端 agent，接入成本退化为"目录存在 → 加一个 target → 重跑脚本"。
+
 ### 这一步解决的
 
 - 宿主动作链路统一、稳定、可发布。
@@ -253,8 +277,8 @@ Windows 侧从"每次调用都起一次 PowerShell"升级为**长期存活的 C#
   - 比如现在用 Codex CLI 跑一个任务，attention pipeline 完全看不见它的 running / waiting 状态，只有 Claude Code 的 hook 是接好的。
 - 非 Windows / 非 WSL 场景下，native helper 子系统是否值得保留还没有结论。
   - 比如如果搬到 macOS，`helper-manager.exe` 这层要整块换成别的实现（AppleScript? ObjC？），现在没方案。
-- AI 协作本身的**纠偏与验证闭环**更多靠个人标准在维持，暂没形成项目级的 checklist。
-  - 比如 Agent 跑完说"测试通过"，我得自己记得追问"这是不是真 smoke test，还是只 mock 了一层"；如果我哪天忘了追问，就会过一版看起来对、实则没验证的改动。
+- AI 协作的**纠偏与验证闭环**在 v5 C 里被 user-level profile 部分固化（`[validation-29..30]` 要求方案阶段就 own 验证闭环、`[tool-use-36]` 拒绝让 untrusted input 跨越授权边界、`[platform-actions-38..41]` 安全面收口），但**项目级**的 checklist 仍空缺。
+  - 比如 Agent 跑完说"测试通过"，user-level profile 能约束它"不要把 mock 当真 smoke test"，但本仓库特有的 `manifest.json` 同步校验、`windows-shell-lib` 使用边界、`runtime-sync` skill 触发时机这些还没进入规则层，仍靠 `CLAUDE.md` 单点描述。
 
 ---
 
@@ -373,7 +397,7 @@ Windows 侧从"每次调用都起一次 PowerShell"升级为**长期存活的 C#
 - **把 attention pipeline 的事件源从单一 Agent CLI 扩到多种**，让平台对 Agent 生态的感知层是厂商无关的。
 - **把控制面的"契约"文档化**，不只是 AGENTS 指南，而是 agent 可发现、可调用的 capability manifest。
 - **真正压一次跨机器场景**：非 Windows / 非 WSL 下哪些层应该保留、哪些退化成 no-op。
-- **把"AI 快速推进 + 人纠偏 + 真实验证"从工作习惯升级成项目级 checklist**，减少每次依赖个人标准。
+- **把协作规则从 user-level 推进到 project-level 的同形结构**。v5 C 已经把跨项目共识变成可版本化 profile；本仓库独有的约束（wrapper 边界 / manifest / runtime sync）还散在 `CLAUDE.md` 和 `docs/`，未来按同样的"分文件 + 稳定 ID + 渐进披露 + 符号链接注入"路径迁移。
 
 ---
 
