@@ -177,6 +177,7 @@ function Write-ManagerConfig {
     statePath = $StatePath
     windowCachePath = $ManagerPaths.WindowCache
     ipcEndpoint = $ManagerPaths.IpcEndpoint
+    chromeDebugStatePath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\chrome-debug\state.json'
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount

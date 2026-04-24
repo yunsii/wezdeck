@@ -120,6 +120,7 @@ internal sealed class ChromeRequestHandler
                 ["decision_path"] = reuseDecision.Path,
             });
             WriteState(logger, stateFile, traceId, headless, port, reuseDecision.Window.ProcessId, "reused");
+            ChromeLivenessWatcher.Track(logger, stateFile, reuseDecision.Window.ProcessId, port, headless, traceId);
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
@@ -147,6 +148,7 @@ internal sealed class ChromeRequestHandler
                 ["user_data_dir"] = userDataDir,
             });
             WriteState(logger, stateFile, traceId, headless, port, reusedPid, "reused");
+            ChromeLivenessWatcher.Track(logger, stateFile, reusedPid, port, headless, traceId);
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
@@ -182,12 +184,31 @@ internal sealed class ChromeRequestHandler
 
         if (headless)
         {
-            WriteState(logger, stateFile, traceId, headless, port, null, "launched");
+            // Headless Chrome has no window to bind, so resolve the actual
+            // chrome.exe pid via command-line matching. Without this, the
+            // state file's `pid` field is null and ChromeLivenessWatcher
+            // cannot subscribe Process.Exited.
+            var headlessPids = WindowQuery.WaitForMatchingProcessIds(matchSpec, 4000);
+            int? headlessPid = headlessPids.Count > 0 ? headlessPids[0] : null;
+            logger.Info("chrome", "resolved headless chrome pid", new Dictionary<string, string?>
+            {
+                ["trace_id"] = traceId,
+                ["launch_key"] = launchKey,
+                ["pid"] = headlessPid?.ToString(),
+                ["matched_count"] = headlessPids.Count.ToString(),
+                ["port"] = port.ToString(),
+            });
+            WriteState(logger, stateFile, traceId, headless, port, headlessPid, "launched");
+            if (headlessPid is int pid)
+            {
+                ChromeLivenessWatcher.Track(logger, stateFile, pid, port, headless, traceId);
+            }
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
                 Status: "launched",
-                DecisionPath: "launch_headless");
+                DecisionPath: "launch_headless",
+                ProcessId: headlessPid);
         }
 
         var launchedWindow = WindowQuery.WaitForWindowForMatchingProcessIds(matchSpec, 4000);
@@ -213,6 +234,7 @@ internal sealed class ChromeRequestHandler
                 ["bound_pid_was_preexisting"] = boundPidWasPreexisting ? "1" : "0",
             });
             WriteState(logger, stateFile, traceId, headless, port, launchedWindow.ProcessId, boundPidWasPreexisting ? "launch_handoff_existing" : "launched");
+            ChromeLivenessWatcher.Track(logger, stateFile, launchedWindow.ProcessId, port, headless, traceId);
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
@@ -243,7 +265,17 @@ internal sealed class ChromeRequestHandler
             DecisionPath: "launch_unbound");
     }
 
-    private static void WriteState(StructuredLogger logger, string? stateFile, string traceId, bool headless, int port, int? pid, string action)
+    public static void WriteState(StructuredLogger logger, string? stateFile, string traceId, bool headless, int port, int? pid, string action)
+    {
+        WriteStateInternal(logger, stateFile, traceId, headless ? "headless" : "visible", port, pid, alive: true, exitedAtMs: null, action);
+    }
+
+    public static void WriteStateNone(StructuredLogger logger, string? stateFile, string traceId, int port, int? pid, string action)
+    {
+        WriteStateInternal(logger, stateFile, traceId, "none", port, pid, alive: false, exitedAtMs: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), action);
+    }
+
+    private static void WriteStateInternal(StructuredLogger logger, string? stateFile, string traceId, string mode, int port, int? pid, bool alive, long? exitedAtMs, string action)
     {
         if (string.IsNullOrWhiteSpace(stateFile))
         {
@@ -258,11 +290,13 @@ internal sealed class ChromeRequestHandler
             }
             var state = new Dictionary<string, object?>
             {
-                ["schema"] = 1,
-                ["mode"] = headless ? "headless" : "visible",
+                ["schema"] = 2,
+                ["mode"] = mode,
                 ["port"] = port,
                 ["pid"] = pid,
+                ["alive"] = alive,
                 ["updated_at_ms"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                ["exited_at_ms"] = exitedAtMs,
                 ["action"] = action,
             };
             var json = JsonSerializer.Serialize(state);
@@ -276,6 +310,7 @@ internal sealed class ChromeRequestHandler
             {
                 ["trace_id"] = traceId,
                 ["state_file"] = stateFile,
+                ["mode"] = mode,
                 ["error"] = ex.Message,
             });
         }
