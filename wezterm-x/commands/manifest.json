@@ -160,6 +160,18 @@
     "palette": { "display_only": true }
   },
   {
+    "id": "agent.new-conversation",
+    "label": "Agent CLI: Start a new conversation (/new)",
+    "description": "When the current pane's foreground process is a known agent CLI (claude / codex), type `/new` followed by Enter to start a fresh conversation. Otherwise forwards `Ctrl+n` to the pane unchanged.",
+    "scope": "project-navigation",
+    "context": "any",
+    "binding": {"handler": "agent.new_conversation"},
+    "hotkeys": [
+      { "keys": "Ctrl+n", "layer": "wezterm" }
+    ],
+    "palette": { "display_only": true }
+  },
+  {
     "id": "command-palette.chord-prefix",
     "label": "Command chord: Activate prefix",
     "description": "Forward `Ctrl+k` to a tmux-backed pane so the follow-up chord keys (`v` / `h` / `x` / `g`) resolve in the tmux `command-chord` table; toast when the current pane is not running tmux.",
