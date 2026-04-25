@@ -45,13 +45,25 @@ runtime_log_info worktree "worktree menu resolved current context" \
   "main_worktree_root=$main_worktree_root" \
   "repo_label=$repo_label"
 
-picker_command="WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd")"
+prefetch_file="$(mktemp -t wezterm-worktree-picker.XXXXXX)"
+prefetch_count=0
+while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
+  [[ -n "$worktree_path" ]] || continue
+  prefetch_window_id="$(tmux_worktree_find_window "$session_name" "$worktree_path" || true)"
+  printf '%s\t%s\t%s\t%s\n' "$worktree_label" "$worktree_path" "$branch_name" "$prefetch_window_id" >> "$prefetch_file"
+  ((prefetch_count += 1))
+done < <(tmux_worktree_list "$list_root" || true)
+runtime_log_info worktree "worktree menu prefetched items" "session_name=$session_name" "repo_label=$repo_label" "item_count=$prefetch_count" "prefetch_file=$prefetch_file"
+
+picker_command="WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd") $(tmux_worktree_shell_quote "$current_worktree_root") $(tmux_worktree_shell_quote "$repo_label") $(tmux_worktree_shell_quote "$prefetch_file")"
 
 runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "list_root=$list_root"
 if tmux display-popup -x C -y C -w 70% -h 75% -T "Worktrees: $repo_label" -E "$picker_command"; then
+  rm -f "$prefetch_file"
   runtime_log_info worktree "worktree popup picker completed" "session_name=$session_name" "repo_label=$repo_label" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0
 fi
+rm -f "$prefetch_file"
 
 runtime_log_warn worktree "popup picker unavailable, falling back to display-menu" "session_name=$session_name" "repo_label=$repo_label"
 
