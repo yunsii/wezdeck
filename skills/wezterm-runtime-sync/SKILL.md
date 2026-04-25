@@ -29,6 +29,8 @@ The scripts under `skills/wezterm-runtime-sync/scripts/` are the source of truth
 - If the user names a path directly, validate that it is absolute and exists before running the sync.
 - Treat repo-root `.sync-target` as the cache for the chosen runtime home.
 - Remember that gitignored files under `wezterm-x/local/` are still copied because sync reads the repository working tree, not just tracked files.
+- Sync also copies `config/worktree-task.env` to `<runtime_dir>/repo-worktree-task.env` so the Windows-side wezterm.exe can read it (`io.open` on a `/home/...` WSL path returns nil from Windows). `wezterm-x/lua/constants.lua` reads that local copy first; without it, the `<base>_resume` profile defined only in the env file is missing on the Windows leg and workspace open silently falls back to the bare profile.
+- The `lua-precheck` step (between `publish-runtime` and `helper-install`) dofile-loads the synced `lua/constants.lua` under a mocked `wezterm` and asserts `default_resume_profile ≠ default_profile` plus a `--continue` / `resume` literal in the resume command. Requires `lua5.4` (or `lua5.3`/`lua`); skips with a warning when none is installed.
 
 ## Commands
 
