@@ -353,6 +353,89 @@ local function resolve_live_location(wezterm_pane_id)
   return nil
 end
 
+-- Walk the mux and write a snapshot of every live pane's
+--   pane_id (string) → { workspace, tab_index, tab_title }
+-- to `target_path` as JSON, plus a `ts` field. The Alt+/ handler calls this
+-- right before forwarding `\x1b/` to the tmux pane so the popup-side picker
+-- can render workspace/tab labels without paying for a `wezterm.exe cli list`
+-- round-trip across the WSL→GUI socket. Returns true on success.
+function M.write_live_snapshot(target_path)
+  if type(target_path) ~= 'string' or target_path == '' then
+    return false
+  end
+  if not wezterm.serde or not wezterm.serde.json_encode then
+    return false
+  end
+
+  local panes_map = {}
+  local ok_all, all_windows = pcall(wezterm.mux.all_windows)
+  if ok_all and type(all_windows) == 'table' then
+    for _, mux_win in ipairs(all_windows) do
+      local workspace
+      if mux_win.get_workspace then
+        local ok_ws, ws = pcall(function() return mux_win:get_workspace() end)
+        if ok_ws then workspace = ws end
+      end
+      local ok_tabs, tabs = pcall(function() return mux_win:tabs() end)
+      if ok_tabs and type(tabs) == 'table' then
+        for tab_idx, mux_tab in ipairs(tabs) do
+          local tab_title
+          if mux_tab.get_title then
+            local ok_title, title = pcall(function() return mux_tab:get_title() end)
+            if ok_title then tab_title = title end
+          end
+          local ok_panes, panes_with_info = pcall(function() return mux_tab:panes_with_info() end)
+          if ok_panes and type(panes_with_info) == 'table' then
+            for _, info in ipairs(panes_with_info) do
+              local pane = info.pane
+              local pid_ok, pid = pcall(function() return pane:pane_id() end)
+              if pid_ok and pid ~= nil then
+                local pane_tab_title = tab_title
+                if (not pane_tab_title or pane_tab_title == '') and pane.get_title then
+                  local ok_ptitle, ptitle = pcall(function() return pane:get_title() end)
+                  if ok_ptitle then pane_tab_title = ptitle end
+                end
+                panes_map[tostring(pid)] = {
+                  workspace = workspace or '',
+                  tab_index = tab_idx,
+                  tab_title = pane_tab_title or '',
+                }
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  local payload = { ts = now_ms(), panes = panes_map }
+  local ok_enc, encoded = pcall(wezterm.serde.json_encode, payload)
+  if not ok_enc or type(encoded) ~= 'string' then
+    return false
+  end
+
+  -- Atomic-ish write: temp + rename. Same dir so rename is in-fs.
+  -- POSIX `rename` overwrites the target atomically; Windows `os.rename`
+  -- (Lua stdlib) does not — it fails when the destination exists. So on
+  -- Windows we explicitly `os.remove` the target before the rename. The
+  -- reader (tmux-attention-picker.sh) already tolerates a missing file
+  -- via the snapshot-freshness fallback to `?`, so the brief gap during
+  -- remove → rename is harmless.
+  local tmp_path = target_path .. '.tmp'
+  local f = io.open(tmp_path, 'w')
+  if not f then return false end
+  f:write(encoded)
+  f:close()
+  if not os.rename(tmp_path, target_path) then
+    pcall(os.remove, target_path)
+    if not os.rename(tmp_path, target_path) then
+      pcall(os.remove, tmp_path)
+      return false
+    end
+  end
+  return true
+end
+
 -- Return a flat array of live entries, waiting first then done, ordered by
 -- ascending ts within each group. Each element preserves the raw entry and
 -- adds `age_ms` plus a resolved `.live` table with workspace / tab_index /

@@ -209,6 +209,7 @@ local base_constants = {
   },
   attention = {
     state_file = defaults.default_attention_state_file(runtime_state_dir, join_path),
+    live_panes_file = defaults.default_attention_live_panes_file(runtime_state_dir, join_path),
   },
 }
 

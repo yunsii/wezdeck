@@ -304,150 +304,30 @@ function M.new(ctx)
   handlers['attention.overlay'] = function()
     return wezterm.action_callback(function(window, pane)
       local trace_id = logger.trace_id('attention')
-      if not attention then return end
-      attention.reload_state()
-      local entries = attention.list()
-      if #entries == 0 then
-        window:toast_notification('WezTerm', 'No pending agent attention', nil, 2000)
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        -- Snapshot the live mux (pane_id -> workspace/tab) before forwarding
+        -- the chord, so the popup-side picker reads workspace/tab labels
+        -- from a fresh in-process JSON file instead of round-tripping
+        -- `wezterm.exe cli list` over the GUI socket from the popup pty.
+        local snapshot_path = constants.attention and constants.attention.live_panes_file
+        if attention and attention.write_live_snapshot and snapshot_path then
+          local ok = attention.write_live_snapshot(snapshot_path)
+          logger.info('attention', 'wrote live-panes snapshot', common.merge_fields(trace_id, {
+            path = snapshot_path,
+            ok = ok,
+          }))
+        end
+        logger.info('attention', 'forwarding Alt+/ to tmux-backed pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(wezterm, window, pane, 'Alt+/', '\x1b/', logger, 'attention', workspace_name, trace_id)
         return
       end
-
-      local function format_age(ms)
-        local s = math.floor((tonumber(ms) or 0) / 1000)
-        if s < 60 then return s .. 's' end
-        local m = math.floor(s / 60)
-        if m < 60 then return m .. 'm' end
-        local h = math.floor(m / 60)
-        return h .. 'h'
-      end
-
-      local function nonempty(value)
-        if value == nil then return false end
-        if type(value) ~= 'string' then return true end
-        return value ~= ''
-      end
-
-      local choices = {}
-      for _, entry in ipairs(entries) do
-        local marker
-        if entry.status == attention.STATUS_WAITING then
-          marker = '⚠'
-        elseif entry.status == attention.STATUS_RUNNING then
-          marker = '⟳'
-        else
-          marker = '✓'
-        end
-        local reason = nonempty(entry.reason) and entry.reason or entry.status
-
-        local live = entry.live or {}
-        local workspace_seg = nonempty(live.workspace) and live.workspace or '?'
-        local tab_seg = '?'
-        if live.tab_index then
-          tab_seg = tostring(live.tab_index)
-          if nonempty(live.tab_title) then
-            tab_seg = tab_seg .. '_' .. live.tab_title
-          end
-        end
-        local function strip_tmux_prefix(value)
-          if type(value) ~= 'string' then return value end
-          return (value:gsub('^[@%%]', ''))
-        end
-        local tmux_seg = '?'
-        if nonempty(entry.tmux_window) then
-          tmux_seg = strip_tmux_prefix(entry.tmux_window)
-          if nonempty(entry.tmux_pane) then
-            tmux_seg = tmux_seg .. '_' .. strip_tmux_prefix(entry.tmux_pane)
-          end
-        end
-        local branch_seg = nonempty(entry.git_branch) and entry.git_branch or '?'
-
-        local prefix = nil
-        if workspace_seg ~= '?' or tab_seg ~= '?' or tmux_seg ~= '?' or branch_seg ~= '?' then
-          prefix = workspace_seg .. '/' .. tab_seg .. '/' .. tmux_seg .. '/' .. branch_seg
-        end
-
-        local label
-        if prefix then
-          label = prefix .. '  ' .. marker .. ' ' .. reason
-        else
-          label = marker .. ' ' .. reason
-        end
-        local age_text = format_age(entry.age_ms)
-        if not nonempty(entry.wezterm_pane_id) then
-          age_text = age_text .. ', no pane'
-        end
-        label = label .. '  (' .. age_text .. ')'
-        table.insert(choices, { label = label, id = entry.session_id })
-      end
-
-      local clear_all_sentinel = '__clear_all__'
-      table.insert(choices, {
-        label = '——  clear all · ' .. #entries .. ' entries  ——',
-        id = clear_all_sentinel,
-      })
-
-      local function inject_tick(inner_pane)
-        local tick
-        local ok_b64, encoded = pcall(wezterm.encode_base64, tostring(os.time()))
-        if ok_b64 and type(encoded) == 'string' then
-          tick = encoded
-        else
-          tick = ''
-        end
-        local osc = '\027]1337;SetUserVar=attention_tick=' .. tick .. '\007'
-        pcall(function() inner_pane:inject_output(osc) end)
-      end
-
-      window:perform_action(
-        wezterm.action.InputSelector {
-          title = 'Agent attention',
-          choices = choices,
-          fuzzy = true,
-          action = wezterm.action_callback(function(inner_window, inner_pane, chosen_id, _chosen_label)
-            if not chosen_id or chosen_id == '' then return end
-
-            if chosen_id == clear_all_sentinel then
-              local args = attention_jump_args({ '--clear-all' }, inner_pane, trace_id)
-              if not args then return end
-              logger.info('attention', 'alt-slash clear-all', { trace = trace_id })
-              wezterm.run_child_process(args)
-              if attention.reload_state then attention.reload_state() end
-              inject_tick(inner_pane)
-              return
-            end
-
-            local chosen_entry
-            for _, candidate in ipairs(entries) do
-              if candidate.session_id == chosen_id then
-                chosen_entry = candidate
-                break
-              end
-            end
-            local activated = false
-            if chosen_entry then
-              activated = attention.activate_in_gui(chosen_entry.wezterm_pane_id, inner_window, inner_pane)
-            end
-
-            local args
-            if chosen_entry then
-              args = attention_direct_args(chosen_entry, inner_pane, trace_id)
-            else
-              args = attention_jump_args({ '--session', chosen_id }, inner_pane, trace_id)
-            end
-            if not args then return end
-            logger.info('attention', 'alt-slash jump', {
-              trace = trace_id,
-              session_id = chosen_id,
-            })
-            wezterm.background_child_process(args)
-            if activated and chosen_entry and chosen_entry.status == attention.STATUS_DONE then
-              local forget_args = attention_forget_args(chosen_entry, inner_pane, trace_id)
-              if forget_args then wezterm.background_child_process(forget_args) end
-            end
-          end),
-        },
-        pane
-      )
+      actions.tmux_only_shortcut(window, logger, 'Alt+/', trace_id)
     end)
   end
 

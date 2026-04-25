@@ -168,6 +168,10 @@ function M.default_attention_state_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'agent-attention', 'attention.json')
 end
 
+function M.default_attention_live_panes_file(runtime_state_dir, join_path)
+  return join_path(runtime_state_dir, 'state', 'agent-attention', 'live-panes.json')
+end
+
 function M.default_chrome_debug_state_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'chrome-debug', 'state.json')
 end
