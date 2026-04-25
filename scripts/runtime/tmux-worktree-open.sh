@@ -2,10 +2,13 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+wezterm_config_repo="$(cd "$script_dir/../.." && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-worktree-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/worktree/lib/resume-command.sh"
 
 session_name="${1:-}"
 worktree_root="${2:-}"
@@ -90,8 +93,15 @@ window_id="$(tmux_worktree_find_window "$session_name" "$worktree_root" || true)
 if [[ -z "$window_id" ]]; then
   runtime_log_info worktree "creating worktree window" "session_name=$session_name" "worktree_root=$worktree_root" "worktree_label=$worktree_label"
   template_window="$(tmux_worktree_template_window "$session_name" "$source_window_id" || true)"
-  runtime_log_info worktree "using template window for worktree creation" "session_name=$session_name" "template_window=${template_window:-none}" "source_window_id=$source_window_id" "source_worktree_root=$source_worktree_root"
-  window_id="$(tmux_worktree_create_window_from_template "$session_name" "$worktree_root" "$worktree_label" "$template_window" "$source_worktree_root")"
+  # Force the resume variant of the agent on every on-demand worktree
+  # window. Without this the new window inherits whatever start command
+  # the source pane was carrying — typically bare `claude`, which loses
+  # cwd context. resolve_resume_primary_command falls back to "" when
+  # the profile has no resume command configured; in that case the
+  # template clone path takes over unchanged.
+  override_primary_command="$(resolve_resume_primary_command "$wezterm_config_repo" || true)"
+  runtime_log_info worktree "using template window for worktree creation" "session_name=$session_name" "template_window=${template_window:-none}" "source_window_id=$source_window_id" "source_worktree_root=$source_worktree_root" "override_primary_command=${override_primary_command:-<none>}"
+  window_id="$(tmux_worktree_create_window_from_template "$session_name" "$worktree_root" "$worktree_label" "$template_window" "$source_worktree_root" attach "$override_primary_command")"
 else
   runtime_log_info worktree "selecting existing worktree window" "session_name=$session_name" "window_id=$window_id" "worktree_root=$worktree_root" "worktree_label=$worktree_label"
   tmux rename-window -t "$window_id" "$worktree_label"

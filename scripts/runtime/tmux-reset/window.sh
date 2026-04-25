@@ -169,6 +169,7 @@ window_refresh_spec() {
   local primary_command=""
   local layout=""
   local role=""
+  local resume_command=""
 
   worktree_root="$(window_root_for_target "$window_target" "$session_name" "$requested_cwd")"
   window_label="$(window_label_for_target "$window_target" "$worktree_root" "$session_name")"
@@ -179,6 +180,25 @@ window_refresh_spec() {
   elif [[ -z "$primary_command" ]]; then
     primary_command="$(window_primary_command "$window_target")"
   fi
+
+  # Refresh on a managed window must put the primary pane back in agent
+  # mode under the resume profile, regardless of what command the pane is
+  # currently carrying — the user expectation is "respawn the agent",
+  # not "respawn whatever shell I happened to drop into". The resume
+  # command falls back to a fresh agent when the cwd has no prior
+  # conversation, so this is safe even on first refresh of a brand-new
+  # worktree. Resolver returns "" when MANAGED_AGENT_PROFILE has no
+  # `_RESUME_COMMAND` configured; in that case we keep the metadata
+  # command (the existing behavior).
+  if [[ "$role" == managed* ]]; then
+    if declare -F resolve_resume_primary_command >/dev/null 2>&1; then
+      resume_command="$(resolve_resume_primary_command "${wezterm_config_repo:-}" 2>/dev/null || true)"
+      if [[ -n "$resume_command" ]]; then
+        primary_command="$resume_command"
+      fi
+    fi
+  fi
+
   layout="$(window_layout_for_target "$window_target")"
 
   printf '%s\t%s\t%s\t%s\t%s\n' "$worktree_root" "$window_label" "$primary_command" "$layout" "$role"
@@ -226,6 +246,8 @@ reset_window_in_place() {
   local target_pane_index=""
   local target_pane_path=""
   local pane_count=0
+  local primary_pane_id=""
+  local target_is_primary=""
 
   while (($# > 0)); do
     case "$1" in
@@ -273,14 +295,24 @@ reset_window_in_place() {
     return 0
   }
   pane_count="$(tmux list-panes -t "$window_id" 2>/dev/null | wc -l | tr -d ' ')"
+  # Identify the primary pane by its pane id (first pane in the window's
+  # list), not by hard-coding pane_index == 0. With `pane-base-index 1`
+  # set in tmux.conf the agent pane's index is 1, not 0, so an
+  # index-based check would always treat the agent pane as a secondary.
+  primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1)"
+  if [[ -n "$primary_pane_id" && "$target_pane" == "$primary_pane_id" ]]; then
+    target_is_primary="1"
+  else
+    target_is_primary="0"
+  fi
 
-  if [[ "${target_pane_index:-0}" == "0" && "$(session_role "$session_name")" == "managed" ]]; then
+  if [[ "$target_is_primary" == "1" && "$(session_role "$session_name")" == "managed" ]]; then
     backfill_window_metadata "$session_name" "$window_id"
   fi
 
   IFS=$'\t' read -r worktree_root window_label primary_command layout role <<< "$(window_refresh_spec "$session_name" "$window_id" "$requested_cwd")"
 
-  if [[ "${target_pane_index:-0}" != "0" ]]; then
+  if [[ "$target_is_primary" != "1" ]]; then
     if [[ -n "$target_pane_path" && -d "$target_pane_path" && ! "$target_pane_path" =~ ^/mnt/[a-z]/Users/[^/]+$ ]]; then
       worktree_root="$(tmux_worktree_abs_path "$target_pane_path")"
     elif [[ -n "$requested_cwd" ]]; then
@@ -296,6 +328,8 @@ reset_window_in_place() {
     "window_id=$window_id" \
     "target_pane=$target_pane" \
     "target_pane_index=$target_pane_index" \
+    "primary_pane_id=$primary_pane_id" \
+    "target_is_primary=$target_is_primary" \
     "worktree_root=$worktree_root" \
     "window_label=$window_label" \
     "primary_command=$primary_command" \
@@ -304,10 +338,10 @@ reset_window_in_place() {
 
   tmux respawn-pane -k -t "$target_pane" -c "$worktree_root" "$primary_command"
   tmux rename-window -t "$window_id" "$window_label" 2>/dev/null || true
-  if [[ "${target_pane_index:-0}" == "0" && "$layout" == "managed_two_pane" && "${pane_count:-0}" -lt 2 ]]; then
+  if [[ "$target_is_primary" == "1" && "$layout" == "managed_two_pane" && "${pane_count:-0}" -lt 2 ]]; then
     tmux_worktree_ensure_window_panes "$window_id" "$worktree_root"
   fi
-  if [[ "${target_pane_index:-0}" == "0" ]]; then
+  if [[ "$target_is_primary" == "1" ]]; then
     apply_window_metadata "$session_name" "$window_id" "$worktree_root" "$window_label" "$primary_command" "$layout" "$role"
   fi
 

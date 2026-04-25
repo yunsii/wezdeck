@@ -114,6 +114,7 @@ tmux_worktree_create_window_from_template() {
   local template_window="${4:-}"
   local source_worktree_root="${5:-}"
   local create_mode="${6:-attach}"
+  local override_primary_command="${7:-}"
   local tmux_args=(new-window -P -F '#{window_id}' -t "$session_name" -c "$worktree_root")
   local layout=""
   local pane_count=0
@@ -157,6 +158,15 @@ tmux_worktree_create_window_from_template() {
     # tmux_worktree_window_metadata.
     template_primary_command="$(tmux_worktree_window_metadata "$template_window" @wezterm_window_primary_command 2>/dev/null || true)"
 
+    # Caller-supplied override (Alt+g picker forces the resume variant).
+    # Replacing template_primary_command here lets it flow through both
+    # the first-pane command-resolution branch below and the
+    # `set-window-option @wezterm_window_primary_command` propagation,
+    # so the new window's metadata reflects what's actually running.
+    if [[ -n "$override_primary_command" ]]; then
+      template_primary_command="$override_primary_command"
+    fi
+
     layout="$(tmux display-message -p -t "$template_window" '#{window_layout}' 2>/dev/null || true)"
     while IFS= read -r pane_index; do
       [[ -n "$pane_index" ]] || continue
@@ -185,8 +195,15 @@ tmux_worktree_create_window_from_template() {
   fi
 
   if (( pane_count == 0 )); then
-    window_id="$(tmux "${tmux_args[@]}")"
-    tmux rename-window -t "$window_id" "$worktree_label"
+    if [[ -n "$override_primary_command" ]]; then
+      window_id="$(tmux "${tmux_args[@]}" "$override_primary_command")"
+      tmux rename-window -t "$window_id" "$worktree_label"
+      tmux set-window-option -t "$window_id" -q @wezterm_window_primary_command \
+        "$(tmux_worktree_metadata_encode_primary_command "$override_primary_command")"
+    else
+      window_id="$(tmux "${tmux_args[@]}")"
+      tmux rename-window -t "$window_id" "$worktree_label"
+    fi
     printf '%s\n' "$window_id"
     return 0
   fi
