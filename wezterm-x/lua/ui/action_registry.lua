@@ -196,6 +196,47 @@ function M.new(ctx)
     return wezterm.action.ActivateCommandPalette
   end
 
+  -- ── Agent CLI ─────────────────────────────────────────
+
+  -- Names that pane:get_foreground_process_name() may report when a
+  -- supported agent CLI is the foreground process directly under WezTerm
+  -- (i.e. without an intervening tmux). Profile commands live in
+  -- `constants.managed_cli.profiles`; this list mirrors them so the
+  -- detection path stays in sync if a new profile is added.
+  local agent_cli_basenames = { claude = true, codex = true }
+
+  handlers['agent.new_conversation'] = function()
+    return wezterm.action_callback(function(window, pane)
+      local trace_id = logger.trace_id('agent_cli')
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        -- Tmux owns the smart switch via `bind-key -n C-n` in tmux.conf;
+        -- it inspects `pane_current_command` of the tmux pane that
+        -- actually has the agent in front. Forward the byte and let it
+        -- decide whether to inject `/new\r` or pass `C-n` through.
+        logger.info('agent_cli', 'forwarding Ctrl+n to tmux-backed pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(wezterm, window, pane, 'Ctrl+n', '\x0e', logger, 'agent_cli', workspace_name, trace_id)
+        return
+      end
+      local foreground_process = common.foreground_process_basename(pane)
+      if foreground_process and agent_cli_basenames[foreground_process:lower()] then
+        logger.info('agent_cli', 'sending /new to non-tmux agent CLI pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          foreground_process = foreground_process,
+          workspace = workspace_name,
+        }))
+        window:perform_action(wezterm.action.SendString('/new\r'), pane)
+        return
+      end
+      window:perform_action(wezterm.action.SendString('\x0e'), pane)
+    end)
+  end
+
   -- ── VS Code ───────────────────────────────────────────
 
   handlers['vscode.open_current_dir'] = function()
