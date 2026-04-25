@@ -29,18 +29,10 @@ command -v flock >/dev/null 2>&1 || exit 0
 
 lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
-. "$lib_dir/windows-runtime-paths-lib.sh"
-
-hotkey_usage_path() {
-  if windows_runtime_detect_paths 2>/dev/null; then
-    printf '%s/hotkey-usage.json' "$WINDOWS_RUNTIME_STATE_WSL"
-    return 0
-  fi
-  local state_root="${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime"
-  printf '%s/hotkey-usage.json' "$state_root"
-}
+. "$lib_dir/hotkey-usage-lib.sh"
 
 file_path="$(hotkey_usage_path)"
+hotkey_usage_migrate_legacy "$file_path"
 dir="${file_path%/*}"
 mkdir -p "$dir" 2>/dev/null || exit 0
 [[ -f "$file_path" ]] || printf '%s\n' '{"schema_version":1,"hotkeys":{}}' > "$file_path"
