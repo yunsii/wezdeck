@@ -21,6 +21,9 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/tmux-ui.md`](docs/tmux-ui.md).
 - Diagnostics, logs, or smoke tests:
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
+- Performance work on the Alt+/ popup, the cross-FS routing rule for
+  state files, or the bench harnesses:
+  Read [`docs/performance.md`](docs/performance.md).
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
 - Preparing a commit message or deciding commit split:
