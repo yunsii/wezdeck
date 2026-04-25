@@ -212,8 +212,10 @@ read_key() {
     # The terminal writes an entire escape sequence in one syscall, so the
     # trailing bytes of a real sequence are already queued when Esc arrives.
     # Use a near-zero timeout instead of 10 ms so a bare Esc exits the picker
-    # without a perceivable wait.
-    if IFS= read -rsn2 -t 0.001 extra; then
+    # without a perceivable wait. Read up to 15 follow-up bytes so longer
+    # sequences (e.g. forwarded \x1b[20099~ for Ctrl+Shift+P toggle, 6 bytes
+    # after the initial Esc) arrive intact in one capture.
+    if IFS= read -rsn15 -t 0.001 extra; then
       key+="$extra"
     fi
   fi
@@ -326,7 +328,16 @@ while true; do
       query=""
       update_filtered_indexes
       ;;
-    $'\033' | $'\003')
+    $'\033[20099~' | $'\003')
+      # Forwarded Ctrl+Shift+P (the chord that opened this popup) or
+      # Ctrl+C: always close. Mirrors the toggle behavior of Alt+/ on
+      # the attention picker.
+      exit 0
+      ;;
+    $'\033')
+      # Bare Esc: clear query first if non-empty, then close. Friendly
+      # backspace-out behavior; the open chord above is the unconditional
+      # toggle.
       if [[ -n "$query" ]]; then
         query=""
         update_filtered_indexes
