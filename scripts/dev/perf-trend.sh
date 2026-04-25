@@ -16,6 +16,8 @@
 #   scripts/dev/perf-trend.sh --raw 2026-04-25         # dump per-event ms for one day
 #   scripts/dev/perf-trend.sh --picker-kind go         # filter by picker kind
 #   scripts/dev/perf-trend.sh --watch                  # live tail of incoming presses
+#   scripts/dev/perf-trend.sh --panel command          # switch to command palette events
+#   scripts/dev/perf-trend.sh --panel worktree         # switch to worktree picker events
 #
 # Reads paint_kind="first" rows only (the first-frame timing per Alt+/
 # press). Repaint events from Up/Down navigation are excluded — they
@@ -33,6 +35,7 @@ filter_kind=''     # 'go' / 'bash' / '' (any)
 diff_a=''
 diff_b=''
 raw_day=''
+panel='attention' # which popup panel; switches the perf log category
 
 resolve_day() {
   case "$1" in
@@ -50,10 +53,17 @@ while (( $# )); do
     --raw)         mode='raw'; raw_day="$(resolve_day "${2:?}")"; shift 2 ;;
     --watch)       mode='watch'; shift ;;
     --log)         log_file="${2:?}"; shift 2 ;;
-    -h|--help)     sed -n '3,21p' "$0"; exit 0 ;;
+    --panel)       panel="${2:?missing panel}"; shift 2 ;;
+    -h|--help)     sed -n '3,23p' "$0"; exit 0 ;;
     *) printf 'unknown arg: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
+
+case "$panel" in
+  attention|command|worktree) ;;
+  *) printf 'perf-trend: unknown --panel: %s (want attention|command|worktree)\n' "$panel" >&2; exit 2 ;;
+esac
+perf_category="$panel.perf"
 
 if [[ ! -f "$log_file" ]]; then
   printf 'perf-trend: log file not found: %s\n' "$log_file" >&2
@@ -64,8 +74,8 @@ fi
 # of `picker_kind \t total_ms \t lua_ms \t menu_ms \t picker_ms`.
 extract_for_day() {
   local day="$1"
-  awk -v day="$day" -v want_kind="$filter_kind" '
-    index($0, "category=\"attention.perf\"") &&
+  awk -v day="$day" -v want_kind="$filter_kind" -v cat_token="category=\"$perf_category\"" '
+    index($0, cat_token) &&
     index($0, "paint_kind=\"first\"") &&
     index($0, "ts=\"" day) {
       kind=""; tot=""; lua=""; menu=""; pic=""
@@ -140,8 +150,8 @@ stage_breakdown() {
 
 case "$mode" in
   trend)
-    printf '\n=== attention.perf — last %d days · log=%s · picker_kind=%s ===\n\n' \
-      "$days" "$log_file" "${filter_kind:-any}"
+    printf '\n=== %s — last %d days · log=%s · picker_kind=%s ===\n\n' \
+      "$perf_category" "$days" "$log_file" "${filter_kind:-any}"
     printf '%-10s  %5s  %7s  %7s  %7s  %7s\n' \
       'day' 'n' 'min' 'p50' 'p95' 'mean'
     printf '%s\n' '-----------  -----  -------  -------  -------  -------'
@@ -153,16 +163,16 @@ case "$mode" in
     printf 'use --raw <day> to dump per-press total_ms\n'
     ;;
   diff)
-    printf '\n=== attention.perf — %s vs %s · picker_kind=%s ===\n\n' \
-      "$diff_a" "$diff_b" "${filter_kind:-any}"
+    printf '\n=== %s — %s vs %s · picker_kind=%s ===\n\n' \
+      "$perf_category" "$diff_a" "$diff_b" "${filter_kind:-any}"
     printf 'A: %s\n' "$diff_a"
     stage_breakdown "$diff_a"
     printf '\nB: %s\n' "$diff_b"
     stage_breakdown "$diff_b"
     ;;
   raw)
-    printf '\n=== attention.perf raw rows · %s · picker_kind=%s ===\n' \
-      "$raw_day" "${filter_kind:-any}"
+    printf '\n=== %s raw rows · %s · picker_kind=%s ===\n' \
+      "$perf_category" "$raw_day" "${filter_kind:-any}"
     printf '%-12s  %5s  %5s  %5s  %5s\n' \
       'picker_kind' 'total' 'lua' 'menu' 'picker'
     extract_for_day "$raw_day" | sort -k2 -n -t$'\t'
@@ -171,12 +181,12 @@ case "$mode" in
     # Live tail of paint_kind=first events as they land. Useful when
     # you press Alt+/ a few times after a code change to see the new
     # latency without re-running the full bench harness.
-    printf '\n=== attention.perf live · log=%s · picker_kind=%s ===\n' \
-      "$log_file" "${filter_kind:-any}"
+    printf '\n=== %s live · log=%s · picker_kind=%s ===\n' \
+      "$perf_category" "$log_file" "${filter_kind:-any}"
     printf '%-12s  %-23s  %5s  %5s  %5s  %5s  %s\n' \
       'picker_kind' 'ts' 'total' 'lua' 'menu' 'picker' 'trace_id'
-    tail -n0 -F "$log_file" 2>/dev/null | awk -v want_kind="$filter_kind" '
-      index($0, "category=\"attention.perf\"") &&
+    tail -n0 -F "$log_file" 2>/dev/null | awk -v want_kind="$filter_kind" -v cat_token="category=\"$perf_category\"" '
+      index($0, cat_token) &&
       index($0, "paint_kind=\"first\"") {
         ts=""; trace=""; kind=""; tot=""; lua=""; menu=""; pic=""
         for (i = 1; i <= NF; i++) {

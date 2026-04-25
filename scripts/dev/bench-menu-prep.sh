@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Microbenchmark for the attention popup's PREPARATION work — everything
-# tmux-attention-menu.sh does up to (but not including) `tmux display-
-# popup`. Runs the menu script with WEZTERM_BENCH_NO_POPUP=1, which makes
-# it dump a `__BENCH__` line and exit instead of opening the popup, so
-# this harness can sample N times **without disrupting the user's tmux**.
+# Microbenchmark for popup-menu PREPARATION work — everything the chosen
+# menu script does up to (but not including) `tmux display-popup`. Runs
+# the menu script with WEZTERM_BENCH_NO_POPUP=1, which makes it dump a
+# `__BENCH__` line and exit instead of opening the popup, so this harness
+# can sample N times **without disrupting the user's tmux**.
 #
 # Use this for tight optimization loops (changing menu.sh internals,
 # swapping jq for awk, merging subprocess calls, etc.). Use the sister
@@ -12,20 +12,29 @@
 # changes need to be verified against the real popup pipeline.
 #
 # Usage:
-#   scripts/dev/bench-menu-prep.sh                          # 30 timed + 5 warmup
+#   scripts/dev/bench-menu-prep.sh                                  # attention, 30+5
+#   scripts/dev/bench-menu-prep.sh --target command                 # command palette
+#   scripts/dev/bench-menu-prep.sh --target worktree                # worktree picker
 #   scripts/dev/bench-menu-prep.sh --runs 100 --warmup 10
-#   scripts/dev/bench-menu-prep.sh --label after-jq-merge   # tag for cross-run diff
-#   scripts/dev/bench-menu-prep.sh --raw                    # dump per-run TSV (no stats)
+#   scripts/dev/bench-menu-prep.sh --label after-jq-merge           # tag for cross-run diff
+#   scripts/dev/bench-menu-prep.sh --raw                            # dump per-run TSV (no stats)
 #
-# Output stages (cumulative µs since bench_t0, captured in menu.sh):
-#   sourced       — bench_t0 set right after the 3 lib sources finish
-#   state_read    — attention.json read + attention_state_init
-#   jq_count      — first jq invocation (entries length)
-#   live_map      — live-panes.json freshness check + .panes extract (jq×2)
-#   jq_rows       — main row-building jq pipeline
-#   tsv_write     — bash while-read into arrays + TSV file write
-#   picker_branch — go-vs-bash dispatch decision
-#   prep_done     — display-message + (bash path) frame pre-render
+# Targets:
+#   attention (default) — tmux-attention-menu.sh; reads state.json, no
+#                         tmux session needed.
+#   command             — tmux-command-menu.sh; loads manifest items via
+#                         jq + bash eval, needs current tmux session.
+#   worktree            — tmux-worktree-menu.sh; resolves git worktree
+#                         context, needs current tmux session AND CWD
+#                         inside a git worktree.
+#
+# Output stages (cumulative µs since bench_t0, captured in menu.sh).
+# Attention:
+#   sourced · state_read · live_map · jq_rows · tsv_write · picker_branch · prep_done
+# Command:
+#   sourced · loaded_items · visible_indexes · prep_done
+# Worktree:
+#   sourced · context_resolved · prefetched_items · frame_rendered · prep_done
 #
 # Stats reported: min · p50 · p95 · max · mean (in milliseconds).
 set -euo pipefail
@@ -34,24 +43,53 @@ runs=30
 warmup=5
 label="$(date +%H%M%S)"
 raw=0
+target='attention'
 
 while (( $# )); do
   case "$1" in
     --runs)   runs="${2:?missing runs}";   shift 2 ;;
     --warmup) warmup="${2:?missing warmup}"; shift 2 ;;
     --label)  label="${2:?missing label}";   shift 2 ;;
+    --target) target="${2:?missing target}"; shift 2 ;;
     --raw)    raw=1;                         shift ;;
-    -h|--help) sed -n '3,29p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,42p' "$0"; exit 0 ;;
     *) printf 'unknown arg: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-menu_script="$repo_root/runtime/tmux-attention-menu.sh"
 
-if [[ ! -x "$menu_script" ]]; then
-  printf 'bench: menu script not found / not executable: %s\n' "$menu_script" >&2
+case "$target" in
+  attention) menu_script="$repo_root/runtime/tmux-attention-menu.sh" ;;
+  command)   menu_script="$repo_root/runtime/tmux-command-menu.sh" ;;
+  worktree)  menu_script="$repo_root/runtime/tmux-worktree-menu.sh" ;;
+  *) printf 'unknown --target: %s (want attention|command|worktree)\n' "$target" >&2; exit 2 ;;
+esac
+
+if [[ ! -r "$menu_script" ]]; then
+  printf 'bench: menu script not readable: %s\n' "$menu_script" >&2
   exit 1
+fi
+
+# command and worktree targets need a real tmux session — probe the
+# current one and pass session_name + current_window_id. attention reads
+# state files only and works without tmux, so positional args stay empty.
+menu_args=()
+if [[ "$target" != 'attention' ]]; then
+  if ! command -v tmux >/dev/null; then
+    printf 'bench: --target %s requires tmux on PATH\n' "$target" >&2
+    exit 1
+  fi
+  if ! probe="$(tmux display-message -p '#S	#{window_id}' 2>/dev/null)"; then
+    printf 'bench: --target %s must be run from inside an attached tmux client\n' "$target" >&2
+    exit 1
+  fi
+  IFS=$'\t' read -r bench_session bench_window_id <<<"$probe"
+  if [[ -z "$bench_session" ]]; then
+    printf 'bench: tmux session probe returned empty session name\n' >&2
+    exit 1
+  fi
+  menu_args=("$bench_session" "$bench_window_id" "$PWD")
 fi
 
 # All output channels off so they don't pollute the harness or fork extra
@@ -61,7 +99,7 @@ export WEZTERM_BENCH_NO_POPUP=1
 export WEZTERM_RUNTIME_LOG_ENABLED=0
 
 run_once() {
-  bash "$menu_script" 2>/dev/null | awk '/^__BENCH__/'
+  bash "$menu_script" "${menu_args[@]}" 2>/dev/null | awk '/^__BENCH__/'
 }
 
 # Warmup: eat cold-cache cost (first WSL→Windows file reads, jq cold
@@ -104,8 +142,10 @@ mapfile -t stages < <(awk '
       if (n != 2) continue
       k = kv[1]
       v = kv[2]
-      # Skip non-numeric keys (e.g. picker_kind=go).
+      # Skip non-numeric values (e.g. picker_kind=go) and known
+      # metadata keys that happen to be numeric (item_count).
       if (v !~ /^[0-9]+$/) continue
+      if (k == "item_count") continue
       if (!(k in seen)) { seen[k]=1; order[++idx]=k }
     }
   }
@@ -122,7 +162,7 @@ fi
 # Compute stats per stage. Stages are CUMULATIVE µs from bench_t0.
 # Report each stage's wall time in ms (cumulative) AND its delta from
 # the previous stage so it's clear what each step contributes.
-printf '\n=== bench-menu-prep · n=%d · label=%s ===\n' "$runs" "$label"
+printf '\n=== bench-menu-prep · target=%s · n=%d · label=%s ===\n' "$target" "$runs" "$label"
 printf '%-14s %8s %8s %8s %8s %8s    %8s %8s %8s\n' \
   'stage' 'min(ms)' 'p50' 'p95' 'max' 'mean' 'Δp50' 'Δp95' 'Δmean'
 
