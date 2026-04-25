@@ -47,6 +47,15 @@ attention_state_lock_path() {
   printf '%s.lock' "$path"
 }
 
+# Sibling of attention.json. Written by `attention.write_live_snapshot` on
+# every Alt+/ keypress; consumed by tmux-attention-picker.sh to label rows
+# without paying for a `wezterm.exe cli list` round-trip from the popup pty.
+attention_live_panes_path() {
+  local state_path
+  state_path="$(attention_state_path)"
+  printf '%s/live-panes.json' "${state_path%/*}"
+}
+
 attention_state_init() {
   local path dir
   path="$(attention_state_path)"

@@ -379,9 +379,9 @@
   {
     "id": "attention.overlay",
     "label": "Attention: Open pending-task overlay",
-    "description": "Open a centered InputSelector listing every pending agent task across workspaces. Fuzzy-filter and `Enter` to jump; pick the trailing `clear all` sentinel to wipe state.json. Works from any pane; final jump still needs tmux.",
+    "description": "Open a centered tmux popup picker listing every pending agent task across workspaces. Up/Down to move, `Enter` to jump; pick the trailing `clear all` sentinel to wipe state.json. Press `Alt+/` again (or `Esc`) to close — the popup owns the chord while open, so the same key opens and closes it.",
     "scope": "project-navigation",
-    "context": "any",
+    "context": "tmux-backed",
     "binding": {"handler": "attention.overlay"},
     "hotkeys": [
       { "keys": "Alt+/", "layer": "wezterm" }
