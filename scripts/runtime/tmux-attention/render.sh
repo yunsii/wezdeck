@@ -68,34 +68,25 @@ attention_picker_emit_frame() {
 
     frame+=$'\033['"${row};1H"
 
+    # Only the leading caret distinguishes selected from unselected;
+    # everything else (badge color, body, dim age) renders identically.
+    # The 2-col gutter is reserved on every row so column alignment
+    # stays stable as the cursor moves.
     if (( top_index == selected_index )); then
-      # Selected row: bold + inverse over plain (uncolored) badge so the
-      # highlight reads as one solid bar. \033[K with \033[7m active fills
-      # the rest of the line with the inverted bg color.
-      frame+=$'\033[1;7m'
-      case "$status" in
-        running)      frame+='⟳ RUN ' ;;
-        waiting)      frame+='⚠ WAIT' ;;
-        done)         frame+='✓ DONE' ;;
-        __sentinel__) frame+='✗ CLR ' ;;
-        *)            frame+='· ----' ;;
-      esac
-      frame+="  $body"
-      [[ -n "$age" ]] && frame+="  ($age)"
-      frame+="$reset$clear_eol"
+      frame+="▶ "
     else
-      # Unselected: colored status badge + default body + dim (age).
-      case "$status" in
-        running)      frame+=$'\033[1;38;5;39m⟳ RUN \033[0m' ;;
-        waiting)      frame+=$'\033[1;38;5;208m⚠ WAIT\033[0m' ;;
-        done)         frame+=$'\033[38;5;108m✓ DONE\033[0m' ;;
-        __sentinel__) frame+=$'\033[1;38;5;160m✗ CLR \033[0m' ;;
-        *)            frame+='· ----' ;;
-      esac
-      frame+="  $body"
-      [[ -n "$age" ]] && frame+="  "$'\033[2m'"($age)"$reset
-      frame+="$clear_eol"
+      frame+="  "
     fi
+    case "$status" in
+      running)      frame+=$'\033[1;38;5;39m⟳ RUN \033[0m' ;;
+      waiting)      frame+=$'\033[1;38;5;208m⚠ WAIT\033[0m' ;;
+      done)         frame+=$'\033[38;5;108m✓ DONE\033[0m' ;;
+      __sentinel__) frame+=$'\033[1;38;5;160m✗ CLR \033[0m' ;;
+      *)            frame+='· ----' ;;
+    esac
+    frame+="  $body"
+    [[ -n "$age" ]] && frame+="  "$'\033[2m'"($age)"$reset
+    frame+="$clear_eol"
 
     row=$((row + 1))
   done
