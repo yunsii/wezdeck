@@ -1,8 +1,8 @@
 ---
 title: 我的 AI 开发环境演进
 subtitle: 从 Copilot 聊天到 Native Helper + Hook 驱动平台
-version: v0 → v5
-date: 2026-04-23
+version: v0 → v5（v5 D 收口于 2026-04-25）
+date: 2026-04-23（worktree 工作流补丁：2026-04-25）
 author: 结合 git 记录整理
 ---
 
@@ -255,21 +255,105 @@ A 收口**宿主动作链路**，B 收口**Agent 状态感知**；C 收口的是
 - [`a932582`](https://github.com/yunsii/wezterm-config/commit/a932582) `docs(agents): extend user-level profile with secrets and safety rules`（2026-04-24）—— 对照 2026 年公开的 AGENTS.md / CLAUDE.md 实践（OpenAI、Anthropic、GitHub 2500+ repo 统计），补齐原本缺失的共识：`secrets.md`、`Untrusted Input`、`Subagent Briefing`、`Error Handling`、`Large Output`、`Bug Diagnosis`、`Blast Radius`、`Plan-Time Validation`。
 - [`51802b2`](https://github.com/yunsii/wezterm-config/commit/51802b2) `docs(agents): add authority boundaries and subagent permission rules`（2026-04-24）—— 安全面闭合：sudo / `--force` / `--no-verify` 类闸门绕过要显式授权、授权 scope 不自动扩展、从只读调查切到副作用动作前要显式声明。
 
-**三个子阶段的分工**：
+### 子阶段 D：Worktree 工作流 —— 人按需求开 / 关，agent 管中间（2026-04-25）
+
+A 收口宿主、B 收口 Agent 状态感知、C 收口协作规则。D 收口的是**人和 agent 在 worktree 这条载体上的分工**：
+
+> **人只做两端：按需求类别快速创建一个 worktree，需求结束后快速回收。**
+> **中间的分支命名、checkout、commit、rebase、PR、合并校验，全部交给 agent 在那个 worktree 里管。**
+
+这条分工以前不是不能做，而是缺三样东西：缺一个"按需求类别一键开"的入口、缺一个"安全一键关"的出口、缺一个让 agent 在每个 worktree 里"接着上次说"的对话载体。这一天把这三样补齐。
+
+**1. 人这一端 —— 按需求类别快速创建（一键开）**
+
+- [`81dcebc`](https://github.com/yunsii/wezterm-config/commit/81dcebc) `refactor(worktree-task): demote skill, add lifecycle hotkeys and reclaim`（2026-04-25）—— 把 worktree-task 从 Skill 调用降级为 manifest-driven hotkey。`Ctrl+k g` 子和弦下 `d` / `t` / `h` 不是三个名字，而是三种**需求类别**：
+  - `g d` → `dev-<slug>`：几周到几个月的"持久工作站"（长期方向 / 长期实验 / 长期分支）
+  - `g t` → `task-<slug>`：几小时到几天的 PR-scoped 工作（一个 issue、一个 ticket）
+  - `g h` → `hotfix-<slug>`：几小时的紧急修复
+- 三种前缀对应三种心智模型；人在按下 `Ctrl+k g d` 那一刻已经声明了"这是哪一类需求"，后面的生命周期、reclaim 策略、是否允许误删全部沿这条轴线走。**人不需要起分支名、不需要 `git worktree add`、不需要决定从哪个 base ref 切出去**。
+
+**2. 中间这一段 —— 分支与 git 流程交给 agent**
+
+人按完 hotkey 之后立刻进入 agent pane，整段 git 工作流由 agent 在那个 worktree 里管：
+
+- **分支命名**：`worktree-task launch` 默认按 `WT_POLICY_BRANCH_PREFIX=task/` 落盘到 `task/<slug>`；目录名（lifecycle）和分支名（团队 PR 策略）解耦，需要别的策略只在 env 里改一次。
+- **Base ref**：默认 `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch`，先 `git fetch origin` 再从 `origin/HEAD` 切，**让 agent 拿到的是干净的远端起点，不被主 worktree 当前 checkout 污染**。
+- **对话续接**：[`f6577f5`](https://github.com/yunsii/wezterm-config/commit/f6577f5) `feat(worktree-agent): launch and refresh into resume profile from every entry`（2026-04-25）—— 每条会创建或刷新 agent pane 的路径都走 `<base>-resume`（workspace 首开、`Ctrl+k g d/t/h`、`Alt+g` picker、`Alt+Shift+G` cycle、`session.refresh-current-window/-session/-workspace`）。resume 命令从 `config/worktree-task.env` 单点读取，agent CLI 自带 fresh 回退（首开新 worktree 自然降级）。
+- [`b1e9aae`](https://github.com/yunsii/wezterm-config/commit/b1e9aae) `feat(workspaces): resume-profile on first open under hybrid-wsl + sync precheck`（2026-04-25）—— 修一个 hybrid-wsl 死角，让上面这条规则在 wezterm.exe 端也稳定生效。
+
+**这一段的关键效果**：agent 在每个 worktree 里都有一段**长期续接的对话**，切回 `dev-foo` 就接着上次没说完的话往下走、`git status` 是它自己留下的、commit message 也是它自己写的；切到 `task-bar` 就是另一段对话、另一份历史。**每个 worktree 是 agent 的一个独立工作上下文，而不是人需要切心智的一个目录**。
+
+**3. 人这一端 —— 需求结束后一键回收（安全一键关）**
+
+- `Ctrl+k g r`（reclaim）是出口：refuse 主 worktree、refuse `dev-*`（保护长寿工作站）、refuse 脏树 / untracked、**只在 task 分支已 merge 进主 worktree HEAD 时才删除**（merge 校验对照 `origin/HEAD` 做）。后置 `git worktree prune` 清理 git 自己留下的幻影 admin 项。
+- agent 那段对话的 transcript 故意留着 —— 下次同名 slug 重建（lifecycle 前缀模型下是合法的）时 `claude --continue` 还能拣回来；不想要再 `/clear`。
+- **人按下 `Ctrl+k g r` 不需要回忆"这条分支合了没 / 树干不干净 / 是不是 dev-"**，三道闸门在 reclaim 内部把关。
+
+**这一步的本质 —— 三段分工的形状**：
+
+```
+人（端点 1）          agent（中段）              人（端点 2）
+Ctrl+k g {d,t,h}  →  分支 / commit / rebase /  →  Ctrl+k g r
+快速开一个需求类别     PR / 合并校验 / 续接对话     需求结束安全回收
+```
+
+**人只在两端按一下键；中间是 agent 在自己的 worktree + 自己的对话里干完一段 git 工作。** worktree 升级为 **"需求 → agent 工作上下文 → 合并 → 回收"** 的全周期载体；和 attention pipeline（v5 B）合流后，多任务从 v5 上线时的"开得起来 / 管得过来"再前进一步到"**人按需求开关、agent 在中段独立推进**" —— 人的认知带宽不再花在 git 流程上，只花在"开哪一类需求"和"这个需求结束没"上。
+
+> **性能（picker 冷启 30-80ms → 2-5ms、popup pty 第一帧的"白闪 / 滞后 Esc"）和 04-25 当天遇到的闪烁/抖动问题，作为"如何让这条分工感觉跟得上手"的子话题，在下一节单独展开。**
+
+**四个子阶段的分工**：
 
 | 子阶段 | 收口对象 | 产出 |
 |---|---|---|
 | A | 宿主动作链路（VS Code focus、Chrome、剪贴板、通知） | Native helper + IPC |
 | B | Agent 运行状态 | Hook 驱动的 attention pipeline |
 | C | **协作规则本身** | 可版本化、跨 agent 家族自动注入的 user-level profile |
+| D | **人 / agent 在 worktree 上的分工**（人按需求开关、agent 管中间 git 流程） | 生命周期 hotkey（`Ctrl+k g {d,t,h,r}`）+ 全局 resume profile + reclaim 安全闸门 |
 
-**隐性收益：CLI 无关性**。v5 A/B 的直接收益是**单 agent**（Claude Code）上的流畅度；C 带来了**跨 CLI 的一致性** —— 同一套规则同时作用在 Claude Code 和 Codex CLI 上，不需要各自维护。当未来再出新的终端 agent，接入成本退化为"目录存在 → 加一个 target → 重跑脚本"。
+**隐性收益：CLI 无关性**。v5 A/B 的直接收益是**单 agent**（Claude Code）上的流畅度；C 带来了**跨 CLI 的一致性** —— 同一套规则同时作用在 Claude Code 和 Codex CLI 上，不需要各自维护；D 把这种"跨 CLI"延伸到 worktree 体验：resume 字符串按 `WT_PROVIDER_AGENT_PROFILE_<UPPER>_RESUME_COMMAND` 收一处，新增一个 agent CLI 只需在 env 里加一行映射。当未来再出新的终端 agent，接入成本退化为"目录存在 → 加一个 target → 重跑脚本 + 在 env 里登记 resume 命令"。
+
+---
+
+## 配套：让 D 这条分工"跟得上手" —— 性能与闪烁
+
+D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g {d,t,h,r}` 和 `Alt+g`，还需要这一波交互在感官层面"零摩擦"。这一节单独讲为这个分工服务的两件事 —— popup picker 的性能曲线，和 04-25 当天遇到的几类闪烁 / 抖动。
+
+### Popup picker 的性能曲线（`Alt+g` / `Alt+/` / `Ctrl+Shift+P`）
+
+`Alt+g`（worktree picker）是 D 的"切换面"，被高频按。一开始的 bash + tmux popup 实现冷启 30-80ms，按下去会有可感知的"卡一下"。当天分四步压到 2-5ms：
+
+- [`faf5822`](https://github.com/yunsii/wezterm-config/commit/faf5822) `perf(worktree-picker): prefetch list, single-frame render, async open`（2026-04-25）—— **prefetch + 单帧渲染**：把 worktree 列表在外层 shell 算好以 TSV 传进 popup，让 popup pty 第一帧就是终态而不是"白屏 → 列加载 → 列出现"两三帧；`tmux run-shell -b` 把"打开窗口"做成 async，按下 Enter 后 popup 立刻关闭，不等窗口建好。
+- [`a7a5378`](https://github.com/yunsii/wezterm-config/commit/a7a5378) `perf(worktree-picker): cat-prime first frame before bash sourcing`（2026-04-25）—— **cat-prime first frame**：popup 里 bash source 自己的初始化脚本要 10+ms，那段时间用户看到的是空白；先 `cat` 一帧静态预渲染上去，让"按下到看见列表"在感官上即刻发生。
+- [`6a10d82`](https://github.com/yunsii/wezterm-config/commit/6a10d82) `perf(worktree-picker): toggle on Alt+g, instant Esc, drop /bin/cat`（2026-04-25）—— **真 toggle + 即时 Esc**：再按一次 `Alt+g` 直接关闭（之前不闭合，要走 `Esc`）；裸 `Esc` 因为 tmux 默认 `escape-time 500ms` 会有半秒滞后，把它压到 10ms（`fix(tmux): drop escape-time to 10ms so bare Esc closes popups instantly` [`3f17c79`](https://github.com/yunsii/wezterm-config/commit/3f17c79)）。
+- [`1d099c8`](https://github.com/yunsii/wezterm-config/commit/1d099c8) → [`c48243f`](https://github.com/yunsii/wezterm-config/commit/c48243f) → [`56db244`](https://github.com/yunsii/wezterm-config/commit/56db244) —— **bash → 静态 Go binary**：popup 主体换成 `picker worktree` / `picker command` 两个 Go 子命令，hot-path 从 ~30ms 压到 2-5ms（约 11×）；同一个二进制顺手把 `Alt+/` 也接管了（[`8afac62`](https://github.com/yunsii/wezterm-config/commit/8afac62)）。
+
+**为什么这件事关键**：D 节的分工里，人按 `Alt+g` 切 worktree 的频次和"切窗口"差不多 —— 一旦每次有 50ms 卡顿，"切回 dev-foo 接着说"就不再是"切回去就接着说"，而是"切回去等一下再接着说"。把它压进感官阈值（约 20ms 以下）才能让那段分工真正成立。
+
+### 04-25 当天的几类闪烁 / 抖动
+
+收口过程里浮上来的几条具体抖动 —— 都是"D 的分工要立得住，必须先消掉的视觉噪音"。第一条是这套形态的**硬前提**，后面几条是把人和 popup 的交互摩擦磨平：
+
+- **输入法候选框闪烁（agent CLI 高频重绘下打中文）**。在 tmux + wezterm 里跑 Claude Code / Codex CLI 这类**高频局部重绘**的 agent 时，用 IME 打中文会出现候选框抖动 / 跳位，根因是 wezterm 的 IME 路径不门控 synchronized-output 状态：`update_ime_position` 跟 paint cycle 一起 fire，agent 每次局部重绘都把候选框位置重新算一遍。正确的协议是 DEC mode 2026（`SynchronizedOutput`），由 Claude Code 输出 BSU/ESU、tmux 转发、wezterm 在 sync 窗口内合并 paint。tmux 3.4 不会把 BSU/ESU 当成自己的 sync barrier、只是当 unknown CSI 透传 —— 一旦 ESU 在 syscall 边界被切开，wezterm 就会被卡在 sync 窗口里冻屏。**tmux 3.6 才把 BSU/ESU 变成 tmux 自己的 batching driver**（带 1 秒 ESU flush 兜底），inner-app 的 sync 状态再也卡不住外层 pipeline。[`fe4491e`](https://github.com/yunsii/wezterm-config/commit/fe4491e) `feat(tmux): require 3.6+ and declare sync feature`（2026-04-25）把 tmux 3.6+ 设为本仓库底线，并在 `tmux.conf` 声明 `terminal-features ',xterm*:sync,wezterm*:sync'`；详细排查时间线见 [`docs/ime-flicker-and-sync-output.md`](../ime-flicker-and-sync-output.md)。这件事影响的是人在 agent pane 里直接打中文的体验 —— 一天反复几十上百次输入中文，候选框抖动累计起来很难受，所以单列出来先消掉。
+- **popup pty 首帧白闪**：popup 打开瞬间，tmux 给 pty 的第一帧是默认背景色，~10ms 后才被 picker 填上内容。解决靠上面 prefetch + cat-prime 两步。
+- **裸 Esc 半秒不响应**：tmux `escape-time` 默认 500ms，按 `Esc` 关 popup 像"卡住"。压到 10ms 后即时关闭，副作用是某些转义序列识别窗口变窄 —— 在用 `Alt+...` chord 的环境下可接受。
+- **picker selected row 反白闪烁**：原来用反色块标 selected row，每次方向键移动会让 popup 整行重绘，眼睛看到一段"色块跳动"。换成行首 caret（`>` 前缀）后，重绘只画一个字符，肉眼无感（[`e8681b8`](https://github.com/yunsii/wezterm-config/commit/e8681b8) `refactor(picker): leading caret instead of reverse-video for selected row`）。
+- **状态栏行宽抖动**：右侧 `CDP·H·9222` 这类 badge 有四种态，长度不同会让整条 status line 宽度跳变。统一占同样字符数后 bar 宽固定，眼睛不再被无关变化吸走。
+- **跨 FS 读小热文件**：hotkey-usage / attention-state 之前在 9P（Windows ↔ WSL）上读，wezterm.exe 端每次都要走一段 syscall 隧道。挪到 WSL ext4 + 让 wezterm.exe 直读后，状态栏刷新和 popup 列表 prefetch 都更稳（[`789cbcf`](https://github.com/yunsii/wezterm-config/commit/789cbcf) / [`2c49526`](https://github.com/yunsii/wezterm-config/commit/2c49526) / [`4ea079a`](https://github.com/yunsii/wezterm-config/commit/4ea079a)）。
+
+### 让这条分工长期可回归的 observability
+
+D 的设想要长期立得住，必须能持续验证"它没有又慢回去"。这一波同时落了一套观测面：
+
+- [`9c6f597`](https://github.com/yunsii/wezterm-config/commit/9c6f597) `feat(observability): ms timestamps, end-to-end trace_id, perf-trend.sh`（2026-04-25）—— 毫秒时间戳、跨进程 `trace_id`、`perf-trend.sh` 看趋势。
+- [`711026e`](https://github.com/yunsii/wezterm-config/commit/711026e) `feat(observability): bench --target + perf-trend --panel for all popup panels`（2026-04-25）—— `bench --target` 和 `perf-trend --panel` 让每条 popup 入口的延迟单独可回归 —— 任意一条以后慢回去都看得见。
+
+**一句话**：性能不是 D 的目的，是 D 的"出场条件"。D 的分工要让人按下去就走，picker 必须像快门；闪烁必须从视野里被消掉；趋势必须能被回归。这一节的所有提交，都是在为 D 节那条"人按两端、agent 管中段"的分工**清出可用的感官通道**。
 
 ### 这一步解决的
 
 - 宿主动作链路统一、稳定、可发布。
 - Agent 任务状态 **从靠人巡检 → 平台主动感知**。
-- worktree-task + attention pipeline 合流后，**多任务并行从"开得起来" 变成"管得过来"**。
+- worktree-task + attention pipeline + resume profile 合流后，**多任务并行从"开得起来" → "管得过来" → "切回去就接着说"**。
 
 ### 还留着的问题
 
@@ -277,6 +361,8 @@ A 收口**宿主动作链路**，B 收口**Agent 状态感知**；C 收口的是
   - 比如现在用 Codex CLI 跑一个任务，attention pipeline 完全看不见它的 running / waiting 状态，只有 Claude Code 的 hook 是接好的。
 - 非 Windows / 非 WSL 场景下，native helper 子系统是否值得保留还没有结论。
   - 比如如果搬到 macOS，`helper-manager.exe` 这层要整块换成别的实现（AppleScript? ObjC？），现在没方案。
+- 子阶段 D 是 04-25 一天内才成形的形态，**回看周期还没走完**。需要看实际多任务并行场景下 resume profile 是不是真的"无副作用接续"，以及 agent 误接续旧上下文的边界（比如用同一个 slug 重建 worktree 时，`claude --continue` 拿到的是上一段不相关的对话）。Codex 那条路径是字符串拼接（`codex resume --last || exec codex`），CLI 一旦改 flag 就会断。
+- 同一 repo family 下挂 5+ worktree、每个里面都有 agent 时，`Alt+/` 列表的可读性还要打磨（按 lifecycle prefix 排序、按最后活跃时间分组、把 reclaim 候选标出来等）。
 - AI 协作的**纠偏与验证闭环**在 v5 C 里被 user-level profile 部分固化（`[validation-29..30]` 要求方案阶段就 own 验证闭环、`[tool-use-36]` 拒绝让 untrusted input 跨越授权边界、`[platform-actions-38..41]` 安全面收口），但**项目级**的 checklist 仍空缺。
   - 比如 Agent 跑完说"测试通过"，user-level profile 能约束它"不要把 mock 当真 smoke test"，但本仓库特有的 `manifest.json` 同步校验、`windows-shell-lib` 使用边界、`runtime-sync` skill 触发时机这些还没进入规则层，仍靠 `CLAUDE.md` 单点描述。
 
@@ -292,6 +378,8 @@ A 收口**宿主动作链路**，B 收口**Agent 状态感知**；C 收口的是
 | v3 → v4 | 终端仅是终端 | 终端是可编程平台 | 工作区 / worktree-task / 贴图 / 命令面板 / Agent launcher |
 | v4 → v5 A | 宿主脚本堆 | Native helper + IPC | 统一控制面、可交付、可回退 |
 | v4 → v5 B | 人巡检 Agent 状态 | 平台主动感知 | Hook 驱动的 attention pipeline |
+| v5 B → v5 C | 协作规则散在每次对话里复述 | 可版本化、跨 CLI 注入的 user-level profile | 同一套规则同时作用于 Claude Code / Codex CLI |
+| v5 C → v5 D | worktree 是分支隔离 | worktree 是 agent 对话上下文的物理载体 | "切回去就接着说"，多任务切换成本逼近零 |
 
 每一次跃迁的共同模式是同一种：
 
@@ -395,10 +483,12 @@ A 收口**宿主动作链路**，B 收口**Agent 状态感知**；C 收口的是
 
 ## 下一步（方向，不是承诺）
 
-- **把 attention pipeline 的事件源从单一 Agent CLI 扩到多种**，让平台对 Agent 生态的感知层是厂商无关的。
+- **把 attention pipeline 的事件源从单一 Agent CLI 扩到多种**，让平台对 Agent 生态的感知层是厂商无关的。这条同时也是 v5 D 里 Codex resume 字符串拼接的根治路径 —— 一旦 Codex 有了和 Claude Code 同形的 hook，resume / attention / reclaim 都能走同一条契约。
 - **把控制面的"契约"文档化**，不只是 AGENTS 指南，而是 agent 可发现、可调用的 capability manifest。
 - **真正压一次跨机器场景**：非 Windows / 非 WSL 下哪些层应该保留、哪些退化成 no-op。
 - **把协作规则从 user-level 推进到 project-level 的同形结构**。v5 C 已经把跨项目共识变成可版本化 profile；本仓库独有的约束（wrapper 边界 / manifest / runtime sync）还散在 `CLAUDE.md` 和 `docs/`，未来按同样的"分文件 + 稳定 ID + 渐进披露 + 符号链接注入"路径迁移。
+- **Worktree 视图的可读性**：同一 repo family 下 5+ worktree 都挂 agent 时，`Alt+/` 需要能按 lifecycle / 最近活跃 / reclaim 候选分组；以及做一次 worktree 总览面板，把 git 状态、agent 状态、构建状态在一屏里揉到一起。
+- **观测验证 D 的设想是否成立**：跑几天再回看 `perf-trend --panel` 的趋势线、`Alt+g` 的实际按键计数、resume 误接续的比率（人工标注），把"切回去就接着说"从设想验证成事实。
 
 ---
 
