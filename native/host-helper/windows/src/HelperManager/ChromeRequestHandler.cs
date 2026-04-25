@@ -15,6 +15,47 @@ internal sealed class ChromeRequestHandler
         this.windowReuseService = windowReuseService;
     }
 
+    // Builds the LaunchMatchSpec used to find an existing debug chrome by
+    // command-line. When `requireHeadless` is null the spec matches any
+    // running mode (used by AutoStart, which only cares that *some* chrome
+    // already serves the configured port + user-data-dir, headless or not).
+    // When non-null the spec enforces equality with --headless on the cmdline,
+    // which is what FocusOrStart needs so it can distinguish "current mode is
+    // already correct" from "stale instance to kill".
+    private static LaunchMatchSpec BuildChromeMatchSpec(
+        string chromePath,
+        int port,
+        string userDataDir,
+        bool? requireHeadless,
+        string launchKeySuffix)
+    {
+        var chromeProcessName = PathResolvers.GetProcessNameFromExecutable(chromePath, "chrome");
+        var launchKey = PathResolvers.BuildChromeCacheKey(port, userDataDir) + launchKeySuffix;
+        var normalizedUserDataDir = PathResolvers.NormalizeWindowsPath(userDataDir);
+        return new LaunchMatchSpec(
+            InstanceType: "chrome",
+            LaunchKey: launchKey,
+            ProcessName: chromeProcessName,
+            CommandLineMatcher: commandLine =>
+            {
+                if (!commandLine.Contains($"--remote-debugging-port={port}", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                if (!PathResolvers.NormalizeWindowsPath(commandLine).Contains(normalizedUserDataDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                if (requireHeadless is null)
+                {
+                    return true;
+                }
+                var processIsHeadless = commandLine.Contains("--headless", StringComparison.OrdinalIgnoreCase);
+                return processIsHeadless == requireHeadless.Value;
+            },
+            ReuseMode: ReuseMode.PreferReuse);
+    }
+
     public RequestOutcome FocusOrStart(JsonElement payload, string traceId)
     {
         var chromePath = RequestPayloadReader.RequireString(payload, "chrome_path");
@@ -263,6 +304,146 @@ internal sealed class ChromeRequestHandler
             Action: "focus_or_start",
             Status: "launched",
             DecisionPath: "launch_unbound");
+    }
+
+    // Helper-driven auto-start: invoked once at HostHelperManager.Run() after
+    // ReconcileOnStartup, so 9222 always has a CDP endpoint without the user
+    // having to press Alt+b. Differs from FocusOrStart on three points by
+    // design:
+    //   * Mode-agnostic detection: any chrome on the right port + user-data-dir
+    //     is fine; we don't kill a visible instance just because the configured
+    //     default is headless. The user can always switch via Alt+b/Alt+Shift+b.
+    //   * Never activates a window. Helper boot is a background event; popping
+    //     a Chrome window to the foreground at startup would be intrusive.
+    //   * Never writes the WindowReuseService cache. That cache reflects "the
+    //     window the user last invoked"; auto-start has no user intent.
+    // Auto-start always launches headless (when launching). Adopting an
+    // already-running visible chrome is fine (we record its actual mode so
+    // the status segment matches reality), but we never spin up a visible
+    // window on our own -- that would be intrusive on helper boot.
+    public static void AutoStart(
+        StructuredLogger logger,
+        string chromePath,
+        int port,
+        string userDataDir,
+        string? stateFile)
+    {
+        const string traceId = "auto_start";
+        const bool launchHeadless = true;
+
+        if (string.IsNullOrWhiteSpace(chromePath))
+        {
+            logger.Warn("chrome", "auto-start skipped: chrome_path empty", new Dictionary<string, string?>
+            {
+                ["port"] = port.ToString(),
+            });
+            return;
+        }
+
+        // Only validate existence for rooted paths. Relative names like
+        // "chrome.exe" are resolved by Process.Start through PATH, and
+        // File.Exists("chrome.exe") would always be false unless we happened
+        // to be running from Chrome's install dir.
+        if (Path.IsPathRooted(chromePath) && !File.Exists(chromePath))
+        {
+            logger.Warn("chrome", "auto-start skipped: chrome executable missing", new Dictionary<string, string?>
+            {
+                ["chrome_path"] = chromePath,
+                ["port"] = port.ToString(),
+            });
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(userDataDir))
+        {
+            logger.Warn("chrome", "auto-start skipped: user_data_dir empty", new Dictionary<string, string?>
+            {
+                ["port"] = port.ToString(),
+            });
+            return;
+        }
+
+        // Step 1: detect any running chrome on this port + user-data-dir,
+        // regardless of headless. If found, just adopt it.
+        var anyModeSpec = BuildChromeMatchSpec(chromePath, port, userDataDir, requireHeadless: null, launchKeySuffix: ":auto");
+        var existingPids = WindowQuery.FindMatchingProcessIds(anyModeSpec);
+        if (existingPids.Count > 0)
+        {
+            // Inspect the running pid's command line to record the *actual*
+            // mode in state (not the configured default), so the status
+            // segment matches reality.
+            var existingPid = existingPids[0];
+            var runningCommandLine = ProcessCommandLineReader.TryGetCommandLine(existingPid) ?? string.Empty;
+            var runningHeadless = runningCommandLine.Contains("--headless", StringComparison.OrdinalIgnoreCase);
+            logger.Info("chrome", "auto-start adopted existing chrome", new Dictionary<string, string?>
+            {
+                ["pid"] = existingPid.ToString(),
+                ["port"] = port.ToString(),
+                ["headless"] = runningHeadless ? "1" : "0",
+                ["user_data_dir"] = userDataDir,
+            });
+            WriteState(logger, stateFile, traceId, runningHeadless, port, existingPid, "auto_adopted");
+            ChromeLivenessWatcher.Track(logger, stateFile, existingPid, port, runningHeadless, traceId);
+            return;
+        }
+
+        // Step 2: nothing running. Launch with the configured default mode.
+        var launchArgs = new List<string>
+        {
+            $"--remote-debugging-port={port}",
+            $"--user-data-dir={userDataDir}",
+            $"--remote-allow-origins=http://localhost:{port}",
+            "--disable-extensions",
+            "--no-first-run",
+            "--no-default-browser-check",
+        };
+        if (launchHeadless)
+        {
+            launchArgs.Add("--headless=new");
+            launchArgs.Add("--window-size=1920,1080");
+        }
+
+        try
+        {
+            WindowActivator.LaunchDetachedProcess(chromePath, launchArgs);
+        }
+        catch (Exception ex)
+        {
+            logger.Warn("chrome", "auto-start launch failed", new Dictionary<string, string?>
+            {
+                ["chrome_path"] = chromePath,
+                ["port"] = port.ToString(),
+                ["headless"] = launchHeadless ? "1" : "0",
+                ["error"] = ex.Message,
+            });
+            WriteStateNone(logger, stateFile, traceId, port, pid: null, action: "auto_launch_failed");
+            return;
+        }
+
+        var matchSpec = BuildChromeMatchSpec(chromePath, port, userDataDir, requireHeadless: launchHeadless, launchKeySuffix: ":auto-launched");
+        var pids = WindowQuery.WaitForMatchingProcessIds(matchSpec, 4000);
+        if (pids.Count == 0)
+        {
+            logger.Warn("chrome", "auto-start launched but pid not resolved", new Dictionary<string, string?>
+            {
+                ["chrome_path"] = chromePath,
+                ["port"] = port.ToString(),
+                ["headless"] = launchHeadless ? "1" : "0",
+            });
+            WriteStateNone(logger, stateFile, traceId, port, pid: null, action: "auto_launch_pid_unresolved");
+            return;
+        }
+
+        var pid = pids[0];
+        logger.Info("chrome", "auto-start launched chrome", new Dictionary<string, string?>
+        {
+            ["pid"] = pid.ToString(),
+            ["port"] = port.ToString(),
+            ["headless"] = launchHeadless ? "1" : "0",
+            ["chrome_path"] = chromePath,
+        });
+        WriteState(logger, stateFile, traceId, launchHeadless, port, pid, "auto_launched");
+        ChromeLivenessWatcher.Track(logger, stateFile, pid, port, launchHeadless, traceId);
     }
 
     public static void WriteState(StructuredLogger logger, string? stateFile, string traceId, bool headless, int port, int? pid, string action)
