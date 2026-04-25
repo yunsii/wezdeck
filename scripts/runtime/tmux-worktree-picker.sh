@@ -11,6 +11,9 @@ session_name="${1:-}"
 current_window_id="${2:-}"
 list_root="${3:-$PWD}"
 cwd="${4:-$PWD}"
+prefetched_current_root="${5:-}"
+prefetched_repo_label="${6:-}"
+prefetched_file="${7:-}"
 context=""
 current_worktree_root=""
 repo_label=""
@@ -23,22 +26,17 @@ if [[ -z "$session_name" ]]; then
   exit 1
 fi
 
-if ! tmux has-session -t "$session_name" 2>/dev/null; then
-  runtime_log_error worktree "worktree picker failed: missing tmux session target" "session_name=$session_name" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
-  printf 'Worktree picker failed: missing session %s.\n' "$session_name"
-  exit 1
+# Skip the tmux has-session probe and the pre-paint log line when prefetch is
+# present: menu.sh already validated the session and any extra tmux RPC /
+# log fsync delays first paint inside the popup.
+if [[ -z "$prefetched_file" || ! -r "$prefetched_file" ]]; then
+  if ! tmux has-session -t "$session_name" 2>/dev/null; then
+    runtime_log_error worktree "worktree picker failed: missing tmux session target" "session_name=$session_name" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
+    printf 'Worktree picker failed: missing session %s.\n' "$session_name"
+    exit 1
+  fi
+  runtime_log_info worktree "worktree picker invoked" "session_name=$session_name" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd" "prefetched_file=$prefetched_file"
 fi
-
-runtime_log_info worktree "worktree picker invoked" "session_name=$session_name" "current_window_id=$current_window_id" "list_root=$list_root" "cwd=$cwd"
-
-context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" || true)"
-if [[ -n "$context" ]]; then
-  IFS=$'\t' read -r current_worktree_root _ _ repo_label <<< "$context"
-else
-  current_worktree_root=""
-  repo_label='repo'
-fi
-runtime_log_info worktree "worktree picker resolved current context" "session_name=$session_name" "current_window_id=$current_window_id" "current_worktree_root=$current_worktree_root" "repo_label=$repo_label"
 
 accelerators=(1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z)
 item_labels=()
@@ -47,12 +45,14 @@ item_branches=()
 item_window_ids=()
 item_accelerators=()
 
-while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
-  local_window_id=""
+append_item() {
+  local worktree_label="$1"
+  local worktree_path="$2"
+  local branch_name="$3"
+  local local_window_id="$4"
 
-  [[ -n "$worktree_path" ]] || continue
+  [[ -n "$worktree_path" ]] || return 0
 
-  local_window_id="$(tmux_worktree_find_window "$session_name" "$worktree_path" || true)"
   item_labels+=("$worktree_label")
   item_paths+=("$worktree_path")
   item_branches+=("$branch_name")
@@ -62,7 +62,31 @@ while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
   else
     item_accelerators+=("")
   fi
-done < <(tmux_worktree_list "$list_root" || true)
+}
+
+if [[ -n "$prefetched_file" && -r "$prefetched_file" ]]; then
+  current_worktree_root="$prefetched_current_root"
+  repo_label="${prefetched_repo_label:-repo}"
+  while IFS=$'\t' read -r worktree_label worktree_path branch_name local_window_id; do
+    append_item "$worktree_label" "$worktree_path" "$branch_name" "$local_window_id"
+  done < "$prefetched_file"
+else
+  context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" || true)"
+  if [[ -n "$context" ]]; then
+    IFS=$'\t' read -r current_worktree_root _ _ repo_label <<< "$context"
+  else
+    current_worktree_root=""
+    repo_label='repo'
+  fi
+  runtime_log_info worktree "worktree picker resolved current context" "session_name=$session_name" "current_window_id=$current_window_id" "current_worktree_root=$current_worktree_root" "repo_label=$repo_label"
+
+  while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
+    local_window_id=""
+    [[ -n "$worktree_path" ]] || continue
+    local_window_id="$(tmux_worktree_find_window "$session_name" "$worktree_path" || true)"
+    append_item "$worktree_label" "$worktree_path" "$branch_name" "$local_window_id"
+  done < <(tmux_worktree_list "$list_root" || true)
+fi
 
 item_count="${#item_paths[@]}"
 if (( item_count == 0 )); then
@@ -79,8 +103,6 @@ for index in "${!item_paths[@]}"; do
     break
   fi
 done
-
-runtime_log_info worktree "running worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "item_count=$item_count"
 
 cleanup() {
   printf '\033[0m\033[?25h'
@@ -99,7 +121,7 @@ terminal_size() {
 
 render_picker() {
   local rows cols visible_rows start_index end_index marker line accelerator line_branch
-  local line_suffix top_index
+  local line_suffix top_index frame
 
   IFS=' ' read -r rows cols <<< "$(terminal_size)"
   visible_rows=$((rows - 6))
@@ -120,10 +142,10 @@ render_picker() {
     fi
   fi
 
-  printf '\033[H\033[2J'
-  printf '%-*.*s\n' "$cols" "$cols" "Worktrees: $repo_label"
-  printf '%-*.*s\n' "$cols" "$cols" "Showing $((start_index + 1))-$((end_index + 1)) of $item_count"
-  printf '\n'
+  frame=$'\033[H'
+  frame+="$(printf '%-*.*s' "$cols" "$cols" "Worktrees: $repo_label")"$'\n'
+  frame+="$(printf '%-*.*s' "$cols" "$cols" "Showing $((start_index + 1))-$((end_index + 1)) of $item_count")"$'\n'
+  frame+=$'\n'
 
   for (( top_index = start_index; top_index <= end_index; top_index += 1 )); do
     marker=' '
@@ -150,14 +172,17 @@ render_picker() {
 
     line="$accelerator $marker ${item_labels[$top_index]}$line_branch$line_suffix"
     if (( top_index == selected_index )); then
-      printf '\033[7m%-*.*s\033[0m\n' "$cols" "$cols" "$line"
+      frame+=$'\033[7m'"$(printf '%-*.*s' "$cols" "$cols" "$line")"$'\033[0m\n'
     else
-      printf '%-*.*s\n' "$cols" "$cols" "$line"
+      frame+="$(printf '%-*.*s' "$cols" "$cols" "$line")"$'\n'
     fi
   done
 
-  printf '\n'
-  printf '%-*.*s' "$cols" "$cols" "Enter open | Up/Down move | 1-9,0,a-z open | Esc close"
+  frame+=$'\n'
+  frame+="$(printf '%-*.*s' "$cols" "$cols" "Enter open | Up/Down move | 1-9,0,a-z open | Esc close")"
+  frame+=$'\033[J'
+
+  printf '%s' "$frame"
 }
 
 read_key() {
@@ -192,7 +217,8 @@ open_selection() {
     "worktree_root=$worktree_root" \
     "existing_window_id=${window_id:-new}" \
     "cwd=$cwd"
-  WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_dir/tmux-worktree-open.sh" "$session_name" "$worktree_root" "$current_window_id" "$cwd"
+  local open_command="WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-open.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$worktree_root") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$cwd")"
+  tmux run-shell -b "$open_command"
 }
 
 find_accelerator_index() {
@@ -212,11 +238,16 @@ find_accelerator_index() {
 trap cleanup EXIT
 printf '\033[?25l'
 
+first_paint_done=0
 while true; do
   key=""
   accel_index=""
 
   render_picker
+  if (( first_paint_done == 0 )); then
+    first_paint_done=1
+    runtime_log_info worktree "worktree picker invoked" "session_name=$session_name" "current_window_id=$current_window_id" "repo_label=$repo_label" "item_count=$item_count" "prefetched_file=$prefetched_file"
+  fi
   key="$(read_key)" || exit 0
 
   case "$key" in
