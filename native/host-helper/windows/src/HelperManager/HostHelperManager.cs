@@ -54,6 +54,33 @@ internal sealed class HostHelperManager : IDisposable
         if (!string.IsNullOrWhiteSpace(config.ChromeDebugStatePath))
         {
             ChromeLivenessWatcher.ReconcileOnStartup(logger, config.ChromeDebugStatePath);
+
+            // Auto-start headless chrome so 9222 always has a CDP endpoint
+            // for MCP / agent tools, without requiring the user to press
+            // Alt+b first. Mode-agnostic: if any chrome on this port +
+            // user-data-dir is already running (visible or headless), adopt
+            // it; otherwise launch with the configured default mode. Never
+            // throws -- a missing chrome.exe just logs a warning and skips.
+            var autoStart = config.ChromeDebugAutoStart;
+            if (autoStart is { Enabled: true })
+            {
+                try
+                {
+                    ChromeRequestHandler.AutoStart(
+                        logger,
+                        autoStart.ChromePath ?? string.Empty,
+                        autoStart.RemoteDebuggingPort,
+                        autoStart.UserDataDir ?? string.Empty,
+                        config.ChromeDebugStatePath);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn("chrome", "auto-start threw, helper continues", new Dictionary<string, string?>
+                    {
+                        ["error"] = ex.Message,
+                    });
+                }
+            }
         }
 
         StartRequestServer();

@@ -11,6 +11,7 @@ internal sealed class HelperConfig
     public string? WindowCachePath { get; init; }
     public required string IpcEndpoint { get; init; }
     public string? ChromeDebugStatePath { get; init; }
+    public ChromeDebugAutoStartConfig? ChromeDebugAutoStart { get; init; }
     public required DiagnosticConfig Diagnostics { get; init; }
     public string? ClipboardOutputDir { get; init; }
     public string? ClipboardWslDistro { get; init; }
@@ -44,6 +45,7 @@ internal sealed class HelperConfig
             WindowCachePath = ResolveWindowCachePath(parsed.WindowCachePath),
             IpcEndpoint = parsed.IpcEndpoint,
             ChromeDebugStatePath = string.IsNullOrWhiteSpace(parsed.ChromeDebugStatePath) ? null : parsed.ChromeDebugStatePath,
+            ChromeDebugAutoStart = parsed.ChromeDebugAutoStart,
             Diagnostics = parsed.Diagnostics,
             ClipboardOutputDir = ResolveClipboardOutputDir(parsed.ClipboardOutputDir),
             ClipboardWslDistro = parsed.ClipboardWslDistro,
@@ -98,6 +100,14 @@ internal sealed class HelperConfig
 
         return Path.GetFullPath(configuredPath);
     }
+}
+
+internal sealed class ChromeDebugAutoStartConfig
+{
+    public bool Enabled { get; init; }
+    public string? ChromePath { get; init; }
+    public int RemoteDebuggingPort { get; init; }
+    public string? UserDataDir { get; init; }
 }
 
 internal sealed class DiagnosticConfig

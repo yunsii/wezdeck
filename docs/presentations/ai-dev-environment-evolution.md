@@ -382,6 +382,7 @@ A 收口**宿主动作链路**，B 收口**Agent 状态感知**；C 收口的是
 - 启动路径走 v5 子阶段 A 搭好的 Windows native helper IPC，带一套加固旗标：`--remote-allow-origins=http://localhost:<port>`（修 Chrome 111+ DevTools 白屏）、`--disable-extensions`、`--no-first-run`、`--no-default-browser-check`、`--headless=new`、`--window-size=1920,1080`（headless 默认是 800×600，MCP 截图和视口相关抓取会走样）。可见态和 headless 如果端口冲突，helper 会先终结旧进程树释放 Chrome 的 singleton lock，再切新模式 —— 模式切换本身也不抢焦点。
 - **这对 Agent 协作是一等大事**：Agent 通过 MCP 的 `--browser-url=http://localhost:<port>` 直接连上这个实例，自主跑 DOM 调试 / 截图 / 端到端验证，**既不抢我的焦点、也不在任务栏闪、更不会把窗口推到前台**。
 - **状态栏看得见**：右侧有一段固定宽度的 badge —— `CDP·H·9222` headless / `CDP·V·9222` visible / `CDP·-·<port>` Chrome 已退出 / `CDP·?·<port>` helper 自身心跳过期（无法判定）；四种状态占同样字符数，bar 宽度不抖。Chrome 退出时由 helper 端 `ChromeLivenessWatcher` 订阅 `Process.Exited`（带 5s 兜底轮询）即时改写 state，helper 自身重启时 `ReconcileOnStartup` 会校准残留状态。
+- **helper 启动即自启动 chrome**：helper 一上线（启动 / 重启 / 同步部署后）就先 `ReconcileOnStartup`，再 mode-agnostic 检测端口+user_data_dir：有 chrome 在跑（无论可见还是无头）直接采纳，没在跑就**自启 headless**——auto-start 永远不弹窗，避免打扰前台。`chrome_debug_browser.headless` 字段只影响 `Alt+b` 用户路径，不影响 auto-start。这意味着 Agent / MCP 永远不需要在调用工具前等用户按 Alt+b：开机即可用。
 - **对比老路径**：以前的验证闭环是"我手工启 Chrome → 切到它 → Agent 等我贴截图"；现在是"Agent 通过 browser-url 自己接管 → 我完全不用切焦点"。v5 里那句"真实验证闭环"里的"真实"——很大程度是靠这条 headless 流兑现的。
 
 ### 两条原则合流的系统结果

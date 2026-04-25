@@ -44,6 +44,11 @@ function M.build_helper_command(runtime)
     or M.diagnostics_capture_enabled(runtime.constants, 'chrome')
     or M.diagnostics_capture_enabled(runtime.constants, 'clipboard')
 
+  local chrome_debug = runtime.constants.chrome_debug_browser or {}
+  local chrome_auto_start_enabled = chrome_debug.auto_start ~= false
+    and type(chrome_debug.executable) == 'string' and chrome_debug.executable ~= ''
+    and type(chrome_debug.user_data_dir) == 'string' and chrome_debug.user_data_dir ~= ''
+
   return {
     integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
     '-NoProfile',
@@ -82,6 +87,14 @@ function M.build_helper_command(runtime)
     tostring(diagnostics.max_bytes or 0),
     '-DiagnosticsMaxFiles',
     tostring(diagnostics.max_files or 0),
+    '-ChromeDebugAutoStartEnabled',
+    chrome_auto_start_enabled and '1' or '0',
+    '-ChromeDebugChromePath',
+    chrome_debug.executable or '',
+    '-ChromeDebugRemoteDebuggingPort',
+    tostring(chrome_debug.remote_debugging_port or 9222),
+    '-ChromeDebugUserDataDir',
+    chrome_debug.user_data_dir or '',
   }, nil
 end
 

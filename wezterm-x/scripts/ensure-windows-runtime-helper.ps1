@@ -27,7 +27,15 @@ param(
 
   [int]$DiagnosticsMaxBytes = 0,
 
-  [int]$DiagnosticsMaxFiles = 0
+  [int]$DiagnosticsMaxFiles = 0,
+
+  [string]$ChromeDebugAutoStartEnabled = '0',
+
+  [string]$ChromeDebugChromePath = '',
+
+  [int]$ChromeDebugRemoteDebuggingPort = 9222,
+
+  [string]$ChromeDebugUserDataDir = ''
 )
 
 Set-StrictMode -Version 3.0
@@ -178,6 +186,12 @@ function Write-ManagerConfig {
     windowCachePath = $ManagerPaths.WindowCache
     ipcEndpoint = $ManagerPaths.IpcEndpoint
     chromeDebugStatePath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\chrome-debug\state.json'
+    chromeDebugAutoStart = [ordered]@{
+      enabled = ($ChromeDebugAutoStartEnabled -eq '1')
+      chromePath = $ChromeDebugChromePath
+      remoteDebuggingPort = $ChromeDebugRemoteDebuggingPort
+      userDataDir = $ChromeDebugUserDataDir
+    }
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
