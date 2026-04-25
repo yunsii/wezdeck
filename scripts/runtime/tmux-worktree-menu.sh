@@ -7,6 +7,20 @@ source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-worktree-lib.sh"
 
+# Microbench short-circuit, mirrors tmux-attention-menu.sh. When
+# WEZTERM_BENCH_NO_POPUP=1 is set, bench_mark records µs-since-start via
+# EPOCHREALTIME (zero-fork) and the script dumps a __BENCH__ line then
+# exits before display-popup so the user's tmux is never disrupted.
+# Drives scripts/dev/bench-menu-prep.sh with `--target worktree`.
+if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
+  bench_marks=()
+  bench_t0="${EPOCHREALTIME//./}"
+  bench_mark() { bench_marks+=("$1=$((${EPOCHREALTIME//./} - bench_t0))"); }
+else
+  bench_mark() { :; }
+fi
+bench_mark sourced
+
 session_name="${1:-}"
 current_window_id="${2:-}"
 cwd="${3:-$PWD}"
@@ -36,6 +50,7 @@ fi
 
 IFS=$'\t' read -r current_worktree_root repo_common_dir main_worktree_root repo_label <<< "$context"
 list_root="$main_worktree_root"
+bench_mark context_resolved
 runtime_log_info worktree "worktree menu resolved current context" \
   "session_name=$session_name" \
   "current_window_id=$current_window_id" \
@@ -69,6 +84,7 @@ while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
     item_accelerators+=("")
   fi
 done < <(tmux_worktree_list "$list_root" || true)
+bench_mark prefetched_items
 runtime_log_info worktree "worktree menu prefetched items" "session_name=$session_name" "repo_label=$repo_label" "item_count=${#item_paths[@]}" "prefetch_file=$prefetch_file"
 
 # Pre-render the first frame to a tmp file so the popup body can `cat` it
@@ -79,31 +95,59 @@ runtime_log_info worktree "worktree menu prefetched items" "session_name=$sessio
 # (minus 2 cells for the popup border on each axis); a brief mismatch with
 # picker.sh's stty-based render is invisible because both paint the same
 # bytes for a fresh popup with no scrollback.
-prefetch_frame_file="$(mktemp -t wezterm-worktree-frame.XXXXXX)"
-if (( ${#item_paths[@]} > 0 )); then
-  client_width="$(tmux display-message -p '#{client_width}' 2>/dev/null || echo 100)"
-  client_height="$(tmux display-message -p '#{client_height}' 2>/dev/null || echo 30)"
-  popup_cols=$(( client_width * 70 / 100 - 2 ))
-  (( popup_cols < 20 )) && popup_cols=20
-  popup_rows=$(( client_height * 75 / 100 - 2 ))
-  (( popup_rows < 6 )) && popup_rows=6
-  visible_rows=$(( popup_rows - 6 ))
-  (( visible_rows < 1 )) && visible_rows=1
+# Prefer the static Go picker binary when present. Cold start is ~2-5ms
+# vs ~30-80ms for the bash picker, and the Go path needs no
+# pre-rendered frame (it owns its own first paint). When the binary is
+# missing, fall back to the bash picker, which still expects a
+# pre-rendered frame and the existing positional contract.
+picker_binary="$script_dir/picker/bin/picker"
+prefetch_frame_file=''
+picker_kind='bash'
+open_script="$script_dir/tmux-worktree-open.sh"
 
-  initial_selected=0
-  for idx in "${!item_paths[@]}"; do
-    if [[ "${item_paths[$idx]}" == "$current_worktree_root" ]]; then
-      initial_selected="$idx"
-      break
-    fi
-  done
+if [[ -x "$picker_binary" ]]; then
+  picker_kind='go'
+  menu_done_ts="$(date +%s%3N)"
+  picker_command=$(printf 'WEZTERM_RUNTIME_TRACE_ID=%q %q worktree %q %q %q %q %q %q %q %q %q %q' \
+    "$trace_id" "$picker_binary" \
+    "$prefetch_file" "$open_script" \
+    "$session_name" "$current_window_id" "$cwd" \
+    "$current_worktree_root" "$repo_label" \
+    "$start_ms" "$start_ms" "$menu_done_ts")
+else
+  prefetch_frame_file="$(mktemp -t wezterm-worktree-frame.XXXXXX)"
+  if (( ${#item_paths[@]} > 0 )); then
+    client_width="$(tmux display-message -p '#{client_width}' 2>/dev/null || echo 100)"
+    client_height="$(tmux display-message -p '#{client_height}' 2>/dev/null || echo 30)"
+    popup_cols=$(( client_width * 70 / 100 - 2 ))
+    (( popup_cols < 20 )) && popup_cols=20
+    popup_rows=$(( client_height * 75 / 100 - 2 ))
+    (( popup_rows < 6 )) && popup_rows=6
+    visible_rows=$(( popup_rows - 6 ))
+    (( visible_rows < 1 )) && visible_rows=1
 
-  # shellcheck disable=SC1091
-  source "$script_dir/tmux-worktree/render.sh"
-  worktree_picker_emit_frame "$popup_cols" "$visible_rows" "$initial_selected" "${#item_paths[@]}" "$current_worktree_root" "$repo_label" > "$prefetch_frame_file"
+    initial_selected=0
+    for idx in "${!item_paths[@]}"; do
+      if [[ "${item_paths[$idx]}" == "$current_worktree_root" ]]; then
+        initial_selected="$idx"
+        break
+      fi
+    done
+
+    # shellcheck disable=SC1091
+    source "$script_dir/tmux-worktree/render.sh"
+    worktree_picker_emit_frame "$popup_cols" "$visible_rows" "$initial_selected" "${#item_paths[@]}" "$current_worktree_root" "$repo_label" > "$prefetch_frame_file"
+  fi
+  picker_command="WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd") $(tmux_worktree_shell_quote "$current_worktree_root") $(tmux_worktree_shell_quote "$repo_label") $(tmux_worktree_shell_quote "$prefetch_file") $(tmux_worktree_shell_quote "$prefetch_frame_file")"
 fi
+bench_mark frame_rendered
+bench_mark prep_done
 
-picker_command="WEZTERM_RUNTIME_TRACE_ID=$(tmux_worktree_shell_quote "$trace_id") bash $(tmux_worktree_shell_quote "$script_dir/tmux-worktree-picker.sh") $(tmux_worktree_shell_quote "$session_name") $(tmux_worktree_shell_quote "$current_window_id") $(tmux_worktree_shell_quote "$list_root") $(tmux_worktree_shell_quote "$cwd") $(tmux_worktree_shell_quote "$current_worktree_root") $(tmux_worktree_shell_quote "$repo_label") $(tmux_worktree_shell_quote "$prefetch_file") $(tmux_worktree_shell_quote "$prefetch_frame_file")"
+if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
+  printf '__BENCH__ picker_kind=%s item_count=%d %s\n' "$picker_kind" "${#item_paths[@]}" "${bench_marks[*]}"
+  rm -f "$prefetch_file" "$prefetch_frame_file"
+  exit 0
+fi
 
 runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "list_root=$list_root"
 if tmux display-popup -x C -y C -w 70% -h 75% -T "Worktrees: $repo_label" -E "$picker_command"; then

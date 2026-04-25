@@ -107,6 +107,44 @@ function M.new(ctx)
       local foreground_process = common.foreground_process_basename(pane)
 
       if tmux_backed then
+        -- Toggle handshake: tmux's user-keys translation consumes the
+        -- forwarded \x1b[20099~ (-> User0) at the client level when a
+        -- popup is up, so a second Ctrl+Shift+P never re-fires
+        -- bind-key. tmux-command-menu.sh writes a flag file under the
+        -- LOCALAPPDATA wezterm-runtime state dir for the lifetime of
+        -- the popup; if we see it, route this press to
+        -- `tmux display-popup -C` directly via wsl.exe (out-of-band,
+        -- not via pty bytes) so the close path bypasses the user-key
+        -- mechanism entirely.
+        local local_app_data = os.getenv('LOCALAPPDATA')
+        if local_app_data and local_app_data ~= '' then
+          local flag_path = local_app_data .. '\\wezterm-runtime\\state\\command-panel\\popup-open.flag'
+          local flag = io.open(flag_path, 'r')
+          if flag then
+            flag:close()
+            local distro = common.wsl_distro_from_domain(pane:get_domain_name())
+              or common.wsl_distro_from_domain(constants.default_domain)
+            if distro then
+              logger.info('command_panel', 'closing existing command palette popup via display-popup -C', common.merge_fields(trace_id, {
+                decision_path = decision_path,
+                distro = distro,
+                workspace = workspace_name,
+              }))
+              local close_args = { 'wsl.exe', '-d', distro, '--', 'tmux', 'display-popup', '-C' }
+              local ok, err = pcall(wezterm.background_child_process, close_args)
+              if not ok then
+                logger.error('command_panel', 'background_child_process for display-popup -C failed', common.merge_fields(trace_id, {
+                  error = err,
+                }))
+              end
+              return
+            end
+            logger.warn('command_panel', 'cannot resolve WSL distro for display-popup -C; falling back to forward', common.merge_fields(trace_id, {
+              workspace = workspace_name,
+            }))
+          end
+        end
+
         logger.info('command_panel', 'forwarding Ctrl+Shift+P to tmux command palette via tmux user-key transport', common.merge_fields(trace_id, {
           decision_path = decision_path,
           transport = 'User0',
