@@ -209,30 +209,25 @@ func renderAttentionFrame(rows []attentionRow, selected int, keypressTS, menuSta
 	for i := startIndex; i <= endIndex; i++ {
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := rows[i]
+		// Only the leading caret distinguishes selected from unselected;
+		// everything else (badge color, body, dim age) renders identically.
+		// The 2-col gutter is reserved on every row so column alignment
+		// stays stable as the cursor moves.
 		if i == selected {
-			b.WriteString("\x1b[1;7m")
-			b.WriteString(plainBadge(r.status))
-			b.WriteString("  ")
-			b.WriteString(r.body)
-			if r.age != "" {
-				b.WriteString("  (")
-				b.WriteString(r.age)
-				b.WriteString(")")
-			}
-			b.WriteString(reset)
-			b.WriteString(clearEOL)
+			b.WriteString("▶ ")
 		} else {
-			b.WriteString(coloredBadge(r.status))
 			b.WriteString("  ")
-			b.WriteString(r.body)
-			if r.age != "" {
-				b.WriteString("  \x1b[2m(")
-				b.WriteString(r.age)
-				b.WriteString(")")
-				b.WriteString(reset)
-			}
-			b.WriteString(clearEOL)
 		}
+		b.WriteString(coloredBadge(r.status))
+		b.WriteString("  ")
+		b.WriteString(r.body)
+		if r.age != "" {
+			b.WriteString("  \x1b[2m(")
+			b.WriteString(r.age)
+			b.WriteString(")")
+			b.WriteString(reset)
+		}
+		b.WriteString(clearEOL)
 		row++
 	}
 
@@ -413,20 +408,6 @@ func coloredBadge(status string) string {
 		return "\x1b[38;5;108m✓ DONE\x1b[0m"
 	case "__sentinel__":
 		return "\x1b[1;38;5;160m✗ CLR \x1b[0m"
-	}
-	return "· ----"
-}
-
-func plainBadge(status string) string {
-	switch status {
-	case "running":
-		return "⟳ RUN "
-	case "waiting":
-		return "⚠ WAIT"
-	case "done":
-		return "✓ DONE"
-	case "__sentinel__":
-		return "✗ CLR "
 	}
 	return "· ----"
 }

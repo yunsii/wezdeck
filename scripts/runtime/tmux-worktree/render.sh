@@ -68,10 +68,14 @@ worktree_picker_emit_frame() {
 
     line="$accelerator $marker ${item_labels[$top_index]}$line_branch$line_suffix"
     frame+=$'\033['"${row};1H"
+    # Only the leading caret distinguishes selected from unselected;
+    # the 2-col gutter is reserved on every row so column alignment
+    # stays stable as the cursor moves. `\033[K` clears to end of line
+    # (no need to printf-pad).
     if (( top_index == selected_index )); then
-      frame+=$'\033[7m'"$(printf '%-*.*s' "$cols" "$cols" "$line")"$'\033[0m'
+      frame+="▶ $line"$'\033[K'
     else
-      frame+="$(printf '%-*.*s' "$cols" "$cols" "$line")"
+      frame+="  $line"$'\033[K'
     fi
     row=$((row + 1))
   done
