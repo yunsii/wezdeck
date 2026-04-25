@@ -106,11 +106,39 @@ func runAttention(args []string) int {
 	// Hide cursor for the picker's lifetime.
 	_, _ = os.Stdout.WriteString("\x1b[?25l")
 
+	// Type-to-filter is always-on (mirrors the command palette); there is
+	// no separate "filter mode" to enter. Every printable keystroke goes
+	// straight into the substring filter, the search row at line 2 is
+	// always visible, and Tab still cycles the orthogonal status filter.
+	filterText := ""
+	statusFilter := "all" // "all" | "running" | "waiting" | "done"
 	selected := 0
-	total := len(rows)
+
+	visible := applyAttentionFilter(rows, filterText, statusFilter)
+
+	render := func(paintKind string) {
+		renderAttentionFrame(visible, selected, keypressTS, menuStartTS, menuDoneTS, paintKind, filterText, statusFilter)
+	}
 
 	// First paint.
-	renderAttentionFrame(rows, selected, keypressTS, menuStartTS, menuDoneTS, "first")
+	render("first")
+
+	cycleStatus := func() {
+		switch statusFilter {
+		case "all":
+			statusFilter = "waiting"
+		case "waiting":
+			statusFilter = "running"
+		case "running":
+			statusFilter = "done"
+		case "done":
+			statusFilter = "all"
+		default:
+			statusFilter = "all"
+		}
+		selected = 0
+		visible = applyAttentionFilter(rows, filterText, statusFilter)
+	}
 
 	for {
 		key, err := readKey()
@@ -123,21 +151,100 @@ func runAttention(args []string) int {
 
 		switch key {
 		case "\r", "\n":
-			dispatchAttention(rows[selected], jumpScript)
+			if len(visible) == 0 {
+				continue
+			}
+			dispatchAttention(visible[selected], jumpScript)
 			return 0
-		case "\x1b", "\x03", "\x1b/":
-			// Bare Esc, Ctrl+C, or the forwarded `\x1b/` from a second
-			// Alt+/ press — the popup is the only thing listening, so
-			// the same chord that opens the picker also closes it.
+		case "\x1b/", "\x03":
+			// Forwarded second Alt+/ and Ctrl+C — unconditional close.
+			// Preserves toggle behaviour and gives the user a stable
+			// escape hatch even when the filter is non-empty.
 			return 0
-		case "\x1b[B", "\x1bOB", "j":
-			selected = (selected + 1) % total
-			renderAttentionFrame(rows, selected, keypressTS, menuStartTS, menuDoneTS, "repaint")
-		case "\x1b[A", "\x1bOA", "k":
-			selected = (selected - 1 + total) % total
-			renderAttentionFrame(rows, selected, keypressTS, menuStartTS, menuDoneTS, "repaint")
+		case "\x1b":
+			// Bare Esc: clear filter when non-empty, otherwise close.
+			// Matches the command palette's Esc semantics so the user
+			// can back out of a search without losing the popup.
+			if filterText != "" {
+				filterText = ""
+				selected = 0
+				visible = applyAttentionFilter(rows, filterText, statusFilter)
+				render("repaint")
+				continue
+			}
+			return 0
+		case "\x1b[B", "\x1bOB":
+			if len(visible) > 0 {
+				selected = (selected + 1) % len(visible)
+				render("repaint")
+			}
+		case "\x1b[A", "\x1bOA":
+			if len(visible) > 0 {
+				selected = (selected - 1 + len(visible)) % len(visible)
+				render("repaint")
+			}
+		case "\t":
+			cycleStatus()
+			render("repaint")
+		case "\x7f", "\x08":
+			if filterText != "" {
+				filterText = filterText[:len(filterText)-1]
+				selected = 0
+				visible = applyAttentionFilter(rows, filterText, statusFilter)
+				render("repaint")
+			}
+		case "\x15": // Ctrl+U — clear filter in one keystroke.
+			if filterText != "" {
+				filterText = ""
+				selected = 0
+				visible = applyAttentionFilter(rows, filterText, statusFilter)
+				render("repaint")
+			}
+		default:
+			// Append printable ASCII only (single byte 0x20–0x7E). Stray
+			// escape sequences or multi-byte input is ignored so it
+			// cannot pollute the filter string.
+			if len(key) == 1 {
+				c := key[0]
+				if c >= 0x20 && c <= 0x7E {
+					filterText += key
+					selected = 0
+					visible = applyAttentionFilter(rows, filterText, statusFilter)
+					render("repaint")
+				}
+			}
 		}
 	}
+}
+
+// applyAttentionFilter returns the subset of rows that pass the current
+// filter. The clear-all sentinel is included only when both filter
+// dimensions are at their defaults (empty text + "all" status) — the
+// sentinel is a meta action and the user typing/cycling clearly excludes
+// it from intent.
+func applyAttentionFilter(rows []attentionRow, filterText, statusFilter string) []attentionRow {
+	filterActive := filterText != "" || statusFilter != "all"
+	lowerFilter := strings.ToLower(filterText)
+	out := make([]attentionRow, 0, len(rows))
+	for _, r := range rows {
+		if r.status == "__sentinel__" {
+			if filterActive {
+				continue
+			}
+			out = append(out, r)
+			continue
+		}
+		if statusFilter != "all" && r.status != statusFilter {
+			continue
+		}
+		if filterText != "" {
+			if !strings.Contains(strings.ToLower(r.body), lowerFilter) {
+				continue
+			}
+		}
+		out = append(out, r)
+	}
+	return out
 }
 
 func loadAttentionRows(path string) ([]attentionRow, error) {
@@ -169,7 +276,7 @@ func loadAttentionRows(path string) ([]attentionRow, error) {
 // same color codes, same selection highlight scheme. If you change
 // either, change both — the bash menu.sh side still pre-renders the
 // first frame for the bash fallback path.
-func renderAttentionFrame(rows []attentionRow, selected int, keypressTS, menuStartTS, menuDoneTS int64, paintKind string) {
+func renderAttentionFrame(rows []attentionRow, selected int, keypressTS, menuStartTS, menuDoneTS int64, paintKind, filterText, statusFilter string) {
 	cols, lines, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || cols < 1 {
 		cols = 80
@@ -177,7 +284,9 @@ func renderAttentionFrame(rows []attentionRow, selected int, keypressTS, menuSta
 	if lines < 1 {
 		lines = 24
 	}
-	visibleRows := lines - 4
+	// 5 non-row lines: title, search input, blank divider, blank-before-
+	// footer, footer.
+	visibleRows := lines - 5
 	if visibleRows < 1 {
 		visibleRows = 1
 	}
@@ -202,14 +311,50 @@ func renderAttentionFrame(rows []attentionRow, selected int, keypressTS, menuSta
 	var b strings.Builder
 	b.Grow(2048)
 
-	// Title row.
+	// Title row. The substring filter has its own search row below; the
+	// title only shows count + (when active) the status filter chip.
+	titleN := selected + 1
+	if itemCount == 0 {
+		titleN = 0
+	}
 	b.WriteString("\x1b[1;1H\x1b[1m")
-	fmt.Fprintf(&b, "Agent attention — %d/%d  ·  order matches status bar (⟳ → ⚠ → ✓)", selected+1, itemCount)
-	b.WriteString(reset)
+	fmt.Fprintf(&b, "Agent attention — %d/%d", titleN, itemCount)
+	if statusFilter == "all" {
+		b.WriteString("  ·  order matches status bar (⟳ → ⚠ → ✓)")
+		b.WriteString(reset)
+	} else {
+		b.WriteString(reset)
+		switch statusFilter {
+		case "running":
+			b.WriteString("  \x1b[1;38;5;39m[⟳ running]")
+			b.WriteString(reset)
+		case "waiting":
+			b.WriteString("  \x1b[1;38;5;208m[⚠ waiting]")
+			b.WriteString(reset)
+		case "done":
+			b.WriteString("  \x1b[38;5;108m[✓ done]")
+			b.WriteString(reset)
+		}
+	}
 	b.WriteString(clearEOL)
 
-	// Item rows start at row 3 (row 2 stays blank as a divider).
-	row := 3
+	// Search row at line 2 — always visible (command-palette style). Empty
+	// state shows a dim placeholder so the affordance is discoverable.
+	cursor := "\x1b[7m \x1b[27m"
+	if filterText != "" {
+		fmt.Fprintf(&b, "\x1b[2;1HSearch: %s%s", filterText, cursor)
+	} else {
+		fmt.Fprintf(&b, "\x1b[2;1H\x1b[2mSearch: %s\x1b[2m Type to filter (Tab cycles status)…%s", cursor, reset)
+	}
+	b.WriteString(clearEOL)
+
+	// Item rows start at row 4 (row 1 = title, row 2 = search, row 3 =
+	// blank divider).
+	row := 4
+	if itemCount == 0 {
+		fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2mNo matches — Esc clears search, Tab cycles status, Backspace edits.%s%s", row, reset, clearEOL)
+		row++
+	}
 	for i := startIndex; i <= endIndex; i++ {
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := rows[i]
@@ -245,7 +390,7 @@ func renderAttentionFrame(rows []attentionRow, selected int, keypressTS, menuSta
 	// once the bash picker is removed.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	b.WriteString("\x1b[2mEnter jump | Up/Down move | Esc / Alt+/ close  ·  powered by ")
+	b.WriteString("\x1b[2mEnter jump | Up/Down move | type filter | Tab status | Esc clear/close  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	var elapsed, lua, menu, picker int64

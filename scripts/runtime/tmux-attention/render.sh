@@ -38,6 +38,13 @@ attention_picker_emit_frame() {
   local lua_ms="${6:-0}"
   local menu_ms="${7:-0}"
   local picker_ms="${8:-0}"
+  # Optional filter state. The picker is always type-to-filter (mirrors
+  # the command palette UX), so the search row is always shown. Defaults
+  # produce the empty-search "Type to filter…" placeholder.
+  #   $9  = filter_text   (substring match against body)
+  #   $10 = status_filter ("all" | "running" | "waiting" | "done")
+  local filter_text="${9:-}"
+  local status_filter="${10:-all}"
 
   local start_index end_index row top_index status body age frame
   local reset=$'\033[0m'
@@ -54,13 +61,47 @@ attention_picker_emit_frame() {
     (( start_index < 0 )) && start_index=0
   fi
 
-  # Title row.
+  # Title row. The substring filter lives in its own search row below;
+  # the title only shows count + (when active) the status filter chip.
+  local title_n=$((selected_index + 1))
+  (( item_count == 0 )) && title_n=0
   frame=$'\033[1;1H'
-  frame+=$'\033[1m'"Agent attention — $((selected_index + 1))/$item_count  ·  order matches status bar (⟳ → ⚠ → ✓)"$reset
+  frame+=$'\033[1m'"Agent attention — ${title_n}/$item_count"
+  if [[ "$status_filter" == "all" ]]; then
+    frame+="  ·  order matches status bar (⟳ → ⚠ → ✓)"
+    frame+="$reset"
+  else
+    frame+="$reset"
+    case "$status_filter" in
+      running) frame+="  "$'\033[1;38;5;39m'"[⟳ running]"$reset ;;
+      waiting) frame+="  "$'\033[1;38;5;208m'"[⚠ waiting]"$reset ;;
+      done)    frame+="  "$'\033[38;5;108m'"[✓ done]"$reset ;;
+    esac
+  fi
   frame+="$clear_eol"
 
-  # Item rows start at row 3, leaving row 2 blank as a visual divider.
-  row=3
+  # Search row at line 2 — always visible (command-palette style). Empty
+  # state shows a dim placeholder so the affordance is discoverable; once
+  # the user types anything the row flips to `Search: <query>` at full
+  # intensity. Cursor block is drawn at the end of the query (or after
+  # the prompt when empty) so the input feels textbox-like.
+  local cursor=$'\033[7m \033[27m'
+  frame+=$'\033[2;1H'
+  if [[ -n "$filter_text" ]]; then
+    frame+="Search: ${filter_text}${cursor}"
+  else
+    frame+=$'\033[2m'"Search: ${cursor}"$'\033[2m'" Type to filter (Tab cycles status)…"$reset
+  fi
+  frame+="$clear_eol"
+
+  # Item rows start at row 4 (row 1 = title, row 2 = search, row 3 = blank
+  # divider). Same dim "No matches" placeholder in the rows area when the
+  # filter excludes everything.
+  row=4
+  if (( item_count == 0 )); then
+    frame+=$'\033['"${row};1H"$'\033[2m'"No matches — Esc clears search, Tab cycles status, Backspace edits."$reset"$clear_eol"
+    row=$((row + 1))
+  fi
   for (( top_index = start_index; top_index <= end_index; top_index += 1 )); do
     status="${row_status[$top_index]}"
     body="${row_body[$top_index]}"
@@ -100,7 +141,7 @@ attention_picker_emit_frame() {
   # is actively comparing across runs — drop both once the Go picker is
   # confirmed and this script is removed.
   row=$((row + 1))
-  frame+=$'\033['"${row};1H"$'\033[2m'"Enter jump | Up/Down move | Esc / Alt+/ close  ·  powered by "$'\033[22;1;38;5;208m'"bash"$reset
+  frame+=$'\033['"${row};1H"$'\033[2m'"Enter jump | Up/Down move | type filter | Tab status | Esc clear/close  ·  powered by "$'\033[22;1;38;5;208m'"bash"$reset
   if [[ "$elapsed_ms" =~ ^[0-9]+$ ]] && (( elapsed_ms > 0 )); then
     frame+=$'\033[2m'"  ·  ${elapsed_ms}ms"
     if (( lua_ms > 0 || menu_ms > 0 || picker_ms > 0 )); then
