@@ -14,18 +14,10 @@ set -euo pipefail
 lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$lib_dir/../.." && pwd)"
 # shellcheck disable=SC1091
-. "$repo_root/scripts/runtime/windows-runtime-paths-lib.sh"
-
-hotkey_usage_path() {
-  if windows_runtime_detect_paths 2>/dev/null; then
-    printf '%s/hotkey-usage.json' "$WINDOWS_RUNTIME_STATE_WSL"
-    return 0
-  fi
-  local state_root="${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime"
-  printf '%s/hotkey-usage.json' "$state_root"
-}
+. "$repo_root/scripts/runtime/hotkey-usage-lib.sh"
 
 counter_path="$(hotkey_usage_path)"
+hotkey_usage_migrate_legacy "$counter_path"
 manifest_path="$repo_root/wezterm-x/commands/manifest.json"
 
 case "${1:-}" in
