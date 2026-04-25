@@ -29,7 +29,8 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
 - `work` and `config` default to the managed launcher profile from `managed_cli.default_profile`.
 - The tracked baseline resolves that profile from `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env` when present; otherwise it falls back through the shared `worktree-task` config and then the built-in Lua default.
 - The managed agent startup uses the profile default, and switches to the light variant when `managed_cli.ui_variant = "light"`.
-- Profile commands are forked into bare and `-resume` variants. Bare `claude` / `codex` start fresh on every pane open and are used for the main worktree (no stale cross-task context) and for `hotfix-*` worktrees (urgent context shouldn't be polluted). The `claude-resume` / `codex-resume` profiles auto-continue the cwd's most recent conversation (`claude --continue`, `sh -c 'codex resume --last || exec codex'`) and are used for `dev-*` long-lived worktrees and `task-*` short-lived worktrees where cross-session continuity is the asset. `open-task-window --type` picks the right profile per lifecycle automatically; main-worktree panes inherit the user's `MANAGED_AGENT_PROFILE` (default `claude`).
+- Profile commands are forked into bare and `-resume` variants. Every wezterm/tmux entry point that creates **or refreshes** a worktree-window agent pane — `Ctrl+k g d/t/h` lifecycle hotkeys, the `Alt+g` picker when it spawns a window on demand, `Alt+Shift+G` cycle, the legacy bare-name path of `open-task-window`, and the palette refresh actions (`session.refresh-current-window` / `refresh-current-session` / `refresh-current-workspace`) — launches the agent under the `<base>-resume` profile (`claude --continue`, `sh -c 'codex resume --last || exec codex'`). The agent CLI falls back to a fresh session when the cwd has no prior conversation, so resume is safe on first open of a brand-new worktree. The bare `claude` / `codex` profiles are kept as the fallback-target of those resume commands and for direct `worktree-task launch` invocations that opt out of resume explicitly.
+- `session.refresh-current-window` only respawns the focused pane: focus the agent pane to bring the agent back under the resume profile, focus a secondary pane to respawn just that shell. The "primary pane" of a managed window is identified by pane id (the first entry from `tmux list-panes`), not pane index — under this repo's `tmux.conf` (`pane-base-index 1`) the agent pane's index is `1`. Use `refresh-current-session` if you want the whole window rebuilt regardless of focus.
 - Profile command strings are sourced from `config/worktree-task.env` (repo-level) and `~/.config/worktree-task/config.env` (user-level). The Lua baseline in `wezterm-x/lua/constants.lua` only carries bare fallbacks used when no env file populates them, so both WezTerm workspace panes and worktree-task quick-create windows read the same single source of truth; edit the env file to change every surface at once.
 - Managed agent commands run inside the resolved login shell so workspace startup sees the same shell environment as your normal terminal sessions.
 - Raw `command = { ... }` overrides still bypass the managed launcher profile entirely.
@@ -44,10 +45,10 @@ The worktree-task runtime supports a two-tier model where directory naming encod
 
 | Prefix | Lifetime | Created by | Reclaimed by | Agent profile |
 |---|---|---|---|---|
-| `main/` (the primary worktree) | permanent | initial clone | never | bare `claude` / `codex` |
+| `main/` (the primary worktree) | permanent | initial clone | never | `claude-resume` / `codex-resume` |
 | `dev-*` | weeks–months | `Ctrl+k g d` | manual `git worktree remove` only — `worktree-task reclaim` refuses | `claude-resume` / `codex-resume` |
 | `task-*` | hours–days | `Ctrl+k g t` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
-| `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | bare `claude` / `codex` |
+| `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 
 Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. Reclaim is intentionally refused on them by both the CLI and the hotkey to prevent loss of that state.
 

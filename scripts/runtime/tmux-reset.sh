@@ -2,10 +2,13 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+wezterm_config_repo="$(cd "$script_dir/../.." && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-worktree-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/worktree/lib/resume-command.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-reset/common.sh"
 # shellcheck disable=SC1091

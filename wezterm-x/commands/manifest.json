@@ -223,7 +223,7 @@
   {
     "id": "worktree.picker",
     "label": "Worktree: Pick in this repo family",
-    "description": "Open a centered tmux popup worktree picker; selecting an unopened worktree creates its tmux window on demand.",
+    "description": "Open a centered tmux popup worktree picker; selecting an unopened worktree creates its tmux window on demand and launches the agent under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
     "binding": {"handler": "worktree.picker"},
@@ -235,7 +235,7 @@
   {
     "id": "worktree.cycle-next",
     "label": "Worktree: Cycle to next",
-    "description": "Cycle to the next git worktree in the current repo family, creating its tmux window on demand when needed.",
+    "description": "Cycle to the next git worktree in the current repo family, creating its tmux window on demand and launching the agent under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
     "binding": {"handler": "worktree.cycle_next"},
@@ -247,7 +247,7 @@
   {
     "id": "worktree.quick-create-dev",
     "label": "Worktree: Quick-create dev-* (long-lived)",
-    "description": "Open a `dev-:` prompt; entered name becomes worktree `dev-<slug>` for long-lived parallel development. Agent uses the `<base>-resume` profile so cwd context is preserved across days.",
+    "description": "Open a `dev-:` prompt; entered name becomes worktree `dev-<slug>` for long-lived parallel development. Agent launches under the `<base>-resume` profile (auto-continue cwd's last conversation, fall back to fresh on first open).",
     "scope": "project-navigation",
     "context": "tmux-backed",
     "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "command-prompt -p \"dev-:\" \"run-shell -b 'bash #{@wezterm_runtime_root}/scripts/runtime/worktree/open-task-window --type dev \\\"%1\\\" >/dev/null 2>&1'\""},
@@ -268,7 +268,7 @@
   {
     "id": "worktree.quick-create-task",
     "label": "Worktree: Quick-create task-* (short-lived)",
-    "description": "Open a `task-:` prompt; entered name becomes worktree `task-<slug>` for PR-scoped focused work. Agent uses the `<base>-resume` profile.",
+    "description": "Open a `task-:` prompt; entered name becomes worktree `task-<slug>` for PR-scoped focused work. Agent launches under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
     "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "command-prompt -p \"task-:\" \"run-shell -b 'bash #{@wezterm_runtime_root}/scripts/runtime/worktree/open-task-window --type task \\\"%1\\\" >/dev/null 2>&1'\""},
@@ -289,7 +289,7 @@
   {
     "id": "worktree.quick-create-hotfix",
     "label": "Worktree: Quick-create hotfix-* (urgent)",
-    "description": "Open a `hotfix-:` prompt; entered name becomes worktree `hotfix-<slug>` for urgent fixes. Agent uses the bare `<base>` profile so context is fresh — no stale resume state.",
+    "description": "Open a `hotfix-:` prompt; entered name becomes worktree `hotfix-<slug>` for urgent fixes. Agent launches under the `<base>-resume` profile; on first open of a brand-new worktree the resume command falls back to a fresh agent automatically.",
     "scope": "project-navigation",
     "context": "tmux-backed",
     "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "command-prompt -p \"hotfix-:\" \"run-shell -b 'bash #{@wezterm_runtime_root}/scripts/runtime/worktree/open-task-window --type hotfix \\\"%1\\\" >/dev/null 2>&1'\""},

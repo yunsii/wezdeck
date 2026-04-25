@@ -9,10 +9,11 @@
 # custom provider) still belongs to `worktree-task launch`/`reclaim`.
 #
 # `--type dev|task|hotfix` opts into the lifecycle-aware path: it prefixes
-# the slug (so `--type dev` + `billing` → worktree dir `dev-billing/`) and
-# picks the agent profile to match (dev/task → `<base>-resume` for cwd
-# auto-resume; hotfix → bare `<base>` for a fresh agent so urgent context
-# isn't polluted by yesterday's task). `<base>` defaults to whatever
+# the slug (so `--type dev` + `billing` → worktree dir `dev-billing/`).
+# Every lifecycle — and the legacy bare path — uses the `<base>-resume`
+# profile so the agent auto-continues the cwd's most recent conversation;
+# when no prior conversation exists, the resume command falls back to a
+# fresh agent on its own. `<base>` defaults to whatever
 # MANAGED_AGENT_PROFILE selects (claude / codex / …).
 set -euo pipefail
 
@@ -38,13 +39,14 @@ produce the same result. Existing worktrees with the same slug bump to
 `<slug>-2`, `<slug>-3`, etc. — use `Alt+g` / `Alt+Shift+g` to reopen an
 already-existing task worktree instead.
 
-  --type dev      long-lived parallel dev workstation; agent uses
-                  `<base>-resume` profile to keep multi-day context
-  --type task     short-lived focused task (PR-scoped); resume profile
-  --type hotfix   urgent fix; bare profile so context is fresh
+  --type dev      long-lived parallel dev workstation
+  --type task     short-lived focused task (PR-scoped)
+  --type hotfix   urgent fix
 
-Without --type, behavior is the legacy bare-name path (kept for
-backward compat and direct CLI invocation).
+All lifecycles (and the legacy bare-name path) launch with the
+`<base>-resume` profile so the agent auto-continues the cwd's most
+recent conversation; the resume command falls back to a fresh agent
+when no prior conversation exists for that cwd.
 EOF
 }
 
@@ -117,23 +119,15 @@ else
   title="$name"
 fi
 
-# Profile selection per lifecycle. Resolve the "base" profile from the
-# user's preference (MANAGED_AGENT_PROFILE in shared.env), strip any
-# trailing `-resume` so we re-derive cleanly, then add it back per type.
+# Profile selection. Resolve the "base" profile from the user's preference
+# (MANAGED_AGENT_PROFILE in shared.env), strip any trailing `-resume` so we
+# re-derive cleanly, then always pick the resume variant — every lifecycle
+# (dev/task/hotfix) and the legacy bare path want cwd auto-resume; if there
+# is no prior conversation for the cwd, the resume command falls back to a
+# fresh agent on its own.
 base_profile="${MANAGED_AGENT_PROFILE:-claude}"
 base_profile="${base_profile%-resume}"
-case "$type_kind" in
-  dev|task)
-    selected_profile="${base_profile}-resume"
-    ;;
-  hotfix)
-    selected_profile="$base_profile"
-    ;;
-  "")
-    # Legacy path keeps the user's existing profile choice unchanged.
-    selected_profile="${MANAGED_AGENT_PROFILE:-}"
-    ;;
-esac
+selected_profile="${base_profile}-resume"
 
 [[ -x "$WORKTREE_TASK_CLI" ]] || die "worktree-task CLI not found or not executable: $WORKTREE_TASK_CLI"
 
