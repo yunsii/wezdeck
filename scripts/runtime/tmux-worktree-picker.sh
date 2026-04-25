@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck disable=SC1091
-source "$script_dir/runtime-log-lib.sh"
-# shellcheck disable=SC1091
-source "$script_dir/tmux-worktree-lib.sh"
-
+# Parse args BEFORE sourcing anything so the cat-priming below can run with
+# only bash builtins. On WSL2 with cold disk caches, sourcing the runtime
+# log + worktree libs can spike to 30–80ms; doing the prime first bounds
+# time-to-first-paint at "bash startup + one syscall" instead of also
+# waiting on those sources.
 session_name="${1:-}"
 current_window_id="${2:-}"
 list_root="${3:-$PWD}"
@@ -14,6 +13,25 @@ cwd="${4:-$PWD}"
 prefetched_current_root="${5:-}"
 prefetched_repo_label="${6:-}"
 prefetched_file="${7:-}"
+prefetched_frame_file="${8:-}"
+
+# First-paint fast path: cat the frame menu.sh pre-rendered before doing any
+# work. Subsequent re-renders (driven by Up/Down) repaint via the shared
+# renderer over the same screen with absolute positioning, so this priming
+# write and the live frame are byte-identical and there is no visible swap.
+printf '\033[?25l'
+if [[ -n "$prefetched_frame_file" && -r "$prefetched_frame_file" ]]; then
+  cat "$prefetched_frame_file"
+fi
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/tmux-worktree-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/tmux-worktree/render.sh"
+
 context=""
 current_worktree_root=""
 repo_label=""
@@ -120,69 +138,13 @@ terminal_size() {
 }
 
 render_picker() {
-  local rows cols visible_rows start_index end_index marker line accelerator line_branch
-  local line_suffix top_index frame
-
+  local rows cols visible_rows
   IFS=' ' read -r rows cols <<< "$(terminal_size)"
   visible_rows=$((rows - 6))
   if (( visible_rows < 1 )); then
     visible_rows=1
   fi
-
-  start_index=0
-  if (( selected_index >= visible_rows )); then
-    start_index=$((selected_index - visible_rows + 1))
-  fi
-  end_index=$((start_index + visible_rows - 1))
-  if (( end_index >= item_count )); then
-    end_index=$((item_count - 1))
-    start_index=$((end_index - visible_rows + 1))
-    if (( start_index < 0 )); then
-      start_index=0
-    fi
-  fi
-
-  frame=$'\033[H'
-  frame+="$(printf '%-*.*s' "$cols" "$cols" "Worktrees: $repo_label")"$'\n'
-  frame+="$(printf '%-*.*s' "$cols" "$cols" "Showing $((start_index + 1))-$((end_index + 1)) of $item_count")"$'\n'
-  frame+=$'\n'
-
-  for (( top_index = start_index; top_index <= end_index; top_index += 1 )); do
-    marker=' '
-    if [[ "${item_paths[$top_index]}" == "$current_worktree_root" ]]; then
-      marker='*'
-    fi
-
-    accelerator="${item_accelerators[$top_index]}"
-    if [[ -n "$accelerator" ]]; then
-      accelerator="[$accelerator]"
-    else
-      accelerator="   "
-    fi
-
-    line_branch=""
-    if [[ -n "${item_branches[$top_index]}" ]]; then
-      line_branch=" [${item_branches[$top_index]}]"
-    fi
-
-    line_suffix=""
-    if [[ -z "${item_window_ids[$top_index]}" ]]; then
-      line_suffix=" (new)"
-    fi
-
-    line="$accelerator $marker ${item_labels[$top_index]}$line_branch$line_suffix"
-    if (( top_index == selected_index )); then
-      frame+=$'\033[7m'"$(printf '%-*.*s' "$cols" "$cols" "$line")"$'\033[0m\n'
-    else
-      frame+="$(printf '%-*.*s' "$cols" "$cols" "$line")"$'\n'
-    fi
-  done
-
-  frame+=$'\n'
-  frame+="$(printf '%-*.*s' "$cols" "$cols" "Enter open | Up/Down move | 1-9,0,a-z open | Esc close")"
-  frame+=$'\033[J'
-
-  printf '%s' "$frame"
+  worktree_picker_emit_frame "$cols" "$visible_rows" "$selected_index" "$item_count" "$current_worktree_root" "$repo_label"
 }
 
 read_key() {
@@ -236,18 +198,22 @@ find_accelerator_index() {
 }
 
 trap cleanup EXIT
-printf '\033[?25l'
 
-first_paint_done=0
+# When menu.sh did NOT pre-render a frame (e.g. fallback path with no
+# prefetch, or zero items), paint the first frame here. When it DID, the
+# `cat` at the top of the script already produced the same bytes, so a
+# second render would be redundant. Either way, subsequent iterations only
+# repaint on Up/Down — see the input loop below.
+if [[ -z "$prefetched_frame_file" || ! -r "$prefetched_frame_file" ]]; then
+  render_picker
+fi
+runtime_log_info worktree "worktree picker invoked" "session_name=$session_name" "current_window_id=$current_window_id" "repo_label=$repo_label" "item_count=$item_count" "prefetched_file=$prefetched_file"
+
 while true; do
   key=""
   accel_index=""
+  needs_render=0
 
-  render_picker
-  if (( first_paint_done == 0 )); then
-    first_paint_done=1
-    runtime_log_info worktree "worktree picker invoked" "session_name=$session_name" "current_window_id=$current_window_id" "repo_label=$repo_label" "item_count=$item_count" "prefetched_file=$prefetched_file"
-  fi
   key="$(read_key)" || exit 0
 
   case "$key" in
@@ -261,9 +227,11 @@ while true; do
       ;;
     $'\033[B' | $'\033OB')
       move_selection 1
+      needs_render=1
       ;;
     $'\033[A' | $'\033OA')
       move_selection -1
+      needs_render=1
       ;;
     *)
       accel_index="$(find_accelerator_index "${key,,}" || true)"
@@ -275,4 +243,8 @@ while true; do
       fi
       ;;
   esac
+
+  if (( needs_render )); then
+    render_picker
+  fi
 done
