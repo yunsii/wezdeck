@@ -37,10 +37,15 @@ performance contract.
 | `scripts/runtime/tmux-attention-menu.sh` | Reads state + builds row tuples + opens popup. Bench-instrumented via `WEZTERM_BENCH_NO_POPUP=1` | p50 49ms (was 545ms) |
 | `scripts/runtime/windows-runtime-paths-lib.sh` | Resolves Windows `%LOCALAPPDATA%` etc. once + caches to disk | 24h TTL cache at `~/.cache/wezterm-runtime/windows-paths.env`; bypass with `WEZTERM_NO_PATH_CACHE=1` |
 | `scripts/runtime/attention-state-lib.sh` | Reads attention state. Sources paths-lib once at lib-load, memoizes resolved path | All callers share one `__ATTENTION_STATE_PATH_CACHED` |
-| `scripts/runtime/picker/main.go` | Static Go binary that runs inside the tmux popup pty | ~2-5ms cold (vs ~30-80ms bash fallback) |
-| `scripts/runtime/picker/bin/picker` | Compiled binary, gitignored | Built by sync; missing → bash fallback kicks in |
-| `scripts/runtime/tmux-attention-picker.sh` | Bash fallback picker (used when Go binary is missing) | Sources 3 libs cold |
-| `scripts/runtime/tmux-attention/render.sh` | Shared bash frame renderer (used by menu pre-paint + bash picker live re-render) | Single ANSI-positioned string, single `printf` flush |
+| `scripts/runtime/picker/main.go` | Subcommand dispatcher + shared helpers (perf log, term IO, shell escape). Hosts the `attention` subcommand. | ~2-5ms cold (vs ~30-80ms bash fallback) |
+| `scripts/runtime/picker/cmd_command.go` | `picker command` — replaces `tmux-command-picker.sh`. Consumes a 6-field TSV menu.sh prefetched. | Skips ~50ms of `command_panel_load_items` re-run inside the popup pty |
+| `scripts/runtime/picker/cmd_worktree.go` | `picker worktree` — replaces `tmux-worktree-picker.sh`. Consumes a 4-field TSV with `existing_window_id` already resolved. | Skips ~30ms of bash boot + render-lib source inside popup |
+| `scripts/runtime/picker/bin/picker` | Compiled binary, gitignored | Built by sync; missing → bash fallback kicks in for whichever panel needs it |
+| `scripts/runtime/tmux-attention-picker.sh` | Bash fallback for `picker attention` | Sources 3 libs cold |
+| `scripts/runtime/tmux-command-picker.sh` | Bash fallback for `picker command` | Re-runs `command_panel_load_items` inside the popup pty |
+| `scripts/runtime/tmux-worktree-picker.sh` | Bash fallback for `picker worktree` | Slurps a pre-rendered first frame to bound first-paint at "bash startup + 1 syscall" |
+| `scripts/runtime/tmux-attention/render.sh` | Shared bash frame renderer (used by menu pre-paint + bash attention picker live re-render) | Single ANSI-positioned string, single `printf` flush |
+| `scripts/runtime/tmux-worktree/render.sh` | Shared bash frame renderer for the worktree popup (menu pre-paint + bash picker re-render) | Same single-flush invariant |
 
 ### Build / sync infrastructure
 
@@ -68,18 +73,24 @@ next time anyone asks "can Alt+/ be faster?".
 
 | File | Use when |
 |---|---|
-| `scripts/dev/bench-menu-prep.sh` | Microbenchmarking menu.sh's prep work in isolation. Sets `WEZTERM_BENCH_NO_POPUP=1` so the popup never opens — **does not disrupt your tmux**. Runs N iterations (default 30 + 5 warmup), reports min / p50 / p95 / max / mean per stage with deltas. Use for tight optimization loops. |
+| `scripts/dev/bench-menu-prep.sh` | Microbenchmarking menu.sh's prep work in isolation. Sets `WEZTERM_BENCH_NO_POPUP=1` so the popup never opens — **does not disrupt your tmux**. Runs N iterations (default 30 + 5 warmup), reports min / p50 / p95 / max / mean per stage with deltas. Use for tight optimization loops. Pick the panel via `--target attention\|command\|worktree` (default `attention`); `command` and `worktree` need to run from inside an attached tmux client and use the current `#S` / `#{window_id}` / `$PWD` as the menu args. |
 | `scripts/dev/bench-attention-popup.sh` | End-to-end validation via `tmux send-keys M-/`. **Will flash your popup N times** — for final acceptance, not iteration. Reads `category="attention.perf"` log entries the picker emits. |
 | `scripts/dev/bench-wezterm-side-fs.ps1` | PowerShell harness measuring wezterm.exe-side file read latency: `%LOCALAPPDATA%` (Windows local NTFS) vs `\\wsl$\<distro>\…` (cross-boundary 9P). Definitively settles "should we move this state file to WSL ext4?" questions. Invoke from WSL via `windows_run_powershell_script_utf8`. |
 
 ### Perf-only logging
 
-Both picker code paths emit `category="attention.perf"`,
-`message="popup paint timing"` on every render with structured fields:
+Each panel emits its own perf category — `attention.perf`,
+`command.perf`, or `worktree.perf` — with `message="popup paint timing"`
+(or `"command palette paint timing"` / `"worktree picker paint timing"`)
+on every render. `perf-trend.sh --panel attention|command|worktree`
+switches the category filter; default is `attention`.
+
+Common structured fields:
 
 ```
 paint_kind     "first" | "repaint"
 picker_kind    "go" | "bash"
+panel          "attention" | "command" | "worktree"
 total_ms       end-to-end key → render
 lua_ms         menu_start - keypress  (Lua handler + tmux dispatch + bash boot)
 menu_ms        menu_done  - menu_start (jq + popup spawn prep)
@@ -293,6 +304,25 @@ When investigating a regression, the typical flow is:
    terminal).
 4. For cross-FS questions, run `scripts/dev/bench-wezterm-side-fs.ps1`
    via the windows-shell-lib UTF-8 wrapper.
+
+## Cross-panel baseline (2026-04-25)
+
+The same bench harness now covers all three popup panels — the column
+to read is **prep p50**, which is everything menu.sh does up to (but
+not including) `tmux display-popup`. Picker-side cost (popup pty +
+bash boot + lib sourcing inside the popup + key loop) is on top.
+
+| Target | prep p50 | Dominant stage | Notes |
+|---|---|---|---|
+| attention | ~31ms | `live_map` + `jq_rows` (~12ms + ~4ms) | Optimized; near the floor described above. |
+| command | ~73ms | `loaded_items` (~52ms) | Manifest jq + bash `eval` per palette item; picker.sh re-runs the same load inside the popup pty. |
+| worktree | ~110ms | `prefetched_items` (~54ms) | One `tmux list-windows` probe per worktree to look up an existing window. |
+
+The command palette and worktree pickers are next in line. Reach for
+the same techniques the attention pipeline used (Go binary in the popup
+pty, single jq pass, drop duplicate work between menu.sh and picker.sh,
+combine subprocess calls). Re-run `bench-menu-prep.sh --target <name>`
+after each change.
 
 ## Floor reached
 
