@@ -5,6 +5,7 @@
     "description": "With a terminal selection, copy to the system clipboard and clear; otherwise send a normal `Ctrl+c` to the pane.",
     "scope": "clipboard",
     "context": "any",
+    "binding": {"handler": "clipboard.copy_or_sigint"},
     "hotkeys": [
       { "keys": "Ctrl+c", "layer": "wezterm" }
     ]
@@ -15,6 +16,7 @@
     "description": "With a terminal selection, copy and clear; otherwise forward `Ctrl+Shift+c` to the pane.",
     "scope": "clipboard",
     "context": "any",
+    "binding": {"handler": "clipboard.copy_selection_strict"},
     "hotkeys": [
       { "keys": "Ctrl+Shift+C", "layer": "wezterm" }
     ]
@@ -25,6 +27,7 @@
     "description": "In hybrid-wsl ask the Windows native helper for the live clipboard at paste time; fall back to plain clipboard paste; paste exported WSL image path for images.",
     "scope": "clipboard",
     "context": "any",
+    "binding": {"handler": "clipboard.paste_smart"},
     "hotkeys": [
       { "keys": "Ctrl+v", "layer": "wezterm" }
     ]
@@ -35,6 +38,7 @@
     "description": "Force a normal clipboard paste without the image-export helper.",
     "scope": "clipboard",
     "context": "any",
+    "binding": {"handler": "clipboard.paste_plain"},
     "hotkeys": [
       { "keys": "Ctrl+Shift+V", "layer": "wezterm" }
     ]
@@ -45,6 +49,7 @@
     "description": "Trigger WezTerm QuickSelect to label every `http(s)://…` URL across the visible pane and WezTerm scrollback; press the label key to open the URL via the system default handler. Keyboard-first counterpart to `Ctrl+LeftClick`.",
     "scope": "clipboard",
     "context": "any",
+    "binding": {"handler": "link.open_in_viewport"},
     "hotkeys": [
       { "keys": "Alt+l", "layer": "wezterm" }
     ],
@@ -88,6 +93,7 @@
     "description": "Rotate focus to the next pane in the current tmux window (same semantics as tmux `prefix o`).",
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
+    "binding": {"handler": "pane.rotate_next"},
     "hotkeys": [
       { "keys": "Alt+o", "layer": "wezterm" }
     ],
@@ -110,6 +116,7 @@
     "description": "Activate the next WezTerm tab in the current workspace.",
     "scope": "window-and-pane-navigation",
     "context": "any",
+    "binding": {"handler": "tabs.activate_relative", "args": {"delta": 1}},
     "hotkeys": [
       { "keys": "Alt+n", "layer": "wezterm" }
     ],
@@ -121,6 +128,7 @@
     "description": "Activate the previous WezTerm tab in the current workspace.",
     "scope": "window-and-pane-navigation",
     "context": "any",
+    "binding": {"handler": "tabs.activate_relative", "args": {"delta": -1}},
     "hotkeys": [
       { "keys": "Alt+Shift+N", "layer": "wezterm" }
     ],
@@ -133,6 +141,7 @@
     "scope": "window-and-pane-navigation",
     "context": "any",
     "args_schema": { "kind": "integer", "range": [1, 9] },
+    "binding": {"handler": "tabs.activate_by_index"},
     "hotkeys": [
       { "keys": "Alt+1", "layer": "wezterm", "args": 1 },
       { "keys": "Alt+2", "layer": "wezterm", "args": 2 },
@@ -153,6 +162,7 @@
     "description": "Forward `Ctrl+k` to a tmux-backed pane so the follow-up chord keys (`v` / `h` / `x` / `g`) resolve in the tmux `command-chord` table; toast when the current pane is not running tmux.",
     "scope": "commands-and-splits",
     "context": "tmux-backed",
+    "binding": {"handler": "command_palette.chord_prefix"},
     "hotkeys": [
       { "keys": "Ctrl+k", "layer": "wezterm" }
     ]
@@ -163,6 +173,7 @@
     "description": "Open the tmux-owned searchable command palette (falls back to WezTerm native palette outside tmux).",
     "scope": "commands-and-splits",
     "context": "any",
+    "binding": {"handler": "command_palette.open"},
     "hotkeys": [
       { "keys": "Ctrl+Shift+P", "layer": "wezterm" }
     ]
@@ -173,6 +184,7 @@
     "description": "Open WezTerm's built-in command palette directly.",
     "scope": "commands-and-splits",
     "context": "any",
+    "binding": {"handler": "command_palette.open_native"},
     "hotkeys": [
       { "keys": "Ctrl+Shift+;", "layer": "wezterm" },
       { "keys": "Ctrl+Shift+:", "layer": "wezterm" }
@@ -184,6 +196,7 @@
     "description": "In tmux-backed panes forward to tmux; in hybrid-wsl outside tmux open the worktree root on the Windows host.",
     "scope": "project-navigation",
     "context": "any",
+    "binding": {"handler": "vscode.open_current_dir"},
     "hotkeys": [
       { "keys": "Alt+v", "layer": "wezterm" }
     ],
@@ -210,6 +223,7 @@
     "description": "Open a centered tmux popup worktree picker; selecting an unopened worktree creates its tmux window on demand.",
     "scope": "project-navigation",
     "context": "tmux-backed",
+    "binding": {"handler": "worktree.picker"},
     "hotkeys": [
       { "keys": "Alt+g", "layer": "wezterm" }
     ],
@@ -221,6 +235,7 @@
     "description": "Cycle to the next git worktree in the current repo family, creating its tmux window on demand when needed.",
     "scope": "project-navigation",
     "context": "tmux-backed",
+    "binding": {"handler": "worktree.cycle_next"},
     "hotkeys": [
       { "keys": "Alt+Shift+G", "layer": "wezterm" }
     ],
@@ -312,6 +327,7 @@
     "description": "Open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua` via the Windows native helper.",
     "scope": "project-navigation",
     "context": "hybrid-wsl",
+    "binding": {"handler": "chrome.open_debug_profile", "args": {"headless": true}},
     "hotkeys": [
       { "keys": "Alt+b", "layer": "wezterm" }
     ],
@@ -323,6 +339,7 @@
     "description": "Open or reset the Chrome debug browser profile in visible (headful) mode for manual verification; shares the debug `user_data_dir` and port with the headless instance.",
     "scope": "project-navigation",
     "context": "hybrid-wsl",
+    "binding": {"handler": "chrome.open_debug_profile", "args": {"headless": false}},
     "hotkeys": [
       { "keys": "Alt+Shift+B", "layer": "wezterm" }
     ],
@@ -334,6 +351,7 @@
     "description": "Jump to the next agent pane whose status is `waiting`. Repeated presses cycle past the current target; silent when nothing is waiting. Toasts outside tmux.",
     "scope": "project-navigation",
     "context": "tmux-backed",
+    "binding": {"handler": "attention.jump_waiting"},
     "hotkeys": [
       { "keys": "Alt+,", "layer": "wezterm" }
     ],
@@ -345,6 +363,7 @@
     "description": "Jump to the next agent pane whose status is `done`; the entry is auto-cleared as the jump lands. Silent when nothing is done.",
     "scope": "project-navigation",
     "context": "tmux-backed",
+    "binding": {"handler": "attention.jump_done"},
     "hotkeys": [
       { "keys": "Alt+.", "layer": "wezterm" }
     ],
@@ -356,6 +375,7 @@
     "description": "Open a centered InputSelector listing every pending agent task across workspaces. Fuzzy-filter and `Enter` to jump; pick the trailing `clear all` sentinel to wipe state.json. Works from any pane; final jump still needs tmux.",
     "scope": "project-navigation",
     "context": "any",
+    "binding": {"handler": "attention.overlay"},
     "hotkeys": [
       { "keys": "Alt+/", "layer": "wezterm" }
     ],
@@ -425,6 +445,7 @@
     "description": "Switch to the built-in WezTerm `default` workspace.",
     "scope": "workspaces",
     "context": "any",
+    "binding": {"handler": "workspace.switch", "args": {"name": "default"}},
     "hotkeys": [
       { "keys": "Alt+d", "layer": "wezterm" }
     ],
@@ -436,6 +457,7 @@
     "description": "Open or switch to `work` using directories configured in `wezterm-x/local/workspaces.lua`.",
     "scope": "workspaces",
     "context": "any",
+    "binding": {"handler": "workspace.switch", "args": {"name": "work"}},
     "hotkeys": [
       { "keys": "Alt+w", "layer": "wezterm" }
     ],
@@ -447,6 +469,7 @@
     "description": "Open or switch to the `config` workspace.",
     "scope": "workspaces",
     "context": "any",
+    "binding": {"handler": "workspace.switch", "args": {"name": "config"}},
     "hotkeys": [
       { "keys": "Alt+c", "layer": "wezterm" }
     ],
@@ -458,6 +481,7 @@
     "description": "Rotate through all currently known workspaces.",
     "scope": "workspaces",
     "context": "any",
+    "binding": {"handler": "workspace.cycle_next"},
     "hotkeys": [
       { "keys": "Alt+p", "layer": "wezterm" }
     ],
@@ -469,6 +493,7 @@
     "description": "Open a centered WezTerm confirmation overlay to close the current non-default workspace.",
     "scope": "workspaces",
     "context": "any",
+    "binding": {"handler": "workspace.close_current"},
     "hotkeys": [
       { "keys": "Alt+Shift+X", "layer": "wezterm" }
     ]
@@ -479,6 +504,7 @@
     "description": "Quit WezTerm and close all windows; WezTerm handles its own confirmation.",
     "scope": "workspaces",
     "context": "any",
+    "binding": {"handler": "app.quit"},
     "hotkeys": [
       { "keys": "Alt+Shift+Q", "layer": "wezterm" }
     ]
