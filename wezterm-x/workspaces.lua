@@ -13,8 +13,9 @@ local constants = dofile(join_path(runtime_dir, 'lua', 'constants.lua'))
 local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
 
 local managed_launcher = nil
-if constants.managed_cli and constants.managed_cli.default_profile then
-  managed_launcher = constants.managed_cli.default_profile
+if constants.managed_cli then
+  managed_launcher = constants.managed_cli.default_resume_profile
+    or constants.managed_cli.default_profile
 end
 
 local public_workspaces = {

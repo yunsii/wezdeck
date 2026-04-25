@@ -24,10 +24,16 @@ end
 local local_constants = helpers.load_optional_table(join_path(runtime_dir, 'local', 'constants.lua')) or {}
 local shared_env = helpers.load_optional_env_file(join_path(runtime_dir, 'local', 'shared.env')) or {}
 local repo_root_override = defaults.read_repo_root_override(runtime_dir, join_path)
-local repo_worktree_task_env = repo_root_override and (
-  helpers.load_optional_env_file(join_path(repo_root_override, 'config', 'worktree-task.env'))
-  or helpers.load_optional_env_file(join_path(repo_root_override, '.worktree-task', 'config.env'))
-) or {}
+-- Prefer the runtime-local copy (sync writes it next to repo-root.txt).
+-- The repo_root_override path is a WSL-native path; Windows-side
+-- wezterm.exe can't `io.open` it, so without the local copy the env
+-- file's profile registrations (including `<base>_resume`) silently
+-- vanish on the Windows leg of hybrid-wsl mode.
+local repo_worktree_task_env = helpers.load_optional_env_file(join_path(runtime_dir, 'repo-worktree-task.env'))
+  or (repo_root_override and (
+    helpers.load_optional_env_file(join_path(repo_root_override, 'config', 'worktree-task.env'))
+    or helpers.load_optional_env_file(join_path(repo_root_override, '.worktree-task', 'config.env'))
+  )) or {}
 local user_worktree_task_env = helpers.load_optional_env_file(defaults.default_worktree_task_user_config_path(join_path) or '') or {}
 local repo_managed_cli_env = managed_cli.parse_managed_cli_env(repo_worktree_task_env)
 local user_managed_cli_env = managed_cli.parse_managed_cli_env(user_worktree_task_env)
@@ -225,6 +231,21 @@ if user_managed_cli_env.active_profile then
 end
 if local_managed_cli_profile then
   constants.managed_cli.default_profile = local_managed_cli_profile
+end
+do
+  -- The env parser at lua/config/managed_cli.lua normalizes
+  -- `WT_PROVIDER_AGENT_PROFILE_<X>_RESUME_COMMAND` profile names by
+  -- mapping non-alphanum to `_`, so the registered key for the resume
+  -- variant is `<base>_resume` (underscore). Shell-side code reads
+  -- env vars directly and uses the literal `<base>-resume` form;
+  -- those paths don't go through this resolver.
+  local base = constants.managed_cli.default_profile
+  local profiles = constants.managed_cli.profiles or {}
+  if base and base ~= '' and profiles[base .. '_resume'] then
+    constants.managed_cli.default_resume_profile = base .. '_resume'
+  else
+    constants.managed_cli.default_resume_profile = base
+  end
 end
 if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
   constants.wakatime = constants.wakatime or {}

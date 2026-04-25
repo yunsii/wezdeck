@@ -12,15 +12,19 @@ end
 local constants = dofile(join_path(runtime_dir, 'lua', 'constants.lua'))
 
 local managed_launcher = nil
-if constants.managed_cli and constants.managed_cli.default_profile then
-  managed_launcher = constants.managed_cli.default_profile
+if constants.managed_cli then
+  managed_launcher = constants.managed_cli.default_resume_profile
+    or constants.managed_cli.default_profile
 end
 
 -- The `work` workspace is the primary entry into a company project's
 -- two-tier worktree model (see docs/workspaces.md "Task Worktree Lifecycle
 -- Model"). Each item below is a separate WezTerm tab pointing at either:
---   - the project's main worktree (bare claude profile, fresh on open), or
---   - a long-lived dev-* worktree (claude-resume profile, see notes below).
+--   - the project's main worktree, or
+--   - a long-lived dev-* worktree.
+-- Both resolve to the `<base>-resume` profile (e.g. `claude --continue`)
+-- so first-open of a workspace tab auto-resumes the cwd's last
+-- conversation, falling back to a fresh session when none exists.
 --
 -- task-* and hotfix-* worktrees are NOT listed here — they're created on
 -- demand via `Ctrl+k g t` / `Ctrl+k g h` and live as tmux windows inside

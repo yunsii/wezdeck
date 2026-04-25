@@ -30,6 +30,10 @@ Run those commands from the repo root, or set `WEZTERM_CONFIG_REPO=/absolute/pat
 The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\host-helper\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/host-helper/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
 It also refreshes `~/.wezterm-x/agent-tools.env` in the target home so external agent platforms can discover repo-local wrappers from one stable marker file.
 
+Sync also copies `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` so the Windows-side wezterm.exe can read it; without that local copy, the `<base>_resume` profiles only declared in the env file silently miss registration in Lua and workspace open falls back to the bare profile. Edits to `config/worktree-task.env` only take effect after the next sync.
+
+Between `publish-runtime` and the Windows helper install, sync runs a `lua-precheck` that dofile-loads `wezterm-x/lua/constants.lua` under a mocked `wezterm` and asserts managed-launcher resolution still works (`default_resume_profile ≠ default_profile`, resume command literally contains `--continue` or `resume`). On failure, sync aborts with a profile-list snapshot. Requires `lua5.4` (or `lua5.3`/`lua`) on the WSL/Linux side; see [`setup.md`](./setup.md#prerequisites). When no lua is installed, the precheck is skipped with a warning rather than failing.
+
 ## Host Helper Release Rollout
 
 When you need the Windows helper to install on machines without a local Windows `dotnet` SDK:

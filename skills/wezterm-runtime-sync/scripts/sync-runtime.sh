@@ -197,6 +197,41 @@ lua_runtime_path() {
   printf '%s\n' "$path"
 }
 
+run_lua_precheck() {
+  local target_runtime_dir="${1:?missing target_runtime_dir}"
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local precheck_script="$script_dir/lua-precheck.lua"
+
+  if [[ ! -f "$precheck_script" ]]; then
+    sync_trace "step=lua-precheck status=skipped reason=script_missing precheck_script=$precheck_script"
+    return 0
+  fi
+
+  local lua_bin=""
+  for candidate in lua5.4 lua5.3 lua; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      lua_bin="$candidate"
+      break
+    fi
+  done
+
+  if [[ -z "$lua_bin" ]]; then
+    runtime_log_warn sync "skipped lua precheck after sync" "reason=no_lua_runtime"
+    sync_trace "step=lua-precheck status=skipped reason=no_lua_runtime"
+    printf 'Skipped lua precheck: install lua5.4 (`sudo apt install lua5.4`) to enable.\n' >&2
+    return 0
+  fi
+
+  sync_trace "step=lua-precheck status=running lua_bin=$lua_bin target_runtime_dir=$target_runtime_dir"
+  if ! "$lua_bin" "$precheck_script" "$target_runtime_dir"; then
+    runtime_log_error sync "lua precheck failed" "target_runtime_dir=$target_runtime_dir"
+    sync_trace "step=lua-precheck status=failed target_runtime_dir=$target_runtime_dir"
+    return 1
+  fi
+  sync_trace "step=lua-precheck status=completed target_runtime_dir=$target_runtime_dir"
+}
+
 maybe_reload_tmux() {
   local repo_root="${1:?missing repo root}"
   local reload_script="$repo_root/scripts/dev/reload-tmux.sh"
@@ -544,6 +579,15 @@ run_runtime_native_flow() {
   fi
   printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
   printf '%s\n' "$MAIN_REPO_ROOT" > "$TEMP_RUNTIME_DIR/repo-main-root.txt"
+  # Copy repo-side worktree-task.env into the runtime dir so the
+  # Windows-side wezterm.exe Lua can read it. The repo-root.txt path
+  # is a WSL-native path which Windows file APIs can't resolve, so
+  # constants.lua's `io.open(<repo-root>/config/worktree-task.env)`
+  # would otherwise return nil and the `<base>_resume` profile defined
+  # only in that env file never gets registered on the Windows side.
+  if [[ -f "$repo_root_path/config/worktree-task.env" ]]; then
+    cp "$repo_root_path/config/worktree-task.env" "$TEMP_RUNTIME_DIR/repo-worktree-task.env"
+  fi
   write_agent_tools_file "$TEMP_RUNTIME_DIR" "$repo_root_path"
   sync_trace "step=write-metadata repo_root_path=$repo_root_path repo_main_root=$MAIN_REPO_ROOT"
 
@@ -551,6 +595,8 @@ run_runtime_native_flow() {
   mv "$TEMP_RUNTIME_DIR" "$TARGET_RUNTIME_DIR"
   mv "$TEMP_NATIVE_DIR" "$TARGET_NATIVE_DIR"
   sync_trace "step=publish-runtime status=completed target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
+
+  run_lua_precheck "$TARGET_RUNTIME_DIR"
 
   install_windows_helper_manager "$TARGET_RUNTIME_DIR"
   ensure_windows_helper_running "$TARGET_RUNTIME_DIR"
