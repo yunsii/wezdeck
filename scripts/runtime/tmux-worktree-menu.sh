@@ -100,7 +100,8 @@ runtime_log_info worktree "worktree menu prefetched items" "session_name=$sessio
 # pre-rendered frame (it owns its own first paint). When the binary is
 # missing, fall back to the bash picker, which still expects a
 # pre-rendered frame and the existing positional contract.
-picker_binary="$script_dir/picker/bin/picker"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+picker_binary="$repo_root/native/picker/bin/picker"
 prefetch_frame_file=''
 picker_kind='bash'
 open_script="$script_dir/tmux-worktree-open.sh"

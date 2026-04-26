@@ -81,7 +81,8 @@ runtime_log_info command_panel "opening tmux command panel" "runtime_mode=$runti
 # the prefetched TSV we build here. When the binary is missing, fall
 # back to the bash picker, which still expects positional args via
 # tmux-command-picker.sh.
-picker_binary="$script_dir/picker/bin/picker"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+picker_binary="$repo_root/native/picker/bin/picker"
 prefetch_file=""
 picker_kind='bash'
 
