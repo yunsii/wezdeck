@@ -99,7 +99,10 @@
     "hotkeys": [
       { "keys": "Alt+o", "layer": "wezterm" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "tmux select-pane -t \"${COMMAND_PANEL_WINDOW_ID}.+\""],
+      "success_message": "Rotated to next pane."
+    }
   },
   {
     "id": "pane.close-current",
@@ -111,7 +114,9 @@
     "hotkeys": [
       { "keys": "Ctrl+k x", "layer": "tmux-chord" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "tmux kill-pane -t \"$COMMAND_PANEL_WINDOW_ID\""]
+    }
   },
   {
     "id": "tab.next",
@@ -169,7 +174,9 @@
     "hotkeys": [
       { "keys": "Ctrl+n", "layer": "wezterm" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" '/new' Enter ;; *) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" C-n ;; esac"]
+    }
   },
   {
     "id": "command-palette.chord-prefix",
@@ -236,7 +243,9 @@
     "hotkeys": [
       { "keys": "Alt+v", "layer": "wezterm" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/open-current-dir-in-vscode.sh --window \"$COMMAND_PANEL_WINDOW_ID\" -- \"$COMMAND_PANEL_CWD\""]
+    }
   },
   {
     "id": "vscode.force-close-all-windows",
@@ -263,7 +272,9 @@
     "hotkeys": [
       { "keys": "Alt+g", "layer": "wezterm" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/tmux-worktree-menu.sh \"$COMMAND_PANEL_SESSION_NAME\" \"$COMMAND_PANEL_WINDOW_ID\" \"$COMMAND_PANEL_CWD\""]
+    }
   },
   {
     "id": "worktree.cycle-next",
@@ -275,7 +286,9 @@
     "hotkeys": [
       { "keys": "Alt+Shift+G", "layer": "wezterm" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/tmux-worktree-cycle.sh \"$COMMAND_PANEL_SESSION_NAME\" \"$COMMAND_PANEL_WINDOW_ID\" \"$COMMAND_PANEL_CWD\""]
+    }
   },
   {
     "id": "worktree.quick-create-dev",
@@ -419,7 +432,9 @@
     "hotkeys": [
       { "keys": "Alt+/", "layer": "wezterm" }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/tmux-attention-menu.sh"]
+    }
   },
   {
     "id": "session.refresh-current-window",
