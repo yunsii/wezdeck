@@ -8,6 +8,10 @@ Use this doc when you need logs, smoke tests, or troubleshooting paths.
 - Runtime shell diagnostics are configured separately in `wezterm-x/local/runtime-logging.sh`, starting from `wezterm-x/local.example/runtime-logging.sh`.
 - Both logging systems are enabled by default at the `info` level for control-plane events.
 
+## Conventions for Emitting Logs
+
+Author-facing rules — file placement, render-path discipline, category schema, levels, required fields, and the field-name dictionary — live in [`logging-conventions.md`](./logging-conventions.md). Read that doc before adding a new logger callsite, a new category, or a new log file.
+
 ## WezTerm Diagnostics
 
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured file and also shows them in the Debug Overlay.

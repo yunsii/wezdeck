@@ -37,8 +37,13 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   (`WEZTERM_PICKER_INSTALL_SOURCE=auto|local|release`) that lets end
   users without Go consume the prebuilt tarball:
   Read [`docs/picker-release.md`](docs/picker-release.md).
-- Diagnostics, logs, or smoke tests:
+- Diagnostics, logs, or smoke tests (operator surface — env knobs,
+  file paths, troubleshooting):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
+- Adding or modifying a logger callsite, choosing a category, deciding
+  log level / required fields, or moving a log file across the WSL
+  boundary (author surface):
+  Read [`docs/logging-conventions.md`](docs/logging-conventions.md).
 - Performance work on the Alt+/ popup, the cross-FS routing rule for
   state files, the bench harnesses, or the sync-runtime hot path
   (skip-if-current gates, rsync-vs-cp tradeoff, mtime-based change
