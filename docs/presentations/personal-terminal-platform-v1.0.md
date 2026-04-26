@@ -3,7 +3,7 @@ title: WezDeck v1.0 — 一个前端第一次做平台工程的三天
 subtitle: 关于 C# / IPC / Windows exe 交付 / 长驻进程 / 多语言收口 / 和 AI 一起做这些
 version: v1.0
 date: 2026-04-19
-project: WezDeck (repo: wezterm-config)
+project: "WezDeck (repo: wezterm-config)"
 audience: 同行前端 · personal reflection · 8 分钟
 author: AI 生成初稿，人工微调
 ---
