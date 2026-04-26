@@ -42,11 +42,12 @@ jobs:
       linux_amd64_asset_name: ${{ steps.package.outputs.linux_amd64_asset_name }}
       linux_amd64_sha256: ${{ steps.package.outputs.linux_amd64_sha256 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: native/picker/go.mod
+          cache-dependency-path: native/picker/go.sum
 
       - name: Resolve release metadata
         id: meta
@@ -89,7 +90,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.meta.outputs.release_tag }}
           target_commitish: ${{ github.sha }}
@@ -122,7 +123,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.draft }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.repository.default_branch }}
 
@@ -135,7 +136,7 @@ jobs:
           --asset-name 'linux-amd64=${{ needs.build.outputs.linux_amd64_asset_name }}'
 
       - name: Create manifest update PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: 'chore(scripts): update picker release manifest'
           title: 'chore(scripts): update picker release manifest for ${{ needs.build.outputs.release_tag }}'
