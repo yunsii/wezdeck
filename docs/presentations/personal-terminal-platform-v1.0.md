@@ -1,274 +1,138 @@
 ---
-title: Personal Terminal Platform v1.0
-subtitle: 三天里程碑纪要
+title: WezDeck v1.0 — 一个前端第一次做平台工程的三天
+subtitle: 关于 C# / IPC / Windows exe 交付 / 长驻进程 / 多语言收口 / 和 AI 一起做这些
 version: v1.0
 date: 2026-04-19
+project: WezDeck (repo: wezterm-config)
+audience: 同行前端 · personal reflection · 8 分钟
 author: AI 生成初稿，人工微调
 ---
 
-# 个人终端工作平台 v1.0
+# WezDeck v1.0 — 一个前端第一次做平台工程的三天
 
-## 概述
+> *本篇是 personal reflection，不是技术文档。*
+> *想看 WezDeck 现在长什么样、5 大特性是什么 → [`ai-workspace-sharing-outline.md`](./ai-workspace-sharing-outline.md)（10 分钟）*
+> *想看 v0 → v5 完整演进 + 一天日常切面 → [`ai-dev-environment-evolution.md`](./ai-dev-environment-evolution.md)（30 分钟）*
 
-`2026-04-17` 到 `2026-04-19` 这三天，项目完成了一次明确的阶段性跃迁。
+## 三天
 
-这次里程碑的本质，不是继续修零散的终端配置，而是把一个由 `WezTerm`、`tmux`、`Lua`、`shell`、`PowerShell`、`C#`、Windows native helper 和 agent 协作规则共同组成的多语言混合项目，推进成了一套开始具备统一控制面、清晰边界、真实验证闭环和可发布能力的个人终端工作平台。
+`2026-04-17` 到 `2026-04-19`。三天里，WezDeck 从一堆"勉强跑得起来的 WezTerm 配置脚本"变成了 v1.0 ——这是它第一次开始像一个有主干的系统。
 
-对我来说，这也是第一次把前端平时不太会深碰的几类问题真正做深：
+但这篇不想讲架构（[outline](./ai-workspace-sharing-outline.md) 和 [evolution](./ai-dev-environment-evolution.md) 已经讲过了）。这篇想讲的是**对一个前端来说**，这三天里第一次真正碰到的一些东西。
 
-- `C#` native helper
-- `IPC`
-- Windows `exe` 打包与交付
-- 长生命周期后台进程
-- 多语言混合项目的架构收口
-- `AI 快速推进 -> 人不断纠偏 -> 真实验证闭环` 的协作方式
+---
 
-一句话总结：
+## 第一次真做 `C# + IPC`
 
-> `v1.0` 标记的是这套 personal terminal platform 第一次形成相对完整技术主干和协作闭环的版本。
+之前对 IPC 的理解大概是：
 
-## 里程碑范围
+> "进程间通信，常见实现有命名管道、unix socket、共享内存…"
 
-这次里程碑覆盖了五个层面：
+—— 知道概念，没碰过。
 
-- 终端交互层：`WezTerm`、`tmux`、快捷键、命令路由、选择与复制行为
-- 运行时控制层：shell wrappers、runtime scripts、sync、diagnostics
-- Windows 平台层：native helper、`IPC`、`PowerShell` bridge、安装与发布
-- 工程化层：日志、smoke test、release fallback、runtime versioning
-- 协作层：agent profiles、clipboard contract、Windows 脚本执行规范
+这次是把它**做进了一条运行中的控制链路**。Windows 侧有一个长驻 `helper-manager.exe`（C#），WSL 侧每次按 `Alt+v` / `Alt+b` / `Ctrl+v` 都通过 `helperctl.exe` 发请求过去，名命管道（`\\.\pipe\wezterm-host-helper-v1`）做传输，typed envelope 回来。
 
-## 核心技术突破
+碰上才发现的事情：
 
-### 1. 从前端视角真正做深了 `C# + IPC`
+- **"长驻"不是写个 `while(true)` 就完事**。要处理服务自启 / 崩溃恢复 / 健康心跳 / 同时多个客户端 / STA 线程对剪贴板这种"进程上下文敏感"操作的隔离 —— 这一堆全要自己想。
+- **协议设计是个真问题**，不是发个 JSON 就行。要决定：什么 op 用 sync 调 / 什么 op 用 fire-and-forget；envelope 里塞不塞 trace_id（最后塞了 —— 没 trace_id 跨进程 debug 直接歇菜）；版本号怎么放（最后放在 named pipe 名字里 `…-v1`，将来好平滑 cut over）。
+- **错误模式比 happy path 多**：管道没起来、helper 还在重启、helper 卡住了不响应、客户端发到一半挂了、helper 收到一半挂了 —— 每一种都要有可观测的失败签名。
 
-作为前端，日常更多接触的是 UI、状态管理、交互和接口；这次第一次把系统通信真正做进了一条运行中的控制链路。
+最后回头看，**IPC 不是技术，是控制面的语法**。你怎么定义这套语法，就怎么决定平台未来能怎么长。
 
-这次的关键不是“用了 `C#`”，而是把它放进了平台主干里：
+---
 
-- 用 `C#` 实现 Windows 侧长期存活的 native helper manager
-- 用 `IPC` 把 `WezTerm`、tmux、脚本层和 Windows helper 串起来
-- 让 `IDE/VS Code` 聚焦与打开、Chrome 调起、剪贴板读写这些能力进入统一请求路径
-- 开始真正理解进程间通信在真实工程里不是概念，而是控制面的基础设施
+## 第一次做 Windows `exe` 的交付链路
 
-以前可能只是“知道 `IPC` 是什么”，这次是把它做成了系统主干的一部分。
+更没碰过的是"把一个 C# 项目变成可分发的 `exe`"。这次要解决的不是构建命令，而是：
 
-### 2. 首次把 Windows `exe` 打包与交付链路纳入闭环
+- 本地有 dotnet → publish self-contained exe，sync 时直接拷到 `%LOCALAPPDATA%\wezterm-runtime\bin\`
+- 本地没 dotnet（很常见）→ **release fallback**：从 GitHub Release 拉版本钉死的 zip，校验 SHA-256，再装
+- 升级路径要不破坏现有 helper 进程：先停旧的、释放管道、再装新的、再起
+- 有 install state 文件记录"现在装的是哪个版本 / 装在哪 / 哪一步成功了"
 
-这次另一个明显的突破，是把 Windows helper 从脚本式能力推进成了可交付产物。
+碰上才理解的事：
 
-这里的重点不只是会跑构建命令，而是开始处理更完整的软件交付问题：
+- **release fallback 不是 nice-to-have，是默认路径**。开源/团队场景下绝大多数用户机器没装 dotnet SDK；如果不做 fallback 这套东西就只是"作者本机能跑"。
+- **版本必须钉死**：`release-manifest.json` 里写明 tag + SHA-256；helper 升级是有 commit / PR 流程的，不能像脚本一样"git pull 即刻生效"。
+- **签名 / SmartScreen 是另一坨问题**（这次没解决，留作后话）—— Windows 给"未签名 exe"的体验对外发布会是个真问题。
 
-- 有 `dotnet` 时支持本地构建 helper
-- 没有 `dotnet` 时支持 release fallback
-- runtime 开始具备 version 语义
-- helper 开始进入“制品、安装、升级、兼容性”的工程层
+第一次理解了"软件交付"和"功能开发"完全是两件事。**把一个能跑的东西变成一个能装的东西，工作量经常和实现本身一样大。**
 
-这一步把项目从“本机能跑”推进到了“能交付、能升级、能回退”。
+---
 
-### 3. 真正进入了多语言混合项目的架构设计
+## 第一次面对"多语言架构怎么收口"
 
-这次工作的难点，不在于语言数量，而在于这些语言分别运行在不同边界上：
+WezDeck 的 v1.0 同时活着这些：
 
-- `Lua`：WezTerm 配置、运行时逻辑、快捷键和 UI 事件
-- `tmux + shell`：终端交互层、命令路由、会话控制
-- `PowerShell`：Windows 桥接、安装、兼容路径
-- `C#`：native helper 和核心控制平面
-- docs / agent profile：把系统能力变成稳定的协作 contract
+- Lua（WezTerm 配置 + 运行时逻辑）
+- bash + Go（运行时脚本 / popup pickers）
+- PowerShell（Windows 安装 / 兼容路径）
+- C#（native helper）
+- 加上 docs / agent profile / manifest 这些"contract 层"
 
-真正有价值的，是这些边界开始清晰：
+难的不是"语言多"。难的是**每一层该放什么、边界要怎么收**：
 
-- 什么留在 WezTerm Lua 层
-- 什么进入 tmux 作为统一交互入口
-- 什么继续由 shell 承载
-- 什么必须收敛到长期存活的 native helper
-- 什么要抽象成 agent 可以稳定发现和调用的 contract
+- 什么逻辑留在 Lua 层 —— 答：所有"按了键之后立刻要做的 UI 反应"，因为那必须 in-process。
+- 什么走 bash —— 答：所有"shell-shaped"的工作（管道、流式 IO、和 git/tmux 直接对话），不要在 Lua 里硬写。
+- 什么走 PowerShell —— 答：装 helper 这一类**Windows 一次性 bootstrap** 动作；其它别。
+- 什么必须收敛到长驻 C# helper —— 答：所有"调用方是多个 + 每次调用启动开销不能接受 + 需要进程级状态"的操作（剪贴板、Chrome reuse、VS Code window cache）。
+- 什么进入 contract 层 —— 答：跨语言的稳定调用面（`agent-tools.env` 发现契约、`worktree-task.env` 配置契约、`commands/manifest.json` 命令契约）。
 
-## v1.0 架构图
+**这一层一层的"什么放哪"，就是平台和脚本堆的差别**。脚本堆是"哪写哪都行、能跑就行"；平台是"每个东西在它该在的层、跨层边界明确、超出边界就重写而不是凑合"。
 
-```mermaid
-flowchart TB
-  U["User / AI Agent"]
+这条理解在前端日常工作里其实接触不太到 —— 前端的"层"通常都已经被框架预先定义好了（component / store / route / API client）。这次是从零开始**自己定层**，每一层放什么是"我说了算"，但正因为我说了算，每条边界都得自己扛后果。
 
-  subgraph Interaction["Interaction Surface"]
-    WT["WezTerm
-    Lua runtime / keybindings / UI events"]
-    TMUX["tmux
-    panes / command routing / session control"]
-  end
+---
 
-  subgraph Control["Unified Control Plane"]
-    RT["Runtime Scripts
-    Bash / shell wrappers / sync / diagnostics"]
-    HC["helperctl / request clients
-    request encode / dispatch / response handling"]
-    AG["Agent Contracts
-    AGENTS / profiles / clipboard wrapper / platform actions"]
-  end
+## 第一次和 AI 真正一起"做平台"
 
-  subgraph Windows["Windows Native Host"]
-    HM["Host Helper Manager
-    C# long-lived exe"]
-    IPC["IPC Layer
-    request-response / state sync"]
-    PS["PowerShell Bridge
-    install / bootstrap / compatibility path"]
-  end
+之前用 AI 是"它写代码我看 → 接受/拒绝"。这次是"我们一起做一个系统"，循环长这样：
 
-  subgraph Targets["Platform Capabilities"]
-    IDE["IDE / VS Code focus & open"]
-    CHROME["Chrome / debug browser control"]
-    CLIP["Clipboard read/write
-    text / image / export"]
-    HOST["Notifications / host-side actions"]
-  end
-
-  subgraph Observability["Observability And Validation"]
-    LOG["Logs
-    WezTerm / runtime / helper"]
-    DIAG["Smoke tests / diagnostics / verification"]
-    CACHE["Runtime state / release artifacts / versioned sync"]
-  end
-
-  U --> WT
-  U --> TMUX
-  U --> AG
-
-  WT <--> TMUX
-  WT --> RT
-  TMUX --> RT
-  AG --> RT
-  RT --> HC
-  HC --> IPC
-  PS --> HM
-  IPC <--> HM
-
-  HM --> IDE
-  HM --> CHROME
-  HM --> CLIP
-  HM --> HOST
-
-  WT --> LOG
-  TMUX --> LOG
-  RT --> LOG
-  HM --> LOG
-
-  RT --> DIAG
-  HM --> DIAG
-  RT --> CACHE
-  HM --> CACHE
+```
+我提目标
+  → AI 快速实现 / 给结构方案
+  → 我纠偏：方向对不对 / 交互够不够自然 / 结构够不够优雅 / 验证够不够真
+  → AI 改、跑真实链路回归
+  → 我再看是不是真"系统级正确"
+  → 收口、refactor、写 docs
 ```
 
-图的核心含义是：
+每一步都很重要，缺哪步都不行：
 
-- 交互表面仍然是 `WezTerm + tmux`
-- 控制面开始通过 runtime scripts、helper clients 和 agent contracts 收敛
-- Windows 平台能力开始统一落到 `C#` long-lived helper 上
-- 平台能力、日志、验证和制品管理不再彼此割裂，而是开始进入同一套系统语义
+- **缺第 1 步（明确目标）**：AI 会给一个"看起来不错"的方案，但解决的是它**猜**你想解决的问题。
+- **缺第 2 步（AI 实现）**：你自己搞，速度退回 v0 之前。
+- **缺第 3 步（人纠偏）**：AI 给你一个 happy-path 实现，没考虑你这套场景的边界（hybrid-wsl / 多 agent 并行 / IME 叠加 sync output / 跨 FS 读延迟）。
+- **缺第 4 步（真实链路回归）**：mock 测试通过、真按下 `Alt+/` 不响应。
+- **缺第 5 步（系统级回看）**：每个 commit 都对、整体有 N 处冗余 / 概念漂移。
+- **缺第 6 步（收口）**：能跑但下一次想加东西要重新理解一遍代码。
 
-## 架构层面的阶段性成果
+最有用的发现是**第 3 步和第 5 步是人的不可替代价值**。AI 在每条具体路径上都比我快，但**它不知道哪条路径不该走**，也不知道**整套系统什么时候开始概念漂移**。这两个判断，至少 2026 年的 Claude / Codex 还做不到。
 
-### 1. 控制面开始统一
+WezDeck 之所以走得到现在的形态，最核心的原因就是这六步没断过 —— 每次想偷懒（"先这样吧后面再说"），都会在两周内变成必须重写的债。
 
-这三天最明显的变化，是原来分散在不同脚本和不同路径里的能力，开始往同一套控制面上收：
+---
 
-- `IDE/VS Code` 聚焦与打开链路
-- Chrome 调试浏览器调起
-- 剪贴板读写
-- helper 生命周期管理
-- 日志与诊断入口
-- agent 可调用能力
+## 这三天对我个人的意义
 
-这意味着项目开始从“很多功能点并排存在”，转向“有主干的系统”。
+作为一个前端，平时碰到的是：JSX / TS 类型 / 状态管理 / 浏览器 API / npm 生态 / CI 配置。这次第一次真正做深的几件事，每一件都在前端日常的边界之外：
 
-### 2. Windows helper 完成了一次质变
+| 之前 | 这三天之后 |
+|---|---|
+| "IPC 是个概念" | "IPC 是控制面的语法，会决定平台未来怎么长" |
+| "exe 就是个可执行文件" | "exe 交付有制品 / 安装 / 升级 / 回退一整套语义" |
+| "long-lived process 是后端的事" | "我自己写过一个，知道它的健康检查、崩溃恢复、状态文件怎么设计" |
+| "多语言 = polyglot, sounds nice" | "多语言要靠'每一层放什么'的边界设计才不会变成乱炖" |
+| "AI 帮我写代码" | "AI 是协作对象 —— 我提目标 + 纠偏 + 抬标准，它出实现 + 跑回归" |
 
-Windows helper 从混合脚本路径继续推进成 native helper 方案，并逐步具备这些特征：
+这些理解不是看资料能拿到的。**必须自己把系统搭起来、踩坑、推翻、重做、再验证**。三天里大概有过四五次"这个方向不对要回退"的瞬间，每次都是真的把刚写完的东西删掉重来。最后剩下的东西不是"AI 写的"，是"AI 写的、我推翻过、又重写过、最后留下来的"。
 
-- 长生命周期
-- 明确 `IPC` 边界
-- 更稳定的控制平面
-- 更清晰的职责分层
-- 可构建、可发布、可安装
+---
 
-这让很多原来“能跑但不够稳”的能力，开始有了统一承载体。
+## 一句话结尾
 
-### 3. 项目结构从命令式堆叠走向分层和插件化
-
-这三天不是只在加功能，也在持续拆边界、压复杂度：
-
-- host integrations 插件化
-- client runtime layers 拆分
-- helperctl 职责拆分
-- runtime shell modules 拆分
-- state path 集中管理
-- 文档结构从按读者拆分收敛到按主题拆分
-
-这说明项目已经开始从“修补式维护”进入“面向长期演化的结构治理”。
-
-## AI 协作与人为纠偏
-
-这次里程碑非常重要的一点，是它不是“AI 自动产出”，而是一种逐渐清晰的人机协作模式。
-
-这次形成的协作方式可以概括为：
-
-- AI 负责快速探索、实现、重构、补文档、跑验证
-- 人负责不断纠偏目标、提高标准、纠正误判、压实验证口径
-- 每次出现偏题、验证不够真实、结构不够优雅时，都会被及时拉回
-- 最终沉淀下来的不是一版“看起来能行”的方案，而是一轮被反复校正后的实现
-
-从这三天的过程里，可以明显看到几个特点：
-
-- 不是接受第一版答案，而是不断追问“这是不是最自然的交互”“这是不是够优雅”“是不是该插件化”“验证是不是太浅”
-- 发现方向不对时，会直接打断，把问题重新拉回真正的目标
-- 不满足于局部正确，而是不断把实现从“局部修补”拉向“系统收口”
-- 会把验证标准从“脚本通过”抬高到“真实 smoke test”“真实链路验证”“更接近实际使用的闭环”
-
-这很重要，因为 `v1.0` 不只是技术结果，也是一次比较成熟的人机协作实践。
-
-## 纠偏与验证闭环
-
-这次过程反复出现的，其实是同一个模式：
-
-1. 先提出一个方向
-2. AI 快速实现或给出结构方案
-3. 人指出偏差、模糊点或不够优雅的地方
-4. 改成更贴近真实意图的版本
-5. 用更真实的验证方式回归
-6. 在确认行为成立后再继续做结构优化
-
-这个循环在多个问题上都很明显：
-
-- 从复制粘贴方案回到更接近原生直觉的交互原则
-- 从“性能优化已经实现”继续推进到“插件化是否成立”
-- 从“跑某个测试”纠偏到“应该跑真正的 smoke test”
-- 从“命名能用”继续收口到更清晰的结构命名
-- 从“文档能看”推进到“文档结构本身要重构”
-- 从“脚本能调用 Windows”推进到“agent 应该如何稳定、无乱码地运行这些脚本”
-- 从“有剪贴板能力”推进到“它应该成为 AI 平台可稳定发现和调用的 contract”
-
-这意味着这次里程碑不是一次线性开发，而是一轮持续校正后的系统收敛。
-
-## 为什么这对前端背景特别有意义
-
-因为这次真正碰到的，不只是“前端工程的外延”，而是许多以前更偏概念化的系统问题：
-
-- `IPC` 不再只是术语，而是主通信路径
-- helper 不再只是一个脚本，而是长期存活的后台进程
-- `exe` 打包不再只是构建动作，而是交付模型的一部分
-- 插件化不再只是组件抽象，而是跨语言能力组织方式
-- 可观测性不再只是埋点，而是跨进程、跨语言链路的诊断基础
-- 验证不再只是页面回归，而是控制链路 smoke test 和运行时行为验证
-
-这些理解很难只靠看资料获得，必须靠自己把系统搭起来、踩坑、推翻、重做、再验证。
-
-## v1.0 的结论
-
-这三天完成的，不只是终端配置的进一步完善，而是一次更完整的系统工程实践：
-
-- 技术上，真正做深了 `C# + IPC + native helper + exe 交付 + 多语言混合架构`
-- 架构上，让这套终端工作平台开始具备统一控制面和更清晰的边界
-- 工作流上，形成了一种“AI 快速推进，人不断纠偏，并通过真实验证闭环收口”的协作模式
-
-一句话总结：
-
-> `personal-terminal-platform-v1.0` 的本质，是我第一次把一个前端开发者平时不太会深入接触的系统工程问题，连同 AI 协作、纠偏和验证循环，一起做成了一套可以运行、可以验证、可以持续演化的平台雏形。
+> v1.0 这三天对 WezDeck 是平台主干第一次成型。
+> 对我自己，是**第一次以一个 builder 的身份和系统问题较劲，而不是以一个使用者的身份消费别人解决好的抽象**。
+>
+> 这件事在 AI 协作时代变得意外地可行 —— 一个前端可以在三天内做完一个 C# IPC + Windows exe 交付 + 多语言架构收口的项目。
+> 但有一个前提：**你得知道哪些步骤是 AI 替不了的**。
