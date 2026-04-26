@@ -96,8 +96,17 @@ runtime_log_should_emit() {
 }
 
 runtime_log_now_ms() {
-  local now
+  # Prefer bash 5's EPOCHREALTIME (zero-fork builtin, microsecond
+  # precision). Truncating the trailing 3 digits maps µs → ms. Falls back
+  # to `date` for shells without EPOCHREALTIME or with a non-period
+  # decimal separator under unusual locales.
+  if [[ -n "${EPOCHREALTIME-}" && "$EPOCHREALTIME" == *.* ]]; then
+    local _epoch="${EPOCHREALTIME//./}"
+    printf '%s\n' "${_epoch%???}"
+    return 0
+  fi
 
+  local now
   now="$(date +%s%3N 2>/dev/null || true)"
   if [[ "$now" =~ ^[0-9]+$ ]]; then
     printf '%s\n' "$now"

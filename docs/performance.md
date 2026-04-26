@@ -119,7 +119,7 @@ bench.
 | Bash vs Go picker on the popup-pty side | Bash startup + 3 lib sources cold = 30-80ms; Go static binary = 2-5ms (~15-25x) | Go on the hot path, bash as fallback when binary is missing | `native/picker/`, `tmux-attention-menu.sh` dispatch |
 | Cache the Windows env detection (`%LOCALAPPDATA%` / `%USERPROFILE%`) | Each Windows shell spawn from WSL ~100-200ms; menu.sh triggered detection 6+ times per Alt+/ → up to 600ms pure interop overhead | 24h disk cache at `~/.cache/wezterm-runtime/windows-paths.env`. Most savings of any single change | `windows-runtime-paths-lib.sh` |
 | Hoist `windows-runtime-paths-lib` source from per-call to lib-load | Per-call source parsed ~150 lines × 3 calls per menu.sh run | Source once at `attention-state-lib.sh` load; in-process memo for `attention_state_path` | `attention-state-lib.sh` |
-| Replace `date +%s%3N` with `EPOCHREALTIME` arithmetic | Each `date` fork = ~5ms; multiple stamps per menu.sh run | bash 5 builtins (`EPOCHREALTIME`, `EPOCHSECONDS`, `RANDOM`) for `start_ms` and `trace_id` | `tmux-attention-menu.sh` |
+| Replace `date +%s%3N` with `EPOCHREALTIME` arithmetic | Each `date` fork = ~5ms; multiple stamps per menu.sh run | bash 5 builtins (`EPOCHREALTIME`, `EPOCHSECONDS`, `RANDOM`) for `start_ms`, `menu_done_ts`, and `trace_id`. `runtime_log_now_ms` itself now prefers `EPOCHREALTIME`, so every caller picks up the savings transparently. | `tmux-attention-menu.sh`, `tmux-command-menu.sh`, `tmux-worktree-menu.sh`, `runtime-log-lib.sh` |
 | Drop `attention_state_init` from menu hot path | Init does mkdir + a /mnt/c stat for 5-10ms of pure cross-FS overhead with no value to a read-only caller | `attention_state_read` already returns empty JSON when the file is missing — init is for writers (hooks) only | `tmux-attention-menu.sh` |
 | Drop the `jq -r '.entries | length'` count check | ~5ms cold jq spawn for redundant info — main pipeline already produces 0 rows on empty input, item_count short-circuit downstream catches it | Removed | `tmux-attention-menu.sh` |
 | Merge `live_map`'s two jq calls (ts + panes) into one | Saves one cold jq spawn (~5ms) + one /mnt/c page-cache miss | Single jq emits both fields, U+0001 (SOH) delimiter, bash parameter expansion split | `tmux-attention-menu.sh` |
@@ -235,6 +235,25 @@ for them when optimizing any other shell hot path in this repo.
 10. **`tmux run-shell -b` for fire-and-forget dispatch** so the popup
     closes BEFORE the slow downstream work runs — the user perceives
     the action as instantaneous even when it takes 50ms+ to complete.
+11. **Single-pass session walk + per-path resolution cache.** When a
+    prefetch loop needs to look up an existing tmux window for many
+    candidate paths, do one `tmux list-panes -s` instead of N
+    `list-windows`/`list-panes` round-trips, and memoize the expensive
+    per-pane resolution (git rev-parse, etc.) by `pane_current_path` so
+    duplicate panes only pay once. Saves O(N×panes) tmux + git forks at
+    the cost of one assoc-array build. Pattern landed in
+    `tmux_worktree_build_window_index` for the worktree popup
+    (`prefetched_items` p50 54ms → 33ms with 1 worktree; scales linearly).
+12. **Skip the bash-array intermediate when the consumer only needs TSV.**
+    When a registrar lib exists to feed multiple consumers (e.g. a popup
+    picker AND a runtime dispatcher), the popup's hot path can bypass the
+    full registration walk — emit the picker-shaped TSV directly from one
+    jq invocation that mirrors the registrar's eligibility filters. Keep
+    the slow legacy walk reachable for users with extension hooks (here:
+    `wezterm-x/local/command-panel.sh`); detect "extension active" with a
+    cheap grep so the fast path is the default. Pattern landed in
+    `command_panel_emit_picker_tsv` (`loaded_items` p50 52ms → 19ms; 168
+    arg-parse calls + per-item eval collapsed into a single jq pass).
 
 ## What we explicitly did NOT do (and why)
 
@@ -359,9 +378,9 @@ bash boot + lib sourcing inside the popup + key loop) is on top.
 
 | Target | prep p50 | Dominant stage | Notes |
 |---|---|---|---|
-| attention | ~31ms | `live_map` + `jq_rows` (~12ms + ~4ms) | Optimized; near the floor described above. |
-| command | ~73ms | `loaded_items` (~52ms) | Manifest jq + bash `eval` per palette item; picker.sh re-runs the same load inside the popup pty. |
-| worktree | ~110ms | `prefetched_items` (~54ms) | One `tmux list-windows` probe per worktree to look up an existing window. |
+| attention | ~23ms | `live_map` + `jq_rows` (~8ms + ~3ms) | Near the floor described above. Was ~31ms before the lingering `date +%s%3N` for `menu_done_ts` was inlined to `EPOCHREALTIME`. |
+| command | ~30ms | `loaded_items` (~19ms) | Single jq invocation emits the picker's 6-field TSV directly (`command_panel_emit_picker_tsv`); the legacy bash-array build still runs only when `wezterm-x/local/command-panel.sh` has user-defined entries. Was ~73ms / ~52ms before the fast path landed. |
+| worktree | ~68ms | `prefetched_items` (~33ms) | Single session-wide `tmux list-panes -s` + per-path git-resolve dedup, replaces N×`tmux_worktree_find_window`. Was ~110ms / ~54ms before `tmux_worktree_build_window_index` landed. |
 
 The command palette and worktree pickers are next in line. Reach for
 the same techniques the attention pipeline used (Go binary in the popup
@@ -411,24 +430,24 @@ median wall time (no source changes since last sync, helper-manager already runn
 
 ### Optimization techniques (replicable patterns specific to sync-runtime)
 
-11. **mtime as a "did anything change since X?" oracle.** When you have a known-good
+13. **mtime as a "did anything change since X?" oracle.** When you have a known-good
     state file (install state, sentinel, log), use its mtime as the reference and
     `find $INPUTS -newer $REF -print -quit` to detect changes early. `-quit`
     ensures the worst case is one full tree walk on the unchanged path, but the
     common case exits on the first hit.
-12. **Detach work that doesn't gate completion.** If a step's output isn't needed
+14. **Detach work that doesn't gate completion.** If a step's output isn't needed
     for sync to succeed (advisory checks, deferred reports), `nohup`+`disown` it
     and let it run past the script. Combine with a daily-rate-limit so you don't
     pile up duplicate background jobs across rapid syncs.
-13. **`rsync -a` instead of `cp -R` whenever target may already exist.** rsync's
+15. **`rsync -a` instead of `cp -R` whenever target may already exist.** rsync's
     "skip unchanged file" beats cp's "always write" by orders of magnitude when
     the target FS is `/mnt/c`. The atomicity downgrade (per-file vs whole-tree)
     rarely matters for user-initiated, infrequent syncs.
-14. **Idempotent generators (write-on-diff)** preserve mtime-based skip chains.
+16. **Idempotent generators (write-on-diff)** preserve mtime-based skip chains.
     Any script that writes to a tracked file should `cmp` against the existing
     target before replacing — otherwise it cascades into invalidating every
     downstream `find -newer` gate.
-15. **Stat-based time, not clock-based.** Cross-OS clock comparisons (WSL vs
+17. **Stat-based time, not clock-based.** Cross-OS clock comparisons (WSL vs
     Windows) drift ~100-300ms steady-state. Use `stat -c '%Y' file` so the
     timestamp comes from the same filesystem clock both readers/writers observe.
     Same trick: `find -newer file` instead of `(date +%s) - (stat +mtime)`.
