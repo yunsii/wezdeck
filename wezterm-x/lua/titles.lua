@@ -277,6 +277,12 @@ function M.register(opts)
   -- after every state transition, and WezTerm delivers it here. Reload
   -- state and repaint the right-status segment immediately instead of
   -- waiting up to 250ms for the next update-status tick.
+  --
+  -- `value` is the hook-side `tick_ms` (epoch ms) decoded from base64 by
+  -- WezTerm. `latency_ms` is the gap between the shell-side OSC emit and
+  -- this Lua handler firing — i.e. WSL→tmux→wezterm OSC delivery latency
+  -- (subject to WSL/Windows clock skew, so treat sub-100ms values as
+  -- noise; the signal is when it spikes into seconds).
   wezterm.on('user-var-changed', function(window, pane, name, value)
     if not attention or name ~= attention.USER_VAR_TICK then
       return
@@ -287,9 +293,20 @@ function M.register(opts)
     refresh_right_status(window, pane)
     log_rendered_status(window)
     if logger then
+      local latency_ms = nil
+      local tick_ms = tonumber(value)
+      if tick_ms then
+        local ok, now_str = pcall(function()
+          return wezterm.time.now():format '%s%3f'
+        end)
+        if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
+          latency_ms = tonumber(now_str) - tick_ms
+        end
+      end
       logger.info('attention', 'tick received', {
         pane_id = pane and pane.pane_id and pane:pane_id() or nil,
         value = value,
+        latency_ms = latency_ms,
       })
     end
   end)

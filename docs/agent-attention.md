@@ -94,6 +94,56 @@ tail -200 ~/.local/state/wezterm-runtime.log \
 
 You should see one UUID per active pane. If the list only shows `pane:<N>` entries (the script's fallback key when no Claude payload is piped in) or is empty, the `running` hook is not wired — double-check `~/.claude/settings.json` points at `... emit-agent-status.sh running` (not `cleared`) and that the hook script is executable.
 
+#### Latency probe — investigating "status counter lags the visible prompt"
+
+**Use this procedure whenever the status bar counter (`⚠ N waiting`, `⟳ N running`, `✓ N done`) is observably behind the visible UI by more than a frame.** It is the canonical diagnostic for "I see the permission prompt but the counter doesn't update for N seconds" and similar flavors.
+
+Every hook invocation now writes:
+
+- `entry_ts_ms` — captured at the very first line of the script, before any `case`/jq/tmux work. Closest available proxy for "hook handler entered".
+- `elapsed_ms` — `entry → emit` in-script latency (jq + flock + git + DCS write). Healthy < 200 ms.
+- `notification_type` — passed through from the hook payload so you can tell which `Notification` flavor fired (`permission_prompt`, `idle_prompt`, `auth_success`, …).
+
+Two previously-silent paths now log so the hook-fire trail is complete:
+
+- `notification ignored` — the `Notification → waiting` hook fired but `notification_type` was `idle_prompt` / `auth_success`, so state was untouched. Use this to confirm Claude actually fired the hook when the permission UI appeared.
+- `hook resolved no-op` — `PreToolUse` / `PostToolUse → resolved` fired on an entry that was already `running` (the common auto-allowed-tool fast path), so no OSC tick was emitted by design.
+
+The Lua side's `tick received` log gains:
+
+- `latency_ms` — gap between the shell-side OSC emit (`tick_ms`) and WezTerm dispatching `user-var-changed`. Subject to WSL/Windows clock skew, so treat sub-100 ms (including small negatives) as noise; signal is seconds-scale spikes.
+
+##### One-shot waterfall
+
+`scripts/dev/attention-latency-probe.sh` joins the WSL `runtime.log` and the Windows `wezterm.log` on `tick_ms` and prints a per-event waterfall with anomaly flags:
+
+```bash
+scripts/dev/attention-latency-probe.sh                  # last 20 events
+scripts/dev/attention-latency-probe.sh --status waiting # waiting only
+scripts/dev/attention-latency-probe.sh --pane %2        # one tmux pane
+```
+
+Anomaly markers:
+
+- `⚠INSCRIPT>Nms` — in-script work was slow (> 200 ms; jq / flock / git contention).
+- `⚠TICK>Nms` — OSC delivery (hook → wezterm) was slow (> 500 ms).
+- `✗NO_TICK` — wezterm never logged a `tick received` for this emit's `tick_ms`. Fast path lost (DCS passthrough drop, wezterm event-loop stalled, tmux backpressure). Renderer falls back to the 250 ms periodic `update-status` tick — still works, just not within a frame.
+
+##### Standing repro for the parallel-waiting issue
+
+1. Open two tmux panes both running Claude in this repo.
+2. In pane A, ask Claude to run a Bash command that needs permission.
+3. While the prompt is up, in pane B, do the same.
+4. Note wallclock when each visual prompt appears.
+5. Note wallclock when the `⚠ N waiting` counter ticks `0 → 1 → 2`.
+6. Run `scripts/dev/attention-latency-probe.sh --status waiting --last 10`.
+
+Decision tree:
+
+- **`entry_ts` lags noted UI wallclock by seconds** → upstream of us; Claude Code fired the `Notification` hook late. Nothing to fix in this repo. Confirm by checking whether the row was tagged `notification ignored` (Claude fired with `idle_prompt` first, only later with `permission_prompt`).
+- **`entry_ts` matches the UI but `cross` (`latency_ms`) is seconds** → OSC pipeline. Look for tmux DCS drops, wezterm event-loop stalls, or `✗NO_TICK` rows that fell back to the periodic tick.
+- **Both are tight but the counter still doesn't update** → renderer side. Check `render_status` log lines on the wezterm side — `attention.collect()` may be returning an unexpected list (TTL prune timing, focused-pane filter, sticky-waiting interaction).
+
 ### Codex integration
 
 Codex's hook surface is narrower than Claude Code's: `~/.codex/config.toml`'s `notify` fires once per `agent-turn-complete`, equivalent to Claude's `Stop` hook, and there is no stable event yet for permission prompts or for the user submitting the next prompt. Codex's `hooks.json` lifecycle system, which would let us wire `waiting` and `cleared`, is still under development upstream (tracked in [openai/codex#2150](https://github.com/openai/codex/discussions/2150) and [#15497](https://github.com/openai/codex/issues/15497)).
