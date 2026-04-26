@@ -2,93 +2,100 @@
   <img src="assets/brand/banner.svg" alt="WezDeck — a flight deck for your AI agents" width="960">
 </p>
 
-# WezDeck
+<h1 align="center">WezDeck</h1>
 
-> *A flight deck for your AI agents — built on WezTerm, tmux, and git worktrees.*
+<p align="center">
+  <em>A flight deck for your AI agents — built on WezTerm, tmux, and git worktrees.</em>
+</p>
 
-WezDeck is a managed WezTerm runtime designed for the multi-agent era: every WezTerm tab is one repo, every tmux window inside it is one git worktree, every pane can host an agent CLI (`claude` / `codex` / …) whose attention state is surfaced as live tab badges + a single right-status counter (`⟳ N running ⚠ N waiting ✓ N done`). One keystroke (`Alt+/`) jumps between any pending task across all panes; one keystroke (`Ctrl+k g d/t/h`) carves out a new linked worktree with its own agent.
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <img alt="WezTerm: nightly" src="https://img.shields.io/badge/wezterm-nightly-8b5cf6">
+  <img alt="tmux: ≥ 3.6" src="https://img.shields.io/badge/tmux-%E2%89%A5%203.6-1f6feb">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-linux%20%C2%B7%20wsl%20%C2%B7%20macOS-22d3ee">
+  <img alt="Lua" src="https://img.shields.io/badge/lua-5.4-000080">
+</p>
 
-This repository is the source of truth for that runtime. The GitHub repo is now [`yunsii/wezdeck`](https://github.com/yunsii/wezdeck) (the previous `yunsii/wezterm-config` URL still works via GitHub's permanent redirect). The env var consumed by `worktree-task` is `WEZDECK_REPO` (legacy `WEZTERM_CONFIG_REPO` still accepted via fallback). The local working directory keeps its original `wezterm-config` name — you can rename it any time and the env var will follow.
+> One WezTerm tab per repo. One tmux window per worktree. One pane per agent. One keystroke to find what's waiting on you.
 
-## Runtime Modes
+This repository is the source of truth for the WezDeck runtime. The GitHub repo is [`yunsii/wezdeck`](https://github.com/yunsii/wezdeck) (the previous `yunsii/wezterm-config` URL still works via GitHub's permanent redirect).
 
-Supported runtime modes:
+## ✨ Highlights
 
-- `hybrid-wsl`: Windows desktop WezTerm plus WSL/tmux runtime
-- `posix-local`: Linux desktop or macOS local runtime
+- **Tab × Worktree × Agent in one frame** — every WezTerm tab is one repo, every tmux window inside it is a linked git worktree, every pane can host an agent CLI (`claude` / `codex` / …).
+- **Live attention surface** — per-tab badges plus a single right-status counter `⟳ N running ⚠ N waiting ✓ N done`, driven by a Claude hook → `attention.json` pipeline.
+- **One keystroke to jump** — `Alt+/` opens a popup of every pending pane across every tab; `Alt+,` / `Alt+.` step through them.
+- **One keystroke to spawn a worktree** — `Ctrl+k g d/t/h` carves out a new linked worktree (with its own agent) without leaving the keyboard.
+- **Manifest-driven hotkeys** — `wezterm-x/commands/manifest.json` is the single source of truth; per-machine overrides live in `wezterm-x/local/keybindings.lua`.
 
-Generated runtime targets live under the chosen user home:
+## 📺 Demo
 
-- `$HOME/.wezterm.lua`
-- `$HOME/.wezterm-x/...`
+> _TODO: drop a screenshot or asciinema GIF here showing the right-status counter, a tab badge transition, and the `Alt+/` picker._
 
-On Windows hybrid setups, `$HOME` is typically `%USERPROFILE%`.
+## 🧭 How It Works
 
-## What This Repo Owns
-
-- WezTerm config and Lua runtime
-- tmux layout and status behavior
-- managed workspaces and launcher behavior
-- runtime sync scripts and Windows host-helper integration
-- linked worktree task workflow
-- project documentation and agent rules
-
-This repo also hosts versioned user-level agent profiles under [`agent-profiles/`](agent-profiles/). They are maintained here for reuse and version control, but they are not project-level WezTerm instructions and are not part of the synced runtime.
-
-## Quick Start
-
-1. Copy `wezterm-x/local.example/` to `wezterm-x/local/`.
-2. Fill in your machine-local values under `wezterm-x/local/`.
-3. Sync the runtime with:
-
-```bash
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+```
+WezTerm tab          ─┐
+  └─ tmux window     ─┤  one repo  ·  one worktree  ·  one agent
+       └─ tmux pane  ─┘
+                       ↑
+       Claude hook → attention.json → tab badges + right-status counter
+                                       ↑
+                                  Alt+/  jumps to next pending pane
 ```
 
-The `wezterm-runtime-sync` skill owns runtime sync. It caches the chosen target home in `.sync-target` and publishes the runtime into the target user directory.
+Full architecture, ownership boundaries, and the WSL ⇄ Windows communication channels: [`docs/architecture.md`](docs/architecture.md).
 
-## Repo-Local Agent Entry Points
+## ✅ Requirements
 
-This repo exposes a small number of runtime-facing shell entrypoints directly from the source tree.
-When an AI workspace or local automation can already resolve this repository root, prefer calling these repo-local scripts instead of reconstructing helper IPC details elsewhere.
-
-Current agent-facing entrypoint:
-
-- [`scripts/runtime/agent-clipboard.sh`](scripts/runtime/agent-clipboard.sh): write text or an image file to the Windows clipboard through the synced host helper from WSL
-
-Recommended discovery contract for external agent platforms:
-
-1. Sync this repo so the runtime writes `~/.wezterm-x/agent-tools.env`
-2. Read `agent_clipboard` from that file
-3. Use the wrapper only when the resolved path exists and is executable
-
-## Read Next
-
-- Project docs start at [`docs/README.md`](docs/README.md).
-- Agent rules start at [`AGENTS.md`](AGENTS.md).
-- User-level reusable agent profiles live under [`agent-profiles/`](agent-profiles/).
-
-Useful direct links:
-
-- Setup and local config: [`docs/setup.md`](docs/setup.md)
-- Daily sync and verification: [`docs/daily-workflow.md`](docs/daily-workflow.md)
-- Workspaces: [`docs/workspaces.md`](docs/workspaces.md)
-- Keybindings: [`docs/keybindings.md`](docs/keybindings.md)
-- tmux UI and status: [`docs/tmux-ui.md`](docs/tmux-ui.md)
-- Diagnostics: [`docs/diagnostics.md`](docs/diagnostics.md)
-- Architecture: [`docs/architecture.md`](docs/architecture.md)
-- Agent attention pipeline: [`docs/agent-attention.md`](docs/agent-attention.md)
-- Browser debug workflow: [`docs/browser-debug.md`](docs/browser-debug.md)
-- Performance hot path: [`docs/performance.md`](docs/performance.md)
-
-## Brand Assets
-
-Brand SVGs live in [`assets/brand/`](assets/brand/) and share a single visual language: dark deck plate with a diagonal `#2e3a4d → #080c14` gradient, three diagonal status colors `#22d3ee` (running) / `#f59e0b` (waiting) / `#34d399` (done), and lucide-aligned glyph proportions.
-
-| File | Size | Purpose |
+| | Required | Notes |
 |---|---|---|
-| [`icon.svg`](assets/brand/icon.svg) | 512×512 | Primary app icon — full 3×3 deck grid with three lit slots showing `running` / `waiting` / `done` glyphs |
-| [`favicon.svg`](assets/brand/favicon.svg) | 32×32 | Simplified version of `icon.svg` — keeps only deck plate + three diagonal status dots |
-| [`banner.svg`](assets/brand/banner.svg) | 1280×320 | README banner — embeds the deck icon plus wordmark, tagline, and live status counter |
+| **WezTerm** | nightly | `hybrid-wsl` mode runs on the Windows nightly build |
+| **tmux** | ≥ 3.6 | DEC mode 2026 (synchronized output); 3.4 deadlocks. Ubuntu 24.04 still ships 3.4 — build from source. [Why](docs/ime-flicker-and-sync-output.md) |
+| **lua5.4** | recommended | Powers the sync precheck; missing → precheck skipped with a warning |
+| **jq** | recommended | Agent-attention writer & focus path; missing → degraded labels |
+| **go ≥ 1.21** | optional | For maintainers of `native/picker/`. End users get a sha256-pinned prebuilt tarball via the release fetcher |
+| **python3** | optional | Only for WakaTime status |
 
-`favicon.svg` is geometrically derived from `icon.svg` at 1/16 scale: edge padding 7.8% / inner padding 10.9% / corner radius 14.8% (outer) and 12.5% (inner) all match. The three status dots sit on icon's lit-slot centers (29.7% / 50% / 70.3%) with radius matching the icon slot rect's inscribed circle (`r = 2.25` in 32-vp = `r = 36` in 512-vp). When `icon.svg` and `favicon.svg` are overlaid at the same render size the dots land inside the icon's lit-slot rectangles. Keep these proportions in sync if either is edited.
+Supported runtime modes: `hybrid-wsl` (Windows WezTerm + WSL/tmux) and `posix-local` (Linux / macOS local).
+
+## 🚀 Quick Start
+
+```bash
+# 1. Seed your machine-local config
+cp -r wezterm-x/local.example/ wezterm-x/local/
+$EDITOR wezterm-x/local/constants.lua   # runtime_mode, default_domain, shell, …
+$EDITOR wezterm-x/local/shared.env      # WAKATIME_API_KEY, MANAGED_AGENT_PROFILE, …
+
+# 2. Sync the runtime into $HOME (writes ~/.wezterm.lua + ~/.wezterm-x/)
+skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+
+# 3. Reload WezTerm and confirm the right status shows
+#    "⟳ 0 ⚠ 0 ✓ 0" — that means the attention pipeline is live.
+```
+
+Full setup walkthrough: [`docs/setup.md`](docs/setup.md).
+
+## 📚 Documentation
+
+**Get started**
+- [Setup](docs/setup.md) · [Daily workflow](docs/daily-workflow.md) · [Workspaces](docs/workspaces.md)
+
+**Daily use**
+- [Keybindings](docs/keybindings.md) · [tmux UI](docs/tmux-ui.md) · [Agent attention](docs/agent-attention.md) · [Browser debug](docs/browser-debug.md)
+
+**Internals**
+- [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [Diagnostics](docs/diagnostics.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md)
+
+**Releases**
+- [Host helper](docs/host-helper-release.md) · [Picker](docs/picker-release.md)
+
+Agent rules: [`AGENTS.md`](AGENTS.md). Reusable user-level profiles: [`agent-profiles/`](agent-profiles/).
+
+## 🎨 Brand
+
+Brand SVGs and the geometric construction notes live in [`assets/brand/`](assets/brand/) — see [`assets/brand/README.md`](assets/brand/README.md) for the asset table and proportional rules.
+
+## 📄 License
+
+MIT © Yuns. See [LICENSE](LICENSE).
