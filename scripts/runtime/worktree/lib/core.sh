@@ -6,12 +6,12 @@ usage:
   worktree-task <command> [options]
 
 commands:
-  configure Configure or update WEZTERM_CONFIG_REPO for worktree-task
+  configure Configure or update WEZDECK_REPO for worktree-task
   launch    Create a linked task worktree and optionally open it in tmux
   reclaim   Remove a linked task worktree created by worktree-task
 
 environment:
-  WEZTERM_CONFIG_REPO  Required wezterm-config repo root; if it is missing, configure it first with worktree-task configure --repo /absolute/path
+  WEZDECK_REPO  Required wezdeck checkout root (legacy WEZTERM_CONFIG_REPO still accepted); if missing, run worktree-task configure --repo /absolute/path
 EOF
 }
 
@@ -43,7 +43,7 @@ usage:
 
 options:
   --cwd PATH   Target repository path used to resolve a relative --repo path. Default: current directory
-  --repo PATH  Explicit wezterm-config repo path to save
+  --repo PATH  Explicit wezdeck-checkout path to save
 EOF
 }
 
@@ -169,8 +169,8 @@ wt_core_export_provider_env() {
   export WT_REPO_COMMON_DIR
   export WT_MAIN_WORKTREE_ROOT
   export WT_REPO_LABEL
-  export WEZTERM_CONFIG_REPO_ROOT
-  export WEZTERM_CONFIG_REPO
+  export WEZDECK_REPO_ROOT
+  export WEZDECK_REPO
   export WT_WORKTREE_PATH
   export WT_BRANCH_NAME
   export WT_TASK_SLUG
@@ -383,7 +383,7 @@ wt_core_configure() {
   wt_core_resolve_repo_context "$cwd"
   wt_config_set_defaults
 
-  [[ -n "$repo_override" ]] || wt_die "configure requires --repo /absolute/path/to/wezterm-config"
+  [[ -n "$repo_override" ]] || wt_die "configure requires --repo /absolute/path/to/wezdeck-checkout"
   selected_repo="$(wt_config_resolve_wezterm_repo_root "$WT_RESOLVED_CWD" "$repo_override")"
   runtime_log_info task "configuring worktree-task repo" "cwd=$WT_RESOLVED_CWD" "selected_repo=$selected_repo"
 

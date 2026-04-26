@@ -31,7 +31,7 @@ Options:
   -h, --help            Show this help text.
 
 Environment:
-  WEZTERM_CONFIG_REPO   Repository root. Defaults to the current working directory.
+  WEZDECK_REPO          Repository root (legacy WEZTERM_CONFIG_REPO still accepted). Defaults to the current working directory.
 EOF
 }
 
@@ -270,11 +270,11 @@ maybe_reload_tmux() {
 }
 
 resolve_repo_root() {
-  local repo_root="${WEZTERM_CONFIG_REPO:-$PWD}"
+  local repo_root="${WEZDECK_REPO:-${WEZTERM_CONFIG_REPO:-$PWD}}"
   [[ -d "$repo_root" ]] || { printf 'Repository root does not exist: %s\n' "$repo_root" >&2; return 1; }
   repo_root="$(cd "$repo_root" && pwd -P)"
-  [[ -f "$repo_root/wezterm.lua" ]] || { printf 'Expected %s/wezterm.lua. Run from the repo root or set WEZTERM_CONFIG_REPO.\n' "$repo_root" >&2; return 1; }
-  [[ -d "$repo_root/wezterm-x" ]] || { printf 'Expected %s/wezterm-x. Run from the repo root or set WEZTERM_CONFIG_REPO.\n' "$repo_root" >&2; return 1; }
+  [[ -f "$repo_root/wezterm.lua" ]] || { printf 'Expected %s/wezterm.lua. Run from the repo root or set WEZDECK_REPO.\n' "$repo_root" >&2; return 1; }
+  [[ -d "$repo_root/wezterm-x" ]] || { printf 'Expected %s/wezterm-x. Run from the repo root or set WEZDECK_REPO.\n' "$repo_root" >&2; return 1; }
   printf '%s\n' "$repo_root"
 }
 
@@ -604,12 +604,12 @@ run_runtime_native_flow() {
 }
 
 run_bootstrap_prepare_flow() {
-  sync_trace "flow=wezterm-config status=starting target_file=$TARGET_FILE temp_file=$TEMP_BOOTSTRAP_FILE"
+  sync_trace "flow=wezdeck-bootstrap status=starting target_file=$TARGET_FILE temp_file=$TEMP_BOOTSTRAP_FILE"
   mkdir -p "$TARGET_HOME"
   mkdir -p "$TARGET_RUNTIME_STATE_DIR"
   cp "$SOURCE_FILE" "$TEMP_BOOTSTRAP_FILE"
   sync_trace "step=prepare-bootstrap status=completed temp_file=$TEMP_BOOTSTRAP_FILE"
-  sync_trace "flow=wezterm-config status=prepared target_file=$TARGET_FILE temp_file=$TEMP_BOOTSTRAP_FILE"
+  sync_trace "flow=wezdeck-bootstrap status=prepared target_file=$TARGET_FILE temp_file=$TEMP_BOOTSTRAP_FILE"
 }
 
 finalize_bootstrap_refresh() {
@@ -630,10 +630,10 @@ sync_trace "flow=runtime-native status=running async=1 pid=$RUNTIME_NATIVE_FLOW_
 
 run_bootstrap_prepare_flow &
 BOOTSTRAP_FLOW_PID=$!
-sync_trace "flow=wezterm-config status=running async=1 pid=$BOOTSTRAP_FLOW_PID"
+sync_trace "flow=wezdeck-bootstrap status=running async=1 pid=$BOOTSTRAP_FLOW_PID"
 
 wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
-wait_for_flow wezterm-config "$BOOTSTRAP_FLOW_PID"
+wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
 
 maybe_reload_tmux "$REPO_ROOT"

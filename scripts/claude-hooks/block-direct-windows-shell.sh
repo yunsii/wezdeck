@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code PreToolUse hook for wezterm-config.
+# Claude Code PreToolUse hook for WezDeck (repo: wezterm-config).
 #
 # Enforces the repo CLAUDE.md "Hard Rules" and docs/setup.md
 # "Windows Script Execution" section: from WSL, never invoke cmd.exe or
@@ -36,7 +36,7 @@ if ! grep -qE 'cmd\.exe|powershell\.exe' <<<"$sanitized"; then
 fi
 
 cat >&2 <<'EOF'
-Blocked: direct cmd.exe / powershell.exe invocation from WSL in wezterm-config.
+Blocked: direct cmd.exe / powershell.exe invocation from WSL in WezDeck.
 
 Use the UTF-8 wrappers from scripts/runtime/windows-shell-lib.sh:
 
