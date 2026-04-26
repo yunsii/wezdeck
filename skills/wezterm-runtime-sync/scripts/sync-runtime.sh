@@ -645,6 +645,13 @@ runtime_log_info sync "sync-runtime completed" \
   "target_runtime_dir=$TARGET_RUNTIME_DIR" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 sync_trace "step=completed duration_ms=$(runtime_log_duration_ms "$start_ms")"
+
+DEPS_CHECK_SCRIPT="$REPO_ROOT/scripts/dev/check-deps-updates.sh"
+if [[ -x "$DEPS_CHECK_SCRIPT" ]] && [[ "${WEZTERM_SYNC_SKIP_DEPS_CHECK:-0}" != "1" ]]; then
+  sync_trace "step=deps-check status=starting"
+  "$DEPS_CHECK_SCRIPT" --advisory --no-color --timeout 10 --prefix '[sync] ' || true
+  sync_trace "step=deps-check status=completed"
+fi
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"
 if [[ -d "$NATIVE_SOURCE_DIR" ]]; then
