@@ -1,6 +1,10 @@
-# WezTerm Config
+# WezDeck
 
-This repository is the source of truth for a managed WezTerm runtime built around WezTerm, tmux, and git-worktree-based task flow.
+> *A flight deck for your AI agents — built on WezTerm, tmux, and git worktrees.*
+
+WezDeck is a managed WezTerm runtime designed for the multi-agent era: every WezTerm tab is one repo, every tmux window inside it is one git worktree, every pane can host an agent CLI (`claude` / `codex` / …) whose attention state is surfaced as live tab badges + a single right-status counter (`⟳ N running ⚠ N waiting ✓ N done`). One keystroke (`Alt+/`) jumps between any pending task across all panes; one keystroke (`Ctrl+k g d/t/h`) carves out a new linked worktree with its own agent.
+
+This repository is the source of truth for that runtime. The repo and its tracked git remote keep their original `wezterm-config` name; **WezDeck** is the project's display / sharing identity.
 
 ## Runtime Modes
 
@@ -69,3 +73,6 @@ Useful direct links:
 - tmux UI and status: [`docs/tmux-ui.md`](docs/tmux-ui.md)
 - Diagnostics: [`docs/diagnostics.md`](docs/diagnostics.md)
 - Architecture: [`docs/architecture.md`](docs/architecture.md)
+- Agent attention pipeline: [`docs/agent-attention.md`](docs/agent-attention.md)
+- Browser debug workflow: [`docs/browser-debug.md`](docs/browser-debug.md)
+- Performance hot path: [`docs/performance.md`](docs/performance.md)
