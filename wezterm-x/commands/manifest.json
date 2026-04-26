@@ -495,6 +495,18 @@
     "palette": { "display_only": true }
   },
   {
+    "id": "workspace.switch-mock-deck",
+    "label": "Workspace: Switch to mock-deck (demo)",
+    "description": "Switch to the `mock-deck` demo workspace (six tabs simulating multi-agent activity). Only useful when the `mock-deck` workspace is registered in `wezterm-x/local/workspaces.lua` and the orchestrator at `scripts/dev/mock-deck/mock-deck.sh` is running.",
+    "scope": "workspaces",
+    "context": "any",
+    "binding": {"handler": "workspace.switch", "args": {"name": "mock-deck"}},
+    "hotkeys": [
+      { "keys": "Alt+m", "layer": "wezterm" }
+    ],
+    "palette": { "display_only": true }
+  },
+  {
     "id": "workspace.cycle-next",
     "label": "Workspace: Cycle to next",
     "description": "Rotate through all currently known workspaces.",
