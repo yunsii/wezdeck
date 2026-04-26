@@ -59,22 +59,6 @@ windows_runtime_detect_paths || true
 toggle_flag_dir="${WINDOWS_RUNTIME_STATE_WSL:-$HOME/.local/state/wezterm-runtime}/state/command-panel"
 toggle_flag_file="$toggle_flag_dir/popup-open.flag"
 
-command_panel_load_items || {
-  tmux display-message 'Command palette failed while loading items'
-  exit 1
-}
-bench_mark loaded_items
-
-mapfile -t visible_indexes < <(command_panel_visible_indexes "$runtime_mode")
-if (( ${#visible_indexes[@]} == 0 )); then
-  runtime_log_warn command_panel "command panel has no visible items" "runtime_mode=$runtime_mode" "session_name=$session_name"
-  tmux display-message "No command palette items are available for $runtime_mode"
-  exit 0
-fi
-bench_mark visible_indexes
-
-runtime_log_info command_panel "opening tmux command panel" "runtime_mode=$runtime_mode" "session_name=$session_name" "item_count=${#visible_indexes[@]}" "trigger_source=$trigger_source"
-
 # Prefer the static Go picker binary when present. Cold start is ~2-5ms
 # vs ~30-80ms for the bash picker; the picker also avoids re-running
 # `command_panel_load_items` inside the popup pty (~50ms) by consuming
@@ -85,46 +69,95 @@ repo_root="$(cd "$script_dir/../.." && pwd)"
 picker_binary="$repo_root/native/picker/bin/picker"
 prefetch_file=""
 picker_kind='bash'
+item_count=0
 
 if [[ -x "$picker_binary" ]]; then
   # tmux-command-picker.sh (bash fallback) reads @wezterm_last_command_id
   # itself; only the Go path needs this menu-side read.
   last_command_id="$(tmux show-option -gv @wezterm_last_command_id 2>/dev/null || true)"
   prefetch_file="$(mktemp -t wezterm-command-picker.XXXXXX)"
-  # Build the whole TSV with one redirect: each field gets stripped of
-  # tab/newline/CR via parameter expansion only (no subshell, no `tr`
-  # fork) so the loop stays in-process. Six fields, 29-ish items —
-  # previous `$(... | tr ...)` per field cost ~260ms on WSL2.
-  {
-    for index in "${visible_indexes[@]}"; do
-      f_id="${COMMAND_PANEL_IDS[$index]}";              f_id="${f_id//$'\t'/ }";    f_id="${f_id//$'\n'/ }";    f_id="${f_id//$'\r'/ }"
-      f_label="${COMMAND_PANEL_LABELS[$index]}";        f_label="${f_label//$'\t'/ }"; f_label="${f_label//$'\n'/ }"; f_label="${f_label//$'\r'/ }"
-      f_desc="${COMMAND_PANEL_DESCRIPTIONS[$index]}";   f_desc="${f_desc//$'\t'/ }"; f_desc="${f_desc//$'\n'/ }"; f_desc="${f_desc//$'\r'/ }"
-      f_accel="${COMMAND_PANEL_ACCELERATORS[$index]:-}"; f_accel="${f_accel//$'\t'/ }"; f_accel="${f_accel//$'\n'/ }"; f_accel="${f_accel//$'\r'/ }"
-      f_hotkey="${COMMAND_PANEL_HOTKEYS[$index]:-}";    f_hotkey="${f_hotkey//$'\t'/ }"; f_hotkey="${f_hotkey//$'\n'/ }"; f_hotkey="${f_hotkey//$'\r'/ }"
-      f_confirm="${COMMAND_PANEL_CONFIRM_MESSAGES[$index]:-}"; f_confirm="${f_confirm//$'\t'/ }"; f_confirm="${f_confirm//$'\n'/ }"; f_confirm="${f_confirm//$'\r'/ }"
-      printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$f_id" "$f_label" "$f_desc" "$f_accel" "$f_hotkey" "$f_confirm"
-    done
-  } > "$prefetch_file"
+
+  if command_panel_local_items_active; then
+    # Slow path: machine has user-defined entries in
+    # wezterm-x/local/command-panel.sh, so we need the bash registrar to
+    # source it and merge with the manifest. ~50ms but rare in practice.
+    command_panel_load_items || {
+      tmux display-message 'Command palette failed while loading items'
+      rm -f "$prefetch_file"
+      exit 1
+    }
+    {
+      for index in "${!COMMAND_PANEL_IDS[@]}"; do
+        command_panel_item_matches_runtime "$index" "$runtime_mode" || continue
+        f_id="${COMMAND_PANEL_IDS[$index]}";              f_id="${f_id//$'\t'/ }";    f_id="${f_id//$'\n'/ }";    f_id="${f_id//$'\r'/ }"
+        f_label="${COMMAND_PANEL_LABELS[$index]}";        f_label="${f_label//$'\t'/ }"; f_label="${f_label//$'\n'/ }"; f_label="${f_label//$'\r'/ }"
+        f_desc="${COMMAND_PANEL_DESCRIPTIONS[$index]}";   f_desc="${f_desc//$'\t'/ }"; f_desc="${f_desc//$'\n'/ }"; f_desc="${f_desc//$'\r'/ }"
+        f_accel="${COMMAND_PANEL_ACCELERATORS[$index]:-}"; f_accel="${f_accel//$'\t'/ }"; f_accel="${f_accel//$'\n'/ }"; f_accel="${f_accel//$'\r'/ }"
+        f_hotkey="${COMMAND_PANEL_HOTKEYS[$index]:-}";    f_hotkey="${f_hotkey//$'\t'/ }"; f_hotkey="${f_hotkey//$'\n'/ }"; f_hotkey="${f_hotkey//$'\r'/ }"
+        f_confirm="${COMMAND_PANEL_CONFIRM_MESSAGES[$index]:-}"; f_confirm="${f_confirm//$'\t'/ }"; f_confirm="${f_confirm//$'\n'/ }"; f_confirm="${f_confirm//$'\r'/ }"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$f_id" "$f_label" "$f_desc" "$f_accel" "$f_hotkey" "$f_confirm"
+        ((item_count += 1))
+      done
+    } > "$prefetch_file"
+  else
+    # Fast path: one jq invocation emits the picker TSV directly, skipping
+    # the bash array intermediate (`command_panel_load_items` walks 168
+    # arg-parse calls + per-item eval — ~52ms in baseline).
+    command_panel_emit_picker_tsv "$runtime_mode" > "$prefetch_file" || {
+      tmux display-message 'Command palette failed while loading items'
+      rm -f "$prefetch_file"
+      exit 1
+    }
+    item_count="$(wc -l < "$prefetch_file" | tr -d ' ')"
+  fi
+  bench_mark loaded_items
+
+  if (( item_count == 0 )); then
+    runtime_log_warn command_panel "command panel has no visible items" "runtime_mode=$runtime_mode" "session_name=$session_name"
+    tmux display-message "No command palette items are available for $runtime_mode"
+    rm -f "$prefetch_file"
+    exit 0
+  fi
+  bench_mark visible_indexes
+
+  runtime_log_info command_panel "opening tmux command panel" "runtime_mode=$runtime_mode" "session_name=$session_name" "item_count=$item_count" "trigger_source=$trigger_source"
+
   picker_kind='go'
   # Command palette has no upstream Lua keypress timestamp like Alt+/, so
   # pass start_ms as both keypress_ts and menu_start_ts. Footer renders
-  # "total = menu+picker" with lua=0.
-  menu_done_ts="$(date +%s%3N)"
+  # "total = menu+picker" with lua=0. EPOCHREALTIME (µs/1000 → ms) avoids
+  # the ~5ms `date` fork on the popup hot path.
+  menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
   picker_command=$(printf 'WEZTERM_RUNTIME_TRACE_ID=%q %q command %q %q %q %q %q %q %q %q %q %q %q' \
     "$trace_id" "$picker_binary" \
     "$prefetch_file" "$script_dir/tmux-command-run.sh" "$runtime_mode" \
     "$session_name" "$current_window_id" "$cwd" "$client_tty" \
     "$last_command_id" "$start_ms" "$start_ms" "$menu_done_ts")
 else
+  # Bash fallback: tmux-command-picker.sh re-loads items itself, so we
+  # only need to confirm at least one item exists before opening the popup.
+  command_panel_load_items || {
+    tmux display-message 'Command palette failed while loading items'
+    exit 1
+  }
+  bench_mark loaded_items
+  mapfile -t visible_indexes < <(command_panel_visible_indexes "$runtime_mode")
+  if (( ${#visible_indexes[@]} == 0 )); then
+    runtime_log_warn command_panel "command panel has no visible items" "runtime_mode=$runtime_mode" "session_name=$session_name"
+    tmux display-message "No command palette items are available for $runtime_mode"
+    exit 0
+  fi
+  bench_mark visible_indexes
+  runtime_log_info command_panel "opening tmux command panel" "runtime_mode=$runtime_mode" "session_name=$session_name" "item_count=${#visible_indexes[@]}" "trigger_source=$trigger_source"
   picker_command=$(printf 'WEZTERM_RUNTIME_TRACE_ID=%q bash %q %q %q %q %q' \
     "$trace_id" "$script_dir/tmux-command-picker.sh" \
     "$session_name" "$current_window_id" "$cwd" "$client_tty")
+  item_count="${#visible_indexes[@]}"
 fi
 bench_mark prep_done
 
 if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
-  printf '__BENCH__ picker_kind=%s item_count=%d %s\n' "$picker_kind" "${#visible_indexes[@]}" "${bench_marks[*]}"
+  printf '__BENCH__ picker_kind=%s item_count=%d %s\n' "$picker_kind" "$item_count" "${bench_marks[*]}"
   rm -f "$prefetch_file"
   exit 0
 fi

@@ -234,8 +234,9 @@ keypress_ts="${snapshot_ts:-0}"
 if [[ -x "$picker_binary" ]]; then
   bench_mark picker_branch
   # Capture menu_done_ts as late as possible (right before launching the
-  # popup) so bucket M reflects all of menu.sh's actual work.
-  menu_done_ts="$(date +%s%3N)"
+  # popup) so bucket M reflects all of menu.sh's actual work. Inline
+  # EPOCHREALTIME (µs/1000 → ms) avoids the ~5ms `date` fork.
+  menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
   picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") $(printf %q "$picker_binary") attention $(printf %q "$prefetch_file") $(printf %q "$attention_jump_script") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
   picker_kind='go'
   prefetch_frame_file=''
@@ -254,7 +255,7 @@ else
   # measurement. picker.sh's post-load re-render is what shows the real
   # end-to-end key→interactive time.
   attention_picker_emit_frame "$popup_cols" "$visible_rows" 0 "$total_rows" 0 0 0 0 > "$prefetch_frame_file"
-  menu_done_ts="$(date +%s%3N)"
+  menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
   picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") bash $(printf %q "$script_dir/tmux-attention-picker.sh") $(printf %q "$prefetch_file") $(printf %q "$prefetch_frame_file") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
   picker_kind='bash'
 fi

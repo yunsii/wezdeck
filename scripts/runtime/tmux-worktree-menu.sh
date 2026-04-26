@@ -70,9 +70,17 @@ item_branches=()
 item_window_ids=()
 item_accelerators=()
 accelerators=(1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z)
+# One pass over the session's panes (with per-path git-resolution dedup)
+# beats N×tmux_worktree_find_window calls — every find_window call would
+# otherwise re-walk the same windows and re-fork git for each pane.
+declare -A worktree_window_index=()
+while IFS=$'\t' read -r idx_root idx_window_id; do
+  [[ -n "$idx_root" && -n "$idx_window_id" ]] || continue
+  worktree_window_index["$idx_root"]="$idx_window_id"
+done < <(tmux_worktree_build_window_index "$session_name" "$repo_common_dir")
 while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
   [[ -n "$worktree_path" ]] || continue
-  prefetch_window_id="$(tmux_worktree_find_window "$session_name" "$worktree_path" || true)"
+  prefetch_window_id="${worktree_window_index[$worktree_path]:-}"
   printf '%s\t%s\t%s\t%s\n' "$worktree_label" "$worktree_path" "$branch_name" "$prefetch_window_id" >> "$prefetch_file"
   item_labels+=("$worktree_label")
   item_paths+=("$worktree_path")
@@ -108,7 +116,9 @@ open_script="$script_dir/tmux-worktree-open.sh"
 
 if [[ -x "$picker_binary" ]]; then
   picker_kind='go'
-  menu_done_ts="$(date +%s%3N)"
+  # EPOCHREALTIME (µs/1000 → ms) avoids the ~5ms `date` fork on the popup
+  # hot path; matches the inlined idiom in tmux-attention-menu.sh.
+  menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
   picker_command=$(printf 'WEZTERM_RUNTIME_TRACE_ID=%q %q worktree %q %q %q %q %q %q %q %q %q %q' \
     "$trace_id" "$picker_binary" \
     "$prefetch_file" "$open_script" \

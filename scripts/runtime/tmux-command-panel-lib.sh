@@ -267,6 +267,74 @@ command_panel_load_items() {
   command_panel_load_local_items
 }
 
+# Returns 0 (true) when the local override file exists AND has any non-comment,
+# non-blank line. The popup hot path uses this to decide between the fast
+# jq-only TSV emitter and the legacy array-build path. Comment-only files
+# (the shipped template) count as inactive.
+command_panel_local_items_active() {
+  local repo_root local_path
+  repo_root="$(command_panel_repo_root)"
+  local_path="$repo_root/wezterm-x/local/command-panel.sh"
+  [[ -f "$local_path" ]] || return 1
+  grep -qE '^[[:space:]]*[^#[:space:]]' "$local_path"
+}
+
+# Emit the 6-field TSV the picker consumes (id, label, desc, accel, hotkey,
+# confirm), one row per palette-eligible manifest entry that matches
+# $runtime_mode. Single jq invocation; replaces command_panel_load_items +
+# visible_indexes + the bash array → TSV walk on the popup hot path.
+#
+# Mirrors command_panel_register_manifest_items' eligibility rules: skip
+# display-only entries that have no hotkey, and skip palette entries with no
+# command. Stripping `[\t\n\r]` per field guards the TSV against rogue bytes
+# in user-controlled fields (description, confirm_message) without forcing the
+# picker to defend.
+command_panel_emit_picker_tsv() {
+  local runtime_mode="${1:-$(command_panel_runtime_mode)}"
+  local manifest_path="${2:-$(command_panel_manifest_path)}"
+
+  if [[ ! -f "$manifest_path" ]]; then
+    runtime_log_error command_panel "command panel manifest missing" "manifest_path=$manifest_path"
+    return 1
+  fi
+
+  if ! command -v jq >/dev/null 2>&1; then
+    runtime_log_error command_panel "jq is required to emit command panel picker tsv" "manifest_path=$manifest_path"
+    return 1
+  fi
+
+  jq -r --arg mode "$runtime_mode" '
+    def clean: tostring | gsub("[\t\n\r]"; " ");
+    .[]
+    | select(has("palette"))
+    | (.context // "any") as $ctx
+    # Slow path: register_manifest_items only adds a `--runtime-mode hybrid-wsl`
+    # restriction when context == "hybrid-wsl"; every other context is left
+    # unrestricted. Mirror that here so contexts like "tmux-backed" or
+    # "commands-and-splits" (no runtime restriction) still surface.
+    | select($ctx != "hybrid-wsl" or $mode == "hybrid-wsl")
+    | (.palette.display_only // false) as $display_only
+    | (.palette.command // []) as $cmd
+    | (.hotkey_display // "") as $hotkey_display
+    | ([.hotkeys[]?.keys] | join(",")) as $hotkey_keys
+    | (if $hotkey_display == "" then $hotkey_keys else $hotkey_display end) as $hotkey
+    | select(
+        if $display_only then ($hotkey | length) > 0
+        else ($cmd | length) > 0
+        end
+      )
+    | [
+        (.id | clean),
+        (.label | clean),
+        (.description // "" | clean),
+        (.palette.accelerator // "" | ascii_downcase | clean),
+        ($hotkey | clean),
+        (.palette.confirm_message // "" | clean)
+      ]
+    | join("\t")
+  ' "$manifest_path"
+}
+
 command_panel_item_matches_runtime() {
   local index="${1:?missing item index}"
   local runtime_mode="${2:-$(command_panel_runtime_mode)}"
