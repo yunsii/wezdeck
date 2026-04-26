@@ -87,4 +87,18 @@ The SHA-256 is in the workflow summary or via `gh release view "$tag" --json ass
 
 ## Install path
 
-> **Note:** the install-side fetcher that turns this manifest into a runtime binary is not yet in place. Until that lands, the picker is still built locally by `wezterm-runtime-sync`'s `build-picker` step from `native/picker/build.sh`; end users without Go fall back to the bash pickers (see [`performance.md`](./performance.md) for the cost). When the fetcher arrives it will mirror the helper installer's `WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=auto|release|local` toggle.
+`native/picker/build.sh` is the single entry point for provisioning the binary at `native/picker/bin/picker`. It chooses between two paths based on `WEZTERM_PICKER_INSTALL_SOURCE`:
+
+- `local`: runs `go build` against the repo source. Errors out (one-line note + bash fallback) if no `go` is found in `PATH`, `~/.local/go/bin`, or `/usr/local/go/bin`.
+- `release`: reads `release-manifest.json`, picks the `<os>-<arch>` asset for the host (`uname -s`/`uname -m` mapped to `linux-amd64`, `linux-arm64`, etc.), downloads the tarball, SHA-256 verifies it against the manifest, and extracts to `native/picker/bin/picker`. Errors out cleanly if the manifest is `enabled: false`, has no asset for the host arch, or the download / hash check fails.
+- `auto` (default): tries `local` first (HEAD source for maintainers), falls through to `release` when Go is missing, and finally exits with a one-liner so the popup callers fall back to the bash pickers.
+
+Downloaded tarballs are cached at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>/` keyed by version, so a re-sync after a successful fetch only re-extracts.
+
+`wezterm-runtime-sync`'s `build-picker` step inherits the env from the calling shell, so a maintainer can force a release-install verification with:
+
+```bash
+WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+```
+
+Use `WEZTERM_PICKER_INSTALL_SOURCE=local` to force the build path explicitly. Same shape as the host-helper's `WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE` toggle.
