@@ -70,7 +70,31 @@ if (( use_color )); then
 fi
 
 fetch() {
-  curl -fsSL --max-time "$timeout_seconds" "$@" 2>/dev/null
+  if curl -fsSL --max-time "$timeout_seconds" "$@" 2>/dev/null; then return 0; fi
+  # Fallback to gh CLI for github.com URLs. Useful when WSL routes HTTPS
+  # through a proxy / WARP that breaks curl but leaves gh's transport intact.
+  command -v gh >/dev/null 2>&1 || return 1
+  local url=""
+  local arg
+  for arg in "$@"; do
+    case "$arg" in https://*|http://*) url="$arg" ;; esac
+  done
+  [[ -z "$url" ]] && return 1
+  case "$url" in
+    https://api.github.com/*)
+      gh api "${url#https://api.github.com/}" 2>/dev/null
+      ;;
+    https://raw.githubusercontent.com/*)
+      # raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>
+      local rest="${url#https://raw.githubusercontent.com/}"
+      local owner="${rest%%/*}"; rest="${rest#*/}"
+      local repo="${rest%%/*}";  rest="${rest#*/}"
+      local ref="${rest%%/*}";   local fpath="${rest#*/}"
+      gh api "repos/$owner/$repo/contents/$fpath?ref=$ref" \
+        -H 'Accept: application/vnd.github.raw' 2>/dev/null
+      ;;
+    *) return 1 ;;
+  esac
 }
 
 # Compare two dot-separated numeric versions; returns 0 if $1 >= $2.
@@ -193,9 +217,15 @@ wezterm_latest=""
 wezterm_sha=""
 if json="$(fetch -H 'Accept: application/vnd.github+json' \
   https://api.github.com/repos/wezterm/wezterm/releases/tags/nightly)"; then
-  wezterm_sha="$(awk -F'"' '/"target_commitish"[[:space:]]*:/ {print $4; exit}' <<<"$json")"
+  # Use bash regex on the captured json blob — works on both pretty-printed
+  # and minified responses, no piping (avoids SIGPIPE-vs-pipefail issues
+  # that bit an earlier awk-based version with the gh fallback's one-line
+  # JSON output).
+  if [[ "$json" =~ \"target_commitish\"[[:space:]]*:[[:space:]]*\"([0-9a-f]+)\" ]]; then
+    wezterm_sha="${BASH_REMATCH[1]}"
+  fi
   if [[ -n "$wezterm_sha" ]]; then
-    wezterm_latest="nightly@${wezterm_sha:0:8}"
+    wezterm_latest="nightly head @${wezterm_sha:0:8}"
   fi
 fi
 
@@ -205,7 +235,9 @@ tmux_release_json=""
 if json="$(fetch -H 'Accept: application/vnd.github+json' \
   https://api.github.com/repos/tmux/tmux/releases/latest)"; then
   tmux_release_json="$json"
-  tmux_latest="$(awk -F'"' '/"tag_name"[[:space:]]*:/ {print $4; exit}' <<<"$json")"
+  if [[ "$json" =~ \"tag_name\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+    tmux_latest="${BASH_REMATCH[1]}"
+  fi
 fi
 
 # Go: official endpoint returns plain "go1.23.4".
@@ -225,9 +257,12 @@ check_wezterm() {
   # wezterm uses a SHA-based comparison instead of version_ge. The installed
   # calver ends with the build's commit SHA suffix (e.g. ...-577474d8); compare
   # it to target_commitish[:8] from the nightly tag. SHA mismatch is reported
-  # as informational ("tracking nightly") rather than "update available", to
-  # avoid false positives caused by API metadata churn (re-uploaded assets,
-  # etc.). The changelog details still render on mismatch.
+  # as informational ("behind nightly head") rather than "update available",
+  # because target_commitish moves with main on every CI poke even when the
+  # bundled binary is unchanged (we observed a 2026-04-25 updated_at paired
+  # with a March 31 build inside the installer). The changelog block below
+  # the table is the actionable signal — if it's empty / docs-only, your
+  # binary is current; if there are real GUI / mux fixes, upgrade.
   if [[ -z "$wezterm_installed" ]]; then
     print_row "wezterm" "(not installed)" "${wezterm_latest:-?}" "-" "skip" "$c_dim"
     return
@@ -241,7 +276,7 @@ check_wezterm() {
   if [[ "$installed_sha8" == "$latest_sha8" ]]; then
     print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "up-to-date" "$c_green"
   else
-    print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "tracking nightly" "$c_dim"
+    print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "behind nightly head" "$c_dim"
     TOOL_BEHIND[wezterm]=1
   fi
 }
@@ -381,8 +416,10 @@ emit_go_changes() {
 }
 
 # Each emit_*_changes self-gates on TOOL_BEHIND; call unconditionally so the
-# wezterm "tracking nightly" path (which intentionally doesn't raise
-# ANY_BEHIND) still surfaces the changelog summary.
+# wezterm "behind nightly head" path (which intentionally doesn't raise
+# ANY_BEHIND) still surfaces the changelog summary — that's the user's
+# actual decision signal: docs-only changes mean don't bother upgrading,
+# real GUI/mux fixes mean do.
 emit_wezterm_changes
 emit_tmux_changes
 emit_go_changes
