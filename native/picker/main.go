@@ -40,6 +40,8 @@ func main() {
 		os.Exit(runCommand(os.Args[2:]))
 	case "worktree":
 		os.Exit(runWorktree(os.Args[2:]))
+	case "links":
+		os.Exit(runLinks(os.Args[2:]))
 	default:
 		fmt.Fprintf(os.Stderr, "picker: unknown subcommand %q\n", os.Args[1])
 		os.Exit(2)
