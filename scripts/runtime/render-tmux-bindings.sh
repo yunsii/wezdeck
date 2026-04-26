@@ -171,6 +171,16 @@ last_key_segment() {
         "$table" "$key" "$(chord_hint_clear)"
     done
   done
-} > "$OUT"
+} > "$OUT.tmp.$$"
 
-printf 'render-tmux-bindings: wrote %s\n' "$OUT"
+# Only replace OUT (and bump its mtime) when content actually changed —
+# saves a redundant rsync write each sync and keeps the file's mtime
+# meaningful as a "last real binding change" marker for skip-if-current
+# checks downstream (lua-precheck, helper-ensure).
+if [[ -f "$OUT" ]] && cmp -s "$OUT.tmp.$$" "$OUT"; then
+  rm -f "$OUT.tmp.$$"
+  printf 'render-tmux-bindings: up-to-date %s\n' "$OUT"
+else
+  mv -f "$OUT.tmp.$$" "$OUT"
+  printf 'render-tmux-bindings: wrote %s\n' "$OUT"
+fi

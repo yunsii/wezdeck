@@ -46,6 +46,26 @@ build_local() {
   local go_bin
   go_bin="$(resolve_go)" || return 1
   mkdir -p "$script_dir/bin"
+
+  # Skip-if-current: when the existing binary is at least as new as every
+  # Go source input, there's nothing to build. `go build` itself is also
+  # incremental, but spawning the toolchain still costs ~150ms in steady
+  # state — meaningful when sync-runtime is rerun frequently.
+  if [[ -x "$out_path" ]]; then
+    local newer_src
+    newer_src="$(
+      cd "$script_dir"
+      find . -maxdepth 4 \( -name '*.go' -o -name 'go.mod' -o -name 'go.sum' \) \
+        -not -path './bin/*' -newer "$out_path" -print -quit 2>/dev/null
+    )"
+    if [[ -z "$newer_src" ]]; then
+      printf 'build-picker: up-to-date %s (%s) — skipping go build\n' \
+        "$out_path" \
+        "$(stat -c '%s bytes' "$out_path" 2>/dev/null || echo 'unknown size')"
+      return 0
+    fi
+  fi
+
   (
     cd "$script_dir"
     CGO_ENABLED=0 GOOS=linux "$go_bin" build -trimpath -ldflags='-s -w' -o "$out_path" .

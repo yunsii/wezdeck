@@ -369,6 +369,102 @@ pty, single jq pass, drop duplicate work between menu.sh and picker.sh,
 combine subprocess calls). Re-run `bench-menu-prep.sh --target <name>`
 after each change.
 
+## Sync-runtime hot path
+
+The Alt+/ sections above measure a frequent **interactive** chord. The other surface
+that benefits from disciplined optimization is `skills/wezterm-runtime-sync/scripts/sync-runtime.sh`,
+which is invoked **after every config edit** to publish the runtime tree from the
+repo into the target home. It is not on the keypress hot path, but a slow sync is
+felt every iteration cycle when actively editing the repo.
+
+The arc here took warm-state sync from **~60s to ~700ms (~85×)**, and the decisions
+follow the same patterns as the Alt+/ work: measure before changing, parallelize
+independent work, skip what hasn't changed, and treat `/mnt/c` writes as expensive.
+
+### Wall-time milestones
+
+Each row is a separate change layered on top of the previous. Numbers are warm-state
+median wall time (no source changes since last sync, helper-manager already running):
+
+| State | Wall time | Headline change |
+|---|---|---|
+| Original | ~60s | Two `&`-parallel flows (runtime+native vs bootstrap), but deps-check ate ~40s sequentially after `step=completed` |
+| Subflow split | ~60s | runtime + native now have their own parallel sub-chains inside `run_runtime_native_flow` (render-tmux-bindings + rsync runtime + write metadata, in parallel with picker build + rsync native). Bottleneck still in deps-check. |
+| Postsync parallel | ~60s | tmux-reload + setup-vscode-links + check-deps-updates run concurrently with output captured to temp files and replayed in stable order. Still capped by deps-check's ~40s network probes. |
+| deps-check fire-and-forget + daily | ~17.5s | `nohup ... &` + `disown`, redirect to a per-target log, gate next runs on log file's mtime date. Never waits on the network again. |
+| rsync direct → target | ~4.2s | Replaced `cp -R source → temp` + `rm -rf old target` + `mv temp → target` with `rsync -a --delete source → target`. Eliminates the cp's full-tree write and the slow `rm -rf` on `/mnt/c`. |
+| helper-install skip-if-current | ~1.1s | mtime check on `host-helper/windows/src/**` vs `helper-install-state.json` skips the ~1-1.5s `dotnet publish` round-trip when nothing changed. |
+| helper-ensure skip-if-running | ~0.95s | Parse `state.env`, check `ready=1` + state.env mtime fresh + no runtime file newer than state.env → skip the ~400-500ms PowerShell round-trip. |
+| picker / render / lua-precheck idempotency | **~0.7s** | Picker `go build` skipped if binary is at least as new as every `*.go`/`go.mod`/`go.sum`. `render-tmux-bindings.sh` writes via temp + `cmp` + rename so identical output never bumps the file's mtime. `lua-precheck` touches a sentinel on success; rerun gated by `find -newer` on `lua/` + `repo-worktree-task.env` + the precheck script. |
+
+### Decisions and the data behind them
+
+| Decision | Measured data | Choice | Where |
+|---|---|---|---|
+| `cp -R` vs `rsync -a` to `/mnt/c` | cp always writes every byte (hundreds of files × ~1ms 9P round-trip per write) + the old flow's `rm -rf` of the previous target adds another full-tree delete | Switched to `rsync -a --delete` direct to target. **Lost** dir-tree atomicity (rsync is per-file atomic via temp+rename, but mid-sync the tree is briefly mixed). Acceptable: sync is a user-initiated action, wezterm/tmux are typically idle, and the worst-case window is sub-second. | `prepare_runtime_subflow`, `prepare_native_subflow` |
+| Block on deps-check vs detach | deps-check spends ~40s waiting on GitHub release API + go.dev. None of its output is needed for sync to succeed. | `nohup ... &` + `disown`; output to a per-target log; **rate-limit to once/day** by checking the log's mtime date against today. | `sync-runtime.sh` (top-of-flow detach block) |
+| mtime gate vs `go build`'s own incremental | `go build` is incremental but still spawns the toolchain (~150ms warm). | Add a `find -newer` shortcut around the build invocation. The mtime check is ~30 syscalls (~30ms on `/mnt/c` only if sources lived there; here sources are on Linux ext4 → microseconds). Layered: our gate avoids the ~150ms fork cost in the steady case; Go's content-hash cache covers the unusual case where mtime updated but content didn't. | `native/picker/build.sh` |
+| Re-render chord-bindings every sync vs idempotent write | The renderer always wrote to `OUT` even when content was identical, bumping mtime. Downstream skip-checks (lua-precheck, helper-ensure) compare against runtime file mtimes — any unnecessary mtime bump makes them invalidate. | Write to `OUT.tmp.$$`; `cmp -s` against `OUT`; on match, `rm` the temp; on diff, `mv`. Output mtime now tracks "last real binding change". | `scripts/runtime/render-tmux-bindings.sh` |
+| Helper state file: heartbeat field vs FS mtime | state.env carries `heartbeat_at_ms` (Windows clock) and is touched on every heartbeat. WSL `date '+%s'` and Windows clock skew by ~250ms in steady state. Comparing epoch-ms naïvely (`age_ms = now_ms - heartbeat_ms; age_ms >= 0`) fires false-negatives whenever Windows is ahead. | Use `stat -c '%Y' state.env` (FS mtime, consistent with `find -newer` we run on the same filesystem) + a wide `[-5s, +10s]` window. | `helper_ensure_skip_if_running` |
+| state.env line-ending parsing | PowerShell writes CRLF. `read -r key value` leaves `\r` on `$value`, so `[[ "$ready" == "1" ]]` fails when actual content is `1\r`. Subtle: this hid the heartbeat-fresh skip behind a CRLF bug for one debug iteration. | `value="${value%$'\r'}"` after each read. | `helper_ensure_skip_if_running` |
+| Preserve metadata-file mtimes via `cp -p` | sync writes `repo-worktree-task.env` into the target via `cp` every run. Without `-p`, target mtime is "now" each sync, which would make every lua-precheck rerun. | `cp -p` so target mtime tracks source. The lua-precheck gate then only fires when the user actually edited `config/worktree-task.env`. | `prepare_runtime_subflow` |
+
+### Optimization techniques (replicable patterns specific to sync-runtime)
+
+11. **mtime as a "did anything change since X?" oracle.** When you have a known-good
+    state file (install state, sentinel, log), use its mtime as the reference and
+    `find $INPUTS -newer $REF -print -quit` to detect changes early. `-quit`
+    ensures the worst case is one full tree walk on the unchanged path, but the
+    common case exits on the first hit.
+12. **Detach work that doesn't gate completion.** If a step's output isn't needed
+    for sync to succeed (advisory checks, deferred reports), `nohup`+`disown` it
+    and let it run past the script. Combine with a daily-rate-limit so you don't
+    pile up duplicate background jobs across rapid syncs.
+13. **`rsync -a` instead of `cp -R` whenever target may already exist.** rsync's
+    "skip unchanged file" beats cp's "always write" by orders of magnitude when
+    the target FS is `/mnt/c`. The atomicity downgrade (per-file vs whole-tree)
+    rarely matters for user-initiated, infrequent syncs.
+14. **Idempotent generators (write-on-diff)** preserve mtime-based skip chains.
+    Any script that writes to a tracked file should `cmp` against the existing
+    target before replacing — otherwise it cascades into invalidating every
+    downstream `find -newer` gate.
+15. **Stat-based time, not clock-based.** Cross-OS clock comparisons (WSL vs
+    Windows) drift ~100-300ms steady-state. Use `stat -c '%Y' file` so the
+    timestamp comes from the same filesystem clock both readers/writers observe.
+    Same trick: `find -newer file` instead of `(date +%s) - (stat +mtime)`.
+
+### What we explicitly did NOT do (and why)
+
+- **Move temp+rename publish back in for tree-level atomicity** — the original
+  flow's `cp source → temp; rm -rf target; mv temp → target` was atomic at the
+  tree level, but cost ~16s warm because of cp's full write + rm-rf's full delete
+  on `/mnt/c`. The rsync direct-write path costs ~700ms. Atomicity loss is
+  practically invisible: nobody reloads wezterm or tmux mid-sync.
+- **Skip `dotnet publish` from the bash side via source hash** — the existing
+  mtime gate is "good enough" (false-positive only when someone `touch`-es
+  unchanged source, which is rare). A content hash would mean reading every .NET
+  source on every sync (~10ms vs ~1ms for a single `find -newer`), trading a
+  cheap stat for a more expensive read.
+- **Long-lived sync daemon** — would shave the bash startup (~50-100ms), but
+  introduces process lifecycle, restart-on-crash, and IPC. Not worth it under
+  1s warm.
+- **Pure-bash JSON parsing of state.env / helper-install-state.json** — both
+  files have predictable layouts and we already parse them with `read` (no jq
+  needed). The bash parsing adds ~0ms compared to spawning jq.
+
+### Floor and what's left
+
+Remaining ~700ms is dominated by physical limits of `/mnt/c` interaction:
+- ~50-100ms bash startup + sourcing the new lib files (`sync-helper-windows-lib.sh` + `sync-target-lib.sh`)
+- ~200-300ms parallel rsync of unchanged trees (still has to stat every file to confirm "nothing changed")
+- ~150-300ms lua-precheck spawn when its gate fires (rare)
+- ~150-300ms tmux-reload + vscode-links concurrent step
+- ~50ms rest
+
+Going below ~500ms would need either a long-lived daemon or rsync replacement that
+bypasses the per-file stat round-trip on /mnt/c — both are large complexity bumps
+for diminishing returns at this scale.
+
 ## Floor reached
 
 Remaining ~49ms p50 is dominated by physical limits:
