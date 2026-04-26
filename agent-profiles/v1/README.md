@@ -26,6 +26,7 @@ Topic files under `en/`:
 - [en/vcs.md](./en/vcs.md)
 - [en/reporting.md](./en/reporting.md)
 - [en/preferences.md](./en/preferences.md)
+- [en/permissions.md](./en/permissions.md)
 
 Each topic file carries YAML frontmatter (`name`, `scope`, `triggers`, `tags`) so agents or tools can index and load on demand.
 Each rule carries a stable identifier of the form `[<topic>-NN]` so feedback, memory entries, and reviewers can reference rules precisely.

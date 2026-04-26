@@ -53,6 +53,7 @@ Read additional topic files only when the current file points to them or the tas
 - Commits, branches, merges, pushes, pull/merge requests → [vcs.md](./vcs.md)
 - Final responses and progress updates → [reporting.md](./reporting.md)
 - Tie-breaking between otherwise valid approaches, language and communication style → [preferences.md](./preferences.md)
+- Editing `settings.json` / `settings.local.json`, allowlist entries, pre-approval rules → [permissions.md](./permissions.md)
 
 Each topic file carries YAML frontmatter (`name`, `scope`, `triggers`, `tags`) for indexed discovery.
 Each rule carries a stable identifier of the form `[<topic>-NN]` so feedback, memory entries, and reviewers can reference rules precisely.
@@ -73,4 +74,5 @@ Full rules live in the routed topic file.
 - VCS: never auto-commit / auto-push / skip hooks / force-push to main; user owns the history.
 - Reporting: state what changed, how it was verified, and what remains uncertain.
 - Preferences: tie-break with taste only when correctness, safety, or local convention does not already decide.
+- Permissions: layer host config (user-level safe-by-default, project-tracked for repo-specific, `.local.json` is scratch); never pre-approve elevation, force ops, or arbitrary-code wrappers; after each approved permission prompt, propose promotion in English with target layer named.
 - Language: reply in Simplified Chinese (简体中文); full rule in [preferences.md](./preferences.md).
