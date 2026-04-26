@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYNC_PROMPT_LIB="$SCRIPT_DIR/sync-prompt-lib.sh"
 RUNTIME_LOG_LIB="$SCRIPT_DIR/../../../scripts/runtime/runtime-log-lib.sh"
 WINDOWS_SHELL_LIB="$SCRIPT_DIR/../../../scripts/runtime/windows-shell-lib.sh"
+HELPER_WINDOWS_LIB="$SCRIPT_DIR/sync-helper-windows-lib.sh"
+TARGET_LIB="$SCRIPT_DIR/sync-target-lib.sh"
 
 # Shared with the prompt test script so output regressions are easy to verify.
 source "$SYNC_PROMPT_LIB"
@@ -12,6 +14,14 @@ source "$SYNC_PROMPT_LIB"
 source "$RUNTIME_LOG_LIB"
 # shellcheck disable=SC1091
 source "$WINDOWS_SHELL_LIB"
+# Helper-windows + target-resolution functions live in sibling lib files so
+# the main entry point stays focused on flow orchestration. Order matters
+# only in that the libs above (runtime-log, windows-shell) must already be
+# sourced — the helper-windows lib calls runtime_log_* / windows_run_*.
+# shellcheck disable=SC1091
+source "$HELPER_WINDOWS_LIB"
+# shellcheck disable=SC1091
+source "$TARGET_LIB"
 export WEZTERM_RUNTIME_LOG_SOURCE="sync-runtime"
 
 sync_trace() {
@@ -33,108 +43,6 @@ Options:
 Environment:
   WEZDECK_REPO          Repository root (legacy WEZTERM_CONFIG_REPO still accepted). Defaults to the current working directory.
 EOF
-}
-
-install_windows_helper_manager() {
-  local target_runtime_dir="${1:?missing target runtime dir}"
-  local install_script="$target_runtime_dir/scripts/install-windows-runtime-helper-manager.ps1"
-  local install_script_win="" runtime_dir_win="" install_output="" manager_path=""
-  local target_home="" target_home_win="" diagnostics_file_win=""
-  local install_source="${WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE:-auto}"
-
-  [[ "$target_runtime_dir" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
-  command -v powershell.exe >/dev/null 2>&1 || return 0
-  command -v wslpath >/dev/null 2>&1 || return 0
-  [[ -f "$install_script" ]] || return 0
-  case "$install_source" in
-    auto|local|release) ;;
-    *)
-      printf 'Unsupported WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE: %s\n' "$install_source" >&2
-      return 1
-      ;;
-  esac
-
-  install_script_win="$(wslpath -w "$install_script" 2>/dev/null || true)"
-  runtime_dir_win="$(wslpath -w "$target_runtime_dir" 2>/dev/null || true)"
-  target_home="$(dirname "$target_runtime_dir")"
-  target_home_win="$(wslpath -w "$target_home" 2>/dev/null || true)"
-  [[ -n "$target_home_win" ]] && diagnostics_file_win="${target_home_win}\\AppData\\Local\\wezterm-runtime\\logs\\helper.log"
-  [[ -n "$install_script_win" && -n "$runtime_dir_win" && -n "$diagnostics_file_win" ]] || return 0
-
-  sync_trace "step=helper-install status=starting target_runtime_dir=$target_runtime_dir runtime_dir_win=$runtime_dir_win install_script_win=$install_script_win install_source=$install_source"
-  if ! install_output="$(
-    windows_run_powershell_script_utf8 "$install_script_win" \
-      -RuntimeDir "$runtime_dir_win" \
-      -InstallSource "$install_source" \
-      -Trigger runtime_sync \
-      -DiagnosticsEnabled 1 \
-      -DiagnosticsCategoryEnabled 1 \
-      -DiagnosticsLevel info \
-      -DiagnosticsFile "$diagnostics_file_win" \
-      -DiagnosticsMaxBytes 5242880 \
-      -DiagnosticsMaxFiles 5 2>&1 | tr -d '\r'
-  )"; then
-    [[ -n "$install_output" ]] && printf '%s\n' "$install_output" >&2
-    sync_trace "step=helper-install status=failed target_runtime_dir=$target_runtime_dir install_source=$install_source"
-    runtime_log_error sync "failed to install windows helper manager after sync" \
-      "target_runtime_dir=$target_runtime_dir" \
-      "install_source=$install_source"
-    return 1
-  fi
-
-  [[ -n "$install_output" ]] && printf '%s\n' "$install_output"
-  manager_path="$(printf '%s\n' "$install_output" | tail -n 1)"
-  sync_trace "step=helper-install status=completed manager_path=${manager_path:-unknown} install_source=$install_source"
-  runtime_log_info sync "installed windows helper manager after sync" \
-    "target_runtime_dir=$target_runtime_dir" \
-    "manager_path=${manager_path:-unknown}" \
-    "install_source=$install_source"
-  return 0
-}
-
-ensure_windows_helper_running() {
-  local target_runtime_dir="${1:?missing target runtime dir}"
-  local ensure_script="$target_runtime_dir/scripts/ensure-windows-runtime-helper.ps1"
-  local ensure_script_win="" target_home="" target_home_win=""
-  local state_path_win="" diagnostics_file_win="" ensure_output=""
-
-  [[ "$target_runtime_dir" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
-  command -v powershell.exe >/dev/null 2>&1 || return 0
-  command -v wslpath >/dev/null 2>&1 || return 0
-  [[ -f "$ensure_script" ]] || return 0
-
-  ensure_script_win="$(wslpath -w "$ensure_script" 2>/dev/null || true)"
-  target_home="$(dirname "$target_runtime_dir")"
-  target_home_win="$(wslpath -w "$target_home" 2>/dev/null || true)"
-  [[ -n "$ensure_script_win" && -n "$target_home_win" ]] || return 0
-
-  state_path_win="${target_home_win}\\AppData\\Local\\wezterm-runtime\\state\\helper\\state.env"
-  diagnostics_file_win="${target_home_win}\\AppData\\Local\\wezterm-runtime\\logs\\helper.log"
-
-  sync_trace "step=helper-ensure status=starting target_runtime_dir=$target_runtime_dir ensure_script_win=$ensure_script_win"
-  if ! ensure_output="$(
-    windows_run_powershell_script_utf8 "$ensure_script_win" \
-      -StatePath "$state_path_win" \
-      -HeartbeatIntervalMs 250 \
-      -HeartbeatTimeoutSeconds 5 \
-      -DiagnosticsEnabled 1 \
-      -DiagnosticsCategoryEnabled 1 \
-      -DiagnosticsLevel info \
-      -DiagnosticsFile "$diagnostics_file_win" \
-      -DiagnosticsMaxBytes 5242880 \
-      -DiagnosticsMaxFiles 5 2>&1 | tr -d '\r'
-  )"; then
-    [[ -n "$ensure_output" ]] && printf '%s\n' "$ensure_output" >&2
-    sync_trace "step=helper-ensure status=failed target_runtime_dir=$target_runtime_dir"
-    runtime_log_warn sync "failed to ensure windows helper running after install" \
-      "target_runtime_dir=$target_runtime_dir"
-    return 0
-  fi
-
-  sync_trace "step=helper-ensure status=completed target_runtime_dir=$target_runtime_dir"
-  runtime_log_info sync "ensured windows helper running after install" \
-    "target_runtime_dir=$target_runtime_dir"
-  return 0
 }
 
 write_text_file_atomic() {
@@ -208,6 +116,24 @@ run_lua_precheck() {
     return 0
   fi
 
+  # Skip-if-current: cache success as a touch'd sentinel under the runtime
+  # state dir. As long as no input file (lua/, repo-worktree-task.env, the
+  # precheck script itself) is newer than the sentinel, the prior result
+  # is still valid. Override with WEZTERM_SYNC_FORCE_LUA_PRECHECK=1.
+  local sentinel="${TARGET_RUNTIME_STATE_DIR:-$target_runtime_dir/.state}/lua-precheck.ok"
+  if [[ -f "$sentinel" && "${WEZTERM_SYNC_FORCE_LUA_PRECHECK:-0}" != "1" ]]; then
+    local newer_input
+    newer_input="$(find \
+      "$target_runtime_dir/lua" \
+      "$target_runtime_dir/repo-worktree-task.env" \
+      "$precheck_script" \
+      -newer "$sentinel" -print -quit 2>/dev/null)"
+    if [[ -z "$newer_input" ]]; then
+      sync_trace "step=lua-precheck status=skipped reason=up-to-date sentinel=$sentinel"
+      return 0
+    fi
+  fi
+
   local lua_bin=""
   for candidate in lua5.4 lua5.3 lua; do
     if command -v "$candidate" >/dev/null 2>&1; then
@@ -229,7 +155,9 @@ run_lua_precheck() {
     sync_trace "step=lua-precheck status=failed target_runtime_dir=$target_runtime_dir"
     return 1
   fi
-  sync_trace "step=lua-precheck status=completed target_runtime_dir=$target_runtime_dir"
+  mkdir -p "$(dirname "$sentinel")" 2>/dev/null || true
+  : >"$sentinel"
+  sync_trace "step=lua-precheck status=completed target_runtime_dir=$target_runtime_dir sentinel=$sentinel"
 }
 
 maybe_reload_tmux() {
@@ -267,206 +195,6 @@ maybe_reload_tmux() {
   runtime_log_error sync "tmux reload after sync failed" "reload_script=$reload_script"
   sync_trace "step=tmux-reload status=failed reload_script=$reload_script"
   printf 'Warning: synced runtime files, but tmux reload failed: %s\n' "$reload_script" >&2
-}
-
-resolve_repo_root() {
-  local repo_root="${WEZDECK_REPO:-${WEZTERM_CONFIG_REPO:-$PWD}}"
-  [[ -d "$repo_root" ]] || { printf 'Repository root does not exist: %s\n' "$repo_root" >&2; return 1; }
-  repo_root="$(cd "$repo_root" && pwd -P)"
-  [[ -f "$repo_root/wezterm.lua" ]] || { printf 'Expected %s/wezterm.lua. Run from the repo root or set WEZDECK_REPO.\n' "$repo_root" >&2; return 1; }
-  [[ -d "$repo_root/wezterm-x" ]] || { printf 'Expected %s/wezterm-x. Run from the repo root or set WEZDECK_REPO.\n' "$repo_root" >&2; return 1; }
-  printf '%s\n' "$repo_root"
-}
-
-resolve_main_repo_root() {
-  local repo_root="${1:?missing repo root}"
-  local common_dir=""
-
-  common_dir="$(git -C "$repo_root" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
-  if [[ -z "$common_dir" ]]; then
-    common_dir="$(git -C "$repo_root" rev-parse --git-common-dir 2>/dev/null || true)"
-  fi
-
-  if [[ -z "$common_dir" ]]; then
-    printf '%s\n' "$repo_root"
-    return 0
-  fi
-
-  if [[ "$common_dir" != /* ]]; then
-    common_dir="$(
-      cd "$repo_root"
-      cd "$common_dir"
-      pwd -P
-    )"
-  fi
-
-  dirname "$common_dir"
-}
-
-target_runtime_state_dir() {
-  local target_home="${1:?missing target home}"
-
-  if [[ "$target_home" =~ ^/mnt/[A-Za-z]/Users/[^/]+$ ]]; then
-    printf '%s/AppData/Local/wezterm-runtime\n' "$target_home"
-    return 0
-  fi
-
-  printf '%s/.local/state/wezterm-runtime\n' "$target_home"
-}
-
-append_unique_candidate() {
-  local entry="$1"
-  local existing
-
-  for existing in "${DETECTED_CANDIDATES[@]:-}"; do
-    if [[ "$existing" == "$entry" ]]; then
-      return 0
-    fi
-  done
-
-  DETECTED_CANDIDATES+=("$entry")
-}
-
-DETECTED_CANDIDATES=()
-
-detect_candidate_homes() {
-  DETECTED_CANDIDATES=()
-  local roots=()
-  local uname
-  uname="$(uname -s)"
-  [[ -n "$HOME" ]] && roots+=("$(dirname "$HOME")")
-  case "$uname" in
-    Linux)
-      roots+=("/home" "/root")
-      [[ -d /mnt/c/Users ]] && roots+=("/mnt/c/Users")
-      ;;
-    Darwin)
-      roots+=("/Users")
-      ;;
-    *)
-      roots+=("/home" "/Users")
-      ;;
-  esac
-
-  local base
-  for base in "${roots[@]}"; do
-    [[ -d "$base" ]] || continue
-    local entry
-    for entry in "$base"/*; do
-      [[ -d "$entry" ]] || continue
-      local name
-      name="$(basename "$entry")"
-      [[ -n "$name" ]] || continue
-      if [[ "$base" == "/mnt/c/Users" ]] && is_system_windows_profile "$name"; then
-        continue
-      fi
-      append_unique_candidate "$entry"
-    done
-  done
-}
-
-is_system_windows_profile() {
-  local name="$1"
-  case "$name" in
-    "All Users"|"Default"|"Default User"|"Public"|"desktop.ini"|"defaultuser0"|"WDAGUtilityAccount")
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-list_candidate_homes() {
-  local lang
-  lang="$(sync_prompt_language)"
-
-  detect_candidate_homes
-  [[ ${#DETECTED_CANDIDATES[@]} -gt 0 ]] || { sync_prompt_no_dir_message "$lang" >&2; return 1; }
-  runtime_log_info sync "listed sync target candidates" "candidate_count=${#DETECTED_CANDIDATES[@]}"
-
-  printf '%s\n' "${DETECTED_CANDIDATES[@]}"
-}
-
-validate_explicit_target_home() {
-  local target="$1"
-  local lang
-  lang="$(sync_prompt_language)"
-
-  [[ "$target" =~ ^/ ]] || { sync_prompt_abs_message "$lang" >&2; return 1; }
-  [[ -d "$target" ]] || { sync_prompt_missing_message "$lang" >&2; return 1; }
-}
-
-load_cached_target() {
-  if [[ -n "${WEZTERM_SYNC_TARGET:-}" ]]; then
-    runtime_log_info sync "using sync target from environment" "target_home=$WEZTERM_SYNC_TARGET"
-    printf '%s\n' "$WEZTERM_SYNC_TARGET"
-    return 0
-  fi
-  if [[ -f "$SYNC_CACHE_FILE" ]]; then
-    local cached
-    cached="$(< "$SYNC_CACHE_FILE")"
-    if [[ -n "$cached" ]]; then
-      runtime_log_info sync "using cached sync target" "target_home=$cached" "cache_file=$SYNC_CACHE_FILE"
-      printf '%s\n' "$cached"
-      return 0
-    fi
-  fi
-  return 1
-}
-
-prompt_user_for_target() {
-  local lang
-  lang="$(sync_prompt_language)"
-
-  detect_candidate_homes
-  local candidates=("${DETECTED_CANDIDATES[@]}")
-  [[ ${#candidates[@]} -gt 0 ]] || { sync_prompt_no_dir_message "$lang" >&2; return 1; }
-
-  if [[ ! -t 0 ]]; then
-    render_sync_prompt_output non-tty "$lang" "${candidates[@]}" >&2
-    return 1
-  fi
-  render_sync_prompt_output tty "$lang" "${candidates[@]}" >&2
-
-  while true; do
-    read -r choice
-    case "$choice" in
-      '' ) continue ;;
-      *[!0-9]* )
-        [[ "$choice" =~ ^/ ]] || { sync_prompt_abs_message "$lang"; continue; }
-        [[ -d "$choice" ]] || { sync_prompt_missing_message "$lang"; continue; }
-        printf '%s\n' "$choice"
-        return 0
-        ;;
-      *)
-        if (( choice >= 1 && choice <= ${#candidates[@]} )); then
-          printf '%s\n' "${candidates[choice-1]}"
-          return 0
-        fi
-        sync_prompt_range_message "$lang"
-        ;;
-    esac
-  done
-}
-
-choose_target_home() {
-  if [[ -n "${TARGET_HOME_OVERRIDE:-}" ]]; then
-    validate_explicit_target_home "$TARGET_HOME_OVERRIDE" || return 1
-    printf '%s\n' "$TARGET_HOME_OVERRIDE" > "$SYNC_CACHE_FILE"
-    runtime_log_info sync "using explicit sync target" "target_home=$TARGET_HOME_OVERRIDE" "cache_file=$SYNC_CACHE_FILE"
-    printf '%s\n' "$TARGET_HOME_OVERRIDE"
-    return 0
-  fi
-
-  local target
-  if target="$(load_cached_target)"; then
-    [[ -d "$target" ]] && printf '%s\n' "$target" && return 0
-  fi
-  target="$(prompt_user_for_target)" || return 1
-  printf '%s\n' "$target" > "$SYNC_CACHE_FILE"
-  runtime_log_info sync "selected sync target interactively" "target_home=$target" "cache_file=$SYNC_CACHE_FILE"
-  printf '%s\n' "$target"
 }
 
 LIST_TARGETS=0
@@ -518,8 +246,6 @@ TARGET_FILE="$TARGET_HOME/.wezterm.lua"
 TARGET_RUNTIME_STATE_DIR="$(target_runtime_state_dir "$TARGET_HOME")"
 TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
 TARGET_NATIVE_DIR="$TARGET_HOME/.wezterm-native"
-TEMP_RUNTIME_DIR="$TARGET_HOME/.wezterm-x.tmp.$$"
-TEMP_NATIVE_DIR="$TARGET_HOME/.wezterm-native.tmp.$$"
 TEMP_BOOTSTRAP_FILE="$TARGET_RUNTIME_STATE_DIR/.wezterm.lua.tmp.$$"
 RUNTIME_NATIVE_FLOW_PID=""
 BOOTSTRAP_FLOW_PID=""
@@ -534,26 +260,46 @@ sync_trace "step=init repo_root=$REPO_ROOT main_repo_root=$MAIN_REPO_ROOT"
 sync_trace "step=target target_home=$TARGET_HOME target_file=$TARGET_FILE"
 sync_trace "step=target target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
 
-run_runtime_native_flow() {
-  local repo_root_path=""
+prepare_runtime_subflow() {
+  local repo_root_path="${1:?missing repo root path}"
 
-  sync_trace "flow=runtime-native status=starting target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
-
-  mkdir -p "$TARGET_HOME"
-  mkdir -p "$TARGET_RUNTIME_STATE_DIR"
-  rm -rf "$TEMP_RUNTIME_DIR" "$TEMP_NATIVE_DIR"
-  mkdir -p "$TEMP_RUNTIME_DIR"
-  mkdir -p "$TEMP_NATIVE_DIR"
-  sync_trace "step=prepare temp_runtime_dir=$TEMP_RUNTIME_DIR temp_native_dir=$TEMP_NATIVE_DIR"
-
-  # Regenerate the tmux chord bindings from the manifest (+ overrides) so
-  # the generated conf is fresh before we copy the runtime tree into place.
-  # The file is gitignored but must exist for tmux.conf's `source-file -q`.
   if [[ -x "$REPO_ROOT/scripts/runtime/render-tmux-bindings.sh" ]]; then
     "$REPO_ROOT/scripts/runtime/render-tmux-bindings.sh"
     sync_trace "step=render-tmux-bindings status=completed"
   fi
 
+  # Mirror source → target directly. --delete removes stale files; the
+  # --exclude flags protect per-target metadata files (written below)
+  # from being deleted as "unknown to source" on subsequent syncs.
+  # rsync writes per-file via temp+rename so each file is atomic; the
+  # tree as a whole has a brief window of mixed old/new during sync.
+  rsync -a --delete \
+    --exclude=/repo-root.txt \
+    --exclude=/repo-main-root.txt \
+    --exclude=/repo-worktree-task.env \
+    --exclude=/agent-tools.env \
+    "$RUNTIME_SOURCE_DIR"/ "$TARGET_RUNTIME_DIR"/
+  sync_trace "step=copy-runtime status=completed runtime_source=$RUNTIME_SOURCE_DIR"
+
+  printf '%s\n' "$repo_root_path" > "$TARGET_RUNTIME_DIR/repo-root.txt"
+  printf '%s\n' "$MAIN_REPO_ROOT" > "$TARGET_RUNTIME_DIR/repo-main-root.txt"
+  # Copy repo-side worktree-task.env into the runtime dir so the
+  # Windows-side wezterm.exe Lua can read it. The repo-root.txt path
+  # is a WSL-native path which Windows file APIs can't resolve, so
+  # constants.lua's `io.open(<repo-root>/config/worktree-task.env)`
+  # would otherwise return nil and the `<base>_resume` profile defined
+  # only in that env file never gets registered on the Windows side.
+  if [[ -f "$repo_root_path/config/worktree-task.env" ]]; then
+    # -p preserves source mtime so downstream mtime-based skip checks
+    # (lua-precheck) only see a change when the source file actually
+    # changes, not on every sync.
+    cp -p "$repo_root_path/config/worktree-task.env" "$TARGET_RUNTIME_DIR/repo-worktree-task.env"
+  fi
+  write_agent_tools_file "$TARGET_RUNTIME_DIR" "$repo_root_path"
+  sync_trace "step=write-metadata repo_root_path=$repo_root_path repo_main_root=$MAIN_REPO_ROOT"
+}
+
+prepare_native_subflow() {
   # Build the static Go picker binary used by tmux-attention-menu.sh
   # (and friends). Same gitignored-artifact pattern as the chord bindings:
   # rebuild every sync so source changes pick up; skip silently when `go`
@@ -567,34 +313,55 @@ run_runtime_native_flow() {
     fi
   fi
 
-  cp -R "$RUNTIME_SOURCE_DIR"/. "$TEMP_RUNTIME_DIR"/
   if [[ -d "$NATIVE_SOURCE_DIR" ]]; then
-    cp -R "$NATIVE_SOURCE_DIR"/. "$TEMP_NATIVE_DIR"/
+    rsync -a --delete "$NATIVE_SOURCE_DIR"/ "$TARGET_NATIVE_DIR"/
+    sync_trace "step=copy-native status=completed native_source=$NATIVE_SOURCE_DIR"
   fi
-  sync_trace "step=copy-source status=completed runtime_source=$RUNTIME_SOURCE_DIR native_source=$NATIVE_SOURCE_DIR"
+}
+
+run_runtime_native_flow() {
+  local repo_root_path=""
+  local runtime_sub_pid="" native_sub_pid=""
+  local runtime_sub_rc=0 native_sub_rc=0
+
+  sync_trace "flow=runtime-native status=starting target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
+
+  mkdir -p "$TARGET_HOME"
+  mkdir -p "$TARGET_RUNTIME_STATE_DIR"
+  mkdir -p "$TARGET_RUNTIME_DIR" "$TARGET_NATIVE_DIR"
+  sync_trace "step=prepare target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
 
   repo_root_path="${WEZTERM_REPO_ROOT:-}"
   if [[ -z "$repo_root_path" ]]; then
     repo_root_path="$(cd "$REPO_ROOT" && pwd -P)"
   fi
-  printf '%s\n' "$repo_root_path" > "$TEMP_RUNTIME_DIR/repo-root.txt"
-  printf '%s\n' "$MAIN_REPO_ROOT" > "$TEMP_RUNTIME_DIR/repo-main-root.txt"
-  # Copy repo-side worktree-task.env into the runtime dir so the
-  # Windows-side wezterm.exe Lua can read it. The repo-root.txt path
-  # is a WSL-native path which Windows file APIs can't resolve, so
-  # constants.lua's `io.open(<repo-root>/config/worktree-task.env)`
-  # would otherwise return nil and the `<base>_resume` profile defined
-  # only in that env file never gets registered on the Windows side.
-  if [[ -f "$repo_root_path/config/worktree-task.env" ]]; then
-    cp "$repo_root_path/config/worktree-task.env" "$TEMP_RUNTIME_DIR/repo-worktree-task.env"
-  fi
-  write_agent_tools_file "$TEMP_RUNTIME_DIR" "$repo_root_path"
-  sync_trace "step=write-metadata repo_root_path=$repo_root_path repo_main_root=$MAIN_REPO_ROOT"
 
-  rm -rf "$TARGET_RUNTIME_DIR" "$TARGET_NATIVE_DIR"
-  mv "$TEMP_RUNTIME_DIR" "$TARGET_RUNTIME_DIR"
-  mv "$TEMP_NATIVE_DIR" "$TARGET_NATIVE_DIR"
-  sync_trace "step=publish-runtime status=completed target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
+  # Two independent chains run in parallel:
+  #   runtime: render-tmux-bindings → rsync runtime → write metadata
+  #   native:  picker build         → rsync native
+  # rsync writes incrementally to TARGET (no temp+rename publish step);
+  # subsequent syncs only write changed files.
+  prepare_runtime_subflow "$repo_root_path" &
+  runtime_sub_pid=$!
+  sync_trace "subflow=runtime status=running async=1 pid=$runtime_sub_pid"
+
+  prepare_native_subflow &
+  native_sub_pid=$!
+  sync_trace "subflow=native status=running async=1 pid=$native_sub_pid"
+
+  wait "$runtime_sub_pid" || runtime_sub_rc=$?
+  sync_trace "subflow=runtime status=completed rc=$runtime_sub_rc"
+  wait "$native_sub_pid" || native_sub_rc=$?
+  sync_trace "subflow=native status=completed rc=$native_sub_rc"
+
+  if (( runtime_sub_rc != 0 )); then
+    runtime_log_error sync "runtime subflow failed" "rc=$runtime_sub_rc"
+    return "$runtime_sub_rc"
+  fi
+  if (( native_sub_rc != 0 )); then
+    runtime_log_error sync "native subflow failed" "rc=$native_sub_rc"
+    return "$native_sub_rc"
+  fi
 
   run_lua_precheck "$TARGET_RUNTIME_DIR"
 
@@ -624,6 +391,35 @@ finalize_bootstrap_refresh() {
   sync_trace "step=refresh-bootstrap status=completed target_file=$TARGET_FILE"
 }
 
+# Fire-and-forget + daily rate-limit: deps-check is purely advisory (it
+# hits the network to look up wezterm/tmux/go versions) and historically
+# dominates wall time at ~40s. Skip if we already ran today; otherwise
+# detach it before the heavy sync work so it overlaps and never blocks
+# the user. Output is written to a per-target log file; freshness is
+# determined from that log file's mtime so a single source of truth.
+# Override with WEZTERM_SYNC_FORCE_DEPS_CHECK=1 to bypass the daily gate.
+DEPS_CHECK_SCRIPT="$REPO_ROOT/scripts/dev/check-deps-updates.sh"
+DEPS_CHECK_LOG_DIR="$TARGET_RUNTIME_STATE_DIR/logs"
+DEPS_CHECK_LOG="$DEPS_CHECK_LOG_DIR/deps-check.log"
+if [[ -x "$DEPS_CHECK_SCRIPT" ]] && [[ "${WEZTERM_SYNC_SKIP_DEPS_CHECK:-0}" != "1" ]]; then
+  mkdir -p "$DEPS_CHECK_LOG_DIR"
+  deps_log_date=""
+  deps_today="$(date '+%Y-%m-%d')"
+  if [[ -s "$DEPS_CHECK_LOG" ]]; then
+    deps_log_date="$(date -r "$DEPS_CHECK_LOG" '+%Y-%m-%d' 2>/dev/null || true)"
+  fi
+  if [[ "${WEZTERM_SYNC_FORCE_DEPS_CHECK:-0}" != "1" && -n "$deps_log_date" && "$deps_log_date" == "$deps_today" ]]; then
+    sync_trace "step=deps-check status=skipped reason=already_ran_today log_date=$deps_log_date log=$DEPS_CHECK_LOG"
+    printf '[sync] deps-check skipped (last run %s), log: %s\n' "$deps_log_date" "$DEPS_CHECK_LOG"
+  else
+    sync_trace "step=deps-check status=detached log=$DEPS_CHECK_LOG previous_log_date=${deps_log_date:-none}"
+    printf '[sync] deps-check running in background, log: %s\n' "$DEPS_CHECK_LOG"
+    nohup "$DEPS_CHECK_SCRIPT" --advisory --no-color --timeout 10 --prefix '[sync] ' \
+      >"$DEPS_CHECK_LOG" 2>&1 </dev/null &
+    disown 2>/dev/null || true
+  fi
+fi
+
 run_runtime_native_flow &
 RUNTIME_NATIVE_FLOW_PID=$!
 sync_trace "flow=runtime-native status=running async=1 pid=$RUNTIME_NATIVE_FLOW_PID"
@@ -636,7 +432,40 @@ wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
 wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
 
-maybe_reload_tmux "$REPO_ROOT"
+# Two independent post-sync tasks run in parallel; each captures its
+# output to a temp file so the on-screen log stays in a stable, readable
+# order when we replay them after `wait`. (deps-check runs detached at
+# the start of the script and writes to its own log.)
+POSTSYNC_OUT_DIR="$(mktemp -d -t wezterm-sync-postXXXXXX)"
+POSTSYNC_TMUX_OUT="$POSTSYNC_OUT_DIR/tmux-reload.out"
+POSTSYNC_VSCODE_OUT="$POSTSYNC_OUT_DIR/vscode-links.out"
+
+VSCODE_LINKS_SETUP="$REPO_ROOT/scripts/runtime/setup-vscode-links.sh"
+
+(
+  maybe_reload_tmux "$REPO_ROOT"
+) >"$POSTSYNC_TMUX_OUT" 2>&1 &
+POSTSYNC_TMUX_PID=$!
+
+(
+  if [[ -x "$VSCODE_LINKS_SETUP" ]]; then
+    sync_trace "step=vscode-links-setup status=starting"
+    # Default mode: auto-install if missing, advise (no auto-replace) if behind.
+    # Output is prefixed so it slots into the same [sync] table as other steps.
+    "$VSCODE_LINKS_SETUP" 2>&1 | sed 's/^/[sync] /' || true
+    sync_trace "step=vscode-links-setup status=completed"
+  fi
+) >"$POSTSYNC_VSCODE_OUT" 2>&1 &
+POSTSYNC_VSCODE_PID=$!
+
+sync_trace "step=postsync status=running tmux_pid=$POSTSYNC_TMUX_PID vscode_pid=$POSTSYNC_VSCODE_PID"
+
+wait "$POSTSYNC_TMUX_PID" || true
+wait "$POSTSYNC_VSCODE_PID" || true
+
+if [[ -s "$POSTSYNC_TMUX_OUT" ]]; then cat "$POSTSYNC_TMUX_OUT"; fi
+if [[ -s "$POSTSYNC_VSCODE_OUT" ]]; then cat "$POSTSYNC_VSCODE_OUT"; fi
+rm -rf "$POSTSYNC_OUT_DIR"
 
 runtime_log_info sync "sync-runtime completed" \
   "repo_root=$REPO_ROOT" \
@@ -646,21 +475,6 @@ runtime_log_info sync "sync-runtime completed" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 sync_trace "step=completed duration_ms=$(runtime_log_duration_ms "$start_ms")"
 
-VSCODE_LINKS_SETUP="$REPO_ROOT/scripts/runtime/setup-vscode-links.sh"
-if [[ -x "$VSCODE_LINKS_SETUP" ]]; then
-  sync_trace "step=vscode-links-setup status=starting"
-  # Default mode: auto-install if missing, advise (no auto-replace) if behind.
-  # Output is prefixed so it slots into the same [sync] table as other steps.
-  "$VSCODE_LINKS_SETUP" 2>&1 | sed 's/^/[sync] /' || true
-  sync_trace "step=vscode-links-setup status=completed"
-fi
-
-DEPS_CHECK_SCRIPT="$REPO_ROOT/scripts/dev/check-deps-updates.sh"
-if [[ -x "$DEPS_CHECK_SCRIPT" ]] && [[ "${WEZTERM_SYNC_SKIP_DEPS_CHECK:-0}" != "1" ]]; then
-  sync_trace "step=deps-check status=starting"
-  "$DEPS_CHECK_SCRIPT" --advisory --no-color --timeout 10 --prefix '[sync] ' || true
-  sync_trace "step=deps-check status=completed"
-fi
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"
 if [[ -d "$NATIVE_SOURCE_DIR" ]]; then

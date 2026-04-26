@@ -19,10 +19,20 @@ Use this doc when you need logs, smoke tests, or troubleshooting paths.
 
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.
 - `sync-runtime.sh` prints a one-line tmux reload result to the terminal, while the full structured detail still goes to `WEZTERM_RUNTIME_LOG_FILE`.
-- `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status.
+- `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status. Each gated step (`helper-install`, `helper-ensure`, `lua-precheck`, `deps-check`) emits an explicit `status=skipped reason=...` line when its skip-if-current check passed; full reasons + force-bypass envs are tabulated in [`daily-workflow.md#skip-if-current-and-force-overrides`](./daily-workflow.md#skip-if-current-and-force-overrides).
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
 - Current runtime categories include `vscode`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
+
+### Sync-side state files
+
+Three small artifacts under `$WEZTERM_RUNTIME_STATE_DIR` (i.e. `%LOCALAPPDATA%\wezterm-runtime\` in hybrid-wsl) drive sync's skip-if-current decisions; deleting any of them forces the next sync to run the corresponding gate from scratch:
+
+- `bin/helper-install-state.json` — written by the PowerShell installer at the end of every successful install. Its **mtime** is sync-runtime's "last successful helper install" marker; `find -newer` on `native/host-helper/windows/src/**` and the `release-manifest.json` against this file decides whether `dotnet publish` runs again.
+- `state/helper/state.env` — written by the running helper-manager every ~250ms. `ready=1` + filesystem mtime within ~10s of now is sync-runtime's "helper alive" signal that lets `helper-ensure` skip the PowerShell round-trip. CRLF line endings (PowerShell-written) — readers must strip `\r` before string-comparing values.
+- `lua-precheck.ok` — empty sentinel touched by `sync-runtime.sh` after each successful Lua precheck. `find -newer` on `~/.wezterm-x/lua/`, `~/.wezterm-x/repo-worktree-task.env`, and the precheck script itself against this file decides whether to re-run the precheck.
+
+`logs/deps-check.log` is a separate artifact: it's both the deps-check output (since the check now runs detached, see daily-workflow.md) AND the daily-rate-limit gate (its mtime date is compared against today's date).
 
 ## Traceability
 

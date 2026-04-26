@@ -40,7 +40,9 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Diagnostics, logs, or smoke tests:
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
 - Performance work on the Alt+/ popup, the cross-FS routing rule for
-  state files, or the bench harnesses:
+  state files, the bench harnesses, or the sync-runtime hot path
+  (skip-if-current gates, rsync-vs-cp tradeoff, mtime-based change
+  detection):
   Read [`docs/performance.md`](docs/performance.md).
 - IME candidate-window stability, DEC mode 2026 (synchronized output),
   why tmux 3.6+ is required, or agent-CLI render flicker investigation:
