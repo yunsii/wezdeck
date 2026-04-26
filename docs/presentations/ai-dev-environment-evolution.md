@@ -3,7 +3,7 @@ title: WezDeck 的演进 —— 从 Copilot 聊天到 multi-agent 驾驶舱
 subtitle: AI 形态每变一次，我都被逼着把工作环境往前推一格
 version: v0 → v5（v5 D 收口于 2026-04-25）
 date: 2026-04-23（worktree 工作流补丁：2026-04-25）
-project: WezDeck (repo: wezterm-config)
+project: "WezDeck (repo: wezterm-config)"
 audience: 同事 / 社区分享 · 长文 · 演进史
 author: 结合 git 记录整理
 ---
