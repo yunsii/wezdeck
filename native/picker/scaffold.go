@@ -102,16 +102,21 @@ func (t perfTimings) renderFooterTail(b *strings.Builder) (elapsed, lua, menu, p
 	return
 }
 
-// emit posts a perf event with the schema every picker shares.
-// extra is merged in for picker-specific fields; nil is fine. No-op
-// when keypressTS is 0.
-func (t perfTimings) emit(category, panel, message, paintKind string, itemCount, selectedIdx int, extra map[string]string) {
+// emitFirstPaint posts the once-per-popup perf event every picker
+// shares. Always called from the picker's main loop *after* the first
+// render() returns — never from inside render() itself, per the
+// render-path discipline rule in docs/logging-conventions.md. extra
+// is merged in for picker-specific fields; nil is fine. No-op when
+// keypressTS is 0. paint_kind is hardcoded to "first" because no
+// downstream consumer reads anything else (perf-trend.sh and
+// bench-attention-popup.sh both filter on paint_kind="first").
+func (t perfTimings) emitFirstPaint(category, panel, message string, itemCount, selectedIdx int, extra map[string]string) {
 	if t.keypressTS <= 0 {
 		return
 	}
 	elapsed, lua, menu, picker := t.stages()
 	fields := map[string]string{
-		"paint_kind":     paintKind,
+		"paint_kind":     "first",
 		"picker_kind":    "go",
 		"panel":          panel,
 		"total_ms":       strconv.FormatInt(elapsed, 10),

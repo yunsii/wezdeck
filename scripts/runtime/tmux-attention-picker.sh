@@ -175,7 +175,6 @@ terminal_size() {
 }
 
 render_picker() {
-  local paint_kind="${1:-first}"
   local rows cols visible_rows elapsed_ms lua_ms menu_ms picker_ms now total
   IFS=' ' read -r rows cols <<< "$(terminal_size)"
   # 5 non-row lines: title, search input, blank divider, blank-before-
@@ -188,7 +187,7 @@ render_picker() {
   lua_ms=0
   menu_ms=0
   picker_ms=0
-  now="$(date +%s%3N)"
+  now=$(( ${EPOCHREALTIME//./} / 1000 ))
   if (( keypress_ts > 0 )); then
     elapsed_ms=$((now - keypress_ts))
     (( elapsed_ms < 0 )) && elapsed_ms=0
@@ -207,19 +206,28 @@ render_picker() {
   fi
   total="${#row_ids[@]}"
   attention_picker_emit_frame "$cols" "$visible_rows" "$selected_index" "$total" "$elapsed_ms" "$lua_ms" "$menu_ms" "$picker_ms" "$filter_text" "$status_filter"
-  # Perf event — own category so users can opt-in via
-  # WEZTERM_RUNTIME_LOG_CATEGORIES=attention.perf without pulling in the
-  # noisier `attention` lifecycle/render logs. Bench harness reads
-  # `paint_kind="first"` rows for cold-path stats.
+}
+
+# Once-per-popup perf emit, dispatched AFTER the first render call from
+# the script's top-level (never from inside render_picker, per
+# docs/logging-conventions.md "Render-path discipline"). Reads the same
+# timing math render_picker just computed by re-reading the timestamps.
+emit_first_paint_perf() {
+  local now elapsed_ms=0 lua_ms=0 menu_ms=0 picker_ms=0
+  now=$(( ${EPOCHREALTIME//./} / 1000 ))
+  (( keypress_ts > 0 )) && { elapsed_ms=$((now - keypress_ts)); (( elapsed_ms < 0 )) && elapsed_ms=0; }
+  (( menu_start_ts > 0 && keypress_ts > 0 )) && { lua_ms=$((menu_start_ts - keypress_ts)); (( lua_ms < 0 )) && lua_ms=0; }
+  (( menu_done_ts > 0 && menu_start_ts > 0 )) && { menu_ms=$((menu_done_ts - menu_start_ts)); (( menu_ms < 0 )) && menu_ms=0; }
+  (( menu_done_ts > 0 )) && { picker_ms=$((now - menu_done_ts)); (( picker_ms < 0 )) && picker_ms=0; }
   runtime_log_info attention.perf "popup paint timing" \
     "trace=$trace_id" \
-    "paint_kind=$paint_kind" \
+    "paint_kind=first" \
     "picker_kind=bash" \
     "total_ms=$elapsed_ms" \
     "lua_ms=$lua_ms" \
     "menu_ms=$menu_ms" \
     "picker_ms=$picker_ms" \
-    "item_count=$total" \
+    "item_count=${#row_ids[@]}" \
     "selected_index=$selected_index"
 }
 
@@ -290,7 +298,8 @@ dispatch_selection() {
 # Force one render here so the diagnostic key→paint readout updates with
 # the real end-to-end time once libs have loaded. Subsequent iterations
 # only repaint when state changes — see the input loop below.
-render_picker first
+render_picker
+emit_first_paint_perf
 
 while true; do
   needs_render=0
@@ -377,6 +386,6 @@ while true; do
   esac
 
   if (( needs_render )); then
-    render_picker repaint
+    render_picker
   fi
 done

@@ -104,7 +104,10 @@ func (commandPicker) Run(args []string) int {
 		ts:            ts,
 	}
 	ui.refilter()
-	ui.render("first")
+	ui.render()
+	// Once-per-popup perf event after the first frame's bytes hit stdout —
+	// see docs/logging-conventions.md "Render-path discipline".
+	ui.ts.emitFirstPaint("command.perf", "command", "command palette paint timing", len(ui.rows), ui.selected, nil)
 
 	return runKeyLoop(func(key string) (loopAction, int) {
 		// Confirm overlay swallows all keys until it is dismissed.
@@ -117,7 +120,7 @@ func (commandPicker) Run(args []string) int {
 			} else {
 				ui.pendingConfirm = ""
 				ui.pendingItemID = ""
-				ui.render("repaint")
+				ui.render()
 			}
 			return loopContinue, 0
 		}
@@ -149,33 +152,33 @@ func (commandPicker) Run(args []string) int {
 			if ui.query != "" {
 				ui.query = ""
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 				return loopContinue, 0
 			}
 			return loopExit, 0
 		case "\x1b[B", "\x1bOB":
 			ui.move(1)
-			ui.render("repaint")
+			ui.render()
 		case "\x1b[A", "\x1bOA":
 			ui.move(-1)
-			ui.render("repaint")
+			ui.render()
 		case "\x7f", "\x08":
 			if ui.query != "" {
 				ui.query = ui.query[:len(ui.query)-1]
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 			}
 		case "\x15": // Ctrl+U
 			if ui.query != "" {
 				ui.query = ""
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 			}
 		default:
 			if isPrintable(key) {
 				ui.query += key
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 			}
 		}
 		return loopContinue, 0
@@ -247,7 +250,7 @@ func (ui *commandUI) move(delta int) {
 	}
 }
 
-func (ui *commandUI) render(paintKind string) {
+func (ui *commandUI) render() {
 	cols, lines := getTermSize()
 	visibleRows := lines - 7
 	if visibleRows < 1 {
@@ -342,10 +345,6 @@ func (ui *commandUI) render(paintKind string) {
 	b.WriteString("\x1b[J")
 
 	_, _ = os.Stdout.WriteString(b.String())
-
-	// Perf event — separate category from attention.perf so perf-trend.sh
-	// can filter by panel. Bench fields mirror attention's schema.
-	ui.ts.emit("command.perf", "command", "command palette paint timing", paintKind, len(ui.rows), ui.selected, nil)
 }
 
 func (ui *commandUI) displayedSelected() int {

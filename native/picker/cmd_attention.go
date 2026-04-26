@@ -66,10 +66,13 @@ func (attentionPicker) Run(args []string) int {
 
 	visible := applyAttentionFilter(rows, filterText, statusFilter)
 
-	render := func(paintKind string) {
-		renderAttentionFrame(visible, selected, ts, paintKind, filterText, statusFilter)
+	render := func() {
+		renderAttentionFrame(visible, selected, ts, filterText, statusFilter)
 	}
-	render("first")
+	render()
+	// Once-per-popup perf event, dispatched AFTER the first frame's bytes
+	// hit stdout — see docs/logging-conventions.md "Render-path discipline".
+	ts.emitFirstPaint("attention.perf", "attention", "popup paint timing", len(visible), selected, nil)
 
 	cycleStatus := func() {
 		switch statusFilter {
@@ -109,36 +112,36 @@ func (attentionPicker) Run(args []string) int {
 				filterText = ""
 				selected = 0
 				visible = applyAttentionFilter(rows, filterText, statusFilter)
-				render("repaint")
+				render()
 				return loopContinue, 0
 			}
 			return loopExit, 0
 		case "\x1b[B", "\x1bOB":
 			if len(visible) > 0 {
 				selected = (selected + 1) % len(visible)
-				render("repaint")
+				render()
 			}
 		case "\x1b[A", "\x1bOA":
 			if len(visible) > 0 {
 				selected = (selected - 1 + len(visible)) % len(visible)
-				render("repaint")
+				render()
 			}
 		case "\t":
 			cycleStatus()
-			render("repaint")
+			render()
 		case "\x7f", "\x08":
 			if filterText != "" {
 				filterText = filterText[:len(filterText)-1]
 				selected = 0
 				visible = applyAttentionFilter(rows, filterText, statusFilter)
-				render("repaint")
+				render()
 			}
 		case "\x15": // Ctrl+U — clear filter in one keystroke.
 			if filterText != "" {
 				filterText = ""
 				selected = 0
 				visible = applyAttentionFilter(rows, filterText, statusFilter)
-				render("repaint")
+				render()
 			}
 		default:
 			// Append printable ASCII only (single byte 0x20–0x7E). Stray
@@ -150,7 +153,7 @@ func (attentionPicker) Run(args []string) int {
 					filterText += key
 					selected = 0
 					visible = applyAttentionFilter(rows, filterText, statusFilter)
-					render("repaint")
+					render()
 				}
 			}
 		}
@@ -217,7 +220,7 @@ func loadAttentionRows(path string) ([]attentionRow, error) {
 // same color codes, same selection highlight scheme. If you change
 // either, change both — the bash menu.sh side still pre-renders the
 // first frame for the bash fallback path.
-func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, paintKind, filterText, statusFilter string) {
+func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, filterText, statusFilter string) {
 	_, lines := getTermSize()
 	// 5 non-row lines: title, search input, blank divider, blank-before-
 	// footer, footer.
@@ -336,11 +339,6 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, pai
 	b.WriteString("\x1b[J")
 
 	_, _ = os.Stdout.WriteString(b.String())
-
-	// Perf event for the bench harness. Mirror the bash picker's
-	// `attention.perf` category + `popup paint timing` message so both
-	// code paths feed the same dashboard.
-	ts.emit("attention.perf", "attention", "popup paint timing", paintKind, len(rows), selected, nil)
 }
 
 func coloredBadge(status string) string {
