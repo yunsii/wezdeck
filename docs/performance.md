@@ -40,7 +40,7 @@ performance contract.
 | `native/picker/main.go` | Subcommand dispatcher + shared helpers (perf log, term IO, shell escape). Hosts the `attention` subcommand. | ~2-5ms cold (vs ~30-80ms bash fallback) |
 | `native/picker/cmd_command.go` | `picker command` — replaces `tmux-command-picker.sh`. Consumes a 6-field TSV menu.sh prefetched. | Skips ~50ms of `command_panel_load_items` re-run inside the popup pty |
 | `native/picker/cmd_worktree.go` | `picker worktree` — replaces `tmux-worktree-picker.sh`. Consumes a 4-field TSV with `existing_window_id` already resolved. | Skips ~30ms of bash boot + render-lib source inside popup |
-| `native/picker/bin/picker` | Compiled binary, gitignored | Built by sync; missing → bash fallback kicks in for whichever panel needs it |
+| `native/picker/bin/picker` | Compiled binary, gitignored | Provisioned by sync via local Go build or release-tarball fetch (see `build.sh` row); missing → bash fallback kicks in for whichever panel needs it |
 | `scripts/runtime/tmux-attention-picker.sh` | Bash fallback for `picker attention` | Sources 3 libs cold |
 | `scripts/runtime/tmux-command-picker.sh` | Bash fallback for `picker command` | Re-runs `command_panel_load_items` inside the popup pty |
 | `scripts/runtime/tmux-worktree-picker.sh` | Bash fallback for `picker worktree` | Slurps a pre-rendered first frame to bound first-paint at "bash startup + 1 syscall" |
@@ -51,7 +51,7 @@ performance contract.
 
 | File | Role |
 |---|---|
-| `native/picker/build.sh` | Builds the Go binary. Auto-discovers `go` from PATH / `~/.local/go/bin` / `/usr/local/go/bin`. Skips silently when Go is missing |
+| `native/picker/build.sh` | Provisions the binary. Default `WEZTERM_PICKER_INSTALL_SOURCE=auto`: local Go build first (auto-discovers `go` from PATH / `~/.local/go/bin` / `/usr/local/go/bin`), then release-tarball fetch from `release-manifest.json` (sha256-verified, cached at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>`), then silent skip. Force `local` or `release` via the same env var. Full semantics: [`picker-release.md#install-path`](./picker-release.md#install-path) |
 | `native/picker/{go.mod, go.sum}` | Go module pinning `golang.org/x/term` |
 | `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` | Added `step=build-picker` between `render-tmux-bindings` and `copy-source` |
 | `.gitignore` | Excludes `native/picker/bin/` (build artifact) |
@@ -59,9 +59,11 @@ performance contract.
 ### Diagnostic UI (temporary, slated for removal)
 
 These exist while the Go picker and bash fallback run side-by-side.
-Drop both once the bash fallback is removed (i.e. once `go` is treated
-as a hard prerequisite rather than a recommended one — see
-[`setup.md`](./setup.md#prerequisites)).
+Drop both once a bash-fallback fire becomes a defect rather than a
+graceful degradation — i.e. once `native/picker/build.sh`'s `auto`
+mode reliably provisions the Go binary on every supported host
+through either the local-build or release-fetch path (see
+[`picker-release.md#install-path`](./picker-release.md#install-path)).
 
 | Surface | Purpose |
 |---|---|
