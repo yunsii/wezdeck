@@ -107,7 +107,10 @@ func (linksPicker) Run(args []string) int {
 		ts:             ts,
 	}
 	ui.refilter()
-	ui.render("first")
+	ui.render()
+	// Once-per-popup perf event after the first frame's bytes hit stdout —
+	// see docs/logging-conventions.md "Render-path discipline".
+	ui.ts.emitFirstPaint("links.perf", "links", "links picker paint timing", len(ui.rows), ui.selected, nil)
 
 	return runKeyLoop(func(key string) (loopAction, int) {
 		switch key {
@@ -133,33 +136,33 @@ func (linksPicker) Run(args []string) int {
 			if ui.query != "" {
 				ui.query = ""
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 				return loopContinue, 0
 			}
 			return loopExit, 0
 		case "\x1b[B", "\x1bOB":
 			ui.move(1)
-			ui.render("repaint")
+			ui.render()
 		case "\x1b[A", "\x1bOA":
 			ui.move(-1)
-			ui.render("repaint")
+			ui.render()
 		case "\x7f", "\x08":
 			if ui.query != "" {
 				ui.query = ui.query[:len(ui.query)-1]
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 			}
 		case "\x15": // Ctrl+U
 			if ui.query != "" {
 				ui.query = ""
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 			}
 		default:
 			if isPrintable(key) {
 				ui.query += key
 				ui.refilter()
-				ui.render("repaint")
+				ui.render()
 			}
 		}
 		return loopContinue, 0
@@ -236,7 +239,7 @@ func (ui *linksUI) move(delta int) {
 	}
 }
 
-func (ui *linksUI) render(paintKind string) {
+func (ui *linksUI) render() {
 	cols, lines := getTermSize()
 	visibleRows := lines - 7
 	if visibleRows < 1 {
@@ -352,8 +355,6 @@ func (ui *linksUI) render(paintKind string) {
 	b.WriteString("\x1b[J")
 
 	_, _ = os.Stdout.WriteString(b.String())
-
-	ui.ts.emit("links.perf", "links", "links picker paint timing", paintKind, len(ui.rows), ui.selected, nil)
 }
 
 func (ui *linksUI) displayedSelected() int {

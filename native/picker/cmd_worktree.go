@@ -89,7 +89,10 @@ func (worktreePicker) Run(args []string) int {
 		cwd:                 cwd,
 		ts:                  ts,
 	}
-	ui.render("first")
+	ui.render()
+	// Once-per-popup perf event after the first frame's bytes hit stdout —
+	// see docs/logging-conventions.md "Render-path discipline".
+	ui.ts.emitFirstPaint("worktree.perf", "worktree", "worktree picker paint timing", len(ui.rows), ui.selected, nil)
 
 	return runKeyLoop(func(key string) (loopAction, int) {
 		switch key {
@@ -102,10 +105,10 @@ func (worktreePicker) Run(args []string) int {
 			return loopExit, 0
 		case "\x1b[B", "\x1bOB":
 			ui.move(1)
-			ui.render("repaint")
+			ui.render()
 		case "\x1b[A", "\x1bOA":
 			ui.move(-1)
-			ui.render("repaint")
+			ui.render()
 		default:
 			if i := ui.findAccelerator(key); i >= 0 {
 				ui.selected = i
@@ -177,7 +180,7 @@ func (ui *worktreeUI) findAccelerator(key string) int {
 	return -1
 }
 
-func (ui *worktreeUI) render(paintKind string) {
+func (ui *worktreeUI) render() {
 	_, lines := getTermSize()
 	visibleRows := lines - 6
 	if visibleRows < 1 {
@@ -257,8 +260,6 @@ func (ui *worktreeUI) render(paintKind string) {
 	b.WriteString("\x1b[J")
 
 	_, _ = os.Stdout.WriteString(b.String())
-
-	ui.ts.emit("worktree.perf", "worktree", "worktree picker paint timing", paintKind, itemCount, ui.selected, nil)
 }
 
 func (ui *worktreeUI) dispatch(fd int, state *term.State) {
