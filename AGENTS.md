@@ -32,6 +32,10 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   `release-manifest.json`, forcing the release-install branch, or
   side-loading the release zip:
   Read [`docs/host-helper-release.md`](docs/host-helper-release.md).
+- Cutting a Go picker (`native/picker/`) release, updating its
+  multi-asset `release-manifest.json`, or planning the install-side
+  fetcher that will let end users skip the Go toolchain:
+  Read [`docs/picker-release.md`](docs/picker-release.md).
 - Diagnostics, logs, or smoke tests:
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
 - Performance work on the Alt+/ popup, the cross-FS routing rule for

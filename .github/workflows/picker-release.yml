@@ -1,0 +1,151 @@
+name: picker-release
+
+on:
+  push:
+    tags:
+      - "picker-v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to create or update"
+        required: true
+        type: string
+      release_name:
+        description: "Optional release title"
+        required: false
+        type: string
+      draft:
+        description: "Create as draft release"
+        required: false
+        default: false
+        type: boolean
+      prerelease:
+        description: "Mark release as prerelease"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: picker-release-${{ inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+      linux_amd64_asset_name: ${{ steps.package.outputs.linux_amd64_asset_name }}
+      linux_amd64_sha256: ${{ steps.package.outputs.linux_amd64_sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: native/picker/go.mod
+
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          tag='${{ inputs.release_tag || github.ref_name }}'
+          name='${{ inputs.release_name }}'
+          if [[ -z "$name" ]]; then
+            name="WezDeck picker $tag"
+          fi
+          {
+            printf 'release_tag=%s\n' "$tag"
+            printf 'release_name=%s\n' "$name"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Package picker binaries
+        id: package
+        run: |
+          set -euo pipefail
+          tag='${{ steps.meta.outputs.release_tag }}'
+          out_dir="$RUNNER_TEMP/picker-release-$tag"
+          mkdir -p "$out_dir/linux-amd64"
+
+          (
+            cd native/picker
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+              go build -trimpath -ldflags='-s -w' \
+              -o "$out_dir/linux-amd64/picker" .
+          )
+
+          asset="wezdeck-picker-$tag-linux-amd64.tar.gz"
+          archive="$out_dir/$asset"
+          tar -C "$out_dir/linux-amd64" -czf "$archive" picker
+          sha=$(sha256sum "$archive" | awk '{print $1}')
+
+          {
+            printf 'linux_amd64_asset_name=%s\n' "$asset"
+            printf 'linux_amd64_sha256=%s\n' "$sha"
+            printf 'linux_amd64_archive_path=%s\n' "$archive"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.release_tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.meta.outputs.release_name }}
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
+          overwrite_files: true
+          files: ${{ steps.package.outputs.linux_amd64_archive_path }}
+
+      - name: Write release summary
+        run: |
+          set -euo pipefail
+          tag='${{ steps.meta.outputs.release_tag }}'
+          asset='${{ steps.package.outputs.linux_amd64_asset_name }}'
+          sha='${{ steps.package.outputs.linux_amd64_sha256 }}'
+          repo='${{ github.repository }}'
+          url="https://github.com/$repo/releases/download/$tag/$asset"
+          {
+            printf 'Release: %s\n\n' "$tag"
+            printf 'Assets:\n'
+            printf -- '- linux-amd64: %s (sha256 %s)\n' "$asset" "$sha"
+            printf '\nManifest update command:\n'
+            printf '```bash\n'
+            printf 'scripts/dev/update-picker-release-manifest.sh --tag %s --repo %s --asset linux-amd64=%s\n' "$tag" "$repo" "$sha"
+            printf '```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  update-manifest:
+    needs: build
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Update release manifest
+        run: >
+          scripts/dev/update-picker-release-manifest.sh
+          --tag '${{ needs.build.outputs.release_tag }}'
+          --repo '${{ github.repository }}'
+          --asset 'linux-amd64=${{ needs.build.outputs.linux_amd64_sha256 }}'
+          --asset-name 'linux-amd64=${{ needs.build.outputs.linux_amd64_asset_name }}'
+
+      - name: Create manifest update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore(scripts): update picker release manifest'
+          title: 'chore(scripts): update picker release manifest for ${{ needs.build.outputs.release_tag }}'
+          body: |
+            Update the picker release manifest after publishing `${{ needs.build.outputs.release_tag }}`.
+
+            linux-amd64 asset: `${{ needs.build.outputs.linux_amd64_asset_name }}`
+            linux-amd64 SHA-256: `${{ needs.build.outputs.linux_amd64_sha256 }}`
+          branch: ci/update-picker-manifest-${{ needs.build.outputs.release_tag }}
+          base: ${{ github.event.repository.default_branch }}
+          add-paths: |
+            native/picker/release-manifest.json
+          delete-branch: true
