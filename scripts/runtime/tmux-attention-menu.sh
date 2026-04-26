@@ -219,7 +219,8 @@ bench_mark tsv_write
 # fall back to the bash picker, which still expects a pre-rendered frame
 # file primed via the shared render lib.
 attention_jump_script="$script_dir/attention-jump.sh"
-picker_binary="$script_dir/picker/bin/picker"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+picker_binary="$repo_root/native/picker/bin/picker"
 
 # Keypress reference: the Lua handler writes live-panes.json with ts =
 # now_ms() right before forwarding `\x1b/`, so its ts is the closest
