@@ -30,7 +30,12 @@ This repository is the source of truth for the WezDeck runtime. The GitHub repo 
 
 ## 📺 Demo
 
-> _TODO: drop a screenshot or asciinema GIF here showing the right-status counter, a tab badge transition, and the `Alt+/` picker._
+<p align="center">
+  <img src="assets/brand/banner.svg" alt="" width="0" height="0" style="display:none">
+  <img src="assets/demo/hero.png" alt="WezDeck flight deck — six mock projects with live tab badges and counter">
+</p>
+
+Six mock projects (cli-parser / image-resizer / log-daemon, two worktrees each), all driving the real attention pipeline. Right-status `⟳ 2 ⚠ 5 ✓ 1` aggregates across the workspace; tab badges flip per pane; the focused agent is paused on a permission prompt — the rest are still streaming or have completed. Reproduce: see [`assets/demo/README.md`](assets/demo/README.md).
 
 ## 🧭 How It Works
 

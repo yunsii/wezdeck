@@ -78,6 +78,7 @@ The Windows helper auto-launches a headless instance on boot, so MCP / agent att
 - `Alt+d`: switch to WezTerm built-in `default`
 - `Alt+w`: open or switch to `work` using the private directories configured in `wezterm-x/local/workspaces.lua`
 - `Alt+c`: open or switch to `config`
+- `Alt+m`: switch to `mock-deck` — only useful when that demo workspace is registered in `wezterm-x/local/workspaces.lua` and the orchestrator at `scripts/dev/mock-deck/mock-deck.sh` is running
 - `Alt+p`: rotate through all currently known workspaces
 - `Alt+Shift+x`: open a centered WezTerm confirmation overlay to close the current non-default workspace
 - `Alt+Shift+q`: quit WezTerm and close all windows; WezTerm will handle any built-in confirmation
