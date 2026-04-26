@@ -4,7 +4,7 @@
 
 WezDeck is a managed WezTerm runtime designed for the multi-agent era: every WezTerm tab is one repo, every tmux window inside it is one git worktree, every pane can host an agent CLI (`claude` / `codex` / …) whose attention state is surfaced as live tab badges + a single right-status counter (`⟳ N running ⚠ N waiting ✓ N done`). One keystroke (`Alt+/`) jumps between any pending task across all panes; one keystroke (`Ctrl+k g d/t/h`) carves out a new linked worktree with its own agent.
 
-This repository is the source of truth for that runtime. The repo and its tracked git remote keep their original `wezterm-config` name; **WezDeck** is the project's display / sharing identity.
+This repository is the source of truth for that runtime. The GitHub repo is now [`yunsii/wezdeck`](https://github.com/yunsii/wezdeck) (the previous `yunsii/wezterm-config` URL still works via GitHub's permanent redirect). The env var consumed by `worktree-task` is `WEZDECK_REPO` (legacy `WEZTERM_CONFIG_REPO` still accepted via fallback). The local working directory keeps its original `wezterm-config` name — you can rename it any time and the env var will follow.
 
 ## Runtime Modes
 

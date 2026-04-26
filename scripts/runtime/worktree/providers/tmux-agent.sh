@@ -467,7 +467,7 @@ provider_build_pane_command() {
 provider_apply_tmux_config() {
   if [[ -n "${WT_PROVIDER_TMUX_CONFIG_FILE_ABS:-}" && -f "${WT_PROVIDER_TMUX_CONFIG_FILE_ABS:-}" ]]; then
     local runtime_root=""
-    runtime_root="${WEZTERM_CONFIG_REPO_ROOT:-}"
+    runtime_root="${WEZDECK_REPO_ROOT:-${WEZTERM_CONFIG_REPO_ROOT:-}}"
     if [[ -z "$runtime_root" ]]; then
       runtime_root="$(cd "$(dirname "$WT_PROVIDER_TMUX_CONFIG_FILE_ABS")" && pwd -P)"
     fi

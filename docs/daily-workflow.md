@@ -25,7 +25,7 @@ skills/wezterm-runtime-sync/scripts/sync-runtime.sh --list-targets
 skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /mnt/c/Users/your-user
 ```
 
-Run those commands from the repo root, or set `WEZTERM_CONFIG_REPO=/absolute/path/to/repo` before invoking the script from elsewhere.
+Run those commands from the repo root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the script from elsewhere.
 
 The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\host-helper\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/host-helper/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
 It also refreshes `~/.wezterm-x/agent-tools.env` in the target home so external agent platforms can discover repo-local wrappers from one stable marker file.

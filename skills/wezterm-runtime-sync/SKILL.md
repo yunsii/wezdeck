@@ -11,7 +11,7 @@ The scripts under `skills/wezterm-runtime-sync/scripts/` are the source of truth
 
 ## Workflow
 
-1. Run from the repository root, or set `WEZTERM_CONFIG_REPO=/absolute/path/to/repo` before invoking the skill scripts.
+1. Run from the repository root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the skill scripts.
 2. If repo-root `.sync-target` or `WEZTERM_SYNC_TARGET` already points at an existing directory, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` with no extra arguments.
 3. If there is no valid cached target, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh --list-targets` to print candidate user home directories.
 4. Present the candidates to the user and ask which path should be used. Accept either one of the listed paths or another absolute path the user explicitly provides.

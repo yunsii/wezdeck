@@ -227,7 +227,7 @@ flowchart LR
 The `worktree-task` runtime creates linked worktrees under the repository parent's `.worktrees/<repo>/` directory and opens them as additional tmux windows in the same repo-family session. Architectural ownership only:
 
 - Tracked profile lives at `config/worktree-task.env`; machine-local agent selection lives at `wezterm-x/local/shared.env` (`MANAGED_AGENT_PROFILE`).
-- `WEZTERM_CONFIG_REPO` is required; recover with `scripts/runtime/worktree/worktree-task configure --repo /absolute/path`.
+- `WEZDECK_REPO` is required (legacy `WEZTERM_CONFIG_REPO` still accepted); recover with `scripts/runtime/worktree/worktree-task configure --repo /absolute/path`.
 - The built-in `tmux-agent` provider executes the agent CLI inside the resolved login shell so PATH and rc files match the user's normal terminal.
 - Runtime launch uses a temporary prompt file only long enough to start the new pane; no prompt archive is kept.
 

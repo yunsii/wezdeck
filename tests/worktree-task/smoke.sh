@@ -85,7 +85,7 @@ case1_happy_path() {
   local expect_wt="$WORK_DIR/.worktrees/origin1/$slug"
 
   HOME="$SANDBOX_HOME" \
-  WEZTERM_CONFIG_REPO="$REPO_ROOT" \
+  WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" launch \
     --cwd "$repo" \
     --title "$slug" \
@@ -103,7 +103,7 @@ case1_happy_path() {
     || { assert_fail "branch task/$slug missing"; return 1; }
 
   HOME="$SANDBOX_HOME" \
-  WEZTERM_CONFIG_REPO="$REPO_ROOT" \
+  WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" reclaim \
     --cwd "$repo" \
     --task-slug "$slug" \
@@ -136,7 +136,7 @@ case2_dev_refusal() {
   local expect_wt="$WORK_DIR/.worktrees/origin2/$slug"
 
   HOME="$SANDBOX_HOME" \
-  WEZTERM_CONFIG_REPO="$REPO_ROOT" \
+  WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" launch \
     --cwd "$repo" \
     --title "$slug" \
@@ -152,7 +152,7 @@ case2_dev_refusal() {
   # Reclaim must refuse with a recognizable message.
   local stderr_file="$WORK_DIR/case2-stderr"
   if HOME="$SANDBOX_HOME" \
-     WEZTERM_CONFIG_REPO="$REPO_ROOT" \
+     WEZDECK_REPO="$REPO_ROOT" \
      "$WORKTREE_TASK" reclaim \
        --cwd "$repo" \
        --task-slug "$slug" \
@@ -190,7 +190,7 @@ case3_transcript_preserved() {
   local expect_wt="$WORK_DIR/.worktrees/origin3/$slug"
 
   HOME="$SANDBOX_HOME" \
-  WEZTERM_CONFIG_REPO="$REPO_ROOT" \
+  WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" launch \
     --cwd "$repo" \
     --title "$slug" \
@@ -206,7 +206,7 @@ case3_transcript_preserved() {
   echo '{"role":"user","content":"hello"}' > "$transcript_src/dummy.jsonl"
 
   HOME="$SANDBOX_HOME" \
-  WEZTERM_CONFIG_REPO="$REPO_ROOT" \
+  WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" reclaim \
     --cwd "$repo" \
     --task-slug "$slug" \

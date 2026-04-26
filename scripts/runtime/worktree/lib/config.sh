@@ -36,9 +36,13 @@ wt_config_set_defaults() {
   WT_CONFIG_USER_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env"
   WT_CONFIG_REPO_FILE="$(wt_config_resolve_repo_profile_file "$WT_MAIN_WORKTREE_ROOT")"
   WEZTERM_SHARED_ENV_FILE=""
-  WEZTERM_CONFIG_REPO="${WEZTERM_CONFIG_REPO:-${WT_CONFIG_WEZTERM_REPO:-}}"
-  WEZTERM_CONFIG_REPO_ROOT=""
-  WEZTERM_CONFIG_REPO_FILE=""
+  # Canonical name is WEZDECK_REPO; legacy WEZTERM_CONFIG_REPO / WT_CONFIG_WEZTERM_REPO
+  # are still accepted so that a user's existing ~/.config/worktree-task/config.env
+  # keeps working through the rename. Drop the legacy aliases once you've migrated
+  # both your env and that file.
+  WEZDECK_REPO="${WEZDECK_REPO:-${WEZTERM_CONFIG_REPO:-${WT_CONFIG_WEZDECK_REPO:-${WT_CONFIG_WEZTERM_REPO:-}}}}"
+  WEZDECK_REPO_ROOT=""
+  WEZDECK_REPO_FILE=""
 }
 
 wt_config_repo_profile_preferred_path() {
@@ -114,8 +118,8 @@ wt_config_apply_setting() {
     WT_PROVIDER_AGENT_PROFILE_*_COMMAND|WT_PROVIDER_AGENT_PROFILE_*_COMMAND_LIGHT|WT_PROVIDER_AGENT_PROFILE_*_COMMAND_DARK|WT_PROVIDER_AGENT_PROFILE_*_PROMPT_FLAG)
       printf -v "$key" '%s' "$value"
       ;;
-    WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
-      printf -v WEZTERM_CONFIG_REPO '%s' "$value"
+    WEZDECK_REPO|WT_CONFIG_WEZDECK_REPO|WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
+      printf -v WEZDECK_REPO '%s' "$value"
       ;;
     MANAGED_AGENT_PROFILE)
       printf -v MANAGED_AGENT_PROFILE '%s' "$value"
@@ -185,7 +189,7 @@ wt_config_find_wezterm_repo_in_file() {
 
     key="$(wt_trim "${trimmed%%=*}")"
     case "$key" in
-      WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
+      WEZDECK_REPO|WT_CONFIG_WEZDECK_REPO|WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
         value="$(wt_config_parse_value "${trimmed#*=}")"
         found=0
         ;;
@@ -237,9 +241,9 @@ wt_config_save_user_wezterm_repo() {
       if [[ -n "$trimmed" && "$trimmed" == *=* ]]; then
         key="$(wt_trim "${trimmed%%=*}")"
         case "$key" in
-          WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
+          WEZDECK_REPO|WT_CONFIG_WEZDECK_REPO|WEZTERM_CONFIG_REPO|WT_CONFIG_WEZTERM_REPO)
             if [[ "$replaced" -eq 0 ]]; then
-              printf 'WEZTERM_CONFIG_REPO=%s\n' "$repo_root" >> "$tmp_file"
+              printf 'WEZDECK_REPO=%s\n' "$repo_root" >> "$tmp_file"
               replaced=1
             fi
             continue
@@ -252,7 +256,7 @@ wt_config_save_user_wezterm_repo() {
 
   if [[ "$replaced" -eq 0 ]]; then
     [[ ! -s "$tmp_file" ]] || printf '\n' >> "$tmp_file"
-    printf 'WEZTERM_CONFIG_REPO=%s\n' "$repo_root" >> "$tmp_file"
+    printf 'WEZDECK_REPO=%s\n' "$repo_root" >> "$tmp_file"
   fi
 
   mv "$tmp_file" "$user_file"
@@ -262,47 +266,47 @@ wt_config_discover_wezterm_repo() {
   local repo_value=""
   local base_dir=""
 
-  WEZTERM_CONFIG_REPO_ROOT=""
-  WEZTERM_CONFIG_REPO_FILE=""
+  WEZDECK_REPO_ROOT=""
+  WEZDECK_REPO_FILE=""
 
-  if [[ -n "${WEZTERM_CONFIG_REPO:-}" ]]; then
-    WEZTERM_CONFIG_REPO_ROOT="$(wt_config_resolve_wezterm_repo_root "$PWD" "$WEZTERM_CONFIG_REPO")"
+  if [[ -n "${WEZDECK_REPO:-}" ]]; then
+    WEZDECK_REPO_ROOT="$(wt_config_resolve_wezterm_repo_root "$PWD" "$WEZDECK_REPO")"
   fi
 
   if repo_value="$(wt_config_find_wezterm_repo_in_file "$WT_CONFIG_USER_FILE" 2>/dev/null || true)"; then
     if [[ -n "$repo_value" ]]; then
       base_dir="$(wt_config_base_dir_for_file "$WT_CONFIG_USER_FILE")"
-      WEZTERM_CONFIG_REPO_ROOT="$(wt_config_resolve_wezterm_repo_root "$base_dir" "$repo_value")"
+      WEZDECK_REPO_ROOT="$(wt_config_resolve_wezterm_repo_root "$base_dir" "$repo_value")"
     fi
   fi
 
   if repo_value="$(wt_config_find_wezterm_repo_in_file "$WT_CONFIG_REPO_FILE" 2>/dev/null || true)"; then
     if [[ -n "$repo_value" ]]; then
       base_dir="$(wt_config_base_dir_for_file "$WT_CONFIG_REPO_FILE")"
-      WEZTERM_CONFIG_REPO_ROOT="$(wt_config_resolve_wezterm_repo_root "$base_dir" "$repo_value")"
+      WEZDECK_REPO_ROOT="$(wt_config_resolve_wezterm_repo_root "$base_dir" "$repo_value")"
     fi
   fi
 
-  if [[ -n "$WEZTERM_CONFIG_REPO_ROOT" ]]; then
-    WEZTERM_CONFIG_REPO_FILE="$(wt_config_resolve_repo_profile_file "$WEZTERM_CONFIG_REPO_ROOT")"
-    WEZTERM_SHARED_ENV_FILE="$WEZTERM_CONFIG_REPO_ROOT/wezterm-x/local/shared.env"
-    [[ -f "$WEZTERM_CONFIG_REPO_FILE" ]] || wt_die "wezterm config repo is missing config/worktree-task.env (.worktree-task/config.env legacy): $WEZTERM_CONFIG_REPO_ROOT"
+  if [[ -n "$WEZDECK_REPO_ROOT" ]]; then
+    WEZDECK_REPO_FILE="$(wt_config_resolve_repo_profile_file "$WEZDECK_REPO_ROOT")"
+    WEZTERM_SHARED_ENV_FILE="$WEZDECK_REPO_ROOT/wezterm-x/local/shared.env"
+    [[ -f "$WEZDECK_REPO_FILE" ]] || wt_die "wezterm config repo is missing config/worktree-task.env (.worktree-task/config.env legacy): $WEZDECK_REPO_ROOT"
     return 0
   fi
 
-  wt_die "WEZTERM_CONFIG_REPO is required for worktree-task; run 'worktree-task configure --repo /absolute/path/to/wezterm-config' or set it in $WT_CONFIG_USER_FILE"
+  wt_die "WEZDECK_REPO is required for worktree-task (legacy WEZTERM_CONFIG_REPO still accepted); run 'worktree-task configure --repo /absolute/path/to/wezdeck-checkout' or set it in $WT_CONFIG_USER_FILE"
 }
 
 wt_config_load() {
   wt_config_set_defaults
   wt_config_discover_wezterm_repo
-  wt_config_load_file "$WEZTERM_CONFIG_REPO_FILE"
+  wt_config_load_file "$WEZDECK_REPO_FILE"
   wt_config_load_file "$WT_CONFIG_USER_FILE"
   wt_config_load_file "$WT_CONFIG_REPO_FILE"
   wt_config_load_file "${WEZTERM_SHARED_ENV_FILE:-}"
   wt_config_resolve_agent_profile
-  if [[ -n "$WEZTERM_CONFIG_REPO_ROOT" ]]; then
-    WEZTERM_CONFIG_REPO="$WEZTERM_CONFIG_REPO_ROOT"
+  if [[ -n "$WEZDECK_REPO_ROOT" ]]; then
+    WEZDECK_REPO="$WEZDECK_REPO_ROOT"
   fi
 }
 
@@ -382,8 +386,8 @@ wt_config_resolve_under_wezterm_repo() {
     return 0
   fi
 
-  [[ -n "${WEZTERM_CONFIG_REPO_ROOT:-}" ]] || wt_die "relative repo-managed path requires WEZTERM_CONFIG_REPO to point at a wezterm-config repo"
-  wt_resolve_path "$WEZTERM_CONFIG_REPO_ROOT" "$path"
+  [[ -n "${WEZDECK_REPO_ROOT:-}" ]] || wt_die "relative repo-managed path requires WEZDECK_REPO to point at a wezdeck checkout"
+  wt_resolve_path "$WEZDECK_REPO_ROOT" "$path"
 }
 
 wt_config_resolve_under_repo_parent() {

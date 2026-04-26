@@ -9,7 +9,7 @@
 #
 # Search order matches `wt_config_load`:
 #   1. user file: `${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env`
-#   2. repo file: `<wezterm-config-repo>/config/worktree-task.env`
+#   2. repo file: `<wezdeck-repo>/config/worktree-task.env` (repo dir name is still `wezterm-config` on disk)
 # Later files override earlier ones (repo wins over user) so a project
 # that ships its own resume command takes precedence over a personal
 # default.
