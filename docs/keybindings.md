@@ -61,7 +61,7 @@ These shortcuts navigate the shared agent-attention state. All three require a t
 ## Commands
 
 - `Ctrl+k`: tmux chord prefix in tmux-backed panes; follow-up keys act on tmux panes and are listed in `Panes` above
-- `Ctrl+Shift+P`: when the current pane is running tmux, open the tmux-owned searchable command palette with repo-shared commands plus optional machine-local extensions from `wezterm-x/local/command-panel.sh`; outside tmux it falls back to WezTerm's native command palette
+- `Ctrl+Shift+P`: when the current pane is running tmux, open the tmux-owned searchable command palette with repo-shared commands plus optional machine-local extensions from `wezterm-x/local/command-panel.sh`; outside tmux it falls back to WezTerm's native command palette. Inside the palette, Enter dispatches the entry directly via its `palette.command` (executed by `tmux-command-run.sh`). Entries marked `palette.display_only: true` (those whose action only the WezTerm GUI process can perform — `ActivateTab*` / `SwitchToWorkspace` / `QuickSelectArgs` / chrome-debug / attention jumps) print a toast pointing at the hotkey instead, since the popup can't reach the WezTerm event loop. tmux-side actions (kill-pane, worktree pickers, attention overlay, agent-CLI `/new`, …) expose a real `palette.command` so Enter works the same as the hotkey
 - `Ctrl+Shift+;`: open WezTerm's native command palette directly
 
 ## Project Navigation
