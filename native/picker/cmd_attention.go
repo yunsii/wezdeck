@@ -367,10 +367,11 @@ func coloredBadge(status string) string {
 	case "done":
 		return "\x1b[38;5;108m✓ DONE\x1b[0m"
 	case "recent":
-		// 💬 is 2 cells wide, so drop the space between glyph and text to
-		// keep the badge at the 6-cell width the other markers use; without
-		// this, the body column on recent rows shifts right by one cell.
-		return "\x1b[2;38;5;245m💬RCNT\x1b[0m"
+		// ↺ (U+21BA) is a single-cell mono glyph that matches the visual
+		// weight of the other badges' symbols (⟳/⚠/✓/✗ are all 1 cell).
+		// 💬 was visually inconsistent (it's a colorful 2-cell emoji) and
+		// also broke the 6-cell badge alignment.
+		return "\x1b[2;38;5;245m↺ RCNT\x1b[0m"
 	case "__sentinel__":
 		return "\x1b[1;38;5;160m✗ CLR \x1b[0m"
 	}
