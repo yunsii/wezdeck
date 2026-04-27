@@ -29,6 +29,14 @@ M.TTL_MS = 1800000
 -- (250ms by default), but the actual shell spawn is self-throttled to at
 -- most one every PRUNE_INTERVAL_MS.
 M.PRUNE_INTERVAL_MS = 60000
+-- Live-panes snapshot pacing. update-status fires every
+-- `status_update_interval` (250ms by default); the snapshot writer is
+-- self-throttled to one rewrite per LIVE_SNAPSHOT_INTERVAL_MS so the
+-- map menu.sh reads is at most this many ms stale even if the user
+-- never opens the picker. The 5-second freshness gate in
+-- tmux-attention-menu.sh stays the consumer-side cap; this constant
+-- just determines how often the producer-side refresh fires.
+M.LIVE_SNAPSHOT_INTERVAL_MS = 1000
 -- Focus-based auto-ack removes the entry with no grace window — focusing
 -- the pane *is* the acknowledgement, so the counter should drop as soon
 -- as the user's eyes are there. The `--only-if-ts` guard in the jump
@@ -52,6 +60,7 @@ local hidden_entries = {}
 -- re-read the focus file.
 local tmux_focus_cache = {}
 local last_prune_ms = 0
+local last_live_snapshot_ms = 0
 local module_logger = nil
 
 local function now_ms()
@@ -468,7 +477,28 @@ function M.write_live_snapshot(target_path, trace_id)
       return false
     end
   end
+  last_live_snapshot_ms = payload.ts
   return true
+end
+
+-- Throttled wrapper for write_live_snapshot, invoked every update-status
+-- tick from titles.lua. Without this the snapshot only refreshes on
+-- explicit Alt+/ presses, so the picker can race the press-time write
+-- (Lua write → forward chord → tmux schedule menu.sh; if the read lands
+-- before the rename is visible to bash, menu.sh sees a multi-minute-old
+-- file, fails the freshness gate, and renders every label as `?/?/`).
+-- Refreshing every LIVE_SNAPSHOT_INTERVAL_MS makes the snapshot a
+-- continuously-maintained artifact rather than a press-coupled one, so
+-- menu.sh almost always sees something fresh regardless of timing.
+function M.maybe_refresh_live_snapshot(target_path)
+  if type(target_path) ~= 'string' or target_path == '' then
+    return
+  end
+  local now = now_ms()
+  if (now - last_live_snapshot_ms) < M.LIVE_SNAPSHOT_INTERVAL_MS then
+    return
+  end
+  M.write_live_snapshot(target_path, '')
 end
 
 -- Return a flat array of live entries, waiting first then done, ordered by

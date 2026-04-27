@@ -304,6 +304,12 @@ function M.register(opts)
     if attention and attention.maybe_prune then
       attention.maybe_prune()
     end
+    if attention and attention.maybe_refresh_live_snapshot then
+      local snapshot_path = constants.attention and constants.attention.live_panes_file
+      if snapshot_path then
+        attention.maybe_refresh_live_snapshot(snapshot_path)
+      end
+    end
     if attention and attention.maybe_ack_focused then
       attention.maybe_ack_focused(window, pane)
     end
