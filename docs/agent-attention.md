@@ -383,8 +383,45 @@ Net effect: **the badge stays on `⚠ waiting` for the entire tool-execution win
 
 **What this means in practice.**
 
-- **For the user**: a `⚠ waiting` badge that persists for minutes after you pressed Enter is normal if the approved tool is long-running. It will clear when the tool finishes. If you are confident the tool finished and the badge is still up, capture the pane (`tmux capture-pane -t <pane> -p | tail -20`) — the prompt is probably actually still up (focus went to the wrong pane on approval).
-- **For implementers**: do *not* re-add a "PreToolUse → resolved flips waiting → running" claim. It has been added and removed multiple times — every revision rediscovers the constraint above. If you find evidence Claude Code has added an approval hook upstream, update the table at the top of this section *and* this paragraph in the same PR.
+- **For the user**: with the prompt-watcher mitigation below, the badge flips to `⟳ running` within ~1 second of the prompt leaving the screen. If the badge still sits on `⚠ waiting` for more than a few seconds after you press Yes, capture the pane (`tmux capture-pane -t <pane> -p | tail -20`) to confirm the prompt is actually gone — focus going to the wrong pane on approval is the most common cause.
+- **For implementers**: do *not* re-add a "PreToolUse → resolved flips waiting → running" claim. It has been added and removed multiple times — every revision rediscovers the constraint above. If you find evidence Claude Code has added an approval hook upstream, update the table at the top of this section, drop the prompt-watcher in `scripts/runtime/attention-prompt-watcher.sh`, and remove its spawn from `emit-agent-status.sh` in the same PR.
+
+### Local mitigation: prompt-watcher
+
+`scripts/runtime/attention-prompt-watcher.sh` closes the gap by sniffing pane content. When `emit-agent-status.sh` upserts a `waiting` entry from `Notification(permission_prompt)`, it forks the watcher (detached via `setsid` + `disown`); the watcher polls `tmux capture-pane -t <pane> -p` once per second and, when the Claude TUI's prompt anchor is no longer visible, flips `waiting → running` via `attention_state_transition_to_running`. The wezterm side picks up the change on its next 250 ms `update-status` tick — total user-visible lag is ≤ 1.25 s.
+
+**Anchor.** Two regex alternatives, either one matching means the prompt is still up: `Tab to amend` (the bash permission_prompt footer, unique to that prompt UI) and `Yes, and don.t ask again` (option #2 in every permission_prompt regardless of tool type). Both are *footer / option-list* strings that the TUI only emits inside the prompt itself — they never appear in conversational text, so the watcher is not fooled by chat content that happens to discuss permission prompts in plain English. (An earlier draft used `Do you want to proceed?` as the anchor; that was abandoned during smoke-testing when it false-positived on a Claude pane whose chat history contained that exact phrase from a meta-discussion.) We deliberately do *not* match the rotating thinking-word indicators (`✽ Finagling…`, `✶ Cogitating…`, …) or the `Running… (… · timeout …)` line, because (a) those rotate / can change wording, and (b) the prompt-anchor approach already covers ctrl+b ctrl+b background mode (the prompt vanishes the same way whether the bash is foreground or backgrounded).
+
+**Approve vs cancel.** The watcher does not try to distinguish them. Either way the agent is no longer blocked on user input, so flipping to `running` is correct. A cancel that ends the turn fires `Stop → done` shortly after, which transitions running → done; the brief running blip is acceptable. A cancel that leaves the agent mid-turn (e.g. user denied so Claude tries another tool) lands on running naturally.
+
+**Lifecycle / safety.** Each watcher:
+
+- Holds a per-pane `flock` on `${XDG_RUNTIME_DIR:-/tmp}/wezterm-attention-watcher/<sha>.lock` so a second spawn for the same pane (sticky waiting, repeat permission_prompt) exits silently.
+- Self-exits when status ≠ waiting (PostToolUse / Stop / TTL prune / `/clear` pane-evict / `Alt+/` clear-all all set this), the tmux pane is gone, or the 30-minute hard cap fires (matches attention TTL).
+- Calls `attention_state_transition_to_running` which re-checks status under flock — a concurrent PostToolUse that lands first short-circuits cleanly. `running` is a no-op.
+
+**Logging.** Each watcher writes one of these lines to the runtime log:
+
+- `watcher started` — at spawn (with `poll_s` / `max_s` / pane coords)
+- `watcher flipped waiting to running` — when the anchor disappears and the transition succeeds (with `elapsed_s` from spawn)
+- `watcher flip noop` — anchor disappeared but the transition was a no-op (PostToolUse beat us)
+- `watcher exit status changed` — entry left waiting via another path
+- `watcher exit pane gone` — tmux pane no longer exists
+- `watcher exit timeout` — 30-minute hard cap
+
+Pair these with the `hook emitted agent status` lines from `emit-agent-status.sh` to reconstruct any specific waiting cycle.
+
+**Tunables (env vars).**
+
+- `WEZTERM_ATTENTION_WATCHER_DISABLED=1` — suppress watcher spawn entirely (falls back to the upstream-only behaviour: waiting persists until PostToolUse).
+- `WEZTERM_ATTENTION_WATCHER_POLL_S=<int>` — poll interval, default `1`.
+- `WEZTERM_ATTENTION_WATCHER_MAX_S=<int>` — hard cap, default `1800` (30 min).
+
+**Failure modes.**
+
+- *Claude TUI changes the prompt question wording.* Anchor stops matching → next poll flips to running prematurely (the prompt may still be up). Stop will fire `done` shortly if the user actually cancelled; otherwise the user pressing Yes a moment later is harmless because the entry is already running. Update `PROMPT_ANCHOR` in `attention-prompt-watcher.sh` and `Local mitigation: prompt-watcher` here in the same PR.
+- *TUI scrolls the prompt above the visible region.* Currently impossible — Claude TUI always anchors the prompt to the bottom of the visible area, and `tmux capture-pane -p` (no `-S`) reads exactly that area. If a future TUI release scrolls prompts off-screen, switch to `-p -S -<N>` with a generous N (and document the trade-off).
+- *Watcher process killed externally (OOM, manual kill).* The flock is released, no state transition happens, badge stays on waiting until PostToolUse. Same fallback behaviour as `WEZTERM_ATTENTION_WATCHER_DISABLED=1`.
 
 ## Performance
 
