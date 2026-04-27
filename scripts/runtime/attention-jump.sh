@@ -252,8 +252,34 @@ if (( recent_jump )); then
     tmux -S "$target_tmux_socket" select-window -t "$target_tmux_window" 2>/dev/null || true
     tmux -S "$target_tmux_socket" select-pane -t "$target_tmux_pane" 2>/dev/null || true
   fi
-  if [[ -n "$target_wezterm_pane" ]] && command -v wezterm.exe >/dev/null 2>&1; then
-    wezterm.exe cli activate-pane --pane-id "$target_wezterm_pane" >/dev/null 2>&1 || true
+
+  # Recent entries' wezterm_pane_id is whatever was live at archive time.
+  # WezTerm assigns fresh pane ids on every restart (mux state is in-process,
+  # tmux survives), so for any recent entry that pre-dates the latest
+  # WezTerm boot the stored id points at nothing — wezterm.exe activate-pane
+  # would silently rc=0 on a phantom pane and the user sees "tmux moved
+  # but the GUI didn't follow". The session-env WEZTERM_PANE is refreshed
+  # by tmux.conf's update-environment + client-focus-in / open-project-
+  # session.sh seeding, so it tracks the LIVE pane that hosts this tmux
+  # session — prefer it, and only fall back to the stored id when the env
+  # is missing (older sessions whose attach predates the propagation chain).
+  live_wezterm_pane=''
+  env_line="$(tmux -S "$target_tmux_socket" show-environment -t "$target_tmux_session" WEZTERM_PANE 2>/dev/null || true)"
+  if [[ "$env_line" =~ ^WEZTERM_PANE=(.+)$ ]]; then
+    live_wezterm_pane="${BASH_REMATCH[1]}"
+  fi
+  effective_wezterm_pane="${live_wezterm_pane:-$target_wezterm_pane}"
+
+  wezterm_activated=0
+  if [[ -n "$effective_wezterm_pane" ]] && command -v wezterm.exe >/dev/null 2>&1; then
+    if wezterm.exe cli activate-pane --pane-id "$effective_wezterm_pane" >/dev/null 2>&1; then
+      wezterm_activated=1
+    fi
+  fi
+
+  if (( ! wezterm_activated )); then
+    notify_tmux 'agent-attention: tmux-only recent jump (WezTerm pane unknown)' \
+      "$target_tmux_socket" "$target_tmux_window"
   fi
   exit 0
 fi
