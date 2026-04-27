@@ -98,39 +98,22 @@ bench_mark alive_panes
 # detect via item_count. Skip it.
 now_ms=$(( ${EPOCHREALTIME//./} / 1000 ))
 
-# Live pane → workspace / tab map. Single jq call (instead of the
-# previous two: ts extract + panes extract) — packs both fields into
-# one stdout buffer that bash splits via parameter expansion. Saves
-# one cold jq spawn (~5ms) plus one /mnt/c file read (the file is
-# already in the page cache after the first jq).
+# Live pane → workspace / tab map.
+# Just read .panes — no freshness gate, no trace adoption. WezTerm's
+# update-status tick re-writes this snapshot every
+# attention.LIVE_SNAPSHOT_INTERVAL_MS (1s) so it is virtually always
+# fresh; on the cold-restart edge (snapshot survives a WezTerm process
+# swap) the keys may briefly point at the previous instance's panes,
+# but the first update-status tick after wezterm.lua loads (≤250ms)
+# overwrites them. Earlier versions defended against staleness with a
+# three-segment ts+trace+panes split and a 5s freshness gate, which
+# kept tripping on cross-WSL/Windows write→read races. Renderers
+# handle a missing pane_id key by falling back to `?` already.
 live_map='{}'
-snapshot_ts=0
 live_panes_path="$(attention_live_panes_path)"
 if [[ -s "$live_panes_path" ]]; then
-  combined="$(jq -rc '"\(.ts // 0)\(.trace // "")\(.panes // {} | tojson)"' "$live_panes_path" 2>/dev/null || printf '')"
-  # Three SOH-delimited fields: ts | trace | panes_json. SOH (\x01)
-  # is guaranteed not to appear in any of them (numeric, hyphen-and-
-  # alnum trace_id, JSON-escaped tojson output).
-  if [[ -n "$combined" && "$combined" == *$'\001'*$'\001'* ]]; then
-    snapshot_ts="${combined%%$'\001'*}"
-    rest_after_ts="${combined#*$'\001'}"
-    snapshot_trace="${rest_after_ts%%$'\001'*}"
-    panes_json="${rest_after_ts#*$'\001'}"
-    [[ "$snapshot_ts" =~ ^[0-9]+$ ]] || snapshot_ts=0
-    snapshot_age_ms=$((now_ms - snapshot_ts))
-    if (( snapshot_age_ms >= 0 && snapshot_age_ms <= 5000 )) && [[ -n "$panes_json" ]]; then
-      live_map="$panes_json"
-      # Adopt the lua-stamped trace_id when present so this menu run
-      # + the picker that follows share one id with the wezterm.log
-      # entry from the lua handler. grep one trace_id across
-      # runtime.log + wezterm.log to assemble the full per-press
-      # timeline of a single Alt+/.
-      if [[ -n "$snapshot_trace" ]]; then
-        trace_id="$snapshot_trace"
-        export WEZTERM_RUNTIME_TRACE_ID="$trace_id"
-      fi
-    fi
-  fi
+  panes_json="$(jq -c '.panes // {}' "$live_panes_path" 2>/dev/null || printf '')"
+  [[ -n "$panes_json" ]] && live_map="$panes_json"
 fi
 bench_mark live_map
 
@@ -219,8 +202,10 @@ rows_tsv="$(jq -r \
       ((.recent // [])
        | map(select((.session_id // "") as $sid | ($active_sids | index($sid)) == null))
        | map(select(
-           (.tmux_socket // "") as $s | (.tmux_pane // "") as $p
-           | ($s == "" or $p == "" or (($alive[$s] // []) | index($p)) != null)
+           (.tmux_socket // "") as $s
+           | (.tmux_window // "") as $w
+           | (.tmux_pane // "") as $p
+           | ($s != "" and $w != "" and $p != "" and (($alive[$s] // []) | index($p)) != null)
          ))
        | sort_by(-(.archived_ts // 0))
        | map(
@@ -303,14 +288,16 @@ picker_binary="$repo_root/native/picker/bin/picker"
 picker_event_dir="$(wezterm_event_dir)"
 mkdir -p "$picker_event_dir" 2>/dev/null || true
 
-# Keypress reference: the Lua handler writes live-panes.json with ts =
-# now_ms() right before forwarding `\x1b/`, so its ts is the closest
-# we have to "moment user pressed Alt+/". Pass it through to the picker
-# so its first render can show end-to-end key→paint latency in the
-# diagnostic footer. Falls back to 0 (no latency display) when the
-# snapshot is stale or missing.
-keypress_ts="${snapshot_ts:-0}"
-[[ "$keypress_ts" =~ ^[0-9]+$ ]] || keypress_ts=0
+# Keypress reference: read .ts off the same snapshot we just consumed
+# for the live map. The Lua handler stamps it on every press-time write
+# AND on every periodic tick, so this is at most LIVE_SNAPSHOT_INTERVAL_MS
+# behind the actual press. Used by the picker footer's lua+menu+picker
+# breakdown; 0 disables that segment.
+keypress_ts=0
+if [[ -s "$live_panes_path" ]]; then
+  ts_raw="$(jq -r '.ts // 0' "$live_panes_path" 2>/dev/null || printf '0')"
+  [[ "$ts_raw" =~ ^[0-9]+$ ]] && keypress_ts="$ts_raw"
+fi
 
 if [[ -x "$picker_binary" ]]; then
   bench_mark picker_branch
