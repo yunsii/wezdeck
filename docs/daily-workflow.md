@@ -32,6 +32,8 @@ It also refreshes `~/.wezterm-x/agent-tools.env` in the target home so external 
 
 Sync also mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` so the Windows-side wezterm.exe can read it; edits to `config/worktree-task.env` only take effect after the next sync. Why this matters for `<base>_resume` profile registration: see [`workspaces.md#behavior`](./workspaces.md#behavior).
 
+Before rsync touches the Windows runtime, sync runs a `lua-source-syntax` gate that `luac -p`s every `wezterm-x/**/*.lua`. Any byte-compile failure aborts the sync before the broken file lands in `~/.wezterm-x/`, so wezterm can't pick up an unparseable file the way it could when only the post-copy `lua-precheck` (which only loads what `constants.lua` transitively requires) was running. Requires `luac5.4` / `luac5.3` / `luac` on PATH — when none is installed, the gate is skipped (no warning sentinel; reinstall lua5.4 to re-enable).
+
 Between `publish-runtime` and the Windows helper install, sync runs a `lua-precheck` that dofile-loads `wezterm-x/lua/constants.lua` under a mocked `wezterm` and asserts managed-launcher resolution still works (`default_resume_profile ≠ default_profile`, resume command literally contains `--continue` or `resume`). On failure, sync aborts with a profile-list snapshot. Requires `lua5.4` (or `lua5.3`/`lua`) on the WSL/Linux side; see [`setup.md`](./setup.md#prerequisites). When no lua is installed, the precheck is skipped with a warning rather than failing.
 
 ### Skip-if-current and force overrides

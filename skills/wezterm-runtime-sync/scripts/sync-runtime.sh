@@ -105,6 +105,46 @@ lua_runtime_path() {
   printf '%s\n' "$path"
 }
 
+run_lua_source_syntax_check() {
+  # Pre-sync gate: byte-compile every *.lua under the source tree with
+  # `luac -p` so a syntax error in any file (not just the ones constants.lua
+  # transitively requires) aborts before rsync overwrites the Windows
+  # runtime with a broken file. The post-copy lua-precheck only loads
+  # constants.lua → it can't catch a busted titles.lua.
+  local source_runtime_dir="${1:?missing source_runtime_dir}"
+
+  local luac_bin=""
+  for candidate in luac5.4 luac5.3 luac; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      luac_bin="$candidate"
+      break
+    fi
+  done
+  if [[ -z "$luac_bin" ]]; then
+    sync_trace "step=lua-source-syntax status=skipped reason=no_luac"
+    return 0
+  fi
+
+  sync_trace "step=lua-source-syntax status=running luac_bin=$luac_bin source_runtime_dir=$source_runtime_dir"
+
+  local errors=""
+  while IFS= read -r -d '' lua_file; do
+    local err
+    if ! err="$("$luac_bin" -p "$lua_file" 2>&1)"; then
+      errors+="$err"$'\n'
+    fi
+  done < <(find "$source_runtime_dir" -type f -name '*.lua' -print0)
+
+  if [[ -n "$errors" ]]; then
+    runtime_log_error sync "lua source syntax check failed" "source_runtime_dir=$source_runtime_dir"
+    sync_trace "step=lua-source-syntax status=failed source_runtime_dir=$source_runtime_dir"
+    printf '[sync] lua syntax errors in source tree (sync aborted before copy):\n%s' "$errors" >&2
+    return 1
+  fi
+
+  sync_trace "step=lua-source-syntax status=completed source_runtime_dir=$source_runtime_dir"
+}
+
 run_lua_precheck() {
   local target_runtime_dir="${1:?missing target_runtime_dir}"
   local script_dir
@@ -262,6 +302,10 @@ sync_trace "step=target target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir
 
 prepare_runtime_subflow() {
   local repo_root_path="${1:?missing repo root path}"
+
+  if ! run_lua_source_syntax_check "$RUNTIME_SOURCE_DIR"; then
+    return 1
+  fi
 
   if [[ -x "$REPO_ROOT/scripts/runtime/render-tmux-bindings.sh" ]]; then
     "$REPO_ROOT/scripts/runtime/render-tmux-bindings.sh"
