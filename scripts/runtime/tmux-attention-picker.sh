@@ -265,9 +265,9 @@ move_selection() {
 cycle_status_filter() {
   case "$status_filter" in
     all)     status_filter="waiting" ;;
-    waiting) status_filter="running" ;;
-    running) status_filter="done" ;;
-    done)    status_filter="all" ;;
+    waiting) status_filter="done" ;;
+    done)    status_filter="running" ;;
+    running) status_filter="all" ;;
     *)       status_filter="all" ;;
   esac
   selected_index=0

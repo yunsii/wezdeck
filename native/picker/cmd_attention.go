@@ -79,10 +79,10 @@ func (attentionPicker) Run(args []string) int {
 		case "all":
 			statusFilter = "waiting"
 		case "waiting":
-			statusFilter = "running"
-		case "running":
 			statusFilter = "done"
 		case "done":
+			statusFilter = "running"
+		case "running":
 			statusFilter = "all"
 		default:
 			statusFilter = "all"
@@ -258,7 +258,7 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	b.WriteString("\x1b[1;1H\x1b[1m")
 	fmt.Fprintf(&b, "Agent attention — %d/%d", titleN, itemCount)
 	if statusFilter == "all" {
-		b.WriteString("  ·  order matches status bar (⟳ → ⚠ → ✓)")
+		b.WriteString("  ·  order matches status bar (⚠ → ✓ → ⟳)")
 		b.WriteString(reset)
 	} else {
 		b.WriteString(reset)

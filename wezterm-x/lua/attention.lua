@@ -203,26 +203,10 @@ function M.render_status_segment(palette, opts)
 
   local parts = {}
 
-  -- Running first: rendered as soft always-on status so the user can see
-  -- at a glance which panes are mid-turn. The segment dims to `idle_bg`
-  -- when zero so the bar width stays stable.
-  if #running > 0 then
-    table.insert(parts, { Background = { Color = palette.tab_attention_running_bg } })
-    table.insert(parts, { Foreground = { Color = palette.tab_attention_running_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ⟳ ' .. #running .. ' running ' })
-  else
-    table.insert(parts, { Background = { Color = idle_bg } })
-    table.insert(parts, { Foreground = { Color = idle_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ⟳ 0 running ' })
-  end
-
-  -- Fixed one-cell gap so the segment width stays stable between idle and
-  -- active states; prevents the right side of the tab bar from jittering.
-  table.insert(parts, { Background = { Color = idle_bg } })
-  table.insert(parts, { Text = ' ' })
-
+  -- Order: waiting → done → running. Action items first so the eye lands
+  -- on `⚠` when something needs the user; `✓` next as the recently-
+  -- finished pile to scan; `⟳` last as ambient "work in flight" context.
+  -- Each segment dims to `idle_bg` when zero so the bar width stays stable.
   if #waiting > 0 then
     table.insert(parts, { Background = { Color = palette.tab_attention_waiting_bg } })
     table.insert(parts, { Foreground = { Color = palette.tab_attention_waiting_fg } })
@@ -235,6 +219,8 @@ function M.render_status_segment(palette, opts)
     table.insert(parts, { Text = ' ⚠ 0 waiting ' })
   end
 
+  -- Fixed one-cell gap so the segment width stays stable between idle and
+  -- active states; prevents the right side of the tab bar from jittering.
   table.insert(parts, { Background = { Color = idle_bg } })
   table.insert(parts, { Text = ' ' })
 
@@ -248,6 +234,21 @@ function M.render_status_segment(palette, opts)
     table.insert(parts, { Foreground = { Color = idle_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Normal' } })
     table.insert(parts, { Text = ' ✓ 0 done ' })
+  end
+
+  table.insert(parts, { Background = { Color = idle_bg } })
+  table.insert(parts, { Text = ' ' })
+
+  if #running > 0 then
+    table.insert(parts, { Background = { Color = palette.tab_attention_running_bg } })
+    table.insert(parts, { Foreground = { Color = palette.tab_attention_running_fg } })
+    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
+    table.insert(parts, { Text = ' ⟳ ' .. #running .. ' running ' })
+  else
+    table.insert(parts, { Background = { Color = idle_bg } })
+    table.insert(parts, { Foreground = { Color = idle_fg } })
+    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
+    table.insert(parts, { Text = ' ⟳ 0 running ' })
   end
   return wezterm.format(parts)
 end
