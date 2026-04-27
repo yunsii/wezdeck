@@ -229,6 +229,48 @@ else
     "$reason" \
     "$git_branch" \
     2>/dev/null || true
+
+  # Spawn the prompt-watcher when a permission_prompt raises waiting.
+  # Claude Code does not fire any hook when the user clicks Yes/No, so
+  # absent the watcher the badge would sit on `⚠ waiting` for the entire
+  # tool-execution window — even if the user already approved and the
+  # bash is now running in the background via ctrl+b ctrl+b. The watcher
+  # tails the pane content for the prompt anchor and flips waiting →
+  # running once the prompt is no longer on screen. See
+  # docs/agent-attention.md "Limitation: no signal for permission
+  # approval" for full rationale and failure modes.
+  #
+  # Sticky waiting (a second permission_prompt while we're already
+  # waiting) is fine: the watcher's per-pane flock makes the second
+  # spawn a no-op, and the original watcher is still polling.
+  if [[ "$status" == "waiting" \
+        && "$notification_type" == "permission_prompt" \
+        && -n "$tmux_socket" \
+        && -n "$tmux_pane" \
+        && "${WEZTERM_ATTENTION_WATCHER_DISABLED:-0}" != "1" ]]; then
+    watcher="$repo_root/scripts/runtime/attention-prompt-watcher.sh"
+    if [[ -x "$watcher" ]] && command -v setsid >/dev/null 2>&1; then
+      # safe key: stable per-pane identifier for the watcher's lockfile.
+      # sha1 over (socket, pane) is overkill but cheap and avoids
+      # collisions across tmux servers / pane-id reuse across sessions.
+      watcher_safe="$(printf '%s|%s' "$tmux_socket" "$tmux_pane" \
+                       | sha1sum 2>/dev/null \
+                       | cut -c1-16)"
+      if [[ -n "$watcher_safe" ]]; then
+        setsid bash "$watcher" \
+          "$session_id" \
+          "${WEZTERM_PANE:-}" \
+          "$tmux_socket" \
+          "$tmux_session" \
+          "$tmux_window" \
+          "$tmux_pane" \
+          "$git_branch" \
+          "$watcher_safe" \
+          </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+      fi
+    fi
+  fi
 fi
 
 # Nudge WezTerm. Value carries the timestamp so repeated emits produce
