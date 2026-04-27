@@ -78,6 +78,22 @@ fi
 
 # shellcheck disable=SC1091
 . "$script_dir/attention-state-lib.sh"
+# shellcheck disable=SC1091
+. "$script_dir/wezterm-event-lib.sh"
+
+# After a state-mutating call (truncate, remove, prune, recent-remove),
+# push an attention.tick event so the wezterm side reloads `state.json`
+# and re-renders the right-status counter immediately. Without this the
+# counter only catches up on the next 250 ms update-status tick — fine
+# for most cases but visibly laggy for `--clear-all` (the doc previously
+# called this out as a ~1s catch-up window). The bus picks the
+# transport automatically: foreground hooks land on OSC (sub-frame),
+# `tmux run-shell -b` and other detached callers land on file (≤250 ms,
+# but still better than waiting for the next periodic reload). See
+# docs/event-bus.md "Why event-driven, not polling".
+nudge_wezterm_tick() {
+  wezterm_event_send "attention.tick" "$(attention_state_now_ms)" 2>/dev/null || true
+}
 
 want_status=''
 explicit_session=''
@@ -92,15 +108,6 @@ recent_jump=0
 recent_archived_ts=''
 
 case "${1:-next-waiting}" in
-  --print-trigger-path)
-    # Picker calls this to learn where to write its jump-trigger.json.
-    # Centralising the path here means picker doesn't need to redo the
-    # WSL/Windows path detection in attention-state-lib.
-    . "$script_dir/attention-state-lib.sh"
-    state_path="$(attention_state_path)"
-    printf '%s/jump-trigger.json' "${state_path%/*}"
-    exit 0
-    ;;
   next-waiting) want_status='waiting' ;;
   next-done)    want_status='done' ;;
   --session)
@@ -180,12 +187,14 @@ notify_tmux() {
 
 if (( clear_all )); then
   attention_state_truncate
+  nudge_wezterm_tick
   notify_tmux 'agent-attention: cleared all' '' ''
   exit 0
 fi
 
 if (( prune_only )); then
   attention_state_prune "$prune_ttl" 2>/dev/null || true
+  nudge_wezterm_tick
   exit 0
 fi
 
@@ -208,6 +217,7 @@ if (( forget )); then
     fi
   fi
   attention_state_remove "$explicit_session" 2>/dev/null || true
+  nudge_wezterm_tick
   exit 0
 fi
 
@@ -253,6 +263,7 @@ if (( recent_jump )); then
 
   if (( ! pane_alive )); then
     attention_state_recent_remove "$explicit_session" "${target_archived_ts:-0}" 2>/dev/null || true
+    nudge_wezterm_tick
     notify_tmux 'agent-attention: pane no longer exists, removed from recent' '' ''
     exit 0
   fi
