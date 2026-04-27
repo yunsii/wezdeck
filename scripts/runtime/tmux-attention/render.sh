@@ -68,7 +68,7 @@ attention_picker_emit_frame() {
   frame=$'\033[1;1H'
   frame+=$'\033[1m'"Agent attention — ${title_n}/$item_count"
   if [[ "$status_filter" == "all" ]]; then
-    frame+="  ·  order matches status bar (⟳ → ⚠ → ✓)"
+    frame+="  ·  order matches status bar (⚠ → ✓ → ⟳)"
     frame+="$reset"
   else
     frame+="$reset"
