@@ -50,6 +50,48 @@ defines where each rule belongs.
   ("add to user-level" / "add to project-tracked") and justify the choice
   against [permissions-10..12].
 
+## Default Mode
+
+Set via `permissions.defaultMode` (typically at the user-level layer
+[permissions-10]). Picks the global posture for calls that no allow / ask
+/ deny rule matches — complements the allowlist, does not replace it.
+
+- [permissions-15] Four options, in increasing looseness:
+  - `default` — prompt on everything not in `allow`. Safest, most
+    prompt-noisy.
+  - `acceptEdits` — auto-allow Write/Edit; Bash and other tools still
+    prompt.
+  - `auto` — small-model classifier judges each call; tunable via the
+    `autoMode` object key (`allow` / `soft_deny` / `environment` arrays,
+    each accepts the literal `"$defaults"` to inherit built-ins). Pair
+    with `skipAutoPermissionPrompt: true` to skip the first-run opt-in
+    dialog.
+  - `bypassPermissions` — full YOLO; no prompts at all, including for
+    [permissions-30..35] patterns. Pair with
+    `skipDangerousModePermissionPrompt: true` to skip the warning dialog
+    on each session start.
+- [permissions-16] Prefer `auto` over `bypassPermissions`. The classifier
+  still gates the destructive / privilege-elevating / arbitrary-code
+  patterns from [permissions-30..35]; `bypassPermissions` blanket-approves
+  them and so directly violates the host-agnostic policy.
+- [permissions-17] Never propose `bypassPermissions` as a recommendation
+  or default. Apply it only on explicit unambiguous user request ("yes,
+  blanket-allow everything globally"). When applied, also set
+  `skipDangerousModePermissionPrompt: true` so the operator at least sees
+  the consequence acknowledged in their settings file rather than via a
+  silently-dismissed dialog.
+- [permissions-18] `defaultMode` is a fallback posture, not a substitute
+  for narrow, auditable allow entries ([permissions-40..44]). Keep
+  high-frequency stack-agnostic verbs in `permissions.allow` so promotion
+  history stays diff-reviewable; rely on `defaultMode: "auto"` only for
+  the long tail of one-shot read-class calls the allowlist would explode
+  to cover.
+- [permissions-19] Distinguish two same-named keys: `autoMode` (object,
+  customizes the auto classifier's rule set) is **not** the switch that
+  enables auto mode. The switch is `permissions.defaultMode: "auto"`.
+  When the user asks for "auto mode" or "YOLO mode", clarify which
+  posture they actually want before editing.
+
 ## Hygiene
 
 - [permissions-40] One-shot commands that drifted into
