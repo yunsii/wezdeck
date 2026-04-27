@@ -30,6 +30,49 @@ Go / Lua equivalent). Internally the bus picks OSC for contexts that
 can reach the parent pty, file otherwise. WezTerm-side consumers
 register handlers by name and never see the difference.
 
+## Why event-driven, not polling
+
+Transport routing is the obvious surface benefit, but it isn't the
+main reason the bus exists. The deeper shift is **how WezTerm decides
+when to reload state**.
+
+Pre-bus, every state change in `attention.json` (and every other state
+file) was discovered the same way: `update-status` ran every 250 ms,
+re-read the file, and re-rendered if anything looked different. That's
+a polling model — wezterm doesn't know whether anything has actually
+changed, so the only way to be correct is to re-do the work on a fixed
+cadence. The historical workaround was a single OSC user-var
+(`attention_tick`) that hooks emitted to *prompt* an immediate reload.
+Useful, but bespoke: every new state source needed its own ad-hoc
+"please reload" channel, or accepted polling latency.
+
+Post-bus, producers say *what* changed. Consumers register *what they
+care about*. Routing happens by name, not by inventing a new channel
+per concern. Two things follow:
+
+- **Idle-time work disappears.** A consumer that subscribes to
+  `chrome.debug.status` doesn't need to re-stat its state file every
+  tick to see whether anything moved — the absence of an event is the
+  signal that nothing did. Update-status's per-tick cost drops from
+  "stat + read + parse + render" to "list event dir, find empty,
+  return". Multiplied across all subscribed consumers, the savings
+  compound.
+- **Sub-frame paths become available.** When the producer happens to
+  have a writable `/dev/tty` (any hook firing inside a regular tmux
+  pane), the bus delivers the event via OSC and the consumer's
+  handler runs in the same wezterm event-loop tick — not on the next
+  250 ms `update-status`. For the same producer in a popup pty (no
+  tty), the bus falls back to file and the latency floor goes back to
+  ≤250 ms. The producer didn't change.
+
+The 250 ms bound on file transport isn't going away — it's the
+`status_update_interval` we already pay for, and dropping below it
+would mean adding a dedicated wezterm-side timer per consumer. The win
+is that **producers no longer have to design a custom IPC; they reuse
+the same primitive every other event uses**. Adding a new event is
+"register a handler + call send". Future events can be hot-pathed
+(OSC) for free wherever the producer has tty.
+
 ## API
 
 ### Producer (bash)
@@ -159,6 +202,47 @@ accumulate forever.
 |---|---|---|---|---|
 | `attention.tick` | `scripts/claude-hooks/emit-agent-status.sh` (Claude hooks) | `titles.lua` (refresh right-status counter) | OSC (hook runs in regular pane) | sub-frame |
 | `attention.jump` | `native/picker/cmd_attention.go` + `scripts/runtime/tmux-attention-picker.sh` (Alt+/ picker selection) | `titles.lua` (mux activate + spawn `attention-jump.sh --direct`) | file (forced via `WEZTERM_EVENT_FORCE_FILE=1`) | 0–250 ms |
+
+### Migration candidates
+
+These signals already exist in the codebase but still drive themselves
+through bespoke IPC or pure polling. Each is a candidate for moving
+onto the bus when the area gets touched anyway — the bus doesn't make
+them urgent, but it makes the eventual move cheap.
+
+- **`chrome.debug.status`** — the right-status `CDP·…` segment is
+  decided by `chrome_debug_status.lua` re-reading
+  `state/chrome-debug/state.json` on every `update-status` tick. State
+  changes arrive on a 0–250 ms random-phase delay, and the file is
+  stat+read every tick whether or not anything moved. A bus migration
+  has the host-helper publish `chrome.debug.status` after each state
+  transition; Lua subscribes once. Idle-time stat goes away; sub-frame
+  hot path opens when the producer has tty (it currently does not —
+  host-helper is a Windows binary writing to a state file — but the
+  bus contract works for it via the file transport without further
+  changes). Producer-side touch lives in
+  `native/host-helper/windows/src/HelperManager/`.
+- **`vscode.helper.heartbeat`** — same pattern: helper writes
+  `state.env`, Lua stats it for liveness on each tick. Migrating to
+  `vscode.helper.heartbeat` events lets liveness become "did we get a
+  heartbeat in the last N ms" (timer, no I/O) instead of "is the file
+  mtime fresh enough" (per-tick stat). Same producer area.
+- **`command-panel.refresh`** — currently no signal exists at all:
+  the command palette rebuilds its contents on popup open, so manifest
+  edits / worktree switches don't reflect in an already-open palette
+  and only land on the next open. With the bus, any script that
+  changes the command set (`wezterm-runtime-sync`, `worktree-task`
+  switch, etc.) sends one event, the palette invalidates its in-memory
+  cache. Pure new capability — there is no current equivalent to keep
+  parity with.
+
+The point of listing these here is to lock in design intent: when
+someone next touches host-helper or the command palette, the
+preferred move is "use the bus", not "invent another ad-hoc IPC". If
+that's no longer the right call (e.g. the bus's worst-case 250 ms
+becomes a problem for chrome.debug.status's 30 Hz updates), this
+section is the place to record the decision and pick a different
+mechanism explicitly.
 
 ## Diagnostics
 
