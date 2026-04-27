@@ -70,14 +70,14 @@ attention_picker_emit_frame() {
   frame=$'\033[1;1H'
   frame+=$'\033[1m'"Agent attention — ${title_n}/$item_count"
   if [[ "$status_filter" == "all" ]]; then
-    frame+="  ·  order matches status bar (⚠ → ✓ → ⟳)"
+    frame+="  ·  order matches status bar (🚨 → ✅ → 🔄)"
     frame+="$reset"
   else
     frame+="$reset"
     case "$status_filter" in
-      running) frame+="  "$'\033[1;38;5;39m'"[⟳ running]"$reset ;;
-      waiting) frame+="  "$'\033[1;38;5;208m'"[⚠ waiting]"$reset ;;
-      done)    frame+="  "$'\033[38;5;108m'"[✓ done]"$reset ;;
+      running) frame+="  "$'\033[1;38;5;39m'"[🔄 running]"$reset ;;
+      waiting) frame+="  "$'\033[1;38;5;208m'"[🚨 waiting]"$reset ;;
+      done)    frame+="  "$'\033[38;5;108m'"[✅ done]"$reset ;;
     esac
   fi
   frame+="$clear_eol"
@@ -121,13 +121,16 @@ attention_picker_emit_frame() {
     else
       frame+="  "
     fi
+    # All badges land at 7 cells (emoji 2 + space 1 + 4-char text).
+    # See cmd_attention.go's coloredBadge for the rationale on why
+    # ⚠+VS16 was rejected in favour of unambiguously-emoji code points.
     case "$status" in
-      running)      frame+=$'\033[1;38;5;39m⟳ RUN \033[0m' ;;
-      waiting)      frame+=$'\033[1;38;5;208m⚠ WAIT\033[0m' ;;
-      done)         frame+=$'\033[38;5;108m✓ DONE\033[0m' ;;
-      recent)       frame+=$'\033[2;38;5;245m↺ RCNT\033[0m' ;;
-      __sentinel__) frame+=$'\033[1;38;5;160m✗ CLR \033[0m' ;;
-      *)            frame+='· ----' ;;
+      running)      frame+=$'\033[1;38;5;39m🔄 RUN \033[0m' ;;
+      waiting)      frame+=$'\033[1;38;5;208m🚨 WAIT\033[0m' ;;
+      done)         frame+=$'\033[38;5;108m✅ DONE\033[0m' ;;
+      recent)       frame+=$'\033[2;38;5;245m📜 RCNT\033[0m' ;;
+      __sentinel__) frame+=$'\033[1;38;5;160m❌ CLR \033[0m' ;;
+      *)            frame+='·  ----' ;;
     esac
     frame+="  $body"
     [[ -n "$age" ]] && frame+="  "$'\033[2m'"($age)"$reset

@@ -263,19 +263,19 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	b.WriteString("\x1b[1;1H\x1b[1m")
 	fmt.Fprintf(&b, "Agent attention — %d/%d", titleN, itemCount)
 	if statusFilter == "all" {
-		b.WriteString("  ·  order matches status bar (⚠ → ✓ → ⟳)")
+		b.WriteString("  ·  order matches status bar (🚨 → ✅ → 🔄)")
 		b.WriteString(reset)
 	} else {
 		b.WriteString(reset)
 		switch statusFilter {
 		case "running":
-			b.WriteString("  \x1b[1;38;5;39m[⟳ running]")
+			b.WriteString("  \x1b[1;38;5;39m[🔄 running]")
 			b.WriteString(reset)
 		case "waiting":
-			b.WriteString("  \x1b[1;38;5;208m[⚠ waiting]")
+			b.WriteString("  \x1b[1;38;5;208m[🚨 waiting]")
 			b.WriteString(reset)
 		case "done":
-			b.WriteString("  \x1b[38;5;108m[✓ done]")
+			b.WriteString("  \x1b[38;5;108m[✅ done]")
 			b.WriteString(reset)
 		}
 	}
@@ -359,23 +359,27 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 }
 
 func coloredBadge(status string) string {
+	// All badges land at 7 cells: 2-cell emoji + 1 space + 4-char text
+	// (3-letter codes get a trailing space for padding). The earlier
+	// mixed-style markers (mono ⟳ ⚠ ✓ ✗ at 1 cell + plain ASCII text)
+	// gave a 6-cell budget; now that the set is fully emoji we add one
+	// cell across the board so the body column stays aligned. Picking
+	// emojis that are unambiguously emoji-presentation (no VS16 text
+	// fallback): ⚠ + VS16 falls back to 1-cell text style in most fonts,
+	// which is why we use 🚨 instead.
 	switch status {
 	case "running":
-		return "\x1b[1;38;5;39m⟳ RUN \x1b[0m"
+		return "\x1b[1;38;5;39m🔄 RUN \x1b[0m"
 	case "waiting":
-		return "\x1b[1;38;5;208m⚠ WAIT\x1b[0m"
+		return "\x1b[1;38;5;208m🚨 WAIT\x1b[0m"
 	case "done":
-		return "\x1b[38;5;108m✓ DONE\x1b[0m"
+		return "\x1b[38;5;108m✅ DONE\x1b[0m"
 	case "recent":
-		// ↺ (U+21BA) is a single-cell mono glyph that matches the visual
-		// weight of the other badges' symbols (⟳/⚠/✓/✗ are all 1 cell).
-		// 💬 was visually inconsistent (it's a colorful 2-cell emoji) and
-		// also broke the 6-cell badge alignment.
-		return "\x1b[2;38;5;245m↺ RCNT\x1b[0m"
+		return "\x1b[2;38;5;245m📜 RCNT\x1b[0m"
 	case "__sentinel__":
-		return "\x1b[1;38;5;160m✗ CLR \x1b[0m"
+		return "\x1b[1;38;5;160m❌ CLR \x1b[0m"
 	}
-	return "· ----"
+	return "·  ----"
 }
 
 func dispatchAttention(r attentionRow, jumpScript string) {

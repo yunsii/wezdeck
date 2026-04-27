@@ -211,12 +211,12 @@ function M.render_status_segment(palette, opts)
     table.insert(parts, { Background = { Color = palette.tab_attention_waiting_bg } })
     table.insert(parts, { Foreground = { Color = palette.tab_attention_waiting_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Bold' } })
-    table.insert(parts, { Text = ' ⚠ ' .. #waiting .. ' waiting ' })
+    table.insert(parts, { Text = ' 🚨 ' .. #waiting .. ' waiting ' })
   else
     table.insert(parts, { Background = { Color = idle_bg } })
     table.insert(parts, { Foreground = { Color = idle_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ⚠ 0 waiting ' })
+    table.insert(parts, { Text = ' 🚨 0 waiting ' })
   end
 
   -- Fixed one-cell gap so the segment width stays stable between idle and
@@ -228,12 +228,12 @@ function M.render_status_segment(palette, opts)
     table.insert(parts, { Background = { Color = palette.tab_attention_done_bg } })
     table.insert(parts, { Foreground = { Color = palette.tab_attention_done_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ✓ ' .. #done .. ' done ' })
+    table.insert(parts, { Text = ' ✅ ' .. #done .. ' done ' })
   else
     table.insert(parts, { Background = { Color = idle_bg } })
     table.insert(parts, { Foreground = { Color = idle_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ✓ 0 done ' })
+    table.insert(parts, { Text = ' ✅ 0 done ' })
   end
 
   table.insert(parts, { Background = { Color = idle_bg } })
@@ -243,12 +243,12 @@ function M.render_status_segment(palette, opts)
     table.insert(parts, { Background = { Color = palette.tab_attention_running_bg } })
     table.insert(parts, { Foreground = { Color = palette.tab_attention_running_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ⟳ ' .. #running .. ' running ' })
+    table.insert(parts, { Text = ' 🔄 ' .. #running .. ' running ' })
   else
     table.insert(parts, { Background = { Color = idle_bg } })
     table.insert(parts, { Foreground = { Color = idle_fg } })
     table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ⟳ 0 running ' })
+    table.insert(parts, { Text = ' 🔄 0 running ' })
   end
   return wezterm.format(parts)
 end
