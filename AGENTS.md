@@ -61,6 +61,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   a new event, or migrating producers/consumers when upstream tmux or
   wezterm fix popup OSC pass-through:
   Read [`docs/event-bus.md`](docs/event-bus.md).
+- Per-workspace tmux-session focus statistics, the `tab-stats-bump.sh`
+  hook chain, the on-disk `<workspace>.json` schema, weight decay /
+  normalization formula, or planning the top-N tab bar slots / overflow
+  tab / warm preheat layer:
+  Read [`docs/tab-visibility.md`](docs/tab-visibility.md).
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
 - Preparing a commit message or deciding commit split:

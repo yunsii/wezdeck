@@ -143,6 +143,18 @@
     "palette": { "display_only": true }
   },
   {
+    "id": "tab.overflow-picker",
+    "label": "Tab: Open overflow picker",
+    "description": "Open the tab-visibility overflow menu (tmux display-menu) listing configured sessions in the current workspace that don't yet have a wezterm tab. Selecting an entry spawns it as a new wezterm tab via Workspace.spawn_or_activate (or activates an existing tab if a match is found). Toasts when the snapshot file is missing (workspace not opened under tab_visibility) or when every configured session is already spawned. See docs/tab-visibility.md.",
+    "scope": "window-and-pane-navigation",
+    "context": "tmux-backed",
+    "binding": {"handler": "tabs.overflow_picker"},
+    "hotkeys": [
+      { "keys": "Alt+t", "layer": "wezterm" }
+    ],
+    "palette": { "display_only": true }
+  },
+  {
     "id": "tab.select-by-index",
     "label": "Tab: Jump by index",
     "description": "`Alt+N` activates the WezTerm tab at position N (1-9) in the current workspace.",

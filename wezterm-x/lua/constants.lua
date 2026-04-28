@@ -217,6 +217,30 @@ local base_constants = {
     state_file = defaults.default_attention_state_file(runtime_state_dir, join_path),
     live_panes_file = defaults.default_attention_live_panes_file(runtime_state_dir, join_path),
   },
+  tab_visibility = {
+    -- Per-workspace stats files written by scripts/runtime/tab-stats-bump.sh.
+    -- The lua module reads <stats_dir>/<workspace_slug>.json on each
+    -- recompute (throttled to recompute_interval_ms).
+    stats_dir = defaults.default_tab_stats_dir(runtime_state_dir, join_path),
+    visible_count = 5,
+    warm_count = 3,
+    half_life_days = 7,
+    recompute_interval_ms = 5000,
+    swap_flash_ms = 800,
+    -- Set of workspace names where the frequency-driven layout (top-N
+    -- visible + warm preheat + slot-aware tab titles) takes effect.
+    -- Empty by default — every existing workspace keeps its current
+    -- behavior. Override per-machine in wezterm-x/local/constants.lua,
+    -- e.g. `tab_visibility = { enabled_workspaces = { work = true } }`.
+    enabled_workspaces = {},
+    -- Limit startup spawn to visible_count tabs (cold-start fallback to
+    -- the workspaces.lua first-N order). Default false because the
+    -- companion `Alt+t` overflow picker — the only way to reach
+    -- unspawned sessions on demand — has not landed yet. Flipping this
+    -- on without the picker would strand sessions beyond visible_count.
+    -- Schema rationale + roadmap: docs/tab-visibility.md.
+    spawn_visible_only = false,
+  },
   wezterm_event_bus = {
     event_dir = defaults.default_wezterm_event_dir(runtime_state_dir, join_path),
   },

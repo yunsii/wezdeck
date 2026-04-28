@@ -172,6 +172,16 @@ function M.default_attention_live_panes_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'agent-attention', 'live-panes.json')
 end
 
+-- Directory holding per-workspace tab focus statistics consumed by the
+-- tab-visibility lua module. Producer is scripts/runtime/tab-stats-bump.sh
+-- (called from tmux session-changed / client-attached hooks); reader is
+-- wezterm-x/lua/ui/tab_visibility.lua on the update-status tick. Per-
+-- workspace files inside this dir are named "<slug>.json" using the same
+-- slug rule as tab_stats_workspace_slug. See docs/tab-visibility.md.
+function M.default_tab_stats_dir(runtime_state_dir, join_path)
+  return join_path(runtime_state_dir, 'state', 'tab-stats')
+end
+
 -- Directory where producers drop file-transport events for the unified
 -- wezterm event bus. Mirrors the path computed by
 -- scripts/runtime/wezterm-event-lib.sh's wezterm_event_dir, so both
