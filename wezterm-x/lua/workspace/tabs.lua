@@ -1,10 +1,14 @@
 local M = {}
 
--- Title used for the tab-visibility overflow placeholder tab. format-tab-
--- title relies on tab.tab_title to keep this rendered as `…`; prune /
--- match logic also uses this string to identify the overflow tab so it
--- doesn't get killed during reconcile.
+-- Title used for the tab-visibility overflow placeholder tab. format-
+-- tab-title relies on tab.tab_title to keep this rendered as `…`. The
+-- prune / alignment-check logic identifies the tab by user_var marker
+-- (M.OVERFLOW_USER_VAR_NAME / M.OVERFLOW_USER_VAR_VALUE) — a
+-- title-based check would silently miss when a refresh path or a
+-- user-driven set_title rewrites the tab title.
 M.OVERFLOW_TAB_TITLE = '…'
+M.OVERFLOW_USER_VAR_NAME = 'we_tab_role'
+M.OVERFLOW_USER_VAR_VALUE = 'overflow'
 
 function M.new(opts)
   local wezterm = opts.wezterm
@@ -21,7 +25,33 @@ function M.new(opts)
     return nil
   end
 
+  -- Identify the overflow tab by user_var marker rather than by title.
+  -- Title-based detection is fragile: refresh paths, user-driven
+  -- set_title, or any code path that resets the title would silently
+  -- de-classify the tab and let prune / alignment-check kill it.
+  -- Active-pane user_var is checked because that is the layer wezterm's
+  -- pane events surface; the var was set by spawn_overflow_tab.
+  local function pane_user_var(pane, name)
+    if not pane or type(pane.get_user_vars) ~= 'function' then return nil end
+    local ok, vars = pcall(function() return pane:get_user_vars() end)
+    if not ok or type(vars) ~= 'table' then return nil end
+    return vars[name]
+  end
+
   local function is_overflow_tab(tab)
+    if not tab then return false end
+    -- Walk tabs_with_info / tab.active_pane to reach the pane object.
+    local active_pane = nil
+    if type(tab.active_pane) == 'function' then
+      local ok, p = pcall(function() return tab:active_pane() end)
+      if ok then active_pane = p end
+    end
+    if active_pane and pane_user_var(active_pane, M.OVERFLOW_USER_VAR_NAME)
+       == M.OVERFLOW_USER_VAR_VALUE then
+      return true
+    end
+    -- Fallback to title for backwards compatibility with any overflow
+    -- tab spawned before the user_var marker landed.
     return tab_title_safe(tab) == M.OVERFLOW_TAB_TITLE
   end
 
@@ -67,6 +97,11 @@ printf "  Sessions outside the top-N visible window project into this pane.\n"
 printf "  Press Alt+t to open the picker; pick a session and the view here\n"
 printf "  switches to it.\n\n"
 exec sleep infinity'
+  # Tag the browse session with a role marker so refresh / reset paths
+  # can identify it explicitly. Not enumerated by workspace_session_names
+  # because it carries no @wezterm_workspace, but the role tag lets
+  # future tooling find it deterministically.
+  tmux set-option -t "$session" -q @wezterm_session_role tab_visibility_overflow_browse
 fi
 exec tmux attach -t "$session"
 ]], browse_session, workspace_slug)
@@ -81,6 +116,49 @@ exec tmux attach -t "$session"
     }
     if tab and type(tab.set_title) == 'function' then
       pcall(function() tab:set_title(M.OVERFLOW_TAB_TITLE) end)
+    end
+    -- Register the overflow pane id in the tab_visibility _G map so the
+    -- attention-side fallbacks (auto-ack + Alt+/ jump) can recover when
+    -- a hook-stored wezterm_pane_id no longer exists. Initial state is
+    -- the browse session — Alt+t picker updates the session field on
+    -- each subsequent switch-client. Lazily dofile to avoid a hard
+    -- dependency cycle.
+    if tab then
+      local pane_id = nil
+      local active_pane = nil
+      pcall(function() active_pane = tab:active_pane() end)
+      if active_pane and type(active_pane.pane_id) == 'function' then
+        pcall(function() pane_id = active_pane:pane_id() end)
+      end
+      -- Tag the overflow pane with a user_var so is_overflow_tab
+      -- identifies it independently of the title — refresh / set_title
+      -- paths can rewrite the title without de-classifying the tab.
+      if active_pane and type(active_pane.set_user_var) == 'function' then
+        pcall(function()
+          active_pane:set_user_var(M.OVERFLOW_USER_VAR_NAME, M.OVERFLOW_USER_VAR_VALUE)
+        end)
+      end
+      if pane_id then
+        local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR') or ''
+        local module_path = runtime_dir .. '/lua/ui/tab_visibility.lua'
+        local ok, tab_visibility = pcall(dofile, module_path)
+        if ok and tab_visibility and type(tab_visibility.set_overflow_pane) == 'function' then
+          local workspace_name = nil
+          pcall(function() workspace_name = mux_window:get_workspace() end)
+          if workspace_name then
+            tab_visibility.set_overflow_pane(workspace_name, pane_id, browse_session)
+          end
+          -- Mirror into the unified pane→session map so attention-side
+          -- focus / jump / badge code resolves the overflow pane the
+          -- same way it resolves visible managed tabs (one lookup, one
+          -- truth source). Initial value is the browse session; the
+          -- tab.activate_overflow handler refreshes it after each
+          -- switch-client.
+          if type(tab_visibility.set_pane_session) == 'function' then
+            tab_visibility.set_pane_session(pane_id, browse_session)
+          end
+        end
+      end
     end
     return tab
   end

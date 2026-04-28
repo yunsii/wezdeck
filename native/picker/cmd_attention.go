@@ -24,6 +24,10 @@ type attentionRow struct {
 	tmuxSocket  string
 	tmuxWindow  string
 	tmuxPane    string
+	tmuxSession string // 10th TSV col: name from attention.json. Carried so
+	// payload generation can append it without round-tripping through
+	// `tmux display-message` (which fails for archived rows whose
+	// stored window id is no longer valid).
 }
 
 type attentionPicker struct{}
@@ -222,10 +226,11 @@ func loadAttentionRows(path string) ([]attentionRow, error) {
 		//   parts[6] = tmux_window
 		//   parts[7] = tmux_pane
 		//   parts[8] = last_status
-		// last_status sits LAST so the active-row case (where it is empty)
-		// produces a trailing empty field rather than an empty MIDDLE field
-		// — the latter is silently collapsed by bash `read -r` with the
-		// whitespace IFS \t, which would shift every following field.
+		//   parts[9] = tmux_session
+		// last_status sits at idx 8 (not last) only because of historical
+		// ordering — both it and the trailing tmux_session may be empty
+		// for active rows / sentinel without confusing bash `read -r` so
+		// long as nothing in between is also empty.
 		if len(parts) >= 5 {
 			row.weztermPane = parts[4]
 		}
@@ -240,6 +245,9 @@ func loadAttentionRows(path string) ([]attentionRow, error) {
 		}
 		if len(parts) >= 9 {
 			row.lastStatus = parts[8]
+		}
+		if len(parts) >= 10 {
+			row.tmuxSession = parts[9]
 		}
 		rows = append(rows, row)
 	}
@@ -475,6 +483,18 @@ func buildAttentionJumpPayload(r attentionRow) string {
 	if r.tmuxSocket == "" || r.tmuxWindow == "" {
 		return ""
 	}
+	// Resolve the target tmux session name once. Both branches append
+	// it to the payload so the wezterm-side activate_in_gui can fall
+	// back via the unified pane→session map (covers the cap-eviction /
+	// workspace-reopen / overflow-rotation cases where the stored
+	// wezterm_pane_id is stale). Carried-from-TSV value (from
+	// attention.json entries[]/recent[]) is authoritative and survives
+	// archived rows whose stored window id no longer exists; runtime
+	// `tmux display-message` resolution is the fallback.
+	sessName := r.tmuxSession
+	if sessName == "" {
+		sessName = sessionNameFromCoords(r)
+	}
 	if strings.HasPrefix(r.id, "recent::") {
 		rest := strings.TrimPrefix(r.id, "recent::")
 		sid, archived, _ := strings.Cut(rest, "::")
@@ -482,14 +502,14 @@ func buildAttentionJumpPayload(r attentionRow) string {
 			return ""
 		}
 		wp := r.weztermPane
-		if live := lookupLiveWezTermPane(r.tmuxSocket, sessionNameFromCoords(r)); live != "" {
+		if live := lookupLiveWezTermPane(r.tmuxSocket, sessName); live != "" {
 			wp = live
 		}
-		return fmt.Sprintf("v1|recent|%s|%s|%s|%s|%s|%s",
-			sid, archived, wp, r.tmuxSocket, r.tmuxWindow, r.tmuxPane)
+		return fmt.Sprintf("v1|recent|%s|%s|%s|%s|%s|%s|%s",
+			sid, archived, wp, r.tmuxSocket, r.tmuxWindow, r.tmuxPane, sessName)
 	}
-	return fmt.Sprintf("v1|jump|%s|%s|%s|%s|%s",
-		r.id, r.weztermPane, r.tmuxSocket, r.tmuxWindow, r.tmuxPane)
+	return fmt.Sprintf("v1|jump|%s|%s|%s|%s|%s|%s",
+		r.id, r.weztermPane, r.tmuxSocket, r.tmuxWindow, r.tmuxPane, sessName)
 }
 
 // sessionNameFromCoords resolves the tmux session NAME for the row's

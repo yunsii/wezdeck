@@ -46,10 +46,14 @@ candidate_session="$(tmux_worktree_session_name_for_path "$workspace" "$cwd" 2>/
 
 if [[ -n "$candidate_session" ]] && tmux has-session -t "$candidate_session" 2>/dev/null; then
   # Warm: switch the overflow pane to it, then jump to the overflow tab.
+  # session= in the payload refreshes the wezterm-side overflow→session
+  # map (consumed by attention auto-ack + Alt+/ jump fallback when an
+  # entry's stored wezterm_pane_id no longer exists). The tab title
+  # intentionally stays `…` regardless.
   if bash "$script_dir/tab-overflow-attach.sh" "$workspace" "$candidate_session" 2>&1; then
     WEZTERM_EVENT_FORCE_FILE=1 \
       wezterm_event_send "tab.activate_overflow" \
-        "v1|workspace=${workspace}" || true
+        "v1|workspace=${workspace}|session=${candidate_session}" || true
     exit 0
   fi
   # switch-client failed — fall through to spawn fallback as a safety net.

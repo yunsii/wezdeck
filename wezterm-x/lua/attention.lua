@@ -106,6 +106,474 @@ local function parse_json(text)
   return nil
 end
 
+-- Resolve which tmux session a wezterm pane currently hosts, via the
+-- unified pane→session map in tab_visibility.lua (in-memory tier covers
+-- overflow rotation; file tier covers visible managed tabs written by
+-- open-project-session.sh). Single source of truth used by tab_badge,
+-- write_live_snapshot, is_entry_focused, and activate_in_gui — so the
+-- right-status counter, picker filter, and tab indicators all agree.
+--
+-- Defined here at the top of the module so every M.* function below can
+-- close over them as parse-time locals. Defining them lower required
+-- forward-declare bindings to bridge the closures, and missing one such
+-- binding silently degraded the caller to its stale-pane fallback path
+-- (the "Alt+/ doesn't jump" / "tab badge missing" failure mode).
+--
+-- The tab_visibility module table is cached for the lifetime of the
+-- wezterm process. Earlier we re-`dofile`d on every call; with
+-- write_live_snapshot iterating all panes plus per-jump lookups, that
+-- meant N+1 cross-FS file reads of tab_visibility.lua per Alt+/ press.
+-- Module state is not cached — set_pane_session / session_for_pane both
+-- consult `_G.__WEZTERM_PANE_TMUX_SESSION` and the on-disk file tier,
+-- which are dynamic, so reusing the module table is safe.
+-- Cache the dofile result for the lifetime of the wezterm Lua state.
+-- write_live_snapshot calls pane_hosted_session per pane plus several
+-- memoize / forget helpers per tick, all routed through this loader;
+-- without caching, every snapshot tick re-`dofile`s a /mnt/c-resident
+-- file 10-20 times (~3-5 ms each cross-FS), and the cumulative ~50-
+-- 100 ms blocks the wezterm UI thread.
+--
+-- Invalidate on window-config-reloaded so changes land after sync
+-- without a full wezterm restart. (An earlier attempt to gate on file
+-- mtime regressed perf by always re-dofile-ing when mtime was
+-- unavailable — wezterm Lua has no portable stat.)
+local cached_tab_visibility = nil
+local function load_tab_visibility()
+  if cached_tab_visibility ~= nil then return cached_tab_visibility end
+  local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR') or ''
+  if runtime_dir == '' then return nil end
+  local ok, tab_visibility = pcall(dofile, runtime_dir .. '/lua/ui/tab_visibility.lua')
+  if not ok or type(tab_visibility) ~= 'table' then return nil end
+  cached_tab_visibility = tab_visibility
+  return cached_tab_visibility
+end
+
+if wezterm.on then
+  pcall(function()
+    wezterm.on('window-config-reloaded', function()
+      cached_tab_visibility = nil
+    end)
+  end)
+end
+
+local function pane_hosted_session(wezterm_pane_id)
+  if wezterm_pane_id == nil or wezterm_pane_id == '' then return nil end
+  local tab_visibility = load_tab_visibility()
+  if not tab_visibility or type(tab_visibility.session_for_pane) ~= 'function' then
+    return nil
+  end
+  return tab_visibility.session_for_pane(wezterm_pane_id)
+end
+
+-- Reverse lookup: which wezterm pane is currently hosting `session_name`?
+-- Used by activate_in_gui to find a jump target when the entry's stored
+-- wezterm_pane_id is stale.
+local function pane_for_hosted_session(session_name)
+  if not session_name or session_name == '' then return nil end
+  local tab_visibility = load_tab_visibility()
+  if not tab_visibility or type(tab_visibility.pane_for_session) ~= 'function' then
+    return nil
+  end
+  return tab_visibility.pane_for_session(session_name)
+end
+
+-- Memoize a (pane_id → session) edge into the in-memory tier so
+-- subsequent reads — and the reverse lookup pane_for_hosted_session in
+-- particular — never have to walk the on-disk pane-session/ directory
+-- (which falls back to spawning a Windows shell directory walk, costing
+-- 100-200ms per jump on cross-FS WSL/Windows). write_live_snapshot
+-- calls this for every pane it touches, so by the time the user
+-- presses Alt+/ the in-memory map is already warm.
+local function memoize_pane_session(pane_id, session_name)
+  if pane_id == nil or session_name == nil or session_name == '' then return end
+  local tab_visibility = load_tab_visibility()
+  if not tab_visibility or type(tab_visibility.set_pane_session) ~= 'function' then
+    return
+  end
+  pcall(tab_visibility.set_pane_session, pane_id, session_name)
+end
+
+-- Drop both tiers of the unified pane→session map for `pane_id`. Used
+-- when write_live_snapshot finds the file-tier value is stale (its
+-- session-name workspace prefix disagrees with the live pane's
+-- workspace). Otherwise the stale value silently misroutes focus-ack
+-- onto the wrong entry — the user focuses pane 1 (config), file says
+-- pane 1 hosts a work session, focus-ack archives the work entry, and
+-- the right-status badge / Alt+/ picker desync.
+local function forget_pane_session(pane_id)
+  if pane_id == nil then return end
+  local tab_visibility = load_tab_visibility()
+  if not tab_visibility or type(tab_visibility.forget_pane_session) ~= 'function' then
+    return
+  end
+  pcall(tab_visibility.forget_pane_session, pane_id)
+end
+
+-- ── Picker row helpers ────────────────────────────────────────────────
+-- The picker (tmux popup) and the right-status badge used to each
+-- recompute visibility / labels / ordering from raw attention.json
+-- using parallel filter pipelines (Lua for the badge, jq for the
+-- picker). They drifted: every change had to be hand-mirrored on both
+-- sides, and the mirror missed often enough that "badge says N, picker
+-- shows M" became a recurring complaint. The helpers below collapse
+-- the decision into one place — `compute_picker_data` returns the
+-- exact rows the picker should render plus the counts the badge
+-- should display, and `write_live_snapshot` embeds the result in the
+-- snapshot so the picker becomes a dumb renderer.
+local OVERFLOW_GLYPH = '…'
+
+local function nonempty_str(v)
+  return type(v) == 'string' and v ~= ''
+end
+
+local function parse_session_workspace(s)
+  if type(s) ~= 'string' or s == '' then return nil end
+  return s:match('^wezterm_([^_]+)_')
+end
+
+local function parse_session_repo(s)
+  if type(s) ~= 'string' or s == '' then return nil end
+  return s:match('^wezterm_[^_]+_(.+)_[0-9a-f]+$')
+end
+
+local function strip_tmux_prefix(v)
+  if type(v) ~= 'string' then return '' end
+  return (v:gsub('^[@%%]', ''))
+end
+
+local function format_age(ms)
+  local s = math.floor((ms or 0) / 1000)
+  if s < 0 then s = 0 end
+  if s < 60 then return s .. 's' end
+  local m = math.floor(s / 60)
+  if m < 60 then return m .. 'm' end
+  return math.floor(s / 3600) .. 'h'
+end
+
+local function sanitize(s)
+  if type(s) ~= 'string' then return '' end
+  return (s:gsub('[\t\n\r]', ' '))
+end
+
+-- Trust the live host pane info for label rendering only when its
+-- workspace matches the session-name workspace prefix. The reverse-map
+-- miss path in production lands the host on whatever pane currently
+-- owns the entry's stored wezterm_pane_id — frequently the user own
+-- Claude pane in a totally unrelated workspace. Trusting that produces
+-- labels like `config/1_wezterm-config/13_21/master` on a coco-server
+-- row. Cross-checking workspace lets the parsed-from-session fallback
+-- kick in for the right reason.
+local function trusted_live(entry, host_info)
+  local L = host_info or {}
+  local session_ws = parse_session_workspace(entry.tmux_session)
+  if L.workspace and session_ws and L.workspace ~= session_ws then
+    return {}
+  end
+  return L
+end
+
+-- Build the `ws/tab/tmuxseg/branch` label string. host_info is the
+-- panes_map entry for the wezterm pane currently hosting the entry's
+-- session, or nil when no such host exists. Falls through to parsed
+-- session-name fields for any segment the live info cannot supply.
+-- Special-case: the overflow placeholder tab title is the `…` glyph,
+-- not a meaningful repo name. When the host is the overflow pane we
+-- substitute the projected session's repo for the tab segment so the
+-- row reads `work/6_coco-server/...` instead of `work/6_…/...`.
+local function compute_label(entry, host_info)
+  local L = trusted_live(entry, host_info)
+  local session_ws = parse_session_workspace(entry.tmux_session)
+  local session_repo = parse_session_repo(entry.tmux_session)
+  local ws = nonempty_str(L.workspace) and L.workspace or (session_ws or '?')
+
+  local tab
+  if L.tab_index ~= nil then
+    if L.tab_title == OVERFLOW_GLYPH then
+      tab = tostring(L.tab_index) .. '_' .. (session_repo or '?')
+    elseif nonempty_str(L.tab_title) then
+      tab = tostring(L.tab_index) .. '_' .. L.tab_title
+    else
+      tab = tostring(L.tab_index)
+    end
+  else
+    tab = session_repo or '?'
+  end
+
+  local tmux_seg
+  if nonempty_str(entry.tmux_window) then
+    if nonempty_str(entry.tmux_pane) then
+      tmux_seg = strip_tmux_prefix(entry.tmux_window) .. '_' .. strip_tmux_prefix(entry.tmux_pane)
+    else
+      tmux_seg = strip_tmux_prefix(entry.tmux_window)
+    end
+  else
+    tmux_seg = '?'
+  end
+
+  local branch = nonempty_str(entry.git_branch) and entry.git_branch or '?'
+
+  if ws == '?' and tab == '?' and tmux_seg == '?' and branch == '?' then
+    return nil
+  end
+  return ws .. '/' .. tab .. '/' .. tmux_seg .. '/' .. branch
+end
+
+-- Reachability predicate driven by snapshot-time facts (panes_map +
+-- sessions_map). Mirrors entry_has_live_target's logic but uses the
+-- pre-built maps rather than re-walking the mux for every entry, which
+-- keeps the picker_data computation cheap.
+local function entry_reachable(entry, panes_map, sessions_map)
+  if not entry then return false end
+  local ts = entry.tmux_session
+  if nonempty_str(ts) and sessions_map and sessions_map[ts] then
+    return true
+  end
+  -- _G fallback in case sessions_map is empty (cold start before the
+  -- first snapshot has populated it).
+  local g_map = rawget(_G, '__WEZTERM_PANE_TMUX_SESSION')
+  if nonempty_str(ts) and type(g_map) == 'table' then
+    for _, sess in pairs(g_map) do
+      if sess == ts then return true end
+    end
+  end
+  -- Fallback: stored wezterm_pane_id alive AND in the session
+  -- encoded workspace.
+  local pane_id = entry.wezterm_pane_id
+  if pane_id == nil or pane_id == '' then return false end
+  local pane_info = panes_map and panes_map[tostring(pane_id)]
+  if not pane_info then return false end
+  local session_ws = parse_session_workspace(ts)
+  if session_ws and nonempty_str(pane_info.workspace) and pane_info.workspace ~= session_ws then
+    return false
+  end
+  return true
+end
+
+-- Visibility predicate shared between picker rows and badge counts.
+-- Running entries are always visible (informational counter — the
+-- user wants an honest in-flight count regardless of whether the
+-- session currently has a known wezterm host). Waiting / done are
+-- visible iff reachable.
+local function entry_visible(entry, panes_map, sessions_map)
+  if not entry then return false end
+  if entry.status == M.STATUS_RUNNING then return true end
+  return entry_reachable(entry, panes_map, sessions_map)
+end
+
+local function status_rank(s)
+  if s == M.STATUS_WAITING then return 0
+  elseif s == M.STATUS_DONE then return 1
+  elseif s == M.STATUS_RUNNING then return 2
+  else return 3 end
+end
+
+local function effective_host_info(entry, panes_map, sessions_map)
+  local effective_pane
+  if nonempty_str(entry.tmux_session) and sessions_map then
+    effective_pane = sessions_map[entry.tmux_session]
+  end
+  if not effective_pane and entry.wezterm_pane_id ~= nil then
+    effective_pane = entry.wezterm_pane_id
+  end
+  if effective_pane == nil then return nil end
+  return panes_map and panes_map[tostring(effective_pane)]
+end
+
+local function build_active_row(entry, label, age_text)
+  local body
+  if nonempty_str(entry.reason) then
+    body = entry.reason
+  else
+    body = entry.status or ''
+  end
+  if label and label ~= '' then
+    body = label .. '  ' .. body
+  end
+  return {
+    status = entry.status,
+    body = sanitize(body),
+    age_text = age_text,
+    id = entry.session_id or '',
+    wezterm_pane_id = entry.wezterm_pane_id ~= nil and tostring(entry.wezterm_pane_id) or '',
+    tmux_socket = entry.tmux_socket or '',
+    tmux_window = entry.tmux_window or '',
+    tmux_pane = entry.tmux_pane or '',
+    last_status = entry.status or '',
+    tmux_session = entry.tmux_session or '',
+  }
+end
+
+local function build_recent_row(r, label, age_text)
+  local body
+  if nonempty_str(r.last_reason) then
+    body = r.last_reason
+  else
+    body = r.last_status or 'recent'
+  end
+  if label and label ~= '' then
+    body = label .. '  ' .. body
+  end
+  return {
+    status = 'recent',
+    body = sanitize(body),
+    age_text = age_text,
+    id = 'recent::' .. (r.session_id or '') .. '::' .. tostring(r.archived_ts or 0),
+    wezterm_pane_id = r.wezterm_pane_id ~= nil and tostring(r.wezterm_pane_id) or '',
+    tmux_socket = r.tmux_socket or '',
+    tmux_window = r.tmux_window or '',
+    tmux_pane = r.tmux_pane or '',
+    last_status = r.last_status or '',
+    tmux_session = r.tmux_session or '',
+  }
+end
+
+-- Single source of truth for picker rows and badge counts. Returns a
+-- table { rows = [...], counts = { waiting, done, running } } where
+-- rows is a flat array (active rows ordered waiting → done → running
+-- by ts; recent rows appended after, deduped by tmux_session, ordered
+-- by archived_ts desc). The picker reads rows directly; the badge
+-- reads counts. Both surfaces therefore agree by construction.
+function M.compute_picker_data(panes_map, sessions_map)
+  panes_map = panes_map or {}
+  sessions_map = sessions_map or {}
+  local now = now_ms()
+  local rows = {}
+  local counts = { waiting = 0, done = 0, running = 0 }
+
+  -- ── Active entries ─────────────────────────────────────────────────
+  local active_sids = {}
+  local actives = {}
+  for sid, entry in pairs(state_cache.entries or {}) do
+    active_sids[sid] = true
+    if entry_is_live(entry, now) and entry_visible(entry, panes_map, sessions_map) then
+      table.insert(actives, entry)
+    end
+  end
+  table.sort(actives, function(a, b)
+    local ra, rb = status_rank(a.status), status_rank(b.status)
+    if ra ~= rb then return ra < rb end
+    return (tonumber(a.ts) or 0) < (tonumber(b.ts) or 0)
+  end)
+  for _, entry in ipairs(actives) do
+    if entry.status == M.STATUS_WAITING or entry.status == M.STATUS_RUNNING
+       or entry.status == M.STATUS_DONE then
+      counts[entry.status] = counts[entry.status] + 1
+    end
+    local host = effective_host_info(entry, panes_map, sessions_map)
+    local label = compute_label(entry, host)
+    local age_ms = now - (tonumber(entry.ts) or now)
+    local age_text = format_age(age_ms)
+    if not nonempty_str(tostring(entry.wezterm_pane_id or '')) then
+      age_text = age_text .. ', no pane'
+    end
+    table.insert(rows, build_active_row(entry, label, age_text))
+  end
+
+  -- ── Recent entries ─────────────────────────────────────────────────
+  -- Dedupe by tmux_session (or session_id for legacy rows). One
+  -- session has at most one current host, so showing every archived
+  -- entry just stacks N rows that all jump to the same place.
+  local recent_by_key = {}
+  for _, r in ipairs(state_cache.recent or {}) do
+    if not active_sids[r.session_id or ''] then
+      local key = nonempty_str(r.tmux_session) and r.tmux_session or (r.session_id or '')
+      if key ~= '' then
+        local existing = recent_by_key[key]
+        if not existing or (tonumber(r.archived_ts) or 0) > (tonumber(existing.archived_ts) or 0) then
+          recent_by_key[key] = r
+        end
+      end
+    end
+  end
+  local recents = {}
+  for _, r in pairs(recent_by_key) do
+    -- Recent never has running status, so reachability is the gate.
+    if entry_reachable(r, panes_map, sessions_map) then
+      table.insert(recents, r)
+    end
+  end
+  table.sort(recents, function(a, b)
+    return (tonumber(a.archived_ts) or 0) > (tonumber(b.archived_ts) or 0)
+  end)
+  for _, r in ipairs(recents) do
+    local host = effective_host_info(r, panes_map, sessions_map)
+    local label = compute_label(r, host)
+    local age_ms = now - (tonumber(r.archived_ts) or now)
+    local age_text = format_age(age_ms)
+    table.insert(rows, build_recent_row(r, label, age_text))
+  end
+
+  return { rows = rows, counts = counts }
+end
+
+-- True when an entry has SOME viable jump target right now: either its
+-- tmux_session appears in the unified pane→session map (preferred), or
+-- its stored wezterm_pane_id is still alive in the live mux (fallback
+-- for visible-managed-tab entries whose pane-session file was cleared
+-- and never rewritten — open-project-session.sh only writes on session
+-- create/attach, so a long-lived persistent session can lose its file
+-- mapping and never get it back). Used by M.collect to hide orphan
+-- entries whose tmux session is detached and has no wezterm host.
+-- Returns true (don't filter) when both signals are unavailable, so a
+-- cold-start tick before write_live_snapshot has populated either path
+-- never wipes legitimate entries.
+local function entry_has_live_target(entry)
+  if type(entry) ~= 'table' then return true end
+  local tmux_session = entry.tmux_session
+  if type(tmux_session) == 'string' and tmux_session ~= '' then
+    local map = rawget(_G, '__WEZTERM_PANE_TMUX_SESSION')
+    if type(map) == 'table' then
+      for _, sess in pairs(map) do
+        if sess == tmux_session then return true end
+      end
+    end
+  else
+    -- Legacy / non-tmux entries: no session to check, treat as live.
+    return true
+  end
+  -- Fallback: the entry's stored wezterm_pane_id is still alive AND
+  -- belongs to the same workspace the session encodes. Walk the mux
+  -- just enough to find the candidate; on a hit, cross-check the
+  -- workspace prefix (`wezterm_<workspace>_...`). Without the
+  -- cross-check an orphan entry whose stored id collides with an
+  -- unrelated current pane (e.g. the user's own Claude pane) would
+  -- pass — the bug the test_attention_overflow suite catches.
+  local pane_id = entry.wezterm_pane_id
+  if pane_id == nil or pane_id == '' then return false end
+  local target = tostring(pane_id)
+  local session_ws = nil
+  if type(tmux_session) == 'string' then
+    session_ws = tmux_session:match('^wezterm_([^_]+)_')
+  end
+  local ok_all, all_windows = pcall(wezterm.mux.all_windows)
+  if not ok_all or type(all_windows) ~= 'table' then return true end
+  for _, mux_win in ipairs(all_windows) do
+    local pane_ws
+    if mux_win.get_workspace then
+      local ok_ws, ws = pcall(function() return mux_win:get_workspace() end)
+      if ok_ws then pane_ws = ws end
+    end
+    local ok_tabs, tabs = pcall(function() return mux_win:tabs() end)
+    if ok_tabs and type(tabs) == 'table' then
+      for _, mux_tab in ipairs(tabs) do
+        local ok_panes, panes_with_info = pcall(function() return mux_tab:panes_with_info() end)
+        if ok_panes and type(panes_with_info) == 'table' then
+          for _, info in ipairs(panes_with_info) do
+            local pid_ok, pid = pcall(function() return info.pane:pane_id() end)
+            if pid_ok and tostring(pid) == target then
+              if session_ws == nil or pane_ws == nil or pane_ws == session_ws then
+                return true
+              end
+              return false
+            end
+          end
+        end
+      end
+    end
+  end
+  return false
+end
+
 function M.configure(opts)
   if opts and type(opts.state_file) == 'string' and opts.state_file ~= '' then
     state_path = opts.state_file
@@ -175,16 +643,34 @@ function M.reload_state()
 end
 
 function M.collect()
+  -- Single source of truth: ask the picker-data builder for the same
+  -- visibility decision the snapshot publishes. Build the empty
+  -- panes_map / sessions_map fallback walk via mux for collect's
+  -- standalone callers (badge update-status path) — write_live_snapshot
+  -- passes its own pre-built maps when it embeds picker_data.
+  return M.collect_buckets(nil, nil)
+end
+
+function M.collect_buckets(panes_map, sessions_map)
   local waiting, running, done = {}, {}, {}
   local now = now_ms()
   for _, entry in pairs(state_cache.entries or {}) do
     if entry_is_live(entry, now) then
-      if entry.status == M.STATUS_WAITING then
-        table.insert(waiting, entry)
-      elseif entry.status == M.STATUS_RUNNING then
-        table.insert(running, entry)
-      elseif entry.status == M.STATUS_DONE then
-        table.insert(done, entry)
+      local visible
+      if panes_map or sessions_map then
+        visible = entry_visible(entry, panes_map, sessions_map)
+      else
+        -- Standalone path: no maps available, so use the mux-walking
+        -- fallback. Result equals entry_visible-with-maps because
+        -- entry_has_live_target is the mux-walking variant of
+        -- entry_reachable.
+        visible = (entry.status == M.STATUS_RUNNING) or entry_has_live_target(entry)
+      end
+      if visible then
+        if entry.status == M.STATUS_WAITING then table.insert(waiting, entry)
+        elseif entry.status == M.STATUS_RUNNING then table.insert(running, entry)
+        elseif entry.status == M.STATUS_DONE then table.insert(done, entry)
+        end
       end
     end
   end
@@ -283,19 +769,29 @@ function M.tab_badge(tab_info)
   local pane_id_str = tostring(active.pane_id)
   local has_waiting, has_running, has_done = false, false, false
   local now = now_ms()
-  -- This repo's convention is "tmux owns splits, WezTerm tabs hold one
-  -- pane each", so all entries on a given tab share the same
-  -- wezterm_pane_id and a single active-pane filter is sufficient.
-  -- When the tab is the active one and the tmux-pane focus matches the
-  -- entry, suppress only the `done` badge — the user is looking at that
-  -- exact pane, so the green "result waiting" mark would be noise.
-  -- `waiting` stays visible even under focus because it is an action
-  -- item (glancing at the prompt is not the same as answering it) and
-  -- `running` stays visible so the parallel-task view across tabs is
-  -- truthful.
+  -- Match entry → tab by tmux session. The pane→session unified map
+  -- (tab_visibility.session_for_pane) is the single source of truth:
+  -- it covers visible managed tabs (file-backed by open-project-
+  -- session.sh) and the rotating overflow pane (in-memory). Comparing
+  -- against entry.tmux_session is stable across spawn-cap eviction,
+  -- workspace close+reopen and overflow rotation — all of which would
+  -- break a wezterm_pane_id strict match.
+  --
+  -- When the tab is the active one and tmux-pane focus also matches
+  -- the entry, suppress only the `done` badge (the user is looking at
+  -- that exact pane already; the green mark would be noise). `waiting`
+  -- stays visible because glancing at a prompt is not the same as
+  -- answering it. `running` stays visible so the parallel-task view
+  -- across tabs is truthful.
+  local hosted_session = pane_hosted_session(active.pane_id)
+  if hosted_session == nil or hosted_session == '' then
+    return nil
+  end
   local tab_is_active = tab_info.is_active == true
   for _, entry in pairs(state_cache.entries or {}) do
-    if entry_is_live(entry, now) and tostring(entry.wezterm_pane_id or '') == pane_id_str then
+    if entry_is_live(entry, now)
+      and type(entry.tmux_session) == 'string'
+      and entry.tmux_session == hosted_session then
       local suppress_for_focus = tab_is_active and M.is_entry_focused(entry, pane_id_str)
       if entry.status == M.STATUS_WAITING then
         has_waiting = true
@@ -399,6 +895,7 @@ end
 -- layers (lua → bash menu → picker), letting `grep trace_id="..."` on
 -- both wezterm.log and runtime.log assemble the full per-press timeline.
 -- Returns true on success.
+--
 function M.write_live_snapshot(target_path, trace_id)
   if type(target_path) ~= 'string' or target_path == '' then
     return false
@@ -448,10 +945,105 @@ function M.write_live_snapshot(target_path, trace_id)
     end
   end
 
+  -- Reverse map for picker labels: tmux_session_name → wezterm_pane_id
+  -- of the pane currently hosting it. Populated from the unified
+  -- pane→session map (covers visible managed tabs file-backed +
+  -- overflow pane in-memory). Lets the picker label a row by the
+  -- workspace/tab where the user can SEE the entry right now —
+  -- crucial when the work overflow tab projects a config session
+  -- (the row is still attached to config session-name, but the user
+  -- views it as "work overflow").
+  --
+  -- Stale-file guard: open-project-session.sh writes
+  -- pane-session/<pid>.txt at session-creation time but never cleans
+  -- up. When a wezterm pane id is reused (workspace close + reopen
+  -- assigns a new tab the previous occupant's id), the file still
+  -- names the previous occupant's session. session_for_pane then
+  -- returns the wrong session, focus-ack misfires on the user's
+  -- focused pane (silently archiving entries the picker then can't
+  -- find), and the right-status / picker desync. Cross-check the
+  -- file's claimed workspace prefix against the pane's actual
+  -- workspace and skip on mismatch. Session naming convention is
+  -- `wezterm_<workspace>_<repo>_<10hex>`; a missing or wrong
+  -- workspace token means the file is stale.
+  -- Overflow registry tier. _G.__WEZTERM_TAB_OVERFLOW[workspace] holds
+  -- {pane_id, session} for the workspace's overflow placeholder tab,
+  -- updated by spawn_overflow_tab and refreshed by the
+  -- tab.activate_overflow event after each Alt+t pick. The pane_id in
+  -- the registry can go stale across workspace close+reopen (the new
+  -- overflow placeholder gets a fresh pane id but nothing rewrites the
+  -- registry until the next Alt+t). Identifying the placeholder by tab
+  -- title is more robust: workspace_manager always renders it with the
+  -- `…` glyph. Pull session from the registry keyed by workspace name,
+  -- not pane_id, so the pane↔session edge is recoverable even when the
+  -- registry pane_id is stale.
+  local overflow_registry = rawget(_G, '__WEZTERM_TAB_OVERFLOW') or {}
+  local OVERFLOW_GLYPH = '…'
+
+  local sessions_map = {}
+  for pane_id_str, pane_info in pairs(panes_map) do
+    local pane_id_key = tonumber(pane_id_str) or pane_id_str
+    local hosted = pane_hosted_session(pane_id_key)
+    -- Overflow override: when the unified map has nothing for this
+    -- pane and the tab is the overflow placeholder, take the session
+    -- from the workspace overflow registry. Covers the common case
+    -- where the workspace was reopened after the last Alt+t pick.
+    if (not hosted or hosted == '') and pane_info.tab_title == OVERFLOW_GLYPH then
+      local pane_workspace = pane_info.workspace or ''
+      local entry = pane_workspace ~= '' and overflow_registry[pane_workspace] or nil
+      if entry and type(entry.session) == 'string' and entry.session ~= '' then
+        hosted = entry.session
+        -- Memoize so jump-time reverse lookup hits in-memory and the
+        -- registry self-heals (any stale pane_id in the registry is
+        -- shadowed by the up-to-date in-memory edge).
+        memoize_pane_session(pane_id_key, hosted)
+      end
+    end
+    if hosted and hosted ~= '' then
+      local session_workspace = hosted:match('^wezterm_([^_]+)_')
+      local pane_workspace = pane_info.workspace or ''
+      if session_workspace and pane_workspace ~= '' and session_workspace ~= pane_workspace then
+        -- Stale file. Delete it AND clear the in-memory tier so
+        -- subsequent session_for_pane calls return nil instead of the
+        -- stale session. Without the file delete, the next snapshot
+        -- tick would re-read the same stale value and we would
+        -- ping-pong forever.
+        forget_pane_session(pane_id_key)
+        if module_logger then
+          module_logger.info('attention',
+            'dropped stale pane→session entry',
+            { pane_id = pane_id_str,
+              file_session = hosted,
+              pane_workspace = pane_workspace })
+        end
+      else
+        sessions_map[hosted] = pane_id_str
+        -- Also stash the hosted session inside the pane entry so picker
+        -- jq can confirm the projection in a single lookup.
+        pane_info.tmux_session = hosted
+        -- Warm the in-memory tier of the unified pane→session map. We
+        -- already paid for the file-tier read above; memoizing here
+        -- means the next jump's pane_for_hosted_session reverse lookup
+        -- hits in-memory instead of falling through to the on-disk
+        -- dir walk.
+        memoize_pane_session(pane_id_key, hosted)
+      end
+    end
+  end
+
+  -- Compute picker rows and counts using the same predicate the badge
+  -- uses (entry_visible). Embed in the snapshot so the picker reads
+  -- precomputed rows directly — no parallel jq filter pipeline that
+  -- could drift out of sync with the badge.
+  local picker_data = M.compute_picker_data(panes_map, sessions_map)
+
   local payload = {
     ts = now_ms(),
     trace = (type(trace_id) == 'string') and trace_id or '',
     panes = panes_map,
+    sessions = sessions_map,
+    picker_rows = picker_data.rows,
+    picker_counts = picker_data.counts,
   }
   local ok_enc, encoded = pcall(wezterm.serde.json_encode, payload)
   if not ok_enc or type(encoded) ~= 'string' then
@@ -533,16 +1125,38 @@ function M.list()
   return result
 end
 
--- Locate and activate the WezTerm pane identified by `pane_id_value`.
--- Performs a workspace switch when the target lives in a different one
--- than the current GUI window, then activates the mux tab/pane so the
--- WezTerm window shows the right content.
--- Returns true when the pane was found.
-function M.activate_in_gui(pane_id_value, window, source_pane)
-  if pane_id_value == nil or pane_id_value == '' then
+-- Locate and activate the WezTerm pane that currently hosts the
+-- chosen attention entry's tmux session. Performs a workspace switch
+-- when the target lives in a different one than the current GUI
+-- window, then activates the mux tab/pane.
+--
+-- Resolution order for the target pane id:
+--   1. Reverse lookup: which wezterm pane currently hosts
+--      `opts.tmux_session`? Covers the common case where the entry's
+--      stored `pane_id_value` is stale (visible cap eviction, workspace
+--      reopen) but the same tmux session is now hosted by a fresh
+--      visible tab or by the overflow pane after Alt+t rotation.
+--   2. Literal `pane_id_value` (the entry's stored
+--      wezterm_pane_id) — only when (1) returns nothing AND the id
+--      still exists in the live mux. Kept as a fallback for legacy /
+--      non-tmux entries that don't carry a tmux_session.
+--
+-- Returns true on successful activation.
+function M.activate_in_gui(pane_id_value, window, source_pane, opts)
+  local tmux_session_hint = opts and opts.tmux_session or nil
+  local target_id = nil
+  if tmux_session_hint and tmux_session_hint ~= '' then
+    local found = pane_for_hosted_session(tmux_session_hint)
+    if found ~= nil then
+      target_id = tostring(found)
+    end
+  end
+  if target_id == nil and pane_id_value ~= nil and pane_id_value ~= '' then
+    target_id = tostring(pane_id_value)
+  end
+  if target_id == nil then
     return false
   end
-  local target_id = tostring(pane_id_value)
   local ok_all, all_windows = pcall(wezterm.mux.all_windows)
   if not ok_all or type(all_windows) ~= 'table' then
     return false
@@ -594,7 +1208,11 @@ end
 --   v1|jump|<sid>|<wp>|<sock>|<win>|<pane>
 --   v1|recent|<sid>|<archived_ts>|<wp>|<sock>|<win>|<pane>
 -- Returns a table { kind = "jump"|"recent", session_id, wezterm_pane,
--- tmux_socket, tmux_window, tmux_pane, archived_ts? } or nil on bad input.
+-- tmux_socket, tmux_window, tmux_pane, tmux_session?, archived_ts? }
+-- or nil on bad input. tmux_session is the v1 trailing append (added
+-- so activate_in_gui can fall back via the unified pane→session map
+-- when wezterm_pane is stale). Older payloads without the trailing
+-- field still parse — tmux_session falls through as nil.
 function M.parse_jump_payload(value)
   if type(value) ~= 'string' or value == '' then
     return nil
@@ -615,6 +1233,7 @@ function M.parse_jump_payload(value)
       tmux_socket  = parts[5],
       tmux_window  = parts[6],
       tmux_pane    = parts[7],
+      tmux_session = parts[8],  -- nil-tolerant: missing → nil
     }
   elseif kind == 'recent' and #parts >= 8 then
     return {
@@ -625,6 +1244,7 @@ function M.parse_jump_payload(value)
       tmux_socket  = parts[6],
       tmux_window  = parts[7],
       tmux_pane    = parts[8],
+      tmux_session = parts[9],
     }
   end
   return nil
@@ -741,9 +1361,26 @@ function M.is_entry_focused(entry, wezterm_pane_id)
   if not entry or wezterm_pane_id == nil or wezterm_pane_id == '' then
     return false
   end
-  if tostring(entry.wezterm_pane_id or '') ~= tostring(wezterm_pane_id) then
+  if type(entry.tmux_session) ~= 'string' or entry.tmux_session == '' then
     return false
   end
+  -- Sole criterion: the focused wezterm pane is hosting a tmux client
+  -- attached to entry.tmux_session. wezterm_pane_id alone is unreliable
+  -- because spawn-cap eviction / workspace close+reopen / overflow
+  -- rotation all change the pane id without changing the session
+  -- identity, and entry.wezterm_pane_id was captured at hook-fire time
+  -- by the original spawning pane. Match against entry.tmux_session
+  -- via the unified pane→session map so the same path covers visible
+  -- managed tabs and the rotating overflow pane.
+  local hosted = pane_hosted_session(wezterm_pane_id)
+  if hosted ~= entry.tmux_session then
+    return false
+  end
+  -- tmux pane-level guard: a single wezterm pane can host an entire
+  -- tmux session whose split panes have independent focus. Require the
+  -- tmux client's active pane to also match entry.tmux_pane before
+  -- counting as focused. Skipped when the entry has no tmux pane
+  -- coordinate (legacy / non-tmux entries).
   if type(entry.tmux_socket) == 'string' and entry.tmux_socket ~= ''
     and type(entry.tmux_pane) == 'string' and entry.tmux_pane ~= '' then
     local active = cached_tmux_focus(entry.tmux_socket, entry.tmux_session)
@@ -844,6 +1481,23 @@ function M.maybe_ack_focused(window, pane)
   -- the subprocess lands the write on disk.
   for sid, ts in pairs(to_hide) do
     hidden_entries[sid] = ts
+    state_cache.entries[sid] = nil
+  end
+end
+
+-- Optimistically hide an entry until its background --forget lands on
+-- disk. Used by the Alt+. handler so the badge / picker drop the
+-- entry immediately on jump rather than lagging until the
+-- subprocess + reload cycle completes (~50-200 ms). Without this,
+-- two quick Alt+. presses look like the count goes 2 → 2 → 0
+-- instead of 2 → 1 → 0.
+function M.optimistically_hide(entry)
+  if type(entry) ~= 'table' then return end
+  local sid = entry.session_id
+  if type(sid) ~= 'string' or sid == '' then return end
+  local ts = entry.ts
+  hidden_entries[sid] = ts
+  if state_cache.entries then
     state_cache.entries[sid] = nil
   end
 end

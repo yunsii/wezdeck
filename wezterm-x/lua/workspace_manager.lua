@@ -253,6 +253,19 @@ function M.new(opts)
       -- list so existing tabs that got spawned before the cap turned on
       -- survive the reconcile.
       tabs.sync_workspace_tabs(name, trace_id, items, raw_items)
+      -- Self-heal: re-spawn the overflow placeholder if it's missing
+      -- (user closed it, refresh-session dropped it, title got reset
+      -- and prune killed it, etc.). Cheap — `find_overflow_tab` is a
+      -- single `tabs_with_info` walk.
+      if tab_visibility and tab_visibility.is_enabled(name) then
+        local target_window = tabs.workspace_windows(name)[1]
+        if target_window and not tabs.find_overflow_tab(target_window) then
+          logger.info('workspace', 'overflow tab missing — respawning', with_trace_id(trace_id, {
+            workspace = name,
+          }))
+          tabs.spawn_overflow_tab(target_window, tab_visibility.workspace_slug(name), trace_id)
+        end
+      end
       return
     end
 

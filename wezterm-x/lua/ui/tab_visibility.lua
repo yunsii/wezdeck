@@ -433,4 +433,188 @@ function M._reset()
   module_state.workspaces = {}
 end
 
+-- ---------------------------------------------------------------------
+-- Overflow pane registry. Stored on `_G` rather than module_state so
+-- attention.lua (which dofile-loads this module independently and would
+-- otherwise see a fresh module_state per dofile) can read the live state
+-- without threading the module through attention.register's opts.
+--
+-- Schema: `_G.__WEZTERM_TAB_OVERFLOW[<workspace_name>] = {
+--   pane_id = <wezterm_pane_id_int>,
+--   session = <currently_projected_tmux_session_name>,
+-- }`
+--
+-- Writers:
+--   - workspace/tabs.lua spawn_overflow_tab populates pane_id + initial
+--     browse session (`wezterm_<slug>_overflow`).
+--   - titles.lua tab.activate_overflow event handler updates session
+--     after each Alt+t pick.
+--
+-- Readers:
+--   - attention.lua is_entry_focused (auto-ack fallback when the user
+--     is focused on the overflow pane currently projecting this entry's
+--     tmux_session, even though the entry's stored wezterm_pane_id
+--     points at a long-killed pane).
+--   - attention.lua activate_in_gui (Alt+/ jump fallback by mapping the
+--     entry's tmux_session to whichever overflow pane is projecting it).
+function M.set_overflow_pane(workspace_name, pane_id, browse_session)
+  if not workspace_name or workspace_name == '' or not pane_id then return end
+  _G.__WEZTERM_TAB_OVERFLOW = _G.__WEZTERM_TAB_OVERFLOW or {}
+  _G.__WEZTERM_TAB_OVERFLOW[workspace_name] = {
+    pane_id = pane_id,
+    session = browse_session or '',
+  }
+end
+
+function M.set_overflow_attach(workspace_name, session_name)
+  if not workspace_name or workspace_name == '' then return end
+  _G.__WEZTERM_TAB_OVERFLOW = _G.__WEZTERM_TAB_OVERFLOW or {}
+  local entry = _G.__WEZTERM_TAB_OVERFLOW[workspace_name]
+  if not entry then return end
+  entry.session = session_name or ''
+end
+
+function M.overflow_attach_for_pane(pane_id)
+  if pane_id == nil then return nil end
+  local map = _G.__WEZTERM_TAB_OVERFLOW or {}
+  local key = tostring(pane_id)
+  for workspace_name, entry in pairs(map) do
+    if entry and entry.pane_id and tostring(entry.pane_id) == key then
+      return { workspace = workspace_name, session = entry.session or '' }
+    end
+  end
+  return nil
+end
+
+function M.overflow_pane_for_session(session_name)
+  if not session_name or session_name == '' then return nil end
+  local map = _G.__WEZTERM_TAB_OVERFLOW or {}
+  for workspace_name, entry in pairs(map) do
+    if entry and entry.session == session_name and entry.pane_id then
+      return { workspace = workspace_name, pane_id = entry.pane_id }
+    end
+  end
+  return nil
+end
+
+-- ---------------------------------------------------------------------
+-- Unified pane→tmux_session map. Single source of truth for "which tmux
+-- session does this wezterm pane currently host". Covers BOTH visible
+-- managed tabs (each pane attached to its project session) AND the
+-- overflow placeholder (rotating attach target).
+--
+-- Two storage tiers:
+--   1. In-memory `_G.__WEZTERM_PANE_TMUX_SESSION[<pane_id>] = <session>`
+--      — written by lua handlers (overflow spawn + tab.activate_overflow).
+--      Survives across dofile because it lives on _G.
+--   2. On-disk `<runtime_state>/state/pane-session/<pane_id>.txt`
+--      containing the session name — written by open-project-session.sh
+--      after a managed tmux session is created or reused. Visible
+--      managed tabs get their entry through this path.
+--
+-- Reads consult tier 1 first, then tier 2. Writes only target tier 1
+-- (the file path is bash-owned at managed-session-creation time).
+--
+-- Readers:
+--   - attention.lua is_entry_focused — match focused pane's session
+--     against entry.tmux_session.
+--   - attention.lua activate_in_gui — pane_for_session() finds the
+--     wezterm pane hosting an entry's session for jump.
+--   - attention.lua tab_badge — active_pane → session → matching entry.
+function M.set_pane_session(pane_id, session_name)
+  if pane_id == nil then return end
+  _G.__WEZTERM_PANE_TMUX_SESSION = _G.__WEZTERM_PANE_TMUX_SESSION or {}
+  if session_name == nil or session_name == '' then
+    _G.__WEZTERM_PANE_TMUX_SESSION[tostring(pane_id)] = nil
+  else
+    _G.__WEZTERM_PANE_TMUX_SESSION[tostring(pane_id)] = session_name
+  end
+end
+
+local function pane_session_dir()
+  if module_state.stats_dir and module_state.stats_dir ~= '' then
+    -- stats_dir = <runtime_state>/state/tab-stats. The pane-session dir
+    -- is its sibling under state/.
+    return module_state.stats_dir:gsub('[/\\]tab%-stats$', '') .. '/pane-session'
+  end
+  -- Fallback: derive from LOCALAPPDATA on hybrid-wsl, XDG_STATE_HOME
+  -- elsewhere. Mirrors open-project-session.sh's path resolution.
+  local lad = os.getenv('LOCALAPPDATA')
+  if lad and lad ~= '' then
+    return lad .. '\\wezterm-runtime\\state\\pane-session'
+  end
+  local xdg = os.getenv('XDG_STATE_HOME') or (os.getenv('HOME') .. '/.local/state')
+  return xdg .. '/wezterm-runtime/state/pane-session'
+end
+
+local function read_pane_session_file(pane_id)
+  if pane_id == nil then return nil end
+  local dir = pane_session_dir()
+  if not dir or dir == '' then return nil end
+  local path
+  if dir:find('\\', 1, true) then
+    path = dir .. '\\' .. tostring(pane_id) .. '.txt'
+  else
+    path = dir .. '/' .. tostring(pane_id) .. '.txt'
+  end
+  local fd = io.open(path, 'r')
+  if not fd then return nil end
+  local line = fd:read('*l')
+  fd:close()
+  if line == nil then return nil end
+  line = line:gsub('^%s+', ''):gsub('%s+$', '')
+  if line == '' then return nil end
+  return line
+end
+
+function M.session_for_pane(pane_id)
+  if pane_id == nil then return nil end
+  local map = _G.__WEZTERM_PANE_TMUX_SESSION or {}
+  local in_memory = map[tostring(pane_id)]
+  if in_memory then return in_memory end
+  return read_pane_session_file(pane_id)
+end
+
+-- Forget both tiers for `pane_id`. Used when the file-tier value is
+-- detected stale (workspace prefix mismatches the live pane's
+-- workspace), so subsequent session_for_pane calls return nil instead
+-- of the stale session — which would otherwise misroute focus-ack and
+-- the picker reverse map.
+function M.forget_pane_session(pane_id)
+  if pane_id == nil then return end
+  _G.__WEZTERM_PANE_TMUX_SESSION = _G.__WEZTERM_PANE_TMUX_SESSION or {}
+  _G.__WEZTERM_PANE_TMUX_SESSION[tostring(pane_id)] = nil
+  local dir = pane_session_dir()
+  if not dir or dir == '' then return end
+  local path
+  if dir:find('\\', 1, true) then
+    path = dir .. '\\' .. tostring(pane_id) .. '.txt'
+  else
+    path = dir .. '/' .. tostring(pane_id) .. '.txt'
+  end
+  pcall(os.remove, path)
+end
+
+function M.pane_for_session(session_name)
+  if not session_name or session_name == '' then return nil end
+  -- In-memory tier only. The file tier used to walk the on-disk
+  -- pane-session/ directory via a Windows shell `dir` spawn — 100-200
+  -- ms per call on cross-FS WSL/Windows, and it fired on EVERY jump
+  -- for a session whose in-memory edge had not been established yet
+  -- (the typical case for a hook-created `running` entry whose
+  -- session is not currently projected by any wezterm pane). The
+  -- snapshot tick already populates the in-memory map for every
+  -- visible managed tab plus the overflow projection, so callers
+  -- that hit this miss are jumps to genuinely unhosted sessions —
+  -- the right behavior is "no host, fall through fast" rather than
+  -- "block 200 ms then return nil anyway".
+  local map = _G.__WEZTERM_PANE_TMUX_SESSION or {}
+  for pane_id, sess in pairs(map) do
+    if sess == session_name then
+      return tonumber(pane_id) or pane_id
+    end
+  end
+  return nil
+end
+
 return M

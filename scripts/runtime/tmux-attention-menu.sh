@@ -61,22 +61,26 @@ bench_mark sourced
 start_ms=$(( ${EPOCHREALTIME//./} / 1000 ))
 trace_id="attention-$EPOCHSECONDS-$$-$RANDOM"
 
-# Skip attention_state_init in the read-only menu hot path: it does
-# mkdir + a /mnt/c stat to check if the file exists, costing 5-10ms
-# of pure cross-FS overhead per invocation. attention_state_read
-# already returns empty JSON when the file is missing, so init is
-# only useful for writers (hooks). Drop it here.
-state_json="$(attention_state_read)"
+# menu.sh no longer reads attention.json directly — picker_rows in
+# the live-panes snapshot is the unified source (compute_picker_data
+# in attention.lua). state_read is kept as a no-op for the bench
+# trace, since downstream tooling parses the bench timeline by stage
+# label.
+live_panes_path="$(attention_live_panes_path)"
 bench_mark state_read
 
-# Live-pane set per tmux socket, built only when .recent[] is non-empty
-# so the typical "no recent yet" hot path pays nothing extra. Recent
-# rows whose recorded (socket, pane) is no longer alive get filtered out
-# of display below — jump-time has its own redundant probe to catch the
-# race where the pane dies between menu render and Enter, but doing it
-# here too keeps the picker from showing rows that can't be jumped.
+# Live-pane set per tmux socket, built only when the snapshot has at
+# least one recent row so the typical "no recent yet" hot path pays
+# nothing extra. Recent rows whose recorded (socket, pane) is no
+# longer alive get filtered out at the final TSV-projection step
+# below — jump-time has its own redundant probe to catch the race
+# where the pane dies between menu render and Enter, but doing it
+# here too keeps the picker from showing rows that cannot be jumped.
 alive_panes_json='{}'
-recent_sockets="$(jq -r '[(.recent // [])[] | (.tmux_socket // "") | select(length > 0)] | unique | .[]' <<<"$state_json" 2>/dev/null || printf '')"
+recent_sockets=''
+if [[ -s "$live_panes_path" ]]; then
+  recent_sockets="$(jq -r '[.picker_rows[]? | select(.status == "recent") | .tmux_socket // "" | select(length > 0)] | unique | .[]' "$live_panes_path" 2>/dev/null || printf '')"
+fi
 if [[ -n "$recent_sockets" ]]; then
   alive_pieces=()
   while IFS= read -r sock; do
@@ -107,120 +111,45 @@ now_ms=$(( ${EPOCHREALTIME//./} / 1000 ))
 # but the first update-status tick after wezterm.lua loads (≤250ms)
 # overwrites them. Earlier versions defended against staleness with a
 # three-segment ts+trace+panes split and a 5s freshness gate, which
-# kept tripping on cross-WSL/Windows write→read races. Renderers
-# handle a missing pane_id key by falling back to `?` already.
-live_map='{}'
-live_panes_path="$(attention_live_panes_path)"
-if [[ -s "$live_panes_path" ]]; then
-  panes_json="$(jq -c '.panes // {}' "$live_panes_path" 2>/dev/null || printf '')"
-  [[ -n "$panes_json" ]] && live_map="$panes_json"
-fi
+# kept tripping on cross-WSL/Windows write→read races.
+#
+# The `panes` and `sessions` maps that the previous jq pipeline read
+# from this file are no longer needed at the menu layer — picker_rows
+# is precomputed Lua-side. Keep the bench_mark for trace alignment.
 bench_mark live_map
 
-# Build the per-row tuples once. Sort order matches the right-status
-# counter (waiting → done → running), with archived "recent" rows appended
-# last so the popup mirrors the badge order on the status bar at a glance
-# while still surfacing previously-active sessions for jump-back.
+# Picker rows now come pre-built from the wezterm-side snapshot
+# (attention.lua compute_picker_data). The badge counters and these
+# rows are produced from the same Lua predicate, so they cannot drift
+# out of sync — the picker stays a renderer instead of a parallel
+# filter pipeline.
 #
-# Row body and reason are sanitized so embedded \t / \n / \r cannot break
-# the TSV split below (reason is user-facing string from the agent).
+# Shell-side still applies one final filter that wezterm cannot answer
+# from Lua: hiding recent rows whose tmux pane is no longer alive
+# (rows would render but the jump would dead-end). The active block
+# does not need this — an active entry implies a recent hook fire,
+# which implies the tmux pane existed seconds ago.
 #
-# TSV layout per row:
-#   status \t body \t age \t id \t
-#   wezterm_pane_id \t tmux_socket \t tmux_window \t tmux_pane \t last_status
+# TSV layout per row (10 tab-separated fields):
+#   status \t body \t age \t id \t wezterm_pane_id \t tmux_socket \t
+#   tmux_window \t tmux_pane \t last_status \t tmux_session
 #
 #   - status:       "running" | "waiting" | "done" | "recent" | "__sentinel__"
 #   - id:           session_id for active; "recent::<sid>::<archived_ts>"
 #                   for recent; "__clear_all__" for the sentinel
-#   - wezterm_pane_id, tmux_socket, tmux_window, tmux_pane: coordinates
-#     the picker uses to build the OSC attention_jump payload on Enter,
-#     so the popup never has to re-read state.json. Empty for the
-#     __sentinel__ row.
-#   - last_status:  populated only for "recent" rows (the status the
-#                   entry held when it was archived); empty otherwise.
-#                   Lives at the END of the row so that for active rows
-#                   it is a trailing empty field — bash `read` with
-#                   `IFS=$'\t'` treats consecutive tabs as one separator
-#                   (tab is whitespace IFS), so an empty MIDDLE field
-#                   silently shifts every following field left by one.
-#                   A trailing empty is preserved correctly.
-rows_tsv="$(jq -r \
-  --argjson live "$live_map" \
-  --argjson alive "$alive_panes_json" \
-  --argjson now "$now_ms" '
-  def fmt_age($ms):
-    (($ms / 1000) | floor) as $s
-    | if $s < 60 then "\($s)s"
-      elif (($s / 60) | floor) < 60 then "\((($s / 60) | floor))m"
-      else "\((($s / 3600) | floor))h"
-      end;
-  def status_rank($s):
-    if $s == "waiting" then 0
-    elif $s == "done" then 1
-    elif $s == "running" then 2
-    else 3 end;
-  def strip_tmux_prefix($v):
-    ($v // "") | tostring | sub("^[@%]"; "");
-  def nonempty($v):
-    ($v // "") | tostring | length > 0;
-  def sanitize($s):
-    ($s // "") | tostring | gsub("[\t\n\r]"; " ");
-  def label_prefix($e; $L):
-    (if nonempty($L.workspace) then ($L.workspace | tostring) else "?" end) as $ws
-    | (if (($L.tab_index // null) != null) then
-         (if nonempty($L.tab_title)
-            then "\($L.tab_index)_\($L.tab_title)"
-            else "\($L.tab_index | tostring)" end)
-       else "?" end) as $tab
-    | (if nonempty($e.tmux_window) then
-         (if nonempty($e.tmux_pane)
-            then "\(strip_tmux_prefix($e.tmux_window))_\(strip_tmux_prefix($e.tmux_pane))"
-            else strip_tmux_prefix($e.tmux_window) end)
-       else "?" end) as $tmuxseg
-    | (if nonempty($e.git_branch) then ($e.git_branch | tostring) else "?" end) as $branch
-    | (if ($ws == "?" and $tab == "?" and $tmuxseg == "?" and $branch == "?")
-         then null
-         else "\($ws)/\($tab)/\($tmuxseg)/\($branch)" end);
-
-  ((.entries // {}) | keys) as $active_sids
-  | (
-      ((.entries // {}) | to_entries | map(.value)
-       | sort_by([status_rank(.status), (.ts // 0)])
-       | map(
-           . as $e
-           | ($live[($e.wezterm_pane_id // "" | tostring)] // {}) as $L
-           | (($now - (($e.ts // $now) | tonumber))) as $age_ms
-           | (fmt_age($age_ms)) as $age_text_base
-           | (if nonempty($e.wezterm_pane_id) then $age_text_base
-              else "\($age_text_base), no pane" end) as $age_text
-           | (label_prefix($e; $L)) as $prefix
-           | (if nonempty($e.reason) then ($e.reason | tostring) else $e.status end) as $reason
-           | (if $prefix == null then $reason else "\($prefix)  \($reason)" end) as $body
-           | "\($e.status)\t\(sanitize($body))\t\($age_text)\t\($e.session_id)\t\($e.wezterm_pane_id // "")\t\($e.tmux_socket // "")\t\($e.tmux_window // "")\t\($e.tmux_pane // "")\t"
-         ))
-      +
-      ((.recent // [])
-       | map(select((.session_id // "") as $sid | ($active_sids | index($sid)) == null))
-       | map(select(
-           (.tmux_socket // "") as $s
-           | (.tmux_window // "") as $w
-           | (.tmux_pane // "") as $p
-           | ($s != "" and $w != "" and $p != "" and (($alive[$s] // []) | index($p)) != null)
-         ))
-       | sort_by(-(.archived_ts // 0))
-       | map(
-           . as $r
-           | ($live[($r.wezterm_pane_id // "" | tostring)] // {}) as $L
-           | (($now - (($r.archived_ts // $now) | tonumber))) as $age_ms
-           | (fmt_age($age_ms)) as $age_text
-           | (label_prefix($r; $L)) as $prefix
-           | (if nonempty($r.last_reason) then ($r.last_reason | tostring) else ($r.last_status // "recent") end) as $reason
-           | (if $prefix == null then $reason else "\($prefix)  \($reason)" end) as $body
-           | "recent\t\(sanitize($body))\t\($age_text)\trecent::\($r.session_id)::\($r.archived_ts // 0)\t\($r.wezterm_pane_id // "")\t\($r.tmux_socket // "")\t\($r.tmux_window // "")\t\($r.tmux_pane // "")\t\($r.last_status // "")"
-         ))
-    )
-  | .[]
-' <<<"$state_json" 2>/dev/null || printf '')"
+#   - last_status / tmux_session live at the trailing edge so empty
+#     middle fields cannot collapse via bash IFS=$'\t' read.
+rows_tsv="$(jq -r --argjson alive "$alive_panes_json" '
+  (.picker_rows // []) | .[]
+  | . as $r
+  | ($r.tmux_socket // "") as $s
+  | ($r.tmux_pane // "")   as $p
+  | (if ($r.status == "recent")
+       then ($s != "" and $p != "" and (($alive[$s] // []) | index($p)) != null)
+       else true end) as $alive_ok
+  | select($alive_ok)
+  | "\($r.status)\t\($r.body)\t\($r.age_text)\t\($r.id)\t\($r.wezterm_pane_id // "")\t\($r.tmux_socket // "")\t\($r.tmux_window // "")\t\($r.tmux_pane // "")\t\($r.last_status // "")\t\($r.tmux_session // "")"
+' "$live_panes_path" 2>/dev/null || printf '')"
 bench_mark jq_rows
 
 if [[ -z "$rows_tsv" ]]; then
@@ -238,14 +167,14 @@ row_status=()
 row_body=()
 row_age=()
 row_last_status=()
-while IFS=$'\t' read -r s b a id wp sock win pane ls; do
+while IFS=$'\t' read -r s b a id wp sock win pane ls tsess; do
   [[ -n "$s" ]] || continue
   row_status+=("$s")
   row_body+=("$b")
   row_age+=("$a")
   row_last_status+=("$ls")
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$s" "$b" "$a" "$id" "$wp" "$sock" "$win" "$pane" "$ls" >> "$prefetch_file"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$s" "$b" "$a" "$id" "$wp" "$sock" "$win" "$pane" "$ls" "$tsess" >> "$prefetch_file"
 done <<<"$rows_tsv"
 
 item_count="${#row_status[@]}"
@@ -262,7 +191,7 @@ row_status+=("__sentinel__")
 row_body+=("clear all · ${item_count} entries")
 row_age+=("")
 row_last_status+=("")
-printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' '__sentinel__' "clear all · ${item_count} entries" '' '__clear_all__' '' '' '' '' '' >> "$prefetch_file"
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' '__sentinel__' "clear all · ${item_count} entries" '' '__clear_all__' '' '' '' '' '' '' >> "$prefetch_file"
 total_rows=$((item_count + 1))
 bench_mark tsv_write
 
