@@ -227,6 +227,71 @@ The picker now falls back to parsing the `tmux_session` name shape
 `wezterm_<workspace>_<repo_label>_<10hex>` so the row shows
 `work/<repo>/...` instead of `?/?/...`.
 
+### Unified pane→tmux_session map (drives attention focus + jumps)
+
+`wezterm_pane_id` is mux-global and lifecycle-bound: spawn-cap
+eviction, workspace close + reopen, refresh-session, and overflow
+rotation all change the id without changing the session identity.
+The `tmux_session` name (computed by `tmux_worktree_session_name_for_path`
+from workspace + cwd) is the stable handle. Attention's render and
+jump paths therefore resolve focus by **"which session does this
+wezterm pane currently host?"** and match against `entry.tmux_session`,
+never by the stored `wezterm_pane_id`.
+
+`tab_visibility.lua` owns one map: `_G.__WEZTERM_PANE_TMUX_SESSION
+[pane_id] = session_name`. Two storage tiers:
+
+1. **In-memory** — `spawn_overflow_tab` populates the overflow pane
+   with its initial browse session (`wezterm_<slug>_overflow`).
+   `titles.lua`'s `tab.activate_overflow` event handler refreshes the
+   value after each Alt+t pick (`set_pane_session(overflow_pane_id,
+   target_session)`). Covers the rotating overflow pane.
+2. **On-disk** — `scripts/runtime/open-project-session.sh` writes
+   `<runtime_state>/state/pane-session/<wezterm_pane_id>.txt` with
+   the `session_name` it just created or reused at managed-session
+   creation. Covers visible managed tabs whose pane id is fixed for
+   the lifetime of that wezterm tab.
+
+Public readers in `tab_visibility.lua`:
+
+- `session_for_pane(pane_id)` — in-memory tier, fall back to file.
+- `pane_for_session(session_name)` — reverse lookup; in-memory walk,
+  fall back to scanning the on-disk dir.
+
+Consumers (all in `attention.lua`):
+
+- `is_entry_focused(entry, focused_pane_id)` — `session_for_pane(focused_pane_id) == entry.tmux_session`, plus the existing tmux-pane-level guard for split-pane sessions.
+- `activate_in_gui(pane_id_value, window, source, opts)` — when `opts.tmux_session` is set, `pane_for_session` finds the wezterm pane currently hosting it (visible tab or overflow) and that pane gets activated. Workspace switch is automatic when the target lives elsewhere. Falls back to literal `pane_id_value` when no session hint is present.
+- `tab_badge(tab_info)` — active pane's hosted session selects the matching attention entry; `done` is suppressed only when `is_entry_focused` says yes.
+
+**Picker payload** (Alt+/) appends the resolved session name as the
+trailing v1 field: `v1|jump|<sid>|<wp>|<sock>|<win>|<pane>|<session>`
+(and `v1|recent|...|<session>`). Both Go picker (`cmd_attention.go`)
+and bash fallback (`tmux-attention-picker.sh`) producers resolve the
+name via `tmux -S <socket> display-message -t <window> '#S'`. Lua's
+`parse_jump_payload` is nil-tolerant — older payloads without the
+trailing field still parse and drop into the legacy literal-pane
+fallback.
+
+### Overflow tab identity via pane user_var
+
+Pruning / alignment-check uses `tab:active_pane():get_user_vars()
+['we_tab_role'] == 'overflow'` to identify the overflow tab —
+`spawn_overflow_tab` sets that user var on the placeholder pane.
+Title-based detection was fragile: any code path that called
+`tab:set_title` (refresh-session, user-driven rename) silently
+de-classified the tab and let prune kill it. The user_var marker is
+set by lua and only touched by lua, so external resets cannot drop it.
+
+The browse session also gets a server-side tag:
+`tmux set-option -t wezterm_<slug>_overflow -q @wezterm_session_role
+tab_visibility_overflow_browse`. Future tooling can identify the
+session deterministically without parsing the name.
+
+Full attention render + transition rules: see
+[`docs/agent-attention.md`](./agent-attention.md), particularly the
+*Focus-based auto-ack* subsection's "Match by `tmux_session`" point.
+
 ## What's not done yet
 
 - **No warm preheat layer.** A natural next step is to keep the next

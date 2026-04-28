@@ -85,13 +85,13 @@ all_wezterm_pane=()
 all_tmux_socket=()
 all_tmux_window=()
 all_tmux_pane=()
-# Column order: status, body, age, id, wp, sock, win, pane, last_status.
-# last_status MUST stay last — bash `read -r` with `IFS=$'\t'` collapses
-# consecutive tabs (tab is whitespace IFS), so an empty MIDDLE field
-# would silently shift every subsequent field. Trailing empty fields are
-# preserved correctly, which is why active rows put their empty
-# last_status at the end of the line.
-while IFS=$'\t' read -r s b a id wp sock win pane ls; do
+all_tmux_session=()
+# Column order: status, body, age, id, wp, sock, win, pane, last_status,
+# tmux_session. Trailing empty fields are preserved by bash `read -r`
+# with `IFS=$'\t'`. Empty MIDDLE fields would be silently collapsed
+# (tab is whitespace IFS), so columns that may be empty for some row
+# kinds (last_status active, tmux_session sentinel) sit at the tail.
+while IFS=$'\t' read -r s b a id wp sock win pane ls tsess; do
   [[ -n "$s" ]] || continue
   all_status+=("$s")
   all_body+=("$b")
@@ -102,6 +102,7 @@ while IFS=$'\t' read -r s b a id wp sock win pane ls; do
   all_tmux_window+=("${win:-}")
   all_tmux_pane+=("${pane:-}")
   all_last_status+=("${ls:-}")
+  all_tmux_session+=("${tsess:-}")
 done < "$prefetch_file"
 
 backing_total="${#all_ids[@]}"
@@ -127,6 +128,7 @@ row_wezterm_pane=()
 row_tmux_socket=()
 row_tmux_window=()
 row_tmux_pane=()
+row_tmux_session=()
 selected_index=0
 
 apply_filter() {
@@ -139,6 +141,7 @@ apply_filter() {
   row_tmux_socket=()
   row_tmux_window=()
   row_tmux_pane=()
+  row_tmux_session=()
   local i s b lower_b lower_f
   local filter_active=0
   [[ -n "$filter_text" || "$status_filter" != "all" ]] && filter_active=1
@@ -162,6 +165,7 @@ apply_filter() {
       row_tmux_socket+=("${all_tmux_socket[$i]}")
       row_tmux_window+=("${all_tmux_window[$i]}")
       row_tmux_pane+=("${all_tmux_pane[$i]}")
+      row_tmux_session+=("${all_tmux_session[$i]}")
       continue
     fi
     if [[ "$status_filter" != "all" && "$status_filter" != "$s" ]]; then
@@ -180,6 +184,7 @@ apply_filter() {
     row_tmux_socket+=("${all_tmux_socket[$i]}")
     row_tmux_window+=("${all_tmux_window[$i]}")
     row_tmux_pane+=("${all_tmux_pane[$i]}")
+    row_tmux_session+=("${all_tmux_session[$i]}")
   done
   # Clamp selection inside the filtered range.
   local visible="${#row_ids[@]}"
@@ -358,6 +363,15 @@ dispatch_selection() {
   fi
 
   local payload
+  # Resolve the target tmux session name. Carried-from-TSV value (from
+  # attention.json entries[]/recent[]) is authoritative. Falls back to
+  # runtime `tmux display-message` only when the carried value is
+  # missing — it would fail anyway for archived rows whose stored
+  # window id no longer exists.
+  local sess_name="${row_tmux_session[$selected_index]:-}"
+  if [[ -z "$sess_name" ]]; then
+    sess_name="$(tmux -S "$sock" display-message -p -t "$win" '#S' 2>/dev/null || true)"
+  fi
   if [[ "$id" == recent::* ]]; then
     local rest sid archived
     rest="${id#recent::}"
@@ -366,8 +380,6 @@ dispatch_selection() {
     [[ "$archived" == "$rest" ]] && archived=""
     # Re-resolve wezterm pane id from the target session env (stored value
     # is whatever was live at archive time and may be stale post-restart).
-    local sess_name=""
-    sess_name="$(tmux -S "$sock" display-message -p -t "$win" '#S' 2>/dev/null || true)"
     if [[ -n "$sess_name" ]]; then
       local env_line
       env_line="$(tmux -S "$sock" show-environment -t "$sess_name" WEZTERM_PANE 2>/dev/null || true)"
@@ -376,12 +388,12 @@ dispatch_selection() {
       fi
     fi
     runtime_log_info attention "alt-slash trigger recent jump" \
-      "trace=$trace_id" "session_id=$sid" "archived_ts=$archived" "wezterm_pane=$wp"
-    payload="v1|recent|${sid}|${archived}|${wp}|${sock}|${win}|${pane}"
+      "trace=$trace_id" "session_id=$sid" "archived_ts=$archived" "wezterm_pane=$wp" "tmux_session=$sess_name"
+    payload="v1|recent|${sid}|${archived}|${wp}|${sock}|${win}|${pane}|${sess_name}"
   else
     runtime_log_info attention "alt-slash trigger jump" \
-      "trace=$trace_id" "session_id=$id" "wezterm_pane=$wp"
-    payload="v1|jump|${id}|${wp}|${sock}|${win}|${pane}"
+      "trace=$trace_id" "session_id=$id" "wezterm_pane=$wp" "tmux_session=$sess_name"
+    payload="v1|jump|${id}|${wp}|${sock}|${win}|${pane}|${sess_name}"
   fi
   if send_attention_jump_event "$payload"; then
     return 0

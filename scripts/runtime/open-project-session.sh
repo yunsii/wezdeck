@@ -9,6 +9,8 @@ source "$SCRIPT_DIR/runtime-log-lib.sh"
 source "$SCRIPT_DIR/tmux-version-lib.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/tmux-worktree-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/windows-runtime-paths-lib.sh"
 
 if [[ $# -lt 2 ]]; then
   echo "usage: $0 <workspace> <cwd> [command...]" >&2
@@ -189,6 +191,24 @@ fi
 
 tmux_worktree_set_session_metadata "$session_name" "$workspace" managed
 tmux_worktree_set_window_metadata "$window_id" managed_primary "$worktree_root" "$worktree_label" "$primary_shell_command" managed_two_pane
+
+# Record the wezterm pane → tmux session mapping for the attention-side
+# focus-ack fallback. Without this, an attention entry whose stored
+# wezterm_pane_id was killed (workspace close + reopen) can never
+# auto-ack via the focused pane match — even when the user is actively
+# focused on the same project's new tab. The lua side reads
+# <state>/pane-session/<pane_id>.txt to determine which tmux session a
+# given wezterm pane is hosting; if it matches entry.tmux_session, the
+# entry counts as focused regardless of stored pane id.
+if [[ -n "${WEZTERM_PANE:-}" ]]; then
+  if windows_runtime_detect_paths 2>/dev/null; then
+    pane_session_dir="$WINDOWS_RUNTIME_STATE_WSL/state/pane-session"
+  else
+    pane_session_dir="${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/state/pane-session"
+  fi
+  mkdir -p "$pane_session_dir" 2>/dev/null || true
+  printf '%s\n' "$session_name" > "$pane_session_dir/$WEZTERM_PANE.txt" 2>/dev/null || true
+fi
 
 startup_step="load_tmux_config"
 tmux_worktree_ensure_tmux_config_loaded "$TMUX_CONF" "$(repo_root_path)"

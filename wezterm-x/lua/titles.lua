@@ -397,7 +397,8 @@ function M.register(opts)
       return
     end
     local activated = attention.activate_in_gui(
-      coords.wezterm_pane, meta.window, meta.pane)
+      coords.wezterm_pane, meta.window, meta.pane,
+      { tmux_session = coords.tmux_session })
     if actions_mod and actions_mod.attention_jump_args and constants then
       local trailing = {
         '--direct',
@@ -462,11 +463,62 @@ function M.register(opts)
   event_bus.on('tab.activate_overflow', function(payload, meta)
     local fields = parse_tab_payload(payload)
     if not fields or not fields.workspace then return end
+    -- Refresh the overflow→session map so attention's auto-ack +
+    -- Alt+/ jump fallback know which session this overflow pane is
+    -- currently projecting. Tab title intentionally stays `…`.
+    if tab_visibility and type(tab_visibility.set_overflow_attach) == 'function'
+       and fields.session and fields.session ~= '' then
+      -- Always resolve the overflow placeholder pane id from the live
+      -- mux. The previous design trusted _G.__WEZTERM_TAB_OVERFLOW's
+      -- stored pane_id, but that goes stale across workspace
+      -- close+reopen — the new placeholder gets a fresh wezterm pane
+      -- id while the registry keeps the dead one. set_pane_session
+      -- then writes the unified map under the wrong pane and
+      -- attention.lua never learns the new edge, so jumps fall back
+      -- to entry stored wezterm_pane_id (a different stale id) and
+      -- the user clicks Alt+/ → no jump. Resolve fresh each time.
+      local found_pane_id
+      local ok_all, all_windows = pcall(wezterm.mux.all_windows)
+      if ok_all and type(all_windows) == 'table' then
+        for _, mux_win in ipairs(all_windows) do
+          local ok_ws, ws = pcall(function() return mux_win:get_workspace() end)
+          if ok_ws and ws == fields.workspace then
+            local ok_tabs, tabs_list = pcall(function() return mux_win:tabs() end)
+            if ok_tabs and type(tabs_list) == 'table' then
+              for _, mux_tab in ipairs(tabs_list) do
+                local ok_title, title = pcall(function() return mux_tab:get_title() end)
+                if ok_title and title == '…' then
+                  local ok_pane, active_pane = pcall(function() return mux_tab:active_pane() end)
+                  if ok_pane and active_pane then
+                    pcall(function() found_pane_id = active_pane:pane_id() end)
+                  end
+                  break
+                end
+              end
+            end
+          end
+          if found_pane_id then break end
+        end
+      end
+      if found_pane_id and type(tab_visibility.set_overflow_pane) == 'function' then
+        -- Re-seed every time so a stale pane_id from an earlier
+        -- workspace incarnation is overwritten by the live one.
+        tab_visibility.set_overflow_pane(fields.workspace, found_pane_id, fields.session)
+      end
+      tab_visibility.set_overflow_attach(fields.workspace, fields.session)
+      -- Mirror the resolved pane → session edge into the unified map
+      -- so attention focus/jump/badge logic sees the overflow pane as
+      -- hosting the new session within the same tick.
+      if found_pane_id and type(tab_visibility.set_pane_session) == 'function' then
+        tab_visibility.set_pane_session(found_pane_id, fields.session)
+      end
+    end
     if not workspace_module or not workspace_module.activate_overflow then return end
     local ok = workspace_module.activate_overflow(fields.workspace)
     if logger then
       logger.info('tab_visibility', 'tab.activate_overflow dispatched', {
         workspace = fields.workspace,
+        session = fields.session,
         success = ok,
         transport = meta and meta.transport or '?',
       })

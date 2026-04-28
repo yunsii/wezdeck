@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 # Cold-session bring-up for the overflow tab. Called when the Alt+t
 # picker selects an `○` cold item (configured in workspaces.lua but
-# without a live tmux session). Creates a bare tmux session for the
-# given cwd, then switch-clients the overflow pane to it.
+# without a live tmux session). Creates a managed tmux session for the
+# given cwd via the same `open-project-session.sh` path the visible
+# tabs use, then switch-clients the overflow pane to it.
 #
 # Usage: tab-overflow-cold-spawn.sh <workspace> <cwd>
 #
-# Limitation: the resulting session is a plain bash shell, not the
-# managed agent (claude / codex). Starting the agent from bash needs
-# to know the active managed_cli profile + its command, which is
-# composed lua-side and not available here. PR4 will plumb that
-# through. For now the user can `claude --continue` themselves once
-# they're in the projected session — better than the previous
-# behavior of silently spawning a new wezterm tab.
+# Resolution shape mirrors the lua side: read worktree-task.env (the
+# tracked managed_cli profile registry) + wezterm-x/local/shared.env
+# (the per-machine MANAGED_AGENT_PROFILE selection), prefer the
+# `<base>_resume` variant when the profile defines one (matches lua's
+# default_resume_profile resolution in constants.lua), and fall back to
+# the bare profile command. open-project-session.sh accepts the resolved
+# argv as its `[command...]` and wraps it in primary-pane-wrapper.sh,
+# which gives the same two-pane layout (left agent, right shell) as a
+# fresh visible tab.
 set -u
 
 workspace="${1:?missing workspace}"
 cwd="${2:?missing cwd}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
 # shellcheck disable=SC1091
 . "$script_dir/wezterm-event-lib.sh"
 # shellcheck disable=SC1091
@@ -33,15 +37,88 @@ if [[ -z "$session_name" ]]; then
   exit 1
 fi
 
-# Idempotent: -A attaches if the session already exists. -d stays
-# detached. Bare bash session if not already there.
-if ! tmux new-session -A -d -s "$session_name" -c "$cwd" 2>/dev/null; then
-  printf '[tab-overflow-cold-spawn] tmux new-session failed for %s\n' "$session_name" >&2
+# If the session is already up (raced with another spawn), skip create
+# and go straight to attach + activate.
+if tmux has-session -t "$session_name" 2>/dev/null; then
+  if ! bash "$script_dir/tab-overflow-attach.sh" "$workspace" "$session_name"; then
+    printf '[tab-overflow-cold-spawn] tab-overflow-attach.sh failed\n' >&2
+    exit 3
+  fi
+  WEZTERM_EVENT_FORCE_FILE=1 \
+    wezterm_event_send "tab.activate_overflow" \
+      "v1|workspace=${workspace}|session=${session_name}" || true
+  exit 0
+fi
+
+# Resolve the managed agent argv from worktree-task.env + shared.env.
+# These files cannot be `source`-d safely — `worktree-task.env` carries
+# values like `codex -c 'tui.theme="github"'` that bash treats as a
+# command invocation under set-a / dot-source. Use a literal key=value
+# reader instead (the lua side has its own parser via
+# wezterm-x/lua/config/managed_cli.parse_managed_cli_env, which mirrors
+# the same shape).
+read_env_var() {
+  local file="$1" key="$2" line raw
+  [[ -f "$file" ]] || return 1
+  line="$(grep -E "^${key}=" "$file" 2>/dev/null | tail -n 1)"
+  [[ -n "$line" ]] || return 1
+  raw="${line#${key}=}"
+  # Strip a single layer of single OR double quotes.
+  if [[ "${raw:0:1}" == "'" && "${raw: -1}" == "'" ]]; then
+    raw="${raw:1:${#raw}-2}"
+  elif [[ "${raw:0:1}" == '"' && "${raw: -1}" == '"' ]]; then
+    raw="${raw:1:${#raw}-2}"
+  fi
+  printf '%s' "$raw"
+}
+
+shared_env="$repo_root/wezterm-x/local/shared.env"
+worktree_env="$repo_root/config/worktree-task.env"
+profile="$(read_env_var "$shared_env" MANAGED_AGENT_PROFILE 2>/dev/null || true)"
+[[ -z "$profile" ]] && profile="$(read_env_var "$worktree_env" WT_PROVIDER_AGENT_PROFILE 2>/dev/null || true)"
+[[ -z "$profile" ]] && profile="claude"
+upper="$(printf '%s' "$profile" | tr '[:lower:]-' '[:upper:]_')"
+agent_command_str="$(read_env_var "$worktree_env" "WT_PROVIDER_AGENT_PROFILE_${upper}_RESUME_COMMAND" 2>/dev/null || true)"
+[[ -z "$agent_command_str" ]] && \
+  agent_command_str="$(read_env_var "$worktree_env" "WT_PROVIDER_AGENT_PROFILE_${upper}_COMMAND" 2>/dev/null || true)"
+[[ -z "$agent_command_str" ]] && agent_command_str="$profile"
+
+# Split into argv. open-project-session.sh's build_primary_shell_command
+# quotes each element with %q, so the result is a single primary command
+# string that primary-pane-wrapper.sh execs. For tokens like
+# `claude --continue` the simple word-split is correct; for codex
+# variants with embedded quotes (codex -c 'tui.theme="github"') a
+# proper shell tokenizer would be needed — out of scope here.
+agent_argv=()
+read -ra agent_argv <<< "$agent_command_str"
+
+# Spawn open-project-session.sh in a fully detached background process.
+# The script's tail does `exec tmux attach-session` which fails without
+# a controlling tty — but `tmux new-session -d` runs first and creates
+# the session, so we still get the managed two-pane layout. setsid +
+# the closed std streams keep the child from holding our stdio.
+( setsid bash "$script_dir/open-project-session.sh" \
+    "$workspace" "$cwd" "${agent_argv[@]}" </dev/null >/dev/null 2>&1 & ) >/dev/null 2>&1
+
+# Poll for the session to come up. open-project-session.sh's setup
+# (git resolution, primary command build, two-pane split) typically
+# lands within 500-800 ms; cap at ~5 s for slow disks.
+for _ in $(seq 1 50); do
+  if tmux has-session -t "$session_name" 2>/dev/null; then
+    break
+  fi
+  sleep 0.1
+done
+
+if ! tmux has-session -t "$session_name" 2>/dev/null; then
+  printf '[tab-overflow-cold-spawn] session %s did not come up in 5 s\n' \
+    "$session_name" >&2
   exit 2
 fi
 
-# Tag the new session with the workspace so any future per-workspace
-# tooling (focus stats hook etc.) buckets it correctly.
+# Tag the new session with the workspace (set-option is idempotent;
+# open-project-session.sh sets it too via tmux_worktree_set_session_metadata
+# but we may race with that call).
 tmux set-option -t "$session_name" -q @wezterm_workspace "$workspace" 2>/dev/null || true
 
 if ! bash "$script_dir/tab-overflow-attach.sh" "$workspace" "$session_name"; then
@@ -50,4 +127,5 @@ if ! bash "$script_dir/tab-overflow-attach.sh" "$workspace" "$session_name"; the
 fi
 
 WEZTERM_EVENT_FORCE_FILE=1 \
-  wezterm_event_send "tab.activate_overflow" "v1|workspace=${workspace}" || true
+  wezterm_event_send "tab.activate_overflow" \
+    "v1|workspace=${workspace}|session=${session_name}" || true

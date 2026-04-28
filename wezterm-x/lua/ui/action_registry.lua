@@ -419,7 +419,8 @@ function M.new(ctx)
         session_id = entry.session_id,
         wezterm_pane_id = entry.wezterm_pane_id,
       })
-      attention.activate_in_gui(entry.wezterm_pane_id, window, pane)
+      attention.activate_in_gui(entry.wezterm_pane_id, window, pane,
+        { tmux_session = entry.tmux_session })
       local args = attention_direct_args(entry, pane, trace_id)
       if args then wezterm.background_child_process(args) end
     end)
@@ -438,10 +439,19 @@ function M.new(ctx)
         session_id = entry.session_id,
         wezterm_pane_id = entry.wezterm_pane_id,
       })
-      local activated = attention.activate_in_gui(entry.wezterm_pane_id, window, pane)
+      local activated = attention.activate_in_gui(entry.wezterm_pane_id, window, pane,
+        { tmux_session = entry.tmux_session })
       local args = attention_direct_args(entry, pane, trace_id)
       if args then wezterm.background_child_process(args) end
       if activated then
+        -- Drop from the in-memory cache before the subprocess lands on
+        -- disk so the badge / picker decrement immediately. Without
+        -- this the user sees `done 2` for 50-200 ms after the jump,
+        -- and a second Alt+. that races with the disk catch-up jumps
+        -- the count from 2 → 0 instead of 2 → 1 → 0.
+        if attention.optimistically_hide then
+          attention.optimistically_hide(entry)
+        end
         local forget_args = attention_forget_args(entry, pane, trace_id)
         if forget_args then wezterm.background_child_process(forget_args) end
       end
