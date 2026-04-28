@@ -179,6 +179,20 @@
     }
   },
   {
+    "id": "git.push-current",
+    "label": "Git: Push current branch (agent-aware)",
+    "description": "Run `git push` in the focused pane. When the foreground process is a known agent CLI (claude / codex), prefix with `!` (with a tiny inter-key gap so the shell-escape detector fires) so the agent runs it as an inline shell command instead of treating it as chat input; otherwise the literal `git push` + Enter is sent to the shell. Note: capturing `Ctrl+P` at the WezTerm layer pre-empts readline previous-history / vim / TUIs in any pane — remap if you want those back. In tmux-backed panes WezTerm forwards `\\x1b[20102~` (User3) and tmux's root binding does the foreground check via `pane_current_command`; outside tmux WezTerm checks `get_foreground_process_name()` directly.",
+    "scope": "project-navigation",
+    "context": "any",
+    "binding": {"handler": "git.push_current"},
+    "hotkeys": [
+      { "keys": "Ctrl+P", "layer": "wezterm" }
+    ],
+    "palette": {
+      "command": ["bash", "-lc", "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/git-push-into-pane.sh' agent \"$COMMAND_PANEL_WINDOW_ID\" ;; *) bash '{repo_root}/scripts/runtime/git-push-into-pane.sh' shell \"$COMMAND_PANEL_WINDOW_ID\" ;; esac"]
+    }
+  },
+  {
     "id": "command-palette.chord-prefix",
     "label": "Command chord: Activate prefix",
     "description": "Forward `Ctrl+k` to a tmux-backed pane so the follow-up chord keys (`v` / `h` / `x` / `g`) resolve in the tmux `command-chord` table; toast when the current pane is not running tmux.",

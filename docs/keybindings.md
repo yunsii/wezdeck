@@ -58,6 +58,10 @@ These shortcuts navigate the shared agent-attention state. All three require a t
 
 - `Ctrl+n`: when the focused pane has a known agent CLI in foreground (`claude` or `codex`), inject `/new` followed by Enter to start a fresh conversation. In tmux-backed panes WezTerm forwards `\x0e` and tmux's root binding does the foreground check via `pane_current_command`; outside tmux WezTerm checks `get_foreground_process_name()` directly. When the foreground is anything else (shell, editor, …), `Ctrl+n` is passed through unchanged so `readline`/`emacs`/etc. next-line bindings keep working. Detection covers the profiles declared in `wezterm-x/lua/constants.lua` `managed_cli.profiles` — add a new profile name to both the Lua handler (`agent_cli_basenames` in `wezterm-x/lua/ui/action_registry.lua`) and the tmux `if-shell` pattern in `tmux.conf` if you introduce another agent CLI.
 
+## Git
+
+- `Ctrl+p`: agent-aware `git push`. When the focused pane has a known agent CLI in foreground (`claude` or `codex`), the binding stages three bursts — `!`, then `git push`, then Enter — separated by ~50 ms gaps so the agent treats each as a typed keystroke rather than a fast batched paste (Claude Code's heuristic otherwise suppresses the `!` shell-mode trigger and/or treats the trailing `\r` as a literal newline inside the input). Otherwise it sends `git push` + Enter directly to the shell. In tmux-backed panes WezTerm forwards `\x1b[20102~` (User3) and tmux's root binding does the foreground check via `pane_current_command`; outside tmux WezTerm checks `get_foreground_process_name()` directly. The same agent-CLI detection as `Ctrl+n` applies — add new agent profiles to both `agent_cli_basenames` (Lua) and the tmux `if-shell` pattern in `tmux.conf` if you introduce another agent CLI. Note: capturing `Ctrl+P` at the WezTerm layer pre-empts readline previous-history (`Up` arrow still works), vim normal-mode `Ctrl+P`, and any TUI that binds `Ctrl+P` for itself; remap via `wezterm-x/local/keybindings.lua` if you want those back.
+
 ## Commands
 
 - `Ctrl+k`: tmux chord prefix in tmux-backed panes; follow-up keys act on tmux panes and are listed in `Panes` above
