@@ -237,6 +237,56 @@ function M.new(ctx)
     end)
   end
 
+  -- ── Git ───────────────────────────────────────────────
+
+  handlers['git.push_current'] = function()
+    return wezterm.action_callback(function(window, pane)
+      local trace_id = logger.trace_id('git')
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        -- Tmux owns the agent-vs-shell switch via `bind-key -n User3` in
+        -- tmux.conf; it inspects `pane_current_command` and either sends
+        -- `!` + sleep + `git push` + Enter (agent CLI) or `git push` +
+        -- Enter (shell).
+        logger.info('git', 'forwarding Ctrl+P to tmux-backed pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(wezterm, window, pane, 'Ctrl+p', '\x1b[20102~', logger, 'git', workspace_name, trace_id)
+        return
+      end
+      local foreground_process = common.foreground_process_basename(pane)
+      if foreground_process and agent_cli_basenames[foreground_process:lower()] then
+        -- Stage `!`, the command body, and Enter with brief gaps so
+        -- Claude Code's shell-escape detector treats each as a typed
+        -- keystroke rather than a fast batched paste. Without the gaps
+        -- the bytes arrive in one read() and the agent suppresses the
+        -- shell-mode trigger / treats the `\r` as a literal newline in
+        -- the input. The synchronous sleeps block the WezTerm event
+        -- loop for ~100 ms total, imperceptible for a one-off keypress.
+        logger.info('git', 'sending !git push (staged) to non-tmux agent CLI pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          foreground_process = foreground_process,
+          workspace = workspace_name,
+        }))
+        window:perform_action(wezterm.action.SendString('!'), pane)
+        pcall(wezterm.run_child_process, { 'sleep', '0.1' })
+        window:perform_action(wezterm.action.SendString('git push'), pane)
+        pcall(wezterm.run_child_process, { 'sleep', '0.1' })
+        window:perform_action(wezterm.action.SendString('\r'), pane)
+        return
+      end
+      logger.info('git', 'sending git push to non-tmux pane', common.merge_fields(trace_id, {
+        decision_path = decision_path,
+        foreground_process = foreground_process or 'unknown',
+        workspace = workspace_name,
+      }))
+      window:perform_action(wezterm.action.SendString('git push\r'), pane)
+    end)
+  end
+
   -- ── VS Code ───────────────────────────────────────────
 
   handlers['vscode.open_current_dir'] = function()
