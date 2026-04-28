@@ -24,6 +24,10 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   auto-ack, the `Alt+,` / `Alt+.` / `Alt+/` keyboard entry points, or
   Codex integration:
   Read [`docs/agent-attention.md`](docs/agent-attention.md).
+- Timed reminders (cron-driven tmux popups), the `reminder.sh` /
+  `tmux-popup-active.sh` wrappers, or the
+  `wezterm-x/local/crontab` install workflow:
+  Read [`docs/reminders.md`](docs/reminders.md).
 - Headless Chrome debug instance, auto-start behavior, `Alt+b` /
   `Alt+Shift+b`, `chrome://inspect` workflow, or the right-status `CDP·…`
   badge:

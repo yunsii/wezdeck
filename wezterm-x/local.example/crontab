@@ -1,0 +1,19 @@
+# Machine-local cron entries. Copy this file to wezterm-x/local/crontab,
+# edit the schedule and message lines, then install with:
+#
+#   crontab wezterm-x/local/crontab
+#
+# Re-running `crontab <file>` replaces the user crontab atomically, so
+# keeping the source of truth here means a fresh machine can restore the
+# same reminders by rerunning that one command.
+#
+# Reminder entries delegate to scripts/runtime/reminder.sh, which finds
+# the most recently active tmux client and pops a centered popup there
+# (silently skips if no tmux client is attached). For raw popups beyond
+# the reminder template, call scripts/runtime/tmux-popup-active.sh
+# directly.
+#
+# Usage: reminder.sh <title> <message> [timeout-seconds] [width] [height]
+
+# ⏰ 09:10 weekday punch-card reminder.
+10 9 * * 1-5 /home/yuns/github/wezterm-config/scripts/runtime/reminder.sh ' ⏰ 打卡提醒 ' '打卡了吗？'
