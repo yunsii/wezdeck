@@ -77,6 +77,24 @@ function M.new(ctx)
     return wezterm.action.ActivateTab(index - 1)
   end
 
+  handlers['tabs.overflow_picker'] = function()
+    return wezterm.action_callback(function(window, pane)
+      local trace_id = logger.trace_id('tab_visibility')
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        logger.info('tab_visibility', 'forwarding Alt+t to tmux-backed pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(wezterm, window, pane, 'Alt+t', '\x1b[20103~', logger, 'tab_visibility', workspace_name, trace_id)
+        return
+      end
+      actions.tmux_only_shortcut(window, logger, 'Alt+t', trace_id)
+    end)
+  end
+
   -- ── Panes ─────────────────────────────────────────────
 
   handlers['pane.rotate_next'] = function()

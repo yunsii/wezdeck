@@ -26,6 +26,8 @@ function M.register(opts)
   local host = opts.host
   local logger = opts.logger
   local constants = opts.constants
+  local tab_visibility = opts.tab_visibility
+  local workspace_module = opts.workspace
   local actions_mod = nil
   if constants then
     -- Lazy-load actions only when titles is wired with constants; the
@@ -179,6 +181,14 @@ function M.register(opts)
       fg = palette.tab_hover_fg
     end
 
+    -- Earlier "slot projection" rewrote visible-window tab titles to the
+    -- top-N session names computed by tab_visibility. Removed: the
+    -- visible tabs are spawned from workspaces.lua's first-N entries
+    -- and stay attached to those tmux sessions for the wezterm tab's
+    -- entire lifetime, so a frequency-driven label can drift out of
+    -- sync with the pane content (tab title says `team-stat` while
+    -- the pane is actually attached to `packages`). Default rendering
+    -- (cwd summary / OSC title) is the source-of-truth.
     local badge = attention and attention.tab_badge(tab) or nil
     local segments = {}
     if badge then
@@ -285,6 +295,21 @@ function M.register(opts)
 
     local workspace = window:active_workspace() or 'default'
     window:set_left_status(format_workspace_label(workspace))
+
+    -- Tab-visibility: recompute the top-N slot assignment for this
+    -- workspace at most once per recompute_interval_ms (the module owns
+    -- the throttle). No-op when the workspace is not enabled in
+    -- constants.tab_visibility.enabled_workspaces. See docs/tab-visibility.md.
+    if tab_visibility and tab_visibility.is_enabled(workspace) then
+      local now_ms = nil
+      local ok, now_str = pcall(function()
+        return wezterm.time.now():format '%s%3f'
+      end)
+      if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
+        now_ms = tonumber(now_str)
+      end
+      if now_ms then tab_visibility.tick(workspace, now_ms) end
+    end
 
     -- update-status owns the periodic housekeeping that genuinely
     -- needs the wezterm tick cadence:
@@ -397,6 +422,100 @@ function M.register(opts)
         wezterm_pane = coords.wezterm_pane,
         activated    = activated,
         transport    = meta.transport,
+      })
+    end
+  end)
+
+  -- Shared payload parser for tab.* events. Format is
+  -- `v1|key1=val1|key2=val2|...`.
+  local function parse_tab_payload(payload)
+    if type(payload) ~= 'string' or payload == '' then return nil end
+    local fields = {}
+    for chunk in string.gmatch(payload, '([^|]+)') do
+      local k, v = chunk:match('^([^=]+)=(.+)$')
+      if k and v then fields[k] = v end
+    end
+    return fields
+  end
+
+  -- tab.activate_visible: Alt+t picker selected a session that already
+  -- has a wezterm tab in its workspace. Just activate that tab.
+  event_bus.on('tab.activate_visible', function(payload, meta)
+    local fields = parse_tab_payload(payload)
+    if not fields or not fields.workspace or not fields.cwd then return end
+    if not workspace_module or not workspace_module.activate_only then return end
+    local ok = workspace_module.activate_only(fields.workspace, fields.cwd)
+    if logger then
+      logger.info('tab_visibility', 'tab.activate_visible dispatched', {
+        workspace = fields.workspace,
+        cwd = fields.cwd,
+        success = ok,
+        transport = meta and meta.transport or '?',
+      })
+    end
+  end)
+
+  -- tab.activate_overflow: bash already switch-client'd the overflow
+  -- pane to a warm session; bring that wezterm tab forward so the
+  -- user sees it. Title stays `…` (overflow is positional, not
+  -- session-bound).
+  event_bus.on('tab.activate_overflow', function(payload, meta)
+    local fields = parse_tab_payload(payload)
+    if not fields or not fields.workspace then return end
+    if not workspace_module or not workspace_module.activate_overflow then return end
+    local ok = workspace_module.activate_overflow(fields.workspace)
+    if logger then
+      logger.info('tab_visibility', 'tab.activate_overflow dispatched', {
+        workspace = fields.workspace,
+        success = ok,
+        transport = meta and meta.transport or '?',
+      })
+    end
+  end)
+
+  -- tab.spawn_overflow handler. Fallback path when the Alt+t picker
+  -- selects a cold session (no tmux session yet) — spawn it as a new
+  -- wezterm tab via Workspace.spawn_or_activate. Bash writes a file
+  -- event with payload `v1|workspace=<name>|cwd=<path>`. Always file
+  -- transport (popup pty has no DCS pass-through to wezterm).
+  event_bus.on('tab.spawn_overflow', function(payload, meta)
+    if type(payload) ~= 'string' or payload == '' then return end
+    local parts = {}
+    for chunk in string.gmatch(payload, '([^|]+)') do
+      parts[#parts + 1] = chunk
+    end
+    local fields = {}
+    for _, p in ipairs(parts) do
+      local k, v = p:match('^([^=]+)=(.+)$')
+      if k and v then fields[k] = v end
+    end
+    local workspace_name = fields.workspace
+    local cwd = fields.cwd
+    if not workspace_name or not cwd then
+      if logger then
+        logger.warn('tab_visibility', 'tab.spawn_overflow payload missing fields', {
+          transport = meta and meta.transport or '?',
+          payload = payload,
+        })
+      end
+      return
+    end
+    if not workspace_module or not workspace_module.spawn_or_activate then
+      if logger then
+        logger.warn('tab_visibility', 'tab.spawn_overflow but workspace module unavailable', {
+          workspace = workspace_name,
+          cwd = cwd,
+        })
+      end
+      return
+    end
+    local ok = workspace_module.spawn_or_activate(workspace_name, cwd)
+    if logger then
+      logger.info('tab_visibility', 'tab.spawn_overflow dispatched', {
+        workspace = workspace_name,
+        cwd = cwd,
+        success = ok,
+        transport = meta and meta.transport or '?',
       })
     end
   end)

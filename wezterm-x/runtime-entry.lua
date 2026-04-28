@@ -38,10 +38,18 @@ config.debug_key_events = constants.diagnostics
   and constants.diagnostics.wezterm.debug_key_events == true
   or false
 
+local tab_visibility = load_module 'ui/tab_visibility'
+tab_visibility.configure {
+  wezterm = wezterm,
+  logger = logger,
+  config = constants.tab_visibility,
+}
+
 local workspace = workspace_manager.new {
   wezterm = wezterm,
   config = config,
   constants = constants,
+  tab_visibility = tab_visibility,
 }
 
 local vscode_integration = (constants.integrations and constants.integrations.vscode) or {}
@@ -60,6 +68,8 @@ titles.register {
   host = host,
   logger = logger,
   constants = constants,
+  tab_visibility = tab_visibility,
+  workspace = workspace,
 }
 
 ui.apply {
