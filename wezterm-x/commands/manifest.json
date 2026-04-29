@@ -145,7 +145,7 @@
   {
     "id": "tab.overflow-picker",
     "label": "Tab: Open overflow picker",
-    "description": "Open the tab-visibility overflow menu (tmux display-menu) listing configured sessions in the current workspace that don't yet have a wezterm tab. Selecting an entry spawns it as a new wezterm tab via Workspace.spawn_or_activate (or activates an existing tab if a match is found). Toasts when the snapshot file is missing (workspace not opened under tab_visibility) or when every configured session is already spawned. See docs/tab-visibility.md.",
+    "description": "Open the cross-workspace overflow picker (tmux display-popup running native/picker/bin/picker overflow) listing every configured session across every workspace whose items snapshot has been written. Each row is tagged ● visible / ◐ warm / ○ cold and the active workspace's rows rank first; the always-on substring filter matches workspace + label + cwd, and Tab toggles between all-workspaces and current-workspace-only scope. Selection routes through tab-overflow-dispatch.sh — visible activates the existing tab, warm switches the overflow pane to that session, cold falls back to managed-spawn. When the picked row's workspace isn't the foregrounded one, lua's tab.* event handlers issue a SwitchToWorkspace so the gui follows. Falls back to a single-workspace tmux display-menu when the Go picker binary is missing. See docs/tab-visibility.md.",
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
     "binding": {"handler": "tabs.overflow_picker"},

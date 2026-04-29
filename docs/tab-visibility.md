@@ -158,14 +158,26 @@ fast-switch path uses `prune_keep_items`. Net behavior:
 ### `Alt+x` — single-tab session rotation
 
 `Alt+x` (manifest id `tab.overflow-picker`, wezterm layer, forwarded
-into the active tmux pane via user-key 4) opens a tmux `display-menu`
-listing **all** configured sessions for the active workspace, marked
-by current state:
+into the active tmux pane via user-key 4) opens a `tmux display-popup`
+running the Go picker (`native/picker/bin/picker overflow`) with
+**every configured session across every workspace whose items snapshot
+has been written**, marked by current state:
 
 - `●` visible — already a wezterm tab.
 - `◐` warm    — tmux session exists but not in a wezterm tab (currently
   living detached or projected into the overflow pane).
 - `○` cold    — no tmux session yet.
+
+The popup shows a workspace badge column next to each row. The active
+workspace's rows rank first (preserving snapshot order) so the
+in-workspace flow is unchanged from before; rows from other workspaces
+sit below in alphabetical order. Always-on substring filter matches
+**workspace + label + cwd** lowercase, so `cfg neo` lands on
+`config · neovim` regardless of starting workspace; `Tab` toggles the
+scope between *all workspaces* (default) and *current workspace only*.
+`Esc` clears the filter when non-empty, otherwise closes; a second
+`Alt+x` always closes (toggle behaviour). When the Go binary is missing
+the picker falls back to the legacy single-workspace `tmux display-menu`.
 
 Picker dispatch (`tab-overflow-dispatch.sh`):
 
@@ -175,9 +187,22 @@ Picker dispatch (`tab-overflow-dispatch.sh`):
 | `◐` warm | `tab-overflow-attach.sh` runs `tmux switch-client -c <tty> -t <session>` + emits `tab.activate_overflow` | overflow pane retargets to that session, wezterm jumps to overflow tab |
 | `○` cold | `tab-overflow-cold-spawn.sh` runs `tmux new-session -A -d -s <session>` + the same attach + activate path | new bare bash session created, projected into overflow tab |
 
-**Total wezterm tab count stays at `visible_count + 1` regardless of
-how many sessions the user rotates through**; the pool is held in
-tmux server memory, the wezterm side is a finite porthole.
+**Cross-workspace activation.** Each `tab.*` handler in `titles.lua`
+calls `ensure_workspace_foregrounded(workspace_name)` before invoking
+the mux-side activate function. The helper is a no-op when the gui's
+active workspace already matches; otherwise it issues `SwitchToWorkspace
+{ name = workspace_name }` on the first gui window so the user sees the
+workspace they picked. The mux-side functions
+(`Workspace.activate_only`, `Workspace.activate_overflow`,
+`Workspace.spawn_or_activate`) themselves are workspace-agnostic — they
+look up the target via `tabs.workspace_windows(workspace_name)` — so no
+other change is needed for cross-workspace picks. If the target
+workspace has no mux window the activate functions return false; the
+user can `Alt+w` it open and re-press `Alt+x`.
+
+**Total wezterm tab count stays at `visible_count + 1` per workspace
+regardless of how many sessions the user rotates through**; the pool
+is held in tmux server memory, the wezterm side is a finite porthole.
 
 ### Cold-start agent gap
 
@@ -210,7 +235,8 @@ re-shuffle the visible tabs (those are pinned to whatever `Workspace
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | reads items snapshot, marks visible/warm/cold, builds `tmux display-menu` |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, ranks current workspace first, launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
+| Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |
 | Cold spawn | `scripts/runtime/tab-overflow-cold-spawn.sh` | `tmux new-session -A -d` + attach |
