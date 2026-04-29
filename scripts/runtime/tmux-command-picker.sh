@@ -275,7 +275,15 @@ run_selection() {
     "item_id=$item_id" \
     "cwd=$cwd"
 
-  WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_dir/tmux-command-run.sh" "$session_name" "$item_id" "$current_window_id" "$cwd" "$client_tty"
+  # Optimistic update: detach run.sh so the popup can close on Enter
+  # instead of waiting for completion. setsid + </dev/null + redirect
+  # mirror the Go picker's `Setsid + nil stdio`. Mirrors the rationale
+  # in cmd_command.go's dispatchByID — failures surface via run.sh's
+  # `tmux display-message` and the runtime log.
+  WEZTERM_RUNTIME_TRACE_ID="$trace_id" setsid bash "$script_dir/tmux-command-run.sh" \
+    "$session_name" "$item_id" "$current_window_id" "$cwd" "$client_tty" \
+    </dev/null >/dev/null 2>&1 &
+  disown
 }
 
 append_query_char() {
