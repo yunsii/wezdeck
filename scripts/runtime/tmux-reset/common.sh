@@ -105,6 +105,26 @@ build_primary_shell_command() {
   printf '%s -il' "$quoted_shell"
 }
 
+# Returns the agent profile base (claude / codex / …) when the active
+# `MANAGED_AGENT_PROFILE` has a configured `*_RESUME_COMMAND` — i.e. when
+# `resolve_resume_primary_command` would actually override the metadata
+# command with the agent wrapper. Empty otherwise. Used by the refresh
+# path to decide whether to tag the pane with `@wezterm_pane_role` so
+# the C-n / User3 bindings can detect agent panes through the wrapper's
+# leaf=sh / leaf=node startup transient.
+agent_profile_for_managed_pane() {
+  local wezterm_repo="$1"
+  if ! declare -F resolve_resume_primary_command >/dev/null 2>&1; then
+    return 0
+  fi
+  local resume_command
+  resume_command="$(resolve_resume_primary_command "$wezterm_repo" 2>/dev/null || true)"
+  [[ -n "$resume_command" ]] || return 0
+  local profile="${MANAGED_AGENT_PROFILE:-claude}"
+  profile="${profile%-resume}"
+  printf '%s\n' "$profile"
+}
+
 active_window_id_for_session() {
   local session_name="${1:?missing session name}"
   tmux display-message -p -t "$session_name" '#{window_id}' 2>/dev/null || true
