@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"golang.org/x/term"
 )
@@ -369,24 +370,28 @@ func (ui *commandUI) renderConfirm() {
 	_, _ = os.Stdout.WriteString(b.String())
 }
 
-// dispatchByID looks up the row by id (post-MRU reorder) and runs the
-// command-run.sh bash script synchronously, with stdin/stdout/stderr
-// inherited so the failure-prompt branch in run.sh still works. Returns
-// true when the dispatch fired (caller exits with 0 in that case).
+// dispatchByID looks up the row by id (post-MRU reorder) and starts
+// command-run.sh detached so the popup can close immediately —
+// "optimistic update": the user sees the popup vanish on Enter rather
+// than staring at a blank popup pty while the command runs. run.sh
+// reports completion / failure via `tmux display-message` and the
+// runtime log; nothing it could print to its stdio would be visible
+// once the popup closes anyway. Returns true when the dispatch fired.
 func (ui *commandUI) dispatchByID(itemID string, fd int, state *term.State) bool {
 	if itemID == "" {
 		return false
 	}
-	// Restore termios + show cursor BEFORE shelling out; the deferred
-	// Restore in the caller will run again on return but is idempotent.
 	_ = term.Restore(fd, state)
-	_, _ = os.Stdout.WriteString("\x1b[0m\x1b[?25h\x1b[H\x1b[2J")
 
 	cmd := exec.Command("bash", ui.runScript, ui.sessionName, itemID, ui.currentWindow, ui.cwd, ui.clientTTY)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	_ = cmd.Run() // run.sh handles its own status reporting via tmux display-message
+	// Detach: nil stdio → /dev/null in os/exec; Setsid puts run.sh in
+	// its own session so the popup pty closing doesn't SIGHUP it.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "picker: failed to start %s: %v\n", ui.runScript, err)
+		return false
+	}
+	_ = cmd.Process.Release()
 	return true
 }
 
