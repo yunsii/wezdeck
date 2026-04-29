@@ -228,13 +228,23 @@ if [[ -s "$live_panes_path" ]]; then
   [[ "$ts_raw" =~ ^[0-9]+$ ]] && keypress_ts="$ts_raw"
 fi
 
+# Resolve the active wezterm workspace so the picker can rank
+# current-workspace rows first and highlight the workspace badge column
+# on each row. Mirrors tab-overflow-menu.sh: tmux session is the active
+# pane's session, the @wezterm_workspace option is set on it by
+# open-project-session.sh; default to "default" when missing.
+current_workspace="$(tmux show-options -v @wezterm_workspace 2>/dev/null || true)"
+if [[ -z "$current_workspace" ]]; then
+  current_workspace="default"
+fi
+
 if [[ -x "$picker_binary" ]]; then
   bench_mark picker_branch
   # Capture menu_done_ts as late as possible (right before launching the
   # popup) so bucket M reflects all of menu.sh's actual work. Inline
   # EPOCHREALTIME (µs/1000 → ms) avoids the ~5ms `date` fork.
   menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
-  picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") attention $(printf %q "$prefetch_file") $(printf %q "$attention_jump_script") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
+  picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") attention $(printf %q "$prefetch_file") $(printf %q "$attention_jump_script") $(printf %q "$current_workspace") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
   picker_kind='go'
   prefetch_frame_file=''
 else

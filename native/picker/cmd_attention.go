@@ -11,6 +11,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -28,6 +31,27 @@ type attentionRow struct {
 	// payload generation can append it without round-tripping through
 	// `tmux display-message` (which fails for archived rows whose
 	// stored window id is no longer valid).
+	workspace string // canonical workspace name — set from body parts[0]
+	// (lua-derived) by splitAttentionBodies, with the tmux_session
+	// regex (`wezterm_<ws>_...`) as a fallback. Empty for the sentinel
+	// row and for sessions whose name doesn't match either source.
+	isCurrent  bool  // workspace == active workspace at popup launch.
+	ageSeconds int64 // `age` text parsed back to seconds (Ns / Nm / Nh).
+	// Drives the secondary sort key after status priority — smaller =
+	// more recent. Missing / unparseable age becomes 0 (treated as
+	// most recent), which is the right behavior for active rows that
+	// don't render an age (`running` "right now").
+	// Body sub-fields, populated by splitAttentionBodies. The lua-side
+	// `compute_label` joins them as `<workspace>/<tab>/<tmux_seg>/<branch>`
+	// and the `compute_picker_data` glue appends `  <reason>`. We re-
+	// split here so the renderer can column-align them.
+	tab       string // e.g. "1_wezterm-config"
+	tmuxSeg   string // e.g. "1_2"
+	branch    string // git branch (may contain '/')
+	reason    string // status reason (e.g. "task done", "running"); the
+	// emoji column already encodes the status itself.
+	rawBody string // original body kept around for the sentinel and the
+	// fallback path when split fails (unknown shape).
 }
 
 type attentionPicker struct{}
@@ -36,18 +60,27 @@ func (attentionPicker) Name() string { return "attention" }
 
 func (attentionPicker) Run(args []string) int {
 	if len(args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: picker attention <prefetch_tsv> <attention_jump_sh> [keypress_ts] [menu_start_ts] [menu_done_ts]")
+		fmt.Fprintln(os.Stderr, "usage: picker attention <prefetch_tsv> <attention_jump_sh> [current_workspace] [keypress_ts] [menu_start_ts] [menu_done_ts]")
 		return 2
 	}
 	prefetchPath := args[0]
 	jumpScript := args[1]
+	// Optional positional: active workspace name (resolved by menu.sh
+	// from `tmux show-options @wezterm_workspace`). Drives current-first
+	// row partitioning + the workspace-column highlight. Empty / "" is
+	// tolerated — the picker degrades to a single-tier list with all
+	// rows tagged non-current, matching pre-workspace-aware behavior.
+	currentWorkspace := ""
+	if len(args) >= 3 {
+		currentWorkspace = args[2]
+	}
 	// Optional diagnostic timestamps (all epoch ms, 0 disables that
 	// segment). The footer breaks elapsed into three buckets so the user
 	// can see WHERE the cold-start cost lives:
 	//   L = menu_start - keypress  (lua handler + tmux dispatch + bash boot)
 	//   M = menu_done  - menu_start (menu.sh work: jq + popup spawn)
 	//   P = render     - menu_done  (popup pty + go runtime + first frame)
-	ts := parsePerfTimings(args, 2)
+	ts := parsePerfTimings(args, 3)
 
 	rows, err := loadAttentionRows(prefetchPath)
 	if err != nil {
@@ -58,6 +91,38 @@ func (attentionPicker) Run(args []string) int {
 		fmt.Fprintln(os.Stderr, "picker: prefetch TSV produced 0 rows")
 		return 1
 	}
+
+	// Tag each row with its workspace + is-current flag, then re-rank so
+	// active-workspace rows come first within each status block. The
+	// Lua-side compute_picker_data already orders rows by status
+	// priority (waiting → done → running, with recent + sentinel
+	// trailing); rankAttentionByWorkspace preserves that ordering as
+	// the secondary key so the picker still leads with the most-
+	// urgent row, but pulled-up to the current workspace tier.
+	// Split body so each row's lua-encoded
+	// `<ws>/<tab>/<tmux_seg>/<branch>  <reason>` becomes individual
+	// columns; parts[0] is also the canonical workspace value (more
+	// reliable than the regex on tmux_session when the entry has no
+	// session or the name doesn't match `wezterm_<ws>_...`).
+	splitAttentionBodies(rows)
+	// Fill workspace + isCurrent + ageSeconds for filter/render/sort.
+	populateAttentionRowFields(rows, currentWorkspace)
+	// Sort: status priority (waiting → done → running → recent →
+	// sentinel) primary, most-recent activity secondary. The lua
+	// side already groups by status but the within-status order is
+	// driven by entry insertion shape (entries[] order then recent
+	// dedupe), which doesn't always lead with the freshest event.
+	// Age — already projected into ageSeconds by
+	// populateAttentionRowFields — gives "freshest first" within
+	// each block; smaller seconds = more recent.
+	sort.SliceStable(rows, func(i, j int) bool {
+		pi, pj := attentionStatusPriority(rows[i].status), attentionStatusPriority(rows[j].status)
+		if pi != pj {
+			return pi < pj
+		}
+		return rows[i].ageSeconds < rows[j].ageSeconds
+	})
+	colWidths := computeAttentionColumnWidths(rows)
 
 	fd, state, ok := enterRawMode()
 	if !ok {
@@ -76,7 +141,7 @@ func (attentionPicker) Run(args []string) int {
 	visible := applyAttentionFilter(rows, filterText, statusFilter)
 
 	render := func() {
-		renderAttentionFrame(visible, selected, ts, filterText, statusFilter)
+		renderAttentionFrame(visible, selected, ts, filterText, statusFilter, colWidths, currentWorkspace)
 	}
 	render()
 	// Once-per-popup perf event, dispatched AFTER the first frame's bytes
@@ -175,6 +240,11 @@ func (attentionPicker) Run(args []string) int {
 // dimensions are at their defaults (empty text + "all" status) — the
 // sentinel is a meta action and the user typing/cycling clearly excludes
 // it from intent.
+//
+// Substring filter matches lowercased `<workspace>  <body>` so typing
+// the workspace name scopes the picker to that workspace alone — the
+// row-level workspace badge is just a visual aid; the source of truth
+// is the haystack here.
 func applyAttentionFilter(rows []attentionRow, filterText, statusFilter string) []attentionRow {
 	filterActive := filterText != "" || statusFilter != "all"
 	lowerFilter := strings.ToLower(filterText)
@@ -191,13 +261,200 @@ func applyAttentionFilter(rows []attentionRow, filterText, statusFilter string) 
 			continue
 		}
 		if filterText != "" {
-			if !strings.Contains(strings.ToLower(r.body), lowerFilter) {
+			haystack := strings.ToLower(r.workspace + " " + r.body)
+			if !strings.Contains(haystack, lowerFilter) {
 				continue
 			}
 		}
 		out = append(out, r)
 	}
 	return out
+}
+
+// populateAttentionRowFields fills in workspace + isCurrent on each
+// row so the renderer / filter can read them. No sort — Alt+/ orders
+// by status priority (waiting → done → running, recent trailing,
+// sentinel last), the order `attention.lua/compute_picker_data`
+// already produces; reshuffling by workspace tier here would split
+// the urgent-waiting rows the badge in the status bar advertises.
+// Cross-workspace info still surfaces through the workspace column
+// + the substring filter (typing the workspace name scopes the list
+// to that workspace alone).
+//
+// Workspace value precedence: body's parts[0] (lua-derived,
+// populated by splitAttentionBodies before this call) → regex on
+// tmuxSession as a fallback.
+var sessionWorkspacePattern = regexp.MustCompile(`^wezterm_([^_]+)_`)
+
+func populateAttentionRowFields(rows []attentionRow, currentWorkspace string) {
+	for i := range rows {
+		if rows[i].status == "__sentinel__" {
+			rows[i].workspace = ""
+			rows[i].isCurrent = false
+			rows[i].ageSeconds = 1<<62 - 1 // pin sentinel to the bottom
+			// regardless of the secondary key — the primary key
+			// (status priority) puts it last anyway, but a maxed
+			// ageSeconds keeps the comparator monotonic in case the
+			// priority table is ever extended.
+			continue
+		}
+		if rows[i].workspace == "" {
+			rows[i].workspace = extractWorkspaceFromSession(rows[i].tmuxSession)
+		}
+		rows[i].isCurrent = currentWorkspace != "" && rows[i].workspace == currentWorkspace
+		rows[i].ageSeconds = parseAgeToSeconds(rows[i].age)
+	}
+}
+
+// attentionStatusPriority — sort tier for the picker. Mirrors the
+// status-bar badge ordering: waiting (needs response) → done (FYI) →
+// running (informational) → recent (archived) → sentinel (clear-all).
+// Anything outside the known set sorts last so unexpected statuses
+// don't accidentally shadow the live work.
+func attentionStatusPriority(status string) int {
+	switch status {
+	case "waiting":
+		return 0
+	case "done":
+		return 1
+	case "running":
+		return 2
+	case "recent":
+		return 3
+	case "__sentinel__":
+		return 4
+	}
+	return 5
+}
+
+// parseAgeToSeconds reverse-projects the lua-side `format_age` output
+// (`Ns` / `Nm` / `Nh`) back to seconds so we can use it as a sort key.
+// Empty / unparseable values return 0, which the comparator treats as
+// "most recent" — correct for live rows that lua deliberately renders
+// without an age (e.g. running "right now").
+func parseAgeToSeconds(age string) int64 {
+	if len(age) < 2 {
+		return 0
+	}
+	suffix := age[len(age)-1]
+	num, err := strconv.ParseInt(age[:len(age)-1], 10, 64)
+	if err != nil || num < 0 {
+		return 0
+	}
+	switch suffix {
+	case 's':
+		return num
+	case 'm':
+		return num * 60
+	case 'h':
+		return num * 3600
+	}
+	return 0
+}
+
+func extractWorkspaceFromSession(session string) string {
+	if session == "" {
+		return ""
+	}
+	m := sessionWorkspacePattern.FindStringSubmatch(session)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
+}
+
+// attentionColWidths captures the per-column width budget the renderer
+// uses to align rows. Width is the visible cell count, not byte length;
+// every field is ASCII-ish in practice (tab segment / tmux_seg / branch
+// / workspace) so byte length is a fine proxy. Each width is capped to
+// keep one ridiculously long branch name from blowing out the layout.
+type attentionColWidths struct {
+	workspace int
+	tab       int
+	tmuxSeg   int
+	branch    int
+}
+
+func computeAttentionColumnWidths(rows []attentionRow) attentionColWidths {
+	w := attentionColWidths{}
+	for _, r := range rows {
+		if r.status == "__sentinel__" {
+			continue
+		}
+		if l := len(r.workspace); l > w.workspace {
+			w.workspace = l
+		}
+		if l := len(r.tab); l > w.tab {
+			w.tab = l
+		}
+		if l := len(r.tmuxSeg); l > w.tmuxSeg {
+			w.tmuxSeg = l
+		}
+		if l := len(r.branch); l > w.branch {
+			w.branch = l
+		}
+	}
+	w.workspace = clampColumnWidth(w.workspace, 4, 12)
+	w.tab = clampColumnWidth(w.tab, 0, 22)
+	w.tmuxSeg = clampColumnWidth(w.tmuxSeg, 0, 8)
+	w.branch = clampColumnWidth(w.branch, 0, 18)
+	return w
+}
+
+func clampColumnWidth(v, lo, hi int) int {
+	if v == 0 && lo == 0 {
+		return 0
+	}
+	if v < lo {
+		v = lo
+	}
+	if v > hi {
+		v = hi
+	}
+	return v
+}
+
+// splitAttentionBodies parses the lua-encoded body shape
+// `<workspace>/<tab>/<tmux_seg>/<branch>  <reason>` (joined by `/`,
+// then ` 2sp ` separator) into the four sub-fields the renderer
+// column-aligns. Branch can itself contain `/` (e.g. `task/dev-infra`),
+// which is why we use SplitN with N=4 and treat the trailing slice as
+// branch+reason. When the body doesn't match the expected shape (very
+// short, missing slashes), all sub-fields stay empty and the renderer
+// falls back to printing rawBody as the only content.
+func splitAttentionBodies(rows []attentionRow) {
+	for i := range rows {
+		rows[i].rawBody = rows[i].body
+		if rows[i].status == "__sentinel__" {
+			continue
+		}
+		// `body` shape: ws/tab/tmux_seg/branch[  reason] — ignore
+		// rows that don't have the four leading slash-delimited
+		// segments.
+		parts := strings.SplitN(rows[i].body, "/", 4)
+		if len(parts) < 4 {
+			continue
+		}
+		// parts[0] is the lua-derived workspace name (host_info.workspace
+		// with the session-prefix fallback). Take it as the canonical
+		// workspace — more reliable than the regex on tmux_session,
+		// which goes empty when the entry has no tmux_session or its
+		// name doesn't match the managed shape. Skip the assignment
+		// only when parts[0] is the literal `?` placeholder
+		// `compute_label` emits when every fallback failed.
+		if parts[0] != "" && parts[0] != "?" {
+			rows[i].workspace = parts[0]
+		}
+		rows[i].tab = parts[1]
+		rows[i].tmuxSeg = parts[2]
+		rest := parts[3]
+		if idx := strings.Index(rest, "  "); idx >= 0 {
+			rows[i].branch = rest[:idx]
+			rows[i].reason = strings.TrimLeft(rest[idx:], " ")
+		} else {
+			rows[i].branch = rest
+		}
+	}
 }
 
 func loadAttentionRows(path string) ([]attentionRow, error) {
@@ -258,8 +515,12 @@ func loadAttentionRows(path string) ([]attentionRow, error) {
 // `attention_picker_emit_frame` byte-for-byte: same ANSI positioning,
 // same color codes, same selection highlight scheme. If you change
 // either, change both — the bash menu.sh side still pre-renders the
-// first frame for the bash fallback path.
-func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, filterText, statusFilter string) {
+// first frame for the bash fallback path. Layout updated to match the
+// Alt+x overflow picker: a workspace badge column sits between the
+// status badge and the body, current-workspace rows are highlighted in
+// the same color family, and rows are pre-ranked so the active
+// workspace's entries appear first.
+func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, filterText, statusFilter string, cols attentionColWidths, currentWorkspace string) {
 	_, lines := getTermSize()
 	// 5 non-row lines: title, search input, blank divider, blank-before-
 	// footer, footer.
@@ -296,6 +557,9 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	}
 	b.WriteString("\x1b[1;1H\x1b[1m")
 	fmt.Fprintf(&b, "Agent attention — %d/%d", titleN, itemCount)
+	if currentWorkspace != "" {
+		fmt.Fprintf(&b, "  ·  active workspace \x1b[1;38;5;108m%s\x1b[0m\x1b[1m", currentWorkspace)
+	}
 	if statusFilter == "all" {
 		b.WriteString("  ·  order matches status bar (🚨 → ✅ → 🔄)")
 		b.WriteString(reset)
@@ -345,10 +609,49 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 			b.WriteString("  ")
 		}
 		b.WriteString(coloredBadge(r.status))
-		b.WriteString("  ")
-		b.WriteString(r.body)
+		// Three-space gap between aligned columns. Padded columns
+		// (workspace, repo/tab) are followed by `gap`; everything
+		// from the branch onward is variable-width and joined by
+		// the same 3-space separator without any padding so reasons
+		// and ages don't drag a long blank channel behind a short
+		// branch name.
+		const gap = "   "
+		b.WriteString(gap)
+		if r.status == "__sentinel__" {
+			// Meta row — no per-field columns. Fall through to the
+			// raw sentinel body and skip the per-column padding.
+			b.WriteString(r.rawBody)
+			b.WriteString(clearEOL)
+			row++
+			continue
+		}
+		// Workspace badge column: same shape as Alt+x — bright color
+		// family for the active workspace, dim for others, empty
+		// padding when the workspace couldn't be parsed.
+		b.WriteString(formatAttentionWorkspaceCell(r.workspace, cols.workspace, r.isCurrent))
+		b.WriteString(gap)
+		// Repo / tab segment (e.g. `1_wezterm-config`). Padded to
+		// cols.tab so the next column lands at the same screen column
+		// across rows. This is the last padded column.
+		b.WriteString(padCell(r.tab, cols.tab))
+		b.WriteString(gap)
+		// Branch + pane id, then reason, then age — all variable
+		// width, joined by `gap` only. No padding past this point so
+		// short branches don't trail a wide empty space before the
+		// reason text.
+		bp := formatAttentionBranchPane(r.branch, r.tmuxSeg)
+		if bp != "" {
+			b.WriteString(bp)
+		}
+		if r.reason != "" {
+			if bp != "" {
+				b.WriteString(gap)
+			}
+			b.WriteString(r.reason)
+		}
 		if r.age != "" {
-			b.WriteString("  \x1b[2m(")
+			b.WriteString(gap)
+			b.WriteString("\x1b[2m(")
 			b.WriteString(r.age)
 			b.WriteString(")")
 			b.WriteString(reset)
@@ -357,7 +660,7 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 		// user can tell at a glance what the entry was doing when it was
 		// archived (e.g. an unfinished waiting prompt vs a clean done).
 		if r.status == "recent" && r.lastStatus != "" {
-			fmt.Fprintf(&b, "  \x1b[2m(%s, archived)%s", r.lastStatus, reset)
+			fmt.Fprintf(&b, "%s\x1b[2m(%s, archived)%s", gap, r.lastStatus, reset)
 		}
 		b.WriteString(clearEOL)
 		row++
@@ -392,28 +695,97 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	_, _ = os.Stdout.WriteString(b.String())
 }
 
+// padCell pads `s` with trailing spaces up to `width`. Truncates from
+// the right when `s` is longer than `width`. Width=0 returns the empty
+// string so optional columns disappear cleanly when no row populates
+// them. Plain text only — no ANSI; callers wrap before/after when
+// they need color.
+func padCell(s string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	if len(s) >= width {
+		if len(s) == width {
+			return s
+		}
+		return s[:width]
+	}
+	return s + strings.Repeat(" ", width-len(s))
+}
+
+// formatAttentionBranchPane joins `branch` + `tmux_seg` (e.g.
+// `master · 1_2`) with a dim middle-dot separator and dims the pane
+// id so the branch reads as the primary identifier. Variable width:
+// the caller pastes a fixed gap *after* this segment instead of
+// padding it, so short branches don't trail a wide empty channel.
+// When either field is empty the separator is dropped; both empty
+// returns "".
+func formatAttentionBranchPane(branch, tmuxSeg string) string {
+	const reset = "\x1b[0m"
+	const dim = "\x1b[2m"
+	switch {
+	case branch != "" && tmuxSeg != "":
+		return branch + dim + " · " + tmuxSeg + reset
+	case branch != "":
+		return branch
+	case tmuxSeg != "":
+		return dim + tmuxSeg + reset
+	}
+	return ""
+}
+
+// formatAttentionWorkspaceCell — workspace badge column formatter.
+// Same width/coloring contract as the Alt+x overflow picker so the
+// two pickers feel like one family. Truncates at `width` instead of
+// padding into the next row when the workspace name overflows; the
+// fuzzy filter still matches the full untruncated name. Empty
+// workspace (session name didn't match the managed-session shape, or
+// tmux_session was missing from the TSV) renders as blank padding —
+// no `·` placeholder, since the body already carries the workspace
+// prefix and a column of dots reads as visual noise.
+func formatAttentionWorkspaceCell(name string, width int, current bool) string {
+	if width <= 0 {
+		return ""
+	}
+	display := name
+	if len(display) > width {
+		display = display[:width]
+	}
+	pad := width - len(display)
+	padding := ""
+	if pad > 0 {
+		padding = strings.Repeat(" ", pad)
+	}
+	if display == "" {
+		return padding
+	}
+	if current {
+		return "\x1b[1;38;5;108m" + display + "\x1b[0m" + padding
+	}
+	return "\x1b[38;5;245m" + display + "\x1b[0m" + padding
+}
+
 func coloredBadge(status string) string {
-	// All badges land at 7 cells: 2-cell emoji + 1 space + 4-char text
-	// (3-letter codes get a trailing space for padding). The earlier
-	// mixed-style markers (mono ⟳ ⚠ ✓ ✗ at 1 cell + plain ASCII text)
-	// gave a 6-cell budget; now that the set is fully emoji we add one
-	// cell across the board so the body column stays aligned. Picking
-	// emojis that are unambiguously emoji-presentation (no VS16 text
-	// fallback): ⚠ + VS16 falls back to 1-cell text style in most fonts,
-	// which is why we use 🚨 instead.
+	// Emoji-only badge — text labels (RUN/WAIT/DONE/RCNT/CLR) used to
+	// trail every emoji to give the user a fallback when emoji
+	// presentation glyphs went missing, but in practice the popup
+	// lives inside a wezterm pty where emoji rendering is reliable
+	// and the labels were just visual noise. All glyphs land at 2
+	// cells; the row layout adds a fixed 4-space gap downstream so
+	// the body column stays aligned regardless of status.
 	switch status {
 	case "running":
-		return "\x1b[1;38;5;39m🔄 RUN \x1b[0m"
+		return "\x1b[1;38;5;39m🔄\x1b[0m"
 	case "waiting":
-		return "\x1b[1;38;5;208m🚨 WAIT\x1b[0m"
+		return "\x1b[1;38;5;208m🚨\x1b[0m"
 	case "done":
-		return "\x1b[38;5;108m✅ DONE\x1b[0m"
+		return "\x1b[38;5;108m✅\x1b[0m"
 	case "recent":
-		return "\x1b[2;38;5;245m📜 RCNT\x1b[0m"
+		return "\x1b[2;38;5;245m📜\x1b[0m"
 	case "__sentinel__":
-		return "\x1b[1;38;5;160m❌ CLR \x1b[0m"
+		return "\x1b[1;38;5;160m❌\x1b[0m"
 	}
-	return "·  ----"
+	return "· "
 }
 
 func dispatchAttention(r attentionRow, jumpScript string) {
