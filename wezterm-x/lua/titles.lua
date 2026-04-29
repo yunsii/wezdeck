@@ -475,12 +475,78 @@ function M.register(opts)
     return fields
   end
 
-  -- tab.activate_visible: Alt+t picker selected a session that already
+  -- Bring the gui's foreground workspace to `workspace_name` when the
+  -- cross-workspace Alt+x picker selects a row whose owning workspace
+  -- isn't the one currently visible. Mux-side activate functions
+  -- (`Workspace.activate_only`, `Workspace.activate_overflow`,
+  -- `Workspace.spawn_or_activate`) already work for any workspace's
+  -- mux window, but they don't repaint the gui — without this hop the
+  -- user clicks a tab in workspace B and stays staring at workspace A.
+  --
+  -- Two cases:
+  --   1. Target workspace already has a mux window — issue a bare
+  --      `SwitchToWorkspace` so the gui follows. Cheap; wezterm
+  --      short-circuits the no-op switch when active already matches.
+  --   2. Target workspace has no mux window (snapshot exists from a
+  --      prior run, but the workspace was never opened in this
+  --      session) — drive the full `Workspace.open` so visible_count
+  --      tabs + the overflow placeholder get spawned, and the gui
+  --      switches as a side-effect of cold-open. Without this, the
+  --      mux-side activate functions called by the per-event handler
+  --      would return false (no window to operate on) and the user
+  --      would see Alt+x close with nothing visible.
+  local function ensure_workspace_foregrounded(workspace_name, trace_label)
+    if not workspace_name or workspace_name == '' then return end
+    local ok_gui, gui_windows = pcall(wezterm.gui.gui_windows)
+    if not ok_gui or type(gui_windows) ~= 'table' or #gui_windows == 0 then
+      return
+    end
+    local gui_window = gui_windows[1]
+    if not gui_window then return end
+    local active_ok, active = pcall(function() return gui_window:active_workspace() end)
+    if active_ok and active == workspace_name then return end
+    local pane_ok, pane = pcall(function() return gui_window:active_pane() end)
+    if not pane_ok or not pane then return end
+
+    local has_window = false
+    local ok_all, all_windows = pcall(wezterm.mux.all_windows)
+    if ok_all and type(all_windows) == 'table' then
+      for _, mw in ipairs(all_windows) do
+        local ok_ws, ws = pcall(function() return mw:get_workspace() end)
+        if ok_ws and ws == workspace_name then
+          has_window = true
+          break
+        end
+      end
+    end
+
+    if has_window or not workspace_module or not workspace_module.open then
+      pcall(function()
+        gui_window:perform_action(
+          wezterm.action.SwitchToWorkspace { name = workspace_name },
+          pane)
+      end)
+    else
+      pcall(function()
+        workspace_module.open(gui_window, pane, workspace_name)
+      end)
+    end
+    if logger then
+      logger.info('tab_visibility', 'cross-workspace gui switch', {
+        workspace = workspace_name,
+        source = trace_label or 'tab.*',
+        had_mux_window = has_window,
+      })
+    end
+  end
+
+  -- tab.activate_visible: Alt+x picker selected a session that already
   -- has a wezterm tab in its workspace. Just activate that tab.
   event_bus.on('tab.activate_visible', function(payload, meta)
     local fields = parse_tab_payload(payload)
     if not fields or not fields.workspace or not fields.cwd then return end
     if not workspace_module or not workspace_module.activate_only then return end
+    ensure_workspace_foregrounded(fields.workspace, 'tab.activate_visible')
     local ok = workspace_module.activate_only(fields.workspace, fields.cwd)
     if logger then
       logger.info('tab_visibility', 'tab.activate_visible dispatched', {
@@ -499,6 +565,7 @@ function M.register(opts)
   event_bus.on('tab.activate_overflow', function(payload, meta)
     local fields = parse_tab_payload(payload)
     if not fields or not fields.workspace then return end
+    ensure_workspace_foregrounded(fields.workspace, 'tab.activate_overflow')
     -- Refresh the overflow→session map so attention's auto-ack +
     -- Alt+/ jump fallback know which session this overflow pane is
     -- currently projecting. Tab title intentionally stays `…`.
@@ -597,6 +664,7 @@ function M.register(opts)
       end
       return
     end
+    ensure_workspace_foregrounded(workspace_name, 'tab.spawn_overflow')
     local ok = workspace_module.spawn_or_activate(workspace_name, cwd)
     if logger then
       logger.info('tab_visibility', 'tab.spawn_overflow dispatched', {
