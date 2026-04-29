@@ -119,7 +119,7 @@ describe('badge counts and picker rows agree on the same predicate', function()
 end)
 
 describe('overflow tab label uses session repo, not the … glyph', function()
-  it('renders work/<idx>_<repo>/... for an overflow-hosted entry', function()
+  it('renders work/<repo>/... for an overflow-hosted entry (no tab_index prefix)', function()
     reset()
     mock.set_mux({
       windows = {
@@ -150,7 +150,7 @@ describe('overflow tab label uses session repo, not the … glyph', function()
     local snapshot = require('json_mini').decode(body)
     local row = find_row(snapshot.picker_rows, function(r) return r.id == 'running-overflow' end)
     assert_truthy(row, 'overflow row missing')
-    assert_truthy(row.body:find('work/2_coco%-server/13_21/master', 1, false),
+    assert_truthy(row.body:find('work/coco%-server/13_21/master', 1, false),
       'overflow label did not substitute session repo for the … glyph; got body=' .. row.body)
   end)
 end)
