@@ -85,12 +85,24 @@ agent_command_str="$(read_env_var "$worktree_env" "WT_PROVIDER_AGENT_PROFILE_${u
 
 # Split into argv. open-project-session.sh's build_primary_shell_command
 # quotes each element with %q, so the result is a single primary command
-# string that primary-pane-wrapper.sh execs. For tokens like
-# `claude --continue` the simple word-split is correct; for codex
-# variants with embedded quotes (codex -c 'tui.theme="github"') a
-# proper shell tokenizer would be needed — out of scope here.
+# string that primary-pane-wrapper.sh execs. The lua side parses these
+# values with config/managed_cli.parse_command_spec, which honors POSIX
+# single/double quoting — we need the shell side to match so resume
+# wrappers like `sh -c 'claude --continue || exec claude'` survive
+# tokenization. xargs is POSIX-quote aware (single AND simple double
+# quotes); fall back to naïve whitespace split when xargs rejects the
+# input (e.g. nested quoting in codex DARK variant) so the cold-spawn
+# path at least matches the prior behavior instead of failing outright.
 agent_argv=()
-read -ra agent_argv <<< "$agent_command_str"
+if tokens_output="$(printf '%s\n' "$agent_command_str" | xargs -n1 printf '%s\n' 2>/dev/null)" \
+   && [[ -n "$tokens_output" ]]; then
+  while IFS= read -r token; do
+    [[ -n "$token" ]] && agent_argv+=("$token")
+  done <<< "$tokens_output"
+fi
+if (( ${#agent_argv[@]} == 0 )); then
+  read -ra agent_argv <<< "$agent_command_str"
+fi
 
 # Spawn open-project-session.sh in a fully detached background process.
 # The script's tail does `exec tmux attach-session` which fails without

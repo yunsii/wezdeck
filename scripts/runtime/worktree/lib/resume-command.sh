@@ -4,8 +4,9 @@
 # `worktree-task launch` would consult, without dragging in the full
 # `lib/config.sh` engine. Used by the Alt+g / Alt+Shift+G picker paths so
 # windows created on demand still launch the resume variant of the agent
-# (`claude --continue`, `codex resume --last || codex`, …) instead of
-# blindly cloning whatever start command the source pane was carrying.
+# (`sh -c 'claude --continue || exec claude'`, `sh -c 'codex resume
+# --last || exec codex'`, …) instead of blindly cloning whatever start
+# command the source pane was carrying.
 #
 # Search order matches `wt_config_load`:
 #   1. user file: `${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env`
