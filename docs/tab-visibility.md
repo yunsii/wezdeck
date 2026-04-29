@@ -287,6 +287,7 @@ Consumers (all in `attention.lua`):
 - `is_entry_focused(entry, focused_pane_id)` — `session_for_pane(focused_pane_id) == entry.tmux_session`, plus the existing tmux-pane-level guard for split-pane sessions.
 - `activate_in_gui(pane_id_value, window, source, opts)` — when `opts.tmux_session` is set, `pane_for_session` finds the wezterm pane currently hosting it (visible tab or overflow) and that pane gets activated. Workspace switch is automatic when the target lives elsewhere. Falls back to literal `pane_id_value` when no session hint is present.
 - `tab_badge(tab_info)` — active pane's hosted session selects the matching attention entry; `done` is suppressed only when `is_entry_focused` says yes.
+- `forget_by_tmux_session(tmux_session)` — archive every active entry on a session into recent[]. Called by `titles.lua`'s `tab.activate_overflow` handler when the overflow slot stops hosting a session, so attention entries don't dangle past the rotation. The wezterm tab is a slot — when the slot stops hosting `prev_session`, attention follows.
 
 **Picker payload** (Alt+/) appends the resolved session name as the
 trailing v1 field: `v1|jump|<sid>|<wp>|<sock>|<win>|<pane>|<session>`

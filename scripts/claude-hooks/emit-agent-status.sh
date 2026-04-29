@@ -20,7 +20,7 @@
 #                                    # Both: running is a no-op.
 #   emit-agent-status.sh cleared     # explicit remove (drops the entry)
 #   emit-agent-status.sh pane-evict  # SessionStart source=clear hook — drop every
-#                                    # entry on the current (tmux_socket, tmux_pane)
+#                                    # entry on the current (tmux_socket, tmux_session)
 #                                    # except the new session_id in the payload.
 #
 # Optional stdin: the hook JSON payload. When jq is available and stdin
@@ -183,10 +183,13 @@ if [[ "$status" == "cleared" ]]; then
 elif [[ "$status" == "pane-evict" ]]; then
   # SessionStart source=clear: the new session_id in stdin is for the
   # fresh post-/clear session; any entries still parked on this tmux
-  # pane belong to the discarded pre-/clear session and will never get
-  # their own Stop. Evict them all, but preserve the new session_id
+  # session belong to the discarded pre-/clear session and will never
+  # get their own Stop. Evict them all, but preserve the new session_id
   # defensively in case a race re-creates it before we hold the lock.
-  attention_state_evict_pane "$tmux_socket" "$tmux_pane" "$session_id" \
+  # Eviction key is (tmux_socket, tmux_session): /clear stays in the
+  # same tmux session, and pane id is internal to a session (splits/
+  # rearranges change it) so it cannot be the identity.
+  attention_state_evict_session "$tmux_socket" "$tmux_session" "$session_id" \
     2>/dev/null || true
 elif [[ "$status" == "resolved" ]]; then
   # Wired to BOTH PreToolUse and PostToolUse. The two hooks fire at

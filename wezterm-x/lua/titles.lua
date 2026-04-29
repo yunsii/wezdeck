@@ -603,6 +603,16 @@ function M.register(opts)
           if found_pane_id then break end
         end
       end
+      -- Capture the session this overflow slot was previously hosting,
+      -- before any of the maps below get overwritten. wezterm tab is a
+      -- slot — when the slot stops hosting `prev_session`, attention
+      -- entries on that session lose their host and should be archived
+      -- into recent[] right now (instead of dangling until TTL).
+      local prev_session
+      if found_pane_id and tab_visibility
+         and type(tab_visibility.session_for_pane) == 'function' then
+        prev_session = tab_visibility.session_for_pane(found_pane_id)
+      end
       if found_pane_id and type(tab_visibility.set_overflow_pane) == 'function' then
         -- Re-seed every time so a stale pane_id from an earlier
         -- workspace incarnation is overwritten by the live one.
@@ -614,6 +624,13 @@ function M.register(opts)
       -- hosting the new session within the same tick.
       if found_pane_id and type(tab_visibility.set_pane_session) == 'function' then
         tab_visibility.set_pane_session(found_pane_id, fields.session)
+      end
+      -- Archive attention entries that were anchored to the old session.
+      -- Skipped when prev == new (re-attaching the same session, e.g. on
+      -- a redundant Alt+x or workspace re-activate).
+      if prev_session and prev_session ~= '' and prev_session ~= fields.session
+         and attention and type(attention.forget_by_tmux_session) == 'function' then
+        attention.forget_by_tmux_session(prev_session)
       end
     end
     if not workspace_module or not workspace_module.activate_overflow then return end

@@ -32,11 +32,10 @@
 #   }
 #
 # `recent[]` stores tombstones for sessions that left .entries via any of
-# the five exit paths (same-pane eviction, evict_pane, --forget, TTL
-# prune, --clear-all). Dedup key is (session_id, tmux_socket, tmux_session,
-# tmux_pane); cap is 50 entries; TTL is 7 days. Active state in `.entries`
-# is the source of truth — picker dedups recent against active by
-# session_id (active wins).
+# the five exit paths (same-session eviction, evict_session, --forget, TTL
+# prune, --clear-all). Dedup key is (tmux_socket, tmux_session); cap is
+# 50 entries; TTL is 7 days. Active state in `.entries` is the source of
+# truth — picker dedups recent against active by session_id (active wins).
 #
 # Sourced by:
 #   scripts/claude-hooks/emit-agent-status.sh  (writer)
@@ -126,7 +125,7 @@ def archive_into_recent($to_archive; $now; $cap; $ttl):
      })) as $new_recents
   | .recent = (
       ($new_recents + (.recent // []))
-      | group_by([.tmux_socket, .tmux_session, .tmux_pane])
+      | group_by([.tmux_socket, .tmux_session])
       | map(max_by(.archived_ts))
       | sort_by(-.archived_ts)
       | map(select(.archived_ts >= ($now - $ttl)))
@@ -168,10 +167,12 @@ attention_state_upsert() {
     flock -x 9
     local current next
     current="$(attention_state_read)"
-    # One tmux pane hosts at most one active attention entry, so drop any
-    # other entry that shares this (tmux_socket, tmux_pane) before the
-    # upsert — old sessions left behind by a killed agent or an
-    # un-consumed `done` do not double-count in the counter. Falls back to
+    # One tmux session hosts at most one active attention entry, so drop
+    # any other entry that shares this (tmux_socket, tmux_session) before
+    # the upsert — old session_ids left behind by `/clear` (new uuid, same
+    # tmux session) do not double-count in the counter. Session is the
+    # identity; tmux_pane is internal to a session and changes when the
+    # user splits/resizes, so it cannot be the dedup key. Falls back to
     # session_id-only dedup when the new entry has no tmux coords.
     # Evicted entries are archived to .recent[] so the picker can surface
     # them later; same-session_id replacement (status transition for the
@@ -200,18 +201,18 @@ attention_state_upsert() {
            . as $orig
            | (($orig.entries // {}) | to_entries
               | map(select(
-                  .key != $sid and $tsk != "" and $tp != ""
-                  and (.value.tmux_socket // "") == $tsk
-                  and (.value.tmux_pane // "") == $tp
+                  .key != $sid and $tsk != "" and $tses != ""
+                  and (.value.tmux_socket  // "") == $tsk
+                  and (.value.tmux_session // "") == $tses
                 ))
               | map(.value)) as $evicted
            | .entries = (
                ($orig.entries // {}) | to_entries
                | map(select(
                    .key == $sid
-                   or $tsk == "" or $tp == ""
-                   or (.value.tmux_socket // "") != $tsk
-                   or (.value.tmux_pane // "") != $tp
+                   or $tsk == "" or $tses == ""
+                   or (.value.tmux_socket  // "") != $tsk
+                   or (.value.tmux_session // "") != $tses
                  ))
                | from_entries
              )
@@ -376,8 +377,8 @@ attention_state_transition_to_running() {
          | .entries[$sid].ts = $ts' <<<"$current")"
     else
       # Missing: upsert a fresh running entry. Mirror attention_state_upsert's
-      # (tmux_socket, tmux_pane) dedup (and its archive-on-eviction) so a
-      # prior tenant of the same pane neither double-counts nor vanishes.
+      # (tmux_socket, tmux_session) dedup (and its archive-on-eviction) so a
+      # prior tenant of the same session neither double-counts nor vanishes.
       next="$(
         jq --arg sid "$session_id" \
            --arg wp "$wezterm_pane" \
@@ -393,18 +394,18 @@ attention_state_transition_to_running() {
              . as $orig
              | (($orig.entries // {}) | to_entries
                 | map(select(
-                    .key != $sid and $tsk != "" and $tp != ""
-                    and (.value.tmux_socket // "") == $tsk
-                    and (.value.tmux_pane // "") == $tp
+                    .key != $sid and $tsk != "" and $tses != ""
+                    and (.value.tmux_socket  // "") == $tsk
+                    and (.value.tmux_session // "") == $tses
                   ))
                 | map(.value)) as $evicted
              | .entries = (
                  ($orig.entries // {}) | to_entries
                  | map(select(
                      .key == $sid
-                     or $tsk == "" or $tp == ""
-                     or (.value.tmux_socket // "") != $tsk
-                     or (.value.tmux_pane // "") != $tp
+                     or $tsk == "" or $tses == ""
+                     or (.value.tmux_socket  // "") != $tsk
+                     or (.value.tmux_session // "") != $tses
                    ))
                  | from_entries
                )
@@ -435,17 +436,17 @@ attention_state_transition_to_running() {
   return "$rc"
 }
 
-# Remove every entry on a given (tmux_socket, tmux_pane), optionally
+# Remove every entry on a given (tmux_socket, tmux_session), optionally
 # preserving one session_id. Used by the SessionStart `source=clear` hook
 # to clean up stale entries when the user runs `/clear` and the prior
 # turn's Stop hook never fired (e.g. the turn was still in flight). The
 # new session's session_id is unknown to the old entries, so the standard
-# same-pane eviction in attention_state_upsert does not trigger until the
-# next UserPromptSubmit — which can be many minutes away. A no-op when
-# tmux coords are empty, since we cannot identify the pane.
-attention_state_evict_pane() {
-  local tmux_socket="$1" tmux_pane="$2" except_session_id="${3:-}"
-  if [[ -z "$tmux_socket" || -z "$tmux_pane" ]]; then
+# same-session eviction in attention_state_upsert does not trigger until
+# the next UserPromptSubmit — which can be many minutes away. A no-op
+# when tmux coords are empty, since we cannot identify the session.
+attention_state_evict_session() {
+  local tmux_socket="$1" tmux_session="$2" except_session_id="${3:-}"
+  if [[ -z "$tmux_socket" || -z "$tmux_session" ]]; then
     return 0
   fi
   local now; now="$(attention_state_now_ms)"
@@ -457,7 +458,7 @@ attention_state_evict_pane() {
     local current next
     current="$(attention_state_read)"
     next="$(jq --arg tsk "$tmux_socket" \
-               --arg tp "$tmux_pane" \
+               --arg tses "$tmux_session" \
                --arg ex "$except_session_id" \
                --argjson now "$now" \
                --argjson cap "$ATTENTION_RECENT_CAP" \
@@ -467,17 +468,56 @@ attention_state_evict_pane() {
       | (($orig.entries // {}) | to_entries
          | map(select(
              .key != $ex
-             and (.value.tmux_socket // "") == $tsk
-             and (.value.tmux_pane // "") == $tp
+             and (.value.tmux_socket  // "") == $tsk
+             and (.value.tmux_session // "") == $tses
            ))
          | map(.value)) as $evicted
       | .entries = (
           ($orig.entries // {}) | to_entries
           | map(select(
               .key == $ex
-              or (.value.tmux_socket // "") != $tsk
-              or (.value.tmux_pane // "") != $tp
+              or (.value.tmux_socket  // "") != $tsk
+              or (.value.tmux_session // "") != $tses
             ))
+          | from_entries
+        )
+      | archive_into_recent($evicted; $now; $cap; $ttl)
+    ' <<<"$current")"
+    attention_state_write "$next"
+  ) 9>"$lock"
+}
+
+# Archive every entry whose tmux_session matches and remove it from
+# .entries. Used by the tmux `session-closed` hook (and the wezterm-side
+# `forget_by_tmux_session` Lua helper, which spawns this via attention-
+# jump.sh --forget-session). Zero-latency replacement for the reachability
+# sweep when tmux can tell us the session is gone outright. A no-op when
+# tmux_session is empty.
+attention_state_forget_session() {
+  local tmux_session="$1"
+  if [[ -z "$tmux_session" ]]; then
+    return 0
+  fi
+  local now; now="$(attention_state_now_ms)"
+  attention_state_init
+  local lock
+  lock="$(attention_state_lock_path)"
+  (
+    flock -x 9
+    local current next
+    current="$(attention_state_read)"
+    next="$(jq --arg tses "$tmux_session" \
+               --argjson now "$now" \
+               --argjson cap "$ATTENTION_RECENT_CAP" \
+               --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
+               "$__ATTENTION_RECENT_DEF"'
+      . as $orig
+      | (($orig.entries // {}) | to_entries
+         | map(select((.value.tmux_session // "") == $tses))
+         | map(.value)) as $evicted
+      | .entries = (
+          ($orig.entries // {}) | to_entries
+          | map(select((.value.tmux_session // "") != $tses))
           | from_entries
         )
       | archive_into_recent($evicted; $now; $cap; $ttl)

@@ -256,49 +256,18 @@ local function sanitize(s)
   return (s:gsub('[\t\n\r]', ' '))
 end
 
--- Trust the live host pane info for label rendering only when its
--- workspace matches the session-name workspace prefix. The reverse-map
--- miss path in production lands the host on whatever pane currently
--- owns the entry's stored wezterm_pane_id — frequently the user own
--- Claude pane in a totally unrelated workspace. Trusting that produces
--- labels like `config/1_wezterm-config/13_21/master` on a coco-server
--- row. Cross-checking workspace lets the parsed-from-session fallback
--- kick in for the right reason.
-local function trusted_live(entry, host_info)
-  local L = host_info or {}
-  local session_ws = parse_session_workspace(entry.tmux_session)
-  if L.workspace and session_ws and L.workspace ~= session_ws then
-    return {}
-  end
-  return L
-end
-
--- Build the `ws/tab/tmuxseg/branch` label string. host_info is the
--- panes_map entry for the wezterm pane currently hosting the entry's
--- session, or nil when no such host exists. Falls through to parsed
--- session-name fields for any segment the live info cannot supply.
--- Special-case: the overflow placeholder tab title is the `…` glyph,
--- not a meaningful repo name. When the host is the overflow pane we
--- substitute the projected session's repo for the tab segment so the
--- row reads `work/6_coco-server/...` instead of `work/6_…/...`.
-local function compute_label(entry, host_info)
-  local L = trusted_live(entry, host_info)
-  local session_ws = parse_session_workspace(entry.tmux_session)
-  local session_repo = parse_session_repo(entry.tmux_session)
-  local ws = nonempty_str(L.workspace) and L.workspace or (session_ws or '?')
-
-  local tab
-  if L.tab_index ~= nil then
-    if L.tab_title == OVERFLOW_GLYPH then
-      tab = tostring(L.tab_index) .. '_' .. (session_repo or '?')
-    elseif nonempty_str(L.tab_title) then
-      tab = tostring(L.tab_index) .. '_' .. L.tab_title
-    else
-      tab = tostring(L.tab_index)
-    end
-  else
-    tab = session_repo or '?'
-  end
+-- Build the `ws/tab/tmuxseg/branch` label string entirely from the
+-- entry's own fields. wezterm tab is a slot — its index, title, and
+-- workspace can all change while the tmux session keeps running, so
+-- the label cannot read the live pane and stay stable. Identity comes
+-- from `tmux_session = wezterm_<ws>_<repo>_<hex>`; tab segment is the
+-- parsed repo name; tmux_window/tmux_pane/git_branch are recorded by
+-- the hook at fire time and stay accurate for the lifetime of that
+-- entry. Default-workspace ad-hoc shells (`wezterm_default_shell_…`)
+-- parse out as ws=`default`, repo=`shell`, which is fine.
+local function compute_label(entry)
+  local ws = parse_session_workspace(entry.tmux_session) or '?'
+  local tab = parse_session_repo(entry.tmux_session) or '?'
 
   local tmux_seg
   if nonempty_str(entry.tmux_window) then
@@ -366,18 +335,6 @@ local function status_rank(s)
   elseif s == M.STATUS_DONE then return 1
   elseif s == M.STATUS_RUNNING then return 2
   else return 3 end
-end
-
-local function effective_host_info(entry, panes_map, sessions_map)
-  local effective_pane
-  if nonempty_str(entry.tmux_session) and sessions_map then
-    effective_pane = sessions_map[entry.tmux_session]
-  end
-  if not effective_pane and entry.wezterm_pane_id ~= nil then
-    effective_pane = entry.wezterm_pane_id
-  end
-  if effective_pane == nil then return nil end
-  return panes_map and panes_map[tostring(effective_pane)]
 end
 
 local function build_active_row(entry, label, age_text)
@@ -460,8 +417,7 @@ function M.compute_picker_data(panes_map, sessions_map)
        or entry.status == M.STATUS_DONE then
       counts[entry.status] = counts[entry.status] + 1
     end
-    local host = effective_host_info(entry, panes_map, sessions_map)
-    local label = compute_label(entry, host)
+    local label = compute_label(entry)
     local age_ms = now - (tonumber(entry.ts) or now)
     local age_text = format_age(age_ms)
     if not nonempty_str(tostring(entry.wezterm_pane_id or '')) then
@@ -497,8 +453,7 @@ function M.compute_picker_data(panes_map, sessions_map)
     return (tonumber(a.archived_ts) or 0) > (tonumber(b.archived_ts) or 0)
   end)
   for _, r in ipairs(recents) do
-    local host = effective_host_info(r, panes_map, sessions_map)
-    local label = compute_label(r, host)
+    local label = compute_label(r)
     local age_ms = now - (tonumber(r.archived_ts) or now)
     local age_text = format_age(age_ms)
     table.insert(rows, build_recent_row(r, label, age_text))
@@ -1034,6 +989,32 @@ function M.write_live_snapshot(target_path, trace_id)
         memoize_pane_session(pane_id_key, hosted)
       end
     end
+  end
+
+  -- Reachability sweep: a `done` / `waiting` entry whose tmux session
+  -- has no wezterm host anymore (spawn-cap evict, workspace close,
+  -- refresh-session, kill-session, or any other path that drops the
+  -- slot without going through `tab.activate_overflow`) sits in
+  -- `entries` until TTL prune unless we archive it. The wezterm tab
+  -- is a slot; when the slot stops hosting `entry.tmux_session`,
+  -- attention follows. `running` is exempt — the agent may legitimately
+  -- be in flight on a detached tmux session whose host is just
+  -- temporarily gone (overflow rotation passes through this state for
+  -- one tick before titles.lua updates the map). Forget runs in the
+  -- background subprocess + optimistic hide, mirroring B2.
+  local snapshot_now = now_ms()
+  local unreachable_sessions = {}
+  for _, entry in pairs(state_cache.entries or {}) do
+    if type(entry) == 'table'
+       and entry_is_live(entry, snapshot_now)
+       and (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
+       and nonempty_str(entry.tmux_session)
+       and not entry_reachable(entry, panes_map, sessions_map) then
+      unreachable_sessions[entry.tmux_session] = true
+    end
+  end
+  for tmux_session, _ in pairs(unreachable_sessions) do
+    M.forget_by_tmux_session(tmux_session)
   end
 
   -- Compute picker rows and counts using the same predicate the badge
@@ -1583,6 +1564,45 @@ function M.optimistically_hide(entry)
   hidden_entries[sid] = ts
   if state_cache.entries then
     state_cache.entries[sid] = nil
+  end
+end
+
+-- Archive every active entry whose tmux_session matches. Used when a
+-- wezterm slot stops hosting a tmux session — overflow rotation
+-- (Alt+x picks a different session), spawn-cap eviction, workspace
+-- close — so the entry leaves `entries` and lands in `recent[]`
+-- instead of dangling indefinitely. Mirrors the Alt+. forget shape
+-- (background --forget + optimistic hide) so the picker / badge
+-- update within the same tick.
+function M.forget_by_tmux_session(tmux_session)
+  if type(tmux_session) ~= 'string' or tmux_session == '' then return end
+  if type(forget_spawner) ~= 'function' then return end
+  local victims = {}
+  for sid, entry in pairs(state_cache.entries or {}) do
+    if type(entry) == 'table' and entry.tmux_session == tmux_session then
+      table.insert(victims, { sid = sid, entry = entry })
+    end
+  end
+  for _, v in ipairs(victims) do
+    local sid, entry = v.sid, v.entry
+    local forget_args = { '--forget', sid }
+    if entry.ts ~= nil then
+      table.insert(forget_args, '--only-if-ts')
+      table.insert(forget_args, tostring(entry.ts))
+    end
+    local args = forget_spawner(forget_args)
+    if type(args) == 'table' and #args > 0 then
+      pcall(function() wezterm.background_child_process(args) end)
+      hidden_entries[sid] = entry.ts
+      state_cache.entries[sid] = nil
+      if module_logger then
+        module_logger.info('attention', 'forget by tmux_session', {
+          session_id = sid,
+          tmux_session = tmux_session,
+          status = entry.status,
+        })
+      end
+    end
   end
 end
 

@@ -24,6 +24,11 @@
 # to clean up entries that have aged past the TTL when no hook has fired:
 #   bash .../attention-jump.sh --prune [--ttl <ms>]
 #
+# Invoked from the tmux `session-closed` hook to archive every active
+# entry on a tmux session that just died. Zero-latency replacement for
+# the wezterm-side reachability sweep when tmux can tell us outright:
+#   bash .../attention-jump.sh --forget-session <tmux_session_name>
+#
 # Invoked by the Alt+/ picker when the user selects a recent (archived)
 # entry. Probes pane existence first; if alive, jumps as usual; if the
 # tmux pane is gone, removes the row from .recent[] and toasts:
@@ -102,6 +107,8 @@ clear_all=0
 forget=0
 forget_delay=0
 forget_if_ts=''
+forget_session_only=0
+forget_session_name=''
 prune_only=0
 prune_ttl=1800000
 recent_jump=0
@@ -144,6 +151,14 @@ case "${1:-next-waiting}" in
       esac
     done
     ;;
+  --forget-session)
+    forget_session_name="${2:-}"
+    if [[ -z "$forget_session_name" ]]; then
+      printf 'usage: %s --forget-session <tmux_session_name>\n' "$0" >&2
+      exit 1
+    fi
+    forget_session_only=1
+    ;;
   --recent)
     recent_jump=1
     shift
@@ -164,7 +179,7 @@ case "${1:-next-waiting}" in
     exit 0
     ;;
   *)
-    printf 'usage: %s next-waiting|next-done|--session <id>|--forget <id> [--delay N] [--only-if-ts TS]|--prune [--ttl MS]|--clear-all|--recent --session <id> [--archived-ts MS]|--direct ...\n' "$0" >&2
+    printf 'usage: %s next-waiting|next-done|--session <id>|--forget <id> [--delay N] [--only-if-ts TS]|--forget-session <tmux_session>|--prune [--ttl MS]|--clear-all|--recent --session <id> [--archived-ts MS]|--direct ...\n' "$0" >&2
     exit 1
     ;;
 esac
@@ -194,6 +209,12 @@ fi
 
 if (( prune_only )); then
   attention_state_prune "$prune_ttl" 2>/dev/null || true
+  nudge_wezterm_tick
+  exit 0
+fi
+
+if (( forget_session_only )); then
+  attention_state_forget_session "$forget_session_name" 2>/dev/null || true
   nudge_wezterm_tick
   exit 0
 fi
