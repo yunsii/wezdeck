@@ -22,9 +22,11 @@ end
 -- Model"). Each item below is a separate WezTerm tab pointing at either:
 --   - the project's main worktree, or
 --   - a long-lived dev-* worktree.
--- Both resolve to the `<base>-resume` profile (e.g. `claude --continue`)
--- so first-open of a workspace tab auto-resumes the cwd's last
--- conversation, falling back to a fresh session when none exists.
+-- Both resolve to the `<base>-resume` profile, which is the resume
+-- command wrapped in a fresh-session fallback (e.g. `sh -c 'claude
+-- --continue || exec claude'`), so first-open of a workspace tab
+-- auto-resumes the cwd's last conversation and falls back to a fresh
+-- session when none exists.
 --
 -- task-* and hotfix-* worktrees are NOT listed here — they're created on
 -- demand via `Ctrl+k g t` / `Ctrl+k g h` and live as tmux windows inside
