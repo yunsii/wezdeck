@@ -153,7 +153,7 @@ Edit `wezterm-x/local/workspaces.lua` when you need to change:
 - per-project launcher overrides that should not be committed
 - raw per-project command overrides that should bypass the managed launcher
 
-Example local override:
+Example local override (minimal — full template with `work` + `opensource` + `config` lives in `wezterm-x/local.example/workspaces.lua`):
 
 ```lua
 local wezterm = require 'wezterm'

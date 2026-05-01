@@ -65,4 +65,22 @@ return {
       { cwd = '/home/your-user/github/another-oss-repo' },
     },
   },
+
+  -- The `config` workspace is for cross-machine dotfiles / terminal-stack
+  -- repos you maintain alongside this one (WSL bootstrap, IME schemas,
+  -- editor config, etc.). The tracked baseline already points `config` at
+  -- the synced wezterm-config repo itself; this override REPLACES the
+  -- baseline entry, so the repo root must be listed explicitly as the
+  -- first item (using `constants.main_repo_root` keeps it correct after a
+  -- repo move). Drop in additional sibling dotfiles repos as extra items.
+  config = {
+    defaults = {
+      launcher = managed_launcher,
+    },
+    items = {
+      { cwd = constants.main_repo_root or '/home/your-user/github/wezterm-config' },
+      { cwd = '/home/your-user/github/WSL' },
+      { cwd = '/home/your-user/github/rime-config' },
+    },
+  },
 }
