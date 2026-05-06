@@ -208,7 +208,16 @@ if (( clear_all )); then
 fi
 
 if (( prune_only )); then
-  attention_state_prune "$prune_ttl" 2>/dev/null || true
+  # Periodic prune does both jobs: TTL sweep (entries idle past 30 min)
+  # plus reachability sweep (entries whose tmux pane is gone — pane
+  # killed, agent crashed, /clear didn't reach the right session, etc.
+  # Without this the entry sits in entries[] until the 30 min TTL even
+  # though the pane vanished minutes ago). The alive map is collected
+  # here, not in emit-agent-status.sh, so the hook hot path never pays
+  # the per-socket `tmux list-panes -a` fork cost — only the once-per-
+  # minute background prune that titles.lua schedules does.
+  alive_panes_json="$(attention_state_collect_alive_panes 2>/dev/null || printf '{}')"
+  attention_state_prune "$prune_ttl" "$alive_panes_json" 2>/dev/null || true
   nudge_wezterm_tick
   exit 0
 fi

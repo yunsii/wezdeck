@@ -182,15 +182,24 @@ if [[ "$status" == "cleared" ]]; then
   attention_state_remove "$session_id" 2>/dev/null || true
 elif [[ "$status" == "pane-evict" ]]; then
   # SessionStart source=clear: the new session_id in stdin is for the
-  # fresh post-/clear session; any entries still parked on this tmux
-  # session belong to the discarded pre-/clear session and will never
-  # get their own Stop. Evict them all, but preserve the new session_id
+  # fresh post-/clear session; any entry still parked on this tmux
+  # PANE belongs to the discarded pre-/clear session and will never
+  # get its own Stop. Evict it, but preserve the new session_id
   # defensively in case a race re-creates it before we hold the lock.
-  # Eviction key is (tmux_socket, tmux_session): /clear stays in the
-  # same tmux session, and pane id is internal to a session (splits/
-  # rearranges change it) so it cannot be the identity.
+  #
+  # Eviction key is (tmux_socket, tmux_session, tmux_pane): /clear
+  # stays in the same tmux pane, and tmux pane ids (`%N`) are
+  # server-internal monotonic identifiers that survive split-window /
+  # swap-pane / break-pane (only true pane destruction recycles them,
+  # which already invalidates the row). Earlier code keyed on (socket,
+  # session) without pane on the rationale "pane id changes on
+  # splits/rearranges" — but split-window allocates a *new* pane id
+  # for the new pane, leaving the original's id untouched, so the
+  # reasoning was wrong. Without pane in the key, /clear in pane B
+  # silently archived pane A's still-live entry on the same tmux
+  # session, leaving A invisible in both the picker and the counter.
   attention_state_evict_session "$tmux_socket" "$tmux_session" "$session_id" \
-    2>/dev/null || true
+    "$tmux_pane" 2>/dev/null || true
 elif [[ "$status" == "resolved" ]]; then
   # Wired to BOTH PreToolUse and PostToolUse. The two hooks fire at
   # different lifecycle points and cover different transitions; they
