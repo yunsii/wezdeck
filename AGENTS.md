@@ -68,6 +68,15 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/tab-visibility.md`](docs/tab-visibility.md).
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
+- Env loading, secret placement, the `~/.config/shell-env.d/`
+  convention, `runtime-env-lib.sh::runtime_env_load_managed`, or
+  deciding whether a value belongs in `wezterm-x/local/shared.env`
+  vs `~/.config/shell-env.d/`:
+  Read [`docs/setup.md#env-loading-model`](docs/setup.md#env-loading-model).
+- Agent-CLI launch chain, `agent-launcher.sh`, the `${WEZTERM_REPO}`
+  placeholder used in `config/worktree-task.env`, or any path that
+  spawns `claude` / `codex`:
+  Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
 - Preparing a commit message or deciding commit split:
   Read [`docs/commit-guidelines.md`](docs/commit-guidelines.md).
 
@@ -80,6 +89,8 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - For Windows file inspection from agents, resolve runtime paths through `scripts/runtime/windows-runtime-paths-lib.sh` and then use WSL-native tools on the `*_WSL` paths instead of `cmd.exe /c dir`, `cmd.exe /c type`, or similar console commands.
 - Keep workspace definitions in `wezterm-x/workspaces.lua`, not inline in `wezterm.lua`.
 - Keep private machine and project overrides in `wezterm-x/local/` and keep tracked templates in `wezterm-x/local.example/`.
+- User-level secrets (CNB tokens, third-party API keys, etc.) live under `~/.config/shell-env.d/<name>.env` — the canonical convention auto-discovered by both `~/.zshrc` and `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`. Do not introduce new ad-hoc dotfile loaders that hardcode specific filenames; drop a file in `shell-env.d/` instead. Repo-machine config consumed by both Lua and shell stays in `wezterm-x/local/shared.env` (synced to Windows runtime). Full rules: [`docs/setup.md#env-loading-model`](docs/setup.md#env-loading-model).
+- Every agent-CLI launch path must terminate at `scripts/runtime/agent-launcher.sh <profile>` — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn all share this single env-loading site. Do not invoke `claude` / `codex` directly from a `tmux new-window` / `respawn-pane` call site or from a new `*_RESUME_COMMAND` in `config/worktree-task.env`. The `${WEZTERM_REPO}` placeholder used in `worktree-task.env` is expanded in three places that must stay in lockstep: `scripts/runtime/worktree/lib/resume-command.sh`, `scripts/runtime/tab-overflow-cold-spawn.sh`, and `wezterm-x/lua/config/managed_cli.lua::parse_managed_cli_env`.
 - Prefer updating an existing doc in `docs/` over adding a new sibling file; keep presentations under `docs/presentations/`.
 - Design user-facing features keyboard-first: every new or changed interaction must have a keyboard path, and mouse bindings are only acceptable as fallbacks (for example cross-pane text selection or quick pane focus). Weigh key ergonomics when picking a binding — reachability, OS- / IME-level hotkey conflicts (Ctrl+Space, Alt+Shift, etc.), chord depth, and whether the action already has a keyboard home in `docs/keybindings.md`.
 - `wezterm-x/commands/manifest.json` is the single source of truth for every shortcut. Adding or renaming a hotkey means: (1) add / update the manifest item with a `binding` field; (2) for wezterm-layer bindings, add the named handler to `wezterm-x/lua/ui/action_registry.lua`; (3) for tmux-chord leaves, the `binding.exec` tmux-action string is everything — no code changes elsewhere; `scripts/runtime/render-tmux-bindings.sh` regenerates `wezterm-x/tmux/chord-bindings.generated.conf` during `wezterm-runtime-sync` and `tmux.conf` loads it via `source-file -q`. Do not re-declare keys or actions in `keymaps.lua` or `tmux.conf` directly; both are driven by the manifest now. Missing or unregistered ids show up as `(unregistered)` in `scripts/dev/hotkey-usage-report.sh` — treat that report as the audit signal.

@@ -75,5 +75,15 @@ resolve_resume_primary_command() {
   done
 
   [[ -n "$resolved" ]] || return 0
+  # ${WEZTERM_REPO} is the canonical placeholder for the wezterm-config
+  # repo root in worktree-task.env — used so resume commands can reference
+  # repo-internal scripts (agent-launcher.sh) without hardcoding an
+  # absolute path. Expanded here (rather than relying on the shell that
+  # eventually runs the command) because tmux fork-execs the resolved
+  # string verbatim via `sh -c`, and a bare ${WEZTERM_REPO} would expand
+  # to empty and fail with `not found`.
+  if [[ -n "$wezterm_repo" ]]; then
+    resolved="${resolved//\$\{WEZTERM_REPO\}/$wezterm_repo}"
+  fi
   printf '%s\n' "$resolved"
 }
