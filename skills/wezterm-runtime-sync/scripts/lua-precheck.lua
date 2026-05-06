@@ -81,7 +81,20 @@ if not resume or not resume.command or #resume.command == 0 then
 end
 
 local joined = table.concat(resume.command, ' ')
-local sentinel = joined:find('%-%-continue') or joined:find('resume')
+-- Sentinels accepted (any of):
+--   • `--continue` / `resume`  — the literal CLI flags used by older
+--     resume-command strings written directly into worktree-task.env
+--     (`sh -c 'claude --continue || exec claude'`, etc.).
+--   • `agent-launcher.sh`      — the canonical entrypoint that wraps
+--     resume-or-fresh logic and runtime-env loading. After the launcher
+--     refactor, the resume command exposed to lua is just
+--     `<repo>/scripts/runtime/agent-launcher.sh <profile>`; the
+--     `--continue` / `resume` literals live inside the launcher and are
+--     no longer visible at this layer. Treat the launcher path as
+--     sufficient evidence that the resume profile is wired up.
+local sentinel = joined:find('%-%-continue')
+  or joined:find('resume')
+  or joined:find('agent%-launcher%.sh')
 if not sentinel then
   fail('default_resume_profile command does not look like a resume command',
     'command="' .. joined .. '"')

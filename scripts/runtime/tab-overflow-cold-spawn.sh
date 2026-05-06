@@ -83,6 +83,12 @@ agent_command_str="$(read_env_var "$worktree_env" "WT_PROVIDER_AGENT_PROFILE_${u
   agent_command_str="$(read_env_var "$worktree_env" "WT_PROVIDER_AGENT_PROFILE_${upper}_COMMAND" 2>/dev/null || true)"
 [[ -z "$agent_command_str" ]] && agent_command_str="$profile"
 
+# Mirror resume-command.sh's ${WEZTERM_REPO} expansion: worktree-task.env
+# uses the placeholder so resume commands can reference repo-internal
+# scripts (agent-launcher.sh) without an absolute path; this cold-spawn
+# path bypasses resume-command.sh's resolver, so we expand here too.
+agent_command_str="${agent_command_str//\$\{WEZTERM_REPO\}/$repo_root}"
+
 # Split into argv. open-project-session.sh's build_primary_shell_command
 # quotes each element with %q, so the result is a single primary command
 # string that primary-pane-wrapper.sh execs. The lua side parses these

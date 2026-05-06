@@ -35,8 +35,8 @@ local repo_worktree_task_env = helpers.load_optional_env_file(join_path(runtime_
     or helpers.load_optional_env_file(join_path(repo_root_override, '.worktree-task', 'config.env'))
   )) or {}
 local user_worktree_task_env = helpers.load_optional_env_file(defaults.default_worktree_task_user_config_path(join_path) or '') or {}
-local repo_managed_cli_env = managed_cli.parse_managed_cli_env(repo_worktree_task_env)
-local user_managed_cli_env = managed_cli.parse_managed_cli_env(user_worktree_task_env)
+local repo_managed_cli_env = managed_cli.parse_managed_cli_env(repo_worktree_task_env, { wezterm_repo = repo_root_override })
+local user_managed_cli_env = managed_cli.parse_managed_cli_env(user_worktree_task_env, { wezterm_repo = repo_root_override })
 local local_managed_cli_profile = managed_cli.normalize_agent_profile_name(shared_env.MANAGED_AGENT_PROFILE)
 
 local function vscode_command(base)

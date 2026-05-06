@@ -81,7 +81,8 @@ function M.parse_command_spec(spec)
   return parts
 end
 
-function M.parse_managed_cli_env(env)
+function M.parse_managed_cli_env(env, opts)
+  opts = opts or {}
   local parsed = {
     active_profile = nil,
     profiles = {},
@@ -92,6 +93,21 @@ function M.parse_managed_cli_env(env)
   end
 
   parsed.active_profile = M.normalize_agent_profile_name(env.WT_PROVIDER_AGENT_PROFILE)
+
+  -- ${WEZTERM_REPO} is the canonical placeholder used in
+  -- config/worktree-task.env so resume commands can reference repo-internal
+  -- scripts (scripts/runtime/agent-launcher.sh) without an absolute path.
+  -- Mirror the expansion in scripts/runtime/worktree/lib/resume-command.sh
+  -- and scripts/runtime/tab-overflow-cold-spawn.sh so every consumer of
+  -- worktree-task.env resolves the placeholder identically.
+  local function expand_placeholders(spec)
+    if not spec or spec == '' or not opts.wezterm_repo then
+      return spec
+    end
+    return (spec:gsub('${WEZTERM_REPO}', function()
+      return opts.wezterm_repo
+    end))
+  end
 
   for key, value in pairs(env) do
     local raw_name, field = match_profile_key(key)
@@ -106,11 +122,11 @@ function M.parse_managed_cli_env(env)
         parsed.profiles[profile_name] = profile
 
         if field == 'COMMAND' then
-          profile.command = M.parse_command_spec(value)
+          profile.command = M.parse_command_spec(expand_placeholders(value))
         elseif field == 'COMMAND_LIGHT' then
-          profile.variants.light = M.parse_command_spec(value)
+          profile.variants.light = M.parse_command_spec(expand_placeholders(value))
         elseif field == 'COMMAND_DARK' then
-          profile.variants.dark = M.parse_command_spec(value)
+          profile.variants.dark = M.parse_command_spec(expand_placeholders(value))
         elseif field == 'PROMPT_FLAG' then
           profile.prompt_flag = value ~= '' and value or nil
         end

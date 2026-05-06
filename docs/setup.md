@@ -7,9 +7,9 @@ Use this doc when you need prerequisites and local setup.
 - `hybrid-wsl` uses the Windows WezTerm nightly build plus a WSL domain configured in `wezterm-x/local/constants.lua`.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
 - `tmux 3.6+` must be available in the runtime environment that will host managed project tabs. Required because the repo's `tmux.conf` advertises DEC mode 2026 (synchronized output) and tmux 3.4 deadlocks on stuck sync windows where 3.6's 1-second flush timeout does not. Ubuntu 24.04 LTS still ships 3.4, so build 3.6+ from source if your distro lags. Background, verification recipe, and the IME-flicker symptom that originally drove this requirement: [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
-- `lua5.4` (or `lua5.3` / `lua`) **recommended** in the WSL/Linux side. Used by `wezterm-runtime-sync`'s `lua-precheck` step (`skills/wezterm-runtime-sync/scripts/lua-precheck.lua`) to dofile the synced `wezterm-x/lua/constants.lua` under a mocked `wezterm` module and assert that managed-launcher resolution still works (`default_profile` resolves, `default_resume_profile ≠ default_profile`, the resume command literally contains `--continue` or `resume`). Without it, sync skips the precheck with a warning instead of failing — same surface that historically let `<base>-resume` vs `<base>_resume` mis-naming and unreachable WSL-path env files slip through to runtime. Install with `sudo apt install lua5.4` on Ubuntu/Debian.
+- `lua5.4` (or `lua5.3` / `lua`) **recommended** in the WSL/Linux side. Used by `wezterm-runtime-sync`'s `lua-precheck` step (`skills/wezterm-runtime-sync/scripts/lua-precheck.lua`) to dofile the synced `wezterm-x/lua/constants.lua` under a mocked `wezterm` module and assert that managed-launcher resolution still works (`default_profile` resolves, `default_resume_profile ≠ default_profile`, and the resume command contains a recognized sentinel — `--continue`, `resume`, or `agent-launcher.sh`). Without it, sync skips the precheck with a warning instead of failing — same surface that historically let `<base>-resume` vs `<base>_resume` mis-naming and unreachable WSL-path env files slip through to runtime. Install with `sudo apt install lua5.4` on Ubuntu/Debian.
 - `jq` **recommended** in the WSL/Linux side. Used by the agent-attention state writer (`scripts/runtime/attention-state-lib.sh`), the focus emit path (`scripts/runtime/tmux-focus-emit.sh`), and the hotkey-usage telemetry (`scripts/runtime/hotkey-usage-bump.sh`); also opportunistically by `scripts/claude-hooks/emit-agent-status.sh` to extract `session_id` / `message` / `prompt` from hook payloads. Without it, the Claude hook still writes attention entries but keys them to `pane:<WEZTERM_PANE>` with canned per-status labels, and the other call sites take their respective degraded paths. Install with `sudo apt install jq` on Ubuntu/Debian.
-- WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY` in `wezterm-x/local/shared.env`.
+- WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY`. Drop it in `~/.config/shell-env.d/wakatime.env` (the canonical home for user-level secrets — see [Env Loading Model](#env-loading-model)) or, equivalently, in `wezterm-x/local/shared.env` if you prefer to keep it next to the rest of the repo-machine config. Both paths feed the unified loader; if both files set the key, `~/.config/shell-env.d/` wins.
 - Repo-local helper wrappers such as `scripts/runtime/agent-clipboard.sh` require `hybrid-wsl`, `cmd.exe`, `powershell.exe`, `wslpath`, and a synced Windows helper runtime.
 - In `hybrid-wsl` mode, `wezterm.exe` runs on Windows and its Lua cannot resolve WSL-native paths like `/home/yuns/...`, so `wezterm-runtime-sync` mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` (Windows-readable NTFS path) on every sync. Skipping a sync after editing `config/worktree-task.env` will leave wezterm.exe on the previous snapshot. Full pickup chain and the `<base>-resume` / `<base>_resume` naming asymmetry: see [`workspaces.md#behavior`](./workspaces.md#behavior).
 
@@ -17,7 +17,7 @@ Use this doc when you need prerequisites and local setup.
 
 1. Copy `wezterm-x/local.example/` to `wezterm-x/local/`.
 2. Edit `wezterm-x/local/constants.lua` for `runtime_mode`, runtime shell, UI variant, and OS-specific integrations such as `default_domain` or Chrome debug profile path.
-3. Edit `wezterm-x/local/shared.env` for shared scalar values such as `WAKATIME_API_KEY` and `MANAGED_AGENT_PROFILE`.
+3. Edit `wezterm-x/local/shared.env` for repo-machine config values consumed by both Lua and shell — `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, and so on. For user-level secrets that should not be tied to a specific repo clone (CNB tokens, third-party API keys), prefer `~/.config/shell-env.d/<name>.env` instead — see [Env Loading Model](#env-loading-model) for the contract.
 4. Edit `wezterm-x/local/workspaces.lua` for your private project directories.
 5. Optionally create `~/.config/worktree-task/config.env` when you need to point globally installed `worktree-task` back at this checkout with `WEZDECK_REPO=/absolute/path` (legacy `WEZTERM_CONFIG_REPO=...` still accepted).
 6. Optionally edit `wezterm-x/local/command-panel.sh` for machine-local tmux command palette entries exposed through `Ctrl+Shift+P`.
@@ -28,9 +28,29 @@ Use this doc when you need prerequisites and local setup.
 
 - `wezterm-x/workspaces.lua`: tracked shared workspace defaults
 - `wezterm-x/local/workspaces.lua`: private directories and machine-local workspace overrides
-- `wezterm-x/local/shared.env`: shared scalar values used by Lua and shell code
+- `wezterm-x/local/shared.env`: shared scalar values used by Lua and shell code (repo-machine scope)
 - `wezterm-x/local/constants.lua`: machine-local structured Lua settings
 - `wezterm-x/local.example/`: tracked templates for `wezterm-x/local/`
+- `~/.config/shell-env.d/*.env`: user-level secrets and per-user env vars; auto-discovered by both `~/.zshrc` and `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`. Mode 600 per file, dir mode 700.
+
+## Env Loading Model
+
+There is one unified env loader for managed-runtime shell scripts: `scripts/runtime/runtime-env-lib.sh`. Any agent / status / hook entry point that needs env should source it and call `runtime_env_load_managed`, which sources two layers in this order (later wins):
+
+1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE` and `WEZTERM_VSCODE_PROFILE`.
+2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets. Drop a new file there to add a secret; no loader edits, no rc-file edits. The same dir is sourced by `~/.zshrc`, so interactive zsh and machine-spawned agents share one source of truth.
+
+The Lua side reads `shared.env` independently via `helpers.load_optional_env_file`; that is a structural cross-language constraint — Lua cannot call into bash — and is the only second loader implementation that exists.
+
+| Genre | Goes in | Notes |
+|---|---|---|
+| User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. Files are auto-globbed. |
+| Repo-machine config (Lua + shell) | `wezterm-x/local/shared.env` | Synced to Windows runtime. |
+| Repo-machine shell init / functions | `wezterm-x/local/runtime-logging.sh`, `wezterm-x/local/command-panel.sh` | Sourced as bash, not as `.env`. |
+| Repo-machine Lua tables | `wezterm-x/local/constants.lua`, `keybindings.lua`, `workspaces.lua` | Lua return-tables. |
+| Repo-tracked config | `config/worktree-task.env` | Read literally — values may contain command strings. Never source. |
+
+For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is the single env-loading site (it calls `runtime_env_load_managed` before exec'ing the agent). All four launch paths — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, tab-overflow cold-spawn — terminate at this launcher. See [`architecture.md#startup-invariants`](./architecture.md#startup-invariants) for the invariant statement.
 
 ## Repo-Local Runtime Wrappers
 
