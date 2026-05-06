@@ -119,6 +119,8 @@ The Lua side's `tick received` log gains:
 
 - `latency_ms` — gap between the shell-side OSC emit (`tick_ms`) and WezTerm dispatching `user-var-changed`. Subject to WSL/Windows clock skew, so treat sub-100 ms (including small negatives) as noise; signal is seconds-scale spikes.
 
+A diagnostic-only `tick echo received` line also lands per OSC emit. The hook drops a sidecar `attention.tick.echo` via the file transport whenever the primary `attention.tick` picked OSC (see [event-bus.md](./event-bus.md) for the registration). Both lines carry the same `value=$tick_ms`, so pairing them disambiguates a missing OSC arrival: hook log present + `tick echo received` present + `tick received` absent ⇒ OSC was lost on the way (hook tty write → tmux DCS pass-through → wezterm user-var dispatch), not the hook itself. The handler logs only — it does **not** call `reload_state` — so an OSC drop still produces the user-visible "stale right-status / Alt+/ picker" symptom while you investigate.
+
 ##### One-shot waterfall
 
 `scripts/dev/attention-latency-probe.sh` joins the WSL `runtime.log` and the Windows `wezterm.log` on `tick_ms` and prints a per-event waterfall with anomaly flags:

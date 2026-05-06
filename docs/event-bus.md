@@ -201,7 +201,24 @@ accumulate forever.
 | name | producer | consumer | typical transport | latency |
 |---|---|---|---|---|
 | `attention.tick` | `scripts/claude-hooks/emit-agent-status.sh` (Claude hooks) | `titles.lua` (refresh right-status counter) | OSC (hook runs in regular pane) | sub-frame |
+| `attention.tick.echo` | `scripts/claude-hooks/emit-agent-status.sh` (sidecar to every OSC `attention.tick`) | `titles.lua` (log only — no `reload_state`) | file (forced unconditionally) | 0–250 ms |
 | `attention.jump` | `native/picker/cmd_attention.go` + `scripts/runtime/tmux-attention-picker.sh` (Alt+/ picker selection) | `titles.lua` (mux activate + spawn `attention-jump.sh --direct`) | file (forced via `WEZTERM_EVENT_FORCE_FILE=1`) | 0–250 ms |
+
+`attention.tick.echo` is **diagnostic-only**. The hook emits it via
+`wezterm_event_send_file` whenever the primary `attention.tick` picked
+OSC, carrying the same `tick_ms` payload. The Lua handler logs receipt
+but intentionally does not call `reload_state` or repaint, so a dropped
+OSC tick still produces the user-visible "stale right-status / Alt+/
+picker" symptom — the file path's reliability would otherwise mask it.
+Pair `tick received transport=osc value=$ms` against `tick echo
+received transport=file value=$ms` in `wezterm.log` (both keyed by the
+same `tick_ms`) to spot a lost OSC tick: hook log present + echo
+received + tick missing means the loss is on the OSC pipeline (hook
+tty write → tmux DCS pass-through → wezterm user-var dispatch). Once
+root cause is understood and fixed, the echo can be retired by
+removing both the `wezterm_event_send_file "attention.tick.echo"` call
+in `emit-agent-status.sh` and the `event_bus.on('attention.tick.echo',
+...)` registration in `titles.lua`.
 
 ### Migration candidates
 
@@ -247,11 +264,15 @@ mechanism explicitly.
 ## Diagnostics
 
 - Producer side logs to `runtime.log`:
-  - bash hook: `attention "hook emitted agent status" event_transport=...`
+  - bash hook: `attention "hook emitted agent status" event_transport=...
+    osc_emitted=... echo_emitted=... tick_ms=...` (`echo_emitted=1`
+    when the OSC-drop sidecar was written).
   - go picker: `attention "event-bus dispatched" transport=osc|file`
   - bash picker: `attention "event-bus dispatched" transport=...`
 - Consumer side logs to `wezterm.log`:
-  - `attention "tick received" transport=osc latency_ms=...`
+  - `attention "tick received" transport=osc latency_ms=... value=$ms`
+  - `attention "tick echo received" transport=file latency_ms=... value=$ms`
+    (sidecar; pair with `tick received` by matching `value=`).
   - `attention "jump dispatched" transport=file activated=...`
   - `event_bus "event with no handler" name=... transport=...` when an
     event arrives that no module subscribed to.
