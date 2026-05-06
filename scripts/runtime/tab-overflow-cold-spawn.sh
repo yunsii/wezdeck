@@ -115,7 +115,21 @@ fi
 # a controlling tty — but `tmux new-session -d` runs first and creates
 # the session, so we still get the managed two-pane layout. setsid +
 # the closed std streams keep the child from holding our stdio.
-( setsid bash "$script_dir/open-project-session.sh" \
+#
+# Strip WEZTERM_PANE before invoking. The picker popup (tmux display-
+# popup) inherits WEZTERM_PANE from whichever wezterm pane the user
+# pressed Alt+t in, and that value flows through dispatch.sh into here.
+# open-project-session.sh would then (a) propagate it into the new tmux
+# session via `-e WEZTERM_PANE=…` and (b) overwrite
+# pane-session/<id>.txt with the new session name — both wrong for
+# cold-spawn, because the new session is not bound to the calling pane.
+# It will be projected into the overflow pane via switch-client, and
+# the lua-side `tab.activate_overflow` handler is what writes the
+# in-memory pane→session map for that pane. Leaving WEZTERM_PANE set
+# causes the badge to also light up the calling tab (e.g. blue running
+# block on tab #1 after Alt+t from the first tab) and misroutes Alt+/
+# jumps via stale entry.wezterm_pane_id.
+( setsid env -u WEZTERM_PANE bash "$script_dir/open-project-session.sh" \
     "$workspace" "$cwd" "${agent_argv[@]}" </dev/null >/dev/null 2>&1 & ) >/dev/null 2>&1
 
 # Poll for the session to come up. open-project-session.sh's setup
