@@ -4,6 +4,8 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-status-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/runtime-env-lib.sh"
 
 WAKA_CACHE="${TMUX_STATUS_WAKATIME_CACHE:-/tmp/.tmux-wakatime-cache}"
 WAKA_LOCK="${TMUX_STATUS_WAKATIME_LOCK:-/tmp/.tmux-wakatime.lock}"
@@ -11,17 +13,11 @@ WAKA_API_URL="${TMUX_STATUS_WAKATIME_API_URL:-https://api.wakatime.com/api/v1/us
 padding="$(tmux_option_or_env TMUX_STATUS_PADDING @tmux_status_padding ' ')"
 separator="$(tmux_option_or_env TMUX_STATUS_SEPARATOR @tmux_status_separator ' · ')"
 script_path="$script_dir/tmux-status-wakatime.sh"
-repo_root="${WEZTERM_REPO_ROOT:-$(cd "$script_dir/../.." && pwd -P)}"
-shared_env_file="${TMUX_STATUS_SHARED_ENV_FILE:-$repo_root/wezterm-x/local/shared.env}"
 
-load_shared_env() {
-  if [[ -f "$shared_env_file" ]]; then
-    # shellcheck disable=SC1090
-    source "$shared_env_file"
-  fi
-}
-
-load_shared_env
+# Pick up shared.env + ~/.config/shell-env.d/*.env via the unified loader.
+# Replaces the previous inline load_shared_env so any new env source added
+# under the shell-env.d convention shows up here automatically.
+runtime_env_load_managed
 api_key="${TMUX_STATUS_WAKATIME_API_KEY:-${WAKATIME_API_KEY:-}}"
 
 is_wakatime_available() {
