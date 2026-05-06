@@ -32,6 +32,35 @@ script_dir="$(cd "$(dirname "$0")" && pwd -P)"
 runtime_env_load_managed
 
 agent="${1:-}"
+
+# Visible boot cue. Until the agent CLI paints its first frame, the pane
+# is blank — that's the shell-chain forks (~150ms, mainly `zsh -ilc`
+# inheriting interactive PATH) plus the agent's own session-resume load
+# (0.5-3s for `claude --continue`, similar for `codex resume --last`).
+# Printing one dim line turns "blank pane for several seconds" into
+# "pane shows what it's doing"; the agent's first paint typically clears
+# the screen, so the banner is only visible while it's actually useful.
+# This script is the universal terminus for every managed-agent launch
+# path (workspace first-open, refresh-current-window, Alt+g on-demand,
+# tab-overflow cold-spawn, worktree-task), so the cue lands once
+# regardless of which entry point the user took. Disable with
+# WEZTERM_NO_LOADING_BANNER=1 if it ever interferes.
+print_loading_banner() {
+  [[ -t 1 ]] || return 0
+  [[ "${WEZTERM_NO_LOADING_BANNER:-}" == "1" ]] && return 0
+
+  local label="$1"
+  [[ -n "$label" ]] || label="agent"
+
+  # \033[2J\033[H = clear + home so the banner anchors at top-left even
+  # if the parent shell painted a prompt bit before this. Two newlines
+  # of leading padding so the banner sits a couple rows down instead of
+  # hugging the very top edge.
+  printf '\033[2J\033[H\n\n  \033[2;36mLoading %s ...\033[0m\n' "$label"
+}
+
+print_loading_banner "$agent"
+
 case "$agent" in
   claude)
     exec sh -c 'claude --continue || exec claude'
