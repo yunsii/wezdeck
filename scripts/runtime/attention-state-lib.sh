@@ -106,6 +106,21 @@ ATTENTION_RECENT_TTL_MS=604800000
 # so each writer can compose `... | archive_into_recent(...)` into its own
 # pipeline. Implemented as a string constant rather than a here-doc fork
 # so the writers stay one jq invocation.
+#
+# Dedup key: (tmux_socket, tmux_session, tmux_pane). Older designs keyed
+# on (tmux_socket, tmux_session) under the assumption "one tmux session
+# hosts at most one Claude pane", which is wrong for split-pane setups —
+# a /clear-driven archive in pane B would silently overwrite pane A's
+# archived row, erasing it from the picker even though pane A's session
+# was still alive (or had its own legitimate history). Including
+# tmux_pane in the key gives each pane its own slot. tmux pane ids
+# (`%N`) are server-internal monotonic identifiers — they survive
+# split-window / swap-pane / break-pane and only change when the pane is
+# truly destroyed and a new one is created (pane death already
+# invalidates the row, so a new pane in a reused id is correct
+# behavior). Empty tmux_pane (legacy entries / non-tmux contexts) all
+# share the same "" pane key, preserving the old behavior for that
+# slice.
 __ATTENTION_RECENT_DEF='
 def archive_into_recent($to_archive; $now; $cap; $ttl):
   ($to_archive
@@ -125,7 +140,7 @@ def archive_into_recent($to_archive; $now; $cap; $ttl):
      })) as $new_recents
   | .recent = (
       ($new_recents + (.recent // []))
-      | group_by([.tmux_socket, .tmux_session])
+      | group_by([.tmux_socket, .tmux_session, (.tmux_pane // "")])
       | map(max_by(.archived_ts))
       | sort_by(-.archived_ts)
       | map(select(.archived_ts >= ($now - $ttl)))
@@ -137,19 +152,49 @@ attention_state_now_ms() {
   date +%s%3N
 }
 
+# Self-healing read: validate JSON before handing the buffer to the
+# downstream jq pipeline. A corrupt file (truncated mid-write, leftover
+# from a crashed pipeline, accidentally clobbered by an unsandboxed
+# trace, etc.) would otherwise feed unparseable input into jq, blow it
+# up, and either mask the bug behind `2>/dev/null || true` or — worse —
+# the upstream writer's empty $next would then trip attention_state_write's
+# refuse-empty guard, leaving the file stuck corrupt forever.
+#
+# When the file fails the parse check we treat it as the empty default
+# state. The next successful write produces a clean baseline,
+# self-healing the file without operator intervention. Logs a single
+# warn line per recovery so the trail still shows the corruption
+# (otherwise the silent reset would mask whatever wrote bad bytes).
 attention_state_read() {
-  local path
+  local path content
   path="$(attention_state_path)"
   if [[ -f "$path" ]]; then
-    cat "$path"
-  else
-    printf '%s' '{"version":1,"entries":{}}'
+    content="$(cat "$path")"
+    if printf '%s' "$content" | jq -e . >/dev/null 2>&1; then
+      printf '%s' "$content"
+      return 0
+    fi
+    if command -v runtime_log_warn >/dev/null 2>&1; then
+      runtime_log_warn attention "state file unparseable; resetting to empty" \
+        "path=$path" "size=${#content}" 2>/dev/null || true
+    fi
   fi
+  printf '%s' '{"version":1,"entries":{},"recent":[]}'
 }
 
-# atomic write via tmp + rename. Caller holds flock.
+# atomic write via tmp + rename. Caller holds flock. Refuses to write
+# an empty payload — every callsite produces output via a `jq` pipeline,
+# and a failed jq run leaves $next empty; without this guard a transient
+# jq error (bad input JSON, malformed --argjson, etc.) silently truncates
+# attention.json to a single `\n` and the next reader either parses it
+# as empty entries (losing every live entry) or fails outright. The
+# write fails closed instead so the existing on-disk state survives the
+# error and the caller's `2>/dev/null || true` handler can keep going.
 attention_state_write() {
   local payload="$1" path tmp
+  if [[ -z "$payload" ]]; then
+    return 1
+  fi
   path="$(attention_state_path)"
   tmp="${path}.tmp.$$"
   printf '%s\n' "$payload" > "$tmp"
@@ -167,16 +212,23 @@ attention_state_upsert() {
     flock -x 9
     local current next
     current="$(attention_state_read)"
-    # One tmux session hosts at most one active attention entry, so drop
-    # any other entry that shares this (tmux_socket, tmux_session) before
-    # the upsert — old session_ids left behind by `/clear` (new uuid, same
-    # tmux session) do not double-count in the counter. Session is the
-    # identity; tmux_pane is internal to a session and changes when the
-    # user splits/resizes, so it cannot be the dedup key. Falls back to
-    # session_id-only dedup when the new entry has no tmux coords.
-    # Evicted entries are archived to .recent[] so the picker can surface
-    # them later; same-session_id replacement (status transition for the
-    # same agent) is not an eviction and does not archive.
+    # One tmux pane hosts at most one active attention entry, so drop any
+    # other entry that shares this (tmux_socket, tmux_session, tmux_pane)
+    # before the upsert — old session_ids left behind by `/clear` (new
+    # uuid, same pane) do not double-count in the counter. Identity is
+    # the *pane*, not the tmux session: split-pane setups can run
+    # multiple Claude instances in one tmux session, and using session
+    # alone as the eviction key would let one pane's UserPromptSubmit
+    # silently archive a sibling pane's still-live entry. tmux pane ids
+    # (`%N`) are server-internal monotonic identifiers that survive
+    # split-window / swap-pane / break-pane and only change when the
+    # pane is destroyed — using them as the key is safe. Falls back to
+    # session_id-only dedup when the new entry has no tmux_pane (non-
+    # tmux contexts; tmux race-guard already skips empty-pane upserts
+    # for status mutations). Evicted entries are archived to .recent[]
+    # so the picker can surface them later; same-session_id replacement
+    # (status transition for the same agent) is not an eviction and
+    # does not archive.
     #
     # Waiting is sticky: once a session's entry is `waiting`, a subsequent
     # `waiting` event (typically another permission_prompt in the same
@@ -201,18 +253,20 @@ attention_state_upsert() {
            . as $orig
            | (($orig.entries // {}) | to_entries
               | map(select(
-                  .key != $sid and $tsk != "" and $tses != ""
+                  .key != $sid and $tsk != "" and $tses != "" and $tp != ""
                   and (.value.tmux_socket  // "") == $tsk
                   and (.value.tmux_session // "") == $tses
+                  and (.value.tmux_pane    // "") == $tp
                 ))
               | map(.value)) as $evicted
            | .entries = (
                ($orig.entries // {}) | to_entries
                | map(select(
                    .key == $sid
-                   or $tsk == "" or $tses == ""
+                   or $tsk == "" or $tses == "" or $tp == ""
                    or (.value.tmux_socket  // "") != $tsk
                    or (.value.tmux_session // "") != $tses
+                   or (.value.tmux_pane    // "") != $tp
                  ))
                | from_entries
              )
@@ -377,8 +431,10 @@ attention_state_transition_to_running() {
          | .entries[$sid].ts = $ts' <<<"$current")"
     else
       # Missing: upsert a fresh running entry. Mirror attention_state_upsert's
-      # (tmux_socket, tmux_session) dedup (and its archive-on-eviction) so a
-      # prior tenant of the same session neither double-counts nor vanishes.
+      # (tmux_socket, tmux_session, tmux_pane) dedup (and its archive-on-
+      # eviction) so a prior tenant of the same pane neither double-counts
+      # nor vanishes. Falls back to session_id-only dedup when tmux_pane is
+      # empty (non-tmux contexts).
       next="$(
         jq --arg sid "$session_id" \
            --arg wp "$wezterm_pane" \
@@ -394,18 +450,20 @@ attention_state_transition_to_running() {
              . as $orig
              | (($orig.entries // {}) | to_entries
                 | map(select(
-                    .key != $sid and $tsk != "" and $tses != ""
+                    .key != $sid and $tsk != "" and $tses != "" and $tp != ""
                     and (.value.tmux_socket  // "") == $tsk
                     and (.value.tmux_session // "") == $tses
+                    and (.value.tmux_pane    // "") == $tp
                   ))
                 | map(.value)) as $evicted
              | .entries = (
                  ($orig.entries // {}) | to_entries
                  | map(select(
                      .key == $sid
-                     or $tsk == "" or $tses == ""
+                     or $tsk == "" or $tses == "" or $tp == ""
                      or (.value.tmux_socket  // "") != $tsk
                      or (.value.tmux_session // "") != $tses
+                     or (.value.tmux_pane    // "") != $tp
                    ))
                  | from_entries
                )
@@ -436,16 +494,27 @@ attention_state_transition_to_running() {
   return "$rc"
 }
 
-# Remove every entry on a given (tmux_socket, tmux_session), optionally
-# preserving one session_id. Used by the SessionStart `source=clear` hook
-# to clean up stale entries when the user runs `/clear` and the prior
-# turn's Stop hook never fired (e.g. the turn was still in flight). The
-# new session's session_id is unknown to the old entries, so the standard
-# same-session eviction in attention_state_upsert does not trigger until
-# the next UserPromptSubmit — which can be many minutes away. A no-op
-# when tmux coords are empty, since we cannot identify the session.
+# Remove every entry on a given (tmux_socket, tmux_session, tmux_pane),
+# optionally preserving one session_id. Used by the SessionStart
+# `source=clear` hook to clean up stale entries when the user runs
+# `/clear` and the prior turn's Stop hook never fired (e.g. the turn was
+# still in flight). The new session's session_id is unknown to the old
+# entries, so the standard same-session eviction in
+# attention_state_upsert does not trigger until the next UserPromptSubmit
+# — which can be many minutes away. A no-op when tmux coords are empty,
+# since we cannot identify the session.
+#
+# Pane-scoped: a 4th positional `tmux_pane` arg restricts the sweep to
+# entries that share that pane id. Multi-pane tmux sessions hosting more
+# than one Claude (e.g. user splits a worktree pane to keep two agents
+# side by side) need this — without it, /clear in pane B silently
+# archives pane A's still-live entry, erasing it from the picker and
+# the right-status counter even though pane A's session was untouched.
+# Empty tmux_pane (legacy callers / non-tmux contexts) preserves the
+# pre-fix (socket, session) sweep behavior.
 attention_state_evict_session() {
   local tmux_socket="$1" tmux_session="$2" except_session_id="${3:-}"
+  local tmux_pane="${4:-}"
   if [[ -z "$tmux_socket" || -z "$tmux_session" ]]; then
     return 0
   fi
@@ -453,6 +522,12 @@ attention_state_evict_session() {
   attention_state_init
   local lock
   lock="$(attention_state_lock_path)"
+  # Pane-scoped eviction: when the caller hands us a tmux_pane, only
+  # evict entries that share (socket, session, pane). This is the
+  # `/clear` case on a multi-pane tmux session — pane B's /clear must
+  # not silently archive pane A's still-live entry. Empty tmux_pane
+  # falls back to (socket, session) eviction so legacy callers (and
+  # any future caller without a pane handle) keep their old behavior.
   (
     flock -x 9
     local current next
@@ -460,6 +535,7 @@ attention_state_evict_session() {
     next="$(jq --arg tsk "$tmux_socket" \
                --arg tses "$tmux_session" \
                --arg ex "$except_session_id" \
+               --arg tp "$tmux_pane" \
                --argjson now "$now" \
                --argjson cap "$ATTENTION_RECENT_CAP" \
                --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
@@ -470,6 +546,7 @@ attention_state_evict_session() {
              .key != $ex
              and (.value.tmux_socket  // "") == $tsk
              and (.value.tmux_session // "") == $tses
+             and ($tp == "" or (.value.tmux_pane // "") == $tp)
            ))
          | map(.value)) as $evicted
       | .entries = (
@@ -478,6 +555,7 @@ attention_state_evict_session() {
               .key == $ex
               or (.value.tmux_socket  // "") != $tsk
               or (.value.tmux_session // "") != $tses
+              or ($tp != "" and (.value.tmux_pane // "") != $tp)
             ))
           | from_entries
         )
@@ -553,8 +631,32 @@ attention_state_truncate() {
 # Drop entries older than TTL (ms). Default 30 minutes. Pruned entries
 # are archived into .recent[] so a user who left an agent idle past TTL
 # can still find it under the recent band.
+#
+# Optional second arg: a JSON map `{<tmux_socket>: ["<pane_id>", ...], ...}`
+# describing the live tmux pane set per socket. When provided, entries
+# whose `(tmux_socket, tmux_pane)` is missing from the corresponding
+# socket's pane list are also archived (reachability sweep). Sockets
+# absent from the map are treated as "unknown" — entries on those
+# sockets are kept (we only archive when we have positive evidence
+# that the pane is gone, never when the tmux server is just
+# unreachable). Empty / missing arg disables the sweep entirely.
+#
+# This is what catches "agent crashed / pane killed without firing
+# Stop" cases that would otherwise sit in entries[] until the 30min
+# TTL: tmux already removed the pane from list-panes, so the
+# reachability check archives the dead row at the next periodic
+# prune. The TTL prune still runs for the conservative case (entry's
+# socket is unknown to us, e.g. tmux server died).
 attention_state_prune() {
   local ttl_ms="${1:-1800000}"
+  local alive_panes_json="${2:-}"
+  # Empty / missing arg → no-op for the reachability sweep. The empty-
+  # brace default has to come from a separate assignment because the
+  # `${2:-{}}` parameter-expansion form does not parse the closing `}`
+  # cleanly (bash treats it as the param-expansion terminator).
+  if [[ -z "$alive_panes_json" ]]; then
+    alive_panes_json='{}'
+  fi
   local now; now="$(attention_state_now_ms)"
   local cutoff=$((now - ttl_ms))
   attention_state_init
@@ -566,13 +668,88 @@ attention_state_prune() {
     current="$(attention_state_read)"
     next="$(jq --argjson cutoff "$cutoff" \
                --argjson now "$now" \
+               --argjson alive "$alive_panes_json" \
                --argjson cap "$ATTENTION_RECENT_CAP" \
                --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
                "$__ATTENTION_RECENT_DEF"'
-      ((.entries // {}) | to_entries | map(.value) | map(select(.ts < $cutoff))) as $pruned
-      | .entries = ((.entries // {}) | with_entries(select(.value.ts >= $cutoff)))
-      | archive_into_recent($pruned; $now; $cap; $ttl)
+      # TTL pass: anything older than $cutoff is unconditionally pruned.
+      # Reachability pass (after TTL): archive entries whose
+      # (tmux_socket, tmux_pane) is positively gone, i.e. the entry
+      # socket is a known key in $alive AND the entry pane is not
+      # listed under it. Sockets absent from $alive are treated as
+      # unknown and the entries on them are kept; without that branch a
+      # tmux server we cannot reach (started later, dropped, restarted)
+      # would falsely look like every pane is dead and we would archive
+      # the lot. Empty $alive ({}) makes the entire pass a no-op so the
+      # hot-path TTL-only callers keep their behavior. Field reads
+      # guard with `// ""` so an entry missing tmux_socket / tmux_pane
+      # never reaches has(null) (jq rejects null keys outright). Note:
+      # apostrophes are intentionally avoided in this comment block —
+      # the entire filter is single-quoted in bash, so a stray
+      # apostrophe would terminate the quote and let bash try to
+      # consume the in-filter `$alive` reference itself.
+      # The inner predicate binds $sock and $pane via `as $sock` / `as
+      # $pane` before referencing them, instead of reading
+      # `.value.tmux_socket` again inside an `or`-chain branch. jq does
+      # not always short-circuit `or` cleanly when the right operand
+      # re-pipes through `index(...)` on an array context — the inner
+      # `.value.tmux_pane` would re-evaluate on the array we just
+      # produced, error out, and the surrounding `or` would coerce it
+      # to true, keeping every entry alive in the reachability sweep.
+      def is_unreachable($alive):
+        (.tmux_socket // "") as $sock
+        | (.tmux_pane // "") as $pane
+        | $sock != ""
+          and $pane != ""
+          and ($alive | has($sock))
+          and ((($alive[$sock]) // []) | index($pane)) == null;
+      ((.entries // {}) | to_entries | map(.value) | map(select(.ts < $cutoff))) as $pruned_ttl
+      | ((.entries // {}) | with_entries(select(.value.ts >= $cutoff))) as $kept_ttl
+      | ($kept_ttl | to_entries | map(.value)
+         | map(select(is_unreachable($alive)))) as $pruned_dead
+      | .entries = ($kept_ttl | with_entries(select((.value | is_unreachable($alive)) | not)))
+      | archive_into_recent($pruned_ttl + $pruned_dead; $now; $cap; $ttl)
     ' <<<"$current")"
     attention_state_write "$next"
   ) 9>"$lock"
+}
+
+# Build the alive-panes map needed by attention_state_prune's reachability
+# sweep. Reads tmux sockets from current entries[], runs `tmux list-panes
+# -a` per socket, and emits `{socket: [pane_id, ...]}` JSON. Sockets that
+# fail the query (server gone, file missing) are dropped from the map so
+# the prune's "unknown socket → keep" branch protects entries on them.
+#
+# Cost: one tmux fork per distinct socket in entries[] (typically 1, at
+# most 2 in practice). Cheap enough to run on every periodic prune; not
+# called from emit-agent-status.sh's hot-path prune.
+attention_state_collect_alive_panes() {
+  attention_state_init
+  local path
+  path="$(attention_state_path)"
+  local sockets
+  sockets="$(jq -r '.entries // {} | [.[].tmux_socket // empty] | map(select(length > 0)) | unique | .[]' "$path" 2>/dev/null || printf '')"
+  if [[ -z "$sockets" ]]; then
+    printf '{}'
+    return 0
+  fi
+  if ! command -v tmux >/dev/null 2>&1; then
+    printf '{}'
+    return 0
+  fi
+  local pieces=()
+  while IFS= read -r sock; do
+    [[ -z "$sock" ]] && continue
+    [[ -S "$sock" ]] || continue
+    local panes_raw
+    panes_raw="$(tmux -S "$sock" list-panes -a -F '#{pane_id}' 2>/dev/null || printf '')"
+    [[ -z "$panes_raw" ]] && continue
+    pieces+=("$(jq -n --arg s "$sock" --arg p "$panes_raw" \
+      '{($s): ($p | split("\n") | map(select(length > 0)))}' 2>/dev/null || printf '{}')")
+  done <<<"$sockets"
+  if (( ${#pieces[@]} == 0 )); then
+    printf '{}'
+    return 0
+  fi
+  printf '%s\n' "${pieces[@]}" | jq -s 'add' 2>/dev/null || printf '{}'
 }
