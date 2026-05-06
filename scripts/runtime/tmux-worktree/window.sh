@@ -63,7 +63,20 @@ tmux_worktree_pane_template_command() {
     return 0
   fi
 
-  if [[ -n "$pane_start_command" ]] && ! tmux_worktree_is_shell_command "$pane_start_command" && "$pane_start_command" != *'--prompt-file '* && "$pane_start_command" != *'--prompt-file='* ]]; then
+  # Bracket pairing matters here: the previous form had `[[ -n "$x" ]] && !
+  # is_shell "$x" && "$x" != *'--prompt-file '* ... ]]` — the second/third
+  # `&&` clauses were *outside* any `[[...]]`, so bash evaluated them as
+  # commands. With a real script path in $pane_start_command (e.g. the
+  # primary-pane-wrapper invocation that the worktree cycle's template
+  # scan produces), bash tried to exec the command — and its stderr
+  # ("No such file or directory" or similar) leaked into the originating
+  # tty, surfacing as a bare `%` PROMPT_SP marker in the new worktree's
+  # secondary shell pane. Fold all the string-shape tests into one
+  # `[[...]]` and keep the function-call gate outside.
+  if [[ -n "$pane_start_command" \
+        && "$pane_start_command" != *'--prompt-file '* \
+        && "$pane_start_command" != *'--prompt-file='* ]] \
+     && ! tmux_worktree_is_shell_command "$pane_start_command"; then
     printf '%s\n' "$pane_start_command"
     return 0
   fi
