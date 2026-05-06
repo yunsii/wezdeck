@@ -307,8 +307,16 @@ else
       if [[ -e /dev/tty ]]; then
         # shellcheck disable=SC1091
         . "$script_dir/../runtime/wezterm-event-lib.sh"
-        wezterm_event_send "attention.tick" \
-          "$(attention_state_now_ms)" 2>/dev/null || true
+        fs_tick_ms="$(attention_state_now_ms)"
+        wezterm_event_send "attention.tick" "$fs_tick_ms" 2>/dev/null || true
+        # Diagnostic-only echo: when primary picked OSC, also drop a
+        # file-transport copy so wezterm.log records receipt of both
+        # paths and a missing OSC arrival is visible. See attention.tick
+        # echo handler in titles.lua and docs/event-bus.md.
+        if [[ "$(wezterm_event_pick_transport)" == "osc" ]]; then
+          wezterm_event_send_file "attention.tick.echo" \
+            "$fs_tick_ms" 2>/dev/null || true
+        fi
       fi
       runtime_log_info attention "hook focus-skipped upsert" \
         "status=$status" \
@@ -387,6 +395,7 @@ fi
 # shellcheck disable=SC1091
 . "$script_dir/../runtime/wezterm-event-lib.sh"
 osc_emitted=0
+echo_emitted=0
 tick_ms=''
 event_transport=''
 if [[ -e /dev/tty ]]; then
@@ -395,6 +404,18 @@ if [[ -e /dev/tty ]]; then
     osc_emitted=1
   fi
   event_transport="$(wezterm_event_pick_transport)"
+  # Diagnostic-only echo: when the primary tick picked OSC, also drop a
+  # file-transport `attention.tick.echo` carrying the same tick_ms.
+  # The Lua handler logs receipt without calling reload_state, so the
+  # user-visible "stale state until next tick" symptom remains for OSC
+  # drop investigations — pair `tick received transport=osc value=$ms`
+  # against `tick echo received transport=file value=$ms` in wezterm.log
+  # to spot a missing OSC arrival.
+  if [[ "$event_transport" == "osc" && "$osc_emitted" == "1" ]]; then
+    if wezterm_event_send_file "attention.tick.echo" "$tick_ms" 2>/dev/null; then
+      echo_emitted=1
+    fi
+  fi
 fi
 
 # Sender-side trace. Pair with attention category in wezterm.log (the
@@ -421,6 +442,7 @@ runtime_log_info attention "hook emitted agent status" \
   "inside_tmux=$([[ -n "${TMUX-}" ]] && echo 1 || echo 0)" \
   "dev_tty_writable=$([[ -e /dev/tty ]] && echo 1 || echo 0)" \
   "osc_emitted=$osc_emitted" \
+  "echo_emitted=$echo_emitted" \
   "event_transport=$event_transport" \
   "tick_ms=$tick_ms" \
   "entry_ts_ms=$entry_ts_ms" \

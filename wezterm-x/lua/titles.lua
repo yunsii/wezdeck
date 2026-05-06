@@ -417,6 +417,34 @@ function M.register(opts)
     end
   end)
 
+  -- attention.tick.echo handler. Diagnostic-only sidecar emitted by
+  -- emit-agent-status.sh whenever the primary `attention.tick` picked
+  -- OSC. Carries the same `tick_ms` payload via the file transport, so
+  -- log entries are correlated by `value=`. Intentionally does NOT call
+  -- reload_state / refresh_right_status — the file path's reliability
+  -- would otherwise mask OSC drops that we are trying to detect. Pair
+  -- with `tick received transport=osc value=$ms`: a missing pair means
+  -- the OSC tick was lost between hook tty write and wezterm dispatch.
+  event_bus.on('attention.tick.echo', function(value, meta)
+    if not logger then return end
+    local latency_ms = nil
+    local tick_ms = tonumber(value)
+    if tick_ms then
+      local ok, now_str = pcall(function()
+        return wezterm.time.now():format '%s%3f'
+      end)
+      if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
+        latency_ms = tonumber(now_str) - tick_ms
+      end
+    end
+    logger.info('attention', 'tick echo received', {
+      pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
+      value = value,
+      latency_ms = latency_ms,
+      transport = meta.transport,
+    })
+  end)
+
   -- attention.jump handler. Fires on picker-driven jumps, currently
   -- always via the file transport because the picker runs inside a
   -- tmux popup whose DCS pass-through doesn't reach wezterm. Same
