@@ -10,6 +10,8 @@ source "$SCRIPT_DIR/tmux-worktree-lib.sh"
 source "$SCRIPT_DIR/windows-runtime-paths-lib.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/windows-shell-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/runtime-env-lib.sh"
 
 usage() {
   cat <<'EOF' >&2
@@ -38,10 +40,13 @@ detect_windows_paths() {
 }
 
 load_vscode_profile_from_shared_env() {
-  local shared_env_file="${WEZTERM_VSCODE_SHARED_ENV_FILE:-$SCRIPT_DIR/../../wezterm-x/local/shared.env}"
-  if [[ -z "${WEZTERM_VSCODE_PROFILE+x}" && -f "$shared_env_file" ]]; then
-    # shellcheck disable=SC1090
-    source "$shared_env_file"
+  # Explicit env wins; only consult the unified loader when the caller
+  # didn't pre-set WEZTERM_VSCODE_PROFILE. runtime_env_load_managed picks
+  # up wezterm-x/local/shared.env and ~/.config/shell-env.d/*.env in one
+  # shot, so a per-machine override file under shell-env.d/ also flows
+  # through here.
+  if [[ -z "${WEZTERM_VSCODE_PROFILE+x}" ]]; then
+    runtime_env_load_managed
   fi
 }
 
