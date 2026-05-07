@@ -129,8 +129,16 @@ fi
 # causes the badge to also light up the calling tab (e.g. blue running
 # block on tab #1 after Alt+t from the first tab) and misroutes Alt+/
 # jumps via stale entry.wezterm_pane_id.
+# Pass `--agent-profile <base>` so open-project-session.sh tags the
+# primary pane with `@wezterm_pane_role=agent-cli:<base>`. Without this
+# tag, `@agent_pane_match` in tmux.conf can't see through the resume
+# wrapper's `pane_current_command=sh`/`node` boot transient, and Ctrl+N
+# / Ctrl+P fall through to the pass-through branch on a fresh cold-spawn
+# tab until something else (refresh-session) re-tags the pane. Mirrors
+# the lua-side wiring at workspace/runtime.lua:project_session_args.
 ( setsid env -u WEZTERM_PANE bash "$script_dir/open-project-session.sh" \
-    "$workspace" "$cwd" "${agent_argv[@]}" </dev/null >/dev/null 2>&1 & ) >/dev/null 2>&1
+    "$workspace" "$cwd" --agent-profile "$profile" "${agent_argv[@]}" \
+    </dev/null >/dev/null 2>&1 & ) >/dev/null 2>&1
 
 # Poll for the session to come up. open-project-session.sh's setup
 # (git resolution, primary command build, two-pane split) typically
