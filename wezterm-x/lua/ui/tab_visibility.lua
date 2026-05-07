@@ -189,18 +189,48 @@ local function read_stats(workspace_name)
   return parsed
 end
 
+-- `scripts/runtime/tmux-reset/session.sh::replacement_session_name` mints
+-- `<base>__refresh_<YYYYMMDDTHHMMSS>_<pid>` whenever refresh-current-window
+-- needs a fresh tmux session for the same workspace+repo. Each variant
+-- gets its own focus-stats row (different session_name keys), so without
+-- normalization a project that the user refreshed three times would show
+-- up as four separate ranking entries — fragmenting its own weight and
+-- letting other projects appear higher than they should. We strip the
+-- suffix during ranking so all variants aggregate under the base name.
+local function normalize_session_name(name)
+  if type(name) ~= 'string' or name == '' then return name end
+  local base = name:match('^(.+)__refresh_%d+T%d+_%d+$')
+  return base or name
+end
+
+M._normalize_session_name = normalize_session_name
+
+-- Aggregate stats rows by normalized base name, then rank.
+-- Aggregation: weight summed (cumulative focus), raw_count summed,
+-- last_bump_ms taken as max (most recent bump across variants).
+-- Summing weight breaks the [0,1] invariant the writer maintains per
+-- session, but only ordering is consumed downstream — sum better
+-- reflects "how much focus this base session got across all its
+-- refresh incarnations" than max would.
 local function rank_sessions(stats)
-  local items = {}
-  if not stats or type(stats.sessions) ~= 'table' then return items end
+  if not stats or type(stats.sessions) ~= 'table' then return {} end
+  local agg = {}
   for name, entry in pairs(stats.sessions) do
     if type(entry) == 'table' then
-      items[#items + 1] = {
-        name = name,
-        weight = tonumber(entry.weight) or 0,
-        raw_count = tonumber(entry.raw_count) or 0,
-      }
+      local key = normalize_session_name(name) or name
+      local cur = agg[key]
+      if not cur then
+        cur = { name = key, weight = 0, raw_count = 0, last_bump_ms = 0 }
+        agg[key] = cur
+      end
+      cur.weight = cur.weight + (tonumber(entry.weight) or 0)
+      cur.raw_count = cur.raw_count + (tonumber(entry.raw_count) or 0)
+      local lbm = tonumber(entry.last_bump_ms) or 0
+      if lbm > cur.last_bump_ms then cur.last_bump_ms = lbm end
     end
   end
+  local items = {}
+  for _, v in pairs(agg) do items[#items + 1] = v end
   table.sort(items, function(a, b)
     if a.weight ~= b.weight then return a.weight > b.weight end
     if a.raw_count ~= b.raw_count then return a.raw_count > b.raw_count end
@@ -208,6 +238,8 @@ local function rank_sessions(stats)
   end)
   return items
 end
+
+M._rank_sessions = rank_sessions
 
 local function ensure_workspace_cache(workspace_name)
   local cache = module_state.workspaces[workspace_name]
