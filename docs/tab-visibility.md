@@ -120,8 +120,20 @@ projection are unconditional now.
 
 When `spawn_visible_only` is set:
 
-1. `Workspace.open` reads `workspaces.lua` items in their declared
-   order and caps at `visible_count`.
+1. `Workspace.open` reads `workspaces.lua` items, computes the
+   canonical session name for each cwd via
+   `scripts/runtime/tmux-worktree/print-session-names.sh` (one shell-out
+   per cold-open, not per item), then asks
+   `tab_visibility.preferred_item_order` for the spawn list. The brain
+   ranks each item's session by aggregated focus weight (after
+   `__refresh_*` aggregation) and caps at `visible_count`. Items whose
+   session has no stats — never been focused — fall back to the
+   `workspaces.lua` declared order, so the bootstrap experience before
+   any focus events is identical to pre-Phase-2 behaviour. The net
+   ordering for the work workspace once `coco-server` accumulates the
+   most focus: `[coco-server, ai-video-collection, breeze-monkey,
+   coco-platform, operations-monkey]` even though `coco-server` sits
+   sixth in `workspaces.lua`.
 2. Spawns those N as wezterm tabs via the existing managed-spawn path
    (`open-project-session.sh` per item).
 3. Appends one extra **overflow tab** with title `…`. Its pane runs
@@ -168,11 +180,20 @@ has been written**, marked by current state:
   living detached or projected into the overflow pane).
 - `○` cold    — no tmux session yet.
 
-The popup shows a workspace badge column next to each row. The active
-workspace's rows rank first (preserving snapshot order) so the
-in-workspace flow is unchanged from before; rows from other workspaces
-sit below in alphabetical order. Always-on substring filter matches
-**workspace + label + cwd** lowercase, so `cfg neo` lands on
+The popup shows a workspace badge column next to each row. Rows are
+ranked by **frequency** (focus weight from `tab-stats/<slug>.json`
+aggregated across `__refresh_*` variants under their base session name):
+the active workspace's rows still group at the top, but within that
+block the sessions you focus most often come first — a project that
+sits at row 6 in `workspaces.lua` will jump to row 1 in the picker
+once it dominates the focus stats. Cross-workspace rows interleave by
+weight too (a high-frequency session in workspace B can rank above a
+low-frequency session in workspace A while you're on A); the workspace
+badge keeps identity visible. When stats haven't yet differentiated
+rows (cold start, or a tie at weight 0), the `workspaces.lua` declared
+order acts as the within-workspace tiebreaker so the picker stays
+usable before any focus events accumulate. Always-on substring filter
+matches **workspace + label + cwd** lowercase, so `cfg neo` lands on
 `config · neovim` regardless of starting workspace; `Tab` toggles the
 scope between *all workspaces* (default) and *current workspace only*.
 `Esc` clears the filter when non-empty, otherwise closes; a second
@@ -231,11 +252,12 @@ re-shuffle the visible tabs (those are pinned to whatever `Workspace
 | --- | --- | --- |
 | Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, `is_enabled` / `spawn_capped` predicates, workspace slug |
 | Constants | `wezterm-x/lua/constants.lua` | `tab_visibility` config block (visible_count, enabled_workspaces, spawn_visible_only, …) |
-| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open`, threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot |
+| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (frequency-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot |
+| Session-name compute | `scripts/runtime/tmux-worktree/print-session-names.sh` | bulk `cwd → canonical session name` map for the workspace, single subprocess invocation; the lua side uses this to join `workspaces.lua` items against `tab-stats/<slug>.json` ranking |
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, ranks current workspace first, launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` weights per session, sorts by `is_current desc, weight desc, raw_count desc, snap_idx asc` (frequency-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
 | Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |

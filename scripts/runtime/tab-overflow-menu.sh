@@ -4,10 +4,13 @@
 # Enumerates `<state>/tab-stats/*-items.json` (one snapshot per workspace
 # that has been opened under tab_visibility), tags each item with its
 # current state (visible / warm / cold) computed from live tmux sessions,
-# and pops a popup picker listing every row across every workspace. The
-# active workspace's rows rank first (preserving snapshot order) so the
-# in-workspace flow is unchanged; rows from other workspaces sit below
-# and become reachable via the always-on substring filter.
+# joins each row against the per-workspace focus stats so we can rank by
+# how often the user actually lands on each session, and pops a popup
+# picker listing every row across every workspace. The active workspace's
+# rows still group at the top; within and across workspaces the rows the
+# user touches most often sort first. Stats accumulate over time — the
+# first-ever popup before any focus events fall back to `workspaces.lua`
+# declared order via the snap_idx tiebreaker.
 #
 # Selection routes through tab-overflow-dispatch.sh exactly as before:
 #   visible  → tab.activate_visible event
@@ -68,11 +71,29 @@ fi
 # O(N) `tmux has-session` forks.
 existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)"
 
-# Build per-workspace TSV blocks then concatenate in priority order
-# (current workspace first, then alphabetical). Within each block the
-# snapshot's natural item order is preserved.
+# Build per-workspace TSV blocks then concatenate. After all blocks are
+# emitted we sort the union by `is_current desc, weight desc, raw_count
+# desc, snap_idx asc` so:
+#   1. The current workspace's rows stay grouped at the top.
+#   2. Within each block the rows the user actually focuses most often
+#      surface first — `coco-server` weighing 1.69 outranks
+#      `ai-video-collection` weighing 0.50 even though the latter sits
+#      earlier in `workspaces.lua`.
+#   3. Cross-workspace rows interleave by weight (an A weight=0.8 row
+#      sits above a B weight=0.7 row). Workspace identity stays visible
+#      via the workspace badge column the picker renders, so the sort
+#      drops the previous "alphabetical, grouped by workspace" model in
+#      favour of frequency-first.
+#   4. Snapshot index is the within-workspace tiebreaker so ties on
+#      weight (e.g. cold-start workspace where every weight is 0) fall
+#      back to the user's intended `workspaces.lua` order — the picker
+#      stays usable before any focus stats accumulate.
+# Aux columns 8-11 (snap_idx, weight, raw_count, last_bump_ms) carry the
+# sort keys; an awk pass strips them before writing the prefetch_file
+# the Go picker reads (the picker still expects a 7-column TSV).
 prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
-trap 'rm -f "$prefetch_file"' EXIT
+prefetch_aux="$(mktemp -t wezterm-overflow-picker-aux.XXXXXX)"
+trap 'rm -f "$prefetch_file" "$prefetch_aux"' EXIT
 
 declare -a other_workspaces=()
 
@@ -90,8 +111,9 @@ for snapshot in "${snapshots[@]}"; do
   other_workspaces+=("$ws")
 done
 
-# Sort the other-workspace block alphabetically so the row order is
-# deterministic across runs (snapshot file order is filesystem-dependent).
+# Deduplicate the other-workspaces list. Order doesn't matter for the
+# user — it's just enumeration order before per-workspace weight maps
+# get built. The final picker order is decided by the sort below.
 if (( ${#other_workspaces[@]} > 0 )); then
   IFS=$'\n' read -r -d '' -a other_workspaces < <(
     printf '%s\n' "${other_workspaces[@]}" | LC_ALL=C sort -u
@@ -99,27 +121,60 @@ if (( ${#other_workspaces[@]} > 0 )); then
   )
 fi
 
+# Per-session weight maps — keyed by base session name (suffixes like
+# `__refresh_<ts>_<pid>` aggregated upstream by tab_stats_aggregated_tsv,
+# matching the lua-side rank_sessions normalization). Session names are
+# workspace-prefixed (`wezterm_<slug>_<repo>_<10hex>`), so a single flat
+# map is collision-free across workspaces.
+declare -A weight_for_sess
+declare -A raw_count_for_sess
+declare -A last_bump_for_sess
+
+populate_weights_for_workspace() {
+  local target_ws="$1"
+  local base weight raw_count last_bump
+  while IFS=$'\t' read -r base weight raw_count last_bump; do
+    [[ -n "$base" ]] || continue
+    weight_for_sess["$base"]="$weight"
+    raw_count_for_sess["$base"]="$raw_count"
+    last_bump_for_sess["$base"]="$last_bump"
+  done < <(tab_stats_aggregated_tsv "$target_ws" 2>/dev/null)
+}
+
+populate_weights_for_workspace "$current_workspace"
+for ws in "${other_workspaces[@]}"; do
+  populate_weights_for_workspace "$ws"
+done
+
 emit_workspace_rows() {
   local target_ws="$1"
   local target_snapshot="$stats_dir/$(tab_stats_workspace_slug "$target_ws")-items.json"
   [[ -f "$target_snapshot" ]] || return 0
   local is_current=0
   [[ "$target_ws" == "$current_workspace" ]] && is_current=1
+  local snap_idx=0
   while IFS=$'\t' read -r cwd label has_tab; do
     [[ -n "$cwd" ]] || continue
+    snap_idx=$(( snap_idx + 1 ))
     local state='cold'
-    local sess=''
+    # Compute the canonical session name unconditionally so we can
+    # always look up its weight, regardless of whether the tmux session
+    # is currently alive (visible/warm) or not (cold). The function is
+    # deterministic on workspace+cwd.
+    local sess
+    sess="$(tmux_worktree_session_name_for_path "$target_ws" "$cwd" 2>/dev/null || true)"
     if [[ "$has_tab" == "true" ]]; then
       state='visible'
-    else
-      sess="$(tmux_worktree_session_name_for_path "$target_ws" "$cwd" 2>/dev/null || true)"
-      if [[ -n "$sess" ]] && grep -Fxq "$sess" <<<"$existing_sessions" 2>/dev/null; then
-        state='warm'
-      fi
+    elif [[ -n "$sess" ]] && grep -Fxq "$sess" <<<"$existing_sessions" 2>/dev/null; then
+      state='warm'
     fi
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    local weight="${weight_for_sess[$sess]:-0}"
+    local raw_count="${raw_count_for_sess[$sess]:-0}"
+    local last_bump="${last_bump_for_sess[$sess]:-0}"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$target_ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
-      >> "$prefetch_file"
+      "$snap_idx" "$weight" "$raw_count" "$last_bump" \
+      >> "$prefetch_aux"
   done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring)] | @tsv' "$target_snapshot" 2>/dev/null)
 }
 
@@ -127,6 +182,25 @@ emit_workspace_rows "$current_workspace"
 for ws in "${other_workspaces[@]}"; do
   emit_workspace_rows "$ws"
 done
+
+# Sort by:
+#   k6 (is_current) desc → current workspace block stays at top
+#   k9 (weight) desc — general numeric handles floats (e.g. 1.693151...)
+#   k10 (raw_count) desc — secondary frequency tiebreaker
+#   k1 (workspace) asc — only matters for cross-workspace ties
+#   k8 (snap_idx) asc — within-workspace tiebreaker; preserves the
+#                       `workspaces.lua` declared order when stats have
+#                       not yet differentiated rows.
+# Then awk-strip the four aux columns so the prefetch the Go picker
+# loads stays at the 7-column shape `cmd_overflow.go::loadOverflowRows`
+# expects.
+if [[ -s "$prefetch_aux" ]]; then
+  LC_ALL=C sort -t $'\t' \
+    -k6,6nr -k9,9gr -k10,10nr -k1,1 -k8,8n \
+    "$prefetch_aux" \
+    | awk -F '\t' 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6,$7}' \
+    > "$prefetch_file"
+fi
 
 if [[ ! -s "$prefetch_file" ]]; then
   tmux display-message -d 2000 \

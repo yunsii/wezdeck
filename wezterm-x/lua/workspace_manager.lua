@@ -34,23 +34,96 @@ function M.new(opts)
     constants = constants,
   }
 
-  -- Cap spawnable items at workspace open when the workspace has opted
-  -- into tab_visibility AND the user has explicitly enabled spawn cap.
-  -- Cold-start fallback is "first N from workspaces.lua" — the user's
-  -- intended priority order. Items beyond visible_count are reachable
-  -- only via the overflow picker (Alt+t, PR3 phase 2) and the existing
-  -- `Alt+/` attention overlay; until that picker ships,
-  -- spawn_visible_only stays default-false to avoid stranding sessions.
-  local function maybe_cap_items(workspace_name, items)
+  -- One-shot bulk compute of `cwd → canonical session name` via the
+  -- `print-session-names.sh` helper. Single subprocess regardless of
+  -- item count (vs forking once per item, which would blow the
+  -- Workspace.open hot path). Returns `{}` on any failure — callers
+  -- treat that as "no session map available, fall back to declared
+  -- order" in `tab_visibility.preferred_item_order`. Uses wsl.exe on
+  -- the hybrid-wsl Windows host, plain bash everywhere else.
+  local function compute_cwd_to_session(workspace_name, items, trace_id)
+    if type(items) ~= 'table' or #items == 0 then return {} end
+    local repo_root = constants and constants.repo_root
+    if not repo_root or repo_root == '' then
+      logger.warn('workspace', 'no repo_root for session-name compute', with_trace_id(trace_id, {
+        workspace = workspace_name,
+      }))
+      return {}
+    end
+    local script_path = repo_root .. '/scripts/runtime/tmux-worktree/print-session-names.sh'
+
+    local args
+    local runtime_mode = (constants and constants.runtime_mode) or 'hybrid-wsl'
+    if runtime_mode == 'hybrid-wsl' and constants and constants.host_os == 'windows' then
+      local domain = constants.default_domain or ''
+      local distro = type(domain) == 'string' and domain:match('^WSL:(.+)$') or nil
+      if not distro then
+        logger.warn('workspace', 'no WSL distro for session-name compute', with_trace_id(trace_id, {
+          workspace = workspace_name,
+          default_domain = domain,
+        }))
+        return {}
+      end
+      args = { 'wsl.exe', '-d', distro, '--', 'bash', script_path, workspace_name }
+    else
+      args = { 'bash', script_path, workspace_name }
+    end
+    for _, item in ipairs(items) do
+      if item and item.cwd and item.cwd ~= '' then
+        args[#args + 1] = item.cwd
+      end
+    end
+
+    local ok, success, stdout, stderr = pcall(wezterm.run_child_process, args)
+    if not ok then
+      logger.warn('workspace', 'session-name compute raised', with_trace_id(trace_id, {
+        workspace = workspace_name,
+        error = success,
+      }))
+      return {}
+    end
+    if not success then
+      logger.warn('workspace', 'session-name compute failed', with_trace_id(trace_id, {
+        workspace = workspace_name,
+        stderr = stderr,
+      }))
+      return {}
+    end
+
+    local out = {}
+    for line in (stdout or ''):gmatch('[^\n]+') do
+      local cwd, sess = line:match('^(.-)\t(.*)$')
+      if cwd and sess and sess ~= '' then
+        out[cwd] = sess
+      end
+    end
+    return out
+  end
+
+  -- Pick the spawn-list when the workspace has opted into tab_visibility
+  -- AND the user has explicitly enabled spawn cap (`spawn_visible_only`).
+  -- Two layers of selection:
+  --   1. Cap `items` at `visible_count` (otherwise we'd spawn the full
+  --      `workspaces.lua` list).
+  --   2. Order the kept items by frequency: the brain's
+  --      `preferred_item_order` ranks each item's session_name by focus
+  --      weight (with `__refresh_*` aggregation) and falls back to
+  --      `workspaces.lua` declared order for items that haven't been
+  --      focused yet, so on cold start (no stats) the user's intended
+  --      priority order is preserved.
+  -- Without `spawn_capped` we leave the list untouched — there's no
+  -- cap, no overflow tab, every item gets a wezterm tab in declared
+  -- order. Reordering an uncapped list would visually shuffle every
+  -- existing tab on hot Alt+w; see Phase 2b for that work.
+  local function maybe_cap_items(workspace_name, items, trace_id)
     if not tab_visibility or not tab_visibility.spawn_capped(workspace_name) then
       return items
     end
     local cfg = tab_visibility.config and tab_visibility.config() or {}
     local cap = tonumber(cfg.visible_count) or 5
-    if #items <= cap then return items end
-    local capped = {}
-    for i = 1, cap do capped[i] = items[i] end
-    return capped
+    if #items == 0 then return items end
+    local cwd_to_session = compute_cwd_to_session(workspace_name, items, trace_id)
+    return tab_visibility.preferred_item_order(workspace_name, items, cwd_to_session, cap)
   end
 
   -- Whether the workspace needs the overflow placeholder tab. Only true
@@ -216,7 +289,7 @@ function M.new(opts)
     -- created) and lazily when the overflow menu fires (TODO: add a
     -- refresh-on-demand event in PR4). Hot Alt+w stays at the
     -- pre-snapshot latency.
-    local items = maybe_cap_items(name, raw_items)
+    local items = maybe_cap_items(name, raw_items, trace_id)
     if #items < #raw_items then
       logger.info('workspace', 'capped startup items by tab_visibility', with_trace_id(trace_id, {
         workspace = name,
@@ -261,11 +334,17 @@ function M.new(opts)
         item_count = #items,
         workspace = name,
       }))
-      -- Spawn loop uses capped items (don't auto-respawn cap-excluded
-      -- entries on Alt+w), but prune compares against the full configured
-      -- list so existing tabs that got spawned before the cap turned on
-      -- survive the reconcile.
-      tabs.sync_workspace_tabs(name, trace_id, items, raw_items)
+      -- Phase 2b: under spawn_capped, both spawn and prune use brain
+      -- top-N (`items`). preserve_focus protects the active tab from
+      -- prune and skips MoveTab repositioning so the tab the user is
+      -- on doesn't get closed or have its position cascaded by the
+      -- focus storm. Without spawn_capped, fall back to the legacy
+      -- soft-cap behavior (spawn = capped, prune = full list) so a
+      -- workspace with no cap doesn't suddenly start losing tabs.
+      local capped = tab_visibility and tab_visibility.spawn_capped(name)
+      local prune_keep = capped and items or raw_items
+      local sync_opts = capped and { preserve_focus = true } or nil
+      tabs.sync_workspace_tabs(name, trace_id, items, prune_keep, sync_opts)
       -- Self-heal the overflow placeholder. Two directions:
       --   - missing + needed → respawn (user closed it, refresh-session
       --     dropped it, etc.).
@@ -336,6 +415,43 @@ function M.new(opts)
     -- snapshot from the most recent cold open is good enough until
     -- workspaces.lua is edited.
     maybe_write_items_snapshot(name, raw_items, trace_id)
+  end
+
+  -- Phase 2b live hot reorder. Called from titles.lua's update-status
+  -- after `tab_visibility.tick` reports that the brain's slot
+  -- assignment changed since the previous tick — that's the signal
+  -- that some session entered top-N (needs to be spawned) or fell out
+  -- of top-N (its tab needs to be pruned). preserve_focus mode keeps
+  -- the user's currently-active tab put: if it's the one being
+  -- demoted, the prune skips it for this round; if it's not, the
+  -- spawn loop won't shuffle its position via MoveTab activation.
+  --
+  -- Only fires when:
+  --   - tab_visibility is enabled AND spawn_capped (no cap means every
+  --     item is already a tab — no swap to make).
+  --   - the workspace has at least one mux window (you can't reorder
+  --     a workspace that hasn't been opened yet — cold-open already
+  --     does the work).
+  --   - the items list is non-empty.
+  function Workspace.maybe_hot_reorder(workspace_name)
+    if not workspace_name or workspace_name == '' then return end
+    if not (tab_visibility and tab_visibility.spawn_capped(workspace_name)) then
+      return
+    end
+    if #tabs.workspace_windows(workspace_name) == 0 then
+      return
+    end
+    local trace_id = logger.trace_id('workspace')
+    local raw_items = runtime.workspace_items(workspace_name)
+    if not raw_items or #raw_items == 0 then return end
+    local items = maybe_cap_items(workspace_name, raw_items, trace_id)
+    if not items or #items == 0 then return end
+
+    logger.info('workspace', 'live hot reorder triggered', with_trace_id(trace_id, {
+      workspace = workspace_name,
+      desired_count = #items,
+    }))
+    tabs.sync_workspace_tabs(workspace_name, trace_id, items, items, { preserve_focus = true })
   end
 
   -- Spawn or activate a single configured item by cwd. Used by the Alt+t
