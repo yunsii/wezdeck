@@ -56,6 +56,11 @@ function M.register(opts)
   local workspace_label_cache = {}
   local badge_last_status = {}
   local last_rendered_status = nil
+  -- Phase 2b: per-workspace cache of the brain's most recent slot
+  -- signature. Compared on every update-status to decide whether the
+  -- sticky-slot reassignment moved anything between ticks. Equal
+  -- signature ⇒ no spawn / no prune work to do.
+  local last_visible_signature = {}
 
   local function ime_snapshot()
     if not host or not host.feature then
@@ -334,8 +339,11 @@ function M.register(opts)
 
     -- Tab-visibility: recompute the top-N slot assignment for this
     -- workspace at most once per recompute_interval_ms (the module owns
-    -- the throttle). No-op when the workspace is not enabled in
-    -- constants.tab_visibility.enabled_workspaces. See docs/tab-visibility.md.
+    -- the throttle). When the brain's slot signature changes (Phase 2b
+    -- sticky-slot churn — some session entered or fell out of top-N),
+    -- nudge the workspace module to spawn missing tabs and prune
+    -- demoted ones, with active-tab protection. No-op when the
+    -- workspace is not enabled. See docs/tab-visibility.md.
     if tab_visibility and tab_visibility.is_enabled(workspace) then
       local now_ms = nil
       local ok, now_str = pcall(function()
@@ -344,7 +352,27 @@ function M.register(opts)
       if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
         now_ms = tonumber(now_str)
       end
-      if now_ms then tab_visibility.tick(workspace, now_ms) end
+      if now_ms then
+        tab_visibility.tick(workspace, now_ms)
+        if workspace_module and workspace_module.maybe_hot_reorder
+          and tab_visibility.visible_signature
+        then
+          local sig = tab_visibility.visible_signature(workspace)
+          if last_visible_signature[workspace] ~= sig then
+            local prev = last_visible_signature[workspace]
+            last_visible_signature[workspace] = sig
+            -- Skip the very first observation (prev == nil): the
+            -- brain just finished its first tick for this workspace
+            -- and any "change" is just bootstrap. The first user-
+            -- caused churn (focus a session, raw_count goes up,
+            -- stats file rewrites) will produce a real signature
+            -- delta on the next tick.
+            if prev ~= nil then
+              pcall(workspace_module.maybe_hot_reorder, workspace)
+            end
+          end
+        end
+      end
     end
 
     -- update-status owns the periodic housekeeping that genuinely

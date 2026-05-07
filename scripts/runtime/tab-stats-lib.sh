@@ -229,3 +229,33 @@ tab_stats_top_n_tsv() {
     | @tsv
   '
 }
+
+# Emit every session as TSV with `__refresh_<ts>_<pid>` variants
+# aggregated under their base name. Mirrors the lua-side
+# `_rank_sessions` aggregation so the picker (Alt+x) and the brain
+# (`tab_visibility.lua`) rank from the same projection of the data.
+#   <base_session_name>\t<weight_sum>\t<raw_count_sum>\t<last_bump_ms_max>
+# No N cap — caller filters/sorts as needed.
+tab_stats_aggregated_tsv() {
+  local workspace="${1:?missing workspace}"
+  tab_stats_read "$workspace" | jq -r '
+    (.sessions // {})
+    | to_entries
+    | map({
+        base: (.key | sub("__refresh_[0-9]+T[0-9]+_[0-9]+$"; "")),
+        weight: (.value.weight // 0),
+        raw_count: (.value.raw_count // 0),
+        last_bump_ms: (.value.last_bump_ms // 0)
+      })
+    | group_by(.base)
+    | map({
+        base: .[0].base,
+        weight: (map(.weight) | add),
+        raw_count: (map(.raw_count) | add),
+        last_bump_ms: (map(.last_bump_ms) | max)
+      })
+    | .[]
+    | [.base, .weight, .raw_count, .last_bump_ms]
+    | @tsv
+  '
+}

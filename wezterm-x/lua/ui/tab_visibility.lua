@@ -451,6 +451,107 @@ function M.config()
   }
 end
 
+-- Stable string signature of the workspace's slot assignment, joined
+-- across the visible_count slots. Used by titles.lua's update-status
+-- callback to detect when the brain's sticky-slot reassignment moved
+-- something between ticks: when the signature stays equal there's no
+-- live reorder work to do. Returns '' for unknown workspaces (cache
+-- not yet populated) so first-tick comparisons trigger naturally.
+function M.visible_signature(workspace_name)
+  local cache = module_state.workspaces[workspace_name]
+  if not cache then return '' end
+  local parts = {}
+  for i = 1, (module_state.visible_count or DEFAULTS.visible_count) do
+    local slot = cache.slots and cache.slots[i]
+    parts[i] = (slot and slot.session_name) or ''
+  end
+  return table.concat(parts, '|')
+end
+
+-- Reorder a workspace's `workspaces.lua` items list using the brain's
+-- frequency ranking, capped at `n`. Items whose session_name appears
+-- in the ranked list (top-N) come first, in weight-desc order; items
+-- without stats (or beyond the top-N) follow in declared order. The
+-- net result is the slot-order spawn list:
+--
+--     [ranked items..., declared-order fallback...] truncated at n
+--
+-- `cwd_to_session` is `{ [cwd] = session_name }` for the workspace
+-- (computed by `scripts/runtime/tmux-worktree/print-session-names.sh`
+-- once at snapshot/spawn time so we don't fork-per-item). Items whose
+-- cwd has no entry in the map are treated as "no session yet" and
+-- fall through to the declared-order tail.
+--
+-- Bootstrap behaviour: when the brain's ranked list is empty (cold
+-- start, no focus events yet), every ranked-pass produces nothing and
+-- we end up returning declared-order's first n items — identical to
+-- the pre-Phase-2 behaviour.
+--
+-- Side effect: calls `tick` to force the cache up-to-date even for
+-- workspaces that aren't currently focused. `Workspace.open` against a
+-- not-yet-focused workspace would otherwise see an empty cache.
+function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
+  if type(items) ~= 'table' or #items == 0 then return {} end
+  n = tonumber(n) or module_state.visible_count or DEFAULTS.visible_count
+
+  -- Force a recompute for this workspace, ignoring the per-workspace
+  -- throttle by zeroing last_recompute_ms first. `Workspace.open` is a
+  -- low-frequency event (Alt+w / cold open) so a synchronous JSON
+  -- decode here is fine.
+  if M.is_enabled(workspace_name) then
+    local cache = ensure_workspace_cache(workspace_name)
+    cache.last_recompute_ms = 0
+    local now_ms = 0
+    if module_state.wezterm and module_state.wezterm.time and module_state.wezterm.time.now then
+      local ok, now_str = pcall(function()
+        return module_state.wezterm.time.now():format '%s%3f'
+      end)
+      if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
+        now_ms = tonumber(now_str) or 0
+      end
+    end
+    M.tick(workspace_name, now_ms)
+  end
+
+  local cache = module_state.workspaces[workspace_name]
+  local ranked = (cache and cache.ranked) or {}
+
+  -- Reverse-lookup: session_name → item.
+  local item_for_session = {}
+  for _, item in ipairs(items) do
+    if item and item.cwd then
+      local sess = cwd_to_session and cwd_to_session[item.cwd]
+      if sess and sess ~= '' then
+        item_for_session[sess] = item
+      end
+    end
+  end
+
+  local out = {}
+  local placed_cwd = {}
+
+  -- Pass 1: ranked items in weight-desc order.
+  for _, entry in ipairs(ranked) do
+    if #out >= n then break end
+    local item = item_for_session[entry.name]
+    if item and not placed_cwd[item.cwd] then
+      out[#out + 1] = item
+      placed_cwd[item.cwd] = true
+    end
+  end
+
+  -- Pass 2: declared-order fallback for remaining capacity.
+  for _, item in ipairs(items) do
+    if #out >= n then break end
+    if item and item.cwd and not placed_cwd[item.cwd] then
+      out[#out + 1] = item
+      placed_cwd[item.cwd] = true
+    end
+  end
+
+  return out
+end
+
 -- Test-only: clear cache so unit tests can reset between calls.
 function M._reset()
   module_state.workspaces = {}

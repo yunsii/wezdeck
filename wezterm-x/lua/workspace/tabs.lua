@@ -270,8 +270,9 @@ exec tmux attach -t "$session"
     end
   end
 
-  local function prune_workspace_tabs(target_window, desired_items)
+  local function prune_workspace_tabs(target_window, desired_items, protected_tab_id)
     local stale_tabs = {}
+    local skipped_protected = false
 
     for _, info in ipairs(target_window:tabs_with_info()) do
       -- Never prune the overflow placeholder — it's not in workspaces.lua
@@ -290,34 +291,59 @@ exec tmux attach -t "$session"
       end
 
       if not matched then
-        stale_tabs[#stale_tabs + 1] = info.tab
+        -- Phase 2b: skip closing the workspace's currently-active tab
+        -- even when its item dropped out of `desired_items`. Protects
+        -- the user's focus from disappearing mid-typing during live
+        -- hot reorder. The next sync (after the user navigates away)
+        -- will release protection and prune normally — the demoted
+        -- tab's tmux session keeps running in the background until
+        -- then, reachable via Alt+x.
+        if protected_tab_id ~= nil and info.tab:tab_id() == protected_tab_id then
+          skipped_protected = true
+        else
+          stale_tabs[#stale_tabs + 1] = info.tab
+        end
       end
 
       ::continue::
     end
 
     if #stale_tabs == 0 then
+      if skipped_protected then
+        logger.info('workspace', 'prune skipped active tab (protected)', {
+          workspace = target_window:get_workspace(),
+          window_id = target_window:window_id(),
+        })
+      end
       return
     end
 
     logger.info('workspace', 'pruning stale workspace tabs', {
       stale_count = #stale_tabs,
+      protected_skipped = skipped_protected,
       workspace = target_window:get_workspace(),
       window_id = target_window:window_id(),
     })
 
-    local desired_tab = nil
-    if desired_items[1] then
-      for _, info in ipairs(target_window:tabs_with_info()) do
-        if tab_matches_item(info.tab, desired_items[1]) then
-          desired_tab = info.tab
-          break
+    -- Pre-prune activation of `desired_items[1]` is only safe when no
+    -- tab is being protected — otherwise we'd steal focus from the
+    -- protected tab right before / right after the prune. The caller
+    -- (sync_workspace_tabs) handles focus restoration when
+    -- `preserve_focus` is on.
+    if protected_tab_id == nil then
+      local desired_tab = nil
+      if desired_items[1] then
+        for _, info in ipairs(target_window:tabs_with_info()) do
+          if tab_matches_item(info.tab, desired_items[1]) then
+            desired_tab = info.tab
+            break
+          end
         end
       end
-    end
 
-    if desired_tab then
-      desired_tab:activate()
+      if desired_tab then
+        desired_tab:activate()
+      end
     end
 
     for _, tab in ipairs(stale_tabs) do
@@ -349,12 +375,31 @@ exec tmux attach -t "$session"
 
   -- desired_items_override caps the spawn loop (only these get spawned
   -- if missing); prune_keep_items_override caps the prune loop (tabs
-  -- matching anything in this list are kept). The two lists differ when
-  -- the spawn cap (tab_visibility.spawn_visible_only) is on but the
-  -- user has tabs from an earlier session that were spawned before the
-  -- cap became active — we don't want to suddenly kill them on Alt+w.
-  -- Both default to the full workspaces.lua items when not supplied.
-  local function sync_workspace_tabs(name, trace_id, desired_items_override, prune_keep_items_override)
+  -- matching anything in this list are kept). The two lists differ
+  -- under spawn_visible_only=true on the legacy soft-cap path: spawn
+  -- limited to top-N, prune kept everything so pre-cap tabs survived
+  -- a stray Alt+w. With Phase 2b (preserve_focus opt), strict cap
+  -- becomes safe to ship — the active tab is protected from prune.
+  --
+  -- opts.preserve_focus (Phase 2b live hot reorder + strict-cap Alt+w):
+  --   - Capture the workspace's currently-active tab id and pass it to
+  --     prune_workspace_tabs so a demoted-but-currently-active tab
+  --     survives this round (releases on next sync once the user
+  --     navigates away).
+  --   - Skip MoveTab repositioning so we don't cascade `:activate()`
+  --     calls through every moved tab — that's the focus-stealing
+  --     pattern that made hot Alt+w jarring under Phase 2a.
+  --   - Restore the original active tab at the end in case
+  --     `mux_window:spawn_tab` activated the freshly-spawned tab as a
+  --     side effect.
+  --   The trade-off: when preserve_focus is on, tab POSITIONS may not
+  --   match `desired_items`'s order — newly-spawned tabs land at the
+  --   end of the strip rather than in their brain-ranked slot. The set
+  --   matches (visible tabs == top-N + protected); only ordering
+  --   differs. Cold-open still gets correct order because spawn order
+  --   = brain order in that path.
+  local function sync_workspace_tabs(name, trace_id, desired_items_override, prune_keep_items_override, opts)
+    opts = opts or {}
     local target_window = workspace_windows(name)[1]
     if not target_window then
       return
@@ -363,12 +408,8 @@ exec tmux attach -t "$session"
     local desired_items = desired_items_override or runtime.workspace_items(name)
     local prune_keep_items = prune_keep_items_override or desired_items
 
-    -- Alignment check uses the prune-keep set (the user's full kept
-    -- list, including items beyond the spawn cap). If the existing
-    -- window already covers that, there's nothing to do — fast-switch.
-    -- Without this, capped Alt+w would always fail alignment (target
-    -- has full N tabs vs desired_items=capped N) and burn N×M
-    -- tab_matches_item RPCs in the reconcile loop on every press.
+    -- Alignment check uses the prune-keep set. If the existing window
+    -- already covers that, there's nothing to do — fast-switch.
     if workspace_is_aligned(target_window, prune_keep_items) then
       logger.info('workspace', 'workspace already aligned, fast switch', with_trace_id(trace_id, {
         workspace = name,
@@ -379,9 +420,36 @@ exec tmux attach -t "$session"
       return
     end
 
+    -- Capture the protected tab id BEFORE any mutation. `active_tab()`
+    -- on the mux window reflects the user's last-seen tab in this
+    -- workspace; protection covers it across spawn (which may activate
+    -- the new tab as a side effect) and prune (which would otherwise
+    -- close it when its session falls out of brain top-N). Fallback:
+    -- scan tabs_with_info for the `is_active` row when the direct
+    -- accessor isn't available on this wezterm build.
+    local protected_tab_id = nil
+    if opts.preserve_focus then
+      local ok_active, active_tab = pcall(function() return target_window:active_tab() end)
+      if ok_active and active_tab and type(active_tab.tab_id) == 'function' then
+        local ok_id, id = pcall(function() return active_tab:tab_id() end)
+        if ok_id then protected_tab_id = id end
+      end
+      if protected_tab_id == nil then
+        for _, info in ipairs(target_window:tabs_with_info()) do
+          if info.is_active and type(info.tab.tab_id) == 'function' then
+            local ok_id, id = pcall(function() return info.tab:tab_id() end)
+            if ok_id then protected_tab_id = id end
+            break
+          end
+        end
+      end
+    end
+
     logger.info('workspace', 'syncing existing workspace window', with_trace_id(trace_id, {
       workspace = name,
       window_id = target_window:window_id(),
+      preserve_focus = opts.preserve_focus and true or false,
+      protected_tab_id = protected_tab_id,
     }))
     mux.set_active_workspace(name)
 
@@ -412,14 +480,38 @@ exec tmux attach -t "$session"
         set_project_tab_title(matched.tab, item)
       end
 
-      if matched and gui_window and matched.index ~= (desired_index - 1) then
+      -- MoveTab cascades focus through every moved tab via the
+      -- mandatory `:activate()` — wezterm has no positional-move that
+      -- bypasses activation. When preserve_focus is on we accept
+      -- positional drift to avoid that focus storm.
+      if not opts.preserve_focus
+        and matched
+        and gui_window
+        and matched.index ~= (desired_index - 1)
+      then
         local move_pane = matched.tab:active_pane()
         matched.tab:activate()
         gui_window:perform_action(wezterm.action.MoveTab(desired_index - 1), move_pane)
       end
     end
 
-    prune_workspace_tabs(target_window, prune_keep_items)
+    prune_workspace_tabs(target_window, prune_keep_items, protected_tab_id)
+
+    -- Restore the originally-active tab. spawn_workspace_tab can
+    -- activate the freshly-spawned tab as a side effect on some
+    -- wezterm builds; this is a cheap no-op when focus already sits
+    -- on the protected tab.
+    if opts.preserve_focus and protected_tab_id then
+      for _, info in ipairs(target_window:tabs_with_info()) do
+        if type(info.tab.tab_id) == 'function' then
+          local ok, id = pcall(function() return info.tab:tab_id() end)
+          if ok and id == protected_tab_id then
+            pcall(function() info.tab:activate() end)
+            break
+          end
+        end
+      end
+    end
   end
 
   return {
