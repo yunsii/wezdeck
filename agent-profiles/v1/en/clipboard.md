@@ -17,6 +17,11 @@ When the task may write to the user's system clipboard, or when the agent is con
 
 When the task stays entirely within the repository and produces no clipboard side effect. General host-side wrapper policy (boundary, discovery, failure modes) lives in [platform-actions.md](./platform-actions.md).
 
+## Wrapper Discovery
+
+- [clipboard-16] Before writing to the clipboard, resolve the wrapper through the marker file declared by your active environment (see [platform-actions.md](./platform-actions.md) §Wrapper Discovery). For wezterm-config–shipped environments the marker is `$HOME/.wezterm-x/agent-tools.env` and the key is `agent_clipboard`. Read the path from the marker and invoke that wrapper directly.
+- [clipboard-17] If the marker is missing, or `agent_clipboard` is absent / not executable, treat clipboard writes as unavailable. **Do not** fall back to raw OS clipboard binaries (`clip.exe`, `pbcopy`, `xclip`, `xsel`, `wl-copy`, `Set-Clipboard`, `osascript "set the clipboard to ..."`). The naive WSL → `clip.exe` path produces CJK mojibake because `clip.exe` reads stdin under the system ANSI codepage (CP936/GBK on Chinese Windows) and reinterprets UTF-8 bytes as GBK code points. A caller *can* avoid that by piping through `iconv -f UTF-8 -t UTF-16LE` with a BOM, but even then the binaries on this list only handle text — no image DIB/PNG dual-write, no STA threading, no helper trace_id / format negotiation. The same shape of trade-off applies to the POSIX entries. Re-implementing all that per call site is strictly worse than reporting the capability as unavailable. Tell the user instead.
+
 ## Default
 
 [clipboard-01] Agent may proactively write to the system clipboard when the output is clearly intended for immediate user paste.

@@ -6,7 +6,9 @@ Use this doc when you need ownership boundaries, entry points, or runtime design
 
 - This repository is the source of truth.
 - Windows runtime files are generated from this repo by the `wezterm-runtime-sync` skill in `skills/wezterm-runtime-sync/`.
-- Live targets include `%USERPROFILE%\.wezterm.lua`, `%USERPROFILE%\.wezterm-x\...`, and `%USERPROFILE%\.wezterm-native\...`.
+- Live targets:
+  - Windows-side (consumed by `wezterm.exe`): `%USERPROFILE%\.wezterm.lua`, `%USERPROFILE%\.wezterm-x\...`, `%USERPROFILE%\.wezterm-native\...`.
+  - WSL-side (consumed by WSL-resident agents — Claude Code, Codex CLI, etc.): `$HOME/.wezterm-x/agent-tools.env`. This is the host-effects discovery marker; schema and contract live in [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
 
 ## Interaction Layers
 
@@ -122,7 +124,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `%LOCALAPPDATA%\wezterm-runtime\` is the Windows runtime state root. It keeps `logs/`, `state/`, `cache/`, and `bin/` in one place.
 - `%LOCALAPPDATA%\wezterm-runtime\bin\helper-manager.exe` is the active Windows host control plane.
 - `%LOCALAPPDATA%\wezterm-runtime\bin\helperctl.exe` is the thin console IPC client that WezTerm Lua, tmux-side scripts, and smoke tests invoke when they need a request or response.
-- Repo-local high-level wrappers (`scripts/runtime/agent-clipboard.sh` and friends) and the `~/.wezterm-x/agent-tools.env` discovery marker are documented in [`setup.md#repo-local-runtime-wrappers`](./setup.md#repo-local-runtime-wrappers); agent-facing automation should prefer those wrappers over raw `helperctl.exe` IPC.
+- Repo-local high-level wrappers (`scripts/runtime/agent-clipboard.sh` and friends) and the `$HOME/.wezterm-x/agent-tools.env` discovery marker are documented in [`setup.md#repo-local-runtime-wrappers`](./setup.md#repo-local-runtime-wrappers) (schema: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema)); agent-facing automation should prefer those wrappers over raw `helperctl.exe` IPC. The marker lives on the WSL home, not under `%USERPROFILE%\.wezterm-x\`, because the wrappers it advertises are bash scripts only callable from WSL.
 - `%USERPROFILE%\.wezterm-native\host-helper\windows\` is the published source tree that sync installs from; `%LOCALAPPDATA%\wezterm-runtime\bin\` is the stable installed binary location that the runtime actually launches.
 - `native/host-helper/windows/release-manifest.json` is the version-pinned release fallback declaration. When Windows `dotnet` is available, the installer publishes from the synced native source tree; otherwise it downloads and verifies the manifest-selected GitHub release asset before replacing `%LOCALAPPDATA%\wezterm-runtime\bin\`. Cutting a release / updating the manifest / side-loading: [`host-helper-release.md`](./host-helper-release.md).
 - `wezterm-x/scripts/` is intentionally thin on Windows. It keeps the helper installer, launcher, and bootstrap pieces, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.

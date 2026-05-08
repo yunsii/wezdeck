@@ -172,7 +172,6 @@ helper_ensure_skip_if_running() {
     -not -name 'repo-root.txt' \
     -not -name 'repo-main-root.txt' \
     -not -name 'repo-worktree-task.env' \
-    -not -name 'agent-tools.env' \
     -print -quit 2>/dev/null)"
   [[ -z "$newer_runtime" ]] || return 1
 

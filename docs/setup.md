@@ -57,8 +57,29 @@ For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is
 - When your automation can already resolve the repository root, prefer repo-local wrappers under `scripts/runtime/` over rebuilding helper IPC or Windows bootstrap logic.
 - `scripts/runtime/agent-clipboard.sh` is the current agent-facing clipboard wrapper. It stays in WSL, ensures the Windows helper is healthy, and then writes text or an image file to the Windows clipboard.
 - If that wrapper reports that the helper bootstrap is missing, sync the runtime first, then rerun the command.
-- `sync-runtime.sh` writes `~/.wezterm-x/agent-tools.env` on the target home. That marker is the primary discovery contract for external agent platforms.
-- Read `agent_clipboard` from `~/.wezterm-x/agent-tools.env` instead of inferring wrapper paths from the current task repository or AGENTS symlinks.
+- `sync-runtime.sh` writes `$HOME/.wezterm-x/agent-tools.env` on the **WSL user home**, not on the Windows-side wezterm runtime target home. Windows-side processes do not consume this file — its only readers are WSL-resident agents (Claude Code, Codex CLI, etc.) that need to discover repo-local wrappers without inferring paths.
+- Read `agent_clipboard` from `$HOME/.wezterm-x/agent-tools.env` instead of inferring wrapper paths from the current task repository or AGENTS symlinks. Schema and contract: [agent-tools.env schema](#agent-toolsenv-schema) below.
+
+### `agent-tools.env` schema
+
+- **Location**: `$HOME/.wezterm-x/agent-tools.env` on the WSL user home that ran `sync-runtime.sh`. In `posix-local` mode the WSL home and the wezterm-runtime target home coincide; in `hybrid-wsl` they diverge (the wezterm runtime lands at `%USERPROFILE%\.wezterm-x\` while the marker stays on `/home/<user>/.wezterm-x/`).
+- **Format**: UTF-8 text, one `key=value` per line. Written via temp+rename by `sync-runtime.sh::write_agent_tools_file`, so consumers either see the previous full file or the new full file — never a partial read.
+- **Keys**:
+  - `version` — schema version, currently `1`. Bump on incompatible key changes; consumers should refuse unknown major versions.
+  - `repo_root` — absolute path to the wezterm-config clone that produced this marker. Lets external agents resolve sibling resources in the same clone (e.g. other scripts under `scripts/runtime/`).
+  - `agent_clipboard` — absolute path to `scripts/runtime/agent-clipboard.sh`. Bash script; callable only from WSL. Writes text or an image file to the Windows clipboard via host-helper named-pipe IPC.
+- **Sample**:
+
+  ```ini
+  version=1
+  repo_root=/home/yuns/github/wezterm-config
+  agent_clipboard=/home/yuns/github/wezterm-config/scripts/runtime/agent-clipboard.sh
+  ```
+
+- **Discovery contract**:
+  - Existence of the file means "wezterm-config host-effects shipped this WSL home". Absent file → consumer must treat host-side wrappers as unavailable, **not** fall back to raw `clip.exe` / `pbcopy` / `xclip` / `Set-Clipboard`. The naive WSL → `clip.exe` path produces CJK mojibake (stdin reinterpreted under the system ANSI codepage, e.g. CP936/GBK on Chinese Windows). Manual `iconv -f UTF-8 -t UTF-16LE` + BOM piping can technically fix the encoding, but the raw binaries still only handle text — no image DIB/PNG dual-write, no STA threading, no helper trace_id / format negotiation — so re-implementing per call site is strictly worse than treating the capability as unavailable.
+  - Before invoking a wrapper, the consumer must verify the referenced path still exists and is executable. A stale marker pointing at a deleted clone is "capability unavailable", not a fatal error.
+  - Do not infer wrapper paths from anywhere else — not the current task repository, AGENTS symlinks, `which`, or environment variables. The marker is the single discovery surface.
 
 ## Windows Launch Hotkey
 
