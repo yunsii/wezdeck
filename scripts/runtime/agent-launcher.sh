@@ -61,15 +61,23 @@ print_loading_banner() {
 
 print_loading_banner "$agent"
 
+# Fallback re-paint: when `--continue` (or `resume --last`) finds no
+# session, the CLI prints "No conversation found to continue" to the
+# primary screen and exits non-zero. The fresh `<agent>`'s welcome card
+# also renders on the primary screen (alt-screen is only entered once
+# the user starts chatting), so without a re-clear the loading banner
+# + error line stay visible above the welcome box. Re-clear and re-draw
+# the banner inside the `||` branch so the fallback path looks the same
+# as the resume-success path.
 case "$agent" in
   claude)
-    exec sh -c 'claude --continue || exec claude'
+    exec sh -c 'claude --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec claude; }'
     ;;
   codex)
-    exec sh -c 'codex resume --last || exec codex'
+    exec sh -c 'codex resume --last || { printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }'
     ;;
   codex-light)
-    exec sh -c "codex -c 'tui.theme=\"github\"' resume --last || exec codex -c 'tui.theme=\"github\"'"
+    exec sh -c "codex -c 'tui.theme=\"github\"' resume --last || { printf '\033[2J\033[H\n\n  \033[2;36mLoading codex-light ...\033[0m\n'; exec codex -c 'tui.theme=\"github\"'; }"
     ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
