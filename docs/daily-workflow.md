@@ -28,7 +28,7 @@ skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /mnt/c/Users/y
 Run those commands from the repo root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the script from elsewhere.
 
 The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\host-helper\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/host-helper/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
-It also refreshes `~/.wezterm-x/agent-tools.env` in the target home so external agent platforms can discover repo-local wrappers from one stable marker file.
+It also refreshes `$HOME/.wezterm-x/agent-tools.env` on the **WSL user home** (regardless of where the wezterm runtime files go) so WSL-resident agent platforms — Claude Code, Codex CLI, etc. — can discover repo-local wrappers from one stable marker file. Schema and contract: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
 
 Sync also mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` so the Windows-side wezterm.exe can read it; edits to `config/worktree-task.env` only take effect after the next sync. Why this matters for `<base>_resume` profile registration: see [`workspaces.md#behavior`](./workspaces.md#behavior).
 
@@ -106,7 +106,7 @@ That suite uses a dedicated temporary `tmux -L ...` socket, a temporary `HOME`, 
 
 - If text paste is fast but image-path paste stops working in `hybrid-wsl`, sync the runtime, let WezTerm auto-reload, and inspect the shared `trace_id` across `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` and `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log`.
 - If `scripts/runtime/agent-clipboard.sh` fails, first rerun [`scripts/dev/check-agent-clipboard.sh`](../scripts/dev/check-agent-clipboard.sh) to distinguish a wrapper bug from a lower-level helper or clipboard issue.
-- If an external agent platform cannot find the clipboard wrapper, verify that the latest sync wrote `~/.wezterm-x/agent-tools.env` and that its `agent_clipboard` path still exists.
+- If an external agent platform cannot find the clipboard wrapper, verify that the latest sync wrote `$HOME/.wezterm-x/agent-tools.env` (on the **WSL** home, not under `%USERPROFILE%\.wezterm-x\`) and that its `agent_clipboard` path still exists.
 - The `open-project-session.sh` helper warns when tmux is older than 3.3. Upgrade tmux before relying on the managed theme if passthrough support is missing.
 
 ## Commit Workflow

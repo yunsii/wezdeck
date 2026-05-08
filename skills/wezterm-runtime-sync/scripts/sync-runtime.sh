@@ -64,11 +64,19 @@ copy_file_atomic() {
 }
 
 write_agent_tools_file() {
-  local target_runtime_dir="${1:?missing target runtime dir}"
+  # Drops the discovery marker on the WSL user home, NOT the wezterm runtime
+  # target home. The marker advertises bash-callable wrappers under
+  # /home/<user>/..., which Windows-side processes cannot consume; the only
+  # readers are WSL-resident agents (Claude Code, Codex CLI, etc.). In
+  # posix-local mode the WSL home and target home coincide, so this still
+  # lands in the right place. Schema lives in docs/setup.md.
+  local wsl_home="${1:?missing WSL home}"
   local repo_root_path="${2:?missing repo root path}"
-  local target_file="$target_runtime_dir/agent-tools.env"
+  local target_dir="$wsl_home/.wezterm-x"
+  local target_file="$target_dir/agent-tools.env"
   local clipboard_wrapper="$repo_root_path/scripts/runtime/agent-clipboard.sh"
 
+  mkdir -p "$target_dir"
   write_text_file_atomic "$target_file" <<EOF
 version=1
 repo_root=$repo_root_path
@@ -321,7 +329,6 @@ prepare_runtime_subflow() {
     --exclude=/repo-root.txt \
     --exclude=/repo-main-root.txt \
     --exclude=/repo-worktree-task.env \
-    --exclude=/agent-tools.env \
     "$RUNTIME_SOURCE_DIR"/ "$TARGET_RUNTIME_DIR"/
   sync_trace "step=copy-runtime status=completed runtime_source=$RUNTIME_SOURCE_DIR"
 
@@ -339,7 +346,6 @@ prepare_runtime_subflow() {
     # changes, not on every sync.
     cp -p "$repo_root_path/config/worktree-task.env" "$TARGET_RUNTIME_DIR/repo-worktree-task.env"
   fi
-  write_agent_tools_file "$TARGET_RUNTIME_DIR" "$repo_root_path"
   sync_trace "step=write-metadata repo_root_path=$repo_root_path repo_main_root=$MAIN_REPO_ROOT"
 }
 
@@ -475,6 +481,16 @@ sync_trace "flow=wezdeck-bootstrap status=running async=1 pid=$BOOTSTRAP_FLOW_PI
 wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
 wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
+
+# Discovery marker for WSL-resident agents (Claude Code, Codex CLI, etc.).
+# Lands in $HOME/.wezterm-x/, not $TARGET_HOME/.wezterm-x/, because the
+# wrappers it advertises are bash scripts under WSL paths (/home/...) that
+# Windows-side processes cannot consume. In posix-local mode $HOME equals
+# $TARGET_HOME, so this is the same destination; in hybrid-wsl it diverges.
+# Schema documented in docs/setup.md (#agent-tools-env-schema).
+write_agent_tools_file "$HOME" "$REPO_ROOT"
+runtime_log_info sync "agent-tools marker written" "agent_tools_path=$HOME/.wezterm-x/agent-tools.env"
+sync_trace "step=write-agent-tools agent_tools_path=$HOME/.wezterm-x/agent-tools.env"
 
 # Two independent post-sync tasks run in parallel; each captures its
 # output to a temp file so the on-screen log stays in a stable, readable
