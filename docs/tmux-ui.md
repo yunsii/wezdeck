@@ -64,3 +64,15 @@ In tmux UI terms what shows up here is: a per-tab badge (a 1-cell `█` block in
 - Worktree switching stays inside one repo-family tmux session and updates the active tmux window instead of spawning more top-level WezTerm tabs.
 - tmux status refresh is hybrid: the draw path reads cached lines, focus and pane or window change hooks trigger debounced background refreshes, a recommended shell prompt hook (see [`setup.md`](./setup.md#tmux-status-prompt-hook); when the hook is not installed, `git` state can lag up to 30s) force-refreshes after each command so `git` operations reflect immediately, and a 30-second `status-interval` acts as a low-frequency fallback poll.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values.
+
+## Pending Upstream Fixes
+
+- **Copy-mode flush flicker on streaming agents.** Entering tmux copy-mode while an agent (Claude Code, Codex, etc.) is still streaming causes a visible jump + flicker on exit: tmux stops reading PTY bytes for the whole duration of copy-mode, so all output the agent produced while you were scrolled up gets buffered, then flushes into the backing grid in one frame at exit. Confirmed by tmux maintainer nicm in [tmux/tmux#1718] as a design choice, not a bug — wezterm and the agent renderer cannot mitigate it. Two upstream commands have already landed in tmux master (post-3.6a, expected in the next release):
+  - [tmux/tmux#4885] `refresh-from-pane` — manually flush the buffer into the backing grid from inside copy-mode while preserving scroll position (records `oy_from_top` before reclone, restores it after). The intended user flow: enter copy-mode, scroll, press the bound key when you want to see new content, keep reading without ever exiting.
+  - [tmux/tmux#4884] `scroll-exit-on/off/toggle` — runtime toggle for `scroll_exit` so a long selection that crosses the bottom isn't kicked out of copy-mode mid-drag.
+
+  Action: when tmux >3.6a ships, upgrade `/usr/local/bin/tmux`, add a `send-keys -X refresh-from-pane` binding in `wezterm-x/commands/manifest.json` scoped to copy-mode / copy-mode-vi (suggested key: `r`, vim/less redraw convention, currently unbound in copy-mode), re-run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh`, and document the key in [`keybindings.md`](./keybindings.md). Until then the closest fallback is `display-popup -E -h 90% -w 90% "tmux capture-pane -t '#{pane_id}' -p -S - -e | less -R"` — a snapshot in a popup, which leaves the agent pane unfrozen.
+
+[tmux/tmux#1718]: https://github.com/tmux/tmux/issues/1718
+[tmux/tmux#4884]: https://github.com/tmux/tmux/pull/4884
+[tmux/tmux#4885]: https://github.com/tmux/tmux/pull/4885
