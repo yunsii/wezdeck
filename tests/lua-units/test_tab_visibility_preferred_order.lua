@@ -168,12 +168,13 @@ describe('preferred_item_order', function()
     assert_eq(out[3].cwd, '/home/yuns/work/coco-platform')
   end)
 
-  it('items missing from cwd_to_session map fall back to declared tail', function()
-    -- Same stats setup as before, but cwd_to_session lacks coco-server
-    -- — simulates the print-session-names.sh helper failing for that
-    -- one path. Brain has coco-server ranked top, but without the
-    -- cwd→session bridge we can't bind it to a workspaces.lua item,
-    -- so it disappears from the slot list and declared order takes over.
+  it('items missing from cwd_to_session map are recovered via label fallback', function()
+    -- cwd_to_session lacks coco-server — simulates the
+    -- print-session-names.sh helper failing for that one path. Brain
+    -- has coco-server ranked top; the label-based fallback (parses
+    -- `wezterm_work_<label>_<hash>` and matches against sanitized
+    -- basenames) picks coco-server back up so a transient cwd→session
+    -- gap doesn't silently demote a high-weight item.
     local stats_dir = fresh_stats_dir()
     write_stats(stats_dir, 'work', {
       ['wezterm_work_coco-server_ebee3ed55c'] = { weight = 1.5, raw_count = 4 },
@@ -183,17 +184,19 @@ describe('preferred_item_order', function()
     c2s['/home/yuns/work/coco-server'] = nil
     local out = tab_visibility.preferred_item_order('work', items, c2s, 3)
     assert_len(out, 3)
-    -- Pure declared order — brain entry got orphaned, so the ranked
-    -- pass produces nothing useful.
-    assert_eq(out[1].cwd, '/home/yuns/work/ai-video-collection')
-    assert_eq(out[2].cwd, '/home/yuns/work/coco-platform')
-    assert_eq(out[3].cwd, '/home/yuns/work/packages')
+    -- Slot 1: coco-server via label fallback (basename 'coco-server'
+    -- matches the session's middle segment).
+    assert_eq(out[1].cwd, '/home/yuns/work/coco-server', 'label fallback recovers coco-server')
+    -- Slots 2-3: declared-order fallback for remaining capacity.
+    assert_eq(out[2].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(out[3].cwd, '/home/yuns/work/coco-platform')
   end)
 
-  it('empty cwd_to_session map → pure declared order (graceful degrade)', function()
+  it('empty cwd_to_session map → label fallback still ranks high-weight items', function()
     -- compute_cwd_to_session shellout failure produces {} on the
-    -- workspace_manager side. Verify we still return a sensible spawn
-    -- list rather than nothing.
+    -- workspace_manager side. With the label-based fallback in place
+    -- the ranked pass should still surface coco-server (top weight)
+    -- ahead of declared order, instead of silently dropping it.
     local stats_dir = fresh_stats_dir()
     write_stats(stats_dir, 'work', {
       ['wezterm_work_coco-server_ebee3ed55c'] = { weight = 1.0, raw_count = 3 },
@@ -202,9 +205,56 @@ describe('preferred_item_order', function()
     local items = work_fixture()
     local out = tab_visibility.preferred_item_order('work', items, {}, 5)
     assert_len(out, 5)
-    -- Declared order, capped at n.
-    assert_eq(out[1].cwd, '/home/yuns/work/ai-video-collection')
-    assert_eq(out[5].cwd, '/home/yuns/work/operations-monkey')
+    -- coco-server recovered via label fallback at slot 1.
+    assert_eq(out[1].cwd, '/home/yuns/work/coco-server', 'label fallback recovers ranked top')
+    -- Slots 2-5: declared order tail, skipping coco-server (placed).
+    assert_eq(out[2].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(out[3].cwd, '/home/yuns/work/coco-platform')
+    assert_eq(out[4].cwd, '/home/yuns/work/packages')
+    assert_eq(out[5].cwd, '/home/yuns/work/breeze-monkey')
+  end)
+
+  it('label fallback handles refresh-suffixed ranked entries', function()
+    -- rank_sessions normalizes `__refresh_*` suffixes to the base
+    -- session name before sorting, so ranked entries reaching
+    -- preferred_item_order always carry the base name. Verify the
+    -- label fallback still works when the brain ranking is driven
+    -- entirely by refresh-variant rows (the base session may have no
+    -- standalone stats row at all).
+    local stats_dir = fresh_stats_dir()
+    write_stats(stats_dir, 'work', {
+      ['wezterm_work_coco-server_ebee3ed55c__refresh_20260507T090418_4108862'] = { weight = 1.2, raw_count = 2 },
+      ['wezterm_work_coco-server_ebee3ed55c__refresh_20260506T174432_2661849'] = { weight = 0.5, raw_count = 1 },
+    })
+    configure(stats_dir, 3)
+    local items = work_fixture()
+    local out = tab_visibility.preferred_item_order('work', items, {}, 3)
+    assert_len(out, 3)
+    assert_eq(out[1].cwd, '/home/yuns/work/coco-server', 'refresh aggregate ranks coco-server top')
+    assert_eq(out[2].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(out[3].cwd, '/home/yuns/work/coco-platform')
+  end)
+
+  it('label fallback ignores ranked entries whose label has no item', function()
+    -- Orphan session under same workspace (e.g. ad-hoc bare tmux
+    -- session bumped via tab-stats-bump.sh from a cwd not declared
+    -- in workspaces.lua). Label fallback must skip it, falling
+    -- through to declared order rather than spawning something the
+    -- user never configured.
+    local stats_dir = fresh_stats_dir()
+    write_stats(stats_dir, 'work', {
+      ['wezterm_work_orphan_xxxxxxxxxx']      = { weight = 2.0, raw_count = 9 },
+      ['wezterm_work_coco-server_ebee3ed55c'] = { weight = 0.5, raw_count = 1 },
+    })
+    configure(stats_dir, 3)
+    local items = work_fixture()
+    local out = tab_visibility.preferred_item_order('work', items, {}, 3)
+    assert_len(out, 3)
+    -- orphan dropped (no item with basename 'orphan'); coco-server
+    -- still surfaces via label fallback.
+    assert_eq(out[1].cwd, '/home/yuns/work/coco-server')
+    assert_eq(out[2].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(out[3].cwd, '/home/yuns/work/coco-platform')
   end)
 end)
 
