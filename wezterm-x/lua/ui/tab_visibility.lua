@@ -205,6 +205,39 @@ end
 
 M._normalize_session_name = normalize_session_name
 
+-- Mirror of `tmux_worktree_sanitize_name` in
+-- scripts/runtime/tmux-worktree/core.sh: replace `/`, space, `.`, `:`
+-- with `_`. Applied to workspace and repo-label segments before they
+-- get joined into a tmux session name. Pure lua so the fallback path
+-- below doesn't shell out.
+local function sanitize_name_segment(name)
+  if type(name) ~= 'string' then return '' end
+  return (name:gsub('[/ .:]', '_'))
+end
+
+M._sanitize_name_segment = sanitize_name_segment
+
+-- Best-effort inverse of `tmux_worktree_session_name_for_path` in
+-- scripts/runtime/tmux-worktree/git.sh: pull the sanitized repo-label
+-- segment out of `wezterm_<workspace>_<label>_<10hex>` so we can match
+-- a ranked session back to a workspaces.lua item even when the
+-- cwd→session map (compute_cwd_to_session's wsl.exe round-trip) is
+-- unavailable. Returns the label or nil. The 10-char hex tail anchors
+-- the right side; greedy `(.+)` captures everything between the
+-- workspace prefix and the hash, so labels containing `_` (or even
+-- hex-looking substrings) parse correctly. Hash format follows from
+-- `sha1sum | cut -c1-10` in core.sh.
+local function session_label_segment(session_name, workspace_name)
+  if type(session_name) ~= 'string' or session_name == '' then return nil end
+  if type(workspace_name) ~= 'string' or workspace_name == '' then return nil end
+  local sanitized_ws = sanitize_name_segment(workspace_name)
+  local prefix = 'wezterm_' .. sanitized_ws .. '_'
+  local prefix_pat = (prefix:gsub('([%-%.%+%*%?%[%]%^%$%(%)%%])', '%%%1'))
+  return session_name:match('^' .. prefix_pat .. '(.+)_(%x%x%x%x%x%x%x%x%x%x)$')
+end
+
+M._session_label_segment = session_label_segment
+
 -- Aggregate stats rows by normalized base name, then rank.
 -- Aggregation: weight summed (cumulative focus), raw_count summed,
 -- last_bump_ms taken as max (most recent bump across variants).
@@ -516,7 +549,8 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
   local cache = module_state.workspaces[workspace_name]
   local ranked = (cache and cache.ranked) or {}
 
-  -- Reverse-lookup: session_name → item.
+  -- Primary reverse-lookup: session_name → item via the cwd→session
+  -- map computed by `compute_cwd_to_session` (workspace_manager.lua).
   local item_for_session = {}
   for _, item in ipairs(items) do
     if item and item.cwd then
@@ -527,13 +561,45 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
     end
   end
 
+  -- Fallback reverse-lookup: sanitized basename → item. Used when the
+  -- cwd→session map is empty or partial — typically because
+  -- compute_cwd_to_session's wsl.exe round-trip failed (e.g. WSL
+  -- service returning E_UNEXPECTED on an overloaded hybrid-wsl host).
+  -- Without this fallback, a transient host-side outage silently
+  -- demotes every high-weight item to the declared-order tail and the
+  -- user's most-used session falls off the visible cap. The label
+  -- pulled from `wezterm_<workspace>_<label>_<10hex>` matches against
+  -- `sanitize(basename(item.cwd))`, mirroring the bash session-name
+  -- minter so the lookup is exact for the common case (a flat repo
+  -- list under workspaces.lua) and best-effort otherwise. First-
+  -- declared item wins ties on label collisions, matching declared-
+  -- order tiebreak elsewhere.
+  local item_for_label = {}
+  for _, item in ipairs(items) do
+    if item and item.cwd then
+      local basename = item.cwd:match('([^/\\]+)$') or item.cwd
+      local sanitized = sanitize_name_segment(basename)
+      if sanitized ~= '' and item_for_label[sanitized] == nil then
+        item_for_label[sanitized] = item
+      end
+    end
+  end
+
+  local function lookup_item(session_name)
+    local exact = item_for_session[session_name]
+    if exact then return exact end
+    local label = session_label_segment(session_name, workspace_name)
+    if label then return item_for_label[label] end
+    return nil
+  end
+
   local out = {}
   local placed_cwd = {}
 
   -- Pass 1: ranked items in weight-desc order.
   for _, entry in ipairs(ranked) do
     if #out >= n then break end
-    local item = item_for_session[entry.name]
+    local item = lookup_item(entry.name)
     if item and not placed_cwd[item.cwd] then
       out[#out + 1] = item
       placed_cwd[item.cwd] = true
