@@ -34,6 +34,19 @@ function M.new(opts)
     constants = constants,
   }
 
+  local function with_trace_id(trace_id, fields)
+    local merged = {}
+
+    for key, value in pairs(fields or {}) do
+      merged[key] = value
+    end
+    if trace_id and trace_id ~= '' then
+      merged.trace_id = trace_id
+    end
+
+    return merged
+  end
+
   -- One-shot bulk compute of `cwd → canonical session name` via the
   -- `print-session-names.sh` helper. Single subprocess regardless of
   -- item count (vs forking once per item, which would blow the
@@ -240,19 +253,6 @@ function M.new(opts)
     local raw_items = runtime.workspace_items(workspace_name)
     if not raw_items or #raw_items == 0 then return end
     maybe_write_items_snapshot(workspace_name, raw_items, nil)
-  end
-
-  local function with_trace_id(trace_id, fields)
-    local merged = {}
-
-    for key, value in pairs(fields or {}) do
-      merged[key] = value
-    end
-    if trace_id and trace_id ~= '' then
-      merged.trace_id = trace_id
-    end
-
-    return merged
   end
 
   runtime = load_workspace_module('runtime').new {
