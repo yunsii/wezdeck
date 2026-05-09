@@ -1138,89 +1138,14 @@ end
 --      non-tmux entries that don't carry a tmux_session.
 --
 -- Returns true on successful activation.
-function M.activate_in_gui(pane_id_value, window, source_pane, opts)
-  local tmux_session_hint = opts and opts.tmux_session or nil
-  local target_id = nil
-  if tmux_session_hint and tmux_session_hint ~= '' then
-    local found = pane_for_hosted_session(tmux_session_hint)
-    if found ~= nil then
-      target_id = tostring(found)
-    end
-  end
-
-  -- No wezterm pane currently hosts the session (typical for a folded
-  -- session: it lives in tmux but the workspace overflow tab is
-  -- attached to something else right now). Project it into the
-  -- overflow tab — same effect as the user picking it via Alt+t —
-  -- so the click actually takes them somewhere useful instead of
-  -- silently dead-ending on the entry's stale stored pane id. We
-  -- compute the overflow placeholder pane id from the live mux to
-  -- use as the activation target, AND spawn the bash helper that
-  -- runs `tmux switch-client` on the overflow client + emits
-  -- tab.activate_overflow so the unified map updates.
-  if target_id == nil and tmux_session_hint and tmux_session_hint ~= ''
-     and type(overflow_project_spawner) == 'function' then
-    local session_workspace = tmux_session_hint:match('^wezterm_([^_]+)_')
-    if session_workspace then
-      -- Find the overflow placeholder pane in that workspace via the
-      -- same heuristic used elsewhere: tab title == OVERFLOW_GLYPH.
-      local overflow_pane_id
-      local ok_all, all_windows = pcall(wezterm.mux.all_windows)
-      if ok_all and type(all_windows) == 'table' then
-        for _, mux_win in ipairs(all_windows) do
-          local ok_ws, ws = pcall(function() return mux_win:get_workspace() end)
-          if ok_ws and ws == session_workspace then
-            local ok_tabs, tabs_list = pcall(function() return mux_win:tabs() end)
-            if ok_tabs and type(tabs_list) == 'table' then
-              for _, mux_tab in ipairs(tabs_list) do
-                local ok_title, title = pcall(function() return mux_tab:get_title() end)
-                if ok_title and title == '…' then
-                  local ok_pane, active_pane = pcall(function() return mux_tab:active_pane() end)
-                  if ok_pane and active_pane then
-                    pcall(function() overflow_pane_id = active_pane:pane_id() end)
-                  end
-                  break
-                end
-              end
-            end
-          end
-          if overflow_pane_id then break end
-        end
-      end
-      if overflow_pane_id then
-        -- Spawn the project helper. It runs tab-overflow-attach.sh
-        -- (tmux switch-client -c <tty> -t <session>) and emits
-        -- tab.activate_overflow to refresh the unified map.
-        local args = overflow_project_spawner(session_workspace, tmux_session_hint, source_pane)
-        if type(args) == 'table' and #args > 0 then
-          pcall(wezterm.background_child_process, args)
-        end
-        -- Memoize the projection in the unified map immediately so
-        -- subsequent reads (and this very activation walk) see the
-        -- new edge without waiting for the bash side / event tick.
-        memoize_pane_session(overflow_pane_id, tmux_session_hint)
-        target_id = tostring(overflow_pane_id)
-        if module_logger then
-          module_logger.info('attention', 'projected entry into overflow', {
-            session = tmux_session_hint,
-            workspace = session_workspace,
-            overflow_pane_id = overflow_pane_id,
-          })
-        end
-      end
-    end
-  end
-
-  if target_id == nil and pane_id_value ~= nil and pane_id_value ~= '' then
-    target_id = tostring(pane_id_value)
-  end
-  if target_id == nil then
-    return false
-  end
+-- Walk the live mux looking for the wezterm pane whose id matches
+-- `target_id`. If found, switch to its workspace (when different),
+-- activate its tab, activate the pane, and return true. Returns false
+-- when target_id is empty/nil OR the mux has no pane with that id.
+local function try_activate_pane(target_id, window, source_pane)
+  if target_id == nil or target_id == '' then return false end
   local ok_all, all_windows = pcall(wezterm.mux.all_windows)
-  if not ok_all or type(all_windows) ~= 'table' then
-    return false
-  end
+  if not ok_all or type(all_windows) ~= 'table' then return false end
   for _, mux_win in ipairs(all_windows) do
     local ok_tabs, tabs = pcall(function() return mux_win:tabs() end)
     if ok_tabs and type(tabs) == 'table' then
@@ -1259,6 +1184,96 @@ function M.activate_in_gui(pane_id_value, window, source_pane, opts)
       end
     end
   end
+  return false
+end
+
+-- Activate the wezterm pane that owns the picked entry, in a fixed
+-- precedence order:
+--   1. The entry's stored wezterm_pane_id, IF that pane is still alive
+--      in the live mux. The producer wrote this id as the authoritative
+--      target — when it resolves, prefer it over any inference.
+--   2. Reverse-lookup the entry's tmux_session in the unified pane→
+--      session map. Used when (1) is stale, e.g. a wezterm restart
+--      bumped pane ids while tmux survived. The reverse lookup picks
+--      ANY wezterm pane currently attached to that session — fine when
+--      only one pane attaches it, but ambiguous when the same session
+--      is attached by multiple wezterm panes. In this repo's split-
+--      pane layout the main shell pane and the agent pane both attach
+--      a single tmux session and just display different tmux panes,
+--      so historically reverse-lookup would silently misroute Alt+. /
+--      Alt+, jumps to the wrong wezterm pane (typically the leftmost
+--      main shell pane). Doing reverse-lookup AFTER step (1) keeps
+--      stale-id recovery working without overruling a live id.
+--   3. Project the entry into the workspace's overflow tab — same
+--      effect as the user picking it via Alt+t. Used when no live
+--      wezterm pane hosts the session anywhere; spawns the bash
+--      helper that runs `tmux switch-client` on the overflow client
+--      and emits tab.activate_overflow so the unified map updates.
+function M.activate_in_gui(pane_id_value, window, source_pane, opts)
+  local tmux_session_hint = opts and opts.tmux_session or nil
+
+  if pane_id_value ~= nil and pane_id_value ~= '' then
+    if try_activate_pane(tostring(pane_id_value), window, source_pane) then
+      return true
+    end
+  end
+
+  if tmux_session_hint and tmux_session_hint ~= '' then
+    local found = pane_for_hosted_session(tmux_session_hint)
+    if found ~= nil and try_activate_pane(tostring(found), window, source_pane) then
+      return true
+    end
+  end
+
+  if tmux_session_hint and tmux_session_hint ~= ''
+     and type(overflow_project_spawner) == 'function' then
+    local session_workspace = tmux_session_hint:match('^wezterm_([^_]+)_')
+    if session_workspace then
+      -- Find the overflow placeholder pane in that workspace via the
+      -- same heuristic used elsewhere: tab title == OVERFLOW_GLYPH.
+      local overflow_pane_id
+      local ok_all, all_windows = pcall(wezterm.mux.all_windows)
+      if ok_all and type(all_windows) == 'table' then
+        for _, mux_win in ipairs(all_windows) do
+          local ok_ws, ws = pcall(function() return mux_win:get_workspace() end)
+          if ok_ws and ws == session_workspace then
+            local ok_tabs, tabs_list = pcall(function() return mux_win:tabs() end)
+            if ok_tabs and type(tabs_list) == 'table' then
+              for _, mux_tab in ipairs(tabs_list) do
+                local ok_title, title = pcall(function() return mux_tab:get_title() end)
+                if ok_title and title == '…' then
+                  local ok_pane, active_pane = pcall(function() return mux_tab:active_pane() end)
+                  if ok_pane and active_pane then
+                    pcall(function() overflow_pane_id = active_pane:pane_id() end)
+                  end
+                  break
+                end
+              end
+            end
+          end
+          if overflow_pane_id then break end
+        end
+      end
+      if overflow_pane_id then
+        local args = overflow_project_spawner(session_workspace, tmux_session_hint, source_pane)
+        if type(args) == 'table' and #args > 0 then
+          pcall(wezterm.background_child_process, args)
+        end
+        memoize_pane_session(overflow_pane_id, tmux_session_hint)
+        if module_logger then
+          module_logger.info('attention', 'projected entry into overflow', {
+            session = tmux_session_hint,
+            workspace = session_workspace,
+            overflow_pane_id = overflow_pane_id,
+          })
+        end
+        if try_activate_pane(tostring(overflow_pane_id), window, source_pane) then
+          return true
+        end
+      end
+    end
+  end
+
   return false
 end
 
@@ -1310,9 +1325,15 @@ function M.parse_jump_payload(value)
   return nil
 end
 
--- Pick next entry matching `kind` ('waiting' or 'done'). Prefers entries
--- whose wezterm_pane_id differs from `current_pane_id` so repeated presses
--- cycle. Returns the entry or nil.
+-- Pick next entry matching `kind` ('waiting' or 'done') whose
+-- wezterm_pane_id differs from `current_pane_id`, so repeated Alt+,/Alt+.
+-- presses cycle through other panes. Returns the entry or nil.
+--
+-- Returns nil when the only candidate is the user's current pane: the
+-- user is already there and has nothing left to jump to. Old fallback
+-- `return pool[1]` made the handler "jump to self" — a no-op visually,
+-- but it still ran the post-jump optimistically_hide + forget side
+-- effects, silently archiving the pane the user was actively looking at.
 function M.pick_next(kind, current_pane_id)
   local waiting, done = M.collect()
   local pool = kind == M.STATUS_DONE and done or waiting
@@ -1328,7 +1349,7 @@ function M.pick_next(kind, current_pane_id)
       return entry
     end
   end
-  return pool[1]
+  return nil
 end
 
 -- Periodic shell-side prune. Called from titles.lua's update-status tick
