@@ -167,6 +167,38 @@ fast-switch path uses `prune_keep_items`. Net behavior:
   overflow tab via `is_overflow_tab` since it is owned by tab_visibility,
   not by `workspaces.lua`.
 
+### Live hot reorder (brain rerank while the window is open)
+
+`titles.lua` watches `tab_visibility.visible_signature` on every
+`update-status` tick. When the brain promotes a new session into the
+top-N (`packages` jumps in, `operations-monkey` drops out), the signature
+changes and `Workspace.maybe_hot_reorder` runs
+`sync_workspace_tabs(preserve_focus = true)`.
+
+Layout invariants under `preserve_focus`:
+
+- The currently-active tab is **protected from prune** for this round,
+  even if its session fell out of top-N. The user's focus never
+  disappears mid-typing.
+- The other top-N tabs **keep their existing positions** — the per-item
+  MoveTab loop is skipped to avoid a focus cascade. So when one session
+  is promoted in and another demoted out, the four unchanged tabs stay
+  in their slots; only the demoted tab's slot turns over.
+- A newly-spawned tab lands at the end of the strip (wezterm's
+  `spawn_tab` always appends). After spawn + prune, `sync_workspace_tabs`
+  re-positions the **overflow tab** to the tail with a single MoveTab
+  if needed — so the visible order ends up `[top-N..., …]` with the
+  promoted session taking the demoted session's old slot. The single
+  MoveTab is not a focus storm, and the focus restore below returns
+  the user to the protected tab.
+
+Trade-off still standing: when `preserve_focus` is on, the top-N
+internal order can drift from `desired_items`'s weight-desc order — the
+*set* matches and the demoted-slot replacement is in-place, but a
+rerank within the existing top-N doesn't reshuffle positions until the
+next cold-open. That's intentional — we trade theoretical rank order
+for muscle memory on the visible strip.
+
 ### `Alt+x` — single-tab session rotation
 
 `Alt+x` (manifest id `tab.overflow-picker`, wezterm layer, forwarded

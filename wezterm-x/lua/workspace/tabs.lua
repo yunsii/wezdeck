@@ -497,6 +497,31 @@ exec tmux attach -t "$session"
 
     prune_workspace_tabs(target_window, prune_keep_items, protected_tab_id)
 
+    -- Keep the overflow placeholder at the tail. Under preserve_focus
+    -- we skip the per-item MoveTab loop above to avoid a cascading
+    -- focus storm — but the overflow tab isn't in desired_items, and
+    -- a freshly-spawned visible tab gets appended *after* it, leaving
+    -- the strip rendered as `…|new_tab` instead of `new_tab|…`. One
+    -- single MoveTab here is not a storm; the focus restore below
+    -- returns the user to their protected tab.
+    if gui_window then
+      local infos = target_window:tabs_with_info()
+      local overflow_info, last_index = nil, -1
+      for _, info in ipairs(infos) do
+        if info.index > last_index then last_index = info.index end
+        if is_overflow_tab(info.tab) then overflow_info = info end
+      end
+      if overflow_info and overflow_info.index ~= last_index then
+        pcall(function() overflow_info.tab:activate() end)
+        local move_pane = overflow_info.tab:active_pane()
+        if move_pane then
+          pcall(function()
+            gui_window:perform_action(wezterm.action.MoveTab(last_index), move_pane)
+          end)
+        end
+      end
+    end
+
     -- Restore the originally-active tab. spawn_workspace_tab can
     -- activate the freshly-spawned tab as a side effect on some
     -- wezterm builds; this is a cheap no-op when focus already sits
