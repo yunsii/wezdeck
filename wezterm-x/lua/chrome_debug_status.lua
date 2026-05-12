@@ -31,6 +31,16 @@ local helper_state_path = nil
 local helper_heartbeat_timeout_ms = 5000
 local fallback_port = nil
 
+-- Last successfully parsed `heartbeat_at_ms` from state.env. The helper
+-- rewrites that file every helper_heartbeat_interval_ms (250 ms) via
+-- tmp+rename, and we read it on every update-status tick. On NTFS the
+-- replace-existing move is atomic at the kernel level but `io.open` can
+-- still race with it (ERROR_SHARING_VIOLATION / ERROR_FILE_NOT_FOUND);
+-- without the cache a single missed read would flip the badge to `?`
+-- for one frame even though the helper is healthy. Falling back to the
+-- cached value lets the 5 s timeout do its real job.
+local last_known_heartbeat_at_ms = nil
+
 local function parse_json(text)
   if type(text) ~= 'string' or text == '' then
     return nil
@@ -95,35 +105,40 @@ end
 -- assume "alive" so single-host setups without a Windows helper do not see a
 -- spurious "?" in the right status. The signal only fires when configure()
 -- has been told a real helper_state_file path.
+local function current_epoch_ms()
+  local ok, formatted = pcall(function()
+    return wezterm.time.now():format '%s%3f'
+  end)
+  if ok and type(formatted) == 'string' and formatted:match '^%d+$' then
+    return tonumber(formatted)
+  end
+  return math.floor(os.time() * 1000)
+end
+
 local function helper_is_alive()
   if not helper_state_path or helper_state_path == '' then
     return true
   end
   local content = read_file(helper_state_path)
-  if not content or content == '' then
-    return false
-  end
   local heartbeat_at_ms = nil
-  for line in content:gmatch '[^\r\n]+' do
-    local key, value = line:match '^([A-Za-z_][A-Za-z0-9_]*)%s*=%s*(.-)%s*$'
-    if key == 'heartbeat_at_ms' then
-      heartbeat_at_ms = tonumber(value)
-      break
+  if content and content ~= '' then
+    for line in content:gmatch '[^\r\n]+' do
+      local key, value = line:match '^([A-Za-z_][A-Za-z0-9_]*)%s*=%s*(.-)%s*$'
+      if key == 'heartbeat_at_ms' then
+        heartbeat_at_ms = tonumber(value)
+        break
+      end
     end
+  end
+  if heartbeat_at_ms then
+    last_known_heartbeat_at_ms = heartbeat_at_ms
+  else
+    heartbeat_at_ms = last_known_heartbeat_at_ms
   end
   if not heartbeat_at_ms then
     return false
   end
-  local now_ms
-  local ok, formatted = pcall(function()
-    return wezterm.time.now():format '%s%3f'
-  end)
-  if ok and type(formatted) == 'string' and formatted:match '^%d+$' then
-    now_ms = tonumber(formatted)
-  else
-    now_ms = math.floor(os.time() * 1000)
-  end
-  return (now_ms - heartbeat_at_ms) <= helper_heartbeat_timeout_ms
+  return (current_epoch_ms() - heartbeat_at_ms) <= helper_heartbeat_timeout_ms
 end
 
 function M.render_status_segment(palette)
