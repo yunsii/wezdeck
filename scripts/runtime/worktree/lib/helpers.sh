@@ -34,6 +34,18 @@ wt_die() {
     runtime_log_error task "worktree-task failed" "message=$*"
   fi
   printf '%s\n' "$*" >&2
+  # Replace the in-flight progress line with a brief failure indicator so
+  # the user isn't left looking at a stale "fetching origin…" / "creating
+  # worktree…" message after a fatal exit. stdout/stderr are usually
+  # swallowed by the tmux `run-shell -b` binding, so the status bar is
+  # the only surface that can communicate the failure. We clear the
+  # override after a few seconds so the bar reverts to its normal state.
+  local err_summary="${*//$'\n'/ }"
+  if (( ${#err_summary} > 80 )); then
+    err_summary="${err_summary:0:77}…"
+  fi
+  wt_tmux_progress "[worktree-task] failed: $err_summary"
+  wt_tmux_progress_clear_after 4
   exit 1
 }
 
