@@ -182,6 +182,26 @@ function M.new(opts)
     local slug = tab_visibility.workspace_slug(workspace_name)
     local path = stats_dir .. path_sep .. slug .. '-items.json'
 
+    -- Only managed-launcher workspaces belong in the Alt+x picker.
+    -- Demo / dev workspaces like `mock-deck` declare items with raw
+    -- `command = { ... }` and no launcher; surfacing them as overflow
+    -- rows is noise. Skip when nothing resolved to a launcher (per-item
+    -- launcher or workspace defaults.launcher, both flattened into
+    -- raw_items by runtime.workspace_items). If a previous configuration
+    -- left a snapshot behind, remove it so the picker stays in lockstep
+    -- with the current rule.
+    local any_launcher = false
+    for _, item in ipairs(raw_items or {}) do
+      if item.launcher then
+        any_launcher = true
+        break
+      end
+    end
+    if not any_launcher then
+      pcall(os.remove, path)
+      return
+    end
+
     -- Build the set of cwds currently spawned as wezterm tabs in this
     -- workspace's mux window. Empty when the workspace has no window
     -- yet (cold start or first-ever open).
@@ -283,12 +303,14 @@ function M.new(opts)
     local trace_id = logger.trace_id('workspace')
     local raw_items = runtime.workspace_items(name)
     -- Don't write the items snapshot here unconditionally — it costs
-    -- mux walk + jq encode + cross-FS NTFS write per Alt+w press, and
-    -- is only consumed by the Alt+t overflow menu. We refresh it on
-    -- the cold-open path below (when a new mux window is being
-    -- created) and lazily when the overflow menu fires (TODO: add a
-    -- refresh-on-demand event in PR4). Hot Alt+w stays at the
-    -- pre-snapshot latency.
+    -- mux walk + json encode + cross-FS NTFS write per Alt+w press,
+    -- and is only consumed by the Alt+x overflow picker. We refresh
+    -- it on the cold-open path below (when a new mux window is being
+    -- created), and the Alt+x handler in action_registry refreshes
+    -- every configured workspace's snapshot on demand via
+    -- Workspace.refresh_all_items_snapshots so edits to
+    -- workspaces.lua surface in the picker without forcing a cold
+    -- reopen. Hot Alt+w stays at the pre-snapshot latency.
     local items = maybe_cap_items(name, raw_items, trace_id)
     if #items < #raw_items then
       logger.info('workspace', 'capped startup items by tab_visibility', with_trace_id(trace_id, {
@@ -589,6 +611,21 @@ function M.new(opts)
   end
 
   Workspace.items = runtime.workspace_items
+
+  Workspace.refresh_items_snapshot = refresh_items_snapshot
+
+  -- On-demand refresh hook for the Alt+x overflow picker. Iterates
+  -- every workspace declared in workspaces.lua (including local
+  -- overrides) so edits made since the last cold-open surface in the
+  -- picker without the user having to close + reopen the workspace
+  -- window. `refresh_items_snapshot` is a no-op for workspaces with
+  -- no configured items or where tab_visibility is disabled, so this
+  -- is safe to call across the whole def table.
+  function Workspace.refresh_all_items_snapshots()
+    for name, _ in pairs(workspace_defs) do
+      refresh_items_snapshot(name)
+    end
+  end
 
   return Workspace
 end
