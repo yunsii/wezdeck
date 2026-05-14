@@ -180,6 +180,37 @@ function Write-ManagerConfig {
     [hashtable]$ManagerPaths
   )
 
+  # Inherit chrome-debug config from the previously-written manager-config.json
+  # when none of the ChromeDebug* parameters were explicitly bound. Two callers
+  # exercise this script today and only one of them (wezterm Lua, via
+  # build_helper_command) passes chrome args; the sync-runtime path
+  # (sync-helper-windows-lib.sh::ensure_windows_helper_running) does not, and
+  # without inheritance a sync-driven helper restart would silently flip
+  # chromeDebugAutoStart.enabled to false and leave the CDP badge stuck at "-"
+  # until wezterm reloaded.
+  $chromeArgsBound = $PSBoundParameters.ContainsKey('ChromeDebugAutoStartEnabled') `
+    -or $PSBoundParameters.ContainsKey('ChromeDebugChromePath') `
+    -or $PSBoundParameters.ContainsKey('ChromeDebugUserDataDir') `
+    -or $PSBoundParameters.ContainsKey('ChromeDebugRemoteDebuggingPort')
+  $chromeAutoStartEnabled = ($ChromeDebugAutoStartEnabled -eq '1')
+  $chromeChromePath = $ChromeDebugChromePath
+  $chromeRemotePort = $ChromeDebugRemoteDebuggingPort
+  $chromeUserDataDir = $ChromeDebugUserDataDir
+  if (-not $chromeArgsBound -and (Test-Path -LiteralPath $ManagerPaths.Config)) {
+    try {
+      $previous = Get-Content -LiteralPath $ManagerPaths.Config -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+      if ($previous -and $previous.chromeDebugAutoStart) {
+        $chromeAutoStartEnabled = [bool]$previous.chromeDebugAutoStart.enabled
+        $chromeChromePath = [string]$previous.chromeDebugAutoStart.chromePath
+        $chromeRemotePort = [int]$previous.chromeDebugAutoStart.remoteDebuggingPort
+        $chromeUserDataDir = [string]$previous.chromeDebugAutoStart.userDataDir
+      }
+    } catch {
+      # Fall back to the unbound defaults; this matches the prior behavior
+      # for the very first ensure when no manager-config.json exists yet.
+    }
+  }
+
   $config = [ordered]@{
     runtimeDir = $RuntimeDir
     statePath = $StatePath
@@ -187,10 +218,10 @@ function Write-ManagerConfig {
     ipcEndpoint = $ManagerPaths.IpcEndpoint
     chromeDebugStatePath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\chrome-debug\state.json'
     chromeDebugAutoStart = [ordered]@{
-      enabled = ($ChromeDebugAutoStartEnabled -eq '1')
-      chromePath = $ChromeDebugChromePath
-      remoteDebuggingPort = $ChromeDebugRemoteDebuggingPort
-      userDataDir = $ChromeDebugUserDataDir
+      enabled = $chromeAutoStartEnabled
+      chromePath = $chromeChromePath
+      remoteDebuggingPort = $chromeRemotePort
+      userDataDir = $chromeUserDataDir
     }
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
