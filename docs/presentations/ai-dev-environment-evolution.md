@@ -1,8 +1,8 @@
 ---
 title: WezDeck 的演进 —— 从 Copilot 聊天到 multi-agent 驾驶舱
 subtitle: AI 形态每变一次，我都被逼着把工作环境往前推一格
-version: v0 → v5（v5 D 收口于 2026-04-25）
-date: 2026-04-23（worktree 工作流补丁：2026-04-25）
+version: v0 → v5（v5 E 后段收束于 2026-05-14）
+date: 2026-04-23（worktree 工作流补丁：2026-04-25；v5 E 后段维护：2026-05-14）
 project: "WezDeck (repo: wezterm-config)"
 audience: 同事 / 社区分享 · 长文 · 演进史
 author: 结合 git 记录整理
@@ -41,9 +41,13 @@ timeline
                           : 工作区 / worktree-task / 命令面板
                           : 宿主动作仍是脚本堆
                           : Agent 状态人脑托管
-  v5 · 2026-04-18 → now : Native helper + Hook 驱动 attention
-                        : 可版本化 user profile
-                        : 人按需求开关、agent 管中段 git
+  v5 A-D · 2026-04-18 → 04-25 : Native helper + Hook 驱动 attention
+                              : 可版本化 user profile
+                              : 人按需求开关、agent 管中段 git
+  v5 E · 2026-04-26 → 05-14 : 身份模型收口（tmux_session as identity）
+                            : tab 可见性 + focus weight brain
+                            : agent-launcher 单点入口
+                            : reminders / OSC echo / 持续可观测
 ```
 
 每一格的"触发"都不是工程灵感，而是**当前 AI 形态在当前环境下显出的具体不爽**：单点建议→不能跨文件 → Agent 模式；编辑器内 agent→不能多 pane 并行 → CLI；CLI 在 WT 不稳 → 换 WezTerm；WezTerm 只是终端 → 把它当平台用；脚本堆住宿主能力 + 任务状态散在脑里 → 跨进程统一控制面 + Hook 驱动的 attention pipeline。
@@ -196,6 +200,49 @@ Ctrl+k g {d,t,h}    →  分支 / commit / rebase /  →  Ctrl+k g r
 
 **隐性收益 · CLI 无关性**：A/B 的直接收益是单 agent（Claude Code）流畅度；C 带来跨 CLI 的一致性 —— 同一套规则同时作用于 Claude / Codex；D 把这种跨 CLI 延伸到 worktree 体验：resume 字符串按 `WT_PROVIDER_AGENT_PROFILE_<UPPER>_RESUME_COMMAND` 收一处。**未来再出新的终端 agent，接入成本退化为"在 env 里加一行映射"**。
 
+### v5 E · 上线之后的持续维护（2026-04-26 → 05-14）
+
+A/B/C/D 是四根主柱；E 不是新柱，是**主柱上线后跑出来的连续维护与后段细化**。在真实 multi-agent 工作流跑了两三周以后，几条原本被掩盖的成本开始浮出来 —— 解决方式都遵循前面四柱的同一种模式：找出隐性认知开销、把它变成平台可以代为承担的链路。
+
+#### E1 · 身份模型收口（2026-04-29）
+
+attention 流水线最初把 wezterm tab + pane 揉进了 entry 身份里：upsert 用 `(socket, tmux_pane)` evict、label 烤进 wezterm `tab_index`、overflow tab 轮转时旧 session 的 entry 在 TTL 之前一直挂着。在 hot reorder 频繁、refresh-current-window 频繁、overflow 旋转频繁的真实使用下，"pane 是身份"的隐含语义和"session 是任务"的真实语义对不上号 —— 同一个 agent 任务被 refresh 一下 pane id 就换了，attention 里就多出一条幽灵 entry。
+
+[`d150a5d`](https://github.com/yunsii/wezterm-config/commit/d150a5d) `refactor(attention)!: anchor pipeline on tmux_session as identity` 把这条边界翻过来：**entry dedup key = `(tmux_socket, tmux_session)`，wezterm tab/pane 只是渲染槽 + 诊断字段**。配套 [`727eb67`](https://github.com/yunsii/wezterm-config/commit/727eb67) 让 `recent[]` 的墓碑按 pane 折叠（一条 pane 多次状态翻转只留最新一条），[`1117b2d`](https://github.com/yunsii/wezterm-config/commit/1117b2d) 让 dedup key 也限定在同一 tmux pane 内。三个 commit 合起来，overflow 轮转、reachability sweep、tmux session-closed hook 各自走干净的"归档进 recent[]"路径，不再依赖 pane-id 这种生命周期短的标识。
+
+#### E2 · Tab 可见性 brain（2026-04-26 → 04-29）
+
+v5 B 让"哪个 agent 在等我"变得可见；v5 E2 让"哪些 session 该被 tab strip 显示"也变得可见。机制和 B 同构：focus 信号是来源，文件状态是中介，wezterm 端只渲染。具体形态见 [outline §核心特性 2.1](./ai-workspace-sharing-outline.md#21-tab-可见性--focus-weight--让在做的自动浮上来)；代表 commit：[`24897d5`](https://github.com/yunsii/wezterm-config/commit/24897d5)（首个 visible-cap + overflow）、[`b3928e1`](https://github.com/yunsii/wezterm-config/commit/b3928e1)（cross-workspace `Alt+x` picker）、[`9821d9d`](https://github.com/yunsii/wezterm-config/commit/9821d9d)（picker 和可见 tab 都改吃 focus weight）、[`941c744`](https://github.com/yunsii/wezterm-config/commit/941c744)（`Alt+/` 与 `Alt+x` 布局对齐）。
+
+**和 v5 B 共享的隐含模式**：人在做这件事的认知开销 → 看 hook 信号能不能代为承担 → 用同一种"状态文件 + 渲染端拉"的链路接上。从"该看哪个 agent"扩展到"该看哪几个 session"，B 和 E2 的成本结构和实现成本几乎一致。
+
+#### E3 · agent-launcher 单点入口（2026-05-06）
+
+v5 的 4 条 agent CLI 启动路径（workspace 首开、`Alt+g` 即开窗、refresh-current-window、tab-overflow 冷 spawn）历史上各走各的 shell chain —— 只有第一条会经过 zsh 的 rc，导致 `~/.zshrc` 导出的 secret（`CNB_TOKEN` 等）在另外三条路径上看不见，agent Bash 里 `npm view @coco/x-server` 出 401，用户的交互 shell 却没事。
+
+[`fa779f0`](https://github.com/yunsii/wezterm-config/commit/fa779f0) `feat(agents): unify launch chain via agent-launcher and shell-env.d` 把 4 条路径全部收敛到 `scripts/runtime/agent-launcher.sh`，由它唯一一次 source `runtime-env-lib.sh::runtime_env_load_managed` 再 exec agent。配套把"用户级 secret"的约定也明确下来 —— 直接丢一个文件进 `~/.config/shell-env.d/<name>.env`（mode 600），loader 和 `~/.zshrc` 都自动发现，新增 secret 不用再改任何 rc 文件或 loader 列表。
+
+**和 v5 A 共享的模式**：v5 A 收的是宿主链路（脚本堆 → IPC 单点）；v5 E3 收的是 agent 起点（4 条 shell chain → launcher 单点）。两条都是"把脚本堆压成一个收口点"的同构操作。
+
+#### E4 · Reminders pipeline（2026-04-26）
+
+[`05518e4`](https://github.com/yunsii/wezterm-config/commit/05518e4) `feat(reminders): add tmux-popup cron pipeline` 加了一条很小的新管道：cron → `scripts/runtime/reminder.sh` → `scripts/runtime/tmux-popup-active.sh`，popup 落到最近活跃的 tmux client 上、阻塞到按键为止（**故意不带 timeout** —— reminder 自动消失就等于没看到）。
+
+**为什么不复用 attention pipeline？**两者解决的是相反的问题：attention 的 badge 是"glanceable but easy to miss"，专门给 agent turn 用；reminder 要的是"interrupt heads-down work"。把 cron-driven 提醒混进 `🚨 N waiting` 计数会稀释 attention 的语义；让 attention 学会"打断"又会让所有 agent waiting 都打断 —— 两者正交，分开做。详见 [`docs/reminders.md`](../reminders.md)。
+
+#### E5 · 持续可观测（贯穿 04-26 → 05-14）
+
+E 段还产出一组**没单独成柱、但 cumulative 重要**的可观测性补强：
+
+- [`367128d`](https://github.com/yunsii/wezterm-config/commit/367128d) `feat(agents): emit attention.tick.echo sidecar for OSC drop diagnosis` —— 每次 hook 触发都额外写一份 echo sidecar，OSC 1337 走丢时 Lua 端用 file-watcher 兜底，事故回放也能在 echo 序列里离线对账。
+- [`2011146`](https://github.com/yunsii/wezterm-config/commit/2011146) `perf(attention): drop per-tick state reload, fire only on attention.tick event` —— attention 状态由轮询改成事件驱动；空闲时 wezterm tick 不再吃 IO。
+- [`4ce90f4`](https://github.com/yunsii/wezterm-config/commit/4ce90f4) `feat(attention): nudge wezterm tick after state writes + event-bus rationale` —— OSC + file 两条传输通道共存的决策（见 [`docs/event-bus.md`](../event-bus.md)）。
+- 几条 split-pane / tab-overflow / chrome-debug 的精度修复（[`bd1fad8`](https://github.com/yunsii/wezterm-config/commit/bd1fad8)、[`8d33bcd`](https://github.com/yunsii/wezterm-config/commit/8d33bcd)、[`9f0f98d`](https://github.com/yunsii/wezterm-config/commit/9f0f98d)）—— 真实使用里冒出来、原模型没考虑到的边缘情形。
+
+**E 段的本质**：v5 上线时各柱"能跑"；E 段把它们做到"跑得稳、跑得能 trace、跑得在边缘情形下也不掉链子"。**这条曲线大概率永远不会停**，写在叙事里是为了承认：平台不是"四柱立起来就完事"，是"四柱立起来之后还得维护两三周才真正长在工作流里"。
+
+---
+
 ### 配套：让 D 这条分工"跟得上手"
 
 D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g {d,t,h,r}` 和 `Alt+g`，picker 必须像快门、闪烁必须从视野里被消掉。这里两件事并发推进：
@@ -237,6 +284,8 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 | 跳到下一个 `done` | `Alt+.` | 62 |
 | 跳到下一个 `waiting` | `Alt+,` | 33 |
 | **attention 三入口合计** | | **173** |
+
+> *样本日为 2026-04-25*。`Alt+x`（跨工作区 tab picker）是 v5 E2 的 04-29 才加入这条 loop 的，那一刻起跨工作区切换从 `Alt+w` → `Alt+1..9` 二跳变成 `Alt+x` 一跳；新的全量计数还没采到，等下一次样本日补上。
 
 这 173 次压过当天任何单一 workspace / tab / clipboard 动作。意味着：
 
@@ -291,6 +340,7 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 | v4 → v5 B | 人巡检 Agent 状态 | 平台主动感知 | Hook 驱动的 attention pipeline |
 | v5 B → v5 C | 协作规则散在每次对话里复述 | 可版本化、跨 CLI 注入的 user profile | 一套规则同时作用于 Claude / Codex |
 | v5 C → v5 D | worktree 是分支隔离 | worktree 是 agent 对话上下文的载体 | "切回去就接着说" |
+| v5 D → v5 E | 上线"能跑"、边缘情形偶发掉链子 | 身份模型 + tab 可见性 + launcher 单点收口 | "跑得稳、跑得能 trace、连续两三周不需要救火" |
 
 每次跃迁的共同模式是同一种：
 
@@ -302,8 +352,8 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 
 - **Codex 等其它 Agent CLI 的 hook 接入**仍有空缺（[`f607b43`](https://github.com/yunsii/wezterm-config/commit/f607b43)）。现在用 Codex CLI 跑任务，attention pipeline 完全看不见它的 running / waiting，只有 Claude Code 的 hook 接好。
 - **非 Windows / 非 WSL 场景**下 native helper 子系统是否值得保留还没结论。搬到 macOS，`helper-manager.exe` 这层要整块换实现（AppleScript? ObjC?），现在没方案。
-- **v5 D 是 04-25 一天内才成形**，回看周期还没走完。需要看实际多任务并行场景下 resume profile 是不是真的"无副作用接续"，以及 agent 误接续旧上下文的边界。Codex 那条路径是字符串拼接（`codex resume --last || exec codex`），CLI 一旦改 flag 就会断。
-- **`Alt+/` 列表的可读性**：同一 repo family 下挂 5+ worktree 时需要按 lifecycle prefix 排序、按最后活跃时间分组、把 reclaim 候选标出来。
+- **Codex resume 路径仍是字符串拼接**（`codex resume --last || exec codex`），CLI 一旦改 flag 就会断 —— v5 E3 把 4 条 launch 路径收敛到 `agent-launcher.sh` 之后，"接入一个新 CLI 退化为加一行映射" 的目标对 Claude 已经成立，对 Codex 还差一层 typed resume 协议。
+- **`Alt+x` 一天的真实按键计数还没采到**。布置在 v5 E2（2026-04-29），样本日仍卡在 04-25；下一次取样要把它纳入"attention 三入口合计"或拆一个新的 "navigation 五入口" 分组。
 - **项目级协作 checklist 仍空缺**。v5 C 把跨项目共识固化为 user-level profile（`[validation-29..30]` / `[tool-use-36]` / `[platform-actions-38..41]`），但本仓库特有的 `manifest.json` 同步校验、`windows-shell-lib` 使用边界、`runtime-sync` 触发时机仍靠 `CLAUDE.md` 单点描述，没进入规则层。
 
 ---
@@ -312,4 +362,4 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 
 > 从 v0 到 v5，表面上换的是编辑器、终端、平台架构；实际上换的是 **AI 在我工作流里的位置** —— 从光标处的单点建议者，到编辑器里的任务执行者，到终端里的一等公民，**最后变成一个有真实状态、被平台主动感知、被 hook 驱动、在自己的 worktree 里独立推进 git 流程的协作对象**。
 >
-> WezDeck 是这条路径在 2026-04 的形态。
+> WezDeck 是这条路径在 2026-04 / 05 的形态 —— 四根主柱（A/B/C/D）在 04-25 立起来，v5 E 的两到三周后段维护把"能跑"压成"在真实多任务流里跑得稳"。
