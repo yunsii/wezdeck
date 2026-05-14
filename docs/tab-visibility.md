@@ -212,6 +212,23 @@ has been written**, marked by current state:
   living detached or projected into the overflow pane).
 - `○` cold    — no tmux session yet.
 
+Each Alt+x press calls
+`Workspace.refresh_all_items_snapshots` from the wezterm-side handler
+in `action_registry.lua` before forwarding into tmux, so every
+managed-launcher workspace's `<slug>-items.json` is rewritten
+synchronously from the live `workspaces.lua` table. Edits to
+`workspaces.lua` (after a sync that reloads the wezterm config)
+therefore surface in the picker on the next press without forcing a
+workspace cold reopen. Workspaces whose items declare raw
+`command = { ... }` with no launcher (e.g. the `mock-deck`
+dev/demo workspace) are filtered out by
+`_maybe_write_items_snapshot_impl`: nothing to manage means nothing
+worth picking, and any stale snapshot from a prior configuration is
+removed in the same step so the picker stays in lockstep. Hot `Alt+w`
+still skips the write to keep workspace-switch latency at its
+baseline; the snapshot is only consumed by Alt+x, so paying that cost
+there is correct.
+
 The popup shows a workspace badge column next to each row. Rows are
 ranked by **frequency** (focus weight from `tab-stats/<slug>.json`
 aggregated across `__refresh_*` variants under their base session name):
@@ -284,7 +301,7 @@ re-shuffle the visible tabs (those are pinned to whatever `Workspace
 | --- | --- | --- |
 | Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, `is_enabled` / `spawn_capped` predicates, workspace slug |
 | Constants | `wezterm-x/lua/constants.lua` | `tab_visibility` config block (visible_count, enabled_workspaces, spawn_visible_only, …) |
-| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (frequency-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot |
+| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (frequency-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh |
 | Session-name compute | `scripts/runtime/tmux-worktree/print-session-names.sh` | bulk `cwd → canonical session name` map for the workspace, single subprocess invocation; the lua side uses this to join `workspaces.lua` items against `tab-stats/<slug>.json` ranking |
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |

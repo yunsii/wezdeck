@@ -83,6 +83,22 @@ function M.new(ctx)
       local workspace_name = common.active_workspace_name(window)
       local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
       if tmux_backed then
+        -- Refresh every workspace's items snapshot before tmux runs
+        -- tab-overflow-menu.sh, so edits to workspaces.lua since the
+        -- last cold-open are visible in the picker. Synchronous —
+        -- the write completes before forward_shortcut_to_pane sends
+        -- the keystroke into the pane, so the bash side reads the
+        -- fresh file. Best-effort: a write failure logs but still
+        -- opens the picker (with stale data).
+        if workspace and workspace.refresh_all_items_snapshots then
+          local ok, err = pcall(workspace.refresh_all_items_snapshots)
+          if not ok then
+            logger.warn('tab_visibility', 'items-snapshot pre-refresh failed', common.merge_fields(trace_id, {
+              error = tostring(err),
+              workspace = workspace_name,
+            }))
+          end
+        end
         logger.info('tab_visibility', 'forwarding Alt+t to tmux-backed pane', common.merge_fields(trace_id, {
           decision_path = decision_path,
           domain = pane:get_domain_name(),
