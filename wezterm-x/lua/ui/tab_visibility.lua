@@ -456,6 +456,21 @@ function M.visible_list(workspace_name)
   return visible_order(cache)
 end
 
+-- True iff `session_name` is currently in the workspace's top-N
+-- visible set (the membership-only check; ordering is irrelevant).
+-- Used by Workspace.maybe_clear_overflow_collision to decide whether
+-- the overflow pane is still projecting a session that has since been
+-- promoted into a visible tab — that pair would otherwise share a tmux
+-- session and mirror the same output. Empty / unknown workspaces
+-- return false (the same answer their visible_set would give).
+function M.is_in_visible(workspace_name, session_name)
+  if not workspace_name or workspace_name == '' then return false end
+  if not session_name or session_name == '' then return false end
+  local cache = module_state.workspaces[workspace_name]
+  if not cache or type(cache.visible_set) ~= 'table' then return false end
+  return cache.visible_set[session_name] == true
+end
+
 function M.warm_list(workspace_name)
   local cache = module_state.workspaces[workspace_name]
   if not cache then return {} end

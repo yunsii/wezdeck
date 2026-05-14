@@ -354,6 +354,16 @@ function M.register(opts)
       end
       if now_ms then
         tab_visibility.tick(workspace, now_ms)
+        -- Auto-detach the overflow pane when its currently-projected
+        -- session just got promoted into top-N (so the new visible tab
+        -- doesn't end up mirroring the overflow pane's tmux output via
+        -- a shared session). Runs every tick — the call is cheap and
+        -- idempotent, with active-pane protection mirroring the
+        -- preserve_focus prune deferral pattern. See docs/tab-visibility.md.
+        if workspace_module and workspace_module.maybe_clear_overflow_collision then
+          local focused_pane_id = rawget(_G, '__WEZTERM_FOCUSED_PANE_ID')
+          pcall(workspace_module.maybe_clear_overflow_collision, workspace, focused_pane_id)
+        end
         if workspace_module and workspace_module.maybe_hot_reorder
           and tab_visibility.visible_signature
         then
