@@ -53,7 +53,16 @@ internal sealed class HostHelperManager : IDisposable
         // process that died with the previous helper.
         if (!string.IsNullOrWhiteSpace(config.ChromeDebugStatePath))
         {
-            ChromeLivenessWatcher.ReconcileOnStartup(logger, config.ChromeDebugStatePath);
+            // Pass chromePath / userDataDir into reconcile so the re-subscribed
+            // process can also have respawn-watch metadata -- otherwise a
+            // helper restart would lose the auto-respawn detection capability
+            // for the in-flight chrome until the user next pressed Alt+b.
+            var autoStart = config.ChromeDebugAutoStart;
+            ChromeLivenessWatcher.ReconcileOnStartup(
+                logger,
+                config.ChromeDebugStatePath,
+                autoStart?.ChromePath,
+                autoStart?.UserDataDir);
 
             // Auto-start headless chrome so 9222 always has a CDP endpoint
             // for MCP / agent tools, without requiring the user to press
@@ -61,7 +70,6 @@ internal sealed class HostHelperManager : IDisposable
             // user-data-dir is already running (visible or headless), adopt
             // it; otherwise launch with the configured default mode. Never
             // throws -- a missing chrome.exe just logs a warning and skips.
-            var autoStart = config.ChromeDebugAutoStart;
             if (autoStart is { Enabled: true })
             {
                 try

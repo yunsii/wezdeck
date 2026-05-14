@@ -8,27 +8,36 @@ namespace WezTerm.WindowsHostHelper;
 // the right-status segment in wezterm keeps showing "H"/"V" until the user
 // next presses Alt+b.
 //
-// Two layers of detection, by design:
+// Three layers of detection, by design:
 //   1. Process.Exited event subscription. Cheap, immediate, fires whenever
 //      the .NET runtime sees the process die.
 //   2. 5s background polling that re-checks Process.HasExited. Backstop for
 //      cases where the Exited event drops on the floor (process hard-killed
 //      by the OS during shutdown, or the wrapper Process object is collected
 //      before subscription wires up).
+//   3. After (1) or (2) marks state=none, the same 5s poll keeps looking for
+//      a new chrome.exe matching the same port + user-data-dir and adopts it
+//      when one shows up. Without this, a Chrome auto-update (which kills
+//      the current chrome and respawns a new one on the same port) would
+//      leave the badge stuck at "-" until the user pressed Alt+b -- the new
+//      PID is never connected to the original Process.Exited subscription.
 //
 // Process objects are kept alive via the static dictionary -- if they were
 // disposed, the Exited event would never fire because the underlying handle
 // would be released. Dispose only happens inside OnExited / Untrack.
 internal static class ChromeLivenessWatcher
 {
-    private sealed record TrackedProcess(string StateFile, Process Process, int Pid, int Port, bool Headless, string TraceId);
+    private sealed record TrackedProcess(string StateFile, Process Process, int Pid, int Port, bool Headless, string TraceId, string? ChromePath, string? UserDataDir);
+
+    private sealed record RespawnWatchSpec(string StateFile, string ChromePath, int Port, string UserDataDir, string TraceId);
 
     private static readonly Dictionary<string, TrackedProcess> tracked = new();
+    private static readonly Dictionary<string, RespawnWatchSpec> respawnWatchers = new();
     private static readonly object gate = new();
     private static System.Threading.Timer? pollingTimer;
     private static StructuredLogger? sharedLogger;
 
-    public static void Track(StructuredLogger logger, string? stateFile, int pid, int port, bool headless, string traceId)
+    public static void Track(StructuredLogger logger, string? stateFile, int pid, int port, bool headless, string traceId, string? chromePath = null, string? userDataDir = null)
     {
         if (string.IsNullOrWhiteSpace(stateFile))
         {
@@ -86,9 +95,14 @@ internal static class ChromeLivenessWatcher
                 return;
             }
 
-            var entry = new TrackedProcess(stateFile, proc, pid, port, headless, traceId);
+            var entry = new TrackedProcess(stateFile, proc, pid, port, headless, traceId, chromePath, userDataDir);
             proc.Exited += (_, _) => OnExited(entry);
             tracked[stateFile] = entry;
+
+            // We're now actively tracking this stateFile via Process.Exited,
+            // so the respawn-poll watcher (if any pending from a previous
+            // exit) is no longer needed.
+            respawnWatchers.Remove(stateFile);
 
             // Re-check immediately: process may have exited between
             // GetProcessById and the EnableRaisingEvents toggle.
@@ -107,11 +121,12 @@ internal static class ChromeLivenessWatcher
                 ["port"] = port.ToString(),
                 ["headless"] = headless ? "1" : "0",
                 ["state_file"] = stateFile,
+                ["respawn_watch"] = !string.IsNullOrWhiteSpace(chromePath) && !string.IsNullOrWhiteSpace(userDataDir) ? "1" : "0",
             });
         }
     }
 
-    public static void ReconcileOnStartup(StructuredLogger logger, string? stateFile)
+    public static void ReconcileOnStartup(StructuredLogger logger, string? stateFile, string? chromePath = null, string? userDataDir = null)
     {
         if (string.IsNullOrWhiteSpace(stateFile) || !File.Exists(stateFile))
         {
@@ -201,7 +216,7 @@ internal static class ChromeLivenessWatcher
         }
 
         var headless = string.Equals(snapshot.Mode, "headless", StringComparison.OrdinalIgnoreCase);
-        var entry = new TrackedProcess(stateFile, proc, pid, snapshot.Port, headless, "reconcile");
+        var entry = new TrackedProcess(stateFile, proc, pid, snapshot.Port, headless, "reconcile", chromePath, userDataDir);
 
         lock (gate)
         {
@@ -213,6 +228,7 @@ internal static class ChromeLivenessWatcher
             // process that exits during this window cannot lose its callback.
             proc.Exited += (_, _) => OnExited(entry);
             tracked[stateFile] = entry;
+            respawnWatchers.Remove(stateFile);
             if (proc.HasExited)
             {
                 OnExitedLocked(entry, "exited_before_reconcile_subscription");
@@ -266,6 +282,21 @@ internal static class ChromeLivenessWatcher
             ["state_file"] = entry.StateFile,
             ["action"] = action,
         });
+
+        // If we know how to identify a "matching" chrome (port + user-data-dir),
+        // start polling for a respawn so a Chrome auto-update -- which kills
+        // the current chrome and immediately relaunches a new one on the same
+        // port -- gets adopted automatically and the badge stops lying.
+        if (!string.IsNullOrWhiteSpace(entry.ChromePath) && !string.IsNullOrWhiteSpace(entry.UserDataDir))
+        {
+            respawnWatchers[entry.StateFile] = new RespawnWatchSpec(
+                entry.StateFile,
+                entry.ChromePath!,
+                entry.Port,
+                entry.UserDataDir!,
+                entry.TraceId);
+            pollingTimer ??= new System.Threading.Timer(_ => PollTick(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        }
     }
 
     private static void UntrackLocked(TrackedProcess entry)
@@ -278,9 +309,11 @@ internal static class ChromeLivenessWatcher
     {
         // Backstop: detect the rare cases where Process.Exited never fires.
         List<TrackedProcess> snapshot;
+        List<RespawnWatchSpec> respawnSnapshot;
         lock (gate)
         {
             snapshot = tracked.Values.ToList();
+            respawnSnapshot = respawnWatchers.Values.ToList();
         }
 
         foreach (var entry in snapshot)
@@ -307,6 +340,74 @@ internal static class ChromeLivenessWatcher
                     OnExitedLocked(entry, "exited_via_poll");
                 }
             }
+        }
+
+        foreach (var spec in respawnSnapshot)
+        {
+            // Skip if a fresh Track came in between snapshot and now -- the
+            // respawn watcher would already be cleared, so any chrome we'd
+            // adopt is already being tracked via Process.Exited.
+            lock (gate)
+            {
+                if (!respawnWatchers.TryGetValue(spec.StateFile, out var current) || !ReferenceEquals(current, spec))
+                {
+                    continue;
+                }
+            }
+
+            int adoptedPid;
+            bool adoptedHeadless;
+            try
+            {
+                var matchSpec = ChromeRequestHandler.BuildChromeMatchSpec(
+                    spec.ChromePath, spec.Port, spec.UserDataDir,
+                    requireHeadless: null, launchKeySuffix: ":respawn");
+                var pids = WindowQuery.FindMatchingProcessIds(matchSpec);
+                if (pids.Count == 0)
+                {
+                    continue;
+                }
+                adoptedPid = pids[0];
+                var commandLine = ProcessCommandLineReader.TryGetCommandLine(adoptedPid) ?? string.Empty;
+                adoptedHeadless = commandLine.Contains("--headless", StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                sharedLogger?.Warn("chrome", "respawn poll failed", new Dictionary<string, string?>
+                {
+                    ["state_file"] = spec.StateFile,
+                    ["port"] = spec.Port.ToString(),
+                    ["error"] = ex.Message,
+                });
+                continue;
+            }
+
+            var logger = sharedLogger;
+            if (logger is null)
+            {
+                continue;
+            }
+
+            // Drop the watcher under the lock before WriteState/Track so we
+            // don't race against an Alt+b that lands in the same window.
+            lock (gate)
+            {
+                if (!respawnWatchers.TryGetValue(spec.StateFile, out var current) || !ReferenceEquals(current, spec))
+                {
+                    continue;
+                }
+                respawnWatchers.Remove(spec.StateFile);
+            }
+
+            ChromeRequestHandler.WriteState(logger, spec.StateFile, spec.TraceId, adoptedHeadless, spec.Port, adoptedPid, "respawn_adopted");
+            logger.Info("chrome", "respawn poll adopted new chrome", new Dictionary<string, string?>
+            {
+                ["pid"] = adoptedPid.ToString(),
+                ["port"] = spec.Port.ToString(),
+                ["headless"] = adoptedHeadless ? "1" : "0",
+                ["state_file"] = spec.StateFile,
+            });
+            Track(logger, spec.StateFile, adoptedPid, spec.Port, adoptedHeadless, spec.TraceId, spec.ChromePath, spec.UserDataDir);
         }
     }
 }

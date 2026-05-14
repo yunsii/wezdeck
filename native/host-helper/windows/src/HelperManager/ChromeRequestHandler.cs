@@ -22,7 +22,7 @@ internal sealed class ChromeRequestHandler
     // When non-null the spec enforces equality with --headless on the cmdline,
     // which is what FocusOrStart needs so it can distinguish "current mode is
     // already correct" from "stale instance to kill".
-    private static LaunchMatchSpec BuildChromeMatchSpec(
+    internal static LaunchMatchSpec BuildChromeMatchSpec(
         string chromePath,
         int port,
         string userDataDir,
@@ -161,7 +161,7 @@ internal sealed class ChromeRequestHandler
                 ["decision_path"] = reuseDecision.Path,
             });
             WriteState(logger, stateFile, traceId, headless, port, reuseDecision.Window.ProcessId, "reused");
-            ChromeLivenessWatcher.Track(logger, stateFile, reuseDecision.Window.ProcessId, port, headless, traceId);
+            ChromeLivenessWatcher.Track(logger, stateFile, reuseDecision.Window.ProcessId, port, headless, traceId, chromePath, userDataDir);
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
@@ -189,7 +189,7 @@ internal sealed class ChromeRequestHandler
                 ["user_data_dir"] = userDataDir,
             });
             WriteState(logger, stateFile, traceId, headless, port, reusedPid, "reused");
-            ChromeLivenessWatcher.Track(logger, stateFile, reusedPid, port, headless, traceId);
+            ChromeLivenessWatcher.Track(logger, stateFile, reusedPid, port, headless, traceId, chromePath, userDataDir);
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
@@ -249,7 +249,7 @@ internal sealed class ChromeRequestHandler
             WriteState(logger, stateFile, traceId, headless, port, headlessPid, "launched");
             if (headlessPid is int pid)
             {
-                ChromeLivenessWatcher.Track(logger, stateFile, pid, port, headless, traceId);
+                ChromeLivenessWatcher.Track(logger, stateFile, pid, port, headless, traceId, chromePath, userDataDir);
             }
             return new RequestOutcome(
                 Domain: "chrome",
@@ -282,7 +282,7 @@ internal sealed class ChromeRequestHandler
                 ["bound_pid_was_preexisting"] = boundPidWasPreexisting ? "1" : "0",
             });
             WriteState(logger, stateFile, traceId, headless, port, launchedWindow.ProcessId, boundPidWasPreexisting ? "launch_handoff_existing" : "launched");
-            ChromeLivenessWatcher.Track(logger, stateFile, launchedWindow.ProcessId, port, headless, traceId);
+            ChromeLivenessWatcher.Track(logger, stateFile, launchedWindow.ProcessId, port, headless, traceId, chromePath, userDataDir);
             return new RequestOutcome(
                 Domain: "chrome",
                 Action: "focus_or_start",
@@ -390,7 +390,7 @@ internal sealed class ChromeRequestHandler
                 ["user_data_dir"] = userDataDir,
             });
             WriteState(logger, stateFile, traceId, runningHeadless, port, existingPid, "auto_adopted");
-            ChromeLivenessWatcher.Track(logger, stateFile, existingPid, port, runningHeadless, traceId);
+            ChromeLivenessWatcher.Track(logger, stateFile, existingPid, port, runningHeadless, traceId, chromePath, userDataDir);
             return;
         }
 
@@ -457,7 +457,7 @@ internal sealed class ChromeRequestHandler
             ["chrome_path"] = chromePath,
         });
         WriteState(logger, stateFile, traceId, launchHeadless, port, pid, "auto_launched");
-        ChromeLivenessWatcher.Track(logger, stateFile, pid, port, launchHeadless, traceId);
+        ChromeLivenessWatcher.Track(logger, stateFile, pid, port, launchHeadless, traceId, chromePath, userDataDir);
     }
 
     public static void WriteState(StructuredLogger logger, string? stateFile, string traceId, bool headless, int port, int? pid, string action)
