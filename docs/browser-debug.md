@@ -59,6 +59,8 @@ The helper writes the current mode/port/pid/alive to `chrome_debug_browser.state
 
 Liveness detection runs through `ChromeLivenessWatcher`, which subscribes `Process.Exited` plus a 5-second `HasExited` poll fallback, and re-subscribes on helper restart through `ReconcileOnStartup`.
 
+After a tracked Chrome exits, the same 5-second poll keeps looking for a new chrome.exe matching the same port + `user_data_dir` and adopts it if one shows up — Chrome's own auto-update path kills the running chrome and immediately respawns a fresh one on the same port, and without this re-detection the badge would stay at `CDP·-·<port>` until the user pressed `Alt+b`. Adoption uses the same mode-agnostic match spec as `AutoStart`, records the actual mode (headless vs. visible) read from the new process's command line, and re-subscribes `Process.Exited` on the new PID.
+
 ## End-to-end smoke check
 
 ```bash
