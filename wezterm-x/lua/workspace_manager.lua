@@ -476,6 +476,87 @@ function M.new(opts)
     tabs.sync_workspace_tabs(workspace_name, trace_id, items, items, { preserve_focus = true })
   end
 
+  -- Cached actions module for the overflow-collision retarget below.
+  -- Lazy-loaded so workspace_manager doesn't add a hard import edge on
+  -- ui/actions for the common case where no collision ever fires (most
+  -- workspaces never have an overflow promotion); resolved once and
+  -- memoized after that.
+  local cached_actions_mod
+  local function load_actions_mod()
+    if cached_actions_mod ~= nil then return cached_actions_mod end
+    local ok, mod = pcall(load_module, 'ui/actions')
+    cached_actions_mod = (ok and mod) or false
+    return cached_actions_mod
+  end
+
+  -- Auto-detach the overflow pane when its currently-projected session
+  -- has just been promoted into top-N. The hot-reorder path spawns a
+  -- new visible tab via open-project-session.sh, which reuses the
+  -- existing tmux session — at that moment two wezterm panes (the new
+  -- visible tab AND the overflow pane) are both attached to the same
+  -- tmux client, so loading output mirrors. The fix is to retarget the
+  -- overflow pane back to the per-workspace browse session
+  -- (`wezterm_<slug>_overflow`) so the new visible tab owns the session
+  -- alone.
+  --
+  -- Same defer pattern as preserve_focus prune in sync_workspace_tabs:
+  -- when `active_pane_id` matches the overflow pane (user is currently
+  -- looking at it), no-op for this tick — retargeting the user's view
+  -- mid-watch would be jarring. Next update-status tick after the user
+  -- navigates elsewhere will catch the collision and resolve it.
+  --
+  -- Called every update-status tick (cheap: a few map lookups, no
+  -- shell-out unless retarget needed). Idempotent — once retargeted,
+  -- the overflow session matches browse_session and the function
+  -- early-returns.
+  function Workspace.maybe_clear_overflow_collision(workspace_name, active_pane_id)
+    if not workspace_name or workspace_name == '' then return false end
+    if not tab_visibility or type(tab_visibility.is_in_visible) ~= 'function' then
+      return false
+    end
+    local map = rawget(_G, '__WEZTERM_TAB_OVERFLOW') or {}
+    local entry = map[workspace_name]
+    if not entry or not entry.pane_id then return false end
+    local session = entry.session
+    if not session or session == '' then return false end
+    local slug = tab_visibility.workspace_slug(workspace_name)
+    local browse_session = 'wezterm_' .. slug .. '_overflow'
+    if session == browse_session then return false end
+    if not tab_visibility.is_in_visible(workspace_name, session) then
+      return false
+    end
+    -- Active-tab protection — defer when the user is on the overflow pane.
+    if active_pane_id ~= nil
+       and tostring(active_pane_id) == tostring(entry.pane_id) then
+      return false
+    end
+    local actions_mod = load_actions_mod()
+    if not actions_mod or type(actions_mod.tab_overflow_attach_args) ~= 'function' then
+      return false
+    end
+    local trace_id = logger.trace_id('tab_visibility')
+    local args = actions_mod.tab_overflow_attach_args(
+      constants, nil, workspace_name, browse_session, logger, trace_id)
+    if not args then return false end
+    logger.info('tab_visibility', 'overflow collision detected — retargeting to browse', with_trace_id(trace_id, {
+      workspace = workspace_name,
+      promoted_session = session,
+      browse_session = browse_session,
+      overflow_pane_id = entry.pane_id,
+    }))
+    pcall(wezterm.background_child_process, args)
+    -- Mirror the new state into the in-memory maps so subsequent ticks
+    -- early-return on the `session == browse_session` guard, instead of
+    -- racing the background subprocess and firing duplicate retargets.
+    if type(tab_visibility.set_overflow_attach) == 'function' then
+      tab_visibility.set_overflow_attach(workspace_name, browse_session)
+    end
+    if type(tab_visibility.set_pane_session) == 'function' then
+      tab_visibility.set_pane_session(entry.pane_id, browse_session)
+    end
+    return true
+  end
+
   -- Spawn or activate a single configured item by cwd. Used by the Alt+t
   -- overflow picker after the user picks an unspawned session: if the
   -- workspace already has a tab matching the cwd, activate it; otherwise

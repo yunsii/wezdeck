@@ -45,6 +45,40 @@ function M.attention_project_into_overflow_args(constants, pane_ref, workspace, 
   return { 'bash', script_path, workspace, session }
 end
 
+-- Build the wsl.exe / bash argv for scripts/runtime/tab-overflow-attach.sh,
+-- which `tmux switch-client -c <tty> -t <target_session>` the workspace
+-- overflow pane to a different session. Used by
+-- Workspace.maybe_clear_overflow_collision when the brain promotes a
+-- session into top-N and the overflow pane is still projecting it; the
+-- target there is the per-workspace browse session
+-- (`wezterm_<slug>_overflow`) so the overflow tab visibly hands off the
+-- session to its newly-spawned visible tab. Symmetric with
+-- `attention_project_into_overflow_args` — same WSL-wrap rule, same
+-- nil-on-failure contract.
+function M.tab_overflow_attach_args(constants, pane_ref, workspace, target_session, logger, trace_id)
+  local repo_root = constants and constants.repo_root
+  if not repo_root or repo_root == '' then
+    if logger then
+      logger.warn('tab_visibility', 'no repo_root to resolve overflow-attach script', { trace = trace_id })
+    end
+    return nil
+  end
+  local script_path = repo_root .. '/scripts/runtime/tab-overflow-attach.sh'
+  local runtime_mode = (constants and constants.runtime_mode) or 'hybrid-wsl'
+  if runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
+    local distro = common.wsl_distro_from_domain(pane_ref and pane_ref:get_domain_name())
+      or common.wsl_distro_from_domain(constants.default_domain)
+    if not distro then
+      if logger then
+        logger.warn('tab_visibility', 'unable to resolve WSL distro for overflow attach', { trace = trace_id })
+      end
+      return nil
+    end
+    return { 'wsl.exe', '-d', distro, '--', 'bash', script_path, workspace, target_session }
+  end
+  return { 'bash', script_path, workspace, target_session }
+end
+
 function M.attention_jump_args(constants, pane_ref, trailing_args, logger, trace_id)
   local repo_root = constants and constants.repo_root
   if not repo_root or repo_root == '' then

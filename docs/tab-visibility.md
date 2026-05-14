@@ -199,6 +199,53 @@ rerank within the existing top-N doesn't reshuffle positions until the
 next cold-open. That's intentional — we trade theoretical rank order
 for muscle memory on the visible strip.
 
+### Overflow auto-detach when a projected session promotes in
+
+When the user has been viewing a session through the overflow pane
+(via an earlier `Alt+x` pick) and that session accumulates enough
+focus to enter top-N, the hot-reorder path spawns a new visible tab
+for it via `open-project-session.sh`. That script reuses the existing
+tmux session (`tmux has-session` → `tmux attach-session -t <name>`),
+so for a brief window **both wezterm panes — the new visible tab and
+the overflow pane — are tmux clients of the same session**. tmux
+mirrors the display across clients, which surfaces as the new tab's
+loading state being duplicated inside the `…` tab.
+
+`Workspace.maybe_clear_overflow_collision` resolves this on every
+`update-status` tick:
+
+1. Read `_G.__WEZTERM_TAB_OVERFLOW[<workspace>]` for the overflow
+   pane's current target session.
+2. If the target is the per-workspace browse session
+   (`wezterm_<slug>_overflow`), no-op — already at browse.
+3. If `tab_visibility.is_in_visible(<workspace>, <session>)` is false,
+   no-op — overflow is still projecting an out-of-top-N session, which
+   is the steady state and not a collision.
+4. If the focused pane (`_G.__WEZTERM_FOCUSED_PANE_ID`) equals the
+   overflow pane, **defer** — same active-pane protection pattern as
+   `preserve_focus` prune in `sync_workspace_tabs`. Retargeting the
+   user's view mid-watch would be jarring; the next tick after the
+   user navigates away will catch the collision.
+5. Otherwise: invoke `scripts/runtime/tab-overflow-attach.sh
+   <workspace> wezterm_<slug>_overflow` via
+   `wezterm.background_child_process`, then mirror the new (pane →
+   browse_session) edge into `set_overflow_attach` /
+   `set_pane_session` so subsequent ticks early-return on the
+   `session == browse_session` guard.
+
+The shell-out and the new visible tab's `tmux attach-session` are
+parallel but independent — `switch-client -c <overflow_tty>` only
+touches the overflow client, while the new tab opens its own client.
+Either landing order leaves overflow on browse and the visible tab
+attached to the promoted session alone.
+
+The call is idempotent and cheap (a handful of map lookups when no
+collision; a single `background_child_process` when there is one), so
+it runs unconditionally each tick rather than being gated on the
+brain's signature change — the defer branch needs to re-evaluate when
+the user moves focus away from overflow, and signature changes don't
+fire on that.
+
 ### `Alt+x` — single-tab session rotation
 
 `Alt+x` (manifest id `tab.overflow-picker`, wezterm layer, forwarded
@@ -301,7 +348,7 @@ re-shuffle the visible tabs (those are pinned to whatever `Workspace
 | --- | --- | --- |
 | Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, `is_enabled` / `spawn_capped` predicates, workspace slug |
 | Constants | `wezterm-x/lua/constants.lua` | `tab_visibility` config block (visible_count, enabled_workspaces, spawn_visible_only, …) |
-| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (frequency-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh |
+| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (frequency-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh, runs `Workspace.maybe_clear_overflow_collision` each tick so a promoted overflow session hands its tmux client back to the new visible tab |
 | Session-name compute | `scripts/runtime/tmux-worktree/print-session-names.sh` | bulk `cwd → canonical session name` map for the workspace, single subprocess invocation; the lua side uses this to join `workspaces.lua` items against `tab-stats/<slug>.json` ranking |
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
