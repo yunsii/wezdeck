@@ -1325,9 +1325,21 @@ function M.parse_jump_payload(value)
   return nil
 end
 
--- Pick next entry matching `kind` ('waiting' or 'done') whose
--- wezterm_pane_id differs from `current_pane_id`, so repeated Alt+,/Alt+.
+-- Pick next entry matching `kind` ('waiting' or 'done') that is *not*
+-- already at the user's focused position, so repeated Alt+,/Alt+.
 -- presses cycle through other panes. Returns the entry or nil.
+--
+-- "At the user's focused position" is tmux-pane-precise: a single
+-- wezterm pane commonly hosts a whole tmux session whose split panes
+-- have independent focus, so a sibling tmux pane is a valid jump target
+-- even though it shares the user's wezterm_pane_id. The earlier filter
+-- (`entry.wezterm_pane_id == current_pane_id`) treated every entry on
+-- the same wezterm pane as "self" and silently dropped sibling-tmux-
+-- pane candidates: in a primary/secondary tmux split, when the agent
+-- in the other pane finished, Alt+. returned nil and the user could
+-- not navigate to the done badge. Reusing M.is_entry_focused keeps
+-- this filter in lockstep with the renderer's focused-drop and the
+-- focus-ack policy.
 --
 -- Returns nil when the only candidate is the user's current pane: the
 -- user is already there and has nothing left to jump to. Old fallback
@@ -1345,7 +1357,23 @@ function M.pick_next(kind, current_pane_id)
   end)
   local current = current_pane_id and tostring(current_pane_id) or nil
   for _, entry in ipairs(pool) do
-    if not current or tostring(entry.wezterm_pane_id or '') ~= current then
+    local at_current
+    if not current then
+      at_current = false
+    elseif type(entry.tmux_session) == 'string' and entry.tmux_session ~= '' then
+      -- Tmux-backed entry: "current" requires both the focused wezterm
+      -- pane to host this entry's tmux session AND the tmux client's
+      -- active pane to match entry.tmux_pane. is_entry_focused already
+      -- combines both checks; sibling tmux panes correctly fall through
+      -- as not-current.
+      at_current = M.is_entry_focused(entry, current)
+    else
+      -- Legacy / non-tmux entry: no tmux coords to compare, fall back
+      -- to the historical wezterm-pane filter so a no-tmux entry still
+      -- cycles correctly.
+      at_current = (tostring(entry.wezterm_pane_id or '') == current)
+    end
+    if not at_current then
       return entry
     end
   end
