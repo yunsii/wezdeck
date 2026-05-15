@@ -235,6 +235,56 @@ describe('preferred_item_order', function()
     assert_eq(out[3].cwd, '/home/yuns/work/coco-platform')
   end)
 
+  it('items fitting under the cap return declared order regardless of brain rank', function()
+    -- Regression: `config` workspace (3 items, cap 5) accumulated brain
+    -- weight for WSL > wezterm-config, and cold-open spawned in brain
+    -- order — pane 1=WSL, pane 2=wezterm-config — which surprised the
+    -- user who expected items[1]=wezterm-config to win, and silently
+    -- misrouted Alt+. to WSL when the stored wezterm_pane_id was stale.
+    -- The brain rank only matters when items > cap (some items get
+    -- dropped); when every item gets a tab anyway, reordering just
+    -- shuffles pane-id assignment with no UX benefit. Declared order
+    -- wins in that case.
+    local stats_dir = fresh_stats_dir()
+    write_stats(stats_dir, 'config', {
+      ['wezterm_config_WSL_f87ebc5e20']           = { weight = 2.0, raw_count = 9 },
+      ['wezterm_config_wezterm-config_1f5ee8662c'] = { weight = 0.5, raw_count = 2 },
+    })
+    configure(stats_dir, 5)
+    local items = {
+      { cwd = '/home/yuns/github/wezterm-config' },
+      { cwd = '/home/yuns/github/WSL' },
+      { cwd = '/home/yuns/github/rime-config' },
+    }
+    local c2s = {
+      ['/home/yuns/github/wezterm-config'] = 'wezterm_config_wezterm-config_1f5ee8662c',
+      ['/home/yuns/github/WSL']            = 'wezterm_config_WSL_f87ebc5e20',
+      ['/home/yuns/github/rime-config']    = 'wezterm_config_rime-config_1a2823b185',
+    }
+    local out = tab_visibility.preferred_item_order('config', items, c2s, 5)
+    assert_len(out, 3)
+    assert_eq(out[1].cwd, '/home/yuns/github/wezterm-config', 'declared items[1] stays first')
+    assert_eq(out[2].cwd, '/home/yuns/github/WSL')
+    assert_eq(out[3].cwd, '/home/yuns/github/rime-config')
+  end)
+
+  it('items exceeding the cap still use brain rank (uncapped path inactive)', function()
+    -- Confirm the new `#items <= n` shortcut only short-circuits when
+    -- the items actually fit; once items exceed cap, brain rank decides
+    -- the spawn set (and the existing top-N + declared-tail logic).
+    local stats_dir = fresh_stats_dir()
+    write_stats(stats_dir, 'work', {
+      ['wezterm_work_coco-server_ebee3ed55c'] = { weight = 1.0, raw_count = 5 },
+    })
+    configure(stats_dir, 5)
+    local items, c2s = work_fixture()
+    local out = tab_visibility.preferred_item_order('work', items, c2s, 5)
+    assert_len(out, 5)
+    -- coco-server rose to the top via brain rank — this is the
+    -- preserved capped-workspace behavior, not affected by the new gate.
+    assert_eq(out[1].cwd, '/home/yuns/work/coco-server', 'brain rank still wins when capping is needed')
+  end)
+
   it('label fallback ignores ranked entries whose label has no item', function()
     -- Orphan session under same workspace (e.g. ad-hoc bare tmux
     -- session bumped via tab-stats-bump.sh from a cwd not declared
