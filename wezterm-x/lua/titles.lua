@@ -423,6 +423,35 @@ function M.register(opts)
     log_rendered_status(window)
   end)
 
+  -- Track OSC `attention.tick` values we have already processed so the
+  -- file-transport echo handler below can detect a dropped primary tick
+  -- and reload as a fallback. Keyed by stringified `tick_ms`; values are
+  -- the wall-clock arrival ms. Entries older than ECHO_PAIR_WINDOW_MS
+  -- are pruned on every echo so the table cannot grow unbounded across
+  -- long-running sessions.
+  local seen_osc_ticks = {}
+  local ECHO_PAIR_WINDOW_MS = 30000
+
+  local function wall_now_ms()
+    local ok, now_str = pcall(function()
+      return wezterm.time.now():format '%s%3f'
+    end)
+    if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
+      return tonumber(now_str)
+    end
+    return nil
+  end
+
+  local function prune_seen_osc_ticks(now)
+    if not now then return end
+    local cutoff = now - ECHO_PAIR_WINDOW_MS
+    for k, ts in pairs(seen_osc_ticks) do
+      if ts < cutoff then
+        seen_osc_ticks[k] = nil
+      end
+    end
+  end
+
   -- attention.tick handler. Fires when a hook signals that state.json
   -- has changed (currently always via OSC because hooks run in regular
   -- panes; the bus would route the same handler if it ever lands via
@@ -434,6 +463,9 @@ function M.register(opts)
     if meta.window then
       refresh_right_status(meta.window, meta.pane)
       log_rendered_status(meta.window)
+    end
+    if value and value ~= '' then
+      seen_osc_ticks[tostring(value)] = wall_now_ms() or 0
     end
     if logger then
       local latency_ms = nil
@@ -455,32 +487,59 @@ function M.register(opts)
     end
   end)
 
-  -- attention.tick.echo handler. Diagnostic-only sidecar emitted by
+  -- attention.tick.echo handler. File-transport sidecar emitted by
   -- emit-agent-status.sh whenever the primary `attention.tick` picked
-  -- OSC. Carries the same `tick_ms` payload via the file transport, so
-  -- log entries are correlated by `value=`. Intentionally does NOT call
-  -- reload_state / refresh_right_status — the file path's reliability
-  -- would otherwise mask OSC drops that we are trying to detect. Pair
-  -- with `tick received transport=osc value=$ms`: a missing pair means
-  -- the OSC tick was lost between hook tty write and wezterm dispatch.
+  -- OSC, carrying the same `tick_ms` payload. Plays two roles:
+  --
+  --   1. Diagnostic: pair `tick received transport=osc value=$ms`
+  --      against `tick echo received transport=file value=$ms` in
+  --      wezterm.log to spot OSC drops (hook log + echo present + osc
+  --      tick missing = drop on the OSC pipeline).
+  --
+  --   2. Fallback: when the primary OSC tick failed to arrive for
+  --      `value`, this handler calls reload_state + refresh so the
+  --      badge reflects the on-disk state within ~250ms of the hook
+  --      firing, instead of sitting stale until the next unrelated
+  --      tick happens to land. The `osc_dropped=1` field on the echo
+  --      log line marks every fallback path so the diagnostic signal
+  --      survives the behavioral change.
+  --
+  -- Done badges in particular were going invisible: Stop hooks routinely
+  -- lose their OSC tick (claude-cli redraws around the hook fire), so
+  -- the file echo is the only signal that actually reaches lua. Without
+  -- the fallback the badge stays on `running` until the next tick from
+  -- *some other session* drives a reload, by which point focus-ack
+  -- usually archives the entry sub-frame.
   event_bus.on('attention.tick.echo', function(value, meta)
-    if not logger then return end
-    local latency_ms = nil
-    local tick_ms = tonumber(value)
-    if tick_ms then
-      local ok, now_str = pcall(function()
-        return wezterm.time.now():format '%s%3f'
-      end)
-      if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
-        latency_ms = tonumber(now_str) - tick_ms
+    local now = wall_now_ms()
+    prune_seen_osc_ticks(now)
+    local key = (value and value ~= '') and tostring(value) or nil
+    local osc_seen = key and seen_osc_ticks[key] ~= nil
+    if key then
+      seen_osc_ticks[key] = nil
+    end
+    if not osc_seen and attention then
+      if attention.reload_state then attention.reload_state() end
+      if meta.window then
+        refresh_right_status(meta.window, meta.pane)
+        log_rendered_status(meta.window)
       end
     end
-    logger.info('attention', 'tick echo received', {
-      pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
-      value = value,
-      latency_ms = latency_ms,
-      transport = meta.transport,
-    })
+    if logger then
+      local latency_ms = nil
+      local tick_ms = tonumber(value)
+      if tick_ms and now then
+        latency_ms = now - tick_ms
+      end
+      logger.info('attention', 'tick echo received', {
+        pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
+        value = value,
+        latency_ms = latency_ms,
+        transport = meta.transport,
+        osc_dropped = (not osc_seen) and 1 or 0,
+        fallback_reload = (not osc_seen) and 1 or 0,
+      })
+    end
   end)
 
   -- attention.jump handler. Fires on picker-driven jumps, currently

@@ -107,9 +107,32 @@ describe('maybe_ack_focused', function()
   it('still acks done on the focused pane (regression guard)', function()
     reset()
     tab_visibility.set_pane_session(10, 'wezterm_work_a_aaaaaaaaaa')
+    -- ts is set past the visibility floor so this exercises the
+    -- "user has been sitting on the pane long enough to register the
+    -- transition" branch, which is the main path the regression guard
+    -- cares about.
     local now = os.time() * 1000
+    local ts = now - (attention.DONE_VISIBILITY_FLOOR_MS + 500)
     local entries = '{"version":1,"entries":{'
       .. '"d1":{"session_id":"d1","wezterm_pane_id":"10",'
+        .. '"tmux_session":"wezterm_work_a_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@2","tmux_pane":"%5",'
+        .. '"status":"done","ts":' .. tostring(ts) .. ',"reason":"task done"}'
+      .. '}}'
+
+    local recorded = run_focus_ack_with(entries, 10, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%5')
+
+    assert_eq(#recorded, 1, 'done on focused pane was not acked (regression)')
+  end)
+
+  it('defers ack of a fresh done entry under the visibility floor', function()
+    reset()
+    tab_visibility.set_pane_session(10, 'wezterm_work_a_aaaaaaaaaa')
+    -- ts is "right now" → age ≈ 0 ms, well under DONE_VISIBILITY_FLOOR_MS.
+    -- focus-ack must defer so the badge renders before it archives.
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"d_fresh":{"session_id":"d_fresh","wezterm_pane_id":"10",'
         .. '"tmux_session":"wezterm_work_a_aaaaaaaaaa",'
         .. '"tmux_socket":"/tmp/sock","tmux_window":"@2","tmux_pane":"%5",'
         .. '"status":"done","ts":' .. tostring(now) .. ',"reason":"task done"}'
@@ -117,7 +140,26 @@ describe('maybe_ack_focused', function()
 
     local recorded = run_focus_ack_with(entries, 10, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%5')
 
-    assert_eq(#recorded, 1, 'done on focused pane was not acked (regression)')
+    assert_eq(#recorded, 0,
+      'fresh done was acked before the visibility floor; badge would have vanished sub-frame')
+  end)
+
+  it('still acks fresh waiting (floor only applies to done)', function()
+    reset()
+    tab_visibility.set_pane_session(10, 'wezterm_work_a_aaaaaaaaaa')
+    -- waiting is an action item, not a knowledge signal — no floor.
+    -- Reusing the "fresh" ts confirms the gate is status-specific.
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"w_fresh":{"session_id":"w_fresh","wezterm_pane_id":"10",'
+        .. '"tmux_session":"wezterm_work_a_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@2","tmux_pane":"%5",'
+        .. '"status":"waiting","ts":' .. tostring(now) .. ',"reason":"approve change"}'
+      .. '}}'
+
+    local recorded = run_focus_ack_with(entries, 10, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%5')
+
+    assert_eq(#recorded, 1, 'fresh waiting on focused pane was not acked (floor leaked across statuses)')
   end)
 
   it('does NOT ack running on the focused pane (informational)', function()

@@ -43,6 +43,15 @@ M.LIVE_SNAPSHOT_INTERVAL_MS = 1000
 -- script still protects against wiping a fresher entry (same session_id,
 -- new ts) landed in the ~50ms subprocess window.
 M.FOCUS_ACK_DELAY_SECONDS = 0
+-- Minimum on-screen lifetime for a `done` badge before focus-ack is
+-- allowed to archive it. Without this floor, the badge can vanish within
+-- one update-status tick of the done landing — the user (already focused
+-- on the pane) never registers the transition and the entry slides
+-- straight into recent[]. 1500ms gives the eye a stable target while
+-- still feeling snappy. `waiting` is exempt: it is an action item, not a
+-- knowledge signal, and the user almost always sits on the pane through
+-- the prompt → answer cycle, so a floor would just delay the inevitable.
+M.DONE_VISIBILITY_FLOOR_MS = 1500
 
 local state_path = nil
 local state_cache = { entries = {} }
@@ -1568,7 +1577,23 @@ function M.maybe_ack_focused(window, pane)
       -- doing something") and the user wants the counter even on the
       -- focused pane. Stuck-running cleanup is handled by the hook
       -- focus-skip path on the next done/waiting transition.
-      if (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
+      --
+      -- `done` is gated by DONE_VISIBILITY_FLOOR_MS: when the entry has
+      -- been `done` for less than the floor, defer the ack to a later
+      -- tick so the badge actually renders long enough for the user to
+      -- see "task done" before it slides into recent[]. Without the
+      -- floor, a hook→reload→ack chain that lands inside one
+      -- update-status tick (especially via the attention.tick.echo
+      -- fallback after an OSC drop) drops the counter sub-frame.
+      local floor_ok = true
+      if entry.status == M.STATUS_DONE then
+        local age_ms = now - (tonumber(entry.ts) or now)
+        if age_ms < M.DONE_VISIBILITY_FLOOR_MS then
+          floor_ok = false
+        end
+      end
+      if floor_ok
+        and (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
         and M.is_entry_focused(entry, pane_id_str) then
         local ts = entry.ts
         if ts ~= nil and focus_ack_scheduled[sid] ~= ts then

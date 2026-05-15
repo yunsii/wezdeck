@@ -84,10 +84,17 @@ M.mux = {
 }
 
 -- ── Time / serde / json — production code uses the pcall-wrapped paths
+-- Production format string is '%s%3f' (epoch seconds + 3-digit ms
+-- fraction). The mock collapses that to "<seconds>000" so callers like
+-- now_ms() get a millisecond-precision integer that lines up with
+-- test-side `os.time() * 1000` math; the previous "<seconds>" return
+-- left now_ms three orders of magnitude smaller than entry.ts and broke
+-- any age comparison that wasn't a TTL-style "huge negative is fine"
+-- tolerance check.
 M.time = {
   now = function()
     return setmetatable({}, {
-      __index = function() return function() return tostring(os.time()) end end,
+      __index = function() return function() return tostring(os.time() * 1000) end end,
     })
   end,
 }

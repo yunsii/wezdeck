@@ -201,23 +201,33 @@ accumulate forever.
 | name | producer | consumer | typical transport | latency |
 |---|---|---|---|---|
 | `attention.tick` | `scripts/claude-hooks/emit-agent-status.sh` (Claude hooks) | `titles.lua` (refresh right-status counter) | OSC (hook runs in regular pane) | sub-frame |
-| `attention.tick.echo` | `scripts/claude-hooks/emit-agent-status.sh` (sidecar to every OSC `attention.tick`) | `titles.lua` (log only — no `reload_state`) | file (forced unconditionally) | 0–250 ms |
+| `attention.tick.echo` | `scripts/claude-hooks/emit-agent-status.sh` (sidecar to every OSC `attention.tick`) | `titles.lua` (log + fallback `reload_state` when the paired OSC tick is missing) | file (forced unconditionally) | 0–250 ms |
 | `attention.jump` | `native/picker/cmd_attention.go` + `scripts/runtime/tmux-attention-picker.sh` (Alt+/ picker selection) | `titles.lua` (mux activate + spawn `attention-jump.sh --direct`) | file (forced via `WEZTERM_EVENT_FORCE_FILE=1`) | 0–250 ms |
 
-`attention.tick.echo` is **diagnostic-only**. The hook emits it via
-`wezterm_event_send_file` whenever the primary `attention.tick` picked
-OSC, carrying the same `tick_ms` payload. The Lua handler logs receipt
-but intentionally does not call `reload_state` or repaint, so a dropped
-OSC tick still produces the user-visible "stale right-status / Alt+/
-picker" symptom — the file path's reliability would otherwise mask it.
-Pair `tick received transport=osc value=$ms` against `tick echo
-received transport=file value=$ms` in `wezterm.log` (both keyed by the
-same `tick_ms`) to spot a lost OSC tick: hook log present + echo
-received + tick missing means the loss is on the OSC pipeline (hook
-tty write → tmux DCS pass-through → wezterm user-var dispatch). Once
-root cause is understood and fixed, the echo can be retired by
-removing both the `wezterm_event_send_file "attention.tick.echo"` call
-in `emit-agent-status.sh` and the `event_bus.on('attention.tick.echo',
+`attention.tick.echo` is the **OSC-drop fallback + drop detector**. The
+hook emits it via `wezterm_event_send_file` whenever the primary
+`attention.tick` picked OSC, carrying the same `tick_ms` payload. The
+Lua handler always logs receipt, and additionally calls `reload_state`
++ `refresh_right_status` when the corresponding OSC `tick_ms` was *not*
+seen within the last ~30s — without this fallback, dropped OSC ticks
+left the badge stuck on `running` until some unrelated session's next
+tick happened to land.
+
+Stop hooks in particular drop their OSC ticks reliably (claude-cli's
+end-of-turn redraw appears to swallow the DCS sequence), so the echo
+is the only signal that actually reaches Lua for most `done`
+transitions.
+
+Diagnostic signal: pair `tick received transport=osc value=$ms` against
+`tick echo received transport=file value=$ms` in `wezterm.log` (both
+keyed by the same `tick_ms`) to spot a lost OSC tick. Hook log present
++ echo received + tick missing means the loss is on the OSC pipeline
+(hook tty write → tmux DCS pass-through → wezterm user-var dispatch);
+the echo log line carries `osc_dropped=1 fallback_reload=1` on every
+drop so the signal survives the new always-reload behavior. Once the
+underlying root cause is fixed, the echo can be retired by removing
+both the `wezterm_event_send_file "attention.tick.echo"` call in
+`emit-agent-status.sh` and the `event_bus.on('attention.tick.echo',
 ...)` registration in `titles.lua`.
 
 ### Migration candidates
@@ -271,8 +281,10 @@ mechanism explicitly.
   - bash picker: `attention "event-bus dispatched" transport=...`
 - Consumer side logs to `wezterm.log`:
   - `attention "tick received" transport=osc latency_ms=... value=$ms`
-  - `attention "tick echo received" transport=file latency_ms=... value=$ms`
-    (sidecar; pair with `tick received` by matching `value=`).
+  - `attention "tick echo received" transport=file latency_ms=... value=$ms osc_dropped=0|1 fallback_reload=0|1`
+    (sidecar; pair with `tick received` by matching `value=`.
+    `osc_dropped=1` flags a missing primary OSC tick — that path also
+    triggered a fallback reload so the badge stays current).
   - `attention "jump dispatched" transport=file activated=...`
   - `event_bus "event with no handler" name=... transport=...` when an
     event arrives that no module subscribed to.
