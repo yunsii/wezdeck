@@ -1190,20 +1190,28 @@ end
 -- Activate the wezterm pane that owns the picked entry, in a fixed
 -- precedence order:
 --   1. The entry's stored wezterm_pane_id, IF that pane is still alive
---      in the live mux. The producer wrote this id as the authoritative
---      target — when it resolves, prefer it over any inference.
+--      AND the unified pane→session map confirms it still hosts
+--      tmux_session_hint. "Alive" alone is not enough: a wezterm pane
+--      id is mux-global and monotonic, but the hook reads $WEZTERM_PANE
+--      from a long-lived tmux server's env (captured at server spawn
+--      and never refreshed), so after a workspace close+reopen — whose
+--      cold-open spawns by brain rank, not declared items order — the
+--      stored id can point at an alive but unrelated pane (e.g. WSL
+--      tab when the entry belongs to wezterm-config). Cross-check the
+--      hint via session_for_pane the same way M.is_entry_focused does
+--      on the render side; a mismatch is treated as stale.
 --   2. Reverse-lookup the entry's tmux_session in the unified pane→
---      session map. Used when (1) is stale, e.g. a wezterm restart
---      bumped pane ids while tmux survived. The reverse lookup picks
---      ANY wezterm pane currently attached to that session — fine when
---      only one pane attaches it, but ambiguous when the same session
---      is attached by multiple wezterm panes. In this repo's split-
---      pane layout the main shell pane and the agent pane both attach
---      a single tmux session and just display different tmux panes,
---      so historically reverse-lookup would silently misroute Alt+. /
---      Alt+, jumps to the wrong wezterm pane (typically the leftmost
---      main shell pane). Doing reverse-lookup AFTER step (1) keeps
---      stale-id recovery working without overruling a live id.
+--      session map. Used when (1) is stale (dead pane OR alive-but-
+--      misrouted). The reverse lookup picks ANY wezterm pane currently
+--      attached to that session — fine when only one pane attaches it,
+--      but ambiguous when the same session is attached by multiple
+--      wezterm panes. In this repo's split-pane layout the main shell
+--      pane and the agent pane both attach a single tmux session and
+--      just display different tmux panes, so historically reverse-
+--      lookup would silently misroute Alt+. / Alt+, jumps to the wrong
+--      wezterm pane (typically the leftmost main shell pane). Doing
+--      reverse-lookup AFTER step (1) keeps stale-id recovery working
+--      without overruling a live id that still hosts the session.
 --   3. Project the entry into the workspace's overflow tab — same
 --      effect as the user picking it via Alt+t. Used when no live
 --      wezterm pane hosts the session anywhere; spawns the bash
@@ -1213,7 +1221,14 @@ function M.activate_in_gui(pane_id_value, window, source_pane, opts)
   local tmux_session_hint = opts and opts.tmux_session or nil
 
   if pane_id_value ~= nil and pane_id_value ~= '' then
-    if try_activate_pane(tostring(pane_id_value), window, source_pane) then
+    local trust_stored = true
+    if tmux_session_hint and tmux_session_hint ~= '' then
+      local hosted = pane_hosted_session(tostring(pane_id_value))
+      if hosted and hosted ~= tmux_session_hint then
+        trust_stored = false
+      end
+    end
+    if trust_stored and try_activate_pane(tostring(pane_id_value), window, source_pane) then
       return true
     end
   end
