@@ -542,6 +542,22 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
   if type(items) ~= 'table' or #items == 0 then return {} end
   n = tonumber(n) or module_state.visible_count or DEFAULTS.visible_count
 
+  -- Workspaces whose full item list fits under the cap have nothing to
+  -- drop, so brain-rank reordering only shuffles spawn / display order
+  -- without changing the spawn set. Skip the rerank and keep declared
+  -- order so workspaces.lua items[1] is always the leftmost tab and
+  -- gets the lowest pane id at cold-open. Matters because wezterm pane
+  -- ids are sticky for the wezterm process's lifetime, and a brain-
+  -- ranked cold-open writes a pane-id layout that diverges from the
+  -- author's mental model for the rest of the session (this caused the
+  -- "Alt+. on wezterm-config done lands on WSL tab" bug when `config`
+  -- workspace's brain happened to rank WSL ahead of wezterm-config).
+  if #items <= n then
+    local out = {}
+    for _, item in ipairs(items) do out[#out + 1] = item end
+    return out
+  end
+
   -- Force a recompute for this workspace, ignoring the per-workspace
   -- throttle by zeroing last_recompute_ms first. `Workspace.open` is a
   -- low-frequency event (Alt+w / cold open) so a synchronous JSON
