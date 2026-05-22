@@ -109,8 +109,8 @@ stateDiagram-v2
 
   state "Ctrl+k g r checks" as RC {
     [*] --> RefuseDirty: dirty / untracked → use --force
-    [*] --> RefuseUnmerged: branch not merged into primary HEAD
-    [*] --> Allow: clean + merged → close window, prune
+    [*] --> RefuseUndelivered: branch not merged into origin/HEAD<br/>AND not pushed (or local ahead of origin/&lt;branch&gt;)
+    [*] --> Allow: clean + (merged OR pushed-in-sync) → close window, prune
   }
 ```
 
@@ -126,7 +126,7 @@ The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fe
 
 ### Reclaim safety
 
-`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
+`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
 
 ## File Ownership
 
