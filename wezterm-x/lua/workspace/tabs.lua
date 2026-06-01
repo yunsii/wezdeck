@@ -522,11 +522,94 @@ exec tmux attach -t "$session"
       end
     end
 
-    -- Restore the originally-active tab. spawn_workspace_tab can
-    -- activate the freshly-spawned tab as a side effect on some
-    -- wezterm builds; this is a cheap no-op when focus already sits
-    -- on the protected tab.
-    if opts.preserve_focus and protected_tab_id then
+    -- Overflow → visible-tab handoff. When the protected tab is the
+    -- overflow placeholder AND the session it is currently hosting was
+    -- just promoted into top-N (so we spawned a real visible tab for
+    -- it in the loop above), the user's focus should follow the
+    -- session into its new permanent home — not stick to the now-
+    -- redundant overflow slot. Without this branch the user observes:
+    --   1. their session graduates from `…` into a proper tab (good)
+    --   2. focus stays on `…` where the session is now redundantly
+    --      mirrored via the shared tmux client (bad)
+    --   3. overflow stays mirrored until they manually navigate away,
+    --      because maybe_clear_overflow_collision defers when overflow
+    --      is the active pane.
+    -- Picking up the new visible tab here breaks the defer cycle on
+    -- the very next tick — collision-clear fires, retargets overflow
+    -- to browse, and the user sees a clean strip with focus where
+    -- their work is.
+    local handoff_target_tab
+    if opts.preserve_focus and protected_tab_id and opts.cwd_to_session then
+      local protected_info
+      for _, info in ipairs(target_window:tabs_with_info()) do
+        if type(info.tab.tab_id) == 'function' then
+          local ok, id = pcall(function() return info.tab:tab_id() end)
+          if ok and id == protected_tab_id then
+            protected_info = info
+            break
+          end
+        end
+      end
+      if protected_info and is_overflow_tab(protected_info.tab) then
+        local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR') or ''
+        local tv_path = runtime_dir .. '/lua/ui/tab_visibility.lua'
+        local ok_tv, tv = pcall(dofile, tv_path)
+        if ok_tv and tv and type(tv.session_for_pane) == 'function' then
+          local overflow_pane_id
+          local ok_pane, ap = pcall(function() return protected_info.tab:active_pane() end)
+          if ok_pane and ap and type(ap.pane_id) == 'function' then
+            pcall(function() overflow_pane_id = ap:pane_id() end)
+          end
+          local overflow_session
+          if overflow_pane_id then
+            overflow_session = tv.session_for_pane(overflow_pane_id)
+          end
+          local browse_session
+          if type(tv.workspace_slug) == 'function' then
+            browse_session = 'wezterm_' .. tv.workspace_slug(name) .. '_overflow'
+          end
+          if overflow_session and overflow_session ~= ''
+             and overflow_session ~= browse_session then
+            -- Reverse-lookup: find the desired_item whose canonical
+            -- session matches overflow's hosted session, then find
+            -- the visible tab for that item.
+            local target_cwd
+            for cwd, sess in pairs(opts.cwd_to_session) do
+              if sess == overflow_session then
+                target_cwd = cwd
+                break
+              end
+            end
+            if target_cwd then
+              for _, item in ipairs(desired_items) do
+                if item.cwd == target_cwd then
+                  for _, info in ipairs(target_window:tabs_with_info()) do
+                    if not is_overflow_tab(info.tab)
+                       and tab_matches_item(info.tab, item) then
+                      handoff_target_tab = info.tab
+                      break
+                    end
+                  end
+                  break
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    if handoff_target_tab then
+      logger.info('workspace', 'overflow handoff: activating new visible tab', with_trace_id(trace_id, {
+        workspace = name,
+        protected_tab_id = protected_tab_id,
+      }))
+      pcall(function() handoff_target_tab:activate() end)
+    elseif opts.preserve_focus and protected_tab_id then
+      -- Restore the originally-active tab. spawn_workspace_tab can
+      -- activate the freshly-spawned tab as a side effect on some
+      -- wezterm builds; this is a cheap no-op when focus already sits
+      -- on the protected tab.
       for _, info in ipairs(target_window:tabs_with_info()) do
         if type(info.tab.tab_id) == 'function' then
           local ok, id = pcall(function() return info.tab:tab_id() end)

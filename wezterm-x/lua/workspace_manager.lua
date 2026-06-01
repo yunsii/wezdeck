@@ -128,15 +128,21 @@ function M.new(opts)
   -- cap, no overflow tab, every item gets a wezterm tab in declared
   -- order. Reordering an uncapped list would visually shuffle every
   -- existing tab on hot Alt+w; see Phase 2b for that work.
+  -- Returns (capped_items, cwd_to_session_map). The map is the same one
+  -- preferred_item_order consumes, hoisted into the return so callers
+  -- that need the canonical session for an item (overflow handoff
+  -- detection in sync_workspace_tabs) can reuse it without re-shelling.
+  -- Callers that don't need it just drop the extra return.
   local function maybe_cap_items(workspace_name, items, trace_id)
     if not tab_visibility or not tab_visibility.spawn_capped(workspace_name) then
-      return items
+      return items, {}
     end
     local cfg = tab_visibility.config and tab_visibility.config() or {}
     local cap = tonumber(cfg.visible_count) or 5
-    if #items == 0 then return items end
+    if #items == 0 then return items, {} end
     local cwd_to_session = compute_cwd_to_session(workspace_name, items, trace_id)
-    return tab_visibility.preferred_item_order(workspace_name, items, cwd_to_session, cap)
+    local capped = tab_visibility.preferred_item_order(workspace_name, items, cwd_to_session, cap)
+    return capped, cwd_to_session
   end
 
   -- Whether the workspace needs the overflow placeholder tab. Only true
@@ -311,7 +317,7 @@ function M.new(opts)
     -- Workspace.refresh_all_items_snapshots so edits to
     -- workspaces.lua surface in the picker without forcing a cold
     -- reopen. Hot Alt+w stays at the pre-snapshot latency.
-    local items = maybe_cap_items(name, raw_items, trace_id)
+    local items, cwd_to_session = maybe_cap_items(name, raw_items, trace_id)
     if #items < #raw_items then
       logger.info('workspace', 'capped startup items by tab_visibility', with_trace_id(trace_id, {
         workspace = name,
@@ -365,7 +371,10 @@ function M.new(opts)
       -- workspace with no cap doesn't suddenly start losing tabs.
       local capped = tab_visibility and tab_visibility.spawn_capped(name)
       local prune_keep = capped and items or raw_items
-      local sync_opts = capped and { preserve_focus = true } or nil
+      local sync_opts = capped and {
+        preserve_focus = true,
+        cwd_to_session = cwd_to_session,
+      } or nil
       tabs.sync_workspace_tabs(name, trace_id, items, prune_keep, sync_opts)
       -- Self-heal the overflow placeholder. Two directions:
       --   - missing + needed → respawn (user closed it, refresh-session
@@ -466,14 +475,17 @@ function M.new(opts)
     local trace_id = logger.trace_id('workspace')
     local raw_items = runtime.workspace_items(workspace_name)
     if not raw_items or #raw_items == 0 then return end
-    local items = maybe_cap_items(workspace_name, raw_items, trace_id)
+    local items, cwd_to_session = maybe_cap_items(workspace_name, raw_items, trace_id)
     if not items or #items == 0 then return end
 
     logger.info('workspace', 'live hot reorder triggered', with_trace_id(trace_id, {
       workspace = workspace_name,
       desired_count = #items,
     }))
-    tabs.sync_workspace_tabs(workspace_name, trace_id, items, items, { preserve_focus = true })
+    tabs.sync_workspace_tabs(workspace_name, trace_id, items, items, {
+      preserve_focus = true,
+      cwd_to_session = cwd_to_session,
+    })
   end
 
   -- Cached actions module for the overflow-collision retarget below.
