@@ -18,25 +18,56 @@ workspace name once the module is configured.
 
 ## Data flow — focus statistics
 
+Each switch produces an **entry/leave pair** through the same script.
+Weight is paid only on leave, scaled by dwell — so a glance costs zero
+and a real work burst costs full credit:
+
 ```
-tmux client lands on session X (workspace W)
-  └─ session-changed / client-attached hook
-     └─ scripts/runtime/tab-stats-bump.sh "X"
-        └─ resolves W from `tmux show-options -v -t X @wezterm_workspace`
-           (set by open-project-session.sh; "default" when missing)
-        └─ scripts/runtime/tab-stats-lib.sh tab_stats_bump W X
-           └─ jq pipeline (single fork):
-              1. decay every session weight by exp(-Δt_ms / half_life_ms * ln2)
-              2. set last_bump_ms = now for every session
-              3. on the bumped session: weight += 1, raw_count += 1
-              4. normalize so max(weight) == 1.0
-           └─ atomic tmp + rename into
-              %LOCALAPPDATA%\wezterm-runtime\state\tab-stats\<workspace>.json
+tmux client C switches from session A to session B (workspace W)
+  └─ client-session-changed / client-attached hook
+     └─ scripts/runtime/tab-stats-bump.sh "B" "/dev/pts/N"
+        ├─ read enter-state for /dev/pts/N (if present): "A, W_A, enter_ms"
+        │   └─ same session → noop (duplicate hook fire, preserve enter_ms)
+        │   └─ different session → tab_stats_close_out W_A A (now-enter_ms)
+        │       └─ tab_stats_dwell_to_weight(dwell_ms):
+        │           dwell  <  1s  → weight_delta = 0       (path-through filtered)
+        │           dwell  ≥ 30s  → weight_delta = 1.0     (saturated)
+        │           otherwise     → linear interpolation
+        │       └─ if delta > 0: __tab_stats_write_delta(W_A, A, delta, 0)
+        ├─ resolve W (from B's @wezterm_workspace tmux option)
+        ├─ tab_stats_bump W B
+        │   └─ __tab_stats_write_delta(W, B, 0, 1)   (raw_count++ only, no weight)
+        └─ write enter-state for /dev/pts/N: "B, W, now_ms"
 ```
 
-Throttle: bumps for the same session within 500 ms collapse to one.
-Lock: per-file `flock -x 9` so concurrent hooks (e.g. attach + immediate
-session-changed) serialize without losing bumps.
+The shared `__tab_stats_write_delta` jq pipeline does, atomically per
+workspace file:
+
+1. decay every session weight by `exp(-Δt_ms / half_life_ms * ln2)`
+2. set `last_bump_ms = now` for every session
+3. on the target session: `weight += $weight_delta`, `raw_count += $raw_delta`
+4. normalize so `max(weight) == 1.0`
+5. atomic tmp + rename into
+   `%LOCALAPPDATA%\wezterm-runtime\state\tab-stats\<workspace>.json`
+
+Throttle: bumps for the same session within 500 ms collapse to one
+(entry-state file is also preserved so the dwell isn't reset). Lock:
+per-file `flock -x 9` so concurrent hooks serialize without losing
+writes.
+
+Per-client enter state lives under
+`%LOCALAPPDATA%\wezterm-runtime\state\tab-stats-enter\<client_slug>.txt`,
+one file per tmux client (`client_tty` → slug `pts_N`). Format:
+`<session>\t<workspace>\t<enter_ms>`. The workspace field lets close-out
+attribute weight correctly even if the prior session has since been
+killed (we can no longer ask tmux for its @wezterm_workspace).
+
+**Why this split**: the previous design paid `weight += 1` on entry
+and normalized — that meant a single Alt+x peek at a cold session
+landed it at weight 1.0 alongside the most-used session and instantly
+promoted it into top-N. Splitting entry (raw_count only) from leave
+(dwell-weighted weight) makes the rank reflect actual use time, not
+access count, so the picker no longer rewards path-throughs.
 
 ## State schema
 
@@ -198,6 +229,23 @@ internal order can drift from `desired_items`'s weight-desc order — the
 rerank within the existing top-N doesn't reshuffle positions until the
 next cold-open. That's intentional — we trade theoretical rank order
 for muscle memory on the visible strip.
+
+**Overflow → visible-tab handoff.** When the protected tab IS the
+overflow tab and overflow is hosting a session that just got promoted
+into top-N (i.e. the same session that the spawn loop just created a
+proper visible tab for), focus is handed to the new visible tab
+instead of being restored to overflow. Rationale: the user was
+watching `platform-core-tech-weekly` via overflow projection; the
+session graduated to its own permanent tab; their attention should
+follow the *session*, not the now-redundant rotating slot. The
+caller passes `opts.cwd_to_session` (already computed in
+`maybe_cap_items` for ranking) into `sync_workspace_tabs`, which
+reverse-looks up the overflow's hosted session, finds the matching
+desired item, then matches it to a visible tab via `tab_matches_item`.
+Without this branch the user would see their session move into a new
+tab but their cursor stay glued to `…`, and `maybe_clear_overflow_
+collision` would defer indefinitely (active-pane protection) until
+they manually navigated away.
 
 ### Overflow auto-detach when a projected session promotes in
 

@@ -40,6 +40,15 @@ TAB_STATS_MS_PER_DAY=86400000
 # fire several times per second when a tmux client churns; we only want
 # a single weight-event per real focus burst.
 TAB_STATS_THROTTLE_MS=500
+# Dwell-to-weight curve for tab_stats_close_out. The entry event
+# (`tab_stats_bump`) only increments raw_count — the weight delta is
+# paid on LEAVE, scaled by how long the session was the active focus.
+# This filters "Alt+x → glance → Esc" path-throughs (sub-second dwell
+# gives weight 0) from real work bursts (≥SATURATION s gives full 1.0).
+# Anything in between scales linearly so a half-minute task still
+# accumulates a meaningful fraction.
+TAB_STATS_DWELL_DEAD_ZONE_MS=1000
+TAB_STATS_DWELL_SATURATION_MS=30000
 
 __TAB_STATS_DIR_CACHED=""
 
@@ -55,6 +64,29 @@ tab_stats_dir() {
     __TAB_STATS_DIR_CACHED="$state_root/state/tab-stats"
   fi
   printf '%s' "$__TAB_STATS_DIR_CACHED"
+}
+
+# Per-client enter-state directory. Each tmux client tracks the session
+# it most recently entered + the timestamp so the next bump (a switch
+# to a different session) can close out the previous one with the
+# correct dwell. Sibling of tab-stats/ under <state>/.
+tab_stats_enter_dir() {
+  printf '%s' "$(tab_stats_dir)/../tab-stats-enter"
+}
+
+# tmux exposes a client identity as `client_tty` (e.g. /dev/pts/3).
+# Slug it into a safe filename: drop /dev/, rewrite any other
+# non-alnum into _. Per-client (not per-session) because dwell
+# semantics belong to the client doing the switching, not to the
+# session being switched to.
+tab_stats_client_slug() {
+  local tty="${1:-}"
+  if [[ -z "$tty" ]]; then
+    printf '%s' '_unknown'
+    return 0
+  fi
+  printf '%s' "$tty" \
+    | LC_ALL=C sed -e 's|^/dev/||' -e 's|[^a-zA-Z0-9_-]|_|g'
 }
 
 # Sanitize workspace string into a safe filename (lowercase, alnum + dash
@@ -125,11 +157,14 @@ tab_stats_write() {
 # Single jq pipeline that:
 #   1. decays every session's weight by exp(-Δt_ms / half_life_ms * ln2)
 #   2. updates each session's last_bump_ms = now
-#   3. on the bumped session: weight += 1, raw_count += 1
+#   3. on the target session: weight += $weight_delta, raw_count += $raw_delta
 #   4. normalizes weights so the max is exactly 1.0 (no-op if max == 0)
 #
-# Pure jq function so the bump path is one fork per call.
-__TAB_STATS_BUMP_JQ='
+# Both tab_stats_bump (entry: weight_delta=0, raw_delta=1) and
+# tab_stats_close_out (leave: weight_delta=f(dwell), raw_delta=0) flow
+# through this same pipeline so reads always see a freshly-decayed,
+# freshly-normalized snapshot regardless of which event source wrote it.
+__TAB_STATS_WRITE_JQ='
   def half_life_ms($d): ($d * 86400000);
   def decay($w; $age_ms; $half_ms):
     if $half_ms <= 0 then $w
@@ -138,6 +173,8 @@ __TAB_STATS_BUMP_JQ='
     end;
   ($now | tonumber) as $now
   | ($session | tostring) as $session
+  | ($weight_delta | tonumber) as $weight_delta
+  | ($raw_delta | tonumber) as $raw_delta
   | (.half_life_days // 7) as $hld
   | half_life_ms($hld) as $half_ms
   | (.sessions // {}) as $existing
@@ -159,25 +196,51 @@ __TAB_STATS_BUMP_JQ='
   | ($decayed[$session] // { weight: 0, last_bump_ms: $now, raw_count: 0 }) as $cur
   | $decayed
   | .[$session] = {
-      weight:       (($cur.weight // 0) + 1),
+      weight:       (($cur.weight // 0) + $weight_delta),
       last_bump_ms: $now,
-      raw_count:    (($cur.raw_count // 0) + 1)
+      raw_count:    (($cur.raw_count // 0) + $raw_delta)
     }
-  | . as $bumped
-  | ([$bumped[].weight // 0] | max) as $max
+  | . as $written
+  | ([$written[].weight // 0] | max) as $max
   | (if $max > 0 then
-       ($bumped | with_entries(.value.weight = (.value.weight / $max)))
-     else $bumped
+       ($written | with_entries(.value.weight = (.value.weight / $max)))
+     else $written
      end) as $normed
   | { version: 1, half_life_days: $hld, sessions: $normed }
 '
 
-# Returns 0 (skipped due to throttle) or 0 (bumped). Caller does not need
-# to distinguish — the throttle is silent.
+# Internal: apply $weight_delta + $raw_delta to <session> under the
+# workspace's lock. Callers compute the deltas; this just runs the
+# pipeline atomically.
+__tab_stats_write_delta() {
+  local workspace="$1" session_name="$2" weight_delta="$3" raw_delta="$4"
+  local now current updated lock
+  now="$(tab_stats_now_ms)"
+  tab_stats_init "$workspace"
+  lock="$(tab_stats_lock_path "$workspace")"
+  (
+    flock -x 9
+    current="$(tab_stats_read "$workspace")"
+    updated="$(printf '%s' "$current" \
+      | jq --arg session "$session_name" --arg now "$now" \
+           --arg weight_delta "$weight_delta" --arg raw_delta "$raw_delta" \
+           "$__TAB_STATS_WRITE_JQ" 2>/dev/null)"
+    if [[ -z "$updated" ]]; then
+      return 0
+    fi
+    tab_stats_write "$workspace" "$updated"
+  ) 9>>"$lock"
+}
+
+# Entry signal. Increments raw_count (the lifetime "I saw this session
+# take focus" counter) but contributes NO weight on its own — the
+# weight is paid on leave by tab_stats_close_out, scaled by dwell.
+# Returns 0 always; throttled re-fires within TAB_STATS_THROTTLE_MS are
+# silently skipped.
 tab_stats_bump() {
   local workspace="${1:?missing workspace}"
   local session_name="${2:?missing session_name}"
-  local now last_ms current updated lock
+  local now last_ms current lock
   now="$(tab_stats_now_ms)"
   tab_stats_init "$workspace"
   lock="$(tab_stats_lock_path "$workspace")"
@@ -190,14 +253,45 @@ tab_stats_bump() {
     if (( last_ms > 0 )) && (( now - last_ms < TAB_STATS_THROTTLE_MS )); then
       return 0
     fi
-    updated="$(printf '%s' "$current" \
-      | jq --arg session "$session_name" --arg now "$now" \
-           "$__TAB_STATS_BUMP_JQ" 2>/dev/null)"
-    if [[ -z "$updated" ]]; then
-      return 0
-    fi
-    tab_stats_write "$workspace" "$updated"
   ) 9>>"$lock"
+  __tab_stats_write_delta "$workspace" "$session_name" 0 1
+}
+
+# Map a dwell duration to a weight delta in [0, 1]:
+#   dwell < DEAD_ZONE_MS       → 0      (path-through, not real use)
+#   dwell ≥ SATURATION_MS      → 1.0    (full focus burst)
+#   otherwise                  → linear interpolation in between
+# Echoes the float on stdout.
+tab_stats_dwell_to_weight() {
+  local dwell_ms="${1:?missing dwell_ms}"
+  if (( dwell_ms < TAB_STATS_DWELL_DEAD_ZONE_MS )); then
+    printf '0'
+    return 0
+  fi
+  if (( dwell_ms >= TAB_STATS_DWELL_SATURATION_MS )); then
+    printf '1'
+    return 0
+  fi
+  awk -v d="$dwell_ms" \
+      -v dz="$TAB_STATS_DWELL_DEAD_ZONE_MS" \
+      -v sat="$TAB_STATS_DWELL_SATURATION_MS" \
+    'BEGIN { printf "%.6f", (d - dz) / (sat - dz) }'
+}
+
+# Leave signal. Pays the weight tab_stats_bump didn't, scaled by how
+# long the session was the active focus. Skipped when dwell falls into
+# the dead zone (sub-second glances stay at zero weight, exactly the
+# "Alt+x peek and leave" filter we want).
+tab_stats_close_out() {
+  local workspace="${1:?missing workspace}"
+  local session_name="${2:?missing session_name}"
+  local dwell_ms="${3:?missing dwell_ms}"
+  local weight_delta
+  weight_delta="$(tab_stats_dwell_to_weight "$dwell_ms")"
+  if [[ -z "$weight_delta" || "$weight_delta" == "0" ]]; then
+    return 0
+  fi
+  __tab_stats_write_delta "$workspace" "$session_name" "$weight_delta" 0
 }
 
 # Print the top N session names (newline-separated, weight desc, then
