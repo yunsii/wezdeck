@@ -210,7 +210,6 @@ internal sealed class ChromeRequestHandler
             // tabs running on the same machine, and the user-data-dir is a
             // dedicated debug profile, not their main browsing data.
             "--remote-allow-origins=*",
-            "--disable-extensions",
             "--no-first-run",
             "--no-default-browser-check",
         };
@@ -407,7 +406,6 @@ internal sealed class ChromeRequestHandler
             // tabs running on the same machine, and the user-data-dir is a
             // dedicated debug profile, not their main browsing data.
             "--remote-allow-origins=*",
-            "--disable-extensions",
             "--no-first-run",
             "--no-default-browser-check",
         };

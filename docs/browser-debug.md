@@ -29,8 +29,10 @@ Launches or reuses the Chrome debug browser profile from `wezterm-x/local/consta
 The launch always adds these hardening flags:
 
 - `--remote-allow-origins=*` — covers MCP `http://localhost:<port>` clients and the human-debug path through `chrome://inspect` / `edge://inspect` / `devtools://devtools`. The wildcard is acceptable because Chrome binds the port to 127.0.0.1 and the dedicated `user_data_dir` is not the user's main profile.
-- `--disable-extensions`, `--no-first-run`, `--no-default-browser-check`.
+- `--no-first-run`, `--no-default-browser-check`.
 - `--headless=new` and `--window-size=1920,1080` — headless defaults to 800×600, which breaks MCP screenshots and viewport-sensitive scrapes.
+
+Browser extensions are **not** disabled — install whatever you need via `Alt+Shift+b` (visible mode) → `chrome://extensions/`. The extensions are stored in the dedicated debug `user_data_dir` and persist across mode switches, so a headless instance launched later will load them too.
 
 If a visible-mode Chrome is already holding the same port + `--user-data-dir`, the helper terminates it (entire process tree) before launching headless so the Chrome singleton lock is released — this is the automatic mode switch; `Alt+Shift+b` is the visible-direction companion.
 
