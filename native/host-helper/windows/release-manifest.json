@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "enabled": true,
-  "version": "host-helper-v2026.05.14.1",
-  "assetName": "wezterm-windows-host-helper-host-helper-v2026.05.14.1-win-x64.zip",
-  "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/host-helper-v2026.05.14.1/wezterm-windows-host-helper-host-helper-v2026.05.14.1-win-x64.zip",
-  "sha256": "bd362f612a77998c30996d1ab3678491487556764f2abab447a131377fef6e42"
+  "version": "host-helper-v2026.06.02.1",
+  "assetName": "wezterm-windows-host-helper-host-helper-v2026.06.02.1-win-x64.zip",
+  "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/host-helper-v2026.06.02.1/wezterm-windows-host-helper-host-helper-v2026.06.02.1-win-x64.zip",
+  "sha256": "e6408009804bd64a10d570afd04adf08d8b39da48fe6298fc2ae82a21c147c55"
 }
