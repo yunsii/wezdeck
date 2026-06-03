@@ -6,7 +6,7 @@
 -- / warm_set.
 --
 -- Sticky slot algorithm:
---   1. compute visible = top-N sessions by (weight desc, raw_count desc, name asc)
+--   1. compute visible = top-N sessions by (dwell_ms desc, raw_count desc, name asc)
 --   2. for each existing slot:
 --        if slot.session_name still in visible → keep, mark "stable"
 --        else → mark "stale" (the existing session fell out)
@@ -193,10 +193,11 @@ end
 -- `<base>__refresh_<YYYYMMDDTHHMMSS>_<pid>` whenever refresh-current-window
 -- needs a fresh tmux session for the same workspace+repo. Each variant
 -- gets its own focus-stats row (different session_name keys), so without
--- normalization a project that the user refreshed three times would show
--- up as four separate ranking entries — fragmenting its own weight and
--- letting other projects appear higher than they should. We strip the
--- suffix during ranking so all variants aggregate under the base name.
+-- aggregation a project that the user refreshed three times would show
+-- up as four separate ranking entries — fragmenting its own dwell across
+-- variants and letting other projects appear higher than they should.
+-- We strip the suffix during ranking so all variants aggregate under the
+-- base name.
 local function normalize_session_name(name)
   if type(name) ~= 'string' or name == '' then return name end
   local base = name:match('^(.+)__refresh_%d+T%d+_%d+$')
@@ -239,12 +240,12 @@ end
 M._session_label_segment = session_label_segment
 
 -- Aggregate stats rows by normalized base name, then rank.
--- Aggregation: weight summed (cumulative focus), raw_count summed,
+-- Aggregation: dwell_ms summed (cumulative decayed focus time),
+-- total_dwell_ms summed (lifetime, never decayed), raw_count summed,
 -- last_bump_ms taken as max (most recent bump across variants).
--- Summing weight breaks the [0,1] invariant the writer maintains per
--- session, but only ordering is consumed downstream — sum better
--- reflects "how much focus this base session got across all its
--- refresh incarnations" than max would.
+-- v1 migration: when `dwell_ms` is missing on an entry, fall back to
+-- the legacy `weight` field so a pre-migration file still ranks while
+-- the writer hasn't rewritten it in v2 shape yet.
 local function rank_sessions(stats)
   if not stats or type(stats.sessions) ~= 'table' then return {} end
   local agg = {}
@@ -253,10 +254,13 @@ local function rank_sessions(stats)
       local key = normalize_session_name(name) or name
       local cur = agg[key]
       if not cur then
-        cur = { name = key, weight = 0, raw_count = 0, last_bump_ms = 0 }
+        cur = { name = key, dwell_ms = 0, total_dwell_ms = 0, raw_count = 0, last_bump_ms = 0 }
         agg[key] = cur
       end
-      cur.weight = cur.weight + (tonumber(entry.weight) or 0)
+      local dwell = tonumber(entry.dwell_ms)
+      if not dwell then dwell = tonumber(entry.weight) or 0 end
+      cur.dwell_ms = cur.dwell_ms + dwell
+      cur.total_dwell_ms = cur.total_dwell_ms + (tonumber(entry.total_dwell_ms) or 0)
       cur.raw_count = cur.raw_count + (tonumber(entry.raw_count) or 0)
       local lbm = tonumber(entry.last_bump_ms) or 0
       if lbm > cur.last_bump_ms then cur.last_bump_ms = lbm end
@@ -265,7 +269,7 @@ local function rank_sessions(stats)
   local items = {}
   for _, v in pairs(agg) do items[#items + 1] = v end
   table.sort(items, function(a, b)
-    if a.weight ~= b.weight then return a.weight > b.weight end
+    if a.dwell_ms ~= b.dwell_ms then return a.dwell_ms > b.dwell_ms end
     if a.raw_count ~= b.raw_count then return a.raw_count > b.raw_count end
     return a.name < b.name
   end)
@@ -518,7 +522,7 @@ end
 
 -- Reorder a workspace's `workspaces.lua` items list using the brain's
 -- frequency ranking, capped at `n`. Items whose session_name appears
--- in the ranked list (top-N) come first, in weight-desc order; items
+-- in the ranked list (top-N) come first, in dwell_ms-desc order; items
 -- without stats (or beyond the top-N) follow in declared order. The
 -- net result is the slot-order spawn list:
 --
@@ -627,7 +631,7 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
   local out = {}
   local placed_cwd = {}
 
-  -- Pass 1: ranked items in weight-desc order.
+  -- Pass 1: ranked items in dwell_ms-desc order.
   for _, entry in ipairs(ranked) do
     if #out >= n then break end
     local item = lookup_item(entry.name)

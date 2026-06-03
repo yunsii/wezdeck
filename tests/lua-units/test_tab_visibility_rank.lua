@@ -4,6 +4,12 @@
 -- weight across N short-lived rows. Without aggregation a frequently
 -- refreshed project gets out-ranked by less-used projects whose stats
 -- happen to be in fewer rows.
+--
+-- Schema v2: ranking key is `dwell_ms` (decayed cumulative dwell, ms
+-- scale). `total_dwell_ms` is the never-decayed lifetime counter,
+-- aggregated alongside for picker display. v1 files (only `weight`)
+-- fall back to weight-as-dwell during read so the rank stays sane
+-- across the migration boundary.
 package.path = './tests/lua-units/?.lua;./wezterm-x/lua/?.lua;./wezterm-x/lua/ui/?.lua;' .. package.path
 
 local mock = require 'wezterm_mock'
@@ -87,65 +93,66 @@ describe('_rank_sessions', function()
     assert_eq(#r({ sessions = 'not-a-table' }), 0)
   end)
 
-  it('passes through a single bare-name entry', function()
+  it('passes through a single bare-name v2 entry', function()
     local out = r {
       sessions = {
         ['wezterm_work_coco-platform_4cbcc8f612'] = {
-          weight = 0.5, raw_count = 3, last_bump_ms = 1000,
+          dwell_ms = 1500000, total_dwell_ms = 1800000, raw_count = 3, last_bump_ms = 1000,
         },
       },
     }
     assert_eq(#out, 1)
     assert_eq(out[1].name, 'wezterm_work_coco-platform_4cbcc8f612')
-    assert_close(out[1].weight, 0.5)
+    assert_close(out[1].dwell_ms, 1500000)
+    assert_eq(out[1].total_dwell_ms, 1800000)
     assert_eq(out[1].raw_count, 3)
     assert_eq(out[1].last_bump_ms, 1000)
   end)
 
-  it('aggregates refresh-suffix variants under the base name', function()
-    -- Mirrors the actual shape we observed in work.json: the base
-    -- session and two refresh variants for coco-server, plus an
-    -- unrelated coco-platform row to make sure cross-base entries
-    -- don't bleed into the aggregate.
+  it('aggregates refresh-suffix variants under the base name (v2)', function()
+    -- All four variants of coco-server collapse to one row; their
+    -- dwell_ms (~25 minutes total across the three variants) and
+    -- total_dwell_ms (lifetime, even larger) both sum.
     local stats = {
       sessions = {
         ['wezterm_work_coco-server_ebee3ed55c'] = {
-          weight = 1.0, raw_count = 3, last_bump_ms = 1000,
+          dwell_ms = 1000000, total_dwell_ms = 5000000, raw_count = 3, last_bump_ms = 1000,
         },
         ['wezterm_work_coco-server_ebee3ed55c__refresh_20260506T174432_2661849'] = {
-          weight = 0.18, raw_count = 1, last_bump_ms = 2000,
+          dwell_ms = 180000, total_dwell_ms = 200000, raw_count = 1, last_bump_ms = 2000,
         },
         ['wezterm_work_coco-server_ebee3ed55c__refresh_20260507T090418_4108862'] = {
-          weight = 0.51, raw_count = 1, last_bump_ms = 3000,
+          dwell_ms = 510000, total_dwell_ms = 800000, raw_count = 1, last_bump_ms = 3000,
         },
         ['wezterm_work_coco-platform_4cbcc8f612'] = {
-          weight = 0.29, raw_count = 3, last_bump_ms = 500,
+          dwell_ms = 290000, total_dwell_ms = 400000, raw_count = 3, last_bump_ms = 500,
         },
       },
     }
     local out = r(stats)
     assert_eq(#out, 2, 'expected exactly two ranked entries (one per base name)')
-    -- coco-server should rank first (1.0 + 0.18 + 0.51 = 1.69 > 0.29)
+    -- coco-server ranks first (1000000 + 180000 + 510000 = 1690000 > 290000)
     assert_eq(out[1].name, 'wezterm_work_coco-server_ebee3ed55c')
-    assert_close(out[1].weight, 1.69, 1e-6, 'coco-server aggregated weight')
+    assert_close(out[1].dwell_ms, 1690000, 1e-6, 'coco-server aggregated dwell_ms')
+    assert_eq(out[1].total_dwell_ms, 6000000, 'coco-server aggregated total_dwell_ms')
     assert_eq(out[1].raw_count, 5, 'coco-server aggregated raw_count')
     assert_eq(out[1].last_bump_ms, 3000, 'coco-server last_bump_ms is max across variants')
     assert_eq(out[2].name, 'wezterm_work_coco-platform_4cbcc8f612')
-    assert_close(out[2].weight, 0.29)
+    assert_close(out[2].dwell_ms, 290000)
     assert_eq(out[2].raw_count, 3)
   end)
 
-  it('orders by weight desc, raw_count desc, name asc', function()
+  it('orders by dwell_ms desc, raw_count desc, name asc', function()
     local out = r {
       sessions = {
-        a = { weight = 0.5, raw_count = 1 },
-        -- same weight, higher raw_count → ranks first
-        b = { weight = 0.5, raw_count = 5 },
+        a = { dwell_ms = 500, raw_count = 1 },
+        -- same dwell_ms, higher raw_count → ranks first among the tie
+        b = { dwell_ms = 500, raw_count = 5 },
         -- ties on both → name asc
-        c = { weight = 0.2, raw_count = 1 },
-        d = { weight = 0.2, raw_count = 1 },
-        -- highest weight → ranks above all
-        z = { weight = 0.9, raw_count = 0 },
+        c = { dwell_ms = 200, raw_count = 1 },
+        d = { dwell_ms = 200, raw_count = 1 },
+        -- highest dwell_ms → ranks above all
+        z = { dwell_ms = 900, raw_count = 0 },
       },
     }
     assert_eq(out[1].name, 'z')
@@ -155,10 +162,29 @@ describe('_rank_sessions', function()
     assert_eq(out[5].name, 'd')
   end)
 
+  it('long-used session is not demoted by a few short-visit competitors', function()
+    -- Regression for the renormalize-to-1.0 bug fixed by schema v2:
+    -- session `a` accumulated 2h of dwell (7.2M ms) over time. Three
+    -- other sessions each got one 30s visit (30K ms). Under v1 with
+    -- normalization the four sessions would tie at weight=1.0 and `a`
+    -- could fall out of top-N. Under v2 `a` is 240x ahead and stays.
+    local out = r {
+      sessions = {
+        a = { dwell_ms = 7200000, raw_count = 50 },  -- 2h cumulative
+        b = { dwell_ms = 30000,   raw_count = 1 },   -- single 30s visit
+        c = { dwell_ms = 30000,   raw_count = 1 },
+        d = { dwell_ms = 30000,   raw_count = 1 },
+      },
+    }
+    assert_eq(out[1].name, 'a', 'long-used session must stay at rank 1')
+    assert_close(out[1].dwell_ms / out[2].dwell_ms, 240, 0.001,
+      'rank-1 dwell should be 240x rank-2 (uncapped ms preserves the lead)')
+  end)
+
   it('skips non-table session entries defensively', function()
     local out = r {
       sessions = {
-        good = { weight = 0.5, raw_count = 1 },
+        good = { dwell_ms = 500, raw_count = 1 },
         bad_string = 'oops',
         bad_number = 42,
       },
@@ -167,22 +193,61 @@ describe('_rank_sessions', function()
     assert_eq(out[1].name, 'good')
   end)
 
-  it('treats missing weight/raw_count/last_bump_ms fields as zero', function()
+  it('treats missing dwell_ms/raw_count/last_bump_ms fields as zero', function()
     local out = r {
       sessions = {
         partial = {},
-        with_weight = { weight = 0.3 },
+        with_dwell = { dwell_ms = 300 },
       },
     }
     assert_eq(#out, 2)
-    -- with_weight ranks first (0.3 > 0); name-asc tiebreaker would have
-    -- put 'partial' first if weights matched.
-    assert_eq(out[1].name, 'with_weight')
-    assert_close(out[1].weight, 0.3)
+    -- with_dwell ranks first (300 > 0); name-asc tiebreaker would have
+    -- put 'partial' first if dwells matched.
+    assert_eq(out[1].name, 'with_dwell')
+    assert_close(out[1].dwell_ms, 300)
     assert_eq(out[1].raw_count, 0)
     assert_eq(out[1].last_bump_ms, 0)
+    assert_eq(out[1].total_dwell_ms, 0)
     assert_eq(out[2].name, 'partial')
-    assert_close(out[2].weight, 0)
+    assert_close(out[2].dwell_ms, 0)
+  end)
+
+  it('falls back to legacy v1 `weight` field when `dwell_ms` is missing', function()
+    -- Migration sanity: a v1 file that hasn't been rewritten yet
+    -- still produces a usable rank. Weight values land verbatim as
+    -- dwell_ms (so rank order is preserved); they'll be overtaken
+    -- once real ms-scale dwells start accumulating.
+    local out = r {
+      sessions = {
+        old_top    = { weight = 1.0, raw_count = 10, last_bump_ms = 1000 },
+        old_middle = { weight = 0.5, raw_count = 5,  last_bump_ms = 1000 },
+        old_bottom = { weight = 0.1, raw_count = 1,  last_bump_ms = 1000 },
+      },
+    }
+    assert_eq(#out, 3)
+    assert_eq(out[1].name, 'old_top')
+    assert_close(out[1].dwell_ms, 1.0)
+    assert_eq(out[1].total_dwell_ms, 0, 'no total_dwell_ms in v1 → 0')
+    assert_eq(out[2].name, 'old_middle')
+    assert_close(out[2].dwell_ms, 0.5)
+    assert_eq(out[3].name, 'old_bottom')
+  end)
+
+  it('mixes v1 and v2 entries when migration is mid-rewrite', function()
+    -- Half of the file's entries have been rewritten in v2 shape (the
+    -- writer always emits v2), the other half still have v1 `weight`
+    -- because only their `last_bump_ms` row was touched. Both should
+    -- rank together.
+    local out = r {
+      sessions = {
+        already_migrated = { dwell_ms = 60000, total_dwell_ms = 60000, raw_count = 3 },
+        not_yet_migrated = { weight = 0.9, raw_count = 1 },
+      },
+    }
+    assert_eq(#out, 2)
+    -- already_migrated has 60000 ms which dwarfs 0.9 (legacy weight)
+    assert_eq(out[1].name, 'already_migrated')
+    assert_eq(out[2].name, 'not_yet_migrated')
   end)
 end)
 

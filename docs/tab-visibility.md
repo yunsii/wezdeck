@@ -19,8 +19,9 @@ workspace name once the module is configured.
 ## Data flow — focus statistics
 
 Each switch produces an **entry/leave pair** through the same script.
-Weight is paid only on leave, scaled by dwell — so a glance costs zero
-and a real work burst costs full credit:
+Dwell is paid only on leave, equal to the real ms the session held
+focus — so a glance costs zero (dead-zone filter) and a long burst
+contributes proportionally to its actual time on screen:
 
 ```
 tmux client C switches from session A to session B (workspace W)
@@ -29,24 +30,28 @@ tmux client C switches from session A to session B (workspace W)
         ├─ read enter-state for /dev/pts/N (if present): "A, W_A, enter_ms"
         │   └─ same session → noop (duplicate hook fire, preserve enter_ms)
         │   └─ different session → tab_stats_close_out W_A A (now-enter_ms)
-        │       └─ tab_stats_dwell_to_weight(dwell_ms):
-        │           dwell  <  1s  → weight_delta = 0       (path-through filtered)
-        │           dwell  ≥ 30s  → weight_delta = 1.0     (saturated)
-        │           otherwise     → linear interpolation
-        │       └─ if delta > 0: __tab_stats_write_delta(W_A, A, delta, 0)
+        │       └─ if dwell_ms < 1s   → skip (path-through filtered)
+        │       └─ otherwise          → __tab_stats_write_delta(W_A, A, dwell_ms, 0)
         ├─ resolve W (from B's @wezterm_workspace tmux option)
         ├─ tab_stats_bump W B
-        │   └─ __tab_stats_write_delta(W, B, 0, 1)   (raw_count++ only, no weight)
+        │   └─ __tab_stats_write_delta(W, B, 0, 1)   (raw_count++ only, no dwell)
         └─ write enter-state for /dev/pts/N: "B, W, now_ms"
 ```
 
 The shared `__tab_stats_write_delta` jq pipeline does, atomically per
 workspace file:
 
-1. decay every session weight by `exp(-Δt_ms / half_life_ms * ln2)`
-2. set `last_bump_ms = now` for every session
-3. on the target session: `weight += $weight_delta`, `raw_count += $raw_delta`
-4. normalize so `max(weight) == 1.0`
+1. decay every session's `dwell_ms` by `exp(-Δt_ms / half_life_ms * ln2)`
+   (falling back to v1 `weight` when present, so a not-yet-migrated
+   file still ranks)
+2. set `last_bump_ms = now` for every session (so the next decay
+   computes a clean age, not double-decayed)
+3. on the target session: `dwell_ms += $dwell_delta`,
+   `total_dwell_ms += $dwell_delta`, `raw_count += $raw_delta`
+4. emit the v2 shape — **no normalize step**. Long-used sessions
+   accumulate real ms (hours = millions of ms), short visits add
+   thousands of ms; the magnitude difference is what keeps the
+   ranking stable.
 5. atomic tmp + rename into
    `%LOCALAPPDATA%\wezterm-runtime\state\tab-stats\<workspace>.json`
 
@@ -59,15 +64,23 @@ Per-client enter state lives under
 `%LOCALAPPDATA%\wezterm-runtime\state\tab-stats-enter\<client_slug>.txt`,
 one file per tmux client (`client_tty` → slug `pts_N`). Format:
 `<session>\t<workspace>\t<enter_ms>`. The workspace field lets close-out
-attribute weight correctly even if the prior session has since been
+attribute dwell correctly even if the prior session has since been
 killed (we can no longer ask tmux for its @wezterm_workspace).
 
-**Why this split**: the previous design paid `weight += 1` on entry
-and normalized — that meant a single Alt+x peek at a cold session
-landed it at weight 1.0 alongside the most-used session and instantly
-promoted it into top-N. Splitting entry (raw_count only) from leave
-(dwell-weighted weight) makes the rank reflect actual use time, not
-access count, so the picker no longer rewards path-throughs.
+**Why dwell, not capped weight**: the previous v1 design paid a
+saturated `weight ∈ [0,1]` on leave (30s capped to 1.0) and
+renormalized to `max(weight) == 1.0` on every write. That made every
+30s+ visit add the same delta regardless of actual time spent, and the
+renorm step crushed the long-used session's lead — five different 30s
+visits could push a 100h-cumulative session out of top-5. v2 pays raw
+dwell ms (a 2h burst weighs 240x a 30s burst) and skips the renorm,
+so cumulative time is preserved in absolute magnitudes.
+
+**Why split entry from leave**: a single `Alt+x` peek that bumps both
+`weight += 1` and stays sub-second would have promoted a cold session
+into top-N under a hypothetical entry-only scheme. Splitting entry
+(raw_count only) from leave (dwell-paid, dead-zone filtered) keeps
+the rank in line with actual use time.
 
 ## State schema
 
@@ -75,16 +88,18 @@ One file per workspace, slug-sanitized into `<workspace>.json`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "half_life_days": 7,
   "sessions": {
     "wezterm-config": {
-      "weight": 1.0,
+      "dwell_ms": 7234567.89,
+      "total_dwell_ms": 12998765,
       "last_bump_ms": 1777343497366,
       "raw_count": 47
     },
     "ai-video-collection": {
-      "weight": 0.42,
+      "dwell_ms": 42345.0,
+      "total_dwell_ms": 87654,
       "last_bump_ms": 1777343497366,
       "raw_count": 19
     }
@@ -92,24 +107,44 @@ One file per workspace, slug-sanitized into `<workspace>.json`:
 }
 ```
 
-- `weight` ∈ [0, 1]. Always renormalized so the most-recently-bumped
-  session is exactly 1.0. Used directly as the rank key (top-N).
-- `last_bump_ms` — wall-clock epoch ms of the most recent bump. Drives
-  the decay calculation on the next bump.
-- `raw_count` — lifetime focus count, never decayed. Diagnostic only;
-  PR 2 may surface it in the picker as a "lifetime focus" chip.
+- `dwell_ms` — decayed cumulative dwell in milliseconds. **Primary
+  ranking key** (top-N, picker sort). Sums each leave's actual ms (no
+  cap), decayed exponentially with a 7-day half-life so idle sessions
+  fade. Never renormalized — long-used sessions carry orders-of-
+  magnitude more weight than short-visit competitors.
+- `total_dwell_ms` — lifetime cumulative dwell ms, **never decayed**.
+  Used as the "you spent X hours on this" surface for the picker
+  (Alt+x can sort or display by this value).
+- `last_bump_ms` — wall-clock epoch ms of the most recent write.
+  Drives the decay age computation on the next write.
+- `raw_count` — lifetime focus-event count, never decayed. Acts as
+  the dwell-tied tiebreaker in the sort and as a diagnostic chip in
+  the picker.
+
+**v1 → v2 migration**: pre-v2 files use a `weight ∈ [0,1]` field in
+place of `dwell_ms`. Readers (`tab_stats_top_n`,
+`tab_stats_aggregated_tsv`, `tab_visibility._rank_sessions`) fall back
+to `weight` when `dwell_ms` is missing, so the rank stays sane until
+the next write rewrites the file in v2 shape. Legacy weights land in
+the v2 file as sub-1 ms values — effectively a soft reset, since
+real-time dwell (ms scale) dominates within the first few real focus
+events.
 
 ## Decay math
 
-`weight_after_decay = weight_before * 2 ^ ( -Δt_ms / (half_life_days * 86_400_000) )`
+`dwell_ms_after = dwell_ms_before * 2 ^ ( -Δt_ms / (half_life_days * 86_400_000) )`
 
-→ At `half_life_days = 7`, a session's weight halves every 7 days of
-inactivity. After 14 days the contribution is ¼; after 30 days roughly
-5%. Long-vacation behavior: all sessions decay by the same factor while
-the user is away, so the **relative ordering is preserved** and the
-top-N set on return matches the set when the user left. The first focus
-events after a long break can promote new sessions into the top-N
-quickly because the decayed competition is small.
+→ At `half_life_days = 7`, a session's decayed dwell halves every 7
+days of inactivity. After 14 days the contribution is ¼; after 30
+days roughly 5%. Long-vacation behavior: all sessions decay by the
+same factor while the user is away, so the **relative ordering is
+preserved** and the top-N set on return matches the set when the user
+left. The first focus events after a long break still need to climb
+back proportionally — but a session that genuinely had hundreds of
+hours of cumulative dwell will retain a large absolute floor even
+after months of decay, while a one-off 30s session decays to zero
+within weeks. This is the property that keeps long-used projects
+sticky and short-visit projects from poisoning top-N.
 
 ## Why per-workspace?
 
@@ -122,12 +157,19 @@ managed-session metadata, so its bumps land on free-form session names.
 
 `scripts/runtime/tab-stats-lib.sh` exposes:
 
-- `tab_stats_bump <workspace> <session_name>` — write path used by the
-  hook. Throttled, atomic, decay+normalize on every call.
+- `tab_stats_bump <workspace> <session_name>` — entry path used by the
+  hook. Throttled, atomic, decays existing rows on every call but
+  only increments raw_count on the target.
+- `tab_stats_close_out <workspace> <session_name> <dwell_ms>` — leave
+  path. Pays the actual focus ms into the target's dwell_ms +
+  total_dwell_ms (skipped under the 1s dead-zone).
 - `tab_stats_read <workspace>` — print the raw JSON.
 - `tab_stats_top_n <workspace> <n>` — newline-separated session names
-  ordered by `weight desc, raw_count desc, name asc`.
-- `tab_stats_top_n_tsv <workspace> <n>` — same but TSV with weight,
+  ordered by `dwell_ms desc, raw_count desc, name asc`.
+- `tab_stats_top_n_tsv <workspace> <n>` — same but TSV with dwell_ms,
+  total_dwell_ms, raw_count, last_bump_ms.
+- `tab_stats_aggregated_tsv <workspace>` — every base session (after
+  `__refresh_*` aggregation) as TSV: dwell_ms, total_dwell_ms,
   raw_count, last_bump_ms.
 
 ## Layout — visible tabs + overflow tab
@@ -156,7 +198,7 @@ When `spawn_visible_only` is set:
    `scripts/runtime/tmux-worktree/print-session-names.sh` (one shell-out
    per cold-open, not per item), then asks
    `tab_visibility.preferred_item_order` for the spawn list. The brain
-   ranks each item's session by aggregated focus weight (after
+   ranks each item's session by aggregated decayed dwell (after
    `__refresh_*` aggregation) and caps at `visible_count`. Items whose
    session has no stats — never been focused — fall back to the
    `workspaces.lua` declared order, so the bootstrap experience before
@@ -224,7 +266,7 @@ Layout invariants under `preserve_focus`:
   the user to the protected tab.
 
 Trade-off still standing: when `preserve_focus` is on, the top-N
-internal order can drift from `desired_items`'s weight-desc order — the
+internal order can drift from `desired_items`'s dwell-desc order — the
 *set* matches and the demoted-slot replacement is in-place, but a
 rerank within the existing top-N doesn't reshuffle positions until the
 next cold-open. That's intentional — we trade theoretical rank order
@@ -325,18 +367,19 @@ baseline; the snapshot is only consumed by Alt+x, so paying that cost
 there is correct.
 
 The popup shows a workspace badge column next to each row. Rows are
-ranked by **frequency** (focus weight from `tab-stats/<slug>.json`
-aggregated across `__refresh_*` variants under their base session name):
-the active workspace's rows still group at the top, but within that
-block the sessions you focus most often come first — a project that
-sits at row 6 in `workspaces.lua` will jump to row 1 in the picker
-once it dominates the focus stats. Cross-workspace rows interleave by
-weight too (a high-frequency session in workspace B can rank above a
-low-frequency session in workspace A while you're on A); the workspace
-badge keeps identity visible. When stats haven't yet differentiated
-rows (cold start, or a tie at weight 0), the `workspaces.lua` declared
-order acts as the within-workspace tiebreaker so the picker stays
-usable before any focus events accumulate. Always-on substring filter
+ranked by **accumulated dwell time** (decayed dwell_ms from
+`tab-stats/<slug>.json`, aggregated across `__refresh_*` variants
+under their base session name): the active workspace's rows still
+group at the top, but within that block the sessions you actually
+spend the most time in come first — a project that sits at row 6 in
+`workspaces.lua` will jump to row 1 in the picker once it accumulates
+the most hours. Cross-workspace rows interleave by dwell too (a
+heavily-used session in workspace B can rank above a barely-used
+session in workspace A while you're on A); the workspace badge keeps
+identity visible. When stats haven't yet differentiated rows (cold
+start, or a tie at dwell 0), the `workspaces.lua` declared order acts
+as the within-workspace tiebreaker so the picker stays usable before
+any focus events accumulate. Always-on substring filter
 matches **workspace + label + cwd** lowercase, so `cfg neo` lands on
 `config · neovim` regardless of starting workspace; `Tab` toggles the
 scope between *all workspaces* (default) and *current workspace only*.
@@ -382,11 +425,13 @@ behavior of silently spawning a new wezterm tab outside the cap.
 ### Long-vacation behavior
 
 Indexed exponential decay is order-preserving: 14 days off with no
-bumps shrinks every weight by the same factor, so the top-N set is
-identical when you return. The first focus events after a break still
-weigh the same as before; new sessions can promote into top-N within
-a day or two of regular use as decayed competitors fall behind. The
-ranking still drives the picker's sort order even though it does not
+bumps shrinks every session's dwell_ms by the same factor, so the
+top-N set is identical when you return. The first focus events after
+a break weigh in raw ms (uncapped) just like before; a session with a
+large dwell floor stays large for many more half-lives than a session
+with a small floor. New sessions can promote into top-N within a few
+days of heavy use as decayed competitors fall behind. The ranking
+still drives the picker's sort order even though it does not
 re-shuffle the visible tabs (those are pinned to whatever `Workspace
 .open` decided at cold-open).
 
@@ -401,7 +446,7 @@ re-shuffle the visible tabs (those are pinned to whatever `Workspace
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` weights per session, sorts by `is_current desc, weight desc, raw_count desc, snap_idx asc` (frequency-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` dwell_ms per session, sorts by `is_current desc, dwell_ms desc, raw_count desc, snap_idx asc` (dwell-time-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
 | Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |
