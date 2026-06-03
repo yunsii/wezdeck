@@ -72,24 +72,21 @@ fi
 existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)"
 
 # Build per-workspace TSV blocks then concatenate. After all blocks are
-# emitted we sort the union by `is_current desc, weight desc, raw_count
-# desc, snap_idx asc` so:
+# emitted we sort the union by `is_current desc, dwell_ms desc,
+# raw_count desc, snap_idx asc` so:
 #   1. The current workspace's rows stay grouped at the top.
 #   2. Within each block the rows the user actually focuses most often
-#      surface first — `coco-server` weighing 1.69 outranks
-#      `ai-video-collection` weighing 0.50 even though the latter sits
-#      earlier in `workspaces.lua`.
-#   3. Cross-workspace rows interleave by weight (an A weight=0.8 row
-#      sits above a B weight=0.7 row). Workspace identity stays visible
-#      via the workspace badge column the picker renders, so the sort
-#      drops the previous "alphabetical, grouped by workspace" model in
-#      favour of frequency-first.
+#      (by accumulated decayed dwell time) surface first — a session
+#      with 2h of focus dwarfs one with a 30s peek.
+#   3. Cross-workspace rows interleave by dwell_ms (a heavy A row sits
+#      above a light B row regardless of workspace). Workspace identity
+#      stays visible via the workspace badge column the picker renders.
 #   4. Snapshot index is the within-workspace tiebreaker so ties on
-#      weight (e.g. cold-start workspace where every weight is 0) fall
+#      dwell_ms (e.g. cold-start workspace where every dwell is 0) fall
 #      back to the user's intended `workspaces.lua` order — the picker
 #      stays usable before any focus stats accumulate.
-# Aux columns 8-11 (snap_idx, weight, raw_count, last_bump_ms) carry the
-# sort keys; an awk pass strips them before writing the prefetch_file
+# Aux columns 8-11 (snap_idx, dwell_ms, raw_count, last_bump_ms) carry
+# the sort keys; an awk pass strips them before writing the prefetch_file
 # the Go picker reads (the picker still expects a 7-column TSV).
 prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
 prefetch_aux="$(mktemp -t wezterm-overflow-picker-aux.XXXXXX)"
@@ -121,21 +118,27 @@ if (( ${#other_workspaces[@]} > 0 )); then
   )
 fi
 
-# Per-session weight maps — keyed by base session name (suffixes like
+# Per-session dwell maps — keyed by base session name (suffixes like
 # `__refresh_<ts>_<pid>` aggregated upstream by tab_stats_aggregated_tsv,
 # matching the lua-side rank_sessions normalization). Session names are
 # workspace-prefixed (`wezterm_<slug>_<repo>_<10hex>`), so a single flat
 # map is collision-free across workspaces.
-declare -A weight_for_sess
+declare -A dwell_for_sess
 declare -A raw_count_for_sess
 declare -A last_bump_for_sess
 
 populate_weights_for_workspace() {
   local target_ws="$1"
-  local base weight raw_count last_bump
-  while IFS=$'\t' read -r base weight raw_count last_bump; do
+  local base dwell_ms total_dwell_ms raw_count last_bump
+  # tab_stats_aggregated_tsv emits 5 columns:
+  #   <base>\t<dwell_ms>\t<total_dwell_ms>\t<raw_count>\t<last_bump_ms>
+  # Picker currently sorts by dwell_ms only; total_dwell_ms is read so
+  # the surface is wired up for future "lifetime focus" picker chips
+  # without a second pass through this populator.
+  while IFS=$'\t' read -r base dwell_ms total_dwell_ms raw_count last_bump; do
     [[ -n "$base" ]] || continue
-    weight_for_sess["$base"]="$weight"
+    : "$total_dwell_ms"  # parsed for future use, intentionally unused for now
+    dwell_for_sess["$base"]="$dwell_ms"
     raw_count_for_sess["$base"]="$raw_count"
     last_bump_for_sess["$base"]="$last_bump"
   done < <(tab_stats_aggregated_tsv "$target_ws" 2>/dev/null)
@@ -168,12 +171,12 @@ emit_workspace_rows() {
     elif [[ -n "$sess" ]] && grep -Fxq "$sess" <<<"$existing_sessions" 2>/dev/null; then
       state='warm'
     fi
-    local weight="${weight_for_sess[$sess]:-0}"
+    local dwell_ms="${dwell_for_sess[$sess]:-0}"
     local raw_count="${raw_count_for_sess[$sess]:-0}"
     local last_bump="${last_bump_for_sess[$sess]:-0}"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$target_ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
-      "$snap_idx" "$weight" "$raw_count" "$last_bump" \
+      "$snap_idx" "$dwell_ms" "$raw_count" "$last_bump" \
       >> "$prefetch_aux"
   done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring)] | @tsv' "$target_snapshot" 2>/dev/null)
 }
@@ -185,7 +188,8 @@ done
 
 # Sort by:
 #   k6 (is_current) desc → current workspace block stays at top
-#   k9 (weight) desc — general numeric handles floats (e.g. 1.693151...)
+#   k9 (dwell_ms) desc — general numeric handles big floats (e.g. 7.2e6
+#                        for a 2h burst, or 30000 for a 30s context switch)
 #   k10 (raw_count) desc — secondary frequency tiebreaker
 #   k1 (workspace) asc — only matters for cross-workspace ties
 #   k8 (snap_idx) asc — within-workspace tiebreaker; preserves the

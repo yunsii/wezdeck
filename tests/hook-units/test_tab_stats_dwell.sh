@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Dwell-weighted tab-stats: tab_stats_bump only pays raw_count++;
-# tab_stats_close_out converts dwell into the weight delta. This file
-# exercises the curve directly and the entry/leave wiring inside
-# tab-stats-bump.sh, so future tweaks to the bump-vs-close split can't
-# silently reintroduce the "Alt+x peek = full promote" regression.
+# Dwell-weighted tab-stats v2: tab_stats_bump pays raw_count++ only;
+# tab_stats_close_out adds the actual dwell_ms (uncapped, never
+# normalized) into dwell_ms and total_dwell_ms. This file exercises:
+#   - the bump-vs-close split (no weight ever paid on entry)
+#   - the dead-zone filter (sub-second dwell stays at 0)
+#   - the long-vs-short rank stability (regression for the v1
+#     renormalize-to-1.0 bug that demoted heavily-used sessions
+#     after a few 30s peeks elsewhere)
+#   - the tab-stats-bump.sh enter-state + close-out wiring
 #
 # Drive: scripts/dev/test-lua-units.sh (the runner sweeps hook-units/
 # too) or run this file directly.
@@ -54,29 +58,6 @@ run_lib_case() {
     "
 }
 
-# Curve sanity --------------------------------------------------------
-printf '\xe2\x96\xb8 %s\n' 'dwell-to-weight curve'
-sandbox="$(new_sandbox)"
-
-w0=$(run_lib_case "$sandbox" 'tab_stats_dwell_to_weight 500')
-[[ "$w0" == "0" ]] && ok "dead-zone (500ms) → 0" || no "dead-zone expected 0, got $w0"
-
-w_sat=$(run_lib_case "$sandbox" 'tab_stats_dwell_to_weight 30000')
-[[ "$w_sat" == "1" ]] && ok "saturation (30000ms) → 1" || no "saturation expected 1, got $w_sat"
-
-w_over=$(run_lib_case "$sandbox" 'tab_stats_dwell_to_weight 60000')
-[[ "$w_over" == "1" ]] && ok "over-saturation (60000ms) → 1" || no "over-sat expected 1, got $w_over"
-
-w_lin=$(run_lib_case "$sandbox" 'tab_stats_dwell_to_weight 15500')
-expected_lin=$(awk 'BEGIN { printf "%.6f", (15500 - 1000) / (30000 - 1000) }')
-[[ "$w_lin" == "$expected_lin" ]] && ok "linear (15.5s) → $expected_lin" \
-  || no "linear expected $expected_lin, got $w_lin"
-
-w_edge=$(run_lib_case "$sandbox" 'tab_stats_dwell_to_weight 1000')
-expected_edge=$(awk 'BEGIN { printf "%.6f", 0 }')
-[[ "$w_edge" == "$expected_edge" ]] && ok "dead-zone boundary (exactly 1000ms) → 0.0" \
-  || no "edge expected $expected_edge, got $w_edge"
-
 # bump-then-close-out -------------------------------------------------
 printf '\xe2\x96\xb8 %s\n' 'bump vs close-out responsibilities'
 sandbox="$(new_sandbox)"
@@ -84,24 +65,36 @@ state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
 
 run_lib_case "$sandbox" "tab_stats_bump work foo-session" >/dev/null
 raw=$(jq -r '.sessions["foo-session"].raw_count' "$state_file" 2>/dev/null || echo MISS)
-weight=$(jq -r '.sessions["foo-session"].weight' "$state_file" 2>/dev/null || echo MISS)
+dwell=$(jq -r '.sessions["foo-session"].dwell_ms' "$state_file" 2>/dev/null || echo MISS)
 [[ "$raw" == "1" ]] && ok "bump → raw_count=1" || no "raw_count expected 1, got $raw"
-# Entry must NOT pay weight on its own. Pre-fix the bump alone normalized
-# to 1.0; after the split it stays at 0 until close_out.
-[[ "$weight" == "0" ]] && ok "bump → weight=0 (paid on leave)" \
-  || no "weight expected 0 after bump, got $weight"
+# Entry must NOT pay dwell on its own; it stays at 0 until close_out.
+[[ "$dwell" == "0" ]] && ok "bump → dwell_ms=0 (paid on leave)" \
+  || no "dwell_ms expected 0 after bump, got $dwell"
 
-# Sub-second close-out: filtered, no weight.
+# Sub-second close-out: filtered, no dwell.
 run_lib_case "$sandbox" "tab_stats_close_out work foo-session 500" >/dev/null
-weight=$(jq -r '.sessions["foo-session"].weight' "$state_file")
-[[ "$weight" == "0" ]] && ok "close_out dwell=500ms (dead-zone) → still 0" \
-  || no "dead-zone close-out leaked weight: $weight"
+dwell=$(jq -r '.sessions["foo-session"].dwell_ms' "$state_file")
+[[ "$dwell" == "0" ]] && ok "close_out dwell=500ms (dead-zone) → still 0" \
+  || no "dead-zone close-out leaked dwell: $dwell"
 
-# Genuine work burst: full saturation pays weight 1.0.
+# Genuine work burst: 30000ms close-out adds 30000 to dwell_ms +
+# total_dwell_ms (no normalization, no saturation cap).
 run_lib_case "$sandbox" "tab_stats_close_out work foo-session 30000" >/dev/null
-weight=$(jq -r '.sessions["foo-session"].weight' "$state_file")
-[[ "$weight" == "1" ]] && ok "close_out dwell=30s → weight=1.0" \
-  || no "saturation close-out expected 1, got $weight"
+dwell=$(jq -r '.sessions["foo-session"].dwell_ms' "$state_file")
+total=$(jq -r '.sessions["foo-session"].total_dwell_ms' "$state_file")
+# Decay over <1s is negligible (factor ~1.0), so dwell ≈ 30000 ± epsilon.
+dwell_ok=$(awk -v d="$dwell" 'BEGIN { print (d >= 29999 && d <= 30001) ? 1 : 0 }')
+[[ "$dwell_ok" == "1" ]] && ok "close_out 30s → dwell_ms ≈ 30000 (got $dwell)" \
+  || no "close_out 30s expected ≈30000, got $dwell"
+[[ "$total" == "30000" ]] && ok "close_out 30s → total_dwell_ms = 30000 (never decayed)" \
+  || no "total_dwell_ms expected 30000, got $total"
+
+# A 2h burst adds proportionally more dwell — uncapped. This is the
+# key v2 property the v1 saturation curve was hiding.
+run_lib_case "$sandbox" "tab_stats_close_out work foo-session 7200000" >/dev/null
+total=$(jq -r '.sessions["foo-session"].total_dwell_ms' "$state_file")
+[[ "$total" == "7230000" ]] && ok "2h burst → total_dwell_ms = 7,230,000 (240x a 30s burst)" \
+  || no "total_dwell_ms expected 7230000, got $total"
 
 # bump should NOT change raw_count beyond +1 per fire; close_out should
 # never change raw_count at all (asymmetry is the whole point).
@@ -110,37 +103,80 @@ raw_after=$(jq -r '.sessions["foo-session"].raw_count' "$state_file")
 [[ "$raw_after" == "1" ]] && ok "close_out leaves raw_count alone" \
   || no "raw_count drifted via close_out: $raw_after"
 
-# Cold session promote threshold --------------------------------------
-printf '\xe2\x96\xb8 %s\n' 'cold session vs hot competitor (top-N membership)'
+# Long-used vs short-visit rank stability -----------------------------
+# Regression for the v1 normalize-to-1.0 bug: a session with 2h of
+# dwell must stay ranked above three different sessions that each only
+# got a single 30s visit. Under v1 those three competitors all tied at
+# weight=1.0 after their close-out and could displace the long-used
+# session out of top-N. Under v2 the 240x ms-scale gap is preserved.
+printf '\xe2\x96\xb8 %s\n' 'long-used session stays ranked above short visits'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
 
-# Hot competitor: bump + close-out 30s twice so it's well-anchored at 1.0.
-run_lib_case "$sandbox" "tab_stats_bump work hot; tab_stats_close_out work hot 30000" >/dev/null
-run_lib_case "$sandbox" "tab_stats_bump work hot; tab_stats_close_out work hot 30000" >/dev/null
-hot_weight=$(jq -r '.sessions["hot"].weight' "$state_file")
-[[ "$hot_weight" == "1" ]] && ok "hot session anchored at 1.0" \
-  || no "hot session expected 1, got $hot_weight"
+# heavy: 2h cumulative dwell.
+run_lib_case "$sandbox" \
+  "tab_stats_bump work heavy; tab_stats_close_out work heavy 7200000" >/dev/null
 
-# Cold peek: enter cold session, leave within dead-zone.
-run_lib_case "$sandbox" "tab_stats_bump work cold; tab_stats_close_out work cold 500" >/dev/null
-cold_weight=$(jq -r '.sessions["cold"].weight' "$state_file")
-[[ "$cold_weight" == "0" ]] && ok "cold peek (sub-second) does not promote: weight=0" \
-  || no "cold peek leaked weight: $cold_weight"
+# Three different competitors, each a single 30s visit.
+for s in light_a light_b light_c; do
+  run_lib_case "$sandbox" \
+    "tab_stats_bump work $s; tab_stats_close_out work $s 30000" >/dev/null
+done
 
-# Real cold work burst: 30s.
-run_lib_case "$sandbox" "tab_stats_bump work cold; tab_stats_close_out work cold 30000" >/dev/null
-cold_weight=$(jq -r '.sessions["cold"].weight' "$state_file")
-hot_weight=$(jq -r '.sessions["hot"].weight' "$state_file")
-# After +1.0 on cold, max becomes 1.0 (cold) and hot decays slightly +
-# divides by max → still close to 1.0. Both should be ≥ 0.99.
-cold_ok=$(awk -v w="$cold_weight" 'BEGIN { print (w >= 0.99) ? 1 : 0 }')
-hot_ok=$(awk -v w="$hot_weight" 'BEGIN { print (w >= 0.99) ? 1 : 0 }')
-if [[ "$cold_ok" == "1" && "$hot_ok" == "1" ]]; then
-  ok "cold 30s burst promotes to top tier alongside hot (cold=$cold_weight hot=$hot_weight)"
-else
-  no "cold 30s expected ≥0.99 hot expected ≥0.99 got cold=$cold_weight hot=$hot_weight"
-fi
+heavy_dwell=$(jq -r '.sessions.heavy.dwell_ms' "$state_file")
+top_name=$(jq -r '
+  (.sessions // {})
+  | to_entries
+  | sort_by(- (.value.dwell_ms // 0))
+  | .[0].key
+' "$state_file")
+[[ "$top_name" == "heavy" ]] && ok "heavy session retains rank 1 after 3 short competitors" \
+  || no "expected heavy at rank 1, got $top_name"
+
+ratio_ok=$(awk -v h="$heavy_dwell" 'BEGIN { print (h >= 7100000) ? 1 : 0 }')
+[[ "$ratio_ok" == "1" ]] && ok "heavy dwell_ms ≥ 7.1M (decay over a few writes is tiny)" \
+  || no "heavy dwell_ms unexpectedly low: $heavy_dwell"
+
+# v1 → v2 migration --------------------------------------------------
+# A v1 file with only `weight` keys must still rank when read; the
+# next write rewrites it in v2 shape.
+printf '\xe2\x96\xb8 %s\n' 'v1 → v2 migration (legacy weight fallback)'
+sandbox="$(new_sandbox)"
+state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
+# Use a recent last_bump_ms so the decay applied during the first v2
+# write is negligible — that way we can observe the legacy weight
+# being added into dwell_ms instead of being decayed away to ~0.
+now_ms=$(date +%s%3N)
+cat > "$state_file" <<JSON
+{
+  "version": 1,
+  "half_life_days": 7,
+  "sessions": {
+    "old_top":    { "weight": 1.0, "raw_count": 10, "last_bump_ms": $now_ms },
+    "old_bottom": { "weight": 0.1, "raw_count": 1,  "last_bump_ms": $now_ms }
+  }
+}
+JSON
+
+# tab_stats_top_n must read weight as fallback so the rank is preserved
+# before any v2 write.
+top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
+[[ "$top" == "old_top" ]] && ok "v1 read: legacy weight ranks old_top first" \
+  || no "v1 read: expected old_top, got $top"
+
+# Next write rewrites the file in v2 shape — version bumps, dwell_ms
+# field appears, total_dwell_ms appears on the touched session.
+run_lib_case "$sandbox" "tab_stats_close_out work old_top 30000" >/dev/null
+version=$(jq -r '.version' "$state_file")
+top_dwell=$(jq -r '.sessions.old_top.dwell_ms' "$state_file")
+top_total=$(jq -r '.sessions.old_top.total_dwell_ms' "$state_file")
+[[ "$version" == "2" ]] && ok "write bumps version → 2" \
+  || no "version expected 2, got $version"
+top_dwell_ok=$(awk -v d="$top_dwell" 'BEGIN { print (d >= 30000.9 && d <= 30001.1) ? 1 : 0 }')
+[[ "$top_dwell_ok" == "1" ]] && ok "old_top dwell_ms = 30000 + legacy weight 1.0 (got $top_dwell)" \
+  || no "old_top dwell_ms expected ≈30001, got $top_dwell"
+[[ "$top_total" == "30000" ]] && ok "old_top total_dwell_ms = 30000 (lifetime starts fresh)" \
+  || no "old_top total_dwell_ms expected 30000, got $top_total"
 
 # tab-stats-bump.sh: enter/leave wiring -------------------------------
 printf '\xe2\x96\xb8 %s\n' 'tab-stats-bump.sh enter-state + close-out flow'
@@ -184,27 +220,23 @@ enter_file="$sandbox/wezterm-runtime/state/tab-stats-enter/pts_9.txt"
 sleep 1.2
 
 # Switching to a different session should close-out alpha with the
-# actual dwell. We're not asserting a specific weight (depends on real
-# clock skew), only that it's strictly > 0 to confirm the close-out
-# path fired with a non-dead-zone dwell.
+# actual dwell_ms. The dwell is ms-scale, so we assert > 1000 (past
+# dead zone) to confirm the close-out fired with a real time delta.
 run_bump beta /dev/pts/9
-alpha_weight=$(jq -r '.sessions.alpha.weight' "$state_dir/work.json")
-alpha_ok=$(awk -v w="$alpha_weight" 'BEGIN { print (w > 0) ? 1 : 0 }')
+alpha_dwell=$(jq -r '.sessions.alpha.dwell_ms' "$state_dir/work.json")
+alpha_ok=$(awk -v d="$alpha_dwell" 'BEGIN { print (d > 1000) ? 1 : 0 }')
 if [[ "$alpha_ok" == "1" ]]; then
-  ok "switch alpha→beta closes alpha with dwell-based weight (=$alpha_weight)"
+  ok "switch alpha→beta closes alpha with dwell_ms = $alpha_dwell"
 else
-  no "alpha close-out expected > 0, got $alpha_weight"
+  no "alpha close-out expected > 1000ms, got $alpha_dwell"
 fi
 
-# Beta should have raw_count=1, weight=0 (bump alone never pays).
+# Beta should have raw_count=1, dwell_ms=0 (bump alone never pays).
 beta_raw=$(jq -r '.sessions.beta.raw_count' "$state_dir/work.json")
-beta_weight=$(jq -r '.sessions.beta.weight' "$state_dir/work.json")
+beta_dwell=$(jq -r '.sessions.beta.dwell_ms' "$state_dir/work.json")
 [[ "$beta_raw" == "1" ]] && ok "beta raw_count=1 after entry" || no "beta raw_count: $beta_raw"
-# After normalization beta may end up at 0 or near 0 depending on max.
-# What we care about is that bump alone did NOT pay weight; the
-# pre-normalize weight is 0. Post-normalize it is 0 / max(alpha) = 0.
-[[ "$beta_weight" == "0" ]] && ok "beta entry leaves it at weight=0 (bump-only)" \
-  || no "beta weight expected 0, got $beta_weight"
+[[ "$beta_dwell" == "0" ]] && ok "beta entry leaves it at dwell_ms=0 (bump-only)" \
+  || no "beta dwell_ms expected 0, got $beta_dwell"
 
 # Same-session duplicate hook fire within the throttle window: must
 # NOT rewrite enter_ms (would clobber the dwell of an in-progress
