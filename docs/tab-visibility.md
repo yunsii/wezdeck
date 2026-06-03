@@ -122,13 +122,17 @@ One file per workspace, slug-sanitized into `<workspace>.json`:
   the picker.
 
 **v1 → v2 migration**: pre-v2 files use a `weight ∈ [0,1]` field in
-place of `dwell_ms`. Readers (`tab_stats_top_n`,
-`tab_stats_aggregated_tsv`, `tab_visibility._rank_sessions`) fall back
-to `weight` when `dwell_ms` is missing, so the rank stays sane until
-the next write rewrites the file in v2 shape. Legacy weights land in
-the v2 file as sub-1 ms values — effectively a soft reset, since
-real-time dwell (ms scale) dominates within the first few real focus
-events.
+place of `dwell_ms`. v1 weight is **discarded at migration time** —
+it's corrupted by the renormalize+fragmentation pathology (heavily-
+refreshed projects fragment across many tiny weighted rows that don't
+sum back to true cumulative usage). Instead the writer seeds
+`dwell_ms` and `total_dwell_ms` from `raw_count * 30000` (30s of
+credit per past focus event, matching the v1 saturation point), so a
+project with 20 lifetime focuses lands at 600K ms regardless of how
+fragmented its weight had become. Readers fall back to raw weight
+during the transition window (before the first v2 write); after the
+migration write fires, both readers and writer see consistent v2
+dwell_ms values.
 
 ## Decay math
 

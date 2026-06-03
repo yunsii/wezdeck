@@ -30,11 +30,14 @@
 # `total_dwell_ms` is never decayed; exposed to the picker for
 # "lifetime time spent" display.
 #
-# v1 migration: when reading a v1 entry (has `weight`, no `dwell_ms`),
-# the pipeline seeds `dwell_ms` from `weight`. v1 values lived in [0,1],
-# so they enter the v2 scale as <=1 ms — effectively a soft reset that
-# preserves rank order during the first few writes while real dwell ms
-# accumulate and dominate.
+# v1 migration: detected by `version < 2` on the parent object. v1
+# `weight` values are corrupted by renormalize+fragmentation (a project
+# refreshed 7 times via refresh-current-window ends up with 7 small
+# rows whose weights don't sum back to the original lifetime usage),
+# so we ignore weight at migration time and seed dwell_ms from
+# raw_count instead — each historical focus event grants 30s of
+# credit, matching the v1 saturation point. After the first v2 write
+# the file is version=2 and dwell_ms accumulates from real leaves.
 #
 # Sourced by:
 #   scripts/runtime/tab-stats-bump.sh    (writer, called from tmux hook)
@@ -168,7 +171,11 @@ tab_stats_write() {
 
 # Single jq pipeline that:
 #   1. decays every session's dwell_ms by exp(-Δt_ms / half_life_ms * ln2)
-#      (falling back to v1 `weight` field when migrating)
+#      — for v1 entries (version < 2), seeds dwell_ms from
+#        raw_count * 30000 (30s per past focus event, matching the v1
+#        saturation point). raw_count is undecayed, so a heavily-used
+#        project that v1 fragmented across refresh variants recovers
+#        the right magnitude despite the renormalize damage to weight.
 #   2. updates each session's last_bump_ms = now (so the next decay
 #      computes age from a clean baseline — see comment in tab_stats_lib
 #      header about why we reset last_bump_ms on every session, not just
@@ -197,16 +204,23 @@ __TAB_STATS_WRITE_JQ='
   | ($raw_delta | tonumber) as $raw_delta
   | (.half_life_days // 7) as $hld
   | half_life_ms($hld) as $half_ms
+  | ((.version // 1) | tonumber) as $ver
   | (.sessions // {}) as $existing
   | ($existing
       | to_entries
       | map(
           .key as $name
           | .value as $v
+          | (if $ver >= 2 then ($v.dwell_ms // 0)
+             else (($v.raw_count // 0) * 30000)
+             end) as $seed_dwell
+          | (if $ver >= 2 then ($v.total_dwell_ms // 0)
+             else (($v.raw_count // 0) * 30000)
+             end) as $seed_total
           | { key: $name,
               value: {
-                dwell_ms:       decay((($v.dwell_ms // $v.weight) // 0); ($now - ($v.last_bump_ms // $now)); $half_ms),
-                total_dwell_ms: ($v.total_dwell_ms // 0),
+                dwell_ms:       decay($seed_dwell; ($now - ($v.last_bump_ms // $now)); $half_ms),
+                total_dwell_ms: $seed_total,
                 last_bump_ms:   $now,
                 raw_count:      ($v.raw_count // 0)
               }

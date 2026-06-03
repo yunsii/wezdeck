@@ -138,45 +138,74 @@ ratio_ok=$(awk -v h="$heavy_dwell" 'BEGIN { print (h >= 7100000) ? 1 : 0 }')
   || no "heavy dwell_ms unexpectedly low: $heavy_dwell"
 
 # v1 → v2 migration --------------------------------------------------
-# A v1 file with only `weight` keys must still rank when read; the
-# next write rewrites it in v2 shape.
-printf '\xe2\x96\xb8 %s\n' 'v1 → v2 migration (legacy weight fallback)'
+# v1 weight values are corrupted by renormalize+fragmentation (a heavily
+# refreshed project ends up with 7 small rows whose weights don't sum
+# back to true cumulative usage). Migration ignores weight and seeds
+# dwell_ms from raw_count * 30000 (30s per past focus event), matching
+# the v1 saturation point. This recovers the right magnitude for
+# heavily-used projects that v1 demoted via fragmentation.
+printf '\xe2\x96\xb8 %s\n' 'v1 → v2 migration (raw_count seeding ignores corrupted weight)'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
-# Use a recent last_bump_ms so the decay applied during the first v2
-# write is negligible — that way we can observe the legacy weight
-# being added into dwell_ms instead of being decayed away to ~0.
+# Use a recent last_bump_ms so decay during the first v2 write is
+# negligible — that way we can assert exact seed values.
 now_ms=$(date +%s%3N)
+# heavy_use has tiny weight (fragmented across imaginary refresh rows)
+# but high raw_count — true magnitude must be recovered from raw_count.
+# light_use has high weight but low raw_count — gets demoted as the
+# fragmentation pathology suggests it should.
 cat > "$state_file" <<JSON
 {
   "version": 1,
   "half_life_days": 7,
   "sessions": {
-    "old_top":    { "weight": 1.0, "raw_count": 10, "last_bump_ms": $now_ms },
-    "old_bottom": { "weight": 0.1, "raw_count": 1,  "last_bump_ms": $now_ms }
+    "heavy_use": { "weight": 0.05, "raw_count": 20, "last_bump_ms": $now_ms },
+    "light_use": { "weight": 1.0,  "raw_count": 2,  "last_bump_ms": $now_ms }
   }
 }
 JSON
 
-# tab_stats_top_n must read weight as fallback so the rank is preserved
-# before any v2 write.
+# tab_stats_top_n's read-side fallback still uses weight (it only sees
+# what's on disk; the writer migration hasn't fired yet). So at read
+# time before any write, light_use still ranks higher by weight.
 top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
-[[ "$top" == "old_top" ]] && ok "v1 read: legacy weight ranks old_top first" \
-  || no "v1 read: expected old_top, got $top"
+[[ "$top" == "light_use" ]] && ok "v1 pre-migration read: weight-based fallback ranks light_use first" \
+  || no "v1 read: expected light_use, got $top"
 
-# Next write rewrites the file in v2 shape — version bumps, dwell_ms
-# field appears, total_dwell_ms appears on the touched session.
-run_lib_case "$sandbox" "tab_stats_close_out work old_top 30000" >/dev/null
+# A close-out on an unrelated session triggers the migration write.
+# After that, both sessions are seeded from raw_count and the rank
+# flips: heavy_use (20 events * 30s = 600K ms) beats light_use
+# (2 events * 30s = 60K ms).
+run_lib_case "$sandbox" "tab_stats_close_out work heavy_use 30000" >/dev/null
 version=$(jq -r '.version' "$state_file")
-top_dwell=$(jq -r '.sessions.old_top.dwell_ms' "$state_file")
-top_total=$(jq -r '.sessions.old_top.total_dwell_ms' "$state_file")
 [[ "$version" == "2" ]] && ok "write bumps version → 2" \
   || no "version expected 2, got $version"
-top_dwell_ok=$(awk -v d="$top_dwell" 'BEGIN { print (d >= 30000.9 && d <= 30001.1) ? 1 : 0 }')
-[[ "$top_dwell_ok" == "1" ]] && ok "old_top dwell_ms = 30000 + legacy weight 1.0 (got $top_dwell)" \
-  || no "old_top dwell_ms expected ≈30001, got $top_dwell"
-[[ "$top_total" == "30000" ]] && ok "old_top total_dwell_ms = 30000 (lifetime starts fresh)" \
-  || no "old_top total_dwell_ms expected 30000, got $top_total"
+
+heavy_dwell=$(jq -r '.sessions.heavy_use.dwell_ms' "$state_file")
+heavy_total=$(jq -r '.sessions.heavy_use.total_dwell_ms' "$state_file")
+light_dwell=$(jq -r '.sessions.light_use.dwell_ms' "$state_file")
+light_total=$(jq -r '.sessions.light_use.total_dwell_ms' "$state_file")
+
+# heavy_use: seed 20*30000=600000 + delta 30000 = 630000
+heavy_dwell_ok=$(awk -v d="$heavy_dwell" 'BEGIN { print (d >= 629999 && d <= 630001) ? 1 : 0 }')
+[[ "$heavy_dwell_ok" == "1" ]] && ok "heavy_use dwell_ms ≈ 630000 (raw_count seed + 30s close-out)" \
+  || no "heavy_use dwell_ms expected ≈630000, got $heavy_dwell"
+heavy_total_ok=$(awk -v t="$heavy_total" 'BEGIN { print (t >= 629999 && t <= 630001) ? 1 : 0 }')
+[[ "$heavy_total_ok" == "1" ]] && ok "heavy_use total_dwell_ms ≈ 630000" \
+  || no "heavy_use total_dwell_ms expected ≈630000, got $heavy_total"
+
+# light_use: seed 2*30000=60000, no delta (not the target)
+light_dwell_ok=$(awk -v d="$light_dwell" 'BEGIN { print (d >= 59999 && d <= 60001) ? 1 : 0 }')
+[[ "$light_dwell_ok" == "1" ]] && ok "light_use dwell_ms = 60000 (raw_count seed, weight 1.0 ignored)" \
+  || no "light_use dwell_ms expected 60000, got $light_dwell"
+[[ "$light_total" == "60000" ]] && ok "light_use total_dwell_ms = 60000" \
+  || no "light_use total_dwell_ms expected 60000, got $light_total"
+
+# Final rank after migration: heavy_use first (the corrupted v1 weight
+# is discarded; raw_count drives the true ordering).
+top_after=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
+[[ "$top_after" == "heavy_use" ]] && ok "post-migration: heavy_use rank #1 (raw_count seeding wins)" \
+  || no "post-migration: expected heavy_use, got $top_after"
 
 # tab-stats-bump.sh: enter/leave wiring -------------------------------
 printf '\xe2\x96\xb8 %s\n' 'tab-stats-bump.sh enter-state + close-out flow'
