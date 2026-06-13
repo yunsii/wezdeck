@@ -44,11 +44,20 @@ The Lua side reads `shared.env` independently via `helpers.load_optional_env_fil
 
 | Genre | Goes in | Notes |
 |---|---|---|
-| User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. Files are auto-globbed. |
+| User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. One file per service. Files are auto-globbed. |
+| Repo-anchored env (`WEZTERM_REPO`, PATH for `cli/`) | `~/.config/shell-env.d/wezterm-env.env` | Template at `wezterm-x/local.example/shell-env.d/`. |
+| Repo-anchored shell helpers (aliases, `cd` functions) | `~/.config/shell-env.d/wezterm-fn.env` | Same template dir. Parent-shell only; runtime-loader treats it as a no-op. |
+| User-facing CLI commands | `scripts/runtime/cli/<name>` | No `.sh` suffix. Auto-PATH'd by `wezterm-env.env`. |
 | Repo-machine config (Lua + shell) | `wezterm-x/local/shared.env` | Synced to Windows runtime. |
 | Repo-machine shell init / functions | `wezterm-x/local/runtime-logging.sh`, `wezterm-x/local/command-panel.sh` | Sourced as bash, not as `.env`. |
 | Repo-machine Lua tables | `wezterm-x/local/constants.lua`, `keybindings.lua`, `workspaces.lua` | Lua return-tables. |
 | Repo-tracked config | `config/worktree-task.env` | Read literally — values may contain command strings. Never source. |
+
+### Repo-anchored CLI surface
+
+User-facing CLI commands belong in `scripts/runtime/cli/` with no `.sh` suffix (users type the bare word, e.g. `reminders` not `reminders.sh`). The tracked template `wezterm-x/local.example/shell-env.d/wezterm-env.env` prepends that dir to `PATH`, so once a user copies that file into `~/.config/shell-env.d/`, adding a new CLI is a single file drop into `cli/` — no PATH edits, no rc-file edits, no symlinks. The same PATH addition rides into agent-launcher subprocesses via the runtime loader, so commands installed this way are also reachable from machine-spawned agents (Claude Code, Codex CLI, etc.) without extra wiring.
+
+Parent-shell-only helpers — `cd`-ing functions, completion hooks, aliases — belong in the sibling `wezterm-fn.env` template instead. They cannot survive a subprocess boundary, so the runtime loader silently no-ops on them (defines, returns, drops). Prefix function and alias names with `wez-` / `wezterm-` so they cannot shadow a real binary a subprocess might rely on.
 
 For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is the single env-loading site (it calls `runtime_env_load_managed` before exec'ing the agent). All four launch paths — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, tab-overflow cold-spawn — terminate at this launcher. See [`architecture.md#startup-invariants`](./architecture.md#startup-invariants) for the invariant statement.
 
