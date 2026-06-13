@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+# reminders — view the installed user crontab as a list of timed
+# reminders, with their parsed title/message, the next scheduled
+# fire (computed via systemd-analyze calendar), and the most recent
+# fires observed in the cron journal.
+#
+# Notes on what this view does and does not tell you:
+#   - "next fire" is a calendar-only prediction. It does not know
+#     whether the cron daemon will actually be up or whether tmux is
+#     attached at that instant.
+#   - "recent fires" is journalctl evidence that cron started the
+#     CMD. It is NOT proof the popup appeared — a tmux mismatch or
+#     dead client can still silently swallow the popup. See
+#     docs/reminders.md Diagnostics for the failure modes.
+#
+# Env knobs:
+#   REMINDERS_JOURNAL_SINCE   default "14 days ago" — how far back
+#                             to scan cron journal for recent fires.
+#   NO_COLOR                  any value disables ANSI styling.
+set -euo pipefail
+
+since="${REMINDERS_JOURNAL_SINCE:-14 days ago}"
+
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  bold=$'\e[1m'; dim=$'\e[2m'; yellow=$'\e[33m'; red=$'\e[31m'; reset=$'\e[0m'
+else
+  bold=''; dim=''; yellow=''; red=''; reset=''
+fi
+
+if ! crontab -l >/dev/null 2>&1; then
+  printf 'no user crontab installed.\n' >&2
+  printf 'template: %s/wezterm-x/local.example/crontab\n' \
+    "${WEZTERM_REPO:-$HOME/github/wezterm-config}" >&2
+  exit 0
+fi
+
+# Translate the day-of-week + month subset of cron syntax to a
+# systemd-analyze calendar expression. Covers the cases this repo's
+# template actually uses (single days, ranges, *). Returns a literal
+# "?" sentinel on patterns we don't try to translate, signaling the
+# caller to skip the next-fire calc rather than guess wrong.
+cron_to_systemd_calendar() {
+  local minute=$1 hour=$2 dom=$3 month=$4 dow=$5
+  local dow_part='' date_part=''
+
+  case "$dow" in
+    '*') dow_part='' ;;
+    [0-7]) dow_part="$(printf '%s\n' Sun Mon Tue Wed Thu Fri Sat Sun | sed -n "$((dow + 1))p")" ;;
+    [0-7]-[0-7])
+      local from=${dow%-*} to=${dow##*-}
+      local f t
+      f="$(printf '%s\n' Sun Mon Tue Wed Thu Fri Sat Sun | sed -n "$((from + 1))p")"
+      t="$(printf '%s\n' Sun Mon Tue Wed Thu Fri Sat Sun | sed -n "$((to + 1))p")"
+      dow_part="$f..$t"
+      ;;
+    *) printf '?'; return 0 ;;
+  esac
+
+  if [[ "$dom" == '*' && "$month" == '*' ]]; then
+    date_part=''
+  elif [[ "$month" == '*' ]]; then
+    date_part="*-*-$dom"
+  else
+    date_part="*-$month-$dom"
+  fi
+
+  case "$minute$hour" in
+    *'*'*|*','*|*'/'*|*'-'*) printf '?'; return 0 ;;
+  esac
+  local time_part
+  printf -v time_part '%02d:%02d:00' "$hour" "$minute"
+
+  local expr=''
+  [[ -n "$dow_part" ]] && expr="$dow_part"
+  [[ -n "$date_part" ]] && expr="${expr:+$expr }$date_part"
+  expr="${expr:+$expr }$time_part"
+  printf '%s' "$expr"
+}
+
+next_fire_line() {
+  local expr=$1
+  [[ "$expr" == '?' ]] && { printf '(complex schedule — next-fire calc skipped)\n'; return 0; }
+  local out
+  if ! out="$(systemd-analyze calendar "$expr" 2>/dev/null)"; then
+    printf '(systemd-analyze rejected "%s")\n' "$expr"
+    return 0
+  fi
+  local next from
+  next="$(printf '%s\n' "$out" | sed -n 's/^[[:space:]]*Next elapse:[[:space:]]*//p')"
+  from="$(printf '%s\n' "$out" | sed -n 's/^[[:space:]]*From now:[[:space:]]*//p')"
+  printf '%s  %s(%s)%s\n' "$next" "$dim" "$from" "$reset"
+}
+
+# Match the script-path prefix of a CMD against journalctl. The
+# entries we ship invoke either reminder.sh or tmux-popup-active.sh,
+# so a basename match is enough — script paths above only ever live
+# under scripts/runtime/.
+recent_fires() {
+  local script_basename=$1
+  journalctl -u cron --since "$since" -o short-iso 2>/dev/null \
+    | grep -E "\\(${USER}\\) CMD .*${script_basename}" \
+    | awk '{print $1}'
+}
+
+humanize_count() {
+  local n=$1 last_iso=$2
+  # Strip a trailing " ago" so "14 days ago" reads cleanly as "14 days".
+  local window="${since% ago}"
+  if (( n == 0 )); then
+    printf '%sno fires in last %s%s' "$yellow" "$window" "$reset"
+  else
+    printf '%d fires in last %s (latest: %s)' "$n" "$window" "$last_iso"
+  fi
+}
+
+shown=0
+while IFS= read -r raw_line; do
+  line="${raw_line#"${raw_line%%[![:space:]]*}"}"
+  [[ -z "$line" || "$line" == \#* ]] && continue
+  # Skip cron env declarations like PATH=...
+  [[ "$line" =~ ^[A-Z_][A-Z0-9_]*= ]] && continue
+
+  read -r minute hour dom month dow rest <<< "$line"
+  command_line="$rest"
+
+  if [[ "$command_line" == *reminder.sh* ]]; then
+    kind='reminder'
+    script_basename='reminder.sh'
+    if [[ "$command_line" =~ reminder\.sh[[:space:]]+\'([^\']*)\'[[:space:]]+\'([^\']*)\' ]]; then
+      title="${BASH_REMATCH[1]}"
+      message="${BASH_REMATCH[2]}"
+    else
+      title='(unparsed reminder)'
+      message=''
+    fi
+  elif [[ "$command_line" == *tmux-popup-active.sh* ]]; then
+    kind='popup'
+    script_basename='tmux-popup-active.sh'
+    title='(raw popup)'
+    message=''
+  else
+    kind='other'
+    script_basename=''
+    title="$(printf '%s' "$command_line" | awk '{print $1}' | xargs basename 2>/dev/null || printf '(unknown)')"
+    message=''
+  fi
+
+  (( shown == 0 )) && printf '%scrontab as installed%s\n\n' "$bold" "$reset"
+  shown=$((shown + 1))
+
+  title="${title## }"; title="${title%% }"
+  printf '%s%s%s\n' "$bold" "$title" "$reset"
+  [[ -n "$message" ]] && printf '  message    %s\n' "$message"
+  printf '  schedule   %s %s %s %s %s\n' "$minute" "$hour" "$dom" "$month" "$dow"
+  printf '  next       '; next_fire_line "$(cron_to_systemd_calendar "$minute" "$hour" "$dom" "$month" "$dow")"
+
+  if [[ -n "$script_basename" ]]; then
+    fires="$(recent_fires "$script_basename" || true)"
+    fire_count=0
+    last_iso='—'
+    if [[ -n "$fires" ]]; then
+      fire_count="$(printf '%s\n' "$fires" | wc -l | tr -d ' ')"
+      last_iso="$(printf '%s\n' "$fires" | tail -1)"
+    fi
+    printf '  recent     %s\n' "$(humanize_count "$fire_count" "$last_iso")"
+  fi
+
+  echo
+done < <(crontab -l)
+
+if (( shown == 0 )); then
+  printf 'crontab is installed but contains no reminder entries.\n'
+  exit 0
+fi
+
+printf '%scron-fire ≠ popup-shown. if a fire is logged but no popup appeared, see docs/reminders.md Diagnostics.%s\n' \
+  "$dim" "$reset"
