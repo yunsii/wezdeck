@@ -57,6 +57,14 @@ The agent-attention right-status counter and tab badges (see [`agent-attention.m
 
 The popup interrupts; the attention pipeline does not. They are orthogonal.
 
+## View
+
+`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezterm-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints the installed user crontab as a list of reminder entries, each with its parsed title and message, the next scheduled fire computed via `systemd-analyze calendar`, and the count + latest timestamp of recent fires from the cron journal. Use it as a first-pass health check before reaching for `journalctl -u cron` or the deeper diagnostics below.
+
+The "recent fires" count is journal evidence that cron *started* the CMD — it is not proof the popup actually appeared. A tmux-binary mismatch or detached client can still swallow the popup silently, which is exactly the failure mode that motivated this view. If the count looks healthy but you have not been seeing popups, jump straight to the *tmux binary mismatch* item below.
+
+Env knobs: `REMINDERS_JOURNAL_SINCE` (default `14 days ago`) widens or narrows the journal window. `NO_COLOR=1` disables ANSI styling, useful when piping the output.
+
 ## Diagnostics
 
 - **Manual test from a real tmux pane** (not from an agent process): `scripts/runtime/reminder.sh ' test ' 'visible?'`. Press a key to dismiss. If the popup does not appear, see the items below.
