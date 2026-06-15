@@ -34,6 +34,32 @@ if ! crontab -l >/dev/null 2>&1; then
   exit 0
 fi
 
+# Pad a single cron minute/hour field for systemd-analyze. Supports
+# `*`, a plain integer (zero-padded to two digits), and a comma list
+# of integers (each padded). Returns sentinel `?` on anything else
+# so the caller can degrade gracefully.
+_systemd_time_field() {
+  local field=$1
+  case "$field" in
+    '*') printf '*' ;;
+    *','*)
+      local IFS=','
+      local -a parts=($field)
+      local out='' part padded
+      for part in "${parts[@]}"; do
+        [[ "$part" =~ ^[0-9]+$ ]] || { printf '?'; return 0; }
+        printf -v padded '%02d' "$part"
+        out="${out:+$out,}$padded"
+      done
+      printf '%s' "$out"
+      ;;
+    *)
+      [[ "$field" =~ ^[0-9]+$ ]] || { printf '?'; return 0; }
+      printf '%02d' "$field"
+      ;;
+  esac
+}
+
 # Translate the day-of-week + month subset of cron syntax to a
 # systemd-analyze calendar expression. Covers the cases this repo's
 # template actually uses (single days, ranges, *). Returns a literal
@@ -64,11 +90,16 @@ cron_to_systemd_calendar() {
     date_part="*-$month-$dom"
   fi
 
-  case "$minute$hour" in
-    *'*'*|*','*|*'/'*|*'-'*) printf '?'; return 0 ;;
-  esac
-  local time_part
-  printf -v time_part '%02d:%02d:00' "$hour" "$minute"
+  # Translate minute / hour into systemd-analyze time syntax. Cover
+  # the patterns this repo's crontabs actually use (single integer,
+  # `*`, comma list); anything else (steps `*/N`, ranges `a-b`) falls
+  # back to `?` so next-fire prints "(complex schedule)" rather than
+  # guessing.
+  local m_part h_part
+  m_part=$(_systemd_time_field "$minute") || { printf '?'; return 0; }
+  h_part=$(_systemd_time_field "$hour")   || { printf '?'; return 0; }
+  [[ "$m_part" == '?' || "$h_part" == '?' ]] && { printf '?'; return 0; }
+  local time_part="$h_part:$m_part:00"
 
   local expr=''
   [[ -n "$dow_part" ]] && expr="$dow_part"
@@ -142,7 +173,13 @@ while IFS= read -r raw_line; do
   # template wraps titles in spaces for popup-border breathing room);
   # tmux-popup-active.sh logs that exact string in popup_title, so we
   # need it verbatim to match ack lines.
+  #
+  # `cmd_kind` controls which signals make sense for this entry —
+  # `popup` entries get fired + shown + drop-detection, `other`
+  # entries only get fired (no ack contract).
+  full_cmd=''
   if [[ "$command_line" == *reminder.sh* ]]; then
+    cmd_kind='popup'
     script_basename='reminder.sh'
     if [[ "$command_line" =~ reminder\.sh[[:space:]]+\'([^\']*)\'[[:space:]]+\'([^\']*)\' ]]; then
       raw_title="${BASH_REMATCH[1]}"
@@ -152,12 +189,16 @@ while IFS= read -r raw_line; do
       message=''
     fi
   elif [[ "$command_line" == *tmux-popup-active.sh* ]]; then
+    cmd_kind='popup'
     script_basename='tmux-popup-active.sh'
     raw_title='(raw popup)'
     message=''
   else
-    script_basename=''
-    raw_title="$(printf '%s' "$command_line" | awk '{print $1}' | xargs basename 2>/dev/null || printf '(unknown)')"
+    cmd_kind='other'
+    full_cmd="$(printf '%s' "$command_line" | awk '{print $1}')"
+    script_basename="$(basename "$full_cmd" 2>/dev/null)"
+    [[ -z "$script_basename" ]] && script_basename='(unknown)'
+    raw_title="$script_basename"
     message=''
   fi
 
@@ -169,21 +210,28 @@ while IFS= read -r raw_line; do
   display_title="${display_title%% }"
   printf '%s%s%s\n' "$bold" "$display_title" "$reset"
   [[ -n "$message" ]] && printf '  message    %s\n' "$message"
+  [[ -n "$full_cmd" ]] && printf '  command    %s\n' "$full_cmd"
   printf '  schedule   %s %s %s %s %s\n' "$minute" "$hour" "$dom" "$month" "$dow"
   printf '  next       '; next_fire_line "$(cron_to_systemd_calendar "$minute" "$hour" "$dom" "$month" "$dow")"
 
-  if [[ -n "$script_basename" ]]; then
-    window="${since% ago}"
-    since_local="$(date -d "$since" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || printf '1970-01-01 00:00:00')"
+  window="${since% ago}"
+  since_local="$(date -d "$since" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || printf '1970-01-01 00:00:00')"
 
-    fires="$(recent_fires "$script_basename" || true)"
-    fire_count=0
-    fire_latest=''
-    if [[ -n "$fires" ]]; then
-      fire_count="$(printf '%s\n' "$fires" | wc -l | tr -d ' ')"
-      fire_latest="$(printf '%s\n' "$fires" | tail -1)"
-    fi
+  fires="$(recent_fires "$script_basename" || true)"
+  fire_count=0
+  fire_latest=''
+  if [[ -n "$fires" ]]; then
+    fire_count="$(printf '%s\n' "$fires" | wc -l | tr -d ' ')"
+    fire_latest="$(printf '%s\n' "$fires" | tail -1)"
+  fi
 
+  if (( fire_count == 0 )); then
+    printf '  fired      %sno cron fires in last %s%s\n' "$yellow" "$window" "$reset"
+  else
+    printf '  fired      %d in last %s (latest %s)\n' "$fire_count" "$window" "$fire_latest"
+  fi
+
+  if [[ "$cmd_kind" == 'popup' ]]; then
     acks="$(recent_popup_acks "$raw_title" | filter_since "$since_local" || true)"
     ack_count=0
     ack_first=''
@@ -192,12 +240,6 @@ while IFS= read -r raw_line; do
       ack_count="$(printf '%s\n' "$acks" | wc -l | tr -d ' ')"
       ack_first="$(printf '%s\n' "$acks" | head -1)"
       ack_latest="$(printf '%s\n' "$acks" | tail -1)"
-    fi
-
-    if (( fire_count == 0 )); then
-      printf '  fired      %sno cron fires in last %s%s\n' "$yellow" "$window" "$reset"
-    else
-      printf '  fired      %d in last %s (latest %s)\n' "$fire_count" "$window" "$fire_latest"
     fi
 
     if [[ -z "$ack_first" ]]; then

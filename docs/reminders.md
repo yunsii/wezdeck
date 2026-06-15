@@ -59,12 +59,16 @@ The popup interrupts; the attention pipeline does not. They are orthogonal.
 
 ## View
 
-`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezterm-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints the installed user crontab as a list of reminder entries, each with its parsed title and message, the next scheduled fire computed via `systemd-analyze calendar`, and two independent recent-activity signals: `fired` and `shown`.
+`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezterm-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints every entry in the installed user crontab — popup-driven reminders alongside any other commands you have scheduled — with the next scheduled fire computed via `systemd-analyze calendar` and one or two recent-activity signals.
 
-- **`fired`** counts cron-journal `(yuns) CMD (...)` lines that match the entry's script in the configured window. This is evidence cron *started* the command — it is NOT proof the popup appeared.
-- **`shown`** counts `popup` category `message="shown"` rows that `tmux-popup-active.sh` emits to runtime.log immediately before `exec tmux display-popup`. This is the actual "popup reached tmux" signal. The view matches acks to entries by their literal `popup_title` (including any padding spaces), so the parsed title in the View output and the title in the runtime log are always the same string.
+- **`fired`** counts cron-journal `(yuns) CMD (...)` lines that match the entry's script basename in the configured window. This is evidence cron *started* the command — for popup entries it is NOT proof the popup appeared.
+- **`shown`** (popup entries only) counts `popup` category `message="shown"` rows that `tmux-popup-active.sh` emits to runtime.log immediately before `exec tmux display-popup`. This is the actual "popup reached tmux" signal. The view matches acks to entries by their literal `popup_title` (including any padding spaces), so the parsed title in the View output and the title in the runtime log are always the same string.
 
-When both counts agree, the entry is healthy. When `shown` is the dim placeholder text, either ack tracking was introduced after the window started or the popup has never actually fired in that window — the docs note below explains. When `shown` is non-zero but lower than the post-first-ack `fired` count, the view prints a `⚠ N fires after <ts> lack an ack` warning: those fires are the silent-drop smoking gun and you should jump straight to the *tmux binary mismatch* / *Popup did not show* items below.
+Non-popup entries (anything that doesn't route through `reminder.sh` or `tmux-popup-active.sh`) get a `command` row showing the full first-token path and a `fired` row; the ack contract is popup-specific so `shown` is omitted entirely rather than printed as a confusing N/A.
+
+When both counts agree on a popup entry, it's healthy. When `shown` is the dim placeholder text, either ack tracking was introduced after the window started or the popup has never actually fired in that window — the docs note below explains. When `shown` is non-zero but lower than the post-first-ack `fired` count, the view prints a `⚠ N fires after <ts> lack an ack` warning: those fires are the silent-drop smoking gun and you should jump straight to the *tmux binary mismatch* / *Popup did not show* items below.
+
+Cron schedule translation covers the common patterns: single integer, `*`, and comma-list values in minute and hour; weekday ranges and single days in the day-of-week column. Anything more exotic (steps, multi-field ranges) degrades to `(complex schedule — next-fire calc skipped)` rather than guessing wrong; `fired`/`shown` still work for those entries because they read the journal/log directly without re-computing schedules.
 
 Env knobs: `REMINDERS_JOURNAL_SINCE` (default `14 days ago`) widens or narrows both windows. `NO_COLOR=1` disables ANSI styling, useful when piping the output.
 
