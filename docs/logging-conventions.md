@@ -44,7 +44,7 @@ If you genuinely need ad-hoc render-path debugging, gate it behind an explicit e
 
 Add a new category only when an existing one would dilute its meaning. Currently registered:
 
-- **bash** (`scripts/runtime/`): `attention`, `clipboard`, `command_panel`, `managed_command`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
+- **bash** (`scripts/runtime/`): `attention`, `clipboard`, `command_panel`, `managed_command`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
 - **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `vscode`, `workspace`
 - **C# helper** (`windows-helper-manager`): owned outside this repo, treat as read-only
 
