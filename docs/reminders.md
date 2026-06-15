@@ -59,11 +59,14 @@ The popup interrupts; the attention pipeline does not. They are orthogonal.
 
 ## View
 
-`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezterm-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints the installed user crontab as a list of reminder entries, each with its parsed title and message, the next scheduled fire computed via `systemd-analyze calendar`, and the count + latest timestamp of recent fires from the cron journal. Use it as a first-pass health check before reaching for `journalctl -u cron` or the deeper diagnostics below.
+`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezterm-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints the installed user crontab as a list of reminder entries, each with its parsed title and message, the next scheduled fire computed via `systemd-analyze calendar`, and two independent recent-activity signals: `fired` and `shown`.
 
-The "recent fires" count is journal evidence that cron *started* the CMD — it is not proof the popup actually appeared. A tmux-binary mismatch or detached client can still swallow the popup silently, which is exactly the failure mode that motivated this view. If the count looks healthy but you have not been seeing popups, jump straight to the *tmux binary mismatch* item below.
+- **`fired`** counts cron-journal `(yuns) CMD (...)` lines that match the entry's script in the configured window. This is evidence cron *started* the command — it is NOT proof the popup appeared.
+- **`shown`** counts `popup` category `message="shown"` rows that `tmux-popup-active.sh` emits to runtime.log immediately before `exec tmux display-popup`. This is the actual "popup reached tmux" signal. The view matches acks to entries by their literal `popup_title` (including any padding spaces), so the parsed title in the View output and the title in the runtime log are always the same string.
 
-Env knobs: `REMINDERS_JOURNAL_SINCE` (default `14 days ago`) widens or narrows the journal window. `NO_COLOR=1` disables ANSI styling, useful when piping the output.
+When both counts agree, the entry is healthy. When `shown` is the dim placeholder text, either ack tracking was introduced after the window started or the popup has never actually fired in that window — the docs note below explains. When `shown` is non-zero but lower than the post-first-ack `fired` count, the view prints a `⚠ N fires after <ts> lack an ack` warning: those fires are the silent-drop smoking gun and you should jump straight to the *tmux binary mismatch* / *Popup did not show* items below.
+
+Env knobs: `REMINDERS_JOURNAL_SINCE` (default `14 days ago`) widens or narrows both windows. `NO_COLOR=1` disables ANSI styling, useful when piping the output.
 
 ## Diagnostics
 

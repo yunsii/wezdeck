@@ -102,16 +102,31 @@ recent_fires() {
     | awk '{print $1}'
 }
 
-humanize_count() {
-  local n=$1 last_iso=$2
-  # Strip a trailing " ago" so "14 days ago" reads cleanly as "14 days".
-  local window="${since% ago}"
-  if (( n == 0 )); then
-    printf '%sno fires in last %s%s' "$yellow" "$window" "$reset"
-  else
-    printf '%d fires in last %s (latest: %s)' "$n" "$window" "$last_iso"
-  fi
+# `popup` category, `message="shown"` ack lines emitted by
+# tmux-popup-active.sh. Returned timestamps are in lib format
+# `YYYY-MM-DD HH:MM:SS.fff` (no TZ, assumed local), one per line, in
+# the order they appear in the log (i.e. chronological — the lib
+# always appends).
+recent_popup_acks() {
+  local title=$1
+  local log="${WSL_RUNTIME_LOG_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/logs/runtime.log}"
+  [[ -r "$log" ]] || return 0
+  grep -F 'category="popup"' "$log" 2>/dev/null \
+    | grep -F 'message="shown"' \
+    | grep -F "popup_title=\"$title\"" \
+    | sed -n 's/.*ts="\([^"]*\)".*/\1/p' \
+    || true
 }
+
+# Lex-filter timestamps to those at or after a cutoff. Both the lib's
+# format and the cutoff we pass in are `YYYY-MM-DD HH:MM:SS[.fff]`,
+# which sorts lexically the same way it sorts chronologically.
+filter_since() {
+  local cutoff=$1
+  awk -v c="$cutoff" 'length($0) > 0 && $0 >= c'
+}
+
+to_epoch() { date -d "$1" +%s 2>/dev/null || printf 0; }
 
 shown=0
 while IFS= read -r raw_line; do
@@ -123,46 +138,96 @@ while IFS= read -r raw_line; do
   read -r minute hour dom month dow rest <<< "$line"
   command_line="$rest"
 
+  # `raw_title` keeps any padding spaces the crontab entry used (the
+  # template wraps titles in spaces for popup-border breathing room);
+  # tmux-popup-active.sh logs that exact string in popup_title, so we
+  # need it verbatim to match ack lines.
   if [[ "$command_line" == *reminder.sh* ]]; then
-    kind='reminder'
     script_basename='reminder.sh'
     if [[ "$command_line" =~ reminder\.sh[[:space:]]+\'([^\']*)\'[[:space:]]+\'([^\']*)\' ]]; then
-      title="${BASH_REMATCH[1]}"
+      raw_title="${BASH_REMATCH[1]}"
       message="${BASH_REMATCH[2]}"
     else
-      title='(unparsed reminder)'
+      raw_title='(unparsed reminder)'
       message=''
     fi
   elif [[ "$command_line" == *tmux-popup-active.sh* ]]; then
-    kind='popup'
     script_basename='tmux-popup-active.sh'
-    title='(raw popup)'
+    raw_title='(raw popup)'
     message=''
   else
-    kind='other'
     script_basename=''
-    title="$(printf '%s' "$command_line" | awk '{print $1}' | xargs basename 2>/dev/null || printf '(unknown)')"
+    raw_title="$(printf '%s' "$command_line" | awk '{print $1}' | xargs basename 2>/dev/null || printf '(unknown)')"
     message=''
   fi
 
   (( shown == 0 )) && printf '%scrontab as installed%s\n\n' "$bold" "$reset"
   shown=$((shown + 1))
 
-  title="${title## }"; title="${title%% }"
-  printf '%s%s%s\n' "$bold" "$title" "$reset"
+  # Strip surrounding padding for display only.
+  display_title="${raw_title## }"
+  display_title="${display_title%% }"
+  printf '%s%s%s\n' "$bold" "$display_title" "$reset"
   [[ -n "$message" ]] && printf '  message    %s\n' "$message"
   printf '  schedule   %s %s %s %s %s\n' "$minute" "$hour" "$dom" "$month" "$dow"
   printf '  next       '; next_fire_line "$(cron_to_systemd_calendar "$minute" "$hour" "$dom" "$month" "$dow")"
 
   if [[ -n "$script_basename" ]]; then
+    window="${since% ago}"
+    since_local="$(date -d "$since" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || printf '1970-01-01 00:00:00')"
+
     fires="$(recent_fires "$script_basename" || true)"
     fire_count=0
-    last_iso='—'
+    fire_latest=''
     if [[ -n "$fires" ]]; then
       fire_count="$(printf '%s\n' "$fires" | wc -l | tr -d ' ')"
-      last_iso="$(printf '%s\n' "$fires" | tail -1)"
+      fire_latest="$(printf '%s\n' "$fires" | tail -1)"
     fi
-    printf '  recent     %s\n' "$(humanize_count "$fire_count" "$last_iso")"
+
+    acks="$(recent_popup_acks "$raw_title" | filter_since "$since_local" || true)"
+    ack_count=0
+    ack_first=''
+    ack_latest=''
+    if [[ -n "$acks" ]]; then
+      ack_count="$(printf '%s\n' "$acks" | wc -l | tr -d ' ')"
+      ack_first="$(printf '%s\n' "$acks" | head -1)"
+      ack_latest="$(printf '%s\n' "$acks" | tail -1)"
+    fi
+
+    if (( fire_count == 0 )); then
+      printf '  fired      %sno cron fires in last %s%s\n' "$yellow" "$window" "$reset"
+    else
+      printf '  fired      %d in last %s (latest %s)\n' "$fire_count" "$window" "$fire_latest"
+    fi
+
+    if [[ -z "$ack_first" ]]; then
+      # No popup-shown ack in window — either the ack signal predates this
+      # entry (cron PATH bug era, recent ack-lib install, etc.) or the
+      # popup truly never fired. Stay neutral; the docs explain.
+      if (( fire_count > 0 )); then
+        printf '  shown      %s(no popup-shown acks in window — ack signal newly added or popup not reaching tmux)%s\n' "$dim" "$reset"
+      else
+        printf '  shown      %s(no popup-shown acks in window)%s\n' "$dim" "$reset"
+      fi
+    else
+      printf '  shown      %d in last %s (latest %s)\n' "$ack_count" "$window" "$ack_latest"
+      # Drop-detection: among fires that happened at-or-after the first
+      # in-window ack (so ack tracking was definitely live for them),
+      # how many lack a paired ack? Anything > 0 is a silent-failure
+      # smell.
+      first_ack_epoch=$(to_epoch "$ack_first")
+      fires_after_ack=0
+      while IFS= read -r ts; do
+        [[ -z "$ts" ]] && continue
+        fe=$(to_epoch "$ts")
+        (( fe >= first_ack_epoch )) && fires_after_ack=$((fires_after_ack + 1))
+      done <<< "$fires"
+      drops=$((fires_after_ack - ack_count))
+      if (( drops > 0 )); then
+        printf '             %s⚠ %d fires after %s lack an ack — see Diagnostics%s\n' \
+          "$red" "$drops" "$ack_first" "$reset"
+      fi
+    fi
   fi
 
   echo
