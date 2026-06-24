@@ -47,13 +47,28 @@ resume_command_extract_value() {
   return 1
 }
 
+resume_command_active_profile() {
+  local wezterm_repo="${1:-}"
+  local profile="${MANAGED_AGENT_PROFILE:-}"
+  local shared_env=""
+
+  if [[ -z "$profile" && -n "$wezterm_repo" ]]; then
+    shared_env="$wezterm_repo/wezterm-x/local/shared.env"
+    profile="$(resume_command_extract_value "$shared_env" MANAGED_AGENT_PROFILE 2>/dev/null || true)"
+  fi
+
+  profile="${profile:-claude}"
+  profile="${profile%-resume}"
+  printf '%s\n' "$profile"
+}
+
 # resolve_resume_primary_command <wezterm_config_repo>
 # Prints the resume command on stdout, or nothing if it cannot be
 # resolved (caller should fall back to the source pane's primary command).
 resolve_resume_primary_command() {
   local wezterm_repo="${1:-}"
-  local profile="${MANAGED_AGENT_PROFILE:-claude}"
-  profile="${profile%-resume}"
+  local profile
+  profile="$(resume_command_active_profile "$wezterm_repo")"
   local normalized
   normalized="$(resume_command_normalize_profile_key "$profile")"
   [[ -n "$normalized" ]] || return 0

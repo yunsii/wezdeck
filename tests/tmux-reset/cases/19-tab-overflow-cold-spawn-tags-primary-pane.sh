@@ -55,6 +55,7 @@ EOF
 WORKSPACE="coldspawntest"
 PROJECT_ROOT="$TEST_ROOT/cold-spawn-root"
 mkdir -p "$PROJECT_ROOT"
+git -C "$PROJECT_ROOT" init -q
 
 SESSION_NAME="$(tmux_worktree_session_name_for_path "$WORKSPACE" "$PROJECT_ROOT")"
 COLD_SPAWN_SCRIPT="$STAGED_REPO/scripts/runtime/tab-overflow-cold-spawn.sh"

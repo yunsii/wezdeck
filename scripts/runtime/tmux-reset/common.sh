@@ -120,8 +120,13 @@ agent_profile_for_managed_pane() {
   local resume_command
   resume_command="$(resolve_resume_primary_command "$wezterm_repo" 2>/dev/null || true)"
   [[ -n "$resume_command" ]] || return 0
-  local profile="${MANAGED_AGENT_PROFILE:-claude}"
-  profile="${profile%-resume}"
+  local profile
+  if declare -F resume_command_active_profile >/dev/null 2>&1; then
+    profile="$(resume_command_active_profile "$wezterm_repo" 2>/dev/null || true)"
+  else
+    profile="${MANAGED_AGENT_PROFILE:-claude}"
+    profile="${profile%-resume}"
+  fi
   printf '%s\n' "$profile"
 }
 

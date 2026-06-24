@@ -14,6 +14,8 @@ ROOT_A="$TEST_ROOT/workspace-a"
 ROOT_B="$TEST_ROOT/workspace-b"
 PRIMARY_COMMAND="/bin/sh -lc 'pwd; exec sleep 300'"
 mkdir -p "$ROOT_A" "$ROOT_B"
+git -C "$ROOT_A" init -q
+git -C "$ROOT_B" init -q
 
 SESSION_A="$(tmux_worktree_session_name_for_path work "$ROOT_A")"
 SESSION_B="$(tmux_worktree_session_name_for_path work "$ROOT_B")"

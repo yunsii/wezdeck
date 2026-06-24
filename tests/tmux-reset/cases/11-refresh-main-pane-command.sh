@@ -9,6 +9,7 @@ source "$SCRIPT_DIR/../../../scripts/runtime/tmux-worktree-lib.sh"
 
 tmux_test_setup
 trap tmux_test_teardown EXIT
+export MANAGED_AGENT_PROFILE=noresume
 
 PRIMARY_ROOT="$TEST_ROOT/main-pane-primary"
 mkdir -p "$PRIMARY_ROOT"

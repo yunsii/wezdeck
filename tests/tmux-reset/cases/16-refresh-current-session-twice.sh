@@ -9,9 +9,11 @@ source "$SCRIPT_DIR/../../../scripts/runtime/tmux-worktree-lib.sh"
 
 tmux_test_setup
 trap tmux_test_teardown EXIT
+export MANAGED_AGENT_PROFILE=noresume
 
 PROJECT_ROOT="$TEST_ROOT/twice-refresh-root"
 mkdir -p "$PROJECT_ROOT"
+git -C "$PROJECT_ROOT" init -q
 
 SESSION_NAME="$(tmux_worktree_session_name_for_path work "$PROJECT_ROOT")"
 OPEN_PROJECT_SESSION_SCRIPT="$SCRIPT_DIR/../../../scripts/runtime/open-project-session.sh"

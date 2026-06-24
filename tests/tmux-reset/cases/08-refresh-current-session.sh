@@ -9,11 +9,13 @@ source "$SCRIPT_DIR/../../../scripts/runtime/tmux-worktree-lib.sh"
 
 tmux_test_setup
 trap tmux_test_teardown EXIT
+export MANAGED_AGENT_PROFILE=testagent
 
 PRIMARY_ROOT="$TEST_ROOT/session-primary"
 SECONDARY_ROOT="$TEST_ROOT/session-secondary"
-PRIMARY_COMMAND="/bin/sh -lc 'printf session-agent-refresh\\n; exec sleep 300'"
 mkdir -p "$PRIMARY_ROOT" "$SECONDARY_ROOT"
+PRIMARY_COMMAND="/bin/sh -lc 'cd \"$PRIMARY_ROOT\" || exit 1; printf session-agent-refresh\\n; exec sleep 300'"
+SECONDARY_COMMAND="/bin/sh -lc 'cd \"$SECONDARY_ROOT\" || exit 1; printf session-agent-refresh\\n; exec sleep 300'"
 
 SESSION_NAME="$(tmux_worktree_session_name_for_path work "$PRIMARY_ROOT")"
 WINDOW_A="$(tmux new-session -d -P -F '#{window_id}' -s "$SESSION_NAME" -c "$PRIMARY_ROOT" /bin/sh -lc 'pwd; exec sleep 300')"
@@ -23,7 +25,7 @@ tmux rename-window -t "$WINDOW_B" "$(basename "$SECONDARY_ROOT")"
 
 tmux_test_set_session_metadata "$SESSION_NAME" work managed
 tmux_test_set_window_metadata "$WINDOW_A" managed_primary "$PRIMARY_ROOT" "$(basename "$PRIMARY_ROOT")" "$PRIMARY_COMMAND" managed_two_pane
-tmux_test_set_window_metadata "$WINDOW_B" managed_primary "$SECONDARY_ROOT" "$(basename "$SECONDARY_ROOT")" "$PRIMARY_COMMAND" managed_two_pane
+tmux_test_set_window_metadata "$WINDOW_B" managed_primary "$SECONDARY_ROOT" "$(basename "$SECONDARY_ROOT")" "$SECONDARY_COMMAND" managed_two_pane
 tmux_worktree_ensure_window_panes "$WINDOW_A" "$PRIMARY_ROOT"
 tmux_worktree_ensure_window_panes "$WINDOW_B" "$SECONDARY_ROOT"
 tmux select-window -t "$WINDOW_A"
