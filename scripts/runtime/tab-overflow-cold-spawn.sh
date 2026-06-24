@@ -51,12 +51,11 @@ if tmux has-session -t "$session_name" 2>/dev/null; then
 fi
 
 # Resolve the managed agent argv from worktree-task.env + shared.env.
-# These files cannot be `source`-d safely — `worktree-task.env` carries
-# values like `codex -c 'tui.theme="github"'` that bash treats as a
-# command invocation under set-a / dot-source. Use a literal key=value
-# reader instead (the lua side has its own parser via
-# wezterm-x/lua/config/managed_cli.parse_managed_cli_env, which mirrors
-# the same shape).
+# These files cannot be `source`-d safely — `worktree-task.env` can carry
+# multi-word command values that bash treats as command invocations under
+# set-a / dot-source. Use a literal key=value reader instead (the lua
+# side has its own parser via wezterm-x/lua/config/managed_cli.parse_managed_cli_env,
+# which mirrors the same shape).
 read_env_var() {
   local file="$1" key="$2" line raw
   [[ -f "$file" ]] || return 1

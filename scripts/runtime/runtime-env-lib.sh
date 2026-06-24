@@ -19,9 +19,9 @@
 #
 #   runtime_env_read_key <file> <KEY>
 #     Stdout the value of KEY using a literal grep+strip parser. Use for
-#     files whose values may contain shell metachars (e.g.
-#     config/worktree-task.env carries `codex -c 'tui.theme="github"'`),
-#     which would be re-interpreted as commands under set -a + source.
+#     files whose values may contain shell metachars or multi-word commands
+#     (e.g. config/worktree-task.env), which would be re-interpreted as
+#     commands under set -a + source.
 #
 # High-level helper:
 #   runtime_env_load_managed
