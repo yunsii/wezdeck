@@ -248,7 +248,7 @@ function M.new(ctx)
         -- Tmux owns the smart switch via `bind-key -n C-n` in tmux.conf;
         -- it inspects `pane_current_command` of the tmux pane that
         -- actually has the agent in front. Forward the byte and let it
-        -- decide whether to inject `/new\r` or pass `C-n` through.
+        -- decide whether to stage `/new` + Enter or pass `C-n` through.
         logger.info('agent_cli', 'forwarding Ctrl+n to tmux-backed pane', common.merge_fields(trace_id, {
           decision_path = decision_path,
           domain = pane:get_domain_name(),
@@ -259,12 +259,14 @@ function M.new(ctx)
       end
       local foreground_process = common.foreground_process_basename(pane)
       if foreground_process and agent_cli_basenames[foreground_process:lower()] then
-        logger.info('agent_cli', 'sending /new to non-tmux agent CLI pane', common.merge_fields(trace_id, {
+        logger.info('agent_cli', 'sending /new (staged) to non-tmux agent CLI pane', common.merge_fields(trace_id, {
           decision_path = decision_path,
           foreground_process = foreground_process,
           workspace = workspace_name,
         }))
-        window:perform_action(wezterm.action.SendString('/new\r'), pane)
+        window:perform_action(wezterm.action.SendString('/new'), pane)
+        pcall(wezterm.run_child_process, { 'sleep', '0.1' })
+        window:perform_action(wezterm.action.SendString('\r'), pane)
         return
       end
       window:perform_action(wezterm.action.SendString('\x0e'), pane)
