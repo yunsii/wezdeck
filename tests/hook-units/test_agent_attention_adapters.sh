@@ -22,7 +22,7 @@ fail=0
 setup_sandbox() {
   local sandbox="$1" tmux_socket="$2" tmux_session="$3" tmux_pane="$4"
   guard_sandbox_paths "$sandbox/wezterm-runtime"
-  mkdir -p "$sandbox/wezterm-runtime/state/agent-attention" "$sandbox/bin"
+  mkdir -p "$sandbox/wezterm-runtime/state/agent-attention" "$sandbox/bin" "$sandbox/home" "$sandbox/project"
   cat > "$sandbox/bin/tmux" <<'TMUX_EOF'
 #!/usr/bin/env bash
 case "${1:-}" in
@@ -47,6 +47,8 @@ TMUX_EOF
   chmod +x "$sandbox/bin/tmux"
 
   export PATH="$sandbox/bin:$ORIGINAL_PATH"
+  export HOME="$sandbox/home"
+  export CODEX_PROJECT_DIR="$sandbox/project"
   export TMUX="dummy"
   export MOCK_TMUX_SOCKET="$tmux_socket"
   export MOCK_TMUX_SESSION="$tmux_session"
@@ -84,6 +86,7 @@ assert_eq() {
 }
 
 ORIGINAL_PATH="$PATH"
+ORIGINAL_HOME="$HOME"
 socket="/tmp/tmux-1000/default"
 session="wezterm_test_x_aaaaaaaaaa"
 
@@ -107,6 +110,17 @@ rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"
 setup_sandbox "$sandbox" "$socket" "$session" "%5"
+mkdir -p "$HOME/.codex"
+printf '%s\n' 'approvals_reviewer = "auto_review"' > "$HOME/.codex/config.toml"
+printf '%s' '{"thread_id":"codex-thread-auto","prompt":"continue","hook_event_name":"UserPromptSubmit"}' \
+  | "$codex_adapter" running >/dev/null 2>&1 || true
+printf '%s' '{"thread_id":"codex-thread-auto","tool_name":"Bash","hook_event_name":"PermissionRequest"}' \
+  | "$codex_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Codex auto-review PermissionRequest does not become waiting" "running" "$(field_for "$sandbox" "codex-thread-auto" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
 printf '%s' '{"session_id":"claude-session-1","prompt":"hello claude\nsecond","hook_event_name":"UserPromptSubmit"}' \
   | "$claude_adapter" running >/dev/null 2>&1 || true
 assert_eq "Claude adapter preserves session_id" "running" "$(field_for "$sandbox" "claude-session-1" "status")"
@@ -119,6 +133,8 @@ printf '%s' '{"message":"no stable id"}' \
   | "$codex_adapter" done >/dev/null 2>&1 || true
 assert_eq "Codex adapter falls back to pane key" "done" "$(field_for "$sandbox" "pane:42" "status")"
 rm -rf "$sandbox"
+
+export HOME="$ORIGINAL_HOME"
 
 echo
 if (( fail > 0 )); then
