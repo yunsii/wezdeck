@@ -22,6 +22,7 @@ trap tmux_test_teardown EXIT
 
 PROJECT_ROOT="$TEST_ROOT/primary-pane-trap-exit-root"
 mkdir -p "$PROJECT_ROOT"
+git -C "$PROJECT_ROOT" init -q
 
 SESSION_NAME="$(tmux_worktree_session_name_for_path work "$PROJECT_ROOT")"
 OPEN_PROJECT_SESSION_SCRIPT="$SCRIPT_DIR/../../../scripts/runtime/open-project-session.sh"
