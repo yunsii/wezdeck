@@ -189,7 +189,7 @@ local base_constants = {
       codex = {
         command = { 'codex' },
         variants = {
-          light = { 'codex', '-c', 'tui.theme="github"' },
+          light = { 'codex' },
           dark = { 'codex' },
         },
       },

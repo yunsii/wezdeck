@@ -22,7 +22,7 @@
 #   workspace first-open) shares the same env view.
 #
 # Usage:
-#   agent-launcher.sh <claude|codex|codex-light>
+#   agent-launcher.sh <claude|codex>
 
 set -eu
 
@@ -76,12 +76,9 @@ case "$agent" in
   codex)
     exec sh -c 'codex resume --last || { printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }'
     ;;
-  codex-light)
-    exec sh -c "codex -c 'tui.theme=\"github\"' resume --last || { printf '\033[2J\033[H\n\n  \033[2;36mLoading codex-light ...\033[0m\n'; exec codex -c 'tui.theme=\"github\"'; }"
-    ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
-    printf 'usage: agent-launcher.sh <claude|codex|codex-light>\n' >&2
+    printf 'usage: agent-launcher.sh <claude|codex>\n' >&2
     exit 1
     ;;
 esac
