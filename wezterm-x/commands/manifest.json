@@ -179,7 +179,7 @@
   {
     "id": "agent.new-conversation",
     "label": "Agent CLI: Start a new conversation (/new)",
-    "description": "When the current pane's foreground process is a known agent CLI (claude / codex), type `/new` followed by Enter to start a fresh conversation. Otherwise forwards `Ctrl+n` to the pane unchanged.",
+    "description": "When the current pane's foreground process is a known agent CLI (claude / codex), type `/new`, briefly pause, then press Enter to start a fresh conversation. Otherwise forwards `Ctrl+n` to the pane unchanged.",
     "scope": "project-navigation",
     "context": "any",
     "binding": {"handler": "agent.new_conversation"},
@@ -187,7 +187,7 @@
       { "keys": "Ctrl+n", "layer": "wezterm" }
     ],
     "palette": {
-      "command": ["bash", "-lc", "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" '/new' Enter ;; *) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" C-n ;; esac"]
+      "command": ["bash", "-lc", "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/agent-new-into-pane.sh' \"$COMMAND_PANEL_WINDOW_ID\" ;; *) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" C-n ;; esac"]
     }
   },
   {
