@@ -200,8 +200,8 @@ accumulate forever.
 
 | name | producer | consumer | typical transport | latency |
 |---|---|---|---|---|
-| `attention.tick` | `scripts/claude-hooks/emit-agent-status.sh` (Claude hooks) | `titles.lua` (refresh right-status counter) | OSC (hook runs in regular pane) | sub-frame |
-| `attention.tick.echo` | `scripts/claude-hooks/emit-agent-status.sh` (sidecar to every OSC `attention.tick`) | `titles.lua` (log + fallback `reload_state` when the paired OSC tick is missing) | file (forced unconditionally) | 0–250 ms |
+| `attention.tick` | `scripts/runtime/agent-attention/emit.sh` (agent hooks) | `titles.lua` (refresh right-status counter) | OSC (hook runs in regular pane) | sub-frame |
+| `attention.tick.echo` | `scripts/runtime/agent-attention/emit.sh` (sidecar to every OSC `attention.tick`) | `titles.lua` (log + fallback `reload_state` when the paired OSC tick is missing) | file (forced unconditionally) | 0–250 ms |
 | `attention.jump` | `native/picker/cmd_attention.go` + `scripts/runtime/tmux-attention-picker.sh` (Alt+/ picker selection) | `titles.lua` (mux activate + spawn `attention-jump.sh --direct`) | file (forced via `WEZTERM_EVENT_FORCE_FILE=1`) | 0–250 ms |
 
 `attention.tick.echo` is the **OSC-drop fallback + drop detector**. The

@@ -41,7 +41,7 @@ WezTerm process
 - `tmux.conf` owns pane splits, copy-mode, mouse handling, worktree-window switching, and status-line rendering. Its chord key tables (`command-chord`, `worktree-chord`) are **generated** from the same `manifest.json` by `scripts/runtime/render-tmux-bindings.sh` into `wezterm-x/tmux/chord-bindings.generated.conf` (gitignored), which `tmux.conf` loads via `source-file -q`. The renderer runs during `wezterm-runtime-sync`.
 - WezTerm keys that mutate tmux state (`Alt+v` / `Alt+g` / `Alt+Shift+g` / `Alt+/` / `Alt+o` / `Ctrl+p` / `Ctrl+k` / `Ctrl+Shift+P`) resolve through the registry on the WezTerm side; they forward into the active tmux-backed pane via short escape sequences (`\x1bv`, `\x1b/`, `\x0b`, etc.) so tmux owns the execution. The tmux `bind-key -n M-v / M-g / M-/ / User0-3` lines that receive those bytes are transport infrastructure and stay inline in `tmux.conf`, not user-customizable.
 - Per-machine keybinding overrides live in `wezterm-x/local/keybindings.lua`, addressed by manifest `id`. The WezTerm path consumes them directly at reload (`wezterm-x/lua/ui/keybinding_overrides.lua`); the tmux-chord path consumes the same file at sync time via the bash renderer. Both sides share one source of truth and one override file.
-- Agent attention is layered: hooks (`scripts/claude-hooks/emit-agent-status.sh`) write a shared JSON file via `scripts/runtime/attention-state-lib.sh` and nudge WezTerm with an OSC 1337 `attention_tick`; `wezterm-x/lua/attention.lua` reads it on every tick and renders tab badges + right-status counter (render-only; no pane walking, no user_var state). Jump path splits by entry point: `Alt+,` / `Alt+.` are Lua-driven `--direct` calls; `Alt+/` is forwarded into tmux and runs the popup picker. Full pipeline (state schema, transitions, rendering, focus-based auto-ack, keyboard, hooks): [`agent-attention.md`](./agent-attention.md).
+- Agent attention is layered: provider adapters under `scripts/runtime/agent-attention/adapters/` normalize Claude / Codex hook payloads, `scripts/runtime/agent-attention/emit.sh` writes a shared JSON file via `scripts/runtime/attention-state-lib.sh` and nudges WezTerm with an OSC 1337 `attention_tick`; `wezterm-x/lua/attention.lua` reads it on every tick and renders tab badges + right-status counter (render-only; no pane walking, no user_var state). Jump path splits by entry point: `Alt+,` / `Alt+.` are Lua-driven `--direct` calls; `Alt+/` is forwarded into tmux and runs the popup picker. Full pipeline (state schema, transitions, rendering, focus-based auto-ack, keyboard, hooks): [`agent-attention.md`](./agent-attention.md).
 
 ### Naming guidance for code and docs
 
@@ -85,7 +85,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `wezterm-x/workspaces.lua`: managed workspace definitions
 - `wezterm-x/commands/manifest.json`: single source of truth for invocable commands (see `Command Manifest`)
 - `wezterm-x/lua/logger.lua`: WezTerm-side structured diagnostics helper
-- Agent-attention pipeline (`wezterm-x/lua/attention.lua`, `scripts/runtime/attention-{state-lib,jump}.sh`, `scripts/claude-hooks/emit-agent-status.sh`, `scripts/runtime/tmux-{attention,focus}-*.sh`, `scripts/runtime/tmux-attention-{menu,picker}.sh`): see [`agent-attention.md`](./agent-attention.md) for the per-file ownership.
+- Agent-attention pipeline (`wezterm-x/lua/attention.lua`, `scripts/runtime/agent-attention/{emit.sh,adapters/*.sh}`, `scripts/runtime/attention-{state-lib,jump}.sh`, `scripts/claude-hooks/emit-agent-status.sh` compatibility wrapper, `scripts/runtime/tmux-{attention,focus}-*.sh`, `scripts/runtime/tmux-attention-{menu,picker}.sh`): see [`agent-attention.md`](./agent-attention.md) for the per-file ownership.
 - `scripts/runtime/tmux-worktree-menu.sh` + `tmux-worktree-picker.sh`: tmux-popup picker for `Alt+g`. The menu wrapper prefetches the worktree list into a TSV file before opening `tmux display-popup -E` so the popup paints content on the first frame; the picker dispatches via `tmux run-shell -b tmux-worktree-open.sh` and exits immediately so the popup closes before window creation finishes. Performance contract: [`performance.md`](./performance.md).
 - `wezterm-x/local/`: gitignored machine-local overrides copied by the sync skill when present
 - `config/worktree-task.env`: tracked repo profile for the `worktree-task` runtime; sync-time mirrored to `<runtime_dir>/repo-worktree-task.env` so Windows-side wezterm.exe Lua can read it (the WSL path in `repo-root.txt` is unreachable from Win32 file APIs). `wezterm-x/lua/constants.lua` reads the local copy first; the env file is the single source of truth for `<base>` / `<base>_resume` profile commands.
@@ -148,7 +148,7 @@ flowchart LR
   subgraph WSL["WSL · Linux processes"]
     direction TB
     W_LUA["WezTerm Lua handlers<br/>(spawned via wsl.exe)"]
-    W_HOOK["Claude hook<br/>emit-agent-status.sh"]
+    W_HOOK["agent hooks<br/>agent-attention/emit.sh"]
     W_AGENT["agent CLI<br/>claude / codex"]
     W_BASH["picker / menu / jump<br/>(bash + Go)"]
   end

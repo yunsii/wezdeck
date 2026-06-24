@@ -14,7 +14,7 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`keybindings.md`](./keybindings.md).
 - Tabs, status lines, and selection behavior:
   Read [`tmux-ui.md`](./tmux-ui.md).
-- Agent-attention pipeline (Claude hooks, state file, badges, `Alt+,` / `Alt+.` / `Alt+/`):
+- Agent-attention pipeline (Claude / Codex hooks, state file, badges, `Alt+,` / `Alt+.` / `Alt+/`):
   Read [`agent-attention.md`](./agent-attention.md).
 - Headless Chrome debug instance, `Alt+b` / `Alt+Shift+b`, `chrome://inspect` workflow, `CDP·…` badge:
   Read [`browser-debug.md`](./browser-debug.md).
