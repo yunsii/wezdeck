@@ -137,7 +137,7 @@ flowchart LR
   subgraph WSL["WSL · Linux processes"]
     direction TB
     W_LUA["WezTerm Lua handlers"]
-    W_HOOK["Claude hook"]
+    W_HOOK["agent hooks"]
     W_AGENT["agent CLI"]
     W_BASH["picker / menu / jump"]
   end

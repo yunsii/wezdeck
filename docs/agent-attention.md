@@ -1,12 +1,12 @@
 # Agent Attention
 
-Use this doc when you need anything about the agent-attention pipeline: shared state file, Claude hook install / upgrade, status transitions, rendering, the three keyboard entry points (`Alt+,` / `Alt+.` / `Alt+/`), focus-based auto-ack, or Codex integration.
+Use this doc when you need anything about the agent-attention pipeline: shared state file, Claude / Codex hook install or upgrade, status transitions, rendering, the three keyboard entry points (`Alt+,` / `Alt+.` / `Alt+/`), focus-based auto-ack, or provider integration.
 
 The high-level layering (hooks → shared JSON → OSC tick → Lua render) is summarised in [`architecture.md#interaction-layers`](./architecture.md#interaction-layers); this doc owns the implementation detail.
 
 ## Hook installation
 
-The agent-attention feature expects Claude Code to emit OSC 1337 user vars from the hook events listed in the install template below (`UserPromptSubmit`, `Notification`, `Stop`, `PreToolUse`, `PostToolUse`, `SessionStart`). The hook script ships in this repo at `scripts/claude-hooks/emit-agent-status.sh` and is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals.
+The agent-attention feature expects agent CLI lifecycle hooks to call a provider adapter. Adapters under `scripts/runtime/agent-attention/adapters/` normalize provider payloads into the shared emitter at `scripts/runtime/agent-attention/emit.sh`, which is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals. The legacy Claude path `scripts/claude-hooks/emit-agent-status.sh` remains as a compatibility wrapper around the Claude adapter.
 
 > **Upgrading from an earlier version of this doc** — the hook argument for `UserPromptSubmit` changed from `cleared` to `running`. If your existing `~/.claude/settings.json` still points at `... emit-agent-status.sh cleared`, swap it for `running`. Claude Code re-reads `settings.json` on every hook firing, so the change takes effect on the next event (send a fresh prompt to exercise `UserPromptSubmit`) — no Claude restart needed. Use the verification command at the bottom of this section to confirm the new command is firing.
 
@@ -18,7 +18,7 @@ The agent-attention feature expects Claude Code to emit OSC 1337 user vars from 
 
 > **Upgrading: closing the agent-side git-status lag** — `PostToolUse` and `Stop` each now carry a second hook entry that backgrounds `tmux-status-refresh.sh --force --refresh-client`. This is the agent-side counterpart to the shell prompt hook described in [`setup.md#tmux-status-prompt-hook`](./setup.md#tmux-status-prompt-hook): without it, file edits driven by Claude (Edit / Write / Bash `git …`) only show up in the tmux status segment after the 30s poll. The `tmux-status-refresh.sh` script's own `@tmux_status_force_debounce` (default 2s) absorbs PostToolUse spam, so high-frequency tool calls do not stampede git/node probes. Merge both new entries from the template below; no Claude restart needed. To confirm, send a prompt that runs `git status` or edits a tracked file and watch the tmux status segment update within a tick instead of after 30s.
 
-### Install / update
+### Claude install / update
 
 Merge the block below into the `hooks` section of `~/.claude/settings.json` (do not replace the file). Each hook event has one shell invocation:
 
@@ -152,15 +152,69 @@ Decision tree:
 - **`entry_ts` matches the UI but `cross` (`latency_ms`) is seconds** → OSC pipeline. Look for tmux DCS drops, wezterm event-loop stalls, or `✗NO_TICK` rows that fell back to the periodic tick.
 - **Both are tight but the counter still doesn't update** → renderer side. Check `render_status` log lines on the wezterm side — `attention.collect()` may be returning an unexpected list (TTL prune timing, focused-pane filter, sticky-waiting interaction).
 
-### Codex integration
+### Codex install / update
 
-Codex's hook surface is narrower than Claude Code's: `~/.codex/config.toml`'s `notify` fires once per `agent-turn-complete`, equivalent to Claude's `Stop` hook, and there is no stable event yet for permission prompts or for the user submitting the next prompt. Codex's `hooks.json` lifecycle system, which would let us wire `waiting` and `cleared`, is still under development upstream (tracked in [openai/codex#2150](https://github.com/openai/codex/discussions/2150) and [#15497](https://github.com/openai/codex/issues/15497)).
+Codex now exposes lifecycle hooks in `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` / project `.codex/config.toml`. The relevant events map cleanly onto the existing attention state machine: `UserPromptSubmit → running`, `PermissionRequest → waiting`, `Stop → done`, `PreToolUse` / `PostToolUse → resolved`, and `SessionStart` with matcher `clear → pane-evict`.
 
-Practical consequence for this repo:
+Use the template at `scripts/runtime/agent-attention/install/codex-hooks.json`, or merge this block into user-level `~/.codex/hooks.json`. Prefer the user-level file for this machine: project-local `.codex/hooks.json` only applies after that project layer is trusted, while the attention counter is a terminal-wide operator surface.
 
-- Wiring `notify` to `emit-agent-status.sh done` would give a half-integration — `done` badges and counts work, but those entries would never auto-clear on the next prompt. You would rely on the 30-minute TTL, a fresh `Stop` overwrite, or the `Alt+/` clear-all sentinel.
-- Codex's `notify` payload does not publish a stable `session_id` today, so the hook's fallback key (`pane:<WEZTERM_PANE>`) would be used. In the hybrid-wsl one-agent-per-pane layout this still dedupes correctly; mixing Claude and Codex in the same WezTerm pane is not supported in that mode.
-- Nothing Codex-specific ships in `~/.codex/config.toml` from this repo. When the upstream lifecycle hooks GA and cover the `waiting` / `cleared` / `resolved` equivalents, integration collapses to adding the matching `notify`/`hooks.json` entries that call the same `emit-agent-status.sh waiting|done|cleared|resolved` interface — no changes in the hook script or Lua side.
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh running" }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh waiting" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh done" },
+          { "type": "command", "command": "bash /home/yuns/github/wezterm-config/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh resolved" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh resolved" },
+          { "type": "command", "command": "bash /home/yuns/github/wezterm-config/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "clear",
+        "hooks": [
+          { "type": "command", "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh pane-evict" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+After editing Codex hook config, start a new Codex thread or restart the current Codex pane, then run `/hooks` in Codex and trust the new command hooks. Codex loads project-local hooks only when the project `.codex/` layer is trusted; user-level hooks remain independent of project trust.
+
+Codex adapter identity resolution currently accepts `.thread_id`, `.threadId`, `.session_id`, and `.sessionId`, falling back to `pane:<WEZTERM_PANE>` when the hook payload lacks a stable id. The fallback is acceptable for the hybrid-wsl one-agent-per-pane layout, but mixing multiple agent CLIs in one WezTerm pane is not supported.
+
+Unlike the Claude path, Codex `PermissionRequest` does not currently spawn `attention-prompt-watcher.sh`; keep `waiting` until `PostToolUse` / `Stop` unless a future Codex-specific prompt anchor is verified.
 
 ## End-to-end walkthrough
 
@@ -227,12 +281,12 @@ Two non-obvious properties this picture makes visible:
 
 State lives in a shared JSON file at `$runtime_state_dir/state/agent-attention/attention.json`. Two top-level fields:
 
-- `entries` — the active set, keyed by `session_id`. Each entry stores `wezterm_pane_id`, tmux `socket`/`session`/`window`/`pane`, a `status` of `running`, `waiting`, or `done`, a free-text `reason`, the `git_branch` captured at hook-fire time (resolved from `$CLAUDE_PROJECT_DIR` → tmux `pane_current_path` → `$PWD`), and an epoch-ms `ts`. Writes are serialized by flock and land via atomic tmp-rename; entries older than 30 minutes are pruned on every write.
+- `entries` — the active set, keyed by the provider session/thread id when available and by `pane:<WEZTERM_PANE>` otherwise. Each entry stores `wezterm_pane_id`, tmux `socket`/`session`/`window`/`pane`, a `status` of `running`, `waiting`, or `done`, a free-text `reason`, the `git_branch` captured at hook-fire time (resolved from provider project dir env → tmux `pane_current_path` → `$PWD`), and an epoch-ms `ts`. Writes are serialized by flock and land via atomic tmp-rename; entries older than 30 minutes are pruned on every write.
 - `recent` — a tombstone array of entries that left `entries` via any exit path. Same fields as an entry plus `last_status` (the status the entry held when archived), `last_reason`, `live_ts` (the entry's `ts` at archive time), and `archived_ts`. Dedup key is `(tmux_socket, tmux_session, tmux_pane)` — one tombstone per pane, so repeated `/clear`s or restarts in the same pane collapse into a single newest entry. Cap is 50 entries; TTL is 7 days. The picker shows recent entries under the `📜 RCNT` band so the user can jump back to a previously-active session even after the live entry is gone. See *Recent archive* below.
 
 ## Transitions
 
-- `scripts/claude-hooks/emit-agent-status.sh` is the sole writer. Claude Code hooks (configured in user-level `~/.claude/settings.json`) map events to statuses: `UserPromptSubmit` → `running` (a turn has begun), `Stop` → `done`, `PreToolUse` → `resolved` and `PostToolUse` → `resolved` (both go through the same conditional transition: `waiting` and `done` flip to `running` in place, a missing entry is upserted as `running`, and `running` is a no-op — see *Resolved transitions to running* below), `SessionStart` with `matcher: "clear"` → `pane-evict` (see *SessionStart pane eviction* below), and `Notification` branches on `notification_type` — `permission_prompt` / `elicitation_dialog` → `waiting`, while `idle_prompt` and `auth_success` exit without touching state (idle_prompt is not a turn-end signal — a persistent Monitor subscription can hold the agent idle mid-turn, and Stop owns the done transition). This gives three orthogonal meanings: `running` = "Claude is mid-turn", `waiting` = "Claude is blocked (on user input or tool execution)", `done` = "turn finished, awaiting next prompt". The test-only `cleared` action is an explicit remove used by `scripts/dev/test-agent-attention.sh`; it is never wired to a Claude hook.
+- `scripts/runtime/agent-attention/emit.sh` is the sole state writer. Provider adapters map lifecycle events to statuses: `UserPromptSubmit` → `running` (a turn has begun), `Stop` → `done`, `PreToolUse` and `PostToolUse` → `resolved` (both go through the same conditional transition: `waiting` and `done` flip to `running` in place, a missing entry is upserted as `running`, and `running` is a no-op — see *Resolved transitions to running* below), `SessionStart` with matcher `clear` → `pane-evict` (see *SessionStart pane eviction* below). Claude `Notification` branches on `notification_type` — `permission_prompt` / `elicitation_dialog` → `waiting`, while `idle_prompt` and `auth_success` exit without touching state; Codex `PermissionRequest` maps directly to `waiting`. This gives three orthogonal meanings: `running` = "agent is mid-turn", `waiting` = "agent is blocked (on user input or tool execution)", `done` = "turn finished, awaiting next prompt". The test-only `cleared` action is an explicit remove used by `scripts/dev/test-agent-attention.sh`; it is never wired to a provider hook.
 - *Why both `PreToolUse` and `PostToolUse` fire `resolved`.* The two hooks fire at different points in the tool-call lifecycle and cover *different* transitions, not the same transition twice:
   - **`PreToolUse`** fires once when the agent decides to call a tool — *before* any permission prompt and *before* the tool starts executing. Per the [official Claude Code hook docs](https://code.claude.com/docs/en/hooks.md), there is no second firing on user approval. Its only useful transition is `done → running` for the **Monitor wake-up** case (a streamed event landed after a prior `Stop`, the agent woke and called a tool — first signal we have for "back to mid-turn"). For the common path where the entry is already `running`, the hook short-circuits as a no-op.
   - **`PostToolUse`** fires when the tool **completes**. This is the only signal that flips `waiting → running` after the user has approved a permission prompt — Claude Code does not expose a hook for the approval keystroke itself, so `waiting` necessarily persists for the full tool-execution window, however long that takes. PostToolUse also catches the Monitor wake-up `done → running` flip as a belt-and-suspenders (PreToolUse usually beats it; if PreToolUse already flipped the entry, PostToolUse sees `running` and short-circuits via the fast path without lock, OSC tick, or log line).
@@ -250,7 +304,7 @@ State lives in a shared JSON file at `$runtime_state_dir/state/agent-attention/a
   5. **Jump-to-done forget** — a successful `Alt+.` / `Alt+/` jump to a `done` entry immediately spawns `attention-jump.sh --forget <session_id> --only-if-ts <ts>`. The `--only-if-ts` guard keeps a fresher `done` that reused the same `session_id` during the ~50 ms subprocess window from being wiped. **[archived]**
   6. **Periodic background prune** — see *Periodic cleanup* below. **[archived]** (shares the TTL prune helper.)
   7. **Focus-based auto-ack** — `done` only (`waiting` is intentionally excluded so a glance does not silently swallow a pending prompt). Uses the same `--forget` with `--only-if-ts` guard, gated by the `DONE_VISIBILITY_FLOOR_MS` window so the badge actually renders before it archives. See *Rendering* below. **[archived]**
-  8. **Test-only `cleared`** — `scripts/dev/test-agent-attention.sh cleared` or the `--clear-all` sentinel; never wired to a Claude hook. **[archived]** (cleared goes through the same remove path as `--forget`.)
+  8. **Test-only `cleared`** — `scripts/dev/test-agent-attention.sh cleared` or the `--clear-all` sentinel; never wired to a provider hook. **[archived]** (cleared goes through the same remove path as `--forget`.)
   9. **`pane-evict` on `/clear`** — `SessionStart` with `matcher: "clear"` wipes every entry on the current `(tmux_socket, tmux_session, tmux_pane)` except the new `session_id`. See *SessionStart pane eviction* above. **[archived]**
   10. **Overflow rotation forget** — when the overflow tab's pane stops hosting `prev_session` (Alt+x picks a different session, workspace re-attach lands on a new session), the `tab.activate_overflow` event handler in `wezterm-x/lua/titles.lua` calls `attention.forget_by_tmux_session(prev_session)`. Without this, attention entries on `prev_session` sit in `entries` even though no wezterm pane is hosting them anymore — they would dangle until the 30-minute TTL or until the user finds and `Alt+,` / `Alt+/`-acks them by hand. The forget runs in the same tick as the rotation. **[archived]**
   11. **Reachability sweep on snapshot tick** — `write_live_snapshot` walks `state_cache.entries` and archives every `done` / `waiting` entry whose `tmux_session` has no wezterm host in the current `panes_map` / `sessions_map`. Catches every "slot stops hosting" path that doesn't go through `tab.activate_overflow` (spawn-cap eviction, workspace close, refresh-session). `running` is exempt — the agent may legitimately be in flight on a session whose host is just temporarily unmapped (e.g. one tick of overflow rotation before the map updates). Runs every `LIVE_SNAPSHOT_INTERVAL_MS` (1s). **[archived]**

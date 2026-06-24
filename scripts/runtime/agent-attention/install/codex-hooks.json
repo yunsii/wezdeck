@@ -1,0 +1,73 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh running"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh waiting"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh done"
+          },
+          {
+            "type": "command",
+            "command": "bash /home/yuns/github/wezterm-config/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh resolved"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh resolved"
+          },
+          {
+            "type": "command",
+            "command": "bash /home/yuns/github/wezterm-config/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/yuns/github/wezterm-config/scripts/runtime/agent-attention/adapters/codex.sh pane-evict"
+          }
+        ]
+      }
+    ]
+  }
+}

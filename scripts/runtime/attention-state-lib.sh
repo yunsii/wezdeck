@@ -38,7 +38,7 @@
 # truth — picker dedups recent against active by session_id (active wins).
 #
 # Sourced by:
-#   scripts/claude-hooks/emit-agent-status.sh  (writer)
+#   scripts/runtime/agent-attention/emit.sh  (writer)
 #   scripts/runtime/attention-jump.sh          (reader / consumer)
 
 set -u
