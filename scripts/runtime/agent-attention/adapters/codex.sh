@@ -40,6 +40,55 @@ if [[ -n "$payload" ]] && command -v jq >/dev/null 2>&1; then
       ' 2>/dev/null || true)"
 fi
 
+codex_auto_review_enabled() {
+  case "${WEZTERM_ATTENTION_CODEX_AUTO_REVIEW_WAITING:-auto}" in
+    0|false|no|off) return 1 ;;
+    1|true|yes|on) return 0 ;;
+  esac
+
+  local files=()
+  if [[ -n "${HOME:-}" ]]; then
+    files+=("$HOME/.codex/config.toml")
+  fi
+
+  local dir="${CODEX_PROJECT_DIR:-$PWD}"
+  local project_files=()
+  while [[ -n "$dir" && "$dir" != "/" ]]; do
+    project_files=("$dir/.codex/config.toml" "${project_files[@]}")
+    dir="${dir%/*}"
+  done
+  files+=("${project_files[@]}")
+
+  local file value=""
+  for file in "${files[@]}"; do
+    [[ -r "$file" ]] || continue
+    value="$(awk '
+      /^[[:space:]]*#/ { next }
+      /^[[:space:]]*approvals_reviewer[[:space:]]*=/ {
+        sub(/^[^=]*=/, "", $0)
+        sub(/[[:space:]]+#.*$/, "", $0)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+        gsub(/^["'\''"]|["'\''"]$/, "", $0)
+        print $0
+      }
+    ' "$file" 2>/dev/null | tail -n 1)"
+    [[ -n "$value" ]] || continue
+  done
+
+  [[ "$value" == "auto_review" ]]
+}
+
+# PermissionRequest means "this action entered Codex's approval path". With
+# auto-review, that path is reviewer-owned rather than a human prompt; denials
+# are returned to the agent as turn context, not as an operator prompt.
+if [[ "$status" == "waiting" && "$raw_event" == "PermissionRequest" ]] \
+    && codex_auto_review_enabled; then
+  status="resolved"
+  if [[ -z "$reason" ]]; then
+    reason="auto-review"
+  fi
+fi
+
 args=(--provider codex)
 [[ -n "$session_id" ]] && args+=(--session-id "$session_id")
 [[ -n "$reason" ]] && args+=(--reason "$reason")
