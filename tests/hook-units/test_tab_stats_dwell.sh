@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Dwell-weighted tab-stats v2: tab_stats_bump pays raw_count++ only;
-# tab_stats_close_out adds the actual dwell_ms (uncapped, never
-# normalized) into dwell_ms and total_dwell_ms. This file exercises:
+# Dwell-weighted tab-stats v3: tab_stats_bump pays raw_count++ only;
+# tab_stats_close_out adds capped dwell credit into dwell_ms and the
+# full wall-clock dwell into total_dwell_ms. This file exercises:
 #   - the bump-vs-close split (no weight ever paid on entry)
 #   - the dead-zone filter (sub-second dwell stays at 0)
 #   - the long-vs-short rank stability (regression for the v1
@@ -89,12 +89,15 @@ dwell_ok=$(awk -v d="$dwell" 'BEGIN { print (d >= 29999 && d <= 30001) ? 1 : 0 }
 [[ "$total" == "30000" ]] && ok "close_out 30s → total_dwell_ms = 30000 (never decayed)" \
   || no "total_dwell_ms expected 30000, got $total"
 
-# A 2h burst adds proportionally more dwell — uncapped. This is the
-# key v2 property the v1 saturation curve was hiding.
+# A 2h burst adds full lifetime dwell but only capped ranking credit.
 run_lib_case "$sandbox" "tab_stats_close_out work foo-session 7200000" >/dev/null
+dwell=$(jq -r '.sessions["foo-session"].dwell_ms' "$state_file")
 total=$(jq -r '.sessions["foo-session"].total_dwell_ms' "$state_file")
 [[ "$total" == "7230000" ]] && ok "2h burst → total_dwell_ms = 7,230,000 (240x a 30s burst)" \
   || no "total_dwell_ms expected 7230000, got $total"
+dwell_ok=$(awk -v d="$dwell" 'BEGIN { print (d >= 1829999 && d <= 1830001) ? 1 : 0 }')
+[[ "$dwell_ok" == "1" ]] && ok "2h burst → dwell_ms capped at prior 30s + 30m credit (got $dwell)" \
+  || no "dwell_ms expected ≈1830000 after capped 2h burst, got $dwell"
 
 # bump should NOT change raw_count beyond +1 per fire; close_out should
 # never change raw_count at all (asymmetry is the whole point).
@@ -104,16 +107,17 @@ raw_after=$(jq -r '.sessions["foo-session"].raw_count' "$state_file")
   || no "raw_count drifted via close_out: $raw_after"
 
 # Long-used vs short-visit rank stability -----------------------------
-# Regression for the v1 normalize-to-1.0 bug: a session with 2h of
-# dwell must stay ranked above three different sessions that each only
+# Regression for the v1 normalize-to-1.0 bug: a session with one long
+# burst must stay ranked above three different sessions that each only
 # got a single 30s visit. Under v1 those three competitors all tied at
 # weight=1.0 after their close-out and could displace the long-used
-# session out of top-N. Under v2 the 240x ms-scale gap is preserved.
+# session out of top-N. Under v3, capped ms-scale credit still preserves
+# the lead without letting overnight dwell dominate forever.
 printf '\xe2\x96\xb8 %s\n' 'long-used session stays ranked above short visits'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
 
-# heavy: 2h cumulative dwell.
+# heavy: 2h cumulative lifetime dwell, 30m ranking credit.
 run_lib_case "$sandbox" \
   "tab_stats_bump work heavy; tab_stats_close_out work heavy 7200000" >/dev/null
 
@@ -133,21 +137,21 @@ top_name=$(jq -r '
 [[ "$top_name" == "heavy" ]] && ok "heavy session retains rank 1 after 3 short competitors" \
   || no "expected heavy at rank 1, got $top_name"
 
-ratio_ok=$(awk -v h="$heavy_dwell" 'BEGIN { print (h >= 7100000) ? 1 : 0 }')
-[[ "$ratio_ok" == "1" ]] && ok "heavy dwell_ms ≥ 7.1M (decay over a few writes is tiny)" \
+ratio_ok=$(awk -v h="$heavy_dwell" 'BEGIN { print (h >= 1799000 && h <= 1801000) ? 1 : 0 }')
+[[ "$ratio_ok" == "1" ]] && ok "heavy dwell_ms ≈ 1.8M capped credit (decay over a few writes is tiny)" \
   || no "heavy dwell_ms unexpectedly low: $heavy_dwell"
 
-# v1 → v2 migration --------------------------------------------------
+# v1 → v3 migration --------------------------------------------------
 # v1 weight values are corrupted by renormalize+fragmentation (a heavily
 # refreshed project ends up with 7 small rows whose weights don't sum
 # back to true cumulative usage). Migration ignores weight and seeds
 # dwell_ms from raw_count * 30000 (30s per past focus event), matching
 # the v1 saturation point. This recovers the right magnitude for
 # heavily-used projects that v1 demoted via fragmentation.
-printf '\xe2\x96\xb8 %s\n' 'v1 → v2 migration (raw_count seeding ignores corrupted weight)'
+printf '\xe2\x96\xb8 %s\n' 'v1 → v3 migration (raw_count seeding ignores corrupted weight)'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
-# Use a recent last_bump_ms so decay during the first v2 write is
+# Use a recent last_bump_ms so decay during the first v3 write is
 # negligible — that way we can assert exact seed values.
 now_ms=$(date +%s%3N)
 # heavy_use has tiny weight (fragmented across imaginary refresh rows)
@@ -178,8 +182,8 @@ top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
 # (2 events * 30s = 60K ms).
 run_lib_case "$sandbox" "tab_stats_close_out work heavy_use 30000" >/dev/null
 version=$(jq -r '.version' "$state_file")
-[[ "$version" == "2" ]] && ok "write bumps version → 2" \
-  || no "version expected 2, got $version"
+[[ "$version" == "3" ]] && ok "write bumps version → 3" \
+  || no "version expected 3, got $version"
 
 heavy_dwell=$(jq -r '.sessions.heavy_use.dwell_ms' "$state_file")
 heavy_total=$(jq -r '.sessions.heavy_use.total_dwell_ms' "$state_file")
@@ -206,6 +210,49 @@ light_dwell_ok=$(awk -v d="$light_dwell" 'BEGIN { print (d >= 59999 && d <= 6000
 top_after=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
 [[ "$top_after" == "heavy_use" ]] && ok "post-migration: heavy_use rank #1 (raw_count seeding wins)" \
   || no "post-migration: expected heavy_use, got $top_after"
+
+# v2 → v3 migration --------------------------------------------------
+printf '\xe2\x96\xb8 %s\n' 'v2 → v3 migration clamps legacy uncapped dwell'
+sandbox="$(new_sandbox)"
+state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
+now_ms=$(date +%s%3N)
+cat > "$state_file" <<JSON
+{
+  "version": 2,
+  "half_life_days": 7,
+  "sessions": {
+    "frequent":  { "dwell_ms": 1734813895, "total_dwell_ms": 4202636013, "raw_count": 45, "last_bump_ms": $now_ms },
+    "overnight": { "dwell_ms": 5013459119, "total_dwell_ms": 5013668127, "raw_count": 5,  "last_bump_ms": $now_ms }
+  }
+}
+JSON
+
+top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
+[[ "$top" == "frequent" ]] && ok "v2 read fallback: frequent raw_count beats low-count overnight dwell" \
+  || no "v2 read fallback expected frequent, got $top"
+agg_top=$(run_lib_case "$sandbox" "tab_stats_aggregated_tsv work | sort -t \$'\\t' -k2,2nr | head -n 1 | cut -f1")
+[[ "$agg_top" == "frequent" ]] && ok "v2 aggregated TSV fallback ranks frequent first" \
+  || no "v2 aggregated TSV expected frequent first, got $agg_top"
+
+run_lib_case "$sandbox" "tab_stats_bump work frequent" >/dev/null
+version=$(jq -r '.version' "$state_file")
+frequent_dwell=$(jq -r '.sessions.frequent.dwell_ms' "$state_file")
+overnight_dwell=$(jq -r '.sessions.overnight.dwell_ms' "$state_file")
+frequent_total=$(jq -r '.sessions.frequent.total_dwell_ms' "$state_file")
+overnight_total=$(jq -r '.sessions.overnight.total_dwell_ms' "$state_file")
+
+[[ "$version" == "3" ]] && ok "v2 migration write bumps version → 3" \
+  || no "v2 migration version expected 3, got $version"
+freq_ok=$(awk -v d="$frequent_dwell" 'BEGIN { print (d >= 80999000 && d <= 81001000) ? 1 : 0 }')
+over_ok=$(awk -v d="$overnight_dwell" 'BEGIN { print (d >= 8999000 && d <= 9001000) ? 1 : 0 }')
+[[ "$freq_ok" == "1" ]] && ok "frequent v2 dwell clamps to raw_count * 30m" \
+  || no "frequent dwell expected ≈81000000, got $frequent_dwell"
+[[ "$over_ok" == "1" ]] && ok "overnight v2 dwell clamps to raw_count * 30m" \
+  || no "overnight dwell expected ≈9000000, got $overnight_dwell"
+[[ "$frequent_total" == "4202636013" ]] && ok "frequent total_dwell_ms preserved" \
+  || no "frequent total_dwell_ms changed: $frequent_total"
+[[ "$overnight_total" == "5013668127" ]] && ok "overnight total_dwell_ms preserved" \
+  || no "overnight total_dwell_ms changed: $overnight_total"
 
 # tab-stats-bump.sh: enter/leave wiring -------------------------------
 printf '\xe2\x96\xb8 %s\n' 'tab-stats-bump.sh enter-state + close-out flow'

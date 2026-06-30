@@ -5,7 +5,7 @@
 -- refreshed project gets out-ranked by less-used projects whose stats
 -- happen to be in fewer rows.
 --
--- Schema v2: ranking key is `dwell_ms` (decayed cumulative dwell, ms
+-- Schema v3: ranking key is `dwell_ms` (decayed capped dwell credit, ms
 -- scale). `total_dwell_ms` is the never-decayed lifetime counter,
 -- aggregated alongside for picker display. v1 files (only `weight`)
 -- fall back to weight-as-dwell during read so the rank stays sane
@@ -111,7 +111,7 @@ describe('_rank_sessions', function()
 
   it('aggregates refresh-suffix variants under the base name (v2)', function()
     -- All four variants of coco-server collapse to one row; their
-    -- dwell_ms (~25 minutes total across the three variants) and
+    -- dwell_ms (~25 minutes total credit across the three variants) and
     -- total_dwell_ms (lifetime, even larger) both sum.
     local stats = {
       sessions = {
@@ -163,22 +163,36 @@ describe('_rank_sessions', function()
   end)
 
   it('long-used session is not demoted by a few short-visit competitors', function()
-    -- Regression for the renormalize-to-1.0 bug fixed by schema v2:
-    -- session `a` accumulated 2h of dwell (7.2M ms) over time. Three
+    -- Regression for the renormalize-to-1.0 bug fixed by dwell-ms ranking:
+    -- session `a` accumulated 30m of ranking credit over time. Three
     -- other sessions each got one 30s visit (30K ms). Under v1 with
     -- normalization the four sessions would tie at weight=1.0 and `a`
-    -- could fall out of top-N. Under v2 `a` is 240x ahead and stays.
+    -- could fall out of top-N. Under v3 `a` is still 60x ahead and stays.
     local out = r {
       sessions = {
-        a = { dwell_ms = 7200000, raw_count = 50 },  -- 2h cumulative
+        a = { dwell_ms = 1800000, raw_count = 50 },  -- one capped long burst
         b = { dwell_ms = 30000,   raw_count = 1 },   -- single 30s visit
         c = { dwell_ms = 30000,   raw_count = 1 },
         d = { dwell_ms = 30000,   raw_count = 1 },
       },
     }
     assert_eq(out[1].name, 'a', 'long-used session must stay at rank 1')
-    assert_close(out[1].dwell_ms / out[2].dwell_ms, 240, 0.001,
-      'rank-1 dwell should be 240x rank-2 (uncapped ms preserves the lead)')
+    assert_close(out[1].dwell_ms / out[2].dwell_ms, 60, 0.001,
+      'rank-1 dwell credit should be 60x rank-2')
+  end)
+
+  it('clamps legacy v2 uncapped dwell by raw_count before ranking', function()
+    local out = r {
+      version = 2,
+      sessions = {
+        frequent = { dwell_ms = 1734813895, total_dwell_ms = 4202636013, raw_count = 45 },
+        overnight = { dwell_ms = 5013459119, total_dwell_ms = 5013668127, raw_count = 5 },
+      },
+    }
+    assert_eq(out[1].name, 'frequent', 'frequent focus should beat one/few overnight dwells')
+    assert_close(out[1].dwell_ms, 45 * 1800000)
+    assert_eq(out[2].name, 'overnight')
+    assert_close(out[2].dwell_ms, 5 * 1800000)
   end)
 
   it('skips non-table session entries defensively', function()
@@ -234,8 +248,8 @@ describe('_rank_sessions', function()
   end)
 
   it('mixes v1 and v2 entries when migration is mid-rewrite', function()
-    -- Half of the file's entries have been rewritten in v2 shape (the
-    -- writer always emits v2), the other half still have v1 `weight`
+    -- Half of the file's entries have been rewritten in ms-scale shape,
+    -- the other half still have v1 `weight`
     -- because only their `last_bump_ms` row was touched. Both should
     -- rank together.
     local out = r {
