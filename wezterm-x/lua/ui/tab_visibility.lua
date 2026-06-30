@@ -27,6 +27,7 @@ local DEFAULTS = {
   visible_count = 5,
   warm_count = 3,
   half_life_days = 7,
+  dwell_credit_cap_ms = 1800000,
   recompute_interval_ms = 5000,
   swap_flash_ms = 800,
 }
@@ -93,6 +94,7 @@ local module_state = {
   visible_count = DEFAULTS.visible_count,
   warm_count = DEFAULTS.warm_count,
   half_life_days = DEFAULTS.half_life_days,
+  dwell_credit_cap_ms = DEFAULTS.dwell_credit_cap_ms,
   recompute_interval_ms = DEFAULTS.recompute_interval_ms,
   swap_flash_ms = DEFAULTS.swap_flash_ms,
   spawn_visible_only = false,
@@ -113,6 +115,7 @@ function M.configure(opts)
   module_state.visible_count = merged.visible_count
   module_state.warm_count = merged.warm_count
   module_state.half_life_days = merged.half_life_days
+  module_state.dwell_credit_cap_ms = merged.dwell_credit_cap_ms
   module_state.recompute_interval_ms = merged.recompute_interval_ms
   module_state.swap_flash_ms = merged.swap_flash_ms
   module_state.spawn_visible_only = (opts.config and opts.config.spawn_visible_only == true) or false
@@ -239,15 +242,41 @@ end
 
 M._session_label_segment = session_label_segment
 
+local function historical_credit_count(entry)
+  local raw = tonumber(entry.raw_count) or 0
+  if raw > 0 then return raw end
+  if (tonumber(entry.dwell_ms) or 0) > 0 or (tonumber(entry.total_dwell_ms) or 0) > 0 then
+    return 1
+  end
+  return 0
+end
+
+local function ranking_dwell(entry, stats_version)
+  local dwell = tonumber(entry.dwell_ms)
+  if not dwell then return tonumber(entry.weight) or 0 end
+  local ver = tonumber(stats_version) or 3
+  if ver >= 3 then return dwell end
+  if ver >= 2 then
+    local cap = tonumber(module_state.dwell_credit_cap_ms) or DEFAULTS.dwell_credit_cap_ms
+    local max_credit = historical_credit_count(entry) * cap
+    if dwell > max_credit then return max_credit end
+  end
+  return dwell
+end
+
 -- Aggregate stats rows by normalized base name, then rank.
--- Aggregation: dwell_ms summed (cumulative decayed focus time),
+-- Aggregation: dwell_ms summed (decayed capped focus credit),
 -- total_dwell_ms summed (lifetime, never decayed), raw_count summed,
 -- last_bump_ms taken as max (most recent bump across variants).
 -- v1 migration: when `dwell_ms` is missing on an entry, fall back to
 -- the legacy `weight` field so a pre-migration file still ranks while
 -- the writer hasn't rewritten it in v2 shape yet.
+-- v2 migration: when the file still stores uncapped wall-clock dwell in
+-- dwell_ms, clamp read-side ranking to raw_count * the per-burst credit
+-- cap so stale overnight focus cannot dominate before the next write.
 local function rank_sessions(stats)
   if not stats or type(stats.sessions) ~= 'table' then return {} end
+  local stats_version = tonumber(stats.version) or 3
   local agg = {}
   for name, entry in pairs(stats.sessions) do
     if type(entry) == 'table' then
@@ -257,8 +286,7 @@ local function rank_sessions(stats)
         cur = { name = key, dwell_ms = 0, total_dwell_ms = 0, raw_count = 0, last_bump_ms = 0 }
         agg[key] = cur
       end
-      local dwell = tonumber(entry.dwell_ms)
-      if not dwell then dwell = tonumber(entry.weight) or 0 end
+      local dwell = ranking_dwell(entry, stats_version)
       cur.dwell_ms = cur.dwell_ms + dwell
       cur.total_dwell_ms = cur.total_dwell_ms + (tonumber(entry.total_dwell_ms) or 0)
       cur.raw_count = cur.raw_count + (tonumber(entry.raw_count) or 0)
@@ -497,6 +525,7 @@ function M.config()
     visible_count = module_state.visible_count,
     warm_count = module_state.warm_count,
     half_life_days = module_state.half_life_days,
+    dwell_credit_cap_ms = module_state.dwell_credit_cap_ms,
     recompute_interval_ms = module_state.recompute_interval_ms,
     swap_flash_ms = module_state.swap_flash_ms,
     stats_dir = module_state.stats_dir,

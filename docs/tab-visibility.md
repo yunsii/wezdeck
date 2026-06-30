@@ -21,7 +21,7 @@ workspace name once the module is configured.
 Each switch produces an **entry/leave pair** through the same script.
 Dwell is paid only on leave, equal to the real ms the session held
 focus — so a glance costs zero (dead-zone filter) and a long burst
-contributes proportionally to its actual time on screen:
+contributes proportionally up to the per-burst ranking cap:
 
 ```
 tmux client C switches from session A to session B (workspace W)
@@ -46,12 +46,12 @@ workspace file:
    file still ranks)
 2. set `last_bump_ms = now` for every session (so the next decay
    computes a clean age, not double-decayed)
-3. on the target session: `dwell_ms += $dwell_delta`,
+3. on the target session: `dwell_ms += min($dwell_delta, 30m)`,
    `total_dwell_ms += $dwell_delta`, `raw_count += $raw_delta`
-4. emit the v2 shape — **no normalize step**. Long-used sessions
-   accumulate real ms (hours = millions of ms), short visits add
-   thousands of ms; the magnitude difference is what keeps the
-   ranking stable.
+4. emit the v3 shape — **no normalize step**. Long-used sessions
+   accumulate repeated capped ms credits, while a session left focused
+   overnight contributes only one 30-minute ranking burst; full
+   wall-clock time remains available in `total_dwell_ms`.
 5. atomic tmp + rename into
    `%LOCALAPPDATA%\wezterm-runtime\state\tab-stats\<workspace>.json`
 
@@ -67,14 +67,17 @@ one file per tmux client (`client_tty` → slug `pts_N`). Format:
 attribute dwell correctly even if the prior session has since been
 killed (we can no longer ask tmux for its @wezterm_workspace).
 
-**Why dwell, not capped weight**: the previous v1 design paid a
+**Why capped dwell credit, not normalized weight or raw wall-clock**: the previous v1 design paid a
 saturated `weight ∈ [0,1]` on leave (30s capped to 1.0) and
 renormalized to `max(weight) == 1.0` on every write. That made every
 30s+ visit add the same delta regardless of actual time spent, and the
 renorm step crushed the long-used session's lead — five different 30s
-visits could push a 100h-cumulative session out of top-5. v2 pays raw
-dwell ms (a 2h burst weighs 240x a 30s burst) and skips the renorm,
-so cumulative time is preserved in absolute magnitudes.
+visits could push a 100h-cumulative session out of top-5. v2 then paid
+raw wall-clock dwell ms; that fixed normalization but over-promoted
+sessions left focused during lunch, meetings, or overnight. v3 pays
+real dwell up to 30 minutes per focus burst and skips the renorm, so
+repeated active use accumulates while a single idle stay cannot pin a
+rarely used project above frequent ones forever.
 
 **Why split entry from leave**: a single `Alt+x` peek that bumps both
 `weight += 1` and stays sub-second would have promoted a cold session
@@ -88,7 +91,7 @@ One file per workspace, slug-sanitized into `<workspace>.json`:
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "half_life_days": 7,
   "sessions": {
     "wezterm-config": {
@@ -107,21 +110,22 @@ One file per workspace, slug-sanitized into `<workspace>.json`:
 }
 ```
 
-- `dwell_ms` — decayed cumulative dwell in milliseconds. **Primary
-  ranking key** (top-N, picker sort). Sums each leave's actual ms (no
-  cap), decayed exponentially with a 7-day half-life so idle sessions
-  fade. Never renormalized — long-used sessions carry orders-of-
-  magnitude more weight than short-visit competitors.
+- `dwell_ms` — decayed cumulative dwell credit in milliseconds.
+  **Primary ranking key** (top-N, picker sort). Each leave contributes
+  actual ms up to a 30-minute cap, decayed exponentially with a 7-day
+  half-life so idle sessions fade. Never renormalized — repeated use
+  carries more weight than short-visit competitors, but overnight idle
+  time does not dominate the ranking.
 - `total_dwell_ms` — lifetime cumulative dwell ms, **never decayed**.
-  Used as the "you spent X hours on this" surface for the picker
-  (Alt+x can sort or display by this value).
+  Receives the full uncapped dwell. Used as the "you spent X hours on
+  this" surface for the picker (Alt+x can sort or display by this value).
 - `last_bump_ms` — wall-clock epoch ms of the most recent write.
   Drives the decay age computation on the next write.
 - `raw_count` — lifetime focus-event count, never decayed. Acts as
   the dwell-tied tiebreaker in the sort and as a diagnostic chip in
   the picker.
 
-**v1 → v2 migration**: pre-v2 files use a `weight ∈ [0,1]` field in
+**v1 → v3 migration**: pre-v2 files use a `weight ∈ [0,1]` field in
 place of `dwell_ms`. v1 weight is **discarded at migration time** —
 it's corrupted by the renormalize+fragmentation pathology (heavily-
 refreshed projects fragment across many tiny weighted rows that don't
@@ -130,9 +134,15 @@ sum back to true cumulative usage). Instead the writer seeds
 credit per past focus event, matching the v1 saturation point), so a
 project with 20 lifetime focuses lands at 600K ms regardless of how
 fragmented its weight had become. Readers fall back to raw weight
-during the transition window (before the first v2 write); after the
-migration write fires, both readers and writer see consistent v2
+during the transition window (before the first v3 write); after the
+migration write fires, both readers and writer see consistent v3
 dwell_ms values.
+
+**v2 → v3 migration**: v2 files store uncapped wall-clock dwell in
+`dwell_ms`. Readers and the next writer clamp legacy v2 ranking dwell
+to `raw_count * 30m` per row, preserving `total_dwell_ms` unchanged.
+This repairs rows inflated by idle overnight focus without deleting the
+lifetime diagnostic counter.
 
 ## Decay math
 
@@ -371,13 +381,13 @@ baseline; the snapshot is only consumed by Alt+x, so paying that cost
 there is correct.
 
 The popup shows a workspace badge column next to each row. Rows are
-ranked by **accumulated dwell time** (decayed dwell_ms from
+ranked by **accumulated dwell credit** (decayed capped dwell_ms from
 `tab-stats/<slug>.json`, aggregated across `__refresh_*` variants
 under their base session name): the active workspace's rows still
 group at the top, but within that block the sessions you actually
 spend the most time in come first — a project that sits at row 6 in
 `workspaces.lua` will jump to row 1 in the picker once it accumulates
-the most hours. Cross-workspace rows interleave by dwell too (a
+the most repeated use. Cross-workspace rows interleave by dwell credit too (a
 heavily-used session in workspace B can rank above a barely-used
 session in workspace A while you're on A); the workspace badge keeps
 identity visible. When stats haven't yet differentiated rows (cold
@@ -431,11 +441,11 @@ behavior of silently spawning a new wezterm tab outside the cap.
 Indexed exponential decay is order-preserving: 14 days off with no
 bumps shrinks every session's dwell_ms by the same factor, so the
 top-N set is identical when you return. The first focus events after
-a break weigh in raw ms (uncapped) just like before; a session with a
-large dwell floor stays large for many more half-lives than a session
-with a small floor. New sessions can promote into top-N within a few
-days of heavy use as decayed competitors fall behind. The ranking
-still drives the picker's sort order even though it does not
+a break weigh in capped ms credit; a session with a large repeated-use
+floor stays large for more half-lives than a session with a small
+floor. New sessions can promote into top-N within a few days of heavy
+use as decayed competitors fall behind. The ranking still drives the
+picker's sort order even though it does not
 re-shuffle the visible tabs (those are pinned to whatever `Workspace
 .open` decided at cold-open).
 
@@ -450,7 +460,7 @@ re-shuffle the visible tabs (those are pinned to whatever `Workspace
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` dwell_ms per session, sorts by `is_current desc, dwell_ms desc, raw_count desc, snap_idx asc` (dwell-time-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` dwell_ms per session, sorts by `is_current desc, dwell_ms desc, raw_count desc, snap_idx asc` (dwell-credit-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
 | Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |
