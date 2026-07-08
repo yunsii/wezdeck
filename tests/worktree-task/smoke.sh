@@ -17,6 +17,8 @@
 #      worktree path, and branch before launch.
 #   5. open-task-window lifecycle names: quick-create uses lifecycle only
 #      for the local worktree slug and keeps branch names type-scoped.
+#   6. origin-default-branch launch: branch starts from origin/HEAD but
+#      does not track the default branch as upstream.
 #
 # Exit non-zero on any failure with a short trace.
 
@@ -305,18 +307,59 @@ case5_open_task_window_lifecycle_names() {
   assert_pass "quick-create avoids duplicated branch prefix"
 }
 
+# ---------- case 6: origin default does not become upstream ----------
+case6_origin_default_no_tracking() {
+  printf '\n=== case 6: origin default no tracking ===\n'
+
+  local remote="$WORK_DIR/remote6.git"
+  local repo="$WORK_DIR/origin6"
+  git init -q --bare "$remote"
+  setup_repo "$repo"
+  git -C "$repo" remote add origin "$remote"
+  git -C "$repo" push -q -u origin main
+  git -C "$remote" symbolic-ref HEAD refs/heads/main
+  git -C "$repo" remote set-head origin -a >/dev/null
+
+  local slug="remote-base"
+  local expect_wt="$WORK_DIR/.worktrees/origin6/$slug"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title "$slug" \
+    --provider none \
+    --no-prompt \
+    --no-attach >/dev/null \
+    || { assert_fail "launch from origin/HEAD failed"; return 1; }
+
+  [[ -d "$expect_wt" ]] && assert_pass "origin-default launch creates worktree" \
+    || { assert_fail "origin-default worktree missing: $expect_wt"; return 1; }
+
+  if git -C "$expect_wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+    assert_fail "new task branch unexpectedly tracks an upstream: $(git -C "$expect_wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')"
+    return 1
+  fi
+  assert_pass "new task branch has no upstream"
+
+  local branch_remote
+  branch_remote="$(git -C "$repo" config --get "branch.task/$slug.remote" || true)"
+  [[ -z "$branch_remote" ]] && assert_pass "branch config has no remote" \
+    || { assert_fail "branch.task/$slug.remote should be empty, got: $branch_remote"; return 1; }
+}
+
 # ---------- case 6: transcript preservation ----------
 # Reclaim intentionally leaves ~/.claude/projects/<escaped>/ in place so a
 # later same-named worktree (rare but legitimate when reusing task types)
 # can resume the prior conversation via `claude --continue`. /clear is the
 # escape hatch when the resumed context isn't wanted.
-case6_transcript_preserved() {
-  printf '\n=== case 6: transcript preserved across reclaim ===\n'
+case7_transcript_preserved() {
+  printf '\n=== case 7: transcript preserved across reclaim ===\n'
 
-  local repo="$WORK_DIR/origin6"
+  local repo="$WORK_DIR/origin7"
   setup_repo "$repo"
   local slug="task-resume"
-  local expect_wt="$WORK_DIR/.worktrees/origin6/$slug"
+  local expect_wt="$WORK_DIR/.worktrees/origin7/$slug"
 
   HOME="$SANDBOX_HOME" \
   WEZDECK_REPO="$REPO_ROOT" \
@@ -355,7 +398,8 @@ case2_dev_refusal
 case3_dev_allow_long_lived
 case4_create_prompt_preview
 case5_open_task_window_lifecycle_names
-case6_transcript_preserved
+case6_origin_default_no_tracking
+case7_transcript_preserved
 
 printf '\n=== summary ===\n'
 printf 'pass=%d fail=%d\n' "$PASS" "$FAIL"

@@ -587,7 +587,7 @@ wt_core_launch() {
       git -C "$WT_MAIN_WORKTREE_ROOT" worktree add "$WT_WORKTREE_PATH" "$WT_BRANCH_NAME"
     else
       branch_created=1
-      git -C "$WT_MAIN_WORKTREE_ROOT" worktree add -b "$WT_BRANCH_NAME" "$WT_WORKTREE_PATH" "$base_ref"
+      git -C "$WT_MAIN_WORKTREE_ROOT" worktree add -b "$WT_BRANCH_NAME" --no-track "$WT_WORKTREE_PATH" "$base_ref"
     fi
     runtime_log_info task "prepared linked worktree" \
       "worktree_path=$WT_WORKTREE_PATH" \
