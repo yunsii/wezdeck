@@ -5,7 +5,7 @@ set -euo pipefail
 # the repo's declared floors. Read-only; never modifies anything.
 #
 # Floors:
-#   - tmux:  3.6  (scripts/runtime/tmux-version-lib.sh: tmux_version_at_least 3 6)
+#   - tmux:  3.7  (scripts/runtime/tmux-version-lib.sh: tmux_version_at_least 3 7)
 #   - go:    1.21 (native/picker/go.mod)
 #   - wezterm: no declared floor; reports installed vs latest only.
 #
@@ -282,7 +282,7 @@ check_wezterm() {
 }
 
 check_wezterm
-check_tool "tmux"    "$tmux_installed"    "$tmux_latest"    "3.6"
+check_tool "tmux"    "$tmux_installed"    "$tmux_latest"    "3.7"
 check_tool "go"      "$go_installed"      "$go_latest"      "1.21"
 
 if (( ANY_FLOOR_VIOLATION )); then

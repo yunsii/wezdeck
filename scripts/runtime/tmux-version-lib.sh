@@ -19,21 +19,22 @@ tmux_version_at_least() {
   return 1
 }
 
-# Warn (but do not abort) when the host tmux is older than 3.6. 3.3 added
+# Warn (but do not abort) when the host tmux is older than 3.7. 3.3 added
 # allow-passthrough; 3.6 added the 1s flush timeout for synchronized output
-# (DEC mode 2026), without which tmux stalls idle renders waiting on ESU
-# and inner agent CLIs (Claude Code, ...) suppress BSU/ESU entirely.
+# (DEC mode 2026), without which tmux stalls idle renders waiting on ESU.
+# 3.7 added refresh-from-pane, used by copy-mode auto-refresh.
 tmux_version_ensure_supported() {
-  if tmux_version_at_least 3 6; then
+  if tmux_version_at_least 3 7; then
     return 0
   fi
   local installed
   installed="$(tmux_version_current)"
   runtime_log_warn workspace "tmux version below recommended floor" "tmux_version=${installed:-unknown}"
   cat <<EOF >&2
-Warning: tmux ${installed:-} is older than 3.6.
+Warning: tmux ${installed:-} is older than 3.7.
 Managed tmux workspaces require tmux 3.3+ for allow-passthrough and benefit
 from 3.6+ for synchronized-output (DEC mode 2026) passthrough, which keeps
 the IME candidate window stable under streaming output from agent CLIs.
+They also use tmux 3.7+'s refresh-from-pane for copy-mode auto-refresh.
 EOF
 }

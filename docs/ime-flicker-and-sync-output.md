@@ -4,13 +4,17 @@ This doc captures the investigation that led to two of this repository's
 load-bearing decisions:
 
 - `tmux.conf` declares `terminal-features ',xterm*:sync,wezterm*:sync'`.
-- `scripts/runtime/tmux-version-lib.sh` enforces a tmux 3.6+ floor.
+- `scripts/runtime/tmux-version-lib.sh` enforces the repo tmux floor.
+  The investigation below established 3.6+ as the minimum for DEC mode
+  2026 stability; the current repo floor is 3.7+ because copy-mode
+  auto-refresh also uses `refresh-from-pane`.
 
 It explains the symptom, the layers involved, every hypothesis tried,
 which ones were rejected, and how to verify the fix on a fresh
 machine. Read this when:
 
-- A new contributor asks why this repo requires tmux 3.6+.
+- A new contributor asks why this repo requires tmux newer than Ubuntu
+  24.04's packaged 3.4.
 - A future agent CLI shows the same flicker — to see which knobs to
   re-validate.
 - The terminal stack changes (wezterm, tmux, Claude Code) and someone
@@ -216,12 +220,12 @@ Verified: no IME flicker, no idle freeze, mouse wheel still works.
 - `tmux.conf:24-30` — declare Sync feature with explanatory comment.
 - `scripts/runtime/tmux-version-lib.sh` — shared helper:
   `tmux_version_current`, `tmux_version_at_least`,
-  `tmux_version_ensure_supported` (warns at < 3.6).
+  `tmux_version_ensure_supported` (warns below the current repo floor).
 - `scripts/runtime/open-default-shell-session.sh` and
   `scripts/runtime/open-project-session.sh` — both source
   `tmux-version-lib.sh` and call `tmux_version_ensure_supported`
   before launching tmux.
-- `docs/setup.md` — prereq line documents the 3.6+ requirement.
+- `docs/setup.md` — prereq line documents the current tmux requirement.
 
 ## Verification recipe
 
@@ -230,8 +234,8 @@ tmux upgrade, wezterm config change, Claude Code upgrade):
 
 ```sh
 # 1. Versions
-tmux -V                          # expect 3.6 or higher
-ls -l /proc/$(pgrep -of tmux)/exe  # expect /usr/local/bin/tmux (the 3.6+ build)
+tmux -V                          # expect the repo floor or higher
+ls -l /proc/$(pgrep -of tmux)/exe  # expect the self-built tmux binary
 claude --version                 # any v2.0.10+ has the differential renderer
 
 # 2. tmux declares Sync to clients
