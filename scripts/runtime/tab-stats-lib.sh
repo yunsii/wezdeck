@@ -1,29 +1,33 @@
 #!/usr/bin/env bash
-# Per-workspace tmux-session focus statistics for the tab-visibility
-# pipeline (frequency-based top-N rendering). One JSON file per workspace
+# Per-workspace tmux-session activity statistics for the tab-visibility
+# pipeline (activity-based top-N rendering). One JSON file per workspace
 # under the shared `wezterm-runtime` state dir, mirrored to the cross-FS
 # routing rule documented in `docs/architecture.md` (the lua tick reads
 # this file on Windows; the tmux hook writes it from WSL).
 #
-# Schema v3 (per workspace):
+# Schema v4 (per workspace):
 #   {
-#     "version": 3,
+#     "version": 4,
 #     "half_life_days": 7,
 #     "sessions": {
 #       "<session_name>": {
-#         "dwell_ms":       <float — decayed capped dwell credit, sort key>,
-#         "total_dwell_ms": <int — lifetime dwell, never decayed>,
+#         "activity_score": <float — decayed git-activity score, sort key>,
+#         "activity_count": <int — lifetime activity event count>,
+#         "last_activity_ms": <epoch ms>,
+#         "last_seen_ms":   <epoch ms>,
+#         "last_git_fingerprint": <string>,
+#         "dwell_ms":       <float — legacy focus dwell, diagnostic>,
+#         "total_dwell_ms": <int — legacy lifetime dwell, diagnostic>,
 #         "last_bump_ms":   <epoch ms>,
-#         "raw_count":      <int — lifetime focus event count>
+#         "raw_count":      <int — legacy focus event count>
 #       }
 #     }
 #   }
 #
-# `dwell_ms` is the primary ranking signal: each leave adds capped dwell
-# credit, decayed exponentially with a 7-day half-life. The cap prevents
-# overnight / away-from-keyboard wall-clock dwell from making a rarely
-# used session outrank a frequently used one forever. The writer does NOT
-# renormalize, so repeated real use still accumulates a stable lead.
+# `activity_score` is the primary ranking signal: git fingerprint changes
+# (HEAD/index/worktree) add weighted activity credit, decayed exponentially
+# with a 7-day half-life. Focus/view events update last_seen/raw_count for
+# diagnostics only; looking at an overflow session does not promote it.
 #
 # `total_dwell_ms` is never decayed and receives the full uncapped dwell;
 # exposed to the picker / diagnostics for "lifetime time spent" display.
@@ -32,13 +36,13 @@
 # `weight` values are corrupted by renormalize+fragmentation (a project
 # refreshed 7 times via refresh-current-window ends up with 7 small
 # rows whose weights don't sum back to the original lifetime usage),
-# v1 → v3 migration: so we ignore weight at migration time and seed dwell_ms from
+# v1 → v4 migration: so we ignore weight at migration time and seed dwell_ms from
 # raw_count instead — each historical focus event grants 30s of
-# credit, matching the v1 saturation point. After the first v3 write
-# the file is version=3 and dwell_ms accumulates capped dwell credit.
+# credit, matching the v1 saturation point. After the first v4 write
+# the file is version=4 and dwell_ms accumulates capped diagnostic credit.
 #
-# v2 → v3 migration: v2 stored uncapped wall-clock dwell in dwell_ms,
-# which over-promoted sessions left focused overnight. On the first v3
+# v2 → v4 migration: v2 stored uncapped wall-clock dwell in dwell_ms,
+# which over-promoted sessions left focused overnight. On the first v4
 # write, pre-existing v2 dwell_ms is clamped to raw_count * the per-burst
 # credit cap. total_dwell_ms is preserved.
 #
@@ -145,7 +149,7 @@ tab_stats_init() {
   mkdir -p "$dir"
   if [[ ! -f "$path" ]]; then
     printf '%s\n' \
-      "{\"version\":3,\"half_life_days\":${TAB_STATS_HALF_LIFE_DAYS},\"sessions\":{}}" \
+      "{\"version\":4,\"half_life_days\":${TAB_STATS_HALF_LIFE_DAYS},\"sessions\":{}}" \
       > "$path"
   fi
 }
@@ -158,7 +162,7 @@ tab_stats_read() {
     cat "$path"
   else
     printf '%s' \
-      "{\"version\":3,\"half_life_days\":${TAB_STATS_HALF_LIFE_DAYS},\"sessions\":{}}"
+      "{\"version\":4,\"half_life_days\":${TAB_STATS_HALF_LIFE_DAYS},\"sessions\":{}}"
   fi
 }
 
@@ -182,18 +186,17 @@ tab_stats_write() {
 #        the right magnitude despite the renormalize damage to weight.
 #      — for v2 entries, clamps pre-existing uncapped dwell_ms to
 #        raw_count * TAB_STATS_DWELL_CREDIT_CAP_MS so stale overnight
-#        dwell cannot keep a low-frequency session pinned above a
-#        frequently used one.
+#        dwell cannot keep a legacy row pinned above a frequently used
+#        one during migration.
 #   2. updates each session's last_bump_ms = now (so the next decay
 #      computes age from a clean baseline — see comment in tab_stats_lib
 #      header about why we reset last_bump_ms on every session, not just
 #      the target)
-#   3. on the target session: dwell_ms += min($dwell_delta, $credit_cap),
-#                             total_dwell_ms += $dwell_delta,
-#                             raw_count += $raw_delta
-#   4. emits the v3 shape — no normalize step. Long-used sessions stay
-#      orders of magnitude above short-visit sessions, so the slot
-#      ranking is stable.
+#   2. decays every session's activity_score by the same half-life.
+#   3. on the target session: legacy focus fields update only
+#      (dwell_ms / total_dwell_ms / raw_count / last_seen_ms).
+#      Activity ranking is updated only by tab_stats_record_activity.
+#   4. emits the v4 shape — no normalize step.
 #
 # Both tab_stats_bump (entry: dwell_delta=0, raw_delta=1) and
 # tab_stats_close_out (leave: dwell_delta=actual_dwell_ms, raw_delta=0)
@@ -235,25 +238,41 @@ __TAB_STATS_WRITE_JQ='
              else (($v.raw_count // 0) * 30000)
              end) as $seed_total
           | { key: $name,
-              value: {
+              value: ($v + {
+                activity_score: decay(($v.activity_score // 0); ($now - ($v.last_activity_ms // $now)); $half_ms),
+                activity_count: ($v.activity_count // 0),
+                last_activity_ms: ($v.last_activity_ms // 0),
+                last_seen_ms: ($v.last_seen_ms // ($v.last_bump_ms // 0)),
+                last_git_fingerprint: ($v.last_git_fingerprint // ""),
                 dwell_ms:       decay($seed_dwell; ($now - ($v.last_bump_ms // $now)); $half_ms),
                 total_dwell_ms: $seed_total,
                 last_bump_ms:   $now,
                 raw_count:      ($v.raw_count // 0)
-              }
+              })
             }
         )
       | from_entries
     ) as $decayed
-  | ($decayed[$session] // { dwell_ms: 0, total_dwell_ms: 0, last_bump_ms: $now, raw_count: 0 }) as $cur
+  | ($decayed[$session] // {
+      activity_score: 0,
+      activity_count: 0,
+      last_activity_ms: 0,
+      last_seen_ms: 0,
+      last_git_fingerprint: "",
+      dwell_ms: 0,
+      total_dwell_ms: 0,
+      last_bump_ms: $now,
+      raw_count: 0
+    }) as $cur
   | $decayed
-  | .[$session] = {
+  | .[$session] = ($cur + {
       dwell_ms:       (($cur.dwell_ms // 0) + $credit_delta),
       total_dwell_ms: (($cur.total_dwell_ms // 0) + $dwell_delta),
       last_bump_ms:   $now,
+      last_seen_ms:   $now,
       raw_count:      (($cur.raw_count // 0) + $raw_delta)
-    }
-  | { version: 3, half_life_days: $hld, sessions: . }
+    })
+  | { version: 4, half_life_days: $hld, sessions: . }
 '
 
 # Internal: apply $dwell_delta + $raw_delta to <session> under the
@@ -320,11 +339,141 @@ tab_stats_close_out() {
   __tab_stats_write_delta "$workspace" "$session_name" "$dwell_ms" 0
 }
 
-# Print the top N session names (newline-separated, dwell_ms desc, then
-# raw_count desc, then alpha asc). Empty output when state file empty.
-# Reads v1 `weight` as fallback and clamps legacy v2 uncapped dwell so a
-# not-yet-migrated file still ranks like the next v3 write will rank.
-__TAB_STATS_RANK_DWELL_JQ='
+__TAB_STATS_ACTIVITY_JQ='
+  def half_life_ms($d): ($d * 86400000);
+  def decay($w; $age_ms; $half_ms):
+    if $half_ms <= 0 then $w
+    elif $age_ms <= 0 then $w
+    else $w * pow(2; -($age_ms / $half_ms))
+    end;
+  ($now | tonumber) as $now
+  | ($session | tostring) as $session
+  | ($score_delta | tonumber) as $score_delta
+  | ($fingerprint | tostring) as $fingerprint
+  | (.half_life_days // 7) as $hld
+  | half_life_ms($hld) as $half_ms
+  | (.sessions // {}) as $existing
+  | ($existing
+      | to_entries
+      | map(
+          .key as $name
+          | .value as $v
+          | { key: $name,
+              value: ($v + {
+                activity_score: decay(($v.activity_score // 0); ($now - ($v.last_activity_ms // $now)); $half_ms),
+                activity_count: ($v.activity_count // 0),
+                last_activity_ms: ($v.last_activity_ms // 0),
+                last_seen_ms: ($v.last_seen_ms // ($v.last_bump_ms // 0)),
+                last_git_fingerprint: ($v.last_git_fingerprint // ""),
+                dwell_ms: ($v.dwell_ms // 0),
+                total_dwell_ms: ($v.total_dwell_ms // 0),
+                last_bump_ms: ($v.last_bump_ms // 0),
+                raw_count: ($v.raw_count // 0)
+              })
+            }
+        )
+      | from_entries
+    ) as $decayed
+  | ($decayed[$session] // {
+      activity_score: 0,
+      activity_count: 0,
+      last_activity_ms: 0,
+      last_seen_ms: 0,
+      last_git_fingerprint: "",
+      dwell_ms: 0,
+      total_dwell_ms: 0,
+      last_bump_ms: 0,
+      raw_count: 0
+    }) as $cur
+  | $decayed
+  | .[$session] = ($cur + {
+      activity_score: (($cur.activity_score // 0) + $score_delta),
+      activity_count: (($cur.activity_count // 0) + 1),
+      last_activity_ms: $now,
+      last_git_fingerprint: $fingerprint
+    })
+  | { version: 4, half_life_days: $hld, sessions: . }
+'
+
+tab_stats_record_activity() {
+  local workspace="${1:?missing workspace}"
+  local session_name="${2:?missing session_name}"
+  local score_delta="${3:?missing score_delta}"
+  local fingerprint="${4:?missing fingerprint}"
+  local now current updated lock
+  now="$(tab_stats_now_ms)"
+  tab_stats_init "$workspace"
+  lock="$(tab_stats_lock_path "$workspace")"
+  (
+    flock -x 9
+    current="$(tab_stats_read "$workspace")"
+    updated="$(printf '%s' "$current" \
+      | jq --arg session "$session_name" --arg now "$now" \
+           --arg score_delta "$score_delta" --arg fingerprint "$fingerprint" \
+           "$__TAB_STATS_ACTIVITY_JQ" 2>/dev/null)"
+    if [[ -z "$updated" ]]; then
+      return 0
+    fi
+    tab_stats_write "$workspace" "$updated"
+  ) 9>>"$lock"
+}
+
+__TAB_STATS_FINGERPRINT_JQ='
+  ($session | tostring) as $session
+  | ($fingerprint | tostring) as $fingerprint
+  | (.half_life_days // 7) as $hld
+  | (.sessions // {}) as $existing
+  | ($existing[$session] // {
+      activity_score: 0,
+      activity_count: 0,
+      last_activity_ms: 0,
+      last_seen_ms: 0,
+      last_git_fingerprint: "",
+      dwell_ms: 0,
+      total_dwell_ms: 0,
+      last_bump_ms: 0,
+      raw_count: 0
+    }) as $cur
+  | $existing
+  | .[$session] = ($cur + {
+      activity_score: ($cur.activity_score // 0),
+      activity_count: ($cur.activity_count // 0),
+      last_activity_ms: ($cur.last_activity_ms // 0),
+      last_seen_ms: ($cur.last_seen_ms // ($cur.last_bump_ms // 0)),
+      last_git_fingerprint: $fingerprint,
+      dwell_ms: ($cur.dwell_ms // 0),
+      total_dwell_ms: ($cur.total_dwell_ms // 0),
+      last_bump_ms: ($cur.last_bump_ms // 0),
+      raw_count: ($cur.raw_count // 0)
+    })
+  | { version: 4, half_life_days: $hld, sessions: . }
+'
+
+tab_stats_set_git_fingerprint() {
+  local workspace="${1:?missing workspace}"
+  local session_name="${2:?missing session_name}"
+  local fingerprint="${3:?missing fingerprint}"
+  local current updated lock
+  tab_stats_init "$workspace"
+  lock="$(tab_stats_lock_path "$workspace")"
+  (
+    flock -x 9
+    current="$(tab_stats_read "$workspace")"
+    updated="$(printf '%s' "$current" \
+      | jq --arg session "$session_name" --arg fingerprint "$fingerprint" \
+           "$__TAB_STATS_FINGERPRINT_JQ" 2>/dev/null)"
+    if [[ -z "$updated" ]]; then
+      return 0
+    fi
+    tab_stats_write "$workspace" "$updated"
+  ) 9>>"$lock"
+}
+
+# Print the top N session names (newline-separated, activity_score desc,
+# then last_activity_ms desc, then alpha asc). Empty output when state
+# file empty. Reads legacy dwell fields as fallback until activity
+# sampler has written v4 activity fields.
+__TAB_STATS_RANK_SCORE_JQ='
   def min2($a; $b): if $a < $b then $a else $b end;
   def historical_credit_count($v):
     if (($v.raw_count // 0) | tonumber) > 0 then (($v.raw_count // 0) | tonumber)
@@ -337,41 +486,52 @@ __TAB_STATS_RANK_DWELL_JQ='
     elif $ver >= 2 then min2((($v.dwell_ms // 0) | tonumber); (historical_credit_count($v) * $cap))
     else (($v.weight // 0) | tonumber)
     end;
+  def rank_score($v; $ver; $cap):
+    if (($v.activity_count // 0) | tonumber) > 0 or (($v.last_activity_ms // 0) | tonumber) > 0 then
+      (($v.activity_score // 0) | tonumber)
+    else rank_dwell($v; $ver; $cap)
+    end;
+  def rank_recent($v):
+    (($v.last_activity_ms // $v.last_bump_ms // 0) | tonumber);
+  def rank_count($v):
+    if (($v.activity_count // 0) | tonumber) > 0 then (($v.activity_count // 0) | tonumber)
+    else (($v.raw_count // 0) | tonumber)
+    end;
 '
 tab_stats_top_n() {
   local workspace="${1:?missing workspace}"
   local n="${2:-5}"
   tab_stats_read "$workspace" | jq -r --argjson n "$n" --argjson cap "$TAB_STATS_DWELL_CREDIT_CAP_MS" "
-    $__TAB_STATS_RANK_DWELL_JQ
+    $__TAB_STATS_RANK_SCORE_JQ
     ((.version // 3) | tonumber) as \$ver
     |
     (.sessions // {})
     | to_entries
-    | sort_by([- rank_dwell(.value; \$ver; \$cap), - (.value.raw_count // 0), .key])
+    | sort_by([- rank_score(.value; \$ver; \$cap), - rank_recent(.value), - rank_count(.value), .key])
     | .[0:$n]
     | .[].key
   "
 }
 
 # Same as top_n but emits the full record per line as TSV:
-#   <session_name>\t<dwell_ms>\t<total_dwell_ms>\t<raw_count>\t<last_bump_ms>
+#   <session_name>\t<rank_score>\t<total_dwell_ms>\t<event_count>\t<rank_recent_ms>
 tab_stats_top_n_tsv() {
   local workspace="${1:?missing workspace}"
   local n="${2:-5}"
   tab_stats_read "$workspace" | jq -r --argjson n "$n" --argjson cap "$TAB_STATS_DWELL_CREDIT_CAP_MS" "
-    $__TAB_STATS_RANK_DWELL_JQ
+    $__TAB_STATS_RANK_SCORE_JQ
     ((.version // 3) | tonumber) as \$ver
     |
     (.sessions // {})
     | to_entries
-    | sort_by([- rank_dwell(.value; \$ver; \$cap), - (.value.raw_count // 0), .key])
+    | sort_by([- rank_score(.value; \$ver; \$cap), - rank_recent(.value), - rank_count(.value), .key])
     | .[0:$n]
     | .[]
     | [.key,
-       rank_dwell(.value; \$ver; \$cap),
+       rank_score(.value; \$ver; \$cap),
        (.value.total_dwell_ms // 0),
-       (.value.raw_count // 0),
-       (.value.last_bump_ms // 0)]
+       rank_count(.value),
+       rank_recent(.value)]
     | @tsv
   "
 }
@@ -380,33 +540,33 @@ tab_stats_top_n_tsv() {
 # aggregated under their base name. Mirrors the lua-side
 # `_rank_sessions` aggregation so the picker (Alt+x) and the brain
 # (`tab_visibility.lua`) rank from the same projection of the data.
-#   <base_session_name>\t<dwell_ms_sum>\t<total_dwell_ms_sum>\t<raw_count_sum>\t<last_bump_ms_max>
+#   <base_session_name>\t<rank_score_sum>\t<total_dwell_ms_sum>\t<event_count_sum>\t<rank_recent_ms_max>
 # No N cap — caller filters/sorts as needed.
 tab_stats_aggregated_tsv() {
   local workspace="${1:?missing workspace}"
   tab_stats_read "$workspace" | jq -r --argjson cap "$TAB_STATS_DWELL_CREDIT_CAP_MS" "
-    $__TAB_STATS_RANK_DWELL_JQ
+    $__TAB_STATS_RANK_SCORE_JQ
     ((.version // 3) | tonumber) as \$ver
     |
     (.sessions // {})
     | to_entries
     | map({
         base: (.key | sub(\"__refresh_[0-9]+T[0-9]+_[0-9]+$\"; \"\")),
-        dwell_ms: rank_dwell(.value; \$ver; \$cap),
+        rank_score: rank_score(.value; \$ver; \$cap),
         total_dwell_ms: (.value.total_dwell_ms // 0),
-        raw_count: (.value.raw_count // 0),
-        last_bump_ms: (.value.last_bump_ms // 0)
+        event_count: rank_count(.value),
+        rank_recent_ms: rank_recent(.value)
       })
     | group_by(.base)
     | map({
         base: .[0].base,
-        dwell_ms: (map(.dwell_ms) | add),
+        rank_score: (map(.rank_score) | add),
         total_dwell_ms: (map(.total_dwell_ms) | add),
-        raw_count: (map(.raw_count) | add),
-        last_bump_ms: (map(.last_bump_ms) | max)
+        event_count: (map(.event_count) | add),
+        rank_recent_ms: (map(.rank_recent_ms) | max)
       })
     | .[]
-    | [.base, .dwell_ms, .total_dwell_ms, .raw_count, .last_bump_ms]
+    | [.base, .rank_score, .total_dwell_ms, .event_count, .rank_recent_ms]
     | @tsv
   "
 }

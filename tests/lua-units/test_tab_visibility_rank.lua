@@ -5,8 +5,10 @@
 -- refreshed project gets out-ranked by less-used projects whose stats
 -- happen to be in fewer rows.
 --
--- Schema v3: ranking key is `dwell_ms` (decayed capped dwell credit, ms
--- scale). `total_dwell_ms` is the never-decayed lifetime counter,
+-- Schema v4: ranking key is activity_score after a row has real git
+-- activity. Rows with no activity events fall back to legacy dwell_ms
+-- so existing v3 state migrates without collapsing to all-zero.
+-- `total_dwell_ms` remains the never-decayed lifetime focus counter,
 -- aggregated alongside for picker display. v1 files (only `weight`)
 -- fall back to weight-as-dwell during read so the rank stays sane
 -- across the migration boundary.
@@ -142,7 +144,7 @@ describe('_rank_sessions', function()
     assert_eq(out[2].raw_count, 3)
   end)
 
-  it('orders by dwell_ms desc, raw_count desc, name asc', function()
+  it('uses legacy dwell/raw_count ordering for rows without activity', function()
     local out = r {
       sessions = {
         a = { dwell_ms = 500, raw_count = 1 },
@@ -160,6 +162,51 @@ describe('_rank_sessions', function()
     assert_eq(out[3].name, 'a')
     assert_eq(out[4].name, 'c')
     assert_eq(out[5].name, 'd')
+  end)
+
+  it('orders activity rows by activity_score, then last_activity_ms, then name', function()
+    local out = r {
+      version = 4,
+      sessions = {
+        high_dwell_view_only = { dwell_ms = 9999999, raw_count = 99 },
+        active_old = {
+          activity_score = 40, activity_count = 2, last_activity_ms = 1000,
+          dwell_ms = 10, raw_count = 1,
+        },
+        active_recent = {
+          activity_score = 40, activity_count = 1, last_activity_ms = 2000,
+          dwell_ms = 10, raw_count = 1,
+        },
+        active_top = {
+          activity_score = 60, activity_count = 1, last_activity_ms = 500,
+          dwell_ms = 10, raw_count = 1,
+        },
+      },
+    }
+    assert_eq(out[1].name, 'high_dwell_view_only',
+      'rows with no activity keep legacy dwell fallback during migration')
+    assert_eq(out[2].name, 'active_top')
+    assert_eq(out[3].name, 'active_recent')
+    assert_eq(out[4].name, 'active_old')
+    assert_close(out[2].rank_score, 60)
+  end)
+
+  it('activity beats legacy dwell once both rows have activity events', function()
+    local out = r {
+      version = 4,
+      sessions = {
+        view_only = {
+          activity_score = 0, activity_count = 1, last_activity_ms = 3000,
+          dwell_ms = 9999999, raw_count = 99,
+        },
+        worked = {
+          activity_score = 20, activity_count = 1, last_activity_ms = 2000,
+          dwell_ms = 10, raw_count = 1,
+        },
+      },
+    }
+    assert_eq(out[1].name, 'worked')
+    assert_eq(out[2].name, 'view_only')
   end)
 
   it('long-used session is not demoted by a few short-visit competitors', function()
@@ -262,6 +309,43 @@ describe('_rank_sessions', function()
     -- already_migrated has 60000 ms which dwarfs 0.9 (legacy weight)
     assert_eq(out[1].name, 'already_migrated')
     assert_eq(out[2].name, 'not_yet_migrated')
+  end)
+end)
+
+describe('rank_signature', function()
+  it('changes when the same visible set reorders by dwell rank', function()
+    local stats_dir = (os.getenv('TMPDIR') or '/tmp') .. '/wezterm-test-rank-sig-' .. tostring(math.random(100000, 999999))
+    os.execute('mkdir -p ' .. stats_dir)
+
+    tab_visibility._reset()
+    tab_visibility.configure {
+      wezterm = mock,
+      config = {
+        stats_dir = stats_dir,
+        visible_count = 2,
+        recompute_interval_ms = 0,
+      },
+    }
+
+    local function write(body)
+      local fd = io.open(stats_dir .. '/work.json', 'w')
+      fd:write(body)
+      fd:close()
+    end
+
+    write('{"version":3,"sessions":{"a":{"dwell_ms":100,"raw_count":1},"b":{"dwell_ms":50,"raw_count":1}}}')
+    tab_visibility.tick('work', 1000)
+    local first_rank = tab_visibility.rank_signature('work')
+    local first_visible = tab_visibility.visible_signature('work')
+
+    write('{"version":3,"sessions":{"a":{"dwell_ms":50,"raw_count":1},"b":{"dwell_ms":100,"raw_count":1}}}')
+    tab_visibility.tick('work', 2000)
+    local second_rank = tab_visibility.rank_signature('work')
+    local second_visible = tab_visibility.visible_signature('work')
+
+    assert_eq(first_rank, 'a|b')
+    assert_eq(second_rank, 'b|a')
+    assert_eq(first_visible, second_visible, 'sticky slot signature should not detect internal rank reorder')
   end)
 end)
 

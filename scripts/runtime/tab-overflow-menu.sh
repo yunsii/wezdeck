@@ -4,12 +4,12 @@
 # Enumerates `<state>/tab-stats/*-items.json` (one snapshot per workspace
 # that has been opened under tab_visibility), tags each item with its
 # current state (visible / warm / cold) computed from live tmux sessions,
-# joins each row against the per-workspace focus stats so we can rank by
-# how often the user actually lands on each session, and pops a popup
+# joins each row against the per-workspace activity stats so we can rank
+# by where real git work happened, and pops a popup
 # picker listing every row across every workspace. The active workspace's
 # rows still group at the top; within and across workspaces the rows the
-# user touches most often sort first. Stats accumulate over time — the
-# first-ever popup before any focus events fall back to `workspaces.lua`
+# user works in most often sort first. Stats accumulate over time — the
+# first-ever popup before any activity events fall back to `workspaces.lua`
 # declared order via the snap_idx tiebreaker.
 #
 # Selection routes through tab-overflow-dispatch.sh exactly as before:
@@ -72,20 +72,20 @@ fi
 existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)"
 
 # Build per-workspace TSV blocks then concatenate. After all blocks are
-# emitted we sort the union by `is_current desc, dwell_ms desc,
-# raw_count desc, snap_idx asc` so:
+# emitted we sort the union by `is_current desc, activity_score desc,
+# event_count desc, snap_idx asc` so:
 #   1. The current workspace's rows stay grouped at the top.
-#   2. Within each block the rows the user actually focuses most often
-#      (by accumulated decayed dwell time) surface first — a session
-#      with 2h of focus dwarfs one with a 30s peek.
-#   3. Cross-workspace rows interleave by dwell_ms (a heavy A row sits
+#   2. Within each block the rows where git activity happened most
+#      often surface first — a session changed by shell/git/agent work
+#      beats one that was merely viewed.
+#   3. Cross-workspace rows interleave by activity score (a heavy A row sits
 #      above a light B row regardless of workspace). Workspace identity
 #      stays visible via the workspace badge column the picker renders.
 #   4. Snapshot index is the within-workspace tiebreaker so ties on
-#      dwell_ms (e.g. cold-start workspace where every dwell is 0) fall
+#      activity score (e.g. cold-start workspace where every score is 0) fall
 #      back to the user's intended `workspaces.lua` order — the picker
-#      stays usable before any focus stats accumulate.
-# Aux columns 8-11 (snap_idx, dwell_ms, raw_count, last_bump_ms) carry
+#      stays usable before any activity stats accumulate.
+# Aux columns 8-11 (snap_idx, activity_score, event_count, rank_recent_ms) carry
 # the sort keys; an awk pass strips them before writing the prefetch_file
 # the Go picker reads (the picker still expects a 7-column TSV).
 prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
@@ -118,29 +118,29 @@ if (( ${#other_workspaces[@]} > 0 )); then
   )
 fi
 
-# Per-session dwell maps — keyed by base session name (suffixes like
+# Per-session activity maps — keyed by base session name (suffixes like
 # `__refresh_<ts>_<pid>` aggregated upstream by tab_stats_aggregated_tsv,
 # matching the lua-side rank_sessions normalization). Session names are
 # workspace-prefixed (`wezterm_<slug>_<repo>_<10hex>`), so a single flat
 # map is collision-free across workspaces.
-declare -A dwell_for_sess
-declare -A raw_count_for_sess
-declare -A last_bump_for_sess
+declare -A score_for_sess
+declare -A event_count_for_sess
+declare -A recent_for_sess
 
 populate_weights_for_workspace() {
   local target_ws="$1"
-  local base dwell_ms total_dwell_ms raw_count last_bump
+  local base rank_score total_dwell_ms event_count rank_recent
   # tab_stats_aggregated_tsv emits 5 columns:
-  #   <base>\t<dwell_ms>\t<total_dwell_ms>\t<raw_count>\t<last_bump_ms>
-  # Picker currently sorts by dwell_ms only; total_dwell_ms is read so
+  #   <base>\t<rank_score>\t<total_dwell_ms>\t<event_count>\t<rank_recent_ms>
+  # Picker currently sorts by rank_score; total_dwell_ms is read so
   # the surface is wired up for future "lifetime focus" picker chips
   # without a second pass through this populator.
-  while IFS=$'\t' read -r base dwell_ms total_dwell_ms raw_count last_bump; do
+  while IFS=$'\t' read -r base rank_score total_dwell_ms event_count rank_recent; do
     [[ -n "$base" ]] || continue
     : "$total_dwell_ms"  # parsed for future use, intentionally unused for now
-    dwell_for_sess["$base"]="$dwell_ms"
-    raw_count_for_sess["$base"]="$raw_count"
-    last_bump_for_sess["$base"]="$last_bump"
+    score_for_sess["$base"]="$rank_score"
+    event_count_for_sess["$base"]="$event_count"
+    recent_for_sess["$base"]="$rank_recent"
   done < <(tab_stats_aggregated_tsv "$target_ws" 2>/dev/null)
 }
 
@@ -171,12 +171,12 @@ emit_workspace_rows() {
     elif [[ -n "$sess" ]] && grep -Fxq "$sess" <<<"$existing_sessions" 2>/dev/null; then
       state='warm'
     fi
-    local dwell_ms="${dwell_for_sess[$sess]:-0}"
-    local raw_count="${raw_count_for_sess[$sess]:-0}"
-    local last_bump="${last_bump_for_sess[$sess]:-0}"
+    local rank_score="${score_for_sess[$sess]:-0}"
+    local event_count="${event_count_for_sess[$sess]:-0}"
+    local rank_recent="${recent_for_sess[$sess]:-0}"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$target_ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
-      "$snap_idx" "$dwell_ms" "$raw_count" "$last_bump" \
+      "$snap_idx" "$rank_score" "$event_count" "$rank_recent" \
       >> "$prefetch_aux"
   done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring)] | @tsv' "$target_snapshot" 2>/dev/null)
 }
@@ -188,9 +188,8 @@ done
 
 # Sort by:
 #   k6 (is_current) desc → current workspace block stays at top
-#   k9 (dwell_ms) desc — general numeric handles big floats (e.g. 7.2e6
-#                        for a 2h burst, or 30000 for a 30s context switch)
-#   k10 (raw_count) desc — secondary frequency tiebreaker
+#   k9 (activity score) desc — real git activity outranks passive viewing
+#   k10 (event count) desc — secondary activity frequency tiebreaker
 #   k1 (workspace) asc — only matters for cross-workspace ties
 #   k8 (snap_idx) asc — within-workspace tiebreaker; preserves the
 #                       `workspaces.lua` declared order when stats have

@@ -113,14 +113,45 @@ function M.new(opts)
     return out
   end
 
+  local function runtime_script_args(script_name, trace_id, ...)
+    local repo_root = constants and constants.repo_root
+    if not repo_root or repo_root == '' then
+      logger.warn('workspace', 'no repo_root for runtime script', with_trace_id(trace_id, {
+        script = script_name,
+      }))
+      return nil
+    end
+    local script_path = repo_root .. '/scripts/runtime/' .. script_name
+    local args
+    local runtime_mode = (constants and constants.runtime_mode) or 'hybrid-wsl'
+    if runtime_mode == 'hybrid-wsl' and constants and constants.host_os == 'windows' then
+      local domain = constants.default_domain or ''
+      local distro = type(domain) == 'string' and domain:match('^WSL:(.+)$') or nil
+      if not distro then
+        logger.warn('workspace', 'no WSL distro for runtime script', with_trace_id(trace_id, {
+          script = script_name,
+          default_domain = domain,
+        }))
+        return nil
+      end
+      args = { 'wsl.exe', '-d', distro, '--', 'bash', script_path }
+    else
+      args = { 'bash', script_path }
+    end
+    for _, arg in ipairs({ ... }) do
+      args[#args + 1] = arg
+    end
+    return args
+  end
+
   -- Pick the spawn-list when the workspace has opted into tab_visibility
   -- AND the user has explicitly enabled spawn cap (`spawn_visible_only`).
   -- Two layers of selection:
   --   1. Cap `items` at `visible_count` (otherwise we'd spawn the full
   --      `workspaces.lua` list).
-  --   2. Order the kept items by frequency: the brain's
-  --      `preferred_item_order` ranks each item's session_name by focus
-  --      weight (with `__refresh_*` aggregation) and falls back to
+  --   2. Order the kept items by activity: the brain's
+  --      `preferred_item_order` ranks each item's session_name by
+  --      activity score (with `__refresh_*` aggregation) and falls back to
   --      `workspaces.lua` declared order for items that haven't been
   --      focused yet, so on cold start (no stats) the user's intended
   --      priority order is preserved.
@@ -304,6 +335,7 @@ function M.new(opts)
   refresh_items_snapshot = _refresh_items_snapshot_impl
 
   local Workspace = {}
+  local last_activity_sample_ms = {}
 
   function Workspace.open(window, pane, name)
     local trace_id = logger.trace_id('workspace')
@@ -452,10 +484,11 @@ function M.new(opts)
   -- after `tab_visibility.tick` reports that the brain's slot
   -- assignment changed since the previous tick — that's the signal
   -- that some session entered top-N (needs to be spawned) or fell out
-  -- of top-N (its tab needs to be pruned). preserve_focus mode keeps
-  -- the user's currently-active tab put: if it's the one being
-  -- demoted, the prune skips it for this round; if it's not, the
-  -- spawn loop won't shuffle its position via MoveTab activation.
+  -- of top-N (its tab needs to be pruned), or when the same top-N set
+  -- changes rank order. preserve_focus mode keeps the user's
+  -- currently-active tab alive and restores focus after any MoveTab
+  -- reordering; if the active tab is demoted, prune skips it for this
+  -- round.
   --
   -- Only fires when:
   --   - tab_visibility is enabled AND spawn_capped (no cap means every
@@ -484,8 +517,44 @@ function M.new(opts)
     }))
     tabs.sync_workspace_tabs(workspace_name, trace_id, items, items, {
       preserve_focus = true,
+      reorder_tabs = true,
       cwd_to_session = cwd_to_session,
     })
+  end
+
+  -- Low-frequency git fingerprint sampler. It runs only for capped
+  -- workspaces that actually have overflow, and only in the background.
+  -- The sampler writes tab-stats v4 activity fields; the next
+  -- tab_visibility.tick sees the changed stats file and hot-reorders if
+  -- the activity top-N changed.
+  function Workspace.maybe_sample_tab_activity(workspace_name, now_ms)
+    if not workspace_name or workspace_name == '' then return false end
+    if not (tab_visibility and tab_visibility.spawn_capped(workspace_name)) then
+      return false
+    end
+    if #tabs.workspace_windows(workspace_name) == 0 then
+      return false
+    end
+    local raw_items = runtime.workspace_items(workspace_name)
+    if not workspace_needs_overflow(workspace_name, raw_items) then
+      return false
+    end
+    local cfg = tab_visibility.config and tab_visibility.config() or {}
+    local interval = tonumber(cfg.activity_sample_interval_ms) or 60000
+    local last = last_activity_sample_ms[workspace_name] or 0
+    if now_ms and last > 0 and (now_ms - last) < interval then
+      return false
+    end
+    last_activity_sample_ms[workspace_name] = now_ms or 0
+    local trace_id = logger.trace_id('tab_visibility')
+    local args = runtime_script_args('tab-activity-sample.sh', trace_id, workspace_name, 'all')
+    if not args then return false end
+    logger.info('tab_visibility', 'sampling tab activity', with_trace_id(trace_id, {
+      workspace = workspace_name,
+      interval_ms = interval,
+    }))
+    pcall(wezterm.background_child_process, args)
+    return true
   end
 
   -- Cached actions module for the overflow-collision retarget below.
