@@ -246,11 +246,21 @@ confirm_selection() {
 
   [[ -n "$message" ]] || return 0
 
-  printf '\033[H\033[2J'
-  printf '%s\n\n' "$message"
-  printf 'Press y to continue, any other key to cancel.'
-  IFS= read -rsn1 answer || return 1
-  [[ "${answer,,}" == 'y' ]]
+  while true; do
+    printf '\033[H\033[2J'
+    printf '%s\n\n' "$message"
+    printf 'Press Enter again to continue, or Esc to cancel.'
+    read_key || return 1
+    answer="$current_key"
+    case "$answer" in
+      "")
+        return 0
+        ;;
+      $'\033' | $'\033[20099~' | $'\003')
+        return 1
+        ;;
+    esac
+  done
 }
 
 run_selection() {
