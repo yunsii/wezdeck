@@ -5,6 +5,8 @@ triggers:
   - final response preparation
   - progress updates
   - confidence wording
+  - evidence summaries
+  - option recommendations
 tags: [reporting, honesty, confidence-vocabulary]
 ---
 
@@ -32,6 +34,10 @@ State:
 
 - [reporting-05] Use concise language.
 - [reporting-06] Do not turn a straightforward result into a long changelog.
+- [reporting-26] For non-trivial analysis or recommendation, include a concise evidence line: local source, upstream source analysis, official docs, tests/logs, current external references, or deeper research skipped because `<reason>`.
+- [reporting-27] When recommending a path among meaningful alternatives, include the considered options, chosen option, why it wins, and remaining tradeoffs.
+- [reporting-28] Do not claim multi-source confirmation unless those sources were actually checked.
+- [reporting-29] If the final answer relies on inference rather than direct evidence, label it with the confidence vocabulary from [validation.md](./validation.md).
 
 ## Final Response Templates
 

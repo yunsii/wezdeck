@@ -42,14 +42,13 @@ Read this file first, then open only the matching topic file.
 Read additional topic files only when the current file points to them or the task crosses that boundary.
 
 - Testing strategy, completion criteria, human-verification thresholds → [validation.md](./validation.md)
-- Structure, abstractions, module boundaries, reliability, performance → [implementation.md](./implementation.md)
+- Structure, abstractions, module boundaries, reliability, performance, evidence gates, or option comparison → [implementation.md](./implementation.md)
 - Restructuring existing code or replacing a subsystem → [refactor.md](./refactor.md)
 - Whether a rule belongs in doc, script, hook, skill, or plugin → [automation.md](./automation.md)
-- Choosing, sequencing, or batching tool calls → [tool-use.md](./tool-use.md)
+- Choosing, sequencing, batching tool calls, or selecting evidence sources → [tool-use.md](./tool-use.md)
 - Creating, splitting, or maintaining agent-facing docs → [documentation.md](./documentation.md)
 - Initializing `AGENTS.md` / `CLAUDE.md` in a new or undocumented repo, distilling `/init`-style scaffolder output, deciding when to split into a layered profile → [repo-bootstrap.md](./repo-bootstrap.md)
-- Host-side side effects (app focus, browser, notifications, reveal in shell, wrapper boundary) → [platform-actions.md](./platform-actions.md)
-- Writing to the system clipboard → [clipboard.md](./clipboard.md)
+- Host-side side effects (clipboard writes, app focus, browser, notifications, reveal in shell, wrapper boundary, or capability discovery) → [platform-actions.md](./platform-actions.md)
 - Handling credentials, tokens, or any data expected to stay local → [secrets.md](./secrets.md)
 - Commits, branches, merges, pushes, pull/merge requests → [vcs.md](./vcs.md)
 - Final responses and progress updates → [reporting.md](./reporting.md)
@@ -66,6 +65,7 @@ One-line summaries so the entrypoint stays scannable.
 Full rules live in the routed topic file.
 
 - Prior art: before designing — code, docs, automation, hooks, anything — search the codebase, the framework, and the broader community first; cite what you adopted, adapted, or rejected; full rule in [implementation.md](./implementation.md) `Prior Art First`.
+- Evidence before judgment: for non-trivial requests, gather the narrowest sufficient evidence before judging; compare viable options when there is meaningful choice, then recommend with tradeoffs and uncertainty; full rule in [implementation.md](./implementation.md) `Evidence Before Judgment`.
 - Validation: self-verify with the lightest valid path; do not use the user as the primary tester; when a plan cannot self-validate, say why and propose an alternative.
 - Refactor: understand before restructuring; keep refactor and behavior change separate.
 - Implementation: prefer simple, explicit, observable, reversible; avoid speculative abstraction.

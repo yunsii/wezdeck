@@ -6,7 +6,9 @@ triggers:
   - browser or URL open
   - local notification
   - reveal file in OS shell
+  - clipboard write
   - host-side wrapper boundary and discovery
+  - capability discovery
 tags: [host-effects, platform, side-effects, safety]
 ---
 
@@ -18,12 +20,11 @@ When the task may trigger a host-side side effect on the user's local machine.
 
 Examples:
 
+- writing to the system clipboard
 - focusing or launching a desktop application
 - opening a browser or URL
 - showing a local notification
 - revealing a file in the OS shell
-
-Clipboard writes are governed by [clipboard.md](./clipboard.md).
 
 ## When Not To Read
 
@@ -59,6 +60,13 @@ Use wrappers that:
 - [platform-actions-13] Do not couple user-level policy to a specific named pipe, binary path, or transport encoding when a stable wrapper already owns that layer.
 - [platform-actions-14] If no stable wrapper or owned command boundary exists for a given action, treat that action as unavailable by default.
 
+## Capability Discovery
+
+- [platform-actions-42] Before any host-side side effect, discover whether the active environment declares a stable capability for that effect.
+- [platform-actions-43] Use declared capabilities, not raw OS commands, binaries, IPC endpoints, or guessed paths.
+- [platform-actions-44] If no declared capability exists, treat the side effect as unavailable by default and report that limitation.
+- [platform-actions-45] Do not fall back from a missing clipboard capability to raw clipboard commands. Clipboard behavior is platform- and encoding-sensitive, and raw commands often lose formats or corrupt text.
+
 ## Wrapper Discovery
 
 - [platform-actions-15] Use an explicit marker file instead of guessing paths.
@@ -85,6 +93,15 @@ Agent may take host-side actions only when all of the following are true:
 - [platform-actions-27] the user would otherwise need to perform the same mechanical step manually
 
 [platform-actions-28] Ask before actions that are destructive, persistent, privacy-sensitive, or hard to undo.
+
+## Clipboard Capability
+
+- [platform-actions-46] Clipboard writes are host-side side effects.
+- [platform-actions-47] Write short paste-ready text only when it clearly serves the current task and a declared clipboard-write capability exists.
+- [platform-actions-48] Ask before writing secrets, destructive commands, long scripts, large payloads, or content likely to overwrite something the user still needs.
+- [platform-actions-49] Do not read the clipboard unless the user explicitly asks.
+- [platform-actions-50] Do not simulate paste or depend on window focus.
+- [platform-actions-51] After writing, report that the clipboard was updated and summarize what was written.
 
 ## Blast Radius
 
