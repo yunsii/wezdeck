@@ -229,6 +229,7 @@ local base_constants = {
     warm_count = 3,
     half_life_days = 7,
     recompute_interval_ms = 5000,
+    activity_sample_interval_ms = 60000,
     swap_flash_ms = 800,
     -- Limit startup spawn to visible_count tabs (cold-start fallback to
     -- the workspaces.lua first-N order). Default false because the

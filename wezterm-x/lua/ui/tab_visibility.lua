@@ -1,12 +1,13 @@
 -- Tab-visibility brain. Reads scripts/runtime/tab-stats-lib.sh's per-
 -- workspace JSON files on the WezTerm `update-status` tick (throttled to
--- recompute_interval_ms), computes the top-N frequency set, and assigns
+-- recompute_interval_ms), computes the top-N activity set, and assigns
 -- sessions to sticky slots. Producers (titles.lua, workspace_manager.lua,
--- the future overflow picker) consume via get_slot_for_tab / visible_set
--- / warm_set.
+-- the overflow picker) consume via get_slot_for_tab / visible_set /
+-- warm_set.
 --
 -- Sticky slot algorithm:
---   1. compute visible = top-N sessions by (dwell_ms desc, raw_count desc, name asc)
+--   1. compute visible = top-N sessions by
+--      (activity_score desc, last_activity_ms desc, name asc)
 --   2. for each existing slot:
 --        if slot.session_name still in visible → keep, mark "stable"
 --        else → mark "stale" (the existing session fell out)
@@ -29,6 +30,7 @@ local DEFAULTS = {
   half_life_days = 7,
   dwell_credit_cap_ms = 1800000,
   recompute_interval_ms = 5000,
+  activity_sample_interval_ms = 60000,
   swap_flash_ms = 800,
 }
 
@@ -96,6 +98,7 @@ local module_state = {
   half_life_days = DEFAULTS.half_life_days,
   dwell_credit_cap_ms = DEFAULTS.dwell_credit_cap_ms,
   recompute_interval_ms = DEFAULTS.recompute_interval_ms,
+  activity_sample_interval_ms = DEFAULTS.activity_sample_interval_ms,
   swap_flash_ms = DEFAULTS.swap_flash_ms,
   spawn_visible_only = false,
   wezterm = nil,
@@ -117,6 +120,7 @@ function M.configure(opts)
   module_state.half_life_days = merged.half_life_days
   module_state.dwell_credit_cap_ms = merged.dwell_credit_cap_ms
   module_state.recompute_interval_ms = merged.recompute_interval_ms
+  module_state.activity_sample_interval_ms = merged.activity_sample_interval_ms
   module_state.swap_flash_ms = merged.swap_flash_ms
   module_state.spawn_visible_only = (opts.config and opts.config.spawn_visible_only == true) or false
   module_state.configured = true
@@ -156,23 +160,21 @@ local function stats_path(workspace_name)
   return module_state.stats_dir .. path_sep() .. M.workspace_slug(workspace_name) .. '.json'
 end
 
--- Use posix mtime via lfs if present, else fall back to wezterm.read_dir/glob;
--- for our purposes we just need a "cheap freshness signal" to skip JSON
--- decode when the file hasn't changed. If we can't determine mtime, return
--- 0 (forces every tick to re-decode, which is still throttled by the
--- recompute interval).
-local function stats_mtime(path)
+-- Cheap content fingerprint used to skip JSON decode when the stats file
+-- has not changed. Size alone missed same-length rewrites (for example
+-- two sessions swapping dwell values), which made live tab ordering lag
+-- until another write changed the byte count.
+local function stats_fingerprint(path)
   if not path then return 0 end
   local fd = io.open(path, 'rb')
   if not fd then return 0 end
-  -- Lua 5.4 doesn't expose stat. Use a length probe — cheap, and any
-  -- change in file content will change length given the JSON shape (every
-  -- bump appends/replaces last_bump_ms). Combined with the recompute
-  -- throttle this is good enough; we are not trying to detect identical
-  -- rewrites, only "did the content change since last tick".
-  local size = fd:seek('end') or 0
+  local content = fd:read('*a') or ''
   fd:close()
-  return size
+  local hash = 5381
+  for i = 1, #content do
+    hash = ((hash * 33) + content:byte(i)) % 2147483647
+  end
+  return tostring(#content) .. ':' .. tostring(hash)
 end
 
 local function read_stats(workspace_name)
@@ -264,16 +266,36 @@ local function ranking_dwell(entry, stats_version)
   return dwell
 end
 
+local function has_activity(entry)
+  return (tonumber(entry.activity_count) or 0) > 0
+    or (tonumber(entry.last_activity_ms) or 0) > 0
+end
+
+local function ranking_score(entry, stats_version)
+  if has_activity(entry) then
+    return tonumber(entry.activity_score) or 0
+  end
+  return ranking_dwell(entry, stats_version)
+end
+
+local function ranking_recent(entry)
+  return tonumber(entry.last_activity_ms) or tonumber(entry.last_bump_ms) or 0
+end
+
 -- Aggregate stats rows by normalized base name, then rank.
--- Aggregation: dwell_ms summed (decayed capped focus credit),
--- total_dwell_ms summed (lifetime, never decayed), raw_count summed,
--- last_bump_ms taken as max (most recent bump across variants).
+-- Aggregation: activity score summed, total_dwell_ms summed
+-- (diagnostic lifetime focus, never decayed), event counts summed, and
+-- recent timestamp taken as max across variants.
 -- v1 migration: when `dwell_ms` is missing on an entry, fall back to
 -- the legacy `weight` field so a pre-migration file still ranks while
 -- the writer hasn't rewritten it in v2 shape yet.
 -- v2 migration: when the file still stores uncapped wall-clock dwell in
 -- dwell_ms, clamp read-side ranking to raw_count * the per-burst credit
 -- cap so stale overnight focus cannot dominate before the next write.
+-- v4 transition: rows with at least one activity event rank by
+-- activity_score; rows without activity still use legacy dwell as a
+-- migration fallback so the visible set does not collapse to all-zero
+-- on the first reload after schema upgrade.
 local function rank_sessions(stats)
   if not stats or type(stats.sessions) ~= 'table' then return {} end
   local stats_version = tonumber(stats.version) or 3
@@ -283,22 +305,44 @@ local function rank_sessions(stats)
       local key = normalize_session_name(name) or name
       local cur = agg[key]
       if not cur then
-        cur = { name = key, dwell_ms = 0, total_dwell_ms = 0, raw_count = 0, last_bump_ms = 0 }
+        cur = {
+          name = key,
+          rank_score = 0,
+          activity_score = 0,
+          activity_count = 0,
+          last_activity_ms = 0,
+          dwell_ms = 0,
+          total_dwell_ms = 0,
+          raw_count = 0,
+          last_bump_ms = 0,
+          rank_recent_ms = 0,
+        }
         agg[key] = cur
       end
       local dwell = ranking_dwell(entry, stats_version)
+      local score = ranking_score(entry, stats_version)
       cur.dwell_ms = cur.dwell_ms + dwell
+      cur.rank_score = cur.rank_score + score
+      cur.activity_score = cur.activity_score + (tonumber(entry.activity_score) or 0)
+      cur.activity_count = cur.activity_count + (tonumber(entry.activity_count) or 0)
       cur.total_dwell_ms = cur.total_dwell_ms + (tonumber(entry.total_dwell_ms) or 0)
       cur.raw_count = cur.raw_count + (tonumber(entry.raw_count) or 0)
       local lbm = tonumber(entry.last_bump_ms) or 0
       if lbm > cur.last_bump_ms then cur.last_bump_ms = lbm end
+      local lam = tonumber(entry.last_activity_ms) or 0
+      if lam > cur.last_activity_ms then cur.last_activity_ms = lam end
+      local recent = ranking_recent(entry)
+      if recent > cur.rank_recent_ms then cur.rank_recent_ms = recent end
     end
   end
   local items = {}
   for _, v in pairs(agg) do items[#items + 1] = v end
   table.sort(items, function(a, b)
-    if a.dwell_ms ~= b.dwell_ms then return a.dwell_ms > b.dwell_ms end
-    if a.raw_count ~= b.raw_count then return a.raw_count > b.raw_count end
+    if a.rank_score ~= b.rank_score then return a.rank_score > b.rank_score end
+    if a.rank_recent_ms ~= b.rank_recent_ms then return a.rank_recent_ms > b.rank_recent_ms end
+    local ac = a.activity_count > 0 and a.activity_count or a.raw_count
+    local bc = b.activity_count > 0 and b.activity_count or b.raw_count
+    if ac ~= bc then return ac > bc end
     return a.name < b.name
   end)
   return items
@@ -391,7 +435,7 @@ function M.tick(workspace_name, now_ms)
   cache.last_recompute_ms = now_ms
 
   local path = stats_path(workspace_name)
-  local size_signal = stats_mtime(path)
+  local size_signal = stats_fingerprint(path)
   if size_signal == cache.last_stats_mtime and cache.stats ~= nil then
     -- file unchanged since last tick; nothing to recompute
     return
@@ -527,6 +571,7 @@ function M.config()
     half_life_days = module_state.half_life_days,
     dwell_credit_cap_ms = module_state.dwell_credit_cap_ms,
     recompute_interval_ms = module_state.recompute_interval_ms,
+    activity_sample_interval_ms = module_state.activity_sample_interval_ms,
     swap_flash_ms = module_state.swap_flash_ms,
     stats_dir = module_state.stats_dir,
   }
@@ -549,9 +594,25 @@ function M.visible_signature(workspace_name)
   return table.concat(parts, '|')
 end
 
+-- Stable string signature of the current activity-ranked visible order.
+-- Unlike visible_signature(), this changes when the same top-N sessions
+-- reorder internally. titles.lua uses it to trigger live tab reordering
+-- instead of waiting for a cold-open or a set-changing slot swap.
+function M.rank_signature(workspace_name)
+  local cache = module_state.workspaces[workspace_name]
+  if not cache then return '' end
+  local parts = {}
+  local ranked = cache.ranked or {}
+  for i = 1, (module_state.visible_count or DEFAULTS.visible_count) do
+    local entry = ranked[i]
+    parts[i] = (entry and entry.name) or ''
+  end
+  return table.concat(parts, '|')
+end
+
 -- Reorder a workspace's `workspaces.lua` items list using the brain's
--- frequency ranking, capped at `n`. Items whose session_name appears
--- in the ranked list (top-N) come first, in dwell_ms-desc order; items
+-- activity ranking, capped at `n`. Items whose session_name appears
+-- in the ranked list (top-N) come first, in activity-score order; items
 -- without stats (or beyond the top-N) follow in declared order. The
 -- net result is the slot-order spawn list:
 --
@@ -660,7 +721,7 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
   local out = {}
   local placed_cwd = {}
 
-  -- Pass 1: ranked items in dwell_ms-desc order.
+  -- Pass 1: ranked items in activity-score order.
   for _, entry in ipairs(ranked) do
     if #out >= n then break end
     local item = lookup_item(entry.name)

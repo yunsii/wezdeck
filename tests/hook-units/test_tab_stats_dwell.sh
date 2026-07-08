@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dwell-weighted tab-stats v3: tab_stats_bump pays raw_count++ only;
+# Legacy dwell diagnostics in tab-stats v4: tab_stats_bump pays raw_count++ only;
 # tab_stats_close_out adds capped dwell credit into dwell_ms and the
 # full wall-clock dwell into total_dwell_ms. This file exercises:
 #   - the bump-vs-close split (no weight ever paid on entry)
@@ -111,7 +111,7 @@ raw_after=$(jq -r '.sessions["foo-session"].raw_count' "$state_file")
 # burst must stay ranked above three different sessions that each only
 # got a single 30s visit. Under v1 those three competitors all tied at
 # weight=1.0 after their close-out and could displace the long-used
-# session out of top-N. Under v3, capped ms-scale credit still preserves
+# session out of top-N. Under the legacy fallback, capped ms-scale credit still preserves
 # the lead without letting overnight dwell dominate forever.
 printf '\xe2\x96\xb8 %s\n' 'long-used session stays ranked above short visits'
 sandbox="$(new_sandbox)"
@@ -141,17 +141,17 @@ ratio_ok=$(awk -v h="$heavy_dwell" 'BEGIN { print (h >= 1799000 && h <= 1801000)
 [[ "$ratio_ok" == "1" ]] && ok "heavy dwell_ms ≈ 1.8M capped credit (decay over a few writes is tiny)" \
   || no "heavy dwell_ms unexpectedly low: $heavy_dwell"
 
-# v1 → v3 migration --------------------------------------------------
+# v1 → v4 migration --------------------------------------------------
 # v1 weight values are corrupted by renormalize+fragmentation (a heavily
 # refreshed project ends up with 7 small rows whose weights don't sum
 # back to true cumulative usage). Migration ignores weight and seeds
 # dwell_ms from raw_count * 30000 (30s per past focus event), matching
 # the v1 saturation point. This recovers the right magnitude for
 # heavily-used projects that v1 demoted via fragmentation.
-printf '\xe2\x96\xb8 %s\n' 'v1 → v3 migration (raw_count seeding ignores corrupted weight)'
+printf '\xe2\x96\xb8 %s\n' 'v1 → v4 migration (raw_count seeding ignores corrupted weight)'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
-# Use a recent last_bump_ms so decay during the first v3 write is
+# Use a recent last_bump_ms so decay during the first v4 write is
 # negligible — that way we can assert exact seed values.
 now_ms=$(date +%s%3N)
 # heavy_use has tiny weight (fragmented across imaginary refresh rows)
@@ -182,8 +182,8 @@ top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
 # (2 events * 30s = 60K ms).
 run_lib_case "$sandbox" "tab_stats_close_out work heavy_use 30000" >/dev/null
 version=$(jq -r '.version' "$state_file")
-[[ "$version" == "3" ]] && ok "write bumps version → 3" \
-  || no "version expected 3, got $version"
+[[ "$version" == "4" ]] && ok "write bumps version → 4" \
+  || no "version expected 4, got $version"
 
 heavy_dwell=$(jq -r '.sessions.heavy_use.dwell_ms' "$state_file")
 heavy_total=$(jq -r '.sessions.heavy_use.total_dwell_ms' "$state_file")
@@ -211,8 +211,8 @@ top_after=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
 [[ "$top_after" == "heavy_use" ]] && ok "post-migration: heavy_use rank #1 (raw_count seeding wins)" \
   || no "post-migration: expected heavy_use, got $top_after"
 
-# v2 → v3 migration --------------------------------------------------
-printf '\xe2\x96\xb8 %s\n' 'v2 → v3 migration clamps legacy uncapped dwell'
+# v2 → v4 migration --------------------------------------------------
+printf '\xe2\x96\xb8 %s\n' 'v2 → v4 migration clamps legacy uncapped dwell'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
 now_ms=$(date +%s%3N)
@@ -241,8 +241,8 @@ overnight_dwell=$(jq -r '.sessions.overnight.dwell_ms' "$state_file")
 frequent_total=$(jq -r '.sessions.frequent.total_dwell_ms' "$state_file")
 overnight_total=$(jq -r '.sessions.overnight.total_dwell_ms' "$state_file")
 
-[[ "$version" == "3" ]] && ok "v2 migration write bumps version → 3" \
-  || no "v2 migration version expected 3, got $version"
+[[ "$version" == "4" ]] && ok "v2 migration write bumps version → 4" \
+  || no "v2 migration version expected 4, got $version"
 freq_ok=$(awk -v d="$frequent_dwell" 'BEGIN { print (d >= 80999000 && d <= 81001000) ? 1 : 0 }')
 over_ok=$(awk -v d="$overnight_dwell" 'BEGIN { print (d >= 8999000 && d <= 9001000) ? 1 : 0 }')
 [[ "$freq_ok" == "1" ]] && ok "frequent v2 dwell clamps to raw_count * 30m" \

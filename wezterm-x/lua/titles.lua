@@ -56,10 +56,10 @@ function M.register(opts)
   local workspace_label_cache = {}
   local badge_last_status = {}
   local last_rendered_status = nil
-  -- Phase 2b: per-workspace cache of the brain's most recent slot
-  -- signature. Compared on every update-status to decide whether the
-  -- sticky-slot reassignment moved anything between ticks. Equal
-  -- signature ⇒ no spawn / no prune work to do.
+  -- Phase 2b: per-workspace cache of the brain's most recent ranked
+  -- top-N signature. Compared on every update-status to decide whether
+  -- visible tabs need spawn / prune / reorder work. Equal signature ⇒
+  -- no layout work to do.
   local last_visible_signature = {}
 
   local function ime_snapshot()
@@ -354,6 +354,9 @@ function M.register(opts)
       end
       if now_ms then
         tab_visibility.tick(workspace, now_ms)
+        if workspace_module and workspace_module.maybe_sample_tab_activity then
+          pcall(workspace_module.maybe_sample_tab_activity, workspace, now_ms)
+        end
         -- Auto-detach the overflow pane when its currently-projected
         -- session just got promoted into top-N (so the new visible tab
         -- doesn't end up mirroring the overflow pane's tmux output via
@@ -365,18 +368,16 @@ function M.register(opts)
           pcall(workspace_module.maybe_clear_overflow_collision, workspace, focused_pane_id)
         end
         if workspace_module and workspace_module.maybe_hot_reorder
-          and tab_visibility.visible_signature
+          and tab_visibility.rank_signature
         then
-          local sig = tab_visibility.visible_signature(workspace)
+          local sig = tab_visibility.rank_signature(workspace)
           if last_visible_signature[workspace] ~= sig then
             local prev = last_visible_signature[workspace]
             last_visible_signature[workspace] = sig
             -- Skip the very first observation (prev == nil): the
             -- brain just finished its first tick for this workspace
-            -- and any "change" is just bootstrap. The first user-
-            -- caused churn (focus a session, raw_count goes up,
-            -- stats file rewrites) will produce a real signature
-            -- delta on the next tick.
+            -- and any "change" is just bootstrap. Later deltas include
+            -- both top-N set changes and within-top-N rank changes.
             if prev ~= nil then
               pcall(workspace_module.maybe_hot_reorder, workspace)
             end

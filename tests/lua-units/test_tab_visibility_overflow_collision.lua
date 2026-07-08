@@ -99,7 +99,7 @@ describe('is_in_visible', function()
   it('models the overflow→top-N promotion path the collision check guards', function()
     -- Scenario from docs/tab-visibility.md "Live hot reorder": the user
     -- has been viewing `skills` through the overflow pane (Alt+x earlier),
-    -- focus stats accumulate, then `skills` displaces a lower-weight
+    -- activity stats accumulate, then `skills` displaces a lower-score
     -- session out of top-N. After the brain ticks, is_in_visible(skills)
     -- flips from false → true — that's the edge maybe_clear_overflow_
     -- collision watches for.
