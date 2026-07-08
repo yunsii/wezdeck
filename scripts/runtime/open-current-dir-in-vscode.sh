@@ -39,18 +39,35 @@ detect_windows_paths() {
   WINDOWS_DIAGNOSTICS_FILE_WIN="${WINDOWS_RUNTIME_STATE_WIN}\\logs\\helper.log"
 }
 
-load_vscode_profile_from_shared_env() {
-  # Explicit env wins; only consult the unified loader when the caller
-  # didn't pre-set WEZTERM_VSCODE_PROFILE. runtime_env_load_managed picks
-  # up wezterm-x/local/shared.env and ~/.config/shell-env.d/*.env in one
-  # shot, so a per-machine override file under shell-env.d/ also flows
-  # through here.
-  if [[ -z "${WEZTERM_VSCODE_PROFILE+x}" ]]; then
-    runtime_env_load_managed
+load_vscode_settings_from_shared_env() {
+  # Explicit env wins; runtime_env_load_managed picks up
+  # wezterm-x/local/shared.env and ~/.config/shell-env.d/*.env in one shot,
+  # so preserve any value the caller deliberately set before loading.
+  local profile_was_set=0
+  local profile_value=""
+  local max_was_set=0
+  local max_value=""
+
+  if [[ -n "${WEZTERM_VSCODE_PROFILE+x}" ]]; then
+    profile_was_set=1
+    profile_value="$WEZTERM_VSCODE_PROFILE"
+  fi
+  if [[ -n "${WEZTERM_VSCODE_MAX_WINDOWS+x}" ]]; then
+    max_was_set=1
+    max_value="$WEZTERM_VSCODE_MAX_WINDOWS"
+  fi
+
+  runtime_env_load_managed
+
+  if (( profile_was_set )); then
+    WEZTERM_VSCODE_PROFILE="$profile_value"
+  fi
+  if (( max_was_set )); then
+    WEZTERM_VSCODE_MAX_WINDOWS="$max_value"
   fi
 }
 
-append_profile_arg() {
+append_vscode_launch_args() {
   if [[ -n "${WEZTERM_VSCODE_PROFILE:-}" ]]; then
     code_command+=(--profile "$WEZTERM_VSCODE_PROFILE")
   fi
@@ -61,17 +78,30 @@ detect_code_command() {
     return 0
   fi
 
-  load_vscode_profile_from_shared_env
-
   local user_install_wsl="${WINDOWS_LOCALAPPDATA_WSL}/Programs/Microsoft VS Code/Code.exe"
   if [[ -f "$user_install_wsl" ]]; then
     code_command=("${WINDOWS_LOCALAPPDATA_WIN}\\Programs\\Microsoft VS Code\\Code.exe")
-    append_profile_arg
+    append_vscode_launch_args
     return 0
   fi
 
   code_command=('C:\Program Files\Microsoft VS Code\Code.exe')
-  append_profile_arg
+  append_vscode_launch_args
+}
+
+vscode_max_windows_json_fragment() {
+  local raw="${WEZTERM_VSCODE_MAX_WINDOWS:-}"
+  if [[ -z "$raw" ]]; then
+    return 0
+  fi
+
+  if [[ ! "$raw" =~ ^[0-9]+$ ]] || (( 10#$raw < 1 )); then
+    runtime_log_warn vscode "ignoring invalid WEZTERM_VSCODE_MAX_WINDOWS" \
+      "value=$raw"
+    return 0
+  fi
+
+  printf ',\"max_windows\":%s' "$((10#$raw))"
 }
 
 helper_state_is_fresh() {
@@ -117,7 +147,7 @@ invoke_helper_request() {
     code_part+="$(json_escape "$code_arg")"
   done
 
-  request_body="{\"version\":2,\"trace_id\":$(json_escape "$trace_id"),\"message_type\":\"request\",\"domain\":\"vscode\",\"action\":\"focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]}}"
+  request_body="{\"version\":2,\"trace_id\":$(json_escape "$trace_id"),\"message_type\":\"request\",\"domain\":\"vscode\",\"action\":\"focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]$(vscode_max_windows_json_fragment)}}"
   request_body_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
   "$HELPER_CLIENT_WSL" request --pipe "$HELPER_IPC_ENDPOINT" --payload-base64 "$request_body_b64" --timeout-ms 5000 >/dev/null 2>&1
 }
@@ -138,8 +168,31 @@ run_direct_windows_open() {
     arg_list+=", "
   fi
   arg_list+="'--folder-uri', $(windows_powershell_quote "$folder_uri")"
+  local max_windows="${WEZTERM_VSCODE_MAX_WINDOWS:-}"
+  if [[ -n "$max_windows" ]]; then
+    if [[ ! "$max_windows" =~ ^[0-9]+$ ]] || (( 10#$max_windows < 1 )); then
+      runtime_log_warn vscode "ignoring invalid WEZTERM_VSCODE_MAX_WINDOWS for direct windows open" \
+        "value=$max_windows"
+      max_windows=""
+    else
+      max_windows="$((10#$max_windows))"
+      runtime_log_info vscode "direct windows open will honor VS Code max window cap" \
+        "max_windows=$max_windows"
+    fi
+  fi
   local command=""
   command="$(cat <<EOF
+\$processName = [System.IO.Path]::GetFileNameWithoutExtension($(windows_powershell_quote "$code_exe"))
+if ([string]::IsNullOrWhiteSpace(\$processName)) { \$processName = 'Code' }
+\$maxWindows = 0
+if ($(windows_powershell_quote "$max_windows") -match '^[0-9]+$') { \$maxWindows = [int]$(windows_powershell_quote "$max_windows") }
+if (\$maxWindows -gt 0) {
+  \$visibleWindows = @(Get-Process -Name \$processName -ErrorAction SilentlyContinue | Where-Object { \$_.MainWindowHandle -ne 0 })
+  if (\$visibleWindows.Count -ge \$maxWindows) {
+    Start-Process -FilePath $(windows_powershell_quote "$code_exe") -ArgumentList @(${arg_list}, '--reuse-window')
+    exit \$LASTEXITCODE
+  }
+}
 Start-Process -FilePath $(windows_powershell_quote "$code_exe") -ArgumentList @(${arg_list})
 EOF
 )"
@@ -231,6 +284,7 @@ if [[ -z "${WSL_DISTRO_NAME:-}" ]] || ! command -v powershell.exe >/dev/null 2>&
   exit $?
 fi
 
+load_vscode_settings_from_shared_env
 detect_code_command
 
 if ensure_helper && invoke_helper_request "$trace_id"; then

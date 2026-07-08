@@ -52,6 +52,15 @@ local function vscode_command(base)
   return out
 end
 
+local function positive_integer_env(value)
+  local number = tonumber(value)
+  if not number or number < 1 then
+    return nil
+  end
+
+  return math.floor(number)
+end
+
 local base_constants = {
   host_os = host_os,
   runtime_mode = defaults.default_runtime_mode(host_os),
@@ -147,6 +156,7 @@ local base_constants = {
     vscode = {
       hybrid_wsl_command = vscode_command(defaults.default_vscode_command(host_os)),
       posix_command = vscode_command({ 'code' }),
+      max_windows = positive_integer_env(shared_env.WEZTERM_VSCODE_MAX_WINDOWS),
       powershell = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
       runtime_dir = runtime_dir,
       helper_script = 'scripts\\ensure-windows-runtime-helper.ps1',

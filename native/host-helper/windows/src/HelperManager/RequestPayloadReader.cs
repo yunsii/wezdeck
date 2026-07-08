@@ -25,6 +25,37 @@ internal static class RequestPayloadReader
         return value;
     }
 
+    public static int? GetOptionalPositiveInt(JsonElement payload, string propertyName)
+    {
+        if (!payload.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        int value;
+        if (property.ValueKind == JsonValueKind.Number)
+        {
+            if (!property.TryGetInt32(out value))
+            {
+                return null;
+            }
+        }
+        else if (property.ValueKind == JsonValueKind.String)
+        {
+            var raw = property.GetString();
+            if (string.IsNullOrWhiteSpace(raw) || !int.TryParse(raw, out value))
+            {
+                return null;
+            }
+        }
+        else
+        {
+            return null;
+        }
+
+        return value > 0 ? value : null;
+    }
+
     public static bool GetOptionalBool(JsonElement payload, string propertyName, bool defaultValue = false)
     {
         if (!payload.TryGetProperty(propertyName, out var property))

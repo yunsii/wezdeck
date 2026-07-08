@@ -11,6 +11,15 @@ local function encode_string_array(runtime, values)
   return table.concat(parts)
 end
 
+local function max_windows_fragment(payload)
+  local value = tonumber(payload.max_windows)
+  if not value or value < 1 then
+    return ''
+  end
+
+  return ',"max_windows":' .. tostring(math.floor(value))
+end
+
 return function(runtime)
   return {
     category = 'vscode',
@@ -26,6 +35,7 @@ return function(runtime)
           '"requested_dir":', runtime:json_escape(payload.cwd), ',',
           '"distro":', runtime:json_escape(payload.distro), ',',
           '"code_command":[', encode_string_array(runtime, payload.code_command), ']',
+          max_windows_fragment(payload),
           '}',
         }
       end)

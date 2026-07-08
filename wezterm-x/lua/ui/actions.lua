@@ -275,6 +275,7 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
       cwd = cwd,
       distro = distro,
       code_command = hybrid_command,
+      max_windows = integration.max_windows,
     })
     if helper_sent then
       return
