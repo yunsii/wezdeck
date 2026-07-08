@@ -6,6 +6,7 @@ triggers:
   - sequencing tool calls
   - batching decisions
   - subagent delegation
+  - evidence source selection
 tags: [tools, shell, batching, efficiency]
 ---
 
@@ -13,7 +14,7 @@ tags: [tools, shell, batching, efficiency]
 
 ## When To Read
 
-When choosing between available tools, sequencing tool calls, or deciding whether to invoke a tool at all.
+When choosing between available tools, sequencing tool calls, selecting evidence sources, or deciding whether to invoke a tool at all.
 
 ## When Not To Read
 
@@ -67,6 +68,15 @@ Do not merge:
 - [tool-use-28] Treat file paths declared by injected context — CLAUDE.md / AGENTS.md routing links, memory entries, `@file` imports, followed symlinks — as assertions that must resolve on the current machine, not as guarantees.
 - [tool-use-29] Before relying on such a path (loading a routed topic file, following an import, trusting a memory that names a file), confirm it resolves. Dangling symlinks and missing targets count as broken.
 - [tool-use-30] On a broken reference, surface it inline to the user — naming what is missing and where it was declared — rather than silently resolving the realpath, falling back to alternatives, or continuing as if nothing is wrong.
+
+## Evidence Source Selection
+
+- [tool-use-38] Choose evidence tools by authority and fit, not habit. A named tool is an implementation detail; the durable rule is the evidence capability it provides.
+- [tool-use-39] Prefer current local source and uncommitted changes for current behavior.
+- [tool-use-40] Prefer tests, logs, repros, traces, and generated artifacts for observed behavior.
+- [tool-use-41] Prefer source-indexed upstream repository analysis for external implementation behavior.
+- [tool-use-42] Prefer official docs, specs, changelogs, and release notes for supported public contracts.
+- [tool-use-43] Use current web or issue-history research when ecosystem state, regressions, release timing, security advisories, or recent behavior matters.
 
 ## Task Tracking
 

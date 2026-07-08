@@ -14,7 +14,9 @@
 #
 # A target whose directory does not exist is skipped silently (well,
 # with one "skip" line). Re-running is idempotent: links already
-# pointing at the right source report "ok" and are left alone.
+# pointing at the right source report "ok" and are left alone. Stale
+# symlinks that point back into the selected source profile but no
+# longer have a matching source topic are pruned.
 #
 # Options:
 #   --source <dir>   Source profile dir
@@ -88,6 +90,32 @@ link_one() {
   esac
 }
 
+prune_stale_links() {
+  local dir=$1 expected_names=$2 source_real=$3
+  local dst base target target_abs
+
+  for dst in "$dir"/*.md; do
+    [[ -L "$dst" ]] || continue
+    base=$(basename "$dst")
+    [[ "$expected_names" == *" $base "* ]] && continue
+
+    target=$(readlink "$dst" 2>/dev/null || true)
+    [[ -n "$target" ]] || continue
+    if [[ "$target" == /* ]]; then
+      target_abs=$(readlink -m "$target")
+    else
+      target_abs=$(readlink -m "$dir/$target")
+    fi
+
+    case "$target_abs" in
+      "$source_real"/*)
+        printf '  %-24s prune-stale\n' "$base"
+        ((dry_run)) || rm -f "$dst"
+        ;;
+    esac
+  done
+}
+
 process_target() {
   local label=$1 dir=$2 entry_name=$3
   if [[ ! -d "$dir" ]]; then
@@ -95,7 +123,9 @@ process_target() {
     return
   fi
   printf '[%s] %s\n' "$label" "$dir"
-  local f base dst_name host_suffix
+  local f base dst_name host_suffix expected_names source_real
+  expected_names=" "
+  source_real=$(readlink -f "$source_dir")
   # Host adapter convention: <topic>-<host>.md where <host> is a known
   # target label (claude, codex, ...). Topic names that contain hyphens
   # (tool-use.md, platform-actions.md) are NOT host adapters because
@@ -117,8 +147,10 @@ process_target() {
     else
       dst_name="$base"
     fi
+    expected_names+="$dst_name "
     link_one "$dir" "$f" "$dst_name"
   done
+  prune_stale_links "$dir" "$expected_names" "$source_real"
 }
 
 ((dry_run)) && echo "(dry run — no filesystem changes)"

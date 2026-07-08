@@ -22,7 +22,6 @@ Topic files under `en/`:
 - [en/tool-use.md](./en/tool-use.md)
 - [en/documentation.md](./en/documentation.md)
 - [en/platform-actions.md](./en/platform-actions.md)
-- [en/clipboard.md](./en/clipboard.md)
 - [en/vcs.md](./en/vcs.md)
 - [en/reporting.md](./en/reporting.md)
 - [en/preferences.md](./en/preferences.md)
@@ -68,7 +67,7 @@ Recommended user-level integrations (entrypoint plus one symlink per topic):
 - `~/.claude/<topic>.md -> /absolute/path/to/repo/agent-profiles/v1/en/<topic>.md` (one per topic file)
 
 The topic mirrors are required because `AGENTS.md` routes to topic files via relative links (`./validation.md`, …) that must resolve alongside the entrypoint in the target directory.
-This repository provides `scripts/dev/link-agent-profile.sh` to create or refresh these links idempotently for any target directory (`~/.claude/`, `~/.codex/`) that exists on the host.
+This repository provides `scripts/dev/link-agent-profile.sh` to create or refresh these links idempotently for any target directory (`~/.claude/`, `~/.codex/`) that exists on the host. The script also prunes stale topic symlinks that point back into this profile after a topic file is removed.
 
 Optional repository compatibility mappings:
 - `AGENTS.md -> agent-profiles/v1/en/AGENTS.md`

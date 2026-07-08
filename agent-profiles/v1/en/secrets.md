@@ -29,7 +29,7 @@ When the task stays entirely within non-sensitive surface (public configuration,
 - [secrets-03] Do not print secrets to tool output, shell logs, test fixtures, or progress messages.
 - [secrets-04] Do not include secrets in commit messages, PR bodies, issue comments, or any VCS-tracked content (see [vcs.md](./vcs.md)).
 - [secrets-05] Do not paste secrets into subagent briefings unless the subagent actually needs them; pass the minimum and prefer a placeholder the host can resolve.
-- [secrets-06] Do not write secrets to the system clipboard without explicit user authorization (see [clipboard.md](./clipboard.md)).
+- [secrets-06] Do not write secrets to the system clipboard without explicit user authorization (see [platform-actions.md](./platform-actions.md)).
 
 ## Storage And Redaction
 

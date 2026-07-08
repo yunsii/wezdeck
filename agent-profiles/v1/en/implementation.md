@@ -7,6 +7,8 @@ triggers:
   - module boundaries
   - reliability
   - performance
+  - evidence gates
+  - option comparison
 tags: [design, architecture, complexity, change-size]
 ---
 
@@ -14,7 +16,7 @@ tags: [design, architecture, complexity, change-size]
 
 ## When To Read
 
-When choosing structure, abstractions, module boundaries, reliability patterns, or performance tradeoffs.
+When choosing structure, abstractions, module boundaries, reliability patterns, performance tradeoffs, evidence depth, or whether to compare options before recommending a path.
 
 ## When Not To Read
 
@@ -29,10 +31,28 @@ Prefer implementations that are understandable, observable, proportionate, and c
 Before designing a non-trivial mechanism — module layout, abstraction, retry/queue/cache strategy, lockfile workflow, doc structure, hook pattern, anything you'd otherwise invent — search the established practice first. Inventing in the open is much more expensive than reading what already exists, and bespoke patterns drift from idioms reviewers recognize.
 
 - [implementation-45] Treat "search for existing best practices" as a step that precedes design, not as a tie-breaker after design. Skipping it is a failure mode, not a shortcut.
-- [implementation-46] Sources, in priority order: (a) the codebase itself — how a sibling module or earlier commit already solved this; (b) the language/framework's official guidance; (c) the broader community — searches, vendor docs, well-cited blog posts, deepwiki / context7 for library-specific use; (d) general web search for cross-cutting patterns. Stop at the first level that gives a concrete, actionable answer.
+- [implementation-46] Sources, in priority order: (a) the codebase itself — how a sibling module or earlier commit already solved this; (b) the language/framework's official guidance; (c) the broader community — searches, vendor docs, well-cited blog posts, source-indexed repository analysis, or versioned library documentation; (d) general web search for cross-cutting patterns. Stop at the first level that gives a concrete, actionable answer.
 - [implementation-47] Cite what you found and why you adopted, adapted, or rejected it. "Followed the official `tokio::sync::OnceCell` pattern" or "deviated because we need re-init on config reload" is enough — silent invention is what you must avoid, not bespoke choices that have a stated reason.
 - [implementation-48] Time-box the search to its decision value. Five minutes for a one-file helper, longer for a subsystem. Inconclusive search is itself a finding ("no community consensus, designing from first principles") — record it and move on, do not loop.
 - [implementation-49] Prior-art findings age. When citing a practice, note its year or version; verify it still holds before adopting it on a hot path or a long-lived interface.
+
+## Evidence Before Judgment
+
+For non-trivial diagnosis, design, architecture, dependency, performance, security, or "should we" questions, decide from evidence rather than memory or first impression. The goal is not ritual research; it is enough confidence to avoid shallow, irreversible, or overconfident conclusions.
+
+- [implementation-50] Identify the concrete claim or decision before researching. Evidence collection should answer that question, not expand into general browsing.
+- [implementation-51] Inspect the narrowest relevant local source, project docs, tests, logs, generated artifacts, or prior automation before finalizing a code or system claim.
+- [implementation-52] When behavior depends on external code, inspect upstream source through a source-indexed repository analysis capability when available. Keep this profile capability-based; map the capability to a concrete tool only in host, project, or skill docs.
+- [implementation-53] When behavior depends on a public contract, prefer official docs, specs, changelogs, or release notes over secondary summaries.
+- [implementation-54] When the task involves meaningful risk, cost, user-visible behavior, security, data loss, broad refactor, unclear requirements, or more than one credible path, compare at least two viable options before recommending one.
+- [implementation-55] Recommend one path only after stating the evidence, why it wins, the tradeoffs, and what remains uncertain.
+- [implementation-56] Skip deeper research when the task is trivial, purely mechanical, or already answered by local evidence; briefly state the skip reason when the final answer would otherwise look under-supported.
+- [implementation-57] Scale research depth to decision risk:
+
+  - Level 0: trivial command, typo, formatting, or direct lookup. No broader research required.
+  - Level 1: local implementation question. Inspect local source and, when useful, nearby tests.
+  - Level 2: bug, design choice, dependency behavior, or unclear requirement. Inspect local evidence plus one external authority when relevant.
+  - Level 3: architecture, security, migration, performance, public behavior, or irreversible change. Use multiple evidence types and present options before acting.
 
 ## Organize Around Ownership
 
