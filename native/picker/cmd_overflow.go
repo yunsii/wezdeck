@@ -247,6 +247,8 @@ func renderOverflowFrame(rows []overflowRow, selected int, ts perfTimings, filte
 
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
+	const selectedBg = "\x1b[48;5;255m"
+	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
 
 	var b strings.Builder
 	b.Grow(2048)
@@ -284,7 +286,21 @@ func renderOverflowFrame(rows []overflowRow, selected int, ts perfTimings, filte
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := rows[i]
 		if i == selected {
+			b.WriteString(selectedBg)
 			b.WriteString("▶ ")
+			b.WriteString(overflowSelectedStateIcon(r.state))
+			b.WriteString("  ")
+			b.WriteString(formatSelectedWorkspaceCell(r.workspace, wsCol, r.isCurrent))
+			b.WriteString("  \x1b[1m")
+			b.WriteString(r.label)
+			b.WriteString(restoreSelectedBg)
+			if r.cwd != "" {
+				fmt.Fprintf(&b, "  \x1b[2m%s%s", r.cwd, restoreSelectedBg)
+			}
+			b.WriteString(clearEOL)
+			b.WriteString(reset)
+			row++
+			continue
 		} else {
 			b.WriteString("  ")
 		}
@@ -327,6 +343,19 @@ func overflowStateIcon(state string) string {
 	return "·  "
 }
 
+func overflowSelectedStateIcon(state string) string {
+	// Selected rows keep the row background active; avoid full SGR reset.
+	switch state {
+	case "visible":
+		return "\x1b[1;38;5;39m●\x1b[22;39m  "
+	case "warm":
+		return "\x1b[38;5;208m◐\x1b[39m  "
+	case "cold":
+		return "\x1b[2;38;5;245m○\x1b[22;39m  "
+	}
+	return "·  "
+}
+
 func formatWorkspaceCell(name string, width int, current bool) string {
 	display := name
 	if len(display) > width {
@@ -341,6 +370,22 @@ func formatWorkspaceCell(name string, width int, current bool) string {
 		return "\x1b[1;38;5;108m" + display + "\x1b[0m" + padding
 	}
 	return "\x1b[38;5;245m" + display + "\x1b[0m" + padding
+}
+
+func formatSelectedWorkspaceCell(name string, width int, current bool) string {
+	display := name
+	if len(display) > width {
+		display = display[:width]
+	}
+	pad := width - len(display)
+	padding := ""
+	if pad > 0 {
+		padding = strings.Repeat(" ", pad)
+	}
+	if current {
+		return "\x1b[1;38;5;108m" + display + "\x1b[22;39m" + padding
+	}
+	return "\x1b[38;5;245m" + display + "\x1b[39m" + padding
 }
 
 func dispatchOverflow(r overflowRow, dispatchScript string) {
