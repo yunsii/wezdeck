@@ -319,10 +319,10 @@
   {
     "id": "worktree.quick-create-dev",
     "label": "Worktree: Quick-create dev-* (long-lived)",
-    "description": "Open a `dev-:` prompt; entered name becomes worktree `dev-<slug>` for long-lived parallel development. Agent launches under the `<base>-resume` profile (auto-continue cwd's last conversation, fall back to fresh on first open).",
+    "description": "Open an interactive dev-* prompt with lifecycle guidance and live worktree/branch preview. Agent launches under the `<base>-resume` profile (auto-continue cwd's last conversation, fall back to fresh on first open).",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "command-prompt -p \"dev-:\" \"run-shell -b 'bash #{@wezterm_runtime_root}/scripts/runtime/worktree/open-task-window --type dev \\\"%1\\\" >/dev/null 2>&1'\""},
+    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup dev #{q:pane_current_path}\""},
     "hotkeys": [
       { "keys": "Ctrl+k g d", "layer": "tmux-chord" }
     ],
@@ -331,19 +331,19 @@
       "command": [
         "bash",
         "-lc",
-        "tmux command-prompt -p 'dev-:' \"run-shell -b 'bash {repo_root}/scripts/runtime/worktree/open-task-window --type dev \\\"%1\\\" >/dev/null 2>&1'\""
+        "tmux display-popup -E -d \"$COMMAND_PANEL_CWD\" -w 88% -h 60% \"{repo_root}/scripts/runtime/worktree/create-prompt-dev\""
       ],
-      "success_message": "Opened dev-: prompt.",
+      "success_message": "Opened dev worktree prompt.",
       "failure_message": "Failed to open dev prompt."
     }
   },
   {
     "id": "worktree.quick-create-task",
     "label": "Worktree: Quick-create task-* (short-lived)",
-    "description": "Open a `task-:` prompt; entered name becomes worktree `task-<slug>` for PR-scoped focused work. Agent launches under the `<base>-resume` profile.",
+    "description": "Open an interactive task-* prompt with lifecycle guidance and live worktree/branch preview. Agent launches under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "command-prompt -p \"task-:\" \"run-shell -b 'bash #{@wezterm_runtime_root}/scripts/runtime/worktree/open-task-window --type task \\\"%1\\\" >/dev/null 2>&1'\""},
+    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup task #{q:pane_current_path}\""},
     "hotkeys": [
       { "keys": "Ctrl+k g t", "layer": "tmux-chord" }
     ],
@@ -352,19 +352,19 @@
       "command": [
         "bash",
         "-lc",
-        "tmux command-prompt -p 'task-:' \"run-shell -b 'bash {repo_root}/scripts/runtime/worktree/open-task-window --type task \\\"%1\\\" >/dev/null 2>&1'\""
+        "tmux display-popup -E -d \"$COMMAND_PANEL_CWD\" -w 88% -h 60% \"{repo_root}/scripts/runtime/worktree/create-prompt-task\""
       ],
-      "success_message": "Opened task-: prompt.",
+      "success_message": "Opened task worktree prompt.",
       "failure_message": "Failed to open task prompt."
     }
   },
   {
     "id": "worktree.quick-create-hotfix",
     "label": "Worktree: Quick-create hotfix-* (urgent)",
-    "description": "Open a `hotfix-:` prompt; entered name becomes worktree `hotfix-<slug>` for urgent fixes. Agent launches under the `<base>-resume` profile; on first open of a brand-new worktree the resume command falls back to a fresh agent automatically.",
+    "description": "Open an interactive hotfix-* prompt with lifecycle guidance and live worktree/branch preview. Agent launches under the `<base>-resume` profile; on first open of a brand-new worktree the resume command falls back to a fresh agent automatically.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "command-prompt -p \"hotfix-:\" \"run-shell -b 'bash #{@wezterm_runtime_root}/scripts/runtime/worktree/open-task-window --type hotfix \\\"%1\\\" >/dev/null 2>&1'\""},
+    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup hotfix #{q:pane_current_path}\""},
     "hotkeys": [
       { "keys": "Ctrl+k g h", "layer": "tmux-chord" }
     ],
@@ -373,9 +373,9 @@
       "command": [
         "bash",
         "-lc",
-        "tmux command-prompt -p 'hotfix-:' \"run-shell -b 'bash {repo_root}/scripts/runtime/worktree/open-task-window --type hotfix \\\"%1\\\" >/dev/null 2>&1'\""
+        "tmux display-popup -E -d \"$COMMAND_PANEL_CWD\" -w 88% -h 60% \"{repo_root}/scripts/runtime/worktree/create-prompt-hotfix\""
       ],
-      "success_message": "Opened hotfix-: prompt.",
+      "success_message": "Opened hotfix worktree prompt.",
       "failure_message": "Failed to open hotfix prompt."
     }
   },

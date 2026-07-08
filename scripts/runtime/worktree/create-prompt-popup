@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: create-prompt-popup dev|task|hotfix [cwd]
+
+Launch the lifecycle worktree create prompt inside a tmux display-popup.
+EOF
+}
+
+if (($# < 1 || $# > 2)); then
+  usage >&2
+  exit 64
+fi
+
+type_kind="$1"
+cwd="${2:-$PWD}"
+
+case "$type_kind" in
+  dev|task|hotfix) ;;
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage >&2
+    exit 64
+    ;;
+esac
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+prompt="$script_dir/create-prompt-$type_kind"
+
+if [[ ! -x "$prompt" ]]; then
+  printf 'create-prompt-popup: prompt wrapper not executable: %s\n' "$prompt" >&2
+  exit 1
+fi
+
+if [[ ! -d "$cwd" ]]; then
+  cwd="$PWD"
+fi
+
+printf -v popup_command 'exec %q' "$prompt"
+exec tmux display-popup -E -d "$cwd" -w "88%" -h "60%" -T "$type_kind worktree" "$popup_command"

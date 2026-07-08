@@ -246,8 +246,8 @@ runtime_log_emit() {
 
   runtime_log_should_emit "$level" "$category" || return 0
 
-  mkdir -p "$(dirname "$WEZTERM_RUNTIME_LOG_FILE")"
-  runtime_log_rotate_if_needed
+  mkdir -p "$(dirname "$WEZTERM_RUNTIME_LOG_FILE")" 2>/dev/null || return 0
+  runtime_log_rotate_if_needed || return 0
 
   local timestamp line trace_id formatted_fields source_name
   # Millisecond-precision timestamp via bash 5 builtins — no `date` fork
@@ -271,7 +271,7 @@ runtime_log_emit() {
     line="$line $formatted_fields"
   fi
 
-  printf '%s\n' "$line" >> "$WEZTERM_RUNTIME_LOG_FILE"
+  printf '%s\n' "$line" 2>/dev/null >> "$WEZTERM_RUNTIME_LOG_FILE" || return 0
 }
 
 runtime_log_debug() {

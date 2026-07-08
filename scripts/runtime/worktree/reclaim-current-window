@@ -9,7 +9,6 @@
 # Refusal rules (any one fails → script aborts before touching git):
 #   - cwd is not inside any git repo
 #   - cwd's worktree IS the main worktree (refuse: never reclaim primary)
-#   - worktree slug starts with `dev-` (long-lived workstation, opt-out)
 #   - worktree has uncommitted/untracked changes (use force flow manually)
 #   - branch hasn't been delivered (incomplete delivery): "delivered" means
 #     either merged into origin's default branch, OR pushed to a remote
@@ -109,10 +108,12 @@ fi
 
 slug="$(basename "$worktree_root")"
 
-# ---------- lifecycle whitelist ----------
+reclaim_extra_args=()
+reclaim_prompt="reclaim $slug? (y/N):"
 case "$slug" in
   dev-*)
-    refuse "$slug is a long-lived dev worktree (use 'git worktree remove' if intentional)"
+    reclaim_extra_args+=(--allow-long-lived)
+    reclaim_prompt="reclaim long-lived $slug? (y/N):"
     ;;
 esac
 
@@ -179,7 +180,7 @@ if [[ -n "${TMUX:-}" && -z "${WT_RECLAIM_NO_CONFIRM:-}" ]]; then
   confirm_status_file="$(mktemp -t wt-reclaim-confirm.XXXXXX)"
   # tmux command-prompt -1 reads exactly one keystroke; we capture y/Y
   # by writing it to the status file.
-  tmux command-prompt -1 -p "reclaim $slug? (y/N):" \
+  tmux command-prompt -1 -p "$reclaim_prompt" \
     "run-shell 'printf %s %1 > $(printf '%q' "$confirm_status_file")'"
   # command-prompt is async; busy-wait briefly for the file to populate.
   for _ in $(seq 1 200); do
@@ -237,7 +238,7 @@ wt_tmux_progress "[worktree-task] reclaiming $slug…"
   exec >>"$log_file" 2>&1
   printf '[%s] reclaim start slug=%s main_root=%s\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$slug" "$main_root"
-  if "$WORKTREE_TASK_CLI" reclaim --cwd "$main_root" --task-slug "$slug"; then
+  if "$WORKTREE_TASK_CLI" reclaim --cwd "$main_root" --task-slug "$slug" "${reclaim_extra_args[@]}"; then
     printf '[%s] reclaim ok\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     wt_tmux_progress "[worktree-task] reclaimed $slug"
     wt_tmux_progress_clear_after 1.5
