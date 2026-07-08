@@ -47,6 +47,43 @@ internal sealed class InstanceRegistry
         return new WindowMatch(entry.ProcessId, entry.WindowHandle);
     }
 
+    public WindowReuseCandidate? FindLeastRecentlyUsedWindow(string instanceType, string expectedProcessName)
+    {
+        List<KeyValuePair<string, WindowCacheEntry>> snapshot;
+        lock (stateLock)
+        {
+            if (!entries.TryGetValue(instanceType, out var typeEntries))
+            {
+                return null;
+            }
+
+            snapshot = typeEntries.ToList();
+        }
+
+        WindowReuseCandidate? selected = null;
+        foreach (var item in snapshot)
+        {
+            var entry = item.Value;
+            using var process = GetLiveProcess(entry.ProcessId, expectedProcessName, entry.ProcessStartTimeUtc);
+            if (process == null || entry.WindowHandle == IntPtr.Zero || !NativeMethods.IsWindow(entry.WindowHandle))
+            {
+                ForgetWindow(instanceType, item.Key);
+                continue;
+            }
+
+            var lastUsedAtUtc = entry.LastUsedAtUtc ?? entry.ProcessStartTimeUtc ?? DateTime.MinValue;
+            if (selected == null || lastUsedAtUtc < selected.LastUsedAtUtc)
+            {
+                selected = new WindowReuseCandidate(
+                    item.Key,
+                    new WindowMatch(entry.ProcessId, entry.WindowHandle),
+                    lastUsedAtUtc);
+            }
+        }
+
+        return selected;
+    }
+
     public void RememberWindow(string instanceType, string key, WindowMatch window)
     {
         DateTime? startTimeUtc = null;
@@ -61,7 +98,28 @@ internal sealed class InstanceRegistry
 
         lock (stateLock)
         {
-            GetOrCreateTypeEntries(instanceType)[key] = new WindowCacheEntry(window.ProcessId, window.WindowHandle, startTimeUtc);
+            GetOrCreateTypeEntries(instanceType)[key] = new WindowCacheEntry(window.ProcessId, window.WindowHandle, startTimeUtc, DateTime.UtcNow);
+            SaveLocked();
+        }
+    }
+
+    public void ReplaceWindowKey(string instanceType, string oldKey, string newKey, WindowMatch window)
+    {
+        DateTime? startTimeUtc = null;
+        try
+        {
+            using var process = Process.GetProcessById(window.ProcessId);
+            startTimeUtc = process.StartTime.ToUniversalTime();
+        }
+        catch
+        {
+        }
+
+        lock (stateLock)
+        {
+            var typeEntries = GetOrCreateTypeEntries(instanceType);
+            typeEntries.Remove(oldKey);
+            typeEntries[newKey] = new WindowCacheEntry(window.ProcessId, window.WindowHandle, startTimeUtc, DateTime.UtcNow);
             SaveLocked();
         }
     }
@@ -147,7 +205,8 @@ internal sealed class InstanceRegistry
             typeEntries[item.Key] = new WindowCacheEntry(
                 item.Value.ProcessId,
                 new IntPtr(item.Value.WindowHandle),
-                item.Value.ProcessStartTimeUtc);
+                item.Value.ProcessStartTimeUtc,
+                item.Value.LastUsedAtUtc);
         }
     }
 
@@ -161,7 +220,8 @@ internal sealed class InstanceRegistry
                     item => new PersistentWindowCacheEntry(
                         item.Value.ProcessId,
                         item.Value.WindowHandle.ToInt64(),
-                        item.Value.ProcessStartTimeUtc),
+                        item.Value.ProcessStartTimeUtc,
+                        item.Value.LastUsedAtUtc),
                     StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase),
             Vscode: null,

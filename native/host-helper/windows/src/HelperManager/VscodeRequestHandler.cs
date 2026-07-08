@@ -19,6 +19,7 @@ internal sealed class VscodeRequestHandler
         var distro = RequestPayloadReader.RequireString(payload, "distro");
         var targetDir = PathResolvers.ResolveWorktreeRoot(requestedDir, distro);
         var command = RequestPayloadReader.GetStringArray(payload, "code_command").ToArray();
+        var maxWindows = RequestPayloadReader.GetOptionalPositiveInt(payload, "max_windows");
         if (command.Length == 0)
         {
             command = new[] { "code" };
@@ -57,6 +58,7 @@ internal sealed class VscodeRequestHandler
             ["matched_window_found"] = reuseDecision.MatchedWindowFound ? "1" : "0",
             ["decision_path"] = reuseDecision.Path,
             ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
+            ["max_windows"] = maxWindows?.ToString(),
             ["folder_uri"] = folderUri,
         });
         if (reuseDecision.Window != null)
@@ -83,6 +85,68 @@ internal sealed class VscodeRequestHandler
                 },
                 ProcessId: reuseDecision.Window.ProcessId,
                 WindowHandle: reuseDecision.Window.WindowHandle.ToInt64());
+        }
+
+        if (maxWindows.HasValue && existingVisibleWindowHandles.Count >= maxWindows.Value)
+        {
+            var reuseCandidate = windowReuseService.FindLeastRecentlyUsedWindow("vscode", processName);
+            var replacementWindow = reuseCandidate?.Window ?? WindowQuery.FindFirstVisibleProcessWindow(processName);
+            if (replacementWindow != null && WindowActivator.TryActivateWindow(replacementWindow))
+            {
+                WindowActivator.LaunchDetachedProcess(
+                    codeExecutable,
+                    codeArguments.Concat(new[] { "--reuse-window", "--folder-uri", folderUri }).ToArray());
+
+                if (reuseCandidate != null)
+                {
+                    windowReuseService.ReplaceWindowKey("vscode", reuseCandidate.LaunchKey, launchKey, replacementWindow);
+                }
+                else
+                {
+                    windowReuseService.RememberWindow("vscode", launchKey, replacementWindow);
+                }
+
+                logger.Info("vscode", "reused least recently used vscode window because max window count was reached", new Dictionary<string, string?>
+                {
+                    ["trace_id"] = traceId,
+                    ["target_dir"] = targetDir,
+                    ["launch_key"] = launchKey,
+                    ["replaced_launch_key"] = reuseCandidate?.LaunchKey,
+                    ["lru_last_used_at_utc"] = reuseCandidate?.LastUsedAtUtc.ToString("O"),
+                    ["pid"] = replacementWindow.ProcessId.ToString(),
+                    ["hwnd"] = replacementWindow.WindowHandle.ToInt64().ToString(),
+                    ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
+                    ["max_windows"] = maxWindows.Value.ToString(),
+                    ["decision_path"] = reuseCandidate != null
+                        ? "max_windows_reuse_lru_window"
+                        : "max_windows_reuse_visible_window",
+                });
+                return new RequestOutcome(
+                    Domain: "vscode",
+                    Action: "focus_or_open",
+                    Status: "reused",
+                    DecisionPath: reuseCandidate != null
+                        ? "max_windows_reuse_lru_window"
+                        : "max_windows_reuse_visible_window",
+                    ResultType: "window_ref",
+                    Result: new HelperWindowRefResult
+                    {
+                        Pid = replacementWindow.ProcessId,
+                        Hwnd = replacementWindow.WindowHandle.ToInt64(),
+                    },
+                    ProcessId: replacementWindow.ProcessId,
+                    WindowHandle: replacementWindow.WindowHandle.ToInt64());
+            }
+
+            logger.Info("vscode", "max window count was reached but no focusable vscode window was found", new Dictionary<string, string?>
+            {
+                ["trace_id"] = traceId,
+                ["target_dir"] = targetDir,
+                ["launch_key"] = launchKey,
+                ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
+                ["max_windows"] = maxWindows.Value.ToString(),
+                ["decision_path"] = "max_windows_no_focusable_window",
+            });
         }
 
         var initialForeground = WindowQuery.GetForegroundWindowInfo();

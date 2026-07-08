@@ -60,6 +60,16 @@ internal sealed class WindowReuseService
         instanceRegistry.RememberWindow(instanceType, key, window);
     }
 
+    public WindowReuseCandidate? FindLeastRecentlyUsedWindow(string instanceType, string expectedProcessName)
+    {
+        return instanceRegistry.FindLeastRecentlyUsedWindow(instanceType, expectedProcessName);
+    }
+
+    public void ReplaceWindowKey(string instanceType, string oldKey, string newKey, WindowMatch window)
+    {
+        instanceRegistry.ReplaceWindowKey(instanceType, oldKey, newKey, window);
+    }
+
     private WindowMatch? TryRebindExistingInstance(LaunchMatchSpec spec, IReadOnlyCollection<int> matchingProcessIds, ForegroundWindowInfo? initialForeground, int timeoutMs)
     {
         var existingWindow = WindowQuery.FindWindowForProcessIds(spec.ProcessName, matchingProcessIds);

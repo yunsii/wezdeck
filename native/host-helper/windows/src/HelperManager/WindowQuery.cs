@@ -26,6 +26,27 @@ internal static class WindowQuery
         return windowHandles;
     }
 
+    public static WindowMatch? FindFirstVisibleProcessWindow(string expectedProcessName)
+    {
+        foreach (var process in Process.GetProcessesByName(expectedProcessName))
+        {
+            try
+            {
+                process.Refresh();
+                if (process.MainWindowHandle != IntPtr.Zero && NativeMethods.IsWindow(process.MainWindowHandle))
+                {
+                    return new WindowMatch(process.Id, process.MainWindowHandle);
+                }
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
+        return null;
+    }
+
     public static WindowMatch? WaitForNewProcessWindow(string expectedProcessName, IReadOnlySet<IntPtr> existingWindowHandles, int timeoutMs)
     {
         var stopwatch = Stopwatch.StartNew();
