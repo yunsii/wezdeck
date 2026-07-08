@@ -1,0 +1,283 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WEZTERM_CONFIG_REPO_DEFAULT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+RUNTIME_LIB_DIR="$WEZTERM_CONFIG_REPO_DEFAULT/scripts/runtime"
+
+# shellcheck disable=SC1091
+source "$RUNTIME_LIB_DIR/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/helpers.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/git.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/config.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/core.sh"
+
+export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.create-prompt"
+
+usage() {
+  cat <<'EOF'
+usage:
+  create-prompt --type dev|task|hotfix
+  create-prompt --type dev|task|hotfix --preview NAME
+
+Interactive tmux popup prompt for lifecycle worktree creation. The prompt
+shows the lifecycle purpose, reclaim rule, final title, worktree directory,
+and branch name while typing.
+EOF
+}
+
+die() {
+  printf 'create-prompt: %s\n' "$1" >&2
+  exit 1
+}
+
+type_kind=""
+preview_name=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --type)
+      [[ $# -ge 2 ]] || die "--type requires a value"
+      type_kind="$2"
+      shift 2
+      ;;
+    --type=*)
+      type_kind="${1#--type=}"
+      shift
+      ;;
+    --preview)
+      [[ $# -ge 2 ]] || die "--preview requires a value"
+      preview_name="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+case "$type_kind" in
+  dev|task|hotfix) ;;
+  *) die "invalid --type: $type_kind (expected dev, task, or hotfix)" ;;
+esac
+
+case "$type_kind" in
+  dev)
+    prompt_label="dev"
+    purpose="long-lived parallel workstation"
+    reclaim_rule="reclaim: protected by default; Ctrl+k g r needs clean + delivered + long-lived confirmation"
+    ;;
+  task)
+    prompt_label="task"
+    purpose="short-lived PR-scoped task"
+    reclaim_rule="reclaim: Ctrl+k g r after clean + delivered"
+    ;;
+  hotfix)
+    prompt_label="hotfix"
+    purpose="urgent fix lane"
+    reclaim_rule="reclaim: Ctrl+k g r after clean + delivered"
+    ;;
+esac
+
+load_context() {
+  local cwd="${1:-$PWD}"
+  wt_core_resolve_repo_context "$cwd"
+  wt_config_load
+  wt_core_resolve_policy_paths
+}
+
+normalize_title() {
+  local raw="${1:-}"
+  local name=""
+  case "$raw" in
+    task/)  name="" ;;
+    task/*) name="${raw#task/}" ;;
+    *)      name="$raw" ;;
+  esac
+
+  if [[ -n "$type_kind" && -n "$name" ]]; then
+    case "$name" in
+      "${type_kind}-"*) printf '%s\n' "$name" ;;
+      *)                printf '%s-%s\n' "$type_kind" "$name" ;;
+    esac
+  else
+    printf '%s\n' "$name"
+  fi
+}
+
+normalize_subject() {
+  local raw="${1:-}"
+  case "$raw" in
+    task/|dev/|hotfix/) printf '\n' ;;
+    task/*)             printf '%s\n' "${raw#task/}" ;;
+    dev/*)              printf '%s\n' "${raw#dev/}" ;;
+    hotfix/*)           printf '%s\n' "${raw#hotfix/}" ;;
+    "${type_kind}-"*)   printf '%s\n' "${raw#"$type_kind"-}" ;;
+    *)                  printf '%s\n' "$raw" ;;
+  esac
+}
+
+branch_prefix_for_type() {
+  case "$type_kind" in
+    dev)    printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_DEV:-$WT_POLICY_BRANCH_PREFIX}" ;;
+    task)   printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_TASK:-$WT_POLICY_BRANCH_PREFIX}" ;;
+    hotfix) printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_HOTFIX:-$WT_POLICY_BRANCH_PREFIX}" ;;
+    *)      printf '%s\n' "$WT_POLICY_BRANCH_PREFIX" ;;
+  esac
+}
+
+compute_preview() {
+  local raw="${1:-}"
+  local subject subject_slug base_worktree_slug resolved_worktree_slug resolved_subject_slug suffix branch_prefix branch worktree_path branch_status path_status
+
+  subject="$(normalize_subject "$raw")"
+  subject_slug="$(wt_slugify "$subject" "$WT_POLICY_SLUG_FALLBACK")"
+  if [[ -z "$subject" ]]; then
+    printf 'raw=%s\n' "$raw"
+    printf 'subject=\nsubject_slug=\nworktree_slug=\nworktree=\nbranch=\nbranch_status=empty\npath_status=empty\n'
+    return 0
+  fi
+
+  base_worktree_slug="${type_kind}-${subject_slug}"
+  resolved_worktree_slug="$base_worktree_slug"
+  resolved_subject_slug="$subject_slug"
+  branch_prefix="$(branch_prefix_for_type)"
+  suffix=1
+  while [[ -e "$WT_POLICY_WORKTREE_DIR_ABS/$resolved_worktree_slug" ]] || wt_git_branch_exists "$WT_MAIN_WORKTREE_ROOT" "${branch_prefix}${resolved_subject_slug}"; do
+    suffix=$((suffix + 1))
+    resolved_subject_slug="${subject_slug}-${suffix}"
+    resolved_worktree_slug="${base_worktree_slug}-${suffix}"
+  done
+
+  branch="${branch_prefix}${resolved_subject_slug}"
+  worktree_path="$WT_POLICY_WORKTREE_DIR_ABS/$resolved_worktree_slug"
+  branch_status="new"
+  path_status="new"
+  [[ "$resolved_worktree_slug" != "$base_worktree_slug" ]] && branch_status="bumped"
+  [[ -e "$worktree_path" ]] && path_status="exists"
+
+  printf 'raw=%s\n' "$raw"
+  printf 'subject=%s\n' "$subject"
+  printf 'subject_slug=%s\n' "$resolved_subject_slug"
+  printf 'worktree_slug=%s\n' "$resolved_worktree_slug"
+  printf 'worktree=%s\n' "$worktree_path"
+  printf 'branch=%s\n' "$branch"
+  printf 'branch_status=%s\n' "$branch_status"
+  printf 'path_status=%s\n' "$path_status"
+}
+
+render() {
+  local raw="$1"
+  local rows cols subject subject_slug worktree_slug worktree branch branch_status path_status line
+  IFS=' ' read -r rows cols < <(stty size 2>/dev/null || printf '22 96')
+
+  while IFS='=' read -r key value; do
+    case "$key" in
+      subject) subject="$value" ;;
+      subject_slug) subject_slug="$value" ;;
+      worktree_slug) worktree_slug="$value" ;;
+      worktree) worktree="$value" ;;
+      branch) branch="$value" ;;
+      branch_status) branch_status="$value" ;;
+      path_status) path_status="$value" ;;
+    esac
+  done < <(compute_preview "$raw")
+
+  printf '\033[H\033[2J'
+  printf '\033[1m%s worktree\033[0m\n' "$prompt_label"
+  printf 'purpose: %s\n' "$purpose"
+  printf '%s\n' "$reclaim_rule"
+  printf '\n'
+  printf 'name: %s\n' "$raw"
+  printf '\n'
+  if [[ -z "${subject:-}" ]]; then
+    printf '\033[2mtype a short name; Enter creates, Esc cancels\033[0m\n'
+  else
+    printf 'subject:       %s\n' "$subject"
+    printf 'subject slug:  %s\n' "$subject_slug"
+    printf 'worktree slug: %s\n' "$worktree_slug"
+    printf 'worktree:      %s\n' "$worktree"
+    printf 'branch:        %s\n' "$branch"
+    if [[ "$branch_status" == "bumped" ]]; then
+      printf '\033[33mcollision: final names were bumped to %s / %s\033[0m\n' "$worktree_slug" "$branch"
+    elif [[ "$path_status" == "exists" ]]; then
+      printf '\033[33mwarning: worktree path already exists\033[0m\n'
+    else
+      printf '\033[2mready: Enter creates this worktree and branch\033[0m\n'
+    fi
+  fi
+  printf '\n'
+  line="Enter create | Backspace delete | Ctrl+U clear | Esc cancel"
+  printf '\033[2m%-*.*s\033[0m' "$cols" "$cols" "$line"
+}
+
+read_key() {
+  local key extra
+  REPLY=""
+  if ! IFS= read -rsn1 key; then
+    runtime_log_warn worktree "create prompt input ended" "type=$type_kind" "cwd=$PWD"
+    return 1
+  fi
+  if [[ "$key" == $'\033' ]]; then
+    if IFS= read -rsn15 -t 0.001 extra; then
+      key+="$extra"
+    fi
+  fi
+  REPLY="$key"
+}
+
+load_context "$PWD"
+runtime_log_info worktree "create prompt started" "type=$type_kind" "cwd=$PWD" "preview=$preview_name"
+
+if [[ -n "$preview_name" ]]; then
+  compute_preview "$preview_name"
+  exit 0
+fi
+
+raw=""
+printf '\033[?25l'
+trap 'printf "\033[0m\033[?25h"' EXIT
+
+while true; do
+  render "$raw"
+  if ! read_key; then
+    printf '\n\ninput unavailable; prompt cannot read from popup tty.\n'
+    printf 'cwd: %s\n' "$PWD"
+    printf 'Press any key to close, or wait 5 seconds.\n'
+    IFS= read -rsn1 -t 5 _ || true
+    exit 1
+  fi
+  key="$REPLY"
+  case "$key" in
+    ""|$'\r'|$'\n')
+      if [[ -n "$(normalize_subject "$raw")" ]]; then
+        exec bash "$SCRIPT_DIR/open-task-window" --type "$type_kind" -- "$raw"
+      fi
+      ;;
+    $'\033'|$'\003')
+      exit 0
+      ;;
+    $'\177'|$'\010')
+      if [[ -n "$raw" ]]; then
+        raw="${raw%?}"
+      fi
+      ;;
+    $'\025')
+      raw=""
+      ;;
+    *)
+      if [[ "$key" =~ [[:print:]] ]]; then
+        raw+="$key"
+      fi
+      ;;
+  esac
+done

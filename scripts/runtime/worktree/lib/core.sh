@@ -59,6 +59,7 @@ options:
   --provider VALUE      Provider name or path. Builtins: none, tmux-agent
   --provider-mode MODE  off, auto, or required
   --force               Reclaim even when the task worktree has local changes
+  --allow-long-lived    Allow reclaiming dev-* long-lived worktrees
   --keep-branch         Keep the task branch even if it is already merged
 EOF
 }
@@ -660,6 +661,7 @@ wt_core_reclaim() {
   local provider_override=""
   local provider_mode_override=""
   local force_mode="0"
+  local allow_long_lived="0"
   local keep_branch="0"
   local context_path=""
   local manifest_provider=""
@@ -700,6 +702,10 @@ wt_core_reclaim() {
         force_mode="1"
         shift
         ;;
+      --allow-long-lived)
+        allow_long_lived="1"
+        shift
+        ;;
       --keep-branch)
         keep_branch="1"
         shift
@@ -735,6 +741,7 @@ wt_core_reclaim() {
     "provider_mode=$WT_PROVIDER_MODE" \
     "provider=${provider_override:-$WT_PROVIDER}" \
     "force=$force_mode" \
+    "allow_long_lived=$allow_long_lived" \
     "keep_branch=$keep_branch"
 
   if [[ -n "$worktree_root" ]]; then
@@ -772,7 +779,9 @@ wt_core_reclaim() {
   # state. Use `git worktree remove` directly if you really mean it.
   case "$WT_TASK_SLUG" in
     dev-*)
-      wt_die "refusing to reclaim long-lived worktree: $WT_TASK_SLUG (use 'git worktree remove' if intentional)"
+      if [[ "$allow_long_lived" != "1" ]]; then
+        wt_die "refusing to reclaim long-lived worktree: $WT_TASK_SLUG (rerun with --allow-long-lived if intentional)"
+      fi
       ;;
   esac
 

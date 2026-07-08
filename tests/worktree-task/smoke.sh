@@ -9,8 +9,14 @@
 # Cases:
 #   1. happy-path: launch + reclaim creates and removes worktree, branch,
 #      and metadata; no phantom worktree entry afterward.
-#   2. dev-* prefix refusal: reclaim of a dev-* worktree refuses with a
-#      clear error and leaves the worktree in place.
+#   2. dev-* prefix refusal: reclaim of a dev-* worktree refuses by default
+#      with a clear error and leaves the worktree in place.
+#   3. dev-* explicit allow: reclaim of a dev-* worktree succeeds when
+#      --allow-long-lived is passed.
+#   4. create-prompt preview: lifecycle prompt computes final title, slug,
+#      worktree path, and branch before launch.
+#   5. open-task-window lifecycle names: quick-create uses lifecycle only
+#      for the local worktree slug and keeps branch names type-scoped.
 #
 # Exit non-zero on any failure with a short trace.
 
@@ -18,9 +24,19 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WORKTREE_TASK="$REPO_ROOT/scripts/runtime/worktree/worktree-task"
+CREATE_PROMPT="$REPO_ROOT/scripts/runtime/worktree/create-prompt"
+OPEN_TASK_WINDOW="$REPO_ROOT/scripts/runtime/worktree/open-task-window"
 
 [[ -x "$WORKTREE_TASK" ]] || {
   printf 'FAIL: worktree-task CLI not found or not executable: %s\n' "$WORKTREE_TASK" >&2
+  exit 1
+}
+[[ -x "$CREATE_PROMPT" ]] || {
+  printf 'FAIL: create-prompt not found or not executable: %s\n' "$CREATE_PROMPT" >&2
+  exit 1
+}
+[[ -x "$OPEN_TASK_WINDOW" ]] || {
+  printf 'FAIL: open-task-window not found or not executable: %s\n' "$OPEN_TASK_WINDOW" >&2
   exit 1
 }
 
@@ -43,7 +59,7 @@ cleanup() {
         | grep -v "^$repo$" \
         | while read -r wt; do
             git -C "$repo" worktree remove -f "$wt" >/dev/null 2>&1 || true
-          done
+          done || true
     done
   fi
   rm -rf "$WORK_DIR"
@@ -126,7 +142,7 @@ case1_happy_path() {
   assert_pass "no phantom worktree entry"
 }
 
-# ---------- case 2: dev-* refusal ----------
+# ---------- case 2: dev-* default refusal ----------
 case2_dev_refusal() {
   printf '\n=== case 2: dev-* prefix refusal ===\n'
 
@@ -176,18 +192,131 @@ case2_dev_refusal() {
   git -C "$repo" worktree remove -f "$expect_wt" >/dev/null 2>&1 || true
 }
 
-# ---------- case 3: transcript preservation ----------
+# ---------- case 3: dev-* explicit allow ----------
+case3_dev_allow_long_lived() {
+  printf '\n=== case 3: dev-* explicit allow ===\n'
+
+  local repo="$WORK_DIR/origin3"
+  setup_repo "$repo"
+  local slug="dev-ci-fix"
+  local expect_wt="$WORK_DIR/.worktrees/origin3/$slug"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title "$slug" \
+    --base-ref HEAD \
+    --provider none \
+    --no-prompt \
+    --no-attach >/dev/null \
+    || { assert_fail "launch returned non-zero for dev-* slug"; return 1; }
+
+  [[ -d "$expect_wt" ]] || { assert_fail "dev-* worktree not created"; return 1; }
+  assert_pass "dev-* worktree created for explicit allow"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" reclaim \
+    --cwd "$repo" \
+    --task-slug "$slug" \
+    --allow-long-lived \
+    --provider none >/dev/null \
+    || { assert_fail "reclaim with --allow-long-lived failed"; return 1; }
+
+  [[ ! -d "$expect_wt" ]] && assert_pass "dev-* worktree gone after explicit allow" \
+    || { assert_fail "dev-* worktree still present after explicit allow"; return 1; }
+}
+
+# ---------- case 4: create-prompt preview ----------
+case4_create_prompt_preview() {
+  printf '\n=== case 4: create-prompt preview ===\n'
+
+  local repo="$WORK_DIR/origin4"
+  setup_repo "$repo"
+  local preview
+
+  preview="$(
+    cd "$repo"
+    HOME="$SANDBOX_HOME" \
+    WEZDECK_REPO="$REPO_ROOT" \
+    "$CREATE_PROMPT" --type dev --preview "ci fix"
+  )"
+
+  grep -qx 'subject=ci fix' <<<"$preview" \
+    && assert_pass "preview preserves subject title" \
+    || { assert_fail "preview subject mismatch: $preview"; return 1; }
+  grep -qx 'subject_slug=ci-fix' <<<"$preview" \
+    && assert_pass "preview slugifies subject" \
+    || { assert_fail "preview subject slug mismatch: $preview"; return 1; }
+  grep -qx 'worktree_slug=dev-ci-fix' <<<"$preview" \
+    && assert_pass "preview applies dev lifecycle to worktree slug" \
+    || { assert_fail "preview title mismatch: $preview"; return 1; }
+  grep -qx "worktree=$WORK_DIR/.worktrees/origin4/dev-ci-fix" <<<"$preview" \
+    && assert_pass "preview shows final worktree path" \
+    || { assert_fail "preview worktree mismatch: $preview"; return 1; }
+  grep -qx 'branch=dev/ci-fix' <<<"$preview" \
+    && assert_pass "preview shows final branch" \
+    || { assert_fail "preview branch mismatch: $preview"; return 1; }
+
+  git -C "$repo" branch dev/ci-fix
+  preview="$(
+    cd "$repo"
+    HOME="$SANDBOX_HOME" \
+    WEZDECK_REPO="$REPO_ROOT" \
+    "$CREATE_PROMPT" --type dev --preview "ci fix"
+  )"
+  grep -qx 'worktree_slug=dev-ci-fix-2' <<<"$preview" \
+    && assert_pass "preview bumps colliding worktree slug" \
+    || { assert_fail "preview did not bump collision: $preview"; return 1; }
+  grep -qx 'branch=dev/ci-fix-2' <<<"$preview" \
+    && assert_pass "preview bumps colliding branch" \
+    || { assert_fail "preview did not bump branch: $preview"; return 1; }
+}
+
+# ---------- case 5: open-task-window lifecycle names ----------
+case5_open_task_window_lifecycle_names() {
+  printf '\n=== case 5: open-task-window lifecycle names ===\n'
+
+  local repo="$WORK_DIR/origin5"
+  setup_repo "$repo"
+  local expect_wt="$WORK_DIR/.worktrees/origin5/task-ci-fix"
+
+  (
+    cd "$repo"
+    HOME="$SANDBOX_HOME" \
+    WEZDECK_REPO="$REPO_ROOT" \
+    MANAGED_AGENT_PROFILE=claude \
+    WT_QUICK_CREATE_BASE_REF=HEAD \
+    WT_QUICK_CREATE_PROVIDER=none \
+    WT_QUICK_CREATE_PROVIDER_MODE=off \
+    "$OPEN_TASK_WINDOW" --type task -- "ci fix" >/dev/null
+  ) || { assert_fail "open-task-window task quick-create failed"; return 1; }
+
+  [[ -d "$expect_wt" ]] && assert_pass "quick-create worktree uses lifecycle slug" \
+    || { assert_fail "quick-create worktree missing: $expect_wt"; return 1; }
+  git -C "$repo" branch --list "task/ci-fix" | grep -q "task/ci-fix" \
+    && assert_pass "quick-create branch uses type prefix plus subject" \
+    || { assert_fail "branch task/ci-fix missing"; return 1; }
+  if git -C "$repo" branch --list "task/task-ci-fix" | grep -q "task/task-ci-fix"; then
+    assert_fail "legacy duplicated branch task/task-ci-fix was created"
+    return 1
+  fi
+  assert_pass "quick-create avoids duplicated branch prefix"
+}
+
+# ---------- case 6: transcript preservation ----------
 # Reclaim intentionally leaves ~/.claude/projects/<escaped>/ in place so a
 # later same-named worktree (rare but legitimate when reusing task types)
 # can resume the prior conversation via `claude --continue`. /clear is the
 # escape hatch when the resumed context isn't wanted.
-case3_transcript_preserved() {
-  printf '\n=== case 3: transcript preserved across reclaim ===\n'
+case6_transcript_preserved() {
+  printf '\n=== case 6: transcript preserved across reclaim ===\n'
 
-  local repo="$WORK_DIR/origin3"
+  local repo="$WORK_DIR/origin6"
   setup_repo "$repo"
   local slug="task-resume"
-  local expect_wt="$WORK_DIR/.worktrees/origin3/$slug"
+  local expect_wt="$WORK_DIR/.worktrees/origin6/$slug"
 
   HOME="$SANDBOX_HOME" \
   WEZDECK_REPO="$REPO_ROOT" \
@@ -223,7 +352,10 @@ case3_transcript_preserved() {
 # ---------- run ----------
 case1_happy_path
 case2_dev_refusal
-case3_transcript_preserved
+case3_dev_allow_long_lived
+case4_create_prompt_preview
+case5_open_task_window_lifecycle_names
+case6_transcript_preserved
 
 printf '\n=== summary ===\n'
 printf 'pass=%d fail=%d\n' "$PASS" "$FAIL"

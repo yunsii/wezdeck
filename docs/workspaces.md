@@ -24,7 +24,7 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
 - Inside that tmux session, each git worktree gets its own tmux window.
 - Worktree switching inside that tmux session follows the live git state of the current pane or window layout, so manually created linked worktrees are discoverable without prewritten tmux metadata.
 - The `worktree-task` skill creates linked task worktrees under the repository parent's `.worktrees/<repo>/` directory and opens them as additional tmux windows inside that same repo-family session.
-- The `worktree-task` runtime also ships an `open-task-window` script (`scripts/runtime/worktree/open-task-window`) as a quick-create entry, bound to the `Ctrl+k` `g` sub-chord (`g d` for dev-, `g t` for task-, `g h` for hotfix-, `g r` to reclaim the current pane's worktree; see [`keybindings.md`](./keybindings.md#panes)). The script forwards <name> to `worktree-task launch` as the task title and prepends the lifecycle prefix; a leading `task/` is stripped so `fix-auth` and `task/fix-auth` resolve to the same worktree. The configured agent starts in the new tmux window but receives no prompt (launched with `--no-prompt`), so it comes up idle.
+- The `worktree-task` runtime also ships a lifecycle-aware quick-create prompt (`scripts/runtime/worktree/create-prompt`) bound to the `Ctrl+k` `g` sub-chord (`g d` for dev-, `g t` for task-, `g h` for hotfix-, `g r` to reclaim the current pane's worktree; see [`keybindings.md`](./keybindings.md#panes)). The prompt explains the selected lifecycle, its reclaim rule, and live-previews the final subject slug, worktree slug, worktree path, and branch as you type. On Enter it calls `open-task-window`, which passes the subject title, explicit worktree slug, and explicit branch to `worktree-task launch`: local worktree slugs carry lifecycle (`dev-<subject>`, `task-<subject>`, `hotfix-<subject>`), while branches use type-specific prefixes (`dev/<subject>`, `task/<subject>`, `hotfix/<subject>` by default). The configured agent starts in the new tmux window but receives no prompt (launched with `--no-prompt`), so it comes up idle.
 - The left pane runs the configured primary command.
 - The right pane stays as a shell in the same directory.
 - `work` and `config` default to the managed launcher profile from `managed_cli.default_profile`.
@@ -76,49 +76,60 @@ The worktree-task runtime supports a two-tier model where directory naming encod
 | Prefix | Lifetime | Created by | Reclaimed by | Agent profile |
 |---|---|---|---|---|
 | `main/` (the primary worktree) | permanent | initial clone | never | `claude-resume` / `codex-resume` |
-| `dev-*` | weeks–months | `Ctrl+k g d` | manual `git worktree remove` only — `worktree-task reclaim` refuses | `claude-resume` / `codex-resume` |
+| `dev-*` | weeks–months | `Ctrl+k g d` | `Ctrl+k g r` after explicit long-lived confirmation; CLI requires `--allow-long-lived` | `claude-resume` / `codex-resume` |
 | `task-*` | hours–days | `Ctrl+k g t` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 | `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 
-Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. Reclaim is intentionally refused on them by both the CLI and the hotkey to prevent loss of that state.
+Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. The CLI refuses them by default; `Ctrl+k g r` can reclaim one only after the normal clean / delivered checks pass and the confirmation prompt names it as long-lived.
 
-Lifecycle visualised — directory prefix encodes which transitions are allowed:
+Lifecycle and reclaim flow:
 
 ```mermaid
-stateDiagram-v2
-  [*] --> main: initial clone
-  main --> dev: Ctrl+k g d (long-lived parallel)
-  main --> task: Ctrl+k g t (PR-scoped)
-  main --> hotfix: Ctrl+k g h (urgent fix)
+flowchart TD
+  A["main worktree<br/>repo root"] --> B{"Create type"}
 
-  task --> [*]: Ctrl+k g r<br/>(reclaim after merge)
-  hotfix --> [*]: Ctrl+k g r<br/>(reclaim after merge)
-  dev --> dev: Ctrl+k g r refused<br/>(use git worktree remove<br/>to drop manually)
+  B -->|"Ctrl+k g d"| D["dev-&lt;slug&gt;<br/>long-lived workstation"]
+  B -->|"Ctrl+k g t"| T["task-&lt;slug&gt;<br/>PR-scoped task"]
+  B -->|"Ctrl+k g h"| H["hotfix-&lt;slug&gt;<br/>urgent fix"]
 
-  note right of dev
-    Reclaim refused on dev-* by both
-    the CLI and Ctrl+k g r — protects
-    accumulated agent context, dev-server
-    state, dependency caches.
-  end note
+  D --> R["Ctrl+k g r<br/>reclaim current worktree"]
+  T --> R
+  H --> R
 
-  note left of main
-    Reclaim refused on main:
-    primary worktree is permanent.
-  end note
+  R --> C1{"Main worktree?"}
+  C1 -->|"yes"| X1["Refuse<br/>primary worktree is permanent"]
+  C1 -->|"no"| C2{"Dirty or untracked?"}
 
-  state "Ctrl+k g r checks" as RC {
-    [*] --> RefuseDirty: dirty / untracked → use --force
-    [*] --> RefuseUndelivered: branch not merged into origin/HEAD<br/>AND not pushed (or local ahead of origin/&lt;branch&gt;)
-    [*] --> Allow: clean + (merged OR pushed-in-sync) → close window, prune
-  }
+  C2 -->|"yes"| X2["Refuse<br/>commit or discard first"]
+  C2 -->|"no"| C3{"Delivered?"}
+
+  C3 -->|"no"| X3["Refuse<br/>merge into origin/HEAD<br/>or push to origin/&lt;branch&gt;<br/>with remote containing local HEAD"]
+  C3 -->|"yes"| C4{"dev-*?"}
+
+  C4 -->|"no: task-* / hotfix-*"| Y1["Confirm<br/>reclaim &lt;slug&gt;?"]
+  C4 -->|"yes"| Y2["Long-lived confirm<br/>reclaim long-lived &lt;slug&gt;?"]
+
+  Y1 -->|"y"| Z1["worktree-task reclaim"]
+  Y2 -->|"y"| Z2["worktree-task reclaim<br/>--allow-long-lived"]
+  Y1 -->|"other"| K["Cancel"]
+  Y2 -->|"other"| K
+
+  Z1 --> W["provider cleanup<br/>git worktree remove<br/>metadata cleanup<br/>git worktree prune"]
+  Z2 --> W
+
+  W --> Q{"Branch merged into<br/>main worktree HEAD?"}
+  Q -->|"yes"| BD["Delete local branch"]
+  Q -->|"no"| BK["Keep local branch"]
+
+  BD --> END["Close original tmux window"]
+  BK --> END
 ```
 
 (`task-*` and `hotfix-*` differ only in directory prefix and intended lifetime; their lifecycle transitions are identical.)
 
 ### Branch naming is independent
 
-Worktree directory prefix encodes lifecycle (your local UX), git branch name still follows the team's branch policy (their merge surface). The `WT_POLICY_BRANCH_PREFIX=task/` default places branches under `task/<slug>` regardless of directory prefix; override with `--branch` per launch when team policy differs.
+Worktree directory prefix encodes lifecycle (your local UX), git branch name follows the team's review surface. Quick-create separates the subject from lifecycle: typing `ci fix` under `Ctrl+k g t` creates worktree `.worktrees/<repo>/task-ci-fix/` and branch `task/ci-fix`; under `Ctrl+k g d` it creates `.worktrees/<repo>/dev-ci-fix/` and branch `dev/ci-fix`. The defaults live in `WT_POLICY_BRANCH_PREFIX_DEV=dev/`, `WT_POLICY_BRANCH_PREFIX_TASK=task/`, and `WT_POLICY_BRANCH_PREFIX_HOTFIX=hotfix/`; `WT_POLICY_BRANCH_PREFIX=task/` remains the generic `worktree-task launch --title` fallback. Set the per-type values to the same prefix if a repository requires all branches under one namespace.
 
 ### Base ref strategy
 
@@ -126,7 +137,7 @@ The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fe
 
 ### Reclaim safety
 
-`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
+`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs unless `--allow-long-lived` is explicit, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. For `dev-*`, the wrapper adds `--allow-long-lived` only after those checks pass and the confirmation prompt calls out the long-lived worktree. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
 
 ## File Ownership
 
