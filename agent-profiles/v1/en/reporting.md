@@ -33,6 +33,135 @@ State:
 - [reporting-05] Use concise language.
 - [reporting-06] Do not turn a straightforward result into a long changelog.
 
+## Final Response Templates
+
+[reporting-20] Choose one main template based on the task outcome: feature, bugfix, refactor, docs/config, or investigation.
+
+[reporting-21] Treat design change as an optional block, not a separate task type.
+
+[reporting-22] Add a visual summary when a design, workflow, state transition, data flow, command chain, user interaction flow, or option selection changed.
+
+[reporting-23] Prefer compact ASCII diagrams for visual summaries. Use them to clarify structure, not to decorate the response.
+
+[reporting-24] Do not add diagrams for typo fixes, one-line local bug fixes, mechanical formatting, dependency bumps without behavior change, or changes already obvious from one short sentence.
+
+[reporting-25] A visual summary never replaces the required outcome, verification, and uncertainty statements.
+
+Use these as compact starting points, not mandatory prose:
+
+```md
+**Feature Complete**
+Status: [verified|inferred|not verified]
+
+Delivered:
+- ...
+
+Behavior:
+- ...
+
+Verified:
+- `...`
+
+Not Covered:
+- ...
+```
+
+```md
+**Bug Fixed**
+Status: [verified|inferred|not verified]
+
+Root Cause:
+- ...
+
+Changed:
+- ...
+
+Verified:
+- Reproduced before fix: ...
+- Confirmed after fix: ...
+
+Remaining Risk:
+- ...
+```
+
+```md
+**Refactor Complete**
+Status: [verified|inferred|not verified]
+
+Changed:
+- ...
+
+Behavior:
+- Intended behavior unchanged.
+
+Verified:
+- `...`
+
+Risk:
+- ...
+```
+
+```md
+**Docs / Config Updated**
+Status: [verified|inferred|not verified]
+
+Changed:
+- ...
+
+Impact:
+- ...
+
+Verified:
+- ...
+
+Not Verified:
+- ...
+```
+
+```md
+**Investigation Result**
+Status: [verified|inferred|not verified]
+
+Found:
+- ...
+
+Evidence:
+- ...
+
+No Change Made:
+- ...
+
+Recommended Next Step:
+- ...
+```
+
+Optional visual block:
+
+```md
+Design Change:
+
+Before:
+A -> B -> C
+
+After:
+A -> Guard -> B -> C
+
+Why:
+- Chose this because ...
+```
+
+Option-selection visual:
+
+```text
+Options
+|-- A. Patch local callsite
+|   `-- Fast, but duplicates behavior
+|-- B. Move logic into shared helper
+|   `-- Slightly larger, but keeps one owner
+`-- Chosen: B
+    `-- Reason: behavior is shared by multiple entry points
+```
+
 ## Progress Updates
 
 [reporting-07] Keep progress updates short and concrete.
