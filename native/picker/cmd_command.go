@@ -111,17 +111,21 @@ func (commandPicker) Run(args []string) int {
 	ui.ts.emitFirstPaint("command.perf", "command", "command palette paint timing", len(ui.rows), ui.selected, nil)
 
 	return runKeyLoop(func(key string) (loopAction, int) {
-		// Confirm overlay swallows all keys until it is dismissed.
+		// Confirm overlay keeps the destructive action on the same key path:
+		// first Enter opens the overlay, second Enter dispatches, Esc cancels.
 		if ui.pendingConfirm != "" {
-			if strings.EqualFold(key, "y") {
+			switch key {
+			case "\r", "\n":
 				ui.pendingConfirm = ""
 				if ui.dispatchByID(ui.pendingItemID, fd, state) {
 					return loopExit, 0
 				}
-			} else {
+			case "\x1b":
 				ui.pendingConfirm = ""
 				ui.pendingItemID = ""
 				ui.render()
+			case "\x1b[20099~", "\x03":
+				return loopExit, 0
 			}
 			return loopContinue, 0
 		}
@@ -364,7 +368,7 @@ func (ui *commandUI) renderConfirm() {
 	b.WriteString(ui.pendingConfirm)
 	b.WriteString(reset)
 	b.WriteString(clearEOL)
-	b.WriteString("\x1b[3;1H\x1b[2mPress y to continue, any other key to cancel.")
+	b.WriteString("\x1b[3;1H\x1b[2mPress Enter again to continue, or Esc to cancel.")
 	b.WriteString(reset)
 	b.WriteString(clearEOL)
 	_, _ = os.Stdout.WriteString(b.String())
