@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="WezTerm: nightly" src="https://img.shields.io/badge/wezterm-nightly-8b5cf6">
-  <img alt="tmux: ≥ 3.6" src="https://img.shields.io/badge/tmux-%E2%89%A5%203.6-1f6feb">
+  <img alt="tmux: ≥ 3.7" src="https://img.shields.io/badge/tmux-%E2%89%A5%203.7-1f6feb">
   <img alt="Platform" src="https://img.shields.io/badge/platform-linux%20%C2%B7%20wsl%20%C2%B7%20macOS-22d3ee">
   <img alt="Lua" src="https://img.shields.io/badge/lua-5.4-000080">
 </p>
@@ -56,7 +56,7 @@ Full architecture, ownership boundaries, and the WSL ⇄ Windows communication c
 | | Required | Notes |
 |---|---|---|
 | **WezTerm** | nightly | `hybrid-wsl` mode runs on the Windows nightly build |
-| **tmux** | ≥ 3.6 | DEC mode 2026 (synchronized output); 3.4 deadlocks. Ubuntu 24.04 still ships 3.4 — build from source. [Why](docs/ime-flicker-and-sync-output.md) |
+| **tmux** | ≥ 3.7 | DEC mode 2026 (synchronized output) needs 3.6+, and copy-mode auto-refresh uses 3.7's `refresh-from-pane`. Ubuntu 24.04 still ships 3.4 — build from source. [Why](docs/ime-flicker-and-sync-output.md) |
 | **lua5.4** | recommended | Powers the sync precheck; missing → precheck skipped with a warning |
 | **jq** | recommended | Agent-attention writer & focus path; missing → degraded labels |
 | **go ≥ 1.21** | optional | For maintainers of `native/picker/`. End users get a sha256-pinned prebuilt tarball via the release fetcher |
