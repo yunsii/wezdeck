@@ -42,6 +42,36 @@ Fields:
 
 After editing, re-run `crontab wezterm-x/local/crontab` to load the change.
 
+## Agent Cleanup
+
+The same cron source can schedule maintenance jobs that are not popups. The
+repo ships [`scripts/runtime/agent-cleanup.sh`](../scripts/runtime/agent-cleanup.sh)
+for stale managed-agent resume chains, especially `codex resume --last` or
+`claude --continue` processes that survived tmux/WezTerm teardown and no
+longer have a controlling TTY.
+
+Preview what would be cleaned:
+
+```bash
+scripts/runtime/agent-cleanup.sh --dry-run --min-age 12h
+```
+
+Install as a timed cleanup by adding a line to `wezterm-x/local/crontab`, then
+reload the user crontab:
+
+```cron
+*/30 * * * * /home/yuns/github/wezterm-config/scripts/runtime/agent-cleanup.sh --kill --min-age 12h
+```
+
+```bash
+crontab wezterm-x/local/crontab
+```
+
+Defaults are conservative: `--dry-run`, `--min-age 12h`, `--agent all`, and
+only `TTY=?` process groups are considered. Use `--include-tty` only for manual
+recovery when you explicitly want to include attached tmux panes. Cleanup
+decisions are logged under `category="agent_cleanup"` in the runtime log.
+
 ## Why no auto-dismiss
 
 `reminder.sh` deliberately omits `read -t <timeout>`. A reminder that auto-closes while you are away defeats its purpose — the next morning you cannot tell whether you saw it or it timed out unattended. The popup blocks until you press a key, which is the explicit acknowledgement.
