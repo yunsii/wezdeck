@@ -9,14 +9,27 @@
 wt_tmux_progress() {
   [[ -n "${TMUX:-}" ]] || return 0
   local session
-  session="$(tmux display-message -p '#{session_name}' 2>/dev/null || true)"
+  session="${2:-}"
+  if [[ -z "$session" ]]; then
+    session="$(tmux display-message -p '#{session_name}' 2>/dev/null || true)"
+  fi
   [[ -n "$session" ]] || return 0
   if [[ -z "${1:-}" ]]; then
     tmux set-option -qu -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true
   else
     tmux set-option -q -t "$session" '@tmux_status_override_line_2' "$1" 2>/dev/null || true
   fi
-  tmux refresh-client -S 2>/dev/null || true
+  wt_tmux_progress_refresh_clients "$session"
+}
+
+wt_tmux_progress_refresh_clients() {
+  local session="${1:-}"
+  [[ -n "$session" ]] || return 0
+  local client
+  while IFS= read -r client; do
+    [[ -n "$client" ]] || continue
+    tmux refresh-client -S -t "$client" 2>/dev/null || true
+  done < <(tmux list-clients -t "$session" -F '#{client_name}' 2>/dev/null || true)
 }
 
 # Schedule a deferred clear so the final milestone lingers a beat after
@@ -25,7 +38,20 @@ wt_tmux_progress() {
 wt_tmux_progress_clear_after() {
   [[ -n "${TMUX:-}" ]] || return 0
   local delay="${1:-1.5}"
-  ( sleep "$delay" && wt_tmux_progress '' ) >/dev/null 2>&1 &
+  local session=""
+  local expected_value=""
+  session="$(tmux display-message -p '#{session_name}' 2>/dev/null || true)"
+  [[ -n "$session" ]] || return 0
+  expected_value="$(tmux show-options -qv -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true)"
+  (
+    sleep "$delay"
+    current_value="$(tmux show-options -qv -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true)"
+    if [[ -n "$expected_value" && "$current_value" != "$expected_value" ]]; then
+      exit 0
+    fi
+    tmux set-option -qu -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true
+    wt_tmux_progress_refresh_clients "$session"
+  ) >/dev/null 2>&1 &
   disown 2>/dev/null || true
 }
 
