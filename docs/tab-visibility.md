@@ -320,10 +320,15 @@ list is otherwise invisible until the user reaches for `Alt+x`.
 ### Hot open (`Alt+w` while the workspace window already exists)
 
 `Workspace.open` finds the existing window and falls through to
-`sync_workspace_tabs`. Cap is **soft on hot open**: `desired_items`
-(the spawn loop input) is the capped set, but `prune_keep_items` (the
-prune loop input) is the full configured list, and the alignment-check
-fast-switch path uses `prune_keep_items`. Net behavior:
+`sync_workspace_tabs`. It skips the synchronous `print-session-names.sh`
+round-trip on this hot path; `preferred_item_order` can recover ranked
+items from the session-name label fallback, which is precise enough for
+fast switching and avoids adding WSL process startup latency before
+WezTerm can repaint the target workspace. Cap is **soft on hot open**:
+`desired_items` (the spawn loop input) is the capped set, but
+`prune_keep_items` (the prune loop input) is the full configured list,
+and the alignment-check fast-switch path uses `prune_keep_items`. Net
+behavior:
 
 - Tabs already spawned before the cap turned on stay alive (no
   surprise kill on a stray `Alt+w`).
