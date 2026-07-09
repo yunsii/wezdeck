@@ -73,8 +73,8 @@ work and reshuffle the tab bar.
 ### Focus diagnostics and legacy migration
 
 tmux focus hooks still run, but they no longer define the visible-tab
-ranking once activity exists for a row. They provide diagnostics and a
-safe migration fallback for existing v1-v3 state.
+ranking. They provide diagnostics and preserve focus-history fields
+while existing v1-v3 state is rewritten into the v4 shape.
 
 Each switch produces an **entry/leave pair** through the same script.
 Dwell is paid only on leave, equal to the real ms the session held
@@ -98,16 +98,15 @@ tmux client C switches from session A to session B (workspace W)
 The shared `__tab_stats_write_delta` jq pipeline does, atomically per
 workspace file:
 
-1. decay every session's `dwell_ms` by `exp(-Δt_ms / half_life_ms * ln2)`
-   (falling back to v1 `weight` when present, so a not-yet-migrated
-   file still ranks)
+1. decay every session's diagnostic `dwell_ms` by
+   `exp(-Δt_ms / half_life_ms * ln2)` (falling back to v1 `weight` when
+   present only for migration writes)
 2. set `last_bump_ms = now` for every session (so the next decay
    computes a clean age, not double-decayed)
 3. on the target session: `dwell_ms += min($dwell_delta, 30m)`,
    `total_dwell_ms += $dwell_delta`, `raw_count += $raw_delta`
-4. emit the v4 shape — **no normalize step**. These fields are
-   diagnostics and legacy fallback; activity fields are the primary
-   ranking signal after real activity has been recorded.
+4. emit the v4 shape — **no normalize step**. These focus fields are
+   diagnostic only; sampled git activity is the only ranking signal.
 5. atomic tmp + rename into
    `%LOCALAPPDATA%\wezterm-runtime\state\tab-stats\<workspace>.json`
 
@@ -132,8 +131,8 @@ visits could push a 100h-cumulative session out of top-5. v2 then paid
 raw wall-clock dwell ms; that fixed normalization but over-promoted
 sessions left focused during lunch, meetings, or overnight. v3 paid
 real dwell up to 30 minutes per focus burst and skipped the renorm.
-v4 keeps that shape as a migration fallback and diagnostic counter,
-but activity_score is the primary ranking signal.
+v4 keeps that shape as a diagnostic counter, but it no longer
+participates in visible-tab or overflow ranking.
 
 **Why split entry from leave**: a single `Alt+x` peek that bumps both
 `weight += 1` and stays sub-second would have promoted a cold session
@@ -186,13 +185,12 @@ One file per workspace, slug-sanitized into `<workspace>.json`:
 - `last_git_fingerprint` — baseline used by the next sampler pass.
 - `last_seen_ms` — most recent focus/view observation; diagnostic only.
 - `dwell_ms` — decayed cumulative focus dwell credit in milliseconds.
-  Legacy fallback for rows with no activity event yet, plus diagnostic.
+  Diagnostic only; no longer used for visible-tab or overflow ranking.
 - `total_dwell_ms` — lifetime cumulative dwell ms, **never decayed**.
   Receives the full uncapped focus dwell. Diagnostic.
 - `last_bump_ms` — wall-clock epoch ms of the most recent write.
   Drives legacy dwell decay.
-- `raw_count` — lifetime focus-event count, never decayed. Diagnostic
-  and fallback tiebreaker before activity exists.
+- `raw_count` — lifetime focus-event count, never decayed. Diagnostic.
 
 **v1 → v4 migration**: pre-v2 files use a `weight ∈ [0,1]` field in
 place of `dwell_ms`. v1 weight is **discarded at migration time** —
@@ -202,23 +200,20 @@ sum back to true cumulative usage). Instead the writer seeds
 `dwell_ms` and `total_dwell_ms` from `raw_count * 30000` (30s of
 credit per past focus event, matching the v1 saturation point), so a
 project with 20 lifetime focuses lands at 600K ms regardless of how
-fragmented its weight had become. Readers fall back to raw weight
-during the transition window (before the first v4 write); after the
-migration write fires, both readers and writer see consistent v4
-dwell_ms values.
+fragmented its weight had become. Readers ignore these migrated focus
+fields for ranking.
 
 **v2 → v4 migration**: v2 files store uncapped wall-clock dwell in
-`dwell_ms`. Readers and the next writer clamp legacy v2 ranking dwell
-to `raw_count * 30m` per row, preserving `total_dwell_ms` unchanged.
-This repairs rows inflated by idle overnight focus without deleting the
-lifetime diagnostic counter.
+`dwell_ms`. The next writer clamps legacy v2 dwell to `raw_count * 30m`
+per row while preserving `total_dwell_ms` unchanged. Readers ignore
+these focus fields for ranking.
 
 **v3 → v4 transition**: rows with activity fields and
 `activity_count > 0` rank by activity_score. Rows with no activity
-event yet continue to rank by legacy dwell so the first reload after
-upgrade does not wipe the user's established visible set. The sampler's
-first pass stores a git fingerprint baseline without scoring; later
-real changes take over gradually.
+event do not rank; `preferred_item_order` fills remaining visible slots
+from `workspaces.lua` declaration order. The sampler's first pass stores
+a git fingerprint baseline without scoring; later real changes take
+over gradually.
 
 ## Decay math
 
@@ -255,14 +250,13 @@ managed-session metadata, so its bumps land on free-form session names.
   <fingerprint>` — score-bearing activity write used by the sampler.
 - `tab_stats_read <workspace>` — print the raw JSON.
 - `tab_stats_top_n <workspace> <n>` — newline-separated session names
-  ordered by `activity_score desc, last_activity_ms desc, event_count
-  desc, name asc`, with legacy dwell fallback for rows without
-  activity.
+  ordered by sampled git activity score, recency, event count, and name.
+  Rows without activity are omitted.
 - `tab_stats_top_n_tsv <workspace> <n>` — same but TSV with
   rank_score, total_dwell_ms, event_count, rank_recent_ms.
 - `tab_stats_aggregated_tsv <workspace>` — every base session (after
-  `__refresh_*` aggregation) as TSV: rank_score, total_dwell_ms,
-  event_count, rank_recent_ms.
+  `__refresh_*` aggregation) as TSV: rank_tier, rank_score,
+  total_dwell_ms, event_count, rank_recent_ms.
 
 ## Layout — visible tabs + overflow tab
 
@@ -292,9 +286,8 @@ When `spawn_visible_only` is set:
    per cold-open, not per item), then asks
    `tab_visibility.preferred_item_order` for the spawn list. The brain
    ranks each item's session by aggregated activity score (after
-   `__refresh_*` aggregation, with legacy dwell fallback during
-   migration) and caps at `visible_count`. Items whose session has no
-   stats fall back to the
+   `__refresh_*` aggregation) and caps at `visible_count`. Items whose
+   session has no activity stats fall back to the
    `workspaces.lua` declared order, so the bootstrap experience before
    any activity is identical to pre-Phase-2 behaviour. The net ordering
    for the work workspace once `coco-server` accumulates the most git
@@ -524,7 +517,7 @@ overflow tab.
 
 | Layer | File | Role |
 | --- | --- | --- |
-| Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, activity-score ranking with legacy dwell fallback, `is_enabled` / `spawn_capped` predicates, workspace slug |
+| Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, activity-score ranking, `is_enabled` / `spawn_capped` predicates, workspace slug |
 | Constants | `wezterm-x/lua/constants.lua` | `tab_visibility` config block (`visible_count`, `activity_sample_interval_ms`, `spawn_visible_only`, …) |
 | Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (activity-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh, runs `Workspace.maybe_sample_tab_activity` only when overflow exists, and runs `Workspace.maybe_clear_overflow_collision` each tick so a promoted overflow session hands its tmux client back to the new visible tab |
 | Activity sampler | `scripts/runtime/tab-activity-sample.sh` | low-frequency git fingerprint sampler; baseline writes do not score, HEAD/index/worktree changes call `tab_stats_record_activity` |
@@ -533,7 +526,7 @@ overflow tab.
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` rank_score per session, sorts by `is_current desc, rank_score desc, event_count desc, snap_idx asc` (activity-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` rank tier + score per session, sorts by `is_current desc, rank_tier desc, rank_score desc, event_count desc, snap_idx asc` (activity-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
 | Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |
