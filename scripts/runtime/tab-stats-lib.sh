@@ -471,26 +471,15 @@ tab_stats_set_git_fingerprint() {
 
 # Print the top N session names (newline-separated, activity_score desc,
 # then last_activity_ms desc, then alpha asc). Empty output when state
-# file empty. Reads legacy dwell fields as fallback until activity
-# sampler has written v4 activity fields.
+# file empty or when no rows have sampled git activity. Legacy dwell is
+# diagnostic-only and does not participate in ranking.
 __TAB_STATS_RANK_SCORE_JQ='
-  def min2($a; $b): if $a < $b then $a else $b end;
-  def historical_credit_count($v):
-    if (($v.raw_count // 0) | tonumber) > 0 then (($v.raw_count // 0) | tonumber)
-    elif ((($v.dwell_ms // 0) | tonumber) > 0) or ((($v.total_dwell_ms // 0) | tonumber) > 0) then 1
-    else 0
-    end;
-  def rank_dwell($v; $ver; $cap):
-    if $v.dwell_ms == null then (($v.weight // 0) | tonumber)
-    elif $ver >= 3 then (($v.dwell_ms // 0) | tonumber)
-    elif $ver >= 2 then min2((($v.dwell_ms // 0) | tonumber); (historical_credit_count($v) * $cap))
-    else (($v.weight // 0) | tonumber)
-    end;
-  def rank_score($v; $ver; $cap):
-    if (($v.activity_count // 0) | tonumber) > 0 or (($v.last_activity_ms // 0) | tonumber) > 0 then
-      (($v.activity_score // 0) | tonumber)
-    else rank_dwell($v; $ver; $cap)
-    end;
+  def has_activity($v):
+    (($v.activity_count // 0) | tonumber) > 0 or (($v.last_activity_ms // 0) | tonumber) > 0;
+  def rank_score($v):
+    (($v.activity_score // 0) | tonumber);
+  def rank_tier($v):
+    if has_activity($v) then 1 else 0 end;
   def rank_recent($v):
     (($v.last_activity_ms // $v.last_bump_ms // 0) | tonumber);
   def rank_count($v):
@@ -503,11 +492,10 @@ tab_stats_top_n() {
   local n="${2:-5}"
   tab_stats_read "$workspace" | jq -r --argjson n "$n" --argjson cap "$TAB_STATS_DWELL_CREDIT_CAP_MS" "
     $__TAB_STATS_RANK_SCORE_JQ
-    ((.version // 3) | tonumber) as \$ver
-    |
     (.sessions // {})
     | to_entries
-    | sort_by([- rank_score(.value; \$ver; \$cap), - rank_recent(.value), - rank_count(.value), .key])
+    | map(select(has_activity(.value)))
+    | sort_by([- rank_tier(.value), - rank_score(.value), - rank_recent(.value), - rank_count(.value), .key])
     | .[0:$n]
     | .[].key
   "
@@ -520,15 +508,14 @@ tab_stats_top_n_tsv() {
   local n="${2:-5}"
   tab_stats_read "$workspace" | jq -r --argjson n "$n" --argjson cap "$TAB_STATS_DWELL_CREDIT_CAP_MS" "
     $__TAB_STATS_RANK_SCORE_JQ
-    ((.version // 3) | tonumber) as \$ver
-    |
     (.sessions // {})
     | to_entries
-    | sort_by([- rank_score(.value; \$ver; \$cap), - rank_recent(.value), - rank_count(.value), .key])
+    | map(select(has_activity(.value)))
+    | sort_by([- rank_tier(.value), - rank_score(.value), - rank_recent(.value), - rank_count(.value), .key])
     | .[0:$n]
     | .[]
     | [.key,
-       rank_score(.value; \$ver; \$cap),
+       rank_score(.value),
        (.value.total_dwell_ms // 0),
        rank_count(.value),
        rank_recent(.value)]
@@ -540,19 +527,19 @@ tab_stats_top_n_tsv() {
 # aggregated under their base name. Mirrors the lua-side
 # `_rank_sessions` aggregation so the picker (Alt+x) and the brain
 # (`tab_visibility.lua`) rank from the same projection of the data.
-#   <base_session_name>\t<rank_score_sum>\t<total_dwell_ms_sum>\t<event_count_sum>\t<rank_recent_ms_max>
+#   <base_session_name>\t<rank_tier_max>\t<rank_score_sum>\t<total_dwell_ms_sum>\t<event_count_sum>\t<rank_recent_ms_max>
 # No N cap — caller filters/sorts as needed.
 tab_stats_aggregated_tsv() {
   local workspace="${1:?missing workspace}"
   tab_stats_read "$workspace" | jq -r --argjson cap "$TAB_STATS_DWELL_CREDIT_CAP_MS" "
     $__TAB_STATS_RANK_SCORE_JQ
-    ((.version // 3) | tonumber) as \$ver
-    |
     (.sessions // {})
     | to_entries
+    | map(select(has_activity(.value)))
     | map({
         base: (.key | sub(\"__refresh_[0-9]+T[0-9]+_[0-9]+$\"; \"\")),
-        rank_score: rank_score(.value; \$ver; \$cap),
+        rank_tier: rank_tier(.value),
+        rank_score: rank_score(.value),
         total_dwell_ms: (.value.total_dwell_ms // 0),
         event_count: rank_count(.value),
         rank_recent_ms: rank_recent(.value)
@@ -560,13 +547,14 @@ tab_stats_aggregated_tsv() {
     | group_by(.base)
     | map({
         base: .[0].base,
+        rank_tier: (map(.rank_tier) | max),
         rank_score: (map(.rank_score) | add),
         total_dwell_ms: (map(.total_dwell_ms) | add),
         event_count: (map(.event_count) | add),
         rank_recent_ms: (map(.rank_recent_ms) | max)
       })
     | .[]
-    | [.base, .rank_score, .total_dwell_ms, .event_count, .rank_recent_ms]
+    | [.base, .rank_tier, .rank_score, .total_dwell_ms, .event_count, .rank_recent_ms]
     | @tsv
   "
 }

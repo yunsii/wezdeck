@@ -72,7 +72,7 @@ fi
 existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)"
 
 # Build per-workspace TSV blocks then concatenate. After all blocks are
-# emitted we sort the union by `is_current desc, activity_score desc,
+# emitted we sort the union by `is_current desc, activity tier desc, score desc,
 # event_count desc, snap_idx asc` so:
 #   1. The current workspace's rows stay grouped at the top.
 #   2. Within each block the rows where git activity happened most
@@ -85,7 +85,7 @@ existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true
 #      activity score (e.g. cold-start workspace where every score is 0) fall
 #      back to the user's intended `workspaces.lua` order — the picker
 #      stays usable before any activity stats accumulate.
-# Aux columns 8-11 (snap_idx, activity_score, event_count, rank_recent_ms) carry
+# Aux columns 8-12 (snap_idx, rank_tier, rank_score, event_count, rank_recent_ms) carry
 # the sort keys; an awk pass strips them before writing the prefetch_file
 # the Go picker reads (the picker still expects a 7-column TSV).
 prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
@@ -124,20 +124,22 @@ fi
 # workspace-prefixed (`wezterm_<slug>_<repo>_<10hex>`), so a single flat
 # map is collision-free across workspaces.
 declare -A score_for_sess
+declare -A tier_for_sess
 declare -A event_count_for_sess
 declare -A recent_for_sess
 
 populate_weights_for_workspace() {
   local target_ws="$1"
-  local base rank_score total_dwell_ms event_count rank_recent
-  # tab_stats_aggregated_tsv emits 5 columns:
-  #   <base>\t<rank_score>\t<total_dwell_ms>\t<event_count>\t<rank_recent_ms>
-  # Picker currently sorts by rank_score; total_dwell_ms is read so
+  local base rank_tier rank_score total_dwell_ms event_count rank_recent
+  # tab_stats_aggregated_tsv emits 6 columns:
+  #   <base>\t<rank_tier>\t<rank_score>\t<total_dwell_ms>\t<event_count>\t<rank_recent_ms>
+  # Picker sorts by tier, then rank_score; total_dwell_ms is read so
   # the surface is wired up for future "lifetime focus" picker chips
   # without a second pass through this populator.
-  while IFS=$'\t' read -r base rank_score total_dwell_ms event_count rank_recent; do
+  while IFS=$'\t' read -r base rank_tier rank_score total_dwell_ms event_count rank_recent; do
     [[ -n "$base" ]] || continue
     : "$total_dwell_ms"  # parsed for future use, intentionally unused for now
+    tier_for_sess["$base"]="$rank_tier"
     score_for_sess["$base"]="$rank_score"
     event_count_for_sess["$base"]="$event_count"
     recent_for_sess["$base"]="$rank_recent"
@@ -171,12 +173,13 @@ emit_workspace_rows() {
     elif [[ -n "$sess" ]] && grep -Fxq "$sess" <<<"$existing_sessions" 2>/dev/null; then
       state='warm'
     fi
+    local rank_tier="${tier_for_sess[$sess]:-0}"
     local rank_score="${score_for_sess[$sess]:-0}"
     local event_count="${event_count_for_sess[$sess]:-0}"
     local rank_recent="${recent_for_sess[$sess]:-0}"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$target_ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
-      "$snap_idx" "$rank_score" "$event_count" "$rank_recent" \
+      "$snap_idx" "$rank_tier" "$rank_score" "$event_count" "$rank_recent" \
       >> "$prefetch_aux"
   done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring)] | @tsv' "$target_snapshot" 2>/dev/null)
 }
@@ -188,8 +191,9 @@ done
 
 # Sort by:
 #   k6 (is_current) desc → current workspace block stays at top
-#   k9 (activity score) desc — real git activity outranks passive viewing
-#   k10 (event count) desc — secondary activity frequency tiebreaker
+#   k9 (rank tier) desc — real git activity outranks passive viewing
+#   k10 (rank score) desc — activity score or same-tier dwell fallback
+#   k11 (event count) desc — secondary activity frequency tiebreaker
 #   k1 (workspace) asc — only matters for cross-workspace ties
 #   k8 (snap_idx) asc — within-workspace tiebreaker; preserves the
 #                       `workspaces.lua` declared order when stats have
@@ -199,7 +203,7 @@ done
 # expects.
 if [[ -s "$prefetch_aux" ]]; then
   LC_ALL=C sort -t $'\t' \
-    -k6,6nr -k9,9gr -k10,10nr -k1,1 -k8,8n \
+    -k6,6nr -k9,9nr -k10,10gr -k11,11nr -k1,1 -k8,8n \
     "$prefetch_aux" \
     | awk -F '\t' 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6,$7}' \
     > "$prefetch_file"

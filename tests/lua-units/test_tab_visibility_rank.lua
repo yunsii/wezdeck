@@ -6,12 +6,10 @@
 -- happen to be in fewer rows.
 --
 -- Schema v4: ranking key is activity_score after a row has real git
--- activity. Rows with no activity events fall back to legacy dwell_ms
--- so existing v3 state migrates without collapsing to all-zero.
+-- activity. Rows with no activity events are ignored by the brain so
+-- callers fall back to workspaces.lua declaration order.
 -- `total_dwell_ms` remains the never-decayed lifetime focus counter,
--- aggregated alongside for picker display. v1 files (only `weight`)
--- fall back to weight-as-dwell during read so the rank stays sane
--- across the migration boundary.
+-- aggregated alongside for picker display on active rows.
 package.path = './tests/lua-units/?.lua;./wezterm-x/lua/?.lua;./wezterm-x/lua/ui/?.lua;' .. package.path
 
 local mock = require 'wezterm_mock'
@@ -95,10 +93,22 @@ describe('_rank_sessions', function()
     assert_eq(#r({ sessions = 'not-a-table' }), 0)
   end)
 
-  it('passes through a single bare-name v2 entry', function()
+  it('ignores a single view-only entry', function()
     local out = r {
       sessions = {
         ['wezterm_work_coco-platform_4cbcc8f612'] = {
+          dwell_ms = 1500000, total_dwell_ms = 1800000, raw_count = 3, last_bump_ms = 1000,
+        },
+      },
+    }
+    assert_eq(#out, 0)
+  end)
+
+  it('passes through a single active bare-name entry', function()
+    local out = r {
+      sessions = {
+        ['wezterm_work_coco-platform_4cbcc8f612'] = {
+          activity_score = 20, activity_count = 1, last_activity_ms = 1500,
           dwell_ms = 1500000, total_dwell_ms = 1800000, raw_count = 3, last_bump_ms = 1000,
         },
       },
@@ -111,30 +121,35 @@ describe('_rank_sessions', function()
     assert_eq(out[1].last_bump_ms, 1000)
   end)
 
-  it('aggregates refresh-suffix variants under the base name (v2)', function()
+  it('aggregates active refresh-suffix variants under the base name', function()
     -- All four variants of coco-server collapse to one row; their
-    -- dwell_ms (~25 minutes total credit across the three variants) and
-    -- total_dwell_ms (lifetime, even larger) both sum.
+    -- activity_score, dwell_ms, and total_dwell_ms all sum for display.
     local stats = {
+      version = 4,
       sessions = {
         ['wezterm_work_coco-server_ebee3ed55c'] = {
+          activity_score = 10, activity_count = 1, last_activity_ms = 1000,
           dwell_ms = 1000000, total_dwell_ms = 5000000, raw_count = 3, last_bump_ms = 1000,
         },
         ['wezterm_work_coco-server_ebee3ed55c__refresh_20260506T174432_2661849'] = {
+          activity_score = 20, activity_count = 1, last_activity_ms = 2000,
           dwell_ms = 180000, total_dwell_ms = 200000, raw_count = 1, last_bump_ms = 2000,
         },
         ['wezterm_work_coco-server_ebee3ed55c__refresh_20260507T090418_4108862'] = {
+          activity_score = 30, activity_count = 1, last_activity_ms = 3000,
           dwell_ms = 510000, total_dwell_ms = 800000, raw_count = 1, last_bump_ms = 3000,
         },
         ['wezterm_work_coco-platform_4cbcc8f612'] = {
+          activity_score = 5, activity_count = 1, last_activity_ms = 500,
           dwell_ms = 290000, total_dwell_ms = 400000, raw_count = 3, last_bump_ms = 500,
         },
       },
     }
     local out = r(stats)
     assert_eq(#out, 2, 'expected exactly two ranked entries (one per base name)')
-    -- coco-server ranks first (1000000 + 180000 + 510000 = 1690000 > 290000)
+    -- coco-server ranks first by aggregated activity_score (10+20+30 > 5).
     assert_eq(out[1].name, 'wezterm_work_coco-server_ebee3ed55c')
+    assert_close(out[1].rank_score, 60)
     assert_close(out[1].dwell_ms, 1690000, 1e-6, 'coco-server aggregated dwell_ms')
     assert_eq(out[1].total_dwell_ms, 6000000, 'coco-server aggregated total_dwell_ms')
     assert_eq(out[1].raw_count, 5, 'coco-server aggregated raw_count')
@@ -144,24 +159,17 @@ describe('_rank_sessions', function()
     assert_eq(out[2].raw_count, 3)
   end)
 
-  it('uses legacy dwell/raw_count ordering for rows without activity', function()
+  it('ignores rows without activity instead of ranking legacy dwell', function()
     local out = r {
       sessions = {
         a = { dwell_ms = 500, raw_count = 1 },
-        -- same dwell_ms, higher raw_count → ranks first among the tie
         b = { dwell_ms = 500, raw_count = 5 },
-        -- ties on both → name asc
         c = { dwell_ms = 200, raw_count = 1 },
         d = { dwell_ms = 200, raw_count = 1 },
-        -- highest dwell_ms → ranks above all
         z = { dwell_ms = 900, raw_count = 0 },
       },
     }
-    assert_eq(out[1].name, 'z')
-    assert_eq(out[2].name, 'b')
-    assert_eq(out[3].name, 'a')
-    assert_eq(out[4].name, 'c')
-    assert_eq(out[5].name, 'd')
+    assert_eq(#out, 0)
   end)
 
   it('orders activity rows by activity_score, then last_activity_ms, then name', function()
@@ -183,12 +191,11 @@ describe('_rank_sessions', function()
         },
       },
     }
-    assert_eq(out[1].name, 'high_dwell_view_only',
-      'rows with no activity keep legacy dwell fallback during migration')
-    assert_eq(out[2].name, 'active_top')
-    assert_eq(out[3].name, 'active_recent')
-    assert_eq(out[4].name, 'active_old')
-    assert_close(out[2].rank_score, 60)
+    assert_eq(out[1].name, 'active_top')
+    assert_eq(out[2].name, 'active_recent')
+    assert_eq(out[3].name, 'active_old')
+    assert_eq(#out, 3, 'view-only legacy dwell rows are not ranked')
+    assert_close(out[1].rank_score, 60)
   end)
 
   it('activity beats legacy dwell once both rows have activity events', function()
@@ -209,26 +216,39 @@ describe('_rank_sessions', function()
     assert_eq(out[2].name, 'view_only')
   end)
 
-  it('long-used session is not demoted by a few short-visit competitors', function()
-    -- Regression for the renormalize-to-1.0 bug fixed by dwell-ms ranking:
-    -- session `a` accumulated 30m of ranking credit over time. Three
-    -- other sessions each got one 30s visit (30K ms). Under v1 with
-    -- normalization the four sessions would tie at weight=1.0 and `a`
-    -- could fall out of top-N. Under v3 `a` is still 60x ahead and stays.
+  it('ranks any activity row ahead of view-only legacy dwell rows', function()
+    local out = r {
+      version = 4,
+      sessions = {
+        old_a = { dwell_ms = 39051807, raw_count = 45, activity_score = 0, activity_count = 0 },
+        old_b = { dwell_ms = 35229360, raw_count = 36, activity_score = 0, activity_count = 0 },
+        coco_forge = {
+          dwell_ms = 22117793,
+          raw_count = 23,
+          activity_score = 234,
+          activity_count = 8,
+          last_activity_ms = 1783569882098,
+        },
+      },
+    }
+    assert_eq(out[1].name, 'coco_forge')
+    assert_eq(out[1].rank_tier, 1)
+    assert_eq(#out, 1)
+  end)
+
+  it('does not rank long-used view-only sessions', function()
     local out = r {
       sessions = {
-        a = { dwell_ms = 1800000, raw_count = 50 },  -- one capped long burst
-        b = { dwell_ms = 30000,   raw_count = 1 },   -- single 30s visit
+        a = { dwell_ms = 1800000, raw_count = 50 },
+        b = { dwell_ms = 30000,   raw_count = 1 },
         c = { dwell_ms = 30000,   raw_count = 1 },
         d = { dwell_ms = 30000,   raw_count = 1 },
       },
     }
-    assert_eq(out[1].name, 'a', 'long-used session must stay at rank 1')
-    assert_close(out[1].dwell_ms / out[2].dwell_ms, 60, 0.001,
-      'rank-1 dwell credit should be 60x rank-2')
+    assert_eq(#out, 0)
   end)
 
-  it('clamps legacy v2 uncapped dwell by raw_count before ranking', function()
+  it('ignores legacy v2 uncapped dwell for ranking', function()
     local out = r {
       version = 2,
       sessions = {
@@ -236,16 +256,13 @@ describe('_rank_sessions', function()
         overnight = { dwell_ms = 5013459119, total_dwell_ms = 5013668127, raw_count = 5 },
       },
     }
-    assert_eq(out[1].name, 'frequent', 'frequent focus should beat one/few overnight dwells')
-    assert_close(out[1].dwell_ms, 45 * 1800000)
-    assert_eq(out[2].name, 'overnight')
-    assert_close(out[2].dwell_ms, 5 * 1800000)
+    assert_eq(#out, 0)
   end)
 
   it('skips non-table session entries defensively', function()
     local out = r {
       sessions = {
-        good = { dwell_ms = 500, raw_count = 1 },
+        good = { activity_score = 5, activity_count = 1, last_activity_ms = 100, dwell_ms = 500, raw_count = 1 },
         bad_string = 'oops',
         bad_number = 42,
       },
@@ -254,30 +271,22 @@ describe('_rank_sessions', function()
     assert_eq(out[1].name, 'good')
   end)
 
-  it('treats missing dwell_ms/raw_count/last_bump_ms fields as zero', function()
+  it('treats missing diagnostic fields on active rows as zero', function()
     local out = r {
       sessions = {
-        partial = {},
+        partial = { activity_score = 10, activity_count = 1, last_activity_ms = 100 },
         with_dwell = { dwell_ms = 300 },
       },
     }
-    assert_eq(#out, 2)
-    -- with_dwell ranks first (300 > 0); name-asc tiebreaker would have
-    -- put 'partial' first if dwells matched.
-    assert_eq(out[1].name, 'with_dwell')
-    assert_close(out[1].dwell_ms, 300)
+    assert_eq(#out, 1)
+    assert_eq(out[1].name, 'partial')
+    assert_close(out[1].dwell_ms, 0)
     assert_eq(out[1].raw_count, 0)
     assert_eq(out[1].last_bump_ms, 0)
     assert_eq(out[1].total_dwell_ms, 0)
-    assert_eq(out[2].name, 'partial')
-    assert_close(out[2].dwell_ms, 0)
   end)
 
-  it('falls back to legacy v1 `weight` field when `dwell_ms` is missing', function()
-    -- Migration sanity: a v1 file that hasn't been rewritten yet
-    -- still produces a usable rank. Weight values land verbatim as
-    -- dwell_ms (so rank order is preserved); they'll be overtaken
-    -- once real ms-scale dwells start accumulating.
+  it('ignores legacy v1 `weight` rows without activity', function()
     local out = r {
       sessions = {
         old_top    = { weight = 1.0, raw_count = 10, last_bump_ms = 1000 },
@@ -285,35 +294,22 @@ describe('_rank_sessions', function()
         old_bottom = { weight = 0.1, raw_count = 1,  last_bump_ms = 1000 },
       },
     }
-    assert_eq(#out, 3)
-    assert_eq(out[1].name, 'old_top')
-    assert_close(out[1].dwell_ms, 1.0)
-    assert_eq(out[1].total_dwell_ms, 0, 'no total_dwell_ms in v1 → 0')
-    assert_eq(out[2].name, 'old_middle')
-    assert_close(out[2].dwell_ms, 0.5)
-    assert_eq(out[3].name, 'old_bottom')
+    assert_eq(#out, 0)
   end)
 
-  it('mixes v1 and v2 entries when migration is mid-rewrite', function()
-    -- Half of the file's entries have been rewritten in ms-scale shape,
-    -- the other half still have v1 `weight`
-    -- because only their `last_bump_ms` row was touched. Both should
-    -- rank together.
+  it('ignores mixed legacy rows without activity', function()
     local out = r {
       sessions = {
         already_migrated = { dwell_ms = 60000, total_dwell_ms = 60000, raw_count = 3 },
         not_yet_migrated = { weight = 0.9, raw_count = 1 },
       },
     }
-    assert_eq(#out, 2)
-    -- already_migrated has 60000 ms which dwarfs 0.9 (legacy weight)
-    assert_eq(out[1].name, 'already_migrated')
-    assert_eq(out[2].name, 'not_yet_migrated')
+    assert_eq(#out, 0)
   end)
 end)
 
 describe('rank_signature', function()
-  it('changes when the same visible set reorders by dwell rank', function()
+  it('changes when the same visible set reorders by activity rank', function()
     local stats_dir = (os.getenv('TMPDIR') or '/tmp') .. '/wezterm-test-rank-sig-' .. tostring(math.random(100000, 999999))
     os.execute('mkdir -p ' .. stats_dir)
 
@@ -333,12 +329,12 @@ describe('rank_signature', function()
       fd:close()
     end
 
-    write('{"version":3,"sessions":{"a":{"dwell_ms":100,"raw_count":1},"b":{"dwell_ms":50,"raw_count":1}}}')
+    write('{"version":4,"sessions":{"a":{"activity_score":100,"activity_count":1,"last_activity_ms":1000},"b":{"activity_score":50,"activity_count":1,"last_activity_ms":900}}}')
     tab_visibility.tick('work', 1000)
     local first_rank = tab_visibility.rank_signature('work')
     local first_visible = tab_visibility.visible_signature('work')
 
-    write('{"version":3,"sessions":{"a":{"dwell_ms":50,"raw_count":1},"b":{"dwell_ms":100,"raw_count":1}}}')
+    write('{"version":4,"sessions":{"a":{"activity_score":50,"activity_count":1,"last_activity_ms":1000},"b":{"activity_score":100,"activity_count":1,"last_activity_ms":900}}}')
     tab_visibility.tick('work', 2000)
     local second_rank = tab_visibility.rank_signature('work')
     local second_visible = tab_visibility.visible_signature('work')

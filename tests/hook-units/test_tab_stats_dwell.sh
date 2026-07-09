@@ -4,9 +4,7 @@
 # full wall-clock dwell into total_dwell_ms. This file exercises:
 #   - the bump-vs-close split (no weight ever paid on entry)
 #   - the dead-zone filter (sub-second dwell stays at 0)
-#   - the long-vs-short rank stability (regression for the v1
-#     renormalize-to-1.0 bug that demoted heavily-used sessions
-#     after a few 30s peeks elsewhere)
+#   - legacy dwell remains diagnostic-only for ranking helpers
 #   - the tab-stats-bump.sh enter-state + close-out wiring
 #
 # Drive: scripts/dev/test-lua-units.sh (the runner sweeps hook-units/
@@ -106,14 +104,8 @@ raw_after=$(jq -r '.sessions["foo-session"].raw_count' "$state_file")
 [[ "$raw_after" == "1" ]] && ok "close_out leaves raw_count alone" \
   || no "raw_count drifted via close_out: $raw_after"
 
-# Long-used vs short-visit rank stability -----------------------------
-# Regression for the v1 normalize-to-1.0 bug: a session with one long
-# burst must stay ranked above three different sessions that each only
-# got a single 30s visit. Under v1 those three competitors all tied at
-# weight=1.0 after their close-out and could displace the long-used
-# session out of top-N. Under the legacy fallback, capped ms-scale credit still preserves
-# the lead without letting overnight dwell dominate forever.
-printf '\xe2\x96\xb8 %s\n' 'long-used session stays ranked above short visits'
+# Legacy dwell does not rank ------------------------------------------
+printf '\xe2\x96\xb8 %s\n' 'legacy dwell stays diagnostic-only for ranking helpers'
 sandbox="$(new_sandbox)"
 state_file="$sandbox/wezterm-runtime/state/tab-stats/work.json"
 
@@ -128,17 +120,11 @@ for s in light_a light_b light_c; do
 done
 
 heavy_dwell=$(jq -r '.sessions.heavy.dwell_ms' "$state_file")
-top_name=$(jq -r '
-  (.sessions // {})
-  | to_entries
-  | sort_by(- (.value.dwell_ms // 0))
-  | .[0].key
-' "$state_file")
-[[ "$top_name" == "heavy" ]] && ok "heavy session retains rank 1 after 3 short competitors" \
-  || no "expected heavy at rank 1, got $top_name"
-
+ranked=$(run_lib_case "$sandbox" "tab_stats_top_n work 5")
+[[ -z "$ranked" ]] && ok "view-only dwell rows do not appear in tab_stats_top_n" \
+  || no "expected no ranked rows, got $ranked"
 ratio_ok=$(awk -v h="$heavy_dwell" 'BEGIN { print (h >= 1799000 && h <= 1801000) ? 1 : 0 }')
-[[ "$ratio_ok" == "1" ]] && ok "heavy dwell_ms ≈ 1.8M capped credit (decay over a few writes is tiny)" \
+[[ "$ratio_ok" == "1" ]] && ok "heavy dwell_ms still recorded for diagnostics (got $heavy_dwell)" \
   || no "heavy dwell_ms unexpectedly low: $heavy_dwell"
 
 # v1 → v4 migration --------------------------------------------------
@@ -169,12 +155,9 @@ cat > "$state_file" <<JSON
 }
 JSON
 
-# tab_stats_top_n's read-side fallback still uses weight (it only sees
-# what's on disk; the writer migration hasn't fired yet). So at read
-# time before any write, light_use still ranks higher by weight.
 top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
-[[ "$top" == "light_use" ]] && ok "v1 pre-migration read: weight-based fallback ranks light_use first" \
-  || no "v1 read: expected light_use, got $top"
+[[ -z "$top" ]] && ok "v1 pre-migration read: view-only weight rows do not rank" \
+  || no "v1 read: expected no ranked rows, got $top"
 
 # A close-out on an unrelated session triggers the migration write.
 # After that, both sessions are seeded from raw_count and the rank
@@ -205,11 +188,9 @@ light_dwell_ok=$(awk -v d="$light_dwell" 'BEGIN { print (d >= 59999 && d <= 6000
 [[ "$light_total" == "60000" ]] && ok "light_use total_dwell_ms = 60000" \
   || no "light_use total_dwell_ms expected 60000, got $light_total"
 
-# Final rank after migration: heavy_use first (the corrupted v1 weight
-# is discarded; raw_count drives the true ordering).
 top_after=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
-[[ "$top_after" == "heavy_use" ]] && ok "post-migration: heavy_use rank #1 (raw_count seeding wins)" \
-  || no "post-migration: expected heavy_use, got $top_after"
+[[ -z "$top_after" ]] && ok "post-migration: migrated view-only rows still do not rank" \
+  || no "post-migration: expected no ranked rows, got $top_after"
 
 # v2 → v4 migration --------------------------------------------------
 printf '\xe2\x96\xb8 %s\n' 'v2 → v4 migration clamps legacy uncapped dwell'
@@ -228,11 +209,11 @@ cat > "$state_file" <<JSON
 JSON
 
 top=$(run_lib_case "$sandbox" "tab_stats_top_n work 1")
-[[ "$top" == "frequent" ]] && ok "v2 read fallback: frequent raw_count beats low-count overnight dwell" \
-  || no "v2 read fallback expected frequent, got $top"
-agg_top=$(run_lib_case "$sandbox" "tab_stats_aggregated_tsv work | sort -t \$'\\t' -k2,2nr | head -n 1 | cut -f1")
-[[ "$agg_top" == "frequent" ]] && ok "v2 aggregated TSV fallback ranks frequent first" \
-  || no "v2 aggregated TSV expected frequent first, got $agg_top"
+[[ -z "$top" ]] && ok "v2 read: view-only dwell rows do not rank" \
+  || no "v2 read expected no ranked rows, got $top"
+agg_top=$(run_lib_case "$sandbox" "tab_stats_aggregated_tsv work | head -n 1 | cut -f1")
+[[ -z "$agg_top" ]] && ok "v2 aggregated TSV omits view-only rows" \
+  || no "v2 aggregated TSV expected no rows, got $agg_top"
 
 run_lib_case "$sandbox" "tab_stats_bump work frequent" >/dev/null
 version=$(jq -r '.version' "$state_file")
