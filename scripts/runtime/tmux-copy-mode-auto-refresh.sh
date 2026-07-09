@@ -51,6 +51,13 @@ copy_mode_active() {
   [[ "$in_mode" == "1" && "$mode" == copy-mode* ]]
 }
 
+selection_present() {
+  local value
+
+  value="$("${tmux_cmd[@]}" display-message -p -t "$pane_id" '#{selection_present}' 2>/dev/null || true)"
+  [[ "$value" == "1" ]]
+}
+
 safe_key="$(printf '%s__%s' "$socket_path" "$pane_id" | tr -c 'A-Za-z0-9._-' '_')"
 lock_dir="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/wezterm-copy-mode-refresh"
 mkdir -p "$lock_dir" 2>/dev/null || exit 0
@@ -67,5 +74,6 @@ copy_mode_active || exit 0
 while sleep "$sleep_s"; do
   option_enabled || exit 0
   copy_mode_active || exit 0
+  selection_present && continue
   "${tmux_cmd[@]}" send-keys -t "$pane_id" -X refresh-from-pane 2>/dev/null || exit 0
 done
