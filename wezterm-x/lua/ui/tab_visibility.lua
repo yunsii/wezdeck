@@ -244,38 +244,17 @@ end
 
 M._session_label_segment = session_label_segment
 
-local function historical_credit_count(entry)
-  local raw = tonumber(entry.raw_count) or 0
-  if raw > 0 then return raw end
-  if (tonumber(entry.dwell_ms) or 0) > 0 or (tonumber(entry.total_dwell_ms) or 0) > 0 then
-    return 1
-  end
-  return 0
-end
-
-local function ranking_dwell(entry, stats_version)
-  local dwell = tonumber(entry.dwell_ms)
-  if not dwell then return tonumber(entry.weight) or 0 end
-  local ver = tonumber(stats_version) or 3
-  if ver >= 3 then return dwell end
-  if ver >= 2 then
-    local cap = tonumber(module_state.dwell_credit_cap_ms) or DEFAULTS.dwell_credit_cap_ms
-    local max_credit = historical_credit_count(entry) * cap
-    if dwell > max_credit then return max_credit end
-  end
-  return dwell
-end
-
 local function has_activity(entry)
   return (tonumber(entry.activity_count) or 0) > 0
     or (tonumber(entry.last_activity_ms) or 0) > 0
 end
 
-local function ranking_score(entry, stats_version)
-  if has_activity(entry) then
-    return tonumber(entry.activity_score) or 0
-  end
-  return ranking_dwell(entry, stats_version)
+local function ranking_score(entry)
+  return tonumber(entry.activity_score) or 0
+end
+
+local function ranking_tier(entry)
+  return has_activity(entry) and 1 or 0
 end
 
 local function ranking_recent(entry)
@@ -286,27 +265,21 @@ end
 -- Aggregation: activity score summed, total_dwell_ms summed
 -- (diagnostic lifetime focus, never decayed), event counts summed, and
 -- recent timestamp taken as max across variants.
--- v1 migration: when `dwell_ms` is missing on an entry, fall back to
--- the legacy `weight` field so a pre-migration file still ranks while
--- the writer hasn't rewritten it in v2 shape yet.
--- v2 migration: when the file still stores uncapped wall-clock dwell in
--- dwell_ms, clamp read-side ranking to raw_count * the per-burst credit
--- cap so stale overnight focus cannot dominate before the next write.
--- v4 transition: rows with at least one activity event rank by
--- activity_score; rows without activity still use legacy dwell as a
--- migration fallback so the visible set does not collapse to all-zero
--- on the first reload after schema upgrade.
+-- Only rows with sampled git activity participate in the ranking. Legacy
+-- focus dwell fields stay available for diagnostics, but no longer affect
+-- top-N selection; callers fall back to workspaces.lua order when the
+-- activity ranking is empty or shorter than visible_count.
 local function rank_sessions(stats)
   if not stats or type(stats.sessions) ~= 'table' then return {} end
-  local stats_version = tonumber(stats.version) or 3
   local agg = {}
   for name, entry in pairs(stats.sessions) do
-    if type(entry) == 'table' then
+    if type(entry) == 'table' and has_activity(entry) then
       local key = normalize_session_name(name) or name
       local cur = agg[key]
       if not cur then
         cur = {
           name = key,
+          rank_tier = 0,
           rank_score = 0,
           activity_score = 0,
           activity_count = 0,
@@ -319,9 +292,11 @@ local function rank_sessions(stats)
         }
         agg[key] = cur
       end
-      local dwell = ranking_dwell(entry, stats_version)
-      local score = ranking_score(entry, stats_version)
+      local dwell = tonumber(entry.dwell_ms) or 0
+      local score = ranking_score(entry)
+      local tier = ranking_tier(entry)
       cur.dwell_ms = cur.dwell_ms + dwell
+      if tier > cur.rank_tier then cur.rank_tier = tier end
       cur.rank_score = cur.rank_score + score
       cur.activity_score = cur.activity_score + (tonumber(entry.activity_score) or 0)
       cur.activity_count = cur.activity_count + (tonumber(entry.activity_count) or 0)
@@ -338,6 +313,7 @@ local function rank_sessions(stats)
   local items = {}
   for _, v in pairs(agg) do items[#items + 1] = v end
   table.sort(items, function(a, b)
+    if a.rank_tier ~= b.rank_tier then return a.rank_tier > b.rank_tier end
     if a.rank_score ~= b.rank_score then return a.rank_score > b.rank_score end
     if a.rank_recent_ms ~= b.rank_recent_ms then return a.rank_recent_ms > b.rank_recent_ms end
     local ac = a.activity_count > 0 and a.activity_count or a.raw_count
