@@ -10,6 +10,89 @@ command -v tmux >/dev/null 2>&1 || {
   exit 1
 }
 
+run_fake_refresh_case() {
+  local name="$1" scroll_position="$2" history_size="$3" prefetch_screens="$4" expected_refresh="$5"
+  local tmp fake_bin calls status
+
+  tmp="$(mktemp -d)"
+  fake_bin="$tmp/bin"
+  calls="$tmp/refresh.calls"
+  mkdir -p "$fake_bin"
+
+  cat >"$fake_bin/tmux" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+args=( "\$@" )
+cmd_index=0
+if [[ "\${args[0]:-}" == "-S" ]]; then
+  cmd_index=2
+fi
+cmd="\${args[\$cmd_index]:-}"
+case "\$cmd" in
+  show-options)
+    opt="\${args[-1]}"
+    case "\$opt" in
+      @copy_mode_auto_refresh) printf '1\n' ;;
+      @copy_mode_auto_refresh_prefetch_screens) printf '${prefetch_screens}\n' ;;
+      @copy_mode_auto_refresh_history_guard_lines) printf '10\n' ;;
+      @copy_mode_auto_refresh_interval_ms) printf '100\n' ;;
+    esac
+    ;;
+  display-message)
+    fmt="\${args[-1]}"
+    case "\$fmt" in
+      '#{pane_in_mode} #{pane_mode}') printf '1 copy-mode\n' ;;
+      '#{selection_present}') printf '0\n' ;;
+      '#{scroll_position} #{history_size} #{history_limit} #{pane_height}') printf '${scroll_position} ${history_size} 100 20\n' ;;
+    esac
+    ;;
+  send-keys)
+    printf 'refresh\n' >>'$calls'
+    ;;
+esac
+EOF
+  chmod +x "$fake_bin/tmux"
+
+  set +e
+  PATH="$fake_bin:/usr/bin:/bin" timeout 0.35s bash "$REFRESH_SCRIPT" fake.sock '%1' 100 >/dev/null 2>&1
+  status=$?
+  set -e
+
+  case "$expected_refresh:$status" in
+    yes:124|no:124) ;;
+    *)
+      printf '%s: expected timeout exit 124 while fake copy-mode stays active, got %s\n' "$name" "$status" >&2
+      rm -rf "$tmp"
+      exit 1
+      ;;
+  esac
+
+  case "$expected_refresh" in
+    yes)
+      [[ -s "$calls" ]] || {
+        printf '%s: expected auto-refresh call away from history limit\n' "$name" >&2
+        rm -rf "$tmp"
+        exit 1
+      }
+      ;;
+    no)
+      [[ ! -e "$calls" ]] || {
+        printf '%s: auto-refresh should pause for this copy-mode state\n' "$name" >&2
+        rm -rf "$tmp"
+        exit 1
+      }
+      ;;
+  esac
+  rm -rf "$tmp"
+}
+
+run_fake_refresh_case live-bottom 0 95 3 yes
+run_fake_refresh_case inside-prefetch-window 42 50 3 yes
+run_fake_refresh_case outside-prefetch-window 80 50 3 no
+run_fake_refresh_case inside-prefetch-window-near-limit 42 95 3 no
+run_fake_refresh_case prefetch-disabled 1 50 0 no
+
 socket_path="/tmp/wezterm-copy-mode-auto-refresh.$$.$RANDOM.sock"
 refresh_pid=""
 
