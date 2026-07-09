@@ -107,13 +107,29 @@ version_ge() {
 #   v1.21.0           -> 1.21.0
 #   go1.22.0          -> 1.22.0
 #   3.6a              -> 3.6
-#   20260117-...      -> 20260117   (wezterm calver — first numeric run only)
+#   20260117-...      -> 20260117
 normalize_version() {
   local v="$1"
   v="${v#v}"
   v="${v#go}"
   v="$(printf '%s' "$v" | grep -oE '^[0-9]+(\.[0-9]+)*' | head -n1)"
   printf '%s' "$v"
+}
+
+wezterm_build_stamp() {
+  local v="$1"
+  if [[ "$v" =~ ^([0-9]{8}-[0-9]{6})- ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  fi
+}
+
+iso8601_to_build_stamp() {
+  local v="$1"
+  if [[ "$v" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})Z$ ]]; then
+    printf '%s%s%s-%s%s%s' \
+      "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" \
+      "${BASH_REMATCH[4]}" "${BASH_REMATCH[5]}" "${BASH_REMATCH[6]}"
+  fi
 }
 
 ANY_BEHIND=0
@@ -205,27 +221,48 @@ if [[ -n "$go_bin" ]]; then
 fi
 
 # --- fetch upstream latest ---
-# WezTerm: hybrid-wsl tracks the nightly build (see docs/setup.md). The
-# nightly release has a rolling tag_name "nightly". Don't synthesize a calver
-# from release-level timestamps — `updated_at` bumps on any asset re-upload
-# even when the bundled binary is unchanged (we observed a 2026-04-25
-# `updated_at` paired with a March 31 build inside the installer). Use only
-# `target_commitish` (the SHA the API currently advertises) and compare it
-# against the SHA suffix the installed binary reports. This avoids the
-# "just installed → already behind" false positive driven by metadata noise.
+# WezTerm: hybrid-wsl tracks the Windows nightly zip (see docs/setup.md).
+# The release tag's `target_commitish` can point at a stale rolling tag, so
+# treat it as diagnostic only. For update status, compare the installed
+# YYYYMMDD-HHMMSS build stamp with the Windows nightly asset's `updated_at`.
 wezterm_latest=""
 wezterm_sha=""
+wezterm_asset_updated_at=""
+wezterm_asset_stamp=""
+wezterm_asset_digest=""
+wezterm_asset_block=""
 if json="$(fetch -H 'Accept: application/vnd.github+json' \
   https://api.github.com/repos/wezterm/wezterm/releases/tags/nightly)"; then
-  # Use bash regex on the captured json blob — works on both pretty-printed
-  # and minified responses, no piping (avoids SIGPIPE-vs-pipefail issues
-  # that bit an earlier awk-based version with the gh fallback's one-line
-  # JSON output).
-  if [[ "$json" =~ \"target_commitish\"[[:space:]]*:[[:space:]]*\"([0-9a-f]+)\" ]]; then
-    wezterm_sha="${BASH_REMATCH[1]}"
+  if command -v jq >/dev/null 2>&1; then
+    wezterm_sha="$(jq -r '.target_commitish // empty' <<<"$json" 2>/dev/null || true)"
+    wezterm_asset_updated_at="$(jq -r '.assets[]? | select(.name == "WezTerm-windows-nightly.zip") | .updated_at // empty' <<<"$json" 2>/dev/null || true)"
+    wezterm_asset_digest="$(jq -r '.assets[]? | select(.name == "WezTerm-windows-nightly.zip") | (.digest // "" | sub("^sha256:"; ""))' <<<"$json" 2>/dev/null || true)"
+  else
+    # Regex fallback for systems without jq. Curl's GitHub API response is
+    # pretty-printed; stop at the asset's browser_download_url so nested
+    # uploader objects do not truncate the block early.
+    if [[ "$json" =~ \"target_commitish\"[[:space:]]*:[[:space:]]*\"([0-9a-f]+)\" ]]; then
+      wezterm_sha="${BASH_REMATCH[1]}"
+    fi
+    wezterm_asset_block="$(awk '
+      /"name"[[:space:]]*:[[:space:]]*"WezTerm-windows-nightly\.zip"/ { capture=1 }
+      capture { print }
+      capture && /"browser_download_url"/ { exit }
+    ' <<<"$json")"
+    if [[ "$wezterm_asset_block" =~ \"updated_at\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+      wezterm_asset_updated_at="${BASH_REMATCH[1]}"
+    fi
+    if [[ "$wezterm_asset_block" =~ \"digest\"[[:space:]]*:[[:space:]]*\"sha256:([0-9a-f]+)\" ]]; then
+      wezterm_asset_digest="${BASH_REMATCH[1]}"
+    fi
   fi
-  if [[ -n "$wezterm_sha" ]]; then
-    wezterm_latest="nightly head @${wezterm_sha:0:8}"
+  if [[ -n "$wezterm_asset_updated_at" ]]; then
+    wezterm_asset_stamp="$(iso8601_to_build_stamp "$wezterm_asset_updated_at")"
+  fi
+  if [[ -n "$wezterm_asset_stamp" ]]; then
+    wezterm_latest="nightly zip $wezterm_asset_stamp"
+  elif [[ -n "$wezterm_sha" ]]; then
+    wezterm_latest="nightly tag @${wezterm_sha:0:8}"
   fi
 fi
 
@@ -254,29 +291,23 @@ emit "$(printf '%sDependency update check%s %s(timeout=%ss)%s' \
 emit "$(printf '  %-9s %-26s %-26s %-10s %s' "tool" "installed" "latest" "floor" "status")"
 emit "$(printf '  %-9s %-26s %-26s %-10s %s' "----" "---------" "------" "-----" "------")"
 check_wezterm() {
-  # wezterm uses a SHA-based comparison instead of version_ge. The installed
-  # calver ends with the build's commit SHA suffix (e.g. ...-577474d8); compare
-  # it to target_commitish[:8] from the nightly tag. SHA mismatch is reported
-  # as informational ("behind nightly head") rather than "update available",
-  # because target_commitish moves with main on every CI poke even when the
-  # bundled binary is unchanged (we observed a 2026-04-25 updated_at paired
-  # with a March 31 build inside the installer). The changelog block below
-  # the table is the actionable signal — if it's empty / docs-only, your
-  # binary is current; if there are real GUI / mux fixes, upgrade.
   if [[ -z "$wezterm_installed" ]]; then
     print_row "wezterm" "(not installed)" "${wezterm_latest:-?}" "-" "skip" "$c_dim"
     return
   fi
-  if [[ -z "$wezterm_latest" || -z "$wezterm_sha" ]]; then
+  if [[ -z "$wezterm_latest" ]]; then
     print_row "wezterm" "$wezterm_installed" "(unreachable)" "-" "offline?" "$c_yellow"
     return
   fi
-  local installed_sha8="${wezterm_installed##*-}"
-  local latest_sha8="${wezterm_sha:0:8}"
-  if [[ "$installed_sha8" == "$latest_sha8" ]]; then
+  local installed_stamp
+  installed_stamp="$(wezterm_build_stamp "$wezterm_installed")"
+  if [[ -z "$installed_stamp" || -z "$wezterm_asset_stamp" ]]; then
+    print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "unknown" "$c_yellow"
+  elif [[ "$installed_stamp" == "$wezterm_asset_stamp" || "$installed_stamp" > "$wezterm_asset_stamp" ]]; then
     print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "up-to-date" "$c_green"
   else
-    print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "behind nightly head" "$c_dim"
+    print_row "wezterm" "$wezterm_installed" "$wezterm_latest" "-" "nightly asset newer" "$c_yellow"
+    ANY_BEHIND=1
     TOOL_BEHIND[wezterm]=1
   fi
 }
@@ -339,6 +370,15 @@ emit_wezterm_changes() {
   [[ "${TOOL_BEHIND[wezterm]:-0}" == 1 ]] || return 0
   emit ""
   emit "$(printf '%swezterm%s changelog (continuous/nightly section)' "$c_bold" "$c_reset")"
+  if [[ -n "$wezterm_asset_updated_at" ]]; then
+    emit "  nightly Windows zip updated_at: $wezterm_asset_updated_at"
+  fi
+  if [[ -n "$wezterm_asset_digest" ]]; then
+    emit "  nightly Windows zip sha256: ${wezterm_asset_digest:0:12}..."
+  fi
+  if [[ -n "$wezterm_sha" ]]; then
+    emit "  nightly tag target_commitish: ${wezterm_sha:0:12} (diagnostic only)"
+  fi
   local md section
   if md="$(fetch https://raw.githubusercontent.com/wezterm/wezterm/main/docs/changelog.md)"; then
     section="$(awk '
@@ -416,10 +456,8 @@ emit_go_changes() {
 }
 
 # Each emit_*_changes self-gates on TOOL_BEHIND; call unconditionally so the
-# wezterm "behind nightly head" path (which intentionally doesn't raise
-# ANY_BEHIND) still surfaces the changelog summary — that's the user's
-# actual decision signal: docs-only changes mean don't bother upgrading,
-# real GUI/mux fixes mean do.
+# script can append per-tool context after the table without duplicating the
+# gate logic here.
 emit_wezterm_changes
 emit_tmux_changes
 emit_go_changes
