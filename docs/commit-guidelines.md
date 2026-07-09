@@ -180,6 +180,6 @@ BREAKING CHANGE: plugin instances now require an explicit project ID.
 - For mixed documentation work across multiple topic docs, prefer plain `docs: ...` unless one topic is clearly primary.
 - Do not run Git commands that can contend on the index lock in parallel; stage, inspect, and commit in sequence.
 - Before committing runtime changes, confirm required sync and validation steps in [`daily-workflow.md`](./daily-workflow.md).
-- Preview the full commit message and get human confirmation before running `git commit`.
+- Treat an explicit user request to commit, save changes, or commit-and-push as confirmation to run `git commit`; do not pause for a second confirmation just to preview the message. Preview the full commit message only when the user asks to review, edit, or confirm it first, or when the request is ambiguous about whether a commit should be created.
 - Use [`scripts/dev/commit-with-ai-context.sh`](../scripts/dev/commit-with-ai-context.sh) when the commit should include AI collaboration metadata.
 - For agent-driven commits that need separate human confirmation before a privileged `git commit`, first run `scripts/dev/commit-with-ai-context.sh --print-only --write-message-file auto`. The script prints the reusable message file path; after confirmation run `git commit -F <that-path>`.
