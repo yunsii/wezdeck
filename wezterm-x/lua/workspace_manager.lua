@@ -164,14 +164,18 @@ function M.new(opts)
   -- that need the canonical session for an item (overflow handoff
   -- detection in sync_workspace_tabs) can reuse it without re-shelling.
   -- Callers that don't need it just drop the extra return.
-  local function maybe_cap_items(workspace_name, items, trace_id)
+  local function maybe_cap_items(workspace_name, items, trace_id, opts)
+    opts = opts or {}
     if not tab_visibility or not tab_visibility.spawn_capped(workspace_name) then
       return items, {}
     end
     local cfg = tab_visibility.config and tab_visibility.config() or {}
     local cap = tonumber(cfg.visible_count) or 5
     if #items == 0 then return items, {} end
-    local cwd_to_session = compute_cwd_to_session(workspace_name, items, trace_id)
+    local cwd_to_session = {}
+    if not opts.skip_session_compute then
+      cwd_to_session = compute_cwd_to_session(workspace_name, items, trace_id)
+    end
     local capped = tab_visibility.preferred_item_order(workspace_name, items, cwd_to_session, cap)
     return capped, cwd_to_session
   end
@@ -337,8 +341,19 @@ function M.new(opts)
   local Workspace = {}
   local last_activity_sample_ms = {}
 
+  local function now_ms()
+    local ok, now_str = pcall(function()
+      return wezterm.time.now():format '%s%3f'
+    end)
+    if ok and type(now_str) == 'string' and now_str:match '^%d+$' then
+      return tonumber(now_str)
+    end
+    return nil
+  end
+
   function Workspace.open(window, pane, name)
     local trace_id = logger.trace_id('workspace')
+    local start_ms = now_ms()
     local raw_items = runtime.workspace_items(name)
     -- Don't write the items snapshot here unconditionally — it costs
     -- mux walk + json encode + cross-FS NTFS write per Alt+w press,
@@ -349,7 +364,10 @@ function M.new(opts)
     -- Workspace.refresh_all_items_snapshots so edits to
     -- workspaces.lua surface in the picker without forcing a cold
     -- reopen. Hot Alt+w stays at the pre-snapshot latency.
-    local items, cwd_to_session = maybe_cap_items(name, raw_items, trace_id)
+    local workspace_exists = #tabs.workspace_windows(name) > 0
+    local items, cwd_to_session = maybe_cap_items(name, raw_items, trace_id, {
+      skip_session_compute = workspace_exists,
+    })
     if #items < #raw_items then
       logger.info('workspace', 'capped startup items by tab_visibility', with_trace_id(trace_id, {
         workspace = name,
@@ -389,9 +407,10 @@ function M.new(opts)
       end
     end
 
-    if #tabs.workspace_windows(name) > 0 then
+    if workspace_exists then
       logger.info('workspace', 'switching to existing workspace', with_trace_id(trace_id, {
         item_count = #items,
+        skipped_session_compute = true,
         workspace = name,
       }))
       -- Phase 2b: under spawn_capped, both spawn and prune use brain
@@ -440,6 +459,13 @@ function M.new(opts)
           end
         end
       end
+      local finish_ms = now_ms()
+      logger.info('workspace', 'workspace open completed', with_trace_id(trace_id, {
+        duration_ms = start_ms and finish_ms and (finish_ms - start_ms) or nil,
+        mode = 'existing',
+        skipped_session_compute = true,
+        workspace = name,
+      }))
       return
     end
 
@@ -478,6 +504,13 @@ function M.new(opts)
     -- snapshot from the most recent cold open is good enough until
     -- workspaces.lua is edited.
     maybe_write_items_snapshot(name, raw_items, trace_id)
+    local finish_ms = now_ms()
+    logger.info('workspace', 'workspace open completed', with_trace_id(trace_id, {
+      duration_ms = start_ms and finish_ms and (finish_ms - start_ms) or nil,
+      mode = 'created',
+      skipped_session_compute = false,
+      workspace = name,
+    }))
   end
 
   -- Phase 2b live hot reorder. Called from titles.lua's update-status
