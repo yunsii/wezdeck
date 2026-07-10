@@ -149,12 +149,11 @@ function M.new(opts)
   -- Two layers of selection:
   --   1. Cap `items` at `visible_count` (otherwise we'd spawn the full
   --      `workspaces.lua` list).
-  --   2. Order the kept items by activity: the brain's
-  --      `preferred_item_order` ranks each item's session_name by
-  --      activity score (with `__refresh_*` aggregation) and falls back to
-  --      `workspaces.lua` declared order for items that haven't been
-  --      focused yet, so on cold start (no stats) the user's intended
-  --      priority order is preserved.
+  --   2. Order the kept items by sticky slot. Activity score (with
+  --      `__refresh_*` aggregation) decides top-N membership and initializes
+  --      cold slots; later score changes among the same members preserve
+  --      their positions. Items without activity fill from `workspaces.lua`
+  --      declared order.
   -- Without `spawn_capped` we leave the list untouched — there's no
   -- cap, no overflow tab, every item gets a wezterm tab in declared
   -- order. Reordering an uncapped list would visually shuffle every
@@ -517,8 +516,8 @@ function M.new(opts)
   -- after `tab_visibility.tick` reports that the brain's slot
   -- assignment changed since the previous tick — that's the signal
   -- that some session entered top-N (needs to be spawned) or fell out
-  -- of top-N (its tab needs to be pruned), or when the same top-N set
-  -- changes rank order. preserve_focus mode keeps the user's
+  -- of top-N (its tab needs to be pruned). Rank changes among the same
+  -- top-N members do not move tabs. preserve_focus mode keeps the user's
   -- currently-active tab alive and restores focus after any MoveTab
   -- reordering; if the active tab is demoted, prune skips it for this
   -- round.
