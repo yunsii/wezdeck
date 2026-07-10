@@ -308,8 +308,8 @@ describe('_rank_sessions', function()
   end)
 end)
 
-describe('rank_signature', function()
-  it('changes when the same visible set reorders by activity rank', function()
+describe('visible_signature', function()
+  it('stays stable across internal reranks and changes on membership replacement', function()
     local stats_dir = (os.getenv('TMPDIR') or '/tmp') .. '/wezterm-test-rank-sig-' .. tostring(math.random(100000, 999999))
     os.execute('mkdir -p ' .. stats_dir)
 
@@ -331,17 +331,20 @@ describe('rank_signature', function()
 
     write('{"version":4,"sessions":{"a":{"activity_score":100,"activity_count":1,"last_activity_ms":1000},"b":{"activity_score":50,"activity_count":1,"last_activity_ms":900}}}')
     tab_visibility.tick('work', 1000)
-    local first_rank = tab_visibility.rank_signature('work')
     local first_visible = tab_visibility.visible_signature('work')
 
     write('{"version":4,"sessions":{"a":{"activity_score":50,"activity_count":1,"last_activity_ms":1000},"b":{"activity_score":100,"activity_count":1,"last_activity_ms":900}}}')
     tab_visibility.tick('work', 2000)
-    local second_rank = tab_visibility.rank_signature('work')
     local second_visible = tab_visibility.visible_signature('work')
 
-    assert_eq(first_rank, 'a|b')
-    assert_eq(second_rank, 'b|a')
-    assert_eq(first_visible, second_visible, 'sticky slot signature should not detect internal rank reorder')
+    assert_eq(first_visible, 'a|b')
+    assert_eq(second_visible, first_visible,
+      'relative score changes inside top-N must not move sticky slots')
+
+    write('{"version":4,"sessions":{"b":{"activity_score":100,"activity_count":1,"last_activity_ms":900},"c":{"activity_score":80,"activity_count":1,"last_activity_ms":2000}}}')
+    tab_visibility.tick('work', 3000)
+    assert_eq(tab_visibility.visible_signature('work'), 'c|b',
+      'new top-N member should replace the stale slot without moving the survivor')
   end)
 end)
 

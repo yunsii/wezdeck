@@ -35,13 +35,13 @@ local function write_stats(stats_dir, slug, sessions)
   local parts = {}
   for name, entry in pairs(sessions) do
     parts[#parts + 1] = string.format(
-      '"%s":{"weight":%s,"raw_count":%d,"last_bump_ms":%d}',
+      '"%s":{"activity_score":%s,"activity_count":%d,"last_activity_ms":%d}',
       name,
       tostring(entry.weight or 0),
       entry.raw_count or 0,
       entry.last_bump_ms or 0)
   end
-  local body = '{"version":1,"half_life_days":7,"sessions":{' .. table.concat(parts, ',') .. '}}'
+  local body = '{"version":4,"half_life_days":7,"sessions":{' .. table.concat(parts, ',') .. '}}'
   local fd = io.open(stats_dir .. '/' .. slug .. '.json', 'w')
   fd:write(body); fd:close()
 end
@@ -85,7 +85,7 @@ describe('is_in_visible', function()
     configure(stats_dir, 3)
     tab_visibility.tick('work', 1000)
 
-    -- top-3 (by weight): coco-server, skills, coco-platform.
+    -- top-3 (by activity score): coco-server, skills, coco-platform.
     assert_truthy(tab_visibility.is_in_visible('work', 'wezterm_work_coco-server_aaaaaaaaaa'))
     assert_truthy(tab_visibility.is_in_visible('work', 'wezterm_work_skills_bbbbbbbbbb'))
     assert_truthy(tab_visibility.is_in_visible('work', 'wezterm_work_coco-platform_cccccccccc'))
@@ -104,7 +104,7 @@ describe('is_in_visible', function()
     -- flips from false → true — that's the edge maybe_clear_overflow_
     -- collision watches for.
     local stats_dir = fresh_stats_dir()
-    -- Initial state: skills not yet in top-N (low weight).
+    -- Initial state: skills not yet in top-N (low activity score).
     write_stats(stats_dir, 'work', {
       ['wezterm_work_a_aaaaaaaaaa']      = { weight = 1.0, raw_count = 30, last_bump_ms = 1000 },
       ['wezterm_work_b_bbbbbbbbbb']      = { weight = 0.9, raw_count = 25, last_bump_ms = 1000 },
@@ -116,7 +116,7 @@ describe('is_in_visible', function()
     assert_falsy(tab_visibility.is_in_visible('work', 'wezterm_work_skills_dddddddddd'),
       'skills starts outside top-N — overflow projecting it is fine')
 
-    -- Now skills accumulates focus and surpasses session `c`.
+    -- Now skills accumulates git activity and surpasses session `c`.
     write_stats(stats_dir, 'work', {
       ['wezterm_work_a_aaaaaaaaaa']      = { weight = 1.0, raw_count = 30, last_bump_ms = 3000 },
       ['wezterm_work_b_bbbbbbbbbb']      = { weight = 0.9, raw_count = 25, last_bump_ms = 3000 },

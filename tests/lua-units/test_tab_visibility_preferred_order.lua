@@ -37,15 +37,15 @@ local function fresh_stats_dir()
 end
 
 local function write_stats(stats_dir, slug, sessions)
-  local body = '{"version":1,"half_life_days":7,"sessions":'
+  local body = '{"version":4,"half_life_days":7,"sessions":'
   local parts = {}
   for name, entry in pairs(sessions) do
     parts[#parts + 1] = string.format(
-      '"%s":{"weight":%s,"raw_count":%d,"last_bump_ms":%d}',
+      '"%s":{"activity_score":%s,"activity_count":%d,"last_activity_ms":%d}',
       name,
-      tostring(entry.weight or 0),
-      entry.raw_count or 0,
-      entry.last_bump_ms or 0)
+      tostring(entry.activity_score or entry.weight or 0),
+      entry.activity_count or entry.raw_count or 1,
+      entry.last_activity_ms or entry.last_bump_ms or 0)
   end
   body = body .. '{' .. table.concat(parts, ',') .. '}}'
   local fd = io.open(stats_dir .. '/' .. slug .. '.json', 'w')
@@ -283,6 +283,67 @@ describe('preferred_item_order', function()
     -- coco-server rose to the top via brain rank — this is the
     -- preserved capped-workspace behavior, not affected by the new gate.
     assert_eq(out[1].cwd, '/home/yuns/work/coco-server', 'brain rank still wins when capping is needed')
+  end)
+
+  it('keeps surviving top-N items in sticky slots across score changes', function()
+    local stats_dir = fresh_stats_dir()
+    local avc = 'wezterm_work_ai-video-collection_59200b16b2'
+    local coco = 'wezterm_work_coco-server_ebee3ed55c'
+    local packages = 'wezterm_work_packages_4a3bc1a83a'
+    configure(stats_dir, 2)
+    local items, c2s = work_fixture()
+
+    write_stats(stats_dir, 'work', {
+      [avc] = { activity_score = 100, activity_count = 1, last_bump_ms = 1000 },
+      [coco] = { activity_score = 50, activity_count = 1, last_bump_ms = 900 },
+    })
+    local initial = tab_visibility.preferred_item_order('work', items, c2s, 2)
+    assert_eq(initial[1].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(initial[2].cwd, '/home/yuns/work/coco-server')
+
+    write_stats(stats_dir, 'work', {
+      [avc] = { activity_score = 50, activity_count = 1, last_bump_ms = 1000 },
+      [coco] = { activity_score = 100, activity_count = 1, last_bump_ms = 2000 },
+    })
+    local reranked = tab_visibility.preferred_item_order('work', items, c2s, 2)
+    assert_eq(reranked[1].cwd, '/home/yuns/work/ai-video-collection',
+      'surviving item should keep slot 1 after falling to rank 2')
+    assert_eq(reranked[2].cwd, '/home/yuns/work/coco-server',
+      'surviving item should keep slot 2 after rising to rank 1')
+
+    write_stats(stats_dir, 'work', {
+      [coco] = { activity_score = 100, activity_count = 1, last_bump_ms = 2000 },
+      [packages] = { activity_score = 80, activity_count = 1, last_bump_ms = 3000 },
+    })
+    local replaced = tab_visibility.preferred_item_order('work', items, c2s, 2)
+    assert_eq(replaced[1].cwd, '/home/yuns/work/packages',
+      'new member should take the stale slot')
+    assert_eq(replaced[2].cwd, '/home/yuns/work/coco-server',
+      'surviving member should not move during replacement')
+  end)
+
+  it('seeds declared fallback tabs so their first activity does not move them', function()
+    local stats_dir = fresh_stats_dir()
+    local avc = 'wezterm_work_ai-video-collection_59200b16b2'
+    local platform = 'wezterm_work_coco-platform_4cbcc8f612'
+    configure(stats_dir, 2)
+    local items, c2s = work_fixture()
+
+    write_stats(stats_dir, 'work', {
+      [avc] = { activity_score = 50, activity_count = 1, last_bump_ms = 1000 },
+    })
+    local initial = tab_visibility.preferred_item_order('work', items, c2s, 2)
+    assert_eq(initial[1].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(initial[2].cwd, '/home/yuns/work/coco-platform')
+
+    write_stats(stats_dir, 'work', {
+      [avc] = { activity_score = 50, activity_count = 1, last_bump_ms = 1000 },
+      [platform] = { activity_score = 100, activity_count = 1, last_bump_ms = 2000 },
+    })
+    local first_activity = tab_visibility.preferred_item_order('work', items, c2s, 2)
+    assert_eq(first_activity[1].cwd, '/home/yuns/work/ai-video-collection')
+    assert_eq(first_activity[2].cwd, '/home/yuns/work/coco-platform',
+      'first activity should keep the fallback tab in its existing slot')
   end)
 
   it('label fallback ignores ranked entries whose label has no item', function()
