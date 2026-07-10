@@ -332,28 +332,31 @@ behavior:
   overflow tab via `is_overflow_tab` since it is owned by tab_visibility,
   not by `workspaces.lua`.
 
-### Live hot reorder (brain rerank while the window is open)
+### Live sticky-slot replacement (brain rerank while the window is open)
 
-`titles.lua` watches `tab_visibility.rank_signature` on every
+`titles.lua` watches `tab_visibility.visible_signature` on every
 `update-status` tick. When the brain promotes a new session into the
-top-N (`packages` jumps in, `operations-monkey` drops out), or when the
-same top-N sessions change rank order, the signature changes and
+top-N (`packages` jumps in, `operations-monkey` drops out), the sticky
+slot assignment changes and
 `Workspace.maybe_hot_reorder` runs
 `sync_workspace_tabs(preserve_focus = true, reorder_tabs = true)`.
+Score changes that only reorder the same top-N members leave the slot
+signature unchanged, so working in an already-visible tab never moves
+that tab within the visible strip.
 
 Layout invariants under `preserve_focus`:
 
 - The currently-active tab is **protected from prune** for this round,
   even if its session fell out of top-N. The user's focus never
   disappears mid-typing.
-- Top-N tabs are moved into current activity-ranked order. WezTerm's only
-  tab-move primitive temporarily activates the moved tab, so
+- Sessions that remain in top-N keep their existing slots. A new entrant
+  takes the stale slot left by the session that fell out. WezTerm's only
+  tab-move primitive temporarily activates the replacement tab, so
   `preserve_focus` records the user's active tab first and restores it
-  after the reorder completes.
+  after the replacement completes.
 - A newly-spawned tab still lands at the end of the strip first
   (wezterm's `spawn_tab` appends), then the MoveTab pass places it in
-  its ranked slot and keeps the **overflow tab** at the tail. The
-  resulting visible order is `[top-N in activity order..., …]`.
+  its assigned sticky slot and keeps the **overflow tab** at the tail.
 
 **Overflow → visible-tab handoff.** When the protected tab IS the
 overflow tab and overflow is hosting a session that just got promoted
@@ -509,17 +512,17 @@ behavior of silently spawning a new wezterm tab outside the cap.
 Indexed exponential decay is order-preserving: 14 days off with no
 activity shrinks every session's activity_score by the same factor, so
 the top-N set is identical when you return. New sessions promote by
-real git activity, not by being viewed for a while. The ranking drives
-both cold-open selection and live hot reorder when the workspace has an
-overflow tab.
+real git activity, not by being viewed for a while. Ranking drives
+cold-open selection and live top-N membership; sticky slots preserve
+the positions of members that remain visible.
 
 ### Pieces
 
 | Layer | File | Role |
 | --- | --- | --- |
-| Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, activity-score ranking, `is_enabled` / `spawn_capped` predicates, workspace slug |
+| Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, activity-score ranking, sticky-slot assignment, `is_enabled` / `spawn_capped` predicates, workspace slug |
 | Constants | `wezterm-x/lua/constants.lua` | `tab_visibility` config block (`visible_count`, `activity_sample_interval_ms`, `spawn_visible_only`, …) |
-| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (activity-first selection with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh, runs `Workspace.maybe_sample_tab_activity` only when overflow exists, and runs `Workspace.maybe_clear_overflow_collision` each tick so a promoted overflow session hands its tmux client back to the new visible tab |
+| Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (sticky top-N slots with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh, runs `Workspace.maybe_sample_tab_activity` only when overflow exists, and runs `Workspace.maybe_clear_overflow_collision` each tick so a promoted overflow session hands its tmux client back to the new visible tab |
 | Activity sampler | `scripts/runtime/tab-activity-sample.sh` | low-frequency git fingerprint sampler; baseline writes do not score, HEAD/index/worktree changes call `tab_stats_record_activity` |
 | Stats writer/readers | `scripts/runtime/tab-stats-lib.sh` | v4 stats schema, activity writes, legacy focus diagnostics, top-N and aggregated TSV helpers |
 | Session-name compute | `scripts/runtime/tmux-worktree/print-session-names.sh` | bulk `cwd → canonical session name` map for the workspace, single subprocess invocation; the lua side uses this to join `workspaces.lua` items against `tab-stats/<slug>.json` ranking |

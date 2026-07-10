@@ -435,12 +435,19 @@ function M.tick(workspace_name, now_ms)
     end
   end
 
-  cache.visible_set = {}
-  for _, n in ipairs(visible_names) do cache.visible_set[n] = true end
   cache.warm_set = {}
   for _, n in ipairs(warm_names) do cache.warm_set[n] = true end
 
   local swapped = reassign_slots(cache, visible_names, now_ms)
+
+  -- Slots may also contain declared-order fallback sessions seeded by
+  -- preferred_item_order. They are real visible tabs even before their
+  -- first activity event, so membership consumers must use the slot
+  -- projection rather than only the scored subset in visible_names.
+  cache.visible_set = {}
+  for _, slot in ipairs(cache.slots) do
+    if slot and slot.session_name then cache.visible_set[slot.session_name] = true end
+  end
 
   if module_state.logger and module_state.logger.info then
     local visible_csv = table.concat(visible_names, ',')
@@ -570,29 +577,19 @@ function M.visible_signature(workspace_name)
   return table.concat(parts, '|')
 end
 
--- Stable string signature of the current activity-ranked visible order.
--- Unlike visible_signature(), this changes when the same top-N sessions
--- reorder internally. titles.lua uses it to trigger live tab reordering
--- instead of waiting for a cold-open or a set-changing slot swap.
+-- Compatibility for callers outside the tracked runtime. Rank changes no
+-- longer imply layout changes, so the legacy accessor now exposes slots too.
 function M.rank_signature(workspace_name)
-  local cache = module_state.workspaces[workspace_name]
-  if not cache then return '' end
-  local parts = {}
-  local ranked = cache.ranked or {}
-  for i = 1, (module_state.visible_count or DEFAULTS.visible_count) do
-    local entry = ranked[i]
-    parts[i] = (entry and entry.name) or ''
-  end
-  return table.concat(parts, '|')
+  return M.visible_signature(workspace_name)
 end
 
 -- Reorder a workspace's `workspaces.lua` items list using the brain's
--- activity ranking, capped at `n`. Items whose session_name appears
--- in the ranked list (top-N) come first, in activity-score order; items
--- without stats (or beyond the top-N) follow in declared order. The
--- net result is the slot-order spawn list:
+-- sticky top-N slots, capped at `n`. Activity ranking decides membership,
+-- but sessions that remain in top-N keep their existing slot when their
+-- relative scores change. Items without stats fill the remaining capacity
+-- in declared order. The net result is the slot-order spawn list:
 --
---     [ranked items..., declared-order fallback...] truncated at n
+--     [sticky-slot items..., declared-order fallback...] truncated at n
 --
 -- `cwd_to_session` is `{ [cwd] = session_name }` for the workspace
 -- (computed by `scripts/runtime/tmux-worktree/print-session-names.sh`
@@ -601,7 +598,7 @@ end
 -- fall through to the declared-order tail.
 --
 -- Bootstrap behaviour: when the brain's ranked list is empty (cold
--- start, no focus events yet), every ranked-pass produces nothing and
+-- start, no activity events yet), the slot pass produces nothing and
 -- we end up returning declared-order's first n items — identical to
 -- the pre-Phase-2 behaviour.
 --
@@ -648,7 +645,7 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
   end
 
   local cache = module_state.workspaces[workspace_name]
-  local ranked = (cache and cache.ranked) or {}
+  local slotted = cache and visible_order(cache) or {}
 
   -- Primary reverse-lookup: session_name → item via the cwd→session
   -- map computed by `compute_cwd_to_session` (workspace_manager.lua).
@@ -696,14 +693,18 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
 
   local out = {}
   local placed_cwd = {}
+  local session_for_cwd = {}
 
-  -- Pass 1: ranked items in activity-score order.
-  for _, entry in ipairs(ranked) do
+  -- Pass 1: top-N items in sticky slot order. `tick` initializes empty
+  -- slots in activity-rank order, then preserves surviving assignments
+  -- across later score changes.
+  for _, session_name in ipairs(slotted) do
     if #out >= n then break end
-    local item = lookup_item(entry.name)
+    local item = lookup_item(session_name)
     if item and not placed_cwd[item.cwd] then
       out[#out + 1] = item
       placed_cwd[item.cwd] = true
+      session_for_cwd[item.cwd] = session_name
     end
   end
 
@@ -713,6 +714,34 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
     if item and item.cwd and not placed_cwd[item.cwd] then
       out[#out + 1] = item
       placed_cwd[item.cwd] = true
+    end
+  end
+
+  -- Cold-start and partial-activity layouts fill unused capacity from
+  -- declaration order. Seed those actual tabs into empty sticky slots so
+  -- their first later activity event keeps the position they already own.
+  -- The canonical cwd map is available on cold open; ranked items recovered
+  -- through label fallback use session_for_cwd instead.
+  if cache and type(cache.slots) == 'table' then
+    local slotted_sessions = {}
+    for _, slot in ipairs(cache.slots) do
+      if slot and slot.session_name then slotted_sessions[slot.session_name] = true end
+    end
+    for index, item in ipairs(out) do
+      local session_name = item and item.cwd
+        and ((cwd_to_session and cwd_to_session[item.cwd]) or session_for_cwd[item.cwd])
+        or nil
+      local slot = cache.slots[index]
+      if session_name and session_name ~= '' and not slotted_sessions[session_name]
+        and (not slot or not slot.session_name)
+      then
+        cache.slots[index] = { session_name = session_name, last_swap_ms = 0 }
+        slotted_sessions[session_name] = true
+      end
+    end
+    cache.visible_set = {}
+    for _, session_name in ipairs(visible_order(cache)) do
+      cache.visible_set[session_name] = true
     end
   end
 

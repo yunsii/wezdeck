@@ -56,10 +56,10 @@ function M.register(opts)
   local workspace_label_cache = {}
   local badge_last_status = {}
   local last_rendered_status = nil
-  -- Phase 2b: per-workspace cache of the brain's most recent ranked
-  -- top-N signature. Compared on every update-status to decide whether
-  -- visible tabs need spawn / prune / reorder work. Equal signature ⇒
-  -- no layout work to do.
+  -- Phase 2b: per-workspace cache of the brain's sticky-slot signature.
+  -- Compared on every update-status to decide whether visible tabs need
+  -- spawn / prune / replacement work. Relative score changes within the
+  -- same top-N set leave the signature stable and do not move tabs.
   local last_visible_signature = {}
 
   local function ime_snapshot()
@@ -368,16 +368,16 @@ function M.register(opts)
           pcall(workspace_module.maybe_clear_overflow_collision, workspace, focused_pane_id)
         end
         if workspace_module and workspace_module.maybe_hot_reorder
-          and tab_visibility.rank_signature
+          and tab_visibility.visible_signature
         then
-          local sig = tab_visibility.rank_signature(workspace)
+          local sig = tab_visibility.visible_signature(workspace)
           if last_visible_signature[workspace] ~= sig then
             local prev = last_visible_signature[workspace]
             last_visible_signature[workspace] = sig
             -- Skip the very first observation (prev == nil): the
             -- brain just finished its first tick for this workspace
-            -- and any "change" is just bootstrap. Later deltas include
-            -- both top-N set changes and within-top-N rank changes.
+            -- and any "change" is just bootstrap. Later deltas only
+            -- represent top-N membership changes assigned to sticky slots.
             if prev ~= nil then
               pcall(workspace_module.maybe_hot_reorder, workspace)
             end

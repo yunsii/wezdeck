@@ -389,8 +389,8 @@ exec tmux attach -t "$session"
   --   - By default, skip MoveTab repositioning so we don't cascade
   --     `:activate()` calls through every moved tab — that's the
   --     focus-stealing pattern that made hot Alt+w jarring under
-  --     Phase 2a. opts.reorder_tabs opts back into MoveTab for live
-  --     rank changes; focus is restored at the end of the sync.
+  --     Phase 2a. opts.reorder_tabs opts back into MoveTab when top-N
+  --     membership changes; focus is restored at the end of the sync.
   --   - Restore the original active tab at the end in case
   --     `mux_window:spawn_tab` activated the freshly-spawned tab as a
   --     side effect.
@@ -485,8 +485,8 @@ exec tmux attach -t "$session"
       -- MoveTab cascades focus through every moved tab via the
       -- mandatory `:activate()` — wezterm has no positional-move that
       -- bypasses activation. preserve_focus normally accepts
-      -- positional drift to avoid that focus storm, but live rank
-      -- reorder explicitly opts back in and restores focus afterward.
+      -- positional drift to avoid that focus storm, but sticky-slot
+      -- replacement explicitly opts back in and restores focus afterward.
       if (not opts.preserve_focus or opts.reorder_tabs)
         and matched
         and gui_window
