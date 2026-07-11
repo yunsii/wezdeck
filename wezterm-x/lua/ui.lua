@@ -140,6 +140,26 @@ function M.apply(opts)
     top = 0,
     bottom = 0,
   }
+  -- Frosted-glass / transparency knobs (constants.appearance, overridable
+  -- in wezterm-x/local/constants.lua). Opacity is cross-platform; the
+  -- OS-level backdrop blur is platform-specific and guarded by host_os.
+  local appearance = constants.appearance or {}
+  if appearance.front_end then
+    config.front_end = appearance.front_end
+  end
+  if appearance.window_background_opacity ~= nil then
+    config.window_background_opacity = appearance.window_background_opacity
+  end
+  if appearance.text_background_opacity ~= nil then
+    config.text_background_opacity = appearance.text_background_opacity
+  end
+  if constants.host_os == 'windows' and appearance.win32_system_backdrop then
+    config.win32_system_backdrop = appearance.win32_system_backdrop
+  end
+  if constants.host_os == 'macos' and appearance.macos_window_background_blur then
+    config.macos_window_background_blur = appearance.macos_window_background_blur
+  end
+
   config.use_fancy_tab_bar = false
   config.enable_tab_bar = true
   config.show_tabs_in_tab_bar = true
