@@ -22,6 +22,9 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`host-helper-release.md`](./host-helper-release.md).
 - Logs, diagnostics, and smoke tests:
   Read [`diagnostics.md`](./diagnostics.md).
+- Cross-host development environment failures involving Windows, WSL, DNS,
+  VPN/proxy software, shells, or agent CLIs:
+  Read [`development-environment-troubleshooting.md`](./development-environment-troubleshooting.md).
 - Entry points, ownership, and runtime design:
   Read [`architecture.md`](./architecture.md).
 - Alt+/ popup hot path, bench harnesses, cross-FS routing rule:

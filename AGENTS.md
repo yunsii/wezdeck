@@ -44,6 +44,9 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Diagnostics, logs, or smoke tests (operator surface — env knobs,
   file paths, troubleshooting):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
+- Cross-host development environment failures involving Windows, WSL, DNS,
+  VPN/proxy software, shells, or agent CLIs:
+  Read [`docs/development-environment-troubleshooting.md`](docs/development-environment-troubleshooting.md).
 - Adding or modifying a logger callsite, choosing a category, deciding
   log level / required fields, or moving a log file across the WSL
   boundary (author surface):
