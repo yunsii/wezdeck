@@ -31,6 +31,20 @@ return {
       },
     },
   },
+  -- Window look is chosen with WEZTERM_APPEARANCE_PRESET in shared.env
+  -- ('opaque' | 'frosted'). The block below is OPTIONAL and only tunes the
+  -- selected preset — it deep-merges over it. E.g. make the frosted preset a
+  -- touch more solid, or force OpenGL if the default WebGpu renders opaque.
+  -- Full model + gotchas: docs/appearance-presets.md.
+  -- appearance = {
+  --   window_background_opacity = 0.4,    -- lower = more see-through + more blur
+  --   -- win32_system_backdrop = 'Mica',  -- override the preset's backdrop
+  --   -- front_end = 'OpenGL',            -- escape hatch; NOT with acrylic
+  --   -- macos_window_background_blur = 20,
+  -- },
+  -- palette = {                            -- override individual theme colors
+  --   -- tab_active_bg = 'rgba(210,197,174,0.7)',
+  -- },
   -- Frequency-driven tab layout. By default no workspace opts in, so
   -- existing tab bars behave identically. Enabled workspaces get
   -- slot-aware tab titles where each tab inside the visible_count window

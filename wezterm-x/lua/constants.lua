@@ -15,6 +15,7 @@ local runtime_state_dir = rawget(_G, 'WEZTERM_RUNTIME_STATE_DIR')
 local helpers = dofile(join_path(runtime_dir, 'lua', 'helpers.lua'))
 local defaults = dofile(join_path(runtime_dir, 'lua', 'config', 'defaults.lua'))
 local managed_cli = dofile(join_path(runtime_dir, 'lua', 'config', 'managed_cli.lua'))
+local appearance_presets = dofile(join_path(runtime_dir, 'lua', 'config', 'appearance-presets.lua'))
 
 local host_os = defaults.detect_host_os(wezterm)
 if not runtime_state_dir or runtime_state_dir == '' then
@@ -151,6 +152,19 @@ local base_constants = {
       },
     },
   },
+  -- Window frosted-glass / transparency. Defaults keep an opaque window
+  -- (no-op), so machines without an override render exactly as before.
+  -- Applied in lua/ui.lua; override per-machine in
+  -- wezterm-x/local/constants.lua. See docs/setup.md.
+  appearance = {
+    window_background_opacity = 1.0,
+    text_background_opacity = 1.0,
+    win32_system_backdrop = nil,        -- Windows 11: 'Acrylic' | 'Mica' | 'Tabbed'
+    macos_window_background_blur = nil, -- macOS: integer blur radius, e.g. 20
+    -- Some Windows GPUs render the default WebGpu front_end to an opaque
+    -- swapchain, which kills window_background_opacity. Set 'OpenGL' there.
+    front_end = nil,                    -- 'OpenGL' | 'WebGpu' | 'Software'
+  },
   launch_menu = defaults.default_launch_menu(host_os),
   integrations = {
     vscode = {
@@ -254,7 +268,17 @@ local base_constants = {
   },
 }
 
-local constants = helpers.deep_merge(base_constants, local_constants)
+-- Appearance preset: selected by WEZTERM_APPEARANCE_PRESET (shared.env),
+-- layered as base <- preset <- local so a machine can still override single
+-- values in local/constants.lua. The tmux side of the same preset is rendered
+-- by scripts/runtime/render-tmux-appearance.sh. See docs/appearance-presets.md.
+local preset, preset_name = appearance_presets.resolve(shared_env.WEZTERM_APPEARANCE_PRESET)
+local with_preset = helpers.deep_merge(base_constants, {
+  appearance = preset.appearance,
+  palette = preset.palette,
+})
+local constants = helpers.deep_merge(with_preset, local_constants)
+constants.appearance_preset = preset_name
 constants.managed_cli = constants.managed_cli or {}
 constants.managed_cli.profiles = helpers.deep_merge(constants.managed_cli.profiles or {}, repo_managed_cli_env.profiles or {})
 constants.managed_cli.profiles = helpers.deep_merge(constants.managed_cli.profiles or {}, user_managed_cli_env.profiles or {})

@@ -24,6 +24,28 @@ Use this doc when you need prerequisites and local setup.
 7. One-time: in VS Code, open Profiles → Import Profile → select `wezterm-x/local.example/vscode/ai-dev.code-profile` (or your customized `wezterm-x/local/vscode/ai-dev.code-profile`). `Alt+v` and `scripts/runtime/open-current-dir-in-vscode.sh` read `WEZTERM_VSCODE_PROFILE` from `wezterm-x/local/shared.env` (default `ai-dev`); set it to empty to use VS Code's default profile instead. After import, open the target WSL folder once in the new profile and click "Install in WSL" for each workspace extension you want enabled (GitLens, etc.) — VS Code tracks WSL-remote extensions separately and reuses the shared WSL server data under `~/.vscode-server`. Set `WEZTERM_VSCODE_MAX_WINDOWS=<n>` in the same file if you want `Alt+v` to stop launching new folder windows after that many visible VS Code windows already exist; already-open folders still reuse their matching window, while new folders reuse the least recently used helper-tracked window with `--reuse-window --folder-uri`. The Windows helper's window-reuse key is `distro + folder`, not profile; if the folder is already open in another profile, `Alt+v` focuses that window instead of launching a new one — close the existing window first.
 8. Recommended: source `scripts/runtime/tmux-status-prompt-hook.sh` from your shell rc so the tmux status line reflects local `git` commands immediately instead of lagging up to 30s on the fallback poll. See [Tmux Status Prompt Hook](#tmux-status-prompt-hook) for the source line and a verification command.
 
+### Window Transparency / Frosted Glass
+
+Window look is chosen with an **appearance preset**: set
+`WEZTERM_APPEARANCE_PRESET` to `opaque` (default) or `frosted` in
+`wezterm-x/local/shared.env`. The full model — the layered
+window/tmux/tab-bar transparency, why acrylic needs a low opacity, the
+`front_end` pitfall, and how the two renderers stay in lockstep — lives in
+[appearance-presets.md](./appearance-presets.md). Read that before changing
+transparency behavior.
+
+To tune the active preset on one machine, add an `appearance` block to
+`wezterm-x/local/constants.lua` (template in `local.example/constants.lua`); it
+deep-merges over the preset (applied in `wezterm-x/lua/ui.lua`):
+
+- `window_background_opacity` (0.0–1.0) — whole-window alpha; lower is more see-through (and, with acrylic, more blur).
+- `text_background_opacity` (0.0–1.0) — alpha of ANSI-colored cell backgrounds; keep `1.0` so colored segments stay readable.
+- `win32_system_backdrop` — Windows 11 (22621+) blur: `'Acrylic'` | `'Mica'` | `'Tabbed'`. Ignored off Windows. Needs a low `window_background_opacity` to show; do NOT set `front_end` alongside it (OpenGL does not compose the DWM backdrop).
+- `macos_window_background_blur` — macOS blur radius (integer, e.g. `20`). Ignored off macOS.
+- `front_end` — `'OpenGL'` | `'WebGpu'` | `'Software'`. Escape hatch only, for a GPU that renders the default to an opaque swapchain; leave unset otherwise.
+
+Re-run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` and reload for changes to take effect.
+
 ## File Boundaries
 
 - `wezterm-x/workspaces.lua`: tracked shared workspace defaults
