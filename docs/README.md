@@ -31,8 +31,6 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`performance.md`](./performance.md).
 - Why tmux 3.6+ is required, IME flicker, DEC mode 2026 investigation:
   Read [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
-- Commit message format and split guidance:
-  Read [`commit-guidelines.md`](./commit-guidelines.md).
 
 ## Doc Rules
 
