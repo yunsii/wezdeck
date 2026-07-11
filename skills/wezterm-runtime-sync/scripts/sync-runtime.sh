@@ -320,6 +320,11 @@ prepare_runtime_subflow() {
     sync_trace "step=render-tmux-bindings status=completed"
   fi
 
+  if [[ -x "$REPO_ROOT/scripts/runtime/render-tmux-appearance.sh" ]]; then
+    "$REPO_ROOT/scripts/runtime/render-tmux-appearance.sh"
+    sync_trace "step=render-tmux-appearance status=completed"
+  fi
+
   # Mirror source → target directly. --delete removes stale files; the
   # --exclude flags protect per-target metadata files (written below)
   # from being deleted as "unknown to source" on subsequent syncs.

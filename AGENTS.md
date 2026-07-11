@@ -19,6 +19,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/keybindings.md`](docs/keybindings.md).
 - tmux UI, tab titles, status rendering, copy-mode, or visible terminal behavior:
   Read [`docs/tmux-ui.md`](docs/tmux-ui.md).
+- Window appearance presets (`opaque` / `frosted`), transparency /
+  frosted-glass, `win32_system_backdrop`, `window_background_opacity`, the
+  `WEZTERM_APPEARANCE_PRESET` selector, `render-tmux-appearance.sh`, or the
+  tab-bar / pane / status background colors that make the frosted look cohere:
+  Read [`docs/appearance-presets.md`](docs/appearance-presets.md).
 - Agent-attention pipeline: Claude hook install / upgrade, attention.json
   schema and transitions, tab badges + right-status counters, focus-based
   auto-ack, the `Alt+,` / `Alt+.` / `Alt+/` keyboard entry points, or
