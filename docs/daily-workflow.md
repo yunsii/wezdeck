@@ -112,4 +112,3 @@ That suite uses a dedicated temporary `tmux -L ...` socket, a temporary `HOME`, 
 ## Commit Workflow
 
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
-- For commit format, split guidance, and AI metadata, read [`commit-guidelines.md`](./commit-guidelines.md).

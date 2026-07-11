@@ -85,8 +85,6 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   placeholder used in `config/worktree-task.env`, or any path that
   spawns `claude` / `codex`:
   Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
-- Preparing a commit message or deciding commit split:
-  Read [`docs/commit-guidelines.md`](docs/commit-guidelines.md).
 
 ## Hard Rules
 
