@@ -59,10 +59,11 @@ opaque layers can each hide it. All must be transparent at once:
    a real blurred material *behind* the window. This is the actual "frosted"
    blur. Requires Windows 11 (build 22621+).
 3. **tmux pane/status background** — tmux paints every cell. An explicit
-   `window-active-style bg=<hex>` fills the whole pane with an opaque color and
-   hides everything above. The frosted preset uses `bg=default` on all of
-   `window-style`, `window-active-style`, `status-style` so cells inherit the
-   transparent terminal background.
+   `window-*-style bg=<hex>` fills the whole pane with an opaque color and hides
+   everything above. The frosted preset uses `bg=default` on all of
+   `window-style`, `window-active-style`, `status-style` so every cell inherits
+   the transparent, blurred terminal background. The active pane is distinguished
+   by its *border*, not its background — see *Focus differentiation* below.
 4. **Tab-bar colors** — the retro tab bar (and this repo's custom
    `titles.lua` segments) paint backgrounds from `palette.tab_bar_background` /
    `tab_inactive_bg` / `tab_active_bg`. The frosted preset sets those to
@@ -71,6 +72,36 @@ opaque layers can each hide it. All must be transparent at once:
    it stays identifiable. Attention badge colors are left opaque on purpose so
    state signaling survives.
 
+## Focus differentiation (pane border, not background)
+
+`bg=default` on every pane makes the frosted window uniform, which erases the
+focused-pane cue (`opaque` gets it from cream-vs-dim-cream backgrounds). Two hard
+constraints kill every *background*-based cue under frost, so do not retry them:
+
+- **A TUI paints its own cell background.** tmux `window-active-style bg=default`
+  only styles the cells an app leaves at "default"; an app like Claude Code or
+  vim paints an explicit background on its cells, which tmux passes straight
+  through to WezTerm. A pane running such a TUI therefore ignores the tmux pane
+  background entirely — you cannot make its interior transparent *or* tint it
+  from tmux. (Plain shell panes, which leave cells at default, do follow the tmux
+  pane background — that is why an empty shell pane goes transparent but a Claude
+  pane does not.)
+- **`text_background_opacity` is global and must be low for frost.** To let the
+  acrylic blur show *through* app panes, `text_background_opacity` is low (~0.25);
+  that same value makes ANY explicit fill (e.g. an inactive `bg=#eae9e1`)
+  translucent too. So "app panes frosted" and "inactive panes a solid color"
+  cannot both hold — they ride the same knob.
+
+So the focus cue is the **pane border**, set in `tmux.conf` (independent of pane
+background, survives the frost, works no matter what runs in the pane):
+
+- `pane-active-border-style fg=#8c6c3e` — the focused pane gets a bright accent
+  (the palette's cursor gold) frame.
+- `pane-border-style fg=#e6e1d7` — inactive panes get a faint grey frame.
+
+Caveat: pane borders only render when a window is split into ≥2 panes; a single
+full-window pane has no border (and needs no cue).
+
 ## Gotchas (each cost a debugging round — do not repeat)
 
 - **Acrylic needs a LOW opacity to be visible.** The blur is *behind* the
@@ -78,6 +109,26 @@ opaque layers can each hide it. All must be transparent at once:
   (`#f1f0e9`) paints too much solid color over the acrylic and it washes out to
   nothing — looking fully opaque even though it "applied". Pair acrylic with
   `window_background_opacity ≈ 0.4`; higher values progressively hide the blur.
+- **"Acrylic looks fully solid" is almost always opacity too high, not acrylic
+  failing.** Over the light background even `window_background_opacity = 0.4` can
+  paint enough solid color to wash the blur out to nothing — it looks opaque even
+  though acrylic "applied". Before blaming acrylic, confirm it *can* work:
+  Windows "Transparency effects" ON (Settings → Personalization → Colors; registry
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\EnableTransparency = 1`)
+  and Windows 11. Then pair acrylic with a LOW opacity (~0.2–0.3) so the blur
+  shows. Diagnose by **isolating the window-transparency layer first**: a
+  standalone probe with *only* `window_background_opacity` (no acrylic, no tmux)
+  proves plain opacity works; a second probe adding acrylic at the *same low*
+  opacity shows whether acrylic blurs. Only if the acrylic probe is still solid at
+  low opacity is acrylic genuinely unavailable — then disable it per machine in
+  `local/constants.lua` with `appearance = { win32_system_backdrop = false }`
+  (plain opacity, no blur). Backdrop changes are window-creation-time → need a
+  full WezTerm restart to apply; opacity changes hot-reload.
+- **For the blur to show through an app pane, `text_background_opacity` must also
+  be low.** A TUI paints its own opaque cell background; at
+  `text_background_opacity = 1.0` that background covers the acrylic and the app
+  pane stays solid even though the window is frosted. Set it low (matching
+  `window_background_opacity`, ~0.25) so the blur shows through app panes too.
 - **Do NOT set `front_end = 'OpenGL'` with acrylic.** OpenGL does not compose
   the DWM backdrop (the blur disappears). The default WebGpu backend composes it
   correctly. `front_end` exists only as an escape hatch for GPUs that render the
