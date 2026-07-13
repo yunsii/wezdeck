@@ -38,6 +38,34 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool IsIconic(IntPtr hWnd);
 
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+    public static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetWindowTextLength(IntPtr hWnd);
+
+    // Enough of the alt-tab window heuristic to count real VS Code editor
+    // windows: Electron runs every window under one Code.exe process, so
+    // Process.MainWindowHandle only ever surfaces one of them. Enumerating
+    // top-level windows and filtering owned/tool/untitled windows is the only
+    // way to see each editor window individually.
+    public const uint GwOwner = 4;
+    public const int GwlExStyle = -20;
+    public const long WsExToolWindow = 0x00000080;
+
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
 
