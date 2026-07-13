@@ -29,8 +29,3 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # targets long-running codex resume --last / claude --continue process groups
 # with no controlling TTY by default, so attached tmux panes are left alone.
 */30 * * * * /home/yuns/github/wezterm-config/scripts/runtime/agent-cleanup.sh --kill --min-age 12h
-
-# Detach ghost phone clients (mosh keeps them attached forever) idle >15min
-# on m-* mirror sessions, so they stop pinning shared windows at phone width.
-# Desktop clients are never candidates. See docs/mobile-access.md.
-*/5 * * * * /home/yuns/github/wezterm-config/scripts/runtime/mobile-client-janitor.sh --detach --min-idle 15m
