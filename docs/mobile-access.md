@@ -63,10 +63,27 @@ reachability acceptable. Decisions:
   desktop, press **Ctrl+T** (or double-tap space) — deliberate rather
   than any-key, so brushing the keyboard can't hijack an in-flight
   phone interaction. The phone regains control simply by sending again.
+- **Phone-spawned sessions are headless.** A session started from the
+  app is launched by `happy daemon` as a standalone process — it never
+  appears in any desktop pane, and it coexists with whatever session a
+  desktop pane is showing (a pane sitting in *remote mode* is just the
+  old session with its keyboard yielded; Ctrl+T reclaims it, nothing to
+  clean up). To move a phone-spawned conversation to the desktop, end
+  it on the phone first, then resume it in the directory (see
+  *Resuming a specific conversation*).
+- **Auth is per-machine, not per-client.** MCP OAuth tokens
+  (`~/.claude.json` credential store) and claude.ai connector grants are
+  shared by every session on this machine, Happy-wrapped or not. But
+  first-time OAuth flows need a browser callback and cannot be initiated
+  from a phone session (non-interactive) — authorize once in a desktop
+  interactive session via `/mcp`, then phone sessions just use it.
 - **Permission modes**: don't touch the phone's mode picker on
   desktop-started sessions (it would drop the session out of `auto`,
   which mobile pickers can't set back — Shift+Tab on the desktop
   restores it); phone-spawned sessions should use `default` or `plan`.
+  `defaultMode` in `~/.claude/settings.json` is machine-global and
+  applies to daemon-spawned sessions too, unless the app's new-session
+  flow sets an explicit mode.
 - Diagnostics: `happy doctor`. A relay outage only breaks phone sync —
   the desktop TUI keeps working as a plain claude session.
 - Findings from the integration spike (launcher diff verified end-to-end,
@@ -89,6 +106,32 @@ session-level modes (default / plan / acceptEdits / bypassPermissions).
 is not offered on mobile pickers — don't touch the selector on
 desktop-started sessions or the session drops out of auto (Shift+Tab on
 the desktop to restore); pick `default` or `plan` for phone-spawned ones.
+
+### Resuming a specific conversation
+
+- `happy --continue` — resume the directory's latest conversation (see
+  the opt-in decision above).
+- `happy --resume` (no arg) — passes through to claude's interactive
+  session picker for the current directory; the pick gets phone sync.
+- `happy resume <happy-session-id>` — exact resume by the ID shown in
+  the phone app's session details; works across directories.
+- All three: make sure no other process is still attached to the same
+  conversation before resuming it.
+
+### Known upstream issues (as of 2026-07)
+
+- **App misses new responses until the session is re-entered**
+  ([slopus/happy#1308](https://github.com/slopus/happy/issues/1308), fix
+  in progress via PR #1310; Android-flavored variant
+  [#1208](https://github.com/slopus/happy/issues/1208)). Mechanism: the
+  relay does not push ordinary messages — delivery rides the app's
+  websocket, which Android suspends when the app is backgrounded — and
+  on returning to foreground the app does not re-sync the visible
+  session. Re-entering the session forces a full fetch, which is why
+  that "fixes" it. Mitigations until the fix ships: exempt the Happy app
+  from vivo battery optimization / allow background running (same
+  treatment as Tailscale), keep the app foregrounded during long tasks,
+  and treat leave-and-re-enter as the manual sync gesture.
 
 ## Termux + ssh (shell work)
 
@@ -158,6 +201,7 @@ idea:
 | Phone can't reach `nut` at all | Tailscale app actually *Connected*; then try the IP `100.108.51.25` — carrier DNS answers the bare name with garbage when the tunnel is down |
 | ssh connected but laggy | `tailscale status` — `relay` means DERP fallback; usually recovers to `direct` on network change |
 | Happy phone client out of sync | Desktop session unaffected; check relay reachability, `happy doctor` |
+| Happy app shows stale conversation; new responses only appear after re-entering the session | Known upstream bug, not a local fault — see *Known upstream issues* above (#1308/#1208); battery-exempt the app, re-enter to force a full sync |
 | Chinese input dead in Termux | `enforce-char-based-input` present + full Exit restart + vivo IME (not Gboard) |
 | Nothing reachable after Windows reboot | WSL isn't started until something launches it; open WezTerm once (keepalive scheduled task is a known-not-done option) |
 
