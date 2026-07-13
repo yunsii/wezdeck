@@ -259,6 +259,7 @@ idea:
 | ssh connected but laggy | `tailscale status` — `relay` means DERP fallback; usually recovers to `direct` on network change |
 | Happy phone client out of sync | Desktop session unaffected; check relay reachability, `happy doctor` |
 | Happy app shows stale conversation; new responses only appear after re-entering the session | Known upstream bug, not a local fault — see *Known upstream issues* above (#1308/#1208); battery-exempt the app, re-enter to force a full sync |
+| Happy app QR-scan button does nothing (or camera opens but never recognizes the code) | Upstream: scanner needs Google Code Scanner / ML Kit, dead on GMS-less ROMs ([#36](https://github.com/slopus/happy/issues/36), fallback promised 2025-08, never shipped); camera-opens-but-won't-scan is [#1480](https://github.com/slopus/happy/issues/1480). Check vivo camera permission first, then GMS presence; for web/account auth the app-settings secret key bypasses QR entirely |
 | Chinese input dead in Termux | `enforce-char-based-input` present + full Exit restart + vivo IME (not Gboard) |
 | Nothing reachable after Windows reboot | WSL isn't started until something launches it; open WezTerm once (keepalive scheduled task is a known-not-done option) |
 
