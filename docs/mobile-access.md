@@ -1,180 +1,150 @@
 # Mobile Access
 
-Use this doc when you need anything about interacting with the WSL tmux
-sessions from an Android phone: the Tailscale + mosh transport, the `tm`
-mirror-session helper, Termux Chinese-input setup, the window-size sharing
-model, or troubleshooting a connection that stopped working or scrollback
-that turned phone-width.
+Use this doc when you need anything about interacting with this machine
+from an Android phone: the Happy client for agent sessions, the
+Tailscale + ssh path for shell work, Termux Chinese-input setup, or the
+tmux window-size sharing model that shaped this design.
 
-Built and verified 2026-07-12 on the `nut` host (vivo phone, node `v2509a`).
+Built 2026-07-12/13 on the `nut` host (vivo phone, node `v2509a`).
 
-## Architecture
+## Division of labor
 
-```
-Android phone                      Windows host
-┌──────────────────┐              ┌───────────────────────────┐
-│ Termux           │  WireGuard   │  WSL2 (Ubuntu, systemd)   │
-│  └ mosh/ssh ─────┼──────────────┼─→ sshd ─→ zsh ─→ tmux     │
-│ Tailscale app    │  P2P first,  │   tailscaled              │
-└──────────────────┘  DERP relay  │   existing tmux server    │
-                      fallback    └───────────────────────────┘
-```
-
-- **Transport**: Tailscale mesh VPN. No router port-forwarding, no public
-  IP, no Windows firewall rules — WSL2 stays NATed and unreachable except
-  through the tailnet. Traffic goes peer-to-peer when NAT traversal
-  succeeds (always on shared Wi-Fi) and falls back to Tailscale's DERP
-  relays (encrypted, free, but overseas — noticeable latency) otherwise.
-  Check with `tailscale status`: each peer line shows `direct` or `relay`.
-- **Session layer**: mosh on top of SSH. Survives network switches, lock
-  screen, and signal loss — the connection is effectively permanent until
-  explicitly ended (which cuts both ways; see *Ghost clients* below).
-- **tmux**: the phone attaches the same tmux server the desktop uses
-  (`~/.local/bin/tmux`, default socket), via a grouped mirror session.
-
-## Server-side pieces (WSL)
-
-All persistent via systemd (`systemd=true` in `/etc/wsl.conf`):
-
-| Piece | Detail |
+| Need | Path |
 | --- | --- |
-| `sshd` | Key-only: `/etc/ssh/sshd_config.d/10-key-only.conf` sets `PasswordAuthentication no` + `KbdInteractiveAuthentication no` |
-| `tailscaled` | Node `nut`, MagicDNS `nut.tailc0ce4c.ts.net` |
-| `mosh` + `fzf` | apt packages; mosh UDP 60000–61000 reachable only inside the tailnet |
-| `tm()` | Helper function at the end of `~/.zshrc` (machine-local, not in this repo) |
+| Interact with Claude Code sessions from the phone | **Happy** (app-layer sync, native mobile rendering) |
+| Run commands / inspect the machine from the phone | **Termux → ssh over Tailscale** |
 
-`~/.ssh/authorized_keys` holds two ed25519 keys: the phone (Termux) and the
-machine's own key (localhost self-tests, desktop self-ssh).
+The two paths share the Tailscale transport but are otherwise independent
+fallbacks for each other.
 
-## Phone-side pieces
+## Happy (agent sessions)
 
-- **Tailscale app**, same account, toggle must be *Connected* (VPN key icon
-  in the status bar). Android battery optimization kills it — exempt it.
-- **Termux** (F-Droid build, not Play Store) with `pkg install openssh mosh`.
-- `~/.termux/termux.properties` needs `enforce-char-based-input = true` for
-  Chinese input, then a full app restart (notification-bar **Exit**, not a
-  swipe-away). The stock vivo IME works with this flag; Gboard does not —
-  the flag makes Termux declare a `TYPE_NULL` input field and Gboard
-  responds by locking itself to a plain latin keyboard (upstream:
-  [termux-app#1539](https://github.com/termux/termux-app/issues/1539),
-  [#202](https://github.com/termux/termux-app/issues/202)). Fallback for a
-  broken IME: swipe the extra-keys row left to reveal Termux's plain text
-  input field, where any IME works fully.
+[Happy](https://happy.engineering/) ([slopus/happy](https://github.com/slopus/happy),
+npm package `happy`, MIT, free including the official relay and voice) is a
+third-party wrapper around the `claude` CLI — not a client of Anthropic's
+first-party Remote Control. It captures the structured session via the
+Agent SDK, syncs it E2E-encrypted (X25519 + AES-256-GCM) through a relay,
+and renders it natively per device. The desktop keeps its full-width TUI
+in the tmux pane; tmux never learns the phone exists, so the whole
+ghost-client / narrow-scrollback class of problems does not exist on this
+path. Control switches per keypress rather than typing simultaneously.
 
-## Daily use
+Status: trialed 2026-07-13 on the official relay — experience and CN
+reachability acceptable. Decisions:
+
+- **Official relay, no self-hosting** for lightweight use. E2E means
+  privacy gains nothing from self-hosting; worst failure mode is the
+  phone losing sync while the desktop session and the ssh path stay
+  intact. Revisit (Docker Compose happy-server + PostgreSQL + Redis, TLS
+  via `tailscale serve` on the `nut.tailc0ce4c.ts.net` cert,
+  `HAPPY_SERVER_URL` in `~/.config/shell-env.d/happy.env`, app-side
+  "Relay Server URL") only if the relay proves unreliable from CN or the
+  phone becomes a daily critical path.
+- **Decision 2026-07-13: manual opt-in, not the default launch path.**
+  `agent-launcher.sh` keeps spawning bare `claude`. Wrap a session with
+  Happy only when phone access is actually wanted: `cd <project> &&
+  happy --continue` resumes the directory's latest conversation with
+  phone sync (exit the pane's own claude first so two processes don't
+  resume the same conversation), or plain `happy` for a fresh session.
+  `~/.local/bin/happy` symlinks the fnm-global install so the command
+  resolves outside fnm-initialized shells.
+- Findings from the integration spike (launcher diff verified end-to-end,
+  then reverted — kept here so a future default-on switch is cheap):
+  `happy --continue` passes args through to claude and lands in a usable
+  session either way; `auto` permission mode works under the wrapper;
+  happy runs claude in an inner pty, so `pane_current_command` reads
+  `sh`, not `claude` — a default-on integration must stamp
+  `@wezterm_pane_role agent-cli:<profile>` from the launcher (role is
+  currently unset on managed panes, so `@agent_pane_match` / the
+  Ctrl+n / Ctrl+P bindings lean on the command-name fallback) and must
+  prepend the fnm default-alias bin to PATH (happy and its `env node`
+  shebang live there; tmux-spawned shells lack it — same trick as the
+  crontab). `happy codex` passthrough of `codex resume --last` was never
+  tested.
+
+Permission modes from the phone: the picker mirrors Claude Code's
+session-level modes (default / plan / acceptEdits / bypassPermissions).
+`auto` (the desktop default here, `defaultMode` in `~/.claude/settings.json`)
+is not offered on mobile pickers — don't touch the selector on
+desktop-started sessions or the session drops out of auto (Shift+Tab on
+the desktop to restore); pick `default` or `plan` for phone-spawned ones.
+
+## Termux + ssh (shell work)
 
 ```bash
-mosh yuns@nut          # or nut.tailc0ce4c.ts.net, or 100.108.51.25
-tm                     # fzf-pick a session → grouped mirror, phone-sized
-tm -g                  # glance mode: never resizes desktop windows
-# leave: Ctrl+b then d (detach; mirror self-destructs, real session untouched)
+ssh yuns@nut           # or nut.tailc0ce4c.ts.net, or 100.108.51.25
 ```
 
-`tm` (defined in `~/.zshrc`) opens a **grouped mirror session** named
-`m-<session>`: shared windows and processes, independent current-window.
-It filters `m-*` out of the picker (no mirror-of-mirror), reattaches with
-`-d` to kick stale clients, and sets `destroy-unattached on` so a detach
-cleans the mirror up. Zoom a pane (`Ctrl+b z`) to read a single pane on a
-small screen — but the zoom flag is shared with the desktop view.
+- **Transport**: Tailscale mesh VPN. No port-forwarding, no public IP —
+  WSL2 stays NATed; peer-to-peer when NAT traversal succeeds (always on
+  shared Wi-Fi), overseas DERP relay fallback otherwise (`tailscale
+  status` shows `direct` vs `relay` per peer). Phone must show
+  *Connected*; exempt the app from battery optimization.
+- **Server side** (all persistent via systemd): key-only sshd
+  (`/etc/ssh/sshd_config.d/10-key-only.conf`), dead-peer cleanup
+  (`20-keepalive.conf`: `ClientAliveInterval 30` + `ClientAliveCountMax 4`
+  → a vanished phone's tmux client detaches in ≤2 min), `tailscaled`
+  (node `nut`). mosh was retired 2026-07-13: tmux already provides session
+  persistence, so mosh's never-dying server bought nothing and was the
+  root cause of ghost clients pinning windows at phone width.
+- **Phone side**: Termux (F-Droid build) + `pkg install openssh`; an
+  `~/.ssh/config` alias with `ServerAliveInterval 30` is convenient.
+  `~/.ssh/authorized_keys` on the server holds the phone key and the
+  machine's own key (localhost self-tests).
+- Attaching tmux from the phone is possible (`tmux attach`) but no longer
+  part of the workflow — the `tm` mirror-session helper and the
+  `mobile-client-janitor.sh` cron task were removed 2026-07-13 once Happy
+  took over agent interaction (see git history for both).
 
-## The window-size model (read before "fixing" anything)
+## Termux Chinese input
 
-Empirically verified on an isolated tmux server (2026-07-12):
+`~/.termux/termux.properties` needs `enforce-char-based-input = true`,
+then a full app restart (notification-bar **Exit**, not a swipe-away).
+The stock vivo IME works with this flag; Gboard does not — the flag makes
+Termux declare a `TYPE_NULL` input field and Gboard responds by locking
+itself to a plain latin keyboard (upstream:
+[termux-app#1539](https://github.com/termux/termux-app/issues/1539),
+[#202](https://github.com/termux/termux-app/issues/202)). Fallback for a
+broken IME: swipe the extra-keys row left to reveal Termux's plain text
+input field, where any IME works fully. Server locale is C.UTF-8
+end-to-end (verified) — display is never the problem.
 
-- Window **size is a window property**, shared across grouped sessions.
-  With `window-size latest` (our value, the default), whichever client
-  last interacted with a window sizes it — attaching counts.
-- Desktop pressing any key reclaims full width instantly. A phone browsing
-  *other* windows never affects the desktop's window.
-- Lines a TUI (claude, etc.) emits while the window is phone-width are
-  hard-wrapped **permanently** in scrollback. tmux reflows only its own
-  soft-wraps; no terminal can un-wrap application output. Remedies:
-  shrink the width gap (smaller Termux font, landscape ≈ 90–120 cols), or
-  re-render the conversation at full width (`/resume` in the claude pane).
-  `clear-history` nukes the narrow segment along with everything else.
-- `tm -g` attaches with the `ignore-size` client flag: the phone client is
-  excluded from sizing entirely (verified: window stays desktop-sized no
-  matter what the phone does), at the cost of a clipped viewport on the
-  phone — fine for glancing, too cramped for real interaction.
-- A pane cannot be attached on its own (client → session → window → pane),
-  and "one pane rendered at two widths simultaneously" does not exist in
-  the pty model. Per-device full-fidelity rendering requires leaving the
-  terminal (app-level multi-client UIs).
+## The tmux window-size model (why Happy, in one section)
 
-## Ghost clients
+Empirically verified on an isolated tmux server (2026-07-12); kept here
+because it constrains any future "share the terminal with the phone"
+idea:
 
-Closing Termux or losing the network does **not** detach the server-side
-tmux client — mosh-server keeps it alive indefinitely, and as the "latest"
-client it keeps sizing shared windows at phone width while the desktop is
-idle (this is how phone-width scrollback appears without any phone
-interaction). Defenses:
-
-- Detach properly (`Ctrl+b d`) instead of just closing the app.
-- `tm` reattaches with `-d`, kicking stale clients of the same mirror.
-- `scripts/runtime/mobile-client-janitor.sh` runs from cron every 5
-  minutes (`wezterm-x/local/crontab`) and detaches `m-*` clients idle
-  longer than 15 minutes. Desktop clients are never candidates. Logs
-  under the `mobile_access` category in `runtime.log`.
-- Diagnose live: `tmux list-clients` — look for small `WxH` clients on
-  `m-*` sessions with old `client_activity`; `tmux detach-client -t
-  /dev/pts/N` removes one. The mirror self-destructs once empty.
-
-A ghost's damage is bounded by `history-limit` too: agent TUIs reprint
-their whole transcript on every resize, and the tmux default of 2000
-lines let a few narrow reprints evict all full-width scrollback — the
-repo `tmux.conf` now sets 10000 (new panes only).
+- Window size is a window property shared across grouped sessions; with
+  `window-size latest`, whichever client last interacted sizes it
+  (attaching counts). Per-client sizes are an upstream architectural
+  wontfix ([tmux#1877](https://github.com/tmux/tmux/issues/1877)).
+- Lines a TUI emits while a window is phone-width are hard-wrapped
+  permanently in scrollback; tmux reflows only its own soft-wraps. Worse,
+  agent TUIs reprint their whole transcript on every resize, so a few
+  narrow reprints can evict all full-width history — that is why the repo
+  `tmux.conf` sets `history-limit 10000` (default 2000; new panes only).
+  The conversation source of truth lives in the agent's own session log
+  (`/resume` re-renders at any width); scrollback is just a render cache.
+- "One pane rendered at two widths simultaneously" does not exist in the
+  pty model. Per-device full-fidelity rendering requires an app-layer
+  multi-client — which is exactly what Happy is.
 
 ## Troubleshooting
 
 | Symptom | First check |
 | --- | --- |
-| Cannot connect at all | Phone Tailscale app actually *Connected*; then try the IP `100.108.51.25` — carrier DNS answers the bare name `nut` with garbage when the tunnel is down |
-| `mosh` connects, input laggy | `tailscale status` — `relay` means DERP fallback; usually recovers to `direct` on network change |
-| Chinese input dead | `enforce-char-based-input = true` present, Termux fully restarted via Exit, IME is vivo's (not Gboard); paste-test to confirm the display path (server locale is C.UTF-8 end-to-end, verified fine) |
-| Desktop scrollback phone-width | Ghost client — see above |
+| Phone can't reach `nut` at all | Tailscale app actually *Connected*; then try the IP `100.108.51.25` — carrier DNS answers the bare name with garbage when the tunnel is down |
+| ssh connected but laggy | `tailscale status` — `relay` means DERP fallback; usually recovers to `direct` on network change |
+| Happy phone client out of sync | Desktop session unaffected; check relay reachability, `happy doctor` |
+| Chinese input dead in Termux | `enforce-char-based-input` present + full Exit restart + vivo IME (not Gboard) |
 | Nothing reachable after Windows reboot | WSL isn't started until something launches it; open WezTerm once (keepalive scheduled task is a known-not-done option) |
-
-## Next: app-layer agent-session sync (Happy) — planned, not started
-
-The terminal model caps how good phone interaction can get: one pty renders
-at one width, so sharing a live agent session always sacrifices one side
-(see *The window-size model*). The community's answer for the agent use
-case is to sync at the data layer instead — [Happy](https://happy.engineering/)
-([slopus/happy](https://github.com/slopus/happy), npm package `happy`)
-wraps the `claude` CLI, syncs the structured session E2E-encrypted through
-a relay server, and renders it natively per device. Desktop keeps its
-full-width TUI in the tmux pane (tmux never learns the phone exists — the
-whole ghost-client / narrow-scrollback class disappears on this path);
-the phone gets native scrolling, permission-request push, and voice input.
-Control switches per keypress rather than typing simultaneously.
-
-Adoption plan, in order:
-
-1. **Trial on the official relay** (zero-intrusion, ~10 min): `npm
-   install -g happy`, `happy --auth` (QR-pair the phone app), run `happy
-   claude` manually in a scratch shell. Validates the experience and the
-   official relay's reachability from CN networks before any investment.
-2. **Self-host the relay inside the tailnet** (kills the third-party
-   dependency; reuses the Tailscale transport already required for mosh):
-   official Docker Compose (happy-server + PostgreSQL + Redis, ~512MB),
-   TLS via `tailscale serve` on the `nut.tailc0ce4c.ts.net` cert, CLI
-   points at it with `HAPPY_SERVER_URL` (put it in
-   `~/.config/shell-env.d/happy.env`), phone app sets "Relay Server URL".
-   Note: push notifications ride the official channel and may need extra
-   setup or be lost when self-hosted — verify during the trial. Raises
-   the priority of the Windows-boot keepalive task below (postgres/redis
-   must survive reboots without opening WezTerm).
-3. **Launcher integration**: wrap the claude profile as `happy claude` in
-   `scripts/runtime/agent-launcher.sh` — the single launch site all
-   workspace first-opens / `Alt+g` / refresh / overflow cold-spawns share
-   (hard rule in `AGENTS.md`). After this, division of labor: Happy owns
-   agent-session interaction from the phone; the tmux + mosh path remains
-   for shell work and whole-screen glances.
 
 ## Known-not-done options
 
 - Windows boot keepalive task (`wsl.exe -d Ubuntu --exec sleep infinity`)
   so the phone can connect before WezTerm is first opened.
-- Self-hosted DERP for better relay latency from outside networks.
+- Default-on Happy launcher integration (spike verified and documented
+  above; flip only if manual opt-in proves too much friction).
 - Termux font: drop a CJK-capable mono ttf at `~/.termux/font.ttf`
   (Sarasa Term SC is the candidate) + `termux-reload-settings`.
