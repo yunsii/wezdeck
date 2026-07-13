@@ -81,9 +81,22 @@ reachability acceptable. Decisions:
   desktop-started sessions (it would drop the session out of `auto`,
   which mobile pickers can't set back — Shift+Tab on the desktop
   restores it); phone-spawned sessions should use `default` or `plan`.
-  `defaultMode` in `~/.claude/settings.json` is machine-global and
-  applies to daemon-spawned sessions too, unless the app's new-session
-  flow sets an explicit mode.
+  Start-mode differs by origin (verified in happy-cli source via
+  DeepWiki): desktop `happy` with no flags passes **no** mode, so the
+  session falls back to `defaultMode` in `~/.claude/settings.json`
+  (`auto` here); the app's new-session flow **always** stamps an
+  explicit mode from its "Agent defaults" setting. So prefer starting
+  sessions on the desktop — the only path that lands in `auto`, and the
+  session sits in a tmux pane covered by the attention/badge tooling
+  while staying fully phone-controllable. Keep the app's Agent defaults
+  on `default` or `plan`, never `yolo` (Happy's alias for
+  `bypassPermissions`, i.e. `--dangerously-skip-permissions`).
+- **One permission state per session, shared by both surfaces.**
+  Allow/deny answers and mode switches from either end apply to the
+  same session-level state (happy-cli `PermissionHandler`); the phone
+  is a control surface, not a sandboxed viewer. The only asymmetry is
+  vocabulary: a session can *sit in* `auto` with the phone attached
+  just fine — the phone just cannot *set* it (see below).
 - Diagnostics: `happy doctor`. A relay outage only breaks phone sync —
   the desktop TUI keeps working as a plain claude session.
 - Findings from the integration spike (launcher diff verified end-to-end,
@@ -100,10 +113,20 @@ reachability acceptable. Decisions:
   crontab). `happy codex` passthrough of `codex resume --last` was never
   tested.
 
-Permission modes from the phone: the picker mirrors Claude Code's
-session-level modes (default / plan / acceptEdits / bypassPermissions).
-`auto` (the desktop default here, `defaultMode` in `~/.claude/settings.json`)
-is not offered on mobile pickers — don't touch the selector on
+Permission modes from the phone: the picker is a hardcoded list —
+Claude Code's *older* vocabulary (default / plan / acceptEdits /
+bypassPermissions, plus the `yolo` alias). The current CLI accepts
+`acceptEdits / auto / bypassPermissions / manual / dontAsk / plan`, and
+the Agent SDK bundled inside happy is current too (0.3.207 as of
+happy 1.2.0) — the lag is Happy's **own wire-layer zod enum**, which
+validates mode strings at every hop (app / relay / cli), so unknown
+values are rejected before reaching claude. That is why `auto` can't be
+set (or restored) from mobile, and why fixing it is slow: extending the
+enum is a coordinated protocol change across relay + CLI + app-store
+releases — tracked in
+[slopus/happy#1156](https://github.com/slopus/happy/issues/1156), which
+falls into upstream's lowest review tier ("core refactors, discuss
+first"). Practical rule stands: don't touch the selector on
 desktop-started sessions or the session drops out of auto (Shift+Tab on
 the desktop to restore); pick `default` or `plan` for phone-spawned ones.
 
@@ -132,6 +155,21 @@ the desktop to restore); pick `default` or `plan` for phone-spawned ones.
   from vivo battery optimization / allow background running (same
   treatment as Tailscale), keep the app foregrounded during long tasks,
   and treat leave-and-re-enter as the manual sync gesture.
+- **No image / file attachments from the app**
+  ([slopus/happy#1319](https://github.com/slopus/happy/issues/1319),
+  roadmap-tracked, PR #1387 in flight). The roadmap marks attachments
+  `[hard]`: under E2E encryption they need an encrypted-storage design
+  first, so this is structurally slow. Workaround: push the screenshot
+  over the Termux + ssh path (`scp ~/storage/pictures/Screenshots/x.png
+  yuns@nut:/tmp/`; needs `termux-setup-storage` once) and ask the
+  session to Read that path.
+- **Upstream maintenance model** (their `docs/CONTRIBUTING.md`,
+  checked 2026-07): issues get AI bulk triage, no individual replies —
+  silence is not rejection. Review priority ladder: bug fixes > UI >
+  features > refactors > core refactors (wire/relay/server changes need
+  prior discussion). Escalation path: tag `@bra1nDump` on the PR/issue;
+  PRs must show end-to-end proof (recording/screenshots). Watch
+  Releases/changelog, not issues, to learn what actually lands.
 
 ## Termux + ssh (shell work)
 
