@@ -187,8 +187,41 @@ if ([string]::IsNullOrWhiteSpace(\$processName)) { \$processName = 'Code' }
 \$maxWindows = 0
 if ($(windows_powershell_quote "$max_windows") -match '^[0-9]+$') { \$maxWindows = [int]$(windows_powershell_quote "$max_windows") }
 if (\$maxWindows -gt 0) {
-  \$visibleWindows = @(Get-Process -Name \$processName -ErrorAction SilentlyContinue | Where-Object { \$_.MainWindowHandle -ne 0 })
-  if (\$visibleWindows.Count -ge \$maxWindows) {
+  if (-not ([System.Management.Automation.PSTypeName]'WezWindowCounter').Type) {
+    Add-Type -TypeDefinition @"
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+public static class WezWindowCounter {
+  private delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
+  [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc cb, IntPtr lParam);
+  [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hWnd);
+  [DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+  [DllImport("user32.dll", EntryPoint="GetWindowLongPtrW")] private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+  [DllImport("user32.dll")] private static extern int GetWindowTextLength(IntPtr hWnd);
+  [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+  public static int Count(int[] processIds) {
+    var ids = new HashSet<int>(processIds);
+    int total = 0;
+    EnumWindows(delegate(IntPtr hWnd, IntPtr lParam) {
+      if (!IsWindowVisible(hWnd)) return true;
+      if (GetWindow(hWnd, 4) != IntPtr.Zero) return true;
+      if ((GetWindowLongPtr(hWnd, -20).ToInt64() & 0x80L) != 0) return true;
+      if (GetWindowTextLength(hWnd) == 0) return true;
+      uint pid;
+      GetWindowThreadProcessId(hWnd, out pid);
+      if (pid != 0 && ids.Contains((int)pid)) total++;
+      return true;
+    }, IntPtr.Zero);
+    return total;
+  }
+}
+"@
+  }
+  \$processIds = @(Get-Process -Name \$processName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id)
+  \$windowCount = 0
+  if (\$processIds.Count -gt 0) { \$windowCount = [WezWindowCounter]::Count([int[]]\$processIds) }
+  if (\$windowCount -ge \$maxWindows) {
     Start-Process -FilePath $(windows_powershell_quote "$code_exe") -ArgumentList @(${arg_list}, '--reuse-window')
     exit \$LASTEXITCODE
   }

@@ -4,18 +4,18 @@ namespace WezTerm.WindowsHostHelper;
 
 internal static class WindowQuery
 {
-    public static HashSet<IntPtr> CaptureVisibleProcessWindowHandles(string expectedProcessName)
+    // Enumerate every visible top-level editor window owned by the target
+    // process group. Unlike Process.MainWindowHandle (one handle per process),
+    // this sees each Electron/VS Code window individually, which is what the
+    // max-window cap needs to count correctly.
+    public static List<WindowMatch> EnumerateVisibleTopLevelWindows(string expectedProcessName)
     {
-        var windowHandles = new HashSet<IntPtr>();
+        var processIds = new HashSet<int>();
         foreach (var process in Process.GetProcessesByName(expectedProcessName))
         {
             try
             {
-                process.Refresh();
-                if (process.MainWindowHandle != IntPtr.Zero)
-                {
-                    windowHandles.Add(process.MainWindowHandle);
-                }
+                processIds.Add(process.Id);
             }
             finally
             {
@@ -23,11 +23,77 @@ internal static class WindowQuery
             }
         }
 
+        var windows = new List<WindowMatch>();
+        if (processIds.Count == 0)
+        {
+            return windows;
+        }
+
+        NativeMethods.EnumWindows((windowHandle, _) =>
+        {
+            if (!IsCountableTopLevelWindow(windowHandle))
+            {
+                return true;
+            }
+
+            NativeMethods.GetWindowThreadProcessId(windowHandle, out var processId);
+            if (processId != 0 && processIds.Contains((int)processId))
+            {
+                windows.Add(new WindowMatch((int)processId, windowHandle));
+            }
+
+            return true;
+        }, IntPtr.Zero);
+
+        return windows;
+    }
+
+    private static bool IsCountableTopLevelWindow(IntPtr windowHandle)
+    {
+        if (!NativeMethods.IsWindowVisible(windowHandle))
+        {
+            return false;
+        }
+
+        // Owned windows are popups/dialogs, not standalone editor windows.
+        if (NativeMethods.GetWindow(windowHandle, NativeMethods.GwOwner) != IntPtr.Zero)
+        {
+            return false;
+        }
+
+        var exStyle = NativeMethods.GetWindowLongPtr(windowHandle, NativeMethods.GwlExStyle).ToInt64();
+        if ((exStyle & NativeMethods.WsExToolWindow) != 0)
+        {
+            return false;
+        }
+
+        // Real editor windows always carry a title; hidden helper windows do not.
+        return NativeMethods.GetWindowTextLength(windowHandle) > 0;
+    }
+
+    public static HashSet<IntPtr> CaptureVisibleProcessWindowHandles(string expectedProcessName)
+    {
+        var windowHandles = new HashSet<IntPtr>();
+        foreach (var window in EnumerateVisibleTopLevelWindows(expectedProcessName))
+        {
+            windowHandles.Add(window.WindowHandle);
+        }
+
         return windowHandles;
     }
 
     public static WindowMatch? FindFirstVisibleProcessWindow(string expectedProcessName)
     {
+        foreach (var window in EnumerateVisibleTopLevelWindows(expectedProcessName))
+        {
+            if (NativeMethods.IsWindow(window.WindowHandle))
+            {
+                return window;
+            }
+        }
+
+        // Fall back to the process main-window scan if enumeration finds nothing
+        // (e.g. a window that transiently reports no title during startup).
         foreach (var process in Process.GetProcessesByName(expectedProcessName))
         {
             try
@@ -52,19 +118,11 @@ internal static class WindowQuery
         var stopwatch = Stopwatch.StartNew();
         while (stopwatch.ElapsedMilliseconds < timeoutMs)
         {
-            foreach (var process in Process.GetProcessesByName(expectedProcessName))
+            foreach (var window in EnumerateVisibleTopLevelWindows(expectedProcessName))
             {
-                try
+                if (!existingWindowHandles.Contains(window.WindowHandle))
                 {
-                    process.Refresh();
-                    if (process.MainWindowHandle != IntPtr.Zero && !existingWindowHandles.Contains(process.MainWindowHandle))
-                    {
-                        return new WindowMatch(process.Id, process.MainWindowHandle);
-                    }
-                }
-                finally
-                {
-                    process.Dispose();
+                    return window;
                 }
             }
 
