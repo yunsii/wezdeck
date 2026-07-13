@@ -48,6 +48,27 @@ reachability acceptable. Decisions:
   resume the same conversation), or plain `happy` for a fresh session.
   `~/.local/bin/happy` symlinks the fnm-global install so the command
   resolves outside fnm-initialized shells.
+
+### Workflow
+
+- **Capability is per-session.** Each running `happy` process registers
+  one session in the phone app; sessions launched as bare `claude` are
+  invisible to the phone. When the wrapper process exits, the session
+  drops off the app. Manual opt-in therefore means: you grant phone
+  access conversation by conversation.
+- **Input is single-writer with explicit handoff; viewing is always
+  live on both ends.** Sending a message from the phone flips the
+  session into *remote mode*: the desktop TUI keeps rendering everything
+  in real time but its keyboard yields. To take control back on the
+  desktop, press **Ctrl+T** (or double-tap space) — deliberate rather
+  than any-key, so brushing the keyboard can't hijack an in-flight
+  phone interaction. The phone regains control simply by sending again.
+- **Permission modes**: don't touch the phone's mode picker on
+  desktop-started sessions (it would drop the session out of `auto`,
+  which mobile pickers can't set back — Shift+Tab on the desktop
+  restores it); phone-spawned sessions should use `default` or `plan`.
+- Diagnostics: `happy doctor`. A relay outage only breaks phone sync —
+  the desktop TUI keeps working as a plain claude session.
 - Findings from the integration spike (launcher diff verified end-to-end,
   then reverted — kept here so a future default-on switch is cheap):
   `happy --continue` passes args through to claude and lands in a usable
