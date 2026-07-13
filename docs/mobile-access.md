@@ -47,7 +47,26 @@ reachability acceptable. Decisions:
   phone sync (exit the pane's own claude first so two processes don't
   resume the same conversation), or plain `happy` for a fresh session.
   `~/.local/bin/happy` symlinks the fnm-global install so the command
-  resolves outside fnm-initialized shells.
+  resolves outside fnm-initialized shells. Promotion is lossless and
+  reversible — conversations persist per directory independent of the
+  hosting process, so any bare session can be promoted later and
+  demoted back (`claude --continue`). Full-fleet wrapping was
+  considered and rejected: it pays the wrapper tax on every pane
+  (relay registration, injected prompt rules, `pane_current_command`
+  reading `sh`) for a capability most sessions never use.
+- **Decision 2026-07-13: Happy is the core phone channel; first-party
+  remote control rejected.** Both vendors ship first-party options now,
+  evaluated and passed over because the agent backend here must stay
+  swappable: Claude's Remote Control (`/rc`, research preview 2026-02,
+  push + phone attachments included) is Claude-only, requires claude.ai
+  OAuth straight against `api.anthropic.com` (any `ANTHROPIC_BASE_URL`
+  gateway disables it), and would strand the phone workflow on an agent
+  switch; Codex Remote (GA 2026-06-25) only accepts the ChatGPT desktop
+  app (macOS/Windows) as host — Codex CLI on Linux/WSL cannot be
+  steered at all (openai/codex#9200). Happy is agent-agnostic
+  (claude / codex / acp backends) with one promotion flow regardless of
+  backend. Re-evaluate only if the backend consolidates on a single
+  vendor long-term.
 
 ### Workflow
 
@@ -248,6 +267,18 @@ idea:
 - Windows boot keepalive task (`wsl.exe -d Ubuntu --exec sleep infinity`)
   so the phone can connect before WezTerm is first opened.
 - Default-on Happy launcher integration (spike verified and documented
-  above; flip only if manual opt-in proves too much friction).
+  above; superseded in spirit by the promote-current-pane helper below —
+  flip only if even per-pane promotion proves too much friction).
+- Promote-current-pane helper: a manifest-driven binding that respawns
+  the focused agent pane into the Happy wrapper (`happy --continue`,
+  `happy codex ...` per profile) and back to the bare CLI. This is the
+  planned desktop-script follow-up to the core-channel decision above.
+  Must apply the two integration-spike findings: prepend the fnm
+  default-alias bin to PATH, and stamp `@wezterm_pane_role
+  agent-cli:<profile>` on respawn so pane navigation survives
+  `pane_current_command` reading `sh`; route the respawn through
+  `agent-launcher.sh` semantics rather than a raw `respawn-pane`
+  command string, and respect the refresh-current-window rule (only
+  ever touch the focused pane).
 - Termux font: drop a CJK-capable mono ttf at `~/.termux/font.ttf`
   (Sarasa Term SC is the candidate) + `termux-reload-settings`.
