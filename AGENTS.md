@@ -33,6 +33,10 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   `tmux-popup-active.sh` wrappers, or the
   `wezterm-x/local/crontab` install workflow:
   Read [`docs/reminders.md`](docs/reminders.md).
+- Phone / Android access to the tmux sessions: Tailscale + mosh + Termux,
+  the `tm` mirror-session helper, grouped-session window sizing, ghost
+  mosh clients, or Termux Chinese input:
+  Read [`docs/mobile-access.md`](docs/mobile-access.md).
 - Headless Chrome debug instance, auto-start behavior, `Alt+b` /
   `Alt+Shift+b`, `chrome://inspect` workflow, or the right-status `CDP·…`
   badge:
