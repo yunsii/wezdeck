@@ -160,6 +160,44 @@ the desktop to restore); pick `default` or `plan` for phone-spawned ones.
 - All three: make sure no other process is still attached to the same
   conversation before resuming it.
 
+### Context compaction and what each surface shows
+
+- **Compaction is a claude-engine operation, not a Happy one**, and it
+  fires by context size regardless of which surface sent the messages —
+  so a long conversation driven *from the phone* triggers auto-compact
+  on the hosting claude process just as a desktop-driven one does. The
+  phone cannot trigger `/compact` manually (a local-only command, absent
+  from the mobile command set), but it absolutely triggers auto-compact
+  indirectly by filling the shared context.
+- **The full transcript is never lost as data.** Two authoritative
+  append-only copies hold it: claude's on-disk session `.jsonl` (what
+  `--resume` reads) and Happy's synced store. Compaction only rewrites
+  the *context fed to the model*; it does not delete recorded messages.
+  In Happy's live view, compaction arrives as a `Compaction completed`
+  event message (verified in `reducer.ts`) that only zeroes the
+  usage/`contextSize` counters — prior messages stay visible and
+  accumulate append-only.
+- **UI asymmetry after compaction**: in each surface's *normal scroll
+  view*, the phone keeps the full continuous stream, whereas the desktop
+  TUI's active-conversation view collapses to the summary (the raw
+  pre-compaction lines remain only in tmux scrollback / the session
+  file, not the live transcript). So the phone can appear to show more
+  of the conversation than the desktop, though the data behind both is
+  the same.
+- **Open question — does an app re-enter (force refetch) restore
+  pre-compaction messages?** Not settled. `happy --continue` promotion
+  *does* include them (it reads the full `.jsonl`, pre-compaction rows
+  intact, and flushes them to the server). But for the in-app
+  leave-and-re-enter path the server model is "patchable canonical
+  messages" (per-message updates keyed by `id`/`seq`), not a plain
+  append-only log — DeepWiki gave contradictory readings on whether a
+  fresh `/v3/sessions/{id}/messages` fetch after compaction returns the
+  pre-compaction rows. Mechanics (stable seqs, jsonl retention,
+  patch≠delete) lean toward "retained", but this is unverified. **To
+  confirm: desktop-start a session, chat past one auto-compact, then
+  leave-and-re-enter on the phone and check whether pre-compaction
+  messages are still there.** Treat as unknown until measured.
+
 ### Known upstream issues (as of 2026-07)
 
 - **App misses new responses until the session is re-entered**
