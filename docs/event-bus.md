@@ -203,6 +203,9 @@ accumulate forever.
 | `attention.tick` | `scripts/runtime/agent-attention/emit.sh` (agent hooks) | `titles.lua` (refresh right-status counter) | OSC (hook runs in regular pane) | sub-frame |
 | `attention.tick.echo` | `scripts/runtime/agent-attention/emit.sh` (sidecar to every OSC `attention.tick`) | `titles.lua` (log + fallback `reload_state` when the paired OSC tick is missing) | file (forced unconditionally) | 0–250 ms |
 | `attention.jump` | `native/picker/cmd_attention.go` + `scripts/runtime/tmux-attention-picker.sh` (Alt+/ picker selection) | `titles.lua` (mux activate + spawn `attention-jump.sh --direct`) | file (forced via `WEZTERM_EVENT_FORCE_FILE=1`) | 0–250 ms |
+| `tab.activate_visible` | `scripts/runtime/tab-overflow-dispatch.sh` (Alt+t pick of a live visible session) | `titles.lua` (foreground workspace + activate WezTerm tab) | file (forced) | 0–250 ms |
+| `tab.activate_overflow` | `scripts/runtime/tab-overflow-attach.sh` / `tab-overflow-cold-spawn.sh` (after switch-client into overflow) | `titles.lua` (refresh overflow pane→session map + activate overflow tab) | file (forced) | 0–250 ms |
+| `tab.spawn_overflow` | overflow cold-spawn fallback path when attach cannot complete the activation alone | `titles.lua` (spawn/ensure overflow tab then activate) | file (forced) | 0–250 ms |
 
 `attention.tick.echo` is the **OSC-drop fallback + drop detector**. The
 hook emits it via `wezterm_event_send_file` whenever the primary

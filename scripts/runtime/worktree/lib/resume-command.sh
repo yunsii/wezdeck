@@ -51,15 +51,61 @@ resume_command_active_profile() {
   local wezterm_repo="${1:-}"
   local profile="${MANAGED_AGENT_PROFILE:-}"
   local shared_env=""
+  local worktree_env=""
 
   if [[ -z "$profile" && -n "$wezterm_repo" ]]; then
     shared_env="$wezterm_repo/wezterm-x/local/shared.env"
     profile="$(resume_command_extract_value "$shared_env" MANAGED_AGENT_PROFILE 2>/dev/null || true)"
   fi
+  # Match cold-spawn / worktree-task: when the machine has not selected a
+  # profile in shared.env, accept the tracked default from worktree-task.env.
+  if [[ -z "$profile" && -n "$wezterm_repo" ]]; then
+    worktree_env="$wezterm_repo/config/worktree-task.env"
+    profile="$(resume_command_extract_value "$worktree_env" WT_PROVIDER_AGENT_PROFILE 2>/dev/null || true)"
+  fi
 
   profile="${profile:-claude}"
   profile="${profile%-resume}"
   printf '%s\n' "$profile"
+}
+
+resume_command_expand_placeholders() {
+  local resolved="${1:-}"
+  local wezterm_repo="${2:-}"
+  # ${WEZTERM_REPO} is the canonical placeholder for the wezterm-config
+  # repo root in worktree-task.env — used so resume commands can reference
+  # repo-internal scripts (agent-launcher.sh) without hardcoding an
+  # absolute path. Expanded here (rather than relying on the shell that
+  # eventually runs the command) because tmux fork-execs the resolved
+  # string verbatim via `sh -c`, and a bare ${WEZTERM_REPO} would expand
+  # to empty and fail with `not found`.
+  # Keep in lockstep with wezterm-x/lua/config/managed_cli.lua::expand_placeholders.
+  if [[ -n "$wezterm_repo" && -n "$resolved" ]]; then
+    resolved="${resolved//\$\{WEZTERM_REPO\}/$wezterm_repo}"
+  fi
+  printf '%s\n' "$resolved"
+}
+
+resume_command_lookup_profile_key() {
+  local wezterm_repo="${1:-}"
+  local key="${2:?missing key}"
+  local user_file="${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env"
+  local repo_file=""
+  local resolved="" candidate value
+
+  if [[ -n "$wezterm_repo" ]]; then
+    repo_file="$wezterm_repo/config/worktree-task.env"
+  fi
+
+  for candidate in "$user_file" "$repo_file"; do
+    [[ -n "$candidate" ]] || continue
+    if value="$(resume_command_extract_value "$candidate" "$key" 2>/dev/null)"; then
+      resolved="$value"
+    fi
+  done
+
+  [[ -n "$resolved" ]] || return 1
+  resume_command_expand_placeholders "$resolved" "$wezterm_repo"
 }
 
 # resolve_resume_primary_command <wezterm_config_repo>
@@ -74,31 +120,57 @@ resolve_resume_primary_command() {
   [[ -n "$normalized" ]] || return 0
 
   local key="WT_PROVIDER_AGENT_PROFILE_${normalized}_RESUME_COMMAND"
-  local user_file="${XDG_CONFIG_HOME:-$HOME/.config}/worktree-task/config.env"
-  local repo_file=""
-  if [[ -n "$wezterm_repo" ]]; then
-    repo_file="$wezterm_repo/config/worktree-task.env"
-  fi
+  resume_command_lookup_profile_key "$wezterm_repo" "$key" || return 0
+}
 
+# resolve_managed_primary_command <wezterm_config_repo>
+# Canonical managed-CLI argv string for every shell launch path that
+# builds a fresh primary pane (Alt+g on-demand, refresh, cold-spawn).
+# Preference: RESUME_COMMAND → bare COMMAND → profile name.
+# Always expands ${WEZTERM_REPO}. Never prints empty when a profile is known.
+resolve_managed_primary_command() {
+  local wezterm_repo="${1:-}"
   local resolved=""
-  local candidate
-  for candidate in "$user_file" "$repo_file"; do
-    [[ -n "$candidate" ]] || continue
-    if value="$(resume_command_extract_value "$candidate" "$key" 2>/dev/null)"; then
-      resolved="$value"
-    fi
-  done
+  local profile normalized key
 
-  [[ -n "$resolved" ]] || return 0
-  # ${WEZTERM_REPO} is the canonical placeholder for the wezterm-config
-  # repo root in worktree-task.env — used so resume commands can reference
-  # repo-internal scripts (agent-launcher.sh) without hardcoding an
-  # absolute path. Expanded here (rather than relying on the shell that
-  # eventually runs the command) because tmux fork-execs the resolved
-  # string verbatim via `sh -c`, and a bare ${WEZTERM_REPO} would expand
-  # to empty and fail with `not found`.
-  if [[ -n "$wezterm_repo" ]]; then
-    resolved="${resolved//\$\{WEZTERM_REPO\}/$wezterm_repo}"
+  resolved="$(resolve_resume_primary_command "$wezterm_repo" || true)"
+  if [[ -n "$resolved" ]]; then
+    printf '%s\n' "$resolved"
+    return 0
   fi
-  printf '%s\n' "$resolved"
+
+  profile="$(resume_command_active_profile "$wezterm_repo")"
+  normalized="$(resume_command_normalize_profile_key "$profile")"
+  if [[ -n "$normalized" ]]; then
+    key="WT_PROVIDER_AGENT_PROFILE_${normalized}_COMMAND"
+    if resolved="$(resume_command_lookup_profile_key "$wezterm_repo" "$key" 2>/dev/null)"; then
+      printf '%s\n' "$resolved"
+      return 0
+    fi
+  fi
+
+  printf '%s\n' "$profile"
+}
+
+# resume_command_split_argv <command_string>
+# Emit one argv token per line. Prefers xargs (POSIX single/double quotes);
+# falls back to naïve whitespace split when xargs rejects nested quotes.
+resume_command_split_argv() {
+  local cmd="${1:-}"
+  local tokens_output token
+  [[ -n "$cmd" ]] || return 0
+
+  if tokens_output="$(printf '%s\n' "$cmd" | xargs -n1 printf '%s\n' 2>/dev/null)" \
+     && [[ -n "$tokens_output" ]]; then
+    while IFS= read -r token; do
+      [[ -n "$token" ]] && printf '%s\n' "$token"
+    done <<< "$tokens_output"
+    return 0
+  fi
+
+  # shellcheck disable=SC2206
+  local -a naive=( $cmd )
+  for token in "${naive[@]}"; do
+    printf '%s\n' "$token"
+  done
 }

@@ -6,6 +6,8 @@ TMUX_CONF="$SCRIPT_DIR/../../tmux.conf"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/runtime-log-lib.sh"
 # shellcheck disable=SC1091
+source "$SCRIPT_DIR/managed-shell-lib.sh"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/tmux-version-lib.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/tmux-worktree-lib.sh"
@@ -113,27 +115,6 @@ repo_root_path() {
   printf '%s\n' "$repo_root"
 }
 
-resolve_login_shell() {
-  if [[ -n "${WEZTERM_MANAGED_SHELL:-}" && -x "${WEZTERM_MANAGED_SHELL:-}" ]]; then
-    printf '%s\n' "$WEZTERM_MANAGED_SHELL"
-    return 0
-  fi
-
-  if [[ -n "${SHELL:-}" && -x "${SHELL:-}" ]]; then
-    printf '%s\n' "$SHELL"
-    return 0
-  fi
-
-  local candidate
-  for candidate in /bin/zsh /usr/bin/zsh /bin/bash /usr/bin/bash /bin/sh /usr/bin/sh; do
-    if [[ -x "$candidate" ]]; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
-
-  printf '/bin/sh\n'
-}
 build_primary_shell_command() {
   local command_string=""
   local login_shell quoted_shell quoted_wrapper

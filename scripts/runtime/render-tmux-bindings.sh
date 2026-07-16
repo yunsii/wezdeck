@@ -7,7 +7,7 @@
 # as inline bind-key lines inside tmux.conf.
 #
 # Output: wezterm-x/tmux/chord-bindings.generated.conf (gitignored). tmux.conf
-# loads it via `source-file -q`, so running wezterm-runtime-sync between
+# loads it via `source-file -Fq`, so running wezterm-runtime-sync between
 # manifest / override edits is what makes changes visible to tmux.
 #
 # Scope in this file:
