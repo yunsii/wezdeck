@@ -215,8 +215,8 @@ if [[ ! -s "$prefetch_file" ]]; then
   exit 0
 fi
 
-repo_root="$(cd "$script_dir/../.." && pwd)"
-picker_binary="$repo_root/native/picker/bin/picker"
+# shellcheck disable=SC1091
+. "$script_dir/picker-bin-lib.sh"
 dispatch_script="$script_dir/tab-overflow-dispatch.sh"
 
 # Pin the picker on the file transport (popup pty has no DCS pass-through
@@ -225,13 +225,17 @@ dispatch_script="$script_dir/tab-overflow-dispatch.sh"
 picker_event_dir="$(wezterm_event_dir)"
 mkdir -p "$picker_event_dir" 2>/dev/null || true
 
-if [[ ! -x "$picker_binary" ]]; then
-  # Hard fallback: the legacy single-workspace tmux display-menu. Lists
-  # only the active workspace's items and uses tmux-native accelerators
-  # (no fuzzy filter, no cross-workspace). Logs so we know when a host is
-  # missing the Go binary.
-  runtime_log_warn overflow "Go picker missing — falling back to display-menu" \
-    "trace=$trace_id" "binary=$picker_binary"
+picker_binary=""
+picker_rc=0
+picker_binary="$(picker_bin_require "$script_dir" "Alt+t")" || picker_rc=$?
+if (( picker_rc == 1 )); then
+  exit 0
+fi
+if (( picker_rc == 2 )); then
+  # WEZTERM_ALLOW_BASH_PICKER=1: legacy single-workspace tmux display-menu
+  # (no fuzzy filter, no cross-workspace).
+  runtime_log_warn overflow "Go picker missing — WEZTERM_ALLOW_BASH_PICKER display-menu path" \
+    "trace=$trace_id"
   declare -a menu_args
   item_count=0
   accelerator_chars='123456789abcdefghijklmnopqrstuvwxyz'

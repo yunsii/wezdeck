@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# DEPRECATED as the default UI. Popups are Go-only via
+# native/picker/bin/picker. Reached only when WEZTERM_ALLOW_BASH_PICKER=1
+# and the Go binary is missing (see docs/picker-release.md).
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

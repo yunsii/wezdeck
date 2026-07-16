@@ -470,7 +470,8 @@ matches **workspace + label + cwd** lowercase, so `cfg neo` lands on
 scope between *all workspaces* (default) and *current workspace only*.
 `Esc` clears the filter when non-empty, otherwise closes; a second
 `Alt+x` always closes (toggle behaviour). When the Go binary is missing
-the picker falls back to the legacy single-workspace `tmux display-menu`.
+the menu toasts and refuses to open (Go-only). Legacy single-workspace
+`tmux display-menu` is available only with `WEZTERM_ALLOW_BASH_PICKER=1`.
 
 Picker dispatch (`tab-overflow-dispatch.sh`):
 
@@ -529,7 +530,7 @@ the positions of members that remain visible.
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` rank tier + score per session, sorts by `is_current desc, rank_tier desc, rank_score desc, event_count desc, snap_idx asc` (activity-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (falls back to `tmux display-menu` for the active workspace when the Go binary is missing) |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` rank tier + score per session, sorts by `is_current desc, rank_tier desc, rank_score desc, event_count desc, snap_idx asc` (activity-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (Go binary required; `WEZTERM_ALLOW_BASH_PICKER=1` unlocks legacy `tmux display-menu` for the active workspace only) |
 | Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |
@@ -586,8 +587,9 @@ Consumers (all in `attention.lua`):
 **Picker payload** (Alt+/) appends the resolved session name as the
 trailing v1 field: `v1|jump|<sid>|<wp>|<sock>|<win>|<pane>|<session>`
 (and `v1|recent|...|<session>`). Both Go picker (`cmd_attention.go`)
-and bash fallback (`tmux-attention-picker.sh`) producers resolve the
-name via `tmux -S <socket> display-message -t <window> '#S'`. Lua's
+and the deprecated bash path (`tmux-attention-picker.sh`, only with
+`WEZTERM_ALLOW_BASH_PICKER=1`) resolve the name via
+`tmux -S <socket> display-message -t <window> '#S'`. Lua's
 `parse_jump_payload` is nil-tolerant — older payloads without the
 trailing field still parse and drop into the legacy literal-pane
 fallback.
