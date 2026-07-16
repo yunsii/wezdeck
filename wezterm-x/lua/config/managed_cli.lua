@@ -3,7 +3,7 @@ local M = {}
 -- Longer suffixes must precede shorter ones so `FOO_COMMAND_LIGHT` matches
 -- `COMMAND_LIGHT` instead of being mis-parsed as profile name `FOO_COMMAND`
 -- with suffix `LIGHT`. Lua patterns have no alternation, so match each.
-local PROFILE_FIELD_SUFFIXES = { 'COMMAND_LIGHT', 'COMMAND_DARK', 'PROMPT_FLAG', 'COMMAND' }
+local PROFILE_FIELD_SUFFIXES = { 'COMMAND_LIGHT', 'COMMAND_DARK', 'COMMAND' }
 
 local function match_profile_key(key)
   for _, suffix in ipairs(PROFILE_FIELD_SUFFIXES) do
@@ -117,7 +117,6 @@ function M.parse_managed_cli_env(env, opts)
         local profile = parsed.profiles[profile_name] or {
           command = nil,
           variants = {},
-          prompt_flag = nil,
         }
         parsed.profiles[profile_name] = profile
 
@@ -127,8 +126,6 @@ function M.parse_managed_cli_env(env, opts)
           profile.variants.light = M.parse_command_spec(expand_placeholders(value))
         elseif field == 'COMMAND_DARK' then
           profile.variants.dark = M.parse_command_spec(expand_placeholders(value))
-        elseif field == 'PROMPT_FLAG' then
-          profile.prompt_flag = value ~= '' and value or nil
         end
       end
     end
