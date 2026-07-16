@@ -29,6 +29,9 @@ set -u
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
+. "$script_dir/menu-bench-lib.sh"
+menu_bench_init
+# shellcheck disable=SC1091
 . "$script_dir/tab-stats-lib.sh"
 # shellcheck disable=SC1091
 . "$script_dir/runtime-log-lib.sh"
@@ -38,6 +41,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$script_dir/tmux-worktree-lib.sh" 2>/dev/null || {
   tmux_worktree_session_name_for_path() { :; }
 }
+bench_mark sourced
 
 # Capture menu-side timestamps for the perf footer (lua + menu + picker).
 menu_start_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
@@ -150,6 +154,15 @@ populate_weights_for_workspace "$current_workspace"
 for ws in "${other_workspaces[@]}"; do
   populate_weights_for_workspace "$ws"
 done
+bench_mark weights
+
+# Build a set of live sessions for O(1) warm/cold checks (grep -F per row
+# was O(rows * sessions) and showed up under microbench).
+declare -A live_session_set=()
+while IFS= read -r s; do
+  [[ -n "$s" ]] && live_session_set["$s"]=1
+done <<< "$existing_sessions"
+bench_mark live_index
 
 emit_workspace_rows() {
   local target_ws="$1"
@@ -158,36 +171,58 @@ emit_workspace_rows() {
   local is_current=0
   [[ "$target_ws" == "$current_workspace" ]] && is_current=1
   local snap_idx=0
-  while IFS=$'\t' read -r cwd label has_tab; do
+  local missing_session_cwds=()
+  local -a row_buf=()
+  # Prefer session names written by lua into items.json (snapshot v2).
+  # Fall back to bulk print-session-names for rows that still lack them
+  # (legacy snapshots / first open after upgrade) — never per-row git.
+  while IFS=$'\t' read -r cwd label has_tab sess; do
     [[ -n "$cwd" ]] || continue
     snap_idx=$(( snap_idx + 1 ))
-    local state='cold'
-    # Compute the canonical session name unconditionally so we can
-    # always look up its weight, regardless of whether the tmux session
-    # is currently alive (visible/warm) or not (cold). The function is
-    # deterministic on workspace+cwd.
-    local sess
-    sess="$(tmux_worktree_session_name_for_path "$target_ws" "$cwd" 2>/dev/null || true)"
+    if [[ -z "$sess" ]]; then
+      missing_session_cwds+=("$cwd")
+    fi
+    row_buf+=("$cwd"$'\t'"$label"$'\t'"$has_tab"$'\t'"$sess"$'\t'"$snap_idx")
+  done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring), (.session // "")] | @tsv' "$target_snapshot" 2>/dev/null)
+
+  declare -A resolved_sess=()
+  if (( ${#missing_session_cwds[@]} > 0 )); then
+    local bulk_script="$script_dir/tmux-worktree/print-session-names.sh"
+    if [[ -x "$bulk_script" ]] || [[ -f "$bulk_script" ]]; then
+      while IFS=$'\t' read -r cwd sess; do
+        [[ -n "$cwd" ]] && resolved_sess["$cwd"]="$sess"
+      done < <(bash "$bulk_script" "$target_ws" "${missing_session_cwds[@]}" 2>/dev/null || true)
+    fi
+  fi
+
+  local line cwd label has_tab sess state rank_tier rank_score event_count rank_recent
+  for line in "${row_buf[@]}"; do
+    IFS=$'\t' read -r cwd label has_tab sess snap_idx <<< "$line"
+    if [[ -z "$sess" ]]; then
+      sess="${resolved_sess[$cwd]:-}"
+    fi
+    state='cold'
     if [[ "$has_tab" == "true" ]]; then
       state='visible'
-    elif [[ -n "$sess" ]] && grep -Fxq "$sess" <<<"$existing_sessions" 2>/dev/null; then
+    elif [[ -n "$sess" && -n "${live_session_set[$sess]:-}" ]]; then
       state='warm'
     fi
-    local rank_tier="${tier_for_sess[$sess]:-0}"
-    local rank_score="${score_for_sess[$sess]:-0}"
-    local event_count="${event_count_for_sess[$sess]:-0}"
-    local rank_recent="${recent_for_sess[$sess]:-0}"
+    rank_tier="${tier_for_sess[$sess]:-0}"
+    rank_score="${score_for_sess[$sess]:-0}"
+    event_count="${event_count_for_sess[$sess]:-0}"
+    rank_recent="${recent_for_sess[$sess]:-0}"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$target_ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
       "$snap_idx" "$rank_tier" "$rank_score" "$event_count" "$rank_recent" \
       >> "$prefetch_aux"
-  done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring)] | @tsv' "$target_snapshot" 2>/dev/null)
+  done
 }
 
 emit_workspace_rows "$current_workspace"
 for ws in "${other_workspaces[@]}"; do
   emit_workspace_rows "$ws"
 done
+bench_mark rows
 
 # Sort by:
 #   k6 (is_current) desc → current workspace block stays at top
@@ -208,6 +243,7 @@ if [[ -s "$prefetch_aux" ]]; then
     | awk -F '\t' 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6,$7}' \
     > "$prefetch_file"
 fi
+bench_mark sorted
 
 if [[ ! -s "$prefetch_file" ]]; then
   tmux display-message -d 2000 \
@@ -227,7 +263,7 @@ mkdir -p "$picker_event_dir" 2>/dev/null || true
 
 picker_binary=""
 picker_rc=0
-picker_binary="$(picker_bin_require "$script_dir" "Alt+t")" || picker_rc=$?
+picker_binary="$(picker_bin_require "$script_dir" "Alt+x")" || picker_rc=$?
 if (( picker_rc == 1 )); then
   exit 0
 fi
@@ -272,12 +308,20 @@ menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
 keypress_ts=0  # Alt+x has no upstream-stamped keypress timestamp; the
               # picker footer falls back to "key→paint" without the
               # 3-bucket lua/menu/picker breakdown.
+bench_mark prep_done
+
+item_count="$(wc -l < "$prefetch_file" | tr -d ' ')"
+if menu_bench_active; then
+  rm -f "$prefetch_file" "$prefetch_aux"
+  menu_bench_dump_and_exit "picker_kind=go" "item_count=$item_count"
+fi
 
 picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") overflow $(printf %q "$prefetch_file") $(printf %q "$dispatch_script") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
 
 if bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 80% -h 70% -T "Sessions across workspaces" -E "$picker_command"; then
   runtime_log_info overflow "popup completed" \
-    "trace=$trace_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+    "trace=$trace_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")" \
+    "item_count=$item_count"
   exit 0
 fi
 
