@@ -6,8 +6,14 @@ The picker itself is the static Go binary that powers the high-frequency `Alt+/`
 
 ## When to use this
 
-- You changed something under `native/picker/` that needs to land on machines without a local Go toolchain.
-- You want to verify a release artifact before the install-side fetcher lands.
+- You changed something under `native/picker/` that needs to land on machines without a local Go toolchain (required after Go-only popups — see [Install path](#install-path)).
+- You want a local dry-run of the release tarball before tagging.
+
+To cut **both** picker (Go) and host-helper (C#) in one session:
+
+```bash
+scripts/dev/prepare-native-releases.sh --dry-run-package
+```
 
 ## Prerequisites
 
@@ -32,7 +38,7 @@ The standard flow is tag-push + merge the manifest-update PR the workflow opens 
    git tag "$tag" && git push origin "$tag"
    ```
 
-3. Watch the workflow. The `build` job cross-compiles `linux-amd64`, packages it as a tar.gz, and publishes the GitHub Release; `update-manifest` then opens a PR titled `chore(scripts): update picker release manifest for <tag>`.
+3. Watch the workflow. The `build` job runs `native/picker/package-release.sh` to cross-compile `linux-amd64` + `linux-arm64`, packages each as a tar.gz, and publishes the GitHub Release; `update-manifest` then opens a PR titled `chore(scripts): update picker release manifest for <tag>`.
 
    ```bash
    run_id=$(gh run list --workflow=picker-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
@@ -59,10 +65,11 @@ The standard flow is tag-push + merge the manifest-update PR the workflow opens 
 If you need to update the manifest manually from a repo checkout (e.g. the auto-PR step was blocked and you don't want to rerun):
 
 ```bash
-scripts/dev/update-picker-release-manifest.sh --tag "$tag" --asset linux-amd64=<sha256>
+scripts/dev/update-picker-release-manifest.sh --tag "$tag" \
+  --asset linux-amd64=<sha256> --asset linux-arm64=<sha256>
 ```
 
-The SHA-256 is in the workflow summary or via `gh release view "$tag" --json assets`. Pass `--asset` again per architecture once additional targets ship.
+The SHA-256 is in the workflow summary or via `gh release view "$tag" --json assets`. Pass one `--asset` per architecture.
 
 ## Manifest schema
 
@@ -83,7 +90,17 @@ The SHA-256 is in the workflow summary or via `gh release view "$tag" --json ass
 }
 ```
 
-`enabled: false` with empty `version` / `assets` is the placeholder state before the first release is cut. The install-side fetcher (when it lands) treats this as "manifest disabled, fall through to local-build".
+`enabled: false` with empty `version` / `assets` is the placeholder state before the first release is cut. `native/picker/build.sh` treats that as "manifest disabled" and keeps a local build / existing binary only.
+
+### Local dry-run packaging
+
+Without pushing a tag, package the same artifacts CI would:
+
+```bash
+native/picker/package-release.sh --tag picker-v$(date +%Y.%m.%d).1 --targets linux-amd64,linux-arm64
+# or full readiness checklist + dry-run:
+scripts/dev/prepare-native-releases.sh --dry-run-package --targets linux-amd64,linux-arm64
+```
 
 ## Install path
 
