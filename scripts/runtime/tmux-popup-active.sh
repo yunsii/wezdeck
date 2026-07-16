@@ -47,4 +47,6 @@ if [[ -z "$target" ]]; then
 fi
 
 runtime_log_info popup 'shown' popup_target="$target" popup_title="$title" || true
-exec tmux display-popup -E -t "$target" -w "$width" -h "$height" -T "$title" "$body"
+# Route through the guarded wrapper so copy-mode auto-refresh pauses
+# for the overlay lifetime (see tmux-display-popup.sh).
+exec bash "$script_dir/tmux-display-popup.sh" -E -t "$target" -w "$width" -h "$height" -T "$title" "$body"

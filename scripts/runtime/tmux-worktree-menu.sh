@@ -161,7 +161,7 @@ if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
 fi
 
 runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "list_root=$list_root"
-if tmux display-popup -x C -y C -w 70% -h 75% -T "Worktrees: $repo_label" -E "$picker_command"; then
+if bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 70% -h 75% -T "Worktrees: $repo_label" -E "$picker_command"; then
   rm -f "$prefetch_file" "$prefetch_frame_file"
   runtime_log_info worktree "worktree popup picker completed" "session_name=$session_name" "repo_label=$repo_label" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0

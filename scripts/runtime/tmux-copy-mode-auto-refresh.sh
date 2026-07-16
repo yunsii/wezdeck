@@ -125,6 +125,12 @@ while sleep "$sleep_s"; do
   option_enabled || exit 0
   copy_mode_active || exit 0
   selection_present && continue
+  # Server-global flag set by tmux-display-popup.sh while any overlay
+  # is up. refresh-from-pane during the overlay races the client
+  # composite and garbles CJK double-width cells into the popup.
+  # Boolean only — concurrent popups are vanishingly rare; last closer
+  # clears. Stuck flag after a hard kill: `tmux set -gu @wezterm_popup_active`.
+  [[ "$(tmux_option @wezterm_popup_active)" == 1 ]] && continue
   outside_prefetch_window && continue
   history_guard_active && continue
   "${tmux_cmd[@]}" send-keys -t "$pane_id" -X refresh-from-pane 2>/dev/null || exit 0
