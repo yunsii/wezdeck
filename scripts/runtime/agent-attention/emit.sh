@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Provider-agnostic agent attention emitter. Writes the current agent's state
-# into the shared attention state file and nudges WezTerm with an OSC 1337
-# attention_tick so attention.lua re-reads the file and refreshes badges /
-# status counters.
+# into the shared attention state file and publishes an `attention.tick`
+# event through the event bus (OSC `we_attention_tick` when /dev/tty is a
+# regular pane; see docs/event-bus.md) so titles.lua reloads state and
+# refreshes badges / status counters.
 #
 # Usage:
 #   emit.sh --provider codex --session-id <id> --reason <text> running

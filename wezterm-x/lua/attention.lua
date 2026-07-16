@@ -6,9 +6,9 @@
 --
 -- This module only renders tab badges and the right-status segment. It
 -- does not emit OSC, does not walk mux panes, and does not own jump.
--- The hook nudges us via OSC 1337 SetUserVar=attention_tick=<ms>;
--- titles.lua owns the user-var-changed handler so it can re-render
--- right-status in the same call (sub-frame latency). update-status
+-- Producers publish `attention.tick` on the event bus (OSC wire name
+-- `we_attention_tick`); titles.lua registers the handler so right-status
+-- re-renders in the same call (sub-frame when OSC lands). update-status
 -- (driven by titles.lua at `status_update_interval`) is the fallback
 -- refresher and owns periodic housekeeping: TTL prune and focus-ack.
 
@@ -16,6 +16,9 @@ local wezterm = require 'wezterm'
 
 local M = {}
 
+-- Legacy constant; live path uses event_bus name `attention.tick`
+-- (OSC wire `we_attention_tick`). Kept so older call sites / tests
+-- that still reference the symbol do not break.
 M.USER_VAR_TICK = 'attention_tick'
 M.STATUS_RUNNING = 'running'
 M.STATUS_WAITING = 'waiting'

@@ -109,7 +109,6 @@ case1_happy_path() {
     --title "$slug" \
     --base-ref HEAD \
     --provider none \
-    --no-prompt \
     --no-attach >/dev/null \
     || { assert_fail "launch returned non-zero"; return 1; }
 
@@ -160,7 +159,6 @@ case2_dev_refusal() {
     --title "$slug" \
     --base-ref HEAD \
     --provider none \
-    --no-prompt \
     --no-attach >/dev/null \
     || { assert_fail "launch returned non-zero for dev-* slug"; return 1; }
 
@@ -210,7 +208,6 @@ case3_dev_allow_long_lived() {
     --title "$slug" \
     --base-ref HEAD \
     --provider none \
-    --no-prompt \
     --no-attach >/dev/null \
     || { assert_fail "launch returned non-zero for dev-* slug"; return 1; }
 
@@ -329,7 +326,6 @@ case6_origin_default_no_tracking() {
     --cwd "$repo" \
     --title "$slug" \
     --provider none \
-    --no-prompt \
     --no-attach >/dev/null \
     || { assert_fail "launch from origin/HEAD failed"; return 1; }
 
@@ -368,7 +364,6 @@ case7_transcript_preserved() {
     --title "$slug" \
     --base-ref HEAD \
     --provider none \
-    --no-prompt \
     --no-attach >/dev/null \
     || { assert_fail "launch failed"; return 1; }
 
