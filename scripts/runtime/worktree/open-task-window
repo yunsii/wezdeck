@@ -202,7 +202,6 @@ launch_args=(
   --title "$title"
   --provider "$quick_create_provider"
   --provider-mode "$quick_create_provider_mode"
-  --no-prompt
 )
 if [[ -n "${WT_QUICK_CREATE_BASE_REF:-}" ]]; then
   launch_args+=(--base-ref "$WT_QUICK_CREATE_BASE_REF")

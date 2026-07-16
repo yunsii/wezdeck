@@ -24,7 +24,7 @@ window_primary_command() {
         ;;
     esac
 
-    if [[ -n "$command" && "$command" != *'--prompt-file '* && "$command" != *'--prompt-file='* ]]; then
+    if [[ -n "$command" ]]; then
       [[ -n "$fallback_command" ]] || fallback_command="$command"
       if [[ "$pane_active" == "1" ]]; then
         preferred_command="$command"
