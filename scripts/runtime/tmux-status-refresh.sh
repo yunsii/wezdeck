@@ -187,6 +187,18 @@ should_refresh() {
       return 0
     fi
 
+    # Context-aware debounce: a switch to a different pane cwd (e.g. moving
+    # between repos in a worktree family) must recompute immediately, or the
+    # branch/worktree segment keeps showing the previous repo until the next
+    # hook fires >=2s later or the 30s poll lands. The time-based debounce
+    # below only exists to collapse same-context storms (prompt hook firing on
+    # every command, repeated focus events), so scope it to the unchanged cwd.
+    local last_cwd=""
+    last_cwd="$(session_option '@tmux_status_last_cwd')"
+    if [[ -n "$cwd" && "$cwd" != "$last_cwd" ]]; then
+      return 0
+    fi
+
     debounce_seconds="$(numeric_option_or_default TMUX_STATUS_FORCE_DEBOUNCE @tmux_status_force_debounce '2')"
     (( now - last_refresh >= debounce_seconds ))
     return
@@ -199,6 +211,7 @@ should_refresh() {
 perform_refresh() {
   bash "$script_dir/tmux-status-layout.sh" "$session_name" "$window_id" "$cwd" >/dev/null
   set_session_option '@tmux_status_last_refresh' "$(date +%s)"
+  set_session_option '@tmux_status_last_cwd' "$cwd"
 
   if (( refresh_client )); then
     refresh_matching_clients
