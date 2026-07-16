@@ -41,6 +41,8 @@ jobs:
       release_name: ${{ steps.meta.outputs.release_name }}
       linux_amd64_asset_name: ${{ steps.package.outputs.linux_amd64_asset_name }}
       linux_amd64_sha256: ${{ steps.package.outputs.linux_amd64_sha256 }}
+      linux_arm64_asset_name: ${{ steps.package.outputs.linux_arm64_asset_name }}
+      linux_arm64_sha256: ${{ steps.package.outputs.linux_arm64_sha256 }}
     steps:
       - uses: actions/checkout@v6
 
@@ -69,25 +71,17 @@ jobs:
           set -euo pipefail
           tag='${{ steps.meta.outputs.release_tag }}'
           out_dir="$RUNNER_TEMP/picker-release-$tag"
-          mkdir -p "$out_dir/linux-amd64"
-
-          (
-            cd native/picker
-            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-              go build -trimpath -ldflags='-s -w' \
-              -o "$out_dir/linux-amd64/picker" .
+          # Shared packaging script (also used for local dry-runs). Builds
+          # linux-amd64 + linux-arm64 so arm64 WSL hosts can release-fetch.
+          while IFS= read -r line; do
+            [[ -n "$line" ]] || continue
+            printf '%s\n' "$line" >> "$GITHUB_OUTPUT"
+          done < <(
+            native/picker/package-release.sh \
+              --tag "$tag" \
+              --out-dir "$out_dir" \
+              --targets linux-amd64,linux-arm64
           )
-
-          asset="wezdeck-picker-$tag-linux-amd64.tar.gz"
-          archive="$out_dir/$asset"
-          tar -C "$out_dir/linux-amd64" -czf "$archive" picker
-          sha=$(sha256sum "$archive" | awk '{print $1}')
-
-          {
-            printf 'linux_amd64_asset_name=%s\n' "$asset"
-            printf 'linux_amd64_sha256=%s\n' "$sha"
-            printf 'linux_amd64_archive_path=%s\n' "$archive"
-          } >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
@@ -98,23 +92,29 @@ jobs:
           draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
           prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
           overwrite_files: true
-          files: ${{ steps.package.outputs.linux_amd64_archive_path }}
+          files: |
+            ${{ steps.package.outputs.linux_amd64_archive_path }}
+            ${{ steps.package.outputs.linux_arm64_archive_path }}
 
       - name: Write release summary
         run: |
           set -euo pipefail
           tag='${{ steps.meta.outputs.release_tag }}'
-          asset='${{ steps.package.outputs.linux_amd64_asset_name }}'
-          sha='${{ steps.package.outputs.linux_amd64_sha256 }}'
           repo='${{ github.repository }}'
-          url="https://github.com/$repo/releases/download/$tag/$asset"
+          amd_asset='${{ steps.package.outputs.linux_amd64_asset_name }}'
+          amd_sha='${{ steps.package.outputs.linux_amd64_sha256 }}'
+          arm_asset='${{ steps.package.outputs.linux_arm64_asset_name }}'
+          arm_sha='${{ steps.package.outputs.linux_arm64_sha256 }}'
           {
             printf 'Release: %s\n\n' "$tag"
             printf 'Assets:\n'
-            printf -- '- linux-amd64: %s (sha256 %s)\n' "$asset" "$sha"
+            printf -- '- linux-amd64: %s (sha256 %s)\n' "$amd_asset" "$amd_sha"
+            printf -- '- linux-arm64: %s (sha256 %s)\n' "$arm_asset" "$arm_sha"
             printf '\nManifest update command:\n'
             printf '```bash\n'
-            printf 'scripts/dev/update-picker-release-manifest.sh --tag %s --repo %s --asset linux-amd64=%s\n' "$tag" "$repo" "$sha"
+            printf 'scripts/dev/update-picker-release-manifest.sh --tag %s --repo %s \\\n' "$tag" "$repo"
+            printf '  --asset linux-amd64=%s --asset-name linux-amd64=%s \\\n' "$amd_sha" "$amd_asset"
+            printf '  --asset linux-arm64=%s --asset-name linux-arm64=%s\n' "$arm_sha" "$arm_asset"
             printf '```\n'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -134,6 +134,8 @@ jobs:
           --repo '${{ github.repository }}'
           --asset 'linux-amd64=${{ needs.build.outputs.linux_amd64_sha256 }}'
           --asset-name 'linux-amd64=${{ needs.build.outputs.linux_amd64_asset_name }}'
+          --asset 'linux-arm64=${{ needs.build.outputs.linux_arm64_sha256 }}'
+          --asset-name 'linux-arm64=${{ needs.build.outputs.linux_arm64_asset_name }}'
 
       - name: Create manifest update PR
         uses: peter-evans/create-pull-request@v8
@@ -145,6 +147,8 @@ jobs:
 
             linux-amd64 asset: `${{ needs.build.outputs.linux_amd64_asset_name }}`
             linux-amd64 SHA-256: `${{ needs.build.outputs.linux_amd64_sha256 }}`
+            linux-arm64 asset: `${{ needs.build.outputs.linux_arm64_asset_name }}`
+            linux-arm64 SHA-256: `${{ needs.build.outputs.linux_arm64_sha256 }}`
           branch: ci/update-picker-manifest-${{ needs.build.outputs.release_tag }}
           base: ${{ github.event.repository.default_branch }}
           add-paths: |
