@@ -5,7 +5,7 @@ Use this doc when you need to apply or verify changes.
 ## Default Flow
 
 1. Edit files in this repo.
-2. If runtime files changed, sync with the `wezterm-runtime-sync` skill.
+2. If runtime files changed, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` (Bash — not a Claude Code Skill tool).
 3. Let WezTerm auto-reload by default.
 4. Reload tmux only when the sync step could not do it for you or when a simple reload is still needed.
 5. Reload affected interactive shells if shell rc files changed.

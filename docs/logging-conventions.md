@@ -12,7 +12,7 @@ Three log files, segmented by **which process writes**. The file lives on the wr
 |---|---|---|
 | `~/.local/state/wezterm-runtime/logs/runtime.log` (WSL ext4) | every bash script in `scripts/runtime/`, every `picker` invocation, the Claude/Codex agent hooks | WSL-native; ~150× faster than `/mnt/c` per the cross-FS routing rule in [`performance.md`](./performance.md) |
 | `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (Windows NTFS) | WezTerm Lua via `wezterm.log_*` + `append_file` in `wezterm-x/lua/logger.lua` | wezterm.exe is a Windows process |
-| `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` (Windows NTFS) | `windows-helper-manager.exe` (.NET) | helper is a Windows process |
+| `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` (Windows NTFS) | `helper-manager.exe` (.NET host helper) | helper is a Windows process |
 
 Never hard-code paths. Bash sources `scripts/runtime/wsl-runtime-paths-lib.sh` for `WSL_RUNTIME_LOG_FILE`; Lua reads `diagnostics.wezterm.file` from `wezterm-x/local/constants.lua`; the Go picker honors `WEZTERM_RUNTIME_LOG_FILE` else derives the same XDG default.
 
@@ -44,9 +44,9 @@ If you genuinely need ad-hoc render-path debugging, gate it behind an explicit e
 
 Add a new category only when an existing one would dilute its meaning. Currently registered:
 
-- **bash** (`scripts/runtime/`): `attention`, `clipboard`, `command_panel`, `managed_command`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
-- **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `vscode`, `workspace`
-- **C# helper** (`windows-helper-manager`): owned outside this repo, treat as read-only
+- **bash** (`scripts/runtime/`): `attention`, `agent_cleanup`, `clipboard`, `command_panel`, `managed_command`, `overflow`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
+- **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `tab_visibility`, `vscode`, `workspace`
+- **C# helper** (`helper-manager.exe`): owned in `native/host-helper/`, treat as read-only from the WSL/Lua side
 
 Rules:
 

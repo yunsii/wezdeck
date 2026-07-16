@@ -4,34 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/managed-shell-lib.sh"
 
 usage() {
   cat <<'EOF' >&2
 usage:
   run-managed-command.sh <command> [args...]
 EOF
-}
-
-resolve_login_shell() {
-  if [[ -n "${WEZTERM_MANAGED_SHELL:-}" && -x "${WEZTERM_MANAGED_SHELL:-}" ]]; then
-    printf '%s\n' "$WEZTERM_MANAGED_SHELL"
-    return 0
-  fi
-
-  if [[ -n "${SHELL:-}" && -x "${SHELL:-}" ]]; then
-    printf '%s\n' "$SHELL"
-    return 0
-  fi
-
-  local candidate
-  for candidate in /bin/zsh /usr/bin/zsh /bin/bash /usr/bin/bash /bin/sh /usr/bin/sh; do
-    if [[ -x "$candidate" ]]; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
-
-  printf '/bin/sh\n'
 }
 
 while [[ $# -gt 0 ]]; do

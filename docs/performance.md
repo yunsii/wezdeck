@@ -123,7 +123,7 @@ bench.
 | Drop `attention_state_init` from menu hot path | Init does mkdir + a /mnt/c stat for 5-10ms of pure cross-FS overhead with no value to a read-only caller | `attention_state_read` already returns empty JSON when the file is missing — init is for writers (hooks) only | `tmux-attention-menu.sh` |
 | Drop the `jq -r '.entries | length'` count check | ~5ms cold jq spawn for redundant info — main pipeline already produces 0 rows on empty input, item_count short-circuit downstream catches it | Removed | `tmux-attention-menu.sh` |
 | Merge `live_map`'s two jq calls (ts + panes) into one | Saves one cold jq spawn (~5ms) + one /mnt/c page-cache miss | Single jq emits both fields, U+0001 (SOH) delimiter, bash parameter expansion split | `tmux-attention-menu.sh` |
-| Move `hotkey-usage.json` to WSL ext4 | Pure WSL bash writer + reader; /mnt/c was paying cross-FS penalty for nothing | Default path is now `${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/hotkey-usage.json`; one-time legacy migration in the bump script | `hotkey-usage-lib.sh` |
+| Move `hotkey-usage.json` to WSL ext4 | Pure WSL bash writer + reader; /mnt/c was paying cross-FS penalty for nothing | Default path is now `${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/state/hotkey-usage.json`; one-time legacy migration in the bump script | `hotkey-usage-lib.sh` |
 | **Do NOT** move `attention.json` to WSL ext4 | wezterm.exe reads `/mnt/c/…` at p50 0.02ms; reading `\\wsl$\…` at p50 3.12ms (~150x slower). Lua tick = 4 Hz × ~3ms × N files = tens to hundreds of ms/sec wezterm CPU | Stay on /mnt/c. The bash menu.sh paying ~5ms per Alt+/ is much cheaper than the continuous tick cost | `bench-wezterm-side-fs.ps1` |
 | **Do NOT** move `live-panes.json` to WSL ext4 | Per-Alt+/ tradeoff: Lua write +10ms vs bash read -5ms = net loss | Stay | Same |
 | **Do NOT** move `tmux-focus/*.txt` to WSL ext4 | Same as `attention.json` — Lua reads on every tick × N tmux sessions | Stay | Same |
@@ -153,8 +153,8 @@ the other end pays the cross-FS penalty if it ever needs to read":
 flowchart LR
   subgraph EXT4["WSL ext4 · pure-WSL hot path"]
     direction TB
-    L1["~/.local/state/wezterm-runtime/<br/>runtime.log"]
-    L2["~/.local/state/wezterm-runtime/<br/>hotkey-usage.json"]
+    L1["~/.local/state/wezterm-runtime/logs/<br/>runtime.log"]
+    L2["~/.local/state/wezterm-runtime/state/<br/>hotkey-usage.json"]
     L3["~/.cache/wezterm-runtime/<br/>windows-paths.env"]
   end
 

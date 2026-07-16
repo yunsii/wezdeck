@@ -97,9 +97,10 @@ function M.parse_managed_cli_env(env, opts)
   -- ${WEZTERM_REPO} is the canonical placeholder used in
   -- config/worktree-task.env so resume commands can reference repo-internal
   -- scripts (scripts/runtime/agent-launcher.sh) without an absolute path.
-  -- Mirror the expansion in scripts/runtime/worktree/lib/resume-command.sh
-  -- and scripts/runtime/tab-overflow-cold-spawn.sh so every consumer of
-  -- worktree-task.env resolves the placeholder identically.
+  -- Mirror scripts/runtime/worktree/lib/resume-command.sh
+  -- (resume_command_expand_placeholders / resolve_managed_primary_command);
+  -- shell launch paths (Alt+g, refresh, cold-spawn) all go through that
+  -- resolver so every consumer of worktree-task.env expands identically.
   local function expand_placeholders(spec)
     if not spec or spec == '' or not opts.wezterm_repo then
       return spec

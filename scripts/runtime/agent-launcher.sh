@@ -9,10 +9,11 @@
 #   Several launch paths fork the agent via `tmux new-window <cmd>` / tmux
 #   respawn-pane, where tmux runs `<cmd>` through a plain `sh -c` direct
 #   from the server process. That `sh` traverses no shell rc files, so
-#   secrets exported by the user's ~/.zshrc (CNB_TOKEN from
-#   ~/.config/cnb/env, etc.) never reach the agent or its child scripts —
-#   leading to e.g. `npm view @coco/x-server` returning 401 inside the
-#   agent's Bash tool while the same command works in the user's shell.
+#   secrets exported by the user's ~/.zshrc (files under
+#   ~/.config/shell-env.d/*.env, etc.) never reach the agent or its child
+#   scripts — leading to e.g. `npm view @coco/x-server` returning 401
+#   inside the agent's Bash tool while the same command works in the
+#   user's shell.
 #
 #   This script is the one place we explicitly load runtime env files
 #   before exec'ing into the resume-or-fresh agent command. All managed
@@ -70,8 +71,8 @@ print_loading_banner "$agent"
 
 # Happy-wrapped launch (phone sync). Prepend the fnm default-alias bin so
 # `happy` and its `env node` shebang resolve — same idiom as
-# tmux-status-node.sh and wezterm-x/local/crontab. Guarded with an
-# if-block (not `&&`) so a missing dir doesn't trip `set -e`.
+# tmux-status-line-main.sh's node probe and wezterm-x/local/crontab.
+# Guarded with an if-block (not `&&`) so a missing dir doesn't trip `set -e`.
 if [[ "$wrap" == "--happy" ]]; then
   fnm_bin="$HOME/.local/share/fnm/aliases/default/bin"
   if [[ -d "$fnm_bin" ]]; then

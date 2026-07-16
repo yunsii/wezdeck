@@ -81,7 +81,7 @@ User-facing CLI commands belong in `scripts/runtime/cli/` with no `.sh` suffix (
 
 Parent-shell-only helpers — `cd`-ing functions, completion hooks, aliases — belong in the sibling `wezterm-fn.env` template instead. They cannot survive a subprocess boundary, so the runtime loader silently no-ops on them (defines, returns, drops). Prefix function and alias names with `wez-` / `wezterm-` so they cannot shadow a real binary a subprocess might rely on.
 
-For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is the single env-loading site (it calls `runtime_env_load_managed` before exec'ing the agent). All four launch paths — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, tab-overflow cold-spawn — terminate at this launcher. See [`architecture.md#startup-invariants`](./architecture.md#startup-invariants) for the invariant statement.
+For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is the single env-loading site (it calls `runtime_env_load_managed` before exec'ing the agent). All managed launch paths — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, tab-overflow cold-spawn, and Happy toggle (`Ctrl+k p`) — terminate at this launcher. Shell paths that resolve the resume argv share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command`. See [`architecture.md#startup-invariants`](./architecture.md#startup-invariants) for the invariant statement.
 
 ## Repo-Local Runtime Wrappers
 
