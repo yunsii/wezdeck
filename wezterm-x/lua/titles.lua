@@ -46,6 +46,44 @@ function M.register(opts)
     and constants.wezterm_event_bus.event_dir
     or nil
   event_bus.configure { event_dir = event_dir, logger = logger }
+
+  -- Alt+x continuous maintenance. Press path is cache-only; this tick
+  -- refreshes items snapshots (has_tab) and rebuilds overflow-base.tsv
+  -- in the background so the keystroke stays under ~50ms. See
+  -- scripts/runtime/tab-overflow-prefetch-build.sh.
+  local last_overflow_prefetch_ms = 0
+  local OVERFLOW_PREFETCH_INTERVAL_MS = 5000
+  local function maybe_refresh_overflow_prefetch(now_ms, pane)
+    if not now_ms then return end
+    if last_overflow_prefetch_ms ~= 0
+      and (now_ms - last_overflow_prefetch_ms) < OVERFLOW_PREFETCH_INTERVAL_MS then
+      return
+    end
+    last_overflow_prefetch_ms = now_ms
+    if workspace_module and workspace_module.refresh_all_items_snapshots then
+      pcall(workspace_module.refresh_all_items_snapshots)
+    end
+    local repo_root = constants and constants.repo_root
+    if not repo_root or repo_root == '' then return end
+    local script_path = repo_root .. '/scripts/runtime/tab-overflow-prefetch-build.sh'
+    local args
+    local runtime_mode = (constants and constants.runtime_mode) or 'hybrid-wsl'
+    if runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
+      local domain = (pane and pane.get_domain_name and pane:get_domain_name())
+        or constants.default_domain
+        or ''
+      local distro = type(domain) == 'string' and domain:match('^WSL:(.+)$') or nil
+      if not distro and type(constants.default_domain) == 'string' then
+        distro = constants.default_domain:match('^WSL:(.+)$')
+      end
+      if not distro then return end
+      args = { 'wsl.exe', '-d', distro, '--', 'bash', script_path }
+    else
+      args = { 'bash', script_path }
+    end
+    pcall(wezterm.background_child_process, args)
+  end
+
   -- One-time initial reload so the right-status counter has something
   -- to render before the first `attention.tick` event arrives. After
   -- this, state_cache is only refreshed inside the attention.tick
@@ -384,6 +422,8 @@ function M.register(opts)
             end
           end
         end
+        -- Keep Alt+x menu cache warm (items has_tab + overflow-base.tsv).
+        maybe_refresh_overflow_prefetch(now_ms, pane)
       end
     end
 
