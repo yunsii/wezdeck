@@ -50,21 +50,22 @@ windows_runtime_detect_paths || true
 toggle_flag_dir="${WINDOWS_RUNTIME_STATE_WSL:-$HOME/.local/state/wezterm-runtime}/state/command-panel"
 toggle_flag_file="$toggle_flag_dir/popup-open.flag"
 
-# Prefer the static Go picker binary when present. Cold start is ~2-5ms
-# vs ~30-80ms for the bash picker; the picker also avoids re-running
-# `command_panel_load_items` inside the popup pty (~50ms) by consuming
-# the prefetched TSV we build here. When the binary is missing, fall
-# back to the bash picker, which still expects positional args via
-# tmux-command-picker.sh.
-repo_root="$(cd "$script_dir/../.." && pwd)"
-picker_binary="$repo_root/native/picker/bin/picker"
+# Go-only picker (cold start ~2-5ms; prefetches TSV so the popup skips
+# re-loading items). Bash path is emergency-only via WEZTERM_ALLOW_BASH_PICKER=1.
+# shellcheck disable=SC1091
+. "$script_dir/picker-bin-lib.sh"
 prefetch_file=""
-picker_kind='bash'
+picker_kind='go'
 item_count=0
+picker_binary=""
+picker_rc=0
+picker_binary="$(picker_bin_require "$script_dir" "command palette")" || picker_rc=$?
+if (( picker_rc == 1 )); then
+  exit 0
+fi
 
-if [[ -x "$picker_binary" ]]; then
-  # tmux-command-picker.sh (bash fallback) reads @wezterm_last_command_id
-  # itself; only the Go path needs this menu-side read.
+if (( picker_rc == 0 )); then
+  # Go path needs last-command id for the menu-side prefetch only.
   last_command_id="$(tmux show-option -gv @wezterm_last_command_id 2>/dev/null || true)"
   prefetch_file="$(mktemp -t wezterm-command-picker.XXXXXX)"
 
@@ -125,8 +126,7 @@ if [[ -x "$picker_binary" ]]; then
     "$session_name" "$current_window_id" "$cwd" "$client_tty" \
     "$last_command_id" "$start_ms" "$start_ms" "$menu_done_ts")
 else
-  # Bash fallback: tmux-command-picker.sh re-loads items itself, so we
-  # only need to confirm at least one item exists before opening the popup.
+  # WEZTERM_ALLOW_BASH_PICKER=1 emergency path.
   command_panel_load_items || {
     tmux display-message 'Command palette failed while loading items'
     exit 1
@@ -144,6 +144,7 @@ else
     "$trace_id" "$script_dir/tmux-command-picker.sh" \
     "$session_name" "$current_window_id" "$cwd" "$client_tty")
   item_count="${#visible_indexes[@]}"
+  picker_kind='bash'
 fi
 bench_mark prep_done
 

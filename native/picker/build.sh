@@ -10,8 +10,12 @@
 #      ${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>
 #      and SHA-256 verified before extraction.
 #
-# Skips silently when neither path is usable; the popup pickers fall
-# back to bash implementations (tmux-attention-picker.sh, etc.).
+# Hard requirement: popups are Go-only (see docs/picker-release.md).
+# When neither path can produce a binary AND no existing
+# native/picker/bin/picker is present, this script exits non-zero so
+# wezterm-runtime-sync fails loudly. An already-installed binary is
+# kept when the toolchain / release fetch is temporarily unavailable.
+# Emergency bash pickers need WEZTERM_ALLOW_BASH_PICKER=1 at menu time.
 #
 # Source preference: WEZTERM_PICKER_INSTALL_SOURCE=auto|local|release
 # (default auto). `auto` tries local first, then release.
@@ -169,18 +173,27 @@ install_release() {
     "$key"
 }
 
+keep_existing_or_fail() {
+  local reason="${1:?missing reason}"
+  if [[ -x "$out_path" ]]; then
+    printf 'build-picker: %s; keeping existing %s\n' "$reason" "$out_path"
+    return 0
+  fi
+  printf 'build-picker: FAILED %s; no binary at %s\n' "$reason" "$out_path" >&2
+  printf 'build-picker: install Go (local) or enable a release asset, then re-run wezterm-runtime-sync\n' >&2
+  return 1
+}
+
 case "$source_pref" in
   local)
-    build_local || {
-      printf 'build-picker: skipped (source=local but go not found in PATH or ~/.local/go/bin or /usr/local/go/bin); picker will use bash fallback\n'
-      exit 0
-    }
+    build_local || keep_existing_or_fail \
+      "source=local but go not found in PATH or ~/.local/go/bin or /usr/local/go/bin" \
+      || exit 1
     ;;
   release)
-    install_release || {
-      printf 'build-picker: skipped (source=release but install failed); picker will use bash fallback\n'
-      exit 0
-    }
+    install_release || keep_existing_or_fail \
+      "source=release but install failed" \
+      || exit 1
     ;;
   auto)
     if build_local 2>/dev/null; then
@@ -188,8 +201,9 @@ case "$source_pref" in
     elif install_release; then
       :
     else
-      printf 'build-picker: skipped (no go toolchain and release manifest unavailable for this host); picker will use bash fallback\n'
-      exit 0
+      keep_existing_or_fail \
+        "no go toolchain and release install unavailable for this host" \
+        || exit 1
     fi
     ;;
   *)
@@ -197,3 +211,8 @@ case "$source_pref" in
     exit 1
     ;;
 esac
+
+if [[ ! -x "$out_path" ]]; then
+  printf 'build-picker: FAILED no executable at %s after install\n' "$out_path" >&2
+  exit 1
+fi

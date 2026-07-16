@@ -185,23 +185,17 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' '__sentinel__' "clear all · $
 total_rows=$((item_count + 1))
 bench_mark tsv_write
 
-# Prefer the static Go picker binary when present. Its cold start is
-# ~2-5ms vs ~30-80ms for the bash picker (bash boot + 3 lib sources +
-# render lib eval inside the popup pty), and it owns its own first
-# render so menu.sh skips the bash frame priming entirely.
-#
-# When the binary is missing (machine without Go installed at sync time),
-# fall back to the bash picker, which still expects a pre-rendered frame
-# file primed via the shared render lib.
+# Go-only picker (cold start ~2-5ms). Bash path is emergency-only via
+# WEZTERM_ALLOW_BASH_PICKER=1 — see picker-bin-lib.sh / docs/picker-release.md.
 attention_jump_script="$script_dir/attention-jump.sh"
-repo_root="$(cd "$script_dir/../.." && pwd)"
-picker_binary="$repo_root/native/picker/bin/picker"
+# shellcheck disable=SC1091
+. "$script_dir/picker-bin-lib.sh"
 
-# Pin the picker (Go or bash) onto the file transport: it always runs
-# inside `tmux display-popup -E`, whose sub-pty does NOT forward DCS
-# pass-through to the parent client tty, so the OSC route would be
-# silently dropped. Inject WEZBUS_EVENT_DIR so the picker doesn't have
-# to redo the wezterm-runtime path detection from inside the popup.
+# Pin the picker onto the file transport: it always runs inside
+# `tmux display-popup -E`, whose sub-pty does NOT forward DCS pass-through
+# to the parent client tty, so the OSC route would be silently dropped.
+# Inject WEZBUS_EVENT_DIR so the picker doesn't redo wezterm-runtime path
+# detection from inside the popup.
 # shellcheck disable=SC1091
 . "$script_dir/wezterm-event-lib.sh"
 picker_event_dir="$(wezterm_event_dir)"
@@ -228,7 +222,15 @@ if [[ -z "$current_workspace" ]]; then
   current_workspace="default"
 fi
 
-if [[ -x "$picker_binary" ]]; then
+picker_binary=""
+picker_rc=0
+picker_binary="$(picker_bin_require "$script_dir" "Alt+/")" || picker_rc=$?
+prefetch_frame_file=''
+if (( picker_rc == 1 )); then
+  rm -f "$prefetch_file"
+  exit 0
+fi
+if (( picker_rc == 0 )); then
   bench_mark picker_branch
   # Capture menu_done_ts as late as possible (right before launching the
   # popup) so bucket M reflects all of menu.sh's actual work. Inline
@@ -236,8 +238,8 @@ if [[ -x "$picker_binary" ]]; then
   menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
   picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") attention $(printf %q "$prefetch_file") $(printf %q "$attention_jump_script") $(printf %q "$current_workspace") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
   picker_kind='go'
-  prefetch_frame_file=''
 else
+  # WEZTERM_ALLOW_BASH_PICKER=1 emergency path.
   prefetch_frame_file="$(mktemp -t wezterm-attention-frame.XXXXXX)"
   client_width="$(tmux display-message -p '#{client_width}' 2>/dev/null || echo 100)"
   client_height="$(tmux display-message -p '#{client_height}' 2>/dev/null || echo 30)"
@@ -247,10 +249,6 @@ else
   (( popup_rows < 6 )) && popup_rows=6
   visible_rows=$(( popup_rows - 4 ))
   (( visible_rows < 1 )) && visible_rows=1
-  # Pre-render skips the latency badge: at this point the popup hasn't
-  # spawned yet, so any number embedded here would be a fictional half-
-  # measurement. picker.sh's post-load re-render is what shows the real
-  # end-to-end key→interactive time.
   attention_picker_emit_frame "$popup_cols" "$visible_rows" 0 "$total_rows" 0 0 0 0 > "$prefetch_frame_file"
   menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
   picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") bash $(printf %q "$script_dir/tmux-attention-picker.sh") $(printf %q "$prefetch_file") $(printf %q "$prefetch_frame_file") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
