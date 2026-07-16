@@ -26,14 +26,18 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 . "$script_dir/tab-stats-lib.sh"
 # shellcheck disable=SC1091
+. "$script_dir/wsl-runtime-paths-lib.sh"
+# shellcheck disable=SC1091
 . "$script_dir/tmux-worktree-lib.sh" 2>/dev/null || {
   tmux_worktree_session_name_for_path() { :; }
 }
 
+# Inputs (items/stats) stay on the Windows tab-stats dir so Lua can
+# co-read them. Output cache is WSL-ext4 for the press-time menu.
 stats_dir="$(tab_stats_dir)"
-mkdir -p "$stats_dir" 2>/dev/null || true
-out="$stats_dir/overflow-base.tsv"
-lock="$stats_dir/overflow-base.tsv.lock"
+mkdir -p "$stats_dir" "$WSL_RUNTIME_STATE_DIR" 2>/dev/null || true
+out="$WSL_OVERFLOW_BASE_TSV"
+lock="$WSL_OVERFLOW_BASE_TSV.lock"
 tmp="$out.tmp.$$"
 
 # Skip if cache is fresh (< 3s) unless forced — update-status may fire
