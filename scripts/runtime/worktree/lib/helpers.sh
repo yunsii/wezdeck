@@ -34,7 +34,19 @@ wt_tmux_progress_refresh_clients() {
 
 # Schedule a deferred clear so the final milestone lingers a beat after
 # the operation completes (user reads the success state, then it goes
-# back to normal). Runs detached; no return.
+# back to normal).
+#
+# The clear MUST run through `tmux run-shell -b`, not a local `& disown`
+# subshell. The common trigger path (`Ctrl+k g d/t/h`) executes the whole
+# worktree-task launch inside a `tmux display-popup -E`, and the launch
+# returns ~immediately after scheduling this clear, so the popup closes
+# almost at once. When a popup closes tmux tears down its pane and kills
+# every process spawned within it — a disowned subshell AND even a setsid
+# child both die mid-`sleep`, so a local timer never survives to unset the
+# override and the "…launched" line stays stuck on the status bar. A
+# run-shell job is owned by the tmux server, so it outlives the popup.
+# The clear body is inlined as a POSIX-sh string (run-shell uses /bin/sh)
+# because the server-side job cannot call back into these bash helpers.
 wt_tmux_progress_clear_after() {
   [[ -n "${TMUX:-}" ]] || return 0
   local delay="${1:-1.5}"
@@ -43,16 +55,11 @@ wt_tmux_progress_clear_after() {
   session="$(tmux display-message -p '#{session_name}' 2>/dev/null || true)"
   [[ -n "$session" ]] || return 0
   expected_value="$(tmux show-options -qv -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true)"
-  (
-    sleep "$delay"
-    current_value="$(tmux show-options -qv -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true)"
-    if [[ -n "$expected_value" && "$current_value" != "$expected_value" ]]; then
-      exit 0
-    fi
-    tmux set-option -qu -t "$session" '@tmux_status_override_line_2' 2>/dev/null || true
-    wt_tmux_progress_refresh_clients "$session"
-  ) >/dev/null 2>&1 &
-  disown 2>/dev/null || true
+
+  local script=""
+  printf -v script 'sleep %q; cur=$(tmux show-options -qv -t %q @tmux_status_override_line_2 2>/dev/null); if [ -n %q ] && [ "$cur" != %q ]; then exit 0; fi; tmux set-option -qu -t %q @tmux_status_override_line_2 2>/dev/null; tmux list-clients -t %q -F "#{client_name}" 2>/dev/null | while IFS= read -r c; do [ -n "$c" ] && tmux refresh-client -S -t "$c" 2>/dev/null; done' \
+    "$delay" "$session" "$expected_value" "$expected_value" "$session" "$session"
+  tmux run-shell -b "$script" 2>/dev/null || true
 }
 
 wt_die() {
