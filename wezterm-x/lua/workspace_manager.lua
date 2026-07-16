@@ -263,20 +263,60 @@ function M.new(opts)
       end
     end
 
+    -- Reuse previously written session names when cwd is unchanged. Session
+    -- names are deterministic on (workspace, repo/cwd); recomputing them
+    -- shells out to git once per item and was the Alt+x menu's dominant
+    -- cost (~300ms for 14 work rows). Only bulk-compute missing cwds.
+    local prev_sessions = {}
+    do
+      local prev_fd = io.open(path, 'rb')
+      if prev_fd then
+        local prev_body = prev_fd:read('*a')
+        prev_fd:close()
+        if type(prev_body) == 'string' and prev_body ~= '' then
+          local ok_dec, prev = pcall(function()
+            return wezterm.serde.json_decode(prev_body)
+          end)
+          if ok_dec and type(prev) == 'table' and type(prev.items) == 'table' then
+            for _, e in ipairs(prev.items) do
+              if type(e) == 'table' and e.cwd and e.session and e.session ~= '' then
+                prev_sessions[e.cwd] = e.session
+              end
+            end
+          end
+        end
+      end
+    end
+
+    local need_session = {}
+    for _, item in ipairs(raw_items or {}) do
+      if item.cwd and not prev_sessions[item.cwd] then
+        need_session[#need_session + 1] = item
+      end
+    end
+    local computed_sessions = {}
+    if #need_session > 0 then
+      computed_sessions = compute_cwd_to_session(workspace_name, need_session, trace_id)
+    end
+
     local entries = {}
     for _, item in ipairs(raw_items or {}) do
       if item.cwd then
         local label = item.cwd:match('([^/]+)$') or item.cwd
+        local session = prev_sessions[item.cwd]
+          or computed_sessions[item.cwd]
+          or ''
         entries[#entries + 1] = {
           cwd = item.cwd,
           label = label,
           has_tab = spawned_cwds[item.cwd] == true,
+          session = session,
         }
       end
     end
     local body
     local ok_enc, encoded = pcall(function()
-      return wezterm.serde.json_encode({ version = 1, workspace = workspace_name, items = entries })
+      return wezterm.serde.json_encode({ version = 2, workspace = workspace_name, items = entries })
     end)
     if ok_enc and type(encoded) == 'string' then
       body = encoded
@@ -285,13 +325,14 @@ function M.new(opts)
       local parts = {}
       for _, e in ipairs(entries) do
         parts[#parts + 1] = string.format(
-          '{"cwd":"%s","label":"%s","has_tab":%s}',
+          '{"cwd":"%s","label":"%s","has_tab":%s,"session":"%s"}',
           e.cwd:gsub('\\', '\\\\'):gsub('"', '\\"'),
           e.label:gsub('\\', '\\\\'):gsub('"', '\\"'),
-          e.has_tab and 'true' or 'false')
+          e.has_tab and 'true' or 'false',
+          (e.session or ''):gsub('\\', '\\\\'):gsub('"', '\\"'))
       end
       body = string.format(
-        '{"version":1,"workspace":"%s","items":[%s]}',
+        '{"version":2,"workspace":"%s","items":[%s]}',
         workspace_name:gsub('\\', '\\\\'):gsub('"', '\\"'),
         table.concat(parts, ','))
     end
