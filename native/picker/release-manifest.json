@@ -1,12 +1,17 @@
 {
   "schemaVersion": 1,
   "enabled": true,
-  "version": "picker-v2026.04.26.1",
+  "version": "picker-v2026.07.16.1",
   "assets": {
+    "linux-arm64": {
+      "assetName": "wezdeck-picker-picker-v2026.07.16.1-linux-arm64.tar.gz",
+      "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/picker-v2026.07.16.1/wezdeck-picker-picker-v2026.07.16.1-linux-arm64.tar.gz",
+      "sha256": "9c019dfd35c45c55270e4aeb4ca57899d0adb31d8dfa031a80687d8d79349fb8"
+    },
     "linux-amd64": {
-      "assetName": "wezdeck-picker-picker-v2026.04.26.1-linux-amd64.tar.gz",
-      "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/picker-v2026.04.26.1/wezdeck-picker-picker-v2026.04.26.1-linux-amd64.tar.gz",
-      "sha256": "5d61aaca02a96e8957186344730019ba8f4de6514c37243774968aa41e0be46b"
+      "assetName": "wezdeck-picker-picker-v2026.07.16.1-linux-amd64.tar.gz",
+      "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/picker-v2026.07.16.1/wezdeck-picker-picker-v2026.07.16.1-linux-amd64.tar.gz",
+      "sha256": "5a7c72fac3923b93a01fd020ec1e30fb5268288bbc77bf8d54c22fdf24364705"
     }
   }
 }
