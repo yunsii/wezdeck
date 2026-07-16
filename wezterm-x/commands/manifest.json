@@ -119,6 +119,23 @@
     }
   },
   {
+    "id": "agent.toggle-happy",
+    "label": "Agent CLI: Toggle Happy (phone) mode on focused pane",
+    "description": "Respawn the focused agent pane into or out of the Happy wrapper, resuming the same conversation. Bare→Happy registers the session for phone sync (drive it from the Happy app); Happy→bare drops phone sync and returns to a plain local session. No-op on non-agent panes. Simple version: assumes one conversation per cwd and resumes via the launcher's --continue, so it does not track explicit session ids. claude only for now; promoting codex is gated pending verification of the happy-codex resume form.",
+    "scope": "project-navigation",
+    "context": "tmux-backed",
+    "binding": {"kind": "tmux-chord-leaf", "table": "command-chord", "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/agent-happy-toggle.sh #{q:pane_id} #{q:pane_current_path}\""},
+    "hotkeys": [
+      { "keys": "Ctrl+k p", "layer": "tmux-chord" }
+    ],
+    "palette": {
+      "accelerator": "p",
+      "command": ["bash", "-lc", "pane=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_id}'); path=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_path}'); bash '{repo_root}/scripts/runtime/agent-happy-toggle.sh' \"$pane\" \"$path\""],
+      "success_message": "Toggled Happy mode on the focused agent pane.",
+      "failure_message": "Failed to toggle Happy mode."
+    }
+  },
+  {
     "id": "tab.next",
     "label": "Tab: Next",
     "description": "Activate the next WezTerm tab in the current workspace.",
