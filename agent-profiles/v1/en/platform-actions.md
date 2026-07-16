@@ -103,6 +103,13 @@ Agent may take host-side actions only when all of the following are true:
 - [platform-actions-50] Do not simulate paste or depend on window focus.
 - [platform-actions-51] After writing, report that the clipboard was updated and summarize what was written.
 
+## File Reveal Capability
+
+- [platform-actions-52] Revealing a generated file in the user's editor is a host-side side effect, but a low-blast-radius one: visible immediately, reversible (close the tab), and idempotent (re-revealing the same file changes nothing).
+- [platform-actions-53] When you produce a file whose primary purpose is for the user to read or review — a written proposal, plan, design doc, report, or summary, as distinct from source you edited as part of a coding task — and the capabilities marker advertises a file-reveal / open-in-editor wrapper, reveal it proactively right after writing, without asking. The low blast radius in [platform-actions-52] is what justifies acting without confirmation here.
+- [platform-actions-54] Reveal only the primary artifact — one file, the thing the user is meant to review. Do not reveal source files touched incidentally during a task, transient scratch files, or anything containing secrets.
+- [platform-actions-55] After revealing, say you opened it for review. If the reveal wrapper is unavailable (marker missing, or the referenced path is absent or not executable), skip silently — do not fall back to raw editor commands or window-focus hacks (same discipline as [platform-actions-45] for clipboard).
+
 ## Blast Radius
 
 Weigh these dimensions instead of relying solely on the enumerated list in [platform-actions-28]:
