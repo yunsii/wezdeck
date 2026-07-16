@@ -4,18 +4,20 @@
 # Why a library instead of dotfile injection:
 #   Several agent / status / hook entry points fork from tmux server via
 #   plain `sh -c '<cmd>'` and never traverse the user's interactive zsh,
-#   so anything injected by ~/.zshrc (CNB_TOKEN from ~/.config/cnb/env,
-#   PATH increments, etc.) is invisible to them. Rather than coerce every
-#   path through zsh, runtime scripts call the loaders below explicitly.
-#   Side benefit: the same lib serves status-bar scripts, agent launchers,
-#   and Claude hooks, replacing five ad-hoc copies of the same parser.
+#   so anything injected by ~/.zshrc (secrets under
+#   ~/.config/shell-env.d/*.env, PATH increments, etc.) is invisible to
+#   them. Rather than coerce every path through zsh, runtime scripts call
+#   the loaders below explicitly. Side benefit: the same lib serves
+#   status-bar scripts, agent launchers, and Claude hooks, replacing
+#   five ad-hoc copies of the same parser.
 #
 # Two genres of files, two primitives:
 #   runtime_env_load_shell <file>
 #     `set -a`-then-`source` a shell-clean KEY=VALUE file (e.g.
-#     wezterm-x/local/shared.env, ~/.config/cnb/env). Existing env is NOT
-#     auto-preserved — assignments in the file overwrite, matching the
-#     plain `source` semantics callers expect. Idempotent.
+#     wezterm-x/local/shared.env, ~/.config/shell-env.d/cnb.env).
+#     Existing env is NOT auto-preserved — assignments in the file
+#     overwrite, matching the plain `source` semantics callers expect.
+#     Idempotent.
 #
 #   runtime_env_read_key <file> <KEY>
 #     Stdout the value of KEY using a literal grep+strip parser. Use for

@@ -74,7 +74,7 @@ Merge the block below into the `hooks` section of `~/.claude/settings.json` (do 
 }
 ```
 
-Substitute the absolute path for your clone if different. `jq` is optional — with it, the hook reads `.session_id` from the piped hook payload and extracts `.message` / `.stop_reason` / `.prompt` as the state entry's `reason`; without it, the hook still writes the entry but keys it to `pane:<WEZTERM_PANE>` and uses canned per-status labels. There is no Windows dependency; the hook script writes only the `attention_tick` OSC to `/dev/tty` in the enclosing WezTerm pane.
+Substitute the absolute path for your clone if different. `jq` is optional — with it, the hook reads `.session_id` from the piped hook payload and extracts `.message` / `.stop_reason` / `.prompt` as the state entry's `reason`; without it, the hook still writes the entry but keys it to `pane:<WEZTERM_PANE>` and uses canned per-status labels. There is no Windows dependency; the hook publishes an `attention.tick` event through the [event bus](./event-bus.md) (OSC `we_attention_tick` when `/dev/tty` is a regular pane).
 
 ### What each hook does
 
@@ -92,7 +92,7 @@ Without `UserPromptSubmit → running` the `⟳ running` counter will never ligh
 Claude Code re-reads `settings.json` on each hook firing, so an edit takes effect immediately — no Claude restart is required. Exercise the new hook by sending a prompt in each Claude pane, then verify from a WSL shell:
 
 ```bash
-tail -200 ~/.local/state/wezterm-runtime.log \
+tail -200 ~/.local/state/wezterm-runtime/logs/runtime.log \
   | grep -a 'status="running"' \
   | sed -n 's/.*session_id="\([^"]*\)".*/\1/p' \
   | sort -u
