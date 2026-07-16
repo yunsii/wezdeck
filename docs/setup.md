@@ -99,12 +99,14 @@ For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is
   - `version` — schema version, currently `1`. Bump on incompatible key changes; consumers should refuse unknown major versions.
   - `repo_root` — absolute path to the wezterm-config clone that produced this marker. Lets external agents resolve sibling resources in the same clone (e.g. other scripts under `scripts/runtime/`).
   - `agent_clipboard` — absolute path to `scripts/runtime/agent-clipboard.sh`. Bash script; callable only from WSL. Writes text or an image file to the Windows clipboard via host-helper named-pipe IPC.
+  - `open_file_in_vscode` — absolute path to `scripts/runtime/open-file-in-vscode.sh`. Bash script; callable only from WSL. Takes one file path (relative to the caller's cwd or absolute) and reveals it in VS Code, focusing/opening the file's repo window via the same host-helper pipeline as `Alt+v`. Use it to auto-open a file you generated for the user to review.
 - **Sample**:
 
   ```ini
   version=1
   repo_root=/home/yuns/github/wezterm-config
   agent_clipboard=/home/yuns/github/wezterm-config/scripts/runtime/agent-clipboard.sh
+  open_file_in_vscode=/home/yuns/github/wezterm-config/scripts/runtime/open-file-in-vscode.sh
   ```
 
 - **Discovery contract**:

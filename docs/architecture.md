@@ -128,6 +128,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `%USERPROFILE%\.wezterm-native\host-helper\windows\` is the published source tree that sync installs from; `%LOCALAPPDATA%\wezterm-runtime\bin\` is the stable installed binary location that the runtime actually launches.
 - `native/host-helper/windows/release-manifest.json` is the version-pinned release fallback declaration. When Windows `dotnet` is available, the installer publishes from the synced native source tree; otherwise it downloads and verifies the manifest-selected GitHub release asset before replacing `%LOCALAPPDATA%\wezterm-runtime\bin\`. Cutting a release / updating the manifest / side-loading: [`host-helper-release.md`](./host-helper-release.md).
 - `wezterm-x/scripts/` is intentionally thin on Windows. It keeps the helper installer, launcher, and bootstrap pieces, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.
+- The `vscode` / `focus_or_open` helper request takes an optional `file` field alongside `requested_dir`. The window is still resolved and reused by `distro + folder` (so all files of a repo share one window); when `file` is present the helper reveals it on top — launches append `--file-uri`, and the reuse-existing-window path issues a follow-up `--reuse-window --file-uri`. The WSL entry points are `open-current-dir-in-vscode.sh --file <abs>` and the agent-facing `open-file-in-vscode.sh <file>` wrapper (used to auto-open a generated proposal for review).
 
 ### Communication Overview
 
