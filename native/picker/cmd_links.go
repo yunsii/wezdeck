@@ -262,6 +262,12 @@ func (ui *linksUI) render() {
 
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
+	// Full-width selected-row highlight, mirroring cmd_overflow.go.
+	// restoreSelectedBg clears intensity/italic/underline/inverse + fg but
+	// leaves the background intact, so the dim URL hint's inner reset can be
+	// swapped for it to keep the bar continuous.
+	const selectedBg = "\x1b[48;5;255m"
+	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
 
 	var b strings.Builder
 	b.Grow(2048)
@@ -299,11 +305,15 @@ func (ui *linksUI) render() {
 	for i := startIndex; i <= endIndex && i < filteredCount; i++ {
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := ui.rows[ui.filtered[i]]
-		if i == ui.selected {
+		sel := i == ui.selected
+		if sel {
+			b.WriteString(selectedBg)
 			b.WriteString("▶ ")
 		} else {
 			b.WriteString("  ")
 		}
+
+		var rb strings.Builder
 		// Title in default weight; URL right-aligned in dim. Cap title
 		// at half the column count so even pathological titles still
 		// leave room for the URL.
@@ -315,7 +325,7 @@ func (ui *linksUI) render() {
 		if visibleWidth(title) > maxTitle {
 			title = title[:maxTitle-1] + "…"
 		}
-		b.WriteString(title)
+		rb.WriteString(title)
 
 		used := 2 + visibleWidth(title)
 		urlHint := r.url
@@ -334,13 +344,24 @@ func (ui *linksUI) render() {
 		if urlHintW > 0 {
 			pad := cols - used - urlHintW
 			for k := 0; k < pad; k++ {
-				b.WriteByte(' ')
+				rb.WriteByte(' ')
 			}
-			b.WriteString("\x1b[2m")
-			b.WriteString(urlHint)
+			rb.WriteString("\x1b[2m")
+			rb.WriteString(urlHint)
+			rb.WriteString(reset)
+		}
+
+		body := rb.String()
+		if sel {
+			// Keep the highlight bar unbroken: any inner reset becomes a
+			// bg-preserving restore, and clearEOL paints to EOL under the bg.
+			body = strings.ReplaceAll(body, reset, restoreSelectedBg)
+		}
+		b.WriteString(body)
+		b.WriteString(clearEOL)
+		if sel {
 			b.WriteString(reset)
 		}
-		b.WriteString(clearEOL)
 		row++
 	}
 

@@ -545,6 +545,14 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
+	// Full-width selected-row highlight, mirroring cmd_overflow.go. The row
+	// body carries several inner SGR resets (colored badge, workspace cell,
+	// branch/pane separator, dim age, archived suffix); on the selected row
+	// each is rewritten to restoreSelectedBg — which clears intensity/italic/
+	// underline/inverse + fg but leaves the background intact — so the bar
+	// stays continuous, and the trailing clearEOL paints to EOL under the bg.
+	const selectedBg = "\x1b[48;5;255m"
+	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
 
 	var b strings.Builder
 	b.Grow(2048)
@@ -599,16 +607,22 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	for i := startIndex; i <= endIndex; i++ {
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := rows[i]
-		// Only the leading caret distinguishes selected from unselected;
-		// everything else (badge color, body, dim age) renders identically.
-		// The 2-col gutter is reserved on every row so column alignment
-		// stays stable as the cursor moves.
-		if i == selected {
+		sel := i == selected
+		// Selected rows get a full-width background bar plus the leading
+		// caret; everything else (badge color, body, dim age) renders
+		// identically. The 2-col gutter is reserved on every row so column
+		// alignment stays stable as the cursor moves.
+		if sel {
+			b.WriteString(selectedBg)
 			b.WriteString("▶ ")
 		} else {
 			b.WriteString("  ")
 		}
-		b.WriteString(coloredBadge(r.status))
+
+		// Build the caret-less body separately so a selected row can rewrite
+		// its inner resets to restoreSelectedBg in one pass.
+		var rb strings.Builder
+		rb.WriteString(coloredBadge(r.status))
 		// Three-space gap between aligned columns. Padded columns
 		// (workspace, repo/tab) are followed by `gap`; everything
 		// from the branch onward is variable-width and joined by
@@ -616,53 +630,60 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 		// and ages don't drag a long blank channel behind a short
 		// branch name.
 		const gap = "   "
-		b.WriteString(gap)
+		rb.WriteString(gap)
 		if r.status == "__sentinel__" {
 			// Meta row — no per-field columns. Fall through to the
 			// raw sentinel body and skip the per-column padding.
-			b.WriteString(r.rawBody)
-			b.WriteString(clearEOL)
-			row++
-			continue
-		}
-		// Workspace badge column: same shape as Alt+x — bright color
-		// family for the active workspace, dim for others, empty
-		// padding when the workspace couldn't be parsed.
-		b.WriteString(formatAttentionWorkspaceCell(r.workspace, cols.workspace, r.isCurrent))
-		b.WriteString(gap)
-		// Repo / tab segment (e.g. `1_wezterm-config`). Padded to
-		// cols.tab so the next column lands at the same screen column
-		// across rows. This is the last padded column.
-		b.WriteString(padCell(r.tab, cols.tab))
-		b.WriteString(gap)
-		// Branch + pane id, then reason, then age — all variable
-		// width, joined by `gap` only. No padding past this point so
-		// short branches don't trail a wide empty space before the
-		// reason text.
-		bp := formatAttentionBranchPane(r.branch, r.tmuxSeg)
-		if bp != "" {
-			b.WriteString(bp)
-		}
-		if r.reason != "" {
+			rb.WriteString(r.rawBody)
+		} else {
+			// Workspace badge column: same shape as Alt+x — bright color
+			// family for the active workspace, dim for others, empty
+			// padding when the workspace couldn't be parsed.
+			rb.WriteString(formatAttentionWorkspaceCell(r.workspace, cols.workspace, r.isCurrent))
+			rb.WriteString(gap)
+			// Repo / tab segment (e.g. `1_wezterm-config`). Padded to
+			// cols.tab so the next column lands at the same screen column
+			// across rows. This is the last padded column.
+			rb.WriteString(padCell(r.tab, cols.tab))
+			rb.WriteString(gap)
+			// Branch + pane id, then reason, then age — all variable
+			// width, joined by `gap` only. No padding past this point so
+			// short branches don't trail a wide empty space before the
+			// reason text.
+			bp := formatAttentionBranchPane(r.branch, r.tmuxSeg)
 			if bp != "" {
-				b.WriteString(gap)
+				rb.WriteString(bp)
 			}
-			b.WriteString(r.reason)
+			if r.reason != "" {
+				if bp != "" {
+					rb.WriteString(gap)
+				}
+				rb.WriteString(r.reason)
+			}
+			if r.age != "" {
+				rb.WriteString(gap)
+				rb.WriteString("\x1b[2m(")
+				rb.WriteString(r.age)
+				rb.WriteString(")")
+				rb.WriteString(reset)
+			}
+			// Recent rows carry the prior live status as a dim suffix so the
+			// user can tell at a glance what the entry was doing when it was
+			// archived (e.g. an unfinished waiting prompt vs a clean done).
+			if r.status == "recent" && r.lastStatus != "" {
+				fmt.Fprintf(&rb, "%s\x1b[2m(%s, archived)%s", gap, r.lastStatus, reset)
+			}
 		}
-		if r.age != "" {
-			b.WriteString(gap)
-			b.WriteString("\x1b[2m(")
-			b.WriteString(r.age)
-			b.WriteString(")")
+
+		body := rb.String()
+		if sel {
+			body = strings.ReplaceAll(body, reset, restoreSelectedBg)
+		}
+		b.WriteString(body)
+		b.WriteString(clearEOL)
+		if sel {
 			b.WriteString(reset)
 		}
-		// Recent rows carry the prior live status as a dim suffix so the
-		// user can tell at a glance what the entry was doing when it was
-		// archived (e.g. an unfinished waiting prompt vs a clean done).
-		if r.status == "recent" && r.lastStatus != "" {
-			fmt.Fprintf(&b, "%s\x1b[2m(%s, archived)%s", gap, r.lastStatus, reset)
-		}
-		b.WriteString(clearEOL)
 		row++
 	}
 
