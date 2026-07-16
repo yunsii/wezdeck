@@ -33,6 +33,14 @@ internal static class PathResolvers
         return $"vscode-remote://wsl+{Uri.EscapeDataString(distro)}{ConvertToVscodeRemotePath(targetDir)}";
     }
 
+    // Same remote-URI shape as the folder URI; VS Code distinguishes a file
+    // target from a folder target by the CLI flag (`--file-uri` vs
+    // `--folder-uri`), not by the URI itself.
+    public static string BuildVscodeFileUri(string distro, string filePath)
+    {
+        return $"vscode-remote://wsl+{Uri.EscapeDataString(distro)}{ConvertToVscodeRemotePath(filePath)}";
+    }
+
     public static string BuildWindowCacheKey(string distro, string path)
     {
         return $"{distro}|{NormalizeWslPath(path)}";
