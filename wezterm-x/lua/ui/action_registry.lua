@@ -77,41 +77,16 @@ function M.new(ctx)
     return wezterm.action.ActivateTab(index - 1)
   end
 
-  -- Throttle full items-snapshot refresh on Alt+x. Each refresh walks
-  -- mux tabs and may cross-FS write under /mnt/c for every workspace;
-  -- doing that on every press was a major contributor to "popup feels
-  -- slow". Session names are cached in the snapshot; has_tab can lag
-  -- by at most this window (still correct after cold-open / tab spawn).
-  local overflow_snapshot_refresh_ms = 2000
-  local last_overflow_snapshot_refresh_ms = 0
-
   handlers['tabs.overflow_picker'] = function()
     return wezterm.action_callback(function(window, pane)
       local trace_id = logger.trace_id('tab_visibility')
       local workspace_name = common.active_workspace_name(window)
       local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
       if tmux_backed then
-        -- Refresh items snapshots so workspaces.lua edits and has_tab
-        -- flags are visible — but not on every keypress. Synchronous
-        -- so the bash menu reads the file after the write when we do
-        -- refresh. Best-effort: failure still opens the picker.
-        if workspace and workspace.refresh_all_items_snapshots then
-          local now = wezterm.time and wezterm.time.now and wezterm.time.now():format('%s%3f')
-          local now_ms = tonumber(now) or 0
-          local due = (now_ms == 0)
-            or (now_ms - last_overflow_snapshot_refresh_ms >= overflow_snapshot_refresh_ms)
-          if due then
-            local ok, err = pcall(workspace.refresh_all_items_snapshots)
-            if ok then
-              last_overflow_snapshot_refresh_ms = now_ms
-            else
-              logger.warn('tab_visibility', 'items-snapshot pre-refresh failed', common.merge_fields(trace_id, {
-                error = tostring(err),
-                workspace = workspace_name,
-              }))
-            end
-          end
-        end
+        -- Press path is intentionally free of snapshot / prefetch work.
+        -- Continuous maintenance lives on update-status (items snapshot
+        -- + tab-overflow-prefetch-build.sh). Menu.sh only reads the
+        -- warm cache, stamps is_current / warm-cold, and opens the picker.
         logger.info('tab_visibility', 'forwarding Alt+x to tmux-backed pane', common.merge_fields(trace_id, {
           decision_path = decision_path,
           domain = pane:get_domain_name(),
