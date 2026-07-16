@@ -68,6 +68,34 @@ reachability acceptable. Decisions:
   backend. Re-evaluate only if the backend consolidates on a single
   vendor long-term.
 
+### Toggling a pane between bare and Happy (`Ctrl+k p`)
+
+The manual `happy --continue` opt-in above has a one-key form for panes
+already running an agent: **`Ctrl+k p`** (command-chord leaf,
+`agent.toggle-happy` in the manifest) respawns the focused agent pane
+into or out of the Happy wrapper, resuming the same conversation.
+
+- **How it works.** `scripts/runtime/agent-happy-toggle.sh` walks the
+  pane's descendant process tree to read the agent flavour and whether
+  it is already Happy-wrapped (the pane's own `pane_current_command`
+  reads `sh`/`node` through Happy's inner pty, so the flavour lives in
+  the descendant argv — `happy/dist/index.mjs <flavor>` when wrapped,
+  `agent-launcher.sh <flavor>` or a bare `claude` process when not). It
+  then `respawn-pane -k`s that one pane through
+  `agent-launcher.sh <flavor> [--happy]` and re-stamps
+  `@wezterm_pane_role` so `Ctrl+n`/`Ctrl+P` keep recognising the pane.
+- **Continuity.** The conversation persists via the on-disk session log;
+  only live scroll / unsent input is lost, exactly like a
+  refresh-current-window. Bare→Happy registers the session for phone
+  sync; Happy→bare drops it.
+- **Scope & limits (simple version).** Assumes one conversation per cwd
+  and resumes via `--continue`, so it does not track explicit session
+  ids. No-op on non-agent panes. **claude only** — codex promotion is
+  gated off pending verification (see Known-not-done). Happy is never a
+  start state: a `kill-server` / reopen brings panes back bare and
+  resuming the cwd's latest, so re-press `Ctrl+k p` if you want the phone
+  again.
+
 ### Workflow
 
 - **Capability is per-session.** Each running `happy` process registers
@@ -306,18 +334,23 @@ idea:
 - Windows boot keepalive task (`wsl.exe -d Ubuntu --exec sleep infinity`)
   so the phone can connect before WezTerm is first opened.
 - Default-on Happy launcher integration (spike verified and documented
-  above; superseded in spirit by the promote-current-pane helper below —
-  flip only if even per-pane promotion proves too much friction).
-- Promote-current-pane helper: a manifest-driven binding that respawns
-  the focused agent pane into the Happy wrapper (`happy --continue`,
-  `happy codex ...` per profile) and back to the bare CLI. This is the
-  planned desktop-script follow-up to the core-channel decision above.
-  Must apply the two integration-spike findings: prepend the fnm
-  default-alias bin to PATH, and stamp `@wezterm_pane_role
-  agent-cli:<profile>` on respawn so pane navigation survives
-  `pane_current_command` reading `sh`; route the respawn through
-  `agent-launcher.sh` semantics rather than a raw `respawn-pane`
-  command string, and respect the refresh-current-window rule (only
-  ever touch the focused pane).
+  above; superseded in spirit by the `Ctrl+k p` promote toggle — flip
+  only if even per-pane promotion proves too much friction).
+- **Precise (session-id-owning) promote toggle.** The shipped `Ctrl+k p`
+  toggle (see *Toggling a pane between bare and Happy* above) is the
+  "simple version": it assumes one conversation per cwd and resumes via
+  the launcher's `--continue`, so with two live agent conversations in
+  the same cwd a promote could resume the wrong one. A precise variant
+  would have the launcher own explicit session ids and stamp them on the
+  pane. Deferred because the CLIs can't support it yet: a bare `claude`
+  exposes its running session id via neither argv, `/proc/<pid>/fd`, nor
+  environ (all verified), and `codex` has no `--session-id` to assign one
+  at a fresh start. Revisit when the CLIs expose/accept session ids.
+- **codex promotion.** `Ctrl+k p` currently gates codex promotion off:
+  the `happy codex` resume passthrough form is unverified and codex can't
+  own a fresh session id. The launcher's `codex --happy` branch is wired
+  but dormant; flip the gate in `agent-happy-toggle.sh` once
+  `happy codex resume --last` is confirmed to land in the same
+  conversation.
 - Termux font: drop a CJK-capable mono ttf at `~/.termux/font.ttf`
   (Sarasa Term SC is the candidate) + `termux-reload-settings`.
