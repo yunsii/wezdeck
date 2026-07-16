@@ -54,6 +54,27 @@ set -u
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Force the landed session's status line to recompute the instant a jump
+# lands. The select-window / select-pane calls below are no-ops when the
+# target window/pane is already active (you left the session parked there),
+# so tmux's session-window-changed / window-pane-changed hooks never fire
+# and the branch/worktree segment would lag until client-focus-in or the
+# 30s poll — the "Alt+. jump but status is stale" symptom. --no-debounce
+# bypasses the force-refresh debounce so a jump is never collapsed into an
+# unrelated recent refresh. All wezterm-managed sessions share the default
+# tmux server, so tmux-status-refresh.sh's bare `tmux` calls resolve the
+# session named here (matching the hook path, which also uses bare tmux).
+refresh_jump_target_status() {
+  local socket="$1" window="$2"
+  [[ -n "$socket" && -n "$window" ]] || return 0
+  local session=''
+  session="$(tmux -S "$socket" display-message -p -t "$window" '#{session_name}' 2>/dev/null || true)"
+  [[ -n "$session" ]] || return 0
+  bash "$script_dir/tmux-status-refresh.sh" \
+    --session "$session" --window "$window" \
+    --force --no-debounce --refresh-client >/dev/null 2>&1 || true
+}
+
 # Fast path: caller already has the tmux coordinates (Lua looked them up
 # from the in-process state cache) and has already activated the WezTerm
 # pane. We only need to sync tmux's selection. Skip the state lib, jq,
@@ -77,6 +98,7 @@ if [[ "${1:-}" == "--direct" ]]; then
     if [[ -n "$direct_pane" ]]; then
       tmux -S "$direct_socket" select-pane -t "$direct_pane" 2>/dev/null || true
     fi
+    refresh_jump_target_status "$direct_socket" "$direct_window"
   fi
   exit 0
 fi
@@ -301,6 +323,7 @@ if (( recent_jump )); then
   if [[ -n "$target_tmux_window" ]]; then
     tmux -S "$target_tmux_socket" select-window -t "$target_tmux_window" 2>/dev/null || true
     tmux -S "$target_tmux_socket" select-pane -t "$target_tmux_pane" 2>/dev/null || true
+    refresh_jump_target_status "$target_tmux_socket" "$target_tmux_window"
   fi
 
   # Recent entries' wezterm_pane_id is whatever was live at archive time.
@@ -395,6 +418,7 @@ if [[ -n "$target_tmux_socket" && -n "$target_tmux_window" ]]; then
   if [[ -n "$target_tmux_pane" ]]; then
     tmux -S "$target_tmux_socket" select-pane -t "$target_tmux_pane" 2>/dev/null || true
   fi
+  refresh_jump_target_status "$target_tmux_socket" "$target_tmux_window"
 fi
 
 wezterm_activated=0
