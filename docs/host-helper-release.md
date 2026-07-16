@@ -10,6 +10,14 @@ The architectural place of the helper itself (request flow, IPC, reuse policy, c
 - You want to verify the release-install path on a machine that *does* have `dotnet` (force the release branch with the env var below).
 - You hit a slow GitHub download and want to side-load a pre-fetched zip.
 
+To cut **both** the Go picker and this C# helper in one session (readiness checks + suggested tags + copy-paste commands):
+
+```bash
+scripts/dev/prepare-native-releases.sh --dry-run-package
+```
+
+Picker narrative: [`picker-release.md`](./picker-release.md).
+
 ## Prerequisites
 
 - `gh` CLI authenticated against this repo.
