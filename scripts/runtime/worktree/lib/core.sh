@@ -22,11 +22,9 @@ usage:
 
 options:
   --cwd PATH            Target repository path. Default: current directory
-  --task-slug VALUE     Slug prefix for the worktree directory and prompt file
+  --task-slug VALUE     Slug prefix for the worktree directory
   --branch VALUE        Explicit branch name. Default: WT_POLICY_BRANCH_PREFIX + slug
   --base-ref VALUE      Base ref for the new branch. Default: primary worktree HEAD
-  --prompt-file FILE    Read the cleaned-up task prompt from FILE instead of stdin
-  --no-prompt           Skip the stdin prompt entirely (agent starts idle)
   --provider VALUE      Provider name or path. Builtins: none, tmux-agent
   --provider-mode MODE  off, auto, or required
   --workspace NAME      Provider workspace/session namespace override
@@ -152,15 +150,6 @@ wt_core_resolve_policy_paths() {
   fi
 }
 
-wt_core_provider_prompt_dir() {
-  printf '%s/worktree-task-prompts\n' "${TMPDIR:-/tmp}"
-}
-
-wt_core_provider_prompt_path() {
-  local task_slug="${1:?missing task slug}"
-  printf '%s/%s-%s.txt\n' "$(wt_core_provider_prompt_dir)" "$(wt_hash "$WT_REPO_COMMON_DIR")" "$task_slug"
-}
-
 wt_core_provider_command() {
   wt_provider_resolve_command "$WT_SCRIPTS_DIR" "${1:?missing provider name}"
 }
@@ -175,7 +164,6 @@ wt_core_export_provider_env() {
   export WT_WORKTREE_PATH
   export WT_BRANCH_NAME
   export WT_TASK_SLUG
-  export WT_PROMPT_FILE
   export WT_RUNTIME_WORKSPACE
   export WT_RUNTIME_VARIANT
   export WT_RUNTIME_ATTACH
@@ -183,7 +171,6 @@ wt_core_export_provider_env() {
   export WT_PROVIDER_AGENT_COMMAND
   export WT_PROVIDER_AGENT_COMMAND_LIGHT
   export WT_PROVIDER_AGENT_COMMAND_DARK
-  export WT_PROVIDER_AGENT_PROMPT_FLAG
   export WT_PROVIDER_LOGIN_SHELL
   export WT_PROVIDER_SESSION_NAME_OVERRIDE
   export WT_PROVIDER_SESSION_NAME
@@ -275,12 +262,10 @@ wt_core_run_launch_provider() {
 wt_core_rollback_launch_failure() {
   local worktree_created="${1:-0}"
   local branch_created="${2:-0}"
-  local provider_prompt_created="${3:-0}"
 
   runtime_log_warn task "rolling back failed launch" \
     "worktree_created=$worktree_created" \
     "branch_created=$branch_created" \
-    "provider_prompt_created=$provider_prompt_created" \
     "worktree_path=${WT_WORKTREE_PATH:-}" \
     "branch_name=${WT_BRANCH_NAME:-}" \
     "provider=${WT_SELECTED_PROVIDER:-}"
@@ -289,10 +274,6 @@ wt_core_rollback_launch_failure() {
 
   if [[ "$WT_SELECTED_PROVIDER" != "none" ]]; then
     wt_core_run_provider "$WT_SELECTED_PROVIDER" cleanup >/dev/null 2>&1 || true
-  fi
-
-  if [[ "$provider_prompt_created" == "1" && -n "${WT_PROMPT_FILE:-}" && -f "$WT_PROMPT_FILE" ]]; then
-    rm -f "$WT_PROMPT_FILE"
   fi
 
   if [[ "$worktree_created" == "1" && -d "$WT_WORKTREE_PATH" ]]; then
@@ -305,25 +286,6 @@ wt_core_rollback_launch_failure() {
 
   rmdir "$WT_POLICY_METADATA_DIR_ABS" 2>/dev/null || true
   rmdir "$WT_POLICY_WORKTREE_DIR_ABS" 2>/dev/null || true
-}
-
-wt_core_read_prompt() {
-  local prompt_file="${1:-}"
-  local prompt_content=""
-
-  if [[ -n "$prompt_file" ]]; then
-    [[ -f "$prompt_file" ]] || wt_die "prompt file does not exist: $prompt_file"
-    prompt_content="$(< "$prompt_file")"
-  else
-    [[ ! -t 0 ]] || wt_die "pipe the cleaned-up task prompt on stdin or use --prompt-file"
-    prompt_content="$(cat)"
-  fi
-
-  if [[ -z "${prompt_content//[[:space:]]/}" ]]; then
-    wt_die "task prompt is empty"
-  fi
-
-  printf '%s\n' "$prompt_content"
 }
 
 wt_core_emit_launch_result() {
@@ -400,22 +362,18 @@ wt_core_launch() {
   local task_slug=""
   local branch_name=""
   local base_ref=""
-  local prompt_file=""
-  local no_prompt="0"
   local provider_override=""
   local provider_mode_override=""
   local workspace_override=""
   local session_name_override=""
   local variant_override=""
   local attach_override=""
-  local prompt_content=""
   local base_slug=""
   local resolved_slug=""
   local suffix=1
   local path_suffix=1
   local worktree_created=0
   local branch_created=0
-  local provider_prompt_created=0
   local start_ms
 
   start_ms="$(runtime_log_now_ms)"
@@ -446,15 +404,6 @@ wt_core_launch() {
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
         base_ref="$2"
         shift 2
-        ;;
-      --prompt-file)
-        [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
-        prompt_file="$2"
-        shift 2
-        ;;
-      --no-prompt)
-        no_prompt="1"
-        shift
         ;;
       --provider)
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
@@ -532,13 +481,6 @@ wt_core_launch() {
     esac
   fi
 
-  if [[ "$no_prompt" == "1" ]]; then
-    [[ -z "$prompt_file" ]] || wt_die "--no-prompt cannot be combined with --prompt-file"
-    prompt_content=""
-  else
-    prompt_content="$(wt_core_read_prompt "$prompt_file")"
-  fi
-
   base_slug="$(wt_slugify "${task_slug:-$task_title}" "$WT_POLICY_SLUG_FALLBACK")"
   resolved_slug="$base_slug"
 
@@ -558,7 +500,6 @@ wt_core_launch() {
 
   WT_TASK_SLUG="$resolved_slug"
   WT_WORKTREE_PATH="$WT_POLICY_WORKTREE_DIR_ABS/$WT_TASK_SLUG"
-  WT_PROMPT_FILE=""
   WT_MANIFEST_FILE="$(wt_manifest_path "$WT_POLICY_METADATA_DIR_ABS" "$WT_TASK_SLUG")"
 
   WT_RUNTIME_WORKSPACE="$WT_PROVIDER_WORKSPACE"
@@ -597,25 +538,13 @@ wt_core_launch() {
       "branch_created=$branch_created"
   fi
 
-  if [[ "$WT_SELECTED_PROVIDER" != "none" && -n "$prompt_content" ]]; then
-    WT_PROMPT_FILE="$(wt_core_provider_prompt_path "$WT_TASK_SLUG")"
-    mkdir -p "$(wt_core_provider_prompt_dir)"
-    printf '%s\n' "$prompt_content" > "$WT_PROMPT_FILE"
-    provider_prompt_created=1
-  fi
-
   wt_tmux_progress "[worktree-task] $WT_TASK_SLUG ready, starting agent…"
   if wt_core_run_launch_provider; then
     :
   else
     wt_tmux_progress ''
-    wt_core_rollback_launch_failure "$worktree_created" "$branch_created" "$provider_prompt_created"
+    wt_core_rollback_launch_failure "$worktree_created" "$branch_created"
     wt_die "provider launch failed: $WT_SELECTED_PROVIDER"
-  fi
-
-  if [[ "$WT_SELECTED_PROVIDER" == "none" && -n "${WT_PROMPT_FILE:-}" && -f "$WT_PROMPT_FILE" ]]; then
-    rm -f "$WT_PROMPT_FILE"
-    WT_PROMPT_FILE=""
   fi
 
   if [[ -n "$WT_PROVIDER_RESULT_SESSION_NAME" ]]; then
@@ -785,7 +714,6 @@ wt_core_reclaim() {
       ;;
   esac
 
-  WT_PROMPT_FILE="$(wt_core_provider_prompt_path "$WT_TASK_SLUG")"
   WT_MANIFEST_FILE="$(wt_manifest_path "$WT_POLICY_METADATA_DIR_ABS" "$WT_TASK_SLUG")"
   WT_BRANCH_NAME="$(git -C "$WT_WORKTREE_PATH" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
 
@@ -849,10 +777,6 @@ wt_core_reclaim() {
   # Defense-in-depth: drop any phantom admin entry git may still hold
   # (e.g., when an earlier `rm -rf` raced ahead of `worktree remove`).
   git -C "$WT_MAIN_WORKTREE_ROOT" worktree prune 2>/dev/null || true
-
-  if [[ -f "$WT_PROMPT_FILE" ]]; then
-    rm -f "$WT_PROMPT_FILE"
-  fi
 
   if [[ -f "$WT_MANIFEST_FILE" ]]; then
     rm -f "$WT_MANIFEST_FILE"

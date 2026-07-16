@@ -437,7 +437,6 @@ provider_resolve_variant() {
 
 provider_build_pane_command() {
   local resolved_variant="${1:?missing variant}"
-  local prompt_file="${2:-}"
   local command_string="env"
 
   if [[ -n "${WT_PROVIDER_AGENT_COMMAND:-}" ]]; then
@@ -449,17 +448,10 @@ provider_build_pane_command() {
   if [[ -n "${WT_PROVIDER_AGENT_COMMAND_DARK:-}" ]]; then
     command_string="$command_string WT_PROVIDER_AGENT_COMMAND_DARK=$(wt_shell_quote "$WT_PROVIDER_AGENT_COMMAND_DARK")"
   fi
-  if [[ -n "${WT_PROVIDER_AGENT_PROMPT_FLAG:-}" ]]; then
-    command_string="$command_string WT_PROVIDER_AGENT_PROMPT_FLAG=$(wt_shell_quote "$WT_PROVIDER_AGENT_PROMPT_FLAG")"
-  fi
   if [[ -n "${WT_PROVIDER_LOGIN_SHELL:-}" ]]; then
     command_string="$command_string WT_PROVIDER_LOGIN_SHELL=$(wt_shell_quote "$WT_PROVIDER_LOGIN_SHELL")"
   fi
   command_string="$command_string bash $(wt_shell_quote "$SCRIPT_DIR/tmux-agent.sh") run-pane-command --variant $(wt_shell_quote "$resolved_variant")"
-
-  if [[ -n "$prompt_file" ]]; then
-    command_string="$command_string --prompt-file $(wt_shell_quote "$prompt_file")"
-  fi
 
   printf '%s\n' "$command_string"
 }
@@ -544,7 +536,7 @@ provider_launch() {
   fi
 
   resolved_variant="$(provider_resolve_variant "$command_hint")"
-  custom_window_command="$(provider_build_pane_command "$resolved_variant" "$WT_PROMPT_FILE")"
+  custom_window_command="$(provider_build_pane_command "$resolved_variant")"
   worktree_label="$(wt_git_worktree_label_for_root "$WT_WORKTREE_PATH" "$WT_MAIN_WORKTREE_ROOT")"
 
   if ! tmux has-session -t "$session_name" 2>/dev/null; then
@@ -670,8 +662,6 @@ provider_detect_context() {
 
 provider_run_pane_command() {
   local variant="light"
-  local prompt_file=""
-  local prompt_arg=""
   local command_spec=""
   local command=()
   local command_string=""
@@ -688,22 +678,11 @@ provider_run_pane_command() {
         variant="$2"
         shift 2
         ;;
-      --prompt-file)
-        [[ $# -ge 2 ]] || exit 20
-        prompt_file="$2"
-        shift 2
-        ;;
       *)
         exit 20
         ;;
     esac
   done
-
-  if [[ -n "$prompt_file" ]]; then
-    [[ -f "$prompt_file" ]] || exit 20
-    prompt_arg="$(< "$prompt_file")"
-    rm -f "$prompt_file"
-  fi
 
   case "${WT_PROVIDER_LOGIN_SHELL:-}" in
     "")
@@ -726,16 +705,7 @@ provider_run_pane_command() {
   provider_parse_command_spec "$command_spec" command || exit 20
   runtime_log_info provider "tmux-agent pane command starting" \
     "variant=$variant" \
-    "command_name=${command[0]:-unknown}" \
-    "has_prompt_file=$([[ -n "$prompt_arg" ]] && printf yes || printf no)"
-
-  if [[ -n "$prompt_arg" ]]; then
-    if [[ -n "${WT_PROVIDER_AGENT_PROMPT_FLAG:-}" ]]; then
-      command+=("$WT_PROVIDER_AGENT_PROMPT_FLAG" "$prompt_arg")
-    else
-      command+=("$prompt_arg")
-    fi
-  fi
+    "command_name=${command[0]:-unknown}"
 
   printf -v command_string '%q ' "${command[@]}"
   command_string="${command_string% }"
