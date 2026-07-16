@@ -38,4 +38,8 @@ WSL_RUNTIME_CACHE_ROOT="${XDG_CACHE_HOME:-$HOME/.cache}/wezterm-runtime"
 
 WSL_RUNTIME_LOG_FILE="$WSL_RUNTIME_LOGS_DIR/runtime.log"
 WSL_HOTKEY_USAGE_FILE="$WSL_RUNTIME_STATE_DIR/hotkey-usage.json"
+# Alt+x overflow menu base TSV — WSL-only consumer (bash menu + builder).
+# Lives on ext4 so press-time reads avoid /mnt/c (~5× slower). Builder still
+# reads items/stats from the Windows tab-stats dir for Lua co-consumers.
+WSL_OVERFLOW_BASE_TSV="$WSL_RUNTIME_STATE_DIR/overflow-base.tsv"
 WSL_WINDOWS_PATHS_CACHE_FILE="$WSL_RUNTIME_CACHE_ROOT/windows-paths.env"
