@@ -21,6 +21,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
+source "$script_dir/menu-bench-lib.sh"
+# shellcheck disable=SC1091
 source "$script_dir/attention-state-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-attention/render.sh"
@@ -37,20 +39,8 @@ source "$script_dir/tmux-attention/render.sh"
 # footer too.
 menu_start_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
 
-# In-script microbench instrumentation. Enabled by setting
-# WEZTERM_BENCH_NO_POPUP=1 in the env. When enabled, every `bench_mark
-# <stage>` records µs-since-start (via EPOCHREALTIME — zero fork, ~ns
-# cost), and right before `tmux display-popup` we dump a `__BENCH__`
-# line and exit instead of opening the popup. This lets
-# scripts/dev/bench-menu-prep.sh drive N runs without disrupting the
-# user's screen. Unset env var → all bench_* calls are inert no-ops.
-if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
-  bench_marks=()
-  bench_t0="${EPOCHREALTIME//./}"
-  bench_mark() { bench_marks+=("$1=$((${EPOCHREALTIME//./} - bench_t0))"); }
-else
-  bench_mark() { :; }
-fi
+# Microbench short-circuit for scripts/dev/bench-menu-prep.sh — see menu-bench-lib.sh.
+menu_bench_init
 bench_mark sourced
 
 # Inline cheap forms of start_ms and trace_id using bash 5 builtins
@@ -269,12 +259,9 @@ fi
 
 bench_mark prep_done
 
-# Bench short-circuit: dump the timing checkpoints + exit instead of
-# opening the popup. Drives scripts/dev/bench-menu-prep.sh.
-if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
-  printf '__BENCH__ picker_kind=%s %s\n' "$picker_kind" "${bench_marks[*]}"
+if menu_bench_active; then
   rm -f "$prefetch_file" "$prefetch_frame_file"
-  exit 0
+  menu_bench_dump_and_exit "picker_kind=$picker_kind"
 fi
 
 if bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 80% -h 70% -T 'Agent attention' -E "$picker_command"; then

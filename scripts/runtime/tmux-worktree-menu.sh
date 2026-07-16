@@ -5,20 +5,12 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
+source "$script_dir/menu-bench-lib.sh"
+# shellcheck disable=SC1091
 source "$script_dir/tmux-worktree-lib.sh"
 
-# Microbench short-circuit, mirrors tmux-attention-menu.sh. When
-# WEZTERM_BENCH_NO_POPUP=1 is set, bench_mark records µs-since-start via
-# EPOCHREALTIME (zero-fork) and the script dumps a __BENCH__ line then
-# exits before display-popup so the user's tmux is never disrupted.
-# Drives scripts/dev/bench-menu-prep.sh with `--target worktree`.
-if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
-  bench_marks=()
-  bench_t0="${EPOCHREALTIME//./}"
-  bench_mark() { bench_marks+=("$1=$((${EPOCHREALTIME//./} - bench_t0))"); }
-else
-  bench_mark() { :; }
-fi
+# Microbench short-circuit for scripts/dev/bench-menu-prep.sh --target worktree.
+menu_bench_init
 bench_mark sourced
 
 session_name="${1:-}"
@@ -154,10 +146,9 @@ fi
 bench_mark frame_rendered
 bench_mark prep_done
 
-if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
-  printf '__BENCH__ picker_kind=%s item_count=%d %s\n' "$picker_kind" "${#item_paths[@]}" "${bench_marks[*]}"
+if menu_bench_active; then
   rm -f "$prefetch_file" "$prefetch_frame_file"
-  exit 0
+  menu_bench_dump_and_exit "picker_kind=$picker_kind" "item_count=${#item_paths[@]}"
 fi
 
 runtime_log_info worktree "opening worktree popup picker" "session_name=$session_name" "repo_label=$repo_label" "list_root=$list_root"

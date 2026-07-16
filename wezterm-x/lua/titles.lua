@@ -239,10 +239,11 @@ function M.register(opts)
 
   -- Compose the right-status bar from IME, chrome-debug, and attention
   -- segments. Kept pure so it can run from both the `update-status`
-  -- tick (the 250ms cadence) and from `user-var-changed` when the agent
-  -- attention hook pushes an `attention_tick`. The fast path uses the
-  -- already-reloaded state cache, so the bar repaints within a frame of
-  -- the OSC arrival instead of waiting up to 250ms for the next tick.
+  -- tick (the 250ms cadence) and from the event-bus handler when a
+  -- producer publishes `attention.tick` (OSC wire `we_attention_tick`).
+  -- The fast path uses the already-reloaded state cache, so the bar
+  -- repaints within a frame of OSC arrival instead of waiting up to
+  -- 250ms for the next tick.
   --
   -- The active pane's id is forwarded to `attention.render_status_segment`
   -- so entries on the currently-focused (WezTerm pane + tmux pane) are
