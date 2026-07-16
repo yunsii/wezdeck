@@ -173,7 +173,7 @@ mkdir -p "$toggle_flag_dir" 2>/dev/null || true
 trap 'rm -f "'"$toggle_flag_file"'" "'"$prefetch_file"'"' EXIT
 
 popup_status=0
-tmux display-popup -x C -y C -w 70% -h 75% -T "Command Palette" -E "$picker_command" || popup_status=$?
+bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 70% -h 75% -T "Command Palette" -E "$picker_command" || popup_status=$?
 
 # tmux 3.6+ is a hard requirement (see CLAUDE.md / fe4491e), so
 # display-popup itself always exists. A non-zero exit here either means

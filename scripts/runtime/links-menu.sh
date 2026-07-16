@@ -97,5 +97,5 @@ dispatch="$script_dir/links-dispatch.sh"
 # tmux format strings (`#{@wezterm_runtime_root}` etc.), so the
 # chord can only safely invoke `run-shell` (which DOES expand) and
 # let this launcher run the popup with already-resolved paths.
-exec tmux display-popup -E -h "60%" -w "80%" \
+exec bash "$script_dir/tmux-display-popup.sh" -E -h "60%" -w "80%" \
   "'$picker_bin' links '$prefetch' '$dispatch' '$cwd' '$keypress_ts' '$menu_start_ts' '$menu_done_ts'"
