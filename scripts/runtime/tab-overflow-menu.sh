@@ -1,29 +1,18 @@
 #!/usr/bin/env bash
 # Cross-workspace tab-overflow picker. Bound to user-key User4 (Alt+x).
 #
-# Enumerates `<state>/tab-stats/*-items.json` (one snapshot per workspace
-# that has been opened under tab_visibility), tags each item with its
-# current state (visible / warm / cold) computed from live tmux sessions,
-# joins each row against the per-workspace activity stats so we can rank
-# by where real git work happened, and pops a popup
-# picker listing every row across every workspace. The active workspace's
-# rows still group at the top; within and across workspaces the rows the
-# user works in most often sort first. Stats accumulate over time — the
-# first-ever popup before any activity events fall back to `workspaces.lua`
-# declared order via the snap_idx tiebreaker.
+# Hot path: read precomputed <tab-stats>/overflow-base.tsv (maintained by
+# tab-overflow-prefetch-build.sh on a WezTerm tick), stamp is_current +
+# visible/warm/cold from live tmux sessions, sort, open Go picker.
+# Cold path (missing cache): build once synchronously, then open.
 #
-# Selection routes through tab-overflow-dispatch.sh exactly as before:
+# Selection routes through tab-overflow-dispatch.sh:
 #   visible  → tab.activate_visible event
-#   warm     → switch overflow pane to that session + tab.activate_overflow
-#   cold     → tab-overflow-cold-spawn.sh + same warm path
-# Cross-workspace picks add a `tab.cross_workspace_focus` event sent
-# beforehand so the lua side calls SwitchToWorkspace on the gui window
-# (the dispatch event itself is mux-keyed and would otherwise leave the
-# gui foregrounded on the previous workspace).
+#   warm     → switch overflow pane + tab.activate_overflow
+#   cold     → tab-overflow-cold-spawn.sh
 #
 # Empty-state handling:
-#   - No snapshots at all → toast "open a workspace first".
-#   - Every snapshot empty → toast "no configured items".
+#   - No base rows → toast "open a workspace first" / "no configured items".
 
 set -u
 
@@ -33,17 +22,15 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 menu_bench_init
 # shellcheck disable=SC1091
 . "$script_dir/tab-stats-lib.sh"
+# Paths/event only — avoid sourcing full worktree git stack on the hot path.
 # shellcheck disable=SC1091
 . "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
 . "$script_dir/wezterm-event-lib.sh"
 # shellcheck disable=SC1091
-. "$script_dir/tmux-worktree-lib.sh" 2>/dev/null || {
-  tmux_worktree_session_name_for_path() { :; }
-}
+. "$script_dir/picker-bin-lib.sh"
 bench_mark sourced
 
-# Capture menu-side timestamps for the perf footer (lua + menu + picker).
 menu_start_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
 start_ms=$menu_start_ts
 trace_id="overflow-$EPOCHSECONDS-$$-$RANDOM"
@@ -61,181 +48,60 @@ if [[ -z "$current_workspace" ]]; then
 fi
 
 stats_dir="$(tab_stats_dir)"
-shopt -s nullglob
-snapshots=( "$stats_dir"/*-items.json )
-shopt -u nullglob
+base_tsv="$stats_dir/overflow-base.tsv"
+build_script="$script_dir/tab-overflow-prefetch-build.sh"
 
-if (( ${#snapshots[@]} == 0 )); then
-  tmux display-message -d 3000 \
-    "Overflow picker: no workspace items snapshot yet (open a workspace under tab_visibility first)"
+# Ensure cache exists. Synchronous only on cold miss — the tick path
+# should keep this warm. Force rebuild when WEZTERM_OVERFLOW_PREFETCH_FORCE=1.
+if [[ ! -s "$base_tsv" || -n "${WEZTERM_OVERFLOW_PREFETCH_FORCE:-}" ]]; then
+  bash "$build_script" 2>/dev/null || true
+fi
+bench_mark cache
+
+if [[ ! -s "$base_tsv" ]]; then
+  # Still empty after build: no items snapshots yet.
+  shopt -s nullglob
+  snaps=( "$stats_dir"/*-items.json )
+  shopt -u nullglob
+  if (( ${#snaps[@]} == 0 )); then
+    tmux display-message -d 3000 \
+      "Overflow picker: no workspace items snapshot yet (open a workspace under tab_visibility first)"
+  else
+    tmux display-message -d 2000 \
+      "Overflow picker: no configured items across any workspace"
+  fi
   exit 0
 fi
 
-# Snapshot tmux sessions once so the warm/cold compute is O(N) instead of
-# O(N) `tmux has-session` forks.
 existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)"
-
-# Build per-workspace TSV blocks then concatenate. After all blocks are
-# emitted we sort the union by `is_current desc, activity tier desc, score desc,
-# event_count desc, snap_idx asc` so:
-#   1. The current workspace's rows stay grouped at the top.
-#   2. Within each block the rows where git activity happened most
-#      often surface first — a session changed by shell/git/agent work
-#      beats one that was merely viewed.
-#   3. Cross-workspace rows interleave by activity score (a heavy A row sits
-#      above a light B row regardless of workspace). Workspace identity
-#      stays visible via the workspace badge column the picker renders.
-#   4. Snapshot index is the within-workspace tiebreaker so ties on
-#      activity score (e.g. cold-start workspace where every score is 0) fall
-#      back to the user's intended `workspaces.lua` order — the picker
-#      stays usable before any activity stats accumulate.
-# Aux columns 8-12 (snap_idx, rank_tier, rank_score, event_count, rank_recent_ms) carry
-# the sort keys; an awk pass strips them before writing the prefetch_file
-# the Go picker reads (the picker still expects a 7-column TSV).
-prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
-prefetch_aux="$(mktemp -t wezterm-overflow-picker-aux.XXXXXX)"
-trap 'rm -f "$prefetch_file" "$prefetch_aux"' EXIT
-
-declare -a other_workspaces=()
-
-for snapshot in "${snapshots[@]}"; do
-  ws="$(jq -r '.workspace // ""' "$snapshot" 2>/dev/null || true)"
-  if [[ -z "$ws" ]]; then
-    # Fallback: derive from filename slug if the snapshot was written
-    # before the workspace field existed.
-    base="${snapshot##*/}"
-    ws="${base%-items.json}"
-  fi
-  if [[ "$ws" == "$current_workspace" ]]; then
-    continue  # written first below
-  fi
-  other_workspaces+=("$ws")
-done
-
-# Deduplicate the other-workspaces list. Order doesn't matter for the
-# user — it's just enumeration order before per-workspace weight maps
-# get built. The final picker order is decided by the sort below.
-if (( ${#other_workspaces[@]} > 0 )); then
-  IFS=$'\n' read -r -d '' -a other_workspaces < <(
-    printf '%s\n' "${other_workspaces[@]}" | LC_ALL=C sort -u
-    printf '\0'
-  )
-fi
-
-# Per-session activity maps — keyed by base session name (suffixes like
-# `__refresh_<ts>_<pid>` aggregated upstream by tab_stats_aggregated_tsv,
-# matching the lua-side rank_sessions normalization). Session names are
-# workspace-prefixed (`wezterm_<slug>_<repo>_<10hex>`), so a single flat
-# map is collision-free across workspaces.
-declare -A score_for_sess
-declare -A tier_for_sess
-declare -A event_count_for_sess
-declare -A recent_for_sess
-
-populate_weights_for_workspace() {
-  local target_ws="$1"
-  local base rank_tier rank_score total_dwell_ms event_count rank_recent
-  # tab_stats_aggregated_tsv emits 6 columns:
-  #   <base>\t<rank_tier>\t<rank_score>\t<total_dwell_ms>\t<event_count>\t<rank_recent_ms>
-  # Picker sorts by tier, then rank_score; total_dwell_ms is read so
-  # the surface is wired up for future "lifetime focus" picker chips
-  # without a second pass through this populator.
-  while IFS=$'\t' read -r base rank_tier rank_score total_dwell_ms event_count rank_recent; do
-    [[ -n "$base" ]] || continue
-    : "$total_dwell_ms"  # parsed for future use, intentionally unused for now
-    tier_for_sess["$base"]="$rank_tier"
-    score_for_sess["$base"]="$rank_score"
-    event_count_for_sess["$base"]="$event_count"
-    recent_for_sess["$base"]="$rank_recent"
-  done < <(tab_stats_aggregated_tsv "$target_ws" 2>/dev/null)
-}
-
-populate_weights_for_workspace "$current_workspace"
-for ws in "${other_workspaces[@]}"; do
-  populate_weights_for_workspace "$ws"
-done
-bench_mark weights
-
-# Build a set of live sessions for O(1) warm/cold checks (grep -F per row
-# was O(rows * sessions) and showed up under microbench).
 declare -A live_session_set=()
 while IFS= read -r s; do
   [[ -n "$s" ]] && live_session_set["$s"]=1
 done <<< "$existing_sessions"
 bench_mark live_index
 
-emit_workspace_rows() {
-  local target_ws="$1"
-  local target_snapshot="$stats_dir/$(tab_stats_workspace_slug "$target_ws")-items.json"
-  [[ -f "$target_snapshot" ]] || return 0
-  local is_current=0
-  [[ "$target_ws" == "$current_workspace" ]] && is_current=1
-  local snap_idx=0
-  local missing_session_cwds=()
-  local -a row_buf=()
-  # Prefer session names written by lua into items.json (snapshot v2).
-  # Fall back to bulk print-session-names for rows that still lack them
-  # (legacy snapshots / first open after upgrade) — never per-row git.
-  while IFS=$'\t' read -r cwd label has_tab sess; do
-    [[ -n "$cwd" ]] || continue
-    snap_idx=$(( snap_idx + 1 ))
-    if [[ -z "$sess" ]]; then
-      missing_session_cwds+=("$cwd")
-    fi
-    row_buf+=("$cwd"$'\t'"$label"$'\t'"$has_tab"$'\t'"$sess"$'\t'"$snap_idx")
-  done < <(jq -r '.items[] | [.cwd, .label, (.has_tab // false | tostring), (.session // "")] | @tsv' "$target_snapshot" 2>/dev/null)
+prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
+prefetch_aux="$(mktemp -t wezterm-overflow-picker-aux.XXXXXX)"
+trap 'rm -f "$prefetch_file" "$prefetch_aux"' EXIT
 
-  declare -A resolved_sess=()
-  if (( ${#missing_session_cwds[@]} > 0 )); then
-    local bulk_script="$script_dir/tmux-worktree/print-session-names.sh"
-    if [[ -x "$bulk_script" ]] || [[ -f "$bulk_script" ]]; then
-      while IFS=$'\t' read -r cwd sess; do
-        [[ -n "$cwd" ]] && resolved_sess["$cwd"]="$sess"
-      done < <(bash "$bulk_script" "$target_ws" "${missing_session_cwds[@]}" 2>/dev/null || true)
-    fi
+# Base columns: workspace label cwd has_tab session snap_idx tier score events recent
+# Stamp is_current + state, keep aux sort keys.
+while IFS=$'\t' read -r ws label cwd has_tab sess snap_idx tier score events recent; do
+  [[ -n "$ws" && -n "$cwd" ]] || continue
+  is_current=0
+  [[ "$ws" == "$current_workspace" ]] && is_current=1
+  state='cold'
+  if [[ "$has_tab" == "true" ]]; then
+    state='visible'
+  elif [[ -n "$sess" && -n "${live_session_set[$sess]:-}" ]]; then
+    state='warm'
   fi
-
-  local line cwd label has_tab sess state rank_tier rank_score event_count rank_recent
-  for line in "${row_buf[@]}"; do
-    IFS=$'\t' read -r cwd label has_tab sess snap_idx <<< "$line"
-    if [[ -z "$sess" ]]; then
-      sess="${resolved_sess[$cwd]:-}"
-    fi
-    state='cold'
-    if [[ "$has_tab" == "true" ]]; then
-      state='visible'
-    elif [[ -n "$sess" && -n "${live_session_set[$sess]:-}" ]]; then
-      state='warm'
-    fi
-    rank_tier="${tier_for_sess[$sess]:-0}"
-    rank_score="${score_for_sess[$sess]:-0}"
-    event_count="${event_count_for_sess[$sess]:-0}"
-    rank_recent="${recent_for_sess[$sess]:-0}"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-      "$target_ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
-      "$snap_idx" "$rank_tier" "$rank_score" "$event_count" "$rank_recent" \
-      >> "$prefetch_aux"
-  done
-}
-
-emit_workspace_rows "$current_workspace"
-for ws in "${other_workspaces[@]}"; do
-  emit_workspace_rows "$ws"
-done
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \
+    "$snap_idx" "$tier" "$score" "$events" "$recent"
+done < "$base_tsv" > "$prefetch_aux"
 bench_mark rows
 
-# Sort by:
-#   k6 (is_current) desc → current workspace block stays at top
-#   k9 (rank tier) desc — real git activity outranks passive viewing
-#   k10 (rank score) desc — activity score or same-tier dwell fallback
-#   k11 (event count) desc — secondary activity frequency tiebreaker
-#   k1 (workspace) asc — only matters for cross-workspace ties
-#   k8 (snap_idx) asc — within-workspace tiebreaker; preserves the
-#                       `workspaces.lua` declared order when stats have
-#                       not yet differentiated rows.
-# Then awk-strip the four aux columns so the prefetch the Go picker
-# loads stays at the 7-column shape `cmd_overflow.go::loadOverflowRows`
-# expects.
 if [[ -s "$prefetch_aux" ]]; then
   LC_ALL=C sort -t $'\t' \
     -k6,6nr -k9,9nr -k10,10gr -k11,11nr -k1,1 -k8,8n \
@@ -251,13 +117,7 @@ if [[ ! -s "$prefetch_file" ]]; then
   exit 0
 fi
 
-# shellcheck disable=SC1091
-. "$script_dir/picker-bin-lib.sh"
 dispatch_script="$script_dir/tab-overflow-dispatch.sh"
-
-# Pin the picker on the file transport (popup pty has no DCS pass-through
-# to the parent client tty) and inject WEZBUS_EVENT_DIR so the popup
-# doesn't redo wezterm-runtime path detection from inside the popup.
 picker_event_dir="$(wezterm_event_dir)"
 mkdir -p "$picker_event_dir" 2>/dev/null || true
 
@@ -267,9 +127,8 @@ picker_binary="$(picker_bin_require "$script_dir" "Alt+x")" || picker_rc=$?
 if (( picker_rc == 1 )); then
   exit 0
 fi
+
 if (( picker_rc == 2 )); then
-  # WEZTERM_ALLOW_BASH_PICKER=1: legacy single-workspace tmux display-menu
-  # (no fuzzy filter, no cross-workspace).
   runtime_log_warn overflow "Go picker missing — WEZTERM_ALLOW_BASH_PICKER display-menu path" \
     "trace=$trace_id"
   declare -a menu_args
@@ -301,27 +160,31 @@ if (( picker_rc == 2 )); then
   fi
   tmux display-menu -T "All sessions · $current_workspace · $item_count" \
     -x C -y C -- "${menu_args[@]}"
+  # Refresh cache after popup so the next press is warm.
+  ( bash "$build_script" >/dev/null 2>&1 & ) || true
   exit 0
 fi
 
 menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
-keypress_ts=0  # Alt+x has no upstream-stamped keypress timestamp; the
-              # picker footer falls back to "key→paint" without the
-              # 3-bucket lua/menu/picker breakdown.
+keypress_ts=0
 bench_mark prep_done
 
 item_count="$(wc -l < "$prefetch_file" | tr -d ' ')"
 if menu_bench_active; then
   rm -f "$prefetch_file" "$prefetch_aux"
-  menu_bench_dump_and_exit "picker_kind=go" "item_count=$item_count"
+  menu_bench_dump_and_exit "picker_kind=go" "item_count=$item_count" "cache=1"
 fi
 
 picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") overflow $(printf %q "$prefetch_file") $(printf %q "$dispatch_script") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
 
+# Kick a background rebuild so the next press stays warm (has_tab /
+# ranking refresh). Fire-and-forget; flock inside the builder.
+( bash "$build_script" >/dev/null 2>&1 & ) || true
+
 if bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 80% -h 70% -T "Sessions across workspaces" -E "$picker_command"; then
   runtime_log_info overflow "popup completed" \
     "trace=$trace_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")" \
-    "item_count=$item_count"
+    "item_count=$item_count" "path=cache"
   exit 0
 fi
 
