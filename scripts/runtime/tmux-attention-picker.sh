@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Popup-side picker for the agent-attention overlay (Alt+/).
 #
+# DEPRECATED as the default UI. Popups are Go-only via
+# native/picker/bin/picker (see docs/picker-release.md). This bash
+# implementation is reached only when WEZTERM_ALLOW_BASH_PICKER=1 and
+# the Go binary is missing — emergency recovery, not the product path.
+#
 # Performance shape mirrors tmux-worktree-picker:
 #   1. Parse args BEFORE sourcing anything so the first paint can run with
 #      bash builtins only. On WSL2 with cold disk caches, sourcing the

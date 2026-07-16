@@ -89,11 +89,19 @@ The SHA-256 is in the workflow summary or via `gh release view "$tag" --json ass
 
 `native/picker/build.sh` is the single entry point for provisioning the binary at `native/picker/bin/picker`. It chooses between two paths based on `WEZTERM_PICKER_INSTALL_SOURCE`:
 
-- `local`: runs `go build` against the repo source. Errors out (one-line note + bash fallback) if no `go` is found in `PATH`, `~/.local/go/bin`, or `/usr/local/go/bin`.
-- `release`: reads `release-manifest.json`, picks the `<os>-<arch>` asset for the host (`uname -s`/`uname -m` mapped to `linux-amd64`, `linux-arm64`, etc.), downloads the tarball, SHA-256 verifies it against the manifest, and extracts to `native/picker/bin/picker`. Errors out cleanly if the manifest is `enabled: false`, has no asset for the host arch, or the download / hash check fails.
-- `auto` (default): tries `local` first (HEAD source for maintainers), falls through to `release` when Go is missing, and finally exits with a one-liner so the popup callers fall back to the bash pickers.
+- `local`: runs `go build` against the repo source. If Go is missing, keeps an already-installed binary; otherwise fails non-zero (no silent skip).
+- `release`: reads `release-manifest.json`, picks the `<os>-<arch>` asset for the host (`uname -s`/`uname -m` mapped to `linux-amd64`, `linux-arm64`, etc.), downloads the tarball, SHA-256 verifies it against the manifest, and extracts to `native/picker/bin/picker`. Fails non-zero if the manifest is `enabled: false`, has no asset for the host arch, or the download / hash check fails — unless an existing binary can be kept.
+- `auto` (default): tries `local` first (HEAD source for maintainers), falls through to `release` when Go is missing, then keeps any existing binary; only exits non-zero when no path can produce or retain a binary.
 
 Downloaded tarballs are cached at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>/` keyed by version, so a re-sync after a successful fetch only re-extracts.
+
+### Go-only product path
+
+High-frequency popups (`Alt+/` attention, `Alt+g` worktree, command palette, `Alt+t` overflow) **require** `native/picker/bin/picker`. Menu wrappers resolve it via `scripts/runtime/picker-bin-lib.sh`. When the binary is missing they toast and refuse to open a degraded UI.
+
+`wezterm-runtime-sync`'s `build-picker` step is a **hard gate**: a failed install aborts the native subflow (and thus the sync) so a broken machine does not silently lose popup UX.
+
+Emergency escape hatch only: set `WEZTERM_ALLOW_BASH_PICKER=1` to re-enable the deprecated bash pickers (`tmux-*-picker.sh`) or overflow's legacy `display-menu` path. This is for recovery when install is broken — not the default product path. Prefer fixing install (`sync-runtime.sh`, Go toolchain, or a published release asset).
 
 `wezterm-runtime-sync`'s `build-picker` step inherits the env from the calling shell, so a maintainer can force a release-install verification with:
 

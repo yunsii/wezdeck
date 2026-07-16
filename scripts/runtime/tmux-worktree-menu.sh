@@ -95,18 +95,22 @@ runtime_log_info worktree "worktree menu prefetched items" "session_name=$sessio
 # (minus 2 cells for the popup border on each axis); a brief mismatch with
 # picker.sh's stty-based render is invisible because both paint the same
 # bytes for a fresh popup with no scrollback.
-# Prefer the static Go picker binary when present. Cold start is ~2-5ms
-# vs ~30-80ms for the bash picker, and the Go path needs no
-# pre-rendered frame (it owns its own first paint). When the binary is
-# missing, fall back to the bash picker, which still expects a
-# pre-rendered frame and the existing positional contract.
-repo_root="$(cd "$script_dir/../.." && pwd)"
-picker_binary="$repo_root/native/picker/bin/picker"
+# Go-only picker (cold start ~2-5ms; owns first paint). Bash path is
+# emergency-only via WEZTERM_ALLOW_BASH_PICKER=1.
+# shellcheck disable=SC1091
+. "$script_dir/picker-bin-lib.sh"
 prefetch_frame_file=''
-picker_kind='bash'
+picker_kind='go'
 open_script="$script_dir/tmux-worktree-open.sh"
+picker_binary=""
+picker_rc=0
+picker_binary="$(picker_bin_require "$script_dir" "Alt+g")" || picker_rc=$?
+if (( picker_rc == 1 )); then
+  rm -f "$prefetch_file"
+  exit 0
+fi
 
-if [[ -x "$picker_binary" ]]; then
+if (( picker_rc == 0 )); then
   picker_kind='go'
   # EPOCHREALTIME (µs/1000 → ms) avoids the ~5ms `date` fork on the popup
   # hot path; matches the inlined idiom in tmux-attention-menu.sh.
@@ -118,6 +122,8 @@ if [[ -x "$picker_binary" ]]; then
     "$current_worktree_root" "$repo_label" \
     "$start_ms" "$start_ms" "$menu_done_ts")
 else
+  # WEZTERM_ALLOW_BASH_PICKER=1 emergency path.
+  picker_kind='bash'
   prefetch_frame_file="$(mktemp -t wezterm-worktree-frame.XXXXXX)"
   if (( ${#item_paths[@]} > 0 )); then
     client_width="$(tmux display-message -p '#{client_width}' 2>/dev/null || echo 100)"
