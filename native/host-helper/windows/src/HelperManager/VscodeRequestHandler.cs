@@ -25,11 +25,24 @@ internal sealed class VscodeRequestHandler
             command = new[] { "code" };
         }
 
+        // Optional file target. When present, the window is still resolved and
+        // reused by folder (so all files of a repo share one window), and the
+        // file is revealed on top: launches append `--file-uri`, and the
+        // reuse-existing-window path issues a follow-up `--reuse-window
+        // --file-uri` so the already-open window jumps to the file.
+        var fileRaw = RequestPayloadReader.GetOptionalString(payload, "file");
+        string? fileUri = string.IsNullOrWhiteSpace(fileRaw)
+            ? null
+            : PathResolvers.BuildVscodeFileUri(distro, PathResolvers.NormalizeWslPath(fileRaw));
+
         var codeExecutable = command[0];
         var codeArguments = command.Skip(1).ToList();
         var processName = PathResolvers.GetProcessNameFromExecutable(codeExecutable, "Code");
         var launchKey = PathResolvers.BuildWindowCacheKey(distro, targetDir);
         var folderUri = PathResolvers.BuildVscodeFolderUri(distro, targetDir);
+        string[] OpenArgs() => fileUri == null
+            ? new[] { "--folder-uri", folderUri }
+            : new[] { "--folder-uri", folderUri, "--file-uri", fileUri };
         var matchSpec = new LaunchMatchSpec(
             InstanceType: "vscode",
             LaunchKey: launchKey,
@@ -63,6 +76,12 @@ internal sealed class VscodeRequestHandler
         });
         if (reuseDecision.Window != null)
         {
+            if (fileUri != null)
+            {
+                WindowActivator.LaunchDetachedProcess(
+                    codeExecutable,
+                    codeArguments.Concat(new[] { "--reuse-window", "--file-uri", fileUri }).ToArray());
+            }
             logger.Info("vscode", "focused cached vscode window", new Dictionary<string, string?>
             {
                 ["trace_id"] = traceId,
@@ -71,6 +90,7 @@ internal sealed class VscodeRequestHandler
                 ["pid"] = reuseDecision.Window.ProcessId.ToString(),
                 ["hwnd"] = reuseDecision.Window.WindowHandle.ToInt64().ToString(),
                 ["decision_path"] = reuseDecision.Path,
+                ["file_uri"] = fileUri,
             });
             return new RequestOutcome(
                 Domain: "vscode",
@@ -95,7 +115,7 @@ internal sealed class VscodeRequestHandler
             {
                 WindowActivator.LaunchDetachedProcess(
                     codeExecutable,
-                    codeArguments.Concat(new[] { "--reuse-window", "--folder-uri", folderUri }).ToArray());
+                    codeArguments.Concat(new[] { "--reuse-window" }).Concat(OpenArgs()).ToArray());
 
                 if (reuseCandidate != null)
                 {
@@ -150,12 +170,13 @@ internal sealed class VscodeRequestHandler
         }
 
         var initialForeground = WindowQuery.GetForegroundWindowInfo();
-        WindowActivator.LaunchDetachedProcess(codeExecutable, codeArguments.Concat(new[] { "--folder-uri", folderUri }).ToArray());
+        WindowActivator.LaunchDetachedProcess(codeExecutable, codeArguments.Concat(OpenArgs()).ToArray());
         logger.Info("vscode", "launched vscode", new Dictionary<string, string?>
         {
             ["trace_id"] = traceId,
             ["target_dir"] = targetDir,
             ["folder_uri"] = folderUri,
+            ["file_uri"] = fileUri,
             ["code_executable"] = codeExecutable,
             ["decision_path"] = "launch",
         });

@@ -16,7 +16,10 @@ source "$SCRIPT_DIR/runtime-env-lib.sh"
 usage() {
   cat <<'EOF' >&2
 usage:
-  open-current-dir-in-vscode.sh [--window WINDOW_ID] [--code-command ARG ... --] [target_dir]
+  open-current-dir-in-vscode.sh [--window WINDOW_ID] [--file ABS_FILE] [--code-command ARG ... --] [target_dir]
+
+With --file, VS Code focuses/opens the file's repo window and reveals the
+file in it. Without it, only the directory is opened (default behavior).
 EOF
 }
 
@@ -104,6 +107,13 @@ vscode_max_windows_json_fragment() {
   printf ',\"max_windows\":%s' "$((10#$raw))"
 }
 
+vscode_file_json_fragment() {
+  if [[ -z "$target_file" ]]; then
+    return 0
+  fi
+  printf ',\"file\":%s' "$(json_escape "$target_file")"
+}
+
 helper_state_is_fresh() {
   windows_runtime_helper_state_is_fresh "$HELPER_STATE_WSL" 5000
 }
@@ -147,7 +157,7 @@ invoke_helper_request() {
     code_part+="$(json_escape "$code_arg")"
   done
 
-  request_body="{\"version\":2,\"trace_id\":$(json_escape "$trace_id"),\"message_type\":\"request\",\"domain\":\"vscode\",\"action\":\"focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]$(vscode_max_windows_json_fragment)}}"
+  request_body="{\"version\":2,\"trace_id\":$(json_escape "$trace_id"),\"message_type\":\"request\",\"domain\":\"vscode\",\"action\":\"focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]$(vscode_max_windows_json_fragment)$(vscode_file_json_fragment)}}"
   request_body_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
   "$HELPER_CLIENT_WSL" request --pipe "$HELPER_IPC_ENDPOINT" --payload-base64 "$request_body_b64" --timeout-ms 5000 >/dev/null 2>&1
 }
@@ -168,6 +178,10 @@ run_direct_windows_open() {
     arg_list+=", "
   fi
   arg_list+="'--folder-uri', $(windows_powershell_quote "$folder_uri")"
+  if [[ -n "$target_file" ]]; then
+    local file_uri="vscode-remote://wsl+${WSL_DISTRO_NAME}${target_file}"
+    arg_list+=", '--file-uri', $(windows_powershell_quote "$file_uri")"
+  fi
   local max_windows="${WEZTERM_VSCODE_MAX_WINDOWS:-}"
   if [[ -n "$max_windows" ]]; then
     if [[ ! "$max_windows" =~ ^[0-9]+$ ]] || (( 10#$max_windows < 1 )); then
@@ -235,6 +249,7 @@ EOF
 code_command=()
 tmux_window_id=""
 window_root=""
+target_file=""
 start_ms="$(runtime_log_now_ms)"
 trace_id="vscode-$(runtime_log_generate_trace_id)"
 export WEZTERM_RUNTIME_TRACE_ID="$trace_id"
@@ -243,6 +258,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --window)
       tmux_window_id="${2:-}"
+      shift 2
+      ;;
+    --file)
+      target_file="${2:-}"
       shift 2
       ;;
     --code-command)
@@ -274,7 +293,25 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-target_dir="${1:-$PWD}"
+if [[ -n "$target_file" ]]; then
+  if [[ "$target_file" != /* ]]; then
+    runtime_log_error vscode "expected absolute file path" "target_file=$target_file"
+    exit 1
+  fi
+  if [[ ! -f "$target_file" ]]; then
+    runtime_log_error vscode "file does not exist" "target_file=$target_file"
+    exit 1
+  fi
+fi
+
+# When a file is given without an explicit dir, anchor on the file's own
+# directory so the repo-root resolution below finds the right window
+# regardless of the caller's cwd.
+if [[ -n "$target_file" && -z "${1:-}" ]]; then
+  target_dir="$(dirname "$target_file")"
+else
+  target_dir="${1:-$PWD}"
+fi
 requested_dir="$target_dir"
 
 if [[ "$target_dir" != /* ]]; then
@@ -313,7 +350,11 @@ if [[ -z "${WSL_DISTRO_NAME:-}" ]] || ! command -v powershell.exe >/dev/null 2>&
   fi
 
   cd "$target_dir"
-  "${code_command[@]}" .
+  if [[ -n "$target_file" ]]; then
+    "${code_command[@]}" . --goto "$target_file"
+  else
+    "${code_command[@]}" .
+  fi
   exit $?
 fi
 
