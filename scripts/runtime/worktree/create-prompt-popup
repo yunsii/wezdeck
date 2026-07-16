@@ -42,4 +42,4 @@ if [[ ! -d "$cwd" ]]; then
 fi
 
 printf -v popup_command 'exec %q' "$prompt"
-exec tmux display-popup -E -d "$cwd" -w "88%" -h "60%" -T "$type_kind worktree" "$popup_command"
+exec bash "$script_dir/../tmux-display-popup.sh" -E -d "$cwd" -w "88%" -h "60%" -T "$type_kind worktree" "$popup_command"

@@ -271,7 +271,7 @@ keypress_ts=0  # Alt+x has no upstream-stamped keypress timestamp; the
 
 picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") overflow $(printf %q "$prefetch_file") $(printf %q "$dispatch_script") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
 
-if tmux display-popup -x C -y C -w 80% -h 70% -T "Sessions across workspaces" -E "$picker_command"; then
+if bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 80% -h 70% -T "Sessions across workspaces" -E "$picker_command"; then
   runtime_log_info overflow "popup completed" \
     "trace=$trace_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0

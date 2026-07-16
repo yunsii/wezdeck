@@ -277,7 +277,7 @@ if [[ -n "${WEZTERM_BENCH_NO_POPUP:-}" ]]; then
   exit 0
 fi
 
-if tmux display-popup -x C -y C -w 80% -h 70% -T 'Agent attention' -E "$picker_command"; then
+if bash "$script_dir/tmux-display-popup.sh" -x C -y C -w 80% -h 70% -T 'Agent attention' -E "$picker_command"; then
   rm -f "$prefetch_file" "$prefetch_frame_file"
   runtime_log_info attention "popup menu completed" \
     "trace=$trace_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")" \

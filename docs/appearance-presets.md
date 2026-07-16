@@ -40,7 +40,7 @@ independently, so keep the two in lockstep when adding/renaming a preset:
 | Layer | File | What it sets |
 | --- | --- | --- |
 | WezTerm window | `wezterm-x/lua/config/appearance-presets.lua` | `window_background_opacity`, `win32_system_backdrop`, `front_end`, and the tab-bar `palette` colors. Consumed in `constants.lua` (`base <- preset <- local`), applied in `lua/ui.lua`. |
-| tmux panes/status | `scripts/runtime/render-tmux-appearance.sh` | Emits `wezterm-x/tmux/appearance.generated.conf` (gitignored) with `status-style` / `window-style` / `window-active-style` bg. `tmux.conf` loads it via `source-file -Fq`; `sync-runtime.sh` regenerates it. |
+| tmux panes/status | `scripts/runtime/render-tmux-appearance.sh` | Emits `wezterm-x/tmux/appearance.generated.conf` (gitignored) with `status-style` / `window-style` / `window-active-style` bg, plus solid `popup-style` / `popup-border-style` (always cream — popups must not inherit frosted `bg=default` or the underlying pane shows through). `tmux.conf` loads it via `source-file -Fq`; `sync-runtime.sh` regenerates it. |
 
 The bash renderer reads `WEZTERM_APPEARANCE_PRESET` straight from
 `local/shared.env`; the Lua side reads the same key via `shared_env`. The Lua
