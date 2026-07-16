@@ -203,6 +203,11 @@ func (ui *worktreeUI) render() {
 
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
+	// Full-width selected-row highlight, mirroring cmd_overflow.go. The row
+	// body carries no inner SGR color, so a bare background + trailing
+	// clearEOL (which paints to EOL under the active bg) is enough — no
+	// "selected variant" helpers like overflow needs for its colored cells.
+	const selectedBg = "\x1b[48;5;255m"
 
 	var b strings.Builder
 	b.Grow(2048)
@@ -240,12 +245,16 @@ func (ui *worktreeUI) render() {
 			suffix = " (new)"
 		}
 		if i == ui.selected {
+			b.WriteString(selectedBg)
 			b.WriteString("▶ ")
 		} else {
 			b.WriteString("  ")
 		}
 		fmt.Fprintf(&b, "%s %c %s%s%s", accelText, marker, r.label, branch, suffix)
 		b.WriteString(clearEOL)
+		if i == ui.selected {
+			b.WriteString(reset)
+		}
 		row++
 	}
 

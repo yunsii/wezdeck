@@ -278,6 +278,12 @@ func (ui *commandUI) render() {
 
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
+	// Full-width selected-row highlight, mirroring cmd_overflow.go.
+	// restoreSelectedBg clears intensity/italic/underline/inverse + fg but
+	// leaves the background intact, so any inner SGR reset in the row body
+	// (the dim hotkey hint) can be swapped for it to keep the bar continuous.
+	const selectedBg = "\x1b[48;5;255m"
+	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
 
 	var b strings.Builder
 	b.Grow(2048)
@@ -311,12 +317,16 @@ func (ui *commandUI) render() {
 	for i := startIndex; i <= endIndex && i < filteredCount; i++ {
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := ui.rows[ui.filtered[i]]
-		if i == ui.selected {
+		sel := i == ui.selected
+		if sel {
+			b.WriteString(selectedBg)
 			b.WriteString("▶ ")
 		} else {
 			b.WriteString("  ")
 		}
-		b.WriteString(r.label)
+
+		var rb strings.Builder
+		rb.WriteString(r.label)
 
 		// Hotkey hint right-aligned (best-effort; truncation falls back to
 		// dropping the hint when the label already crowds the column).
@@ -327,14 +337,25 @@ func (ui *commandUI) render() {
 			if used <= cols {
 				pad := cols - used
 				for k := 0; k < pad; k++ {
-					b.WriteByte(' ')
+					rb.WriteByte(' ')
 				}
-				b.WriteString("\x1b[2m")
-				b.WriteString(hint)
-				b.WriteString(reset)
+				rb.WriteString("\x1b[2m")
+				rb.WriteString(hint)
+				rb.WriteString(reset)
 			}
 		}
+
+		body := rb.String()
+		if sel {
+			// Keep the highlight bar unbroken: any inner reset becomes a
+			// bg-preserving restore, and clearEOL paints to EOL under the bg.
+			body = strings.ReplaceAll(body, reset, restoreSelectedBg)
+		}
+		b.WriteString(body)
 		b.WriteString(clearEOL)
+		if sel {
+			b.WriteString(reset)
+		}
 		row++
 	}
 
