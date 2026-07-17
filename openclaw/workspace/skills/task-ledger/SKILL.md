@@ -23,6 +23,11 @@ description: >
 7. When the request has a clear **需求提出人** (product / user who asked):
    record them on open/update with `--requester-id <ou_…>` (preferred).
    Feishu person field name: **需求提出人**. Do not leave it blank when known.
+8. **Order with worktree:** `open` first (may still point at primary repo path);
+   after claw worktree exists, `update` cwd/分支 **before** claiming work started
+   in that tree. Never `close` without a real `task_id` from CLI.
+9. Pure Q&A: do not open a row. As soon as the user accepts **implementation**,
+   open before assess/create (same turn is OK if open is first).
 
 ## Path guard
 
@@ -75,11 +80,13 @@ Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only; never commit fil
 ## Flow
 
 1. Path guard → 团队仓 allowlist.
-2. `open` (status `open`/`planned`) — may still point at primary repo path.
-3. Plan → user confirm when needed → `confirm`.
-4. Create **`claw-*` worktree** (`claw-worktree.sh create`); `update` ledger
-   `cwd` + `分支` to that worktree (never human `dev-*`/`task-*`/`hotfix-*`).
-5. Implement only under the claw worktree `cwd`.
-6. `close` + report with `task_id`.
-7. **Ask** if the user wants reclaim (do not auto-reclaim). Prefer keep for
-   `claw-dev-*`; for task/hotfix offer reclaim only after user yes.
+2. `open` (status `open`/`planned`) — may still point at primary repo path;
+   capture `task_id` immediately for all later Feishu messages.
+3. Plan / worktree 初评 → user confirm when needed → `confirm` if required.
+4. Create/reuse **`claw-*` worktree**; `update` ledger `cwd` + `分支`
+   (never human `dev-*`/`task-*`/`hotfix-*`).
+5. Implement under claw cwd **or** handoff to profile-backed coding agent
+   (main still owns close).
+6. `close` + report with `task_id` (AGENTS 结果 template).
+7. **Ask** reclaim (do not auto-reclaim). Prefer keep for `claw-dev-*`;
+   task/hotfix only after user yes.

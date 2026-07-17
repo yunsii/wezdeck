@@ -24,15 +24,20 @@ This is **not** the same MCP session as Grok/Claude CLI; all clients share the
 Workflow detail for launch / badge / inspect:
 repo root [`docs/browser-debug.md`](../../../../docs/browser-debug.md).
 
-## When to use
+## When to use (main YunsClaw)
 
-- User asks to open a URL, check a page, click UI, fill a form, screenshot, audit.
-- Verify a web UI after code change (still respect 团队仓 allowlist for **code** work).
-- Read console / network for a failing page.
+| Trigger | Action |
+| --- | --- |
+| User: open/check URL, click, form, screenshot | MCP navigate + snapshot (not curl HTML) |
+| **You** just changed UI in 团队仓 | Before 验收通过: open relevant URL/path, snapshot |
+| “页面坏了 / 控制台报错 / 按钮点不了” | list pages / console / network as needed |
+
+Coding agents on the host have their **own** browser/MCP/profile — this skill is
+for **main** when main is looking at the page. No bridge required.
 
 ## When not to use
 
-- Pure git / shell / ledger — use those tools; do not open Chrome “just in case”.
+- Pure git / shell / ledger / worktree assess — do not open Chrome “just in case”.
 - Destructive browser actions outside what the user asked (clear profile, mass
   delete, payment submit) without explicit confirmation.
 - Host shell risk still goes through `claw-run` / `exec-risk` — browser MCP is
