@@ -44,7 +44,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | Feishu DM | `dmPolicy: allowlist` (owner only); no re-pairing on reconnect |
 | Feishu groups | `groupPolicy: allowlist` (empty = all groups off) + `requireMention: true` |
 | Feishu tools | Prefer off: `doc` / `wiki` / `drive` / `perm` / `bitable`; keep `chat` / `scopes` if needed |
-| Host exec | Personal default: `mode: full` + `ask: off` (no OpenClaw `/approve` spam). Dev planning uses **agent** judgment; obvious shell danger uses **simple** `claw-exec-classify.sh` + Feishu confirm (`skills/exec-risk`). |
+| Host exec | `mode: full` (no `/approve` spam). Gate: **rules → Grok → human if danger** via `claw-exec-gate.sh` (`skills/exec-risk`). Dev planning still agent+skills. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Dev allowlist | **团队仓 only** — roots from local env or `$HOME/work/…` defaults (no host user path in git) |
