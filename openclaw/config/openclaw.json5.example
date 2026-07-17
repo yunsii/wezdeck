@@ -7,7 +7,7 @@
 
 {
   // tools: {
-  //   profile: "coding",
+  //   profile: "coding", // allows bundle-mcp (configured mcp.servers)
   //   elevated: { enabled: false },
   //   // Prefer mode alone — do not combine with tools.exec.security / ask
   //   exec: {
@@ -17,6 +17,23 @@
   //     host: "gateway",
   //     strictInlineEval: false,
   //     // safeBinTrustedDirs: ["/bin", "/usr/bin"],
+  //   },
+  // },
+
+  // Core: attach to WezDeck Windows debug Chrome (CDP). Local only — do not
+  // commit live openclaw.json. Port must match chrome_debug_browser.remote_debugging_port.
+  // mcp: {
+  //   servers: {
+  //     "chrome-devtools": {
+  //       command: "npx",
+  //       args: [
+  //         "-y",
+  //         "chrome-devtools-mcp@latest",
+  //         "--browser-url=http://127.0.0.1:9222",
+  //       ],
+  //       connectTimeout: 60,
+  //       timeout: 90,
+  //     },
   //   },
   // },
 
