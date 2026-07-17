@@ -57,7 +57,10 @@ Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only; never commit fil
 ## Flow
 
 1. Path guard → coco-forge allowlist.
-2. `open` (status `open`/`planned`).
+2. `open` (status `open`/`planned`) — may still point at primary repo path.
 3. Plan → user confirm when needed → `confirm`.
-4. Implement under fixed allowlisted `cwd`.
-5. `close` + report with `task_id`.
+4. Create **`claw-*` worktree** (`claw-worktree.sh create`); `update` ledger
+   `cwd` + `分支` to that worktree (never human `dev-*`/`task-*`/`hotfix-*`).
+5. Implement only under the claw worktree `cwd`.
+6. `close` + report with `task_id`.
+7. Reclaim claw worktree when appropriate (`claw-worktree.sh reclaim`).

@@ -333,6 +333,29 @@ Tracked docs only describe the *policy*; concrete roots stay local.
 - Soft guard: `workspace/AGENTS.md` + skills refuse non–coco-forge development.
 - Hard guard: `dev-task-ledger.sh` rejects `--repo` / `--cwd` outside the allowlist.
 
+### Development workflow + worktree ownership
+
+Write tasks follow: **ledger open → plan → confirm → claw worktree → work →
+ledger close → reclaim claw tree**.
+
+| Owner | Slug under `.worktrees/<repo>/` | Branch | Tooling |
+| --- | --- | --- | --- |
+| Human (WezDeck) | `dev-*`, `task-*`, `hotfix-*` | `dev/`, `task/`, `hotfix/` | User only |
+| OpenClaw | **`claw-*` only** | **`claw/` only** | `scripts/claw-worktree.sh` |
+| Primary checkout | repo root | — | **read-only for task implementation** |
+
+```bash
+./openclaw/scripts/claw-worktree.sh create --title "cache search field" \
+  --cwd "$HOME/work/coco-forge"
+./openclaw/scripts/claw-worktree.sh list --cwd "$HOME/work/coco-forge"
+./openclaw/scripts/claw-worktree.sh reclaim --slug claw-cache-search-field \
+  --cwd "$HOME/work/coco-forge"
+```
+
+Create uses `worktree-task launch` with `--provider none` (no tmux attach).
+Reclaim **refuses** human prefixes. Same parent directory as WezDeck; isolation
+is by **slug prefix**, not a second parent tree.
+
 ### Privacy
 
 - Do **not** put App Secret, API keys, tokens, or full diffs in Base cells.
