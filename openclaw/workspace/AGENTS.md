@@ -46,10 +46,10 @@ runtime:
 ```text
 ledger open
   → 【初评】worktree 选型（lifecycle + domain + slug）→ 用户确认
-  → create claw worktree
+  → create claw worktree（或复用）
   → implement + accept in that cwd only
   → ledger close
-  → reclaim（按 lifecycle 规则）
+  → 【询问是否回收】（见下；默认不自动删树）
 ```
 
 ### Reference: WezDeck human design → Claw mapping
@@ -133,20 +133,32 @@ both are plausible.
   --title "<subject>" --lifecycle task|dev|hotfix \
   --domain "<optional>" --cwd "$HOME/work/team-repo"
 
-./openclaw/scripts/claw-worktree.sh reclaim --slug claw-task-… \
-  --cwd "$HOME/work/team-repo"
-# claw-dev-*: add --allow-long-lived after delivery checks
-
 ./openclaw/scripts/claw-worktree.sh list --cwd "$HOME/work/team-repo"
 # claw-task|claw-dev|claw-hotfix|human|…
+```
+
+**Reclaim is never automatic.** After business is done (`ledger close`), **ask**
+the user whether to reclaim. Do not run `reclaim` until they explicitly agree.
+
+| Kind | After close |
+| --- | --- |
+| `claw-task-*` / `claw-hotfix-*` | Ask: 是否回收？(可建议回收，若已交付且非共享) |
+| `claw-dev-*` | **Default keep** — 一般不回收；仅当用户明确要求时 reclaim，并带 `--allow-long-lived` |
+| Shared domain hub still in use | Do not reclaim; explain |
+
+```bash
+# only after user says yes
+./openclaw/scripts/claw-worktree.sh reclaim --slug claw-task-… \
+  --cwd "$HOME/work/team-repo"
 ```
 
 Hard rules:
 
 1. Never touch human WezDeck worktrees (read-only reference OK if user points).
 2. Never implement write tasks on primary checkout.
-3. One write task → one claw worktree; all edits/tests/commits in that cwd.
+3. Prefer one claw worktree per task unless reusing a domain hub.
 4. Ledger `cwd`/branch match the claw worktree.
+5. Never auto-reclaim; never reclaim `claw-dev-*` unless the user insists.
 5. Reclaim only `claw-*`; dirty refuse without explicit force.
 
 ## Before any write

@@ -337,8 +337,8 @@ Tracked docs only describe the *policy*; concrete roots stay local.
 
 Write tasks follow:
 
-**ledger open → worktree 初评 (assess) → user confirm → create → work →
-ledger close → reclaim**
+**ledger open → worktree 初评 (assess) → user confirm → create/reuse → work →
+ledger close → ask whether to reclaim**（dev 默认不回收）
 
 Claw mirrors your WezDeck **lifecycle** (dev / task / hotfix) under reserved
 `claw-` prefixes so human trees are never overwritten.
