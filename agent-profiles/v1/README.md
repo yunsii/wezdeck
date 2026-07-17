@@ -55,6 +55,21 @@ agents; consult when setting up a CLI tool or rotating machines.
 Each topic file carries YAML frontmatter (`name`, `scope`, `triggers`, `tags`) so agents or tools can index and load on demand.
 Each rule carries a stable identifier of the form `[<topic>-NN]` so feedback, memory entries, and reviewers can reference rules precisely.
 
+## Relation to YunsClaw / OpenClaw
+
+This profile is the **host coding-agent** instruction set (Claude/Codex via
+symlink). It is **not** loaded as the OpenClaw Feishu main agent system prompt.
+
+| Surface | Uses this profile? |
+| --- | --- |
+| `claude` / WezDeck agent-launcher / future ACP `claude` | **Yes** (via `~/.claude` links) |
+| Codex host / future ACP `codex` | **Yes** (via `~/.codex` links + [host-setup/codex.md](./host-setup/codex.md)) |
+| YunsClaw main (Feishu → OpenClaw) | **No** — uses `openclaw/workspace/AGENTS.md` |
+
+Execution modes (main vs handoff vs CLI backend vs ACP), including how ACP
+speaks JSON-RPC to harnesses:
+[openclaw/README.md — Development execution modes](../../openclaw/README.md#development-execution-modes).
+
 ## How To Attach
 
 Default entrypoint:

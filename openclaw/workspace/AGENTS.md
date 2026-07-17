@@ -96,6 +96,12 @@ It attaches to host debug Chrome at `http://127.0.0.1:9222` (WezDeck —
 When you are **not** implementing the bulk of the work, post this block in 飞书
 (and keep it for resume). No MCP/profile bridge required.
 
+This is the **operational handoff** path (active today). It is **not** OpenClaw
+CLI-backend or ACP IPC — see package
+[`README.md` → Development execution modes](../README.md#development-execution-modes)
+for how main / handoff / CLI backend / ACP differ, including how ACP uses
+stdio JSON-RPC once configured.
+
 ```text
 ## Handoff
 - task_id: …
