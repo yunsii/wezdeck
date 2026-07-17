@@ -51,14 +51,17 @@ for pat, why in danger_res:
     if re.search(pat, norm):
         finish("danger", why, 2)
 
-if re.search(
-    r"(\.env\b|id_rsa|id_ed25519|\.pem\b|api[_-]?key|app_secret|password=|authorization:\s*bearer)",
-    norm,
-) and re.search(
-    r"\b(cat|less|head|tail|tee|cp|scp|curl|wget|printenv|env|export)\b",
+# credential dump — not ordinary `source …/shell-env.d/*.env`
+if re.search(r"(id_rsa|id_ed25519|\.pem\b|password=|authorization:\s*bearer)", norm) and re.search(
+    r"\b(cat|less|head|tail|tee|cp|scp|curl|wget|printenv)\b",
     norm,
 ):
     finish("danger", "likely secret/credential material access", 2)
+if re.search(r"\b(cat|less|head|tail)\b", norm) and re.search(
+    r"(\.env\b|credentials|app_secret|api[_-]?key)",
+    norm,
+) and "shell-env.d" not in norm and "openclaw-tasks.env" not in norm:
+    finish("danger", "reading env/secret-like file", 2)
 
 safe_hint = re.search(
     r"\b(ls|test|echo|pwd|whoami|uname|realpath|readlink|dirname|basename|wc|"
