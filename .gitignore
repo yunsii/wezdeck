@@ -5,3 +5,6 @@ wezterm-x/tmux/appearance.generated.conf
 native/picker/bin/
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
+
+# OpenClaw machine-local (never commit filled secrets or host paths)
+openclaw/local/

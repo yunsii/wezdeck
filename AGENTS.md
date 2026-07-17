@@ -89,6 +89,10 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   placeholder used in `config/worktree-task.env`, or any path that
   spawns `claude` / `codex`:
   Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
+- Personal OpenClaw control plane (Feishu gateway templates, main-agent
+  protocol, link/smoke scripts — **not** the WezTerm/tmux execution hot path):
+  Read [`openclaw/README.md`](openclaw/README.md) and
+  [`openclaw/workspace/AGENTS.md`](openclaw/workspace/AGENTS.md).
 
 ## Hard Rules
 
