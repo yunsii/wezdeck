@@ -45,6 +45,8 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`performance.md`](./performance.md).
 - Why tmux 3.7+ is required, IME flicker, DEC mode 2026 investigation:
   Read [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
+- Personal OpenClaw control plane (Feishu remote, MVP templates, not WezTerm hot path):
+  Read [`../openclaw/README.md`](../openclaw/README.md).
 
 ## Doc Rules
 
