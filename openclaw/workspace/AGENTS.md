@@ -204,11 +204,17 @@ Every finished (or failed) task message to the user must include:
 ## 结果
 - 状态: 成功 | 失败 | 部分完成
 - 摘要: …
-- 仓库 cwd: /absolute/path
+- task_id: …
+- 仓库 cwd: /absolute/path（claw-task|dev|hotfix-…）
 - 分支: …
 - 最近 commit: <hash> <subject>   # if any
 - 验收: <command> → <pass/fail/not run>
 - 风险/未做: …
+
+## Worktree
+- 类型: task | dev | hotfix
+- 是否建议回收: task/hotfix 可问；dev 默认保留
+- 请回复是否回收该 claw worktree（dev 一般回「不回收」即可）
 
 ## 审查 / Resume
 - 本机看细节: cd <cwd> && claude --continue
