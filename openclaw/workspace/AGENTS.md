@@ -103,8 +103,28 @@ Heuristics (also implemented in `assess`):
 | `--days <= 2` | `task` (unless hotfix keywords) |
 
 User may override lifecycle/domain; claw must not create until confirmed when
-the task is non-trivial. Trivial follow-ups on an **existing** `claw-*` tree
-may continue there if the user says so.
+the task is non-trivial.
+
+### Same domain + prefer reuse
+
+Multiple tasks can share a **domain** (e.g. two i18n fixes). Policy:
+
+1. **Assess always lists** `same_domain_candidates` and sets `action`:
+   - `reuse` — suitable existing claw tree (priority below)
+   - `create` — no good match; may allocate `…-2` if slug taken
+2. **Reuse priority** (when domain is set):
+   1. Exact `claw-<lc>-<domain>-<subject>` (or `-N` sibling for same subject)
+   2. **`claw-dev-<domain>-*` hub** for new `task`/`dev` work in that domain
+      (long-lived hub hosts multiple related changes)
+   3. Other `claw-<lc>-<domain>-*` (same lifecycle)
+3. **Hotfix** does not reuse non-hotfix trees.
+4. **Default create uses `--prefer-reuse`**: prints existing path, no new tree.
+   User/agent passes **`--force-new`** when a second parallel tree is required
+   (unique `…-2` slug).
+5. Human `dev-*`/`task-*`/`hotfix-*` never appear as reuse targets.
+
+初评 must say clearly: **复用 `slug` / 新建 `slug`** and wait for user when
+both are plausible.
 
 ### Create / reclaim
 

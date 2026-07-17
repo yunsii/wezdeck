@@ -24,30 +24,39 @@ Human `dev-*` / `task-*` / `hotfix-*` (no `claw-`) are **read-only** for claw.
 ## Steps
 
 1. Ledger `open`.
-2. **Assess** (mandatory for new write trees):
+2. **Assess** (mandatory):
 
    ```bash
    ./openclaw/scripts/claw-worktree.sh assess \
      --title "…" --domain "i18n" --scope "apps/…" --days 3
    ```
 
-   Present 初评 to the user (lifecycle, slug, branch, reclaim rule). Wait for
-   confirm on non-trivial tasks.
+   Read JSON: `action` (`reuse`|`create`), `reuse`, `same_domain_candidates`,
+   `create_slug_if_new`. Present 初评: 复用哪个 / 是否 force-new。
 
-3. **Create** after confirm:
+3. **Obtain cwd** after confirm:
 
    ```bash
+   # default: prefer reuse
    WT=$(./openclaw/scripts/claw-worktree.sh create \
      --title "…" --lifecycle task --domain i18n \
      --cwd "$HOME/work/coco-forge")
+
+   # parallel second tree in same domain:
+   WT=$(./openclaw/scripts/claw-worktree.sh create \
+     --title "…" --lifecycle task --domain i18n \
+     --cwd "$HOME/work/coco-forge" --force-new)
    ```
 
 4. Ledger update `cwd` + branch; implement only under `$WT`.
 5. Ledger `close`.
-6. Reclaim: `claw-task-*` / `claw-hotfix-*` standard; `claw-dev-*` needs
-   `--allow-long-lived`.
+6. Reclaim only when this task owned the tree **and** no other open work
+   remains there (especially for shared `claw-dev-<domain>-*`).  
+   `claw-dev-*` needs `--allow-long-lived`.
 
-## Domain
+## Domain + multi-task
 
-Use `--domain` when work is area-scoped (i18n, platform, userscript, server, …)
-so parallel claw tasks do not collide and audit stays readable.
+- Always pass `--domain` when area is known.
+- Prefer **one `claw-dev-<domain>-…` hub** for ongoing domain work.
+- Same domain + independent parallel PRs → `--force-new` (gets `-2` suffix).
+- Never reuse human worktrees.
