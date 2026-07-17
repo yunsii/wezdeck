@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
-# Claw-owned git worktrees — mirrors WezDeck lifecycle (dev/task/hotfix) but
-# under reserved prefixes so human worktrees are never touched.
-#
-# WezDeck human:  dev-* | task-* | hotfix-*     branches dev/ | task/ | hotfix/
-# OpenClaw claw:  claw-dev-* | claw-task-* | claw-hotfix-*
-#                 branches    claw/dev/ | claw/task/ | claw/hotfix/
-#
-# Parent dir is the same: $HOME/work/.worktrees/<repo>/
+# Claw-owned git worktrees — WezDeck lifecycle (dev/task/hotfix) under claw- prefixes.
+# - Same parent: $HOME/work/.worktrees/<repo>/
+# - Prefer reusing an existing claw worktree in the same domain (+ compatible lifecycle)
+# - Same domain can have multiple trees; new slugs get -2, -3… uniqueness
 set -euo pipefail
 
 cmd="${1:-}"
@@ -22,30 +18,27 @@ usage() {
   cat <<'EOF'
 Usage:
   claw-worktree.sh assess  --title SUBJECT [--domain DOMAIN] [--scope HINT]
-                           [--days N] [--cwd REPO]
-      Print recommended lifecycle + slug + branch (no create).
+                           [--days N] [--cwd REPO] [--lifecycle task|dev|hotfix]
+      JSON: lifecycle, slug, branch, action=reuse|create, reuse candidates.
 
   claw-worktree.sh create  --title SUBJECT --lifecycle task|dev|hotfix
                            [--domain DOMAIN] [--cwd REPO] [--slug SLUG]
-                           [--base-ref REF]
-      Create claw worktree. Lifecycle is required (or use assess first).
+                           [--base-ref REF] [--prefer-reuse] [--force-new]
+      --prefer-reuse (default): if a suitable claw tree exists for domain+lifecycle,
+      print its path and exit 0 without creating. --force-new always creates unique slug.
 
-  claw-worktree.sh reclaim --slug claw-{task|dev|hotfix}-SLUG
-                           [--cwd REPO] [--force] [--allow-long-lived]
+  claw-worktree.sh reclaim --slug SLUG [--cwd REPO] [--force] [--allow-long-lived]
   claw-worktree.sh list    [--cwd REPO]
 
-Lifecycle (aligned with WezDeck, claw-owned only):
+Lifecycle:
+  task     claw-task-*     claw/task/     short     reclaim default
+  dev      claw-dev-*      claw/dev/      long      reclaim --allow-long-lived
+  hotfix   claw-hotfix-*   claw/hotfix/   urgent    reclaim default
 
-  kind     dir prefix        branch prefix     lifetime        reclaim
-  -------  ----------------  ----------------  --------------  -----------------
-  task     claw-task-        claw/task/        hours–days      default after done
-  dev      claw-dev-         claw/dev/         weeks–months    needs --allow-long-lived
-  hotfix   claw-hotfix-      claw/hotfix/      hours           default after done
-
-Human WezDeck prefixes (never touch): dev-* task-* hotfix-* (without claw-)
-
-Domain (optional): short area tag for slug, e.g. i18n, platform, userscript
-  → claw-task-i18n-cache-search-field
+Same domain, multiple tasks:
+  - Prefer reuse claw-dev-<domain>-* (long hub) when lifecycle=dev or assess upgrades to dev
+  - Prefer reuse exact claw-task-<domain>-<subject> if exists
+  - Else create claw-task-<domain>-<subject>[-N] unique among siblings
 EOF
 }
 
@@ -62,7 +55,6 @@ slugify() {
 
 is_human_slug() {
   local s="$1"
-  # human only if NOT claw-prefixed
   [[ "${s}" != claw-* ]] || return 1
   [[ "${s}" == dev-* || "${s}" == task-* || "${s}" == hotfix-* ]]
 }
@@ -70,12 +62,6 @@ is_human_slug() {
 is_claw_slug() {
   local s="$1"
   [[ "${s}" == claw-task-* || "${s}" == claw-dev-* || "${s}" == claw-hotfix-* || "${s}" == claw-* ]]
-}
-
-# New preferred shapes
-is_claw_lifecycle_slug() {
-  local s="$1"
-  [[ "${s}" == claw-task-* || "${s}" == claw-dev-* || "${s}" == claw-hotfix-* ]]
 }
 
 lifecycle_dir_prefix() {
@@ -108,92 +94,140 @@ normalize_lifecycle() {
   esac
 }
 
-# Heuristic assess (no side effects)
-assess_lifecycle() {
-  local title="$1" domain="$2" scope="$3" days="${4:-}"
-  local lc="task" reasons=()
+worktree_root_for_repo() {
+  local cwd="$1"
+  local repo_name
+  repo_name="$(basename "$(realpath "${cwd}")")"
+  printf '%s' "${HOME}/work/.worktrees/${repo_name}"
+}
 
-  # explicit days hint
-  if [[ -n "${days}" ]]; then
-    if [[ "${days}" -ge 14 ]]; then
-      lc="dev"
-      reasons+=("expected duration >=14d → dev (long-lived)")
-    elif [[ "${days}" -le 2 ]]; then
-      lc="task"
-      reasons+=("expected duration <=2d → task")
+# List claw worktrees as lines: lifecycle|domain|slug|path
+# domain may be empty; parsed from slug after lifecycle prefix (first segment if multi)
+list_claw_entries() {
+  local cwd="$1"
+  local wt_root name rest domain lc
+  wt_root="$(worktree_root_for_repo "${cwd}")"
+  [[ -d "${wt_root}" ]] || return 0
+  ls -1 "${wt_root}" 2>/dev/null | while read -r name; do
+    [[ -z "${name}" || "${name}" == .* ]] && continue
+    [[ -d "${wt_root}/${name}" ]] || continue
+    lc=""
+    rest=""
+    if [[ "${name}" == claw-task-* ]]; then
+      lc="task"; rest="${name#claw-task-}"
+    elif [[ "${name}" == claw-dev-* ]]; then
+      lc="dev"; rest="${name#claw-dev-}"
+    elif [[ "${name}" == claw-hotfix-* ]]; then
+      lc="hotfix"; rest="${name#claw-hotfix-}"
+    elif [[ "${name}" == claw-* ]]; then
+      lc="legacy"; rest="${name#claw-}"
     else
-      lc="task"
-      reasons+=("expected duration ${days}d → task (default mid-range)")
+      continue
     fi
-  fi
-
-  local blob
-  blob="$(printf '%s %s %s' "${title}" "${domain}" "${scope}" | tr '[:upper:]' '[:lower:]')"
-
-  if echo "${blob}" | grep -qE 'hotfix|紧急|线上|prod|production|p0|阻断|回滚'; then
-    lc="hotfix"
-    reasons+=("keywords suggest production urgency → hotfix")
-  elif echo "${blob}" | grep -qE 'epic|平台|platform|长期|workstation|重构大|multi-week|迭代'; then
-    if [[ "${lc}" != "hotfix" ]]; then
-      lc="dev"
-      reasons+=("keywords suggest long-running area work → dev")
+    domain=""
+    # domain = first hyphen segment only when there is more than one segment
+    if [[ "${rest}" == *-* ]]; then
+      domain="${rest%%-*}"
     fi
-  elif echo "${blob}" | grep -qE 'fix|bug|小改|缓存|文案|样式|单测|chore|docs'; then
-    if [[ "${lc}" == "task" ]]; then
-      reasons+=("keywords suggest scoped delivery → task")
+    printf '%s|%s|%s|%s\n' "${lc}" "${domain}" "${name}" "${wt_root}/${name}"
+  done
+}
+
+# Unique slug under worktree root
+unique_slug() {
+  local cwd="$1" base_slug="$2"
+  local wt_root="${HOME}/work/.worktrees/$(basename "$(realpath "${cwd}")")"
+  local candidate="${base_slug}" n=2
+  while [[ -e "${wt_root}/${candidate}" ]]; do
+    candidate="${base_slug}-${n}"
+    n=$((n + 1))
+    [[ ${n} -lt 100 ]] || die "could not allocate unique slug from ${base_slug}"
+  done
+  printf '%s' "${candidate}"
+}
+
+pick_reuse() {
+  # stdin: entries lifecycle|domain|slug|path
+  # args: want_lc want_domain want_subject_slug
+  # Prefer: 1) exact slug match  2) claw-dev-<domain>-* if want task/dev  3) claw-<lc>-<domain>-*
+  local want_lc="$1" want_domain="$2" want_subject="$3"
+  local best="" best_rank=99
+  local lc domain slug path rank
+  while IFS='|' read -r lc domain slug path; do
+    [[ -n "${slug}" ]] || continue
+    rank=99
+    # exact subject under same lifecycle+domain
+    if [[ -n "${want_domain}" && "${domain}" == "${want_domain}" ]]; then
+      if [[ "${slug}" == "claw-${want_lc}-${want_domain}-${want_subject}" ]]; then
+        rank=1
+      elif [[ "${slug}" == claw-${want_lc}-${want_domain}-${want_subject}-* ]]; then
+        rank=2
+      elif [[ "${lc}" == "dev" && "${want_lc}" != "hotfix" ]]; then
+        # long-lived domain hub
+        rank=3
+      elif [[ "${lc}" == "${want_lc}" ]]; then
+        rank=4
+      fi
+    elif [[ -z "${want_domain}" && "${lc}" == "${want_lc}" ]]; then
+      if [[ "${slug}" == *"${want_subject}"* ]]; then
+        rank=5
+      fi
     fi
+    # hotfix never reuses non-hotfix
+    if [[ "${want_lc}" == "hotfix" && "${lc}" != "hotfix" ]]; then
+      continue
+    fi
+    if [[ "${rank}" -lt "${best_rank}" ]]; then
+      best_rank="${rank}"
+      best="${lc}|${domain}|${slug}|${path}|${rank}"
+    fi
+  done
+  if [[ -n "${best}" && "${best_rank}" -le 4 ]]; then
+    printf '%s' "${best}"
   fi
+}
 
-  if [[ ${#reasons[@]} -eq 0 ]]; then
-    reasons+=("default → task (PR-scoped, reclaim after delivery)")
-  fi
-
-  local subject domain_slug slug dir_prefix branch_prefix
+build_subject() {
+  local title="$1" domain="$2"
+  local subject
   subject="$(slugify "${title}")"
   subject="${subject#claw-task-}"; subject="${subject#claw-dev-}"; subject="${subject#claw-hotfix-}"
   subject="${subject#claw-}"
-  # drop lifecycle words from subject to avoid claw-hotfix-…-hotfix-…
   subject="$(printf '%s' "${subject}" | sed -E 's/^(hotfix|task|dev)-//')"
-  [[ -n "${subject}" ]] || subject="work"
-
-  domain_slug=""
   if [[ -n "${domain}" ]]; then
-    domain_slug="$(slugify "${domain}")"
-    # avoid domain-domain-subject when title starts with domain
-    subject="${subject#"${domain_slug}-"}"
+    local ds
+    ds="$(slugify "${domain}")"
+    subject="${subject#"${ds}-"}"
   fi
-
-  dir_prefix="$(lifecycle_dir_prefix "${lc}")"
-  branch_prefix="$(lifecycle_branch_prefix "${lc}")"
-  if [[ -n "${domain_slug}" ]]; then
-    slug="${dir_prefix}${domain_slug}-${subject}"
-  else
-    slug="${dir_prefix}${subject}"
-  fi
-  # cap slug length roughly
-  if [[ ${#slug} -gt 80 ]]; then
-    slug="${slug:0:80}"
-    slug="${slug%-}"
-  fi
-
-  local branch_tail="${slug#"${dir_prefix}"}"
-  local branch="${branch_prefix}${branch_tail}"
-
-  cat <<EOF
-{
-  "lifecycle": "${lc}",
-  "dir_slug": "${slug}",
-  "branch": "${branch}",
-  "domain": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "${domain}"),
-  "reasons": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "${reasons[@]}") ,
-  "reclaim": $( [[ "${lc}" == "dev" ]] && echo '"needs --allow-long-lived after delivery checks"' || echo '"standard after merge/push"' ),
-  "note": "Assessment only — confirm with user before create. Human worktrees (dev-/task-/hotfix- without claw-) are never used."
+  [[ -n "${subject}" ]] || subject="work"
+  printf '%s' "${subject}"
 }
-EOF
+
+infer_lifecycle() {
+  local title="$1" domain="$2" scope="$3" days="${4:-}" forced="${5:-}"
+  if [[ -n "${forced}" ]]; then
+    normalize_lifecycle "${forced}"
+    return
+  fi
+  local lc="task"
+  if [[ -n "${days}" ]]; then
+    if [[ "${days}" -ge 14 ]]; then lc="dev"
+    elif [[ "${days}" -le 2 ]]; then lc="task"
+    else lc="task"
+    fi
+  fi
+  local blob
+  blob="$(printf '%s %s %s' "${title}" "${domain}" "${scope}" | tr '[:upper:]' '[:lower:]')"
+  if echo "${blob}" | grep -qE 'hotfix|紧急|线上|prod|production|p0|阻断|回滚'; then
+    lc="hotfix"
+  elif echo "${blob}" | grep -qE 'epic|平台|platform|长期|workstation|重构大|multi-week|迭代'; then
+    [[ "${lc}" != "hotfix" ]] && lc="dev"
+  fi
+  printf '%s' "${lc}"
 }
 
 cmd_assess() {
-  local title="" domain="" scope="" days="" cwd="${DEFAULT_REPO}"
+  local title="" domain="" scope="" days="" cwd="${DEFAULT_REPO}" lifecycle=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --title) title="$2"; shift 2 ;;
@@ -201,16 +235,115 @@ cmd_assess() {
       --scope) scope="$2"; shift 2 ;;
       --days) days="$2"; shift 2 ;;
       --cwd) cwd="$2"; shift 2 ;;
+      --lifecycle|--kind) lifecycle="$2"; shift 2 ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown arg: $1" ;;
     esac
   done
   [[ -n "${title}" ]] || die "--title required"
-  assess_lifecycle "${title}" "${domain}" "${scope}" "${days}"
+  [[ -d "${cwd}" ]] || die "repo not found: ${cwd}"
+
+  local lc subject domain_slug dir_prefix branch_prefix base_slug unique reasons_json
+  lc="$(infer_lifecycle "${title}" "${domain}" "${scope}" "${days}" "${lifecycle}")"
+  subject="$(build_subject "${title}" "${domain}")"
+  domain_slug=""
+  [[ -n "${domain}" ]] && domain_slug="$(slugify "${domain}")"
+  dir_prefix="$(lifecycle_dir_prefix "${lc}")"
+  branch_prefix="$(lifecycle_branch_prefix "${lc}")"
+  if [[ -n "${domain_slug}" ]]; then
+    base_slug="${dir_prefix}${domain_slug}-${subject}"
+  else
+    base_slug="${dir_prefix}${subject}"
+  fi
+  if [[ ${#base_slug} -gt 80 ]]; then
+    base_slug="${base_slug:0:80}"; base_slug="${base_slug%-}"
+  fi
+  unique="$(unique_slug "${cwd}" "${base_slug}")"
+
+  local entries reuse reuse_lc reuse_domain reuse_slug reuse_path reuse_rank
+  entries="$(list_claw_entries "${cwd}" || true)"
+  reuse="$(printf '%s\n' "${entries}" | pick_reuse "${lc}" "${domain_slug}" "${subject}" || true)"
+
+  local action="create" reasons=()
+  reasons+=("lifecycle=${lc}")
+  if [[ -n "${domain_slug}" ]]; then
+    reasons+=("domain=${domain_slug}")
+  fi
+  if [[ -n "${reuse}" ]]; then
+    IFS='|' read -r reuse_lc reuse_domain reuse_slug reuse_path reuse_rank <<<"${reuse}"
+    action="reuse"
+    reasons+=("prefer existing ${reuse_slug} (rank=${reuse_rank})")
+    if [[ "${reuse_lc}" == "dev" && "${lc}" == "task" ]]; then
+      reasons+=("same domain long-lived claw-dev hub can host multiple task-sized changes")
+    fi
+    if [[ "${unique}" != "${base_slug}" ]]; then
+      reasons+=("if force-new, unique slug would be ${unique}")
+    fi
+  else
+    reasons+=("no suitable claw worktree to reuse")
+    if [[ "${unique}" != "${base_slug}" ]]; then
+      reasons+=("slug collision → use ${unique}")
+    fi
+  fi
+
+  # candidates list for same domain
+  local candidates
+  candidates="$(printf '%s\n' "${entries}" | python3 -c '
+import sys, json
+want_d=sys.argv[1]
+want_lc=sys.argv[2]
+out=[]
+for line in sys.stdin:
+    line=line.strip()
+    if not line: continue
+    parts=line.split("|")
+    if len(parts)<4: continue
+    lc,dom,slug,path=parts[0],parts[1],parts[2],parts[3]
+    if want_d and dom!=want_d: continue
+    if want_lc=="hotfix" and lc!="hotfix": continue
+    out.append({"lifecycle":lc,"domain":dom,"slug":slug,"path":path})
+print(json.dumps(out,ensure_ascii=False))
+' "${domain_slug}" "${lc}")"
+
+  python3 - <<PY
+import json
+reasons = $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "${reasons[@]}")
+out = {
+  "action": "${action}",
+  "lifecycle": "${lc}",
+  "domain": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "${domain}"),
+  "subject": "${subject}",
+  "dir_slug": "${unique}" if "${action}" == "create" else "${reuse_slug:-${unique}}",
+  "branch": "${branch_prefix}${unique#${dir_prefix}}" if "${action}" == "create" else "",
+  "create_slug_if_new": "${unique}",
+  "create_branch_if_new": "${branch_prefix}${unique#"${dir_prefix}"}",
+  "reuse": None,
+  "same_domain_candidates": json.loads('''${candidates}'''),
+  "reasons": reasons,
+  "reclaim": "needs --allow-long-lived" if "${lc}" == "dev" else "standard after delivery",
+  "note": "Confirm with user. Prefer reuse when action=reuse unless they request force-new. Human worktrees never used.",
+}
+if "${action}" == "reuse":
+    out["reuse"] = {
+        "lifecycle": "${reuse_lc}",
+        "domain": "${reuse_domain}",
+        "slug": "${reuse_slug}",
+        "path": "${reuse_path}",
+        "rank": int("${reuse_rank:-99}"),
+    }
+    out["dir_slug"] = "${reuse_slug}"
+    # branch unknown cheaply; agent can git -C path rev-parse
+    out["branch"] = None
+    out["path"] = "${reuse_path}"
+else:
+    out["path"] = None
+print(json.dumps(out, ensure_ascii=False, indent=2))
+PY
 }
 
 cmd_create() {
   local title="" cwd="${DEFAULT_REPO}" slug="" base_ref="" lifecycle="" domain=""
+  local prefer_reuse=1 force_new=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --title) title="$2"; shift 2 ;;
@@ -219,6 +352,8 @@ cmd_create() {
       --base-ref) base_ref="$2"; shift 2 ;;
       --lifecycle|--kind) lifecycle="$2"; shift 2 ;;
       --domain) domain="$2"; shift 2 ;;
+      --prefer-reuse) prefer_reuse=1; shift ;;
+      --force-new) force_new=1; prefer_reuse=0; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown arg: $1" ;;
     esac
@@ -228,47 +363,60 @@ cmd_create() {
   require_wt
 
   if [[ -z "${lifecycle}" && -z "${slug}" ]]; then
-    die "pass --lifecycle task|dev|hotfix (or full --slug claw-task-…); run 'assess' first"
+    die "pass --lifecycle task|dev|hotfix (or full --slug claw-task-…); run assess first"
   fi
 
-  local dir_slug branch dir_prefix branch_prefix subject branch_tail
+  local subject domain_slug dir_slug branch dir_prefix branch_prefix branch_tail
 
   if [[ -n "${slug}" ]]; then
     dir_slug="$(slugify "${slug}")"
-    # ensure claw- lifecycle prefix
-    if ! is_claw_lifecycle_slug "${dir_slug}"; then
-      # legacy claw-foo → treat as claw-task-foo
-      dir_slug="${dir_slug#claw-}"
+    if [[ "${dir_slug}" == claw-dev-* ]]; then lifecycle="dev"
+    elif [[ "${dir_slug}" == claw-hotfix-* ]]; then lifecycle="hotfix"
+    elif [[ "${dir_slug}" == claw-task-* ]]; then lifecycle="task"
+    else
       lifecycle="$(normalize_lifecycle "${lifecycle:-task}")"
       dir_prefix="$(lifecycle_dir_prefix "${lifecycle}")"
+      dir_slug="${dir_slug#claw-}"
       dir_slug="${dir_prefix}${dir_slug}"
-    else
-      if [[ "${dir_slug}" == claw-dev-* ]]; then lifecycle="dev"
-      elif [[ "${dir_slug}" == claw-hotfix-* ]]; then lifecycle="hotfix"
-      else lifecycle="task"
-      fi
     fi
   else
     lifecycle="$(normalize_lifecycle "${lifecycle}")"
+    subject="$(build_subject "${title}" "${domain}")"
+    domain_slug=""
+    [[ -n "${domain}" ]] && domain_slug="$(slugify "${domain}")"
     dir_prefix="$(lifecycle_dir_prefix "${lifecycle}")"
-    subject="$(slugify "${title}")"
-    subject="${subject#claw-task-}"; subject="${subject#claw-dev-}"; subject="${subject#claw-hotfix-}"
-    subject="${subject#claw-}"
-    [[ -n "${subject}" ]] || subject="work"
-    if [[ -n "${domain}" ]]; then
-      dir_slug="${dir_prefix}$(slugify "${domain}")-${subject}"
+    if [[ -n "${domain_slug}" ]]; then
+      dir_slug="${dir_prefix}${domain_slug}-${subject}"
     else
       dir_slug="${dir_prefix}${subject}"
     fi
   fi
 
-  is_human_slug "${dir_slug}" && die "slug collides with human prefix: ${dir_slug}"
-  is_claw_slug "${dir_slug}" || die "internal: not a claw slug: ${dir_slug}"
-
   lifecycle="$(normalize_lifecycle "${lifecycle}")"
+  is_human_slug "${dir_slug}" && die "slug collides with human prefix: ${dir_slug}"
+
+  # Prefer reuse unless force-new or explicit unique slug request
+  if [[ "${force_new}" -eq 0 && "${prefer_reuse}" -eq 1 ]]; then
+    subject="$(build_subject "${title}" "${domain}")"
+    domain_slug=""
+    [[ -n "${domain}" ]] && domain_slug="$(slugify "${domain}")"
+    local entries reuse
+    entries="$(list_claw_entries "${cwd}" || true)"
+    reuse="$(printf '%s\n' "${entries}" | pick_reuse "${lifecycle}" "${domain_slug}" "${subject}" || true)"
+    if [[ -n "${reuse}" ]]; then
+      local r_lc r_dom r_slug r_path r_rank
+      IFS='|' read -r r_lc r_dom r_slug r_path r_rank <<<"${reuse}"
+      echo "reuse existing worktree slug=${r_slug} (rank=${r_rank}); pass --force-new to create another" >&2
+      printf '%s\n' "${r_path}"
+      exit 0
+    fi
+  fi
+
+  # ensure unique if collision
+  dir_slug="$(unique_slug "${cwd}" "${dir_slug}")"
+
   dir_prefix="$(lifecycle_dir_prefix "${lifecycle}")"
   branch_prefix="$(lifecycle_branch_prefix "${lifecycle}")"
-  # re-sync prefix if slug has full form
   if [[ "${dir_slug}" == claw-dev-* ]]; then
     branch_tail="${dir_slug#claw-dev-}"
     branch_prefix="$(lifecycle_branch_prefix dev)"
@@ -284,18 +432,11 @@ cmd_create() {
   branch="${branch_prefix}${branch_tail}"
 
   local args=(
-    launch
-    --cwd "${cwd}"
-    --title "${title}"
-    --task-slug "${dir_slug}"
-    --branch "${branch}"
-    --provider none
-    --provider-mode off
-    --no-attach
+    launch --cwd "${cwd}" --title "${title}"
+    --task-slug "${dir_slug}" --branch "${branch}"
+    --provider none --provider-mode off --no-attach
   )
-  if [[ -n "${base_ref}" ]]; then
-    args+=(--base-ref "${base_ref}")
-  fi
+  [[ -n "${base_ref}" ]] && args+=(--base-ref "${base_ref}")
 
   echo "creating lifecycle=${lifecycle} slug=${dir_slug} branch=${branch}" >&2
   "${WT_BIN}" "${args[@]}"
@@ -330,35 +471,22 @@ cmd_reclaim() {
   [[ -n "${slug}" || -n "${root}" ]] || die "need --slug or --worktree-root"
 
   local name=""
-  if [[ -n "${slug}" ]]; then
-    name="${slug}"
-  else
-    name="$(basename "${root%/}")"
+  if [[ -n "${slug}" ]]; then name="${slug}"
+  else name="$(basename "${root%/}")"
   fi
 
-  if is_human_slug "${name}"; then
-    die "refusing human WezDeck worktree '${name}'"
-  fi
-  if ! is_claw_slug "${name}"; then
-    die "reclaim only claw-* worktrees (got '${name}')"
-  fi
-  # claw-dev-* requires allow-long-lived (mirror WezDeck dev-*)
+  is_human_slug "${name}" && die "refusing human WezDeck worktree '${name}'"
+  is_claw_slug "${name}" || die "reclaim only claw-* worktrees (got '${name}')"
   if [[ "${name}" == claw-dev-* && "${long}" -ne 1 ]]; then
-    die "claw-dev-* is long-lived; pass --allow-long-lived after delivery checks (mirrors WezDeck dev-*)"
+    die "claw-dev-* is long-lived; pass --allow-long-lived after delivery checks"
   fi
 
   local args=(reclaim --cwd "${cwd}" --provider none --provider-mode off)
-  if [[ -n "${slug}" ]]; then
-    args+=(--task-slug "${slug}")
-  else
-    args+=(--worktree-root "${root}")
+  if [[ -n "${slug}" ]]; then args+=(--task-slug "${slug}")
+  else args+=(--worktree-root "${root}")
   fi
-  if [[ "${force}" -eq 1 ]]; then
-    args+=(--force)
-  fi
-  if [[ "${long}" -eq 1 ]]; then
-    args+=(--allow-long-lived)
-  fi
+  [[ "${force}" -eq 1 ]] && args+=(--force)
+  [[ "${long}" -eq 1 ]] && args+=(--allow-long-lived)
 
   echo "reclaiming ${name}..." >&2
   "${WT_BIN}" "${args[@]}"
@@ -373,9 +501,8 @@ cmd_list() {
     esac
   done
   [[ -d "${cwd}" ]] || die "repo not found: ${cwd}"
-  local repo_name wt_root
-  repo_name="$(basename "$(realpath "${cwd}")")"
-  wt_root="${HOME}/work/.worktrees/${repo_name}"
+  local wt_root name
+  wt_root="$(worktree_root_for_repo "${cwd}")"
   if [[ ! -d "${wt_root}" ]]; then
     echo "no worktrees dir: ${wt_root}" >&2
     exit 0

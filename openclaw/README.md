@@ -351,17 +351,27 @@ Claw mirrors your WezDeck **lifecycle** (dev / task / hotfix) under reserved
 
 Optional **domain** in slug: `claw-task-i18n-cache-field`.
 
+**Same domain, multiple tasks:** prefer **reuse** (especially `claw-dev-<domain>-*`
+hubs). Independent parallel work: `--force-new` → unique `…-2`. Assess reports
+`action=reuse|create` and `same_domain_candidates`.
+
 ```bash
-# 初评 only (JSON): lifecycle + slug + branch + reasons
+# 初评 (JSON): action, reuse path, create_slug_if_new, candidates
 ./openclaw/scripts/claw-worktree.sh assess \
   --title "cache search field" --domain i18n --scope "apps/…" --days 2
 
+# default prefer-reuse
 ./openclaw/scripts/claw-worktree.sh create \
   --title "cache search field" --lifecycle task --domain i18n \
   --cwd "$HOME/work/team-repo"
 
+# second parallel tree in same domain
+./openclaw/scripts/claw-worktree.sh create \
+  --title "other i18n fix" --lifecycle task --domain i18n \
+  --cwd "$HOME/work/team-repo" --force-new
+
 ./openclaw/scripts/claw-worktree.sh list --cwd "$HOME/work/team-repo"
-./openclaw/scripts/claw-worktree.sh reclaim --slug claw-task-i18n-cache-search-field \
+./openclaw/scripts/claw-worktree.sh reclaim --slug claw-task-i18n-… \
   --cwd "$HOME/work/team-repo"
 # claw-dev-*: add --allow-long-lived
 ```
