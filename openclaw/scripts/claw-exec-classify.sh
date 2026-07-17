@@ -39,6 +39,11 @@ danger_res = [
     (r"\bgit\s+clean\s+-[a-z0-9]*f", "git clean -f"),
     (r"curl[^\n|]*\|\s*(ba)?sh", "curl|sh"),
     (r"wget[^\n|]*\|\s*(ba)?sh", "wget|sh"),
+    # Soft stand-in for OpenClaw strictInlineEval (local default: false → no /approve).
+    # Innocent `xargs rg` stays write/safe; only high-risk carriers go danger.
+    (r"\b(python3?|node|ruby|perl|php|lua|osascript)\s+(-c|-e|--eval|-p|-r)\b", "inline code eval (-c/-e)"),
+    (r"\bxargs\b[^\n]*\b(rm|sh|bash|zsh|dd|mkfs|curl|wget)\b", "xargs into destructive/shell carrier"),
+    (r"\bfind\b[^\n]*-exec\b[^\n]*\b(rm|sh|bash|dd)\b", "find -exec destructive/shell"),
     (r"\bmkfs\.", "mkfs"),
     (r"\bdd\s+if=", "dd if="),
     (r">\s*/etc/", "write under /etc"),
