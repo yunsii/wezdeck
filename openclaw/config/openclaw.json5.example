@@ -11,9 +11,11 @@
   //   elevated: { enabled: false },
   //   // Prefer mode alone — do not combine with tools.exec.security / ask
   //   exec: {
-  //     mode: "auto",
+  //     // Personal YunsClaw: full + ask off + strictInlineEval false.
+  //     // Semantic risk → claw-run / skills/exec-risk (not platform /approve).
+  //     mode: "full",
   //     host: "gateway",
-  //     strictInlineEval: true,
+  //     strictInlineEval: false,
   //     // safeBinTrustedDirs: ["/bin", "/usr/bin"],
   //   },
   // },

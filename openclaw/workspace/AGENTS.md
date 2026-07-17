@@ -178,22 +178,40 @@ High-risk actions need explicit user confirmation first:
 
 Default **deny**: `curl | sh`, scanning the whole home for keys, silent push.
 
-### Exec risk: three layers
+### Exec risk: three layers (option A — protocol hard habit)
 
 | Decision | Mechanism |
 | --- | --- |
 | Dev task plan / worktree 初评 / 是否写代码 | **Agent + skills** (dev-task, assess, ledger) — enough |
-| Host shell | **`claw-exec-gate.sh`**: rules → Grok re-check → human only if still danger |
+| Host shell | **Must** use `claw-run.sh` (or gate then run): rules → Grok → human if danger |
+
+**Hard rule:** do **not** call bare host `exec` / free-form shell for task work.
+Route shell through the wrapper:
 
 ```bash
-./openclaw/scripts/claw-exec-gate.sh '<command>'
-# exit 0 allow | 2 need Feishu yes | 4 infra fail (ask human)
+./openclaw/scripts/claw-run.sh -- git status          # preferred
+./openclaw/scripts/claw-run.sh 'ls -la'
+./openclaw/scripts/claw-exec-gate.sh '<command>'      # inspect only
+# claw-run / gate: exit 0 allow | 2 need Feishu yes | 4 infra fail → ask human
 ```
 
+Mandatory loop:
+
+1. `claw-run` (or `claw-exec-gate` then run only if `decision=allow`).
+2. If `human_required` / exit 2 → 飞书说明 `layer` + `reason` + 完整命令；**等待明确同意**.
+3. Only after user yes → `./openclaw/scripts/claw-run.sh --force -- '<same command>'`.
+4. Never skip the gate “just this once”; never invent `--force` without chat yes.
+
+Notes:
+
 - `safe`/`write` from rules: allow immediately (no LLM cost).
-- Rules `danger`: Grok second opinion; if still danger → **飞书说明并等待确认**.
-- `exec.mode=full` means no OpenClaw `/approve` spam; it does **not** skip layer-3
-  chat confirmation for danger.
+- Rules `danger`: Grok second opinion; if still danger → **飞书确认** (not OpenClaw `/approve`).
+- Platform posture (local `~/.openclaw`, not git): `mode=full`, `ask=off`,
+  **`strictInlineEval=false`** so `xargs` / similar do **not** force `/approve`.
+  Semantic risk is **only** via `claw-run` / gate → Feishu.
+- Prefer direct tools over carriers: `rg -l pattern path` not `find | xargs rg`.
+  Avoid `python -c` / `node -e` when a file or `rg`/`jq` suffices (classify treats
+  risky inline eval as danger when gate runs).
 
 See `skills/exec-risk/SKILL.md`.
 
