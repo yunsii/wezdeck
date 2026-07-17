@@ -62,13 +62,12 @@ symlink). It is **not** loaded as the OpenClaw Feishu main agent system prompt.
 
 | Surface | Uses this profile? |
 | --- | --- |
-| `claude` / WezDeck agent-launcher / future ACP `claude` | **Yes** (via `~/.claude` links) |
-| Codex host / future ACP `codex` | **Yes** (via `~/.codex` links + [host-setup/codex.md](./host-setup/codex.md)) |
-| YunsClaw main (Feishu → OpenClaw) | **No** — uses `openclaw/workspace/AGENTS.md` |
+| Human / host `claude`·`codex` (modes A, C) | **Yes** |
+| Future ACP `claude` / `codex` (mode E) | **Yes** |
+| YunsClaw main (mode B) | **No** — `openclaw/workspace/AGENTS.md` |
 
-Execution modes (main vs handoff vs CLI backend vs ACP), including how ACP
-speaks JSON-RPC to harnesses:
-[openclaw/README.md — Development execution modes](../../openclaw/README.md#development-execution-modes).
+Full mode table (A–E), handoff rhythm, ACP JSON-RPC:
+[openclaw/README.md — Development modes](../../openclaw/README.md#development-modes-who-writes-code).
 
 ## How To Attach
 

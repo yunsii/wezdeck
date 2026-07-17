@@ -28,10 +28,10 @@ watch or take over.
 
 Protocol detail: [`workspace/AGENTS.md`](./workspace/AGENTS.md).
 
-**Main vs coding agents:** YunsClaw **main** owns Feishu orchestration (ledger,
-worktree, claw-run, chrome MCP, handoff brief). Heavy coding uses host agents
-that already load user `agent-profiles` (Claude/Codex) — **no** profile/MCP
-bridge into ACP is required for that path.
+**Development modes:** human direct (A), Feishu main (B), optional handoff (C),
+unconfigured CLI backend (D) / ACP (E) — see
+[Development modes](#development-modes-who-writes-code). No profile bridge
+required for host Claude/Codex.
 
 ## Status (MVP)
 
@@ -145,129 +145,152 @@ Feishu DM (allowlisted user)
 Optional: same Feishu app used by lark-cli for manual API work.
 ```
 
-### Development execution modes
+### Development modes (who writes code)
 
-How a development request reaches something that actually writes code. Four
-paths; only **main direct** and **operational handoff** are used on this host
-today. CLI backend and ACP are OpenClaw product capabilities — **not configured**
-here yet (see [Roadmap](#roadmap-after-mvp)).
+Five ways code gets written on this machine. **A / B are the everyday paths.**
+**C** is an optional bot→local handoff (single writer). **D / E** are OpenClaw
+product capabilities **not configured** here yet.
 
-| Mode | Executor | Model / auth | How messages reach the worker | Use when | Status (this host) |
+```text
+需求
+  ├─ A 人工直接开发 ──────────────► IDE / 终端 / 本机 Claude·Codex
+  │                                   （可不经飞书、不经 Handoff）
+  │
+  └─ 飞书 YunsClaw (main)
+        ├─ B Main 直写 ───────────► Gateway 内工具 + grok-proxy（小改）
+        ├─ C 运营 Handoff ────────► 本机做完编码 → 再回飞书让 main 收尾
+        ├─ D CLI backend ─────────► 未配置（主模型 fallback，非主开发路径）
+        └─ E ACP harness ─────────► 未配置（stdio JSON-RPC 持久 harness）
+```
+
+| | Mode | Who codes | How it connects | When | Status |
 | --- | --- | --- | --- | --- | --- |
-| **Main agent, direct** | Gateway embedded agent (YunsClaw) | OpenClaw native provider (`grok-proxy`) | In-process tools (`read`/`write`/`exec` …) in claw worktree cwd | Small, clear-scope edits | **Active** (Feishu main path) |
-| **Operational handoff** | Human or WezDeck `agent-launcher` starts host `claude` / `codex` at a cwd | Local CLI subscription login + **user `agent-profiles`** | Not OpenClaw IPC — main posts a **Handoff brief** in Feishu; operator continues in that CLI | Multi-file / heavy work without enabling ACP | **Active** (ops path; see `workspace/AGENTS.md`) |
-| **CLI backend** | Bundled **`claude-cli`** (and custom `cliBackends`); **not** a default `codex-cli` | Reuses local Claude login; child env clears many `ANTHROPIC_*` vars so OAuth/login wins over API keys | OpenClaw selects model ref `claude-cli/…`, spawns CLI, **stream-json** over stdio; optional `bundleMcp` loopback for gateway tools | **Text / model fallback** when primary API fails — not the primary coding path | Capability present, **not configured** |
-| **ACP harness** | Persistent coding harness via `@openclaw/acpx` (`claude`, `codex`, `gemini`, …) | Same local-login style as the harness itself | **[Agent Client Protocol](https://agentclientprotocol.com/)** over **stdio + JSON-RPC** (see below) | Heavy multi-file work with bindable sessions, `/acp` controls, resume | Capability present, **not configured** |
+| **A** | **Human direct** | You (IDE / shell / host `claude`·`codex`) | No OpenClaw IPC | Day-to-day coding; full **TUI history** if using CLI | **Active** (operator habit) |
+| **B** | **Main direct** | YunsClaw embedded agent | Feishu → Gateway in-process tools | Small, clear Feishu-driven edits + ledger/worktree | **Active** |
+| **C** | **Operational handoff** | Host CLI (or you) after main prepares cwd | Main posts `## Handoff` in Feishu; **not** ACP | Main will not implement the bulk; optional assist for local finish | **Optional protocol** — not required for A |
+| **D** | **CLI backend** | Bundled `claude-cli` (not default `codex-cli`) | Model ref `claude-cli/…`, stream-json stdio | API **fallback**, not primary coding | Present, **not configured** |
+| **E** | **ACP harness** | `claude` / `codex` / … via `@openclaw/acpx` | ACP **stdio + JSON-RPC** (below) | Bound Feishu↔harness multi-file sessions | Present, **not configured** |
+
+**Single writer rule:** for a given worktree, only **one** of main / local CLI /
+you should be the primary editor at a time. Do **not** run B and C (or A and B)
+as concurrent writers on the same tree.
+
+#### A — Human direct
+
+```text
+You → edit under 团队仓 or a worktree → commit / MR as usual
+```
+
+- No Feishu brief required.
+- Host Claude/Codex load **agent-profiles** (`~/.claude` / `~/.codex` symlinks).
+- Process detail: your TUI / IDE. OpenClaw is unaware unless you later ask main
+  for ledger/验收.
+
+#### B — Main direct (Feishu claw develops)
+
+```text
+Feishu → main → claw-* worktree (read/write/exec via claw-run) → Feishu 结果
+```
+
+- Instructions: `openclaw/workspace/AGENTS.md` + skills (not full agent-profiles).
+- **No Claude-Code-like TUI** for full tool history — follow via Feishu progress,
+  `journalctl --user -u openclaw-gateway`, and `git` in the worktree.
+- Danger shell: `claw-run` → Feishu confirm if still danger (not `/approve` spam).
+
+#### C — Operational handoff (optional)
+
+Main **prepares** ledger + worktree, posts a brief, then **stops coding**.
+Local side finishes; main is called back for **close / 验收 / reclaim**.
+
+```text
+正常节奏（推荐）:
+  main: open + 初评 + create cwd + ## Handoff
+    → 本机: cd <cwd> && claude   # 或人直接改；做完这一段
+    → 飞书: 「做完了…」→ main: ledger close + 问 reclaim
+
+不要:
+  main 与本机 CLI 同时当主笔改同一 worktree
+```
+
+- Handoff is **execution transfer**, not “so you can resume TUI for curiosity”.
+- After handoff, main **does not** drive the local CLI turn-by-turn.
+- You **may** message Feishu mid-flight (status / stop local then let main take a
+  slice); default is **finish local first**, then return main for wrap-up.
+- Mid-process “take back”: possible on Feishu, but pause local coding first.
+
+**Handoff block (main → 飞书):** see `workspace/AGENTS.md`.
+
+#### D / E — Not configured (product options)
+
+| | Role | Docs |
+| --- | --- | --- |
+| **D CLI backend** | Text/model **fallback** when primary API fails | [CLI backends](https://docs.openclaw.ai/gateway/cli-backends) |
+| **E ACP** | Gateway spawns harness; chat can bind; JSON-RPC control plane | [ACP agents](https://docs.openclaw.ai/tools/acp-agents) |
+
+Until E is enabled, heavy work is **A** or **C**, not automatic harness spawn.
+
+**Also not a coding backend:** OpenClaw in-process **sub-agents**
+(`sessions_spawn` without `runtime: "acp"`) — same embedded runtime, parallelism
+only.
 
 **Coding rules by executor**
 
-| Executor | Instructions loaded |
+| Who | Instructions |
 | --- | --- |
-| Main | `openclaw/workspace/AGENTS.md` + workspace skills (+ `~/.agents/skills`) |
-| Operational handoff / ACP Claude | `~/.claude` → repo `agent-profiles/v1` (symlink) + **project** `AGENTS.md` at cwd |
-| Codex (CLI host / ACP `codex`) | `~/.codex` profile links + `agent-profiles/v1/host-setup/codex.md` |
-| CLI backend `claude-cli` | OpenClaw builds a system prompt from **workspace context**; not a full interactive Claude Code UX |
+| Main (B) | `openclaw/workspace/AGENTS.md` + workspace / `~/.agents` skills |
+| Human / handoff CLI / future ACP Claude (A, C, E) | `agent-profiles/v1` via `~/.claude` + project `AGENTS.md` at cwd |
+| Codex host / future ACP `codex` | `~/.codex` + `agent-profiles/v1/host-setup/codex.md` |
+| CLI backend `claude-cli` (D) | OpenClaw-built workspace-oriented system prompt (≠ full Claude Code UX) |
 
-**Also not a coding backend:** in-process OpenClaw **sub-agents**
-(`sessions_spawn` without `runtime: "acp"`) share the same embedded model/runtime —
-parallelism only, not a separate Claude/Codex process.
+**Auth:** CLI/ACP reuse machine logins (Claude CLI child clears many `ANTHROPIC_*`
+env vars so subscription login wins). Main **Grok** is a native OpenClaw provider
+(proxy), not a local CLI login — [Grok proxy section](#model-grok-via-existing-cli-proxy-optional-pattern).
 
-**Auth note:** CLI/ACP reuse accounts you already use on the machine. Grok for
-**main** is a native OpenClaw provider (proxy), not a local CLI login — see
-[Model: Grok via existing CLI proxy](#model-grok-via-existing-cli-proxy-optional-pattern).
-A Grok-backed **Codex** worker would be configured inside Codex itself
-(`~/.codex/config.toml`), not by pointing OpenClaw main at Grok twice.
+#### How ACP talks to the agent (when E is enabled)
 
-#### How ACP talks to the agent (protocol)
-
-ACP is a **client↔server agent protocol** ([spec](https://agentclientprotocol.com/)).
-In the OpenClaw **harness** direction (Feishu → coding worker), the stack is:
+ACP = [Agent Client Protocol](https://agentclientprotocol.com/). Harness stack:
 
 ```text
 Feishu / chat
-  → OpenClaw Gateway (routing, bindings, delivery, policy)
-      → acpx backend plugin
-          → ACP JSON-RPC over stdio (or adapter transport)
-              → harness adapter (e.g. Claude Code ACP / Codex ACP)
-                  → real coding CLI process + its tools + user profile
+  → OpenClaw Gateway (route, bind, deliver, policy)
+      → @openclaw/acpx
+          → ACP JSON-RPC over stdio
+              → adapter (Claude Code ACP / Codex ACP / …)
+                  → coding process + its tools + agent-profiles
 ```
 
-OpenClaw owns the **control plane** (spawn, bind chat, cancel, close, deliver
-replies). The harness owns **coding tools, auth, model catalog, and filesystem
-behavior**. OpenClaw plugin tools are **not** exposed to the harness by default
-(optional MCP bridges in upstream ACP setup docs).
+OpenClaw = control plane; harness = tools/auth/FS. Plugin tools are **not**
+injected into the harness by default.
 
-**Session key shape (OpenClaw):** `agent:<agentId>:acp:<uuid>`  
-(compare sub-agent: `agent:<agentId>:subagent:<uuid>`).
-
-**Typical JSON-RPC-style lifecycle** (names follow ACP; exact fields are
-adapter-defined — illustrative):
+**Illustrative lifecycle:**
 
 ```text
-1) Client (OpenClaw/acpx) → initialize
-   ← server capabilities (sessions, models, …)
-
-2) → session/new  { cwd: "/home/…/claw-task-…", … }
-   ← session id
-
-3) → session/prompt (or equivalent) { text: "Implement … acceptance …" }
-   ← stream of session updates:
-        agent message chunks / thought chunks / tool call events
-   ← turn complete
-
-4) Optional: session/set_model, session/request_permission (approvals),
-             session/load or resume after restart
-
-5) → session/close  (or /acp close from chat)
+initialize → session/new { cwd } → session/prompt (stream updates)
+  → optional set_model / request_permission / load|resume
+  → session/close   # or /acp close
 ```
 
-Bound chat (when enabled): after `/acp spawn claude --bind here --cwd <worktree>`,
-**normal user text** in that conversation is forwarded as ACP prompts to the
-same session; **`/acp …`, `/status`, `/unfocus`** stay on the Gateway and are
-**not** sent as prompt text to the harness.
-
-**Operator examples** (not enabled on this host until ACP is configured):
+After `/acp spawn claude --bind here --cwd <worktree>`, normal chat text is
+forwarded as ACP prompts; `/acp …` / `/status` stay on Gateway.
 
 ```text
-# Health
 /acp doctor
-
-# Spawn Claude Code ACP in a claw worktree; keep talking in this chat
 /acp spawn claude --bind here --cwd $HOME/work/.worktrees/team-repo/claw-task-…
-
-# Or from main agent tooling (when advertised)
-sessions_spawn({ runtime: "acp", agentId: "claude", cwd: "…", … })
-
-# Steer / stop without tearing down the binding
-/acp steer tighten logging and continue
-/acp cancel
-/acp status
-/acp close
+/acp steer …   /acp cancel   /acp status   /acp close
 ```
 
-**Example Feishu turn (mental model):**
+**Follow process detail**
 
-1. User: 「大改 i18n CSV 导入」  
-2. **Main** (embedded): ledger open → worktree 初评 → create `claw-task-…` →
-   either implements small fix **or** prepares handoff / (later) `/acp spawn`.  
-3. If ACP: Gateway spawns harness at that `cwd`; user follow-ups in the bound
-   chat become ACP prompts; harness uses **its** profile + project files.  
-4. Completion text returns through Gateway → Feishu; **main** still owns ledger
-   `close` + reclaim ask.
-
-**Contrast with operational handoff (what we use now for heavy work):**
-
-```text
-Main → Feishu "## Handoff" block (task_id, cwd, goal, acceptance)
-User/WezDeck → cd <cwd> && claude --continue
-  (no ACP JSON-RPC; full local Claude + agent-profiles)
-Main ← user pastes summary or continues Feishu for ledger close
-```
+| Mode | How to follow “what happened” |
+| --- | --- |
+| A | IDE / CLI TUI (`claude --continue` in that cwd) |
+| B | Feishu thread + gateway logs + worktree `git` — **not** full TUI |
+| C | Local TUI during coding; Feishu for brief + wrap-up |
+| E (later) | Bound chat delivery + harness; still ≠ 1:1 Claude TUI |
 
 Upstream: [ACP agents](https://docs.openclaw.ai/tools/acp-agents),
 [ACP setup](https://docs.openclaw.ai/tools/acp-agents-setup),
-[CLI backends](https://docs.openclaw.ai/gateway/cli-backends)
-(fallback only — not a substitute for ACP).
+[CLI backends](https://docs.openclaw.ai/gateway/cli-backends).
 
 ### Chrome DevTools MCP (core browser capability)
 
@@ -598,12 +621,11 @@ Ordered by payoff for this personal setup:
 4. **One work group (optional)** — add a single `oc_…` to `groupAllowFrom`,
    keep `@mention`.
 5. **Multi-repo spawn** — only after exec denials feel understood.
-6. **ACP → Claude Code / Codex** — optional; enables `/acp spawn`, bindable
-   sessions, JSON-RPC harness control (see
-   [Development execution modes](#development-execution-modes)). Until then,
-   heavy work uses **operational handoff** + host `agent-profiles`.
-7. **CLI backend (`claude-cli`)** — optional text/model **fallback** only, not
-   the primary coding path ([upstream CLI backends](https://docs.openclaw.ai/gateway/cli-backends)).
+6. **ACP → Claude Code / Codex** — optional (mode **E**); see
+   [Development modes](#development-modes-who-writes-code). Until then heavy
+   work is **A** (human) or **C** (handoff → local finish → main wrap-up).
+7. **CLI backend (`claude-cli`)** — optional mode **D** text/model **fallback**
+   only ([upstream](https://docs.openclaw.ai/gateway/cli-backends)).
 8. **WezDeck attach** — open worktree pane only when reviewing, not for every
    remote task.
 
