@@ -49,10 +49,12 @@ Human `dev-*` / `task-*` / `hotfix-*` (no `claw-`) are **read-only** for claw.
    ```
 
 4. Ledger update `cwd` + branch; implement only under `$WT`.
-5. Ledger `close`.
-6. Reclaim only when this task owned the tree **and** no other open work
-   remains there (especially for shared `claw-dev-<domain>-*`).  
-   `claw-dev-*` needs `--allow-long-lived`.
+5. Ledger `close` with summary + `task_id`.
+6. **Ask whether to reclaim** (never auto-run reclaim):
+   - `claw-task-*` / `claw-hotfix-*`: 询问是否回收；用户同意再 `reclaim`。
+   - `claw-dev-*`: **默认不回收**（长期枢纽）；仅用户明确要求时 reclaim，并
+     带 `--allow-long-lived`。
+   - 共享 hub 上还有其它进行中工作：说明不回收。
 
 ## Domain + multi-task
 
