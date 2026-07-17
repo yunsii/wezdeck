@@ -44,7 +44,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | Feishu DM | `dmPolicy: allowlist` (owner only); no re-pairing on reconnect |
 | Feishu groups | `groupPolicy: allowlist` (empty = all groups off) + `requireMention: true` |
 | Feishu tools | Prefer off: `doc` / `wiki` / `drive` / `perm` / `bitable`; keep `chat` / `scopes` if needed |
-| Host exec | `tools.exec.mode: auto` + host file `allowlist` / `on-miss` / `askFallback: deny` |
+| Host exec | Personal default: `mode: full` + `ask: off` (auto-run; Feishu allowlist is the human gate). Tighten to `allowlist`/`auto` if you want per-command prompts. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Dev allowlist | **coco-forge only** — roots from local env or `$HOME/work/…` defaults (no host user path in git) |
