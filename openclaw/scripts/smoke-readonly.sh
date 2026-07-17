@@ -60,17 +60,22 @@ else
   bad "skills/exec-risk missing"
 fi
 
-# Main protocol markers (orchestration checklist / handoff — not full user profile)
+# Main protocol markers (orchestration checklist / modes — not full user profile)
 if grep -q 'Hard checklist' "${src_workspace}/AGENTS.md" 2>/dev/null \
-  && grep -q 'Handoff brief' "${src_workspace}/AGENTS.md" 2>/dev/null; then
-  ok "AGENTS.md main checklist + handoff present"
+  && grep -q '开发方式' "${src_workspace}/AGENTS.md" 2>/dev/null; then
+  ok "AGENTS.md main checklist + 开发方式 present"
 else
-  bad "AGENTS.md missing main checklist/handoff sections"
+  bad "AGENTS.md missing main checklist/开发方式 sections"
 fi
 if grep -q 'Main checklist' "${src_workspace}/skills/dev-task/SKILL.md" 2>/dev/null; then
   ok "dev-task main checklist present"
 else
   bad "dev-task missing main checklist"
+fi
+if grep -q 'Development modes' "${pkg_root}/README.md" 2>/dev/null; then
+  ok "README Development modes section present"
+else
+  bad "README missing Development modes section"
 fi
 
 # Offline gate path only (no LLM, no side effects)
