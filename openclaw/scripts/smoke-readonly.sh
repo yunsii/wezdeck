@@ -48,6 +48,30 @@ else
   bad "dev-task-ledger.sh missing or not executable"
 fi
 
+if [[ -x "${pkg_root}/scripts/claw-exec-classify.sh" && -x "${pkg_root}/scripts/claw-exec-gate.sh" && -x "${pkg_root}/scripts/claw-run.sh" ]]; then
+  ok "exec-risk scripts executable (classify/gate/run)"
+else
+  bad "exec-risk scripts missing or not executable"
+fi
+
+if [[ -f "${src_workspace}/skills/exec-risk/SKILL.md" ]]; then
+  ok "skills/exec-risk present"
+else
+  bad "skills/exec-risk missing"
+fi
+
+# Offline gate path only (no LLM, no side effects)
+if CLAW_RUN_SKIP_LLM=1 "${pkg_root}/scripts/claw-run.sh" --dry-run --skip-llm 'true' >/dev/null 2>&1; then
+  ok "claw-run dry-run allows safe command"
+else
+  bad "claw-run dry-run failed on safe command"
+fi
+if CLAW_RUN_SKIP_LLM=1 "${pkg_root}/scripts/claw-run.sh" --dry-run --skip-llm 'rm -rf /' >/dev/null 2>&1; then
+  bad "claw-run dry-run should deny rm -rf /"
+else
+  ok "claw-run dry-run denies danger (exit non-zero)"
+fi
+
 if [[ -f "${pkg_root}/config/openclaw.json5.example" ]]; then
   ok "config example present"
 else
