@@ -371,13 +371,14 @@ hubs). Independent parallel work: `--force-new` → unique `…-2`. Assess repor
   --cwd "$HOME/work/coco-forge" --force-new
 
 ./openclaw/scripts/claw-worktree.sh list --cwd "$HOME/work/coco-forge"
+# reclaim only after user says yes (never automatic)
 ./openclaw/scripts/claw-worktree.sh reclaim --slug claw-task-i18n-… \
   --cwd "$HOME/work/coco-forge"
-# claw-dev-*: add --allow-long-lived
+# claw-dev-*: default keep; if user insists: --allow-long-lived
 ```
 
-Create uses `worktree-task` + `--provider none`. Reclaim refuses human prefixes;
-`claw-dev-*` requires `--allow-long-lived` (same idea as WezDeck `dev-*`).
+Create uses `worktree-task` + `--provider none`. Reclaim refuses human prefixes.
+**After business completes, claw asks before reclaim; `claw-dev-*` usually stays.**
 
 ### Privacy
 
