@@ -3,6 +3,10 @@
 Versioned templates and agent protocol for a **Feishu → OpenClaw → local machine**
 loop. This directory is **not** part of the WezTerm runtime hot path.
 
+**Display name on Feishu (this machine):** **YunsClaw** — set in local
+`channels.feishu.accounts.main.name` and in the Feishu Open Platform app/bot
+title. Do not put personal branding into shared secrets files.
+
 | Layer | Location | Git |
 | --- | --- | --- |
 | Templates + protocol (this tree) | `openclaw/` examples, skills, scripts | tracked |

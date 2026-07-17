@@ -74,7 +74,7 @@
   //       main: {
   //         appId: "cli_xxx",
   //         appSecret: "FROM_LOCAL_SECRET_ONLY",
-  //         name: "OpenClaw",
+  //         name: "YunsClaw", // Feishu-facing display label (local branding)
   //       },
   //     },
   //   },
