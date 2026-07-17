@@ -44,7 +44,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | Feishu DM | `dmPolicy: allowlist` (owner only); no re-pairing on reconnect |
 | Feishu groups | `groupPolicy: allowlist` (empty = all groups off) + `requireMention: true` |
 | Feishu tools | Prefer off: `doc` / `wiki` / `drive` / `perm` / `bitable`; keep `chat` / `scopes` if needed |
-| Host exec | Personal default: `mode: full` + `ask: off` (auto-run; Feishu allowlist is the human gate). Tighten to `allowlist`/`auto` if you want per-command prompts. |
+| Host exec | Personal default: `mode: full` + `ask: off` (no OpenClaw `/approve` spam). Dev planning uses **agent** judgment; obvious shell danger uses **simple** `claw-exec-classify.sh` + Feishu confirm (`skills/exec-risk`). |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Dev allowlist | **coco-forge only** — roots from local env or `$HOME/work/…` defaults (no host user path in git) |
@@ -100,9 +100,9 @@ history if needed, and restart the Gateway.
 | Feishu DM | `allowlist` + owner `open_id` only |
 | Feishu groups | `allowlist` (empty list = no groups) + `requireMention` |
 | Feishu tools | Disable `doc` / `wiki` / `drive` / `perm` / `bitable` unless needed |
-| Host exec | `tools.exec.mode: auto` (do **not** also set `tools.exec.security` / `ask` — OpenClaw rejects the combination) |
-| Host approvals file | `security=allowlist`, `ask=on-miss`, `askFallback=deny`, `autoAllowSkills=false` |
-| Allowlist entries | Explicit binaries (git, common Unix tools, node/npm under known paths, …) |
+| Host exec | Prefer one of: `mode: full` (auto) **or** `mode: auto`/`allowlist` (prompt/deny). Do not mix `mode` with `security`/`ask` fields. |
+| Host approvals file | Must match intent: full+off for auto; allowlist+on-miss for prompts |
+| Allowlist entries | Only matter when security is allowlist |
 | Elevated | `tools.elevated.enabled: false` |
 | Gateway | systemd user unit; loopback bind + token auth |
 | Linger | `yes` so logout does not kill the Feishu long-connect |

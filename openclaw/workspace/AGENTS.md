@@ -178,6 +178,23 @@ High-risk actions need explicit user confirmation first:
 
 Default **deny**: `curl | sh`, scanning the whole home for keys, silent push.
 
+### Exec risk: agent vs simple classifier
+
+| Decision | Enough? | Mechanism |
+| --- | --- | --- |
+| Dev task plan / worktree 初评 / 是否写代码 | **Yes — agent + skills** | dev-task, assess, ledger, user confirm |
+| Obvious host-shell danger | **Classifier + still ask user** | `scripts/claw-exec-classify.sh` → label `danger` must get Feishu yes |
+
+Host gateway may use `exec.mode=full` (no OpenClaw `/approve` spam). That does
+**not** waive danger confirmation in chat. Before risky shell, run:
+
+```bash
+./openclaw/scripts/claw-exec-classify.sh '<command>'
+# danger → explain + wait; safe/write → may run under worktree rules
+```
+
+See `skills/exec-risk/SKILL.md`.
+
 ## Multi-task / multi-repo
 
 - You are the orchestrator; do not silently serialize everything in one dirty tree.
@@ -255,3 +272,4 @@ ledger. Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only).
 
 - Single-repo coding flow + worktree rules: `skills/dev-task/SKILL.md`
 - Task ledger (Feishu Base): `skills/task-ledger/SKILL.md`
+- Host shell risk labels: `skills/exec-risk/SKILL.md`
