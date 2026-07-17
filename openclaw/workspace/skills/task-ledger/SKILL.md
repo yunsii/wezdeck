@@ -63,4 +63,5 @@ Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only; never commit fil
    `cwd` + `分支` to that worktree (never human `dev-*`/`task-*`/`hotfix-*`).
 5. Implement only under the claw worktree `cwd`.
 6. `close` + report with `task_id`.
-7. Reclaim claw worktree when appropriate (`claw-worktree.sh reclaim`).
+7. **Ask** if the user wants reclaim (do not auto-reclaim). Prefer keep for
+   `claw-dev-*`; for task/hotfix offer reclaim only after user yes.
