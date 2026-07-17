@@ -20,6 +20,9 @@ description: >
 4. Never write secrets into the ledger.
 5. Final reply **must** include `task_id`.
 6. If CLI fails, say so; do not invent `task_id`.
+7. When the request has a clear **需求提出人** (product / user who asked):
+   record them on open/update with `--requester-id <ou_…>` (preferred).
+   Feishu person field name: **需求提出人**. Do not leave it blank when known.
 
 ## Path guard
 
@@ -39,7 +42,12 @@ description: >
   --acceptance "pnpm --filter … test" \
   --risk low|medium|high \
   --source feishu \
-  --confirm-required 1
+  --confirm-required 1 \
+  --requester-id ou_xxx   # 需求提出人 (Feishu open_id); optional --requester "显示名"
+
+./openclaw/scripts/dev-task-ledger.sh update \
+  --task-id <uuid> \
+  --requester-id ou_xxx
 
 ./openclaw/scripts/dev-task-ledger.sh confirm --task-id <uuid>
 
@@ -51,6 +59,16 @@ description: >
   --commits "abc1234" \
   --mr "https://…"
 ```
+
+### 需求提出人
+
+| CLI | Base 列 | 类型 |
+| --- | --- | --- |
+| `--requester-id ou_…` | `需求提出人` | 人员（单选） |
+| `--requester "姓名"` | 仅当没有 open_id 时写入 `record_note` 兜底 | 文本 |
+
+- Prefer open_id from Feishu mention / contact lookup.
+- Owner who chats with OpenClaw is **not** automatically the requester; set when the asker is named (e.g. product feedback).
 
 Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only; never commit filled file).
 
