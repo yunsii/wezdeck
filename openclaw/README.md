@@ -44,7 +44,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | Feishu DM | `dmPolicy: allowlist` (owner only); no re-pairing on reconnect |
 | Feishu groups | `groupPolicy: allowlist` (empty = all groups off) + `requireMention: true` |
 | Feishu tools | Prefer off: `doc` / `wiki` / `drive` / `perm` / `bitable`; keep `chat` / `scopes` if needed |
-| Host exec | `mode: full` (no `/approve` spam). Gate: **rules → Grok → human if danger** via `claw-exec-gate.sh` (`skills/exec-risk`). Dev planning still agent+skills. |
+| Host exec | `mode: full`, `ask=off`, **`strictInlineEval=false`** (no `/approve` on `xargs`/inline). **Option A:** agent must use `claw-run.sh` → rules → Grok → Feishu if danger (`skills/exec-risk`). Not binary allowlist. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Dev allowlist | **coco-forge only** — roots from local env or `$HOME/work/…` defaults (no host user path in git) |
@@ -101,6 +101,7 @@ history if needed, and restart the Gateway.
 | Feishu groups | `allowlist` (empty list = no groups) + `requireMention` |
 | Feishu tools | Disable `doc` / `wiki` / `drive` / `perm` / `bitable` unless needed |
 | Host exec | Prefer one of: `mode: full` (auto) **or** `mode: auto`/`allowlist` (prompt/deny). Do not mix `mode` with `security`/`ask` fields. |
+| `strictInlineEval` | Personal YunsClaw: **`false`** so platform does not force `/approve` on `xargs`/`-c`. Semantic gate is `claw-run` (see `skills/exec-risk`). Set `true` only if you want platform hard-block on inline carriers. |
 | Host approvals file | Must match intent: full+off for auto; allowlist+on-miss for prompts |
 | Allowlist entries | Only matter when security is allowlist |
 | Elevated | `tools.elevated.enabled: false` |
@@ -317,12 +318,29 @@ openclaw pairing approve feishu <CODE>
 ./openclaw/scripts/dev-task-ledger.sh open \
   --title "…" --repo "$HOME/work/coco-forge" --cwd "$HOME/work/coco-forge" \
   --scope "packages/…" --acceptance "pnpm --filter … test" \
-  --risk medium --source feishu --confirm-required 1
+  --risk medium --source feishu --confirm-required 1 \
+  --requester-id ou_xxx   # optional: 需求提出人 (Feishu open_id)
+
+./openclaw/scripts/dev-task-ledger.sh update \
+  --task-id <uuid> --requester-id ou_xxx
 
 ./openclaw/scripts/dev-task-ledger.sh confirm --task-id <uuid>
 ./openclaw/scripts/dev-task-ledger.sh close --task-id <uuid> \
   --status done --summary "…" --branch feat/… --commits abc1234
 ```
+
+### Base columns (selected)
+
+| Column | Meaning |
+| --- | --- |
+| `task_id` | UUID primary key for agent reports |
+| `标题` / `状态` / `范围` / `验收` | Task meta |
+| **`需求提出人`** | Person who raised the need (Feishu user field) |
+| `来源` | feishu / cli / manual |
+| `cwd` / `分支` / `commits` / `MR` | Delivery pointers |
+| `结果摘要` | Close summary |
+
+Write `需求提出人` via CLI `--requester-id <ou_…>` (cell value `[{ "id": "ou_…" }]`).
 
 ### Development allowlist (coco-forge only)
 

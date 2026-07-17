@@ -215,6 +215,7 @@ Usage:
                             [--scope S] [--acceptance A] [--risk low|medium|high]
                             [--source feishu|cli|manual] [--source-ref R]
                             [--confirm-required 0|1] [--tags T] [--model M]
+                            [--requester-id OU_ID] [--requester NAME]
                             [--task-id UUID]
   dev-task-ledger.sh update --task-id UUID [--status S] [--title T] ... (same optional fields)
   dev-task-ledger.sh confirm --task-id UUID
@@ -230,6 +231,10 @@ Env:
   OPENCLAW_TASKS_TABLE_ID     table id (tbl…)
   OPENCLAW_TASKS_LARK_AS      bot|user (default bot)
   OPENCLAW_TASKS_ENV_FILE     default ~/.config/shell-env.d/openclaw-tasks.env
+
+Notes:
+  --requester-id   Feishu open_id (ou_…), writes person field 需求提出人
+  --requester      display name only (stored in record_note when no id; prefer --requester-id)
 EOF
 }
 
@@ -237,6 +242,7 @@ parse_kv() {
   TITLE=""; REPO=""; CWD=""; BRANCH=""; SCOPE=""; ACCEPT=""; RISK=""
   SOURCE="feishu"; SOURCE_REF=""; CONFIRM_REQ="1"; TAGS=""; MODEL=""
   TASK_ID=""; STATUS=""; SUMMARY=""; COMMITS=""; MR=""
+  REQUESTER_ID=""; REQUESTER_NAME=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --title) TITLE="$2"; shift 2 ;;
@@ -256,6 +262,8 @@ parse_kv() {
       --summary) SUMMARY="$2"; shift 2 ;;
       --commits) COMMITS="$2"; shift 2 ;;
       --mr) MR="$2"; shift 2 ;;
+      --requester-id) REQUESTER_ID="$2"; shift 2 ;;
+      --requester) REQUESTER_NAME="$2"; shift 2 ;;
       --limit) LIMIT="$2"; shift 2 ;;
       -h|--help) usage; exit 0 ;;
       *) echo "unknown arg: $1" >&2; exit 2 ;;
@@ -265,12 +273,14 @@ parse_kv() {
 
 build_partial_json() {
   # stdout: JSON object with only set fields (Chinese column names)
+  # person field 需求提出人 expects [{"id":"ou_xxx"}]
   python3 - <<'PY' \
     "${TITLE:-}" "${STATUS:-}" "${SOURCE:-}" "${SOURCE_REF:-}" \
     "${REPO:-}" "${CWD:-}" "${BRANCH:-}" "${SCOPE:-}" "${ACCEPT:-}" \
     "${RISK:-}" "${CONFIRM_REQ:-}" "${TAGS:-}" "${MODEL:-}" \
     "${SUMMARY:-}" "${COMMITS:-}" "${MR:-}" "${TASK_ID:-}" \
-    "${OPENED_AT:-}" "${CLOSED_AT:-}" "${CONFIRMED_AT:-}"
+    "${OPENED_AT:-}" "${CLOSED_AT:-}" "${CONFIRMED_AT:-}" \
+    "${REQUESTER_ID:-}" "${REQUESTER_NAME:-}"
 import json, sys
 keys = [
   ("标题", 0), ("状态", 1), ("来源", 2), ("source_ref", 3),
@@ -291,6 +301,16 @@ for name, i in keys:
         out[name] = v in ("1", "true", "True", "yes", "YES")
     else:
         out[name] = v
+# person field: prefer open_id
+req_id = vals[20] if len(vals) > 20 else ""
+req_name = vals[21] if len(vals) > 21 else ""
+if req_id:
+    out["需求提出人"] = [{"id": req_id}]
+elif req_name:
+    # fallback note when only a display name is known
+    note = out.get("record_note") or ""
+    extra = f"需求提出人: {req_name}"
+    out["record_note"] = f"{note}; {extra}".strip("; ") if note else extra
 print(json.dumps(out, ensure_ascii=False))
 PY
 }
