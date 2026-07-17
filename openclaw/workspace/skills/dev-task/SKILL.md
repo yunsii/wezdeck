@@ -1,66 +1,53 @@
 ---
 name: dev-task
 description: >
-  团队仓 development under OpenClaw: always use an isolated claw-* worktree,
-  never human WezDeck dev-/task-/hotfix-* trees or the primary checkout for writes.
+  团队仓 development under OpenClaw with WezDeck-aligned lifecycle worktrees
+  (claw-task/dev/hotfix), mandatory assess before create, never human worktrees.
 ---
 
-# Dev task (团队仓 + claw worktree)
+# Dev task (团队仓 + claw lifecycle worktrees)
 
 ## When to use
 
-- Implement / fix / refactor / test in **团队仓** only.
+Write work in **团队仓** only.
 
-## When not to use
+## Worktree model (mirrors WezDeck)
 
-- Pure Q&A (no file changes).
-- Other repos — refuse.
-- Requests to “continue in my existing task-*/dev-* worktree” for **writes** —
-  refuse to write there; offer a new `claw-*` worktree (read-only peek OK).
+| Kind | Claw dir | Claw branch | Human analogue |
+| --- | --- | --- | --- |
+| task | `claw-task-<domain?>-<subject>` | `claw/task/…` | `task-*` |
+| dev | `claw-dev-<domain?>-<subject>` | `claw/dev/…` | `dev-*` |
+| hotfix | `claw-hotfix-<domain?>-<subject>` | `claw/hotfix/…` | `hotfix-*` |
 
-## Path + worktree guards
-
-**Repo allowlist:** runtime roots from `OPENCLAW_TASKS_ALLOWED_ROOTS` or
-`$HOME/work/team-repo` + `$HOME/work/.worktrees/team-repo`.
-
-**Worktree ownership:**
-
-| Prefix | Owner | Claw may |
-| --- | --- | --- |
-| primary root | human | read only for task work |
-| `dev-*` / `task-*` / `hotfix-*` | human (WezDeck) | **read only**; never create/reclaim/write |
-| `claw-*` | OpenClaw | create, write, reclaim |
+Human `dev-*` / `task-*` / `hotfix-*` (no `claw-`) are **read-only** for claw.
 
 ## Steps
 
-1. **Ledger open** (task-ledger) — status planned/open; repo 团队仓.
-2. **Plan** — scope, acceptance, risk; wait for confirm if needed.
-3. **Create claw worktree** (mandatory for writes):
+1. Ledger `open`.
+2. **Assess** (mandatory for new write trees):
+
+   ```bash
+   ./openclaw/scripts/claw-worktree.sh assess \
+     --title "…" --domain "i18n" --scope "apps/…" --days 3
+   ```
+
+   Present 初评 to the user (lifecycle, slug, branch, reclaim rule). Wait for
+   confirm on non-trivial tasks.
+
+3. **Create** after confirm:
 
    ```bash
    WT=$(./openclaw/scripts/claw-worktree.sh create \
-     --title "<subject>" --cwd "$HOME/work/team-repo")
-   # use $WT as cwd for all subsequent work
+     --title "…" --lifecycle task --domain i18n \
+     --cwd "$HOME/work/team-repo")
    ```
 
-   - Dir: `.worktrees/team-repo/claw-<slug>/`
-   - Branch: `claw/<slug>`
-   - Provider: none (no tmux attach; headless)
+4. Ledger update `cwd` + branch; implement only under `$WT`.
+5. Ledger `close`.
+6. Reclaim: `claw-task-*` / `claw-hotfix-*` standard; `claw-dev-*` needs
+   `--allow-long-lived`.
 
-4. **Ledger update** — set `cwd` / `分支` to the claw worktree values.
-5. **Implement** only under that `cwd`; run filtered tests.
-6. **Ledger close** with summary + commits.
-7. **Reclaim** when delivered and user did not ask to keep the tree:
+## Domain
 
-   ```bash
-   ./openclaw/scripts/claw-worktree.sh reclaim --slug claw-<slug> \
-     --cwd "$HOME/work/team-repo"
-   ```
-
-## Hard rules
-
-- Never overwrite or reuse human worktrees for claw tasks.
-- Never write task changes on primary checkout.
-- One claw worktree per task; one writer per tree.
-- No push to main/master / force-push without explicit user confirm.
-- Completion report includes `task_id`, claw `cwd`, branch, reclaim status.
+Use `--domain` when work is area-scoped (i18n, platform, userscript, server, …)
+so parallel claw tasks do not collide and audit stays readable.

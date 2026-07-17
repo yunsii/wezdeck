@@ -1,48 +1,51 @@
 #!/usr/bin/env bash
-# Claw-owned git worktrees for OpenClaw development tasks.
-# Layout mirrors WezDeck worktree-task, but uses a reserved slug/branch prefix
-# so human-created dev-*/task-*/hotfix-* worktrees are never touched.
+# Claw-owned git worktrees — mirrors WezDeck lifecycle (dev/task/hotfix) but
+# under reserved prefixes so human worktrees are never touched.
 #
-# Directory:  $HOME/work/.worktrees/<repo>/claw-<slug>/
-# Branch:     claw/<slug>
+# WezDeck human:  dev-* | task-* | hotfix-*     branches dev/ | task/ | hotfix/
+# OpenClaw claw:  claw-dev-* | claw-task-* | claw-hotfix-*
+#                 branches    claw/dev/ | claw/task/ | claw/hotfix/
 #
-# Requires: worktree-task from wezterm-config (WEZDECK_REPO / this repo).
+# Parent dir is the same: $HOME/work/.worktrees/<repo>/
 set -euo pipefail
 
 cmd="${1:-}"
 shift || true
 
-# Resolve wezdeck / worktree-task without hard-coding a username.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 WEZDECK_REPO="${WEZDECK_REPO:-${WEZTERM_CONFIG_REPO:-${REPO_ROOT}}}"
 WT_BIN="${WEZDECK_REPO}/scripts/runtime/worktree/worktree-task"
-
-CLAW_DIR_PREFIX="${OPENCLAW_CLAW_WORKTREE_PREFIX:-claw-}"
-CLAW_BRANCH_PREFIX="${OPENCLAW_CLAW_BRANCH_PREFIX:-claw/}"
-
-# Default primary repo for development (portable; override with --cwd).
 DEFAULT_REPO="${OPENCLAW_CLAW_DEFAULT_REPO:-${HOME}/work/team-repo}"
 
 usage() {
-  cat <<EOF
+  cat <<'EOF'
 Usage:
-  claw-worktree.sh create --title SUBJECT [--cwd REPO] [--slug SLUG] [--base-ref REF]
-  claw-worktree.sh reclaim --slug claw-SLUG | --worktree-root PATH [--cwd REPO] [--force]
-  claw-worktree.sh list [--cwd REPO]
+  claw-worktree.sh assess  --title SUBJECT [--domain DOMAIN] [--scope HINT]
+                           [--days N] [--cwd REPO]
+      Print recommended lifecycle + slug + branch (no create).
 
-Reserved layout (do not use for human WezDeck worktrees):
-  dir:    .worktrees/<repo>/${CLAW_DIR_PREFIX}<slug>
-  branch: ${CLAW_BRANCH_PREFIX}<slug>
+  claw-worktree.sh create  --title SUBJECT --lifecycle task|dev|hotfix
+                           [--domain DOMAIN] [--cwd REPO] [--slug SLUG]
+                           [--base-ref REF]
+      Create claw worktree. Lifecycle is required (or use assess first).
 
-Human-owned prefixes (never create/reclaim via this script):
-  dev-*  task-*  hotfix-*
+  claw-worktree.sh reclaim --slug claw-{task|dev|hotfix}-SLUG
+                           [--cwd REPO] [--force] [--allow-long-lived]
+  claw-worktree.sh list    [--cwd REPO]
 
-Env:
-  WEZDECK_REPO / WEZTERM_CONFIG_REPO  worktree-task home (default: this monorepo)
-  OPENCLAW_CLAW_DEFAULT_REPO          default --cwd (default: \$HOME/work/team-repo)
-  OPENCLAW_CLAW_WORKTREE_PREFIX       default claw-
-  OPENCLAW_CLAW_BRANCH_PREFIX         default claw/
+Lifecycle (aligned with WezDeck, claw-owned only):
+
+  kind     dir prefix        branch prefix     lifetime        reclaim
+  -------  ----------------  ----------------  --------------  -----------------
+  task     claw-task-        claw/task/        hours–days      default after done
+  dev      claw-dev-         claw/dev/         weeks–months    needs --allow-long-lived
+  hotfix   claw-hotfix-      claw/hotfix/      hours           default after done
+
+Human WezDeck prefixes (never touch): dev-* task-* hotfix-* (without claw-)
+
+Domain (optional): short area tag for slug, e.g. i18n, platform, userscript
+  → claw-task-i18n-cache-search-field
 EOF
 }
 
@@ -54,39 +57,168 @@ require_wt() {
 }
 
 slugify() {
-  # lowercase, non-alnum -> -, trim
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
-}
-
-is_claw_slug() {
-  local s="$1"
-  [[ "${s}" == ${CLAW_DIR_PREFIX}* ]]
 }
 
 is_human_slug() {
   local s="$1"
+  # human only if NOT claw-prefixed
+  [[ "${s}" != claw-* ]] || return 1
   [[ "${s}" == dev-* || "${s}" == task-* || "${s}" == hotfix-* ]]
 }
 
-assert_not_human_path() {
-  local p base
-  p="$(basename "${1%/}")"
-  if is_human_slug "${p}"; then
-    die "refusing to touch human WezDeck worktree '${p}' (dev-/task-/hotfix- are user-owned)"
+is_claw_slug() {
+  local s="$1"
+  [[ "${s}" == claw-task-* || "${s}" == claw-dev-* || "${s}" == claw-hotfix-* || "${s}" == claw-* ]]
+}
+
+# New preferred shapes
+is_claw_lifecycle_slug() {
+  local s="$1"
+  [[ "${s}" == claw-task-* || "${s}" == claw-dev-* || "${s}" == claw-hotfix-* ]]
+}
+
+lifecycle_dir_prefix() {
+  case "$1" in
+    task) echo "claw-task-" ;;
+    dev) echo "claw-dev-" ;;
+    hotfix) echo "claw-hotfix-" ;;
+    *) die "lifecycle must be task|dev|hotfix" ;;
+  esac
+}
+
+lifecycle_branch_prefix() {
+  case "$1" in
+    task) echo "claw/task/" ;;
+    dev) echo "claw/dev/" ;;
+    hotfix) echo "claw/hotfix/" ;;
+    *) die "lifecycle must be task|dev|hotfix" ;;
+  esac
+}
+
+normalize_lifecycle() {
+  local lc
+  lc="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  case "${lc}" in
+    task|dev|hotfix) printf '%s' "${lc}" ;;
+    t) echo task ;;
+    d) echo dev ;;
+    h) echo hotfix ;;
+    *) die "lifecycle must be task|dev|hotfix (got '${1:-}')" ;;
+  esac
+}
+
+# Heuristic assess (no side effects)
+assess_lifecycle() {
+  local title="$1" domain="$2" scope="$3" days="${4:-}"
+  local lc="task" reasons=()
+
+  # explicit days hint
+  if [[ -n "${days}" ]]; then
+    if [[ "${days}" -ge 14 ]]; then
+      lc="dev"
+      reasons+=("expected duration >=14d → dev (long-lived)")
+    elif [[ "${days}" -le 2 ]]; then
+      lc="task"
+      reasons+=("expected duration <=2d → task")
+    else
+      lc="task"
+      reasons+=("expected duration ${days}d → task (default mid-range)")
+    fi
   fi
-  if [[ "${p}" != ${CLAW_DIR_PREFIX}* && "${cmd}" == "reclaim" ]]; then
-    die "reclaim only allowed for '${CLAW_DIR_PREFIX}*' worktrees, got '${p}'"
+
+  local blob
+  blob="$(printf '%s %s %s' "${title}" "${domain}" "${scope}" | tr '[:upper:]' '[:lower:]')"
+
+  if echo "${blob}" | grep -qE 'hotfix|紧急|线上|prod|production|p0|阻断|回滚'; then
+    lc="hotfix"
+    reasons+=("keywords suggest production urgency → hotfix")
+  elif echo "${blob}" | grep -qE 'epic|平台|platform|长期|workstation|重构大|multi-week|迭代'; then
+    if [[ "${lc}" != "hotfix" ]]; then
+      lc="dev"
+      reasons+=("keywords suggest long-running area work → dev")
+    fi
+  elif echo "${blob}" | grep -qE 'fix|bug|小改|缓存|文案|样式|单测|chore|docs'; then
+    if [[ "${lc}" == "task" ]]; then
+      reasons+=("keywords suggest scoped delivery → task")
+    fi
   fi
+
+  if [[ ${#reasons[@]} -eq 0 ]]; then
+    reasons+=("default → task (PR-scoped, reclaim after delivery)")
+  fi
+
+  local subject domain_slug slug dir_prefix branch_prefix
+  subject="$(slugify "${title}")"
+  subject="${subject#claw-task-}"; subject="${subject#claw-dev-}"; subject="${subject#claw-hotfix-}"
+  subject="${subject#claw-}"
+  # drop lifecycle words from subject to avoid claw-hotfix-…-hotfix-…
+  subject="$(printf '%s' "${subject}" | sed -E 's/^(hotfix|task|dev)-//')"
+  [[ -n "${subject}" ]] || subject="work"
+
+  domain_slug=""
+  if [[ -n "${domain}" ]]; then
+    domain_slug="$(slugify "${domain}")"
+    # avoid domain-domain-subject when title starts with domain
+    subject="${subject#"${domain_slug}-"}"
+  fi
+
+  dir_prefix="$(lifecycle_dir_prefix "${lc}")"
+  branch_prefix="$(lifecycle_branch_prefix "${lc}")"
+  if [[ -n "${domain_slug}" ]]; then
+    slug="${dir_prefix}${domain_slug}-${subject}"
+  else
+    slug="${dir_prefix}${subject}"
+  fi
+  # cap slug length roughly
+  if [[ ${#slug} -gt 80 ]]; then
+    slug="${slug:0:80}"
+    slug="${slug%-}"
+  fi
+
+  local branch_tail="${slug#"${dir_prefix}"}"
+  local branch="${branch_prefix}${branch_tail}"
+
+  cat <<EOF
+{
+  "lifecycle": "${lc}",
+  "dir_slug": "${slug}",
+  "branch": "${branch}",
+  "domain": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "${domain}"),
+  "reasons": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "${reasons[@]}") ,
+  "reclaim": $( [[ "${lc}" == "dev" ]] && echo '"needs --allow-long-lived after delivery checks"' || echo '"standard after merge/push"' ),
+  "note": "Assessment only — confirm with user before create. Human worktrees (dev-/task-/hotfix- without claw-) are never used."
+}
+EOF
+}
+
+cmd_assess() {
+  local title="" domain="" scope="" days="" cwd="${DEFAULT_REPO}"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --title) title="$2"; shift 2 ;;
+      --domain) domain="$2"; shift 2 ;;
+      --scope) scope="$2"; shift 2 ;;
+      --days) days="$2"; shift 2 ;;
+      --cwd) cwd="$2"; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown arg: $1" ;;
+    esac
+  done
+  [[ -n "${title}" ]] || die "--title required"
+  assess_lifecycle "${title}" "${domain}" "${scope}" "${days}"
 }
 
 cmd_create() {
-  local title="" cwd="${DEFAULT_REPO}" slug="" base_ref=""
+  local title="" cwd="${DEFAULT_REPO}" slug="" base_ref="" lifecycle="" domain=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --title) title="$2"; shift 2 ;;
       --cwd) cwd="$2"; shift 2 ;;
       --slug) slug="$2"; shift 2 ;;
       --base-ref) base_ref="$2"; shift 2 ;;
+      --lifecycle|--kind) lifecycle="$2"; shift 2 ;;
+      --domain) domain="$2"; shift 2 ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown arg: $1" ;;
     esac
@@ -95,30 +227,62 @@ cmd_create() {
   [[ -d "${cwd}" ]] || die "repo not found: ${cwd}"
   require_wt
 
-  local subject branch dir_slug branch_tail
-  subject="$(slugify "${title}")"
-  [[ -n "${subject}" ]] || subject="task"
-  # avoid claw-claw-* if title already contains reserved prefix
-  subject="${subject#${CLAW_DIR_PREFIX}}"
-  subject="${subject#claw-}"
+  if [[ -z "${lifecycle}" && -z "${slug}" ]]; then
+    die "pass --lifecycle task|dev|hotfix (or full --slug claw-task-…); run 'assess' first"
+  fi
+
+  local dir_slug branch dir_prefix branch_prefix subject branch_tail
 
   if [[ -n "${slug}" ]]; then
     dir_slug="$(slugify "${slug}")"
-    dir_slug="${dir_slug#${CLAW_DIR_PREFIX}}"
-    dir_slug="${dir_slug#claw-}"
-    dir_slug="${CLAW_DIR_PREFIX}${dir_slug}"
+    # ensure claw- lifecycle prefix
+    if ! is_claw_lifecycle_slug "${dir_slug}"; then
+      # legacy claw-foo → treat as claw-task-foo
+      dir_slug="${dir_slug#claw-}"
+      lifecycle="$(normalize_lifecycle "${lifecycle:-task}")"
+      dir_prefix="$(lifecycle_dir_prefix "${lifecycle}")"
+      dir_slug="${dir_prefix}${dir_slug}"
+    else
+      if [[ "${dir_slug}" == claw-dev-* ]]; then lifecycle="dev"
+      elif [[ "${dir_slug}" == claw-hotfix-* ]]; then lifecycle="hotfix"
+      else lifecycle="task"
+      fi
+    fi
   else
-    dir_slug="${CLAW_DIR_PREFIX}${subject}"
+    lifecycle="$(normalize_lifecycle "${lifecycle}")"
+    dir_prefix="$(lifecycle_dir_prefix "${lifecycle}")"
+    subject="$(slugify "${title}")"
+    subject="${subject#claw-task-}"; subject="${subject#claw-dev-}"; subject="${subject#claw-hotfix-}"
+    subject="${subject#claw-}"
+    [[ -n "${subject}" ]] || subject="work"
+    if [[ -n "${domain}" ]]; then
+      dir_slug="${dir_prefix}$(slugify "${domain}")-${subject}"
+    else
+      dir_slug="${dir_prefix}${subject}"
+    fi
   fi
 
-  if is_human_slug "${dir_slug}"; then
-    die "slug collides with human lifecycle prefix: ${dir_slug}"
+  is_human_slug "${dir_slug}" && die "slug collides with human prefix: ${dir_slug}"
+  is_claw_slug "${dir_slug}" || die "internal: not a claw slug: ${dir_slug}"
+
+  lifecycle="$(normalize_lifecycle "${lifecycle}")"
+  dir_prefix="$(lifecycle_dir_prefix "${lifecycle}")"
+  branch_prefix="$(lifecycle_branch_prefix "${lifecycle}")"
+  # re-sync prefix if slug has full form
+  if [[ "${dir_slug}" == claw-dev-* ]]; then
+    branch_tail="${dir_slug#claw-dev-}"
+    branch_prefix="$(lifecycle_branch_prefix dev)"
+  elif [[ "${dir_slug}" == claw-hotfix-* ]]; then
+    branch_tail="${dir_slug#claw-hotfix-}"
+    branch_prefix="$(lifecycle_branch_prefix hotfix)"
+  elif [[ "${dir_slug}" == claw-task-* ]]; then
+    branch_tail="${dir_slug#claw-task-}"
+    branch_prefix="$(lifecycle_branch_prefix task)"
+  else
+    branch_tail="${dir_slug#claw-}"
   fi
+  branch="${branch_prefix}${branch_tail}"
 
-  branch_tail="${dir_slug#"${CLAW_DIR_PREFIX}"}"
-  branch="${CLAW_BRANCH_PREFIX}${branch_tail}"
-
-  # Headless: no tmux attach — OpenClaw runs outside WezDeck panes by default
   local args=(
     launch
     --cwd "${cwd}"
@@ -133,24 +297,15 @@ cmd_create() {
     args+=(--base-ref "${base_ref}")
   fi
 
-  echo "creating claw worktree slug=${dir_slug} branch=${branch} cwd=${cwd}" >&2
+  echo "creating lifecycle=${lifecycle} slug=${dir_slug} branch=${branch}" >&2
   "${WT_BIN}" "${args[@]}"
 
-  # Print machine-readable path for agents
-  local wt_parent repo_name wt_path
+  local repo_name wt_path
   repo_name="$(basename "$(realpath "${cwd}")")"
-  # worktree-task uses parent of repo: .worktrees/{repo}/slug
-  wt_parent="$(realpath "${cwd}/..")/.worktrees/${repo_name}"
-  # if policy is under repo parent - check both layouts
-  if [[ ! -d "${wt_parent}/${dir_slug}" ]]; then
-    wt_parent="$(realpath "${cwd}")/../.worktrees/${repo_name}"
-    wt_parent="$(realpath -m "${wt_parent}")"
-  fi
   wt_path="$(realpath -m "${HOME}/work/.worktrees/${repo_name}/${dir_slug}")"
   if [[ -d "${wt_path}" ]]; then
     printf '%s\n' "${wt_path}"
   else
-    # fallback: ask git
     git -C "${cwd}" worktree list --porcelain 2>/dev/null | awk -v s="/${dir_slug}" '
       $1=="worktree" {p=$2}
       p!="" && index(p,s) {print p; exit}
@@ -159,13 +314,14 @@ cmd_create() {
 }
 
 cmd_reclaim() {
-  local slug="" root="" cwd="${DEFAULT_REPO}" force=0
+  local slug="" root="" cwd="${DEFAULT_REPO}" force=0 long=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --slug) slug="$2"; shift 2 ;;
       --worktree-root) root="$2"; shift 2 ;;
       --cwd) cwd="$2"; shift 2 ;;
       --force) force=1; shift ;;
+      --allow-long-lived) long=1; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown arg: $1" ;;
     esac
@@ -173,19 +329,22 @@ cmd_reclaim() {
   require_wt
   [[ -n "${slug}" || -n "${root}" ]] || die "need --slug or --worktree-root"
 
+  local name=""
   if [[ -n "${slug}" ]]; then
-    if ! is_claw_slug "${slug}"; then
-      die "reclaim slug must start with '${CLAW_DIR_PREFIX}' (got '${slug}')"
-    fi
-    if is_human_slug "${slug}"; then
-      die "refusing human worktree slug '${slug}'"
-    fi
+    name="${slug}"
+  else
+    name="$(basename "${root%/}")"
   fi
-  if [[ -n "${root}" ]]; then
-    assert_not_human_path "${root}"
-    local base
-    base="$(basename "${root%/}")"
-    is_claw_slug "${base}" || die "worktree-root basename must start with '${CLAW_DIR_PREFIX}'"
+
+  if is_human_slug "${name}"; then
+    die "refusing human WezDeck worktree '${name}'"
+  fi
+  if ! is_claw_slug "${name}"; then
+    die "reclaim only claw-* worktrees (got '${name}')"
+  fi
+  # claw-dev-* requires allow-long-lived (mirror WezDeck dev-*)
+  if [[ "${name}" == claw-dev-* && "${long}" -ne 1 ]]; then
+    die "claw-dev-* is long-lived; pass --allow-long-lived after delivery checks (mirrors WezDeck dev-*)"
   fi
 
   local args=(reclaim --cwd "${cwd}" --provider none --provider-mode off)
@@ -197,8 +356,11 @@ cmd_reclaim() {
   if [[ "${force}" -eq 1 ]]; then
     args+=(--force)
   fi
+  if [[ "${long}" -eq 1 ]]; then
+    args+=(--allow-long-lived)
+  fi
 
-  echo "reclaiming claw worktree..." >&2
+  echo "reclaiming ${name}..." >&2
   "${WT_BIN}" "${args[@]}"
 }
 
@@ -218,11 +380,16 @@ cmd_list() {
     echo "no worktrees dir: ${wt_root}" >&2
     exit 0
   fi
-  # shellcheck disable=SC2012
   ls -1 "${wt_root}" 2>/dev/null | while read -r name; do
     [[ -z "${name}" || "${name}" == .* ]] && continue
-    if is_claw_slug "${name}"; then
-      printf 'claw|%s|%s\n' "${name}" "${wt_root}/${name}"
+    if [[ "${name}" == claw-dev-* ]]; then
+      printf 'claw-dev|%s|%s\n' "${name}" "${wt_root}/${name}"
+    elif [[ "${name}" == claw-task-* ]]; then
+      printf 'claw-task|%s|%s\n' "${name}" "${wt_root}/${name}"
+    elif [[ "${name}" == claw-hotfix-* ]]; then
+      printf 'claw-hotfix|%s|%s\n' "${name}" "${wt_root}/${name}"
+    elif [[ "${name}" == claw-* ]]; then
+      printf 'claw-legacy|%s|%s\n' "${name}" "${wt_root}/${name}"
     elif is_human_slug "${name}"; then
       printf 'human|%s|%s\n' "${name}" "${wt_root}/${name}"
     else
@@ -232,6 +399,7 @@ cmd_list() {
 }
 
 case "${cmd}" in
+  assess) cmd_assess "$@" ;;
   create) cmd_create "$@" ;;
   reclaim) cmd_reclaim "$@" ;;
   list) cmd_list "$@" ;;

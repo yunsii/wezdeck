@@ -335,26 +335,39 @@ Tracked docs only describe the *policy*; concrete roots stay local.
 
 ### Development workflow + worktree ownership
 
-Write tasks follow: **ledger open → plan → confirm → claw worktree → work →
-ledger close → reclaim claw tree**.
+Write tasks follow:
 
-| Owner | Slug under `.worktrees/<repo>/` | Branch | Tooling |
+**ledger open → worktree 初评 (assess) → user confirm → create → work →
+ledger close → reclaim**
+
+Claw mirrors your WezDeck **lifecycle** (dev / task / hotfix) under reserved
+`claw-` prefixes so human trees are never overwritten.
+
+| Kind | Claw dir / branch | Human analogue | Length |
 | --- | --- | --- | --- |
-| Human (WezDeck) | `dev-*`, `task-*`, `hotfix-*` | `dev/`, `task/`, `hotfix/` | User only |
-| OpenClaw | **`claw-*` only** | **`claw/` only** | `scripts/claw-worktree.sh` |
-| Primary checkout | repo root | — | **read-only for task implementation** |
+| task | `claw-task-*` / `claw/task/…` | `task-*` | hours–days |
+| dev | `claw-dev-*` / `claw/dev/…` | `dev-*` | weeks–months |
+| hotfix | `claw-hotfix-*` / `claw/hotfix/…` | `hotfix-*` | hours |
+
+Optional **domain** in slug: `claw-task-i18n-cache-field`.
 
 ```bash
-./openclaw/scripts/claw-worktree.sh create --title "cache search field" \
+# 初评 only (JSON): lifecycle + slug + branch + reasons
+./openclaw/scripts/claw-worktree.sh assess \
+  --title "cache search field" --domain i18n --scope "apps/…" --days 2
+
+./openclaw/scripts/claw-worktree.sh create \
+  --title "cache search field" --lifecycle task --domain i18n \
   --cwd "$HOME/work/team-repo"
+
 ./openclaw/scripts/claw-worktree.sh list --cwd "$HOME/work/team-repo"
-./openclaw/scripts/claw-worktree.sh reclaim --slug claw-cache-search-field \
+./openclaw/scripts/claw-worktree.sh reclaim --slug claw-task-i18n-cache-search-field \
   --cwd "$HOME/work/team-repo"
+# claw-dev-*: add --allow-long-lived
 ```
 
-Create uses `worktree-task launch` with `--provider none` (no tmux attach).
-Reclaim **refuses** human prefixes. Same parent directory as WezDeck; isolation
-is by **slug prefix**, not a second parent tree.
+Create uses `worktree-task` + `--provider none`. Reclaim refuses human prefixes;
+`claw-dev-*` requires `--allow-long-lived` (same idea as WezDeck `dev-*`).
 
 ### Privacy
 
