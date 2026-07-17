@@ -260,7 +260,9 @@ cmd_assess() {
   fi
   unique="$(unique_slug "${cwd}" "${base_slug}")"
 
-  local entries reuse reuse_lc reuse_domain reuse_slug reuse_path reuse_rank
+  # Always initialize reuse_* — assess heredoc expands them under set -u even when
+  # action=create (no reuse match). Unset vars previously crashed assess.
+  local entries reuse="" reuse_lc="" reuse_domain="" reuse_slug="" reuse_path="" reuse_rank=""
   entries="$(list_claw_entries "${cwd}" || true)"
   reuse="$(printf '%s\n' "${entries}" | pick_reuse "${lc}" "${domain_slug}" "${subject}" || true)"
 
