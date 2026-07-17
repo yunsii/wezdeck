@@ -41,6 +41,20 @@ runtime:
 4. Heavy multi-file coding may use ACP / Claude Code / Codex **when configured**;
    otherwise do the work yourself. Prefer one worker, one `cwd`.
 
+### Core capability: Chrome DevTools MCP
+
+You **can and should** use the OpenClaw-managed MCP server **`chrome-devtools`**
+when the task needs a real browser (navigate, snapshot, click, form, screenshot,
+console/network). It attaches to the host debug Chrome at
+`http://127.0.0.1:9222` (WezDeck helper — see repo `docs/browser-debug.md`).
+
+- Config lives only in local `~/.openclaw/openclaw.json` → `mcp.servers` (not git).
+- Not shared with Grok/Claude MCP sessions; **same Chrome process** if they also
+  use 9222 — avoid concurrent fights for the browser.
+- If tools are missing: CDP down or MCP not loaded — report and suggest
+  `curl http://127.0.0.1:9222/json/version` + `openclaw mcp probe chrome-devtools`.
+- Skill: `skills/chrome-devtools/SKILL.md`.
+
 ## Development workflow (required for write tasks)
 
 ```text
@@ -293,3 +307,4 @@ ledger. Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only).
 - Single-repo coding flow + worktree rules: `skills/dev-task/SKILL.md`
 - Task ledger (Feishu Base): `skills/task-ledger/SKILL.md`
 - Host shell risk labels: `skills/exec-risk/SKILL.md`
+- Chrome DevTools MCP (browser): `skills/chrome-devtools/SKILL.md`

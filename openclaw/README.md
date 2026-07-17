@@ -45,6 +45,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | Feishu groups | `groupPolicy: allowlist` (empty = all groups off) + `requireMention: true` |
 | Feishu tools | Prefer off: `doc` / `wiki` / `drive` / `perm` / `bitable`; keep `chat` / `scopes` if needed |
 | Host exec | `mode: full`, `ask=off`, **`strictInlineEval=false`** (no `/approve` on `xargs`/inline). **Option A:** agent must use `claw-run.sh` → rules → Grok → Feishu if danger (`skills/exec-risk`). Not binary allowlist. |
+| **Chrome MCP** | OpenClaw `mcp.servers.chrome-devtools` → `chrome-devtools-mcp` on **CDP `127.0.0.1:9222`** (WezDeck debug Chrome). Core browser capability for YunsClaw. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Dev allowlist | **coco-forge only** — roots from local env or `$HOME/work/…` defaults (no host user path in git) |
@@ -57,6 +58,8 @@ loginctl show-user "$USER" -p Linger          # expect Linger=yes
 systemctl --user is-active openclaw-gateway   # active
 openclaw channels status --probe              # Feishu … works
 openclaw exec-policy show
+openclaw mcp list && openclaw mcp probe chrome-devtools   # ~29 tools
+curl -sS -m 3 http://127.0.0.1:9222/json/version          # CDP up
 openclaw security audit                       # prefer 0 critical
 ./openclaw/scripts/smoke-readonly.sh
 ```
@@ -130,11 +133,51 @@ Feishu DM (allowlisted user)
   → OpenClaw Gateway (WSL systemd user service, loopback; linger preferred)
       → main agent (workspace AGENTS.md + skills)
           → model provider (e.g. OpenAI-compatible proxy for Grok)
-          → host exec under allowlist / auto policy
-  → streaming card reply on Feishu
+          → host exec (claw-run protocol + mode=full)
+          → MCP chrome-devtools → CDP 127.0.0.1:9222 (WezDeck debug Chrome)
+  → reply on Feishu
 
 Optional: same Feishu app used by lark-cli for manual API work.
 ```
+
+### Chrome DevTools MCP (core browser capability)
+
+YunsClaw drives the **same** headless/debug Chrome that WezDeck auto-starts
+for agents (see repo [`docs/browser-debug.md`](../docs/browser-debug.md)).
+
+| Layer | Value |
+| --- | --- |
+| Config key | `mcp.servers.chrome-devtools` in **local** `~/.openclaw/openclaw.json` |
+| Command | `npx -y chrome-devtools-mcp@latest --browser-url=http://127.0.0.1:9222` |
+| Tool profile | `tools.profile: coding` (allows `bundle-mcp`) |
+| Agent skill | `workspace/skills/chrome-devtools/SKILL.md` |
+
+One-time install on a machine:
+
+```bash
+curl -sS -m 3 http://127.0.0.1:9222/json/version   # CDP must be up first
+
+openclaw mcp add chrome-devtools \
+  --command npx \
+  --arg -y \
+  --arg chrome-devtools-mcp@latest \
+  --arg --browser-url=http://127.0.0.1:9222 \
+  --timeout 90 \
+  --connect-timeout 60
+
+openclaw mcp probe chrome-devtools   # expect ~29 tools
+openclaw mcp reload
+# or: systemctl --user restart openclaw-gateway.service
+```
+
+Notes:
+
+- Grok/Claude CLI MCP configs are **separate processes**; they share the **Chrome
+  on 9222**, not the OpenClaw MCP runtime. Prefer one agent controlling the browser
+  at a time.
+- Change port only if `wezterm-x/local/constants.lua` `chrome_debug_browser.remote_debugging_port`
+  differs; keep loopback only.
+- Do not commit live `openclaw.json`; template is in `config/openclaw.json5.example`.
 
 ## Prerequisites
 
@@ -146,6 +189,8 @@ Optional: same Feishu app used by lark-cli for manual API work.
    + `im.message.receive_v1`; app published.
 5. Work roots for write tasks (default mental model: `$HOME/work`).
 6. Optional but recommended: `loginctl enable-linger` for the OpenClaw user.
+7. **Browser automation:** WezDeck debug Chrome on CDP `9222` + OpenClaw
+   `mcp.servers.chrome-devtools` (above).
 
 ## Layout
 
