@@ -8,3 +8,5 @@ native/picker/bin/
 
 # OpenClaw machine-local (never commit filled secrets or host paths)
 openclaw/local/
+# Runtime inbound media from Feishu / channel (Gateway workspace)
+openclaw/workspace/media/
