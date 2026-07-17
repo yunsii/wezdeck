@@ -60,6 +60,19 @@ else
   bad "skills/exec-risk missing"
 fi
 
+# Main protocol markers (orchestration checklist / handoff — not full user profile)
+if grep -q 'Hard checklist' "${src_workspace}/AGENTS.md" 2>/dev/null \
+  && grep -q 'Handoff brief' "${src_workspace}/AGENTS.md" 2>/dev/null; then
+  ok "AGENTS.md main checklist + handoff present"
+else
+  bad "AGENTS.md missing main checklist/handoff sections"
+fi
+if grep -q 'Main checklist' "${src_workspace}/skills/dev-task/SKILL.md" 2>/dev/null; then
+  ok "dev-task main checklist present"
+else
+  bad "dev-task missing main checklist"
+fi
+
 # Offline gate path only (no LLM, no side effects)
 if CLAW_RUN_SKIP_LLM=1 "${pkg_root}/scripts/claw-run.sh" --dry-run --skip-llm 'true' >/dev/null 2>&1; then
   ok "claw-run dry-run allows safe command"

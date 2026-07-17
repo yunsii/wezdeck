@@ -28,6 +28,11 @@ watch or take over.
 
 Protocol detail: [`workspace/AGENTS.md`](./workspace/AGENTS.md).
 
+**Main vs coding agents:** YunsClaw **main** owns Feishu orchestration (ledger,
+worktree, claw-run, chrome MCP, handoff brief). Heavy coding uses host agents
+that already load user `agent-profiles` (Claude/Codex) — **no** profile/MCP
+bridge into ACP is required for that path.
+
 ## Status (MVP)
 
 Personal control-plane MVP is **operational** when the checks below pass on
