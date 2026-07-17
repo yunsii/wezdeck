@@ -1,0 +1,96 @@
+// Desensitized sketch for ~/.openclaw/openclaw.json (or .json5).
+// Merge by hand after install. Field names follow upstream docs; rename if your
+// OpenClaw version differs — this is a checklist, not a live dump.
+//
+// NEVER put real App Secret, API keys, or gateway tokens in this tracked file.
+// Prefer ~/.config/shell-env.d/*.env (mode 600) or local secret stores.
+
+{
+  // tools: {
+  //   profile: "coding",
+  //   elevated: { enabled: false },
+  //   // Prefer mode alone — do not combine with tools.exec.security / ask
+  //   exec: {
+  //     mode: "auto",
+  //     host: "gateway",
+  //     strictInlineEval: true,
+  //     // safeBinTrustedDirs: ["/bin", "/usr/bin"],
+  //   },
+  // },
+
+  agents: {
+    defaults: {
+      workspace: "~/.openclaw/workspace",
+      // skipBootstrap: true  // when workspace is symlinked from this repo
+      // model: { primary: "xai/grok-4.3" },
+      // or custom proxy provider (see models.providers below):
+      // model: { primary: "grok-proxy/grok-4.5" },
+    },
+  },
+
+  // Optional: OpenAI-compatible proxy (same idea as a local Grok CLI baseUrl).
+  // models: {
+  //   mode: "merge",
+  //   providers: {
+  //     "grok-proxy": {
+  //       baseUrl: "https://YOUR-PROXY.example/v1",
+  //       apiKey: "YOUR_KEY_OR_ENV_REF",
+  //       api: "openai-responses",
+  //       models: [
+  //         {
+  //           id: "grok-4.5",
+  //           name: "Grok",
+  //           api: "openai-responses",
+  //           reasoning: true,
+  //           input: ["text"],
+  //           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  //           contextWindow: 200000,
+  //           maxTokens: 32000,
+  //         },
+  //       ],
+  //     },
+  //   },
+  // },
+
+  // channels: {
+  //   feishu: {
+  //     enabled: true,
+  //     domain: "feishu", // or "lark"
+  //     dmPolicy: "allowlist", // or "pairing"; never "open" for personal MVP
+  //     allowFrom: ["ou_YOUR_OPEN_ID"],
+  //     groupPolicy: "allowlist",
+  //     requireMention: true,
+  //     tools: {
+  //       doc: false,
+  //       wiki: false,
+  //       drive: false,
+  //       perm: false,
+  //       bitable: false,
+  //       chat: true,
+  //       scopes: true,
+  //     },
+  //     defaultAccount: "main",
+  //     accounts: {
+  //       main: {
+  //         appId: "cli_xxx",
+  //         appSecret: "FROM_LOCAL_SECRET_ONLY",
+  //         name: "OpenClaw",
+  //       },
+  //     },
+  //   },
+  // },
+
+  // plugins: {
+  //   allow: ["feishu"],
+  //   entries: {
+  //     feishu: { enabled: true },
+  //   },
+  // },
+
+  // gateway: {
+  //   mode: "local",
+  //   bind: "loopback",
+  //   port: 18789,
+  //   auth: { mode: "token" }, // token value is local-only
+  // },
+}
