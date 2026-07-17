@@ -1,52 +1,66 @@
 ---
 name: dev-task
 description: >
-  Single-repo development under OpenClaw, currently 团队仓 only.
-  Use when the user asks to implement, fix, refactor, or verify code in
-  团队仓 (primary checkout or its worktrees).
+  团队仓 development under OpenClaw: always use an isolated claw-* worktree,
+  never human WezDeck dev-/task-/hotfix-* trees or the primary checkout for writes.
 ---
 
-# Dev task (团队仓 only)
+# Dev task (团队仓 + claw worktree)
 
 ## When to use
 
-- Implementation / fix / refactor / tests targeting **团队仓**.
-- Paths under the runtime allowlist (see below), not hard-coded host paths.
+- Implement / fix / refactor / test in **团队仓** only.
 
 ## When not to use
 
-- Pure Q&A with no file changes.
-- Any other repository — **refuse development**; do not open a ledger task.
-- Destructive or production operations without explicit user confirm.
+- Pure Q&A (no file changes).
+- Other repos — refuse.
+- Requests to “continue in my existing task-*/dev-* worktree” for **writes** —
+  refuse to write there; offer a new `claw-*` worktree (read-only peek OK).
 
-## Path guard
+## Path + worktree guards
 
-Allowed roots (runtime):
+**Repo allowlist:** runtime roots from `OPENCLAW_TASKS_ALLOWED_ROOTS` or
+`$HOME/work/team-repo` + `$HOME/work/.worktrees/team-repo`.
 
-1. `OPENCLAW_TASKS_ALLOWED_ROOTS` from local env if set (machine-specific;
-   never invent or commit another user's absolute path).
-2. Else defaults used by `dev-task-ledger.sh`:
-   - `$HOME/work/team-repo`
-   - `$HOME/work/.worktrees/team-repo/` (prefix)
+**Worktree ownership:**
 
-If the user says "team-repo" without a path, default `cwd`/`repo` to
-`$HOME/work/team-repo` when that directory exists; otherwise ask for the
-absolute path and verify it is under the allowlist.
-
-Also follow 团队仓 `AGENTS.md` progressive disclosure once inside the repo.
+| Prefix | Owner | Claw may |
+| --- | --- | --- |
+| primary root | human | read only for task work |
+| `dev-*` / `task-*` / `hotfix-*` | human (WezDeck) | **read only**; never create/reclaim/write |
+| `claw-*` | OpenClaw | create, write, reclaim |
 
 ## Steps
 
-1. **Ledger open** (`skills/task-ledger`) with allowlisted paths only.
-2. **Plan** — packages/apps touched, acceptance (`pnpm --filter …` preferred),
-   risk; wait for confirm when medium/high or confirm-required.
-3. **Isolate** — branch or worktree under 团队仓 layout if needed.
-4. **Implement** — stay inside allowed `cwd`; exec allowlist still applies.
-5. **Ledger close** + completion report with `task_id`.
+1. **Ledger open** (task-ledger) — status planned/open; repo 团队仓.
+2. **Plan** — scope, acceptance, risk; wait for confirm if needed.
+3. **Create claw worktree** (mandatory for writes):
+
+   ```bash
+   WT=$(./openclaw/scripts/claw-worktree.sh create \
+     --title "<subject>" --cwd "$HOME/work/team-repo")
+   # use $WT as cwd for all subsequent work
+   ```
+
+   - Dir: `.worktrees/team-repo/claw-<slug>/`
+   - Branch: `claw/<slug>`
+   - Provider: none (no tmux attach; headless)
+
+4. **Ledger update** — set `cwd` / `分支` to the claw worktree values.
+5. **Implement** only under that `cwd`; run filtered tests.
+6. **Ledger close** with summary + commits.
+7. **Reclaim** when delivered and user did not ask to keep the tree:
+
+   ```bash
+   ./openclaw/scripts/claw-worktree.sh reclaim --slug claw-<slug> \
+     --cwd "$HOME/work/team-repo"
+   ```
 
 ## Hard rules
 
-- 团队仓 only (runtime allowlist).
-- One writer per working tree.
-- No push to `main`/`master`, no force-push without explicit user confirm.
-- Completion always includes resume pointers and **`task_id`**.
+- Never overwrite or reuse human worktrees for claw tasks.
+- Never write task changes on primary checkout.
+- One claw worktree per task; one writer per tree.
+- No push to main/master / force-push without explicit user confirm.
+- Completion report includes `task_id`, claw `cwd`, branch, reclaim status.

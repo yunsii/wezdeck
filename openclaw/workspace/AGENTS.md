@@ -41,14 +41,77 @@ runtime:
 4. Heavy multi-file coding may use ACP / Claude Code / Codex **when configured**;
    otherwise do the work yourself. Prefer one worker, one `cwd`.
 
+## Development workflow (required for write tasks)
+
+Follow this order for every 团队仓 **write** task:
+
+```text
+ledger open → plan → user confirm (if needed)
+  → create claw worktree (never use primary / human worktrees)
+  → implement + accept in that cwd only
+  → ledger close
+  → reclaim claw worktree when delivered (or leave branch if user says keep)
+```
+
+### Worktree ownership (critical)
+
+Human WezDeck worktrees and OpenClaw worktrees **must not share directories**.
+
+| Owner | Directory slug (under `.worktrees/<repo>/`) | Branch (default) | Who creates / reclaims |
+| --- | --- | --- | --- |
+| Human (WezDeck) | `dev-*`, `task-*`, `hotfix-*` | `dev/…`, `task/…`, `hotfix/…` | User only (`Ctrl+k g …`) |
+| OpenClaw | **`claw-*` only** | **`claw/…` only** | Claw via `openclaw/scripts/claw-worktree.sh` |
+| Primary checkout | repo root | whatever user has checked out | **Never write task work here** |
+
+Hard rules:
+
+1. **Never** create, modify, commit-in, or reclaim a `dev-*` / `task-*` /
+   `hotfix-*` worktree — those are the user's. You may **read** them for
+   reference (diff, compare design) if the user points at them.
+2. **Never** implement a development task in the primary checkout
+   (`$HOME/work/team-repo` root) except pure read-only inspection.
+3. For each write task, create an isolated worktree:
+
+```bash
+# prints worktree path on success
+./openclaw/scripts/claw-worktree.sh create \
+  --title "<short subject>" \
+  --cwd "$HOME/work/team-repo"
+# → …/.worktrees/team-repo/claw-<slug>
+# → branch claw/<slug>
+```
+
+4. All edits, tests, and commits run with `cwd` = that claw worktree path.
+   Ledger `open`/`close` must use the **same** `cwd`.
+5. After successful delivery (merged or pushed as the user requested), reclaim
+   **only** claw worktrees:
+
+```bash
+./openclaw/scripts/claw-worktree.sh reclaim --slug claw-<slug> \
+  --cwd "$HOME/work/team-repo"
+```
+
+   Reclaim refuses human prefixes and non-`claw-*` paths. Dirty trees refuse
+   unless the user explicitly allows force. Prefer not to `--force`.
+6. List ownership when unsure:
+
+```bash
+./openclaw/scripts/claw-worktree.sh list --cwd "$HOME/work/team-repo"
+# claw | human | other
+```
+
+Layout is the same parent tree as WezDeck (`.worktrees/<repo>/`) so tooling
+stays familiar; **slug prefix** is the isolation boundary.
+
 ## Before any write
 
 Restate in your reply (or confirmation card when available):
 
-- Absolute repo path (`cwd`)
+- Absolute repo path (`cwd`) — must be a **`claw-*` worktree**, not primary
 - Goal and non-goals
 - Acceptance command (e.g. `pnpm test`, script path, or `git diff` review)
 - Risks (deps install, network, destructive git)
+- Worktree slug + branch (`claw-…` / `claw/…`)
 
 High-risk actions need explicit user confirmation first:
 
@@ -127,5 +190,5 @@ ledger. Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only).
 
 ## Skills
 
-- Single-repo coding flow: `skills/dev-task/SKILL.md`
+- Single-repo coding flow + worktree rules: `skills/dev-task/SKILL.md`
 - Task ledger (Feishu Base): `skills/task-ledger/SKILL.md`
