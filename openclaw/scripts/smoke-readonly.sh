@@ -121,6 +121,25 @@ else
   wrn "~/.openclaw missing (onboard later)"
 fi
 
+# Chrome DevTools MCP (core browser) — optional if openclaw + CDP present
+if command -v openclaw >/dev/null 2>&1 && [[ -f "${HOME}/.openclaw/openclaw.json" ]]; then
+  if openclaw mcp list 2>/dev/null | grep -q 'chrome-devtools'; then
+    ok "openclaw mcp chrome-devtools configured"
+  else
+    wrn "openclaw mcp chrome-devtools missing — see openclaw/README.md Chrome MCP section"
+  fi
+fi
+if curl -sS -m 2 http://127.0.0.1:9222/json/version >/dev/null 2>&1; then
+  ok "CDP http://127.0.0.1:9222 answers"
+else
+  wrn "CDP 9222 not answering — start WezDeck debug Chrome (docs/browser-debug.md)"
+fi
+if [[ -f "${src_workspace}/skills/chrome-devtools/SKILL.md" ]]; then
+  ok "skills/chrome-devtools present"
+else
+  bad "skills/chrome-devtools missing"
+fi
+
 if command -v claude >/dev/null 2>&1; then
   ok "claude on PATH"
 else
