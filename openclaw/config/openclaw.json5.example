@@ -46,9 +46,21 @@
       // model: { primary: "grok-proxy/grok-4.5" },
       // models: allowlist only intended providers — do NOT add claude-cli/*
       //   or model.fallbacks: ["claude-cli/…"] (CLI backend disabled by policy).
-      // cliBackends: { }  // leave unset / empty — see README Development modes D
+      // cliBackends: { }  // leave unset — mode D disabled
     },
   },
+
+  // ACP harness (mode E) — local only; personal machines may use approve-all
+  // acp: {
+  //   enabled: true,
+  //   backend: "acpx",
+  //   defaultAgent: "claude",
+  //   allowedAgents: ["claude", "codex"],
+  //   maxConcurrentSessions: 4,
+  //   runtime: { ttlMinutes: 120 },
+  // },
+  // plugins.allow must include "acpx"; plugins.entries.acpx.enabled: true
+  // plugins.entries.acpx.config.permissionMode: "approve-all" // personal break-glass
 
   // Optional: OpenAI-compatible proxy (same idea as a local Grok CLI baseUrl).
   // models: {
