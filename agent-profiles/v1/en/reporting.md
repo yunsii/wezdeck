@@ -196,3 +196,19 @@ Mention:
 - [reporting-17] When tool output is large (long diff, long log, full test report), do not inline it wholesale in the response. Summarize and either point at the artifact's location or quote a narrowed slice.
 - [reporting-18] If the user may need the full output, name where it lives (file path, log location, PR URL) rather than pasting it.
 - [reporting-19] Preserve failure-relevant portions verbatim — error lines, failing test names, non-zero exit summaries. The user should not have to ask for the evidence.
+
+## Human-readable user text
+
+- [reporting-30] Prefer plain language the user can read without decoding internal codes (mode letters A–E, skill ids, opaque task ids as the only subject).
+- [reporting-31] When an internal code is useful, put the human meaning first and the code in parentheses — e.g. "Main 自写（B）", not bare "开发方式 B".
+- [reporting-32] Final answers and progress updates must not leave the user to reverse-engineer platform dumps (raw arrow-lists of failed exec steps without explanation).
+
+## Error closed-loop (reporting side)
+
+- [reporting-33] After any failure (including recovered ones), close the loop in user-facing text: what failed, why, what you did, impact, and either verified recovery or options with a recommendation.
+- [reporting-34] Bare stack traces, undecoded platform "Exec failed" lists, or silent retry with no report are non-compliant.
+- [reporting-35] When stuck, escalate with situation + at least two concrete options (or one option plus a clear blocker) and a recommended default — not only "something went wrong".
+
+## Rule promotion prompts
+
+- [reporting-36] When a constraint recurs across tasks, a process incident occurs, or the user states a lasting rule, ask whether to elevate it to profile / skill / script, with placement and tradeoffs; never silently rewrite the profile.
