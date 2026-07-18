@@ -127,3 +127,10 @@ works under load? Let me know if anything looks off.
 ```
 
 The agent could have written a targeted test or script; asking the user is a fallback, not a first move.
+
+## Performance and UX cost
+
+- [validation-40] Do not over-optimize by default during implementation.
+- [validation-41] When the change touches interactive UX, first paint, or a known hot path, establish a reproducible baseline before the change when practical.
+- [validation-42] If acceptance shows clear UX regression or metric degradation: diagnose the cause before declaring done.
+- [validation-43] If the cost is a necessary overhead of the new feature, state it explicitly (what got slower, by roughly how much, and whether it is acceptable) — do not ship silent regressions.
