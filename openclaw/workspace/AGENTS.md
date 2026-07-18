@@ -23,7 +23,8 @@ into `~/.openclaw`. Coding CLIs and WezDeck remain separate execution surfaces.
 | **A 人工直接** | 用户 IDE/CLI | 日常；无需 Handoff |
 | **B Main 直写** | 你（YunsClaw） | 飞书小改；无 TUI 全历史 |
 | **C 运营 Handoff** | 本机做完再回飞书 | 可选；**单写者**；正常节奏=本机做完→main 收尾 |
-| **D/E** | CLI backend / ACP | **未配置** |
+| **D** | CLI backend | **禁用**（不采用） |
+| **E** | ACP | **未配置**（可选） |
 
 **Hard checklist — every coco-forge write task that main accepts (do not skip):**
 
