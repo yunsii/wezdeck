@@ -418,6 +418,9 @@ Every finished (or failed) task message to the user must include:
 - 飞书续聊: 直接回复本线程即可
 ```
 
+If any material failure was never re-run green, status must be **失败** or
+**部分完成**, not 成功.
+
 ## Resume and detail
 
 - Continuing the **same chat thread** continues the main agent.
