@@ -14,7 +14,7 @@ and **self-application**.
 | --- | --- | --- |
 | 1 · Find | `--reviewer` | Finds defects under a **guilty-until-proven** stance; every finding must carry a concrete `failure_scenario`. |
 | 2 · Refute | `--refuter` | A *different* model tries to **refute** each finding; burden of proof is on the finding (unsure → refuted). |
-| 3 · Empirical | `--reviewer` + sandbox | For each `CONFIRMED` finding, the model writes a minimal repro script and the orchestrator **runs it in a detached worktree**. |
+| 3 · Empirical | `--reviewer` + sandbox | For each `CONFIRMED` finding, the model writes a minimal repro script and the orchestrator **runs it in a sandbox that mirrors the reviewed revision/worktree** (not ambient `HEAD`). |
 
 ### Modes (survivor definition)
 
@@ -108,9 +108,16 @@ docs/adversarial-review.md   this file
 ## Safety
 
 - Reviewer/refuter generation run **read-only** (Claude plan mode + read tool allowlist).
-- Repro scripts run in a **detached `git worktree` at HEAD** (not the dirty primary),
-  with a 60s timeout and a danger-pattern scan; flagged scripts are not executed
-  (`needs_human`).
+- Repro scripts run in a **detached sandbox worktree that matches the reviewed tree**:
+  - normal range `BASE..HEAD_REF` → checkout **`HEAD_REF`** (not whatever the agent cwd HEAD is)
+  - `dogfood` / `WORKTREE` → checkout **`BASE`** (usually `HEAD`), then **copy** the
+    reviewed paths from the live worktree (so uncommitted edits are present)
+  - `trap` on EXIT/INT/TERM/HUP removes the sandbox worktree (no leak on interrupt)
+  - 60s timeout; expanded danger-pattern scan (network, sudo, push/publish, inline
+    eval, …); flagged scripts are not executed (`needs_human`)
+  - best-effort: sandbox `.git` is made read-only before exec
+- This is **not** a full OS sandbox (no bubblewrap/seccomp). Treat repro as
+  semi-trusted automation; do not enable auto-fix loops without a human.
 - Nothing is auto-fixed. Survivors are for you (or a supervised agent) to adjudicate.
 
 ## Exit codes

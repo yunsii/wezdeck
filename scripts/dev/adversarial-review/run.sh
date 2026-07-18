@@ -71,31 +71,92 @@ _diff_for_file() {
   '
 }
 
-# Run repro script in an isolated temp worktree (not the dirty primary tree).
+# Globals set before gate 3: base, head_ref, changed (newline-separated paths)
+# Sandbox must mirror the *reviewed* tree, not whatever HEAD the agent cwd is on.
+_SANDBOX_PATH=""
+_sandbox_cleanup() {
+  local p="${_SANDBOX_PATH:-}"
+  [ -z "$p" ] && return 0
+  _SANDBOX_PATH=""
+  # best-effort: registered worktree first, then raw dir
+  git -C "$repo_root" worktree remove --force "$p" >/dev/null 2>&1 || true
+  rm -rf "$p" >/dev/null 2>&1 || true
+}
+trap '_sandbox_cleanup' EXIT INT TERM HUP
+
+# Materialize reviewed tree into $1 (absolute sandbox path).
+# - head_ref is a real commit-ish → detached worktree at that rev
+# - head_ref=WORKTREE (dogfood) → worktree at base (usually HEAD) + apply WT changes
+_sandbox_materialize() {
+  local sand="$1"
+  local rev files f dir
+  if [ "$head_ref" = "WORKTREE" ]; then
+    rev="$(git -C "$repo_root" rev-parse "$base^{commit}")"
+  else
+    rev="$(git -C "$repo_root" rev-parse "$head_ref^{commit}")"
+  fi
+  if ! git -C "$repo_root" worktree add --detach "$sand" "$rev" >/dev/null 2>&1; then
+    return 1
+  fi
+  _SANDBOX_PATH="$sand"
+
+  if [ "$head_ref" = "WORKTREE" ]; then
+    # Copy live worktree bytes for reviewed paths so dogfood sees uncommitted edits.
+    if [ -n "${changed:-}" ]; then
+      while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        if [ -f "$repo_root/$f" ]; then
+          dir="$(dirname "$sand/$f")"
+          mkdir -p "$dir"
+          # tracked or untracked: copy bytes from the live worktree
+          cp -a "$repo_root/$f" "$sand/$f"
+        elif [ -e "$repo_root/$f" ]; then
+          dir="$(dirname "$sand/$f")"
+          mkdir -p "$dir"
+          cp -a "$repo_root/$f" "$sand/$f"
+        else
+          # deleted in worktree relative to base
+          rm -rf "$sand/$f"
+        fi
+      done <<< "$changed"
+    fi
+  fi
+  return 0
+}
+
+# Danger patterns: deny auto-exec (still not a full OS sandbox).
+_repro_is_dangerous() {
+  local script="$1"
+  printf '%s' "$script" | grep -Eqi \
+    'rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*[[:space:]]+/|rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f|:\(\)\{|fork[[:space:]]*\(|\$\(curl|`curl|(^|[^a-zA-Z_-])(curl|wget|sudo|mkfs|shutdown|reboot|dd|nc|ncat|python[[:space:]]+-c|python3[[:space:]]+-c|node[[:space:]]+-e|perl[[:space:]]+-e|ruby[[:space:]]+-e|chmod[[:space:]]+[0-7]*[67]|chown|ssh-keygen|scp|rsync)([^a-zA-Z_-]|$)|git[[:space:]]+push|npm[[:space:]]+publish|pip[[:space:]]+install|/etc/passwd|\.ssh/|/dev/sd|mkfifo|nohup|/proc/|/sys/' \
+    && return 0
+  return 1
+}
+
+# Run repro script in a sandbox that matches the *reviewed* tree.
 # returns: 0 reproduced · 1 did-not-reproduce · 2 inconclusive · 3 dangerous
 _repro_verdict() {
   local raw="$1"
-  local script rc sand head_sha
+  local script rc sand
   script="$(printf '%s\n' "$raw" | awk '/^```bash/{f=1;next} /^```/{if(f){f=0}} f')"
   [ -z "$script" ] && return 2
-  if printf '%s' "$script" | grep -Eqi \
-    'rm[[:space:]]+-[a-z]*f[a-z]*[[:space:]]+/|:\(\)\{|(^|[^a-zA-Z])(curl|wget|sudo|mkfs|shutdown|reboot|dd)([^a-zA-Z]|$)|git[[:space:]]+push|npm[[:space:]]+publish|/etc/passwd|\.ssh/'; then
+  if _repro_is_dangerous "$script"; then
     return 3
   fi
 
-  head_sha="$(git -C "$repo_root" rev-parse HEAD)"
   sand="$(mktemp -d "${TMPDIR:-/tmp}/adv-review-sand.XXXXXX")"
-  # detached worktree at HEAD — isolated tree, still same object db
-  if ! git -C "$repo_root" worktree add --detach "$sand" "$head_sha" >/dev/null 2>&1; then
+  if ! _sandbox_materialize "$sand"; then
     rm -rf "$sand"
     return 2
   fi
   printf '%s\n' "$script" > "$sand/.adv-repro.sh"
+  # drop write to .git inside sandbox (best-effort hardening)
+  chmod -R a-w "$sand/.git" 2>/dev/null || true
   set +e
   ( cd "$sand" && timeout 60 bash .adv-repro.sh >/dev/null 2>&1 )
   rc=$?
   set -e
-  git -C "$repo_root" worktree remove --force "$sand" >/dev/null 2>&1 || rm -rf "$sand"
+  _sandbox_cleanup
 
   case "$rc" in
     0)   return 1 ;;   # exit 0  -> behaved correctly, NOT reproduced
