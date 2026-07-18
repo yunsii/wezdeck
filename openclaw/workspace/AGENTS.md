@@ -143,8 +143,10 @@ Override: `OPENCLAW_TASKS_ALLOWED_ROOTS`. Other repos: read-only Q&A only.
 - 类型: task|dev|hotfix · 是否建议回收: … · 请回复是否回收
 
 ## 审查 / Resume
-- cd <cwd> && claude --continue   # or codex resume --last
-- 飞书续聊: 直接回复本线程
+- 按**实际开发方式**写主路径（禁止 Main 自写却默认甩 claude --continue）：
+  - Main 自写（B）: 飞书直接回复本线程（主路径）；可选 cd <cwd> 本地旁观
+  - 本机 handoff（C）/ 用户自写（A）: cd <cwd> && claude --continue  # 或 codex resume --last
+  - ACP（E）: 飞书本线程 / ACP 会话续跑说明（写清 agent 与 cwd）
 ```
 
 Material failure never re-run green → 状态不得为 **成功**.
