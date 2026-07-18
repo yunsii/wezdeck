@@ -52,7 +52,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | **Chrome MCP** | OpenClaw `mcp.servers.chrome-devtools` → `chrome-devtools-mcp` on **CDP `127.0.0.1:9222`** (WezDeck debug Chrome). Core browser capability for YunsClaw. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
-| Dev allowlist | **coco-forge only** — roots from local env or `$HOME/work/…` defaults (no host user path in git) |
+| Dev allowlist | **coco-forge + wezdeck** (wezterm-config) — roots from local env or `$HOME/…` portable defaults |
 | Secrets | mode `600` env files; never commit filled config |
 
 ### Quick health
@@ -628,18 +628,25 @@ openclaw pairing approve feishu <CODE>
 
 Write `需求提出人` via CLI `--requester-id <ou_…>` (cell value `[{ "id": "ou_…" }]`).
 
-### Development allowlist (coco-forge only)
+### Development allowlist (coco-forge + wezdeck)
 
 **Do not commit machine-specific absolute paths** (e.g. `/home/<user>/…`).  
 Tracked docs only describe the *policy*; concrete roots stay local.
 
+| Logical repo | Portable default roots (when env unset) |
+| --- | --- |
+| **coco-forge** | `$HOME/work/coco-forge`, `$HOME/work/.worktrees/coco-forge` |
+| **wezdeck** | `$HOME/github/wezterm-config`, `$HOME/work/.worktrees/wezterm-config`, `$HOME/work/wezterm-config` |
+
 | Source | Value |
 | --- | --- |
-| Local override (preferred on odd layouts) | `OPENCLAW_TASKS_ALLOWED_ROOTS` in `~/.config/shell-env.d/openclaw-tasks.env` |
-| Portable default (CLI if env unset) | `$HOME/work/coco-forge` and `$HOME/work/.worktrees/coco-forge` |
+| Local override | `OPENCLAW_TASKS_ALLOWED_ROOTS` in `~/.config/shell-env.d/openclaw-tasks.env` |
+| Portable default | See `dev-task-ledger.sh` `DEFAULT_ALLOWED_ROOTS` |
 
-- Soft guard: `workspace/AGENTS.md` + skills refuse non–coco-forge development.
+- Soft guard: `workspace/AGENTS.md` + skills refuse non-allowlisted development.
 - Hard guard: `dev-task-ledger.sh` rejects `--repo` / `--cwd` outside the allowlist.
+- Default create cwd for product work remains coco-forge; pass
+  `--cwd "$HOME/github/wezterm-config"` (or local equivalent) for wezdeck tasks.
 
 ### Development workflow + worktree ownership
 
