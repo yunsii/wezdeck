@@ -12,3 +12,10 @@ openclaw/local/
 openclaw/workspace/media/
 # OpenClaw agent daily/runtime memory (PII, host paths, task ledger)
 openclaw/workspace/memory/
+# ACP / agent runtime under linked workspace (sessions, smoke leftovers)
+openclaw/workspace/state/
+openclaw/workspace/claude/
+openclaw/workspace/codex/
+openclaw/workspace/smoke-ok.txt
+openclaw/workspace/**/smoke-ok.txt
+openclaw/workspace/**/marker.txt
