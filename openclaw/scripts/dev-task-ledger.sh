@@ -10,9 +10,9 @@ STATE_DIR="${OPENCLAW_TASKS_STATE_DIR:-${HOME}/.local/state/openclaw-tasks}"
 INDEX_FILE="${STATE_DIR}/index.json"
 ENV_FILE="${OPENCLAW_TASKS_ENV_FILE:-${HOME}/.config/shell-env.d/openclaw-tasks.env}"
 
-# Development allowlist: 团队仓 only (override with OPENCLAW_TASKS_ALLOWED_ROOTS
-# colon-separated absolute paths if ever expanded intentionally).
-DEFAULT_ALLOWED_ROOTS="${HOME}/work/team-repo:${HOME}/work/.worktrees/team-repo"
+# Development allowlist: wezdeck (+ optional team roots in local config) (wezterm-config).
+# Override with OPENCLAW_TASKS_ALLOWED_ROOTS (colon-separated absolute paths).
+DEFAULT_ALLOWED_ROOTS="${HOME}/work/team-repo:${HOME}/work/.worktrees/team-repo:${HOME}/github/wezterm-config:${HOME}/work/.worktrees/wezterm-config:${HOME}/work/wezterm-config"
 
 load_env() {
   if [[ -f "${ENV_FILE}" ]]; then
@@ -57,7 +57,7 @@ assert_dev_paths() {
       continue
     fi
     if ! path_allowed "${p}"; then
-      echo "error: development tasks are 团队仓 only" >&2
+      echo "error: development path not on allowlist (团队仓 | wezdeck/wezterm-config)" >&2
       echo "  refused path: ${p}" >&2
       echo "  allowed: ${OPENCLAW_TASKS_ALLOWED_ROOTS:-${DEFAULT_ALLOWED_ROOTS}}" >&2
       exit 5

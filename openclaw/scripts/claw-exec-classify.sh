@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Minimal host-exec risk labels for YunsClaw.
-# NOT a replacement for Feishu allowlist / 团队仓 / claw worktree rules.
+# NOT a replacement for Feishu allowlist / repo path allowlist / claw worktree rules.
 #
 # Usage:
 #   claw-exec-classify.sh "command string"

@@ -1,16 +1,23 @@
 ---
 name: dev-task
 description: >
-  团队仓 development under OpenClaw with WezDeck-aligned lifecycle worktrees
-  (claw-task/dev/hotfix), mandatory assess before create, declare dev mode A/B/C/E
+  Allowlisted development (wezdeck (+ optional team roots in local config)/wezterm-config) under OpenClaw
+  with claw lifecycle worktrees, assess before create, declare mode A/B/C/E
   after requirement confirm, never human worktrees.
 ---
 
-# Dev task (团队仓 + claw lifecycle worktrees)
+# Dev task (allowlisted repos + claw lifecycle worktrees)
 
 ## When to use
 
-Write work in **团队仓** only. Skip this skill for pure Q&A.
+Write work only under the **development allowlist**:
+
+| Logical | Default roots |
+| --- | --- |
+| **团队仓** | `$HOME/work/team-repo`, worktrees under `.worktrees/team-repo` |
+| **wezdeck** | `$HOME/github/wezterm-config` (or `$HOME/work/wezterm-config`), worktrees under `.worktrees/wezterm-config` |
+
+Skip this skill for pure Q&A. Other repos: refuse.
 
 ## Main checklist (when main accepts a write task)
 
@@ -68,9 +75,12 @@ Repo scripts `claw-worktree.sh` / `dev-task-ledger.sh`: call directly.
 4. **Obtain cwd** after tree + mode confirm:
 
    ```bash
+   # 团队仓 product:
    WT=$(./openclaw/scripts/claw-worktree.sh create \
      --title "…" --lifecycle task --domain i18n \
      --cwd "$HOME/work/team-repo")
+   # wezdeck / wezterm-config:
+   # --cwd "$HOME/github/wezterm-config"
    ```
 
 5. Ledger `update` cwd + branch.
