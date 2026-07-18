@@ -52,51 +52,92 @@ Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 
   before claiming done; no force-push / no push `main`/`master` without explicit
   chat yes; never invent `task_id` or success.
 
-### Command / script failure reporting (hard — never swallow)
+### Error closed-loop (hard — never bare errors, never silent swallow)
 
-Any failed step must be surfaced to the user in **that same turn** (or in the
-completion report if the turn is the completion) — **not** only in internal tool
-logs. This includes:
+**Principle:** Every error is a **closed loop**, not a raw dump. Prefer
+professional agency: diagnose → try a reasonable fix → verify → report what
+happened. Only if you cannot resolve it (or the fix is high-risk / needs a
+human decision) do you escalate with **situation + options**, not a naked
+stack trace or platform arrow-list.
+
+Applies to **all** failures, including:
 
 | Kind | Examples |
 | --- | --- |
 | Shell / script | non-zero exit, timeout, `Text file busy` / ETXTBSY, missing binary |
 | Tool / platform | OpenClaw **`🛠️ Exec failed`**, tool batch aborted, SIGTERM/SIGINT on exec, allowlist refuse |
 | Product checks | test/lint/build fail, ledger CLI refuse, worktree create fail |
+| Logic / data | unexpected empty output, wrong path, schema mismatch |
 
-**Platform `Exec failed` is user-visible.** The Feishu/runtime line that looks
-like `🛠️ Exec failed: run A → run B → …` is a **failed agent exec batch**, not
-noise. Do **not** treat it as internal-only. In the same reply (or the next
-user-facing message if the batch was mid-turn), explain it with the template
-below in plain language — e.g. 「上一批 shell 被中断，验收没跑完」— never leave
-the user to decode the arrow-list alone.
+#### Closed-loop order (do in this order)
 
-**Minimum template (use when anything fails):**
+```text
+1. Detect     — notice non-zero / Exec failed / empty critical output
+2. Diagnose   — one factual cause (exit code, path, SIGTERM, missing tool…)
+3. Self-fix  — try a *reasonable* recovery once or twice (see below)
+4. Verify     — re-run the smallest check that proves recovery
+5. Report     — always close the loop in user-facing text (template below)
+6. Escalate   — only if still blocked: situation + impact + concrete options
+```
+
+**Self-fix is expected when safe and cheap**, for example:
+
+| Failure | Reasonable self-fix |
+| --- | --- |
+| ETXTBSY after rewrite | `bash path/to/script …` or brief wait + retry |
+| Platform `Exec failed` / mid-batch SIGTERM | split into **short** execs; re-run only the missing checks |
+| flaky network / 429 | backoff once; then report if still failing |
+| wrong path / missing dir | resolve realpath / create only if clearly intended |
+| lock / busy process you started | stop your leftover process, then retry |
+
+**Do not** “self-fix” with high-risk actions without explicit user yes:
+force-push, `rm -rf` of non-trivial trees, production deploy, disabling
+safeguards, rewriting unrelated git history.
+
+#### Platform `Exec failed` is user-visible
+
+The Feishu/runtime line `🛠️ Exec failed: run A → run B → …` means the **agent
+exec batch failed** — not noise, not “internal only”. Never leave the user to
+decode the arrow-list. Either:
+
+- recover (short re-runs) and report 「曾中断 → 已重跑 → 结果」, or
+- if still blocked, explain in plain language + options.
+
+#### Report template (always use after a failure, even if recovered)
 
 ```text
 失败：<exact command, step, or platform event e.g. Exec failed / kill batch>
-原因：<one sentence, factual — exit code, SIGTERM, ETXTBSY, path, etc.>
+原因：<one sentence, factual>
+处置：已自愈（做了什么）| 重试中 | 无法自愈
 影响：阻塞交付 | 不阻塞；缺了哪项验收；当前结论是否仍成立
-补救：已重跑 → <result> | 待你决定 | 下一步…
+结果/备选：
+  - 若已恢复：验证命令 → pass/fail
+  - 若未恢复：可行方案 A/B/C（推荐哪一个 + 需要你拍板的点）
 ```
 
-Rules:
+Bare errors only (exit code dump, raw `Exec failed` arrow list, stack trace
+without 原因/影响/下一步) are **non-compliant**.
+
+#### Rules
 
 1. **Never** mark overall 成功 if a **blocking** check failed and was not re-run green.
-2. Transient failures (ETXTBSY, mid-batch SIGTERM, platform `Exec failed`) still
-   require the template **once in that turn**; then re-run via smaller steps
-   (`bash path/to/script …`, one check per exec when flaky) and report re-run.
-3. Non-blocking gaps (skipped optional check, SINGLE-MODEL gate, dry-run only)
-   go under **风险/未做** with the same honesty — do not imply they passed.
-4. Mid-task: short Feishu progress is OK, but a failed step must not disappear
-   into silent retry loops without user-visible reason + impact.
-5. Final 【结果】 must list every failed-or-skipped acceptance command explicitly
-   (`验收:` lines: pass | fail | not run | re-run pass after <reason>).
-6. **Do not bury platform failures** under a vague 「部分完成」or only mentioning
-   product symptoms. If exec/tool infrastructure failed, say so first, then say
-   what product evidence is still missing.
-7. Prefer **short exec batches** for verification after writes (avoid one giant
-   kill+test+commit script that becomes an opaque `Exec failed: A → B → C`).
+2. Transient failures still open a loop: self-fix when safe → verify → report
+   (including “曾失败已恢复”). Do not pretend nothing happened.
+3. Non-blocking gaps (optional skip, SINGLE-MODEL, dry-run only) go under
+   **风险/未做** with the same honesty — do not imply they passed.
+4. Mid-task progress is OK, but a failed step must not vanish into silent retry
+   loops without a user-visible closed loop by completion at latest.
+5. Final 【结果】 lists each material check:
+   `pass | fail | not run | re-run pass (after <reason>)`, plus **失败记录**
+   (or 「无」). Recovered failures stay in 失败记录 as closed items.
+6. **Do not bury platform/infra failures** under vague 「部分完成」. Infra first,
+   then product evidence still missing.
+7. Prefer **short exec batches** after writes (avoid giant kill+test+commit
+   scripts that collapse into opaque `Exec failed: A → B → C`).
+8. Escalation quality: when stuck, give **≥2 concrete options** (or 1 option +
+   clear blocker), trade-offs, and a recommended default — not “出错了，你看看”.
+9. Professional tone: factual, proportional, no blame-shifting; own the next
+   step when you can take it without new risk.
 
 ### Development task allowlist (hard guard)
 
