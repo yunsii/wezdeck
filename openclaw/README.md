@@ -28,10 +28,9 @@ watch or take over.
 
 Protocol detail: [`workspace/AGENTS.md`](./workspace/AGENTS.md).
 
-**Development modes:** human direct (A), Feishu main (B), optional handoff (C),
-unconfigured CLI backend (D) / ACP (E) — see
-[Development modes](#development-modes-who-writes-code). No profile bridge
-required for host Claude/Codex.
+**Development modes:** human direct (A), Feishu main (B), optional handoff (C);
+**CLI backend (D) disabled by policy**; ACP (E) optional later — see
+[Development modes](#development-modes-who-writes-code).
 
 ## Status (MVP)
 
