@@ -174,6 +174,12 @@ on this host for `claude` + `codex` (see below). **D (CLI backend) is disabled**
 you should be the primary editor at a time. Do **not** run B and C (or A and B)
 as concurrent writers on the same tree.
 
+**Mode declaration (protocol):** after the user confirms requirements / worktree
+初评, **main must post a 【开发方式】** block (A/B/C/E + who executes + one-line
+reason) and **wait for confirm** before writing code or `/acp spawn`. This is
+**soft routing** (agent + AGENTS heuristics), not a hard classifier binary.
+User overrides win. See `workspace/AGENTS.md`.
+
 #### A — Human direct
 
 ```text

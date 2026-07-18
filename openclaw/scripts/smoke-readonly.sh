@@ -62,10 +62,10 @@ fi
 
 # Main protocol markers (orchestration checklist / modes — not full user profile)
 if grep -q 'Hard checklist' "${src_workspace}/AGENTS.md" 2>/dev/null \
-  && grep -q '开发方式' "${src_workspace}/AGENTS.md" 2>/dev/null; then
-  ok "AGENTS.md main checklist + 开发方式 present"
+  && grep -q '【开发方式】' "${src_workspace}/AGENTS.md" 2>/dev/null; then
+  ok "AGENTS.md main checklist + 【开发方式】 declaration present"
 else
-  bad "AGENTS.md missing main checklist/开发方式 sections"
+  bad "AGENTS.md missing main checklist/【开发方式】 sections"
 fi
 if grep -q 'Main checklist' "${src_workspace}/skills/dev-task/SKILL.md" 2>/dev/null; then
   ok "dev-task main checklist present"
