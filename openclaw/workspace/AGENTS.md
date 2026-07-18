@@ -32,11 +32,12 @@ into `~/.openclaw`. Coding CLIs and WezDeck remain separate execution surfaces.
 [ ] 1. ledger open（task_id；已知提出人 → 需求提出人）
 [ ] 2. worktree assess → 飞书【初评】→ 确认前不 create
 [ ] 3. 【开发方式】声明（A/B/C/E + 理由 + 执行者）→ 用户确认前不写代码 / 不 spawn ACP
-[ ] 4. create/reuse claw-*；ledger update cwd/分支（可与 3 同一轮，但方式须先说清）
-[ ] 5. 按已确认方式执行（B 自写 | C Handoff 停笔 | E acp spawn | A 只协助）
-[ ] 6. 若 B：验收 + UI chrome；若 C/A/E：等本机/ACP 完成再 close（勿双写）
-[ ] 7. ledger close +【结果】（必含 task_id + 实际使用的开发方式）
-[ ] 8. 询问 reclaim（永不自动）
+[ ] 4. 用户确认初评+方式后 → **ledger confirm**（写确认时间、需确认=false）
+[ ] 5. create/reuse claw-*；ledger update cwd/分支
+[ ] 6. 按已确认方式执行（B 自写 | C Handoff 停笔 | E acp spawn | A 只协助）
+[ ] 7. 若 B：验收 + UI chrome；若 C/A/E：等本机/ACP 完成再 close（勿双写）
+[ ] 8. ledger close +【结果】（task_id + 实际开发方式；结束时间=结案秒级时刻）
+[ ] 9. 询问 reclaim（永不自动）
 ```
 
 Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 接任务**：勿强行 open。
@@ -162,15 +163,18 @@ session turn-by-turn.
 ## Development workflow (required for write tasks)
 
 ```text
-ledger open
-  → 【初评】worktree 选型 → 用户确认目标/验收/树
-  → 【开发方式】A|B|C|E + 理由 → 用户确认
-  → create/reuse claw worktree；ledger update cwd/分支
-  → 按方式执行（B 写 | C handoff 停笔 | E acp spawn | A 协助）
-  → 验收（B：命令/Chrome；C/A/E：对方完成后再做）
-  → ledger close + 【结果】（含实际开发方式）
-  → 【询问是否回收】（永不自动）
+ledger open                    # 开始时间; 默认 需确认=true（方案闸门）
+  → 【初评】+【开发方式】→ 用户确认
+  → ledger confirm             # 确认时间; 需确认 取消勾选（正确；痕迹看确认时间）
+  → create/reuse claw worktree；update cwd/分支
+  → 按方式执行
+  → 验收（≠ 需确认；写摘要/MR/状态）
+  → ledger close               # 结束时间=台账结案秒级（≠ PR merge）
+  → 【询问是否回收】
 ```
+
+默认 `confirm-required 1` 时 **开始时间 ≠ 确认时间**（确认更晚）。
+仅 `confirm-required 0` 时二者相同。勿用 需确认 表示待验收/待 merge。
 
 ### Reference: WezDeck human design → Claw mapping
 
@@ -405,6 +409,11 @@ be recorded in the Feishu multi-dim table ledger via:
 - `open` when accepting the task  
 - `confirm` after the user approves the plan (when confirm was required)  
 - `close` with `done` / `failed` / `cancelled` / `blocked`  
+- **`delete`** after every smoke/CLI self-test that opened a row (hard remove;
+  do not leave test data in Base). Real work keeps the row via `close`.
+
+**仓库** field must be a clickable **https://…** web URL (CLI rewrites
+`git@` / `ssh://` / `.git`). Local paths go only in **cwd**.
 
 Final user reply must include **`task_id`**. Do not write secrets into the
 ledger. Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only).

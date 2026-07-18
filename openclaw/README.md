@@ -587,7 +587,7 @@ openclaw pairing approve feishu <CODE>
 
 | Piece | Location |
 | --- | --- |
-| CLI | `scripts/dev-task-ledger.sh` (`open` / `confirm` / `close` / `list` / `show`) |
+| CLI | `scripts/dev-task-ledger.sh` (`open` / `confirm` / `close` / `delete` / `list` / `show`) |
 | Skill | `workspace/skills/task-ledger/SKILL.md` |
 | AGENTS rule | development tasks must open + close; reply includes `task_id` |
 | Local env | `~/.config/shell-env.d/openclaw-tasks.env` (mode 600, **never commit**) |
@@ -613,6 +613,10 @@ openclaw pairing approve feishu <CODE>
 ./openclaw/scripts/dev-task-ledger.sh confirm --task-id <uuid>
 ./openclaw/scripts/dev-task-ledger.sh close --task-id <uuid> \
   --status done --summary "…" --branch feat/… --commits abc1234
+
+# After every smoke/test open: hard-delete the row (do not leave test data)
+./openclaw/scripts/dev-task-ledger.sh delete --task-id <uuid>
+# or: … delete --record-id recXXXX
 ```
 
 ### Base columns (selected)
@@ -623,13 +627,29 @@ openclaw pairing approve feishu <CODE>
 | `标题` / `状态` / `范围` / `验收` | Task meta |
 | **`需求提出人`** | Person who raised the need (Feishu user field) |
 | `来源` | feishu / cli / manual |
-| **`仓库`** | **Remote URL** (`git remote get-url origin`, or `--repo` URL) — not a local path |
+| **`仓库`** | **https web URL** only (`https://github.com/…` / `https://cnb.cool/…`) — clickable; CLI rewrites `git@` / `ssh://` / `.git` |
 | **`cwd`** | **Local** working path (allowlisted absolute path / claw worktree) |
 | `分支` / `commits` / `MR` | Delivery pointers |
+| **开始时间** | `open` — second precision (`YYYY-MM-DD HH:MM:SS`) |
+| **需确认** | Live gate: true until `confirm` (default); **unchecked after confirm** — not 验收/merge |
+| **确认时间** | `confirm` wall clock; only equals 开始时间 when `--confirm-required 0` |
+| **结束时间** | `close` — **ledger close clock** (done/failed/cancelled/blocked), **not** PR merge time |
 | `结果摘要` | Close summary |
 
-`--repo` may be a local path (resolved to remote for `仓库`) or an explicit remote URL.
-`--cwd` is always local. Do not put machine paths into `仓库`.
+`--repo` may be a local path (resolved to origin, then to **https web URL** for
+`仓库`) or any git remote form. `--cwd` is always local. Never store machine
+paths or bare `git@…` SSH remotes in `仓库`.
+
+**Test hygiene:** every smoke that calls `open` must end with **`delete`** so
+the production Base table stays free of test rows. Real work uses `close`.
+
+**Time loop:** `open` → user yes → **`confirm`** → work → **`close`**.  
+`close --status done` is rejected if still 需确认. PR merge time is **not**
+auto-filled; use `MR` URL + summary.
+
+**秒级显示：** 开始/确认/结束时间 must be Base **文本** columns. Feishu
+`datetime` formats max out at `HH:mm` (no seconds) and default
+`yyyy/MM/dd` only shows the day — that is why the table looked day-only.
 
 Write `需求提出人` via CLI `--requester-id <ou_…>` (cell value `[{ "id": "ou_…" }]`).
 
