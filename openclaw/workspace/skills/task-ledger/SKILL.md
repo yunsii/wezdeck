@@ -34,12 +34,15 @@ description: >
 - Local env `OPENCLAW_TASKS_ALLOWED_ROOTS` (colon-separated) overrides defaults.
 - Defaults (portable): wezdeck (+ optional team roots in local config) roots under `$HOME/work` /
   `$HOME/github/wezterm-config` (see `dev-task-ledger.sh` `DEFAULT_ALLOWED_ROOTS`).
-- CLI rejects `--repo` / `--cwd` outside the allowlist.
+- CLI allowlists **local** `--cwd` / path-form `--repo` only (not remote URLs).
+- Base field **`仓库`** = git remote URL; **`cwd`** = local path.
 
 ## CLI
 
 ```bash
 # from wezterm-config checkout, or $WEZTERM_REPO if set
+# --repo: local path (→ origin URL written to Base 仓库) or explicit remote URL
+# --cwd: local path only → Base field cwd
 ./openclaw/scripts/dev-task-ledger.sh open \
   --title "…" \
   --repo "$HOME/work/team-repo" \

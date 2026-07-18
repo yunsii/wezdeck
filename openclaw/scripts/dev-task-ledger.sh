@@ -49,20 +49,99 @@ path_allowed() {
   return 1
 }
 
-assert_dev_paths() {
-  # Enforce 团队仓-only for any provided repo/cwd on open/update/close.
-  local p
-  for p in "${REPO:-}" "${CWD:-}"; do
-    if [[ -z "${p}" ]]; then
-      continue
+is_remote_url() {
+  local s="${1:-}"
+  [[ "${s}" =~ ^(https?://|git@|ssh://|git://) ]]
+}
+
+# Best-effort: git toplevel for a path (empty if not a repo).
+git_toplevel() {
+  local p="${1:-}"
+  [[ -z "${p}" ]] && return 0
+  git -C "${p}" rev-parse --show-toplevel 2>/dev/null || true
+}
+
+# Resolve origin (or first remote) URL for a local git path; or echo if already URL.
+resolve_repo_remote() {
+  local p="${1:-}"
+  [[ -z "${p}" ]] && return 1
+  if is_remote_url "${p}"; then
+    printf '%s' "${p}"
+    return 0
+  fi
+  local top url rname
+  top="$(git_toplevel "${p}")"
+  [[ -z "${top}" ]] && top="${p}"
+  url="$(git -C "${top}" remote get-url origin 2>/dev/null || true)"
+  if [[ -z "${url}" ]]; then
+    rname="$(git -C "${top}" remote 2>/dev/null | head -1 || true)"
+    if [[ -n "${rname}" ]]; then
+      url="$(git -C "${top}" remote get-url "${rname}" 2>/dev/null || true)"
     fi
-    if ! path_allowed "${p}"; then
-      echo "error: development path not on allowlist (团队仓 | wezdeck/wezterm-config)" >&2
-      echo "  refused path: ${p}" >&2
-      echo "  allowed: ${OPENCLAW_TASKS_ALLOWED_ROOTS:-${DEFAULT_ALLOWED_ROOTS}}" >&2
+  fi
+  [[ -n "${url}" ]] || return 1
+  printf '%s' "${url}"
+}
+
+assert_local_dev_path() {
+  local p="${1:-}"
+  [[ -z "${p}" ]] && return 0
+  if is_remote_url "${p}"; then
+    return 0
+  fi
+  if ! path_allowed "${p}"; then
+    echo "error: development path not on allowlist (团队仓 | wezdeck/wezterm-config)" >&2
+    echo "  refused path: ${p}" >&2
+    echo "  allowed: ${OPENCLAW_TASKS_ALLOWED_ROOTS:-${DEFAULT_ALLOWED_ROOTS}}" >&2
+    exit 5
+  fi
+}
+
+# Normalize REPO → remote URL for Feishu 仓库; CWD → absolute local path.
+# Allowlist checks apply only to local paths (not to remote URLs).
+normalize_repo_and_cwd() {
+  local path_hint="" remote="" top=""
+
+  if [[ -n "${CWD:-}" ]]; then
+    CWD="$(realpath -m "${CWD}" 2>/dev/null || echo "${CWD}")"
+    path_hint="${CWD}"
+  fi
+  if [[ -n "${REPO:-}" ]] && ! is_remote_url "${REPO}"; then
+    REPO="$(realpath -m "${REPO}" 2>/dev/null || echo "${REPO}")"
+    path_hint="${REPO}"
+    if [[ -z "${CWD:-}" ]]; then
+      CWD="${REPO}"
+    fi
+  fi
+  if [[ -z "${REPO:-}" && -n "${CWD:-}" ]]; then
+    path_hint="${CWD}"
+  fi
+
+  # Allowlist: local cwd + local repo path (before rewriting REPO to URL)
+  if [[ -n "${path_hint}" ]]; then
+    top="$(git_toplevel "${path_hint}")"
+    [[ -z "${top}" ]] && top="${path_hint}"
+    assert_local_dev_path "${top}"
+    assert_local_dev_path "${CWD:-}"
+  fi
+
+  if [[ -n "${REPO:-}" ]] && is_remote_url "${REPO}"; then
+    : # already remote for 仓库
+  else
+    if [[ -n "${path_hint}" ]]; then
+      remote="$(resolve_repo_remote "${path_hint}" || true)"
+    fi
+    if [[ -z "${remote}" ]]; then
+      echo "error: cannot resolve git remote for 仓库 field" >&2
+      echo "  pass a local path with origin configured, or --repo with https/git@ URL" >&2
       exit 5
     fi
-  done
+    REPO="${remote}"
+  fi
+
+  if [[ -n "${CWD:-}" ]]; then
+    CWD="$(realpath -m "${CWD}" 2>/dev/null || echo "${CWD}")"
+  fi
 }
 
 require_bins() {
@@ -211,7 +290,7 @@ upsert_fields() {
 usage() {
   cat <<'EOF'
 Usage:
-  dev-task-ledger.sh open   --title TEXT [--repo PATH] [--cwd PATH] [--branch B]
+  dev-task-ledger.sh open   --title TEXT [--repo PATH|URL] [--cwd PATH] [--branch B]
                             [--scope S] [--acceptance A] [--risk low|medium|high]
                             [--source feishu|cli|manual] [--source-ref R]
                             [--confirm-required 0|1] [--tags T] [--model M]
@@ -233,6 +312,10 @@ Env:
   OPENCLAW_TASKS_ENV_FILE     default ~/.config/shell-env.d/openclaw-tasks.env
 
 Notes:
+  --repo           local path (resolved to git remote for 仓库) or remote URL
+  --cwd            local absolute/relative path only → Base field cwd
+  仓库 (Base)      always a remote URL (origin preferred)
+  cwd (Base)       local working path (machine-local; allowlisted)
   --requester-id   Feishu open_id (ou_…), writes person field 需求提出人
   --requester      display name only (stored in record_note when no id; prefer --requester-id)
 EOF
@@ -323,18 +406,16 @@ cmd_open() {
     echo "error: --title required" >&2
     exit 2
   fi
-  # Default repo/cwd to 团队仓 primary if omitted
+  # Default local paths to 团队仓 primary if omitted
   if [[ -z "${REPO}" && -z "${CWD}" ]]; then
     REPO="${HOME}/work/team-repo"
     CWD="${HOME}/work/team-repo"
   fi
-  if [[ -z "${REPO}" && -n "${CWD}" ]]; then
-    REPO="${CWD}"
-  fi
-  if [[ -z "${CWD}" && -n "${REPO}" ]]; then
+  if [[ -z "${CWD}" && -n "${REPO}" ]] && ! is_remote_url "${REPO}"; then
     CWD="${REPO}"
   fi
-  assert_dev_paths
+  # 仓库 → remote URL; cwd → local path; allowlist on local paths
+  normalize_repo_and_cwd
   if [[ -z "${TASK_ID}" ]]; then
     TASK_ID="$(new_task_id)"
   fi
@@ -374,7 +455,9 @@ cmd_update() {
     echo "error: --task-id required" >&2
     exit 2
   fi
-  assert_dev_paths
+  if [[ -n "${REPO}" || -n "${CWD}" ]]; then
+    normalize_repo_and_cwd
+  fi
   local rid fields resp
   rid="$(resolve_record_id "${TASK_ID}")"
   if [[ -z "${rid}" ]]; then
@@ -417,7 +500,9 @@ cmd_close() {
     echo "error: --task-id and --status required" >&2
     exit 2
   fi
-  assert_dev_paths
+  if [[ -n "${REPO}" || -n "${CWD}" ]]; then
+    normalize_repo_and_cwd
+  fi
   case "${STATUS}" in
     done|failed|cancelled|blocked) ;;
     *) echo "error: close status must be done|failed|cancelled|blocked" >&2; exit 2 ;;
