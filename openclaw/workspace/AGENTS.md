@@ -31,11 +31,12 @@ into `~/.openclaw`. Coding CLIs and WezDeck remain separate execution surfaces.
 ```text
 [ ] 1. ledger open（task_id；已知提出人 → 需求提出人）
 [ ] 2. worktree assess → 飞书【初评】→ 确认前不 create
-[ ] 3. create/reuse claw-*；ledger update cwd/分支
-[ ] 4. 路径：B 自写 | C Handoff | E `/acp spawn claude|codex --cwd <wt>` | A 用户自干则只协助
-[ ] 5. 若 B：验收 + UI chrome；若 C/A/E：等本机/ACP 完成再 close（勿与 ACP 双写）
-[ ] 6. ledger close +【结果】（必含 task_id）
-[ ] 7. 询问 reclaim（永不自动）
+[ ] 3. 【开发方式】声明（A/B/C/E + 理由 + 执行者）→ 用户确认前不写代码 / 不 spawn ACP
+[ ] 4. create/reuse claw-*；ledger update cwd/分支（可与 3 同一轮，但方式须先说清）
+[ ] 5. 按已确认方式执行（B 自写 | C Handoff 停笔 | E acp spawn | A 只协助）
+[ ] 6. 若 B：验收 + UI chrome；若 C/A/E：等本机/ACP 完成再 close（勿双写）
+[ ] 7. ledger close +【结果】（必含 task_id + 实际使用的开发方式）
+[ ] 8. 询问 reclaim（永不自动）
 ```
 
 Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 接任务**：勿强行 open。
@@ -75,15 +76,36 @@ runtime:
 2. Do **not** require a visible tmux pane for every task.
 3. If the user says 打开 / 盯着 / 审查过程 / attach / resume UI, tell them the
    exact `cwd` and how to open a local CLI session (see Resume).
-4. **Path choice (main):**
-   - **B Small:** implement yourself under claw worktree.
-   - **C Large / user wants host CLI:** ledger + worktree + **Handoff brief**; then
-     **stop coding** until the user returns (normal: 本机做完 → 飞书收尾).
-   - **A User already coding themselves:** do not invent handoff; help with ledger /
-     worktree / 验收 only if asked.
-   - Never co-edit the same worktree with a live local CLI session.
+4. **Path choice (main) — after 需求/初评确认，必须先声明再动手**（见下节模板）。
+   Heuristics (user may override):
+   - **B** 小改、范围清、可飞书跟完 → Main 自写。
+   - **E** 多文件/需 Claude·Codex profile 且希望飞书侧驱动 → `/acp spawn claude|codex --cwd <wt>`
+     （默认 `claude`；用户点名 codex / Grok-via-Codex 时再改）。
+   - **C** 用户要本机 TUI 细看或明确「我自己/本机改」→ Handoff 后 **停笔**，本机做完再收尾。
+   - **A** 用户已在本机开发、未让你主笔 → 不强制 handoff；只台账/worktree/验收。
+   - **D** 禁止。
+   - Never co-edit the same worktree with a live local CLI / active ACP session.
 5. Prefer one worker, one `cwd`. Mid-task: short 飞书 progress
-   (「台账已开」「初评待确认」「worktree 已就绪」).
+   (「台账已开」「初评待确认」「方式已确认：B」「worktree 已就绪」).
+
+### 【开发方式】声明（需求确认后必发）
+
+在用户确认 **目标/验收/初评** 之后、**写代码或 `/acp spawn` 之前**，飞书发一块：
+
+```text
+## 开发方式
+- 选用: A | B | C | E   （D 禁用）
+- 执行者: Main 自写 | 本机 Claude/Codex（handoff）| ACP claude | ACP codex | 用户自干
+- 理由: （一句话，对照启发式）
+- cwd: （若已有 / 将创建）
+- task_id: …
+- 你将看到: （B=飞书进度摘要；C/A=本机 TUI；E=飞书绑定/ACP 输出，非完整 TUI）
+请确认或指定改用 A/B/C/E（及 claude|codex）。确认前我不会开始改代码。
+```
+
+- 用户已明确指定方式 → 仍 **复述** 该块再执行（可合并在同一条消息末尾）。
+- 中途改路径（例如 B→E）→ 再发一版【开发方式】并停双写。
+- 【结果】里写 **实际** 使用的方式（若与声明不同，说明原因）。
 
 ### Core capability: Chrome DevTools MCP
 
@@ -135,11 +157,12 @@ session turn-by-turn.
 
 ```text
 ledger open
-  → 【初评】worktree 选型 → 用户确认
+  → 【初评】worktree 选型 → 用户确认目标/验收/树
+  → 【开发方式】A|B|C|E + 理由 → 用户确认
   → create/reuse claw worktree；ledger update cwd/分支
-  → B 小改自写 | C Handoff 后停笔等本机做完 | A 用户自干则只协助
-  → 验收（B：命令/Chrome；C/A：用户回传后）
-  → ledger close + 【结果】模板
+  → 按方式执行（B 写 | C handoff 停笔 | E acp spawn | A 协助）
+  → 验收（B：命令/Chrome；C/A/E：对方完成后再做）
+  → ledger close + 【结果】（含实际开发方式）
   → 【询问是否回收】（永不自动）
 ```
 
@@ -333,6 +356,7 @@ Every finished (or failed) task message to the user must include:
 - 状态: 成功 | 失败 | 部分完成
 - 摘要: …
 - task_id: …
+- 开发方式: A | B | C | E（claude|codex）  # 实际使用；若与声明不同请说明
 - 仓库 cwd: /absolute/path（claw-task|dev|hotfix-…）
 - 分支: …
 - 最近 commit: <hash> <subject>   # if any

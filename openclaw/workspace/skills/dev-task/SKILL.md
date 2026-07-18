@@ -2,8 +2,8 @@
 name: dev-task
 description: >
   coco-forge development under OpenClaw with WezDeck-aligned lifecycle worktrees
-  (claw-task/dev/hotfix), mandatory assess before create, never human worktrees.
-  Main orchestrator checklist + handoff to profile-backed coding agents.
+  (claw-task/dev/hotfix), mandatory assess before create, declare dev mode A/B/C/E
+  after requirement confirm, never human worktrees.
 ---
 
 # Dev task (coco-forge + claw lifecycle worktrees)
@@ -16,30 +16,20 @@ Write work in **coco-forge** only. Skip this skill for pure Q&A.
 
 ```text
 [ ] ledger open → task_id
-[ ] assess → 飞书初评 → user confirm
+[ ] assess → 飞书【初评】→ user confirms goal/tree
+[ ] 【开发方式】A|B|C|E + 理由 + 执行者 → user confirms (before code / ACP spawn)
 [ ] create/reuse claw-* → ledger update cwd/分支
-[ ] path: B self-implement | C Handoff then stop coding | A user-only → assist only
-[ ] accept if B; if C/A wait for user return then close
-[ ] ledger close + 结果 (task_id)
+[ ] execute per mode (B write | C handoff stop | E acp spawn | A assist only)
+[ ] accept if B; if C/A/E wait then close (no dual-write)
+[ ] ledger close + 结果 (task_id + actual mode)
 [ ] ask reclaim (never auto)
 ```
 
-**Modes:** A human direct · B main direct · C handoff (local finish → main wrap-up).
-Never dual-write with a live host CLI. Full table:
-`openclaw/README.md` → Development modes.
+**Modes:** A human · B main · C handoff · E ACP (`claude`|`codex`) · **D forbidden**.  
+Full table: `openclaw/README.md` → Development modes.
 
 Ad-hoc shell: `claw-run` (exec-risk).  
 Repo scripts `claw-worktree.sh` / `dev-task-ledger.sh`: call directly.
-
-## Worktree model (mirrors WezDeck)
-
-| Kind | Claw dir | Claw branch | Human analogue |
-| --- | --- | --- | --- |
-| task | `claw-task-<domain?>-<subject>` | `claw/task/…` | `task-*` |
-| dev | `claw-dev-<domain?>-<subject>` | `claw/dev/…` | `dev-*` |
-| hotfix | `claw-hotfix-<domain?>-<subject>` | `claw/hotfix/…` | `hotfix-*` |
-
-Human `dev-*` / `task-*` / `hotfix-*` (no `claw-`) are **read-only** for claw.
 
 ## Steps
 
@@ -54,27 +44,40 @@ Human `dev-*` / `task-*` / `hotfix-*` (no `claw-`) are **read-only** for claw.
    Present 初评 from JSON: `action` (`reuse`|`create`), `reuse`,
    `same_domain_candidates`, `create_slug_if_new`.
 
-3. **Obtain cwd** only after user confirm:
+3. **【开发方式】** after user confirms requirements / 初评 — **before** implement
+   or ACP spawn. Template (Feishu):
+
+   ```text
+   ## 开发方式
+   - 选用: A | B | C | E
+   - 执行者: Main | 本机 CLI (handoff) | ACP claude | ACP codex | 用户自干
+   - 理由: …
+   - cwd / task_id: …
+   - 你将看到: …
+   请确认或改用 A/B/C/E。确认前不开始改代码。
+   ```
+
+   Heuristics (user overrides):
+   - **B** — small, clear scope, Feishu-followable.
+   - **E** — multi-file / wants Claude·Codex profile + Feishu-driven worker
+     (`/acp spawn claude|codex --cwd <wt>`; default claude).
+   - **C** — user wants local TUI or says they will code locally; then **stop** coding.
+   - **A** — user already coding; assist ledger/验收 only.
+   - **D** — never.
+
+4. **Obtain cwd** after tree + mode confirm:
 
    ```bash
    WT=$(./openclaw/scripts/claw-worktree.sh create \
      --title "…" --lifecycle task --domain i18n \
      --cwd "$HOME/work/coco-forge")
-   # parallel second tree: add --force-new
    ```
 
-4. Ledger `update` with `cwd` + branch.
-5. **Path choice**
-   - **B Small:** implement only under `$WT`.
-   - **C Large:** post **Handoff**, then **stop coding**; normal: user finishes
-     locally → Feishu return → main close. Host CLI already has agent-profiles.
-   - **A User self-drive:** no forced handoff; ledger/验收 only if asked.
-6. Accept if B (tests / chrome UI). If C/A: wait for user before `close`.
-7. Ledger `close` + Feishu 结果 (`task_id`).
-8. **Ask reclaim** (never auto):
-   - `claw-task-*` / `claw-hotfix-*`: ask; reclaim only on yes.
-   - `claw-dev-*`: default keep; reclaim only if user insists + `--allow-long-lived`.
-   - Shared hub still busy: do not reclaim; explain.
+5. Ledger `update` cwd + branch.
+6. Execute per confirmed mode (single writer).
+7. Accept if B (tests / chrome). If C/A/E: wait for completion before `close`.
+8. Ledger `close` + 结果 including **actual** 开发方式.
+9. **Ask reclaim** (never auto).
 
 ## Handoff brief (mode C — copy)
 
@@ -84,6 +87,7 @@ Human `dev-*` / `task-*` / `hotfix-*` (no `claw-`) are **read-only** for claw.
 - cwd: …
 - branch: …
 - goal / non-goals / acceptance: …
+- 开发方式: C
 - constraints: no force-push; no push main/master without user yes
 - after: 本机做完 → 飞书摘要 → main close + reclaim ask
 - 本机: cd <cwd> && claude --continue
