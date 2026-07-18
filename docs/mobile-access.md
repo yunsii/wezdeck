@@ -68,6 +68,35 @@ reachability acceptable. Decisions:
   backend. Re-evaluate only if the backend consolidates on a single
   vendor long-term.
 
+### How Happy talks to each agent (local transport)
+
+"agent-agnostic (claude / codex / acp backends)" above is per-agent **by
+design**: Happy does not use one wire for every agent. On the local hop it
+speaks whatever protocol each agent already exposes, then wraps the result in
+its own remote E2E relay layer (the X25519 + AES-256-GCM sync described at the
+top of this section). Verified in [`slopus/happy-cli`](https://github.com/slopus/happy)
+via DeepWiki (2026-07-18):
+
+| Backend | Local transport to the agent process | Implementation |
+| --- | --- | --- |
+| **Claude** | `stream-json` over stdio, via the Claude Code SDK (spawns the `claude` CLI, pipes stdio, control requests on stdin) | `src/claude/sdk/query.ts` |
+| **Codex** | **MCP** over stdio (`@modelcontextprotocol/sdk` `StdioClientTransport`, drives `codex mcp-server`; tool approval via MCP elicitation) | `src/codex/codexMcpClient.ts` |
+| **Gemini** | **ACP** over stdio (`@agentclientprotocol/sdk`, spawns `gemini --experimental-acp`) | `src/agent/acp/AcpBackend.ts` |
+
+`AcpBackend` is a **generic** ACP client, not Gemini-specific; the `AgentId`
+enum also lists `opencode`, `claude-acp`, `codex-acp` as future/experimental ACP
+paths. But today Claude and Codex use their **native** protocols (stream-json /
+MCP), not ACP.
+
+So Happy is a **polyglot on the local hop** — stream-json for Claude, MCP for
+Codex, ACP for Gemini — and uniform only on its remote hop (Agent SDK capture →
+E2E → relay → native phone render). OpenClaw **YunsClaw** is different: the
+Feishu **main** agent is an **embedded** Gateway runtime (not ACP); **optional**
+coding workers use ACP (`/acp spawn claude|codex`) via `@openclaw/acpx`. See
+[`openclaw/README.md` → Development modes](../openclaw/README.md#development-modes-who-writes-code).
+Where both speak ACP they share the **same** ACP standard,
+`@agentclientprotocol/sdk`.
+
 ### Toggling a pane between bare and Happy (`Ctrl+k p`)
 
 The manual `happy --continue` opt-in above has a one-key form for panes

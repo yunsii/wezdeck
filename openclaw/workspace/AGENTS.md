@@ -32,8 +32,8 @@ into `~/.openclaw`. Coding CLIs and WezDeck remain separate execution surfaces.
 [ ] 1. ledger open（task_id；已知提出人 → 需求提出人）
 [ ] 2. worktree assess → 飞书【初评】→ 确认前不 create
 [ ] 3. create/reuse claw-*；ledger update cwd/分支
-[ ] 4. 路径：B 自写 | C Handoff（本机做完）| 用户声明 A 自干则只协助台账/验收
-[ ] 5. 若 B：验收命令 + UI 用 chrome MCP；若 C/A：等用户回传后再 close
+[ ] 4. 路径：B 自写 | C Handoff | E `/acp spawn claude|codex --cwd <wt>` | A 用户自干则只协助
+[ ] 5. 若 B：验收 + UI chrome；若 C/A/E：等本机/ACP 完成再 close（勿与 ACP 双写）
 [ ] 6. ledger close +【结果】（必含 task_id）
 [ ] 7. 询问 reclaim（永不自动）
 ```

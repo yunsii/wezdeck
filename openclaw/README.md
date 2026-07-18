@@ -266,6 +266,39 @@ acp: {
 | **codex** (default GPT) | **PASS** after auth bridge | Isolated `~/.openclaw/acpx/codex-home` needs host auth (401 if missing). Bundled `codex-acp` OK without global `codex` on PATH |
 | **codex + Grok** | **Config landed; ACP write smoke not green** | Model id **`grok-4.5`** from Grok CLI / OpenClaw proxy. Use `~/.codex/grok.config.toml` + `codex --profile grok` (and/or `[profiles.grok]`). ACP still `spawn codex` (no `spawn grok`). First ACP turns failed (`ACP_TURN_FAILED` / sandbox-read-only or profile form); treat as **best-effort** until re-verified |
 
+**Codex + Grok (recommended local config)** — aligned with Grok CLI
+`~/.grok/config.toml` (`models_base_url` …`/v1`, default `grok-4.5`,
+`api_backend = responses`) and OpenClaw `grok-proxy` models:
+
+```toml
+# ~/.codex/grok.config.toml  (preferred for newer Codex: codex --profile grok)
+model_provider = "OpenAI"
+model = "grok-4.5"
+model_reasoning_effort = "high"
+
+[model_providers.OpenAI]
+name = "OpenAI"
+base_url = "https://YOUR-PROXY.example"   # same host as Grok CLI / Packy
+wire_api = "responses"
+requires_openai_auth = true
+```
+
+Optional dual form in `config.toml` (if your Codex still reads profiles from it):
+
+```toml
+[profiles.grok]
+model_provider = "OpenAI"
+model = "grok-4.5"
+model_reasoning_effort = "high"
+```
+
+Keep **default** `model = "gpt-5.5"` (or your GPT id) for everyday Codex; only switch
+to Grok when you want that model. Prefer `codex --profile grok` with
+`grok.config.toml` (newer Codex rejects top-level `profile = "…"`). Auth: same
+proxy credentials as Grok CLI / Codex `auth.json` (do not commit). For ACP
+isolation, ensure `~/.openclaw/acpx/codex-home/auth.json` stays populated after
+first successful codex ACP run.
+
 **Ops:** single writer per worktree; main still owns ledger `task_id` open/close.
 `approve-all` is intentional for personal DM-only control plane — tighten if
 shared. Upstream: [ACP agents](https://docs.openclaw.ai/tools/acp-agents).
