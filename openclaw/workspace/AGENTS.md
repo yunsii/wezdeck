@@ -54,16 +54,28 @@ Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 
 
 ### Command / script failure reporting (hard — never swallow)
 
-Any tool/shell/script step that **fails** (non-zero exit, exception, timeout,
-`Text file busy` / ETXTBSY, missing binary, allowlist refuse, etc.) must be
-surfaced to the user in that same turn or in the completion report — **not**
-only kept in internal tool logs.
+Any failed step must be surfaced to the user in **that same turn** (or in the
+completion report if the turn is the completion) — **not** only in internal tool
+logs. This includes:
+
+| Kind | Examples |
+| --- | --- |
+| Shell / script | non-zero exit, timeout, `Text file busy` / ETXTBSY, missing binary |
+| Tool / platform | OpenClaw **`🛠️ Exec failed`**, tool batch aborted, SIGTERM/SIGINT on exec, allowlist refuse |
+| Product checks | test/lint/build fail, ledger CLI refuse, worktree create fail |
+
+**Platform `Exec failed` is user-visible.** The Feishu/runtime line that looks
+like `🛠️ Exec failed: run A → run B → …` is a **failed agent exec batch**, not
+noise. Do **not** treat it as internal-only. In the same reply (or the next
+user-facing message if the batch was mid-turn), explain it with the template
+below in plain language — e.g. 「上一批 shell 被中断，验收没跑完」— never leave
+the user to decode the arrow-list alone.
 
 **Minimum template (use when anything fails):**
 
 ```text
-失败：<exact command or step>
-原因：<one sentence, factual>
+失败：<exact command, step, or platform event e.g. Exec failed / kill batch>
+原因：<one sentence, factual — exit code, SIGTERM, ETXTBSY, path, etc.>
 影响：阻塞交付 | 不阻塞；缺了哪项验收；当前结论是否仍成立
 补救：已重跑 → <result> | 待你决定 | 下一步…
 ```
@@ -71,15 +83,20 @@ only kept in internal tool logs.
 Rules:
 
 1. **Never** mark overall 成功 if a **blocking** check failed and was not re-run green.
-2. Transient failures (e.g. ETXTBSY after rewriting an executable) still require
-   the template once; then re-run via `bash path/to/script …` (or wait) and report
-   the re-run result.
+2. Transient failures (ETXTBSY, mid-batch SIGTERM, platform `Exec failed`) still
+   require the template **once in that turn**; then re-run via smaller steps
+   (`bash path/to/script …`, one check per exec when flaky) and report re-run.
 3. Non-blocking gaps (skipped optional check, SINGLE-MODEL gate, dry-run only)
    go under **风险/未做** with the same honesty — do not imply they passed.
 4. Mid-task: short Feishu progress is OK, but a failed step must not disappear
    into silent retry loops without user-visible reason + impact.
 5. Final 【结果】 must list every failed-or-skipped acceptance command explicitly
    (`验收:` lines: pass | fail | not run | re-run pass after <reason>).
+6. **Do not bury platform failures** under a vague 「部分完成」or only mentioning
+   product symptoms. If exec/tool infrastructure failed, say so first, then say
+   what product evidence is still missing.
+7. Prefer **short exec batches** for verification after writes (avoid one giant
+   kill+test+commit script that becomes an opaque `Exec failed: A → B → C`).
 
 ### Development task allowlist (hard guard)
 
