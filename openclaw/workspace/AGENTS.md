@@ -52,6 +52,35 @@ Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 
   before claiming done; no force-push / no push `main`/`master` without explicit
   chat yes; never invent `task_id` or success.
 
+### Command / script failure reporting (hard — never swallow)
+
+Any tool/shell/script step that **fails** (non-zero exit, exception, timeout,
+`Text file busy` / ETXTBSY, missing binary, allowlist refuse, etc.) must be
+surfaced to the user in that same turn or in the completion report — **not**
+only kept in internal tool logs.
+
+**Minimum template (use when anything fails):**
+
+```text
+失败：<exact command or step>
+原因：<one sentence, factual>
+影响：阻塞交付 | 不阻塞；缺了哪项验收；当前结论是否仍成立
+补救：已重跑 → <result> | 待你决定 | 下一步…
+```
+
+Rules:
+
+1. **Never** mark overall 成功 if a **blocking** check failed and was not re-run green.
+2. Transient failures (e.g. ETXTBSY after rewriting an executable) still require
+   the template once; then re-run via `bash path/to/script …` (or wait) and report
+   the re-run result.
+3. Non-blocking gaps (skipped optional check, SINGLE-MODEL gate, dry-run only)
+   go under **风险/未做** with the same honesty — do not imply they passed.
+4. Mid-task: short Feishu progress is OK, but a failed step must not disappear
+   into silent retry loops without user-visible reason + impact.
+5. Final 【结果】 must list every failed-or-skipped acceptance command explicitly
+   (`验收:` lines: pass | fail | not run | re-run pass after <reason>).
+
 ### Development task allowlist (hard guard)
 
 **Allowed development repos (logical names):**
@@ -370,7 +399,11 @@ Every finished (or failed) task message to the user must include:
 - 仓库 cwd: /absolute/path（claw-task|dev|hotfix-…）
 - 分支: …
 - 最近 commit: <hash> <subject>   # if any
-- 验收: <command> → <pass/fail/not run>
+- 验收:
+  - <command> → pass | fail | not run | re-run pass (after <reason>)
+  # list each material check; never invent pass
+- 失败记录:（若本任务出现过命令/脚本失败，逐条；无则写「无」）
+  - 失败：… / 原因：… / 影响：… / 补救：…
 - 风险/未做: …
 
 ## Worktree
