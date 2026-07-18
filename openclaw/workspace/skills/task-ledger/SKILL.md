@@ -2,7 +2,7 @@
 name: task-ledger
 description: >
   Ledger development tasks to Feishu Base via dev-task-ledger.sh.
-  Development tasks are coco-forge only for now. Use on accept/confirm/close
+  Allowlist: coco-forge + wezdeck (wezterm-config). Use on accept/confirm/close
   of coding work; not for pure Q&A.
 ---
 
@@ -10,11 +10,11 @@ description: >
 
 ## Hard rules
 
-1. Development tasks **must** target **coco-forge** only, under the runtime
-   path allowlist (see Path guard). Do not hard-code another machine's
-   `/home/...` paths in prompts or commits.
+1. Development tasks **must** target an **allowlisted** root (see Path guard):
+   **coco-forge** or **wezdeck** / wezterm-config. Do not hard-code another
+   machine's `/home/...` paths in prompts or commits.
 2. If the user asks for another repo: **do not** `open` a ledger row as accepted
-   work; refuse and explain coco-forge-only policy.
+   work; refuse and explain allowlist policy.
 3. When accepted:
    - `open` → `confirm` (if required) → `close` (`done`/`failed`/`cancelled`/`blocked`)
 4. Never write secrets into the ledger.
@@ -32,7 +32,8 @@ description: >
 ## Path guard
 
 - Local env `OPENCLAW_TASKS_ALLOWED_ROOTS` (colon-separated) overrides defaults.
-- Defaults (portable): `$HOME/work/coco-forge` and `$HOME/work/.worktrees/coco-forge`.
+- Defaults (portable): coco-forge + wezdeck roots under `$HOME/work` /
+  `$HOME/github/wezterm-config` (see `dev-task-ledger.sh` `DEFAULT_ALLOWED_ROOTS`).
 - CLI rejects `--repo` / `--cwd` outside the allowlist.
 
 ## CLI
@@ -79,7 +80,7 @@ Config: `~/.config/shell-env.d/openclaw-tasks.env` (local only; never commit fil
 
 ## Flow
 
-1. Path guard → coco-forge allowlist.
+1. Path guard → allowlist (coco-forge | wezdeck).
 2. `open` (status `open`/`planned`) — may still point at primary repo path;
    capture `task_id` immediately for all later Feishu messages.
 3. Plan / worktree 初评 → user confirm when needed → `confirm` if required.

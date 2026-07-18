@@ -29,7 +29,7 @@ repo root [`docs/browser-debug.md`](../../../../docs/browser-debug.md).
 | Trigger | Action |
 | --- | --- |
 | User: open/check URL, click, form, screenshot | MCP navigate + snapshot (not curl HTML) |
-| **You** just changed UI in coco-forge | Before 验收通过: open relevant URL/path, snapshot |
+| **You** just changed UI (allowlisted repo) | Before 验收通过: open relevant URL/path, snapshot |
 | “页面坏了 / 控制台报错 / 按钮点不了” | list pages / console / network as needed |
 
 Coding agents on the host have their **own** browser/MCP/profile — this skill is

@@ -1,16 +1,23 @@
 ---
 name: dev-task
 description: >
-  coco-forge development under OpenClaw with WezDeck-aligned lifecycle worktrees
-  (claw-task/dev/hotfix), mandatory assess before create, declare dev mode A/B/C/E
+  Allowlisted development (coco-forge + wezdeck/wezterm-config) under OpenClaw
+  with claw lifecycle worktrees, assess before create, declare mode A/B/C/E
   after requirement confirm, never human worktrees.
 ---
 
-# Dev task (coco-forge + claw lifecycle worktrees)
+# Dev task (allowlisted repos + claw lifecycle worktrees)
 
 ## When to use
 
-Write work in **coco-forge** only. Skip this skill for pure Q&A.
+Write work only under the **development allowlist**:
+
+| Logical | Default roots |
+| --- | --- |
+| **coco-forge** | `$HOME/work/coco-forge`, worktrees under `.worktrees/coco-forge` |
+| **wezdeck** | `$HOME/github/wezterm-config` (or `$HOME/work/wezterm-config`), worktrees under `.worktrees/wezterm-config` |
+
+Skip this skill for pure Q&A. Other repos: refuse.
 
 ## Main checklist (when main accepts a write task)
 
@@ -68,9 +75,12 @@ Repo scripts `claw-worktree.sh` / `dev-task-ledger.sh`: call directly.
 4. **Obtain cwd** after tree + mode confirm:
 
    ```bash
+   # coco-forge product:
    WT=$(./openclaw/scripts/claw-worktree.sh create \
      --title "…" --lifecycle task --domain i18n \
      --cwd "$HOME/work/coco-forge")
+   # wezdeck / wezterm-config:
+   # --cwd "$HOME/github/wezterm-config"
    ```
 
 5. Ledger `update` cwd + branch.

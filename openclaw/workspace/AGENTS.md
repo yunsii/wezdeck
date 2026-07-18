@@ -26,7 +26,7 @@ into `~/.openclaw`. Coding CLIs and WezDeck remain separate execution surfaces.
 | **D** | CLI backend | **禁用** |
 | **E** | ACP | **已启用** `claude` / `codex`（`/acp spawn …`；单写者；见 README） |
 
-**Hard checklist — every coco-forge write task that main accepts (do not skip):**
+**Hard checklist — every allowlisted write task that main accepts (do not skip):**
 
 ```text
 [ ] 1. ledger open（task_id；已知提出人 → 需求提出人）
@@ -53,22 +53,28 @@ Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 
 
 ### Development task allowlist (hard guard)
 
-**Only the logical repo `coco-forge` is accepted for development tasks right now.**
+**Allowed development repos (logical names):**
 
-Allowed roots are **not** hard-coded host paths in this file. Resolve them at
+| Logical | Typical roots (portable defaults) |
+| --- | --- |
+| **coco-forge** | `$HOME/work/coco-forge`, `$HOME/work/.worktrees/coco-forge` |
+| **wezdeck** (git remote of this monorepo) | `$HOME/github/wezterm-config`, `$HOME/work/.worktrees/wezterm-config`, `$HOME/work/wezterm-config` |
+
+Allowed roots are **not** hard-coded host usernames in this file. Resolve at
 runtime:
 
 1. Prefer `OPENCLAW_TASKS_ALLOWED_ROOTS` (colon-separated absolute paths) from
-   the local env file `~/.config/shell-env.d/openclaw-tasks.env` — **never commit
-   machine-specific paths into this repo**.
-2. If unset, the ledger CLI default is portable relative to `$HOME`:
-   - `$HOME/work/coco-forge` (primary)
-   - `$HOME/work/.worktrees/coco-forge` (linked worktrees prefix)
+   `~/.config/shell-env.d/openclaw-tasks.env` — **never commit machine-specific
+   paths into this repo**.
+2. If unset, `dev-task-ledger.sh` uses the portable defaults above (relative to
+   `$HOME`).
 
 - Resolve `cwd` / `repo` with `realpath` when possible; must fall under an
   allowed root.
 - Other repos: **refuse** development work; read-only Q&A is OK.
 - Ledger `open`/`close` only for allowlisted paths (CLI enforces).
+- Pick `--cwd` / default repo to match the task: coco-forge product work vs
+  wezdeck (wezterm-config / OpenClaw package) infra work.
 
 ## Default execution mode
 
@@ -143,7 +149,7 @@ host (mode A). Not ACP/CLI-backend IPC — see
 - goal: …
 - non-goals: …
 - acceptance: …
-- constraints: no force-push; no push main/master without user yes; coco-forge only
+- constraints: no force-push; no push main/master without user yes; allowlist only
 - UI: <URL or n/a>
 - after: 本机做完 → 飞书摘要 → main：ledger close + 是否 reclaim
 - 本机: cd <cwd> && claude --continue   # 过程细节在 TUI，不在飞书 main
