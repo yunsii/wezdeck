@@ -623,8 +623,13 @@ openclaw pairing approve feishu <CODE>
 | `标题` / `状态` / `范围` / `验收` | Task meta |
 | **`需求提出人`** | Person who raised the need (Feishu user field) |
 | `来源` | feishu / cli / manual |
-| `cwd` / `分支` / `commits` / `MR` | Delivery pointers |
+| **`仓库`** | **Remote URL** (`git remote get-url origin`, or `--repo` URL) — not a local path |
+| **`cwd`** | **Local** working path (allowlisted absolute path / claw worktree) |
+| `分支` / `commits` / `MR` | Delivery pointers |
 | `结果摘要` | Close summary |
+
+`--repo` may be a local path (resolved to remote for `仓库`) or an explicit remote URL.
+`--cwd` is always local. Do not put machine paths into `仓库`.
 
 Write `需求提出人` via CLI `--requester-id <ou_…>` (cell value `[{ "id": "ou_…" }]`).
 
