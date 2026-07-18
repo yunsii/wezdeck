@@ -25,10 +25,11 @@ Skip this skill for pure Q&A. Other repos: refuse.
 [ ] ledger open → task_id
 [ ] assess → 飞书【初评】→ user confirms goal/tree
 [ ] 【开发方式】A|B|C|E + 理由 + 执行者 → user confirms (before code / ACP spawn)
+[ ] ledger confirm  # 确认时间; 需确认=false (if open used confirm-required 1)
 [ ] create/reuse claw-* → ledger update cwd/分支
 [ ] execute per mode (B write | C handoff stop | E acp spawn | A assist only)
 [ ] accept if B; if C/A/E wait then close (no dual-write)
-[ ] ledger close + 结果 (task_id + actual mode)
+[ ] ledger close + 结果 (task_id + actual mode; 结束时间=结案秒级)
 [ ] ask reclaim (never auto)
 ```
 

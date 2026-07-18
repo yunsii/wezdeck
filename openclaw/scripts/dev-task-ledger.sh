@@ -61,26 +61,75 @@ git_toplevel() {
   git -C "${p}" rev-parse --show-toplevel 2>/dev/null || true
 }
 
+# Convert any git remote form → https web URL (clickable in Feishu Base).
+# git@host:org/repo.git | ssh://git@host/… | https://…/.git → https://host/org/repo
+repo_to_web_url() {
+  local raw="${1:-}"
+  [[ -z "${raw}" ]] && return 1
+  python3 -c '
+import re, sys
+u = (sys.argv[1] or "").strip()
+if not u:
+    sys.exit(1)
+# git@host:path
+m = re.match(r"^git@([^:]+):(.+)$", u)
+if m:
+    host, path = m.group(1), m.group(2)
+    path = path.removeprefix("/").removesuffix(".git")
+    print(f"https://{host}/{path}")
+    raise SystemExit(0)
+# ssh://git@host[:port]/path or ssh://host/path
+m = re.match(r"^ssh://(?:git@)?([^/]+?)(?::\d+)?/(.+)$", u)
+if m:
+    host, path = m.group(1), m.group(2)
+    path = path.removesuffix(".git")
+    print(f"https://{host}/{path}")
+    raise SystemExit(0)
+# git://host/path
+m = re.match(r"^git://([^/]+)/(.+)$", u)
+if m:
+    host, path = m.group(1), m.group(2)
+    path = path.removesuffix(".git")
+    print(f"https://{host}/{path}")
+    raise SystemExit(0)
+# http(s)://…  strip .git suffix for cleaner browser link
+m = re.match(r"^(https?://)(.+)$", u)
+if m:
+    scheme, rest = m.group(1), m.group(2)
+    if rest.endswith(".git"):
+        rest = rest[:-4]
+    # prefer https for clickability
+    if scheme == "http://":
+        scheme = "https://"
+    print(f"{scheme}{rest}")
+    raise SystemExit(0)
+# unknown form — pass through
+print(u)
+' "${raw}"
+}
+
 # Resolve origin (or first remote) URL for a local git path; or echo if already URL.
+# Always returns https web form when conversion succeeds.
 resolve_repo_remote() {
   local p="${1:-}"
   [[ -z "${p}" ]] && return 1
+  local url top rname web
   if is_remote_url "${p}"; then
-    printf '%s' "${p}"
-    return 0
-  fi
-  local top url rname
-  top="$(git_toplevel "${p}")"
-  [[ -z "${top}" ]] && top="${p}"
-  url="$(git -C "${top}" remote get-url origin 2>/dev/null || true)"
-  if [[ -z "${url}" ]]; then
-    rname="$(git -C "${top}" remote 2>/dev/null | head -1 || true)"
-    if [[ -n "${rname}" ]]; then
-      url="$(git -C "${top}" remote get-url "${rname}" 2>/dev/null || true)"
+    url="${p}"
+  else
+    top="$(git_toplevel "${p}")"
+    [[ -z "${top}" ]] && top="${p}"
+    url="$(git -C "${top}" remote get-url origin 2>/dev/null || true)"
+    if [[ -z "${url}" ]]; then
+      rname="$(git -C "${top}" remote 2>/dev/null | head -1 || true)"
+      if [[ -n "${rname}" ]]; then
+        url="$(git -C "${top}" remote get-url "${rname}" 2>/dev/null || true)"
+      fi
     fi
   fi
   [[ -n "${url}" ]] || return 1
-  printf '%s' "${url}"
+  web="$(repo_to_web_url "${url}" || true)"
+  printf '%s' "${web:-${url}}"
 }
 
 assert_local_dev_path() {
@@ -97,10 +146,10 @@ assert_local_dev_path() {
   fi
 }
 
-# Normalize REPO → remote URL for Feishu 仓库; CWD → absolute local path.
+# Normalize REPO → https web URL for Feishu 仓库; CWD → absolute local path.
 # Allowlist checks apply only to local paths (not to remote URLs).
 normalize_repo_and_cwd() {
-  local path_hint="" remote="" top=""
+  local path_hint="" remote="" top="" web=""
 
   if [[ -n "${CWD:-}" ]]; then
     CWD="$(realpath -m "${CWD}" 2>/dev/null || echo "${CWD}")"
@@ -126,18 +175,20 @@ normalize_repo_and_cwd() {
   fi
 
   if [[ -n "${REPO:-}" ]] && is_remote_url "${REPO}"; then
-    : # already remote for 仓库
+    remote="${REPO}"
   else
     if [[ -n "${path_hint}" ]]; then
       remote="$(resolve_repo_remote "${path_hint}" || true)"
     fi
-    if [[ -z "${remote}" ]]; then
-      echo "error: cannot resolve git remote for 仓库 field" >&2
-      echo "  pass a local path with origin configured, or --repo with https/git@ URL" >&2
-      exit 5
-    fi
-    REPO="${remote}"
   fi
+  if [[ -z "${remote}" ]]; then
+    echo "error: cannot resolve git remote for 仓库 field" >&2
+    echo "  pass a local path with origin configured, or --repo with https/git@ URL" >&2
+    exit 5
+  fi
+  # Always store clickable https web URL in 仓库 (not git@ / local path / .git)
+  web="$(repo_to_web_url "${remote}" || true)"
+  REPO="${web:-${remote}}"
 
   if [[ -n "${CWD:-}" ]]; then
     CWD="$(realpath -m "${CWD}" 2>/dev/null || echo "${CWD}")"
@@ -183,7 +234,10 @@ PY
 }
 
 now_local() {
-  # Feishu Base datetime happy-path string
+  # Second precision for Base **text** time fields (YYYY-MM-DD HH:MM:SS).
+  # 开始时间/确认时间/结束时间 must be type=text in Feishu Base:
+  # datetime display formats max at minute (no :ss) and default yyyy/MM/dd
+  # only shows the day.
   date '+%Y-%m-%d %H:%M:%S'
 }
 
@@ -200,14 +254,49 @@ index_get() {
   jq -r --arg id "${task_id}" '.[$id].record_id // empty' "${INDEX_FILE}"
 }
 
+index_del() {
+  local task_id="$1"
+  local tmp
+  tmp="$(mktemp)"
+  jq --arg id "${task_id}" 'del(.[$id])' "${INDEX_FILE}" >"${tmp}"
+  mv "${tmp}" "${INDEX_FILE}"
+  chmod 600 "${INDEX_FILE}"
+}
+
+# Drop every index entry pointing at record_id (best-effort local cleanup).
+index_del_by_record() {
+  local record_id="$1"
+  local tmp
+  tmp="$(mktemp)"
+  jq --arg rid "${record_id}" '
+    with_entries(select(.value.record_id != $rid))
+  ' "${INDEX_FILE}" >"${tmp}"
+  mv "${tmp}" "${INDEX_FILE}"
+  chmod 600 "${INDEX_FILE}"
+}
+
+# index_set TASK_ID RECORD_ID [confirm_required 0|1] [confirmed 0|1]
 index_set() {
   local task_id="$1" record_id="$2"
+  local confirm_required="${3:-}"
+  local confirmed="${4:-}"
   local tmp
   tmp="$(mktemp)"
   jq --arg id "${task_id}" --arg rid "${record_id}" --arg at "$(date -Iseconds)" \
-    '.[$id] = {record_id: $rid, updated_at: $at}' "${INDEX_FILE}" >"${tmp}"
+    --arg cr "${confirm_required}" --arg cf "${confirmed}" '
+    .[$id] = ((.[$id] // {}) + {record_id: $rid, updated_at: $at}
+      + (if $cr == "" then {} else {confirm_required: ($cr == "1")} end)
+      + (if $cf == "" then {} else {confirmed: ($cf == "1")} end))
+  ' "${INDEX_FILE}" >"${tmp}"
   mv "${tmp}" "${INDEX_FILE}"
   chmod 600 "${INDEX_FILE}"
+}
+
+index_needs_confirm() {
+  local task_id="$1"
+  jq -e --arg id "${task_id}" '
+    (.[$id].confirm_required == true) and (.[$id].confirmed != true)
+  ' "${INDEX_FILE}" >/dev/null 2>&1
 }
 
 # Resolve record_id: local index first, then list+filter by task_id field (best-effort)
@@ -303,6 +392,8 @@ Usage:
                             [--mr URL] [--cwd PATH]
   dev-task-ledger.sh show   --task-id UUID
   dev-task-ledger.sh list   [--limit N]
+  dev-task-ledger.sh delete --task-id UUID | --record-id REC
+                            # remove Base row + local index (tests / mistakes)
   dev-task-ledger.sh config  # print whether base/table env is set (no secrets)
 
 Env:
@@ -312,19 +403,20 @@ Env:
   OPENCLAW_TASKS_ENV_FILE     default ~/.config/shell-env.d/openclaw-tasks.env
 
 Notes:
-  --repo           local path (resolved to git remote for 仓库) or remote URL
+  --repo           local path (→ origin, then https web URL for 仓库) or any git remote form
   --cwd            local absolute/relative path only → Base field cwd
-  仓库 (Base)      always a remote URL (origin preferred)
+  仓库 (Base)      always https://… web URL (clickable); never git@ / local path / bare .git
   cwd (Base)       local working path (machine-local; allowlisted)
   --requester-id   Feishu open_id (ou_…), writes person field 需求提出人
   --requester      display name only (stored in record_note when no id; prefer --requester-id)
+  delete           after every smoke/test open, delete the row (do not leave test data in Base)
 EOF
 }
 
 parse_kv() {
   TITLE=""; REPO=""; CWD=""; BRANCH=""; SCOPE=""; ACCEPT=""; RISK=""
   SOURCE="feishu"; SOURCE_REF=""; CONFIRM_REQ="1"; TAGS=""; MODEL=""
-  TASK_ID=""; STATUS=""; SUMMARY=""; COMMITS=""; MR=""
+  TASK_ID=""; RECORD_ID=""; STATUS=""; SUMMARY=""; COMMITS=""; MR=""
   REQUESTER_ID=""; REQUESTER_NAME=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -341,6 +433,7 @@ parse_kv() {
       --tags) TAGS="$2"; shift 2 ;;
       --model) MODEL="$2"; shift 2 ;;
       --task-id) TASK_ID="$2"; shift 2 ;;
+      --record-id) RECORD_ID="$2"; shift 2 ;;
       --status) STATUS="$2"; shift 2 ;;
       --summary) SUMMARY="$2"; shift 2 ;;
       --commits) COMMITS="$2"; shift 2 ;;
@@ -422,6 +515,21 @@ cmd_open() {
   STATUS="${STATUS:-open}"
   OPENED_AT="$(now_local)"
   RISK="${RISK:-medium}"
+  # Closed loop for 需确认 / 确认时间:
+  # - confirm-required 1: 需确认=true, 确认时间 empty until confirm
+  # - confirm-required 0: 需确认=false, 确认时间=开始时间 (no separate gate)
+  local conf_req_flag conf_done_flag
+  if [[ "${CONFIRM_REQ}" == "1" || "${CONFIRM_REQ}" == "true" || "${CONFIRM_REQ}" == "yes" ]]; then
+    CONFIRM_REQ="1"
+    conf_req_flag="1"
+    conf_done_flag="0"
+    CONFIRMED_AT=""
+  else
+    CONFIRM_REQ="0"
+    conf_req_flag="0"
+    conf_done_flag="1"
+    CONFIRMED_AT="${OPENED_AT}"
+  fi
   local fields
   fields="$(build_partial_json)"
   local resp rid
@@ -443,8 +551,15 @@ print(d.get("data",{}).get("record_id") or "")
     printf '%s\n' "${resp}" | head -c 1500 >&2
     exit 4
   fi
-  index_set "${TASK_ID}" "${rid}"
-  echo "{\"ok\":true,\"task_id\":\"${TASK_ID}\",\"record_id\":\"${rid}\"}"
+  index_set "${TASK_ID}" "${rid}" "${conf_req_flag}" "${conf_done_flag}"
+  jq -n \
+    --arg tid "${TASK_ID}" \
+    --arg rid "${rid}" \
+    --arg opened "${OPENED_AT}" \
+    --arg conf "${CONFIRMED_AT:-}" \
+    --argjson need "$([[ "${conf_req_flag}" == "1" ]] && echo true || echo false)" \
+    '{ok:true, task_id:$tid, record_id:$rid, opened_at:$opened, confirm_required:$need}
+     + (if $conf != "" then {confirmed_at:$conf} else {} end)'
 }
 
 cmd_update() {
@@ -475,21 +590,26 @@ cmd_update() {
 
 cmd_confirm() {
   parse_kv "$@"
-  CONFIRMED_AT="$(now_local)"
-  STATUS="${STATUS:-in_progress}"
-  CONFIRM_REQ="0"
-  cmd_update --task-id "${TASK_ID}" --status "${STATUS}" --confirm-required 0 \
-    ${TITLE:+--title "$TITLE"} ${REPO:+--repo "$REPO"}
-  # write confirmed_at via second partial
   require_config
   ensure_state
+  if [[ -z "${TASK_ID}" ]]; then
+    echo "error: --task-id required" >&2
+    exit 2
+  fi
   local rid
   rid="$(resolve_record_id "${TASK_ID}")"
+  if [[ -z "${rid}" ]]; then
+    echo "error: no record for task_id=${TASK_ID}" >&2
+    exit 3
+  fi
+  # 确认时间 = 用户确认方案/初评/开发方式的时刻（秒）
+  CONFIRMED_AT="$(now_local)"
   local fields
   fields="$(jq -n --arg t "${CONFIRMED_AT}" --arg s "in_progress" \
     '{"确认时间":$t,"状态":$s,"需确认":false}')"
   upsert_fields "${fields}" "${rid}" >/dev/null
-  echo "{\"ok\":true,\"task_id\":\"${TASK_ID}\",\"status\":\"in_progress\",\"confirmed_at\":\"${CONFIRMED_AT}\"}"
+  index_set "${TASK_ID}" "${rid}" "1" "1"
+  echo "{\"ok\":true,\"task_id\":\"${TASK_ID}\",\"status\":\"in_progress\",\"confirmed_at\":\"${CONFIRMED_AT}\",\"record_id\":\"${rid}\"}"
 }
 
 cmd_close() {
@@ -507,13 +627,20 @@ cmd_close() {
     done|failed|cancelled|blocked) ;;
     *) echo "error: close status must be done|failed|cancelled|blocked" >&2; exit 2 ;;
   esac
-  CLOSED_AT="$(now_local)"
   local rid fields
   rid="$(resolve_record_id "${TASK_ID}")"
   if [[ -z "${rid}" ]]; then
     echo "error: no record for task_id=${TASK_ID}" >&2
     exit 3
   fi
+  # done requires confirm when open used --confirm-required 1
+  if [[ "${STATUS}" == "done" ]] && index_needs_confirm "${TASK_ID}"; then
+    echo "error: task still 需确认 — run confirm after user approves plan/初评/开发方式" >&2
+    echo "  ./openclaw/scripts/dev-task-ledger.sh confirm --task-id ${TASK_ID}" >&2
+    exit 6
+  fi
+  # 结束时间 = 台账结案时刻（close 调用秒级），不是 PR merge 自动时间
+  CLOSED_AT="$(now_local)"
   fields="$(jq -n \
     --arg s "${STATUS}" \
     --arg end "${CLOSED_AT}" \
@@ -524,7 +651,8 @@ cmd_close() {
     --arg cwd "${CWD}" \
     '{
       "状态": $s,
-      "结束时间": $end
+      "结束时间": $end,
+      "需确认": false
     }
     + (if $sum != "" then {"结果摘要": $sum} else {} end)
     + (if $c != "" then {"commits": $c} else {} end)
@@ -533,6 +661,7 @@ cmd_close() {
     + (if $cwd != "" then {"cwd": $cwd} else {} end)
   ')"
   upsert_fields "${fields}" "${rid}" >/dev/null
+  index_set "${TASK_ID}" "${rid}" "" "1"
   echo "{\"ok\":true,\"task_id\":\"${TASK_ID}\",\"status\":\"${STATUS}\",\"closed_at\":\"${CLOSED_AT}\",\"record_id\":\"${rid}\"}"
 }
 
@@ -566,6 +695,38 @@ cmd_list() {
     --format json
 }
 
+# Hard-delete Base row (for smoke/test cleanup or mistaken open). Not soft-close.
+cmd_delete() {
+  parse_kv "$@"
+  require_config
+  ensure_state
+  local rid tid="${TASK_ID:-}"
+  if [[ -n "${RECORD_ID:-}" ]]; then
+    rid="${RECORD_ID}"
+  elif [[ -n "${tid}" ]]; then
+    rid="$(resolve_record_id "${tid}")"
+  else
+    echo "error: --task-id or --record-id required" >&2
+    exit 2
+  fi
+  if [[ -z "${rid}" ]]; then
+    echo "error: no record to delete" >&2
+    exit 3
+  fi
+  lark-cli base +record-delete \
+    --as "${AS_IDENTITY}" \
+    --base-token "${BASE_TOKEN}" \
+    --table-id "${TABLE_ID}" \
+    --record-id "${rid}" \
+    --yes \
+    --format json >/dev/null
+  if [[ -n "${tid}" ]]; then
+    index_del "${tid}"
+  fi
+  index_del_by_record "${rid}"
+  echo "{\"ok\":true,\"deleted\":true,\"task_id\":\"${tid}\",\"record_id\":\"${rid}\"}"
+}
+
 cmd_config() {
   load_env
   python3 - <<PY
@@ -590,6 +751,7 @@ case "${cmd}" in
   close) cmd_close "$@" ;;
   show) cmd_show "$@" ;;
   list) cmd_list "$@" ;;
+  delete|purge) cmd_delete "$@" ;;
   config) cmd_config "$@" ;;
   ""|-h|--help) usage ;;
   *) echo "unknown command: ${cmd}" >&2; usage; exit 2 ;;
