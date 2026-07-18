@@ -1,112 +1,103 @@
 ---
 name: dev-task
 description: >
-  Allowlisted development (coco-forge + wezdeck/wezterm-config) under OpenClaw
-  with claw lifecycle worktrees, assess before create, declare mode A/B/C/E
-  after requirement confirm, never human worktrees.
+  Allowlisted development (coco-forge + wezdeck) under OpenClaw: claw worktrees
+  under dirname(primary)/.worktrees/<repo>/, assess before create, modes A/B/C/E,
+  handoff, reclaim. Load for any write-task implementation.
 ---
 
 # Dev task (allowlisted repos + claw lifecycle worktrees)
 
-## When to use
+## When
 
-Write work only under the **development allowlist**:
+Write work only under allowlist (see `AGENTS.md`). Pure Q&A: skip. Other repos: refuse.
 
-| Logical | Default roots |
+| Logical | Roots |
 | --- | --- |
-| **coco-forge** | `$HOME/work/coco-forge`, worktrees under `.worktrees/coco-forge` |
-| **wezdeck** | `$HOME/github/wezterm-config` (or `$HOME/work/wezterm-config`), worktrees under `.worktrees/wezterm-config` |
+| coco-forge | `$HOME/work/coco-forge`, `$HOME/work/.worktrees/coco-forge` |
+| wezdeck | `$HOME/github/wezterm-config`, `$HOME/github/.worktrees/wezterm-config` |
 
-Skip this skill for pure Q&A. Other repos: refuse.
+Path formula (WezDeck): `dirname(realpath(primary))/.worktrees/<basename(primary)>/<slug>/`.
 
-## Main checklist (when main accepts a write task)
+## Checklist
 
-```text
-[ ] ledger open → task_id
-[ ] assess → 飞书【初评】→ user confirms goal/tree
-[ ] 【开发方式】A|B|C|E + 理由 + 执行者 → user confirms (before code / ACP spawn)
-[ ] ledger confirm  # 确认时间; 需确认=false (if open used confirm-required 1)
-[ ] create/reuse claw-* → ledger update cwd/分支
-[ ] execute per mode (B write | C handoff stop | E acp spawn | A assist only)
-[ ] accept if B; if C/A/E wait then close (no dual-write)
-[ ] ledger close + 结果 (task_id + actual mode; 结束时间=结案秒级)
-[ ] ask reclaim (never auto)
+Same 9 steps as `AGENTS.md` Write-task checklist. Scripts:
+
+- `openclaw/scripts/dev-task-ledger.sh` — see `skills/task-ledger`
+- `openclaw/scripts/claw-worktree.sh` — assess/create/list/reclaim (create 委托 worktree-task)
+- `openclaw/scripts/claw-run.sh` — host shell gate
+
+## Assess → 初评
+
+```bash
+./openclaw/scripts/claw-worktree.sh assess \
+  --title "<subject>" --domain "<area>" --scope "<hint>" [--days N] \
+  --cwd "$HOME/github/wezterm-config"   # or coco-forge primary
 ```
 
-**Modes:** A human · B main · C handoff · E ACP (`claude`|`codex`) · **D forbidden**.  
-Full table: `openclaw/README.md` → Development modes.
+Present: lifecycle, slug, branch, `action` reuse|create, `worktree_root`, `path_if_create`,
+`same_domain_candidates`. **Wait for user** before create when non-trivial.
 
-Ad-hoc shell: `claw-run` (exec-risk).  
-Repo scripts `claw-worktree.sh` / `dev-task-ledger.sh`: call directly.
+| Signal | Prefer |
+| --- | --- |
+| 紧急/线上/P0 | hotfix |
+| 大范围/多周 | dev |
+| 单功能/明确验收 | task |
 
-## Steps
+### 初评模板
 
-1. Ledger `open` (`skills/task-ledger`).
-2. **Assess** (mandatory before create):
+```text
+## Worktree 初评
+- lifecycle / slug / branch / domain
+- action: 复用 … | 新建 …
+- worktree_root: …
+请确认后我再 create。
+```
 
-   ```bash
-   ./openclaw/scripts/claw-worktree.sh assess \
-     --title "…" --domain "i18n" --scope "apps/…" --days 3
-   ```
+## Create / reuse / reclaim
 
-   Present 初评 from JSON: `action` (`reuse`|`create`), `reuse`,
-   `same_domain_candidates`, `create_slug_if_new`.
+```bash
+./openclaw/scripts/claw-worktree.sh create \
+  --title "…" --lifecycle task|dev|hotfix --domain "…" \
+  --cwd "$HOME/github/wezterm-config"   # primary; tree lands under parent .worktrees
+```
 
-3. **【开发方式】** after user confirms requirements / 初评 — **before** implement
-   or ACP spawn. Template (Feishu):
+- Default **prefer-reuse** same domain; `--force-new` for parallel tree (`-2` suffix).
+- Never human `dev-*`/`task-*`/`hotfix-*` as write targets.
+- **Reclaim never automatic** — ask after `ledger close`; `claw-dev-*` default keep (`--allow-long-lived` if reclaiming).
 
-   ```text
-   ## 开发方式
-   - 选用: A | B | C | E
-   - 执行者: Main | 本机 CLI (handoff) | ACP claude | ACP codex | 用户自干
-   - 理由: …
-   - cwd / task_id: …
-   - 你将看到: …
-   请确认或改用 A/B/C/E。确认前不开始改代码。
-   ```
+| Lifecycle | Claw slug / branch |
+| --- | --- |
+| task | `claw-task-*` / `claw/task/…` |
+| dev | `claw-dev-*` / `claw/dev/…` |
+| hotfix | `claw-hotfix-*` / `claw/hotfix/…` |
 
-   Heuristics (user overrides):
-   - **B** — small, clear scope, Feishu-followable.
-   - **E** — multi-file / wants Claude·Codex profile + Feishu-driven worker
-     (`/acp spawn claude|codex --cwd <wt>`; default claude).
-   - **C** — user wants local TUI or says they will code locally; then **stop** coding.
-   - **A** — user already coding; assist ledger/验收 only.
-   - **D** — never.
+## Modes
 
-4. **Obtain cwd** after tree + mode confirm:
+| | Who | Main does |
+| --- | --- | --- |
+| A | User local | Ledger/验收 only |
+| B | Main | Implement + verify |
+| C | Local after handoff | Post handoff, **stop coding** that cwd |
+| E | ACP claude/codex | `sessions_spawn` / `/acp spawn`; single writer |
+| D | — | Forbidden |
 
-   ```bash
-   # coco-forge product:
-   WT=$(./openclaw/scripts/claw-worktree.sh create \
-     --title "…" --lifecycle task --domain i18n \
-     --cwd "$HOME/work/coco-forge")
-   # wezdeck / wezterm-config:
-   # --cwd "$HOME/github/wezterm-config"
-   ```
-
-5. Ledger `update` cwd + branch.
-6. Execute per confirmed mode (single writer).
-7. Accept if B (tests / chrome). If C/A/E: wait for completion before `close`.
-8. Ledger `close` + 结果 including **actual** 开发方式.
-9. **Ask reclaim** (never auto).
-
-## Handoff brief (mode C — copy)
+### Handoff (C)
 
 ```text
 ## Handoff
-- task_id: …
-- cwd: …
-- branch: …
-- goal / non-goals / acceptance: …
+- task_id / cwd / branch / goal / non-goals / acceptance
 - 开发方式: C
-- constraints: no force-push; no push main/master without user yes
+- constraints: no force-push; no push main without yes
 - after: 本机做完 → 飞书摘要 → main close + reclaim ask
 - 本机: cd <cwd> && claude --continue
 ```
 
-## Domain + multi-task
+## 开发方式 + 实现方案
 
-- Always pass `--domain` when area is known.
-- Prefer **one `claw-dev-<domain>-…` hub** for ongoing domain work.
-- Same domain + independent parallel PRs → `--force-new` (gets `-2` suffix).
-- Never reuse human worktrees.
+See `AGENTS.md` templates. Always restate mode before code/ACP even if user named it.
+
+## 落实 / commits
+
+On 落实: review → implement → verify → **1–3 logical commits** (no scatter) → push agreed branch → report.
+Shell via `claw-run` when required by exec-risk.
