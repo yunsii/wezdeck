@@ -661,7 +661,7 @@ Tracked docs only describe the *policy*; concrete roots stay local.
 | Logical repo | Portable default roots (when env unset) |
 | --- | --- |
 | **coco-forge** | `$HOME/work/coco-forge`, `$HOME/work/.worktrees/coco-forge` |
-| **wezdeck** | `$HOME/github/wezterm-config`, `$HOME/work/.worktrees/wezterm-config`, `$HOME/work/wezterm-config` |
+| **wezdeck** | `$HOME/github/wezterm-config`, `$HOME/github/.worktrees/wezterm-config` (WezDeck: `dirname(primary)/.worktrees/<repo>`), optional `$HOME/work/wezterm-config` + `$HOME/work/.worktrees/wezterm-config` |
 
 | Source | Value |
 | --- | --- |

@@ -12,7 +12,7 @@ ENV_FILE="${OPENCLAW_TASKS_ENV_FILE:-${HOME}/.config/shell-env.d/openclaw-tasks.
 
 # Development allowlist: coco-forge + wezdeck (wezterm-config).
 # Override with OPENCLAW_TASKS_ALLOWED_ROOTS (colon-separated absolute paths).
-DEFAULT_ALLOWED_ROOTS="${HOME}/work/coco-forge:${HOME}/work/.worktrees/coco-forge:${HOME}/github/wezterm-config:${HOME}/work/.worktrees/wezterm-config:${HOME}/work/wezterm-config"
+DEFAULT_ALLOWED_ROOTS="${HOME}/work/coco-forge:${HOME}/work/.worktrees/coco-forge:${HOME}/github/wezterm-config:${HOME}/github/.worktrees/wezterm-config:${HOME}/work/.worktrees/wezterm-config:${HOME}/work/wezterm-config"
 
 load_env() {
   if [[ -f "${ENV_FILE}" ]]; then

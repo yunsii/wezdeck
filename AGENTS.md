@@ -80,6 +80,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/tab-visibility.md`](docs/tab-visibility.md).
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
+- Cross-agent adversarial code review (three-gate critic → cross-model
+  refute → empirical repro), the `scripts/dev/adversarial-review/`
+  runner, its agent-agnostic `provider.sh` adapter, or adding a
+  reviewer provider:
+  Read [`docs/adversarial-review.md`](docs/adversarial-review.md).
 - Env loading, secret placement, the `~/.config/shell-env.d/`
   convention, `runtime-env-lib.sh::runtime_env_load_managed`, or
   deciding whether a value belongs in `wezterm-x/local/shared.env`

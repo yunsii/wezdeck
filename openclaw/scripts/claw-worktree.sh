@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Claw-owned git worktrees — WezDeck lifecycle (dev/task/hotfix) under claw- prefixes.
-# - Same parent: $HOME/work/.worktrees/<repo>/
+# - Same parent as WezDeck worktree-task: dirname(primary)/.worktrees/<repo>/
+# - Create/reclaim delegate to worktree-task (single path truth); claw only owns claw-* policy
 # - Prefer reusing an existing claw worktree in the same domain (+ compatible lifecycle)
 # - Same domain can have multiple trees; new slugs get -2, -3… uniqueness
 set -euo pipefail
@@ -94,11 +95,32 @@ normalize_lifecycle() {
   esac
 }
 
+# Align with worktree-task: WT_POLICY_WORKTREE_DIR=.worktrees/{repo}
+# resolved under dirname(primary) via wt_config_resolve_under_repo_parent.
 worktree_root_for_repo() {
   local cwd="$1"
-  local repo_name
-  repo_name="$(basename "$(realpath "${cwd}")")"
-  printf '%s' "${HOME}/work/.worktrees/${repo_name}"
+  local primary repo_parent repo_name
+  primary="$(realpath "${cwd}")"
+  # If cwd is already a linked worktree, resolve to the main worktree root.
+  if git -C "${primary}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local git_common main_candidate
+    git_common="$(git -C "${primary}" rev-parse --git-common-dir 2>/dev/null || true)"
+    if [[ -n "${git_common}" ]]; then
+      git_common="$(cd "${primary}" && realpath "${git_common}" 2>/dev/null || true)"
+      # common dir is <main>/.git or <main>/.git/worktrees/... → main is dirname of .git
+      if [[ "${git_common}" == */.git ]]; then
+        main_candidate="$(dirname "${git_common}")"
+      elif [[ "${git_common}" == */.git/worktrees/* ]]; then
+        main_candidate="$(dirname "$(dirname "$(dirname "${git_common}")")")"
+      fi
+      if [[ -n "${main_candidate:-}" ]] && { [[ -d "${main_candidate}/.git" ]] || [[ -f "${main_candidate}/.git" ]]; }; then
+        primary="$(realpath "${main_candidate}")"
+      fi
+    fi
+  fi
+  repo_parent="$(dirname "${primary}")"
+  repo_name="$(basename "${primary}")"
+  printf '%s' "${repo_parent}/.worktrees/${repo_name}"
 }
 
 # List claw worktrees as lines: lifecycle|domain|slug|path
@@ -136,7 +158,8 @@ list_claw_entries() {
 # Unique slug under worktree root
 unique_slug() {
   local cwd="$1" base_slug="$2"
-  local wt_root="${HOME}/work/.worktrees/$(basename "$(realpath "${cwd}")")"
+  local wt_root
+  wt_root="$(worktree_root_for_repo "${cwd}")"
   local candidate="${base_slug}" n=2
   while [[ -e "${wt_root}/${candidate}" ]]; do
     candidate="${base_slug}-${n}"
@@ -307,6 +330,10 @@ for line in sys.stdin:
 print(json.dumps(out,ensure_ascii=False))
 ' "${domain_slug}" "${lc}")"
 
+  local wt_root path_if_create
+  wt_root="$(worktree_root_for_repo "${cwd}")"
+  path_if_create="${wt_root}/${unique}"
+
   python3 - <<PY
 import json
 reasons = $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "${reasons[@]}")
@@ -319,11 +346,13 @@ out = {
   "branch": "${branch_prefix}${unique#${dir_prefix}}" if "${action}" == "create" else "",
   "create_slug_if_new": "${unique}",
   "create_branch_if_new": "${branch_prefix}${unique#"${dir_prefix}"}",
+  "worktree_root": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "${wt_root}"),
+  "path_if_create": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "${path_if_create}"),
   "reuse": None,
   "same_domain_candidates": json.loads('''${candidates}'''),
   "reasons": reasons,
   "reclaim": "needs --allow-long-lived" if "${lc}" == "dev" else "standard after delivery",
-  "note": "Confirm with user. Prefer reuse when action=reuse unless they request force-new. Human worktrees never used.",
+  "note": "Confirm with user. Prefer reuse when action=reuse unless they request force-new. Human worktrees never used. Paths follow dirname(primary)/.worktrees/<repo> (WezDeck).",
 }
 if "${action}" == "reuse":
     out["reuse"] = {
@@ -441,19 +470,23 @@ cmd_create() {
   [[ -n "${base_ref}" ]] && args+=(--base-ref "${base_ref}")
 
   echo "creating lifecycle=${lifecycle} slug=${dir_slug} branch=${branch}" >&2
-  "${WT_BIN}" "${args[@]}"
-
-  local repo_name wt_path
-  repo_name="$(basename "$(realpath "${cwd}")")"
-  wt_path="$(realpath -m "${HOME}/work/.worktrees/${repo_name}/${dir_slug}")"
-  if [[ -d "${wt_path}" ]]; then
-    printf '%s\n' "${wt_path}"
-  else
-    git -C "${cwd}" worktree list --porcelain 2>/dev/null | awk -v s="/${dir_slug}" '
+  local launch_out wt_path
+  launch_out="$("${WT_BIN}" "${args[@]}" 2>&1)" || {
+    printf '%s\n' "${launch_out}" >&2
+    die "worktree-task launch failed"
+  }
+  printf '%s\n' "${launch_out}" >&2
+  wt_path="$(printf '%s\n' "${launch_out}" | sed -n 's/^worktree_path=//p' | tail -n1)"
+  if [[ -z "${wt_path}" ]]; then
+    wt_path="$(realpath -m "$(worktree_root_for_repo "${cwd}")/${dir_slug}")"
+  fi
+  if [[ ! -d "${wt_path}" ]]; then
+    wt_path="$(git -C "${cwd}" worktree list --porcelain 2>/dev/null | awk -v s="/${dir_slug}" '
       $1=="worktree" {p=$2}
       p!="" && index(p,s) {print p; exit}
-    ' || true
+    ' || true)"
   fi
+  printf '%s\n' "${wt_path}"
 }
 
 cmd_reclaim() {

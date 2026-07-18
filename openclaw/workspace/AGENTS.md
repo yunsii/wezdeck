@@ -59,7 +59,7 @@ Pure Q&A：可跳过 ledger/worktree。用户**只在本机开发、未让 main 
 | Logical | Typical roots (portable defaults) |
 | --- | --- |
 | **coco-forge** | `$HOME/work/coco-forge`, `$HOME/work/.worktrees/coco-forge` |
-| **wezdeck** (git remote of this monorepo) | `$HOME/github/wezterm-config`, `$HOME/work/.worktrees/wezterm-config`, `$HOME/work/wezterm-config` |
+| **wezdeck** (git remote of this monorepo) | `$HOME/github/wezterm-config`, `$HOME/github/.worktrees/wezterm-config` (parent `.worktrees/<repo>`), optional `$HOME/work/wezterm-config` + `$HOME/work/.worktrees/wezterm-config` |
 
 Allowed roots are **not** hard-coded host usernames in this file. Resolve at
 runtime:
