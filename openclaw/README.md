@@ -147,9 +147,8 @@ Optional: same Feishu app used by lark-cli for manual API work.
 ### Development modes (who writes code)
 
 Five ways code gets written on this machine. **A / B are the everyday paths.**
-**C** is an optional bot→local handoff (single writer). **E** (ACP) is optional
-later. **D (CLI backend) is deliberately disabled** for this personal setup
-(coarse permission-mode only — poor interactive control).
+**C** is an optional bot→local handoff (single writer). **E (ACP)** is enabled
+on this host for `claude` + `codex` (see below). **D (CLI backend) is disabled**.
 
 ```text
 需求
@@ -159,17 +158,17 @@ later. **D (CLI backend) is deliberately disabled** for this personal setup
   └─ 飞书 YunsClaw (main)
         ├─ B Main 直写 ───────────► Gateway 内工具 + grok-proxy（小改）
         ├─ C 运营 Handoff ────────► 本机做完编码 → 再回飞书让 main 收尾
-        ├─ D CLI backend ─────────► **禁用**（预置 permission 粗粒度，不采用）
-        └─ E ACP harness ─────────► 未配置（可选；stdio JSON-RPC）
+        ├─ D CLI backend ─────────► **禁用**
+        └─ E ACP harness ─────────► acpx → claude / codex（stdio JSON-RPC）
 ```
 
 | | Mode | Who codes | How it connects | When | Status |
 | --- | --- | --- | --- | --- | --- |
-| **A** | **Human direct** | You (IDE / shell / host `claude`·`codex`) | No OpenClaw IPC | Day-to-day coding; full **TUI history** if using CLI | **Active** (operator habit) |
+| **A** | **Human direct** | You (IDE / shell / host `claude`·`codex`) | No OpenClaw IPC | Day-to-day coding; full **TUI history** if using CLI | **Active** |
 | **B** | **Main direct** | YunsClaw embedded agent | Feishu → Gateway in-process tools | Small, clear Feishu-driven edits + ledger/worktree | **Active** |
-| **C** | **Operational handoff** | Host CLI (or you) after main prepares cwd | Main posts `## Handoff` in Feishu; **not** ACP | Main will not implement the bulk; optional assist for local finish | **Optional protocol** — not required for A |
-| **D** | **CLI backend** | Bundled `claude-cli` etc. | Model ref `claude-cli/…`, stream-json; permissions = launch-time mode only | Upstream: API fallback | **Disabled by policy** (do not enable) |
-| **E** | **ACP harness** | `claude` / `codex` / … via `@openclaw/acpx` | ACP **stdio + JSON-RPC** (below) | Bound Feishu↔harness multi-file sessions | Present, **not configured** |
+| **C** | **Operational handoff** | Host CLI (or you) after main prepares cwd | Main posts `## Handoff` in Feishu; **not** ACP | Main will not implement the bulk; local finish → main wrap-up | **Optional protocol** |
+| **D** | **CLI backend** | Bundled `claude-cli` etc. | stream-json spawn as model | — | **Disabled by policy** |
+| **E** | **ACP harness** | `claude` / `codex` via `@openclaw/acpx` | ACP **stdio + JSON-RPC** | Multi-file Feishu-driven coding workers | **Enabled** (`allowedAgents: claude, codex`) |
 
 **Single writer rule:** for a given worktree, only **one** of main / local CLI /
 you should be the primary editor at a time. Do **not** run B and C (or A and B)
@@ -273,6 +272,15 @@ Feishu / chat
 
 OpenClaw = control plane; harness = tools/auth/FS. Plugin tools are **not**
 injected into the harness by default.
+
+**vs Happy (the mobile channel).** `claw` bets on **one** protocol — ACP over
+stdio — for *every* agent on the local hop; Claude/Codex/etc. all reach it
+through their ACP adapters. Happy inverts this: it is a **polyglot** locally —
+`stream-json` for Claude, **MCP** for Codex, **ACP** only for Gemini — and is
+uniform only on its remote E2E relay. Where the two touch ACP they share the
+same `@agentclientprotocol/sdk` standard. Per-agent transport detail (verified
+against `slopus/happy-cli`): [`docs/mobile-access.md` → How Happy talks to each
+agent](../docs/mobile-access.md).
 
 **Illustrative lifecycle:**
 
