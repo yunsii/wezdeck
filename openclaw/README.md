@@ -234,11 +234,41 @@ If a future need appears (pure text fallback when Grok is down), re-evaluate
 explicitly — default remains **off**. Upstream reference only:
 [CLI backends](https://docs.openclaw.ai/gateway/cli-backends).
 
-#### E — ACP: not configured (optional later)
+#### E — ACP (enabled on this host)
 
-Gateway-spawned harness, bindable chat, JSON-RPC control plane. Still not a
-full TUI; needs headless permission profiles. Until enabled, heavy work is
-**A** or **C**. Docs: [ACP agents](https://docs.openclaw.ai/tools/acp-agents).
+Local config (never commit secrets): `@openclaw/acpx` enabled, `plugins.allow`
+includes `acpx`, top-level:
+
+```json5
+acp: {
+  enabled: true,
+  backend: "acpx",
+  defaultAgent: "claude",
+  allowedAgents: ["claude", "codex"],
+  maxConcurrentSessions: 4,
+  runtime: { ttlMinutes: 120 },
+}
+// plugins.entries.acpx.config.permissionMode: "approve-all"  // personal; break-glass
+```
+
+**Usage (Feishu or `openclaw agent --message`):**
+
+```text
+/acp doctor
+/acp spawn claude --cwd /abs/path/to/claw-worktree
+/acp spawn codex  --cwd /abs/path/to/claw-worktree
+/acp status | /acp close
+```
+
+| Target | Smoke (2026-07-18) | Notes |
+| --- | --- | --- |
+| **claude** | **PASS** — `smoke-ok.txt` = `claude-acp-ok` | Host Claude Code login; user `~/.claude` / agent-profiles |
+| **codex** (default GPT) | **PASS** after auth bridge | Isolated `~/.openclaw/acpx/codex-home` needs host auth (401 if missing). Bundled `codex-acp` OK without global `codex` on PATH |
+| **codex + Grok** | **Config landed; ACP write smoke not green** | Model id **`grok-4.5`** from Grok CLI / OpenClaw proxy. Use `~/.codex/grok.config.toml` + `codex --profile grok` (and/or `[profiles.grok]`). ACP still `spawn codex` (no `spawn grok`). First ACP turns failed (`ACP_TURN_FAILED` / sandbox-read-only or profile form); treat as **best-effort** until re-verified |
+
+**Ops:** single writer per worktree; main still owns ledger `task_id` open/close.
+`approve-all` is intentional for personal DM-only control plane — tighten if
+shared. Upstream: [ACP agents](https://docs.openclaw.ai/tools/acp-agents).
 
 **Also not a coding backend:** OpenClaw in-process **sub-agents**
 (`sessions_spawn` without `runtime: "acp"`) — same embedded runtime, parallelism
@@ -641,11 +671,10 @@ Ordered by payoff for this personal setup:
 4. **One work group (optional)** — add a single `oc_…` to `groupAllowFrom`,
    keep `@mention`.
 5. **Multi-repo spawn** — only after exec denials feel understood.
-6. **ACP → Claude Code / Codex** — optional (mode **E**); see
-   [Development modes](#development-modes-who-writes-code). Until then heavy
-   work is **A** (human) or **C** (handoff → local finish → main wrap-up).
-7. **CLI backend** — **out of scope / disabled** (see mode **D**). Prefer A/B/C;
-   do not add `claude-cli` fallbacks without an explicit decision.
+6. **ACP ops** — mode **E** enabled (`claude`/`codex`); prefer claw worktree
+   cwd; keep `approve-all` personal-only; Codex may need CODEX_HOME auth bridge
+   on first use. Grok-via-Codex = set Codex model id on proxy, not `spawn grok`.
+7. **CLI backend** — **disabled** (mode **D**).
 8. **WezDeck attach** — open worktree pane only when reviewing, not for every
    remote task.
 
