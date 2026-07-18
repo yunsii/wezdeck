@@ -212,3 +212,13 @@ Mention:
 ## Rule promotion prompts
 
 - [reporting-36] When a constraint recurs across tasks, a process incident occurs, or the user states a lasting rule, ask whether to elevate it to profile / skill / script, with placement and tradeoffs; never silently rewrite the profile.
+
+## Impact scope (blast radius)
+
+- [reporting-40] For non-trivial decisions, plans, or delivery reports, state the impact scope: code (modules/API/data), people (who must coordinate or will be affected), and team/process (release, oncall, collaboration) when any apply.
+- [reporting-41] Do not default to "only the files in front of you" when the change can affect others or shared process.
+- [reporting-42] When impact is confined to the current task with no extra people/process cost, say so briefly (e.g. "no extra people/process impact") rather than omitting the field silently on important work.
+
+## Constitution / profile alignment
+
+- [reporting-43] When a delivery changes openclaw L0 cross-task principles, note in the user report whether agent-profiles was updated in the same delivery (or why not).
