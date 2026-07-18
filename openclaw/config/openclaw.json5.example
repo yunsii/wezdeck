@@ -44,6 +44,9 @@
       // model: { primary: "xai/grok-4.3" },
       // or custom proxy provider (see models.providers below):
       // model: { primary: "grok-proxy/grok-4.5" },
+      // models: allowlist only intended providers — do NOT add claude-cli/*
+      //   or model.fallbacks: ["claude-cli/…"] (CLI backend disabled by policy).
+      // cliBackends: { }  // leave unset / empty — see README Development modes D
     },
   },
 
