@@ -19,6 +19,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | --- | --- |
 | Terms / doc layering | `terminology.md` |
 | **Digital employees (Dex/Bob/Scout)** | `digital-employees.md` |
+| **Digital employee memory (public vs private)** | `digital-employee-memory.md` |
 | **Feishu multi-bot wiring** | `feishu-digital-employees.md` |
 | Architecture / rails | `agent-architecture.md` |
 | Interaction modes | `agent-interaction.md` |

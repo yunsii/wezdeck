@@ -1,66 +1,61 @@
 # 数字员工三角（Dex / Bob / Scout）
 
-个人控制面的 **三个 OpenClaw agent**，不是智能体群互聊。
+个人控制面的 **三个 OpenClaw agent**。不是智能体群互聊。
 
-| 短名 | agentId | 职责 | Workspace（本机） |
+| 短名 | agentId | 公开岗位（可开源表述） | Workspace（本机） |
 | --- | --- | --- | --- |
 | **Dex** | `main` | 开发编排 · C1/C2/C3 | `~/.openclaw/workspace` |
-| **Bob** | `pm` | 项目管理 · 进度推送 | `~/.openclaw/workspace-pm` |
-| **Scout** | `radar` | 情报 · RSS/找资源/摘要 | `~/.openclaw/workspace-radar` |
+| **Bob** | `pm` | 项目管理数字员工（可适配） | `~/.openclaw/workspace-pm` |
+| **Scout** | `radar` | 情报 / 雷达数字员工（可适配） | `~/.openclaw/workspace-radar` |
+
+## 铁律：能力公开，细节私有
+
+- **公开人设**（git 模板）：只写岗位能力、边界、风格。  
+- **具体工作经验 / 客户与项目细节**：只进 **私有记忆** 或 **业务仓适配脚本**。  
+- 详见 [`digital-employee-memory.md`](./digital-employee-memory.md)。
 
 ## 命名
 
 | 层 | 写法 |
 | --- | --- |
 | 飞书/对人短名 | Dex · Bob · Scout |
-| 描述 | Yuns 的开发/项目/情报助手 |
-| 配置 id | `main` · `pm` · `radar`（稳定，不随昵称改） |
+| 配置 id | `main` · `pm` · `radar`（稳定） |
 
-历史品牌 **YunsClaw** 可仍作 Feishu 应用名；对内开发员工称 **Dex**。
+历史品牌 **YunsClaw** 可作 Feishu 应用名；开发员工对内称 **Dex**。
 
 ## 边界
 
 ```text
-Dex  — 写码与确认；不收项目/情报定时刷屏
-Bob  — 项目与工作推送；不写业务代码
-Scout— 发现与摘要；不写代码、不排期
+Dex  — 写码与确认；不收项目定时刷屏；不主动提 Scout
+Bob  — 进度/优先级/跟催；不写业务代码；不主动提 Scout
+Scout— 发现与摘要（主人自用）；不写代码、不排期
 ```
 
-协作：Scout 线索 → 人确认 → Bob 建项/催办 → Dex 落地。  
-默认 **不做三角群聊**；需要时人转发或一条短结论。
+默认 **不做三角群聊**。协作由人转发或短结论。
 
-## 飞书接入步骤
+## 飞书接入
 
-**完整操作手册（防反复试错）：** [`feishu-digital-employees.md`](./feishu-digital-employees.md)
+操作手册：[`feishu-digital-employees.md`](./feishu-digital-employees.md)  
+（只写接入与 open_id 技术点，不写业务细节。）
 
-## 路由现状与下一步
+## 身份与模板路径
 
-- Gateway 已注册三 agent（`openclaw agents list`）。
-- 当前飞书 **仍可能默认进 main**（无 per-peer 绑定或第二应用时）。
-- **落地推送隔离** 任选：
-  1. **推荐先做：** cron `agentId=pm|radar` + `delivery` 指向 **独立会话/群**（不指 Dex 主会话）
-  2. 或为 Bob/Scout 建 **独立 Feishu 应用/账号** 再 `agents bind`
-  3. 或 peer 级 bindings（按官方 multi-agent 文档）
+| 员工 | 公开模板（repo） | 本机 runtime |
+| --- | --- | --- |
+| Dex | `openclaw/workspace/` | `~/.openclaw/workspace` |
+| Bob | `openclaw/workspace-pm/` | `~/.openclaw/workspace-pm` |
+| Scout | `openclaw/workspace-radar/` | `~/.openclaw/workspace-radar` |
 
-## 身份文件
-
-各 workspace 的 `IDENTITY.md` + 精简 `AGENTS.md`：
-
-- Dex: `~/.openclaw/workspace/IDENTITY.md`（开发宪法仍以现有 `AGENTS.md` L0 为准）
-- Bob: `~/.openclaw/workspace-pm/`
-- Scout: `~/.openclaw/workspace-radar/`
-
-Repo 知识库副本：本文 + `terminology.md` 读序可链到本文。
+私有记忆：各 runtime 下 `memory/`（见 memory 文档）。
 
 ## 迁移清单
 
-1. [x] `openclaw agents add pm|radar`
-2. [x] IDENTITY / AGENTS 草稿
-3. [x] `set-identity` 写入 runtime
-4. [ ] 业务仓定时推送 → `pm` + 非 main 投递
-5. [ ] Scout RSS 日摘要 cron（可后做）
-6. [x] 飞书多账号 + bindings（Bob/Scout）
-7. [ ] 项目定时推送 → Bob；订阅摘要 → Scout
+1. [x] `openclaw agents add pm|radar` + identity  
+2. [x] 公开 AGENTS/IDENTITY 模板（无业务细节）  
+3. [x] 飞书多账号 + bindings  
+4. [x] 记忆分层说明 `digital-employee-memory.md`  
+5. [ ] 业务仓宿主适配（cron/推送）与公开人设分离验收  
+6. [ ] Scout 订阅源仅私有配置  
 
 ## CLI 速查
 
