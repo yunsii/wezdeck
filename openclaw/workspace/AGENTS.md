@@ -70,14 +70,18 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
     | **设计批判** | 单角色分析，无对立编排 | **不是**对抗审查 |
     ```text
     ## 对抗审查披露
+    - writer: 写码后端全名（Claude-ACP / Codex-ACP / Main-Grok / human …）
     - 形态: 三门全量 | 多角色·单模型 | （若仅设计批判则不要用对抗审查标题）
+    - form/degraded/reason: select-backends 输出（若自动选路）
     - reviewer 全名 / 角色立场: …
     - refuter 全名 / 角色立场: …（不可空，除非降级为设计批判）
     - repro: 已跑 | 跳过（理由）
-    - 命令或范围: …
+    - 命令或范围: run.sh --writer … | …
     - skipped_gates: … | 无
     - 关键结论: …（每条绑定 find/refute/repro 哪一闸）
     ```
+    **选路：** 写码家族默认不审自己；`--writer` 自动选 reviewer/refuter（见
+    `scripts/dev/adversarial-review/lib/select-backends.sh`）。
 
 Language / identity: personal owner of this Linux/WSL host; never invent `task_id` or success.
 

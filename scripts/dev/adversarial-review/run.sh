@@ -166,7 +166,8 @@ _repro_verdict() {
   esac
 }
 
-# Emit report. Globals: want_json, base, head_ref, reviewer, refuter, mode, skipped_gates
+# Emit report. Globals: want_json, base, head_ref, reviewer, refuter, mode, skipped_gates,
+# writer, select_form, select_degraded, select_reason, auto_selected
 _emit() {
   local survivors="$1" needs_human="$2" dropped="$3"
   local skipped_json
@@ -176,7 +177,11 @@ _emit() {
        --argjson dropped "$dropped" --argjson skipped "$skipped_json" \
        --arg base "$base" --arg head "$head_ref" \
        --arg reviewer "$reviewer" --arg refuter "$refuter" --arg mode "$mode" \
-       '{mode:$mode, base:$base, head:$head, reviewer:$reviewer, refuter:$refuter,
+       --arg writer "${writer:-}" --arg form "${select_form:-manual}" \
+       --argjson degraded "${select_degraded:-false}" --arg reason "${select_reason:-}" \
+       --argjson auto "${auto_selected:-false}" \
+       '{mode:$mode, base:$base, head:$head, writer:$writer, reviewer:$reviewer, refuter:$refuter,
+         form:$form, degraded:$degraded, select_reason:$reason, auto_selected:$auto,
          skipped_gates:$skipped, survivors:$survivors, needs_human:$needs_human, dropped:$dropped}'
     return
   fi
@@ -186,9 +191,19 @@ _emit() {
   nd="$(printf '%s' "$dropped" | jq 'length')"
   echo
   echo "═══ Adversarial review [$mode]: $base..$head_ref  ($reviewer vs $refuter) ═══"
+  echo "## 对抗审查披露"
+  echo "- writer: ${writer:-unspecified}"
+  echo "- form: ${select_form:-manual}"
+  echo "- reviewer: $reviewer"
+  echo "- refuter: $refuter"
+  echo "- auto_selected: ${auto_selected:-false}"
+  echo "- degraded: ${select_degraded:-false}"
+  echo "- reason: ${select_reason:-}"
   if [ "$(printf '%s' "$skipped_json" | jq 'length')" -gt 0 ]; then
-    echo "⚠ skipped gates: $(printf '%s' "$skipped_json" | jq -r 'join(", ")')"
-    echo "  (result may be SINGLE-MODEL — not full cross-agent)"
+    echo "- skipped_gates: $(printf '%s' "$skipped_json" | jq -r 'join(", ")')"
+    echo "  (may be SINGLE-MODEL — not full cross-agent)"
+  else
+    echo "- skipped_gates: 无"
   fi
   echo
   echo "── survivors (strict blockers: CONFIRMED + reproduced) [$ns] ──"
@@ -221,13 +236,18 @@ if [ "${1:-}" = "dogfood" ]; then
 fi
 
 # --- args --------------------------------------------------------------------
-base=""; head_ref="HEAD"; reviewer="claude"; refuter="codex"
+base=""; head_ref="HEAD"; reviewer=""; refuter=""
+writer="human"; auto_select=0
 min_sev="low"; want_json=0; dry=0; mode="strict"; fail_on=0
+auto_selected=false; select_form="manual"; select_degraded=false; select_reason=""
 skipped_gates=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --reviewer) reviewer="$2"; shift 2 ;;
-    --refuter|--critic) refuter="$2"; shift 2 ;;  # --critic is deprecated alias
+    --refuter|--critic) refuter="$2"; shift 2 ;;
+    --writer) writer="$2"; auto_select=1; shift 2 ;;
+    --auto-select) auto_select=1; shift ;;
+    --no-probe) ADV_REVIEW_PROBE=0; shift ;;
     --head) head_ref="$2"; shift 2 ;;
     --min-severity) min_sev="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
@@ -235,7 +255,7 @@ while [ $# -gt 0 ]; do
     --dry-run) dry=1; shift ;;
     --fail-on-finding) fail_on=1; shift ;;
     -h|--help)
-      sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,40p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*) die "unknown flag: $1" ;;
@@ -244,6 +264,26 @@ while [ $# -gt 0 ]; do
 done
 
 case "$mode" in strict|advisory) ;; *) die "mode must be strict|advisory" ;; esac
+
+# Backend selection: --writer / --auto-select, or default pair when reviewer/refuter omitted
+# shellcheck source=/dev/null
+. "$lib_dir/lib/select-backends.sh"
+if [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
+  if select_review_backends "$writer"; then
+    if [ -z "$reviewer" ]; then reviewer="$SEL_REVIEWER"; auto_selected=true; fi
+    if [ -z "$refuter" ]; then refuter="$SEL_REFUTER"; auto_selected=true; fi
+    select_form="${SEL_FORM:-manual}"
+    select_degraded="${SEL_DEGRADED:-false}"
+    select_reason="${SEL_REASON:-}"
+    log "backend select: writer=$writer → $reviewer vs $refuter (form=$select_form degraded=$select_degraded)"
+    log "  reason: $select_reason"
+  else
+    die "no review backends available for writer=$writer" 2
+  fi
+fi
+# manual defaults if still empty
+[ -n "$reviewer" ] || reviewer="claude"
+[ -n "$refuter" ] || refuter="codex-gpt"
 
 cd "$repo_root"
 
@@ -313,12 +353,14 @@ if [ "$has_runtime" -eq 0 ]; then
   exit 0
 fi
 
-log "range $base..$head_ref  mode=$mode  reviewer=$reviewer  refuter=$refuter"
+log "range $base..$head_ref  mode=$mode  writer=$writer  reviewer=$reviewer  refuter=$refuter"
 
 if [ "$dry" -eq 1 ]; then
   log "dry-run — planned gates:"
+  log "  writer        -> $writer (form=$select_form degraded=$select_degraded)"
+  log "  reason        -> $select_reason"
   log "  stage1 find   -> $reviewer"
-  log "  stage2 refute -> $refuter $(provider_available "$refuter" && echo '(available)' || echo '(UNAVAILABLE -> skip)')"
+  log "  stage2 refute -> $refuter $(provider_available "$refuter" && echo '(available)' || echo '(UNAVAILABLE)')"
   log "  stage3 repro  -> $reviewer + sandbox worktree"
   exit 0
 fi
