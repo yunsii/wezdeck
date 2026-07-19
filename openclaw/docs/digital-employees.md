@@ -29,6 +29,10 @@ Scout— 发现与摘要；不写代码、不排期
 协作：Scout 线索 → 人确认 → Bob 建项/催办 → Dex 落地。  
 默认 **不做三角群聊**；需要时人转发或一条短结论。
 
+## 飞书接入步骤
+
+**完整操作手册（防反复试错）：** [`feishu-digital-employees.md`](./feishu-digital-employees.md)
+
 ## 路由现状与下一步
 
 - Gateway 已注册三 agent（`openclaw agents list`）。
@@ -55,7 +59,8 @@ Repo 知识库副本：本文 + `terminology.md` 读序可链到本文。
 3. [x] `set-identity` 写入 runtime
 4. [ ] 业务仓定时推送 → `pm` + 非 main 投递
 5. [ ] Scout RSS 日摘要 cron（可后做）
-6. [ ] 飞书展示名/第二入口（可选）
+6. [x] 飞书多账号 + bindings（Bob/Scout）
+7. [ ] 项目定时推送 → Bob；订阅摘要 → Scout
 
 ## CLI 速查
 
