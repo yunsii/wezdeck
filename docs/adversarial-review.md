@@ -123,7 +123,7 @@ so native interactive Codex stays untouched.
 | --- | --- | --- | --- |
 | Now (proxy GPT often 404) | `claude` | `codex-grok` | Real cross-stack: Claude vs Grok |
 | When GPT account works | `claude` | `codex-gpt` | Claude vs GPT |
-| Optional third matrix | `codex-gpt` | `codex-grok` | Same harness family — runner marks same-family skip |
+| Optional third matrix | `codex-gpt` | `codex-grok` | Same harness, **different models** — full gate 2 runs |
 
 If gate 2 is skipped (unavailable or same family), results are **SINGLE-MODEL**
 — never claim full cross-agent success.

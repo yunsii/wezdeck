@@ -30,12 +30,11 @@ _provider_canonical() {
   esac
 }
 
+# Cross-model identity: aliases that resolve to the same backend are "same".
+# codex-gpt vs codex-grok are DIFFERENT (third matrix: same harness, different models).
 _provider_family() {
-  case "$(_provider_canonical "$1")" in
-    claude) echo claude ;;
-    codex-gpt|codex-grok) echo codex ;;
-    *) echo "$1" ;;
-  esac
+  # Keep for logging only; cross-model skip uses canonical equality.
+  _provider_canonical "$1"
 }
 
 provider_available() {
@@ -48,8 +47,10 @@ provider_available() {
   esac
 }
 
+# True only when both names resolve to the same canonical backend
+# (e.g. codex == codex-gpt). codex-gpt vs codex-grok => false.
 provider_same_family() {
-  [ "$(_provider_family "$1")" = "$(_provider_family "$2")" ]
+  [ "$(_provider_canonical "$1")" = "$(_provider_canonical "$2")" ]
 }
 
 _json_slice() {
@@ -101,9 +102,9 @@ for ln in sys.stdin:
     if ev.get("type") in ("agent_message", "message", "item.completed"):
         item = ev.get("item") or ev.get("message") or {}
         if isinstance(item, dict):
-            t = item.get("text") or item.get("content")
-            if isinstance(t, str) and t.strip():
-                last = t
+            tx = item.get("text") or item.get("content")
+            if isinstance(tx, str) and tx.strip():
+                last = tx
 print(last)
 '
 }
