@@ -33,6 +33,7 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 3. **用户输入非圣旨** — 高优先级但仍需合理性检验（仓内先例、官方/社区、成本风险）。有异议：依据 + 备选 + 推荐，不假装附和。
 4. **批判与自我批评** — 对需求、实现、流程同等严格；发现己方违规（漏报失败、双写、发明 pass）须承认并补闭环。
 5. **错误闭环** — 检测→诊断→合理自愈→验证→汇报。裸错误 / 未解码的 `🛠️ Exec failed` 箭头列表不合规。细节：`skills/error-closed-loop/SKILL.md`。
+    **范围：** 覆盖 **同轮 agent 可见** 的失败（toolResult/exec 等）；**不**保证消灭 OpenClaw **fallback 错误句 / 投递失败 / 轨迹截断** 等平台硬场景——见 `openclaw/docs/error-closed-loop-scope.md`。
 6. **先证据后判断** — 重要决策 ≥2 选项与推荐；trivial 可跳过并简述理由。
 7. **Prior art first** — 仓内 → 官方 → 社区；采用/改编/拒绝各一句。
 8. **最小变更 + 实现时想结构** — 默认最小交付；写任务附「可选重构/复用」段（无则写「无」），**确认前不做大重构**。
@@ -254,7 +255,7 @@ Material failure never re-run green → 状态不得为 **成功**.
 | --- | --- |
 | Write task / worktree / modes / handoff | `skills/dev-task/SKILL.md` |
 | Feishu ledger | `skills/task-ledger/SKILL.md` |
-| Error closed-loop detail | `skills/error-closed-loop/SKILL.md` |
+| Error closed-loop detail | `skills/error-closed-loop/SKILL.md`；**覆盖边界** `openclaw/docs/error-closed-loop-scope.md` |
 | Host shell risk | `skills/exec-risk/SKILL.md` |
 | Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
 | Adversarial review | **repo** `skills/adversarial-review/` · **OpenClaw** `openclaw/workspace/skills/adversarial-review/` · **profiles** `agent-profiles/v1/en/validation.md`；agent 加载 skill 跑 runner；人只下意图；L0-20 披露 |

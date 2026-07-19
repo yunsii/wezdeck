@@ -39,6 +39,23 @@ Feishu/runtime `🛠️ Exec failed: run A → run B → …` = **agent exec bat
 Explain in plain language the same turn; do not leave the arrow-list undecoded.
 Prefer short verification batches after writes.
 
+## Coverage vs OpenClaw platform (important)
+
+This skill **still matters**: it covers failures that re-enter the **current agent turn**
+as tool results (exec non-zero, readable tool errors, self-heal + verify).
+
+It does **not** cover all OpenClaw special cases:
+
+| Covered (agent must close loop) | Not covered by agent discipline alone |
+| --- | --- |
+| Same-turn toolResult / Exec failed | Runtime **fallback** error payload when no renderable final text |
+| Self-heal + re-verify | Fixed system error strings (model/stream) |
+| User-facing 失败/原因/处置/影响 | **Delivery** failed/partial after run ended (`message_sent` is observe-only) |
+| Task 失败记录 honesty | Trajectory/session truncation diagnostics |
+
+Full table + evidence pointers: `openclaw/docs/error-closed-loop-scope.md`.
+Do not claim this skill eliminates every Feishu tail error banner.
+
 ## Report template
 
 ```text
