@@ -287,6 +287,7 @@ Material failure never re-run green → 状态不得为 **成功**.
 | Error closed-loop detail | `skills/error-closed-loop/SKILL.md`；**覆盖边界** `openclaw/docs/error-closed-loop-scope.md` |
 | Host shell risk | `skills/exec-risk/SKILL.md` |
 | Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
+| Terminology / 文档分层 | `openclaw/docs/terminology.md` |
 | Adversarial review | **repo** `skills/adversarial-review/` · **OpenClaw** `openclaw/workspace/skills/adversarial-review/` · **profiles** `agent-profiles/v1/en/validation.md`；agent 加载 skill 跑 runner；人只下意图；L0-21 披露 |
 | Mode theory / ACP | `openclaw/docs/agent-architecture.md`, `openclaw/README.md` |
 | Agent interaction (TUI/headless/ACP) | `openclaw/docs/agent-interaction.md` |

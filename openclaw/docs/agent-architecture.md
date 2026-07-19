@@ -7,6 +7,8 @@
 [`agent-interaction.md`](./agent-interaction.md)（含 headless 调用示例）。
 **错误闭环覆盖 vs 平台边界** 详见
 [`error-closed-loop-scope.md`](./error-closed-loop-scope.md)。
+**术语与文档分层** 详见
+[`terminology.md`](./terminology.md)。
 
 对用户主语言用 **人工 H\*** / **Claw C\***；括号内可附旧 A–E 代号。
 

@@ -245,6 +245,7 @@ scripts/dev/adversarial-review/run.sh HEAD~1 --dry-run \
 | 文档/脚本 | 内容 |
 | --- | --- |
 | `agent-architecture.md` | 双轨、ACP、Grok 三分 |
+| `terminology.md` | 术语与宪法/知识库分层 |
 | `error-closed-loop-scope.md` | 错误闭环覆盖范围 vs OpenClaw 平台边界 |
 | `docs/adversarial-review.md` | 三门与披露 |
 | `scripts/dev/adversarial-review/` | 审查实现 |
