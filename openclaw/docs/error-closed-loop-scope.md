@@ -1,6 +1,6 @@
 # 错误闭环：覆盖范围与 OpenClaw 平台边界
 
-本文固化 **YunsClaw 侧错误闭环** 与 **OpenClaw Gateway/通道层** 的分工，
+本文固化 **Main（Dex）侧错误闭环** 与 **OpenClaw Gateway/通道层** 的分工，
 避免把「agent 纪律」误当成「能消灭所有飞书尾部报错」。
 
 相关：

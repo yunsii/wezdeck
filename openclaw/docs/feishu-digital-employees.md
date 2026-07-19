@@ -10,7 +10,7 @@
 | **Bob** | `pm` | `pm` | `~/.openclaw/workspace-pm` | 项目管理 |
 | **Scout** | `radar` | `radar` | `~/.openclaw/workspace-radar` | 情报 / RSS |
 
-产品/应用名可仍叫 YunsClaw；开发员工对内称 Dex。总览见 [`digital-employees.md`](./digital-employees.md)。
+飞书开发入口展示名建议：**Dex**。总览见 [`digital-employees.md`](./digital-employees.md)。
 
 ## 飞书开放平台（每个应用各做一遍）
 
@@ -20,7 +20,7 @@
    - 事件至少：`im.message.receive_v1`
 3. **权限**：收发消息等相关 scope；**发布/可用范围**含机主本人。
 4. 复制 **App ID**（`cli_…`）+ **App Secret** → 只写本机 `~/.openclaw/openclaw.json`，**禁止进 git**。
-5. 机器人展示名建议：`Bob` / `Scout` / `Dex`（或 YunsClaw）。
+5. 机器人展示名建议：`Bob` / `Scout` / `Dex`。
 
 ## OpenClaw 配置骨架
 
@@ -38,7 +38,7 @@
         "ou_…_under_scout_app",
       ],
       accounts: {
-        main:  { appId: "cli_…", appSecret: "***", name: "YunsClaw" },
+        main:  { appId: "cli_…", appSecret: "***", name: "Dex" },
         pm:    { appId: "cli_…", appSecret: "***", name: "Bob" },
         radar: { appId: "cli_…", appSecret: "***", name: "Scout" },
       },
@@ -113,7 +113,7 @@ openclaw message send --channel feishu --account pm \
 - [ ] `openclaw agents list --bindings`：pm→feishu:pm，radar→feishu:radar
 - [ ] 私聊 Bob → 项目管理助手，不进 Dex 会话
 - [ ] 私聊 Scout → 情报助手
-- [ ] 私聊 YunsClaw/Dex → 开发助手
+- [ ] 私聊 Dex → 开发助手
 - [ ] 日志无持续 `blocked unauthorized`
 
 ## 安全

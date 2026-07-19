@@ -90,7 +90,7 @@ MCP), not ACP.
 
 So Happy is a **polyglot on the local hop** — stream-json for Claude, MCP for
 Codex, ACP for Gemini — and uniform only on its remote hop (Agent SDK capture →
-E2E → relay → native phone render). OpenClaw **YunsClaw** is different: the
+E2E → relay → native phone render). OpenClaw **Dex (Main)** is different: the
 Feishu **main** agent is an **embedded** Gateway runtime (not ACP); **optional**
 coding workers use ACP (`/acp spawn claude|codex`) via `@openclaw/acpx`. See
 [`openclaw/README.md` → Development modes](../openclaw/README.md#development-modes-who-writes-code).

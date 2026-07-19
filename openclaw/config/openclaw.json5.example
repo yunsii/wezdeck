@@ -11,7 +11,7 @@
   //   elevated: { enabled: false },
   //   // Prefer mode alone — do not combine with tools.exec.security / ask
   //   exec: {
-  //     // Personal YunsClaw: full + ask off + strictInlineEval false.
+  //     // Personal OpenClaw (Dex): full + ask off + strictInlineEval false.
   //     // Semantic risk → claw-run / skills/exec-risk (not platform /approve).
   //     mode: "full",
   //     host: "gateway",
@@ -108,7 +108,7 @@
   //       main: {
   //         appId: "cli_xxx",
   //         appSecret: "FROM_LOCAL_SECRET_ONLY",
-  //         name: "YunsClaw", // Feishu-facing display label (local branding)
+  //         name: "Dex", // Feishu-facing display label (Dex)
   //       },
   //     },
   //   },

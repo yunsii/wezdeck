@@ -1,7 +1,7 @@
 ---
 name: error-closed-loop
 description: >
-  Full error closed-loop for YunsClaw: diagnose, safe self-fix, verify, report;
+  Full error closed-loop for Dex (Main): diagnose, safe self-fix, verify, report;
   platform Exec failed handling; escalation with options. Load when handling
   failures or writing failure reports.
 ---

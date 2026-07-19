@@ -55,7 +55,7 @@ agents; consult when setting up a CLI tool or rotating machines.
 Each topic file carries YAML frontmatter (`name`, `scope`, `triggers`, `tags`) so agents or tools can index and load on demand.
 Each rule carries a stable identifier of the form `[<topic>-NN]` so feedback, memory entries, and reviewers can reference rules precisely.
 
-## Relation to YunsClaw / OpenClaw
+## Relation to OpenClaw
 
 This profile is the **host coding-agent** instruction set (Claude/Codex via
 symlink). It is **not** loaded as the OpenClaw Feishu main agent system prompt.
@@ -64,7 +64,7 @@ symlink). It is **not** loaded as the OpenClaw Feishu main agent system prompt.
 | --- | --- |
 | Human / host `claude`·`codex` (modes A, C) | **Yes** |
 | Future ACP `claude` / `codex` (mode E) | **Yes** |
-| YunsClaw main (mode B) | **No** — `openclaw/workspace/AGENTS.md` |
+| Dex main (mode B) | **No** — `openclaw/workspace/AGENTS.md` |
 
 Full mode table (A–E), handoff rhythm, ACP JSON-RPC:
 [openclaw/README.md — Development modes](../../openclaw/README.md#development-modes-who-writes-code).

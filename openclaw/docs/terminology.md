@@ -1,4 +1,4 @@
-# 术语与文档分层说明（YunsClaw / wezdeck）
+# 术语与文档分层说明（OpenClaw / wezdeck）
 
 目的：统一 **Claw / host / TUI / ACP / 宪法 / 知识库** 等说法，减少「同一词多义」。  
 本文是 **维护用知识库**（可改、可扩），不是 always-on 系统提示全文。
@@ -31,7 +31,6 @@
 | 术语 | 含义 | 不是 |
 | --- | --- | --- |
 | **OpenClaw** | 开源个人 AI 控制面产品/运行时（Gateway、agent loop、通道、工具） | 某一个 LLM 品牌 |
-| **YunsClaw** | 本机上的 OpenClaw 编排身份/飞书展示名；**不是** git Author | 仓库主人账号 |
 | **Gateway** | OpenClaw 守护进程：收消息、跑 agent、投递回复、工具与审批 | 飞书服务器本身 |
 | **Main / Main agent** | 当前会话的主 agent（本机通常 `agent=main`） | Claude/Codex 进程 |
 | **Main-Grok** | Main 使用的模型能力（配置里 provider+model，如 grok-4.5） | Grok 原生 CLI |

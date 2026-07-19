@@ -1,6 +1,6 @@
 # Agent 统一架构（Phase 0–1）
 
-个人控制面 **YunsClaw / OpenClaw** 的统一规划：原生能力保留、ACP 作接入、
+个人控制面 **OpenClaw** 的统一规划：原生能力保留、ACP 作接入、
 人工轨 / Claw 轨分用、全员同一宪法与平台能力。
 
 **交互形态（TUI / headless CLI / ACP / 飞书）** 详见

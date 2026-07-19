@@ -21,7 +21,6 @@
 | 飞书/对人短名 | Dex · Bob · Scout |
 | 配置 id | `main` · `pm` · `radar`（稳定） |
 
-历史品牌 **YunsClaw** 可作 Feishu 应用名；开发员工对内称 **Dex**。
 
 ## 边界
 

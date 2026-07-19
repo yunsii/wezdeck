@@ -15,7 +15,7 @@ this skill on every host command. Skipping the gate is a protocol violation.
 | Layer | Local setting | Role |
 | --- | --- | --- |
 | OpenClaw host policy | `mode=full`, `ask=off` | No `/approve` spam for normal shell |
-| OpenClaw `strictInlineEval` | **`false`** (personal YunsClaw) | Do **not** hard-block `xargs` / `-c` at platform |
+| OpenClaw `strictInlineEval` | **`false`** (personal OpenClaw · Dex) | Do **not** hard-block `xargs` / `-c` at platform |
 | **This skill** (`claw-run` / gate) | always | Semantic risk: rules → Grok → **飞书** if danger |
 
 `strictInlineEval=false` does **not** disable the classifier. It only removes

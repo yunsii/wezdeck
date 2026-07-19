@@ -1,6 +1,6 @@
 # Agent 交互说明（完整）
 
-本机 YunsClaw / OpenClaw 控制面下，**Agent 怎么和人对齐、怎么被脚本/飞书调用**。
+本机 OpenClaw 控制面下，**Agent 怎么和人对齐、怎么被脚本/飞书调用**。
 与架构总览配合阅读：[`agent-architecture.md`](./agent-architecture.md)。
 
 ---
@@ -13,7 +13,7 @@
         ┌─────────────┼─────────────┐
         ▼             ▼             ▼
    交互 TUI      Headless CLI    飞书 DM
-   (终端里聊)    (脚本一次跑完)   (YunsClaw Main)
+   (终端里聊)    (脚本一次跑完)   (Dex · Main)
         │             │             │
         │             │             ├─ C1 Main-Grok 自写
         │             │             ├─ C2 Handoff → 你开 TUI

@@ -3,7 +3,7 @@
 Versioned templates and agent protocol for a **Feishu → OpenClaw → local machine**
 loop. This directory is **not** part of the WezTerm runtime hot path.
 
-**Display name on Feishu (this machine):** **YunsClaw** — set in local
+**Display name on Feishu (this machine):** **Dex** — set in local
 `channels.feishu.accounts.main.name` and in the Feishu Open Platform app/bot
 title. Do not put personal branding into shared secrets files.
 
@@ -56,7 +56,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | Feishu groups | `groupPolicy: allowlist` (empty = all groups off) + `requireMention: true` |
 | Feishu tools | Prefer off: `doc` / `wiki` / `drive` / `perm` / `bitable`; keep `chat` / `scopes` if needed |
 | Host exec | `mode: full`, `ask=off`, **`strictInlineEval=false`** (no `/approve` on `xargs`/inline). **Option A:** agent must use `claw-run.sh` → rules → Grok → Feishu if danger (`skills/exec-risk`). Not binary allowlist. |
-| **Chrome MCP** | OpenClaw `mcp.servers.chrome-devtools` → `chrome-devtools-mcp` on **CDP `127.0.0.1:9222`** (WezDeck debug Chrome). Core browser capability for YunsClaw. |
+| **Chrome MCP** | OpenClaw `mcp.servers.chrome-devtools` → `chrome-devtools-mcp` on **CDP `127.0.0.1:9222`** (WezDeck debug Chrome). Core browser capability for Dex. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Dev allowlist | **wezdeck (+ optional team roots in local config)** (wezterm-config) — roots from local env or `$HOME/…` portable defaults |
@@ -115,7 +115,7 @@ history if needed, and restart the Gateway.
 | Feishu groups | `allowlist` (empty list = no groups) + `requireMention` |
 | Feishu tools | Disable `doc` / `wiki` / `drive` / `perm` / `bitable` unless needed |
 | Host exec | Prefer one of: `mode: full` (auto) **or** `mode: auto`/`allowlist` (prompt/deny). Do not mix `mode` with `security`/`ask` fields. |
-| `strictInlineEval` | Personal YunsClaw: **`false`** so platform does not force `/approve` on `xargs`/`-c`. Semantic gate is `claw-run` (see `skills/exec-risk`). Set `true` only if you want platform hard-block on inline carriers. |
+| `strictInlineEval` | Personal OpenClaw (Dex): **`false`** so platform does not force `/approve` on `xargs`/`-c`. Semantic gate is `claw-run` (see `skills/exec-risk`). Set `true` only if you want platform hard-block on inline carriers. |
 | Host approvals file | Must match intent: full+off for auto; allowlist+on-miss for prompts |
 | Allowlist entries | Only matter when security is allowlist |
 | Elevated | `tools.elevated.enabled: false` |
@@ -166,7 +166,7 @@ Claude/Codex backends. **D** disabled.
   │    H1 人直接开发 ─────────────► IDE
   │    H2 人 + 原生 Agent ────────► grok / claude / codex 原生 TUI
   │
-  └─ Claw 轨（飞书 YunsClaw / Main-Grok 编排）
+  └─ Claw 轨（飞书 Dex / Main-Grok 编排）
         ├─ C1 Main 自写 ──────────► Gateway 工具 + grok-proxy（小改）
         ├─ C2 Handoff 原生 ───────► 本机 CLI 写完 → Main 收尾（非 ACP）
         ├─ D  CLI backend ────────► **禁用**
@@ -177,7 +177,7 @@ Claude/Codex backends. **D** disabled.
 | --- | --- | --- | --- | --- | --- | --- |
 | 人工 | **H1** 人直接 | A | You (IDE) | No OpenClaw IPC | Day-to-day | **Active** |
 | 人工 | **H2** 原生 Agent | A | Host `grok`/`claude`/`codex` | Native TUI | Full product UX | **Active** |
-| Claw | **C1** Main 自写 | B | YunsClaw embedded | Feishu → in-process tools | Small Feishu edits | **Active** |
+| Claw | **C1** Main 自写 | B | Dex (Main) embedded | Feishu → in-process tools | Small Feishu edits | **Active** |
 | Claw | **C2** Handoff | C | Host CLI after handoff | Feishu `## Handoff`; not ACP | Local finish → Main wrap-up | **Optional** |
 | Claw | **C3** ACP 后端 | E | `claude` / `codex` via ACP | ACP stdio JSON-RPC (**access layer**) | Multi-file Feishu workers | **Enabled** |
 | — | ~~D CLI backend~~ | D | — | stream-json as model | — | **Disabled** |
@@ -410,7 +410,7 @@ Upstream: [ACP agents](https://docs.openclaw.ai/tools/acp-agents),
 
 ### Chrome DevTools MCP (core browser capability)
 
-YunsClaw drives the **same** headless/debug Chrome that WezDeck auto-starts
+Dex (Main) drives the **same** headless/debug Chrome that WezDeck auto-starts
 for agents (see repo [`docs/browser-debug.md`](../docs/browser-debug.md)).
 
 | Layer | Value |

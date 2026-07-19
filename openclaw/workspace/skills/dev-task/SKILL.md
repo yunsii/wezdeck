@@ -148,8 +148,8 @@ Shell via `claw-run` when required by exec-risk.
 
 | Rule | Detail |
 | --- | --- |
-| Author | Always repo owner. wezdeck: `Yuns <yuns.xie@qq.com>`. **Never** `YunsClaw` / `yuns@local`. |
-| Do not | `git -c user.name=YunsClaw` or other bot identity overrides. |
+| Author | Always repo owner. wezdeck: `Yuns <yuns.xie@qq.com>`. **Never** bot Author names / `yuns@local`. |
+| Do not | `git -c user.name=<bot>` or other bot identity overrides. |
 | Trailer | `Assisted-by: OpenClaw (backend=…, model=…)` |
 | C1 Main | `backend=main`, `model=<short model id>` e.g. `grok-4.5` (not `grok-proxy/…` unless debugging) |
 | C2/C3 write | `backend=<full name>` e.g. `Claude-ACP`, `Codex-ACP` + that backend's model |

@@ -6,11 +6,11 @@ description: >
   clicks, forms, console/network inspection — not for host shell risk.
 ---
 
-# Chrome DevTools (YunsClaw core)
+# Chrome DevTools (Dex / OpenClaw core)
 
 ## What this is
 
-YunsClaw can control the **Windows host debug Chrome** through OpenClaw MCP:
+Dex (Main) can control the **Windows host debug Chrome** through OpenClaw MCP:
 
 | Piece | Where |
 | --- | --- |
@@ -24,7 +24,7 @@ This is **not** the same MCP session as Grok/Claude CLI; all clients share the
 Workflow detail for launch / badge / inspect:
 repo root [`docs/browser-debug.md`](../../../../docs/browser-debug.md).
 
-## When to use (main YunsClaw)
+## When to use (Dex · Main)
 
 | Trigger | Action |
 | --- | --- |
