@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "defaultAgent": "main",
+  "comment": "Copy to ~/.openclaw/tasks-allowlist.json (not secrets). Paths may use $HOME or ~. Per-agent write roots for OpenClaw task ledger / dev guards. Do not commit a machine-filled copy with extra private roots you do not want in git.",
+  "agents": {
+    "main": {
+      "role": "Dex — coding allowlist (Claw write tasks)",
+      "allowedRoots": [
+        "$HOME/work/team-repo",
+        "$HOME/work/.worktrees/team-repo",
+        "$HOME/github/wezterm-config",
+        "$HOME/github/.worktrees/wezterm-config",
+        "$HOME/work/wezterm-config",
+        "$HOME/work/.worktrees/wezterm-config"
+      ]
+    },
+    "pm": {
+      "role": "Bob — business host adapters only (not wezdeck/team product coding)",
+      "allowedRoots": [
+        "$HOME/work/fe1"
+      ]
+    },
+    "radar": {
+      "role": "Scout — no business-repo write by default",
+      "allowedRoots": []
+    }
+  }
+}

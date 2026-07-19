@@ -2,17 +2,17 @@
 name: task-ledger
 description: >
   Ledger development tasks to Feishu Base via dev-task-ledger.sh.
-  Allowlist: wezdeck (+ optional team roots in local config) (wezterm-config). Use on accept/confirm/close
-  of coding work; not for pure Q&A.
+  Write roots from ~/.openclaw/tasks-allowlist.json (per agent). Use on
+  accept/confirm/close of coding/ops work; not for pure Q&A.
 ---
 
 # Development task ledger (Feishu Base)
 
 ## Hard rules
 
-1. Development tasks **must** target an **allowlisted** root (see Path guard):
-   **团队仓** or **wezdeck** / wezterm-config. Do not hard-code another
-   machine's `/home/...` paths in prompts or commits.
+1. Development tasks **must** target an **allowlisted** root for the active
+   agent (see Path guard / `tasks-allowlist.json`). main → wezdeck|team-repo;
+   pm → FE1 (ops). Do not hard-code another machine's `/home/...` in commits.
 2. If the user asks for another repo: **do not** `open` a ledger row as accepted
    work; refuse and explain allowlist policy.
 3. When accepted, **time loop must close**:
@@ -37,9 +37,10 @@ description: >
 
 ## Path guard
 
-- Local env `OPENCLAW_TASKS_ALLOWED_ROOTS` (colon-separated) overrides defaults.
-- Defaults (portable): wezdeck (+ optional team roots in local config) roots under `$HOME/work` /
-  `$HOME/github/wezterm-config` (see `dev-task-ledger.sh` `DEFAULT_ALLOWED_ROOTS`).
+- **Config file (authoritative):** `~/.openclaw/tasks-allowlist.json`
+  (from `openclaw/config/tasks-allowlist.json.example`).
+- Resolver: `openclaw/scripts/tasks-allowlist.py` (`show` / `check` / `roots`).
+- Agent: `OPENCLAW_TASKS_AGENT` or default `main` (paths come from config, not env).
 - CLI allowlists **local** `--cwd` / path-form `--repo` only (not remote URLs).
 - Base field **`仓库`** = **https web URL** (clickable in Feishu); **`cwd`** = local path.
   CLI rewrites `git@…` / `ssh://…` / `….git` → `https://host/org/repo`.

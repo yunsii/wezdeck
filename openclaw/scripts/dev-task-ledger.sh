@@ -9,10 +9,10 @@ shift || true
 STATE_DIR="${OPENCLAW_TASKS_STATE_DIR:-${HOME}/.local/state/openclaw-tasks}"
 INDEX_FILE="${STATE_DIR}/index.json"
 ENV_FILE="${OPENCLAW_TASKS_ENV_FILE:-${HOME}/.config/shell-env.d/openclaw-tasks.env}"
-
-# Development allowlist: wezdeck (+ optional team roots in local config) (wezterm-config).
-# Override with OPENCLAW_TASKS_ALLOWED_ROOTS (colon-separated absolute paths).
-DEFAULT_ALLOWED_ROOTS="${HOME}/work/team-repo:${HOME}/work/.worktrees/team-repo:${HOME}/github/wezterm-config:${HOME}/work/.worktrees/wezterm-config:${HOME}/work/wezterm-config"
+# Per-agent write allowlist: ~/.openclaw/tasks-allowlist.json (see openclaw/config/tasks-allowlist.json.example)
+ALLOWLIST_PY="${OPENCLAW_TASKS_ALLOWLIST_PY:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tasks-allowlist.py}"
+# Agent id for path checks (main|pm|radar). Overridable via --agent on open/update or OPENCLAW_TASKS_AGENT.
+TASKS_AGENT="${OPENCLAW_TASKS_AGENT:-main}"
 
 load_env() {
   if [[ -f "${ENV_FILE}" ]]; then
@@ -22,31 +22,27 @@ load_env() {
     source "${ENV_FILE}"
     set +a
   fi
+  # Prefer env agent after sourcing secrets file (does not define roots).
+  TASKS_AGENT="${OPENCLAW_TASKS_AGENT:-${TASKS_AGENT:-main}}"
 }
 
-# Return 0 if path is under an allowed root (or equals a root).
+# Return 0 if path is under an allowed root for TASKS_AGENT (config file authoritative).
 path_allowed() {
   local raw="${1:-}"
   if [[ -z "${raw}" ]]; then
     return 1
   fi
-  local resolved roots root r
-  if [[ -e "${raw}" ]]; then
-    resolved="$(realpath -m "${raw}" 2>/dev/null || readlink -f "${raw}" 2>/dev/null || echo "${raw}")"
-  else
-    # non-existent path: still normalize for prefix check
-    resolved="$(realpath -m "${raw}" 2>/dev/null || echo "${raw}")"
+  if [[ ! -f "${ALLOWLIST_PY}" ]]; then
+    echo "error: missing tasks-allowlist.py at ${ALLOWLIST_PY}" >&2
+    return 1
   fi
-  roots="${OPENCLAW_TASKS_ALLOWED_ROOTS:-${DEFAULT_ALLOWED_ROOTS}}"
-  IFS=':' read -r -a arr <<<"${roots}"
-  for root in "${arr[@]}"; do
-    [[ -z "${root}" ]] && continue
-    r="$(realpath -m "${root}" 2>/dev/null || echo "${root}")"
-    if [[ "${resolved}" == "${r}" || "${resolved}" == "${r}/"* ]]; then
-      return 0
-    fi
-  done
-  return 1
+  python3 "${ALLOWLIST_PY}" check "${raw}" --agent "${TASKS_AGENT}" >/dev/null 2>&1
+}
+
+allowlist_roots_display() {
+  if [[ -f "${ALLOWLIST_PY}" ]]; then
+    python3 "${ALLOWLIST_PY}" roots --agent "${TASKS_AGENT}" 2>/dev/null || true
+  fi
 }
 
 is_remote_url() {
@@ -139,9 +135,10 @@ assert_local_dev_path() {
     return 0
   fi
   if ! path_allowed "${p}"; then
-    echo "error: development path not on allowlist (团队仓 | wezdeck/wezterm-config)" >&2
+    echo "error: development path not on allowlist for agent=${TASKS_AGENT}" >&2
     echo "  refused path: ${p}" >&2
-    echo "  allowed: ${OPENCLAW_TASKS_ALLOWED_ROOTS:-${DEFAULT_ALLOWED_ROOTS}}" >&2
+    echo "  config: ${HOME}/.openclaw/tasks-allowlist.json (see openclaw/config/tasks-allowlist.json.example)" >&2
+    echo "  allowed: $(allowlist_roots_display)" >&2
     exit 5
   fi
 }
@@ -739,7 +736,9 @@ print("table_id_set=", bool(tid), "table_id=", tid if tid else "")
 print("lark_as=", os.environ.get("OPENCLAW_TASKS_LARK_AS","bot"))
 print("state_dir=${STATE_DIR}")
 print("lark_cli=", __import__("shutil").which("lark-cli"))
-print("allowed_roots=", os.environ.get("OPENCLAW_TASKS_ALLOWED_ROOTS", "${DEFAULT_ALLOWED_ROOTS}"))
+print("tasks_agent=${TASKS_AGENT}")
+print("allowlist_config=${HOME}/.openclaw/tasks-allowlist.json")
+print("allowed_roots=", """$(allowlist_roots_display)""")
 PY
 }
 

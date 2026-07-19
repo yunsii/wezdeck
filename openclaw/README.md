@@ -15,7 +15,7 @@ title. Do not put personal branding into shared secrets files.
 | Secrets / filled env | `~/.config/shell-env.d/*.env` | **never** track |
 | Task ledger Base tokens | `openclaw-tasks.env` (same shell-env.d) | **never** track |
 | Optional Grok CLI / lark-cli stores | `~/.grok/`, lark-cli key store | **never** track |
-| Machine path overrides | `OPENCLAW_TASKS_ALLOWED_ROOTS` in local env | **never** track |
+| Task write allowlist (per agent) | `~/.openclaw/tasks-allowlist.json` | **never** track filled local copy; example is tracked |
 
 **Do not commit:** absolute host paths (`/home/<user>/…`), App Secret, API keys,
 Gateway tokens, Base tokens, filled `*.env`, live `openclaw.json`, or personal
@@ -680,25 +680,30 @@ auto-filled; use `MR` URL + summary.
 
 Write `需求提出人` via CLI `--requester-id <ou_…>` (cell value `[{ "id": "ou_…" }]`).
 
-### Development allowlist (wezdeck (+ optional team roots in local config))
+### Development allowlist (per agent, config file)
 
-**Do not commit machine-specific absolute paths** (e.g. `/home/<user>/…`).  
-Tracked docs only describe the *policy*; concrete roots stay local.
+**Authoritative:** `~/.openclaw/tasks-allowlist.json`  
+**Tracked example:** `openclaw/config/tasks-allowlist.json.example`  
+**Resolver:** `openclaw/scripts/tasks-allowlist.py`
 
-| Logical repo | Portable default roots (when env unset) |
+| agentId | Default write roots (portable in example) |
 | --- | --- |
-| **团队仓** | `$HOME/work/team-repo`, `$HOME/work/.worktrees/team-repo` |
-| **wezdeck** | `$HOME/github/wezterm-config`, `$HOME/work/.worktrees/wezterm-config`, `$HOME/work/wezterm-config` |
+| **main** (Dex) | wezdeck (+ optional team roots in local config) (+ worktree roots) |
+| **pm** (Bob) | `$HOME/work/fe1` (business host adapters) |
+| **radar** (Scout) | none |
 
-| Source | Value |
-| --- | --- |
-| Local override | `OPENCLAW_TASKS_ALLOWED_ROOTS` in `~/.config/shell-env.d/openclaw-tasks.env` |
-| Portable default | See `dev-task-ledger.sh` `DEFAULT_ALLOWED_ROOTS` |
+Install once:
+
+```bash
+cp openclaw/config/tasks-allowlist.json.example ~/.openclaw/tasks-allowlist.json
+python3 openclaw/scripts/tasks-allowlist.py show --agent main
+python3 openclaw/scripts/tasks-allowlist.py show --agent pm
+```
 
 - Soft guard: `workspace/AGENTS.md` + skills refuse non-allowlisted development.
-- Hard guard: `dev-task-ledger.sh` rejects `--repo` / `--cwd` outside the allowlist.
-- Default create cwd for product work remains 团队仓; pass
-  `--cwd "$HOME/github/wezterm-config"` (or local equivalent) for wezdeck tasks.
+- Hard guard: `dev-task-ledger.sh` rejects local `--repo` / `--cwd` outside the agent’s roots.
+- Secrets for Feishu Base stay in `~/.config/shell-env.d/openclaw-tasks.env` (token/table only).
+- Do **not** put write roots in env colon-lists; edit the JSON config.
 
 ### Development workflow + worktree ownership
 
