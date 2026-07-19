@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage:
 #   run.sh <BASE_REF> [options]
-#   run.sh selfcheck [claude|codex ...]
+#   run.sh selfcheck [claude|codex|codex-gpt|codex-grok ...]
 #   run.sh dogfood [--mode MODE] [options]   # review this tool's own uncommitted+HEAD diff
 #
 # Cross-agent adversarial review over BASE_REF..HEAD, in three gates:
@@ -344,9 +344,15 @@ fi
 
 # --- stage 2: refute ---------------------------------------------------------
 survivors="$f1"
-if [ "$reviewer" = "$refuter" ]; then
-  log "stage 2/3 · SKIP — reviewer==refuter, no cross-model value"
-  skipped_gates+=("cross-model(reviewer==refuter)")
+# Same string OR same family (codex-gpt vs codex-grok is still codex family)
+if [ "$reviewer" = "$refuter" ] || provider_same_family "$reviewer" "$refuter"; then
+  if [ "$reviewer" = "$refuter" ]; then
+    log "stage 2/3 · SKIP — reviewer==refuter, no cross-model value"
+    skipped_gates+=("cross-model(reviewer==refuter)")
+  else
+    log "stage 2/3 · SKIP — reviewer/refuter same family ($(_provider_family "$reviewer")); not full cross-agent"
+    skipped_gates+=("cross-model(same-family:$(_provider_family "$reviewer"))")
+  fi
 elif ! provider_available "$refuter"; then
   log "stage 2/3 · SKIP — refuter '$refuter' unavailable; results are SINGLE-MODEL"
   skipped_gates+=("cross-model($refuter unavailable)")

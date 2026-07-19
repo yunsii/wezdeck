@@ -1,8 +1,8 @@
 ---
 name: adversarial-review
 description: >
-  Three-gate cross-agent review (find → refute → sandbox repro). Use before
-  merging runtime changes, or dogfood to recursively improve this tool itself.
+  Three-gate cross-agent review (find → refute → sandbox repro). Backends:
+  claude | codex-gpt | codex-grok. Use before merge or dogfood self-review.
 ---
 
 # Adversarial review (thin skill)
@@ -15,25 +15,35 @@ description: >
 
 Skip pure docs/tests-only diffs (the runner auto-skips).
 
+## Backends (three paths)
+
+| Alias | Stack |
+| --- | --- |
+| `claude` | Claude Code |
+| `codex` / `codex-gpt` | Host Codex default (GPT when allowed) |
+| `codex-grok` | Host Codex `--profile grok` |
+
+Does **not** use OpenClaw ACP `CODEX_HOME`. Prefer `claude` × `codex-grok` when
+proxy GPT is unavailable.
+
 ## Do
 
 ```bash
-# normal range
+# recommended now
 scripts/dev/adversarial-review/run.sh <BASE_REF> \
-  --reviewer claude --refuter codex --mode strict
+  --reviewer claude --refuter codex-grok --mode strict
 
-# self-improve loop (supervised)
+# when GPT works
+scripts/dev/adversarial-review/run.sh <BASE_REF> \
+  --reviewer claude --refuter codex-gpt --mode strict
+
 scripts/dev/adversarial-review/run.sh dogfood --mode strict --fail-on-finding
-
-# provider health
-scripts/dev/adversarial-review/run.sh selfcheck claude
+scripts/dev/adversarial-review/run.sh selfcheck claude codex-gpt codex-grok
 ```
-
-Read `docs/adversarial-review.md` for contracts, modes, exit codes, and
-**stopping rules** for recursive optimization.
 
 ## Don't
 
-- Don't invent “all three gates passed” for PLAUSIBLE findings
+- Don't invent "all three gates passed" for PLAUSIBLE findings
 - Don't run unbounded auto-fix loops; max 3 dogfood cycles without human OK
 - Don't claim cross-agent success when gate 2 was skipped (SINGLE-MODEL)
+- Don't point review Codex at `~/.openclaw/acpx/codex-home` (ACP-only)

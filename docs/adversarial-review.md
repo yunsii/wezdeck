@@ -30,8 +30,8 @@ Never claim “survived all three gates” for PLAUSIBLE items — they skip gat
 ```bash
 scripts/dev/adversarial-review/run.sh <BASE_REF> [options]
 
-  --reviewer P       provider that finds defects          (default: claude)
-  --refuter P        provider that refutes them           (default: codex)
+  --reviewer P       backend: claude|codex|codex-gpt|codex-grok (default: claude)
+  --refuter P        backend alias (default: codex → codex-gpt)
   --critic P         deprecated alias for --refuter
   --head REF         diff endpoint                         (default: HEAD)
   --mode MODE        strict | advisory                     (default: strict)
@@ -40,15 +40,18 @@ scripts/dev/adversarial-review/run.sh <BASE_REF> [options]
   --dry-run          print the planned gates, call no agents
   --fail-on-finding  exit 10 if any strict survivor
 
-scripts/dev/adversarial-review/run.sh selfcheck [claude|codex ...]
+scripts/dev/adversarial-review/run.sh selfcheck [claude|codex-gpt|codex-grok ...]
 scripts/dev/adversarial-review/run.sh dogfood [--mode MODE] [options]
 ```
 
 Examples:
 
 ```bash
-# last commit, Claude finds, Codex refutes (strict)
-run.sh HEAD~1 --reviewer claude --refuter codex
+# last commit, Claude finds, Codex+Grok refutes (recommended when GPT blocked)
+run.sh HEAD~1 --reviewer claude --refuter codex-grok
+
+# Claude finds, native Codex/GPT refutes (when account allows GPT)
+run.sh HEAD~1 --reviewer claude --refuter codex-gpt
 
 # advisory report for humans (includes PLAUSIBLE)
 run.sh origin/master --mode advisory --reviewer claude --refuter claude
@@ -98,12 +101,41 @@ scripts/dev/adversarial-review/
 docs/adversarial-review.md   this file
 ```
 
+## Backend aliases (three review paths)
+
+These names are **review backends**, not OpenClaw ACP harness ids (`claude` /
+`codex` only at the ACP layer). Grok is never `spawn grok`; it is **Codex +
+profile/model**.
+
+| Alias | Meaning | Host config used | Typical role |
+| --- | --- | --- | --- |
+| `claude` | Claude Code CLI | `~/.claude` | find / repro |
+| `codex` / `codex-gpt` | Codex native default model (GPT when account allows) | host `~/.codex` default | refute or second opinion |
+| `codex-grok` | Codex `--profile grok` + `grok-4.5` | host `~/.codex` + `grok.config.toml` | Grok-side refute / matrix |
+
+**OpenClaw ACP isolation** (`~/.openclaw/acpx/codex-home`) is for Feishu
+`/acp spawn codex` only. This review tool **must not** set `CODEX_HOME` there,
+so native interactive Codex stays untouched.
+
+### Recommended matrices
+
+| Stage | reviewer | refuter | Notes |
+| --- | --- | --- | --- |
+| Now (proxy GPT often 404) | `claude` | `codex-grok` | Real cross-stack: Claude vs Grok |
+| When GPT account works | `claude` | `codex-gpt` | Claude vs GPT |
+| Optional third matrix | `codex-gpt` | `codex-grok` | Same harness family — runner marks same-family skip |
+
+If gate 2 is skipped (unavailable or same family), results are **SINGLE-MODEL**
+— never claim full cross-agent success.
+
 ## Provider status
 
-- **Claude** — verified end-to-end (2026-07-18); `selfcheck claude` expected green.
-- **Codex** — adapter written; may be unavailable on PATH. When unavailable, gate 2
-  is **skipped and reported**; title marks possible SINGLE-MODEL. Do not silently
-  claim cross-agent.
+- **Claude** — `selfcheck claude` expected green when Claude Code is logged in.
+- **codex-gpt** — host Codex default; on some proxy account groups `gpt-5.5` returns
+  404 → mark unavailable / SINGLE-MODEL, do not fake green.
+- **codex-grok** — host `codex -p grok -m grok-4.5`; preferred refuter when GPT is
+  blocked. Uses host profile files, not ACP `CODEX_HOME`.
+- Gate 2 skip is always **reported** (`skipped_gates`); never silent cross-agent claim.
 
 ## Safety
 
