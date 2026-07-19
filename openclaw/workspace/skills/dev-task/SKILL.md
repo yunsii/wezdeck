@@ -118,7 +118,7 @@ Heuristics: **C1** small/clear; **Claude-ACP** multi-file/profile; **C2/H2** nee
 6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
 ```
 
-Before spawn: reject if cwd missing or not a `claw-*` worktree path.
+Before spawn: reject if cwd missing or outside allowlist. wezdeck may be primary master; 团队仓 usually claw-*.
 After C3: prefer structured report `changed_files` / `summary` / `blockers` / `commits`.
 
 Probe: `openclaw/scripts/agent-matrix-status.sh`.
