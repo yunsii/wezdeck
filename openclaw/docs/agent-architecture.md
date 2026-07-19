@@ -150,7 +150,7 @@ C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/d
 ## wezdeck 推送策略（已固化）
 
 机主自维护 **wezdeck**（`$HOME/github/wezterm-config`）：任务验收通过后允许
-**直接 merge + push `master`**，无需再问「是否合主」。
+**默认已在 `master` 上开发**；验收后 **直接 push `master`**，无需再问「是否合主」。隔离分支时再 ff-only 合入。
 仍须明确 yes：force-push、非 wezdeck 仓推主、生产破坏。
 
 ## 对抗审查 vs 设计批判

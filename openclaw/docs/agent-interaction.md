@@ -236,7 +236,7 @@ scripts/dev/adversarial-review/run.sh HEAD~1 --dry-run \
 | `~/.openclaw/openclaw.json` | Main-Grok 等 |
 
 - 审查/ headless 写码：注意 sandbox / permission-mode，避免无脑 bypass。  
-- wezdeck 验收后可直接合 `master`（见 AGENTS L0-18）。  
+- wezdeck 验收后可直接合 `master`（见 AGENTS L0-13/19）。  
 
 ---
 

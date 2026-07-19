@@ -32,8 +32,12 @@ Protocol detail: [`workspace/AGENTS.md`](./workspace/AGENTS.md).
 ACP is an **access layer** (backends: Claude / Codex); Grok is split into
 native CLI vs Main-Grok vs Codex+Grok model. See
 [`docs/agent-architecture.md`](./docs/agent-architecture.md).
+**Docs map / terms:** [`docs/README.md`](./docs/README.md) · [`docs/terminology.md`](./docs/terminology.md).
 Legacy A–E codes remain as parenthetical aliases under
 [Development modes](#development-modes-who-writes-code).
+
+**wezdeck cwd:** personal mainline default = primary **`master`** (no mandatory
+worktree). Isolate with `claw-*` only when parallel or long experiment.
 
 ## Status (MVP)
 
@@ -178,15 +182,19 @@ Claude/Codex backends. **D** disabled.
 | Claw | **C3** ACP 后端 | E | `claude` / `codex` via ACP | ACP stdio JSON-RPC (**access layer**) | Multi-file Feishu workers | **Enabled** |
 | — | ~~D CLI backend~~ | D | — | stream-json as model | — | **Disabled** |
 
-**Single writer rule:** for a given worktree, only **one** of main / local CLI /
-ACP worker / you is the primary editor. Do **not** run C1+C2 or C1+C3 concurrent
-writes on the same tree.
+**Single writer rule:** for a given **cwd** (primary checkout or worktree), only
+**one** of main / local CLI / ACP worker / you is the primary editor. Do **not**
+run C1+C2 or C1+C3 concurrent writes on the same tree.
 
-**Mode declaration (protocol):** after requirements / worktree 初评, **main must
-post a 【开发方式】 recommendation card** (H/C Chinese names + optional A–E +
-who executes + reason + alternatives) and **wait for confirm** before writing
-code or `/acp spawn`. Soft routing; user overrides win. See `workspace/AGENTS.md`
-and `docs/agent-architecture.md`.
+**cwd (wezdeck):** default **primary `master`** (personal mainline, L0-13). Use a
+`claw-*` worktree only for parallel work, long experiments, or isolation. 团队仓
+still prefers `claw-*` unless the user overrides.
+
+**Mode declaration (protocol):** after requirements (and worktree 初评 **only if**
+isolation is needed), **main must post a 【开发方式】 recommendation card** (H/C
+Chinese names + optional A–E + who executes + reason + alternatives) and **wait
+for confirm** before writing code or `/acp spawn`. Soft routing; user overrides
+win. See `workspace/AGENTS.md` and `docs/agent-architecture.md`.
 
 #### A — Human direct
 
@@ -202,27 +210,28 @@ You → edit under 团队仓 or a worktree → commit / MR as usual
 #### B — Main direct (Feishu claw develops)
 
 ```text
-Feishu → main → claw-* worktree (read/write/exec via claw-run) → Feishu 结果
+Feishu → main → wezdeck primary master (default) or claw-* if isolated
+         → read/write/exec via claw-run → Feishu 精简【结果】
 ```
 
 - Instructions: `openclaw/workspace/AGENTS.md` + skills (not full agent-profiles).
 - **No Claude-Code-like TUI** for full tool history — follow via Feishu progress,
-  `journalctl --user -u openclaw-gateway`, and `git` in the worktree.
+  `journalctl --user -u openclaw-gateway`, and `git` in the cwd.
 - Danger shell: `claw-run` → Feishu confirm if still danger (not `/approve` spam).
 
 #### C — Operational handoff (optional)
 
-Main **prepares** ledger + worktree, posts a brief, then **stops coding**.
-Local side finishes; main is called back for **close / 验收 / reclaim**.
+Main **prepares** ledger + cwd (master or worktree), posts a brief, then **stops coding**.
+Local side finishes; main is called back for **close / 验收 / reclaim** (reclaim only if worktree).
 
 ```text
 正常节奏（推荐）:
-  main: open + 初评 + create cwd + ## Handoff
-    → 本机: cd <cwd> && claude   # 或人直接改；做完这一段
-    → 飞书: 「做完了…」→ main: ledger close + 问 reclaim
+  main: open + 【开发方式】+ cwd (wezdeck: often master) + ## Handoff
+    → 本机: cd <cwd> && claude   # 或人直接改
+    → 飞书: 「做完了…」→ main: ledger close + 问 reclaim（若用了 worktree）
 
 不要:
-  main 与本机 CLI 同时当主笔改同一 worktree
+  main 与本机 CLI 同时当主笔改同一 cwd
 ```
 
 - Handoff is **execution transfer**, not “so you can resume TUI for curiosity”.

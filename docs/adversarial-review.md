@@ -37,7 +37,7 @@ same chat turn with no role split **is not**.
 
 ## Reporting disclosure (mandatory)
 
-Any Feishu/chat claim of「对抗审查」**must** include this block (OpenClaw L0-20).
+Any Feishu/chat claim of「对抗审查」**must** include this block (OpenClaw L0-21).
 Never ship conclusions alone. Never use the title if refute role was omitted.
 
 ```text

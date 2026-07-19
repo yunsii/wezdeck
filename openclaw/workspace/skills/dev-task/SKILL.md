@@ -132,7 +132,7 @@ See `AGENTS.md`. Always restate mode even if user named it.
 ## 落实 / commits
 
 On 落实: review → implement → verify → **1–3 logical commits** → push agreed branch → report.
-**wezdeck:** default work on **primary master**; after green checks **commit + push `master`** (L0-12/18/19). If a task branch/worktree was used, ff-only into master then push.
+**wezdeck:** default work on **primary master**; after green checks **commit + push `master`** (L0-12/13/20). If a task branch/worktree was used, ff-only into master then push.
 Other repos: push main/master only with explicit yes.
 Shell via `claw-run` when required by exec-risk.
 
@@ -172,7 +172,7 @@ Assisted-by: OpenClaw (backend=main, model=grok-4.5)
 
 1. **Load** `skills/adversarial-review/SKILL.md`
 2. **Run** `$REPO/scripts/dev/adversarial-review/run.sh <BASE> --writer <family> --mode strict`
-3. **Report** L0-20 disclosure (writer / form / reviewer / refuter / conclusions)
+3. **Report** L0-21 disclosure (writer / form / reviewer / refuter / conclusions)
 
 「对抗审查」= multi-role (find+refute minimum). Same agent twice with opposite
 stance is OK if labeled SINGLE-MODEL. Solo Main monologue = **设计批判** only.

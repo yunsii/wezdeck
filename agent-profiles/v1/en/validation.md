@@ -152,6 +152,6 @@ When the user asks for 对抗审查 / adversarial review, or acceptance recommen
   3. Runner (only implementation): `scripts/dev/adversarial-review/run.sh`
 - [validation-54] Typical invoke from repo root or claw worktree:
   `scripts/dev/adversarial-review/run.sh <BASE_REF> --writer <main|claude|codex|human> --mode strict`
-- [validation-55] Report with disclosure: writer, form/degraded/reason, reviewer, refuter, repro status, skipped_gates, conclusions bound to gates. Align with openclaw L0-20 spirit.
+- [validation-55] Report with disclosure: writer, form/degraded/reason, reviewer, refuter, repro status, skipped_gates, conclusions bound to gates. Align with openclaw L0-21 spirit.
 - [validation-56] Review uses **host headless** CLIs (`claude` / `codex-gpt` / `codex-grok`), not OpenClaw ACP `CODEX_HOME` by default.
 - [validation-57] Outside wezdeck: if the runner/skill is absent, say so and fall back to design critique or skip — do not invent a green multi-role review.
