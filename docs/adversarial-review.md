@@ -4,26 +4,44 @@
 over a diff, in three gates, and classifies findings so you can use the tool to
 **recursively improve itself** (dogfood) without silent false confidence.
 
+## What counts as 对抗审查
+
+**Adversarial = multi-role.** Minimum:
+
+1. **Find / reviewer** — guilty-until-proven; produce findings with failure scenarios  
+2. **Refute / refuter** — opposite burden; try to kill each finding  
+3. **Repro** (recommended) — empirical check for CONFIRMED items  
+
+- Prefer **different** agent families (e.g. Claude-TUI × Codex-Grok-profile).  
+- If only **one** model is available: still run **two roles** (two calls, opposite
+  prompts). Label **SINGLE-MODEL**. Do **not** skip refute.  
+- A single monologue (one Main-Grok essay) is **设计批判**, **not** 对抗审查.
+
+Orchestration may be `run.sh` or Main spawning two ACP/TUI turns with distinct
+role prompts. Same binary twice with different stance **is** multi-role;
+same chat turn with no role split **is not**.
+
 ## Reporting disclosure (mandatory)
 
 Any Feishu/chat claim of「对抗审查」**must** include this block (OpenClaw L0-20).
-Never ship conclusions alone.
+Never ship conclusions alone. Never use the title if refute role was omitted.
 
 ```text
 ## 对抗审查披露
-- 形态: 三门全量 | 单模型/同家族 | 设计对抗
-- reviewer 全名: Claude-TUI | Main-Grok | …
-- refuter 全名: Codex-Grok-profile | （无/跳过）…
-- 命令或范围: run.sh … | 未跑 run.sh
+- 形态: 三门全量 | 多角色·单模型
+- reviewer 全名 / 立场: …
+- refuter 全名 / 立场: …
+- repro: 已跑 | 跳过（理由）
+- 命令或范围: run.sh … | Main 编排两次 …
 - skipped_gates: … | 无
-- 关键结论: 每条绑定闸门/证据（find / refute / repro / 设计对照）
+- 关键结论: 每条绑定 find / refute / repro
 ```
 
 | 形态 | 何时使用 | 可否写 cross-agent |
 | --- | --- | --- |
-| **三门全量** | `run.sh` 且 gate2 未因同家族/不可用跳过 | 可以 |
-| **单模型/同家族** | gate2 skip 或 reviewer==refuter | 否；标 SINGLE-MODEL |
-| **设计对抗** | Main-Grok 对照需求做 guilty 分析，无 run.sh | 否；必须写「设计对抗 · Main-Grok」 |
+| **三门全量** | find+refute+repro，且 reviewer≠refuter 家族 | 可以 |
+| **多角色·单模型** | find+refute（±repro），同家族/同后端 | 否；标 SINGLE-MODEL |
+| **设计批判** | 单角色分析 | **不要**叫对抗审查 |
 
 Full backend names: see `openclaw/docs/agent-architecture.md` and
 `openclaw/scripts/agent-matrix-status.sh`.
