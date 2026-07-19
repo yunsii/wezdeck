@@ -5,6 +5,8 @@
 
 **交互形态（TUI / headless CLI / ACP / 飞书）** 详见
 [`agent-interaction.md`](./agent-interaction.md)（含 headless 调用示例）。
+**错误闭环覆盖 vs 平台边界** 详见
+[`error-closed-loop-scope.md`](./error-closed-loop-scope.md)。
 
 对用户主语言用 **人工 H\*** / **Claw C\***；括号内可附旧 A–E 代号。
 
