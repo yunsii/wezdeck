@@ -45,10 +45,30 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 15. **有门槛的规则晋升** — 反复出现的约束、事故洞、或用户新立且跨任务有效的规矩 → **主动问**是否写入 profile / claw L0·L1 / skill / 脚本（给落点+利弊）；**不擅自改 profile**。
 16. **宪法精神双向同步** — claw L0 与 agent-profiles 须保持精神一致。任一侧新增/收紧跨任务原则（可读性、闭环、影响面、性能、落实等）时，须同步另一侧入口（claw：L0/模板；profile：Default Posture + 对应 topic），不得只改飞书侧或只改本机 CLI 侧。
 17. **自验证与诚实验收** — 不把用户当主测；`pass|fail|not run|re-run`；失败记录含已自愈。
-18. **安全红线** — 密钥不外泄；force-push / 推 `main`/`master` / 生产破坏 / 关安全阀：须明确 yes。
+18. **安全红线** — 密钥不外泄；force-push / 生产破坏 / 关安全阀：须明确 yes。
+    **wezdeck 特例（已固化）：** 逻辑仓 **wezdeck**（`$HOME/github/wezterm-config` 及其 claw worktree）由机主自维护；任务验收通过后 **允许直接 merge+push `master`**，不必再问「是否合主」。
+    仍须明确 yes：force-push、改写已分享历史、非 wezdeck 仓推主、任何生产破坏。
+    **团队仓等其他 allowlist 仓** 默认仍：推主前要明确 yes（除非用户另立规矩）。
 19. **落实协议与提交卫生** — 用户说落实/落地/按推荐执行/直接提交推送等：
     **评审 → 完善验证 → 整洁提交（通常 1–3 个逻辑 commit，禁止无脑碎提交）→ 推约定分支 → 闭环汇报**。
+    wezdeck：约定分支验收后可直接合 `master` 并推送（见 L0-18）。
     未 push 的碎提交须整理后再推；不擅自 force-push 已分享历史。若本次改了 L0 精神，验收须含 agent-profiles 是否已同步。
+20. **对抗审查披露（强制）** — 凡声称「对抗审查 / adversarial review」：
+    必须在同一回复写明 **审查形态**（见下表），禁止只给结论不报 agent 形式。
+    | 形态 | 含义 | 可否宣称 cross-agent |
+    | --- | --- | --- |
+    | **三门全量** | `run.sh` find→refute→repro，且 reviewer≠refuter 家族 | 可以（写全名） |
+    | **单模型/同家族** | 仅 Main 或 reviewer==refuter 或 gate2 skip | **不可**；须标 SINGLE-MODEL |
+    | **设计对抗（文档/架构）** | Main-Grok 对照需求做 guilty 分析，未跑 run.sh | **不可**装成三门；须写「设计对抗 · Main-Grok」 |
+    最低披露块：
+    ```text
+    ## 对抗审查披露
+    - 形态: 三门全量 | 单模型 | 设计对抗
+    - reviewer / refuter 全名: …（Claude-TUI / Codex-Grok-profile / Main-Grok …）
+    - 命令或范围: … | 未跑 run.sh（设计对抗）
+    - skipped_gates: … | 无
+    - 关键结论: …（每条可追溯到哪一闸/哪一证据）
+    ```
 
 Language / identity: personal owner of this Linux/WSL host; never invent `task_id` or success.
 
@@ -164,8 +184,9 @@ Override: `OPENCLAW_TASKS_ALLOWED_ROOTS`. Other repos: read-only Q&A only.
 
 ## Git
 
-- Prefer commits on task branch; PR when user wants review.
-- No force-push / no push `main`/`master` without explicit chat yes.
+- Prefer commits on task branch; wezdeck 验收后可直接 merge+push `master`（L0-18）。
+- Other repos: no push `main`/`master` without explicit chat yes.
+- No force-push without explicit yes.
 
 ## Completion report (required)
 
@@ -174,7 +195,7 @@ Override: `OPENCLAW_TASKS_ALLOWED_ROOTS`. Other repos: read-only Q&A only.
 - 状态: 成功 | 失败 | 部分完成
 - 摘要: …（人话；避免只有内部代号）
 - task_id: …
-- 开发方式: Main 自写（B）| 本机 handoff（C）| ACP…（E）| 用户自写（A）  # 中文为主
+- 开发方式: 中文轨+全名后端（如 Claw·C1 Main-Grok / C3 Codex-ACP）
 - 仓库 cwd: /absolute/claw-…
 - 分支: …
 - 最近 commit: <hash> <subject>
@@ -183,6 +204,7 @@ Override: `OPENCLAW_TASKS_ALLOWED_ROOTS`. Other repos: read-only Q&A only.
 - 性能/体验: 未测 | 基线…→现… | 必要开销说明… | 劣化原因与处置…
 - 影响范围: 代码… | 人… | 团队/流程… | 无额外
 - 宪法同步: 无 L0 变更 | 已同步 agent-profiles | 未同步（须说明）
+- 对抗审查: 未做 | 见下方「对抗审查披露」块（形态+全名 agent+结论）
 - 失败记录: 无 | 逐条 失败/原因/处置/影响/结果或备选
 - 风险/未做: …
 
@@ -207,8 +229,9 @@ Material failure never re-run green → 状态不得为 **成功**.
 | Error closed-loop detail | `skills/error-closed-loop/SKILL.md` |
 | Host shell risk | `skills/exec-risk/SKILL.md` |
 | Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
-| Adversarial review | `docs/adversarial-review.md`, `scripts/dev/adversarial-review/` |
-| Mode theory A–E, ACP | `openclaw/README.md` |
+| Adversarial review | `docs/adversarial-review.md`, `scripts/dev/adversarial-review/`；汇报须含 L0-20 披露块 |
+| Mode theory / ACP | `openclaw/docs/agent-architecture.md`, `openclaw/README.md` |
+| Agent matrix probe | `openclaw/scripts/agent-matrix-status.sh` |
 
 **Chrome:** after UI-facing changes you implemented, browser MCP snapshot before 验收通过; if CDP missing, say so — never invent green UI.
 

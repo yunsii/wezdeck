@@ -127,7 +127,22 @@ Claw 需要写码后端
 
 C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/dev-task/SKILL.md`。
 
+## wezdeck 推送策略（已固化）
+
+机主自维护 **wezdeck**（`$HOME/github/wezterm-config`）：任务验收通过后允许
+**直接 merge + push `master`**，无需再问「是否合主」。
+仍须明确 yes：force-push、非 wezdeck 仓推主、生产破坏。
+
+## 对抗审查 vs 设计对抗
+
+| 说法 | 要求 |
+| --- | --- |
+| 三门对抗审查 | `run.sh` + 披露 reviewer/refuter 全名 |
+| 设计对抗 | Main-Grok 文档/架构 guilty 分析；**必须**标明形态，禁止装成 cross-agent |
+
+详见 AGENTS L0-20、`docs/adversarial-review.md`。
+
 ## 与旧文档关系
 
 - 本文为 **L1 架构入口**；开发模式细节仍见 README「Development modes」。  
-- 对用户优先 H/C 中文名；日志/兼容可保留 A–E。  
+- 对用户优先 H/C 中文名 + 后端全名；日志/兼容可保留 A–E。  
