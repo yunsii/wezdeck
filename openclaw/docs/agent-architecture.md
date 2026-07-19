@@ -83,19 +83,26 @@ Claw 需要写码后端
 
 每条单独记：`pass | fail | not run | degraded`。
 
-| 能力 | 含义 | 备注 |
-| --- | --- | --- |
-| `grok-native` | 本机 Grok CLI | 与 Main-Grok 不同 |
-| `main-grok` | OpenClaw Main 模型 | 编排 + C1 |
-| `claude-native` | 本机 Claude Code | H2 / C2 |
-| `codex-native` | 本机 Codex + host 配置 | 默认模型属用户 |
-| `acp-claude` | `/acp spawn claude` | C3 |
-| `acp-codex` | `/acp spawn codex` | C3；隔离 CODEX_HOME |
-| `review-claude` | 审查后端 claude | host CLI |
-| `review-codex-gpt` | 审查 codex-gpt | host；代理无 GPT 时 degraded |
-| `review-codex-grok` | 审查 codex-grok | host `-p grok` |
+| 能力 | 含义 | 本机状态（2026-07-19） | 备注 |
+| --- | --- | --- | --- |
+| `grok-native` | 本机 Grok CLI | not run（本轮） | 与 Main-Grok 不同 |
+| `main-grok` | OpenClaw Main 模型 | **pass** | 编排 + C1 |
+| `claude-native` | 本机 Claude Code | **pass**（PATH/登录） | H2 / C2 |
+| `codex-native` | 本机 Codex + host 配置 | **pass**（CLI 在 PATH；默认 gpt-5.5 属用户） | 代理无 GPT 时调用可能 degraded |
+| `acp-claude` | ACP → Claude 后端 | **pass**（历史 smoke） | C3 |
+| `acp-codex` | ACP → Codex 后端 | **pass**（2026-07-19 写出 `codex-acp-ok`） | 隔离 CODEX_HOME 默认 Grok；**未改** host |
+| `review-claude` | 审查后端 claude | **pass**（selfcheck） | host CLI |
+| `review-codex-gpt` | 审查 codex-gpt | **degraded** | host；代理账号组常 404 GPT |
+| `review-codex-grok` | 审查 codex-grok | **pass**（CLI smoke） | host `-p grok` |
 
 质量面默认推荐：`review-claude` × `review-codex-grok`。
+
+### ACP Codex smoke 记录（Phase 2）
+
+- 方式：Claw 轨 C3，`sessions_spawn` / ACP → `codex`
+- cwd：claw task worktree
+- 产物：`tmp-acp-smoke/smoke-ok.txt` = `codex-acp-ok`
+- 边界：host `~/.codex` 默认 `gpt-5.5` 与 auth **未变**；ACP 使用隔离 home + Grok
 
 ## Claw 轨门闩（写任务）
 
