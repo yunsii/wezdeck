@@ -28,8 +28,11 @@ watch or take over.
 
 Protocol detail: [`workspace/AGENTS.md`](./workspace/AGENTS.md).
 
-**Development modes:** human direct (A), Feishu main (B), optional handoff (C);
-**CLI backend (D) disabled by policy**; ACP (E) optional later — see
+**Agent architecture (unified):** human rail H1/H2 + Claw rail C1/C2/C3;
+ACP is an **access layer** (backends: Claude / Codex); Grok is split into
+native CLI vs Main-Grok vs Codex+Grok model. See
+[`docs/agent-architecture.md`](./docs/agent-architecture.md).
+Legacy A–E codes remain as parenthetical aliases under
 [Development modes](#development-modes-who-writes-code).
 
 ## Status (MVP)
@@ -146,39 +149,44 @@ Optional: same Feishu app used by lark-cli for manual API work.
 
 ### Development modes (who writes code)
 
-Five ways code gets written on this machine. **A / B are the everyday paths.**
-**C** is an optional bot→local handoff (single writer). **E (ACP)** is enabled
-on this host for `claude` + `codex` (see below). **D (CLI backend) is disabled**.
+**User-facing language:** human rail **H1/H2** and Claw rail **C1/C2/C3**
+(see [`docs/agent-architecture.md`](./docs/agent-architecture.md)).
+Legacy **A–E** codes stay as internal aliases (below).
+
+**Everyday paths:** H1/H2 and C1. **C2** optional handoff. **C3** ACP access to
+Claude/Codex backends. **D** disabled.
 
 ```text
 需求
-  ├─ A 人工直接开发 ──────────────► IDE / 终端 / 本机 Claude·Codex
-  │                                   （可不经飞书、不经 Handoff）
+  ├─ 人工轨
+  │    H1 人直接开发 ─────────────► IDE
+  │    H2 人 + 原生 Agent ────────► grok / claude / codex 原生 TUI
   │
-  └─ 飞书 YunsClaw (main)
-        ├─ B Main 直写 ───────────► Gateway 内工具 + grok-proxy（小改）
-        ├─ C 运营 Handoff ────────► 本机做完编码 → 再回飞书让 main 收尾
-        ├─ D CLI backend ─────────► **禁用**
-        └─ E ACP harness ─────────► acpx → claude / codex（stdio JSON-RPC）
+  └─ Claw 轨（飞书 YunsClaw / Main-Grok 编排）
+        ├─ C1 Main 自写 ──────────► Gateway 工具 + grok-proxy（小改）
+        ├─ C2 Handoff 原生 ───────► 本机 CLI 写完 → Main 收尾（非 ACP）
+        ├─ D  CLI backend ────────► **禁用**
+        └─ C3 ACP 接入 ───────────► acpx → 后端 claude | codex
 ```
 
-| | Mode | Who codes | How it connects | When | Status |
-| --- | --- | --- | --- | --- | --- |
-| **A** | **Human direct** | You (IDE / shell / host `claude`·`codex`) | No OpenClaw IPC | Day-to-day coding; full **TUI history** if using CLI | **Active** |
-| **B** | **Main direct** | YunsClaw embedded agent | Feishu → Gateway in-process tools | Small, clear Feishu-driven edits + ledger/worktree | **Active** |
-| **C** | **Operational handoff** | Host CLI (or you) after main prepares cwd | Main posts `## Handoff` in Feishu; **not** ACP | Main will not implement the bulk; local finish → main wrap-up | **Optional protocol** |
-| **D** | **CLI backend** | Bundled `claude-cli` etc. | stream-json spawn as model | — | **Disabled by policy** |
-| **E** | **ACP harness** | `claude` / `codex` via `@openclaw/acpx` | ACP **stdio + JSON-RPC** | Multi-file Feishu-driven coding workers | **Enabled** (`allowedAgents: claude, codex`) |
+| 轨 | 方式 | 旧 | Who codes | How it connects | When | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 人工 | **H1** 人直接 | A | You (IDE) | No OpenClaw IPC | Day-to-day | **Active** |
+| 人工 | **H2** 原生 Agent | A | Host `grok`/`claude`/`codex` | Native TUI | Full product UX | **Active** |
+| Claw | **C1** Main 自写 | B | YunsClaw embedded | Feishu → in-process tools | Small Feishu edits | **Active** |
+| Claw | **C2** Handoff | C | Host CLI after handoff | Feishu `## Handoff`; not ACP | Local finish → Main wrap-up | **Optional** |
+| Claw | **C3** ACP 后端 | E | `claude` / `codex` via ACP | ACP stdio JSON-RPC (**access layer**) | Multi-file Feishu workers | **Enabled** |
+| — | ~~D CLI backend~~ | D | — | stream-json as model | — | **Disabled** |
 
 **Single writer rule:** for a given worktree, only **one** of main / local CLI /
-you should be the primary editor at a time. Do **not** run B and C (or A and B)
-as concurrent writers on the same tree.
+ACP worker / you is the primary editor. Do **not** run C1+C2 or C1+C3 concurrent
+writes on the same tree.
 
-**Mode declaration (protocol):** after the user confirms requirements / worktree
-初评, **main must post a 【开发方式】** block (A/B/C/E + who executes + one-line
-reason) and **wait for confirm** before writing code or `/acp spawn`. This is
-**soft routing** (agent + AGENTS heuristics), not a hard classifier binary.
-User overrides win. See `workspace/AGENTS.md`.
+**Mode declaration (protocol):** after requirements / worktree 初评, **main must
+post a 【开发方式】 recommendation card** (H/C Chinese names + optional A–E +
+who executes + reason + alternatives) and **wait for confirm** before writing
+code or `/acp spawn`. Soft routing; user overrides win. See `workspace/AGENTS.md`
+and `docs/agent-architecture.md`.
 
 #### A — Human direct
 
@@ -240,7 +248,16 @@ If a future need appears (pure text fallback when Grok is down), re-evaluate
 explicitly — default remains **off**. Upstream reference only:
 [CLI backends](https://docs.openclaw.ai/gateway/cli-backends).
 
-#### E — ACP (enabled on this host)
+#### C3 / E — ACP access layer (Claude / Codex backends)
+
+**ACP is not a third constitution.** It is the OpenClaw **access layer** that
+schedules **Claude** or **Codex** as coding backends on the Claw rail. There is
+no `spawn grok`. Grok as a *model* on Codex ≠ Grok native CLI ≠ Main-Grok.
+
+**Config isolation (hard):** ACP Codex uses only
+`~/.openclaw/acpx/codex-home/**`. Do **not** overwrite host `~/.codex` defaults
+when tuning ACP. Host `~/.claude` / `~/.codex` / `~/.grok` remain user assets.
+Adversarial-review and handoff CLIs use host configs (`env -u CODEX_HOME`).
 
 Local config (never commit secrets): `@openclaw/acpx` enabled, `plugins.allow`
 includes `acpx`, top-level:

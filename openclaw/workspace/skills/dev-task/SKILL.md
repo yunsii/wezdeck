@@ -2,8 +2,8 @@
 name: dev-task
 description: >
   Allowlisted development (coco-forge + wezdeck) under OpenClaw: claw worktrees
-  under dirname(primary)/.worktrees/<repo>/, assess before create, modes A/B/C/E,
-  handoff, reclaim. Load for any write-task implementation.
+  under dirname(primary)/.worktrees/<repo>/, assess before create, human/Claw
+  rails (H1/H2, C1/C2/C3; legacy A–E), ACP as access layer, handoff, reclaim.
 ---
 
 # Dev task (allowlisted repos + claw lifecycle worktrees)
@@ -19,12 +19,14 @@ Write work only under allowlist (see `AGENTS.md`). Pure Q&A: skip. Other repos: 
 
 Path formula (WezDeck): `dirname(realpath(primary))/.worktrees/<basename(primary)>/<slug>/`.
 
+Architecture: `openclaw/docs/agent-architecture.md` (Grok 三分, ACP 接入, 命名空间).
+
 ## Checklist
 
 Same 9 steps as `AGENTS.md` Write-task checklist. Scripts:
 
 - `openclaw/scripts/dev-task-ledger.sh` — see `skills/task-ledger`
-- `openclaw/scripts/claw-worktree.sh` — assess/create/list/reclaim (create 委托 worktree-task)
+- `openclaw/scripts/claw-worktree.sh` — assess/create/list/reclaim
 - `openclaw/scripts/claw-run.sh` — host shell gate
 
 ## Assess → 初评
@@ -32,72 +34,80 @@ Same 9 steps as `AGENTS.md` Write-task checklist. Scripts:
 ```bash
 ./openclaw/scripts/claw-worktree.sh assess \
   --title "<subject>" --domain "<area>" --scope "<hint>" [--days N] \
-  --cwd "$HOME/github/wezterm-config"   # or coco-forge primary
+  --cwd "$HOME/github/wezterm-config"
 ```
 
-Present: lifecycle, slug, branch, `action` reuse|create, `worktree_root`, `path_if_create`,
-`same_domain_candidates`. **Wait for user** before create when non-trivial.
-
-| Signal | Prefer |
-| --- | --- |
-| 紧急/线上/P0 | hotfix |
-| 大范围/多周 | dev |
-| 单功能/明确验收 | task |
-
-### 初评模板
-
-```text
-## Worktree 初评
-- lifecycle / slug / branch / domain
-- action: 复用 … | 新建 …
-- worktree_root: …
-请确认后我再 create。
-```
+Present: lifecycle, slug, branch, `action` reuse|create, `worktree_root`, `path_if_create`.
+**Wait for user** before create when non-trivial (落实 may skip re-confirm if already authorized).
 
 ## Create / reuse / reclaim
 
 ```bash
 ./openclaw/scripts/claw-worktree.sh create \
   --title "…" --lifecycle task|dev|hotfix --domain "…" \
-  --cwd "$HOME/github/wezterm-config"   # primary; tree lands under parent .worktrees
+  --cwd "$HOME/github/wezterm-config"
 ```
 
-- Default **prefer-reuse** same domain; `--force-new` for parallel tree (`-2` suffix).
-- Never human `dev-*`/`task-*`/`hotfix-*` as write targets.
-- **Reclaim never automatic** — ask after `ledger close`; `claw-dev-*` default keep (`--allow-long-lived` if reclaiming).
+- Prefer-reuse same domain; never human `dev-*`/`task-*` as write targets.
+- **Reclaim never automatic** after ledger close.
 
-| Lifecycle | Claw slug / branch |
-| --- | --- |
-| task | `claw-task-*` / `claw/task/…` |
-| dev | `claw-dev-*` / `claw/dev/…` |
-| hotfix | `claw-hotfix-*` / `claw/hotfix/…` |
+## Rails & modes (user-facing)
 
-## Modes
+| 轨 | 方式 | 旧 | Who codes | Main does |
+| --- | --- | --- | --- | --- |
+| 人工 | H1 人直接 | A | User IDE | Ledger/验收 only |
+| 人工 | H2 原生 Agent | A | Host grok/claude/codex | Assist only |
+| Claw | C1 Main 自写 | B | Main (Main-Grok) | Implement + verify |
+| Claw | C2 Handoff | C | Host CLI after handoff | **Stop coding** that cwd |
+| Claw | C3 ACP 后端 | E | ACP → claude \| codex | Spawn/close; single writer |
+| — | D | D | — | **Forbidden** |
 
-| | Who | Main does |
-| --- | --- | --- |
-| A | User local | Ledger/验收 only |
-| B | Main | Implement + verify |
-| C | Local after handoff | Post handoff, **stop coding** that cwd |
-| E | ACP claude/codex | `sessions_spawn` / `/acp spawn`; single writer |
-| D | — | Forbidden |
+**ACP** = access layer only; backends are Claude/Codex. No `spawn grok`.
+Do not rewrite host `~/.codex` / `~/.grok` defaults when fixing ACP
+(use `~/.openclaw/acpx/codex-home` for ACP Codex).
 
-### Handoff (C)
+### Handoff (C2)
 
 ```text
 ## Handoff
 - task_id / cwd / branch / goal / non-goals / acceptance
-- 开发方式: C
+- 开发方式: C2 本机原生 handoff（C）
 - constraints: no force-push; no push main without yes
 - after: 本机做完 → 飞书摘要 → main close + reclaim ask
 - 本机: cd <cwd> && claude --continue
 ```
 
-## 开发方式 + 实现方案
+## 开发方式推荐卡（必发）
 
-See `AGENTS.md` templates. Always restate mode before code/ACP even if user named it.
+Before code or ACP, post and wait:
+
+```text
+## 开发方式（请抉择）
+- 轨: 人工 | Claw
+- 推荐: H1 | H2 | C1 Main自写 | C2 handoff | C3 ACP(claude|codex)
+- 执行者 / 后端: …
+- 理由: …（含限制/degraded）
+- 备选: …
+- 平台约束: 单写者、claw-*、确认前不写码；不改原生默认配置
+- 审查建议: claude × codex-grok | 跳过（理由）
+- cwd / task_id: …
+请确认。确认前不改代码 / 不 spawn ACP。
+```
+
+Heuristics: **C1** small/clear; **C3-claude** multi-file/profile; **C2/H2** need TUI;
+**H1** already coding; **C3-codex** explicit Codex stack.
+
+## 实现方案块
+
+See `AGENTS.md`. Always restate mode even if user named it.
 
 ## 落实 / commits
 
-On 落实: review → implement → verify → **1–3 logical commits** (no scatter) → push agreed branch → report.
+On 落实: review → implement → verify → **1–3 logical commits** → push agreed branch → report.
 Shell via `claw-run` when required by exec-risk.
+
+## Constitution (all agents)
+
+Usage may differ by rail/limits; **criteria do not**: L0, skills, scripts,
+single-writer, honest pass/fail, no fake green, secret hygiene, error closed-loop
+(`Process failed` / `Exec failed` same-turn plain language).
