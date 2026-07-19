@@ -343,24 +343,25 @@ if [ "$n1" -eq 0 ]; then
 fi
 
 # --- stage 2: refute ---------------------------------------------------------
+# Multi-role is mandatory for 对抗审查: always attempt refute when provider is
+# available. Same backend/family still runs gate2 (opposite prompt), but results
+# are SINGLE-MODEL — never claim cross-agent.
 survivors="$f1"
-# Same string OR same family (codex-gpt vs codex-grok is still codex family)
-if [ "$reviewer" = "$refuter" ] || provider_same_family "$reviewer" "$refuter"; then
-  if [ "$reviewer" = "$refuter" ]; then
-    log "stage 2/3 · SKIP — reviewer==refuter, no cross-model value"
-    skipped_gates+=("cross-model(reviewer==refuter)")
-  else
-    log "stage 2/3 · SKIP — reviewer/refuter same family ($(_provider_family "$reviewer")); not full cross-agent"
-    skipped_gates+=("cross-model(same-family:$(_provider_family "$reviewer"))")
-  fi
+if provider_same_family "$reviewer" "$refuter" || [ "$(_provider_canonical "$reviewer")" = "$(_provider_canonical "$refuter")" ]; then
+  log "stage 2/3 · refute ($refuter) as SECOND ROLE (same capability as reviewer → SINGLE-MODEL)"
+  skipped_gates+=("cross-model(single-model-multi-role)")
 elif ! provider_available "$refuter"; then
-  log "stage 2/3 · SKIP — refuter '$refuter' unavailable; results are SINGLE-MODEL"
-  skipped_gates+=("cross-model($refuter unavailable)")
+  log "stage 2/3 · SKIP — refuter '$refuter' unavailable; cannot complete multi-role 对抗审查"
+  skipped_gates+=("refute-unavailable($refuter)")
+  # Without refute, do not pretend adversarial completeness
+  survivors="$f1"
 else
   log "stage 2/3 · refute ($refuter)…"
+fi
+
+if provider_available "$refuter" && [[ " ${skipped_gates[*]} " != *"refute-unavailable"* ]]; then
   refute_in="$diff"$'\n\n=== FINDINGS ===\n'"$f1"
   if f2_raw="$(printf '%s' "$refute_in" | run_agent "$refuter" "$prompts/refute.md")"; then
-    # Trust only refuted/refute_reason from stage2; merge onto stage1 by id
     f2="$(_validate_findings "$f2_raw")"
     survivors="$(jq -nc --argjson s1 "$f1" --argjson s2 "$f2" '
       ($s2 | map({key:(.id // (.file+":"+(.line|tostring)+":"+.summary)), value:.}) | from_entries) as $m
@@ -376,7 +377,7 @@ else
     log "  → $(printf '%s' "$survivors" | jq 'length')/$n1 survived refutation"
   else
     log "  ! refuter returned no valid JSON — keeping stage1 findings, gate marked skipped"
-    skipped_gates+=("cross-model(bad-json)")
+    skipped_gates+=("refute-bad-json")
   fi
 fi
 

@@ -133,13 +133,14 @@ C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/d
 **直接 merge + push `master`**，无需再问「是否合主」。
 仍须明确 yes：force-push、非 wezdeck 仓推主、生产破坏。
 
-## 对抗审查 vs 设计对抗
+## 对抗审查 vs 设计批判
 
 | 说法 | 要求 |
 | --- | --- |
-| 三门对抗审查 | `run.sh` + 披露 reviewer/refuter 全名 |
-| 设计对抗 | Main-Grok 文档/架构 guilty 分析；**必须**标明形态，禁止装成 cross-agent |
+| **对抗审查** | **多角色**：至少 find + refute（推荐 repro）；优先异模型；同模型须两次对立调用并标 SINGLE-MODEL |
+| **设计批判** | 单角色 Main-Grok 分析；**禁止**叫对抗审查 |
 
+编排：`run.sh`，或 Main 连续调度两次 TUI/ACP（不同立场 prompt）。  
 详见 AGENTS L0-20、`docs/adversarial-review.md`。
 
 ## 与旧文档关系
