@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "adversarial-review finding",
+  "description": "Inter-stage contract for scripts/dev/adversarial-review. Every agent stage emits an array of these.",
+  "type": "object",
+  "required": ["file", "line", "summary", "failure_scenario", "severity", "verdict"],
+  "properties": {
+    "id": { "type": "string", "description": "stable-ish hash of file+line+summary; filled by run.sh if absent" },
+    "file": { "type": "string", "description": "repo-relative path" },
+    "line": { "type": "integer" },
+    "summary": { "type": "string", "description": "one-sentence defect statement" },
+    "failure_scenario": { "type": "string", "minLength": 1, "description": "concrete input/state -> wrong output/crash; MUST be non-empty or the finding is dropped" },
+    "severity": { "enum": ["critical", "high", "medium", "low"] },
+    "category": { "type": "string", "description": "correctness|security|resource|concurrency|..." },
+    "verdict": { "enum": ["CONFIRMED", "PLAUSIBLE"] },
+    "refuted": { "type": "boolean", "default": false },
+    "refute_reason": { "type": ["string", "null"], "default": null },
+    "repro": {
+      "type": "object",
+      "properties": {
+        "ran": { "type": "boolean" },
+        "reproduced": { "type": ["boolean", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
