@@ -2,9 +2,16 @@
 
 ## Agent skill (not for humans to run by hand)
 
-OpenClaw agents load **`openclaw/workspace/skills/adversarial-review/SKILL.md`** and execute
-`scripts/dev/adversarial-review/run.sh` themselves. Humans only state intent
-(e.g. 审一下 / 对抗审查). Do not make the user the primary operator of this script.
+Agents load a skill and execute `scripts/dev/adversarial-review/run.sh` themselves.
+Humans only state intent (e.g. 审一下 / 对抗审查). Do not make the user the primary
+operator of this script.
+
+| Surface | Discovery |
+| --- | --- |
+| **Repo / host TUI** (cwd in wezdeck) | `skills/adversarial-review/SKILL.md` |
+| **OpenClaw Main** | `openclaw/workspace/skills/adversarial-review/SKILL.md` |
+| **All host TUI doctrine** | `agent-profiles/v1/en/validation.md` → Adversarial review |
+| **Runner (only impl)** | `scripts/dev/adversarial-review/run.sh` |
 
 
 `scripts/dev/adversarial-review/` runs a **cross-agent adversarial code review**
