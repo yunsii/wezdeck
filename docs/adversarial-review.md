@@ -1,5 +1,10 @@
 # Adversarial Review (cross-agent) — v0.2
 
+**Authority:** runner `scripts/dev/adversarial-review/` is the only implementation.
+**Main procedure:** `openclaw/workspace/skills/adversarial-review/SKILL.md`.
+**Repo/TUI discovery:** thin `skills/adversarial-review/SKILL.md` (pointer).
+**This file:** knowledge base (how/why), not a second procedure.
+
 ## Agent skill (not for humans to run by hand)
 
 Agents load a skill and execute `scripts/dev/adversarial-review/run.sh` themselves.
@@ -8,8 +13,8 @@ operator of this script.
 
 | Surface | Discovery |
 | --- | --- |
-| **Repo / host TUI** (cwd in wezdeck) | `skills/adversarial-review/SKILL.md` |
-| **OpenClaw Main** | `openclaw/workspace/skills/adversarial-review/SKILL.md` |
+| **Repo / host TUI** (cwd in wezdeck) | `skills/adversarial-review/SKILL.md` (thin) |
+| **OpenClaw Main** | `openclaw/workspace/skills/adversarial-review/SKILL.md` (full) |
 | **All host TUI doctrine** | `agent-profiles/v1/en/validation.md` → Adversarial review |
 | **Runner (only impl)** | `scripts/dev/adversarial-review/run.sh` |
 
