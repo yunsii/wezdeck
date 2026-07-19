@@ -283,11 +283,12 @@ acp: {
 /acp status | /acp close
 ```
 
-| Target | Smoke (2026-07-18) | Notes |
+| Target | Smoke | Notes |
 | --- | --- | --- |
-| **claude** | **PASS** — `smoke-ok.txt` = `claude-acp-ok` | Host Claude Code login; user `~/.claude` / agent-profiles |
-| **codex** (default GPT) | **PASS** after auth bridge | Isolated `~/.openclaw/acpx/codex-home` needs host auth (401 if missing). Bundled `codex-acp` OK without global `codex` on PATH |
-| **codex + Grok** | **Config landed; ACP write smoke not green** | Model id **`grok-4.5`** from Grok CLI / OpenClaw proxy. Use `~/.codex/grok.config.toml` + `codex --profile grok` (and/or `[profiles.grok]`). ACP still `spawn codex` (no `spawn grok`). First ACP turns failed (`ACP_TURN_FAILED` / sandbox-read-only or profile form); treat as **best-effort** until re-verified |
+| **claude** | **PASS** (2026-07-18) — `claude-acp-ok` | Host Claude Code login; user `~/.claude` / agent-profiles |
+| **codex** (ACP isolated default) | **PASS** (2026-07-19) — `tmp-acp-smoke/smoke-ok.txt` = `codex-acp-ok` | ACP uses **isolated** `~/.openclaw/acpx/codex-home` (default model **grok-4.5** on this proxy). Host `~/.codex` defaults **not** overwritten. No `spawn grok`. |
+| **codex host GPT default** | **degraded** on this proxy account group | Host may keep `gpt-5.5`; many GPT ids 404 here — separate from ACP smoke |
+| **codex + Grok (host profile)** | **PASS** CLI (`codex -p grok`); review path uses host | `~/.codex/grok.config.toml` + `[profiles.grok]`; review adapters `env -u CODEX_HOME` |
 
 **Codex + Grok (recommended local config)** — aligned with Grok CLI
 `~/.grok/config.toml` (`models_base_url` …`/v1`, default `grok-4.5`,
