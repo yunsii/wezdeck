@@ -67,18 +67,50 @@ and **self-application**.
 
 Never claim “survived all three gates” for PLAUSIBLE items — they skip gate 3.
 
+## Writer-aware backend selection (strategy B)
+
+**Rule:** the agent family that *wrote* the code is not the default reviewer.
+Only when availability is insufficient may the same family be reused (must still
+be multi-role; label SINGLE-MODEL / degraded).
+
+| writer (who coded) | default pair (when available) |
+| --- | --- |
+| `claude` / Claude-ACP / Claude-TUI | `codex-gpt` × `codex-grok` |
+| `codex` / Codex-ACP / Codex-TUI / codex-grok | `claude` × `codex-gpt` (else `claude` × `codex-grok`) |
+| `main` / Main-Grok / `human` | `claude` × `codex-gpt` (else × `codex-grok`) |
+
+Probe order: prefer **codex-gpt** when headless ping works; else **codex-grok**.
+Implementation: `lib/select-backends.sh`. Human report always prints disclosure
+fields: writer / form / reviewer / refuter / degraded / reason.
+
+```bash
+# auto by who wrote the code
+run.sh <BASE> --writer codex-grok --mode strict
+run.sh <BASE> --writer claude-acp --dry-run --no-probe
+
+# explicit pair still wins when both flags set
+run.sh <BASE> --reviewer claude --refuter codex-gpt
+
+# inspect selection only
+lib/select-backends.sh --writer codex --json --no-probe
+```
+
 ## Usage
 
 ```bash
 scripts/dev/adversarial-review/run.sh <BASE_REF> [options]
 
-  --reviewer P       backend: claude|codex|codex-gpt|codex-grok (default: claude)
-  --refuter P        backend alias (default: codex → codex-gpt)
+  --writer W         who wrote code: claude|codex|codex-gpt|codex-grok|main|human
+                     (auto-selects reviewer/refuter; strategy B)
+  --auto-select      select backends for writer (default writer=human if omitted)
+  --no-probe         PATH-only availability (skip live headless ping)
+  --reviewer P       backend: claude|codex|codex-gpt|codex-grok (optional if --writer)
+  --refuter P        backend alias (optional if --writer)
   --critic P         deprecated alias for --refuter
   --head REF         diff endpoint                         (default: HEAD)
   --mode MODE        strict | advisory                     (default: strict)
   --min-severity L   critical|high|medium|low              (default: low)
-  --json             machine-readable output
+  --json             machine-readable output (includes writer/form/degraded)
   --dry-run          print the planned gates, call no agents
   --fail-on-finding  exit 10 if any strict survivor
 
