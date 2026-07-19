@@ -53,21 +53,30 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
     **评审 → 完善验证 → 整洁提交（通常 1–3 个逻辑 commit，禁止无脑碎提交）→ 推约定分支 → 闭环汇报**。
     wezdeck：约定分支验收后可直接合 `master` 并推送（见 L0-18）。
     未 push 的碎提交须整理后再推；不擅自 force-push 已分享历史。若本次改了 L0 精神，验收须含 agent-profiles 是否已同步。
-20. **对抗审查披露（强制）** — 凡声称「对抗审查 / adversarial review」：
-    必须在同一回复写明 **审查形态**（见下表），禁止只给结论不报 agent 形式。
+20. **对抗审查 = 多角色编排（强制）** — 名称即约束：
+    - **最低结构**：至少两个对立角色——**找茬 (find/reviewer)** 与 **反驳 (refute/refuter)**；
+      推荐再加 **复现 (repro)**。禁止「一个角色自说自话」仍叫对抗审查。
+    - **优先**不同 agent 家族（如 Claude-TUI × Codex-Grok-profile）。
+    - **若只能同一 agent 能力**：仍须 **分角色编排**（两次独立调用、不同 system/prompt 立场：
+      guilty-until-proven vs 举证责任在 finding），并标 **SINGLE-MODEL**；
+      不得省略 refute 角色。可用 Main 编排两次同后端，或 `run.sh --reviewer X --refuter X`。
+    - **单角色 guilty 独白**（仅 Main-Grok 一段分析）：**禁止**称「对抗审查」；只能称
+      **「设计批判 · Main-Grok」**（或架构评审），且不得暗示 cross-agent / 三门通过。
+    - 凡声称「对抗审查」须同轮披露：
     | 形态 | 含义 | 可否宣称 cross-agent |
     | --- | --- | --- |
-    | **三门全量** | `run.sh` find→refute→repro，且 reviewer≠refuter 家族 | 可以（写全名） |
-    | **单模型/同家族** | 仅 Main 或 reviewer==refuter 或 gate2 skip | **不可**；须标 SINGLE-MODEL |
-    | **设计对抗（文档/架构）** | Main-Grok 对照需求做 guilty 分析，未跑 run.sh | **不可**装成三门；须写「设计对抗 · Main-Grok」 |
-    最低披露块：
+    | **三门全量** | find→refute→repro，且 reviewer≠refuter 家族 | 可以（写全名） |
+    | **多角色·单模型** | 有 find+refute（±repro），但同家族/同后端 | **不可**；须标 SINGLE-MODEL |
+    | **设计批判** | 单角色分析，无对立编排 | **不是**对抗审查 |
     ```text
     ## 对抗审查披露
-    - 形态: 三门全量 | 单模型 | 设计对抗
-    - reviewer / refuter 全名: …（Claude-TUI / Codex-Grok-profile / Main-Grok …）
-    - 命令或范围: … | 未跑 run.sh（设计对抗）
+    - 形态: 三门全量 | 多角色·单模型 | （若仅设计批判则不要用对抗审查标题）
+    - reviewer 全名 / 角色立场: …
+    - refuter 全名 / 角色立场: …（不可空，除非降级为设计批判）
+    - repro: 已跑 | 跳过（理由）
+    - 命令或范围: …
     - skipped_gates: … | 无
-    - 关键结论: …（每条可追溯到哪一闸/哪一证据）
+    - 关键结论: …（每条绑定 find/refute/repro 哪一闸）
     ```
 
 Language / identity: personal owner of this Linux/WSL host; never invent `task_id` or success.
