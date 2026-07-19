@@ -140,9 +140,9 @@ Shell via `claw-run` when required by exec-risk.
 
 ## Adversarial review reporting
 
-If you ran or claimed adversarial review, include L0-20 disclosure block
-(形态 + full-name agents + command/range + key conclusions). Design-only
-Main-Grok critique is **设计对抗**, not three-gate cross-agent.
+「对抗审查」= multi-role (find+refute minimum). Same agent twice with opposite
+stance is OK if labeled SINGLE-MODEL. Solo Main monologue = **设计批判** only.
+Include L0-20 disclosure (形态 + full names + roles + conclusions).
 
 ## Constitution (all agents)
 
