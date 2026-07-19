@@ -40,14 +40,15 @@
 | **Codex+Grok** | Codex 的 model/profile（host `-p grok` 或 ACP 隔离默认） | Codex **后端**的一种模型，不是 Grok 原生 |
 
 
-## Git 提交约定（wezdeck）
+## Git / cwd 约定（wezdeck）
 
+- **默认 cwd**：primary **`master`**（个人仓无并行不必 worktree）；并行/隔离再 `claw-*`。
 - **Author** = 仓库主人（`Yuns <yuns.xie@qq.com>`），禁止机器人名占 Author。
 - **Trailer**：`Assisted-by: OpenClaw (backend=…, model=…)`
   - C1 Main 自写：`backend=main, model=grok-4.5`（短 model id；不必写 `*-proxy` 供应商后缀）
   - C2/C3 写码后端：`backend=Claude-ACP|Codex-ACP|…, model=…`
-- **合主**：默认 **fast-forward**（rebase + `merge --ff-only`），不为仪式默认 `--no-ff`。
-- 细节：`workspace/AGENTS.md` L0-18/19、`skills/dev-task/SKILL.md`。
+- **推送**：默认已在 master → 验收后 **直接 push master**；隔离分支时 ff-only 合入，不为仪式 `--no-ff`。
+- 细节：`workspace/AGENTS.md` L0-12/18/19、`skills/dev-task/SKILL.md`；host TUI：`agent-profiles` vcs wezdeck 节。
 
 ## ACP = 接入层，不是第三套 Agent
 

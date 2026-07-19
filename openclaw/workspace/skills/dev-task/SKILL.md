@@ -1,12 +1,12 @@
 ---
 name: dev-task
 description: >
-  Allowlisted development (wezdeck (+ optional team roots in local config)) under OpenClaw: claw worktrees
-  under dirname(primary)/.worktrees/<repo>/, assess before create, human/Claw
-  rails (H1/H2, C1/C2/C3; legacy A–E), ACP as access layer, handoff, reclaim.
+  Allowlisted development (wezdeck (+ optional team roots in local config)) under OpenClaw: wezdeck defaults
+  to primary master; claw worktrees when parallel/isolation needed; 团队仓
+  still prefers claw-*; human/Claw rails (H1/H2, C1/C2/C3), ACP access layer.
 ---
 
-# Dev task (allowlisted repos + claw lifecycle worktrees)
+# Dev task (allowlisted repos)
 
 ## When
 
@@ -15,41 +15,37 @@ Write work only under allowlist (see `AGENTS.md`). Pure Q&A: skip. Other repos: 
 | Logical | Roots |
 | --- | --- |
 | 团队仓 | `$HOME/work/team-repo`, `$HOME/work/.worktrees/team-repo` |
-| wezdeck | `$HOME/github/wezterm-config`, `$HOME/github/.worktrees/wezterm-config` |
+| wezdeck | `$HOME/github/wezterm-config` (primary), optional `.worktrees` |
 
-Path formula (WezDeck): `dirname(realpath(primary))/.worktrees/<basename(primary)>/<slug>/`.
+## cwd policy (L0-12)
 
-Architecture: `openclaw/docs/agent-architecture.md` (Grok 三分, ACP 接入, 命名空间).
+| Repo | Default | Worktree when |
+| --- | --- | --- |
+| **wezdeck** | **primary `master`** | parallel tasks, long experiment, C2/C3 needs isolated cwd, user asks |
+| **团队仓** | **claw-\*** under `dirname(primary)/.worktrees/<repo>/` | always unless user overrides |
+
+Path formula (when used): `dirname(realpath(primary))/.worktrees/<basename(primary)>/<slug>/`.
+
+Architecture: `openclaw/docs/agent-architecture.md`.
 
 ## Checklist
 
-Same 9 steps as `AGENTS.md` Write-task checklist. Scripts:
+Same steps as `AGENTS.md` Write-task checklist (wezdeck may skip assess/create).
+Scripts: `dev-task-ledger.sh`, `claw-worktree.sh`, `claw-run.sh`.
 
-- `openclaw/scripts/dev-task-ledger.sh` — see `skills/task-ledger`
-- `openclaw/scripts/claw-worktree.sh` — assess/create/list/reclaim
-- `openclaw/scripts/claw-run.sh` — host shell gate
-
-## Assess → 初评
+## Assess → create (only when isolation/parallel needed)
 
 ```bash
 ./openclaw/scripts/claw-worktree.sh assess \
   --title "<subject>" --domain "<area>" --scope "<hint>" [--days N] \
   --cwd "$HOME/github/wezterm-config"
-```
-
-Present: lifecycle, slug, branch, `action` reuse|create, `worktree_root`, `path_if_create`.
-**Wait for user** before create when non-trivial (落实 may skip re-confirm if already authorized).
-
-## Create / reuse / reclaim
-
-```bash
 ./openclaw/scripts/claw-worktree.sh create \
   --title "…" --lifecycle task|dev|hotfix --domain "…" \
   --cwd "$HOME/github/wezterm-config"
 ```
 
 - Prefer-reuse same domain; never human `dev-*`/`task-*` as write targets.
-- **Reclaim never automatic** after ledger close.
+- **Reclaim never automatic** after close (only if a worktree was used).
 
 ## Rails & modes (user-facing)
 
@@ -114,9 +110,9 @@ Heuristics: **C1** small/clear; **Claude-ACP** multi-file/profile; **C2/H2** nee
 
 ```text
 [OpenClaw C3 constitution — non-negotiable]
-1. Single writer: only you write this worktree; no parallel Main/TUI edits.
-2. cwd is the given claw-* path only; do not write primary or other trees.
-3. No force-push; no push to main/master without explicit human yes in chat.
+1. Single writer: only you write this cwd; no parallel Main/TUI on same tree.
+2. cwd is the path Main gave (wezdeck may be primary master or claw-*).
+3. No force-push; wezdeck may push master per owner policy; other repos need explicit yes.
 4. Prefer 1–3 logical commits; no secret leakage.
 5. On completion report: changed files, summary, blockers; honest fail if blocked.
 6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
@@ -134,7 +130,7 @@ See `AGENTS.md`. Always restate mode even if user named it.
 ## 落实 / commits
 
 On 落实: review → implement → verify → **1–3 logical commits** → push agreed branch → report.
-**wezdeck:** after green checks, **ff-only 合入 + push `master`** (owner policy, AGENTS L0-18/19).
+**wezdeck:** default work on **primary master**; after green checks **commit + push `master`** (L0-12/18/19). If a task branch/worktree was used, ff-only into master then push.
 Other repos: push main/master only with explicit yes.
 Shell via `claw-run` when required by exec-risk.
 
@@ -156,7 +152,7 @@ Shell via `claw-run` when required by exec-risk.
 | C1 Main | `backend=main`, `model=<short model id>` e.g. `grok-4.5` (not `grok-proxy/…` unless debugging) |
 | C2/C3 write | `backend=<full name>` e.g. `Claude-ACP`, `Codex-ACP` + that backend's model |
 | Editorial only | `Assisted-by: OpenClaw (editorial-only)` or omit |
-| Integrate | rebase onto master → `merge --ff-only` → push; **no** default `--no-ff` |
+| Integrate | wezdeck already on master → push; else rebase → `merge --ff-only` → push; **no** default `--no-ff` |
 
 Example message:
 

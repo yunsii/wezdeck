@@ -35,6 +35,18 @@ When the change is purely local edits and is not yet ready to enter version cont
 - [vcs-07] Prefer creating a new commit over amending a previously published commit.
 - [vcs-08] Stage specific files by name. Avoid `git add -A` / `git add .` because they may include secrets, generated files, or unrelated changes.
 
+## Personal monorepo: wezdeck (alignment with OpenClaw L0)
+
+When the repo is **wezdeck** (`wezterm-config` / machine-owner personal deck):
+
+- [vcs-30] **Default develop on `master`** (primary checkout). No mandatory feature branch or worktree for serial personal work.
+- [vcs-31] Use a **worktree or task branch** when work is parallel, long-lived experimental, or needs isolation from another live agent on the same tree.
+- [vcs-32] After acceptance, **push `master` is allowed** without a second "merge to main?" confirmation (owner policy). Still never force-push without explicit yes.
+- [vcs-33] Prefer **linear history**: rebase + fast-forward; do not invent merge commits for ceremony.
+- [vcs-34] **Author** must be the repo owner identity (not a bot name). Optional trailer: `Assisted-by: OpenClaw (backend=…, model=…)` when an agent assisted — see OpenClaw `AGENTS.md` L0-19.
+
+Other shared/team repos keep [vcs-03]–[vcs-06] strictly; do not assume wezdeck push rights apply there.
+
 ## Commit Granularity
 
 - [vcs-09] One commit, one coherent change.
