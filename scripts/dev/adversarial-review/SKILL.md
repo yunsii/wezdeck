@@ -46,13 +46,19 @@ proxy GPT is unavailable.
 ## Do
 
 ```bash
+# preferred: declare who wrote the code → auto pair (avoid writer family)
 scripts/dev/adversarial-review/run.sh <BASE_REF> \
-  --reviewer claude --refuter codex-grok --mode strict
+  --writer codex-grok --mode strict
+
+# explicit pair
+scripts/dev/adversarial-review/run.sh <BASE_REF> \
+  --reviewer claude --refuter codex-gpt --mode strict
 
 # same-model multi-role still valid (SINGLE-MODEL)
 scripts/dev/adversarial-review/run.sh <BASE_REF> \
   --reviewer claude --refuter claude --mode strict
 
+scripts/dev/adversarial-review/lib/select-backends.sh --writer claude --json
 scripts/dev/adversarial-review/run.sh dogfood --mode strict --fail-on-finding
 scripts/dev/adversarial-review/run.sh selfcheck claude codex-gpt codex-grok
 ```
@@ -61,9 +67,11 @@ scripts/dev/adversarial-review/run.sh selfcheck claude codex-gpt codex-grok
 
 ```text
 ## 对抗审查披露
-- 形态: 三门全量 | 多角色·单模型
+- writer: Claude-ACP | Codex-ACP | Main-Grok | human | …
+- 形态/form: cross-family | cross-model-codex | single-model-multi-role | …
 - reviewer 全名 / 立场: …
 - refuter 全名 / 立场: …
+- degraded / reason: …
 - repro: 已跑 | 跳过（理由）
 - 命令或范围: …
 - skipped_gates: … | 无
