@@ -37,6 +37,16 @@
 | **Main-Grok** | `openclaw.json` → `grok-proxy` | 控制面编排 + C1 自写 |
 | **Codex+Grok** | Codex 的 model/profile（host `-p grok` 或 ACP 隔离默认） | Codex **后端**的一种模型，不是 Grok 原生 |
 
+
+## Git 提交约定（wezdeck）
+
+- **Author** = 仓库主人（`Yuns <yuns.xie@qq.com>`），禁止机器人名占 Author。
+- **Trailer**：`Assisted-by: OpenClaw (backend=…, model=…)`
+  - C1 Main 自写：`backend=main, model=grok-4.5`（短 model id；不必写 `*-proxy` 供应商后缀）
+  - C2/C3 写码后端：`backend=Claude-ACP|Codex-ACP|…, model=…`
+- **合主**：默认 **fast-forward**（rebase + `merge --ff-only`），不为仪式默认 `--no-ff`。
+- 细节：`workspace/AGENTS.md` L0-18/19、`skills/dev-task/SKILL.md`。
+
 ## ACP = 接入层，不是第三套 Agent
 
 ```text

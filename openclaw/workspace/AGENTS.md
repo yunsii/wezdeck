@@ -46,12 +46,24 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 16. **宪法精神双向同步** — claw L0 与 agent-profiles 须保持精神一致。任一侧新增/收紧跨任务原则（可读性、闭环、影响面、性能、落实等）时，须同步另一侧入口（claw：L0/模板；profile：Default Posture + 对应 topic），不得只改飞书侧或只改本机 CLI 侧。
 17. **自验证与诚实验收** — 不把用户当主测；`pass|fail|not run|re-run`；失败记录含已自愈。
 18. **安全红线** — 密钥不外泄；force-push / 生产破坏 / 关安全阀：须明确 yes。
-    **wezdeck 特例（已固化）：** 逻辑仓 **wezdeck**（`$HOME/github/wezterm-config` 及其 claw worktree）由机主自维护；任务验收通过后 **允许直接 merge+push `master`**，不必再问「是否合主」。
+    **wezdeck 特例（已固化）：** 逻辑仓 **wezdeck**（`$HOME/github/wezterm-config` 及其 claw worktree）由机主自维护；任务验收通过后 **允许直接合入并 push `master`**，不必再问「是否合主」。
+    合入默认 **fast-forward**（任务分支先 rebase master，再 `merge --ff-only` 或等价线性合入）；**禁止**为「看起来像合入」而默认 `merge --no-ff` 制造无意义 merge commit。
     仍须明确 yes：force-push、改写已分享历史、非 wezdeck 仓推主、任何生产破坏。
     **coco-forge 等其他 allowlist 仓** 默认仍：推主前要明确 yes（除非用户另立规矩）。
 19. **落实协议与提交卫生** — 用户说落实/落地/按推荐执行/直接提交推送等：
     **评审 → 完善验证 → 整洁提交（通常 1–3 个逻辑 commit，禁止无脑碎提交）→ 推约定分支 → 闭环汇报**。
-    wezdeck：约定分支验收后可直接合 `master` 并推送（见 L0-18）。
+    wezdeck：约定分支验收后可直接 **ff 合入** `master` 并推送（见 L0-18）。
+    **Git 作者与 trailer（强制）：**
+    - **Author / Committer 必须是仓库主人**（wezdeck：`Yuns <yuns.xie@qq.com>`）。禁止 `user.name=YunsClaw`、禁止 `yuns@local` 等机器人身份占 Author。
+    - 提交消息用 conventional subject + 可选 body；协助信息只放 **trailer**，不占 Author。
+    - Footer 格式：
+      - Main 自写（C1）：`Assisted-by: OpenClaw (backend=main, model=<model-id>)`
+        例：`Assisted-by: OpenClaw (backend=main, model=grok-4.5)`（人读写短 model；不必写 provider 的 `*-proxy` 后缀）。
+      - 有写码 agent 后端（C2/C3/H2 且 agent 产出 diff）：
+        `Assisted-by: OpenClaw (backend=<全名>, model=<model-id>)`
+        例：`Assisted-by: OpenClaw (backend=Claude-ACP, model=…)` / `(backend=Codex-ACP, model=grok-4.5)`。
+      - Main 仅整理提交说明：`Assisted-by: OpenClaw (editorial-only)` 或省略 trailer。
+    - `backend=main` = OpenClaw 内置编排 agent（直接调配置的 model API），≠ Claude-ACP/Codex-ACP 外挂后端。
     未 push 的碎提交须整理后再推；不擅自 force-push 已分享历史。若本次改了 L0 精神，验收须含 agent-profiles 是否已同步。
 20. **对抗审查 = 多角色编排（强制）** — 名称即约束：
     - **最低结构**：至少两个对立角色——**找茬 (find/reviewer)** 与 **反驳 (refute/refuter)**；
@@ -197,7 +209,10 @@ Override: `OPENCLAW_TASKS_ALLOWED_ROOTS`. Other repos: read-only Q&A only.
 
 ## Git
 
-- Prefer commits on task branch; wezdeck 验收后可直接 merge+push `master`（L0-18）。
+- Prefer commits on task branch; wezdeck 验收后可 **ff-only 合入 + push `master`**（L0-18/19）。
+- **Author = 主人**（`Yuns <yuns.xie@qq.com>`）；禁止 YunsClaw / 机器人邮箱占 Author。
+- Trailer：`Assisted-by: OpenClaw (backend=main|Claude-ACP|…, model=…)`（见 L0-19）。
+- wezdeck 合主：`rebase` 任务分支 → `checkout master` → `merge --ff-only <branch>` → `push`；默认不用 `--no-ff`。
 - Other repos: no push `main`/`master` without explicit chat yes.
 - No force-push without explicit yes.
 
