@@ -138,6 +138,14 @@ On 落实: review → implement → verify → **1–3 logical commits** → pus
 Other repos: push main/master only with explicit yes.
 Shell via `claw-run` when required by exec-risk.
 
+### Feishu report default (brevity)
+
+- Progress while working: **1–3 lines**, not tool play-by-play.
+- Final report: use AGENTS **精简【结果】卡** by default (status, one-liner, commit anchor, decision ask).
+- Do **not** default-paste full acceptance tables, long path lists, full adversarial disclosure, or multi-block bash.
+- User says 展开/全文/细节 → then full completion template.
+- Failures: 4-line closed-loop first (失败/原因/处置/影响).
+
 ### Git author & trailer (mandatory)
 
 | Rule | Detail |
