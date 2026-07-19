@@ -134,9 +134,31 @@ See `AGENTS.md`. Always restate mode even if user named it.
 ## 落实 / commits
 
 On 落实: review → implement → verify → **1–3 logical commits** → push agreed branch → report.
-**wezdeck:** after green checks, **merge+push `master` directly** (owner policy, AGENTS L0-18).
+**wezdeck:** after green checks, **ff-only 合入 + push `master`** (owner policy, AGENTS L0-18/19).
 Other repos: push main/master only with explicit yes.
 Shell via `claw-run` when required by exec-risk.
+
+### Git author & trailer (mandatory)
+
+| Rule | Detail |
+| --- | --- |
+| Author | Always repo owner. wezdeck: `Yuns <yuns.xie@qq.com>`. **Never** `YunsClaw` / `yuns@local`. |
+| Do not | `git -c user.name=YunsClaw` or other bot identity overrides. |
+| Trailer | `Assisted-by: OpenClaw (backend=…, model=…)` |
+| C1 Main | `backend=main`, `model=<short model id>` e.g. `grok-4.5` (not `grok-proxy/…` unless debugging) |
+| C2/C3 write | `backend=<full name>` e.g. `Claude-ACP`, `Codex-ACP` + that backend's model |
+| Editorial only | `Assisted-by: OpenClaw (editorial-only)` or omit |
+| Integrate | rebase onto master → `merge --ff-only` → push; **no** default `--no-ff` |
+
+Example message:
+
+```text
+feat(scope): subject
+
+- bullet why/what
+
+Assisted-by: OpenClaw (backend=main, model=grok-4.5)
+```
 
 ## Adversarial review reporting
 
