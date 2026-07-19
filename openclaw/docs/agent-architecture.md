@@ -3,6 +3,9 @@
 个人控制面 **YunsClaw / OpenClaw** 的统一规划：原生能力保留、ACP 作接入、
 人工轨 / Claw 轨分用、全员同一宪法与平台能力。
 
+**交互形态（TUI / headless CLI / ACP / 飞书）** 详见
+[`agent-interaction.md`](./agent-interaction.md)（含 headless 调用示例）。
+
 对用户主语言用 **人工 H\*** / **Claw C\***；括号内可附旧 A–E 代号。
 
 ## 一句话
@@ -146,4 +149,5 @@ C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/d
 ## 与旧文档关系
 
 - 本文为 **L1 架构入口**；开发模式细节仍见 README「Development modes」。  
+- 交互与 headless 示例：[`agent-interaction.md`](./agent-interaction.md)。  
 - 对用户优先 H/C 中文名 + 后端全名；日志/兼容可保留 A–E。  
