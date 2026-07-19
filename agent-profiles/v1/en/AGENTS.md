@@ -83,7 +83,7 @@ Full rules live in the routed topic file.
 - Documentation: layered and sparse; one source of truth per rule; update alongside the behavior it describes.
 - Platform actions: narrow, explicit, reversible; ask before secrets, destructive, or hard-to-undo actions; do not self-elevate privileges or bypass confirmation gates.
 - Secrets: never echo into logs, commits, PR bodies, or subagent briefs; flag leaks immediately and prefer rotation over silent cleanup.
-- VCS: never auto-commit / auto-push / skip hooks / force-push to main without yes; user owns the history; tidy commits. **wezdeck personal:** default work on `master`; push master after acceptance OK; worktree only when parallel/isolation — full rules in [vcs.md](./vcs.md) `Personal monorepo: wezdeck`.
+- VCS core: never auto-commit/push/skip hooks/force-push without yes; user owns history. **Personal projects prefer mainline** (develop on `master`/`main` for efficiency; branch/worktree only when parallel/isolation). wezdeck is an instance. Full rules: [vcs.md](./vcs.md) `Core VCS: personal projects`.
 - Single writer: do not edit the same worktree/cwd in parallel with another live agent or human session on that tree; serialize or isolate (worktree) first.
 - Reporting: state what changed, how it was verified, and what remains uncertain; human-readable first. Full rule in [reporting.md](./reporting.md).
 - Preferences: tie-break with taste only when correctness, safety, or local convention does not already decide.

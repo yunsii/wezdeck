@@ -40,15 +40,17 @@
 | **Codex+Grok** | Codex 的 model/profile（host `-p grok` 或 ACP 隔离默认） | Codex **后端**的一种模型，不是 Grok 原生 |
 
 
-## Git / cwd 约定（wezdeck）
+## 法则分层 + Git / cwd
 
-- **默认 cwd**：primary **`master`**（个人仓无并行不必 worktree）；并行/隔离再 `claw-*`。
-- **Author** = 仓库主人（`Yuns <yuns.xie@qq.com>`），禁止机器人名占 Author。
-- **Trailer**：`Assisted-by: OpenClaw (backend=…, model=…)`
-  - C1 Main 自写：`backend=main, model=grok-4.5`（短 model id；不必写 `*-proxy` 供应商后缀）
-  - C2/C3 写码后端：`backend=Claude-ACP|Codex-ACP|…, model=…`
-- **推送**：默认已在 master → 验收后 **直接 push master**；隔离分支时 ff-only 合入，不为仪式 `--no-ff`。
-- 细节：`workspace/AGENTS.md` L0-12/18/19、`skills/dev-task/SKILL.md`；host TUI：`agent-profiles` vcs wezdeck 节。
+| 层 | 内容 | 同步 |
+| --- | --- | --- |
+| **L0 核心** | 单写者；**个人项目优先主分支**；提交 Author/trailer；错误闭环；对抗多角色… | claw ↔ agent-profiles **必须** |
+| **L1 Claw/飞书** | 飞书克制、台账、推荐卡… | 仅 claw |
+| **L1 Host TUI** | permissions、通用 tool-use… | 仅 profiles |
+
+**VCS 核心（L0-13）：** 个人仓默认 `master`/`main` 直开直推；并行/隔离才分支/worktree。  
+**实例 wezdeck：** primary master。**团队仓**（如团队仓）：仍偏隔离 + 推主要 yes。  
+**Author/trailer：** `workspace/AGENTS.md` L0-20；host：`agent-profiles` vcs 核心节。
 
 ## ACP = 接入层，不是第三套 Agent
 
@@ -157,7 +159,7 @@ C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/d
 | **设计批判** | 单角色 Main-Grok 分析；**禁止**叫对抗审查 |
 
 编排：`run.sh`，或 Main 连续调度两次 TUI/ACP（不同立场 prompt）。  
-详见 AGENTS L0-20、`docs/adversarial-review.md`。
+详见 AGENTS L0-21、`docs/adversarial-review.md`。
 
 ## 与旧文档关系
 

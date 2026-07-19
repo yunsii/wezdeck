@@ -35,17 +35,22 @@ When the change is purely local edits and is not yet ready to enter version cont
 - [vcs-07] Prefer creating a new commit over amending a previously published commit.
 - [vcs-08] Stage specific files by name. Avoid `git add -A` / `git add .` because they may include secrets, generated files, or unrelated changes.
 
-## Personal monorepo: wezdeck (alignment with OpenClaw L0)
+## Core VCS: personal projects prefer mainline (OpenClaw L0-13)
 
-When the repo is **wezdeck** (`wezterm-config` / machine-owner personal deck):
+**Core rule (cross-surface):** for **personal, owner-maintained** repos with no parallel collaboration, prefer **direct development on the default branch** (`master`/`main`) to maximize throughput. Do not invent branches/worktrees for ceremony.
 
-- [vcs-30] **Default develop on `master`** (primary checkout). No mandatory feature branch or worktree for serial personal work.
-- [vcs-31] Use a **worktree or task branch** when work is parallel, long-lived experimental, or needs isolation from another live agent on the same tree.
-- [vcs-32] After acceptance, **push `master` is allowed** without a second "merge to main?" confirmation (owner policy). Still never force-push without explicit yes.
-- [vcs-33] Prefer **linear history**: rebase + fast-forward; do not invent merge commits for ceremony.
-- [vcs-34] **Author** must be the repo owner identity (not a bot name). Optional trailer: `Assisted-by: OpenClaw (backend=…, model=…)` when an agent assisted — see OpenClaw `AGENTS.md` L0-19.
+- [vcs-30] **Personal project default:** develop, commit, and (when the user has authorized delivery) push on the primary default branch.
+- [vcs-31] **Branch/worktree only when needed:** parallel tasks, long experiments, large rollback risk, or isolation from another live agent on the same tree.
+- [vcs-32] **Linear history:** rebase + fast-forward; do not invent merge commits for ceremony.
+- [vcs-33] **Author** = repo owner identity (not a bot name). Optional trailer when an agent assisted: `Assisted-by: OpenClaw (backend=…, model=…)` (OpenClaw L0-20 trailer rules).
 
-Other shared/team repos keep [vcs-03]–[vcs-06] strictly; do not assume wezdeck push rights apply there.
+### Instance: wezdeck
+
+- [vcs-34] wezdeck (`wezterm-config`) is a personal monorepo: default **primary `master`**; after acceptance **push `master` without a second "merge to main?"** question. Force-push still needs explicit yes.
+
+### Shared / team repos
+
+- [vcs-35] Shared/team repos keep [vcs-03]–[vcs-06] strictly; do **not** assume personal mainline-push rights (e.g. team repos still prefer isolation / explicit yes for main unless the user sets otherwise).
 
 ## Commit Granularity
 

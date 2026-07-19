@@ -17,12 +17,14 @@ Write work only under allowlist (see `AGENTS.md`). Pure Q&A: skip. Other repos: 
 | 团队仓 | `$HOME/work/team-repo`, `$HOME/work/.worktrees/team-repo` |
 | wezdeck | `$HOME/github/wezterm-config` (primary), optional `.worktrees` |
 
-## cwd policy (L0-12)
+## cwd policy (L0-12/13)
+
+**Core:** personal projects → default mainline. **wezdeck** is the local instance.
 
 | Repo | Default | Worktree when |
 | --- | --- | --- |
-| **wezdeck** | **primary `master`** | parallel tasks, long experiment, C2/C3 needs isolated cwd, user asks |
-| **团队仓** | **claw-\*** under `dirname(primary)/.worktrees/<repo>/` | always unless user overrides |
+| **wezdeck** (personal) | **primary `master`** | parallel, long experiment, isolated agent cwd, user asks |
+| **团队仓** (team-ish) | **claw-\*** under `dirname(primary)/.worktrees/<repo>/` | default isolation unless user overrides |
 
 Path formula (when used): `dirname(realpath(primary))/.worktrees/<basename(primary)>/<slug>/`.
 
