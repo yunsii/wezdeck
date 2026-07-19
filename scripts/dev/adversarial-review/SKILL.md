@@ -1,87 +1,19 @@
 ---
 name: adversarial-review
 description: >
-  Multi-role adversarial review (find → refute → sandbox repro). Backends:
-  claude | codex-gpt | codex-grok. Same-model multi-role OK if SINGLE-MODEL.
+  Thin pointer: OpenClaw agents must load workspace skill
+  openclaw/workspace/skills/adversarial-review/SKILL.md and run host scripts
+  themselves. Humans only state intent (审一下 / 对抗审查).
 ---
 
-# Adversarial review (thin skill)
+# Adversarial review (runner-side pointer)
 
-## When
+**Canonical agent skill:** `openclaw/workspace/skills/adversarial-review/SKILL.md`
 
-- Runtime code/scripts changed and you want defect-focused review
-- Before PR/merge acceptance for wezdeck / allowlisted product work
-- After editing `scripts/dev/adversarial-review` itself (`dogfood`)
+That skill tells Main/agents to:
 
-Skip pure docs/tests-only diffs (the runner auto-skips).
+1. Resolve `REPO_ROOT` / worktree
+2. Run `scripts/dev/adversarial-review/run.sh` with `--writer …`
+3. Paste L0-20 disclosure — **without** asking the human to run the script
 
-## Multi-role minimum (name = constraint)
-
-「对抗审查」requires **find + refute** (repro recommended):
-
-| Role | Stance |
-| --- | --- |
-| reviewer / find | guilty-until-proven |
-| refuter | burden on the finding; try to kill it |
-| repro | empirical (recommended) |
-
-- Prefer different agent families (Claude-TUI × Codex-Grok-profile).
-- If only one capability: **two independent calls**, opposite prompts; label
-  **SINGLE-MODEL**. Do **not** skip refute.
-- Solo monologue (one Main essay) = **设计批判**, **not** 对抗审查.
-
-Orchestration: `run.sh`, or Main schedules two TUI/ACP turns with role prompts.
-
-## Backends
-
-| Alias | Stack |
-| --- | --- |
-| `claude` | Claude Code (host) |
-| `codex` / `codex-gpt` | Host Codex default |
-| `codex-grok` | Host Codex `--profile grok` |
-
-Does **not** use OpenClaw ACP `CODEX_HOME`. Prefer `claude` × `codex-grok` when
-proxy GPT is unavailable.
-
-## Do
-
-```bash
-# preferred: declare who wrote the code → auto pair (avoid writer family)
-scripts/dev/adversarial-review/run.sh <BASE_REF> \
-  --writer codex-grok --mode strict
-
-# explicit pair
-scripts/dev/adversarial-review/run.sh <BASE_REF> \
-  --reviewer claude --refuter codex-gpt --mode strict
-
-# same-model multi-role still valid (SINGLE-MODEL)
-scripts/dev/adversarial-review/run.sh <BASE_REF> \
-  --reviewer claude --refuter claude --mode strict
-
-scripts/dev/adversarial-review/lib/select-backends.sh --writer claude --json
-scripts/dev/adversarial-review/run.sh dogfood --mode strict --fail-on-finding
-scripts/dev/adversarial-review/run.sh selfcheck claude codex-gpt codex-grok
-```
-
-## Report (mandatory)
-
-```text
-## 对抗审查披露
-- writer: Claude-ACP | Codex-ACP | Main-Grok | human | …
-- 形态/form: cross-family | cross-model-codex | single-model-multi-role | …
-- reviewer 全名 / 立场: …
-- refuter 全名 / 立场: …
-- degraded / reason: …
-- repro: 已跑 | 跳过（理由）
-- 命令或范围: …
-- skipped_gates: … | 无
-- 关键结论: …（绑 find/refute/repro）
-```
-
-## Don't
-
-- Don't call solo analysis 对抗审查 (use 设计批判)
-- Don't invent "all three gates passed" for PLAUSIBLE findings
-- Don't skip refute when claiming 对抗审查
-- Don't claim cross-agent when SINGLE-MODEL
-- Don't point review Codex at `~/.openclaw/acpx/codex-home`
+Docs: `docs/adversarial-review.md`. Select: `lib/select-backends.sh`.
