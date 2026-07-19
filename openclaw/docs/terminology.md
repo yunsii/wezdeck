@@ -6,6 +6,7 @@
 相关：[`README.md`](./README.md)（文档地图）· [`agent-architecture.md`](./agent-architecture.md) · [`agent-interaction.md`](./agent-interaction.md) · `workspace/AGENTS.md` · `agent-profiles/v1/`
 
 **读序（5 分钟）：** terminology → architecture → interaction → AGENTS L0 → skills 按需。详见 [`README.md`](./README.md)。
+**数字员工三角：** Dex(`main`) / Bob(`pm`) / Scout(`radar`) — 见 [`digital-employees.md`](./digital-employees.md)。
 
 ---
 

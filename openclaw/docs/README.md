@@ -11,12 +11,14 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | 3 | [`agent-interaction.md`](./agent-interaction.md) | TUI / headless / Feishu / ACP how-to |
 | 4 | [`../workspace/AGENTS.md`](../workspace/AGENTS.md) **L0 only** | Always-on constitution for Main |
 | 5 | Skills on demand | `workspace/skills/*`, repo `skills/*` |
+| 6 | Digital employees | [`digital-employees.md`](./digital-employees.md) — Dex / Bob / Scout |
 
 ## By topic
 
 | Topic | Authority |
 | --- | --- |
 | Terms / doc layering | `terminology.md` |
+| **Digital employees (Dex/Bob/Scout)** | `digital-employees.md` |
 | Architecture / rails | `agent-architecture.md` |
 | Interaction modes | `agent-interaction.md` |
 | Error closed-loop **scope** | `error-closed-loop-scope.md` + skill `error-closed-loop` |
