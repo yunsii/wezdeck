@@ -15,7 +15,7 @@ Use this package when a coding agent needs user-level defaults for execution sty
 
 Topic files under `en/`:
 
-- [en/validation.md](./en/validation.md)
+- [en/validation.md](./en/validation.md) — includes **adversarial review** (agent-operated; points at wezdeck `skills/` + `scripts/dev/adversarial-review/`)
 - [en/implementation.md](./en/implementation.md)
 - [en/refactor.md](./en/refactor.md)
 - [en/automation.md](./en/automation.md)

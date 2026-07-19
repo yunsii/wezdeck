@@ -8,7 +8,10 @@ triggers:
   - rollout confidence
   - failure handling
   - plan-time validation
-tags: [quality, testing, escalation, evidence]
+  - adversarial review
+  - 对抗审查
+  - multi-role review
+tags: [quality, testing, escalation, evidence, adversarial-review]
 ---
 
 # Validation
@@ -134,3 +137,21 @@ The agent could have written a targeted test or script; asking the user is a fal
 - [validation-41] When the change touches interactive UX, first paint, or a known hot path, establish a reproducible baseline before the change when practical.
 - [validation-42] If acceptance shows clear UX regression or metric degradation: diagnose the cause before declaring done.
 - [validation-43] If the cost is a necessary overhead of the new feature, state it explicitly (what got slower, by roughly how much, and whether it is acceptable) — do not ship silent regressions.
+
+## Adversarial review (platform capability)
+
+Multi-role defect review is a **shared platform capability**, not a human homework script.
+When the user asks for 对抗审查 / adversarial review, or acceptance recommends it for runtime changes:
+
+- [validation-50] The **agent** loads the skill and runs the runner; do **not** make the human the primary operator of `run.sh`.
+- [validation-51] 「对抗审查」requires at least **find + refute** (repro recommended). A solo monologue is **设计批判** only — never label it 对抗审查.
+- [validation-52] Prefer backends **outside the writer family** (writer-aware selection). Same-model multi-role is allowed only when availability forces it; label **SINGLE-MODEL** / degraded.
+- [validation-53] In wezdeck (this repo), discovery order:
+  1. Repo skill: `skills/adversarial-review/SKILL.md`
+  2. OpenClaw workspace skill: `openclaw/workspace/skills/adversarial-review/SKILL.md`
+  3. Runner (only implementation): `scripts/dev/adversarial-review/run.sh`
+- [validation-54] Typical invoke from repo root or claw worktree:
+  `scripts/dev/adversarial-review/run.sh <BASE_REF> --writer <main|claude|codex|human> --mode strict`
+- [validation-55] Report with disclosure: writer, form/degraded/reason, reviewer, refuter, repro status, skipped_gates, conclusions bound to gates. Align with openclaw L0-20 spirit.
+- [validation-56] Review uses **host headless** CLIs (`claude` / `codex-gpt` / `codex-grok`), not OpenClaw ACP `CODEX_HOME` by default.
+- [validation-57] Outside wezdeck: if the runner/skill is absent, say so and fall back to design critique or skip — do not invent a green multi-role review.

@@ -116,7 +116,9 @@ If scripts missing (wrong cwd), `cd` to wezdeck primary or the task worktree fir
 
 ## Related
 
+- Repo thin skill (TUI discovery): `skills/adversarial-review/SKILL.md` (repo root)
 - Runner & docs: `docs/adversarial-review.md`, `scripts/dev/adversarial-review/`
+- Host TUI doctrine: `agent-profiles/v1/en/validation.md`
 - L0-20 disclosure: `AGENTS.md`
 - Task hooks: `skills/dev-task/SKILL.md` (acceptance / 审查建议)
 - Interaction: `openclaw/docs/agent-interaction.md`

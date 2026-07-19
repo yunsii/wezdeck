@@ -73,6 +73,7 @@ Full rules live in the routed topic file.
 - Impact / boundary: for non-trivial decisions or changes, state blast radius — code (modules/API/data), people (who must help or will feel pain), team/process (release/oncall/collaboration). Do not assume "only the files in front of you". Full rule in [reporting.md](./reporting.md).
 - Constitution sync: keep Default Posture / topic rules aligned with openclaw workspace L0 spirit; when L0 gains or tightens a cross-task principle, update profile in the same delivery (or immediately after). Do not leave Feishu-only or CLI-only doctrine.
 - Performance: do not over-optimize by default; for UX/hot paths prefer a baseline; on regression find cause or state necessary overhead explicitly. Full rule in [validation.md](./validation.md).
+- Adversarial review: multi-role find+refute (not solo monologue); **agent** runs repo/OpenClaw skill + `scripts/dev/adversarial-review/run.sh` — humans only state intent; disclose writer/form/backends. Full rules in [validation.md](./validation.md) `Adversarial review`.
 - Rule promotion: when a constraint recurs or the user states a lasting rule, ask whether to elevate to profile / skill / script (with placement + tradeoffs); never silently rewrite profile.
 - Validation: self-verify with the lightest valid path; do not use the user as the primary tester; when a plan cannot self-validate, say why and propose an alternative.
 - Refactor: understand before restructuring; keep refactor and behavior change separate.
