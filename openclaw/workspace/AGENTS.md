@@ -240,6 +240,7 @@ Material failure never re-run green → 状态不得为 **成功**.
 | Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
 | Adversarial review | `docs/adversarial-review.md`, `scripts/dev/adversarial-review/`；汇报须含 L0-20 披露块 |
 | Mode theory / ACP | `openclaw/docs/agent-architecture.md`, `openclaw/README.md` |
+| Agent interaction (TUI/headless/ACP) | `openclaw/docs/agent-interaction.md` |
 | Agent matrix probe | `openclaw/scripts/agent-matrix-status.sh` |
 
 **Chrome:** after UI-facing changes you implemented, browser MCP snapshot before 验收通过; if CDP missing, say so — never invent green UI.
