@@ -1,5 +1,12 @@
 # Adversarial Review (cross-agent) — v0.2
 
+## Agent skill (not for humans to run by hand)
+
+OpenClaw agents load **`openclaw/workspace/skills/adversarial-review/SKILL.md`** and execute
+`scripts/dev/adversarial-review/run.sh` themselves. Humans only state intent
+(e.g. 审一下 / 对抗审查). Do not make the user the primary operator of this script.
+
+
 `scripts/dev/adversarial-review/` runs a **cross-agent adversarial code review**
 over a diff, in three gates, and classifies findings so you can use the tool to
 **recursively improve itself** (dogfood) without silent false confidence.

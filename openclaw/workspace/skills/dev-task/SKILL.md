@@ -160,11 +160,17 @@ feat(scope): subject
 Assisted-by: OpenClaw (backend=main, model=grok-4.5)
 ```
 
-## Adversarial review reporting
+## Adversarial review (agent runs it)
+
+**Do not** ask the human to run `run.sh`. On review intent or acceptance:
+
+1. **Load** `skills/adversarial-review/SKILL.md`
+2. **Run** `$REPO/scripts/dev/adversarial-review/run.sh <BASE> --writer <family> --mode strict`
+3. **Report** L0-20 disclosure (writer / form / reviewer / refuter / conclusions)
 
 「对抗审查」= multi-role (find+refute minimum). Same agent twice with opposite
 stance is OK if labeled SINGLE-MODEL. Solo Main monologue = **设计批判** only.
-Include L0-20 disclosure (形态 + full names + roles + conclusions).
+Writer-aware selection: `--writer main|claude|codex|human` (strategy B).
 
 ## Constitution (all agents)
 
