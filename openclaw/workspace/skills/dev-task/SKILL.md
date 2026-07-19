@@ -134,7 +134,15 @@ See `AGENTS.md`. Always restate mode even if user named it.
 ## 落实 / commits
 
 On 落实: review → implement → verify → **1–3 logical commits** → push agreed branch → report.
+**wezdeck:** after green checks, **merge+push `master` directly** (owner policy, AGENTS L0-18).
+Other repos: push main/master only with explicit yes.
 Shell via `claw-run` when required by exec-risk.
+
+## Adversarial review reporting
+
+If you ran or claimed adversarial review, include L0-20 disclosure block
+(形态 + full-name agents + command/range + key conclusions). Design-only
+Main-Grok critique is **设计对抗**, not three-gate cross-agent.
 
 ## Constitution (all agents)
 
