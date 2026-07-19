@@ -79,23 +79,53 @@ Do not rewrite host `~/.codex` / `~/.grok` defaults when fixing ACP
 
 ## 开发方式推荐卡（必发）
 
+**Full names required** (never bare "Codex"/"Claude" alone):
+
+| Full name | Meaning |
+| --- | --- |
+| Claude-TUI | host `claude` (H2/C2) |
+| Claude-ACP | C3 `agentId=claude` |
+| Codex-TUI | host `codex` + `~/.codex` |
+| Codex-ACP | C3 `agentId=codex` + isolated CODEX_HOME |
+| Codex-Grok-profile | host `codex -p grok` |
+| Main-Grok | OpenClaw main model |
+| Grok-native | host `grok` CLI |
+
 Before code or ACP, post and wait:
 
 ```text
 ## 开发方式（请抉择）
 - 轨: 人工 | Claw
-- 推荐: H1 | H2 | C1 Main自写 | C2 handoff | C3 ACP(claude|codex)
-- 执行者 / 后端: …
+- 推荐: H1 | H2 (Claude-TUI|Codex-TUI|Grok-native) | C1 Main-Grok |
+        C2 handoff | C3 (Claude-ACP|Codex-ACP)
+- 执行者 / 后端全名: …
 - 理由: …（含限制/degraded）
 - 备选: …
 - 平台约束: 单写者、claw-*、确认前不写码；不改原生默认配置
-- 审查建议: claude × codex-grok | 跳过（理由）
+- 审查建议: review-claude × review-codex-grok | 跳过（理由）
 - cwd / task_id: …
 请确认。确认前不改代码 / 不 spawn ACP。
 ```
 
-Heuristics: **C1** small/clear; **C3-claude** multi-file/profile; **C2/H2** need TUI;
-**H1** already coding; **C3-codex** explicit Codex stack.
+Heuristics: **C1** small/clear; **Claude-ACP** multi-file/profile; **C2/H2** need TUI;
+**H1** already coding; **Codex-ACP** explicit Codex stack.
+
+## C3 ACP spawn constitution (prepend to task)
+
+```text
+[OpenClaw C3 constitution — non-negotiable]
+1. Single writer: only you write this worktree; no parallel Main/TUI edits.
+2. cwd is the given claw-* path only; do not write primary or other trees.
+3. No force-push; no push to main/master without explicit human yes in chat.
+4. Prefer 1–3 logical commits; no secret leakage.
+5. On completion report: changed files, summary, blockers; honest fail if blocked.
+6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
+```
+
+Before spawn: reject if cwd missing or not a `claw-*` worktree path.
+After C3: prefer structured report `changed_files` / `summary` / `blockers` / `commits`.
+
+Probe: `openclaw/scripts/agent-matrix-status.sh`.
 
 ## 实现方案块
 

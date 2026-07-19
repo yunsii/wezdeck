@@ -72,24 +72,58 @@ Details: `skills/dev-task/SKILL.md`, `skills/task-ledger/SKILL.md`.
 
 ### 开发方式推荐卡（动手前必发，等确认）
 
+**全名强制**（禁止只说「Codex/Claude」）：
+
+| 全名 | 含义 |
+| --- | --- |
+| **Claude-TUI** | 本机 `claude`（H2/C2） |
+| **Claude-ACP** | C3 `agentId=claude` |
+| **Codex-TUI** | 本机 `codex` + `~/.codex`（H2/C2） |
+| **Codex-ACP** | C3 `agentId=codex` + 隔离 CODEX_HOME |
+| **Codex-Grok-profile** | host `codex -p grok`（审查/手工） |
+| **Main-Grok** | OpenClaw Main 模型 |
+| **Grok-native** | 本机 `grok` CLI |
+
 ```text
 ## 开发方式（请抉择）
 - 轨: 人工 | Claw
-- 推荐: H1 人直接 | H2 原生Agent | C1 Main自写 | C2 本机handoff | C3 ACP后端(claude|codex)
+- 推荐: H1 人直接 | H2 原生Agent(Claude-TUI|Codex-TUI|Grok-native) |
+        C1 Main自写(Main-Grok) | C2 handoff(同上TUI) |
+        C3 ACP(Claude-ACP|Codex-ACP)
   （括号可附旧 A–E。D 禁用）
-- 执行者 / 后端: …
-- 理由: …（含限制：如代理无 GPT → acp-codex 默认 Grok 保通）
+- 执行者 / 后端全名: …（必须用上表全名）
+- 理由: …（含限制：如代理无 GPT → Codex-ACP 默认 Grok 保通）
 - 备选: …
 - 平台约束: 单写者、claw-* 树、确认前不写码；原生 ~/.codex|~/.grok 默认不因 ACP 改写
-- 完成后审查建议: claude × codex-grok | 跳过（理由）
+- 完成后审查建议: review-claude × review-codex-grok | 跳过（理由）
 - cwd / task_id: …
 - 你将看到: …
 请确认或改用。确认前不开始改代码 / 不 spawn ACP。
 ```
 
-Heuristics（对内）: **C1** 小且清；**C3-claude** 多文件/要 profile；**C2/H2** 要 TUI；**H1** 已在写；**C3-codex** 明确 Codex 栈。对用户以中文轨/方式名为准。
+Heuristics（对内）: **C1** 小且清；**Claude-ACP** 多文件/要 profile；**C2/H2** 要 TUI；**H1** 已在写；**Codex-ACP** 明确 Codex 栈。对用户以中文轨 + 全名后端为准。
 
 **全员同一宪法与平台能力**（用法可差、准则不差）: L0、skills、脚本、单写者、错误闭环、假绿禁止；人工轨可不跑台账，Claw 写任务默认要。
+
+### C3 ACP spawn 宪法前缀（强制注入任务正文前）
+
+Main 在 `sessions_spawn(runtime=acp)` / 等价 spawn 时，**必须**把下列约束放进 task 前部（可略调措辞，不可省略要点）：
+
+```text
+[OpenClaw C3 constitution — non-negotiable]
+1. Single writer: only you write this worktree; no parallel Main/TUI edits.
+2. cwd is the given claw-* path only; do not write primary or other trees.
+3. No force-push; no push to main/master without explicit human yes in chat.
+4. Prefer 1–3 logical commits; no secret leakage.
+5. On completion report: changed files, summary, blockers; honest fail if blocked.
+6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
+```
+
+**Main 侧 spawn 前校验：** cwd 存在且路径含 `/claw-`（或 slug 以 `claw-` 开头）；否则拒绝 spawn 并改推荐卡。
+
+**C3 完成回传（建议结构）：** `changed_files` / `summary` / `blockers` / `commits`。
+
+能力探测：`openclaw/scripts/agent-matrix-status.sh`。
 
 ### 实现方案块（写任务推荐）
 

@@ -104,14 +104,28 @@ Claw 需要写码后端
 - 产物：`tmp-acp-smoke/smoke-ok.txt` = `codex-acp-ok`
 - 边界：host `~/.codex` 默认 `gpt-5.5` 与 auth **未变**；ACP 使用隔离 home + Grok
 
+## 全名表（推荐卡 / 汇报强制）
+
+| 全名 | 含义 |
+| --- | --- |
+| Claude-TUI | 本机 Claude Code |
+| Claude-ACP | C3 ACP → claude |
+| Codex-TUI | 本机 Codex + `~/.codex` |
+| Codex-ACP | C3 ACP → codex（隔离 CODEX_HOME） |
+| Codex-Grok-profile | host `codex -p grok` |
+| Main-Grok | OpenClaw Main 模型 |
+| Grok-native | 本机 Grok CLI |
+
+探测脚本：`openclaw/scripts/agent-matrix-status.sh`。
+
 ## Claw 轨门闩（写任务）
 
 1. 方案 + 初评  
-2. **【开发方式】推荐卡**（含推荐/备选/限制）→ **用户确认**  
-3. 再 create / 写码 / ACP spawn  
+2. **【开发方式】推荐卡**（全名后端 + 推荐/备选/限制）→ **用户确认**  
+3. 再 create / 写码 / ACP spawn（C3 必须注入宪法前缀；cwd 必须 claw-*）  
 4. 自验 →（推荐）审查 →【结果】+ reclaim 询问  
 
-详见 `workspace/AGENTS.md`、`workspace/skills/dev-task/SKILL.md`。
+C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/dev-task/SKILL.md`。
 
 ## 与旧文档关系
 
