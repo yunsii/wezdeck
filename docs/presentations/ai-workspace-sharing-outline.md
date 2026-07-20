@@ -9,7 +9,7 @@ audience: 同事 / 社区分享 · 长文 · 10-15 分钟阅读
 > *Built on WezTerm + tmux + git worktrees.*
 > *仓库源码在 `wezterm-config`，对外品牌叫 **WezDeck**。*
 >
-> **三篇导航**：本篇是 **"现在长什么样"** 入门篇（10 分钟）。想看 v0 → v5 演进 + 一天日常切面 → [evolution](./ai-dev-environment-evolution.md)（30 分钟）。想看作者前端视角的 personal reflection → [v1.0](./personal-terminal-platform-v1.0.md)（8 分钟）。
+> **三篇导航**：本篇是 **"现在长什么样"** 入门篇（10 分钟）。想看 v0 → v6 演进 + 一天日常切面 → [evolution](./ai-dev-environment-evolution.md)（30 分钟）。想看作者前端视角的 personal reflection → [v1.0](./personal-terminal-platform-v1.0.md)（8 分钟）。
 
 ---
 
@@ -24,6 +24,11 @@ WezDeck 是一套面向多 agent 时代的 personal terminal platform：
 - **`Ctrl+k g {d,t,h}` 一键开新 worktree + 配套 agent**
 
 不是一份 dotfiles，是一个**有控制面的工作环境**。
+
+### 远程：OpenClaw（v6）
+
+本机驾驶舱之外，日常远程派活走 **飞书 → OpenClaw（Dex）**（C1/C2/C3、ACP、必要时 tmux 临时遥控）。曾试过的 Happy 手机 TUI 同步已移除；手机 shell 仍用 Tailscale + Termux。详见 [evolution v6](./ai-dev-environment-evolution.md) 与 [`openclaw/README.md`](../../openclaw/README.md)。
+
 
 ---
 

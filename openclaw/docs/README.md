@@ -26,7 +26,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | Error closed-loop **scope** | `error-closed-loop-scope.md` + skill `error-closed-loop` |
 | Adversarial review | **Runner** `scripts/dev/adversarial-review/` · **Main skill** `workspace/skills/adversarial-review/` · **Repo thin skill** `skills/adversarial-review/` · **KB** `docs/adversarial-review.md` (repo root) |
 | Host TUI constitution | `agent-profiles/v1/en/*` |
-| Ops / matrix / Feishu MVP | `../README.md` (entry; prefer docs above for policy) |
+| Ops / matrix / Feishu control plane | `../README.md` (entry; prefer docs above for policy) |
 
 ## L0 number cheat-sheet (AGENTS.md)
 

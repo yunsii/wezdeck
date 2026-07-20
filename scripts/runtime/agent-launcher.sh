@@ -23,13 +23,12 @@
 #   workspace first-open) shares the same env view.
 #
 # Usage:
-#   agent-launcher.sh <claude|codex> [--happy]
+#   agent-launcher.sh <claude|codex>
 #
-# With `--happy` the agent is launched inside the Happy wrapper for phone
-# sync (used by the Ctrl+k p toggle, agent-happy-toggle.sh). Happy runs
-# the real CLI in an inner pty, so the desktop experience is unchanged;
-# the only extra need is the fnm default-alias bin on PATH so `happy` and
-# its `env node` shebang resolve (tmux-spawned shells lack it).
+# Phone sync via Happy was removed (2026-07): remote work goes through
+# OpenClaw (Feishu / ACP / temporary tmux control). See
+# docs/presentations/ai-dev-environment-evolution.md (v6) and
+# docs/mobile-access.md.
 
 set -eu
 
@@ -39,7 +38,11 @@ script_dir="$(cd "$(dirname "$0")" && pwd -P)"
 runtime_env_load_managed
 
 agent="${1:-}"
-wrap="${2:-}"
+if [[ -n "${2:-}" ]]; then
+  printf 'agent-launcher: unexpected argument %s (Happy wrap removed)\n' "$2" >&2
+  printf 'usage: agent-launcher.sh <claude|codex>\n' >&2
+  exit 1
+fi
 
 # Visible boot cue. Until the agent CLI paints its first frame, the pane
 # is blank — that's the shell-chain forks (~150ms, mainly `zsh -ilc`
@@ -68,34 +71,6 @@ print_loading_banner() {
 }
 
 print_loading_banner "$agent"
-
-# Happy-wrapped launch (phone sync). Prepend the fnm default-alias bin so
-# `happy` and its `env node` shebang resolve — same idiom as
-# tmux-status-line-main.sh's node probe and wezterm-x/local/crontab.
-# Guarded with an if-block (not `&&`) so a missing dir doesn't trip `set -e`.
-if [[ "$wrap" == "--happy" ]]; then
-  fnm_bin="$HOME/.local/share/fnm/aliases/default/bin"
-  if [[ -d "$fnm_bin" ]]; then
-    PATH="$fnm_bin:$PATH"
-    export PATH
-  fi
-  case "$agent" in
-    claude)
-      exec sh -c 'happy --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading happy ...\033[0m\n"; exec happy; }'
-      ;;
-    codex)
-      # UNVERIFIED: the `happy codex` resume passthrough form was never
-      # tested (see docs/mobile-access.md). agent-happy-toggle.sh gates
-      # codex promotion, so this branch is dormant until verified.
-      exec sh -c 'happy codex resume --last || { printf "\033[2J\033[H\n\n  \033[2;36mLoading happy ...\033[0m\n"; exec happy codex; }'
-      ;;
-    *)
-      printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
-      printf 'usage: agent-launcher.sh <claude|codex> [--happy]\n' >&2
-      exit 1
-      ;;
-  esac
-fi
 
 # Fallback re-paint: when `--continue` (or `resume --last`) finds no
 # session, the CLI prints "No conversation found to continue" to the

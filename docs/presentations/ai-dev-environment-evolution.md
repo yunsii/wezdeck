@@ -1,8 +1,8 @@
 ---
 title: WezDeck 的演进 —— 从 Copilot 聊天到 multi-agent 驾驶舱
 subtitle: AI 形态每变一次，我都被逼着把工作环境往前推一格
-version: v0 → v5（v5 E 后段收束于 2026-05-14）
-date: 2026-04-23（worktree 工作流补丁：2026-04-25；v5 E 后段维护：2026-05-14）
+version: v0 → v6（v6 远程控制面：2026-07；Happy 移除：2026-07-20）
+date: 2026-04-23（v5 E：2026-05-14；v6 OpenClaw + Happy 移除：2026-07-20）
 project: "WezDeck (repo: wezterm-config)"
 audience: 同事 / 社区分享 · 长文 · 演进史
 author: 结合 git 记录整理
@@ -26,7 +26,7 @@ author: 结合 git 记录整理
 
 ```mermaid
 timeline
-  title WezDeck 五版本时间线
+  title WezDeck 六版本时间线
   v0 · 长一段时间 : VS Code + Copilot inline + chat
                   : 单点建议
   v1 · 长一段时间 : VS Code + Copilot Agent 模式
@@ -48,6 +48,9 @@ timeline
                             : tab 可见性 + focus weight brain
                             : agent-launcher 单点入口
                             : reminders / OSC echo / 持续可观测
+  v6 · 2026-07 : 飞书 OpenClaw 控制面（Dex）日常可用
+               : C1/C2/C3 + ACP + tmux 临时遥控
+               : 移除 Happy 手机 TUI 同步路径
 ```
 
 每一格的"触发"都不是工程灵感，而是**当前 AI 形态在当前环境下显出的具体不爽**：单点建议→不能跨文件 → Agent 模式；编辑器内 agent→不能多 pane 并行 → CLI；CLI 在 WT 不稳 → 换 WezTerm；WezTerm 只是终端 → 把它当平台用；脚本堆住宿主能力 + 任务状态散在脑里 → 跨进程统一控制面 + Hook 驱动的 attention pipeline。
@@ -328,6 +331,34 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 
 ---
 
+## v6 — 远程控制面：OpenClaw，并移除 Happy（2026-07）
+
+**触发**：v5 把「多 agent 在驾驶舱里管得过来」做实了，但交互入口仍默认是人坐在 WezTerm/tmux 前。下一层不爽是：
+
+- 远程想派活 / 改方向 / 验收，不能只靠「打开同一个 Claude pane」；
+- 手机跟桌面 **同一 TUI** 的同步（Happy）能用，但频率低，且和「任务编排」不是同一类需求。
+
+**形态（OpenClaw · operational，不再标 MVP）**：
+
+```text
+飞书 DM → OpenClaw Gateway（Dex）
+  → C1 Main 自写 | C2 本机 handoff | C3 ACP（Claude/Codex）
+  → 台账 / 错误闭环 / Chrome 验收
+  → 可选：tmux skill 临时读屏、送键（不是会话接管）
+```
+
+WezDeck 仍是本机驾驶舱（attention、worktree、launcher）；OpenClaw 是 **飞书侧控制面**，不必为每个远程任务自动开 pane。
+
+**试过又拿掉的路径：Happy（2026-07-13 集成 → 2026-07-20 移除）**
+
+- 曾用 [Happy](https://happy.engineering/) 包一层桌面 agent CLI，手机原生 UI + E2E relay；WezDeck 有 `Ctrl+k p` bare↔Happy 与 `agent-launcher --happy`。
+- **移除原因（更本质需求）**：要的是多种开发方式下的远程编排（尤其 **ACP**）+ 必要时 **tmux 临时遥控**，不是第二个全量 TUI 客户端。
+- 代码侧删除：`agent-happy-toggle.sh`、launcher `--happy`、manifest `agent.toggle-happy`；手机 shell 仍见 [`mobile-access.md`](../mobile-access.md)；协议与运维见 [`openclaw/README.md`](../../openclaw/README.md)。
+
+**和 v5 的关系**：v5 解决「本机多 agent 可见可控」；v6 解决「人不在驾驶舱前也能派活与验收」，并明确 **远程主路径只有 OpenClaw**。
+
+---
+
 ## 横向对照：每次跃迁发生了什么
 
 | 跃迁 | 从 | 到 | 获得的新能力 |
@@ -341,6 +372,7 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 | v5 B → v5 C | 协作规则散在每次对话里复述 | 可版本化、跨 CLI 注入的 user profile | 一套规则同时作用于 Claude / Codex |
 | v5 C → v5 D | worktree 是分支隔离 | worktree 是 agent 对话上下文的载体 | "切回去就接着说" |
 | v5 D → v5 E | 上线"能跑"、边缘情形偶发掉链子 | 身份模型 + tab 可见性 + launcher 单点收口 | "跑得稳、跑得能 trace、连续两三周不需要救火" |
+| v5 → v6 | 人必须坐在驾驶舱前；曾试手机 TUI 同步 | 飞书 OpenClaw 控制面；移除 Happy | 远程派活/ACP/打断；手机 shell 与 agent 编排分离 |
 
 每次跃迁的共同模式是同一种：
 
@@ -360,6 +392,6 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 
 ## 一句话结尾
 
-> 从 v0 到 v5，表面上换的是编辑器、终端、平台架构；实际上换的是 **AI 在我工作流里的位置** —— 从光标处的单点建议者，到编辑器里的任务执行者，到终端里的一等公民，**最后变成一个有真实状态、被平台主动感知、被 hook 驱动、在自己的 worktree 里独立推进 git 流程的协作对象**。
+> 从 v0 到 v6，表面上换的是编辑器、终端、平台架构；实际上换的是 **AI 在我工作流里的位置** —— 从光标处的单点建议者，到编辑器里的任务执行者，到终端里的一等公民，**再到有真实状态、可从飞书控制面派活与验收的协作对象**。
 >
-> WezDeck 是这条路径在 2026-04 / 05 的形态 —— 四根主柱（A/B/C/D）在 04-25 立起来，v5 E 的两到三周后段维护把"能跑"压成"在真实多任务流里跑得稳"。
+> WezDeck 是本机驾驶舱（v5）；**OpenClaw 是 v6 远程控制面**。Happy 手机 TUI 同步已移除——远程主需求是编排与验收，不是第二块屏幕。

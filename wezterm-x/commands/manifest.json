@@ -5,9 +5,14 @@
     "description": "With a terminal selection, copy to the system clipboard and clear; otherwise send a normal `Ctrl+c` to the pane.",
     "scope": "clipboard",
     "context": "any",
-    "binding": {"handler": "clipboard.copy_or_sigint"},
+    "binding": {
+      "handler": "clipboard.copy_or_sigint"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+c", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+c",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -16,9 +21,14 @@
     "description": "With a terminal selection, copy and clear; otherwise forward `Ctrl+Shift+c` to the pane.",
     "scope": "clipboard",
     "context": "any",
-    "binding": {"handler": "clipboard.copy_selection_strict"},
+    "binding": {
+      "handler": "clipboard.copy_selection_strict"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+Shift+C", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+Shift+C",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -27,9 +37,14 @@
     "description": "In hybrid-wsl ask the Windows native helper for the live clipboard at paste time; fall back to plain clipboard paste; paste exported WSL image path for images.",
     "scope": "clipboard",
     "context": "any",
-    "binding": {"handler": "clipboard.paste_smart"},
+    "binding": {
+      "handler": "clipboard.paste_smart"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+v", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+v",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -38,9 +53,14 @@
     "description": "Force a normal clipboard paste without the image-export helper.",
     "scope": "clipboard",
     "context": "any",
-    "binding": {"handler": "clipboard.paste_plain"},
+    "binding": {
+      "handler": "clipboard.paste_plain"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+Shift+V", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+Shift+V",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -49,11 +69,18 @@
     "description": "Trigger WezTerm QuickSelect to label every `http(s)://…` URL across the visible pane and WezTerm scrollback; press the label key to open the URL via the system default handler. Keyboard-first counterpart to `Ctrl+LeftClick`.",
     "scope": "clipboard",
     "context": "any",
-    "binding": {"handler": "link.open_in_viewport"},
+    "binding": {
+      "handler": "link.open_in_viewport"
+    },
     "hotkeys": [
-      { "keys": "Alt+l", "layer": "wezterm" }
+      {
+        "keys": "Alt+l",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "pane.split-vertical",
@@ -61,13 +88,24 @@
     "description": "Create a top/bottom tmux split in the current pane.",
     "scope": "commands-and-splits",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "command-chord", "exec": "split-window -v -c \"#{pane_current_path}\""},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "split-window -v -c \"#{pane_current_path}\""
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k v", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k v",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "v",
-      "command": ["bash", "-lc", "tmux split-window -v -c \"$PWD\""],
+      "command": [
+        "bash",
+        "-lc",
+        "tmux split-window -v -c \"$PWD\""
+      ],
       "success_message": "Created a vertical split.",
       "failure_message": "Failed to create a vertical split."
     }
@@ -78,13 +116,24 @@
     "description": "Create a left/right tmux split in the current pane.",
     "scope": "commands-and-splits",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "command-chord", "exec": "split-window -h -c \"#{pane_current_path}\""},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "split-window -h -c \"#{pane_current_path}\""
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k h", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k h",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "h",
-      "command": ["bash", "-lc", "tmux split-window -h -c \"$PWD\""],
+      "command": [
+        "bash",
+        "-lc",
+        "tmux split-window -h -c \"$PWD\""
+      ],
       "success_message": "Created a horizontal split.",
       "failure_message": "Failed to create a horizontal split."
     }
@@ -95,12 +144,21 @@
     "description": "Rotate focus to the next pane in the current tmux window (same semantics as tmux `prefix o`).",
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "pane.rotate_next"},
+    "binding": {
+      "handler": "pane.rotate_next"
+    },
     "hotkeys": [
-      { "keys": "Alt+o", "layer": "wezterm" }
+      {
+        "keys": "Alt+o",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "tmux select-pane -t \"${COMMAND_PANEL_WINDOW_ID}.+\""],
+      "command": [
+        "bash",
+        "-lc",
+        "tmux select-pane -t \"${COMMAND_PANEL_WINDOW_ID}.+\""
+      ],
       "success_message": "Rotated to next pane."
     }
   },
@@ -110,29 +168,23 @@
     "description": "Run tmux `kill-pane` on the focused pane; if it is the last pane in the window, tmux closes the window too.",
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "command-chord", "exec": "kill-pane"},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "kill-pane"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k x", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k x",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "tmux kill-pane -t \"$COMMAND_PANEL_WINDOW_ID\""]
-    }
-  },
-  {
-    "id": "agent.toggle-happy",
-    "label": "Agent CLI: Toggle Happy (phone) mode on focused pane",
-    "description": "Respawn the focused agent pane into or out of the Happy wrapper, resuming the same conversation. Bare→Happy registers the session for phone sync (drive it from the Happy app); Happy→bare drops phone sync and returns to a plain local session. No-op on non-agent panes. Simple version: assumes one conversation per cwd and resumes via the launcher's --continue, so it does not track explicit session ids. claude only for now; promoting codex is gated pending verification of the happy-codex resume form.",
-    "scope": "project-navigation",
-    "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "command-chord", "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/agent-happy-toggle.sh #{q:pane_id} #{q:pane_current_path}\""},
-    "hotkeys": [
-      { "keys": "Ctrl+k p", "layer": "tmux-chord" }
-    ],
-    "palette": {
-      "accelerator": "p",
-      "command": ["bash", "-lc", "pane=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_id}'); path=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_path}'); bash '{repo_root}/scripts/runtime/agent-happy-toggle.sh' \"$pane\" \"$path\""],
-      "success_message": "Toggled Happy mode on the focused agent pane.",
-      "failure_message": "Failed to toggle Happy mode."
+      "command": [
+        "bash",
+        "-lc",
+        "tmux kill-pane -t \"$COMMAND_PANEL_WINDOW_ID\""
+      ]
     }
   },
   {
@@ -141,11 +193,21 @@
     "description": "Activate the next WezTerm tab in the current workspace.",
     "scope": "window-and-pane-navigation",
     "context": "any",
-    "binding": {"handler": "tabs.activate_relative", "args": {"delta": 1}},
+    "binding": {
+      "handler": "tabs.activate_relative",
+      "args": {
+        "delta": 1
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+n", "layer": "wezterm" }
+      {
+        "keys": "Alt+n",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "tab.previous",
@@ -153,11 +215,21 @@
     "description": "Activate the previous WezTerm tab in the current workspace.",
     "scope": "window-and-pane-navigation",
     "context": "any",
-    "binding": {"handler": "tabs.activate_relative", "args": {"delta": -1}},
+    "binding": {
+      "handler": "tabs.activate_relative",
+      "args": {
+        "delta": -1
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+Shift+N", "layer": "wezterm" }
+      {
+        "keys": "Alt+Shift+N",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "tab.overflow-picker",
@@ -165,11 +237,18 @@
     "description": "Open the cross-workspace overflow picker (tmux display-popup running native/picker/bin/picker overflow) listing every configured session across every workspace whose items snapshot has been written. Each row is tagged ● visible / ◐ warm / ○ cold and the active workspace's rows rank first; the always-on substring filter matches workspace + label + cwd, and Tab toggles between all-workspaces and current-workspace-only scope. Selection routes through tab-overflow-dispatch.sh — visible activates the existing tab, warm switches the overflow pane to that session, cold falls back to managed-spawn. When the picked row's workspace isn't the foregrounded one, lua's tab.* event handlers issue a SwitchToWorkspace so the gui follows. Falls back to a single-workspace tmux display-menu when the Go picker binary is missing. See docs/tab-visibility.md.",
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "tabs.overflow_picker"},
+    "binding": {
+      "handler": "tabs.overflow_picker"
+    },
     "hotkeys": [
-      { "keys": "Alt+x", "layer": "wezterm" }
+      {
+        "keys": "Alt+x",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "tab.select-by-index",
@@ -177,21 +256,67 @@
     "description": "`Alt+N` activates the WezTerm tab at position N (1-9) in the current workspace.",
     "scope": "window-and-pane-navigation",
     "context": "any",
-    "args_schema": { "kind": "integer", "range": [1, 9] },
-    "binding": {"handler": "tabs.activate_by_index"},
+    "args_schema": {
+      "kind": "integer",
+      "range": [
+        1,
+        9
+      ]
+    },
+    "binding": {
+      "handler": "tabs.activate_by_index"
+    },
     "hotkeys": [
-      { "keys": "Alt+1", "layer": "wezterm", "args": 1 },
-      { "keys": "Alt+2", "layer": "wezterm", "args": 2 },
-      { "keys": "Alt+3", "layer": "wezterm", "args": 3 },
-      { "keys": "Alt+4", "layer": "wezterm", "args": 4 },
-      { "keys": "Alt+5", "layer": "wezterm", "args": 5 },
-      { "keys": "Alt+6", "layer": "wezterm", "args": 6 },
-      { "keys": "Alt+7", "layer": "wezterm", "args": 7 },
-      { "keys": "Alt+8", "layer": "wezterm", "args": 8 },
-      { "keys": "Alt+9", "layer": "wezterm", "args": 9 }
+      {
+        "keys": "Alt+1",
+        "layer": "wezterm",
+        "args": 1
+      },
+      {
+        "keys": "Alt+2",
+        "layer": "wezterm",
+        "args": 2
+      },
+      {
+        "keys": "Alt+3",
+        "layer": "wezterm",
+        "args": 3
+      },
+      {
+        "keys": "Alt+4",
+        "layer": "wezterm",
+        "args": 4
+      },
+      {
+        "keys": "Alt+5",
+        "layer": "wezterm",
+        "args": 5
+      },
+      {
+        "keys": "Alt+6",
+        "layer": "wezterm",
+        "args": 6
+      },
+      {
+        "keys": "Alt+7",
+        "layer": "wezterm",
+        "args": 7
+      },
+      {
+        "keys": "Alt+8",
+        "layer": "wezterm",
+        "args": 8
+      },
+      {
+        "keys": "Alt+9",
+        "layer": "wezterm",
+        "args": 9
+      }
     ],
     "hotkey_display": "Alt+1..9",
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "agent.new-conversation",
@@ -199,12 +324,21 @@
     "description": "When the current pane's foreground process is a known agent CLI (claude / codex), type `/new`, briefly pause, then press Enter to start a fresh conversation. Otherwise forwards `Ctrl+n` to the pane unchanged.",
     "scope": "project-navigation",
     "context": "any",
-    "binding": {"handler": "agent.new_conversation"},
+    "binding": {
+      "handler": "agent.new_conversation"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+n", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+n",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/agent-new-into-pane.sh' \"$COMMAND_PANEL_WINDOW_ID\" ;; *) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" C-n ;; esac"]
+      "command": [
+        "bash",
+        "-lc",
+        "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/agent-new-into-pane.sh' \"$COMMAND_PANEL_WINDOW_ID\" ;; *) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" C-n ;; esac"
+      ]
     }
   },
   {
@@ -213,12 +347,21 @@
     "description": "Run `git push` in the focused pane. When the foreground process is a known agent CLI (claude / codex), prefix with `!` (with a tiny inter-key gap so the shell-escape detector fires) so the agent runs it as an inline shell command instead of treating it as chat input; otherwise the literal `git push` + Enter is sent to the shell. Note: capturing `Ctrl+P` at the WezTerm layer pre-empts readline previous-history / vim / TUIs in any pane — remap if you want those back. In tmux-backed panes WezTerm forwards `\\x1b[20102~` (User3) and tmux's root binding does the foreground check via `pane_current_command`; outside tmux WezTerm checks `get_foreground_process_name()` directly.",
     "scope": "project-navigation",
     "context": "any",
-    "binding": {"handler": "git.push_current"},
+    "binding": {
+      "handler": "git.push_current"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+P", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+P",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/git-push-into-pane.sh' agent \"$COMMAND_PANEL_WINDOW_ID\" ;; *) bash '{repo_root}/scripts/runtime/git-push-into-pane.sh' shell \"$COMMAND_PANEL_WINDOW_ID\" ;; esac"]
+      "command": [
+        "bash",
+        "-lc",
+        "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/git-push-into-pane.sh' agent \"$COMMAND_PANEL_WINDOW_ID\" ;; *) bash '{repo_root}/scripts/runtime/git-push-into-pane.sh' shell \"$COMMAND_PANEL_WINDOW_ID\" ;; esac"
+      ]
     }
   },
   {
@@ -227,9 +370,14 @@
     "description": "Forward `Ctrl+k` to a tmux-backed pane so the follow-up chord keys (`v` / `h` / `x` / `g`) resolve in the tmux `command-chord` table; toast when the current pane is not running tmux.",
     "scope": "commands-and-splits",
     "context": "tmux-backed",
-    "binding": {"handler": "command_palette.chord_prefix"},
+    "binding": {
+      "handler": "command_palette.chord_prefix"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+k",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -238,9 +386,14 @@
     "description": "Open the tmux-owned searchable command palette (falls back to WezTerm native palette outside tmux).",
     "scope": "commands-and-splits",
     "context": "any",
-    "binding": {"handler": "command_palette.open"},
+    "binding": {
+      "handler": "command_palette.open"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+Shift+P", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+Shift+P",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -249,10 +402,18 @@
     "description": "Open WezTerm's built-in command palette directly.",
     "scope": "commands-and-splits",
     "context": "any",
-    "binding": {"handler": "command_palette.open_native"},
+    "binding": {
+      "handler": "command_palette.open_native"
+    },
     "hotkeys": [
-      { "keys": "Ctrl+Shift+;", "layer": "wezterm" },
-      { "keys": "Ctrl+Shift+:", "layer": "wezterm" }
+      {
+        "keys": "Ctrl+Shift+;",
+        "layer": "wezterm"
+      },
+      {
+        "keys": "Ctrl+Shift+:",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -267,11 +428,18 @@
       "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/links-menu.sh '#{pane_current_path}'\""
     },
     "hotkeys": [
-      { "keys": "Ctrl+k l", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k l",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "l",
-      "command": ["bash", "-lc", "tmux display-popup -E -w 80% -h 60% \"bash $WEZTERM_RUNTIME_ROOT/scripts/runtime/links-menu.sh '$PWD'\""],
+      "command": [
+        "bash",
+        "-lc",
+        "tmux display-popup -E -w 80% -h 60% \"bash $WEZTERM_RUNTIME_ROOT/scripts/runtime/links-menu.sh '$PWD'\""
+      ],
       "success_message": "Opened links picker.",
       "failure_message": "Failed to open links picker."
     }
@@ -282,12 +450,21 @@
     "description": "In tmux-backed panes forward to tmux; in hybrid-wsl outside tmux open the worktree root on the Windows host.",
     "scope": "project-navigation",
     "context": "any",
-    "binding": {"handler": "vscode.open_current_dir"},
+    "binding": {
+      "handler": "vscode.open_current_dir"
+    },
     "hotkeys": [
-      { "keys": "Alt+v", "layer": "wezterm" }
+      {
+        "keys": "Alt+v",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/open-current-dir-in-vscode.sh --window \"$COMMAND_PANEL_WINDOW_ID\" -- \"$COMMAND_PANEL_CWD\""]
+      "command": [
+        "bash",
+        "-lc",
+        "bash {repo_root}/scripts/runtime/open-current-dir-in-vscode.sh --window \"$COMMAND_PANEL_WINDOW_ID\" -- \"$COMMAND_PANEL_CWD\""
+      ]
     }
   },
   {
@@ -299,7 +476,14 @@
     "hotkeys": [],
     "palette": {
       "accelerator": "k",
-      "command": ["cmd.exe", "/c", "taskkill", "/IM", "code.exe", "/F"],
+      "command": [
+        "cmd.exe",
+        "/c",
+        "taskkill",
+        "/IM",
+        "code.exe",
+        "/F"
+      ],
       "confirm_message": "Force close all VS Code windows? Unsaved editor state will be lost.",
       "success_message": "Closed all VS Code windows.",
       "failure_message": "Failed to close VS Code windows."
@@ -311,12 +495,21 @@
     "description": "Open a centered tmux popup worktree picker; selecting an unopened worktree creates its tmux window on demand and launches the agent under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "worktree.picker"},
+    "binding": {
+      "handler": "worktree.picker"
+    },
     "hotkeys": [
-      { "keys": "Alt+g", "layer": "wezterm" }
+      {
+        "keys": "Alt+g",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/tmux-worktree-menu.sh \"$COMMAND_PANEL_SESSION_NAME\" \"$COMMAND_PANEL_WINDOW_ID\" \"$COMMAND_PANEL_CWD\""]
+      "command": [
+        "bash",
+        "-lc",
+        "bash {repo_root}/scripts/runtime/tmux-worktree-menu.sh \"$COMMAND_PANEL_SESSION_NAME\" \"$COMMAND_PANEL_WINDOW_ID\" \"$COMMAND_PANEL_CWD\""
+      ]
     }
   },
   {
@@ -325,12 +518,21 @@
     "description": "Cycle to the next git worktree in the current repo family, creating its tmux window on demand and launching the agent under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "worktree.cycle_next"},
+    "binding": {
+      "handler": "worktree.cycle_next"
+    },
     "hotkeys": [
-      { "keys": "Alt+Shift+G", "layer": "wezterm" }
+      {
+        "keys": "Alt+Shift+G",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/tmux-worktree-cycle.sh \"$COMMAND_PANEL_SESSION_NAME\" \"$COMMAND_PANEL_WINDOW_ID\" \"$COMMAND_PANEL_CWD\""]
+      "command": [
+        "bash",
+        "-lc",
+        "bash {repo_root}/scripts/runtime/tmux-worktree-cycle.sh \"$COMMAND_PANEL_SESSION_NAME\" \"$COMMAND_PANEL_WINDOW_ID\" \"$COMMAND_PANEL_CWD\""
+      ]
     }
   },
   {
@@ -339,9 +541,17 @@
     "description": "Open an interactive dev-* prompt with lifecycle guidance and live worktree/branch preview. Agent launches under the `<base>-resume` profile (auto-continue cwd's last conversation, fall back to fresh on first open).",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup dev #{q:pane_current_path}\""},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "worktree-chord",
+      "switch_first": true,
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup dev #{q:pane_current_path}\""
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k g d", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k g d",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "d",
@@ -360,9 +570,17 @@
     "description": "Open an interactive task-* prompt with lifecycle guidance and live worktree/branch preview. Agent launches under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup task #{q:pane_current_path}\""},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "worktree-chord",
+      "switch_first": true,
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup task #{q:pane_current_path}\""
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k g t", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k g t",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "t",
@@ -381,9 +599,17 @@
     "description": "Open an interactive hotfix-* prompt with lifecycle guidance and live worktree/branch preview. Agent launches under the `<base>-resume` profile; on first open of a brand-new worktree the resume command falls back to a fresh agent automatically.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup hotfix #{q:pane_current_path}\""},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "worktree-chord",
+      "switch_first": true,
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/create-prompt-popup hotfix #{q:pane_current_path}\""
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k g h", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k g h",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "h",
@@ -402,9 +628,17 @@
     "description": "Reclaim the current pane's worktree after merge. Refuses on main, dev-*, dirty/untracked changes, or unmerged branch. Switches focus to the main worktree window, runs reclaim detached, then closes the original window.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"kind": "tmux-chord-leaf", "table": "worktree-chord", "switch_first": true, "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/reclaim-current-window #{q:pane_current_path} #{pane_id}\""},
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "worktree-chord",
+      "switch_first": true,
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/worktree/reclaim-current-window #{q:pane_current_path} #{pane_id}\""
+    },
     "hotkeys": [
-      { "keys": "Ctrl+k g r", "layer": "tmux-chord" }
+      {
+        "keys": "Ctrl+k g r",
+        "layer": "tmux-chord"
+      }
     ],
     "palette": {
       "accelerator": "r",
@@ -423,11 +657,21 @@
     "description": "Open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua` via the Windows native helper.",
     "scope": "project-navigation",
     "context": "hybrid-wsl",
-    "binding": {"handler": "chrome.open_debug_profile", "args": {"headless": true}},
+    "binding": {
+      "handler": "chrome.open_debug_profile",
+      "args": {
+        "headless": true
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+b", "layer": "wezterm" }
+      {
+        "keys": "Alt+b",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "chrome.open-debug-profile-visible",
@@ -435,11 +679,21 @@
     "description": "Open or reset the Chrome debug browser profile in visible (headful) mode for manual verification; shares the debug `user_data_dir` and port with the headless instance.",
     "scope": "project-navigation",
     "context": "hybrid-wsl",
-    "binding": {"handler": "chrome.open_debug_profile", "args": {"headless": false}},
+    "binding": {
+      "handler": "chrome.open_debug_profile",
+      "args": {
+        "headless": false
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+Shift+B", "layer": "wezterm" }
+      {
+        "keys": "Alt+Shift+B",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "attention.jump-waiting",
@@ -447,11 +701,18 @@
     "description": "Jump to the next agent pane whose status is `waiting`. Repeated presses cycle past the current target; silent when nothing is waiting. Toasts outside tmux.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "attention.jump_waiting"},
+    "binding": {
+      "handler": "attention.jump_waiting"
+    },
     "hotkeys": [
-      { "keys": "Alt+,", "layer": "wezterm" }
+      {
+        "keys": "Alt+,",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "attention.jump-done",
@@ -459,11 +720,18 @@
     "description": "Jump to the next agent pane whose status is `done`; the entry is auto-cleared as the jump lands. Silent when nothing is done.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "attention.jump_done"},
+    "binding": {
+      "handler": "attention.jump_done"
+    },
     "hotkeys": [
-      { "keys": "Alt+.", "layer": "wezterm" }
+      {
+        "keys": "Alt+.",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "attention.overlay",
@@ -471,12 +739,21 @@
     "description": "Open a centered tmux popup picker listing every pending agent task across workspaces. Up/Down to move, `Enter` to jump; pick the trailing `clear all` sentinel to wipe state.json. Press `Alt+/` again (or `Esc`) to close — the popup owns the chord while open, so the same key opens and closes it.",
     "scope": "project-navigation",
     "context": "tmux-backed",
-    "binding": {"handler": "attention.overlay"},
+    "binding": {
+      "handler": "attention.overlay"
+    },
     "hotkeys": [
-      { "keys": "Alt+/", "layer": "wezterm" }
+      {
+        "keys": "Alt+/",
+        "layer": "wezterm"
+      }
     ],
     "palette": {
-      "command": ["bash", "-lc", "bash {repo_root}/scripts/runtime/tmux-attention-menu.sh"]
+      "command": [
+        "bash",
+        "-lc",
+        "bash {repo_root}/scripts/runtime/tmux-attention-menu.sh"
+      ]
     }
   },
   {
@@ -488,7 +765,11 @@
     "hotkeys": [],
     "palette": {
       "accelerator": "r",
-      "command": ["bash", "{repo_root}/scripts/runtime/tmux-reset.sh", "refresh-current-window"],
+      "command": [
+        "bash",
+        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "refresh-current-window"
+      ],
       "success_message": "Refreshed current tmux window.",
       "failure_message": "Failed to refresh current tmux window."
     }
@@ -502,7 +783,11 @@
     "hotkeys": [],
     "palette": {
       "accelerator": "s",
-      "command": ["bash", "{repo_root}/scripts/runtime/tmux-reset.sh", "refresh-current-session"],
+      "command": [
+        "bash",
+        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "refresh-current-session"
+      ],
       "success_message": "Refreshed current tmux session.",
       "failure_message": "Failed to refresh current tmux session."
     }
@@ -516,7 +801,11 @@
     "hotkeys": [],
     "palette": {
       "accelerator": "w",
-      "command": ["bash", "{repo_root}/scripts/runtime/tmux-reset.sh", "refresh-current-workspace"],
+      "command": [
+        "bash",
+        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "refresh-current-workspace"
+      ],
       "confirm_message": "Refresh every tmux session in the current workspace?",
       "success_message": "Refreshed current workspace sessions.",
       "failure_message": "Failed to refresh current workspace sessions."
@@ -531,7 +820,11 @@
     "hotkeys": [],
     "palette": {
       "accelerator": "a",
-      "command": ["bash", "{repo_root}/scripts/runtime/tmux-reset.sh", "refresh-all"],
+      "command": [
+        "bash",
+        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "refresh-all"
+      ],
       "confirm_message": "Refresh every tmux session on this tmux server?",
       "success_message": "Refreshed all tmux sessions.",
       "failure_message": "Failed to refresh all tmux sessions."
@@ -543,11 +836,21 @@
     "description": "Switch to the built-in WezTerm `default` workspace.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.switch", "args": {"name": "default"}},
+    "binding": {
+      "handler": "workspace.switch",
+      "args": {
+        "name": "default"
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+d", "layer": "wezterm" }
+      {
+        "keys": "Alt+d",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "workspace.switch-work",
@@ -555,11 +858,21 @@
     "description": "Open or switch to `work` using directories configured in `wezterm-x/local/workspaces.lua`.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.switch", "args": {"name": "work"}},
+    "binding": {
+      "handler": "workspace.switch",
+      "args": {
+        "name": "work"
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+w", "layer": "wezterm" }
+      {
+        "keys": "Alt+w",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "workspace.switch-config",
@@ -567,11 +880,21 @@
     "description": "Open or switch to the `config` workspace.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.switch", "args": {"name": "config"}},
+    "binding": {
+      "handler": "workspace.switch",
+      "args": {
+        "name": "config"
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+c", "layer": "wezterm" }
+      {
+        "keys": "Alt+c",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "workspace.switch-opensource",
@@ -579,11 +902,21 @@
     "description": "Open or switch to `opensource` using directories configured in `wezterm-x/local/workspaces.lua` (intended for ~/github open-source projects).",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.switch", "args": {"name": "opensource"}},
+    "binding": {
+      "handler": "workspace.switch",
+      "args": {
+        "name": "opensource"
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+s", "layer": "wezterm" }
+      {
+        "keys": "Alt+s",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "workspace.switch-mock-deck",
@@ -591,11 +924,21 @@
     "description": "Switch to the `mock-deck` demo workspace (six tabs simulating multi-agent activity). Only useful when the `mock-deck` workspace is registered in `wezterm-x/local/workspaces.lua` and the orchestrator at `scripts/dev/mock-deck/mock-deck.sh` is running.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.switch", "args": {"name": "mock-deck"}},
+    "binding": {
+      "handler": "workspace.switch",
+      "args": {
+        "name": "mock-deck"
+      }
+    },
     "hotkeys": [
-      { "keys": "Alt+m", "layer": "wezterm" }
+      {
+        "keys": "Alt+m",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "workspace.cycle-next",
@@ -603,11 +946,18 @@
     "description": "Rotate through all currently known workspaces.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.cycle_next"},
+    "binding": {
+      "handler": "workspace.cycle_next"
+    },
     "hotkeys": [
-      { "keys": "Alt+p", "layer": "wezterm" }
+      {
+        "keys": "Alt+p",
+        "layer": "wezterm"
+      }
     ],
-    "palette": { "display_only": true }
+    "palette": {
+      "display_only": true
+    }
   },
   {
     "id": "workspace.close-current",
@@ -615,9 +965,14 @@
     "description": "Open a centered WezTerm confirmation overlay to close the current non-default workspace.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "workspace.close_current"},
+    "binding": {
+      "handler": "workspace.close_current"
+    },
     "hotkeys": [
-      { "keys": "Alt+Shift+X", "layer": "wezterm" }
+      {
+        "keys": "Alt+Shift+X",
+        "layer": "wezterm"
+      }
     ]
   },
   {
@@ -626,9 +981,14 @@
     "description": "Quit WezTerm and close all windows; WezTerm handles its own confirmation.",
     "scope": "workspaces",
     "context": "any",
-    "binding": {"handler": "app.quit"},
+    "binding": {
+      "handler": "app.quit"
+    },
     "hotkeys": [
-      { "keys": "Alt+Shift+Q", "layer": "wezterm" }
+      {
+        "keys": "Alt+Shift+Q",
+        "layer": "wezterm"
+      }
     ]
   }
 ]

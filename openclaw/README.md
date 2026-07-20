@@ -1,4 +1,4 @@
-# OpenClaw personal control plane (MVP)
+# OpenClaw personal control plane
 
 Versioned templates and agent protocol for a **Feishu → OpenClaw → local machine**
 loop. This directory is **not** part of the WezTerm runtime hot path.
@@ -39,9 +39,9 @@ Legacy A–E codes remain as parenthetical aliases under
 **wezdeck cwd:** personal mainline default = primary **`master`** (no mandatory
 worktree). Isolate with `claw-*` only when parallel or long experiment.
 
-## Status (MVP)
+## Status
 
-Personal control-plane MVP is **operational** when the checks below pass on
+Personal control plane is **operational** when the checks below pass on
 the machine. Values below describe the **intended** baseline; they live under
 `~/.openclaw/` and are not stored in git.
 
@@ -369,14 +369,12 @@ Feishu / chat
 OpenClaw = control plane; harness = tools/auth/FS. Plugin tools are **not**
 injected into the harness by default.
 
-**vs Happy (the mobile channel).** `claw` bets on **one** protocol — ACP over
-stdio — for *every* agent on the local hop; Claude/Codex/etc. all reach it
-through their ACP adapters. Happy inverts this: it is a **polyglot** locally —
-`stream-json` for Claude, **MCP** for Codex, **ACP** only for Gemini — and is
-uniform only on its remote E2E relay. Where the two touch ACP they share the
-same `@agentclientprotocol/sdk` standard. Per-agent transport detail (verified
-against `slopus/happy-cli`): [`docs/mobile-access.md` → How Happy talks to each
-agent](../docs/mobile-access.md).
+**Remote path (post-Happy).** WezDeck no longer wraps desktop agent panes
+with Happy for phone sync. Remote agent work goes through **this control plane**
+(Feishu → Gateway → C1/C2/C3, including ACP). Temporary help on a live tmux
+pane uses the OpenClaw **tmux** skill (capture / send-keys), not a second full
+client. Phone **shell** access remains Tailscale + Termux:
+[`docs/mobile-access.md`](../docs/mobile-access.md). History: evolution **v6**.
 
 **Illustrative lifecycle:**
 
@@ -594,7 +592,7 @@ openclaw pairing list feishu
 openclaw pairing approve feishu <CODE>
 ```
 
-## MVP checklist
+## Operational checklist
 
 | Item | Done when |
 | --- | --- |
@@ -761,7 +759,7 @@ Create uses `worktree-task` + `--provider none`. Reclaim refuses human prefixes.
 
 Create views as needed: 进行中 / 本周完成 / 失败与取消 — no extra code required.
 
-## Roadmap (after MVP)
+## Roadmap
 
 Ordered by payoff for this personal setup:
 

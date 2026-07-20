@@ -12,7 +12,7 @@ author: AI 生成初稿，人工微调
 
 > *本篇是 personal reflection，不是技术文档。*
 > *想看 WezDeck 现在长什么样、5 大特性是什么 → [`ai-workspace-sharing-outline.md`](./ai-workspace-sharing-outline.md)（10 分钟）*
-> *想看 v0 → v5 完整演进 + 一天日常切面 → [`ai-dev-environment-evolution.md`](./ai-dev-environment-evolution.md)（30 分钟）*
+> *想看 v0 → v6 完整演进 + 一天日常切面 → [`ai-dev-environment-evolution.md`](./ai-dev-environment-evolution.md)（30 分钟）*
 
 ## 三天
 
