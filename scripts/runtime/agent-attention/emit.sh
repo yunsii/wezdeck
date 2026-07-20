@@ -187,6 +187,25 @@ case "$status" in
         "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
       exit 0
     fi
+    # No jumpable target anywhere: neither a WezTerm pane id nor a tmux
+    # pane. Happens when an agent hook fires outside any managed
+    # WezTerm/tmux pane (e.g. an OpenClaw-spawned agent). Such an entry
+    # can never be jumped (Alt+.) or focus-acked, so it would linger as
+    # an orphan that inflates the right-status counter while staying
+    # invisible in the Alt+/ picker (which filters unreachable rows via
+    # entry_reachable). Persisting it is the write-side half of the
+    # badge/picker desync; drop it here. The "WezTerm pane but no tmux"
+    # case (WEZTERM_PANE set, tmux_pane empty) is a supported non-tmux
+    # jump target and is intentionally NOT skipped. Housekeeping statuses
+    # (resolved/cleared/pane-evict) are not in this case arm and still run.
+    if [[ -z "${WEZTERM_PANE:-}" && -z "$tmux_pane" ]]; then
+      runtime_log_info attention "hook skipped: no wezterm/tmux pane" \
+        "status=$status" \
+        "provider=${provider:-}" \
+        "session_id=${session_id:-}" \
+        "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+      exit 0
+    fi
     ;;
 esac
 
