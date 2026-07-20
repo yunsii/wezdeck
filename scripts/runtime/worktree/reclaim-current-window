@@ -245,6 +245,19 @@ wt_tmux_progress "[worktree-task] reclaiming $slug…"
     if [[ -n "${TMUX:-}" && -n "$SOURCE_WINDOW_ID" ]]; then
       tmux kill-window -t "$SOURCE_WINDOW_ID" 2>/dev/null || true
     fi
+    # Recompute the survivor window's cached status now that the worktree
+    # is gone. Symmetric with tmux-worktree-open.sh's post-create refresh:
+    # without it the cached `linked:N` segment stays stale until the ~30s
+    # poll or the next prompt hook, so the count looks unchanged after the
+    # 1.5s progress override above clears. Session-scoped so it resolves
+    # whichever window we switched focus to (main_root or last-window).
+    if [[ -n "${TMUX:-}" && -n "${session_name:-}" ]]; then
+      bash "$RUNTIME_LIB_DIR/tmux-status-refresh.sh" \
+        --session "$session_name" \
+        --force \
+        --no-debounce \
+        --refresh-client >/dev/null 2>&1 || true
+    fi
   else
     rc=$?
     printf '[%s] reclaim failed rc=%d (window kept open for inspection)\n' \
