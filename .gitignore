@@ -16,6 +16,8 @@ openclaw/workspace/memory/
 openclaw/workspace/state/
 openclaw/workspace/claude/
 openclaw/workspace/codex/
+# Scratch / handoff files staged by agents (not source of truth)
+openclaw/workspace/tmp/
 openclaw/workspace/smoke-ok.txt
 openclaw/workspace/**/smoke-ok.txt
 openclaw/workspace/**/marker.txt
