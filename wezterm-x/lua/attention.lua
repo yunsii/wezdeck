@@ -1240,6 +1240,27 @@ end
 function M.activate_in_gui(pane_id_value, window, source_pane, opts)
   local tmux_session_hint = opts and opts.tmux_session or nil
 
+  -- Resolve the live pane from the tmux session FIRST — the session is the
+  -- stable identity, while the entry's stored wezterm_pane_id goes stale
+  -- whenever the session moves wezterm panes WITHOUT a hook fire to refresh
+  -- it: promotion out of the overflow tab (Alt+t / auto-promote), spawn-cap
+  -- eviction respawn, workspace close+reopen. Trusting the stored id first
+  -- then lands the jump on whatever now occupies that pane — a sibling tab
+  -- or the overflow placeholder (the reported "Alt+/ jumps to the overflow
+  -- tab after I promoted the repo out of overflow" bug). pane_for_hosted_
+  -- session reads the unified map that write_live_snapshot rebuilds from live
+  -- mux every tick, so it tracks the move; the stored id is only the
+  -- pre-first-snapshot fallback below.
+  if tmux_session_hint and tmux_session_hint ~= '' then
+    local found = pane_for_hosted_session(tmux_session_hint)
+    if found ~= nil and try_activate_pane(tostring(found), window, source_pane) then
+      return true
+    end
+  end
+
+  -- Fallback: the entry's stored wezterm_pane_id. Only trusted when it still
+  -- hosts this session (or there is no session to cross-check) — covers the
+  -- brief window before the first snapshot has populated the session→pane map.
   if pane_id_value ~= nil and pane_id_value ~= '' then
     local trust_stored = true
     if tmux_session_hint and tmux_session_hint ~= '' then
@@ -1249,13 +1270,6 @@ function M.activate_in_gui(pane_id_value, window, source_pane, opts)
       end
     end
     if trust_stored and try_activate_pane(tostring(pane_id_value), window, source_pane) then
-      return true
-    end
-  end
-
-  if tmux_session_hint and tmux_session_hint ~= '' then
-    local found = pane_for_hosted_session(tmux_session_hint)
-    if found ~= nil and try_activate_pane(tostring(found), window, source_pane) then
       return true
     end
   end

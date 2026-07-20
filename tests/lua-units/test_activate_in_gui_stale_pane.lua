@@ -152,6 +152,46 @@ describe('activate_in_gui — stale stored wezterm_pane_id', function()
   end)
 end)
 
+describe('activate_in_gui — session promoted out of the overflow tab', function()
+  it('reroutes to the promoted dedicated pane, not the stale overflow placeholder', function()
+    reset()
+    -- `skills` was promoted out of overflow: it now owns tab/pane 3. Pane 6
+    -- is the overflow placeholder ('…'); pane 2 is a sibling repo (fe1). The
+    -- attention entry still stores the wezterm_pane_id skills had while folded
+    -- into overflow (6) — promotion fires no attention hook, so the entry is
+    -- never refreshed. Trusting the stored id lands the jump on the overflow
+    -- placeholder (the reported bug); session-first resolution reroutes to 3.
+    mock.set_mux {
+      windows = {
+        { workspace = 'work', tabs = {
+          { id = 1, title = 'fe1',    active_pane = { id = 2 } },
+          { id = 2, title = 'skills', active_pane = { id = 3 } },
+          { id = 6, title = '…',      active_pane = { id = 6 } },
+        }},
+      },
+    }
+    local activated
+    for _, win in ipairs(mock.mux.all_windows()) do
+      for _, tab in ipairs(win:tabs()) do
+        for _, info in ipairs(tab:panes_with_info()) do
+          local pid = info.pane.id
+          info.pane.activate = function() activated = pid end
+        end
+      end
+    end
+    local SKILLS = 'wezterm_work_skills_743fa33b6f'
+    -- Live truth (rebuilt by write_live_snapshot each tick): skills on pane 3.
+    tab_visibility.set_pane_session(3, SKILLS)
+    tab_visibility.set_pane_session(2, 'wezterm_work_fe1_dddddddddd')
+
+    -- Stored id = 6, the overflow placeholder pane skills used to fold into.
+    local ok = attention.activate_in_gui('6', nil, {}, { tmux_session = SKILLS })
+    assert_truthy(ok, 'should activate the promoted pane')
+    assert_eq(activated, 3,
+      'expected reroute to promoted pane 3, not overflow placeholder 6')
+  end)
+end)
+
 if fail_count > 0 then
   io.write(string.format('\n%d failed, %d passed\n', fail_count, pass_count))
   os.exit(1)
