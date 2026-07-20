@@ -24,7 +24,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | Architecture / rails | `agent-architecture.md` |
 | Interaction modes | `agent-interaction.md` |
 | Error closed-loop **scope** | `error-closed-loop-scope.md` + skill `error-closed-loop` |
-| Adversarial review | **Runner** `scripts/dev/adversarial-review/` · **Main skill** `workspace/skills/adversarial-review/` · **Repo thin skill** `skills/adversarial-review/` · **KB** `docs/adversarial-review.md` (repo root) |
+| Adversarial review | **Single source** `scripts/dev/adversarial-review/` (SKILL+runner) · **links** `~/.agents/skills/…`, `workspace/skills/…`, `skills/…` via `scripts/dev/link-platform-skills.sh` · **KB** `docs/adversarial-review.md` |
 | Host TUI constitution | `agent-profiles/v1/en/*` |
 | Ops / matrix / Feishu control plane | `../README.md` (entry; prefer docs above for policy) |
 

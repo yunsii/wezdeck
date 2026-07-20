@@ -13,8 +13,13 @@
 #   strict    (default) survivors = CONFIRMED && reproduced==true only
 #   advisory  also surface PLAUSIBLE / needs_human (never claim "all three gates")
 #
+# TOOL vs TARGET:
+#   TOOL_HOME  = this script's directory (prompts, provider, select-backends)
+#   TARGET     = git repo under review (--repo PATH, or cwd git toplevel)
+#   dogfood forces TARGET = the git root that hosts this tool (usually wezdeck)
+#
 # All logic is agent-agnostic; the only agent-specific code is in
-# lib/provider.sh. See docs/adversarial-review.md.
+# lib/provider.sh. See docs/adversarial-review.md and SKILL.md.
 #
 # Exit codes:
 #   0 done (no strict survivors, or advisory without --fail-on-finding)
@@ -25,8 +30,14 @@
 
 set -euo pipefail
 
-lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$lib_dir/../../.." && pwd)"
+# TOOL_HOME: skill/runner unit (not the repo under review)
+tool_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+lib_dir="$tool_root"
+# Git root that *hosts* the tool sources (for dogfood + relative tool_paths)
+tool_host_root="$(cd "$tool_root/../../.." && pwd)"
+# repo_root = TARGET under review (set after args; default cwd git toplevel)
+repo_root=""
+target_repo_arg=""
 prompts="$lib_dir/prompts"
 schema="$lib_dir/lib/findings-schema.json"
 # shellcheck source=/dev/null
@@ -248,6 +259,7 @@ while [ $# -gt 0 ]; do
     --writer) writer="$2"; auto_select=1; shift 2 ;;
     --auto-select) auto_select=1; shift ;;
     --no-probe) ADV_REVIEW_PROBE=0; shift ;;
+    --repo) target_repo_arg="$2"; shift 2 ;;
     --head) head_ref="$2"; shift 2 ;;
     --min-severity) min_sev="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
@@ -255,7 +267,7 @@ while [ $# -gt 0 ]; do
     --dry-run) dry=1; shift ;;
     --fail-on-finding) fail_on=1; shift ;;
     -h|--help)
-      sed -n '2,40p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,45p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*) die "unknown flag: $1" ;;
@@ -264,6 +276,23 @@ while [ $# -gt 0 ]; do
 done
 
 case "$mode" in strict|advisory) ;; *) die "mode must be strict|advisory" ;; esac
+
+# Resolve TARGET (repo under review). dogfood always uses the tool host repo.
+if [ "$dogfood" -eq 1 ]; then
+  repo_root="$tool_host_root"
+elif [ -n "$target_repo_arg" ]; then
+  [ -d "$target_repo_arg" ] || die "--repo not a directory: $target_repo_arg"
+  repo_root="$(cd "$target_repo_arg" && pwd)"
+  if git -C "$repo_root" rev-parse --show-toplevel >/dev/null 2>&1; then
+    repo_root="$(git -C "$repo_root" rev-parse --show-toplevel)"
+  fi
+else
+  if git rev-parse --show-toplevel >/dev/null 2>&1; then
+    repo_root="$(git rev-parse --show-toplevel)"
+  else
+    die "not inside a git repo; pass --repo <path> or cd into TARGET"
+  fi
+fi
 
 # Backend selection: --writer / --auto-select, or default pair when reviewer/refuter omitted
 # shellcheck source=/dev/null
@@ -285,11 +314,13 @@ fi
 [ -n "$reviewer" ] || reviewer="claude"
 [ -n "$refuter" ] || refuter="codex-gpt"
 
+log "tool=$tool_root"
+log "target=$repo_root"
 cd "$repo_root"
 
 if [ "$dogfood" -eq 1 ]; then
   # Review staged+unstaged+untracked under this tool + docs, vs HEAD.
-  # Uses a synthetic range: stash-less path via git diff HEAD and include untracked via temporary index? 
+  # Uses a synthetic range: stash-less path via git diff HEAD and include untracked via temporary index?
   # Practical approach: base=HEAD, head= worktree with only our paths — use HEAD and pass "working tree"
   # by creating a temporary commit-less diff: git diff HEAD -- paths + untracked.
   base="HEAD"

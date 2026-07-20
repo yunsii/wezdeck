@@ -1,22 +1,28 @@
 # Adversarial Review (cross-agent) — v0.2
 
-**Authority:** runner `scripts/dev/adversarial-review/` is the only implementation.
-**Main procedure:** `openclaw/workspace/skills/adversarial-review/SKILL.md`.
-**Repo/TUI discovery:** thin `skills/adversarial-review/SKILL.md` (pointer).
+**Authority:** `scripts/dev/adversarial-review/` is the **only** skill+runner unit
+(SKILL.md + run.sh + lib + prompts). All other paths are **symlinks**.
+**Procedure:** that directory's `SKILL.md`.
 **This file:** knowledge base (how/why), not a second procedure.
 
 ## Agent skill (not for humans to run by hand)
 
-Agents load a skill and execute `scripts/dev/adversarial-review/run.sh` themselves.
+Agents load the platform skill and execute `run.sh` themselves.
 Humans only state intent (e.g. 审一下 / 对抗审查). Do not make the user the primary
 operator of this script.
 
 | Surface | Discovery |
 | --- | --- |
-| **Repo / host TUI** (cwd in wezdeck) | `skills/adversarial-review/SKILL.md` (thin) |
-| **OpenClaw Main** | `openclaw/workspace/skills/adversarial-review/SKILL.md` (full) |
-| **All host TUI doctrine** | `agent-profiles/v1/en/validation.md` → Adversarial review |
-| **Runner (only impl)** | `scripts/dev/adversarial-review/run.sh` |
+| **Single source** | `scripts/dev/adversarial-review/` |
+| **User-level host** | `~/.agents/skills/adversarial-review` → source |
+| **Claude skills** | `~/.claude/skills/adversarial-review` → agents (or source) |
+| **OpenClaw workspace** | `openclaw/workspace/skills/adversarial-review` → source |
+| **Repo-root discovery** | `skills/adversarial-review` → source |
+| **Host TUI doctrine** | `agent-profiles/v1/en/validation.md` → Adversarial review |
+| **Install / refresh links** | `scripts/dev/link-platform-skills.sh` |
+
+**TOOL vs TARGET:** `run.sh` lives in TOOL_HOME; the repo under review is TARGET
+(`--repo` or cwd git toplevel). Do not require TARGET to vendor the scripts.
 
 
 `scripts/dev/adversarial-review/` runs a **cross-agent adversarial code review**
@@ -103,8 +109,9 @@ Implementation: `lib/select-backends.sh`. Human report always prints disclosure
 fields: writer / form / reviewer / refuter / degraded / reason.
 
 ```bash
-# auto by who wrote the code
+# auto by who wrote the code (TARGET = cwd git root, or --repo)
 run.sh <BASE> --writer codex-grok --mode strict
+run.sh <BASE> --repo /path/to/other-repo --writer main --dry-run --no-probe
 run.sh <BASE> --writer claude-acp --dry-run --no-probe
 
 # explicit pair still wins when both flags set
@@ -117,8 +124,10 @@ lib/select-backends.sh --writer codex --json --no-probe
 ## Usage
 
 ```bash
-scripts/dev/adversarial-review/run.sh <BASE_REF> [options]
+# TOOL_HOME = scripts/dev/adversarial-review (or linked user-level skill dir)
+$TOOL_HOME/run.sh <BASE_REF> [options]
 
+  --repo PATH        TARGET git repo to review (default: cwd git toplevel)
   --writer W         who wrote code: claude|codex|codex-gpt|codex-grok|main|human
                      (auto-selects reviewer/refuter; strategy B)
   --auto-select      select backends for writer (default writer=human if omitted)
@@ -133,8 +142,8 @@ scripts/dev/adversarial-review/run.sh <BASE_REF> [options]
   --dry-run          print the planned gates, call no agents
   --fail-on-finding  exit 10 if any strict survivor
 
-scripts/dev/adversarial-review/run.sh selfcheck [claude|codex-gpt|codex-grok ...]
-scripts/dev/adversarial-review/run.sh dogfood [--mode MODE] [options]
+$TOOL_HOME/run.sh selfcheck [claude|codex-gpt|codex-grok ...]
+$TOOL_HOME/run.sh dogfood [--mode MODE] [options]
 ```
 
 Examples:
@@ -186,12 +195,15 @@ Stopping conditions (hard):
 ## Structure
 
 ```
-scripts/dev/adversarial-review/
+scripts/dev/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
+  SKILL.md                   agent procedure (only body)
   run.sh                     three-gate orchestration (agent-agnostic)
   lib/provider.sh            ONLY agent-specific code
+  lib/select-backends.sh     writer-aware pair selection
   lib/findings-schema.json   inter-stage JSON contract (enforced)
   prompts/{critic,refute,repro}.md
-docs/adversarial-review.md   this file
+scripts/dev/link-platform-skills.sh   user-level + in-repo symlinks
+docs/adversarial-review.md   this file (KB only)
 ```
 
 ## Backend aliases (three review paths)
