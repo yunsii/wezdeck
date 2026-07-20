@@ -495,10 +495,18 @@ local function entry_has_live_target(entry)
         if sess == tmux_session then return true end
       end
     end
-  else
-    -- Legacy / non-tmux entries: no session to check, treat as live.
-    return true
   end
+  -- No live tmux session match — or the entry carries no tmux_session at
+  -- all — so fall through to the wezterm_pane_id fallback below. The old
+  -- code short-circuited empty-tmux_session entries here with `return
+  -- true` ("legacy non-tmux, treat as live"), which inflated the badge
+  -- counter with orphan entries that have NEITHER a live session NOR a
+  -- stored pane id (agent hooks that fire outside a managed WezTerm/tmux
+  -- pane — e.g. an OpenClaw-spawned agent). entry_reachable (the picker /
+  -- Alt+/ predicate) already filters those, so the badge disagreed with
+  -- the overlay and Alt+. had no jumpable target. An entry with no
+  -- session and no pane must not count; a real non-tmux entry with a
+  -- live wezterm_pane_id still passes the fallback (session_ws == nil).
   -- Fallback: the entry's stored wezterm_pane_id is still alive AND
   -- belongs to the same workspace the session encodes. Walk the mux
   -- just enough to find the candidate; on a hit, cross-check the

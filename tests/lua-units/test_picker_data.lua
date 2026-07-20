@@ -116,6 +116,47 @@ describe('badge counts and picker rows agree on the same predicate', function()
     assert_eq(#r_buckets, 1, 'collect running desync')
     assert_eq(#d, 0, 'collect done desync (orphan leaked)')
   end)
+
+  it('paneless orphan (empty tmux_session AND empty wezterm_pane_id) is not counted', function()
+    -- Production regression: agent hooks firing outside any managed
+    -- WezTerm/tmux pane (e.g. OpenClaw-spawned agents) persist entries
+    -- with empty tmux_session and empty wezterm_pane_id. The badge path
+    -- (collect_buckets → entry_has_live_target) used to short-circuit
+    -- these to "treat as live" and count them, while the picker path
+    -- (entry_reachable) dropped them — so the right-status bar showed
+    -- "5 done" while Alt+/ listed 1 and Alt+. had nothing to jump to.
+    reset()
+    -- A live pane exists, but the orphan references none of it.
+    mock.set_mux({
+      windows = {
+        { workspace = 'config', tabs = {
+          { id = 1, title = 'wezterm-config', active_pane = { id = 1 } },
+        }},
+      },
+    })
+    local now_ts = tostring(os.time() * 1000)
+    load_state('{"version":1,"entries":{'
+      .. '"paneless-done":{"session_id":"paneless-done","wezterm_pane_id":"",'
+        .. '"tmux_session":"","tmux_socket":"","tmux_window":"","tmux_pane":"",'
+        .. '"status":"done","ts":' .. now_ts .. ',"reason":"task done"}'
+      .. '}}')
+
+    local out = os.tmpname()
+    attention.write_live_snapshot(out, 'test')
+    local fd = io.open(out, 'r')
+    local body = fd:read('*a')
+    fd:close()
+    os.remove(out)
+    local snapshot = require('json_mini').decode(body)
+
+    assert_falsy(find_row(snapshot.picker_rows, function(r) return r.id == 'paneless-done' end),
+      'paneless orphan leaked into picker rows')
+    assert_eq(snapshot.picker_counts.done, 0, 'snapshot done count includes paneless orphan')
+
+    -- Standalone badge path (nil maps → mux-walking entry_has_live_target).
+    local _, d, _ = attention.collect()
+    assert_eq(#d, 0, 'collect counted paneless orphan (entry_has_live_target regressed)')
+  end)
 end)
 
 describe('overflow tab label uses session repo, not the … glyph', function()
