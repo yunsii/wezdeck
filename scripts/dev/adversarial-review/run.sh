@@ -18,6 +18,11 @@
 #   TARGET     = git repo under review (--repo PATH, or cwd git toplevel)
 #   dogfood forces TARGET = the git root that hosts this tool (usually wezdeck)
 #
+# Context pack v1 (find/refute share one pack):
+#   META + INTENT + CHANGESET + DIFF + FILES
+#   --head WORKTREE includes uncommitted TARGET changes
+#   --intent / --intent-file supply change intent
+#
 # All logic is agent-agnostic; the only agent-specific code is in
 # lib/provider.sh. See docs/adversarial-review.md and SKILL.md.
 #
@@ -191,8 +196,11 @@ _emit() {
        --arg writer "${writer:-}" --arg form "${select_form:-manual}" \
        --argjson degraded "${select_degraded:-false}" --arg reason "${select_reason:-}" \
        --argjson auto "${auto_selected:-false}" \
+       --arg pack_id "${PACK_ID:-}" --arg pack_hash "${PACK_HASH:-}" \
+       --arg context "pack-v1" --arg pack_file "${PACK_FILE:-}" \
        '{mode:$mode, base:$base, head:$head, writer:$writer, reviewer:$reviewer, refuter:$refuter,
          form:$form, degraded:$degraded, select_reason:$reason, auto_selected:$auto,
+         context:$context, pack_id:$pack_id, pack_hash:$pack_hash, pack_file:$pack_file,
          skipped_gates:$skipped, survivors:$survivors, needs_human:$needs_human, dropped:$dropped}'
     return
   fi
@@ -210,6 +218,9 @@ _emit() {
   echo "- auto_selected: ${auto_selected:-false}"
   echo "- degraded: ${select_degraded:-false}"
   echo "- reason: ${select_reason:-}"
+  echo "- context: pack-v1"
+  echo "- pack_id: ${PACK_ID:-n/a}"
+  echo "- pack_hash: ${PACK_HASH:-n/a}"
   if [ "$(printf '%s' "$skipped_json" | jq 'length')" -gt 0 ]; then
     echo "- skipped_gates: $(printf '%s' "$skipped_json" | jq -r 'join(", ")')"
     echo "  (may be SINGLE-MODEL — not full cross-agent)"
@@ -252,6 +263,10 @@ writer="human"; auto_select=0
 min_sev="low"; want_json=0; dry=0; mode="strict"; fail_on=0
 auto_selected=false; select_form="manual"; select_degraded=false; select_reason=""
 skipped_gates=()
+intent_text=""; intent_file=""; keep_pack_dir=""
+max_files=10; max_file_bytes=40960; context_window=200
+path_filter=()
+PACK_ID=""; PACK_HASH=""; PACK_FILE=""; PACK_DIR=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --reviewer) reviewer="$2"; shift 2 ;;
@@ -261,13 +276,19 @@ while [ $# -gt 0 ]; do
     --no-probe) ADV_REVIEW_PROBE=0; shift ;;
     --repo) target_repo_arg="$2"; shift 2 ;;
     --head) head_ref="$2"; shift 2 ;;
+    --intent) intent_text="$2"; shift 2 ;;
+    --intent-file) intent_file="$2"; shift 2 ;;
+    --max-files) max_files="$2"; shift 2 ;;
+    --max-file-bytes) max_file_bytes="$2"; shift 2 ;;
+    --context-window) context_window="$2"; shift 2 ;;
+    --keep-pack) keep_pack_dir="$2"; shift 2 ;;
     --min-severity) min_sev="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
     --json) want_json=1; shift ;;
     --dry-run) dry=1; shift ;;
     --fail-on-finding) fail_on=1; shift ;;
     -h|--help)
-      sed -n '2,45p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,55p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*) die "unknown flag: $1" ;;
@@ -319,13 +340,18 @@ log "target=$repo_root"
 cd "$repo_root"
 
 if [ "$dogfood" -eq 1 ]; then
-  # Review staged+unstaged+untracked under this tool + docs, vs HEAD.
-  # Uses a synthetic range: stash-less path via git diff HEAD and include untracked via temporary index?
-  # Practical approach: base=HEAD, head= worktree with only our paths — use HEAD and pass "working tree"
-  # by creating a temporary commit-less diff: git diff HEAD -- paths + untracked.
+  # dogfood = WORKTREE + tool path filter
   base="HEAD"
   head_ref="WORKTREE"
-  log "dogfood: reviewing adversarial-review + related docs against HEAD (working tree)"
+  path_filter=(
+    "scripts/dev/adversarial-review"
+    "docs/adversarial-review.md"
+    "openclaw/scripts/claw-worktree.sh"
+  )
+  if [ -z "$intent_text" ] && [ -z "$intent_file" ]; then
+    intent_text="dogfood: adversarial-review toolkit self-review (uncommitted + HEAD vs tool paths)"
+  fi
+  log "dogfood: WORKTREE review of tool paths against HEAD"
 fi
 
 [ -n "$base" ] || die "missing BASE_REF (try: run.sh HEAD~1  or  run.sh dogfood)"
@@ -338,69 +364,43 @@ else
 fi
 min_rank="$(sev_rank "$min_sev")"
 
-# --- stage 0: precheck -------------------------------------------------------
-tool_paths=(
-  "scripts/dev/adversarial-review"
-  "docs/adversarial-review.md"
-  "openclaw/scripts/claw-worktree.sh"
-)
-
-if [ "$head_ref" = "WORKTREE" ]; then
-  # collect changed names for tool paths
-  changed="$(
-    {
-      git diff --name-only "$base" -- "${tool_paths[@]}" 2>/dev/null || true
-      git ls-files --others --exclude-standard -- "${tool_paths[@]}" 2>/dev/null || true
-    } | sort -u
-  )"
-  diff="$(
-    {
-      git diff "$base" -- "${tool_paths[@]}" 2>/dev/null || true
-      # untracked files as /dev/null diffs
-      while IFS= read -r f; do
-        [ -z "$f" ] && continue
-        [ -f "$f" ] || continue
-        git diff --no-index -- /dev/null "$f" 2>/dev/null || true
-      done < <(git ls-files --others --exclude-standard -- "${tool_paths[@]}" 2>/dev/null || true)
-    }
-  )"
-else
-  changed="$(git diff --name-only "$base".."$head_ref")"
-  diff="$(git diff "$base".."$head_ref")"
-fi
+# --- stage 0: build context pack ---------------------------------------------
+# shellcheck source=/dev/null
+. "$lib_dir/lib/context-pack.sh"
+build_context_pack
+changed="$PACK_CHANGED"
+diff="$PACK_DIFF"
 
 [ -n "$changed" ] || { log "no changes in range"; exit 0; }
 
-has_runtime=0
-while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  case "$f" in
-    *.md|docs/*|*/testdata/*|*_test.*|*.test.*|test/*|tests/*) : ;;
-    *) has_runtime=1 ;;
-  esac
-done <<< "$changed"
-if [ "$has_runtime" -eq 0 ]; then
+if [ "${PACK_HAS_RUNTIME:-0}" -eq 0 ]; then
   log "skip: diff is docs/tests only — no runtime behavior to review adversarially"
   exit 0
 fi
 
 log "range $base..$head_ref  mode=$mode  writer=$writer  reviewer=$reviewer  refuter=$refuter"
+log "context=pack-v1 pack_id=$PACK_ID hash=${PACK_HASH:0:12}…"
 
 if [ "$dry" -eq 1 ]; then
   log "dry-run — planned gates:"
   log "  writer        -> $writer (form=$select_form degraded=$select_degraded)"
   log "  reason        -> $select_reason"
-  log "  stage1 find   -> $reviewer"
-  log "  stage2 refute -> $refuter $(provider_available "$refuter" && echo '(available)' || echo '(UNAVAILABLE)')"
+  log "  context       -> pack-v1 ($PACK_FILE)"
+  log "  pack_hash     -> $PACK_HASH"
+  log "  stage1 find   -> $reviewer  (INPUT=context pack)"
+  log "  stage2 refute -> $refuter $(provider_available "$refuter" && echo '(available)' || echo '(UNAVAILABLE)') (same pack + findings)"
   log "  stage3 repro  -> $reviewer + sandbox worktree"
   exit 0
 fi
 
 provider_available "$reviewer" || die "reviewer '$reviewer' unavailable" 2
 
+# Shared pack body for find + refute (same bytes)
+pack_body="$(cat "$PACK_FILE")"
+
 # --- stage 1: find -----------------------------------------------------------
 log "stage 1/3 · find ($reviewer)…"
-f1="$(printf '%s' "$diff" | run_agent "$reviewer" "$prompts/critic.md")" \
+f1="$(printf '%s' "$pack_body" | run_agent "$reviewer" "$prompts/critic.md")" \
   || die "stage1: $reviewer produced no valid JSON" 3
 f1="$(_validate_findings "$f1")"
 f1="$(printf '%s' "$f1" | jq -c '
@@ -433,7 +433,7 @@ else
 fi
 
 if provider_available "$refuter" && [[ " ${skipped_gates[*]} " != *"refute-unavailable"* ]]; then
-  refute_in="$diff"$'\n\n=== FINDINGS ===\n'"$f1"
+  refute_in="$pack_body"$'\n\n=== FINDINGS ===\n'"$f1"
   if f2_raw="$(printf '%s' "$refute_in" | run_agent "$refuter" "$prompts/refute.md")"; then
     f2="$(_validate_findings "$f2_raw")"
     survivors="$(jq -nc --argjson s1 "$f1" --argjson s2 "$f2" '

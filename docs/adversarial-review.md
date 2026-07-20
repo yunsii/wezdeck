@@ -192,6 +192,28 @@ Stopping conditions (hard):
 - never `git commit` / `git push` from inside repro scripts
 - never treat SINGLE-MODEL (refuter unavailable) as full cross-agent success
 
+## Context pack v1
+
+Find/refute input is a **context pack** (same bytes both gates), not bare diff:
+
+| Section | Content |
+| --- | --- |
+| META | target, base/head, writer, pack_id |
+| INTENT | `--intent` / `--intent-file` / commit message / degraded none |
+| CHANGESET | changed paths |
+| DIFF | unified diff (`BASE..HEAD` or worktree vs BASE) |
+| FILES | related file bodies (budget-capped) |
+| NOTES | truncations / omissions |
+
+```bash
+# include uncommitted TARGET changes
+run.sh HEAD --head WORKTREE --repo /path/to/target \
+  --writer main --intent "fix X" --mode strict
+
+# keep pack for audit
+run.sh HEAD~1 --keep-pack /tmp/adv-pack --writer main --dry-run --no-probe
+```
+
 ## Structure
 
 ```

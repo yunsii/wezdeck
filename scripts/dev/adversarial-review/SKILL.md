@@ -75,6 +75,21 @@ actually exists (compat only).
 else: git rev-parse --show-toplevel from cwd
 ```
 
+## Context pack v1
+
+Find and refute receive the **same** pack (not bare diff):
+
+- META / INTENT / CHANGESET / DIFF / FILES / NOTES
+- `--head WORKTREE` includes uncommitted TARGET changes
+- `--intent` or `--intent-file` (else commit message or degraded none)
+- Budget: `--max-files` (10) `--max-file-bytes` (40960) `--context-window` (200)
+- Optional: `--keep-pack DIR` to retain pack.md for audit
+
+```bash
+"$TOOL_HOME/run.sh" HEAD --head WORKTREE --repo "$TARGET" \
+  --writer main --intent "what this change is for" --mode strict
+```
+
 ## Agent procedure
 
 1. **Identify** TARGET cwd/repo, `BASE_REF`, **writer**  

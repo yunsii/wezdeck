@@ -9,8 +9,9 @@ Input JSON shape after `=== INPUT ===`:
 
 Contract (the orchestrator depends on it exactly):
 - Output ONLY a bash script, inside a single ```bash fenced block.
-- The script runs from a **detached sandbox worktree at HEAD** (not the dirty
-  primary tree). Treat the tree as disposable.
+- The script runs from a **detached sandbox worktree that mirrors the reviewed
+  tree** (HEAD commit or WORKTREE snapshot — not an arbitrary dirty primary).
+  Treat the tree as disposable.
 - Prefer **read-only** checks: inspect files, run pure functions, `bash -n`,
   unit-style assertions. Avoid network, sudo, and mutating system state.
 - If the defect reproduces, exit with a **non-zero** code and print one line to

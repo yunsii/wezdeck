@@ -93,7 +93,8 @@ for ln in sys.stdin:
                 last = c
             elif isinstance(c, list):
                 parts = []
-                for item in c:\n                    if isinstance(item, dict) and isinstance(item.get("text"), str):
+                for item in c:
+                    if isinstance(item, dict) and isinstance(item.get("text"), str):
                         parts.append(item["text"])
                     elif isinstance(item, str):
                         parts.append(item)
