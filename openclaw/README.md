@@ -369,12 +369,13 @@ Feishu / chat
 OpenClaw = control plane; harness = tools/auth/FS. Plugin tools are **not**
 injected into the harness by default.
 
-**Remote path (post-Happy).** WezDeck no longer wraps desktop agent panes
-with Happy for phone sync. Remote agent work goes through **this control plane**
-(Feishu → Gateway → C1/C2/C3, including ACP). Temporary help on a live tmux
-pane uses the OpenClaw **tmux** skill (capture / send-keys), not a second full
-client. Phone **shell** access remains Tailscale + Termux:
-[`docs/mobile-access.md`](../docs/mobile-access.md). History: evolution **v6**.
+**Remote path (post-Happy / post-Tailscale phone shell).** WezDeck no longer
+wraps desktop agent panes with Happy for phone sync, and the host no longer
+maintains a Tailscale phone-ssh path. Remote agent work goes through **this
+control plane** (Feishu → Gateway → C1/C2/C3, including ACP). Temporary help on
+a live tmux pane uses the OpenClaw **tmux** skill (capture / send-keys), not a
+second full client. History and retired phone notes:
+[`docs/mobile-access.md`](../docs/mobile-access.md) · evolution **v6**.
 
 **Illustrative lifecycle:**
 

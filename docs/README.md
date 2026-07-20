@@ -22,7 +22,7 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`browser-debug.md`](./browser-debug.md).
 - Timed reminders (cron + tmux popups), `reminder.sh`, crontab install:
   Read [`reminders.md`](./reminders.md).
-- Phone / Android access (Tailscale + Termux shell; agent work via OpenClaw):
+- Phone / Android remote work (OpenClaw; Happy + Tailscale phone shell retired):
   Read [`mobile-access.md`](./mobile-access.md).
 - Cutting a Windows host-helper release, updating `release-manifest.json`, side-loading the release zip:
   Read [`host-helper-release.md`](./host-helper-release.md).

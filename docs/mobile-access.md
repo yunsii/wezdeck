@@ -1,27 +1,20 @@
 # Mobile Access
 
-Use this doc for **phone shell access** to this machine (Android + Tailscale +
-Termux). **Agent remote work is OpenClaw (Feishu / ACP)**, not a phone-sync
-wrapper around desktop TUI sessions.
-
-Happy (phone mirror of Claude/Codex panes) was **removed from WezDeck** in
-2026-07 (v6). Rationale and history:  
-[`docs/presentations/ai-dev-environment-evolution.md`](./presentations/ai-dev-environment-evolution.md) ·  
-OpenClaw control plane: [`openclaw/README.md`](../openclaw/README.md).
-
-Built initially 2026-07-12/13 on the `nut` host (vivo phone); Happy path
-retired 2026-07-20.
-
-## Division of labor
+**Agent remote work is OpenClaw (Feishu / ACP).** There is no phone-sync
+wrapper around desktop TUI sessions, and **no maintained phone-shell VPN path**
+on this host after 2026-07-20.
 
 | Need | Path |
 | --- | --- |
 | Assign / steer / accept coding work remotely | **OpenClaw** (Feishu DM → Dex; C1/C2/C3, including ACP) |
 | Temporary help on a live tmux agent pane | OpenClaw **tmux skill** (capture / send-keys) — not a second full client |
-| Run shell commands / inspect the machine from the phone | **Termux → ssh over Tailscale** |
+| Phone shell / attach desktop tmux from Android | **Retired** (was Tailscale + Termux ssh; host package to be purged) |
 
-OpenClaw and ssh share Tailscale when the phone is on the tailnet; they are
-otherwise independent.
+History: evolution **v6** · OpenClaw control plane:
+[`openclaw/README.md`](../openclaw/README.md).
+
+Built initially 2026-07-12/13 on the `nut` host (vivo phone). Happy path
+retired 2026-07-20; Tailscale phone path retired the same day (host package purge is ops, not WezDeck code).
 
 ## Why not Happy (retired)
 
@@ -37,25 +30,25 @@ desktop agent CLIs for native phone UI + E2E relay sync, with WezDeck
 3. Happy stayed low-use, polyglot local transports, and extra wrapper tax
    (relay, `pane_current_command` noise, codex path never fully verified).
 
+Code side (2026-07-20): deleted `agent-happy-toggle.sh`, launcher `--happy`,
+manifest `agent.toggle-happy`. Host side: remove `~/.happy`, broken
+`~/.local/bin/happy` symlink, and any leftover global npm `happy` package.
+
 Do **not** re-add launcher wrap / chord bindings unless product goals change.
-If you still have a global `happy` npm install, it is unrelated to WezDeck
-and can be uninstalled separately.
 
-## SSH over Tailscale (phone shell)
+## Why not Tailscale (retired)
 
-- **Host**: Tailscale on WSL node `nut`; OpenSSH key-only
-  (`/etc/ssh/sshd_config.d/10-key-only.conf`), dead-peer cleanup
-  (`20-keepalive.conf`: `ClientAliveInterval 30` + `ClientAliveCountMax 4`
-  → a vanished phone's tmux client detaches in ≤2 min), `tailscaled`.
-  mosh was retired 2026-07-13: tmux already provides session persistence.
-- **Phone**: Termux (F-Droid) + `pkg install openssh`; optional
-  `~/.ssh/config` with `ServerAliveInterval 30`.
-- Attaching tmux from the phone is possible but **not** the agent workflow —
-  prefer OpenClaw for agent work. Historical ghost-client / narrow-scrollback
-  problems are why app-layer multi-width TUI sharing was attempted (Happy)
-  and then abandoned in favor of a separate control plane.
+Phone **shell** used to be Termux → ssh over Tailscale to WSL node `nut`
+(key-only OpenSSH, keepalives for dead-peer detach). That path was low-use
+once OpenClaw covered remote agent work; keeping `tailscaled` + tailnet
+surface without a product need was pure cost.
 
-## Termux Chinese input
+If you ever reintroduce a personal VPN/ssh path, document it here and keep it
+independent of OpenClaw (control plane ≠ shell tunnel).
+
+## Termux Chinese input (historical notes)
+
+Still useful if Termux is used for anything else:
 
 `~/.termux/termux.properties` needs `enforce-char-based-input = true`,
 then a full app restart (notification-bar **Exit**, not a swipe-away).
@@ -65,8 +58,7 @@ itself to a plain latin keyboard (upstream:
 [termux-app#1539](https://github.com/termux/termux-app/issues/1539),
 [#202](https://github.com/termux/termux-app/issues/202)). Fallback for a
 broken IME: swipe the extra-keys row left to reveal Termux's plain text
-input field, where any IME works fully. Server locale is C.UTF-8
-end-to-end (verified) — display is never the problem.
+input field, where any IME works fully.
 
 ## The tmux window-size model (why phone TUI attach is hard)
 
@@ -93,15 +85,6 @@ it constrains any future "share the terminal with the phone" idea:
 
 | Symptom | First check |
 | --- | --- |
-| Phone can't reach `nut` at all | Tailscale app *Connected*; try the tailnet IP when carrier DNS is wrong |
-| ssh connected but laggy | `tailscale status` — `relay` means DERP fallback; usually recovers to `direct` |
-| Need agent work from phone | Use **Feishu → OpenClaw**, not tmux attach / Happy |
+| Need agent work from phone | Use **Feishu → OpenClaw** (not tmux attach / Happy / Tailscale) |
 | Chinese input dead in Termux | `enforce-char-based-input` + full Exit restart + vivo IME (not Gboard) |
-| Nothing reachable after Windows reboot | WSL isn't started until something launches it; open WezTerm once |
-
-## Known-not-done options
-
-- Windows boot keepalive task (`wsl.exe -d Ubuntu --exec sleep infinity`)
-  so the phone can connect before WezTerm is first opened.
-- Termux font: drop a CJK-capable mono ttf at `~/.termux/font.ttf`
-  (Sarasa Term SC is the candidate) + `termux-reload-settings`.
+| Expect ssh via tailnet IP | Path retired — do not reinstall Tailscale for agent work; use OpenClaw |

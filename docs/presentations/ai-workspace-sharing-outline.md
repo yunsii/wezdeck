@@ -27,7 +27,7 @@ WezDeck 是一套面向多 agent 时代的 personal terminal platform：
 
 ### 远程：OpenClaw（v6）
 
-本机驾驶舱之外，日常远程派活走 **飞书 → OpenClaw（Dex）**（C1/C2/C3、ACP、必要时 tmux 临时遥控）。曾试过的 Happy 手机 TUI 同步已移除；手机 shell 仍用 Tailscale + Termux。详见 [evolution v6](./ai-dev-environment-evolution.md) 与 [`openclaw/README.md`](../../openclaw/README.md)。
+本机驾驶舱之外，日常远程派活走 **飞书 → OpenClaw（Dex）**（C1/C2/C3、ACP、必要时 tmux 临时遥控）。曾试过的 Happy 手机 TUI 同步与 Tailscale 手机 shell 均已移除。详见 [evolution v6](./ai-dev-environment-evolution.md) 与 [`openclaw/README.md`](../../openclaw/README.md)。
 
 
 ---
