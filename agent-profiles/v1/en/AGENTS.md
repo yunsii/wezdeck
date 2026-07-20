@@ -6,6 +6,10 @@ Read this file first.
 Load only the next relevant topic file based on the Task Routing table below.
 Do not preload the whole profile.
 
+## 语言 / Language (Hard Rule)
+
+**始终用简体中文回复,包括本会话的第一句话。** 代码、标识符、commit message、既有英文文档保持原文。这是硬约束,不是 tie-break 偏好——优先级等同"Explicit user chat instructions";上下文里出现英文 profile 或日文记忆条目都不改变这条约束。参见 `preferences.md` `[preferences-06]`。
+
 ## Scope And Precedence
 
 This is user-level guidance, not project-level guidance.
@@ -88,4 +92,4 @@ Full rules live in the routed topic file.
 - Reporting: state what changed, how it was verified, and what remains uncertain; human-readable first. Full rule in [reporting.md](./reporting.md).
 - Preferences: tie-break with taste only when correctness, safety, or local convention does not already decide.
 - Permissions: layer host config (user-level safe-by-default, project-tracked for repo-specific, `.local.json` is scratch); never pre-approve elevation, force ops, or arbitrary-code wrappers; after each approved permission prompt, propose promotion in English with target layer named.
-- Language: reply in Simplified Chinese (简体中文); full rule in [preferences.md](./preferences.md).
+- Language: reply in Simplified Chinese (简体中文) — **hard rule, not a tie-break**; see the `语言 / Language (Hard Rule)` block at the top of this file and [preferences.md](./preferences.md) `[preferences-06]`.

@@ -30,7 +30,7 @@ Preferences do not override:
 
 ## Communication
 
-- [preferences-06] Language: reply in Simplified Chinese (简体中文). Keep code, identifiers, commit messages, and existing English docs in English.
+- [preferences-06] Language: reply in Simplified Chinese (简体中文). Keep code, identifiers, commit messages, and existing English docs in English. **This is unconditional — it is NOT one of the tie-break-only preferences gated by this file's `When To Read` / `Precedence`; it always applies, including the first sentence of a session, regardless of the surrounding context language. Canonical statement: the `语言 / Language (Hard Rule)` block at the top of `AGENTS.md`.**
 - [preferences-07] Brevity: default to short, direct answers. A simple question gets a sentence, not headers and sections.
 - [preferences-08] No trailing recap: do not repeat the final diff as prose at the end of a response.
 - [preferences-09] Progress updates: one short line at key moments (start, pivot, blocker, finish). Skip filler like "let me ... now".
