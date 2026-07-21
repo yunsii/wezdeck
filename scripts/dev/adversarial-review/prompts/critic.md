@@ -16,7 +16,10 @@ Per dimension type:
   triggering path, do not report it.
 - **design/advisory** dimensions: report the concern in `failure_scenario` as
   *specific state/change -> concrete negative impact* (no crash required); these
-  surface as advisories, not hard blockers.
+  surface as advisories, not hard blockers. **Evidence discipline:** ground every
+  design claim in a pack fact or a tool-verified fact (cite the pack section /
+  `file:line` / an authoritative constraint) — do **not** report a bare assertion
+  from taste or intuition. If you cannot cite a basis, drop the concern.
 
 Rules:
 - Ground findings in the pack. Use Read/Grep/Glob only to **verify** pack claims;

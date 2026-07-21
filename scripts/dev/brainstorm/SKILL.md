@@ -78,6 +78,10 @@ INPUT, **not** via `claude --resume` / `codex exec resume`. Deliberate:
    "$TOOL_HOME/run.sh" "<problem>" \
      --diverge claude,codex --challenger codex --judge grok
    ```
+   **长跑解耦(host 支持后台时)**：多角色 × 慢后端可能数分钟。若 host 支持后台执行
+   （Claude Code 的 Bash `run_in_background`），后台跑 run.sh 且 `--json > <file>`，
+   完成后读该文件再汇报，别同步阻塞会话；host 不支持（如 Codex-TUI）则同步跑并
+   先给「耗时约 N 分钟」预告。
 3. **Relay** the top ideas + synthesis + key tradeoffs, with the disclosure
    block below. Honest note if a stage was skipped (single-model / unavailable).
 
@@ -97,6 +101,7 @@ INPUT, **not** via `claude --resume` / `codex exec resume`. Deliberate:
 - diverge personas: <N> over <providers>
 - challenger: <provider>
 - judge: <provider>
+- consensus: 单盲评委推荐，非多模型共识（cross-model UNREVIEWED）
 - notes / skipped: … | 无   (single-model? stage skipped?)
 - top 想法(带 score/verdict) + synthesis + key tradeoffs
 ```

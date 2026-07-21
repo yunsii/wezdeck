@@ -108,6 +108,10 @@ Find and refute receive the **same** pack (not bare diff):
    "$TOOL_HOME/run.sh" <BASE_REF> --repo "$TARGET" \
      --reviewer claude --refuter codex --mode strict
    ```
+   **长跑解耦(host 支持后台时)**：三门全量 + 慢后端（codex）可能数分钟。若 host
+   支持后台执行（Claude Code 的 Bash `run_in_background`），后台跑 run.sh 且
+   `--json > <file>`，完成后读该文件再汇报，别同步阻塞会话；host 不支持后台
+   （如 Codex-TUI）则同步跑，先给用户一句「耗时约 N 分钟」预告。
 5. **Report** with mandatory disclosure (below). Honest fail if tool/backends fail.
 6. **Do not** claim cross-agent if form is single-model; do not invent green gates.
 
@@ -132,7 +136,7 @@ Find and refute receive the **same** pack (not bare diff):
 - repro: 已跑 | 跳过（理由）
 - 命令或范围: run.sh <BASE> --repo <TARGET> --writer …
 - skipped_gates: … | 无
-- 关键结论: …（绑 find/refute/repro）
+- 关键结论（每条标 [阻塞] / [非阻塞·backlog]）: …（绑 find/refute/repro）
 ```
 
 ## Helper commands (agent-only)

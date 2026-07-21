@@ -92,6 +92,11 @@ and **self-application**.
 
 Never claim “survived all three gates” for PLAUSIBLE items — they skip gate 3.
 
+The human report labels each group for readability: strict survivors →
+**`[阻塞]`**, `needs_human` / PLAUSIBLE → **`[非阻塞·backlog]`**, dropped →
+non-blocking. `--json` keeps the raw `survivors` / `needs_human` / `dropped`
+field names unchanged (machine contract), so this is a display-only aid.
+
 ## Design: pipeline, effort, no-resume
 
 The whole flow in one view — **who reviews** (cross-model selection) and **how
@@ -174,6 +179,11 @@ declares it the **sole** review criteria (the profile is background).
   bypass repro, so consistency/extensibility surface as advisories instead of
   being dropped for lacking a crash. This is how the tool covers design quality
   without diluting the repro-gated precision of runtime defects.
+- **Evidence discipline (design dimensions).** A design/advisory finding must cite
+  a basis — a pack fact, `file:line`, or an authoritative constraint — not a bare
+  assertion from taste; the refuter marks an uncited design claim `refuted`
+  (`prompts/critic.md` + `prompts/refute.md`). Keeps design-mode review from
+  drifting into opinion.
 
 ## Writer-aware backend selection (strategy B)
 
@@ -407,6 +417,26 @@ If gate 2 is skipped (unavailable or same family), results are **SINGLE-MODEL**
 1. Codex CLI binary + `exec --json` flags on this host (`selfcheck codex`).
 2. Project-specific verify conventions for gate 3 beyond shell/unit checks.
 3. Cost controls for huge monorepo diffs (`--paths` future).
+
+## Backlog (deferred)
+
+Ideas ported in from the relay-doctrine review, deliberately **not** built yet —
+they fail the 95-point rule (a crash mid-run wastes tokens but is not a correctness
+bug), and neither skill has a discussion-orchestrator to hang them on. Applies to
+**both** skills (brainstorm reuses this provider layer):
+
+- **① Long-run decoupling (heavy version).** Host-TUI is already covered via
+  background Bash + `--json` file (see each `SKILL.md`). The heavy form — a
+  progress-file + announce-on-done loop, needed for OpenClaw Main (飞书) where a
+  synchronous `run.sh` blocks the whole turn — stays deferred; Main would need
+  `tmux run-shell -b`, and backgrounded children die in some popup scopes.
+- **② Stage-output ledger for resume.** Append each stage's JSON to a per-run dir
+  so a crash resumes from the last good stage (audit + token save). Compatible with
+  no-session-resume (it caches *conclusions*, not a provider session — see
+  [`brainstorm.md` §3](brainstorm.md#3-no-session-resume-design-decision)); only
+  worth it if runs start failing often.
+- **⑥ Guardrail, not a task.** Do **not** build a 3-way auto-rotation orchestrator.
+  Neither skill has one; keeping it that way *is* the 95-point line.
 
 ## What it is NOT
 

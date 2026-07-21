@@ -50,6 +50,10 @@ the *whole* set, not a conversation. Role interaction is deliberate:
   but never deletes — pruning is the judge's call, not the critic's.
 - The **judge** ranks **blind** to which persona authored each idea (so a
   strong-sounding source can't inflate a weak idea), then synthesizes.
+  The synthesis is **one blind judge's recommendation, not a multi-model
+  consensus** — the report and `--json` label it `cross-model UNREVIEWED`. A
+  second confirming judge is deliberately *not* built (that would be 100-point
+  over-design); the honest label is the fix.
 - Every hop is a **stateless call** (JSON in → JSON out), never a resumed
   session — that is *how* the roles stay independent (see §2, §3).
 
@@ -358,3 +362,5 @@ profile is welcome, but the review standard lives in the role setting.
 - Sibling skill (provider layer source, same effort/no-resume design):
   [`adversarial-review.md`](adversarial-review.md)
 - Link installer: `scripts/dev/link-platform-skills.sh`
+- Deferred long-run / ledger backlog (shared):
+  [`adversarial-review.md` § Backlog](adversarial-review.md#backlog-deferred)

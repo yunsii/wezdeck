@@ -321,6 +321,7 @@ if [ "$want_json" -eq 1 ]; then
      --argjson personas "$personas_n" \
      '{diverge_primary:$primary, challenger:$challenger, challenger_model:$challenger_model,
        judge:$judge, judge_model:$judge_model, personas:$personas,
+       consensus:"single-judge · cross-model UNREVIEWED",
        skipped:$skipped, synthesis:$synthesis, key_tradeoffs:$tradeoffs, ideas:$ideas}'
   exit 0
 fi
@@ -332,6 +333,7 @@ _div_disp=""; for _p in "${diverge_providers[@]}"; do _div_disp="$_div_disp $_p(
 echo "- diverge personas: $personas_n over${_div_disp}"
 echo "- challenger: $challenger (model: $(provider_model "$challenger"))"
 echo "- judge: $judge (model: $(provider_model "$judge"))"
+echo "- consensus: 单盲评委推荐,非多模型共识(cross-model UNREVIEWED)"
 if [ "$(printf '%s' "$skipped_json" | jq 'length')" -gt 0 ]; then
   echo "- notes: $(printf '%s' "$skipped_json" | jq -r 'join(", ")')"
 else
@@ -360,7 +362,7 @@ if [ "$nr" -gt "$top_n" ]; then
 fi
 if [ -n "$synthesis" ]; then
   echo
-  echo "── synthesis ──"
+  echo "── synthesis (单评委推荐 · UNREVIEWED) ──"
   echo "$synthesis"
 fi
 if [ "$(printf '%s' "$key_tradeoffs" | jq 'length')" -gt 0 ]; then

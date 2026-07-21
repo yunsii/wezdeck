@@ -233,7 +233,7 @@ _emit() {
     echo "- skipped_gates: 无"
   fi
   echo
-  echo "── survivors (strict blockers: CONFIRMED + reproduced) [$ns] ──"
+  echo "── 阻塞 · survivors (strict blockers = CONFIRMED + reproduced) [$ns] ──"
   if [ "$ns" -eq 0 ]; then
     echo "(none)"
   else
@@ -242,7 +242,7 @@ _emit() {
   fi
   if [ "$mode" = "advisory" ] || [ "$nh" -gt 0 ]; then
     echo
-    echo "── needs_human / plausible [$nh] ──"
+    echo "── 非阻塞·backlog · needs_human / plausible [$nh] ──"
     if [ "$nh" -eq 0 ]; then
       echo "(none)"
     else
@@ -250,7 +250,7 @@ _emit() {
         "• [\(.severity)] \(.file):\(.line) — \(.summary)\n    note: \(.repro.note // .verdict // "n/a")"'
     fi
   fi
-  [ "$nd" -gt 0 ] && echo && echo "($nd finding(s) dropped — see --json for details)"
+  [ "$nd" -gt 0 ] && echo && echo "($nd 条非阻塞 finding 已 drop — 详见 --json)"
 }
 
 # --- selfcheck / dogfood passthrough ----------------------------------------
