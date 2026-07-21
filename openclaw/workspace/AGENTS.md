@@ -104,6 +104,16 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
     ```
     **选路：** 写码家族默认不审自己；`--writer` 自动选 reviewer/refuter（见
     `scripts/dev/adversarial-review/lib/select-backends.sh`）。
+22. **外部产物落盘 · 仓库外优先**（L1 · claw 侧，不必同步 host profile）— OpenClaw
+    下载/接收的外部文件（飞书附件、`curl`/`wget` 拉取、送审稿等**非本仓源码**）
+    默认落 **仓库外绝对路径** `~/.openclaw/downloads/`。
+    - **禁落 repo 树**：`~/.openclaw/workspace/` 是 wezterm-config 的 **symlink**——
+      写它的**根目录或任何 tracked 路径 = 写进版本库**。仅 workspace 内 **已 gitignore**
+      的运行时子目录（`tmp/` `state/` `media/` `claude/` `codex/`）可作临时区。
+    - **下载命令传绝对 `--output`**：`lark-cli` / `curl` 等**不得依赖 cwd**——Main 的
+      cwd 常是 `~/.openclaw/workspace`（=repo symlink），相对路径会把外部物落进版本库。
+    - **事故洞（2026-07-21）**：一份飞书送审 `PROTOCOL.md` 因相对 `--output` +
+      cwd=workspace 误落 repo 根、又不在 ignore 兜底内，险被当本仓内容分析 / 误 commit。
 
 Language / identity: personal owner of this Linux/WSL host; never invent `task_id` or success.
 
