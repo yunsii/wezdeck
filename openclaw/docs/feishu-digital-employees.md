@@ -164,8 +164,45 @@ env -i HOME="$HOME" USER="$USER" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 | 主配置 apps | `cat ~/.lark-cli/config.json`（应含 bob 的 appId） |
 | OpenClaw 子配置 apps | `cat ~/.lark-cli/openclaw/config.json` |
 | cron PATH 是否含 lark-cli | crontab 顶部 `PATH=…:$HOME/.local/bin:…` |
+| **二进制是否真在**（非断链） | `readlink -f "$(command -v lark-cli)" && lark-cli --version` |
 
 相关业务脚本（本机，不在本仓）：`fe1/scripts/_lark_fe1.py` 强制 `--profile bob`；IM 走 OpenClaw 凭证的 `_bob_im.py`，不经 lark-cli。
+
+## 关键坑：lark-cli 装到 `/tmp` 会断链（cron 秒挂）
+
+`@larksuite/cli` 的 npm postinstall 会把 **Go 二进制** 下到包内 `bin/`，再用 wrapper 调用。若有人把 `~/.local/bin/lark-cli` **软链到 `/tmp/...`**（例如临时解压目录 ` /tmp/lark-cli-inspect/...`），**重启 / tmp 清理后链路断裂**：
+
+```text
+~/.local/bin/lark-cli -> /tmp/lark-cli-inspect/package/bin/lark-cli  # broken
+env: 'lark-cli': No such file or directory
+```
+
+业务侧常见误导症状：
+- FE1 `notify-misses` / `check-tapd-iteration` 报 **「没有飞书 option 匹配今天日期」**（其实是 lark 调用失败被吞成空结果）
+- 耗时 **0s 级 FAIL**；OpenClaw 会话里若 PATH 碰巧还能找到别的副本，会出现「手动 OK / 定时挂」
+
+### 正确安装（稳定路径）
+
+```bash
+# 推荐：二进制落到用户目录，再链到 PATH
+VERSION=1.0.73   # 或当前需要的版本
+DEST="$HOME/.local/share/lark-cli/bin"
+mkdir -p "$DEST" /tmp/lark-cli-fix && cd /tmp/lark-cli-fix
+curl -fsSL -o lark-cli.tgz \
+  "https://github.com/larksuite/cli/releases/download/v${VERSION}/lark-cli-${VERSION}-linux-amd64.tar.gz"
+tar -xzf lark-cli.tgz
+install -m 755 lark-cli "$DEST/lark-cli"
+ln -sfn "$DEST/lark-cli" "$HOME/.local/bin/lark-cli"
+# 可选：同步到 fnm default bin（若 cron PATH 含 aliases/default/bin）
+ln -sfn "$DEST/lark-cli" \
+  "$HOME/.local/share/fnm/aliases/default/bin/lark-cli"
+
+# 验收（必须指向非 /tmp 路径）
+readlink -f "$(command -v lark-cli)"   # 期望 .../.local/share/lark-cli/bin/lark-cli
+lark-cli --version
+```
+
+**禁止**把生产 PATH 上的 `lark-cli` 指到 `/tmp` 下任何路径。
 
 ## 验收清单
 
