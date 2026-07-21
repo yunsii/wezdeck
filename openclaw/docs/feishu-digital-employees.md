@@ -107,6 +107,66 @@ openclaw message send --channel feishu --account pm \
   --target ou_…bob… --message "Bob 连通测试"
 ```
 
+## 关键坑：lark-cli 双配置目录（cron / 宿主脚本必读）
+
+OpenClaw 进程会设 `OPENCLAW_CLI=1`。此时 **lark-cli 读的是隔离配置目录**：
+
+| 环境 | 配置目录 | 典型场景 |
+| --- | --- | --- |
+| OpenClaw 内 / `OPENCLAW_CLI=1` | `~/.lark-cli/openclaw/` | 飞书会话里的 agent、Gateway 子进程 |
+| 普通 shell / **cron** / 无 `OPENCLAW_CLI` | `~/.lark-cli/`（主配置） | 本机 crontab、手动终端、systemd 用户 timer |
+
+**后果**：在 OpenClaw 里 `lark-cli profile add --name bob …` 只写进 **openclaw 子目录**。cron 看不到该 profile，表现为：
+
+```text
+profile "bob" not found
+hint: available profiles: cli_a94591fc51ba9bd1   # 仅主配置里的 Dex
+```
+
+业务侧症状（例如 FE1 `sync-all`）：`cnb-push-bitable` / `tapd-push-bitable` / `push-repos-bitable` 等 **0.1s 级失败**；同一命令在 OpenClaw 会话或带 `OPENCLAW_CLI=1` 的 shell 里却成功。
+
+### 正确做法
+
+1. **宿主定时任务 / 非 OpenClaw 脚本**用到的 profile，必须写进 **主配置**（无 `OPENCLAW_CLI` 时执行）：
+
+```bash
+# 用干净环境写入主配置（不要在已 export OPENCLAW_CLI=1 的 agent shell 里直接 add）
+env -i HOME="$HOME" USER="$USER" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" \
+  DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}" \
+  bash -c 'printf "%s" "$BOB_APP_SECRET" | lark-cli profile add \
+    --name bob --app-id cli_…bob… --brand feishu --app-secret-stdin'
+# 不要加 --use，避免把默认 profile 切离 Dex
+```
+
+2. **验收必须用 cron 同款环境**（不要只在 OpenClaw 里试）：
+
+```bash
+env -i HOME="$HOME" USER="$USER" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  lark-cli profile list
+# 期望能看到 name=bob（以及默认的 Dex appId profile）
+
+env -i HOME="$HOME" USER="$USER" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  lark-cli --profile bob --as bot auth status
+# 期望 bot identity ready
+```
+
+3. Secret / profile **永不进 git**；文档只记流程。Bob App Secret 来源是本机  
+   `~/.openclaw/openclaw.json` → `channels.feishu.accounts.pm`（与 OpenClaw 机器人共用同一自建应用）。
+
+4. 若希望 OpenClaw 会话与 cron **共用同一套 profile 列表**，主配置与 `~/.lark-cli/openclaw/config.json` 都要有对应 app 条目（或接受两套各自维护）。**只配 openclaw 子目录 = 定时必炸。**
+
+### 快速自检
+
+| 检查 | 命令 / 位置 |
+| --- | --- |
+| 当前 shell 是否 OpenClaw 隔离 | `echo "$OPENCLAW_CLI"`（非空则走 openclaw 子配置） |
+| 主配置 apps | `cat ~/.lark-cli/config.json`（应含 bob 的 appId） |
+| OpenClaw 子配置 apps | `cat ~/.lark-cli/openclaw/config.json` |
+| cron PATH 是否含 lark-cli | crontab 顶部 `PATH=…:$HOME/.local/bin:…` |
+
+相关业务脚本（本机，不在本仓）：`fe1/scripts/_lark_fe1.py` 强制 `--profile bob`；IM 走 OpenClaw 凭证的 `_bob_im.py`，不经 lark-cli。
+
 ## 验收清单
 
 - [ ] `openclaw channels status --probe`：main / pm / radar 均为 connected, works
@@ -115,6 +175,8 @@ openclaw message send --channel feishu --account pm \
 - [ ] 私聊 Scout → 情报助手
 - [ ] 私聊 Dex → 开发助手
 - [ ] 日志无持续 `blocked unauthorized`
+- [ ] **无 `OPENCLAW_CLI` 时** `lark-cli profile list` 含宿主脚本所需 profile（如 `bob`）
+- [ ] cron 同款 `env -i …` 下 `lark-cli --profile bob --as bot` 可调通 Base
 
 ## 安全
 
