@@ -92,30 +92,132 @@ and **self-application**.
 
 Never claim “survived all three gates” for PLAUSIBLE items — they skip gate 3.
 
+## Design: pipeline, effort, no-resume
+
+The whole flow in one view — **who reviews** (cross-model selection) and **how
+they oppose each other** (the three gates): the code's *writer* never reviews
+its own work (strategy B excludes its family); a cross-family **reviewer** and
+**refuter** take opposing stances; an **empirical repro** settles survivors.
+Selection only picks *which* agents/models — the same three gates run
+identically whether the pair is cross-family or a degraded single-model.
+
+```mermaid
+flowchart TB
+  W(["writer<br/>(who coded)"])
+  subgraph FAM["3 backends = 3 distinct families — different CLIs + models"]
+    direction LR
+    C["claude<br/>Claude Code"]
+    G["codex · gpt"]
+    K["grok · own key"]
+  end
+  W --> SEL{{"select-backends · strategy B<br/>exclude writer's family;<br/>cross-family if ≥2 families available,<br/>else SINGLE-MODEL (labeled, degraded)"}}
+  FAM --> SEL
+
+  PACK["context pack<br/>META / INTENT / DIFF / FILES"] --> F
+
+  subgraph GATES["three adversarial gates — ALWAYS run, whatever selection returned"]
+    direction TB
+    F["① Find · reviewer<br/>guilty-until-proven · effort=high"]
+    R["② Refute · refuter<br/>opposite burden, kill each · effort=high"]
+    E["③ Repro · reviewer + orchestrator<br/>run script in sandbox · effort=low"]
+    F ==>|"findings[]"| R
+    R ==>|"survivors[]"| E
+  end
+
+  SEL ==>|"reviewer"| F
+  SEL ==>|"refuter (≠ reviewer; = reviewer only when single-model)"| R
+  E --> OUT["blockers (CONFIRMED + reproduced) / needs_human / dropped"]
+
+  classDef fam fill:#e8f0fe,stroke:#4285f4,color:#111;
+  classDef gate fill:#fce8e6,stroke:#ea4335,color:#111;
+  class C,G,K fam;
+  class F,R,E gate;
+```
+
+Each gate is a **fresh, stateless provider call**; the prior gate's JSON is fed
+as INPUT to the next — the runner threads state, not a resumed session. Agents
+never talk directly; `run.sh` is the only conduit (validate → merge by id →
+segment → next stdin), and `id` (`file:line:summary`) is the cross-gate anchor.
+See [`brainstorm.md` §2](brainstorm.md#2-provider-layer--agent-to-agent-data-flow).
+
+**Reasoning effort per gate:** find=`high`, refute=`high` (deep defect-hunting +
+rigorous refutation), repro=`low` (writing a mechanical script). Passed to the
+provider CLI. Mapping to each CLI and the measured-latency rationale (why
+**codex**, not grok, is the cost) live in the shared provider layer — see
+[`brainstorm.md` §4](brainstorm.md#4-reasoning-effort-per-stage-design-decision).
+
+**No session resume — the cross-model critic depends on it.** A CLI session is
+single-provider, so `claude`-find → `codex`-refute could not share one anyway;
+and even same-provider, resuming would carry the finder's reasoning into the
+refuter, collapsing the opposite-burden stance into self-agreement. Full
+rationale (shared with brainstorm):
+[`brainstorm.md` §3](brainstorm.md#3-no-session-resume-design-decision).
+
+**Offline mock.** `PROVIDER_MOCK=1` returns canned, shape-correct JSON per
+prompt with no LLM call — for fast, deterministic runner tests. See
+[`brainstorm.md` §5](brainstorm.md#5-offline-mock--testing).
+
+## Review rubric (`lib/rubric.conf`)
+
+The critic's review dimensions are a **configurable standard**, not hard-coded —
+the role setting's authoritative list (see [`brainstorm.md` §8](brainstorm.md#8-agent-context-profile-vs-role-setting)).
+`run.sh` injects it into the critic prompt after `=== RUBRIC ===`, and the prompt
+declares it the **sole** review criteria (the profile is background).
+
+| kind | dimensions | handling |
+| --- | --- | --- |
+| **repro-gated** | correctness · security · resource · concurrency | need a concrete `failure_scenario`; gate 3 runs a sandbox repro; can become a **strict blocker** |
+| **design / advisory** | consistency · extensibility · maintainability | state concern + impact (no crash); gate 3 **skips** repro; surfaces as `needs_human` — **never a strict blocker** |
+
+- **Add a dimension** = add a line to `rubric.conf` (`dimension|repro_gated|guidance`); no prompt or code edits.
+- `run.sh` routes each finding by `rubric_repro_gated(category)`: design dimensions
+  bypass repro, so consistency/extensibility surface as advisories instead of
+  being dropped for lacking a crash. This is how the tool covers design quality
+  without diluting the repro-gated precision of runtime defects.
+
 ## Writer-aware backend selection (strategy B)
 
 **Rule:** the agent family that *wrote* the code is not the default reviewer.
 Only when availability is insufficient may the same family be reused (must still
-be multi-role; label SINGLE-MODEL / degraded).
+be multi-role; label SINGLE-MODEL / degraded). The selection ↔ gates flow is the
+combined diagram under [§ Design](#design-pipeline-effort-no-resume).
+
+The point of *cross-model*: reviewer and refuter run on **genuinely different
+backends** (different CLIs, models, and — for grok — a different API key), so a
+finding survives only if a *second, independent* model can't kill it. Same-family
+reuse is allowed only as a labeled, degraded fallback. The table below is the
+concrete writer → pair mapping.
 
 | writer (who coded) | default pair (when available) |
 | --- | --- |
-| `claude` / Claude-ACP / Claude-TUI | `codex-gpt` × `codex-grok` |
-| `codex` / Codex-ACP / Codex-TUI / codex-grok | `claude` × `codex-gpt` (else `claude` × `codex-grok`) |
-| `main` / Main-Grok / `human` | `claude` × `codex-gpt` (else × `codex-grok`) |
+| `claude` / Claude-ACP / Claude-TUI | `codex` × `grok` |
+| `codex` / Codex-ACP / Codex-TUI / grok | `claude` × `codex` (else `claude` × `grok`) |
+| `main` / Main-Grok / `human` | `claude` × `codex` (else × `grok`) |
 
-Probe order: prefer **codex-gpt** when headless ping works; else **codex-grok**.
-Implementation: `lib/select-backends.sh`. Human report always prints disclosure
-fields: writer / form / reviewer / refuter / degraded / reason.
+**Selection weights, per role** (`lib/select-backends.sh`), highest first:
+
+1. **Hard constraint** — exclude the writer's family; the pair must stay
+   multi-role (two roles, opposite prompts).
+2. **Role preference** — the **reviewer** (finder) defaults to `claude`; the
+   **refuter** follows `roles.conf`'s `refute` order (`grok` → `codex` → `claude`),
+   avoiding the reviewer's and writer's family.
+   So `claude` gravitates to Find and `grok`/`codex` to Refute — *unless the
+   writer is claude*, in which case the reviewer falls to `codex` (avoid-writer
+   outranks the claude-as-reviewer preference).
+3. **Degrade ladder** — cross-family → partial-avoidance (reviewer shares the
+   writer's family) → single-model (same backend, two roles; labeled degraded).
+
+The human report always prints the disclosure fields: writer / form / reviewer /
+refuter / degraded / reason.
 
 ```bash
 # auto by who wrote the code (TARGET = cwd git root, or --repo)
-run.sh <BASE> --writer codex-grok --mode strict
+run.sh <BASE> --writer grok --mode strict
 run.sh <BASE> --repo /path/to/other-repo --writer main --dry-run --no-probe
 run.sh <BASE> --writer claude-acp --dry-run --no-probe
 
 # explicit pair still wins when both flags set
-run.sh <BASE> --reviewer claude --refuter codex-gpt
+run.sh <BASE> --reviewer claude --refuter codex
 
 # inspect selection only
 lib/select-backends.sh --writer codex --json --no-probe
@@ -128,11 +230,11 @@ lib/select-backends.sh --writer codex --json --no-probe
 $TOOL_HOME/run.sh <BASE_REF> [options]
 
   --repo PATH        TARGET git repo to review (default: cwd git toplevel)
-  --writer W         who wrote code: claude|codex|codex-gpt|codex-grok|main|human
+  --writer W         who wrote code: claude|codex|grok|main|human
                      (auto-selects reviewer/refuter; strategy B)
   --auto-select      select backends for writer (default writer=human if omitted)
   --no-probe         PATH-only availability (skip live headless ping)
-  --reviewer P       backend: claude|codex|codex-gpt|codex-grok (optional if --writer)
+  --reviewer P       backend: claude|codex|grok (optional if --writer)
   --refuter P        backend alias (optional if --writer)
   --critic P         deprecated alias for --refuter
   --head REF         diff endpoint                         (default: HEAD)
@@ -142,7 +244,7 @@ $TOOL_HOME/run.sh <BASE_REF> [options]
   --dry-run          print the planned gates, call no agents
   --fail-on-finding  exit 10 if any strict survivor
 
-$TOOL_HOME/run.sh selfcheck [claude|codex-gpt|codex-grok ...]
+$TOOL_HOME/run.sh selfcheck [claude|codex|grok ...]
 $TOOL_HOME/run.sh dogfood [--mode MODE] [options]
 ```
 
@@ -150,10 +252,10 @@ Examples:
 
 ```bash
 # last commit, Claude finds, Codex+Grok refutes (recommended when GPT blocked)
-run.sh HEAD~1 --reviewer claude --refuter codex-grok
+run.sh HEAD~1 --reviewer claude --refuter grok
 
 # Claude finds, native Codex/GPT refutes (when account allows GPT)
-run.sh HEAD~1 --reviewer claude --refuter codex-gpt
+run.sh HEAD~1 --reviewer claude --refuter codex
 
 # advisory report for humans (includes PLAUSIBLE)
 run.sh origin/master --mode advisory --reviewer claude --refuter claude
@@ -220,8 +322,11 @@ run.sh HEAD~1 --keep-pack /tmp/adv-pack --writer main --dry-run --no-probe
 scripts/dev/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
   SKILL.md                   agent procedure (only body)
   run.sh                     three-gate orchestration (agent-agnostic)
-  lib/provider.sh            ONLY agent-specific code
-  lib/select-backends.sh     writer-aware pair selection
+  lib/provider.sh            plugin loader + dispatch (NO backend names)
+  lib/providers/*.sh         one plugin per backend (claude / codex / grok)
+  lib/roles.conf             role -> effort + candidate standard (see brainstorm.md §7)
+  lib/roles-lib.sh           roles.conf reader
+  lib/select-backends.sh     writer-aware pair selection (reads roles.conf)
   lib/findings-schema.json   inter-stage JSON contract (enforced)
   prompts/{critic,refute,repro}.md
 scripts/dev/link-platform-skills.sh   user-level + in-repo symlinks
@@ -230,15 +335,23 @@ docs/adversarial-review.md   this file (KB only)
 
 ## Backend aliases (three review paths)
 
+**Model / effort standard + how to add a backend (plugin interface):** see
+[`brainstorm.md` §7](brainstorm.md#7-model--effort-standard-and-adding-backends).
+**Agent context (profile vs role setting — profile always loads, keep the role
+setting authoritative & self-contained):** see
+[`brainstorm.md` §8](brainstorm.md#8-agent-context-profile-vs-role-setting).
+
 These names are **review backends**, not OpenClaw ACP harness ids (`claude` /
-`codex` only at the ACP layer). Grok is never `spawn grok`; it is **Codex +
-profile/model**.
+`codex` only at the ACP layer). `grok` calls the **standalone Grok CLI**
+(`~/.grok/bin/grok`, headless `-p --output-format json`) **directly** — NOT the
+codex gateway, which serves gpt only (`grok-4.5` 404s there, and Grok uses its
+own API key). The `grok` alias name is kept for back-compat.
 
 | Alias | Meaning | Host config used | Typical role |
 | --- | --- | --- | --- |
 | `claude` | Claude Code CLI | `~/.claude` | find / repro |
-| `codex` / `codex-gpt` | Codex native default model (GPT when account allows) | host `~/.codex` default | refute or second opinion |
-| `codex-grok` | Codex `--profile grok` + `grok-4.5` | host `~/.codex` + `grok.config.toml` | Grok-side refute / matrix |
+| `codex` / `gpt` | Codex native default model (GPT when account allows) | host `~/.codex` default | refute or second opinion |
+| `grok` | Standalone Grok CLI (`grok -p`) + `grok-4.5` | `~/.grok` (own API key) | Grok-side refute / matrix |
 
 **OpenClaw ACP isolation** (`~/.openclaw/acpx/codex-home`) is for Feishu
 `/acp spawn codex` only. This review tool **must not** set `CODEX_HOME` there,
@@ -248,9 +361,9 @@ so native interactive Codex stays untouched.
 
 | Stage | reviewer | refuter | Notes |
 | --- | --- | --- | --- |
-| Now (proxy GPT often 404) | `claude` | `codex-grok` | Real cross-stack: Claude vs Grok |
-| When GPT account works | `claude` | `codex-gpt` | Claude vs GPT |
-| Optional third matrix | `codex-gpt` | `codex-grok` | Same harness, **different models** — full gate 2 runs |
+| Now (proxy GPT often 404) | `claude` | `grok` | Real cross-stack: Claude vs Grok |
+| When GPT account works | `claude` | `codex` | Claude vs GPT |
+| Optional third matrix | `codex` | `grok` | **Cross-family** (separate CLIs/models) — full gate 2 runs |
 
 If gate 2 is skipped (unavailable or same family), results are **SINGLE-MODEL**
 — never claim full cross-agent success.
@@ -258,10 +371,10 @@ If gate 2 is skipped (unavailable or same family), results are **SINGLE-MODEL**
 ## Provider status
 
 - **Claude** — `selfcheck claude` expected green when Claude Code is logged in.
-- **codex-gpt** — host Codex default; on some proxy account groups `gpt-5.5` returns
+- **codex** — host Codex default; on some proxy account groups `gpt-5.5` returns
   404 → mark unavailable / SINGLE-MODEL, do not fake green.
-- **codex-grok** — host `codex -p grok -m grok-4.5`; preferred refuter when GPT is
-  blocked. Uses host profile files, not ACP `CODEX_HOME`.
+- **grok** — standalone Grok CLI (`~/.grok/bin/grok`, own API key); preferred
+  refuter when GPT is blocked. NOT the codex gateway (which lacks grok).
 - Gate 2 skip is always **reported** (`skipped_gates`); never silent cross-agent claim.
 
 ## Safety

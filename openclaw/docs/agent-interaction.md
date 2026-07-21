@@ -157,11 +157,11 @@ codex exec --json "Reply with exactly: ok" | head -c 800
 codex exec --json --sandbox read-only \
   "Do not modify files. Name one file in the current directory."
 
-# Grok profile + 模型（本机代理；审查 codex-grok）
+# Grok profile + 模型（本机代理；审查 grok）
 # 使用 host 配置：不要 export CODEX_HOME 到 ACP 目录
 env -u CODEX_HOME codex exec --json --sandbox read-only \
   -p grok -m grok-4.5 \
-  "Reply with exactly: codex-grok-headless"
+  "Reply with exactly: grok-headless"
 
 # 管道 + profile（与 provider.sh 同构）
 printf '%s\n' "Summarize stdin in 5 words:" "lorem ipsum dolor" \
@@ -192,7 +192,7 @@ cd /path/to/wezdeck   # 或 claw worktree
 
 # 跨模型（推荐）
 scripts/dev/adversarial-review/run.sh HEAD~1 \
-  --reviewer claude --refuter codex-grok --mode strict
+  --reviewer claude --refuter grok --mode strict
 
 # 同能力多角色（SINGLE-MODEL，仍跑 find+refute）
 scripts/dev/adversarial-review/run.sh HEAD~1 \
@@ -200,7 +200,7 @@ scripts/dev/adversarial-review/run.sh HEAD~1 \
 
 # 只看计划、不调模型
 scripts/dev/adversarial-review/run.sh HEAD~1 --dry-run \
-  --reviewer claude --refuter codex-grok
+  --reviewer claude --refuter grok
 ```
 
 每次 gate = 一次 headless 调用（不同 prompt 立场），不是开两个 TUI 窗口。

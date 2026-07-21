@@ -100,7 +100,7 @@ Before code or ACP, post and wait:
 - 理由: …（含限制/degraded）
 - 备选: …
 - 平台约束: 单写者、claw-*、确认前不写码；不改原生默认配置
-- 审查建议: review-claude × review-codex-grok | 跳过（理由）
+- 审查建议: review-claude × review-grok | 跳过（理由）
 - cwd / task_id: …
 请确认。确认前不改代码 / 不 spawn ACP。
 ```

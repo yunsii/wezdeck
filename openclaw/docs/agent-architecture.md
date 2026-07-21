@@ -112,10 +112,10 @@ Claw 需要写码后端
 | `acp-claude` | ACP → Claude 后端 | **pass**（历史 smoke） | C3 |
 | `acp-codex` | ACP → Codex 后端 | **pass**（2026-07-19 写出 `codex-acp-ok`） | 隔离 CODEX_HOME 默认 Grok；**未改** host |
 | `review-claude` | 审查后端 claude | **pass**（selfcheck） | host CLI |
-| `review-codex-gpt` | 审查 codex-gpt | **degraded** | host；代理账号组常 404 GPT |
-| `review-codex-grok` | 审查 codex-grok | **pass**（CLI smoke） | host `-p grok` |
+| `review-codex` | 审查 codex | **degraded** | host；代理账号组常 404 GPT |
+| `review-grok` | 审查 grok | **pass**（CLI smoke） | host `-p grok` |
 
-质量面默认推荐：`review-claude` × `review-codex-grok`。
+质量面默认推荐：`review-claude` × `review-grok`。
 
 ### ACP Codex smoke 记录（Phase 2）
 

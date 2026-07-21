@@ -88,6 +88,13 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   placeholder used in `config/worktree-task.env`, or any path that
   spawns `claude` / `codex`:
   Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
+- Adversarial code review skill (find→refute→repro), cross-agent backend
+  selection, the shared `lib/provider.sh` layer, per-stage reasoning effort,
+  the no-session-resume rationale, or offline mock testing:
+  Read [`docs/adversarial-review.md`](docs/adversarial-review.md).
+- Multi-persona brainstorm skill (diverge→challenge→converge), persona/provider
+  selection, per-stage effort, the no-resume design, or the offline mock harness:
+  Read [`docs/brainstorm.md`](docs/brainstorm.md).
 - Personal OpenClaw control plane (Feishu gateway templates, main-agent
   protocol, link/smoke scripts — **not** the WezTerm/tmux execution hot path):
   Read [`openclaw/README.md`](openclaw/README.md) and
@@ -109,6 +116,7 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - `wezterm-x/commands/manifest.json` is the single source of truth for every shortcut. Adding or renaming a hotkey means: (1) add / update the manifest item with a `binding` field; (2) for wezterm-layer bindings, add the named handler to `wezterm-x/lua/ui/action_registry.lua`; (3) for tmux-chord leaves, the `binding.exec` tmux-action string is everything — no code changes elsewhere; `scripts/runtime/render-tmux-bindings.sh` regenerates `wezterm-x/tmux/chord-bindings.generated.conf` during `wezterm-runtime-sync` and `tmux.conf` loads it via `source-file -Fq`. Do not re-declare keys or actions in `keymaps.lua` or `tmux.conf` directly; both are driven by the manifest now. Missing or unregistered ids show up as `(unregistered)` in `scripts/dev/hotkey-usage-report.sh` — treat that report as the audit signal.
 - Per-machine user overrides live in `wezterm-x/local/keybindings.lua` keyed by manifest id (string → new key, `false` → disable, list → per-variant). The WezTerm side applies them at reload; the tmux-chord side applies them when the renderer runs. Template: `wezterm-x/local.example/keybindings.lua`. Full rules in `docs/keybindings.md`.
 - If behavior, keybindings, workspace semantics, tmux UI, or diagnostics change, update the matching docs in the same edit.
+- Markdown with mermaid diagrams: after editing a mermaid code block, run `scripts/dev/check-mermaid.sh` (validates every block via `mermaid.parse` under jsdom — real grammar check, no chromium; deps cached outside the repo). Do not hand-eyeball mermaid syntax.
 - After runtime config changes, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` (Bash, not the `Skill` tool — see the note above).
 - Do not run Git commands that can contend on the index lock in parallel.
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
