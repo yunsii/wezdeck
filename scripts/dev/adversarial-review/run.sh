@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage:
 #   run.sh <BASE_REF> [options]
-#   run.sh selfcheck [claude|codex|codex-gpt|codex-grok ...]
+#   run.sh selfcheck [claude|codex|grok ...]
 #   run.sh dogfood [--mode MODE] [options]   # review this tool's own uncommitted+HEAD diff
 #
 # Cross-agent adversarial review over BASE_REF..HEAD, in three gates:
@@ -47,6 +47,8 @@ prompts="$lib_dir/prompts"
 schema="$lib_dir/lib/findings-schema.json"
 # shellcheck source=/dev/null
 . "$lib_dir/lib/provider.sh"
+# shellcheck source=/dev/null
+. "$lib_dir/lib/rubric-lib.sh"
 
 log() { printf '\033[2m[adv-review]\033[0m %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit "${2:-1}"; }
@@ -193,12 +195,15 @@ _emit() {
        --argjson dropped "$dropped" --argjson skipped "$skipped_json" \
        --arg base "$base" --arg head "$head_ref" \
        --arg reviewer "$reviewer" --arg refuter "$refuter" --arg mode "$mode" \
+       --arg reviewer_model "$(provider_model "$reviewer")" \
+       --arg refuter_model "$(provider_model "$refuter")" \
        --arg writer "${writer:-}" --arg form "${select_form:-manual}" \
        --argjson degraded "${select_degraded:-false}" --arg reason "${select_reason:-}" \
        --argjson auto "${auto_selected:-false}" \
        --arg pack_id "${PACK_ID:-}" --arg pack_hash "${PACK_HASH:-}" \
        --arg context "pack-v1" --arg pack_file "${PACK_FILE:-}" \
        '{mode:$mode, base:$base, head:$head, writer:$writer, reviewer:$reviewer, refuter:$refuter,
+         reviewer_model:$reviewer_model, refuter_model:$refuter_model,
          form:$form, degraded:$degraded, select_reason:$reason, auto_selected:$auto,
          context:$context, pack_id:$pack_id, pack_hash:$pack_hash, pack_file:$pack_file,
          skipped_gates:$skipped, survivors:$survivors, needs_human:$needs_human, dropped:$dropped}'
@@ -213,8 +218,8 @@ _emit() {
   echo "## 对抗审查披露"
   echo "- writer: ${writer:-unspecified}"
   echo "- form: ${select_form:-manual}"
-  echo "- reviewer: $reviewer"
-  echo "- refuter: $refuter"
+  echo "- reviewer: $reviewer (model: $(provider_model "$reviewer"))"
+  echo "- refuter: $refuter (model: $(provider_model "$refuter"))"
   echo "- auto_selected: ${auto_selected:-false}"
   echo "- degraded: ${select_degraded:-false}"
   echo "- reason: ${select_reason:-}"
@@ -333,7 +338,7 @@ if [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
 fi
 # manual defaults if still empty
 [ -n "$reviewer" ] || reviewer="claude"
-[ -n "$refuter" ] || refuter="codex-gpt"
+[ -n "$refuter" ] || refuter="codex"
 
 log "tool=$tool_root"
 log "target=$repo_root"
@@ -397,10 +402,13 @@ provider_available "$reviewer" || die "reviewer '$reviewer' unavailable" 2
 
 # Shared pack body for find + refute (same bytes)
 pack_body="$(cat "$PACK_FILE")"
+# The critic also gets the authoritative review rubric (find only; the refuter
+# judges findings, not dimensions).
+critic_in="$pack_body"$'\n\n=== RUBRIC ===\n'"$(rubric_text)"
 
 # --- stage 1: find -----------------------------------------------------------
 log "stage 1/3 · find ($reviewer)…"
-f1="$(printf '%s' "$pack_body" | run_agent "$reviewer" "$prompts/critic.md")" \
+f1="$(printf '%s' "$critic_in" | run_agent "$reviewer" "$prompts/critic.md" high)" \
   || die "stage1: $reviewer produced no valid JSON" 3
 f1="$(_validate_findings "$f1")"
 f1="$(printf '%s' "$f1" | jq -c '
@@ -434,7 +442,7 @@ fi
 
 if provider_available "$refuter" && [[ " ${skipped_gates[*]} " != *"refute-unavailable"* ]]; then
   refute_in="$pack_body"$'\n\n=== FINDINGS ===\n'"$f1"
-  if f2_raw="$(printf '%s' "$refute_in" | run_agent "$refuter" "$prompts/refute.md")"; then
+  if f2_raw="$(printf '%s' "$refute_in" | run_agent "$refuter" "$prompts/refute.md" high)"; then
     f2="$(_validate_findings "$f2_raw")"
     survivors="$(jq -nc --argjson s1 "$f1" --argjson s2 "$f2" '
       ($s2 | map({key:(.id // (.file+":"+(.line|tostring)+":"+.summary)), value:.}) | from_entries) as $m
@@ -475,9 +483,22 @@ if [ "$ns" -gt 0 ]; then
       continue
     fi
 
+    # Only repro-gate dimensions the rubric marks repro_gated=yes. A design
+    # dimension (no) OR a category not in the rubric (empty) is NOT a strict
+    # blocker — surface it as needs_human. This enforces "the rubric is the sole
+    # criteria": an off-rubric category can't be promoted via a failing repro.
+    gated="$(rubric_repro_gated "$(printf '%s' "$f" | jq -r '.category // ""')")"
+    if [ "$gated" != "yes" ]; then
+      note=$([ "$gated" = "no" ] && echo "design/advisory dimension — not repro-gated" || echo "category not in rubric — needs human")
+      fj="$(printf '%s' "$f" | jq -c --arg n "$note" '.repro={ran:false,reproduced:null,note:$n}')"
+      needs_human="$(jarr_append "$needs_human" "$fj")"
+      log "  ~ non-repro-gated ($(printf '%s' "$f" | jq -r '.category // "?"')): $(printf '%s' "$f" | jq -r '.summary')"
+      continue
+    fi
+
     repro_in="$(jq -nc --argjson finding "$f" --arg hunk "$hunk" \
       '{finding:$finding, related_diff:$hunk}')"
-    script_raw="$(printf '%s' "$repro_in" | agent_text "$reviewer" "$prompts/repro.md" || true)"
+    script_raw="$(printf '%s' "$repro_in" | agent_text "$reviewer" "$prompts/repro.md" low || true)"
     set +e
     _repro_verdict "$script_raw"
     rc=$?

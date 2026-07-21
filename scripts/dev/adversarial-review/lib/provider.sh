@@ -1,56 +1,64 @@
 #!/usr/bin/env bash
-# provider.sh — agent-agnostic adapter for adversarial-review.
+# provider.sh — agent-agnostic adapter for adversarial-review + brainstorm.
 #
-# Backend aliases (review matrix — not OpenClaw ACP harness ids):
-#   claude       Claude Code CLI
-#   codex        alias of codex-gpt (native Codex default model)
-#   codex-gpt    Codex with native/default GPT profile (host ~/.codex)
-#   codex-grok   Codex with --profile grok (host grok profile; not ACP CODEX_HOME)
+# Plugin architecture: each backend is a self-contained plugin in providers/
+# implementing the interface
+#     <name>__available   can it run (PATH / probe)
+#     <name>__family      cross-model identity
+#     <name>__model       default model id (env-overridable)
+#     <name>__invoke      stdin = full prompt, $1 = effort → model's reply text
+#   (+ optional <name>__aliases  extra names that resolve to this backend)
 #
-# IMPORTANT: uses host CLI configs (~/.claude, ~/.codex). Must NOT set
-# CODEX_HOME to OpenClaw ACP isolation (~/.openclaw/acpx/codex-home).
+# This file contains NO backend names. Adding a backend = drop
+# providers/<name>.sh and list <name> in roles.conf; no core edits.
+#
+# IMPORTANT: plugins use host CLI configs (~/.claude, ~/.codex, ~/.grok) and must
+# NOT set CODEX_HOME to OpenClaw ACP isolation.
 
 set -euo pipefail
 
-_codex_bin() {
-  if command -v codex >/dev/null 2>&1; then command -v codex; return 0; fi
-  local c
-  for c in "$HOME/.local/bin/codex" "$HOME/.codex/bin/codex"; do
-    [ -x "$c" ] && { printf '%s\n' "$c"; return 0; }
+_PROVIDER_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --- load plugins & build the registry --------------------------------------
+_ALL_PROVIDERS=()
+declare -A _ALIAS_MAP=()
+_load_providers() {
+  local f name al
+  for f in "$_PROVIDER_LIB_DIR/providers/"*.sh; do
+    [ -e "$f" ] || continue
+    # shellcheck source=/dev/null
+    . "$f"
+    name="$(basename "$f" .sh)"
+    _ALL_PROVIDERS+=("$name")
+    _ALIAS_MAP["$name"]="$name"
+    if declare -F "${name}__aliases" >/dev/null 2>&1; then
+      for al in $("${name}__aliases" 2>/dev/null); do _ALIAS_MAP["$al"]="$name"; done
+    fi
   done
-  return 1
 }
+_load_providers
 
-_provider_canonical() {
-  case "$1" in
-    claude) echo claude ;;
-    codex|codex-gpt|codex_gpt|gpt) echo codex-gpt ;;
-    codex-grok|codex_grok|grok) echo codex-grok ;;
-    *) echo "$1" ;;
-  esac
-}
+_provider_canonical() { printf '%s' "${_ALIAS_MAP[$1]:-$1}"; }
 
-# Cross-model identity: aliases that resolve to the same backend are "same".
-# codex-gpt vs codex-grok are DIFFERENT (third matrix: same harness, different models).
+# Cross-model identity: same canonical family => "same". Different plugins
+# (e.g. codex vs grok) are DIFFERENT backends (separate CLIs and models).
 _provider_family() {
-  # Keep for logging only; cross-model skip uses canonical equality.
-  _provider_canonical "$1"
+  local p; p="$(_provider_canonical "$1")"
+  if declare -F "${p}__family" >/dev/null 2>&1; then "${p}__family"; else printf '%s' "$p"; fi
 }
+provider_same_family() { [ "$(_provider_family "$1")" = "$(_provider_family "$2")" ]; }
 
 provider_available() {
-  local p
-  p="$(_provider_canonical "$1")"
-  case "$p" in
-    claude) command -v claude >/dev/null 2>&1 ;;
-    codex-gpt|codex-grok) _codex_bin >/dev/null 2>&1 ;;
-    *) return 1 ;;
-  esac
+  # mock mode is fully offline — no real binary needed (portable tests)
+  [ -n "${PROVIDER_MOCK:-}" ] && return 0
+  local p; p="$(_provider_canonical "$1")"
+  declare -F "${p}__available" >/dev/null 2>&1 && "${p}__available"
 }
 
-# True only when both names resolve to the same canonical backend
-# (e.g. codex == codex-gpt). codex-gpt vs codex-grok => false.
-provider_same_family() {
-  [ "$(_provider_canonical "$1")" = "$(_provider_canonical "$2")" ]
+# The actual model a backend will use — for disclosure / reproducibility.
+provider_model() {
+  local p; p="$(_provider_canonical "$1")"
+  declare -F "${p}__model" >/dev/null 2>&1 && "${p}__model"
 }
 
 _json_slice() {
@@ -71,85 +79,52 @@ sys.exit(1)
 '
 }
 
-_codex_extract_text() {
-  python3 -c '
-import sys, json
-last = ""
-for ln in sys.stdin:
-    ln = ln.strip()
-    if not ln:
-        continue
-    try:
-        ev = json.loads(ln)
-    except Exception:
-        continue
-    for key in ("text", "delta", "content", "message"):
-        v = ev.get(key)
-        if isinstance(v, str) and v.strip():
-            last = v
-        elif isinstance(v, dict):
-            c = v.get("content") or v.get("text")
-            if isinstance(c, str) and c.strip():
-                last = c
-            elif isinstance(c, list):
-                parts = []
-                for item in c:
-                    if isinstance(item, dict) and isinstance(item.get("text"), str):
-                        parts.append(item["text"])
-                    elif isinstance(item, str):
-                        parts.append(item)
-                if parts:
-                    last = "".join(parts)
-    if ev.get("type") in ("agent_message", "message", "item.completed"):
-        item = ev.get("item") or ev.get("message") or {}
-        if isinstance(item, dict):
-            tx = item.get("text") or item.get("content")
-            if isinstance(tx, str) and tx.strip():
-                last = tx
-print(last)
-'
-}
-
-agent_text() {
-  local provider="$1" prompt_file="$2"
-  local input full bin
-  provider="$(_provider_canonical "$provider")"
-  input="$(cat)"
-  full="$(cat "$prompt_file")"$'\n\n=== INPUT ===\n'"$input"
-
-  case "$provider" in
-    claude)
-      printf '%s' "$full" \
-        | claude -p --output-format json \
-            --permission-mode plan \
-            --allowed-tools Read Grep Glob 2>/dev/null \
-        | jq -r '.result // .text // empty'
-      ;;
-    codex-gpt)
-      bin="$(_codex_bin)" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
-      printf '%s' "$full" \
-        | env -u CODEX_HOME "$bin" exec --json --sandbox read-only - 2>/dev/null \
-        | _codex_extract_text
-      ;;
-    codex-grok)
-      bin="$(_codex_bin)" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
-      printf '%s' "$full" \
-        | env -u CODEX_HOME "$bin" exec --json --sandbox read-only \
-            -p grok -m grok-4.5 - 2>/dev/null \
-        | _codex_extract_text
-      ;;
+# Offline mock: canned, shape-correct output per prompt, WITHOUT any LLM call.
+# Enabled by PROVIDER_MOCK=1. For transform stages (challenge/refute/converge)
+# it derives the response from the trailing JSON block so ids stay consistent
+# and the runner's merge logic is exercised. Fast/free/deterministic tests.
+_provider_mock() {
+  local pf; pf="$(basename "$1")"
+  local input="$2" tail_json
+  tail_json="$(printf '%s' "$input" | awk '/^=== [A-Z_]+ ===$/{buf="";next}{buf=buf $0 "\n"}END{printf "%s",buf}')"
+  case "$pf" in
+    diverge.md)
+      printf '%s' '[{"title":"Mock idea A","summary":"mock summary A","novelty":3},{"title":"Mock idea B","summary":"mock summary B","novelty":4}]' ;;
+    critic.md)
+      printf '%s' '[{"file":"mock.sh","line":1,"summary":"mock finding","failure_scenario":"mock input -> mock crash","severity":"low","category":"correctness","verdict":"PLAUSIBLE"}]' ;;
+    challenge.md)
+      printf '%s' "$tail_json" | jq -c 'map(. + {feasibility:3,risks:["mock risk"],blocking_assumptions:["mock assumption"],challenge_note:"mock note"})' 2>/dev/null || printf '[]' ;;
+    refute.md)
+      printf '%s' "$tail_json" | jq -c 'map(. + {refuted:false,refute_reason:null})' 2>/dev/null || printf '[]' ;;
+    converge.md)
+      printf '%s' "$tail_json" | jq -c '{ideas:map(. + {score:7,verdict:"maybe",judge_note:"mock judgement"}),synthesis:"mock synthesis",key_tradeoffs:["mock tradeoff A vs B"]}' 2>/dev/null || printf '%s' '{"ideas":[],"synthesis":"","key_tradeoffs":[]}' ;;
+    repro.md)
+      printf '%s\n' '```bash' 'exit 99' '```' ;;
     *)
-      echo "__PROVIDER_UNAVAILABLE__"; return 3 ;;
+      printf '%s' '[]' ;;
   esac
 }
 
+# Dispatch to the plugin's __invoke. No backend names here.
+agent_text() {
+  local provider="$1" prompt_file="$2" effort="${3:-}"
+  local input full
+  provider="$(_provider_canonical "$provider")"
+  input="$(cat)"
+  if [ -n "${PROVIDER_MOCK:-}" ]; then _provider_mock "$prompt_file" "$input"; return 0; fi
+  declare -F "${provider}__invoke" >/dev/null 2>&1 || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
+  "${provider}__available" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
+  full="$(cat "$prompt_file")"$'\n\n=== INPUT ===\n'"$input"
+  printf '%s' "$full" | "${provider}__invoke" "$effort"
+}
+
 run_agent() {
-  local provider="$1" prompt_file="$2"
+  local provider="$1" prompt_file="$2" effort="${3:-}"
   local input; input="$(cat)"
   local attempt text out
   local pf="$prompt_file"
   for attempt in 1 2; do
-    text="$(printf '%s' "$input" | agent_text "$provider" "$pf")" || return 3
+    text="$(printf '%s' "$input" | agent_text "$provider" "$pf" "$effort")" || return 3
     if [ "$text" = "__PROVIDER_UNAVAILABLE__" ]; then return 3; fi
     if out="$(printf '%s' "$text" | _json_slice)"; then
       printf '%s' "$out"; return 0
@@ -161,13 +136,13 @@ run_agent() {
 
 _selfcheck() {
   local providers=("$@")
-  [ "${#providers[@]}" -eq 0 ] && providers=(claude codex-gpt codex-grok)
+  [ "${#providers[@]}" -eq 0 ] && providers=("${_ALL_PROVIDERS[@]}")
   local tmp; tmp="$(mktemp)"
   printf 'Output ONLY this exact JSON array and nothing else: [{"ok":true}]\n' > "$tmp"
   local p rc=0 got canon
   for p in "${providers[@]}"; do
     canon="$(_provider_canonical "$p")"
-    printf '%-12s ' "$p($canon):"
+    printf '%-26s ' "$p($canon → $(provider_model "$p")):"
     if ! provider_available "$p"; then echo "UNAVAILABLE (not resolved on PATH)"; rc=1; continue; fi
     if got="$(printf 'ping' | run_agent "$p" "$tmp" 2>/dev/null)" \
        && printf '%s' "$got" | jq -e '.[0].ok == true' >/dev/null 2>&1; then
@@ -183,6 +158,14 @@ _selfcheck() {
 if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
   case "${1:-}" in
     selfcheck) shift; _selfcheck "$@" ;;
-    *) echo "usage: provider.sh selfcheck [claude|codex|codex-gpt|codex-grok ...]" >&2; exit 1 ;;
+    providers) printf '%s\n' "${_ALL_PROVIDERS[@]}" ;;
+    probe) # probe <name>: exit 0 if the backend produces any reply (live ping)
+      _pp="$(_provider_canonical "${2:-}")"
+      provider_available "$_pp" || exit 1
+      declare -F "${_pp}__invoke" >/dev/null 2>&1 || exit 1
+      _pout="$(printf 'Reply with exactly: ping-ok' | "${_pp}__invoke" '' 2>/dev/null)" || true
+      [ -n "$_pout" ] || exit 1
+      ;;
+    *) echo "usage: provider.sh {selfcheck [name ...] | providers | probe <name>}" >&2; exit 1 ;;
   esac
 fi

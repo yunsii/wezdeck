@@ -1,212 +1,135 @@
 #!/usr/bin/env bash
-# select-backends.sh — pick reviewer/refuter given who wrote the code.
+# select-backends.sh — pick reviewer/refuter for the adversarial gates.
 #
-# Policy (strategy B, host headless only):
-#   1. Prefer cross-family pairs; avoid writer family when possible.
-#   2. writer=codex → reviewer must be claude; refuter may be the *other* codex model.
-#   3. Prefer codex-gpt over codex-grok when gpt headless probe passes.
-#   4. Same-agent multi-role only when availability forces it (SINGLE-MODEL).
+# Standard-driven (see roles.conf): reviewer uses the `find` candidate sequence,
+# refuter the `refute` sequence. Layered:
+#   L1 agent isolation — always two roles (multi-role), enforced by run.sh.
+#   L2 model isolation — prefer cross-family and avoid the writer's family;
+#      degrade (partial-avoidance → single-model) only when backends are scarce.
+# Adding a backend needs no edit here — it flows in via roles.conf + its plugin.
 #
 # Usage:
 #   source lib/select-backends.sh
-#   select_review_backends <writer>   # sets: SEL_REVIEWER SEL_REFUTER SEL_FORM SEL_DEGRADED SEL_REASON
-#   select-backends.sh --writer claude-acp [--json]
-#
+#   select_review_backends <writer>   # sets SEL_REVIEWER SEL_REFUTER SEL_FORM SEL_DEGRADED SEL_REASON
+#   select-backends.sh --writer claude-acp [--json] [--no-probe]
 set -euo pipefail
 
 _sel_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 . "$_sel_dir/provider.sh"
+# shellcheck source=/dev/null
+. "$_sel_dir/roles-lib.sh"
 
-# Optional live probe (short). Set ADV_REVIEW_PROBE=0 to skip (PATH-only).
 ADV_REVIEW_PROBE="${ADV_REVIEW_PROBE:-1}"
 ADV_REVIEW_PROBE_TIMEOUT="${ADV_REVIEW_PROBE_TIMEOUT:-45}"
 
+# Writer identity (various aliases) → family, matching backend families.
 _writer_family() {
   case "$1" in
     claude|claude-tui|claude-acp|claude_host|Claude-TUI|Claude-ACP) echo claude ;;
-    codex|codex-gpt|codex-grok|codex-tui|codex-acp|Codex-TUI|Codex-ACP|Codex-Grok-profile|gpt|grok)
-      echo codex ;;
+    codex|codex-tui|codex-acp|Codex-TUI|Codex-ACP|gpt) echo codex ;;
+    grok|Grok|Codex-Grok-profile) echo grok ;;
     main|main-grok|Main-Grok|c1) echo main ;;
     human|h1|none|"") echo human ;;
     *) echo "$1" ;;
   esac
 }
 
-_backend_family() {
-  case "$(_provider_canonical "$1")" in
-    claude) echo claude ;;
-    codex-gpt|codex-grok) echo codex ;;
-    *) echo "$1" ;;
-  esac
-}
+# Backend → family (delegates to the plugin via provider.sh).
+_backend_family() { _provider_family "$1"; }
 
-# Live ping: 0 = usable for review headless
+# Live ping (0 = usable headless). PATH-only when ADV_REVIEW_PROBE=0.
 _probe_backend() {
-  local p canon bin
-  p="$1"
-  canon="$(_provider_canonical "$p")"
-  provider_available "$canon" || return 1
+  local p; p="$(_provider_canonical "$1")"
+  provider_available "$p" || return 1
   [ "$ADV_REVIEW_PROBE" = "0" ] && return 0
-  case "$canon" in
-    claude)
-      timeout "$ADV_REVIEW_PROBE_TIMEOUT" claude -p "Reply with exactly: ping-ok" >/dev/null 2>&1
-      ;;
-    codex-gpt)
-      bin="$(_codex_bin)" || return 1
-      timeout "$ADV_REVIEW_PROBE_TIMEOUT" env -u CODEX_HOME "$bin" exec --sandbox read-only \
-        "Reply with exactly: ping-ok" >/dev/null 2>&1
-      ;;
-    codex-grok)
-      bin="$(_codex_bin)" || return 1
-      timeout "$ADV_REVIEW_PROBE_TIMEOUT" env -u CODEX_HOME "$bin" exec --sandbox read-only \
-        -p grok -m grok-4.5 "Reply with exactly: ping-ok" >/dev/null 2>&1
-      ;;
-    *) return 1 ;;
-  esac
+  timeout "$ADV_REVIEW_PROBE_TIMEOUT" "$_sel_dir/provider.sh" probe "$p" >/dev/null 2>&1
 }
+_avail() { _probe_backend "$1"; }
 
-_avail() {
-  _probe_backend "$1"
-}
-
-# Ordered ideal pairs (reviewer, refuter)
-# Prefer gpt over grok when both work.
 _emit_pair() {
-  SEL_REVIEWER="$1"
-  SEL_REFUTER="$2"
-  SEL_FORM="$3"
-  SEL_DEGRADED="$4"
-  SEL_REASON="$5"
+  SEL_REVIEWER="$1"; SEL_REFUTER="$2"; SEL_FORM="$3"; SEL_DEGRADED="$4"; SEL_REASON="$5"
 }
 
+# Pick reviewer from the `find` sequence and refuter from the `refute` sequence
+# (roles.conf), honouring: avoid writer family, then reviewer≠refuter family.
 select_review_backends() {
-  local writer="${1:-human}"
-  local W
+  local writer="${1:-human}" W
   W="$(_writer_family "$writer")"
 
-  local claude_ok=0 gpt_ok=0 grok_ok=0
-  _avail claude && claude_ok=1
-  _avail codex-gpt && gpt_ok=1
-  _avail codex-grok && grok_ok=1
+  local rev_cands ref_cands c cf
+  rev_cands="$(role_candidates adversarial find)"
+  ref_cands="$(role_candidates adversarial refute)"
 
-  # --- prefer: both sides avoid writer family ---
-  if [ "$W" = "claude" ]; then
-    # avoid claude: use codex vs codex cross-model if possible
-    if [ "$gpt_ok" -eq 1 ] && [ "$grok_ok" -eq 1 ]; then
-      _emit_pair codex-gpt codex-grok "cross-model-codex" "false" "writer=claude; avoid claude family"
-      return 0
-    fi
-    if [ "$gpt_ok" -eq 1 ]; then
-      _emit_pair codex-gpt codex-gpt "single-model-multi-role" "true" "writer=claude; only codex-gpt"
-      return 0
-    fi
-    if [ "$grok_ok" -eq 1 ]; then
-      _emit_pair codex-grok codex-grok "single-model-multi-role" "true" "writer=claude; only codex-grok"
-      return 0
-    fi
-    if [ "$claude_ok" -eq 1 ]; then
-      _emit_pair claude claude "single-model-multi-role" "true" "writer_reuse=claude; no other backend"
-      return 0
-    fi
+  # reviewer: first available candidate outside the writer's family …
+  local reviewer=""
+  for c in $rev_cands; do
+    _avail "$c" || continue
+    [ "$(_backend_family "$c")" = "$W" ] && continue
+    reviewer="$c"; break
+  done
+  # … else any available (writer family allowed; flagged degraded below)
+  if [ -z "$reviewer" ]; then
+    for c in $rev_cands; do _avail "$c" && { reviewer="$c"; break; }; done
   fi
+  if [ -z "$reviewer" ]; then
+    _emit_pair "" "" "unavailable" "true" "no review backends available"; return 1
+  fi
+  local rev_fam; rev_fam="$(_backend_family "$reviewer")"
 
-  if [ "$W" = "codex" ]; then
-    # strategy B: reviewer must be claude; refuter = other codex model when possible
-    if [ "$claude_ok" -eq 1 ] && [ "$gpt_ok" -eq 1 ]; then
-      _emit_pair claude codex-gpt "cross-family" "false" "writer=codex; reviewer=claude refuter=gpt"
-      return 0
-    fi
-    if [ "$claude_ok" -eq 1 ] && [ "$grok_ok" -eq 1 ]; then
-      _emit_pair claude codex-grok "cross-family" "false" "writer=codex; reviewer=claude refuter=grok"
-      return 0
-    fi
-    if [ "$claude_ok" -eq 1 ]; then
-      _emit_pair claude claude "single-model-multi-role" "true" "writer=codex; only claude for multi-role"
-      return 0
-    fi
-    # no claude: partial — still try cross-model codex (degraded: same family as writer)
-    if [ "$gpt_ok" -eq 1 ] && [ "$grok_ok" -eq 1 ]; then
-      _emit_pair codex-gpt codex-grok "partial-avoidance" "true" "writer=codex; no claude; codex cross-model"
-      return 0
-    fi
-    if [ "$gpt_ok" -eq 1 ]; then
-      _emit_pair codex-gpt codex-gpt "single-model-multi-role" "true" "writer_reuse=codex-gpt"
-      return 0
-    fi
-    if [ "$grok_ok" -eq 1 ]; then
-      _emit_pair codex-grok codex-grok "single-model-multi-role" "true" "writer_reuse=codex-grok"
-      return 0
-    fi
+  # refuter: available, family ≠ reviewer, prefer also ≠ writer …
+  local refuter=""
+  for c in $ref_cands; do
+    _avail "$c" || continue
+    cf="$(_backend_family "$c")"
+    [ "$cf" = "$rev_fam" ] && continue
+    [ "$cf" = "$W" ] && continue
+    refuter="$c"; break
+  done
+  # … relax writer-avoidance, still ≠ reviewer …
+  if [ -z "$refuter" ]; then
+    for c in $ref_cands; do
+      _avail "$c" || continue
+      [ "$(_backend_family "$c")" = "$rev_fam" ] && continue
+      refuter="$c"; break
+    done
   fi
+  # … last resort: reuse reviewer (single-model, two roles)
+  [ -z "$refuter" ] && refuter="$reviewer"
 
-  # main or human or unknown: global best pair
-  if [ "$claude_ok" -eq 1 ] && [ "$gpt_ok" -eq 1 ]; then
-    _emit_pair claude codex-gpt "cross-family" "false" "default; gpt preferred"
-    return 0
+  local ref_fam form degraded reason
+  ref_fam="$(_backend_family "$refuter")"
+  if [ "$reviewer" = "$refuter" ] || [ "$rev_fam" = "$ref_fam" ]; then
+    form="single-model-multi-role"; degraded="true"; reason="only one distinct family available"
+  elif [ "$rev_fam" = "$W" ] || [ "$ref_fam" = "$W" ]; then
+    form="partial-avoidance"; degraded="true"; reason="a role shares the writer's family ($W)"
+  else
+    form="cross-family"; degraded="false"; reason="reviewer=$reviewer refuter=$refuter, both != writer($W)"
   fi
-  if [ "$claude_ok" -eq 1 ] && [ "$grok_ok" -eq 1 ]; then
-    _emit_pair claude codex-grok "cross-family" "false" "default; gpt unavailable use grok"
-    return 0
-  fi
-  if [ "$gpt_ok" -eq 1 ] && [ "$grok_ok" -eq 1 ]; then
-    _emit_pair codex-gpt codex-grok "cross-model-codex" "true" "no claude"
-    return 0
-  fi
-  if [ "$claude_ok" -eq 1 ]; then
-    _emit_pair claude claude "single-model-multi-role" "true" "only claude"
-    return 0
-  fi
-  if [ "$gpt_ok" -eq 1 ]; then
-    _emit_pair codex-gpt codex-gpt "single-model-multi-role" "true" "only codex-gpt"
-    return 0
-  fi
-  if [ "$grok_ok" -eq 1 ]; then
-    _emit_pair codex-grok codex-grok "single-model-multi-role" "true" "only codex-grok"
-    return 0
-  fi
-
-  _emit_pair "" "" "unavailable" "true" "no review backends available"
-  return 1
+  _emit_pair "$reviewer" "$refuter" "$form" "$degraded" "$reason"
 }
 
 # CLI entry
 if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
-  writer="human"
-  want_json=0
+  writer="human"; want_json=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --writer) writer="$2"; shift 2 ;;
       --json) want_json=1; shift ;;
       --no-probe) ADV_REVIEW_PROBE=0; shift ;;
-      -h|--help)
-        echo "Usage: select-backends.sh --writer claude|codex|codex-gpt|codex-grok|main|human [--json] [--no-probe]"
-        exit 0
-        ;;
+      -h|--help) echo "Usage: select-backends.sh --writer NAME [--json] [--no-probe]"; exit 0 ;;
       *) echo "unknown: $1" >&2; exit 1 ;;
     esac
   done
-  if select_review_backends "$writer"; then
-    :
-  else
-    true
-  fi
+  select_review_backends "$writer" || true
   if [ "$want_json" -eq 1 ]; then
-    jq -nc \
-      --arg writer "$writer" \
-      --arg reviewer "${SEL_REVIEWER:-}" \
-      --arg refuter "${SEL_REFUTER:-}" \
-      --arg form "${SEL_FORM:-}" \
-      --argjson degraded "${SEL_DEGRADED:-true}" \
-      --arg reason "${SEL_REASON:-}" \
+    jq -nc --arg writer "$writer" --arg reviewer "${SEL_REVIEWER:-}" \
+      --arg refuter "${SEL_REFUTER:-}" --arg form "${SEL_FORM:-}" \
+      --argjson degraded "${SEL_DEGRADED:-true}" --arg reason "${SEL_REASON:-}" \
       '{writer:$writer,reviewer:$reviewer,refuter:$refuter,form:$form,degraded:$degraded,reason:$reason}'
   else
-    echo "writer=$writer"
-    echo "reviewer=${SEL_REVIEWER:-}"
-    echo "refuter=${SEL_REFUTER:-}"
-    echo "form=${SEL_FORM:-}"
-    echo "degraded=${SEL_DEGRADED:-}"
-    echo "reason=${SEL_REASON:-}"
+    echo "writer=$writer"; echo "reviewer=${SEL_REVIEWER:-}"; echo "refuter=${SEL_REFUTER:-}"
+    echo "form=${SEL_FORM:-}"; echo "degraded=${SEL_DEGRADED:-}"; echo "reason=${SEL_REASON:-}"
   fi
   [ -n "${SEL_REVIEWER:-}" ] && [ -n "${SEL_REFUTER:-}" ]
 fi

@@ -23,7 +23,7 @@ This directory is the **only** skill + runner unit. Other paths are **symlinks**
 | --- | --- |
 | **Human** | Intent only:「对抗审查」「审一下这批改动」「按推荐审查」 |
 | **Any agent** | **Load this skill → resolve TOOL + TARGET → run → disclose** |
-| **Host headless backends** | `claude` / `codex-gpt` / `codex-grok` as find/refute (not ACP by default) |
+| **Host headless backends** | `claude` / `codex` / `grok` as find/refute (not ACP by default) |
 
 ## When to load / run
 
@@ -93,7 +93,7 @@ Find and refute receive the **same** pack (not bare diff):
 ## Agent procedure
 
 1. **Identify** TARGET cwd/repo, `BASE_REF`, **writer**  
-   (`main` | `claude` | `codex` | `codex-gpt` | `codex-grok` | `human`)
+   (`main` | `claude` | `codex` | `codex` | `grok` | `human`)
 2. **Resolve** TOOL_HOME (above). Confirm `"$TOOL_HOME/run.sh"` is executable.
 3. **Optional dry probe**
    ```bash
@@ -106,7 +106,7 @@ Find and refute receive the **same** pack (not bare diff):
    Explicit backends only if user named them:
    ```bash
    "$TOOL_HOME/run.sh" <BASE_REF> --repo "$TARGET" \
-     --reviewer claude --refuter codex-gpt --mode strict
+     --reviewer claude --refuter codex --mode strict
    ```
 5. **Report** with mandatory disclosure (below). Honest fail if tool/backends fail.
 6. **Do not** claim cross-agent if form is single-model; do not invent green gates.
@@ -115,9 +115,9 @@ Find and refute receive the **same** pack (not bare diff):
 
 | writer | Typical pair when available |
 | --- | --- |
-| `claude` / Claude-ACP/TUI | `codex-gpt` × `codex-grok` |
-| `codex` / Codex-* | `claude` × `codex-gpt` (else × `codex-grok`) |
-| `main` / Main-Grok | `claude` × `codex-gpt` |
+| `claude` / Claude-ACP/TUI | `codex` × `grok` |
+| `codex` / Codex-* | `claude` × `codex` (else × `grok`) |
+| `main` / Main-Grok | `claude` × `codex` |
 | `human` | same as global best |
 
 ## Mandatory disclosure (paste into 结果)
@@ -125,7 +125,7 @@ Find and refute receive the **same** pack (not bare diff):
 ```text
 ## 对抗审查披露
 - writer: Main-Grok | Claude-ACP | Codex-ACP | human | …
-- 形态/form: cross-family | cross-model-codex | single-model-multi-role | …
+- 形态/form: cross-family | partial-avoidance | single-model-multi-role | …
 - form/degraded/reason: (from select-backends / run log)
 - reviewer 全名 / 立场: …
 - refuter 全名 / 立场: …
@@ -138,9 +138,11 @@ Find and refute receive the **same** pack (not bare diff):
 ## Helper commands (agent-only)
 
 ```bash
-"$TOOL_HOME/run.sh" selfcheck claude codex-gpt codex-grok
+"$TOOL_HOME/run.sh" selfcheck claude codex grok
 "$TOOL_HOME/run.sh" dogfood --mode strict --fail-on-finding
 "$TOOL_HOME/run.sh" <BASE> --repo "$TARGET" --writer main --dry-run --no-probe
+PROVIDER_MOCK=1 "$TOOL_HOME/run.sh" <BASE> --repo "$TARGET"   # offline, no LLM
+# reasoning effort per stage: find/refute=high, repro=low (passed to provider CLI)
 ```
 
 Install / refresh user-level discovery (idempotent):
