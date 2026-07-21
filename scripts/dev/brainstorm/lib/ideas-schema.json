@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "brainstorm idea",
+  "description": "Inter-stage contract for scripts/dev/brainstorm. Diverge emits an array of these; challenge augments each; converge wraps them in {ideas,synthesis,key_tradeoffs}.",
+  "type": "object",
+  "required": ["title", "summary"],
+  "properties": {
+    "id": { "type": "string", "description": "stable-ish hash of persona+title; filled by run.sh if absent" },
+    "title": { "type": "string", "description": "short name of the idea" },
+    "summary": { "type": "string", "description": "one-to-two sentence description of the idea" },
+    "rationale": { "type": "string", "description": "why it addresses the problem" },
+    "persona": { "type": "string", "description": "which diverge lens produced it; filled by run.sh" },
+    "novelty": { "type": "integer", "minimum": 1, "maximum": 5, "description": "self-assessed novelty (diverge stage)" },
+
+    "feasibility": { "type": "integer", "minimum": 1, "maximum": 5, "description": "challenge stage: how implementable" },
+    "risks": { "type": "array", "items": { "type": "string" }, "description": "challenge stage: failure modes / downsides" },
+    "blocking_assumptions": { "type": "array", "items": { "type": "string" }, "description": "challenge stage: what must hold for it to work" },
+    "challenge_note": { "type": ["string", "null"], "description": "challenge stage: devil's-advocate summary" },
+
+    "score": { "type": "number", "minimum": 1, "maximum": 10, "description": "converge stage: blind overall score" },
+    "verdict": { "enum": ["top", "maybe", "drop"], "description": "converge stage" },
+    "judge_note": { "type": ["string", "null"], "description": "converge stage: why this rank" }
+  }
+}

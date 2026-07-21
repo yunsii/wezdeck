@@ -8,6 +8,7 @@
 #
 # Currently linked:
 #   adversarial-review  -> scripts/dev/adversarial-review/
+#   brainstorm          -> scripts/dev/brainstorm/
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
@@ -38,6 +39,7 @@ done
 # name|relative_source_from_repo_root
 skills=(
   "adversarial-review|scripts/dev/adversarial-review"
+  "brainstorm|scripts/dev/brainstorm"
 )
 
 link_one() {
