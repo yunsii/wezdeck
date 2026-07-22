@@ -95,6 +95,13 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Multi-persona brainstorm skill (diverge→challenge→converge), persona/provider
   selection, per-stage effort, the no-resume design, or the offline mock harness:
   Read [`docs/brainstorm.md`](docs/brainstorm.md).
+- Design proposal / RFC / ADR / 方案评审 (no runtime diff — **not** a dedicated
+  skill): structured 设计评审 checklist and intent routing live in the
+  user-level profile
+  [`agent-profiles/v1/en/validation.md`](agent-profiles/v1/en/validation.md)
+  (`Design proposal review`); also summarized under
+  [`docs/adversarial-review.md`](docs/adversarial-review.md) (out of scope) and
+  [`docs/brainstorm.md`](docs/brainstorm.md) (when alternatives are still needed).
 - Host↔Claw session interop (Session Adapter Kit / `session-bridge`: list/read
   host tmux + claw sessions, gated `poke` / `host-send-keys` under lease, panic
   freeze, `bot-send` / `say-as-me` identities, attention merge, tmux side-load

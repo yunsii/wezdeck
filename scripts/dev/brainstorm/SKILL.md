@@ -33,8 +33,17 @@ SKILL.md body.
 - User wants ideas, options, approaches, or angles on an open-ended question
 - User explicitly says 头脑风暴 / brainstorm / 发散 / 想点子
 
-**Skip / redirect:** reviewing a concrete diff or existing code → use
-**adversarial-review** instead (this skill is generative, not a defect finder).
+**Skip / redirect:**
+
+- Concrete diff / existing **code** → **adversarial-review** (this skill is
+  generative, not a defect finder)
+- Someone's **design doc / RFC / ADR / 方案** when the intent is only to
+  **evaluate that proposal** → default **设计评审** (main-agent structured
+  challenge; host `validation.md` → Design proposal review). Do **not** default
+  to a full diverge pass that ignores the proposal
+- Same design doc when the user still wants **alternatives** → this skill is
+  appropriate: phrase problem + extract hard constraints from the doc; prefer
+  challenge-heavy use; full diverge only if the problem space is still open
 
 ## Three stages (divergent → convergent)
 
@@ -126,6 +135,8 @@ Install / refresh user-level discovery (idempotent):
 - Don't ask the human to run `run.sh` as the main path
 - Don't collapse to a solo idea list and call it a multi-persona brainstorm
 - Don't use it to review existing code — that's adversarial-review
+- Don't default to full multi-persona diverge just to critique one closed proposal
+  (that is 设计评审, not brainstorm) unless the user wants alternatives
 - Don't claim cross-model diversity when only one provider was available (the
   runner marks single-model in `notes`)
 
@@ -133,5 +144,6 @@ Install / refresh user-level discovery (idempotent):
 
 - Runner (this dir): `run.sh`, `lib/ideas-schema.json`, `prompts/`
 - Sibling skill (provider layer source): `../adversarial-review/`
+- Design-doc routing (no dedicated skill): host `validation.md` → Design proposal review
 - Link installer: `scripts/dev/link-platform-skills.sh`
 - Memory: `adversarial-review-no-resume` (why stateless, not resume)

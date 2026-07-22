@@ -67,7 +67,22 @@ Never ship conclusions alone. Never use the title if refute role was omitted.
 | --- | --- | --- |
 | **三门全量** | find+refute+repro，且 reviewer≠refuter 家族 | 可以 |
 | **多角色·单模型** | find+refute（±repro），同家族/同后端 | 否；标 SINGLE-MODEL |
-| **设计批判** | 单角色分析 | **不要**叫对抗审查 |
+| **设计批判** | 单角色分析（含对代码的口头意见） | **不要**叫对抗审查 |
+| **设计评审** | 方案 / RFC / ADR / 设计 doc（无 runtime diff） | **不要**叫对抗审查；走 profile 检查单，见下 |
+
+### Design docs are out of scope (route elsewhere)
+
+Pure design proposals are **not** a special mode of this tool — stage 0
+**auto-skips** docs/tests-only diffs. Default path:
+
+| Input | Intent | Use |
+| --- | --- | --- |
+| 方案 / RFC / ADR | evaluate the proposal | **设计评审** (checklist in `agent-profiles/…/validation.md` → Design proposal review) |
+| same | still need alternatives | **brainstorm** (problem + constraints from the doc) |
+| runtime diff | defect hunt | **this skill** |
+
+Do not invent a green 对抗审查 for markdown. No dedicated design-review skill
+unless demand later forces tier-C promotion.
 
 Full backend names: see `openclaw/docs/agent-architecture.md` and
 `openclaw/scripts/agent-matrix-status.sh`.

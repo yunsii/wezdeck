@@ -32,7 +32,13 @@ This directory is the **only** skill + runner unit. Other paths are **symlinks**
 - Runtime code/scripts changed (any git TARGET the agent may review)
 - After editing this toolkit itself → `dogfood`
 
-**Skip:** pure docs/tests-only (runner auto-skips); user explicitly skips with reason.
+**Skip / redirect:**
+
+- Pure docs/tests-only (runner auto-skips); user explicitly skips with reason
+- **Design docs / RFC / ADR / 方案提案** (no runtime diff): do **not** force this
+  skill. Use **设计评审** (structured checklist in host
+  `validation.md` → Design proposal review) or **brainstorm** only when the user
+  still wants alternative approaches. Never label a doc critique 对抗审查.
 
 ## Multi-role minimum
 
@@ -204,6 +210,7 @@ Install / refresh user-level discovery (idempotent):
 - Don't use ACP CODEX_HOME for review (`env -u CODEX_HOME` is inside provider)
 - Don't skip refute when claiming 对抗审查
 - Don't call solo Main analysis 对抗审查
+- Don't run this skill on pure design-doc review and claim 对抗审查
 - Don't treat main-agent PROJECT_SLICE filter as a review gate or drop hits to hide risk
 - Don't assume the skill lives only under the TARGET repo
 - Don't force-push; wezdeck personal mainline may push master after green (L0-13/19)

@@ -11,7 +11,13 @@ triggers:
   - adversarial review
   - 对抗审查
   - multi-role review
-tags: [quality, testing, escalation, evidence, adversarial-review]
+  - design review
+  - 方案评审
+  - 设计评审
+  - design doc
+  - RFC
+  - ADR
+tags: [quality, testing, escalation, evidence, adversarial-review, design-review]
 ---
 
 # Validation
@@ -160,3 +166,28 @@ When the user asks for 对抗审查 / adversarial review, or acceptance recommen
 - [validation-56] Review uses **host headless** CLIs (`claude` / `codex-gpt` / `codex-grok`), not OpenClaw ACP `CODEX_HOME` by default.
 - [validation-57] If TOOL_HOME cannot be resolved (tool not linked/installed), say so and fall back to design critique or skip — do not invent a green multi-role review.
 - [validation-58] Optional **main-agent PROJECT_SLICE filter** (not a fourth adversarial role): when grep `same-name` noise is high, run `--pack-only --keep-pack DIR`, coarse-filter candidates with project knowledge (**when unsure → keep**), then re-run with `--project-slice-file`. Do not drop hits to shrink blast radius or hide risk; do not write findings in this step. One-shot without filter remains valid. Procedure: skill `SKILL.md` + `docs/adversarial-review.md`.
+
+## Design proposal review (no dedicated skill — tier A)
+
+Someone else's **design doc / RFC / ADR / 方案** is **not** adversarial-review input
+(runner auto-skips pure docs; the three gates target runtime diffs). There is **no**
+separate design-review skill by default — route and critique in-process.
+
+- [validation-59] **Intent routing** for proposal documents (and similar non-code plans):
+
+  | Intent | Path | Label in the report |
+  | --- | --- | --- |
+  | Evaluate this proposal (accept / revise / reject) | **Design review** — main agent structured challenge (checklist below); no runner required | 设计评审 / 设计批判 — **not** 对抗审查 |
+  | Still need alternatives relative to the proposal | **brainstorm** with problem + hard constraints extracted from the doc (challenge-first; full diverge only if the problem is still open) | 头脑风暴（披露 multi-persona） |
+  | Implementation / diff already exists | **adversarial-review** | 对抗审查 |
+
+- [validation-60] **Design-review checklist** (Design Doc / RFC / ADR practice). Cover each item; skip only with an explicit reason:
+
+  1. Problem, goals, and **non-goals**
+  2. Assumptions and unvalidated constraints
+  3. Rejected alternatives (real options, not strawmen)
+  4. Failure modes and boundaries (consistency, auth, data, rollback)
+  5. Cost, operability, and evolution (what breaks in ~1 year)
+  6. How success is verified (metrics, milestones, exit criteria)
+
+- [validation-61] **Naming honesty:** solo or structured critique of a doc = 设计评审/设计批判. Multi-persona ideation = 头脑风暴 only if that skill actually ran. Never call a doc critique 对抗审查. No new skill until the need is recurrent and needs a machine contract (see rule promotion).

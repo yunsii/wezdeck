@@ -12,6 +12,20 @@ and **shares that skill's provider layer** (`lib/provider.sh`) — so the two
 key cross-cutting decisions below (reasoning **effort** and **no session
 resume**) apply to both skills.
 
+### When *not* to default to full brainstorm
+
+Someone else's **design doc / RFC / ADR / 方案** is often a **closed proposal to
+evaluate**, not an open ideation brief:
+
+| Intent | Prefer |
+| --- | --- |
+| Accept / revise / reject **this** proposal | **设计评审** (structured checklist; host `validation.md` → Design proposal review) — no runner |
+| Need **alternatives** relative to the proposal | This skill: problem + constraints extracted from the doc; challenge-first; full diverge only if the space is still open |
+| Runtime **code** diff | `adversarial-review` |
+
+There is no separate design-review skill by default (tier A routing). Do not
+relabel a solo doc critique as multi-persona brainstorm or as 对抗审查.
+
 ## 1. Overall flow
 
 Three *role types* collaborate adversarially: many independent **generators**,
