@@ -18,6 +18,12 @@
     "lease_ttl_sec": 120,
     "panic_path": "~/.openclaw/state/session-bridge.panic",
     "tmux_bin": "~/.local/bin/tmux",
+    "watch": {
+      "ttl_sec": 5400,
+      "interval_sec": 10,
+      "notify_to": "dex",
+      "comment": "take/watch-loop: poll cheaply; notify only waiting|ended"
+    },
     "receipt": {
       "enabled": false,
       "mode": "audit_only",

@@ -417,6 +417,34 @@
     ]
   },
   {
+    "id": "session.claw-take",
+    "label": "Claw: Take over focused pane",
+    "description": "Hand the focused tmux pane to OpenClaw session-bridge take: register a cheap watch job, poll attention/tmux status without LLM, and Feishu-notify only on need_human (permission) or session end. Chord: Ctrl+K w.",
+    "scope": "commands-and-splits",
+    "context": "tmux-backed",
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/session-bridge-take.sh '#{session_name}:#{window_index}.#{pane_index}' '#{pane_id}'\""
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+k w",
+        "layer": "tmux-chord"
+      }
+    ],
+    "palette": {
+      "accelerator": "w",
+      "command": [
+        "bash",
+        "-lc",
+        "bash {repo_root}/scripts/runtime/session-bridge-take.sh"
+      ],
+      "success_message": "Claw take started for focused pane.",
+      "failure_message": "Claw take failed."
+    }
+  },
+  {
     "id": "links.picker",
     "label": "Links: Open picker",
     "description": "Resolve project links via the `vscode-links` CLI for the current pane's cwd and surface them in the native Go picker. Enter opens the URL on the Windows host; Ctrl+Y copies it. Requires `vscode-links` (install via the project's install.sh, or set VSCODE_LINKS_BIN) plus `jq` on PATH.",

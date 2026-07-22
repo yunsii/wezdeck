@@ -3,7 +3,8 @@ name: session-bridge
 description: >
   Host ↔ Claw Session Adapter Kit: list/capture host tmux panes, list/tail
   OpenClaw sessions, poke agent turns, lease-gated host-send-keys, bot-send,
-  optional say-as-me. Use for Feishu/host interop — not a second TUI.
+  optional say-as-me, take/watch poller for focused-pane handoff. Use for
+  Feishu/host interop — not a second TUI.
 ---
 
 # Session Adapter Kit（Dex · Main）
@@ -29,7 +30,12 @@ tmux 版本策略：`docs/tmux-install.md`
 | 查 Dex 会话 | `$SB claw-ls` / `claw-show --id dex` |
 | 机器人通知 | `$SB bot-send --to dex -m '…'`（默认 dry-run） |
 | **本人**飞书说话 | `$SB say-as-me --to dex -m '…'`（P3；默认 dry-run） |
+| **饭点接管聚焦 pane** | 快捷键 **Ctrl+K w**；或 `$SB take --focus --confirm-notify` |
+| 查/停盯梢 | `$SB watch-status` / `watch-stop --all` |
 | 紧急停写 | `$SB panic on` |
+
+`take` 只做轻量轮询 + 飞书通知（需确认 / 会话结束）；**不**代按 TUI、不每 tick 跑模型。  
+**仅 agent pane**（kind / 标题启发式 / attention）；普通 shell 直接拒绝，无强开开关。
 
 ## 硬规则
 
@@ -46,8 +52,8 @@ tmux 版本策略：`docs/tmux-install.md`
 
 - `aliases.dex` → session key  
 - `host_allowlist.send_keys_panes` → session 名 glob（如 `wezterm_*`）  
-- `feishu_targets.dex_user_id` / `*_chat_id` → say-as-me  
-- `defaults.tmux_bin` / `receipt`
+- `feishu_targets.dex_user_id` / `*_chat_id` → bot-send / say-as-me  
+- `defaults.tmux_bin` / `receipt` / `defaults.watch`（ttl/interval/notify_to）
 
 ## 不要
 

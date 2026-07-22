@@ -24,6 +24,8 @@ source "$SB_ROOT/session-bridge/host-write.sh"
 source "$SB_ROOT/session-bridge/bot-send.sh"
 # shellcheck disable=SC1091
 source "$SB_ROOT/session-bridge/say-as-me.sh"
+# shellcheck disable=SC1091
+source "$SB_ROOT/session-bridge/watch.sh"
 
 SB_JSON="${SB_JSON:-1}"
 export SB_JSON
@@ -52,6 +54,11 @@ Write / gated:
                  [--approve-visible] [--lease ID] [--dry-run]
   bot-send --to <alias|chat> -m <text> [--confirm] [--channel feishu]
   say-as-me --to <alias|id> -m <text> [--confirm] [--interactive]  # user identity
+  take [--focus|--target sess:w.p] [--pane-id %N] [--note …] [--ttl SEC]
+       [--notify-to alias] [--confirm-notify] [--no-ack] [--dry-run]
+  watch-status
+  watch-stop --id <job>|--all
+  watch-loop                    # internal poller (flock); take starts it
   panic on|off|status
 
 Notes:
@@ -60,8 +67,11 @@ Notes:
   - host-send-keys needs valid lease + host_allowlist + no panic.
   - bot-send / say-as-me default dry-run; --confirm to actually send.
   - host-status may enrich cards from WezDeck attention.json (inferred).
+  - take: hand focused/any pane to cheap watch poller; notify only on
+    need_human (waiting) or ended — no per-tick LLM.
   - Config: ~/.openclaw/session-bridge.json
   - Audit: ~/.openclaw/logs/session-bridge-audit.jsonl
+  - Watch jobs: ~/.openclaw/state/session-bridge-watch/
 EOF
 }
 
@@ -284,6 +294,47 @@ cmd_say_as_me() {
   sb_say_as_me "$to" "$message" "$confirm" "$interactive" | print_result
 }
 
+cmd_take() {
+  local target="" pane_id="" note="" ttl="" notify_to=""
+  local confirm_notify=0 dry=0 no_ack=0 focus=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --focus) focus=1; shift ;;
+      --target) target="${2:-}"; shift 2 ;;
+      --pane-id) pane_id="${2:-}"; shift 2 ;;
+      --note) note="${2:-}"; shift 2 ;;
+      --ttl) ttl="${2:-}"; shift 2 ;;
+      --notify-to) notify_to="${2:-}"; shift 2 ;;
+      --confirm-notify) confirm_notify=1; shift ;;
+      --no-ack) no_ack=1; shift ;;
+      --dry-run) dry=1; shift ;;
+      *) sb_die 3 "未知参数: $1" ;;
+    esac
+  done
+  # Default: focus when neither --target nor explicit empty
+  if [[ -z "$target" ]]; then
+    focus=1
+  fi
+  # focus flag alone clears target
+  if [[ "$focus" == "1" && -z "$target" ]]; then
+    target=""
+  fi
+  sb_watch_take "$target" "$pane_id" "$note" "$ttl" "$notify_to" \
+    "$confirm_notify" "$dry" "$no_ack" | print_result
+}
+
+cmd_watch_stop() {
+  local id="" all=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --id) id="${2:-}"; shift 2 ;;
+      --all) all=1; shift ;;
+      *) sb_die 3 "未知参数: $1" ;;
+    esac
+  done
+  sb_watch_stop "$id" "$all" | print_result
+}
+
 # --- main ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -331,6 +382,19 @@ case "$cmd" in
     ;;
   say-as-me)
     cmd_say_as_me "$@"
+    ;;
+  take)
+    cmd_take "$@"
+    ;;
+  watch-status)
+    sb_watch_status_cmd | print_result
+    ;;
+  watch-stop)
+    cmd_watch_stop "$@"
+    ;;
+  watch-loop)
+    # internal; no JSON wrapper noise on the long-running process beyond audits
+    sb_watch_loop
     ;;
   panic)
     cmd_panic "$@"

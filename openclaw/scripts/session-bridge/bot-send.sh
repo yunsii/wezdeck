@@ -21,8 +21,12 @@ sb_bot_send() {
   resolved="$(sb_resolve_alias "$to")"
   target_cfg=""
   if [[ -f "$(sb_config_path)" ]]; then
+    # Prefer explicit chat/user id maps over session-key aliases.
     target_cfg="$(jq -er --arg k "$to" '
-      .feishu_targets[$k] // .feishu_targets[($k + "_chat_id")] // empty
+      .feishu_targets[$k]
+      // .feishu_targets[($k + "_chat_id")]
+      // .feishu_targets[($k + "_user_id")]
+      // empty
     ' "$(sb_config_path)" 2>/dev/null || true)"
   fi
   local dest="$resolved"
