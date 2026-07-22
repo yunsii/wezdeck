@@ -56,7 +56,7 @@ Full architecture, ownership boundaries, and the WSL ⇄ Windows communication c
 | | Required | Notes |
 |---|---|---|
 | **WezTerm** | nightly | `hybrid-wsl` mode runs on the Windows nightly build |
-| **tmux** | ≥ 3.7 | DEC mode 2026 (synchronized output) needs 3.6+, and copy-mode auto-refresh uses 3.7's `refresh-from-pane`. Ubuntu 24.04 still ships 3.4 — build from source. [Why](docs/ime-flicker-and-sync-output.md) |
+| **tmux** | ≥ 3.7 | DEC sync 3.6+; `refresh-from-pane` 3.7+. Prefer OS/brew package when ≥ 3.7; user-prefix `~/.local` only if distro is older (e.g. Ubuntu apt 3.4). [Install](docs/tmux-install.md) · [Why](docs/ime-flicker-and-sync-output.md) |
 | **lua5.4** | recommended | Powers the sync precheck; missing → precheck skipped with a warning |
 | **jq** | recommended | Agent-attention writer & focus path; missing → degraded labels |
 | **go ≥ 1.21** | optional | For maintainers of `native/picker/`. End users get a sha256-pinned prebuilt tarball via the release fetcher |

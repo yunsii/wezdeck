@@ -95,6 +95,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Multi-persona brainstorm skill (diverge→challenge→converge), persona/provider
   selection, per-stage effort, the no-resume design, or the offline mock harness:
   Read [`docs/brainstorm.md`](docs/brainstorm.md).
+- Host↔Claw session interop (Session Adapter Kit / `session-bridge`: list/read
+  host tmux + claw sessions, gated `poke` / `host-send-keys` under lease, panic
+  freeze, `bot-send` / `say-as-me` identities, attention merge, tmux side-load
+  safety):
+  Read [`openclaw/docs/session-bridge.md`](openclaw/docs/session-bridge.md).
 - Personal OpenClaw control plane (Feishu gateway templates, main-agent
   protocol, link/smoke scripts — **not** the WezTerm/tmux execution hot path):
   Read [`openclaw/README.md`](openclaw/README.md) and

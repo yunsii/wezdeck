@@ -189,8 +189,15 @@ an out-of-band install.
 
 ### Step 6 — the fix that stuck
 
+> **Install policy update (2026-07):** Prefer any **system/package** tmux
+> that already is ≥ 3.7 (e.g. Homebrew on macOS). User-prefix build to
+> `~/.local/bin` is only the **fallback** when the distro package is too
+> old (Ubuntu 24.04 apt 3.4). No multi-shim; do not `apt remove tmux` just
+> to “clean up”. Full decision tree: [`tmux-install.md`](./tmux-install.md).
+> Step 6 below is the **historical** IME fix (3.6a → `/usr/local/bin`).
+
 1. Build tmux 3.6a from source, install to `/usr/local/bin/tmux`
-   (shadowing apt's 3.4).
+   (shadowing apt's 3.4). *(Historical; prefer `~/.local` + 3.7+ now.)*
 2. `tmux kill-server` and start fresh so the running server is the
    3.6a binary.
 3. Re-add `set -as terminal-features ',xterm*:sync,wezterm*:sync'`

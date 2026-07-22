@@ -43,8 +43,12 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`tab-visibility.md`](./tab-visibility.md).
 - Alt+/ popup hot path, bench harnesses, cross-FS routing rule:
   Read [`performance.md`](./performance.md).
+- tmux install (cross-OS: use system if ≥ 3.7; user-prefix only as fallback):
+  Read [`tmux-install.md`](./tmux-install.md).
 - Why tmux 3.7+ is required, IME flicker, DEC mode 2026 investigation:
   Read [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
+- Host↔Claw session interop (Session Adapter Kit / `session-bridge`: host tmux ↔ claw sessions, gated poke/host-send-keys, panic, identities):
+  Read [`../openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md).
 - Personal OpenClaw control plane (Feishu remote, operational; not WezTerm hot path):
   Read [`../openclaw/README.md`](../openclaw/README.md).
 
