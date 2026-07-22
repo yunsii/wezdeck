@@ -161,6 +161,28 @@ never talk directly; `run.sh` is the only conduit (validate → merge by id →
 segment → next stdin), and `id` (`file:line:summary`) is the cross-gate anchor.
 See [`brainstorm.md` §2](brainstorm.md#2-provider-layer--agent-to-agent-data-flow).
 
+### Invoke layers (provider vs fanout)
+
+| Layer | Path | Use |
+| --- | --- | --- |
+| **Single-shot** | `provider.sh` → `run_agent` / `agent_text` → `__invoke` | This skill's gates (sequential, hot path, no temp dir) |
+| **Multi-shot** | `agent-fanout/lib/fanout-lib.sh` → plugins | Same prompt × N backends, or heterogeneous jobs |
+
+Dependency is **one-way**: fanout sources provider; provider never loads fanout.
+Do not call plugin `__invoke` from feature code; do not hand-roll `claude & wait`.
+
+```bash
+# multi-model free-form (e.g. harness scoring)
+scripts/dev/agent-fanout/run.sh run \
+  --backends claude,codex,grok \
+  --prompt-file /path/to/pack.md \
+  --out /tmp/fanout-out \
+  --effort high \
+  --json
+# jobs:    ... jobs --job 'id|backend|/path/prompt.md'
+# offline: PROVIDER_MOCK=1 scripts/dev/agent-fanout/test.sh
+```
+
 **Reasoning effort per gate:** find=`high`, refute=`high` (deep defect-hunting +
 rigorous refutation), repro=`low` (writing a mechanical script). Passed to the
 provider CLI. Mapping to each CLI and the measured-latency rationale (why

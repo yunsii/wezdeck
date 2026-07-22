@@ -39,16 +39,16 @@ tool_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 prompts="$tool_root/prompts"
 schema="$tool_root/lib/ideas-schema.json"
 
-# Reuse the adversarial-review provider layer (single source of multi-provider,
-# stateless, JSON-retrying agent calls). Sibling skill, same repo parent dir.
+# Single-shot stages: provider run_agent → __invoke.
+# Parallel diverge: fanout-lib (sources provider one-way).
 adv_provider="$tool_root/../adversarial-review/lib/provider.sh"
-[ -f "$adv_provider" ] || {
-  printf 'error: provider lib not found at %s\n' "$adv_provider" >&2
-  printf '       (brainstorm reuses adversarial-review/lib/provider.sh)\n' >&2
+fanout_lib="$tool_root/../agent-fanout/lib/fanout-lib.sh"
+[ -f "$fanout_lib" ] || {
+  printf 'error: fanout lib not found at %s\n' "$fanout_lib" >&2
   exit 3
 }
 # shellcheck source=/dev/null
-. "$adv_provider"
+. "$fanout_lib"
 # shellcheck source=/dev/null
 . "$(dirname "$adv_provider")/roles-lib.sh"
 
@@ -159,7 +159,6 @@ provider_available "$challenger" || skipped+=("challenger-unavailable($challenge
 provider_available "$judge" || skipped+=("judge-unavailable($judge)")
 
 # --- validation helper -------------------------------------------------------
-# Keep an array of ideas whose title+summary are non-empty strings.
 _validate_ideas() {
   printf '%s' "$1" | jq -c '
     def ok: (type=="object")
@@ -169,11 +168,27 @@ _validate_ideas() {
   ' 2>/dev/null || printf '%s' '[]'
 }
 
+# Tag + merge one persona body into all_ideas (current shell — do not $()-wrap).
+# Sets INGEST_N. Return 1 if no valid ideas.
+_ingest_diverge_body() {
+  local pname="$1" raw="$2"
+  local ideas_i sliced
+  INGEST_N=0
+  if sliced="$(printf '%s' "$raw" | _json_slice 2>/dev/null)"; then
+    raw="$sliced"
+  fi
+  ideas_i="$(_validate_ideas "$raw")"
+  INGEST_N="$(printf '%s' "$ideas_i" | jq 'length')"
+  [ "$INGEST_N" -gt 0 ] || return 1
+  ideas_i="$(printf '%s' "$ideas_i" | jq -c --arg p "$pname" \
+    '[ .[] | .persona=$p | .id=($p+"::"+(.title//"")) ]')"
+  all_ideas="$(jq -nc --argjson a "$all_ideas" --argjson b "$ideas_i" '$a + $b')"
+  return 0
+}
+
 # Run a stage against candidates until one returns valid JSON.
 # Reads INPUT from stdin; $1=prompt_file, rest=candidate providers.
-# On success: echoes "<provider>\n<JSON>" (first line = which backend was used,
-# so the caller can recover it across the command-substitution subshell),
-# returns 0. Else returns 1.
+# On success: echoes "<provider>\n<JSON>" ; returns 0. Else 1.
 _run_with_fallback() {
   local prompt_file="$1" effort="$2"; shift 2
   local input out p
@@ -201,36 +216,88 @@ if [ "$dry" -eq 1 ]; then
   exit 0
 fi
 
-# --- stage 1: diverge --------------------------------------------------------
+# --- stage 1: diverge (parallel primary + serial fallback) ------------------
 log "stage 1/3 · diverge ($personas_n personas over: ${diverge_providers[*]})…"
 all_ideas='[]'
 ndp="${#diverge_providers[@]}"
+div_tmp="$(mktemp -d "${TMPDIR:-/tmp}/brainstorm-diverge.XXXXXX")"
+
+# persona_meta lines: pname|primary|cand2,cand3,...
+# full prompt path contains "diverge" so PROVIDER_MOCK uses provider fixtures.
+job_args=()
+persona_meta=()
 for i in $(seq 0 $((personas_n - 1))); do
   entry="${PERSONAS[$i]}"
   pname="${entry%%|*}"
   pdesc="${entry#*|}"
   prov="${diverge_providers[$((i % ndp))]}"
-  # candidates: this persona's rotated provider first, then the rest of the sequence
   d_cands=("$prov"); for c in "${div_seq[@]}"; do [ "$c" != "$prov" ] && d_cands+=("$c"); done
   d_in="=== YOUR PERSONA ==="$'\n'"$pname: $pdesc"$'\n\n'"=== PROBLEM ==="$'\n'"$problem"$'\n\n'"=== CONSTRAINTS ==="$'\n'"$constraints_disp"
-  # A persona is a lens (the prompt); the provider only executes it. Fall back
-  # across providers so a runtime-broken first backend costs at most diversity
-  # for this one persona — never the whole run (e.g. --personas 1).
+  full_pf="$div_tmp/diverge-${pname}.full.md"
+  {
+    cat "$prompts/diverge.md"
+    printf '\n\n=== INPUT ===\n%s' "$d_in"
+  } >"$full_pf"
+  printf '%s' "$d_in" >"$div_tmp/${pname}.input.md"
+  rest_cands=("${d_cands[@]:1}")
+  IFS=','; rest_joined="${rest_cands[*]-}"; unset IFS
+  persona_meta+=("${pname}|${prov}|${rest_joined}")
+  job_args+=(--job "${pname}|${prov}|${full_pf}")
+done
+
+# Primary: true parallel across personas (one backend each).
+primary_ok=()
+set +e
+FANOUT_QUIET=1 fanout_run_jobs --out "$div_tmp/out" --effort "$div_effort" --parallel "${job_args[@]}"
+set -e
+for meta in "${persona_meta[@]}"; do
+  pname="${meta%%|*}"
+  rest="${meta#*|}"
+  prov="${rest%%|*}"
+  body_f="$div_tmp/out/${pname}.md"
+  [ -f "$body_f" ] && [ -s "$body_f" ] || continue
+  if _ingest_diverge_body "$pname" "$(cat "$body_f")"; then
+    log "  • $pname ($prov) → $INGEST_N idea(s) [fanout]"
+    primary_ok+=("$pname")
+  fi
+done
+
+# Fallback: failed personas, serial run_agent candidate chain.
+for meta in "${persona_meta[@]}"; do
+  pname="${meta%%|*}"
+  rest="${meta#*|}"
+  prov="${rest%%|*}"
+  rest_cands="${rest#*|}"
+  skip=0
+  for okp in "${primary_ok[@]+"${primary_ok[@]}"}"; do
+    [ "$okp" = "$pname" ] && { skip=1; break; }
+  done
+  [ "$skip" -eq 1 ] && continue
+
+  d_cands=("$prov")
+  if [ -n "$rest_cands" ]; then
+    IFS=',' read -r -a _rc <<<"$rest_cands"
+    d_cands+=("${_rc[@]}")
+  fi
+  d_in="$(cat "$div_tmp/${pname}.input.md")"
   if draw="$(printf '%s' "$d_in" | _run_with_fallback "$prompts/diverge.md" "$div_effort" "${d_cands[@]}")"; then
     dused="$(printf '%s' "$draw" | head -n1)"
     raw="$(printf '%s' "$draw" | tail -n +2)"
     [ "$dused" != "$prov" ] && skipped+=("diverge-fellback($pname:$prov→$dused)")
-    ideas_i="$(_validate_ideas "$raw")"
-    ideas_i="$(printf '%s' "$ideas_i" | jq -c --arg p "$pname" \
-      '[ .[] | .persona=$p | .id=($p+"::"+(.title//"")) ]')"
-    ni="$(printf '%s' "$ideas_i" | jq 'length')"
-    log "  • $pname ($dused) → $ni idea(s)"
-    all_ideas="$(jq -nc --argjson a "$all_ideas" --argjson b "$ideas_i" '$a + $b')"
+    if _ingest_diverge_body "$pname" "$raw"; then
+      log "  • $pname ($dused) → $INGEST_N idea(s) [fallback]"
+    else
+      log "  ! $pname empty after fallback validate — skipped"
+      skipped+=("diverge-bad-json($pname)")
+    fi
   else
     log "  ! $pname produced no valid JSON on any provider — skipped"
     skipped+=("diverge-bad-json($pname)")
   fi
 done
+
+rm -rf "$div_tmp"
+
 n_ideas="$(printf '%s' "$all_ideas" | jq 'length')"
 log "  → $n_ideas total idea(s)"
 [ "$n_ideas" -gt 0 ] || die "diverge produced no ideas" 3

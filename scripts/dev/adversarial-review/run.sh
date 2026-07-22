@@ -56,6 +56,7 @@ repo_root=""
 target_repo_arg=""
 prompts="$lib_dir/prompts"
 schema="$lib_dir/lib/findings-schema.json"
+# Single-shot gates use provider run_agent → __invoke (no fanout).
 # shellcheck source=/dev/null
 . "$lib_dir/lib/provider.sh"
 # shellcheck source=/dev/null

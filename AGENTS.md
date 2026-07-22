@@ -95,6 +95,16 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Multi-persona brainstorm skill (diverge→challenge→converge), persona/provider
   selection, per-stage effort, the no-resume design, or the offline mock harness:
   Read [`docs/brainstorm.md`](docs/brainstorm.md).
+- Host-CLI invoke layers (one-way dependency):
+  - **Single-shot:** `adversarial-review/lib/provider.sh` → `run_agent` /
+    `agent_text` → plugin `__invoke` (no temp dir).
+  - **Multi-shot / parallel:** `agent-fanout/lib/fanout-lib.sh`
+    (`fanout_call` / `fanout_run` / `fanout_run_jobs`) + CLI `run.sh`.
+  Fanout sources provider; provider never loads fanout. Do **not** hand-roll
+  `claude & wait` or call `__invoke` from feature code. Offline smoke:
+  `scripts/dev/agent-fanout/test.sh`. Notes:
+  [`docs/adversarial-review.md`](docs/adversarial-review.md) /
+  [`docs/brainstorm.md`](docs/brainstorm.md).
 - Design proposal / RFC / ADR / 方案评审 (no runtime diff — **not** a dedicated
   skill): structured 设计评审 checklist and intent routing live in the
   user-level profile

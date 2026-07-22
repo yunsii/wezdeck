@@ -73,26 +73,34 @@ the *whole* set, not a conversation. Role interaction is deliberate:
 
 ## 2. Provider layer & agent-to-agent data flow
 
-Both skills call `lib/provider.sh`:
+Skills source layers by need (one-way dependency):
+
+| Call shape | Layer |
+| --- | --- |
+| challenge / converge / single stage | `provider.sh` → `run_agent` → `__invoke` |
+| diverge (N personas) | `fanout_run_jobs` (parallel) then serial `run_agent` fallback |
 
 ```mermaid
 flowchart LR
   subgraph consumers
     B["brainstorm run.sh"]
     A["adversarial-review run.sh"]
+    C["agent-fanout CLI"]
   end
-  B --> RA["run_agent(provider, prompt, effort)"]
+  B --> DJ["fanout_run_jobs<br/>diverge parallel"]
+  B --> RA["run_agent"]
   A --> RA
-  RA --> AT["agent_text — case per provider"]
-  AT -->|claude| C1["claude -p --effort E"]
-  AT -->|codex| C2["codex exec -c model_reasoning_effort=E"]
-  AT -->|grok| C3["grok -p --reasoning-effort E"]
-  AT -. "PROVIDER_MOCK=1" .-> MK["_provider_mock — canned JSON, no LLM"]
+  C --> FR["fanout_run / jobs"]
+  DJ --> FL["fanout-lib"]
+  FR --> FL
+  FL --> P["provider.sh plugins"]
+  RA --> P
+  RA -. "PROVIDER_MOCK=1" .-> MK["_provider_mock"]
 ```
 
-`run_agent` is a pure function: same `(provider, prompt, input, effort)` →
-retriable, cacheable, JSON-validated (retries once on non-JSON). No hidden
-session state.
+`run_agent` is a pure function: `(provider, prompt, input, effort)` →
+JSON-validated (retries once). Diverge merges results via one `_ingest_diverge_body`
+helper for both fanout and fallback paths.
 
 ### How stages hand off (orchestrator-mediated)
 

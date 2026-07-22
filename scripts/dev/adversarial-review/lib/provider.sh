@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
-# provider.sh — agent-agnostic adapter for adversarial-review + brainstorm.
+# provider.sh — plugins + mock + JSON helpers + single-shot invoke.
 #
-# Plugin architecture: each backend is a self-contained plugin in providers/
-# implementing the interface
-#     <name>__available   can it run (PATH / probe)
-#     <name>__family      cross-model identity
-#     <name>__model       default model id (env-overridable)
-#     <name>__invoke      stdin = full prompt, $1 = effort → model's reply text
-#   (+ optional <name>__aliases  extra names that resolve to this backend)
+# Plugin interface (providers/<name>.sh):
+#   <name>__available / __family / __model / __invoke  [+ optional __aliases]
+# Adding a backend = drop a plugin file; no core edits. This file has no
+# backend names.
 #
-# This file contains NO backend names. Adding a backend = drop
-# providers/<name>.sh and list <name> in roles.conf; no core edits.
+# Single-shot (hot path): agent_text / run_agent → plugin __invoke directly.
+# Multi-shot / parallel: scripts/dev/agent-fanout/lib/fanout-lib.sh (sources
+# this file). Do not auto-load fanout from here — dependency is one-way.
 #
 # IMPORTANT: plugins use host CLI configs (~/.claude, ~/.codex, ~/.grok) and must
 # NOT set CODEX_HOME to OpenClaw ACP isolation.
@@ -18,6 +16,14 @@
 set -euo pipefail
 
 _PROVIDER_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Non-login agent shells often miss host CLIs.
+case ":${PATH:-}:" in *":${HOME}/.local/bin:"*) ;; *)
+  export PATH="${HOME}/.local/bin${PATH:+:$PATH}" ;;
+esac
+case ":${PATH:-}:" in *":${HOME}/.grok/bin:"*) ;; *)
+  export PATH="${HOME}/.grok/bin${PATH:+:$PATH}" ;;
+esac
 
 # --- load plugins & build the registry --------------------------------------
 _ALL_PROVIDERS=()
@@ -40,8 +46,6 @@ _load_providers
 
 _provider_canonical() { printf '%s' "${_ALIAS_MAP[$1]:-$1}"; }
 
-# Cross-model identity: same canonical family => "same". Different plugins
-# (e.g. codex vs grok) are DIFFERENT backends (separate CLIs and models).
 _provider_family() {
   local p; p="$(_provider_canonical "$1")"
   if declare -F "${p}__family" >/dev/null 2>&1; then "${p}__family"; else printf '%s' "$p"; fi
@@ -49,13 +53,11 @@ _provider_family() {
 provider_same_family() { [ "$(_provider_family "$1")" = "$(_provider_family "$2")" ]; }
 
 provider_available() {
-  # mock mode is fully offline — no real binary needed (portable tests)
   [ -n "${PROVIDER_MOCK:-}" ] && return 0
   local p; p="$(_provider_canonical "$1")"
   declare -F "${p}__available" >/dev/null 2>&1 && "${p}__available"
 }
 
-# The actual model a backend will use — for disclosure / reproducibility.
 provider_model() {
   local p; p="$(_provider_canonical "$1")"
   declare -F "${p}__model" >/dev/null 2>&1 && "${p}__model"
@@ -79,10 +81,7 @@ sys.exit(1)
 '
 }
 
-# Offline mock: canned, shape-correct output per prompt, WITHOUT any LLM call.
-# Enabled by PROVIDER_MOCK=1. For transform stages (challenge/refute/converge)
-# it derives the response from the trailing JSON block so ids stay consistent
-# and the runner's merge logic is exercised. Fast/free/deterministic tests.
+# Offline mock: canned, shape-correct output per prompt basename. No LLM.
 _provider_mock() {
   local pf; pf="$(basename "$1")"
   local input="$2" tail_json
@@ -105,7 +104,7 @@ _provider_mock() {
   esac
 }
 
-# Dispatch to the plugin's __invoke. No backend names here.
+# Single-shot hot path: template + INPUT → plugin. No fanout, no temp dir.
 agent_text() {
   local provider="$1" prompt_file="$2" effort="${3:-}"
   local input full
@@ -159,7 +158,7 @@ if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
   case "${1:-}" in
     selfcheck) shift; _selfcheck "$@" ;;
     providers) printf '%s\n' "${_ALL_PROVIDERS[@]}" ;;
-    probe) # probe <name>: exit 0 if the backend produces any reply (live ping)
+    probe)
       _pp="$(_provider_canonical "${2:-}")"
       provider_available "$_pp" || exit 1
       declare -F "${_pp}__invoke" >/dev/null 2>&1 || exit 1
