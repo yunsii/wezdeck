@@ -82,12 +82,15 @@ Find and refute receive the **same** pack (not bare diff):
 - META / INTENT / CHANGESET / DIFF / FILES / PROJECT_SLICE / NOTES
 - PROJECT_SLICE = downstream refs to changed symbols (blast radius); grep floor,
   language-aware resolvers pluggable. `--no-impact` to skip.
+- **Main-agent filter (optional):** coarse filter of grep `same-name` candidates
+  before gates — not a fourth adversarial role. See procedure below.
 - `--head WORKTREE` includes uncommitted TARGET changes
 - `--intent` or `--intent-file` (else commit message or degraded none)
 - Budget: `--max-files` (10) `--max-file-bytes` (40960) `--context-window` (200)
-- Optional: `--keep-pack DIR` to retain pack.md for audit
+- Optional: `--keep-pack DIR` to retain pack.md + `impact_candidates.json`
 
 ```bash
+# One-shot (no filter) — still valid default
 "$TOOL_HOME/run.sh" HEAD --head WORKTREE --repo "$TARGET" \
   --writer main --intent "what this change is for" --mode strict
 ```
@@ -95,13 +98,46 @@ Find and refute receive the **same** pack (not bare diff):
 ## Agent procedure
 
 1. **Identify** TARGET cwd/repo, `BASE_REF`, **writer**  
-   (`main` | `claude` | `codex` | `codex` | `grok` | `human`)
+   (`main` | `claude` | `codex` | `grok` | `human`)
 2. **Resolve** TOOL_HOME (above). Confirm `"$TOOL_HOME/run.sh"` is executable.
 3. **Optional dry probe**
    ```bash
    "$TOOL_HOME/lib/select-backends.sh" --writer <writer> --no-probe
    ```
-4. **Run**
+4. **Optional · main-agent PROJECT_SLICE filter** (recommended when impact noise is high
+   or you already know the module map; skip when candidates are few / empty):
+
+   You (the orchestrating main agent) have project context. You may **coarse-filter**
+   grep floor hits before find/refute. This is **material budget**, not review:
+
+   | Do | Don't |
+   | --- | --- |
+   | Drop obvious decoy same-name (wrong language tree, generated, lock, unrelated package) | Drop because “probably unused” without a reason |
+   | Keep anything that might be a real consumer | Write findings / severities here |
+   | When unsure → **KEEP** | Shrink the slice to make the change look safer |
+   | Record short notes on what you dropped | Replace refute or claim you “pre-reviewed” |
+
+   ```bash
+   PACK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/adv-pack.XXXXXX")"
+   "$TOOL_HOME/run.sh" <BASE_REF> --repo "$TARGET" --writer <writer> \
+     --head WORKTREE --pack-only --keep-pack "$PACK_DIR" --json \
+     > "$PACK_DIR/pack-only.json"
+   # Read $PACK_DIR/impact_candidates.json (or .impact_candidates in pack-only.json).
+   # Write keep list (array of hits, or object form):
+   #   { "keep": [ ... ], "dropped": [ ... ], "filter": "main-agent",
+   #     "notes": "dropped foo.go: decoy same-name in vendor" }
+   # Template: $PACK_DIR/project_slice.keep.example.json
+   ```
+
+   If `impact_candidates_n == 0` or you choose not to filter, skip to step 5 without
+   `--project-slice-file`.
+
+5. **Run gates**
+   ```bash
+   "$TOOL_HOME/run.sh" <BASE_REF> --repo "$TARGET" --writer <writer> --mode strict \
+     --project-slice-file "$PACK_DIR/project_slice.keep.json"   # if filtered
+   ```
+   Or one-shot without filter:
    ```bash
    "$TOOL_HOME/run.sh" <BASE_REF> --repo "$TARGET" --writer <writer> --mode strict
    ```
@@ -114,8 +150,9 @@ Find and refute receive the **same** pack (not bare diff):
    支持后台执行（Claude Code 的 Bash `run_in_background`），后台跑 run.sh 且
    `--json > <file>`，完成后读该文件再汇报，别同步阻塞会话；host 不支持后台
    （如 Codex-TUI）则同步跑，先给用户一句「耗时约 N 分钟」预告。
-5. **Report** with mandatory disclosure (below). Honest fail if tool/backends fail.
-6. **Do not** claim cross-agent if form is single-model; do not invent green gates.
+6. **Report** with mandatory disclosure (below). Include `impact_filter` when set.
+   Honest fail if tool/backends fail.
+7. **Do not** claim cross-agent if form is single-model; do not invent green gates.
 
 ### Writer → expected pair (strategy B)
 
@@ -135,8 +172,9 @@ Find and refute receive the **same** pack (not bare diff):
 - form/degraded/reason: (from select-backends / run log)
 - reviewer 全名 / 立场: …
 - refuter 全名 / 立场: …
+- impact_filter: none | main-agent (kept K / candidates C; dropped D) + notes if any
 - repro: 已跑 | 跳过（理由）
-- 命令或范围: run.sh <BASE> --repo <TARGET> --writer …
+- 命令或范围: run.sh <BASE> --repo <TARGET> --writer … [--project-slice-file …]
 - skipped_gates: … | 无
 - 关键结论（每条标 [阻塞] / [非阻塞·backlog]）: …（绑 find/refute/repro）
 ```
@@ -147,6 +185,8 @@ Find and refute receive the **same** pack (not bare diff):
 "$TOOL_HOME/run.sh" selfcheck claude codex grok
 "$TOOL_HOME/run.sh" dogfood --mode strict --fail-on-finding
 "$TOOL_HOME/run.sh" <BASE> --repo "$TARGET" --writer main --dry-run --no-probe
+"$TOOL_HOME/run.sh" <BASE> --repo "$TARGET" --pack-only --keep-pack /tmp/p --json
+"$TOOL_HOME/run.sh" <BASE> --repo "$TARGET" --project-slice-file /tmp/p/project_slice.keep.json
 PROVIDER_MOCK=1 "$TOOL_HOME/run.sh" <BASE> --repo "$TARGET"   # offline, no LLM
 # reasoning effort per stage: find/refute=high, repro=low (passed to provider CLI)
 ```
@@ -164,6 +204,7 @@ Install / refresh user-level discovery (idempotent):
 - Don't use ACP CODEX_HOME for review (`env -u CODEX_HOME` is inside provider)
 - Don't skip refute when claiming 对抗审查
 - Don't call solo Main analysis 对抗审查
+- Don't treat main-agent PROJECT_SLICE filter as a review gate or drop hits to hide risk
 - Don't assume the skill lives only under the TARGET repo
 - Don't force-push; wezdeck personal mainline may push master after green (L0-13/19)
 

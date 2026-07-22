@@ -24,6 +24,12 @@ Per dimension type:
 Rules:
 - Ground findings in the pack. Use Read/Grep/Glob only to **verify** pack claims;
   do not invent facts absent from pack and tools.
+- **PROJECT_SLICE / same-name:** entries labeled `same-name` (grep floor) are
+  heuristic name matches, not proven references. Do **not** use a same-name
+  pointer as the *sole* evidence for a finding — open the `file:line` (or
+  equivalent tool check) and confirm a real consumer/call site first. Higher
+  confidence (`module-ref`, `exact-ref`) may be trusted more but still verify
+  when the failure path is non-obvious.
 - Set `category` to the **exact rubric dimension name**.
 - Prefer INTENT; do not flag deliberate, documented changes unless they introduce
   a real problem under some dimension.

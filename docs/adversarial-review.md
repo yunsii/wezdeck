@@ -56,6 +56,7 @@ Never ship conclusions alone. Never use the title if refute role was omitted.
 - 形态: 三门全量 | 多角色·单模型
 - reviewer 全名 / 立场: …
 - refuter 全名 / 立场: …
+- impact_filter: none | main-agent (kept K / candidates C; dropped D)
 - repro: 已跑 | 跳过（理由）
 - 命令或范围: run.sh … | Main 编排两次 …
 - skipped_gates: … | 无
@@ -250,6 +251,10 @@ $TOOL_HOME/run.sh <BASE_REF> [options]
   --head REF         diff endpoint                         (default: HEAD)
   --mode MODE        strict | advisory                     (default: strict)
   --no-impact        skip the blast-radius PROJECT_SLICE (leave it empty)
+  --pack-only        build pack + emit impact candidates; skip all gates
+  --project-slice-file F  inject main-agent keep list for PROJECT_SLICE
+                     (JSON array of hits, or {keep,dropped?,filter?,notes?})
+  --keep-pack DIR    retain pack.md + impact_candidates.json (+ example keep file)
   --min-severity L   critical|high|medium|low              (default: low)
   --json             machine-readable output (includes writer/form/degraded)
   --dry-run          print the planned gates, call no agents
@@ -276,6 +281,12 @@ run.sh dogfood --mode strict --fail-on-finding
 
 # provider JSON round-trip
 run.sh selfcheck claude
+
+# two-phase: pack-only → main-agent filter → gates
+PACK_DIR=$(mktemp -d)
+run.sh HEAD~1 --writer main --pack-only --keep-pack "$PACK_DIR" --json > "$PACK_DIR/meta.json"
+# edit/write $PACK_DIR/project_slice.keep.json (when unsure, KEEP)
+run.sh HEAD~1 --writer main --project-slice-file "$PACK_DIR/project_slice.keep.json" --mode strict
 ```
 
 **Stage 0 auto-skips** diffs that are docs/tests only.
@@ -343,6 +354,46 @@ it and emit `exact-ref` / `module-ref` hits (rendered ahead of `same-name`). Cos
 bounded (per-symbol + total hit caps); display is capped at 40 pointers with an
 explicit "N total" overflow note — **no silent truncation**. `--no-impact` skips it.
 
+### Main-agent PROJECT_SLICE filter
+
+Grep `same-name` hits are **candidates**, not proven references. The orchestrating
+**main agent** (who usually has project context) may coarse-filter them before
+find/refute — this is **material budget**, not a fourth adversarial role and not a
+substitute for strategy B backends.
+
+| Step | Who | What |
+| --- | --- | --- |
+| 1 | runner `--pack-only` | Build pack; write `impact_candidates.json`; emit JSON meta; **no gates** |
+| 2 | main agent | Drop only obvious decoys; **when unsure → keep**; write keep file |
+| 3 | runner + `--project-slice-file` | Rebuild `PROJECT_SLICE` from keep list; run three gates |
+
+Keep file shapes:
+
+```json
+// A) array of hits (same fields as impact output)
+[{ "file": "consumer.sh", "line": 3, "symbol": "compute_blast_radius",
+   "why": "references 'compute_blast_radius' (git grep -w)",
+   "confidence": "same-name", "resolver": "grep" }]
+
+// B) object with audit trail (preferred)
+{
+  "keep": [ /* hits */ ],
+  "dropped": [{ "file": "vendor/x.go", "line": 1, "reason": "decoy same-name" }],
+  "filter": "main-agent",
+  "notes": "dropped vendor decoy; kept real consumers"
+}
+```
+
+`--keep-pack DIR` also writes `project_slice.keep.example.json` (full candidates as
+keep) for agents to copy/edit. Disclosure and `--json` report
+`impact_filter` / kept / candidates / dropped counts.
+
+**Bias:** never drop hits to make the change look safer. Writer-as-main-agent is
+common; over-filtering shrinks blast radius before refute can help.
+
+Critic prompt: `same-name` alone must not be the sole evidence for a finding —
+verify the `file:line` with tools.
+
 ```bash
 # include uncommitted TARGET changes
 run.sh HEAD --head WORKTREE --repo /path/to/target \
@@ -370,6 +421,7 @@ scripts/dev/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
     extract-symbols.sh       language-agnostic changed-symbol extraction
     resolvers/grep.sh        always-available text-symbol floor (same-name)
     test-impact.sh           offline deterministic smoke test
+    test-pack-slice.sh       pack-only + --project-slice-file smoke test
   prompts/{critic,refute,repro}.md
 scripts/dev/link-platform-skills.sh   user-level + in-repo symlinks
 docs/adversarial-review.md   this file (KB only)

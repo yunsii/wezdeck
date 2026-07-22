@@ -156,6 +156,7 @@ When the user asks for 对抗审查 / adversarial review, or acceptance recommen
   (git repo under review). Typical invoke from any cwd:
   `$TOOL_HOME/run.sh <BASE_REF> --repo <TARGET> --writer <main|claude|codex|human> --mode strict`
   Do **not** assume `./scripts/dev/adversarial-review` exists inside TARGET.
-- [validation-55] Report with disclosure: writer, form/degraded/reason, reviewer, refuter, repro status, skipped_gates, conclusions bound to gates. Align with openclaw L0-21 spirit.
+- [validation-55] Report with disclosure: writer, form/degraded/reason, reviewer, refuter, **impact_filter** (if used), repro status, skipped_gates, conclusions bound to gates. Align with openclaw L0-21 spirit.
 - [validation-56] Review uses **host headless** CLIs (`claude` / `codex-gpt` / `codex-grok`), not OpenClaw ACP `CODEX_HOME` by default.
 - [validation-57] If TOOL_HOME cannot be resolved (tool not linked/installed), say so and fall back to design critique or skip — do not invent a green multi-role review.
+- [validation-58] Optional **main-agent PROJECT_SLICE filter** (not a fourth adversarial role): when grep `same-name` noise is high, run `--pack-only --keep-pack DIR`, coarse-filter candidates with project knowledge (**when unsure → keep**), then re-run with `--project-slice-file`. Do not drop hits to shrink blast radius or hide risk; do not write findings in this step. One-shot without filter remains valid. Procedure: skill `SKILL.md` + `docs/adversarial-review.md`.

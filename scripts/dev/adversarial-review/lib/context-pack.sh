@@ -11,12 +11,19 @@
 #   max_files (default 10), max_file_bytes (default 40960), context_window (default 200)
 #   path_filter (bash array; empty = all changed paths)
 #   keep_pack_dir (if set, write pack there; else mktemp -d)
+#   project_slice_file  JSON array of keep hits, or object {keep,dropped?,filter?,notes?}
+#                       When set, replaces PROJECT_SLICE after auto-impact (main-agent coarse filter).
+#   impact_enable (default 1)
 #
 # Outputs (globals set):
 #   PACK_DIR, PACK_FILE, PACK_ID, PACK_HASH
 #   PACK_CHANGED (newline paths), PACK_DIFF (unified diff string)
 #   PACK_DIRTY (0|1), PACK_HAS_RUNTIME (0|1)
 #   PACK_TRUNCATED (human notes, newline)
+#   PACK_IMPACT_JSON, PACK_IMPACT_N
+#   PACK_IMPACT_CANDIDATES_JSON, PACK_IMPACT_CANDIDATES_N  (pre-filter auto-impact)
+#   PACK_IMPACT_FILTER (none|main-agent|…), PACK_IMPACT_DROPPED_N
+#   PACK_IMPACT_CANDIDATES_FILE (path written next to pack when N>0 or filter applied)
 
 # shellcheck shell=bash
 
@@ -293,11 +300,14 @@ _cp_file_body() {
 }
 
 # Resolve downstream references (PROJECT_SLICE) by reusing the ALREADY-computed
-# diff — never recompute. Sets PACK_IMPACT_JSON (array) + PACK_IMPACT_N (count).
+# diff — never recompute. Sets PACK_IMPACT_JSON (array) + PACK_IMPACT_N (count)
+# and mirrors them into PACK_IMPACT_CANDIDATES_* (pre-filter snapshot).
 # Any failure degrades to an empty slice with a NOTES entry; pack build proceeds.
 _cp_resolve_impact() {
   PACK_IMPACT_JSON='[]'
   PACK_IMPACT_N=0
+  PACK_IMPACT_CANDIDATES_JSON='[]'
+  PACK_IMPACT_CANDIDATES_N=0
   if [ "${impact_enable:-1}" != 1 ]; then
     PACK_TRUNCATED+=$'impact: disabled (--no-impact) — PROJECT_SLICE empty\n'
     return
@@ -321,9 +331,110 @@ _cp_resolve_impact() {
   if out="$(impact_resolve 2>/dev/null)" && [ -n "$out" ]; then
     PACK_IMPACT_JSON="$out"
     PACK_IMPACT_N="$(printf '%s' "$out" | jq 'length' 2>/dev/null || echo 0)"
+    PACK_IMPACT_CANDIDATES_JSON="$PACK_IMPACT_JSON"
+    PACK_IMPACT_CANDIDATES_N="$PACK_IMPACT_N"
   else
     PACK_TRUNCATED+=$'impact: resolver produced nothing — PROJECT_SLICE empty\n'
   fi
+}
+
+# Normalize hit list for PROJECT_SLICE (require .file string). stdin → stdout JSON array.
+_cp_normalize_hits() {
+  jq -c '
+    if type == "array" then . else empty end
+    | [.[]
+        | select(type=="object" and (.file|type=="string") and ((.file|length)>0))
+        | {
+            file: .file,
+            line: (if (.line|type)=="number" then .line else 0 end),
+            symbol: ((.symbol // "")|tostring),
+            why: ((.why // "kept by main-agent filter")|tostring),
+            confidence: ((.confidence // "same-name")|tostring),
+            resolver: ((.resolver // "main-agent-filter")|tostring)
+          }
+      ]
+  '
+}
+
+_cp_fail() {
+  if declare -F die >/dev/null 2>&1; then
+    die "$@"
+  fi
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+# Apply optional main-agent coarse filter from project_slice_file.
+# Accepts:
+#   - JSON array of keep hits (same shape as impact output)
+#   - object { keep: [...], dropped?: [...], filter?: string, notes?: string }
+# Replaces PACK_IMPACT_JSON; records filter metadata for pack NOTES + disclosure.
+# Default bias for the *caller* (documented in SKILL): when unsure, keep.
+_cp_apply_project_slice_file() {
+  PACK_IMPACT_FILTER="${PACK_IMPACT_FILTER:-none}"
+  PACK_IMPACT_DROPPED_N="${PACK_IMPACT_DROPPED_N:-0}"
+  PACK_IMPACT_FILTER_NOTES=""
+  [ -n "${project_slice_file:-}" ] || return 0
+
+  if [ ! -f "$project_slice_file" ]; then
+    _cp_fail "project-slice-file not found: $project_slice_file"
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    _cp_fail "jq required for --project-slice-file"
+  fi
+
+  local raw keep dropped filter notes cand_n keep_n drop_n
+  raw="$(cat "$project_slice_file")"
+  if printf '%s' "$raw" | jq -e 'type=="array"' >/dev/null 2>&1; then
+    keep="$(printf '%s' "$raw" | _cp_normalize_hits)"
+    dropped='[]'
+    filter="main-agent"
+    notes=""
+  elif printf '%s' "$raw" | jq -e 'type=="object" and has("keep")' >/dev/null 2>&1; then
+    keep="$(printf '%s' "$raw" | jq -c '.keep // []' | _cp_normalize_hits)"
+    dropped="$(printf '%s' "$raw" | jq -c 'if (.dropped|type)=="array" then .dropped else [] end')"
+    filter="$(printf '%s' "$raw" | jq -r '.filter // "main-agent"')"
+    notes="$(printf '%s' "$raw" | jq -r '.notes // empty')"
+  else
+    _cp_fail "--project-slice-file must be a JSON array of hits or an object with .keep"
+  fi
+  [ -n "$keep" ] || keep='[]'
+
+  cand_n="${PACK_IMPACT_CANDIDATES_N:-0}"
+  keep_n="$(printf '%s' "$keep" | jq 'length')"
+  # Prefer explicit dropped list length; else infer from candidates − keep when possible
+  drop_n="$(printf '%s' "$dropped" | jq 'length')"
+  if [ "$drop_n" -eq 0 ] && [ "$cand_n" -gt 0 ] && [ "$keep_n" -le "$cand_n" ]; then
+    drop_n=$((cand_n - keep_n))
+  fi
+
+  PACK_IMPACT_JSON="$keep"
+  PACK_IMPACT_N="$keep_n"
+  PACK_IMPACT_FILTER="$filter"
+  PACK_IMPACT_DROPPED_N="$drop_n"
+  PACK_IMPACT_FILTER_NOTES="$notes"
+
+  PACK_TRUNCATED+="impact_filter: $filter kept=$keep_n candidates=$cand_n dropped=$drop_n"$'\n'
+  if [ -n "$notes" ]; then
+    PACK_TRUNCATED+="impact_filter_notes: $notes"$'\n'
+  fi
+  _cp_log "project_slice filter=$filter kept=$keep_n candidates=$cand_n dropped=$drop_n"
+}
+
+# Write impact_candidates.json next to pack for main-agent filter workflow.
+_cp_write_impact_artifacts() {
+  PACK_IMPACT_CANDIDATES_FILE=""
+  [ -n "${PACK_DIR:-}" ] || return 0
+  local out="$PACK_DIR/impact_candidates.json"
+  printf '%s\n' "${PACK_IMPACT_CANDIDATES_JSON:-[]}" > "$out"
+  PACK_IMPACT_CANDIDATES_FILE="$out"
+  # Template keep-file for main agent (full candidates; edit or replace with subset)
+  local keep_tpl="$PACK_DIR/project_slice.keep.example.json"
+  jq -nc \
+    --argjson keep "${PACK_IMPACT_CANDIDATES_JSON:-[]}" \
+    --arg filter "main-agent" \
+    --arg notes "Conservative default: copy impact_candidates into keep; drop only obvious decoys. When unsure, keep." \
+    '{keep:$keep, dropped:[], filter:$filter, notes:$notes}' > "$keep_tpl" 2>/dev/null || true
 }
 
 _cp_write_pack() {
@@ -395,9 +506,16 @@ _cp_write_pack() {
     fi
     echo "## PROJECT_SLICE"
     echo "(downstream references to changed symbols — file:line pointers, not bodies."
-    echo " Confidence: exact-ref > module-ref > same-name; same-name is a heuristic grep hit.)"
+    echo " Confidence: exact-ref > module-ref > same-name; same-name is a heuristic grep hit."
+    echo " same-name alone must not be the sole evidence for a finding — verify with tools.)"
+    if [ "${PACK_IMPACT_FILTER:-none}" != "none" ]; then
+      echo " Filter: ${PACK_IMPACT_FILTER} (kept ${PACK_IMPACT_N:-0} / candidates ${PACK_IMPACT_CANDIDATES_N:-0}; dropped ${PACK_IMPACT_DROPPED_N:-0})"
+      if [ -n "${PACK_IMPACT_FILTER_NOTES:-}" ]; then
+        echo " Filter notes: $PACK_IMPACT_FILTER_NOTES"
+      fi
+    fi
     if [ "${PACK_IMPACT_N:-0}" -eq 0 ]; then
-      echo "(no downstream references found — see NOTES)"
+      echo "(no downstream references in slice — see NOTES)"
     else
       printf '%s' "$PACK_IMPACT_JSON" | jq -r '
         def tier: if .confidence=="exact-ref" then 0 elif .confidence=="module-ref" then 1 else 2 end;
@@ -436,6 +554,12 @@ build_context_pack() {
   PACK_FILE_LIST=()
   PACK_IMPACT_JSON='[]'
   PACK_IMPACT_N=0
+  PACK_IMPACT_CANDIDATES_JSON='[]'
+  PACK_IMPACT_CANDIDATES_N=0
+  PACK_IMPACT_FILTER="none"
+  PACK_IMPACT_DROPPED_N=0
+  PACK_IMPACT_FILTER_NOTES=""
+  PACK_IMPACT_CANDIDATES_FILE=""
 
   PACK_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
   if [ -n "${keep_pack_dir:-}" ]; then
@@ -451,6 +575,8 @@ build_context_pack() {
   _cp_resolve_intent
   _cp_select_files
   _cp_resolve_impact
+  _cp_apply_project_slice_file
+  _cp_write_impact_artifacts
   _cp_write_pack "$PACK_FILE"
 
   if command -v sha256sum >/dev/null 2>&1; then
@@ -461,6 +587,6 @@ build_context_pack() {
     PACK_HASH="unknown"
   fi
 
-  _cp_log "pack_id=$PACK_ID hash=${PACK_HASH:0:12}… files=${#PACK_FILE_LIST[@]} dirty=$PACK_DIRTY runtime=$PACK_HAS_RUNTIME"
+  _cp_log "pack_id=$PACK_ID hash=${PACK_HASH:0:12}… files=${#PACK_FILE_LIST[@]} dirty=$PACK_DIRTY runtime=$PACK_HAS_RUNTIME impact=${PACK_IMPACT_N:-0} filter=${PACK_IMPACT_FILTER:-none}"
   _cp_log "pack_file=$PACK_FILE"
 }

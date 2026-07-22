@@ -24,6 +24,15 @@
 #   --intent / --intent-file supply change intent
 #   PROJECT_SLICE = downstream refs to changed symbols (blast radius); grep floor,
 #                   language-aware resolvers pluggable. --no-impact to skip.
+#   --pack-only              build pack + emit impact candidates; skip gates
+#   --project-slice-file F   main-agent filtered keep list for PROJECT_SLICE
+#   --keep-pack DIR          retain pack.md + impact_candidates.json for audit
+#
+# Main-agent impact filter (optional two-phase):
+#   1) run.sh BASE --pack-only --keep-pack DIR --json
+#   2) main agent writes DIR/project_slice.keep.json (conservative keep)
+#   3) run.sh BASE --project-slice-file DIR/project_slice.keep.json …
+#   Single-shot without filter still works (full same-name candidates in pack).
 #
 # All logic is agent-agnostic; the only agent-specific code is in
 # lib/provider.sh. See docs/adversarial-review.md and SKILL.md.
@@ -204,10 +213,16 @@ _emit() {
        --argjson auto "${auto_selected:-false}" \
        --arg pack_id "${PACK_ID:-}" --arg pack_hash "${PACK_HASH:-}" \
        --arg context "pack-v1" --arg pack_file "${PACK_FILE:-}" \
+       --arg impact_filter "${PACK_IMPACT_FILTER:-none}" \
+       --argjson impact_n "${PACK_IMPACT_N:-0}" \
+       --argjson impact_candidates_n "${PACK_IMPACT_CANDIDATES_N:-0}" \
+       --argjson impact_dropped_n "${PACK_IMPACT_DROPPED_N:-0}" \
        '{mode:$mode, base:$base, head:$head, writer:$writer, reviewer:$reviewer, refuter:$refuter,
          reviewer_model:$reviewer_model, refuter_model:$refuter_model,
          form:$form, degraded:$degraded, select_reason:$reason, auto_selected:$auto,
          context:$context, pack_id:$pack_id, pack_hash:$pack_hash, pack_file:$pack_file,
+         impact_filter:$impact_filter, impact_n:$impact_n,
+         impact_candidates_n:$impact_candidates_n, impact_dropped_n:$impact_dropped_n,
          skipped_gates:$skipped, survivors:$survivors, needs_human:$needs_human, dropped:$dropped}'
     return
   fi
@@ -228,6 +243,7 @@ _emit() {
   echo "- context: pack-v1"
   echo "- pack_id: ${PACK_ID:-n/a}"
   echo "- pack_hash: ${PACK_HASH:-n/a}"
+  echo "- impact_filter: ${PACK_IMPACT_FILTER:-none} (kept ${PACK_IMPACT_N:-0} / candidates ${PACK_IMPACT_CANDIDATES_N:-0}; dropped ${PACK_IMPACT_DROPPED_N:-0})"
   if [ "$(printf '%s' "$skipped_json" | jq 'length')" -gt 0 ]; then
     echo "- skipped_gates: $(printf '%s' "$skipped_json" | jq -r 'join(", ")')"
     echo "  (may be SINGLE-MODEL — not full cross-agent)"
@@ -273,8 +289,11 @@ skipped_gates=()
 intent_text=""; intent_file=""; keep_pack_dir=""
 max_files=10; max_file_bytes=40960; context_window=200
 impact_enable=1
+project_slice_file=""
+pack_only=0
 path_filter=()
 PACK_ID=""; PACK_HASH=""; PACK_FILE=""; PACK_DIR=""
+PACK_IMPACT_FILTER="none"; PACK_IMPACT_N=0; PACK_IMPACT_CANDIDATES_N=0; PACK_IMPACT_DROPPED_N=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --reviewer) reviewer="$2"; shift 2 ;;
@@ -290,6 +309,8 @@ while [ $# -gt 0 ]; do
     --max-file-bytes) max_file_bytes="$2"; shift 2 ;;
     --context-window) context_window="$2"; shift 2 ;;
     --no-impact) impact_enable=0; shift ;;
+    --project-slice-file) project_slice_file="$2"; shift 2 ;;
+    --pack-only) pack_only=1; shift ;;
     --keep-pack) keep_pack_dir="$2"; shift 2 ;;
     --min-severity) min_sev="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
@@ -297,7 +318,7 @@ while [ $# -gt 0 ]; do
     --dry-run) dry=1; shift ;;
     --fail-on-finding) fail_on=1; shift ;;
     -h|--help)
-      sed -n '2,55p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,60p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*) die "unknown flag: $1" ;;
@@ -324,10 +345,16 @@ else
   fi
 fi
 
-# Backend selection: --writer / --auto-select, or default pair when reviewer/refuter omitted
+# Backend selection: --writer / --auto-select, or default pair when reviewer/refuter omitted.
+# pack-only skips selection/probes — no gates run.
 # shellcheck source=/dev/null
 . "$lib_dir/lib/select-backends.sh"
-if [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
+if [ "$pack_only" -eq 1 ]; then
+  reviewer="${reviewer:-none}"
+  refuter="${refuter:-none}"
+  select_form="pack-only"
+  select_reason="pack-only: backend selection skipped"
+elif [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
   if select_review_backends "$writer"; then
     if [ -z "$reviewer" ]; then reviewer="$SEL_REVIEWER"; auto_selected=true; fi
     if [ -z "$refuter" ]; then refuter="$SEL_REFUTER"; auto_selected=true; fi
@@ -341,8 +368,10 @@ if [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
   fi
 fi
 # manual defaults if still empty
-[ -n "$reviewer" ] || reviewer="claude"
-[ -n "$refuter" ] || refuter="codex"
+if [ "$pack_only" -ne 1 ]; then
+  [ -n "$reviewer" ] || reviewer="claude"
+  [ -n "$refuter" ] || refuter="codex"
+fi
 
 log "tool=$tool_root"
 log "target=$repo_root"
@@ -380,19 +409,91 @@ build_context_pack
 changed="$PACK_CHANGED"
 diff="$PACK_DIFF"
 
-[ -n "$changed" ] || { log "no changes in range"; exit 0; }
+_emit_pack_only() {
+  local skip_reason="${1:-}"
+  if [ "$want_json" -eq 1 ]; then
+    jq -nc \
+      --arg mode "pack-only" \
+      --arg base "$base" --arg head "$head_ref" \
+      --arg writer "${writer:-}" \
+      --arg pack_id "${PACK_ID:-}" --arg pack_hash "${PACK_HASH:-}" \
+      --arg pack_file "${PACK_FILE:-}" --arg pack_dir "${PACK_DIR:-}" \
+      --arg candidates_file "${PACK_IMPACT_CANDIDATES_FILE:-}" \
+      --arg impact_filter "${PACK_IMPACT_FILTER:-none}" \
+      --arg skip_reason "$skip_reason" \
+      --argjson has_runtime "${PACK_HAS_RUNTIME:-0}" \
+      --argjson impact_n "${PACK_IMPACT_N:-0}" \
+      --argjson impact_candidates_n "${PACK_IMPACT_CANDIDATES_N:-0}" \
+      --argjson impact_dropped_n "${PACK_IMPACT_DROPPED_N:-0}" \
+      --argjson impact_candidates "${PACK_IMPACT_CANDIDATES_JSON:-[]}" \
+      --argjson project_slice "${PACK_IMPACT_JSON:-[]}" \
+      --argjson changed "$(printf '%s\n' "${PACK_CHANGED:-}" | jq -R . | jq -sc 'map(select(length>0))')" \
+      '{mode:$mode, base:$base, head:$head, writer:$writer,
+        pack_id:$pack_id, pack_hash:$pack_hash, pack_file:$pack_file, pack_dir:$pack_dir,
+        has_runtime:$has_runtime, skip_reason:$skip_reason,
+        impact_filter:$impact_filter, impact_n:$impact_n,
+        impact_candidates_n:$impact_candidates_n, impact_dropped_n:$impact_dropped_n,
+        impact_candidates_file:$candidates_file,
+        impact_candidates:$impact_candidates, project_slice:$project_slice,
+        changed:$changed,
+        next_steps:(
+          if ($skip_reason|length)>0 then
+            ["skipped: "+$skip_reason]
+          elif $impact_candidates_n==0 then
+            ["no impact candidates — run full review without --project-slice-file"]
+          else
+            ["write keep list to pack_dir/project_slice.keep.json (array or {keep,dropped,filter,notes})",
+             "re-run without --pack-only with --project-slice-file <keep.json>",
+             "when unsure whether a hit is a real consumer: KEEP it"]
+          end
+        )}'
+  else
+    echo "═══ pack-only: $base..$head_ref ═══"
+    echo "pack_dir:  ${PACK_DIR:-n/a}"
+    echo "pack_file: ${PACK_FILE:-n/a}"
+    echo "pack_id:   ${PACK_ID:-n/a}"
+    echo "runtime:   ${PACK_HAS_RUNTIME:-0}"
+    [ -n "$skip_reason" ] && echo "skip:      $skip_reason"
+    echo "impact:    candidates=${PACK_IMPACT_CANDIDATES_N:-0} slice=${PACK_IMPACT_N:-0} filter=${PACK_IMPACT_FILTER:-none}"
+    [ -n "${PACK_IMPACT_CANDIDATES_FILE:-}" ] && echo "candidates_file: $PACK_IMPACT_CANDIDATES_FILE"
+    if [ "${PACK_IMPACT_CANDIDATES_N:-0}" -gt 0 ]; then
+      echo
+      echo "── impact candidates (grep floor / same-name) ──"
+      printf '%s' "${PACK_IMPACT_CANDIDATES_JSON:-[]}" | jq -r '
+        .[:40][] | "- \(.file):\(.line) \(.symbol) [\(.confidence)/\(.resolver)]"'
+      [ "${PACK_IMPACT_CANDIDATES_N:-0}" -gt 40 ] && echo "- … (${PACK_IMPACT_CANDIDATES_N} total)"
+      echo
+      echo "Main-agent filter: write keep list, then re-run gates with:"
+      echo "  --project-slice-file ${PACK_DIR}/project_slice.keep.json"
+      echo "When unsure, KEEP. Do not drop to make the change look safer."
+    fi
+  fi
+}
+
+[ -n "$changed" ] || {
+  log "no changes in range"
+  if [ "$pack_only" -eq 1 ]; then _emit_pack_only "no changes in range"; fi
+  exit 0
+}
 
 if [ "${PACK_HAS_RUNTIME:-0}" -eq 0 ]; then
   log "skip: diff is docs/tests only — no runtime behavior to review adversarially"
+  if [ "$pack_only" -eq 1 ]; then _emit_pack_only "docs/tests only"; fi
   exit 0
 fi
 
 log "range $base..$head_ref  mode=$mode  writer=$writer  reviewer=$reviewer  refuter=$refuter"
 log "context=pack-v1 pack_id=$PACK_ID hash=${PACK_HASH:0:12}…"
-if [ "$impact_enable" -eq 1 ]; then
-  log "impact: PROJECT_SLICE downstream refs=${PACK_IMPACT_N:-0} (grep floor; language-aware resolvers pluggable)"
+if [ "$impact_enable" -eq 1 ] || [ -n "${project_slice_file:-}" ]; then
+  log "impact: slice=${PACK_IMPACT_N:-0} candidates=${PACK_IMPACT_CANDIDATES_N:-0} filter=${PACK_IMPACT_FILTER:-none}"
 else
   log "impact: disabled (--no-impact)"
+fi
+
+if [ "$pack_only" -eq 1 ]; then
+  log "pack-only — gates skipped; impact candidates ready for main-agent filter"
+  _emit_pack_only ""
+  exit 0
 fi
 
 if [ "$dry" -eq 1 ]; then
@@ -401,7 +502,7 @@ if [ "$dry" -eq 1 ]; then
   log "  reason        -> $select_reason"
   log "  context       -> pack-v1 ($PACK_FILE)"
   log "  pack_hash     -> $PACK_HASH"
-  log "  project_slice -> $([ "$impact_enable" -eq 1 ] && echo "${PACK_IMPACT_N:-0} downstream refs (grep floor)" || echo 'disabled')"
+  log "  project_slice -> slice=${PACK_IMPACT_N:-0} candidates=${PACK_IMPACT_CANDIDATES_N:-0} filter=${PACK_IMPACT_FILTER:-none}"
   log "  stage1 find   -> $reviewer  (INPUT=context pack)"
   log "  stage2 refute -> $refuter $(provider_available "$refuter" && echo '(available)' || echo '(UNAVAILABLE)') (same pack + findings)"
   log "  stage3 repro  -> $reviewer + sandbox worktree"
