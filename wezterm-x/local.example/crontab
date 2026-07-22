@@ -15,12 +15,11 @@
 #
 # Usage: reminder.sh <title> <message> [timeout-seconds] [width] [height]
 
-# Put /usr/local/bin ahead of cron's default /usr/bin:/bin so the popup
-# scripts pick the same tmux binary the WezTerm/tmux server is running.
-# Without this, a newer /usr/local/bin/tmux server + cron's older
-# /usr/bin/tmux client mismatch on protocol, `tmux list-clients` returns
-# "server exited unexpectedly", and the popup silently no-ops.
-PATH=/usr/local/bin:/usr/bin:/bin
+# PATH: put user tmux (≥3.7 at ~/.local/bin) first, then /usr/local, then
+# system. Cron's default /usr/bin/tmux is often 3.4 and cannot talk to a
+# 3.7 server ("server exited unexpectedly" → silent popup no-op).
+# See docs/tmux-install.md.
+PATH=/home/REPLACE/.local/bin:/usr/local/bin:/usr/bin:/bin
 
 # ⏰ 09:10 weekday punch-card reminder.
 10 9 * * 1-5 /home/yuns/github/wezterm-config/scripts/runtime/reminder.sh ' ⏰ 打卡提醒 ' '打卡了吗？'

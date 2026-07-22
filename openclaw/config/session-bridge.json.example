@@ -1,0 +1,27 @@
+{
+  "aliases": {
+    "dex": "agent:main:feishu:direct:ou_REPLACE_OWNER_OPEN_ID",
+    "bob": "agent:pm:feishu:direct:ou_REPLACE",
+    "scout": "agent:radar:feishu:direct:ou_REPLACE"
+  },
+  "feishu_targets": {
+    "dex_user_id": "ou_REPLACE",
+    "dex_chat_id": "oc_or_p2p_REPLACE",
+    "comment": "say-as-me / bot-send targets"
+  },
+  "host_allowlist": {
+    "send_keys_panes": ["wezterm_*", "wd:*"],
+    "comment": "glob on tmux session name; empty = deny all host-send-keys"
+  },
+  "defaults": {
+    "capture_lines": 40,
+    "lease_ttl_sec": 120,
+    "panic_path": "~/.openclaw/state/session-bridge.panic",
+    "tmux_bin": "~/.local/bin/tmux",
+    "receipt": {
+      "enabled": false,
+      "mode": "audit_only",
+      "comment": "audit always; bot_announce needs enabled+SB_RECEIPT_CONFIRM=1"
+    }
+  }
+}
