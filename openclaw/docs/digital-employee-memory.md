@@ -71,3 +71,11 @@ Repo 里只跟踪 **公开模板**（`openclaw/workspace-pm|radar` 的 AGENTS/ID
 
 - Scout 通道默认 **主人自用**；其他员工会话 **不主动提 Scout**。
 - 订阅源列表、兴趣画像 → 私有 memory / 本地配置，不进公开人设。
+
+## 检索与索引（运维）
+
+写什么 / 放哪一层 = 本文。**怎么建索引、embedding 用谁、向量检索挂了怎么修** →
+[`memory-search.md`](./memory-search.md)。
+
+要点：聊天模型（Grok/Claude/Codex）**不是** embedding；本机默认走
+`memorySearch.provider: local`（llama-cpp GGUF），不是 OpenAI。

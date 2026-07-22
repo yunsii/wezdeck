@@ -59,6 +59,7 @@ the machine. Values below describe the **intended** baseline; they live under
 | **Chrome MCP** | OpenClaw `mcp.servers.chrome-devtools` → `chrome-devtools-mcp` on **CDP `127.0.0.1:9222`** (WezDeck debug Chrome). Core browser capability for Dex. |
 | Elevated | `tools.elevated.enabled: false` |
 | Task ledger | Feishu Base via `scripts/dev-task-ledger.sh` + skill `task-ledger` |
+| **Memory search** | `agents.defaults.memorySearch.provider: local` + plugin `llama-cpp` (not chat proxy / not OpenAI-by-default). Ops: [`docs/memory-search.md`](./docs/memory-search.md) |
 | Dev allowlist | **wezdeck (+ optional team roots in local config)** (wezterm-config) — roots from local env or `$HOME/…` portable defaults |
 | Secrets | mode `600` env files; never commit filled config |
 
@@ -71,6 +72,7 @@ openclaw channels status --probe              # Feishu … works
 openclaw exec-policy show
 openclaw mcp list && openclaw mcp probe chrome-devtools   # ~29 tools
 curl -sS -m 3 http://127.0.0.1:9222/json/version          # CDP up
+openclaw memory status --agent main           # local provider; Indexed N/N, Dirty no
 openclaw security audit                       # prefer 0 critical
 ./openclaw/scripts/smoke-readonly.sh
 ```

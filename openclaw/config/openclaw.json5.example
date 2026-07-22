@@ -47,6 +47,14 @@
       // models: allowlist only intended providers — do NOT add claude-cli/*
       //   or model.fallbacks: ["claude-cli/…"] (CLI backend disabled by policy).
       // cliBackends: { }  // leave unset — mode D disabled
+      //
+      // Memory search embeddings ≠ chat models. Default OpenClaw uses openai
+      // embeddings; without OPENAI_API_KEY, memory_search fails closed.
+      // This host: local GGUF via llama-cpp plugin (see docs/memory-search.md).
+      // memorySearch: {
+      //   provider: "local",
+      //   fallback: "none",
+      // },
     },
   },
 
@@ -115,9 +123,14 @@
   // },
 
   // plugins: {
-  //   allow: ["feishu"],
+  //   // allow is a hard gate — missing ids stay disabled even if installed.
+  //   allow: ["feishu", "memory-core", "acpx", "llama-cpp"],
   //   entries: {
   //     feishu: { enabled: true },
+  //     acpx: { enabled: true },
+  //     // Local GGUF embeddings for memory_search (npm: @openclaw/llama-cpp-provider).
+  //     "llama-cpp": { enabled: true },
+  //     "memory-core": { config: {} },
   //   },
   // },
 

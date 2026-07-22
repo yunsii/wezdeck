@@ -20,6 +20,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | Terms / doc layering | `terminology.md` |
 | **Digital employees (Dex/Bob/Scout)** | `digital-employees.md` |
 | **Digital employee memory (public vs private)** | `digital-employee-memory.md` |
+| **Memory search ops (embeddings / reindex)** | `memory-search.md`（local llama-cpp · 故障闭环） |
 | **Feishu multi-bot wiring** | `feishu-digital-employees.md`（含 lark-cli 双配置 / cron profile 坑） |
 | Architecture / rails | `agent-architecture.md` |
 | Interaction modes | `agent-interaction.md` |
