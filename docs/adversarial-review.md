@@ -118,7 +118,7 @@ flowchart TB
   W --> SEL{{"select-backends · strategy B<br/>exclude writer's family;<br/>cross-family if ≥2 families available,<br/>else SINGLE-MODEL (labeled, degraded)"}}
   FAM --> SEL
 
-  PACK["context pack<br/>META / INTENT / DIFF / FILES"] --> F
+  PACK["context pack<br/>META / INTENT / DIFF / FILES / PROJECT_SLICE"] --> F
 
   subgraph GATES["three adversarial gates — ALWAYS run, whatever selection returned"]
     direction TB
@@ -249,6 +249,7 @@ $TOOL_HOME/run.sh <BASE_REF> [options]
   --critic P         deprecated alias for --refuter
   --head REF         diff endpoint                         (default: HEAD)
   --mode MODE        strict | advisory                     (default: strict)
+  --no-impact        skip the blast-radius PROJECT_SLICE (leave it empty)
   --min-severity L   critical|high|medium|low              (default: low)
   --json             machine-readable output (includes writer/form/degraded)
   --dry-run          print the planned gates, call no agents
@@ -315,7 +316,32 @@ Find/refute input is a **context pack** (same bytes both gates), not bare diff:
 | CHANGESET | changed paths |
 | DIFF | unified diff (`BASE..HEAD` or worktree vs BASE) |
 | FILES | related file bodies (budget-capped) |
+| PROJECT_SLICE | **downstream references to changed symbols** (blast radius) — `file:line` pointers, not bodies. Filled by the impact resolver (below); empty with `--no-impact`. |
 | NOTES | truncations / omissions |
+
+### PROJECT_SLICE — blast-radius resolver
+
+The defects that hurt reach *past* the changed lines: a changed contract breaks a
+downstream consumer the diff never shows. `PROJECT_SLICE` widens the review surface
+to those consumers, following **progressive disclosure** — start with the diff +
+changed files (`FILES`), then add only the downstream `file:line` pointers, not
+whole bodies. `lib/impact/impact.sh` runs in stage 0 (reusing the pack's
+already-computed diff — never a second `git diff`) and fills the section.
+
+**Resolver plugins** mirror `lib/provider.sh`: every `lib/impact/resolvers/*.sh`
+implements `__available` / `__confidence` / `__resolve`; the orchestrator holds no
+resolver names. Adding a language-aware resolver = drop a plugin, no core edits.
+
+| Resolver | Tier | confidence | Status |
+| --- | --- | --- | --- |
+| `grep` | text symbol, word-boundary `git grep` | `same-name` (heuristic — can't tell a real ref from a same-named token) | **shipped (always-available floor)** |
+| ts/js dep graph | module imports (`dependency-cruiser --reaches`) | `module-ref` | future plugin |
+| LSP references | symbol-level (`multilspy`) | `exact-ref` | future plugin |
+
+The floor always runs so nothing is missed; higher-confidence resolvers layer above
+it and emit `exact-ref` / `module-ref` hits (rendered ahead of `same-name`). Cost is
+bounded (per-symbol + total hit caps); display is capped at 40 pointers with an
+explicit "N total" overflow note — **no silent truncation**. `--no-impact` skips it.
 
 ```bash
 # include uncommitted TARGET changes
@@ -338,6 +364,12 @@ scripts/dev/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
   lib/roles-lib.sh           roles.conf reader
   lib/select-backends.sh     writer-aware pair selection (reads roles.conf)
   lib/findings-schema.json   inter-stage JSON contract (enforced)
+  lib/context-pack.sh        builds the pack; calls impact for PROJECT_SLICE
+  lib/impact/                blast-radius resolver (fills PROJECT_SLICE)
+    impact.sh                orchestrator + resolver plugin loader (no resolver names)
+    extract-symbols.sh       language-agnostic changed-symbol extraction
+    resolvers/grep.sh        always-available text-symbol floor (same-name)
+    test-impact.sh           offline deterministic smoke test
   prompts/{critic,refute,repro}.md
 scripts/dev/link-platform-skills.sh   user-level + in-repo symlinks
 docs/adversarial-review.md   this file (KB only)

@@ -20,6 +20,13 @@
 
 # shellcheck shell=bash
 
+# Impact resolver (blast-radius): fills the reserved PROJECT_SLICE with downstream
+# references to changed symbols. Optional — a failure here must never break pack
+# construction. Toggle with impact_enable (default 1) / run.sh --no-impact.
+_CP_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+[ -f "$_CP_LIB_DIR/impact/impact.sh" ] && . "$_CP_LIB_DIR/impact/impact.sh"
+
 _cp_log() { printf '\033[2m[adv-pack]\033[0m %s\n' "$*" >&2; }
 
 _cp_is_probably_binary() {
@@ -285,6 +292,40 @@ _cp_file_body() {
   PACK_TRUNCATED+="windowed $f"$'\n'
 }
 
+# Resolve downstream references (PROJECT_SLICE) by reusing the ALREADY-computed
+# diff — never recompute. Sets PACK_IMPACT_JSON (array) + PACK_IMPACT_N (count).
+# Any failure degrades to an empty slice with a NOTES entry; pack build proceeds.
+_cp_resolve_impact() {
+  PACK_IMPACT_JSON='[]'
+  PACK_IMPACT_N=0
+  if [ "${impact_enable:-1}" != 1 ]; then
+    PACK_TRUNCATED+=$'impact: disabled (--no-impact) — PROJECT_SLICE empty\n'
+    return
+  fi
+  if ! declare -F impact_resolve >/dev/null 2>&1; then
+    PACK_TRUNCATED+=$'impact: resolver unit not loaded — PROJECT_SLICE empty\n'
+    return
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    PACK_TRUNCATED+=$'impact: jq missing — PROJECT_SLICE empty\n'
+    return
+  fi
+  local out
+  IMPACT_REPO="$repo_root"
+  IMPACT_DIFF="$PACK_DIFF"
+  IMPACT_CHANGED="$PACK_CHANGED"
+  # Collect a truthful count (ceiling well above the 40-line display cap) so the
+  # PROJECT_SLICE "N total" note distinguishes "exactly 40" from "capped" — no
+  # silent truncation. Per-symbol flood is still bounded by the resolver default.
+  IMPACT_MAX_FILES="${IMPACT_MAX_FILES:-200}"
+  if out="$(impact_resolve 2>/dev/null)" && [ -n "$out" ]; then
+    PACK_IMPACT_JSON="$out"
+    PACK_IMPACT_N="$(printf '%s' "$out" | jq 'length' 2>/dev/null || echo 0)"
+  else
+    PACK_TRUNCATED+=$'impact: resolver produced nothing — PROJECT_SLICE empty\n'
+  fi
+}
+
 _cp_write_pack() {
   local out="$1"
   local f st lang
@@ -353,7 +394,21 @@ _cp_write_pack() {
       done
     fi
     echo "## PROJECT_SLICE"
-    echo "(none in pack-v1 P0 — reserved)"
+    echo "(downstream references to changed symbols — file:line pointers, not bodies."
+    echo " Confidence: exact-ref > module-ref > same-name; same-name is a heuristic grep hit.)"
+    if [ "${PACK_IMPACT_N:-0}" -eq 0 ]; then
+      echo "(no downstream references found — see NOTES)"
+    else
+      printf '%s' "$PACK_IMPACT_JSON" | jq -r '
+        def tier: if .confidence=="exact-ref" then 0 elif .confidence=="module-ref" then 1 else 2 end;
+        sort_by(tier, .file, .line)
+        | .[:40][]
+        | "- \(.file):\(.line) — \(.why) [\(.confidence)/\(.resolver)]"'
+      if [ "${PACK_IMPACT_N:-0}" -gt 40 ]; then
+        echo "- … ($PACK_IMPACT_N total downstream refs; showing 40 — narrow the diff or add a language-aware resolver)"
+        PACK_TRUNCATED+="project_slice capped: shown=40 total=$PACK_IMPACT_N"$'\n'
+      fi
+    fi
     echo
     echo "## NOTES"
     if [ -z "${PACK_TRUNCATED//[$' \t\n']/}" ]; then
@@ -379,6 +434,8 @@ build_context_pack() {
   PACK_DIRTY=0
   PACK_HAS_RUNTIME=0
   PACK_FILE_LIST=()
+  PACK_IMPACT_JSON='[]'
+  PACK_IMPACT_N=0
 
   PACK_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
   if [ -n "${keep_pack_dir:-}" ]; then
@@ -393,6 +450,7 @@ build_context_pack() {
   _cp_has_runtime
   _cp_resolve_intent
   _cp_select_files
+  _cp_resolve_impact
   _cp_write_pack "$PACK_FILE"
 
   if command -v sha256sum >/dev/null 2>&1; then

@@ -79,7 +79,9 @@ else: git rev-parse --show-toplevel from cwd
 
 Find and refute receive the **same** pack (not bare diff):
 
-- META / INTENT / CHANGESET / DIFF / FILES / NOTES
+- META / INTENT / CHANGESET / DIFF / FILES / PROJECT_SLICE / NOTES
+- PROJECT_SLICE = downstream refs to changed symbols (blast radius); grep floor,
+  language-aware resolvers pluggable. `--no-impact` to skip.
 - `--head WORKTREE` includes uncommitted TARGET changes
 - `--intent` or `--intent-file` (else commit message or degraded none)
 - Budget: `--max-files` (10) `--max-file-bytes` (40960) `--context-window` (200)

@@ -19,9 +19,11 @@
 #   dogfood forces TARGET = the git root that hosts this tool (usually wezdeck)
 #
 # Context pack v1 (find/refute share one pack):
-#   META + INTENT + CHANGESET + DIFF + FILES
+#   META + INTENT + CHANGESET + DIFF + FILES + PROJECT_SLICE
 #   --head WORKTREE includes uncommitted TARGET changes
 #   --intent / --intent-file supply change intent
+#   PROJECT_SLICE = downstream refs to changed symbols (blast radius); grep floor,
+#                   language-aware resolvers pluggable. --no-impact to skip.
 #
 # All logic is agent-agnostic; the only agent-specific code is in
 # lib/provider.sh. See docs/adversarial-review.md and SKILL.md.
@@ -270,6 +272,7 @@ auto_selected=false; select_form="manual"; select_degraded=false; select_reason=
 skipped_gates=()
 intent_text=""; intent_file=""; keep_pack_dir=""
 max_files=10; max_file_bytes=40960; context_window=200
+impact_enable=1
 path_filter=()
 PACK_ID=""; PACK_HASH=""; PACK_FILE=""; PACK_DIR=""
 while [ $# -gt 0 ]; do
@@ -286,6 +289,7 @@ while [ $# -gt 0 ]; do
     --max-files) max_files="$2"; shift 2 ;;
     --max-file-bytes) max_file_bytes="$2"; shift 2 ;;
     --context-window) context_window="$2"; shift 2 ;;
+    --no-impact) impact_enable=0; shift ;;
     --keep-pack) keep_pack_dir="$2"; shift 2 ;;
     --min-severity) min_sev="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
@@ -385,6 +389,11 @@ fi
 
 log "range $base..$head_ref  mode=$mode  writer=$writer  reviewer=$reviewer  refuter=$refuter"
 log "context=pack-v1 pack_id=$PACK_ID hash=${PACK_HASH:0:12}…"
+if [ "$impact_enable" -eq 1 ]; then
+  log "impact: PROJECT_SLICE downstream refs=${PACK_IMPACT_N:-0} (grep floor; language-aware resolvers pluggable)"
+else
+  log "impact: disabled (--no-impact)"
+fi
 
 if [ "$dry" -eq 1 ]; then
   log "dry-run — planned gates:"
@@ -392,6 +401,7 @@ if [ "$dry" -eq 1 ]; then
   log "  reason        -> $select_reason"
   log "  context       -> pack-v1 ($PACK_FILE)"
   log "  pack_hash     -> $PACK_HASH"
+  log "  project_slice -> $([ "$impact_enable" -eq 1 ] && echo "${PACK_IMPACT_N:-0} downstream refs (grep floor)" || echo 'disabled')"
   log "  stage1 find   -> $reviewer  (INPUT=context pack)"
   log "  stage2 refute -> $refuter $(provider_available "$refuter" && echo '(available)' || echo '(UNAVAILABLE)') (same pack + findings)"
   log "  stage3 repro  -> $reviewer + sandbox worktree"
