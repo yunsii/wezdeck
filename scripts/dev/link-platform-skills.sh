@@ -9,6 +9,7 @@
 # Currently linked:
 #   adversarial-review  -> scripts/dev/adversarial-review/
 #   brainstorm          -> scripts/dev/brainstorm/
+#   yuns-engineer      -> scripts/dev/yuns-engineer/
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
@@ -40,6 +41,7 @@ done
 skills=(
   "adversarial-review|scripts/dev/adversarial-review"
   "brainstorm|scripts/dev/brainstorm"
+  "yuns-engineer|scripts/dev/yuns-engineer"
 )
 
 link_one() {
