@@ -37,6 +37,8 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`development-environment-troubleshooting.md`](./development-environment-troubleshooting.md).
 - Entry points, ownership, and runtime design:
   Read [`architecture.md`](./architecture.md).
+- Big-picture map of session management (workspace/tab/tmux/worktree/agent/attention) and interop (host TUI ↔ session-bridge ↔ Feishu), with a built / convention / not-built status table:
+  Read [`architecture.md#session--interop-overview`](./architecture.md#session--interop-overview).
 - Unified WezTerm event bus (OSC vs file transport, registered events):
   Read [`event-bus.md`](./event-bus.md).
 - Tab visibility / overflow ranking (`tab-stats`, Alt+t):

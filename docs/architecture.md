@@ -50,6 +50,88 @@ WezTerm process
 - "Tab" is unambiguous — it only exists in WezTerm.
 - In `wezterm-x/commands/manifest.json`, `context: tmux-backed` implies the command only makes sense when the focused WezTerm pane is running tmux; `layer: wezterm | tmux | tmux-chord` identifies which keymap owns the binding.
 
+## Session & Interop Overview
+
+This section is the single map for two cross-cutting concerns that otherwise span four docs: **session management** (how a repo becomes a WezTerm tab, a tmux session, a worktree window, and an agent pane, with its attention state) and **interop** (how OpenClaw's `session-bridge` reads and — under gates — nudges those host sessions, and how identities reach Feishu). Depth lives in the linked docs; this is the orientation layer.
+
+```mermaid
+flowchart TB
+  subgraph SM["Session management · this repo"]
+    direction TB
+    WS["Workspace<br/>default / work / config / opensource"]
+    TAB["WezTerm tab<br/>= one repo family"]
+    SESS["tmux session<br/>= repo family (reused)"]
+    WIN["tmux window<br/>= git worktree<br/>main / dev-* / task-* / hotfix-*"]
+    PANE["tmux panes<br/>left agent · right shell"]
+    AGENT["agent CLI pane<br/>claude / codex (-resume)<br/>via agent-launcher.sh"]
+    ATT[("attention.json<br/>running / waiting / done")]
+    WS --> TAB --> SESS --> WIN --> PANE --> AGENT
+    AGENT -->|"lifecycle hooks"| ATT
+    ATT -->|"OSC / file tick"| BADGE["tab badges + right-status<br/>Alt+, / Alt+. / Alt+/"]
+  end
+
+  subgraph SB["Interop · OpenClaw session-bridge"]
+    direction TB
+    CLI["session-bridge CLI<br/>SessionCard · panic · audit"]
+    RHOST["read host view<br/>host-ls / host-status / host-capture"]
+    RCLAW["read claw truth<br/>claw-ls / claw-show / claw-tail"]
+    POKE["poke → agent turn<br/>identity: agent-poke"]
+    KEYS["host-send-keys (write)<br/>lease + allowlist + no-panic"]
+    CLI --> RHOST
+    CLI --> RCLAW
+    CLI --> POKE
+    CLI --> KEYS
+  end
+
+  subgraph FS["Feishu · OpenClaw Main"]
+    direction TB
+    MAIN["Main-Grok orchestration<br/>H* human track / C* claw track"]
+    BOT["bot-send<br/>identity: bot"]
+    SAY["say-as-me<br/>identity: user (lark-cli)"]
+  end
+
+  AGENT -. "host TUI (Claude/Codex/Grok)<br/>observed as tmux panes" .-> RHOST
+  ATT -. "inferred.attention" .-> RHOST
+  RHOST --> KEYS
+  POKE --> MAIN
+  CLI --> BOT
+  CLI --> SAY
+  KEYS === SW{{"single-writer boundary:<br/>poke / host-send-keys nudge only,<br/>never grant write-code rights"}}
+  POKE === SW
+```
+
+### Session management
+
+The nesting and ownership rules are in [*Interaction Layers*](#interaction-layers) above; the lifecycle detail is in [`workspaces.md`](./workspaces.md). Key facts this repo commits to:
+
+- **Naming / reuse.** A managed WezTerm tab maps to one repo family and attaches to **one tmux session per repo family**, reused across that repo's linked worktrees. Each git worktree is one tmux window; each window splits into a left agent pane and a right shell pane. Managed workspaces are `work` / `config` / `opensource`; `default` is the built-in WezTerm workspace.
+- **Worktree sessions.** `worktree-task` creates linked worktrees under `.worktrees/<repo>/` and opens them as additional windows in the same session. Directory prefixes encode lifecycle (`dev-*` / `task-*` / `hotfix-*`), created by `Ctrl+k g d/t/h` and reclaimed by `Ctrl+k g r`; branch naming is independent. Full lifecycle + reclaim safety: [`workspaces.md#task-worktree-lifecycle-model`](./workspaces.md#task-worktree-lifecycle-model).
+- **Agent pane lifecycle.** Every agent-CLI launch terminates at `scripts/runtime/agent-launcher.sh <profile>` (the single env-loading + boot-cue site); resume variants (`sh -c 'claude --continue || exec claude'`) fall back to a fresh session on a brand-new worktree. `primary-pane-wrapper.sh` execs the login shell after the agent exits so the pane survives agent death. See [*Startup Invariants*](#startup-invariants).
+- **Attention state.** Provider hooks → `agent-attention/emit.sh` → `attention.json` (`running` / `waiting` / `done`, keyed by session id or `pane:<N>`) → event bus tick → tab badges + right-status counter; jump via `Alt+,` / `Alt+.` (Lua `--direct`) and `Alt+/` (tmux popup). This is the same state file the interop layer reads. Full pipeline: [`agent-attention.md`](./agent-attention.md).
+
+### Interop (host TUI ↔ session-bridge ↔ Feishu)
+
+The host TUI agents (`claude` / `codex`, plus `grok` when run natively) live inside the tmux panes above. OpenClaw's **Session Adapter Kit** (`openclaw/scripts/session-bridge.sh`) is a **narrow adapter, not a second session store or a second TUI** — full contract in [`session-bridge.md`](../openclaw/docs/session-bridge.md); agent-track architecture in [`agent-architecture.md`](../openclaw/docs/agent-architecture.md).
+
+- **Read wide.** Host side projects live tmux panes into `SessionCard[]` (`host-ls` / `host-status` / `host-capture`), degrading gracefully when tmux is unreachable; `host-status` folds this repo's `attention.json` into `inferred.attention`. Claw side wraps `openclaw sessions*` (`claw-ls` / `claw-show` / `claw-tail`).
+- **Write narrow, three identities (never mixed).** `agent-poke` (`poke` runs one agent turn), `bot` (`bot-send`, dry-run unless `--confirm`), `user` (`say-as-me` via lark-cli). `host-send-keys` into a host pane requires **lease + allowlist + no active panic**, refuses `C-c/C-z/C-d`, and every write is audited.
+- **Panic freeze.** `session-bridge panic on` denies every write path (poke, lease mint, host-send-keys) and does not auto re-arm.
+- **Single-writer boundary.** `poke` / `host-send-keys` only push *interaction* into a session; they never grant the right to write code to the same cwd in parallel. On a C2 handoff, Main still stops typing. This is the L0 single-writer rule surfacing at the interop edge.
+
+### Status: built / convention / not built
+
+| Area | Component | State |
+|---|---|---|
+| Session | WezTerm ⊃ tmux nesting, repo-family session reuse, agent pane resume + survival | **Built** |
+| Session | Worktree lifecycle (`dev/task/hotfix`, `Ctrl+k g d/t/h/r`), branch-independent naming | **Built** |
+| Session | Attention pipeline (hooks → `attention.json` → badges + `Alt+,`/`.`/`/`) | **Built** |
+| Interop | Read (host + claw), `poke`, `panic`, `audit` (P1) | **Built** |
+| Interop | `lease` + `host-send-keys` + `bot-send` + attention inference + audit receipt (P2) | **Built** |
+| Interop | `say-as-me` (P3, lark-cli user identity) | **Built**, default `--dry-run` — **convention**: `--confirm` to actually send |
+| Interop | Single-writer boundary (nudge ≠ write-code rights; Main stops on C2) | **Convention** (not machine-enforced) |
+| Host | `posix-local` native host helper (focus/open, clipboard, reuse policy) | **Not built** — Windows-only today; see [*Posix Host*](#posix-host) |
+| Interop | Feishu as a second full TUI / a CRDT session store | **Not built — explicit non-goal** ([`session-bridge.md`](../openclaw/docs/session-bridge.md) §0) |
+
 ## Command Manifest
 
 `wezterm-x/commands/manifest.json` is the single source of truth for invocable commands across the WezTerm keymap, the tmux chord tables, the tmux-owned command palette, and the `docs/keybindings.md` reference. Consumers (WezTerm keymap builder, tmux chord renderer, palette reader, hotkey usage report) resolve commands by `id` and must not re-declare keys, actions, or palette entries outside the manifest.

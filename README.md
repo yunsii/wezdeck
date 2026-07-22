@@ -49,7 +49,7 @@ WezTerm tab          ─┐
                                   Alt+/  jumps to next pending pane
 ```
 
-Full architecture, ownership boundaries, and the WSL ⇄ Windows communication channels: [`docs/architecture.md`](docs/architecture.md).
+Full architecture, ownership boundaries, and the WSL ⇄ Windows communication channels: [`docs/architecture.md`](docs/architecture.md). For the session-management + interop map (workspace/tab/tmux/worktree/agent/attention ↔ session-bridge ↔ Feishu), see [Session & Interop Overview](docs/architecture.md#session--interop-overview).
 
 ## ✅ Requirements
 
