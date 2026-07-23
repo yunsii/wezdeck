@@ -357,19 +357,22 @@ env vars so subscription login wins). Main **Grok** is a native OpenClaw provide
 
 #### How ACP talks to the agent (when E is enabled)
 
-ACP = [Agent Client Protocol](https://agentclientprotocol.com/). Harness stack:
+ACP = [Agent Client Protocol](https://agentclientprotocol.com/). Access stack
+(terms: [`docs/terminology.md` §2](docs/terminology.md#2-model--harness--agent--backend核心分层)):
 
 ```text
 Feishu / chat
-  → OpenClaw Gateway (route, bind, deliver, policy)
+  → OpenClaw Gateway (control plane: route, bind, deliver, policy)
       → @openclaw/acpx
           → ACP JSON-RPC over stdio
               → adapter (Claude Code ACP / Codex ACP / …)
-                  → coding process + its tools + agent-profiles
+                  → coding agent process + its own harness (tools/auth/FS)
+                      + agent-profiles
 ```
 
-OpenClaw = control plane; harness = tools/auth/FS. Plugin tools are **not**
-injected into the harness by default.
+**OpenClaw = control plane** (not “another Claude Code”). On the ACP worker
+side, **harness = that coding process’s tools/auth/FS**. Plugin tools are
+**not** injected into the worker harness by default.
 
 **Remote path (post-Happy / post-Tailscale phone shell).** WezDeck no longer
 wraps desktop agent panes with Happy for phone sync, and the host no longer
@@ -403,7 +406,7 @@ forwarded as ACP prompts; `/acp …` / `/status` stay on Gateway.
 | A | IDE / CLI TUI (`claude --continue` in that cwd) |
 | B | Feishu thread + gateway logs + worktree `git` — **not** full TUI |
 | C | Local TUI during coding; Feishu for brief + wrap-up |
-| E (later) | Bound chat delivery + harness; still ≠ 1:1 Claude TUI |
+| E (later) | Bound chat delivery + worker harness; still ≠ 1:1 Claude TUI |
 
 Upstream: [ACP agents](https://docs.openclaw.ai/tools/acp-agents),
 [ACP setup](https://docs.openclaw.ai/tools/acp-agents-setup),

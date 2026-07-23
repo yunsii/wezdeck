@@ -472,11 +472,13 @@ docs/adversarial-review.md   this file (KB only)
 setting authoritative & self-contained):** see
 [`brainstorm.md` §8](brainstorm.md#8-agent-context-profile-vs-role-setting).
 
-These names are **review backends**, not OpenClaw ACP harness ids (`claude` /
-`codex` only at the ACP layer). `grok` calls the **standalone Grok CLI**
-(`~/.grok/bin/grok`, headless `-p --output-format json`) **directly** — NOT the
-codex gateway, which serves gpt only (`grok-4.5` 404s there, and Grok uses its
-own API key). The `grok` alias name is kept for back-compat.
+These names are **review backends** (caller-perspective labels — see
+[`openclaw/docs/terminology.md` §2](../openclaw/docs/terminology.md#2-model--harness--agent--backend核心分层)),
+not OpenClaw ACP `agentId`s (`claude` / `codex` only at the ACP layer). `grok`
+calls the **standalone Grok CLI** (`~/.grok/bin/grok`, headless
+`-p --output-format json`) **directly** — NOT the codex gateway, which serves
+gpt only (`grok-4.5` 404s there, and Grok uses its own API key). The `grok`
+alias name is kept for back-compat.
 
 | Alias | Meaning | Host config used | Typical role |
 | --- | --- | --- | --- |

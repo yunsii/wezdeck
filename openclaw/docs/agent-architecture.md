@@ -8,7 +8,9 @@
 **错误闭环覆盖 vs 平台边界** 详见
 [`error-closed-loop-scope.md`](./error-closed-loop-scope.md)。
 **术语与文档分层** 详见
-[`terminology.md`](./terminology.md)。
+[`terminology.md`](./terminology.md)
+（含 **Model / Harness / Agent session / Backend / Control plane** 标准：
+[`terminology.md` §2](./terminology.md#2-model--harness--agent--backend核心分层)）。
 
 对用户主语言用 **人工 H\*** / **Claw C\***；括号内可附旧 A–E 代号。
 
@@ -17,19 +19,23 @@
 ```text
 宪法 + 平台能力（L0 / skills / 脚本 / worktree / 台账 / 单写者）
         │
-        ├─ 人工轨 ──► 原生 Agent（Grok CLI / Claude / Codex / IDE）
+        ├─ 人工轨 ──► 原生 coding agent（Grok CLI / Claude / Codex / IDE）
         └─ Claw 轨 ──► Main 编排（Main-Grok）
                          ├─ C1 Main 自写
                          ├─ C2 Handoff → 原生 CLI
                          └─ C3 ACP 接入 → Claude / Codex 后端
 ```
 
+**名词提醒：** Claude/Codex/Grok 官方主称是 **coding agent**；工程拆零件时才说其
+**Runtime/Harness**。OpenClaw = **控制面**，不是又一个 coding harness。Backend =
+调度关系标签，不是构成栈上的一层。
+
 ## 平面
 
 | 平面 | 职责 | 禁止 |
 | --- | --- | --- |
 | **控制面 Main** | 飞书编排、台账、worktree、开发方式门闩、验收、错误闭环 | 假装自己是 Claude/Codex TUI；与工人双写 |
-| **原生 Runtime** | `grok` / `claude` / `codex` 产品能力与 host 配置 | 被 ACP 排障静默改默认 |
+| **原生 Runtime** | `grok` / `claude` / `codex` 产品能力与 host 配置（各产品自家 harness） | 被 ACP 排障静默改默认 |
 | **ACP 接入** | 把 Claude/Codex **后端**挂进 Claw 轨 | 替换原生；写 `~/.codex` 顶层默认 |
 | **质量面** | adversarial-review 等 | 与开发工人抢同一树写权限 |
 

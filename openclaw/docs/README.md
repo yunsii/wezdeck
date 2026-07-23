@@ -18,6 +18,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | Topic | Authority |
 | --- | --- |
 | Terms / doc layering | `terminology.md` |
+| **Model / Harness / Agent session / Backend / Control plane** | `terminology.md` §2（官方主称 coding agent；OpenClaw = control plane） |
 | **Digital employees (Dex/Bob/Scout)** | `digital-employees.md` |
 | **Digital employee memory (public vs private)** | `digital-employee-memory.md` |
 | **Memory search ops (embeddings / reindex)** | `memory-search.md`（local llama-cpp · 故障闭环） |

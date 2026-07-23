@@ -37,16 +37,20 @@
 
 ## 2. 名词（不要混）
 
+构成层（Model / Harness / Agent session / Backend / Control plane）以
+[`terminology.md` §2](./terminology.md#2-model--harness--agent--backend核心分层)
+为准。本节只列 **交互全名**。
+
 | 全名 | 是什么 | 交互 |
 | --- | --- | --- |
-| **Grok-native** | 本机 `grok` | 多为交互 CLI/TUI |
+| **Grok-native** | 本机 `grok`（官方：coding agent） | 多为交互 CLI/TUI |
 | **Main-Grok** | OpenClaw Main 模型 | 飞书会话 |
 | **Claude-TUI** | 本机 `claude` **交互会话** | 终端多轮 |
 | **Claude-host-headless** | 本机 `claude -p`… | 无界面批处理 |
 | **Codex-TUI** | 本机 `codex` 交互 | 终端多轮 |
 | **Codex-host-headless** | 本机 `codex exec`… | 无界面批处理 |
 | **Codex-Grok-profile** | host `codex -p grok`（TUI 或 exec） | 模型走 Grok |
-| **Claude-ACP / Codex-ACP** | OpenClaw ACP 接入的后端 | 飞书/C3 编排，非 host TUI |
+| **Claude-ACP / Codex-ACP** | OpenClaw ACP 接入的 **backend** | 飞书/C3 编排，非 host TUI |
 
 历史文档里「审查用 Claude-TUI」= **host 上 Claude 产品**；实现是 **headless**（`claude -p`），不是让你盯着 TUI 点 Allow。
 
