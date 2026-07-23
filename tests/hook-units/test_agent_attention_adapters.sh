@@ -129,6 +129,61 @@ rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"
 setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"session_id":"claude-wait-1","hook_event_name":"Notification","notification_type":"permission_prompt","message":"Claude needs your permission to use Bash"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Claude permission_prompt becomes waiting" "waiting" "$(field_for "$sandbox" "claude-wait-1" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"session_id":"claude-idle-1","hook_event_name":"UserPromptSubmit","prompt":"go"}' \
+  | "$claude_adapter" running >/dev/null 2>&1 || true
+printf '%s' '{"session_id":"claude-idle-1","hook_event_name":"Notification","notification_type":"idle_prompt","message":"idle"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Claude idle_prompt does not flip running" "running" "$(field_for "$sandbox" "claude-idle-1" "status")"
+rm -rf "$sandbox"
+
+# Grok loads Claude hooks via compat and sends camelCase payloads. Turn
+# complete fires Notification with message "Turn complete" — must NOT raise
+# ⚠ waiting after a correct Stop→done.
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"sessionId":"grok-session-1","hookEventName":"UserPromptSubmit","prompt":"fix waiting\nmore"}' \
+  | "$claude_adapter" running >/dev/null 2>&1 || true
+assert_eq "Grok camelCase sessionId keys the entry" "running" "$(field_for "$sandbox" "grok-session-1" "status")"
+assert_eq "Grok camelCase prompt becomes reason" "fix waiting" "$(field_for "$sandbox" "grok-session-1" "reason")"
+printf '%s' '{"sessionId":"grok-session-1","hookEventName":"Stop","stopReason":"end_turn","message":"Turn complete"}' \
+  | "$claude_adapter" done >/dev/null 2>&1 || true
+assert_eq "Grok Stop becomes done" "done" "$(field_for "$sandbox" "grok-session-1" "status")"
+printf '%s' '{"sessionId":"grok-session-1","hookEventName":"Notification","message":"Turn complete"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok turn_complete Notification does not overwrite done" "done" "$(field_for "$sandbox" "grok-session-1" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"sessionId":"grok-session-2","hookEventName":"Notification","notificationType":"turn_complete","message":"Turn complete"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok notificationType=turn_complete creates no entry" "" "$(field_for "$sandbox" "grok-session-2" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"sessionId":"grok-session-3","hookEventName":"Notification","notificationType":"approval_required","message":"Needs approval"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok approval_required becomes waiting" "waiting" "$(field_for "$sandbox" "grok-session-3" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+# Legacy unparsed path: empty raw_event + reason "Turn complete" (pre-camelCase).
+printf '%s' '{"message":"Turn complete"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Bare Turn complete reason does not create waiting" "" "$(field_for "$sandbox" "pane:42" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
 printf '%s' '{"message":"no stable id"}' \
   | "$codex_adapter" done >/dev/null 2>&1 || true
 assert_eq "Codex adapter falls back to pane key" "done" "$(field_for "$sandbox" "pane:42" "status")"

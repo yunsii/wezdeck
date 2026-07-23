@@ -89,20 +89,30 @@ if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
   stdin_payload="$(cat || true)"
   if [[ -n "$stdin_payload" ]]; then
     if [[ -z "$session_id" ]]; then
-      session_id="$(printf '%s' "$stdin_payload" | jq -r '.session_id // .thread_id // .threadId // empty' 2>/dev/null || true)"
+      # Claude: session_id; Codex: thread_id/threadId; Grok compat: sessionId.
+      session_id="$(printf '%s' "$stdin_payload" \
+        | jq -r '.session_id // .sessionId // .thread_id // .threadId // empty' \
+          2>/dev/null || true)"
     fi
     # .prompt carries the user's new prompt on UserPromptSubmit. Take the
     # first line and cap it so the Alt+/ overlay label stays readable.
     if [[ -z "$reason_override" ]]; then
       extracted="$(printf '%s' "$stdin_payload" \
-        | jq -r '.message // .stop_reason // .reason // (.prompt | if . == null then empty else (split("\n")[0] | .[0:80]) end) // empty' \
+        | jq -r '.message // .stop_reason // .stopReason // .reason // (.prompt | if . == null then empty else (split("\n")[0] | .[0:80]) end) // empty' \
         2>/dev/null || true)"
       if [[ -n "$extracted" ]]; then
         reason="$extracted"
       fi
     fi
     if [[ -z "$notification_type" ]]; then
-      notification_type="$(printf '%s' "$stdin_payload" | jq -r '.notification_type // .type // empty' 2>/dev/null || true)"
+      notification_type="$(printf '%s' "$stdin_payload" \
+        | jq -r '.notification_type // .notificationType // .type // empty' \
+          2>/dev/null || true)"
+    fi
+    if [[ -z "$raw_event" ]]; then
+      raw_event="$(printf '%s' "$stdin_payload" \
+        | jq -r '.hook_event_name // .hookEventName // .event // empty' \
+          2>/dev/null || true)"
     fi
   fi
 fi
@@ -110,31 +120,69 @@ if [[ -n "$reason_override" ]]; then
   reason="$reason_override"
 fi
 
-# Notification hook disambiguation: only permission_prompt / elicitation_dialog
-# actually require user action. idle_prompt fires whenever Claude has been
-# idle for a while — which is not the same as "turn finished" (Stop owns that
-# signal) and not the same as "user must act" (waiting). In particular, a
-# persistent Monitor subscription can hold the agent idle mid-turn, so
-# writing done here would silently flip a still-running entry to done and
-# PostToolUse could not recover it (see attention_state_transition_to_running).
-# Exit without touching state, leaving the existing running / waiting / done
-# unchanged. auth_success is one-shot UI confirmation, not a transition.
-if [[ "$status" == "waiting" && -n "$notification_type" ]]; then
-  case "$notification_type" in
-    permission_prompt|elicitation_dialog) ;;
-    idle_prompt|auth_success)
-      runtime_log_info attention "notification ignored" \
-        "provider=$provider" \
-        "raw_event=$raw_event" \
-        "status=$status" \
-        "notification_type=$notification_type" \
-        "session_id=${session_id:-}" \
-        "wezterm_pane=${WEZTERM_PANE:-}" \
-        "tmux_pane=${TMUX_PANE:-}" \
-        "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
-      exit 0
-      ;;
+# ---------------------------------------------------------------------------
+# Waiting gate (Notification path is a strict whitelist)
+# ---------------------------------------------------------------------------
+# Only permission / elicitation / approval signals may raise ⚠ waiting.
+#
+# Why whitelist (not blacklist): Grok loads Claude's Notification → waiting
+# hook via compat, then fires Notification on *turn_complete* with message
+# "Turn complete". Payload is often camelCase and/or leaves notification_type
+# empty — the old "ignore only when type ∈ {idle_prompt,auth_success}" logic
+# fell through on empty type and overwrote a correct Stop→done with waiting.
+#
+# Non-Notification waiting paths still work:
+#   - Codex PermissionRequest (raw_event=PermissionRequest, type empty)
+#   - scripts/dev/test-agent-attention.sh direct `waiting` (no Notification)
+#   - manual emit.sh waiting for diagnosis
+# ---------------------------------------------------------------------------
+if [[ "$status" == "waiting" ]]; then
+  # Normalize separators so approval-required / approval_required match.
+  ntype="$(printf '%s' "$notification_type" \
+    | tr '[:upper:]' '[:lower:]' \
+    | tr '-' '_')"
+  rev="$(printf '%s' "$raw_event" | tr '[:upper:]' '[:lower:]')"
+  reason_lc="$(printf '%s' "$reason" | tr '[:upper:]' '[:lower:]')"
+
+  is_notification_path=0
+  case "$rev" in
+    notification|notification_*) is_notification_path=1 ;;
   esac
+  # Any explicit notification_type means we are on the Notification path
+  # (Claude always sets it; Grok may set turn_complete / approval_required).
+  [[ -n "$ntype" ]] && is_notification_path=1
+
+  allow_waiting=0
+  if (( is_notification_path == 1 )); then
+    case "$ntype" in
+      permission_prompt|elicitation_dialog|approval_required)
+        allow_waiting=1
+        ;;
+    esac
+  else
+    # Direct / Codex / diagnostic waiting: allow unless reason is clearly a
+    # completion toast (Grok turn_complete with unparsed empty raw_event).
+    allow_waiting=1
+    case "$reason_lc" in
+      *'turn complete'*|*'task complete'*|*'session ready'*)
+        allow_waiting=0
+        ;;
+    esac
+  fi
+
+  if (( allow_waiting == 0 )); then
+    runtime_log_info attention "notification ignored" \
+      "provider=$provider" \
+      "raw_event=$raw_event" \
+      "status=$status" \
+      "notification_type=${notification_type:-}" \
+      "reason=${reason:-}" \
+      "session_id=${session_id:-}" \
+      "wezterm_pane=${WEZTERM_PANE:-}" \
+      "tmux_pane=${TMUX_PANE:-}" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+    exit 0
+  fi
 fi
 
 # Fallback key when hooks run without a stable provider session id (e.g. test
