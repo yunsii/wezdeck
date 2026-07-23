@@ -3,12 +3,35 @@
 // resolved, so the popup pty does zero tmux RPCs at first paint) and
 // fires `tmux-worktree-open.sh` via `tmux run-shell -b` so the popup
 // tears down before the open work starts.
+//
+// Bindings:
+//   Enter    → open selected worktree window
+//   Ctrl+Y   → copy selected worktree path to the Windows clipboard
+//   Ctrl+B   → copy selected branch name to the Windows clipboard
+//   Up/Down  → move
+//   1-9,0,a-z → accelerator open
+//   Esc / Ctrl+C / Alt+g → close
+//
+// Clipboard writes go through agent-clipboard.sh / host helper — NOT OSC 52.
+// Why keyboard copy instead of mouse select: plain drag is intentionally
+// unbound (tmux pane-local select needs Shift+drag; terminal-wide select
+// needs Super+drag). Inside a live raw-mode TUI popup, Shift+drag enters
+// copy-mode and fights the picker's redraw, and Super is Win on hybrid-wsl
+// so OS window chrome often steals it.
+//
+// Why not OSC 52: tmux `display-popup -E` does not forward OSC/DCS
+// pass-through to the parent WezTerm client (same constraint that forced
+// the attention picker's file event-bus). Emitting OSC 52 only paints a
+// false "copied" flash. links-dispatch uses Set-Clipboard; we use the
+// shared agent-clipboard helper (warm IPC is faster than a fresh
+// powershell.exe).
 package main
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/term"
@@ -32,6 +55,9 @@ type worktreeUI struct {
 	currentWindowID     string
 	cwd                 string
 	ts                  perfTimings
+	// flash is a one-shot status line (e.g. "copied path") shown on the
+	// path row until the next move/render clears it.
+	flash string
 }
 
 type worktreePicker struct{}
@@ -99,6 +125,12 @@ func (worktreePicker) Run(args []string) int {
 		case "\r", "\n":
 			ui.dispatch(fd, state)
 			return loopExit, 0
+		case "\x19": // Ctrl+Y — copy focused path; stay open (unlike Enter)
+			ui.copySelected("path")
+			ui.render()
+		case "\x02": // Ctrl+B — copy focused branch name; stay open
+			ui.copySelected("branch")
+			ui.render()
 		case "\x1b", "\x03", "\x1bg":
 			// Bare Esc / Ctrl+C / forwarded Alt+g (the chord that opened
 			// this popup, treated as a toggle exit). Mirrors bash picker.
@@ -165,6 +197,57 @@ func (ui *worktreeUI) move(delta int) {
 	if ui.selected < 0 {
 		ui.selected += n
 	}
+	ui.flash = ""
+}
+
+// copySelected writes path or branch of the focused row to the Windows
+// clipboard through agent-clipboard.sh (sibling of the open script passed
+// by tmux-worktree-menu.sh). Blocks until the helper returns so the flash
+// reflects real success/failure. Stays open. kind is "path" or "branch".
+func (ui *worktreeUI) copySelected(kind string) {
+	if ui.selected < 0 || ui.selected >= len(ui.rows) {
+		return
+	}
+	r := ui.rows[ui.selected]
+	var text, emptyMsg, okPrefix string
+	switch kind {
+	case "branch":
+		text, emptyMsg, okPrefix = r.branch, "no branch to copy", "copied branch "
+	default: // path
+		text, emptyMsg, okPrefix = r.path, "no path to copy", "copied path "
+	}
+	if text == "" {
+		ui.flash = emptyMsg
+		return
+	}
+	if err := writeClipboardText(ui.openScript, text); err != nil {
+		ui.flash = "copy failed"
+		return
+	}
+	// Keep the payload in the flash so the user can confirm what landed.
+	ui.flash = okPrefix + text
+}
+
+// writeClipboardText invokes agent-clipboard.sh next to openScript.
+// openScript is always scripts/runtime/tmux-worktree-open.sh in production;
+// tests may override writeClipboardTextHook.
+var writeClipboardText = writeClipboardTextDefault
+
+func writeClipboardTextDefault(openScript, text string) error {
+	if openScript == "" {
+		return fmt.Errorf("open script path empty")
+	}
+	script := filepath.Join(filepath.Dir(openScript), "agent-clipboard.sh")
+	cmd := exec.Command("bash", script, "write-text", "--text", text, "--quiet")
+	// Detach from the popup pty so agent-clipboard / helperctl cannot
+	// corrupt the raw-mode TUI if they write diagnostics to stdout.
+	cmd.Stdin = nil
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("agent-clipboard: %w", err)
+	}
+	return nil
 }
 
 func (ui *worktreeUI) findAccelerator(key string) int {
@@ -181,8 +264,10 @@ func (ui *worktreeUI) findAccelerator(key string) int {
 }
 
 func (ui *worktreeUI) render() {
-	_, lines := getTermSize()
-	visibleRows := lines - 6
+	cols, lines := getTermSize()
+	// Title + showing + path detail + blank + footer reserve ≈ 7 chrome lines
+	// (rows start at screen line 5; one blank before footer).
+	visibleRows := lines - 7
 	if visibleRows < 1 {
 		visibleRows = 1
 	}
@@ -224,7 +309,21 @@ func (ui *worktreeUI) render() {
 	b.WriteString(reset)
 	b.WriteString(clearEOL)
 
-	row := 4
+	// Detail of the focused row (or post-copy flash): path · branch so
+	// both copy targets are visible before Ctrl+y / Ctrl+b.
+	b.WriteString("\x1b[3;1H")
+	if ui.flash != "" {
+		b.WriteString("\x1b[32m")
+		b.WriteString(truncateRunes(ui.flash, cols))
+		b.WriteString(reset)
+	} else if ui.selected >= 0 && ui.selected < itemCount {
+		b.WriteString("\x1b[2m")
+		b.WriteString(truncateRunes(ui.selectedDetailLine(), cols))
+		b.WriteString(reset)
+	}
+	b.WriteString(clearEOL)
+
+	row := 5
 	for i := startIndex; i <= endIndex; i++ {
 		fmt.Fprintf(&b, "\x1b[%d;1H", row)
 		r := ui.rows[i]
@@ -261,7 +360,7 @@ func (ui *worktreeUI) render() {
 	// Footer.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	b.WriteString("\x1b[2mEnter open | Up/Down move | 1-9,0,a-z open | Esc close  ·  powered by ")
+	b.WriteString("\x1b[2mEnter open · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z open · Esc close  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	ui.ts.renderFooterTail(&b)
@@ -269,6 +368,38 @@ func (ui *worktreeUI) render() {
 	b.WriteString("\x1b[J")
 
 	_, _ = os.Stdout.WriteString(b.String())
+}
+
+// selectedDetailLine is the idle detail-row text: "<path> · <branch>"
+// (branch omitted when empty).
+func (ui *worktreeUI) selectedDetailLine() string {
+	if ui.selected < 0 || ui.selected >= len(ui.rows) {
+		return ""
+	}
+	r := ui.rows[ui.selected]
+	if r.branch == "" {
+		return r.path
+	}
+	if r.path == "" {
+		return r.branch
+	}
+	return r.path + " · " + r.branch
+}
+
+// truncateRunes caps s to at most max cells (1 rune ≈ 1 cell; good enough
+// for path display). Empty max yields empty string.
+func truncateRunes(s string, max int) string {
+	if max <= 0 {
+		return ""
+	}
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	if max == 1 {
+		return "…"
+	}
+	return string(runes[:max-1]) + "…"
 }
 
 func (ui *worktreeUI) dispatch(fd int, state *term.State) {
