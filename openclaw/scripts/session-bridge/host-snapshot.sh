@@ -106,7 +106,8 @@ sb_host_list_cards() {
     [[ -z "${sess:-}" ]] && continue
     local id kind status attn_status attn_reason
     id="tmux:${sess}:${win}.${pane}"
-    kind="$(sb_infer_kind "${cmd:-}" "${title:-}")"
+    # Process-first when pane id known (sh -c claude → claude-tui, not shell).
+    kind="$(sb_resolve_pane_kind "${paneid:-}" "${cmd:-}")"
     if [[ "${dead:-0}" == "1" ]]; then
       status="done"
     elif [[ "${active:-0}" == "1" ]]; then

@@ -21,12 +21,39 @@ export PATH="$TMP/bin:$PATH"
 cat >"$SB_CONFIG" <<'JSON'
 {
   "aliases": {"dex": "agent:main:feishu:direct:ou_test"},
-  "feishu_targets": {"dex_user_id": "ou_test_user"}
+  "feishu_targets": {
+    "dex_user_id": "ou_test_user",
+    "dex_chat_id": "oc_test_dex_p2p",
+    "dex_bot_open_id": "ou_test_bot"
+  }
 }
 JSON
 
 out="$("$SB" --json say-as-me --to dex -m 'hello')"
 echo "$out" | jq -e '.ok == true and .dry_run == true and .identity == "user"' >/dev/null
+echo "$out" | jq -e '.to == "oc_test_dex_p2p"' >/dev/null
+# owner-only map must refuse (not "talk to Dex")
+cat >"$SB_CONFIG" <<'JSON'
+{
+  "aliases": {"dex": "agent:main:feishu:direct:ou_test"},
+  "feishu_targets": {"dex_user_id": "ou_test_user"}
+}
+JSON
+set +e
+bad="$("$SB" --json say-as-me --to dex -m 'hello' 2>&1)"
+bad_ec=$?
+set -e
+[[ $bad_ec -ne 0 ]] || { echo "FAIL: owner-only should refuse: $bad"; exit 1; }
+# restore full map for panic check
+cat >"$SB_CONFIG" <<'JSON'
+{
+  "aliases": {"dex": "agent:main:feishu:direct:ou_test"},
+  "feishu_targets": {
+    "dex_user_id": "ou_test_user",
+    "dex_chat_id": "oc_test_dex_p2p"
+  }
+}
+JSON
 
 "$SB" --json panic on >/dev/null
 set +e

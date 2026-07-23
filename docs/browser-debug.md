@@ -44,6 +44,14 @@ Launches or reuses the same Chrome debug browser profile in visible (headful) mo
 
 Pressing this when a headless instance is running will kill that headless first, wait for the `--user-data-dir` singleton lock to release, and start a visible Chrome with the same hardening flags (minus `--headless=new` and `--window-size=1920,1080`, which are headless-only). MCP connections from the previous headless session will drop and can be reestablished on the visible instance. The right-status segment flips to `CDP·V·<port>` after launch.
 
+## Right-status layout (CDP and neighbors)
+
+Right-status order (left → right):
+
+`IME` · **`CDP·…`** · **`SB·N`** (session-bridge watch poller) · attention counters
+
+The `SB·-` / `SB·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); see [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir.
+
 ## Right-status `CDP` badge
 
 The WezTerm right-status renders just to the right of the IME segment as a fixed-width badge. The four states share the same glyph count so the bar width never jitters when you switch modes:

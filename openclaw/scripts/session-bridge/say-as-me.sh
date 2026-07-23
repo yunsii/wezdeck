@@ -20,28 +20,48 @@ sb_say_as_me() {
     sb_die 2 "lark-cli 不在 PATH（say-as-me 需要用户身份 CLI）"
   fi
 
-  local resolved dest_user="" dest_chat=""
+  local resolved dest_user="" dest_chat="" owner_user=""
   resolved="$(sb_resolve_alias "$to")"
-  # Prefer explicit feishu_targets map
+  # Prefer explicit feishu_targets map.
+  # For alias "dex": chat_id (p2p with bot) or bot_open_id — NOT owner user_id.
+  # Owner dex_user_id is who *you* are; messaging it is not "talk to Dex".
   if [[ -f "$(sb_config_path)" ]]; then
-    dest_user="$(jq -er --arg k "$to" '
-      .feishu_targets[($k + "_user_id")] // .feishu_targets.dex_user_id // empty
-    ' "$(sb_config_path)" 2>/dev/null || true)"
     dest_chat="$(jq -er --arg k "$to" '
       .feishu_targets[($k + "_chat_id")] // .feishu_targets.dex_chat_id // empty
     ' "$(sb_config_path)" 2>/dev/null || true)"
+    dest_user="$(jq -er --arg k "$to" '
+      .feishu_targets[($k + "_bot_open_id")]
+      // .feishu_targets.dex_bot_open_id
+      // empty
+    ' "$(sb_config_path)" 2>/dev/null || true)"
+    owner_user="$(jq -er --arg k "$to" '
+      .feishu_targets[($k + "_user_id")] // .feishu_targets.dex_user_id // empty
+    ' "$(sb_config_path)" 2>/dev/null || true)"
   fi
-  # Heuristic: ou_ → user-id, oc_ → chat-id
+  # Heuristic: ou_ → user-id, oc_ → chat-id (only when map empty)
   if [[ -z "$dest_user" && -z "$dest_chat" ]]; then
     case "$resolved" in
-      ou_*) dest_user="$resolved" ;;
+      ou_*)
+        # Refuse owner open_id masquerading as Dex destination
+        if [[ -n "$owner_user" && "$resolved" == "$owner_user" ]]; then
+          sb_die 2 "say-as-me → dex 需要 feishu_targets.dex_chat_id 或 dex_bot_open_id（不是 dex_user_id=主人自己）"
+        fi
+        dest_user="$resolved"
+        ;;
       oc_*) dest_chat="$resolved" ;;
       agent:*)
-        # cannot send to session key as-me without map
-        sb_die 2 "say-as-me 需要 feishu_targets 映射（${to}_user_id / ${to}_chat_id），不能直接用 session key"
+        sb_die 2 "say-as-me 需要 feishu_targets.dex_chat_id 或 dex_bot_open_id，不能直接用 session key"
         ;;
-      *) dest_user="$resolved" ;;
+      *)
+        if [[ -n "$owner_user" ]]; then
+          sb_die 2 "say-as-me → ${to} 需要 feishu_targets.${to}_chat_id 或 ${to}_bot_open_id"
+        fi
+        dest_user="$resolved"
+        ;;
     esac
+  fi
+  if [[ -z "$dest_user" && -z "$dest_chat" ]]; then
+    sb_die 2 "say-as-me 无目标：配置 feishu_targets.dex_chat_id（推荐）或 dex_bot_open_id"
   fi
 
   local -a cmd

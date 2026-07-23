@@ -62,17 +62,15 @@ sb_host_capture_text_raw() {
   printf '%s\n' "$text" | tail -n "$lines"
 }
 
-sb_prompt_visible() {
+# Shared tail-anchor matcher. anchors = pipe-separated, case-insensitive.
+sb_text_has_anchor() {
   local text="$1"
-  # Only inspect the last few lines: a real permission prompt sits at the bottom
-  # of the pane, so scrollback like "Continue reading..." can no longer satisfy
-  # the gate (adversarial-review host-write.sh:62).
-  local tail_text
-  tail_text="$(printf '%s\n' "$text" | tail -n "${SB_APPROVE_TAIL_LINES:-6}")"
-  local anchors="$SB_APPROVE_ANCHORS"
-  local IFS='|'
-  local a al lower
+  local anchors="$2"
+  local tail_n="${3:-6}"
+  local tail_text a al lower
+  tail_text="$(printf '%s\n' "$text" | tail -n "$tail_n")"
   lower="$(printf '%s' "$tail_text" | tr '[:upper:]' '[:lower:]')"
+  local IFS='|'
   for a in $anchors; do
     al="$(printf '%s' "$a" | tr '[:upper:]' '[:lower:]')"
     [[ -z "$al" ]] && continue
@@ -81,6 +79,26 @@ sb_prompt_visible() {
     fi
   done
   return 1
+}
+
+sb_prompt_visible() {
+  local text="$1"
+  # Only inspect the last few lines: a real permission prompt sits at the bottom
+  # of the pane, so scrollback like "Continue reading..." can no longer satisfy
+  # the gate (adversarial-review host-write.sh:62).
+  # Narrow anchors only — used by host-send-keys --approve-visible.
+  sb_text_has_anchor "$text" "$SB_APPROVE_ANCHORS" "${SB_APPROVE_TAIL_LINES:-6}"
+}
+
+# Watch / take "needs human" detector — broader than approve-visible.
+# Covers Claude permission_prompt AND AskUserQuestion / elicitation choice UIs
+# (footer: "Enter to select · ↑/↓ to navigate · Esc to cancel").
+# Do NOT reuse for auto-key approve — choice menus are not y/N.
+SB_WATCH_HUMAN_ANCHORS="${SB_WATCH_HUMAN_ANCHORS:-Do you want|[y/N]|[Y/n]|(y/n)|y/n|Yes / No|❯ 1. Yes|1. Yes|Proceed?|Enter to select|Esc to cancel|to navigate|Tab to amend|Type something.|Chat about this|Yes, and don}"
+
+sb_watch_human_prompt_visible() {
+  local text="$1"
+  sb_text_has_anchor "$text" "$SB_WATCH_HUMAN_ANCHORS" "${SB_WATCH_HUMAN_TAIL_LINES:-12}"
 }
 
 sb_host_send_keys() {

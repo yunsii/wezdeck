@@ -5,9 +5,10 @@
     "scout": "agent:radar:feishu:direct:ou_REPLACE"
   },
   "feishu_targets": {
-    "dex_user_id": "ou_REPLACE",
-    "dex_chat_id": "oc_or_p2p_REPLACE",
-    "comment": "say-as-me / bot-send targets"
+    "dex_user_id": "ou_OWNER_OPEN_ID",
+    "dex_chat_id": "oc_P2P_WITH_DEX_BOT",
+    "dex_bot_open_id": "ou_DEX_BOT_OPEN_ID",
+    "comment": "bot-send→dex_user_id(主人). say-as-me→dex_chat_id 优先，否则 dex_bot_open_id。不要把 say-as-me 指到 dex_user_id。"
   },
   "host_allowlist": {
     "send_keys_panes": ["wezterm_*", "wd:*"],
@@ -22,7 +23,8 @@
       "ttl_sec": 5400,
       "interval_sec": 10,
       "notify_to": "dex",
-      "comment": "take/watch-loop: poll cheaply; notify only waiting|ended"
+      "notify_identity": "user+poke",
+      "comment": "take/watch: user=say-as-me into dex_chat_id; poke=inject Dex session; bot=legacy bot→owner (avoid). Default user+poke so Dex notices without looking like Dex DMing you."
     },
     "receipt": {
       "enabled": false,

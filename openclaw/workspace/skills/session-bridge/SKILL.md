@@ -30,12 +30,13 @@ tmux 版本策略：`docs/tmux-install.md`
 | 查 Dex 会话 | `$SB claw-ls` / `claw-show --id dex` |
 | 机器人通知 | `$SB bot-send --to dex -m '…'`（默认 dry-run） |
 | **本人**飞书说话 | `$SB say-as-me --to dex -m '…'`（P3；默认 dry-run） |
-| **饭点接管聚焦 pane** | 快捷键 **Ctrl+K w**；或 `$SB take --focus --confirm-notify` |
+| **饭点接管聚焦 pane** | 快捷键 **Ctrl+K w**；或 `$SB take --focus --confirm-notify`。默认 **你→Dex**（say-as-me + poke），不是 bot 推你 |
 | 查/停盯梢 | `$SB watch-status` / `watch-stop --all` |
 | 紧急停写 | `$SB panic on` |
 
-`take` 只做轻量轮询 + 飞书通知（需确认 / 会话结束）；**不**代按 TUI、不每 tick 跑模型。  
-**仅 agent pane**（kind / 标题启发式 / attention）；普通 shell 直接拒绝，无强开开关。
+`take` 只做轻量轮询 + **向 Dex 交接**（需确认 / 会话结束）；**不**代按 TUI、不每 tick 跑模型。  
+通知默认 `user+poke`：本人进 Dex 飞书会话 + session poke；文案带 `【host-watch · …】` 头，避免 Dex 把 host 选择题当成自己的 1/2/3。需配置 `feishu_targets.dex_chat_id` 才有 say-as-me；否则至少 poke。  
+**仅 agent pane**：以 **pane 前台进程**为准；**不用标题**。
 
 ## 硬规则
 

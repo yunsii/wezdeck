@@ -226,6 +226,11 @@ local base_constants = {
     headless = true,
     state_file = defaults.default_chrome_debug_state_file(runtime_state_dir, join_path),
   },
+  -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and attention).
+  session_bridge_watch = {
+    status_file = defaults.default_session_bridge_watch_status_file(runtime_state_dir, join_path),
+    heartbeat_timeout_ms = 35000,
+  },
   wakatime = {
     api_key = nil,
   },

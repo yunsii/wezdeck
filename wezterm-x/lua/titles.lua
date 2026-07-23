@@ -23,6 +23,7 @@ function M.register(opts)
   local palette = opts.palette
   local attention = opts.attention
   local chrome_debug_status = opts.chrome_debug_status
+  local session_bridge_status = opts.session_bridge_status
   local host = opts.host
   local logger = opts.logger
   local constants = opts.constants
@@ -275,13 +276,12 @@ function M.register(opts)
     return segments
   end)
 
-  -- Compose the right-status bar from IME, chrome-debug, and attention
-  -- segments. Kept pure so it can run from both the `update-status`
-  -- tick (the 250ms cadence) and from the event-bus handler when a
-  -- producer publishes `attention.tick` (OSC wire `we_attention_tick`).
-  -- The fast path uses the already-reloaded state cache, so the bar
-  -- repaints within a frame of OSC arrival instead of waiting up to
-  -- 250ms for the next tick.
+  -- Compose the right-status bar from IME, chrome-debug, session-bridge
+  -- watch poller, and attention segments. Order:
+  --   IME | CDP·… | SB·N | 🚨…✅…🔄…
+  -- Kept pure so it can run from both the `update-status` tick (250ms)
+  -- and from the event-bus handler when a producer publishes
+  -- `attention.tick` (OSC wire `we_attention_tick`).
   --
   -- The active pane's id is forwarded to `attention.render_status_segment`
   -- so entries on the currently-focused (WezTerm pane + tmux pane) are
@@ -295,6 +295,12 @@ function M.register(opts)
     local chrome_debug_segment = chrome_debug_status and chrome_debug_status.render_status_segment(palette) or nil
     if chrome_debug_segment then
       table.insert(right_segments, chrome_debug_segment)
+    end
+    local sb_segment = session_bridge_status
+      and session_bridge_status.render_status_segment(palette)
+      or nil
+    if sb_segment then
+      table.insert(right_segments, sb_segment)
     end
     local active_pane_id = nil
     if pane and type(pane.pane_id) == 'function' then

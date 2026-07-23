@@ -18,7 +18,7 @@ import (
 )
 
 type attentionRow struct {
-	status      string // "running" | "waiting" | "done" | "recent" | "__sentinel__"
+	status      string // "running" | "waiting" | "done" | "sb" | "recent" | "__sentinel__"
 	body        string
 	age         string
 	id          string
@@ -135,7 +135,7 @@ func (attentionPicker) Run(args []string) int {
 	// straight into the substring filter, the search row at line 2 is
 	// always visible, and Tab still cycles the orthogonal status filter.
 	filterText := ""
-	statusFilter := "all" // "all" | "running" | "waiting" | "done"
+	statusFilter := "all" // "all" | "running" | "waiting" | "done" | "sb"
 	selected := 0
 
 	visible := applyAttentionFilter(rows, filterText, statusFilter)
@@ -157,6 +157,8 @@ func (attentionPicker) Run(args []string) int {
 		case "done":
 			statusFilter = "running"
 		case "running":
+			statusFilter = "sb"
+		case "sb":
 			statusFilter = "all"
 		default:
 			statusFilter = "all"
@@ -217,6 +219,23 @@ func (attentionPicker) Run(args []string) int {
 				visible = applyAttentionFilter(rows, filterText, statusFilter)
 				render()
 			}
+		case "\x18": // Ctrl+X — stop session-bridge watch on selected 📡 SB row.
+			// Plain `x` always goes to the search filter (see default);
+			// never steal it for stop, or users cannot type/search "x".
+			if len(visible) > 0 && visible[selected].status == "sb" {
+				if stopSessionBridgeWatch(visible[selected]) {
+					rows = removeAttentionRowByID(rows, visible[selected].id)
+					visible = applyAttentionFilter(rows, filterText, statusFilter)
+					if len(visible) == 0 {
+						selected = 0
+					} else if selected >= len(visible) {
+						selected = len(visible) - 1
+					}
+					colWidths = computeAttentionColumnWidths(rows)
+					render()
+				}
+			}
+			return loopContinue, 0
 		default:
 			// Append printable ASCII only (single byte 0x20–0x7E). Stray
 			// escape sequences or multi-byte input is ignored so it
@@ -233,6 +252,68 @@ func (attentionPicker) Run(args []string) int {
 		}
 		return loopContinue, 0
 	})
+}
+
+// stopSessionBridgeWatch runs `session-bridge.sh watch-stop --id <job>`.
+// Job id is encoded in the row as "sb::<w-…>". Returns true on success.
+func stopSessionBridgeWatch(r attentionRow) bool {
+	if r.status != "sb" {
+		return false
+	}
+	jobID := strings.TrimPrefix(r.id, "sb::")
+	if jobID == "" || jobID == r.id {
+		return false
+	}
+	sh := os.Getenv("SESSION_BRIDGE_SH")
+	if sh == "" {
+		// Fallback: sibling of attention-jump.sh is not stable; try common repo layout via env.
+		if root := os.Getenv("WEZTERM_REPO"); root != "" {
+			sh = root + "/openclaw/scripts/session-bridge.sh"
+		}
+	}
+	if sh == "" {
+		emitPerfEvent("attention", "sb-watch-stop missing SESSION_BRIDGE_SH", map[string]string{
+			"row_id": r.id,
+		})
+		return false
+	}
+	cmd := exec.Command("bash", sh, "--json", "watch-stop", "--id", jobID)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		emitPerfEvent("attention", "sb-watch-stop failed", map[string]string{
+			"row_id": r.id,
+			"job_id": jobID,
+			"err":    err.Error(),
+			"out":    truncateForPerf(string(out), 120),
+		})
+		return false
+	}
+	emitPerfEvent("attention", "sb-watch-stop ok", map[string]string{
+		"row_id": r.id,
+		"job_id": jobID,
+	})
+	return true
+}
+
+func removeAttentionRowByID(rows []attentionRow, id string) []attentionRow {
+	if id == "" {
+		return rows
+	}
+	out := make([]attentionRow, 0, len(rows))
+	for _, r := range rows {
+		if r.id == id {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+func truncateForPerf(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }
 
 // applyAttentionFilter returns the subset of rows that pass the current
@@ -319,12 +400,15 @@ func attentionStatusPriority(status string) int {
 		return 1
 	case "running":
 		return 2
-	case "recent":
+	case "sb":
+		// session-bridge watch jobs (Ctrl+K w) — after live attention, before recent
 		return 3
-	case "__sentinel__":
+	case "recent":
 		return 4
+	case "__sentinel__":
+		return 5
 	}
-	return 5
+	return 6
 }
 
 // parseAgeToSeconds reverse-projects the lua-side `format_age` output
@@ -569,7 +653,7 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 		fmt.Fprintf(&b, "  ·  active workspace \x1b[1;38;5;108m%s\x1b[0m\x1b[1m", currentWorkspace)
 	}
 	if statusFilter == "all" {
-		b.WriteString("  ·  order matches status bar (🚨 → ✅ → 🔄)")
+		b.WriteString("  ·  order 🚨 → ✅ → 🔄 → 📡SB")
 		b.WriteString(reset)
 	} else {
 		b.WriteString(reset)
@@ -582,6 +666,9 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 			b.WriteString(reset)
 		case "done":
 			b.WriteString("  \x1b[38;5;108m[✅ done]")
+			b.WriteString(reset)
+		case "sb":
+			b.WriteString("  \x1b[1;38;5;141m[📡 SB watch]")
 			b.WriteString(reset)
 		}
 	}
@@ -673,6 +760,9 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 			if r.status == "recent" && r.lastStatus != "" {
 				fmt.Fprintf(&rb, "%s\x1b[2m(%s, archived)%s", gap, r.lastStatus, reset)
 			}
+			if r.status == "sb" && r.lastStatus != "" {
+				fmt.Fprintf(&rb, "%s\x1b[2m(watch:%s)%s", gap, r.lastStatus, reset)
+			}
 		}
 
 		body := rb.String()
@@ -703,7 +793,7 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	fmt.Fprintf(&b, "\x1b[%d;1H%s", row, clearEOL)
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	b.WriteString("\x1b[2mEnter jump | Up/Down move | type filter | Tab status | Esc clear/close  ·  powered by ")
+	b.WriteString("\x1b[2mEnter jump | Ctrl+X stop SB | Up/Down | type filter | Tab status | Esc  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	ts.renderFooterTail(&b)
@@ -801,6 +891,9 @@ func coloredBadge(status string) string {
 		return "\x1b[1;38;5;208m🚨\x1b[0m"
 	case "done":
 		return "\x1b[38;5;108m✅\x1b[0m"
+	case "sb":
+		// session-bridge watch (Ctrl+K w) — purple satellite
+		return "\x1b[1;38;5;141m📡\x1b[0m"
 	case "recent":
 		return "\x1b[2;38;5;245m📜\x1b[0m"
 	case "__sentinel__":

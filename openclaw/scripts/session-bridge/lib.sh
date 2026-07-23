@@ -157,17 +157,165 @@ sb_default_capture_lines() {
   printf '%s\n' "$n"
 }
 
-sb_infer_kind() {
-  local cmd="$1" title="$2"
-  local s
-  s="$(printf '%s %s' "$cmd" "$title" | tr '[:upper:]' '[:lower:]')"
-  case "$s" in
-    *claude*) printf 'claude-tui\n' ;;
-    *codex*) printf 'codex-tui\n' ;;
-    *grok*) printf 'grok-tui\n' ;;
-    *node*|*python*|*zsh*|*bash*|*fish*|*sh*) printf 'shell\n' ;;
+# Map a process name (comm or argv0 basename) → agent kind. Empty + exit 1 if not agent.
+sb_name_to_agent_kind() {
+  local raw="${1:-}" base
+  [[ -n "$raw" ]] || return 1
+  base="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+  base="${base##*/}"          # basename
+  base="${base%%[[:space:]]*}" # first token only
+  case "$base" in
+    claude|claude-*) printf 'claude-tui\n'; return 0 ;;
+    codex|codex-*) printf 'codex-tui\n'; return 0 ;;
+    grok|grok-*) printf 'grok-tui\n'; return 0 ;;
+    opencode|opencode-*) printf 'claude-tui\n'; return 0 ;;
+  esac
+  return 1
+}
+
+# cmd-only kind. Title is never consulted (task titles are noise: "Node …", "…ship…").
+sb_infer_kind_from_cmd() {
+  local cmd_l k=""
+  cmd_l="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  k="$(sb_name_to_agent_kind "$cmd_l" 2>/dev/null || true)"
+  if [[ -n "$k" ]]; then
+    printf '%s\n' "$k"
+    return 0
+  fi
+  case "$cmd_l" in
+    node|nodejs|python|python3|zsh|bash|fish|sh|dash|sudo) printf 'shell\n' ;;
     *) printf 'unknown\n' ;;
   esac
+}
+
+# API kept as (cmd, title?) for call-site compat; title is ignored.
+sb_infer_kind() {
+  local cmd="$1"
+  # "$2" title intentionally unused — process/cmd only.
+  sb_infer_kind_from_cmd "$cmd"
+}
+
+# pane_id → pane_pid (tmux).
+sb_pane_pid() {
+  local pane_id="${1:-}"
+  [[ -n "$pane_id" ]] || return 1
+  if ! declare -F sb_tmux >/dev/null 2>&1; then
+    return 1
+  fi
+  local pid
+  pid="$(sb_tmux display-message -t "$pane_id" -p '#{pane_pid}' 2>/dev/null || true)"
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  printf '%s\n' "$pid"
+}
+
+# Resolve agent kind from one pid's comm + argv0.
+sb_pid_agent_kind() {
+  local pid="${1:-}"
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  local comm args0 k
+  comm="$(ps -o comm= -p "$pid" 2>/dev/null | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  args0="$(ps -o args= -p "$pid" 2>/dev/null | awk '{print $1}')"
+  k="$(sb_name_to_agent_kind "$comm" 2>/dev/null || true)"
+  [[ -n "$k" ]] && { printf '%s\n' "$k"; return 0; }
+  k="$(sb_name_to_agent_kind "$args0" 2>/dev/null || true)"
+  [[ -n "$k" ]] && { printf '%s\n' "$k"; return 0; }
+  return 1
+}
+
+# Primary signal: processes in the foreground process group of the pane tty
+# (ps STAT contains '+'). This is the real interactive job — not the idle
+# shell left as pane_pid / pane_current_command after `claude` is spawned
+# under `sh -c` or as a child of zsh.
+sb_pane_fg_agent_kind() {
+  local pane_id="${1:-}"
+  local pid tty st spid k
+  pid="$(sb_pane_pid "$pane_id" 2>/dev/null || true)"
+  [[ -n "$pid" ]] || return 1
+  tty="$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')"
+  [[ -n "$tty" && "$tty" != "?" ]] || return 1
+
+  # ps -o stat=,pid= → "Sl+  500974" (spacing varies)
+  while read -r st spid; do
+    [[ -n "${st:-}" && -n "${spid:-}" ]] || continue
+    [[ "$st" == *'+'* ]] || continue
+    [[ "$spid" =~ ^[0-9]+$ ]] || continue
+    k="$(sb_pid_agent_kind "$spid" 2>/dev/null || true)"
+    if [[ -n "$k" ]]; then
+      printf '%s\n' "$k"
+      return 0
+    fi
+  done < <(ps -o stat=,pid= -t "$tty" 2>/dev/null || true)
+  return 1
+}
+
+# Fallback: walk pane_pid descendants (depth-limited) when FG scan misses
+# (spawn race, agent briefly not in FG group).
+sb_pane_tree_agent_kind() {
+  local pane_id="${1:-}"
+  local root
+  root="$(sb_pane_pid "$pane_id" 2>/dev/null || true)"
+  [[ -n "$root" ]] || return 1
+
+  local -a queue=("$root")
+  local -A seen=()
+  local depth=0 pid cpid k
+  while ((${#queue[@]} > 0)) && ((depth < 6)); do
+    local -a next=()
+    for pid in "${queue[@]}"; do
+      [[ -n "${seen[$pid]:-}" ]] && continue
+      seen[$pid]=1
+      k="$(sb_pid_agent_kind "$pid" 2>/dev/null || true)"
+      if [[ -n "$k" ]]; then
+        printf '%s\n' "$k"
+        return 0
+      fi
+      while read -r cpid; do
+        [[ "$cpid" =~ ^[0-9]+$ ]] || continue
+        next+=("$cpid")
+      done < <(ps -o pid= --ppid "$pid" 2>/dev/null || true)
+    done
+    queue=("${next[@]}")
+    depth=$((depth + 1))
+  done
+  return 1
+}
+
+# Canonical process-based kind: FG first, then descendant tree.
+sb_pane_agent_kind_from_process() {
+  local pane_id="${1:-}"
+  local k=""
+  [[ -n "$pane_id" ]] || return 1
+  k="$(sb_pane_fg_agent_kind "$pane_id" 2>/dev/null || true)"
+  if [[ -n "$k" ]]; then
+    printf '%s\n' "$k"
+    return 0
+  fi
+  k="$(sb_pane_tree_agent_kind "$pane_id" 2>/dev/null || true)"
+  if [[ -n "$k" ]]; then
+    printf '%s\n' "$k"
+    return 0
+  fi
+  return 1
+}
+
+sb_pane_has_agent_process() {
+  sb_pane_agent_kind_from_process "${1:-}" >/dev/null 2>&1
+}
+
+# Resolve kind for a pane: **process first**, then pane_current_command name.
+# Title is never used. Call sites: take / host-status.
+sb_resolve_pane_kind() {
+  local pane_id="${1:-}" cmd="${2:-}"
+  # optional 3rd arg (title) ignored if present
+  local k=""
+  if [[ -n "$pane_id" ]]; then
+    k="$(sb_pane_agent_kind_from_process "$pane_id" 2>/dev/null || true)"
+    if [[ -n "$k" ]]; then
+      printf '%s\n' "$k"
+      return 0
+    fi
+  fi
+  sb_infer_kind_from_cmd "$cmd"
 }
 
 # --- tmux binary resolution (side-load safety) ---

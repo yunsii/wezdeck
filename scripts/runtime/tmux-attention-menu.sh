@@ -142,8 +142,22 @@ rows_tsv="$(jq -r --argjson alive "$alive_panes_json" '
 ' "$live_panes_path" 2>/dev/null || printf '')"
 bench_mark jq_rows
 
+# Session-bridge Ctrl+K w watch jobs (same TSV shape; status=sb).
+sb_rows_tsv=""
+if [[ -x "$script_dir/session-bridge-watch-picker-rows.sh" || -f "$script_dir/session-bridge-watch-picker-rows.sh" ]]; then
+  sb_rows_tsv="$(bash "$script_dir/session-bridge-watch-picker-rows.sh" 2>/dev/null || printf '')"
+fi
+if [[ -n "$sb_rows_tsv" ]]; then
+  if [[ -n "$rows_tsv" ]]; then
+    rows_tsv+=$'\n'"$sb_rows_tsv"
+  else
+    rows_tsv="$sb_rows_tsv"
+  fi
+fi
+bench_mark sb_watch_rows
+
 if [[ -z "$rows_tsv" ]]; then
-  tmux display-message -d 1500 'No pending agent attention'
+  tmux display-message -d 1500 'No pending agent attention / SB watch'
   runtime_log_info attention "popup menu skipped — empty rows" \
     "trace=$trace_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
   exit 0
@@ -236,7 +250,9 @@ if (( picker_rc == 0 )); then
   # popup) so bucket M reflects all of menu.sh's actual work. Inline
   # EPOCHREALTIME (µs/1000 → ms) avoids the ~5ms `date` fork.
   menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
-  picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") $(printf %q "$picker_binary") attention $(printf %q "$prefetch_file") $(printf %q "$attention_jump_script") $(printf %q "$current_workspace") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
+  # SESSION_BRIDGE_SH: Alt+/ `x` on 📡 SB rows runs watch-stop --id.
+  session_bridge_sh="$(cd "$script_dir/../.." && pwd)/openclaw/scripts/session-bridge.sh"
+  picker_command="WEZTERM_RUNTIME_TRACE_ID=$(printf %q "$trace_id") WEZTERM_EVENT_FORCE_FILE=1 WEZBUS_EVENT_DIR=$(printf %q "$picker_event_dir") SESSION_BRIDGE_SH=$(printf %q "$session_bridge_sh") WEZTERM_REPO=$(printf %q "$(cd "$script_dir/../.." && pwd)") $(printf %q "$picker_binary") attention $(printf %q "$prefetch_file") $(printf %q "$attention_jump_script") $(printf %q "$current_workspace") $(printf %q "$keypress_ts") $(printf %q "$menu_start_ts") $(printf %q "$menu_done_ts")"
   picker_kind='go'
 else
   # WEZTERM_ALLOW_BASH_PICKER=1 emergency path.
