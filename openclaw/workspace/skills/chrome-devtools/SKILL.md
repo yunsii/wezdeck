@@ -16,7 +16,7 @@ Dex (Main) can control the **Windows host debug Chrome** through OpenClaw MCP:
 | --- | --- |
 | CDP endpoint | `http://127.0.0.1:9222` (WezDeck helper auto-start) |
 | MCP server name | `chrome-devtools` in local `~/.openclaw/openclaw.json` → `mcp.servers` |
-| Package | `npx -y chrome-devtools-mcp@latest --browser-url=http://127.0.0.1:9222` |
+| Package | globally-installed `chrome-devtools-mcp --browser-url=http://127.0.0.1:9222 --usageStatistics=false` (pinned; **not** `npx …@latest`) |
 
 This is **not** the same MCP session as Grok/Claude CLI; all clients share the
 **same Chrome process** on port 9222. Avoid concurrent multi-agent browser wars.
@@ -49,11 +49,14 @@ for **main** when main is looking at the page. No bridge required.
 # CDP must answer first
 curl -sS -m 3 http://127.0.0.1:9222/json/version
 
+# Install once, pinned. Never drive this from `npx …@latest`: npx leaves
+# npm-cli resident (~85Mi) per instance purely as a launcher.
+npm i -g chrome-devtools-mcp@1.6.0
+
 openclaw mcp add chrome-devtools \
-  --command npx \
-  --arg -y \
-  --arg chrome-devtools-mcp@latest \
+  --command chrome-devtools-mcp \
   --arg --browser-url=http://127.0.0.1:9222 \
+  --arg --usageStatistics=false \
   --timeout 90 \
   --connect-timeout 60
 
@@ -61,6 +64,15 @@ openclaw mcp probe chrome-devtools   # expect ~29 tools
 openclaw mcp reload
 # or: systemctl --user restart openclaw-gateway.service
 ```
+
+A bare `--command` is enough — the gateway unit's pinned `Environment=PATH=`
+already contains the fnm global bin dir. **Re-run `npm i -g` after any
+`fnm default <version>` switch**: npm's global prefix is scoped to the default
+node version, so the binary drops off `PATH` entirely.
+`--usageStatistics=false` drops a ~135Mi `telemetry/watchdog` child process.
+Net: 4 processes / ~357Mi → 1 process / 150Mi per instance — see repo
+[`docs/diagnostics.md`](../../../../docs/diagnostics.md) "Standing memory
+consumers".
 
 Health:
 

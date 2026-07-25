@@ -420,7 +420,7 @@ for agents (see repo [`docs/browser-debug.md`](../docs/browser-debug.md)).
 | Layer | Value |
 | --- | --- |
 | Config key | `mcp.servers.chrome-devtools` in **local** `~/.openclaw/openclaw.json` |
-| Command | `npx -y chrome-devtools-mcp@latest --browser-url=http://127.0.0.1:9222` |
+| Command | globally-installed `chrome-devtools-mcp --browser-url=http://127.0.0.1:9222 --usageStatistics=false` |
 | Tool profile | `tools.profile: coding` (allows `bundle-mcp`) |
 | Agent skill | `workspace/skills/chrome-devtools/SKILL.md` |
 
@@ -429,11 +429,13 @@ One-time install on a machine:
 ```bash
 curl -sS -m 3 http://127.0.0.1:9222/json/version   # CDP must be up first
 
+# Install once, pinned — do NOT drive this from `npx …@latest` (see below)
+npm i -g chrome-devtools-mcp@1.6.0
+
 openclaw mcp add chrome-devtools \
-  --command npx \
-  --arg -y \
-  --arg chrome-devtools-mcp@latest \
+  --command chrome-devtools-mcp \
   --arg --browser-url=http://127.0.0.1:9222 \
+  --arg --usageStatistics=false \
   --timeout 90 \
   --connect-timeout 60
 
@@ -441,6 +443,22 @@ openclaw mcp probe chrome-devtools   # expect ~29 tools
 openclaw mcp reload
 # or: systemctl --user restart openclaw-gateway.service
 ```
+
+A bare `--command` is enough: the gateway's `Environment=PATH=` is pinned in its
+systemd user unit and already contains the fnm global bin dir, so no absolute
+path is needed. **Re-run the `npm i -g` after any `fnm default <version>`
+switch** — npm's global prefix is scoped to the default node version and
+`aliases/default` retargets with it, so the binary drops off `PATH` entirely.
+Re-verify with `openclaw mcp probe chrome-devtools`.
+
+**Why not `npx -y chrome-devtools-mcp@latest` (the previous form):** each stdio
+server is spawned per agent runtime, and `npx` leaves npm-cli resident for the
+whole session (~85 Mi) purely as a launcher, on top of re-resolving `@latest`
+every start. `--usageStatistics=false` additionally drops a
+`telemetry/watchdog` child — a second full Node runtime, ~135 Mi. Together:
+**4 processes / ~357 Mi → 1 process / 150 Mi** per instance. Full measurements,
+the node-version prerequisite, and the deferred `uxc` alternative are in repo
+[`docs/diagnostics.md`](../docs/diagnostics.md) "Standing memory consumers".
 
 Notes:
 

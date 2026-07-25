@@ -154,9 +154,47 @@ scripts/runtime/wsl-oom-guard.sh status          # protection state + headroom
 - Env knobs: `WEZTERM_OOM_GUARD_LOG`, `WEZTERM_OOM_WATCH_INTERVAL` (10s), `WEZTERM_OOM_WATCH_HIGH_PCT` (85), `WEZTERM_OOM_WATCH_TOP_N` (8), `WEZTERM_OOM_SCOPE`, `WEZTERM_OOM_PROTECT_ADJ` (-1000), `WEZTERM_OOM_TMUX_ADJ` (-800), `WEZTERM_OOM_PROTECT_TMUX` (1), `WEZTERM_OOM_RENORMALIZE` (1), `WEZTERM_OOM_DRY_RUN` (0).
 - `wsl-oom-guard.sh status` prints one line per protected process with `(protected)` / `(NOT protected)`. After a distro restart that is the one-command check that the boot path still works.
 - **The high-water snapshot is the load-bearing one.** A snapshot taken *after* `oom_kill` increments no longer contains the process that died; the pre-kill snapshot names it.
-- **Neither unit reduces memory usage or prevents OOM.** They change *who* dies and guarantee a record. Capping the actual consumers (`systemd-run --scope -p MemoryMax=…` for dev servers, fewer parallel agents each carrying a `chrome-devtools-mcp` + Chrome) is a separate decision.
+- **Neither unit reduces memory usage or prevents OOM.** They change *who* dies and guarantee a record. Capping the actual consumers is a separate decision — see "Standing memory consumers" below.
 - Prior art considered and deferred: `earlyoom` and `systemd-oomd` both implement a full kill *policy* with victim logging. This pair is deliberately narrower — exemption plus evidence, no policy, no apt dependency. Reach for `earlyoom` if the goal becomes "act at 90% before the kernel does".
 - Kernel OOM lines are **already** captured (journald `ReadKMsg` defaults on in the default namespace; `journalctl -k` works). They are still easy to lose: `misc dxg: dxgkio_query_adapter_info` spam runs ~145 lines/s and wraps the `dmesg` ring buffer within seconds. In the reference incident no kernel OOM line survived anywhere — only the `init.scope` cgroup counter, which the VM kernel carries across distro restarts and which systemd therefore re-reported at every one of the ~50 restarts.
+
+### Standing memory consumers
+
+The guard tells you who died; this section records what is *always* resident, so a snapshot can be read against a known baseline. Measured 2026-07-25 via `/proc/<pid>/status` `VmHWM` (per-process peak RSS) — the top-of-`ps` view understates long-lived processes that have since shrunk.
+
+| Family | Peak sum | Processes | Note |
+|---|---|---|---|
+| `chrome-devtools-mcp` | 5.91 Gi | 44 | one full stack **per agent session**; see below |
+| `claude` | 4.60 Gi | 11 | parallel agent sessions |
+| `vscode-server` | 1.24 Gi | 10 | one server per distro, shared across windows; each extra window adds an extension host |
+| `tsgo` (`--lsp --stdio`) | 17 Mi | 1 | the TypeScript native language server is **not** a memory concern — it is Go, no V8 heap |
+
+Two findings worth keeping:
+
+- **No Chrome runs inside WSL.** The browser is the Windows-side headless debug instance (see [`browser-debug.md`](./browser-debug.md)); every WSL-side `chrome-devtools-mcp` process is Node.js attached over `--browser-url=http://127.0.0.1:9222`. Do not go looking for renderer processes here.
+- **It was pure standby cost.** Those processes showed **0 seconds of CPU time** after 43 minutes of uptime, and peak RSS within ~10% of current — they were never exercised. The cost was paid whether or not any browser tool was ever called.
+
+Applied 2026-07-25 — MCP config is user-global (`~/.claude.json`, managed with `claude mcp add/remove -s user`), so this is a record of the decision, not repo-owned config:
+
+1. **Dropped the `npx` wrapper.** `npx chrome-devtools-mcp@latest` leaves npm-cli resident (~85 Mi) for the whole session just to act as a launcher, and re-resolves `@latest` on every start. `npm i -g chrome-devtools-mcp@<version>` plus a bare `command: chrome-devtools-mcp` removes that layer. Both spawners already have the fnm global bin dir on `PATH` — Claude Code's server entry sets `env.PATH` explicitly, and the OpenClaw gateway's `Environment=PATH=` is pinned in its systemd user unit — so no absolute path is needed, and the config stays copy-pasteable across machines.
+
+   **The prerequisite that actually breaks:** `npm config get prefix` is scoped to the *current default* node version (`…/node-versions/v22.23.1/installation` here), and `aliases/default` is a symlink to it. After a `fnm default <other-version>`, the alias retargets and the binary is simply gone from `PATH` — re-run `npm i -g chrome-devtools-mcp@<version>` under the new default and re-verify with `claude mcp get chrome-devtools` / `openclaw mcp probe chrome-devtools`. An absolute path does **not** protect against this; it fails the same way with a less obvious error. Also note the path `command -v` prints right after `npm i -g` is an ephemeral `/run/user/<uid>/fnm_multishells/…` one — never put that in config.
+2. **Disabled usage statistics.** `--usageStatistics=false` (or `CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS=1`) removes a `telemetry/watchdog/main.js` child — a second full Node runtime, ~135 Mi, one per instance. Grepping `process.env.[A-Z_]+` in `build/src` does **not** surface that variable; read `chrome-devtools-mcp --help` instead.
+
+Verified result: **4 processes / ~357 Mi per instance → 1 process / 150 Mi**, zero children, zero watchdog. Across ~12 concurrent sessions that is ~4.3 Gi → ~1.8 Gi.
+
+**There are two independent MCP configs on this host, and both needed the change.** `claude mcp … -s user` only touches Claude Code (`~/.claude.json`). The OpenClaw gateway keeps its own at `~/.openclaw/openclaw.json` → `mcp.servers.chrome-devtools`, managed with `openclaw mcp add/show/probe/reload`, and it runs **outside tmux** — so neither a Claude-side config change nor a `tmux kill-server` reaches it. Both are now on the global-binary + `--usageStatistics=false` form; the OpenClaw side is documented in [`openclaw/README.md`](../openclaw/README.md) "Chrome DevTools MCP" with the operator recipe mirrored in `openclaw/workspace/skills/chrome-devtools/SKILL.md`. After editing, `openclaw mcp reload` disposes cached runtimes so the next turn rebuilds on the new config.
+
+Related: a killed instance can **orphan** its `telemetry/watchdog` child (observed while testing), so it lingers holding ~135 Mi. Reap only the orphans — never a bare `pkill -f telemetry/watchdog`, which would also kill live sessions' watchdogs:
+
+```bash
+for p in $(pgrep -f "telemetry/watchdog"); do
+  pp=$(tr '\0' '\n' </proc/$p/cmdline | grep -oP '(?<=--parent-pid=)\d+')
+  [ -n "$pp" ] && [ ! -d "/proc/$pp" ] && kill "$p"
+done
+``` Other useful flags in the same `--help`: `--slim` (3 tools only, cuts tool-schema context), `--performanceCrux=false` (stops sending trace URLs to the Google CrUX API), `--experimentalPageIdRouting` (page-ID routing for concurrent sessions).
+
+Deferred option if memory pressure returns: wrap the MCP in a **skill** driven by [`uxc`](https://github.com/holon-run/uxc) instead of keeping a resident MCP connection. Measured viable — `uxc` discovers all 29 operations over stdio and its daemon reuses one live session (`idle_ttl_secs: 600`, daemon itself only 9 Mi), so `take_snapshot` → `click` `uid` continuity survives; real calls ran 970 ms cold, 518 ms warm. Costs: ~0.5–1 s per call, session state lost after the 10-minute idle expiry, and the model reaches tools by composing a CLI line instead of seeing their schemas directly. The side benefit is context, not just memory — an enabled MCP injects all 29 tool schemas into every session, while a skill loads only when triggered.
 
 ## Troubleshooting Notes
 
