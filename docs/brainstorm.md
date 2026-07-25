@@ -289,7 +289,7 @@ are fixed; model is a weighted preference.
 
 | agent (CLI) | default model (env override) | profile (measured) |
 | --- | --- | --- |
-| `claude` | `claude-fable-5[1m]` (`ADV_MODEL_CLAUDE`) | strong reasoning · ~6.6s |
+| `claude` | `claude-opus-5[1m]` (`ADV_MODEL_CLAUDE`) | deepest reasoning · ~5.6s |
 | `codex`  | `gpt-5.5` (`ADV_MODEL_CODEX`) | strong · ~25s |
 | `grok`   | `grok-4.5` (`ADV_MODEL_GROK`) | fast · ~4s · good quality |
 

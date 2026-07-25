@@ -482,7 +482,7 @@ alias name is kept for back-compat.
 
 | Alias | Meaning | Host config used | Typical role |
 | --- | --- | --- | --- |
-| `claude` | Claude Code CLI | `~/.claude` | find / repro |
+| `claude` | Claude Code CLI (`claude -p`) + `claude-opus-5[1m]` | `~/.claude` | find / repro |
 | `codex` / `gpt` | Codex native default model (GPT when account allows) | host `~/.codex` default | refute or second opinion |
 | `grok` | Standalone Grok CLI (`grok -p`) + `grok-4.5` | `~/.grok` (own API key) | Grok-side refute / matrix |
 

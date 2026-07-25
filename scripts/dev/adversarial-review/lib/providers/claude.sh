@@ -5,7 +5,7 @@
 claude__aliases() { :; }                 # no extra aliases
 claude__available() { command -v claude >/dev/null 2>&1; }
 claude__family()   { echo claude; }
-claude__model()    { printf '%s' "${ADV_MODEL_CLAUDE:-claude-fable-5[1m]}"; }
+claude__model()    { printf '%s' "${ADV_MODEL_CLAUDE:-claude-opus-5[1m]}"; }
 
 # stdin = full prompt (pack + INPUT); $1 = effort (may be empty)
 claude__invoke() {
