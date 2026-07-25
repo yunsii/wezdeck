@@ -70,7 +70,7 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | `say-as-me --to … -m …` | **写** | identity=`user`（lark-cli）；**默认 dry-run**；`--confirm` / 可选 `--interactive` |
 | `take [--focus\|--target …]` | 元写 | 接管聚焦/指定 pane：写 watch job + 启 poller；可选 ack 通知 |
 | `watch-status` / `watch-stop` | 读/元写 | 查看/停止盯梢 job |
-| `watch-loop` | 内部 | 轻量 poller（flock）；**无 LLM**；仅 `waiting`/`ended` 通知 |
+| `watch-loop` | 内部 | 轻量 poller（flock）；**无 LLM**；`waiting` / `turn_idle` / `ended` 通知 |
 | `panic on\|off\|status` | 元写 | `~/.openclaw/state/session-bridge.panic` |
 | `audit tail` | 读 | `~/.openclaw/logs/session-bridge-audit.jsonl` |
 
@@ -91,9 +91,10 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | --- | --- |
 | poller | 本机 bash + flock；读 attention.json / pane 存活 / 权限锚点 |
 | 通知方向 | **默认 `user+poke`**：你（say-as-me）→ Dex 飞书会话 **+** poke 注入 Dex session，让 Main 跑一轮。**不是** bot→主人（旧路径看起来像 Dex 主动找你，且易被当成飞书菜单）。配置：`defaults.watch.notify_identity`=`user`\|`poke`\|`user+poke`\|`bot` |
-| 通知时机 | **仅跃迁** take_ack / `→waiting`（need_human）/ `→done`·TTL；不每 tick 跑模型 |
+| 通知时机 | **仅跃迁** take_ack / `→waiting`（need_human）/ `→idle`（turn_idle，**job 不关**）/ `→done`·TTL；不每 tick 跑模型。从 running 再进 waiting/idle 可再次通知。 |
 | say-as-me 条件 | 需 `feishu_targets.dex_chat_id`（与 Dex bot 的 p2p chat）。只有 `dex_user_id` 不够（那是主人 open_id，发了也不进 Dex 会话） |
 | waiting 判定 | attention.json → 否则 capture 底栏匹配 **watch 专用锚点**（权限 y/N **与** Claude 选择题 footer：`Enter to select` / `Esc to cancel` 等）。**不用** approve-visible 窄锚点（避免选择题被当 y/N 自动键）。take 时 `last_status=init`，已在等待的 pane 首 tick 也会发 `need_human`。 |
+| idle / turn_idle | attention=`idle`，或 capture：底栏空 `❯` 且无进行中 spinner/tool（`esc to interrupt` / `… (Nm` / Waddling… 等）。用于「回合做完等你决策」；**不**结束 job。 |
 | need_human 文案 | `format-need-human.py` 从 capture（~80 行）抽出题目/选项/当前选中 `▶`，排成可读多行；**禁止**只 tail 底栏半截原文。 |
 | job 目录 | `~/.openclaw/state/session-bridge-watch/` |
 | WezTerm 徽章 | poller 每 tick 写 `%LOCALAPPDATA%/wezterm-runtime/state/session-bridge-watch/status.json`；right-status 在 **CDP 与 attention 之间** 显示 `SB·-`（未跑）/ `SB·N`（N=job 数）；waiting>0 时用 waiting 色 |

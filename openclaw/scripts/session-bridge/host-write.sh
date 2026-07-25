@@ -101,6 +101,40 @@ sb_watch_human_prompt_visible() {
   sb_text_has_anchor "$text" "$SB_WATCH_HUMAN_ANCHORS" "${SB_WATCH_HUMAN_TAIL_LINES:-12}"
 }
 
+# Turn-idle detector (Claude Code-like TUIs): empty prompt at bottom and no
+# in-flight spinner/tool line. Used by watch poller so "round finished, waiting
+# for next human decision" is not stuck as fake running.
+# Priority: human-prompt (waiting) wins over idle — call that first.
+# Note: Claude often paints the empty prompt as "❯" + NBSP (U+00A0), which is
+# NOT matched by POSIX [[:space:]] — normalize before the empty-prompt check.
+SB_WATCH_IDLE_TAIL_LINES="${SB_WATCH_IDLE_TAIL_LINES:-22}"
+sb_watch_turn_idle_visible() {
+  local text="$1"
+  local tail_n="${SB_WATCH_IDLE_TAIL_LINES:-22}"
+  local tail_text lower norm
+  tail_text="$(printf '%s\n' "$text" | tail -n "$tail_n")"
+  [[ -n "$tail_text" ]] || return 1
+  lower="$(printf '%s' "$tail_text" | tr '[:upper:]' '[:lower:]')"
+
+  # In-flight work → not idle
+  if [[ "$lower" == *"esc to interrupt"* ]]; then return 1; fi
+  if [[ "$lower" == *"to run in background"* ]]; then return 1; fi
+  if [[ "$lower" == *"ctrl+b"* ]]; then return 1; fi
+  # Running timer / spinner copy (Waddling… (5m 10s · …))
+  if printf '%s\n' "$tail_text" | grep -qE '…[[:space:]]*\([0-9]'; then return 1; fi
+  if printf '%s\n' "$tail_text" | grep -qiE '(waddling|thinking|brewing|cooking|running|streaming|fumbling|meandering)…'; then
+    return 1
+  fi
+
+  # Normalize NBSP / other unicode spaces so empty "❯ " / "❯\u00a0" counts as idle.
+  # Keep choice rows like "❯ 1. Yes" non-empty after strip of only pure whitespace.
+  norm="$(printf '%s\n' "$tail_text" | sed $'s/\xc2\xa0/ /g; s/\xe2\x80[\x80-\x8a\xaf]/ /g')"
+  if printf '%s\n' "$norm" | grep -qE '^[[:space:]]*❯[[:space:]]*$'; then
+    return 0
+  fi
+  return 1
+}
+
 sb_host_send_keys() {
   # args via env-like named params set by caller function below
   local target="$1"

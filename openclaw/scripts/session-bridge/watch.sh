@@ -328,7 +328,7 @@ sb_watch_status_for_job() {
     attn_idx="$(sb_attention_index_json)"
     attn="$(jq -r --arg p "$pane_id" '.[$p].status // empty' <<<"$attn_idx" 2>/dev/null || true)"
     case "$attn" in
-      waiting|running|done)
+      waiting|running|done|idle)
         printf '%s\n' "$attn"
         return 0
         ;;
@@ -338,10 +338,16 @@ sb_watch_status_for_job() {
   # Fallback: pane bottom looks like permission OR choice UI → waiting.
   # Broader than sb_prompt_visible (approve-key gate): Claude AskUserQuestion
   # shows "Enter to select · Esc to cancel" with no y/N anchors.
+  # Capture enough lines for idle spinner negation + empty ❯.
   local tail_text
-  tail_text="$(sb_host_capture_text_raw "$tmux_target" 20 2>/dev/null || true)"
+  tail_text="$(sb_host_capture_text_raw "$tmux_target" "${SB_WATCH_IDLE_TAIL_LINES:-22}" 2>/dev/null || true)"
   if [[ -n "$tail_text" ]] && sb_watch_human_prompt_visible "$tail_text"; then
     printf 'waiting\n'
+    return 0
+  fi
+  # Turn finished / awaiting next human input (empty prompt, no spinner).
+  if [[ -n "$tail_text" ]] && sb_watch_turn_idle_visible "$tail_text"; then
+    printf 'idle\n'
     return 0
   fi
 
@@ -455,7 +461,7 @@ sb_watch_notify() {
 
 # Wrap body so Dex never mistakes host choice UI for its own Feishu 1/2/3 menu.
 sb_watch_frame_for_dex() {
-  local event="$1"   # take | need_human | ended
+  local event="$1"   # take | need_human | turn_idle | ended
   local body="$2"
   case "$event" in
     take)
@@ -466,7 +472,7 @@ sb_watch_frame_for_dex() {
         "" \
         "$body" \
         "" \
-        "规则：只在「需我确认 / 会话结束」时再找我；不要把后文选项当成你的飞书菜单。"
+        "规则：只在「需我确认 / 回合空闲 / 会话结束」时再找我；不要把后文选项当成你的飞书菜单。"
       ;;
     need_human)
       printf '%s\n' \
@@ -477,6 +483,15 @@ sb_watch_frame_for_dex() {
         "$body" \
         "" \
         "请提醒我回主机处理。除非我明确授权 lease/host-send-keys，不要代按键。"
+      ;;
+    turn_idle)
+      printf '%s\n' \
+        "【host-watch · turn_idle】" \
+        "本机 agent 回合已停在空闲 prompt，方便你回主机做决策。" \
+        "下面摘要来自 host pane 截取——不是你的飞书菜单，请勿代选。" \
+        "盯梢继续（job 未关）；除非明确授权，不要代按 TUI。" \
+        "" \
+        "$body"
       ;;
     ended)
       printf '%s\n' \
@@ -489,6 +504,26 @@ sb_watch_frame_for_dex() {
       printf '%s\n' "【host-watch · ${event}】" "$body"
       ;;
   esac
+}
+
+# Short tail for turn_idle notify (not a choice menu dump).
+sb_watch_format_turn_idle_msg() {
+  local target="$1"
+  local kind="$2"
+  local note="${3:-}"
+  local tmux_target raw tail
+  tmux_target="$(sb_normalize_host_target "$target")"
+  raw="$(sb_host_capture_text_raw "$tmux_target" 40 2>/dev/null || true)"
+  tail="$(printf '%s\n' "$raw" | tail -n 16 | sed -e 's/[[:space:]]*$//' | awk 'NF{p=1} p' | tail -n 12)"
+  printf '⏸ 回合空闲（可决策）\n\n会话: %s\n类型: %s\n' "$target" "$kind"
+  if [[ -n "$note" ]]; then
+    printf '备注: %s\n' "$note"
+  fi
+  printf 'reason: turn_idle\njob: 继续盯梢（未结束）\n'
+  if [[ -n "$tail" ]]; then
+    printf '\n--- pane 尾部 ---\n%s\n' "$tail"
+  fi
+  printf '\n→ 回对应 tmux pane 继续或收工\n'
 }
 
 # Structured Feishu body for need_human (choice UI / permission), not raw pane dump.
@@ -818,10 +853,20 @@ sb_watch_tick_job() {
     cur="done"
   else
     cur="$(sb_watch_status_for_job "$target" "$pane_id")"
+    # After leaving waiting/idle back to running, allow the same event to fire again
+    # on the next stretch (otherwise last_notified_event blocks re-notify forever).
+    if [[ "$cur" == "running" && "$last_notified_event" =~ ^(need_human|turn_idle)$ ]]; then
+      last_notified_event=""
+    fi
     if [[ "$cur" == "waiting" && "$last_status" != "waiting" ]]; then
       event="need_human"
       body="$(sb_watch_format_need_human_msg "$target" "$kind" "$note")"
       msg="$(sb_watch_frame_for_dex need_human "$body")"
+    elif [[ "$cur" == "idle" && "$last_status" != "idle" ]]; then
+      # turn finished / awaiting decision — notify, keep job open
+      event="turn_idle"
+      body="$(sb_watch_format_turn_idle_msg "$target" "$kind" "$note")"
+      msg="$(sb_watch_frame_for_dex turn_idle "$body")"
     elif [[ "$cur" == "done" && "$last_status" != "done" && "$last_status" != "init" ]]; then
       event="ended"
       body="$(printf 'target: %s\nkind: %s\nreason: status=done' "$target" "$kind")"
@@ -833,24 +878,32 @@ sb_watch_tick_job() {
     fi
   fi
 
-  # update last_status always
+  # Persist status *before* slow notify (say-as-me/poke can take seconds). Otherwise a
+  # concurrent tick or kill mid-notify leaves last_status stuck and re-fires forever.
   local updated
-  updated="$(jq -c --arg st "$cur" --arg ev "${event:-}" \
-    '.last_status=$st | if $ev != "" then .last_event=$ev else . end' <<<"$job")"
-
+  local will_notify=0
   if [[ -n "$event" && "$event" != "$last_notified_event" ]]; then
-    # poller always real-notify (confirm=1); panic still freezes writes
-    if sb_watch_notify "$notify_to" "$msg" 1 "$notify_identity" 2>/dev/null; then
-      updated="$(jq -c --arg ev "$event" --arg ts "$(sb_now_iso)" \
-        '.last_notified_event=$ev | .last_notified_at=$ts' <<<"$updated")"
-      sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${msg:0:80}"
-    else
-      sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${msg:0:80}"
-    fi
+    will_notify=1
   fi
+  updated="$(jq -c --arg st "$cur" --arg ev "${event:-}" --arg lne "$last_notified_event" \
+    --argjson notify "$will_notify" --arg ts "$(sb_now_iso)" \
+    '.last_status=$st
+     | if $ev != "" then .last_event=$ev else . end
+     | if $lne == "" then .last_notified_event = null else . end
+     | if $notify == 1 and $ev != "" then
+         .last_notified_event=$ev | .last_notified_at=$ts
+       else . end' <<<"$job")"
 
   if [[ "$event" == "ended" ]] || [[ "$cur" == "done" && "$event" == "ended" ]]; then
+    # ended: drop job first so loop won't double-send while notify runs
     rm -f "$path"
+    if [[ "$will_notify" == "1" ]]; then
+      if sb_watch_notify "$notify_to" "$msg" 1 "$notify_identity" 2>/dev/null; then
+        sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${msg:0:80}"
+      else
+        sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${msg:0:80}"
+      fi
+    fi
     sb_audit "watch-end" "local" "$target" "ok" "${event:-done}"
     return 0
   fi
@@ -865,6 +918,19 @@ sb_watch_tick_job() {
   fi
 
   printf '%s\n' "$updated" >"$path"
+
+  if [[ "$will_notify" == "1" ]]; then
+    # poller always real-notify (confirm=1); panic still freezes writes
+    # last_notified_event already stamped above to suppress duplicates
+    if sb_watch_notify "$notify_to" "$msg" 1 "$notify_identity" 2>/dev/null; then
+      sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${msg:0:80}"
+    else
+      sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${msg:0:80}"
+      # allow retry next tick if delivery failed
+      jq -c 'del(.last_notified_event) | del(.last_notified_at)' "$path" >"${path}.tmp.$$" \
+        && mv -f "${path}.tmp.$$" "$path" || true
+    fi
+  fi
 }
 
 sb_watch_loop() {

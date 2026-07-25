@@ -34,7 +34,7 @@ tmux 版本策略：`docs/tmux-install.md`
 | 查/停盯梢 | `$SB watch-status` / `watch-stop --all` |
 | 紧急停写 | `$SB panic on` |
 
-`take` 只做轻量轮询 + **向 Dex 交接**（需确认 / 会话结束）；**不**代按 TUI、不每 tick 跑模型。  
+`take` 只做轻量轮询 + **向 Dex 交接**（需确认 / 回合空闲 turn_idle / 会话结束）；**不**代按 TUI、不每 tick 跑模型。turn_idle 时 job 继续盯，不自动结束。  
 通知默认 `user+poke`：本人进 Dex 飞书会话 + session poke；文案带 `【host-watch · …】` 头，避免 Dex 把 host 选择题当成自己的 1/2/3。需配置 `feishu_targets.dex_chat_id` 才有 say-as-me；否则至少 poke。  
 **仅 agent pane**：以 **pane 前台进程**为准；**不用标题**。
 
