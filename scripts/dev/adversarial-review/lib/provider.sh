@@ -82,13 +82,31 @@ sys.exit(1)
 }
 
 # Offline mock: canned, shape-correct output per prompt basename. No LLM.
+#
+# PROVIDER_MOCK_PAD_BYTES=<n> pads each generated idea summary by n bytes so a
+# test can build a payload larger than the 64KiB pipe buffer. That is what
+# separates "the shell logic runs" from "the shell logic survives a real-sized
+# payload": stage splitters written as `printf … | head -n1` SIGPIPE (rc 141)
+# only once the payload exceeds the buffer, and set -e + pipefail then aborts
+# the run mid-stage. The pad flows through challenge/converge (they map over the
+# ideas they are given), so one env var sizes up every downstream stage.
 _provider_mock() {
   local pf; pf="$(basename "$1")"
-  local input="$2" tail_json
+  local input="$2" tail_json pad="" pad_n
   tail_json="$(printf '%s' "$input" | awk '/^=== [A-Z_]+ ===$/{buf="";next}{buf=buf $0 "\n"}END{printf "%s",buf}')"
+  # Capped: this is a test knob, and one stray zero would have bash allocate the
+  # whole string up front. 1MiB is far past any threshold worth exercising.
+  pad_n="${PROVIDER_MOCK_PAD_BYTES:-0}"
+  case "$pad_n" in ''|*[!0-9]*) pad_n=0 ;; esac
+  if [ "$pad_n" -gt 1048576 ]; then pad_n=1048576; fi
+  if [ "$pad_n" -gt 0 ]; then printf -v pad '%*s' "$pad_n" ''; fi
   case "$pf" in
     diverge.md)
-      printf '%s' '[{"title":"Mock idea A","summary":"mock summary A","novelty":3},{"title":"Mock idea B","summary":"mock summary B","novelty":4}]' ;;
+      # --rawfile, not --arg: the pad is exactly the kind of oversized value that
+      # blows the 128KiB argv cap this knob exists to test.
+      jq -nc --rawfile pad <(printf '%s' "$pad") \
+        '[{title:"Mock idea A",summary:("mock summary A"+$pad),novelty:3},
+          {title:"Mock idea B",summary:("mock summary B"+$pad),novelty:4}]' ;;
     critic.md)
       printf '%s' '[{"file":"mock.sh","line":1,"summary":"mock finding","failure_scenario":"mock input -> mock crash","severity":"low","category":"correctness","verdict":"PLAUSIBLE"}]' ;;
     challenge.md)

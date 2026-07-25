@@ -31,11 +31,43 @@ check "report includes an idea"   grep -qE '/10' <<<"$out"
 check "personas=1 exits 0"      test "$?" -eq 0
 
 # 3. --json is valid and carries a non-empty ideas array (no ideas silently dropped)
-tmpj="$(mktemp)"; trap 'rm -f "$tmpj"' EXIT
+tmpj="$(mktemp)"; tmp4="$(mktemp)"; tmpbig="$(mktemp)"
+trap 'rm -f "$tmpj" "$tmp4" "$tmpbig"' EXIT
 "$here/run.sh" "y" --personas 2 --json >"$tmpj" 2>/dev/null
 check "--json is valid JSON"    jq -e . "$tmpj"
 check "--json has ideas[]"      jq -e '.ideas | length > 0' "$tmpj"
 check "--json has synthesis"    jq -e 'has("synthesis")' "$tmpj"
+
+# 4. THE FULL persona set (no --personas), because lens names are not
+#    filename-safe: "Contrarian / First-Principles" carries a "/" and spaces.
+#    Cases 1-3 all pinned --personas 1|2 and never reached the 4th lens, so a
+#    broken temp path / fanout job label there stayed invisible.
+#    Assert against the run's own `personas` count, not personas.conf's line
+#    count: run.sh defaults to 4 lenses and only clamps *down* to the conf, so a
+#    5th line would fail this check without anything being broken.
+"$here/run.sh" "how to focus better" --json >"$tmp4" 2>/dev/null; rc4=$?
+check "full persona set exits 0"  test "$rc4" -eq 0
+check "every lens ingested (names with '/' and spaces)" \
+  jq -e '(.ideas | map(.persona) | unique | length) == .personas' "$tmp4"
+
+# 5. MOCK-only: a real-sized payload, sized past BOTH size cliffs:
+#      64KiB  pipe buffer  — `printf … | head -n1` SIGPIPEs (rc 141) and set -e
+#                            + pipefail kills the stage
+#     128KiB  argv cap     — `jq --argjson <big>` dies E2BIG (rc 126)
+#    The tightest site is the CUMULATIVE diverge ingest merge, which only holds
+#    (n_lens-1) personas' worth when it merges the last one. So the pad must
+#    satisfy (n_lens-1) * 2 ideas * pad > 128KiB — at 4 lenses, 20000 gives only
+#    ~120KiB and stays green while the bug is live. 30000 gives ~180KiB.
+#    More lenses only make it larger, so this stays valid as personas.conf grows.
+if [ "$live" -eq 0 ]; then
+  PROVIDER_MOCK_PAD_BYTES=30000 "$here/run.sh" "big payload" --json \
+    >"$tmpbig" 2>/dev/null; rcb=$?
+  check "oversized payload exits 0 (no SIGPIPE mid-stage)" test "$rcb" -eq 0
+  check "oversized payload keeps every idea" \
+    jq -e '(.ideas | length) == (.personas * 2)' "$tmpbig"
+  check "oversized payload still reaches converge" \
+    jq -e '(.synthesis | type) == "string" and (.synthesis | length) > 0' "$tmpbig"
+fi
 
 echo "---"
 printf 'pass=%d fail=%d\n' "$pass" "$fail"

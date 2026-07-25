@@ -251,8 +251,20 @@ converge output from the input so ids stay consistent — exercising the runner'
 arg parsing, provider selection, JSON threading, jq filters, fallback, and
 merge logic without any model.
 
-- `brainstorm/test.sh` — default-mock smoke (7 checks, ~0.5 s); `--live` for real.
+- `brainstorm/test.sh` — default-mock smoke (12 checks, ~2 s); `--live` for real.
 - Measured: brainstorm e2e ≈ **0.18 s mock** vs minutes live.
+
+**Two things a canned mock hides, so the suite forces them:**
+
+| Guard | Why the earlier suite missed it |
+| --- | --- |
+| One run with the **full** persona set (no `--personas`) | Every earlier case pinned `--personas 1\|2`, so lens 4 — `Contrarian / First-Principles`, whose name carries `/` and spaces — was never built. Its temp path / fanout job label was broken and the run aborted; the suite stayed green. |
+| One run with `PROVIDER_MOCK_PAD_BYTES=30000` | Canned ideas are a few hundred bytes, so payload-size failures cannot fire: `printf … \| head -n1` only SIGPIPEs past the 64KiB pipe buffer, and `jq --argjson` only hits E2BIG past the 128KiB argv cap. Real runs (a dozen-plus scored ideas) cross both. The pad must clear the *cumulative* ingest merge, which holds `(n_lens-1) × 2 × pad` when merging the last persona — at 4 lenses, `20000` yields only ~120KiB and stays green with the bug live; `30000` yields ~180KiB. |
+
+`PROVIDER_MOCK_PAD_BYTES=<n>` pads each mock idea summary by n bytes; the pad
+flows through challenge/converge (they map over the ideas handed to them), so one
+env var sizes up every downstream stage. Both guards were verified against the
+pre-fix runner: the 7 original checks pass there, the 5 new ones fail.
 
 ## 6. Boundary hardening
 
@@ -268,6 +280,27 @@ Brainstorm trusts models to return schema-shaped JSON, so it defends the seams
   by id** — the judge can never silently drop ideas by returning a subset.
 - `key_tradeoffs` is coerced to an array (a string value no longer crashes the
   report).
+- **Persona names are not filenames.** Diverge derives a `pslug`
+  (`[a-z0-9-]` + index) for temp paths and fanout job labels, and keeps the human
+  name only for prompts / ids / the report. `fanout_run_jobs` interpolates a job
+  label straight into `out/<label>.md` without sanitizing, so a lens named
+  `Contrarian / First-Principles` used to abort the run on a missing directory.
+- **Payload size is a seam, twice over.** Stage results are split with bash
+  parameter expansion (`_split_result`), never `printf … | head -n1`, which
+  SIGPIPEs (rc 141) past the 64KiB pipe buffer and — under `set -e` +
+  `pipefail` — kills the stage. And every **payload-bearing** JSON reaches `jq`
+  by stdin or `--slurpfile`, never `--argjson`, whose argv entry caps at 128KiB
+  (`Argument list too long`, rc 126): the diverge ingest merge, both id-merges,
+  and the `--json` emit. (`--argjson` is still fine for counters and the small
+  `skipped` / `key_tradeoffs` arrays.) Both cliffs fire only on real-sized
+  payloads; see the §5 padding guard.
+- **The cumulative site fails first, and quietly.** `_ingest_diverge_body` grows
+  `all_ideas` per persona, so it crosses 128KiB before any single-stage payload
+  does. It runs as `if _ingest_diverge_body …`, where `set -e` is suppressed — a
+  failed merge there used to blank `all_ideas`, still `return 0`, log the persona
+  as a success and skip its provider fallback, losing every idea and ending in
+  `diverge produced no ideas`. It now returns failure so the persona falls back
+  like any other ingest miss.
 
 ## 7. Model & effort standard, and adding backends
 

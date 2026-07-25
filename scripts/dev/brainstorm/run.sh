@@ -178,12 +178,39 @@ _ingest_diverge_body() {
     raw="$sliced"
   fi
   ideas_i="$(_validate_ideas "$raw")"
-  INGEST_N="$(printf '%s' "$ideas_i" | jq 'length')"
+  INGEST_N="$(printf '%s' "$ideas_i" | jq 'length' 2>/dev/null || true)"
+  INGEST_N="${INGEST_N:-0}"
   [ "$INGEST_N" -gt 0 ] || return 1
   ideas_i="$(printf '%s' "$ideas_i" | jq -c --arg p "$pname" \
     '[ .[] | .persona=$p | .id=($p+"::"+(.title//"")) ]')"
-  all_ideas="$(jq -nc --argjson a "$all_ideas" --argjson b "$ideas_i" '$a + $b')"
+  # This merge is CUMULATIVE — all_ideas grows with every persona, so it is the
+  # first jq site to cross the 128KiB argv cap. Route it by stdin/--slurpfile,
+  # and treat a failed merge as ingest failure: this runs inside
+  # `if _ingest_diverge_body …`, where set -e is suppressed, so returning 0 after
+  # a broken assignment would blank all_ideas, log the persona as a success and
+  # skip its fallback — every idea gone, silently.
+  local merged
+  if merged="$(printf '%s' "$all_ideas" \
+                 | jq -c --slurpfile add <(printf '%s' "$ideas_i") '. + $add[0]')" \
+     && [ -n "$merged" ]; then
+    all_ideas="$merged"
+  else
+    INGEST_N=0
+    return 1
+  fi
   return 0
+}
+
+# Split a "<provider>\n<payload>" _run_with_fallback result without a pipe.
+# `printf | head -n1` would SIGPIPE (141) once the payload exceeds the pipe
+# buffer, and set -e + pipefail then kills the whole run mid-stage.
+# Sets SPLIT_PROVIDER / SPLIT_BODY.
+_split_result() {
+  SPLIT_PROVIDER="${1%%$'\n'*}"
+  case "$1" in
+    *$'\n'*) SPLIT_BODY="${1#*$'\n'}" ;;
+    *) SPLIT_BODY="" ;;
+  esac
 }
 
 # Run a stage against candidates until one returns valid JSON.
@@ -222,7 +249,9 @@ all_ideas='[]'
 ndp="${#diverge_providers[@]}"
 div_tmp="$(mktemp -d "${TMPDIR:-/tmp}/brainstorm-diverge.XXXXXX")"
 
-# persona_meta lines: pname|primary|cand2,cand3,...
+# persona_meta lines: pname|pslug|primary|cand2,cand3,...
+# pslug is the filesystem/job-label form: persona names may contain "/" or
+# spaces (e.g. "Contrarian / First-Principles"), which would break paths.
 # full prompt path contains "diverge" so PROVIDER_MOCK uses provider fixtures.
 job_args=()
 persona_meta=()
@@ -230,19 +259,21 @@ for i in $(seq 0 $((personas_n - 1))); do
   entry="${PERSONAS[$i]}"
   pname="${entry%%|*}"
   pdesc="${entry#*|}"
+  pslug="$(printf '%s' "$pname" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9]\+/-/g' -e 's/^-//' -e 's/-$//')"
+  pslug="${pslug:-persona}-$i"
   prov="${diverge_providers[$((i % ndp))]}"
   d_cands=("$prov"); for c in "${div_seq[@]}"; do [ "$c" != "$prov" ] && d_cands+=("$c"); done
   d_in="=== YOUR PERSONA ==="$'\n'"$pname: $pdesc"$'\n\n'"=== PROBLEM ==="$'\n'"$problem"$'\n\n'"=== CONSTRAINTS ==="$'\n'"$constraints_disp"
-  full_pf="$div_tmp/diverge-${pname}.full.md"
+  full_pf="$div_tmp/diverge-${pslug}.full.md"
   {
     cat "$prompts/diverge.md"
     printf '\n\n=== INPUT ===\n%s' "$d_in"
   } >"$full_pf"
-  printf '%s' "$d_in" >"$div_tmp/${pname}.input.md"
+  printf '%s' "$d_in" >"$div_tmp/${pslug}.input.md"
   rest_cands=("${d_cands[@]:1}")
   IFS=','; rest_joined="${rest_cands[*]-}"; unset IFS
-  persona_meta+=("${pname}|${prov}|${rest_joined}")
-  job_args+=(--job "${pname}|${prov}|${full_pf}")
+  persona_meta+=("${pname}|${pslug}|${prov}|${rest_joined}")
+  job_args+=(--job "${pslug}|${prov}|${full_pf}")
 done
 
 # Primary: true parallel across personas (one backend each).
@@ -253,12 +284,14 @@ set -e
 for meta in "${persona_meta[@]}"; do
   pname="${meta%%|*}"
   rest="${meta#*|}"
+  pslug="${rest%%|*}"
+  rest="${rest#*|}"
   prov="${rest%%|*}"
-  body_f="$div_tmp/out/${pname}.md"
+  body_f="$div_tmp/out/${pslug}.md"
   [ -f "$body_f" ] && [ -s "$body_f" ] || continue
   if _ingest_diverge_body "$pname" "$(cat "$body_f")"; then
     log "  • $pname ($prov) → $INGEST_N idea(s) [fanout]"
-    primary_ok+=("$pname")
+    primary_ok+=("$pslug")
   fi
 done
 
@@ -266,11 +299,13 @@ done
 for meta in "${persona_meta[@]}"; do
   pname="${meta%%|*}"
   rest="${meta#*|}"
+  pslug="${rest%%|*}"
+  rest="${rest#*|}"
   prov="${rest%%|*}"
   rest_cands="${rest#*|}"
   skip=0
   for okp in "${primary_ok[@]+"${primary_ok[@]}"}"; do
-    [ "$okp" = "$pname" ] && { skip=1; break; }
+    [ "$okp" = "$pslug" ] && { skip=1; break; }
   done
   [ "$skip" -eq 1 ] && continue
 
@@ -279,10 +314,9 @@ for meta in "${persona_meta[@]}"; do
     IFS=',' read -r -a _rc <<<"$rest_cands"
     d_cands+=("${_rc[@]}")
   fi
-  d_in="$(cat "$div_tmp/${pname}.input.md")"
+  d_in="$(cat "$div_tmp/${pslug}.input.md")"
   if draw="$(printf '%s' "$d_in" | _run_with_fallback "$prompts/diverge.md" "$div_effort" "${d_cands[@]}")"; then
-    dused="$(printf '%s' "$draw" | head -n1)"
-    raw="$(printf '%s' "$draw" | tail -n +2)"
+    _split_result "$draw"; dused="$SPLIT_PROVIDER"; raw="$SPLIT_BODY"
     [ "$dused" != "$prov" ] && skipped+=("diverge-fellback($pname:$prov→$dused)")
     if _ingest_diverge_body "$pname" "$raw"; then
       log "  • $pname ($dused) → $INGEST_N idea(s) [fallback]"
@@ -310,14 +344,16 @@ if provider_available "$challenger" || [ "${#ch_cands[@]}" -gt 0 ]; then
   log "stage 2/3 · challenge ($challenger)…"
   c_in="=== PROBLEM ==="$'\n'"$problem"$'\n\n'"=== CONSTRAINTS ==="$'\n'"$constraints_disp"$'\n\n'"=== IDEAS ==="$'\n'"$all_ideas"
   if raw2="$(printf '%s' "$c_in" | _run_with_fallback "$prompts/challenge.md" "$ch_effort" "${ch_cands[@]}")"; then
-    used="$(printf '%s' "$raw2" | head -n1)"
-    c2_raw="$(printf '%s' "$raw2" | tail -n +2)"
+    _split_result "$raw2"; used="$SPLIT_PROVIDER"; c2_raw="$SPLIT_BODY"
     [ "$used" != "$challenger" ] && skipped+=("challenger-fellback($challenger→$used)")
     challenger="$used"
     c2="$(_validate_ideas "$c2_raw")"
-    challenged="$(jq -nc --argjson base "$all_ideas" --argjson ch "$c2" '
-      ($ch | map({key:(.id // (.persona+"::"+.title)), value:.}) | from_entries) as $m
-      | [ $base[]
+    # Big JSON travels by stdin / --slurpfile, never argv: one argv entry caps at
+    # 128KiB (MAX_ARG_STRLEN), which a two-dozen-idea payload passes — as argv it
+    # died with "Argument list too long" (rc 126) mid-stage.
+    challenged="$(printf '%s' "$all_ideas" | jq -c --slurpfile ch <(printf '%s' "$c2") '
+      ($ch[0] | map({key:(.id // (.persona+"::"+.title)), value:.}) | from_entries) as $m
+      | [ .[]
           | . as $o
           | ($m[$o.id] // {}) as $n
           | $o + ( $n
@@ -340,8 +376,7 @@ jd_cands=("$judge"); for c in "${cv_seq[@]}"; do [ "$c" != "$judge" ] && jd_cand
 log "stage 3/3 · converge ($judge)…"
 v_in="=== PROBLEM ==="$'\n'"$problem"$'\n\n'"=== CONSTRAINTS ==="$'\n'"$constraints_disp"$'\n\n'"=== IDEAS ==="$'\n'"$challenged"
 if raw3="$(printf '%s' "$v_in" | _run_with_fallback "$prompts/converge.md" "$cv_effort" "${jd_cands[@]}")"; then
-  used="$(printf '%s' "$raw3" | head -n1)"
-  conv_raw="$(printf '%s' "$raw3" | tail -n +2)"
+  _split_result "$raw3"; used="$SPLIT_PROVIDER"; conv_raw="$SPLIT_BODY"
   [ "$used" != "$judge" ] && skipped+=("judge-fellback($judge→$used)")
   judge="$used"
   conv_ideas="$(printf '%s' "$conv_raw" | jq -c '.ideas // empty' 2>/dev/null || true)"
@@ -350,9 +385,9 @@ if raw3="$(printf '%s' "$v_in" | _run_with_fallback "$prompts/converge.md" "$cv_
     # Merge the judge's score/verdict/judge_note back onto the challenged set by
     # id — never let the judge silently drop ideas. Ideas the judge omitted are
     # kept unscored (they sort by novelty), and every original field is preserved.
-    final_ideas="$(jq -nc --argjson base "$challenged" --argjson j "$cj" '
-      ($j | map({key:(.id // (.persona+"::"+.title)), value:.}) | from_entries) as $m
-      | [ $base[]
+    final_ideas="$(printf '%s' "$challenged" | jq -c --slurpfile j <(printf '%s' "$cj") '
+      ($j[0] | map({key:(.id // (.persona+"::"+.title)), value:.}) | from_entries) as $m
+      | [ .[]
           | . as $o
           | ($m[$o.id] // {}) as $n
           | $o + ( $n | {score, verdict, judge_note} | with_entries(select(.value != null)) )
@@ -380,7 +415,9 @@ ranked="$(printf '%s' "$final_ideas" | jq -c '
 skipped_json="$(printf '%s\n' "${skipped[@]:-}" | jq -R . | jq -sc 'map(select(length>0))')"
 
 if [ "$want_json" -eq 1 ]; then
-  jq -nc --argjson ideas "$ranked" --arg synthesis "$synthesis" \
+  # ideas (the big one) via stdin, everything else via argv — see the E2BIG note
+  # on the challenge merge above.
+  printf '%s' "$ranked" | jq -c --arg synthesis "$synthesis" \
      --argjson tradeoffs "$key_tradeoffs" --argjson skipped "$skipped_json" \
      --arg primary "$primary" --arg challenger "$challenger" --arg judge "$judge" \
      --arg challenger_model "$(provider_model "$challenger")" \
@@ -389,7 +426,7 @@ if [ "$want_json" -eq 1 ]; then
      '{diverge_primary:$primary, challenger:$challenger, challenger_model:$challenger_model,
        judge:$judge, judge_model:$judge_model, personas:$personas,
        consensus:"single-judge · cross-model UNREVIEWED",
-       skipped:$skipped, synthesis:$synthesis, key_tradeoffs:$tradeoffs, ideas:$ideas}'
+       skipped:$skipped, synthesis:$synthesis, key_tradeoffs:$tradeoffs, ideas:.}'
   exit 0
 fi
 
