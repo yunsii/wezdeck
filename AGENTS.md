@@ -52,7 +52,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Diagnostics, logs, or smoke tests (operator surface — env knobs,
   file paths, troubleshooting); also guest-OOM hardening (the whole distro
   vanishing / restarting on a fixed interval, `wsl-oom-guard.sh`, the
-  `wezterm-oom-protect` / `wezterm-oom-record` units):
+  `wezterm-oom-protect` / `wezterm-oom-record` units); also host disk space
+  (host volume full, `ext4.vhdx` growing but never shrinking, why
+  `--set-sparse` is a trap, `fstrim` → `wsl --shutdown` → `Optimize-VHD` /
+  `compact vdisk`, build-artifact inventory, OEM preinstalls, and the
+  `wsl-disk-guard.sh` sampler + `D·…` headroom badge):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
 - Cross-host development environment failures involving Windows, WSL, DNS,
   VPN/proxy software, shells, or agent CLIs; also the first-triage path when

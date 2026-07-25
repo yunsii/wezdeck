@@ -59,7 +59,7 @@ Re-run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` and reload for chan
 
 There is one unified env loader for managed-runtime shell scripts: `scripts/runtime/runtime-env-lib.sh`. Any agent / status / hook entry point that needs env should source it and call `runtime_env_load_managed`, which sources two layers in this order (later wins):
 
-1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, and VS Code launch overrides.
+1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [diagnostics.md](./diagnostics.md#host-disk-space)), and VS Code launch overrides.
 2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets. Drop a new file there to add a secret; no loader edits, no rc-file edits. The same dir is sourced by `~/.zshrc`, so interactive zsh and machine-spawned agents share one source of truth.
 
 The Lua side reads `shared.env` independently via `helpers.load_optional_env_file`; that is a structural cross-language constraint — Lua cannot call into bash — and is the only second loader implementation that exists.

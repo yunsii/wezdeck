@@ -23,6 +23,7 @@ local workspace_manager = load_module 'workspace_manager'
 local attention = load_module 'attention'
 local chrome_debug_status = load_module 'chrome_debug_status'
 local session_bridge_status = load_module 'session_bridge_status'
+local disk_status = load_module 'disk_status'
 local logger = load_module('logger').new {
   wezterm = wezterm,
   constants = constants,
@@ -67,12 +68,19 @@ session_bridge_status.configure {
   heartbeat_timeout_ms = sb_watch.heartbeat_timeout_ms,
 }
 
+local disk_guard = constants.disk_guard or {}
+disk_status.configure {
+  state_file = disk_guard.status_file,
+  heartbeat_timeout_ms = disk_guard.heartbeat_timeout_ms,
+}
+
 titles.register {
   wezterm = wezterm,
   palette = constants.palette,
   attention = attention,
   chrome_debug_status = chrome_debug_status,
   session_bridge_status = session_bridge_status,
+  disk_status = disk_status,
   host = host,
   logger = logger,
   constants = constants,

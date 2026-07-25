@@ -24,6 +24,7 @@ function M.register(opts)
   local attention = opts.attention
   local chrome_debug_status = opts.chrome_debug_status
   local session_bridge_status = opts.session_bridge_status
+  local disk_status = opts.disk_status
   local host = opts.host
   local logger = opts.logger
   local constants = opts.constants
@@ -277,8 +278,8 @@ function M.register(opts)
   end)
 
   -- Compose the right-status bar from IME, chrome-debug, session-bridge
-  -- watch poller, and attention segments. Order:
-  --   IME | CDP·… | SB·N | 🚨…✅…🔄…
+  -- watch poller, host-disk, and attention segments. Order:
+  --   IME | CDP·… | SB·N | D·151G | 🚨…✅…🔄…
   -- Kept pure so it can run from both the `update-status` tick (250ms)
   -- and from the event-bus handler when a producer publishes
   -- `attention.tick` (OSC wire `we_attention_tick`).
@@ -301,6 +302,10 @@ function M.register(opts)
       or nil
     if sb_segment then
       table.insert(right_segments, sb_segment)
+    end
+    local disk_segment = disk_status and disk_status.render_status_segment(palette) or nil
+    if disk_segment then
+      table.insert(right_segments, disk_segment)
     end
     local active_pane_id = nil
     if pane and type(pane.pane_id) == 'function' then

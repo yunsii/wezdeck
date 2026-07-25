@@ -123,6 +123,12 @@ local base_constants = {
     tab_accent = '#b07d48',
     tab_attention_waiting_bg = '#c7925b',
     tab_attention_waiting_fg = '#1f1a11',
+    -- Host-disk badge at crit. Distinct from the amber attention colors so
+    -- "the disk is about to stop the machine" never reads as "an agent is
+    -- waiting on you"; disk_status.lua falls back to the amber pair when a
+    -- preset palette omits these.
+    disk_crit_bg = '#b4574b',
+    disk_crit_fg = '#fbf1ef',
     tab_attention_running_bg = '#a5bbd4',
     tab_attention_running_fg = '#1b2534',
     tab_attention_done_bg = '#a7c89b',
@@ -230,6 +236,13 @@ local base_constants = {
   session_bridge_watch = {
     status_file = defaults.default_session_bridge_watch_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 35000,
+  },
+  -- Host-disk badge (right-status, after SB). Producer is the
+  -- wezterm-disk-guard systemd user timer; 13 min tolerates two missed
+  -- 5 min samples before the badge admits it is stale.
+  disk_guard = {
+    status_file = defaults.default_disk_guard_status_file(runtime_state_dir, join_path),
+    heartbeat_timeout_ms = 780000,
   },
   wakatime = {
     api_key = nil,
