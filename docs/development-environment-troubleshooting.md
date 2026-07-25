@@ -28,6 +28,31 @@ Keep credentials out of diagnostics. Generated VPN and proxy configs commonly
 contain node passwords or subscription data; inspect only the exact keys needed
 for the current hypothesis.
 
+## The Whole WSL Distro Disappears
+
+Everything dies at once — tmux, every agent pane, every dev server — and it may
+then keep coming back and dying on a fixed interval. This reads like a WezTerm or
+tmux crash and is almost never either one.
+
+Narrow the layer before anything else:
+
+1. **`dmesg` timestamp continuity.** Timestamps that keep climbing across the
+   restart cycles (paired `systemd-shutdow` SIGTERM + `EXT4-fs … unmounting` →
+   `mounted`) mean the VM kernel is alive and only the *distro* restarted. A
+   reset to `[0.000000]` means the VM itself rebooted.
+2. **The previous instance's shutdown log**, for the actual cause:
+   `journalctl --file /var/log/journal/<machine-id>/system@<seq>.journal~ -n 60 --no-pager`
+   (pick the newest with `ls -t`). `init.scope: Failed with result 'oom-kill'`
+   plus the `memory peak` / `memory swap peak` line is guest memory exhaustion.
+3. **Restart count** ≈ number of `*.journal~` fragments — journald renames the
+   file on every unclean start.
+
+Guest OOM is the confirmed failure pattern on this host, and the standing
+hardening (`wezterm-oom-protect` / `wezterm-oom-record` units, the pre-kill
+process snapshot in `/var/log/wezterm-oom-guard.log`) lives in
+[`diagnostics.md`](./diagnostics.md) "Guest OOM Hardening". Go there once step 2
+points at OOM; stay here if it points at the Windows side instead.
+
 ## Agent-CLI Stalls On IPv6 / AAAA DNS
 
 ### Symptoms

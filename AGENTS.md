@@ -50,10 +50,13 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   users without Go consume the prebuilt tarball:
   Read [`docs/picker-release.md`](docs/picker-release.md).
 - Diagnostics, logs, or smoke tests (operator surface — env knobs,
-  file paths, troubleshooting):
+  file paths, troubleshooting); also guest-OOM hardening (the whole distro
+  vanishing / restarting on a fixed interval, `wsl-oom-guard.sh`, the
+  `wezterm-oom-protect` / `wezterm-oom-record` units):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
 - Cross-host development environment failures involving Windows, WSL, DNS,
-  VPN/proxy software, shells, or agent CLIs:
+  VPN/proxy software, shells, or agent CLIs; also the first-triage path when
+  the whole WSL distro disappears at once (distro restart vs VM reboot):
   Read [`docs/development-environment-troubleshooting.md`](docs/development-environment-troubleshooting.md).
 - Adding or modifying a logger callsite, choosing a category, deciding
   log level / required fields, or moving a log file across the WSL

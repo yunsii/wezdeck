@@ -6,15 +6,24 @@ For the **operator** surface — env knobs, where files live, how to read them, 
 
 ## Where logs go
 
-Three log files, segmented by **which process writes**. The file lives on the writer's native filesystem so the writer never pays the cross-FS penalty; cross-FS readers (rare) absorb the cost in their own paths.
+Four log files, segmented by **which process writes**. The file lives on the writer's native filesystem so the writer never pays the cross-FS penalty; cross-FS readers (rare) absorb the cost in their own paths.
 
 | File | Writer | Why this side |
 |---|---|---|
 | `~/.local/state/wezterm-runtime/logs/runtime.log` (WSL ext4) | every bash script in `scripts/runtime/`, every `picker` invocation, the Claude/Codex agent hooks | WSL-native; ~150× faster than `/mnt/c` per the cross-FS routing rule in [`performance.md`](./performance.md) |
 | `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (Windows NTFS) | WezTerm Lua via `wezterm.log_*` + `append_file` in `wezterm-x/lua/logger.lua` | wezterm.exe is a Windows process |
 | `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` (Windows NTFS) | `helper-manager.exe` (.NET host helper) | helper is a Windows process |
+| `/var/log/wezterm-oom-guard.log` (WSL ext4, root-owned) | `scripts/runtime/wsl-oom-guard.sh` under the `wezterm-oom-*` systemd units | root-owned system service, not a user session — see the exception below |
 
 Never hard-code paths. Bash sources `scripts/runtime/wsl-runtime-paths-lib.sh` for `WSL_RUNTIME_LOG_FILE`; Lua reads `diagnostics.wezterm.file` from `wezterm-x/local/constants.lua`; the Go picker honors `WEZTERM_RUNTIME_LOG_FILE` else derives the same XDG default.
+
+**The one sanctioned exception is the OOM guard.** It stays out of the XDG tree and out of `wsl-runtime-paths-lib.sh` for three reasons, all load-bearing — do not "fix" it by folding it into `runtime.log`:
+
+1. It runs as **root** under systemd, so `$HOME` is `/root` and any `XDG_STATE_HOME`-derived constant would resolve to the wrong tree. Hard-coding the user's home into a root unit is worse than a `/var/log` path.
+2. Root-owned lines interleaved into a user-owned `runtime.log` create permission and rotation hazards for every other writer of that file.
+3. It writes to **both** stdout (the journal) and a plain append-only file *on purpose*. The journal fragments across exactly the distro restart loop this guard exists to diagnose — see [`diagnostics.md`](./diagnostics.md) "Guest OOM Hardening". The duplication is the durability guarantee, not an oversight.
+
+The path is overridable via `WEZTERM_OOM_GUARD_LOG`, which is how the sandboxed tests keep out of the live file.
 
 When adding a new log writer, ask: **does this writer ever run on the other side of the WSL boundary?** Yes → file belongs on the writer's native FS, not the reader's. The cross-FS penalty is asymmetric and the writer is always the hot side.
 

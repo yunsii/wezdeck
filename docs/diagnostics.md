@@ -108,8 +108,59 @@ After the wrapper is placed on the Desktop, run it from Windows PowerShell with 
 powershell -ExecutionPolicy Bypass -File C:\Users\your-user\Desktop\measure-hybrid-wsl-agent-startup-your-repo.ps1 -Pause
 ```
 
+## Guest OOM Hardening
+
+Guest memory exhaustion does not present as "a process died" — it presents as **the whole distro vanishing and then flapping**. Reference incident (2026-07-25): `init.scope` peaked at 41.8G of the 44G `memory=` budget with 10.1G of 11G swap consumed, the OOM killer fired inside `init.scope`, and the distro then powered off and restarted every 32.4s for ~27 minutes before the VM itself rebooted.
+
+**Judging it in 10 seconds:** if `dmesg` timestamps do **not** reset across the restart cycles (paired `systemd-shutdow` SIGTERM + `EXT4-fs … unmounting` → `mounted`), the VM kernel is alive and only the *distro* is restarting. A reset to `[0.000000]` means the VM really rebooted. The restart count is also recoverable from `/var/log/journal/<machine-id>/*.journal~` — journald renames the file on every unclean start, so fragment count ≈ restart count.
+
+Two units, installed together by [`scripts/dev/install-wsl-oom-guard.sh`](../scripts/dev/install-wsl-oom-guard.sh) and both driving [`scripts/runtime/wsl-oom-guard.sh`](../scripts/runtime/wsl-oom-guard.sh):
+
+| Unit | Type | What it does |
+|---|---|---|
+| `wezterm-oom-protect.service` | oneshot at boot | Writes `-1000` to `oom_score_adj` of WSL's init (comm `init-systemd(Ub…)`, normally PID 2), making it OOM-immune, and `-800` to every tmux server — then **sweeps the inherited copies back to `0`** (see below; without the sweep this unit is worse than useless). Guest OOM still kills the fattest process; it can no longer kill the process WSL uses to decide the distro still has sessions, nor the one holding every pane. `oom_score_adj` resets on every distro start, which is why this is a unit and not a one-off `echo`. |
+| `wezterm-oom-record.service` | long-running | Polls `init.scope/memory.events` + `MemAvailable`; dumps a top-N RSS snapshot (with each PID's `oom_score_adj`) on an `oom_kill` increment, on crossing the high-water mark, and at startup when the counter is already non-zero. Also **re-applies the protection set every tick** — see below. Runs at `OOMScoreAdjust=-900` so the recorder outlives the pressure it records. |
+
+**`oom_score_adj` is inherited across `fork`, and that inversion is the whole trap.** Protecting WSL init does not protect one process — it silently immunizes *every* process spawned under it, because each new WSL session descends from PID 2 and inherits its value. Under tmux the leak compounds: panes inherit the tmux server's `-800`, and so does every agent and dev server started in them. Measured right after a `tmux kill-server` on this host: **119 of `init.scope`'s processes carried a protected value when exactly 2 should have — ~6.7 Gi of the largest consumers (claude, `chrome-devtools-mcp`, node, esbuild) all off the OOM killer's candidate list.** That is strictly worse than installing nothing: the kernel still has to reclaim, but no worthwhile victim is eligible, so it kills small useless processes or fails to reclaim at all.
+
+So `protect` finishes by resetting to `0` any process in the watched cgroup that carries a protected value and is not one of the protected PIDs — and the recorder repeats the sweep every tick, since new sessions keep inheriting (the count climbed 119 → 152 in the minutes between two checks). Two properties make the sweep safe:
+
+- **Scoped to `init.scope`, which separates "inherited by accident" from "set on purpose" without guessing.** `systemd-udevd` (`-1000`) and `sshd` (`-1000`) are legitimate systemd `OOMScoreAdjust=` settings, as is the recorder's own `-900`; all three live in `system.slice`, outside the swept cgroup, and are never touched. Verified by reading `/proc/<pid>/cgroup`.
+- **Only the two protected values are reset.** Deliberate *positive* values elsewhere (the OpenClaw gateway sits at `+200`) mean "prefer killing me" and are left alone.
+
+`wsl-oom-guard.sh status` reports this directly:
+
+```
+inherited leak: 0 process(es) in the cgroup wrongly carry -1000/-800 (should be 0)
+```
+
+A number that stays above zero means the sweep is off or not keeping up. Note a non-root sweep only reaches processes you own — WSL's `SessionLeader` / `Relay(…)` plumbing is root-owned, so ~28 entries persist until the root-run recorder does a tick. `WEZTERM_OOM_DRY_RUN=1` counts what the sweep would change without writing.
+
+Two more non-obvious details in the protection set:
+
+- **tmux cannot be covered by the boot-time oneshot.** A tmux server starts when the user first opens WezTerm, long after `multi-user.target`, and arrives with `oom_score_adj=0`. That is why `wezterm-oom-record` re-applies protection on every poll tick — a new or restarted tmux server converges within `WEZTERM_OOM_WATCH_INTERVAL`. Writes are idempotent and failures are latched per PID, so a steady state logs nothing.
+- **tmux servers are unfindable by `pgrep`.** `comm` is `tmux: server` (so `pgrep -x tmux` misses) while `cmdline` is still the original `tmux new-session …` (so `pgrep -f 'tmux: server'` misses too). The guard scans `/proc/*/comm`.
+- **tmux gets `-800`, not `-1000`.** A tmux server holds every pane's scrollback and can genuinely grow; `-800` means it is only pickable when it is itself using >80% of memory, so the one case where tmux really is the hog stays actionable instead of becoming a blind spot.
+
+```bash
+sudo ./scripts/dev/install-wsl-oom-guard.sh      # install + enable + start
+./scripts/dev/install-wsl-oom-guard.sh --check   # no root, no writes
+./scripts/dev/install-wsl-oom-guard.sh --print   # dump the generated units
+sudo ./scripts/dev/install-wsl-oom-guard.sh --uninstall
+scripts/runtime/wsl-oom-guard.sh status          # protection state + headroom
+```
+
+- Evidence lands in `journalctl -u wezterm-oom-record` **and** `/var/log/wezterm-oom-guard.log`. The plain file exists because the journal fragments across exactly the restart loop this guard diagnoses.
+- Env knobs: `WEZTERM_OOM_GUARD_LOG`, `WEZTERM_OOM_WATCH_INTERVAL` (10s), `WEZTERM_OOM_WATCH_HIGH_PCT` (85), `WEZTERM_OOM_WATCH_TOP_N` (8), `WEZTERM_OOM_SCOPE`, `WEZTERM_OOM_PROTECT_ADJ` (-1000), `WEZTERM_OOM_TMUX_ADJ` (-800), `WEZTERM_OOM_PROTECT_TMUX` (1), `WEZTERM_OOM_RENORMALIZE` (1), `WEZTERM_OOM_DRY_RUN` (0).
+- `wsl-oom-guard.sh status` prints one line per protected process with `(protected)` / `(NOT protected)`. After a distro restart that is the one-command check that the boot path still works.
+- **The high-water snapshot is the load-bearing one.** A snapshot taken *after* `oom_kill` increments no longer contains the process that died; the pre-kill snapshot names it.
+- **Neither unit reduces memory usage or prevents OOM.** They change *who* dies and guarantee a record. Capping the actual consumers (`systemd-run --scope -p MemoryMax=…` for dev servers, fewer parallel agents each carrying a `chrome-devtools-mcp` + Chrome) is a separate decision.
+- Prior art considered and deferred: `earlyoom` and `systemd-oomd` both implement a full kill *policy* with victim logging. This pair is deliberately narrower — exemption plus evidence, no policy, no apt dependency. Reach for `earlyoom` if the goal becomes "act at 90% before the kernel does".
+- Kernel OOM lines are **already** captured (journald `ReadKMsg` defaults on in the default namespace; `journalctl -k` works). They are still easy to lose: `misc dxg: dxgkio_query_adapter_info` spam runs ~145 lines/s and wraps the `dmesg` ring buffer within seconds. In the reference incident no kernel OOM line survived anywhere — only the `init.scope` cgroup counter, which the VM kernel carries across distro restarts and which systemd therefore re-reported at every one of the ~50 restarts.
+
 ## Troubleshooting Notes
 
+- If the whole distro disappears — tmux, every agent pane, all at once — and especially if it then keeps coming back and dying on a fixed interval, suspect guest OOM before suspecting WezTerm or tmux. Start from "Guest OOM hardening" above: check `dmesg` timestamp continuity to tell a distro restart from a VM reboot, then read the previous instance's shutdown log for `init.scope: Failed with result 'oom-kill'` and the `memory peak` / `memory swap peak` line (`journalctl --file /var/log/journal/<machine-id>/system@<seq>.journal~ -n 60 --no-pager`).
 - For agent-attention "stuck running / done not clearing / right-status not refreshing" reports, **first verify the hook→render latency in the logs before suspecting render or cache layers**. Producer side: `grep "hook emitted agent status" ~/.local/state/wezterm-runtime/logs/runtime.log` — `elapsed_ms` should be ~100–300 ms with `osc_emitted=1`. Renderer side: in the WezTerm log under `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log`, the `category="attention"` lines (`render_status` / `focus ack scheduled` / `jump dispatched`) for the same `session_id` should land in the same frame as the producer's `tick_ms`. If both are normal, the UI is not at fault — pivot upstream: read `attention.json.entries[<id>]` plus `recent[]` and look for whether the producer ever emitted a transition (long stretches of `hook resolved no-op` between a `running` and the next `done` mean the agent really was running, not stuck — Claude Code's protocol only updates status on UserPromptSubmit/Stop, all PreToolUse/PostToolUse runs resolve to no-op).
 - If the tmux status line still reflects stale branch or change counts after a local `git` command and only catches up on the next 30s poll, the recommended prompt hook is probably not installed. From an affected tmux pane run `typeset -f __tmux_status_prompt_refresh >/dev/null && echo ok || echo missing`; when it prints `missing`, add the source line documented in [`setup.md`](./setup.md#tmux-status-prompt-hook) to your shell rc and re-source it — existing shells will not pick up the hook until you do.
 - If text paste is fast but image-path paste stops working in `hybrid-wsl`, sync the runtime, let WezTerm auto-reload, and inspect the shared `trace_id` across the WezTerm and helper logs.
