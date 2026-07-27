@@ -182,7 +182,7 @@ func TestLoadWorktreeRowsParsesAttentionColumns(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "prefetch.tsv")
 	body := "main\t/repo\tmaster\t@1\trunning\t12s\t\n" +
 		"dev-auth\t/repo-auth\tdev/auth\t@2\twaiting\t2m\tneeds your permission to use Bash\n" +
-		"task-perf\t/repo-perf\ttask/perf\t@3\tlast:done\t3m\ttask done\n" +
+		"task-perf\t/repo-perf\ttask/perf\t@3\tdone\t3m\ttask done\n" +
 		"hotfix-x\t/repo-hot\thotfix/x\t\t\t\t\n"
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
@@ -199,8 +199,8 @@ func TestLoadWorktreeRowsParsesAttentionColumns(t *testing.T) {
 		rows[1].reason != "needs your permission to use Bash" {
 		t.Fatalf("waiting row: %+v", rows[1])
 	}
-	if rows[2].status != "last:done" || rows[2].age != "3m" {
-		t.Fatalf("archived row: %+v", rows[2])
+	if rows[2].status != "done" || rows[2].age != "3m" {
+		t.Fatalf("done row: %+v", rows[2])
 	}
 	if rows[3].status != "" || rows[3].existingWindowID != "" {
 		t.Fatalf("worktree with no window should carry no status: %+v", rows[3])
@@ -232,7 +232,7 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 			{label: "dev-auth", path: "/repo-auth", branch: "dev/auth", existingWindowID: "@2", accelerator: "2",
 				status: "waiting", age: "2m", reason: "needs your permission to use Bash"},
 			{label: "task-perf", path: "/repo-perf", branch: "task/perf", existingWindowID: "@3", accelerator: "3",
-				status: "last:done", age: "3m", reason: "task done"},
+				status: "done", age: "3m", reason: "task done"},
 			{label: "hotfix-x", path: "/repo-hot", branch: "hotfix/x", accelerator: "4"},
 		},
 		selected:            1,
@@ -242,14 +242,17 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 
 	out := captureStdout(t, func() { ui.render() })
 
-	for _, want := range []string{"🔄 12s", "🚨 2m", "last ✅ 3m", "(new)"} {
+	for _, want := range []string{"🔄 12s", "🚨 2m", "✅ 3m", "(new)"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status cell %q missing: %q", want, out)
 		}
 	}
-	// Archived and (new) cells are dim; a live cell is not.
-	if !strings.Contains(out, "\x1b[2mlast ✅ 3m") {
-		t.Fatalf("archived status cell is not dimmed: %q", out)
+	// Live cells are never dimmed — only `(new)` is.
+	if strings.Contains(out, "\x1b[2m✅ 3m") {
+		t.Fatalf("live status cell should not be dimmed: %q", out)
+	}
+	if !strings.Contains(out, "\x1b[2m(new)") {
+		t.Fatalf("(new) hint is not dimmed: %q", out)
 	}
 	// Detail line carries the focused row's reason so the user knows why
 	// it is 🚨 before jumping.
@@ -263,14 +266,28 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 	}
 }
 
+func TestWorktreeArchivedStatusRendersNothing(t *testing.T) {
+	// Regression lock for 2026-07-27: menu.sh no longer joins recent[]
+	// tombstones, because a 7-day-lived `last 🔄 4h` contradicted every
+	// wezterm surface (badge / counters read live .entries only). If some
+	// producer ever emits the old `last:<status>` form again, the cell
+	// stays empty rather than resurrecting stale state on the row.
+	for _, status := range []string{"last:done", "last:running", "recent", "bogus"} {
+		r := worktreeRow{label: "task-perf", existingWindowID: "@3", status: status, age: "4h"}
+		if got := r.statusCell("\x1b[0m"); got != "" {
+			t.Fatalf("status %q should render no cell, got %q", status, got)
+		}
+	}
+}
+
 func TestWorktreeSelectedRowKeepsBackgroundThroughDimStatus(t *testing.T) {
-	// The dim run in an archived status cell must restore with the
+	// The dim run in the `(new)` status cell must restore with the
 	// background-preserving SGR, not a full reset — otherwise the
 	// selected row's highlight bar stops mid-line.
 	ui := &worktreeUI{
 		rows: []worktreeRow{
-			{label: "task-perf", path: "/repo-perf", branch: "task/perf", existingWindowID: "@3",
-				accelerator: "1", status: "last:done", age: "3m"},
+			{label: "task-perf", path: "/repo-perf", branch: "task/perf",
+				accelerator: "1"},
 		},
 		selected:  0,
 		repoLabel: "wezterm-config",

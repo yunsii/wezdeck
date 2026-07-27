@@ -76,17 +76,24 @@ done < <(tmux_worktree_build_window_index "$session_name" "$repo_common_dir")
 # worktree rows below by window id (`@N`) — the tmux window IS the
 # worktree, so the join is exact.
 #
-# Source is attention.json rather than the wezterm-side `live-panes.json`
-# snapshot that Alt+/ consumes: the snapshot's `recent[]` rows are deduped
-# by tmux_session, which collapses a whole repo family into one row, while
-# on-disk `recent[]` is deduped per (socket, session, pane) and so keeps
-# one tombstone per worktree. Same cost either way (one /mnt/c read + one
-# jq, ~5ms on a keypress path; see docs/performance.md's cross-FS rule —
-# the wezterm tick side is untouched).
+# Live `.entries` only: an empty status cell means "nothing pending here
+# right now", exactly like the wezterm tab badge and right-status
+# counters, which also read `.entries` alone. Archived `recent[]`
+# tombstones were rendered here as dimmed `last ✅ 3m` until 2026-07-27
+# and are deliberately gone: on-disk tombstones live for 7 days (Lua's
+# 30-minute TTL only governs `.entries`), so a worktree kept showing an
+# hours-old `last 🔄 4h` / `last ✅ 10h` while every wezterm surface
+# considered that session idle. A `last:running` tombstone is not even a
+# result — it means the record was evicted mid-run.
 #
-# Live entries sort ahead of archived ones and by status precedence, so
-# the first row seen for a window wins (split panes inside one worktree
-# window can produce more than one).
+# Same cost as reading the wezterm-side `live-panes.json` snapshot that
+# Alt+/ consumes (one /mnt/c read + one jq, ~5ms on a keypress path; see
+# docs/performance.md's cross-FS rule — the wezterm tick side is
+# untouched), and attention.json is the source of truth rather than a
+# derived 1 Hz snapshot, so the read stays here.
+#
+# Rows sort by status precedence, so the first row seen for a window wins
+# (split panes inside one worktree window can produce more than one).
 declare -A window_status=()
 attention_state_file="$(attention_state_path)"
 if [[ -s "$attention_state_file" ]]; then
@@ -107,18 +114,12 @@ if [[ -s "$attention_state_file" ]]; then
       def rank: if . == "waiting" then 0 elif . == "running" then 1
                 elif . == "done" then 2 else 3 end;
       def clean: (. // "") | gsub("[\t\r\n]"; " ");
-      ([ (.entries // {}) | to_entries[] | .value
-         | select((.tmux_session // "") == $sess and (.tmux_window // "") != "")
-         | select(($now - (.ts // 0)) < $ttl)
-         | { w: .tmux_window, s: (.status // ""), a: age(.ts // $now),
-             r: (.reason | clean), o: 0 } ]
-       | sort_by(.s | rank))
-      + ([ (.recent // [])[]
-         | select((.tmux_session // "") == $sess and (.tmux_window // "") != "")
-         | { w: .tmux_window, s: ("last:" + (.last_status // "")),
-             a: age(.archived_ts // $now), r: (.last_reason | clean),
-             o: -(.archived_ts // 0) } ]
-       | sort_by(.o))
+      [ (.entries // {}) | to_entries[] | .value
+        | select((.tmux_session // "") == $sess and (.tmux_window // "") != "")
+        | select(($now - (.ts // 0)) < $ttl)
+        | { w: .tmux_window, s: (.status // ""), a: age(.ts // $now),
+            r: (.reason | clean) } ]
+      | sort_by(.s | rank)
       | .[] | [.w, .s, .a, .r] | @tsv
     ' "$attention_state_file" 2>/dev/null || true)
 fi

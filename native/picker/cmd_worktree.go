@@ -44,9 +44,10 @@ type worktreeRow struct {
 	existingWindowID string // empty when no tmux window for this worktree yet
 	accelerator      string // single-char key, e.g. "1" or "a"; "" when out of slots
 	// Agent-attention state joined by menu.sh on tmux window id. status is
-	// "waiting" / "running" / "done" for a live entry, "last:<status>" for
-	// an archived one (the agent finished and the entry was focus-acked
-	// into recent[]), and "" when this worktree has no agent history.
+	// "waiting" / "running" / "done" for a live entry and "" when nothing
+	// is pending for this worktree right now — menu.sh reads live
+	// `.entries` only, matching the wezterm badge / counters, so an
+	// archived (focus-acked or TTL'd) session leaves the cell empty.
 	status string
 	age    string
 	reason string
@@ -223,10 +224,11 @@ func worktreeStatusIcon(status string) string {
 
 // statusCell renders the trailing agent-attention column. Live statuses
 // reuse the Alt+/ emoji vocabulary (🚨 / ✅ / 🔄) so both pickers read the
-// same way; archived ones are dimmed and prefixed with `last` because
-// they describe a session that already left the live set (focus-ack /
-// TTL / `/clear` archived it into recent[]). A worktree with no tmux
-// window keeps the original `(new)` hint — it cannot have agent state.
+// same way; there is no archived variant — an empty cell means "nothing
+// pending", the same thing an absent tab badge means (see menu.sh's
+// join comment for why the dimmed `last ✅ 3m` form was dropped). A
+// worktree with no tmux window keeps the original `(new)` hint — it
+// cannot have agent state.
 //
 // restore is the SGR that puts the caller's background back after a dim
 // run: `reset` on a normal row, the background-preserving variant on the
@@ -237,13 +239,6 @@ func (r worktreeRow) statusCell(restore string) string {
 			return "\x1b[2m(new)" + restore
 		}
 		return ""
-	}
-	if strings.HasPrefix(r.status, "last:") {
-		icon := worktreeStatusIcon(strings.TrimPrefix(r.status, "last:"))
-		if icon == "" {
-			return ""
-		}
-		return "\x1b[2mlast " + icon + " " + r.age + restore
 	}
 	icon := worktreeStatusIcon(r.status)
 	if icon == "" {
@@ -354,8 +349,8 @@ func (ui *worktreeUI) render() {
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
 	// Full-width selected-row highlight, mirroring cmd_overflow.go. The only
-	// inner SGR in a row body is the dim run used by the archived / `(new)`
-	// status cell, which restores with the background-preserving sequence
+	// inner SGR in a row body is the dim run used by the `(new)` status
+	// cell, which restores with the background-preserving sequence
 	// (not a full reset) so the highlight bar stays continuous to EOL.
 	const selectedBg = "\x1b[48;5;255m"
 	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
