@@ -740,13 +740,19 @@ function M.render_status_segment(palette, opts)
   return wezterm.format(parts)
 end
 
+local function is_badge_status(status)
+  return status == M.STATUS_WAITING
+    or status == M.STATUS_RUNNING
+    or status == M.STATUS_DONE
+end
+
 function M.tab_badge(tab_info)
   local active = tab_info and tab_info.active_pane
   if not active or active.pane_id == nil then
     return nil
   end
   local pane_id_str = tostring(active.pane_id)
-  local has_waiting, has_running, has_done = false, false, false
+  local best, best_ts = nil, nil
   local now = now_ms()
   -- Match entry → tab by tmux session. The pane→session unified map
   -- (tab_visibility.session_for_pane) is the single source of truth:
@@ -768,21 +774,39 @@ function M.tab_badge(tab_info)
     return nil
   end
   local tab_is_active = tab_info.is_active == true
+  -- One wezterm tab hosts one tmux session = one repo family, whose
+  -- windows are its worktrees, so this loop routinely sees several
+  -- agent sessions. The badge shows the **most recent** one: highest
+  -- `ts` wins, regardless of status.
+  --
+  -- The rejected alternative was status precedence first (waiting >
+  -- running > done), newest within the bucket. It survives one case this
+  -- rule does not: a `waiting` that has sat unanswered for two minutes
+  -- gets hidden the moment another worktree starts a turn, because the
+  -- fresh `running` is newer. That case is covered by the right-status
+  -- `🚨 N waiting` counter, `Alt+,`, and `Alt+/`, and the user asked for
+  -- "latest" twice — so recency wins here. Flipping back means ranking
+  -- on (status, ts) instead of ts alone.
   for _, entry in pairs(state_cache.entries or {}) do
     if entry_is_live(entry, now)
       and type(entry.tmux_session) == 'string'
       and entry.tmux_session == hosted_session then
-      local suppress_for_focus = tab_is_active and M.is_entry_focused(entry, pane_id_str)
-      if entry.status == M.STATUS_WAITING then
-        if not suppress_for_focus then has_waiting = true end
-      elseif entry.status == M.STATUS_RUNNING then
-        has_running = true  -- informational; visible even on focused pane
-      elseif entry.status == M.STATUS_DONE then
-        if not suppress_for_focus then has_done = true end
+      -- `running` stays visible on the focused pane (informational);
+      -- `waiting` / `done` there are already acked by the glance.
+      local suppress_for_focus = tab_is_active
+        and entry.status ~= M.STATUS_RUNNING
+        and M.is_entry_focused(entry, pane_id_str)
+      if is_badge_status(entry.status) and not suppress_for_focus then
+        local ts = tonumber(entry.ts) or 0
+        if best == nil or ts > best_ts then
+          best, best_ts = entry, ts
+        end
       end
     end
   end
-  -- Priority: waiting (needs action) > running (live) > done (informational).
+  if best == nil then
+    return nil
+  end
   -- The tab badge intentionally drops the emoji vocabulary used by the
   -- right-status counter and the picker chips: at a tab-strip density the
   -- emoji is informationally redundant (color already encodes status) and
@@ -790,15 +814,12 @@ function M.tab_badge(tab_info)
   -- Render a single `█` block in the status color instead — color does
   -- the work, the glyph is just a 1-cell carrier so the eye has something
   -- to land on. The right-status and picker keep emoji because their
-  -- adjacent text labels need the visual anchor.
-  if has_waiting then
-    return { status = M.STATUS_WAITING, marker = '█' }
-  elseif has_running then
-    return { status = M.STATUS_RUNNING, marker = '█' }
-  elseif has_done then
-    return { status = M.STATUS_DONE, marker = '█' }
-  end
-  return nil
+  -- adjacent text labels need the visual anchor. Nothing else is added
+  -- to the tab: naming the winning worktree here was tried and reverted
+  -- (it ate the title's width budget and the tab re-labeled itself every
+  -- time a different worktree became the newest). Which worktree it is
+  -- belongs to `Alt+g`, which shows all of them at once.
+  return { status = best.status, marker = '█' }
 end
 
 function M.badge_colors(palette, status)

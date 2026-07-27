@@ -43,6 +43,13 @@ type worktreeRow struct {
 	branch           string
 	existingWindowID string // empty when no tmux window for this worktree yet
 	accelerator      string // single-char key, e.g. "1" or "a"; "" when out of slots
+	// Agent-attention state joined by menu.sh on tmux window id. status is
+	// "waiting" / "running" / "done" for a live entry, "last:<status>" for
+	// an archived one (the agent finished and the entry was focus-acked
+	// into recent[]), and "" when this worktree has no agent history.
+	status string
+	age    string
+	reason string
 }
 
 type worktreeUI struct {
@@ -168,8 +175,11 @@ func loadWorktreeRows(path string) ([]worktreeRow, error) {
 		if line == "" {
 			continue
 		}
-		// 4 fields: label  path  branch  existing_window_id
-		parts := strings.SplitN(line, "\t", 4)
+		// 7 fields: label  path  branch  existing_window_id  status  age  reason
+		// Short lines are tolerated so an older menu.sh (or a hand-written
+		// fixture) that only emits the first four still renders — it just
+		// carries no agent status.
+		parts := strings.SplitN(line, "\t", 7)
 		if len(parts) < 4 {
 			continue
 		}
@@ -179,12 +189,67 @@ func loadWorktreeRows(path string) ([]worktreeRow, error) {
 			branch:           parts[2],
 			existingWindowID: parts[3],
 		}
+		if len(parts) >= 7 {
+			row.status, row.age, row.reason = parts[4], parts[5], parts[6]
+		}
 		if len(rows) < len(accels) {
 			row.accelerator = accels[len(rows)]
 		}
 		rows = append(rows, row)
 	}
 	return rows, nil
+}
+
+// nameCell is the "<worktree> [<branch>]" part of a row — everything
+// before the agent-status column.
+func (r worktreeRow) nameCell() string {
+	if r.branch == "" {
+		return r.label
+	}
+	return r.label + " [" + r.branch + "]"
+}
+
+func worktreeStatusIcon(status string) string {
+	switch status {
+	case "waiting":
+		return "🚨"
+	case "done":
+		return "✅"
+	case "running":
+		return "🔄"
+	}
+	return ""
+}
+
+// statusCell renders the trailing agent-attention column. Live statuses
+// reuse the Alt+/ emoji vocabulary (🚨 / ✅ / 🔄) so both pickers read the
+// same way; archived ones are dimmed and prefixed with `last` because
+// they describe a session that already left the live set (focus-ack /
+// TTL / `/clear` archived it into recent[]). A worktree with no tmux
+// window keeps the original `(new)` hint — it cannot have agent state.
+//
+// restore is the SGR that puts the caller's background back after a dim
+// run: `reset` on a normal row, the background-preserving variant on the
+// selected row so its highlight bar stays continuous.
+func (r worktreeRow) statusCell(restore string) string {
+	if r.status == "" {
+		if r.existingWindowID == "" {
+			return "\x1b[2m(new)" + restore
+		}
+		return ""
+	}
+	if strings.HasPrefix(r.status, "last:") {
+		icon := worktreeStatusIcon(strings.TrimPrefix(r.status, "last:"))
+		if icon == "" {
+			return ""
+		}
+		return "\x1b[2mlast " + icon + " " + r.age + restore
+	}
+	icon := worktreeStatusIcon(r.status)
+	if icon == "" {
+		return ""
+	}
+	return icon + " " + r.age
 }
 
 func (ui *worktreeUI) move(delta int) {
@@ -288,11 +353,25 @@ func (ui *worktreeUI) render() {
 
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
-	// Full-width selected-row highlight, mirroring cmd_overflow.go. The row
-	// body carries no inner SGR color, so a bare background + trailing
-	// clearEOL (which paints to EOL under the active bg) is enough — no
-	// "selected variant" helpers like overflow needs for its colored cells.
+	// Full-width selected-row highlight, mirroring cmd_overflow.go. The only
+	// inner SGR in a row body is the dim run used by the archived / `(new)`
+	// status cell, which restores with the background-preserving sequence
+	// (not a full reset) so the highlight bar stays continuous to EOL.
 	const selectedBg = "\x1b[48;5;255m"
+	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
+
+	// Pad the name cell to a common width so the status column lines up.
+	// Measured over every row, not just the visible window, so scrolling
+	// does not shift the column sideways.
+	nameCol := 0
+	for _, r := range ui.rows {
+		if n := len([]rune(r.nameCell())); n > nameCol {
+			nameCol = n
+		}
+	}
+	if maxNameCol := cols / 2; nameCol > maxNameCol {
+		nameCol = maxNameCol
+	}
 
 	var b strings.Builder
 	b.Grow(2048)
@@ -335,21 +414,24 @@ func (ui *worktreeUI) render() {
 		if r.accelerator != "" {
 			accelText = "[" + r.accelerator + "]"
 		}
-		branch := ""
-		if r.branch != "" {
-			branch = " [" + r.branch + "]"
-		}
-		suffix := ""
-		if r.existingWindowID == "" {
-			suffix = " (new)"
-		}
+		restore := reset
 		if i == ui.selected {
+			restore = restoreSelectedBg
 			b.WriteString(selectedBg)
 			b.WriteString("▶ ")
 		} else {
 			b.WriteString("  ")
 		}
-		fmt.Fprintf(&b, "%s %c %s%s%s", accelText, marker, r.label, branch, suffix)
+		name := r.nameCell()
+		status := r.statusCell(restore)
+		if status != "" {
+			name = padRunes(name, nameCol)
+		}
+		fmt.Fprintf(&b, "%s %c %s", accelText, marker, name)
+		if status != "" {
+			b.WriteString("  ")
+			b.WriteString(status)
+		}
 		b.WriteString(clearEOL)
 		if i == ui.selected {
 			b.WriteString(reset)
@@ -370,20 +452,33 @@ func (ui *worktreeUI) render() {
 	_, _ = os.Stdout.WriteString(b.String())
 }
 
-// selectedDetailLine is the idle detail-row text: "<path> · <branch>"
-// (branch omitted when empty).
+// selectedDetailLine is the idle detail-row text:
+// "<path> · <branch> · <agent reason>" (each part omitted when empty).
+// The reason is the one piece of agent state that has no room in the row
+// itself, and it is what tells you *why* a worktree is 🚨 before you jump.
 func (ui *worktreeUI) selectedDetailLine() string {
 	if ui.selected < 0 || ui.selected >= len(ui.rows) {
 		return ""
 	}
 	r := ui.rows[ui.selected]
-	if r.branch == "" {
-		return r.path
+	parts := make([]string, 0, 3)
+	for _, p := range []string{r.path, r.branch, r.reason} {
+		if p != "" {
+			parts = append(parts, p)
+		}
 	}
-	if r.path == "" {
-		return r.branch
+	return strings.Join(parts, " · ")
+}
+
+// padRunes right-pads s with spaces to width cells (1 rune ≈ 1 cell —
+// worktree labels and branch names are ASCII in practice). Longer input
+// is returned unchanged so a single long branch does not get clipped.
+func padRunes(s string, width int) string {
+	n := len([]rune(s))
+	if n >= width {
+		return s
 	}
-	return r.path + " · " + r.branch
+	return s + strings.Repeat(" ", width-n)
 }
 
 // truncateRunes caps s to at most max cells (1 rune ≈ 1 cell; good enough

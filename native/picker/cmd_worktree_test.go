@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -170,6 +172,124 @@ func TestWorktreeMoveClearsFlash(t *testing.T) {
 	}
 	if ui.selected != 1 {
 		t.Fatalf("selected after move: got %d", ui.selected)
+	}
+}
+
+func TestLoadWorktreeRowsParsesAttentionColumns(t *testing.T) {
+	// menu.sh emits 7 columns; the last three are the agent-attention
+	// join. Reason may contain spaces (and `·`), never tabs — menu.sh's
+	// jq strips those.
+	path := filepath.Join(t.TempDir(), "prefetch.tsv")
+	body := "main\t/repo\tmaster\t@1\trunning\t12s\t\n" +
+		"dev-auth\t/repo-auth\tdev/auth\t@2\twaiting\t2m\tneeds your permission to use Bash\n" +
+		"task-perf\t/repo-perf\ttask/perf\t@3\tlast:done\t3m\ttask done\n" +
+		"hotfix-x\t/repo-hot\thotfix/x\t\t\t\t\n"
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := loadWorktreeRows(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 4 {
+		t.Fatalf("row count: got %d", len(rows))
+	}
+	if rows[1].status != "waiting" || rows[1].age != "2m" ||
+		rows[1].reason != "needs your permission to use Bash" {
+		t.Fatalf("waiting row: %+v", rows[1])
+	}
+	if rows[2].status != "last:done" || rows[2].age != "3m" {
+		t.Fatalf("archived row: %+v", rows[2])
+	}
+	if rows[3].status != "" || rows[3].existingWindowID != "" {
+		t.Fatalf("worktree with no window should carry no status: %+v", rows[3])
+	}
+	if rows[0].accelerator != "1" || rows[1].accelerator != "2" {
+		t.Fatalf("accelerators did not survive the wider TSV: %+v", rows[:2])
+	}
+}
+
+func TestLoadWorktreeRowsToleratesLegacyFourColumns(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "prefetch.tsv")
+	if err := os.WriteFile(path, []byte("main\t/repo\tmaster\t@1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := loadWorktreeRows(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0].existingWindowID != "@1" || rows[0].status != "" {
+		t.Fatalf("legacy 4-column row: %+v", rows)
+	}
+}
+
+func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
+	ui := &worktreeUI{
+		rows: []worktreeRow{
+			{label: "main", path: "/repo", branch: "master", existingWindowID: "@1", accelerator: "1",
+				status: "running", age: "12s"},
+			{label: "dev-auth", path: "/repo-auth", branch: "dev/auth", existingWindowID: "@2", accelerator: "2",
+				status: "waiting", age: "2m", reason: "needs your permission to use Bash"},
+			{label: "task-perf", path: "/repo-perf", branch: "task/perf", existingWindowID: "@3", accelerator: "3",
+				status: "last:done", age: "3m", reason: "task done"},
+			{label: "hotfix-x", path: "/repo-hot", branch: "hotfix/x", accelerator: "4"},
+		},
+		selected:            1,
+		currentWorktreeRoot: "/repo-auth",
+		repoLabel:           "wezterm-config",
+	}
+
+	out := captureStdout(t, func() { ui.render() })
+
+	for _, want := range []string{"🔄 12s", "🚨 2m", "last ✅ 3m", "(new)"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("status cell %q missing: %q", want, out)
+		}
+	}
+	// Archived and (new) cells are dim; a live cell is not.
+	if !strings.Contains(out, "\x1b[2mlast ✅ 3m") {
+		t.Fatalf("archived status cell is not dimmed: %q", out)
+	}
+	// Detail line carries the focused row's reason so the user knows why
+	// it is 🚨 before jumping.
+	if !strings.Contains(out, "/repo-auth · dev/auth · needs your permission to use Bash") {
+		t.Fatalf("detail line missing reason: %q", out)
+	}
+	// Name cells are padded to a common width so the status column aligns:
+	// the longest cell here is "task-perf [task/perf]" (21 runes).
+	if !strings.Contains(out, "main [master]        ") {
+		t.Fatalf("name column not padded for status alignment: %q", out)
+	}
+}
+
+func TestWorktreeSelectedRowKeepsBackgroundThroughDimStatus(t *testing.T) {
+	// The dim run in an archived status cell must restore with the
+	// background-preserving SGR, not a full reset — otherwise the
+	// selected row's highlight bar stops mid-line.
+	ui := &worktreeUI{
+		rows: []worktreeRow{
+			{label: "task-perf", path: "/repo-perf", branch: "task/perf", existingWindowID: "@3",
+				accelerator: "1", status: "last:done", age: "3m"},
+		},
+		selected:  0,
+		repoLabel: "wezterm-config",
+	}
+	out := captureStdout(t, func() { ui.render() })
+	start := strings.Index(out, "\x1b[5;1H\x1b[48;5;255m")
+	if start < 0 {
+		t.Fatalf("selected row not found: %q", out)
+	}
+	tail := out[start:]
+	eol := strings.Index(tail, "\x1b[K")
+	if eol < 0 {
+		t.Fatalf("clear-to-EOL not found: %q", out)
+	}
+	if strings.Contains(tail[:eol], "\x1b[0m") {
+		t.Fatalf("dim status cell reset the selected background: %q", tail[:eol])
+	}
+	if !strings.Contains(tail[:eol], "\x1b[22;23;24;27;39m") {
+		t.Fatalf("dim status cell did not restore with the bg-preserving SGR: %q", tail[:eol])
 	}
 }
 

@@ -34,7 +34,8 @@
 # Command:
 #   sourced · loaded_items · visible_indexes · prep_done
 # Worktree:
-#   sourced · context_resolved · prefetched_items · frame_rendered · prep_done
+#   sourced · context_resolved · attention_joined · prefetched_items ·
+#   frame_rendered · prep_done
 #
 # Stats reported: min · p50 · p95 · max · mean (in milliseconds).
 set -euo pipefail

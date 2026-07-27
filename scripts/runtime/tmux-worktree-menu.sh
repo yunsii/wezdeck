@@ -8,6 +8,8 @@ source "$script_dir/runtime-log-lib.sh"
 source "$script_dir/menu-bench-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-worktree-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/attention-state-lib.sh"
 
 # Microbench short-circuit for scripts/dev/bench-menu-prep.sh --target worktree.
 menu_bench_init
@@ -70,10 +72,66 @@ while IFS=$'\t' read -r idx_root idx_window_id; do
   [[ -n "$idx_root" && -n "$idx_window_id" ]] || continue
   worktree_window_index["$idx_root"]="$idx_window_id"
 done < <(tmux_worktree_build_window_index "$session_name" "$repo_common_dir")
+# Agent-attention status per tmux window of this session, joined onto the
+# worktree rows below by window id (`@N`) — the tmux window IS the
+# worktree, so the join is exact.
+#
+# Source is attention.json rather than the wezterm-side `live-panes.json`
+# snapshot that Alt+/ consumes: the snapshot's `recent[]` rows are deduped
+# by tmux_session, which collapses a whole repo family into one row, while
+# on-disk `recent[]` is deduped per (socket, session, pane) and so keeps
+# one tombstone per worktree. Same cost either way (one /mnt/c read + one
+# jq, ~5ms on a keypress path; see docs/performance.md's cross-FS rule —
+# the wezterm tick side is untouched).
+#
+# Live entries sort ahead of archived ones and by status precedence, so
+# the first row seen for a window wins (split panes inside one worktree
+# window can produce more than one).
+declare -A window_status=()
+attention_state_file="$(attention_state_path)"
+if [[ -s "$attention_state_file" ]]; then
+  while IFS=$'\t' read -r as_window as_status as_age as_reason; do
+    [[ -n "$as_window" ]] || continue
+    if [[ -z "${window_status[$as_window]+set}" ]]; then
+      window_status["$as_window"]="$as_status"$'\t'"$as_age"$'\t'"$as_reason"
+    fi
+  done < <(jq -r \
+    --arg sess "$session_name" \
+    --argjson now "$start_ms" \
+    --argjson ttl 1800000 '
+      def age($ms): (($now - $ms) / 1000 | floor) as $s
+        | if $s < 0 then "0s"
+          elif $s < 60 then "\($s)s"
+          elif $s < 3600 then "\(($s / 60) | floor)m"
+          else "\(($s / 3600) | floor)h" end;
+      def rank: if . == "waiting" then 0 elif . == "running" then 1
+                elif . == "done" then 2 else 3 end;
+      def clean: (. // "") | gsub("[\t\r\n]"; " ");
+      ([ (.entries // {}) | to_entries[] | .value
+         | select((.tmux_session // "") == $sess and (.tmux_window // "") != "")
+         | select(($now - (.ts // 0)) < $ttl)
+         | { w: .tmux_window, s: (.status // ""), a: age(.ts // $now),
+             r: (.reason | clean), o: 0 } ]
+       | sort_by(.s | rank))
+      + ([ (.recent // [])[]
+         | select((.tmux_session // "") == $sess and (.tmux_window // "") != "")
+         | { w: .tmux_window, s: ("last:" + (.last_status // "")),
+             a: age(.archived_ts // $now), r: (.last_reason | clean),
+             o: -(.archived_ts // 0) } ]
+       | sort_by(.o))
+      | .[] | [.w, .s, .a, .r] | @tsv
+    ' "$attention_state_file" 2>/dev/null || true)
+fi
+bench_mark attention_joined
+
 while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
   [[ -n "$worktree_path" ]] || continue
   prefetch_window_id="${worktree_window_index[$worktree_path]:-}"
-  printf '%s\t%s\t%s\t%s\n' "$worktree_label" "$worktree_path" "$branch_name" "$prefetch_window_id" >> "$prefetch_file"
+  attention_cells=$'\t\t'
+  if [[ -n "$prefetch_window_id" && -n "${window_status[$prefetch_window_id]:-}" ]]; then
+    attention_cells="${window_status[$prefetch_window_id]}"
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\n' "$worktree_label" "$worktree_path" "$branch_name" "$prefetch_window_id" "$attention_cells" >> "$prefetch_file"
   item_labels+=("$worktree_label")
   item_paths+=("$worktree_path")
   item_branches+=("$branch_name")
