@@ -29,6 +29,41 @@
 #            Also re-applies `protect` every tick — a boot-time oneshot cannot
 #            cover tmux, which starts when the user first opens WezTerm.
 #
+#            Watch also owns the *fragmentation* axis, which is a third failure
+#            shape neither the percentage badge nor earlyoom can see. On
+#            2026-07-27 the VM rebooted twice (14:52, 18:21) on an identical
+#            signature: `page allocation failure: order:7` out of
+#            `vmbus_alloc_ring` <- `hvs_probe`, i.e. a new hyperv-vsock channel
+#            could not get its 512 KiB contiguous ring. Losing that channel is
+#            fatal in a way losing a process is not — WSL's own relay then
+#            reports `UtilAcceptVsock: accept4 failed 110` and the Windows side
+#            tears the VM down. Nothing in the guest is killed, so there is no
+#            OOM record to find afterwards.
+#
+#            Two things make this invisible to the existing layers. Allocations
+#            above PAGE_ALLOC_COSTLY_ORDER (3) do not invoke the OOM killer at
+#            all — the kernel warns and fails. And earlyoom's AND gate never
+#            armed: at 18:20:36 memory was at 95% but swap was only 38% used,
+#            nowhere near the 12%-free trigger. Free swap is not the reliable
+#            axis it looked like after 2026-07-26; high-order *contiguity* can
+#            collapse while both percentages still say survivable.
+#
+#            So watch reacts to contiguity directly, and handles it in the
+#            system layer rather than by capping individual consumers:
+#              1. a new `page allocation failure: order:>=4` in the kernel log
+#                 (the confirmed signal — one appeared 50 minutes before the
+#                 14:52 reboot), or high-order free blocks hitting zero while
+#                 memory is already past the high-water mark (the predictive
+#                 one, ANDed with memory so ordinary harmless fragmentation
+#                 does not fire it);
+#              2. snapshot, then ask the kernel to compact — lossless, and
+#                 aimed at exactly the thing that failed;
+#              3. only if compaction cannot produce a single block of the
+#                 needed order, SIGTERM the largest consumer. That is the
+#                 airbag earlyoom's swap gate withholds, and it is deliberately
+#                 the last step: the cost is one dev server, the alternative is
+#                 the whole VM.
+#
 #   sample   Take one measurement and publish the JSON the WezTerm M· badge
 #            reads. No root needed. `watch` does this on its own schedule; this
 #            subcommand exists for manual checks and for the test suite.
@@ -65,6 +100,27 @@
 #   WEZTERM_OOM_SWAP_CRIT_PCT    swap used% at or above this is `crit`. Default 90
 #   WEZTERM_OOM_MEMINFO          meminfo source. Default /proc/meminfo; the test
 #                                suite points it at a fixture to pin thresholds
+#   WEZTERM_OOM_FRAG_ORDER       buddy order that must stay satisfiable. Default
+#                                7 — the order vmbus_alloc_ring asked for in
+#                                both 2026-07-27 reboots
+#   WEZTERM_OOM_FRAG_MIN_BLOCKS  free blocks at/above that order below which the
+#                                guard acts. Default 1
+#   WEZTERM_OOM_FRAG_MEM_PCT     memory used% required *in addition* for the
+#                                predictive trigger. Default: the high-water
+#                                mark. A confirmed allocation failure ignores it
+#   WEZTERM_OOM_FRAG_ACTION      off | compact | compact+term. Default
+#                                compact+term
+#   WEZTERM_OOM_FRAG_COOLDOWN    seconds between relief attempts. Default 120
+#   WEZTERM_OOM_FRAG_MIN_RSS_MIB smallest process the guard will SIGTERM.
+#                                Default 2048 — below that the victim is not the
+#                                cause and killing it only loses work
+#   WEZTERM_OOM_FRAG_AVOID       comm regex never chosen as victim. Default
+#                                matches earlyoom's --avoid
+#   WEZTERM_OOM_BUDDYINFO        buddy source. Default /proc/buddyinfo
+#   WEZTERM_OOM_COMPACT_FILE     compaction trigger. Default
+#                                /proc/sys/vm/compact_memory
+#   WEZTERM_OOM_KMSG_FILE        read kernel log from this file instead of
+#                                running dmesg. Test-suite hook
 #
 # Install as systemd units: scripts/dev/install-wsl-oom-guard.sh
 set -uo pipefail
@@ -95,6 +151,32 @@ CRIT_PCT="${WEZTERM_OOM_CRIT_PCT:-93}"
 SWAP_WARN_PCT="${WEZTERM_OOM_SWAP_WARN_PCT:-70}"
 SWAP_CRIT_PCT="${WEZTERM_OOM_SWAP_CRIT_PCT:-90}"
 MEMINFO="${WEZTERM_OOM_MEMINFO:-/proc/meminfo}"
+
+# --- fragmentation axis ---------------------------------------------------
+# Order 7 = 512 KiB contiguous, which is what vmbus_alloc_ring needs for a new
+# hyperv-vsock channel ring. It is not an arbitrary "high order": it is the
+# exact allocation whose failure ended the distro twice on 2026-07-27, so the
+# guard watches the number the incident actually turned on.
+FRAG_ORDER="${WEZTERM_OOM_FRAG_ORDER:-7}"
+FRAG_MIN_BLOCKS="${WEZTERM_OOM_FRAG_MIN_BLOCKS:-1}"
+# The predictive trigger is ANDed with memory pressure because high-order
+# exhaustion on its own is *normal* on Linux — a long-lived box drifts there
+# under ordinary page-cache churn and never notices. Acting on contiguity alone
+# would mean compacting (and eventually killing) on a perfectly healthy host.
+FRAG_MEM_PCT="${WEZTERM_OOM_FRAG_MEM_PCT:-$WATCH_HIGH_PCT}"
+FRAG_ACTION="${WEZTERM_OOM_FRAG_ACTION:-compact+term}"
+FRAG_COOLDOWN="${WEZTERM_OOM_FRAG_COOLDOWN:-120}"
+# A victim smaller than this is collateral, not cause: the observed hogs were
+# 13.4 Gi (next-server) and 4x ~3 Gi (chrome-devtools), while an agent CLI sits
+# around 400 Mi. Below the floor the guard reports and does nothing.
+FRAG_MIN_RSS_MIB="${WEZTERM_OOM_FRAG_MIN_RSS_MIB:-2048}"
+# Same list earlyoom is configured with, for the same reason: killing any of
+# these converts a recoverable memory problem into the distro-level failure the
+# `protect` subcommand exists to prevent.
+FRAG_AVOID="${WEZTERM_OOM_FRAG_AVOID:-^(init|systemd|sshd|tmux|wezterm|Xwayland|dbus)}"
+BUDDYINFO="${WEZTERM_OOM_BUDDYINFO:-/proc/buddyinfo}"
+COMPACT_FILE="${WEZTERM_OOM_COMPACT_FILE:-/proc/sys/vm/compact_memory}"
+KMSG_FILE="${WEZTERM_OOM_KMSG_FILE:-}"
 
 # Print the whole header block (line 2 through the line before `set -`) so the
 # help text cannot drift out of sync when the header grows.
@@ -279,6 +361,124 @@ read_swap() {
   ' "$MEMINFO" 2>/dev/null || printf '0 0 0\n'
 }
 
+# --- fragmentation ------------------------------------------------------
+# Free blocks at or above FRAG_ORDER, summed over every zone. Summed rather
+# than per-zone because a GFP_KERNEL request is satisfiable from either DMA32 or
+# Normal here, so the total is what "can this allocation succeed" depends on.
+#
+# Indexed from column 5 with the top order derived from NF, not hardcoded to 11
+# columns: MAX_ORDER changed meaning in 6.4 and this file's width follows it.
+read_frag() {
+  awk -v want="$FRAG_ORDER" '
+    $1 == "Node" {
+      top = NF - 5
+      for (i = want; i <= top; i++) sum += $(5 + i)
+    }
+    END { printf "%d\n", sum + 0 }
+  ' "$BUDDYINFO" 2>/dev/null || printf '0\n'
+}
+
+# Count of high-order allocation failures currently visible in the kernel log.
+# A count, not a watermark, mirroring read_oom_kill: the caller only acts when
+# it *grows*, and re-baselines on any change so a wrapped ring buffer (which
+# drops old lines and can lower the count) degrades to "missed it" rather than
+# to a permanent false positive.
+#
+# Only order >= 4 is interesting. At or below PAGE_ALLOC_COSTLY_ORDER the
+# kernel reclaims, OOM-kills, and retries, so those failures are a different
+# story with a different owner; above it, the allocation simply fails.
+alloc_fail_count() {
+  local n
+  if [[ -n "$KMSG_FILE" ]]; then
+    n="$(grep -cE 'page allocation failure: order:([4-9]|[1-9][0-9])' "$KMSG_FILE" 2>/dev/null)"
+  else
+    n="$(dmesg 2>/dev/null | grep -cE 'page allocation failure: order:([4-9]|[1-9][0-9])')"
+  fi
+  [[ "${n:-}" =~ ^[0-9]+$ ]] || n=0
+  printf '%s\n' "$n"
+}
+
+# Largest process the guard is willing to SIGTERM, as "pid rss_mib comm".
+# Empty output means "nobody qualifies" — either nothing is big enough or every
+# large process is protected. `ps` is sorted descending, so the first row that
+# falls under the floor ends the search.
+pick_frag_victim() {
+  local pid rss comm
+  collect_protected_pids
+  while read -r pid rss comm; do
+    [[ -n "${pid:-}" ]] || continue
+    (( rss / 1024 >= FRAG_MIN_RSS_MIB )) || return 0
+    [[ " $PROTECTED_PIDS " == *" $pid "* ]] && continue
+    [[ "$comm" =~ $FRAG_AVOID ]] && continue
+    printf '%s %s %s\n' "$pid" "$((rss / 1024))" "$comm"
+    return 0
+  done < <(ps -eo pid,rss,comm --sort=-rss --no-headers 2>/dev/null)
+  return 0
+}
+
+# The pid this guard last signalled, so a repeat offender escalates instead of
+# being asked politely forever. A process wedged in reclaim is exactly the case
+# where SIGTERM never gets serviced.
+LAST_FRAG_VICTIM=""
+
+# Escalate from "ask the kernel" to "remove the cause", stopping at the first
+# step that restores a usable block. Every step logs, because the whole point
+# of this axis is that the previous incidents left no evidence at all.
+frag_relieve() {
+  local reason="$1" mem_pct="$2"
+  local before after pid rss comm sig
+
+  before="$(read_frag)"
+  log "frag: $reason — order>=$FRAG_ORDER free blocks=$before (min $FRAG_MIN_BLOCKS) mem=${mem_pct}% action=$FRAG_ACTION"
+  snapshot "frag-$reason"
+
+  [[ "$FRAG_ACTION" == "off" ]] && return 0
+  if [[ "$DRY_RUN" == 1 ]]; then
+    log "frag: dry-run — no compaction, no signal"
+    return 0
+  fi
+
+  if ( printf '1\n' >"$COMPACT_FILE" ) 2>/dev/null; then
+    # Compaction is synchronous for the writer, but the buddy lists settle a
+    # beat later; re-reading immediately undercounts what was actually freed.
+    sleep 1
+    after="$(read_frag)"
+    log "frag: compacted — order>=$FRAG_ORDER free blocks $before -> $after"
+  else
+    after="$before"
+    log "frag: WARNING compaction unavailable ($COMPACT_FILE not writable — running without root?)"
+  fi
+
+  if (( after >= FRAG_MIN_BLOCKS )); then
+    log "frag: relieved by compaction, no process signalled"
+    return 0
+  fi
+  if [[ "$FRAG_ACTION" != "compact+term" ]]; then
+    log "frag: still short of order>=$FRAG_ORDER but action=$FRAG_ACTION — leaving the kill to earlyoom"
+    return 0
+  fi
+
+  read -r pid rss comm <<<"$(pick_frag_victim)"
+  if [[ -z "${pid:-}" ]]; then
+    log "frag: still short of order>=$FRAG_ORDER but no victim over ${FRAG_MIN_RSS_MIB}Mi outside the protected set — nothing safe to do"
+    return 0
+  fi
+
+  # Second strike on the same pid means the first signal was not serviced.
+  if [[ "$pid" == "$LAST_FRAG_VICTIM" ]]; then
+    sig=KILL
+  else
+    sig=TERM
+  fi
+  if kill "-$sig" "$pid" 2>/dev/null; then
+    log "frag: sent SIG$sig to pid=$pid rss=${rss}Mi comm=$comm (compaction left $after block(s) at order>=$FRAG_ORDER)"
+    LAST_FRAG_VICTIM="$pid"
+  else
+    log "frag: WARNING failed to signal pid=$pid comm=$comm (gone already?)"
+  fi
+  return 0
+}
+
 # --- badge state ---------------------------------------------------------
 # ok < warn < crit, on whichever of the two axes is worse. Memory used% alone
 # would have shown a calm 88% through the whole 2026-07-26 incident; swap
@@ -379,6 +579,10 @@ publish_status() {
   "crit_pct": $CRIT_PCT,
   "swap_warn_pct": $SWAP_WARN_PCT,
   "swap_crit_pct": $SWAP_CRIT_PCT,
+  "frag_order": $FRAG_ORDER,
+  "frag_free_blocks": $(read_frag),
+  "frag_min_blocks": $FRAG_MIN_BLOCKS,
+  "alloc_failures": $(alloc_fail_count),
   "oom_kill": $(read_oom_kill),
   "heartbeat_at_ms": $(now_ms),
   "updated_at": "$(date --iso-8601=seconds)"
@@ -417,10 +621,19 @@ cmd_protect() {
 cmd_watch() {
   local last_kill cur_kill total avail pct high_latched=0 low_pct
   local swap_total swap_used swap_pct level last_level="" last_publish=0 now
+  local last_alloc_fail cur_alloc_fail frag_blocks frag_reason last_frag=0
   low_pct=$((WATCH_HIGH_PCT - 10))
   last_kill="$(read_oom_kill)"
+  last_alloc_fail="$(alloc_fail_count)"
   log "watch: start interval=${WATCH_INTERVAL}s high=${WATCH_HIGH_PCT}% top_n=$WATCH_TOP_N renormalize=$RENORMALIZE scope=$OOM_SCOPE oom_kill=$last_kill"
   log "watch: badge levels warn>=${WARN_PCT}%/swap${SWAP_WARN_PCT}% crit>=${CRIT_PCT}%/swap${SWAP_CRIT_PCT}% -> $(status_file_path)"
+  log "watch: frag axis order>=$FRAG_ORDER min_blocks=$FRAG_MIN_BLOCKS mem_gate=${FRAG_MEM_PCT}% action=$FRAG_ACTION cooldown=${FRAG_COOLDOWN}s free_blocks=$(read_frag) alloc_failures=$last_alloc_fail"
+  # A non-zero baseline is evidence in its own right: the VM kernel outlives a
+  # distro restart, so these lines can be from the instance that just died —
+  # which is precisely the 2026-07-27 shape.
+  if (( last_alloc_fail > 0 )); then
+    log "watch: kernel log already carries $last_alloc_fail high-order allocation failure(s) — this VM has been short on contiguous memory"
+  fi
   # Publish once before the first sleep so a freshly started distro has a
   # heartbeat immediately; otherwise the badge reads "stale" for a full tick.
   cmd_sample >/dev/null 2>&1 || true
@@ -459,6 +672,28 @@ cmd_watch() {
         && log "watch: badge level $last_level -> $level (mem ${pct}%, swap ${swap_pct}%)"
       last_level="$level"
       last_publish="$now"
+    fi
+
+    # Fragmentation axis. Checked every tick because the window is short: the
+    # first order:7 failure on 2026-07-27 landed at 14:02 and the VM was gone by
+    # 14:52, but between 18:19:13 and the 18:20:42 teardown there was only a
+    # minute and a half.
+    frag_blocks="$(read_frag)"
+    cur_alloc_fail="$(alloc_fail_count)"
+    frag_reason=""
+    if (( cur_alloc_fail > last_alloc_fail )); then
+      # Confirmed: the kernel has already refused an allocation. No memory gate
+      # — the failure is the evidence, whatever the percentages say.
+      frag_reason="alloc-failure"
+    elif (( frag_blocks < FRAG_MIN_BLOCKS )) && (( pct >= FRAG_MEM_PCT )); then
+      frag_reason="high-order-exhaustion"
+    fi
+    last_alloc_fail="$cur_alloc_fail"
+    if [[ -n "$frag_reason" ]]; then
+      if (( now - last_frag >= FRAG_COOLDOWN )); then
+        last_frag="$now"
+        frag_relieve "$frag_reason" "$pct"
+      fi
     fi
 
     if (( pct >= WATCH_HIGH_PCT )) && (( high_latched == 0 )); then
@@ -519,6 +754,15 @@ cmd_status() {
     read -r top_rss top_comm <<<"$(top_consumer)"
     [[ -n "${top_comm:-}" ]] && printf 'largest       : %s (%sMi)\n' "$top_comm" "$top_rss"
   fi
+  local frag_blocks alloc_fails
+  frag_blocks="$(read_frag)"
+  alloc_fails="$(alloc_fail_count)"
+  printf 'fragmentation : order>=%s free blocks=%s (acts below %s, mem gate %s%%) action=%s\n' \
+    "$FRAG_ORDER" "$frag_blocks" "$FRAG_MIN_BLOCKS" "$FRAG_MEM_PCT" "$FRAG_ACTION"
+  # Spelled out rather than left as a bare count: this is the number that means
+  # "the kernel has already failed an allocation like the one that killed the VM".
+  printf 'alloc failures: %s high-order (order>=4) failure(s) in this VM'"'"'s kernel log%s\n' \
+    "$alloc_fails" "$( (( alloc_fails > 0 )) && printf ' — see dmesg for the failing caller' )"
   printf 'cgroup        : %s oom_kill=%s\n' "$OOM_SCOPE" "$(read_oom_kill)"
   printf 'inherited leak: %s process(es) in the cgroup wrongly carry %s/%s (should be 0)\n' \
     "$(count_inherited)" "$PROTECT_ADJ" "$TMUX_ADJ"

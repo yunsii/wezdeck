@@ -151,7 +151,7 @@ scripts/runtime/wsl-oom-guard.sh status          # protection state + headroom
 ```
 
 - Evidence lands in `journalctl -u wezterm-oom-record` **and** `/var/log/wezterm-oom-guard.log`. The plain file exists because the journal fragments across exactly the restart loop this guard diagnoses.
-- Env knobs: `WEZTERM_OOM_GUARD_LOG`, `WEZTERM_OOM_WATCH_INTERVAL` (10s), `WEZTERM_OOM_WATCH_HIGH_PCT` (85), `WEZTERM_OOM_WATCH_TOP_N` (8), `WEZTERM_OOM_SCOPE`, `WEZTERM_OOM_PROTECT_ADJ` (-1000), `WEZTERM_OOM_TMUX_ADJ` (-800), `WEZTERM_OOM_PROTECT_TMUX` (1), `WEZTERM_OOM_RENORMALIZE` (1), `WEZTERM_OOM_DRY_RUN` (0). Badge-side: `WEZTERM_OOM_STATUS_FILE`, `WEZTERM_OOM_PUBLISH_INTERVAL` (30s), `WEZTERM_OOM_WARN_PCT` (85), `WEZTERM_OOM_CRIT_PCT` (93), `WEZTERM_OOM_SWAP_WARN_PCT` (70), `WEZTERM_OOM_SWAP_CRIT_PCT` (90), `WEZTERM_OOM_MEMINFO` (test fixture hook).
+- Env knobs: `WEZTERM_OOM_GUARD_LOG`, `WEZTERM_OOM_WATCH_INTERVAL` (10s), `WEZTERM_OOM_WATCH_HIGH_PCT` (85), `WEZTERM_OOM_WATCH_TOP_N` (8), `WEZTERM_OOM_SCOPE`, `WEZTERM_OOM_PROTECT_ADJ` (-1000), `WEZTERM_OOM_TMUX_ADJ` (-800), `WEZTERM_OOM_PROTECT_TMUX` (1), `WEZTERM_OOM_RENORMALIZE` (1), `WEZTERM_OOM_DRY_RUN` (0). Badge-side: `WEZTERM_OOM_STATUS_FILE`, `WEZTERM_OOM_PUBLISH_INTERVAL` (30s), `WEZTERM_OOM_WARN_PCT` (85), `WEZTERM_OOM_CRIT_PCT` (93), `WEZTERM_OOM_SWAP_WARN_PCT` (70), `WEZTERM_OOM_SWAP_CRIT_PCT` (90), `WEZTERM_OOM_MEMINFO` (test fixture hook). Fragmentation-axis knobs (`WEZTERM_OOM_FRAG_*`) are listed with [the third failure mode](#the-third-failure-mode-a-high-order-allocation-failure-takes-the-vm-down).
 - `wsl-oom-guard.sh status` prints one line per protected process with `(protected)` / `(NOT protected)`. After a distro restart that is the one-command check that the boot path still works.
 - **The high-water snapshot is the load-bearing one.** A snapshot taken *after* `oom_kill` increments no longer contains the process that died; the pre-kill snapshot names it.
 - **Neither unit reduces memory usage or prevents OOM.** They change *who* dies and guarantee a record. Acting on the pressure is `earlyoom`'s job (below); capping the actual consumers is a separate decision — see "Standing memory consumers".
@@ -219,7 +219,7 @@ journalctl -u earlyoom                            # kills and hourly reports
 
 Config is `-m 15,10 -s 12,6`: SIGTERM once available memory is under 15% **and** free swap under 12%, SIGKILL at 10% / 6%.
 
-**Swap is the gate on this host, not memory.** This box legitimately runs at 85-88% memory (12-15% available) for hours, so a memory threshold tight enough to mean anything would fire constantly. Free swap is the axis that separates "busy" from "about to die" — near 100% free in normal work, collapsing only on the way into the livelock. The AND still holds it back from deploying during normal driving. Sized against three measured points:
+**Swap is the gate on this host, not memory** — for *this* failure mode. 2026-07-27 later showed a shape where swap stayed at 62% free and the VM died anyway, so read this claim as scoped to the livelock, not as the host's one true axis; see [the third failure mode](#the-third-failure-mode-a-high-order-allocation-failure-takes-the-vm-down). This box legitimately runs at 85-88% memory (12-15% available) for hours, so a memory threshold tight enough to mean anything would fire constantly. Free swap is the axis that separates "busy" from "about to die" — near 100% free in normal work, collapsing only on the way into the livelock. The AND still holds it back from deploying during normal driving. Sized against three measured points:
 
 | Sample | mem avail | swap free | Verdict |
 |---|---|---|---|
@@ -249,6 +249,82 @@ daemon parsed :
 **`enable --now` is not enough on a reinstall.** It is a no-op against an already-running unit, so the old process keeps the old environment while every file on disk shows the new one. On 2026-07-27 the badge path was correctly baked into `wezterm-oom-record.service` and the running recorder never saw it — it logged an empty status path and published nothing, while `systemctl show` cheerfully reported the new value. Both installers now `systemctl restart` explicitly.
 
 **Why not `systemd-oomd`.** Its unit of destruction is a *cgroup*, and on this host 109 processes — tmux, every agent, every dev server — live in the single `/init.scope` cgroup (which is why the OOM guard watches exactly that cgroup). oomd would either not manage `init.scope` at all or take out the whole thing, reproducing the 2026-07-25 poweroff/restart loop. It is also not installed here (`/usr/lib/systemd/systemd-oomd` absent), so there is no "already in the box" advantage, and `/proc/pressure/memory` currently reads `total=0` on this kernel while cpu and io both count — worth pressure-testing before ever relying on memory PSI in WSL. earlyoom kills one process and needs none of that.
+
+### The third failure mode: a high-order allocation failure takes the VM down
+
+Reference incident 2026-07-27, twice in one afternoon (VM up at 14:52, dead at 18:20). Same family again — the guest is short on memory — and a **third** presentation: no process was killed, no restart loop, no livelock long enough to notice, and **swap was healthy**. The distro just stopped, and Windows restarted the whole VM.
+
+**Judging it:** `dmesg` timestamps reset to `[0.000000]`, so per the rule above this is a VM reboot, not a distro restart. Then look for this, and nothing else is needed:
+
+```
+18:19:13 kworker/0:1: page allocation failure: order:7, mode:0xdc0(GFP_KERNEL|__GFP_ZERO)
+           __alloc_pages_slowpath → vmbus_alloc_ring → vmbus_open → hvs_probe → vmbus_probe
+18:19:13 Node 0 Normal: … 0*512kB 0*1024kB 1*2048kB      <- orders 7 and 8 gone
+18:19:45 WSL (SessionLeader) ERROR: UtilAcceptVsock:273: accept4 failed 110    <- ETIMEDOUT
+18:20:30 WSL (Relay)         ERROR: UtilAcceptVsock:246: Waiting for abnormally long accept(11)
+18:20:42 <last log line of the instance>
+```
+
+Read it as a chain, not as three separate errors:
+
+1. **A new hyperv-vsock channel needs `order:7` — 512 KiB contiguous — for its ring buffer** (`vmbus_alloc_ring`). Total free memory is not the constraint; *contiguity* is. Both incidents failed with several GB nominally free.
+2. **Losing a vsock channel is fatal in a way losing a process is not.** vsock is how the Windows side and the guest talk, so the relay's `accept4` times out (`110`), `wsl.exe` concludes the distro is unreachable, and the VM is torn down. The `UtilAcceptVsock` errors are the blast surface, not the cause — do not go debugging WSL networking.
+3. **Nothing in the guest dies, so there is nothing to find afterwards.** `oom_kill` stays 0 and no `Killed process` line is ever written. "No OOM record" rules out even less than it did after 2026-07-26.
+
+The consumers were the standing set again, from the guard's own high-water snapshots: `next-server` at 17.0 Gi before the 14:52 death and 13.4 Gi before the 18:20 one, four `chrome-devtools` at ~2.9-4.0 Gi, `tsgo` ~2.6 Gi.
+
+**Why all three existing layers were silent.** This is the useful part of the incident:
+
+| Layer | Why it did nothing |
+|---|---|
+| kernel OOM killer | `order:7` is above `PAGE_ALLOC_COSTLY_ORDER` (3). The kernel warns and fails; it never selects a victim. Same mechanism as the 2026-07-26 `order:4`. |
+| `M·` badge | Correct and already red — `crit` at 18:19:11 (mem 94%). A number on the bar is not an action, and there were 91 seconds left. |
+| earlyoom | **The AND gate never armed.** At 18:20:36 memory was 95% used but swap was only 38% used — 62% free, nowhere near the 12%-free trigger. |
+
+So the previous section's conclusion — *"swap is the gate on this host, not memory"* — is **too strong**, and the table above it dates from before this incident. Free swap predicted the 2026-07-26 livelock well and predicts this shape not at all: high-order contiguity can collapse while both percentages still read survivable. That table's `2026-07-27 14:48` row is also an after-the-fact threshold calculation, not an observation — `journalctl -b -2` contains no earlyoom lines at all, because it was still being installed that afternoon. The only *observed* verdict for earlyoom on this failure mode is the 18:20 one: silent.
+
+#### The fragmentation axis in `wezterm-oom-record`
+
+The guard therefore watches contiguity directly, and handles it **in the system layer** rather than by capping each consumer — one place to reason about, and no per-project memory flags to keep in sync. Two triggers:
+
+- **Confirmed:** a new `page allocation failure: order:>=4` appears in the kernel log. No memory gate — the kernel has already refused an allocation, whatever the percentages say. This is the trigger with real lead time: the first `order:7` failure landed at 14:02 and the VM survived until 14:52.
+- **Predictive:** free blocks at `order>=7` hit zero **and** memory is already past the high-water mark. The AND is load-bearing: high-order exhaustion alone is the ordinary steady state of a long-lived Linux box, and acting on it unqualified would mean compacting and eventually killing on a perfectly healthy host.
+
+Then it escalates, stopping at the first step that produces a usable block:
+
+1. `snapshot` — the durable record of who was big, which neither incident left behind.
+2. `echo 1 > /proc/sys/vm/compact_memory`, then re-read `/proc/buddyinfo` a beat later. Lossless, and aimed at exactly what failed. If this restores a block, nothing is signalled and the log says so.
+3. Only if compaction cannot produce a single block: `SIGTERM` the largest consumer, `SIGKILL` if the same PID survives to the next attempt (a process wedged in reclaim never services `SIGTERM`). Floor of 2048 MiB and earlyoom's own `--avoid` list, so the victim is a cause and never a bystander — an agent CLI at ~400 Mi is not why a 512 KiB allocation failed.
+
+**This is the airbag earlyoom's swap gate withholds**, deliberately placed last. The cost of step 3 is one dev server; the cost of not having it is every pane in the VM. One relief attempt per `WEZTERM_OOM_FRAG_COOLDOWN` (120 s default) keeps a sustained shortage from becoming a killing spree.
+
+```bash
+scripts/runtime/wsl-oom-guard.sh status     # fragmentation + alloc-failure lines
+journalctl -u wezterm-oom-record | grep frag:
+```
+
+```
+fragmentation : order>=7 free blocks=4483 (acts below 1, mem gate 85%) action=compact+term
+alloc failures: 0 high-order (order>=4) failure(s) in this VM's kernel log
+```
+
+A non-zero `alloc failures` count means this VM has *already* been where both reboots started, whether or not the guard was watching at the time — `watch` logs that baseline on startup for the same reason it logs a non-zero `oom_kill`.
+
+Notes:
+
+- **`frag_order`, `frag_free_blocks`, `frag_min_blocks` and `alloc_failures` are published in `status.json`, but the badge level is unchanged** — it still comes from the two percentage axes only, so `mem_status.lua` needs no update. The fields are there for diagnosis and for a future axis on the bar; the incident's badge was already red, so a fourth colour would have added nothing.
+- **The buddy column count is derived from the line, not fixed at 11.** `MAX_ORDER` changed meaning in 6.4 and `/proc/buddyinfo`'s width follows the kernel.
+- **The kernel-log count is a count, not a watermark** (same shape as `read_oom_kill`): the guard acts only when it grows and re-baselines on any change, so the wrapping `dmesg` ring buffer degrades to "missed one" instead of a stuck alarm. The predictive trigger is the backstop for exactly that.
+- Env knobs: `WEZTERM_OOM_FRAG_ORDER` (7), `WEZTERM_OOM_FRAG_MIN_BLOCKS` (1), `WEZTERM_OOM_FRAG_MEM_PCT` (high-water mark), `WEZTERM_OOM_FRAG_ACTION` (`compact+term`; also `compact` to hand the kill back to earlyoom, or `off`), `WEZTERM_OOM_FRAG_COOLDOWN` (120), `WEZTERM_OOM_FRAG_MIN_RSS_MIB` (2048), `WEZTERM_OOM_FRAG_AVOID`, `WEZTERM_OOM_BUDDYINFO`, `WEZTERM_OOM_COMPACT_FILE`, `WEZTERM_OOM_KMSG_FILE` (test hook). `WEZTERM_OOM_DRY_RUN=1` reports and snapshots without compacting or signalling.
+- **Compaction and signalling need root**; the recorder is a system unit, so this works there and degrades to a logged warning under an interactive `watch`.
+- Regression tests: `tests/hook-units/test_wsl_oom_guard.sh` pins the escalation order, the memory gate, the RSS floor, the avoid list, the cooldown, and `SIGTERM`→`SIGKILL`, driving the real `watch` loop against fixtures (fake `/proc/buddyinfo`, fake kernel log, a FIFO standing in for `compact_memory` so "compaction helped" is deterministic rather than timing-dependent).
+
+**After changing this script, restart the recorder** — the unit runs the file straight out of the repo, so an edit alone changes nothing in the live process:
+
+```bash
+sudo systemctl restart wezterm-oom-record
+journalctl -u wezterm-oom-record -n 5 | grep 'frag axis'   # must name the new axis
+```
 
 ### Standing memory consumers
 
