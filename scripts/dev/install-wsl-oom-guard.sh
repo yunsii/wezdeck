@@ -10,13 +10,21 @@
 #                                 sessions, which turns one memory spike into a
 #                                 poweroff + restart loop.
 #   wezterm-oom-record.service    long-running — records who was big before an
-#                                 OOM kill, and re-applies the protection set
-#                                 every tick because tmux starts long after boot.
+#                                 OOM kill, re-applies the protection set every
+#                                 tick because tmux starts long after boot, and
+#                                 publishes the JSON behind WezTerm's M· badge.
 #                                 Runs at OOMScoreAdjust=-900 so the recorder
 #                                 outlives the pressure it records.
 #
 # /proc/<pid>/oom_score_adj resets on every distro start, which is why this is a
 # unit and not a one-off echo.
+#
+# The badge's status-file path is resolved *here* and baked into the unit. The
+# recorder is a system unit running as root, where $HOME is /root (so the
+# per-user Windows-path cache is invisible) and there is no Windows interop to
+# fall back on — it cannot work the path out for itself at runtime. Resolution
+# failing is not fatal: the guard keeps protecting and logging, the badge just
+# never appears.
 #
 # Usage:
 #   sudo ./scripts/dev/install-wsl-oom-guard.sh            # install + enable + start
@@ -73,6 +81,32 @@ WantedBy=multi-user.target
 EOF
 }
 
+# Resolve the badge status file as the *invoking* user, so the warm
+# Windows-path cache in their ~/.cache is the one consulted. Prints nothing
+# when the path cannot be worked out, which the caller treats as "install the
+# guard without the badge".
+resolve_status_file() {
+  if [[ -n "${WEZTERM_OOM_STATUS_FILE:-}" ]]; then
+    printf '%s\n' "$WEZTERM_OOM_STATUS_FILE"
+    return 0
+  fi
+  local user home
+  user="${SUDO_USER:-$(id -un)}"
+  home="$(getent passwd "$user" 2>/dev/null | cut -d: -f6)"
+  [[ -n "$home" && -d "$home" ]] || return 1
+  (
+    export HOME="$home"
+    unset XDG_CACHE_HOME
+    # shellcheck disable=SC1091
+    source "$REPO_ROOT/scripts/runtime/windows-runtime-paths-lib.sh" 2>/dev/null || exit 1
+    windows_runtime_detect_paths 2>/dev/null || true
+    [[ -n "${WINDOWS_RUNTIME_STATE_WSL:-}" ]] || exit 1
+    printf '%s\n' "${WINDOWS_RUNTIME_STATE_WSL}/state/oom-guard/status.json"
+  )
+}
+
+STATUS_FILE="$(resolve_status_file || true)"
+
 record_unit_text() {
   cat <<EOF
 [Unit]
@@ -84,6 +118,7 @@ ConditionVirtualization=wsl
 [Service]
 Type=simple
 Environment=WEZTERM_OOM_GUARD_LOG=$GUARD_LOG
+$( [[ -n "$STATUS_FILE" ]] && printf 'Environment=WEZTERM_OOM_STATUS_FILE=%s' "$STATUS_FILE" )
 ExecStart=$GUARD_SCRIPT watch
 Restart=always
 RestartSec=5
@@ -109,10 +144,20 @@ case "$MODE" in
     ;;
   check)
     "$GUARD_SCRIPT" status
+    # Report the path this run *would* bake in, and what the installed unit
+    # actually carries. A guard that protects but never publishes looks
+    # healthy from every other angle, so the mismatch has to be visible here.
+    printf 'badge path    : %s\n' "${STATUS_FILE:-<unresolved — badge will not appear>}"
+    if [[ -f "$UNIT_DIR/$RECORD_UNIT" ]]; then
+      printf 'unit carries  : %s\n' \
+        "$(grep -o 'WEZTERM_OOM_STATUS_FILE=.*' "$UNIT_DIR/$RECORD_UNIT" 2>/dev/null | cut -d= -f2- || printf '<none>')"
+    fi
     for unit in "$PROTECT_UNIT" "$RECORD_UNIT"; do
       # is-enabled exits non-zero for disabled/not-found but still prints the
       # state, so use its stdout and only substitute when it printed nothing.
-      enabled_state="$(systemctl is-enabled "$unit" 2>/dev/null)"
+      # `|| true` is load-bearing under `set -e`: a not-found unit exits 1 and
+      # would otherwise abort the very report --check exists to print.
+      enabled_state="$(systemctl is-enabled "$unit" 2>/dev/null || true)"
       printf '%-32s installed=%s enabled=%s\n' "$unit" \
         "$([[ -f "$UNIT_DIR/$unit" ]] && printf yes || printf no)" \
         "${enabled_state:-unknown}"
@@ -145,6 +190,14 @@ chmod 0644 "$GUARD_LOG"
 systemctl daemon-reload
 systemctl enable --now "$PROTECT_UNIT"
 systemctl enable --now "$RECORD_UNIT"
+# `enable --now` is a no-op on an already-running unit, so a reinstall would
+# leave the old process holding the old environment. That is not theoretical:
+# on 2026-07-27 the badge path was correctly baked into the unit file and the
+# recorder kept running without it, logging an empty status path and
+# publishing nothing, while `systemctl show` reported the new value (it reads
+# the unit file, not the live process). Restart explicitly.
+systemctl restart "$PROTECT_UNIT"
+systemctl restart "$RECORD_UNIT"
 
 printf '\n'
 "$GUARD_SCRIPT" status

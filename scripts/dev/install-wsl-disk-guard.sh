@@ -101,7 +101,9 @@ case "$MODE" in
     for unit in "$SERVICE_UNIT" "$TIMER_UNIT"; do
       # is-enabled exits non-zero for disabled/not-found but still prints the
       # state, so use its stdout and only substitute when it printed nothing.
-      enabled_state="$(systemctl --user is-enabled "$unit" 2>/dev/null)"
+      # `|| true` is load-bearing under `set -e`: a not-found unit exits 1 and
+      # would otherwise abort the very report --check exists to print.
+      enabled_state="$(systemctl --user is-enabled "$unit" 2>/dev/null || true)"
       printf '%-30s installed=%s enabled=%s\n' "$unit" \
         "$([[ -f "$UNIT_DIR/$unit" ]] && printf yes || printf no)" \
         "${enabled_state:-unknown}"

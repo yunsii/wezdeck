@@ -29,12 +29,17 @@
 #            Also re-applies `protect` every tick — a boot-time oneshot cannot
 #            cover tmux, which starts when the user first opens WezTerm.
 #
+#   sample   Take one measurement and publish the JSON the WezTerm M· badge
+#            reads. No root needed. `watch` does this on its own schedule; this
+#            subcommand exists for manual checks and for the test suite.
+#
 #   status   Print current protection state, counters, and headroom. No writes,
 #            no root needed.
 #
 # Usage:
 #   scripts/runtime/wsl-oom-guard.sh protect      # needs root
 #   scripts/runtime/wsl-oom-guard.sh watch        # long-running; systemd owns it
+#   scripts/runtime/wsl-oom-guard.sh sample
 #   scripts/runtime/wsl-oom-guard.sh status
 #
 # Env knobs (see docs/diagnostics.md "Guest OOM hardening"):
@@ -48,6 +53,18 @@
 #   WEZTERM_OOM_PROTECT_TMUX     1 to protect tmux servers, 0 to skip. Default 1
 #   WEZTERM_OOM_RENORMALIZE      1 to sweep inherited values back to 0. Default 1
 #   WEZTERM_OOM_DRY_RUN          1 to count the sweep without writing. Default 0
+#   WEZTERM_OOM_STATUS_FILE      badge JSON path. Default: Windows runtime state.
+#                                The record unit bakes this in at install time —
+#                                see scripts/dev/install-wsl-oom-guard.sh.
+#   WEZTERM_OOM_PUBLISH_INTERVAL seconds between badge writes while the level is
+#                                unchanged. Default 30
+#   WEZTERM_OOM_WARN_PCT         memory used% at or above this is `warn`. Default
+#                                85, matching the high-water mark
+#   WEZTERM_OOM_CRIT_PCT         memory used% at or above this is `crit`. Default 93
+#   WEZTERM_OOM_SWAP_WARN_PCT    swap used% at or above this is `warn`. Default 70
+#   WEZTERM_OOM_SWAP_CRIT_PCT    swap used% at or above this is `crit`. Default 90
+#   WEZTERM_OOM_MEMINFO          meminfo source. Default /proc/meminfo; the test
+#                                suite points it at a fixture to pin thresholds
 #
 # Install as systemd units: scripts/dev/install-wsl-oom-guard.sh
 set -uo pipefail
@@ -67,6 +84,17 @@ PROTECT_TMUX="${WEZTERM_OOM_PROTECT_TMUX:-1}"
 # renormalize_inherited).
 RENORMALIZE="${WEZTERM_OOM_RENORMALIZE:-1}"
 DRY_RUN="${WEZTERM_OOM_DRY_RUN:-0}"
+PUBLISH_INTERVAL="${WEZTERM_OOM_PUBLISH_INTERVAL:-30}"
+# Badge thresholds. warn defaults to the high-water mark so the bar lights up at
+# the same moment the log starts caring, rather than inventing a second number.
+WARN_PCT="${WEZTERM_OOM_WARN_PCT:-$WATCH_HIGH_PCT}"
+CRIT_PCT="${WEZTERM_OOM_CRIT_PCT:-93}"
+# Swap gets its own pair because it is the axis that actually predicts the
+# livelock: on 2026-07-26 memory sat at 88% for four hours while swap drained to
+# zero, and it was the exhausted swap — not the 88% — that ended the distro.
+SWAP_WARN_PCT="${WEZTERM_OOM_SWAP_WARN_PCT:-70}"
+SWAP_CRIT_PCT="${WEZTERM_OOM_SWAP_CRIT_PCT:-90}"
+MEMINFO="${WEZTERM_OOM_MEMINFO:-/proc/meminfo}"
 
 # Print the whole header block (line 2 through the line before `set -`) so the
 # help text cannot drift out of sync when the header grows.
@@ -235,13 +263,134 @@ read_mem() {
       if (total <= 0) { print "0 0 0"; exit }
       printf "%d %d %d\n", total / 1024, avail / 1024, (total - avail) * 100 / total
     }
-  ' /proc/meminfo 2>/dev/null || printf '0 0 0\n'
+  ' "$MEMINFO" 2>/dev/null || printf '0 0 0\n'
+}
+
+# SwapTotal / SwapUsed in MiB plus used percent. A swapless distro reports
+# "0 0 0" rather than dividing by zero, and classify treats that as no signal.
+read_swap() {
+  awk '
+    /^SwapTotal:/ { total = $2 }
+    /^SwapFree:/  { free = $2 }
+    END {
+      if (total <= 0) { print "0 0 0"; exit }
+      printf "%d %d %d\n", total / 1024, (total - free) / 1024, (total - free) * 100 / total
+    }
+  ' "$MEMINFO" 2>/dev/null || printf '0 0 0\n'
+}
+
+# --- badge state ---------------------------------------------------------
+# ok < warn < crit, on whichever of the two axes is worse. Memory used% alone
+# would have shown a calm 88% through the whole 2026-07-26 incident; swap
+# used% alone misses a swapless machine filling RAM. The badge reports the
+# dominant one so a single number is always the thing to act on.
+classify_pressure() {
+  local mem_pct="$1" swap_pct="$2"
+  if (( mem_pct >= CRIT_PCT )) || (( swap_pct >= SWAP_CRIT_PCT )); then
+    printf 'crit\n'
+  elif (( mem_pct >= WARN_PCT )) || (( swap_pct >= SWAP_WARN_PCT )); then
+    printf 'warn\n'
+  else
+    printf 'ok\n'
+  fi
+}
+
+now_ms() {
+  printf '%s\n' "$(($(date +%s%N) / 1000000))"
+}
+
+# --- state file location -----------------------------------------------
+# Same rule as the disk guard: prefer the Windows-readable runtime state dir so
+# WezTerm Lua never crosses \\wsl$ on its 250 ms tick.
+#
+# Detection cannot be relied on here the way it can in the disk guard. That one
+# runs as a *user* timer, so `windows_runtime_detect_paths` finds the warm
+# per-user cache; this one runs as root from a system unit, where $HOME is
+# /root (no cache) and there is no Windows interop to fall back on. The
+# installer therefore resolves the path from the invoking user's shell and
+# bakes it into the unit as WEZTERM_OOM_STATUS_FILE. Detection is still
+# attempted so an interactive `sample` / `status` works with no setup at all.
+status_file_path() {
+  if [[ -n "${WEZTERM_OOM_STATUS_FILE:-}" ]]; then
+    printf '%s\n' "$WEZTERM_OOM_STATUS_FILE"
+    return 0
+  fi
+  if [[ -z "${WINDOWS_RUNTIME_STATE_WSL:-}" ]]; then
+    local paths_lib
+    paths_lib="$(dirname "${BASH_SOURCE[0]}")/windows-runtime-paths-lib.sh"
+    if [[ -f "$paths_lib" ]]; then
+      # shellcheck disable=SC1091
+      source "$paths_lib" 2>/dev/null || true
+      windows_runtime_detect_paths 2>/dev/null || true
+    fi
+  fi
+  if [[ -n "${WINDOWS_RUNTIME_STATE_WSL:-}" ]]; then
+    printf '%s\n' "${WINDOWS_RUNTIME_STATE_WSL}/state/oom-guard/status.json"
+    return 0
+  fi
+  printf '%s\n' "${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/state/oom-guard/status.json"
+}
+
+# Largest RSS process as "rss_mib comm". Only called when the level is not ok:
+# it costs a `ps` over every process, and in the common case nobody reads it.
+#
+# Size first, name last, because comm routinely contains spaces — Next.js's
+# worker reports `next-server (v1…`, and a name-first layout made `read -r`
+# split the number off into the name field.
+top_consumer() {
+  ps -eo rss,comm --sort=-rss --no-headers 2>/dev/null \
+    | awk 'NR==1 { rss = $1; $1 = ""; sub(/^ +/, ""); printf "%d %s\n", rss / 1024, $0; exit }'
+}
+
+# Publishes the badge JSON. Hand-rolled rather than jq-piped for the same reason
+# as the disk guard: this runs from a systemd unit where a missing jq must not
+# cost the badge its heartbeat.
+publish_status() {
+  local level="$1" mem_total="$2" mem_avail="$3" mem_pct="$4"
+  local swap_total="$5" swap_used="$6" swap_pct="$7"
+  local path tmp top_comm="" top_rss=""
+
+  if [[ "$level" != "ok" ]]; then
+    read -r top_rss top_comm <<<"$(top_consumer)"
+    # comm is attacker-adjacent only in the sense that any process can pick it;
+    # strip the two characters that would produce invalid JSON rather than
+    # trusting it, since a malformed file costs the badge its heartbeat.
+    top_comm="${top_comm//\\/}"
+    top_comm="${top_comm//\"/}"
+    [[ "$top_rss" =~ ^[0-9]+$ ]] || top_rss=""
+  fi
+
+  path="$(status_file_path)"
+  mkdir -p "$(dirname "$path")" 2>/dev/null || true
+  tmp="${path}.tmp.$$"
+  cat >"$tmp" 2>/dev/null <<EOF
+{
+  "version": 1,
+  "level": "$level",
+  "mem_total_mib": $mem_total,
+  "mem_avail_mib": $mem_avail,
+  "mem_used_pct": $mem_pct,
+  "swap_total_mib": $swap_total,
+  "swap_used_mib": $swap_used,
+  "swap_used_pct": $swap_pct,
+  "top_comm": $( [[ -n "$top_comm" ]] && printf '"%s"' "${top_comm//\"/}" || printf 'null' ),
+  "top_rss_mib": ${top_rss:-null},
+  "warn_pct": $WARN_PCT,
+  "crit_pct": $CRIT_PCT,
+  "swap_warn_pct": $SWAP_WARN_PCT,
+  "swap_crit_pct": $SWAP_CRIT_PCT,
+  "oom_kill": $(read_oom_kill),
+  "heartbeat_at_ms": $(now_ms),
+  "updated_at": "$(date --iso-8601=seconds)"
+}
+EOF
+  mv -f "$tmp" "$path" 2>/dev/null || rm -f "$tmp" 2>/dev/null || true
 }
 
 snapshot() {
   local reason="$1" total avail pct swap_used pid rss comm adj rows=0
   read -r total avail pct <<<"$(read_mem)"
-  swap_used="$(awk '/^SwapTotal:/{t=$2} /^SwapFree:/{f=$2} END{printf "%d", (t - f) / 1024}' /proc/meminfo 2>/dev/null || printf '0')"
+  swap_used="$(awk '/^SwapTotal:/{t=$2} /^SwapFree:/{f=$2} END{printf "%d", (t - f) / 1024}' "$MEMINFO" 2>/dev/null || printf '0')"
   log "snapshot[$reason] mem_total=${total}Mi mem_avail=${avail}Mi used=${pct}% swap_used=${swap_used}Mi oom_kill=$(read_oom_kill)"
   # oom_score_adj is not a ps format specifier (procps rejects it), so read the
   # per-PID value from /proc. Trailing `comm` absorbs names containing spaces.
@@ -267,9 +416,14 @@ cmd_protect() {
 
 cmd_watch() {
   local last_kill cur_kill total avail pct high_latched=0 low_pct
+  local swap_total swap_used swap_pct level last_level="" last_publish=0 now
   low_pct=$((WATCH_HIGH_PCT - 10))
   last_kill="$(read_oom_kill)"
   log "watch: start interval=${WATCH_INTERVAL}s high=${WATCH_HIGH_PCT}% top_n=$WATCH_TOP_N renormalize=$RENORMALIZE scope=$OOM_SCOPE oom_kill=$last_kill"
+  log "watch: badge levels warn>=${WARN_PCT}%/swap${SWAP_WARN_PCT}% crit>=${CRIT_PCT}%/swap${SWAP_CRIT_PCT}% -> $(status_file_path)"
+  # Publish once before the first sleep so a freshly started distro has a
+  # heartbeat immediately; otherwise the badge reads "stale" for a full tick.
+  cmd_sample >/dev/null 2>&1 || true
   # A non-zero counter at startup is itself evidence: the VM kernel outlives a
   # distro restart, so the cgroup counter can carry over from a dead instance.
   # That is exactly what the 2026-07-25 restart loop kept re-reporting.
@@ -290,6 +444,23 @@ cmd_watch() {
       last_kill="$cur_kill"
     fi
     read -r total avail pct <<<"$(read_mem)"
+    read -r swap_total swap_used swap_pct <<<"$(read_swap)"
+
+    # The badge is the part of this guard that a human actually sees, so it
+    # republishes on every level change and otherwise on a slow heartbeat.
+    # Not every tick: the status file lives on the Windows side of the 9p
+    # boundary, and a 10 s write cadence would put it in the hot path this
+    # repo deliberately keeps state files out of (docs/performance.md).
+    level="$(classify_pressure "$pct" "$swap_pct")"
+    now="$(date +%s)"
+    if [[ "$level" != "$last_level" ]] || (( now - last_publish >= PUBLISH_INTERVAL )); then
+      publish_status "$level" "$total" "$avail" "$pct" "$swap_total" "$swap_used" "$swap_pct"
+      [[ "$level" != "$last_level" && -n "$last_level" ]] \
+        && log "watch: badge level $last_level -> $level (mem ${pct}%, swap ${swap_pct}%)"
+      last_level="$level"
+      last_publish="$now"
+    fi
+
     if (( pct >= WATCH_HIGH_PCT )) && (( high_latched == 0 )); then
       high_latched=1
       log "watch: crossed high-water mark (${pct}% >= ${WATCH_HIGH_PCT}%)"
@@ -299,6 +470,15 @@ cmd_watch() {
       log "watch: pressure released (${pct}% < ${low_pct}%)"
     fi
   done
+}
+
+cmd_sample() {
+  local total avail pct swap_total swap_used swap_pct level
+  read -r total avail pct <<<"$(read_mem)"
+  read -r swap_total swap_used swap_pct <<<"$(read_swap)"
+  level="$(classify_pressure "$pct" "$swap_pct")"
+  publish_status "$level" "$total" "$avail" "$pct" "$swap_total" "$swap_used" "$swap_pct"
+  printf '%s mem=%s%% swap=%s%% -> %s\n' "$level" "$pct" "$swap_pct" "$(status_file_path)"
 }
 
 cmd_status() {
@@ -326,6 +506,19 @@ cmd_status() {
   read -r total avail pct <<<"$(read_mem)"
   printf 'memory        : total=%sMi avail=%sMi used=%s%% (high-water %s%%)\n' \
     "$total" "$avail" "$pct" "$WATCH_HIGH_PCT"
+  local swap_total swap_used swap_pct level
+  read -r swap_total swap_used swap_pct <<<"$(read_swap)"
+  printf 'swap          : total=%sMi used=%sMi (%s%%)\n' "$swap_total" "$swap_used" "$swap_pct"
+  level="$(classify_pressure "$pct" "$swap_pct")"
+  printf 'badge level   : %s (warn mem>=%s%% swap>=%s%%, crit mem>=%s%% swap>=%s%%)\n' \
+    "$level" "$WARN_PCT" "$SWAP_WARN_PCT" "$CRIT_PCT" "$SWAP_CRIT_PCT"
+  printf 'badge file    : %s%s\n' "$(status_file_path)" \
+    "$([[ -f "$(status_file_path)" ]] && printf '' || printf ' (not published yet)')"
+  if [[ "$level" != "ok" ]]; then
+    local top_comm top_rss
+    read -r top_rss top_comm <<<"$(top_consumer)"
+    [[ -n "${top_comm:-}" ]] && printf 'largest       : %s (%sMi)\n' "$top_comm" "$top_rss"
+  fi
   printf 'cgroup        : %s oom_kill=%s\n' "$OOM_SCOPE" "$(read_oom_kill)"
   printf 'inherited leak: %s process(es) in the cgroup wrongly carry %s/%s (should be 0)\n' \
     "$(count_inherited)" "$PROTECT_ADJ" "$TMUX_ADJ"
@@ -344,6 +537,7 @@ cmd_status() {
 case "${1:-}" in
   protect) cmd_protect ;;
   watch)   cmd_watch ;;
+  sample)  cmd_sample ;;
   status)  cmd_status ;;
   -h|--help) usage ;;
   *) usage >&2; exit 2 ;;

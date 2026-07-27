@@ -28,9 +28,11 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`host-helper-release.md`](./host-helper-release.md).
 - Cutting a Go picker release or install-source toggle (`WEZTERM_PICKER_INSTALL_SOURCE`):
   Read [`picker-release.md`](./picker-release.md).
-- Logs, diagnostics, and smoke tests; also guest-OOM hardening and host disk
-  space (`ext4.vhdx` never shrinking, why sparse VHD is a trap, compaction,
-  the disk-guard timer and `D·…` badge):
+- Logs, diagnostics, and smoke tests; also guest-OOM hardening (both failure
+  modes: the distro restart loop, and the reclaim livelock that pins the CPU
+  and kills nothing — plus the `M·…` badge and earlyoom) and host disk space
+  (`ext4.vhdx` never shrinking, why sparse VHD is a trap, compaction, the
+  disk-guard timer and `D·…` badge):
   Read [`diagnostics.md`](./diagnostics.md).
 - Logger author surface (categories, levels, render-path discipline):
   Read [`logging-conventions.md`](./logging-conventions.md).

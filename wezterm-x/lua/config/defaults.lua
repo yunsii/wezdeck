@@ -205,6 +205,10 @@ function M.default_disk_guard_status_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'disk-guard', 'status.json')
 end
 
+function M.default_mem_guard_status_file(runtime_state_dir, join_path)
+  return join_path(runtime_state_dir, 'state', 'oom-guard', 'status.json')
+end
+
 function M.read_repo_root_override(runtime_dir, join_path)
   local override_path = join_path(runtime_dir, 'repo-root.txt')
   local file = io.open(override_path, 'r')

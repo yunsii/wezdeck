@@ -244,6 +244,13 @@ local base_constants = {
     status_file = defaults.default_disk_guard_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 780000,
   },
+  -- Guest memory-pressure badge (right-status, after D·). Producer is the
+  -- wezterm-oom-record system unit, which republishes every 30 s; 90 s
+  -- tolerates two missed writes before the badge admits it is stale.
+  mem_guard = {
+    status_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
+    heartbeat_timeout_ms = 90000,
+  },
   wakatime = {
     api_key = nil,
   },

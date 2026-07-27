@@ -24,6 +24,7 @@ local attention = load_module 'attention'
 local chrome_debug_status = load_module 'chrome_debug_status'
 local session_bridge_status = load_module 'session_bridge_status'
 local disk_status = load_module 'disk_status'
+local mem_status = load_module 'mem_status'
 local logger = load_module('logger').new {
   wezterm = wezterm,
   constants = constants,
@@ -74,6 +75,12 @@ disk_status.configure {
   heartbeat_timeout_ms = disk_guard.heartbeat_timeout_ms,
 }
 
+local mem_guard = constants.mem_guard or {}
+mem_status.configure {
+  state_file = mem_guard.status_file,
+  heartbeat_timeout_ms = mem_guard.heartbeat_timeout_ms,
+}
+
 titles.register {
   wezterm = wezterm,
   palette = constants.palette,
@@ -81,6 +88,7 @@ titles.register {
   chrome_debug_status = chrome_debug_status,
   session_bridge_status = session_bridge_status,
   disk_status = disk_status,
+  mem_status = mem_status,
   host = host,
   logger = logger,
   constants = constants,

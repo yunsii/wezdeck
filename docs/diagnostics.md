@@ -119,7 +119,7 @@ Two units, installed together by [`scripts/dev/install-wsl-oom-guard.sh`](../scr
 | Unit | Type | What it does |
 |---|---|---|
 | `wezterm-oom-protect.service` | oneshot at boot | Writes `-1000` to `oom_score_adj` of WSL's init (comm `init-systemd(Ub…)`, normally PID 2), making it OOM-immune, and `-800` to every tmux server — then **sweeps the inherited copies back to `0`** (see below; without the sweep this unit is worse than useless). Guest OOM still kills the fattest process; it can no longer kill the process WSL uses to decide the distro still has sessions, nor the one holding every pane. `oom_score_adj` resets on every distro start, which is why this is a unit and not a one-off `echo`. |
-| `wezterm-oom-record.service` | long-running | Polls `init.scope/memory.events` + `MemAvailable`; dumps a top-N RSS snapshot (with each PID's `oom_score_adj`) on an `oom_kill` increment, on crossing the high-water mark, and at startup when the counter is already non-zero. Also **re-applies the protection set every tick** — see below. Runs at `OOMScoreAdjust=-900` so the recorder outlives the pressure it records. |
+| `wezterm-oom-record.service` | long-running | Polls `init.scope/memory.events` + `MemAvailable`; dumps a top-N RSS snapshot (with each PID's `oom_score_adj`) on an `oom_kill` increment, on crossing the high-water mark, and at startup when the counter is already non-zero. Also **re-applies the protection set every tick** and **publishes the `M·` badge JSON** — see below. Runs at `OOMScoreAdjust=-900` so the recorder outlives the pressure it records. |
 
 **`oom_score_adj` is inherited across `fork`, and that inversion is the whole trap.** Protecting WSL init does not protect one process — it silently immunizes *every* process spawned under it, because each new WSL session descends from PID 2 and inherits its value. Under tmux the leak compounds: panes inherit the tmux server's `-800`, and so does every agent and dev server started in them. Measured right after a `tmux kill-server` on this host: **119 of `init.scope`'s processes carried a protected value when exactly 2 should have — ~6.7 Gi of the largest consumers (claude, `chrome-devtools-mcp`, node, esbuild) all off the OOM killer's candidate list.** That is strictly worse than installing nothing: the kernel still has to reclaim, but no worthwhile victim is eligible, so it kills small useless processes or fails to reclaim at all.
 
@@ -151,12 +151,104 @@ scripts/runtime/wsl-oom-guard.sh status          # protection state + headroom
 ```
 
 - Evidence lands in `journalctl -u wezterm-oom-record` **and** `/var/log/wezterm-oom-guard.log`. The plain file exists because the journal fragments across exactly the restart loop this guard diagnoses.
-- Env knobs: `WEZTERM_OOM_GUARD_LOG`, `WEZTERM_OOM_WATCH_INTERVAL` (10s), `WEZTERM_OOM_WATCH_HIGH_PCT` (85), `WEZTERM_OOM_WATCH_TOP_N` (8), `WEZTERM_OOM_SCOPE`, `WEZTERM_OOM_PROTECT_ADJ` (-1000), `WEZTERM_OOM_TMUX_ADJ` (-800), `WEZTERM_OOM_PROTECT_TMUX` (1), `WEZTERM_OOM_RENORMALIZE` (1), `WEZTERM_OOM_DRY_RUN` (0).
+- Env knobs: `WEZTERM_OOM_GUARD_LOG`, `WEZTERM_OOM_WATCH_INTERVAL` (10s), `WEZTERM_OOM_WATCH_HIGH_PCT` (85), `WEZTERM_OOM_WATCH_TOP_N` (8), `WEZTERM_OOM_SCOPE`, `WEZTERM_OOM_PROTECT_ADJ` (-1000), `WEZTERM_OOM_TMUX_ADJ` (-800), `WEZTERM_OOM_PROTECT_TMUX` (1), `WEZTERM_OOM_RENORMALIZE` (1), `WEZTERM_OOM_DRY_RUN` (0). Badge-side: `WEZTERM_OOM_STATUS_FILE`, `WEZTERM_OOM_PUBLISH_INTERVAL` (30s), `WEZTERM_OOM_WARN_PCT` (85), `WEZTERM_OOM_CRIT_PCT` (93), `WEZTERM_OOM_SWAP_WARN_PCT` (70), `WEZTERM_OOM_SWAP_CRIT_PCT` (90), `WEZTERM_OOM_MEMINFO` (test fixture hook).
 - `wsl-oom-guard.sh status` prints one line per protected process with `(protected)` / `(NOT protected)`. After a distro restart that is the one-command check that the boot path still works.
 - **The high-water snapshot is the load-bearing one.** A snapshot taken *after* `oom_kill` increments no longer contains the process that died; the pre-kill snapshot names it.
-- **Neither unit reduces memory usage or prevents OOM.** They change *who* dies and guarantee a record. Capping the actual consumers is a separate decision — see "Standing memory consumers" below.
-- Prior art considered and deferred: `earlyoom` and `systemd-oomd` both implement a full kill *policy* with victim logging. This pair is deliberately narrower — exemption plus evidence, no policy, no apt dependency. Reach for `earlyoom` if the goal becomes "act at 90% before the kernel does".
+- **Neither unit reduces memory usage or prevents OOM.** They change *who* dies and guarantee a record. Acting on the pressure is `earlyoom`'s job (below); capping the actual consumers is a separate decision — see "Standing memory consumers".
+- Prior art: `earlyoom` and `systemd-oomd` were both considered and deferred at first, on the grounds that this pair is deliberately narrower — exemption plus evidence, no policy, no apt dependency. The 2026-07-26 livelock (below) is exactly the "act before the kernel does" case that was left open, and `earlyoom` is now installed alongside. `systemd-oomd` stays rejected, for a reason specific to this host — see below.
 - Kernel OOM lines are **already** captured (journald `ReadKMsg` defaults on in the default namespace; `journalctl -k` works). They are still easy to lose: `misc dxg: dxgkio_query_adapter_info` spam runs ~145 lines/s and wraps the `dmesg` ring buffer within seconds. In the reference incident no kernel OOM line survived anywhere — only the `init.scope` cgroup counter, which the VM kernel carries across distro restarts and which systemd therefore re-reported at every one of the ~50 restarts.
+
+### The second failure mode: reclaim livelock with no OOM kill
+
+Reference incident 2026-07-26. Same root cause family as 2026-07-25 (guest memory exhausted), **opposite presentation**: nothing was killed, there was no restart loop, and the distro simply stopped responding with all cores pinned until `taskkill /f /im wslservice.exe` from an elevated Windows prompt.
+
+**Do not use "no OOM record" to rule out memory.** `journalctl -b -1` contained no `Out of memory: Killed process`, and the cgroup counter read `oom_kill=0` the whole time. What it did contain:
+
+```
+15:21:22 zsh: page allocation failure: order:4, mode:0x40c40(GFP_NOFS)
+15:21:23 Free swap = 0kB    Total swap = 11534336kB
+         free:61954 (≈248MB)  inactive_anon:33.7G  pagetables:740784kB
+```
+
+Three things to read from that:
+
+1. **`Free swap = 0kB` with ~250 MB free is the whole diagnosis.** 44 GiB + 11 GiB swap, both gone.
+2. **Timestamp spacing in the kernel log is itself evidence.** Consecutive lines of a *single* call trace drifted from sub-second to 10 s, 30 s, then three minutes (`15:24:10` → `15:27:36`). When journald cannot get scheduled to write one line for three minutes, the livelock is established without needing any other measurement.
+3. **Why nothing died.** The failing allocations were `order:4` (64 KiB). Above `PAGE_ALLOC_COSTLY_ORDER` (3) the kernel does **not** invoke the OOM killer — it warns and fails. Meanwhile order-0 allocations were still nominally satisfiable through direct reclaim, except swap was full so reclaim freed nothing. Every core spun in reclaim/compaction at 100% with zero forward progress, and no victim was ever selected.
+
+The `order:4` source is 9p: every `/mnt/*` drvfs mount here is `msize=65536`, so each RPC (`p9_fcall_init`) needs a 64 KiB contiguous `kmalloc`. Under fragmentation **`/mnt/c` access is always the first thing to fail** — in this incident a `zsh` `getdents64` and an Xwayland readahead. That is the blast surface, not the cause; do not go debugging drvfs.
+
+The consumers were the usual standing set, from the guard's own high-water snapshot: `next-server` 11.2 Gi + 5.1 Gi, `tsgo` 5.0 Gi, two leaked `chrome-devtools-mcp` at 3.9 Gi each (against the 150 Mi/instance baseline recorded below — a 26x regression worth chasing separately), plus ~3.9 Gi across ten `claude` sessions.
+
+**What the guard got wrong here, and what changed.** The protection set was working correctly — `renormalize` was still sweeping at `15:21:19`, so every fat process was an eligible victim at `oom_score_adj=0`. The killer just never ran. The real gap was visibility: the guard crossed its high-water mark at 09:48, again at 11:25, and then **stayed above it for four hours with no further signal**, because the high-water log line is edge-latched and lives in a file nobody reads. Two additions close that:
+
+#### The `M·` badge
+
+`wezterm-oom-record` now publishes `state/oom-guard/status.json` next to the disk guard's, and [`wezterm-x/lua/mem_status.lua`](../wezterm-x/lua/mem_status.lua) renders it in right-status after `D·`:
+
+```
+(absent)   both axes below warn
+M·88%      memory used, at/above warn (amber)
+S·95%      swap used, when swap is the worse axis
+M·94%      at/above crit (red — earlyoom is close to picking a victim)
+M·?        the recorder was publishing and went stale
+```
+
+Same "nothing while healthy" contract as `D·`: presence is the signal, and never having published renders nothing at all so a machine without the guard keeps a clean bar.
+
+**It reports whichever axis is worse, and that is the point.** Through the whole 2026-07-26 run-up memory read a calm 88% while swap drained from 20% free to zero. A memory-only badge would have been accurate and useless. Thresholds: warn at 85% memory (same number as the high-water mark, so the bar and the log agree) or 70% swap; crit at 93% / 90%.
+
+Publishing is on level change plus a 30 s heartbeat, not every 10 s tick — the status file is on the Windows side of the 9p boundary and belongs nowhere near a hot path (see [`performance.md`](./performance.md)).
+
+**The status-file path is resolved at install time and baked into the unit** as `Environment=WEZTERM_OOM_STATUS_FILE=`. The recorder is a *system* unit running as root, where `$HOME` is `/root` (so the per-user Windows-path cache is invisible) and a systemd unit has no Windows interop — it cannot resolve the path itself at runtime. The installer resolves it as `$SUDO_USER` instead. If resolution fails the guard still protects and logs; only the badge goes missing. `install-wsl-oom-guard.sh --check` prints both the path it *would* bake and the one the installed unit actually carries, because a guard that protects but never publishes looks healthy from every other angle:
+
+```
+badge path    : /mnt/c/Users/<you>/AppData/Local/wezterm-runtime/state/oom-guard/status.json
+unit carries  : <none>          <- reinstall needed
+```
+
+#### earlyoom as the airbag
+
+```bash
+sudo ./scripts/dev/install-earlyoom.sh            # install + configure + start
+./scripts/dev/install-earlyoom.sh --check         # no root, no writes
+./scripts/dev/install-earlyoom.sh --print         # dump the generated drop-in
+sudo ./scripts/dev/install-earlyoom.sh --uninstall
+journalctl -u earlyoom                            # kills and hourly reports
+```
+
+Config is `-m 15,10 -s 12,6`: SIGTERM once available memory is under 15% **and** free swap under 12%, SIGKILL at 10% / 6%.
+
+**Swap is the gate on this host, not memory.** This box legitimately runs at 85-88% memory (12-15% available) for hours, so a memory threshold tight enough to mean anything would fire constantly. Free swap is the axis that separates "busy" from "about to die" — near 100% free in normal work, collapsing only on the way into the livelock. The AND still holds it back from deploying during normal driving. Sized against three measured points:
+
+| Sample | mem avail | swap free | Verdict |
+|---|---|---|---|
+| 2026-07-26 09:48 | 11.9% | 20.0% | silent — swap healthy |
+| 2026-07-26 11:25 | 11.6% | 6.6% | **fires** — early (that state ran four more hours), and the victim is the leaked 11 Gi `next-server`, which is correct |
+| 2026-07-27 14:48 | 14.0% | 10.5% | **fires** — the distro died at 14:52 |
+
+Expect it to kill a leaked dev server rather than never fire; that is the intended trade. `WEZTERM_EARLYOOM_SWAP` raises the gate if it proves too eager.
+
+Four things make it compose with the existing guard rather than duplicate it:
+
+- **It picks its victim by `/proc/<pid>/oom_score`, which folds in `oom_score_adj`.** The guard's `-1000` on WSL init and `-800` on tmux already steer earlyoom away from them for free — and the guard's renormalize sweep is precisely what keeps the fat processes eligible. `--avoid ^(init|systemd|sshd|tmux|wezterm|Xwayland|dbus)` is a second layer for units living *outside* `init.scope`, beyond the sweep's reach.
+- **Config goes in a systemd drop-in**, `/etc/systemd/system/earlyoom.service.d/wezdeck.conf`, not the packaged `/etc/default/earlyoom` — that file is a dpkg conffile and editing it makes every upgrade prompt. The drop-in also applies the man page's `-p` equivalent (`OOMScoreAdjust=-100`, `Nice=-20`), which cannot work through the packaged unit.
+- **The drop-in must override `ExecStart=`, not `EARLYOOM_ARGS`.** The packaged unit's `EnvironmentFile=-/etc/default/earlyoom` **wins over** a drop-in `Environment=`, so an args-by-variable drop-in applies silently and does nothing. Cost of learning this the hard way: earlyoom ran for a day on the package defaults (`-m 10 -s 10`) while every config file on disk said otherwise. An empty `ExecStart=` resets the list before the real one.
+- **The `--avoid` regex must contain no spaces and no quotes.** systemd splits a command line without shell quote processing, so the packaged config's own `--avoid '(^|/)(init|X|sshd|firefox)$'` example would arrive as two broken arguments. `^tmux` still matches comm `tmux: server`.
+
+**Verify against the daemon, never against the config.** earlyoom prints its parsed thresholds on startup, and that banner is the only trustworthy source — `systemctl show` reports the unit file, not the live process. `install-earlyoom.sh --check` prints installed / intended / actually-parsed side by side for exactly this reason, and the installer runs `earlyoom --dryrun` (no privilege needed) before writing, so a bad argument string fails at install time instead of during the next incident:
+
+```
+installed args: -r 3600 -m 15,10 -s 12,6 --avoid ^(init|systemd|…)
+would install : -r 3600 -m 15,10 -s 12,6 --avoid ^(init|systemd|…)
+daemon parsed :
+  sending SIGTERM when mem <= 15.00% and swap <= 12.00%,
+          SIGKILL when mem <= 10.00% and swap <=  6.00%
+```
+
+**`enable --now` is not enough on a reinstall.** It is a no-op against an already-running unit, so the old process keeps the old environment while every file on disk shows the new one. On 2026-07-27 the badge path was correctly baked into `wezterm-oom-record.service` and the running recorder never saw it — it logged an empty status path and published nothing, while `systemctl show` cheerfully reported the new value. Both installers now `systemctl restart` explicitly.
+
+**Why not `systemd-oomd`.** Its unit of destruction is a *cgroup*, and on this host 109 processes — tmux, every agent, every dev server — live in the single `/init.scope` cgroup (which is why the OOM guard watches exactly that cgroup). oomd would either not manage `init.scope` at all or take out the whole thing, reproducing the 2026-07-25 poweroff/restart loop. It is also not installed here (`/usr/lib/systemd/systemd-oomd` absent), so there is no "already in the box" advantage, and `/proc/pressure/memory` currently reads `total=0` on this kernel while cpu and io both count — worth pressure-testing before ever relying on memory PSI in WSL. earlyoom kills one process and needs none of that.
 
 ### Standing memory consumers
 

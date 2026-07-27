@@ -50,9 +50,12 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   users without Go consume the prebuilt tarball:
   Read [`docs/picker-release.md`](docs/picker-release.md).
 - Diagnostics, logs, or smoke tests (operator surface — env knobs,
-  file paths, troubleshooting); also guest-OOM hardening (the whole distro
-  vanishing / restarting on a fixed interval, `wsl-oom-guard.sh`, the
-  `wezterm-oom-protect` / `wezterm-oom-record` units); also host disk space
+  file paths, troubleshooting); also guest-OOM hardening in both its shapes —
+  the whole distro vanishing / restarting on a fixed interval, and the
+  reclaim livelock that pins every core, kills nothing, and leaves no OOM
+  record (`wsl-oom-guard.sh`, the `wezterm-oom-protect` /
+  `wezterm-oom-record` units, the `M·…` / `S·…` memory badge, and
+  `install-earlyoom.sh`); also host disk space
   (host volume full, `ext4.vhdx` growing but never shrinking, why
   `--set-sparse` is a trap, `fstrim` → `wsl --shutdown` → `Optimize-VHD` /
   `compact vdisk`, build-artifact inventory, OEM preinstalls, and the
