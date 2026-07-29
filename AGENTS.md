@@ -62,8 +62,17 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   (host volume full, `ext4.vhdx` growing but never shrinking, why
   `--set-sparse` is a trap, `fstrim` → `wsl --shutdown` → `Optimize-VHD` /
   `compact vdisk`, build-artifact inventory, OEM preinstalls, and the
-  `wsl-disk-guard.sh` sampler + `D·…` headroom badge):
+  `wsl-disk-guard.sh` sampler + `D·…` headroom badge); also the standing-memory
+  baseline for agent-side processes (per-session MCP cost, the
+  `chrome-devtools-mcp` unbounded-heap leak and its `uxc` containment,
+  `uxc-session-reaper.sh`, and why the Claude Code and OpenClaw sides are
+  deliberately asymmetric):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
+- Unverified claims, deferred decisions, or "what still needs following up" on
+  any of the above — dated, each with how to close it:
+  Read [`docs/diagnostics.md#open-questions`](docs/diagnostics.md#open-questions).
+  Record new ones there rather than only in a commit body, which is not
+  reviewable day to day.
 - Cross-host development environment failures involving Windows, WSL, DNS,
   VPN/proxy software, shells, or agent CLIs; also the first-triage path when
   the whole WSL distro disappears at once (distro restart vs VM reboot):
