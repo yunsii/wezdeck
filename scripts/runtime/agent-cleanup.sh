@@ -199,8 +199,35 @@ fi
 
 printf '%-8s %-22s %-8s %-7s %-5s %s\n' "PGID" "PIDS" "AGE" "CPU%" "TTY" "COMMAND"
 
+# A process in state T (stopped) does not act on SIGTERM: the signal stays
+# pending until something continues it. kill(2) still reports success, so
+# signalling alone is not evidence of death — observed 2026-07-29, this script
+# "terminated" the same stopped pgid every 30 minutes while it stayed alive for
+# 38 hours, and every run logged killed=1. Wake the group first, then verify.
+group_has_stopped() {
+  local pgid="$1" pid state
+  for pid in ${group_pids[$pgid]//,/ }; do
+    state="$(awk '/^State:/{print $2}' "/proc/$pid/status" 2>/dev/null || true)"
+    if [[ "$state" == "T" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+group_alive() {
+  local pgid="$1" pid
+  for pid in ${group_pids[$pgid]//,/ }; do
+    if [[ -d "/proc/$pid" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 failed=0
 killed=0
+lingering=0
 for pgid in "${groups[@]}"; do
   command="${group_command[$pgid]}"
   if (( ${#command} > 120 )); then
@@ -212,12 +239,32 @@ for pgid in "${groups[@]}"; do
     "${group_cpu[$pgid]}" "${group_tty[$pgid]}" "$command"
 
   if [[ "$mode" == "kill" ]]; then
+    was_stopped=0
+    if group_has_stopped "$pgid"; then
+      was_stopped=1
+      kill -CONT -- "-$pgid" 2>/dev/null || true
+    fi
+
     if kill "-$signal_name" -- "-$pgid" 2>/dev/null; then
-      killed=$((killed + 1))
-      runtime_log_warn agent_cleanup "terminated stale agent process group" \
-        "pgid=$pgid" "pids=${group_pids[$pgid]}" "age_seconds=${group_age[$pgid]}" \
-        "max_cpu=${group_cpu[$pgid]}" "tty=${group_tty[$pgid]}" "signal=$signal_name" \
-        "command=${group_command[$pgid]}"
+      # Give the group a moment to actually go away before claiming it did.
+      for _ in 1 2 3 4 5; do
+        group_alive "$pgid" || break
+        sleep 0.2
+      done
+
+      if group_alive "$pgid"; then
+        lingering=$((lingering + 1))
+        runtime_log_warn agent_cleanup "signalled stale agent process group but it is still alive" \
+          "pgid=$pgid" "pids=${group_pids[$pgid]}" "age_seconds=${group_age[$pgid]}" \
+          "tty=${group_tty[$pgid]}" "signal=$signal_name" "was_stopped=$was_stopped" \
+          "command=${group_command[$pgid]}"
+      else
+        killed=$((killed + 1))
+        runtime_log_warn agent_cleanup "terminated stale agent process group" \
+          "pgid=$pgid" "pids=${group_pids[$pgid]}" "age_seconds=${group_age[$pgid]}" \
+          "max_cpu=${group_cpu[$pgid]}" "tty=${group_tty[$pgid]}" "signal=$signal_name" \
+          "was_stopped=$was_stopped" "command=${group_command[$pgid]}"
+      fi
     else
       failed=$((failed + 1))
       runtime_log_error agent_cleanup "failed to terminate stale agent process group" \
@@ -228,13 +275,21 @@ done
 
 runtime_log_info agent_cleanup "scan completed" \
   "mode=$mode" "agent=$agent" "min_age_seconds=$min_age_seconds" \
-  "require_no_tty=$require_no_tty" "groups=${#groups[@]}" "killed=$killed" "failed=$failed"
+  "require_no_tty=$require_no_tty" "groups=${#groups[@]}" "killed=$killed" \
+  "lingering=$lingering" "failed=$failed"
 
 if [[ "$mode" == "dry-run" ]]; then
   printf 'dry-run only; rerun with --kill to terminate these process groups.\n'
 elif (( failed > 0 )); then
-  printf 'terminated=%d failed=%d\n' "$killed" "$failed" >&2
+  printf 'terminated=%d lingering=%d failed=%d\n' "$killed" "$lingering" "$failed" >&2
   exit 1
+elif (( lingering > 0 )); then
+  # Signalled but still alive. Not a hard failure — the group may simply be
+  # slow to unwind — but a group that lingers across consecutive runs needs a
+  # stronger signal (`--signal KILL`) or manual attention, so keep it visible
+  # instead of reporting it as terminated.
+  printf 'terminated=%d lingering=%d (still alive after %s; rerun with --signal KILL if it persists)\n' \
+    "$killed" "$lingering" "$signal_name" >&2
 else
   printf 'terminated=%d\n' "$killed"
 fi
