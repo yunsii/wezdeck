@@ -74,6 +74,21 @@ Net: 4 processes / ~357Mi → 1 process / 150Mi per instance — see repo
 [`docs/diagnostics.md`](../../../../docs/diagnostics.md) "Standing memory
 consumers".
 
+⚠️ **That 150Mi is the idle floor, not a ceiling.** `chrome-devtools-mcp` grows
+without bound while attached to a page: its network/console collectors have no
+size cap and only trim on main-frame navigation, so an SPA or a tab left open
+keeps feeding the Node heap. On the Claude Code side, instances reached
+1.7–3.5 Gi and that path was moved off resident MCP entirely. OpenClaw keeps
+resident MCP on purpose — one gateway-level instance instead of one per session,
+observed peak 138 Mi, and the runtime does get released — but the growth
+mechanism is the same one.
+
+So if a gateway-owned instance is ever seen above ~1 Gi, or surviving many turns
+without release, reclaim it with `openclaw mcp reload` (disposes the cached
+runtime; the next turn rebuilds it). Do not reach for a rewrite. Inspect with
+`pgrep -f chrome-devtools-mcp` — the `-f` matters, `comm` truncates to
+`chrome-devtools`. Rationale and thresholds: repo `docs/diagnostics.md`.
+
 Health:
 
 ```bash

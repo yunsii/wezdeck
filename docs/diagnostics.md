@@ -351,7 +351,28 @@ Applied 2026-07-25 — MCP config is user-global (`~/.claude.json`, managed with
 
 Verified result: **4 processes / ~357 Mi per instance → 1 process / 150 Mi**, zero children, zero watchdog. Across ~12 concurrent sessions that is ~4.3 Gi → ~1.8 Gi.
 
-**There are two independent MCP configs on this host, and both needed the change.** `claude mcp … -s user` only touches Claude Code (`~/.claude.json`). The OpenClaw gateway keeps its own at `~/.openclaw/openclaw.json` → `mcp.servers.chrome-devtools`, managed with `openclaw mcp add/show/probe/reload`, and it runs **outside tmux** — so neither a Claude-side config change nor a `tmux kill-server` reaches it. Both are now on the global-binary + `--usageStatistics=false` form; the OpenClaw side is documented in [`openclaw/README.md`](../openclaw/README.md) "Chrome DevTools MCP" with the operator recipe mirrored in `openclaw/workspace/skills/chrome-devtools/SKILL.md`. After editing, `openclaw mcp reload` disposes cached runtimes so the next turn rebuilds on the new config.
+**There are two independent MCP configs on this host, and they are deliberately no longer symmetric.** `claude mcp … -s user` only touches Claude Code (`~/.claude.json`). The OpenClaw gateway keeps its own at `~/.openclaw/openclaw.json` → `mcp.servers.chrome-devtools`, managed with `openclaw mcp add/configure/probe/reload`, and it runs **outside tmux** — so neither a Claude-side config change nor a `tmux kill-server` reaches it. Both were put on the global-binary + `--usageStatistics=false` form; the OpenClaw side is documented in [`openclaw/README.md`](../openclaw/README.md) "Chrome DevTools MCP" with the operator recipe mirrored in `openclaw/workspace/skills/chrome-devtools/SKILL.md`. After editing, `openclaw mcp reload` disposes cached runtimes so the next turn rebuilds on the new config.
+
+As of 2026-07-29 the Claude Code side is off resident MCP entirely (see below), while **OpenClaw deliberately keeps it**. The asymmetry is intentional, because the numbers and the costs differ on each side:
+
+| | Claude Code | OpenClaw gateway |
+|---|---|---|
+| instances | one **per session** — 16 observed | **one**, gateway-level |
+| observed peak | 3.4 Gi (5 instances ≥1.7 Gi) | 138 Mi |
+| lifetime | resident for the whole session | lazy-spawned, released again (observed at 0 processes with the server still configured) |
+| cost of switching to `uxc` | tool schemas leave the prompt, calls go through Bash | every browser step additionally passes the `claw-run` / `exec-risk` shell gate, and code-mode `MCP.chromeDevtools.*` stops working |
+
+So the leak that justified rebuilding the Claude Code path does not reproduce here: there is no 16× standby multiplier, the observed peak is ~25× smaller, and the runtime does get released. Paying a shell-risk gate on every "look at the page" would be a real regression in the path Dex uses daily.
+
+**Revisit that decision if** a gateway-owned `chrome-devtools-mcp` process is seen holding more than ~1 Gi, or surviving across many turns without being released. The cheap fix at that point is not a rewrite — it is `openclaw mcp reload`, which disposes the cached runtime and lets the next turn rebuild it; that can be driven on a threshold rather than switching Dex to a CLI. Check with:
+
+```bash
+# gateway MainPID, then MCP children hanging off it
+systemctl --user show openclaw-gateway.service -p MainPID --value
+pgrep -f chrome-devtools-mcp   # -f is required: comm truncates to "chrome-devtools"
+```
+
+Note `openclaw mcp configure` exposes auth/timeout/TLS/tool-filter knobs but **no idle or TTL control**, so there is no config-only way to cap the growth — hence the threshold-plus-`reload` shape above. Also note `openclaw mcp probe` connects from the CLI process, not from the gateway, so it cannot be used to observe gateway runtime lifetime.
 
 Related: a killed instance can **orphan** its `telemetry/watchdog` child (observed while testing), so it lingers holding ~135 Mi. Reap only the orphans — never a bare `pkill -f telemetry/watchdog`, which would also kill live sessions' watchdogs:
 
@@ -362,7 +383,79 @@ for p in $(pgrep -f "telemetry/watchdog"); do
 done
 ``` Other useful flags in the same `--help`: `--slim` (3 tools only, cuts tool-schema context), `--performanceCrux=false` (stops sending trace URLs to the Google CrUX API), `--experimentalPageIdRouting` (page-ID routing for concurrent sessions).
 
-Deferred option if memory pressure returns: wrap the MCP in a **skill** driven by [`uxc`](https://github.com/holon-run/uxc) instead of keeping a resident MCP connection. Measured viable — `uxc` discovers all 29 operations over stdio and its daemon reuses one live session (`idle_ttl_secs: 600`, daemon itself only 9 Mi), so `take_snapshot` → `click` `uid` continuity survives; real calls ran 970 ms cold, 518 ms warm. Costs: ~0.5–1 s per call, session state lost after the 10-minute idle expiry, and the model reaches tools by composing a CLI line instead of seeing their schemas directly. The side benefit is context, not just memory — an enabled MCP injects all 29 tool schemas into every session, while a skill loads only when triggered.
+#### The standby figure is a floor, not a ceiling — the heap grows without bound
+
+The `150 Mi per instance` above is the **never-exercised** cost. An instance that actually drives a page grows monotonically and never gives the memory back. Measured 2026-07-29 across 16 concurrent sessions, the split is bimodal:
+
+| Class | Count | Footprint |
+|---|---|---|
+| never called a browser tool | 11 | ~80 Mi each (RSS 1 Mi + 79 Mi swap — fully paged out) |
+| actually drove a page | 5 | **1.7–3.5 Gi each** (13 h → 1.7 Gi, 23.5 h → 3.48 Gi, 37.6 h → 3.35 Gi) |
+
+`smaps_rollup` shows `Rss ≈ Pss ≈ Anonymous ≈ Private_Dirty` (cross-process double-counting only 0.20%), i.e. pure anonymous private heap with nothing reclaimable. Those 5 held **77% of the guest's entire `AnonPages`** (14.91 of 19.32 Gi) and were the reason swap sat at 99% with only 21 MiB free while `MemFree` still showed 21 Gi — physical memory looked fine because the pressure had already been paid into swap and never came back.
+
+**Root cause is in `build/src/PageCollector.js`**, and it is not subtle:
+
+```js
+maxNavigationSaved = 3;
+storage = [[]];
+listeners(value => { …; this.storage[0].push(withId); });          // no size cap
+listenerMap['framenavigated'] = frame => { …; this.splitAfterNavigation(); };
+splitAfterNavigation() { this.storage.unshift([]); this.storage.splice(3); }
+```
+
+Retention is "last 3 navigations", but **a single navigation bucket has no item limit**, and trimming only fires on main-frame `framenavigated`. An SPA routing via `history.pushState` never triggers it; a page left open never triggers it. So `storage[0]` grows forever. What accumulates are puppeteer `HTTPRequest` objects — each holding response/body plus back-references to frame, page, and CDP session — so a single retained entry pins a long chain. **Next.js dev server + HMR + a page left open is the worst case**, and it is exactly what the 5 bloated instances were pointed at.
+
+Two consequences for operators:
+
+- **`--slim` and `--no-category-network` do not help memory.** They gate tool *registration* only (`tools.js` / `ToolHandler.js`); `McpPage.js` constructs `new NetworkCollector` / `new ConsoleCollector` unconditionally in its constructor. They remain useful for cutting tool-schema context — just not for this. The only size cap anywhere in the package is `telemetry/watchdog/ClearcutSender.js`'s `MAX_BUFFER_SIZE = 1000`, which is the one component already disabled above.
+- **Upgrading does not help.** 1.6.0 (2026-07-14) is the latest release. Upstream [issue #1192](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/1192) (`p1`, `confirmed`, closed) reports the same disease from the `--autoConnect` side — ~13 MB/min, 1.66 Gi in 10 h, swap exhaustion triggering a macOS kernel watchdog panic. The v0.20.3 fix (#1200, "release old navigation request in NetworkCollector") only addressed releasing *across* navigations, not the unbounded single bucket.
+
+A cheap habitual mitigation: **reload the page when done debugging**. That fires `framenavigated` and trims to the last 3 navigations.
+
+#### Containment: run it through uxc instead of holding a resident connection
+
+Applied 2026-07-29 (was previously deferred here). Drive the MCP through [`uxc`](https://github.com/holon-run/uxc) so the process is reclaimed when idle instead of living for the session's lifetime.
+
+```bash
+A=/home/yuns/.local/share/fnm/aliases/default
+uxc link chrome-devtools-mcp-cli \
+  "$A/bin/node $A/lib/node_modules/chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js --browser-url=http://127.0.0.1:9222 --usageStatistics=false"
+```
+
+**Absolute `node` + absolute `.js` is required**, not the `chrome-devtools-mcp` shim: it is a `#!/usr/bin/env node` symlink and the daemon's child environment has no `node` on `PATH` (`env -i` reproduces the failure). Routing both through `aliases/default` avoids hard-coding the node version, though the `fnm default` caveat above still applies.
+
+The agent-facing side is upstream's own wrapper skill, installed **unmodified** from `holon-run/uxc` → `skills/chrome-devtools-mcp-skill` (MIT) into the shared pool at `~/.agents/skills/`, symlinked into `~/.claude/skills/` like `context7-mcp-skill`. Do not fork it: its `scripts/validate.sh` requires the documentation to quote upstream's own endpoint strings verbatim, so a locally-edited copy cannot pass upstream validation.
+
+That works despite upstream prescribing a host this machine rejects — `npx -y chrome-devtools-mcp@latest --autoConnect --no-usage-statistics`, which would reintroduce the resident npm-cli launcher and cannot work at all here (`--autoConnect` looks for a local Chrome user-data-dir, and there is no Chrome inside WSL). The Link-First flow checks `command -v chrome-devtools-mcp-cli` **before** creating anything, so the pre-seeded absolute-path link above wins and upstream's `uxc link` line never runs. Upstream's naming would call this variant `chrome-devtools-mcp-port`; locally `-cli` *is* the browserUrl form, because it is the only form that works.
+
+⚠️ The failure mode to watch: on a machine where the link is missing, an agent will follow upstream's text and create the `npx` form — functional but with the launcher overhead back. Re-create it with the absolute-path command above instead. Running upstream's `validate.sh` needs `ripgrep`, which is not installed here.
+
+Verified on this host:
+
+- **All 29 operations exposed**, covering 100% of the 18 previously whitelisted ones.
+- **Stateful continuity holds across separate CLI invocations.** `take_snapshot` → `uid=3_0` in one process, `click uid=3_0` in the next, `evaluate_script` reading back `CLICKED` in a third — same `child_pid` throughout, `mcp_reuse_hits` incrementing. Sessions key on `stdio:{endpoint}:{auth_fingerprint}`; `cleanup_idle` uses non-blocking `try_lock` specifically so it cannot interrupt an in-flight call.
+- **Arguments must be passed `key=value`.** The skill docs' "bare JSON positional payload" form fails against MCP tools (`Invalid value at $.function`), and `--input-json` takes inline JSON only, not a file path. Use backticks inside JS to dodge shell quoting.
+
+⚠️ **uxc's idle reaping is lazy — it needs external traffic to fire.** `MCP_IDLE_TTL_SECS` is 600, but `cleanup_idle` only runs immediately before the daemon handles a request; there is no timer. Measured: a child sat at `idle_for_secs=820`, `expires_in_secs=0`, 701 Mi resident for 750 s untouched, then died instantly when one unrelated endpoint call (`deepwiki-mcp-cli -h`) came in. Any endpoint counts, not just this one — but a quiet stretch leaves expired children resident.
+
+`scripts/runtime/uxc-session-reaper.sh` supplies the missing trigger, on cron every 5 minutes (see `wezterm-x/local.example/crontab`). It takes its verdict from uxc's own `expires_in_secs == 0` rather than guessing an RSS threshold, acts only when *every* session is expired so an in-flight workflow is never cut, and calls `uxc daemon stop` rather than signalling `child_pid` behind the daemon's back. Triage entry point:
+
+```bash
+uxc daemon sessions   # child_pid, idle_for_secs, expires_in_secs, reuse_eligible
+uxc daemon status     # mcp_stdio_sessions, mcp_reuse_hits
+scripts/runtime/uxc-session-reaper.sh          # dry-run
+```
+
+`UXC_DAEMON_IDLE_TTL=<secs>` overrides the TTL for a daemon (`0` disables reaping entirely — do **not** use it here, that reinstates the unbounded growth); `uxc link --daemon-idle-ttl` pins it per link.
+
+Residual costs, unchanged from the earlier assessment: ~0.5–1 s per call (970 ms cold, 518 ms warm), and the model composes a CLI line instead of seeing tool schemas directly. The side benefit is context, not just memory — a resident MCP injects all 29 tool schemas into every session.
+
+**Permission note:** never grant `Bash(uxc:*)`. `uxc` is a general-purpose invoker (`uxc <any endpoint> <any operation>`, plus `uxc auth` over stored credentials), so a broad prefix rule is a real privilege escalation. Keep grants bound to the linked command name, which has the endpoint baked in.
+
+**Idle does not mean quiescent.** With pages still open, the heap keeps growing even when no tool is called: one session went 778 → 1187 Mi across 40 minutes of `idle_for_secs`, because the CDP connection is still delivering events into the collectors. The earlier 750 s observation that showed RSS *falling* (782 → 700 Mi) was measured with the test page closed, i.e. with nothing arriving — do not generalise from it. So the 600 s TTL is an upper bound on damage, not a plateau; if a session routinely accumulates hundreds of MiB before expiring, shorten it via `uxc link --daemon-idle-ttl`.
+
+⚠️ **The reaper needs `XDG_RUNTIME_DIR` exported, not just derived.** cron does not set it, and uxc then resolves its socket to `/tmp/uxc-unknown/daemon/uxc.sock` instead of `/run/user/<uid>/uxc/uxc.sock`. A first cut of the script derived the path locally without exporting it, so the socket check passed while `uxc daemon sessions` failed to connect — and because the verdict only looked at `.data`, the error envelope degraded into "no sessions" and every cron run silently reaped nothing for 40 minutes. When triaging a reaper that appears to do nothing, check `syslog` for the `CRON … CMD` line first (it will be there), then run it under `env -i` with cron's environment; a healthy run logs `reaped expired uxc daemon sessions` with `child_pids`.
 
 ## Host Disk Space
 
