@@ -33,6 +33,19 @@ func parseTimestampArg(args []string, i int) int64 {
 	return v
 }
 
+// parseIndexArg reads an optional non-negative row index from args[i].
+// Anything missing, malformed, or negative means "no preselection" (0).
+func parseIndexArg(args []string, i int) int {
+	if len(args) <= i {
+		return 0
+	}
+	v, err := strconv.Atoi(args[i])
+	if err != nil || v < 0 {
+		return 0
+	}
+	return v
+}
+
 // perfTimings carries the three optional epoch-ms timestamps the
 // menu.sh launcher passes through (keypress → menu_start → menu_done).
 // They feed the footer's `Xms = lua+menu+picker` breakdown and the

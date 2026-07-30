@@ -1,10 +1,10 @@
 // `picker overflow` — TUI for the cross-workspace tab-overflow picker
 // (Alt+x). Lists every configured session across every workspace whose
 // items snapshot has been written, marked with state (visible/warm/cold)
-// and which workspace owns the row. Current workspace's rows rank first
-// so the keystroke flow for in-workspace jumps stays unchanged; rows from
-// other workspaces sit below and become reachable via the always-on
-// substring filter.
+// and which workspace owns the row. One flat list ordered most-recently-
+// active first, across every workspace — the current workspace is not
+// grouped on top; its row is preselected instead (initial_selected,
+// computed upstream), matching the worktree picker's contract.
 //
 // Receives a prefetch TSV (built upstream by tab-overflow-menu.sh after
 // it scanned `<state>/tab-stats/*-items.json`) so the picker itself
@@ -37,12 +37,13 @@ func (overflowPicker) Name() string { return "overflow" }
 
 func (overflowPicker) Run(args []string) int {
 	if len(args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: picker overflow <prefetch_tsv> <dispatch_sh> [keypress_ts] [menu_start_ts] [menu_done_ts]")
+		fmt.Fprintln(os.Stderr, "usage: picker overflow <prefetch_tsv> <dispatch_sh> [keypress_ts] [menu_start_ts] [menu_done_ts] [initial_selected]")
 		return 2
 	}
 	prefetchPath := args[0]
 	dispatchScript := args[1]
 	ts := parsePerfTimings(args, 2)
+	initialSelected := parseIndexArg(args, 5)
 
 	rows, err := loadOverflowRows(prefetchPath)
 	if err != nil {
@@ -67,7 +68,13 @@ func (overflowPicker) Run(args []string) int {
 	// cwd is always-on; runs orthogonally to the workspace mode.
 	filterText := ""
 	scopeFilter := "all"
-	selected := 0
+	// Preselect the row the caller resolved as "where you are right now".
+	// Only valid for the unfiltered first paint — every filter/scope change
+	// below resets to 0, because the row it pointed at may be gone.
+	selected := initialSelected
+	if selected >= len(rows) {
+		selected = 0
+	}
 
 	visible := applyOverflowFilter(rows, filterText, scopeFilter)
 

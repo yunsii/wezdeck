@@ -106,8 +106,9 @@ tmux_worktree_find_window() {
   return 1
 }
 
-# Build a `worktree_root\twindow_id` map for every window in $session_name
-# whose panes all live inside the repo identified by $repo_common_dir.
+# Build a `worktree_root\twindow_id\twindow_activity` map for every window
+# in $session_name whose panes all live inside the repo identified by
+# $repo_common_dir.
 #
 # Why: callers that need to look up an existing window for many candidate
 # worktree roots (the popup prefetch loop in tmux-worktree-menu.sh) would
@@ -115,6 +116,12 @@ tmux_worktree_find_window() {
 # call re-walks every window/pane in the session and re-runs git resolution
 # per pane. This helper does the walk + git resolution once per session,
 # deduplicating by pane path so each unique path only spawns git once.
+#
+# `window_activity` (epoch seconds, tmux's own "time of last activity in
+# this window") rides along on the same `list-panes` format string — it
+# costs nothing extra and is what orders the Alt+g picker most-recent
+# first. A worktree with no window in this session simply has no row
+# here, and the caller ranks it last.
 #
 # Mirrors `tmux_worktree_window_context`'s rules: a window contributes to
 # the index only if every pane resolves to the same (root, common_dir) and
@@ -124,6 +131,7 @@ tmux_worktree_build_window_index() {
   local repo_common_dir="${2:-}"
   local line=""
   local window_id=""
+  local window_activity=""
   local pane_path=""
   local pane_root=""
   local pane_common_dir=""
@@ -136,10 +144,13 @@ tmux_worktree_build_window_index() {
   declare -A path_common_cache=()
   declare -A window_root=()
   declare -A window_common=()
+  declare -A window_activity_at=()
   declare -A window_skip=()
 
-  while IFS=$'\t' read -r window_id pane_path; do
+  while IFS=$'\t' read -r window_id window_activity pane_path; do
     [[ -n "$window_id" && -n "$pane_path" && -d "$pane_path" ]] || continue
+    [[ "$window_activity" =~ ^[0-9]+$ ]] || window_activity=0
+    window_activity_at[$window_id]="$window_activity"
 
     if [[ -z "${path_root_cache[$pane_path]+set}" ]]; then
       context="$(tmux_worktree_context_for_path "$pane_path" || true)"
@@ -168,7 +179,7 @@ tmux_worktree_build_window_index() {
        || "${window_common[$window_id]}" != "$pane_common_dir" ]]; then
       window_skip[$window_id]=1
     fi
-  done < <(tmux list-panes -s -t "$session_name" -F '#{window_id}'$'\t''#{pane_current_path}' 2>/dev/null || true)
+  done < <(tmux list-panes -s -t "$session_name" -F '#{window_id}'$'\t''#{window_activity}'$'\t''#{pane_current_path}' 2>/dev/null || true)
 
   for window_id in "${!window_root[@]}"; do
     (( ${window_skip[$window_id]:-0} == 1 )) && continue
@@ -178,6 +189,6 @@ tmux_worktree_build_window_index() {
     if [[ -n "$repo_common_dir" && "$resolved_common_dir" != "$repo_common_dir" ]]; then
       continue
     fi
-    printf '%s\t%s\n' "$resolved_root" "$window_id"
+    printf '%s\t%s\t%s\n' "$resolved_root" "$window_id" "${window_activity_at[$window_id]:-0}"
   done
 }

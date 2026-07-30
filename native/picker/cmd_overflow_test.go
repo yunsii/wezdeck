@@ -31,6 +31,45 @@ func captureStdout(t *testing.T, fn func()) string {
 	return string(out)
 }
 
+func TestParseIndexArgPreselection(t *testing.T) {
+	args := []string{"prefetch", "dispatch", "0", "0", "0", "3"}
+	if got := parseIndexArg(args, 5); got != 3 {
+		t.Fatalf("parseIndexArg = %d, want 3", got)
+	}
+	// Absent (old callers that stop at menu_done_ts), malformed, and
+	// negative all mean "no preselection".
+	if got := parseIndexArg(args[:5], 5); got != 0 {
+		t.Fatalf("parseIndexArg(absent) = %d, want 0", got)
+	}
+	if got := parseIndexArg([]string{"a", "b", "c", "d", "e", "nope"}, 5); got != 0 {
+		t.Fatalf("parseIndexArg(malformed) = %d, want 0", got)
+	}
+	if got := parseIndexArg([]string{"a", "b", "c", "d", "e", "-2"}, 5); got != 0 {
+		t.Fatalf("parseIndexArg(negative) = %d, want 0", got)
+	}
+}
+
+func TestRenderOverflowFrameScrollsToPreselectedRow(t *testing.T) {
+	// A preselection past the visible window must scroll it into view
+	// rather than paint a cursor the user cannot see.
+	rows := make([]overflowRow, 40)
+	for i := range rows {
+		rows[i] = overflowRow{workspace: "work", label: "s" + string(rune('a'+i%26)), state: "cold"}
+	}
+	rows[39].label = "target-session"
+
+	out := captureStdout(t, func() {
+		renderOverflowFrame(rows, 39, perfTimings{}, "", "all", 8)
+	})
+
+	if !strings.Contains(out, "target-session") {
+		t.Fatalf("preselected row outside the initial window was not scrolled into view: %q", out)
+	}
+	if !strings.Contains(out, "— 40/40") {
+		t.Fatalf("title should report the preselected row as 40/40: %q", out)
+	}
+}
+
 func TestRenderOverflowFrameHighlightsSelectedRow(t *testing.T) {
 	rows := []overflowRow{
 		{

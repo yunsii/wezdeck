@@ -453,18 +453,44 @@ baseline; the snapshot is only consumed by Alt+x, so paying that cost
 there is correct.
 
 The popup shows a workspace badge column next to each row. Rows are
-ranked by **accumulated activity score** from
-`tab-stats/<slug>.json`, aggregated across `__refresh_*` variants under
-their base session name. The active workspace's rows still group at
-the top, but within that block the sessions where git activity really
-happened come first. A project that sits at row 6 in `workspaces.lua`
-will jump to row 1 in the picker once commits, staging, or worktree
-edits make it the most active. Cross-workspace rows interleave by
-activity score too; the workspace badge keeps identity visible. When
-stats haven't yet differentiated rows (cold start, or a tie at score
-0), the `workspaces.lua` declared order acts as the within-workspace
-tiebreaker so the picker stays usable before any activity events
-accumulate. Always-on substring filter
+**one flat list across every workspace, most-recently-active first** —
+the same contract `Alt+g` uses. Two sort keys:
+
+1. `has_live_session desc` — a row backed by a running tmux session
+   (`●` visible / `◐` warm) outranks a row that is only a
+   `workspaces.lua` entry (`○` cold). A cold row has no terminal at
+   all, so it is not "active" in any sense the user means when they
+   reach for this picker.
+2. `last_activity_ms desc` — for live rows this is tmux's own
+   `session_activity` (last output in that session, epoch seconds,
+   read from the `tmux list-sessions` call the popup body already
+   makes). Cold rows have no such clock, so they fall back to
+   tab-stats' `rank_recent_ms` (last sampled git change) purely to
+   order themselves *within* the cold block.
+
+Ties break on workspace name then snapshot order, so before any
+activity exists the `workspaces.lua` declared order still governs and
+the picker is usable at cold start.
+
+**The active workspace is not grouped on top.** Instead the popup body
+resolves an `initial_selected` row index — first the row whose session
+is the one you pressed `Alt+x` from, else the first row of the current
+workspace, else row 0 — and the Go picker opens its cursor there
+(scrolling it into view if the recency sort pushed it below the fold).
+So the list answers *where is the work* and the cursor answers *where
+am I*, and `Enter` on first paint is a no-op. Every filter or scope
+change resets the cursor to row 0, because the row it pointed at may
+no longer be in the filtered set.
+
+Note the deliberate split from the brain: `tab_visibility.lua` decides
+**which sessions get a visible tab** from the decayed git-activity
+score (`activity_score`), a slow-moving "which project matters"
+signal. This picker decides **row order for a human about to jump**,
+which wants "where did something just happen" — terminal recency. Both
+read the same `tab-stats/<slug>.json`, but only the brain ranks on
+`activity_score`.
+
+Always-on substring filter
 matches **workspace + label + cwd** lowercase, so `cfg neo` lands on
 `config · neovim` regardless of starting workspace; `Tab` toggles the
 scope between *all workspaces* (default) and *current workspace only*.
@@ -530,8 +556,8 @@ the positions of members that remain visible.
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, joins `tab_stats_aggregated_tsv` rank tier + score per session, sorts by `is_current desc, rank_tier desc, rank_score desc, event_count desc, snap_idx asc` (activity-first within and across workspaces; current workspace stays grouped on top), launches `picker overflow` in a `tmux display-popup` (Go binary required; `WEZTERM_ALLOW_BASH_PICKER=1` unlocks legacy `tmux display-menu` for the active workspace only) |
-| Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` + `tab-overflow-popup-body.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, sorts into **one flat recency list across all workspaces** — `has_live_session desc, last_activity_ms desc, workspace asc, snap_idx asc` — and resolves the preselected row, then launches `picker overflow` in a `tmux display-popup` (Go binary required; `WEZTERM_ALLOW_BASH_PICKER=1` unlocks legacy `tmux display-menu` for the active workspace only) |
+| Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, opens the cursor on the preselected row, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |
 | Cold spawn | `scripts/runtime/tab-overflow-cold-spawn.sh` | `tmux new-session -A -d` + attach |
