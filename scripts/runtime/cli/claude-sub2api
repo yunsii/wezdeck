@@ -10,29 +10,23 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-launcher="$script_dir/../agent-launcher.sh"
+runtime_dir="$(cd "$script_dir/.." && pwd -P)"
+launcher="$runtime_dir/agent-launcher.sh"
 
-if [[ ! -x "$launcher" && ! -f "$launcher" ]]; then
+if [[ ! -f "$launcher" ]]; then
   printf 'claude-sub2api: agent-launcher.sh not found at %s\n' "$launcher" >&2
   exit 1
 fi
 
-if [[ $# -gt 0 ]]; then
-  # Forward argv to bare `claude` after loading gateway env the same way
-  # the launcher does (for `claude -p ...` / one-shot flags).
-  # shellcheck disable=SC1091
-  . "$script_dir/../runtime-env-lib.sh"
-  runtime_env_load_managed
-
-  env_file="${CLAUDE_SUB2API_ENV:-$HOME/.config/claude-profiles/sub2api.env}"
-  if [[ ! -r "$env_file" ]]; then
-    printf 'claude-sub2api: env file missing: %s\n' "$env_file" >&2
-    exit 1
-  fi
-  unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL \
-    ANTHROPIC_CUSTOM_HEADERS 2>/dev/null || true
-  runtime_env_load_shell "$env_file"
-  exec claude "$@"
+if [[ $# -eq 0 ]]; then
+  exec bash "$launcher" claude-sub2api
 fi
 
-exec bash "$launcher" claude-sub2api
+# One-shot with user argv: same env + isolated home as the launcher.
+# shellcheck disable=SC1091
+. "$runtime_dir/runtime-env-lib.sh"
+runtime_env_load_managed
+# shellcheck disable=SC1091
+. "$runtime_dir/agent-claude-sub2api-lib.sh"
+load_claude_sub2api_env
+exec claude "$@"

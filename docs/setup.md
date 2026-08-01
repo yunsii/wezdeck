@@ -131,8 +131,35 @@ scripts/runtime/agent-launcher.sh claude-sub2api
 
 # after filling sub2api.env, banner should say "Loading claude-sub2api ..."
 # and Claude should bill/route via the gateway (not team 5h limit)
+#
+# In-session check: /status should show Anthropic base URL = your gateway
+# and Auth token = ANTHROPIC_AUTH_TOKEN — not a claude.ai Login row.
 ```
 
+**OAuth isolation (important)**
+
+`claude-sub2api` sets `CLAUDE_CONFIG_DIR` to
+`~/.config/claude-profiles/home` (override with `CLAUDE_SUB2API_HOME`) so the
+team OAuth session in `~/.claude/.credentials.json` is **not** loaded.
+
+Without that isolation, Claude Code stays on a hybrid “API keys + Team/Max”
+path. After the team 5h limit it tries Anthropic **extra usage** billing and
+shows:
+
+> You're logged in with API keys, but haven't purchased any extra usage
+
+even when the gateway itself is healthy (`curl …/v1/messages` returns 200).
+The launcher also refuses to keep a `.credentials.json` inside the isolated
+home. Hooks/permissions still come from a symlink to
+`~/.claude/settings.json`.
+
+**TUI tips when on sub2api**
+
+- Prefer a normal-context model (e.g. `sonnet` / `opus`) if the gateway does
+  not implement Max “1M context / extra usage” entitlements.
+- Status bar should **not** say `Claude Max` once isolation is working.
+- The “claude.ai connectors are disabled…” line is expected under gateway
+  auth; it is not the extra-usage failure.
 ## Repo-Local Runtime Wrappers
 
 - When your automation can already resolve the repository root, prefer repo-local wrappers under `scripts/runtime/` over rebuilding helper IPC or Windows bootstrap logic.

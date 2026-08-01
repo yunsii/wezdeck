@@ -85,47 +85,8 @@ print_loading_banner() {
   printf '\033[2J\033[H\n\n  \033[2;36mLoading %s ...\033[0m\n' "$label"
 }
 
-# Drop gateway overrides so the stock `claude` profile stays on OAuth /
-# subscription auth. Claude Code prefers ANTHROPIC_API_KEY /
-# ANTHROPIC_AUTH_TOKEN over a logged-in team session when either is set.
-clear_anthropic_gateway_env() {
-  unset ANTHROPIC_API_KEY \
-    ANTHROPIC_AUTH_TOKEN \
-    ANTHROPIC_BASE_URL \
-    ANTHROPIC_CUSTOM_HEADERS \
-    2>/dev/null || true
-}
-
-# Load sub2api (or any Anthropic-compatible gateway) credentials from a
-# dedicated file — never from shell-env.d auto-glob. Override path with
-# CLAUDE_SUB2API_ENV.
-load_claude_sub2api_env() {
-  local env_file="${CLAUDE_SUB2API_ENV:-$HOME/.config/claude-profiles/sub2api.env}"
-  local repo_root
-  repo_root="$(runtime_env_repo_root)"
-
-  if [[ ! -r "$env_file" ]]; then
-    printf 'agent-launcher: claude-sub2api env file missing or unreadable:\n' >&2
-    printf '  %s\n' "$env_file" >&2
-    printf 'Create it (mode 600) from:\n' >&2
-    printf '  %s/wezterm-x/local.example/claude-profiles/sub2api.env\n' "$repo_root" >&2
-    printf 'Or point CLAUDE_SUB2API_ENV at an alternate path.\n' >&2
-    exit 1
-  fi
-
-  clear_anthropic_gateway_env
-  runtime_env_load_shell "$env_file"
-
-  if [[ -z "${ANTHROPIC_AUTH_TOKEN:-}" && -z "${ANTHROPIC_API_KEY:-}" ]]; then
-    printf 'agent-launcher: %s must set ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY\n' \
-      "$env_file" >&2
-    exit 1
-  fi
-  if [[ -z "${ANTHROPIC_BASE_URL:-}" ]]; then
-    printf 'agent-launcher: %s must set ANTHROPIC_BASE_URL\n' "$env_file" >&2
-    exit 1
-  fi
-}
+# shellcheck disable=SC1091
+. "$script_dir/agent-claude-sub2api-lib.sh"
 
 print_loading_banner "$agent"
 
