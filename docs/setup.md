@@ -67,6 +67,7 @@ The Lua side reads `shared.env` independently via `helpers.load_optional_env_fil
 | Genre | Goes in | Notes |
 |---|---|---|
 | User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. One file per service. Files are auto-globbed. |
+| Claude gateway profile (sub2api) | `~/.config/claude-profiles/sub2api.env` | Mode 600. **Not** auto-globbed — only `agent-launcher.sh claude-sub2api` loads it. See [Claude auth profiles](#claude-auth-profiles). |
 | Repo-anchored env (`WEZTERM_REPO`, PATH for `cli/`) | `~/.config/shell-env.d/wezterm-env.env` | Template at `wezterm-x/local.example/shell-env.d/`. |
 | Repo-anchored shell helpers (aliases, `cd` functions) | `~/.config/shell-env.d/wezterm-fn.env` | Same template dir. Parent-shell only; runtime-loader treats it as a no-op. |
 | User-facing CLI commands | `scripts/runtime/cli/<name>` | No `.sh` suffix. Auto-PATH'd by `wezterm-env.env`. |
@@ -82,6 +83,55 @@ User-facing CLI commands belong in `scripts/runtime/cli/` with no `.sh` suffix (
 Parent-shell-only helpers — `cd`-ing functions, completion hooks, aliases — belong in the sibling `wezterm-fn.env` template instead. They cannot survive a subprocess boundary, so the runtime loader silently no-ops on them (defines, returns, drops). Prefix function and alias names with `wez-` / `wezterm-` so they cannot shadow a real binary a subprocess might rely on.
 
 For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is the single env-loading site (it calls `runtime_env_load_managed` before exec'ing the agent). All managed launch paths — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn — terminate at this launcher. Shell paths that resolve the resume argv share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command`. See [`architecture.md#startup-invariants`](./architecture.md#startup-invariants) for the invariant statement.
+
+### Claude auth profiles
+
+Managed Claude has two auth identities that share the same binary and the same `~/.claude` session store; only the **process env at launch** differs.
+
+| Profile (`MANAGED_AGENT_PROFILE`) | Auth | Credentials |
+|---|---|---|
+| `claude` (default) | Claude.ai OAuth / team subscription | `~/.claude/.credentials.json` (login once). Launcher **clears** `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_BASE_URL` so a leaked parent env cannot override OAuth. |
+| `claude_sub2api` | Anthropic-compatible gateway (sub2api, etc.) | `~/.config/claude-profiles/sub2api.env` (or `$CLAUDE_SUB2API_ENV`). Must set `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` (or `ANTHROPIC_API_KEY`). |
+
+**Why not `shell-env.d`?** That directory is sourced for *every* managed agent. Putting gateway keys there would force API auth onto team panes as well. The sub2api file is deliberately outside the auto-glob and is only read by `agent-launcher.sh claude-sub2api`.
+
+**One-time setup**
+
+```bash
+mkdir -p ~/.config/claude-profiles
+cp wezterm-x/local.example/claude-profiles/sub2api.env \
+   ~/.config/claude-profiles/sub2api.env
+chmod 600 ~/.config/claude-profiles/sub2api.env
+# edit BASE_URL + token
+```
+
+**Switch default for new managed panes**
+
+```bash
+# wezterm-x/local/shared.env
+MANAGED_AGENT_PROFILE='claude_sub2api'   # or 'claude' to go back
+```
+
+Then open a new agent window (`Alt+g`) or refresh the current window so a new process starts. Already-running panes keep the identity they were launched with.
+
+**One-shot from an interactive shell** (does not change `MANAGED_AGENT_PROFILE`):
+
+```bash
+claude-sub2api          # resume-or-fresh via agent-launcher
+claude-sub2api -p 'hi'  # forward args to claude after loading gateway env
+```
+
+`claude-sub2api` is on PATH via the `wezterm-env.env` template (`scripts/runtime/cli/`).
+
+**Verify**
+
+```bash
+# missing credentials → clear error, exit 1
+scripts/runtime/agent-launcher.sh claude-sub2api
+
+# after filling sub2api.env, banner should say "Loading claude-sub2api ..."
+# and Claude should bill/route via the gateway (not team 5h limit)
+```
 
 ## Repo-Local Runtime Wrappers
 

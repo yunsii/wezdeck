@@ -23,7 +23,17 @@
 #   workspace first-open) shares the same env view.
 #
 # Usage:
-#   agent-launcher.sh <claude|codex>
+#   agent-launcher.sh <claude|claude-sub2api|codex>
+#
+# Claude auth profiles:
+#   claude            OAuth / subscription (team or individual). Gateway
+#                     env vars are cleared so a leaked ANTHROPIC_* from
+#                     the parent shell cannot silently override OAuth.
+#   claude-sub2api    API gateway via ANTHROPIC_BASE_URL + token from a
+#                     dedicated env file (default
+#                     ~/.config/claude-profiles/sub2api.env). Do NOT put
+#                     those keys in shell-env.d — that would override
+#                     every claude pane.
 #
 # Phone sync via Happy was removed (2026-07): remote work goes through
 # OpenClaw (Feishu / ACP / temporary tmux control). See
@@ -40,9 +50,14 @@ runtime_env_load_managed
 agent="${1:-}"
 if [[ -n "${2:-}" ]]; then
   printf 'agent-launcher: unexpected argument %s (Happy wrap removed)\n' "$2" >&2
-  printf 'usage: agent-launcher.sh <claude|codex>\n' >&2
+  printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex>\n' >&2
   exit 1
 fi
+
+# Normalize underscore form from managed_cli profile names.
+case "$agent" in
+  claude_sub2api) agent='claude-sub2api' ;;
+esac
 
 # Visible boot cue. Until the agent CLI paints its first frame, the pane
 # is blank — that's the shell-chain forks (~150ms, mainly `zsh -ilc`
@@ -70,6 +85,48 @@ print_loading_banner() {
   printf '\033[2J\033[H\n\n  \033[2;36mLoading %s ...\033[0m\n' "$label"
 }
 
+# Drop gateway overrides so the stock `claude` profile stays on OAuth /
+# subscription auth. Claude Code prefers ANTHROPIC_API_KEY /
+# ANTHROPIC_AUTH_TOKEN over a logged-in team session when either is set.
+clear_anthropic_gateway_env() {
+  unset ANTHROPIC_API_KEY \
+    ANTHROPIC_AUTH_TOKEN \
+    ANTHROPIC_BASE_URL \
+    ANTHROPIC_CUSTOM_HEADERS \
+    2>/dev/null || true
+}
+
+# Load sub2api (or any Anthropic-compatible gateway) credentials from a
+# dedicated file — never from shell-env.d auto-glob. Override path with
+# CLAUDE_SUB2API_ENV.
+load_claude_sub2api_env() {
+  local env_file="${CLAUDE_SUB2API_ENV:-$HOME/.config/claude-profiles/sub2api.env}"
+  local repo_root
+  repo_root="$(runtime_env_repo_root)"
+
+  if [[ ! -r "$env_file" ]]; then
+    printf 'agent-launcher: claude-sub2api env file missing or unreadable:\n' >&2
+    printf '  %s\n' "$env_file" >&2
+    printf 'Create it (mode 600) from:\n' >&2
+    printf '  %s/wezterm-x/local.example/claude-profiles/sub2api.env\n' "$repo_root" >&2
+    printf 'Or point CLAUDE_SUB2API_ENV at an alternate path.\n' >&2
+    exit 1
+  fi
+
+  clear_anthropic_gateway_env
+  runtime_env_load_shell "$env_file"
+
+  if [[ -z "${ANTHROPIC_AUTH_TOKEN:-}" && -z "${ANTHROPIC_API_KEY:-}" ]]; then
+    printf 'agent-launcher: %s must set ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY\n' \
+      "$env_file" >&2
+    exit 1
+  fi
+  if [[ -z "${ANTHROPIC_BASE_URL:-}" ]]; then
+    printf 'agent-launcher: %s must set ANTHROPIC_BASE_URL\n' "$env_file" >&2
+    exit 1
+  fi
+}
+
 print_loading_banner "$agent"
 
 # Fallback re-paint: when `--continue` (or `resume --last`) finds no
@@ -82,14 +139,21 @@ print_loading_banner "$agent"
 # as the resume-success path.
 case "$agent" in
   claude)
+    clear_anthropic_gateway_env
     exec sh -c 'claude --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec claude; }'
+    ;;
+  claude-sub2api)
+    load_claude_sub2api_env
+    # Env is inherited by the inner sh -c / claude process. Banner label
+    # keeps the identity visible during the multi-second resume window.
+    exec sh -c 'claude --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading claude-sub2api ...\033[0m\n"; exec claude; }'
     ;;
   codex)
     exec sh -c 'codex resume --last || { printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }'
     ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
-    printf 'usage: agent-launcher.sh <claude|codex>\n' >&2
+    printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex>\n' >&2
     exit 1
     ;;
 esac
