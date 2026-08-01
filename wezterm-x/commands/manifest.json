@@ -520,7 +520,7 @@
   {
     "id": "worktree.picker",
     "label": "Worktree: Pick in this repo family",
-    "description": "Open a centered tmux popup worktree picker, ordered most-recently-active first (tmux window_activity for each worktree's window in this session; no window yet = bottom, ties keep `git worktree list` order) with the current worktree preselected. The `1-9,0,a-z` accelerators are positional, so [1] is always the worktree that moved most recently. Selecting an unopened worktree creates its tmux window on demand and launches the agent under the `<base>-resume` profile.",
+    "description": "Open a centered tmux popup worktree picker, ordered most-recently-interacted first (@wezterm_user_interact_ts: last key/mouse input while that worktree's window held focus — not tmux window_activity/pane output; no window or never-touched = bottom, ties keep `git worktree list` order) with the current worktree preselected. The `1-9,0,a-z` accelerators are positional, so [1] is always the worktree you last typed in. Selecting an unopened worktree creates its tmux window on demand and launches the agent under the `<base>-resume` profile.",
     "scope": "project-navigation",
     "context": "tmux-backed",
     "binding": {

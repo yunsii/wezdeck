@@ -33,6 +33,11 @@
 #   <state>/agent-attention/tmux-focus/<safe_socket>__<safe_session>.txt
 #     -> single line containing the active tmux pane id (e.g. "%12").
 #
+# Also attributes user input (tmux client_activity) to the window that
+# held focus when the input happened — see tmux-user-interact-lib.sh.
+# Alt+g ranks worktrees by that stamp so agent pane *output* no longer
+# reshuffles the picker.
+#
 # Fails open: any step that fails is silently skipped so the tmux hook
 # never observes an error.
 
@@ -51,30 +56,39 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$script_dir/attention-state-lib.sh"
 # shellcheck disable=SC1091
 . "$script_dir/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+. "$script_dir/tmux-user-interact-lib.sh"
+
+# User-interact MRU is independent of the attention focus-file store:
+# even if attention_state_path is unavailable we still want Alt+g order.
+window_id="$(tmux display-message -p -t "$pane" '#{window_id}' 2>/dev/null || true)"
+if [[ -n "$window_id" ]]; then
+  tmux_user_interact_note_focus "$session" "$window_id" || true
+fi
 
 # attention_state_path resolves to .../agent-attention/attention.json; peel
 # off the filename to co-locate the per-session focus files under the
 # same feature directory.
 state_path="$(attention_state_path 2>/dev/null || true)"
-if [[ -z "$state_path" ]]; then
-  exit 0
-fi
-focus_dir="${state_path%/*}/tmux-focus"
-mkdir -p "$focus_dir" 2>/dev/null || exit 0
-
-# Filename-safe key. Socket paths contain slashes; session names are
-# already safe characters in this repo (workspaces.lua enforces it), but
-# we keep the legacy `$`-strip in case a caller ever passes a raw id.
-# The Lua reader applies the same transform so both sides agree on the
-# path without having to parse the full socket string.
-safe_socket="${socket//\//_}"
-safe_session="${session#\$}"
-file="$focus_dir/${safe_socket}__${safe_session}.txt"
-tmp="${file}.tmp.$$"
-
 write_ok=0
-if printf '%s\n' "$pane" > "$tmp" 2>/dev/null && mv "$tmp" "$file" 2>/dev/null; then
-  write_ok=1
+file=""
+if [[ -n "$state_path" ]]; then
+  focus_dir="${state_path%/*}/tmux-focus"
+  if mkdir -p "$focus_dir" 2>/dev/null; then
+    # Filename-safe key. Socket paths contain slashes; session names are
+    # already safe characters in this repo (workspaces.lua enforces it), but
+    # we keep the legacy `$`-strip in case a caller ever passes a raw id.
+    # The Lua reader applies the same transform so both sides agree on the
+    # path without having to parse the full socket string.
+    safe_socket="${socket//\//_}"
+    safe_session="${session#\$}"
+    file="$focus_dir/${safe_socket}__${safe_session}.txt"
+    tmp="${file}.tmp.$$"
+
+    if printf '%s\n' "$pane" > "$tmp" 2>/dev/null && mv "$tmp" "$file" 2>/dev/null; then
+      write_ok=1
+    fi
+  fi
 fi
 
 if command -v runtime_log_info >/dev/null 2>&1; then
@@ -82,6 +96,7 @@ if command -v runtime_log_info >/dev/null 2>&1; then
     "socket=$socket" \
     "session=$session" \
     "pane=$pane" \
+    "window_id=${window_id:-}" \
     "file=$file" \
     "write_ok=$write_ok"
 fi
