@@ -461,6 +461,64 @@ Residual costs, unchanged from the earlier assessment: ~0.5–1 s per call (970 
 
 `tsgo` is the TypeScript native language server shipped by the `typescriptteam.native-preview` VS Code extension, enabled here via `typescript.experimental.useTsgo`. It replaces the Node `tsserver`, so `typescript.tsserver.maxTsServerMemory` (which becomes `--max-old-space-size`) has **no effect on it at all** — being Go, the only limit it honours is `GOMEMLIMIT`, which the extension sets from `js/ts.server.goMemLimit`.
 
+**What it is actually serving here.** Read this table with one rule in mind, because it is the trap: **a `handled method` line does not mean the feature is on.** VS Code's clients keep issuing requests on their own schedule regardless of config, and a disabled feature answers empty in microseconds. So capability has to be judged from the config dump (authoritative) with latency as the cross-check — not from request counts. Tabulated from 13 491 `handled method` lines across the three newest logs, against the config tsgo reports receiving:
+
+| state | methods | evidence |
+|---|---|---|
+| **on — real work** | `semanticTokens/full`, `/range` | the only expensive thing left: p50 28 ms, p95 **34 s** during project load |
+| **on — parse-level, cheap** | `documentSymbol`, `foldingRange` | syntactic, sub-ms by nature |
+| **on — navigation** | `definition`, `hover`, `documentHighlight` | `hover:map[maximumLength:500]`; sub-ms |
+| **on — basic completion** | (not observed in logs) | `suggest:map[… enabled:true]`, but `autoImports:false`, `includeCompletionsForImportStatements:false`, `completeFunctionCalls:false` |
+| **off — answers empty** | `textDocument/diagnostic` | `validate:map[… enabled:false]`; 9 631 calls (71 % of traffic) yet 97.7 % under 5 ms, p50 0.23 ms |
+| **off — answers empty** | `textDocument/inlayHint` | every sub-key `false`/`none`; 70 calls, p50 0.18 ms |
+| **off — answers empty** | `textDocument/codeLens` | `implementationsCodeLens.enabled:false`, `referencesCodeLens.enabled:false`; 34 calls, p50 0.70 ms |
+| **off / near-empty** | `textDocument/codeAction` | `suggestionActions:map[enabled:false]`, and quick fixes derive from diagnostics which are off; p50 0.23 ms |
+| infrastructure | `workspace/didChangeWatchedFiles` | 3 546 calls |
+
+So what the tuning block actually leaves is **parse-level features plus navigation** — jump-to-definition, hover, outline, folding — and, easy to miss, **semantic highlighting, which is the single most expensive operation still running**. Anyone describing this configuration as "navigation only" is nearly right but should know about `semanticTokens`: it is the remaining lever if cost has to come down further.
+
+**Do not over-read that table as "only highlighting and navigation survive".** The binary implements a full language service — `strings … | grep -oE 'textDocument/[a-zA-Z]+'` lists `completion`, `references`, `rename`, `prepareRename`, `implementation`, `typeDefinition`, `declaration`, `signatureHelp`, `prepareCallHierarchy`, `prepareTypeHierarchy`, `selectionRange`, `linkedEditingRange`, `documentLink`, `inlineCompletion`, plus `workspace/symbol` — and **this configuration disables none of them**. The methods absent from the log table were simply not invoked during the sampled window; absence there is not evidence of a disabled capability.
+
+Measured against VS Code's *defaults*, the tuning turns off exactly four feature groups: **type diagnostics** (no red squiggles — type errors must come from a separate `tsc --noEmit` run or CI, which is an implicit dependency of this configuration), **auto-import completions** (the rest of completion still works), **formatting** (delegated to prettier) and **automatic type acquisition**.
+
+`inlayHints` and both `codeLens` kinds show as disabled in the config dump but are **not** part of this tuning — VS Code ships them off by default (`inlayHints.*` default `false`/`none`, `implementationsCodeLens.enabled` and `referencesCodeLens.enabled` default `false`). Crediting them to the tuning block overstates what it does.
+
+#### Which keys actually do something
+
+The authoritative check is not the settings schema and not observed behaviour — it is the `config:"…"` struct tags compiled into the `tsgo` binary, which are exactly the keys the server reads (72 of them):
+
+```bash
+strings -n 6 ~/.vscode-server/extensions/typescriptteam.native-preview-*/lib/tsgo \
+  | grep -oE 'config:"[^"]+"' | sed 's/config:"//;s/"$//' | tr ',' '\n' | sort -u
+```
+
+That audit cut `~/.vscode-server/data/Machine/settings.json` from 17 keys to 12. The 12 that remain, all confirmed to be keys something actually reads:
+
+| key | role |
+|---|---|
+| `js/ts.server.goMemLimit` | Go heap ceiling → `GOMEMLIMIT`. Read by the **extension**, not tsgo; verified in `/proc/<pid>/environ` |
+| `typescript.experimental.useTsgo` | master switch; the only key the extension watches for live changes |
+| `{typescript,javascript}.validate.enabled` | type diagnostics — latency confirms it stops the checking |
+| `{typescript,javascript}.suggest.autoImports` | auto-import completions (effect not fully confirmed — see open question 7) |
+| `…suggest.includeCompletionsForImportStatements` | import-statement completions |
+| `{typescript,javascript}.format.enabled` | built-in formatter |
+| `typescript.disableAutomaticTypeAcquisition` + `typescript.tsserver.automaticTypeAcquisition.enabled` | stop fetching `@types` — **both are required**, see below |
+
+The 5 removed key names (6 entries counting the ts/js pairs) and why each was dead:
+
+| removed | why it did nothing |
+|---|---|
+| `js/ts.trace.server` | no-op — gated behind the output channel's log level |
+| `{typescript,javascript}.validate.enable` | tsgo's tags contain only `validate.enabled`; `.enable` is the built-in extension's key, and `useTsgo` retires that extension |
+| `{typescript,javascript}.format.enable` | same — only `format.enabled` exists in the tags |
+| `typescript.tsserver.nodePath` | tsgo is a Go binary; no node is involved |
+
+**The deletion is self-verifying, which is the neat part.** After the reload, tsgo's config dump shows `validate:map[enable:true enabled:false]` and `format:map[enable:true enabled:false]` — the `.enable` halves reverted to their schema default `true` because nothing sets them any more, while the `.enabled` halves stayed `false`. Behaviour did not change, which is exactly the proof that those keys were inert. `trace:map[server:verbose]` reverted the same way, harmlessly.
+
+⚠️ **Automatic type acquisition needs both keys set, or it silently stays on.** tsgo's tags contain `disableAutomaticTypeAcquisition` *and* the newer `tsserver.automaticTypeAcquisition.enabled`. With only the first one set, the dump showed them disagreeing — `disableAutomaticTypeAcquisition:true` alongside `automaticTypeAcquisition:map[enabled:true]`, the newer key sitting at its default because nothing set it — and which one wins is undocumented, so ATA may have been running the whole time. Both are now set and the dump agrees: `enabled:false`.
+
+Also worth knowing: **`suggest.enabled` is *not* in tsgo's tag list**, so basic completion cannot be turned off from the server side by that key — only the auto-import parts of completion are configurable here.
+
 **Setting that limit below the live heap converts a memory cost into a much worse CPU cost.** Measured 2026-08-04 with `goMemLimit: "3GiB"` against the `ai-video-collection` monorepo:
 
 | | over-limit server | control |
@@ -474,7 +532,7 @@ Both servers were started within 40 minutes of each other and had the same uptim
 
 Same binary, same setting; the only difference is where the live heap sits relative to the limit. `GOMEMLIMIT` is a *soft* limit — when it cannot be met the runtime simply keeps running GC cycles that free nothing, forever.
 
-**The failure is time-delayed, which is why it went unnoticed for so long.** A freshly restarted server on the same monorepo settles at **2.82 Gi — under the 3 GiB limit — and is quiet at 3 % of one core**. That leaves only ~6 % headroom, so ordinary use drifts the heap past the limit within hours, and once past it the server never recovers: the 3.94 Gi / 145 % state above was the *same* workspace after 21 h. Two consequences:
+**The failure is time-delayed, which is why it went unnoticed for so long.** A freshly restarted server on the same monorepo settles at **2.82–2.92 Gi (two cold measurements) — under the 3 GiB limit — and is quiet at 3 % of one core**. That is only **3–8 % headroom**, so ordinary use drifts the heap past the limit within hours, and once past it the server never recovers: the 3.94 Gi / 145 % state above was the *same* workspace after 21 h. In other words the old setting was borderline from cold start, not merely after growth. Two consequences:
 
 - A limit that looks safe on a cold server can be badly wrong on a warm one. Size it against the *grown* heap, not the freshly-loaded one.
 - **You cannot reproduce or refute this right after a reload.** Measured minutes after a restart, everything looks healthy no matter what the limit is. Compare against a server that has been up for hours, or wait.
@@ -752,7 +810,7 @@ Things left unverified or deliberately deferred, with how to close them. Dated s
    `pageId` is safe to hold onto: it is a stable allocated id, not a list position. Verified by opening two scratch pages (6, 7), closing 6, and confirming 7 stayed 7 rather than sliding down — consistent with v1.6.0's `keep page ids unique across browser reconnects` (#2345). Ids do differ between *separate* MCP process instances, which is why two `list_pages` runs against different children can order the same tabs differently; within one child they are stable. So routing is a sound fix, not a partial one.
 
    Neither is applied yet: the collision needs two agents driving the browser inside the same 10-minute window, plausible here but not routine. Escalate to `--experimentalPageIdRouting` the first time a snapshot is observed returning the wrong page — do not wait for a second occurrence, since the failure is silent.
-5. **`goMemLimit: "6GiB"` is written but not yet running** (2026-08-04). The setting is in `~/.vscode-server/data/Machine/settings.json` and the extension host can see it (a `didChangeConfiguration` payload carrying `server:map[goMemLimit:6GiB]` was logged), but every live `tsgo` still carries `GOMEMLIMIT=3GiB` — applying it needs `Developer: Reload Window` for the reasons in [tsgo and `goMemLimit`](#tsgo-and-gomemlimit). Closes by reloading the `ai-video-collection` window and confirming (a) a new `Setting GOMEMLIMIT=6GiB` log line and (b) `GOMEMLIMIT=6GiB` in `/proc/<pid>/environ`. **Do not treat low CPU right after the reload as confirmation** — a cold server sits at 2.82 Gi and is quiet at 3 % under the old 3GiB limit too, so that measurement distinguishes nothing. The real check is (c): after a day of use, RSS should be allowed past 3 Gi *without* idle CPU climbing. That is also the falsification test for the whole diagnosis, which was inferred from RSS/fault/IO shape rather than from a `gctrace` (not enablable on a running process). If a warm server is over 3 Gi, under 6 GiB, and still burning ~145 %, the GC-over-limit explanation is wrong and the real cause is still open.
+5. **`goMemLimit: "6GiB"` is applied; the CPU benefit is still unproven** (2026-08-04, updated same day). Windows reloaded at 17:03 and the change is confirmed live on both IDE servers — fresh `Setting GOMEMLIMIT=6GiB` log lines, `GOMEMLIMIT=6GiB` in `/proc/<pid>/environ`, and `server:map[goMemLimit:6GiB]` in tsgo's own config dump. What is **not** yet shown is that it helps: the cold server sits at 2.92 Gi / 3 % CPU / 0 swap, which is exactly what the old 3GiB limit also looked like when cold, so this measurement distinguishes nothing. Closes after a day of real use: RSS should be allowed past 3 Gi *without* idle CPU climbing. That is also the falsification test for the whole diagnosis, which was inferred from RSS/fault/IO shape rather than from a `gctrace` (not enablable on a running process). If a warm server is over 3 Gi, under 6 GiB, and still burning ~145 %, the GC-over-limit explanation is wrong and the real cause is still open.
 6. **Where the heap goes — and why it grows 2.82 → 3.94 Gi over a day — is unmeasured** (2026-08-04). Raising the limit stops the CPU burn but does not make the heap smaller. Two separate questions: whether ~2.8 Gi is a reasonable cold cost for this monorepo's type information, and whether the +1.1 Gi drift across 21 h of editing is legitimate working set or a leak. The second matters more, because a leak would eventually cross any limit and reinstate the burn. The extension exposes `js/ts.server.pprofDir` plus `dev.saveHeapProfile` / `dev.saveAllocProfile` commands, so a real heap profile is available — it needs a Go toolchain for `go tool pprof`, which is not installed here. Until someone looks, "3.9 Gi is just what this project costs" is an assumption, not a finding.
-7. **Several keys in the tsgo tuning block are unverified beyond `goMemLimit`** (2026-08-04). `typescript.validate.enabled: false` is confirmed *delivered* to the server (it appears as `validate:map[enable:false enabled:false]` in tsgo's own config dump), yet `Running scheduled diagnostics refresh` and `textDocument/diagnostic` were still being handled minutes later; likewise `suggest.autoImports: false` is delivered while `Built autoimport registry` still appears. Delivered is not the same as honoured, and the diagnostics path may be driven by the client's pull-diagnostics registration rather than by that key. Closes by checking, per key, whether tsgo acts on it — the reliable method is the one used originally: dump the `config:"…"` struct tags from the `tsgo` binary and match them against observed behaviour, not against the settings schema.
+7. **`validate.enabled: false` looks honoured; the rest of the tuning block is still unverified** (2026-08-04, revised same day). The earlier reading here — "delivered but seemingly ignored, because `textDocument/diagnostic` keeps being handled" — was **too strong**. Latency settles it: 97.7 % of 9 631 diagnostic calls return under 5 ms (p50 0.23 ms), which cannot be real type checking, so the key stops the *checking* while VS Code's pull-diagnostics client keeps issuing *requests* on its own schedule. Two things genuinely remain open: (a) the 2.3 % slow tail (up to 8.2 s) is unattributed — plausibly requests blocking behind project load, since `semanticTokens/full` shows a 34 s p95 in the same windows, but that is a guess; (b) `suggest.autoImports: false` is delivered yet `Built autoimport registry` still appears in the logs, and no latency argument has been made for it. Closes per key by dumping the `config:"…"` struct tags from the `tsgo` binary and matching them against observed behaviour, not against the settings schema.
 8. **Reconnect cost is unmeasured, and it is the real argument against a short TTL** (2026-07-29). A freshly spawned session reached 1411 Mi within 6 minutes of being created against three open tabs (one of them a Grafana explore view) — the collectors appear to absorb the current pages' history on attach, not just events arriving afterwards. Against the old resident numbers (3.3 Gi over 37 h) that is a far steeper curve, so shortening the TTL trades accumulation for repeated re-absorption. Nothing here is wrong — the peak is reclaimed rather than kept — but if the TTL is ever tuned, measure how much a reconnect costs before assuming shorter is better.
