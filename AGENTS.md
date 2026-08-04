@@ -66,7 +66,13 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   baseline for agent-side processes (per-session MCP cost, the
   `chrome-devtools-mcp` unbounded-heap leak and its `uxc` containment,
   `uxc-session-reaper.sh`, and why the Claude Code and OpenClaw sides are
-  deliberately asymmetric):
+  deliberately asymmetric); also the IDE-side TypeScript language server
+  (`tsgo` / `typescript.experimental.useTsgo`) — why `maxTsServerMemory` does
+  nothing to it, how `js/ts.server.goMemLimit` set *below* the live heap trades
+  ~4 Gi of memory for a permanent ~1.5-core GC burn, the RSS-flat /
+  faults-near-zero signature that identifies it, why only
+  `Developer: Reload Window` applies a change to that key, and why the
+  uncapped `tsgo` that Claude Code spawns on its own must be left uncapped:
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
 - Unverified claims, deferred decisions, or "what still needs following up" on
   any of the above — dated, each with how to close it:

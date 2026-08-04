@@ -335,7 +335,7 @@ The guard tells you who died; this section records what is *always* resident, so
 | `chrome-devtools-mcp` | 5.91 Gi | 44 | one full stack **per agent session**; see below |
 | `claude` | 4.60 Gi | 11 | parallel agent sessions |
 | `vscode-server` | 1.24 Gi | 10 | one server per distro, shared across windows; each extra window adds an extension host |
-| `tsgo` (`--lsp --stdio`) | 17 Mi | 1 | the TypeScript native language server is **not** a memory concern — it is Go, no V8 heap |
+| `tsgo` (`--lsp --stdio`) | 4.27 Gi | 2–3 | ⚠️ corrected 2026-08-04 (`VmHWM` 4.19 Gi + 76 Mi; current RSS 3.94 Gi). The 2026-07-25 reading was **17 Mi / 1 process**, with the note "not a memory concern — it is Go, no V8 heap". That was a small-repo measurement and does not generalise: one server per workspace folder, and in a large monorepo a single one is a top-three consumer. See [tsgo and `goMemLimit`](#tsgo-and-gomemlimit) |
 
 Two findings worth keeping:
 
@@ -357,7 +357,7 @@ As of 2026-07-29 the Claude Code side is off resident MCP entirely (see below), 
 
 | | Claude Code | OpenClaw gateway |
 |---|---|---|
-| instances | one **per session** — 16 observed | **one**, gateway-level |
+| instances | one **per session** — 16 observed | gateway-level, but **not always exactly one** — a steady 2 concurrent on 2026-08-04 (141 Mi each). Lazy-spawn/release still holds: both observed PIDs exited within the hour and were replaced by a fresh pair, so read this as "a churning pair", not "a leak" |
 | observed peak | 3.4 Gi (5 instances ≥1.7 Gi) | 138 Mi |
 | lifetime | resident for the whole session | lazy-spawned, released again (observed at 0 processes with the server still configured) |
 | cost of switching to `uxc` | tool schemas leave the prompt, calls go through Bash | every browser step additionally passes the `claw-run` / `exec-risk` shell gate, and code-mode `MCP.chromeDevtools.*` stops working |
@@ -456,6 +456,58 @@ Residual costs, unchanged from the earlier assessment: ~0.5–1 s per call (970 
 **Idle does not mean quiescent.** With pages still open, the heap keeps growing even when no tool is called: one session went 778 → 1187 Mi across 40 minutes of `idle_for_secs`, because the CDP connection is still delivering events into the collectors. The earlier 750 s observation that showed RSS *falling* (782 → 700 Mi) was measured with the test page closed, i.e. with nothing arriving — do not generalise from it. So the 600 s TTL is an upper bound on damage, not a plateau; if a session routinely accumulates hundreds of MiB before expiring, shorten it via `uxc link --daemon-idle-ttl`.
 
 ⚠️ **The reaper needs `XDG_RUNTIME_DIR` exported, not just derived.** cron does not set it, and uxc then resolves its socket to `/tmp/uxc-unknown/daemon/uxc.sock` instead of `/run/user/<uid>/uxc/uxc.sock`. A first cut of the script derived the path locally without exporting it, so the socket check passed while `uxc daemon sessions` failed to connect — and because the verdict only looked at `.data`, the error envelope degraded into "no sessions" and every cron run silently reaped nothing for 40 minutes. When triaging a reaper that appears to do nothing, check `syslog` for the `CRON … CMD` line first (it will be there), then run it under `env -i` with cron's environment; a healthy run logs `reaped expired uxc daemon sessions` with `child_pids`.
+
+### tsgo and `goMemLimit`
+
+`tsgo` is the TypeScript native language server shipped by the `typescriptteam.native-preview` VS Code extension, enabled here via `typescript.experimental.useTsgo`. It replaces the Node `tsserver`, so `typescript.tsserver.maxTsServerMemory` (which becomes `--max-old-space-size`) has **no effect on it at all** — being Go, the only limit it honours is `GOMEMLIMIT`, which the extension sets from `js/ts.server.goMemLimit`.
+
+**Setting that limit below the live heap converts a memory cost into a much worse CPU cost.** Measured 2026-08-04 with `goMemLimit: "3GiB"` against the `ai-video-collection` monorepo:
+
+| | over-limit server | control |
+|---|---|---|
+| workspace | `ai-video-collection` | its `dev-web-cmdb` worktree |
+| `GOMEMLIMIT` | 3GiB | 3GiB |
+| RSS | 3.94 Gi (`VmHWM` 4.19 Gi) | 76 Mi |
+| CPU used / uptime | **30 h 42 m / 21 h → 145 % sustained** | **19 s / 21 h** |
+
+Both servers were started within 40 minutes of each other and had the same uptime, so the 5800× difference in CPU is not a warm-up artefact.
+
+Same binary, same setting; the only difference is where the live heap sits relative to the limit. `GOMEMLIMIT` is a *soft* limit — when it cannot be met the runtime simply keeps running GC cycles that free nothing, forever.
+
+**The failure is time-delayed, which is why it went unnoticed for so long.** A freshly restarted server on the same monorepo settles at **2.82 Gi — under the 3 GiB limit — and is quiet at 3 % of one core**. That leaves only ~6 % headroom, so ordinary use drifts the heap past the limit within hours, and once past it the server never recovers: the 3.94 Gi / 145 % state above was the *same* workspace after 21 h. Two consequences:
+
+- A limit that looks safe on a cold server can be badly wrong on a warm one. Size it against the *grown* heap, not the freshly-loaded one.
+- **You cannot reproduce or refute this right after a reload.** Measured minutes after a restart, everything looks healthy no matter what the limit is. Compare against a server that has been up for hours, or wait.
+
+The diagnostic signature is specific enough to recognise in one pass, and it is **not** the shape you would expect:
+
+- CPU in periodic parallel bursts (~5.5 core-seconds every 4–6 s), not a smooth pin.
+- **RSS flat** (3941 → 3936 Mi over 30 s) and **minor faults near zero** (0–63 per 2 s). There is no scavenge/refault sawtooth, because nothing is reclaimable.
+- `smaps_rollup` shows ~99.6 % `Private_Dirty` anonymous (file-backed only 9.6 Mi), so the whole figure is Go-runtime-accounted and really is above the limit.
+- `read_bytes` +0 over 30 s and the extension host idle at 2–8 %, which rules out project rescans and LSP request storms — the work is self-initiated.
+
+Set the limit with real headroom above the live heap (`6GiB` here — 2.1× the 2.82 Gi cold working set, 1.5× the 3.94 Gi warm one) or leave it unset. Unset is not free either: with the Go default `GOGC=100` the heap grows toward 2× live (≈7.8 Gi), which is what the limit was originally added to prevent — so a limit with headroom beats both.
+
+⚠️ **Changing `goMemLimit` requires `Developer: Reload Window`. Nothing cheaper works.** The env is built once, inside the extension's `start()`. Verified against `native-preview` `0.20260707.2`:
+
+- Killing `tsgo` gets it respawned by the LanguageClient's own crash-restart, which reuses the captured `ServerOptions.env` — done twice here, both times the new process still had `GOMEMLIMIT=3GiB`.
+- The extension's own **`TypeScript Native Preview: Restart`** command is no better: `tryRestart()` only falls through to `restartSession()` → `start()` when the resolved tsgo **binary path changed**; an unchanged path takes `client.restart()`, which also reuses the captured env.
+
+Check which value a live server actually got — the env is authoritative, the settings file is not:
+
+```bash
+pgrep -f 'lib/tsgo --lsp' | while read p; do
+  echo "$p $(tr '\0' '\n' < /proc/$p/environ | grep '^GOMEMLIMIT=') $(readlink /proc/$p/cwd)"
+done
+grep -h 'Setting GOMEMLIMIT' ~/.vscode-server/data/logs/*/exthost*/*native-preview*/*.log | tail -3
+```
+
+A reload that took effect leaves a **new** `Setting GOMEMLIMIT=` line; no new line means no re-read.
+
+Two adjacent findings from the same pass:
+
+- **Claude Code spawns its own `tsgo` from the same extension directory with no `GOMEMLIMIT` — and that is fine. Do not cap it.** It does not read VS Code settings, so nothing sets the env. An initial reading of this as "an uncapped multi-gigabyte heap waiting to happen" was **wrong**; measured 2026-08-04: peak RSS **3.9 Mi** across 30 minutes of sampling, instances rotate every few minutes rather than living for the session, and — decisively — the three `claude` sessions sitting in `ai-video-collection` and its worktrees had **no `tsgo` at all**, while only the session doing active work in this (non-TS) repo had one. It never performs a project-level type load, so there is nothing to cap. Note also that a cap could not break validation even if added: `GOMEMLIMIT` is soft and Go never fails an allocation over it — the risk of capping is the CPU pathology above, not failure.
+- **`js/ts.trace.server: "off"` is a no-op.** `refreshTrace()` initialises trace to `Off` and only consults `trace.server` when the output channel's log level is already `Trace`. The `[info] handled method … in Xµs` spam (21 MiB across the log tree, 3.3 MiB in one day's file) is tsgo's own logging, driven by `initializationOptions.logVerbosity` = the output channel's log level and updated via `custom/setLogVerbosity`. Lower it with `Developer: Set Log Level…` on the TypeScript Native Preview channel, not with that setting.
 
 ## Host Disk Space
 
@@ -700,4 +752,7 @@ Things left unverified or deliberately deferred, with how to close them. Dated s
    `pageId` is safe to hold onto: it is a stable allocated id, not a list position. Verified by opening two scratch pages (6, 7), closing 6, and confirming 7 stayed 7 rather than sliding down — consistent with v1.6.0's `keep page ids unique across browser reconnects` (#2345). Ids do differ between *separate* MCP process instances, which is why two `list_pages` runs against different children can order the same tabs differently; within one child they are stable. So routing is a sound fix, not a partial one.
 
    Neither is applied yet: the collision needs two agents driving the browser inside the same 10-minute window, plausible here but not routine. Escalate to `--experimentalPageIdRouting` the first time a snapshot is observed returning the wrong page — do not wait for a second occurrence, since the failure is silent.
-5. **Reconnect cost is unmeasured, and it is the real argument against a short TTL** (2026-07-29). A freshly spawned session reached 1411 Mi within 6 minutes of being created against three open tabs (one of them a Grafana explore view) — the collectors appear to absorb the current pages' history on attach, not just events arriving afterwards. Against the old resident numbers (3.3 Gi over 37 h) that is a far steeper curve, so shortening the TTL trades accumulation for repeated re-absorption. Nothing here is wrong — the peak is reclaimed rather than kept — but if the TTL is ever tuned, measure how much a reconnect costs before assuming shorter is better.
+5. **`goMemLimit: "6GiB"` is written but not yet running** (2026-08-04). The setting is in `~/.vscode-server/data/Machine/settings.json` and the extension host can see it (a `didChangeConfiguration` payload carrying `server:map[goMemLimit:6GiB]` was logged), but every live `tsgo` still carries `GOMEMLIMIT=3GiB` — applying it needs `Developer: Reload Window` for the reasons in [tsgo and `goMemLimit`](#tsgo-and-gomemlimit). Closes by reloading the `ai-video-collection` window and confirming (a) a new `Setting GOMEMLIMIT=6GiB` log line and (b) `GOMEMLIMIT=6GiB` in `/proc/<pid>/environ`. **Do not treat low CPU right after the reload as confirmation** — a cold server sits at 2.82 Gi and is quiet at 3 % under the old 3GiB limit too, so that measurement distinguishes nothing. The real check is (c): after a day of use, RSS should be allowed past 3 Gi *without* idle CPU climbing. That is also the falsification test for the whole diagnosis, which was inferred from RSS/fault/IO shape rather than from a `gctrace` (not enablable on a running process). If a warm server is over 3 Gi, under 6 GiB, and still burning ~145 %, the GC-over-limit explanation is wrong and the real cause is still open.
+6. **Where the heap goes — and why it grows 2.82 → 3.94 Gi over a day — is unmeasured** (2026-08-04). Raising the limit stops the CPU burn but does not make the heap smaller. Two separate questions: whether ~2.8 Gi is a reasonable cold cost for this monorepo's type information, and whether the +1.1 Gi drift across 21 h of editing is legitimate working set or a leak. The second matters more, because a leak would eventually cross any limit and reinstate the burn. The extension exposes `js/ts.server.pprofDir` plus `dev.saveHeapProfile` / `dev.saveAllocProfile` commands, so a real heap profile is available — it needs a Go toolchain for `go tool pprof`, which is not installed here. Until someone looks, "3.9 Gi is just what this project costs" is an assumption, not a finding.
+7. **Several keys in the tsgo tuning block are unverified beyond `goMemLimit`** (2026-08-04). `typescript.validate.enabled: false` is confirmed *delivered* to the server (it appears as `validate:map[enable:false enabled:false]` in tsgo's own config dump), yet `Running scheduled diagnostics refresh` and `textDocument/diagnostic` were still being handled minutes later; likewise `suggest.autoImports: false` is delivered while `Built autoimport registry` still appears. Delivered is not the same as honoured, and the diagnostics path may be driven by the client's pull-diagnostics registration rather than by that key. Closes by checking, per key, whether tsgo acts on it — the reliable method is the one used originally: dump the `config:"…"` struct tags from the `tsgo` binary and match them against observed behaviour, not against the settings schema.
+8. **Reconnect cost is unmeasured, and it is the real argument against a short TTL** (2026-07-29). A freshly spawned session reached 1411 Mi within 6 minutes of being created against three open tabs (one of them a Grafana explore view) — the collectors appear to absorb the current pages' history on attach, not just events arriving afterwards. Against the old resident numbers (3.3 Gi over 37 h) that is a far steeper curve, so shortening the TTL trades accumulation for repeated re-absorption. Nothing here is wrong — the peak is reclaimed rather than kept — but if the TTL is ever tuned, measure how much a reconnect costs before assuming shorter is better.
