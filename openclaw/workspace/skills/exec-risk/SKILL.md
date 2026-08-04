@@ -3,6 +3,8 @@ name: exec-risk
 description: >
   Host shell MUST go through claw-run (gate then exec). Three layers:
   rules → Grok re-check → human only if still danger. Prefer claw-run over bare exec.
+  Also: exec hygiene — short shell, scripts on disk via claw-script-run (no fragile
+  python -c / node -e), split chains, gateway self-update only via detached unit.
 ---
 
 # Exec risk (layered) — option A protocol
@@ -70,7 +72,7 @@ before ANY host shell (exec / bash -c / pipelines):
 
 Exceptions (no gate):
 
-- Calling `claw-exec-gate.sh` / `claw-exec-classify.sh` / `claw-run.sh` themselves
+- Calling `claw-exec-gate.sh` / `claw-exec-classify.sh` / `claw-run.sh` / `claw-script-run.sh` themselves
 - Pure in-process file tools that are not shell (if the platform provides them)
 
 ## Pipeline (inside gate)
@@ -111,6 +113,54 @@ Flags (gate / run):
 | danger | destructive / secret / pipe-to-shell → human |
 
 Keep rule patterns simple; extend `claw-exec-classify.sh` when real misses appear.
+
+## Exec hygiene (anti-`Exec failed` spam)
+
+Complement to the risk gate. Most Feishu `🛠️ Exec failed` noise is **not**
+"Gateway unstable" — it is fragile agent shell (2026-08-04 sample: majority
+inline SyntaxError / giant chains / gateway self-update guard).
+
+### Rules
+
+1. **Short shell for probes** — version/path/process checks stay short. Do not
+   pack 5+ unrelated probes into one `a; b; python…` string.
+2. **Logic on disk, then run** — if body is multi-line, does JSON/HTML parsing,
+   or would need careful quoting: **no** `python -c` / `node -e` / fragile
+   heredoc escapes.
+   - Prefer platform `write` / `apply_patch` → interpreter on that path.
+   - Or: `openclaw/scripts/claw-script-run.sh --lang python3 <<'PY' … PY`
+     (writes under `~/.openclaw/tmp/scripts/`, runs, deletes unless `--keep`).
+   - Never drop throwaway scripts into tracked repo paths.
+3. **Real newlines only** — never emit literal backslash-n inside generated
+   source. If a tool result shows `as f:\n    d=json`, rewrite to a file first.
+4. **Language by stack** — not "always Node". Same hygiene for py/js/sh.
+5. **Gateway self-update / stop-self** — `openclaw update` from inside the
+   gateway process tree **will** fail by design and paint a red Exec card.
+   Use a **detached user unit**:
+
+```bash
+# Example pattern (Feishu agent must not call openclaw update as a child of gateway)
+systemd-run --user --collect --unit=openclaw-self-update \
+  --setenv=PATH="$PATH" --setenv=HOME="$HOME" \
+  bash -lc 'openclaw update --yes 2>&1 | tee "$HOME/.openclaw/downloads/openclaw-update.log"'
+```
+
+   Then verify: `openclaw --version`, `openclaw gateway status`,
+   `openclaw update status`.
+
+6. **Decode failures** — any `🛠️ Exec failed` in the same turn: 失败/原因/处置/影响
+   (see `error-closed-loop`). Prefer re-run as **split short execs** after a
+   multi-command batch dies.
+
+### Quick allow/deny
+
+| Pattern | Verdict |
+| --- | --- |
+| `openclaw --version` / `git status` | short shell OK |
+| 30-line JSON analysis | `claw-script-run` or write+exec file |
+| `python -c '…\n…'` | **deny** — rewrite to file |
+| `openclaw update` under gateway | **deny** — detached unit |
+| `cmd1; cmd2; cmd3` where only cmd3 is critical | split; isolate critical step |
 
 ## Not option B
 

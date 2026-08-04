@@ -240,6 +240,19 @@ Main 在 `sessions_spawn(runtime=acp)` / 等价 spawn 时，**必须**把下列�
 - Task shell: **`claw-run.sh`** / gate — not bare dangerous host exec. See `skills/exec-risk/SKILL.md`.
 - Parallel writes: **separate worktrees** (or separate repos); one writer per tree; after spawn, yield.
 
+### Exec hygiene (L1 · anti-`Exec failed` spam · always)
+
+Incident baseline (2026-08-04 统计): 过半 `Exec failed` 来自 **内联脚本语法/转义** 与 **巨型链式命令**，不是 Gateway 随机故障。
+
+1. **短 shell 优先** — 查版本/路径/进程用短命令；禁止默认把 5+ 步探测塞进一条 `cmd1; cmd2; python…`。
+2. **逻辑落盘再跑** — 超过 ~15 行或含多行字符串/JSON 解析时：**禁止** `python -c` / `node -e` / 易损 heredoc。
+   - 优先：`write`/`apply_patch` → 文件 → 再 `exec` 解释器；或 `openclaw/scripts/claw-script-run.sh --lang python3 <<'PY' … PY`。
+   - 落盘目录：`~/.openclaw/tmp/scripts/`（或已 gitignore 的 `workspace/tmp/`）；**禁止**把临时脚本写进 repo 跟踪路径。
+3. **禁止字面量 `\n` 当换行** — 生成脚本时必须是真换行；若看到 `as f:\n    d=json` 类内容，先落盘修复再跑，不得连红硬撞。
+4. **语言按栈选** — 不默认「全改 Node」；Python/Node/shell 按任务与现成库选择，卫生规则相同。
+5. **自升级 / 停 Gateway** — 不得在 Gateway 进程树内直接 `openclaw update`（会保护性失败并刷红卡）。用 **独立 systemd user unit**（`systemd-run --user … openclaw update`）或先停服务再升；细节见 `skills/exec-risk/SKILL.md`。
+6. **失败展示** — 出现 `🛠️ Exec failed` 须同轮按错误闭环解码（原因/处置/影响），不得只留箭头列表。
+
 ## Git
 
 - **wezdeck 默认：** 在 `master` 上按变更边界合理逻辑 commit → `push origin master`（L0-13/20）。
@@ -304,7 +317,7 @@ Material failure never re-run green → 状态不得为 **成功**.
 | Write task / worktree / modes / handoff | `skills/dev-task/SKILL.md` |
 | Feishu ledger | `skills/task-ledger/SKILL.md` |
 | Error closed-loop detail | `skills/error-closed-loop/SKILL.md`；**覆盖边界** `openclaw/docs/error-closed-loop-scope.md` |
-| Host shell risk | `skills/exec-risk/SKILL.md` |
+| Host shell risk / exec hygiene | `skills/exec-risk/SKILL.md` · `openclaw/scripts/claw-script-run.sh` |
 | Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
 | Terminology / 文档分层 | `openclaw/docs/terminology.md` |
 | Adversarial review | **单源** `scripts/dev/adversarial-review/`（SKILL+runner）· 用户级链 `~/.agents/skills/adversarial-review` · 仓内链 `skills/` / `workspace/skills/` · `link-platform-skills.sh` · **profiles** `validation.md`；TOOL≠TARGET（`--repo`）；人只下意图；L0-21 披露 |

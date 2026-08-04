@@ -27,6 +27,10 @@ Always-on doctrine is short in `AGENTS.md` L0. This skill expands procedure.
 | --- | --- |
 | ETXTBSY | `bash path/to/script` or wait + retry |
 | `🛠️ Exec failed` / SIGTERM batch | Split short execs; re-run missing checks only |
+| Inline `SyntaxError` / literal `\\n` in python/node | Rewrite body to file (`write` or `claw-script-run.sh`); do not re-fire the same `-c`/`-e` string |
+| Giant `a; b; c` chain, later step failed | Re-run **only** the missing step(s); keep probes short |
+| `openclaw update` + gateway process tree | Detached `systemd-run --user` unit (see `exec-risk`); never loop the same in-tree update |
+| `command not found` (e.g. `rg`) | Use absolute path / `grep` / install only if intended; do not spam retries |
 | 429 / flaky network | Backoff once |
 | Wrong path | realpath / create only if clearly intended |
 | Your leftover lock/process | Stop it, retry |
@@ -38,6 +42,10 @@ Always-on doctrine is short in `AGENTS.md` L0. This skill expands procedure.
 Feishu/runtime `🛠️ Exec failed: run A → run B → …` = **agent exec batch failed**, not noise.
 Explain in plain language the same turn; do not leave the arrow-list undecoded.
 Prefer short verification batches after writes.
+
+**Prevention (preferred over recovery):** AGENTS **Exec hygiene** + `skills/exec-risk` —
+short shell, scripts on disk, no gateway-tree self-update. Goal is fewer red cards,
+not prettier post-mortems only.
 
 ## Coverage vs OpenClaw platform (important)
 
