@@ -248,31 +248,59 @@ perform_refresh_async() {
   ) >/dev/null 2>&1 &
 }
 
+# Callers are tmux hooks, so a value can arrive empty whenever the format
+# variable behind it is unset for that hook scope (e.g. `hook_window` on the
+# session-scoped `session-window-changed`). `--window #{q:hook_window} --force`
+# then reaches us as `--window --force`; consuming the next token blindly
+# would swallow `--force` and turn the whole invocation into a no-op. Treat a
+# flag-shaped token as "no value given" instead.
+opt_value=""
+opt_shift=1
+read_option_value() {
+  opt_value=""
+  opt_shift=1
+
+  case "${1:-}" in
+    '' | -*)
+      return 0
+      ;;
+  esac
+
+  opt_value="$1"
+  opt_shift=2
+}
+
 while (( $# > 0 )); do
   case "$1" in
     --client)
-      client_name="${2:-}"
-      shift 2
+      read_option_value "${2:-}"
+      client_name="$opt_value"
+      shift "$opt_shift"
       ;;
     --session)
-      session_name="${2:-}"
-      shift 2
+      read_option_value "${2:-}"
+      session_name="$opt_value"
+      shift "$opt_shift"
       ;;
     --window)
-      window_id="${2:-}"
-      shift 2
+      read_option_value "${2:-}"
+      window_id="$opt_value"
+      shift "$opt_shift"
       ;;
     --pane)
-      pane_id="${2:-}"
-      shift 2
+      read_option_value "${2:-}"
+      pane_id="$opt_value"
+      shift "$opt_shift"
       ;;
     --cwd)
-      cwd="${2:-}"
-      shift 2
+      read_option_value "${2:-}"
+      cwd="$opt_value"
+      shift "$opt_shift"
       ;;
     --print-line)
-      print_line="${2:-}"
-      shift 2
+      read_option_value "${2:-}"
+      print_line="$opt_value"
+      shift "$opt_shift"
       ;;
     --force)
       force_refresh=1
