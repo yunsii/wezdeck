@@ -113,7 +113,14 @@ case "$sub" in
     done
     case "$target" in
       ''|"$session"|@1|%1|/dev/pts/9)
-        printf '%s\t@1\t%s\n' "$session" "$cwd"
+        # Expand whichever fields the caller asked for, in order, so the
+        # stub answers both the 3-field context probe and the 2-field
+        # live-context probe.
+        fmt="${1:-}"
+        fmt="${fmt//'#{session_name}'/$session}"
+        fmt="${fmt//'#{window_id}'/@1}"
+        fmt="${fmt//'#{pane_current_path}'/$cwd}"
+        printf '%s\n' "$fmt"
         ;;
       *)
         printf "can't find target: %s\n" "$target" >&2
@@ -220,7 +227,75 @@ else
   no "stale line survived the poll interval (line0=$(line0))"
 fi
 
-# 6. An unknown option is still a usage error.
+# 6. A request whose captured cwd is already out of date must render the
+#    session's live active pane, not the snapshot it was queued with. Several
+#    refreshes race on every jump; the one that wins the lock may have been
+#    queued just before the switch landed.
+other="$sandbox/other-repo"
+git init -q -b legacy/other-branch "$other"
+git -C "$other" config user.email test@example.com
+git -C "$other" config user.name Test
+printf 'two\n' > "$other/file.txt"
+git -C "$other" add file.txt
+git -C "$other" commit -q -m initial
+
+reset_state "$(date +%s)" "$sandbox/third-repo"
+run_refresh --session "$session" --window @1 --cwd "$other" --force --refresh-client >/dev/null 2>&1
+if [[ "$(line0)" == *feature/status-probe* && "$(line0)" != *legacy/other-branch* ]]; then
+  ok 'stale captured cwd loses to the live active pane'
+else
+  no "rendered the stale captured cwd (line0=$(line0))"
+fi
+
+# 7. A forced refresh waits for a busy lock instead of dropping itself.
+lock_dir="/tmp/.tmux-status-refresh.${session}.lock"
+rm -rf "$lock_dir"
+mkdir -p "$lock_dir"
+( sleep 0.4; rm -rf "$lock_dir" ) &
+unlocker=$!
+reset_state "$(date +%s)" "$sandbox/third-repo"
+start_ms=$(date +%s%3N)
+run_refresh --session "$session" --window @1 --cwd "$workdir" --force --refresh-client >/dev/null 2>&1
+elapsed_ms=$(( $(date +%s%3N) - start_ms ))
+wait "$unlocker" 2>/dev/null
+rm -rf "$lock_dir"
+if [[ "$(line0)" == *feature/status-probe* ]] && (( elapsed_ms >= 350 )); then
+  ok "forced refresh waited out a busy lock (${elapsed_ms}ms)"
+else
+  no "forced refresh dropped itself on a busy lock (${elapsed_ms}ms, line0=$(line0))"
+fi
+
+# 8. The draw path must never block on the lock — it renders cached lines.
+mkdir -p "$lock_dir"
+reset_state "$(( $(date +%s) - 120 ))" "$workdir"
+start_ms=$(date +%s%3N)
+run_refresh --session "$session" --window @1 --cwd "$workdir" --print-line 0 >/dev/null 2>&1
+elapsed_ms=$(( $(date +%s%3N) - start_ms ))
+rm -rf "$lock_dir"
+if (( elapsed_ms < 300 )); then
+  ok "draw path stays non-blocking under a held lock (${elapsed_ms}ms)"
+else
+  no "draw path blocked on the lock (${elapsed_ms}ms)"
+fi
+
+# 9. When the request we queued behind already rendered this live context,
+#    skip the duplicate git probe instead of repainting it.
+mkdir -p "$lock_dir"
+( sleep 0.3; rm -rf "$lock_dir" ) &
+unlocker=$!
+reset_state "$(date +%s)" "$workdir"
+start_ms=$(date +%s%3N)
+run_refresh --session "$session" --window @1 --cwd "$workdir" --force --no-debounce --refresh-client >/dev/null 2>&1
+elapsed_ms=$(( $(date +%s%3N) - start_ms ))
+wait "$unlocker" 2>/dev/null
+rm -rf "$lock_dir"
+if [[ "$(line0)" == "stale-line" ]] && (( elapsed_ms < 400 )); then
+  ok "redundant recompute short-circuits after the lock wait (${elapsed_ms}ms)"
+else
+  no "recomputed a line the winner already rendered (${elapsed_ms}ms, line0=$(line0))"
+fi
+
+# 10. An unknown option is still a usage error.
 reset_state "$(date +%s)" "$workdir"
 if run_refresh --nope >/dev/null 2>&1; then
   no 'unknown option did not fail'
