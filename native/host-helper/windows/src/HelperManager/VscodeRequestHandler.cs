@@ -40,6 +40,10 @@ internal sealed class VscodeRequestHandler
         var processName = PathResolvers.GetProcessNameFromExecutable(codeExecutable, "Code");
         var launchKey = PathResolvers.BuildWindowCacheKey(distro, targetDir);
         var folderUri = PathResolvers.BuildVscodeFolderUri(distro, targetDir);
+        // How this folder appears in a VS Code window title, per its default
+        // `window.title` template: "<file> - <folder-leaf> [WSL: <distro>] - …".
+        var folderLeaf = targetDir.TrimEnd('/').Split('/').LastOrDefault() ?? string.Empty;
+        var titleFolderMarker = string.IsNullOrEmpty(folderLeaf) ? null : $"{folderLeaf} [WSL: {distro}]";
         string[] OpenArgs() => fileUri == null
             ? new[] { "--folder-uri", folderUri }
             : new[] { "--folder-uri", folderUri, "--file-uri", fileUri };
@@ -113,6 +117,62 @@ internal sealed class VscodeRequestHandler
 
         if (maxWindows.HasValue && existingVisibleWindowHandles.Count >= maxWindows.Value)
         {
+            // Before displacing anything, check whether this folder is already on
+            // screen in a window the registry never learned about — VS Code
+            // restores its own session on restart, and those windows match no
+            // registry key and no command line. Displacing an unrelated window
+            // for a folder VS Code is going to de-dupe anyway is the worst
+            // outcome: the folder lands in the window that already had it, the
+            // displaced window keeps its old content, and the registry ends up
+            // claiming a folder lives somewhere it never went.
+            var alreadyOpenWindow = WindowQuery.FindWindowShowingFolder(existingVisibleWindows, titleFolderMarker);
+            if (alreadyOpenWindow != null && WindowActivator.TryActivateWindow(alreadyOpenWindow))
+            {
+                if (fileUri != null)
+                {
+                    WindowActivator.LaunchDetachedProcess(
+                        codeExecutable,
+                        codeArguments.Concat(new[] { "--reuse-window", "--file-uri", fileUri }).ToArray());
+                }
+
+                var staleKey = windowReuseService.FindKeyByWindowHandle("vscode", alreadyOpenWindow.WindowHandle);
+                if (staleKey != null && !string.Equals(staleKey, launchKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    windowReuseService.ReplaceWindowKey("vscode", staleKey, launchKey, alreadyOpenWindow);
+                }
+                else
+                {
+                    windowReuseService.RememberWindow("vscode", launchKey, alreadyOpenWindow);
+                }
+
+                logger.Info("vscode", "focused the window already showing this folder instead of displacing one", new Dictionary<string, string?>
+                {
+                    ["trace_id"] = traceId,
+                    ["target_dir"] = targetDir,
+                    ["launch_key"] = launchKey,
+                    ["title_marker"] = titleFolderMarker,
+                    ["replaced_launch_key"] = staleKey,
+                    ["pid"] = alreadyOpenWindow.ProcessId.ToString(),
+                    ["hwnd"] = alreadyOpenWindow.WindowHandle.ToInt64().ToString(),
+                    ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
+                    ["max_windows"] = maxWindows.Value.ToString(),
+                    ["decision_path"] = "max_windows_focus_window_showing_folder",
+                });
+                return new RequestOutcome(
+                    Domain: "vscode",
+                    Action: "focus_or_open",
+                    Status: "reused",
+                    DecisionPath: "max_windows_focus_window_showing_folder",
+                    ResultType: "window_ref",
+                    Result: new HelperWindowRefResult
+                    {
+                        Pid = alreadyOpenWindow.ProcessId,
+                        Hwnd = alreadyOpenWindow.WindowHandle.ToInt64(),
+                    },
+                    ProcessId: alreadyOpenWindow.ProcessId,
+                    WindowHandle: alreadyOpenWindow.WindowHandle.ToInt64());
+            }
+
             // Least recently activated across every visible window, by Z order.
             // Scoping this to registry-tracked windows instead made the pick
             // collapse onto whichever window the helper happened to record first

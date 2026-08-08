@@ -57,6 +57,9 @@ internal static class NativeMethods
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern int GetWindowTextLength(IntPtr hWnd);
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetWindowTextW")]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
+
     // Enough of the alt-tab window heuristic to count real VS Code editor
     // windows: Electron runs every window under one Code.exe process, so
     // Process.MainWindowHandle only ever surfaces one of them. Enumerating

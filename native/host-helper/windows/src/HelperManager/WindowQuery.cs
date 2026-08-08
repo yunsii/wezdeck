@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 namespace WezTerm.WindowsHostHelper;
 
@@ -80,6 +81,45 @@ internal static class WindowQuery
         }
 
         return windowHandles;
+    }
+
+    public static string GetWindowTitle(IntPtr windowHandle)
+    {
+        var length = NativeMethods.GetWindowTextLength(windowHandle);
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+
+        var buffer = new StringBuilder(length + 1);
+        return NativeMethods.GetWindowText(windowHandle, buffer, buffer.Capacity) > 0
+            ? buffer.ToString()
+            : string.Empty;
+    }
+
+    // VS Code de-dupes by folder: asking it to open a folder that some window
+    // already holds focuses that window and leaves the one we aimed at alone.
+    // The registry cannot see those windows (it only knows what this helper
+    // opened or focused, and VS Code restores its own session on restart), so
+    // the window title is the only available evidence that a folder is already
+    // on screen. `marker` is "<folder-leaf> [WSL: <distro>]", specific enough
+    // that a bare folder-name collision is not enough to match.
+    public static WindowMatch? FindWindowShowingFolder(IReadOnlyList<WindowMatch> windows, string? marker)
+    {
+        if (string.IsNullOrEmpty(marker))
+        {
+            return null;
+        }
+
+        foreach (var window in windows)
+        {
+            if (GetWindowTitle(window.WindowHandle).Contains(marker, StringComparison.OrdinalIgnoreCase))
+            {
+                return window;
+            }
+        }
+
+        return null;
     }
 
     // EnumWindows walks top-level windows front-to-back in Z order, so the last
