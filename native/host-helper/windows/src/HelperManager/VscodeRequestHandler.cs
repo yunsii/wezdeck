@@ -49,7 +49,11 @@ internal sealed class VscodeRequestHandler
             ProcessName: processName,
             CommandLineMatcher: commandLine => commandLine.Contains(folderUri, StringComparison.OrdinalIgnoreCase),
             ReuseMode: ReuseMode.Strict);
-        var existingVisibleWindowHandles = WindowQuery.CaptureVisibleProcessWindowHandles(processName);
+        // One snapshot drives both the cap count and the replacement pick, so the
+        // window that gets reused is always drawn from the same population the
+        // cap counted.
+        var existingVisibleWindows = WindowQuery.EnumerateVisibleTopLevelWindows(processName);
+        var existingVisibleWindowHandles = existingVisibleWindows.Select(window => window.WindowHandle).ToHashSet();
 
         logger.Info("vscode", "resolved vscode target", new Dictionary<string, string?>
         {
@@ -109,45 +113,51 @@ internal sealed class VscodeRequestHandler
 
         if (maxWindows.HasValue && existingVisibleWindowHandles.Count >= maxWindows.Value)
         {
-            var reuseCandidate = windowReuseService.FindLeastRecentlyUsedWindow("vscode", processName);
-            var replacementWindow = reuseCandidate?.Window ?? WindowQuery.FindFirstVisibleProcessWindow(processName);
+            // Least recently activated across every visible window, by Z order.
+            // Scoping this to registry-tracked windows instead made the pick
+            // collapse onto whichever window the helper happened to record first
+            // and never move off it.
+            var lruWindow = WindowQuery.PickLeastRecentlyActivatedWindow(existingVisibleWindows);
+            var replacementWindow = lruWindow ?? WindowQuery.FindFirstVisibleProcessWindow(processName);
+            var replacementPath = lruWindow != null
+                ? "max_windows_reuse_zorder_lru_window"
+                : "max_windows_reuse_visible_window";
             if (replacementWindow != null && WindowActivator.TryActivateWindow(replacementWindow))
             {
                 WindowActivator.LaunchDetachedProcess(
                     codeExecutable,
                     codeArguments.Concat(new[] { "--reuse-window" }).Concat(OpenArgs()).ToArray());
 
-                if (reuseCandidate != null)
+                // The window may still be registered under the folder it used to
+                // hold; move that key rather than leaving it pointing at content
+                // the window no longer shows.
+                var replacedLaunchKey = windowReuseService.FindKeyByWindowHandle("vscode", replacementWindow.WindowHandle);
+                if (replacedLaunchKey != null && !string.Equals(replacedLaunchKey, launchKey, StringComparison.OrdinalIgnoreCase))
                 {
-                    windowReuseService.ReplaceWindowKey("vscode", reuseCandidate.LaunchKey, launchKey, replacementWindow);
+                    windowReuseService.ReplaceWindowKey("vscode", replacedLaunchKey, launchKey, replacementWindow);
                 }
                 else
                 {
                     windowReuseService.RememberWindow("vscode", launchKey, replacementWindow);
                 }
 
-                logger.Info("vscode", "reused least recently used vscode window because max window count was reached", new Dictionary<string, string?>
+                logger.Info("vscode", "reused least recently activated vscode window because max window count was reached", new Dictionary<string, string?>
                 {
                     ["trace_id"] = traceId,
                     ["target_dir"] = targetDir,
                     ["launch_key"] = launchKey,
-                    ["replaced_launch_key"] = reuseCandidate?.LaunchKey,
-                    ["lru_last_used_at_utc"] = reuseCandidate?.LastUsedAtUtc.ToString("O"),
+                    ["replaced_launch_key"] = replacedLaunchKey,
                     ["pid"] = replacementWindow.ProcessId.ToString(),
                     ["hwnd"] = replacementWindow.WindowHandle.ToInt64().ToString(),
                     ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
                     ["max_windows"] = maxWindows.Value.ToString(),
-                    ["decision_path"] = reuseCandidate != null
-                        ? "max_windows_reuse_lru_window"
-                        : "max_windows_reuse_visible_window",
+                    ["decision_path"] = replacementPath,
                 });
                 return new RequestOutcome(
                     Domain: "vscode",
                     Action: "focus_or_open",
                     Status: "reused",
-                    DecisionPath: reuseCandidate != null
-                        ? "max_windows_reuse_lru_window"
-                        : "max_windows_reuse_visible_window",
+                    DecisionPath: replacementPath,
                     ResultType: "window_ref",
                     Result: new HelperWindowRefResult
                     {

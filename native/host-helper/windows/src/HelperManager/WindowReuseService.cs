@@ -60,9 +60,9 @@ internal sealed class WindowReuseService
         instanceRegistry.RememberWindow(instanceType, key, window);
     }
 
-    public WindowReuseCandidate? FindLeastRecentlyUsedWindow(string instanceType, string expectedProcessName)
+    public string? FindKeyByWindowHandle(string instanceType, IntPtr windowHandle)
     {
-        return instanceRegistry.FindLeastRecentlyUsedWindow(instanceType, expectedProcessName);
+        return instanceRegistry.FindKeyByWindowHandle(instanceType, windowHandle);
     }
 
     public void ReplaceWindowKey(string instanceType, string oldKey, string newKey, WindowMatch window)

@@ -309,6 +309,7 @@ flowchart LR
 - Response types stay explicit: current-window reuse returns `result_type=window_ref`, clipboard reads return `clipboard_text` or `clipboard_image`, IME queries return `ime_state` with flat `mode` / `lang` / `reason` fields.
 - Reuse logic depends on persisted cache, process command-line matching, visible window scanning, and foreground binding compensation.
 - The VS Code max-window cap (`WEZTERM_VSCODE_MAX_WINDOWS`) counts real top-level editor windows via `EnumWindows` (visible, unowned, non-tool-window, titled), never `Process.MainWindowHandle`: Electron runs every VS Code window under one `Code.exe` process, so `MainWindowHandle` only ever surfaces one of them and would make the cap count ~1 regardless of how many windows are open.
+- When that cap is hit, the window to reuse is picked by **Z order over the same `EnumWindows` snapshot the cap counted** — last entry wins, i.e. least recently activated. It must not be scoped to the helper's window-cache registry: the registry only holds windows the helper itself launched or focused, and VS Code restores its own session on restart (invalidating every cached `hwnd`), so a registry-scoped pick routinely sees 1-of-N entries and locks onto a single window forever. Z order is the only least-recently-used signal that covers hand-opened and session-restored windows too.
 - Clipboard reads and writes must stay in an STA-aware path so Windows data formats remain stable.
 
 ## Posix Host

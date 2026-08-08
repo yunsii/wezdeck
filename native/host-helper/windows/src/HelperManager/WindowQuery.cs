@@ -82,6 +82,25 @@ internal static class WindowQuery
         return windowHandles;
     }
 
+    // EnumWindows walks top-level windows front-to-back in Z order, so the last
+    // still-live entry is the editor window that has gone longest without being
+    // activated. This is the only "least recently used" signal that covers every
+    // visible window: the helper registry only knows windows it opened or
+    // focused itself, and VS Code restores its own session on restart, so the
+    // registry is routinely 1-of-N.
+    public static WindowMatch? PickLeastRecentlyActivatedWindow(IReadOnlyList<WindowMatch> windowsInZOrder)
+    {
+        for (var index = windowsInZOrder.Count - 1; index >= 0; index--)
+        {
+            if (NativeMethods.IsWindow(windowsInZOrder[index].WindowHandle))
+            {
+                return windowsInZOrder[index];
+            }
+        }
+
+        return null;
+    }
+
     public static WindowMatch? FindFirstVisibleProcessWindow(string expectedProcessName)
     {
         foreach (var window in EnumerateVisibleTopLevelWindows(expectedProcessName))

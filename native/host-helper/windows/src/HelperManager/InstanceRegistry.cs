@@ -47,9 +47,16 @@ internal sealed class InstanceRegistry
         return new WindowMatch(entry.ProcessId, entry.WindowHandle);
     }
 
-    public WindowReuseCandidate? FindLeastRecentlyUsedWindow(string instanceType, string expectedProcessName)
+    // Which folder, if any, this window is currently registered under. Used when
+    // a window is reused for a different folder so the stale key can be moved
+    // instead of left pointing at content the window no longer shows.
+    public string? FindKeyByWindowHandle(string instanceType, IntPtr windowHandle)
     {
-        List<KeyValuePair<string, WindowCacheEntry>> snapshot;
+        if (windowHandle == IntPtr.Zero)
+        {
+            return null;
+        }
+
         lock (stateLock)
         {
             if (!entries.TryGetValue(instanceType, out var typeEntries))
@@ -57,31 +64,16 @@ internal sealed class InstanceRegistry
                 return null;
             }
 
-            snapshot = typeEntries.ToList();
-        }
-
-        WindowReuseCandidate? selected = null;
-        foreach (var item in snapshot)
-        {
-            var entry = item.Value;
-            using var process = GetLiveProcess(entry.ProcessId, expectedProcessName, entry.ProcessStartTimeUtc);
-            if (process == null || entry.WindowHandle == IntPtr.Zero || !NativeMethods.IsWindow(entry.WindowHandle))
+            foreach (var item in typeEntries)
             {
-                ForgetWindow(instanceType, item.Key);
-                continue;
+                if (item.Value.WindowHandle == windowHandle)
+                {
+                    return item.Key;
+                }
             }
 
-            var lastUsedAtUtc = entry.LastUsedAtUtc ?? entry.ProcessStartTimeUtc ?? DateTime.MinValue;
-            if (selected == null || lastUsedAtUtc < selected.LastUsedAtUtc)
-            {
-                selected = new WindowReuseCandidate(
-                    item.Key,
-                    new WindowMatch(entry.ProcessId, entry.WindowHandle),
-                    lastUsedAtUtc);
-            }
+            return null;
         }
-
-        return selected;
     }
 
     public void RememberWindow(string instanceType, string key, WindowMatch window)
