@@ -24,6 +24,14 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   `WEZTERM_APPEARANCE_PRESET` selector, `render-tmux-appearance.sh`, or the
   tab-bar / pane / status background colors that make the frosted look cohere:
   Read [`docs/appearance-presets.md`](docs/appearance-presets.md).
+- Choosing or revisiting the inner multiplexer (tmux vs herdr), or planning
+  feature work that a tmux upgrade could absorb — the tmux 3.8 borrow list
+  (OSC 133 pane events, floating / modal panes, `set-hook -B` monitors, theme
+  reporting, `#{A/count:frames}`), the measured herdr 0.8.0 numbers
+  (per-session server memory, session-level focus, sidebar limits, no
+  `#(shell)` equivalent, no ad-hoc popup CLI), and why the 2026-08-18
+  evaluation ended with tmux staying:
+  Read [`docs/multiplexer-comparison.md`](docs/multiplexer-comparison.md).
 - Agent-attention pipeline: Claude hook install / upgrade, attention.json
   schema and transitions, tab badges + right-status counters, focus-based
   auto-ack, the `Alt+,` / `Alt+.` / `Alt+/` keyboard entry points, or
