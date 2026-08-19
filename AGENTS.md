@@ -19,6 +19,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/keybindings.md`](docs/keybindings.md).
 - tmux UI, tab titles, status rendering, copy-mode, or visible terminal behavior:
   Read [`docs/tmux-ui.md`](docs/tmux-ui.md).
+- Terminal Vim inside tmux: scroll that feels like page-skips, windows full of
+  `@` rows, `'termsync'` / DEC 2026 under tmux DA2, or `Shift+drag` jumping
+  into copy-mode while editing:
+  Read [`docs/tmux-ui.md#vim-in-tmux`](docs/tmux-ui.md#vim-in-tmux)
+  (install / vimrc: [`docs/setup.md#vim-92-optional`](docs/setup.md#vim-92-optional)).
 - Window appearance presets (`opaque` / `frosted`), transparency /
   frosted-glass, `win32_system_backdrop`, `window_background_opacity`, the
   `WEZTERM_APPEARANCE_PRESET` selector, `render-tmux-appearance.sh`, or the

@@ -234,6 +234,15 @@ Verified: no IME flicker, no idle freeze, mouse wheel still works.
   before launching tmux.
 - `docs/setup.md` — prereq line documents the current tmux requirement.
 
+### Adjacent: terminal Vim
+
+This doc is about **agent-CLI / IME** flicker. Terminal Vim has a related but
+separate Sync story: Vim 9.2 `'termsync'` exists, yet inside tmux it often
+never auto-enables because tmux’s DA2 id is `84`. Long-line `@` placeholders
+and `Shift+drag` ownership are display/mouse-layer issues, not IME. Operator
+guide: [`tmux-ui.md#vim-in-tmux`](./tmux-ui.md#vim-in-tmux); optional 9.2
+install: [`setup.md#vim-92-optional`](./setup.md#vim-92-optional).
+
 ## Verification recipe
 
 Run this after touching anything in the chain (terminal upgrade,

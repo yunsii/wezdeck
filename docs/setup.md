@@ -7,6 +7,7 @@ Use this doc when you need prerequisites and local setup.
 - `hybrid-wsl` uses the Windows WezTerm nightly build plus a WSL domain configured in `wezterm-x/local/constants.lua`.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
 - `tmux 3.7+` must be available in the runtime environment that will host managed project tabs (DEC mode 2026 / sync needs 3.6+; copy-mode auto-refresh needs 3.7 `refresh-from-pane`). **If the OS/package-manager `tmux` already meets ≥ 3.7, use it — do not compile a user copy.** Only when the distro package is too old (e.g. Ubuntu 24.04 apt 3.4) install a user-prefix build to `~/.local/bin/tmux` and put that dir first on PATH. Cross-OS decision tree, package options, and fallback script: [`tmux-install.md`](./tmux-install.md). Why the floor: [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
+- **Vim 9.2+ (optional, recommended if you edit in terminal Vim).** `'termsync'` (DEC 2026 synchronized redraw) exists only on 9.2+. Ubuntu 24.04 apt stays on 9.1 — `apt upgrade` cannot get it. Prefer a user-prefix build to `~/.local/bin/vim` (same PATH pattern as the tmux fallback). Merge [`wezterm-x/local.example/vimrc.recommended`](../wezterm-x/local.example/vimrc.recommended) into `~/.vim/vimrc` for `lastline` / `smoothscroll` / tmux DECRPM inject. Scroll/`@`-line / `Shift+drag` behavior: [`tmux-ui.md#vim-in-tmux`](./tmux-ui.md#vim-in-tmux). Details: [Vim 9.2 (optional)](#vim-92-optional).
 - `lua5.4` (or `lua5.3` / `lua`) **recommended** in the WSL/Linux side. Used by `wezterm-runtime-sync`'s `lua-precheck` step (`skills/wezterm-runtime-sync/scripts/lua-precheck.lua`) to dofile the synced `wezterm-x/lua/constants.lua` under a mocked `wezterm` module and assert that managed-launcher resolution still works (`default_profile` resolves, `default_resume_profile ≠ default_profile`, and the resume command contains a recognized sentinel — `--continue`, `resume`, or `agent-launcher.sh`). Without it, sync skips the precheck with a warning instead of failing — same surface that historically let `<base>-resume` vs `<base>_resume` mis-naming and unreachable WSL-path env files slip through to runtime. Install with `sudo apt install lua5.4` on Ubuntu/Debian.
 - `jq` **recommended** in the WSL/Linux side. Used by the agent-attention state writer (`scripts/runtime/attention-state-lib.sh`), the focus emit path (`scripts/runtime/tmux-focus-emit.sh`), and the hotkey-usage telemetry (`scripts/runtime/hotkey-usage-bump.sh`); also opportunistically by `scripts/runtime/agent-attention/adapters/*.sh` to extract stable session ids and readable reasons from hook payloads. Without it, attention hooks still write entries but key them to `pane:<WEZTERM_PANE>` with canned per-status labels, and the other call sites take their respective degraded paths. Install with `sudo apt install jq` on Ubuntu/Debian.
 - WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY`. Drop it in `~/.config/shell-env.d/wakatime.env` (the canonical home for user-level secrets — see [Env Loading Model](#env-loading-model)) or, equivalently, in `wezterm-x/local/shared.env` if you prefer to keep it next to the rest of the repo-machine config. Both paths feed the unified loader; if both files set the key, `~/.config/shell-env.d/` wins.
@@ -228,6 +229,32 @@ If it prints `missing`, the rc did not source the hook. Without the hook, the 30
 
 The same gap exists for file edits driven by Claude Code (Edit / Write / Bash `git …`) — the shell prompt is not in the loop, so the prompt hook never fires. The agent-side counterpart lives in the Claude install template at [`agent-attention.md#install--update`](./agent-attention.md#install--update): a second hook entry under `PostToolUse` and `Stop` backgrounds the same `tmux-status-refresh.sh --force --refresh-client` after every tool call and at turn end, sharing the 2s `@tmux_status_force_debounce` window with this prompt hook.
 
+## Vim 9.2 (optional)
+
+Use this when terminal Vim scroll feels like tearing or page-skips inside tmux, or when `:set termsync?` reports `E518` / unknown option (9.1).
+
+1. **Confirm apt cannot help** (Ubuntu 24.04 / noble): `apt-cache policy vim` — candidate stays 9.1.x.
+2. **Build a user-prefix Vim 9.2+** (example tag; pick a current `v9.2.*`):
+
+   ```sh
+   PREFIX="$HOME/.local"
+   SRC="$(mktemp -d /tmp/vim-build-XXXXXX)"
+   git clone --depth 1 --branch v9.2.0976 https://github.com/vim/vim.git "$SRC/vim"
+   cd "$SRC/vim"
+   ./configure --prefix="$PREFIX" --with-features=huge --enable-multibyte \
+     --disable-gui --without-x --enable-terminal
+   make -j"$(nproc)" && make install
+   hash -r
+   command -v vim   # expect $HOME/.local/bin/vim
+   vim --version | head -3
+   ```
+
+   Keep `~/.local/bin` ahead of `/usr/bin` on `PATH` (already typical on this machine). System `/usr/bin/vim` / `vi` → `vim.basic` remain 9.1 — tools that spawn `vi` without PATH preference still get 9.1; set `EDITOR=$HOME/.local/bin/vim` for SOPS / `x-env secrets edit` if needed.
+3. **Merge** [`wezterm-x/local.example/vimrc.recommended`](../wezterm-x/local.example/vimrc.recommended) into `~/.vim/vimrc`.
+4. **Verify** inside tmux Vim: `:set termsync?` → `termsync`; long-line files should not fill the window with `@` after `display+=lastline`. Interaction matrix: [`tmux-ui.md#vim-in-tmux`](./tmux-ui.md#vim-in-tmux).
+
+This is **not** a hard repo prerequisite (many flows use VS Code via `EDITOR=code --wait`). It is the supported path when you want terminal Vim redraw/scroll to match this stack’s Sync-capable tmux.
+
 ## IME State Indicator
 
 In `hybrid-wsl` the WezTerm right status bar renders a compact IME state badge so keyboard-first interactions (chord prefixes, `y/n` confirmations, single-letter shortcuts) do not have to guess which input mode is active.
@@ -273,3 +300,5 @@ This section applies **only to maintainers** who cut releases or develop the nat
   Read [`daily-workflow.md`](./daily-workflow.md).
 - Runtime ownership and entry points:
   Read [`architecture.md`](./architecture.md).
+- Vim scroll / `@` lines / `Shift+drag` inside tmux:
+  Read [`tmux-ui.md#vim-in-tmux`](./tmux-ui.md#vim-in-tmux).

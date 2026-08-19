@@ -6,8 +6,8 @@ This workspace is designed keyboard-first: every feature is expected to have a k
 
 ## Selection And Clipboard
 
-- `Shift+LeftDrag`: start a tmux pane-local selection inside the pane under the mouse; press `Ctrl+c` to copy while keeping the selection visible, or `Enter` to copy and exit copy-mode
-- `LeftDrag`: plain drag does not start selection, even after wheel scrolling; use `Shift+LeftDrag` for tmux pane-local selection or `Super+LeftDrag` for terminal-wide selection
+- `Shift+LeftDrag`: in a normal pane, start a tmux pane-local selection under the mouse (`Ctrl+c` copies without leaving copy-mode; `Enter` copies and exits). On an alternate-screen app (vim, etc.), the same gesture is forwarded to the app so selection does not jump into tmux copy-mode
+- `LeftDrag`: plain drag does not start tmux selection, even after wheel scrolling; use `Shift+LeftDrag` for tmux pane-local selection (normal panes) / app selection (alternate screen), or `Super+LeftDrag` for terminal-wide selection
 - `Super+LeftDrag`: bypass tmux mouse reporting and use WezTerm's terminal-wide text selection when you intentionally want to select across pane boundaries
 - `Ctrl+c`: if the current WezTerm pane has a terminal selection, copy it to the system clipboard and clear the selection; otherwise send a normal terminal `Ctrl+c`. In tmux copy-mode, `Ctrl+c` copies the current selection without leaving copy-mode
 - `Ctrl+Shift+c`: if the current WezTerm pane has a terminal selection, copy it to the system clipboard and clear the selection; otherwise forward `Ctrl+Shift+c` to the pane

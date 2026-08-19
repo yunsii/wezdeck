@@ -1,0 +1,24 @@
+" Recommended ~/.vim/vimrc fragment for wezdeck / this tmux+wezterm stack.
+" Copy into ~/.vim/vimrc (or merge). Not loaded by WezTerm — user-editor config.
+"
+" Full context: docs/tmux-ui.md#vim-in-tmux
+" Vim 9.2+ install when apt is stuck on 9.1: docs/setup.md#vim-92-optional
+
+set mouse=a
+
+" Long lines (SOPS .enc, minified JSON, …): avoid "@"-filled windows and
+" logical-line scroll jumps when 'wrap' is on.
+set display+=lastline
+if exists('+smoothscroll')
+  set smoothscroll
+endif
+
+" Synchronized output (DEC 2026). Default off. Vim auto-probes DECRQM only for
+" some DA2 identities; tmux reports >84;… so inject a "supported" DECRPM once.
+" Requires tmux 3.6+ with terminal-features sync (this repo already sets that).
+if !has('gui_running')
+  augroup wezdeck_termsync
+    autocmd!
+    autocmd VimEnter * ++once call feedkeys("\<Esc>[?2026;2$y", 'L')
+  augroup END
+endif

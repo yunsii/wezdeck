@@ -29,7 +29,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Copy and paste are intentionally split by layer: tmux owns pane-local text selection and copy, while WezTerm owns the smart system clipboard paste path.
 - tmux explicitly uses `set-clipboard external`, so copying from tmux copy-mode writes to the system clipboard through OSC 52.
 - Outside tmux copy-mode, plain left clicks are consumed by tmux only to focus the pane under the mouse.
-- Outside tmux copy-mode, plain left drag does not start any selection path; use `Shift+drag` to start tmux pane-local selection from normal mode.
+- Outside tmux copy-mode, plain left drag does not start any selection path. `Shift+drag` starts tmux pane-local selection in normal (non-alternate) panes; when the pane is on the alternate screen (vim and similar), `Shift+drag` is forwarded to the application so selection stays in one layer instead of jumping into copy-mode.
 - Wheel scrolling may move tmux into its copy-mode-backed scrollback state, and tmux selects the pane under the mouse before entering that state.
 - Copy-mode entry and exit via directional inputs follow a single symmetric rule: the first press at a boundary only switches mode without scrolling. Upward keys (`PageUp`, `Shift+Up`, wheel-up) entering from the live prompt do not jump, and downward inputs (`PageDown`, `Shift+Down`, wheel-down) at the live bottom exit copy-mode on a single press rather than auto-exiting mid-scroll.
 - While a pane is in copy-mode, tmux 3.7+'s `refresh-from-pane` is run automatically every `@copy_mode_auto_refresh_interval_ms` milliseconds (default `1000`) so streaming agent output is periodically flushed into the backing grid without leaving copy-mode. The automatic loop refreshes while copy-mode is within `@copy_mode_auto_refresh_prefetch_screens` screens of the live bottom (default `3`), like a bottom-side prefetch window; farther back, it pauses so older viewport positions do not jump forward as new output pushes history past `history-limit`. It also pauses when `history_size` is within `@copy_mode_auto_refresh_history_guard_lines` lines of `history-limit` (default `200`). Because `refresh-from-pane` clears tmux's active selection, automatic refresh pauses while `selection_present=1`; manual `r` also skips refresh during an active selection. The loop also pauses while `@wezterm_popup_active=1` (boolean, set by `scripts/runtime/tmux-display-popup.sh` for the overlay lifetime): refreshing the underlying grid during a popup races tmux's client composite and garbles double-width CJK cells into the overlay. The flag is **server-global** — one reminder popup pauses auto-refresh on every pane for a few seconds (intentional, cheap). Concurrent popups are not refcounted; last closer clears. A hard-killed wrapper can leave the flag stuck (`tmux set -gu @wezterm_popup_active` clears it). Set `@copy_mode_auto_refresh` to `0` to disable the loop.
@@ -43,6 +43,41 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Pane and status backgrounds are driven by the active appearance preset (`WEZTERM_APPEARANCE_PRESET`), not hardcoded in `tmux.conf`: `render-tmux-appearance.sh` regenerates `wezterm-x/tmux/appearance.generated.conf` (sourced via `source-file -Fq`) during sync. The `opaque` preset uses cream/dim-cream backgrounds; the `frosted` preset sets `status-style` / `window-style` / `window-active-style` all to `bg=default` so cells inherit WezTerm's window transparency + acrylic (the focused pane is then told apart by border color, not body tint). Giving any of those an explicit `bg=<hex>` paints cells opaque and hides window transparency. Full model: [`appearance-presets.md`](./appearance-presets.md).
 - ANSI 256-color index 255 is remapped to `#dedcd0` via `colors.indexed` in `wezterm-x/lua/ui.lua` (sourced from `palette.indexed` in `constants.lua`). Claude Code's scrollback renderer paints user-message backgrounds with `\e[48;5;255m`, and the default xterm value (`#eeeeee`) is too close to the cream pane background to read clearly. The remap is applied to the wezterm color scheme rather than a Claude theme override because Claude Code's `userMessageBackground` token only takes effect in fullscreen rendering mode; in scrollback mode the only point of intervention is the terminal palette.
 - Managed agent panes show a single dim-cyan `Loading <agent> ...` line while the agent boots, printed by `scripts/runtime/agent-launcher.sh` right before it execs the CLI. The agent's first paint clears the screen, so the cue is only visible while it's actually useful — covering the multi-second `claude --continue` / `codex resume --last` session-load window where the pane would otherwise stay blank. The shell-chain forks before the launcher (~130ms, dominated by `zsh -ilc` to inherit the interactive PATH) are intentionally kept: the post-agent fallback shell (Ctrl+D / agent crash) execs the same login shell on the same tty, so it pays the equivalent zshrc cost regardless — splitting the env across `~/.zshrc` and `~/.config/shell-env.d/` to shave that 130ms would desync interactive-shell behavior for no perceptual win. Disable the cue with `WEZTERM_NO_LOADING_BANNER=1`.
+
+## Vim in tmux
+
+Terminal Vim inside this stack is a frequent source of “scroll jitter” reports. Most of them are **not** a tmux↔Vim incompatibility; they are Vim display/scroll semantics amplified by long lines and by which layer owns `Shift+drag`. Repo-side mouse policy lives in `tmux.conf`; editor options live in the user’s `~/.vim/vimrc` (template: [`wezterm-x/local.example/vimrc.recommended`](../wezterm-x/local.example/vimrc.recommended)). Install notes for Vim 9.2+: [`setup.md`](./setup.md#vim-92-optional).
+
+### Symptoms and causes
+
+| What you see | Cause | Fix layer |
+| --- | --- | --- |
+| Screen full of `@` rows; scroll feels like skipping a whole page | A wrapped line does not fit the window and `'display'` lacks `lastline`, so Vim fills with `@`. Without `'smoothscroll'`, scroll steps by **logical** lines — one SOPS `.enc` line can be 10k+ chars. | User vimrc: `set display+=lastline` and `set smoothscroll` (Vim 9+) |
+| Tear / flash *within* a redraw | Vim 9.1 and older have no `'termsync'`. Vim 9.2+ supports DEC 2026, but auto-probe only enables it for some DA2 ids (kitty / foot / iTerm2). **tmux answers DA2 `>84;…`**, so Vim never sends DECRQM and stays on `notermsync` unless helped. | Vim ≥ 9.2 + vimrc DECRPM inject (see template); tmux already advertises `sync` ([`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md)) |
+| Remaining “frame jump” after termsync | `'termsync'` batches *one* redraw; each scroll still replaces the screen. Cursor/status updates can sit outside BSU/ESU. | Expectation: less tearing, not frozen smooth scrolling. Prefer `Ctrl-D`/`Ctrl-U` over a fast wheel for fewer frames. |
+| `Shift+drag` in Vim jumps into a frozen grid | Previously root `S-MouseDrag1Pane` always ran `copy-mode -M`, stealing the gesture before Vim saw it. | **Repo:** when `alternate_on`, forward with `send-keys -M`; otherwise keep tmux pane-local selection ([keybindings](./keybindings.md)) |
+
+Changing Vim keymaps alone cannot fix `Shift+drag` ownership — tmux binds the gesture first.
+
+### Selection cheat sheet
+
+- **Inside Vim (alternate screen):** plain drag or `Shift+drag` → Vim (`mouse=a`); or `v` / `V`.
+- **Normal shell pane:** `Shift+drag` → tmux copy-mode; plain drag does not start tmux selection.
+- **Terminal-wide:** `Super+drag` (WezTerm).
+
+### Verify
+
+```vim
+:version          " prefer 9.2+ with termsync support
+:set termsync?    " expect:  termsync  (after the DECRPM inject)
+:set display?     " expect:  …lastline…
+:set smoothscroll?
+```
+
+```sh
+tmux list-keys -T root | grep S-MouseDrag1Pane
+# expect: if-shell … alternate_on … send-keys -M … copy-mode -M
+```
 
 ## Agent Attention
 
