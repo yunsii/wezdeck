@@ -121,40 +121,105 @@ local base_constants = {
     new_tab_hover_fg = '#2f302c',
     tab_edge = '#ddd8cd',
     tab_accent = '#b07d48',
-    tab_attention_waiting_bg = '#c7925b',
-    tab_attention_waiting_fg = '#1f1a11',
-    -- Host-disk badge at crit. Distinct from the amber attention colors so
-    -- "the disk is about to stop the machine" never reads as "an agent is
-    -- waiting on you"; disk_status.lua falls back to the amber pair when a
-    -- preset palette omits these.
+    -- ── Agent-attention status colors ──────────────────────────────
+    -- One ladder, three hues. The role fixes lightness and chroma; the
+    -- status only picks the hue, so no status can end up heavier or
+    -- flatter than its peers. Values are OKLCh (perceptual — equal L
+    -- really does look equally heavy, unlike HSL):
+    --
+    --   role   | L    | C     | used by
+    --   _bg    | 0.75 | 0.080 | counter block, tab-strip `█` badge
+    --   _glyph | 0.42 | 0.120 | the counter's leading mark only
+    --   _fg    | 0.25 | 0.030 | counter label text
+    --
+    --   status  | hue
+    --   waiting |  66°  warm amber
+    --   done    | 140°  green
+    --   running | 252°  blue
+    --
+    -- Amber cannot hold C 0.120 at L 0.42 in sRGB (the gamut edge there
+    -- is 0.094), so the waiting glyph sits at that edge. Taken from the
+    -- edge rather than by clamping RGB channels, which would have kept
+    -- the chroma number and swung the hue 11° toward red instead.
+    --
+    -- Before this ladder (2026-08-19) the nine values were picked one at
+    -- a time and drifted: the waiting block sat 0.10 darker than the
+    -- other two, and running's chroma was 0.043 — half of waiting's,
+    -- close enough to grey that the blue `█` tab badge was hard to tell
+    -- from an inactive tab. Equal weight matters most on that badge,
+    -- which shows one status at a time: a `done` must not be easier to
+    -- miss than a `waiting` just because green was mixed paler.
+    --
+    -- Retuning: move a hue to reskin a status, move a row of the ladder
+    -- to reweight every status at once. Do not hand-mix a single value —
+    -- that is what produced the drift above. Rationale + the glyph/label
+    -- split: docs/agent-attention.md.
+    tab_attention_waiting_bg = '#d1a477',
+    tab_attention_waiting_fg = '#2c1f12',
+    tab_attention_waiting_glyph = '#6f4100',
+    tab_attention_done_bg = '#93bb8b',
+    tab_attention_done_fg = '#1a2517',
+    tab_attention_done_glyph = '#225c13',
+    tab_attention_running_bg = '#89b2e0',
+    tab_attention_running_fg = '#172330',
+    tab_attention_running_glyph = '#094e8c',
+    -- Host-disk badge at crit. Deliberately outside the ladder above: it
+    -- is not an agent status, and "the disk is about to stop the machine"
+    -- must never read as "an agent is waiting on you". disk_status.lua
+    -- falls back to the amber pair when a preset palette omits these.
     disk_crit_bg = '#b4574b',
     disk_crit_fg = '#fbf1ef',
-    tab_attention_running_bg = '#a5bbd4',
-    tab_attention_running_fg = '#1b2534',
-    tab_attention_done_bg = '#a7c89b',
-    tab_attention_done_fg = '#1e2a1c',
     ime_native_bg = '#6b86b7',
     ime_native_fg = '#f8f5ee',
     ime_alpha_bg = '#dbc39e',
     ime_alpha_fg = '#614321',
     ime_en_fg = '#908b83',
     ime_unknown_fg = '#908b83',
+    -- ── Workspace identity badges ──────────────────────────────────
+    -- Same construction as the attention ladder above — role fixes L/C
+    -- in OKLCh, the workspace only picks a hue — but pitched a full step
+    -- quieter, because these answer "where am I" rather than "act now":
+    --
+    --   role | L    | C
+    --   bg   | 0.88 | 0.030   (attention blocks: L 0.75 / C 0.080)
+    --   fg   | 0.40 | 0.050   (attention labels: L 0.25 / C 0.030)
+    --
+    --   workspace | hue
+    --   default   |  85°  near-neutral, see below
+    --   managed   |  45°  warm terracotta
+    --   work      | 100°  golden olive
+    --   config    | 262°  blue
+    --
+    -- `default` is the deliberate exception: it drops to C 0.010 (fg
+    -- 0.018) so the unnamed workspace reads as grey. Colorless is the
+    -- honest signal for "no identity", and at C 0.030 its hue would land
+    -- within 5° of `work` — the two badges came out as the same beige.
+    --
+    -- The hues are spread on purpose. Before this ladder (2026-08-19)
+    -- `default`, `managed` and `work` all sat between 78° and 85° and
+    -- were told apart only by weight: `work` was 0.077 darker and 3.3x
+    -- more saturated than `default`. Equalising L without moving the
+    -- hues would have collapsed the three into one color.
+    --
+    -- Unknown workspaces fall back to `managed` (titles.lua
+    -- workspace_badge_style), so that slot is also "every other
+    -- workspace" — keep it distinguishable from the three named ones.
     workspace_badges = {
       default = {
-        bg = '#e5dfd3',
-        fg = '#5f5a52',
+        bg = '#dad7d0',
+        fg = '#4c473d',
       },
       managed = {
-        bg = '#ddd0bb',
-        fg = '#614321',
+        bg = '#e9d2c8',
+        fg = '#5f3f31',
       },
       work = {
-        bg = '#dbc39e',
-        fg = '#4f3516',
+        bg = '#dcd8c2',
+        fg = '#4e4828',
       },
       config = {
-        bg = '#d7dfed',
-        fg = '#294267',
+        bg = '#cdd8ec',
+        fg = '#394863',
       },
     },
   },
@@ -236,6 +301,9 @@ local base_constants = {
   session_bridge_watch = {
     status_file = defaults.default_session_bridge_watch_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 35000,
+    -- Same glyph the Alt+/ picker stamps on session-bridge watch rows.
+    -- `''` drops it and leaves the bare `SB·N`.
+    icon = '◆',
   },
   -- Host-disk badge (right-status, after SB). Producer is the
   -- wezterm-disk-guard systemd user timer; 13 min tolerates two missed
@@ -268,6 +336,21 @@ local base_constants = {
   attention = {
     state_file = defaults.default_attention_state_file(runtime_state_dir, join_path),
     live_panes_file = defaults.default_attention_live_panes_file(runtime_state_dir, join_path),
+    -- Right-status counter glyphs. Monochrome 1-cell text code points by
+    -- default so the segment sits with the typographic badges around it
+    -- (`CDP·…`, `D·151G`, `M·88%`) instead of reading as a sticker; the
+    -- rationale and the matching picker set live in
+    -- docs/agent-attention.md. Override per machine in
+    -- wezterm-x/local/constants.lua; `''` drops the glyph and leaves the
+    -- bare `N waiting` counter. The tab-strip badge is deliberately not
+    -- covered here — it is a color block with no glyph vocabulary.
+    -- Changing these does NOT move the Alt+/ and Alt+g pickers, which
+    -- carry their own copy of the set (native/picker/cmd_attention.go).
+    icons = {
+      waiting = '▲',
+      done = '✓',
+      running = '●',
+    },
   },
   tab_visibility = {
     -- Per-workspace stats files written by scripts/runtime/tab-stats-bump.sh.

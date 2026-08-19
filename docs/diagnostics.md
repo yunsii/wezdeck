@@ -690,7 +690,7 @@ recipe exactly then, and stays quiet otherwise.
 |---|---|
 | Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` |
 | Timer | `wezterm-disk-guard.timer` — user unit, 1 min after start then every 5 min |
-| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `SB·N` |
+| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SB·N` |
 | Escalation popup | `reminder.sh`, the same wrapper cron reminders use |
 
 ```bash

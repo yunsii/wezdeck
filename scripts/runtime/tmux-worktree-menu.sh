@@ -91,10 +91,10 @@ done < <(tmux_worktree_build_window_index "$session_name" "$repo_common_dir")
 # Live `.entries` only: an empty status cell means "nothing pending here
 # right now", exactly like the wezterm tab badge and right-status
 # counters, which also read `.entries` alone. Archived `recent[]`
-# tombstones were rendered here as dimmed `last ✅ 3m` until 2026-07-27
+# tombstones were rendered here as dimmed `last ✓ 3m` until 2026-07-27
 # and are deliberately gone: on-disk tombstones live for 7 days (Lua's
 # 30-minute TTL only governs `.entries`), so a worktree kept showing an
-# hours-old `last 🔄 4h` / `last ✅ 10h` while every wezterm surface
+# hours-old `last ● 4h` / `last ✓ 10h` while every wezterm surface
 # considered that session idle. A `last:running` tombstone is not even a
 # result — it means the record was evicted mid-run.
 #

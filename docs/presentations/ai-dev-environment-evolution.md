@@ -231,7 +231,7 @@ v5 的 4 条 agent CLI 启动路径（workspace 首开、`Alt+g` 即开窗、ref
 
 [`05518e4`](https://github.com/yunsii/wezterm-config/commit/05518e4) `feat(reminders): add tmux-popup cron pipeline` 加了一条很小的新管道：cron → `scripts/runtime/reminder.sh` → `scripts/runtime/tmux-popup-active.sh`，popup 落到最近活跃的 tmux client 上、阻塞到按键为止（**故意不带 timeout** —— reminder 自动消失就等于没看到）。
 
-**为什么不复用 attention pipeline？**两者解决的是相反的问题：attention 的 badge 是"glanceable but easy to miss"，专门给 agent turn 用；reminder 要的是"interrupt heads-down work"。把 cron-driven 提醒混进 `🚨 N waiting` 计数会稀释 attention 的语义；让 attention 学会"打断"又会让所有 agent waiting 都打断 —— 两者正交，分开做。详见 [`docs/reminders.md`](../reminders.md)。
+**为什么不复用 attention pipeline？**两者解决的是相反的问题：attention 的 badge 是"glanceable but easy to miss"，专门给 agent turn 用；reminder 要的是"interrupt heads-down work"。把 cron-driven 提醒混进 `▲ N waiting` 计数会稀释 attention 的语义；让 attention 学会"打断"又会让所有 agent waiting 都打断 —— 两者正交，分开做。详见 [`docs/reminders.md`](../reminders.md)。
 
 #### E5 · 持续可观测（贯穿 04-26 → 05-14）
 

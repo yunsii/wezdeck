@@ -67,6 +67,7 @@ local sb_watch = constants.session_bridge_watch or {}
 session_bridge_status.configure {
   state_file = sb_watch.status_file,
   heartbeat_timeout_ms = sb_watch.heartbeat_timeout_ms,
+  icon = sb_watch.icon,
 }
 
 local disk_guard = constants.disk_guard or {}

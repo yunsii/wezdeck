@@ -242,20 +242,20 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 
 	out := captureStdout(t, func() { ui.render() })
 
-	for _, want := range []string{"🔄 12s", "🚨 2m", "✅ 3m", "(new)"} {
+	for _, want := range []string{"● 12s", "▲ 2m", "✓ 3m", "(new)"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status cell %q missing: %q", want, out)
 		}
 	}
 	// Live cells are never dimmed — only `(new)` is.
-	if strings.Contains(out, "\x1b[2m✅ 3m") {
+	if strings.Contains(out, "\x1b[2m✓ 3m") {
 		t.Fatalf("live status cell should not be dimmed: %q", out)
 	}
 	if !strings.Contains(out, "\x1b[2m(new)") {
 		t.Fatalf("(new) hint is not dimmed: %q", out)
 	}
 	// Detail line carries the focused row's reason so the user knows why
-	// it is 🚨 before jumping.
+	// it is ▲ before jumping.
 	if !strings.Contains(out, "/repo-auth · dev/auth · needs your permission to use Bash") {
 		t.Fatalf("detail line missing reason: %q", out)
 	}
@@ -268,7 +268,7 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 
 func TestWorktreeArchivedStatusRendersNothing(t *testing.T) {
 	// Regression lock for 2026-07-27: menu.sh no longer joins recent[]
-	// tombstones, because a 7-day-lived `last 🔄 4h` contradicted every
+	// tombstones, because a 7-day-lived `last ● 4h` contradicted every
 	// wezterm surface (badge / counters read live .entries only). If some
 	// producer ever emits the old `last:<status>` form again, the cell
 	// stays empty rather than resurrecting stale state on the row.

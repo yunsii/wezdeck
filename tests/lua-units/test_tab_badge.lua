@@ -130,13 +130,18 @@ describe('tab_badge shows the most recent session of a repo family', function()
     assert_eq(badge.status, 'done', 'badge did not follow the newest entry')
   end)
 
-  it('carries no label — the tab strip keeps its original bare block', function()
+  it('carries status only — nothing that would occupy width in the tab', function()
     reset()
     local now = os.time() * 1000
     local badge = badge_for(state(
       entry('running', '@2', '%5', 'running', now, 'dev/auth')
     ))
-    assert_eq(badge.marker, '█', 'marker changed')
+    assert_eq(badge.status, 'running', 'status missing')
+    -- The tab renders status by recoloring its own title. Anything
+    -- returned here that the caller would print re-flows the tab strip
+    -- as turns start and end — the `marker = '█'` cell did exactly that
+    -- until 2026-08-19, and a label was reverted before it.
+    assert_falsy(badge.marker, 'badge grew a marker cell again; that jitters the tab strip')
     assert_falsy(badge.label, 'badge grew a label again; that was reverted on purpose')
   end)
 
@@ -252,6 +257,43 @@ describe('tab_badge on the overflow placeholder', function()
     assert_truthy(badge, 'projected session lost its badge on the overflow tab')
     assert_eq(badge.status, 'running', 'unexpected status on the overflow tab')
     pane_session_files.clear()
+  end)
+end)
+
+describe('badge_colors paints an unfocused tab its status block', function()
+  -- The focused tab keeps the active pair regardless of status
+  -- (titles.lua priority 1), so this map only ever reaches unfocused
+  -- tabs — and it is the same block pairing the right-status counters
+  -- use, which is why both surfaces read as one system.
+  local PALETTE = {
+    tab_bar_background = '#f1f0e9',
+    tab_accent = '#b07d48',
+    tab_attention_waiting_bg = '#d1a477',
+    tab_attention_waiting_fg = '#2c1f12',
+    tab_attention_done_bg = '#93bb8b',
+    tab_attention_done_fg = '#1a2517',
+    tab_attention_running_bg = '#89b2e0',
+    tab_attention_running_fg = '#172330',
+  }
+
+  it('returns the block pair for every status', function()
+    for status, want in pairs({
+      waiting = { '#d1a477', '#2c1f12' },
+      done = { '#93bb8b', '#1a2517' },
+      running = { '#89b2e0', '#172330' },
+    }) do
+      local bg, fg = attention.badge_colors(PALETTE, status)
+      assert_eq(bg, want[1], status .. ' bg')
+      assert_eq(fg, want[2], status .. ' fg')
+    end
+  end)
+
+  it('hands an unknown status something drawable rather than nil', function()
+    -- A nil here would reach wezterm.format as a Color and take the
+    -- whole tab bar down, so the fallback is load-bearing.
+    local bg, fg = attention.badge_colors(PALETTE, 'bogus')
+    assert_eq(bg, PALETTE.tab_bar_background, 'unknown status bg')
+    assert_eq(fg, PALETTE.tab_accent, 'unknown status fg')
   end)
 end)
 

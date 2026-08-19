@@ -44,6 +44,27 @@ return {
   -- },
   -- palette = {                            -- override individual theme colors
   --   -- tab_active_bg = 'rgba(210,197,174,0.7)',
+  --   -- Right-status counter + tab-badge colors. Shared with the disk /
+  --   -- memory warning badges and the SB waiting state — see
+  --   -- docs/agent-attention.md before retuning them.
+  --   -- tab_attention_waiting_bg = '#c7925b',
+  --   -- tab_attention_waiting_fg = '#1f1a11',
+  --   -- `_glyph` tints only the counter's leading mark (▲ / ✓ / ●) so it
+  --   -- separates from the label on the same block; omit it and the mark
+  --   -- takes `_fg` like the label.
+  --   -- tab_attention_waiting_glyph = '#6f4213',
+  --   -- tab_attention_done_glyph    = '#2f6236',
+  --   -- tab_attention_running_glyph = '#27527f',
+  -- },
+  -- Right-status glyphs for the agent-attention counters. `''` drops the
+  -- glyph and leaves a bare `2 waiting`. Does NOT move the Alt+/ and
+  -- Alt+g pickers, which carry their own copy of the set.
+  -- attention = {
+  --   icons = { waiting = '▲', done = '✓', running = '●' },
+  -- },
+  -- Glyph on the session-bridge watch badge (`◆ SB·N`). `''` drops it.
+  -- session_bridge_watch = {
+  --   icon = '◆',
   -- },
   -- Frequency-driven tab layout. By default no workspace opts in, so
   -- existing tab bars behave identically. Enabled workspaces get

@@ -48,9 +48,9 @@ Pressing this when a headless instance is running will kill that headless first,
 
 Right-status order (left → right):
 
-`IME` · **`CDP·…`** · **`SB·N`** (session-bridge watch poller) · attention counters
+`IME` · **`CDP·…`** · **`◆ SB·N`** (session-bridge watch poller) · attention counters
 
-The `SB·-` / `SB·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); see [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir.
+The `◆ SB·-` / `◆ SB·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); the `◆` matches the glyph the `Alt+/` picker puts on that poller's watch rows and is overridable per machine via `session_bridge_watch.icon` in `wezterm-x/local/constants.lua` (`''` leaves a bare `SB·N`). see [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir.
 
 ## Right-status `CDP` badge
 

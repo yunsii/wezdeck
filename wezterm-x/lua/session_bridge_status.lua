@@ -5,9 +5,16 @@
 -- chrome-debug), so WezTerm Lua never crosses \\wsl$ on the 250 ms tick.
 --
 -- Fixed-width badge so the bar does not jitter:
---   SB·-    poller not running / heartbeat stale
---   SB·0…9  poller running, job count (capped display)
---   SB·9+   10+ jobs
+--   ◆ SB·-    poller not running / heartbeat stale
+--   ◆ SB·0…9  poller running, job count (capped display)
+--   ◆ SB·9+   10+ jobs
+--
+-- The `◆` is the same glyph the Alt+/ picker stamps on session-bridge
+-- watch rows (`native/picker/cmd_attention.go::coloredBadge`, status
+-- `sb`) and the same one its `[◆ SB watch]` filter chip carries — the
+-- badge and the rows it summarises should be recognisable as one thing.
+-- The `SB` letters stay: unlike the attention counters, this segment has
+-- no word label next to it, so the glyph alone would not say what it is.
 --
 -- Placement: right-status, between CDP and attention counters.
 
@@ -16,6 +23,9 @@ local wezterm = require 'wezterm'
 local M = {}
 
 local state_path = nil
+-- Overridden from constants.session_bridge_watch.icon (runtime-entry.lua).
+-- `''` is a valid value and drops the glyph, leaving a bare `SB·N`.
+local icon = '◆'
 -- Stale after ~3 default 10s ticks + slack.
 local heartbeat_timeout_ms = 35000
 local last_known = nil
@@ -66,6 +76,19 @@ function M.configure(opts)
   if opts and type(opts.heartbeat_timeout_ms) == 'number' and opts.heartbeat_timeout_ms > 0 then
     heartbeat_timeout_ms = opts.heartbeat_timeout_ms
   end
+  -- Only a string is honoured, so a malformed local override degrades to
+  -- the default glyph instead of rendering `nil` into the status bar.
+  if opts and type(opts.icon) == 'string' then
+    icon = opts.icon
+  end
+end
+
+-- ' ◆ SB·1 ' — or ' SB·1 ' when the glyph is configured away.
+local function badge_text(body)
+  if icon == '' then
+    return ' ' .. body .. ' '
+  end
+  return ' ' .. icon .. ' ' .. body .. ' '
 end
 
 function M.reload_state()
@@ -112,18 +135,17 @@ function M.render_status_segment(palette)
   end
 
   local text
-  local bg, fg, intensity, italic
+  local bg, fg, intensity
   if not running then
-    text = ' SB·- '
+    text = badge_text('SB·-')
     bg = palette.tab_bar_background
     fg = palette.new_tab_fg
     intensity = 'Normal'
-    italic = true
   else
     if jobs >= 10 then
-      text = ' SB·9+ '
+      text = badge_text('SB·9+')
     else
-      text = string.format(' SB·%d ', jobs)
+      text = badge_text(string.format('SB·%d', jobs))
     end
     -- Highlight when at least one job is waiting for human.
     local waiting = tonumber(state and state.waiting_count) or 0
@@ -131,20 +153,22 @@ function M.render_status_segment(palette)
       bg = palette.tab_attention_waiting_bg or palette.tab_attention_running_bg
       fg = palette.tab_attention_waiting_fg or palette.tab_attention_running_fg
       intensity = 'Bold'
-      italic = false
     else
       bg = palette.tab_inactive_bg
       fg = palette.tab_inactive_fg
       intensity = 'Normal'
-      italic = false
     end
   end
 
+  -- The stale/off state is carried by the dim `tab_bar_background` /
+  -- `new_tab_fg` pair alone. Italic was tried on it and dropped: the
+  -- oblique `◆ SB·-` leaned out of the row of upright badges around it,
+  -- and the color drop already reads as "not running".
   return wezterm.format {
     { Background = { Color = bg } },
     { Foreground = { Color = fg } },
     { Attribute = { Intensity = intensity } },
-    { Attribute = { Italic = italic } },
+    { Attribute = { Italic = false } },
     { Text = text },
   }
 end

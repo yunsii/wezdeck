@@ -213,20 +213,20 @@ func (r worktreeRow) nameCell() string {
 func worktreeStatusIcon(status string) string {
 	switch status {
 	case "waiting":
-		return "🚨"
+		return "▲"
 	case "done":
-		return "✅"
+		return "✓"
 	case "running":
-		return "🔄"
+		return "●"
 	}
 	return ""
 }
 
 // statusCell renders the trailing agent-attention column. Live statuses
-// reuse the Alt+/ emoji vocabulary (🚨 / ✅ / 🔄) so both pickers read the
+// reuse the Alt+/ glyph vocabulary (▲ / ✓ / ●) so both pickers read the
 // same way; there is no archived variant — an empty cell means "nothing
 // pending", the same thing an absent tab badge means (see menu.sh's
-// join comment for why the dimmed `last ✅ 3m` form was dropped). A
+// join comment for why the dimmed `last ✓ 3m` form was dropped). A
 // worktree with no tmux window keeps the original `(new)` hint — it
 // cannot have agent state.
 //
@@ -450,7 +450,7 @@ func (ui *worktreeUI) render() {
 // selectedDetailLine is the idle detail-row text:
 // "<path> · <branch> · <agent reason>" (each part omitted when empty).
 // The reason is the one piece of agent state that has no room in the row
-// itself, and it is what tells you *why* a worktree is 🚨 before you jump.
+// itself, and it is what tells you *why* a worktree is ▲ before you jump.
 func (ui *worktreeUI) selectedDetailLine() string {
 	if ui.selected < 0 || ui.selected >= len(ui.rows) {
 		return ""

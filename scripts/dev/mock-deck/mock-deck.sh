@@ -11,7 +11,7 @@
 #      a real cwd to spawn each tab into.
 #   2. In `hero` scenario: drops a sentinel file and pins a fixed pose
 #      in attention.json (running / waiting / done × 2 each → counter
-#      ⟳ 2 ⚠ 2 ✓ 2). The sentinel makes every spawned agent suppress
+#      ▲ 2 ✓ 2 ● 2). The sentinel makes every spawned agent suppress
 #      its own emits so the pinned pose holds against races.
 #   3. In `continuous` scenario: just creates the dirs and waits;
 #      agents stream their tapes and emit transitions as they go.
@@ -26,7 +26,7 @@
 #        cli-parser-1 / cli-parser-2 / image-resizer-1 / image-resizer-2
 #        / log-daemon-1 / log-daemon-2.
 #      Each tab has tab badge driven by its pinned hero status.
-#   3. Right-status counter shows ⟳ 2 ⚠ 2 ✓ 2.
+#   3. Right-status counter shows ▲ 2 ✓ 2 ● 2.
 #   4. Capture the screenshot or GIF.
 #   5. Ctrl+C the orchestrator. Cleanup runs.
 #   6. Manually close the spawned tabs (or switch back to your normal
@@ -73,7 +73,7 @@ PROJECTS=(cli-parser image-resizer log-daemon)
 SLOTS=(1 2)
 
 # Hero target state per project (both slots get the same state for a
-# clean ⟳ 2 ⚠ 2 ✓ 2 pose).
+# clean ▲ 2 ✓ 2 ● 2 pose).
 declare -A HERO_STATE=(
   [cli-parser]=running
   [image-resizer]=waiting
@@ -196,7 +196,7 @@ case "$scenario" in
       done
     done
     osc_nudge
-    printf '[mock-deck] HERO READY  ⟳ 2 ⚠ 2 ✓ 2  (hold %ds, Ctrl+C to abort)\n' "$hold_seconds"
+    printf '[mock-deck] HERO READY  ▲ 2 ✓ 2 ● 2  (hold %ds, Ctrl+C to abort)\n' "$hold_seconds"
     printf '[mock-deck] each spawned tab will respect the hero sentinel and stay silent;\n'
     printf '            the pinned pose holds until you Ctrl+C this orchestrator.\n'
     sleep "$hold_seconds"

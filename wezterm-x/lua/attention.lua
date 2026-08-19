@@ -24,6 +24,17 @@ M.STATUS_RUNNING = 'running'
 M.STATUS_WAITING = 'waiting'
 M.STATUS_DONE = 'done'
 
+-- Right-status counter glyphs. Defaults mirror constants.attention.icons;
+-- M.register overwrites them from the merged constants so a machine can
+-- retune the set in wezterm-x/local/constants.lua without touching this
+-- module. An empty string is a valid value and means "no glyph" — the
+-- counter then renders as a bare `N waiting`.
+local icons = {
+  waiting = '▲',
+  done = '✓',
+  running = '●',
+}
+
 -- Aligned with scripts/runtime/attention-state-lib.sh (attention_state_prune
 -- default). The Lua-side filter hides entries that passed the TTL even
 -- before the periodic shell prune physically removes them from state.json.
@@ -727,6 +738,35 @@ function M.collect_buckets(panes_map, sessions_map)
   return waiting, done, running
 end
 
+-- Appends one counter — ' ▲ 2 waiting ' — to a format-parts list.
+--
+-- The glyph gets its own Foreground run so it can be tinted a deeper
+-- shade of the block's hue (`tab_attention_*_glyph`) while the label
+-- keeps `_fg`; without the split the mark is the same near-black as the
+-- text it leads and the color lives only in the block behind them. A
+-- palette that omits the `_glyph` key falls back to `_fg`, which renders
+-- the counter exactly as it did before the key existed.
+--
+-- At zero the whole counter — glyph included — drops to the idle pair.
+-- The dim state is meant to be quiet, and a counter still wearing its
+-- status color while reading `0` invites a double-take.
+--
+-- Both branches build their text through the same concatenation so they
+-- cannot drift apart on spacing, and an empty glyph (a valid override,
+-- see configure_icons) simply omits the leading run.
+local function append_counter(parts, spec)
+  local active = spec.count > 0
+  local fg = active and spec.fg or spec.idle_fg
+  table.insert(parts, { Background = { Color = active and spec.bg or spec.idle_bg } })
+  table.insert(parts, { Attribute = { Intensity = active and spec.intensity or 'Normal' } })
+  if spec.icon ~= nil and spec.icon ~= '' then
+    table.insert(parts, { Foreground = { Color = active and (spec.glyph_fg or spec.fg) or spec.idle_fg } })
+    table.insert(parts, { Text = ' ' .. spec.icon })
+  end
+  table.insert(parts, { Foreground = { Color = fg } })
+  table.insert(parts, { Text = ' ' .. spec.count .. ' ' .. spec.label .. ' ' })
+end
+
 -- opts.active_pane_id (optional): when provided, entries on the
 -- currently-focused `(wezterm_pane_id, tmux_pane)` are filtered out of
 -- the `waiting` and `done` counters. This is a visual fallback for
@@ -765,52 +805,50 @@ function M.render_status_segment(palette, opts)
   local parts = {}
 
   -- Order: waiting → done → running. Action items first so the eye lands
-  -- on `⚠` when something needs the user; `✓` next as the recently-
-  -- finished pile to scan; `⟳` last as ambient "work in flight" context.
+  -- on `▲` when something needs the user; `✓` next as the recently-
+  -- finished pile to scan; `●` last as ambient "work in flight" context.
   -- Each segment dims to `idle_bg` when zero so the bar width stays stable.
-  if #waiting > 0 then
-    table.insert(parts, { Background = { Color = palette.tab_attention_waiting_bg } })
-    table.insert(parts, { Foreground = { Color = palette.tab_attention_waiting_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Bold' } })
-    table.insert(parts, { Text = ' 🚨 ' .. #waiting .. ' waiting ' })
-  else
-    table.insert(parts, { Background = { Color = idle_bg } })
-    table.insert(parts, { Foreground = { Color = idle_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' 🚨 0 waiting ' })
-  end
+  -- Glyphs are 1-cell monochrome text code points, not emoji: the rest of
+  -- the right status bar is typographic (`CDP·…`, `D·151G`, `M·88%`) and
+  -- color-filled emoji read as a foreign body next to it. Color still
+  -- carries the status; the glyph is a shape cue so the three slots stay
+  -- distinguishable when all of them dim to zero. Same set in the Alt+/
+  -- and Alt+g pickers — see native/picker/cmd_attention.go::coloredBadge.
+  append_counter(parts, {
+    count = #waiting, label = 'waiting', icon = icons.waiting,
+    bg = palette.tab_attention_waiting_bg,
+    fg = palette.tab_attention_waiting_fg,
+    glyph_fg = palette.tab_attention_waiting_glyph,
+    -- Only the action item is bold; done / running are ambient.
+    intensity = 'Bold',
+    idle_bg = idle_bg, idle_fg = idle_fg,
+  })
 
   -- Fixed one-cell gap so the segment width stays stable between idle and
   -- active states; prevents the right side of the tab bar from jittering.
   table.insert(parts, { Background = { Color = idle_bg } })
   table.insert(parts, { Text = ' ' })
 
-  if #done > 0 then
-    table.insert(parts, { Background = { Color = palette.tab_attention_done_bg } })
-    table.insert(parts, { Foreground = { Color = palette.tab_attention_done_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ✅ ' .. #done .. ' done ' })
-  else
-    table.insert(parts, { Background = { Color = idle_bg } })
-    table.insert(parts, { Foreground = { Color = idle_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' ✅ 0 done ' })
-  end
+  append_counter(parts, {
+    count = #done, label = 'done', icon = icons.done,
+    bg = palette.tab_attention_done_bg,
+    fg = palette.tab_attention_done_fg,
+    glyph_fg = palette.tab_attention_done_glyph,
+    intensity = 'Normal',
+    idle_bg = idle_bg, idle_fg = idle_fg,
+  })
 
   table.insert(parts, { Background = { Color = idle_bg } })
   table.insert(parts, { Text = ' ' })
 
-  if #running > 0 then
-    table.insert(parts, { Background = { Color = palette.tab_attention_running_bg } })
-    table.insert(parts, { Foreground = { Color = palette.tab_attention_running_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' 🔄 ' .. #running .. ' running ' })
-  else
-    table.insert(parts, { Background = { Color = idle_bg } })
-    table.insert(parts, { Foreground = { Color = idle_fg } })
-    table.insert(parts, { Attribute = { Intensity = 'Normal' } })
-    table.insert(parts, { Text = ' 🔄 0 running ' })
-  end
+  append_counter(parts, {
+    count = #running, label = 'running', icon = icons.running,
+    bg = palette.tab_attention_running_bg,
+    fg = palette.tab_attention_running_fg,
+    glyph_fg = palette.tab_attention_running_glyph,
+    intensity = 'Normal',
+    idle_bg = idle_bg, idle_fg = idle_fg,
+  })
   return wezterm.format(parts)
 end
 
@@ -864,7 +902,7 @@ function M.tab_badge(tab_info)
   -- rule does not: a `waiting` that has sat unanswered for two minutes
   -- gets hidden the moment another worktree starts a turn, because the
   -- fresh `running` is newer. That case is covered by the right-status
-  -- `🚨 N waiting` counter, `Alt+,`, and `Alt+/`, and the user asked for
+  -- `▲ N waiting` counter, `Alt+,`, and `Alt+/`, and the user asked for
   -- "latest" twice — so recency wins here. Flipping back means ranking
   -- on (status, ts) instead of ts alone.
   for _, entry in pairs(state_cache.entries or {}) do
@@ -887,21 +925,28 @@ function M.tab_badge(tab_info)
   if best == nil then
     return nil
   end
-  -- The tab badge intentionally drops the emoji vocabulary used by the
-  -- right-status counter and the picker chips: at a tab-strip density the
-  -- emoji is informationally redundant (color already encodes status) and
-  -- the 2-cell width plus VS16/font-baseline drift made it feel "off".
-  -- Render a single `█` block in the status color instead — color does
-  -- the work, the glyph is just a 1-cell carrier so the eye has something
-  -- to land on. The right-status and picker keep emoji because their
-  -- adjacent text labels need the visual anchor. Nothing else is added
-  -- to the tab: naming the winning worktree here was tried and reverted
-  -- (it ate the title's width budget and the tab re-labeled itself every
-  -- time a different worktree became the newest). Which worktree it is
-  -- belongs to `Alt+g`, which shows all of them at once.
-  return { status = best.status, marker = '█' }
+  -- Status only — the caller renders it by recoloring the tab's own
+  -- title (titles.lua `format-tab-title`). This surface adds nothing to
+  -- the tab: it carries no glyph vocabulary (the right-status counter and
+  -- the pickers keep `▲` / `✓` / `●` because they list several statuses
+  -- side by side, where color alone would not separate them, and the tab
+  -- strip shows one status at a time), and it carries no label (naming
+  -- the winning worktree here was tried and reverted — it ate the title's
+  -- width budget and the tab re-labeled itself every time a different
+  -- worktree became the newest; which worktree it is belongs to `Alt+g`,
+  -- which shows all of them at once).
+  --
+  -- The `marker = '█'` field this used to return went away with the
+  -- prepended marker cell on 2026-08-19: anything occupying width here
+  -- re-flows the tab strip whenever a turn starts or ends.
+  return { status = best.status }
 end
 
+-- Returns the block pair (background, text) for a status — what an
+-- unfocused tab carrying that status is painted with, and the same
+-- pairing the right-status counter uses for its own block. The `_glyph`
+-- slot is not returned: it belongs to the counter's leading mark, and
+-- the tab strip has no mark to tint.
 function M.badge_colors(palette, status)
   if status == M.STATUS_WAITING then
     return palette.tab_attention_waiting_bg, palette.tab_attention_waiting_fg
@@ -1835,6 +1880,21 @@ function M.forget_by_tmux_session(tmux_session)
   end
 end
 
+-- Applies a constants.attention.icons table. Only string values are
+-- honoured so a malformed local override degrades to the default glyph
+-- rather than rendering `nil` into the status bar; `''` is accepted and
+-- means "render the counter without a glyph".
+function M.configure_icons(overrides)
+  if type(overrides) ~= 'table' then
+    return
+  end
+  for _, key in ipairs({ 'waiting', 'done', 'running' }) do
+    if type(overrides[key]) == 'string' then
+      icons[key] = overrides[key]
+    end
+  end
+end
+
 function M.register(opts)
   module_logger = opts and opts.logger
   if opts and type(opts.prune_spawner) == 'function' then
@@ -1851,6 +1911,7 @@ function M.register(opts)
   elseif opts and opts.state_file then
     state_path = opts.state_file
   end
+  M.configure_icons(opts and opts.constants and opts.constants.attention and opts.constants.attention.icons)
 
   M.reload_state()
 

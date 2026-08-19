@@ -55,7 +55,7 @@ sb_watch_ui_status_path() {
   printf '%s\n' "${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/state/session-bridge-watch/status.json"
 }
 
-# Publish poller heartbeat for WezTerm SB·N badge. running=0|1
+# Publish poller heartbeat for WezTerm ◆ SB·N badge. running=0|1
 sb_watch_publish_ui_status() {
   local running="${1:-1}"
   local path dir tmp jobs waiting pid hb

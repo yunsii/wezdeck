@@ -216,17 +216,6 @@ function M.register(opts)
 
     title = wezterm.truncate_right(title, width)
 
-    local bg = palette.tab_inactive_bg
-    local fg = palette.tab_inactive_fg
-
-    if tab.is_active then
-      bg = palette.tab_active_bg
-      fg = palette.tab_active_fg
-    elseif hover then
-      bg = palette.tab_hover_bg
-      fg = palette.tab_hover_fg
-    end
-
     -- Earlier "slot projection" rewrote visible-window tab titles to the
     -- top-N session names computed by tab_visibility. Removed: the
     -- visible tabs are spawned from workspaces.lua's first-N entries
@@ -237,18 +226,47 @@ function M.register(opts)
     -- (cwd summary / OSC title) is the source-of-truth.
     local badge = attention and attention.tab_badge(tab) or nil
     local segments = {}
-    if badge then
-      -- Render the badge as a colored `█` over the tab's own background:
-      -- the saturated status color lives on the foreground so the bar
-      -- reads as an indicator stripe rather than a filled chip. We pull
-      -- the saturated color from `badge_colors`'s bg slot — that's where
-      -- the orange/blue/green hue is defined; the fg slot is the
-      -- text-on-saturated contrast color, not what we want here.
-      local badge_color, _ = attention.badge_colors(palette, badge.status)
-      table.insert(segments, { Background = { Color = bg } })
-      table.insert(segments, { Foreground = { Color = badge_color } })
-      table.insert(segments, { Attribute = { Intensity = 'Bold' } })
-      table.insert(segments, { Text = badge.marker })
+
+    -- Tab colors, highest priority first:
+    --
+    --   1. focused      — always the active pair, never a status. The
+    --                     background is the only thing saying which tab
+    --                     is focused (`use_fancy_tab_bar = false`), and
+    --                     the tab you are looking at is the one whose
+    --                     status you least need announced.
+    --   2. status       — an unfocused tab whose session has a live
+    --                     agent status takes the full block treatment,
+    --                     background plus its matching text color, the
+    --                     same pairing the right-status counters use.
+    --                     This outranks hover: the pointer is a
+    --                     secondary affordance in a keyboard-first strip
+    --                     and a status must not vanish under it.
+    --   3. hover        — pointer feedback on an otherwise plain tab.
+    --   4. default      — inactive.
+    --
+    -- Status is carried by recoloring rather than by anything added to
+    -- the tab. A separate marker cell — a `█` prepended when and only
+    -- when a status was live — was how this worked until 2026-08-19, and
+    -- it re-flowed the whole tab strip every time an agent started or
+    -- finished a turn; an agent flipping between `running` and `waiting`
+    -- several times a minute made the titles twitch under the cursor.
+    -- Reserving the cell on idle tabs also fixes the twitch but spends a
+    -- column of every title on nothing. Recoloring costs no width at
+    -- all, so there is nothing left to jitter. Tinting only the
+    -- foreground was tried in between and was too quiet to catch in
+    -- peripheral vision, which is this surface's entire job.
+    local bg, fg
+    if tab.is_active then
+      bg = palette.tab_active_bg
+      fg = palette.tab_active_fg
+    elseif badge then
+      bg, fg = attention.badge_colors(palette, badge.status)
+    elseif hover then
+      bg = palette.tab_hover_bg
+      fg = palette.tab_hover_fg
+    else
+      bg = palette.tab_inactive_bg
+      fg = palette.tab_inactive_fg
     end
     if logger then
       local tab_id = tab.tab_id
@@ -280,7 +298,7 @@ function M.register(opts)
 
   -- Compose the right-status bar from IME, chrome-debug, session-bridge
   -- watch poller, host-disk, guest-memory, and attention segments. Order:
-  --   IME | CDP·… | SB·N | D·151G | M·88% | 🚨…✅…🔄…
+  --   IME | CDP·… | ◆ SB·N | D·151G | M·88% | ▲…✓…●…
   -- Kept pure so it can run from both the `update-status` tick (250ms)
   -- and from the event-bus handler when a producer publishes
   -- `attention.tick` (OSC wire `we_attention_tick`).

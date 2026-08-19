@@ -82,7 +82,7 @@ If a particular reminder genuinely is fire-and-forget (e.g. a "deploy started" n
 
 The agent-attention right-status counter and tab badges (see [`agent-attention.md`](./agent-attention.md)) are the existing "something needs your eyes" surface, but they were rejected for reminders during design:
 
-- Attention is for *agent* turns (Claude, Codex). Mixing in cron-driven reminders dilutes the `🚨 N waiting` counter's meaning.
+- Attention is for *agent* turns (Claude, Codex). Mixing in cron-driven reminders dilutes the `▲ N waiting` counter's meaning.
 - Attention's badge is glanceable but easy to miss when you are heads-down — the whole reason a reminder exists is to interrupt heads-down work.
 
 The popup interrupts; the attention pipeline does not. They are orthogonal.

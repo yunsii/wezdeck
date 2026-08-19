@@ -219,7 +219,7 @@ func (attentionPicker) Run(args []string) int {
 				visible = applyAttentionFilter(rows, filterText, statusFilter)
 				render()
 			}
-		case "\x18": // Ctrl+X — stop session-bridge watch on selected 📡 SB row.
+		case "\x18": // Ctrl+X — stop session-bridge watch on selected ◆ SB row.
 			// Plain `x` always goes to the search filter (see default);
 			// never steal it for stop, or users cannot type/search "x".
 			if len(visible) > 0 && visible[selected].status == "sb" {
@@ -653,22 +653,22 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 		fmt.Fprintf(&b, "  ·  active workspace \x1b[1;38;5;108m%s\x1b[0m\x1b[1m", currentWorkspace)
 	}
 	if statusFilter == "all" {
-		b.WriteString("  ·  order 🚨 → ✅ → 🔄 → 📡SB")
+		b.WriteString("  ·  order ▲ → ✓ → ● → ◆SB")
 		b.WriteString(reset)
 	} else {
 		b.WriteString(reset)
 		switch statusFilter {
 		case "running":
-			b.WriteString("  \x1b[1;38;5;39m[🔄 running]")
+			b.WriteString("  \x1b[1;38;5;39m[● running]")
 			b.WriteString(reset)
 		case "waiting":
-			b.WriteString("  \x1b[1;38;5;208m[🚨 waiting]")
+			b.WriteString("  \x1b[1;38;5;208m[▲ waiting]")
 			b.WriteString(reset)
 		case "done":
-			b.WriteString("  \x1b[38;5;108m[✅ done]")
+			b.WriteString("  \x1b[38;5;108m[✓ done]")
 			b.WriteString(reset)
 		case "sb":
-			b.WriteString("  \x1b[1;38;5;141m[📡 SB watch]")
+			b.WriteString("  \x1b[1;38;5;141m[◆ SB watch]")
 			b.WriteString(reset)
 		}
 	}
@@ -877,29 +877,38 @@ func formatAttentionWorkspaceCell(name string, width int, current bool) string {
 }
 
 func coloredBadge(status string) string {
-	// Emoji-only badge — text labels (RUN/WAIT/DONE/RCNT/CLR) used to
-	// trail every emoji to give the user a fallback when emoji
+	// Glyph-only badge — text labels (RUN/WAIT/DONE/RCNT/CLR) used to
+	// trail every glyph to give the user a fallback when emoji
 	// presentation glyphs went missing, but in practice the popup
-	// lives inside a wezterm pty where emoji rendering is reliable
-	// and the labels were just visual noise. All glyphs land at 2
-	// cells; the row layout adds a fixed 4-space gap downstream so
-	// the body column stays aligned regardless of status.
+	// lives inside a wezterm pty where rendering is reliable and the
+	// labels were just visual noise.
+	//
+	// The set is monochrome 1-cell text code points, not emoji: the
+	// picker sits next to a typographic status bar (`D·151G`, `M·88%`)
+	// and the color-emoji set read as a foreign body there. Color still
+	// carries the status; the shape keeps the six kinds apart. All
+	// glyphs land at 1 cell; the row layout adds a fixed gap downstream
+	// so the body column stays aligned regardless of status. Keep this
+	// in sync with attention.lua's right-status counter and
+	// cmd_worktree.go's status column — the three surfaces answer the
+	// same question and are meant to read the same.
 	switch status {
 	case "running":
-		return "\x1b[1;38;5;39m🔄\x1b[0m"
+		return "\x1b[1;38;5;39m●\x1b[0m"
 	case "waiting":
-		return "\x1b[1;38;5;208m🚨\x1b[0m"
+		return "\x1b[1;38;5;208m▲\x1b[0m"
 	case "done":
-		return "\x1b[38;5;108m✅\x1b[0m"
+		return "\x1b[38;5;108m✓\x1b[0m"
 	case "sb":
-		// session-bridge watch (Ctrl+K w) — purple satellite
-		return "\x1b[1;38;5;141m📡\x1b[0m"
+		// session-bridge watch (Ctrl+K w) — purple diamond
+		return "\x1b[1;38;5;141m◆\x1b[0m"
 	case "recent":
-		return "\x1b[2;38;5;245m📜\x1b[0m"
+		// archived: the hollow counterpart of a live `●`
+		return "\x1b[2;38;5;245m○\x1b[0m"
 	case "__sentinel__":
-		return "\x1b[1;38;5;160m❌\x1b[0m"
+		return "\x1b[1;38;5;160m✕\x1b[0m"
 	}
-	return "· "
+	return "·"
 }
 
 func dispatchAttention(r attentionRow, jumpScript string) {
