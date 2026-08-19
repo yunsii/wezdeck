@@ -148,6 +148,18 @@ exec tmux attach -t "$session"
           if workspace_name then
             tab_visibility.set_overflow_pane(workspace_name, pane_id, browse_session)
           end
+          -- Evict any leftover `pane-session/<pane_id>.txt` before
+          -- seeding this pane. wezterm recycles pane ids across
+          -- restarts and open-project-session.sh never deletes the
+          -- files it writes for managed session panes, so the id handed
+          -- to a fresh placeholder often still has a file naming the
+          -- previous occupant's session. The snapshot's staleness guard
+          -- only catches cross-workspace mismatches, so a
+          -- same-workspace leftover would make this tab claim that
+          -- session and duplicate its attention badge onto `…`.
+          if type(tab_visibility.forget_pane_session) == 'function' then
+            tab_visibility.forget_pane_session(pane_id)
+          end
           -- Mirror into the unified pane→session map so attention-side
           -- focus / jump / badge code resolves the overflow pane the
           -- same way it resolves visible managed tabs (one lookup, one

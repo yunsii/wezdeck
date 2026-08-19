@@ -12,6 +12,10 @@
 --      completely unrelated current pane.
 --   4. Stale pane-session/<pid>.txt entries (workspace mismatch) get
 --      dropped, so focus-ack and the picker do not misfire.
+--   5. The overflow placeholder never adopts a *same-workspace*
+--      pane-session/<pid>.txt left behind by the managed tab that owned
+--      the pane id before wezterm recycled it (guard 4 cannot see those
+--      — the workspace prefix matches).
 --
 -- Driven by lua5.4 directly. Mocks wezterm via wezterm_mock.lua and
 -- wires it into package.preload before requiring the modules under
@@ -28,6 +32,7 @@ _G.WEZTERM_RUNTIME_DIR = './wezterm-x'
 
 local attention = require 'attention'
 local tab_visibility = require 'tab_visibility'
+local pane_session_files = require 'pane_session_files'
 
 -- ── tiny test harness ─────────────────────────────────────────────────
 local fail_count = 0
@@ -483,6 +488,133 @@ describe('overflow tab counts toward running badge', function()
     end
     assert_truthy(found,
       'overflow-projected coco-server running entry was filtered out — right-status badge will under-count')
+  end)
+end)
+
+describe('overflow placeholder ignores a recycled pane id file', function()
+  -- 2026-08-19: `pane-session/6.txt` (written 08-03, when pane id 6 was
+  -- the coco-forge tab) was still on disk when the work overflow
+  -- placeholder came up on the same id. session_for_pane answered
+  -- coco-forge for both panes, so the single running coco-forge entry
+  -- badged the real tab AND `…`, and the session→pane reverse map
+  -- resolved to whichever pane pairs() reached last. tmux had the
+  -- placeholder on its browse session the whole time — the collision
+  -- was metadata only, which is why maybe_clear_overflow_collision
+  -- (registry-driven) could not see it either.
+  --
+  -- Each test uses a distinct overflow pane id: the eviction is
+  -- memoized per pane id per Lua state (one os.remove per placeholder,
+  -- not one per snapshot tick), and the whole suite is one state.
+  local SESSION = 'wezterm_work_coco-forge_060820bd21'
+
+  local function snapshot_body(overflow_pane_id, overflow_tab)
+    mock.set_mux({
+      windows = {
+        { workspace = 'work', tabs = {
+          { id = 600, title = 'coco-forge', active_pane = { id = 4 } },
+          overflow_tab,
+        }},
+      },
+    })
+    local out = tmpfile()
+    assert_truthy(attention.write_live_snapshot(out, 'test-trace'),
+      'write_live_snapshot returned non-truthy')
+    local fd = io.open(out, 'r')
+    local body = fd:read('*a')
+    fd:close()
+    os.remove(out)
+    return body
+  end
+
+  it('keeps the leftover out of the reverse map and deletes it', function()
+    reset_global_state()
+    pane_session_files.clear()
+    tab_visibility.set_pane_session(4, SESSION)
+    pane_session_files.write(6, SESSION)
+
+    local body = snapshot_body(6, {
+      id = 601, title = '…',
+      active_pane = { id = 6, user_vars = { we_tab_role = 'overflow' } },
+    })
+
+    assert_truthy(body:find('"' .. SESSION .. '":"4"', 1, true),
+      'session no longer resolves to the real tab; body=' .. body)
+    assert_falsy(body:find('"' .. SESSION .. '":"6"', 1, true),
+      'overflow pane claimed the recycled id\'s session')
+    assert_eq(tab_visibility.memory_session_for_pane(6), nil,
+      'leftover was memoized into the in-memory tier')
+    assert_falsy(pane_session_files.exists(6),
+      'leftover pane-session file survived the snapshot')
+    assert_truthy(body:find('"is_overflow":true', 1, true),
+      'snapshot does not mark the placeholder; body=' .. body)
+  end)
+
+  it('identifies a pre-marker placeholder by its `…` title', function()
+    reset_global_state()
+    pane_session_files.clear()
+    tab_visibility.set_pane_session(4, SESSION)
+    pane_session_files.write(7, SESSION)
+
+    local body = snapshot_body(7, { id = 602, title = '…', active_pane = { id = 7 } })
+
+    assert_falsy(body:find('"' .. SESSION .. '":"7"', 1, true),
+      'title-identified placeholder claimed the recycled id\'s session')
+    assert_falsy(pane_session_files.exists(7),
+      'leftover pane-session file survived the snapshot')
+  end)
+
+  it('leaves a real Alt+x projection in memory alone', function()
+    reset_global_state()
+    pane_session_files.clear()
+    -- The placeholder genuinely displays SESSION after a switch-client;
+    -- tab.activate_overflow recorded that in the in-memory tier, and a
+    -- leftover file for the same id must not change the outcome.
+    tab_visibility.set_pane_session(8, SESSION)
+    pane_session_files.write(8, 'wezterm_work_someone-else_1111111111')
+
+    local body = snapshot_body(8, {
+      id = 603, title = '…',
+      active_pane = { id = 8, user_vars = { we_tab_role = 'overflow' } },
+    })
+
+    assert_truthy(body:find('"' .. SESSION .. '":"8"', 1, true),
+      'projected session lost its overflow host; body=' .. body)
+    assert_falsy(body:find('wezterm_work_someone-else_1111111111', 1, true),
+      'leftover file leaked into the snapshot')
+    assert_falsy(pane_session_files.exists(8),
+      'leftover pane-session file survived the snapshot')
+    pane_session_files.clear()
+  end)
+end)
+
+describe('tab_visibility pane→session tiers', function()
+  it('memory_session_for_pane never falls through to the file tier', function()
+    reset_global_state()
+    pane_session_files.clear()
+    pane_session_files.write(42, 'wezterm_work_leftover_2222222222')
+    assert_eq(tab_visibility.session_for_pane(42), 'wezterm_work_leftover_2222222222',
+      'file tier unreadable — the sandbox path is wrong')
+    assert_eq(tab_visibility.memory_session_for_pane(42), nil,
+      'memory-only lookup read the file tier')
+    tab_visibility.set_pane_session(42, 'wezterm_work_live_3333333333')
+    assert_eq(tab_visibility.memory_session_for_pane(42), 'wezterm_work_live_3333333333',
+      'memory-only lookup missed the in-memory edge')
+  end)
+
+  it('forget_pane_session_file drops only the file tier', function()
+    reset_global_state()
+    pane_session_files.clear()
+    pane_session_files.write(43, 'wezterm_work_leftover_4444444444')
+    tab_visibility.set_pane_session(43, 'wezterm_work_live_5555555555')
+
+    assert_eq(tab_visibility.forget_pane_session_file(43), true,
+      'removal was not reported')
+    assert_falsy(pane_session_files.exists(43), 'file tier survived')
+    assert_eq(tab_visibility.memory_session_for_pane(43), 'wezterm_work_live_5555555555',
+      'in-memory edge was collateral damage')
+    assert_eq(tab_visibility.forget_pane_session_file(43), false,
+      'second call reported a removal that did not happen')
+    pane_session_files.clear()
   end)
 end)
 

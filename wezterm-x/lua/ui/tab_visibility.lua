@@ -867,16 +867,19 @@ local function pane_session_dir()
   return xdg .. '/wezterm-runtime/state/pane-session'
 end
 
-local function read_pane_session_file(pane_id)
+local function pane_session_file_path(pane_id)
   if pane_id == nil then return nil end
   local dir = pane_session_dir()
   if not dir or dir == '' then return nil end
-  local path
   if dir:find('\\', 1, true) then
-    path = dir .. '\\' .. tostring(pane_id) .. '.txt'
-  else
-    path = dir .. '/' .. tostring(pane_id) .. '.txt'
+    return dir .. '\\' .. tostring(pane_id) .. '.txt'
   end
+  return dir .. '/' .. tostring(pane_id) .. '.txt'
+end
+
+local function read_pane_session_file(pane_id)
+  local path = pane_session_file_path(pane_id)
+  if not path then return nil end
   local fd = io.open(path, 'r')
   if not fd then return nil end
   local line = fd:read('*l')
@@ -889,10 +892,37 @@ end
 
 function M.session_for_pane(pane_id)
   if pane_id == nil then return nil end
-  local map = _G.__WEZTERM_PANE_TMUX_SESSION or {}
-  local in_memory = map[tostring(pane_id)]
+  local in_memory = M.memory_session_for_pane(pane_id)
   if in_memory then return in_memory end
   return read_pane_session_file(pane_id)
+end
+
+-- In-memory tier only, for callers that must not consult the file tier.
+--
+-- The overflow placeholder is the one pane that can never legitimately
+-- own a `pane-session/<pane_id>.txt`: that file is written by
+-- open-project-session.sh for *managed* session panes and is never
+-- deleted, while wezterm recycles pane ids across restarts. A fresh
+-- placeholder therefore routinely inherits an id whose leftover file
+-- names the previous occupant's session — and write_live_snapshot's
+-- staleness guard only catches cross-workspace mismatches, so a
+-- same-workspace leftover sails through. Observed 2026-08-19: work
+-- overflow pane 6 read a 08-03 file naming `coco-forge`, so the single
+-- running coco-forge entry painted its badge on both the real
+-- coco-forge tab and the `…` tab (tmux itself had the placeholder on
+-- the browse session the whole time — the collision was metadata only,
+-- which is also why maybe_clear_overflow_collision could not see it).
+--
+-- The overflow pane's session is only ever known in memory (browse
+-- session at spawn, projected session after `tab.activate_overflow`),
+-- so a miss here means "unknown", not "look on disk". Trade-off: a
+-- config reload wipes `_G` and the placeholder loses the memory of a
+-- pre-reload Alt+x projection, so its badge goes quiet until the next
+-- pick. Silence beats attributing another tab's agent to it.
+function M.memory_session_for_pane(pane_id)
+  if pane_id == nil then return nil end
+  local map = _G.__WEZTERM_PANE_TMUX_SESSION or {}
+  return map[tostring(pane_id)]
 end
 
 -- Forget both tiers for `pane_id`. Used when the file-tier value is
@@ -904,15 +934,19 @@ function M.forget_pane_session(pane_id)
   if pane_id == nil then return end
   _G.__WEZTERM_PANE_TMUX_SESSION = _G.__WEZTERM_PANE_TMUX_SESSION or {}
   _G.__WEZTERM_PANE_TMUX_SESSION[tostring(pane_id)] = nil
-  local dir = pane_session_dir()
-  if not dir or dir == '' then return end
-  local path
-  if dir:find('\\', 1, true) then
-    path = dir .. '\\' .. tostring(pane_id) .. '.txt'
-  else
-    path = dir .. '/' .. tostring(pane_id) .. '.txt'
-  end
-  pcall(os.remove, path)
+  M.forget_pane_session_file(pane_id)
+end
+
+-- Delete the file tier only, leaving the in-memory tier intact. Used to
+-- evict a leftover managed-session file that a recycled pane id
+-- inherited (see memory_session_for_pane) without clobbering the live
+-- in-memory edge the same pane may legitimately hold. Returns true when
+-- a file was actually removed, so the caller can log the eviction once.
+function M.forget_pane_session_file(pane_id)
+  local path = pane_session_file_path(pane_id)
+  if not path then return false end
+  local ok, removed = pcall(os.remove, path)
+  return ok and removed ~= nil
 end
 
 function M.pane_for_session(session_name)

@@ -15,6 +15,17 @@ if ! command -v lua5.4 >/dev/null 2>&1; then
   exit 2
 fi
 
+# Sandbox the state-file roots the modules under test resolve from
+# env. tab_visibility's pane_session_dir() falls back to
+# LOCALAPPDATA (hybrid-wsl) or XDG_STATE_HOME/HOME, so without this a
+# file-tier test would read and delete entries under the user's REAL
+# wezterm-runtime state (a 2026-05-06 trace corrupted attention.json
+# exactly this way).
+lua_state_root="$(mktemp -d)"
+trap 'rm -rf "$lua_state_root"' EXIT
+unset LOCALAPPDATA
+export XDG_STATE_HOME="$lua_state_root"
+
 failures=0
 for t in tests/lua-units/test_*.lua; do
   echo "── $t"

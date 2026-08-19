@@ -13,6 +13,7 @@ _G.WEZTERM_RUNTIME_DIR = './wezterm-x'
 
 local attention = require 'attention'
 local tab_visibility = require 'tab_visibility'
+local pane_session_files = require 'pane_session_files'
 
 local fail_count, pass_count = 0, 0
 local function describe(n, fn) io.write('▸ ' .. n .. '\n') fn() end
@@ -29,6 +30,10 @@ local function assert_falsy(v, m) if v then error((m or 'expected falsy') .. ': 
 
 local SESSION = 'wezterm_config_wezterm-config_aaaaaaaaaa'
 local PANE_ID = 7
+-- The workspace's overflow placeholder (`…`). Its own pane id, so the
+-- suite can put a managed tab and the placeholder side by side.
+local OVERFLOW_PANE_ID = 8
+local OVERFLOW_USER_VARS = { we_tab_role = 'overflow' }
 
 -- Stand up an attention state file (plus an optional tmux-focus file so
 -- is_entry_focused has something to read) and return the badge for a
@@ -52,7 +57,13 @@ local function badge_for(entries_json, opts)
   attention.reload_state()
 
   local badge = attention.tab_badge {
-    active_pane = { pane_id = PANE_ID },
+    active_pane = {
+      pane_id = opts.pane_id or PANE_ID,
+      -- PaneInformation exposes user vars as a plain field (MuxPane uses
+      -- a getter); this is the shape format-tab-title hands tab_badge.
+      user_vars = opts.user_vars,
+    },
+    tab_title = opts.tab_title,
     is_active = opts.is_active == true,
   }
   os.execute('rm -rf ' .. tmp)
@@ -178,6 +189,69 @@ describe('tab_badge focus suppression', function()
       entry('bg-waiting', '@2', '%5', 'waiting', now, 'dev/auth')
     ), { is_active = false, focused_tmux_pane = '%5' })
     assert_eq(badge.status, 'waiting', 'inactive tab suppressed its own waiting')
+  end)
+end)
+
+-- Regression: the overflow placeholder must resolve its session from
+-- the in-memory tier only. wezterm recycles pane ids across restarts and
+-- open-project-session.sh never deletes the `pane-session/<id>.txt` it
+-- writes for managed panes, so a fresh placeholder routinely inherits an
+-- id whose leftover file names the previous occupant's session. Honouring
+-- that file made one running agent paint its badge on both its own tab
+-- and `…` (observed 2026-08-19 on the work workspace: pane 6 read an
+-- 08-03 file naming coco-forge). The snapshot's staleness guard cannot
+-- catch it — the leftover names a session in the *same* workspace.
+describe('tab_badge on the overflow placeholder', function()
+  local function overflow_reset()
+    reset()
+    pane_session_files.clear()
+    -- The placeholder holds no in-memory edge: this is the post-reload
+    -- state, where _G was wiped but the leftover file survives.
+    tab_visibility.forget_pane_session(OVERFLOW_PANE_ID)
+    pane_session_files.write(OVERFLOW_PANE_ID, SESSION)
+  end
+
+  local function running_state()
+    return state(entry('running', '@2', '%5', 'running', os.time() * 1000, 'dev/auth'))
+  end
+
+  it('still badges the real tab hosting the session (control)', function()
+    overflow_reset()
+    local badge = badge_for(running_state())
+    assert_truthy(badge, 'the managed tab lost its badge')
+    assert_eq(badge.status, 'running', 'unexpected status on the managed tab')
+  end)
+
+  it('ignores a recycled pane id leftover file (user_var marker)', function()
+    overflow_reset()
+    local badge = badge_for(running_state(), {
+      pane_id = OVERFLOW_PANE_ID,
+      user_vars = OVERFLOW_USER_VARS,
+    })
+    assert_falsy(badge, 'overflow tab inherited the previous occupant session badge')
+  end)
+
+  it('ignores it for a pre-marker placeholder too (title fallback)', function()
+    overflow_reset()
+    local badge = badge_for(running_state(), {
+      pane_id = OVERFLOW_PANE_ID,
+      tab_title = '…',
+    })
+    assert_falsy(badge, 'title-identified overflow tab honoured the leftover file')
+  end)
+
+  it('still badges a real projection (Alt+x) held in memory', function()
+    overflow_reset()
+    -- What tab.activate_overflow writes after a switch-client: the
+    -- placeholder genuinely displays SESSION, so the badge belongs here.
+    tab_visibility.set_pane_session(OVERFLOW_PANE_ID, SESSION)
+    local badge = badge_for(running_state(), {
+      pane_id = OVERFLOW_PANE_ID,
+      user_vars = OVERFLOW_USER_VARS,
+    })
+    assert_truthy(badge, 'projected session lost its badge on the overflow tab')
+    assert_eq(badge.status, 'running', 'unexpected status on the overflow tab')
+    pane_session_files.clear()
   end)
 end)
 

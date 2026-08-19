@@ -24,6 +24,10 @@ local function make_pane(spec)
   function pane:get_title() return self.title end
   function pane:set_user_var(name, value) self.user_vars[name] = value end
   function pane:get_user_var(name) return self.user_vars[name] end
+  -- MuxPane's real accessor — how production code (workspace/tabs.lua's
+  -- is_overflow_tab, attention.lua's pane_is_overflow) reads the
+  -- `we_tab_role` overflow marker off a mux pane.
+  function pane:get_user_vars() return self.user_vars end
   function pane:activate() end
   return pane
 end

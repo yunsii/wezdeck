@@ -169,10 +169,56 @@ if wezterm.on then
   end)
 end
 
-local function pane_hosted_session(wezterm_pane_id)
+-- Marker for the tab-visibility overflow placeholder tab. Mirrors
+-- workspace/tabs.lua's M.OVERFLOW_* constants — attention.lua cannot
+-- dofile that module (it is a factory needing wezterm/mux/logger opts),
+-- so the two literals are kept in sync by hand, same as the pre-existing
+-- `…` glyph check in write_live_snapshot.
+local OVERFLOW_GLYPH = '…'
+local OVERFLOW_USER_VAR_NAME = 'we_tab_role'
+local OVERFLOW_USER_VAR_VALUE = 'overflow'
+
+-- User vars come in two shapes depending on the caller: MuxPane (what
+-- write_live_snapshot walks) exposes a get_user_vars() method, while
+-- PaneInformation (what format-tab-title hands tab_badge) exposes a
+-- plain `user_vars` field.
+local function pane_user_vars(pane)
+  if pane == nil then return nil end
+  local ok, vars = pcall(function()
+    if type(pane.get_user_vars) == 'function' then
+      return pane:get_user_vars()
+    end
+    return pane.user_vars
+  end)
+  if not ok or type(vars) ~= 'table' then return nil end
+  return vars
+end
+
+-- Is this pane the workspace's overflow placeholder? The user_var
+-- marker is authoritative (it survives any set_title that would
+-- de-classify a title-based check); the `…` glyph stays as the fallback
+-- for placeholders spawned before the marker landed.
+local function pane_is_overflow(pane, tab_title)
+  local vars = pane_user_vars(pane)
+  if vars and vars[OVERFLOW_USER_VAR_NAME] == OVERFLOW_USER_VAR_VALUE then
+    return true
+  end
+  return tab_title == OVERFLOW_GLYPH
+end
+
+-- Resolve which tmux session a wezterm pane hosts. `memory_only` is set
+-- for the overflow placeholder, whose session must never be read from
+-- the on-disk tier — see tab_visibility.memory_session_for_pane for why
+-- a recycled pane id makes that file a liar.
+local function pane_hosted_session(wezterm_pane_id, memory_only)
   if wezterm_pane_id == nil or wezterm_pane_id == '' then return nil end
   local tab_visibility = load_tab_visibility()
-  if not tab_visibility or type(tab_visibility.session_for_pane) ~= 'function' then
+  if not tab_visibility then return nil end
+  if memory_only then
+    if type(tab_visibility.memory_session_for_pane) ~= 'function' then return nil end
+    return tab_visibility.memory_session_for_pane(wezterm_pane_id)
+  end
+  if type(tab_visibility.session_for_pane) ~= 'function' then
     return nil
   end
   return tab_visibility.session_for_pane(wezterm_pane_id)
@@ -220,6 +266,34 @@ local function forget_pane_session(pane_id)
     return
   end
   pcall(tab_visibility.forget_pane_session, pane_id)
+end
+
+-- Pane ids whose leftover file-tier entry we already evicted, so the
+-- 1s snapshot tick pays at most one os.remove per overflow pane per Lua
+-- state instead of one per tick (the file lives on the Windows side on
+-- hybrid-wsl, where every touch is a cross-FS round trip).
+local overflow_file_evicted = {}
+
+-- The overflow placeholder never owns a managed-session file, so any
+-- `pane-session/<pane_id>.txt` under its id is a leftover from the tab
+-- that held the id before wezterm recycled it. Delete the file tier
+-- only: the in-memory tier may hold this pane's real browse/projected
+-- session and must survive.
+local function evict_overflow_pane_file(pane_id)
+  if pane_id == nil then return end
+  local key = tostring(pane_id)
+  if overflow_file_evicted[key] then return end
+  overflow_file_evicted[key] = true
+  local tab_visibility = load_tab_visibility()
+  if not tab_visibility or type(tab_visibility.forget_pane_session_file) ~= 'function' then
+    return
+  end
+  local ok, removed = pcall(tab_visibility.forget_pane_session_file, pane_id)
+  if ok and removed and module_logger then
+    module_logger.info('attention', 'evicted recycled pane→session file from overflow pane', {
+      pane_id = key,
+    })
+  end
 end
 
 -- ── Picker row helpers ────────────────────────────────────────────────
@@ -769,7 +843,13 @@ function M.tab_badge(tab_info)
   -- glance is not the same as an answer, but the user updated the
   -- spec to suppress both on focus. `running` stays visible so the
   -- parallel-task view across tabs is truthful.
-  local hosted_session = pane_hosted_session(active.pane_id)
+  -- The overflow placeholder resolves in-memory only: its file-tier
+  -- entry, when one exists at all, belongs to whichever managed tab
+  -- owned this pane id before wezterm recycled it, and honouring it
+  -- stamps that tab's badge onto `…` as well (see
+  -- tab_visibility.memory_session_for_pane).
+  local hosted_session = pane_hosted_session(
+    active.pane_id, pane_is_overflow(active, tab_info.tab_title))
   if hosted_session == nil or hosted_session == '' then
     return nil
   end
@@ -933,11 +1013,19 @@ function M.write_live_snapshot(target_path, trace_id)
                   local ok_ptitle, ptitle = pcall(function() return pane:get_title() end)
                   if ok_ptitle then pane_tab_title = ptitle end
                 end
-                panes_map[tostring(pid)] = {
+                local entry = {
                   workspace = workspace or '',
                   tab_index = tab_idx,
                   tab_title = pane_tab_title or '',
                 }
+                -- Published so the picker (and anyone reading
+                -- live-panes.json during triage) can tell the overflow
+                -- placeholder apart from a managed tab without
+                -- re-deriving it from the `…` glyph.
+                if pane_is_overflow(pane, entry.tab_title) then
+                  entry.is_overflow = true
+                end
+                panes_map[tostring(pid)] = entry
               end
             end
           end
@@ -979,17 +1067,23 @@ function M.write_live_snapshot(target_path, trace_id)
   -- not pane_id, so the pane↔session edge is recoverable even when the
   -- registry pane_id is stale.
   local overflow_registry = rawget(_G, '__WEZTERM_TAB_OVERFLOW') or {}
-  local OVERFLOW_GLYPH = '…'
 
   local sessions_map = {}
   for pane_id_str, pane_info in pairs(panes_map) do
     local pane_id_key = tonumber(pane_id_str) or pane_id_str
-    local hosted = pane_hosted_session(pane_id_key)
+    local is_overflow = pane_info.is_overflow == true
+    if is_overflow then
+      -- One-shot cleanup of the recycled-id leftover that would
+      -- otherwise keep answering for this pane on every reader that
+      -- still consults the file tier (focus-ack, picker labels).
+      evict_overflow_pane_file(pane_id_key)
+    end
+    local hosted = pane_hosted_session(pane_id_key, is_overflow)
     -- Overflow override: when the unified map has nothing for this
     -- pane and the tab is the overflow placeholder, take the session
     -- from the workspace overflow registry. Covers the common case
     -- where the workspace was reopened after the last Alt+t pick.
-    if (not hosted or hosted == '') and pane_info.tab_title == OVERFLOW_GLYPH then
+    if (not hosted or hosted == '') and is_overflow then
       local pane_workspace = pane_info.workspace or ''
       local entry = pane_workspace ~= '' and overflow_registry[pane_workspace] or nil
       if entry and type(entry.session) == 'string' and entry.session ~= '' then

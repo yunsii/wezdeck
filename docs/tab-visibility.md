@@ -600,8 +600,55 @@ never by the stored `wezterm_pane_id`.
 Public readers in `tab_visibility.lua`:
 
 - `session_for_pane(pane_id)` — in-memory tier, fall back to file.
+- `memory_session_for_pane(pane_id)` — in-memory tier only. What the
+  overflow placeholder must be resolved with; see *Recycled pane ids*
+  below.
 - `pane_for_session(session_name)` — reverse lookup; in-memory walk,
   fall back to scanning the on-disk dir.
+- `forget_pane_session(pane_id)` / `forget_pane_session_file(pane_id)`
+  — drop both tiers, or the file tier alone when the in-memory edge is
+  still live. The file variant returns `true` only when a file was
+  actually removed, so callers log the eviction once.
+
+#### Recycled pane ids — why the overflow pane skips the file tier
+
+The file tier has no owner lifecycle: `open-project-session.sh` writes
+`pane-session/<pane_id>.txt` when a managed session is created and
+nothing ever deletes it, while wezterm recycles pane ids across
+restarts. A fresh overflow placeholder therefore routinely lands on an
+id whose leftover file names the *previous* occupant's session.
+
+`write_live_snapshot`'s staleness guard only compares the workspace
+token in the session name against the pane's live workspace, so a
+leftover from the same workspace sails straight through. Observed
+2026-08-19 on `work`: `pane-session/6.txt` (written 08-03, when pane id
+6 was the coco-forge tab) was still on disk when the overflow
+placeholder came up on pane 6, so `session_for_pane` answered
+`coco-forge` for both panes — one running agent painted its badge on
+both the real tab and `…`, and the session→pane reverse map resolved to
+whichever pane `pairs()` reached last (an Alt+/ jump could land on the
+placeholder). tmux itself had the placeholder attached to its browse
+session the whole time; the collision was metadata only, which is also
+why `maybe_clear_overflow_collision` — which reads the in-memory
+overflow registry — could not see it.
+
+Two-part rule:
+
+1. `spawn_overflow_tab` calls `forget_pane_session(pane_id)` before
+   seeding the browse session, so a placeholder never starts life
+   holding a recycled id's file.
+2. Readers resolve the placeholder **in-memory only**
+   (`attention.lua`'s `pane_is_overflow` → `memory_session_for_pane`),
+   and `write_live_snapshot` evicts the leftover file once per pane id
+   per Lua state (`forget_pane_session_file`) so the readers that take
+   a bare pane id — `is_entry_focused`, `activate_in_gui`'s stored-id
+   fallback — stop seeing it too. Snapshot panes carry `is_overflow`
+   so this is visible in `live-panes.json` during triage.
+
+Trade-off: the placeholder's session lives only in `_G`, so a config
+reload wipes the memory of a pre-reload `Alt+x` projection and its badge
+goes quiet until the next pick. Silence beats attributing another tab's
+agent to it.
 
 Consumers (all in `attention.lua`):
 
