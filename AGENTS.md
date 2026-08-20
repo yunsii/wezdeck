@@ -24,6 +24,14 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   into copy-mode while editing:
   Read [`docs/tmux-ui.md#vim-in-tmux`](docs/tmux-ui.md#vim-in-tmux)
   (install / vimrc: [`docs/setup.md#vim-92-optional`](docs/setup.md#vim-92-optional)).
+- Grok Build fullscreen TUI: whole-transcript flash on `Alt+o` / pane focus,
+  FocusGained `terminal.clear()`, cream `#eeeeee` vs pane `bg_base`, the
+  PATH focus-filter (`grok-with-focus-filter.sh --install`: `~/.grok/bin/grok`
+  → wrapper, `grok.real` = ELF; required because zshrc prepends `~/.grok/bin`),
+  why macOS WezTerm+tmux can look fine with the same heal (sub-frame client
+  burst, not OS-exempt), why WSL→Windows still flashes even on a tiny pane,
+  or `scripts/dev/repro-grok-focus-flash.sh`:
+  Read [`docs/tmux-ui.md#grok-build-in-tmux`](docs/tmux-ui.md#grok-build-in-tmux).
 - Window appearance presets (`opaque` / `frosted`), transparency /
   frosted-glass, `win32_system_backdrop`, `window_background_opacity`, the
   `WEZTERM_APPEARANCE_PRESET` selector, `render-tmux-appearance.sh`, or the

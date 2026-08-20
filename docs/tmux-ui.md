@@ -108,7 +108,114 @@ In tmux UI terms what shows up here is: a per-tab badge (an unfocused tab filled
 - **Concurrent refreshes cannot lose the switch.** Every jump fires two or three refresh requests within ~15ms — the `session-window-changed` / `window-pane-changed` hook, `attention-jump.sh`'s explicit `--no-debounce` refresh, and `client-focus-in` — and each captured its context when it was queued. Two rules keep the last switch from being dropped: (1) `perform_refresh` re-reads the session's **live** active window / pane immediately before rendering, so a request queued a few ms before the switch landed still paints the worktree you are on rather than the previous one (the status line only ever describes the active pane, so live is also the correct semantics; the caller's `--cwd` remains the input to the debounce decision); (2) a `--force` request **waits** for a busy lock (`@tmux_status_lock_wait_attempts`, default 20 × 50ms) instead of returning silently. Before the fix the loser was dropped with nothing re-queuing it, so a jump could sit on the previous branch until the poll — and the poll measured **44-45s**, not the nominal 30s. After the wait, if the winner already rendered this live context (same `@tmux_status_last_cwd`, refreshed within 1s) the duplicate git probe is short-circuited. Covered by `tests/hook-units/test_tmux_status_refresh_args.sh`.
 - Attention jumps (`Alt+.` / `Alt+,` / the `Alt+/` picker, via `attention-jump.sh`) force an un-debounced refresh of the landed session right after the `select-window` / `select-pane`. This is needed because those `select-*` calls are no-ops when the target window/pane is already active (the session was parked there), so the `session-window-changed` / `window-pane-changed` hooks never fire — without the explicit refresh the branch/worktree segment would stay stale until `client-focus-in` or the 30s poll.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values.
-- **Grok Build light TUI background.** Stock GrokDay paints an opaque cool `#eeeeee` `bg_base`, which fights this repo's dynamic tmux pane cream (`#eae9e1` inactive / `#f1f0e9` active) and flashes on focus-in repaint. Grok has no public custom-theme API, so `scripts/dev/patch-grok-theme-wezdeck.sh` rewrites that single crossterm Color slot to **`Color::Reset`** (terminal default bg) — the main canvas then shows tmux's live `window-style` / `window-active-style`. Override with `WEZDECK_GROK_BG=f1f0e9` (solid cream) if needed. Re-run after every Grok self-update. Pin light mode with `auto_light_theme = "grokday"` in `~/.grok/config.toml`.
+- Grok Build fullscreen TUI focus flash / cream `bg_base` tint: see [Grok Build in tmux](#grok-build-in-tmux) below (not a WezTerm paint bug).
+
+## Grok Build in tmux
+
+Grok’s fullscreen (alt-screen) TUI under this stack has two separable issues. The **primary** one is whole-content flash on pane focus; the **secondary** one is GrokDay’s cool `#eeeeee` canvas fighting cream pane styles. Do not collapse them — cream-matching alone does not stop the flash.
+
+### Symptom → cause → fix
+
+| What you see | Cause | Fix layer |
+| --- | --- | --- |
+| Entire transcript flashes one frame on `Alt+o` / pane click (empty session often quieter) | tmux `focus-events on` delivers CSI FocusIn (`\e[I`); Grok enables `\e[?1004h`, then on FocusGained runs `terminal.clear()` (`\e[2J`) + full `app.draw` when `repaints_pane_out_of_band()` is true | **Repo:** PATH wrapper strips FocusIn/Out before they reach Grok ([Local fix](#local-fix-focus-filter)). Do **not** turn session `focus-events` off as the standing fix (starves Vim / Claude / attention). |
+| Cool-grey flash / canvas vs cream pane | Stock GrokDay `bg_base` is opaque `#eeeeee` vs `window-style` `#eae9e1` / `window-active-style` `#f1f0e9` | **Optional:** `scripts/dev/patch-grok-theme-wezdeck.sh` with `WEZDECK_GROK_BG=f1f0e9` (or `default` → `Color::Reset`). Re-run after every Grok self-update. Pin `auto_light_theme = "grokday"` in `~/.grok/config.toml`. |
+
+### Upstream root cause
+
+Open source [`xai-org/grok-build`](https://github.com/xai-org/grok-build) (checked through public `main` and binaries **1.0.5 stable** / **1.0.7 alpha**, 2026-08-20):
+
+1. `Event::FocusGained` in `xai-grok-pager` `event_loop.rs` sets `force_repaint` when `terminal_context().repaints_pane_out_of_band()` is true.
+2. That predicate is `embedded_editor.is_some() || multiplexer != Undetected` (`xai-grok-pager-render` `terminal/mod.rs`) — **plain tmux always qualifies**.
+3. Presenter does `terminal.clear()` then `app.draw(...)`.
+4. Motivation (regression `tests/pty_e2e/doubled_lines_out_of_band_repro.rs`): heal stranded rows when **nvim `:terminal` / multiplexer** rewrites the pane out-of-band while Grok’s diff renderer only updates cells it owns.
+
+So: heal for nested-editor doubled lines, gate too wide → ordinary tmux splits take the full clear on every focus. Not a WezTerm bug; WezTerm paints what the PTY emits.
+
+Ideal upstream: narrow the gate to `embedded_editor` (or only after detecting stranded rows), or add a kill-switch. Repo Issues are disabled; product path is `/feedback` (submitted 2026-08-20; draft `~/.grok/feedback-drafts/tmux-focus-flicker.md`).
+
+### Why macOS WezTerm + tmux can “not flash” even with the same heal
+
+**One-line answer:** macOS is not exempt from the heal — Grok still clears on FocusIn. What differs is whether WezTerm ever **paints** the cleared intermediate state as its own display frame. On native macOS the clear→redraw usually finishes inside one 60 Hz frame (~16.7 ms), so the eye only sees the final UI. On this WSL→Windows WezTerm path the same clear is often long enough (or chunked enough) to become a visible frame — even when the pane is tiny.
+
+Colleague check (2026-08-20, macOS aarch64, Grok **1.0.5** same commit as this machine, tmux **3.6a**, `focus-events = on`, fullscreen/alt-screen, non-nested tmux under WezTerm, `/doctor` clean with `multiplexer.kind = "tmux"`):
+
+```text
+FocusIn (\e[I)
+  → Grok: terminal.clear() \e[2J + full app.draw   ← same on macOS and WSL
+  → tmux: updates pane grid, re-encodes to client  ← “app cleared” ≠ “pixels flashed”
+  → WezTerm: paints ~60 Hz frames
+       native macOS: clear+redraw burst ~1–6 ms  → usually 1 composited frame → invisible
+       WSL→Win WezTerm: burst delayed/fragmented → intermediate clear can be a painted frame → visible flash
+```
+
+1. **Mechanism matches this repo (macOS included).** Pty capture of Grok’s own writes: every FocusIn (`\e[I`) is followed by a lone `\e[2J` (~1 ms later the full redraw starts). FocusOut / idle never clear. Gate is still “any multiplexer”: forcing `multiplexer=tmux` or `herdr` → emits `2J`; clearing `TMUX`/`HERDR_ENV`/`STY`/`ZELLIJ`/… so `undetected` → no `2J`. `\e[?1004h` stays on in all three modes — only the clear-on-focus handler is gated. So “dingbo has no flash” is **not** “macOS skipped the heal”.
+2. **`\e[2J` hits tmux first, not the GPU.** tmux eats the clear into its pane buffer and re-encodes a client update. A flash is only possible if WezTerm presents a frame while that buffer (or the in-flight client stream) still looks empty/partial.
+3. **On dingbo’s macOS, that window is almost always sub-frame.** Real tmux **client** byte stream + pyte frame replay when returning to the Grok pane:
+   - `focus-events on`: redraw burst ~**5.0 KiB** over **1.0–1.5 ms**
+   - `focus-events off`: ~**0.6–1.0 KiB** / **0.2 ms** (mostly tmux redrawing the active-pane border)
+   - Non-empty cell count dips **503 → 104 → … → 503** (floor ≠ 0) and the whole dip lands **inside one frame**. At 60 Hz a frame is **16.7 ms**, so WezTerm’s presented frame is already the restored UI → **no perceptible flash**.
+4. **Burst grows with pane cells, still usually one frame on native macOS:**
+
+   | Pane | Cells | Burst | Span |
+   | --- | --- | --- | --- |
+   | 59×40 | 2360 | ~5.0 KiB | 1.0–1.3 ms |
+   | 207×60 | 12420 | ~17.8 KiB | 1.9–2.8 ms |
+   | 307×90 | 27630 | ~34.7 KiB | 2.6–5.9 ms |
+
+5. **macOS is timing-lucky, not timing-proof.** One small-pane trial there stretched to **19.19 ms** (over one frame) — so macOS can flash too; dingbo’s usual case just stays ~1–6 ms with headroom.
+6. **This WSL host is the opposite timing regime.** Leading suspect: **WSL interop cutting/delaying** the pty burst before Windows WezTerm. Measured A/B (2026-08-20, unfiltered `grok.real`, isolated WezTerm + `groknofilter`, `focus-events on`): Grok pane ~**31×15** in a ~**60×18** client — `Alt+o` / pane-click **still** whole-content flashes. Shrinking the pane does **not** buy a free pass here; the standing fix remains the PATH focus-filter. Size scaling on macOS only explains why that machine often *looks* clean, not how to drop the wrapper on WSL.
+
+Other quiet machines can still be explained by stock `focus-events off`, WezTerm-only panes (`multiplexer=undetected`), `--minimal`, or pre-heal Grok builds — but **do not assume macOS is config-off**; dingbo’s box had `focus-events on` and still no visible flash for timing reasons.
+
+Upstream feedback: include the “`2J` always fires under multiplexer, but client burst is sub-frame on native hosts” numbers — otherwise maintainers may keep treating the heal as invisible.
+
+### Investigation notes (what not to chase)
+
+| Dead end | Why |
+| --- | --- |
+| Only patching cream / `Color::Reset` | Stops cool-grey tint mismatch; FocusGained still clears the whole UI |
+| Equalizing `window-style` == `window-active-style` | Does not stop `terminal.clear()` + full redraw |
+| Blaming missing DEC 2026 | Grok already wraps frames in `\e[?2026h`…`l`; the flash is a deliberate clear, not a torn differential |
+| “Colleague on macOS doesn’t flash ⇒ mechanism wrong / OS-exempt” | Mechanism still fires `\e[2J` on FocusIn under tmux; macOS often stays sub-frame so the eye never sees it ([section above](#why-macos-wezterm--tmux-can-not-flash-even-with-the-same-heal)) |
+| “Shrink the Grok pane on WSL to avoid flash” | Closed 2026-08-20: ~**31×15** unfiltered pane in ~**60×18** client still flashed on `Alt+o`. Size A/B explains macOS headroom, not a local workaround |
+| Detached `tmux select-pane` as automated bounce | No attached client → FocusIn often never delivered; use CSI inject or interactive WezTerm `Alt+o` |
+| Live process still flashing after installing the wrapper | (1) Wrapper only under `~/.local/bin` while `~/.zshrc` prepends `~/.grok/bin` — run `--install` so `~/.grok/bin/grok` is the wrapper. (2) Already-running process keeps the old stdin path until exit/`--resume`. Confirm tree is `python3 → grok.real`, not `zsh →` ELF `grok`. |
+| Still flashes right after resume | `type -a grok` — if the first hit is a real ELF under `~/.grok/bin/grok` (not a symlink to `grok-with-focus-filter.sh`), re-run `--install` (often after `grok update`). |
+
+### Local fix (focus-filter)
+
+Keep session `focus-events on`. Blind only Grok.
+
+Grok’s installer adds `export PATH="$HOME/.grok/bin:$PATH"` in `~/.zshrc`, so **`~/.grok/bin` wins over `~/.local/bin`**. A symlink only under `~/.local/bin/grok` is skipped — that is why a resume can still flash after “installing” the filter there. Install into the path Grok actually uses:
+
+```bash
+scripts/runtime/grok-with-focus-filter.sh --install
+# parks the real binary at ~/.grok/bin/grok.real
+# points ~/.grok/bin/grok (+ ~/.local/bin/grok) at the wrapper
+hash -r
+type -a grok          # first hit should be ~/.grok/bin/grok → …/grok-with-focus-filter.sh
+grok --version        # still prints Grok version via grok.real
+```
+
+- Implementation: `scripts/runtime/grok-with-focus-filter.sh` + `scripts/runtime/grok-focus-filter.py` (PTY relay; strips `\e[I` / `\e[O]`).
+- Opt out one run: `GROK_FOCUS_FILTER=0 grok …`
+- Override binary: `GROK_REAL_BIN=/path/to/grok`
+- After install (and after every `grok update`, which overwrites `~/.grok/bin/grok`), **exit and `--resume`** any live Grok. Confirm the new process is `python3 → grok.real`, not `zsh → grok` with exe `~/.grok/bin/grok` as a plain ELF.
+
+### Verify
+
+```bash
+# Headless causal matrix (isolated tmux; does not touch work sessions).
+# inject-real uses ~/.grok/bin/grok.real (ELF); inject-wrap uses the installed wrapper.
+scripts/dev/repro-grok-focus-flash.sh matrix
+# Expect: inject-real / inject-wrap-off → FLASH(clear+redraw);
+#         inject-wrap → no-clear
+```
+
+Interactive: split Grok + shell with transcript, `Alt+o` several times — whole surface should stay steady. Live tree should look like `python3 …/grok-focus-filter.py -- …/grok.real --resume …` (confirmed on this machine 2026-08-20 after `--install` + resume).
+
+Version check when revisiting upstream: `grok update --check --json` (stable) and, if needed, side-load an alpha artifact under `/tmp` and re-run the inject harness — do not flip the machine’s `channel` unless intending to stay on alpha. After any `grok update`, re-run `--install` before trusting the interactive check.
 
 ## Upstream Constraints
 

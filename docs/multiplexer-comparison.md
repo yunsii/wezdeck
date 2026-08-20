@@ -113,13 +113,17 @@ observation that produced them.
     `[theme.custom] panel_bg`; pane distinction comes from `pane_borders` and
     the accent color. Two consequences: the cream active/inactive pane tint of
     [`appearance-presets.md`](./appearance-presets.md) cannot be reproduced, and
-    the Grok flicker mechanism recorded in [`tmux-ui.md`](./tmux-ui.md) (opaque
-    `#eeeeee` fighting the dynamic `window-style` / `window-active-style` cream
-    on focus-in repaint) **has no differential left to flash against**. The
-    `Color::Reset` patch in `scripts/dev/patch-grok-theme-wezdeck.sh` stays
-    useful but now resolves to one static background. Never visually confirmed: the
-    evaluation switch was removed before that test ran, and the tmux-side fix
-    is the one worth testing now — see Open questions.
+    the **secondary** Grok tint fight in [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux)
+    (opaque `#eeeeee` vs cream `window-style` / `window-active-style`) has no
+    differential left to flash against. That does **not** remove the **primary**
+    FocusGained `terminal.clear()` flash (any multiplexer still triggers
+    upstream’s heal; macOS can hide it via sub-frame client redraw, WSL→Windows
+    does not — even a ~31×15 pane still flashed). The cream patch stays optional
+    for tint; the standing mitigation for whole-content flash is
+    `scripts/runtime/grok-with-focus-filter.sh --install` (wrapper at
+    `~/.grok/bin/grok`, ELF at `grok.real`) in that same section. Never
+    visually confirmed on herdr: the evaluation switch was removed before
+    that test ran — see Open questions.
 11. **Config reloads live.** `herdr server reload-config` returned
     `status=applied, diagnostics=[]` and the attached client repainted with the
     new sidebar layout. No client restart, no session loss.
@@ -151,7 +155,7 @@ coupling still valid.
 | Zero-config agent state detection | **OSC 133 escape sequences now trigger events**: `pane-command-started`, `pane-command-finished`, `pane-shell-prompt`. Plus `pane_last_output_time` as a format and a `t/d` modifier giving a time difference in seconds. | A provider-agnostic attention path. `scripts/runtime/agent-attention/adapters/` currently has only `claude.sh` and `codex.sh` — Grok has no attention coverage at all. OSC 133 events plus `pane_last_output_time` would cover any agent without a vendor hook. |
 | Popups / overlays as first-class UI | **Floating panes**: `new-pane` / `split-window` with `-T` title, `-B` border lines, `-W` wait-for-exit; **modal panes** via `new-pane -O` (one per window, blocks interaction elsewhere); move/resize/drag including mouse; `break-pane` floats a tiled pane and `join-pane` tiles a floating one; `choose-tree -h` / `choose-client -h` hide the pane containing the mode and `-k` kills it on exit; `pane-border-status` gains `top-floating` / `bottom-floating`; default bindings under `C-b g`. `display-panes` is now a mode that can run inside another pane. Menus belong to the window and appear on all clients. | Upgrades the substrate under 78 `display-popup` call sites. Cron-driven reminders get a modal pane instead of a popup that dies on close. Most importantly: **a persistent sidebar — the thing herdr's UI is built around — becomes expressible as a floating pane**, which `display-popup` never allowed. |
 | Sidebar list + fast switching | `switch-mode`, a fast switcher bound by default to `Tab` (windows) and `S-Tab` (sessions). Additional pane sort orders, `z` sort order for floating panes, `-f` filters on `kill-pane -a` / `kill-window -a` / `kill-session -a`. | Overlaps the `Alt+/` picker and worktree cycling; the picker subsystem (2,637 lines) can shrink onto native modes rather than being ported anywhere. |
-| Theme awareness | Builtin light and dark themes, a `theme` option controlling detect / terminal / force-light / force-dark, `themeblack` / `themewhite` / `themegreen` style names expanded as formats, `tree-mode-selection-style`, and — decisive here — **the terminal's own theme is reported to panes instead of being guessed from the background** (issue 5343). | This is the root cause of the Grok background conflict in [`tmux-ui.md`](./tmux-ui.md): Grok picks an opaque `#eeeeee` because it guesses. If tmux reports the real theme, `scripts/dev/patch-grok-theme-wezdeck.sh` may stop being necessary — a better outcome than herdr's "no per-pane background at all" (constraint 10), because the cream active/inactive tint survives. |
+| Theme awareness | Builtin light and dark themes, a `theme` option controlling detect / terminal / force-light / force-dark, `themeblack` / `themewhite` / `themegreen` style names expanded as formats, `tree-mode-selection-style`, and — decisive here — **the terminal's own theme is reported to panes instead of being guessed from the background** (issue 5343). | May retire the **secondary** GrokDay `#eeeeee` tint patch in [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux) if Grok stops guessing light bg. It does **not** fix the **primary** FocusGained full-clear flash (gate is multiplexer detection, not theme guess). Better than herdr’s “no per-pane background” (constraint 10) because cream active/inactive tint can survive. |
 | Status animation for agent activity | `#{A/count:frames}` renders a frame series as an animation in the status line (issue 5412). | An "agent working" spinner with no external script and no timer. |
 | Synchronized-output correctness | Post-3.7c master: **DECRQM used to detect mode 2026**, and "Flush output before ending sync". | Directly in the area [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md) documents; the repo tmux floor may want to move again. |
 | Misc worth borrowing | `set-option` / `set-hook` take formats with a `-F` flag; `dim=` and `link=` / `nolink` style attributes; `O:` loops over options and `V:` over environments; `I` reports client terminal info; `m` supports multiple terms and fuzzy matching; `client_colours`, `pane_start_command_list`, `pane_modal_flag`, `window_modal_pane`; `new-window -E` / `respawn-pane -E` for empty panes; `mouse` now defaults to on; control-mode fixes for clients hanging on exit and notifications to exiting clients (issues 5356, 5357). | Fuzzy `m` and `O:` loops simplify status and picker formats. The control-mode fixes matter for [`session-bridge`](../openclaw/docs/session-bridge.md), which parses control/format output. |
@@ -305,13 +309,15 @@ per the repo convention.
   against `attention.json` as produced by the Claude adapter. This is the
   highest-value borrow on the list.
 - **2026-08-18 — Does tmux 3.8 theme reporting fix the Grok background
-  conflict?** `docs/tmux-ui.md` records Grok painting an opaque `#eeeeee`
-  because it guesses light/dark from the background; 3.8 reports the terminal's
+  tint conflict?** Secondary only — see [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
+  Grok paints opaque `#eeeeee` when it guesses light; 3.8 reports the terminal's
   real theme to panes (issue 5343). Close it by testing against master with
   `scripts/dev/patch-grok-theme-wezdeck.sh` reverted; if clean, retire the patch
-  and the `WEZDECK_GROK_BG` knob. Note this beats the herdr outcome, which
-  removed the flicker only by having no per-pane background at all
-  (constraint 10) — the cream active/inactive tint survives here.
+  and the `WEZDECK_GROK_BG` knob. Does **not** close the FocusGained full-clear
+  flash (that needs an upstream gate narrow or the PATH focus-filter; macOS
+  sub-frame redraw can hide it, WSL→Windows cannot — see the same section).
+  Beats herdr’s “no per-pane background” outcome (constraint 10) because cream
+  active/inactive tint can survive.
 - **2026-08-18 — Is a persistent sidebar worth building on floating panes?**
   herdr's always-visible agent list was its most convincing UI element, and
   `new-pane -O` / floating panes make one expressible for the first time —
