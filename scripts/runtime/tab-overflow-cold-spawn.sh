@@ -53,8 +53,8 @@ fi
 # Same resolver as Alt+g / refresh — do not reimplement key lookup or
 # ${WEZTERM_REPO} expansion here (hard rule: keep expand sites lockstep
 # with resume-command.sh + managed_cli.lua).
-profile="$(resume_command_active_profile "$repo_root")"
-agent_command_str="$(resolve_managed_primary_command "$repo_root")"
+profile="$(resume_command_active_profile "$repo_root" "$cwd")"
+agent_command_str="$(resolve_managed_primary_command "$repo_root" "$cwd")"
 
 # Split into argv. open-project-session.sh's build_primary_shell_command
 # quotes each element with %q, so the result is a single primary command

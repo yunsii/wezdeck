@@ -49,6 +49,8 @@ Most sync steps short-circuit when their inputs haven't changed since the last s
 | `build-picker` | binary exists; no `.go` / `go.mod` / `go.sum` newer than the binary | (none — Go's own incremental cache covers the unusual case) |
 | `render-tmux-bindings` | rendered output already matches the would-be output byte-for-byte (write goes to a temp + cmp + mv on diff) | (none — content-based, not mtime-based) |
 
+Sync also runs `render-workspace-agent-map.sh` (no skip gate yet) so `wezterm-x/local/workspace-agent-map.tsv` stays aligned with per-item `launcher` overrides in `local/workspaces.lua`. Requires `lua5.4` on PATH. See [`workspaces.md`](./workspaces.md#per-repo-agent-cli).
+
 Each gate emits its decision to the `[sync] step=...` traces and to the runtime log (`category="sync"`). When something feels wrong ("I edited X and the helper still acts old"), grep for `step=helper-install\|step=helper-ensure\|step=lua-precheck` in the traces — the `status=skipped reason=...` line names the exact gate, and you can either set the matching `_FORCE_` var or `touch` the source so its mtime updates.
 
 ## Host Helper Release

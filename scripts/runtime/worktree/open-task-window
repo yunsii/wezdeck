@@ -11,8 +11,9 @@
 # Every lifecycle — and the legacy bare path — uses the `<base>-resume`
 # profile so the agent auto-continues the cwd's most recent conversation;
 # when no prior conversation exists, the resume command falls back to a
-# fresh agent on its own. `<base>` defaults to whatever
-# MANAGED_AGENT_PROFILE selects (claude / codex / …).
+# fresh agent on its own. `<base>` comes from workspace-agent-map.tsv for
+# the current repo (per-item launcher in workspaces.lua), else
+# MANAGED_AGENT_PROFILE (claude / codex / …).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -51,7 +52,8 @@ both names to `<subject-slug>-2`, `<subject-slug>-3`, etc. Use `Alt+g` /
 All lifecycles (and the legacy bare-name path) launch with the
 `<base>-resume` profile so the agent auto-continues the cwd's most
 recent conversation; the resume command falls back to a fresh agent
-when no prior conversation exists for that cwd.
+when no prior conversation exists for that cwd. `<base>` follows
+workspace-agent-map.tsv (per-item launcher) then MANAGED_AGENT_PROFILE.
 EOF
 }
 
@@ -158,14 +160,15 @@ task_slug=""
 branch_name=""
 resolve_names
 
-# Profile selection. Resolve the "base" profile from the user's preference
-# (MANAGED_AGENT_PROFILE in shared.env), strip any trailing `-resume` so we
-# re-derive cleanly, then always pick the resume variant — every lifecycle
-# (dev/task/hotfix) and the legacy bare path want cwd auto-resume; if there
-# is no prior conversation for the cwd, the resume command falls back to a
-# fresh agent on its own.
-base_profile="${MANAGED_AGENT_PROFILE:-claude}"
-base_profile="${base_profile%-resume}"
+# Profile selection. Prefer per-repo launcher from workspace-agent-map.tsv
+# (derived from workspaces.lua), then MANAGED_AGENT_PROFILE / shared.env.
+# Always launch the resume variant — every lifecycle (dev/task/hotfix) and
+# the legacy bare path want cwd auto-resume; if there is no prior
+# conversation for the cwd, the resume command falls back to a fresh agent.
+# shellcheck disable=SC1091
+source "$RUNTIME_LIB_DIR/worktree/lib/resume-command.sh"
+base_profile="$(resume_command_active_profile "${WEZTERM_CONFIG_REPO:-$WEZTERM_CONFIG_REPO_DEFAULT}" "$PWD")"
+base_profile="${base_profile:-claude}"
 selected_profile="${base_profile}-resume"
 quick_create_provider="${WT_QUICK_CREATE_PROVIDER:-tmux-agent}"
 quick_create_provider_mode="${WT_QUICK_CREATE_PROVIDER_MODE:-auto}"

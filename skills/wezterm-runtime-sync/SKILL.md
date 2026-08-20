@@ -30,6 +30,7 @@ The scripts under `skills/wezterm-runtime-sync/scripts/` are the source of truth
 - Treat repo-root `.sync-target` as the cache for the chosen runtime home.
 - Remember that gitignored files under `wezterm-x/local/` are still copied because sync reads the repository working tree, not just tracked files.
 - Sync also copies `config/worktree-task.env` to `<runtime_dir>/repo-worktree-task.env` so the Windows-side wezterm.exe can read it (`io.open` on a `/home/...` WSL path returns nil from Windows). `wezterm-x/lua/constants.lua` reads that local copy first; without it, the `<base>_resume` profile defined only in the env file is missing on the Windows leg and workspace open silently falls back to the bare profile.
+- Sync runs `scripts/runtime/render-workspace-agent-map.sh` (requires `lua5.4`) to regenerate `wezterm-x/local/workspace-agent-map.tsv` from workspaces.lua so shell launch paths honor per-item `launcher` overrides. See `docs/workspaces.md#per-repo-agent-cli`.
 - The `lua-precheck` step (between `publish-runtime` and `helper-install`) dofile-loads the synced `lua/constants.lua` under a mocked `wezterm` and asserts `default_resume_profile ≠ default_profile` plus a `--continue` / `resume` literal in the resume command. Requires `lua5.4` (or `lua5.3`/`lua`); skips with a warning when none is installed.
 
 ## Commands

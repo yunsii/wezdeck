@@ -225,7 +225,7 @@ function M.new(ctx)
   -- (i.e. without an intervening tmux). Profile commands live in
   -- `constants.managed_cli.profiles`; this list mirrors them so the
   -- detection path stays in sync if a new profile is added.
-  local agent_cli_basenames = { claude = true, codex = true }
+  local agent_cli_basenames = { claude = true, codex = true, grok = true }
 
   handlers['agent.new_conversation'] = function()
     return wezterm.action_callback(function(window, pane)

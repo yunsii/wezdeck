@@ -99,7 +99,7 @@ if [[ -z "$window_id" ]]; then
   # cwd context. resolve_resume_primary_command falls back to "" when
   # the profile has no resume command configured; in that case the
   # template clone path takes over unchanged.
-  override_primary_command="$(resolve_resume_primary_command "$wezterm_config_repo" || true)"
+  override_primary_command="$(resolve_resume_primary_command "$wezterm_config_repo" "$worktree_root" || true)"
   runtime_log_info worktree "using template window for worktree creation" "session_name=$session_name" "template_window=${template_window:-none}" "source_window_id=$source_window_id" "source_worktree_root=$source_worktree_root" "override_primary_command=${override_primary_command:-<none>}"
   window_id="$(tmux_worktree_create_window_from_template "$session_name" "$worktree_root" "$worktree_label" "$template_window" "$source_worktree_root" attach "$override_primary_command")"
 else

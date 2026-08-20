@@ -327,6 +327,11 @@ prepare_runtime_subflow() {
     sync_trace "step=render-tmux-appearance status=completed"
   fi
 
+  if [[ -x "$REPO_ROOT/scripts/runtime/render-workspace-agent-map.sh" ]]; then
+    "$REPO_ROOT/scripts/runtime/render-workspace-agent-map.sh"
+    sync_trace "step=render-workspace-agent-map status=completed"
+  fi
+
   # Mirror source → target directly. --delete removes stale files; the
   # --exclude flags protect per-target metadata files (written below)
   # from being deleted as "unknown to source" on subsequent syncs.
@@ -402,8 +407,9 @@ run_runtime_native_flow() {
   fi
 
   # Two independent chains run in parallel:
-  #   runtime: render-tmux-bindings → rsync runtime → write metadata
-  #   native:  picker build         → rsync native
+  #   runtime: render-tmux-bindings / appearance / workspace-agent-map
+  #            → rsync runtime → write metadata
+  #   native:  picker build → rsync native
   # rsync writes incrementally to TARGET (no temp+rename publish step);
   # subsequent syncs only write changed files.
   prepare_runtime_subflow "$repo_root_path" &

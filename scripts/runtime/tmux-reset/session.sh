@@ -66,7 +66,7 @@ create_window_from_spec() {
   # refresh would carry no `@wezterm_pane_role` and the bindings would
   # fall through to plain key forwarding while the wrapper boots.
   primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1)"
-  ensure_primary_pane_role_tag "$primary_pane_id" "$role" "${wezterm_config_repo:-}"
+  ensure_primary_pane_role_tag "$primary_pane_id" "$role" "${wezterm_config_repo:-}" "$worktree_root"
 
   printf '%s\n' "$window_id"
 }

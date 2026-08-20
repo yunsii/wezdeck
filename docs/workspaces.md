@@ -32,7 +32,7 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
 - The managed agent startup uses the profile default, and switches to the light variant when `managed_cli.ui_variant = "light"`.
 - Profile commands are forked into bare and `-resume` variants. Every wezterm/tmux entry point that creates **or refreshes** an agent pane — workspace first-open of `work` / `config` (the `defaults.launcher` for managed workspaces resolves to `<base>-resume` when that profile is registered), `Ctrl+k g d/t/h` lifecycle hotkeys, the `Alt+g` picker when it spawns a window on demand, `Alt+Shift+G` cycle, the legacy bare-name path of `open-task-window`, and the palette refresh actions (`session.refresh-current-window` / `refresh-current-session` / `refresh-current-workspace`) — launches the agent under the `<base>-resume` profile (`sh -c 'claude --continue || exec claude'`, `sh -c 'codex resume --last || exec codex'`). Both wrappers fall back to a fresh session when the cwd has no prior conversation — `claude --continue` exits 1 with "No conversation found to continue" on its own, but the `||` wrapper catches that and execs the bare CLI, so resume is safe on first open of a brand-new worktree or workspace tab. The bare `claude` / `codex` profiles are kept as the fallback target of those resume commands and for direct `worktree-task launch` invocations that opt out of resume explicitly.
 - `session.refresh-current-window` only respawns the focused pane: focus the agent pane to bring the agent back under the resume profile, focus a secondary pane to respawn just that shell. The "primary pane" of a managed window is identified by pane id (the first entry from `tmux list-panes`), not pane index — under this repo's `tmux.conf` (`pane-base-index 1`) the agent pane's index is `1`. Use `refresh-current-session` if you want the whole window rebuilt regardless of focus.
-- The pane's `@wezterm_pane_role=agent-cli:<base>` tag is written by **both** entry points: `open-project-session.sh` on first workspace open (it receives the agent profile via `--agent-profile <base>`, supplied by `workspace/runtime.lua:project_session_args` whenever `item.launcher` resolves to a managed launcher) and `tmux-reset/{session,window}.sh` on every refresh / reset (which clear the option for non-agent respawns via `ensure_primary_pane_role_tag`). This tag lets `Ctrl+n` / `Ctrl+P` recognize agent panes through the `sh -c '<resume> || exec <fresh>'` wrapper's `pane_current_command=sh`/`node` boot transient. The shared `@agent_pane_match` predicate (defined at the top of `tmux.conf`) layers this **intent tag** with the leaf-name fallback (`claude*` / `codex*`) and a shell-veto, so manually-launched agent panes still work without a tag and the binding falls through cleanly once a shell takes over the pane. See the `Ctrl+n` entry in `keybindings.md` for the full predicate.
+- The pane's `@wezterm_pane_role=agent-cli:<base>` tag is written by **both** entry points: `open-project-session.sh` on first workspace open (it receives the agent profile via `--agent-profile <base>`, supplied by `workspace/runtime.lua:project_session_args` whenever `item.launcher` resolves to a managed launcher) and `tmux-reset/{session,window}.sh` on every refresh / reset (which clear the option for non-agent respawns via `ensure_primary_pane_role_tag`). This tag lets `Ctrl+n` / `Ctrl+P` recognize agent panes through the `sh -c '<resume> || exec <fresh>'` wrapper's `pane_current_command=sh`/`node` boot transient. The shared `@agent_pane_match` predicate (defined at the top of `tmux.conf`) layers this **intent tag** with the leaf-name fallback (`claude*` / `codex*` / `grok*`) and a shell-veto, so manually-launched agent panes still work without a tag and the binding falls through cleanly once a shell takes over the pane. See the `Ctrl+n` entry in `keybindings.md` for the full predicate.
 - Profile command strings are sourced from `config/worktree-task.env` (repo-level) and `~/.config/worktree-task/config.env` (user-level). The Lua baseline in `wezterm-x/lua/constants.lua` only carries bare fallbacks used when no env file populates them, so both WezTerm workspace panes and worktree-task quick-create windows read the same single source of truth; edit the env file to change every surface at once.
 - Naming convention asymmetry: shell-side reads use the literal `<base>-resume` form (hyphen) to derive `WT_PROVIDER_AGENT_PROFILE_<UPPER>_RESUME_COMMAND` env keys, while the Lua env parser in `wezterm-x/lua/config/managed_cli.lua` normalizes the captured profile name with `[^a-z0-9]+ → _`, so the registered Lua key is `<base>_resume` (underscore). The workspace-open resolver in `wezterm-x/lua/constants.lua` looks up `<base>_resume`. If you add a new managed agent profile, update both sides or `default_resume_profile` will silently fall back to the bare profile.
 
@@ -66,6 +66,33 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
 - Raw `command = { ... }` overrides still bypass the managed launcher profile entirely.
 - Existing tmux worktree sessions are reused as-is. Changing the launcher affects newly created or recreated sessions.
 - `workspace.open()` opens only its first configured entry window immediately. Wider navigation is expected to happen inside tmux.
+
+### Agent selection layers
+
+Three layers, most specific wins:
+
+| Layer | Where | Example |
+|---|---|---|
+| **Repo** | `items[].launcher` in `workspaces.lua` | one opensource checkout on `codex_resume` |
+| **Workspace** | `defaults.launcher` for that workspace | `config` → `grok_resume` (tracked baseline + local example) |
+| **Global** | `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env` (else `WT_PROVIDER_AGENT_PROFILE` / built-in `claude`) | machine default for `work` / `opensource` when their defaults still point at `managed_launcher` |
+
+```lua
+config = {
+  defaults = { launcher = 'grok_resume' },  -- workspace default
+  items = {
+    { cwd = '/home/you/github/wezterm-config' },                 -- inherits grok
+    { cwd = '/home/you/github/special', launcher = 'codex_resume' }, -- repo override
+    { cwd = '/home/you/github/legacy', command = { 'bash' } },   -- no managed agent
+  },
+}
+```
+
+- **WezTerm first-open** resolves `item.launcher or defaults.launcher` in Lua.
+- **Shell entry points** (`Alt+g`, `Ctrl+k g d/t/h`, refresh, tab-overflow cold-spawn) read `wezterm-x/local/workspace-agent-map.tsv` (cwd → base profile), which flattens the same merge (repo override, else workspace default). Sync regenerates it via `scripts/runtime/render-workspace-agent-map.sh`. Edit `launcher` / workspace defaults, then run `wezterm-runtime-sync` before expecting shell paths to pick up the change.
+- If the map misses the cwd: `MANAGED_AGENT_PROFILE` / `shared.env` → `WT_PROVIDER_AGENT_PROFILE` → `claude`.
+- Within one repo family, a more specific mapped cwd wins over a shorter prefix; when only the family rule applies, the entry whose cwd equals the primary worktree is preferred.
+- Registered profiles today: `claude`, `claude_sub2api`, `codex`, `grok` (each with a `_resume` Lua key / `-resume` shell form). Add new ones in `config/worktree-task.env` + `scripts/runtime/agent-launcher.sh`.
 
 ## Task Worktree Lifecycle Model
 
@@ -161,7 +188,7 @@ Edit `wezterm-x/local/workspaces.lua` when you need to change:
 
 - your private project directories
 - machine-specific workspace overrides
-- per-project launcher overrides that should not be committed
+- per-project launcher overrides that should not be committed (also regenerates `workspace-agent-map.tsv` on sync so `Alt+g` / `Ctrl+k g` / refresh honor them)
 - raw per-project command overrides that should bypass the managed launcher
 
 Example local override (minimal — full template with `work` + `opensource` + `config` lives in `wezterm-x/local.example/workspaces.lua`):

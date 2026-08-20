@@ -23,7 +23,7 @@
 #   workspace first-open) shares the same env view.
 #
 # Usage:
-#   agent-launcher.sh <claude|claude-sub2api|codex>
+#   agent-launcher.sh <claude|claude-sub2api|codex|grok>
 #
 # Claude auth profiles:
 #   claude            OAuth / subscription (team or individual). Gateway
@@ -50,7 +50,7 @@ runtime_env_load_managed
 agent="${1:-}"
 if [[ -n "${2:-}" ]]; then
   printf 'agent-launcher: unexpected argument %s (Happy wrap removed)\n' "$2" >&2
-  printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex>\n' >&2
+  printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex|grok>\n' >&2
   exit 1
 fi
 
@@ -112,9 +112,14 @@ case "$agent" in
   codex)
     exec sh -c 'codex resume --last || { printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }'
     ;;
+  grok)
+    # Grok Build: `--continue` resumes the most recent session for cwd
+    # (same role as `claude --continue` / `codex resume --last`).
+    exec sh -c 'grok --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading grok ...\033[0m\n"; exec grok; }'
+    ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
-    printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex>\n' >&2
+    printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex|grok>\n' >&2
     exit 1
     ;;
 esac

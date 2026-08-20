@@ -47,6 +47,12 @@ return {
       { cwd = '/home/your-user/work/myproject/dev-billing' },
       { cwd = '/home/your-user/work/myproject/dev-search-rewrite' },
 
+      -- Per-repo agent override: this checkout uses Codex for every
+      -- launch path (workspace first-open, Alt+g, Ctrl+k g, refresh).
+      -- After editing, run wezterm-runtime-sync so shell paths refresh
+      -- wezterm-x/local/workspace-agent-map.tsv.
+      -- { cwd = '/home/your-user/work/codex-preferred', launcher = 'codex_resume' },
+
       -- Plain shell over a service repo, no managed agent.
       { cwd = '/home/your-user/work/project-c', command = { 'bash' } },
     },
@@ -73,9 +79,14 @@ return {
   -- baseline entry, so the repo root must be listed explicitly as the
   -- first item (using `constants.main_repo_root` keeps it correct after a
   -- repo move). Drop in additional sibling dotfiles repos as extra items.
+  --
+  -- Workspace-default agent is grok (resume). Machine global
+  -- (MANAGED_AGENT_PROFILE → managed_launcher) still applies to `work` /
+  -- `opensource` above. A single item can still override with its own
+  -- `launcher = 'claude_resume'` / `'codex_resume'`.
   config = {
     defaults = {
-      launcher = managed_launcher,
+      launcher = 'grok_resume',
     },
     items = {
       { cwd = constants.main_repo_root or '/home/your-user/github/wezterm-config' },

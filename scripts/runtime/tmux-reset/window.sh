@@ -192,7 +192,7 @@ window_refresh_spec() {
   # command (the existing behavior).
   if [[ "$role" == managed* ]]; then
     if declare -F resolve_resume_primary_command >/dev/null 2>&1; then
-      resume_command="$(resolve_resume_primary_command "${wezterm_config_repo:-}" 2>/dev/null || true)"
+      resume_command="$(resolve_resume_primary_command "${wezterm_config_repo:-}" "$worktree_root" 2>/dev/null || true)"
       if [[ -n "$resume_command" ]]; then
         primary_command="$resume_command"
       fi
@@ -343,7 +343,7 @@ reset_window_in_place() {
   # can detect it through the resume wrapper's leaf=sh / leaf=node
   # startup transient. See `@agent_pane_match` in tmux.conf.
   if [[ "$target_is_primary" == "1" ]]; then
-    ensure_primary_pane_role_tag "$target_pane" "$role" "${wezterm_config_repo:-}"
+    ensure_primary_pane_role_tag "$target_pane" "$role" "${wezterm_config_repo:-}" "$worktree_root"
   fi
   if [[ "$target_is_primary" == "1" && "$layout" == "managed_two_pane" && "${pane_count:-0}" -lt 2 ]]; then
     tmux_worktree_ensure_window_panes "$window_id" "$worktree_root"

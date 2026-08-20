@@ -94,18 +94,20 @@ build_primary_shell_command() {
 # leaf=sh / leaf=node startup transient.
 agent_profile_for_managed_pane() {
   local wezterm_repo="$1"
+  local cwd="${2:-}"
   if ! declare -F resolve_resume_primary_command >/dev/null 2>&1; then
     return 0
   fi
   local resume_command
-  resume_command="$(resolve_resume_primary_command "$wezterm_repo" 2>/dev/null || true)"
+  resume_command="$(resolve_resume_primary_command "$wezterm_repo" "$cwd" 2>/dev/null || true)"
   [[ -n "$resume_command" ]] || return 0
   local profile
   if declare -F resume_command_active_profile >/dev/null 2>&1; then
-    profile="$(resume_command_active_profile "$wezterm_repo" 2>/dev/null || true)"
+    profile="$(resume_command_active_profile "$wezterm_repo" "$cwd" 2>/dev/null || true)"
   else
     profile="${MANAGED_AGENT_PROFILE:-claude}"
     profile="${profile%-resume}"
+    profile="${profile%_resume}"
   fi
   printf '%s\n' "$profile"
 }
@@ -120,11 +122,12 @@ ensure_primary_pane_role_tag() {
   local pane_id="${1:?missing pane id}"
   local role="${2:-}"
   local wezterm_repo="${3:-}"
+  local cwd="${4:-}"
   local agent_profile=""
 
   [[ -n "$pane_id" ]] || return 0
   if [[ "$role" == managed* ]]; then
-    agent_profile="$(agent_profile_for_managed_pane "$wezterm_repo" 2>/dev/null || true)"
+    agent_profile="$(agent_profile_for_managed_pane "$wezterm_repo" "$cwd" 2>/dev/null || true)"
   fi
   if [[ -n "$agent_profile" ]]; then
     tmux set-option -p -t "$pane_id" @wezterm_pane_role "agent-cli:$agent_profile" 2>/dev/null || true
