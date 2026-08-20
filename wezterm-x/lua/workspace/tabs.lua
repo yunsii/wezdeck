@@ -237,7 +237,15 @@ exec tmux attach -t "$session"
   end
 
   local function project_tab_title(item)
-    return item and item.cwd and helpers.basename(item.cwd) or nil
+    if not item then
+      return nil
+    end
+    -- Optional display override (e.g. brand name when the checkout dir
+    -- still uses a legacy basename). Falls back to the cwd basename.
+    if type(item.title) == 'string' and item.title ~= '' then
+      return item.title
+    end
+    return item.cwd and helpers.basename(item.cwd) or nil
   end
 
   local function set_project_tab_title(tab, item)
@@ -378,7 +386,13 @@ exec tmux attach -t "$session"
       return false
     end
     for i, info in ipairs(infos) do
-      if not tab_matches_item(info.tab, desired_items[i]) then
+      local item = desired_items[i]
+      if not tab_matches_item(info.tab, item) then
+        return false
+      end
+      -- Title can drift when items[].title changes while cwd still
+      -- matches; force a sync pass so set_project_tab_title runs.
+      if tab_title_safe(info.tab) ~= project_tab_title(item) then
         return false
       end
     end

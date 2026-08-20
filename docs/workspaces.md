@@ -190,6 +190,7 @@ Edit `wezterm-x/local/workspaces.lua` when you need to change:
 - machine-specific workspace overrides
 - per-project launcher overrides that should not be committed (also regenerates `workspace-agent-map.tsv` on sync so `Alt+g` / `Ctrl+k g` / refresh honor them)
 - raw per-project command overrides that should bypass the managed launcher
+- optional per-item `title` for the WezTerm tab display name (defaults to the cwd basename; does not rename the checkout dir or the tmux session id)
 
 Example local override (minimal — full template with `work` + `opensource` + `config` lives in `wezterm-x/local.example/workspaces.lua`):
 

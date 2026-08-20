@@ -140,6 +140,10 @@ exit 1
 
         normalized.command = helpers.copy_array(raw_command)
         normalized.launcher = launcher
+        -- Optional WezTerm tab display override (see project_tab_title).
+        if type(item) == 'table' and type(item.title) == 'string' and item.title ~= '' then
+          normalized.title = item.title
+        end
 
         if not normalized.command and launcher then
           normalized.command, normalized.command_error = managed_launcher_command(launcher)
