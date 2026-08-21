@@ -43,18 +43,20 @@ return {
   --   -- macos_window_background_blur = 20,
   -- },
   -- palette = {                            -- override individual theme colors
-  --   -- tab_active_bg = 'rgba(210,197,174,0.7)',
+  --   -- tab_active_bg = 'rgba(175,155,128,0.7)',
   --   -- Right-status counter + tab-badge colors. Shared with the disk /
   --   -- memory warning badges and the SB waiting state — see
-  --   -- docs/agent-attention.md before retuning them.
-  --   -- tab_attention_waiting_bg = '#c7925b',
-  --   -- tab_attention_waiting_fg = '#1f1a11',
+  --   -- docs/agent-attention.md before retuning them. waiting/done sit on
+  --   -- the soft-action ladder; running is ambient (quieter) on purpose;
+  --   -- focus (`tab_active_bg`) stays heavier than both.
+  --   -- tab_attention_waiting_bg = '#ddbe9f',
+  --   -- tab_attention_waiting_fg = '#493624',
   --   -- `_glyph` tints only the counter's leading mark (▲ / ✓ / ●) so it
   --   -- separates from the label on the same block; omit it and the mark
   --   -- takes `_fg` like the label.
-  --   -- tab_attention_waiting_glyph = '#6f4213',
-  --   -- tab_attention_done_glyph    = '#2f6236',
-  --   -- tab_attention_running_glyph = '#27527f',
+  --   -- tab_attention_waiting_glyph = '#82592e',
+  --   -- tab_attention_done_glyph    = '#4a6e42',
+  --   -- tab_attention_running_glyph = '#406690',
   -- },
   -- Right-status glyphs for the agent-attention counters. `''` drops the
   -- glyph and leaves a bare `2 waiting`. Does NOT move the Alt+/ and

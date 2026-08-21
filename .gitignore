@@ -1,4 +1,7 @@
 .sync-target
+# Python bytecode from runtime helpers (e.g. grok-focus-filter)
+__pycache__/
+*.py[cod]
 wezterm-x/local/
 wezterm-x/tmux/chord-bindings.generated.conf
 wezterm-x/tmux/appearance.generated.conf

@@ -28,15 +28,15 @@ end
 local PALETTE = {
   tab_bar_background = '#000000',
   new_tab_fg = '#888888',
-  tab_attention_waiting_bg = '#d1a477',
-  tab_attention_waiting_fg = '#2c1f12',
-  tab_attention_waiting_glyph = '#6f4100',
-  tab_attention_done_bg = '#93bb8b',
-  tab_attention_done_fg = '#1a2517',
-  tab_attention_done_glyph = '#225c13',
-  tab_attention_running_bg = '#89b2e0',
-  tab_attention_running_fg = '#172330',
-  tab_attention_running_glyph = '#094e8c',
+  tab_attention_waiting_bg = '#ddbe9f',
+  tab_attention_waiting_fg = '#493624',
+  tab_attention_waiting_glyph = '#82592e',
+  tab_attention_done_bg = '#b2cdac',
+  tab_attention_done_fg = '#2f402c',
+  tab_attention_done_glyph = '#4a6e42',
+  tab_attention_running_bg = '#bfd3eb',
+  tab_attention_running_fg = '#364960',
+  tab_attention_running_glyph = '#406690',
 }
 
 -- Walks the format-parts list and returns the Foreground in effect for
@@ -147,12 +147,12 @@ describe('glyph tint on an active counter', function()
 
   it('paints the glyph with _glyph and the label with _fg', function()
     with_live_entries(function()
-      assert_eq(color_of('▲', PALETTE), '#6f4100', 'waiting glyph tint')
-      assert_eq(color_of('1 waiting', PALETTE), '#2c1f12', 'waiting label color')
-      assert_eq(color_of('✓', PALETTE), '#225c13', 'done glyph tint')
-      assert_eq(color_of('1 done', PALETTE), '#1a2517', 'done label color')
-      assert_eq(color_of('●', PALETTE), '#094e8c', 'running glyph tint')
-      assert_eq(color_of('1 running', PALETTE), '#172330', 'running label color')
+      assert_eq(color_of('▲', PALETTE), '#82592e', 'waiting glyph tint')
+      assert_eq(color_of('1 waiting', PALETTE), '#493624', 'waiting label color')
+      assert_eq(color_of('✓', PALETTE), '#4a6e42', 'done glyph tint')
+      assert_eq(color_of('1 done', PALETTE), '#2f402c', 'done label color')
+      assert_eq(color_of('●', PALETTE), '#406690', 'running glyph tint')
+      assert_eq(color_of('1 running', PALETTE), '#364960', 'running label color')
     end)
   end)
 
@@ -162,9 +162,9 @@ describe('glyph tint on an active counter', function()
       for k, v in pairs(PALETTE) do
         if not k:find('_glyph', 1, true) then legacy[k] = v end
       end
-      assert_eq(color_of('▲', legacy), '#2c1f12', 'waiting glyph did not fall back')
-      assert_eq(color_of('✓', legacy), '#1a2517', 'done glyph did not fall back')
-      assert_eq(color_of('●', legacy), '#172330', 'running glyph did not fall back')
+      assert_eq(color_of('▲', legacy), '#493624', 'waiting glyph did not fall back')
+      assert_eq(color_of('✓', legacy), '#2f402c', 'done glyph did not fall back')
+      assert_eq(color_of('●', legacy), '#364960', 'running glyph did not fall back')
     end)
   end)
 end)

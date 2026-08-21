@@ -253,8 +253,10 @@ function M.register(opts)
     -- Reserving the cell on idle tabs also fixes the twitch but spends a
     -- column of every title on nothing. Recoloring costs no width at
     -- all, so there is nothing left to jitter. Tinting only the
-    -- foreground was tried in between and was too quiet to catch in
-    -- peripheral vision, which is this surface's entire job.
+    -- foreground was tried in between and was too quiet for action
+    -- statuses (`waiting` / `done`); `running` stays a full recolor but
+    -- on the quieter ambient ladder so it does not out-compete focus.
+    -- Ladder + focus tuning: docs/agent-attention.md / constants.lua.
     local bg, fg
     if tab.is_active then
       bg = palette.tab_active_bg

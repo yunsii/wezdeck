@@ -113,7 +113,9 @@ local base_constants = {
     tab_inactive_fg = '#6f685f',
     tab_hover_bg = '#e2dbcd',
     tab_hover_fg = '#2f302c',
-    tab_active_bg = '#d2c5ae',
+    -- Focus tab: darkest block on the strip so "where I am" wins over
+    -- every status wash. OKLCh ~ L 0.70 / C 0.045 / h 75°.
+    tab_active_bg = '#af9b80',
     tab_active_fg = '#221f1a',
     new_tab_bg = '#f1f0e9',
     new_tab_fg = '#908b83',
@@ -122,47 +124,45 @@ local base_constants = {
     tab_edge = '#ddd8cd',
     tab_accent = '#b07d48',
     -- ── Agent-attention status colors ──────────────────────────────
-    -- One ladder, three hues. The role fixes lightness and chroma; the
-    -- status only picks the hue, so no status can end up heavier or
-    -- flatter than its peers. Values are OKLCh (perceptual — equal L
-    -- really does look equally heavy, unlike HSL):
+    -- Focus-first ladders in OKLCh. Waiting / done share a soft action
+    -- ladder (below focus, above running); running sits one step quieter
+    -- on an ambient ladder. The status only picks the hue within its
+    -- ladder.
     --
-    --   role   | L    | C     | used by
-    --   _bg    | 0.75 | 0.080 | counter block, tab-strip `█` badge
-    --   _glyph | 0.42 | 0.120 | the counter's leading mark only
-    --   _fg    | 0.25 | 0.030 | counter label text
+    --   role (soft action: waiting / done)
+    --   _bg    | L 0.82 | C 0.055 | counter block, tab recolor
+    --   _glyph | L 0.50 | C 0.080 | the counter's leading mark only
+    --   _fg    | L 0.35 | C 0.040 | counter label text
     --
-    --   status  | hue
-    --   waiting |  66°  warm amber
-    --   done    | 140°  green
-    --   running | 252°  blue
+    --   role (ambient: running)
+    --   _bg    | L 0.86 | C 0.040 | soft wash — readable, not urgent
+    --   _glyph | L 0.50 | C 0.080 | same mark weight as soft action
+    --   _fg    | L 0.40 | C 0.045 | matches workspace-identity weight
     --
-    -- Amber cannot hold C 0.120 at L 0.42 in sRGB (the gamut edge there
-    -- is 0.094), so the waiting glyph sits at that edge. Taken from the
-    -- edge rather than by clamping RGB channels, which would have kept
-    -- the chroma number and swung the hue 11° toward red instead.
+    --   status  | hue   | ladder
+    --   waiting |  66°  | soft action (warm amber)
+    --   done    | 140°  | soft action (green)
+    --   running | 252°  | ambient (blue)
     --
-    -- Before this ladder (2026-08-19) the nine values were picked one at
-    -- a time and drifted: the waiting block sat 0.10 darker than the
-    -- other two, and running's chroma was 0.043 — half of waiting's,
-    -- close enough to grey that the blue `█` tab badge was hard to tell
-    -- from an inactive tab. Equal weight matters most on that badge,
-    -- which shows one status at a time: a `done` must not be easier to
-    -- miss than a `waiting` just because green was mixed paler.
+    -- History: before 2026-08-19 the nine values were hand-mixed and
+    -- drifted. Equal action weight (L 0.75 / C 0.080) fixed peer drift
+    -- but made status blocks compete with focus; 2026-08-21 demoted
+    -- running to ambient, then softened waiting/done and darkened focus
+    -- so the strip reads focus > soft-action > ambient.
     --
-    -- Retuning: move a hue to reskin a status, move a row of the ladder
-    -- to reweight every status at once. Do not hand-mix a single value —
-    -- that is what produced the drift above. Rationale + the glyph/label
-    -- split: docs/agent-attention.md.
-    tab_attention_waiting_bg = '#d1a477',
-    tab_attention_waiting_fg = '#2c1f12',
-    tab_attention_waiting_glyph = '#6f4100',
-    tab_attention_done_bg = '#93bb8b',
-    tab_attention_done_fg = '#1a2517',
-    tab_attention_done_glyph = '#225c13',
-    tab_attention_running_bg = '#89b2e0',
-    tab_attention_running_fg = '#172330',
-    tab_attention_running_glyph = '#094e8c',
+    -- Retuning: move a hue to reskin a status; move a soft-action row to
+    -- reweight waiting+done; move an ambient row to reweight running;
+    -- move `tab_active_bg` to reweight focus. Do not hand-mix a single
+    -- value. Rationale + glyph/label split: docs/agent-attention.md.
+    tab_attention_waiting_bg = '#ddbe9f',
+    tab_attention_waiting_fg = '#493624',
+    tab_attention_waiting_glyph = '#82592e',
+    tab_attention_done_bg = '#b2cdac',
+    tab_attention_done_fg = '#2f402c',
+    tab_attention_done_glyph = '#4a6e42',
+    tab_attention_running_bg = '#bfd3eb',
+    tab_attention_running_fg = '#364960',
+    tab_attention_running_glyph = '#406690',
     -- Host-disk badge at crit. Deliberately outside the ladder above: it
     -- is not an agent status, and "the disk is about to stop the machine"
     -- must never read as "an agent is waiting on you". disk_status.lua
@@ -176,13 +176,16 @@ local base_constants = {
     ime_en_fg = '#908b83',
     ime_unknown_fg = '#908b83',
     -- ── Workspace identity badges ──────────────────────────────────
-    -- Same construction as the attention ladder above — role fixes L/C
-    -- in OKLCh, the workspace only picks a hue — but pitched a full step
-    -- quieter, because these answer "where am I" rather than "act now":
+    -- Same construction as the attention ladders above — role fixes L/C
+    -- in OKLCh, the workspace only picks a hue — but pitched quieter
+    -- still, because these answer "where am I" rather than "act now"
+    -- or even "work in flight":
     --
     --   role | L    | C
-    --   bg   | 0.88 | 0.030   (attention blocks: L 0.75 / C 0.080)
-    --   fg   | 0.40 | 0.050   (attention labels: L 0.25 / C 0.030)
+    --   bg   | 0.88 | 0.030   (soft-action: L 0.82 / C 0.055;
+    --                          running wash: L 0.86 / C 0.040)
+    --   fg   | 0.40 | 0.050   (soft-action labels: L 0.35 / C 0.040;
+    --                          running labels: L 0.40 / C 0.045)
     --
     --   workspace | hue
     --   default   |  85°  near-neutral, see below
