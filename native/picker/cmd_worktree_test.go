@@ -233,7 +233,10 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 				status: "waiting", age: "2m", reason: "needs your permission to use Bash"},
 			{label: "task-perf", path: "/repo-perf", branch: "task/perf", existingWindowID: "@3", accelerator: "3",
 				status: "done", age: "3m", reason: "task done"},
-			{label: "hotfix-x", path: "/repo-hot", branch: "hotfix/x", accelerator: "4"},
+			// No window: last-visit age only (not "(new)").
+			{label: "hotfix-x", path: "/repo-hot", branch: "hotfix/x", accelerator: "4", age: "2d"},
+			// No window and no visit history: blank status cell.
+			{label: "orphan", path: "/repo-orphan", branch: "misc", accelerator: "5"},
 		},
 		selected:            1,
 		currentWorktreeRoot: "/repo-auth",
@@ -242,17 +245,20 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 
 	out := captureStdout(t, func() { ui.render() })
 
-	for _, want := range []string{"● 12s", "▲ 2m", "✓ 3m", "(new)"} {
+	for _, want := range []string{"● 12s", "▲ 2m", "✓ 3m", "2d"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status cell %q missing: %q", want, out)
 		}
 	}
-	// Live cells are never dimmed — only `(new)` is.
+	// Live cells are never dimmed — only last-visit age is.
 	if strings.Contains(out, "\x1b[2m✓ 3m") {
 		t.Fatalf("live status cell should not be dimmed: %q", out)
 	}
-	if !strings.Contains(out, "\x1b[2m(new)") {
-		t.Fatalf("(new) hint is not dimmed: %q", out)
+	if !strings.Contains(out, "\x1b[2m2d") {
+		t.Fatalf("last-visit age is not dimmed: %q", out)
+	}
+	if strings.Contains(out, "(new)") {
+		t.Fatalf("unexpected (new) hint: %q", out)
 	}
 	// Detail line carries the focused row's reason so the user knows why
 	// it is ▲ before jumping.
@@ -281,13 +287,13 @@ func TestWorktreeArchivedStatusRendersNothing(t *testing.T) {
 }
 
 func TestWorktreeSelectedRowKeepsBackgroundThroughDimStatus(t *testing.T) {
-	// The dim run in the `(new)` status cell must restore with the
+	// The dim run in the last-visit-age status cell must restore with the
 	// background-preserving SGR, not a full reset — otherwise the
 	// selected row's highlight bar stops mid-line.
 	ui := &worktreeUI{
 		rows: []worktreeRow{
 			{label: "task-perf", path: "/repo-perf", branch: "task/perf",
-				accelerator: "1"},
+				accelerator: "1", age: "3h"},
 		},
 		selected:  0,
 		repoLabel: "wezterm-config",

@@ -326,6 +326,105 @@ end
 
 M._rank_sessions = rank_sessions
 
+local function slots_path(workspace_name)
+  if not module_state.stats_dir or module_state.stats_dir == '' then
+    return nil
+  end
+  -- Co-locate with tab-stats JSON so Lua can read/write without creating
+  -- a new directory on the Windows runtime state tree (mkdir is awkward
+  -- from wezterm.exe). Filename distinguishes the sticky-slot snapshot
+  -- from the activity-score stats file.
+  return module_state.stats_dir
+    .. path_sep()
+    .. M.workspace_slug(workspace_name)
+    .. '.slots.json'
+end
+
+local function read_persisted_slots(workspace_name)
+  local path = slots_path(workspace_name)
+  if not path then return nil end
+  local fd = io.open(path, 'rb')
+  if not fd then return nil end
+  local content = fd:read('*a')
+  fd:close()
+  if not content or content == '' then return nil end
+  local wezterm = module_state.wezterm
+  if not wezterm or not wezterm.serde or not wezterm.serde.json_decode then
+    return nil
+  end
+  local ok, parsed = pcall(wezterm.serde.json_decode, content)
+  if not ok or type(parsed) ~= 'table' or type(parsed.slots) ~= 'table' then
+    return nil
+  end
+  return parsed.slots
+end
+
+local function write_persisted_slots(workspace_name, slots)
+  local path = slots_path(workspace_name)
+  if not path then return end
+  local wezterm = module_state.wezterm
+  if not wezterm or not wezterm.serde or not wezterm.serde.json_encode then
+    return
+  end
+  local payload = {
+    version = 1,
+    workspace = workspace_name,
+    slots = {},
+  }
+  for i, slot in ipairs(slots or {}) do
+    if slot and slot.session_name and slot.session_name ~= '' then
+      payload.slots[i] = {
+        session_name = slot.session_name,
+        last_swap_ms = tonumber(slot.last_swap_ms) or 0,
+      }
+    else
+      payload.slots[i] = {}
+    end
+  end
+  local ok, encoded = pcall(wezterm.serde.json_encode, payload)
+  if not ok or type(encoded) ~= 'string' then return end
+  local tmp = path .. '.tmp'
+  local fd = io.open(tmp, 'wb')
+  if not fd then return end
+  fd:write(encoded)
+  fd:close()
+  -- Atomic replace when possible; fall back to overwrite.
+  local renamed = os.rename(tmp, path)
+  if not renamed then
+    local out = io.open(path, 'wb')
+    if out then
+      out:write(encoded)
+      out:close()
+    end
+    pcall(os.remove, tmp)
+  end
+end
+
+local function hydrate_slots_from_disk(cache, workspace_name)
+  if cache.slots_hydrated then return end
+  cache.slots_hydrated = true
+  local persisted = read_persisted_slots(workspace_name)
+  if type(persisted) ~= 'table' then return end
+  local filled = 0
+  for i = 1, module_state.visible_count do
+    local entry = persisted[i]
+    if type(entry) == 'table' and type(entry.session_name) == 'string'
+        and entry.session_name ~= '' then
+      cache.slots[i] = {
+        session_name = entry.session_name,
+        last_swap_ms = tonumber(entry.last_swap_ms) or 0,
+      }
+      filled = filled + 1
+    end
+  end
+  if filled > 0 and module_state.logger and module_state.logger.info then
+    module_state.logger.info('tab_visibility', 'hydrated sticky slots', {
+      workspace = workspace_name,
+      filled = filled,
+    })
+  end
+end
+
 local function ensure_workspace_cache(workspace_name)
   local cache = module_state.workspaces[workspace_name]
   if cache then return cache end
@@ -337,10 +436,12 @@ local function ensure_workspace_cache(workspace_name)
     visible_set = {},  -- set: name -> true
     warm_set = {},
     slots = {},        -- array of { session_name, last_swap_ms } or {}
+    slots_hydrated = false,
   }
   for i = 1, module_state.visible_count do
     cache.slots[i] = {}
   end
+  hydrate_slots_from_disk(cache, workspace_name)
   module_state.workspaces[workspace_name] = cache
   return cache
 end
@@ -449,11 +550,20 @@ function M.tick(workspace_name, now_ms)
     if slot and slot.session_name then cache.visible_set[slot.session_name] = true end
   end
 
+  local swap_count = 0
+  for _ in pairs(swapped) do swap_count = swap_count + 1 end
+  -- Persist whenever membership/order of sticky slots changes so a
+  -- WezTerm restart can hydrate the same layout. Also write once after
+  -- first hydrate+tick so a never-swapped cold-open still records the
+  -- initial assignment.
+  if swap_count > 0 or not cache.slots_persisted then
+    write_persisted_slots(workspace_name, cache.slots)
+    cache.slots_persisted = true
+  end
+
   if module_state.logger and module_state.logger.info then
     local visible_csv = table.concat(visible_names, ',')
     local warm_csv = table.concat(warm_names, ',')
-    local swap_count = 0
-    for _ in pairs(swapped) do swap_count = swap_count + 1 end
     if swap_count > 0 then
       module_state.logger.info('tab_visibility', 'slot swap', {
         workspace = workspace_name,
@@ -743,6 +853,8 @@ function M.preferred_item_order(workspace_name, items, cwd_to_session, n)
     for _, session_name in ipairs(visible_order(cache)) do
       cache.visible_set[session_name] = true
     end
+    write_persisted_slots(workspace_name, cache.slots)
+    cache.slots_persisted = true
   end
 
   return out
@@ -751,6 +863,11 @@ end
 -- Test-only: clear cache so unit tests can reset between calls.
 function M._reset()
   module_state.workspaces = {}
+end
+
+-- Test helper: expose slots path construction.
+function M._slots_path_for_test(workspace_name)
+  return slots_path(workspace_name)
 end
 
 -- ---------------------------------------------------------------------

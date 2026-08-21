@@ -65,6 +65,7 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
 - Managed agent commands run inside the resolved login shell so workspace startup sees the same shell environment as your normal terminal sessions.
 - Raw `command = { ... }` overrides still bypass the managed launcher profile entirely.
 - Existing tmux worktree sessions are reused as-is. Changing the launcher affects newly created or recreated sessions.
+- **Focus restore on reopen.** `scripts/runtime/open-project-session.sh` no longer forces `select-window` onto the configured item cwd when a session already exists. It prefers the durable access-ledger `last_path` for that session (survives `tmux kill-server`), then the session's already-active window (survives WezTerm-only quit), and only then falls back to the item cwd. Other worktree windows are **not** pre-created on session recreate — `Alt+g` shows last-visit age for paths without a live window, and selecting a row creates+resumes on demand. Ledger path: `~/.local/state/wezterm-runtime/state/access-ledger.json` (see [`tab-visibility.md`](./tab-visibility.md) for the Alt+x / Alt+g shared sort contract).
 - `workspace.open()` opens only its first configured entry window immediately. Wider navigation is expected to happen inside tmux.
 
 ### Agent selection layers

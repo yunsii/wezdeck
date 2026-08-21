@@ -28,18 +28,24 @@ fi
 current_workspace="$(tmux show-options -v -t "$session_name" @wezterm_workspace 2>/dev/null || true)"
 [[ -n "$current_workspace" ]] || current_workspace="default"
 
-# `session_activity` (epoch seconds — tmux's own "time of last activity in
-# this session") rides along on the list-sessions format we already ran.
-# It is the recency signal the picker sorts on; see the sort below.
-existing_sessions="$(tmux list-sessions -F '#{session_name}'$'\t''#{session_activity}' 2>/dev/null || true)"
+# Live membership from list-sessions; recency from the user-access
+# ledger (same contract as Alt+g). Do NOT use tmux session_activity —
+# that advances on pane output and thrash-sorts when agents stream.
+existing_sessions="$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)"
 declare -A live_session_set=()
-declare -A live_session_activity=()
-while IFS=$'\t' read -r s s_activity; do
+while IFS= read -r s; do
   [[ -n "$s" ]] || continue
   live_session_set["$s"]=1
-  [[ "$s_activity" =~ ^[0-9]+$ ]] || s_activity=0
-  live_session_activity["$s"]="$s_activity"
 done <<< "$existing_sessions"
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+. "$script_dir/access-ledger-lib.sh"
+declare -A ledger_session_ms=()
+while IFS=$'\t' read -r ledger_sess ledger_ms; do
+  [[ -n "$ledger_sess" && "$ledger_ms" =~ ^[0-9]+$ ]] || continue
+  ledger_session_ms["$ledger_sess"]="$ledger_ms"
+done < <(access_ledger_all_session_ms_tsv)
 
 prefetch_file="$(mktemp -t wezterm-overflow-picker.XXXXXX)"
 prefetch_aux="$(mktemp -t wezterm-overflow-picker-aux.XXXXXX)"
@@ -56,17 +62,18 @@ while IFS=$'\t' read -r ws label cwd has_tab sess snap_idx tier score events rec
     state='warm'
   fi
   # Two-key recency: `live` splits rows that have a running tmux session
-  # from rows that are only a config entry, and `activity_ms` orders
-  # within each group. Live rows use tmux's own last-activity clock;
-  # cold rows have no terminal at all, so they fall back to tab-stats'
-  # `rank_recent_ms` (last sampled git change) purely to order themselves.
+  # from config-only rows; `activity_ms` is user last-access from the
+  # durable ledger (shared with Alt+g). Cold / never-touched rows fall
+  # back to tab-stats `rank_recent_ms` only as a within-cold tiebreak.
   live=0
   activity_ms=0
-  if [[ -n "$sess" && -n "${live_session_activity[$sess]+set}" ]]; then
+  if [[ -n "$sess" && -n "${live_session_set[$sess]:-}" ]]; then
     live=1
-    activity_ms=$(( ${live_session_activity[$sess]} * 1000 ))
-  else
-    [[ "$recent" =~ ^[0-9]+$ ]] && activity_ms="$recent"
+  fi
+  if [[ -n "$sess" && -n "${ledger_session_ms[$sess]:-}" ]]; then
+    activity_ms="${ledger_session_ms[$sess]}"
+  elif [[ "$recent" =~ ^[0-9]+$ ]]; then
+    activity_ms="$recent"
   fi
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$ws" "$label" "$cwd" "$state" "$has_tab" "$is_current" "$sess" \

@@ -453,23 +453,26 @@ baseline; the snapshot is only consumed by Alt+x, so paying that cost
 there is correct.
 
 The popup shows a workspace badge column next to each row. Rows are
-**one flat list across every workspace, most-recently-active first** —
-the same contract `Alt+g` uses. Two sort keys:
+**one flat list across every workspace, most-recently-visited first** —
+the same **user-access** contract `Alt+g` uses (not pane-output
+activity). Two sort keys:
 
 1. `has_live_session desc` — a row backed by a running tmux session
    (`●` visible / `◐` warm) outranks a row that is only a
    `workspaces.lua` entry (`○` cold). A cold row has no terminal at
    all, so it is not "active" in any sense the user means when they
    reach for this picker.
-2. `last_activity_ms desc` — for live rows this is tmux's own
-   `session_activity` (last output in that session, epoch seconds,
-   read from the `tmux list-sessions` call the popup body already
-   makes). Cold rows have no such clock, so they fall back to
-   tab-stats' `rank_recent_ms` (last sampled git change) purely to
-   order themselves *within* the cold block.
+2. `last_access_ms desc` — from the durable access ledger
+   (`~/.local/state/wezterm-runtime/state/access-ledger.json`), stamped
+   when the user opens a worktree (`Alt+g`), picks an overflow row
+   (`Alt+x`), or lands on a managed session at workspace open. Agent
+   pane output does **not** advance this clock (tmux `session_activity`
+   is deliberately unused for navigation). Never-touched / cold rows
+   fall back to tab-stats' `rank_recent_ms` (last sampled git change)
+   only as a within-cold tiebreak.
 
 Ties break on workspace name then snapshot order, so before any
-activity exists the `workspaces.lua` declared order still governs and
+access exists the `workspaces.lua` declared order still governs and
 the picker is usable at cold start.
 
 **The active workspace is not grouped on top.** Instead the popup body
@@ -485,10 +488,12 @@ no longer be in the filtered set.
 Note the deliberate split from the brain: `tab_visibility.lua` decides
 **which sessions get a visible tab** from the decayed git-activity
 score (`activity_score`), a slow-moving "which project matters"
-signal. This picker decides **row order for a human about to jump**,
-which wants "where did something just happen" — terminal recency. Both
-read the same `tab-stats/<slug>.json`, but only the brain ranks on
-`activity_score`.
+signal. Sticky slot **order** is persisted to
+`tab-stats/<slug>.slots.json` so a WezTerm restart hydrates the same
+layout; slots only move when a new top-N entrant displaces a stale
+slot (including overflow → visible promotion). This picker decides
+**row order for a human about to jump**, which wants "where did I last
+go" — user-access recency from the access ledger, shared with `Alt+g`.
 
 Always-on substring filter
 matches **workspace + label + cwd** lowercase, so `cfg neo` lands on
@@ -541,13 +546,16 @@ activity shrinks every session's activity_score by the same factor, so
 the top-N set is identical when you return. New sessions promote by
 real git activity, not by being viewed for a while. Ranking drives
 cold-open selection and live top-N membership; sticky slots preserve
-the positions of members that remain visible.
+the positions of members that remain visible. Slot assignments are
+also written to `tab-stats/<slug>.slots.json` so a WezTerm process
+restart hydrates the same order instead of rebuilding purely from
+scores.
 
 ### Pieces
 
 | Layer | File | Role |
 | --- | --- | --- |
-| Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, activity-score ranking, sticky-slot assignment, `is_enabled` / `spawn_capped` predicates, workspace slug |
+| Brain | `wezterm-x/lua/ui/tab_visibility.lua` | top-N computation, activity-score ranking, sticky-slot assignment + `.slots.json` persistence/hydrate, `is_enabled` / `spawn_capped` predicates, workspace slug |
 | Constants | `wezterm-x/lua/constants.lua` | `tab_visibility` config block (`visible_count`, `activity_sample_interval_ms`, `spawn_visible_only`, …) |
 | Spawn cap + items snapshot | `wezterm-x/lua/workspace_manager.lua` | caps `Workspace.open` via `tab_visibility.preferred_item_order` (sticky top-N slots with declared-order bootstrap fallback), threads `prune_keep_items` through `sync_workspace_tabs`, writes per-workspace items snapshot at cold-open, exposes `Workspace.refresh_all_items_snapshots` for the Alt+x handler's on-demand pre-refresh, runs `Workspace.maybe_sample_tab_activity` only when overflow exists, and runs `Workspace.maybe_clear_overflow_collision` each tick so a promoted overflow session hands its tmux client back to the new visible tab |
 | Activity sampler | `scripts/runtime/tab-activity-sample.sh` | low-frequency git fingerprint sampler; baseline writes do not score, HEAD/index/worktree changes call `tab_stats_record_activity` |
@@ -556,7 +564,8 @@ the positions of members that remain visible.
 | Overflow tab spawn | `wezterm-x/lua/workspace/tabs.lua` `spawn_overflow_tab` | creates the `…` tab, browse session, records tty |
 | Manifest + handler | `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` | `tab.overflow-picker` → `Alt+x`, forwards user-key 4 |
 | tmux user-key | `tmux.conf` | `bind-key -n User4` runs `tab-overflow-menu.sh` |
-| Picker menu | `scripts/runtime/tab-overflow-menu.sh` + `tab-overflow-popup-body.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, sorts into **one flat recency list across all workspaces** — `has_live_session desc, last_activity_ms desc, workspace asc, snap_idx asc` — and resolves the preselected row, then launches `picker overflow` in a `tmux display-popup` (Go binary required; `WEZTERM_ALLOW_BASH_PICKER=1` unlocks legacy `tmux display-menu` for the active workspace only) |
+| Access ledger | `scripts/runtime/access-ledger-lib.sh` | durable user-access MRU (`access-ledger.json` on WSL ext4) shared by Alt+g / Alt+x and worktree focus restore |
+| Picker menu | `scripts/runtime/tab-overflow-menu.sh` + `tab-overflow-popup-body.sh` | enumerates every `<slug>-items.json`, marks visible/warm/cold per row, sorts into **one flat user-access list across all workspaces** — `has_live_session desc, last_access_ms desc, workspace asc, snap_idx asc` — and resolves the preselected row, then launches `picker overflow` in a `tmux display-popup` (Go binary required; `WEZTERM_ALLOW_BASH_PICKER=1` unlocks legacy `tmux display-menu` for the active workspace only) |
 | Picker TUI | `native/picker/cmd_overflow.go` | reads the prefetch TSV, opens the cursor on the preselected row, fuzzy-filters across workspace + label + cwd, renders the workspace-badged row list, `tmux run-shell -b` dispatches |
 | Dispatch | `scripts/runtime/tab-overflow-dispatch.sh` | per-state routing (event, attach, cold-spawn) |
 | switch-client | `scripts/runtime/tab-overflow-attach.sh` | `tmux switch-client -c <tty> -t <session>` |

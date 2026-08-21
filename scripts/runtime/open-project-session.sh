@@ -13,6 +13,8 @@ source "$SCRIPT_DIR/tmux-version-lib.sh"
 source "$SCRIPT_DIR/tmux-worktree-lib.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/windows-runtime-paths-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/access-ledger-lib.sh"
 
 if [[ $# -lt 2 ]]; then
   echo "usage: $0 <workspace> <cwd> [command...]" >&2
@@ -237,11 +239,42 @@ fi
 
 startup_step="load_tmux_config"
 tmux_worktree_ensure_tmux_config_loaded "$TMUX_CONF" "$(repo_root_path)"
+
+# Focus restore: prefer ledger last_path (survives tmux death), then the
+# session's already-active window when reusing. Only fall back to the
+# configured item cwd when nothing else resolves. Missing worktree
+# windows are not pre-created — Alt+g shows last-visit age instead of
+# `(new)`, and selecting a row creates+resumes on demand.
 startup_step="select_window"
-tmux select-window -t "$window_id"
+focus_window_id="$window_id"
+restore_path="$(access_ledger_session_last_path "$session_name" || true)"
+if [[ -n "$restore_path" && -d "$restore_path" ]]; then
+  restore_window="$(tmux_worktree_find_window "$session_name" "$restore_path" || true)"
+  if [[ -n "$restore_window" ]]; then
+    focus_window_id="$restore_window"
+  fi
+fi
+if (( session_created == 0 )) && [[ "$focus_window_id" == "$window_id" ]]; then
+  # Fall back to whatever window the detached session already had
+  # active (tmux preserves this across WezTerm-only restarts).
+  current_window="$(tmux display-message -p -t "$session_name" '#{window_id}' 2>/dev/null || true)"
+  if [[ -n "$current_window" ]]; then
+    focus_window_id="$current_window"
+  fi
+fi
+tmux select-window -t "$focus_window_id"
+# Record focus so a subsequent kill-server → cold-open can land here.
+focus_path="$(tmux display-message -p -t "$focus_window_id" '#{pane_current_path}' 2>/dev/null || true)"
+if [[ -n "$focus_path" && -d "$focus_path" ]]; then
+  access_ledger_touch "$session_name" "$(tmux_worktree_abs_path "$focus_path")" >/dev/null 2>&1 || true
+fi
 
 startup_step="attach"
-runtime_log_info workspace "open-project-session prepared tmux session" "session_name=$session_name" "window_id=$window_id" "duration_ms=$(runtime_log_duration_ms "$start_ms")"
-runtime_log_info workspace "attaching tmux session" "session_name=$session_name" "window_id=$window_id"
+runtime_log_info workspace "open-project-session prepared tmux session" \
+  "session_name=$session_name" \
+  "window_id=$window_id" \
+  "focus_window_id=$focus_window_id" \
+  "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+runtime_log_info workspace "attaching tmux session" "session_name=$session_name" "window_id=$focus_window_id"
 trap - EXIT
 exec tmux attach-session -t "$session_name"

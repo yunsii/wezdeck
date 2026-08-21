@@ -9,6 +9,8 @@ source "$script_dir/runtime-log-lib.sh"
 source "$script_dir/tmux-worktree-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/worktree/lib/resume-command.sh"
+# shellcheck disable=SC1091
+source "$script_dir/access-ledger-lib.sh"
 
 session_name="${1:-}"
 worktree_root="${2:-}"
@@ -110,6 +112,18 @@ fi
 tmux select-window -t "$window_id"
 selection_metadata="$(tmux display-message -p -t "$window_id" '#{session_name}\t#{window_id}\t#{window_name}\t#{pane_current_path}' 2>/dev/null || true)"
 runtime_log_info worktree "selected tmux worktree window" "session_name=$session_name" "window_id=$window_id" "worktree_root=$worktree_root" "selection_metadata=${selection_metadata:-unavailable}"
+# Durable MRU for Alt+g / Alt+x and post-restart focus restore.
+access_ledger_touch "$session_name" "$worktree_root" >/dev/null 2>&1 || true
+# Keep the live tmux sort key in sync so Alt+g does not wait for a
+# subsequent keypress to promote the window the user just picked.
+if [[ -n "$window_id" ]]; then
+  # shellcheck disable=SC1091
+  source "$script_dir/tmux-user-interact-lib.sh"
+  now_s="$(date +%s 2>/dev/null || true)"
+  if [[ "$now_s" =~ ^[0-9]+$ ]]; then
+    tmux_user_interact_stamp_window "$window_id" "$now_s"
+  fi
+fi
 bash "$script_dir/tmux-status-refresh.sh" \
   --session "$session_name" \
   --window "$window_id" \

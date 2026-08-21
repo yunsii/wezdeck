@@ -95,8 +95,7 @@ if [[ -n "$prefetched_file" && -r "$prefetched_file" ]]; then
   # The prefetch TSV carries three more columns (attention status / age /
   # reason) that only the Go picker renders. Read them into throwaway
   # vars so they cannot spill into $local_window_id — a trailing `read`
-  # variable absorbs every remaining field, which would silently break
-  # the "(new)" window-existence check in this emergency fallback.
+  # variable absorbs every remaining field.
   while IFS=$'\t' read -r worktree_label worktree_path branch_name local_window_id _ _ _; do
     append_item "$worktree_label" "$worktree_path" "$branch_name" "$local_window_id"
   done < "$prefetched_file"

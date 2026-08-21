@@ -12,6 +12,8 @@ source "$script_dir/tmux-worktree-lib.sh"
 source "$script_dir/attention-state-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-user-interact-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/access-ledger-lib.sh"
 
 # Microbench short-circuit for scripts/dev/bench-menu-prep.sh --target worktree.
 menu_bench_init
@@ -71,6 +73,11 @@ accelerators=(1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w 
 if [[ -n "$current_window_id" ]]; then
   tmux_user_interact_flush_current "$session_name" "$current_window_id" || true
 fi
+# Opening the picker is itself a user visit of the current worktree —
+# keep the durable ledger warm so Alt+x / post-restart restore agree.
+if [[ -n "$current_worktree_root" ]]; then
+  access_ledger_touch "$session_name" "$current_worktree_root" >/dev/null 2>&1 || true
+fi
 
 # One pass over the session's panes (with per-path git-resolution dedup)
 # beats N×tmux_worktree_find_window calls — every find_window call would
@@ -84,6 +91,14 @@ while IFS=$'\t' read -r idx_root idx_window_id idx_interact; do
   worktree_window_index["$idx_root"]="$idx_window_id"
   worktree_window_interact["$idx_root"]="${idx_interact:-0}"
 done < <(tmux_worktree_build_window_index "$session_name" "$repo_common_dir")
+# Durable ledger fills gaps after tmux death (all live interact ts=0).
+# Convert ms → seconds to match @wezterm_user_interact_ts units; take max
+# so a live stamp still wins when both exist.
+declare -A worktree_ledger_interact=()
+while IFS=$'\t' read -r ledger_path ledger_ms; do
+  [[ -n "$ledger_path" && "$ledger_ms" =~ ^[0-9]+$ ]] || continue
+  worktree_ledger_interact["$ledger_path"]=$(( ledger_ms / 1000 ))
+done < <(access_ledger_all_worktree_ms_tsv)
 # Agent-attention status per tmux window of this session, joined onto the
 # worktree rows below by window id (`@N`) — the tmux window IS the
 # worktree, so the join is exact.
@@ -148,13 +163,48 @@ git_order=0
 while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
   [[ -n "$worktree_path" ]] || continue
   prefetch_window_id="${worktree_window_index[$worktree_path]:-}"
-  # `@wezterm_user_interact_ts`, epoch seconds. No window yet → 0 and
-  # sorts to the bottom with the `(new)` rows; never-typed windows also
-  # sit at 0 and keep git-list order among themselves.
+  # Sort / age clock (epoch seconds), strongest signal wins:
+  #   1. live @wezterm_user_interact_ts (user key/mouse on that window)
+  #   2. durable access-ledger last visit (survives tmux death)
+  #   3. worktree dir birth time, else mtime (never-visited兜底)
+  # Agent hooks do NOT feed this clock — they only drive ▲/●/✓ badges.
   row_interact="${worktree_window_interact[$worktree_path]:-0}"
+  [[ "$row_interact" =~ ^[0-9]+$ ]] || row_interact=0
+  ledger_interact="${worktree_ledger_interact[$worktree_path]:-0}"
+  [[ "$ledger_interact" =~ ^[0-9]+$ ]] || ledger_interact=0
+  if (( ledger_interact > row_interact )); then
+    row_interact="$ledger_interact"
+  fi
+  if (( row_interact == 0 )) && [[ -d "$worktree_path" ]]; then
+    # GNU stat: %W birth (0 when unknown), %Y mtime.
+    created_s="$(stat -c '%W %Y' "$worktree_path" 2>/dev/null || true)"
+    birth_s="${created_s%% *}"
+    mtime_s="${created_s##* }"
+    if [[ "$birth_s" =~ ^[0-9]+$ ]] && (( birth_s > 0 )); then
+      row_interact="$birth_s"
+    elif [[ "$mtime_s" =~ ^[0-9]+$ ]] && (( mtime_s > 0 )); then
+      row_interact="$mtime_s"
+    fi
+  fi
   attention_cells=$'\t\t'
   if [[ -n "$prefetch_window_id" && -n "${window_status[$prefetch_window_id]:-}" ]]; then
     attention_cells="${window_status[$prefetch_window_id]}"
+  elif [[ -z "$prefetch_window_id" ]] && (( row_interact > 0 )); then
+    # No live tmux window and no attention badge: show last-visit /
+    # created age (not `(new)`). Selecting still creates+resumes.
+    now_s=$(( start_ms / 1000 ))
+    age_s=$(( now_s - row_interact ))
+    (( age_s < 0 )) && age_s=0
+    if (( age_s < 60 )); then
+      visit_age="${age_s}s"
+    elif (( age_s < 3600 )); then
+      visit_age="$(( age_s / 60 ))m"
+    elif (( age_s < 86400 )); then
+      visit_age="$(( age_s / 3600 ))h"
+    else
+      visit_age="$(( age_s / 86400 ))d"
+    fi
+    attention_cells=$'\t'"$visit_age"$'\t'
   fi
   ranked_rows+=("$row_interact"$'\t'"$git_order"$'\t'"$worktree_label"$'\t'"$worktree_path"$'\t'"$branch_name"$'\t'"$prefetch_window_id"$'\t'"$attention_cells")
   git_order=$((git_order + 1))
@@ -273,7 +323,6 @@ for index in "${!item_paths[@]}"; do
   worktree_label="${item_labels[$index]}"
   worktree_path="${item_paths[$index]}"
   branch_name="${item_branches[$index]}"
-  existing_window_id="${item_window_ids[$index]}"
 
   marker=' '
   if [[ "$worktree_path" == "$current_worktree_root" ]]; then
@@ -283,9 +332,8 @@ for index in "${!item_paths[@]}"; do
   if [[ -n "$branch_name" ]]; then
     menu_label="$menu_label [$branch_name]"
   fi
-  if [[ -z "$existing_window_id" ]]; then
-    menu_label="$menu_label (new)"
-  fi
+  # No "(new)" suffix: window presence does not matter for selection
+  # (create+resume on demand). The Go picker shows last-visit age instead.
 
   accelerator="${item_accelerators[$index]}"
 

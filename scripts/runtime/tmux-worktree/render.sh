@@ -61,12 +61,9 @@ worktree_picker_emit_frame() {
       line_branch=" [${item_branches[$top_index]}]"
     fi
 
-    line_suffix=""
-    if [[ -z "${item_window_ids[$top_index]}" ]]; then
-      line_suffix=" (new)"
-    fi
-
-    line="$accelerator $marker ${item_labels[$top_index]}$line_branch$line_suffix"
+    # Window presence is not labelled here — the Go picker shows last-visit
+    # age instead of "(new)", and this bash frame is first-paint only.
+    line="$accelerator $marker ${item_labels[$top_index]}$line_branch"
     frame+=$'\033['"${row};1H"
     # Only the leading caret distinguishes selected from unselected;
     # the 2-col gutter is reserved on every row so column alignment

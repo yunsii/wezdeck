@@ -29,9 +29,18 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   tmux_worktree_session_name_for_path() { :; }
 }
 
+# shellcheck disable=SC1091
+. "$script_dir/access-ledger-lib.sh" 2>/dev/null || true
+
 workspace="${1:?missing workspace}"
 cwd="${2:?missing cwd}"
 has_tab="${3:-false}"
+
+# Resolve session early so every exit path can stamp the access ledger.
+candidate_session="$(tmux_worktree_session_name_for_path "$workspace" "$cwd" 2>/dev/null || true)"
+if [[ -n "$candidate_session" && -n "$cwd" && -d "$cwd" ]]; then
+  access_ledger_touch "$candidate_session" "$cwd" >/dev/null 2>&1 || true
+fi
 
 if [[ "$has_tab" == "true" ]]; then
   WEZTERM_EVENT_FORCE_FILE=1 \
@@ -40,10 +49,7 @@ if [[ "$has_tab" == "true" ]]; then
   exit 0
 fi
 
-# Non-visible: figure out the candidate tmux session name for this cwd
-# under this workspace, then check if it already exists in tmux.
-candidate_session="$(tmux_worktree_session_name_for_path "$workspace" "$cwd" 2>/dev/null || true)"
-
+# Non-visible: check if the candidate already exists in tmux.
 if [[ -n "$candidate_session" ]] && tmux has-session -t "$candidate_session" 2>/dev/null; then
   # Warm: switch the overflow pane to it, then jump to the overflow tab.
   # session= in the payload refreshes the wezterm-side overflow→session

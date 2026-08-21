@@ -222,21 +222,21 @@ func worktreeStatusIcon(status string) string {
 	return ""
 }
 
-// statusCell renders the trailing agent-attention column. Live statuses
-// reuse the Alt+/ glyph vocabulary (▲ / ✓ / ●) so both pickers read the
-// same way; there is no archived variant — an empty cell means "nothing
-// pending", the same thing an absent tab badge means (see menu.sh's
-// join comment for why the dimmed `last ✓ 3m` form was dropped). A
-// worktree with no tmux window keeps the original `(new)` hint — it
-// cannot have agent state.
+// statusCell renders the trailing column. Live agent statuses reuse the
+// Alt+/ glyph vocabulary (▲ / ✓ / ●). When there is no attention entry,
+// an empty status with a non-empty age is the last-visit age menu.sh
+// stamped from the access ledger for a worktree that has no tmux window
+// yet — shown dimmed, never as "(new)", because selecting the row will
+// create+resume on demand. A blank cell means nothing pending and no
+// visit history either (same as an absent tab badge).
 //
 // restore is the SGR that puts the caller's background back after a dim
-// run: `reset` on a normal row, the background-preserving variant on the
+// run: reset on a normal row, the background-preserving variant on the
 // selected row so its highlight bar stays continuous.
 func (r worktreeRow) statusCell(restore string) string {
 	if r.status == "" {
-		if r.existingWindowID == "" {
-			return "\x1b[2m(new)" + restore
+		if r.age != "" {
+			return "\x1b[2m" + r.age + restore
 		}
 		return ""
 	}
@@ -349,8 +349,8 @@ func (ui *worktreeUI) render() {
 	const reset = "\x1b[0m"
 	const clearEOL = "\x1b[K"
 	// Full-width selected-row highlight, mirroring cmd_overflow.go. The only
-	// inner SGR in a row body is the dim run used by the `(new)` status
-	// cell, which restores with the background-preserving sequence
+	// inner SGR in a row body is the dim run used by last-visit age (no
+	// window yet), which restores with the background-preserving sequence
 	// (not a full reset) so the highlight bar stays continuous to EOL.
 	const selectedBg = "\x1b[48;5;255m"
 	const restoreSelectedBg = "\x1b[22;23;24;27;39m"
