@@ -329,6 +329,31 @@ elif [[ "$status" == "resolved" ]]; then
   # See docs/agent-attention.md "Limitation: no signal for permission
   # approval" for why we cannot flip `waiting → running` at approval
   # time and why this branch never tries to.
+  # Grok Ask / elicitation_dialog: PostToolUse often fires ~200 ms after
+  # Notification while the dialog is still on screen. transition_to_running
+  # refuses that flip unless force=1 (watcher). Log it distinctly so the
+  # latency probe does not look like a plain auto-allowed no-op.
+  _resolved_status=""
+  _resolved_waiting_kind=""
+  if [[ -f "$(attention_state_path)" ]]; then
+    _resolved_status="$(jq -r --arg sid "$session_id" \
+      '.entries[$sid].status // ""' "$(attention_state_path)" 2>/dev/null || printf '')"
+    _resolved_waiting_kind="$(jq -r --arg sid "$session_id" \
+      '.entries[$sid].waiting_kind // ""' "$(attention_state_path)" 2>/dev/null || printf '')"
+  fi
+  if [[ "$_resolved_status" == "waiting" \
+        && "$_resolved_waiting_kind" == "elicitation_dialog" ]]; then
+    runtime_log_info attention "resolved skipped elicitation waiting" \
+      "provider=$provider" \
+      "raw_event=$raw_event" \
+      "session_id=$session_id" \
+      "wezterm_pane=${WEZTERM_PANE:-}" \
+      "tmux_pane=$tmux_pane" \
+      "waiting_kind=elicitation_dialog" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+    exit 0
+  fi
+
   if ! attention_state_transition_to_running \
       "$session_id" \
       "${WEZTERM_PANE:-}" \
@@ -429,6 +454,15 @@ else
     fi
   fi
 
+  # Normalize waiting_kind the same way the waiting whitelist does so
+  # stored values match transition_to_running's elicitation check.
+  waiting_kind=""
+  if [[ "$status" == "waiting" && -n "$notification_type" ]]; then
+    waiting_kind="$(printf '%s' "$notification_type" \
+      | tr '[:upper:]' '[:lower:]' \
+      | tr '-' '_')"
+  fi
+
   attention_state_upsert \
     "$session_id" \
     "${WEZTERM_PANE:-}" \
@@ -439,49 +473,52 @@ else
     "$status" \
     "$reason" \
     "$git_branch" \
+    "$waiting_kind" \
     2>/dev/null || true
 
-  # Spawn the prompt-watcher when a Claude permission_prompt raises waiting.
-  # Claude Code does not fire any hook when the user clicks Yes/No, so
-  # absent the watcher the badge would sit on `⚠ waiting` for the entire
-  # tool-execution window — even if the user already approved and the
-  # bash is now running in the background via ctrl+b ctrl+b. The watcher
-  # tails the pane content for the prompt anchor and flips waiting →
-  # running once the prompt is no longer on screen. See
-  # docs/agent-attention.md "Limitation: no signal for permission
-  # approval" for full rationale and failure modes.
+  # Spawn the prompt-watcher when a user-action waiting lands.
+  # Covers:
+  #   - Claude permission_prompt: no hook on Yes/No; without the watcher
+  #     the badge sits on ⚠ for the whole tool-execution window.
+  #   - Grok/Claude elicitation_dialog: PostToolUse fires while the Ask
+  #     dialog is still up, so resolved must NOT clear waiting — the
+  #     watcher is the path that flips waiting → running once the dialog
+  #     leaves the pane.
+  #   - Grok approval_required: same watcher anchors as permission.
+  # See docs/agent-attention.md "Limitation: no signal for permission
+  # approval" and "Grok elicitation vs PostToolUse".
   #
-  # Sticky waiting (a second permission_prompt while we're already
-  # waiting) is fine: the watcher's per-pane flock makes the second
-  # spawn a no-op, and the original watcher is still polling.
+  # Sticky waiting (a second prompt while we're already waiting) is fine:
+  # the watcher's per-pane flock makes the second spawn a no-op.
+  _watcher_kind="$waiting_kind"
   if [[ "$status" == "waiting" \
-        && "$provider" == "claude" \
-        && "$notification_type" == "permission_prompt" \
         && -n "$tmux_socket" \
         && -n "$tmux_pane" \
         && "${WEZTERM_ATTENTION_WATCHER_DISABLED:-0}" != "1" ]]; then
-    watcher="$repo_root/scripts/runtime/attention-prompt-watcher.sh"
-    if [[ -x "$watcher" ]] && command -v setsid >/dev/null 2>&1; then
-      # safe key: stable per-pane identifier for the watcher's lockfile.
-      # sha1 over (socket, pane) is overkill but cheap and avoids
-      # collisions across tmux servers / pane-id reuse across sessions.
-      watcher_safe="$(printf '%s|%s' "$tmux_socket" "$tmux_pane" \
-                       | sha1sum 2>/dev/null \
-                       | cut -c1-16)"
-      if [[ -n "$watcher_safe" ]]; then
-        setsid bash "$watcher" \
-          "$session_id" \
-          "${WEZTERM_PANE:-}" \
-          "$tmux_socket" \
-          "$tmux_session" \
-          "$tmux_window" \
-          "$tmux_pane" \
-          "$git_branch" \
-          "$watcher_safe" \
-          </dev/null >/dev/null 2>&1 &
-        disown 2>/dev/null || true
-      fi
-    fi
+    case "$_watcher_kind" in
+      permission_prompt|elicitation_dialog|approval_required)
+        watcher="$repo_root/scripts/runtime/attention-prompt-watcher.sh"
+        if [[ -x "$watcher" ]] && command -v setsid >/dev/null 2>&1; then
+          # safe key: stable per-pane identifier for the watcher's lockfile.
+          watcher_safe="$(printf '%s|%s' "$tmux_socket" "$tmux_pane" \
+                           | sha1sum 2>/dev/null \
+                           | cut -c1-16)"
+          if [[ -n "$watcher_safe" ]]; then
+            setsid bash "$watcher" \
+              "$session_id" \
+              "${WEZTERM_PANE:-}" \
+              "$tmux_socket" \
+              "$tmux_session" \
+              "$tmux_window" \
+              "$tmux_pane" \
+              "$git_branch" \
+              "$watcher_safe" \
+              </dev/null >/dev/null 2>&1 &
+            disown 2>/dev/null || true
+          fi
+        fi
+        ;;
+    esac
   fi
 fi
 

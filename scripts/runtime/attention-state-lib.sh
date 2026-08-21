@@ -15,6 +15,12 @@
 #         "status":         "running" | "waiting" | "done",
 #         "reason":         "<short text>",
 #         "git_branch":     "<string>",
+#         "waiting_kind":   "<optional; only while status=waiting>",
+#                          # e.g. permission_prompt | elicitation_dialog |
+#                          # approval_required. PostToolUse must NOT clear
+#                          # elicitation_dialog (Grok fires PostToolUse while
+#                          # the Ask dialog is still on screen); the prompt
+#                          # watcher / Stop / next UserPromptSubmit clear it.
 #         "ts":             <epoch ms>
 #       }
 #     },
@@ -204,6 +210,10 @@ attention_state_write() {
 attention_state_upsert() {
   local session_id="$1" wezterm_pane="$2" tmux_socket="$3" tmux_session="$4"
   local tmux_window="$5" tmux_pane="$6" status="$7" reason="$8" git_branch="${9:-}"
+  # Optional 10th arg: waiting_kind (permission_prompt / elicitation_dialog /
+  # approval_required). Stored only while status=waiting so PostToolUse can
+  # refuse to clear elicitation_dialog (see transition_to_running).
+  local waiting_kind="${10:-}"
   local ts; ts="$(attention_state_now_ms)"
   attention_state_init
   local lock
@@ -232,10 +242,10 @@ attention_state_upsert() {
     #
     # Waiting is sticky: once a session's entry is `waiting`, a subsequent
     # `waiting` event (typically another permission_prompt in the same
-    # turn) is a no-op — the original ts and reason are preserved so the
-    # counter does not oscillate and the TTL clock keeps running from the
-    # moment Claude first blocked for input. Only a non-waiting upsert
-    # (normally `done`) transitions the entry out.
+    # turn) is a no-op — the original ts, reason, and waiting_kind are
+    # preserved so the counter does not oscillate and the TTL clock keeps
+    # running from the moment Claude first blocked for input. Only a
+    # non-waiting upsert (normally `done`) transitions the entry out.
     next="$(
       jq --arg sid "$session_id" \
          --arg wp "$wezterm_pane" \
@@ -246,6 +256,7 @@ attention_state_upsert() {
          --arg st "$status" \
          --arg rs "$reason" \
          --arg gb "$git_branch" \
+         --arg wk "$waiting_kind" \
          --argjson ts "$ts" \
          --argjson cap "$ATTENTION_RECENT_CAP" \
          --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
@@ -272,18 +283,24 @@ attention_state_upsert() {
              )
            | if ($st == "waiting") and ((.entries[$sid].status // "") == "waiting")
              then .
-             else .entries[$sid] = {
-                 session_id: $sid,
-                 wezterm_pane_id: $wp,
-                 tmux_socket: $tsk,
-                 tmux_session: $tses,
-                 tmux_window: $tw,
-                 tmux_pane: $tp,
-                 status: $st,
-                 reason: $rs,
-                 git_branch: $gb,
-                 ts: $ts
-               }
+             else .entries[$sid] = (
+                 {
+                   session_id: $sid,
+                   wezterm_pane_id: $wp,
+                   tmux_socket: $tsk,
+                   tmux_session: $tses,
+                   tmux_window: $tw,
+                   tmux_pane: $tp,
+                   status: $st,
+                   reason: $rs,
+                   git_branch: $gb,
+                   ts: $ts
+                 }
+                 + (if ($st == "waiting") and ($wk != "")
+                    then {waiting_kind: $wk}
+                    else {}
+                    end)
+               )
              end
            | archive_into_recent($evicted; $ts; $cap; $ttl)
          ' <<<"$current"
@@ -363,8 +380,14 @@ attention_state_recent_remove() {
 #
 # Behaviour by current status (irrespective of which hook called):
 #   waiting → flip to running in place (ts/reason refreshed, tmux
-#             coords preserved). Only PostToolUse reaches this branch;
-#             PreToolUse fires before the prompt and lands on running.
+#             coords preserved). Only PostToolUse reaches this branch
+#             for permission_prompt; PreToolUse fires before the prompt
+#             and lands on running. **Exception**: waiting_kind=
+#             elicitation_dialog is sticky against PostToolUse /
+#             PreToolUse — Grok fires PostToolUse while the Ask dialog
+#             is still on screen (~150–250 ms after Notification). Pass
+#             force=1 (watcher) to clear elicitation waiting when the
+#             dialog actually leaves the pane.
 #   done    → flip to running in place (Monitor wake-up: a streamed
 #             event resumed the agent after a prior Stop; Claude is
 #             mid-turn again). Both PreToolUse and PostToolUse can
@@ -380,6 +403,10 @@ attention_state_recent_remove() {
 #             call; PostToolUse hits it whenever PreToolUse already
 #             flipped a done → running before it fired.
 #
+# Optional 8th arg `force`: when `1`, allow flipping elicitation_dialog
+# waiting (used by attention-prompt-watcher.sh). Default / empty keeps
+# elicitation sticky so premature PostToolUse cannot clear the badge.
+#
 # Returns 0 if the state file changed, 1 on no-op. Callers use the
 # return code to skip the OSC tick / log emit on no-op so PreToolUse /
 # PostToolUse (which fire on every tool call, auto-allowed or not) do
@@ -387,10 +414,12 @@ attention_state_recent_remove() {
 #
 # See docs/agent-attention.md "Limitation: no signal for permission
 # approval" for why we cannot do better than PostToolUse for the
-# approve → tool-completion window.
+# approve → tool-completion window, and "Grok elicitation vs PostToolUse"
+# for the elicitation sticky rule.
 attention_state_transition_to_running() {
   local session_id="$1" wezterm_pane="$2" tmux_socket="$3" tmux_session="$4"
   local tmux_window="$5" tmux_pane="$6" git_branch="${7:-}"
+  local force="${8:-0}"
   attention_state_init
   local path
   path="$(attention_state_path)"
@@ -401,11 +430,19 @@ attention_state_transition_to_running() {
   # with other hooks on the same session_id. `done` is deliberately not
   # short-circuited: a Monitor event can wake the agent after Stop wrote
   # done, so we need to take the lock and flip back to running.
-  local current_status=""
+  # Elicitation waiting is also not short-circuited here — the locked
+  # section below decides whether force=1 may clear it.
+  local current_status="" current_waiting_kind=""
   if [[ -f "$path" ]]; then
     current_status="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' "$path" 2>/dev/null || printf '')"
+    current_waiting_kind="$(jq -r --arg sid "$session_id" '.entries[$sid].waiting_kind // ""' "$path" 2>/dev/null || printf '')"
   fi
   if [[ "$current_status" == "running" ]]; then
+    return 1
+  fi
+  if [[ "$current_status" == "waiting" \
+        && "$current_waiting_kind" == "elicitation_dialog" \
+        && "$force" != "1" ]]; then
     return 1
   fi
   local lock
@@ -415,20 +452,27 @@ attention_state_transition_to_running() {
   local ts; ts="$(attention_state_now_ms)"
   (
     flock -x 9
-    local current next locked_status
+    local current next locked_status locked_waiting_kind
     current="$(attention_state_read)"
     # Re-check under the lock so a concurrent running upsert from another
     # hook is respected instead of stomped on by this delayed transition.
     # `done` is eligible for transition here — see docstring's `done` branch.
     locked_status="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' <<<"$current")"
+    locked_waiting_kind="$(jq -r --arg sid "$session_id" '.entries[$sid].waiting_kind // ""' <<<"$current")"
     if [[ "$locked_status" == "running" ]]; then
+      exit 0
+    fi
+    if [[ "$locked_status" == "waiting" \
+          && "$locked_waiting_kind" == "elicitation_dialog" \
+          && "$force" != "1" ]]; then
       exit 0
     fi
     if [[ "$locked_status" == "waiting" || "$locked_status" == "done" ]]; then
       next="$(jq --arg sid "$session_id" --argjson ts "$ts" \
         '.entries[$sid].status = "running"
          | .entries[$sid].reason = ""
-         | .entries[$sid].ts = $ts' <<<"$current")"
+         | .entries[$sid].ts = $ts
+         | del(.entries[$sid].waiting_kind)' <<<"$current")"
     else
       # Missing: upsert a fresh running entry. Mirror attention_state_upsert's
       # (tmux_socket, tmux_session, tmux_pane) dedup (and its archive-on-

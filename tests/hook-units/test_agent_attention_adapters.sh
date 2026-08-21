@@ -176,6 +176,17 @@ rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"
 setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"sessionId":"grok-session-4","hookEventName":"Notification","notificationType":"elicitation_dialog","message":"Waiting on answers"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok elicitation_dialog becomes waiting" "waiting" "$(field_for "$sandbox" "grok-session-4" "status")"
+assert_eq "Grok elicitation stores waiting_kind" "elicitation_dialog" "$(field_for "$sandbox" "grok-session-4" "waiting_kind")"
+printf '%s' '{"sessionId":"grok-session-4","hookEventName":"PostToolUse"}' \
+  | "$claude_adapter" resolved >/dev/null 2>&1 || true
+assert_eq "Grok PostToolUse does not clear elicitation waiting" "waiting" "$(field_for "$sandbox" "grok-session-4" "status")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
 # Legacy unparsed path: empty raw_event + reason "Turn complete" (pre-camelCase).
 printf '%s' '{"message":"Turn complete"}' \
   | "$claude_adapter" waiting >/dev/null 2>&1 || true

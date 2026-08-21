@@ -186,6 +186,7 @@ echo
 echo "▸ resolved transitions (PreToolUse / PostToolUse)"
 
 # Case 6 — waiting → running via resolved (PostToolUse after permission).
+# Legacy rows without waiting_kind still flip (permission-shaped default).
 sandbox="$(mktemp -d)"
 seed_state "$sandbox" '{
   "version":1,
@@ -198,6 +199,41 @@ MOCK_HOOK_STDIN='{"session_id":"sid-life-6"}' \
   run_hook_in_sandbox "$sandbox" "resolved" "" "1" "$socket" "$session" "%5"
 assert_eq "resolved flips waiting → running" "running" "$(field_for "$sandbox" "sid-life-6" "status")"
 assert_eq "resolved clears the stale reason" "" "$(field_for "$sandbox" "sid-life-6" "reason")"
+rm -rf "$sandbox"
+
+# Case 6b — permission_prompt waiting_kind still clears via resolved.
+sandbox="$(mktemp -d)"
+seed_state "$sandbox" '{
+  "version":1,
+  "entries":{
+    "sid-life-6b":{"session_id":"sid-life-6b","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%5","status":"waiting","waiting_kind":"permission_prompt","reason":"perm","ts":'"$(date +%s%3N)"'}
+  },
+  "recent":[]
+}'
+MOCK_HOOK_STDIN='{"session_id":"sid-life-6b"}' \
+  run_hook_in_sandbox "$sandbox" "resolved" "" "1" "$socket" "$session" "%5"
+assert_eq "resolved flips permission_prompt waiting → running" "running" "$(field_for "$sandbox" "sid-life-6b" "status")"
+rm -rf "$sandbox"
+
+# Case 6c — elicitation_dialog waiting is sticky against PostToolUse
+# (Grok Ask fires PostToolUse while the dialog is still on screen).
+sandbox="$(mktemp -d)"
+seed_state "$sandbox" '{
+  "version":1,
+  "entries":{
+    "sid-life-6c":{"session_id":"sid-life-6c","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%5","status":"waiting","waiting_kind":"elicitation_dialog","reason":"ask","ts":'"$(date +%s%3N)"'}
+  },
+  "recent":[]
+}'
+MOCK_HOOK_STDIN='{"session_id":"sid-life-6c"}' \
+  run_hook_in_sandbox "$sandbox" "resolved" "" "1" "$socket" "$session" "%5"
+assert_eq "resolved does NOT clear elicitation_dialog waiting" "waiting" "$(field_for "$sandbox" "sid-life-6c" "status")"
+assert_eq "elicitation waiting_kind preserved after resolved" "elicitation_dialog" "$(field_for "$sandbox" "sid-life-6c" "waiting_kind")"
+# Watcher path: force=1 must clear it.
+run_in_sandbox_lib "$sandbox" attention_state_transition_to_running \
+  "sid-life-6c" "1" "$socket" "$session" "@1" "%5" "" "1"
+assert_eq "force=1 clears elicitation_dialog waiting" "running" "$(field_for "$sandbox" "sid-life-6c" "status")"
+assert_eq "force=1 drops waiting_kind" "" "$(field_for "$sandbox" "sid-life-6c" "waiting_kind")"
 rm -rf "$sandbox"
 
 # Case 7 — done → running via resolved (Monitor wake-up).

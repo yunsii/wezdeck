@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Watchdog spawned by emit-agent-status.sh on every
-# `Notification(permission_prompt)` upsert. Polls `tmux capture-pane` for
-# the Claude TUI's prompt anchor; when the anchor disappears, flips the
-# entry from `waiting` to `running` so the badge does not lag the
-# user-visible state until PostToolUse fires (which can be many minutes
-# later for long-running approved tools, especially if the user pushes
-# the tool to background with ctrl+b ctrl+b).
+# Watchdog spawned by emit.sh on user-action waiting upserts:
+#   Notification(permission_prompt | elicitation_dialog | approval_required).
+# Polls `tmux capture-pane` for Claude / Grok prompt anchors; when the
+# anchor disappears, flips the entry from `waiting` to `running`.
 #
-# This is the local mitigation for the upstream limitation documented in
-# docs/agent-attention.md "Limitation: no signal for permission
-# approval" — Claude Code does not expose any hook event when the user
-# clicks Yes/No on a permission_prompt, and the only state-changing
-# signal we get on the approve→completion window is PostToolUse, which
-# fires when the tool *actually exits*.
+# Two upstream gaps this closes:
+#   1. Claude permission_prompt — no hook on Yes/No; PostToolUse only
+#      fires when the tool *exits*, so without the watcher the badge
+#      sits on ⚠ for the whole tool-execution window (especially if the
+#      user backgrounds the tool with ctrl+b ctrl+b).
+#   2. Grok elicitation_dialog (Ask) — PostToolUse fires ~200 ms after
+#      Notification while the dialog is still on screen, so the state
+#      machine refuses to clear elicitation waiting via resolved; the
+#      watcher is the path that flips once the dialog actually leaves.
 #
 # Args (all positional):
 #   $1  session_id
@@ -36,10 +36,13 @@
 #       * tmux pane is gone (agent / pane killed)
 #       * the hard cap fires
 #   - When the prompt anchor is no longer on screen AND status is still
-#     waiting, flips waiting → running via attention_state_transition_to_running
-#     and exits. We do NOT try to distinguish approve-vs-cancel — either
-#     way the agent is no longer blocked on user input; a cancel will be
-#     followed shortly by `Stop` which transitions running → done.
+#     waiting, flips waiting → running via
+#     attention_state_transition_to_running … force=1 and exits. force=1
+#     is required so elicitation_dialog waiting (sticky against ordinary
+#     PostToolUse) can clear. We do NOT try to distinguish
+#     approve-vs-cancel — either way the agent is no longer blocked on
+#     user input; a cancel will be followed shortly by `Stop` which
+#     transitions running → done.
 #
 # Opt-out:
 #   Set WEZTERM_ATTENTION_WATCHER_DISABLED=1 in the env that hooks read
@@ -105,33 +108,23 @@ MAX_DURATION_S="${WEZTERM_ATTENTION_WATCHER_MAX_S:-1800}"
 # redraw artifacts.
 CONSECUTIVE_MISS_THRESHOLD="${WEZTERM_ATTENTION_WATCHER_MISS_THRESHOLD:-2}"
 
-# Anchor regex. Any pattern matching means "permission_prompt is on
-# screen". All three are footer / option-list strings that the Claude
-# TUI only emits inside the prompt UI itself; none appears in the
-# agent's conversational text, so the watcher does not get fooled by a
-# pane whose chat history happens to mention the words "Do you want to
-# proceed?" (which is why the original `Do you want to proceed\?`
-# anchor was abandoned — it false-positived on chat content discussing
-# the very feature this watcher implements).
+# Anchor regex. Any pattern matching means "a user-action prompt is on
+# screen". Patterns are footer / chrome strings the TUIs only emit inside
+# the prompt UI itself — not ordinary chat — so chat that discusses the
+# feature does not false-positive (the original `Do you want to proceed\?`
+# anchor did, and was abandoned).
 #
-#   `Esc to cancel`              — leftmost footer item, present in every
-#                                  permission_prompt and elicitation
-#                                  dialog regardless of tool type. The
-#                                  most reliable single anchor and the
-#                                  primary signal.
-#   `Tab to amend`               — middle footer of bash-style
-#                                  permission_prompt ("Esc to cancel ·
-#                                  Tab to amend · ctrl+e to explain").
-#                                  Bash-only but kept as a redundant
-#                                  match for resilience.
-#   `Yes, and don.t ask again`   — option #2 row of the default prompt
-#                                  shape. Not always present (any prompt
-#                                  variant that swaps option #2 for a
-#                                  tool-specific allow row drops it),
-#                                  hence the `Esc to cancel` primary.
-#                                  The `.` matches the apostrophe byte
-#                                  tolerantly across encodings.
-PROMPT_ANCHOR='(Esc to cancel|Tab to amend|Yes, and don.t ask again)'
+# Claude permission / elicitation:
+#   `Esc to cancel`              — leftmost footer; primary Claude signal.
+#   `Tab to amend`               — bash-style permission_prompt middle.
+#   `Yes, and don.t ask again`   — default option #2 (`.` = apostrophe).
+#
+# Grok Ask / elicitation_dialog (fullscreen TUI):
+#   `Waiting on answers for`     — status line while Ask is open.
+#   `Enter:submit`               — Ask footer submit affordance.
+#   `Tab:next answer`            — Ask footer (multi-question).
+#   `Shift\+x:dismiss`           — Ask dismiss chrome.
+PROMPT_ANCHOR='(Esc to cancel|Tab to amend|Yes, and don.t ask again|Waiting on answers for|Enter:submit|Tab:next answer|Shift\+x:dismiss)'
 
 state_path="$(attention_state_path)"
 start_ts="$(date +%s 2>/dev/null || printf '0')"
@@ -232,9 +225,9 @@ while :; do
     continue
   fi
 
-  # Prompt anchor stably gone. Flip waiting → running. The transition
-  # helper re-checks status under flock, so a concurrent PostToolUse
-  # that beat us to it will short-circuit cleanly.
+  # Prompt anchor stably gone. Flip waiting → running with force=1 so
+  # elicitation_dialog waiting (sticky against ordinary PostToolUse) can
+  # clear. The helper re-checks under flock.
   if attention_state_transition_to_running \
        "$session_id" \
        "$wezterm_pane" \
@@ -243,15 +236,15 @@ while :; do
        "$tmux_window" \
        "$tmux_pane" \
        "$git_branch" \
+       "1" \
        2>/dev/null; then
     runtime_log_info attention "watcher flipped waiting to running" \
       "session_id=$session_id" "tmux_pane=$tmux_pane" \
       "elapsed_s=$((now_ts - start_ts))" \
       "consecutive_misses=$consecutive_misses" 2>/dev/null || true
   else
-    # Helper returned no-op (the lock-protected re-check saw something
-    # other than waiting/done/missing — almost certainly running already
-    # via PostToolUse winning the race). Log and exit; nothing to do.
+    # Helper returned no-op (status already left waiting via Stop /
+    # UserPromptSubmit / Alt+/ clear, etc.). Log and exit.
     runtime_log_info attention "watcher flip noop" \
       "session_id=$session_id" "tmux_pane=$tmux_pane" \
       "elapsed_s=$((now_ts - start_ts))" \
