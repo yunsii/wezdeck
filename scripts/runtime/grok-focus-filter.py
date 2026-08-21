@@ -8,7 +8,9 @@ conversation surface; under WezTerm + tmux that full-content redraw flashes
 visibly (whole transcript, not just a background tint).
 
 This relay keeps the outer session's `focus-events` enabled (Vim / Claude /
-attention hooks still need them) while Grok never sees the focus CSI.
+attention hooks still need them) while Grok never sees the focus CSI. Bare Esc
+is never held — only an incomplete ``ESC [`` prefix waits for its final byte
+(see `_strip_focus`).
 
 Usage:
   grok-focus-filter.py [--] grok [args...]
@@ -50,7 +52,20 @@ def _get_winsize(fd: int) -> tuple[int, int]:
 
 
 def _strip_focus(buf: bytearray, enabled: bool) -> bytes:
-    """Remove FocusIn/Out CSI; keep a trailing lone ESC for the next chunk."""
+    """Remove FocusIn/Out CSI from *buf*, leaving at most an incomplete prefix.
+
+    Hold policy (deliberate — do not "improve" by buffering a bare Esc):
+
+    - A lone ``ESC`` is forwarded immediately. Holding it made Grok's
+      ``/settings`` need several Esc presses to close, and left a pending Esc
+      that made the next ``/`` appear to need two presses. Bare Esc is not a
+      Focus CSI prefix until ``[`` also arrives.
+    - Only an incomplete ``ESC [`` suffix is held (one more byte decides
+      ``I``/``O`` vs other CSI). tmux FocusIn/Out is almost always one 3-byte
+      write; a pathological split that starts with a lone Esc would forward
+      Esc and then ``[I``/``[O`` as ordinary input (Focus CSI not recognized
+      across that split) — far cheaper than breaking every Esc keypress.
+    """
     if not enabled or not buf:
         out = bytes(buf)
         buf.clear()
@@ -60,15 +75,37 @@ def _strip_focus(buf: bytearray, enabled: bool) -> bytes:
     i = 0
     n = len(buf)
     while i < n:
-        if buf[i] == 0x1B:
-            # Need at least ESC [ X
-            if i + 2 >= n:
-                break
-            if buf[i + 1] == ord("[") and buf[i + 2] in (ord("I"), ord("O")):
-                i += 3
-                continue
+        if buf[i] != 0x1B:
+            out.append(buf[i])
+            i += 1
+            continue
+
+        # Bare ESC at end of chunk → forward now (never hold lone Esc).
+        if i + 1 >= n:
+            out.append(buf[i])
+            i += 1
+            break
+
+        # ESC not followed by '[' → Esc / meta lead-in; forward Esc only.
+        if buf[i + 1] != ord("["):
+            out.append(buf[i])
+            i += 1
+            continue
+
+        # Incomplete "ESC [" → hold for the deciding final byte.
+        if i + 2 >= n:
+            break
+
+        # FocusIn / FocusOut → drop the three-byte CSI.
+        if buf[i + 2] in (ord("I"), ord("O")):
+            i += 3
+            continue
+
+        # Other CSI (arrows, etc.): forward Esc and continue; the loop emits
+        # '[' and the final byte on later iterations so the sequence stays intact.
         out.append(buf[i])
         i += 1
+
     del buf[:i]
     return bytes(out)
 

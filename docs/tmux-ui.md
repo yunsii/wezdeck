@@ -199,6 +199,7 @@ grok --version        # still prints Grok version via grok.real
 ```
 
 - Implementation: `scripts/runtime/grok-with-focus-filter.sh` + `scripts/runtime/grok-focus-filter.py` (PTY relay; strips `\e[I` / `\e[O]`).
+- **Hold policy:** only an incomplete `\e[` suffix is buffered (needs one more byte to decide Focus vs other CSI). A **bare Esc is forwarded immediately** — an earlier version held every lone `\e` until more bytes arrived, which made `/settings` need several Esc presses to close and left a pending Esc so the next `/` looked like it needed two presses. Unit coverage: `tests/hook-units/test_grok_focus_filter.sh`.
 - Opt out one run: `GROK_FOCUS_FILTER=0 grok …`
 - Override binary: `GROK_REAL_BIN=/path/to/grok`
 - After install (and after every `grok update`, which overwrites `~/.grok/bin/grok`), **exit and `--resume`** any live Grok. Confirm the new process is `python3 → grok.real`, not `zsh → grok` with exe `~/.grok/bin/grok` as a plain ELF.
