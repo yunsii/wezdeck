@@ -54,14 +54,14 @@ If you genuinely need ad-hoc render-path debugging, gate it behind an explicit e
 Add a new category only when an existing one would dilute its meaning. Currently registered:
 
 - **bash** (`scripts/runtime/`): `attention`, `agent_cleanup`, `clipboard`, `command_panel`, `managed_command`, `overflow`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
-- **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `tab_visibility`, `vscode`, `workspace`
+- **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `latency`, `tab_visibility`, `vscode`, `workspace`
 - **C# helper** (`helper-manager.exe`): owned in `native/host-helper/`, treat as read-only from the WSL/Lua side
 
 Rules:
 
 1. **Lower-snake_case.** No spaces, no PascalCase, no dots inside the base name.
-2. **`<base>.perf` is reserved for perf events** that follow the schema in [`performance.md`](./performance.md) "Perf-only logging". One `.perf` subcategory per UI surface (`attention.perf`, `command.perf`, `worktree.perf`, `links.perf`). Never reuse `<base>.perf` for non-perf events.
-3. **Lifecycle / dispatch events live in the base category**, not in `.perf`. Base categories default-on; `.perf` is opt-in via `WEZTERM_RUNTIME_LOG_CATEGORIES`.
+2. **`<base>.perf` is reserved for perf events** that follow the schema in [`performance.md`](./performance.md) "Perf-only logging". One `.perf` subcategory per UI surface (`attention.perf`, `command.perf`, `worktree.perf`, `links.perf`, `latency.perf`). Never reuse `<base>.perf` for non-perf events.
+3. **Lifecycle / dispatch events live in the base category**, not in `.perf`. Base categories default-on; `.perf` is opt-in via `WEZTERM_RUNTIME_LOG_CATEGORIES` (bash) or an explicit flag / allowlist (Lua `latency.perf` — see below).
 4. **One category per subsystem, not per file.** `attention-jump.sh`, `attention-state-lib.sh`, and `tmux-attention-picker.sh` all log under `attention`.
 5. **Cross-language alignment.** When bash and Lua cooperate on one flow, use the same base name on both sides (`attention` on both, not `attention` vs `att`).
 
@@ -102,5 +102,22 @@ Pick the name from the dictionary when one exists; coin a new field only when no
 | timestamp captured by writer | explicit unit suffix (`tick_ms`, `heartbeat_at_ms`) |
 | picker variant | `picker_kind="go"` or `"bash"` |
 | boolean | spell out: `osc_emitted="1"` not `emit="true"` — every value is a lib-quoted string |
+| manifest hotkey id | `hotkey_id` (not `id`, not `key`) |
+| latency kind | `kind="hotkey"` or `kind="status"` |
+| configured slow threshold | `threshold_ms` |
 
 The dictionary is small on purpose. Before inventing a field, grep existing log lines for an analogous one.
+
+## Key / status latency (Lua)
+
+Cross-cutting input-feel observability lives in `wezterm-x/lua/latency.lua`:
+
+| Event | Category | When it fires |
+|---|---|---|
+| Slow WezTerm-layer hotkey | `latency` · `message="slow key handler"` | handler `duration_ms >= hotkey_slow_ms` (default 50) |
+| Slow `update-status` tick | `latency` · `message="slow status tick"` | tick `duration_ms >= status_slow_ms` (default 40) |
+| Every sample | `latency.perf` | only when `diagnostics.wezterm.latency.emit_all = true` (or an explicit categories allowlist that includes `latency.perf`) |
+
+Empty `diagnostics.wezterm.categories` still means "all **base** categories" for the logger, but `latency.lua` deliberately does **not** treat that as permission to flood `latency.perf` at 4 Hz — full sampling needs the explicit flag / allowlist entry above.
+
+Threshold-gated `latency` rows are control-plane events (default-on). Do not log every status tick at info. Operator surface: [`diagnostics.md`](./diagnostics.md) "Key / status latency"; report script: `scripts/dev/latency-report.sh`.

@@ -289,6 +289,23 @@ Every Alt+/ press already writes a structured `attention.perf` row to
 required. The data is enough to answer "did anything regress?" weeks
 later without re-running benches.
 
+### Key / status latency (wezterm.log)
+
+Cross-cutting input-feel rows land in the **Windows-side**
+`%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (Lua writer), not in
+`runtime.log`:
+
+- Threshold-gated `category="latency"` — `slow key handler` (≥50 ms) and
+  `slow status tick` (≥40 ms). Default-on; quiet unless something is
+  actually slow.
+- Opt-in `category="latency.perf"` via
+  `diagnostics.wezterm.latency.emit_all = true`.
+
+Instrumenting hang-points: WezTerm-layer hotkeys are wrapped once in
+`wezterm-x/lua/ui/keymaps.lua`; `update-status` is timed end-to-end in
+`titles.lua`. Report: `scripts/dev/latency-report.sh`. Operator detail:
+[`diagnostics.md`](./diagnostics.md) "Key / status latency".
+
 ### Schema
 
 ```

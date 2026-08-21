@@ -15,9 +15,53 @@ Author-facing rules — file placement, render-path discipline, category schema,
 ## WezTerm Diagnostics
 
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured file and also shows them in the Debug Overlay.
-- Current WezTerm-side diagnostics categories include `workspace`, `vscode`, `chrome`, `clipboard`, `command_panel`, `host_helper`, and `hotkey`.
+- Current WezTerm-side diagnostics categories include `workspace`, `vscode`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, and `latency`.
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations.
 - WezTerm-side diagnostics rotate with `diagnostics.wezterm.max_bytes` and `diagnostics.wezterm.max_files`.
+
+## Key / status latency
+
+Occasional typing stutter or slow shortcuts usually means the WezTerm UI thread was busy. Ordinary character keys never enter Lua, so this surface measures two proxies and writes them to `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log`:
+
+| Signal | Meaning | Default gate |
+|---|---|---|
+| `category="latency" message="slow key handler"` | A WezTerm-layer manifest hotkey's `perform_action` (including usage bump) took too long | `duration_ms >= 50` |
+| `category="latency" message="slow status tick"` | One `update-status` callback (250 ms cadence) took too long — the closest proxy for "typing felt sticky" | `duration_ms >= 40` |
+
+Shared fields: `duration_ms`, `threshold_ms`, `kind="hotkey|status"`, plus `hotkey_id` / `workspace` / `pane_id` / `domain` / `foreground` when available.
+
+Config (tracked defaults in `wezterm-x/lua/constants.lua`, override in `wezterm-x/local/constants.lua`):
+
+```lua
+diagnostics = {
+  wezterm = {
+    latency = {
+      hotkey_slow_ms = 50,
+      status_slow_ms = 40,
+      emit_all = false,  -- true → also write every sample under latency.perf
+    },
+    -- If you use a categories allowlist, keep latency = true or slow
+    -- rows are filtered out by the logger.
+    categories = { latency = true, --[[ … ]] },
+  },
+}
+```
+
+Operator commands:
+
+```bash
+# Daily slow-event counts + p50/p95 from wezterm.log
+scripts/dev/latency-report.sh
+
+# Only workspace switches / only status ticks
+scripts/dev/latency-report.sh --hotkey-id workspace.switch
+scripts/dev/latency-report.sh --kind status
+
+# Live tail while reproducing a stutter
+scripts/dev/latency-report.sh --watch
+```
+
+Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME candidate-window delay. A quiet log during a felt stutter means the blockage is outside these Lua callbacks — use that as a negative signal, not as "nothing happened".
 
 ## Runtime Diagnostics
 

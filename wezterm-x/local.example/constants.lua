@@ -28,7 +28,17 @@ return {
         host_helper = true,
         workspace = true,
         tab_visibility = true,
+        -- Slow key / status-tick events (threshold-gated). Keep enabled
+        -- when using an allowlist, or those rows are filtered out.
+        latency = true,
       },
+      -- Thresholds for category=latency slow events. emit_all writes
+      -- every sample under latency.perf (noisy at ~4 Hz status ticks).
+      -- latency = {
+      --   hotkey_slow_ms = 50,
+      --   status_slow_ms = 40,
+      --   emit_all = false,
+      -- },
     },
   },
   -- Window look is chosen with WEZTERM_APPEARANCE_PRESET in shared.env

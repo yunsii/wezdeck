@@ -50,6 +50,9 @@ function M.register(opts)
     or nil
   event_bus.configure { event_dir = event_dir, logger = logger }
 
+  local latency = load_module 'latency'
+  local lat_cfg = latency.config(constants)
+
   -- Alt+x continuous maintenance. Press path is cache-only; this tick
   -- refreshes items snapshots (has_tab) and rebuilds overflow-base.tsv
   -- in the background so the keystroke stays under ~50ms. See
@@ -397,6 +400,13 @@ function M.register(opts)
       return
     end
 
+    -- Threshold-gated UI-thread budget. Ordinary typing never enters
+    -- Lua; a slow tick is the closest proxy for "keys feel sticky".
+    -- Logging stays out of the render helpers — only flush at the end
+    -- when duration crosses status_slow_ms (or emit_all). See
+    -- docs/logging-conventions.md render-path discipline.
+    local tick_t0 = latency.now_ms(wezterm)
+
     -- Refresh the focused-pane marker on every tick of the focused
     -- window too — window-focus-changed fires only on transitions, so
     -- a pane swap inside the focused window (e.g. Alt+number tab pick)
@@ -499,6 +509,17 @@ function M.register(opts)
 
     refresh_right_status(window, pane)
     log_rendered_status(window)
+
+    local tick_t1 = latency.now_ms(wezterm)
+    if logger and tick_t0 and tick_t1 then
+      latency.observe(logger, lat_cfg, {
+        kind = 'status',
+        duration_ms = tick_t1 - tick_t0,
+        window = window,
+        pane = pane,
+        fields = { workspace = workspace },
+      })
+    end
   end)
 
   -- Track OSC `attention.tick` values we have already processed so the

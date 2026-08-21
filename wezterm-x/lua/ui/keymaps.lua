@@ -1,7 +1,7 @@
 -- Keymap builder. Iterates `commands/manifest.json`, resolves each
 -- wezterm-layer hotkey through `keybinding_overrides.lua`, dispatches the
 -- action via `action_registry.lua`, and wraps the final entry with the
--- usage-counter bump.
+-- usage-counter bump plus latency timing (see lua/latency.lua).
 --
 -- This file owns no binding data anymore — adding a shortcut means adding
 -- an item in manifest.json and a handler in action_registry.lua.
@@ -16,6 +16,7 @@ local runtime_dir = rawget(_G, 'WEZTERM_RUNTIME_DIR') or '.'
 local module_dir = join_path(runtime_dir, 'lua', 'ui')
 local overrides_lib = dofile(join_path(module_dir, 'keybinding_overrides.lua'))
 local action_registry = dofile(join_path(module_dir, 'action_registry.lua'))
+local latency = dofile(join_path(runtime_dir, 'lua', 'latency.lua'))
 
 local function load_manifest(wezterm)
   local path = join_path(runtime_dir, 'commands', 'manifest.json')
@@ -50,15 +51,29 @@ function M.build(opts)
   local usage = opts.usage
   local raw_overrides = opts.raw_overrides or {}
 
-  -- Wrap an entry so pressing the key first bumps the hotkey counter.
-  -- The bump is fire-and-forget, so the nested perform_action path still
-  -- receives focus events in the same frame as an un-instrumented binding.
+  -- Wrap an entry so pressing the key bumps the usage counter and records
+  -- handler duration. The bump is fire-and-forget; latency logging is
+  -- threshold-gated (see diagnostics.wezterm.latency) so the hot path
+  -- stays quiet unless a press is actually slow.
+  local lat_cfg = latency.config(constants)
   local function inst(hotkey_id, entry)
-    if not usage or not usage.bump then return entry end
     local original_action = entry.action
     entry.action = wezterm.action_callback(function(window, pane)
-      usage.bump(hotkey_id, { window = window, pane = pane })
+      local t0 = latency.now_ms(wezterm)
+      if usage and usage.bump then
+        usage.bump(hotkey_id, { window = window, pane = pane })
+      end
       window:perform_action(original_action, pane)
+      local t1 = latency.now_ms(wezterm)
+      if logger and t0 and t1 then
+        latency.observe(logger, lat_cfg, {
+          kind = 'hotkey',
+          duration_ms = t1 - t0,
+          window = window,
+          pane = pane,
+          fields = { hotkey_id = hotkey_id },
+        })
+      end
     end)
     return entry
   end

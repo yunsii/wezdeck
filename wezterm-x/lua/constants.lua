@@ -320,6 +320,15 @@ local base_constants = {
       max_files = 5,
       debug_key_events = false,
       categories = {},
+      -- Key / status-tick latency. Slow events (duration >= threshold)
+      -- land in category `latency` by default. Set emit_all = true to
+      -- also write every sample under `latency.perf` (noisy at 4 Hz).
+      -- See docs/diagnostics.md "Key / status latency".
+      latency = {
+        hotkey_slow_ms = 50,
+        status_slow_ms = 40,
+        emit_all = false,
+      },
     },
   },
   attention = {
