@@ -69,8 +69,10 @@ opaque layers can each hide it. All must be transparent at once:
    `tab_inactive_bg` / `tab_active_bg`. The frosted preset sets those to
    transparent (`rgba(0,0,0,0)`) so the strip, inactive tabs, and right-status
    counters dissolve into the frost; the active tab keeps a light alpha tint so
-   it stays identifiable. Attention badge colors are left opaque on purpose so
-   state signaling survives.
+   it stays identifiable (`tab_active_bg` tracks Tailwind `cyan-500`, same token
+   as `constants.lua`). Attention badge colors are left opaque on purpose so
+   state signaling survives; their hexes also follow the Tailwind-first policy
+   in [`agent-attention.md`](./agent-attention.md).
 
 ## Focus differentiation (pane border, not background)
 

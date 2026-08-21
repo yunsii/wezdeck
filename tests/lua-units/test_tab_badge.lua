@@ -268,19 +268,19 @@ describe('badge_colors paints an unfocused tab its status block', function()
   local PALETTE = {
     tab_bar_background = '#f1f0e9',
     tab_accent = '#b07d48',
-    tab_attention_waiting_bg = '#ddbe9f',
-    tab_attention_waiting_fg = '#493624',
-    tab_attention_done_bg = '#b2cdac',
-    tab_attention_done_fg = '#2f402c',
-    tab_attention_running_bg = '#bfd3eb',
-    tab_attention_running_fg = '#364960',
+    tab_attention_waiting_bg = '#fde68a',
+    tab_attention_waiting_fg = '#78350f',
+    tab_attention_done_bg = '#bbf7d0',
+    tab_attention_done_fg = '#14532d',
+    tab_attention_running_bg = '#bae6fd',
+    tab_attention_running_fg = '#0c4a6e',
   }
 
   it('returns the block pair for every status', function()
     for status, want in pairs({
-      waiting = { '#ddbe9f', '#493624' },
-      done = { '#b2cdac', '#2f402c' },
-      running = { '#bfd3eb', '#364960' },
+      waiting = { '#fde68a', '#78350f' },
+      done = { '#bbf7d0', '#14532d' },
+      running = { '#bae6fd', '#0c4a6e' },
     }) do
       local bg, fg = attention.badge_colors(PALETTE, status)
       assert_eq(bg, want[1], status .. ' bg')

@@ -113,10 +113,10 @@ local base_constants = {
     tab_inactive_fg = '#6f685f',
     tab_hover_bg = '#e2dbcd',
     tab_hover_fg = '#2f302c',
-    -- Focus tab: darkest block on the strip so "where I am" wins over
-    -- every status wash. OKLCh ~ L 0.70 / C 0.045 / h 75°.
-    tab_active_bg = '#af9b80',
-    tab_active_fg = '#221f1a',
+    -- Focus tab: Tailwind cyan-500 selected chip + white text.
+    -- Palette source: https://tailwindcss.com/docs/colors
+    tab_active_bg = '#06b6d4', -- cyan-500
+    tab_active_fg = '#ffffff', -- white
     new_tab_bg = '#f1f0e9',
     new_tab_fg = '#908b83',
     new_tab_hover_bg = '#e2dbcd',
@@ -124,49 +124,38 @@ local base_constants = {
     tab_edge = '#ddd8cd',
     tab_accent = '#b07d48',
     -- ── Agent-attention status colors ──────────────────────────────
-    -- Focus-first ladders in OKLCh. Waiting / done share a soft action
-    -- ladder (below focus, above running); running sits one step quieter
-    -- on an ambient ladder. The status only picks the hue within its
-    -- ladder.
+    -- Sourced from the Tailwind default palette so focus / status hues
+    -- stay on one system. Weight is carried by shade, not hand-mixed
+    -- OKLCh ladders:
     --
-    --   role (soft action: waiting / done)
-    --   _bg    | L 0.82 | C 0.055 | counter block, tab recolor
-    --   _glyph | L 0.50 | C 0.080 | the counter's leading mark only
-    --   _fg    | L 0.35 | C 0.040 | counter label text
+    --   role            | tokens                         | job
+    --   focus           | cyan-500 / white               | where I am
+    --   waiting (soft)  | amber-200 / amber-900 / -700   | needs you
+    --   done (soft)     | green-200 / green-900 / -700   | finished
+    --   running (quiet) | sky-200 / sky-900 / sky-700    | in flight
     --
-    --   role (ambient: running)
-    --   _bg    | L 0.86 | C 0.040 | soft wash — readable, not urgent
-    --   _glyph | L 0.50 | C 0.080 | same mark weight as soft action
-    --   _fg    | L 0.40 | C 0.045 | matches workspace-identity weight
+    -- Running uses sky (not cyan) so mid-turn tabs cannot be mistaken
+    -- for the focused cyan-500 chip. Soft *-200 fills stay below the
+    -- saturated *-500 focus block. Hexes are the published Tailwind v3
+    -- defaults.
     --
-    --   status  | hue   | ladder
-    --   waiting |  66°  | soft action (warm amber)
-    --   done    | 140°  | soft action (green)
-    --   running | 252°  | ambient (blue)
-    --
-    -- History: before 2026-08-19 the nine values were hand-mixed and
-    -- drifted. Equal action weight (L 0.75 / C 0.080) fixed peer drift
-    -- but made status blocks compete with focus; 2026-08-21 demoted
-    -- running to ambient, then softened waiting/done and darkened focus
-    -- so the strip reads focus > soft-action > ambient.
-    --
-    -- Retuning: move a hue to reskin a status; move a soft-action row to
-    -- reweight waiting+done; move an ambient row to reweight running;
-    -- move `tab_active_bg` to reweight focus. Do not hand-mix a single
-    -- value. Rationale + glyph/label split: docs/agent-attention.md.
-    tab_attention_waiting_bg = '#ddbe9f',
-    tab_attention_waiting_fg = '#493624',
-    tab_attention_waiting_glyph = '#82592e',
-    tab_attention_done_bg = '#b2cdac',
-    tab_attention_done_fg = '#2f402c',
-    tab_attention_done_glyph = '#4a6e42',
-    tab_attention_running_bg = '#bfd3eb',
-    tab_attention_running_fg = '#364960',
-    tab_attention_running_glyph = '#406690',
-    -- Host-disk badge at crit. Deliberately outside the ladder above: it
-    -- is not an agent status, and "the disk is about to stop the machine"
-    -- must never read as "an agent is waiting on you". disk_status.lua
-    -- falls back to the amber pair when a preset palette omits these.
+    -- Retuning: pick another Tailwind token of the same role weight
+    -- (e.g. focus → cyan-600, waiting → amber-300). Do not hand-mix a
+    -- single channel. Rationale: docs/agent-attention.md.
+    tab_attention_waiting_bg = '#fde68a', -- amber-200
+    tab_attention_waiting_fg = '#78350f', -- amber-900
+    tab_attention_waiting_glyph = '#b45309', -- amber-700
+    tab_attention_done_bg = '#bbf7d0', -- green-200
+    tab_attention_done_fg = '#14532d', -- green-900
+    tab_attention_done_glyph = '#15803d', -- green-700
+    tab_attention_running_bg = '#bae6fd', -- sky-200
+    tab_attention_running_fg = '#0c4a6e', -- sky-900
+    tab_attention_running_glyph = '#0369a1', -- sky-700
+    -- Host-disk badge at crit. Deliberately outside the Tailwind attention
+    -- tokens above: it is not an agent status, and "the disk is about to
+    -- stop the machine" must never read as "an agent is waiting on you".
+    -- disk_status.lua falls back to the amber pair when a preset palette
+    -- omits these.
     disk_crit_bg = '#b4574b',
     disk_crit_fg = '#fbf1ef',
     ime_native_bg = '#6b86b7',
@@ -176,16 +165,13 @@ local base_constants = {
     ime_en_fg = '#908b83',
     ime_unknown_fg = '#908b83',
     -- ── Workspace identity badges ──────────────────────────────────
-    -- Same construction as the attention ladders above — role fixes L/C
-    -- in OKLCh, the workspace only picks a hue — but pitched quieter
-    -- still, because these answer "where am I" rather than "act now"
-    -- or even "work in flight":
+    -- Still OKLCh (not Tailwind): these answer workspace identity, not
+    -- agent urgency, and stay quieter than the Tailwind *-200 status
+    -- washes. Role fixes L/C; the workspace only picks a hue:
     --
     --   role | L    | C
-    --   bg   | 0.88 | 0.030   (soft-action: L 0.82 / C 0.055;
-    --                          running wash: L 0.86 / C 0.040)
-    --   fg   | 0.40 | 0.050   (soft-action labels: L 0.35 / C 0.040;
-    --                          running labels: L 0.40 / C 0.045)
+    --   bg   | 0.88 | 0.030
+    --   fg   | 0.40 | 0.050
     --
     --   workspace | hue
     --   default   |  85°  near-neutral, see below

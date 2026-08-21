@@ -35,9 +35,9 @@ M.presets = {
     palette = {
       tab_bar_background = '#f1f0e9',
       tab_inactive_bg = '#f1f0e9',
-      -- Keep in lockstep with constants.lua `tab_active_bg` (focus must
-      -- stay heavier than the ambient running wash).
-      tab_active_bg = '#af9b80',
+      -- Keep in lockstep with constants.lua `tab_active_bg` (Tailwind
+      -- cyan-500; focus must stay heavier than the ambient sky-200 wash).
+      tab_active_bg = '#06b6d4',
       tab_hover_bg = '#e2dbcd',
     },
   },
@@ -59,8 +59,8 @@ M.presets = {
       -- active tab keeps a light alpha tint so it stays identifiable.
       tab_bar_background = 'rgba(0,0,0,0)',
       tab_inactive_bg = 'rgba(0,0,0,0)',
-      tab_active_bg = 'rgba(175,155,128,0.60)',
-      tab_hover_bg = 'rgba(175,155,128,0.18)',
+      tab_active_bg = 'rgba(6,182,212,0.70)', -- cyan-500
+      tab_hover_bg = 'rgba(6,182,212,0.18)',
     },
   },
 }
