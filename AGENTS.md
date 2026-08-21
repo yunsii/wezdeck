@@ -30,7 +30,8 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   → wrapper, `grok.real` = ELF; required because zshrc prepends `~/.grok/bin`),
   why macOS WezTerm+tmux can look fine with the same heal (sub-frame client
   burst, not OS-exempt), why WSL→Windows still flashes even on a tiny pane,
-  or `scripts/dev/repro-grok-focus-flash.sh`:
+  `scripts/dev/repro-grok-focus-flash.sh`, or mouse-wheel feel under tmux
+  (`scroll_lines` / `scroll_mode=wheel` / `scroll_speed` in `~/.grok/config.toml`):
   Read [`docs/tmux-ui.md#grok-build-in-tmux`](docs/tmux-ui.md#grok-build-in-tmux).
 - Window appearance presets (`opaque` / `frosted`), transparency /
   frosted-glass, `win32_system_backdrop`, `window_background_opacity`, the

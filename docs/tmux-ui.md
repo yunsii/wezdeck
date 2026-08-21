@@ -108,11 +108,11 @@ In tmux UI terms what shows up here is: a per-tab badge (an unfocused tab filled
 - **Concurrent refreshes cannot lose the switch.** Every jump fires two or three refresh requests within ~15ms — the `session-window-changed` / `window-pane-changed` hook, `attention-jump.sh`'s explicit `--no-debounce` refresh, and `client-focus-in` — and each captured its context when it was queued. Two rules keep the last switch from being dropped: (1) `perform_refresh` re-reads the session's **live** active window / pane immediately before rendering, so a request queued a few ms before the switch landed still paints the worktree you are on rather than the previous one (the status line only ever describes the active pane, so live is also the correct semantics; the caller's `--cwd` remains the input to the debounce decision); (2) a `--force` request **waits** for a busy lock (`@tmux_status_lock_wait_attempts`, default 20 × 50ms) instead of returning silently. Before the fix the loser was dropped with nothing re-queuing it, so a jump could sit on the previous branch until the poll — and the poll measured **44-45s**, not the nominal 30s. After the wait, if the winner already rendered this live context (same `@tmux_status_last_cwd`, refreshed within 1s) the duplicate git probe is short-circuited. Covered by `tests/hook-units/test_tmux_status_refresh_args.sh`.
 - Attention jumps (`Alt+.` / `Alt+,` / the `Alt+/` picker, via `attention-jump.sh`) force an un-debounced refresh of the landed session right after the `select-window` / `select-pane`. This is needed because those `select-*` calls are no-ops when the target window/pane is already active (the session was parked there), so the `session-window-changed` / `window-pane-changed` hooks never fire — without the explicit refresh the branch/worktree segment would stay stale until `client-focus-in` or the 30s poll.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values.
-- Grok Build fullscreen TUI focus flash / cream `bg_base` tint: see [Grok Build in tmux](#grok-build-in-tmux) below (not a WezTerm paint bug).
+- Grok Build fullscreen TUI focus flash / cream `bg_base` tint / mouse-wheel feel: see [Grok Build in tmux](#grok-build-in-tmux) below (not a WezTerm paint bug).
 
 ## Grok Build in tmux
 
-Grok’s fullscreen (alt-screen) TUI under this stack has two separable issues. The **primary** one is whole-content flash on pane focus; the **secondary** one is GrokDay’s cool `#eeeeee` canvas fighting cream pane styles. Do not collapse them — cream-matching alone does not stop the flash.
+Grok’s fullscreen (alt-screen) TUI under this stack has three separable issues. The **primary** one is whole-content flash on pane focus; the **secondary** one is GrokDay’s cool `#eeeeee` canvas fighting cream pane styles; the **tertiary** one is mouse-wheel scroll feel under tmux (lines-per-tick + wheel/trackpad heuristic). Do not collapse them — cream-matching alone does not stop the flash, and scroll knobs live in `~/.grok/config.toml`, not this repo’s runtime sync.
 
 ### Symptom → cause → fix
 
@@ -120,6 +120,8 @@ Grok’s fullscreen (alt-screen) TUI under this stack has two separable issues. 
 | --- | --- | --- |
 | Entire transcript flashes one frame on `Alt+o` / pane click (empty session often quieter) | tmux `focus-events on` delivers CSI FocusIn (`\e[I`); Grok enables `\e[?1004h`, then on FocusGained runs `terminal.clear()` (`\e[2J`) + full `app.draw` when `repaints_pane_out_of_band()` is true | **Repo:** PATH wrapper strips FocusIn/Out before they reach Grok ([Local fix](#local-fix-focus-filter)). Do **not** turn session `focus-events` off as the standing fix (starves Vim / Claude / attention). |
 | Cool-grey flash / canvas vs cream pane | Stock GrokDay `bg_base` is opaque `#eeeeee` vs `window-style` `#eae9e1` / `window-active-style` `#f1f0e9` | **Optional:** `scripts/dev/patch-grok-theme-wezdeck.sh` with `WEZDECK_GROK_BG=f1f0e9` (or `default` → `Color::Reset`). Re-run after every Grok self-update. Pin `auto_light_theme = "grokday"` in `~/.grok/config.toml`. |
+| Slow single-notch scroll (≈1 line/tick) under tmux | Grok `[ui] scroll_lines` unset → per-terminal profile defaults to a conservative 1 line/event inside tmux | **Machine-local:** set `scroll_lines` in `~/.grok/config.toml` (this host aligns with tmux `Wheel* -N 5` → `scroll_lines = 5`). Also `/settings` → **Scroll lines**. |
+| Single-notch feels fine (~5 lines) but a fast flick barely moves | Terminal wheel events carry no magnitude; `scroll_mode = "auto"` guesses wheel vs trackpad from event timing and often treats a rapid notch burst as trackpad, damping the flick | **Machine-local:** force `scroll_mode = "wheel"` and raise `scroll_speed` (this host: `80`; `50` = 1.0x, `100` ≈ 6.0x). No per-tick scroll log in `runtime.log` — tune by feel or `/settings`. |
 
 ### Upstream root cause
 
@@ -203,6 +205,21 @@ grok --version        # still prints Grok version via grok.real
 - Opt out one run: `GROK_FOCUS_FILTER=0 grok …`
 - Override binary: `GROK_REAL_BIN=/path/to/grok`
 - After install (and after every `grok update`, which overwrites `~/.grok/bin/grok`), **exit and `--resume`** any live Grok. Confirm the new process is `python3 → grok.real`, not `zsh → grok` with exe `~/.grok/bin/grok` as a plain ELF.
+
+### Mouse scroll (`~/.grok/config.toml` `[ui]`)
+
+Grok’s wheel/trackpad knobs are **not** synced by `wezterm-runtime-sync`; they live in the user’s Grok config (or `/settings` → **Scroll speed** / **Scroll input** / **Scroll lines** / **Invert scroll**). There is no standing “one log line per wheel tick” in this repo’s `runtime.log` — `GROK_LOG_FILE` + `RUST_LOG=debug` is for Grok-internal tracing, not scroll UX metering.
+
+Standing values on this machine (adjust per device):
+
+```toml
+[ui]
+scroll_lines = 5          # match tmux.conf copy-mode WheelUp/Down -N 5
+scroll_mode = "wheel"     # avoid auto misreading rapid notches as trackpad
+scroll_speed = 80         # 50 = 1.0x; raise further if flicks still feel soft
+```
+
+Diagnostic split that led here: notch-by-notch already showed ~5 lines after setting `scroll_lines`, but fast flicks stayed sluggish until `scroll_mode = "wheel"`. If a trackpad is the primary input, try `scroll_mode = "trackpad"` instead of forcing wheel.
 
 ### Verify
 
