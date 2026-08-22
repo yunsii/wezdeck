@@ -785,9 +785,61 @@
     }
   },
   {
+    "id": "window.font-size-decrease",
+    "label": "Window: Decrease font size",
+    "description": "Decrease WezTerm font size (Ctrl+-), then schedule a light tmux layout heal so pane splits and status stay aligned after the cell grid changes.",
+    "scope": "window-and-pane-navigation",
+    "context": "any",
+    "binding": {
+      "handler": "window.font-size-decrease"
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+-",
+        "layer": "wezterm"
+      }
+    ]
+  },
+  {
+    "id": "window.font-size-increase",
+    "label": "Window: Increase font size",
+    "description": "Increase WezTerm font size (Ctrl+=), then schedule a light tmux layout heal so pane splits and status stay aligned after the cell grid changes.",
+    "scope": "window-and-pane-navigation",
+    "context": "any",
+    "binding": {
+      "handler": "window.font-size-increase"
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+=",
+        "layer": "wezterm"
+      },
+      {
+        "keys": "Ctrl+Shift+=",
+        "layer": "wezterm"
+      }
+    ]
+  },
+  {
+    "id": "window.font-size-reset",
+    "label": "Window: Reset font size",
+    "description": "Reset WezTerm font size (Ctrl+0), then schedule a light tmux layout heal.",
+    "scope": "window-and-pane-navigation",
+    "context": "any",
+    "binding": {
+      "handler": "window.font-size-reset"
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+0",
+        "layer": "wezterm"
+      }
+    ]
+  },
+  {
     "id": "session.fix-layout",
     "label": "Session: Fix layout",
-    "description": "Light heal after DPI / RDP / zoom glitches: re-measure client size, rebalance the current window panes (even-horizontal), and clamp/redraw the multi-line tmux status. Does not respawn panes or restart agents.",
+    "description": "Light heal after DPI / RDP / zoom glitches: re-measure client size, rebalance the current window panes (even-horizontal), and clamp/redraw the multi-line tmux status. Does not respawn panes or restart agents. Also runs automatically (debounced) on window-resized and after Ctrl+/- / Ctrl+0 font zoom.",
     "scope": "session-maintenance",
     "context": "tmux-backed",
     "binding": {

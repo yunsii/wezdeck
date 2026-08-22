@@ -12,6 +12,7 @@
 #
 # Usage:
 #   tmux-fix-layout.sh
+#   tmux-fix-layout.sh --quiet   # auto heal: no toast (WezTerm resize/zoom)
 #   tmux-fix-layout.sh --session NAME --window ID --cwd PATH [--client NAME]
 set -euo pipefail
 
@@ -26,6 +27,7 @@ window_id="${COMMAND_PANEL_WINDOW_ID:-}"
 cwd="${COMMAND_PANEL_CWD:-}"
 client_tty="${COMMAND_PANEL_CLIENT_TTY:-}"
 client_name=""
+quiet=0
 start_ms="$(runtime_log_now_ms)"
 
 while (($# > 0)); do
@@ -50,8 +52,12 @@ while (($# > 0)); do
       client_tty="${2:-}"
       shift 2
       ;;
+    --quiet|-q)
+      quiet=1
+      shift
+      ;;
     -h|--help)
-      printf 'Usage: %s [--session NAME] [--window ID] [--cwd PATH] [--client NAME]\n' "$0"
+      printf 'Usage: %s [--quiet] [--session NAME] [--window ID] [--cwd PATH] [--client NAME]\n' "$0"
       exit 0
       ;;
     *)
@@ -61,7 +67,14 @@ while (($# > 0)); do
   esac
 done
 
+toast() {
+  (( quiet )) && return 0
+  tmux display-message "$1" 2>/dev/null || true
+}
+
 # Resolve live context when invoked from a chord (no COMMAND_PANEL_*).
+# Detached auto-heal (wsl.exe → bash, no TMUX client) cannot use bare
+# display-message -p; fall back to the first attached client's view.
 if [[ -z "$session_name" || -z "$window_id" ]]; then
   meta="$(tmux display-message -p '#{session_name}\t#{window_id}\t#{pane_current_path}\t#{client_name}' 2>/dev/null || true)"
   IFS=$'\t' read -r live_session live_window live_cwd live_client <<< "$meta"
@@ -72,10 +85,23 @@ if [[ -z "$session_name" || -z "$window_id" ]]; then
 fi
 
 if [[ -z "$session_name" || -z "$window_id" ]]; then
-  runtime_log_warn layout "fix-layout missing session/window" \
-    "session_name=${session_name:-}" "window_id=${window_id:-}"
-  tmux display-message 'Layout fix failed: not inside a tmux session' 2>/dev/null || true
-  exit 1
+  while IFS=$'\t' read -r c_name c_session c_window c_cwd; do
+    [[ -n "$c_session" && -n "$c_window" ]] || continue
+    client_name="$c_name"
+    session_name="$c_session"
+    window_id="$c_window"
+    [[ -n "$cwd" ]] || cwd="$c_cwd"
+    break
+  done < <(tmux list-clients -F '#{client_name}\t#{client_session}\t#{window_id}\t#{pane_current_path}' 2>/dev/null || true)
+fi
+
+if [[ -z "$session_name" || -z "$window_id" ]]; then
+  # Startup race: WezTerm window-resized fires before any tmux client
+  # exists. Quiet exit — nothing to heal yet.
+  runtime_log_info layout "fix-layout skipped: no tmux client yet" \
+    "quiet=$quiet"
+  toast 'Layout fix failed: not inside a tmux session'
+  exit 0
 fi
 
 [[ -n "$cwd" && -d "$cwd" ]] || cwd="$(tmux display-message -p -t "$window_id" '#{pane_current_path}' 2>/dev/null || true)"
@@ -170,4 +196,4 @@ runtime_log_info layout "fix-layout completed" \
   "status_after=$(tmux show-options -qv -t "$session_name" status 2>/dev/null || true)" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 
-tmux display-message 'Layout fixed (size · panes · status)' 2>/dev/null || true
+toast 'Layout fixed (size · panes · status)'

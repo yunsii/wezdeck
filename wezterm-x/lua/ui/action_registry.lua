@@ -65,6 +65,36 @@ function M.new(ctx)
 
   local handlers = {}
 
+  -- ── Font size (triggers layout heal after zoom) ───────
+  -- Use Multiple so the unit-variant font action stays a first-class
+  -- KeyAssignment (config.keys / Multiple), not something we pass through
+  -- window:perform_action — that path rejects DecreaseFontSize on some
+  -- WezTerm builds with "… is not a valid action".
+
+  local function font_size_with_heal(font_action)
+    return wezterm.action.Multiple {
+      font_action,
+      wezterm.action_callback(function(_, pane)
+        local heal = rawget(_G, '__WEZTERM_LAYOUT_HEAL')
+        if heal and heal.schedule then
+          heal.schedule(pane)
+        end
+      end),
+    }
+  end
+
+  handlers['window.font-size-increase'] = function()
+    return font_size_with_heal(wezterm.action.IncreaseFontSize)
+  end
+
+  handlers['window.font-size-decrease'] = function()
+    return font_size_with_heal(wezterm.action.DecreaseFontSize)
+  end
+
+  handlers['window.font-size-reset'] = function()
+    return font_size_with_heal(wezterm.action.ResetFontSize)
+  end
+
   -- ── Tabs ──────────────────────────────────────────────
 
   handlers['tabs.activate_relative'] = function(binding_args)

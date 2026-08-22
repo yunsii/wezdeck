@@ -48,16 +48,39 @@ function M.parse_key_string(raw)
   if raw:find(' ', 1, true) then
     return nil, 'chord keys (space-separated segments) are not supported in this phase; override chord leaves via tmux directly'
   end
-  local pieces = split_on_plus(raw)
-  if #pieces == 0 then
+  -- Trailing "++" (e.g. Ctrl++): the key is literal "+", but a naive
+  -- split on '+' drops empty segments and leaves only the modifiers —
+  -- which then mis-binds key="Ctrl" and crashes WezTerm config load.
+  local plus_key = false
+  local expr = raw
+  if expr:sub(-2) == '++' then
+    plus_key = true
+    expr = expr:sub(1, -2) -- strip one trailing '+'; leave "Ctrl+" / "Ctrl+Shift+"
+    if expr:sub(-1) == '+' then
+      expr = expr:sub(1, -2) -- strip the separator before the key
+    end
+  end
+  local pieces = split_on_plus(expr)
+  if plus_key then
+    -- modifiers only in pieces; key is '+'
+    if #pieces == 0 then
+      return nil, 'empty key expression'
+    end
+  elseif #pieces == 0 then
     return nil, 'empty key expression'
   end
-  local key = pieces[#pieces]
+  local key = plus_key and '+' or pieces[#pieces]
   if key == '' then
     return nil, 'key token is empty'
   end
+  -- Reject accidentally binding a modifier name as the key (the Ctrl++
+  -- failure mode before the trailing-plus special case above).
+  if not plus_key and MOD_ALIASES[key:lower()] and #pieces == 1 then
+    return nil, 'key token looks like a modifier with no key: ' .. raw
+  end
   local seen, mods = {}, {}
-  for i = 1, #pieces - 1 do
+  local mod_end = plus_key and #pieces or (#pieces - 1)
+  for i = 1, mod_end do
     local token = pieces[i]:lower()
     local canonical = MOD_ALIASES[token]
     if not canonical then

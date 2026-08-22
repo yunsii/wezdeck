@@ -6,9 +6,46 @@ Use this doc when you need to apply or verify changes.
 
 1. Edit files in this repo.
 2. If runtime files changed, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` (Bash — not a Claude Code Skill tool).
-3. Let WezTerm auto-reload by default.
-4. Reload tmux only when the sync step could not do it for you or when a simple reload is still needed.
-5. Reload affected interactive shells if shell rc files changed.
+
+   **Default path (auto crash gate):**
+
+   1. Stage under `%LOCALAPPDATA%\wezterm-runtime\canary\` (live `~/.wezterm.lua` untouched so far).
+   2. Launch an isolated WezTerm (`--always-new-process`, class `wezdeck-canary`, workspace `default`).
+   3. Wait for `canary/healthy.stamp` (written on `gui-startup` when the probe config loads).
+   4. On success: close canary processes (command-line match on `wezdeck-canary` / `wezterm-runtime\canary`), backup live → `last-good/`, promote canary → live. Manual `--launch` leaves the probe window open for inspection.
+   5. On failure/timeout: kill leftover canary processes, **leave live alone**, exit non-zero — your running wezdeck keeps working.
+
+3. Reload the main WezTerm window (or open a new one) after a successful sync so it picks up the promoted tree.
+4. Reload tmux only when needed; reload affected interactive shells if shell rc files changed.
+
+### Manual / recovery
+
+```bash
+scripts/dev/wezterm-canary.sh --auto          # same probe+promote as sync
+scripts/dev/wezterm-canary.sh --launch        # probe only
+scripts/dev/wezterm-canary.sh --promote       # force promote without waiting
+scripts/dev/wezterm-canary.sh --recover       # last-good → live
+scripts/dev/wezterm-canary.sh --recover --start
+WEZTERM_SYNC_SKIP_CANARY_AUTO=1 skills/wezterm-runtime-sync/scripts/sync-runtime.sh  # stage only
+```
+
+### Why canary (not only luac / lua-precheck)
+
+Static gates catch syntax and some launcher wiring. They do **not** catch runtime KeyAssignment mistakes or startup failures that only appear in a real GUI. The auto canary answers one question: **did an independent WezTerm process load this config without dying before gui-startup?** That is enough to keep the main wezdeck bootable; it is not a full UX regression suite.
+
+### Emergency live publish
+
+Skip the gate when you intentionally want the running GUI to reload immediately:
+
+```bash
+skills/wezterm-runtime-sync/scripts/sync-runtime.sh --live
+```
+
+### Hard escape (no last-good)
+
+```bash
+wezterm.exe -n start --always-new-process
+```
 
 ## Runtime Sync
 

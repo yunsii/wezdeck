@@ -32,10 +32,18 @@ usage() {
   cat <<'EOF'
 Usage:
   skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+  skills/wezterm-runtime-sync/scripts/sync-runtime.sh --live
   skills/wezterm-runtime-sync/scripts/sync-runtime.sh --list-targets
   skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /absolute/path
 
 Options:
+  (default)             Stage to the canary tree, auto-launch an isolated
+                        WezTerm probe, promote to live only if healthy.stamp
+                        appears (else leave live untouched and exit 1).
+                        Skip probe: WEZTERM_SYNC_SKIP_CANARY_AUTO=1
+  --live                Publish directly to the live bootstrap + runtime (old
+                        behaviour). Use when you intentionally want the running
+                        WezTerm to pick up changes on reload.
   --list-targets        Print candidate user home directories and exit.
   --target-home PATH    Sync directly to PATH and cache it in .sync-target.
   -h, --help            Show this help text.
@@ -170,7 +178,13 @@ run_lua_precheck() {
   # state dir. As long as no input file (lua/, repo-worktree-task.env, the
   # precheck script itself) is newer than the sentinel, the prior result
   # is still valid. Override with WEZTERM_SYNC_FORCE_LUA_PRECHECK=1.
-  local sentinel="${TARGET_RUNTIME_STATE_DIR:-$target_runtime_dir/.state}/lua-precheck.ok"
+  # Canary and live use different sentinels so staging always re-checks the
+  # canary tree even when live was prechecked recently.
+  local sentinel_name="lua-precheck.ok"
+  if [[ "${SYNC_PUBLISH_MODE:-live}" == "canary" ]]; then
+    sentinel_name="lua-precheck.canary.ok"
+  fi
+  local sentinel="${TARGET_RUNTIME_STATE_DIR:-$target_runtime_dir/.state}/$sentinel_name"
   if [[ -f "$sentinel" && "${WEZTERM_SYNC_FORCE_LUA_PRECHECK:-0}" != "1" ]]; then
     local newer_input
     newer_input="$(find \
@@ -249,6 +263,9 @@ maybe_reload_tmux() {
 
 LIST_TARGETS=0
 TARGET_HOME_OVERRIDE=""
+# Default: stage canary only so a bad config cannot reload into the live GUI.
+# Pass --live to publish straight to ~/.wezterm.lua + ~/.wezterm-x.
+SYNC_PUBLISH_MODE="${WEZTERM_SYNC_PUBLISH_MODE:-canary}"
 start_ms="$(runtime_log_now_ms)"
 
 while [[ $# -gt 0 ]]; do
@@ -261,6 +278,14 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || { printf 'Missing value for --target-home.\n' >&2; usage >&2; exit 1; }
       TARGET_HOME_OVERRIDE="$2"
       shift 2
+      ;;
+    --live)
+      SYNC_PUBLISH_MODE=live
+      shift
+      ;;
+    --canary|--stage-canary)
+      SYNC_PUBLISH_MODE=canary
+      shift
       ;;
     -h|--help)
       usage
@@ -292,10 +317,28 @@ SYNC_CACHE_FILE="$REPO_ROOT/.sync-target"
 MAIN_REPO_ROOT="$(resolve_main_repo_root "$REPO_ROOT")"
 
 TARGET_HOME="$(choose_target_home)"
-TARGET_FILE="$TARGET_HOME/.wezterm.lua"
 TARGET_RUNTIME_STATE_DIR="$(target_runtime_state_dir "$TARGET_HOME")"
-TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
+LIVE_TARGET_FILE="$TARGET_HOME/.wezterm.lua"
+LIVE_TARGET_RUNTIME_DIR="$TARGET_HOME/.wezterm-x"
 TARGET_NATIVE_DIR="$TARGET_HOME/.wezterm-native"
+CANARY_ROOT="$TARGET_RUNTIME_STATE_DIR/canary"
+LAST_GOOD_ROOT="$TARGET_RUNTIME_STATE_DIR/last-good"
+
+case "$SYNC_PUBLISH_MODE" in
+  canary)
+    TARGET_FILE="$CANARY_ROOT/.wezterm.lua"
+    TARGET_RUNTIME_DIR="$CANARY_ROOT/.wezterm-x"
+    ;;
+  live)
+    TARGET_FILE="$LIVE_TARGET_FILE"
+    TARGET_RUNTIME_DIR="$LIVE_TARGET_RUNTIME_DIR"
+    ;;
+  *)
+    printf 'Unknown SYNC_PUBLISH_MODE: %s (want canary|live)\n' "$SYNC_PUBLISH_MODE" >&2
+    exit 1
+    ;;
+esac
+
 TEMP_BOOTSTRAP_FILE="$TARGET_RUNTIME_STATE_DIR/.wezterm.lua.tmp.$$"
 RUNTIME_NATIVE_FLOW_PID=""
 BOOTSTRAP_FLOW_PID=""
@@ -303,12 +346,18 @@ BOOTSTRAP_FLOW_PID=""
 runtime_log_info sync "sync-runtime invoked" \
   "repo_root=$REPO_ROOT" \
   "main_repo_root=$MAIN_REPO_ROOT" \
+  "publish_mode=$SYNC_PUBLISH_MODE" \
   "target_home=$TARGET_HOME" \
   "target_file=$TARGET_FILE" \
-  "target_runtime_dir=$TARGET_RUNTIME_DIR"
-sync_trace "step=init repo_root=$REPO_ROOT main_repo_root=$MAIN_REPO_ROOT"
+  "target_runtime_dir=$TARGET_RUNTIME_DIR" \
+  "live_target_file=$LIVE_TARGET_FILE" \
+  "live_target_runtime_dir=$LIVE_TARGET_RUNTIME_DIR"
+sync_trace "step=init repo_root=$REPO_ROOT main_repo_root=$MAIN_REPO_ROOT publish_mode=$SYNC_PUBLISH_MODE"
 sync_trace "step=target target_home=$TARGET_HOME target_file=$TARGET_FILE"
 sync_trace "step=target target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
+if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
+  sync_trace "step=target live_bootstrap=$LIVE_TARGET_FILE live_runtime=$LIVE_TARGET_RUNTIME_DIR canary_root=$CANARY_ROOT"
+fi
 
 prepare_runtime_subflow() {
   local repo_root_path="${1:?missing repo root path}"
@@ -436,15 +485,32 @@ run_runtime_native_flow() {
 
   run_lua_precheck "$TARGET_RUNTIME_DIR"
 
-  install_windows_helper_manager "$TARGET_RUNTIME_DIR"
-  ensure_windows_helper_running "$TARGET_RUNTIME_DIR"
-  sync_trace "flow=runtime-native status=completed target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
+  # Helper is always installed against the *live* runtime so the main GUI
+  # keeps a working host-helper path even when this sync only staged canary.
+  local helper_runtime_dir="$TARGET_RUNTIME_DIR"
+  if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
+    helper_runtime_dir="$LIVE_TARGET_RUNTIME_DIR"
+    mkdir -p "$helper_runtime_dir"
+    # Keep helper scripts in live tree roughly current without promoting
+    # the whole canary runtime: copy only the ensure script tree if missing.
+    if [[ ! -f "$helper_runtime_dir/scripts/ensure-windows-runtime-helper.ps1" \
+        && -f "$TARGET_RUNTIME_DIR/scripts/ensure-windows-runtime-helper.ps1" ]]; then
+      mkdir -p "$helper_runtime_dir/scripts"
+      rsync -a "$TARGET_RUNTIME_DIR/scripts/" "$helper_runtime_dir/scripts/" || true
+    fi
+  fi
+  install_windows_helper_manager "$helper_runtime_dir"
+  ensure_windows_helper_running "$helper_runtime_dir"
+  sync_trace "flow=runtime-native status=completed target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR helper_runtime_dir=$helper_runtime_dir"
 }
 
 run_bootstrap_prepare_flow() {
   sync_trace "flow=wezdeck-bootstrap status=starting target_file=$TARGET_FILE temp_file=$TEMP_BOOTSTRAP_FILE"
   mkdir -p "$TARGET_HOME"
   mkdir -p "$TARGET_RUNTIME_STATE_DIR"
+  if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
+    mkdir -p "$CANARY_ROOT"
+  fi
   cp "$SOURCE_FILE" "$TEMP_BOOTSTRAP_FILE"
   sync_trace "step=prepare-bootstrap status=completed temp_file=$TEMP_BOOTSTRAP_FILE"
   sync_trace "flow=wezdeck-bootstrap status=prepared target_file=$TARGET_FILE temp_file=$TEMP_BOOTSTRAP_FILE"
@@ -550,14 +616,33 @@ rm -rf "$POSTSYNC_OUT_DIR"
 
 runtime_log_info sync "sync-runtime completed" \
   "repo_root=$REPO_ROOT" \
+  "publish_mode=$SYNC_PUBLISH_MODE" \
   "target_home=$TARGET_HOME" \
   "target_file=$TARGET_FILE" \
   "target_runtime_dir=$TARGET_RUNTIME_DIR" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
-sync_trace "step=completed duration_ms=$(runtime_log_duration_ms "$start_ms")"
+sync_trace "step=completed duration_ms=$(runtime_log_duration_ms "$start_ms") publish_mode=$SYNC_PUBLISH_MODE"
 
 printf 'Synced %s -> %s\n' "$SOURCE_FILE" "$TARGET_FILE"
 printf 'Synced %s -> %s\n' "$RUNTIME_SOURCE_DIR" "$TARGET_RUNTIME_DIR"
 if [[ -d "$NATIVE_SOURCE_DIR" ]]; then
   printf 'Synced %s -> %s\n' "$NATIVE_SOURCE_DIR" "$TARGET_NATIVE_DIR"
+fi
+if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
+  printf '\n'
+  printf '[sync] publish_mode=canary — staged at %s\n' "$TARGET_FILE"
+  if [[ "${WEZTERM_SYNC_SKIP_CANARY_AUTO:-0}" == "1" ]]; then
+    printf '[sync] canary auto-probe skipped (WEZTERM_SYNC_SKIP_CANARY_AUTO=1)\n'
+    printf '  next: scripts/dev/wezterm-canary.sh --auto\n'
+  else
+    printf '[sync] auto-probing canary (launch → healthy.stamp → promote) …\n'
+    if bash "$REPO_ROOT/scripts/dev/wezterm-canary.sh" --auto; then
+      printf '[sync] canary auto-promote OK — live updated (last-good backed up)\n'
+    else
+      printf '[sync] canary auto-probe FAILED — live bootstrap left untouched: %s\n' "$LIVE_TARGET_FILE" >&2
+      printf '  fix config and re-run sync, or: scripts/dev/wezterm-canary.sh --recover\n' >&2
+      printf '  emergency live publish: skills/wezterm-runtime-sync/scripts/sync-runtime.sh --live\n' >&2
+      exit 1
+    fi
+  fi
 fi
