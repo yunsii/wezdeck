@@ -336,6 +336,23 @@ reset_window_in_place() {
     "layout=$layout" \
     "role=$role"
 
+  # Heal client size / pane balance / status clamp before respawn so a
+  # refresh after RDP or DPI change does not recreate panes into a
+  # still-broken geometry. `script_dir` comes from tmux-reset.sh (the
+  # sourcer); fall back to wezterm_config_repo when sourced under tests.
+  _fix_layout=""
+  if [[ -n "${script_dir:-}" && -f "$script_dir/tmux-fix-layout.sh" ]]; then
+    _fix_layout="$script_dir/tmux-fix-layout.sh"
+  elif [[ -n "${wezterm_config_repo:-}" && -f "$wezterm_config_repo/scripts/runtime/tmux-fix-layout.sh" ]]; then
+    _fix_layout="$wezterm_config_repo/scripts/runtime/tmux-fix-layout.sh"
+  fi
+  if [[ -n "$_fix_layout" ]]; then
+    _fix_args=(--session "$session_name" --window "$window_id")
+    [[ -n "$requested_cwd" ]] && _fix_args+=(--cwd "$requested_cwd")
+    bash "$_fix_layout" "${_fix_args[@]}" >/dev/null 2>&1 || true
+  fi
+  unset _fix_layout _fix_args
+
   tmux respawn-pane -k -t "$target_pane" -c "$worktree_root" "$primary_command"
   tmux rename-window -t "$window_id" "$window_label" 2>/dev/null || true
 

@@ -785,9 +785,36 @@
     }
   },
   {
+    "id": "session.fix-layout",
+    "label": "Session: Fix layout",
+    "description": "Light heal after DPI / RDP / zoom glitches: re-measure client size, rebalance the current window panes (even-horizontal), and clamp/redraw the multi-line tmux status. Does not respawn panes or restart agents.",
+    "scope": "session-maintenance",
+    "context": "tmux-backed",
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/tmux-fix-layout.sh\""
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+k r",
+        "layer": "tmux-chord"
+      }
+    ],
+    "palette": {
+      "accelerator": "f",
+      "command": [
+        "bash",
+        "{repo_root}/scripts/runtime/tmux-fix-layout.sh"
+      ],
+      "success_message": "Fixed tmux layout (size · panes · status).",
+      "failure_message": "Failed to fix tmux layout."
+    }
+  },
+  {
     "id": "session.refresh-current-window",
     "label": "Session: Refresh current window",
-    "description": "Respawn only the focused tmux window in place.",
+    "description": "Respawn only the focused tmux window in place (agent resume). Runs the light layout heal first so DPI/RDP size glitches are cleared before respawn.",
     "scope": "session-maintenance",
     "context": "tmux-backed",
     "hotkeys": [],

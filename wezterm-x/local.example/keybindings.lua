@@ -36,6 +36,7 @@ return {
   -- ['link.open-in-viewport']           = 'Alt+l',
 
   -- ── Panes / chord prefix ──────────────────────────────
+  -- ['session.fix-layout']             = 'Ctrl+k r', -- light heal after RDP/DPI
   -- ['command-palette.chord-prefix']    = 'Ctrl+k',  -- tmux.conf still binds
   --                                                  -- the old Ctrl+k until
   --                                                  -- the chord renderer lands.
