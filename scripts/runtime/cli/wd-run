@@ -10,7 +10,9 @@ source "$SCRIPT_DIR/../agent-run-lib.sh"
 usage() {
   cat <<'EOF' >&2
 usage:
-  wd-run propose --cwd DIR [--actor A] [--summary S] (--file F | --stdin | -)
+  wd-run propose --cwd DIR [--actor A] [--summary S] [--wait] [--timeout SEC]
+                 (--file F | --stdin | -)
+  wd-run wait --id ID [--timeout SEC] [--interval SEC]
   wd-run peek [--id ID]
   wd-run run --id ID [--force-id]
   wd-run show <id>
@@ -27,11 +29,17 @@ the agent tool channel — do not wrap those here.
 
 --cwd is required on propose and must be an existing directory; the
 script always runs with that working directory.
+
+Blocking handoff (agent auto-continue): after propose, run
+  wd-run wait --id <id>
+(or propose --wait). Treat like a normal background shell task — no
+attention badge. Exits with the script exit code when the human finishes x.
 EOF
 }
 
 cmd_propose() {
   local actor="unknown" cwd="" summary="" file="" use_stdin=0
+  local do_wait=0 timeout_sec=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --actor) actor="${2:-}"; shift 2 ;;
@@ -39,6 +47,8 @@ cmd_propose() {
       --summary) summary="${2:-}"; shift 2 ;;
       --file) file="${2:-}"; shift 2 ;;
       --stdin|-) use_stdin=1; shift ;;
+      --wait) do_wait=1; shift ;;
+      --timeout) timeout_sec="${2:-0}"; shift 2 ;;
       -h|--help) usage; return 0 ;;
       *)
         printf 'wd-run propose: unknown arg %s\n' "$1" >&2
@@ -69,6 +79,33 @@ cmd_propose() {
   printf 'id=%s\n' "$id"
   printf 'preview+run: x\n' >&2
   printf 'cwd=%s\n' "$(agent_run_resolve_cwd "$cwd")" >&2
+  if [[ "$do_wait" -eq 1 ]]; then
+    printf 'waiting for human x (timeout=%ss)…\n' "$timeout_sec" >&2
+    agent_run_wait "$id" "$timeout_sec"
+  fi
+}
+
+cmd_wait() {
+  local id="" timeout_sec=0 interval_sec=1
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --id) id="${2:-}"; shift 2 ;;
+      --timeout) timeout_sec="${2:-0}"; shift 2 ;;
+      --interval) interval_sec="${2:-1}"; shift 2 ;;
+      -h|--help) usage; return 0 ;;
+      *)
+        printf 'wd-run wait: unknown arg %s\n' "$1" >&2
+        return 1
+        ;;
+    esac
+  done
+  if [[ -z "$id" ]]; then
+    id="$(agent_run_read_head_id)" || {
+      printf 'wd-run wait: --id required (HEAD empty)\n' >&2
+      return "$AGENT_RUN_EXIT_MISSING"
+    }
+  fi
+  agent_run_wait "$id" "$timeout_sec" "$interval_sec"
 }
 
 cmd_peek() {
@@ -215,6 +252,7 @@ main() {
   shift || true
   case "$cmd" in
     propose) cmd_propose "$@" ;;
+    wait) cmd_wait "$@" ;;
     peek) cmd_peek "$@" ;;
     run) cmd_run "$@" ;;
     show) cmd_show "$@" ;;

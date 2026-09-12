@@ -204,7 +204,7 @@ Mention:
 When a **human** (not the agent) must execute a script or multi-line command:
 
 - [reporting-50] **Load and follow** the platform skill `human-run` before asking the human to run anything. Do not improvise a paste-to-terminal path.
-- [reporting-51] First run the skill’s `ensure-env.sh` (check + init). Deliver the payload only via `"$TOOL_HOME/propose.sh" --cwd <dir> …` (explicit existing working directory). Tell the human to run shell `x` — at most one short line in chat.
+- [reporting-51] First run the skill’s `ensure-env.sh` (check + init). Tell the human to run shell `x` (one line). Deliver via `"$TOOL_HOME/propose.sh" --cwd <dir> …` (defaults to `--wait`: block/background like a normal shell task until `x` finishes, then continue). Do not rely on attention badges for this handoff.
 - [reporting-52] Do **not** paste multi-line runnable scripts into chat for the human to copy. Illustrative code is allowed only when marked as read-only / 勿粘贴执行.
 - [reporting-53] Do **not** route agent self-exec through `human-run` / `wd-run`. If tools can run it, run it.
 - [reporting-54] If `ensure-env.sh` / the skill fails, report that failure and stop — do not fall back to broken TUI copy-paste as the execution channel.

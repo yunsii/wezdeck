@@ -18,6 +18,8 @@ AGENT_RUN_VERSION=1
 AGENT_RUN_EXIT_SUPERSEDED=2
 AGENT_RUN_EXIT_BUSY=3
 AGENT_RUN_EXIT_MISSING=4
+AGENT_RUN_EXIT_CANCELLED=5
+AGENT_RUN_EXIT_TIMEOUT=124
 
 # Caps — override via env for tests / tight hosts.
 : "${AGENT_RUN_ENTRY_KEEP:=50}"
@@ -530,4 +532,74 @@ agent_run_format_preview() {
   printf '%s\n' '' '----- script -----'
   jq -r '.body' <<<"$json"
   printf '%s\n' '----- end -----'
+}
+
+# Block until entry reaches a terminal status. For agent "background task"
+# wait — no attention/status badges; just exit when the human finished `x`.
+# Usage: agent_run_wait <id> [timeout_sec] [interval_sec]
+# Exit: script exit_code on done/failed; 2 superseded; 5 cancelled; 124 timeout; 4 missing.
+agent_run_wait() {
+  local id="${1:-}"
+  local timeout_sec="${2:-0}"
+  local interval_sec="${3:-1}"
+  local path status code started now elapsed
+
+  agent_run_require_jq || return 1
+  agent_run_ensure_dirs || return 1
+  [[ -n "$id" ]] || return "$AGENT_RUN_EXIT_MISSING"
+  [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=0
+  [[ "$interval_sec" =~ ^[0-9]+$ ]] || interval_sec=1
+  (( interval_sec >= 1 )) || interval_sec=1
+
+  path="$(agent_run_entry_path "$id")"
+  [[ -s "$path" ]] || {
+    printf 'wd-run wait: missing entry id=%s\n' "$id" >&2
+    return "$AGENT_RUN_EXIT_MISSING"
+  }
+
+  started="$(agent_run_now_ms)"
+  agent_run_audit "wait_start" "$id" "agent" "ok" "timeout_sec=$timeout_sec" || true
+
+  while true; do
+    [[ -s "$path" ]] || {
+      printf 'wd-run wait: entry disappeared id=%s\n' "$id" >&2
+      return "$AGENT_RUN_EXIT_MISSING"
+    }
+    status="$(jq -r '.status // empty' "$path" 2>/dev/null || true)"
+    case "$status" in
+      done|failed)
+        code="$(jq -r '.result.exit_code // 1' "$path" 2>/dev/null || printf '1')"
+        [[ "$code" =~ ^[0-9]+$ ]] || code=1
+        agent_run_audit "wait_end" "$id" "agent" "ok" "status=$status exit_code=$code" || true
+        return "$code"
+        ;;
+      cancelled)
+        agent_run_audit "wait_end" "$id" "agent" "ok" "status=cancelled" || true
+        printf 'wd-run wait: cancelled id=%s\n' "$id" >&2
+        return "$AGENT_RUN_EXIT_CANCELLED"
+        ;;
+      superseded)
+        agent_run_audit "wait_end" "$id" "agent" "ok" "status=superseded" || true
+        printf 'wd-run wait: superseded id=%s\n' "$id" >&2
+        return "$AGENT_RUN_EXIT_SUPERSEDED"
+        ;;
+      pending|running)
+        ;;
+      *)
+        printf 'wd-run wait: unknown status=%s id=%s\n' "$status" "$id" >&2
+        return 1
+        ;;
+    esac
+
+    if (( timeout_sec > 0 )); then
+      now="$(agent_run_now_ms)"
+      elapsed=$(( (now - started) / 1000 ))
+      if (( elapsed >= timeout_sec )); then
+        agent_run_audit "wait_end" "$id" "agent" "fail" "timeout_sec=$timeout_sec" || true
+        printf 'wd-run wait: timeout after %ss id=%s\n' "$timeout_sec" "$id" >&2
+        return "$AGENT_RUN_EXIT_TIMEOUT"
+      fi
+    fi
+    sleep "$interval_sec"
+  done
 }

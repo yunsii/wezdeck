@@ -70,20 +70,28 @@ If ensure-env fails → **fail closed** (report the ensure-env stderr). Do **not
 1. **Decide** this is human-only (if you can self-run → do that; skip this skill).
 2. **Ensure env:** `"$TOOL_HOME/ensure-env.sh"` (required).
 3. **Choose cwd** — existing directory; never omit `--cwd`.
-4. **Propose** via the skill wrapper (runs ensure again, then propose):
+4. **Tell the human first** (one line): 请在本机终端运行 `x` 预览并确认。Do not paste the script body.
+5. **Propose + wait** — same shape as a normal blocking/background shell task.
+   `propose.sh` **defaults to `--wait`** (blocks until `x` finishes). Prefer host
+   background execution when the wait may be long; on completion, continue the
+   turn with the wait exit code (script exit code). **No** attention / status
+   badge required.
 
    ```bash
    "$TOOL_HOME/propose.sh" \
      --cwd "/abs/workdir" \
      --actor "${AGENT_NAME:-agent}" \
      --summary "short title ≤80" \
+     --timeout 3600 \
      --stdin <<'EOF'
    # script body
    EOF
    ```
 
-5. **Tell the human** one line: run `x`. Optional `id=…` from stdout. Do not reprint the script as paste payload.
-6. **Stop** — they own `x`.
+   Or split: `propose.sh --no-wait …` then `"$WD_RUN" wait --id <id> --timeout 3600`.
+
+6. **Continue** when wait returns — inspect exit code, proceed with the task.
+   Do not ask the human to paste output unless something failed and you need it.
 
 ## Don't
 

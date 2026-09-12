@@ -134,6 +134,30 @@ else
 fi
 assert_ok "HEAD still present" test -s "$AGENT_RUN_HEAD_FILE"
 
+printf '== wait until human run ==\n'
+out="$("$wd_run" propose --cwd "$sandbox/work" --actor test --summary 'wait-me' --stdin <<<"echo waited-ok" 2>/dev/null)"
+wait_id="${out#id=}"
+wait_id="$(printf '%s' "$wait_id" | head -n1 | tr -d '\r')"
+# Finish the handoff in the background while wait blocks briefly
+(
+  sleep 0.3
+  "$wd_run" run --id "$wait_id" >/dev/null 2>&1
+) &
+set +e
+"$wd_run" wait --id "$wait_id" --timeout 10 --interval 1
+wait_rc=$?
+set -e
+assert_eq "wait returns script exit 0" "$wait_rc" "0"
+
+out="$("$wd_run" propose --cwd "$sandbox/work" --actor test --summary 'wait-timeout' --stdin <<<"echo never" 2>/dev/null)"
+toid="${out#id=}"
+toid="$(printf '%s' "$toid" | head -n1 | tr -d '\r')"
+set +e
+"$wd_run" wait --id "$toid" --timeout 1 --interval 1
+to_rc=$?
+set -e
+assert_eq "wait timeout exit 124" "$to_rc" "124"
+
 printf '== peek / format_preview (printf leading-dash regression) ==\n'
 # Regression: bash printf treats a format starting with '-' as flags
 # (printf '----- end -----' → "invalid option"). Under set -e that made

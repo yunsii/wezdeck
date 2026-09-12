@@ -28,8 +28,11 @@ confirms. Chat should at most show one line: `x`.
 
 1. Load skill `human-run`.
 2. Run `"$TOOL_HOME/ensure-env.sh"` (check + init; idempotent).
-3. Propose with `"$TOOL_HOME/propose.sh" --cwd …` — not a hand-rolled `wd-run` path.
-4. Tell the human to run `x`.
+3. Tell the human to run `x` (one line).
+4. `"$TOOL_HOME/propose.sh" --cwd …` — **defaults to `--wait`** so the tool
+   call blocks like a normal shell task until `x` finishes; then continue.
+   Prefer host background execution for long waits. No attention badge.
+5. Or split: `propose.sh --no-wait` + `wd-run wait --id …`.
 
 Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reporting-54]`.
 
