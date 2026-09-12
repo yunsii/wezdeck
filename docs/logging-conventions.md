@@ -21,7 +21,7 @@ Never hard-code paths. Bash sources `scripts/runtime/wsl-runtime-paths-lib.sh` f
 
 1. It runs as **root** under systemd, so `$HOME` is `/root` and any `XDG_STATE_HOME`-derived constant would resolve to the wrong tree. Hard-coding the user's home into a root unit is worse than a `/var/log` path.
 2. Root-owned lines interleaved into a user-owned `runtime.log` create permission and rotation hazards for every other writer of that file.
-3. It writes to **both** stdout (the journal) and a plain append-only file *on purpose*. The journal fragments across exactly the distro restart loop this guard exists to diagnose — see [`diagnostics.md`](./diagnostics.md) "Guest OOM Hardening". The duplication is the durability guarantee, not an oversight.
+3. It writes to **both** stdout (the journal) and a plain append-only file *on purpose*. The journal fragments across exactly the distro restart loop this guard exists to diagnose — see [`guest-oom.md`](./guest-oom.md). The duplication is the durability guarantee, not an oversight.
 
 The path is overridable via `WEZTERM_OOM_GUARD_LOG`, which is how the sandboxed tests keep out of the live file.
 

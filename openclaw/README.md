@@ -465,7 +465,7 @@ every start. `--usageStatistics=false` additionally drops a
 `telemetry/watchdog` child — a second full Node runtime, ~135 Mi. Together:
 **4 processes / ~357 Mi → 1 process / 150 Mi** per instance. Full measurements,
 the node-version prerequisite, and the deferred `uxc` alternative are in repo
-[`docs/diagnostics.md`](../docs/diagnostics.md) "Standing memory consumers".
+[`docs/guest-oom.md#standing-memory-consumers`](../docs/guest-oom.md#standing-memory-consumers).
 
 Notes:
 

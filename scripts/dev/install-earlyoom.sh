@@ -17,7 +17,7 @@
 # /init.scope cgroup (that is why the OOM guard watches exactly that cgroup).
 # oomd would either not manage init.scope at all or take out the whole thing,
 # reproducing the 32 s poweroff/restart loop of 2026-07-25. earlyoom kills one
-# process. See docs/diagnostics.md "Guest OOM hardening".
+# process. See docs/guest-oom.md.
 #
 # This composes with wezterm-oom-guard rather than replacing it. earlyoom picks
 # its victim by /proc/<pid>/oom_score, which folds in oom_score_adj — so the
@@ -40,7 +40,7 @@
 #   ./scripts/dev/install-earlyoom.sh --print         # dump the generated drop-in
 #   sudo ./scripts/dev/install-earlyoom.sh --uninstall # remove the drop-in only
 #
-# Docs: docs/diagnostics.md "Guest OOM hardening"
+# Docs: docs/guest-oom.md
 set -euo pipefail
 
 DROPIN_DIR="${SYSTEMD_DROPIN_DIR:-/etc/systemd/system/earlyoom.service.d}"

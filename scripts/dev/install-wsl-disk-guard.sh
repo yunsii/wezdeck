@@ -23,7 +23,7 @@
 #   ./scripts/dev/install-wsl-disk-guard.sh --print    # dump generated units
 #   ./scripts/dev/install-wsl-disk-guard.sh --uninstall
 #
-# Docs: docs/diagnostics.md "Host disk space"
+# Docs: docs/host-disk.md
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

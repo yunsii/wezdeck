@@ -30,14 +30,14 @@
 # `gap` deliberately does not drive the badge on its own. When the volume is
 # a dedicated WSL disk (the usual arrangement, and the case here), reclaimable
 # space is not waste — it is the distro's own reserve. Compaction converts gap
-# back into avail; it does not create headroom. See docs/diagnostics.md
+# back into avail; it does not create headroom. See docs/host-disk.md
 # "Host disk space".
 #
 # Usage:
 #   scripts/runtime/wsl-disk-guard.sh sample
 #   scripts/runtime/wsl-disk-guard.sh status
 #
-# Env knobs (see docs/diagnostics.md "Host disk space"):
+# Env knobs (see docs/host-disk.md):
 #   WEZTERM_DISK_VHDX            vhdx path, WSL-side. Default: autodetected
 #   WEZTERM_DISK_STATUS_FILE     JSON output path. Default: Windows runtime state
 #   WEZTERM_DISK_VOLUME          WSL-side mount point of the volume to watch,
@@ -492,7 +492,7 @@ cmd_status() {
     printf '  # then, elevated Windows PowerShell:\n'
     printf '  wsl --shutdown\n'
     printf '  Optimize-VHD -Path "%s" -Mode Full\n' "$(wslpath -w "${VHDX_PATH:-}" 2>/dev/null || printf '<vhdx>')"
-    printf 'See docs/diagnostics.md "Host disk space".\n'
+    printf 'See docs/host-disk.md.\n'
   fi
 }
 

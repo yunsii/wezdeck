@@ -13,7 +13,7 @@
 -- The gap is deliberately not surfaced. On a dedicated WSL volume it is the
 -- distro's own reserve rather than waste, so showing it would light up a
 -- permanent hint that never needs acting on.
--- See docs/diagnostics.md "Host disk space".
+-- See docs/host-disk.md.
 --
 -- **The badge renders nothing while healthy.** It appears only when there is
 -- something to act on, so its mere presence in the bar is the signal — no

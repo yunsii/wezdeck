@@ -71,7 +71,7 @@ already contains the fnm global bin dir. **Re-run `npm i -g` after any
 node version, so the binary drops off `PATH` entirely.
 `--usageStatistics=false` drops a ~135Mi `telemetry/watchdog` child process.
 Net: 4 processes / ~357Mi → 1 process / 150Mi per instance — see repo
-[`docs/diagnostics.md`](../../../../docs/diagnostics.md) "Standing memory
+[`docs/guest-oom.md#standing-memory-consumers`](../../../../docs/guest-oom.md#standing-memory-consumers) "Standing memory
 consumers".
 
 ⚠️ **That 150Mi is the idle floor, not a ceiling.** `chrome-devtools-mcp` grows
@@ -87,7 +87,7 @@ So if a gateway-owned instance is ever seen above ~1 Gi, or surviving many turns
 without release, reclaim it with `openclaw mcp reload` (disposes the cached
 runtime; the next turn rebuilds it). Do not reach for a rewrite. Inspect with
 `pgrep -f chrome-devtools-mcp` — the `-f` matters, `comm` truncates to
-`chrome-devtools`. Rationale and thresholds: repo `docs/diagnostics.md`.
+`chrome-devtools`. Rationale and thresholds: repo `docs/guest-oom.md`.
 
 Health:
 

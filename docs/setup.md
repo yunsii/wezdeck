@@ -70,7 +70,7 @@ Re-run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` and reload for chan
 
 There is one unified env loader for managed-runtime shell scripts: `scripts/runtime/runtime-env-lib.sh`. Any agent / status / hook entry point that needs env should source it and call `runtime_env_load_managed`, which sources two layers in this order (later wins):
 
-1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [diagnostics.md](./diagnostics.md#host-disk-space)), and VS Code launch overrides.
+1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [host-disk.md](./host-disk.md)), and VS Code launch overrides.
 2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets. Drop a new file there to add a secret; no loader edits, no rc-file edits. The same dir is sourced by `~/.zshrc`, so interactive zsh and machine-spawned agents share one source of truth.
 
 The Lua side reads `shared.env` independently via `helpers.load_optional_env_file`; that is a structural cross-language constraint — Lua cannot call into bash — and is the only second loader implementation that exists.
@@ -239,7 +239,7 @@ typeset -f __tmux_status_prompt_refresh >/dev/null && echo ok || echo missing
 
 If it prints `missing`, the rc did not source the hook. Without the hook, the 30s poll and pane-switch hooks keep working unchanged, so `git` state can lag up to 30s before the status line updates.
 
-The same gap exists for file edits driven by Claude Code (Edit / Write / Bash `git …`) — the shell prompt is not in the loop, so the prompt hook never fires. The agent-side counterpart lives in the Claude install template at [`agent-attention.md#install--update`](./agent-attention.md#install--update): a second hook entry under `PostToolUse` and `Stop` backgrounds the same `tmux-status-refresh.sh --force --refresh-client` after every tool call and at turn end, sharing the 2s `@tmux_status_force_debounce` window with this prompt hook.
+The same gap exists for file edits driven by Claude Code (Edit / Write / Bash `git …`) — the shell prompt is not in the loop, so the prompt hook never fires. The agent-side counterpart lives in the Claude install template at [`agent-attention.md#claude-install--update`](./agent-attention.md#claude-install--update): a second hook entry under `PostToolUse` and `Stop` backgrounds the same `tmux-status-refresh.sh --force --refresh-client` after every tool call and at turn end, sharing the 2s `@tmux_status_force_debounce` window with this prompt hook.
 
 ## Vim 9.2 (optional)
 

@@ -50,7 +50,7 @@ Narrow the layer before anything else:
 Guest OOM is the confirmed failure pattern on this host, and the standing
 hardening (`wezterm-oom-protect` / `wezterm-oom-record` units, the pre-kill
 process snapshot in `/var/log/wezterm-oom-guard.log`) lives in
-[`diagnostics.md`](./diagnostics.md) "Guest OOM Hardening". Go there once step 2
+[`guest-oom.md`](./guest-oom.md). Go there once step 2
 points at OOM; stay here if it points at the Windows side instead.
 
 ## Agent-CLI Stalls On IPv6 / AAAA DNS

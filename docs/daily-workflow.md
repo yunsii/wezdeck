@@ -100,7 +100,7 @@ Most sync steps short-circuit when their inputs haven't changed since the last s
 | `build-picker` | binary exists; no `.go` / `go.mod` / `go.sum` newer than the binary | (none — Go's own incremental cache covers the unusual case) |
 | `render-tmux-bindings` | rendered output already matches the would-be output byte-for-byte (write goes to a temp + cmp + mv on diff) | (none — content-based, not mtime-based) |
 
-Sync also runs `render-workspace-agent-map.sh` (no skip gate yet) so `wezterm-x/local/workspace-agent-map.tsv` stays aligned with per-item `launcher` overrides in `local/workspaces.lua`. Requires `lua5.4` on PATH. See [`workspaces.md`](./workspaces.md#per-repo-agent-cli).
+Sync also runs `render-workspace-agent-map.sh` (no skip gate yet) so `wezterm-x/local/workspace-agent-map.tsv` stays aligned with per-item `launcher` overrides in `local/workspaces.lua`. Requires `lua5.4` on PATH. See [`workspaces.md`](./workspaces.md#agent-selection-layers).
 
 Each gate emits its decision to the `[sync] step=...` traces and to the runtime log (`category="sync"`). When something feels wrong ("I edited X and the helper still acts old"), grep for `step=helper-install\|step=helper-ensure\|step=lua-precheck` in the traces — the `status=skipped reason=...` line names the exact gate, and you can either set the matching `_FORCE_` var or `touch` the source so its mtime updates.
 
@@ -162,6 +162,32 @@ That suite uses a dedicated temporary `tmux -L ...` socket, a temporary `HOME`, 
 - If an external agent platform cannot find the clipboard wrapper, verify that the latest sync wrote `$HOME/.wezterm-x/agent-tools.env` (on the **WSL** home, not under `%USERPROFILE%\.wezterm-x\`) and that its `agent_clipboard` path still exists.
 - The `open-project-session.sh` helper warns when tmux is older than 3.3. Upgrade tmux before relying on the managed theme if passthrough support is missing.
 
+## Repo hygiene
+
+Layered checks for doc/code rot (not 对抗审查, not 设计评审):
+
+| Layer | When | Command |
+| --- | --- | --- |
+| L0 pre-commit | every commit (after install) | git hook → `scripts/dev/repo-hygiene/run.sh pre-commit` |
+| L1 audit | round close / “全面评审” / recycle prep | `scripts/dev/repo-hygiene/run.sh audit` |
+| L2 judgment | after audit queues debt | split oversized topics by decision domain; refresh stale semantics by hand/agent |
+
+Install once per clone / shared git dir (covers all worktrees):
+
+```bash
+scripts/dev/repo-hygiene/install-hooks.sh
+```
+
+L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, and **new** files (or newly crossing) over hard line budgets in `scripts/dev/repo-hygiene/budgets.conf`. Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
+
+`run.sh audit` prints a **summary first** (samples of each bucket). Pass `--verbose` for full lists, `--backticks` for basename/path backtick heuristics (off by default — too noisy for prose filenames), `--strict` to fail on non-allowlisted OVER-HARD files.
+
+Emergency only: `WEZTERM_HYGIENE_SKIP=1` or `--no-verify` (both discouraged).
+
+Fixture self-check: `scripts/dev/repo-hygiene/test.sh`.
+
 ## Commit Workflow
 
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
+- Ensure the repo-hygiene pre-commit hook is installed (see [Repo hygiene](#repo-hygiene)) before relying on commits to catch basic doc/script rot.
+

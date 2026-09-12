@@ -28,12 +28,13 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`host-helper-release.md`](./host-helper-release.md).
 - Cutting a Go picker release or install-source toggle (`WEZTERM_PICKER_INSTALL_SOURCE`):
   Read [`picker-release.md`](./picker-release.md).
-- Logs, diagnostics, and smoke tests; also guest-OOM hardening (both failure
-  modes: the distro restart loop, and the reclaim livelock that pins the CPU
-  and kills nothing — plus the `M·…` badge and earlyoom) and host disk space
-  (`ext4.vhdx` never shrinking, why sparse VHD is a trap, compaction, the
-  disk-guard timer and `D·…` badge):
+- Logs, diagnostics, smoke tests, latency / hotkey counters:
   Read [`diagnostics.md`](./diagnostics.md).
+- Guest OOM hardening (restart loop, reclaim livelock, high-order allocation,
+  `M·…` / earlyoom, standing memory consumers):
+  Read [`guest-oom.md`](./guest-oom.md).
+- Host disk space (`ext4.vhdx`, sparse-VHD trap, compaction, `D·…` badge):
+  Read [`host-disk.md`](./host-disk.md).
 - Logger author surface (categories, levels, render-path discipline):
   Read [`logging-conventions.md`](./logging-conventions.md).
 - Cross-host development environment failures involving Windows, WSL, DNS,
@@ -62,5 +63,8 @@ Use this doc when you need the shortest possible map of the repository docs.
 
 - Keep one topic in one primary file. Link to it instead of restating the same rule elsewhere.
 - Prefer editing an existing topic doc over adding a new sibling file.
+- When a topic is already over the soft line budget in [`scripts/dev/repo-hygiene/budgets.conf`](../scripts/dev/repo-hygiene/budgets.conf) (docs topics soft 400 / hard 600), split by **decision domain** rather than appending another section — see user-level `documentation-29`.
 - Keep setup, workflow, UI behavior, diagnostics, and architecture separate.
 - Put presentations, outlines, and non-reference material under [`presentations/`](./presentations/).
+- After changing markdown links or mermaid blocks, rely on `scripts/dev/repo-hygiene/` (pre-commit + `run.sh audit`) rather than eyeballing. Operator notes: [`daily-workflow.md#repo-hygiene`](./daily-workflow.md#repo-hygiene).
+

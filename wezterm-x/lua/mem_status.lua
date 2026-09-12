@@ -11,7 +11,7 @@
 -- order-4 GFP_NOFS, which the kernel declines to OOM-kill for). The guard
 -- recorded it faithfully into /var/log/wezterm-oom-guard.log, which nobody
 -- reads. The number was known the whole time; the bar just never showed it.
--- See docs/diagnostics.md "Guest OOM hardening".
+-- See docs/guest-oom.md.
 --
 -- **The badge renders nothing while healthy.** It appears only when there is
 -- something to act on, so its mere presence in the bar is the signal — no

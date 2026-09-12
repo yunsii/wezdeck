@@ -17,7 +17,7 @@ Width target: 960 px. Size target: ≤ 2 MB per asset.
 
 ## One-time setup
 
-The `mock-deck` workspace is registered in [`wezterm-x/local/workspaces.lua`](../../wezterm-x/local/workspaces.lua) (gitignored). Six items reference [`scripts/dev/mock-deck/mock-launcher.sh`](../../scripts/dev/mock-deck/mock-launcher.sh) by absolute path. After cloning a fresh machine you'd add the workspace block + run a runtime sync — already done on this checkout.
+The `mock-deck` workspace is registered in machine-local `wezterm-x/local/workspaces.lua` (gitignored). Start from the tracked template [`wezterm-x/local.example/workspaces.lua`](../../wezterm-x/local.example/workspaces.lua). Six items reference [`scripts/dev/mock-deck/mock-launcher.sh`](../../scripts/dev/mock-deck/mock-launcher.sh) by absolute path. After cloning a fresh machine you'd copy/adapt the workspace block into `local/` + run a runtime sync — already done on this checkout.
 
 The orchestrator auto-creates the six fake project directories under `~/.cache/wezdeck/mock-projects/` on first run.
 

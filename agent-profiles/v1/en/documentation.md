@@ -82,6 +82,16 @@ Each topic file should ideally answer:
 - [documentation-31] Other files should route to it, not restate it.
 - [documentation-32] When a change alters behavior, interfaces, or workflows that an existing doc describes, update that doc in the same edit.
 
+## Size budgets (soft numbers)
+
+Numeric gates belong in automation when a repo provides them. Defaults used by wezdeck `scripts/dev/repo-hygiene/budgets.conf` (adjust per repo):
+
+- [documentation-35] Entrypoint `AGENTS.md`: soft ~150, hard ~220 (aligns with [repo-bootstrap](./repo-bootstrap.md) sweet spot).
+- [documentation-36] Topic docs: soft ~400, hard ~600 lines; presentations may be higher.
+- [documentation-37] Prefer splitting at soft; block **new** files or **newly crossing** hard in pre-commit when the repo installs the hygiene hook. Historical over-hard files may be allowlisted so day-to-day commits are not frozen on old debt.
+- [documentation-38] Broken relative markdown links are a hard fail whenever automation is present; do not leave routes to deleted files.
+
+
 ## Prior Art
 
 - [documentation-33] Before drafting structure, formats, or conventions for agent-facing docs, follow [implementation-45]–[implementation-49] (Prior Art First). Doc structure is a design decision; invent only after the codebase, the format spec (e.g. `agents.md`), and the broader community have been checked.

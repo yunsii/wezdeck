@@ -32,7 +32,7 @@
 #   ./scripts/dev/install-wsl-oom-guard.sh --print         # dump generated units
 #   sudo ./scripts/dev/install-wsl-oom-guard.sh --uninstall
 #
-# Docs: docs/diagnostics.md "Guest OOM hardening"
+# Docs: docs/guest-oom.md
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

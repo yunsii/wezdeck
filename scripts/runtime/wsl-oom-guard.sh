@@ -77,7 +77,7 @@
 #   scripts/runtime/wsl-oom-guard.sh sample
 #   scripts/runtime/wsl-oom-guard.sh status
 #
-# Env knobs (see docs/diagnostics.md "Guest OOM hardening"):
+# Env knobs (see docs/guest-oom.md):
 #   WEZTERM_OOM_GUARD_LOG        append target. Default /var/log/wezterm-oom-guard.log
 #   WEZTERM_OOM_WATCH_INTERVAL   poll seconds. Default 10
 #   WEZTERM_OOM_WATCH_HIGH_PCT   high-water mark, percent of MemTotal. Default 85
