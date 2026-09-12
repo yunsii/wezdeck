@@ -26,9 +26,12 @@ confirms. Chat should at most show one line: `x`.
 
 ## Agent path (mandatory)
 
-1. Load skill `human-run` (linked via `scripts/dev/link-platform-skills.sh`).
-2. Follow its procedure — do not invent a paste path.
-3. Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reporting-54]`.
+1. Load skill `human-run`.
+2. Run `"$TOOL_HOME/ensure-env.sh"` (check + init; idempotent).
+3. Propose with `"$TOOL_HOME/propose.sh" --cwd …` — not a hand-rolled `wd-run` path.
+4. Tell the human to run `x`.
+
+Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reporting-54]`.
 
 ## Human / CLI path
 

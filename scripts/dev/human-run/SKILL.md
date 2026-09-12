@@ -2,99 +2,78 @@
 name: human-run
 description: >
   Mandatory handoff when a human (not the agent) must run a script/command.
-  Agent loads this skill, proposes via wezdeck `wd-run` with an explicit --cwd,
-  and tells the human to preview/run with `x`. Never paste multi-line scripts
-  into chat for the human to copy. Agent self-exec is out of scope — keep using
-  tools. Use when: you would otherwise ask the user to paste/run a script, the
-  command needs interactive TTY / host secrets / out-of-sandbox privileges, or
-  the user must visually confirm before exec.
+  Agent loads this skill, runs ensure-env (check+init), proposes via propose.sh
+  with an explicit --cwd, and tells the human to preview/run with `x`. Never
+  paste multi-line scripts into chat. Agent self-exec is out of scope. Use when:
+  you would otherwise ask the user to paste/run a script, the command needs
+  interactive TTY / host secrets / out-of-sandbox privileges, or the user must
+  visually confirm before exec.
 ---
 
 # human-run (platform skill — single source)
 
 **Who runs the script:** the **human**, via shell command `x`.  
-**Who prepares it:** the **agent**, via `wd-run propose` (this skill).  
+**Who prepares it:** the **agent**, via this skill’s `ensure-env.sh` + `propose.sh`.  
 **Never** paste a multi-line script into chat as the execution channel.  
 **Never** wrap agent self-exec through this skill — tools already run those.
 
-This directory is the skill unit. Runtime CLI lives in wezdeck
-`scripts/runtime/cli/{wd-run,x}` + `agent-run-lib.sh`. Docs:
-`docs/agent-run.md`. User-level doctrine: `agent-profiles` → `reporting.md`
-(Human-run handoff).
+Runtime CLI lives in the same wezdeck tree as this skill:
+`scripts/runtime/cli/{wd-run,x}` + `agent-run-lib.sh`.  
+Docs: `docs/agent-run.md`. Profile: `agent-profiles` → `reporting.md`.
 
 ## Who runs what
 
 | Actor | Duty |
 | --- | --- |
 | **Human** | In a real terminal: `x` (peek → confirm → run in recorded cwd) |
-| **Any agent** | **Load this skill → propose → tell user only `x`** |
+| **Any agent** | **Load skill → ensure-env → propose.sh → tell user only `x`** |
 | **Agent tools** | Self-runnable work — do **not** call this skill |
 
 ## When to load (mandatory)
 
-Load and follow this skill whenever **any** of these is true:
+Load whenever **any** of these is true:
 
 - You are about to ask the human to run / paste / copy a shell script or multi-line command
 - The command needs a real TTY, GUI, host secret the agent must not hold, or privileges outside the agent sandbox
 - The human must read and approve the exact script before it runs
 
-**Do not load / do not propose** when:
+**Do not load** when you can run it with tools, or when the snippet is illustrative only (mark 勿粘贴执行).
 
-- You can run it yourself with available tools (default)
-- It is only an illustrative snippet (mark as 勿粘贴执行; no `propose`)
-
-## Resolve WD_RUN
-
-First hit wins:
+## Resolve TOOL_HOME
 
 ```text
-1. $WD_RUN                              # explicit override
-2. $HOME/.wezterm-x/agent-tools.env → wd_run=… (must exist + executable)
-3. command -v wd-run
-4. $WEZTERM_REPO/scripts/runtime/cli/wd-run
-5. $HOME/github/wezterm-config/scripts/runtime/cli/wd-run
-6. else: fail — "wd-run not on PATH; see Repair half-install below"
+1. directory of this SKILL.md (follow symlinks; ~/.agents/skills/human-run → …)
+2. $HUMAN_RUN_HOME if set
+3. else fail — re-run link-platform-skills.sh from a wezdeck that has human-run
 ```
 
-Human short command `x` is installed next to `wd-run` under `scripts/runtime/cli/`
-(PATH via `~/.config/shell-env.d/wezterm-env.env`).
+## Environment check + init (mandatory first step)
 
-### Repair half-install (skill linked, CLI missing)
-
-Typical failure in **other repos** (e.g. ai-video-collection): `~/.claude/skills/human-run`
-is linked, but `$WEZTERM_REPO` (often `~/github/wezterm-config`) is behind
-`origin/master` and has no `cli/wd-run`. **Do not** paste scripts into chat.
-
-Ask the human (or a wezdeck session) to repair on the machine:
+**Do not** hand-roll path guessing in the chat. Always:
 
 ```bash
-# 1) Drop CLI into the WEZTERM_REPO tree without moving that clone's HEAD
-git -C "${WEZTERM_REPO:-$HOME/github/wezterm-config}" fetch origin master
-git -C "${WEZTERM_REPO:-$HOME/github/wezterm-config}" checkout origin/master -- \
-  scripts/runtime/cli/wd-run \
-  scripts/runtime/cli/x \
-  scripts/runtime/agent-run-lib.sh
-# ensure WSL_AGENT_RUN_* exists in scripts/runtime/wsl-runtime-paths-lib.sh
-
-# 2) Refresh discovery marker (or full sync-runtime)
-#    must include: wd_run=$WEZTERM_REPO/scripts/runtime/cli/wd-run
-
-# 3) New shells pick up PATH via wezterm-env.env; already-running agents
-#    can still use agent-tools.env → wd_run= absolute path.
+TOOL_HOME="$(readlink -f "${HUMAN_RUN_HOME:-$HOME/.agents/skills/human-run}")"
+"$TOOL_HOME/ensure-env.sh"
 ```
 
-Then re-resolve `WD_RUN` from step 2 of Resolve. If still missing → fail closed.
+`ensure-env.sh` is idempotent. It:
+
+1. Verifies this skill’s wezdeck tree has `wd-run` / `x` / `agent-run-lib.sh`
+2. If `$WEZTERM_REPO/scripts/runtime/cli` lacks them, **symlinks** from the skill tree (so `wezterm-env` PATH and human `x` work even when that clone’s HEAD is behind)
+3. Writes/updates `~/.wezterm-x/agent-tools.env` with a working `wd_run=`
+4. Smokes the binary; prints the absolute `wd-run` path on stdout
+
+If ensure-env fails → **fail closed** (report the ensure-env stderr). Do **not** paste scripts into chat.
 
 ## Agent procedure
 
-1. **Decide** this is human-only (if unsure and you *can* self-run → self-run).
-2. **Resolve** `WD_RUN` (above). Fail clearly if missing — do not fall back to chat paste.
-3. **Choose cwd** — absolute or resolvable existing directory the script must run in.
-   Relative paths are OK at propose time; `wd-run` canonicalizes. **Never omit `--cwd`.**
-4. **Propose** (body via stdin or temp file — never as argv):
+1. **Decide** this is human-only (if you can self-run → do that; skip this skill).
+2. **Ensure env:** `"$TOOL_HOME/ensure-env.sh"` (required).
+3. **Choose cwd** — existing directory; never omit `--cwd`.
+4. **Propose** via the skill wrapper (runs ensure again, then propose):
 
    ```bash
-   "$WD_RUN" propose \
+   "$TOOL_HOME/propose.sh" \
      --cwd "/abs/workdir" \
      --actor "${AGENT_NAME:-agent}" \
      --summary "short title ≤80" \
@@ -103,22 +82,21 @@ Then re-resolve `WD_RUN` from step 2 of Resolve. If still missing → fail close
    EOF
    ```
 
-5. **Report to the human** (Chinese OK): one line instruction to run `x`.
-   Optionally include `id=…` from propose stdout. **Do not** reprint the script body
-   as something to paste. Illustrative excerpts only if marked 仅供阅读 / 勿粘贴执行.
-6. **Stop** — do not poll for completion unless the user asks; they own `x`.
+5. **Tell the human** one line: run `x`. Optional `id=…` from stdout. Do not reprint the script as paste payload.
+6. **Stop** — they own `x`.
 
 ## Don't
 
-- Don't paste multi-line runnable scripts into chat for copy-paste
+- Don't paste multi-line runnable scripts into chat
+- Don't skip `ensure-env.sh` / `propose.sh` and call a guessed `wd-run` path
 - Don't `propose` work you can run with tools
-- Don't omit `--cwd` or invent a cwd that does not exist
+- Don't omit `--cwd`
 - Don't ask the human to run `wd-run` as the primary path — that is `x`
-- Don't confuse shell `x` with WezTerm **`Alt+x`** (overflow picker)
+- Don't confuse shell `x` with WezTerm **`Alt+x`**
 
 ## Related
 
-- Runtime: `scripts/runtime/cli/wd-run`, `scripts/runtime/cli/x`, `agent-run-lib.sh`
+- `ensure-env.sh`, `propose.sh`, `lib/resolve-wd-run.sh` (this dir)
+- Runtime: `scripts/runtime/cli/wd-run`, `scripts/runtime/cli/x`
 - Docs: `docs/agent-run.md`
-- Profile: `agent-profiles/v1/en/reporting.md` → Human-run handoff
 - Install links: `scripts/dev/link-platform-skills.sh`
