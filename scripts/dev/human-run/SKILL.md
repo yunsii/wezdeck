@@ -53,11 +53,37 @@ First hit wins:
 3. command -v wd-run
 4. $WEZTERM_REPO/scripts/runtime/cli/wd-run
 5. $HOME/github/wezterm-config/scripts/runtime/cli/wd-run
-6. else: fail — "wd-run not on PATH; sync-runtime / wezterm-env.env / link-platform-skills"
+6. else: fail — "wd-run not on PATH; see Repair half-install below"
 ```
 
 Human short command `x` is installed next to `wd-run` under `scripts/runtime/cli/`
 (PATH via `~/.config/shell-env.d/wezterm-env.env`).
+
+### Repair half-install (skill linked, CLI missing)
+
+Typical failure in **other repos** (e.g. ai-video-collection): `~/.claude/skills/human-run`
+is linked, but `$WEZTERM_REPO` (often `~/github/wezterm-config`) is behind
+`origin/master` and has no `cli/wd-run`. **Do not** paste scripts into chat.
+
+Ask the human (or a wezdeck session) to repair on the machine:
+
+```bash
+# 1) Drop CLI into the WEZTERM_REPO tree without moving that clone's HEAD
+git -C "${WEZTERM_REPO:-$HOME/github/wezterm-config}" fetch origin master
+git -C "${WEZTERM_REPO:-$HOME/github/wezterm-config}" checkout origin/master -- \
+  scripts/runtime/cli/wd-run \
+  scripts/runtime/cli/x \
+  scripts/runtime/agent-run-lib.sh
+# ensure WSL_AGENT_RUN_* exists in scripts/runtime/wsl-runtime-paths-lib.sh
+
+# 2) Refresh discovery marker (or full sync-runtime)
+#    must include: wd_run=$WEZTERM_REPO/scripts/runtime/cli/wd-run
+
+# 3) New shells pick up PATH via wezterm-env.env; already-running agents
+#    can still use agent-tools.env → wd_run= absolute path.
+```
+
+Then re-resolve `WD_RUN` from step 2 of Resolve. If still missing → fail closed.
 
 ## Agent procedure
 
