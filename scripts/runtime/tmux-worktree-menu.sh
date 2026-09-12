@@ -152,12 +152,11 @@ if [[ -s "$attention_state_file" ]]; then
 fi
 bench_mark attention_joined
 
-# Rows are collected in `git worktree list` order first, then ranked
-# most-recently-interacted first (user key/mouse via
-# @wezterm_user_interact_ts — see the sort below). The accelerators
-# `1-9,0,a-z` are assigned AFTER the sort, so `[1]` always means "the
-# worktree you last typed in" rather than "whatever git happens to list
-# first" or "whichever agent just streamed output".
+# Rows are collected in `git worktree list` order first, then ranked:
+#   1. human trees before delegated (delegate-* / claw-*)
+#   2. within each tier, most-recently-visited first
+# Accelerators `1-9,0,a-z` are assigned AFTER the sort, so `[1]` is the
+# worktree you last typed in among human trees (delegated sink to the end).
 ranked_rows=()
 git_order=0
 while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
@@ -170,6 +169,10 @@ while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
     "${worktree_window_interact[$worktree_path]:-0}" \
     "${worktree_ledger_interact[$worktree_path]:-0}")"
   [[ "$row_interact" =~ ^[0-9]+$ ]] || row_interact=0
+  row_tier=0
+  if tmux_worktree_is_delegated "$worktree_path" "$branch_name"; then
+    row_tier=1
+  fi
   attention_cells=$'\t\t'
   if [[ -n "$prefetch_window_id" && -n "${window_status[$prefetch_window_id]:-}" ]]; then
     attention_cells="${window_status[$prefetch_window_id]}"
@@ -190,14 +193,15 @@ while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
     fi
     attention_cells=$'\t'"$visit_age"$'\t'
   fi
-  ranked_rows+=("$row_interact"$'\t'"$git_order"$'\t'"$worktree_label"$'\t'"$worktree_path"$'\t'"$branch_name"$'\t'"$prefetch_window_id"$'\t'"$attention_cells")
+  ranked_rows+=("$row_tier"$'\t'"$row_interact"$'\t'"$git_order"$'\t'"$worktree_label"$'\t'"$worktree_path"$'\t'"$branch_name"$'\t'"$prefetch_window_id"$'\t'"$attention_cells")
   git_order=$((git_order + 1))
 done < <(tmux_worktree_list "$list_root" || true)
 
 if (( ${#ranked_rows[@]} > 0 )); then
-  # -k1,1nr: user-interact ts desc. -k2,2n: ties keep git-list order, so a
-  # repo whose worktrees have never been touched renders exactly as before.
-  while IFS=$'\t' read -r _ _ worktree_label worktree_path branch_name prefetch_window_id row_status row_age row_reason; do
+  # -k1,1n:  human (0) before delegated (1).
+  # -k2,2nr: visit ts desc within tier.
+  # -k3,3n:  ties keep git-list order.
+  while IFS=$'\t' read -r _ _ _ worktree_label worktree_path branch_name prefetch_window_id row_status row_age row_reason; do
     [[ -n "$worktree_path" ]] || continue
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$worktree_label" "$worktree_path" "$branch_name" "$prefetch_window_id" \
@@ -211,7 +215,7 @@ if (( ${#ranked_rows[@]} > 0 )); then
     else
       item_accelerators+=("")
     fi
-  done < <(printf '%s\n' "${ranked_rows[@]}" | LC_ALL=C sort -t $'\t' -k1,1nr -k2,2n)
+  done < <(printf '%s\n' "${ranked_rows[@]}" | LC_ALL=C sort -t $'\t' -k1,1n -k2,2nr -k3,3n)
 fi
 bench_mark prefetched_items
 runtime_log_info worktree "worktree menu prefetched items" "session_name=$session_name" "repo_label=$repo_label" "item_count=${#item_paths[@]}" "prefetch_file=$prefetch_file"

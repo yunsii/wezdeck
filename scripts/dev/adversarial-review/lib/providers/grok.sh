@@ -14,9 +14,14 @@ grok__invoke() {
   model="$(grok__model)"
   gtmp="$(mktemp "${TMPDIR:-/tmp}/grok-prompt.XXXXXX")"
   cat > "$gtmp"
-  gout="$(grok --prompt-file "$gtmp" -m "$model" --output-format json \
-            ${effort:+--reasoning-effort "$effort"} 2>/dev/null \
-          | jq -r '.text // empty')" || true
+  # Headless review must not decorate interactive attention (Alt+/).
+  gout="$(
+    env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
+      AGENT_ATTENTION_SKIP=1 \
+      grok --prompt-file "$gtmp" -m "$model" --output-format json \
+        ${effort:+--reasoning-effort "$effort"} 2>/dev/null \
+      | jq -r '.text // empty'
+  )" || true
   rm -f "$gtmp"
   printf '%s' "$gout"
 }

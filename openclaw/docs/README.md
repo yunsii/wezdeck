@@ -28,6 +28,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | **Session Adapter Kit** (host↔claw) | `session-bridge.md` + `scripts/session-bridge.sh` + skill `session-bridge` |
 | Error closed-loop **scope** | `error-closed-loop-scope.md` + skill `error-closed-loop` |
 | Adversarial review | **Single source** `scripts/dev/adversarial-review/` (SKILL+runner) · **links** `~/.agents/skills/…`, `workspace/skills/…`, `skills/…` via `scripts/dev/link-platform-skills.sh` · **KB** `docs/adversarial-review.md` |
+| Cross-repo tickets | **Single source** `scripts/dev/cross-repo-delegate/` (skill name `cross-repo-delegate`; short CLI `delegate`) · same link script · tickets under `~/.agent/tickets/` (not git) · MVP: create/inbox/claim/reply/close |
 | Host TUI constitution | `agent-profiles/v1/en/*` |
 | Ops / matrix / Feishu control plane | `../README.md` (entry; prefer docs above for policy) |
 

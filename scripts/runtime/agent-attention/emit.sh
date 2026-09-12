@@ -69,6 +69,34 @@ if [[ -z "$status" ]]; then
   exit 0
 fi
 
+# Delegated / non-interactive agents must not inflate the human attention
+# badge (Alt+/ · right-status ●/▲). Covers: cross-repo-delegate workers,
+# OpenClaw C3 ACP backends, adversarial-review / brainstorm headless, CI.
+#
+# Spawner should set AGENT_ATTENTION_SKIP=1 (preferred). Also honor aliases
+# and OpenClaw ACP markers so a regenerated wrapper that only sets OPENCLAW_ACP
+# still skips.
+_attention_skip_val="${AGENT_ATTENTION_SKIP:-${WEZTERM_ATTENTION_SKIP:-${DELEGATE_HEADLESS:-${OPENCLAW_ACP:-0}}}}"
+case "${_attention_skip_val}" in
+  1|true|TRUE|yes|YES)
+    runtime_log_info attention "hook skipped: AGENT_ATTENTION_SKIP" \
+      "status=$status" \
+      "provider=${AGENT_ATTENTION_PROVIDER:-}" \
+      "session_id=${AGENT_ATTENTION_SESSION_ID:-}" \
+      "openclaw_acp=${OPENCLAW_ACP:-}" \
+      "openclaw_lease=${OPENCLAW_ACPX_LEASE_ID:-}" 2>/dev/null || true
+    exit 0
+    ;;
+esac
+# Lease id alone (wrapper may export it without OPENCLAW_ACP=1)
+if [[ -n "${OPENCLAW_ACPX_LEASE_ID:-}" ]]; then
+  runtime_log_info attention "hook skipped: OPENCLAW_ACPX_LEASE_ID" \
+    "status=$status" \
+    "session_id=${AGENT_ATTENTION_SESSION_ID:-}" 2>/dev/null || true
+  exit 0
+fi
+unset _attention_skip_val
+
 # Earliest possible timestamp inside the hook. Pairs with emit-side
 # `elapsed_ms` and the wezterm-side `tick received` log to attribute the
 # wallclock gap between visible UI and rendered status counter.

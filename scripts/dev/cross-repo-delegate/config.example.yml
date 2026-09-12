@@ -1,0 +1,13 @@
+# Copied to ~/.agent/tickets/config.yml on first `delegate init`.
+# Keys under targets are canonical --to / --from names.
+
+targets:
+  wezdeck:
+    path: ~/github/wezterm-config
+    aliases: [wezdeck, wezterm-config, wezdeck-config]
+  ai-video-collection:
+    path: ~/work/ai-video-collection
+    aliases: [avc, ai-video-collection]
+  coco-forge:
+    path: ~/work/coco-forge
+    aliases: [cf, coco-forge]

@@ -11,9 +11,13 @@ claude__model()    { printf '%s' "${ADV_MODEL_CLAUDE:-claude-opus-5[1m]}"; }
 claude__invoke() {
   local effort="${1:-}" model
   model="$(claude__model)"
-  claude -p --output-format json \
+  # Headless review must not decorate interactive attention (Alt+/).
+  env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
+    AGENT_ATTENTION_SKIP=1 \
+    claude -p --output-format json \
       --permission-mode plan \
       --allowed-tools Read Grep Glob \
-      --model "$model" ${effort:+--effort "$effort"} 2>/dev/null \
+      --model "$model" ${effort:+--effort "$effort"} \
+      --settings '{"disableAllHooks":true}' 2>/dev/null \
     | jq -r '.result // .text // empty'
 }

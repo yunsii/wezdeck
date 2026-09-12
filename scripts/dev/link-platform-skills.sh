@@ -10,6 +10,7 @@
 #   adversarial-review  -> scripts/dev/adversarial-review/
 #   brainstorm          -> scripts/dev/brainstorm/
 #   yuns-engineer      -> scripts/dev/yuns-engineer/
+#   cross-repo-delegate -> scripts/dev/cross-repo-delegate/
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
@@ -42,6 +43,7 @@ skills=(
   "adversarial-review|scripts/dev/adversarial-review"
   "brainstorm|scripts/dev/brainstorm"
   "yuns-engineer|scripts/dev/yuns-engineer"
+  "cross-repo-delegate|scripts/dev/cross-repo-delegate"
 )
 
 link_one() {
@@ -172,5 +174,15 @@ for entry in "${skills[@]}"; do
   link_one_rel "$src" "$repo_root/openclaw/workspace/skills/$name"
   link_one_rel "$src" "$repo_root/skills/$name"
 done
+
+# PATH entry for short CLI `delegate` (idempotent; skill name is cross-repo-delegate)
+if [[ -x "$repo_root/scripts/dev/cross-repo-delegate/run.sh" ]]; then
+  echo "[cli] delegate → ~/.local/bin/delegate"
+  if ((dry_run)); then
+    echo "  (dry run) would run: scripts/dev/cross-repo-delegate/run.sh install-cli"
+  else
+    "$repo_root/scripts/dev/cross-repo-delegate/run.sh" install-cli || true
+  fi
+fi
 
 echo "done."

@@ -268,6 +268,13 @@ no `spawn grok`. Grok as a *model* on Codex ≠ Grok native CLI ≠ Main-Grok.
 **Config isolation (hard):** ACP Codex uses only
 `~/.openclaw/acpx/codex-home/**`. Do **not** overwrite host `~/.codex` defaults
 when tuning ACP. Host `~/.claude` / `~/.codex` / `~/.grok` remain user assets.
+
+**Attention isolation (hard):** C3 ACP and other delegated headless workers must
+**not** write the WezDeck interactive attention badge (`Alt+/` · ●/▲). After
+`@openclaw/acpx` regenerates `~/.openclaw/acpx/*-wrapper.mjs`, re-run
+`openclaw/scripts/patch-acpx-attention-skip.sh`. Defense in depth:
+`scripts/runtime/agent-attention/emit.sh` skips when `AGENT_ATTENTION_SKIP` /
+`OPENCLAW_ACP` / `OPENCLAW_ACPX_LEASE_ID` is set.
 Adversarial-review and handoff CLIs use host configs (`env -u CODEX_HOME`).
 
 Local config (never commit secrets): `@openclaw/acpx` enabled, `plugins.allow`

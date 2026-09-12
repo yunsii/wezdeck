@@ -189,6 +189,7 @@ Main 在 `sessions_spawn(runtime=acp)` / 等价 spawn 时，**必须**把下列�
 4. Prefer reasonable logical commits (compress noise by change boundary; no hard 1–3 cap); no secret leakage.
 5. On completion report: changed files, summary, blockers; honest fail if blocked.
 6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
+7. Do not participate in the host interactive attention badge (WezDeck Alt+/ ●/▲). ACP is delegated; wrappers must set AGENT_ATTENTION_SKIP / OPENCLAW_ACP (see `openclaw/scripts/patch-acpx-attention-skip.sh`).
 ```
 
 **Main 侧 spawn 前校验：** cwd 存在且在 allowlist 内（wezdeck 可为 primary master；隔离任务才要求 claw-*）；否则拒绝 spawn。

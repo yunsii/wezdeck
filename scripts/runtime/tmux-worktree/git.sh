@@ -193,6 +193,26 @@ tmux_worktree_kind_for_root() {
   printf 'linked\n'
 }
 
+# True when this linked worktree is agent-delegated (cross-repo-delegate /
+# OpenClaw claw-*), not a human lifecycle tree (dev-/task-/hotfix-).
+# Used by Alt+g to sink these rows below human worktrees.
+# Usage: tmux_worktree_is_delegated <path> [branch] → exit 0 if delegated.
+tmux_worktree_is_delegated() {
+  local worktree_root="${1:-}"
+  local branch="${2:-}"
+  local base=""
+
+  [[ -n "$worktree_root" ]] || return 1
+  base="$(basename "$worktree_root")"
+  case "$base" in
+    delegate-*|claw-*) return 0 ;;
+  esac
+  case "$branch" in
+    delegate/*|claw/*) return 0 ;;
+  esac
+  return 1
+}
+
 tmux_worktree_branch_for_root() {
   local worktree_root="${1:-$PWD}"
 

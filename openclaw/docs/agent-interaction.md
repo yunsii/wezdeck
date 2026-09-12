@@ -92,6 +92,7 @@ codex exec "List the top-level files and stop"
 
 - Codex-ACP 用 **隔离** `~/.openclaw/acpx/codex-home`（可默认 Grok 保通）  
 - **不改** host `~/.codex` 默认  
+- **不得写入 WezDeck 交互式注意力徽章**（`Alt+/` · ●/▲）：C3 是委托工人。`emit.sh` 认 `AGENT_ATTENTION_SKIP` / `OPENCLAW_ACP` / `OPENCLAW_ACPX_LEASE_ID`；生成式 wrapper 用 `openclaw/scripts/patch-acpx-attention-skip.sh`（`@openclaw/acpx` 重生成后重跑）  
 - 适合：人离开终端、飞书驱动多文件开发（C3）  
 - **默认不用于**对抗审查（质量面与开发面分离）  
 

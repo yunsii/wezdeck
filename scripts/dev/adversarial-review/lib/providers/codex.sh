@@ -61,7 +61,10 @@ codex__invoke() {
   local effort="${1:-}" bin model
   bin="$(_codex_bin)" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
   model="$(codex__model)"
-  env -u CODEX_HOME "$bin" exec --json --sandbox read-only \
+  # Headless review must not decorate interactive attention (Alt+/).
+  env -u CODEX_HOME -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
+    AGENT_ATTENTION_SKIP=1 \
+    "$bin" exec --json --sandbox read-only \
       -c model="$model" ${effort:+-c model_reasoning_effort="$effort"} - 2>/dev/null \
     | _codex_extract_text
 }
