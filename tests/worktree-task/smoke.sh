@@ -22,8 +22,10 @@
 #   7. transcript preserved across reclaim.
 #   8. recycle refuses undelivered workstation commits.
 #   9. recycle happy path: reset to origin/HEAD, prune merged temp branch,
-#      clean debug dirs, write next-task brief.
+#      clean debug dirs, write next-task brief, sync origin/<branch>.
 #  10. recycle refuses task-* (short-lived trees use reclaim).
+#  11. recycle accepts squash-merged tip (content absorbed) and force-with-lease
+#      syncs a stale origin/<branch>.
 #
 # Exit non-zero on any failure with a short trace.
 
@@ -514,11 +516,16 @@ case9_recycle_happy() {
     && assert_pass "branch name preserved" \
     || { assert_fail "branch name changed"; return 1; }
 
-  if git -C "$expect_wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
-    assert_fail "recycled branch unexpectedly tracks upstream"
-    return 1
-  fi
-  assert_pass "recycled branch has no upstream"
+  local upstream=""
+  upstream="$(git -C "$expect_wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+  [[ "$upstream" == "origin/dev/recycle-ok" ]] \
+    && assert_pass "recycled branch tracks origin/<branch>" \
+    || { assert_fail "expected upstream origin/dev/recycle-ok, got '${upstream:-none}'"; return 1; }
+
+  git -C "$repo" fetch -q origin
+  [[ "$(git -C "$expect_wt" rev-parse HEAD)" == "$(git -C "$repo" rev-parse origin/dev/recycle-ok)" ]] \
+    && assert_pass "origin/<branch> matches recycled tip" \
+    || { assert_fail "remote branch not synced to origin/HEAD tip"; return 1; }
 
   if git -C "$repo" show-ref --verify --quiet refs/heads/backup/old; then
     assert_fail "merged backup/old should have been pruned"
@@ -584,6 +591,84 @@ case10_recycle_refuses_task_slug() {
     || { assert_fail "task worktree disappeared"; return 1; }
 }
 
+# ---------- case 11: squash merge + stale remote sync ----------
+case11_recycle_squash_and_sync_remote() {
+  printf '\n=== case 11: recycle squash-merged tip + sync stale remote ===\n'
+
+  local remote="$WORK_DIR/remote11.git"
+  local repo="$WORK_DIR/origin11"
+  git init -q --bare "$remote"
+  setup_repo "$repo"
+  git -C "$repo" remote add origin "$remote"
+  git -C "$repo" push -q -u origin main
+  git -C "$remote" symbolic-ref HEAD refs/heads/main
+  git -C "$repo" remote set-head origin -a >/dev/null
+
+  local slug="dev-recycle-squash"
+  local expect_wt="$WORK_DIR/.worktrees/origin11/$slug"
+  local branch="dev/recycle-squash"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title recycle-squash \
+    --task-slug "$slug" \
+    --branch "$branch" \
+    --provider none \
+    --no-attach >/dev/null \
+    || { assert_fail "launch failed"; return 1; }
+
+  echo squash-me >"$expect_wt/feature.txt"
+  git -C "$expect_wt" add feature.txt
+  git -C "$expect_wt" commit -q -m "workstation feature"
+  local old_tip
+  old_tip="$(git -C "$expect_wt" rev-parse HEAD)"
+
+  # Publish the pre-squash tip so origin/<branch> exists and later needs rewrite.
+  git -C "$expect_wt" push -q -u origin "$branch"
+
+  # Squash into main: content lands, original SHA does not.
+  git -C "$repo" checkout -q main
+  git -C "$repo" merge -q --squash "$branch"
+  git -C "$repo" commit -q -m "squash workstation feature"
+  echo later >"$repo/later.txt"
+  git -C "$repo" add later.txt
+  git -C "$repo" commit -q -m "main advances after squash"
+  git -C "$repo" push -q origin main
+  git -C "$repo" fetch -q origin
+  local origin_tip
+  origin_tip="$(git -C "$repo" rev-parse origin/HEAD)"
+
+  # SHA ancestry must fail (squash), content absorption must pass.
+  if git -C "$repo" merge-base --is-ancestor "$old_tip" "$origin_tip" 2>/dev/null; then
+    assert_fail "fixture broken: old tip unexpectedly ancestor of origin/HEAD"
+    return 1
+  fi
+  assert_pass "fixture: squash broke SHA ancestry"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  WT_RECYCLE_NO_CONFIRM=1 \
+  "$WORKTREE_TASK" recycle \
+    --worktree-root "$expect_wt" \
+    -y >/dev/null \
+    || { assert_fail "recycle should accept content-absorbed squash tip"; return 1; }
+
+  [[ "$(git -C "$expect_wt" rev-parse HEAD)" == "$origin_tip" ]] \
+    && assert_pass "local tip reset to origin/HEAD after squash" \
+    || { assert_fail "local tip not on origin/HEAD"; return 1; }
+
+  git -C "$repo" fetch -q origin
+  [[ "$(git -C "$repo" rev-parse "origin/$branch")" == "$origin_tip" ]] \
+    && assert_pass "stale origin/<branch> force-with-lease synced to base" \
+    || { assert_fail "origin/$branch still stale"; return 1; }
+
+  [[ -f "$expect_wt/later.txt" ]] \
+    && assert_pass "post-squash main content visible" \
+    || { assert_fail "later.txt missing"; return 1; }
+}
+
 # ---------- run ----------
 case1_happy_path
 case2_dev_refusal
@@ -595,6 +680,7 @@ case7_transcript_preserved
 case8_recycle_undelivered
 case9_recycle_happy
 case10_recycle_refuses_task_slug
+case11_recycle_squash_and_sync_remote
 
 printf '\n=== summary ===\n'
 printf 'pass=%d fail=%d\n' "$PASS" "$FAIL"

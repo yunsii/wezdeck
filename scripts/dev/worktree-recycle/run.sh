@@ -2,7 +2,14 @@
 # worktree-recycle runner — soft preflight + worktree-task recycle + project init.
 set -euo pipefail
 
-TOOL_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve through symlinks so ~/.agents/skills/worktree-recycle → this checkout
+# owns TOOL_HOME (and therefore the co-located worktree-task), not $HOME/../...
+_wr_src="${BASH_SOURCE[0]}"
+if command -v readlink >/dev/null 2>&1; then
+  _wr_src="$(readlink -f "$_wr_src" 2>/dev/null || printf '%s' "$_wr_src")"
+fi
+TOOL_HOME="$(cd "$(dirname "$_wr_src")" && pwd)"
+unset _wr_src
 # shellcheck disable=SC1091
 source "$TOOL_HOME/lib/preflight.sh"
 # shellcheck disable=SC1091
@@ -53,7 +60,7 @@ wr_usage() {
 usage:
   run.sh preflight [--cwd PATH] [--json]
   run.sh recycle  [--cwd PATH] [-y] [--task TEXT] [--fresh-agent] [--force] [--dry-run]
-                  [--keep-temp-branches] [--no-clean-files]
+                  [--keep-temp-branches] [--no-clean-files] [--no-sync-remote]
   run.sh init     [--cwd PATH]
   run.sh selfcheck
 
@@ -111,7 +118,7 @@ cmd_recycle() {
         passthrough+=(--task "$2")
         shift 2
         ;;
-      --fresh-agent|--force|--keep-temp-branches|--no-clean-files|-y|--yes)
+      --fresh-agent|--force|--keep-temp-branches|--no-clean-files|--no-sync-remote|-y|--yes)
         passthrough+=("$1")
         shift
         ;;

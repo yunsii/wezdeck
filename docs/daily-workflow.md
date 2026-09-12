@@ -20,7 +20,7 @@ Use this doc when you need to apply or verify changes.
 
 ### Closing a `dev-*` development round
 
-When the current work on a long-lived linked workstation (`dev-*`) is already on `origin/HEAD` (or pushed with the remote containing local HEAD), reset the workstation in place instead of reclaiming it. **Agents:** load `worktree-recycle` and run its `run.sh` (preflight → recycle → project init). **Humans / debug CLI:**
+When the current work on a long-lived linked workstation (`dev-*`) is already on `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), or pushed with the remote containing local HEAD, reset the workstation in place instead of reclaiming it. End state: local `dev/*` **and** `origin/<same branch>` both match the default tip, then project init. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — do not re-ask about squash delivery or whether to push. **Humans / debug CLI:**
 
 ```bash
 scripts/dev/worktree-recycle/run.sh recycle -y --task "describe the next round"
