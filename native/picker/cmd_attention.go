@@ -219,12 +219,23 @@ func (attentionPicker) Run(args []string) int {
 				visible = applyAttentionFilter(rows, filterText, statusFilter)
 				render()
 			}
-		case "\x18": // Ctrl+X — stop session-bridge watch on selected ◆ SB row.
+		case "\x18": // Ctrl+X — clear selected row without jumping.
 			// Plain `x` always goes to the search filter (see default);
-			// never steal it for stop, or users cannot type/search "x".
-			if len(visible) > 0 && visible[selected].status == "sb" {
-				if stopSessionBridgeWatch(visible[selected]) {
-					rows = removeAttentionRowByID(rows, visible[selected].id)
+			// never steal it for clear/stop, or users cannot type/search "x".
+			// ◆ SB → soft-stop watch; live attention → archive+forget that
+			// session_id (covers stuck ● running when the agent is gone).
+			if len(visible) > 0 {
+				cur := visible[selected]
+				cleared := false
+				switch cur.status {
+				case "sb":
+					cleared = stopSessionBridgeWatch(cur)
+				case "running", "waiting", "done":
+					cleared = forgetAttentionEntry(cur, jumpScript)
+				}
+				if cleared {
+					rows = removeAttentionRowByID(rows, cur.id)
+					rows = refreshClearAllSentinel(rows)
 					visible = applyAttentionFilter(rows, filterText, statusFilter)
 					if len(visible) == 0 {
 						selected = 0
@@ -252,6 +263,59 @@ func (attentionPicker) Run(args []string) int {
 		}
 		return loopContinue, 0
 	})
+}
+
+// forgetAttentionEntry archives+removes one live attention entry via
+// `attention-jump.sh --forget <session_id>`. Used by Ctrl+X so a stuck
+// ●/▲/✓ can be cleared without wiping every other entry (clear-all) or
+// waiting for TTL. Returns true on success so the picker can drop the row.
+func forgetAttentionEntry(r attentionRow, jumpScript string) bool {
+	switch r.status {
+	case "running", "waiting", "done":
+	default:
+		return false
+	}
+	if jumpScript == "" || r.id == "" || r.id == "__clear_all__" {
+		return false
+	}
+	if strings.HasPrefix(r.id, "sb::") || strings.HasPrefix(r.id, "recent::") {
+		return false
+	}
+	cmd := exec.Command("bash", jumpScript, "--forget", r.id)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		emitPerfEvent("attention", "alt-slash forget failed", map[string]string{
+			"row_id":     r.id,
+			"row_status": r.status,
+			"err":        err.Error(),
+			"out":        truncateForPerf(string(out), 120),
+		})
+		return false
+	}
+	emitPerfEvent("attention", "alt-slash forget ok", map[string]string{
+		"row_id":     r.id,
+		"row_status": r.status,
+	})
+	return true
+}
+
+// refreshClearAllSentinel rewrites the clear-all row body so its entry
+// count matches the remaining non-sentinel rows after a Ctrl+X clear.
+func refreshClearAllSentinel(rows []attentionRow) []attentionRow {
+	n := 0
+	for _, r := range rows {
+		if r.id != "" && r.id != "__clear_all__" && r.status != "__sentinel__" {
+			n++
+		}
+	}
+	label := fmt.Sprintf("clear all · %d entries", n)
+	for i := range rows {
+		if rows[i].id == "__clear_all__" || rows[i].status == "__sentinel__" {
+			rows[i].body = label
+			rows[i].rawBody = label
+		}
+	}
+	return rows
 }
 
 // stopSessionBridgeWatch runs `session-bridge.sh watch-stop --id <job>`.
@@ -793,7 +857,7 @@ func renderAttentionFrame(rows []attentionRow, selected int, ts perfTimings, fil
 	fmt.Fprintf(&b, "\x1b[%d;1H%s", row, clearEOL)
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	b.WriteString("\x1b[2mEnter jump | Ctrl+X stop SB | Up/Down | type filter | Tab status | Esc  ·  powered by ")
+	b.WriteString("\x1b[2mEnter jump | Ctrl+X clear | Up/Down | type filter | Tab status | Esc  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	ts.renderFooterTail(&b)

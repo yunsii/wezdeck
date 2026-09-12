@@ -99,7 +99,7 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | need_human 文案 | 按 kind 族解析器抽题目/选项/当前选中；失败则清洗短摘要。兼容入口仍保留 `format-need-human.py`。 |
 | job 目录 | `~/.openclaw/state/session-bridge-watch/` |
 | WezTerm 徽章 | poller 每 tick 写 `%LOCALAPPDATA%/wezterm-runtime/state/session-bridge-watch/status.json`；right-status 在 **CDP 与 attention 之间** 显示 `◆ SB·-`（未跑）/ `◆ SB·N`（N=job 数）；`◆` 与 Alt+/ 列表里 sb 行的徽章同字形；waiting>0 时用 waiting 色 |
-| Alt+/ 列表 | `tmux-attention-menu.sh` 追加 `session-bridge-watch-picker-rows.sh` 行（status=`sb`，徽章 ◆）；**Enter** 跳 pane；**Ctrl+X** = `watch-stop --id` **软停**（`active=false`，job 文件保留审计；列表不再显示；**不**动 agent-attention）。普通 `x` 仍可搜索。Tab 可筛 `[◆ SB watch]`。硬删：`SB_WATCH_PURGE=1 watch-stop` |
+| Alt+/ 列表 | `tmux-attention-menu.sh` 追加 `session-bridge-watch-picker-rows.sh` 行（status=`sb`，徽章 ◆）；**Enter** 跳 pane；**Ctrl+X** on ◆ SB = `watch-stop --id` **软停**（`active=false`，job 文件保留审计；列表不再显示；**不**动 agent-attention）。同一快捷键在 live attention 行上则 archive+forget 该条（见 [`docs/agent-attention.md`](../../docs/agent-attention.md#keyboard)）。普通 `x` 仍可搜索。Tab 可筛 `[◆ SB watch]`。硬删：`SB_WATCH_PURGE=1 watch-stop` |
 | 默认 TTL | `defaults.watch.ttl_sec`（样例 5400s） |
 | 遥控写键 | **不做**（take ≠ host-send-keys） |
 | 非 agent | **拒绝**（不启 poller）；仅 Claude/Codex/Grok 等 agent 会话 |

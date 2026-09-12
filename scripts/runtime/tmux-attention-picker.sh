@@ -411,6 +411,98 @@ dispatch_selection() {
   return 0
 }
 
+# Remove one backing row by id (used after Ctrl+X clear/stop). Rebuilds
+# all_* arrays in place; caller must apply_filter + render afterwards.
+remove_backing_row_by_id() {
+  local target_id="$1"
+  [[ -n "$target_id" ]] || return 1
+  local -a ns nb na ni nls nwp nsock nwin npane ntsess
+  local i
+  for (( i = 0; i < backing_total; i += 1 )); do
+    if [[ "${all_ids[$i]}" == "$target_id" ]]; then
+      continue
+    fi
+    ns+=("${all_status[$i]}")
+    nb+=("${all_body[$i]}")
+    na+=("${all_age[$i]}")
+    ni+=("${all_ids[$i]}")
+    nls+=("${all_last_status[$i]}")
+    nwp+=("${all_wezterm_pane[$i]}")
+    nsock+=("${all_tmux_socket[$i]}")
+    nwin+=("${all_tmux_window[$i]}")
+    npane+=("${all_tmux_pane[$i]}")
+    ntsess+=("${all_tmux_session[$i]}")
+  done
+  all_status=("${ns[@]}")
+  all_body=("${nb[@]}")
+  all_age=("${na[@]}")
+  all_ids=("${ni[@]}")
+  all_last_status=("${nls[@]}")
+  all_wezterm_pane=("${nwp[@]}")
+  all_tmux_socket=("${nsock[@]}")
+  all_tmux_window=("${nwin[@]}")
+  all_tmux_pane=("${npane[@]}")
+  all_tmux_session=("${ntsess[@]}")
+  backing_total="${#all_ids[@]}"
+  refresh_clear_all_sentinel
+}
+
+refresh_clear_all_sentinel() {
+  local i n=0 label
+  for (( i = 0; i < backing_total; i += 1 )); do
+    if [[ "${all_ids[$i]}" != "__clear_all__" && "${all_status[$i]}" != "__sentinel__" ]]; then
+      n=$((n + 1))
+    fi
+  done
+  label="clear all · ${n} entries"
+  for (( i = 0; i < backing_total; i += 1 )); do
+    if [[ "${all_ids[$i]}" == "__clear_all__" || "${all_status[$i]}" == "__sentinel__" ]]; then
+      all_body[$i]="$label"
+    fi
+  done
+}
+
+# Ctrl+X: forget one live attention entry, or soft-stop a ◆ SB watch.
+# Stays in the popup (same as Go picker) so multiple stuck rows can be
+# cleaned without reopening Alt+/.
+clear_selected_row() {
+  local total="${#row_ids[@]}"
+  (( total == 0 )) && return 1
+  local id="${row_ids[$selected_index]}"
+  local status="${row_status[$selected_index]}"
+  case "$status" in
+    running|waiting|done)
+      if ! WEZTERM_RUNTIME_TRACE_ID="$trace_id" bash "$script_dir/attention-jump.sh" --forget "$id" >/dev/null 2>&1; then
+        runtime_log_warn attention "alt-slash forget failed" "trace=$trace_id" "id=$id" "status=$status"
+        return 1
+      fi
+      runtime_log_info attention "alt-slash forget ok" "trace=$trace_id" "id=$id" "status=$status"
+      ;;
+    sb)
+      local job_id="${id#sb::}"
+      local sb_sh="${SESSION_BRIDGE_SH:-}"
+      if [[ -z "$sb_sh" && -n "${WEZTERM_REPO:-}" ]]; then
+        sb_sh="${WEZTERM_REPO}/openclaw/scripts/session-bridge.sh"
+      fi
+      if [[ -z "$sb_sh" || "$job_id" == "$id" || -z "$job_id" ]]; then
+        runtime_log_warn attention "sb-watch-stop missing SESSION_BRIDGE_SH" "trace=$trace_id" "id=$id"
+        return 1
+      fi
+      if ! bash "$sb_sh" --json watch-stop --id "$job_id" >/dev/null 2>&1; then
+        runtime_log_warn attention "sb-watch-stop failed" "trace=$trace_id" "id=$id" "job_id=$job_id"
+        return 1
+      fi
+      runtime_log_info attention "sb-watch-stop ok" "trace=$trace_id" "id=$id" "job_id=$job_id"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+  remove_backing_row_by_id "$id"
+  apply_filter
+  return 0
+}
+
 # menu.sh already painted the first frame so the user sees content
 # instantly, but it could not embed the latency badge (popup hadn't
 # spawned yet — any number would have been a fictional half-measurement).
@@ -485,6 +577,13 @@ while true; do
         filter_text=""
         selected_index=0
         apply_filter
+        needs_render=1
+      fi
+      ;;
+    $'\030')
+      # Ctrl+X — clear selected live attention row / soft-stop ◆ SB.
+      # Plain `x` stays a search character (see * below).
+      if clear_selected_row; then
         needs_render=1
       fi
       ;;

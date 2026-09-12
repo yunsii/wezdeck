@@ -159,7 +159,7 @@ attention_picker_emit_frame() {
   # new footer. Without this `\033[K` the old footer ghosts through.
   frame+=$'\033['"${row};1H${clear_eol}"
   row=$((row + 1))
-  frame+=$'\033['"${row};1H"$'\033[2m'"Enter jump | Up/Down move | type filter | Tab status | Esc clear/close  ·  powered by "$'\033[22;1;38;5;208m'"bash"$reset
+  frame+=$'\033['"${row};1H"$'\033[2m'"Enter jump | Ctrl+X clear | Up/Down | type filter | Tab status | Esc  ·  powered by "$'\033[22;1;38;5;208m'"bash"$reset
   if [[ "$elapsed_ms" =~ ^[0-9]+$ ]] && (( elapsed_ms > 0 )); then
     frame+=$'\033[2m'"  ·  ${elapsed_ms}ms"
     if (( lua_ms > 0 || menu_ms > 0 || picker_ms > 0 )); then
