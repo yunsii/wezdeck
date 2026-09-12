@@ -113,10 +113,6 @@ case "$status" in
 esac
 
 reason="$default_reason"
-# Workday-playback fields for agent.user_input (summary only — never full body).
-prompt_summary=""
-prompt_chars=""
-prompt_lines=""
 if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
   stdin_payload="$(cat || true)"
   if [[ -n "$stdin_payload" ]]; then
@@ -136,16 +132,6 @@ if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
         reason="$extracted"
       fi
     fi
-    # Narrative summary: first line ≤80 + char/line counts (no full prompt).
-    prompt_summary="$(printf '%s' "$stdin_payload" \
-      | jq -r '(.prompt | if . == null then empty else (split("\n")[0] | .[0:80]) end) // empty' \
-        2>/dev/null || true)"
-    prompt_chars="$(printf '%s' "$stdin_payload" \
-      | jq -r '(.prompt | if . == null then empty else (tostring | length) end) // empty' \
-        2>/dev/null || true)"
-    prompt_lines="$(printf '%s' "$stdin_payload" \
-      | jq -r '(.prompt | if . == null then empty else (split("\n") | length) end) // empty' \
-        2>/dev/null || true)"
     if [[ -z "$notification_type" ]]; then
       notification_type="$(printf '%s' "$stdin_payload" \
         | jq -r '.notification_type // .notificationType // .type // empty' \
@@ -654,34 +640,5 @@ runtime_log_info attention "hook emitted agent status" \
   "tick_ms=$tick_ms" \
   "entry_ts_ms=$entry_ts_ms" \
   "elapsed_ms=$elapsed_ms" 2>/dev/null || true
-
-# Workday playback narrative (fail-open).
-rev_lc="$(printf '%s' "$raw_event" | tr '[:upper:]' '[:lower:]')"
-# shellcheck disable=SC1091
-. "$script_dir/../narrative-lib.sh" 2>/dev/null || true
-if declare -F narrative_append_event >/dev/null 2>&1; then
-  if [[ "$status" == "running" \
-        && ( "$rev_lc" == "userpromptsubmit" || -n "$prompt_summary" ) ]]; then
-    summary_out="${prompt_summary:-$reason}"
-    [[ -z "$summary_out" ]] && summary_out="(user message)"
-    summary_out="$(printf '%s' "$summary_out" | tr '\n\r\t|=' '    ' | cut -c1-80)"
-    narr_fields=(
-      "summary=$summary_out"
-      "provider=$provider"
-    )
-    [[ -n "$session_id" ]] && narr_fields+=("session_id=$session_id")
-    [[ -n "$prompt_chars" ]] && narr_fields+=("chars=$prompt_chars")
-    [[ -n "$prompt_lines" ]] && narr_fields+=("lines=$prompt_lines")
-    [[ -n "${WEZTERM_PANE:-}" ]] && narr_fields+=("pane_id=$WEZTERM_PANE")
-    narrative_append_event agent.user_input "${narr_fields[@]}" || true
-  fi
-  # agent.reply: animation-only signal on Stop/done — no reply body stored.
-  if [[ "$status" == "done" ]]; then
-    narr_fields=("provider=$provider")
-    [[ -n "$session_id" ]] && narr_fields+=("session_id=$session_id")
-    [[ -n "${WEZTERM_PANE:-}" ]] && narr_fields+=("pane_id=$WEZTERM_PANE")
-    narrative_append_event agent.reply "${narr_fields[@]}" || true
-  fi
-fi
 
 exit 0

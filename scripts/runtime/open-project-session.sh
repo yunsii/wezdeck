@@ -328,22 +328,5 @@ runtime_log_info workspace "open-project-session prepared tmux session" \
   "duration_ms=$(runtime_log_duration_ms "$start_ms")"
 runtime_log_info workspace "attaching tmux session" "session_name=$session_name" "window_id=$focus_window_id"
 
-# Workday-playback narrative: session surface only (no agent transcript).
-# Best-effort; never block attach.
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/narrative-lib.sh" 2>/dev/null || true
-if declare -F narrative_append_event >/dev/null 2>&1; then
-  project_label="$(basename "$cwd")"
-  narr_fields=(
-    "workspace=$workspace"
-    "session_name=$session_name"
-    "project=$project_label"
-    "session_created=$session_created"
-    "window_created=$window_created"
-  )
-  [[ -n "$agent_profile" ]] && narr_fields+=("agent_profile=$agent_profile")
-  narrative_append_event session.launch "${narr_fields[@]}" || true
-fi
-
 trap - EXIT
 exec tmux attach-session -t "$session_name"

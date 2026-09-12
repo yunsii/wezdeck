@@ -124,7 +124,7 @@ Three small artifacts under `$WEZTERM_RUNTIME_STATE_DIR` (i.e. `%LOCALAPPDATA%\w
 
 ## Hotkey Usage Counter
 
-Aggregate press counts — no event log — for every WezTerm keymap entry and the tmux command-chord actions. The counter is meant for "do I press this often enough to deserve a better key" decisions, not forensics. For **timed shareable playback** of presses + session launches, see [`workday-playback.md`](./workday-playback.md) (separate narrative shards; the usage bump script appends those as a side effect).
+Aggregate press counts — no event log — for every WezTerm keymap entry and the tmux command-chord actions. The counter is meant for "do I press this often enough to deserve a better key" decisions, not forensics.
 
 - Storage: `~/.local/state/wezterm-runtime/state/hotkey-usage.json` (WSL ext4 via `WSL_HOTKEY_USAGE_FILE` in `wsl-runtime-paths-lib.sh`). Pure WSL bash writer + reader — not under `%LOCALAPPDATA%`. Single JSON file, no rotation.
 - File layout (versioned):
