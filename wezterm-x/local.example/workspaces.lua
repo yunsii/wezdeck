@@ -60,11 +60,11 @@ return {
 
   -- The `opensource` workspace collects personal / open-source projects
   -- under ~/github, separate from the company `work` workspace. Bound to
-  -- Alt+s. Same launcher resolution as `work` — first open auto-resumes
-  -- the cwd's last conversation, falling back to a fresh agent.
+  -- Alt+s. Workspace-default agent is grok (resume) — first open
+  -- auto-resumes the cwd's last conversation, falling back to a fresh agent.
   opensource = {
     defaults = {
-      launcher = managed_launcher,
+      launcher = 'grok_resume',
     },
     items = {
       { cwd = '/home/your-user/github/some-oss-repo' },
@@ -80,9 +80,9 @@ return {
   -- first item (using `constants.main_repo_root` keeps it correct after a
   -- repo move). Drop in additional sibling dotfiles repos as extra items.
   --
-  -- Workspace-default agent is grok (resume). Machine global
-  -- (MANAGED_AGENT_PROFILE → managed_launcher) still applies to `work` /
-  -- `opensource` above. A single item can still override with its own
+  -- Workspace-default agent is grok (resume), same as `opensource`.
+  -- Machine global (MANAGED_AGENT_PROFILE → managed_launcher) still applies
+  -- to `work` above. A single item can still override with its own
   -- `launcher = 'claude_resume'` / `'codex_resume'`.
   config = {
     defaults = {

@@ -25,7 +25,7 @@ local public_workspaces = {
     },
     items = {},
   },
-  -- Workspace-default agent for config is grok; work / opensource keep the
+  -- Workspace-default agent for config / opensource is grok; work keeps the
   -- machine global (MANAGED_AGENT_PROFILE → managed_launcher). Per-item
   -- `launcher` still overrides a single repo. See docs/workspaces.md.
   config = {
@@ -38,7 +38,7 @@ local public_workspaces = {
   },
   opensource = {
     defaults = {
-      launcher = managed_launcher,
+      launcher = 'grok_resume',
     },
     items = {},
   },
