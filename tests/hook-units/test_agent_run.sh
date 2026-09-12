@@ -48,6 +48,17 @@ assert_fail() {
   fi
 }
 
+assert_contains() {
+  local name="$1" hay="$2" needle="$3"
+  if [[ "$hay" == *"$needle"* ]]; then
+    pass=$((pass + 1))
+    printf '  PASS  %s\n' "$name"
+  else
+    fail=$((fail + 1))
+    printf '  FAIL  %s\n    haystack missing %q\n' "$name" "$needle"
+  fi
+}
+
 sandbox="$(mktemp -d -t agent-run-test.XXXXXX)"
 trap 'rm -rf "$sandbox"' EXIT
 export XDG_STATE_HOME="$sandbox/xdg"
@@ -122,6 +133,47 @@ else
   printf '  FAIL  entry count %s > 3\n' "$count"
 fi
 assert_ok "HEAD still present" test -s "$AGENT_RUN_HEAD_FILE"
+
+printf '== peek / format_preview (printf leading-dash regression) ==\n'
+# Regression: bash printf treats a format starting with '-' as flags
+# (printf '----- end -----' → "invalid option"). Under set -e that made
+# peek report "entry not found" for a live pending id. Body also includes
+# leading "--" lines so we exercise script dumping, not just banners.
+out="$("$wd_run" propose --cwd "$sandbox/work" --actor test --summary 'peek-reg' --stdin <<'EOF' 2>/dev/null
+# handoff preview regression
+echo start
+--not-a-flag
+echo end
+EOF
+)"
+peek_id="${out#id=}"
+peek_id="$(printf '%s' "$peek_id" | head -n1 | tr -d '\r')"
+
+set +e
+preview="$(agent_run_format_preview "$peek_id" 2>&1)"
+fmt_rc=$?
+set -e
+assert_eq "format_preview exit 0" "$fmt_rc" "0"
+assert_contains "format_preview has id" "$preview" "$peek_id"
+assert_contains "format_preview has end banner" "$preview" "----- end -----"
+assert_contains "format_preview keeps body dash line" "$preview" "--not-a-flag"
+
+set +e
+peek_out="$("$wd_run" peek --id "$peek_id" 2>&1)"
+peek_rc=$?
+set -e
+assert_eq "wd-run peek exit 0" "$peek_rc" "0"
+assert_contains "peek output not false missing" "$peek_out" "$peek_id"
+case "$peek_out" in
+  *"entry not found"*)
+    fail=$((fail + 1))
+    printf '  FAIL  peek falsely reported entry not found\n'
+    ;;
+  *)
+    pass=$((pass + 1))
+    printf '  PASS  peek does not claim missing entry\n'
+    ;;
+esac
 
 printf '== audit rotate ==\n'
 # Pad audit file past rotate threshold
