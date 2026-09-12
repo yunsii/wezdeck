@@ -215,7 +215,8 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
 - **Worktree maintenance:** linked `dev-*` trees are for **isolation**, not PRs.
   Finish a round by delivering **directly onto mainline** (`origin/HEAD` / primary
-  `master` push or ff — **no pull request**), then recycle the `dev-*` workstation
-  onto that tip. Keep `WEZTERM_REPO` / platform skills / `agent-tools.env` on the
-  primary tree. Detail:
+  `master` push or ff — **no pull request**), then **immediately** recycle so the
+  `dev-*` tip **stays equal to** `origin/HEAD` (lagging `dev/*` is out of policy).
+  Keep `WEZTERM_REPO` / platform skills / `agent-tools.env` on the primary tree.
+  Detail:
   [`docs/workspaces.md#maintenance-loop-wezdeck-standing-policy`](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy).
