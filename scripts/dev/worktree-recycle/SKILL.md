@@ -22,12 +22,15 @@ This skill owns what the script cannot: **richer preflight**, **human-readable b
 | 重置开发分支 / 重置工作站 / recycle / 收尾换下一轮 | `preflight` → if only soft warnings or squash false-positive risk is gone, `recycle -y` → `init` |
 | 重置并开始做 X / recycle with task X | same, pass `--task "X"` |
 | 只要看看能不能重置 | `preflight` or `recycle --dry-run` only |
+| **wezdeck standing close-out:** worktree round delivered onto `origin/HEAD` / 「合入主分支后收尾」 | same recycle path — **default**, not optional. Then ensure primary `master` / `WEZTERM_REPO` is the machine SoT (ff/rebase primary if it lagged). |
 
 **Skip / redirect:**
 
 - Short-lived `task-*` / `hotfix-*` end-of-life → **`worktree-task reclaim`** / `Ctrl+k g r` (not this skill)
 - Primary worktree / mainline-only checkout with no linked `dev-*` → refuse; do not invent a slug
 - Pure `git reset` without delivery checks → do not bypass this skill
+
+**wezdeck policy:** all changes are judged against mainline. After delivering from a `dev-*` tree, always recycle that workstation onto `origin/HEAD` so the next round does not drift. See `docs/workspaces.md` → Maintenance loop.
 
 ## Resolve TOOL_HOME (first hit wins)
 

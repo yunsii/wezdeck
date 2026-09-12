@@ -20,7 +20,9 @@ Use this doc when you need to apply or verify changes.
 
 ### Closing a `dev-*` development round
 
-When the current work on a long-lived linked workstation (`dev-*`) is already on `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), or pushed with the remote containing local HEAD, reset the workstation in place instead of reclaiming it. End state: local `dev/*` **and** `origin/<same branch>` both match the default tip; the agent then re-inits the project for that repo’s stack (skill stays stack-agnostic). **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — do not re-ask about squash delivery or whether to push. **Humans / debug CLI:**
+**Standing close-out (wezdeck):** after a linked-worktree round is delivered onto mainline, always recycle the `dev-*` workstation onto `origin/HEAD`, and keep primary `master` / `WEZTERM_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
+
+When the current work on a long-lived linked workstation (`dev-*`) is already on `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), or pushed with the remote containing local HEAD, reset the workstation in place instead of reclaiming it. End state: local `dev/*` **and** `origin/<same branch>` both match the default tip; the agent then re-inits the project for that repo’s stack (skill stays stack-agnostic). **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery or whether to push. **Humans / debug CLI:**
 
 ```bash
 scripts/dev/worktree-recycle/run.sh recycle -y --task "describe the next round"

@@ -168,9 +168,21 @@ Worktree directory prefix encodes lifecycle (your local UX), git branch name fol
 
 The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fetch origin` then branches off `origin/HEAD`. This insulates new worktrees from the primary worktree's current checkout AND from local divergence with origin. New task/dev/hotfix branches are created with `--no-track`: `origin/HEAD` is only the start point, not the branch upstream, so `git status` does not compare a fresh task branch against `origin/main` / `origin/master`. The branch gets an upstream only after the normal first push (`git push -u origin <branch>`). **First-time setup**: run `git remote set-head origin -a` once per repo to populate `origin/HEAD`. Repos without a remote fall back to `WT_POLICY_BASE_REF_STRATEGY=primary-head` (set explicitly in their env file or pass `--base-ref HEAD` per launch).
 
+### Maintenance loop (wezdeck standing policy)
+
+**All changes are judged against the default branch (`origin/master` / `origin/HEAD`).** Linked `dev-*` worktrees are disposable workstations, not a second source of truth.
+
+Standing loop after finishing a round in a linked worktree:
+
+1. **Deliver onto mainline** — commit (and push) so the change lands on `origin/HEAD` (fast-forward or squash/content-absorbed). Prefer pushing the primary `master` tip when that is how the round was delivered; do not leave the only copy of the work on `dev/*`.
+2. **Recycle the `dev-*` workstation** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so the next round starts from mainline, not from a drifted `dev/*` tip.
+3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZTERM_REPO`) on `master` tracking `origin/master`. After delivery, rebase/ff the primary onto `origin/master` when it lags; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
+
+Do **not** leave user-level skills / `WEZTERM_REPO` pointed at a stale `dev-*` worktree after the round is closed. Short-lived `task-*` / `hotfix-*` end with **reclaim**, not recycle.
+
 ### Recycle (long-lived `dev-*` round reset)
 
-Agents should load the platform skill **`worktree-recycle`** (`scripts/dev/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` + project init — not a bare `git reset`.
+Agents should load the platform skill **`worktree-recycle`** (`scripts/dev/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` + project init — not a bare `git reset`. After a delivered round, recycle is the **default** close-out (see [Maintenance loop](#maintenance-loop-wezdeck-standing-policy)), not an optional cleanup.
 
 `worktree-task recycle` keeps the linked worktree directory and resets the current branch tip onto `origin/HEAD` after the same **delivered** gate used by reclaim (`lib/delivery.sh`: SHA-ancestor of `origin/HEAD`, **or content absorbed into `origin/HEAD`** — covers CNB/GitHub squash merges where the original tip SHA never lands — or pushed with `origin/<branch>` containing local HEAD). After the local reset it also publishes that tip to `origin/<branch>` (fast-forward, or `--force-with-lease` when the remote still holds the pre-reset tip) and sets upstream to `origin/<branch>` — not to the default branch — so local and remote long-lived `dev/*` both match the default tip. Opt out with `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0`. It is the hard-ops half of closing a development round on a workstation without destroying caches or the tmux window.
 
