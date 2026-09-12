@@ -186,7 +186,7 @@ scripts/runtime/worktree/worktree-task recycle -y
 scripts/runtime/worktree/worktree-task recycle --dry-run
 ```
 
-Project init after recycle: executable `.worktree-recycle/post-recycle.sh` in the worktree, else `WT_RECYCLE_POST_HOOK`, else a builtin recipe (wezdeck skips `sync-runtime`; generic only *suggests* bootstrap commands).
+Project init after recycle: `run.sh init` prints a builtin recipe / suggestions (wezdeck skips `sync-runtime`; generic may list detected lockfiles). The **agent** then re-initializes the project for whatever stack the repo uses — the skill stays stack-agnostic and does not auto-run a package manager. Optional escape hatches: executable `.worktree-recycle/post-recycle.sh` or `WT_RECYCLE_POST_HOOK` for non-obvious automation only.
 
 Behavior:
 

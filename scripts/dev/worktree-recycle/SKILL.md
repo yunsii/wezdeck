@@ -13,7 +13,7 @@ description: >
 **Never** tell the user to copy-paste `worktree-task recycle` as the primary path — load this skill and run the co-located runner.
 
 Hard git ops stay in **`worktree-task recycle`** (delivered gate including squash content-absorption, allowlisted clean, `reset --hard origin/HEAD`, sync `origin/<branch>` to the same tip).  
-This skill owns what the script cannot: **richer preflight**, **human-readable blockers**, and **per-project init** after the tree is fresh.
+This skill owns what the script cannot: **richer preflight**, **human-readable blockers**, and telling the agent what “ready for the next round” still needs after git is clean.
 
 ## When to load / run
 
@@ -54,8 +54,9 @@ Install / refresh discovery (idempotent, from wezdeck):
 
 | Layer | Duty |
 | --- | --- |
-| **Skill + `run.sh`** | Soft preflight report, orchestrate recycle, project init hooks / recipes |
+| **Skill + `run.sh`** | Soft preflight report, orchestrate recycle, print readiness hints |
 | **`worktree-task recycle`** | Dirty/delivered hard gates, temp-branch prune, debug-file allowlist, `reset --hard`, remote sync |
+| **Agent (you)** | After git is clean, **re-initialize the project yourself** for whatever stack this repo uses — do not ask the human to run bootstrap |
 | **Human** | Intent; confirm only when preflight shows **real** blockers (unique undelivered content, dirty outside allowlist) |
 
 ## Agent procedure
@@ -72,12 +73,12 @@ Install / refresh discovery (idempotent, from wezdeck):
    "$R" recycle --cwd "$PWD" -y [--task "…"] [--fresh-agent] [--dry-run]
    ```
    Prefer `-y` after a clean preflight or when the user explicitly overrode a real blocker. Do **not** invent a second “先 push 旧 tip / 不推手动 reset” fork.
-5. **Init** (always after a successful non-dry recycle — `run.sh recycle` already chains this; call only if you invoked `worktree-task` directly):
+5. **Init report** (always after a successful non-dry recycle — `run.sh recycle` already chains this; call only if you invoked `worktree-task` directly):
    ```bash
    "$R" init --cwd "$PWD"
    ```
-   Then open/read `.task-brief.md` if present and start the next round from that brief. Do **not** invent a second prompt-injection path unless the user asked and a future `--seed-prompt` exists.
-6. **Report** briefly: delivery basis (SHA merged / content absorbed / pushed), new HEAD, remote sync result, pruned/cleaned summary, init recipe used, next step (including `/clear` when `--fresh-agent`).
+   Treat the printed recipe / suggestions as hints only. **You** then bring the tree to a workable state for *this* repo (deps, codegen, caches, services — whatever the project actually needs). Stay stack-agnostic: Node may be `pnpm install`, Rust `cargo fetch`, Go `go mod download`, or a project `make bootstrap` — infer from the tree; do not hard-code one ecosystem, and do not invent a per-repo hook just to run install. Open/read `.task-brief.md` if present and start the next round from that brief.
+6. **Report** briefly: delivery basis (SHA merged / content absorbed / pushed), new HEAD, remote sync result, pruned/cleaned summary, what you ran to re-init (if anything), next step (including `/clear` when `--fresh-agent`).
 
 ## Preflight covers (skill layer)
 
@@ -92,24 +93,20 @@ Install / refresh discovery (idempotent, from wezdeck):
 
 ## Desired end state
 
-After a successful recycle + init:
+After a successful recycle + agent re-init:
 
 - Local `dev/*` tip == `origin/HEAD` (default branch tip)
 - `origin/<same branch>` tip == that same commit (unless `--no-sync-remote`)
 - Upstream is `origin/<branch>` (never the default branch)
-- Project hook / recipe left the tree ready to start the next round
+- The workstation is actually usable for the next round (agent restored whatever this repo needs — not “git clean but deps broken”)
 
 ## Project init (after recycle)
 
-Order (first hit that applies runs; then builtin recipe still prints readiness):
+Git reset is universal; **project bootstrap is not**. Keep that split:
 
-1. **Worktree hook:** executable `.worktree-recycle/post-recycle.sh` (project-owned; may be tracked or local)
-2. **Env hook:** `WT_RECYCLE_POST_HOOK` (absolute path or command) from managed env / `worktree-task.env`
-3. **Builtin recipe** by repo fingerprint:
-   - **wezdeck** (`wezterm.lua` + `wezterm-x/`): no `sync-runtime` after a pure git recycle; print brief path; remind agent resume/`/clear`
-   - **generic:** report lockfiles / missing `node_modules` / common bootstrap commands as **suggestions only** (do not auto-install unless a hook did)
-
-Projects that need real bootstrap (deps, codegen, docker) should ship `.worktree-recycle/post-recycle.sh` rather than expanding this skill with one-off recipes.
+1. `run.sh init` may print a builtin recipe / suggestions (wezdeck skips `sync-runtime`; generic may list detected lockfiles). Suggestions are **not** executed by the skill.
+2. Optional escape hatches only when a repo truly needs non-obvious automation: executable `.worktree-recycle/post-recycle.sh`, or `WT_RECYCLE_POST_HOOK`. Do **not** add a hook just to run a one-line package-manager install — the agent should do that.
+3. **Default path:** after recycle, the agent inspects the tree and re-initializes appropriately for that stack. No Node/Rust/Go special-case in the skill runner.
 
 ## Don't
 
@@ -119,6 +116,8 @@ Projects that need real bootstrap (deps, codegen, docker) should ship `.worktree
 - Don't `--force` away dirty trees without an explicit user override
 - Don't treat attention / ledger / delegate `shipped` as proof of merge
 - Don't run `sync-runtime` just because recycle finished
+- Don't auto-install a single ecosystem inside the skill runner “for convenience” — that breaks generality; instruct the agent instead
+- Don't leave the human to bootstrap after recycle; the agent re-inits
 - Don't delete Claude transcripts; use `--fresh-agent` + `/clear` when a blank session is wanted
 - Don't maintain a second SKILL.md body outside this directory (link only)
 

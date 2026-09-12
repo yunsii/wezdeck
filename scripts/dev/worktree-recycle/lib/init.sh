@@ -76,13 +76,13 @@ wr_init_builtin_generic() {
   fi
 
   if ((${#suggestions[@]})); then
-    printf '  suggested bootstrap (not auto-run — add .worktree-recycle/post-recycle.sh to automate):\n'
+    printf '  suggested bootstrap (hints for the agent — skill does not auto-run):\n'
     local s
     for s in "${suggestions[@]}"; do
       printf '    - %s\n' "$s"
     done
   else
-    printf '  suggested bootstrap: (none detected)\n'
+    printf '  suggested bootstrap: (none detected — agent should still inspect the tree)\n'
   fi
 
   if [[ -f "$brief" ]]; then
@@ -93,7 +93,7 @@ wr_init_builtin_generic() {
   else
     printf '  next-task brief: (none)\n'
   fi
-  printf '  ready: tree reset; run project hooks or suggested bootstrap if needed\n'
+  printf '  ready: git reset done; agent re-inits this project for its own stack\n'
 }
 
 wr_init_run() {
