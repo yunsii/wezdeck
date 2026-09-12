@@ -36,11 +36,34 @@ SCRIPT_DIR="$(cd "$(dirname "$_SELF")" && pwd)"
 FILTER_PY="$SCRIPT_DIR/grok-focus-filter.py"
 REPO_WRAPPER="$SCRIPT_DIR/grok-with-focus-filter.sh"
 
-is_this_wrapper() {
+is_focus_filter_wrapper() {
+  # True for *any* checkout's grok-with-focus-filter.sh (primary, worktree,
+  # or a copied path). Comparing only to $_SELF wrongly treated another
+  # worktree's wrapper as "real binary" and copied it into grok.real.
   local path="$1"
-  local resolved
+  local resolved base dir
+  [[ -z "$path" ]] && return 1
   resolved="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
-  [[ "$resolved" == "$_SELF" || "$resolved" == "$REPO_WRAPPER" ]]
+  base="$(basename "$resolved")"
+  [[ "$base" == "grok-with-focus-filter.sh" ]] && return 0
+  [[ "$resolved" == "$_SELF" || "$resolved" == "$REPO_WRAPPER" ]] && return 0
+  dir="$(dirname "$resolved")"
+  [[ -f "$dir/grok-focus-filter.py" && -f "$resolved" ]] || return 1
+  # Cheap content marker — avoid promoting random scripts beside the py.
+  grep -q 'grok-focus-filter.py' "$resolved" 2>/dev/null
+}
+
+# Back-compat name used throughout this file.
+is_this_wrapper() { is_focus_filter_wrapper "$1"; }
+
+is_probable_grok_elf() {
+  local path="$1"
+  [[ -f "$path" && -x "$path" ]] || return 1
+  is_focus_filter_wrapper "$path" && return 1
+  # file(1) is enough; avoid promoting shell/python into grok.real.
+  local kind
+  kind="$(file -b "$path" 2>/dev/null || true)"
+  [[ "$kind" == *ELF* ]]
 }
 
 resolve_real_bin() {
@@ -53,12 +76,12 @@ resolve_real_bin() {
     return
   fi
   local candidate
-  # Prefer the parked real binary; never pick ~/.grok/bin/grok when it is us.
+  # Prefer the parked real binary; never pick a focus-filter wrapper script.
   for candidate in \
     "${HOME}/.grok/bin/grok.real" \
     "${HOME}/.grok/downloads/grok-1.0.5-linux-x86_64" \
     "${HOME}/.grok/downloads/grok-1.0.7-linux-x86_64"; do
-    if [[ -x "$candidate" ]] && ! is_this_wrapper "$candidate"; then
+    if is_probable_grok_elf "$candidate"; then
       printf '%s\n' "$candidate"
       return
     fi
@@ -68,18 +91,14 @@ resolve_real_bin() {
   if compgen -G "${HOME}/.grok/downloads/grok-*-linux-x86_64" >/dev/null 2>&1; then
     newest="$(ls -1t "${HOME}/.grok/downloads"/grok-*-linux-x86_64 2>/dev/null | head -1 || true)"
   fi
-  if [[ -n "$newest" && -x "$newest" ]] && ! is_this_wrapper "$newest"; then
+  if [[ -n "$newest" ]] && is_probable_grok_elf "$newest"; then
     printf '%s\n' "$newest"
     return
   fi
-  # Last resort: PATH entries that are not this wrapper (and not a symlink to it).
-  local resolved
+  # Last resort: PATH entries that look like a real ELF grok.
   while IFS= read -r candidate; do
     [[ -z "$candidate" ]] && continue
-    if is_this_wrapper "$candidate"; then
-      continue
-    fi
-    if [[ -x "$candidate" ]]; then
+    if is_probable_grok_elf "$candidate"; then
       printf '%s\n' "$candidate"
       return
     fi
@@ -119,29 +138,31 @@ install_wrapper() {
       # grok.real so the wrapper keeps the newest binary.
       local dest
       dest="$(readlink -f "$target" 2>/dev/null || true)"
-      if [[ -n "$dest" && -f "$dest" ]]; then
+      if [[ -n "$dest" ]] && is_probable_grok_elf "$dest"; then
         if [[ ! -e "$real" || "$dest" -nt "$real" ]]; then
           cp -f "$dest" "$real"
           chmod +x "$real"
           printf 'install: promoted %s → %s\n' "$dest" "$real"
         fi
+      elif [[ -n "$dest" ]]; then
+        printf 'install: skip promoting non-ELF symlink target %s\n' "$dest"
       fi
       rm -f "$target"
     fi
   fi
 
-  if [[ ! -x "$real" ]]; then
-    # Seed from downloads if present.
+  if ! is_probable_grok_elf "$real"; then
+    # Missing, or a previous bug parked a wrapper script here — reseed.
     local seed=""
     if compgen -G "${HOME}/.grok/downloads/grok-*-linux-x86_64" >/dev/null 2>&1; then
       seed="$(ls -1t "${HOME}/.grok/downloads"/grok-*-linux-x86_64 2>/dev/null | head -1 || true)"
     fi
-    if [[ -n "$seed" && -x "$seed" ]]; then
+    if [[ -n "$seed" ]] && is_probable_grok_elf "$seed"; then
       cp -f "$seed" "$real"
       chmod +x "$real"
       printf 'install: seeded %s from %s\n' "$real" "$seed"
     else
-      printf 'install: missing real binary at %s and no downloads seed\n' "$real" >&2
+      printf 'install: missing real ELF at %s and no downloads seed\n' "$real" >&2
       exit 1
     fi
   else
@@ -151,7 +172,7 @@ install_wrapper() {
     if compgen -G "${HOME}/.grok/downloads/grok-*-linux-x86_64" >/dev/null 2>&1; then
       newest="$(ls -1t "${HOME}/.grok/downloads"/grok-*-linux-x86_64 2>/dev/null | head -1 || true)"
     fi
-    if [[ -n "$newest" && -x "$newest" && "$newest" -nt "$real" ]]; then
+    if [[ -n "$newest" ]] && is_probable_grok_elf "$newest" && [[ "$newest" -nt "$real" ]]; then
       cp -f "$newest" "$real"
       chmod +x "$real"
       printf 'install: upgraded %s from newer download %s\n' "$real" "$newest"
@@ -197,32 +218,34 @@ ensure_wrapper() {
     else
       local dest
       dest="$(readlink -f "$target" 2>/dev/null || true)"
-      if [[ -n "$dest" && -f "$dest" ]]; then
+      if [[ -n "$dest" ]] && is_probable_grok_elf "$dest"; then
         if [[ ! -e "$real" || "$dest" -nt "$real" ]]; then
           cp -f "$dest" "$real"
           chmod +x "$real"
           ensure_log "promoted $dest → $real"
         fi
+      elif [[ -n "$dest" ]]; then
+        ensure_log "skip promoting non-ELF symlink target $dest"
       fi
       rm -f "$target"
       ensure_log "removed clobbered symlink at $target"
     fi
   fi
 
-  # Seed / upgrade grok.real from newest download.
+  # Seed / upgrade grok.real from newest download (never park a wrapper script).
   local newest=""
   if compgen -G "${HOME}/.grok/downloads/grok-*-linux-x86_64" >/dev/null 2>&1; then
     newest="$(ls -1t "${HOME}/.grok/downloads"/grok-*-linux-x86_64 2>/dev/null | head -1 || true)"
   fi
-  if [[ ! -x "$real" ]]; then
-    if [[ -n "$newest" && -x "$newest" ]]; then
+  if ! is_probable_grok_elf "$real"; then
+    if [[ -n "$newest" ]] && is_probable_grok_elf "$newest"; then
       cp -f "$newest" "$real"
       chmod +x "$real"
       ensure_log "seeded $real from $newest"
     else
-      ensure_log "no grok.real and no downloads seed (resolve_real_bin may still find PATH)"
+      ensure_log "no grok.real ELF and no downloads seed (resolve_real_bin may still find PATH)"
     fi
-  elif [[ -n "$newest" && -x "$newest" && "$newest" -nt "$real" ]]; then
+  elif [[ -n "$newest" ]] && is_probable_grok_elf "$newest" && [[ "$newest" -nt "$real" ]]; then
     cp -f "$newest" "$real"
     chmod +x "$real"
     ensure_log "upgraded $real from $newest"
