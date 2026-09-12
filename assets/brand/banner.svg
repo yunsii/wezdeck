@@ -73,11 +73,12 @@
     <text x="3" y="188" font-size="19" fill="#9fb0c8" letter-spacing="0.3"
           font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">A flight deck for your AI agents</text>
 
-    <!-- status row: order + glyphs match right-status (▲ waiting · ✓ done · ● running) -->
+    <!-- status row: order + glyphs match right-status (▲ waiting · ✓ done · ● running);
+         ▲/● optical centers at y≈-8 with the 22px number baseline -->
     <g transform="translate(3 244)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">
       <!-- waiting ▲ -->
       <g>
-        <path d="M 13 -20 L 23 -4 L 3 -4 Z" fill="#fbbf24"/>
+        <path d="M 13 -17 L 23 -1 L 3 -1 Z" fill="#fbbf24"/>
         <text x="38" y="0" font-size="22" font-weight="400" fill="#e6edf6">1</text>
         <text x="60" y="-2" font-size="15" fill="#9fb0c8" letter-spacing="0.5">waiting</text>
       </g>
@@ -91,7 +92,7 @@
       </g>
       <!-- running ● -->
       <g transform="translate(380 0)">
-        <circle cx="13" cy="-10" r="7" fill="#38bdf8"/>
+        <circle cx="13" cy="-8" r="7" fill="#38bdf8"/>
         <text x="38" y="0" font-size="22" font-weight="400" fill="#e6edf6">3</text>
         <text x="60" y="-2" font-size="15" fill="#9fb0c8" letter-spacing="0.5">running</text>
       </g>
