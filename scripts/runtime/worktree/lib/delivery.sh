@@ -41,10 +41,50 @@ wt_delivery_resolve_base_tip() {
   return 1
 }
 
+# Content-equivalent of "merged into default" for squash / rebase merges where
+# the original tip SHA never lands on origin/HEAD.
+#
+# Accept when every path changed on local_head since the merge-base either:
+#   - already has the same blob on default_tip (absorbed), or
+#   - also changed on default_tip since the merge-base (main evolved past it).
+# Refuse only when default did not touch a path but the tip still differs —
+# that is unique unmerged work.
+#
+# Returns 0 when absorbed, 1 otherwise. Does not set globals.
+wt_delivery_content_absorbed() {
+  local main_root="${1:?missing main worktree root}"
+  local local_head="${2:?missing local head}"
+  local default_tip="${3:?missing default tip}"
+  local mb=""
+  local path=""
+
+  if git -C "$main_root" diff --quiet "$local_head" "$default_tip" 2>/dev/null; then
+    return 0
+  fi
+
+  mb="$(git -C "$main_root" merge-base "$local_head" "$default_tip" 2>/dev/null || true)"
+  [[ -n "$mb" ]] || return 1
+
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if git -C "$main_root" diff --quiet "$local_head" "$default_tip" -- "$path" 2>/dev/null; then
+      continue
+    fi
+    # Default also moved this path since the fork → treat as main evolution.
+    if ! git -C "$main_root" diff --quiet "$mb" "$default_tip" -- "$path" 2>/dev/null; then
+      continue
+    fi
+    return 1
+  done < <(git -C "$main_root" diff --name-only "$mb" "$local_head" 2>/dev/null)
+
+  return 0
+}
+
 # Check whether a worktree branch is safe to reclaim / recycle.
 # Sets:
 #   WT_DELIVERY_OK=0|1
 #   WT_DELIVERY_MERGED_INTO_DEFAULT=0|1
+#   WT_DELIVERY_CONTENT_ABSORBED=0|1
 #   WT_DELIVERY_PUSHED_AND_IN_SYNC=0|1
 #   WT_DELIVERY_DEFAULT_REF_LABEL
 #   WT_DELIVERY_REMOTE_REF (refs/remotes/origin/<branch> or empty)
@@ -60,6 +100,7 @@ wt_delivery_check() {
 
   WT_DELIVERY_OK=0
   WT_DELIVERY_MERGED_INTO_DEFAULT=0
+  WT_DELIVERY_CONTENT_ABSORBED=0
   WT_DELIVERY_PUSHED_AND_IN_SYNC=0
   WT_DELIVERY_DEFAULT_REF_LABEL="origin/HEAD"
   WT_DELIVERY_REMOTE_REF=""
@@ -74,11 +115,21 @@ wt_delivery_check() {
     WT_DELIVERY_DEFAULT_REF_LABEL="$(git -C "$main_root" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/HEAD)"
     if git -C "$main_root" merge-base --is-ancestor "$branch_name" "$upstream_default" 2>/dev/null; then
       WT_DELIVERY_MERGED_INTO_DEFAULT=1
+    elif [[ -n "$local_head" ]] && wt_delivery_content_absorbed "$main_root" "$local_head" "$upstream_default"; then
+      WT_DELIVERY_CONTENT_ABSORBED=1
+      WT_DELIVERY_MERGED_INTO_DEFAULT=1
     fi
   else
     WT_DELIVERY_DEFAULT_REF_LABEL="HEAD"
     if git -C "$main_root" merge-base --is-ancestor "$branch_name" HEAD 2>/dev/null; then
       WT_DELIVERY_MERGED_INTO_DEFAULT=1
+    elif [[ -n "$local_head" ]]; then
+      local primary_head=""
+      primary_head="$(git -C "$main_root" rev-parse --verify HEAD 2>/dev/null || true)"
+      if [[ -n "$primary_head" ]] && wt_delivery_content_absorbed "$main_root" "$local_head" "$primary_head"; then
+        WT_DELIVERY_CONTENT_ABSORBED=1
+        WT_DELIVERY_MERGED_INTO_DEFAULT=1
+      fi
     fi
   fi
 

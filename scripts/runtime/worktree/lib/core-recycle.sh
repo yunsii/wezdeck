@@ -9,7 +9,8 @@ usage:
 
 Reset a long-lived linked worktree (dev-*) onto origin/HEAD in place:
   preflight (clean + delivered) → prune temp locals / debug files →
-  hard-reset current branch to origin/HEAD → optional next-task brief.
+  hard-reset current branch to origin/HEAD → sync origin/<branch> to the
+  same tip (default) → optional next-task brief.
 
 options:
   --cwd PATH              Worktree or repo path. Default: current directory
@@ -22,6 +23,7 @@ options:
   --prune-merged-locals   Delete merged temp local branches (default)
   --keep-temp-branches    Skip local temp-branch pruning
   --no-clean-files        Skip allowlisted debug-file cleanup
+  --no-sync-remote        Do not push origin/<branch> after reset
   -y, --yes               Skip confirmation (or set WT_RECYCLE_NO_CONFIRM=1)
 EOF
 }
@@ -198,6 +200,57 @@ wt_core_recycle_blocking_dirty() {
   [[ "$blocking" -eq 0 ]]
 }
 
+# Publish local tip to origin/<branch> after recycle reset.
+# Sets WT_RECYCLE_REMOTE_SYNC_RESULT to one of:
+#   skipped | created | fast-forward | force-with-lease | failed | noop
+wt_core_recycle_sync_remote() {
+  local worktree_path="${1:?missing worktree}"
+  local branch_name="${2:?missing branch}"
+  local tip="${3:?missing tip}"
+  local remote_ref="refs/remotes/origin/$branch_name"
+  local remote_tip=""
+
+  WT_RECYCLE_REMOTE_SYNC_RESULT="skipped"
+
+  if ! git -C "$worktree_path" remote get-url origin >/dev/null 2>&1; then
+    WT_RECYCLE_REMOTE_SYNC_RESULT="skipped"
+    return 0
+  fi
+
+  if git -C "$worktree_path" rev-parse --verify --quiet "$remote_ref" >/dev/null 2>&1; then
+    remote_tip="$(git -C "$worktree_path" rev-parse "$remote_ref")"
+    if [[ "$remote_tip" == "$tip" ]]; then
+      git -C "$worktree_path" branch --set-upstream-to="origin/$branch_name" "$branch_name" >/dev/null 2>&1 || true
+      WT_RECYCLE_REMOTE_SYNC_RESULT="noop"
+      return 0
+    fi
+    if git -C "$worktree_path" merge-base --is-ancestor "$remote_tip" "$tip" 2>/dev/null; then
+      if git -C "$worktree_path" push origin "refs/heads/$branch_name:refs/heads/$branch_name"; then
+        git -C "$worktree_path" branch --set-upstream-to="origin/$branch_name" "$branch_name" >/dev/null 2>&1 || true
+        WT_RECYCLE_REMOTE_SYNC_RESULT="fast-forward"
+        return 0
+      fi
+      WT_RECYCLE_REMOTE_SYNC_RESULT="failed"
+      return 1
+    fi
+    if git -C "$worktree_path" push --force-with-lease="refs/heads/$branch_name:$remote_tip" \
+      origin "refs/heads/$branch_name:refs/heads/$branch_name"; then
+      git -C "$worktree_path" branch --set-upstream-to="origin/$branch_name" "$branch_name" >/dev/null 2>&1 || true
+      WT_RECYCLE_REMOTE_SYNC_RESULT="force-with-lease"
+      return 0
+    fi
+    WT_RECYCLE_REMOTE_SYNC_RESULT="failed"
+    return 1
+  fi
+
+  if git -C "$worktree_path" push -u origin "refs/heads/$branch_name:refs/heads/$branch_name"; then
+    WT_RECYCLE_REMOTE_SYNC_RESULT="created"
+    return 0
+  fi
+  WT_RECYCLE_REMOTE_SYNC_RESULT="failed"
+  return 1
+}
+
 wt_core_recycle() {
   local cwd="$PWD"
   local worktree_root=""
@@ -207,6 +260,7 @@ wt_core_recycle() {
   local fresh_agent="0"
   local prune_merged_locals="1"
   local clean_files="1"
+  local sync_remote=""
   local skip_confirm="0"
   local branch_name=""
   local base_tip=""
@@ -221,8 +275,11 @@ wt_core_recycle() {
   local occupied_by=""
   local start_ms
   local brief_path=""
+  local backup_branch=""
+  local remote_sync_plan=""
 
   start_ms="$(runtime_log_now_ms)"
+  WT_RECYCLE_REMOTE_SYNC_RESULT=""
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -265,6 +322,10 @@ wt_core_recycle() {
         clean_files="0"
         shift
         ;;
+      --no-sync-remote)
+        sync_remote="0"
+        shift
+        ;;
       -y|--yes)
         skip_confirm="1"
         shift
@@ -292,6 +353,8 @@ wt_core_recycle() {
   wt_core_resolve_repo_context "$cwd"
   wt_config_load
   wt_core_resolve_policy_paths
+  # CLI --no-sync-remote wins; otherwise honor WT_RECYCLE_SYNC_REMOTE (default 1).
+  sync_remote="${sync_remote:-${WT_RECYCLE_SYNC_REMOTE:-1}}"
 
   WT_WORKTREE_PATH="$(wt_abs_path "${worktree_root:-$WT_REPO_ROOT}")"
   if [[ "$WT_WORKTREE_PATH" == "$WT_MAIN_WORKTREE_ROOT" ]]; then
@@ -396,11 +459,33 @@ wt_core_recycle() {
   fi
   if [[ -n "$delivery_blocker" ]]; then
     printf '  blocker: %s\n' "$delivery_blocker"
+  elif [[ "${WT_DELIVERY_CONTENT_ABSORBED:-0}" == "1" ]]; then
+    printf '  delivery: content absorbed into %s (squash/rebase-safe)\n' "$WT_DELIVERY_DEFAULT_REF_LABEL"
   elif [[ "$WT_DELIVERY_MERGED_INTO_DEFAULT" == "1" ]]; then
     printf '  delivery: merged into %s\n' "$WT_DELIVERY_DEFAULT_REF_LABEL"
   elif [[ "$WT_DELIVERY_PUSHED_AND_IN_SYNC" == "1" ]]; then
-    printf '  delivery: pushed; origin/%s contains local HEAD (remote tip kept for recovery)\n' "$branch_name"
+    printf '  delivery: pushed; origin/%s contains local HEAD\n' "$branch_name"
   fi
+  if [[ "$before_head" != "$base_tip" ]]; then
+    backup_branch="backup/$(printf '%s' "$branch_name" | tr '/' '-')-$(date +%Y%m%d-%H%M)"
+    printf '  backup branch: %s (pre-reset tip)\n' "$backup_branch"
+  else
+    printf '  backup branch: (none; already on base)\n'
+  fi
+  if [[ "$sync_remote" == "1" ]]; then
+    if git -C "$WT_WORKTREE_PATH" remote get-url origin >/dev/null 2>&1; then
+      if git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --verify --quiet "refs/remotes/origin/$branch_name" >/dev/null 2>&1; then
+        remote_sync_plan="push origin/$branch_name → base (FF or --force-with-lease)"
+      else
+        remote_sync_plan="create origin/$branch_name at base"
+      fi
+    else
+      remote_sync_plan="skip (no origin remote)"
+    fi
+  else
+    remote_sync_plan="skip (--no-sync-remote / WT_RECYCLE_SYNC_REMOTE=0)"
+  fi
+  printf '  remote sync: %s\n' "$remote_sync_plan"
   if ((${#pruned_branches[@]})); then
     printf '  prune branches: %s\n' "${pruned_branches[*]}"
   else
@@ -453,13 +538,27 @@ wt_core_recycle() {
     runtime_log_info task "recycle cleaned path" "path=$candidate"
   done
 
+  if [[ -n "$backup_branch" ]]; then
+    git -C "$WT_MAIN_WORKTREE_ROOT" branch -f "$backup_branch" "$before_head" >/dev/null
+    runtime_log_info task "recycle backup branch" "branch=$backup_branch" "tip=$before_head"
+  fi
+
   git -C "$WT_WORKTREE_PATH" reset --hard "$base_tip" >/dev/null
-  # Keep --no-track semantics: never set upstream to the default branch.
+  # Never track the default branch; remote sync below may set origin/<branch>.
   git -C "$WT_WORKTREE_PATH" branch --unset-upstream >/dev/null 2>&1 || true
 
   after_head="$(git -C "$WT_WORKTREE_PATH" rev-parse --verify HEAD)"
   if [[ "$after_head" != "$base_tip" ]]; then
     wt_die "recycle reset failed: HEAD=$after_head expected=$base_tip"
+  fi
+
+  if [[ "$sync_remote" == "1" ]]; then
+    wt_tmux_progress "[worktree-task] recycle: syncing origin/$branch_name…"
+    if ! wt_core_recycle_sync_remote "$WT_WORKTREE_PATH" "$branch_name" "$after_head"; then
+      wt_die "recycle local reset ok, but failed to sync origin/$branch_name (result=${WT_RECYCLE_REMOTE_SYNC_RESULT:-failed})"
+    fi
+  else
+    WT_RECYCLE_REMOTE_SYNC_RESULT="skipped"
   fi
 
   brief_path="$WT_WORKTREE_PATH/${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
@@ -480,9 +579,15 @@ EOF
   printf '  HEAD: %s -> %s\n' \
     "$(git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --short "$before_head")" \
     "$(git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --short "$after_head")"
-  printf '  branch: %s (no upstream)\n' "$branch_name"
-  if [[ "$WT_DELIVERY_PUSHED_AND_IN_SYNC" == "1" && "$WT_DELIVERY_MERGED_INTO_DEFAULT" != "1" ]]; then
-    printf '  note: origin/%s still holds the previous tip for recovery\n' "$branch_name"
+  printf '  branch: %s\n' "$branch_name"
+  if [[ -n "$backup_branch" ]]; then
+    printf '  backup: %s\n' "$backup_branch"
+  fi
+  printf '  remote sync: %s\n' "${WT_RECYCLE_REMOTE_SYNC_RESULT:-skipped}"
+  if git -C "$WT_WORKTREE_PATH" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+    printf '  upstream: %s\n' "$(git -C "$WT_WORKTREE_PATH" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')"
+  else
+    printf '  upstream: (none)\n'
   fi
   if [[ -n "$task_brief" ]]; then
     printf '  brief: %s\n' "$brief_path"
@@ -498,6 +603,7 @@ EOF
     "branch=$branch_name" \
     "before=$before_head" \
     "after=$after_head" \
+    "remote_sync=${WT_RECYCLE_REMOTE_SYNC_RESULT:-skipped}" \
     "duration_ms=$(( $(runtime_log_now_ms) - start_ms ))"
 
   wt_tmux_progress "[worktree-task] $WT_TASK_SLUG recycled"

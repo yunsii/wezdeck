@@ -127,7 +127,7 @@ flowchart TD
 
   RC --> RC1{"dev-* + delivered + clean?"}
   RC1 -->|"no"| RCX["Refuse"]
-  RC1 -->|"yes"| RC2["prune temp locals<br/>clean allowlisted debug files<br/>reset --hard origin/HEAD<br/>optional .task-brief.md"]
+  RC1 -->|"yes"| RC2["prune temp locals<br/>clean allowlisted debug files<br/>reset --hard origin/HEAD<br/>sync origin/branch to same tip<br/>optional .task-brief.md"]
 
   R --> C1{"Main worktree?"}
   C1 -->|"yes"| X1["Refuse<br/>primary worktree is permanent"]
@@ -172,7 +172,7 @@ The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fe
 
 Agents should load the platform skill **`worktree-recycle`** (`scripts/dev/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` + project init — not a bare `git reset`.
 
-`worktree-task recycle` keeps the linked worktree directory and resets the current branch tip onto `origin/HEAD` after the same **delivered** gate used by reclaim (`lib/delivery.sh`: merged into `origin/HEAD`, or pushed with `origin/<branch>` containing local HEAD). It is the hard-ops half of closing a development round on a workstation without destroying caches or the tmux window.
+`worktree-task recycle` keeps the linked worktree directory and resets the current branch tip onto `origin/HEAD` after the same **delivered** gate used by reclaim (`lib/delivery.sh`: SHA-ancestor of `origin/HEAD`, **or content absorbed into `origin/HEAD`** — covers CNB/GitHub squash merges where the original tip SHA never lands — or pushed with `origin/<branch>` containing local HEAD). After the local reset it also publishes that tip to `origin/<branch>` (fast-forward, or `--force-with-lease` when the remote still holds the pre-reset tip) and sets upstream to `origin/<branch>` — not to the default branch — so local and remote long-lived `dev/*` both match the default tip. Opt out with `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0`. It is the hard-ops half of closing a development round on a workstation without destroying caches or the tmux window.
 
 Typical invocation (prefer the skill runner from agents):
 
@@ -193,13 +193,14 @@ Behavior:
 - Refuses primary worktree and non-`dev-*` slugs (use `reclaim` for `task-*` / `hotfix-*`).
 - Refuses dirty trees except allowlisted debug leftovers (`WT_RECYCLE_CLEAN_GLOBS`, default `.delegate` / `.scratch` / `*.orig` / `*.rej` / `.task-brief.md`) and `--force`.
 - Optionally prunes local branches that match `WT_RECYCLE_TEMP_BRANCH_PREFIXES` (default `backup/,tmp/,wip/,scratch/`), are ancestors of `origin/HEAD`, and are not checked out elsewhere.
-- `git reset --hard` to `origin/HEAD` while keeping the branch name; clears upstream so the branch does not track the default branch (`--no-track` semantics).
+- Writes a `backup/<branch-slug>-<timestamp>` tip before reset when HEAD is not already on the base (kept when not an ancestor of `origin/HEAD`, e.g. after squash).
+- `git reset --hard` to `origin/HEAD` while keeping the branch name; never tracks the default branch. Default remote sync then pushes `origin/<branch>` to the same tip and sets upstream there.
 - `--task` / `--title` writes `WT_RECYCLE_BRIEF_FILE` (default `.task-brief.md`) for the next round; does **not** inject an agent prompt.
 - Does not delete Claude transcripts; `--fresh-agent` only reminds you to `/clear`. Does not run `sync-runtime`.
 
 ### Reclaim safety
 
-`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs unless `--allow-long-lived` is explicit, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. For `dev-*`, the wrapper adds `--allow-long-lived` only after those checks pass and the confirmation prompt calls out the long-lived worktree. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
+`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs unless `--allow-long-lived` is explicit, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. For `dev-*`, the wrapper adds `--allow-long-lived` only after those checks pass and the confirmation prompt calls out the long-lived worktree. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
 
 ## File Ownership
 
