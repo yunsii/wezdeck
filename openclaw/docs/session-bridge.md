@@ -67,7 +67,7 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | `lease mint\|status\|revoke` | 元写/读 | TTL 遥控授权；落盘 `~/.openclaw/state/session-bridge-leases/` |
 | `host-send-keys --target …` | **写** | 需 **lease + allowlist + 无 panic**；可 `--dry-run` / `--approve-visible` |
 | `bot-send --to … -m …` | **写** | identity=`bot`；**默认 dry-run**，`--confirm` 才真发 |
-| `say-as-me --to … -m …` | **写** | identity=`user`（lark-cli）；**默认 dry-run**；`--confirm` / 可选 `--interactive` |
+| `say-as-me --to … -m …` | **写** | identity=`user`（lark-cli）；**默认 dry-run**；`--confirm` / 可选 `--interactive`；`--markdown` / `--format markdown` 走飞书 post |
 | `take [--focus\|--target …]` | 元写 | 接管聚焦/指定 pane：写 watch job + 启 poller；可选 ack 通知 |
 | `watch-status` / `watch-stop` | 读/元写 | 查看/停止盯梢 job |
 | `watch-loop` | 内部 | 轻量 poller（flock）；**无 LLM**；`waiting` / `turn_idle` / `ended` 通知 |
@@ -95,7 +95,8 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | say-as-me 条件 | 需 `feishu_targets.dex_chat_id`（与 Dex bot 的 p2p chat）。只有 `dex_user_id` 不够（那是主人 open_id，发了也不进 Dex 会话） |
 | waiting 判定 | attention.json → 否则 capture 底栏匹配 **watch 专用锚点**（权限 y/N **与** Claude 选择题 footer：`Enter to select` / `Esc to cancel` 等）。**不用** approve-visible 窄锚点（避免选择题被当 y/N 自动键）。take 时 `last_status=init`，已在等待的 pane 首 tick 也会发 `need_human`。 |
 | idle / turn_idle | attention=`idle`，或 capture：底栏空 `❯` 且无进行中 spinner/tool（`esc to interrupt` / `… (Nm` / Waddling… 等）。用于「回合做完等你决策」；**不**结束 job。 |
-| need_human 文案 | `format-need-human.py` 从 capture（~80 行）抽出题目/选项/当前选中 `▶`，排成可读多行；**禁止**只 tail 底栏半截原文。 |
+| 通知呈现 | **确定性 NotifyCard**（`notify_card.py`，**无 LLM**）：capture → 按 `kind` 族（`claude`/`codex`/`grok`/`generic`）抽取 → 双通道渲染。飞书（say-as-me）默认 `--markdown`（post）；poke 只收短纯文本 + `【host-watch · …】` 防菜单框。配置：`defaults.watch.notify_format`=`markdown`\|`text`。**禁止**整屏 dump / 横线墙。 |
+| need_human 文案 | 按 kind 族解析器抽题目/选项/当前选中；失败则清洗短摘要。兼容入口仍保留 `format-need-human.py`。 |
 | job 目录 | `~/.openclaw/state/session-bridge-watch/` |
 | WezTerm 徽章 | poller 每 tick 写 `%LOCALAPPDATA%/wezterm-runtime/state/session-bridge-watch/status.json`；right-status 在 **CDP 与 attention 之间** 显示 `◆ SB·-`（未跑）/ `◆ SB·N`（N=job 数）；`◆` 与 Alt+/ 列表里 sb 行的徽章同字形；waiting>0 时用 waiting 色 |
 | Alt+/ 列表 | `tmux-attention-menu.sh` 追加 `session-bridge-watch-picker-rows.sh` 行（status=`sb`，徽章 ◆）；**Enter** 跳 pane；**Ctrl+X** = `watch-stop --id` **软停**（`active=false`，job 文件保留审计；列表不再显示；**不**动 agent-attention）。普通 `x` 仍可搜索。Tab 可筛 `[◆ SB watch]`。硬删：`SB_WATCH_PURGE=1 watch-stop` |

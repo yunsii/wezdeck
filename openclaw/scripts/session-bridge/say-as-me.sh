@@ -13,6 +13,8 @@ sb_say_as_me() {
   local message="$2"
   local confirm="${3:-0}"
   local interactive="${4:-0}"
+  # content_format: text (default) | markdown — markdown uses lark-cli --markdown (post)
+  local content_format="${5:-text}"
 
   sb_require_no_panic
 
@@ -64,8 +66,17 @@ sb_say_as_me() {
     sb_die 2 "say-as-me 无目标：配置 feishu_targets.dex_chat_id（推荐）或 dex_bot_open_id"
   fi
 
+  local use_markdown=0
+  case "$content_format" in
+    markdown|md|post) use_markdown=1 ;;
+  esac
+
   local -a cmd
-  cmd=(lark-cli im +messages-send --text "$message")
+  if [[ "$use_markdown" == "1" ]]; then
+    cmd=(lark-cli im +messages-send --markdown "$message")
+  else
+    cmd=(lark-cli im +messages-send --text "$message")
+  fi
   if [[ -n "$dest_chat" ]]; then
     cmd+=(--chat-id "$dest_chat")
   else
@@ -78,6 +89,7 @@ sb_say_as_me() {
       --arg identity "user" \
       --arg to "${dest_chat:-$dest_user}" \
       --arg message "$message" \
+      --arg format "$([[ "$use_markdown" == "1" ]] && echo markdown || echo text)" \
       --argjson argv "$(printf '%s\0' "${cmd[@]}" | jq -Rs 'split("\u0000")|map(select(length>0))')" \
       '{
         ok: true,
@@ -85,6 +97,7 @@ sb_say_as_me() {
         identity: $identity,
         to: $to,
         message: $message,
+        content_format: $format,
         would_run: $argv,
         note: "身份=user（lark-cli 本人）。默认 dry-run；真发需 --confirm（建议交互终端）"
       }'
@@ -110,6 +123,18 @@ sb_say_as_me() {
   sb_audit "say-as-me" "user" "${dest_chat:-$dest_user}" "ok" "execute" "$message"
   local out ec=0
   out="$("${cmd[@]}" 2>&1)" || ec=$?
+  # markdown path failed → once with --text so notify is not silently lost
+  if [[ $ec -ne 0 && "$use_markdown" == "1" ]]; then
+    local -a cmd_text
+    cmd_text=(lark-cli im +messages-send --text "$message")
+    if [[ -n "$dest_chat" ]]; then
+      cmd_text+=(--chat-id "$dest_chat")
+    else
+      cmd_text+=(--user-id "$dest_user")
+    fi
+    out="$("${cmd_text[@]}" 2>&1)" || ec=$?
+    use_markdown=0
+  fi
   if [[ $ec -ne 0 ]]; then
     sb_audit "say-as-me" "user" "${dest_chat:-$dest_user}" "deny" "exit=$ec" "$message"
     sb_die "$ec" "say-as-me 失败 (exit $ec): $out"
@@ -118,5 +143,6 @@ sb_say_as_me() {
     --arg identity "user" \
     --arg to "${dest_chat:-$dest_user}" \
     --arg out "$out" \
-    '{ok:true, dry_run:false, identity:$identity, to:$to, output:$out}'
+    --arg format "$([[ "$use_markdown" == "1" ]] && echo markdown || echo text)" \
+    '{ok:true, dry_run:false, identity:$identity, to:$to, content_format:$format, output:$out}'
 }

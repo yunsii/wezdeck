@@ -156,6 +156,78 @@ sb_watch_default_notify_identity() {
   printf '%s\n' "$t"
 }
 
+# Feishu user-channel format: markdown (lark post) | text (plain).
+sb_watch_default_notify_format() {
+  local t
+  t="$(sb_cfg_get '.defaults.watch.notify_format' 2>/dev/null || true)"
+  if [[ -z "$t" || "$t" == "null" ]]; then
+    t="markdown"
+  fi
+  case "$t" in
+    markdown|md|post) printf 'markdown\n' ;;
+    *) printf 'text\n' ;;
+  esac
+}
+
+sb_watch_notify_card_py() {
+  printf '%s\n' "$_SB_LIB_DIR/notify_card.py"
+}
+
+# Build dual payloads from NotifyCard: feishu (md|plain) + poke_text (framed).
+# Prints: JSON {"feishu":"...","poke":"...","format":"markdown|text"}
+sb_watch_build_notify_payloads() {
+  local event="$1"
+  local target="$2"
+  local kind="$3"
+  local note="${4:-}"
+  local capture="${5:-}"   # raw capture; empty for take/ended
+  shift 5 || true
+  local -a extra_args=()
+  local kv
+  for kv in "$@"; do
+    [[ -n "$kv" ]] && extra_args+=(--extra "$kv")
+  done
+
+  local py fmt channel_feishu
+  py="$(sb_watch_notify_card_py)"
+  fmt="$(sb_watch_default_notify_format)"
+  if [[ "$fmt" == "markdown" ]]; then
+    channel_feishu="feishu_md"
+  else
+    channel_feishu="plain"
+  fi
+
+  local card_json feishu poke
+  if [[ -n "$capture" ]]; then
+    card_json="$(printf '%s\n' "$capture" | python3 "$py" extract \
+      --event "$event" --target "$target" --kind "$kind" --note "$note" \
+      "${extra_args[@]}" 2>/dev/null)" || card_json=""
+  else
+    card_json="$(python3 "$py" card \
+      --event "$event" --target "$target" --kind "$kind" --note "$note" \
+      "${extra_args[@]}" 2>/dev/null)" || card_json=""
+  fi
+
+  if [[ -z "$card_json" ]]; then
+    # Last-resort minimal payloads
+    feishu="$(printf '%s\n会话: %s\n类型: %s\n' "$event" "$target" "$kind")"
+    poke="$(printf '【host-watch · %s】\n会话: %s\n类型: %s\n' "$event" "$target" "$kind")"
+    jq -nc --arg f "$feishu" --arg p "$poke" --arg fmt text \
+      '{feishu:$f, poke:$p, format:$fmt}'
+    return 0
+  fi
+
+  feishu="$(printf '%s\n' "$card_json" | python3 "$py" render --channel "$channel_feishu" 2>/dev/null || true)"
+  poke="$(printf '%s\n' "$card_json" | python3 "$py" render --channel poke_text 2>/dev/null || true)"
+  if [[ -z "$feishu" || -z "$poke" ]]; then
+    feishu="$(printf '%s\n' "$card_json" | python3 "$py" render --channel plain 2>/dev/null || printf '%s\n' "$card_json")"
+    poke="$feishu"
+    fmt="text"
+  fi
+  jq -nc --arg f "$feishu" --arg p "$poke" --arg fmt "$fmt" \
+    '{feishu:$f, poke:$p, format:$fmt}'
+}
+
 # Agent pane? Process (FG → tree) → kind/cmd name → live attention.
 # Title is never consulted (kept as unused 3rd arg for call-site compat).
 sb_watch_is_agent_pane() {
@@ -394,13 +466,23 @@ sb_watch_job_is_active() {
 
 # Deliver a watch event. Returns 0 if at least one channel succeeded.
 # confirm=1 → real send; 0 → dry-run only.
+# Dual-channel notify: feishu_msg for user/bot, poke_msg for agent-poke.
+# Optional 6th arg content_format=markdown|text (default text) for say-as-me.
 sb_watch_notify() {
   local to="$1"
-  local message="$2"
+  local feishu_msg="$2"
   local confirm="${3:-1}"
   local identity="${4:-}"
+  local poke_msg="${5:-}"
+  local content_format="${6:-}"
   if [[ -z "$identity" ]]; then
     identity="$(sb_watch_default_notify_identity)"
+  fi
+  if [[ -z "$poke_msg" ]]; then
+    poke_msg="$feishu_msg"
+  fi
+  if [[ -z "$content_format" ]]; then
+    content_format="$(sb_watch_default_notify_format)"
   fi
 
   local dry=1
@@ -424,127 +506,57 @@ sb_watch_notify() {
   #    as --user-id (lark resolves p2p). Never use owner dex_user_id (that is you).
   if [[ "$want_user" == "1" ]]; then
     if declare -F sb_say_as_me >/dev/null 2>&1; then
-      if sb_say_as_me "$to" "$message" "$([[ "$dry" == "0" ]] && echo 1 || echo 0)" 0 >/dev/null 2>&1; then
+      if sb_say_as_me "$to" "$feishu_msg" "$([[ "$dry" == "0" ]] && echo 1 || echo 0)" 0 "$content_format" >/dev/null 2>&1; then
         ok=1
       else
-        sb_audit "watch-notify" "user" "$to" "deny" "say-as-me-failed" "${message:0:80}"
+        sb_audit "watch-notify" "user" "$to" "deny" "say-as-me-failed" "${feishu_msg:0:80}"
       fi
     else
-      sb_audit "watch-notify" "user" "$to" "deny" "say-as-me-unavailable" "${message:0:80}"
+      sb_audit "watch-notify" "user" "$to" "deny" "say-as-me-unavailable" "${feishu_msg:0:80}"
     fi
   fi
 
   # 2) poke Dex session so Main actually runs a turn (not just a Feishu toast).
+  #    Always plain short digest (never markdown dump).
   if [[ "$want_poke" == "1" ]]; then
     if declare -F sb_claw_poke_cmd >/dev/null 2>&1; then
-      if sb_claw_poke_cmd "$to" "$message" "$dry" "" >/dev/null 2>&1; then
+      if sb_claw_poke_cmd "$to" "$poke_msg" "$dry" "" >/dev/null 2>&1; then
         ok=1
       else
-        sb_audit "watch-notify" "agent-poke" "$to" "deny" "poke-failed" "${message:0:80}"
+        sb_audit "watch-notify" "agent-poke" "$to" "deny" "poke-failed" "${poke_msg:0:80}"
       fi
     else
-      sb_audit "watch-notify" "agent-poke" "$to" "deny" "poke-unavailable" "${message:0:80}"
+      sb_audit "watch-notify" "agent-poke" "$to" "deny" "poke-unavailable" "${poke_msg:0:80}"
     fi
   fi
 
-  # 3) legacy bot → owner (opt-in only)
+  # 3) legacy bot → owner (opt-in only); plain text
   if [[ "$want_bot" == "1" ]]; then
-    if sb_bot_send "$to" "$message" "$([[ "$dry" == "0" ]] && echo 1 || echo 0)" "feishu" "" >/dev/null 2>&1; then
+    if sb_bot_send "$to" "$feishu_msg" "$([[ "$dry" == "0" ]] && echo 1 || echo 0)" "feishu" "" >/dev/null 2>&1; then
       ok=1
     else
-      sb_audit "watch-notify" "bot" "$to" "deny" "bot-send-failed" "${message:0:80}"
+      sb_audit "watch-notify" "bot" "$to" "deny" "bot-send-failed" "${feishu_msg:0:80}"
     fi
   fi
 
   [[ "$ok" == "1" ]]
 }
 
-# Wrap body so Dex never mistakes host choice UI for its own Feishu 1/2/3 menu.
-sb_watch_frame_for_dex() {
-  local event="$1"   # take | need_human | turn_idle | ended
-  local body="$2"
-  case "$event" in
-    take)
-      printf '%s\n' \
-        "【host-watch · take】" \
-        "我（主人）用 Ctrl+K w 把本机 tmux agent pane 交给你盯梢。" \
-        "这是 host→你 的交接，不是 bot 广播，也不是让你代按 TUI。" \
-        "" \
-        "$body" \
-        "" \
-        "规则：只在「需我确认 / 回合空闲 / 会话结束」时再找我；不要把后文选项当成你的飞书菜单。"
-      ;;
-    need_human)
-      printf '%s\n' \
-        "【host-watch · need_human】" \
-        "本机 host 会话卡住、需要我本人回 tmux 处理。" \
-        "下面摘要来自 host pane 截取——不是你的飞书 1/2/3 菜单，请勿代选。" \
-        "" \
-        "$body" \
-        "" \
-        "请提醒我回主机处理。除非我明确授权 lease/host-send-keys，不要代按键。"
-      ;;
-    turn_idle)
-      printf '%s\n' \
-        "【host-watch · turn_idle】" \
-        "本机 agent 回合已停在空闲 prompt，方便你回主机做决策。" \
-        "下面摘要来自 host pane 截取——不是你的飞书菜单，请勿代选。" \
-        "盯梢继续（job 未关）；除非明确授权，不要代按 TUI。" \
-        "" \
-        "$body"
-      ;;
-    ended)
-      printf '%s\n' \
-        "【host-watch · ended】" \
-        "本机盯梢结束（done / pane 消失 / TTL）。" \
-        "" \
-        "$body"
-      ;;
-    *)
-      printf '%s\n' "【host-watch · ${event}】" "$body"
-      ;;
-  esac
+# Capture + NotifyCard payloads for need_human / turn_idle.
+sb_watch_format_need_human_payloads() {
+  local target="$1" kind="$2" note="${3:-}"
+  local tmux_target raw
+  tmux_target="$(sb_normalize_host_target "$target")"
+  raw="$(sb_host_capture_text_raw "$tmux_target" 80 2>/dev/null || true)"
+  sb_watch_build_notify_payloads need_human "$target" "$kind" "$note" "$raw"
 }
 
-# Short tail for turn_idle notify (not a choice menu dump).
-sb_watch_format_turn_idle_msg() {
-  local target="$1"
-  local kind="$2"
-  local note="${3:-}"
-  local tmux_target raw tail
+sb_watch_format_turn_idle_payloads() {
+  local target="$1" kind="$2" note="${3:-}"
+  local tmux_target raw
   tmux_target="$(sb_normalize_host_target "$target")"
   raw="$(sb_host_capture_text_raw "$tmux_target" 40 2>/dev/null || true)"
-  tail="$(printf '%s\n' "$raw" | tail -n 16 | sed -e 's/[[:space:]]*$//' | awk 'NF{p=1} p' | tail -n 12)"
-  printf '⏸ 回合空闲（可决策）\n\n会话: %s\n类型: %s\n' "$target" "$kind"
-  if [[ -n "$note" ]]; then
-    printf '备注: %s\n' "$note"
-  fi
-  printf 'reason: turn_idle\njob: 继续盯梢（未结束）\n'
-  if [[ -n "$tail" ]]; then
-    printf '\n--- pane 尾部 ---\n%s\n' "$tail"
-  fi
-  printf '\n→ 回对应 tmux pane 继续或收工\n'
-}
-
-# Structured Feishu body for need_human (choice UI / permission), not raw pane dump.
-sb_watch_format_need_human_msg() {
-  local target="$1"
-  local kind="$2"
-  local note="${3:-}"
-  local tmux_target raw fmt
-  tmux_target="$(sb_normalize_host_target "$target")"
-  # Capture enough history to include full AskUserQuestion box (not just footer).
-  raw="$(sb_host_capture_text_raw "$tmux_target" 80 2>/dev/null || true)"
-  fmt="$_SB_LIB_DIR/format-need-human.py"
-  if [[ -f "$fmt" && -n "$raw" ]]; then
-    if printf '%s\n' "$raw" | python3 "$fmt" "$target" "$kind" "$note" 2>/dev/null; then
-      return 0
-    fi
-  fi
-  # Fallback: short plain line
-  printf '🔔 需要确认\n\n会话: %s\n类型: %s\n%s\n→ 回对应 tmux pane 处理\n' \
-    "$target" "$kind" \
-    "$( [[ -n "$note" ]] && printf '备注: %s\n' "$note" || true )"
+  sb_watch_build_notify_payloads turn_idle "$target" "$kind" "$note" "$raw"
 }
 
 sb_watch_ensure_loop() {
@@ -689,11 +701,12 @@ sb_watch_take() {
   sb_watch_ensure_loop 1
   sb_watch_publish_ui_status 1
 
-  local ack_body ack_msg
-  ack_body="$(printf 'target: %s\nkind: %s\nstatus_at_take: %s\nttl: %sm%s' \
-    "$target_r" "$kind" "$status0" "$((ttl / 60))" \
-    "$( [[ -n "$note" ]] && printf '\nnote: %s' "$note" || true )")"
-  ack_msg="$(sb_watch_frame_for_dex take "$ack_body")"
+  local ack_payload ack_feishu ack_poke ack_fmt
+  ack_payload="$(sb_watch_build_notify_payloads take "$target_r" "$kind" "$note" "" \
+    "status_at_take=$status0" "ttl=$((ttl / 60))m")"
+  ack_feishu="$(jq -r '.feishu' <<<"$ack_payload")"
+  ack_poke="$(jq -r '.poke' <<<"$ack_payload")"
+  ack_fmt="$(jq -r '.format' <<<"$ack_payload")"
 
   local notified=false
   local notify_identity
@@ -703,7 +716,8 @@ sb_watch_take() {
     "$path" >"${path}.tmp" && mv "${path}.tmp" "$path"
 
   if [[ "$no_ack" != "1" ]]; then
-    if sb_watch_notify "$notify_to" "$ack_msg" "$confirm_notify" "$notify_identity" 2>/dev/null; then
+    if sb_watch_notify "$notify_to" "$ack_feishu" "$confirm_notify" "$notify_identity" \
+      "$ack_poke" "$ack_fmt" 2>/dev/null; then
       notified=true
       jq --arg ts "$(sb_now_iso)" '.last_notified_at=$ts | .last_notified_event="take_ack"' \
         "$path" >"${path}.tmp" && mv "${path}.tmp" "$path"
@@ -713,7 +727,7 @@ sb_watch_take() {
   jq -nc \
     --argjson job "$(cat "$path")" \
     --argjson notified "$notified" \
-    --arg ack "$ack_msg" \
+    --arg ack "$ack_feishu" \
     --arg identity "$notify_identity" \
     '{ok:true, action:"take", job:$job, ack_notified:$notified, ack_message:$ack, notify_identity:$identity, poller:"watch-loop"}'
 }
@@ -843,13 +857,12 @@ sb_watch_tick_job() {
   fi
   last_notified_event="$(jq -r '.last_notified_event // empty' <<<"$job")"
 
-  local now cur event="" msg="" body=""
+  local now cur event="" payload="" feishu_msg="" poke_msg="" content_fmt="text"
   now="$(sb_watch_now_epoch)"
 
   if [[ "$exp" =~ ^[0-9]+$ ]] && (( now > exp )); then
     event="ended"
-    body="$(printf 'target: %s\nkind: %s\nreason: ttl_expired' "$target" "$kind")"
-    msg="$(sb_watch_frame_for_dex ended "$body")"
+    payload="$(sb_watch_build_notify_payloads ended "$target" "$kind" "$note" "" "reason=ttl_expired")"
     cur="done"
   else
     cur="$(sb_watch_status_for_job "$target" "$pane_id")"
@@ -860,22 +873,24 @@ sb_watch_tick_job() {
     fi
     if [[ "$cur" == "waiting" && "$last_status" != "waiting" ]]; then
       event="need_human"
-      body="$(sb_watch_format_need_human_msg "$target" "$kind" "$note")"
-      msg="$(sb_watch_frame_for_dex need_human "$body")"
+      payload="$(sb_watch_format_need_human_payloads "$target" "$kind" "$note")"
     elif [[ "$cur" == "idle" && "$last_status" != "idle" ]]; then
       # turn finished / awaiting decision — notify, keep job open
       event="turn_idle"
-      body="$(sb_watch_format_turn_idle_msg "$target" "$kind" "$note")"
-      msg="$(sb_watch_frame_for_dex turn_idle "$body")"
+      payload="$(sb_watch_format_turn_idle_payloads "$target" "$kind" "$note")"
     elif [[ "$cur" == "done" && "$last_status" != "done" && "$last_status" != "init" ]]; then
       event="ended"
-      body="$(printf 'target: %s\nkind: %s\nreason: status=done' "$target" "$kind")"
-      msg="$(sb_watch_frame_for_dex ended "$body")"
+      payload="$(sb_watch_build_notify_payloads ended "$target" "$kind" "$note" "" "reason=status=done")"
     elif [[ "$cur" == "done" && "$last_status" == "init" ]]; then
       event="ended"
-      body="$(printf 'target: %s\nkind: %s\nreason: already_gone_at_take' "$target" "$kind")"
-      msg="$(sb_watch_frame_for_dex ended "$body")"
+      payload="$(sb_watch_build_notify_payloads ended "$target" "$kind" "$note" "" "reason=already_gone_at_take")"
     fi
+  fi
+
+  if [[ -n "$payload" ]]; then
+    feishu_msg="$(jq -r '.feishu // empty' <<<"$payload")"
+    poke_msg="$(jq -r '.poke // empty' <<<"$payload")"
+    content_fmt="$(jq -r '.format // "text"' <<<"$payload")"
   fi
 
   # Persist status *before* slow notify (say-as-me/poke can take seconds). Otherwise a
@@ -898,10 +913,11 @@ sb_watch_tick_job() {
     # ended: drop job first so loop won't double-send while notify runs
     rm -f "$path"
     if [[ "$will_notify" == "1" ]]; then
-      if sb_watch_notify "$notify_to" "$msg" 1 "$notify_identity" 2>/dev/null; then
-        sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${msg:0:80}"
+      if sb_watch_notify "$notify_to" "$feishu_msg" 1 "$notify_identity" \
+        "$poke_msg" "$content_fmt" 2>/dev/null; then
+        sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${feishu_msg:0:80}"
       else
-        sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${msg:0:80}"
+        sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${feishu_msg:0:80}"
       fi
     fi
     sb_audit "watch-end" "local" "$target" "ok" "${event:-done}"
@@ -922,10 +938,11 @@ sb_watch_tick_job() {
   if [[ "$will_notify" == "1" ]]; then
     # poller always real-notify (confirm=1); panic still freezes writes
     # last_notified_event already stamped above to suppress duplicates
-    if sb_watch_notify "$notify_to" "$msg" 1 "$notify_identity" 2>/dev/null; then
-      sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${msg:0:80}"
+    if sb_watch_notify "$notify_to" "$feishu_msg" 1 "$notify_identity" \
+      "$poke_msg" "$content_fmt" 2>/dev/null; then
+      sb_audit "watch-notify" "$notify_identity" "$target" "ok" "$event" "${feishu_msg:0:80}"
     else
-      sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${msg:0:80}"
+      sb_audit "watch-notify" "$notify_identity" "$target" "deny" "$event-failed" "${feishu_msg:0:80}"
       # allow retry next tick if delivery failed
       jq -c 'del(.last_notified_event) | del(.last_notified_at)' "$path" >"${path}.tmp.$$" \
         && mv -f "${path}.tmp.$$" "$path" || true

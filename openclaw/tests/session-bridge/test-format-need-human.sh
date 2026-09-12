@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Compat wrapper around notify_card.py (need_human / plain).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FMT="$ROOT/scripts/session-bridge/format-need-human.py"
@@ -15,6 +16,5 @@ echo "$out" | grep -q '▶ 1. Opt A' || { echo fail sel; exit 1; }
 echo "$out" | grep -q 'detail a' || { echo fail detail; exit 1; }
 echo "$out" | grep -q '▸ 2. Opt B' || { echo fail o2; exit 1; }
 echo "$out" | grep -q '🔔 需要确认' || { echo fail head; exit 1; }
-# must not be a raw truncated dump starting mid-option
-echo "$out" | grep -qv '需要确认 ·' || true
+if echo "$out" | grep -q '────'; then echo 'fail rules'; exit 1; fi
 echo "PASS: format-need-human"

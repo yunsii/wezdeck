@@ -53,7 +53,7 @@ Write / gated:
   host-send-keys --target <pane> [--text T] [--keys "Enter"] [--enter]
                  [--approve-visible] [--lease ID] [--dry-run]
   bot-send --to <alias|chat> -m <text> [--confirm] [--channel feishu]
-  say-as-me --to <alias|id> -m <text> [--confirm] [--interactive]  # user identity
+  say-as-me --to <alias|id> -m <text> [--confirm] [--interactive] [--markdown]  # user identity
   take [--focus|--target sess:w.p] [--pane-id %N] [--note …] [--ttl SEC]
        [--notify-to alias] [--confirm-notify] [--no-ack] [--dry-run]
   watch-status
@@ -279,19 +279,24 @@ cmd_bot_send() {
 }
 
 cmd_say_as_me() {
-  local to="" message="" confirm=0 interactive=0
+  local to="" message="" confirm=0 interactive=0 content_format="text"
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --to) to="${2:-}"; shift 2 ;;
       -m|--message) message="${2:-}"; shift 2 ;;
       --confirm) confirm=1; shift ;;
       --interactive) interactive=1; shift ;;
+      --markdown) content_format="markdown"; shift ;;
+      --format)
+        content_format="${2:-text}"
+        shift 2
+        ;;
       *) sb_die 3 "未知参数: $1" ;;
     esac
   done
   [[ -n "$to" ]] || sb_die 3 "say-as-me 需要 --to"
   [[ -n "$message" ]] || sb_die 3 "say-as-me 需要 -m|--message"
-  sb_say_as_me "$to" "$message" "$confirm" "$interactive" | print_result
+  sb_say_as_me "$to" "$message" "$confirm" "$interactive" "$content_format" | print_result
 }
 
 cmd_take() {
