@@ -18,6 +18,18 @@ Use this doc when you need to apply or verify changes.
 3. Reload the main WezTerm window (or open a new one) after a successful sync so it picks up the promoted tree.
 4. Reload tmux only when needed; reload affected interactive shells if shell rc files changed.
 
+### Closing a `dev-*` development round
+
+When the current work on a long-lived linked workstation (`dev-*`) is already on `origin/HEAD` (or pushed with the remote containing local HEAD), reset the workstation in place instead of reclaiming it. **Agents:** load `worktree-recycle` and run its `run.sh` (preflight → recycle → project init). **Humans / debug CLI:**
+
+```bash
+scripts/dev/worktree-recycle/run.sh recycle -y --task "describe the next round"
+# equivalent hard ops only:
+scripts/runtime/worktree/worktree-task recycle -y --task "describe the next round"
+```
+
+Full semantics (delivered gate, temp-branch prune, debug-file allowlist, brief file, hooks): [`workspaces.md` Task Worktree Lifecycle / Recycle](./workspaces.md#recycle-long-lived-dev--round-reset). Short-lived `task-*` / `hotfix-*` trees still use `Ctrl+k g r` / `worktree-task reclaim`.
+
 ### Manual / recovery
 
 ```bash

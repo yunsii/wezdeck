@@ -32,6 +32,8 @@ source "$RUNTIME_LIB_DIR/runtime-log-lib.sh"
 source "$SCRIPT_DIR/lib/helpers.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/git.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/delivery.sh"
 
 export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.reclaim-current"
 
@@ -123,56 +125,19 @@ if [[ -n "$(git -C "$worktree_root" status --porcelain --untracked-files=all 2>/
 fi
 
 # ---------- delivery check ----------
-# A branch is "delivered" — and thus safe to reclaim — if EITHER:
-#   (a) it's merged into origin's default branch (or primary HEAD as
-#       fallback when origin/HEAD isn't set), OR
-#   (b) it's been pushed to a remote branch whose tip already contains
-#       the local HEAD (work is backed up server-side; recoverable via
-#       `git fetch && git worktree add ../foo origin/<branch>`).
-# Condition (b) intentionally requires `is-ancestor HEAD origin/<branch>`
-# — a stale remote ref that's BEHIND local would let unpushed commits
-# disappear silently.
+# Shared definition lives in lib/delivery.sh (also used by recycle).
 branch_name="$(git -C "$worktree_root" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
 if [[ -z "$branch_name" ]]; then
   refuse "$slug is in detached-HEAD state; not safe to auto-reclaim"
 fi
 
 wt_tmux_progress "[worktree-task] checking $slug delivery status…"
-if ! git -C "$main_root" fetch origin --quiet 2>/dev/null; then
+if ! wt_delivery_fetch_origin "$main_root"; then
   inform "warning: 'git fetch origin' failed; delivery check uses local refs only"
 fi
 
-local_head="$(git -C "$worktree_root" rev-parse --verify HEAD 2>/dev/null || true)"
-
-is_merged_into_default=false
-default_ref_label="origin/HEAD"
-upstream_default="$(git -C "$main_root" rev-parse --verify origin/HEAD 2>/dev/null || true)"
-if [[ -n "$upstream_default" ]]; then
-  default_ref_label="$(git -C "$main_root" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/HEAD)"
-  if git -C "$main_root" merge-base --is-ancestor "$branch_name" "$upstream_default" 2>/dev/null; then
-    is_merged_into_default=true
-  fi
-else
-  default_ref_label="HEAD"
-  if git -C "$main_root" merge-base --is-ancestor "$branch_name" HEAD 2>/dev/null; then
-    is_merged_into_default=true
-  fi
-fi
-
-is_pushed_and_in_sync=false
-remote_ref="refs/remotes/origin/$branch_name"
-if [[ -n "$local_head" ]] && git -C "$main_root" rev-parse --verify --quiet "$remote_ref" >/dev/null 2>&1; then
-  if git -C "$main_root" merge-base --is-ancestor "$local_head" "$remote_ref" 2>/dev/null; then
-    is_pushed_and_in_sync=true
-  fi
-fi
-
-if ! $is_merged_into_default && ! $is_pushed_and_in_sync; then
-  if git -C "$main_root" rev-parse --verify --quiet "$remote_ref" >/dev/null 2>&1; then
-    refuse "$branch_name has local commits not pushed to origin/$branch_name; push first (or merge into $default_ref_label)"
-  else
-    refuse "$branch_name not merged into $default_ref_label and not pushed to origin; push or merge first"
-  fi
+if ! wt_delivery_check "$worktree_root" "$main_root" "$branch_name"; then
+  refuse "$WT_DELIVERY_REFUSE_REASON"
 fi
 
 # ---------- confirmation ----------

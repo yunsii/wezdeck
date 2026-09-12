@@ -16,3 +16,5 @@ __WT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$__WT_CORE_DIR/core-launch.sh"
 # shellcheck disable=SC1091
 . "$__WT_CORE_DIR/core-reclaim.sh"
+# shellcheck disable=SC1091
+. "$__WT_CORE_DIR/core-recycle.sh"

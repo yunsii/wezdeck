@@ -19,6 +19,11 @@
 #      for the local worktree slug and keeps branch names type-scoped.
 #   6. origin-default-branch launch: branch starts from origin/HEAD but
 #      does not track the default branch as upstream.
+#   7. transcript preserved across reclaim.
+#   8. recycle refuses undelivered workstation commits.
+#   9. recycle happy path: reset to origin/HEAD, prune merged temp branch,
+#      clean debug dirs, write next-task brief.
+#  10. recycle refuses task-* (short-lived trees use reclaim).
 #
 # Exit non-zero on any failure with a short trace.
 
@@ -387,6 +392,198 @@ case7_transcript_preserved() {
     || { assert_fail ".archive/ unexpectedly created — archive code may not be fully removed"; return 1; }
 }
 
+# ---------- case 8: recycle refuses undelivered work ----------
+case8_recycle_undelivered() {
+  printf '\n=== case 8: recycle refuses undelivered ===\n'
+
+  local remote="$WORK_DIR/remote8.git"
+  local repo="$WORK_DIR/origin8"
+  git init -q --bare "$remote"
+  setup_repo "$repo"
+  git -C "$repo" remote add origin "$remote"
+  git -C "$repo" push -q -u origin main
+  git -C "$remote" symbolic-ref HEAD refs/heads/main
+  git -C "$repo" remote set-head origin -a >/dev/null
+
+  local slug="dev-recycle-block"
+  local expect_wt="$WORK_DIR/.worktrees/origin8/$slug"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title recycle-block \
+    --task-slug "$slug" \
+    --branch "dev/recycle-block" \
+    --provider none \
+    --no-attach >/dev/null \
+    || { assert_fail "launch failed"; return 1; }
+
+  echo undelivered >"$expect_wt/undelivered.txt"
+  git -C "$expect_wt" add undelivered.txt
+  git -C "$expect_wt" commit -q -m "undelivered work"
+
+  local before
+  before="$(git -C "$expect_wt" rev-parse HEAD)"
+  local stderr_file="$WORK_DIR/case8-stderr"
+  if HOME="$SANDBOX_HOME" \
+     WEZDECK_REPO="$REPO_ROOT" \
+     WT_RECYCLE_NO_CONFIRM=1 \
+     "$WORKTREE_TASK" recycle \
+       --worktree-root "$expect_wt" \
+       -y >/dev/null 2>"$stderr_file"; then
+    assert_fail "recycle should refuse undelivered branch"
+    return 1
+  fi
+  assert_pass "recycle refused undelivered"
+  [[ "$(git -C "$expect_wt" rev-parse HEAD)" == "$before" ]] \
+    && assert_pass "tip unchanged after refused recycle" \
+    || { assert_fail "tip moved despite refusal"; return 1; }
+}
+
+# ---------- case 9: recycle happy path ----------
+case9_recycle_happy() {
+  printf '\n=== case 9: recycle happy path ===\n'
+
+  local remote="$WORK_DIR/remote9.git"
+  local repo="$WORK_DIR/origin9"
+  git init -q --bare "$remote"
+  setup_repo "$repo"
+  git -C "$repo" remote add origin "$remote"
+  git -C "$repo" push -q -u origin main
+  git -C "$remote" symbolic-ref HEAD refs/heads/main
+  git -C "$repo" remote set-head origin -a >/dev/null
+
+  local slug="dev-recycle-ok"
+  local expect_wt="$WORK_DIR/.worktrees/origin9/$slug"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title recycle-ok \
+    --task-slug "$slug" \
+    --branch "dev/recycle-ok" \
+    --provider none \
+    --no-attach >/dev/null \
+    || { assert_fail "launch failed"; return 1; }
+
+  # Feature commit on the workstation, then merge into main and advance origin.
+  echo feature >"$expect_wt/feature.txt"
+  git -C "$expect_wt" add feature.txt
+  git -C "$expect_wt" commit -q -m "feature on workstation"
+  git -C "$repo" checkout -q main
+  git -C "$repo" merge -q --no-ff "dev/recycle-ok" -m "merge workstation"
+  echo later >"$repo/later.txt"
+  git -C "$repo" add later.txt
+  git -C "$repo" commit -q -m "main advances"
+  git -C "$repo" push -q origin main
+  git -C "$repo" fetch -q origin
+  local origin_tip
+  origin_tip="$(git -C "$repo" rev-parse origin/HEAD)"
+
+  # Merged temp branch vs unmerged wip.
+  git -C "$repo" branch backup/old "$origin_tip"
+  git -C "$repo" branch wip/keep
+  # Make wip/keep diverge so it is not an ancestor of origin/HEAD.
+  git -C "$repo" checkout -q wip/keep
+  echo keep >"$repo/keep.txt"
+  git -C "$repo" add keep.txt
+  git -C "$repo" commit -q -m "unmerged wip"
+  git -C "$repo" checkout -q main
+
+  mkdir -p "$expect_wt/.scratch" "$expect_wt/.delegate"
+  echo junk >"$expect_wt/.scratch/tmp.log"
+  echo ticket >"$expect_wt/.delegate/note.md"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  WT_RECYCLE_NO_CONFIRM=1 \
+  "$WORKTREE_TASK" recycle \
+    --worktree-root "$expect_wt" \
+    -y \
+    --task "wire hotkey next" \
+    --fresh-agent >/dev/null \
+    || { assert_fail "recycle happy path failed"; return 1; }
+
+  [[ "$(git -C "$expect_wt" rev-parse HEAD)" == "$origin_tip" ]] \
+    && assert_pass "workstation HEAD matches origin/HEAD" \
+    || { assert_fail "HEAD not reset to origin/HEAD"; return 1; }
+
+  [[ "$(git -C "$expect_wt" symbolic-ref --short HEAD)" == "dev/recycle-ok" ]] \
+    && assert_pass "branch name preserved" \
+    || { assert_fail "branch name changed"; return 1; }
+
+  if git -C "$expect_wt" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+    assert_fail "recycled branch unexpectedly tracks upstream"
+    return 1
+  fi
+  assert_pass "recycled branch has no upstream"
+
+  if git -C "$repo" show-ref --verify --quiet refs/heads/backup/old; then
+    assert_fail "merged backup/old should have been pruned"
+    return 1
+  fi
+  assert_pass "merged backup/old pruned"
+
+  git -C "$repo" show-ref --verify --quiet refs/heads/wip/keep \
+    && assert_pass "unmerged wip/keep kept" \
+    || { assert_fail "wip/keep was pruned incorrectly"; return 1; }
+
+  [[ ! -e "$expect_wt/.scratch" && ! -e "$expect_wt/.delegate" ]] \
+    && assert_pass "debug dirs cleaned" \
+    || { assert_fail "debug dirs still present"; return 1; }
+
+  [[ -f "$expect_wt/.task-brief.md" ]] \
+    && grep -q "wire hotkey next" "$expect_wt/.task-brief.md" \
+    && assert_pass "next-task brief written" \
+    || { assert_fail "brief missing or wrong"; return 1; }
+
+  [[ -f "$expect_wt/later.txt" ]] \
+    && assert_pass "origin/HEAD content visible after recycle" \
+    || { assert_fail "later.txt missing after reset"; return 1; }
+}
+
+# ---------- case 10: recycle refuses task-* ----------
+case10_recycle_refuses_task_slug() {
+  printf '\n=== case 10: recycle refuses task-* ===\n'
+
+  local repo="$WORK_DIR/origin10"
+  setup_repo "$repo"
+  local slug="task-recycle-no"
+  local expect_wt="$WORK_DIR/.worktrees/origin10/$slug"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title recycle-no \
+    --task-slug "$slug" \
+    --branch "task/recycle-no" \
+    --base-ref HEAD \
+    --provider none \
+    --no-attach >/dev/null \
+    || { assert_fail "launch failed"; return 1; }
+
+  local stderr_file="$WORK_DIR/case10-stderr"
+  if HOME="$SANDBOX_HOME" \
+     WEZDECK_REPO="$REPO_ROOT" \
+     "$WORKTREE_TASK" recycle \
+       --worktree-root "$expect_wt" \
+       -y >/dev/null 2>"$stderr_file"; then
+    assert_fail "recycle should refuse task-* slug"
+    return 1
+  fi
+  if grep -qiE "dev-\*|long-lived|reclaim" "$stderr_file"; then
+    assert_pass "refusal points at reclaim / dev-* scope"
+  else
+    assert_fail "unclear refusal: $(cat "$stderr_file")"
+    return 1
+  fi
+  [[ -d "$expect_wt" ]] && assert_pass "task worktree left in place" \
+    || { assert_fail "task worktree disappeared"; return 1; }
+}
+
 # ---------- run ----------
 case1_happy_path
 case2_dev_refusal
@@ -395,6 +592,9 @@ case4_create_prompt_preview
 case5_open_task_window_lifecycle_names
 case6_origin_default_no_tracking
 case7_transcript_preserved
+case8_recycle_undelivered
+case9_recycle_happy
+case10_recycle_refuses_task_slug
 
 printf '\n=== summary ===\n'
 printf 'pass=%d fail=%d\n' "$PASS" "$FAIL"

@@ -108,9 +108,9 @@ The worktree-task runtime supports a two-tier model where directory naming encod
 | `task-*` | hours–days | `Ctrl+k g t` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 | `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 
-Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. The CLI refuses them by default; `Ctrl+k g r` can reclaim one only after the normal clean / delivered checks pass and the confirmation prompt names it as long-lived.
+Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. The CLI refuses reclaim by default; `Ctrl+k g r` can reclaim one only after the normal clean / delivered checks pass and the confirmation prompt names it as long-lived. For day-to-day round closure on a `dev-*` workstation, prefer **`worktree-task recycle`** (in-place reset onto `origin/HEAD`) over reclaim→recreate — the directory, tmux window, and caches stay.
 
-Lifecycle and reclaim flow:
+Lifecycle, recycle, and reclaim flow:
 
 ```mermaid
 flowchart TD
@@ -120,9 +120,14 @@ flowchart TD
   B -->|"Ctrl+k g t"| T["task-&lt;slug&gt;<br/>PR-scoped task"]
   B -->|"Ctrl+k g h"| H["hotfix-&lt;slug&gt;<br/>urgent fix"]
 
+  D --> RC["worktree-task recycle<br/>in-place onto origin/HEAD"]
   D --> R["Ctrl+k g r<br/>reclaim current worktree"]
   T --> R
   H --> R
+
+  RC --> RC1{"dev-* + delivered + clean?"}
+  RC1 -->|"no"| RCX["Refuse"]
+  RC1 -->|"yes"| RC2["prune temp locals<br/>clean allowlisted debug files<br/>reset --hard origin/HEAD<br/>optional .task-brief.md"]
 
   R --> C1{"Main worktree?"}
   C1 -->|"yes"| X1["Refuse<br/>primary worktree is permanent"]
@@ -153,7 +158,7 @@ flowchart TD
   BK --> END
 ```
 
-(`task-*` and `hotfix-*` differ only in directory prefix and intended lifetime; their lifecycle transitions are identical.)
+(`task-*` and `hotfix-*` differ only in directory prefix and intended lifetime; their lifecycle transitions are identical. Recycle refuses non-`dev-*` slugs — short-lived trees should reclaim.)
 
 ### Branch naming is independent
 
@@ -162,6 +167,35 @@ Worktree directory prefix encodes lifecycle (your local UX), git branch name fol
 ### Base ref strategy
 
 The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fetch origin` then branches off `origin/HEAD`. This insulates new worktrees from the primary worktree's current checkout AND from local divergence with origin. New task/dev/hotfix branches are created with `--no-track`: `origin/HEAD` is only the start point, not the branch upstream, so `git status` does not compare a fresh task branch against `origin/main` / `origin/master`. The branch gets an upstream only after the normal first push (`git push -u origin <branch>`). **First-time setup**: run `git remote set-head origin -a` once per repo to populate `origin/HEAD`. Repos without a remote fall back to `WT_POLICY_BASE_REF_STRATEGY=primary-head` (set explicitly in their env file or pass `--base-ref HEAD` per launch).
+
+### Recycle (long-lived `dev-*` round reset)
+
+Agents should load the platform skill **`worktree-recycle`** (`scripts/dev/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` + project init — not a bare `git reset`.
+
+`worktree-task recycle` keeps the linked worktree directory and resets the current branch tip onto `origin/HEAD` after the same **delivered** gate used by reclaim (`lib/delivery.sh`: merged into `origin/HEAD`, or pushed with `origin/<branch>` containing local HEAD). It is the hard-ops half of closing a development round on a workstation without destroying caches or the tmux window.
+
+Typical invocation (prefer the skill runner from agents):
+
+```bash
+# agent path
+"$TOOL_HOME/run.sh" preflight --cwd "$PWD"
+"$TOOL_HOME/run.sh" recycle --cwd "$PWD" -y --task "next: wire recycle hotkey"
+
+# direct CLI (humans / debugging)
+scripts/runtime/worktree/worktree-task recycle -y
+scripts/runtime/worktree/worktree-task recycle --dry-run
+```
+
+Project init after recycle: executable `.worktree-recycle/post-recycle.sh` in the worktree, else `WT_RECYCLE_POST_HOOK`, else a builtin recipe (wezdeck skips `sync-runtime`; generic only *suggests* bootstrap commands).
+
+Behavior:
+
+- Refuses primary worktree and non-`dev-*` slugs (use `reclaim` for `task-*` / `hotfix-*`).
+- Refuses dirty trees except allowlisted debug leftovers (`WT_RECYCLE_CLEAN_GLOBS`, default `.delegate` / `.scratch` / `*.orig` / `*.rej` / `.task-brief.md`) and `--force`.
+- Optionally prunes local branches that match `WT_RECYCLE_TEMP_BRANCH_PREFIXES` (default `backup/,tmp/,wip/,scratch/`), are ancestors of `origin/HEAD`, and are not checked out elsewhere.
+- `git reset --hard` to `origin/HEAD` while keeping the branch name; clears upstream so the branch does not track the default branch (`--no-track` semantics).
+- `--task` / `--title` writes `WT_RECYCLE_BRIEF_FILE` (default `.task-brief.md`) for the next round; does **not** inject an agent prompt.
+- Does not delete Claude transcripts; `--fresh-agent` only reminds you to `/clear`. Does not run `sync-runtime`.
 
 ### Reclaim safety
 

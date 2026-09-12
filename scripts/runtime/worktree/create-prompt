@@ -74,7 +74,7 @@ case "$type_kind" in
   dev)
     prompt_label="dev"
     purpose="long-lived parallel workstation"
-    reclaim_rule="reclaim: protected by default; Ctrl+k g r needs clean + delivered + long-lived confirmation"
+    reclaim_rule="round reset: worktree-task recycle (in-place); reclaim: Ctrl+k g r needs clean + delivered + long-lived confirmation"
     ;;
   task)
     prompt_label="task"

@@ -13,6 +13,11 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/setup.md`](docs/setup.md).
 - Sync, reload, verification, or day-to-day maintenance:
   Read [`docs/daily-workflow.md`](docs/daily-workflow.md).
+- Resetting a long-lived `dev-*` workstation / 「重置开发分支」 / recycle onto
+  `origin/HEAD` / closing a round then starting the next task:
+  Load platform skill [`scripts/dev/worktree-recycle/SKILL.md`](scripts/dev/worktree-recycle/SKILL.md)
+  (linked as `worktree-recycle`); do **not** hand-roll `git reset` or ask the
+  human to run CLI. Docs: [`docs/workspaces.md`](docs/workspaces.md#recycle-long-lived-dev--round-reset).
 - Workspace definitions or workspace behavior:
   Read [`docs/workspaces.md`](docs/workspaces.md).
 - Keybindings:

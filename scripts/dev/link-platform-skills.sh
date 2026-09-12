@@ -11,6 +11,7 @@
 #   brainstorm          -> scripts/dev/brainstorm/
 #   yuns-engineer      -> scripts/dev/yuns-engineer/
 #   cross-repo-delegate -> scripts/dev/cross-repo-delegate/
+#   worktree-recycle    -> scripts/dev/worktree-recycle/
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
@@ -44,6 +45,7 @@ skills=(
   "brainstorm|scripts/dev/brainstorm"
   "yuns-engineer|scripts/dev/yuns-engineer"
   "cross-repo-delegate|scripts/dev/cross-repo-delegate"
+  "worktree-recycle|scripts/dev/worktree-recycle"
 )
 
 link_one() {

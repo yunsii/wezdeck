@@ -21,6 +21,8 @@ source "$SCRIPT_DIR/lib/helpers.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/git.sh"
 # shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/delivery.sh"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/config.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/manifest.sh"
@@ -41,6 +43,9 @@ case "$command" in
     ;;
   reclaim)
     wt_core_reclaim "$@"
+    ;;
+  recycle)
+    wt_core_recycle "$@"
     ;;
   -h|--help|help|'')
     wt_core_usage
