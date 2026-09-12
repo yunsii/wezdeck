@@ -13,6 +13,15 @@ return {
     -- Use a Windows path in hybrid-wsl and a local path in posix-local.
     user_data_dir = '/path/to/chrome-profile',
   },
+  -- OS foreground sampling only (never mutes WezDeck-internal collection).
+  --   device_profile = 'personal' → allowlist WezTerm + VS Code + Chrome
+  --   device_profile = 'work'     → every foreground process-name change
+  --   foreground_sampling = 'off' → disable OS foreground logs only
+  -- workflow = {
+  --   device_profile = 'personal',
+  --   -- foreground_sampling = 'allowlist',  -- or 'all' / 'off'
+  --   -- foreground_allowlist = { 'wezterm-gui', 'Code', 'chrome' },
+  -- },
   diagnostics = {
     wezterm = {
       enabled = true,

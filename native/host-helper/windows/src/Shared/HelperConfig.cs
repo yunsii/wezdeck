@@ -20,6 +20,7 @@ internal sealed class HelperConfig
     public int ClipboardCleanupMaxAgeHours { get; init; }
     public int ClipboardCleanupMaxFiles { get; init; }
     public int HeartbeatIntervalMs { get; init; }
+    public ForegroundSamplingConfig? ForegroundSampling { get; init; }
 
     public static HelperConfig Load(string path)
     {
@@ -54,6 +55,7 @@ internal sealed class HelperConfig
             ClipboardCleanupMaxAgeHours = parsed.ClipboardCleanupMaxAgeHours,
             ClipboardCleanupMaxFiles = parsed.ClipboardCleanupMaxFiles,
             HeartbeatIntervalMs = parsed.HeartbeatIntervalMs,
+            ForegroundSampling = parsed.ForegroundSampling,
         };
     }
 
@@ -118,4 +120,11 @@ internal sealed class DiagnosticConfig
     public string? FilePath { get; init; }
     public int MaxBytes { get; init; }
     public int MaxFiles { get; init; }
+}
+
+internal sealed class ForegroundSamplingConfig
+{
+    /// <summary>off | allowlist | all. Default allowlist when unset.</summary>
+    public string? Mode { get; init; }
+    public List<string>? Allowlist { get; init; }
 }

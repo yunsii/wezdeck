@@ -204,6 +204,11 @@ ensure_windows_helper_running() {
   state_path_win="${target_home_win}\\AppData\\Local\\wezterm-runtime\\state\\helper\\state.env"
   diagnostics_file_win="${target_home_win}\\AppData\\Local\\wezterm-runtime\\logs\\helper.log"
 
+  # Do NOT pass -ForegroundSamplingMode here: sync must not clobber a
+  # work-machine `all` (or explicit `off`) already in manager-config.json.
+  # Mode comes from WezTerm Lua build_helper_command (constants.workflow) on
+  # GUI ensure, or inherits the previous manager-config on sync ensure.
+  # 'off' mutes OS foreground rows only — never WezDeck-internal logs.
   sync_trace "step=helper-ensure status=starting target_runtime_dir=$target_runtime_dir ensure_script_win=$ensure_script_win"
   if ! ensure_output="$(
     windows_run_powershell_script_utf8 "$ensure_script_win" \

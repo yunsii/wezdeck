@@ -10,6 +10,7 @@ internal sealed class HostHelperManager : IDisposable
     private readonly ClipboardService? clipboardService;
     private readonly System.Threading.Timer heartbeatTimer;
     private readonly RequestRouter requestRouter;
+    private readonly ForegroundChangeTracker foregroundChangeTracker;
     private string lastError = string.Empty;
     private int heartbeatTickActive;
     private bool disposed;
@@ -29,6 +30,7 @@ internal sealed class HostHelperManager : IDisposable
             new VscodeRequestHandler(logger, windowReuseService),
             new ChromeRequestHandler(logger, windowReuseService),
             new ImeRequestHandler(logger));
+        foregroundChangeTracker = new ForegroundChangeTracker(logger, config.ForegroundSampling);
 
         heartbeatTimer = new System.Threading.Timer(_ => RunHeartbeatTick(), null, Timeout.Infinite, Timeout.Infinite);
     }
@@ -140,6 +142,18 @@ internal sealed class HostHelperManager : IDisposable
         try
         {
             currentImeSample = ImeStateSampler.Sample();
+            try
+            {
+                foregroundChangeTracker.Sample();
+            }
+            catch (Exception fgEx)
+            {
+                logger.Warn("foreground", "foreground sample failed", new Dictionary<string, string?>
+                {
+                    ["error"] = fgEx.Message,
+                });
+            }
+
             WriteHelperState("1", lastError);
         }
         catch (Exception ex)

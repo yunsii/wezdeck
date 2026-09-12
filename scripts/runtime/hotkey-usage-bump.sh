@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# Usage: hotkey-usage-bump.sh <hotkey_id>
+# Usage: hotkey-usage-bump.sh <hotkey_id> [--chord]
 #
 # Increment the aggregate counter for <hotkey_id> in the shared JSON counter
 # file. Atomic: flock on a sibling .lock plus jq read-modify-write with
 # tmpfile + rename. Best-effort — silently no-op when jq/flock are missing
 # or input is malformed, so a bump failure never disrupts a keypress path.
+#
+# With `--chord` (tmux chord leaves only — WezTerm wraps already emit
+# category=hotkey in wezterm.log), also append one runtime.log line:
+#   category=hotkey message="chord pressed" hotkey_id=...
 #
 # File layout (versioned via `schema_version`):
 #   {
@@ -23,11 +27,25 @@ set -u
 
 hotkey_id="${1:-}"
 [[ -n "$hotkey_id" ]] || exit 0
+chord_event=0
+if [[ "${2:-}" == "--chord" ]]; then
+  chord_event=1
+fi
+
+lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if (( chord_event )); then
+  # Best-effort workflow breadcrumb for tmux-chord leaves (no WezTerm wrap).
+  # shellcheck disable=SC1091
+  . "$lib_dir/runtime-log-lib.sh" 2>/dev/null || true
+  if declare -F runtime_log_info >/dev/null 2>&1; then
+    runtime_log_info hotkey "chord pressed" "hotkey_id=$hotkey_id" "via=tmux-chord" || true
+  fi
+fi
 
 command -v jq >/dev/null 2>&1 || exit 0
 command -v flock >/dev/null 2>&1 || exit 0
 
-lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 . "$lib_dir/hotkey-usage-lib.sh"
 

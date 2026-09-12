@@ -80,7 +80,9 @@ chord_hint_clear() {
 
 usage_bump() {
   local id="$1"
-  printf 'run-shell -b "bash %s/scripts/runtime/hotkey-usage-bump.sh %s"' \
+  # --chord: also emit runtime.log category=hotkey (WezTerm wraps already
+  # log pressed/dispatched in wezterm.log; chord leaves would be silent).
+  printf 'run-shell -b "bash %s/scripts/runtime/hotkey-usage-bump.sh %s --chord"' \
     "$RT" "$id"
 }
 

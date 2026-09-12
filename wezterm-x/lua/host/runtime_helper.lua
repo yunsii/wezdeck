@@ -49,6 +49,34 @@ function M.build_helper_command(runtime)
     and type(chrome_debug.executable) == 'string' and chrome_debug.executable ~= ''
     and type(chrome_debug.user_data_dir) == 'string' and chrome_debug.user_data_dir ~= ''
 
+  -- OS foreground sampling only (host helper → helper.log).
+  -- Does NOT gate WezDeck-internal logs (hotkey / worktree / attention / …).
+  -- workflow.device_profile: personal → allowlist, work → all
+  -- workflow.foreground_sampling: explicit 'allowlist' | 'all' | 'off'
+  local workflow = runtime.constants.workflow or {}
+  local fg_mode = workflow.foreground_sampling
+  if type(fg_mode) ~= 'string' or fg_mode == '' then
+    local profile = workflow.device_profile
+    if profile == 'work' then
+      fg_mode = 'all'
+    else
+      -- personal (default) and any unknown profile → allowlist
+      fg_mode = 'allowlist'
+    end
+  end
+  local fg_allowlist = ''
+  if type(workflow.foreground_allowlist) == 'table' then
+    local parts = {}
+    for _, name in ipairs(workflow.foreground_allowlist) do
+      if type(name) == 'string' and name ~= '' then
+        parts[#parts + 1] = name
+      end
+    end
+    fg_allowlist = table.concat(parts, ',')
+  elseif type(workflow.foreground_allowlist) == 'string' then
+    fg_allowlist = workflow.foreground_allowlist
+  end
+
   return {
     integration.powershell or 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
     '-NoProfile',
@@ -95,6 +123,10 @@ function M.build_helper_command(runtime)
     tostring(chrome_debug.remote_debugging_port or 9222),
     '-ChromeDebugUserDataDir',
     chrome_debug.user_data_dir or '',
+    '-ForegroundSamplingMode',
+    fg_mode,
+    '-ForegroundAllowlist',
+    fg_allowlist,
   }, nil
 end
 

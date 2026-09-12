@@ -500,8 +500,8 @@ synchronously from the live `workspaces.lua` table. Edits to
 `workspaces.lua` (after a sync that reloads the wezterm config)
 therefore surface in the picker on the next press without forcing a
 workspace cold reopen. Workspaces whose items declare raw
-`command = { ... }` with no launcher (e.g. the `mock-deck`
-dev/demo workspace) are filtered out by
+`command = { ... }` with no launcher (raw-command workspace items
+without a managed agent launcher) are filtered out by
 `_maybe_write_items_snapshot_impl`: nothing to manage means nothing
 worth picking, and any stale snapshot from a prior configuration is
 removed in the same step so the picker stays in lockstep. Hot `Alt+w`

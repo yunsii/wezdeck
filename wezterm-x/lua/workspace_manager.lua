@@ -223,13 +223,11 @@ function M.new(opts)
     local path = stats_dir .. path_sep .. slug .. '-items.json'
 
     -- Only managed-launcher workspaces belong in the Alt+x picker.
-    -- Demo / dev workspaces like `mock-deck` declare items with raw
-    -- `command = { ... }` and no launcher; surfacing them as overflow
-    -- rows is noise. Skip when nothing resolved to a launcher (per-item
-    -- launcher or workspace defaults.launcher, both flattened into
-    -- raw_items by runtime.workspace_items). If a previous configuration
-    -- left a snapshot behind, remove it so the picker stays in lockstep
-    -- with the current rule.
+    -- Items with raw `command = { ... }` and no launcher are noise there.
+    -- Skip when nothing resolved to a launcher (per-item launcher or
+    -- workspace defaults.launcher, both flattened into raw_items by
+    -- runtime.workspace_items). If a previous configuration left a
+    -- snapshot behind, remove it so the picker stays in lockstep.
     local any_launcher = false
     for _, item in ipairs(raw_items or {}) do
       if item.launcher then
@@ -512,8 +510,8 @@ function M.new(opts)
       --     dropped it, etc.).
       --   - present + not needed → kill (workspace items dropped below
       --     the cap, OR enabled_workspaces gate was just removed and the
-      --     workspace fits — config / mock-deck single-tab shouldn't
-      --     carry a permanent empty `…`).
+      --     workspace fits — single-tab workspaces shouldn't carry a
+      --     permanent empty `…`).
       -- find_overflow_tab is a single tabs_with_info walk; the
       -- needs_overflow check is O(1).
       if tab_visibility and tab_visibility.is_enabled(name) then

@@ -22,35 +22,52 @@ This repository is the source of truth for the WezDeck runtime. The GitHub repo 
 
 ## ✨ Highlights
 
-- **Tab × Worktree × Agent in one frame** — every WezTerm tab is one repo, every tmux window inside it is a linked git worktree, every pane can host an agent CLI (`claude` / `codex` / …).
-- **Live attention surface** — per-tab badges plus a single right-status counter `⟳ N running ⚠ N waiting ✓ N done`, driven by a Claude hook → `attention.json` pipeline.
-- **One keystroke to jump** — `Alt+/` opens a popup of every pending pane across every tab; `Alt+j` / `Alt+k` / `Alt+l` step through waiting / done / running.
-- **One keystroke to spawn a worktree** — `Ctrl+k g d/t/h` carves out a new linked worktree (with its own agent) without leaving the keyboard.
+- **Tab × Worktree × Agent in one frame** — every WezTerm tab is one repo, every tmux window inside it is a linked git worktree, every pane can host an agent CLI (`claude` / `codex` / `grok` / …).
+- **Primary pane auto-resume** — managed agent panes boot through `agent-launcher.sh` with `<base>-resume`; after WezTerm or machine restart, entering a worktree continues the last conversation (falls back to a fresh session when none exists).
+- **Live attention surface** — per-tab badges plus a right-status counter `⟳ N running ⚠ N waiting ✓ N done`, driven by agent hooks → `attention.json`.
+- **In-slot jump keys** — `Alt+j` / `Alt+k` / `Alt+l` step waiting / done / running; `Alt+/` and `Alt+x` are occasional overview / overflow pickers, not the main loop.
+- **One keystroke to spawn a worktree** — `Ctrl+k g d/t/h` carves out a linked worktree (with its own agent) when no suitable slot exists.
 - **Manifest-driven hotkeys** — `wezterm-x/commands/manifest.json` is the single source of truth; per-machine overrides live in `wezterm-x/local/keybindings.lua`.
 
-## 📺 Demo
+## 🎛️ Workbench · A day in the loop
 
-<p align="center">
-  <img src="assets/brand/banner.svg" alt="" width="0" height="0" style="display:none">
-  <img src="assets/demo/hero.png" alt="WezDeck flight deck — six mock projects with live tab badges and counter">
-</p>
+> Pick the right isolation slot (worktree), then continue inside it. Attention keys are in-slot navigation — not the primary way you find work.
 
-Six mock projects (cli-parser / image-resizer / log-daemon, two worktrees each), all driving the real attention pipeline. Right-status `⟳ 2 ⚠ 5 ✓ 1` aggregates across the workspace; tab badges flip per pane; the focused agent is paused on a permission prompt — the rest are still streaming or have completed. Reproduce: see [`assets/demo/README.md`](assets/demo/README.md).
+```text
+need arises
+  → Alt+w/c/s  enter workspace · Alt+1..9  pick repo tab
+  → Alt+g      select an existing worktree
+       └─ none fits → Ctrl+k g d|t|h  create, then enter
+  → primary pane auto-resumes the agent for that cwd
+  → in-slot: Alt+j waiting · Alt+k done · Alt+l running
+       · verify with Alt+v (VS Code) / Alt+b (headless Chrome)
+       · occasionally Alt+/ overview or Alt+x overflow
+  → deliver onto origin/HEAD → recycle (dev-*) / reclaim (task|hotfix)
+```
+
+| Stage | Capability | Deep dive |
+|---|---|---|
+| Land on the slot | Workspace + tab + **`Alt+g` worktree picker**; create when missing | [Workspaces](docs/workspaces.md) |
+| Continue after restart | **`<base>-resume`** via `agent-launcher.sh` + access-ledger focus restore | [Architecture · startup](docs/architecture.md#startup-invariants) |
+| In-slot loop | Attention badges / counter + **`Alt+j/k/l`** | [Agent attention](docs/agent-attention.md) |
+| Verify | Host helper: **`Alt+v`** / **`Alt+b`** (MCP shares the CDP instance) | [Browser debug](docs/browser-debug.md) |
+| Close the round | Mainline delivery (no PR) → **`worktree-recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
+
+Longer narrative (features + evolution): [`docs/presentations/`](docs/presentations/). Day-loop forensics from live logs: [`scripts/dev/workflow-timeline.sh`](scripts/dev/workflow-timeline.sh) · [Diagnostics · Workflow timeline](docs/diagnostics.md#workflow-timeline).
 
 ## 🧭 How It Works
 
 ```
 WezTerm tab          ─┐
-  └─ tmux window     ─┤  one repo  ·  one worktree  ·  one agent
+  └─ tmux window     ─┤  one repo  ·  one worktree  ·  one agent (resume)
        └─ tmux pane  ─┘
                        ↑
-       Claude hook → attention.json → tab badges + right-status counter
+       agent hooks → attention.json → tab badges + right-status counter
                                        ↑
-                                  Alt+/  jumps to next pending pane
+                                  Alt+j/k/l  in-slot jumps
 ```
 
-Full architecture, ownership boundaries, and the WSL ⇄ Windows communication channels: [`docs/architecture.md`](docs/architecture.md). For the session-management + interop map (workspace/tab/tmux/worktree/agent/attention ↔ session-bridge ↔ Feishu), see [Session & Interop Overview](docs/architecture.md#session--interop-overview).
-
+Full architecture, ownership boundaries, and the WSL ⇄ Windows channels: [`docs/architecture.md`](docs/architecture.md). Session + interop map (workspace/tab/tmux/worktree/agent/attention ↔ session-bridge ↔ Feishu): [Session & Interop Overview](docs/architecture.md#session--interop-overview).
 ## ✅ Requirements
 
 | | Required | Notes |
@@ -84,13 +101,13 @@ Full setup walkthrough: [`docs/setup.md`](docs/setup.md).
 ## 📚 Documentation
 
 **Get started**
-- [Setup](docs/setup.md) · [Daily workflow](docs/daily-workflow.md) · [Workspaces](docs/workspaces.md)
+- [Setup](docs/setup.md) · [Daily workflow](docs/daily-workflow.md) · [Workspaces](docs/workspaces.md) · [Presentations](docs/presentations/)
 
 **Daily use**
 - [Keybindings](docs/keybindings.md) · [tmux UI](docs/tmux-ui.md) · [Agent attention](docs/agent-attention.md) · [Browser debug](docs/browser-debug.md)
 
 **Internals**
-- [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [Diagnostics](docs/diagnostics.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md)
+- [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [Diagnostics](docs/diagnostics.md) (incl. [workflow timeline](docs/diagnostics.md#workflow-timeline)) · [IME & sync output](docs/ime-flicker-and-sync-output.md)
 
 **Releases**
 - [Host helper](docs/host-helper-release.md) · [Picker](docs/picker-release.md)

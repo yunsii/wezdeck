@@ -171,6 +171,68 @@ Aggregate press counts — no event log — for every WezTerm keymap entry and t
 
   tmux chord bumps do **not** emit these lines (the shell bump path has no pane context); only WezTerm keymap wraps do.
 
+## Workflow timeline
+
+Derived **day loop** projection over WezDeck / helper / OpenClaw logs — for
+reconstructing how you moved through workspaces / worktrees / attention /
+host verify / OS foreground / recycle / interop.
+
+- Entry: [`scripts/dev/workflow-timeline.sh`](../scripts/dev/workflow-timeline.sh)
+  (Python projector: `scripts/dev/workflow-timeline.py`).
+- Sources (resolved via runtime path libs):
+  - `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` — `workspace.enter`,
+    mapped hotkey `dispatched` (j/k/l, overlay, overflow, tab, worktree create
+    hotkeys, vscode/chrome), Alt+v forward.
+  - `~/.local/state/wezterm-runtime/logs/runtime.log` — worktree
+    select/create/switch, `session.focus_restore`, `agent.resume_boot` /
+    `agent.resume_fallback_fresh`, tmux-chord `hotkey` presses, attention
+    **status edges** (`running`/`waiting`/`done` only; `resolved` skipped),
+    recycle/reclaim, vscode IPC, human-run propose.
+  - `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` — `host.foreground`
+    (`category=foreground message="foreground changed"`; process names only).
+  - `~/.openclaw/logs/session-bridge-audit.jsonl` when present — `interop.*`
+    (**`preview` stripped**; `text_hash` kept).
+- Optional write: `--write` →
+  `~/.local/state/wezterm-runtime/state/workflow/day-YYYY-MM-DD.jsonl`
+  (`WSL_WORKFLOW_DIR`; recomputable, safe to delete).
+- Examples:
+
+```bash
+scripts/dev/workflow-timeline.sh                  # today, table (no status edges)
+scripts/dev/workflow-timeline.sh --summary
+scripts/dev/workflow-timeline.sh --include-transitions   # add running/waiting/done edges
+scripts/dev/workflow-timeline.sh --kind host.foreground
+scripts/dev/workflow-timeline.sh --write --paths
+```
+
+- Default output omits `attention.transition` (pass `--include-transitions`
+  for status forensics).
+- Privacy: no agent chat / `last_user_prompt`; no audit preview; no window titles.
+
+### Foreground sampling (device profile)
+
+Host helper samples the OS foreground process name on each heartbeat and logs
+**only on process-name change**. This gate applies **only** to OS foreground
+rows in `helper.log` — WezDeck-internal collection (hotkeys, worktree,
+attention, resume, vscode/chrome opens, …) stays on regardless.
+
+Configure in machine-local `wezterm-x/local/constants.lua` (template:
+[`wezterm-x/local.example/constants.lua`](../wezterm-x/local.example/constants.lua)):
+
+```lua
+workflow = {
+  -- personal (default): allowlist WezTerm + VS Code + Chrome
+  -- work: every foreground process-name change
+  device_profile = 'personal',
+  -- foreground_sampling = 'off',  -- mute OS foreground logs only
+  -- foreground_allowlist = { 'wezterm-gui', 'Code', 'chrome' },
+}
+```
+
+Written into `manager-config.json` as `foregroundSampling.{mode,allowlist}` when
+the helper is ensured. Reload WezTerm (or re-run ensure) after changing local
+constants so the helper picks up a new `configHash`.
+
 ## Smoke Tests
 
 - For a repeatable live smoke test of the Windows runtime host, run [`scripts/dev/check-windows-runtime-host.sh`](../scripts/dev/check-windows-runtime-host.sh) from WSL.

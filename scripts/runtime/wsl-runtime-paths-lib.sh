@@ -51,4 +51,7 @@ WSL_AGENT_RUN_DIR="$WSL_RUNTIME_STATE_DIR/agent-run"
 WSL_AGENT_RUN_HEAD_FILE="$WSL_AGENT_RUN_DIR/HEAD.json"
 WSL_AGENT_RUN_ENTRIES_DIR="$WSL_AGENT_RUN_DIR/entries"
 WSL_AGENT_RUN_AUDIT_FILE="$WSL_RUNTIME_LOGS_DIR/agent-run.jsonl"
+# Derived day timeline for workflow forensics (recomputable; see
+# scripts/dev/workflow-timeline.sh). Not a writer hot path.
+WSL_WORKFLOW_DIR="$WSL_RUNTIME_STATE_DIR/workflow"
 WSL_WINDOWS_PATHS_CACHE_FILE="$WSL_RUNTIME_CACHE_ROOT/windows-paths.env"

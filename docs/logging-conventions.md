@@ -55,7 +55,7 @@ Add a new category only when an existing one would dilute its meaning. Currently
 
 - **bash** (`scripts/runtime/`): `attention`, `agent_cleanup`, `agent_run`, `clipboard`, `command_panel`, `managed_command`, `overflow`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
 - **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `latency`, `tab_visibility`, `vscode`, `workspace`
-- **C# helper** (`helper-manager.exe`): owned in `native/host-helper/`, treat as read-only from the WSL/Lua side
+- **C# helper** (`helper-manager.exe`): owned in `native/host-helper/` — `vscode`, `chrome`, `clipboard`, `host_helper`, `foreground` (OS foreground process-name edges; no window titles). Treat as read-only from the WSL/Lua side
 
 Rules:
 

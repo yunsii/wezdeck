@@ -87,8 +87,23 @@ print_loading_banner() {
 
 # shellcheck disable=SC1091
 . "$script_dir/agent-claude-sub2api-lib.sh"
+# shellcheck disable=SC1091
+. "$script_dir/runtime-log-lib.sh" 2>/dev/null || true
 
 print_loading_banner "$agent"
+
+# Workflow breadcrumb: every managed primary pane boots as resume-attempt;
+# the || branch logs resume_fallback_fresh when continue/resume finds nothing.
+log_resume_boot() {
+  local name="$1"
+  if declare -F runtime_log_info >/dev/null 2>&1; then
+    runtime_log_info primary_pane "agent resume boot" \
+      "agent=$name" "mode=resume_attempt" "cwd=$PWD" || true
+  fi
+}
+
+# Called from inside `sh -c` fallback — keep argv tiny and best-effort.
+fallback_log_script="$script_dir/agent-resume-fallback-log.sh"
 
 # Fallback re-paint: when `--continue` (or `resume --last`) finds no
 # session, the CLI prints "No conversation found to continue" to the
@@ -101,16 +116,22 @@ print_loading_banner "$agent"
 case "$agent" in
   claude)
     clear_anthropic_gateway_env
-    exec sh -c 'claude --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec claude; }'
+    log_resume_boot claude
+    exec sh -c 'claude --continue || { bash "$1" claude; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec claude; }' \
+      sh "$fallback_log_script"
     ;;
   claude-sub2api)
     load_claude_sub2api_env
     # Env is inherited by the inner sh -c / claude process. Banner label
     # keeps the identity visible during the multi-second resume window.
-    exec sh -c 'claude --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading claude-sub2api ...\033[0m\n"; exec claude; }'
+    log_resume_boot claude-sub2api
+    exec sh -c 'claude --continue || { bash "$1" claude-sub2api; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude-sub2api ...\033[0m\n"; exec claude; }' \
+      sh "$fallback_log_script"
     ;;
   codex)
-    exec sh -c 'codex resume --last || { printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }'
+    log_resume_boot codex
+    exec sh -c 'codex resume --last || { bash "$1" codex; printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }' \
+      sh "$fallback_log_script"
     ;;
   grok)
     # Grok Build: `--continue` resumes the most recent session for cwd
@@ -129,8 +150,9 @@ case "$agent" in
         "$script_dir/grok-with-focus-filter.sh" >&2
       exit 127
     fi
-    exec sh -c '"$0" --continue || { printf "\033[2J\033[H\n\n  \033[2;36mLoading grok ...\033[0m\n"; exec "$0"; }' \
-      "$grok_bin"
+    log_resume_boot grok
+    exec sh -c '"$0" --continue || { bash "$1" grok; printf "\033[2J\033[H\n\n  \033[2;36mLoading grok ...\033[0m\n"; exec "$0"; }' \
+      "$grok_bin" "$fallback_log_script"
     ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2

@@ -31,7 +31,7 @@ cwd="$(tmux_worktree_abs_path "$cwd")"
 # Pulled out before `[command...]` so the rest of the parser keeps treating
 # whatever's left as the launcher command verbatim. Set by the Lua side
 # (`workspace/runtime.lua:project_session_args`) when the workspace item
-# resolves to a managed agent launcher; absent for mock-deck items and for
+# resolves to a managed agent launcher; absent for raw-command items and for
 # direct callers (tests) that pass a custom command.
 agent_profile=""
 while [[ $# -gt 0 ]]; do

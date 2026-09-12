@@ -26,7 +26,7 @@ describe('is_enabled is the default for every workspace', function()
     tab_visibility.configure { wezterm = mock, config = {} }
     assert_truthy(tab_visibility.is_enabled('work'))
     assert_truthy(tab_visibility.is_enabled('config'))
-    assert_truthy(tab_visibility.is_enabled('mock-deck'))
+    assert_truthy(tab_visibility.is_enabled('opensource'))
     assert_truthy(tab_visibility.is_enabled('any-future-workspace'))
   end)
 

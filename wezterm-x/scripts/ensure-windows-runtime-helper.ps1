@@ -35,7 +35,15 @@ param(
 
   [int]$ChromeDebugRemoteDebuggingPort = 9222,
 
-  [string]$ChromeDebugUserDataDir = ''
+  [string]$ChromeDebugUserDataDir = '',
+
+  # Workflow foreground sampling (host helper → helper.log category=foreground).
+  # Mode: allowlist (personal default) | all (work device) | off
+  [string]$ForegroundSamplingMode = 'allowlist',
+
+  # Comma-separated Process.ProcessName values (no .exe). Empty → built-in
+  # WezTerm + VS Code + Chrome defaults inside the helper.
+  [string]$ForegroundAllowlist = ''
 )
 
 Set-StrictMode -Version 3.0
@@ -177,38 +185,59 @@ function Stop-StaleProcesses {
 function Write-ManagerConfig {
   param(
     [string]$RuntimeDir,
-    [hashtable]$ManagerPaths
+    [hashtable]$ManagerPaths,
+    [bool]$ChromeArgsBound = $false,
+    [bool]$FgArgsBound = $false
   )
 
-  # Inherit chrome-debug config from the previously-written manager-config.json
-  # when none of the ChromeDebug* parameters were explicitly bound. Two callers
-  # exercise this script today and only one of them (wezterm Lua, via
-  # build_helper_command) passes chrome args; the sync-runtime path
-  # (sync-helper-windows-lib.sh::ensure_windows_helper_running) does not, and
-  # without inheritance a sync-driven helper restart would silently flip
-  # chromeDebugAutoStart.enabled to false and leave the CDP badge stuck at "-"
-  # until wezterm reloaded.
-  $chromeArgsBound = $PSBoundParameters.ContainsKey('ChromeDebugAutoStartEnabled') `
-    -or $PSBoundParameters.ContainsKey('ChromeDebugChromePath') `
-    -or $PSBoundParameters.ContainsKey('ChromeDebugUserDataDir') `
-    -or $PSBoundParameters.ContainsKey('ChromeDebugRemoteDebuggingPort')
+  # Inherit chrome-debug / foregroundSampling from the previously-written
+  # manager-config.json when the matching script-level params were not bound.
+  # Bound flags MUST be computed at script scope ($PSBoundParameters there) and
+  # passed in — inside this function $PSBoundParameters only sees RuntimeDir /
+  # ManagerPaths / these two bools.
+  # Sync-runtime often omits chrome args; without inheritance a sync-driven
+  # helper restart would flip chromeDebugAutoStart.enabled to false.
   $chromeAutoStartEnabled = ($ChromeDebugAutoStartEnabled -eq '1')
   $chromeChromePath = $ChromeDebugChromePath
   $chromeRemotePort = $ChromeDebugRemoteDebuggingPort
   $chromeUserDataDir = $ChromeDebugUserDataDir
-  if (-not $chromeArgsBound -and (Test-Path -LiteralPath $ManagerPaths.Config)) {
-    try {
-      $previous = Get-Content -LiteralPath $ManagerPaths.Config -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-      if ($previous -and $previous.chromeDebugAutoStart) {
-        $chromeAutoStartEnabled = [bool]$previous.chromeDebugAutoStart.enabled
-        $chromeChromePath = [string]$previous.chromeDebugAutoStart.chromePath
-        $chromeRemotePort = [int]$previous.chromeDebugAutoStart.remoteDebuggingPort
-        $chromeUserDataDir = [string]$previous.chromeDebugAutoStart.userDataDir
+  $fgMode = $ForegroundSamplingMode
+  $fgAllowlistRaw = $ForegroundAllowlist
+  if (-not $ChromeArgsBound -or -not $FgArgsBound) {
+    if (Test-Path -LiteralPath $ManagerPaths.Config) {
+      try {
+        $previous = Get-Content -LiteralPath $ManagerPaths.Config -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        if (-not $ChromeArgsBound -and $previous -and $previous.chromeDebugAutoStart) {
+          $chromeAutoStartEnabled = [bool]$previous.chromeDebugAutoStart.enabled
+          $chromeChromePath = [string]$previous.chromeDebugAutoStart.chromePath
+          $chromeRemotePort = [int]$previous.chromeDebugAutoStart.remoteDebuggingPort
+          $chromeUserDataDir = [string]$previous.chromeDebugAutoStart.userDataDir
+        }
+        if (-not $FgArgsBound -and $previous -and $previous.foregroundSampling) {
+          if ($previous.foregroundSampling.mode) {
+            $fgMode = [string]$previous.foregroundSampling.mode
+          }
+          if ($previous.foregroundSampling.allowlist) {
+            $fgAllowlistRaw = (@($previous.foregroundSampling.allowlist) -join ',')
+          }
+        }
+      } catch {
+        # Fall back to the unbound defaults; this matches the prior behavior
+        # for the very first ensure when no manager-config.json exists yet.
       }
-    } catch {
-      # Fall back to the unbound defaults; this matches the prior behavior
-      # for the very first ensure when no manager-config.json exists yet.
     }
+  }
+
+  $fgAllowlist = @()
+  if (-not [string]::IsNullOrWhiteSpace($fgAllowlistRaw)) {
+    $fgAllowlist = @(
+      $fgAllowlistRaw.Split(',') |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+  }
+  if ([string]::IsNullOrWhiteSpace($fgMode)) {
+    $fgMode = 'allowlist'
   }
 
   $config = [ordered]@{
@@ -230,6 +259,10 @@ function Write-ManagerConfig {
     clipboardCleanupMaxAgeHours = $ClipboardCleanupMaxAgeHours
     clipboardCleanupMaxFiles = $ClipboardCleanupMaxFiles
     heartbeatIntervalMs = $HeartbeatIntervalMs
+    foregroundSampling = [ordered]@{
+      mode = $fgMode
+      allowlist = @($fgAllowlist)
+    }
     diagnostics = [ordered]@{
       enabled = ($DiagnosticsEnabled -eq '1')
       categoryEnabled = ($DiagnosticsCategoryEnabled -eq '1')
@@ -283,7 +316,17 @@ function Ensure-ManagerInstalled {
 try {
   $runtimeDir = Get-ExpectedRuntimeDir
   $managerPaths = Get-ManagerPaths
-  $configHash = Write-ManagerConfig -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
+  $chromeArgsBound = $PSBoundParameters.ContainsKey('ChromeDebugAutoStartEnabled') `
+    -or $PSBoundParameters.ContainsKey('ChromeDebugChromePath') `
+    -or $PSBoundParameters.ContainsKey('ChromeDebugUserDataDir') `
+    -or $PSBoundParameters.ContainsKey('ChromeDebugRemoteDebuggingPort')
+  $fgArgsBound = $PSBoundParameters.ContainsKey('ForegroundSamplingMode') `
+    -or $PSBoundParameters.ContainsKey('ForegroundAllowlist')
+  $configHash = Write-ManagerConfig `
+    -RuntimeDir $runtimeDir `
+    -ManagerPaths $managerPaths `
+    -ChromeArgsBound:$chromeArgsBound `
+    -FgArgsBound:$fgArgsBound
   $state = Read-HelperState
   if (Test-HelperStateFresh -State $state -ExpectedRuntimeDir $runtimeDir -ExpectedConfigHash $configHash) {
     exit 0
