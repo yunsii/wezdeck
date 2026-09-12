@@ -2,12 +2,12 @@
 name: human-run
 description: >
   Mandatory handoff when a human (not the agent) must run a script/command.
-  Agent loads this skill, runs ensure-env (check+init), proposes via propose.sh
-  with an explicit --cwd, and tells the human to preview/run with `x`. Never
-  paste multi-line scripts into chat. Agent self-exec is out of scope. Use when:
-  you would otherwise ask the user to paste/run a script, the command needs
-  interactive TTY / host secrets / out-of-sandbox privileges, or the user must
-  visually confirm before exec.
+  Agent loads this skill, ensure-env, propose.sh --cwd (default --wait until x
+  finishes), then the agent continues follow-up itself. Handoff script bodies
+  must be non-blocking kickoffs (trigger/async ack) — never wait for CI/deploy
+  inside x. Never paste multi-line scripts into chat. Agent self-exec is out of
+  scope. Use when you would otherwise ask the user to paste/run a script, or
+  the command needs TTY / host secrets / out-of-sandbox privileges.
 ---
 
 # human-run (platform skill — single source)
@@ -65,36 +65,66 @@ TOOL_HOME="$(readlink -f "${HUMAN_RUN_HOME:-$HOME/.agents/skills/human-run}")"
 
 If ensure-env fails → **fail closed** (report the ensure-env stderr). Do **not** paste scripts into chat.
 
+## Script body contract (non-blocking kickoff)
+
+`x` only covers the **human-gated moment**. The script must finish quickly so
+`wd-run wait` returns and **you** resume ownership of the long tail.
+
+| Put in the `x` script | Keep out of the `x` script (agent after wait) |
+| --- | --- |
+| Trigger / fire-and-forget (start deploy, enqueue job, open privileged CLI that submits then exits) | Poll CI / pipeline / rollout until green |
+| Print a clear “triggered” ack + any id/url the agent will need | `sleep` loops, `gh run watch`, `kubectl rollout status` waits |
+| Fail fast if trigger rejected | Multi-stage verification the agent can do with tools |
+
+**Rule:** prefer async trigger + exit 0 once accepted. If a tool has sync vs async
+modes, choose async for the handoff body. After `propose.sh --wait` returns,
+the agent polls / verifies / retries with its own tools.
+
+Anti-patterns (do **not** ship in handoff body):
+
+```bash
+# BAD — blocks the human and the agent's wait on CI
+gh run watch "$id" --exit-status
+while ! curl -fsS "$health"; do sleep 5; done
+```
+
+```bash
+# GOOD — trigger only; agent continues after wait
+gh workflow run deploy.yml -f ref=…
+echo "triggered workflow=deploy.yml"   # agent scrapes / lists runs next
+```
+
 ## Agent procedure
 
 1. **Decide** this is human-only (if you can self-run → do that; skip this skill).
-2. **Ensure env:** `"$TOOL_HOME/ensure-env.sh"` (required).
-3. **Choose cwd** — existing directory; never omit `--cwd`.
-4. **Tell the human first** (one line): 请在本机终端运行 `x` 预览并确认。Do not paste the script body.
-5. **Propose + wait** — same shape as a normal blocking/background shell task.
-   `propose.sh` **defaults to `--wait`** (blocks until `x` finishes). Prefer host
-   background execution when the wait may be long; on completion, continue the
-   turn with the wait exit code (script exit code). **No** attention / status
-   badge required.
+2. **Split the work:** handoff body = non-blocking kickoff; post-wait = agent-owned follow-up.
+3. **Ensure env:** `"$TOOL_HOME/ensure-env.sh"` (required).
+4. **Choose cwd** — existing directory; never omit `--cwd`.
+5. **Tell the human first** (one line): 请在本机终端运行 `x` 预览并确认（脚本应很快结束）。Do not paste the script body.
+6. **Propose + wait** — same shape as a normal blocking/background shell task.
+   `propose.sh` **defaults to `--wait`** (blocks until `x` finishes — which should
+   be seconds, not CI duration). Prefer host background if needed. **No** attention badge.
 
    ```bash
    "$TOOL_HOME/propose.sh" \
      --cwd "/abs/workdir" \
      --actor "${AGENT_NAME:-agent}" \
      --summary "short title ≤80" \
-     --timeout 3600 \
+     --timeout 600 \
      --stdin <<'EOF'
-   # script body
+   # non-blocking kickoff only
    EOF
    ```
 
-   Or split: `propose.sh --no-wait …` then `"$WD_RUN" wait --id <id> --timeout 3600`.
+   Default `--timeout` for wait should assume a **short** human action (minutes),
+   not a full pipeline. Or split: `propose.sh --no-wait …` then `wd-run wait --id …`.
 
-6. **Continue** when wait returns — inspect exit code, proceed with the task.
-   Do not ask the human to paste output unless something failed and you need it.
+7. **Continue after wait** — with tools, handle CI/status/verification yourself.
+   Do not ask the human to sit in `x` until the pipeline ends.
 
 ## Don't
 
+- Don't put long waits / CI watches inside the handoff script body
 - Don't paste multi-line runnable scripts into chat
 - Don't skip `ensure-env.sh` / `propose.sh` and call a guessed `wd-run` path
 - Don't `propose` work you can run with tools

@@ -208,6 +208,7 @@ When a **human** (not the agent) must execute a script or multi-line command:
 - [reporting-52] Do **not** paste multi-line runnable scripts into chat for the human to copy. Illustrative code is allowed only when marked as read-only / 勿粘贴执行.
 - [reporting-53] Do **not** route agent self-exec through `human-run` / `wd-run`. If tools can run it, run it.
 - [reporting-54] If `ensure-env.sh` / the skill fails, report that failure and stop — do not fall back to broken TUI copy-paste as the execution channel.
+- [reporting-55] Handoff script bodies must be **non-blocking kickoffs** (trigger / async ack, exit quickly). Do **not** wait for CI, rollouts, or long polls inside `x`; after `wait` returns, the agent owns follow-up with tools.
 
 Skill source (single body): wezdeck `scripts/dev/human-run/SKILL.md`, linked by `scripts/dev/link-platform-skills.sh`. Runtime details: wezdeck `docs/agent-run.md`.
 

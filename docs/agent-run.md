@@ -34,7 +34,11 @@ confirms. Chat should at most show one line: `x`.
    Prefer host background execution for long waits. No attention badge.
 5. Or split: `propose.sh --no-wait` + `wd-run wait --id …`.
 
-Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reporting-54]`.
+**Handoff body = non-blocking kickoff.** Trigger/async ack only; exit quickly.
+Do not `gh run watch` / health-poll / rollout-wait inside `x`. After wait
+returns, the agent polls CI and handles the rest with tools.
+
+Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reporting-55]`.
 
 ## Human / CLI path
 
