@@ -24,7 +24,7 @@ This repository is the source of truth for the WezDeck runtime. The GitHub repo 
 
 - **Tab × Worktree × Agent in one frame** — every WezTerm tab is one repo, every tmux window inside it is a linked git worktree, every pane can host an agent CLI (`claude` / `codex` / `grok` / …).
 - **Primary pane auto-resume** — managed agent panes boot through `agent-launcher.sh` with `<base>-resume`; after WezTerm or machine restart, entering a worktree continues the last conversation (falls back to a fresh session when none exists).
-- **Live attention surface** — per-tab badges plus a right-status counter `⟳ N running ⚠ N waiting ✓ N done`, driven by agent hooks → `attention.json`.
+- **Live attention surface** — per-tab badges plus a right-status counter `▲ N waiting ✓ N done ● N running`, driven by agent hooks → `attention.json`.
 - **In-slot jump keys** — `Alt+j` / `Alt+k` / `Alt+l` step waiting / done / running; `Alt+/` and `Alt+x` are occasional overview / overflow pickers, not the main loop.
 - **One keystroke to spawn a worktree** — `Ctrl+k g d/t/h` carves out a linked worktree (with its own agent) when no suitable slot exists.
 - **Manifest-driven hotkeys** — `wezterm-x/commands/manifest.json` is the single source of truth; per-machine overrides live in `wezterm-x/local/keybindings.lua`.

@@ -1,12 +1,12 @@
 # Brand Assets
 
-Brand SVGs share a single visual language: dark deck plate with a diagonal `#2e3a4d → #080c14` gradient, three diagonal status colors `#22d3ee` (running) / `#f59e0b` (waiting) / `#34d399` (done), and lucide-aligned glyph proportions.
+Brand SVGs share a single visual language: dark deck plate with a diagonal `#2e3a4d → #080c14` gradient, three diagonal status colors from the Tailwind family used by the live right-status counter — `#38bdf8` sky-400 (running ●) / `#fbbf24` amber-400 (waiting ▲) / `#4ade80` green-400 (done ✓). Glyphs match `constants.attention.icons` (`●` / `▲` / `✓`), not the retired lucide refresh / warning / check set.
 
 | File | Size | Purpose |
 |---|---|---|
-| [`icon.svg`](icon.svg) | 512×512 | Primary app icon — full 3×3 deck grid with three lit slots showing `running` / `waiting` / `done` glyphs |
+| [`icon.svg`](icon.svg) | 512×512 | Primary app icon — full 3×3 deck grid with three lit slots showing `●` / `▲` / `✓` |
 | [`favicon.svg`](favicon.svg) | 32×32 | Simplified version of `icon.svg` — keeps only deck plate + three diagonal status dots |
-| [`banner.svg`](banner.svg) | 1280×320 | README banner — embeds the deck icon plus wordmark, tagline, and live status counter |
+| [`banner.svg`](banner.svg) | 1280×320 | README banner — embeds the deck icon plus wordmark, tagline, and `▲ N waiting · ✓ N done · ● N running` counter |
 
 ## Geometric construction
 

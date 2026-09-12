@@ -13,7 +13,7 @@
   <rect x="2.5" y="2.5" width="27" height="27" rx="5" fill="url(#edge)"/>
   <rect x="3.5" y="3.5" width="25" height="25" rx="4" fill="url(#deck)"/>
   <!-- diagonal lit slots: running / waiting / done (positions + radius match icon.svg slot geometry) -->
-  <circle cx="9.5" cy="9.5" r="2.25" fill="#22d3ee"/>
-  <circle cx="16" cy="16" r="2.25" fill="#f59e0b"/>
-  <circle cx="22.5" cy="22.5" r="2.25" fill="#34d399"/>
+  <circle cx="9.5" cy="9.5" r="2.25" fill="#38bdf8"/>
+  <circle cx="16" cy="16" r="2.25" fill="#fbbf24"/>
+  <circle cx="22.5" cy="22.5" r="2.25" fill="#4ade80"/>
 </svg>

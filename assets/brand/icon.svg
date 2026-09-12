@@ -41,32 +41,25 @@
     <circle cx="256" cy="360" r="3.5"/>
   </g>
 
-  <!-- running: top-left (col 0, row 0) -->
+  <!-- running ● : top-left (col 0, row 0) — sky family (matches runtime sky-*) -->
   <g>
-    <circle cx="152" cy="152" r="40" fill="#22d3ee" opacity="0.18" filter="url(#soft)"/>
-    <rect x="116" y="116" width="72" height="72" rx="14" fill="#22d3ee" opacity="0.14" stroke="#22d3ee" stroke-opacity="0.55" stroke-width="2"/>
-    <g transform="translate(152 152)" stroke="#22d3ee" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M 22 0 a 22 22 0 1 1 -22 -22 c 6.16 0 12.05 2.44 16.47 6.7 L 22 -9.78"/>
-      <path d="M 22 -22 v 12.22 h -12.22"/>
-    </g>
+    <circle cx="152" cy="152" r="40" fill="#38bdf8" opacity="0.18" filter="url(#soft)"/>
+    <rect x="116" y="116" width="72" height="72" rx="14" fill="#38bdf8" opacity="0.14" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="2"/>
+    <circle cx="152" cy="152" r="14" fill="#38bdf8"/>
   </g>
 
-  <!-- waiting: center (col 1, row 1) -->
+  <!-- waiting ▲ : center (col 1, row 1) — amber family -->
   <g>
-    <circle cx="256" cy="256" r="40" fill="#f59e0b" opacity="0.20" filter="url(#soft)"/>
-    <rect x="220" y="220" width="72" height="72" rx="14" fill="#f59e0b" opacity="0.14" stroke="#f59e0b" stroke-opacity="0.55" stroke-width="2"/>
-    <g transform="translate(256 256)" fill="none" stroke="#f59e0b" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round">
-      <path d="M 0 -21 L 23 17 L -23 17 Z"/>
-      <line x1="0" y1="-6" x2="0" y2="3"/>
-      <line x1="0" y1="10" x2="0.01" y2="10"/>
-    </g>
+    <circle cx="256" cy="256" r="40" fill="#fbbf24" opacity="0.20" filter="url(#soft)"/>
+    <rect x="220" y="220" width="72" height="72" rx="14" fill="#fbbf24" opacity="0.14" stroke="#fbbf24" stroke-opacity="0.55" stroke-width="2"/>
+    <path d="M 256 238 L 276 274 L 236 274 Z" fill="#fbbf24"/>
   </g>
 
-  <!-- done: bottom-right (col 2, row 2) -->
+  <!-- done ✓ : bottom-right (col 2, row 2) — green family -->
   <g>
-    <circle cx="360" cy="360" r="40" fill="#34d399" opacity="0.20" filter="url(#soft)"/>
-    <rect x="324" y="324" width="72" height="72" rx="14" fill="#34d399" opacity="0.14" stroke="#34d399" stroke-opacity="0.55" stroke-width="2"/>
-    <path d="M 335 362 L 353 380 L 385 345" fill="none" stroke="#34d399" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="360" cy="360" r="40" fill="#4ade80" opacity="0.20" filter="url(#soft)"/>
+    <rect x="324" y="324" width="72" height="72" rx="14" fill="#4ade80" opacity="0.14" stroke="#4ade80" stroke-opacity="0.55" stroke-width="2"/>
+    <path d="M 335 362 L 353 380 L 385 345" fill="none" stroke="#4ade80" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
 </svg>
