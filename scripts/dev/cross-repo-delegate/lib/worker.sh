@@ -262,10 +262,18 @@ delegate_worker_invoke() {
   esac
 }
 
+# Render phase-sliced ticket view into stdout (full ticket stays on disk).
+delegate_worker_phase_view() {
+  local ticket_id=$1 phase=$2
+  env DELEGATE_TICKETS_ROOT="$(delegate_tickets_root)" \
+    python3 "$(delegate_tool_root)/lib/ticket_fs.py" phase-view "$ticket_id" "$phase"
+}
+
+# Build prompt-${phase}.md. worktree_path may be empty for MOCK (no .delegate copy).
 delegate_worker_prepare_prompt() {
   local ticket_id=$1 worktree_path=$2 phase=$3
   # phase: research | implement
-  local root ticket_path prompt_path template local_result ticket_copy result_name
+  local root ticket_path prompt_path template local_result ticket_copy view_copy result_name view
   root="$(delegate_tickets_root)"
   ticket_path="$root/_data/${ticket_id}/ticket.md"
   prompt_path="$root/_data/${ticket_id}/prompt-${phase}.md"
@@ -277,22 +285,32 @@ delegate_worker_prepare_prompt() {
     result_name="worker-result.json"
   fi
 
-  mkdir -p "$worktree_path/.delegate"
-  ticket_copy="$worktree_path/.delegate/ticket.md"
-  local_result="$worktree_path/.delegate/${result_name}"
-  cp -f "$ticket_path" "$ticket_copy"
-  rm -f "$local_result" "$worktree_path/${result_name}"
+  view="$(delegate_worker_phase_view "$ticket_id" "$phase")" \
+    || delegate_die "failed to render phase view ($phase) for $ticket_id" 2
+  printf '%s' "$view" >"$root/_data/${ticket_id}/ticket-view-${phase}.md"
+
+  local_result=""
+  if [[ -n "$worktree_path" ]]; then
+    mkdir -p "$worktree_path/.delegate"
+    ticket_copy="$worktree_path/.delegate/ticket.md"
+    view_copy="$worktree_path/.delegate/ticket-view.md"
+    local_result="$worktree_path/.delegate/${result_name}"
+    cp -f "$ticket_path" "$ticket_copy"
+    printf '%s' "$view" >"$view_copy"
+    rm -f "$local_result" "$worktree_path/${result_name}"
+  fi
 
   {
     sed \
       -e "s|{{TICKET_PATH}}|.delegate/ticket.md|g" \
+      -e "s|{{TICKET_VIEW_PATH}}|.delegate/ticket-view.md|g" \
       -e "s|{{RESULT_PATH}}|.delegate/${result_name}|g" \
       -e "s|{{TICKET_ID}}|${ticket_id}|g" \
       "$template"
-    printf '\n\n## Ticket body (embedded — authoritative copy)\n\n```markdown\n'
-    cat "$ticket_path"
+    printf '\n\n## Ticket phase view (embedded — authoritative for this hop)\n\n```markdown\n'
+    printf '%s' "$view"
     printf '\n```\n'
-    printf '\nWrite the JSON result to `.delegate/%s` in this worktree. Do not require access outside the worktree.\n' "$result_name"
+    printf '\nFull ticket (omitted sections): `.delegate/ticket.md`. Write JSON to `.delegate/%s`.\n' "$result_name"
   } >"$prompt_path"
 
   printf '%s\n' "$prompt_path"
@@ -310,16 +328,7 @@ delegate_worker_research() {
 
   if [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" ]]; then
     delegate_log "worker MOCK research id=$ticket_id"
-    {
-      sed \
-        -e "s|{{TICKET_PATH}}|.delegate/ticket.md|g" \
-        -e "s|{{RESULT_PATH}}|.delegate/worker-result.json|g" \
-        -e "s|{{TICKET_ID}}|${ticket_id}|g" \
-        "$(delegate_tool_root)/prompts/research.md"
-      printf '\n\n## Ticket body (embedded)\n\n```markdown\n'
-      cat "$ticket_path"
-      printf '\n```\n'
-    } >"$root/_data/${ticket_id}/prompt-research.md"
+    delegate_worker_prepare_prompt "$ticket_id" "" research >/dev/null
     delegate_worker_write_mock_result "$result_path" "$ticket_path"
     delegate_worker_apply_result "$ticket_id"
     return 0
@@ -356,16 +365,7 @@ delegate_worker_implement() {
 
   if [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" ]]; then
     delegate_log "worker MOCK implement id=$ticket_id"
-    {
-      sed \
-        -e "s|{{TICKET_PATH}}|.delegate/ticket.md|g" \
-        -e "s|{{RESULT_PATH}}|.delegate/implement-result.json|g" \
-        -e "s|{{TICKET_ID}}|${ticket_id}|g" \
-        "$(delegate_tool_root)/prompts/implement.md"
-      printf '\n\n## Ticket body (embedded)\n\n```markdown\n'
-      cat "$ticket_path"
-      printf '\n```\n'
-    } >"$root/_data/${ticket_id}/prompt-implement.md"
+    delegate_worker_prepare_prompt "$ticket_id" "" implement >/dev/null
     delegate_worker_write_mock_implement_result "$result_path"
     delegate_worker_apply_implement_result "$ticket_id"
     return 0

@@ -6,7 +6,7 @@ You are an **implement** worker in the **target** repository worktree.
 
 1. Implement only what Verification + Decision already agreed.
 2. Prefer small, test-backed changes. Do not expand scope.
-3. Stay inside this worktree. Ticket body is embedded below (and at `{{TICKET_PATH}}`).
+3. Stay inside this worktree. A **phase view** (Summary + Assumptions + Verification + Decision) is embedded below and at `{{TICKET_VIEW_PATH}}` — authoritative for this hop. Full ticket: `{{TICKET_PATH}}` (read only if needed; skip Thread by default).
 4. Write results **only** to `{{RESULT_PATH}}` as JSON. Do not edit `ticket.md`.
 5. Do not force-push, do not touch unrelated repos.
 

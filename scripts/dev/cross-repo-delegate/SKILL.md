@@ -46,6 +46,12 @@ Concrete repo names live only in `~/.agent/tickets/config.yml` (and the user’s
 
 Policy: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing a ticket means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.
 
+**Prompt injection (token trim):** workers embed a **phase view**, not the full ticket.
+Omit only high-noise / phase-irrelevant sections — **never** the hop’s contract.
+Both phases keep Summary + Assumptions; `implement` also gets Verification + Decision
+(+ Implement if present). `Thread` / `events.jsonl` stay on disk under `_data/<id>/`
+(and `.delegate/ticket.md`) for on-demand Read only.
+
 Headless workers set `AGENT_ATTENTION_SKIP=1` and (Claude) `disableAllHooks` so they **must not** appear in the human attention badge / `Alt+/` list.
 
 ## Resolve TOOL_HOME (first hit wins)

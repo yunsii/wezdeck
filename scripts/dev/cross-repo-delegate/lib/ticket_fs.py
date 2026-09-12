@@ -261,19 +261,133 @@ def list_inbox(to_key: str) -> list[dict[str, Any]]:
     return out
 
 
+# Phase views for worker prompt injection (token trim). Full ticket stays on disk.
+#
+# Rule: omit only high-noise or phase-irrelevant sections — never the contract
+# the hop must honor. Thread grows with Q/A and is the main trim target;
+# events.jsonl is never embedded. Assumptions stay in *both* phases (small,
+# and implement still needs observed / assumed / snippet-ref).
+PHASE_VIEW_SECTIONS: dict[str, tuple[str, ...]] = {
+    # research: contract to verify; skip empty Decision / prior Implement / Thread
+    "research": ("Summary", "Assumptions"),
+    # implement: same contract + agreed verification/decision; optional Implement
+    "implement": ("Summary", "Assumptions", "Verification", "Decision", "Implement"),
+}
+
+
+def split_markdown_sections(body: str) -> list[tuple[str | None, str]]:
+    """Split body into (heading_title|None, section_text_including_heading).
+
+    Heading title is the text after ``## `` (ATX h2 only). Preamble before the
+    first h2 keeps title None.
+    """
+    lines = body.splitlines(keepends=True)
+    sections: list[tuple[str | None, str]] = []
+    cur_title: str | None = None
+    buf: list[str] = []
+    heading_re = re.compile(r"^##[ \t]+(.+?)\s*$")
+
+    def flush() -> None:
+        nonlocal buf, cur_title
+        if not buf and cur_title is None:
+            return
+        sections.append((cur_title, "".join(buf)))
+        buf = []
+
+    for line in lines:
+        m = heading_re.match(line.rstrip("\n"))
+        if m:
+            flush()
+            cur_title = m.group(1).strip()
+            buf = [line]
+        else:
+            buf.append(line)
+    flush()
+    return sections
+
+
+def extract_h2_section(body: str, title: str) -> str | None:
+    for heading, text in split_markdown_sections(body):
+        if heading == title:
+            return text.rstrip() + ("\n" if text else "")
+    return None
+
+
+def render_phase_view(meta: dict[str, Any], body: str, phase: str) -> str:
+    """Build the embedded ticket slice for a worker phase.
+
+    Omitted sections (Thread, unused phase blocks, events.jsonl) stay in the
+    canonical ``ticket.md`` for on-demand Read — they are not re-injected.
+    """
+    phase = (phase or "").strip().lower()
+    wanted = PHASE_VIEW_SECTIONS.get(phase)
+    if wanted is None:
+        raise ValueError(f"unknown phase for ticket view: {phase!r} (research|implement)")
+
+    tid = meta.get("id") or "?"
+    title = meta.get("title") or tid
+    summary = meta.get("summary") or title
+    header_lines = [
+        f"# {title}",
+        "",
+        f"- id: `{tid}`",
+        f"- from: {meta.get('from') or '?'}",
+        f"- to: {meta.get('to') or '?'}",
+        f"- status: {meta.get('status') or '?'}",
+        f"- phase: {meta.get('phase') or '?'}",
+        f"- summary: {summary}",
+        "",
+        f"_Phase view · `{phase}` — authoritative for this hop. "
+        f"Omitted sections live in `.delegate/ticket.md`; read only if needed._",
+        "",
+    ]
+
+    out = "\n".join(header_lines) + "\n"
+    missing: list[str] = []
+    for section_title in wanted:
+        block = extract_h2_section(body, section_title)
+        if block is None or not block.strip():
+            # Implement block is optional (first pass); others should exist.
+            if section_title == "Implement":
+                continue
+            missing.append(section_title)
+            continue
+        out += block.rstrip() + "\n\n"
+
+    if missing:
+        out += (
+            "_Missing expected sections in canonical ticket: "
+            + ", ".join(f"`{s}`" for s in missing)
+            + "._\n"
+        )
+    return out.rstrip() + "\n"
+
+
 def cmd_reindex(_: list[str]) -> int:
     counts = reindex()
     print(json.dumps({"ok": True, **counts}, ensure_ascii=False))
     return 0
 
 
+def cmd_phase_view(argv: list[str]) -> int:
+    if len(argv) < 2:
+        print("usage: ticket_fs.py phase-view <ticket-id> <research|implement>", file=sys.stderr)
+        return 1
+    tid, phase = argv[0], argv[1]
+    meta, body = read_ticket(tid)
+    sys.stdout.write(render_phase_view(meta, body, phase))
+    return 0
+
+
 def main(argv: list[str]) -> int:
     if not argv:
-        print("usage: ticket_fs.py reindex|…", file=sys.stderr)
+        print("usage: ticket_fs.py reindex|phase-view|…", file=sys.stderr)
         return 1
     cmd = argv[0]
     if cmd == "reindex":
         return cmd_reindex(argv[1:])
+    if cmd == "phase-view":
+        return cmd_phase_view(argv[1:])
     print(f"unknown: {cmd}", file=sys.stderr)
     return 1
 

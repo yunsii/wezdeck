@@ -136,6 +136,69 @@ check "selfcheck exits 0" "$run" selfcheck
 wt="$("$run" walkthrough 2>/dev/null)"
 check "walkthrough mentions claim" grep -q "claim" <<<"$wt"
 
+# --- phase view trim (omit noise, keep contract) ---
+TOOL_ROOT="$(cd "$(dirname "$run")" && pwd)"
+id_view="$("$run" create --to wezdeck --from avc --title "phase view" \
+  --observed "obs-token-trim" --assumed "assumed-token-trim" \
+  --summary "short summary only" 2>/dev/null | jq -r .id)"
+python3 - "$DELEGATE_TICKETS_ROOT" "$TOOL_ROOT" "$id_view" <<'PY' >"$tmp/research-view.md"
+import importlib.util, os, sys
+os.environ["DELEGATE_TICKETS_ROOT"] = sys.argv[1]
+spec = importlib.util.spec_from_file_location("ticket_fs", os.path.join(sys.argv[2], "lib", "ticket_fs.py"))
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+tid = sys.argv[3]
+meta, body = mod.read_ticket(tid)
+if "## Thread" in body:
+    body = body.replace(
+        "## Thread\n\n<!-- append Q/A here -->\n",
+        "## Thread\n\n- (noise) do-not-inject-this-thread-line\n\n",
+        1,
+    )
+else:
+    body += "\n## Thread\n\n- (noise) do-not-inject-this-thread-line\n"
+mod.write_ticket(tid, meta, body)
+print(mod.render_phase_view(meta, body, "research"), end="")
+PY
+if grep -q "assumed-token-trim" "$tmp/research-view.md" \
+  && grep -q "obs-token-trim" "$tmp/research-view.md" \
+  && grep -q "Assumptions" "$tmp/research-view.md" \
+  && ! grep -q "do-not-inject-this-thread-line" "$tmp/research-view.md" \
+  && ! grep -q "^## Thread" "$tmp/research-view.md" \
+  && ! grep -q "^## Decision" "$tmp/research-view.md"; then
+  ok "research phase view keeps Assumptions, drops Thread"
+else
+  bad "research phase view keeps Assumptions, drops Thread"
+  cat "$tmp/research-view.md" >&2
+fi
+
+"$run" challenge --id "$id_view" \
+  --measured "measured-for-implement" \
+  --impact "impact-x" \
+  --recommended "do-y" \
+  --needs "ok?" >/dev/null 2>&1
+"$run" reply --id "$id_view" --decision "decision-go-ahead" --status waiting_target >/dev/null 2>&1
+python3 - "$DELEGATE_TICKETS_ROOT" "$TOOL_ROOT" "$id_view" <<'PY' >"$tmp/implement-view.md"
+import importlib.util, os, sys
+os.environ["DELEGATE_TICKETS_ROOT"] = sys.argv[1]
+spec = importlib.util.spec_from_file_location("ticket_fs", os.path.join(sys.argv[2], "lib", "ticket_fs.py"))
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+meta, body = mod.read_ticket(sys.argv[3])
+print(mod.render_phase_view(meta, body, "implement"), end="")
+PY
+if grep -q "measured-for-implement" "$tmp/implement-view.md" \
+  && grep -q "decision-go-ahead" "$tmp/implement-view.md" \
+  && grep -q "assumed-token-trim" "$tmp/implement-view.md" \
+  && grep -q "obs-token-trim" "$tmp/implement-view.md" \
+  && grep -q "Verification" "$tmp/implement-view.md" \
+  && ! grep -q "do-not-inject-this-thread-line" "$tmp/implement-view.md"; then
+  ok "implement phase view keeps contract+Verification+Decision, drops Thread"
+else
+  bad "implement phase view keeps contract+Verification+Decision, drops Thread"
+  cat "$tmp/implement-view.md" >&2
+fi
+
 # --- create --run --mock (no LLM, no real worktree) ---
 # create --run --mock → research accept → auto implement → shipped
 run_out="$("$run" create \
@@ -149,6 +212,26 @@ if printf '%s\n' "$run_out" | jq -s -e 'map(select(.phase? == "implement_done" o
 else
   bad "create --run --mock auto-implements to shipped"
   printf '%s\n' "$run_out" >&2
+fi
+
+# prompts written by mock path must use phase views (no Thread)
+id_auto="$(printf '%s\n' "$run_out" | jq -s -r 'map(select(.id != null)) | .[0].id // empty')"
+if [[ -n "$id_auto" ]]; then
+  pr="$DELEGATE_TICKETS_ROOT/_data/$id_auto/prompt-research.md"
+  pi="$DELEGATE_TICKETS_ROOT/_data/$id_auto/prompt-implement.md"
+  if [[ -f "$pr" ]] && grep -q "Ticket phase view" "$pr" && grep -q "Assumptions" "$pr" && ! grep -q "^## Thread" "$pr"; then
+    ok "mock research prompt embeds phase view without Thread"
+  else
+    bad "mock research prompt embeds phase view without Thread"
+  fi
+  if [[ -f "$pi" ]] && grep -q "Ticket phase view" "$pi" && grep -q "Verification" "$pi" && ! grep -q "^## Thread" "$pi"; then
+    ok "mock implement prompt embeds phase view without Thread"
+  else
+    bad "mock implement prompt embeds phase view without Thread"
+  fi
+else
+  bad "mock research prompt embeds phase view without Thread"
+  bad "mock implement prompt embeds phase view without Thread"
 fi
 
 # challenge path: mock research that challenges, then reply --continue

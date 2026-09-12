@@ -19,3 +19,8 @@ delegate run --id req-… --phase research [--backend claude]
 From wezdeck root, `./scripts/dev/link-platform-skills.sh` links the skill and installs the short CLI.
 
 Tickets: `~/.agent/tickets/` (see `templates/tickets-README.md`).
+
+Worker prompts embed a **phase view** (not the full `ticket.md`): both phases
+keep Summary+Assumptions (the contract); implement also gets Verification+Decision.
+`Thread` / `events.jsonl` stay on disk for humans / on-demand Read — trim noise,
+not the contract.

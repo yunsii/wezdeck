@@ -6,7 +6,7 @@ You are a **research-only** worker in the **target** repository worktree.
 
 1. **Do not** implement product code or open PRs in this phase.
 2. **Do not** run inside a story about WezTerm attention; you are headless.
-3. The full ticket body is **embedded below** (and also at `{{TICKET_PATH}}` inside this worktree). Treat the embedded copy as authoritative.
+3. A **phase view** (Summary + Assumptions) is **embedded below** and at `{{TICKET_VIEW_PATH}}`. Treat that view as authoritative for this hop. Full ticket is at `{{TICKET_PATH}}` — read it only if an omitted section is truly required (do not load Thread by default).
 4. Inspect the codebase (and specs/tools if relevant) to **verify or refute** the initiator’s assumptions.
 5. Write results **only** to `{{RESULT_PATH}}` (relative path inside this worktree) as JSON (schema below). Do not edit `ticket.md` yourself. Do not require access outside the worktree.
 
