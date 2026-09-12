@@ -56,7 +56,7 @@ Prefer a **clean, linear git graph**. Compress noise before it becomes permanent
 ### Instance: wezdeck
 
 - [vcs-34] wezdeck (`wezterm-config`) is a personal monorepo: default **primary `master`**; after acceptance **push `master` without a second "merge to main?"** question. Graph hygiene [vcs-36]–[vcs-37] applies; bare force without lease still needs explicit yes.
-- [vcs-40] **wezdeck worktree close-out:** when work was done on a linked `dev-*` workstation, after the change is on `origin/HEAD`, **always** run platform skill `worktree-recycle` so that worktree resets onto `origin/HEAD`. Keep `WEZTERM_REPO` / user-level skills resolving to the **primary** checkout on `master`, not a drifted `dev-*` tree. Project doc: `docs/workspaces.md` → Maintenance loop.
+- [vcs-40] **wezdeck worktree close-out:** linked `dev-*` trees exist for **isolation**, not review. Deliver **directly to mainline** (push/ff `master` → `origin/HEAD`; **no PR**, no second “merge to main?”). Then **always** run platform skill `worktree-recycle` so the workstation resets onto `origin/HEAD`. Keep `WEZTERM_REPO` / user-level skills on the **primary** `master` checkout. Project doc: `docs/workspaces.md` → Maintenance loop.
 
 ### Shared / team repos
 

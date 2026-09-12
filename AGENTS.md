@@ -213,8 +213,9 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - After runtime config changes, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` (Bash, not the `Skill` tool — see the note above). **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is left untouched). Use `--live` to skip the gate; `WEZTERM_SYNC_SKIP_CANARY_AUTO=1` to stage without probing. Full flow: [`docs/daily-workflow.md`](docs/daily-workflow.md).
 - Do not run Git commands that can contend on the index lock in parallel.
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
-- **Worktree maintenance:** finish a linked-worktree round by delivering onto
-  `origin/HEAD` (mainline), then recycle the `dev-*` workstation onto that tip.
-  Do not leave machine defaults (`WEZTERM_REPO`, platform skills, `agent-tools.env`)
-  pointed at a drifted `dev-*` tree. Detail:
+- **Worktree maintenance:** linked `dev-*` trees are for **isolation**, not PRs.
+  Finish a round by delivering **directly onto mainline** (`origin/HEAD` / primary
+  `master` push or ff — **no pull request**), then recycle the `dev-*` workstation
+  onto that tip. Keep `WEZTERM_REPO` / platform skills / `agent-tools.env` on the
+  primary tree. Detail:
   [`docs/workspaces.md#maintenance-loop-wezdeck-standing-policy`](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy).

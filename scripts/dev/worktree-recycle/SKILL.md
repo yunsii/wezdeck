@@ -30,7 +30,7 @@ This skill owns what the script cannot: **richer preflight**, **human-readable b
 - Primary worktree / mainline-only checkout with no linked `dev-*` → refuse; do not invent a slug
 - Pure `git reset` without delivery checks → do not bypass this skill
 
-**wezdeck policy:** all changes are judged against mainline. After delivering from a `dev-*` tree, always recycle that workstation onto `origin/HEAD` so the next round does not drift. See `docs/workspaces.md` → Maintenance loop.
+**wezdeck policy:** worktrees = **isolation**; delivery = **direct mainline** (no PR). After the change is on `origin/HEAD`, always recycle the `dev-*` workstation onto that tip. See `docs/workspaces.md` → Maintenance loop.
 
 ## Resolve TOOL_HOME (first hit wins)
 

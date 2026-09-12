@@ -170,11 +170,13 @@ The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fe
 
 ### Maintenance loop (wezdeck standing policy)
 
-**All changes are judged against the default branch (`origin/master` / `origin/HEAD`).** Linked `dev-*` worktrees are disposable workstations, not a second source of truth.
+**Why linked worktrees exist here:** **change isolation** (parallel agents / dirty WIP / rollback risk) — not review ceremony. **All changes are judged against the default branch (`origin/master` / `origin/HEAD`).** A `dev-*` tree is a disposable workstation, not a second source of truth.
+
+**Delivery is mainline-direct: no PR.** wezdeck is personal mainline ([vcs-34](../agent-profiles/v1/en/vcs.md)): after acceptance, push (or ff) onto `master` / `origin/HEAD` as efficiently as possible. Do not open a pull/merge request, do not ask “merge to main?”, and do not keep the only copy of the work on `dev/*`.
 
 Standing loop after finishing a round in a linked worktree:
 
-1. **Deliver onto mainline** — commit (and push) so the change lands on `origin/HEAD` (fast-forward or squash/content-absorbed). Prefer pushing the primary `master` tip when that is how the round was delivered; do not leave the only copy of the work on `dev/*`.
+1. **Deliver onto mainline (no PR)** — commit and push so the tip lands on `origin/HEAD` (prefer ff onto primary `master`, or content absorbed after squash). Graph hygiene [vcs-36]–[vcs-37] still applies.
 2. **Recycle the `dev-*` workstation** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so the next round starts from mainline, not from a drifted `dev/*` tip.
 3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZTERM_REPO`) on `master` tracking `origin/master`. After delivery, rebase/ff the primary onto `origin/master` when it lags; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
 
