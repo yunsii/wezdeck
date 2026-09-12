@@ -84,6 +84,7 @@ write_agent_tools_file() {
   local target_file="$target_dir/agent-tools.env"
   local clipboard_wrapper="$repo_root_path/scripts/runtime/agent-clipboard.sh"
   local open_file_wrapper="$repo_root_path/scripts/runtime/open-file-in-vscode.sh"
+  local wd_run_cli="$repo_root_path/scripts/runtime/cli/wd-run"
 
   mkdir -p "$target_dir"
   write_text_file_atomic "$target_file" <<EOF
@@ -91,6 +92,7 @@ version=1
 repo_root=$repo_root_path
 agent_clipboard=$clipboard_wrapper
 open_file_in_vscode=$open_file_wrapper
+wd_run=$wd_run_cli
 EOF
 }
 

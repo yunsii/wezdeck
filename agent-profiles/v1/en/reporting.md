@@ -7,7 +7,9 @@ triggers:
   - confidence wording
   - evidence summaries
   - option recommendations
-tags: [reporting, honesty, confidence-vocabulary]
+  - ask human to run or paste a script
+  - human-run handoff
+tags: [reporting, honesty, confidence-vocabulary, human-run]
 ---
 
 # Reporting
@@ -196,6 +198,18 @@ Mention:
 - [reporting-17] When tool output is large (long diff, long log, full test report), do not inline it wholesale in the response. Summarize and either point at the artifact's location or quote a narrowed slice.
 - [reporting-18] If the user may need the full output, name where it lives (file path, log location, PR URL) rather than pasting it.
 - [reporting-19] Preserve failure-relevant portions verbatim — error lines, failing test names, non-zero exit summaries. The user should not have to ask for the evidence.
+
+## Human-run handoff (mandatory skill)
+
+When a **human** (not the agent) must execute a script or multi-line command:
+
+- [reporting-50] **Load and follow** the platform skill `human-run` before asking the human to run anything. Do not improvise a paste-to-terminal path.
+- [reporting-51] Deliver the payload only via `wd-run propose --cwd <dir> …` (explicit existing working directory). Tell the human to run shell `x` — at most one short line in chat.
+- [reporting-52] Do **not** paste multi-line runnable scripts into chat for the human to copy. Illustrative code is allowed only when marked as read-only / 勿粘贴执行.
+- [reporting-53] Do **not** route agent self-exec through `human-run` / `wd-run`. If tools can run it, run it.
+- [reporting-54] If `wd-run` / the skill is unavailable, say so and stop — do not fall back to broken TUI copy-paste as the execution channel.
+
+Skill source (single body): wezdeck `scripts/dev/human-run/SKILL.md`, linked by `scripts/dev/link-platform-skills.sh`. Runtime details: wezdeck `docs/agent-run.md`.
 
 ## Human-readable user text
 

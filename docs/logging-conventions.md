@@ -53,7 +53,7 @@ If you genuinely need ad-hoc render-path debugging, gate it behind an explicit e
 
 Add a new category only when an existing one would dilute its meaning. Currently registered:
 
-- **bash** (`scripts/runtime/`): `attention`, `agent_cleanup`, `clipboard`, `command_panel`, `managed_command`, `overflow`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
+- **bash** (`scripts/runtime/`): `attention`, `agent_cleanup`, `agent_run`, `clipboard`, `command_panel`, `managed_command`, `overflow`, `popup`, `primary_pane`, `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
 - **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `latency`, `tab_visibility`, `vscode`, `workspace`
 - **C# helper** (`helper-manager.exe`): owned in `native/host-helper/`, treat as read-only from the WSL/Lua side
 

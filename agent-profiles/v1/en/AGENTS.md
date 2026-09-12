@@ -56,6 +56,7 @@ Read additional topic files only when the current file points to them or the tas
 - Handling credentials, tokens, or any data expected to stay local → [secrets.md](./secrets.md)
 - Commits, branches, merges, pushes, pull/merge requests → [vcs.md](./vcs.md)
 - Final responses and progress updates → [reporting.md](./reporting.md)
+- Asking a human to run / paste a script → [reporting.md](./reporting.md) `Human-run handoff` + platform skill `human-run` (mandatory)
 - Tie-breaking between otherwise valid approaches, language and communication style → [preferences.md](./preferences.md)
 - Pre-approval policy, recurrence-gated promotion, what must stay prompted → [permissions.md](./permissions.md)
 - Claude Code-specific allowlist files (`settings.json` / `.claude/settings.json` / `settings.local.json`), layering, PreToolUse hooks → [permissions-claude.md](./permissions-claude.md)
@@ -91,6 +92,7 @@ Full rules live in the routed topic file.
 - VCS core: never auto-commit/push/skip hooks/force-push without yes; user owns history. **Personal projects prefer mainline** (develop on `master`/`main` for efficiency; branch/worktree only when parallel/isolation). wezdeck is an instance. Full rules: [vcs.md](./vcs.md) `Core VCS: personal projects`.
 - Single writer: do not edit the same worktree/cwd in parallel with another live agent or human session on that tree; serialize or isolate (worktree) first.
 - Reporting: state what changed, how it was verified, and what remains uncertain; human-readable first. Full rule in [reporting.md](./reporting.md).
+- Human-run handoff: if a **human** must run a script, **mandatory** load skill `human-run` → `wd-run propose --cwd …` → tell user `x`; never multi-line paste-to-terminal; never wrap agent self-exec. Full rules in [reporting.md](./reporting.md) `Human-run handoff`.
 - Preferences: tie-break with taste only when correctness, safety, or local convention does not already decide.
 - Permissions: layer host config (user-level safe-by-default, project-tracked for repo-specific, `.local.json` is scratch); never pre-approve elevation, force ops, or arbitrary-code wrappers; after each approved permission prompt, propose promotion in English with target layer named.
 - Language: reply in Simplified Chinese (简体中文) — **hard rule, not a tie-break**; see the `语言 / Language (Hard Rule)` block at the top of this file and [preferences.md](./preferences.md) `[preferences-06]`.

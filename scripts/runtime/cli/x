@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# x — human short path for wd-run handoff: peek latest → confirm → CAS run.
+# Not related to Alt+x (overflow picker). Override name via WD_RUN_HUMAN_CMD.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WD_RUN="$SCRIPT_DIR/wd-run"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../agent-run-lib.sh"
+
+usage() {
+  cat <<'EOF' >&2
+usage:
+  x           peek HEAD, then [y/N] run the id you just viewed
+  x -         peek only (no confirm)
+  x --id ID   CAS-run id without pager (still requires id == HEAD unless
+              you use wd-run run --id ID --force-id)
+
+Only consumes human-handoff entries created by: wd-run propose --cwd …
+EOF
+}
+
+peek_only=0
+run_id=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -)
+      peek_only=1
+      shift
+      ;;
+    --id)
+      run_id="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'x: unknown arg %s\n' "$1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -n "$run_id" ]]; then
+  exec "$WD_RUN" run --id "$run_id"
+fi
+
+agent_run_ensure_dirs
+bound_id="$(agent_run_read_head_id)" || {
+  printf 'x: no pending handoff (HEAD empty)\n' >&2
+  exit "$AGENT_RUN_EXIT_MISSING"
+}
+
+"$WD_RUN" peek --id "$bound_id"
+
+if [[ "$peek_only" -eq 1 ]]; then
+  exit 0
+fi
+
+if [[ ! -t 0 ]]; then
+  printf 'x: non-interactive stdin; peeked id=%s — run with: x --id %s\n' \
+    "$bound_id" "$bound_id" >&2
+  exit 0
+fi
+
+printf 'Run id=%s in recorded cwd? [y/N] ' "$bound_id" >&2
+read -r ans || ans=""
+case "$ans" in
+  y|Y|yes|YES)
+    # CAS against the id bound at peek time — never silently run a newer HEAD.
+    exec "$WD_RUN" run --id "$bound_id"
+    ;;
+  *)
+    printf 'x: cancelled (HEAD may still be pending)\n' >&2
+    exit 0
+    ;;
+esac

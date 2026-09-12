@@ -45,4 +45,10 @@ WSL_ACCESS_LEDGER_FILE="$WSL_RUNTIME_STATE_DIR/access-ledger.json"
 # Lives on ext4 so press-time reads avoid /mnt/c (~5× slower). Builder still
 # reads items/stats from the Windows tab-stats dir for Lua co-consumers.
 WSL_OVERFLOW_BASE_TSV="$WSL_RUNTIME_STATE_DIR/overflow-base.tsv"
+# Human-handoff run store: agent propose → human `x` peek/run.
+# WSL-only (ext4); not for agent self-exec. See docs/agent-run.md.
+WSL_AGENT_RUN_DIR="$WSL_RUNTIME_STATE_DIR/agent-run"
+WSL_AGENT_RUN_HEAD_FILE="$WSL_AGENT_RUN_DIR/HEAD.json"
+WSL_AGENT_RUN_ENTRIES_DIR="$WSL_AGENT_RUN_DIR/entries"
+WSL_AGENT_RUN_AUDIT_FILE="$WSL_RUNTIME_LOGS_DIR/agent-run.jsonl"
 WSL_WINDOWS_PATHS_CACHE_FILE="$WSL_RUNTIME_CACHE_ROOT/windows-paths.env"

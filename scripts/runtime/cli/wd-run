@@ -1,0 +1,235 @@
+#!/usr/bin/env bash
+# wd-run — human-handoff script store (agent propose → human x peek/run).
+# Agent self-exec is out of scope. See docs/agent-run.md.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../agent-run-lib.sh"
+
+usage() {
+  cat <<'EOF' >&2
+usage:
+  wd-run propose --cwd DIR [--actor A] [--summary S] (--file F | --stdin | -)
+  wd-run peek [--id ID]
+  wd-run run --id ID [--force-id]
+  wd-run show <id>
+  wd-run head
+  wd-run log [--lines N]
+  wd-run ls [--status STATUS]
+  wd-run cancel [--id ID]
+  wd-run gc
+
+Human short path: x  (peek HEAD → confirm → CAS run)
+
+Only for commands that must be run by a human. Agent self-run stays on
+the agent tool channel — do not wrap those here.
+
+--cwd is required on propose and must be an existing directory; the
+script always runs with that working directory.
+EOF
+}
+
+cmd_propose() {
+  local actor="unknown" cwd="" summary="" file="" use_stdin=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --actor) actor="${2:-}"; shift 2 ;;
+      --cwd) cwd="${2:-}"; shift 2 ;;
+      --summary) summary="${2:-}"; shift 2 ;;
+      --file) file="${2:-}"; shift 2 ;;
+      --stdin|-) use_stdin=1; shift ;;
+      -h|--help) usage; return 0 ;;
+      *)
+        printf 'wd-run propose: unknown arg %s\n' "$1" >&2
+        usage
+        return 1
+        ;;
+    esac
+  done
+  if [[ -z "$cwd" ]]; then
+    printf 'wd-run propose: --cwd DIR is required\n' >&2
+    return 1
+  fi
+  local body=""
+  if [[ -n "$file" ]]; then
+    [[ -f "$file" ]] || {
+      printf 'wd-run propose: file not found: %s\n' "$file" >&2
+      return 1
+    }
+    body="$(cat "$file")"
+  elif [[ "$use_stdin" -eq 1 ]] || [[ ! -t 0 ]]; then
+    body="$(cat)"
+  else
+    printf 'wd-run propose: provide --file F or --stdin (or pipe body)\n' >&2
+    return 1
+  fi
+  local id
+  id="$(agent_run_propose "$actor" "$cwd" "$summary" "$body")" || return 1
+  printf 'id=%s\n' "$id"
+  printf 'preview+run: x\n' >&2
+  printf 'cwd=%s\n' "$(agent_run_resolve_cwd "$cwd")" >&2
+}
+
+cmd_peek() {
+  local id=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --id) id="${2:-}"; shift 2 ;;
+      -h|--help) usage; return 0 ;;
+      *)
+        printf 'wd-run peek: unknown arg %s\n' "$1" >&2
+        return 1
+        ;;
+    esac
+  done
+  agent_run_ensure_dirs
+  if [[ -z "$id" ]]; then
+    id="$(agent_run_read_head_id)" || {
+      printf 'wd-run: no pending handoff (HEAD empty)\n' >&2
+      return "$AGENT_RUN_EXIT_MISSING"
+    }
+  fi
+  agent_run_audit "peek" "$id" "human" "ok" "" || true
+  local text
+  text="$(agent_run_format_preview "$id")" || {
+    printf 'wd-run: entry not found: %s\n' "$id" >&2
+    return "$AGENT_RUN_EXIT_MISSING"
+  }
+  if [[ -t 1 ]] && command -v less >/dev/null 2>&1; then
+    printf '%s\n' "$text" | less -F -X -R
+  else
+    printf '%s\n' "$text"
+  fi
+}
+
+cmd_run() {
+  local id="" force=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --id) id="${2:-}"; shift 2 ;;
+      --force-id) force=1; shift ;;
+      -h|--help) usage; return 0 ;;
+      *)
+        printf 'wd-run run: unknown arg %s\n' "$1" >&2
+        return 1
+        ;;
+    esac
+  done
+  [[ -n "$id" ]] || {
+    printf 'wd-run run: --id is required\n' >&2
+    return 1
+  }
+  local allow=0
+  [[ "$force" -eq 1 ]] && allow=1
+  agent_run_cas_claim "$id" "$allow" >/dev/null || return $?
+  agent_run_exec_body "$id"
+}
+
+cmd_show() {
+  local id="${1:-}"
+  [[ -n "$id" ]] || {
+    usage
+    return 1
+  }
+  agent_run_format_preview "$id" || {
+    printf 'wd-run: entry not found: %s\n' "$id" >&2
+    return "$AGENT_RUN_EXIT_MISSING"
+  }
+}
+
+cmd_head() {
+  agent_run_ensure_dirs
+  if [[ ! -s "$AGENT_RUN_HEAD_FILE" ]]; then
+    printf 'wd-run: HEAD empty\n' >&2
+    return "$AGENT_RUN_EXIT_MISSING"
+  fi
+  cat "$AGENT_RUN_HEAD_FILE"
+  printf '\n'
+}
+
+cmd_log() {
+  local lines=40
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --lines|-n) lines="${2:-40}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  agent_run_ensure_dirs
+  if [[ ! -f "$AGENT_RUN_AUDIT_FILE" ]]; then
+    printf 'wd-run: no audit log yet\n' >&2
+    return 0
+  fi
+  tail -n "$lines" "$AGENT_RUN_AUDIT_FILE"
+}
+
+cmd_ls() {
+  local status_filter=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --status) status_filter="${2:-}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  agent_run_ensure_dirs
+  local path id st created summary cwd
+  for path in "$AGENT_RUN_ENTRIES_DIR"/*.json; do
+    [[ -f "$path" ]] || continue
+    id="$(jq -r '.id' "$path")"
+    st="$(jq -r '.status' "$path")"
+    [[ -z "$status_filter" || "$st" == "$status_filter" ]] || continue
+    created="$(jq -r '.created_ms' "$path")"
+    summary="$(jq -r '.summary' "$path")"
+    cwd="$(jq -r '.session.cwd' "$path")"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$created" "$st" "$id" "$cwd" "$summary"
+  done | sort -n
+}
+
+cmd_cancel() {
+  local id=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --id) id="${2:-}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  local out
+  out="$(agent_run_cancel "$id")" || return $?
+  printf 'cancelled id=%s\n' "$out"
+}
+
+cmd_gc() {
+  agent_run_ensure_dirs
+  (
+    flock -x 9 || exit 1
+    agent_run_gc_entries
+  ) 9>"$AGENT_RUN_LOCK_FILE"
+  agent_run_audit_rotate_if_needed || true
+  printf 'gc done (ENTRY_KEEP=%s AUDIT_ROTATE_BYTES=%s)\n' \
+    "${AGENT_RUN_ENTRY_KEEP}" "${AGENT_RUN_AUDIT_ROTATE_BYTES}"
+}
+
+main() {
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    propose) cmd_propose "$@" ;;
+    peek) cmd_peek "$@" ;;
+    run) cmd_run "$@" ;;
+    show) cmd_show "$@" ;;
+    head) cmd_head "$@" ;;
+    log) cmd_log "$@" ;;
+    ls) cmd_ls "$@" ;;
+    cancel) cmd_cancel "$@" ;;
+    gc) cmd_gc "$@" ;;
+    -h|--help|"") usage; [[ -n "$cmd" ]] || return 1; return 0 ;;
+    *)
+      printf 'wd-run: unknown command %s\n' "$cmd" >&2
+      usage
+      return 1
+      ;;
+  esac
+}
+
+main "$@"

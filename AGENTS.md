@@ -11,6 +11,9 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 
 - Setup, local prerequisites, or machine-local config:
   Read [`docs/setup.md`](docs/setup.md).
+- Human-only script handoff (`wd-run` / `x`), propose→peek→CAS run, handoff
+  audit / retention, or “do not paste multi-line scripts for the human to run”:
+  Read [`docs/agent-run.md`](docs/agent-run.md). Agent self-exec is out of scope.
 - Sync, reload, verification, or day-to-day maintenance:
   Read [`docs/daily-workflow.md`](docs/daily-workflow.md).
 - Resetting a long-lived `dev-*` workstation / 「重置开发分支」 / recycle onto
