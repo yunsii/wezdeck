@@ -31,29 +31,30 @@ This repository is the source of truth for the WezDeck runtime. The GitHub repo 
 
 ## 🎛️ Workbench · A day in the loop
 
-> Pick the right isolation slot (worktree), then continue inside it. Attention keys are in-slot navigation — not the primary way you find work.
+> Find the slot first (workspace / tab / worktree), keep the agent resumed, then
+> jump and verify in-slot. Measured day loops are dominated by `Alt+j/k/l` and
+> `Alt+v` — not by the overview pickers.
 
 ```text
 need arises
-  → Alt+w/c/s  enter workspace · Alt+1..9  pick repo tab
-  → Alt+g      select an existing worktree
-       └─ none fits → Ctrl+k g d|t|h  create, then enter
-  → primary pane auto-resumes the agent for that cwd
-  → in-slot: Alt+j waiting · Alt+k done · Alt+l running
-       · verify with Alt+v (VS Code) / Alt+b (headless Chrome)
-       · occasionally Alt+/ overview or Alt+x overflow
+  → switch workspace (Alt+w/c/…) · tab (Alt+1..9) · worktree (Alt+g)
+       └─ no suitable slot → Ctrl+k g d|t|h  create, then enter
+  → primary pane auto-resumes for that cwd
+  → main loop: Alt+j waiting · Alt+k done · Alt+l running
+               + Alt+v open VS Code (daily verify path)
+       · side paths: Alt+b debug Chrome · Alt+/ overview · Alt+x overflow
   → deliver onto origin/HEAD → recycle (dev-*) / reclaim (task|hotfix)
 ```
 
 | Stage | Capability | Deep dive |
 |---|---|---|
-| Land on the slot | Workspace + tab + **`Alt+g` worktree picker**; create when missing | [Workspaces](docs/workspaces.md) |
+| Land on the slot | Workspace switch + tab index + **`Alt+g`**; create only when missing | [Workspaces](docs/workspaces.md) |
 | Continue after restart | **`<base>-resume`** via `agent-launcher.sh` + access-ledger focus restore | [Architecture · startup](docs/architecture.md#startup-invariants) |
-| In-slot loop | Attention badges / counter + **`Alt+j/k/l`** | [Agent attention](docs/agent-attention.md) |
-| Verify | Host helper: **`Alt+v`** / **`Alt+b`** (MCP shares the CDP instance) | [Browser debug](docs/browser-debug.md) |
+| In-slot loop | Badges / counter + **`Alt+j/k/l`** (highest-frequency keys in a real day) | [Agent attention](docs/agent-attention.md) |
+| Verify | **`Alt+v`** daily; **`Alt+b`** when you need the debug Chrome (MCP shares CDP) | [Browser debug](docs/browser-debug.md) |
 | Close the round | Mainline delivery (no PR) → **`worktree-recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
 
-Longer narrative (features + evolution): [`docs/presentations/`](docs/presentations/). Day-loop forensics from live logs: [`scripts/dev/workflow-timeline.sh`](scripts/dev/workflow-timeline.sh) · [Diagnostics · Workflow timeline](docs/diagnostics.md#workflow-timeline).
+Longer narrative: [`docs/presentations/`](docs/presentations/). Rebuild a day from logs: [`scripts/dev/workflow-timeline.sh`](scripts/dev/workflow-timeline.sh) · [Diagnostics · Workflow timeline](docs/diagnostics.md#workflow-timeline).
 
 ## 🧭 How It Works
 
@@ -64,10 +65,11 @@ WezTerm tab          ─┐
                        ↑
        agent hooks → attention.json → tab badges + right-status counter
                                        ↑
-                                  Alt+j/k/l  in-slot jumps
+                         Alt+j/k/l  +  Alt+v  (main loop)
 ```
 
 Full architecture, ownership boundaries, and the WSL ⇄ Windows channels: [`docs/architecture.md`](docs/architecture.md). Session + interop map (workspace/tab/tmux/worktree/agent/attention ↔ session-bridge ↔ Feishu): [Session & Interop Overview](docs/architecture.md#session--interop-overview).
+
 ## ✅ Requirements
 
 | | Required | Notes |
