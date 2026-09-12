@@ -215,22 +215,27 @@ grok --version        # still prints Grok version via grok.real
 
 ### Standing ops (after `grok update`)
 
-`grok update` routinely replaces `~/.grok/bin/grok` with a fresh ELF or a symlink into `~/.grok/downloads/`. The focus-filter is not part of Grok’s package; **every update is a regression until `--install` runs again**.
+`grok update` routinely replaces `~/.grok/bin/grok` with a fresh ELF or a symlink into `~/.grok/downloads/`. The focus-filter is not part of Grok’s package.
 
-Checklist (copy/paste):
+**Automation (preferred):**
+
+1. **Launch ensure** — every normal run of `grok-with-focus-filter.sh` quietly promotes the newest `downloads/` artifact into `grok.real` and re-seats `~/.grok/bin/grok` (+ `~/.local/bin/grok`) when update clobbered them. Opt out: `GROK_FOCUS_FILTER_SKIP_ENSURE=1`.
+2. **Interactive zsh function** — `~/.config/shell-env.d/grok-focus-filter.env` (template under `wezterm-x/local.example/shell-env.d/`) defines `grok()` that always calls the wrapper by absolute path via `WEZTERM_REPO`, so update cannot steal the name through PATH. Managed panes already do the same via `agent-launcher.sh`.
+
+Already-running Grok processes keep the old stdin path forever — **exit / `--resume`** those panes after an update. New launches heal themselves.
+
+Manual checklist (when automation is missing or a live pane still flashes):
 
 ```bash
-# 1) Did update wipe the wrapper?
+# 1) Health
 scripts/runtime/grok-with-focus-filter.sh --check
-# FAIL on ~/.grok/bin/grok ⇒ continue
 
-# 2) Re-seat wrapper + promote newest download into grok.real
-scripts/runtime/grok-with-focus-filter.sh --install
+# 2) One-shot reseat (also what launch ensure does)
+scripts/runtime/grok-with-focus-filter.sh --install   # or --ensure
 hash -r
 scripts/runtime/grok-with-focus-filter.sh --check
 
-# 3) Kill / exit every live Grok pane, then reopen (Alt+g / --continue / shell `grok`)
-#    Already-running trees keep the old stdin path forever.
+# 3) Exit / reopen every live Grok pane (Alt+g / --continue / shell `grok`)
 
 # 4) Spot-check process tree in a flashing pane:
 #    expect: python3 …/grok-focus-filter.py -- …/grok.real …
@@ -238,7 +243,7 @@ scripts/runtime/grok-with-focus-filter.sh --check
 ps -o pid,ppid,cmd -C grok 2>/dev/null; pgrep -af grok-focus-filter | head
 ```
 
-Agent triage trigger: user says「直接 grok 还闪」/「update 后又闪」→ run `--check` before redesigning focus-events or blaming WezTerm.
+Agent triage trigger: user says「直接 grok 还闪」/「update 后又闪」→ run `--check` before redesigning focus-events or blaming WezTerm. If check is green but a pane still flashes, that pane predates the heal — resume it.
 
 ### Mouse scroll (`~/.grok/config.toml` `[ui]`)
 

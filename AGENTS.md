@@ -38,13 +38,13 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   (install / vimrc: [`docs/setup.md#vim-92-optional`](docs/setup.md#vim-92-optional)).
 - Grok Build fullscreen TUI: whole-transcript flash on `Alt+o` / pane focus,
   FocusGained `terminal.clear()`, cream `#eeeeee` vs pane `bg_base`, the
-  PATH focus-filter (`grok-with-focus-filter.sh --install` / `--check`:
-  `~/.grok/bin/grok` → wrapper, `grok.real` = ELF; required because zshrc
-  prepends `~/.grok/bin`), **direct shell `grok` still flashes after
-  `grok update`** (updater overwrites `~/.grok/bin/grok`; re-run `--install`
-  then exit/`--resume` — do not redesign focus-events), why managed
-  `agent-launcher.sh grok` can look fine while interactive `grok` flashes
-  (launcher uses wrapper absolute path; shell follows login PATH), why
+  PATH focus-filter (`grok-with-focus-filter.sh --install` / `--check` /
+  launch `--ensure`; `~/.grok/bin/grok` → wrapper, `grok.real` = ELF; zshrc
+  prepends `~/.grok/bin`), **interactive `grok` after `grok update`**
+  (updater clobbers `~/.grok/bin/grok`; heal = shell-env `grok()` absolute
+  wrap + launch ensure, then exit/`--resume` live panes — do not redesign
+  focus-events), why managed `agent-launcher.sh grok` can look fine while a
+  bare-PATH `grok` flashes (launcher uses wrapper absolute path), why
   macOS WezTerm+tmux can look fine with the same heal (sub-frame client
   burst, not OS-exempt), why WSL→Windows still flashes even on a tiny pane,
   `scripts/dev/repro-grok-focus-flash.sh`, mouse-wheel feel under tmux
