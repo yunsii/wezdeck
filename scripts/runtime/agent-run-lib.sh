@@ -520,13 +520,14 @@ agent_run_format_preview() {
   path="$(agent_run_entry_path "$id")"
   [[ -s "$path" ]] || return 1
   json="$(cat "$path")"
-  printf 'id:      %s\n' "$(jq -r '.id' <<<"$json")"
-  printf 'status:  %s\n' "$(jq -r '.status' <<<"$json")"
-  printf 'actor:   %s\n' "$(jq -r '.actor' <<<"$json")"
-  printf 'cwd:     %s\n' "$(jq -r '.session.cwd' <<<"$json")"
-  printf 'summary: %s\n' "$(jq -r '.summary' <<<"$json")"
-  printf 'sha256:  %s\n' "$(jq -r '.body_sha256' <<<"$json")"
-  printf '\n----- script -----\n'
+  # Never use a printf format that begins with '-' (bash printf treats it as flags).
+  printf '%s\n' "id:      $(jq -r '.id' <<<"$json")"
+  printf '%s\n' "status:  $(jq -r '.status' <<<"$json")"
+  printf '%s\n' "actor:   $(jq -r '.actor' <<<"$json")"
+  printf '%s\n' "cwd:     $(jq -r '.session.cwd' <<<"$json")"
+  printf '%s\n' "summary: $(jq -r '.summary' <<<"$json")"
+  printf '%s\n' "sha256:  $(jq -r '.body_sha256' <<<"$json")"
+  printf '%s\n' '' '----- script -----'
   jq -r '.body' <<<"$json"
-  printf '----- end -----\n'
+  printf '%s\n' '----- end -----'
 }
