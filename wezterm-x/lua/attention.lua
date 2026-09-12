@@ -1643,14 +1643,111 @@ function M.parse_jump_payload(value)
   return nil
 end
 
+-- One mux walk → pane_id → { workspace, tab_index, left, top }. Used by
+-- pick_next so spatial order matches what the user sees (left-to-right
+-- tabs) instead of hook-fire time.
+local function build_pane_locations()
+  local locs = {}
+  local ok_all, all_windows = pcall(wezterm.mux.all_windows)
+  if not ok_all or type(all_windows) ~= 'table' then
+    return locs
+  end
+  for _, mux_win in ipairs(all_windows) do
+    local workspace = ''
+    if mux_win.get_workspace then
+      local ok_ws, ws = pcall(function() return mux_win:get_workspace() end)
+      if ok_ws and type(ws) == 'string' then workspace = ws end
+    end
+    local ok_tabs, tabs = pcall(function() return mux_win:tabs() end)
+    if ok_tabs and type(tabs) == 'table' then
+      for tab_idx, mux_tab in ipairs(tabs) do
+        local ok_panes, panes_with_info = pcall(function() return mux_tab:panes_with_info() end)
+        if ok_panes and type(panes_with_info) == 'table' then
+          for _, info in ipairs(panes_with_info) do
+            local pane = info and info.pane
+            if pane and pane.pane_id then
+              local pid_ok, pid = pcall(function() return pane:pane_id() end)
+              if pid_ok and pid ~= nil then
+                locs[tostring(pid)] = {
+                  workspace = workspace,
+                  tab_index = tab_idx,
+                  left = tonumber(info.left) or 0,
+                  top = tonumber(info.top) or 0,
+                }
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  return locs
+end
+
+-- Resolve an entry to a live spatial key. Prefer the pane that currently
+-- hosts tmux_session (stale wezterm_pane_id is common after overflow /
+-- reopen); fall back to the stored id, then to the session-name
+-- workspace token with a large tab_index so unknowns sort last inside
+-- their workspace group.
+local function entry_spatial(entry, pane_locs)
+  local pane_id = nil
+  if type(entry.tmux_session) == 'string' and entry.tmux_session ~= '' then
+    pane_id = pane_for_hosted_session(entry.tmux_session)
+  end
+  if pane_id == nil or pane_id == '' then
+    pane_id = entry.wezterm_pane_id
+  end
+  if pane_id ~= nil and pane_id ~= '' then
+    local loc = pane_locs[tostring(pane_id)]
+    if loc then
+      return loc.workspace or '', loc.tab_index or 9999, loc.left or 0, loc.top or 0
+    end
+  end
+  return parse_session_workspace(entry.tmux_session) or '', 9999, 0, 0
+end
+
+local function tmux_coord_num(v)
+  local s = strip_tmux_prefix(v)
+  return tonumber(s) or 0
+end
+
+-- Spatial round-robin order for Alt+j / Alt+k / Alt+l:
+--   1. Current workspace first (finish its tabs before switching away).
+--   2. Within a workspace: left-to-right by tab_index, then pane left/top.
+--   3. Other workspaces by name, same L→R within each.
+--   4. tmux window/pane + ts as stable tiebreaks.
+-- Oldest-ts-only ordering used to yank the user out of a workspace that
+-- still had unread siblings whenever a foreign entry was older.
+local function sort_pool_spatial(pool, current_ws, pane_locs)
+  table.sort(pool, function(a, b)
+    local aw, ati, al, at = entry_spatial(a, pane_locs)
+    local bw, bti, bl, bt = entry_spatial(b, pane_locs)
+    local a_here = (current_ws ~= '' and aw == current_ws) and 0 or 1
+    local b_here = (current_ws ~= '' and bw == current_ws) and 0 or 1
+    if a_here ~= b_here then return a_here < b_here end
+    if aw ~= bw then return aw < bw end
+    if ati ~= bti then return ati < bti end
+    if al ~= bl then return al < bl end
+    if at ~= bt then return at < bt end
+    local awin, bwin = tmux_coord_num(a.tmux_window), tmux_coord_num(b.tmux_window)
+    if awin ~= bwin then return awin < bwin end
+    local apane, bpane = tmux_coord_num(a.tmux_pane), tmux_coord_num(b.tmux_pane)
+    if apane ~= bpane then return apane < bpane end
+    return (tonumber(a.ts) or 0) < (tonumber(b.ts) or 0)
+  end)
+end
+
 -- Pick next entry matching `kind` ('waiting', 'done', or 'running')
--- in oldest-first round-robin order, so repeated Alt+j / Alt+k / Alt+l
--- presses walk the whole pool (not just the two oldest). Returns nil
--- when the pool is empty or the only candidate is already focused.
+-- in spatial round-robin order (current workspace left→right, then
+-- other workspaces), so repeated Alt+j / Alt+k / Alt+l presses walk
+-- the whole pool without yanking out of a workspace mid-sweep.
+-- Returns nil when the pool is empty or the only candidate is already
+-- focused.
 --
--- opts.reverse = true walks newest-ward (Alt+Shift+l for running):
--- from the focused slot step backward and wrap; when nothing in the
--- pool is focused, land on the newest instead of the oldest.
+-- opts.reverse = true walks right-to-left / previous-workspace
+-- (Alt+Shift+l for running): from the focused slot step backward and
+-- wrap; when nothing in the pool is focused, land on the rightmost
+-- entry of the current workspace (else the overall last).
 --
 -- "At the user's focused position" is tmux-pane-precise: a single
 -- wezterm pane commonly hosts a whole tmux session whose split panes
@@ -1672,7 +1769,7 @@ end
 --      (2), focused_idx stays nil and every press re-picks pool[1],
 --      which activate_in_gui resolves to the already-focused pane → the
 --      key feels dead.
---   3. No cursor → oldest (newest if reverse).
+--   3. No cursor → leftmost of current workspace (rightmost if reverse).
 --
 -- Returns nil when the only candidate is the cursor / focused pane: the
 -- user is already there and has nothing left to jump to. Old fallback
@@ -1693,18 +1790,23 @@ function M.pick_next(kind, current_pane_id, opts)
   if #pool == 0 then
     return nil
   end
-  table.sort(pool, function(a, b)
-    return (tonumber(a.ts) or 0) < (tonumber(b.ts) or 0)
-  end)
 
-  -- Round-robin in sorted order. The older "first non-focused" scan
+  local pane_locs = build_pane_locations()
+  local current = current_pane_id and tostring(current_pane_id) or nil
+  local current_ws = ''
+  if current and pane_locs[current] then
+    current_ws = pane_locs[current].workspace or ''
+  end
+  sort_pool_spatial(pool, current_ws, pane_locs)
+
+  -- Round-robin in spatial order. The older "first non-focused" scan
   -- ping-ponged forever between the two oldest entries whenever the
   -- pool had 3+: from A it picked B, from B it picked A again, and C
   -- was never reachable. Find the focused / last-jumped slot (if any)
   -- and step forward (or backward when reverse). When nothing in the
-  -- pool is a cursor, land on the oldest (newest if reverse). When the
-  -- only candidate is the cursor, return nil.
-  local current = current_pane_id and tostring(current_pane_id) or nil
+  -- pool is a cursor, land on the leftmost of the current workspace
+  -- (rightmost if reverse). When the only candidate is the cursor,
+  -- return nil.
   local cursor_idx = nil
   for i, entry in ipairs(pool) do
     local at_current
@@ -1740,7 +1842,18 @@ function M.pick_next(kind, current_pane_id, opts)
     end
   end
   if not cursor_idx then
-    return reverse and pool[#pool] or pool[1]
+    if reverse then
+      if current_ws ~= '' then
+        for i = #pool, 1, -1 do
+          local ws = entry_spatial(pool[i], pane_locs)
+          if ws == current_ws then
+            return pool[i]
+          end
+        end
+      end
+      return pool[#pool]
+    end
+    return pool[1]
   end
   if #pool == 1 then
     return nil

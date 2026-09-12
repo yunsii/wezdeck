@@ -428,6 +428,122 @@ describe('pick_next — running pool (Alt+l)', function()
   end)
 end)
 
+describe('pick_next — spatial order (current workspace L→R first)', function()
+  it('finishes same-workspace running tabs before jumping to another workspace', function()
+    -- Repro for "Alt+l feels yanky": work has two running tabs, but an
+    -- older-ts running entry lives in `other`. Oldest-ts order would hop
+    -- work-left → other → work-right. Spatial order must keep work-left
+    -- → work-right before leaving.
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'left', active_pane = { id = 41 } },
+            { id = 2, title = 'right', active_pane = { id = 42 } },
+          },
+        },
+        {
+          workspace = 'other',
+          tabs = {
+            { id = 1, title = 'x', active_pane = { id = 51 } },
+          },
+        },
+      },
+    }
+    tab_visibility.set_pane_session(41, 'wezterm_work_a_aaaaaaaaaa')
+    tab_visibility.set_pane_session(42, 'wezterm_work_b_bbbbbbbbbb')
+    tab_visibility.set_pane_session(51, 'wezterm_other_c_cccccccccc')
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"r_work_left":{"session_id":"r_work_left","wezterm_pane_id":"41",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_a_aaaaaaaaaa",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 1000) .. ',"reason":"left newer than other"},'
+      .. '"r_other":{"session_id":"r_other","wezterm_pane_id":"51",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_other_c_cccccccccc",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 3000) .. ',"reason":"other is oldest ts"},'
+      .. '"r_work_right":{"session_id":"r_work_right","wezterm_pane_id":"42",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_b_bbbbbbbbbb",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 500) .. ',"reason":"right newest"}'
+      .. '}}'
+    local tmp = setup_state(entries, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%1', {
+      { socket = '/tmp/sock', session = 'wezterm_work_b_bbbbbbbbbb', tmux_pane = '%1' },
+      { socket = '/tmp/sock', session = 'wezterm_other_c_cccccccccc', tmux_pane = '%1' },
+    })
+    local first = attention.pick_next(attention.STATUS_RUNNING, 41)
+    assert_truthy(first, 'first hop nil')
+    assert_eq(first.session_id, 'r_work_right',
+      'from work-left must stay in work and go right (not jump to older other)')
+
+    cleanup(tmp)
+    tmp = setup_state(entries, '/tmp/sock', 'wezterm_work_b_bbbbbbbbbb', '%1', {
+      { socket = '/tmp/sock', session = 'wezterm_work_a_aaaaaaaaaa', tmux_pane = '%1' },
+      { socket = '/tmp/sock', session = 'wezterm_other_c_cccccccccc', tmux_pane = '%1' },
+    })
+    local second = attention.pick_next(attention.STATUS_RUNNING, 42)
+    cleanup(tmp)
+    assert_truthy(second, 'second hop nil')
+    assert_eq(second.session_id, 'r_other',
+      'after finishing work tabs, next hop may leave to other')
+  end)
+
+  it('with no cursor lands on leftmost of the current workspace', function()
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'left', active_pane = { id = 41 } },
+            { id = 2, title = 'right', active_pane = { id = 42 } },
+          },
+        },
+        {
+          workspace = 'other',
+          tabs = {
+            { id = 1, title = 'x', active_pane = { id = 51 } },
+          },
+        },
+      },
+    }
+    tab_visibility.set_pane_session(41, 'wezterm_work_a_aaaaaaaaaa')
+    tab_visibility.set_pane_session(42, 'wezterm_work_b_bbbbbbbbbb')
+    tab_visibility.set_pane_session(51, 'wezterm_other_c_cccccccccc')
+    local now = os.time() * 1000
+    -- User is on a non-running pane in work (no focus match); other has
+    -- the oldest ts. Spatial pick must still prefer work-left.
+    local entries = '{"version":1,"entries":{'
+      .. '"r_work_left":{"session_id":"r_work_left","wezterm_pane_id":"41",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_a_aaaaaaaaaa",'
+        .. '"tmux_window":"@1","tmux_pane":"%2","status":"running","ts":'
+        .. tostring(now - 1000) .. ',"reason":"work left"},'
+      .. '"r_other":{"session_id":"r_other","wezterm_pane_id":"51",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_other_c_cccccccccc",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 9000) .. ',"reason":"other oldest"},'
+      .. '"r_work_right":{"session_id":"r_work_right","wezterm_pane_id":"42",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_b_bbbbbbbbbb",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 500) .. ',"reason":"work right"}'
+      .. '}}'
+    -- Focus on work session a / %1 while running entries are on %2 and
+    -- other panes — no cursor match in the running pool.
+    local tmp = setup_state(entries, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%1', {
+      { socket = '/tmp/sock', session = 'wezterm_work_b_bbbbbbbbbb', tmux_pane = '%1' },
+      { socket = '/tmp/sock', session = 'wezterm_other_c_cccccccccc', tmux_pane = '%1' },
+    })
+    local picked = attention.pick_next(attention.STATUS_RUNNING, 41)
+    cleanup(tmp)
+    assert_truthy(picked, 'no-cursor pick nil')
+    assert_eq(picked.session_id, 'r_work_left',
+      'no cursor should land on leftmost current-workspace running')
+  end)
+end)
+
 describe('pick_next — non-tmux fallback', function()
   it('skips an entry whose wezterm_pane_id matches when no tmux_session', function()
     reset()
