@@ -374,6 +374,95 @@ describe('pick_next — running pool (Alt+l)', function()
     assert_nil(picked, 'pick_next(running) jumped to self')
   end)
 
+  it('returns the sole running entry after note_jump when focus has moved away', function()
+    -- Repro 2026-09-08: sole ● on coco-forge; Alt+l landed there (note_jump);
+    -- user manually switched to ai-video-collection; Alt+l logged
+    -- `jump running empty` because last_jump made #pool==1 return nil.
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'coco-forge', active_pane = { id = 11 } },
+            { id = 2, title = 'ai-video-collection', active_pane = { id = 2 } },
+          },
+        },
+      },
+    }
+    tab_visibility.set_pane_session(11, 'wezterm_work_coco-forge_060820bd21')
+    tab_visibility.set_pane_session(2, 'wezterm_work_ai-video-collection_59200b16b2')
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"r_coco":{"session_id":"r_coco","wezterm_pane_id":"11",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_coco-forge_060820bd21",'
+        .. '"tmux_window":"@18","tmux_pane":"%33","status":"running","ts":'
+        .. tostring(now) .. ',"reason":"running"}'
+      .. '}}'
+    -- Focus file names the ai-video session the user is now on — not coco.
+    local tmp = setup_state(entries, '/tmp/sock',
+      'wezterm_work_ai-video-collection_59200b16b2', '%35', {
+        { socket = '/tmp/sock', session = 'wezterm_work_coco-forge_060820bd21', tmux_pane = '%33' },
+      })
+    attention.note_jump(attention.STATUS_RUNNING, {
+      session_id = 'r_coco',
+      tmux_window = '@18',
+      tmux_pane = '%33',
+    })
+    local picked = attention.pick_next(attention.STATUS_RUNNING, 2)
+    cleanup(tmp)
+    assert_truthy(picked, 'sole running entry suppressed by stale last_jump')
+    assert_eq(picked.session_id, 'r_coco',
+      'expected sole coco-forge running; got ' .. tostring(picked and picked.session_id))
+  end)
+
+  it('returns the sole waiting entry after note_jump when focus has moved away', function()
+    -- Same last_jump+#pool==1 trap on Alt+j (2026-09-08 18:09 jump →
+    -- 19:31 empty while render_status still waiting=1).
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'coco-forge', active_pane = { id = 11 } },
+            { id = 2, title = 'ai-video-collection', active_pane = { id = 2 } },
+          },
+        },
+        {
+          workspace = 'config',
+          tabs = {
+            { id = 3, title = 'wezdeck', active_pane = { id = 7 } },
+          },
+        },
+      },
+    }
+    tab_visibility.set_pane_session(11, 'wezterm_work_coco-forge_060820bd21')
+    tab_visibility.set_pane_session(2, 'wezterm_work_ai-video-collection_59200b16b2')
+    tab_visibility.set_pane_session(7, 'wezterm_config_wezterm-config_1f5ee8662c')
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"w_coco":{"session_id":"w_coco","wezterm_pane_id":"11",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_coco-forge_060820bd21",'
+        .. '"tmux_window":"@18","tmux_pane":"%33","status":"waiting","ts":'
+        .. tostring(now) .. ',"reason":"permission"}'
+      .. '}}'
+    local tmp = setup_state(entries, '/tmp/sock',
+      'wezterm_config_wezterm-config_1f5ee8662c', '%18', {
+        { socket = '/tmp/sock', session = 'wezterm_work_coco-forge_060820bd21', tmux_pane = '%33' },
+      })
+    attention.note_jump(attention.STATUS_WAITING, {
+      session_id = 'w_coco',
+      tmux_window = '@18',
+      tmux_pane = '%33',
+    })
+    local picked = attention.pick_next(attention.STATUS_WAITING, 7)
+    cleanup(tmp)
+    assert_truthy(picked, 'sole waiting entry suppressed by stale last_jump')
+    assert_eq(picked.session_id, 'w_coco',
+      'expected sole coco-forge waiting; got ' .. tostring(picked and picked.session_id))
+  end)
+
   it('advances via note_jump when tmux-focus still names the previous pane', function()
     -- Repro for "Alt+l feels dead": after landing on mid, the focus file
     -- has not caught up (still names oldest). Without note_jump the next

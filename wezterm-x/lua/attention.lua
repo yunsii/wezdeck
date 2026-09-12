@@ -1771,11 +1771,18 @@ end
 --      key feels dead.
 --   3. No cursor → leftmost of current workspace (rightmost if reverse).
 --
--- Returns nil when the only candidate is the cursor / focused pane: the
--- user is already there and has nothing left to jump to. Old fallback
+-- Returns nil when the only candidate is *really focused*: the user is
+-- already there and has nothing left to jump to. Old fallback
 -- `return pool[1]` made the handler "jump to self" — a no-op visually,
 -- but it still ran the post-jump optimistically_hide + forget side
 -- effects, silently archiving the pane the user was actively looking at.
+--
+-- last_jump alone must NOT trigger that nil: the user may have Alt+l'd
+-- to the sole running entry, then manually switched workspace/tab, and
+-- pressed Alt+l again expecting to jump back. Treating last_jump as
+-- "still focused" made the key log `alt-l jump running empty` while the
+-- ● counter still showed 1 (repro 2026-09-08: coco-forge sole running,
+-- focus on ai-video-collection pane 2 after a prior jump).
 function M.pick_next(kind, current_pane_id, opts)
   local reverse = type(opts) == 'table' and opts.reverse == true
   local waiting, done, running = M.collect()
@@ -1805,9 +1812,10 @@ function M.pick_next(kind, current_pane_id, opts)
   -- was never reachable. Find the focused / last-jumped slot (if any)
   -- and step forward (or backward when reverse). When nothing in the
   -- pool is a cursor, land on the leftmost of the current workspace
-  -- (rightmost if reverse). When the only candidate is the cursor,
-  -- return nil.
-  local cursor_idx = nil
+  -- (rightmost if reverse). When the only candidate is *really focused*,
+  -- return nil — last_jump alone must NOT suppress (user may have
+  -- jumped away after Alt+l).
+  local focused_idx = nil
   for i, entry in ipairs(pool) do
     local at_current
     if not current then
@@ -1826,10 +1834,11 @@ function M.pick_next(kind, current_pane_id, opts)
       at_current = (tostring(entry.wezterm_pane_id or '') == current)
     end
     if at_current then
-      cursor_idx = i
+      focused_idx = i
       break
     end
   end
+  local cursor_idx = focused_idx
   if not cursor_idx then
     local last_key = last_jump_by_kind[kind]
     if type(last_key) == 'string' and last_key ~= '' then
@@ -1856,7 +1865,12 @@ function M.pick_next(kind, current_pane_id, opts)
     return pool[1]
   end
   if #pool == 1 then
-    return nil
+    -- Suppress only when live focus says we are on the sole entry.
+    -- A last_jump-only cursor means the user has since moved away.
+    if focused_idx then
+      return nil
+    end
+    return pool[1]
   end
   local next_idx = reverse and (cursor_idx - 1) or (cursor_idx + 1)
   if next_idx < 1 then

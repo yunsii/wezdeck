@@ -450,9 +450,17 @@ function M.new(ctx)
       local current_pane_id = pane and pane:pane_id() or nil
       local entry = attention.pick_next(attention.STATUS_WAITING, current_pane_id)
       if not entry then
+        local waiting_n, done_n, running_n = 0, 0, 0
+        if attention.collect then
+          local w, d, r = attention.collect()
+          waiting_n, done_n, running_n = #w, #d, #r
+        end
         logger.info('attention', 'alt-j jump waiting empty', {
           trace = trace_id,
           pane_id = current_pane_id,
+          waiting = waiting_n,
+          done = done_n,
+          running = running_n,
         })
         return
       end
@@ -482,9 +490,17 @@ function M.new(ctx)
       local current_pane_id = pane and pane:pane_id() or nil
       local entry = attention.pick_next(attention.STATUS_DONE, current_pane_id)
       if not entry then
+        local waiting_n, done_n, running_n = 0, 0, 0
+        if attention.collect then
+          local w, d, r = attention.collect()
+          waiting_n, done_n, running_n = #w, #d, #r
+        end
         logger.info('attention', 'alt-k jump done empty', {
           trace = trace_id,
           pane_id = current_pane_id,
+          waiting = waiting_n,
+          done = done_n,
+          running = running_n,
         })
         return
       end
@@ -533,10 +549,18 @@ function M.new(ctx)
         current_pane_id,
         { reverse = reverse })
       if not entry then
+        local waiting_n, done_n, running_n = 0, 0, 0
+        if attention.collect then
+          local w, d, r = attention.collect()
+          waiting_n, done_n, running_n = #w, #d, #r
+        end
         logger.info('attention', reverse and 'alt-shift-l jump running empty' or 'alt-l jump running empty', {
           trace = trace_id,
           pane_id = current_pane_id,
           reverse = reverse and 1 or 0,
+          waiting = waiting_n,
+          done = done_n,
+          running = running_n,
         })
         return
       end
