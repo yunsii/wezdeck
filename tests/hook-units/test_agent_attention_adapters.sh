@@ -22,7 +22,10 @@ fail=0
 setup_sandbox() {
   local sandbox="$1" tmux_socket="$2" tmux_session="$3" tmux_pane="$4"
   guard_sandbox_paths "$sandbox/wezterm-runtime"
-  mkdir -p "$sandbox/wezterm-runtime/state/agent-attention" "$sandbox/bin" "$sandbox/home" "$sandbox/project"
+  mkdir -p "$sandbox/wezterm-runtime/state/agent-attention" \
+    "$sandbox/wezterm-runtime/logs" "$sandbox/bin" "$sandbox/home" "$sandbox/project"
+  export WEZTERM_RUNTIME_LOG_FILE="$sandbox/wezterm-runtime/logs/runtime.log"
+  : > "$WEZTERM_RUNTIME_LOG_FILE"
   cat > "$sandbox/bin/tmux" <<'TMUX_EOF'
 #!/usr/bin/env bash
 case "${1:-}" in
@@ -121,10 +124,56 @@ rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"
 setup_sandbox "$sandbox" "$socket" "$session" "%5"
+set +e
 printf '%s' '{"session_id":"claude-session-1","prompt":"hello claude\nsecond","hook_event_name":"UserPromptSubmit"}' \
-  | "$claude_adapter" running >/dev/null 2>&1 || true
+  | "$claude_adapter" running >/dev/null 2>"$sandbox/stderr"
+claude_ups_rc=$?
+set -e
+assert_eq "Claude UserPromptSubmit exit 0 (no set -u abort)" "0" "$claude_ups_rc"
 assert_eq "Claude adapter preserves session_id" "running" "$(field_for "$sandbox" "claude-session-1" "status")"
 assert_eq "Claude adapter preserves prompt reason" "hello claude" "$(field_for "$sandbox" "claude-session-1" "reason")"
+assert_eq "Claude UserPromptSubmit sticky last_user_prompt" "hello claude" \
+  "$(field_for "$sandbox" "claude-session-1" "last_user_prompt")"
+if grep -q 'unbound variable' "$sandbox/stderr" 2>/dev/null; then
+  echo "FAIL Claude UserPromptSubmit must not nounset-abort (saw: $(tr '\n' ' ' <"$sandbox/stderr"))" >&2
+  fail=$((fail + 1))
+else
+  pass=$((pass + 1))
+  echo "  ok  Claude UserPromptSubmit no unbound-variable stderr"
+fi
+rm -rf "$sandbox"
+
+# EXIT trap must leave hook aborted in runtime.log on non-zero exit.
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+set +e
+AGENT_ATTENTION_FORCE_ABORT=1 "$repo_root/scripts/runtime/agent-attention/emit.sh" running \
+  >/dev/null 2>"$sandbox/stderr"
+abort_rc=$?
+set -e
+assert_eq "FORCE_ABORT exits non-zero" "1" "$abort_rc"
+if grep -q 'message="hook aborted"' "$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null; then
+  pass=$((pass + 1))
+  echo "  ok  FORCE_ABORT writes hook aborted to runtime.log"
+else
+  fail=$((fail + 1))
+  echo "FAIL FORCE_ABORT missing hook aborted in $WEZTERM_RUNTIME_LOG_FILE" >&2
+  echo "    log: $(tr '\n' ' ' <"$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null)" >&2
+fi
+rm -rf "$sandbox"
+
+# Degraded JSON object (no identity fields) → warn, still fail-open.
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"unrelated":true}' \
+  | "$claude_adapter" running >/dev/null 2>&1 || true
+if grep -q 'message="adapter payload degraded"' "$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null; then
+  pass=$((pass + 1))
+  echo "  ok  degraded payload warns in runtime.log"
+else
+  fail=$((fail + 1))
+  echo "FAIL missing adapter payload degraded warn" >&2
+fi
 rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"

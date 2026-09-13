@@ -13,8 +13,14 @@
 # backwards compatibility, this script still accepts a raw Claude-like JSON
 # payload on stdin and extracts .session_id / .message / .stop_reason / .prompt.
 #
-# Fails open: any step that fails is silently skipped so hook execution
-# never breaks the agent flow.
+# Fails open (two layers):
+#   1) Agent CLI ignores non-zero hook exit (Claude/Grok: "hook failed,
+#      ignored") — the turn continues even if we abort.
+#   2) This script itself must not nounset-abort on optional sticky fields
+#      (`prompt_summary`, etc.): initialize every variable used under
+#      `set -u`, and soft-fail state/OSC steps with `|| true` so a badge
+#      miss never becomes a hard exit. Product gates (waiting whitelist,
+#      tmux race, AGENT_ATTENTION_SKIP) are intentional early exits 0.
 
 set -u
 
@@ -32,6 +38,39 @@ session_id="${AGENT_ATTENTION_SESSION_ID:-}"
 reason_override="${AGENT_ATTENTION_REASON:-}"
 notification_type="${AGENT_ATTENTION_NOTIFICATION_TYPE:-}"
 raw_event="${AGENT_ATTENTION_RAW_EVENT:-}"
+# Sticky Alt+/ body (UserPromptSubmit first line). Separate from `reason`,
+# which Stop/waiting overwrite. Always initialized — emit runs under `set -u`.
+prompt_summary="${AGENT_ATTENTION_PROMPT_SUMMARY:-}"
+status=""
+
+# Leave a runtime.log breadcrumb when the hook exits non-zero (nounset under
+# `set -u`, explicit abort, etc.). Claude/Grok only show "hook failed,
+# ignored" — without this, badge misses are invisible in runtime.log.
+# Use EXIT (not ERR): this script is fail-open without `set -e`; an ERR
+# trap that exits would turn soft `cmd || true` neighbors into hard kills.
+# Trap body must use ${…:-} so a second nounset cannot recurse.
+_attention_abort_logged=0
+_attention_emit_on_exit() {
+  local rc=$?
+  (( rc == 0 )) && return 0
+  (( _attention_abort_logged )) && return 0
+  _attention_abort_logged=1
+  runtime_log_error attention "hook aborted" \
+    "exit_code=${rc}" \
+    "status=${status:-}" \
+    "provider=${provider:-}" \
+    "session_id=${session_id:-}" \
+    "raw_event=${raw_event:-}" \
+    "wezterm_pane=${WEZTERM_PANE:-}" \
+    "tmux_pane=${TMUX_PANE:-}" \
+    2>/dev/null || true
+}
+trap '_attention_emit_on_exit' EXIT
+
+# Unit-test hook: force a logged abort after init (see test_agent_attention_adapters).
+if [[ "${AGENT_ATTENTION_FORCE_ABORT:-0}" == "1" ]]; then
+  exit 1
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -124,6 +163,11 @@ if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
     fi
     # .prompt carries the user's new prompt on UserPromptSubmit. Take the
     # first line and cap it so the Alt+/ overlay label stays readable.
+    if [[ -z "$prompt_summary" ]]; then
+      prompt_summary="$(printf '%s' "$stdin_payload" \
+        | jq -r '(.prompt | if . == null then empty else (split("\n")[0] | .[0:80]) end) // empty' \
+          2>/dev/null || true)"
+    fi
     if [[ -z "$reason_override" ]]; then
       extracted="$(printf '%s' "$stdin_payload" \
         | jq -r '.message // .stop_reason // .stopReason // .reason // (.prompt | if . == null then empty else (split("\n")[0] | .[0:80]) end) // empty' \
@@ -146,6 +190,12 @@ if [[ ! -t 0 ]] && command -v jq >/dev/null 2>&1; then
 fi
 if [[ -n "$reason_override" ]]; then
   reason="$reason_override"
+fi
+# Adapter path often puts the UserPromptSubmit first line in --reason and
+# does not set prompt_summary; reuse it only while status is running.
+if [[ -z "$prompt_summary" && "$status" == "running" \
+      && -n "$reason" && "$reason" != "running…" && "$reason" != "running" ]]; then
+  prompt_summary="$reason"
 fi
 
 # ---------------------------------------------------------------------------
@@ -495,12 +545,11 @@ else
   # Sticky display fields for Alt+/ : last real user prompt + provider
   # session name. Stop/waiting overwrite `reason` with end_turn / permission
   # copy; these two must survive so recent rows stay readable.
+  # `${…:-}` keeps `set -u` from aborting if a future caller forgets init
+  # (regression: b411eab referenced prompt_summary before it was assigned).
   last_user_prompt=""
-  if [[ -n "$prompt_summary" ]]; then
+  if [[ -n "${prompt_summary:-}" ]]; then
     last_user_prompt="$prompt_summary"
-  elif [[ "$status" == "running" && -n "$reason" \
-          && "$reason" != "running…" && "$reason" != "running" ]]; then
-    last_user_prompt="$reason"
   fi
   agent_name=""
   if [[ -n "$session_id" && "$session_id" != pane:* ]]; then

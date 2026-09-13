@@ -17,36 +17,54 @@
 #   Reset= 00 00 00 00     (tag  0 = Color::Reset → terminal default bg)
 # Exactly one source match is required or the script aborts.
 #
-# Re-run after every `grok` self-update / reinstall.
+# Standing automation: `scripts/runtime/grok-with-focus-filter.sh` ensure /
+# install re-runs this against ~/.grok/bin/grok.real after every promote from
+# `grok update`. Manual re-run is only needed when that launch path is skipped.
 #
 # Usage:
 #   scripts/dev/patch-grok-theme-wezdeck.sh
 #   WEZDECK_GROK_BG=default   scripts/dev/patch-grok-theme-wezdeck.sh
 #   WEZDECK_GROK_BG=f1f0e9    scripts/dev/patch-grok-theme-wezdeck.sh
-#   GROK_BIN=~/.grok/bin/grok scripts/dev/patch-grok-theme-wezdeck.sh
+#   GROK_BIN=~/.grok/bin/grok.real scripts/dev/patch-grok-theme-wezdeck.sh
+# Quiet (ensure path): WEZDECK_GROK_THEME_QUIET=1
+# Opt out of auto patch from focus-filter ensure: WEZDECK_GROK_THEME_PATCH=0
 set -euo pipefail
 
-GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok}"
+# Prefer the parked ELF — ~/.grok/bin/grok is usually the focus-filter wrapper.
+GROK_BIN="${GROK_BIN:-$HOME/.grok/bin/grok.real}"
 # default | reset | transparent | <6 hex digits>
 TARGET_SPEC="${WEZDECK_GROK_BG:-default}"
 # Prior fills we may need to migrate from (stock + earlier WezDeck patches).
 SOURCE_CANDIDATES="${WEZDECK_GROK_BG_SOURCES:-eeeeee,eae9e1,f1f0e9}"
+QUIET="${WEZDECK_GROK_THEME_QUIET:-0}"
 
 if [[ ! -f "$GROK_BIN" ]]; then
   printf 'patch-grok-theme-wezdeck: missing binary: %s\n' "$GROK_BIN" >&2
   exit 1
 fi
 
-python3 - "$GROK_BIN" "$TARGET_SPEC" "$SOURCE_CANDIDATES" <<'PY'
+python3 - "$GROK_BIN" "$TARGET_SPEC" "$SOURCE_CANDIDATES" "$QUIET" <<'PY'
 import os, shutil, sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
 target_spec = sys.argv[2].strip().lower()
 sources = [s.strip().lower() for s in sys.argv[3].split(",") if s.strip()]
+quiet = sys.argv[4].strip() in ("1", "true", "yes")
 
 RGB_TAG = 0x11  # crossterm::style::Color::Rgb discriminant
 RESET = bytes([0x00, 0x00, 0x00, 0x00])  # Color::Reset
+
+
+def say(msg: str) -> None:
+    if not quiet:
+        print(msg)
+
+
+def status(kind: str) -> None:
+    # Always emit one machine-readable line so ensure can log real rewrites
+    # even when human prose is quiet.
+    print(f"status={kind}")
 
 
 def rgb_tag(hex6: str) -> bytes:
@@ -88,7 +106,8 @@ if data.count(target_b) >= 1 and all(n == 0 for n in source_hits.values()):
             neighbor = RESET + rgb_tag("dedede")
             if data.find(neighbor) >= 0 or data.find(rgb_tag("dedede")) >= 0:
                 # If stock/prior fills gone, assume already transparent.
-                print(f"already patched: {path} → {target_label}")
+                say(f"already patched: {path} → {target_label}")
+                status("already")
                 sys.exit(0)
 
 # Prefer a source that appears exactly once.
@@ -112,7 +131,8 @@ if source_b is None:
     # Maybe already Reset: look for 00 00 00 00 11 de de de (Reset + #dedede pair)
     pair = RESET + rgb_tag("dedede")
     if target_b == RESET and data.find(pair) >= 0:
-        print(f"already patched: {path} → {target_label}")
+        say(f"already patched: {path} → {target_label}")
+        status("already")
         sys.exit(0)
     print(
         f"abort: none of the source colors {sources} found exactly once in {path}. "
@@ -122,13 +142,14 @@ if source_b is None:
     sys.exit(2)
 
 if source_b == target_b:
-    print(f"already patched: {path} → {target_label}")
+    say(f"already patched: {path} → {target_label}")
+    status("already")
     sys.exit(0)
 
 bak = path.with_name(path.name + ".bak-theme")
 if not bak.exists():
     shutil.copy2(path, bak)
-    print(f"backup: {bak}")
+    say(f"backup: {bak}")
 
 # Safety: only replace when the GrokDay pair shape matches
 #   <color4> 11 de de de   (bg_base + next light gray)
@@ -154,7 +175,8 @@ if target_b != RESET:
 else:
     assert verify.find(RESET + dedede) >= 0, "Reset+#dedede pair missing after write"
 
-print(f"patched: {path} ({how})")
-print(f"  GrokDay bg_base  #{source}  →  {target_label}")
-print("  restart grok; main canvas should follow tmux pane bg (active/inactive cream).")
+say(f"patched: {path} ({how})")
+say(f"  GrokDay bg_base  #{source}  →  {target_label}")
+say("  restart grok; main canvas should follow tmux pane bg (active/inactive cream).")
+status(f"patched:{how}:#{source}→{target_spec}")
 PY

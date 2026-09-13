@@ -15,8 +15,9 @@
 # After `grok update` the updater overwrites ~/.grok/bin/grok again. Standing
 # automation (preferred over remembering --install):
 #   1) Every normal launch runs a quiet ensure (promote newest download →
-#      grok.real; re-seat PATH symlinks if clobbered). Skip with
-#      GROK_FOCUS_FILTER_SKIP_ENSURE=1.
+#      grok.real; re-seat PATH symlinks if clobbered; re-apply GrokDay
+#      bg_base cream/Reset patch). Skip with GROK_FOCUS_FILTER_SKIP_ENSURE=1.
+#      Theme patch alone: WEZDECK_GROK_THEME_PATCH=0.
 #   2) Interactive zsh: shell-env.d `grok()` calls this wrapper by absolute
 #      path so update cannot steal the name via PATH (see
 #      wezterm-x/local.example/shell-env.d/grok-focus-filter.env).
@@ -35,6 +36,20 @@ _SELF="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOUR
 SCRIPT_DIR="$(cd "$(dirname "$_SELF")" && pwd)"
 FILTER_PY="$SCRIPT_DIR/grok-focus-filter.py"
 REPO_WRAPPER="$SCRIPT_DIR/grok-with-focus-filter.sh"
+THEME_PATCH="$SCRIPT_DIR/../dev/patch-grok-theme-wezdeck.sh"
+
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/runtime-log-lib.sh" 2>/dev/null || true
+WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-grok-with-focus-filter.sh}"
+
+_grok_runtime_log() {
+  local level="$1"
+  local message="$2"
+  shift 2
+  if declare -F "runtime_log_${level}" >/dev/null 2>&1; then
+    "runtime_log_${level}" primary_pane "$message" "$@" 2>/dev/null || true
+  fi
+}
 
 is_focus_filter_wrapper() {
   # True for *any* checkout's grok-with-focus-filter.sh (primary, worktree,
@@ -104,6 +119,8 @@ resolve_real_bin() {
     fi
   done < <(type -aP grok 2>/dev/null || true)
   printf 'grok-with-focus-filter: cannot find a real grok binary (expected ~/.grok/bin/grok.real)\n' >&2
+  _grok_runtime_log error "grok focus-filter unhealthy" \
+    "reason=missing_real_binary" "expected=${HOME}/.grok/bin/grok.real"
   exit 127
 }
 
@@ -184,10 +201,69 @@ install_wrapper() {
   printf 'install: %s → %s\n' "$target" "$REPO_WRAPPER"
   printf 'install: %s → %s\n' "$local_link" "$REPO_WRAPPER"
   printf 'install: real binary %s\n' "$real"
-  printf 'Re-run after every `grok update`. Exit and --resume any live Grok session.\n'
+  ensure_theme_patch "$real" verbose
+  printf 'Re-run after every `grok update` is usually unnecessary — launch ensure heals PATH + theme. Exit and --resume any live Grok session.\n'
   # Smoke: resolved real must not be the wrapper.
   GROK_REAL_BIN= "$REPO_WRAPPER" --version >/dev/null
   printf 'install: smoke --version ok via wrapper\n'
+}
+
+# Re-apply GrokDay bg_base cream/Reset patch after update promotes a stock ELF.
+# Never fails the launch path — layout drift just warns (focus-filter still works).
+# Opt out: WEZDECK_GROK_THEME_PATCH=0
+ensure_theme_patch() {
+  local real="${1:-${HOME}/.grok/bin/grok.real}"
+  local mode="${2:-quiet}" # quiet | verbose
+  local log=0
+  [[ "${GROK_FOCUS_FILTER_ENSURE_LOG:-0}" == "1" || "$mode" == "verbose" ]] && log=1
+
+  case "${WEZDECK_GROK_THEME_PATCH:-1}" in
+    0|false|no|off) (( log )) && printf 'ensure: theme patch skipped (WEZDECK_GROK_THEME_PATCH=%s)\n' "${WEZDECK_GROK_THEME_PATCH}" >&2; return 0 ;;
+  esac
+
+  if [[ ! -x "$THEME_PATCH" ]]; then
+    (( log )) && printf 'ensure: theme patch script missing: %s\n' "$THEME_PATCH" >&2
+    _grok_runtime_log warn "grok theme patch skipped" \
+      "reason=missing_script" "script=$THEME_PATCH"
+    return 0
+  fi
+  if ! is_probable_grok_elf "$real"; then
+    (( log )) && printf 'ensure: theme patch skip — no ELF at %s\n' "$real" >&2
+    return 0
+  fi
+
+  local quiet_env=1
+  [[ "$mode" == "verbose" || "${GROK_FOCUS_FILTER_ENSURE_LOG:-0}" == "1" ]] && quiet_env=0
+
+  local out rc
+  set +e
+  out="$(
+    WEZDECK_GROK_THEME_QUIET="$quiet_env" GROK_BIN="$real" "$THEME_PATCH" 2>&1
+  )"
+  rc=$?
+  set -e
+
+  if (( rc == 0 )); then
+    if (( log )) && [[ -n "$out" ]]; then
+      printf '%s\n' "$out" | sed 's/^/ensure: /' >&2
+    elif grep -q '^status=patched' <<<"$out"; then
+      # Always surface a real rewrite once (update just restored stock #eeeeee).
+      local st
+      st="$(grep '^status=patched' <<<"$out" | tail -1)"
+      printf 'ensure: theme %s\n' "$st" >&2
+      _grok_runtime_log info "grok theme patched" \
+        "binary=$real" "detail=$st"
+    fi
+    return 0
+  fi
+
+  # Soft-fail: do not block grok launch when upstream layout moved.
+  printf 'ensure: theme patch failed (rc=%s) — active/inactive cream may be missing; see docs/tmux-ui.md#grok-build-in-tmux\n' "$rc" >&2
+  [[ -n "$out" ]] && printf '%s\n' "$out" | sed 's/^/ensure: /' >&2
+  _grok_runtime_log warn "grok theme patch failed" \
+    "binary=$real" "exit_code=$rc" \
+    "detail=$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-200)"
+  return 0
 }
 
 # Quiet heal used on every normal launch (and safe to call repeatedly).
@@ -259,6 +335,9 @@ ensure_wrapper() {
     ln -sfn "$REPO_WRAPPER" "$local_link"
     ensure_log "$local_link → wrapper"
   fi
+
+  # After any promote/seed of grok.real, re-apply cream/Reset bg_base.
+  ensure_theme_patch "$real" quiet
 }
 
 # Non-mutating health check for docs / agents / post-update ops.
@@ -300,6 +379,50 @@ check_wrapper() {
     printf 'WARN: %s is not the wrapper (PATH backup missing)\n' "$local_link"
   fi
 
+  # GrokDay bg_base cream/Reset patch (active/inactive pane tint under opaque).
+  case "${WEZDECK_GROK_THEME_PATCH:-1}" in
+    0|false|no|off)
+      printf 'ok: theme patch opted out (WEZDECK_GROK_THEME_PATCH=%s)\n' "${WEZDECK_GROK_THEME_PATCH}"
+      ;;
+    *)
+      if [[ -x "$real" ]]; then
+        local theme_state=""
+        theme_state="$(
+          python3 - "$real" "${WEZDECK_GROK_BG:-default}" <<'PY' 2>/dev/null || true
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+target = sys.argv[2].strip().lower()
+data = path.read_bytes()
+RGB, RESET = 0x11, bytes(4)
+def rgb(h):
+    return bytes([RGB, int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)])
+stock = data.count(rgb("eeeeee"))
+if target in ("default", "reset", "transparent", "none"):
+    ok = stock == 0 and data.find(RESET + rgb("dedede")) >= 0
+    label = "Color::Reset"
+elif len(target) == 6:
+    ok = stock == 0 and data.count(rgb(target)) == 1
+    label = f"Rgb #{target}"
+else:
+    ok = False
+    label = target
+print("ok" if ok else "bad", label, f"stock_eeeeee={stock}")
+PY
+        )"
+        if [[ "$theme_state" == ok* ]]; then
+          printf 'ok: GrokDay bg_base patched (%s)\n' "${theme_state#ok }"
+        elif [[ -z "$theme_state" ]]; then
+          printf 'WARN: could not inspect GrokDay bg_base in %s\n' "$real"
+        else
+          printf 'FAIL: GrokDay bg_base still stock (or unpatched) in %s (%s)\n' "$real" "$theme_state"
+          printf '  fix: launch ensure / --install re-applies scripts/dev/patch-grok-theme-wezdeck.sh\n'
+          rc=1
+        fi
+      fi
+      ;;
+  esac
+
   # Interactive launch: zsh function (absolute wrapper) OR PATH first hit.
   local kind=""
   kind="$(zsh -ilc 'whence -w grok' 2>/dev/null || true)"
@@ -324,6 +447,8 @@ check_wrapper() {
     printf 'check: focus-filter install looks healthy\n'
   else
     printf 'check: focus-filter install needs repair (see FAIL lines above)\n' >&2
+    _grok_runtime_log error "grok focus-filter unhealthy" \
+      "reason=check_failed" "target=$target" "real=$real"
   fi
   return "$rc"
 }
@@ -352,6 +477,8 @@ export GROK_REAL_BIN="$REAL_BIN"
 
 if [[ ! -f "$FILTER_PY" ]]; then
   printf 'grok-with-focus-filter: missing %s\n' "$FILTER_PY" >&2
+  _grok_runtime_log error "grok focus-filter unhealthy" \
+    "reason=missing_filter_py" "path=$FILTER_PY"
   exit 127
 fi
 

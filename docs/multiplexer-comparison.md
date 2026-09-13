@@ -118,10 +118,10 @@ observation that produced them.
     differential left to flash against. That does **not** remove the **primary**
     FocusGained `terminal.clear()` flash (any multiplexer still triggers
     upstream’s heal; macOS can hide it via sub-frame client redraw, WSL→Windows
-    does not — even a ~31×15 pane still flashed). The cream patch stays optional
-    for tint; the standing mitigation for whole-content flash is
-    `scripts/runtime/grok-with-focus-filter.sh --install` (wrapper at
-    `~/.grok/bin/grok`, ELF at `grok.real`) in that same section. Never
+    does not — even a ~31×15 pane still flashed). The cream/`Reset` theme patch
+    is standing inside the same focus-filter launch ensure (re-applied after
+    `grok update`); the flash mitigation is the PATH wrapper at
+    `~/.grok/bin/grok` (ELF at `grok.real`) in that same section. Never
     visually confirmed on herdr: the evaluation switch was removed before
     that test ran — see Open questions.
 11. **Config reloads live.** `herdr server reload-config` returned

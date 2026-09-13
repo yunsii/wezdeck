@@ -46,11 +46,25 @@ script_dir="$(cd "$(dirname "$0")" && pwd -P)"
 # shellcheck disable=SC1091
 . "$script_dir/runtime-env-lib.sh"
 runtime_env_load_managed
+# shellcheck disable=SC1091
+. "$script_dir/runtime-log-lib.sh" 2>/dev/null || true
+WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-agent-launcher.sh}"
 
 agent="${1:-}"
+
+_launcher_log_error() {
+  local message="$1"
+  shift
+  if declare -F runtime_log_error >/dev/null 2>&1; then
+    runtime_log_error primary_pane "$message" "$@" || true
+  fi
+}
+
 if [[ -n "${2:-}" ]]; then
   printf 'agent-launcher: unexpected argument %s (Happy wrap removed)\n' "$2" >&2
   printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex|grok>\n' >&2
+  _launcher_log_error "agent launcher failed" \
+    "reason=unexpected_argument" "arg=$2" "agent=${agent:-}" "cwd=$PWD"
   exit 1
 fi
 
@@ -87,8 +101,6 @@ print_loading_banner() {
 
 # shellcheck disable=SC1091
 . "$script_dir/agent-claude-sub2api-lib.sh"
-# shellcheck disable=SC1091
-. "$script_dir/runtime-log-lib.sh" 2>/dev/null || true
 
 print_loading_banner "$agent"
 
@@ -148,6 +160,10 @@ case "$agent" in
     if [[ -z "$grok_bin" ]]; then
       printf 'agent-launcher: grok not found (expected %s or PATH)\n' \
         "$script_dir/grok-with-focus-filter.sh" >&2
+      _launcher_log_error "agent launcher failed" \
+        "reason=grok_not_found" \
+        "expected=$script_dir/grok-with-focus-filter.sh" \
+        "cwd=$PWD"
       exit 127
     fi
     log_resume_boot grok
@@ -157,6 +173,8 @@ case "$agent" in
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
     printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex|grok>\n' >&2
+    _launcher_log_error "agent launcher failed" \
+      "reason=unknown_agent" "agent=${agent:-}" "cwd=$PWD"
     exit 1
     ;;
 esac

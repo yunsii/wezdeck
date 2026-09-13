@@ -45,7 +45,8 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   launch `--ensure`; `~/.grok/bin/grok` → wrapper, `grok.real` = ELF; zshrc
   prepends `~/.grok/bin`), **interactive `grok` after `grok update`**
   (updater clobbers `~/.grok/bin/grok`; heal = shell-env `grok()` absolute
-  wrap + launch ensure, then exit/`--resume` live panes — do not redesign
+  wrap + launch ensure reseats PATH **and** re-applies GrokDay cream/`Reset`
+  theme patch, then exit/`--resume` live panes — do not redesign
   focus-events), why managed `agent-launcher.sh grok` can look fine while a
   bare-PATH `grok` flashes (launcher uses wrapper absolute path), why
   macOS WezTerm+tmux can look fine with the same heal (sub-frame client

@@ -21,10 +21,22 @@ runtime_log_init() {
   # shellcheck disable=SC1091
   . "$__RUNTIME_LOG_LIB_DIR/wsl-runtime-paths-lib.sh"
 
+  # Caller / test override wins over wezterm-x/local/runtime-logging.sh,
+  # which unconditionally `export`s WEZTERM_RUNTIME_LOG_FILE to the live path.
+  local preset_log_file="${WEZTERM_RUNTIME_LOG_FILE-}"
+  local preset_log_level="${WEZTERM_RUNTIME_LOG_LEVEL-}"
+  local preset_log_enabled="${WEZTERM_RUNTIME_LOG_ENABLED-}"
+  local preset_log_categories="${WEZTERM_RUNTIME_LOG_CATEGORIES-}"
+
   if [[ -f "$config_file" ]]; then
     # shellcheck disable=SC1090
     source "$config_file"
   fi
+
+  [[ -n "$preset_log_file" ]] && WEZTERM_RUNTIME_LOG_FILE="$preset_log_file"
+  [[ -n "$preset_log_level" ]] && WEZTERM_RUNTIME_LOG_LEVEL="$preset_log_level"
+  [[ -n "$preset_log_enabled" ]] && WEZTERM_RUNTIME_LOG_ENABLED="$preset_log_enabled"
+  [[ -n "$preset_log_categories" ]] && WEZTERM_RUNTIME_LOG_CATEGORIES="$preset_log_categories"
 
   : "${WEZTERM_RUNTIME_LOG_ENABLED:=1}"
   : "${WEZTERM_RUNTIME_LOG_LEVEL:=info}"

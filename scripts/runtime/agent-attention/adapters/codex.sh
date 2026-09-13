@@ -6,6 +6,9 @@ set -u
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 emit="$script_dir/../emit.sh"
+# shellcheck disable=SC1091
+. "$script_dir/../../runtime-log-lib.sh" 2>/dev/null || true
+WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-agent-attention-adapter-codex.sh}"
 
 status="${1:-}"
 if [[ -z "$status" ]]; then
@@ -38,6 +41,18 @@ if [[ -n "$payload" ]] && command -v jq >/dev/null 2>&1; then
         // (.prompt | if . == null then empty else (split("\n")[0] | .[0:80]) end)
         // empty
       ' 2>/dev/null || true)"
+
+  if [[ -z "$session_id" && -z "$raw_event" && -z "$reason" ]] \
+      && printf '%s' "$payload" | jq -e 'type == "object"' >/dev/null 2>&1; then
+    if declare -F runtime_log_warn >/dev/null 2>&1; then
+      runtime_log_warn attention "adapter payload degraded" \
+        "provider=codex" \
+        "status=$status" \
+        "payload_bytes=${#payload}" \
+        "wezterm_pane=${WEZTERM_PANE:-}" \
+        2>/dev/null || true
+    fi
+  fi
 fi
 
 codex_auto_review_enabled() {
