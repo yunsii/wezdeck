@@ -356,7 +356,7 @@ reset_window_in_place() {
   tmux respawn-pane -k -t "$target_pane" -c "$worktree_root" "$primary_command"
   tmux rename-window -t "$window_id" "$window_label" 2>/dev/null || true
 
-  # Tag (or clear) the agent profile on the primary pane so C-n / User3
+  # Tag (or clear) the agent profile on the primary pane so C-n
   # can detect it through the resume wrapper's leaf=sh / leaf=node
   # startup transient. See `@agent_pane_match` in tmux.conf.
   if [[ "$target_is_primary" == "1" ]]; then

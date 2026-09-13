@@ -91,7 +91,7 @@ fi
 # primary pane with `@wezterm_pane_role=agent-cli:<base>`. Without this
 # tag, `@agent_pane_match` in tmux.conf can't see through the resume
 # wrapper's `pane_current_command=sh`/`node` boot transient, and Ctrl+N
-# / Ctrl+P fall through to the pass-through branch on a fresh cold-spawn
+# falls through to the pass-through branch on a fresh cold-spawn
 # tab until something else (refresh-session) re-tags the pane. Mirrors
 # the lua-side wiring at workspace/runtime.lua:project_session_args.
 ( setsid env -u WEZTERM_PANE bash "$script_dir/open-project-session.sh" \

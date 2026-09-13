@@ -90,7 +90,7 @@ build_primary_shell_command() {
 # `resolve_resume_primary_command` would actually override the metadata
 # command with the agent wrapper. Empty otherwise. Used by the refresh
 # path to decide whether to tag the pane with `@wezterm_pane_role` so
-# the C-n / User3 bindings can detect agent panes through the wrapper's
+# the C-n binding can detect agent panes through the wrapper's
 # leaf=sh / leaf=node startup transient.
 agent_profile_for_managed_pane() {
   local wezterm_repo="$1"
@@ -113,7 +113,7 @@ agent_profile_for_managed_pane() {
 }
 
 # Tag (or untag) a primary pane with `@wezterm_pane_role=agent-cli:<profile>`
-# so the C-n / User3 bindings can detect it through the resume wrapper's
+# so the C-n binding can detect it through the resume wrapper's
 # leaf=sh / leaf=node boot transient. Used by every path that respawns
 # or freshly creates a managed primary pane (in-place window refresh,
 # session-replacement clone, …) to keep the predicate semantics in one

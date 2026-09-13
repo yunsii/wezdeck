@@ -199,8 +199,8 @@ tmux_worktree_set_session_metadata "$session_name" "$workspace" managed
 tmux_worktree_set_window_metadata "$window_id" managed_primary "$worktree_root" "$worktree_label" "$primary_shell_command" managed_two_pane
 
 # Tag the primary pane with `@wezterm_pane_role=agent-cli:<base>` so the
-# Ctrl+n (`/new`) and Ctrl+P (`!git push`) bindings — driven by
-# `@agent_pane_match` in tmux.conf — can recognize the agent CLI through
+# Ctrl+n (`/new`) binding — driven by `@agent_pane_match` in tmux.conf —
+# can recognize the agent CLI through
 # primary-pane-wrapper.sh's startup transient (where `pane_current_command`
 # is `sh`/`node` rather than `claude`/`codex` because the resume wrapper
 # `sh -c '<resume> || exec <fresh>'` doesn't `exec` on the success branch).

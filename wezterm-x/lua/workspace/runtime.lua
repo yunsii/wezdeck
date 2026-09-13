@@ -166,7 +166,7 @@ exit 1
       -- normalized away so the tmux-side `@wezterm_pane_role=agent-cli:<base>`
       -- tag matches the agent CLI's own basename — that's what
       -- `@agent_pane_match` in tmux.conf compares against. Without this
-      -- tag the Ctrl+n / Ctrl+P bindings can't see through the wrapper's
+      -- tag the Ctrl+n binding can't see through the wrapper's
       -- `pane_current_command=sh` boot transient.
       local base = item.launcher:gsub('_resume$', '')
       if base ~= '' then

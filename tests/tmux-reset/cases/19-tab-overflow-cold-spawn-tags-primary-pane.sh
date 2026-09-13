@@ -8,8 +8,8 @@
 # with @wezterm_pane_role=agent-cli:<base> only when invoked with
 # --agent-profile <base>; without that tag, tmux.conf's
 # @agent_pane_match cannot see through the resume wrapper's
-# `pane_current_command=sh`/`node` boot transient and Ctrl+N / Ctrl+P
-# fall through to plain pass-through on a freshly opened cold tab. A
+# `pane_current_command=sh`/`node` boot transient and Ctrl+N
+# falls through to plain pass-through on a freshly opened cold tab. A
 # subsequent refresh-session re-tags the pane and the bindings start
 # working — exactly the symptom the bug report described.
 #
@@ -104,6 +104,6 @@ for _ in $(seq 1 100); do
 done
 
 tmux_test_assert_eq "agent-cli:mockagent" "$role" \
-  "cold-spawn must tag primary pane so @agent_pane_match (Ctrl+N / Ctrl+P) sees through resume-wrapper boot transient"
+  "cold-spawn must tag primary pane so @agent_pane_match (Ctrl+N) sees through resume-wrapper boot transient"
 
 printf 'PASS tab-overflow-cold-spawn-tags-primary-pane\n'

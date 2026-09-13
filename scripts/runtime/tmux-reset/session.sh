@@ -60,7 +60,7 @@ create_window_from_spec() {
 
   apply_window_metadata "$session_name" "$window_id" "$worktree_root" "$window_label" "$primary_command" "$layout" "$role"
 
-  # Tag the freshly-created primary pane so C-n / User3 can detect a
+  # Tag the freshly-created primary pane so C-n can detect a
   # managed agent pane through the resume wrapper's leaf=sh / leaf=node
   # startup transient. Without this, panes created via session-replacement
   # refresh would carry no `@wezterm_pane_role` and the bindings would

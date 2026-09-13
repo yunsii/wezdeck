@@ -131,7 +131,7 @@ repo family 一旦超过 5、6 个 session，全部摊在 tab bar 上既挤又�
 
 #### 2.2 Worktree 生命周期外的工作区快捷键
 
-`Alt+s` 进 `opensource` 工作区（开源仓库专属）、`Ctrl+P` 是 agent-aware 的 git push 快捷键（push 之前感知 attention 状态，避免抢 agent turn）；管道里其他启动路径全部走 `scripts/runtime/agent-launcher.sh <profile>` 这唯一一个 env-loading 入口（见后文架构表脚注）。
+`Alt+s` 进 `opensource` 工作区（开源仓库专属）；管道里其他启动路径全部走 `scripts/runtime/agent-launcher.sh <profile>` 这唯一一个 env-loading 入口（见后文架构表脚注）。
 
 ### 3. WSL ⇄ Windows 的三通道通信
 
