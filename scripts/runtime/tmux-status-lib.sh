@@ -53,6 +53,43 @@ style() {
   printf '#[%s]%s#[default]' "$spec" "$text"
 }
 
+# Map a git toplevel basename to a status-bar display label.
+# One optional remap: TMUX_STATUS_REPO_ALIAS / @tmux_status_repo_alias as
+# `basename=label` (default wezterm-config=wezdeck). Set to none|off|0
+# (or an empty env value) to show the raw basename.
+tmux_status_repo_display_label() {
+  local label="${1:-}"
+  local alias=""
+  local key=""
+  local value=""
+
+  [[ -n "$label" ]] || {
+    printf '%s' "$label"
+    return
+  }
+
+  alias="$(tmux_option_or_env TMUX_STATUS_REPO_ALIAS @tmux_status_repo_alias 'wezterm-config=wezdeck')"
+  case "$alias" in
+    ''|none|off|0)
+      printf '%s' "$label"
+      return
+      ;;
+  esac
+
+  key="${alias%%=*}"
+  value="${alias#*=}"
+  key="${key#"${key%%[![:space:]]*}"}"
+  key="${key%"${key##*[![:space:]]}"}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  if [[ "$key" == "$label" && -n "$value" && "$value" != "$alias" ]]; then
+    printf '%s' "$value"
+    return
+  fi
+
+  printf '%s' "$label"
+}
+
 epoch_to_day() {
   local value="$1"
 

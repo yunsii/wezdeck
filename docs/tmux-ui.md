@@ -88,6 +88,7 @@ In tmux UI terms what shows up here is: a per-tab badge (an unfocused tab filled
 ## Status Lines
 
 - The first tmux line renders repo, branch, combined git change counts, tracked-branch sync markers, and Node.js version.
+- The repo segment starts from the git toplevel basename, then applies one optional remap via `@tmux_status_repo_alias` / `TMUX_STATUS_REPO_ALIAS` (`basename=label`). Default is `wezterm-config=wezdeck` so this repo's logical name shows in the bar while the directory stays `wezterm-config`. Set the option to `none` (or empty `TMUX_STATUS_REPO_ALIAS=`) to show the raw basename. WezTerm managed tab titles still use the directory name unless overridden separately.
 - The git-changes group reads `(+S,~U,?T,<sync>)` where `S` is staged, `U` is unstaged, `T` is untracked, and `<sync>` is one of: `=0` (synced with upstream), `^N` (ahead by N), `vN` (behind by N), `*0` (no upstream — local-only branch never pushed).
 - The second tmux line renders the repo family's linked worktree count plus the current worktree role, for example `linked:2 · primary`.
 - The worktree line derives its repo family and current role from the active pane's live git state instead of stored tmux metadata.

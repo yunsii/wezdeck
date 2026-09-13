@@ -225,7 +225,7 @@ if is_enabled "$render_repo" || is_enabled "$render_branch" || is_enabled "$rend
 fi
 
 if is_enabled "$render_repo"; then
-  parts+=("$(style 'fg=#3f5f94,bold' "$git_repo_label")")
+  parts+=("$(style 'fg=#3f5f94,bold' "$(tmux_status_repo_display_label "$git_repo_label")")")
 fi
 
 if is_enabled "$render_branch"; then
