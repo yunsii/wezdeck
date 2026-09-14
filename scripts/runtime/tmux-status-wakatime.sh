@@ -143,8 +143,8 @@ if [[ "${TMUX_STATUS_WAKATIME_REFRESH_ONLY:-0}" == "1" ]]; then
   exit 0
 fi
 
+# No key / no python → emit nothing so status-layout does not reserve a row.
 if ! is_wakatime_available; then
-  printf '%s%s' "$padding" "$(style 'fg=#7f7a72' 'WakaTime unavailable')"
   exit 0
 fi
 
@@ -188,11 +188,8 @@ if (( age >= 60 )) && [[ ! -f "$WAKA_LOCK" ]]; then
   TMUX_STATUS_WAKATIME_REFRESH_ONLY=1 nohup bash "$script_path" >/dev/null 2>&1 &
 fi
 
+# Warming cache / zero activity → empty line (do not occupy a status row).
 if [[ -z "$ai" && -z "$code" ]]; then
-  printf '%s%s%s' \
-    "$padding" \
-    "$(style 'fg=#7f7a72' 'WakaTime:')" \
-    "$(style 'fg=#7f7a72' ' Ready to roll')"
   exit 0
 fi
 
@@ -207,10 +204,6 @@ if [[ -n "$code" && "$code" != "0 secs" && "$code" != "null" ]]; then
 fi
 
 if (( ${#parts[@]} == 0 )); then
-  printf '%s%s%s' \
-    "$padding" \
-    "$(style 'fg=#7f7a72' 'WakaTime:')" \
-    "$(style 'fg=#7f7a72' ' Ready to roll')"
   exit 0
 fi
 

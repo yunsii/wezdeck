@@ -5,10 +5,13 @@
 # palette refresh-current-* actions.
 #
 # Steps:
-#   1. refresh-client -S — re-measure tty size after zoom / RDP attach
+#   1. resync client size to the PTY (refresh-client -S; if still drifted
+#      from TIOCGWINSZ, SIGWINCH the attach client — WezTerm can resize
+#      the pts while tmux keeps a stale client_width/height)
 #   2. rebalance managed two-pane windows (even-horizontal)
-#   3. clamp multi-line status to the expected 1–3 lines and force a
-#      status recompute (fixes "status bar ate half the window")
+#   3. clear cached status lines, force a status recompute so the bar
+#      packs to the number of visible content rows (not a fixed 3), then
+#      safety-clamp anything still above 3
 #
 # Usage:
 #   tmux-fix-layout.sh
@@ -21,6 +24,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-worktree-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/tmux-fix-layout-lib.sh"
 
 session_name="${COMMAND_PANEL_SESSION_NAME:-}"
 window_id="${COMMAND_PANEL_WINDOW_ID:-}"
@@ -114,23 +119,79 @@ runtime_log_info layout "fix-layout invoked" \
   "client_tty=${client_tty:-}"
 
 # ── 1. Re-measure client size (DPI / RDP attach-detach) ──────────────
+# WezTerm can resize the PTY (TIOCGWINSZ) while the tmux attach client
+# keeps a stale client_width/height. refresh-client -S alone does not
+# always pick that up (measured 2026-09-14: pts 213x56 vs client 170x46).
+# SIGWINCH the attach process forces a re-read; then -S / rebalance follow.
+# Helpers: tmux-fix-layout-lib.sh (covered by hook-unit tests).
+resync_client_size() {
+  local client="$1"
+  local tty="$2"
+  local pty_size=""
+  local client_size=""
+  local cols="" rows="" usable_rows="" status_opt=""
+
+  [[ -n "$client" ]] || return 0
+  tmux refresh-client -S -t "$client" 2>/dev/null || true
+
+  if [[ -z "$tty" ]]; then
+    tty="$(tmux list-clients -F '#{client_name}\t#{client_tty}' 2>/dev/null \
+      | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
+  fi
+  [[ -n "$tty" ]] || return 0
+
+  pty_size="$(tmux_fix_layout_pty_winsize "$tty")"
+  client_size="$(tmux list-clients -F '#{client_name}\t#{client_width}x#{client_height}' 2>/dev/null \
+    | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
+  tmux_fix_layout_sizes_differ "$pty_size" "$client_size" || return 0
+
+  runtime_log_info layout "client size drifted from PTY; sending SIGWINCH" \
+    "client=$client" "tty=$tty" "pty_size=$pty_size" "client_size=$client_size"
+  tmux_fix_layout_winch_attach_client "$tty"
+  # Give the client a beat to apply TIOCGWINSZ before the next -S.
+  sleep 0.05
+  tmux refresh-client -S -t "$client" 2>/dev/null || true
+
+  client_size="$(tmux list-clients -F '#{client_name}\t#{client_width}x#{client_height}' 2>/dev/null \
+    | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
+  if tmux_fix_layout_sizes_differ "$pty_size" "$client_size"; then
+    cols="${pty_size%x*}"
+    rows="${pty_size#*x}"
+    status_opt="$(tmux show-options -qv -t "$session_name" status 2>/dev/null || true)"
+    [[ -n "$status_opt" ]] || status_opt="$(tmux show -gv status 2>/dev/null || printf 'on')"
+    usable_rows="$(tmux_fix_layout_usable_rows "$rows" "$status_opt")"
+    if [[ "$cols" =~ ^[0-9]+$ && "$usable_rows" =~ ^[0-9]+$ && -n "$window_id" ]]; then
+      tmux resize-window -t "$window_id" -x "$cols" -y "$usable_rows" >/dev/null 2>&1 || true
+      runtime_log_warn layout "SIGWINCH did not update client; resized window to PTY" \
+        "window_id=$window_id" "pty_size=$pty_size" "client_size=$client_size" \
+        "usable=${cols}x${usable_rows}"
+    fi
+  fi
+}
+
 refresh_clients() {
   local client=""
+  local tty=""
   if [[ -n "$client_name" ]]; then
-    tmux refresh-client -S -t "$client_name" 2>/dev/null || true
+    tty="$client_tty"
+    if [[ -z "$tty" ]]; then
+      tty="$(tmux list-clients -F '#{client_name}\t#{client_tty}' 2>/dev/null \
+        | awk -F '\t' -v c="$client_name" '$1 == c { print $2; exit }')"
+    fi
+    resync_client_size "$client_name" "$tty"
     return 0
   fi
   if [[ -n "$client_tty" ]]; then
-    while IFS= read -r client; do
+    while IFS=$'\t' read -r client tty; do
       [[ -n "$client" ]] || continue
-      tmux refresh-client -S -t "$client" 2>/dev/null || true
+      resync_client_size "$client" "$tty"
     done < <(tmux list-clients -F '#{client_name}\t#{client_tty}' 2>/dev/null \
-      | awk -F '\t' -v tty="$client_tty" '$2 == tty { print $1 }')
+      | awk -F '\t' -v tty="$client_tty" '$2 == tty { print $1 "\t" $2 }')
   fi
-  while IFS= read -r client; do
+  while IFS=$'\t' read -r client tty; do
     [[ -n "$client" ]] || continue
-    tmux refresh-client -S -t "$client" 2>/dev/null || true
-  done < <(tmux list-clients -t "$session_name" -F '#{client_name}' 2>/dev/null || true)
+    resync_client_size "$client" "$tty"
+  done < <(tmux list-clients -t "$session_name" -F '#{client_name}\t#{client_tty}' 2>/dev/null || true)
 }
 refresh_clients
 

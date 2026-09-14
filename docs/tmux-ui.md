@@ -20,7 +20,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - Managed tmux flows do not require shell rc `OSC 7` integration; tmux status and tmux-owned shortcuts resolve cwd from tmux's own `pane_current_path`.
 - In tmux-backed panes, navigation actions such as VS Code open and worktree switching resolve through tmux first, including copy-mode and scrollback.
 - `Ctrl+Shift+P` opens a centered tmux popup command palette whenever the current pane is running tmux.
-- tmux refresh (respawn) is command-palette-owned instead of WezTerm-shortcut-owned. The lighter **layout fix** (`scripts/runtime/tmux-fix-layout.sh`) runs `refresh-client -S`, rebalances with `even-horizontal`, clamps multi-line `status` to ≤3 lines, and forces a status recompute. Triggers: manual `Ctrl+k r` / palette `Session: Fix layout`; **automatic** (debounced ~200 ms, min interval 500 ms) on WezTerm `window-resized` and after `Ctrl+-` / `Ctrl+=` / `Ctrl+0` font zoom (`wezterm-x/lua/layout_heal.lua`). It does not respawn panes. Palette `Session: Refresh current window` still respawns the focused pane and runs the same heal first.
+- tmux refresh (respawn) is command-palette-owned instead of WezTerm-shortcut-owned. The lighter **layout fix** (`scripts/runtime/tmux-fix-layout.sh`) resyncs client size to the PTY (`refresh-client -S`, then `SIGWINCH` on the attach client when `TIOCGWINSZ` still disagrees — WezTerm can grow the pts while tmux keeps a stale `client_width`/`client_height`), rebalances with `even-horizontal`, forces a status recompute that packs to the number of visible content rows (safety-clamp ≤3), and realigns panes. Triggers: manual `Ctrl+k r` / palette `Session: Fix layout`; **automatic** (debounced ~200 ms, min interval 500 ms) on WezTerm `window-resized` and after `Ctrl+-` / `Ctrl+=` / `Ctrl+0` font zoom (`wezterm-x/lua/layout_heal.lua`). Status row-count changes also re-assert `even-horizontal` on managed two-pane windows. It does not respawn panes. Palette `Session: Refresh current window` still respawns the focused pane and runs the same heal first.
 - `Ctrl+k` is a tmux chord prefix for memorized low-latency actions such as `Ctrl+k v` for vertical split, `Ctrl+k h` for horizontal split, and `Ctrl+k r` for layout fix.
 - After `Ctrl+k`, tmux temporarily replaces one status line with a generic waiting hint.
 - The Go popup pickers share one selected-row treatment: the focused row gets a full-width warm ANSI 255 background bar plus a leading `▶` caret so row focus is visible without overloading any per-row marker. The `Alt+x` cross-workspace session picker additionally bolds the selected session label; the `Alt+g` worktree picker, `Ctrl+Shift+P` command palette, `Alt+/` agent-attention overlay, and links picker use the same background bar. (The `Alt+j` / `Alt+k` / `Alt+l` attention jumps are direct — they cycle panes without opening a picker, so they have no selected-row surface.) Inner per-cell colors are restored with a background-preserving SGR (`\x1b[22;23;24;27;39m`) rather than a full reset so the bar stays continuous to the end of the line. The bash fallback pickers (used only when the Go binary is unavailable) keep the caret-only look.
@@ -92,11 +92,49 @@ In tmux UI terms what shows up here is: a per-tab badge (an unfocused tab filled
 - The git-changes group reads `(+S,~U,?T,<sync>)` where `S` is staged, `U` is unstaged, `T` is untracked, and `<sync>` is one of: `=0` (synced with upstream), `^N` (ahead by N), `vN` (behind by N), `*0` (no upstream — local-only branch never pushed).
 - The second tmux line renders the repo family's linked worktree count plus the current worktree role, for example `linked:2 · primary`.
 - The worktree line derives its repo family and current role from the active pane's live git state instead of stored tmux metadata.
-- The third tmux line renders whenever the WakaTime toggle is enabled.
-- Any enabled status section keeps a stable on-screen slot. If live data is unavailable, that section renders placeholder text instead of disappearing.
-- A section only disappears completely when its toggle is disabled. If an entire line has no enabled sections, that line does not reserve a status row.
+- The third tmux line renders WakaTime only when the toggle is enabled **and** there is real summary data (AI / Code time). No key, warming cache, or zero activity emits an empty line so the row is not reserved.
+- Status rows are packed by visible content: producers that emit empty output are skipped, remaining lines move up into consecutive `status-format` slots, and `status` is set to the packed count (`off` / `on` / `2` / `3`). Placeholder-only rows are not kept.
+- A section still disappears completely when its toggle is disabled. Within a visible line, missing live fields may omit that segment without holding an empty status row.
 - Node.js version lookup falls back to `~/.local/share/fnm/aliases/default/bin` when `node` is not already on `$PATH` (this is the path `fnm` populates from its `default` alias). The resolved version is cached.
 - WakaTime refresh is cache-backed and reuses summary data for up to 60 seconds.
+
+## Layout heal (fix-layout)
+
+Use this section when a managed tab **looks** wrongly sized (uneven panes, content not filling the WezTerm window, status “eating” height) even after `Ctrl+k r` / palette **Session: Fix layout**. Do not stop at `list-panes` widths alone — the standing failure mode is a **stale tmux client size** behind a correctly resized PTY.
+
+### What fix-layout does
+
+Script: `scripts/runtime/tmux-fix-layout.sh` (helpers in `tmux-fix-layout-lib.sh`).
+
+1. **Resync client → PTY** — `refresh-client -S`; if `TIOCGWINSZ` on the client tty still disagrees with `#{client_width}x#{client_height}`, send `SIGWINCH` to the `tmux attach` process on that tty, then `-S` again. If still drifted, last-resort `resize-window` to PTY cols × (PTY rows − status rows).
+2. **`even-horizontal`** on managed two-pane windows (and unknown layouts).
+3. **Status pack + safety clamp** — clear cached `@tmux_status_line_*`, force `tmux-status-refresh.sh` so rows match visible content, clamp anything still `> 3`.
+
+Triggers: manual `Ctrl+k r` / palette `Session: Fix layout`; automatic debounced heal on WezTerm `window-resized` and font zoom (`wezterm-x/lua/layout_heal.lua`); status row-count changes also re-assert `even-horizontal` from `tmux-status-layout.sh`.
+
+### Symptom → check → action
+
+| What you see | First measurement | Likely cause | Action |
+| --- | --- | --- | --- |
+| Left/right look ~40/60 or whole tab smaller than sibling tabs | `stty size < $TTY` (or TIOCGWINSZ) **≠** `tmux list-clients … #{client_width}x#{client_height}` | PTY grew; attach client stale. `refresh-client -S` alone often **no-ops** | `Ctrl+k r` (now SIGWINCHes); or `kill -WINCH $(pgrep -t ${TTY#/dev/} -f 'tmux attach')` then fix-layout |
+| `list-panes` already ~equal (`85\|84`) but GUI unchanged | Same PTY vs client mismatch | False “already healthy” read — pane ratios are relative to a **too-small** window | Fix client size first; equal panes on a 170-col grid still look wrong on a 213-col WezTerm |
+| Status feels too tall | `tmux show -t $SESS status` and non-empty `@tmux_status_line_{0,1,2}` | Packed count is correct when every line has real content (e.g. WakaTime `AI N mins`); empty/placeholder must not reserve a row | Confirm packing; disable WakaTime toggle only if that row should vanish |
+| Uneven panes, PTY == client | `list-panes` widths differ by ≫1 | Split dragged / not rebalanced | `even-horizontal` via fix-layout |
+
+### Operator triage (copy/paste)
+
+```bash
+SESS=wezterm_work_<repo>_<hash>   # from status / list-clients
+TTY=$(tmux list-clients -t "$SESS" -F '#{client_tty}')
+echo "pty=$(python3 -c "import fcntl,termios,struct; fd=open('$TTY','rb'); r,c,x,y=struct.unpack('HHHH',fcntl.ioctl(fd,termios.TIOCGWINSZ,bytes(8))); print(f'{c}x{r}')")"
+tmux list-clients -t "$SESS" -F 'client=#{client_width}x#{client_height}'
+tmux list-panes -t "$SESS" -F 'pane=#{pane_width}x#{pane_height}'
+tmux show-options -qv -t "$SESS" status
+bash "${WEZTERM_REPO:-$HOME/github/wezterm-config}/scripts/runtime/tmux-fix-layout.sh" \
+  --session "$SESS" --cwd "$(tmux display-message -p -t "$SESS" '#{pane_current_path}')" --quiet
+```
+
+Regression coverage: `tests/hook-units/test_tmux_fix_layout.sh`, `test_tmux_fix_layout_lib.sh`, `test_tmux_fix_layout_behavior.sh`, `test_tmux_status_line_pack.sh`.
 
 ## Notes
 

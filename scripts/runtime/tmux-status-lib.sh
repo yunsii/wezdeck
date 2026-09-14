@@ -47,6 +47,19 @@ join_with_separator() {
   done
 }
 
+# True when a status line has visible text after stripping tmux style
+# markers (#[...]) and whitespace. Used to pack status rows: empty /
+# placeholder-only producers must emit "" so they do not reserve a row.
+tmux_status_line_is_visible() {
+  local raw="${1:-}"
+  local plain=""
+
+  plain="$(printf '%s' "$raw" | sed -E 's/#\[[^]]*\]//g')"
+  plain="${plain#"${plain%%[![:space:]]*}"}"
+  plain="${plain%"${plain##*[![:space:]]}"}"
+  [[ -n "$plain" ]]
+}
+
 style() {
   local spec="$1"
   local text="$2"
