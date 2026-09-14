@@ -137,6 +137,10 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
   Read [`docs/tab-visibility.md`](docs/tab-visibility.md).
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
+- Agent 执行通道调度（人工 TUI / 跨仓工单 Ticket-headless / OpenClaw ACP·Main /
+  审查 headless）、`host-agent-invoke` 读写分档、或「统一什么 / 刻意不合什么」:
+  Read [`docs/agent-scheduling.md`](docs/agent-scheduling.md)（平台知识；**不**放
+  `openclaw/docs/`）。
 - Env loading, secret placement, the `~/.config/shell-env.d/`
   convention, `runtime-env-lib.sh::runtime_env_load_managed`, or
   deciding whether a value belongs in `wezterm-x/local/shared.env`

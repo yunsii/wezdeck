@@ -161,19 +161,19 @@ Docs map: `openclaw/docs/README.md` · terms: `openclaw/docs/terminology.md`.
 - 轨: 人工 | Claw
 - 推荐: H1 人直接 | H2 原生Agent(Claude-TUI|Codex-TUI|Grok-native) |
         C1 Main自写(Main-Grok) | C2 handoff(同上TUI) |
-        C3 ACP(Claude-ACP|Codex-ACP)
+        C3 ACP(Claude-ACP|Codex-ACP) | Ticket-headless(delegate)
   （括号可附旧 A–E。D 禁用）
+- 执行通道: ACP | Ticket-headless | Handoff/TUI | Main自写
 - 执行者 / 后端全名: …（必须用上表全名）
-- 理由: …（含限制：如代理无 GPT → Codex-ACP 默认 Grok 保通）
+- 理由: …（含限制：如代理无 GPT → Codex-ACP 默认 Grok 保通；跨仓契约优先 Ticket-headless）
 - 备选: …
-- 平台约束: 单写者；wezdeck 默认 master / 并行才 claw-*；确认前不写码；不改原生 ~/.codex|~/.grok 默认
+- 平台约束: 单写者；wezdeck 默认 master / 并行才 claw-*；确认前不写码；不改原生 ~/.codex|~/.grok 默认；工单不另建票库
 - 完成后审查建议: review-claude × review-grok | 跳过（理由）
 - cwd / task_id: …
-- 你将看到: …
-请确认或改用。确认前不开始改代码 / 不 spawn ACP。
+请确认或改用。确认前不开始改代码 / 不 spawn ACP / 不 kick delegate implement。
 ```
 
-Heuristics（对内）: **C1** 小且清；**Claude-ACP** 多文件/要 profile；**C2/H2** 要 TUI；**H1** 已在写；**Codex-ACP** 明确 Codex 栈。对用户以中文轨 + 全名后端为准。
+Heuristics: **C1** 小且清；**Claude-ACP** 多文件+steer；**Ticket-headless** 跨仓契约；**C2/H2** 要 TUI；**H1** 已在写；**Codex-ACP** 明确 Codex 栈。选型 `docs/agent-scheduling.md`。
 
 **全员同一宪法与平台能力**（用法可差、准则不差）: L0、skills、脚本、单写者、错误闭环、假绿禁止；人工轨可不跑台账，Claw 写任务默认要。
 
@@ -323,7 +323,7 @@ Material failure never re-run green → 状态不得为 **成功**.
 | Terminology / 文档分层 | `openclaw/docs/terminology.md` |
 | Adversarial review | **单源** `scripts/dev/adversarial-review/`（SKILL+runner）· 用户级链 `~/.agents/skills/adversarial-review` · 仓内链 `skills/` / `workspace/skills/` · `link-platform-skills.sh` · **profiles** `validation.md`；TOOL≠TARGET（`--repo`）；人只下意图；L0-21 披露 |
 | Mode theory / ACP | `openclaw/docs/agent-architecture.md`, `openclaw/README.md` |
-| Agent interaction (TUI/headless/ACP) | `openclaw/docs/agent-interaction.md` |
+| Interaction + 执行通道 | `openclaw/docs/agent-interaction.md` · 平台 `docs/agent-scheduling.md` |
 | Agent matrix probe | `openclaw/scripts/agent-matrix-status.sh` |
 
 **Chrome:** after UI-facing changes you implemented, browser MCP snapshot before 验收通过; if CDP missing, say so — never invent green UI.

@@ -14,11 +14,12 @@
         ▼             ▼             ▼
    交互 TUI      Headless CLI    飞书 DM
    (终端里聊)    (脚本一次跑完)   (Dex · Main)
-        │             │             │
         │             │             ├─ C1 Main-Grok 自写
         │             │             ├─ C2 Handoff → 你开 TUI
-        │             │             └─ C3 ACP → Claude/Codex 后端
-        │             │
+        │             │             ├─ C3 ACP → Claude/Codex 后端
+        │             │             └─ 亦可调同一 skill：cross-repo-delegate
+        │             ├─ 审查 / brainstorm（provider）
+        │             └─ 跨仓工单（delegate run = Ticket-headless）
         └──────┬──────┘
                ▼
      host 原生 Agent 产品
@@ -29,9 +30,9 @@
 | 交互面 | 人是否在回路 | 典型用途 |
 | --- | --- | --- |
 | **TUI** | 是（多轮、可点权限） | 人工开发 H2、Handoff C2 |
-| **Headless CLI** | 否（stdin/参数进，stdout 出） | 对抗审查、自动化、dogfood |
+| **Headless CLI** | 否（stdin/参数进，stdout/落盘出） | 对抗审查、**跨仓工单 worker**、自动化 |
 | **Main（飞书）** | 是（聊飞书） | 编排、台账、小改 C1；**默认短回复**（AGENTS L0 飞书克制 + 精简结果卡） |
-| **ACP** | 飞书编排，无本机 TUI | Claw 开发工人 C3 |
+| **ACP** | 飞书编排，无本机 TUI | Claw 开发工人 C3（可 steer；≠ 工单票仓） |
 
 ---
 
@@ -100,14 +101,17 @@ codex exec "List the top-level files and stop"
 
 ## 4. 和开发方式（轨）的对应
 
-| 轨 | 主交互 | Agent |
+| 轨 / 通道 | 主交互 | Agent / 入口 |
 | --- | --- | --- |
 | H1 人直接 | IDE | 无或旁路 |
 | H2 原生 Agent | **TUI** | Claude-TUI / Codex-TUI / Grok-native |
 | C1 Main 自写 | 飞书 | Main-Grok |
 | C2 Handoff | 飞书 brief → 你开 **TUI** | 同上 host 原生 |
 | C3 ACP | 飞书 | Claude-ACP / Codex-ACP |
+| **Ticket-headless** | 飞书/TUI 编排 → `delegate run` | Claude/Codex/Grok **host headless**（票在 `~/.agent/tickets/`） |
 | 对抗审查 | **Headless CLI** 多角色 | Claude-host + Codex-Grok-profile（等） |
+
+**执行通道（与「后端全名」正交）：** 推荐卡除写 Claude-ACP / Codex-TUI 等全名外，还要写清通道是 **ACP**、**Ticket-headless**、还是 **Handoff/TUI**。同一后端产品可以走不同通道（例如 Claude-ACP ≠ Claude-host-headless 工单工人）。
 
 ---
 
@@ -218,15 +222,21 @@ scripts/dev/adversarial-review/run.sh HEAD~1 --dry-run \
 
 ---
 
-## 6. 何时用哪种交互
+## 6. 何时用哪种交互 / 执行通道
+
+平台级选型表、统一 vs 刻意不合、`host-agent-invoke` 读写分档：见
+[`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)（**不**在 openclaw 私产下）。
+
+Claw 侧速查：
 
 | 你想… | 用 |
 | --- | --- |
-| 自己深度改代码、看全程 | **TUI**（H2/C2） |
-| 脚本/审查/自动多角色 | **Headless CLI** |
+| 飞书边聊边改、要 steer / cancel | **ACP C3** |
+| 跨仓契约 / research→implement | **Ticket-headless**（同一 skill `cross-repo-delegate`） |
 | 飞书小改、编排台账 | **Main 飞书**（C1） |
-| 飞书驱动多文件工人 | **ACP C3** |
-| 对抗审查 | **Headless 多角色**（默认非 ACP） |
+| 人盯全程 | **TUI**（H2/C2） |
+
+禁止：另建 OpenClaw 私有票库；ACP↛headless 无披露自动 failover。
 
 ---
 
@@ -250,9 +260,12 @@ scripts/dev/adversarial-review/run.sh HEAD~1 --dry-run \
 | 文档/脚本 | 内容 |
 | --- | --- |
 | `agent-architecture.md` | 双轨、ACP、Grok 三分 |
+| [`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md) | 平台执行通道调度总览 |
 | `terminology.md` | 术语与宪法/知识库分层 |
 | `error-closed-loop-scope.md` | 错误闭环覆盖范围 vs OpenClaw 平台边界 |
 | `docs/adversarial-review.md` | 三门与披露 |
-| `scripts/dev/adversarial-review/` | 审查实现 |
+| `scripts/dev/host-agent-invoke/` | 共享 host headless invoke（工单 write · 审查 read） |
+| `scripts/dev/adversarial-review/` | 审查 headless（provider → host-agent-invoke） |
+| `scripts/dev/cross-repo-delegate/` | 跨仓工单 + Ticket-headless worker |
 | `openclaw/scripts/agent-matrix-status.sh` | 本机能力快照 |
 | `workspace/AGENTS.md` | L0、推荐卡、C3 宪法前缀 |

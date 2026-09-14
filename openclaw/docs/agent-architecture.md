@@ -169,8 +169,16 @@ C3 宪法前缀与推荐卡全文见 `workspace/AGENTS.md`、`workspace/skills/d
 编排：`run.sh`，或 Main 连续调度两次 TUI/ACP（不同立场 prompt）。  
 详见 AGENTS L0-21、`docs/adversarial-review.md`。
 
+## 执行通道 vs 后端全名
+
+**后端全名**（Claude-ACP / Codex-TUI…）回答「哪个产品/配置」。  
+**执行通道**（ACP / Ticket-headless / Handoff·TUI / Main自写 / Review-headless）回答「怎么起工人」。
+
+权威调度文档（**平台级**，非 openclaw 私产）：[`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)。
+
 ## 与旧文档关系
 
 - 本文为 **L1 架构入口**；开发模式细节仍见 README「Development modes」。  
+- 调度 / 执行通道：[`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)。  
 - 交互与 headless 示例：[`agent-interaction.md`](./agent-interaction.md)。  
 - 对用户优先 H/C 中文名 + 后端全名；日志/兼容可保留 A–E。  

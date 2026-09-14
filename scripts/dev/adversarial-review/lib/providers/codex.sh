@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # provider plugin: codex (Codex CLI, native/default host config). alias: gpt
-# Interface: <name>__available / __family / __model / __invoke  (+ optional __aliases)
+# Uses host-agent-invoke read profile. Interface: __available / __family / __model / __invoke
+
+_CODEX_HOST_INVOKE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../host-agent-invoke/lib" && pwd)/host-agent-invoke.sh"
+# shellcheck source=/dev/null
+. "$_CODEX_HOST_INVOKE"
 
 _codex_bin() {
   if command -v codex >/dev/null 2>&1; then command -v codex; return 0; fi
@@ -56,15 +60,19 @@ codex__available() { _codex_bin >/dev/null 2>&1; }
 codex__family()   { echo codex; }
 codex__model()    { printf '%s' "${ADV_MODEL_CODEX:-gpt-5.5}"; }
 
-# stdin = full prompt; $1 = effort. env -u CODEX_HOME keeps host (non-ACP) config.
+# stdin = full prompt; $1 = effort. Host CODEX_HOME via host-agent-invoke.
 codex__invoke() {
-  local effort="${1:-}" bin model
-  bin="$(_codex_bin)" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
+  local effort="${1:-}" model gtmp raw
   model="$(codex__model)"
-  # Headless review must not decorate interactive attention (Alt+/).
-  env -u CODEX_HOME -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-    AGENT_ATTENTION_SKIP=1 \
-    "$bin" exec --json --sandbox read-only \
-      -c model="$model" ${effort:+-c model_reasoning_effort="$effort"} - 2>/dev/null \
-    | _codex_extract_text
+  gtmp="$(mktemp "${TMPDIR:-/tmp}/codex-prompt.XXXXXX")"
+  cat >"$gtmp"
+  raw="$(
+    host_agent_invoke_run \
+      --backend codex --mode read \
+      --cwd "${PWD:-.}" --prompt-file "$gtmp" \
+      --model "$model" ${effort:+--effort "$effort"} \
+      --capture
+  )" || true
+  rm -f "$gtmp"
+  printf '%s' "$raw" | _codex_extract_text
 }

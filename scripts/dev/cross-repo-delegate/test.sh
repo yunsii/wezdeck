@@ -229,9 +229,22 @@ if [[ -n "$id_auto" ]]; then
   else
     bad "mock implement prompt embeds phase view without Thread"
   fi
+  # Prove workers went through shared host-agent-invoke (not a private CLI case).
+  trace="$DELEGATE_TICKETS_ROOT/_data/$id_auto/host-invoke.trace.jsonl"
+  if [[ -f "$trace" ]] \
+    && jq -e -s 'map(select(.mock == true and .mode == "write" and .backend == "claude")) | length >= 2' <"$trace" >/dev/null \
+    && grep -q 'host_agent_invoke_run' "$here/lib/worker.sh" \
+    && ! grep -qE 'claude -p "\$\(cat|codex exec --full-auto "\$\(cat|grok -p "\$\(cat' "$here/lib/worker.sh"; then
+    ok "mock workers invoke via shared host-agent-invoke (trace+no private CLI case)"
+  else
+    bad "mock workers invoke via shared host-agent-invoke (trace+no private CLI case)"
+    printf 'trace=%s\n' "$trace" >&2
+    [[ -f "$trace" ]] && cat "$trace" >&2
+  fi
 else
   bad "mock research prompt embeds phase view without Thread"
   bad "mock implement prompt embeds phase view without Thread"
+  bad "mock workers invoke via shared host-agent-invoke (trace+no private CLI case)"
 fi
 
 # challenge path: mock research that challenges, then reply --continue

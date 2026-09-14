@@ -14,6 +14,7 @@ delegate create --to <target> --from . --title "…" \
 # Or dispatch an existing ticket:
 delegate run --id req-… --phase research [--backend claude]
 # Offline: add --mock (no LLM / no worktree)
+# Workers use scripts/dev/host-agent-invoke/ (write). See docs/agent-scheduling.md
 ```
 
 From wezdeck root, `./scripts/dev/link-platform-skills.sh` links the skill and installs the short CLI.

@@ -52,7 +52,10 @@ Both phases keep Summary + Assumptions; `implement` also gets Verification + Dec
 (+ Implement if present). `Thread` / `events.jsonl` stay on disk under `_data/<id>/`
 (and `.delegate/ticket.md`) for on-demand Read only.
 
-Headless workers set `AGENT_ATTENTION_SKIP=1` and (Claude) `disableAllHooks` so they **must not** appear in the human attention badge / `Alt+/` list.
+Headless workers call shared `scripts/dev/host-agent-invoke/` (`write` mode), set
+`AGENT_ATTENTION_SKIP=1` / `DELEGATE_HEADLESS`, and (Claude) `disableAllHooks` so they
+**must not** appear in the human attention badge / `Alt+/` list. Scheduling map:
+`docs/agent-scheduling.md`.
 
 ## Resolve TOOL_HOME (first hit wins)
 
@@ -149,6 +152,7 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 - Don’t skip `--observed` / `--assumed` on create
 - Don’t close without `--doc` or `--no-doc`
 - Don’t start a second claim while a lease is active
+- Don’t treat Ticket-headless as C3 ACP (or the reverse); OpenClaw Main picks **执行通道** — see `openclaw/docs/agent-interaction.md` §6
 
 ## Tests (operators / CI — not the user path)
 

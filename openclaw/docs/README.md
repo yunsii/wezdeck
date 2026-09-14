@@ -12,6 +12,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | 4 | [`../workspace/AGENTS.md`](../workspace/AGENTS.md) **L0 only** | Always-on constitution for Main |
 | 5 | Skills on demand | `workspace/skills/*`, repo `skills/*` |
 | 6 | Digital employees | [`digital-employees.md`](./digital-employees.md) — Dex / Bob / Scout |
+| — | [`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md) | **平台**执行通道（人工/工单/Claw）；不在 openclaw 私产下 |
 
 ## By topic
 
@@ -24,11 +25,12 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | **Memory search ops (embeddings / reindex)** | `memory-search.md`（local llama-cpp · 故障闭环） |
 | **Feishu multi-bot wiring** | `feishu-digital-employees.md`（含 lark-cli 双配置 / cron profile 坑） |
 | Architecture / rails | `agent-architecture.md` |
+| **Agent scheduling / 执行通道** | 平台正文 [`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)（stub：[`agent-scheduling.md`](./agent-scheduling.md)） |
 | Interaction modes | `agent-interaction.md` |
 | **Session Adapter Kit** (host↔claw) | `session-bridge.md` + `scripts/session-bridge.sh` + skill `session-bridge` |
 | Error closed-loop **scope** | `error-closed-loop-scope.md` + skill `error-closed-loop` |
 | Adversarial review | **Single source** `scripts/dev/adversarial-review/` (SKILL+runner) · **links** `~/.agents/skills/…`, `workspace/skills/…`, `skills/…` via `scripts/dev/link-platform-skills.sh` · **KB** `docs/adversarial-review.md` |
-| Cross-repo tickets | **Single source** `scripts/dev/cross-repo-delegate/` (skill name `cross-repo-delegate`; short CLI `delegate`) · same link script · tickets under `~/.agent/tickets/` (not git) · MVP: create/inbox/claim/reply/close |
+| Cross-repo tickets | **Single source** `scripts/dev/cross-repo-delegate/` · tickets `~/.agent/tickets/` · invoke via `scripts/dev/host-agent-invoke/` · 通道 **Ticket-headless**（≠ ACP；见 [`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)） |
 | Host TUI constitution | `agent-profiles/v1/en/*` |
 | Ops / matrix / Feishu control plane | `../README.md` (entry; prefer docs above for policy) |
 

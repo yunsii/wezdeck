@@ -11,7 +11,8 @@
 # this file). Do not auto-load fanout from here — dependency is one-way.
 #
 # IMPORTANT: plugins use host CLI configs (~/.claude, ~/.codex, ~/.grok) and must
-# NOT set CODEX_HOME to OpenClaw ACP isolation.
+# NOT set CODEX_HOME to OpenClaw ACP isolation. Live __invoke goes through
+# scripts/dev/host-agent-invoke/ (read mode); PROVIDER_MOCK still short-circuits here.
 
 set -euo pipefail
 

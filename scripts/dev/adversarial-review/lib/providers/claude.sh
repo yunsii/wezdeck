@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
-# provider plugin: claude (Claude Code CLI)
+# provider plugin: claude (Claude Code CLI) — host-agent-invoke read profile
 # Interface: <name>__available / __family / __model / __invoke  (+ optional __aliases)
 
-claude__aliases() { :; }                 # no extra aliases
+_CLAUDE_HOST_INVOKE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../host-agent-invoke/lib" && pwd)/host-agent-invoke.sh"
+# shellcheck source=/dev/null
+. "$_CLAUDE_HOST_INVOKE"
+
+claude__aliases() { :; }
 claude__available() { command -v claude >/dev/null 2>&1; }
 claude__family()   { echo claude; }
 claude__model()    { printf '%s' "${ADV_MODEL_CLAUDE:-claude-opus-5[1m]}"; }
 
 # stdin = full prompt (pack + INPUT); $1 = effort (may be empty)
 claude__invoke() {
-  local effort="${1:-}" model
+  local effort="${1:-}" model gtmp raw
   model="$(claude__model)"
-  # Headless review must not decorate interactive attention (Alt+/).
-  env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-    AGENT_ATTENTION_SKIP=1 \
-    claude -p --output-format json \
-      --permission-mode plan \
-      --allowed-tools Read Grep Glob \
+  gtmp="$(mktemp "${TMPDIR:-/tmp}/claude-prompt.XXXXXX")"
+  cat >"$gtmp"
+  raw="$(
+    host_agent_invoke_run \
+      --backend claude --mode read \
+      --cwd "${PWD:-.}" --prompt-file "$gtmp" \
       --model "$model" ${effort:+--effort "$effort"} \
-      --settings '{"disableAllHooks":true}' 2>/dev/null \
-    | jq -r '.result // .text // empty'
+      --capture
+  )" || true
+  rm -f "$gtmp"
+  printf '%s' "$raw" | jq -r '.result // .text // empty'
 }

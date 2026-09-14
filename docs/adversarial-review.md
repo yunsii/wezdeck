@@ -447,7 +447,7 @@ scripts/dev/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
   SKILL.md                   agent procedure (only body)
   run.sh                     three-gate orchestration (agent-agnostic)
   lib/provider.sh            plugin loader + dispatch (NO backend names)
-  lib/providers/*.sh         one plugin per backend (claude / codex / grok)
+  lib/providers/*.sh         one plugin per backend; live CLI via host-agent-invoke (read)
   lib/roles.conf             role -> effort + candidate standard (see brainstorm.md §7)
   lib/roles-lib.sh           roles.conf reader
   lib/select-backends.sh     writer-aware pair selection (reads roles.conf)

@@ -2,6 +2,11 @@
 # Headless research / implement workers + result apply.
 # shellcheck shell=bash
 
+# Shared host-headless invoke (claude/codex/grok read|write profiles).
+_DELEGATE_HOST_INVOKE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../host-agent-invoke/lib" && pwd)/host-agent-invoke.sh"
+# shellcheck source=/dev/null
+. "$_DELEGATE_HOST_INVOKE"
+
 delegate_worker_write_mock_result() {
   local result_path=$1 ticket_path=$2
   python3 - "$result_path" "$ticket_path" <<'PY'
@@ -220,46 +225,36 @@ print(json.dumps({
 PY
 }
 
-# Shared headless invoke. Writes log; expects result at local_result path inside worktree.
+# Headless invoke via shared host-agent-invoke (write profile: ticket result-file contract).
+# Args: backend worktree_path prompt_path log_path [mode=write]
 delegate_worker_invoke() {
   local backend=$1 worktree_path=$2 prompt_path=$3 log_path=$4
-  delegate_log "worker backend=$backend cwd=$worktree_path (attention skipped)"
-  case "$backend" in
-    claude)
-      (
-        cd "$worktree_path"
-        env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-          AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 \
-          claude -p "$(cat "$prompt_path")" \
-            --permission-mode bypassPermissions \
-            --output-format text \
-            --add-dir "$worktree_path/.delegate" \
-            --settings '{"disableAllHooks":true}'
-      ) >"$log_path" 2>&1 \
-        || delegate_log "warn: claude exited non-zero (see $(basename "$log_path"))"
-      ;;
-    codex)
-      (
-        cd "$worktree_path"
-        env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u CODEX_HOME \
-          AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 \
-          codex exec --full-auto "$(cat "$prompt_path")"
-      ) >"$log_path" 2>&1 \
-        || delegate_log "warn: codex exited non-zero (see $(basename "$log_path"))"
-      ;;
-    grok)
-      (
-        cd "$worktree_path"
-        env -u TMUX -u TMUX_PANE -u WEZTERM_PANE \
-          AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 \
-          grok -p "$(cat "$prompt_path")" --always-approve
-      ) >"$log_path" 2>&1 \
-        || delegate_log "warn: grok exited non-zero (see $(basename "$log_path"))"
-      ;;
-    *)
-      delegate_die "unknown backend: $backend (claude|codex|grok)"
-      ;;
+  local mode=${5:-write}
+  local add_dir="" rc=0
+  delegate_log "worker backend=$backend mode=$mode cwd=$worktree_path (host-agent-invoke)"
+  case "$backend" in claude|codex|grok) ;; *)
+    delegate_die "unknown backend: $backend (claude|codex|grok)"
+    ;;
   esac
+  if [[ "$backend" == "claude" && -d "$worktree_path/.delegate" ]]; then
+    add_dir="$worktree_path/.delegate"
+  fi
+  rc=0
+  if [[ -n "$add_dir" ]]; then
+    host_agent_invoke_run \
+      --backend "$backend" --mode "$mode" \
+      --cwd "$worktree_path" --prompt-file "$prompt_path" \
+      --add-dir "$add_dir" --log "$log_path" || rc=$?
+  else
+    host_agent_invoke_run \
+      --backend "$backend" --mode "$mode" \
+      --cwd "$worktree_path" --prompt-file "$prompt_path" \
+      --log "$log_path" || rc=$?
+  fi
+  if [[ "$rc" -ne 0 ]]; then
+    delegate_log "warn: host-agent-invoke backend=$backend exited $rc (see $(basename "$log_path"))"
+  fi
+  return 0
 }
 
 # Render phase-sliced ticket view into stdout (full ticket stays on disk).
@@ -327,8 +322,16 @@ delegate_worker_research() {
   rm -f "$result_path"
 
   if [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" ]]; then
-    delegate_log "worker MOCK research id=$ticket_id"
-    delegate_worker_prepare_prompt "$ticket_id" "" research >/dev/null
+    delegate_log "worker MOCK research id=$ticket_id (via host-agent-invoke)"
+    local prepared prompt_path mock_cwd
+    prepared="$(delegate_worker_prepare_prompt "$ticket_id" "" research)"
+    prompt_path="$(printf '%s\n' "$prepared" | sed -n '1p')"
+    mock_cwd="$root/_data/${ticket_id}"
+    mkdir -p "$mock_cwd"
+    HOST_AGENT_INVOKE_MOCK=1 \
+      HOST_AGENT_INVOKE_TRACE="${HOST_AGENT_INVOKE_TRACE:-$root/_data/${ticket_id}/host-invoke.trace.jsonl}" \
+      delegate_worker_invoke "$backend" "$mock_cwd" "$prompt_path" \
+      "$root/_data/${ticket_id}/worker.log" write
     delegate_worker_write_mock_result "$result_path" "$ticket_path"
     delegate_worker_apply_result "$ticket_id"
     return 0
@@ -341,7 +344,7 @@ delegate_worker_research() {
   local_result="$(printf '%s\n' "$prepared" | sed -n '2p')"
 
   delegate_worker_invoke "$backend" "$worktree_path" "$prompt_path" \
-    "$root/_data/${ticket_id}/worker.log"
+    "$root/_data/${ticket_id}/worker.log" write
 
   if [[ -f "$local_result" ]]; then
     cp -f "$local_result" "$result_path"
@@ -364,8 +367,16 @@ delegate_worker_implement() {
   rm -f "$result_path"
 
   if [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" ]]; then
-    delegate_log "worker MOCK implement id=$ticket_id"
-    delegate_worker_prepare_prompt "$ticket_id" "" implement >/dev/null
+    delegate_log "worker MOCK implement id=$ticket_id (via host-agent-invoke)"
+    local prepared prompt_path mock_cwd
+    prepared="$(delegate_worker_prepare_prompt "$ticket_id" "" implement)"
+    prompt_path="$(printf '%s\n' "$prepared" | sed -n '1p')"
+    mock_cwd="$root/_data/${ticket_id}"
+    mkdir -p "$mock_cwd"
+    HOST_AGENT_INVOKE_MOCK=1 \
+      HOST_AGENT_INVOKE_TRACE="${HOST_AGENT_INVOKE_TRACE:-$root/_data/${ticket_id}/host-invoke.trace.jsonl}" \
+      delegate_worker_invoke "$backend" "$mock_cwd" "$prompt_path" \
+      "$root/_data/${ticket_id}/implement.log" write
     delegate_worker_write_mock_implement_result "$result_path"
     delegate_worker_apply_implement_result "$ticket_id"
     return 0
@@ -396,7 +407,7 @@ mod.reindex()
 PY
 
   delegate_worker_invoke "$backend" "$worktree_path" "$prompt_path" \
-    "$root/_data/${ticket_id}/implement.log"
+    "$root/_data/${ticket_id}/implement.log" write
 
   if [[ -f "$local_result" ]]; then
     cp -f "$local_result" "$result_path"
