@@ -143,6 +143,9 @@ if [[ "${1:-}" == "--direct" ]]; then
 fi
 
 # shellcheck disable=SC1091
+. "$script_dir/runtime-log-lib.sh"
+export WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-attention-jump.sh}"
+# shellcheck disable=SC1091
 . "$script_dir/attention-state-lib.sh"
 # shellcheck disable=SC1091
 . "$script_dir/wezterm-event-lib.sh"
@@ -247,6 +250,12 @@ esac
 
 notify_tmux() {
   local message="$1" socket="${2:-}" target="${3:-}"
+  # Mirror toast text into runtime.log so empty/failed jumps are greppable
+  # after the status banner is gone (same class of gap as Ctrl+n pass-through).
+  if declare -F runtime_log_info >/dev/null 2>&1; then
+    runtime_log_info attention "attention jump toast" \
+      "toast=$message" "tmux_socket=${socket:-}" "tmux_window=${target:-}" || true
+  fi
   command -v tmux >/dev/null 2>&1 || return 0
   # Prefer the target tmux (on its own socket) when we have one: if the
   # jump activated the target WezTerm pane the user's eyes are now there.
@@ -437,6 +446,12 @@ if [[ -z "$target_json" || "$target_json" == "null" ]]; then
     case "$want_status" in
       waiting) notify_tmux 'agent-attention: no waiting panes' '' '' ;;
       done)    notify_tmux 'agent-attention: no done panes' '' '' ;;
+      *)
+        if declare -F runtime_log_info >/dev/null 2>&1; then
+          runtime_log_info attention "attention jump empty" \
+            "want_status=${want_status:-}" "explicit_session=${explicit_session:-}" || true
+        fi
+        ;;
     esac
   fi
   exit 0
@@ -493,6 +508,16 @@ if [[ -n "$target_wezterm_pane" ]] && command -v wezterm.exe >/dev/null 2>&1; th
 fi
 
 if (( wezterm_activated )); then
+  if declare -F runtime_log_info >/dev/null 2>&1; then
+    runtime_log_info attention "attention jump completed" \
+      "want_status=${want_status:-}" \
+      "status=${target_status:-}" \
+      "tmux_session=${target_tmux_session:-}" \
+      "tmux_window=${target_tmux_window:-}" \
+      "tmux_pane=${target_tmux_pane:-}" \
+      "wezterm_pane=${target_wezterm_pane:-}" \
+      "reason=${target_reason:-}" || true
+  fi
   exit 0
 fi
 

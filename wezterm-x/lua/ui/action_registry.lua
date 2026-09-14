@@ -287,6 +287,14 @@ function M.new(ctx)
         window:perform_action(wezterm.action.SendString('\r'), pane)
         return
       end
+      -- Pass-through on non-agent panes. Default allowlists must keep
+      -- category agent_cli enabled or the forward / match rows never
+      -- reach wezterm.log; this quiet path stays debug.
+      logger.debug('agent_cli', 'Ctrl+n pass-through on non-tmux non-agent pane', common.merge_fields(trace_id, {
+        decision_path = decision_path,
+        foreground_process = foreground_process,
+        workspace = workspace_name,
+      }))
       window:perform_action(wezterm.action.SendString('\x0e'), pane)
     end)
   end

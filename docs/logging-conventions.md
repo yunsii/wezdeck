@@ -53,8 +53,8 @@ If you genuinely need ad-hoc render-path debugging, gate it behind an explicit e
 
 Add a new category only when an existing one would dilute its meaning. Currently registered:
 
-- **bash** (`scripts/runtime/`): `attention`, `agent_cleanup`, `agent_run`, `clipboard`, `command_panel`, `managed_command`, `overflow`, `popup`, `primary_pane` (managed agent launch **and** Grok focus-filter / theme ensure heals), `provider`, `sync`, `task`, `vscode`, `workspace`, `worktree`
-- **Lua** (`wezterm-x/lua/`): `attention`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `ime`, `latency`, `tab_visibility`, `vscode`, `workspace`
+- **bash** (`scripts/runtime/`): `attention` (jump toast / empty / completed), `agent_cleanup`, `agent_cli` (Ctrl+n `/new` decision + `@wezterm_pane_role` set/clear), `agent_run`, `clipboard`, `command_panel`, `layout` (fix-layout), `managed_command`, `overflow`, `popup`, `primary_pane` (managed agent launch **and** Grok focus-filter / theme ensure heals), `provider`, `session_bridge` (`Ctrl+k w` claw take), `sync`, `task`, `vscode`, `workspace`, `worktree`
+- **Lua** (`wezterm-x/lua/`): `attention`, `agent_cli` (Ctrl+n forward into tmux / non-tmux `/new`), `chrome`, `clipboard`, `command_panel`, `event_bus`, `host_helper`, `hotkey`, `keybindings`, `layout`, `link`, `latency`, `tab_visibility`, `vscode`, `workspace`
 - **C# helper** (`helper-manager.exe`): owned in `native/host-helper/` — `vscode`, `chrome`, `clipboard`, `host_helper`, `foreground` (OS foreground process-name edges; no window titles). Treat as read-only from the WSL/Lua side
 
 Rules:

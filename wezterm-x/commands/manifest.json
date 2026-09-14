@@ -336,7 +336,7 @@
       "command": [
         "bash",
         "-lc",
-        "proc=$(tmux display-message -p -t \"$COMMAND_PANEL_WINDOW_ID\" '#{pane_current_command}'); case \"$proc\" in claude*|codex*) bash '{repo_root}/scripts/runtime/agent-new-into-pane.sh' \"$COMMAND_PANEL_WINDOW_ID\" ;; *) tmux send-keys -t \"$COMMAND_PANEL_WINDOW_ID\" C-n ;; esac"
+        "bash '{repo_root}/scripts/runtime/agent-ctrl-n.sh' \"$COMMAND_PANEL_WINDOW_ID\""
       ]
     }
   },

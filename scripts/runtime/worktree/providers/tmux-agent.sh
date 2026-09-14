@@ -552,6 +552,24 @@ provider_launch() {
   provider_ensure_window_panes "$window_id"
   provider_apply_tmux_config
 
+  # Tag primary pane so Ctrl+n (@agent_pane_match) sees through the
+  # resume wrapper's pane_current_command=sh/node leaf. Mirrors
+  # open-project-session / tmux-reset / tmux-worktree-open tagging.
+  primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1 || true)"
+  if [[ -n "$primary_pane_id" ]]; then
+    agent_base="${MANAGED_AGENT_PROFILE:-claude}"
+    agent_base="${agent_base%-resume}"
+    agent_base="${agent_base%_resume}"
+    if [[ -n "$agent_base" ]]; then
+      tmux set-option -p -t "$primary_pane_id" @wezterm_pane_role "agent-cli:$agent_base" 2>/dev/null || true
+      runtime_log_info provider "tagged primary pane agent role" \
+        "session_name=$session_name" \
+        "window_id=$window_id" \
+        "primary_pane_id=$primary_pane_id" \
+        "role=agent-cli:$agent_base"
+    fi
+  fi
+
   provider_result \
     session_name "$session_name" \
     window_id "$window_id" \

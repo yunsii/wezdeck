@@ -15,7 +15,7 @@ Author-facing rules — file placement, render-path discipline, category schema,
 ## WezTerm Diagnostics
 
 - When `diagnostics.wezterm.enabled = true`, WezTerm writes structured lines to the configured file and also shows them in the Debug Overlay.
-- Current WezTerm-side diagnostics categories include `workspace`, `vscode`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, and `latency`.
+- Current WezTerm-side diagnostics categories include `workspace`, `vscode`, `chrome`, `clipboard`, `command_panel`, `host_helper`, `hotkey`, `latency`, `agent_cli`, `attention`, `tab_visibility`, `event_bus`, `keybindings`, `layout`, and `link`. When `diagnostics.wezterm.categories` is a non-empty allowlist, every category you care to grep later must be listed as `true` — otherwise those rows are filtered at emit time (this is how Ctrl+n / keybinding / layout warnings went missing before).
 - Set `diagnostics.wezterm.debug_key_events = true` only for keybinding investigations.
 - WezTerm-side diagnostics rotate with `diagnostics.wezterm.max_bytes` and `diagnostics.wezterm.max_files`.
 
@@ -102,7 +102,50 @@ Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME c
 - `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status. Each gated step (`helper-install`, `helper-ensure`, `lua-precheck`, `deps-check`) emits an explicit `status=skipped reason=...` line when its skip-if-current check passed; full reasons + force-bypass envs are tabulated in [`daily-workflow.md#skip-if-current-and-force-overrides`](./daily-workflow.md#skip-if-current-and-force-overrides).
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
-- Current runtime categories include `vscode`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, and `sync`.
+- Current runtime categories include `vscode`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs pass-through + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
+
+### Ctrl+n / agent `/new` did nothing
+
+`Ctrl+n` is decided on the **tmux** side (`scripts/runtime/agent-ctrl-n.sh`), not in WezTerm Lua. Lua only logs that it forwarded `\x0e`; the match / pass-through / `/new` outcome is in WSL `runtime.log`.
+
+| Where | What to grep |
+|---|---|
+| `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` | `category="agent_cli"` — `forwarding Ctrl+n to tmux-backed pane` (key reached Lua) |
+| `~/.local/state/wezterm-runtime/logs/runtime.log` | `category="agent_cli"` — decision |
+
+Decision messages in `runtime.log`:
+
+| level | message | Meaning |
+|---|---|---|
+| `info` | `Ctrl+n matched agent pane; staging /new` | `@agent_pane_match=1` → injected `/new` |
+| `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`, window has managed `primary_command`, but pane role tag empty — the Alt+g tagging-gap class of bug |
+| `debug` | `Ctrl+n pass-through` | normal non-agent pane (shell / editor); default-off at `info` |
+
+Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`.
+
+```bash
+# After reproducing a dead Ctrl+n:
+grep 'category="agent_cli"' ~/.local/state/wezterm-runtime/logs/runtime.log | tail
+
+# Live pane probe (no keypress needed):
+tmux display-message -p \
+  'cmd=#{pane_current_command} role=#{@wezterm_pane_role} match=#{E:#{@agent_pane_match}}'
+```
+
+Heal a suspected miss without refresh:  
+`tmux set-option -p -t <pane_id> @wezterm_pane_role agent-cli:<claude|codex|grok>`  
+Or re-select the worktree via `Alt+g` (retag on select) / run session refresh.
+
+Tag lifecycle (same `agent_cli` category): `set primary pane agent role tag` / `cleared primary pane agent role tag` from `ensure_primary_pane_role_tag`.
+
+### Attention jump / Claw take toast-only gaps
+
+| Symptom | Grep |
+|---|---|
+| Alt+j/k/l or User1/User2 “did nothing” | `category="attention"` in `runtime.log` — `attention jump toast` / `attention jump empty` / `attention jump completed` |
+| `Ctrl+k w` claw take failed | `category="session_bridge"` — `session-bridge take failed` (toast alone used to evaporate) |
+
+Lua-side Alt+j/k/l also writes `attention` rows to `wezterm.log` when allowlisted.
 
 ### Sync-side state files
 

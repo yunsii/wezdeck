@@ -124,15 +124,34 @@ ensure_primary_pane_role_tag() {
   local wezterm_repo="${3:-}"
   local cwd="${4:-}"
   local agent_profile=""
+  local previous_role=""
 
   [[ -n "$pane_id" ]] || return 0
+  previous_role="$(tmux show-options -p -t "$pane_id" -v -q @wezterm_pane_role 2>/dev/null || true)"
   if [[ "$role" == managed* ]]; then
     agent_profile="$(agent_profile_for_managed_pane "$wezterm_repo" "$cwd" 2>/dev/null || true)"
   fi
   if [[ -n "$agent_profile" ]]; then
     tmux set-option -p -t "$pane_id" @wezterm_pane_role "agent-cli:$agent_profile" 2>/dev/null || true
+    if declare -F runtime_log_info >/dev/null 2>&1; then
+      runtime_log_info agent_cli "set primary pane agent role tag" \
+        "pane_id=$pane_id" \
+        "cwd=$cwd" \
+        "window_role=$role" \
+        "previous_role=${previous_role:-}" \
+        "pane_role=agent-cli:$agent_profile"
+    fi
   else
     tmux set-option -p -t "$pane_id" -u @wezterm_pane_role 2>/dev/null || true
+    # Only log clears when something was actually present — avoids noise
+    # on every shell-window refresh that never carried a tag.
+    if [[ -n "$previous_role" ]] && declare -F runtime_log_info >/dev/null 2>&1; then
+      runtime_log_info agent_cli "cleared primary pane agent role tag" \
+        "pane_id=$pane_id" \
+        "cwd=$cwd" \
+        "window_role=$role" \
+        "previous_role=$previous_role"
+    fi
   fi
 }
 

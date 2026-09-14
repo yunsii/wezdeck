@@ -44,6 +44,15 @@ return {
         -- allowlist is non-empty — otherwise "did this hotkey fire?"
         -- cannot be answered from wezterm.log.
         hotkey = true,
+        -- Ctrl+n → tmux agent-ctrl-n decision (forward / /new). Without
+        -- this allowlist entry the Lua-side rows are filtered and you
+        -- only see the bash decision in runtime.log.
+        agent_cli = true,
+        -- Same class as agent_cli: non-empty allowlist filters these out.
+        event_bus = true,    -- unparseable envelope / no-handler
+        keybindings = true,  -- override ignored / handler missing
+        layout = true,       -- auto fix-layout schedule / spawn fail
+        link = true,         -- QuickSelect URL open
       },
       -- Thresholds for category=latency slow events. emit_all writes
       -- every sample under latency.perf (noisy at ~4 Hz status ticks).

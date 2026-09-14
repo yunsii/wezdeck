@@ -2,7 +2,9 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-wezterm_config_repo="$(cd "$script_dir/../.." && pwd)"
+# Honor WEZTERM_CONFIG_REPO when set (tests / staged checkouts); otherwise
+# derive from this script's location. Same convention as open-task-window.
+wezterm_config_repo="${WEZTERM_CONFIG_REPO:-$(cd "$script_dir/../.." && pwd)}"
 # shellcheck disable=SC1091
 source "$script_dir/runtime-log-lib.sh"
 # shellcheck disable=SC1091
@@ -91,6 +93,7 @@ fi
 main_worktree_root="$(tmux_worktree_main_root "$repo_common_dir" || true)"
 worktree_label="$(tmux_worktree_label_for_root "$worktree_root" "$main_worktree_root")"
 window_id="$(tmux_worktree_find_window "$session_name" "$worktree_root" || true)"
+override_primary_command=""
 
 if [[ -z "$window_id" ]]; then
   runtime_log_info worktree "creating worktree window" "session_name=$session_name" "worktree_root=$worktree_root" "worktree_label=$worktree_label"
@@ -107,6 +110,29 @@ if [[ -z "$window_id" ]]; then
 else
   runtime_log_info worktree "selecting existing worktree window" "session_name=$session_name" "window_id=$window_id" "worktree_root=$worktree_root" "worktree_label=$worktree_label"
   tmux rename-window -t "$window_id" "$worktree_label"
+fi
+
+# Tag the primary pane with @wezterm_pane_role=agent-cli:<base> so Ctrl+n
+# (@agent_pane_match) can see through the resume wrapper's
+# pane_current_command=sh/node leaf. open-project-session / tmux-reset
+# already tag their paths; Alt+g / Alt+Shift+g create+select was the gap.
+# Re-select of an existing managed window also re-applies the tag so
+# windows opened before this fix (or that lost the pane option) heal
+# without a full refresh.
+# shellcheck disable=SC1091
+source "$script_dir/tmux-reset/common.sh"
+primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1 || true)"
+if [[ -n "$primary_pane_id" ]]; then
+  # Fresh create with a resume override, or any window that already carries
+  # @wezterm_window_primary_command (set to the resolved resume argv, which
+  # may be agent-launcher.sh *or* a bare profile command like sleep in
+  # tests). ensure_primary_pane_role_tag only writes agent-cli:<base> when
+  # a resume profile resolves; otherwise it clears a stale tag.
+  primary_meta="$(tmux_worktree_window_metadata "$window_id" @wezterm_window_primary_command 2>/dev/null || true)"
+  if [[ -n "$override_primary_command" || -n "$primary_meta" ]]; then
+    # Tag/clear + agent_cli log live inside ensure_primary_pane_role_tag.
+    ensure_primary_pane_role_tag "$primary_pane_id" "managed" "$wezterm_config_repo" "$worktree_root"
+  fi
 fi
 
 tmux select-window -t "$window_id"
