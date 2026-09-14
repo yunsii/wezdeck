@@ -25,7 +25,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | **Memory search ops (embeddings / reindex)** | `memory-search.md`（local llama-cpp · 故障闭环） |
 | **Feishu multi-bot wiring** | `feishu-digital-employees.md`（含 lark-cli 双配置 / cron profile 坑） |
 | Architecture / rails | `agent-architecture.md` |
-| **Agent scheduling / 执行通道** | 平台正文 [`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)（stub：[`agent-scheduling.md`](./agent-scheduling.md)） |
+| **Agent scheduling / 执行通道** | 平台正文 [`../../docs/agent-scheduling.md`](../../docs/agent-scheduling.md)（不在 openclaw 私产下） |
 | Interaction modes | `agent-interaction.md` |
 | **Session Adapter Kit** (host↔claw) | `session-bridge.md` + `scripts/session-bridge.sh` + skill `session-bridge` |
 | Error closed-loop **scope** | `error-closed-loop-scope.md` + skill `error-closed-loop` |
