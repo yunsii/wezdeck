@@ -85,9 +85,19 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 | --- | --- |
 | 人要盯全程 / 深改 | **Handoff/TUI** |
 | 飞书边聊边改、要 steer/cancel | **ACP** |
-| 跨仓契约、research→challenge→implement、`watch` | **Ticket-headless**（同一 skill） |
+| 跨仓契约、只交票 / 主会话认领改 / 明确委托工人 | **Ticket**（同一 skill；见下表三模式） |
 | 小且清、Main 自己写 | **Main自写** |
 | 多角色找茬 / 发散 | **Review-headless**（非写码工人） |
+
+### cross-repo-delegate 三模式（票仓内）
+
+| 模式 | 命令 | 开发者 | Attention |
+| --- | --- | --- | --- |
+| **1. 主会话创建工单** | `create`（无 `--run`） | 尚未开发；票进 inbox | 无工人 |
+| **2. 主会话认领并开发** | `claim` → 当前 TUI/cwd 改码 | `owner=human`；**禁止**自动 worktree/worker | 主会话参与 Alt+/ |
+| **3. 主会话建单并委托开发** | `create --run` / `run --phase auto` | headless worker + `delegate-*` worktree | SKIP（`DELEGATE_HEADLESS`） |
+
+**硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。
 
 ---
 

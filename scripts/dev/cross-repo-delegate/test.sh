@@ -77,11 +77,38 @@ fi
 inbox="$(cd "$fake_wez" && "$run" inbox --to . 2>/dev/null)"
 check "inbox sees ticket" jq -e --arg id "$id" '.count >= 1 and (.tickets | map(.id) | index($id) != null)' <<<"$inbox"
 
-# --- claim / lease conflict ---
+# --- claim / lease conflict (Mode 2 = session) ---
 claim1="$("$run" claim --id "$id" --by agent-a --lease-hours 2 2>/dev/null)"
 check "claim a ok" jq -e '.ok == true and .claimed_by == "agent-a"' <<<"$claim1"
+check "claim defaults to session (owner=human)" jq -e '.owner == "human" and .mode == "session"' <<<"$claim1"
 claim2="$("$run" claim --id "$id" --by agent-b --lease-hours 2 2>/dev/null)" || true
 check "second claim blocked while lease held" jq -e '.ok == false' <<<"$claim2"
+
+# session lease must block headless run (no silent worktree/worker)
+set +e
+run_blocked="$("$run" run --id "$id" --phase research --mock 2>&1)"
+rc_blocked=$?
+set -u
+if [[ "$rc_blocked" -ne 0 ]] && grep -q 'lease held\|session lease\|worker claim failed' <<<"$run_blocked"; then
+  ok "run refused while session lease held"
+else
+  bad "run refused while session lease held"
+  printf 'rc=%s out=%s\n' "$rc_blocked" "$run_blocked" >&2
+fi
+# --steal may take over for explicit Mode 3 override
+set +e
+steal_out="$("$run" run --id "$id" --phase research --mock --steal 2>&1)"
+rc_steal=$?
+set -u
+if [[ "$rc_steal" -eq 0 ]] && printf '%s\n' "$steal_out" | grep '^{' | jq -s -e 'map(select(.ok == true and .owner == "worker")) | length >= 1' >/dev/null 2>&1; then
+  ok "run --steal overrides session lease (mock research)"
+else
+  bad "run --steal overrides session lease (mock research)"
+  printf 'rc=%s out=%s\n' "$rc_steal" "$steal_out" >&2
+fi
+# restore a clean session-claimed ticket for challenge/reply below
+"$run" release --id "$id" >/dev/null 2>&1 || true
+"$run" claim --id "$id" --by agent-a >/dev/null 2>&1
 
 # --- challenge / reply ---
 chal="$("$run" challenge --id "$id" \
@@ -245,6 +272,22 @@ else
   bad "mock research prompt embeds phase view without Thread"
   bad "mock implement prompt embeds phase view without Thread"
   bad "mock workers invoke via shared host-agent-invoke (trace+no private CLI case)"
+fi
+
+# session claim: reply --continue must refuse (Mode 2 stays in TUI)
+id_sess="$("$run" create --to wezdeck --from avc --title "session continue refuse" --observed "o" --assumed "a" 2>/dev/null | jq -r .id)"
+"$run" claim --id "$id_sess" --by human-dev >/dev/null 2>&1
+"$run" set-status --id "$id_sess" --status waiting_initiator --owner initiator --phase research_challenge >/dev/null
+# keep claimed_by=human-dev in ticket body (set-status may not clear it)
+set +e
+sess_cont="$("$run" reply --id "$id_sess" --decision "ok proceed" --continue --mock 2>&1)"
+rc_sess_cont=$?
+set -u
+if [[ "$rc_sess_cont" -ne 0 ]] && grep -qi 'session-claimed\|owner=human\|refused' <<<"$sess_cont"; then
+  ok "reply --continue refused for session claim"
+else
+  bad "reply --continue refused for session claim"
+  printf 'rc=%s out=%s\n' "$rc_sess_cont" "$sess_cont" >&2
 fi
 
 # challenge path: mock research that challenges, then reply --continue

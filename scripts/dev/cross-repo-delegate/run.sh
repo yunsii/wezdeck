@@ -6,18 +6,24 @@
 #   run.sh create --to TARGET --from SOURCE --title TITLE \
 #     --observed TEXT --assumed TEXT [--snippet-ref REF] [--summary TEXT] [--source-pr REF] \
 #     [--run] [--backend claude|codex|grok] [--mock]
-#   run.sh run --id ID [--phase research|implement|auto] [--backend …] [--mock] [--no-worktree]
+#       bare create = 主会话建单（只交票，不派工人）
+#       create --run = 主会话建单并委托开发（headless worktree + worker）
+#   run.sh run --id ID [--phase research|implement|auto] [--backend …] [--mock] [--no-worktree] [--steal]
 #       auto = research then implement if verdict=accept (default for create --run)
+#       refuses a human/session lease unless --steal
 #   run.sh watch --id ID [--interval SEC] [--once] [--max-rounds N] [--backend …] [--mock]
 #       poll until terminal / blocked on human; auto-continue implement when approved
 #   run.sh inbox [--to TARGET|.]
 #   run.sh show --id ID
 #   run.sh next [--to TARGET|.] [--id ID]
-#   run.sh claim --id ID [--by WHO] [--lease-hours N]
+#   run.sh claim --id ID [--by WHO] [--lease-hours N] [--as-worker] [--steal]
+#       default = 主会话认领并开发 (owner=human; 禁止自动 worktree/worker)
+#       --as-worker = headless worker 内部认领 only
 #   run.sh release --id ID
 #   run.sh challenge --id ID --measured TEXT --impact TEXT --recommended TEXT \
 #     [--original TEXT] [--needs TEXT]
 #   run.sh reply --id ID --decision TEXT [--status waiting_target|in_progress]
+#       [--continue] only for worker-owned tickets (headless implement)
 #   run.sh set-status --id ID --status STATUS [--owner OWNER] [--phase PHASE]
 #   run.sh status [--id ID] [--mine] [--from SOURCE]
 #   run.sh board [--to TARGET]
@@ -26,8 +32,8 @@
 #   run.sh reindex | selfcheck
 #
 # Tickets live under ~/.agent/tickets (override: DELEGATE_TICKETS_ROOT).
-# create --run / run: auto worktree (delegate-*) + headless research worker.
-# DELEGATE_WORKER_MOCK=1 or --mock skips LLM (for tests).
+# Three modes: create | claim(session develop) | create --run (delegate develop).
+# Claim never implies run/worktree. DELEGATE_WORKER_MOCK=1 or --mock skips LLM.
 #
 # Exit: 0 ok · 1 usage · 2 not found / invalid · 3 lock / conflict
 set -euo pipefail
@@ -39,10 +45,11 @@ TOOL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$TOOL_ROOT/lib/worktree.sh"
 # shellcheck source=/dev/null
 . "$TOOL_ROOT/lib/worker.sh"
+. "$TOOL_ROOT/lib/lifecycle.sh"
 
 PY="$TOOL_ROOT/lib/ticket_fs.py"
 usage() {
-  sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 cmd="${1:-}"
@@ -187,310 +194,6 @@ PY
   fi
 }
 
-# Ensure claim + worktree; prints worktree path (may be empty under mock).
-delegate_prepare_worker_cwd() {
-  local id=$1 backend=$2 no_worktree=$3
-  local root title to_key to_path wt_path
-  root="$(delegate_tickets_root)"
-  cmd_claim --id "$id" --by "worker-${backend}" --lease-hours 2 >/dev/null || true
-  to_key="$(awk -F': ' '/^to:/{print $2; exit}' "$root/_data/$id/ticket.md" | tr -d '"')"
-  title="$(awk -F': ' '/^title:/{sub(/^title:[[:space:]]*/,""); gsub(/^"|"$/,""); print; exit}' "$root/_data/$id/ticket.md")"
-  to_path="$(delegate_target_path "$to_key")"
-  wt_path=""
-  if ((no_worktree)) || [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" && "${DELEGATE_FORCE_WORKTREE:-0}" != "1" ]]; then
-    delegate_log "skip worktree (mock/no-worktree)"
-  else
-    # reuse meta.worktree when present
-    wt_path="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("worktree") or "")' \
-      "$root/_data/$id/meta.json" 2>/dev/null || true)"
-    if [[ -z "$wt_path" || ! -d "$wt_path" ]]; then
-      wt_path="$(delegate_ensure_worktree "$to_path" "$id" "$title")"
-    fi
-    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" ID="$id" WT="$wt_path" BR="${DELEGATE_WORKTREE_BRANCH:-}" python3 - <<'PY'
-import importlib.util, os
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-tid = os.environ["ID"]
-mj = mod.read_meta_json(tid)
-mj["worktree"] = os.environ.get("WT") or None
-mj["branch"] = os.environ.get("BR") or None
-mod.write_meta_json(tid, mj)
-mod.append_event(tid, {"type": "worktree_ready", "worktree": mj["worktree"], "branch": mj["branch"]})
-PY
-  fi
-  printf '%s\n' "$wt_path"
-}
-
-cmd_run() {
-  local id="" phase="auto" backend="claude" mock=0 no_worktree=0
-  while (($#)); do
-    case "$1" in
-      --id) id=$2; shift 2 ;;
-      --phase) phase=$2; shift 2 ;;
-      --backend) backend=$2; shift 2 ;;
-      --mock) mock=1; shift ;;
-      --no-worktree) no_worktree=1; shift ;;
-      *) delegate_die "unknown run arg: $1" ;;
-    esac
-  done
-  [[ -n "$id" ]] || delegate_die "run requires --id"
-  case "$phase" in
-    research|implement|auto) ;;
-    *) delegate_die "unsupported --phase $phase (research|implement|auto)" ;;
-  esac
-
-  delegate_ensure_tree
-  ((mock)) && export DELEGATE_WORKER_MOCK=1
-
-  local root wt_path apply_json impl_json
-  root="$(delegate_tickets_root)"
-  [[ -f "$root/_data/$id/ticket.md" ]] || delegate_die "ticket not found: $id" 2
-
-  wt_path="$(delegate_prepare_worker_cwd "$id" "$backend" "$no_worktree")"
-
-  if [[ "$phase" == "research" || "$phase" == "auto" ]]; then
-    apply_json="$(delegate_worker_research "$id" "$wt_path" "$backend")"
-    apply_json="$(python3 -c 'import json,sys; a=json.loads(sys.argv[1]); a["worktree"]=sys.argv[2] or None; print(json.dumps(a,ensure_ascii=False))' \
-      "$apply_json" "${wt_path:-}")"
-    printf '%s\n' "$apply_json"
-    # accept → no objection → start implement immediately
-    if [[ "$phase" == "auto" ]]; then
-      local next_action
-      next_action="$(printf '%s' "$apply_json" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("next_action") or "")')"
-      if [[ "$next_action" == "implement" ]]; then
-        delegate_log "research accept → auto implement"
-        impl_json="$(delegate_worker_implement "$id" "$wt_path" "$backend")"
-        python3 -c 'import json,sys; a=json.loads(sys.argv[1]); a["worktree"]=sys.argv[2] or None; a["auto_implement"]=True; print(json.dumps(a,ensure_ascii=False))' \
-          "$impl_json" "${wt_path:-}"
-      else
-        delegate_log "research needs initiator ($next_action) — watch / reply before implement"
-      fi
-    fi
-    return 0
-  fi
-
-  # phase=implement
-  impl_json="$(delegate_worker_implement "$id" "$wt_path" "$backend")"
-  python3 -c 'import json,sys; a=json.loads(sys.argv[1]); a["worktree"]=sys.argv[2] or None; print(json.dumps(a,ensure_ascii=False))' \
-    "$impl_json" "${wt_path:-}"
-}
-cmd_inbox() {
-  local to="."
-  while (($#)); do
-    case "$1" in
-      --to) to=$2; shift 2 ;;
-      *) delegate_die "unknown inbox arg: $1" ;;
-    esac
-  done
-  delegate_ensure_tree
-  local key
-  key="$(delegate_resolve_target_key "$to")"
-  env DELEGATE_TICKETS_ROOT="$(delegate_tickets_root)" TOOL_ROOT="$TOOL_ROOT" TO_KEY="$key" python3 - <<'PY'
-import importlib.util, json, os
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-mod.reindex()
-items = mod.list_inbox(os.environ["TO_KEY"])
-out = []
-for it in items:
-    m = it["meta"]
-    out.append({
-        "id": it["id"],
-        "title": m.get("title"),
-        "from": m.get("from"),
-        "status": m.get("status"),
-        "owner": m.get("owner"),
-        "summary": m.get("summary"),
-        "updated_at": m.get("updated_at"),
-    })
-print(json.dumps({"ok": True, "to": os.environ["TO_KEY"], "count": len(out), "tickets": out}, ensure_ascii=False, indent=2))
-PY
-}
-
-cmd_claim() {
-  local id="" by="${USER:-agent}" lease_hours=2
-  while (($#)); do
-    case "$1" in
-      --id) id=$2; shift 2 ;;
-      --by) by=$2; shift 2 ;;
-      --lease-hours) lease_hours=$2; shift 2 ;;
-      *) delegate_die "unknown claim arg: $1" ;;
-    esac
-  done
-  [[ -n "$id" ]] || delegate_die "claim requires --id"
-  delegate_ensure_tree
-  local root lock
-  root="$(delegate_tickets_root)"
-  lock="$root/.locks/tickets.lock"
-  delegate_with_lock "$lock" -- \
-    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
-      ID="$id" BY="$by" LEASE_HOURS="$lease_hours" python3 - <<'PY'
-import importlib.util, json, os, sys, time
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-
-tid = os.environ["ID"]
-by = os.environ["BY"]
-hours = float(os.environ.get("LEASE_HOURS") or 2)
-try:
-    meta, body = mod.read_ticket(tid)
-except FileNotFoundError as e:
-    print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
-    sys.exit(2)
-
-mj = mod.read_meta_json(tid)
-lease_until = mj.get("lease_until_epoch")
-claimed_by = meta.get("claimed_by") or mj.get("claimed_by")
-if meta.get("status") == "in_progress" and isinstance(lease_until, int) and lease_until > mod.now_epoch():
-    if claimed_by and claimed_by != by:
-        print(json.dumps({"ok": False, "error": "lease held", "claimed_by": claimed_by, "lease_until_epoch": lease_until}, ensure_ascii=False))
-        sys.exit(3)
-
-gen = int(mj.get("claim_gen") or meta.get("claim_gen") or 0) + 1
-until = mod.now_epoch() + int(hours * 3600)
-meta["status"] = "in_progress"
-meta["owner"] = "worker"
-meta["phase"] = meta.get("phase") or "claim"
-meta["claimed_by"] = by
-meta["claim_gen"] = gen
-meta["lease_until"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(until))
-mj["claim_gen"] = gen
-mj["claimed_by"] = by
-mj["lease_until_epoch"] = until
-mod.write_ticket(tid, meta, body)
-mod.write_meta_json(tid, mj)
-mod.append_event(tid, {"type": "claimed", "by": by, "claim_gen": gen, "lease_until_epoch": until})
-mod.reindex()
-print(json.dumps({"ok": True, "id": tid, "status": "in_progress", "claimed_by": by, "claim_gen": gen, "lease_until": meta["lease_until"]}, ensure_ascii=False))
-PY
-}
-
-cmd_release() {
-  local id=""
-  while (($#)); do
-    case "$1" in
-      --id) id=$2; shift 2 ;;
-      *) delegate_die "unknown release arg: $1" ;;
-    esac
-  done
-  [[ -n "$id" ]] || delegate_die "release requires --id"
-  delegate_ensure_tree
-  local root lock
-  root="$(delegate_tickets_root)"
-  lock="$root/.locks/tickets.lock"
-  delegate_with_lock "$lock" -- \
-    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" ID="$id" python3 - <<'PY'
-import importlib.util, json, os, sys
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-tid = os.environ["ID"]
-try:
-    meta, body = mod.read_ticket(tid)
-except FileNotFoundError as e:
-    print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
-    sys.exit(2)
-meta["status"] = "submitted"
-meta["owner"] = "worker"
-meta["claimed_by"] = None
-meta["lease_until"] = None
-mj = mod.read_meta_json(tid)
-mj["lease_until_epoch"] = None
-mj["claimed_by"] = None
-mod.write_ticket(tid, meta, body)
-mod.write_meta_json(tid, mj)
-mod.append_event(tid, {"type": "released"})
-mod.reindex()
-print(json.dumps({"ok": True, "id": tid, "status": "submitted"}, ensure_ascii=False))
-PY
-}
-
-cmd_reply() {
-  local id="" decision="" status="waiting_target" do_continue=0 backend="claude" mock=0
-  while (($#)); do
-    case "$1" in
-      --id) id=$2; shift 2 ;;
-      --decision) decision=$2; shift 2 ;;
-      --status) status=$2; shift 2 ;;
-      --continue) do_continue=1; shift ;;
-      --backend) backend=$2; shift 2 ;;
-      --mock) mock=1; shift ;;
-      *) delegate_die "unknown reply arg: $1" ;;
-    esac
-  done
-  [[ -n "$id" && -n "$decision" ]] || delegate_die "reply requires --id and --decision"
-  delegate_ensure_tree
-  local root lock
-  root="$(delegate_tickets_root)"
-  lock="$root/.locks/tickets.lock"
-  delegate_with_lock "$lock" -- \
-    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
-      ID="$id" DECISION="$decision" STATUS="$status" python3 - <<'PY'
-import importlib.util, json, os, sys, re
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-tid = os.environ["ID"]
-decision = os.environ["DECISION"]
-status = os.environ["STATUS"]
-try:
-    meta, body = mod.read_ticket(tid)
-except FileNotFoundError as e:
-    print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
-    sys.exit(2)
-
-stamp = mod.now_iso()
-if re.search(r"^## Decision\s*$", body, re.M):
-    body = re.sub(
-        r"^## Decision\s*\n(?:.*\n)*?(?=^## |\Z)",
-        f"## Decision\n\n_{stamp}_\n\n{decision}\n\n",
-        body,
-        count=1,
-        flags=re.M,
-    )
-else:
-    body = body.rstrip() + f"\n\n## Decision\n\n_{stamp}_\n\n{decision}\n"
-
-thread_line = f"\n- ({stamp}) initiator: {decision}\n"
-if "## Thread" in body:
-    body = body.replace("## Thread", "## Thread" + thread_line, 1)
-else:
-    body += "\n## Thread\n" + thread_line
-
-meta["status"] = status
-if status in ("waiting_target", "in_progress", "submitted"):
-    meta["owner"] = "worker"
-    meta["phase"] = "approved_to_implement"
-else:
-    meta["owner"] = "initiator"
-mod.write_ticket(tid, meta, body)
-mod.append_event(tid, {"type": "reply", "decision": decision, "status": status, "phase": meta.get("phase")})
-mod.reindex()
-print(json.dumps({"ok": True, "id": tid, "status": status, "owner": meta["owner"], "phase": meta.get("phase"), "next_action": "implement" if meta.get("phase") == "approved_to_implement" else "none"}, ensure_ascii=False))
-PY
-
-  if ((do_continue)); then
-    local run_args=(--id "$id" --phase implement --backend "$backend")
-    ((mock)) && run_args+=(--mock)
-    cmd_run "${run_args[@]}"
-  fi
-}
-
-# Watch loop for a blocked initiator: poll ticket and auto-continue when the
-# ball returns to the worker (approved_to_implement / research_done accept).
 cmd_watch() {
   local id="" interval=20 once=0 max_rounds=60 backend="claude" mock=0
   while (($#)); do
@@ -539,7 +242,14 @@ cmd_watch() {
         ;;
     esac
 
-    # Auto-continue implement when approved or research accepted but not yet implemented
+    # Auto-continue implement only for worker-owned tickets. Session claims stay in TUI.
+    if [[ "$owner" == "human" && ( "$phase" == "approved_to_implement" || "$phase" == "research_done" || "$phase" == "session" ) ]]; then
+      printf '{"ok":true,"id":"%s","blocked":true,"status":"%s","phase":"%s","owner":"human","hint":"session claim — target TUI implements; do not run/worktree"}\n' \
+        "$id" "$status" "$phase"
+      ((once)) && return 0
+      sleep "$interval"
+      continue
+    fi
     if [[ "$phase" == "approved_to_implement" || "$phase" == "research_done" ]]; then
       delegate_log "watch: kicking implement (phase=$phase)"
       local run_args=(--id "$id" --phase implement --backend "$backend")
@@ -857,33 +567,56 @@ to_key = (os.environ.get("TO_KEY") or "").strip()
 def advice(meta, tid):
     st = meta.get("status")
     owner = meta.get("owner")
+    claimed_by = str(meta.get("claimed_by") or "")
+    session = owner == "human" or (claimed_by and not claimed_by.startswith("worker-"))
     steps = []
     if st == "submitted":
         steps = [
-            f"{cli} claim --id {tid}",
-            f"{cli} show --id {tid}",
-            "# work in the target repo, then either:",
+            f"# Mode 2 — 主会话认领并开发（默认）:",
+            f"{cli} claim --id {tid} && {cli} show --id {tid}",
+            "# then develop in THIS TUI/cwd — do NOT run / worktree",
             f"{cli} challenge --id {tid} --measured '…' --impact '…' --recommended '…' --needs '…'",
-            f"# or finish and: {cli} close --id {tid} --doc path/to/topic.md",
+            f"# or finish: {cli} close --id {tid} --doc path/to/topic.md",
+            f"# Mode 3 only if user asks to delegate: {cli} run --id {tid} --phase auto",
         ]
     elif st == "in_progress":
-        steps = [
-            f"{cli} show --id {tid}",
-            "# continue work; when assumptions fail:",
-            f"{cli} challenge --id {tid} --measured '…' --impact '…' --recommended '…'",
-            f"# when done: {cli} close --id {tid} --doc path.md",
-        ]
+        if session:
+            steps = [
+                f"{cli} show --id {tid}",
+                "# session claim: keep developing in this TUI/cwd",
+                "# do NOT run.sh run / create delegate-* worktree",
+                f"{cli} challenge --id {tid} --measured '…' --impact '…' --recommended '…'",
+                f"# when done: {cli} close --id {tid} --doc path.md",
+            ]
+        else:
+            steps = [
+                f"{cli} show --id {tid}",
+                "# worker-owned: headless path in progress",
+                f"{cli} watch --id {tid}",
+            ]
     elif st == "waiting_initiator":
-        steps = [
-            f"{cli} show --id {tid}",
-            f"{cli} reply --id {tid} --decision '…' --continue   # confirm then auto-implement",
-            f"# or: {cli} watch --id {tid}   # after reply without --continue",
-        ]
+        if session:
+            steps = [
+                f"{cli} show --id {tid}",
+                f"{cli} reply --id {tid} --decision '…'   # no --continue; target TUI implements",
+            ]
+        else:
+            steps = [
+                f"{cli} show --id {tid}",
+                f"{cli} reply --id {tid} --decision '…' --continue   # confirm then headless implement",
+                f"# or: {cli} watch --id {tid}   # after reply without --continue",
+            ]
     elif st == "waiting_target":
         phase = meta.get("phase") or ""
-        if phase in ("research_done", "approved_to_implement"):
+        if session:
             steps = [
-                f"{cli} watch --id {tid} --once   # kicks implement",
+                f"{cli} show --id {tid}",
+                "# session claim: target TUI implements — do not watch/run",
+                f"# when done: {cli} close --id {tid} --doc path.md",
+            ]
+        elif phase in ("research_done", "approved_to_implement"):
+            steps = [
+                f"{cli} watch --id {tid} --once   # kicks headless implement",
                 f"# or: {cli} run --id {tid} --phase implement",
             ]
         else:
@@ -901,7 +634,7 @@ def advice(meta, tid):
         steps = ["# terminal — nothing to do"]
     else:
         steps = [f"{cli} status --id {tid}", f"{cli} show --id {tid}"]
-    return {"id": tid, "status": st, "owner": owner, "title": meta.get("title"), "next": steps}
+    return {"id": tid, "status": st, "owner": owner, "mode": "session" if session else "worker", "title": meta.get("title"), "next": steps}
 
 out = {"ok": True, "actions": []}
 if tid:
@@ -1036,11 +769,13 @@ cmd_walkthrough() {
   cat <<EOF
 # Delegate walkthrough · AVC → wezdeck (Pull)
 
+Three modes: (1) create only  (2) claim + develop in this TUI  (3) create --run to delegate.
+
 Install once (PATH):
   $TOOL_ROOT/run.sh install-cli
   # then: hash -r   # or open a new shell
 
-## A) File from AVC (initiator)
+## A) File from AVC (initiator) — Mode 1
 
   cd ~/work/ai-video-collection
   $cli create \\
@@ -1052,20 +787,25 @@ Install once (PATH):
 
   # note the printed "id": req-…
 
-## B) Handle in wezdeck (target)
+## B) Handle in wezdeck (target) — Mode 2 session claim
 
   cd ~/github/wezterm-config
   $cli inbox --to .
   $cli next --to .
-  $cli claim --id req-…
+  $cli claim --id req-…          # owner=human; develop HERE — do NOT run/worktree
   $cli show --id req-…
-  # … edit wezdeck code / docs …
+  # … edit wezdeck code / docs in this TUI …
   # if assumptions were wrong:
   $cli challenge --id req-… --measured "…" --impact "…" --recommended "…" --needs "…"
   # back in initiator session:
   $cli reply --id req-… --decision "…"
   # finish:
   $cli close --id req-… --doc scripts/dev/cross-repo-delegate/README.md
+
+## B2) Mode 3 — create and delegate (explicit only)
+
+  $cli create … --run [--backend claude]   # headless worker + delegate-* worktree
+  $cli watch --id req-…
 
 ## C) Inspect
 

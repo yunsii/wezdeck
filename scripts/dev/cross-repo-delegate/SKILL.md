@@ -19,20 +19,22 @@ are symlinks from `scripts/dev/link-platform-skills.sh`.
 
 Skill id: **`cross-repo-delegate`**. Short CLI on PATH (optional): **`delegate`**.
 
-## When to load / run
+## Three modes (hard rule)
 
-| User intent (examples) | You do |
-| --- | --- |
-| 跨仓委托；给**另一个**项目/仓库提单；消费方要平台侧改 | `create`（`--to` / `--from` 用 allowlist 里的 key 或 `.`） |
-| 有没有我的单；看 inbox；认领这张单 | `inbox` → `claim` → `show` |
-| 假设不对；需要对方决策 | `challenge` |
-| 答复挑战；关单；写方案路径 | `reply` / `close` |
+| Mode | User intent | You do | Must NOT |
+| --- | --- | --- | --- |
+| **1. 主会话创建工单** | 提单 / 跨仓委托 / 只交票 | `create`（**无** `--run`） | 自动 `run` / worktree / worker |
+| **2. 主会话认领并开发** | 有没有我的单；认领；认领后改 | `inbox` → `claim` → `show` → **在当前 TUI/cwd 开发** | `run` / `create --run` / 建 `delegate-*` worktree |
+| **3. 主会话建单并委托开发** | 明确说后台跑 / 派工人 / 委托开发 | `create … --run` 或已有单上 `run --phase auto` | 把 Mode 2 的认领误当成 Mode 3 |
+
+`claim` 默认 **session**（`owner=human`）。Headless worker 才用 `claim --as-worker`（由 `run` 内部调用）。  
+**认领 ≠ 派工人。** 用户在 TUI 认领后，由**当前主会话**读票、调研、改代码、`challenge` / `close`。
 
 Concrete repo names live only in `~/.agent/tickets/config.yml` (and the user’s words), not in this skill’s trigger text.
 
 **Skip / redirect:** long exploratory design → interactive TUI / OpenClaw C2 handoff, not a ticket loop.
 
-**Auto-dispatch:** after create, or later:
+## Mode 3 only — explicit headless dispatch
 
 ```bash
 "$D" create … --run [--backend claude|codex|grok]
@@ -40,11 +42,13 @@ Concrete repo names live only in `~/.agent/tickets/config.yml` (and the user’s
 # if challenge/need_input → stops for initiator
 
 "$D" run --id <id> --phase auto|research|implement
-"$D" reply --id <id> --decision "…" --continue   # after challenge
-"$D" watch --id <id> [--once] [--interval 20]    # blocked initiator loop
+"$D" reply --id <id> --decision "…" --continue   # after challenge (worker-owned only)
+"$D" watch --id <id> [--once] [--interval 20]    # blocked initiator loop (worker-owned)
 ```
 
-Policy: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing a ticket means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.
+Policy for **Mode 3**: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing with `--run` means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.
+
+If a ticket is already **session-claimed** (`owner=human`), `run` / `reply --continue` / `watch` **will not** steal the lease unless the user explicitly asks to force headless (`run --steal`). Prefer developing in the claiming TUI.
 
 **Prompt injection (token trim):** workers embed a **phase view**, not the full ticket.
 Omit only high-noise / phase-irrelevant sections — **never** the hop’s contract.
@@ -86,7 +90,7 @@ If `~/.agent/tickets/config.yml` lacks the target, add it (path + aliases) befor
 
 ## Agent procedure
 
-### A) File a ticket (initiator project cwd)
+### A) Mode 1 — File a ticket (initiator project cwd)
 
 1. Resolve TOOL_HOME; confirm `"$D"` is executable.
 2. Infer `--to <allowlist_key>` from the user; use `--from .` when cwd is the source project (or an explicit source key).
@@ -104,29 +108,47 @@ If `~/.agent/tickets/config.yml` lacks the target, add it (path + aliases) befor
   [--summary "…"] [--source-pr "#…"]
 ```
 
-5. Report the printed `id` to the user. Do **not** commit the ticket into any git tree.
+5. Report the printed `id` to the user. Do **not** commit the ticket into any git tree.  
+   Do **not** add `--run` unless the user asked for Mode 3 (委托开发).
 
-### B) Inbox / claim (receiving project cwd)
+### B) Mode 2 — Inbox / claim / develop in this session (receiving project cwd)
 
 ```bash
 "$D" inbox --to .
 "$D" next --to .
-"$D" claim --id <id>
+"$D" claim --id <id>    # owner=human, mode=session
 "$D" show --id <id>
 ```
 
-Read the **full** ticket before editing code. If claim returns lease held → stop; do not dual-write.
+Read the **full** ticket, then **edit code in the current worktree/TUI**.  
+If claim returns lease held → stop; do not dual-write.  
+**Do not** call `"$D" run` after a successful session claim.
 
-### C) Challenge (target) → reply (initiator)
+### C) Mode 3 — Create and delegate development
+
+Only when the user explicitly wants a background worker:
+
+```bash
+"$D" create … --run [--backend claude|codex|grok]
+# or later:
+"$D" run --id <id> --phase auto
+"$D" watch --id <id>   # initiator blocked on worker
+```
+
+### D) Challenge (target) → reply (initiator)
 
 ```bash
 "$D" challenge --id <id> \
   --measured "…" --impact "…" --recommended "…" [--needs "…"]
 # initiator side:
 "$D" reply --id <id> --decision "…" --status waiting_target
+# Mode 3 worker-owned only:
+"$D" reply --id <id> --decision "…" --continue
 ```
 
-### D) Close
+Session-claimed tickets: after `reply`, the **claiming TUI** continues implement — no `--continue`.
+
+### E) Close
 
 ```bash
 "$D" close --id <id> --doc <topic-doc-in-target-repo>
@@ -140,7 +162,10 @@ Update/create the **topic solution doc** in the target repo yourself; never comm
 
 `submitted` · `in_progress` · `waiting_initiator` · `waiting_target` · `shipped` · `closed` · `rejected` · `failed`  
 
-`owner`: `worker` | `initiator` | `human`
+`owner`: `worker` | `initiator` | `human`  
+
+- `human` = Mode 2 session claim (main TUI develops)  
+- `worker` = Mode 3 headless path  
 
 Use `"$D" next --id <id>` when unsure whose turn it is.
 
@@ -153,6 +178,8 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 - Don’t close without `--doc` or `--no-doc`
 - Don’t start a second claim while a lease is active
 - Don’t treat Ticket-headless as C3 ACP (or the reverse); OpenClaw Main picks **执行通道** — see `openclaw/docs/agent-interaction.md` §6
+- **Don’t** after `claim` (session) call `run` / spawn `delegate-*` worktree / headless worker
+- **Don’t** use `--run` / `run` unless the user asked to 委托 / 后台 / 派工人 (Mode 3)
 
 ## Tests (operators / CI — not the user path)
 
@@ -162,6 +189,7 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 
 ## Related
 
-- Runner: `run.sh` · lib: `lib/` · offline: `test.sh`
+- Runner: `run.sh` · lib: `lib/` (`lifecycle.sh` = claim/run/reply) · offline: `test.sh`
 - Link: `scripts/dev/link-platform-skills.sh`
 - Sibling: `adversarial-review`, `brainstorm`
+- Scheduling: `docs/agent-scheduling.md`
