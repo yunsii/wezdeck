@@ -673,6 +673,25 @@ function M.is_in_visible(workspace_name, session_name)
   return cache.visible_set[session_name] == true
 end
 
+-- True when sticky visible_set claims `session_name` but no *non-overflow*
+-- wezterm pane currently hosts it in the in-memory map. That is the
+-- ghost-sticky case: Alt+l projects into `…`, then maybe_clear_overflow_
+-- collision yanks overflow back to browse because is_in_visible is still
+-- true. Returns ghost, live_host_pane_id_or_empty.
+function M.overflow_collision_is_ghost(session_name, overflow_pane_id)
+  if not session_name or session_name == '' then
+    return false, ''
+  end
+  local pane_map = rawget(_G, '__WEZTERM_PANE_TMUX_SESSION') or {}
+  for pane_id, sess in pairs(pane_map) do
+    if sess == session_name
+       and tostring(pane_id) ~= tostring(overflow_pane_id) then
+      return false, tostring(pane_id)
+    end
+  end
+  return true, ''
+end
+
 function M.warm_list(workspace_name)
   local cache = module_state.workspaces[workspace_name]
   if not cache then return {} end

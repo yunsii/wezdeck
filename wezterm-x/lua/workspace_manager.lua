@@ -730,12 +730,60 @@ function M.new(opts)
     local args = actions_mod.tab_overflow_attach_args(
       constants, nil, workspace_name, browse_session, logger, trace_id)
     if not args then return false end
-    logger.info('tab_visibility', 'overflow collision detected — retargeting to browse', with_trace_id(trace_id, {
+
+    -- Distinguish a real promotion (another visible pane hosts the
+    -- session) from a ghost-sticky fight: sticky visible_set still
+    -- claims the session, but the only live host is this overflow pane
+    -- (or nothing). Do NOT retarget on ghost — that was clearing
+    -- Alt+l / Alt+x projections and leaving the user on browse.
+    local is_ghost, live_host_pane = false, ''
+    if type(tab_visibility.overflow_collision_is_ghost) == 'function' then
+      is_ghost, live_host_pane = tab_visibility.overflow_collision_is_ghost(
+        session, entry.pane_id)
+    end
+    local recent = rawget(_G, '__WEZTERM_LAST_OVERFLOW_PROJECT')
+    local recent_project_age_ms = ''
+    local fought_recent_project = '0'
+    if type(recent) == 'table'
+       and recent.session == session
+       and type(recent.ms) == 'number' then
+      -- Coarse clock is enough: we only care about "same session was
+      -- projected into overflow within the last few seconds".
+      local now = os.time() * 1000
+      local age = now - recent.ms
+      if age >= 0 and age < 10000 then
+        recent_project_age_ms = tostring(age)
+        fought_recent_project = '1'
+      end
+    end
+    local fields = with_trace_id(trace_id, {
       workspace = workspace_name,
       promoted_session = session,
       browse_session = browse_session,
       overflow_pane_id = entry.pane_id,
-    }))
+      live_host_pane = live_host_pane or '',
+      has_non_overflow_host = (not is_ghost) and '1' or '0',
+      fought_recent_project = fought_recent_project,
+      recent_project_age_ms = recent_project_age_ms,
+    })
+    if is_ghost then
+      logger.warn('tab_visibility',
+        'inconsistent: overflow collision on ghost-visible session',
+        fields)
+      return false
+    end
+    if fought_recent_project == '1' then
+      -- Visible host exists, but a jump just projected the same session
+      -- into overflow; defer so the user can see the landing. Next tick
+      -- after the project stamp ages out will clear the duplicate.
+      logger.warn('tab_visibility',
+        'inconsistent: overflow collision deferred — recent jump project',
+        fields)
+      return false
+    end
+    logger.info('tab_visibility',
+      'overflow collision detected — retargeting to browse',
+      fields)
     pcall(wezterm.background_child_process, args)
     -- Mirror the new state into the in-memory maps so subsequent ticks
     -- early-return on the `session == browse_session` guard, instead of

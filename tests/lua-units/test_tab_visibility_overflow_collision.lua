@@ -131,5 +131,40 @@ describe('is_in_visible', function()
   end)
 end)
 
+describe('overflow_collision_is_ghost', function()
+  it('is ghost when only the overflow pane hosts the session', function()
+    _G.__WEZTERM_PANE_TMUX_SESSION = {
+      ['6'] = 'wezterm_work_cnb-review-pollo_b7aa5d920d',
+      ['1'] = 'wezterm_work_coco-forge_060820bd21',
+    }
+    local ghost, host = tab_visibility.overflow_collision_is_ghost(
+      'wezterm_work_cnb-review-pollo_b7aa5d920d', 6)
+    assert_truthy(ghost, 'overflow-only host must be ghost')
+    assert_falsy(host and host ~= '', 'no non-overflow host pane expected')
+  end)
+
+  it('is not ghost when a dedicated visible pane also hosts the session', function()
+    _G.__WEZTERM_PANE_TMUX_SESSION = {
+      ['6'] = 'wezterm_work_skills_dddddddddd',
+      ['3'] = 'wezterm_work_skills_dddddddddd',
+    }
+    local ghost, host = tab_visibility.overflow_collision_is_ghost(
+      'wezterm_work_skills_dddddddddd', 6)
+    assert_falsy(ghost, 'promoted visible host → real collision')
+    if host ~= '3' then
+      error('live host should be the dedicated pane, got=' .. tostring(host))
+    end
+  end)
+
+  it('is ghost when nothing hosts the session at all', function()
+    _G.__WEZTERM_PANE_TMUX_SESSION = {
+      ['1'] = 'wezterm_work_coco-forge_060820bd21',
+    }
+    local ghost = tab_visibility.overflow_collision_is_ghost(
+      'wezterm_work_cnb-review-pollo_b7aa5d920d', 6)
+    assert_truthy(ghost, 'no host at all is still ghost sticky')
+  end)
+end)
+
 io.write(string.format('\n%d passed, %d failed\n', pass_count, fail_count))
 os.exit(fail_count == 0 and 0 or 1)

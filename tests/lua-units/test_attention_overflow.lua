@@ -280,6 +280,46 @@ describe('activate_in_gui jumps via session, not stored pane id', function()
   end)
 end)
 
+describe('write_live_snapshot sticky title/session mismatch warn', function()
+  it('emits inconsistent warn when tab title disagrees with hosted session label', function()
+    reset_global_state()
+    local warns = {}
+    attention.register {
+      logger = {
+        info = function() end,
+        warn = function(category, message, fields)
+          warns[#warns + 1] = { category = category, message = message, fields = fields }
+        end,
+      },
+    }
+    tab_visibility.set_pane_session(4, 'wezterm_work_platform-core-tech-weekly_84aa50b9cc')
+    -- Do not put an overflow placeholder on pane 6 here: eviction of
+    -- recycled pane-session files is memoized per pane id for the
+    -- whole Lua state, and a later test in this file owns pane 6.
+    mock.set_mux({
+      windows = {
+        { workspace = 'work', tabs = {
+          { id = 4, title = 'cnb-review-pollo', active_pane = { id = 4 } },
+        }},
+      },
+    })
+    local out = tmpfile()
+    local ok = attention.write_live_snapshot(out, 'mismatch-trace')
+    assert_truthy(ok, 'snapshot write failed')
+    os.remove(out)
+    local hit = false
+    for _, w in ipairs(warns) do
+      if w.message == 'inconsistent: sticky title/session mismatch'
+         and w.fields
+         and w.fields.tab_title == 'cnb-review-pollo'
+         and w.fields.session_label == 'platform-core-tech-weekly' then
+        hit = true
+      end
+    end
+    assert_truthy(hit, 'expected sticky title/session mismatch warn')
+  end)
+end)
+
 describe('activate_in_gui auto-projects folded sessions into overflow', function()
   it('spawns the project helper and lands the activation on the overflow pane', function()
     -- Setup: coco-server is parked in tmux but no wezterm pane hosts

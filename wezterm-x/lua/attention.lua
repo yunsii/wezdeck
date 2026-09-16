@@ -93,6 +93,14 @@ local last_jump_by_kind = {}
 local last_prune_ms = 0
 local last_live_snapshot_ms = 0
 local module_logger = nil
+local consistency = nil
+local function load_consistency()
+  if consistency ~= nil then return consistency ~= false and consistency or nil end
+  local rd = rawget(_G, 'WEZTERM_RUNTIME_DIR') or ''
+  local ok, mod = rd ~= '' and pcall(dofile, rd .. '/lua/attention_consistency.lua') or (false, nil)
+  consistency = (ok and type(mod) == 'table') and mod or false
+  return consistency ~= false and consistency or nil
+end
 
 local function entry_jump_key(entry)
   if type(entry) ~= 'table' then return nil end
@@ -203,6 +211,7 @@ if wezterm.on then
   pcall(function()
     wezterm.on('window-config-reloaded', function()
       cached_tab_visibility = nil
+      consistency = nil
     end)
   end)
 end
@@ -345,7 +354,6 @@ end
 -- exact rows the picker should render plus the counts the badge
 -- should display, and `write_live_snapshot` embeds the result in the
 -- snapshot so the picker becomes a dumb renderer.
-local OVERFLOW_GLYPH = '…'
 
 local function nonempty_str(v)
   return type(v) == 'string' and v ~= ''
@@ -1276,6 +1284,10 @@ function M.write_live_snapshot(target_path, trace_id)
         -- hits in-memory instead of falling through to the on-disk
         -- dir walk.
         memoize_pane_session(pane_id_key, hosted)
+        local cons = load_consistency()
+        if cons then
+          cons.maybe_warn_title_session_mismatch(module_logger, pane_id_str, pane_info, hosted, is_overflow)
+        end
       end
     end
   end
@@ -1476,50 +1488,16 @@ local function try_activate_pane(target_id, window, source_pane)
   return false
 end
 
--- Activate the wezterm pane that owns the picked entry, in a fixed
--- precedence order:
---   1. The entry's stored wezterm_pane_id, IF that pane is still alive
---      AND the unified pane→session map confirms it still hosts
---      tmux_session_hint. "Alive" alone is not enough: a wezterm pane
---      id is mux-global and monotonic, but the hook reads $WEZTERM_PANE
---      from a long-lived tmux server's env (captured at server spawn
---      and never refreshed), so after a workspace close+reopen — whose
---      cold-open spawns by brain rank, not declared items order — the
---      stored id can point at an alive but unrelated pane (e.g. WSL
---      tab when the entry belongs to wezterm-config). Cross-check the
---      hint via session_for_pane the same way M.is_entry_focused does
---      on the render side; a mismatch is treated as stale.
---   2. Reverse-lookup the entry's tmux_session in the unified pane→
---      session map. Used when (1) is stale (dead pane OR alive-but-
---      misrouted). The reverse lookup picks ANY wezterm pane currently
---      attached to that session — fine when only one pane attaches it,
---      but ambiguous when the same session is attached by multiple
---      wezterm panes. In this repo's split-pane layout the main shell
---      pane and the agent pane both attach a single tmux session and
---      just display different tmux panes, so historically reverse-
---      lookup would silently misroute Alt+k / Alt+j jumps to the wrong
---      wezterm pane (typically the leftmost main shell pane). Doing
---      reverse-lookup AFTER step (1) keeps stale-id recovery working
---      without overruling a live id that still hosts the session.
---   3. Project the entry into the workspace's overflow tab — same
---      effect as the user picking it via Alt+t. Used when no live
---      wezterm pane hosts the session anywhere; spawns the bash
---      helper that runs `tmux switch-client` on the overflow client
---      and emits tab.activate_overflow so the unified map updates.
+-- Activate the wezterm pane for a picked entry:
+--   1. pane_for_hosted_session(tmux_session) — session is stable identity
+--      (stored wezterm_pane_id goes stale on overflow promote / respawn /
+--      workspace reopen; trusting it first misroutes to sibling/`…`).
+--   2. stored wezterm_pane_id only if it still hosts the session (or no
+--      session hint) — pre-first-snapshot fallback.
+--   3. project into the workspace overflow tab (switch-client + map update).
 function M.activate_in_gui(pane_id_value, window, source_pane, opts)
   local tmux_session_hint = opts and opts.tmux_session or nil
 
-  -- Resolve the live pane from the tmux session FIRST — the session is the
-  -- stable identity, while the entry's stored wezterm_pane_id goes stale
-  -- whenever the session moves wezterm panes WITHOUT a hook fire to refresh
-  -- it: promotion out of the overflow tab (Alt+t / auto-promote), spawn-cap
-  -- eviction respawn, workspace close+reopen. Trusting the stored id first
-  -- then lands the jump on whatever now occupies that pane — a sibling tab
-  -- or the overflow placeholder (the reported "Alt+/ jumps to the overflow
-  -- tab after I promoted the repo out of overflow" bug). pane_for_hosted_
-  -- session reads the unified map that write_live_snapshot rebuilds from live
-  -- mux every tick, so it tracks the move; the stored id is only the
-  -- pre-first-snapshot fallback below.
   if tmux_session_hint and tmux_session_hint ~= '' then
     local found = pane_for_hosted_session(tmux_session_hint)
     if found ~= nil and try_activate_pane(tostring(found), window, source_pane) then
@@ -1527,9 +1505,6 @@ function M.activate_in_gui(pane_id_value, window, source_pane, opts)
     end
   end
 
-  -- Fallback: the entry's stored wezterm_pane_id. Only trusted when it still
-  -- hosts this session (or there is no session to cross-check) — covers the
-  -- brief window before the first snapshot has populated the session→pane map.
   if pane_id_value ~= nil and pane_id_value ~= '' then
     local trust_stored = true
     if tmux_session_hint and tmux_session_hint ~= '' then
@@ -1578,12 +1553,11 @@ function M.activate_in_gui(pane_id_value, window, source_pane, opts)
           pcall(wezterm.background_child_process, args)
         end
         memoize_pane_session(overflow_pane_id, tmux_session_hint)
-        if module_logger then
-          module_logger.info('attention', 'projected entry into overflow', {
-            session = tmux_session_hint,
-            workspace = session_workspace,
-            overflow_pane_id = overflow_pane_id,
-          })
+        local cons = load_consistency()
+        if cons then
+          cons.note_overflow_project(session_workspace, tmux_session_hint, overflow_pane_id, now_ms())
+          cons.log_overflow_project(module_logger, load_tab_visibility, pane_hosted_session,
+            session_workspace, tmux_session_hint, overflow_pane_id, pane_id_value)
         end
         if try_activate_pane(tostring(overflow_pane_id), window, source_pane) then
           return true

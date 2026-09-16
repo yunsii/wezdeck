@@ -192,6 +192,70 @@ describe('activate_in_gui — session promoted out of the overflow tab', functio
   end)
 end)
 
+describe('activate_in_gui — inconsistent overflow project warn', function()
+  it('warns when projecting to overflow while a sticky tab still bears the session title', function()
+    reset()
+    local CNB = 'wezterm_work_cnb-review-pollo_b7aa5d920d'
+    local PLATFORM = 'wezterm_work_platform-core-tech-weekly_84aa50b9cc'
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'coco-forge', active_pane = { id = 1 } },
+            -- Sticky title still says cnb-review-pollo, but the pane
+            -- actually hosts platform-core-tech-weekly (the observed bug).
+            { id = 4, title = 'cnb-review-pollo', active_pane = { id = 4 } },
+            { id = 6, title = '…', active_pane = { id = 6 } },
+          },
+        },
+      },
+    }
+    local activated
+    for _, win in ipairs(mock.mux.all_windows()) do
+      for _, tab in ipairs(win:tabs()) do
+        for _, info in ipairs(tab:panes_with_info()) do
+          local pid = info.pane.id
+          info.pane.activate = function() activated = pid end
+        end
+      end
+    end
+    -- No live host for CNB; pane 4 hosts PLATFORM under the cnb title.
+    tab_visibility.set_pane_session(4, PLATFORM)
+    tab_visibility.set_pane_session(1, 'wezterm_work_coco-forge_060820bd21')
+
+    local warns = {}
+    attention.register {
+      logger = {
+        info = function() end,
+        warn = function(category, message, fields)
+          warns[#warns + 1] = { category = category, message = message, fields = fields }
+        end,
+      },
+      overflow_project_spawner = function(workspace, session)
+        return { 'echo', workspace, session }
+      end,
+    }
+
+    local ok = attention.activate_in_gui('4', nil, {}, { tmux_session = CNB })
+    assert_truthy(ok, 'should still project into overflow')
+    assert_eq(activated, 6, 'activation should land on overflow pane')
+    assert_truthy(#warns >= 1, 'expected inconsistent warn')
+    local hit = false
+    for _, w in ipairs(warns) do
+      if w.message == 'inconsistent: jump projected to overflow despite sticky-visible tab'
+         and w.fields and w.fields.titled_pane_id == '4'
+         and w.fields.titled_host_session == PLATFORM then
+        hit = true
+      end
+    end
+    assert_truthy(hit, 'warn must name the titled pane + wrong host session')
+    assert_truthy(_G.__WEZTERM_LAST_OVERFLOW_PROJECT
+      and _G.__WEZTERM_LAST_OVERFLOW_PROJECT.session == CNB,
+      'recent overflow-project stamp must be set for collision fight detection')
+  end)
+end)
+
 if fail_count > 0 then
   io.write(string.format('\n%d failed, %d passed\n', fail_count, pass_count))
   os.exit(1)

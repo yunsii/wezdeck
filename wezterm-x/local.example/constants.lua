@@ -37,6 +37,10 @@ return {
         host_helper = true,
         workspace = true,
         tab_visibility = true,
+        -- Alt+j/k/l jumps + sticky/overflow inconsistency warns
+        -- (`message` starts with `inconsistent:`). Required when the
+        -- allowlist is non-empty.
+        attention = true,
         -- Slow key / status-tick events (threshold-gated). Keep enabled
         -- when using an allowlist, or those rows are filtered out.
         latency = true,
