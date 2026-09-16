@@ -3,10 +3,10 @@
 #
 # WezTerm always forwards \x0e here (see manifest `agent.new-conversation`).
 # This script evaluates @agent_pane_match, logs the decision, then either
-# stages `/new`+Enter or passes Ctrl+n through. Without this log, a
-# missing @wezterm_pane_role on a resume-wrapper pane (leaf=sh/node)
-# silently falls through and is indistinguishable from "user pressed
-# Ctrl+n in a shell" after the fact.
+# stages `/new`+Enter (agent) or injects `clear`+Enter (non-agent). Without
+# this log, a missing @wezterm_pane_role on a resume-wrapper pane
+# (leaf=sh/node) silently falls through and is indistinguishable from
+# "user pressed Ctrl+n in a shell" after the fact.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -69,8 +69,9 @@ if [[ "$match" == "1" ]]; then
 fi
 
 # Suspected miss: resume wrapper leaf (sh/node) + managed primary metadata
-# but no role tag → exactly the Alt+g tagging gap. Surface as warn so a
-# later "Ctrl+n did nothing" report can be grepped without turning on debug.
+# but no role tag → exactly the Alt+g tagging gap. Do NOT inject `clear`
+# into a likely agent composer; keep C-n pass-through and warn so a later
+# "Ctrl+n did nothing" report is greppable without turning on debug.
 cmd_base="${cmd##*/}"
 suspected_miss=0
 case "$cmd_base" in
@@ -86,8 +87,9 @@ if [[ "$suspected_miss" == "1" ]]; then
     "Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)" \
     "${common_fields[@]}" \
     "hint=tag_or_refresh"
-else
-  runtime_log_debug agent_cli "Ctrl+n pass-through" "${common_fields[@]}"
+  tmux send-keys -t "$pane_id" C-n
+  exit 0
 fi
 
-tmux send-keys -t "$pane_id" C-n
+runtime_log_info agent_cli "Ctrl+n non-agent pane; injecting clear" "${common_fields[@]}"
+tmux send-keys -t "$pane_id" 'clear' Enter

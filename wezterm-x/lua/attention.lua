@@ -96,8 +96,8 @@ local module_logger = nil
 local consistency = nil
 local function load_consistency()
   if consistency ~= nil then return consistency ~= false and consistency or nil end
-  local rd = rawget(_G, 'WEZTERM_RUNTIME_DIR') or ''
-  local ok, mod = rd ~= '' and pcall(dofile, rd .. '/lua/attention_consistency.lua') or (false, nil)
+  local rd, ok, mod = rawget(_G, 'WEZTERM_RUNTIME_DIR') or '', false, nil
+  if rd ~= '' then ok, mod = pcall(dofile, rd .. '/lua/attention_consistency.lua') end
   consistency = (ok and type(mod) == 'table') and mod or false
   return consistency ~= false and consistency or nil
 end

@@ -37,6 +37,7 @@ return {
 
   -- ── Panes / chord prefix ──────────────────────────────
   -- ['session.fix-layout']             = 'Ctrl+k r', -- light heal after RDP/DPI
+  -- ['session.refresh-current-window']  = 'F5',       -- heal + respawn focused pane
   -- ['command-palette.chord-prefix']    = 'Ctrl+k',  -- tmux.conf still binds
   --                                                  -- the old Ctrl+k until
   --                                                  -- the chord renderer lands.

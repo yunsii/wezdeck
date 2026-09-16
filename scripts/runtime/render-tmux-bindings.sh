@@ -16,7 +16,7 @@
 #   * sub-chord trigger (command-chord g → worktree-chord)
 #   * cancellation fallbacks (Escape / C-k / Any) for both tables
 #
-# Out of scope (stays inline in tmux.conf): root Alt+* and User0/1/2 bindings
+# Out of scope (stays inline in tmux.conf): root Alt+* and User0/1/2/3/4 bindings
 # that carry WezTerm-forwarded keystrokes into tmux. Those are transport
 # infrastructure; customizing them at the user level would break forwarding.
 

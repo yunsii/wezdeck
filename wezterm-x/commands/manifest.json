@@ -319,8 +319,8 @@
   },
   {
     "id": "agent.new-conversation",
-    "label": "Agent CLI: Start a new conversation (/new)",
-    "description": "When the current pane's foreground process is a known agent CLI (claude / codex), type `/new`, briefly pause, then press Enter to start a fresh conversation. Otherwise forwards `Ctrl+n` to the pane unchanged.",
+    "label": "Agent CLI: Start a new conversation (/new) / shell clear",
+    "description": "When the current pane's foreground process is a known agent CLI (claude / codex / grok), type `/new`, briefly pause, then press Enter to start a fresh conversation. Otherwise inject `clear` and Enter to clear the shell screen.",
     "scope": "project-navigation",
     "context": "any",
     "binding": {
@@ -883,10 +883,18 @@
   {
     "id": "session.refresh-current-window",
     "label": "Session: Refresh current window",
-    "description": "Respawn only the focused tmux window in place (agent resume). Runs the light layout heal first so DPI/RDP size glitches are cleared before respawn.",
+    "description": "Respawn the focused pane in the current tmux window in place (agent resume on the primary pane). Runs the light layout heal first so DPI/RDP size glitches are cleared before respawn. Browser-style F5; same action as the palette entry.",
     "scope": "session-maintenance",
     "context": "tmux-backed",
-    "hotkeys": [],
+    "binding": {
+      "handler": "session.refresh_current_window"
+    },
+    "hotkeys": [
+      {
+        "keys": "F5",
+        "layer": "wezterm"
+      }
+    ],
     "palette": {
       "accelerator": "r",
       "command": [

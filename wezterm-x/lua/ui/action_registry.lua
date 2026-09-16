@@ -248,6 +248,26 @@ function M.new(ctx)
     return wezterm.action.ActivateCommandPalette
   end
 
+  -- F5 → tmux User3 (`\e[20102~`). Same refresh-current-window path as
+  -- the command palette accelerator `r` (heal + respawn focused pane).
+  handlers['session.refresh_current_window'] = function()
+    return wezterm.action_callback(function(window, pane)
+      local trace_id = logger.trace_id('workspace')
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        logger.info('workspace', 'forwarding F5 refresh-current-window to tmux', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(wezterm, window, pane, 'F5', '\x1b[20102~', logger, 'workspace', workspace_name, trace_id)
+        return
+      end
+      actions.tmux_only_shortcut(window, logger, 'F5', trace_id)
+    end)
+  end
+
   -- ── Agent CLI ─────────────────────────────────────────
 
   -- Names that pane:get_foreground_process_name() may report when a
@@ -266,7 +286,7 @@ function M.new(ctx)
         -- Tmux owns the smart switch via `bind-key -n C-n` in tmux.conf;
         -- it inspects `pane_current_command` of the tmux pane that
         -- actually has the agent in front. Forward the byte and let it
-        -- decide whether to stage `/new` + Enter or pass `C-n` through.
+        -- decide whether to stage `/new` + Enter or inject `clear` + Enter.
         logger.info('agent_cli', 'forwarding Ctrl+n to tmux-backed pane', common.merge_fields(trace_id, {
           decision_path = decision_path,
           domain = pane:get_domain_name(),
@@ -287,15 +307,15 @@ function M.new(ctx)
         window:perform_action(wezterm.action.SendString('\r'), pane)
         return
       end
-      -- Pass-through on non-agent panes. Default allowlists must keep
-      -- category agent_cli enabled or the forward / match rows never
-      -- reach wezterm.log; this quiet path stays debug.
-      logger.debug('agent_cli', 'Ctrl+n pass-through on non-tmux non-agent pane', common.merge_fields(trace_id, {
+      -- Non-agent panes: inject `clear` + Enter (shell clear). Default
+      -- allowlists must keep category agent_cli enabled or the forward /
+      -- match rows never reach wezterm.log.
+      logger.info('agent_cli', 'Ctrl+n injecting clear on non-tmux non-agent pane', common.merge_fields(trace_id, {
         decision_path = decision_path,
         foreground_process = foreground_process,
         workspace = workspace_name,
       }))
-      window:perform_action(wezterm.action.SendString('\x0e'), pane)
+      window:perform_action(wezterm.action.SendString('clear\r'), pane)
     end)
   end
 
