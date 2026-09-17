@@ -7,6 +7,10 @@
 # this log, a missing @wezterm_pane_role on a resume-wrapper pane
 # (leaf=sh/node) silently falls through and is indistinguishable from
 # "user pressed Ctrl+n in a shell" after the fact.
+#
+# Outcome contract (log-only, no toast — keystrokes are the user-visible
+# effect): invoked is implicit in the decision row; each path ends with
+# `Ctrl+n completed` + duration_ms + outcome=.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,11 +26,16 @@ usage() {
 target="${1-}"
 [[ -n "$target" ]] || usage
 
+start_ms="$(runtime_log_now_ms)"
+
 # Resolve to a concrete pane id so logs stay comparable across calls
 # (window targets would otherwise bounce between active panes).
 pane_id="$(tmux display-message -p -t "$target" '#{pane_id}' 2>/dev/null || true)"
 if [[ -z "$pane_id" ]]; then
-  runtime_log_warn agent_cli "Ctrl+n aborted: target pane unavailable" "target=$target"
+  runtime_log_warn agent_cli "Ctrl+n aborted: target pane unavailable" \
+    "target=$target" \
+    "duration_ms=$(runtime_log_duration_ms "$start_ms")" \
+    "outcome=aborted"
   exit 0
 fi
 
@@ -60,11 +69,21 @@ common_fields=(
   "pane_role=${role:-}"
   "agent_pane_match=${match:-0}"
   "primary_command=${primary_meta:-}"
+  "hotkey_id=agent.new-conversation"
 )
+
+complete() {
+  local outcome="$1"
+  runtime_log_info agent_cli "Ctrl+n completed" \
+    "${common_fields[@]}" \
+    "duration_ms=$(runtime_log_duration_ms "$start_ms")" \
+    "outcome=$outcome"
+}
 
 if [[ "$match" == "1" ]]; then
   runtime_log_info agent_cli "Ctrl+n matched agent pane; staging /new" "${common_fields[@]}"
   bash "$SCRIPT_DIR/agent-new-into-pane.sh" "$pane_id"
+  complete "new"
   exit 0
 fi
 
@@ -88,8 +107,10 @@ if [[ "$suspected_miss" == "1" ]]; then
     "${common_fields[@]}" \
     "hint=tag_or_refresh"
   tmux send-keys -t "$pane_id" C-n
+  complete "pass_through_suspected"
   exit 0
 fi
 
 runtime_log_info agent_cli "Ctrl+n non-agent pane; injecting clear" "${common_fields[@]}"
 tmux send-keys -t "$pane_id" 'clear' Enter
+complete "clear"

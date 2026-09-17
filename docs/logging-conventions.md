@@ -84,6 +84,7 @@ Beyond those, the schema below is enforced by convention (no lint yet — break 
 
 - **Lifecycle "X started":** identifying fields the operation works on (`session_name`, `cwd`, `worktree_root`, …).
 - **Lifecycle "X completed":** the same identifiers plus `duration_ms` — use `runtime_log_duration_ms "$start_ms"` in bash; the Lua side computes it inline.
+- **Interactive / destructive hotkeys** (respawn, session handoff, anything that mutates the live pane beyond a pure key forward): emit `invoked` then `completed` or `failed` with `duration_ms`, and a short `tmux display-message` toast. Mirror the toast text into a `toast=` field so it stays greppable after the banner is gone (templates: `session-bridge-take.sh`, `attention-jump.sh` `notify_tmux`, `session-refresh-current-window.sh`). WezTerm Lua may only log the forward; the **outcome** lives in WSL `runtime.log`. For `run-shell` / `run-shell -b` wrappers: **stdout must stay empty** (any print opens view-mode / status `COPY`); keep failures at `exit 0` from the wrapper so tmux does not append `returned N`.
 - **`*.perf` rows:** `paint_kind="first"`, `picker_kind="go|bash"`, `panel="<name>"`, `total_ms`, `lua_ms`, `menu_ms`, `picker_ms`, `item_count`, `selected_index`. Do NOT emit `paint_kind="repaint"` — no consumer reads it and the noise hides real signal.
 
 ## Field names

@@ -102,7 +102,7 @@ Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME c
 - `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status. Each gated step (`helper-install`, `helper-ensure`, `lua-precheck`, `deps-check`) emits an explicit `status=skipped reason=...` line when its skip-if-current check passed; full reasons + force-bypass envs are tabulated in [`daily-workflow.md#skip-if-current-and-force-overrides`](./daily-workflow.md#skip-if-current-and-force-overrides).
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
-- Current runtime categories include `vscode`, `workspace`, `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
+- Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
 
 ### Ctrl+n / agent `/new` did nothing
 
@@ -120,8 +120,9 @@ Decision messages in `runtime.log`:
 | `info` | `Ctrl+n matched agent pane; staging /new` | `@agent_pane_match=1` → injected `/new` |
 | `info` | `Ctrl+n non-agent pane; injecting clear` | normal non-agent pane → injected `clear`+Enter |
 | `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`, window has managed `primary_command`, but pane role tag empty — keep raw `Ctrl+n` (do not clear into a likely agent composer); the Alt+g tagging-gap class of bug |
+| `info` | `Ctrl+n completed` | terminal row; `outcome=new\|clear\|pass_through_suspected\|aborted` + `duration_ms` (no toast — keystrokes are the UX) |
 
-Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`.
+Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`, `outcome`, `duration_ms`.
 
 ```bash
 # After reproducing a dead Ctrl+n:
@@ -146,6 +147,38 @@ Tag lifecycle (same `agent_cli` category): `set primary pane agent role tag` / `
 | `Ctrl+k w` claw take failed | `category="session_bridge"` — `session-bridge take failed` (toast alone used to evaporate) |
 
 Lua-side Alt+j/k/l also writes `attention` rows to `wezterm.log` when allowlisted.
+
+### F5 / refresh current window
+
+`F5` is decided on the **tmux** side (`scripts/runtime/session-refresh-current-window.sh` via `User3`). WezTerm only logs that it forwarded `\e[20102~`; the heal + respawn outcome is in WSL `runtime.log`. Toast alone evaporates — always grep the terminal row.
+
+| Where | What to grep |
+|---|---|
+| `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` | `hotkey_id="session.refresh-current-window"` / `forwarding F5` (key reached Lua) |
+| `~/.local/state/wezterm-runtime/logs/runtime.log` | `F5 refresh-current-window` |
+
+| level | message | Meaning |
+|---|---|---|
+| `info` | `F5 refresh-current-window invoked` | User3 script started |
+| `info` | `F5 refresh-current-window completed` | heal + respawn finished; fields include `duration_ms`, `outcome=respawned`, `toast=` |
+| `warn` | `F5 refresh-current-window failed` | reset non-zero; `duration_ms`, `exit_code`, `toast=` — wrapper still exits 0 so tmux does not append `returned N` |
+
+If the pane lands in status `COPY` with an empty grid after F5, that was historically **view-mode** opened because `run-shell` received stdout (`reset_window_in_place`). The wrapper now discards reset stdout; a leftover mode is cancelled on the success path. Confirm with `tmux display-message -p -t <pane> '#{pane_in_mode} #{pane_mode}'` (`view-mode` / `copy-mode` vs empty).
+
+```bash
+grep 'F5 refresh-current-window' ~/.local/state/wezterm-runtime/logs/runtime.log | tail
+```
+
+### Destructive hotkeys (pane close / palette refresh-*)
+
+| Symptom | Grep |
+|---|---|
+| `Ctrl+k x` close pane unclear | `category="workspace"` — `pane close-current invoked` / `completed` / `failed` (`outcome=killed`, `closes_window=0\|1`, `toast=`) |
+| Palette Refresh session / workspace / all “did nothing” | `category="workspace"` — `session refresh invoked` / `completed` / `failed` (`action=refresh-current-session\|…`, `outcome=refreshed_*`) plus `command_panel` item completed/failed |
+
+```bash
+grep -E 'pane close-current|session refresh ' ~/.local/state/wezterm-runtime/logs/runtime.log | tail
+```
 
 ### Sync-side state files
 

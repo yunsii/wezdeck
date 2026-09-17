@@ -164,13 +164,13 @@
   {
     "id": "pane.close-current",
     "label": "Pane: Close current",
-    "description": "Run tmux `kill-pane` on the focused pane; if it is the last pane in the window, tmux closes the window too.",
+    "description": "Run tmux `kill-pane` on the focused pane; if it is the last pane in the window, tmux closes the window too. Logs invoked/completed (or failed) with duration_ms and a short toast.",
     "scope": "window-and-pane-navigation",
     "context": "tmux-backed",
     "binding": {
       "kind": "tmux-chord-leaf",
       "table": "command-chord",
-      "exec": "kill-pane"
+      "exec": "run-shell \"bash #{@wezterm_runtime_root}/scripts/runtime/pane-close-current.sh #{pane_id}\""
     },
     "hotkeys": [
       {
@@ -181,9 +181,10 @@
     "palette": {
       "command": [
         "bash",
-        "-lc",
-        "tmux kill-pane -t \"$COMMAND_PANEL_WINDOW_ID\""
-      ]
+        "{repo_root}/scripts/runtime/pane-close-current.sh"
+      ],
+      "success_message": "Closed pane.",
+      "failure_message": "Failed to close pane."
     }
   },
   {
@@ -899,7 +900,7 @@
       "accelerator": "r",
       "command": [
         "bash",
-        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "{repo_root}/scripts/runtime/session-refresh-action.sh",
         "refresh-current-window"
       ],
       "success_message": "Refreshed current tmux window.",
@@ -909,7 +910,7 @@
   {
     "id": "session.refresh-current-session",
     "label": "Session: Refresh current session",
-    "description": "Rebuild the attached tmux session via replacement session.",
+    "description": "Rebuild the attached tmux session via replacement session. Logs session refresh invoked/completed (or failed) with duration_ms and outcome=.",
     "scope": "session-maintenance",
     "context": "tmux-backed",
     "hotkeys": [],
@@ -917,7 +918,7 @@
       "accelerator": "s",
       "command": [
         "bash",
-        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "{repo_root}/scripts/runtime/session-refresh-action.sh",
         "refresh-current-session"
       ],
       "success_message": "Refreshed current tmux session.",
@@ -927,7 +928,7 @@
   {
     "id": "session.refresh-current-workspace",
     "label": "Session: Refresh current workspace",
-    "description": "Rebuild every tmux session that belongs to this workspace.",
+    "description": "Rebuild every tmux session that belongs to this workspace. Logs session refresh invoked/completed (or failed) with duration_ms and outcome=.",
     "scope": "session-maintenance",
     "context": "tmux-backed",
     "hotkeys": [],
@@ -935,7 +936,7 @@
       "accelerator": "w",
       "command": [
         "bash",
-        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "{repo_root}/scripts/runtime/session-refresh-action.sh",
         "refresh-current-workspace"
       ],
       "confirm_message": "Refresh every tmux session in the current workspace?",
@@ -946,7 +947,7 @@
   {
     "id": "session.refresh-all-sessions",
     "label": "Session: Refresh all sessions",
-    "description": "Rebuild every tmux session on the current tmux server.",
+    "description": "Rebuild every tmux session on the current tmux server. Logs session refresh invoked/completed (or failed) with duration_ms and outcome=.",
     "scope": "session-maintenance",
     "context": "tmux-backed",
     "hotkeys": [],
@@ -954,7 +955,7 @@
       "accelerator": "a",
       "command": [
         "bash",
-        "{repo_root}/scripts/runtime/tmux-reset.sh",
+        "{repo_root}/scripts/runtime/session-refresh-action.sh",
         "refresh-all"
       ],
       "confirm_message": "Refresh every tmux session on this tmux server?",
