@@ -97,6 +97,10 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Diagnostics, logs, smoke tests, latency / hotkey counters, or operator
   troubleshooting (env knobs, file paths):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
+- Personal development-habit weekly report（开发习惯周报 / habit weekly）:
+  Load platform skill [`scripts/dev/habit-weekly/SKILL.md`](scripts/dev/habit-weekly/SKILL.md)
+  (`habit-weekly`); collector is `scripts/dev/habit-report.sh`. Not
+  `coco-weekly-report` (business delivery).
 - Guest OOM hardening (distro restart loop, reclaim livelock, high-order
   allocation / VM reboot; `wsl-oom-guard.sh`, `M·…` / earlyoom; standing
   memory consumers including MCP/`uxc` and IDE `tsgo` / `goMemLimit`):

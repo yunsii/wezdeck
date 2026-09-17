@@ -148,6 +148,7 @@ Aggregate press counts — no event log — for every WezTerm keymap entry and t
   - tmux chord side: each `command-chord` binding in `tmux.conf` prefixes the action with `run-shell -b "bash .../hotkey-usage-bump.sh <id>"`.
 - Ids are the manifest entry ids from [`wezterm-x/commands/manifest.json`](../wezterm-x/commands/manifest.json). Every hotkey should be registered there (enforced by the rule in [`AGENTS.md`](../AGENTS.md)); ad-hoc ids that ever slip through render with label `(unregistered)` in the report, which is the signal to add the missing manifest entry.
 - Run [`scripts/dev/hotkey-usage-report.sh`](../scripts/dev/hotkey-usage-report.sh) for a sorted table (count, keys, id, label, first-seen, last-seen ages). `--json` dumps the raw counter, `--path` prints the resolved file path.
+- For **recent-day intensity** (per-day `Alt+l` / peers, group mix, densest hours) prefer [`scripts/dev/habit-report.sh`](../scripts/dev/habit-report.sh) — see [Habit report](#habit-report). The aggregate counter alone understates short-lived high-frequency ids.
 - Deleting the counter file is safe and resets all counts; the bump script recreates it on the next press.
 - The counter is aggregate-only. For **per-press audit** of WezTerm-layer bindings, look at `category="hotkey"` rows in `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (filtered via `diagnostics.wezterm.categories` — keep `hotkey = true` when using an allowlist):
 
@@ -170,6 +171,54 @@ Aggregate press counts — no event log — for every WezTerm keymap entry and t
   4. **Both hotkey rows + action log** — logic ran; if the UI still felt stuck, look at preceding `slow status tick` / `phase_*` rows.
 
   tmux chord bumps do **not** emit these lines (the shell bump path has no pane context); only WezTerm keymap wraps do.
+
+## Habit report
+
+Personal **agent-efficiency + intensity** metrics over recent days —
+complementary to the workflow timeline (day *loop* reconstruction).
+
+- Entry: [`scripts/dev/habit-report.sh`](../scripts/dev/habit-report.sh)
+  (orchestrator: `scripts/dev/habit-report.py`; plugins:
+  `scripts/dev/habit_report/providers/{claude,grok,codex}.py`).
+- **Primary (pluginized):**
+  - Concurrent agents — `runtime.log` `hook emitted agent status`
+    (`running` / `waiting` / `done`), **pane-scoped** (`tmux_socket|tmux_pane`)
+    with **30m TTL** (same spirit as attention TTL). Raw `session_id`
+    occupancy is only emitted as `raw_sid_max_running` (diagnostic): sids that
+    never got `done` otherwise accumulate across days and inflate the peak.
+  - Skills / MCP / CLI — per-provider collectors into one schema
+    (`skills`, `mcp`, `cli`, `tools`, `verify`):
+    | Provider | Source (current) |
+    | --- | --- |
+    | Claude | `~/.claude/projects/**/<session>.jsonl` — `tool_use` (`Skill`, `mcp__…`, `Bash`) |
+    | Grok | `~/.grok/sessions/**/updates.jsonl` (+ `events.jsonl`); `GROK_HOME` relocates |
+    | Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` — `function_call` (not `history.jsonl`) |
+  - CDP verify→iterate — same-session heuristic after `chrome-devtools` /
+    skill / MCP within ≤60 minutes.
+- **Secondary:** WezTerm hotkey `pressed` rows + `hotkey-usage.json` intensity.
+- Examples:
+
+```bash
+scripts/dev/habit-report.sh                      # last 7 days
+scripts/dev/habit-report.sh --days 3
+scripts/dev/habit-report.sh --providers claude,grok
+scripts/dev/habit-report.sh --json
+scripts/dev/habit-report.sh --no-hotkeys         # agent metrics only
+scripts/dev/habit-report.sh --paths
+```
+
+**Weekly write-up (stable template):** platform skill
+[`scripts/dev/habit-weekly/`](../scripts/dev/habit-weekly/) — agent loads
+`habit-weekly` and runs `run.sh` (default: this week Mon→today; `--week last`
+for the previous Mon–Sun; `--write` archives under
+`$WSL_WORKFLOW_DIR/habit-weekly/`). Do not confuse with `coco-weekly-report`
+(business delivery / Feishu). Link discovery:
+`scripts/dev/link-platform-skills.sh`.
+
+Caveats: Claude transcripts age out with `cleanupPeriodDays` (default 30);
+Codex may leave `rollout-*.jsonl.zst` siblings (skipped until decompressed);
+Grok skill counts prefer `SKILL.md` reads / explicit loads — do not scrape
+system skill catalogs from chat prompts.
 
 ## Workflow timeline
 

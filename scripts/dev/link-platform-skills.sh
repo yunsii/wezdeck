@@ -13,6 +13,7 @@
 #   cross-repo-delegate -> scripts/dev/cross-repo-delegate/
 #   worktree-recycle    -> scripts/dev/worktree-recycle/
 #   human-run           -> scripts/dev/human-run/
+#   habit-weekly        -> scripts/dev/habit-weekly/
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
@@ -48,6 +49,7 @@ skills=(
   "cross-repo-delegate|scripts/dev/cross-repo-delegate"
   "worktree-recycle|scripts/dev/worktree-recycle"
   "human-run|scripts/dev/human-run"
+  "habit-weekly|scripts/dev/habit-weekly"
 )
 
 link_one() {
