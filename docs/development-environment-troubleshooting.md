@@ -319,6 +319,41 @@ Do not work around a managed DNS failure by permanently replacing an
 automatically assigned Windows DNS server with a public resolver; that can
 silently break internal and split-horizon domains.
 
+## Windows Taskbar After Lock→Unlock
+
+After locking the workstation for a while and unlocking, the Windows shell can
+leave the taskbar in a bad state even though settings look unchanged. Typical
+symptoms on this hybrid-wsl host:
+
+1. **Auto-hide hover dead, Win/Meta still works** — edge hit-testing for the
+   tray is stuck; the Start key still raises the bar.
+2. **WezTerm “maximized” covers the tray** — the window grows to the full
+   monitor bounds (for example height 1152) instead of the working area
+   (1104), so the taskbar is painted underneath and looks missing.
+3. **Buttons refuse to combine** — labels stay wide even when
+   `TaskbarGlomLevel` says “combine when full”; the bar looks half-rendered.
+
+### First action
+
+In a tmux-backed pane press **`Ctrl+k e`** (`windows.restart-explorer`). That
+recycles `explorer.exe` plus shell experience hosts, verifies a new pid in the
+toast, and when auto-hide is off re-fits covering `wezterm-gui` windows into
+the primary working area. Hotkey and palette entry:
+[`keybindings.md`](./keybindings.md) (`Ctrl+k e` / `Windows: Restart Explorer`).
+
+Do **not** clear auto-hide with `ABM_SETSTATE` alone on Windows 11 — it can
+desync live shell state from `StuckRects3` and leave the tray half-drawn.
+Prefer Settings → Personalization → Taskbar → Taskbar behaviors, or a
+StuckRects3 + explorer recycle after you have verified the byte encoding on
+*this* build (`byte8=3` means auto-hide on for the current machine; some
+guides reverse 2/3).
+
+### If icons still look ungrouped
+
+Settings → Taskbar behaviors → **Combine taskbar buttons and hide labels** →
+**Always** (registry `TaskbarGlomLevel=0`). Then `Ctrl+k e` again if the UI
+does not refresh.
+
 ## Validation
 
 Validate against the binary that actually failed, not a glibc stand-in. The

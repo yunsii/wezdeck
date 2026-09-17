@@ -14,11 +14,11 @@
 --   * '+' joins modifiers: Ctrl / Shift / Alt (Opt, Option, Meta) / Cmd (Super, Win).
 --   * Last token is the main key (case-preserved: 'Ctrl+Shift+v' vs 'Ctrl+Shift+V').
 --   * Chord keys are supported for tmux-chord ids (pane.split-*, pane.close-current,
---     worktree.quick-create-*, worktree.reclaim-current). Write the full chord
---     path: 'Ctrl+k s' to rebind the leaf, 'Ctrl+k g e' for a worktree chord
---     leaf. Only the final segment is consumed (the prefix stays Ctrl+k at the
---     tmux side); rerun wezterm-runtime-sync after editing so the tmux chord
---     table regenerates.
+--     windows.restart-explorer, worktree.quick-create-*, worktree.reclaim-current).
+--     Write the full chord path: 'Ctrl+k s' to rebind the leaf, 'Ctrl+k g e' for
+--     a worktree chord leaf. Only the final segment is consumed (the prefix stays
+--     Ctrl+k at the tmux side); rerun wezterm-runtime-sync after editing so the
+--     tmux chord table regenerates.
 --
 -- Discover ids: wezterm-x/commands/manifest.json, or run
 --   scripts/dev/hotkey-usage-report.sh
@@ -73,10 +73,11 @@ return {
   -- ['worktree.quick-create-hotfix']    = 'Ctrl+k g f',  -- rebind h -> f
   -- ['worktree.reclaim-current']        = 'Ctrl+k g r',
 
-  -- ── Panes (chord leaves) ──────────────────────────────
+  -- ── Panes / host (chord leaves) ───────────────────────
   -- ['pane.split-vertical']             = 'Ctrl+k s',    -- rebind v -> s
   -- ['pane.split-horizontal']           = 'Ctrl+k v',    -- rebind h -> v
   -- ['pane.close-current']              = false,         -- disable
+  -- ['windows.restart-explorer']        = 'Ctrl+k e',    -- fix stuck auto-hide taskbar
   -- Chord leaves live in the tmux chord tables. Edits here take effect only
   -- after wezterm-runtime-sync regenerates wezterm-x/tmux/chord-bindings.generated.conf.
 

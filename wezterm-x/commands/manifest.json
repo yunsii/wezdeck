@@ -882,6 +882,33 @@
     }
   },
   {
+    "id": "windows.restart-explorer",
+    "label": "Windows: Restart Explorer",
+    "description": "Recycle Windows Explorer after lock→unlock shell glitches: auto-hide hover dead while Win/Meta still works, and/or maximized WezTerm covering the taskbar band. Verifies a new explorer pid; when auto-hide is off, re-fits covering wezterm-gui windows to the working area. hybrid-wsl only; does not flip the auto-hide setting.",
+    "scope": "session-maintenance",
+    "context": "hybrid-wsl",
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "run-shell -b \"bash #{@wezterm_runtime_root}/scripts/runtime/restart-windows-explorer.sh\""
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+k e",
+        "layer": "tmux-chord"
+      }
+    ],
+    "palette": {
+      "accelerator": "e",
+      "command": [
+        "bash",
+        "{repo_root}/scripts/runtime/restart-windows-explorer.sh"
+      ],
+      "success_message": "Restarted Windows Explorer.",
+      "failure_message": "Failed to restart Windows Explorer."
+    }
+  },
+  {
     "id": "session.refresh-current-window",
     "label": "Session: Refresh current window",
     "description": "Respawn the focused pane in the current tmux window in place (agent resume on the primary pane). Runs the light layout heal first so DPI/RDP size glitches are cleared before respawn. Browser-style F5; same action as the palette entry.",
