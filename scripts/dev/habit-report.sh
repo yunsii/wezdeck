@@ -27,7 +27,11 @@ py="$script_dir/habit-report.py"
 . "$repo_root/scripts/runtime/windows-runtime-paths-lib.sh"
 # shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/hotkey-usage-lib.sh"
+# shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/runtime-env-lib.sh"
 windows_runtime_detect_paths >/dev/null 2>&1 || true
+# Pick up WAKATIME_API_KEY from shared.env / shell-env.d when present.
+runtime_env_load_managed
 
 days=7
 end='today'
@@ -35,6 +39,7 @@ providers='claude,grok,codex'
 format_json=0
 no_lifetime=0
 no_hotkeys=0
+wakatime=0
 paths_only=0
 wezterm_log="${WINDOWS_RUNTIME_STATE_WSL:-}/logs/wezterm.log"
 runtime_log="${WSL_RUNTIME_LOG_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/logs/runtime.log}"
@@ -55,6 +60,8 @@ while (( $# )); do
     --json) format_json=1; shift ;;
     --no-lifetime) no_lifetime=1; shift ;;
     --no-hotkeys) no_hotkeys=1; shift ;;
+    --wakatime) wakatime=1; shift ;;
+    --no-wakatime) wakatime=0; shift ;;
     --wezterm-log) wezterm_log="${2:?}"; shift 2 ;;
     --runtime-log) runtime_log="${2:?}"; shift 2 ;;
     --usage-json) usage_json="${2:?}"; shift 2 ;;
@@ -88,6 +95,7 @@ args=(
 (( format_json )) && args+=(--json)
 (( no_lifetime )) && args+=(--no-lifetime)
 (( no_hotkeys )) && args+=(--no-hotkeys)
+(( wakatime )) && args+=(--wakatime) || args+=(--no-wakatime)
 (( paths_only )) && args+=(--paths-only)
 
 exec python3 "$py" "${args[@]}"

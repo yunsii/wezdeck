@@ -55,14 +55,21 @@ def render(report: dict[str, Any]) -> str:
     busy = [d for d in daily_hk if int(d.get("alt_l") or 0) >= 200]
     light = [d for d in daily_hk if int(d.get("alt_l") or 0) < 50]
 
+    waka = report.get("wakatime") or {}
+    waka_ok = bool(waka.get("ok"))
+    waka_total = ((waka.get("totals") or {}).get("text") if waka_ok else "") or ""
+
     # One-line BLUF
     cli0 = cli[0][0] if cli else "（无 CLI 信号）"
     skill0 = _skill_label(skills[0][0]) if skills else "（无 skill 信号）"
-    bluf = (
-        f"本周开发形态：多路 Agent 并行峰值 **{max_r}** 个 pane；"
-        f"热键以 **Alt+l** 巡检为主（{alt_sum}/{presses}，{alt_pct}%）；"
-        f"能力侧高频 **{cli0}** + skill **{skill0}**。"
-    )
+    bluf_parts = [
+        f"本周开发形态：多路 Agent 并行峰值 **{max_r}** 个 pane",
+        f"热键以 **Alt+l** 巡检为主（{alt_sum}/{presses}，{alt_pct}%）",
+        f"能力侧高频 **{cli0}** + skill **{skill0}**",
+    ]
+    if waka_ok and waka_total:
+        bluf_parts.insert(1, f"WakaTime 合计 **{waka_total}**")
+    bluf = "；".join(bluf_parts) + "。"
 
     lines: list[str] = []
     lines.append(f"# 开发习惯周报")
@@ -75,6 +82,75 @@ def render(report: dict[str, Any]) -> str:
     lines.append("")
     lines.append(bluf)
     lines.append("")
+
+    # WakaTime (macro time investment; optional)
+    lines.append("## WakaTime 时间投入")
+    lines.append("")
+    if not waka:
+        lines.append("_未请求 WakaTime（`--no-wakatime`）。_")
+        lines.append("")
+    elif not waka_ok:
+        err = waka.get("error") or "unknown"
+        if err == "missing_api_key":
+            lines.append(
+                "_未配置 `WAKATIME_API_KEY`（建议 `~/.config/shell-env.d/wakatime.env`）。_"
+            )
+        else:
+            lines.append(f"_WakaTime 拉取失败：`{err}`。_")
+        lines.append("")
+    else:
+        lines.append(f"**合计：** {waka_total or '—'}")
+        lines.append("")
+        cats = waka.get("categories") or []
+        if cats:
+            lines.append(
+                "**分类：** "
+                + " · ".join(
+                    f"{c.get('name')} {c.get('text')}"
+                    f"（{c.get('percent', 0):.0f}%）"
+                    for c in cats[:6]
+                )
+            )
+            lines.append("")
+        projects = waka.get("projects") or []
+        if projects:
+            lines.append("### Top 项目")
+            lines.append("")
+            lines.append("| 时长 | % | 项目 |")
+            lines.append("| ---: | ---: | --- |")
+            for row in projects[:8]:
+                lines.append(
+                    f"| {row.get('text', '')} | {row.get('percent', 0):.0f}% | "
+                    f"`{row.get('name', '')}` |"
+                )
+            lines.append("")
+        languages = waka.get("languages") or []
+        if languages:
+            lines.append("### Top 语言")
+            lines.append("")
+            lines.append(
+                " · ".join(
+                    f"{r.get('name')} {r.get('text')}（{r.get('percent', 0):.0f}%）"
+                    for r in languages[:8]
+                )
+            )
+            lines.append("")
+        editors = waka.get("editors") or []
+        if editors:
+            lines.append(
+                "**编辑器：** "
+                + " · ".join(
+                    f"{r.get('name')} {r.get('text')}" for r in editors[:6]
+                )
+            )
+            lines.append("")
+        daily_w = waka.get("daily") or []
+        if daily_w:
+            lines.append("| 日期 | 时长 |")
+            lines.append("| --- | ---: |")
+            for d in daily_w:
+                lines.append(f"| {d.get('date', '')} | {d.get('text', '')} |")
+            lines.append("")
 
     # Concurrency
     lines.append("## Agent 并发")
@@ -229,16 +305,24 @@ def render(report: dict[str, Any]) -> str:
     lines.append("- Skill `路径推断` 可能与显式 Skill 工具略有重叠")
     lines.append("- Claude transcript 默认约 30 天清理；Codex `.jsonl.zst` 可能跳过")
     lines.append("- CDP→iterate 为同会话 ≤60m 启发式")
+    lines.append(
+        "- WakaTime 为编辑器心跳汇总，与 WezDeck Agent/热键口径不同；"
+        "无 key 时本段降级，不阻断整报"
+    )
     lines.append("")
 
     lines.append("## 复现")
     lines.append("")
     lines.append("```bash")
     lines.append(
-        f"scripts/dev/habit-weekly/run.sh --since {start} --until {end}"
+        f"scripts/dev/habit-weekly/run.sh --since {start} --until {end} --write"
     )
     lines.append(
-        f"scripts/dev/habit-report.sh --days N   # 原始表；JSON 见同目录 .json"
+        f"scripts/dev/habit-weekly/run.sh --since {start} --until {end} "
+        "--write --push   # 推送到配置的习惯归档仓"
+    )
+    lines.append(
+        "scripts/dev/habit-report.sh --days N --wakatime   # 原始表；JSON 见同目录 .json"
     )
     lines.append("```")
     lines.append("")

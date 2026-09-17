@@ -272,6 +272,13 @@ complementary to the workflow timeline (day *loop* reconstruction).
   - CDP verify→iterate — same-session heuristic after `chrome-devtools` /
     skill / MCP within ≤60 minutes.
 - **Secondary:** WezTerm hotkey `pressed` rows + `hotkey-usage.json` intensity.
+- **Optional time investment:** WakaTime
+  `GET /users/current/summaries?start&end` via
+  [`scripts/dev/habit_report/wakatime.py`](../scripts/dev/habit_report/wakatime.py)
+  (`--wakatime` / `--no-wakatime`). Uses `WAKATIME_API_KEY` from
+  `runtime_env_load_managed` (`~/.config/shell-env.d/wakatime.env` or
+  `wezterm-x/local/shared.env`). Missing key degrades the section; does not
+  fail the whole report. Distinct from the tmux status-bar today endpoint.
 - Examples:
 
 ```bash
@@ -279,6 +286,7 @@ scripts/dev/habit-report.sh                      # last 7 days
 scripts/dev/habit-report.sh --days 3
 scripts/dev/habit-report.sh --providers claude,grok
 scripts/dev/habit-report.sh --json
+scripts/dev/habit-report.sh --wakatime           # include summaries for same window
 scripts/dev/habit-report.sh --no-hotkeys         # agent metrics only
 scripts/dev/habit-report.sh --paths
 ```
@@ -286,15 +294,19 @@ scripts/dev/habit-report.sh --paths
 **Weekly write-up (stable template):** platform skill
 [`scripts/dev/habit-weekly/`](../scripts/dev/habit-weekly/) — agent loads
 `habit-weekly` and runs `run.sh` (default: this week Mon→today; `--week last`
-for the previous Mon–Sun; `--write` archives under
-`$WSL_WORKFLOW_DIR/habit-weekly/`). Do not confuse with `coco-weekly-report`
+for the previous Mon–Sun; WakaTime on by default; `--write` archives under
+`$WSL_WORKFLOW_DIR/habit-weekly/`; **`--push`** copies into the private habit
+archive repo configured by `~/.config/habit-weekly/state.json` /
+`HABIT_WEEKLY_ARCHIVE_*` and commits — push is explicit, never implied by
+`--write` alone). Default archive target: `yunsii/wezdeck-habit-weekly`
+(`reports/YYYY/`). Do not confuse with `coco-weekly-report`
 (business delivery / Feishu). Link discovery:
 `scripts/dev/link-platform-skills.sh`.
 
 Caveats: Claude transcripts age out with `cleanupPeriodDays` (default 30);
 Codex may leave `rollout-*.jsonl.zst` siblings (skipped until decompressed);
 Grok skill counts prefer `SKILL.md` reads / explicit loads — do not scrape
-system skill catalogs from chat prompts.
+system skill catalogs from chat prompts; WakaTime heartbeats ≠ pane concurrency.
 
 ## Workflow timeline
 

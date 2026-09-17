@@ -6,10 +6,13 @@
 #   run.sh --week last             # previous Mon–Sun
 #   run.sh --since 2026-09-11 --until 2026-09-17
 #   run.sh --write                 # also save under state/workflow/habit-weekly/
+#   run.sh --write --push          # local write + push to habit archive repo
 #   run.sh --json-only             # only emit habit-report JSON to stdout
 #   run.sh --stdout                # print markdown (default when no --write)
+#   run.sh --no-wakatime           # skip WakaTime summaries
 #
-# Relies on scripts/dev/habit-report.sh (Claude/Grok/Codex plugins + hotkeys).
+# Relies on scripts/dev/habit-report.sh (Claude/Grok/Codex plugins + hotkeys +
+# optional WakaTime). Archive push: push-archive.sh + ~/.config/habit-weekly/state.json.
 set -euo pipefail
 
 TOOL_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,21 +20,29 @@ TOOL_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$TOOL_HOME/../../.." && pwd)"
 habit_sh="$repo_root/scripts/dev/habit-report.sh"
 render_py="$TOOL_HOME/render.py"
+push_sh="$TOOL_HOME/push-archive.sh"
 
 # shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/wsl-runtime-paths-lib.sh" 2>/dev/null || true
+# shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/runtime-env-lib.sh" 2>/dev/null || true
+if declare -F runtime_env_load_managed >/dev/null 2>&1; then
+  runtime_env_load_managed
+fi
 
 week='this'
 since=''
 until=''
 write=0
+push=0
 stdout=0
 json_only=0
+wakatime=1
 providers='claude,grok,codex'
 out_dir="${WSL_WORKFLOW_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/state/workflow}/habit-weekly"
 
 usage() {
-  sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # Monday of the ISO week containing $1 (YYYY-MM-DD). GNU date.
@@ -51,8 +62,11 @@ while (( $# )); do
     --until) until="${2:?}"; shift 2 ;;
     --providers) providers="${2:?}"; shift 2 ;;
     --write) write=1; shift ;;
+    --push) push=1; write=1; shift ;;
     --stdout) stdout=1; shift ;;
     --json-only) json_only=1; shift ;;
+    --wakatime) wakatime=1; shift ;;
+    --no-wakatime) wakatime=0; shift ;;
     --out-dir) out_dir="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'unknown arg: %s\n' "$1" >&2; exit 2 ;;
@@ -62,6 +76,12 @@ done
 command -v python3 >/dev/null 2>&1 || { echo 'python3 required' >&2; exit 1; }
 [[ -x "$habit_sh" || -f "$habit_sh" ]] || { printf 'missing %s\n' "$habit_sh" >&2; exit 1; }
 [[ -f "$render_py" ]] || { printf 'missing %s\n' "$render_py" >&2; exit 1; }
+if (( push )); then
+  [[ -x "$push_sh" || -f "$push_sh" ]] || {
+    printf 'missing %s\n' "$push_sh" >&2
+    exit 1
+  }
+fi
 
 today="$(date +%Y-%m-%d)"
 if [[ -n "$since" || -n "$until" ]]; then
@@ -100,12 +120,19 @@ trap 'rm -rf "$tmpdir"' EXIT
 json_path="$tmpdir/habit.json"
 md_path="$tmpdir/report.md"
 
-bash "$habit_sh" \
-  --days "$days" \
-  --end "$until" \
-  --providers "$providers" \
-  --json \
-  >"$json_path"
+habit_args=(
+  --days "$days"
+  --end "$until"
+  --providers "$providers"
+  --json
+)
+if (( wakatime )); then
+  habit_args+=(--wakatime)
+else
+  habit_args+=(--no-wakatime)
+fi
+
+bash "$habit_sh" "${habit_args[@]}" >"$json_path"
 
 # Annotate window start in case days math drifted (habit-report end-anchored).
 python3 - "$json_path" "$since" "$until" <<'PY'
@@ -127,18 +154,33 @@ fi
 
 python3 "$render_py" --input "$json_path" --output "$md_path"
 
+stem="habit-weekly-${since}_to_${until}"
+written_md=''
+written_json=''
+
 if (( write )); then
   mkdir -p "$out_dir"
-  stem="habit-weekly-${since}_to_${until}"
-  cp -f "$json_path" "$out_dir/${stem}.json"
-  cp -f "$md_path" "$out_dir/${stem}.md"
-  printf 'wrote %s\n' "$out_dir/${stem}.md" >&2
-  printf 'wrote %s\n' "$out_dir/${stem}.json" >&2
-  # Default: also print path; print body if --stdout
+  written_json="$out_dir/${stem}.json"
+  written_md="$out_dir/${stem}.md"
+  cp -f "$json_path" "$written_json"
+  cp -f "$md_path" "$written_md"
+  printf 'wrote %s\n' "$written_md" >&2
+  printf 'wrote %s\n' "$written_json" >&2
+fi
+
+if (( push )); then
+  bash "$push_sh" \
+    --since "$since" \
+    --until "$until" \
+    --md "${written_md:-$md_path}" \
+    --json "${written_json:-$json_path}"
+fi
+
+if (( write )); then
   if (( stdout )); then
     cat "$md_path"
   else
-    printf '%s\n' "$out_dir/${stem}.md"
+    printf '%s\n' "$written_md"
   fi
   exit 0
 fi

@@ -31,6 +31,7 @@ from habit_report.hotkeys import (  # noqa: E402
 )
 from habit_report.providers import available_providers, run_providers  # noqa: E402
 from habit_report.schema import merge_metrics  # noqa: E402
+from habit_report.wakatime import fetch_summaries  # noqa: E402
 
 
 def resolve_day(raw: str) -> date:
@@ -191,6 +192,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--no-lifetime", action="store_true")
     ap.add_argument("--no-hotkeys", action="store_true")
+    ap.add_argument(
+        "--wakatime",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="include WakaTime summaries for the same window (default: off)",
+    )
     ap.add_argument("--wezterm-log", default="")
     ap.add_argument("--runtime-log", default="")
     ap.add_argument("--usage-json", default="")
@@ -270,10 +277,29 @@ def main(argv: list[str] | None = None) -> int:
         ],
     }
 
+    if args.wakatime:
+        report["wakatime"] = fetch_summaries(start_day, end_day)
+        if not report["wakatime"].get("ok"):
+            report.setdefault("notes", []).append(
+                f"WakaTime unavailable: {report['wakatime'].get('error')}"
+            )
+
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         sys.stdout.write(format_table(report))
+        waka = report.get("wakatime") or {}
+        if waka:
+            sys.stdout.write("\n## wakatime\n")
+            if waka.get("ok"):
+                totals = waka.get("totals") or {}
+                sys.stdout.write(
+                    f"  total={totals.get('text', '?')}  "
+                    f"projects={len(waka.get('projects') or [])}  "
+                    f"languages={len(waka.get('languages') or [])}\n"
+                )
+            else:
+                sys.stdout.write(f"  error={waka.get('error')}\n")
     return 0
 
 
