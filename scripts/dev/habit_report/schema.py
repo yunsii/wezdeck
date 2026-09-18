@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .session import empty_session_acc, merge_session_summaries, summarize_session
+from .usage import empty_usage_acc, merge_usage_summaries, summarize_usage
 
 
 @dataclass
@@ -18,6 +19,7 @@ class ProviderMetrics:
     cli:    high-level CLIs (coco-cli, lark-cli, uxc, chrome-devtools, …)
     tools:  native agent tools (Bash, read_file, exec_command, …)
     session: accumulator for turns / active time / feed / media / goal / rewrites
+    usage:  token / cost totals from each agent’s native usage records
     """
 
     provider: str
@@ -30,6 +32,7 @@ class ProviderMetrics:
     verify: Counter[str] = field(default_factory=Counter)
     # verify keys: cdp_sessions, cdp_calls, iterate_after_cdp
     session: dict[str, Any] = field(default_factory=empty_session_acc)
+    usage: dict[str, Any] = field(default_factory=empty_usage_acc)
     notes: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
@@ -44,6 +47,7 @@ class ProviderMetrics:
             "tools": dict(self.tools.most_common()),
             "verify": dict(self.verify),
             "session": summarize_session(self.session),
+            "usage": summarize_usage(self.usage),
             "notes": list(self.notes),
             "errors": list(self.errors),
         }
@@ -61,6 +65,7 @@ def merge_metrics(rows: list[ProviderMetrics]) -> dict[str, Any]:
     verify: Counter[str] = Counter()
     by_provider: dict[str, Any] = {}
     session_rows: list[dict[str, Any]] = []
+    usage_rows: list[dict[str, Any]] = []
     for row in rows:
         as_dict = row.to_dict()
         by_provider[row.provider] = as_dict
@@ -70,6 +75,7 @@ def merge_metrics(rows: list[ProviderMetrics]) -> dict[str, Any]:
         tools.update(row.tools)
         verify.update(row.verify)
         session_rows.append(as_dict.get("session") or {})
+        usage_rows.append(as_dict.get("usage") or {})
     return {
         "by_provider": by_provider,
         "skills": dict(skills.most_common()),
@@ -78,4 +84,5 @@ def merge_metrics(rows: list[ProviderMetrics]) -> dict[str, Any]:
         "tools": dict(tools.most_common()),
         "verify": dict(verify),
         "session": merge_session_summaries(session_rows),
+        "usage": merge_usage_summaries(usage_rows),
     }

@@ -34,6 +34,7 @@ from ..session import (
     record_timing,
     record_user_message,
 )
+from ..usage import add_codex_last_usage
 
 
 def _codex_home() -> Path:
@@ -80,17 +81,35 @@ def collect(
         file_edits: Counter[str] = Counter()
         had_url = False
         saw = False
+        usage_deltas = 0
+        first_total_before: dict | None = None
+        last_total_in: dict | None = None
+        current_model: str | None = None
 
         for row in iter_jsonl(path):
             ts = parse_iso_ts(str(row.get("timestamp") or ""))
+            pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+            info = pl.get("info") if isinstance(pl.get("info"), dict) else {}
+            if row.get("type") == "turn_context" and pl.get("model"):
+                current_model = str(pl.get("model"))
+            # Codex token_count: payload.info.{total,last}_token_usage
+            total_u = pl.get("total_token_usage") or info.get("total_token_usage")
+            last_u = pl.get("last_token_usage") or info.get("last_token_usage")
             if ts is not None and not in_window(ts, start_dt, end_dt):
+                if isinstance(total_u, dict):
+                    first_total_before = total_u
                 continue
             if row.get("type") == "session_meta":
-                pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
                 sessions.add(str(pl.get("session_id") or pl.get("id") or sid))
                 continue
+            if row.get("type") == "turn_context":
+                continue
             if row.get("type") == "event_msg":
-                pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+                if isinstance(last_u, dict):
+                    add_codex_last_usage(m.usage, last_u, model=current_model)
+                    usage_deltas += 1
+                elif isinstance(total_u, dict):
+                    last_total_in = total_u
                 if pl.get("type") == "user_message":
                     msg = str(pl.get("message") or "")
                     # Skip long untrusted-transcript wrappers used by review agents.
@@ -186,6 +205,25 @@ def collect(
             record_session_flags(m.session, had_image=False, had_url=had_url)
             if file_edits:
                 record_rewrites(m.session, file_edits)
+        if usage_deltas:
+            m.usage["sessions_with_usage"] += 1
+        elif last_total_in is not None:
+            # No last_token_usage deltas — attribute cumulative total delta in window.
+            base = first_total_before or {}
+            delta = {
+                k: int(last_total_in.get(k) or 0) - int(base.get(k) or 0)
+                for k in (
+                    "input_tokens",
+                    "cached_input_tokens",
+                    "cache_write_input_tokens",
+                    "output_tokens",
+                    "reasoning_output_tokens",
+                    "total_tokens",
+                )
+            }
+            if any(int(v or 0) > 0 for v in delta.values()):
+                add_codex_last_usage(m.usage, delta, model=current_model)
+                m.usage["sessions_with_usage"] += 1
 
     for _ in base.rglob("rollout-*.jsonl.zst"):
         zst_seen += 1
@@ -200,6 +238,7 @@ def collect(
     m.verify["iterate_sessions"] = len(iterate_sessions)
     m.notes.append(
         "source= $CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl "
-        "(not history.jsonl); exec_command → CLI + skills/.system SKILL.md loads"
+        "(not history.jsonl); exec_command → CLI + skills/.system SKILL.md loads; "
+        "usage=sum last_token_usage in-window (no native USD)"
     )
     return m

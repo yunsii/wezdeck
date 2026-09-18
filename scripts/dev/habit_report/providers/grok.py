@@ -8,6 +8,7 @@ Session: per-session chat_history (turns/feed/media/active time) + goal_updated.
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
@@ -32,6 +33,7 @@ from ..session import (
     record_timing,
     record_user_message,
 )
+from ..usage import add_grok_usage_blob
 
 
 def _row_ts(row: dict, tz) -> datetime | None:
@@ -236,12 +238,50 @@ def collect(
             if file_edits:
                 record_rewrites(m.session, file_edits)
 
+        usage_path = updates.parent / "usage.json"
+        if usage_path.is_file():
+            m.files_scanned += 1
+            try:
+                usage_doc = json.loads(usage_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                m.errors.append(f"usage.json {usage_path.parent.name}: {exc}")
+                usage_doc = None
+            if isinstance(usage_doc, dict):
+                turns = usage_doc.get("turns")
+                matched = 0
+                if isinstance(turns, list):
+                    for turn in turns:
+                        if not isinstance(turn, dict):
+                            continue
+                        ended = parse_iso_ts(str(turn.get("endedAt") or ""))
+                        if not in_window(ended, start_dt, end_dt):
+                            continue
+                        add_grok_usage_blob(m.usage, turn)
+                        matched += 1
+                if matched:
+                    m.usage["sessions_with_usage"] += 1
+                    sessions.add(sid)
+                elif (
+                    not isinstance(turns, list) or len(turns) == 0
+                ) and isinstance(usage_doc.get("session"), dict) and (
+                    mtime_in_window(usage_path, start_dt, end_dt) or saw
+                ):
+                    # Only fall back when the file has no turn breakdown.
+                    add_grok_usage_blob(m.usage, usage_doc["session"])
+                    m.usage["sessions_with_usage"] += 1
+                    sessions.add(sid)
+                    notes = m.usage.setdefault("notes", [])
+                    msg = "grok: session block fallback (usage.json has no turns[])"
+                    if msg not in notes:
+                        notes.append(msg)
+
     m.sessions_scanned = len(sessions)
     m.verify["cdp_sessions"] = len(cdp_sessions)
     m.verify["iterate_sessions"] = len(iterate_sessions)
     m.notes.append(
         "source= ~/.grok/sessions/<cwd>/<session-id>/ "
         "(updates+chat_history+events; slash via cwd prompt_history; "
-        "active-time not from prompt_history; goal_elapsed from goal_updated)"
+        "active-time not from prompt_history; goal_elapsed from goal_updated; "
+        "usage=usage.json turns by endedAt)"
     )
     return m

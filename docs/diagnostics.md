@@ -262,13 +262,13 @@ complementary to the workflow timeline (day *loop* reconstruction).
     with **30m TTL** (same spirit as attention TTL). Raw `session_id`
     occupancy is only emitted as `raw_sid_max_running` (diagnostic): sids that
     never got `done` otherwise accumulate across days and inflate the peak.
-  - Skills / MCP / CLI — per-provider collectors into one schema
-    (`skills`, `mcp`, `cli`, `tools`, `verify`, `session`):
+  - Skills / MCP / CLI / **usage** — per-provider collectors into one schema
+    (`skills`, `mcp`, `cli`, `tools`, `verify`, `session`, `usage` with `by_model`):
     | Provider | Source (current) |
     | --- | --- |
-    | Claude | `~/.claude/projects/**/<session>.jsonl` — `tool_use` (`Skill`, `mcp__…`, `Bash`) **plus** user slash (`<command-name>`, `<forked-skill-launch>` for `/code-review` / `/goal` 类); session = turns/chars/images/urls + active-time/segments + Edit/Write rewrites |
-    | Grok | `~/.grok/sessions/<cwd>/<session-id>/` updates+chat_history+events; slash via cwd-level `prompt_history.jsonl` (counts only — **not** for duration); `/goal` duration from `goal_updated.elapsed_ms` |
-    | Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` — `function_call` (not `history.jsonl`); includes `.codex/skills/.system/<name>/SKILL.md` loads; light session timing from timestamps |
+    | Claude | `~/.claude/projects/**/<session>.jsonl` — `tool_use` (`Skill`, `mcp__…`, `Bash`) **plus** user slash (`<command-name>`, `<forked-skill-launch>` for `/code-review` / `/goal` 类); session = turns/chars/images/urls + active-time/segments + Edit/Write rewrites; **usage** = last `cost-state` when session `startTime` (epoch ms) is in-window (skips `subagents/` and pre-window carryover lifetimes) |
+    | Grok | `~/.grok/sessions/<cwd>/<session-id>/` updates+chat_history+events; slash via cwd-level `prompt_history.jsonl` (counts only — **not** for duration); `/goal` duration from `goal_updated.elapsed_ms`; **usage** = `usage.json` turns with `endedAt` in window (`costUsdTicks/1e9` ≈ USD estimate) |
+    | Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` — `function_call` (not `history.jsonl`); includes `.codex/skills/.system/<name>/SKILL.md` loads; light session timing from timestamps; **usage** = sum in-window `payload.info.last_token_usage` deltas (no native USD; short sessions without `token_count` stay 0) |
   - Session duration: **active minutes** (inter-message gaps capped at 15m) + **segments** (split on >2h idle). Wall-clock first→last is diagnostic only (resume / multi-day continue inflate it). `/goal` uses harness `elapsed_ms`, not session wall clock.
   - User feed: `user_chars` = human typed+paste; `typed_chars` / `paste_chars` split on ``` fences. Protocol/agent rows on the user channel go to `session.injected` **per kind**, and **per provider** under `by_provider.*.session.injected` (Skill body, system-reminder subtypes, compact continuation, task-notification, harness role, user_info envelope).
   - Keywords: jieba posseg + `stopwords_zh.txt` + synonyms (`keywords.example.json` / `~/.config/habit-weekly/keywords.json`) over cleaned feed with fences stripped; `session.keywords.top` only (no raw utterances).

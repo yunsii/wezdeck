@@ -10,15 +10,16 @@
 4. **WakaTime 时间投入**（无 key / 拉取失败则降级说明，不删整段标题）  
 5. **Agent 并发**（pane+TTL；可提一句 raw_sid 虚高勿用）  
 6. **会话形态**（活跃时长/片段/投喂分桶/图链/Goal 工期/改写分布/常用关键词；**禁止**把墙钟当主指标；含 **按端协议注入表**）  
-7. **Rime 上屏 × 前台/pane-focus**（可选插件；`wezterm.agent.*` / `.shell`）  
-8. **代码变更量**（可选插件 `git_churn`；排除规则见 `git-churn.json`）  
-9. **Skill / CLI / MCP**（合并 Top + 分 provider 一句分工）  
-10. **CDP 验证→迭代**（有数据才写）  
-11. **热键调度**（Alt+l 为主；忙日/轻量日对照）  
-12. **工作环路**（短流程图或 5 步列表）  
-13. **数据边界**（固定注意点，可压缩）  
-14. **复现命令**  
-15. **本次提取的数据**（结尾必有）  
+7. **Token / 费用（分 agent · 分模型）**（Claude `cost-state.modelUsage` / Grok `usage.json` / Codex `last_token_usage`+`turn_context.model`；主读分端与分模型 USD + output/reasoning；`total` 含 cache 不作跨端主 KPI）  
+8. **Rime 上屏 × 前台/pane-focus**（可选插件；`wezterm.agent.*` / `.shell`）  
+9. **代码变更量**（可选插件 `git_churn`；排除规则见 `git-churn.json`）  
+10. **Skill / CLI / MCP**（合并 Top + 分 provider 一句分工）  
+11. **CDP 验证→迭代**（有数据才写）  
+12. **热键调度**（Alt+l 为主；忙日/轻量日对照）  
+13. **工作环路**（短流程图或 5 步列表）  
+14. **数据边界**（固定注意点，可压缩）  
+15. **复现命令**  
+16. **本次提取的数据**（结尾必有）  
 ## 文风
 
 - 简体中文；标识符/命令保持原文  
@@ -41,4 +42,6 @@
 
 - 不要编造窗口外没有的数字  
 - 不要把 WakaTime 心跳时长当成 Agent pane 并发  
+- 不要把跨端 raw `total_tokens` 当成「本周消耗」主 KPI（cache 虚高 + 计价不同）  
+- Token 数字只引用 `agents.usage` / `by_provider.*.usage`；不要手算 message.usage 覆盖官方汇总  
 - 不要在报告 JSON / 归档仓里写入 API key  

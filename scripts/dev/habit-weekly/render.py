@@ -109,6 +109,7 @@ def render(report: dict[str, Any]) -> str:
             verify=verify,
             cli0=cli0,
             skill0=skill0,
+            usage=agents.get("usage") or {},
         )
     )
 
@@ -397,6 +398,14 @@ def render(report: dict[str, Any]) -> str:
                 )
                 lines.append("")
 
+    usage = agents.get("usage") or {}
+    if usage.get("sessions_with_usage") or any(
+        ((row.get("usage") or {}).get("sessions_with_usage") or 0)
+        for row in by_p.values()
+        if isinstance(row, dict)
+    ):
+        lines.extend(_render_usage_section(usage, by_p))
+
     # Rime × foreground (optional plugin, auto-detect)
     if rime.get("commit_events") or rime.get("enabled") or rime.get("available"):
         lines.append('<a id="sec-rime"></a>')
@@ -638,6 +647,109 @@ def _status_row(name: str, status: str, detail: str) -> str:
     return f"| {name} | {status} | {detail} |"
 
 
+def _fmt_tokens(n: Any) -> str:
+    try:
+        v = int(n or 0)
+    except (TypeError, ValueError):
+        return "—"
+    if v >= 1_000_000:
+        return f"{v / 1_000_000:.2f}M"
+    if v >= 1_000:
+        return f"{v / 1_000:.1f}k"
+    return str(v)
+
+
+def _render_usage_section(usage: dict, by_p: dict) -> list[str]:
+    lines: list[str] = []
+    lines.append('<a id="sec-usage"></a>')
+    lines.append("## Token / 费用（分 agent · 分模型）")
+    lines.append("")
+    lines.append(
+        "主读 **分端 / 分模型 USD（有则）** 与 **output / reasoning**；"
+        "`total` 含 cache 易虚高，不作跨端主 KPI。"
+        "Claude=`cost-state.modelUsage`（仅 `startTime` 落在窗口内）；"
+        "Grok=`usage.json` turns/`modelUsage`；"
+        "Codex=`last_token_usage` + 最近 `turn_context.model`（无原生 USD）。"
+        "Grok USD 按 `costUsdTicks/1e9` 估算。"
+    )
+    lines.append("")
+    lines.append(
+        "| Agent | 会话 | output | reasoning | cache读 | cache% | total | USD |"
+    )
+    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    for pname in ("claude", "grok", "codex"):
+        row = by_p.get(pname) or {}
+        u = row.get("usage") or {}
+        if not u.get("sessions_with_usage") and not u.get("total_tokens"):
+            continue
+        usd = u.get("cost_usd")
+        usd_s = f"{usd:.2f}" if isinstance(usd, (int, float)) else "—"
+        lines.append(
+            f"| {pname} | {u.get('sessions_with_usage', 0)} | "
+            f"{_fmt_tokens(u.get('output_tokens'))} | "
+            f"{_fmt_tokens(u.get('reasoning_tokens'))} | "
+            f"{_fmt_tokens(u.get('cache_read_tokens'))} | "
+            f"{u.get('cache_read_pct', 0)}% | "
+            f"{_fmt_tokens(u.get('total_tokens'))} | {usd_s} |"
+        )
+    if usage.get("cost_usd_known") and usage.get("cost_usd") is not None:
+        lines.append("")
+        lines.append(
+            f"**有价端合计 USD：** **{usage.get('cost_usd'):.2f}**"
+            f"（仅 Claude + Grok 估算；Codex 未计入）"
+        )
+    lines.append("")
+
+    # Per-model table (provider/model), sorted by cost then total tokens.
+    model_rows: list[tuple[str, str, dict]] = []
+    for pname in ("claude", "grok", "codex"):
+        row = by_p.get(pname) or {}
+        u = row.get("usage") or {}
+        by_model = u.get("by_model") or {}
+        if isinstance(by_model, dict) and by_model:
+            for model, slot in by_model.items():
+                if isinstance(slot, dict):
+                    model_rows.append((pname, str(model), slot))
+        else:
+            for model, tok in (u.get("by_model_tokens") or {}).items():
+                model_rows.append(
+                    (
+                        pname,
+                        str(model),
+                        {"total_tokens": int(tok or 0), "cost_usd_known": False},
+                    )
+                )
+    model_rows.sort(
+        key=lambda t: (
+            -(float(t[2].get("cost_usd") or 0) if t[2].get("cost_usd_known") else 0.0),
+            -int(t[2].get("total_tokens") or 0),
+            t[0],
+            t[1],
+        )
+    )
+    if model_rows:
+        lines.append("### 按模型")
+        lines.append("")
+        lines.append(
+            "| Agent | 模型 | output | reasoning | cache% | total | USD | calls |"
+        )
+        lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |")
+        for pname, model, slot in model_rows[:16]:
+            usd = slot.get("cost_usd")
+            usd_s = f"{usd:.2f}" if isinstance(usd, (int, float)) else "—"
+            calls = slot.get("model_calls")
+            calls_s = str(calls) if calls else "—"
+            lines.append(
+                f"| {pname} | `{model}` | "
+                f"{_fmt_tokens(slot.get('output_tokens'))} | "
+                f"{_fmt_tokens(slot.get('reasoning_tokens'))} | "
+                f"{slot.get('cache_read_pct', 0)}% | "
+                f"{_fmt_tokens(slot.get('total_tokens'))} | {usd_s} | {calls_s} |"
+            )
+        lines.append("")
+    return lines
+
+
 def _render_key_metrics(
     *,
     max_r: Any,
@@ -651,6 +763,7 @@ def _render_key_metrics(
     verify: dict,
     cli0: str,
     skill0: str,
+    usage: dict | None = None,
 ) -> list[str]:
     """Compact KPI table right under BLUF; links jump to detail sections."""
     lines: list[str] = []
@@ -687,6 +800,21 @@ def _render_key_metrics(
                 if isinstance(x, dict)
             )
             row("常用关键词", preview or "有", "sec-keywords")
+
+    usage = usage or {}
+    if usage.get("sessions_with_usage") or usage.get("total_tokens"):
+        usd = usage.get("cost_usd")
+        usd_bit = (
+            f"USD **{usd:.2f}**"
+            if usage.get("cost_usd_known") and isinstance(usd, (int, float))
+            else "USD —"
+        )
+        row(
+            "Token / 费用",
+            f"{usd_bit} · out {_fmt_tokens(usage.get('output_tokens'))} · "
+            f"cache {usage.get('cache_read_pct', 0)}%",
+            "sec-usage",
+        )
 
     if git_churn.get("ok") and (
         git_churn.get("commits") or git_churn.get("insertions")
@@ -816,6 +944,26 @@ def _render_data_inventory(
             )
         else:
             rows.append((f"Agent 转录 · {pname}", "窗口内无/未扫到", "—"))
+
+    usage = agents.get("usage") or {}
+    if usage.get("sessions_with_usage") or usage.get("total_tokens"):
+        usd = usage.get("cost_usd")
+        usd_s = (
+            f"{usd:.2f}"
+            if usage.get("cost_usd_known") and isinstance(usd, (int, float))
+            else "—"
+        )
+        rows.append(
+            (
+                "Token / 费用（分 agent）",
+                "有",
+                f"sessions={usage.get('sessions_with_usage')} · "
+                f"out={usage.get('output_tokens')} · "
+                f"cache%={usage.get('cache_read_pct')} · USD={usd_s}",
+            )
+        )
+    else:
+        rows.append(("Token / 费用（分 agent）", "窗口内无/未扫到", "—"))
 
     # Session metrics
     if sess.get("user_turns") or sess.get("sessions_timed"):

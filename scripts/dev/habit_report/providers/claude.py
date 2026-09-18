@@ -36,6 +36,7 @@ from ..session import (
     record_timing,
     record_user_message,
 )
+from ..usage import add_claude_cost_state, parse_claude_start_time
 
 
 def collect(
@@ -61,6 +62,10 @@ def collect(
         name = path.name
         if ".orphaned-" in name or ".superseded-" in name:
             continue
+        # Subagent transcripts are billed under the parent cost-state when present;
+        # skip them here to avoid double-counting when they also emit cost-state.
+        if "subagents" in path.parts:
+            continue
         if not mtime_in_window(path, start_dt, end_dt):
             continue
         m.files_scanned += 1
@@ -71,8 +76,11 @@ def collect(
         file_had_url = False
         file_edits: Counter[str] = Counter()
         file_saw_in_window = False
+        last_cost_state: dict | None = None
 
         for row in iter_jsonl(path):
+            if row.get("type") == "cost-state":
+                last_cost_state = row
             ts = parse_iso_ts(str(row.get("timestamp") or ""))
             if not in_window(ts, start_dt, end_dt):
                 continue
@@ -215,13 +223,39 @@ def collect(
             )
             if file_edits:
                 record_rewrites(m.session, file_edits)
+            if last_cost_state is not None:
+                started = parse_claude_start_time(last_cost_state.get("startTime"))
+                # cost-state is lifetime for that session id — only count sessions
+                # that *started* in-window. Earlier resumes stay as carryover note.
+                if started is not None and in_window(started, start_dt, end_dt):
+                    add_claude_cost_state(m.usage, last_cost_state)
+                elif started is not None:
+                    m.usage["_carryover_skipped"] = (
+                        int(m.usage.get("_carryover_skipped") or 0) + 1
+                    )
+                    notes = [
+                        n
+                        for n in (m.usage.get("notes") or [])
+                        if not str(n).startswith("claude: skipped ")
+                    ]
+                    notes.append(
+                        "claude: skipped "
+                        f"{m.usage['_carryover_skipped']} "
+                        "carryover session(s) started before window "
+                        "(lifetime cost-state not attributed)"
+                    )
+                    m.usage["notes"] = notes
+                else:
+                    add_claude_cost_state(m.usage, last_cost_state)
 
+    m.usage.pop("_carryover_skipped", None)
     m.sessions_scanned = len(sessions)
     m.verify["cdp_sessions"] = len(cdp_sessions)
     m.verify["iterate_sessions"] = len(iterate_sessions)
     m.notes.append(
         "source= ~/.claude/projects/**/<session>.jsonl "
         "(Skill/slash + session active-time/segments/feed/media/rewrites; "
+        "usage=cost-state when session startTime in window; "
         "default cleanupPeriodDays=30)"
     )
     return m

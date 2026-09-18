@@ -79,10 +79,11 @@ Install / refresh discovery:
 2. WakaTime 时间投入（无 key 则降级说明）  
 3. Agent 并发（pane+TTL；raw_sid 仅诊断）  
 4. Skill / CLI / MCP + 分 provider  
-5. CDP 验证→迭代（有则写）  
-6. 热键调度（Alt+l 为主）  
-7. 工作环路归纳  
-8. 数据边界 + 复现命令  
+5. Token / 费用（分 agent · 分模型；Claude `cost-state` / Grok `usage.json` / Codex `last_token_usage`）  
+6. CDP 验证→迭代（有则写）  
+7. 热键调度（Alt+l 为主）  
+8. 工作环路归纳  
+9. 数据边界 + 复现命令  
 
 ## Options
 
