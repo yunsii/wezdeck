@@ -95,7 +95,25 @@ def render(report: dict[str, Any]) -> str:
     lines.append(bluf)
     lines.append("")
 
+    # Key metrics with in-doc jumps (anchors placed on detail sections below)
+    lines.extend(
+        _render_key_metrics(
+            max_r=max_r,
+            presses=presses,
+            alt_sum=alt_sum,
+            waka_ok=waka_ok,
+            waka_total=waka_total,
+            sess=sess,
+            rime=rime,
+            git_churn=git_churn,
+            verify=verify,
+            cli0=cli0,
+            skill0=skill0,
+        )
+    )
+
     # WakaTime (macro time investment; optional)
+    lines.append('<a id="sec-wakatime"></a>')
     lines.append("## WakaTime 时间投入")
     lines.append("")
     if not waka:
@@ -165,6 +183,7 @@ def render(report: dict[str, Any]) -> str:
             lines.append("")
 
     # Concurrency
+    lines.append('<a id="sec-concurrency"></a>')
     lines.append("## Agent 并发")
     lines.append("")
     lines.append("| 指标 | 数值 |")
@@ -199,6 +218,7 @@ def render(report: dict[str, Any]) -> str:
 
     # Session shape (active time / feed / media / goal)
     if sess.get("sessions_timed") or sess.get("user_turns") or sess.get("goal_completed"):
+        lines.append('<a id="sec-session"></a>')
         lines.append("## 会话形态（活跃时长 / 投喂 / Goal）")
         lines.append("")
         lines.append(
@@ -353,6 +373,7 @@ def render(report: dict[str, Any]) -> str:
 
     # Rime × foreground (optional plugin, auto-detect)
     if rime.get("commit_events") or rime.get("enabled") or rime.get("available"):
+        lines.append('<a id="sec-rime"></a>')
         lines.append("## Rime 上屏 × 前台进程（可选插件）")
         lines.append("")
         lines.append(
@@ -389,6 +410,7 @@ def render(report: dict[str, Any]) -> str:
         or git_churn.get("insertions")
         or git_churn.get("repos_scanned")
     ):
+        lines.append('<a id="sec-git-churn"></a>')
         lines.append("## 代码变更量（git churn）")
         lines.append("")
         lines.append(
@@ -421,6 +443,7 @@ def render(report: dict[str, Any]) -> str:
             lines.append("")
 
     # Skills / CLI
+    lines.append('<a id="sec-skills"></a>')
     lines.append("## Skill / CLI / MCP")
     lines.append("")
     if skills:
@@ -474,6 +497,7 @@ def render(report: dict[str, Any]) -> str:
 
     # CDP
     if verify.get("cdp_calls") or verify.get("cdp_sessions"):
+        lines.append('<a id="sec-cdp"></a>')
         lines.append("## CDP 验证 → 迭代")
         lines.append("")
         lines.append(
@@ -485,6 +509,7 @@ def render(report: dict[str, Any]) -> str:
         lines.append("")
 
     # Hotkeys
+    lines.append('<a id="sec-hotkeys"></a>')
     lines.append("## 热键调度")
     lines.append("")
     lines.append(
@@ -549,8 +574,8 @@ def render(report: dict[str, Any]) -> str:
         "无 key 时本段降级，不阻断整报"
     )
     lines.append(
-        "- Rime 上屏字数 × host.foreground：只记字数/进程名，不落正文；"
-        "PoC 仅分 wezterm/code/chrome/other，WezTerm 内 agent pane 尚未对齐"
+        "- Rime 上屏：OS foreground × tmux pane-focus 时间线 → "
+        "`wezterm.agent.*` / `wezterm.shell`；只记字数/进程名/role，不落正文"
     )
     lines.append(
         "- git churn：工作机 auto；排除仓与生成目录见 "
@@ -587,6 +612,87 @@ def _status_row(name: str, status: str, detail: str) -> str:
     return f"| {name} | {status} | {detail} |"
 
 
+def _render_key_metrics(
+    *,
+    max_r: Any,
+    presses: int,
+    alt_sum: int,
+    waka_ok: bool,
+    waka_total: str,
+    sess: dict,
+    rime: dict,
+    git_churn: dict,
+    verify: dict,
+    cli0: str,
+    skill0: str,
+) -> list[str]:
+    """Compact KPI table right under BLUF; links jump to detail sections."""
+    lines: list[str] = []
+    lines.append('<a id="sec-key-metrics"></a>')
+    lines.append("## 关键指标")
+    lines.append("")
+    lines.append("| 指标 | 数值 | 详情 |")
+    lines.append("| --- | --- | --- |")
+
+    def row(name: str, value: str, anchor: str) -> None:
+        lines.append(f"| {name} | {value} | [查看](#{anchor}) |")
+
+    row("Agent 并行峰值", f"**{max_r}** pane", "sec-concurrency")
+    row("热键 / Alt+l", f"**{presses}** / **{alt_sum}**", "sec-hotkeys")
+    if waka_ok and waka_total:
+        row("WakaTime", f"**{waka_total}**", "sec-wakatime")
+
+    if sess.get("user_turns") or sess.get("sessions_timed"):
+        typed = sess.get("typed_chars")
+        active = sess.get("active_minutes_p50")
+        parts = []
+        if active is not None:
+            parts.append(f"活跃P50 **{active}** 分")
+        if typed is not None:
+            parts.append(f"typed **{typed}**")
+        if sess.get("goal_completed"):
+            parts.append(f"goal **{sess.get('goal_completed')}**")
+        row("会话形态", " · ".join(parts) if parts else "有", "sec-session")
+
+    if git_churn.get("ok") and (
+        git_churn.get("commits") or git_churn.get("insertions")
+    ):
+        row(
+            "代码变更",
+            f"**{git_churn.get('commits', 0)}** 提交 · "
+            f"+{git_churn.get('insertions', 0)}/−{git_churn.get('deletions', 0)}",
+            "sec-git-churn",
+        )
+
+    if rime.get("commit_events"):
+        buckets = list((rime.get("by_foreground") or {}).keys())[:4]
+        row(
+            "Rime 上屏",
+            f"**{rime.get('commit_chars', 0)}** 字 · "
+            f"{rime.get('commit_events', 0)} 次"
+            + (f" · {', '.join(buckets)}" if buckets else ""),
+            "sec-rime",
+        )
+    elif rime.get("enabled") or rime.get("available") or rime.get("detected"):
+        row("Rime 上屏", "已启用 · 本窗口无事件", "sec-rime")
+
+    row("高频能力", f"`{cli0}` · `{skill0}`", "sec-skills")
+
+    if verify.get("cdp_sessions") or verify.get("cdp_calls"):
+        row(
+            "CDP 验证",
+            f"会话 **{verify.get('cdp_sessions', 0)}** · "
+            f"iterate **{verify.get('iterate_after_cdp', 0)}**",
+            "sec-cdp",
+        )
+
+    row("数据覆盖清单", "各信号有/无/未启用", "sec-inventory")
+    lines.append("")
+    lines.append("_点击「查看」跳到下文对应章节。_")
+    lines.append("")
+    return lines
+
+
 def _render_data_inventory(
     report: dict,
     agents: dict,
@@ -598,6 +704,7 @@ def _render_data_inventory(
 ) -> list[str]:
     """Terminal section: which signals this run actually used."""
     lines: list[str] = []
+    lines.append('<a id="sec-inventory"></a>')
     lines.append("## 本次提取的数据")
     lines.append("")
     lines.append(
@@ -731,23 +838,26 @@ def _render_data_inventory(
     if rime.get("commit_events"):
         rows.append(
             (
-                "Rime 上屏 × host.foreground",
+                "Rime 上屏 × foreground/pane-focus",
                 "有",
                 f"events={rime.get('commit_events')} · "
                 f"chars={rime.get('commit_chars')} · "
-                f"buckets={list((rime.get('by_foreground') or {}).keys())}",
+                f"buckets={list((rime.get('by_foreground') or {}).keys())} · "
+                f"pane_edges={rime.get('pane_focus_edges', 0)}",
             )
         )
     elif rime.get("enabled") or rime.get("available") or rime.get("detected"):
         rows.append(
             (
-                "Rime 上屏 × host.foreground",
+                "Rime 上屏 × foreground/pane-focus",
                 "已启用·窗口内无事件",
                 "计数器/log 在，但本窗口无上屏记录",
             )
         )
     else:
-        rows.append(("Rime 上屏 × host.foreground", "未启用", "未检测到计数器/log"))
+        rows.append(
+            ("Rime 上屏 × foreground/pane-focus", "未启用", "未检测到计数器/log")
+        )
 
     # git churn
     if git_churn.get("ok") and (

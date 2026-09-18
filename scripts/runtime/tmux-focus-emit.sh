@@ -38,6 +38,11 @@
 # Alt+g ranks worktrees by that stamp so agent pane *output* no longer
 # reshuffles the picker.
 #
+# Habit join: on focus *change*, append one JSONL row to
+#   <runtime>/state/wezterm-pane-focus.jsonl
+# (pane / kind / agent / cmd basename / role only — no titles). Used by
+# habit_report/rime_commits.py to split wezterm → wezterm.agent.* / .shell.
+#
 # Fails open: any step that fails is silently skipped so the tmux hook
 # never observes an error.
 
@@ -99,6 +104,60 @@ if command -v runtime_log_info >/dev/null 2>&1; then
     "window_id=${window_id:-}" \
     "file=$file" \
     "write_ok=$write_ok"
+fi
+
+# --- Habit: pane-focus timeline for Rime commit × agent-pane join ----------
+# Privacy: no titles / cwd / text — only pane id, role tag, command basename,
+# and derived agent label. Append on *change* only (same posture as
+# host.foreground process-name gating).
+if [[ -n "$state_path" ]]; then
+  # attention.json lives at <runtime>/state/agent-attention/attention.json
+  state_root="$(dirname "$(dirname "$state_path")")"
+  pane_jsonl="${state_root}/wezterm-pane-focus.jsonl"
+  pane_last="${state_root}/wezterm-pane-focus.last"
+  role="$(tmux show-options -p -t "$pane" -v -q @wezterm_pane_role 2>/dev/null || true)"
+  cmd="$(tmux display-message -p -t "$pane" '#{pane_current_command}' 2>/dev/null || true)"
+  cmd_base="${cmd##*/}"
+
+  agent=""
+  if [[ "$role" == agent-cli:* ]]; then
+    agent="${role#agent-cli:}"
+  fi
+  case "$cmd_base" in
+    claude|claude-*|Claude) agent="${agent:-claude}" ;;
+    codex|codex-*|Codex) agent="${agent:-codex}" ;;
+    grok|grok-*|Grok) agent="${agent:-grok}" ;;
+  esac
+  # Plain shell without intent tag → not an agent pane (resume wrappers keep the tag).
+  case "$cmd_base" in
+    bash|zsh|fish|sh|sudo)
+      if [[ "$role" != agent-cli:* ]]; then
+        agent=""
+      fi
+      ;;
+  esac
+
+  kind="shell"
+  if [[ -n "$agent" ]]; then
+    kind="agent"
+  fi
+
+  fingerprint="${pane}|${kind}|${agent}|${cmd_base}|${role}"
+  prev=""
+  if [[ -f "$pane_last" ]]; then
+    prev="$(cat "$pane_last" 2>/dev/null || true)"
+  fi
+  if [[ "$fingerprint" != "$prev" ]]; then
+    ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)"
+    if [[ -n "$ts" ]]; then
+      # Hand-built JSON (no jq dependency on the hook path).
+      line=$(printf '{"ts":"%s","pane":"%s","kind":"%s","agent":"%s","cmd":"%s","role":"%s","source":"tmux_focus"}\n' \
+        "$ts" "$pane" "$kind" "$agent" "$cmd_base" "$role")
+      if printf '%s' "$line" >>"$pane_jsonl" 2>/dev/null; then
+        printf '%s\n' "$fingerprint" >"$pane_last" 2>/dev/null || true
+      fi
+    fi
+  fi
 fi
 
 exit 0

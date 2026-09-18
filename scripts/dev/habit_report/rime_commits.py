@@ -1,8 +1,14 @@
-"""Join Rime commit-char JSONL with host.foreground process timeline.
+"""Join Rime commit-char JSONL with host.foreground + WezTerm pane-focus.
 
 Privacy: commit log has no text; helper.log foreground rows have process
-names only (no window titles). Agent-vs-shell inside WezTerm is Phase 2 —
-PoC buckets stop at OS foreground process (wezterm-gui / Code / chrome / other).
+names only; pane-focus JSONL has pane id / role / cmd basename / agent
+label only (no titles / cwd).
+
+Buckets:
+  - code / chrome / other / unknown — OS foreground outside WezTerm
+  - wezterm — OS WezTerm but no pane-focus edge yet
+  - wezterm.shell — focused pane classified non-agent
+  - wezterm.agent.<claude|codex|grok> — focused agent pane
 """
 
 from __future__ import annotations
@@ -10,17 +16,12 @@ from __future__ import annotations
 import re
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 from .common import day_bounds_utc, in_window, iter_jsonl, parse_iso_ts, parse_local_ts
 
-_FG_RE = re.compile(
-    r'ts="([^"]+)".*category="foreground".*message="foreground changed".*'
-    r'(?:to_process="([^"]*)"|from_process="([^"]*)")'
-)
-# Prefer to_process; some lines may order fields differently — parse kv loosely.
 _KV_RE = re.compile(r'(\w+)="([^"]*)"')
 
 _WEZTERM_NAMES = frozenset({"wezterm-gui", "wezterm", "WezTerm"})
@@ -34,20 +35,21 @@ class FgEdge:
     process: str
 
 
+@dataclass
+class PaneEdge:
+    ts: datetime
+    kind: str  # agent | shell
+    agent: str  # claude|codex|grok|""
+
+
 def _parse_helper_ts(raw: str) -> datetime | None:
-    # helper.log uses local wall clock without TZ: "2026-09-12 19:11:41.886"
     dt = parse_local_ts(raw)
     if dt is None:
         return None
-    # Treat as local-then-UTC-naive attach: compare in UTC by assuming local==host.
-    # Host helper and Rime both run on Windows local time; Rime writes UTC Z.
-    # Convert local naive → UTC by tagging as UTC offset unknown: use as-is with
-    # UTC label for window compare only when Rime ts converted to local…
-    # Simpler: convert Rime UTC → naive local via astimezone if we know offset.
     return dt.replace(tzinfo=None)
 
 
-def _bucket(process: str) -> str:
+def _os_bucket(process: str) -> str:
     if process in _WEZTERM_NAMES:
         return "wezterm"
     if process in _CODE_NAMES:
@@ -79,21 +81,60 @@ def load_foreground_timeline(helper_log: Path) -> list[FgEdge]:
     return edges
 
 
-def process_at(edges: list[FgEdge], when_local: datetime) -> str:
-    """Return foreground process name at when_local (naive local)."""
+def load_pane_focus_timeline(pane_log: Path) -> list[PaneEdge]:
+    edges: list[PaneEdge] = []
+    if not pane_log.is_file():
+        return edges
+    for row in iter_jsonl(pane_log):
+        if row.get("source") not in {None, "tmux_focus"}:
+            if row.get("source") and row.get("source") != "tmux_focus":
+                continue
+        ts = parse_iso_ts(str(row.get("ts") or ""))
+        if ts is None:
+            continue
+        local = ts.astimezone().replace(tzinfo=None) if ts.tzinfo else ts
+        kind = str(row.get("kind") or "shell")
+        agent = str(row.get("agent") or "")
+        edges.append(PaneEdge(ts=local, kind=kind, agent=agent))
+    edges.sort(key=lambda e: e.ts)
+    return edges
+
+
+def _edge_at(edges: list, when_local: datetime):
     if not edges:
-        return ""
-    # last edge with ts <= when
+        return None
     lo, hi = 0, len(edges) - 1
-    best = ""
+    best = None
     while lo <= hi:
         mid = (lo + hi) // 2
         if edges[mid].ts <= when_local:
-            best = edges[mid].process
+            best = edges[mid]
             lo = mid + 1
         else:
             hi = mid - 1
     return best
+
+
+def process_at(edges: list[FgEdge], when_local: datetime) -> str:
+    best = _edge_at(edges, when_local)
+    return str(best.process) if best else ""
+
+
+def pane_at(edges: list[PaneEdge], when_local: datetime) -> PaneEdge | None:
+    return _edge_at(edges, when_local)
+
+
+def refine_bucket(os_bucket: str, pane: PaneEdge | None) -> str:
+    """Split wezterm into shell / agent.* when pane-focus timeline exists."""
+    if os_bucket != "wezterm":
+        return os_bucket
+    if pane is None:
+        return "wezterm"
+    if pane.kind == "agent" and pane.agent:
+        return f"wezterm.agent.{pane.agent}"
+    if pane.kind == "agent":
+        return "wezterm.agent"
+    return "wezterm.shell"
 
 
 def _rime_ts_to_local_naive(ts: datetime) -> datetime:
@@ -102,12 +143,32 @@ def _rime_ts_to_local_naive(ts: datetime) -> datetime:
     return ts.astimezone().replace(tzinfo=None)
 
 
+def resolve_pane_focus_log(commit_log: Path | None) -> Path | None:
+    """Co-locate with rime-commits under wezterm-runtime/state/."""
+    import os
+
+    env = os.environ.get("WEZDECK_PANE_FOCUS_LOG", "").strip()
+    if env:
+        return Path(env)
+    candidates: list[Path] = []
+    if commit_log is not None:
+        candidates.append(commit_log.parent / "wezterm-pane-focus.jsonl")
+    home = Path.home()
+    for user in ("yuns", "Yuns"):
+        candidates.append(
+            Path(f"/mnt/c/Users/{user}/AppData/Local/wezterm-runtime/state/wezterm-pane-focus.jsonl")
+        )
+    candidates.append(home / ".local/state/wezterm-runtime/state/wezterm-pane-focus.jsonl")
+    return next((p for p in candidates if p.is_file()), candidates[0] if candidates else None)
+
+
 def collect_rime_commits(
     *,
     start: date,
     end: date,
     commit_log: Path | None = None,
     helper_log: Path | None = None,
+    pane_log: Path | None = None,
 ) -> dict[str, Any]:
     """Return summary dict for habit-report (empty-ok if logs missing)."""
     out: dict[str, Any] = {
@@ -123,9 +184,13 @@ def collect_rime_commits(
         out["notes"].append("paths not resolved")
         return out
 
+    if pane_log is None:
+        pane_log = resolve_pane_focus_log(commit_log)
+
     out["paths"] = {
         "commit_log": str(commit_log),
         "helper_log": str(helper_log),
+        "pane_focus_log": str(pane_log) if pane_log else "",
     }
     if not commit_log.is_file():
         out["notes"].append(f"missing commit log: {commit_log}")
@@ -133,9 +198,15 @@ def collect_rime_commits(
 
     start_dt, end_dt = day_bounds_utc(start, end)
     edges = load_foreground_timeline(helper_log) if helper_log.is_file() else []
+    pane_edges = load_pane_focus_timeline(pane_log) if pane_log and pane_log.is_file() else []
     if not edges:
         out["notes"].append(
             "no foreground edges in helper.log — chars counted but unbucketed"
+        )
+    if not pane_edges:
+        out["notes"].append(
+            "no wezterm-pane-focus.jsonl edges yet — wezterm bucket not split "
+            "(switch panes once after upgrade to start sampling)"
         )
 
     by_fg: Counter[str] = Counter()
@@ -145,7 +216,6 @@ def collect_rime_commits(
 
     for row in iter_jsonl(commit_log):
         if row.get("source") not in {None, "rime_commit"}:
-            # tolerate missing source
             if row.get("source") and row.get("source") != "rime_commit":
                 continue
         ts = parse_iso_ts(str(row.get("ts") or ""))
@@ -161,7 +231,9 @@ def collect_rime_commits(
         total_chars += chars
         local = _rime_ts_to_local_naive(ts) if ts else None
         proc = process_at(edges, local) if local else ""
-        bucket = _bucket(proc) if proc else "unknown"
+        os_bucket = _os_bucket(proc) if proc else "unknown"
+        pane = pane_at(pane_edges, local) if local else None
+        bucket = refine_bucket(os_bucket, pane)
         by_fg[bucket] += chars
         by_fg_events[bucket] += 1
 
@@ -172,10 +244,12 @@ def collect_rime_commits(
         k: {"chars": by_fg[k], "events": by_fg_events[k]}
         for k in sorted(by_fg.keys(), key=lambda x: -by_fg[x])
     }
-    out["notes"].append(
-        "PoC: OS foreground only (wezterm/code/chrome/other). "
-        "Agent-pane split inside WezTerm is not joined yet."
-    )
+    out["pane_focus_edges"] = len(pane_edges)
+    if pane_edges:
+        out["notes"].append(
+            "WezTerm bucket refined via tmux focus timeline "
+            "(wezterm.agent.* / wezterm.shell); OS FG still gates non-WezTerm apps"
+        )
     if events == 0 and commit_log.is_file():
         out["notes"].append("commit log exists but no events in window")
     return out
@@ -194,7 +268,6 @@ def resolve_default_paths() -> tuple[Path | None, Path | None]:
     if helper:
         candidates_helper.append(Path(helper))
 
-    # Common WSL mounts for this machine layout.
     home = Path.home()
     for user in ("yuns", "Yuns"):
         base = Path(f"/mnt/c/Users/{user}/AppData/Local/wezterm-runtime")
@@ -205,7 +278,6 @@ def resolve_default_paths() -> tuple[Path | None, Path | None]:
     )
 
     commit_path = next((p for p in candidates_commit if p.is_file()), None)
-    # Prefer creating path hint even if missing: first candidate under LocalAppData
     if commit_path is None:
         for p in candidates_commit:
             if "wezterm-runtime" in str(p):

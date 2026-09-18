@@ -32,13 +32,14 @@ detects install/log and runs only then; `--plugins off` disables;
 
 | Bucket | Meaning |
 | --- | --- |
-| `wezterm` | OS foreground was `wezterm-gui` |
-| `code` | VS Code |
-| `chrome` | Chromium family |
-| `other` / `unknown` | everything else / no FG edge yet |
+| `wezterm.agent.claude` / `.codex` / `.grok` | OS WezTerm + focused agent pane |
+| `wezterm.shell` | OS WezTerm + focused non-agent pane |
+| `wezterm` | OS WezTerm but no pane-focus edge yet |
+| `code` / `chrome` / `other` / `unknown` | non-WezTerm OS foreground |
 
-**Not in PoC:** whether the focused WezTerm pane is `claude`/`codex`/`grok`
-(agent foreground). That needs a WezTerm-side sample at commit time.
+Pane focus timeline: `tmux-focus-emit.sh` appends
+`<runtime>/state/wezterm-pane-focus.jsonl` on focus **change** (role + cmd
+basename only). Switch panes once after upgrade to start sampling.
 
 ## Compare with habit `typed_chars`
 
