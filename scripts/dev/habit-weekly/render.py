@@ -573,10 +573,223 @@ def render(report: dict[str, Any]) -> str:
     )
     lines.append("```")
     lines.append("")
+
+    # Closing inventory: what this report actually extracted
+    lines.extend(_render_data_inventory(report, agents, sess, waka, rime, git_churn, verify))
+
     lines.append("---")
     lines.append("*由 habit-weekly skill 根据 habit-report JSON 渲染。*")
     lines.append("")
     return "\n".join(lines)
+
+
+def _status_row(name: str, status: str, detail: str) -> str:
+    return f"| {name} | {status} | {detail} |"
+
+
+def _render_data_inventory(
+    report: dict,
+    agents: dict,
+    sess: dict,
+    waka: dict,
+    rime: dict,
+    git_churn: dict,
+    verify: dict,
+) -> list[str]:
+    """Terminal section: which signals this run actually used."""
+    lines: list[str] = []
+    lines.append("## 本次提取的数据")
+    lines.append("")
+    lines.append(
+        "本表只列**这一次报告实际采到并写入**的信号；未启用 / 窗口内无事件会标明。"
+    )
+    lines.append("")
+    lines.append("| 数据 | 状态 | 摘要 |")
+    lines.append("| --- | --- | --- |")
+
+    rows: list[tuple[str, str, str]] = []
+
+    # Window
+    win = report.get("window") or {}
+    start = win.get("start") or report.get("start")
+    end = win.get("end") or report.get("end")
+    rows.append(
+        (
+            "时间窗口",
+            "有" if start and end else "缺字段",
+            f"`{start}` → `{end}`",
+        )
+    )
+
+    # Concurrency
+    conc = report.get("concurrency") or {}
+    if conc.get("max_running") is not None or conc.get("transitions"):
+        rows.append(
+            (
+                "Agent 并发（attention.log）",
+                "有",
+                f"max_running={conc.get('max_running')} · "
+                f"transitions={conc.get('transitions')} · "
+                f"unique_sessions={conc.get('unique_running_sessions')}",
+            )
+        )
+    else:
+        rows.append(
+            (
+                "Agent 并发（attention.log）",
+                "无/失败",
+                str(conc.get("error") or "—"),
+            )
+        )
+
+    # Hotkeys
+    hk = report.get("hotkeys") or {}
+    presses = int(hk.get("total_hotkey_presses") or 0)
+    alt_l = int(hk.get("alt_l_sum") or 0)
+    if presses:
+        rows.append(
+            (
+                "热键（wezterm.log）",
+                "有",
+                f"presses={presses} · Alt+l={alt_l} · "
+                f"active_days={hk.get('active_days')}",
+            )
+        )
+    else:
+        rows.append(("热键（wezterm.log）", "窗口内无事件", "—"))
+
+    # Providers
+    by_p = agents.get("by_provider") or {}
+    for pname in ("claude", "grok", "codex"):
+        row = by_p.get(pname) or {}
+        sess_n = row.get("sessions_scanned") or 0
+        if sess_n or row.get("files_scanned"):
+            rows.append(
+                (
+                    f"Agent 转录 · {pname}",
+                    "有",
+                    f"sessions={sess_n} · files={row.get('files_scanned', 0)} · "
+                    f"skills={len(row.get('skills') or {})} · "
+                    f"cli={sum((row.get('cli') or {}).values())}",
+                )
+            )
+        else:
+            rows.append((f"Agent 转录 · {pname}", "窗口内无/未扫到", "—"))
+
+    # Session metrics
+    if sess.get("user_turns") or sess.get("sessions_timed"):
+        rows.append(
+            (
+                "会话形态（投喂/活跃时长/注入）",
+                "有",
+                f"turns={sess.get('user_turns')} · "
+                f"user_chars={sess.get('user_chars')} · "
+                f"typed={sess.get('typed_chars')} · "
+                f"注入条数={sess.get('excluded_feed_msgs')} · "
+                f"goal={sess.get('goal_completed')}",
+            )
+        )
+    else:
+        rows.append(("会话形态（投喂/活跃时长/注入）", "无", "—"))
+
+    if sess.get("injected"):
+        kinds = ", ".join(list((sess.get("injected") or {}).keys())[:6])
+        rows.append(
+            (
+                "协议/Agent 注入分型",
+                "有",
+                f"kinds={len(sess.get('injected') or {})}（{kinds}…）"
+                if len(sess.get("injected") or {}) > 6
+                else f"kinds={len(sess.get('injected') or {})}（{kinds}）",
+            )
+        )
+
+    # CDP
+    if verify.get("cdp_sessions") or verify.get("cdp_calls"):
+        rows.append(
+            (
+                "CDP verify→iterate",
+                "有",
+                f"sessions={verify.get('cdp_sessions')} · "
+                f"calls={verify.get('cdp_calls')} · "
+                f"iterate={verify.get('iterate_after_cdp')}",
+            )
+        )
+    else:
+        rows.append(("CDP verify→iterate", "窗口内无事件", "—"))
+
+    # WakaTime
+    if waka.get("ok"):
+        tot = (waka.get("totals") or {}).get("text") or waka.get("totals")
+        rows.append(("WakaTime", "有", f"total={tot}"))
+    elif waka.get("error"):
+        rows.append(("WakaTime", "失败/未配置", str(waka.get("error"))[:80]))
+    else:
+        rows.append(("WakaTime", "未请求", "—"))
+
+    # Rime plugin
+    if rime.get("commit_events"):
+        rows.append(
+            (
+                "Rime 上屏 × host.foreground",
+                "有",
+                f"events={rime.get('commit_events')} · "
+                f"chars={rime.get('commit_chars')} · "
+                f"buckets={list((rime.get('by_foreground') or {}).keys())}",
+            )
+        )
+    elif rime.get("enabled") or rime.get("available") or rime.get("detected"):
+        rows.append(
+            (
+                "Rime 上屏 × host.foreground",
+                "已启用·窗口内无事件",
+                "计数器/log 在，但本窗口无上屏记录",
+            )
+        )
+    else:
+        rows.append(("Rime 上屏 × host.foreground", "未启用", "未检测到计数器/log"))
+
+    # git churn
+    if git_churn.get("ok") and (
+        git_churn.get("commits") or git_churn.get("insertions")
+    ):
+        rows.append(
+            (
+                "git churn（多仓 numstat）",
+                "有",
+                f"commits={git_churn.get('commits')} · "
+                f"+{git_churn.get('insertions')}/−{git_churn.get('deletions')} · "
+                f"repos={git_churn.get('repos_with_activity')}/"
+                f"{git_churn.get('repos_scanned')}",
+            )
+        )
+    elif git_churn.get("ok") or git_churn.get("detected"):
+        rows.append(
+            (
+                "git churn（多仓 numstat）",
+                "已启用·窗口内无产出",
+                f"scanned={git_churn.get('repos_scanned', 0)}",
+            )
+        )
+    else:
+        rows.append(("git churn（多仓 numstat）", "未启用", "非 work 机或无配置"))
+
+    # Optional plugins inventory
+    plugins = report.get("plugins") or {}
+    if plugins:
+        rows.append(
+            (
+                "可选插件集合",
+                "有",
+                ", ".join(sorted(plugins.keys())) or "—",
+            )
+        )
+
+    for name, status, detail in rows:
+        lines.append(_status_row(name, status, detail.replace("|", "/")))
+
+    lines.append("")
+    return lines
 
 
 def main(argv: list[str] | None = None) -> int:
