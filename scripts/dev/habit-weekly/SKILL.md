@@ -4,7 +4,8 @@ description: >
   Produce a stable personal development-habit weekly report from WezDeck
   observability: pane-scoped agent concurrency, Claude/Grok/Codex skills+slash+CLI+MCP,
   CDP verify→iterate, hotkey intensity (Alt+l etc.), optional WakaTime summaries,
-  and optional push to a private habit archive repo. Use when the user says
+  and optional push to a private habit archive repo. Default window is the previous
+  complete Mon–Sun (not the in-progress week). Use when the user says
   开发习惯周报 / 习惯周报 / habit weekly / 这周热键和 agent 习惯 / 出一份习惯数据报告.
   Prefer this over ad-hoc chat analysis once habit-report exists.
 ---
@@ -20,8 +21,9 @@ description: >
 
 | 用户意图 | 你做 |
 | --- | --- |
-| 开发习惯周报 / 习惯周报 / habit weekly | `run.sh`（默认本周迄今；默认含 WakaTime） |
-| 上周习惯 / last week | `run.sh --week last` |
+| 开发习惯周报 / 习惯周报 / habit weekly | `run.sh`（**默认上一完整 Mon–Sun**；默认含 WakaTime） |
+| 上周习惯 / last week | `run.sh` 或 `run.sh --week last`（与默认相同） |
+| 本周迄今 / this week | `run.sh --week this`（Mon→today，未完结周） |
 | 自定义区间 | `run.sh --since YYYY-MM-DD --until YYYY-MM-DD` |
 | 只要原始 JSON | `run.sh --json-only` |
 | 落盘归档（本机） | `run.sh --write`（再 `--stdout` 可同时打印正文） |
@@ -56,17 +58,21 @@ Install / refresh discovery:
 
 ## Agent procedure
 
-1. **定窗口**（用户没说则默认本周迄今 Mon→today）：
-   - 本周 → `--week this`
-   - 上周完整 Mon–Sun → `--week last`
-   - 点名日期 → `--since` / `--until`
+1. **定窗口**（用户没说则默认**上一完整 Mon–Sun**；未完结周须显式 `--week this`）：
+   - 默认 / 上周完整周 → 不传或 `--week last`
+   - 本周迄今（未完结）→ `--week this`
+   - 点名日期 → `--since` / `--until`，或 `--week YYYY-MM-DD`（取该日所在周 Mon–Sun）
 2. **跑收集 + 渲染**（优先 `--write` 落盘；用户要远端归档时再加 `--push`）：
    ```bash
-   "$R" --week this --write
+   "$R" --write --push
    ```
-   或：
+   仅本机落盘：
    ```bash
-   "$R" --week last --write --push
+   "$R" --write
+   ```
+   未完结本周（少用）：
+   ```bash
+   "$R" --week this --write
    ```
 3. **读** `references/REPORT_STYLE.md`，核对渲染稿是否需补一句人话结论（数字已被模板写好；只在环路归纳与分工上可加 1–2 句，**禁止改数字**）。
 4. **汇报**：把 markdown 正文（或落盘路径 + 摘要）用简体中文交给用户。披露数据窗口、`max_running` 口径（pane+TTL）、WakaTime 是否成功。
@@ -89,7 +95,7 @@ Install / refresh discovery:
 
 | Flag | 作用 |
 | --- | --- |
-| `--week this\|last\|DATE` | 周窗口；DATE 取其所在周 Mon–Sun |
+| `--week this\|last\|DATE` | 默认 `last`（完整 Mon–Sun）；`this`=Mon→today；DATE 取其所在周 Mon–Sun |
 | `--since` / `--until` | 显式闭区间（优先于 `--week`） |
 | `--providers csv` | 默认 `claude,grok,codex` |
 | `--wakatime` / `--no-wakatime` | 默认开；关则跳过 WakaTime |

@@ -299,14 +299,14 @@ scripts/dev/habit-report.sh --paths
 
 **Weekly write-up (stable template):** platform skill
 [`scripts/dev/habit-weekly/`](../scripts/dev/habit-weekly/) — agent loads
-`habit-weekly` and runs `run.sh` (default: this week Mon→today; `--week last`
-for the previous Mon–Sun; WakaTime on by default; `--write` archives under
-`$WSL_WORKFLOW_DIR/habit-weekly/`; **`--push`** copies into the private habit
-archive repo configured by `~/.config/habit-weekly/state.json` /
-`HABIT_WEEKLY_ARCHIVE_*` and commits — push is explicit, never implied by
-`--write` alone). Default archive target: `yunsii/wezdeck-habit-weekly`
-(`reports/YYYY/`). Do not confuse with `coco-weekly-report`
-(business delivery / Feishu). Link discovery:
+`habit-weekly` and runs `run.sh` (default: **previous complete Mon–Sun**;
+`--week this` for the in-progress week Mon→today; WakaTime on by default;
+`--write` archives under `$WSL_WORKFLOW_DIR/habit-weekly/`; **`--push`**
+copies into the private habit archive repo configured by
+`~/.config/habit-weekly/state.json` / `HABIT_WEEKLY_ARCHIVE_*` and commits —
+push is explicit, never implied by `--write` alone). Default archive target:
+`yunsii/wezdeck-habit-weekly` (`reports/YYYY/`). Do not confuse with
+`coco-weekly-report` (business delivery / Feishu). Link discovery:
 `scripts/dev/link-platform-skills.sh`.
 
 Caveats: Claude transcripts age out with `cleanupPeriodDays` (default 30);

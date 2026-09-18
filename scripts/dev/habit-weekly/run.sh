@@ -2,8 +2,9 @@
 # Collect habit-report JSON for a week window and render a stable markdown report.
 #
 # Examples:
-#   run.sh                         # this week so far (Mon → today)
-#   run.sh --week last             # previous Mon–Sun
+#   run.sh                         # previous complete Mon–Sun (default)
+#   run.sh --week this             # current week so far (Mon → today)
+#   run.sh --week last             # same as default: previous Mon–Sun
 #   run.sh --since 2026-09-11 --until 2026-09-17
 #   run.sh --write                 # also save under state/workflow/habit-weekly/
 #   run.sh --write --push          # local write + push to habit archive repo
@@ -30,7 +31,8 @@ if declare -F runtime_env_load_managed >/dev/null 2>&1; then
   runtime_env_load_managed
 fi
 
-week='this'
+# Default: last complete Mon–Sun. In-progress weeks need an explicit --week this.
+week='last'
 since=''
 until=''
 write=0
