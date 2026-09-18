@@ -24,3 +24,6 @@ openclaw/workspace/tmp/
 openclaw/workspace/smoke-ok.txt
 openclaw/workspace/**/smoke-ok.txt
 openclaw/workspace/**/marker.txt
+
+# habit_report optional NLP venv
+scripts/dev/habit_report/.venv/

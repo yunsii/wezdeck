@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "top_n": 40,
+  "min_len": 2,
+  "min_count": 2,
+  "allow_pos": ["n", "nr", "ns", "nt", "nz", "v", "vn", "eng"],
+  "extra_stopwords": [],
+  "synonyms": {
+    "部署": ["上线", "发布", "release", "deploy", "deployment"],
+    "提交": ["commit", "push", "交上去"],
+    "修复": ["fix", "修好", "修一下", "修了", "bugfix"],
+    "审查": ["review", "审一下", "code-review", "对抗审查"],
+    "回滚": ["rollback", "revert"],
+    "配置": ["config", "设置"],
+    "热键": ["快捷键", "hotkey", "keybinding"],
+    "工作区": ["workspace", "仓", "仓库"],
+    "文档": ["docs", "readme", "说明"],
+    "测试": ["test", "单测", "冒烟"],
+    "周报": ["weekly", "habit-weekly", "习惯周报"]
+  }
+}

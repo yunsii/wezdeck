@@ -11,6 +11,8 @@ from collections import Counter
 from datetime import datetime
 from typing import Any
 
+from .keywords import accumulate_keywords, summarize_keywords
+
 # Cap each inter-message gap so overnight AFK does not inflate "active" time.
 ACTIVE_GAP_CAP_S = 15 * 60
 # Idle longer than this starts a new work segment (resume / next-day continue).
@@ -52,6 +54,7 @@ def empty_session_acc() -> dict[str, Any]:
         "goal_elapsed_ms_list": [],
         "rewrites": Counter({"once": 0, "twice": 0, "thrice_plus": 0}),
         "tool_route": Counter(),
+        "keywords": Counter(),
     }
 
 
@@ -218,6 +221,9 @@ def record_user_message(acc: dict[str, Any], text: str, *, images: int = 0) -> N
     # URLs from cleaned feed only (not skill dumps / envelopes).
     acc["urls"] += count_urls(cleaned)
     acc["images"] += images
+    if cleaned:
+        # Prefer non-fenced text so pasted code does not dominate keyword stats.
+        accumulate_keywords(acc, _CODE_FENCE_RE.sub(" ", cleaned))
 
 
 def record_session_flags(
@@ -356,6 +362,9 @@ def summarize_session(acc: dict[str, Any]) -> dict[str, Any]:
         "goal_elapsed_minutes_list": [round(ms / 60000.0, 1) for ms in goal_sorted],
         "rewrites": rewrites_d,
         "tool_route": route_d,
+        "keywords": summarize_keywords(acc)
+        if acc.get("keywords")
+        else {"top": [], "engine": "none", "unique": 0, "kept_unique": 0},
         "notes": [
             "active_minutes = sum of inter-message gaps capped at 15m; "
             "segments split on >2h idle (resume/multi-day continue)",
@@ -363,7 +372,7 @@ def summarize_session(acc: dict[str, Any]) -> dict[str, Any]:
             "goal_elapsed_* from goal_updated.elapsed_ms on goal_completed only",
             "user_chars = human feed (typed+paste); typed_chars omits ``` fences; "
             "injected.* = protocol/agent rows on the user channel (per kind); "
-            "compare by_provider.session.injected across agents",
+            "keywords = jieba+stopwords+synonyms over cleaned feed (counts only)",
         ],
     }
 
@@ -403,6 +412,26 @@ def merge_session_summaries(rows: list[dict[str, Any]]) -> dict[str, Any]:
             acc["injected_chars"][kind] += int(meta.get("chars") or 0)
         for k, v in (row.get("tool_route") or {}).items():
             acc["tool_route"][k] += int(v)
+        kw = row.get("keywords") or {}
+        if isinstance(kw, dict):
+            counts = kw.get("counts")
+            if isinstance(counts, dict) and counts:
+                for term, cnt in counts.items():
+                    try:
+                        acc["keywords"][str(term)] += int(cnt)
+                    except (TypeError, ValueError):
+                        continue
+            else:
+                for item in kw.get("top") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    term = str(item.get("term") or "")
+                    try:
+                        cnt = int(item.get("count") or 0)
+                    except (TypeError, ValueError):
+                        continue
+                    if term and cnt:
+                        acc["keywords"][term] += cnt
         # Reconstruct approximate lists from totals is lossy for percentiles.
         # Prefer provider-exported raw lists when present.
         for val in row.get("active_minutes_list") or []:

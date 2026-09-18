@@ -314,6 +314,32 @@ def render(report: dict[str, Any]) -> str:
             )
             lines.append("")
 
+        kw = sess.get("keywords") or {}
+        kw_top = kw.get("top") if isinstance(kw, dict) else None
+        if kw_top:
+            lines.append('<a id="sec-keywords"></a>')
+            lines.append("### 常用关键词（去助词 · 同义合并）")
+            lines.append("")
+            lines.append(
+                f"_引擎 `{kw.get('engine')}` · 词种 {kw.get('unique')} → "
+                f"保留 {kw.get('kept_unique')}（min_count）_"
+            )
+            lines.append("")
+            lines.append("| 次数 | 词 |")
+            lines.append("| ---: | --- |")
+            for item in kw_top[:30]:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"| {item.get('count', 0)} | `{item.get('term')}` |"
+                )
+            lines.append("")
+            lines.append(
+                "_来源：清洗后的用户投喂（已排除协议注入）；"
+                "同义词见 `~/.config/habit-weekly/keywords.json`。_"
+            )
+            lines.append("")
+
         # Protocol / agent injections on the user channel — per agent.
         inj = sess.get("injected") or {}
         if inj or any(
@@ -653,6 +679,14 @@ def _render_key_metrics(
         if sess.get("goal_completed"):
             parts.append(f"goal **{sess.get('goal_completed')}**")
         row("会话形态", " · ".join(parts) if parts else "有", "sec-session")
+        kw_top = ((sess.get("keywords") or {}).get("top") or [])[:3]
+        if kw_top:
+            preview = "、".join(
+                f"{x.get('term')}×{x.get('count')}"
+                for x in kw_top
+                if isinstance(x, dict)
+            )
+            row("常用关键词", preview or "有", "sec-keywords")
 
     if git_churn.get("ok") and (
         git_churn.get("commits") or git_churn.get("insertions")
@@ -810,6 +844,23 @@ def _render_data_inventory(
                 else f"kinds={len(sess.get('injected') or {})}（{kinds}）",
             )
         )
+
+    kw = sess.get("keywords") or {}
+    if isinstance(kw, dict) and kw.get("top"):
+        top3 = ", ".join(
+            f"{x.get('term')}×{x.get('count')}"
+            for x in (kw.get("top") or [])[:5]
+            if isinstance(x, dict)
+        )
+        rows.append(
+            (
+                "常用关键词（jieba+停用词+同义）",
+                "有",
+                f"engine={kw.get('engine')} · unique={kw.get('unique')} · top={top3}",
+            )
+        )
+    else:
+        rows.append(("常用关键词（jieba+停用词+同义）", "无/未产出", "—"))
 
     # CDP
     if verify.get("cdp_sessions") or verify.get("cdp_calls"):
