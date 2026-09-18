@@ -263,12 +263,15 @@ complementary to the workflow timeline (day *loop* reconstruction).
     occupancy is only emitted as `raw_sid_max_running` (diagnostic): sids that
     never got `done` otherwise accumulate across days and inflate the peak.
   - Skills / MCP / CLI — per-provider collectors into one schema
-    (`skills`, `mcp`, `cli`, `tools`, `verify`):
+    (`skills`, `mcp`, `cli`, `tools`, `verify`, `session`):
     | Provider | Source (current) |
     | --- | --- |
-    | Claude | `~/.claude/projects/**/<session>.jsonl` — `tool_use` (`Skill`, `mcp__…`, `Bash`) |
-    | Grok | `~/.grok/sessions/**/updates.jsonl` (+ `events.jsonl`); `GROK_HOME` relocates |
-    | Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` — `function_call` (not `history.jsonl`) |
+    | Claude | `~/.claude/projects/**/<session>.jsonl` — `tool_use` (`Skill`, `mcp__…`, `Bash`) **plus** user slash (`<command-name>`, `<forked-skill-launch>` for `/code-review` / `/goal` 类); session = turns/chars/images/urls + active-time/segments + Edit/Write rewrites |
+    | Grok | `~/.grok/sessions/<cwd>/<session-id>/` updates+chat_history+events; slash via cwd-level `prompt_history.jsonl` (counts only — **not** for duration); `/goal` duration from `goal_updated.elapsed_ms` |
+    | Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` — `function_call` (not `history.jsonl`); includes `.codex/skills/.system/<name>/SKILL.md` loads; light session timing from timestamps |
+  - Session duration: **active minutes** (inter-message gaps capped at 15m) + **segments** (split on >2h idle). Wall-clock first→last is diagnostic only (resume / multi-day continue inflate it). `/goal` uses harness `elapsed_ms`, not session wall clock.
+  - User feed: `user_chars` = human typed+paste; `typed_chars` / `paste_chars` split on ``` fences. Protocol/agent rows on the user channel go to `session.injected` **per kind**, and **per provider** under `by_provider.*.session.injected` (Skill body, system-reminder subtypes, compact continuation, task-notification, harness role, user_info envelope).
+  - Optional collectors (`habit_report/plugins/`): **auto-detect**. Rime plugin enables when `wezdeck_commit_counter.lua` is installed or `rime-commits.jsonl` exists; `--plugins auto|off|all|rime`. Payload under `plugins.rime` (alias `rime_commits`). Join with `helper.log` `host.foreground` → `by_foreground` (`wezterm`/`code`/`chrome`/`other`). No commit text. Agent-pane split TBD. Install: [`scripts/dev/rime-commit-counter/`](../scripts/dev/rime-commit-counter/).
   - CDP verify→iterate — same-session heuristic after `chrome-devtools` /
     skill / MCP within ≤60 minutes.
 - **Secondary:** WezTerm hotkey `pressed` rows + `hotkey-usage.json` intensity.
@@ -305,8 +308,10 @@ archive repo configured by `~/.config/habit-weekly/state.json` /
 
 Caveats: Claude transcripts age out with `cleanupPeriodDays` (default 30);
 Codex may leave `rollout-*.jsonl.zst` siblings (skipped until decompressed);
-Grok skill counts prefer `SKILL.md` reads / explicit loads — do not scrape
-system skill catalogs from chat prompts; WakaTime heartbeats ≠ pane concurrency.
+Grok skill counts prefer `SKILL.md` reads / `prompt_history` slash — do not
+scrape system skill catalogs from chat prompts; session chrome slashes
+(`/clear`, `/new`, `/home`, …) are filtered out of skill totals; WakaTime
+heartbeats ≠ pane concurrency.
 
 ## Workflow timeline
 

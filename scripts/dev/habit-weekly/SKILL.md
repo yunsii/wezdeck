@@ -2,7 +2,7 @@
 name: habit-weekly
 description: >
   Produce a stable personal development-habit weekly report from WezDeck
-  observability: pane-scoped agent concurrency, Claude/Grok/Codex skills+CLI+MCP,
+  observability: pane-scoped agent concurrency, Claude/Grok/Codex skills+slash+CLI+MCP,
   CDP verify→iterate, hotkey intensity (Alt+l etc.), optional WakaTime summaries,
   and optional push to a private habit archive repo. Use when the user says
   开发习惯周报 / 习惯周报 / habit weekly / 这周热键和 agent 习惯 / 出一份习惯数据报告.

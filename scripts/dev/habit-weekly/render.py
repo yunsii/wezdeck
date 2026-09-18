@@ -44,6 +44,7 @@ def render(report: dict[str, Any]) -> str:
     mcp = _top(agents.get("mcp"), 6)
     verify = agents.get("verify") or {}
     by_p = agents.get("by_provider") or {}
+    sess = agents.get("session") or {}
 
     alt_sum = int(hk.get("alt_l_sum") or 0)
     presses = int(hk.get("total_hotkey_presses") or 0)
@@ -58,10 +59,12 @@ def render(report: dict[str, Any]) -> str:
     waka = report.get("wakatime") or {}
     waka_ok = bool(waka.get("ok"))
     waka_total = ((waka.get("totals") or {}).get("text") if waka_ok else "") or ""
+    rime = (report.get("plugins") or {}).get("rime") or report.get("rime_commits") or {}
 
     # One-line BLUF
     cli0 = cli[0][0] if cli else "（无 CLI 信号）"
     skill0 = _skill_label(skills[0][0]) if skills else "（无 skill 信号）"
+    active_p50 = sess.get("active_minutes_p50")
     bluf_parts = [
         f"本周开发形态：多路 Agent 并行峰值 **{max_r}** 个 pane",
         f"热键以 **Alt+l** 巡检为主（{alt_sum}/{presses}，{alt_pct}%）",
@@ -69,6 +72,13 @@ def render(report: dict[str, Any]) -> str:
     ]
     if waka_ok and waka_total:
         bluf_parts.insert(1, f"WakaTime 合计 **{waka_total}**")
+    if active_p50 is not None:
+        bluf_parts.append(f"会话活跃时长中位 **{active_p50}** 分钟（非墙钟）")
+    if sess.get("goal_completed"):
+        bluf_parts.append(
+            f"/goal 完成 **{sess.get('goal_completed')}** 次"
+            f"（工期中位 {sess.get('goal_elapsed_minutes_p50')} 分钟）"
+        )
     bluf = "；".join(bluf_parts) + "。"
 
     lines: list[str] = []
@@ -183,6 +193,193 @@ def render(report: dict[str, Any]) -> str:
         lines.append("**状态边 by provider：**")
         for k, v in sorted(edges.items(), key=lambda kv: -int(kv[1])):
             lines.append(f"- {k}: {v}（{100 * int(v) / total_e:.0f}%）")
+        lines.append("")
+
+    # Session shape (active time / feed / media / goal)
+    if sess.get("sessions_timed") or sess.get("user_turns") or sess.get("goal_completed"):
+        lines.append("## 会话形态（活跃时长 / 投喂 / Goal）")
+        lines.append("")
+        lines.append(
+            "持续时间用 **活跃时长**（消息间隔封顶 15 分钟）与 **工作片段**"
+            "（空闲 >2 小时切开）；**不用**首末墙钟（resume / 多日续聊会虚高）。"
+            "`/goal` 单独用 harness `elapsed_ms`。"
+        )
+        lines.append("")
+        lines.append("| 指标 | 数值 |")
+        lines.append("| --- | ---: |")
+        lines.append(f"| user 轮次（已排除协议注入） | {sess.get('user_turns', 0)} |")
+        lines.append(f"| user 字符合计 | {sess.get('user_chars', 0)} |")
+        lines.append(
+            f"| 其中约手写 / 代码围栏粘贴 | "
+            f"{sess.get('typed_chars', 0)} / {sess.get('paste_chars', 0)} |"
+        )
+        excl_c = int(sess.get("excluded_feed_chars") or 0)
+        excl_m = int(sess.get("excluded_feed_msgs") or 0)
+        if excl_c or excl_m:
+            lines.append(
+                f"| 协议/Agent 注入合计（已从投喂剔除） | {excl_m} 条 / {excl_c} 字符 |"
+            )
+        lines.append(
+            f"| 活跃时长合计 / P50 / P90（分钟） | "
+            f"{sess.get('active_minutes_total')} / "
+            f"{sess.get('active_minutes_p50')} / "
+            f"{sess.get('active_minutes_p90')} |"
+        )
+        lines.append(
+            f"| 墙钟 P50 / P90（诊断，勿当主指标） | "
+            f"{sess.get('wall_minutes_p50_diag')} / "
+            f"{sess.get('wall_minutes_p90_diag')} |"
+        )
+        lines.append(
+            f"| 工作片段合计 · 多片段会话 | "
+            f"{sess.get('segments_total')} · "
+            f"{sess.get('multi_segment_sessions')} |"
+        )
+        lines.append(
+            f"| 截图 · 含图会话 | "
+            f"{sess.get('images', 0)} · {sess.get('sessions_with_image', 0)} |"
+        )
+        lines.append(
+            f"| 链接 · 含链会话 | "
+            f"{sess.get('urls', 0)} · {sess.get('sessions_with_url', 0)} |"
+        )
+        lines.append(f"| 超长粘贴条数（≥10k 字） | {sess.get('long_paste_msgs', 0)} |")
+        lines.append("")
+        buckets = sess.get("char_buckets") or {}
+        if buckets:
+            label = {
+                "lt_200": "<200",
+                "200_2k": "200–2k",
+                "2k_10k": "2k–10k",
+                "gt_10k": ">10k",
+            }
+            lines.append(
+                "**投喂分桶：** "
+                + " · ".join(
+                    f"{label.get(k, k)}={v}"
+                    for k, v in sorted(buckets.items(), key=lambda kv: kv[0])
+                )
+            )
+            lines.append("")
+        if sess.get("goal_completed"):
+            glist = sess.get("goal_elapsed_minutes_list") or []
+            lines.append(
+                f"**Goal：** 完成 **{sess.get('goal_completed')}** 次；"
+                f"工期合计 **{sess.get('goal_elapsed_minutes_total')}** 分钟；"
+                f"中位 **{sess.get('goal_elapsed_minutes_p50')}** 分钟"
+                + (f"；明细 {glist}" if glist else "")
+            )
+            lines.append("")
+        rewrites = sess.get("rewrites") or {}
+        if any(int(v or 0) for v in rewrites.values()):
+            lines.append(
+                "**同文件改写分布：** "
+                + " · ".join(
+                    f"{k}={v}"
+                    for k, v in (
+                        ("一次成稿", rewrites.get("once", 0)),
+                        ("改 2 次", rewrites.get("twice", 0)),
+                        ("改 3+ 次", rewrites.get("thrice_plus", 0)),
+                    )
+                )
+            )
+            lines.append("")
+        route = sess.get("tool_route") or {}
+        if route:
+            lines.append(
+                "**工具路由：** "
+                + " · ".join(f"`{k}`={v}" for k, v in list(route.items())[:8])
+            )
+            lines.append("")
+
+        # Protocol / agent injections on the user channel — per agent.
+        inj = sess.get("injected") or {}
+        if inj or any(
+            (row.get("session") or {}).get("injected")
+            for row in by_p.values()
+            if isinstance(row, dict)
+        ):
+            lines.append("### User 通道上的协议/Agent 注入（按端）")
+            lines.append("")
+            lines.append(
+                "这些内容出现在 user 角色里，但不是人的投喂；"
+                "已从上方字数剔除。按 agent 对照可看谁在用户输入层灌了什么，"
+                "方便复盘「输入侧」可优化点（少刷屏、少续写摘要、少 task 通知等）。"
+            )
+            lines.append("")
+            lines.append("| Agent | 类型 | 条数 | 字符 |")
+            lines.append("| --- | --- | ---: | ---: |")
+            # Per-provider rows first (what the user asked for).
+            for pname in ("claude", "grok", "codex"):
+                row = by_p.get(pname) or {}
+                pinj = (row.get("session") or {}).get("injected") or {}
+                if not pinj:
+                    continue
+                for kind, meta in pinj.items():
+                    if not isinstance(meta, dict):
+                        continue
+                    label = meta.get("label") or kind
+                    lines.append(
+                        f"| {pname} | {label} | "
+                        f"{meta.get('msgs', 0)} | {meta.get('chars', 0)} |"
+                    )
+            # Also list any other providers present.
+            for pname, row in by_p.items():
+                if pname in ("claude", "grok", "codex"):
+                    continue
+                pinj = (row.get("session") or {}).get("injected") or {}
+                for kind, meta in (pinj or {}).items():
+                    if not isinstance(meta, dict):
+                        continue
+                    label = meta.get("label") or kind
+                    lines.append(
+                        f"| {pname} | {label} | "
+                        f"{meta.get('msgs', 0)} | {meta.get('chars', 0)} |"
+                    )
+            lines.append("")
+            if inj:
+                lines.append(
+                    "**合并 Top：** "
+                    + " · ".join(
+                        f"{(meta.get('label') or kind)} "
+                        f"{meta.get('chars', 0)}字/{meta.get('msgs', 0)}条"
+                        for kind, meta in list(inj.items())[:6]
+                        if isinstance(meta, dict)
+                    )
+                )
+                lines.append("")
+
+    # Rime × foreground (optional plugin, auto-detect)
+    if rime.get("commit_events") or rime.get("enabled") or rime.get("available"):
+        lines.append("## Rime 上屏 × 前台进程（可选插件）")
+        lines.append("")
+        lines.append(
+            f"上屏事件 **{rime.get('commit_events', 0)}** · "
+            f"字数 **{rime.get('commit_chars', 0)}**"
+            "（只记字数，不落正文；与会话 `typed_chars` 对照）。"
+        )
+        lines.append("")
+        by_fg = rime.get("by_foreground") or {}
+        if by_fg:
+            lines.append("| 前台进程桶 | 上屏字数 | 事件 |")
+            lines.append("| --- | ---: | ---: |")
+            for name, meta in by_fg.items():
+                if not isinstance(meta, dict):
+                    continue
+                lines.append(
+                    f"| `{name}` | {meta.get('chars', 0)} | {meta.get('events', 0)} |"
+                )
+            lines.append("")
+        typed = int(sess.get("typed_chars") or 0)
+        rime_chars = int(rime.get("commit_chars") or 0)
+        if typed or rime_chars:
+            lines.append(
+                f"**对照会话投喂：** typed_chars={typed} · "
+                f"rime_commit_chars={rime_chars}"
+            )
+            lines.append("")
+        for note in rime.get("notes") or []:
+            lines.append(f"- _{note}_")
         lines.append("")
 
     # Skills / CLI
@@ -302,12 +499,20 @@ def render(report: dict[str, Any]) -> str:
     lines.append("")
     lines.append("- 并发：pane + 30m TTL；`raw_sid_max` 仅诊断")
     lines.append("- `avg_running` 含夜间空闲，看 daily_max / 忙日 Alt+l 更有用")
+    lines.append(
+        "- 会话时长：活跃时长（间隔封顶 15m）+ 片段（>2h 切开）；"
+        "墙钟仅诊断；`/goal` 用 goal_updated.elapsed_ms"
+    )
     lines.append("- Skill `路径推断` 可能与显式 Skill 工具略有重叠")
     lines.append("- Claude transcript 默认约 30 天清理；Codex `.jsonl.zst` 可能跳过")
     lines.append("- CDP→iterate 为同会话 ≤60m 启发式")
     lines.append(
         "- WakaTime 为编辑器心跳汇总，与 WezDeck Agent/热键口径不同；"
         "无 key 时本段降级，不阻断整报"
+    )
+    lines.append(
+        "- Rime 上屏字数 × host.foreground：只记字数/进程名，不落正文；"
+        "PoC 仅分 wezterm/code/chrome/other，WezTerm 内 agent pane 尚未对齐"
     )
     lines.append("")
 

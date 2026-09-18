@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 
@@ -26,6 +27,13 @@ from ..common import (
     skill_from_path,
 )
 from ..schema import ProviderMetrics, empty_metrics
+from ..session import (
+    count_urls,
+    record_rewrites,
+    record_session_flags,
+    record_timing,
+    record_user_message,
+)
 
 
 def _codex_home() -> Path:
@@ -68,6 +76,10 @@ def collect(
             # keep full stem as session key; also try uuid suffix
             sid = path.stem
         sessions.add(sid)
+        file_ts: list[datetime] = []
+        file_edits: Counter[str] = Counter()
+        had_url = False
+        saw = False
 
         for row in iter_jsonl(path):
             ts = parse_iso_ts(str(row.get("timestamp") or ""))
@@ -77,11 +89,28 @@ def collect(
                 pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
                 sessions.add(str(pl.get("session_id") or pl.get("id") or sid))
                 continue
+            if row.get("type") == "event_msg":
+                pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+                if pl.get("type") == "user_message":
+                    msg = str(pl.get("message") or "")
+                    # Skip long untrusted-transcript wrappers used by review agents.
+                    if msg.startswith("The following is the Codex agent history"):
+                        continue
+                    if ts:
+                        file_ts.append(ts)
+                        saw = True
+                    record_user_message(m.session, msg, images=0)
+                    if count_urls(msg):
+                        had_url = True
+                continue
             if row.get("type") != "response_item":
                 continue
             pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
             if pl.get("type") != "function_call":
                 continue
+            if ts:
+                file_ts.append(ts)
+                saw = True
             name = str(pl.get("name") or "?")
             m.tools[name] += 1
             args = pl.get("arguments")
@@ -98,12 +127,17 @@ def collect(
                 server, full = mcp
                 m.mcp[server] += 1
                 m.mcp[full] += 1
+                m.session["tool_route"]["mcp_native"] += 1
 
             # Common Codex shell tool
             cmd = str(args.get("cmd") or args.get("command") or "")
             cmd_labels: list[str] = []
             if name in {"exec_command", "shell_command", "Bash", "shell"} or cmd:
                 cmd_labels = classify_command(cmd)
+                if "uxc" in cmd_labels:
+                    m.session["tool_route"]["uxc"] += 1
+                else:
+                    m.session["tool_route"]["bash"] += 1
                 for label in cmd_labels:
                     m.cli[label] += 1
                     if label == "chrome-devtools":
@@ -114,13 +148,22 @@ def collect(
                         m.verify["cdp_calls"] += 1
                 sk = skill_from_path(cmd)
                 if sk:
-                    m.skills[f"path:{sk}"] += 1
+                    # Reading SKILL.md (agents/skills, .system, scripts/dev, …) is a skill load.
+                    cmd_norm = cmd.replace("\\", "/")
+                    if "SKILL.md" in cmd_norm:
+                        m.skills[sk] += 1
+                    else:
+                        m.skills[f"path:{sk}"] += 1
                     if "chrome-devtools" in sk or sk == "chrome-devtools-mcp-skill":
                         cdp_sessions.add(sid)
                         pending_iterate.add(sid)
                         if ts:
                             last_cdp_ts[sid] = ts
                         m.verify["cdp_calls"] += 1
+            elif name == "apply_patch":
+                m.session["tool_route"]["edit_write"] += 1
+            else:
+                m.session["tool_route"]["other"] += 1
 
             # Named skill-ish tools
             if "skill" in name.lower():
@@ -138,6 +181,12 @@ def collect(
                         m.verify["iterate_after_cdp"] += 1
                         pending_iterate.discard(sid)
 
+        if saw:
+            record_timing(m.session, file_ts)
+            record_session_flags(m.session, had_image=False, had_url=had_url)
+            if file_edits:
+                record_rewrites(m.session, file_edits)
+
     for _ in base.rglob("rollout-*.jsonl.zst"):
         zst_seen += 1
     if zst_seen:
@@ -151,6 +200,6 @@ def collect(
     m.verify["iterate_sessions"] = len(iterate_sessions)
     m.notes.append(
         "source= $CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl "
-        "(not history.jsonl); function_call.exec_command → CLI classify"
+        "(not history.jsonl); exec_command → CLI + skills/.system SKILL.md loads"
     )
     return m

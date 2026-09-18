@@ -6,15 +6,18 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
+from .session import empty_session_acc, merge_session_summaries, summarize_session
+
 
 @dataclass
 class ProviderMetrics:
     """Cross-provider habit signals.
 
-    skills: Skill tool / SKILL.md loads (name → count)
+    skills: Skill tool / SKILL.md loads / user slash·forked invokes (name → count)
     mcp:    MCP server or mcp__server__tool ids
     cli:    high-level CLIs (coco-cli, lark-cli, uxc, chrome-devtools, …)
     tools:  native agent tools (Bash, read_file, exec_command, …)
+    session: accumulator for turns / active time / feed / media / goal / rewrites
     """
 
     provider: str
@@ -26,6 +29,7 @@ class ProviderMetrics:
     tools: Counter[str] = field(default_factory=Counter)
     verify: Counter[str] = field(default_factory=Counter)
     # verify keys: cdp_sessions, cdp_calls, iterate_after_cdp
+    session: dict[str, Any] = field(default_factory=empty_session_acc)
     notes: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
@@ -39,6 +43,7 @@ class ProviderMetrics:
             "cli": dict(self.cli.most_common()),
             "tools": dict(self.tools.most_common()),
             "verify": dict(self.verify),
+            "session": summarize_session(self.session),
             "notes": list(self.notes),
             "errors": list(self.errors),
         }
@@ -55,13 +60,16 @@ def merge_metrics(rows: list[ProviderMetrics]) -> dict[str, Any]:
     tools: Counter[str] = Counter()
     verify: Counter[str] = Counter()
     by_provider: dict[str, Any] = {}
+    session_rows: list[dict[str, Any]] = []
     for row in rows:
-        by_provider[row.provider] = row.to_dict()
+        as_dict = row.to_dict()
+        by_provider[row.provider] = as_dict
         skills.update(row.skills)
         mcp.update(row.mcp)
         cli.update(row.cli)
         tools.update(row.tools)
         verify.update(row.verify)
+        session_rows.append(as_dict.get("session") or {})
     return {
         "by_provider": by_provider,
         "skills": dict(skills.most_common()),
@@ -69,4 +77,5 @@ def merge_metrics(rows: list[ProviderMetrics]) -> dict[str, Any]:
         "cli": dict(cli.most_common()),
         "tools": dict(tools.most_common()),
         "verify": dict(verify),
+        "session": merge_session_summaries(session_rows),
     }

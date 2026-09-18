@@ -25,12 +25,79 @@ _CLI_RULES: list[tuple[re.Pattern[str], str]] = [
     ),
 ]
 
+# Match SKILL.md under agent skill roots (incl. Codex `.system/`), platform
+# `scripts/dev/<skill>/`, generic `skills/<skill>/`, or trailing `/<skill>/SKILL.md`.
 _SKILL_PATH_RE = re.compile(
-    r"(?:^|/)(?:\.agents|\.claude|\.grok|\.codex|skills)/skills/"
+    r"(?:^|/)(?:\.agents|\.claude|\.grok|\.codex)/skills/(?:\.system/)?"
     r"([A-Za-z0-9_-]+)/SKILL\.md\b|"
-    r"(?:^|/)skills/([A-Za-z0-9_-]+)/SKILL\.md\b"
+    r"(?:^|/)(?:skills|scripts/dev)/([A-Za-z0-9_-]+)/SKILL\.md\b|"
+    r"(?:^|/)([A-Za-z0-9_-]+)/SKILL\.md\b"
 )
 _MCP_TOOL_RE = re.compile(r"^mcp__([A-Za-z0-9_-]+)__([A-Za-z0-9_-]+)$")
+
+# Leading `/name` in a user prompt (slash command / user-invocable skill).
+_SLASH_PROMPT_RE = re.compile(r"^\s*/([A-Za-z][A-Za-z0-9_:-]{0,64})\b")
+# Claude Code embeds slash invokes as <command-name>/foo</command-name>.
+_CLAUDE_COMMAND_NAME_RE = re.compile(
+    r"<command-name>\s*/?([A-Za-z][A-Za-z0-9_:-]{0,64})\s*</command-name>",
+    re.IGNORECASE,
+)
+_CLAUDE_FORKED_SKILL_RE = re.compile(
+    r"<forked-skill-launch>\s*(\{.*?\})\s*</forked-skill-launch>",
+    re.DOTALL,
+)
+
+# Session chrome / pager builtins — not habit "tools". Keep skill-like
+# user invokes (goal, code-review, coco-*, human-run, …) out of this set.
+_SLASH_CHROME = frozenset(
+    {
+        "agents-dashboard",
+        "bug",
+        "btw",
+        "clear",
+        "compact",
+        "config",
+        "context",
+        "copy",
+        "cost",
+        "dashboard",
+        "doctor",
+        "effort",
+        "exit",
+        "export",
+        "fork",
+        "help",
+        "home",
+        "info",
+        "init",
+        "issue",
+        "keybindings",
+        "login",
+        "logout",
+        "mcp",
+        "memory",
+        "migrate",
+        "model",
+        "new",
+        "permissions",
+        "plugin",
+        "plugins",
+        "quit",
+        "reload",
+        "resume",
+        "rewind",
+        "session-info",
+        "sessions",
+        "settings",
+        "status",
+        "theme",
+        "todos",
+        "undo",
+        "vim",
+        "vim-mode",
+        "welcome",
+    }
+)
 
 
 def parse_iso_ts(ts: str | None) -> datetime | None:
@@ -87,7 +154,56 @@ def skill_from_path(path: str) -> str | None:
     m = _SKILL_PATH_RE.search(path.replace("\\", "/"))
     if not m:
         return None
-    return m.group(1) or m.group(2)
+    return m.group(1) or m.group(2) or m.group(3)
+
+
+def slash_command_name(text: str) -> str | None:
+    """Return slash command stem from a leading `/name …` prompt, or None."""
+    if not text:
+        return None
+    m = _SLASH_PROMPT_RE.match(text)
+    if not m:
+        return None
+    name = m.group(1).strip().lstrip("/").lower()
+    # Drop plugin-qualified prefix noise: keep `login` from `plugin:login`
+    # only when counting; prefer full token for skill ids with hyphens.
+    if not name or name in _SLASH_CHROME:
+        return None
+    # Path-like false positives: /home/yuns, /mnt/c, /api/v1
+    if "/" in name or name in {"home", "mnt", "api", "usr", "var", "tmp", "opt"}:
+        return None
+    return name
+
+
+def iter_claude_command_names(text: str) -> list[str]:
+    """Yield user-invoked command names from Claude <command-name> blocks."""
+    if not text:
+        return []
+    out: list[str] = []
+    for m in _CLAUDE_COMMAND_NAME_RE.finditer(text):
+        name = m.group(1).strip().lstrip("/").lower()
+        if name and name not in _SLASH_CHROME:
+            out.append(name)
+    return out
+
+
+def iter_claude_forked_skills(text: str) -> list[str]:
+    """Yield skillName values from Claude <forked-skill-launch> payloads."""
+    if not text:
+        return []
+    out: list[str] = []
+    for m in _CLAUDE_FORKED_SKILL_RE.finditer(text):
+        try:
+            payload = json.loads(m.group(1))
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        name = str(payload.get("skillName") or payload.get("skill") or "").strip()
+        name = name.lstrip("/").lower()
+        if name and name not in _SLASH_CHROME:
+            out.append(name)
+    return out
 
 
 def classify_mcp_tool(name: str) -> tuple[str, str] | None:

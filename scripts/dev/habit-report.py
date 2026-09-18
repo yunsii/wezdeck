@@ -30,6 +30,11 @@ from habit_report.hotkeys import (  # noqa: E402
     scan_hotkey_window,
 )
 from habit_report.providers import available_providers, run_providers  # noqa: E402
+from habit_report.plugins import (  # noqa: E402
+    available_plugins,
+    detect_enabled,
+    run_plugins,
+)
 from habit_report.schema import merge_metrics  # noqa: E402
 from habit_report.wakatime import fetch_summaries  # noqa: E402
 
@@ -112,6 +117,70 @@ def format_table(report: dict) -> str:
         f"iterate_after_cdp={verify.get('iterate_after_cdp', 0)}"
     )
 
+    sess = agents.get("session") or {}
+    lines.append("")
+    lines.append("## session (active time / feed / media — not wall clock)")
+    lines.append(
+        f"  user_turns={sess.get('user_turns', 0)}  "
+        f"user_chars={sess.get('user_chars', 0)}  "
+        f"images={sess.get('images', 0)}  urls={sess.get('urls', 0)}  "
+        f"excluded_msgs={sess.get('excluded_feed_msgs', 0)}  "
+        f"excluded_chars={sess.get('excluded_feed_chars', 0)}  "
+        f"typed={sess.get('typed_chars', 0)}  paste={sess.get('paste_chars', 0)}"
+    )
+    inj = sess.get("injected") or {}
+    if inj:
+        lines.append(
+            "  injected: "
+            + " ".join(
+                f"{k}={meta.get('chars', 0)}c/{meta.get('msgs', 0)}m"
+                for k, meta in list(inj.items())[:8]
+                if isinstance(meta, dict)
+            )
+        )
+    lines.append(
+        f"  active_min total={sess.get('active_minutes_total')}  "
+        f"p50={sess.get('active_minutes_p50')}  "
+        f"p90={sess.get('active_minutes_p90')}  "
+        f"timed_sessions={sess.get('sessions_timed', 0)}"
+    )
+    lines.append(
+        f"  wall_min p50_diag={sess.get('wall_minutes_p50_diag')}  "
+        f"p90_diag={sess.get('wall_minutes_p90_diag')}  "
+        f"(diagnostic; resume/goal inflate — do not use as BLUF)"
+    )
+    lines.append(
+        f"  segments_total={sess.get('segments_total')}  "
+        f"multi_segment_sessions={sess.get('multi_segment_sessions')}  "
+        f"long_paste_msgs={sess.get('long_paste_msgs', 0)}"
+    )
+    buckets = sess.get("char_buckets") or {}
+    if buckets:
+        lines.append(
+            "  char_buckets: "
+            + " ".join(f"{k}={v}" for k, v in sorted(buckets.items()))
+        )
+    goal_n = sess.get("goal_completed") or 0
+    if goal_n:
+        lines.append(
+            f"  goal_completed={goal_n}  "
+            f"goal_elapsed_min total={sess.get('goal_elapsed_minutes_total')}  "
+            f"p50={sess.get('goal_elapsed_minutes_p50')}  "
+            f"list={sess.get('goal_elapsed_minutes_list')}"
+        )
+    rewrites = sess.get("rewrites") or {}
+    if any(int(v) for v in rewrites.values()):
+        lines.append(
+            "  rewrites: "
+            + " ".join(f"{k}={v}" for k, v in rewrites.items())
+        )
+    route = sess.get("tool_route") or {}
+    if route:
+        lines.append(
+            "  tool_route: "
+            + " ".join(f"{k}={v}" for k, v in list(route.items())[:8])
+        )
+
     lines.append("")
     lines.append("## per provider")
     for name, row in (agents.get("by_provider") or {}).items():
@@ -175,6 +244,28 @@ def format_table(report: dict) -> str:
                 f"days={row['days_observed']:5.1f}  {row['id']}"
             )
 
+    plugins = report.get("plugins") or {}
+    rime = plugins.get("rime") or report.get("rime_commits") or {}
+    if rime and (rime.get("commit_events") or rime.get("enabled") or rime.get("available")):
+        lines.append("")
+        lines.append("## rime commits × host.foreground (optional plugin)")
+        lines.append(
+            f"  events={rime.get('commit_events', 0)}  "
+            f"chars={rime.get('commit_chars', 0)}  "
+            f"detected={rime.get('detected', rime.get('available'))}"
+        )
+        by_fg = rime.get("by_foreground") or {}
+        if by_fg:
+            lines.append("  by_foreground:")
+            for name, meta in by_fg.items():
+                if isinstance(meta, dict):
+                    lines.append(
+                        f"    {name}: chars={meta.get('chars', 0)}  "
+                        f"events={meta.get('events', 0)}"
+                    )
+        for note in rime.get("notes") or []:
+            lines.append(f"  note: {note}")
+
     for note in report.get("notes") or []:
         lines.append(f"note: {note}")
     return "\n".join(lines) + "\n"
@@ -205,6 +296,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--grok-root", default="")
     ap.add_argument("--codex-root", default="")
     ap.add_argument("--paths-only", action="store_true")
+    ap.add_argument(
+        "--plugins",
+        default="auto",
+        help=(
+            "optional collectors: auto (detect), off, all, or comma names "
+            f"(available={','.join(available_plugins()) or 'none'})"
+        ),
+    )
+    # Compat alias
+    ap.add_argument(
+        "--rime-commits",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="deprecated: use --plugins auto|off|rime",
+    )
     args = ap.parse_args(argv)
 
     if args.days < 1:
@@ -282,6 +388,38 @@ def main(argv: list[str] | None = None) -> int:
         if not report["wakatime"].get("ok"):
             report.setdefault("notes", []).append(
                 f"WakaTime unavailable: {report['wakatime'].get('error')}"
+            )
+
+    plugin_mode = (args.plugins or "auto").strip().lower()
+    if args.rime_commits is False:
+        plugin_mode = "off"
+    elif args.rime_commits is True and plugin_mode == "auto":
+        plugin_mode = "auto"
+
+    plugin_names: list[str] | None = None
+    if plugin_mode in {"auto", "off", "all"}:
+        mode = plugin_mode
+    else:
+        mode = "all"
+        plugin_names = [p.strip() for p in plugin_mode.split(",") if p.strip()]
+
+    plugins_out = run_plugins(
+        start=start_day, end=end_day, names=plugin_names, mode=mode
+    )
+    report["plugins"] = plugins_out
+    # Back-compat key for weekly render / older consumers
+    if "rime" in plugins_out:
+        report["rime_commits"] = plugins_out["rime"]
+        if plugins_out["rime"].get("commit_events"):
+            report.setdefault("notes", []).append(
+                "Rime plugin: commit chars × host.foreground "
+                "(OS process buckets; agent-pane split TBD)."
+            )
+    elif mode == "auto":
+        detected = detect_enabled()
+        if detected:
+            report.setdefault("notes", []).append(
+                f"optional plugins detected: {', '.join(detected)}"
             )
 
     if args.json:
