@@ -85,6 +85,14 @@ _CODE_NOISE = frozenset(
         "object",
         "array",
         "boolean",
+        "image",
+        "images",
+        "persona",
+        "personas",
+        "multiply",
+        "coordinates",
+        "displayed",
+        "original",
     }
 )
 

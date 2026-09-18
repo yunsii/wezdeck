@@ -75,10 +75,17 @@ _HARNESS_ROLE_HEADS = (
     "You are an **implement** worker",
     "You are a research-only worker",
     "You are an implement worker",
+    "You are an idea generator in a multi-persona brainstorm",
+    "You are an idea generator",
     "# Cross-repo ticket",
     "A session-scoped Stop hook is now active",
 )
 _XML_TAG_RE = re.compile(r"<[^>]+>")
+# Claude attachment placeholders / dimension metadata (not human typing).
+_IMAGE_META_RE = re.compile(
+    r"\[Image\s*(?:#[0-9]+|:[^\]]*)\]",
+    re.IGNORECASE,
+)
 
 # Human-readable labels for weekly report (stable ids → 中文).
 INJECT_LABELS: dict[str, str] = {
@@ -97,6 +104,7 @@ INJECT_LABELS: dict[str, str] = {
     "harness_role": "子代理/harness 角色提示",
     "local_command_caveat": "local-command-caveat 包装",
     "slash_command_xml": "斜杠命令 XML 壳",
+    "image_metadata": "附件 Image 元数据",
     "user_info_envelope": "user_info 信封",
     "empty": "空消息",
 }
@@ -143,6 +151,9 @@ def classify_user_feed(text: str) -> tuple[str | None, str | None]:
         return None, "task_notification"
     if "<local-command-caveat>" in head_l or head_l.startswith("<local-command-"):
         return None, "local_command_caveat"
+    # Claude attachment dimension metadata (not typed by the human).
+    if re.match(r"^\s*\[Image:\s*original\s+\d+", stripped, re.I):
+        return None, "image_metadata"
     # Slash UI shell with little/no human args — not free-form typing.
     if "<command-name>" in stripped[:300] and "<command-args>" not in stripped:
         return None, "slash_command_xml"
@@ -249,11 +260,13 @@ def record_user_message(acc: dict[str, Any], text: str, *, images: int = 0) -> N
         # do not dominate keyword stats.
         kw_text = _CODE_FENCE_RE.sub(" ", cleaned)
         kw_text = _XML_TAG_RE.sub(" ", kw_text)
-        # Skip long mostly-Latin blobs (English harness leftovers / log dumps).
+        kw_text = _IMAGE_META_RE.sub(" ", kw_text)
+        # Skip mostly-Latin blobs (English harness leftovers / image metadata).
         letters = re.findall(r"[A-Za-z\u4e00-\u9fff]", kw_text)
         if letters:
             cjk = sum(1 for ch in letters if "\u4e00" <= ch <= "\u9fff")
-            if len(kw_text) >= 120 and (cjk / max(len(letters), 1)) < 0.15:
+            ratio = cjk / max(len(letters), 1)
+            if ratio < 0.15 and (len(kw_text) >= 80 or cjk == 0):
                 kw_text = ""
         if kw_text.strip():
             accumulate_keywords(acc, kw_text)
