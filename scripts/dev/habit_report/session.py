@@ -62,14 +62,23 @@ _CONTINUATION_MARKERS = (
     "This session is being continued from a previous conversation",
     "This session is being continued from a previous",
 )
-# Subagent / fanout harness prompts injected as role=user (not the human).
+# Subagent / fanout / ticket / goal-hook prompts injected as role=user.
 _HARNESS_ROLE_HEADS = (
     "You are an **adversarial verifier**",
+    "You are an adversarial code reviewer",
+    "You are an adversarial",
     "You are a devil's advocate",
     "You are the facilitator/judge",
     "You are the Goal Summarizer",
     "You are an **adversarial",
+    "You are a **research-only** worker",
+    "You are an **implement** worker",
+    "You are a research-only worker",
+    "You are an implement worker",
+    "# Cross-repo ticket",
+    "A session-scoped Stop hook is now active",
 )
+_XML_TAG_RE = re.compile(r"<[^>]+>")
 
 # Human-readable labels for weekly report (stable ids → 中文).
 INJECT_LABELS: dict[str, str] = {
@@ -86,6 +95,8 @@ INJECT_LABELS: dict[str, str] = {
     "task_notification": "后台 task-notification",
     "compact_continuation": "续写/压缩摘要",
     "harness_role": "子代理/harness 角色提示",
+    "local_command_caveat": "local-command-caveat 包装",
+    "slash_command_xml": "斜杠命令 XML 壳",
     "user_info_envelope": "user_info 信封",
     "empty": "空消息",
 }
@@ -130,11 +141,23 @@ def classify_user_feed(text: str) -> tuple[str | None, str | None]:
         return None, _classify_system_reminder(stripped)
     if "<task-notification>" in stripped[:200]:
         return None, "task_notification"
+    if "<local-command-caveat>" in head_l or head_l.startswith("<local-command-"):
+        return None, "local_command_caveat"
+    # Slash UI shell with little/no human args — not free-form typing.
+    if "<command-name>" in stripped[:300] and "<command-args>" not in stripped:
+        return None, "slash_command_xml"
+    if re.match(r"^\s*<command-name>", stripped) and len(stripped) < 400:
+        # Short command XML blobs (clear/model/etc.) even with empty args tags.
+        args_m = re.search(
+            r"<command-args>\s*(.*?)\s*</command-args>", stripped, re.DOTALL | re.I
+        )
+        if not args_m or not args_m.group(1).strip():
+            return None, "slash_command_xml"
     for marker in _CONTINUATION_MARKERS:
         if marker in stripped[:400]:
             return None, "compact_continuation"
     for marker in _HARNESS_ROLE_HEADS:
-        if stripped.startswith(marker):
+        if stripped.startswith(marker) or marker.lower() in head_l[:200]:
             return None, "harness_role"
 
     if "<user_query>" in stripped:
@@ -222,8 +245,18 @@ def record_user_message(acc: dict[str, Any], text: str, *, images: int = 0) -> N
     acc["urls"] += count_urls(cleaned)
     acc["images"] += images
     if cleaned:
-        # Prefer non-fenced text so pasted code does not dominate keyword stats.
-        accumulate_keywords(acc, _CODE_FENCE_RE.sub(" ", cleaned))
+        # Prefer non-fenced, non-XML text so protocol shells / code pastes
+        # do not dominate keyword stats.
+        kw_text = _CODE_FENCE_RE.sub(" ", cleaned)
+        kw_text = _XML_TAG_RE.sub(" ", kw_text)
+        # Skip long mostly-Latin blobs (English harness leftovers / log dumps).
+        letters = re.findall(r"[A-Za-z\u4e00-\u9fff]", kw_text)
+        if letters:
+            cjk = sum(1 for ch in letters if "\u4e00" <= ch <= "\u9fff")
+            if len(kw_text) >= 120 and (cjk / max(len(letters), 1)) < 0.15:
+                kw_text = ""
+        if kw_text.strip():
+            accumulate_keywords(acc, kw_text)
 
 
 def record_session_flags(
