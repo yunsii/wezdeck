@@ -1,0 +1,53 @@
+{
+  "enabled": "auto",
+  "roots": ["~/work", "~/github"],
+  "authors": [],
+  "exclude_repos": [
+    "wezdeck-habit-weekly",
+    "wezterm",
+    "fe1",
+    "management-operations",
+    "operations",
+    "operations-monkey",
+    "ci-infra",
+    "infra",
+    "dev-ops-mcp-server",
+    "platform-core-tech-weekly",
+    "weekly-report",
+    "team-stat",
+    "members-stat",
+    "coco-web-infra"
+  ],
+  "exclude_repo_globs": [
+    "*ops*",
+    "*infra*",
+    "*weekly*",
+    "*habit*",
+    "*admin*",
+    "management-*",
+    "*dotfile*"
+  ],
+  "exclude_path_globs": [
+    "vendor/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".next/**",
+    ".turbo/**",
+    "coverage/**",
+    "pnpm-lock.yaml",
+    "package-lock.json",
+    "yarn.lock",
+    "Cargo.lock",
+    "go.sum",
+    "*.min.js",
+    "*.min.css",
+    "**/*.generated.*",
+    "**/__generated__/**",
+    "**/*.pb.go",
+    "**/migrations/**/*.sql"
+  ],
+  "max_depth": 2,
+  "include_worktrees": false,
+  "top_repos": 12
+}

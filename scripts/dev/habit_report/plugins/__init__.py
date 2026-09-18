@@ -15,7 +15,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Protocol
 
-from . import rime
+from . import git_churn, rime
 
 
 class OptionalPlugin(Protocol):
@@ -28,6 +28,7 @@ class OptionalPlugin(Protocol):
 
 PLUGINS: dict[str, Any] = {
     rime.NAME: rime,
+    git_churn.NAME: git_churn,
 }
 
 

@@ -59,7 +59,9 @@ def render(report: dict[str, Any]) -> str:
     waka = report.get("wakatime") or {}
     waka_ok = bool(waka.get("ok"))
     waka_total = ((waka.get("totals") or {}).get("text") if waka_ok else "") or ""
-    rime = (report.get("plugins") or {}).get("rime") or report.get("rime_commits") or {}
+    plugins_all = report.get("plugins") or {}
+    rime = plugins_all.get("rime") or report.get("rime_commits") or {}
+    git_churn = plugins_all.get("git_churn") or {}
 
     # One-line BLUF
     cli0 = cli[0][0] if cli else "（无 CLI 信号）"
@@ -382,6 +384,42 @@ def render(report: dict[str, Any]) -> str:
             lines.append(f"- _{note}_")
         lines.append("")
 
+    if git_churn.get("ok") and (
+        git_churn.get("commits")
+        or git_churn.get("insertions")
+        or git_churn.get("repos_scanned")
+    ):
+        lines.append("## 代码变更量（git churn）")
+        lines.append("")
+        lines.append(
+            f"提交 **{git_churn.get('commits', 0)}** · "
+            f"+{git_churn.get('insertions', 0)} / −{git_churn.get('deletions', 0)} 行 · "
+            f"文件 **{git_churn.get('files', 0)}** · "
+            f"有产出仓 **{git_churn.get('repos_with_activity', 0)}** / "
+            f"扫描 **{git_churn.get('repos_scanned', 0)}**"
+            + (
+                f" · 路径排除命中 {git_churn.get('skipped_paths', 0)}"
+                if git_churn.get("skipped_paths")
+                else ""
+            )
+        )
+        lines.append("")
+        top = git_churn.get("top_repos") or []
+        if top:
+            lines.append("| 仓库 | 提交 | +行 | −行 | 文件 |")
+            lines.append("| --- | ---: | ---: | ---: | ---: |")
+            for row in top[:12]:
+                lines.append(
+                    f"| `{row.get('repo')}` | {row.get('commits', 0)} | "
+                    f"{row.get('insertions', 0)} | {row.get('deletions', 0)} | "
+                    f"{row.get('files', 0)} |"
+                )
+            lines.append("")
+        cfg = git_churn.get("config_path")
+        if cfg:
+            lines.append(f"_排除规则见 `{cfg}`（`exclude_repos` / `exclude_repo_globs` / `exclude_path_globs`）。_")
+            lines.append("")
+
     # Skills / CLI
     lines.append("## Skill / CLI / MCP")
     lines.append("")
@@ -513,6 +551,10 @@ def render(report: dict[str, Any]) -> str:
     lines.append(
         "- Rime 上屏字数 × host.foreground：只记字数/进程名，不落正文；"
         "PoC 仅分 wezterm/code/chrome/other，WezTerm 内 agent pane 尚未对齐"
+    )
+    lines.append(
+        "- git churn：工作机 auto；排除仓与生成目录见 "
+        "`~/.config/habit-weekly/git-churn.json`；不落 commit message"
     )
     lines.append("")
 

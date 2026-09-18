@@ -266,6 +266,27 @@ def format_table(report: dict) -> str:
         for note in rime.get("notes") or []:
             lines.append(f"  note: {note}")
 
+    churn = plugins.get("git_churn") or {}
+    if churn and churn.get("ok"):
+        lines.append("")
+        lines.append("## git churn (optional plugin)")
+        lines.append(
+            f"  commits={churn.get('commits', 0)}  "
+            f"+{churn.get('insertions', 0)}/-{churn.get('deletions', 0)}  "
+            f"files={churn.get('files', 0)}  "
+            f"repos={churn.get('repos_with_activity', 0)}/"
+            f"{churn.get('repos_scanned', 0)}  "
+            f"skipped_paths={churn.get('skipped_paths', 0)}"
+        )
+        for row in (churn.get("top_repos") or [])[:8]:
+            lines.append(
+                f"  {row.get('repo')}: "
+                f"+{row.get('insertions', 0)}/-{row.get('deletions', 0)}  "
+                f"c={row.get('commits', 0)}  f={row.get('files', 0)}"
+            )
+        if churn.get("config_path"):
+            lines.append(f"  config={churn.get('config_path')}")
+
     for note in report.get("notes") or []:
         lines.append(f"note: {note}")
     return "\n".join(lines) + "\n"
