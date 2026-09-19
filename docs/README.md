@@ -30,6 +30,10 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`picker-release.md`](./picker-release.md).
 - Logs, diagnostics, smoke tests, latency / hotkey counters:
   Read [`diagnostics.md`](./diagnostics.md).
+- Day-loop reconstruction (`workflow-timeline.sh`) or personal habit /
+  intensity metrics (`habit-report.sh` / skill `habit-weekly`):
+  Read [`diagnostics.md#workflow-timeline`](./diagnostics.md#workflow-timeline)
+  and [`diagnostics.md#habit-report`](./diagnostics.md#habit-report).
 - Guest OOM hardening (restart loop, reclaim livelock, high-order allocation,
   `M·…` / earlyoom, standing memory consumers):
   Read [`guest-oom.md`](./guest-oom.md).

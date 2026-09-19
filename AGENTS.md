@@ -7,6 +7,16 @@ User-level reusable agent profiles hosted under `agent-profiles/` are separate a
 
 Read `AGENTS.md` first, then open only the matching file under `docs/`. Read additional docs only when the current doc points to them or the task crosses that boundary.
 
+## Design stance
+
+Control plane, not a hotkey dump. Every new/changed interaction must be
+(1) **keyboard-first**, (2) **headless-verify for agents** (CDP without stealing
+focus), (3) **observable** — leave reviewable signals (badge / category
+log·latency / timeline·habit). **Blind features are incomplete.** Summary:
+[`README.md#design-stance`](README.md#design-stance). Operator:
+[`docs/diagnostics.md`](docs/diagnostics.md). Emit:
+[`docs/logging-conventions.md`](docs/logging-conventions.md).
+
 ## Task Routing
 
 - Setup, local prerequisites, or machine-local config:
@@ -202,6 +212,7 @@ Read `AGENTS.md` first, then open only the matching file under `docs/`. Read add
 - Prefer updating an existing doc in `docs/` over adding a new sibling file; keep presentations under `docs/presentations/`. When a topic doc is already over the soft line budget (see `scripts/dev/repo-hygiene/budgets.conf`), split by decision domain instead of growing it further.
 
 - Design user-facing features keyboard-first: every new or changed interaction must have a keyboard path, and mouse bindings are only acceptable as fallbacks (for example cross-pane text selection or quick pane focus). Weigh key ergonomics when picking a binding — reachability, OS- / IME-level hotkey conflicts (Ctrl+Space, Alt+Shift, etc.), chord depth, and whether the action already has a keyboard home in `docs/keybindings.md`.
+- Design for an **observable development process** (stance #3): new/changed hot paths must leave reviewable signals (state-transition/outcome category rows; threshold-gated latency when input-feel matters; badges or `workflow-timeline` / `habit-report` when glance or day/week reconstruction is needed). Prefer existing categories / status segments / projectors over ad-hoc prints. Blind behavior changes are incomplete. Detail: [`docs/logging-conventions.md`](docs/logging-conventions.md) · [`docs/diagnostics.md`](docs/diagnostics.md).
 - `wezterm-x/commands/manifest.json` is the single source of truth for every shortcut. Adding or renaming a hotkey means: (1) add / update the manifest item with a `binding` field; (2) for wezterm-layer bindings, add the named handler to `wezterm-x/lua/ui/action_registry.lua`; (3) for tmux-chord leaves, the `binding.exec` tmux-action string is everything — no code changes elsewhere; `scripts/runtime/render-tmux-bindings.sh` regenerates `wezterm-x/tmux/chord-bindings.generated.conf` during `wezterm-runtime-sync` and `tmux.conf` loads it via `source-file -Fq`. Do not re-declare keys or actions in `keymaps.lua` or `tmux.conf` directly; both are driven by the manifest now. Missing or unregistered ids show up as `(unregistered)` in `scripts/dev/hotkey-usage-report.sh` — treat that report as the audit signal.
 - Per-machine user overrides live in `wezterm-x/local/keybindings.lua` keyed by manifest id (string → new key, `false` → disable, list → per-variant). The WezTerm side applies them at reload; the tmux-chord side applies them when the renderer runs. Template: `wezterm-x/local.example/keybindings.lua`. Full rules in `docs/keybindings.md`.
 - If behavior, keybindings, workspace semantics, tmux UI, or diagnostics change, update the matching docs in the same edit.

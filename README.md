@@ -20,6 +20,18 @@
 
 This repository is the source of truth for the WezDeck runtime. The GitHub repo is [`yunsii/wezdeck`](https://github.com/yunsii/wezdeck) (the previous `yunsii/wezterm-config` URL still works via GitHub's permanent redirect).
 
+## Design stance
+
+WezDeck is not a pile of hotkeys — it is a **control plane** for multi-agent terminal work. Three constraints shape every new interaction. They are also **binding agent guidance** in [`AGENTS.md` · Design stance](AGENTS.md#design-stance) / Hard Rules — not README-only marketing.
+
+| Constraint | What it means in practice |
+|---|---|
+| **Keyboard-first** | Every new or changed interaction has a keyboard path; mouse is fallback only. Manifest + palette cover the same actions. |
+| **Headless verify for agents** | Debug Chrome auto-starts headless (`CDP·H·…`); agents attach via CDP/MCP without stealing GUI focus. |
+| **Observable development process** | Hot paths emit structured signals so a day can be reconstructed, latency gated, and habits reviewed — not guessed from memory. Blind features (no badge / log / projector path) are incomplete. |
+
+The third constraint is load-bearing for iteration: badges warn live, logs explain a sticky key or a stuck attention state, and day/week projectors turn those same signals into a reviewable loop. Longer narrative: [`docs/presentations/`](docs/presentations/).
+
 ## ✨ Highlights
 
 - **Tab × Worktree × Agent in one frame** — every WezTerm tab is one repo, every tmux window inside it is a linked git worktree, every pane can host an agent CLI (`claude` / `codex` / `grok` / …).
@@ -28,6 +40,7 @@ This repository is the source of truth for the WezDeck runtime. The GitHub repo 
 - **In-slot jump keys** — `Alt+j` / `Alt+k` / `Alt+l` step waiting / done / running; `Alt+/` and `Alt+x` are occasional overview / overflow pickers, not the main loop.
 - **One keystroke to spawn a worktree** — `Ctrl+k g d/t/h` carves out a linked worktree (with its own agent) when no suitable slot exists.
 - **Manifest-driven hotkeys** — `wezterm-x/commands/manifest.json` is the single source of truth; per-machine overrides live in `wezterm-x/local/keybindings.lua`.
+- **Dev-env observability** — right-status pressure badges, structured runtime / WezTerm logs, threshold-gated latency rows, plus day timeline and habit-weekly projectors for review.
 
 ## 🎛️ Workbench · A day in the loop
 
@@ -53,8 +66,44 @@ need arises
 | In-slot loop | Badges / counter + **`Alt+j/k/l`** (highest-frequency keys in a real day) | [Agent attention](docs/agent-attention.md) |
 | Verify | **`Alt+v`** daily; **`Alt+b`** when you need the debug Chrome (MCP shares CDP) | [Browser debug](docs/browser-debug.md) |
 | Close the round | Mainline delivery (no PR) → **`worktree-recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
+| Review the day / week | Timeline + habit report from the same signals | [Diagnostics · timeline](docs/diagnostics.md#workflow-timeline) · [Habit report](docs/diagnostics.md#habit-report) |
 
-Longer narrative: [`docs/presentations/`](docs/presentations/). Rebuild a day from logs: [`scripts/dev/workflow-timeline.sh`](scripts/dev/workflow-timeline.sh) · [Diagnostics · Workflow timeline](docs/diagnostics.md#workflow-timeline).
+## 📡 Observability surface
+
+Three layers share one idea: **if you cannot see it, you cannot improve it.**
+
+### Live right-status (operator glance)
+
+Left → right (pressure badges stay absent while healthy — presence *is* the signal):
+
+`IME` · `CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention counters
+
+| Segment | Meaning | Deep dive |
+|---|---|---|
+| `CDP·H/V/-/?·port` | Headless / visible / down / helper stale | [Browser debug](docs/browser-debug.md) |
+| `◆ SB·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
+| `D·…` | Host volume headroom under WSL `ext4.vhdx` | [Host disk](docs/host-disk.md) |
+| `M·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |
+| `▲ / ✓ / ●` | Waiting / done / running attention | [Agent attention](docs/agent-attention.md) |
+
+### Structured logs + latency (why did it feel sticky?)
+
+- WSL `runtime.log` + Windows `wezterm.log` / `helper.log` — category-scoped rows (`attention`, `hotkey`, `latency`, …).
+- Threshold-gated slow hotkey / status-tick rows; slow samples attach guest pressure from the same `M·` status file.
+- Operator entry: [`docs/diagnostics.md`](docs/diagnostics.md) · author conventions: [`docs/logging-conventions.md`](docs/logging-conventions.md) · report: `scripts/dev/latency-report.sh`.
+
+### Day / week reconstruction (review & optimize)
+
+| Projector | Question it answers | Entry |
+|---|---|---|
+| **Workflow timeline** | How did I move through workspaces / worktrees / attention / host verify today? | `scripts/dev/workflow-timeline.sh` · [docs](docs/diagnostics.md#workflow-timeline) |
+| **Habit report / weekly** | Agent concurrency, skills/MCP/CLI, verify→iterate, hotkey intensity, optional WakaTime / Rime / git churn | `scripts/dev/habit-report.sh` · skill `habit-weekly` · [docs](docs/diagnostics.md#habit-report) |
+
+```bash
+scripts/dev/workflow-timeline.sh --summary
+scripts/dev/habit-report.sh --days 7
+# weekly write-up: load skill habit-weekly → scripts/dev/habit-weekly/run.sh
+```
 
 ## 🧭 How It Works
 
@@ -66,6 +115,8 @@ WezTerm tab          ─┐
        agent hooks → attention.json → tab badges + right-status counter
                                        ↑
                          Alt+j/k/l  +  Alt+v  (main loop)
+                       ↓
+       structured logs → timeline / habit projectors  (review loop)
 ```
 
 Full architecture, ownership boundaries, and the WSL ⇄ Windows channels: [`docs/architecture.md`](docs/architecture.md). Session + interop map (workspace/tab/tmux/worktree/agent/attention ↔ session-bridge ↔ Feishu): [Session & Interop Overview](docs/architecture.md#session--interop-overview).
@@ -79,7 +130,7 @@ Full architecture, ownership boundaries, and the WSL ⇄ Windows channels: [`doc
 | **lua5.4** | recommended | Powers the sync precheck; missing → precheck skipped with a warning |
 | **jq** | recommended | Agent-attention writer & focus path; missing → degraded labels |
 | **go ≥ 1.21** | optional | For maintainers of `native/picker/`. End users get a sha256-pinned prebuilt tarball via the release fetcher |
-| **python3** | optional | Only for WakaTime status |
+| **python3** | optional | Habit / timeline projectors; WakaTime status |
 
 Supported runtime modes: `hybrid-wsl` (Windows WezTerm + WSL/tmux) and `posix-local` (Linux / macOS local).
 
@@ -95,10 +146,11 @@ $EDITOR wezterm-x/local/shared.env      # WAKATIME_API_KEY, MANAGED_AGENT_PROFIL
 skills/wezterm-runtime-sync/scripts/sync-runtime.sh
 
 # 3. Reload WezTerm and confirm the right status shows
-#    "⟳ 0 ⚠ 0 ✓ 0" — that means the attention pipeline is live.
+#    attention counters (and CDP·… when the helper is up) — that means the
+#    attention / CDP pipelines are live. D· / M· appear only under pressure.
 ```
 
-Full setup walkthrough: [`docs/setup.md`](docs/setup.md).
+Full setup walkthrough: [`docs/setup.md`](docs/setup.md). Optional guards on WSL hosts: [`docs/guest-oom.md`](docs/guest-oom.md) · [`docs/host-disk.md`](docs/host-disk.md).
 
 ## 📚 Documentation
 
@@ -108,13 +160,16 @@ Full setup walkthrough: [`docs/setup.md`](docs/setup.md).
 **Daily use**
 - [Keybindings](docs/keybindings.md) · [tmux UI](docs/tmux-ui.md) · [Agent attention](docs/agent-attention.md) · [Browser debug](docs/browser-debug.md)
 
+**Observability & ops**
+- [Diagnostics](docs/diagnostics.md) (latency · [workflow timeline](docs/diagnostics.md#workflow-timeline) · [habit report](docs/diagnostics.md#habit-report)) · [Guest OOM](docs/guest-oom.md) (`M·`) · [Host disk](docs/host-disk.md) (`D·`) · [Logging conventions](docs/logging-conventions.md)
+
 **Internals**
-- [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [Diagnostics](docs/diagnostics.md) (incl. [workflow timeline](docs/diagnostics.md#workflow-timeline)) · [IME & sync output](docs/ime-flicker-and-sync-output.md)
+- [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md) · [Dev-env troubleshooting](docs/development-environment-troubleshooting.md)
 
 **Releases**
 - [Host helper](docs/host-helper-release.md) · [Picker](docs/picker-release.md)
 
-Agent rules: [`AGENTS.md`](AGENTS.md). Reusable user-level profiles: [`agent-profiles/`](agent-profiles/).
+Docs map: [`docs/README.md`](docs/README.md). Agent rules: [`AGENTS.md`](AGENTS.md). Reusable user-level profiles: [`agent-profiles/`](agent-profiles/).
 
 ## 🎨 Brand
 
