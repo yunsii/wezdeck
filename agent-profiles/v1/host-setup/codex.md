@@ -96,19 +96,37 @@ exclude = [
 `inherit = "core"` means only PATH / HOME / USER / etc. flow through;
 anything else must be explicitly whitelisted via `set` or `include`.
 
-### 5. `[mcp_servers.*]` to mirror Claude's MCP capabilities
+### 5. Browser / MCP parity with other host agents
 
-If Claude Code uses chrome-devtools / deepwiki / context7 via MCP, the
-same servers can be reused under Codex. Capability parity, fewer
-context-switch losses:
+**Chrome DevTools is not a Codex resident MCP.** Match Claude: drive the
+WezDeck CDP Chrome (`http://127.0.0.1:9222`) through the shared uxc skill
+`chrome-devtools-mcp-skill` and the pre-seeded link `chrome-devtools-mcp-cli`
+(absolute `node` + pinned global package + `--usageStatistics=false`,
+idle-reaped). Do **not** put `npx chrome-devtools-mcp@latest` (or a bare
+global binary) under `[mcp_servers.chrome-devtools]` — that reintroduces
+per-session resident Node + the npm launcher tax documented in
+[`docs/guest-oom.md`](../../../docs/guest-oom.md).
+
+Wire discovery once (same pool Claude already uses):
+
+```bash
+mkdir -p ~/.codex/skills
+ln -sfn ~/.agents/skills/chrome-devtools-mcp-skill ~/.codex/skills/chrome-devtools-mcp-skill
+ln -sfn ~/.agents/skills/uxc ~/.codex/skills/uxc
+command -v chrome-devtools-mcp-cli   # must already exist; recreate via guest-oom recipe if missing
+```
+
+OpenClaw's gateway keeps a **separate** resident `mcp.servers.chrome-devtools`
+on purpose (one gateway-level instance). Host Codex / Claude / Grok share
+the Chrome on 9222, not that MCP runtime.
+
+Other MCP servers (deepwiki / context7 / HTTP docs) can still live under
+`[mcp_servers.*]` when they are not memory-hot the way chrome-devtools is:
 
 ```toml
 [mcp_servers.deepwiki]
 command = "deepwiki-mcp-cli"
 args    = ["serve"]
-
-[mcp_servers.context7]
-command = "..."  # mirror your ~/.claude/ MCP entries
 ```
 
 ### 6. `notify` hook → desktop / Feishu

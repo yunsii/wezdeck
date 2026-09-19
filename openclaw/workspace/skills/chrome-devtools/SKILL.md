@@ -51,7 +51,7 @@ curl -sS -m 3 http://127.0.0.1:9222/json/version
 
 # Install once, pinned. Never drive this from `npx …@latest`: npx leaves
 # npm-cli resident (~85Mi) per instance purely as a launcher.
-npm i -g chrome-devtools-mcp@1.6.0
+npm i -g chrome-devtools-mcp@1.9.0
 
 openclaw mcp add chrome-devtools \
   --command chrome-devtools-mcp \
@@ -60,7 +60,7 @@ openclaw mcp add chrome-devtools \
   --timeout 90 \
   --connect-timeout 60
 
-openclaw mcp probe chrome-devtools   # expect ~29 tools
+openclaw mcp probe chrome-devtools   # expect dozens of tools (count drifts by release)
 openclaw mcp reload
 # or: systemctl --user restart openclaw-gateway.service
 ```

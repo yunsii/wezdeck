@@ -70,7 +70,7 @@ loginctl show-user "$USER" -p Linger          # expect Linger=yes
 systemctl --user is-active openclaw-gateway   # active
 openclaw channels status --probe              # Feishu … works
 openclaw exec-policy show
-openclaw mcp list && openclaw mcp probe chrome-devtools   # ~29 tools
+openclaw mcp list && openclaw mcp probe chrome-devtools   # tool count drifts by release
 curl -sS -m 3 http://127.0.0.1:9222/json/version          # CDP up
 openclaw memory status --agent main           # local provider; Indexed N/N, Dirty no
 openclaw security audit                       # prefer 0 critical
@@ -437,7 +437,7 @@ One-time install on a machine:
 curl -sS -m 3 http://127.0.0.1:9222/json/version   # CDP must be up first
 
 # Install once, pinned — do NOT drive this from `npx …@latest` (see below)
-npm i -g chrome-devtools-mcp@1.6.0
+npm i -g chrome-devtools-mcp@1.9.0
 
 openclaw mcp add chrome-devtools \
   --command chrome-devtools-mcp \
@@ -446,7 +446,7 @@ openclaw mcp add chrome-devtools \
   --timeout 90 \
   --connect-timeout 60
 
-openclaw mcp probe chrome-devtools   # expect ~29 tools
+openclaw mcp probe chrome-devtools
 openclaw mcp reload
 # or: systemctl --user restart openclaw-gateway.service
 ```
@@ -469,9 +469,9 @@ the node-version prerequisite, and the deferred `uxc` alternative are in repo
 
 Notes:
 
-- Grok/Claude CLI MCP configs are **separate processes**; they share the **Chrome
-  on 9222**, not the OpenClaw MCP runtime. Prefer one agent controlling the browser
-  at a time.
+- Host Claude/Codex/Grok drive Chrome via **uxc** (`chrome-devtools-mcp-cli`), not
+  a resident MCP; they share **Chrome on 9222**, not this gateway MCP runtime.
+  Prefer one agent controlling the browser at a time.
 - Change port only if `wezterm-x/local/constants.lua` `chrome_debug_browser.remote_debugging_port`
   differs; keep loopback only.
 - Do not commit live `openclaw.json`; template is in `config/openclaw.json5.example`.

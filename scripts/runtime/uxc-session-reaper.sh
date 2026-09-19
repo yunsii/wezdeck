@@ -71,23 +71,49 @@ if [[ -z "$uxc_bin" ]]; then
   exit 0
 fi
 
-# cron does not set XDG_RUNTIME_DIR, and uxc does not fall back the way this
-# script did: with the variable unset it resolves its socket to
-# /tmp/uxc-unknown/daemon/uxc.sock — a different path from the one the
-# interactive daemon listens on. Deriving the path here without exporting it
-# made the two disagree: the socket check passed against
-# /run/user/<uid>/uxc/uxc.sock while `uxc daemon sessions` failed to connect,
-# every cron run silently reaped nothing. Export it so both agree.
+# Discover the live daemon via `uxc daemon status` rather than hardcoding a
+# socket path. Pre-0.15/0.22 uxc preferred `$XDG_RUNTIME_DIR/uxc/uxc.sock`
+# (and with XDG unset fell back to `/tmp/uxc-unknown/...`); current releases
+# default to `~/.uxc/daemon/uxc.sock`. Asking the binary keeps cron and
+# interactive clients on the same socket without chasing path churn.
+#
+# Still export XDG_RUNTIME_DIR for older binaries / any child that still keys
+# off it; do not use it as the sole liveness signal.
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
-# Never let this script be the thing that starts the daemon. Management
-# subcommands appear not to auto-start it, but the socket check makes that
-# independent of uxc's internals.
-socket="$XDG_RUNTIME_DIR/uxc/uxc.sock"
-if [[ ! -S "$socket" ]]; then
-  printf 'uxc daemon not running (no socket at %s); nothing to reap.\n' "$socket"
-  exit 0
-fi
+# Never let this script be the thing that starts the daemon. `daemon status`
+# / `daemon sessions` do not auto-start; only endpoint traffic does.
+status_json="$("$uxc_bin" daemon status 2>/dev/null || true)"
+status_line="$(printf '%s' "$status_json" | python3 -c '
+import json, sys
+try:
+    payload = json.loads(sys.stdin.read(), strict=False)
+except Exception:
+    print("unreadable")
+    raise SystemExit
+data = payload.get("data") or {}
+socket = data.get("socket") or ""
+running = bool(data.get("running")) and bool(data.get("socket_exists", True))
+if not payload.get("ok") and not socket:
+    print("failed")
+    raise SystemExit
+print(("running" if running else "stopped") + " " + socket)
+' 2>/dev/null || printf 'unreadable')"
+
+read -r daemon_state socket <<<"$status_line"
+socket="${socket:-unknown}"
+
+case "$daemon_state" in
+  stopped)
+    printf 'uxc daemon not running (socket %s); nothing to reap.\n' "$socket"
+    exit 0
+    ;;
+  unreadable|failed|"")
+    printf 'could not read uxc daemon status; skipping.\n'
+    runtime_log_warn agent_cleanup "uxc session sweep skipped" "reason=daemon_status_unreadable"
+    exit 0
+    ;;
+esac
 
 sessions_json="$("$uxc_bin" daemon sessions 2>/dev/null || true)"
 if [[ -z "$sessions_json" ]]; then
@@ -147,7 +173,8 @@ case "$verdict" in
     # failure this branch exists to make visible.
     printf 'uxc daemon sessions returned an error (socket %s); skipping.\n' "$socket" >&2
     runtime_log_warn agent_cleanup "uxc session sweep skipped" \
-      "reason=daemon_query_failed" "socket=$socket" "xdg_runtime_dir=$XDG_RUNTIME_DIR"
+      "reason=daemon_query_failed" "socket=$socket" \
+      "xdg_runtime_dir=$XDG_RUNTIME_DIR" "uxc_bin=$uxc_bin"
     exit 0
     ;;
   active)
