@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="WezTerm: nightly" src="https://img.shields.io/badge/wezterm-nightly-8b5cf6">
   <img alt="tmux: ≥ 3.7" src="https://img.shields.io/badge/tmux-%E2%89%A5%203.7-1f6feb">
@@ -169,7 +173,7 @@ Full setup walkthrough: [`docs/setup.md`](docs/setup.md). Optional guards on WSL
 **Releases**
 - [Host helper](docs/host-helper-release.md) · [Picker](docs/picker-release.md)
 
-Docs map: [`docs/README.md`](docs/README.md). Agent rules: [`AGENTS.md`](AGENTS.md). Reusable user-level profiles: [`agent-profiles/`](agent-profiles/).
+Docs map: [`docs/README.md`](docs/README.md). Agent rules: [`AGENTS.md`](AGENTS.md). Reusable user-level profiles: [`agent-profiles/`](agent-profiles/). Chinese twin: [`README.zh-CN.md`](README.zh-CN.md) — keep in structural sync (repo-hygiene L0 checks heading outline, relative links, fences/tables, and durable tokens).
 
 ## 🎨 Brand
 

@@ -178,7 +178,7 @@ Install once per clone / shared git dir (covers all worktrees):
 scripts/dev/repo-hygiene/install-hooks.sh
 ```
 
-L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, and **new** files (or newly crossing) over hard line budgets in `scripts/dev/repo-hygiene/budgets.conf`. Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
+L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, **new** files (or newly crossing) over hard line budgets in `scripts/dev/repo-hygiene/budgets.conf`, and — when `README.md` / `README.zh-CN.md` is staged — **bilingual README parity** (heading-level outline, relative link set, fence/table counts, shared durable tokens in `scripts/dev/repo-hygiene/readme-parity.conf`, language switcher). Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
 
 `run.sh audit` prints a **summary first** (samples of each bucket). Pass `--verbose` for full lists, `--backticks` for basename/path backtick heuristics (off by default — too noisy for prose filenames), `--strict` to fail on non-allowlisted OVER-HARD files.
 

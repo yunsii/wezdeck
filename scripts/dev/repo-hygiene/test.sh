@@ -168,6 +168,149 @@ git -C "$fx" add docs/ok.md docs/other.md
 git -C "$fx" rm -q docs/broken.md
 assert_exit 0 "gfm double-hyphen anchor" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
 
+# 8) bilingual README parity — matching pair passes
+cat >"$fx/README.md" <<'EOF'
+<p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+
+## Design stance
+
+See [docs](docs/ok.md) and [AGENTS.md](AGENTS.md). Tokens: attention.json agent-launcher.sh.
+
+## Highlights
+
+- Alt+j Alt+k Alt+l Alt+v Alt+b
+- CDP· D· M· SB· hybrid-wsl posix-local worktree-recycle
+- wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
+- scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
+- docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
+- docs/agent-attention.md docs/browser-debug.md
+
+```text
+loop
+```
+
+```bash
+echo hi
+```
+
+| A | B |
+|---|---|
+| 1 | 2 |
+EOF
+cat >"$fx/README.zh-CN.md" <<'EOF'
+<p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
+
+## 设计立场
+
+见 [docs](docs/ok.md) 与 [AGENTS.md](AGENTS.md)。Tokens: attention.json agent-launcher.sh。
+
+## 亮点
+
+- Alt+j Alt+k Alt+l Alt+v Alt+b
+- CDP· D· M· SB· hybrid-wsl posix-local worktree-recycle
+- wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
+- scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
+- docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
+- docs/agent-attention.md docs/browser-debug.md
+
+```text
+loop
+```
+
+```bash
+echo hi
+```
+
+| A | B |
+|---|---|
+| 1 | 2 |
+EOF
+# AGENTS stub so relative link resolves in other checks if needed
+echo '# AGENTS' >"$fx/AGENTS.md"
+git -C "$fx" add README.md README.zh-CN.md AGENTS.md
+assert_exit 0 "readme parity ok" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+
+# 9) heading outline drift → fail
+cat >"$fx/README.zh-CN.md" <<'EOF'
+<p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
+
+## 设计立场
+
+见 [docs](docs/ok.md)。
+
+```text
+loop
+```
+EOF
+git -C "$fx" add README.zh-CN.md
+assert_exit 1 "readme parity heading drift" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+assert_grep "heading level outline" "$tmp/out" "heading drift message"
+# restore matching zh for later
+git -C "$fx" checkout -q -- README.zh-CN.md 2>/dev/null || true
+# re-write good zh (checkout may restore seed absence; force good copy)
+cat >"$fx/README.zh-CN.md" <<'EOF'
+<p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
+
+## 设计立场
+
+见 [docs](docs/ok.md) 与 [AGENTS.md](AGENTS.md)。Tokens: attention.json agent-launcher.sh。
+
+## 亮点
+
+- Alt+j Alt+k Alt+l Alt+v Alt+b
+- CDP· D· M· SB· hybrid-wsl posix-local worktree-recycle
+- wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
+- scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
+- docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
+- docs/agent-attention.md docs/browser-debug.md
+
+```text
+loop
+```
+
+```bash
+echo hi
+```
+
+| A | B |
+|---|---|
+| 1 | 2 |
+EOF
+git -C "$fx" add README.md README.zh-CN.md
+
+# 10) link only on English side → fail
+cat >"$fx/README.md" <<'EOF'
+<p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+
+## Design stance
+
+See [docs](docs/ok.md) [extra](docs/other.md) and [AGENTS.md](AGENTS.md). Tokens: attention.json agent-launcher.sh.
+
+## Highlights
+
+- Alt+j Alt+k Alt+l Alt+v Alt+b
+- CDP· D· M· SB· hybrid-wsl posix-local worktree-recycle
+- wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
+- scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
+- docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
+- docs/agent-attention.md docs/browser-debug.md
+
+```text
+loop
+```
+
+```bash
+echo hi
+```
+
+| A | B |
+|---|---|
+| 1 | 2 |
+EOF
+git -C "$fx" add README.md
+assert_exit 1 "readme parity link drift" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+assert_grep "relative links only in README.md" "$tmp/out" "link drift message"
+
 # Live-repo structural check for diagnostics domain split (skips if absent).
 if [[ -f "$root/docs/guest-oom.md" && -f "$root/scripts/dev/repo-hygiene/test-diagnostics-split.sh" ]]; then
   if bash "$root/scripts/dev/repo-hygiene/test-diagnostics-split.sh" >"$tmp/split.out" 2>"$tmp/split.err"; then
@@ -175,6 +318,18 @@ if [[ -f "$root/docs/guest-oom.md" && -f "$root/scripts/dev/repo-hygiene/test-di
   else
     echo "FAIL diagnostics-split invariants" >&2
     cat "$tmp/split.out" "$tmp/split.err" >&2 || true
+    fail=$((fail + 1))
+  fi
+fi
+
+# Live-repo bilingual README parity (skips if Chinese twin absent).
+if [[ -f "$root/README.md" && -f "$root/README.zh-CN.md" ]]; then
+  if python3 "$root/scripts/dev/repo-hygiene/lib/readme-parity.py" "$root" \
+      "$root/scripts/dev/repo-hygiene/readme-parity.conf" >"$tmp/live-readme.out" 2>"$tmp/live-readme.err"; then
+    echo "ok live README en/zh parity"
+  else
+    echo "FAIL live README en/zh parity" >&2
+    cat "$tmp/live-readme.out" "$tmp/live-readme.err" >&2 || true
     fail=$((fail + 1))
   fi
 fi

@@ -2,9 +2,11 @@
 name: repo-hygiene
 description: >
   Repo hygiene audit and pre-commit gate for wezdeck: broken relative markdown
-  links, bash -n, mermaid on staged docs, secret heuristics, line budgets.
+  links, bash -n, mermaid on staged docs, secret heuristics, line budgets,
+  bilingual README.md ↔ README.zh-CN.md structural parity.
   Use when installing commit hooks, running a full-repo size/link audit, or
-  when the user asks for 卫生审计 / doc-link check / line-budget review.
+  when the user asks for 卫生审计 / doc-link check / line-budget review /
+  README 中英文同步检查.
   Not adversarial-review and not design-review.
 ---
 
@@ -40,6 +42,10 @@ scripts/dev/repo-hygiene/run.sh audit --strict      # fail non-allowlisted OVER-
 scripts/dev/repo-hygiene/test.sh
 ```
 
-Budgets: `budgets.conf`. Operator notes: `docs/daily-workflow.md#repo-hygiene`.
+Budgets: `budgets.conf`. README en/zh tokens: `readme-parity.conf` (checker:
+`lib/readme-parity.py`). Operator notes: `docs/daily-workflow.md#repo-hygiene`.
 
 Emergency bypass only: `WEZTERM_HYGIENE_SKIP=1`. Soften heading-anchor fails: `WEZTERM_HYGIENE_SOFT_ANCHORS=1`.
+
+When editing either root README, update the twin in the same commit — L0 compares
+heading outline, relative links, fences/tables, and durable tokens.

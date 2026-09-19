@@ -28,6 +28,8 @@ source "$HYGIENE_HOME/lib/sizes.sh"
 source "$HYGIENE_HOME/lib/shell-syntax.sh"
 # shellcheck source=lib/secrets-heuristics.sh
 source "$HYGIENE_HOME/lib/secrets-heuristics.sh"
+# shellcheck source=lib/readme-parity.sh
+source "$HYGIENE_HOME/lib/readme-parity.sh"
 
 SOFT_ANCHORS=0
 STRICT=0
@@ -40,7 +42,9 @@ usage() {
 Usage: run.sh <pre-commit|audit|install> [options]
 
   pre-commit   Fast checks on staged files (hard fail). For git hook.
-  audit        Full-repo report (summary first; fail on broken file links).
+               Also en/zh README parity when README.md or README.zh-CN.md staged.
+  audit        Full-repo report (summary first; fail on broken file links /
+               README parity).
   install      Install shared pre-commit hook into git common dir.
 
 Options:
@@ -161,6 +165,9 @@ cmd_pre_commit() {
     fails=$((fails + 1))
   fi
 
+  hygiene_check_readme_parity "$root" pre-commit "${targets[@]}" || true
+  fails=$((fails + HYGIENE_README_FAILS))
+
   if (( fails > 0 )); then
     hygiene_err "pre-commit failed ($fails finding(s)). Fix or (emergency) WEZTERM_HYGIENE_SKIP=1"
     exit 1
@@ -230,12 +237,21 @@ cmd_audit() {
     bt_count="$(grep -cE '^ADVISORY ' "$tmp/bt.raw" || true)"
   fi
 
-  local fail_n adv_anchor_n over_n over_allow_n soft_n
+  # --- bilingual README parity ---
+  : >"$tmp/readme.raw"
+  hygiene_check_readme_parity "$root" audit >"$tmp/readme.raw" 2>&1 || true
+  local readme_fails=$HYGIENE_README_FAILS
+  grep -E '^FAIL ' "$tmp/readme.raw" >"$tmp/readme.fail" || true
+  grep -E '^ADVISORY ' "$tmp/readme.raw" >"$tmp/readme.adv" || true
+
+  local fail_n adv_anchor_n over_n over_allow_n soft_n readme_fail_n readme_adv_n
   fail_n="$(wc -l <"$tmp/links.fail" | tr -d '[:space:]')"
   adv_anchor_n="$(wc -l <"$tmp/links.adv" | tr -d '[:space:]')"
   over_n="$(wc -l <"$tmp/sizes.over" | tr -d '[:space:]')"
   over_allow_n="$(wc -l <"$tmp/sizes.over.allow" | tr -d '[:space:]')"
   soft_n="$(wc -l <"$tmp/sizes.adv" | tr -d '[:space:]')"
+  readme_fail_n="$(wc -l <"$tmp/readme.fail" | tr -d '[:space:]')"
+  readme_adv_n="$(wc -l <"$tmp/readme.adv" | tr -d '[:space:]')"
 
   echo "--- summary ---"
   printf 'FAIL file/anchor links:     %s\n' "$fail_n"
@@ -243,6 +259,8 @@ cmd_audit() {
   printf 'OVER-HARD (actionable):     %s\n' "$over_n"
   printf 'OVER-HARD (allowlisted):    %s\n' "$over_allow_n"
   printf 'ADVISORY soft budgets:      %s\n' "$soft_n"
+  printf 'FAIL README en/zh parity:   %s\n' "$readme_fail_n"
+  printf 'ADVISORY README parity:     %s\n' "$readme_adv_n"
   if (( BACKTICKS )); then
     printf 'ADVISORY backticks:         %s\n' "$bt_count"
   else
@@ -285,6 +303,15 @@ cmd_audit() {
     hygiene_print_sample 15 "backtick advisories" "$tmp/bt.adv"
     echo
   fi
+  if [[ -s "$tmp/readme.fail" || -s "$tmp/readme.adv" ]]; then
+    echo "--- README en/zh parity ---"
+    hygiene_print_sample 40 "README parity" "$tmp/readme.raw"
+    echo
+  elif [[ -s "$tmp/readme.raw" ]]; then
+    echo "--- README en/zh parity ---"
+    cat "$tmp/readme.raw"
+    echo
+  fi
 
   echo "--- top markdown by lines ---"
   python3 - "$root" "${md_all[@]}" <<'PY' | tail -n 15
@@ -317,6 +344,7 @@ PY
   echo
 
   local fails=$link_fails
+  fails=$((fails + readme_fails))
   if (( STRICT )); then
     fails=$((fails + over_n))
     if (( over_n > 0 )); then
