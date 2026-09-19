@@ -90,17 +90,17 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | 项 | 行为 |
 | --- | --- |
 | poller | 本机 bash + flock；读 attention.json / pane 存活 / 权限锚点 |
-| 通知方向 | **默认 `user+poke`**：你（say-as-me）→ Dex 飞书会话 **+** poke 注入 Dex session，让 Main 跑一轮。**不是** bot→主人（旧路径看起来像 Dex 主动找你，且易被当成飞书菜单）。配置：`defaults.watch.notify_identity`=`user`\|`poke`\|`user+poke`\|`bot` |
-| 通知时机 | **仅跃迁** take_ack / `→waiting`（need_human）/ `→idle`（turn_idle，**job 不关**）/ `→done`·TTL；不每 tick 跑模型。从 running 再进 waiting/idle 可再次通知。 |
-| say-as-me 条件 | 需 `feishu_targets.dex_chat_id`（与 Dex bot 的 p2p chat）。只有 `dex_user_id` 不够（那是主人 open_id，发了也不进 Dex 会话） |
+| 通知方向（按事件） | **默认分流**（`defaults.watch.notify_by_event`）：`need_human`→`owner`（bot DM **主人** `dex_user_id`，让你决策）；`turn_idle` / `take` / `ended`→`none`（不推飞书、不冒充本人进 Dex）。旧毯子 `notify_identity=user+poke` 若仍配置则覆盖全事件（不推荐）。其它取值：`user` / `poke` / `bot` / `owner+poke` |
+| 通知时机 | **仅跃迁** `→waiting`（need_human，**唯一默认飞书出口**）/ `→idle`（turn_idle，默认静默）/ `→done`·TTL；不每 tick 跑模型。从 running 再进 waiting 可再次通知。 |
+| owner 条件 | 需 `feishu_targets.dex_user_id`（主人 open_id）。`dex_chat_id` 只给 say-as-me 用，决策通知不走本人身份。 |
 | waiting 判定 | attention.json → 否则 capture 底栏匹配 **watch 专用锚点**（权限 y/N **与** Claude 选择题 footer：`Enter to select` / `Esc to cancel` 等）。**不用** approve-visible 窄锚点（避免选择题被当 y/N 自动键）。take 时 `last_status=init`，已在等待的 pane 首 tick 也会发 `need_human`。 |
-| idle / turn_idle | attention=`idle`，或 capture：底栏空 `❯` 且无进行中 spinner/tool（`esc to interrupt` / `… (Nm` / Waddling… 等）。用于「回合做完等你决策」；**不**结束 job。 |
-| 通知呈现 | **确定性 NotifyCard**（`notify_card.py`，**无 LLM**）：capture → 按 `kind` 族（`claude`/`codex`/`grok`/`generic`）抽取 → 双通道渲染。飞书（say-as-me）默认 `--markdown`（post）；poke 只收短纯文本 + `【host-watch · …】` 防菜单框。配置：`defaults.watch.notify_format`=`markdown`\|`text`。**禁止**整屏 dump / 横线墙。 |
-| need_human 文案 | 按 kind 族解析器抽题目/选项/当前选中；失败则清洗短摘要。兼容入口仍保留 `format-need-human.py`。 |
+| idle / turn_idle | attention=`idle`，或 capture：底栏空 `❯` 且无进行中 spinner/tool。用于「回合做完」状态机；**默认不推飞书**；**不**结束 job。 |
+| 通知呈现 | **确定性 NotifyCard**（`notify_card.py`，**无 LLM**）：优先 **attention 结构化字段**（`reason` / `waiting_kind` / `last_user_prompt` / `agent_name`）+ capture 按 `kind` 族抽题目/选项 → 双通道渲染。飞书默认 markdown；poke 短纯文本 + `【host-watch · …】`。**禁止**整屏 dump / 横线墙。 |
+| need_human 文案 | attention 字段 + kind 族解析器抽题目/选项/当前选中；失败则清洗短摘要。兼容入口仍保留 `format-need-human.py`。 |
 | job 目录 | `~/.openclaw/state/session-bridge-watch/` |
 | WezTerm 徽章 | poller 每 tick 写 `%LOCALAPPDATA%/wezterm-runtime/state/session-bridge-watch/status.json`；right-status 在 **CDP 与 attention 之间** 显示 `◆ SB·-`（未跑）/ `◆ SB·N`（N=job 数）；`◆` 与 Alt+/ 列表里 sb 行的徽章同字形；waiting>0 时用 waiting 色 |
 | Alt+/ 列表 | `tmux-attention-menu.sh` 追加 `session-bridge-watch-picker-rows.sh` 行（status=`sb`，徽章 ◆）；**Enter** 跳 pane；**Ctrl+X** on ◆ SB = `watch-stop --id` **软停**（`active=false`，job 文件保留审计；列表不再显示；**不**动 agent-attention）。同一快捷键在 live attention 行上则 archive+forget 该条（见 [`docs/agent-attention.md`](../../docs/agent-attention.md#keyboard)）。普通 `x` 仍可搜索。Tab 可筛 `[◆ SB watch]`。硬删：`SB_WATCH_PURGE=1 watch-stop` |
-| 默认 TTL | `defaults.watch.ttl_sec`（样例 5400s） |
+| 默认 TTL | `defaults.watch.ttl_sec`（样例 5400s=90m）；**默认滑动续期** `ttl_renew_on_activity=true`：状态跃迁时重置到期时刻；真正闲置满 TTL 才 `ended`。单次 take 可用 `--ttl SEC` |
 | 遥控写键 | **不做**（take ≠ host-send-keys） |
 | 非 agent | **拒绝**（不启 poller）；仅 Claude/Codex/Grok 等 agent 会话 |
 | agent 判定（优先级） | **① pane 前台进程**（tty 上 STAT 含 `+` 的 comm/argv0）→ **② pane_pid 后代树** → ③ `pane_current_command` 名 → ④ live `attention.json`。**不用标题**（任务名噪声大）。不信任单独的 `cmd=sh`（常见 `sh -c claude`）。 |

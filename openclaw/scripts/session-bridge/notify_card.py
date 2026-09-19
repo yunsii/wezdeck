@@ -356,28 +356,52 @@ def extract_card(
     }
 
     if event == "need_human":
-        card["headline"] = "需要确认"
+        card["headline"] = "需要你决策"
         parsed = ext.need_human(lines)
         card["title"] = parsed.title
         card["question"] = parsed.question
         card["options"] = parsed.options
         card["hint"] = parsed.hint
         card["summary_lines"] = parsed.summary_lines
-        if not (parsed.options or parsed.question or parsed.title or parsed.summary_lines):
+        # Prefer attention.json structured fields over raw pane-tail dump.
+        structured: list[str] = []
+        lup = str(extra.get("last_user_prompt") or "").strip()
+        wk = str(extra.get("waiting_kind") or "").strip()
+        ag = str(extra.get("agent_name") or "").strip()
+        if lup:
+            structured.append(f"最近用户意图: {lup}")
+        if wk:
+            structured.append(f"等待类型: {wk}")
+        if ag:
+            structured.append(f"agent: {ag}")
+        reason = str(extra.get("reason") or "").strip()
+        if reason and reason not in (parsed.question, parsed.title):
+            # reason already on card.reason; also seed summary when parse is thin
+            if not (parsed.options or parsed.question or parsed.title):
+                structured.insert(0, reason)
+        if structured and not (parsed.options or parsed.question or parsed.title):
+            card["summary_lines"] = structured + list(card["summary_lines"] or [])
+        elif structured and not card["summary_lines"]:
+            card["summary_lines"] = structured
+        if not (parsed.options or parsed.question or parsed.title or card["summary_lines"]):
+            # Last resort: cleaned capture tail — still better than rule walls.
             card["summary_lines"] = fallback_summary(lines[-20:])
         card["action"] = "回对应 tmux pane 选择/确认（本通知不代按键）"
         return card
 
     if event == "turn_idle":
-        card["headline"] = "回合空闲（可决策）"
+        card["headline"] = "回合空闲"
         card["summary_lines"] = ext.turn_idle(lines)
+        lup = str(extra.get("last_user_prompt") or "").strip()
+        if lup and not card["summary_lines"]:
+            card["summary_lines"] = [f"最近用户意图: {lup}"]
         card["action"] = "回对应 tmux pane 继续或收工"
         card["meta"]["job"] = "继续盯梢（未结束）"
         return card
 
     if event == "take":
         card["headline"] = "已接管盯梢"
-        card["action"] = "只在需确认 / 回合空闲 / 会话结束时再通知；不代按 TUI"
+        card["action"] = "默认只在「需要你决策」时推飞书；不代按 TUI"
         return card
 
     if event == "ended":
@@ -472,7 +496,21 @@ def render_feishu_md(card: dict[str, Any]) -> str:
         lines.append(f"- **备注:** {card['note']}")
     if card.get("reason"):
         lines.append(f"- **原因:** {card['reason']}")
-    for k, v in (card.get("meta") or {}).items():
+    meta = card.get("meta") or {}
+    for k in ("waiting_kind", "last_user_prompt", "agent_name", "git_branch"):
+        v = meta.get(k)
+        if v is None or v == "":
+            continue
+        label = {
+            "waiting_kind": "等待类型",
+            "last_user_prompt": "最近用户意图",
+            "agent_name": "agent",
+            "git_branch": "分支",
+        }.get(k, k)
+        lines.append(f"- **{label}:** {v}")
+    for k, v in meta.items():
+        if k in ("waiting_kind", "last_user_prompt", "agent_name", "git_branch"):
+            continue
         if v is None or v == "":
             continue
         lines.append(f"- **{k}:** {v}")
@@ -557,20 +595,19 @@ def render_poke_frame(card: dict[str, Any]) -> str:
     frames = {
         "take": (
             "【host-watch · take】",
-            "我（主人）用 Ctrl+K w 把本机 tmux agent pane 交给你盯梢。",
-            "这是 host→你 的交接，不是 bot 广播，也不是让你代按 TUI。",
-            "规则：只在「需我确认 / 回合空闲 / 会话结束」时再找我；不要把后文选项当成你的飞书菜单。",
+            "主人用 Ctrl+K w 把本机 tmux agent pane 交给盯梢。",
+            "默认不推飞书 ack；只有 need_human（要主人决策）才 bot DM 主人。",
+            "不要代按 TUI；不要把后文选项当成飞书菜单。",
         ),
         "need_human": (
             "【host-watch · need_human】",
-            "本机 host 会话卡住、需要我本人回 tmux 处理。",
-            "下面是结构化摘要——不是你的飞书 1/2/3 菜单，请勿代选。",
-            "请提醒我回主机处理。除非我明确授权 lease/host-send-keys，不要代按键。",
+            "本机 host 会话需要主人回 tmux 决策（权限/选择题等）。",
+            "下面优先来自 attention 结构化字段 + TUI 解析——不是飞书 1/2/3 菜单，请勿代选。",
+            "除非主人明确授权 lease/host-send-keys，不要代按键。",
         ),
         "turn_idle": (
             "【host-watch · turn_idle】",
-            "本机 agent 回合已停在空闲 prompt，方便你回主机做决策。",
-            "下面是结构化摘要——不是你的飞书菜单，请勿代选。",
+            "本机 agent 回合停在空闲 prompt（默认不推飞书；本条仅 poke/审计用）。",
             "盯梢继续（job 未关）；除非明确授权，不要代按 TUI。",
         ),
         "ended": (

@@ -33,7 +33,7 @@ echo "$card" | jq -e '.options | length == 2' >/dev/null || fail opts
 echo "$card" | jq -e '.options[0].selected == true' >/dev/null || fail selected
 
 md=$(printf '%s\n' "$card" | python3 "$PY" render --channel feishu_md)
-echo "$md" | grep -q '## 🔔 需要确认' || fail md-head
+echo "$md" | grep -q '## 🔔 需要你决策' || fail md-head
 echo "$md" | grep -q '← 当前' || fail md-sel
 if echo "$md" | grep -q '────'; then fail 'md has rules'; fi
 
@@ -82,6 +82,18 @@ if echo "$card_g" | jq -r '.summary_lines[]' | grep -q '────'; then fail
 md_g=$(printf '%s\n' "$card_g" | python3 "$PY" render --channel feishu_md)
 echo "$md_g" | grep -q '回合空闲' || fail grok-md
 if echo "$md_g" | grep -q 'pane 尾部'; then fail 'idle still dumps pane tail'; fi
+
+# Structured attention extras beat empty capture for need_human
+card_attn=$(python3 "$PY" card --event need_human --target 's:1.1' --kind claude-tui \
+  --extra 'reason=needs your permission' \
+  --extra 'waiting_kind=permission_prompt' \
+  --extra 'last_user_prompt=调研 turbopack')
+echo "$card_attn" | jq -e '.reason == "needs your permission"' >/dev/null || fail attn-reason
+echo "$card_attn" | jq -r '.summary_lines[]' | grep -q 'turbopack' || fail attn-lup
+echo "$card_attn" | jq -e '.meta.waiting_kind == "permission_prompt"' >/dev/null || fail attn-wk
+md_attn=$(printf '%s\n' "$card_attn" | python3 "$PY" render --channel feishu_md)
+echo "$md_attn" | grep -q '最近用户意图' || fail attn-md-lup
+echo "$md_attn" | grep -q '等待类型' || fail attn-md-wk
 
 # take / ended without capture
 take=$(python3 "$PY" card --event take --target t:0.0 --kind claude-tui \

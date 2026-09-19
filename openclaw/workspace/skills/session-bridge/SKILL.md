@@ -30,12 +30,14 @@ tmux 版本策略：`docs/tmux-install.md`
 | 查 Dex 会话 | `$SB claw-ls` / `claw-show --id dex` |
 | 机器人通知 | `$SB bot-send --to dex -m '…'`（默认 dry-run） |
 | **本人**飞书说话 | `$SB say-as-me --to dex -m '…'`（P3；默认 dry-run） |
-| **饭点接管聚焦 pane** | 快捷键 **Ctrl+K w**；或 `$SB take --focus --confirm-notify`。默认 **你→Dex**（say-as-me + poke），不是 bot 推你 |
+| **饭点接管聚焦 pane** | 快捷键 **Ctrl+K w**；或 `$SB take --focus --confirm-notify`。默认 **只在 need_human 时 bot→主人**（`owner`），不拿本人身份刷 Dex |
 | 查/停盯梢 | `$SB watch-status` / `watch-stop --all` |
 | 紧急停写 | `$SB panic on` |
 
-`take` 只做轻量轮询 + **向 Dex 交接**（需确认 / 回合空闲 turn_idle / 会话结束）；**不**代按 TUI、不每 tick 跑模型。turn_idle 时 job 继续盯，不自动结束。  
-通知默认 `user+poke`：本人进 Dex 飞书会话 + session poke。文案经 **NotifyCard 呈现适配**（`notify_card.py`）：按 pane `kind`（claude/codex/grok）确定性抽取，飞书默认 markdown/post，poke 侧短纯文本 + `【host-watch · …】` 防菜单误判——**不是** LLM 整理。需配置 `feishu_targets.dex_chat_id` 才有 say-as-me；否则至少 poke。  
+`take` 只做轻量轮询 + 状态机；**不**代按 TUI、不每 tick 跑模型。  
+通知按事件分流（`notify_by_event`）：**`need_human`→`owner`**（bot DM 主人，汇总后让你决策）；`turn_idle` / `take` / `ended` 默认 **`none`**。旧 `notify_identity=user+poke` 毯子覆盖已不推荐。  
+TTL 默认 90m，**状态跃迁滑动续期**（`ttl_renew_on_activity`）；真闲置满窗才结束。  
+文案经 **NotifyCard**（`notify_card.py`）：优先 attention 结构化字段 + pane `kind` 抽取，**不是** LLM / 整屏 tmux dump。需 `feishu_targets.dex_user_id` 才能 `owner` DM。  
 **仅 agent pane**：以 **pane 前台进程**为准；**不用标题**。扩展新 TUI：在 `notify_card.py` 的 `KIND_EXTRACTORS` / `KIND_FAMILY` 注册解析器即可。
 
 ## 硬规则

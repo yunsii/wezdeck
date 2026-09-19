@@ -56,6 +56,10 @@ sb_attention_index_json() {
             value: {
               status: ($e.status // "unknown"),
               reason: ($e.reason // ""),
+              waiting_kind: ($e.waiting_kind // null),
+              last_user_prompt: ($e.last_user_prompt // null),
+              agent_name: ($e.agent_name // null),
+              git_branch: ($e.git_branch // null),
               tmux_session: ($e.tmux_session // null),
               tmux_window: ($e.tmux_window // null),
               session_id: ($e.session_id // null),

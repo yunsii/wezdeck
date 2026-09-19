@@ -21,11 +21,17 @@
     "tmux_bin": "~/.local/bin/tmux",
     "watch": {
       "ttl_sec": 5400,
+      "ttl_renew_on_activity": true,
       "interval_sec": 10,
       "notify_to": "dex",
-      "notify_identity": "user+poke",
+      "notify_by_event": {
+        "need_human": "owner",
+        "turn_idle": "none",
+        "take": "none",
+        "ended": "none"
+      },
       "notify_format": "markdown",
-      "comment": "take/watch: user=say-as-me into dex_chat_id; poke=inject Dex session; bot=legacy bot→owner (avoid). Default user+poke so Dex notices without looking like Dex DMing you. notify_format=markdown|text — Feishu user channel only; poke always short plain. Capture→NotifyCard uses kind-family extractors (claude|codex|grok|generic)."
+      "comment": "ttl_renew_on_activity: sliding window on status transitions (idle 满 ttl 才结束). notify_by_event: need_human→owner(bot DM 主人决策); turn_idle/take/ended→none. 旧 notify_identity=user+poke 若仍配置则毯子覆盖全事件（不推荐）。owner 用 feishu_targets.dex_user_id。Capture+attention 结构化字段→NotifyCard。"
     },
     "receipt": {
       "enabled": false,

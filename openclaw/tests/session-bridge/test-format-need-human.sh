@@ -15,6 +15,6 @@ echo "$out" | grep -q '【交付路线】' || { echo fail title; exit 1; }
 echo "$out" | grep -q '▶ 1. Opt A' || { echo fail sel; exit 1; }
 echo "$out" | grep -q 'detail a' || { echo fail detail; exit 1; }
 echo "$out" | grep -q '▸ 2. Opt B' || { echo fail o2; exit 1; }
-echo "$out" | grep -q '🔔 需要确认' || { echo fail head; exit 1; }
+echo "$out" | grep -q '🔔 需要你决策' || { echo fail head; exit 1; }
 if echo "$out" | grep -q '────'; then echo 'fail rules'; exit 1; fi
 echo "PASS: format-need-human"
