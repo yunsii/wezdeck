@@ -29,11 +29,13 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Repo hygiene (doc/code size budgets, broken relative links, pre-commit gate, `run.sh audit`):
   Read [`docs/daily-workflow.md#repo-hygiene`](docs/daily-workflow.md#repo-hygiene); run `scripts/dev/repo-hygiene/`.
 
-- Resetting a long-lived `dev-*` workstation / 「重置开发分支」 / recycle onto
-  `origin/HEAD` / closing a round then starting the next task:
+- Resetting a primary checkout or long-lived `dev-*` workstation / 「重置开发分支」 /
+  recycle onto `origin/HEAD` / closing a round then starting the next task:
   Load platform skill [`scripts/dev/worktree-recycle/SKILL.md`](scripts/dev/worktree-recycle/SKILL.md)
   (linked as `worktree-recycle`); do **not** hand-roll `git reset` or ask the
-  human to run CLI. Docs: [`docs/workspaces.md`](docs/workspaces.md#recycle-long-lived-dev--round-reset).
+  human to run CLI. Fast path: fetch + dirty check + hard-reset + remote sync;
+  delivery gate and project init are off by default. Docs:
+  [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-long-lived-dev--round-reset).
   **Standing policy:** after a worktree round is delivered onto mainline, always
   recycle the `dev-*` tree so the next round starts from `origin/HEAD`; keep
   primary `master` / `WEZTERM_REPO` as the machine source of truth

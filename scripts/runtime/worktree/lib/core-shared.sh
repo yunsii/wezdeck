@@ -12,7 +12,7 @@ commands:
   configure Configure or update WEZDECK_REPO for worktree-task
   launch    Create a linked task worktree and optionally open it in tmux
   reclaim   Remove a linked task worktree created by worktree-task
-  recycle   In-place reset a long-lived dev-* worktree onto origin/HEAD
+  recycle   Fast reset primary or linked dev-* onto origin/HEAD (skip delivery by default)
 
 environment:
   WEZDECK_REPO  Required wezdeck checkout root (legacy WEZTERM_CONFIG_REPO still accepted); if missing, run worktree-task configure --repo /absolute/path

@@ -1,10 +1,11 @@
 ---
 name: worktree-recycle
 description: >
-  Reset a long-lived linked dev-* workstation onto origin/HEAD after the round
-  is delivered: soft preflight (beyond git), call worktree-task recycle, then
-  project-specific post-init. Use when the user says 重置开发分支 / 重置工作站 /
-  recycle this worktree / 收尾换下一轮, optionally with a next-task brief.
+  Fast reset of a primary checkout or linked dev-* workstation onto
+  origin/HEAD: soft preflight, then worktree-task recycle (fetch + dirty
+  check + hard-reset + remote sync). Skips delivery gate and project init
+  by default. Use when the user says 重置开发分支 / 重置工作站 / recycle
+  this worktree / 收尾换下一轮, optionally with a next-task brief.
 ---
 
 # Worktree recycle (platform skill — single source)
@@ -12,23 +13,23 @@ description: >
 **Who runs:** the coding agent, **not** the human.  
 **Never** tell the user to copy-paste `worktree-task recycle` as the primary path — load this skill and run the co-located runner.
 
-Hard git ops stay in **`worktree-task recycle`** (delivered gate including squash content-absorption, allowlisted clean, `reset --hard origin/HEAD`, sync `origin/<branch>` to the same tip).  
-This skill owns what the script cannot: **richer preflight**, **human-readable blockers**, and telling the agent what “ready for the next round” still needs after git is clean.
+Hard git ops stay in **`worktree-task recycle`** (dirty check, optional delivered gate, allowlisted clean, branch align to slug, `reset --hard origin/HEAD`, sync `origin/<branch>`).  
+This skill owns soft preflight and readiness hints. **Project bootstrap is not part of recycle** — the next task initializes what it needs.
 
 ## When to load / run
 
 | User intent (examples) | You do |
 | --- | --- |
-| 重置开发分支 / 重置工作站 / recycle / 收尾换下一轮 | `preflight` → if only soft warnings or squash false-positive risk is gone, `recycle -y` → `init` |
+| 重置开发分支 / 重置工作站 / recycle / 收尾换下一轮 | `preflight` (optional glance) → `recycle -y` |
 | 重置并开始做 X / recycle with task X | same, pass `--task "X"` |
 | 只要看看能不能重置 | `preflight` or `recycle --dry-run` only |
-| **wezdeck standing close-out:** worktree round delivered onto `origin/HEAD` / 「合入主分支后收尾」 | same recycle path — **default**, not optional. Then ensure primary `master` / `WEZTERM_REPO` is the machine SoT (ff/rebase primary if it lagged). |
+| 主 worktree / primary / master 对齐最新主分支 | same recycle path on the primary checkout |
+| **wezdeck standing close-out:** worktree round delivered onto `origin/HEAD` / 「合入主分支后收尾」 | same recycle path — **default**, not optional |
 
 **Skip / redirect:**
 
 - Short-lived `task-*` / `hotfix-*` end-of-life → **`worktree-task reclaim`** / `Ctrl+k g r` (not this skill)
-- Primary worktree / mainline-only checkout with no linked `dev-*` → refuse; do not invent a slug
-- Pure `git reset` without delivery checks → do not bypass this skill
+- Pure `git reset` without this skill → do not bypass; still use the runner
 
 **wezdeck policy:** worktrees = **isolation**; delivery = **direct mainline** (no PR).  
 **Invariant:** idle `dev/*` tip **must equal** `origin/HEAD`. After landing on mainline (or when mainline moved while the workstation sat idle), **immediately** recycle — do not leave `dev/*` behind. See `docs/workspaces.md` → Maintenance loop.
@@ -58,59 +59,56 @@ Install / refresh discovery (idempotent, from wezdeck):
 
 | Layer | Duty |
 | --- | --- |
-| **Skill + `run.sh`** | Soft preflight report, orchestrate recycle, print readiness hints |
-| **`worktree-task recycle`** | Dirty/delivered hard gates, temp-branch prune, debug-file allowlist, `reset --hard`, remote sync |
-| **Agent (you)** | After git is clean, **re-initialize the project yourself** for whatever stack this repo uses — do not ask the human to run bootstrap |
-| **Human** | Intent; confirm only when preflight shows **real** blockers (unique undelivered content, dirty outside allowlist) |
+| **Skill + `run.sh`** | Soft preflight, orchestrate recycle; init only with `--with-init` |
+| **`worktree-task recycle`** | Fetch, dirty gate, branch align, hard-reset, remote sync |
+| **Agent (you)** | After git is clean, start the next task; bootstrap the stack only if that task needs it |
+| **Human** | Intent; confirm only when preflight shows **real** blockers (wrong lifecycle slug, dirty outside allowlist) |
 
 ## Agent procedure
 
-1. **Resolve** TOOL_HOME; confirm `"$R"` is executable. Cwd should be the linked `dev-*` worktree (or pass `--cwd`).
-2. **Preflight** (always first):
+1. **Resolve** TOOL_HOME; confirm `"$R"` is executable. Cwd may be a linked `dev-*` worktree **or** the primary checkout (or pass `--cwd`).
+2. **Preflight** (optional glance; recycle also runs it):
    ```bash
    "$R" preflight --cwd "$PWD"
    ```
-   Read the report. Soft signals (attention waiting, open `.delegate/`) are warnings — explain in Chinese only if they matter. Unique undelivered content / dirty outside allowlist are real blockers.
+   Soft signals only. `task-*` / `hotfix-*` are real blockers (use reclaim). Dirty trees need `--force` or a clean tree.
 3. If the user already named the next task, keep it for `--task`.
-4. **When the user already said 重置 / recycle:** do **not** ask again about squash vs push vs manual reset. Squash merges are content-checked automatically; remote sync is the default end state. Proceed:
+4. **When the user already said 重置 / recycle:** do **not** re-ask about squash / push / init. Proceed:
    ```bash
    "$R" recycle --cwd "$PWD" -y [--task "…"] [--fresh-agent] [--dry-run]
    ```
-   Prefer `-y` after a clean preflight or when the user explicitly overrode a real blocker. Do **not** invent a second “先 push 旧 tip / 不推手动 reset” fork.
-5. **Init report** (always after a successful non-dry recycle — `run.sh recycle` already chains this; call only if you invoked `worktree-task` directly):
-   ```bash
-   "$R" init --cwd "$PWD"
-   ```
-   Treat the printed recipe / suggestions as hints only. **You** then bring the tree to a workable state for *this* repo (deps, codegen, caches, services — whatever the project actually needs). Stay stack-agnostic: Node may be `pnpm install`, Rust `cargo fetch`, Go `go mod download`, or a project `make bootstrap` — infer from the tree; do not hard-code one ecosystem, and do not invent a per-repo hook just to run install. Open/read `.task-brief.md` if present and start the next round from that brief.
-6. **Report** briefly: delivery basis (SHA merged / content absorbed / pushed), new HEAD, remote sync result, pruned/cleaned summary, what you ran to re-init (if anything), next step (including `/clear` when `--fresh-agent`).
+   Prefer `-y` when the user explicitly asked to reset. Do **not** invent a “先 push / 手动 reset / 先 bootstrap” fork.
+5. **Do not run init** unless the user asked or you pass `--with-init`. Leave deps/codegen/services to the follow-up task.
+6. **Report** briefly: new HEAD, branch (after slug align), remote sync result, next step (including `/clear` when `--fresh-agent`).
 
 ## Preflight covers (skill layer)
 
 | Check | Hard / soft | Notes |
 | --- | --- | --- |
-| Linked `dev-*` (not primary / not task-*) | hard via CLI | Script refuses otherwise |
-| Dirty outside recycle allowlist | hard | Fix or explicit `--force` from user |
-| Delivered (`origin/HEAD` ancestor, **content absorbed**, or pushed remote contains HEAD) | hard | Squash/rebase: content check, no human quiz |
-| `.delegate/` leftovers | soft→clean | Allowlisted clean; warn if looks like an active ticket |
-| Attention `waiting` on this pane | soft warn | Do not treat attention `done` as merge proof |
+| Primary **or** linked `dev-*` | hard | `task-*` / `hotfix-*` → reclaim |
+| Dirty outside recycle allowlist | hard (CLI) | Fix or explicit `--force` from user |
+| Delivery / content-absorbed | **off by default** | Opt in with `--require-delivered` |
+| `.delegate/` leftovers | soft | Allowlisted clean on linked trees |
 | Next-task text from user | passthrough | Becomes `--task` / `.task-brief.md` |
 
 ## Desired end state
 
-After a successful recycle + agent re-init:
+After a successful recycle:
 
-- Local `dev/*` tip == `origin/HEAD` (default branch tip)
+- Local tip == `origin/HEAD` (default branch tip)
+- Branch name matches the worktree slug mapping (`dev-agent` → `dev/agent`); primary uses the default branch (`master` / `main`)
 - `origin/<same branch>` tip == that same commit (unless `--no-sync-remote`)
-- Upstream is `origin/<branch>` (never the default branch)
-- The workstation is actually usable for the next round (agent restored whatever this repo needs — not “git clean but deps broken”)
+- Upstream is `origin/<branch>` (linked never tracks the default branch)
+- Project bootstrap **not** required by recycle itself
 
-## Project init (after recycle)
+## Fast path defaults
 
-Git reset is universal; **project bootstrap is not**. Keep that split:
-
-1. `run.sh init` may print a builtin recipe / suggestions (wezdeck skips `sync-runtime`; generic may list detected lockfiles). Suggestions are **not** executed by the skill.
-2. Optional escape hatches only when a repo truly needs non-obvious automation: executable `.worktree-recycle/post-recycle.sh`, or `WT_RECYCLE_POST_HOOK`. Do **not** add a hook just to run a one-line package-manager install — the agent should do that.
-3. **Default path:** after recycle, the agent inspects the tree and re-initializes appropriately for that stack. No Node/Rust/Go special-case in the skill runner.
+| Behavior | Default | Opt-in / opt-out |
+| --- | --- | --- |
+| Delivery gate | skip | `--require-delivered` / `WT_RECYCLE_REQUIRE_DELIVERED=1` |
+| Branch align to slug | on | `--keep-branch-name` / `WT_RECYCLE_KEEP_BRANCH_NAME=1` |
+| Remote sync | on | `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0` |
+| Project init | skip | `--with-init` or `run.sh init` |
 
 ## Don't
 
@@ -119,15 +117,14 @@ Git reset is universal; **project bootstrap is not**. Keep that split:
 - Don't use recycle for short-lived `task-*` / `hotfix-*` (use reclaim)
 - Don't `--force` away dirty trees without an explicit user override
 - Don't treat attention / ledger / delegate `shipped` as proof of merge
-- Don't run `sync-runtime` just because recycle finished
-- Don't auto-install a single ecosystem inside the skill runner “for convenience” — that breaks generality; instruct the agent instead
-- Don't leave the human to bootstrap after recycle; the agent re-inits
+- Don't run `sync-runtime` or package installs just because recycle finished
+- Don't auto-bootstrap the project inside the skill runner
 - Don't delete Claude transcripts; use `--fresh-agent` + `/clear` when a blank session is wanted
 - Don't maintain a second SKILL.md body outside this directory (link only)
 
 ## Related
 
-- Runner: `run.sh`, `lib/preflight.sh`, `lib/init.sh`
+- Runner: `run.sh`, `lib/preflight.sh`, `lib/init.sh` (opt-in)
 - Hard ops: `scripts/runtime/worktree/worktree-task recycle`
 - Docs: `docs/workspaces.md` (Recycle), `docs/daily-workflow.md` (closing a round)
 - Link: `scripts/dev/link-platform-skills.sh`

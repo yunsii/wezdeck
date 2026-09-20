@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# worktree-recycle runner — soft preflight + worktree-task recycle + project init.
+# worktree-recycle runner — soft preflight + worktree-task recycle.
+# Project init is opt-in (--with-init); follow-up tasks bootstrap as needed.
 set -euo pipefail
 
 # Resolve through symlinks so ~/.agents/skills/worktree-recycle → this checkout
@@ -61,10 +62,12 @@ usage:
   run.sh preflight [--cwd PATH] [--json]
   run.sh recycle  [--cwd PATH] [-y] [--task TEXT] [--fresh-agent] [--force] [--dry-run]
                   [--keep-temp-branches] [--no-clean-files] [--no-sync-remote]
+                  [--keep-branch-name] [--require-delivered] [--with-init]
   run.sh init     [--cwd PATH]
   run.sh selfcheck
 
-Orchestrates soft preflight → worktree-task recycle → project init.
+Orchestrates soft preflight → worktree-task recycle.
+Project init is skipped by default; pass --with-init to run it.
 EOF
 }
 
@@ -98,7 +101,7 @@ cmd_preflight() {
 cmd_recycle() {
   local cwd="$PWD"
   local passthrough=()
-  local do_init=1
+  local do_init=0
   local dry_run=0
 
   while [[ $# -gt 0 ]]; do
@@ -118,11 +121,16 @@ cmd_recycle() {
         passthrough+=(--task "$2")
         shift 2
         ;;
-      --fresh-agent|--force|--keep-temp-branches|--no-clean-files|--no-sync-remote|-y|--yes)
+      --fresh-agent|--force|--keep-temp-branches|--no-clean-files|--no-sync-remote|--keep-branch-name|--require-delivered|-y|--yes)
         passthrough+=("$1")
         shift
         ;;
+      --with-init)
+        do_init=1
+        shift
+        ;;
       --skip-init)
+        # Kept for backward compatibility; init is already off by default.
         do_init=0
         shift
         ;;

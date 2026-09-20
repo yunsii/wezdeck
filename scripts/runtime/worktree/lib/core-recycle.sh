@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# core-recycle.sh — worktree-task recycle (in-place reset of long-lived dev-*).
+# core-recycle.sh — worktree-task recycle (fast in-place reset onto origin/HEAD).
 # shellcheck shell=bash
 
 wt_core_recycle_usage() {
@@ -7,10 +7,11 @@ wt_core_recycle_usage() {
 usage:
   worktree-task recycle [options]
 
-Reset a long-lived linked worktree (dev-*) onto origin/HEAD in place:
-  preflight (clean + delivered) → prune temp locals / debug files →
-  hard-reset current branch to origin/HEAD → sync origin/<branch> to the
-  same tip (default) → optional next-task brief.
+Fast reset onto origin/HEAD:
+  fetch → dirty check → hard-reset → sync origin/<branch> (default).
+  Linked dev-*: branch name is forced to the slug mapping (dev-agent → dev/agent).
+  Primary worktree: reset the default branch (master/main) onto origin/HEAD.
+  Delivery gate is off by default (use --require-delivered to restore).
 
 options:
   --cwd PATH              Worktree or repo path. Default: current directory
@@ -20,10 +21,12 @@ options:
   --title TEXT            Write next-task brief after reset (alias: --task)
   --task TEXT             Same as --title
   --fresh-agent           Remind to /clear the resumed agent session
-  --prune-merged-locals   Delete merged temp local branches (default)
+  --prune-merged-locals   Delete merged temp local branches (default for linked)
   --keep-temp-branches    Skip local temp-branch pruning
   --no-clean-files        Skip allowlisted debug-file cleanup
   --no-sync-remote        Do not push origin/<branch> after reset
+  --keep-branch-name      Do not rename linked branch to the slug mapping
+  --require-delivered     Restore the old delivered/content-absorbed gate
   -y, --yes               Skip confirmation (or set WT_RECYCLE_NO_CONFIRM=1)
 EOF
 }
@@ -99,6 +102,54 @@ wt_core_recycle_is_temp_branch() {
       "$prefix"*) return 0 ;;
     esac
   done
+  return 1
+}
+
+# Map lifecycle worktree slug → expected branch (dev-agent → dev/agent).
+wt_core_recycle_branch_for_slug() {
+  local slug="${1:?missing slug}"
+  local subject=""
+
+  case "$slug" in
+    dev-*)
+      subject="${slug#dev-}"
+      [[ -n "$subject" ]] || return 1
+      printf '%s%s\n' "${WT_POLICY_BRANCH_PREFIX_DEV:-dev/}" "$subject"
+      ;;
+    task-*)
+      subject="${slug#task-}"
+      [[ -n "$subject" ]] || return 1
+      printf '%s%s\n' "${WT_POLICY_BRANCH_PREFIX_TASK:-task/}" "$subject"
+      ;;
+    hotfix-*)
+      subject="${slug#hotfix-}"
+      [[ -n "$subject" ]] || return 1
+      printf '%s%s\n' "${WT_POLICY_BRANCH_PREFIX_HOTFIX:-hotfix/}" "$subject"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+# Default branch short name from origin/HEAD (origin/master → master).
+wt_core_recycle_default_branch() {
+  local main_root="${1:?missing main root}"
+  local remote_head=""
+
+  remote_head="$(git -C "$main_root" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  if [[ -n "$remote_head" ]]; then
+    printf '%s\n' "${remote_head#origin/}"
+    return 0
+  fi
+  if git -C "$main_root" show-ref --verify --quiet refs/heads/master; then
+    printf 'master\n'
+    return 0
+  fi
+  if git -C "$main_root" show-ref --verify --quiet refs/heads/main; then
+    printf 'main\n'
+    return 0
+  fi
   return 1
 }
 
@@ -251,6 +302,23 @@ wt_core_recycle_sync_remote() {
   return 1
 }
 
+# Switch (or create) target_branch at tip inside worktree_path.
+wt_core_recycle_checkout_branch_at() {
+  local worktree_path="${1:?missing worktree}"
+  local main_root="${2:?missing main root}"
+  local target_branch="${3:?missing branch}"
+  local tip="${4:?missing tip}"
+  local occupied_by=""
+
+  if occupied_by="$(wt_core_recycle_branch_checked_out "$main_root" "$target_branch")"; then
+    if [[ "$(wt_abs_path "$occupied_by")" != "$(wt_abs_path "$worktree_path")" ]]; then
+      wt_die "target branch $target_branch is checked out at $occupied_by"
+    fi
+  fi
+
+  git -C "$worktree_path" switch --force -C "$target_branch" "$tip" >/dev/null
+}
+
 wt_core_recycle() {
   local cwd="$PWD"
   local worktree_root=""
@@ -262,7 +330,12 @@ wt_core_recycle() {
   local clean_files="1"
   local sync_remote=""
   local skip_confirm="0"
+  local keep_branch_name="0"
+  local require_delivered="0"
+  local is_primary="0"
   local branch_name=""
+  local current_branch=""
+  local expected_branch=""
   local base_tip=""
   local before_head=""
   local after_head=""
@@ -277,6 +350,7 @@ wt_core_recycle() {
   local brief_path=""
   local backup_branch=""
   local remote_sync_plan=""
+  local default_branch=""
 
   start_ms="$(runtime_log_now_ms)"
   WT_RECYCLE_REMOTE_SYNC_RESULT=""
@@ -326,6 +400,14 @@ wt_core_recycle() {
         sync_remote="0"
         shift
         ;;
+      --keep-branch-name)
+        keep_branch_name="1"
+        shift
+        ;;
+      --require-delivered)
+        require_delivered="1"
+        shift
+        ;;
       -y|--yes)
         skip_confirm="1"
         shift
@@ -355,43 +437,73 @@ wt_core_recycle() {
   wt_core_resolve_policy_paths
   # CLI --no-sync-remote wins; otherwise honor WT_RECYCLE_SYNC_REMOTE (default 1).
   sync_remote="${sync_remote:-${WT_RECYCLE_SYNC_REMOTE:-1}}"
+  if [[ "${WT_RECYCLE_REQUIRE_DELIVERED:-0}" == "1" ]]; then
+    require_delivered="1"
+  fi
+  if [[ "${WT_RECYCLE_KEEP_BRANCH_NAME:-0}" == "1" ]]; then
+    keep_branch_name="1"
+  fi
 
   WT_WORKTREE_PATH="$(wt_abs_path "${worktree_root:-$WT_REPO_ROOT}")"
   if [[ "$WT_WORKTREE_PATH" == "$WT_MAIN_WORKTREE_ROOT" ]]; then
-    wt_die "refusing to recycle the primary worktree; recycle is for linked long-lived workstations"
+    is_primary="1"
   fi
 
-  case "$WT_WORKTREE_PATH" in
-    "$WT_POLICY_WORKTREE_DIR_ABS"/*)
-      ;;
-    *)
-      wt_die "target worktree is not under the managed task directory: $WT_WORKTREE_PATH"
-      ;;
-  esac
+  if [[ "$is_primary" != "1" ]]; then
+    case "$WT_WORKTREE_PATH" in
+      "$WT_POLICY_WORKTREE_DIR_ABS"/*)
+        ;;
+      *)
+        wt_die "target worktree is not under the managed task directory: $WT_WORKTREE_PATH"
+        ;;
+    esac
 
-  [[ -d "$WT_WORKTREE_PATH" ]] || wt_die "task worktree does not exist: $WT_WORKTREE_PATH"
-  wt_git_in_repo "$WT_WORKTREE_PATH" || wt_die "task worktree is not a git worktree: $WT_WORKTREE_PATH"
-  if [[ "$(wt_git_common_dir "$WT_WORKTREE_PATH" || true)" != "$WT_REPO_COMMON_DIR" ]]; then
-    wt_die "task worktree belongs to another repo family: $WT_WORKTREE_PATH"
+    [[ -d "$WT_WORKTREE_PATH" ]] || wt_die "task worktree does not exist: $WT_WORKTREE_PATH"
+    wt_git_in_repo "$WT_WORKTREE_PATH" || wt_die "task worktree is not a git worktree: $WT_WORKTREE_PATH"
+    if [[ "$(wt_git_common_dir "$WT_WORKTREE_PATH" || true)" != "$WT_REPO_COMMON_DIR" ]]; then
+      wt_die "task worktree belongs to another repo family: $WT_WORKTREE_PATH"
+    fi
+
+    WT_TASK_SLUG="$(basename "$WT_WORKTREE_PATH")"
+    case "$WT_TASK_SLUG" in
+      dev-*)
+        ;;
+      *)
+        wt_die "recycle is for primary or long-lived dev-* worktrees; use reclaim for $WT_TASK_SLUG"
+        ;;
+    esac
+  else
+    WT_TASK_SLUG="$(basename "$WT_WORKTREE_PATH")"
   fi
 
-  WT_TASK_SLUG="$(basename "$WT_WORKTREE_PATH")"
-  case "$WT_TASK_SLUG" in
-    dev-*)
-      ;;
-    *)
-      wt_die "recycle is for long-lived dev-* worktrees; use reclaim for $WT_TASK_SLUG"
-      ;;
-  esac
-
-  branch_name="$(git -C "$WT_WORKTREE_PATH" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
-  if [[ -z "$branch_name" ]]; then
+  current_branch="$(git -C "$WT_WORKTREE_PATH" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+  if [[ -z "$current_branch" ]]; then
     wt_die "$WT_TASK_SLUG is in detached-HEAD state; not safe to recycle"
+  fi
+
+  if [[ "$is_primary" == "1" ]]; then
+    default_branch="$(wt_core_recycle_default_branch "$WT_MAIN_WORKTREE_ROOT")" \
+      || wt_die "could not resolve default branch for primary recycle"
+    branch_name="$default_branch"
+    expected_branch="$default_branch"
+    # Primary: skip temp-branch prune by default (workstation-only hygiene).
+    if [[ "$prune_merged_locals" == "1" && -z "${WT_RECYCLE_PRUNE_ON_PRIMARY:-}" ]]; then
+      prune_merged_locals="0"
+    fi
+  else
+    if [[ "$keep_branch_name" == "1" ]]; then
+      branch_name="$current_branch"
+      expected_branch="$current_branch"
+    else
+      expected_branch="$(wt_core_recycle_branch_for_slug "$WT_TASK_SLUG")" \
+        || wt_die "cannot derive branch name from slug: $WT_TASK_SLUG"
+      branch_name="$expected_branch"
+    fi
   fi
   WT_BRANCH_NAME="$branch_name"
 
   # Plan file cleanup first so dirty checks can ignore allowlisted leftovers.
-  if [[ "$clean_files" == "1" ]]; then
+  if [[ "$clean_files" == "1" && "$is_primary" != "1" ]]; then
     while IFS= read -r candidate; do
       [[ -n "$candidate" ]] || continue
       cleaned_files+=("$candidate")
@@ -412,16 +524,23 @@ wt_core_recycle() {
     fi
   fi
 
-  wt_tmux_progress "[worktree-task] recycle: checking delivery…"
+  wt_tmux_progress "[worktree-task] recycle: fetching origin…"
   if ! wt_delivery_fetch_origin "$WT_MAIN_WORKTREE_ROOT"; then
     runtime_log_warn task "recycle fetch origin failed; using local refs" "worktree=$WT_WORKTREE_PATH"
-    printf 'warning: git fetch origin failed; delivery check uses local refs only\n' >&2
+    printf 'warning: git fetch origin failed; recycle uses local refs only\n' >&2
   fi
 
-  if ! wt_delivery_check "$WT_WORKTREE_PATH" "$WT_MAIN_WORKTREE_ROOT" "$branch_name"; then
-    delivery_blocker="$WT_DELIVERY_REFUSE_REASON"
-    if [[ "$dry_run" != "1" ]]; then
-      wt_die "$delivery_blocker"
+  if [[ "$require_delivered" == "1" ]]; then
+    if [[ "$is_primary" == "1" ]]; then
+      printf 'warning: --require-delivered ignored on primary worktree\n' >&2
+    else
+      wt_tmux_progress "[worktree-task] recycle: checking delivery…"
+      if ! wt_delivery_check "$WT_WORKTREE_PATH" "$WT_MAIN_WORKTREE_ROOT" "$current_branch"; then
+        delivery_blocker="$WT_DELIVERY_REFUSE_REASON"
+        if [[ "$dry_run" != "1" ]]; then
+          wt_die "$delivery_blocker"
+        fi
+      fi
     fi
   fi
 
@@ -430,11 +549,12 @@ wt_core_recycle() {
   base_tip="$WT_DELIVERY_BASE_TIP"
   before_head="$(git -C "$WT_WORKTREE_PATH" rev-parse --verify HEAD)"
 
-  # Plan temp branch deletions.
+  # Plan temp branch deletions (linked worktrees only by default).
   if [[ "$prune_merged_locals" == "1" ]]; then
     while IFS= read -r candidate; do
       [[ -n "$candidate" ]] || continue
       [[ "$candidate" == "$branch_name" ]] && continue
+      [[ "$candidate" == "$current_branch" ]] && continue
       case "$candidate" in
         master|main) continue ;;
       esac
@@ -449,9 +569,18 @@ wt_core_recycle() {
   fi
 
   printf 'recycle plan\n'
+  if [[ "$is_primary" == "1" ]]; then
+    printf '  mode: primary\n'
+  else
+    printf '  mode: linked\n'
+  fi
   printf '  worktree: %s\n' "$WT_WORKTREE_PATH"
   printf '  slug: %s\n' "$WT_TASK_SLUG"
-  printf '  branch: %s\n' "$branch_name"
+  printf '  branch now: %s\n' "$current_branch"
+  printf '  branch target: %s\n' "$branch_name"
+  if [[ "$current_branch" != "$branch_name" ]]; then
+    printf '  branch align: %s → %s\n' "$current_branch" "$branch_name"
+  fi
   printf '  base: %s (%s)\n' "$WT_DELIVERY_BASE_REF_LABEL" "$(git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --short "$base_tip")"
   printf '  HEAD now: %s\n' "$(git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --short "$before_head")"
   if [[ -n "$dirty_blocker" ]]; then
@@ -459,22 +588,28 @@ wt_core_recycle() {
   fi
   if [[ -n "$delivery_blocker" ]]; then
     printf '  blocker: %s\n' "$delivery_blocker"
-  elif [[ "${WT_DELIVERY_CONTENT_ABSORBED:-0}" == "1" ]]; then
-    printf '  delivery: content absorbed into %s (squash/rebase-safe)\n' "$WT_DELIVERY_DEFAULT_REF_LABEL"
-  elif [[ "$WT_DELIVERY_MERGED_INTO_DEFAULT" == "1" ]]; then
-    printf '  delivery: merged into %s\n' "$WT_DELIVERY_DEFAULT_REF_LABEL"
-  elif [[ "$WT_DELIVERY_PUSHED_AND_IN_SYNC" == "1" ]]; then
-    printf '  delivery: pushed; origin/%s contains local HEAD\n' "$branch_name"
+  elif [[ "$require_delivered" == "1" ]]; then
+    if [[ "${WT_DELIVERY_CONTENT_ABSORBED:-0}" == "1" ]]; then
+      printf '  delivery: content absorbed into %s (squash/rebase-safe)\n' "$WT_DELIVERY_DEFAULT_REF_LABEL"
+    elif [[ "${WT_DELIVERY_MERGED_INTO_DEFAULT:-0}" == "1" ]]; then
+      printf '  delivery: merged into %s\n' "$WT_DELIVERY_DEFAULT_REF_LABEL"
+    elif [[ "${WT_DELIVERY_PUSHED_AND_IN_SYNC:-0}" == "1" ]]; then
+      printf '  delivery: pushed; origin/%s contains local HEAD\n' "$current_branch"
+    fi
+  else
+    printf '  delivery: skipped (fast path; use --require-delivered to enforce)\n'
   fi
-  if [[ "$before_head" != "$base_tip" ]]; then
-    backup_branch="backup/$(printf '%s' "$branch_name" | tr '/' '-')-$(date +%Y%m%d-%H%M)"
+  if [[ "$before_head" != "$base_tip" || "$current_branch" != "$branch_name" ]]; then
+    backup_branch="backup/$(printf '%s' "$current_branch" | tr '/' '-')-$(date +%Y%m%d-%H%M)"
     printf '  backup branch: %s (pre-reset tip)\n' "$backup_branch"
   else
     printf '  backup branch: (none; already on base)\n'
   fi
   if [[ "$sync_remote" == "1" ]]; then
     if git -C "$WT_WORKTREE_PATH" remote get-url origin >/dev/null 2>&1; then
-      if git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --verify --quiet "refs/remotes/origin/$branch_name" >/dev/null 2>&1; then
+      if [[ "$is_primary" == "1" ]]; then
+        remote_sync_plan="ensure origin/$branch_name == base (usually noop after fetch)"
+      elif git -C "$WT_MAIN_WORKTREE_ROOT" rev-parse --verify --quiet "refs/remotes/origin/$branch_name" >/dev/null 2>&1; then
         remote_sync_plan="push origin/$branch_name → base (FF or --force-with-lease)"
       else
         remote_sync_plan="create origin/$branch_name at base"
@@ -514,7 +649,7 @@ wt_core_recycle() {
     return 0
   fi
 
-  if ! wt_core_recycle_confirm "recycle long-lived $WT_TASK_SLUG onto $WT_DELIVERY_BASE_REF_LABEL? (y/N):"; then
+  if ! wt_core_recycle_confirm "recycle $WT_TASK_SLUG onto $WT_DELIVERY_BASE_REF_LABEL? (y/N):"; then
     printf 'recycle cancelled\n' >&2
     wt_tmux_progress ""
     return 0
@@ -543,13 +678,21 @@ wt_core_recycle() {
     runtime_log_info task "recycle backup branch" "branch=$backup_branch" "tip=$before_head"
   fi
 
-  git -C "$WT_WORKTREE_PATH" reset --hard "$base_tip" >/dev/null
-  # Never track the default branch; remote sync below may set origin/<branch>.
+  if [[ "$current_branch" != "$branch_name" ]]; then
+    wt_core_recycle_checkout_branch_at "$WT_WORKTREE_PATH" "$WT_MAIN_WORKTREE_ROOT" "$branch_name" "$base_tip"
+  else
+    git -C "$WT_WORKTREE_PATH" reset --hard "$base_tip" >/dev/null
+  fi
+  # Never track the default branch from a linked workstation; primary keeps origin/<default>.
   git -C "$WT_WORKTREE_PATH" branch --unset-upstream >/dev/null 2>&1 || true
 
   after_head="$(git -C "$WT_WORKTREE_PATH" rev-parse --verify HEAD)"
   if [[ "$after_head" != "$base_tip" ]]; then
     wt_die "recycle reset failed: HEAD=$after_head expected=$base_tip"
+  fi
+  current_branch="$(git -C "$WT_WORKTREE_PATH" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+  if [[ "$current_branch" != "$branch_name" ]]; then
+    wt_die "recycle branch align failed: HEAD=$current_branch expected=$branch_name"
   fi
 
   if [[ "$sync_remote" == "1" ]]; then
@@ -595,12 +738,13 @@ EOF
   if [[ "$fresh_agent" == "1" ]]; then
     printf '  next: open the agent pane and run /clear for a blank session\n'
   else
-    printf '  next: ready for the next task (agent resume keeps prior transcript)\n'
+    printf '  next: ready for the next task (project init left to the follow-up task)\n'
   fi
 
   runtime_log_info task "recycle completed" \
     "worktree_path=$WT_WORKTREE_PATH" \
     "branch=$branch_name" \
+    "primary=$is_primary" \
     "before=$before_head" \
     "after=$after_head" \
     "remote_sync=${WT_RECYCLE_REMOTE_SYNC_RESULT:-skipped}" \

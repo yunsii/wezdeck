@@ -22,7 +22,7 @@ Use this doc when you need to apply or verify changes.
 
 **Standing close-out (wezdeck):** worktrees isolate changes; deliver **directly to mainline (no PR)**, then always recycle the `dev-*` workstation onto `origin/HEAD`, and keep primary `master` / `WEZTERM_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
 
-When the current work on a long-lived linked workstation (`dev-*`) is already on `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), or pushed with the remote containing local HEAD, reset the workstation in place instead of reclaiming it. End state: local `dev/*` **and** `origin/<same branch>` both match the default tip; the agent then re-inits the project for that repo’s stack (skill stays stack-agnostic). **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery or whether to push. **Humans / debug CLI:**
+Reset a primary checkout or long-lived linked workstation (`dev-*`) in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery, push, or bootstrap. **Humans / debug CLI:**
 
 ```bash
 scripts/dev/worktree-recycle/run.sh recycle -y --task "describe the next round"
@@ -30,7 +30,7 @@ scripts/dev/worktree-recycle/run.sh recycle -y --task "describe the next round"
 scripts/runtime/worktree/worktree-task recycle -y --task "describe the next round"
 ```
 
-Full semantics (delivered gate, temp-branch prune, debug-file allowlist, brief file, hooks): [`workspaces.md` Task Worktree Lifecycle / Recycle](./workspaces.md#recycle-long-lived-dev--round-reset). Short-lived `task-*` / `hotfix-*` trees still use `Ctrl+k g r` / `worktree-task reclaim`.
+Full semantics (fast path, optional `--require-delivered`, temp-branch prune, debug-file allowlist, brief file, opt-in `--with-init`): [`workspaces.md` Task Worktree Lifecycle / Recycle](./workspaces.md#recycle-primary-or-long-lived-dev--round-reset). Short-lived `task-*` / `hotfix-*` trees still use `Ctrl+k g r` / `worktree-task reclaim`.
 
 ### Manual / recovery
 
