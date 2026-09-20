@@ -50,6 +50,7 @@ Read additional topic files only when the current file points to them or the tas
 - Restructuring existing code or replacing a subsystem → [refactor.md](./refactor.md)
 - Whether a rule belongs in doc, script, hook, skill, or plugin → [automation.md](./automation.md)
 - Choosing, sequencing, batching tool calls, or selecting evidence sources → [tool-use.md](./tool-use.md)
+- Dependency / upstream / third-party / internal-service fault triage (prefer web+tracker for public deps; org tools for internal; OSS issues/discussions + source-indexed / browser evidence) → [dependency-triage.md](./dependency-triage.md)
 - Creating, splitting, or maintaining agent-facing docs; Markdown hard-wrap vs issue/PR/comment long lines → [documentation.md](./documentation.md) (`Markdown surfaces`)
 - Initializing `AGENTS.md` / `CLAUDE.md` in a new or undocumented repo, distilling `/init`-style scaffolder output, deciding when to split into a layered profile → [repo-bootstrap.md](./repo-bootstrap.md)
 - Host-side side effects (clipboard writes, app focus, browser, notifications, reveal in shell, wrapper boundary, or capability discovery) → [platform-actions.md](./platform-actions.md)
@@ -71,6 +72,7 @@ Full rules live in the routed topic file.
 
 - Prior art: before designing — code, docs, automation, hooks, anything — search the codebase, the framework, and the broader community first; cite what you adopted, adapted, or rejected; full rule in [implementation.md](./implementation.md) `Prior Art First`.
 - Evidence before judgment: for non-trivial requests, gather the narrowest sufficient evidence before judging; compare viable options when there is meaningful choice, then recommend with tradeoffs and uncertainty; full rule in [implementation.md](./implementation.md) `Evidence Before Judgment`.
+- Dependency triage: when the fault likely sits in a dependency, classify public-external / vendor / internal first; public and OSS → prioritize current web + Issues/Discussions/changelog (plus source-indexed upstream analysis and live browser when needed); internal → org-local logs/deploy/service tools, not public-web rabbit holes. Full playbook in [dependency-triage.md](./dependency-triage.md).
 - Agency / closed loop: on failure, diagnose → safe self-fix → verify → report; do not dump bare errors or undecoded platform failure lists; escalate only with situation + options + recommendation. Detail in [reporting.md](./reporting.md).
 - Critique: user chat is high priority but not unexamined; challenge weak requirements with evidence and alternatives; self-critique process misses. Prefer professional dissent over empty agreement.
 - Human-readable: user-facing text must be understandable without decoding internal codes (mode letters, skill ids); Chinese primary; codes only as parenthetical aids. Full rule in [reporting.md](./reporting.md) / [preferences.md](./preferences.md).
