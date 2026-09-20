@@ -5,7 +5,9 @@ triggers:
   - creating agent-facing docs
   - splitting or revising docs
   - doc layering decisions
-tags: [documentation, layering, progressive-disclosure]
+  - Markdown hard-wrap versus render-platform long lines
+  - issue or PR or comment body formatting
+tags: [documentation, layering, progressive-disclosure, markdown-surfaces]
 ---
 
 # Documentation
@@ -91,6 +93,18 @@ Numeric gates belong in automation when a repo provides them. Defaults used by w
 - [documentation-37] Prefer splitting at soft; block **new** files or **newly crossing** hard in pre-commit when the repo installs the hygiene hook. Historical over-hard files may be allowlisted so day-to-day commits are not frozen on old debt.
 - [documentation-38] Broken relative markdown links are a hard fail whenever automation is present; do not leave routes to deleted files.
 
+## Markdown surfaces (repo vs render platform)
+
+Two surfaces share Markdown syntax but not the same newline contract. Mixing them is a recurring publish bug (wide screens show a narrow left strip of hard breaks).
+
+- [documentation-40] **Git-tracked Markdown** (repo `.md` under version control): hard-wrapped / semantic line breaks are fine. Repo renderers treat a soft break inside a paragraph as a space; line-oriented diffs stay readable.
+- [documentation-41] **Render-platform Markdown** (issue / PR description, PR & ticket comments, many chat / Feishu rich-text Markdown bodies, CNB / GitHub comment UIs): write **paragraph-long lines**. Those UIs commonly enable GFM-style breaks: a single newline inside a paragraph becomes `<br>`, so repo-style hard wraps become visible fractures.
+- [documentation-42] Do **not** paste hard-wrapped repo prose into a render-platform body without unwrapping first. Terminal preview and the source file both look fine; the break only shows after publish.
+- [documentation-43] When transforming hard-wrapped source into a render-platform body, preserve structure: leave fenced code blocks untouched; keep each table row on its own line; merge list-item continuation lines into the item; merge blockquote continuation lines. Join English (Latin) word breaks with a single space; join CJK runs with **no** extra space.
+- [documentation-44] Prefer the wezdeck helper over hand-editing when the body is non-trivial: `scripts/dev/markdown-unwrap-prose/unwrap.py` (stdin→stdout, or paths; `--check` / `--stdout`). Do **not** run it as a repo-wide pre-commit rewriter — that would fight [documentation-40].
+- [documentation-45] PR / issue body rules in [vcs.md](./vcs.md) inherit [documentation-41]–[documentation-44]; chat-facing Markdown in [reporting.md](./reporting.md) does too.
+
+Prior art: GitHub issue/comment renderers treating softbreaks as `<br>` (community discussions since ~2020); unwrap tools such as `markdown-prose-hooks` (2026) for the opposite repo convention — adopted here only as the **outbound** transform, not as a repo prose style.
 
 ## Prior Art
 

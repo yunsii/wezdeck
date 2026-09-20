@@ -50,7 +50,7 @@ Read additional topic files only when the current file points to them or the tas
 - Restructuring existing code or replacing a subsystem → [refactor.md](./refactor.md)
 - Whether a rule belongs in doc, script, hook, skill, or plugin → [automation.md](./automation.md)
 - Choosing, sequencing, batching tool calls, or selecting evidence sources → [tool-use.md](./tool-use.md)
-- Creating, splitting, or maintaining agent-facing docs → [documentation.md](./documentation.md)
+- Creating, splitting, or maintaining agent-facing docs; Markdown hard-wrap vs issue/PR/comment long lines → [documentation.md](./documentation.md) (`Markdown surfaces`)
 - Initializing `AGENTS.md` / `CLAUDE.md` in a new or undocumented repo, distilling `/init`-style scaffolder output, deciding when to split into a layered profile → [repo-bootstrap.md](./repo-bootstrap.md)
 - Host-side side effects (clipboard writes, app focus, browser, notifications, reveal in shell, wrapper boundary, or capability discovery) → [platform-actions.md](./platform-actions.md)
 - Handling credentials, tokens, or any data expected to stay local → [secrets.md](./secrets.md)
@@ -86,7 +86,7 @@ Full rules live in the routed topic file.
 - Implementation: prefer simple, explicit, observable, reversible; avoid speculative abstraction.
 - Automation: implement over instruct when consistency matters.
 - Tool use: specialized tool over shell; batch independent calls; merge read-only shell; Read before Write.
-- Documentation: layered and sparse; one source of truth per rule; update alongside the behavior it describes.
+- Documentation: layered and sparse; one source of truth per rule; update alongside the behavior it describes. Repo `.md` may hard-wrap; issue/PR/comment Markdown must be paragraph-long lines ([documentation.md](./documentation.md) `Markdown surfaces`).
 - Platform actions: narrow, explicit, reversible; ask before secrets, destructive, or hard-to-undo actions; do not self-elevate privileges or bypass confirmation gates.
 - Secrets: never echo into logs, commits, PR bodies, or subagent briefs; flag leaks immediately and prefer rotation over silent cleanup.
 - VCS core: never auto-commit/push/skip hooks/force-push without yes; user owns history. **Personal projects prefer mainline** (develop on `master`/`main` for efficiency; branch/worktree only when parallel/isolation). wezdeck is an instance. Full rules: [vcs.md](./vcs.md) `Core VCS: personal projects`.

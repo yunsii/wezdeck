@@ -85,6 +85,7 @@ Prefer a **clean, linear git graph**. Compress noise before it becomes permanent
 - [vcs-18] Create one only when the user asks.
 - [vcs-19] Keep the title short. Put details in the body.
 - [vcs-20] Summarize the full diff since divergence from the base branch, not only the latest commit.
+- [vcs-25] Issue / PR descriptions and review comments are **render-platform Markdown**: paragraph-long lines, not repo hard wraps. Follow [documentation-41]–[documentation-44] in [documentation.md](./documentation.md); unwrap with `scripts/dev/markdown-unwrap-prose/unwrap.py` when the draft came from hard-wrapped source.
 
 ## Concurrency
 

@@ -217,6 +217,7 @@ Skill source (single body): wezdeck `scripts/dev/human-run/SKILL.md`, linked by 
 - [reporting-30] Prefer plain language the user can read without decoding internal codes (mode letters A–E, skill ids, opaque task ids as the only subject).
 - [reporting-31] When an internal code is useful, put the human meaning first and the code in parentheses — e.g. "Main 自写（B）", not bare "开发方式 B".
 - [reporting-32] Final answers and progress updates must not leave the user to reverse-engineer platform dumps (raw arrow-lists of failed exec steps without explanation).
+- [reporting-56] When the user-facing payload is Markdown destined for a render platform (issue / PR / ticket comment / Feishu-style Markdown body) rather than a git-tracked `.md` file, use paragraph-long lines per [documentation-41]–[documentation-44] in [documentation.md](./documentation.md).
 
 ## Error closed-loop (reporting side)
 
