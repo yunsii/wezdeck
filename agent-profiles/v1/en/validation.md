@@ -17,7 +17,11 @@ triggers:
   - design doc
   - RFC
   - ADR
-tags: [quality, testing, escalation, evidence, adversarial-review, design-review]
+  - performance optimization
+  - output parity
+  - 性能优化
+  - 产物一致
+tags: [quality, testing, escalation, evidence, adversarial-review, design-review, performance]
 ---
 
 # Validation
@@ -143,6 +147,42 @@ The agent could have written a targeted test or script; asking the user is a fal
 - [validation-41] When the change touches interactive UX, first paint, or a known hot path, establish a reproducible baseline before the change when practical.
 - [validation-42] If acceptance shows clear UX regression or metric degradation: diagnose the cause before declaring done.
 - [validation-43] If the cost is a necessary overhead of the new feature, state it explicitly (what got slower, by roughly how much, and whether it is acceptable) — do not ship silent regressions.
+
+## Performance optimization: final-artifact parity
+
+Speed-only or cache-only changes that claim "same logic, faster path" are
+**behavior-preserving** until proven otherwise. Green builds and non-empty
+outputs are not enough — silent under-production (fewer catalog entries,
+thinner bundles, dropped side artifacts) is a common failure mode.
+
+- [validation-44] Before calling a performance / cache / path-layout
+  optimization done, define the **final artifacts** that must stay
+  equivalent to the pre-change path (counts, key records, digests, public
+  files, API payloads, or other durable products the next stage consumes).
+- [validation-45] Run a **fair old-vs-new comparison** under matched
+  conditions: same inputs, same relevant env flags, clean residual state
+  that would bias one side, and the same scope (full vs partial). Report
+  the numbers; do not declare parity from a skewed run.
+- [validation-46] Prefer an automated parity gate (golden count, digest
+  diff, differential run of old and new entrypoints) over human eyeballing.
+  If the repo only has weak "non-empty" asserts, strengthen or add a
+  focused check when the optimization can silently drop content.
+- [validation-47] Treat unexplained artifact shrinkage or content drift as
+  a **regression**, even when exit codes are zero and CI is green. Fix or
+  revert before merge; do not ship on "likely unrelated".
+- [validation-48] If the optimization intentionally changes products
+  (fewer locales in a preview mode, coarser cache, different encoding),
+  label it as a **semantic / product change**, not a pure perf win, and
+  validate the new contract explicitly.
+- [validation-49] Do not keep an optimization whose claimed benefit was
+  never measured, or was already falsified, solely as "hygiene" when it
+  expands the surface for silent artifact drift. No measured win + risk of
+  wrong products → drop it.
+
+Prior art adapted: differential / behavior-preserving checks for
+performance refactors (old and new implementations compared on the same
+inputs); local incident pattern — extract/build stayed green while catalog
+cardinality silently fell until fair baseline comparison exposed it.
 
 ## Adversarial review (platform capability)
 

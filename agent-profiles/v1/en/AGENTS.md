@@ -45,7 +45,7 @@ Detailed escalation criteria live in [validation.md](./validation.md).
 Read this file first, then open only the matching topic file.
 Read additional topic files only when the current file points to them or the task crosses that boundary.
 
-- Testing strategy, completion criteria, human-verification thresholds → [validation.md](./validation.md)
+- Testing strategy, completion criteria, human-verification thresholds, or performance-optimization artifact parity (old vs new final products) → [validation.md](./validation.md)
 - Structure, abstractions, module boundaries, reliability, performance, evidence gates, or option comparison → [implementation.md](./implementation.md)
 - Restructuring existing code or replacing a subsystem → [refactor.md](./refactor.md)
 - Whether a rule belongs in doc, script, hook, skill, or plugin → [automation.md](./automation.md)
@@ -79,7 +79,7 @@ Full rules live in the routed topic file.
 - Structure opportunity: default to minimal change; when reuse/refactor would help, propose options for user confirm before large structural work. Full rule in [implementation.md](./implementation.md) / [refactor.md](./refactor.md).
 - Impact / boundary: for non-trivial decisions or changes, state blast radius — code (modules/API/data), people (who must help or will feel pain), team/process (release/oncall/collaboration). Do not assume "only the files in front of you". Full rule in [reporting.md](./reporting.md).
 - Constitution sync: keep Default Posture / topic rules aligned with openclaw workspace L0 spirit; when L0 gains or tightens a cross-task principle, update profile in the same delivery (or immediately after). Do not leave Feishu-only or CLI-only doctrine.
-- Performance: do not over-optimize by default; for UX/hot paths prefer a baseline; on regression find cause or state necessary overhead explicitly. Full rule in [validation.md](./validation.md).
+- Performance: do not over-optimize by default; for UX/hot paths prefer a baseline; on regression find cause or state necessary overhead explicitly. Speed/cache-only changes must prove **final-artifact parity** with the old path under fair conditions (counts/digests/key records) — green exit codes are not enough. Full rules in [validation.md](./validation.md) `Performance optimization: final-artifact parity`.
 - Adversarial review: multi-role find+refute (not solo monologue); **agent** runs repo/OpenClaw skill + `scripts/dev/adversarial-review/run.sh` — humans only state intent; disclose writer/form/backends. Full rules in [validation.md](./validation.md) `Adversarial review`.
 - Design proposal docs (RFC/ADR/方案): **design review** checklist in-process — not adversarial-review (docs skip), not a full brainstorm by default; brainstorm only when alternatives are still needed. Full rules in [validation.md](./validation.md) `Design proposal review`.
 - Rule promotion: when a constraint recurs or the user states a lasting rule, ask whether to elevate to profile / skill / script (with placement + tradeoffs); never silently rewrite profile.
