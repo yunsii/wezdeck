@@ -16,6 +16,26 @@ def _top(d: dict[str, Any] | None, n: int = 10) -> list[tuple[str, int]]:
     return sorted(d.items(), key=lambda kv: -int(kv[1]))[:n]
 
 
+def _mcp_rows(d: dict[str, Any] | None, n: int = 8) -> list[tuple[str, int]]:
+    """MCP counters for the weekly table: drop unreadable buckets like bare `mcp`."""
+    rows: list[tuple[str, int]] = []
+    for name, c in _top(d, n * 2):
+        label = str(name or "").strip()
+        if not label or label.lower() == "mcp":
+            continue
+        # Claude/Codex emit mcp__server__tool — keep server + tool readable.
+        if label.startswith("mcp__"):
+            parts = label.split("__")
+            if len(parts) >= 3:
+                label = f"{parts[1]} / {parts[2]}"
+            elif len(parts) == 2:
+                label = parts[1]
+        rows.append((label, int(c)))
+        if len(rows) >= n:
+            break
+    return rows
+
+
 def _skill_label(name: str) -> str:
     if name.startswith("path:"):
         return f"{name[5:]}（路径推断）"
@@ -41,7 +61,7 @@ def render(report: dict[str, Any]) -> str:
 
     skills = _top(agents.get("skills"), 10)
     cli = _top(agents.get("cli"), 6)
-    mcp = _top(agents.get("mcp"), 6)
+    mcp = _mcp_rows(agents.get("mcp"), 8)
     verify = agents.get("verify") or {}
     by_p = agents.get("by_provider") or {}
     sess = agents.get("session") or {}
@@ -500,8 +520,15 @@ def render(report: dict[str, Any]) -> str:
     if mcp:
         lines.append("### MCP")
         lines.append("")
+        lines.append("| 次数 | Server / 工具 |")
+        lines.append("| ---: | --- |")
         for name, c in mcp:
-            lines.append(f"- {name}: {c}")
+            lines.append(f"| {c} | `{name}` |")
+        lines.append("")
+        lines.append(
+            "_Grok 多为 `mcp_server_starting` 按 server 名计数；"
+            "Claude/Codex 为 `mcp__server__tool` 调用。_"
+        )
         lines.append("")
 
     if by_p:

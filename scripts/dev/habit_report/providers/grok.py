@@ -1,7 +1,7 @@
 """Grok Build provider: ~/.grok/sessions/<encoded-cwd>/<session-id>/
 
 Primary: updates.jsonl tool_call rows with rawInput.
-Secondary: events.jsonl tool_started / mcp_*.
+Secondary: events.jsonl tool_started / mcp_server_starting (by server_name).
 Skill: SKILL.md reads + prompt_history.jsonl leading `/name` (cwd-level file).
 Session: per-session chat_history (turns/feed/media/active time) + goal_updated.
 """
@@ -190,14 +190,19 @@ def collect(
                 if et == "tool_started":
                     tn = str(row.get("tool_name") or "?")
                     m.tools[f"event:{tn}"] += 1
-                elif et in {"mcp_server_starting", "mcp_config_resolved"}:
+                elif et == "mcp_server_starting":
+                    # Field is server_name (not server/name). Never fall back to
+                    # literal "mcp" — that made weekly reports show "mcp: 18".
+                    # Skip mcp_config_resolved: same servers would double-count.
                     server = str(
-                        row.get("server")
+                        row.get("server_name")
+                        or row.get("server")
                         or row.get("name")
                         or row.get("mcp_server")
-                        or "mcp"
-                    )
-                    m.mcp[server] += 1
+                        or ""
+                    ).strip()
+                    if server:
+                        m.mcp[server] += 1
 
         # User feed from chat_history (session-scoped).
         chat = updates.parent / "chat_history.jsonl"
