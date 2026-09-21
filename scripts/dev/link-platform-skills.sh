@@ -13,7 +13,9 @@
 #   cross-repo-delegate -> scripts/dev/cross-repo-delegate/
 #   worktree-recycle    -> scripts/dev/worktree-recycle/
 #   human-run           -> scripts/dev/human-run/
-#   habit-weekly        -> scripts/dev/habit-weekly/
+#
+# Not linked (repo-local only; route via AGENTS.md):
+#   habit-weekly        -> scripts/dev/habit-weekly/  (WezDeck collector + run.sh)
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
@@ -49,7 +51,6 @@ skills=(
   "cross-repo-delegate|scripts/dev/cross-repo-delegate"
   "worktree-recycle|scripts/dev/worktree-recycle"
   "human-run|scripts/dev/human-run"
-  "habit-weekly|scripts/dev/habit-weekly"
 )
 
 link_one() {

@@ -10,10 +10,12 @@ description: >
   Prefer this over ad-hoc chat analysis once habit-report exists.
 ---
 
-# Habit weekly（平台 skill — 开发习惯周报）
+# Habit weekly（仓库内 skill — 开发习惯周报）
 
 **Who runs:** the coding agent, **not** the human.  
 **Never** ask the human to paste `habit-report.sh` as the primary path — load this skill and run the co-located runner.
+
+**Scope:** WezDeck 仓库内 skill（`scripts/dev/habit-weekly/`）。由 `AGENTS.md` 路由加载；**不**经 `link-platform-skills.sh` 同步到 `~/.agents/skills` / `~/.claude/skills`（依赖本仓 `habit-report.sh`，用户级软链会把 `repo_root` 算错）。
 
 数据收集器是 `scripts/dev/habit-report.sh`（插件化 Claude / Grok / Codex + 可选 WakaTime）。本 skill 负责：**定窗口 → 拉 JSON → 按固定模板渲染周报 →（可选）落盘 →（显式）推送到习惯归档仓**。
 
@@ -38,23 +40,18 @@ description: >
 ## Resolve TOOL_HOME
 
 ```text
-1. $HABIT_WEEKLY_HOME
-2. directory of this SKILL.md if run.sh is co-located
-3. $HOME/.agents/skills/habit-weekly
+1. $HABIT_WEEKLY_HOME（显式覆盖）
+2. $WEZTERM_REPO/scripts/dev/habit-weekly（本机主仓）
+3. 本 SKILL.md 同目录（scripts/dev/habit-weekly，run.sh 共存）
 4. $WEZDECK_ROOT/scripts/dev/habit-weekly
-5. $HOME/github/wezterm-config/scripts/dev/habit-weekly
 ```
 
 ```bash
-TOOL_HOME=…   # dir that contains run.sh
+TOOL_HOME="${HABIT_WEEKLY_HOME:-$WEZTERM_REPO/scripts/dev/habit-weekly}"
 R="$TOOL_HOME/run.sh"
 ```
 
-Install / refresh discovery:
-
-```bash
-./scripts/dev/link-platform-skills.sh
-```
+`run.sh` 用 `pwd -P` 解析自身目录，并以 `$WEZTERM_REPO`（若含 `scripts/dev/habit-report.sh`）优先定仓库根。不要从 `~/.agents/skills/habit-weekly` 启动。
 
 ## Agent procedure
 
@@ -121,12 +118,11 @@ Install / refresh discovery:
 - Don't 手改 JSON 里的计数再渲染  
 - Don't 与 coco-weekly-report 混用（一个是习惯可观测，一个是业务交付周报）  
 - Don't 在未要求时省略 `--push` 却声称已推远端；也不要在仅 `--write` 时 push  
-- Don't 维护第二份 SKILL.md 正文（只允许 symlink）
+- Don't 把本 skill 链进 `~/.agents/skills` / `link-platform-skills.sh`（仓库内专用）
 
 ## Related
 
 - Collector: `scripts/dev/habit-report.sh` + `scripts/dev/habit_report/providers/` + `habit_report/wakatime.py`  
 - Push: `scripts/dev/habit-weekly/push-archive.sh`  
 - Docs: `docs/diagnostics.md` → Habit report  
-- Link: `scripts/dev/link-platform-skills.sh`  
 - Sibling timeline: `scripts/dev/workflow-timeline.sh`  

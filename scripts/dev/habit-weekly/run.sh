@@ -16,9 +16,15 @@
 # optional WakaTime). Archive push: push-archive.sh + ~/.config/habit-weekly/state.json.
 set -euo pipefail
 
-TOOL_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# pwd -P: follow symlinks so TOOL_HOME is always scripts/dev/habit-weekly
+# (logical ~/.agents/.../habit-weekly would make ../../.. resolve to $HOME).
+TOOL_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # habit-weekly → scripts/dev → scripts → repo root
-repo_root="$(cd "$TOOL_HOME/../../.." && pwd)"
+if [[ -n "${WEZTERM_REPO:-}" && -f "${WEZTERM_REPO}/scripts/dev/habit-report.sh" ]]; then
+  repo_root="$(cd "$WEZTERM_REPO" && pwd -P)"
+else
+  repo_root="$(cd "$TOOL_HOME/../../.." && pwd -P)"
+fi
 habit_sh="$repo_root/scripts/dev/habit-report.sh"
 render_py="$TOOL_HOME/render.py"
 push_sh="$TOOL_HOME/push-archive.sh"
