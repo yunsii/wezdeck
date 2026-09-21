@@ -13,7 +13,7 @@
 7. **Token / 费用（分 agent · 分模型）**（Claude `cost-state.modelUsage` / Grok `usage.json` / Codex `last_token_usage`+`turn_context.model`；主读分端与分模型 USD + output/reasoning；`total` 含 cache 不作跨端主 KPI）  
 8. **Rime 上屏 × 前台/pane-focus**（可选插件；`wezterm.agent.*` / `.shell`）  
 9. **代码变更量**（可选插件 `git_churn`；排除规则见 `git-churn.json`）  
-10. **Skill / CLI / MCP**（Skill/CLI Top 表；MCP 用 Server/工具表，禁止裸 `mcp: N`）  
+10. **Skill / CLI / MCP**（Skill/CLI Top 表；MCP 只计真实调用的 Server/工具表，禁止裸 `mcp: N`，禁止把 `mcp_server_starting` 当调用）  
 11. **CDP 验证→迭代**（有数据才写）  
 12. **热键调度**（Alt+l 为主；忙日/轻量日对照）  
 13. **工作环路**（短流程图或 5 步列表）  

@@ -526,8 +526,8 @@ def render(report: dict[str, Any]) -> str:
             lines.append(f"| {c} | `{name}` |")
         lines.append("")
         lines.append(
-            "_Grok 多为 `mcp_server_starting` 按 server 名计数；"
-            "Claude/Codex 为 `mcp__server__tool` 调用。_"
+            "_只计真实 MCP 工具调用（Claude/Codex：`mcp__server__tool`；"
+            "Grok：`use_tool`）。会话自动拉起的 `mcp_server_starting` 不计。_"
         )
         lines.append("")
 

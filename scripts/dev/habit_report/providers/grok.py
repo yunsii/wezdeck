@@ -1,7 +1,8 @@
 """Grok Build provider: ~/.grok/sessions/<encoded-cwd>/<session-id>/
 
 Primary: updates.jsonl tool_call rows with rawInput.
-Secondary: events.jsonl tool_started / mcp_server_starting (by server_name).
+Secondary: events.jsonl tool_started. MCP usage only from use_tool calls
+(not mcp_server_starting — config auto-start ≠ invoked).
 Skill: SKILL.md reads + prompt_history.jsonl leading `/name` (cwd-level file).
 Session: per-session chat_history (turns/feed/media/active time) + goal_updated.
 """
@@ -140,8 +141,31 @@ def collect(
                     m.session["tool_route"]["uxc"] += 1
                 else:
                     m.session["tool_route"]["bash"] += 1
-            elif tool_name in {"use_tool", "search_tool"}:
+            elif tool_name == "search_tool":
+                # MCP catalog discovery, not a server/tool invocation.
                 m.session["tool_route"]["mcp_native"] += 1
+            elif tool_name == "use_tool":
+                m.session["tool_route"]["mcp_native"] += 1
+                # Prefer explicit server/tool fields when present.
+                server = str(
+                    raw.get("server")
+                    or raw.get("server_name")
+                    or raw.get("mcp_server")
+                    or ""
+                ).strip()
+                tool = str(
+                    raw.get("tool")
+                    or raw.get("tool_name")
+                    or raw.get("name")
+                    or ""
+                ).strip()
+                if server and tool:
+                    m.mcp[server] += 1
+                    m.mcp[f"mcp__{server}__{tool}"] += 1
+                elif server:
+                    m.mcp[server] += 1
+                elif tool:
+                    m.mcp[tool] += 1
             elif tool_name:
                 m.session["tool_route"]["other"] += 1
 
@@ -190,19 +214,8 @@ def collect(
                 if et == "tool_started":
                     tn = str(row.get("tool_name") or "?")
                     m.tools[f"event:{tn}"] += 1
-                elif et == "mcp_server_starting":
-                    # Field is server_name (not server/name). Never fall back to
-                    # literal "mcp" — that made weekly reports show "mcp: 18".
-                    # Skip mcp_config_resolved: same servers would double-count.
-                    server = str(
-                        row.get("server_name")
-                        or row.get("server")
-                        or row.get("name")
-                        or row.get("mcp_server")
-                        or ""
-                    ).strip()
-                    if server:
-                        m.mcp[server] += 1
+                # mcp_server_starting / mcp_config_resolved = configured & auto-started
+                # when a session opens (e.g. Framelink Figma MCP). Do not count as usage.
 
         # User feed from chat_history (session-scoped).
         chat = updates.parent / "chat_history.jsonl"
