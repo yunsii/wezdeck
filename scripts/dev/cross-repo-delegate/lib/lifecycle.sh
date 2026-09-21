@@ -324,7 +324,7 @@ stamp = mod.now_iso()
 if re.search(r"^## Decision\s*$", body, re.M):
     body = re.sub(
         r"^## Decision\s*\n(?:.*\n)*?(?=^## |\Z)",
-        f"## Decision\n\n_{stamp}_\n\n{decision}\n\n",
+        lambda _m: f"## Decision\n\n_{stamp}_\n\n{decision}\n\n",
         body,
         count=1,
         flags=re.M,

@@ -728,7 +728,7 @@ _{stamp}_
 if re.search(r"^## Verification\s*$", body, re.M):
     body = re.sub(
         r"^## Verification\s*\n(?:.*\n)*?(?=^## |\Z)",
-        block,
+        lambda _m: block,
         body,
         count=1,
         flags=re.M,

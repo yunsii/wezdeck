@@ -96,7 +96,7 @@ _{stamp} · research worker_
 if re.search(r"^## Verification\s*$", body, re.M):
     body = re.sub(
         r"^## Verification\s*\n(?:.*\n)*?(?=^## |\Z)",
-        block,
+        lambda _m: block,
         body,
         count=1,
         flags=re.M,
@@ -183,7 +183,7 @@ _{stamp} · implement worker_
 if re.search(r"^## Implement\s*$", body, re.M):
     body = re.sub(
         r"^## Implement\s*\n(?:.*\n)*?(?=^## |\Z)",
-        block,
+        lambda _m: block,
         body,
         count=1,
         flags=re.M,
