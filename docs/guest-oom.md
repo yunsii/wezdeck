@@ -9,6 +9,8 @@ Guest memory exhaustion does not present as "a process died" — it presents as 
 
 **Judging it in 10 seconds:** if `dmesg` timestamps do **not** reset across the restart cycles (paired `systemd-shutdow` SIGTERM + `EXT4-fs … unmounting` → `mounted`), the VM kernel is alive and only the *distro* is restarting. A reset to `[0.000000]` means the VM really rebooted. The restart count is also recoverable from `/var/log/journal/<machine-id>/*.journal~` — journald renames the file on every unclean start, so fragment count ≈ restart count.
 
+**Lookalike (not OOM):** VM reboot + `UtilAcceptVsock` spam with healthy mem/swap can also be a **Fatal machine check (MCE)**. Check `%LOCALAPPDATA%\Temp\wsl-crashes\kernel-panic-*.txt` before treating the third failure mode below as proven — triage lives in [`development-environment-troubleshooting.md`](./development-environment-troubleshooting.md#fatal-machine-check-mce--reference-2026-09-23).
+
 Two units, installed together by [`scripts/dev/install-wsl-oom-guard.sh`](../scripts/dev/install-wsl-oom-guard.sh) and both driving [`scripts/runtime/wsl-oom-guard.sh`](../scripts/runtime/wsl-oom-guard.sh):
 
 | Unit | Type | What it does |
@@ -163,7 +165,7 @@ Reference incident 2026-07-27, twice in one afternoon (VM up at 14:52, dead at 1
 Read it as a chain, not as three separate errors:
 
 1. **A new hyperv-vsock channel needs `order:7` — 512 KiB contiguous — for its ring buffer** (`vmbus_alloc_ring`). Total free memory is not the constraint; *contiguity* is. Both incidents failed with several GB nominally free.
-2. **Losing a vsock channel is fatal in a way losing a process is not.** vsock is how the Windows side and the guest talk, so the relay's `accept4` times out (`110`), `wsl.exe` concludes the distro is unreachable, and the VM is torn down. The `UtilAcceptVsock` errors are the blast surface, not the cause — do not go debugging WSL networking.
+2. **Losing a vsock channel is fatal in a way losing a process is not.** vsock is how the Windows side and the guest talk, so the relay's `accept4` times out (`110`), `wsl.exe` concludes the distro is unreachable, and the VM is torn down. The `UtilAcceptVsock` errors are the blast surface, not the cause — do not go debugging WSL networking. The same spam also appears as a prelude to **Fatal machine check (MCE)** VM death with healthy mem/swap — rule that out via `wsl-crashes\kernel-panic-*.txt` first ([cross-host triage](./development-environment-troubleshooting.md#fatal-machine-check-mce--reference-2026-09-23)).
 3. **Nothing in the guest dies, so there is nothing to find afterwards.** `oom_kill` stays 0 and no `Killed process` line is ever written. "No OOM record" rules out even less than it did after 2026-07-26.
 
 The consumers were the standing set again, from the guard's own high-water snapshots: `next-server` at 17.0 Gi before the 14:52 death and 13.4 Gi before the 18:20 one, four `chrome-devtools` at ~2.9-4.0 Gi, `tsgo` ~2.6 Gi.

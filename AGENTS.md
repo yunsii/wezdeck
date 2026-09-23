@@ -125,9 +125,9 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   Read [`docs/diagnostics.md#open-questions`](docs/diagnostics.md#open-questions).
   Record new ones there rather than only in a commit body, which is not
   reviewable day to day.
-- Cross-host development environment failures involving Windows, WSL, DNS,
-  VPN/proxy software, shells, or agent CLIs; also the first-triage path when
-  the whole WSL distro disappears at once (distro restart vs VM reboot):
+- Cross-host failures (Windows, WSL, DNS, VPN/proxy, shells, agent CLIs);
+  WezTerm silent exit / whole distro vanish (distro vs VM reboot; MCE
+  `kernel-panic-*.txt` under `%LOCALAPPDATA%\Temp\wsl-crashes\`):
   Read [`docs/development-environment-troubleshooting.md`](docs/development-environment-troubleshooting.md).
 - Adding or modifying a logger callsite, choosing a category, deciding
   log level / required fields, or moving a log file across the WSL

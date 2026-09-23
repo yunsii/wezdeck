@@ -32,7 +32,9 @@ for the current hypothesis.
 
 Everything dies at once — tmux, every agent pane, every dev server — and it may
 then keep coming back and dying on a fixed interval. This reads like a WezTerm or
-tmux crash and is almost never either one.
+tmux crash and is almost never either one. **WezTerm "silently quitting"** with
+no Lua error in `wezterm.log` is the same class: the Windows GUI often survives
+briefly (or is relaunched by hand) while the WSL VM underneath is already gone.
 
 Narrow the layer before anything else:
 
@@ -40,18 +42,50 @@ Narrow the layer before anything else:
    restart cycles (paired `systemd-shutdow` SIGTERM + `EXT4-fs … unmounting` →
    `mounted`) mean the VM kernel is alive and only the *distro* restarted. A
    reset to `[0.000000]` means the VM itself rebooted.
-2. **The previous instance's shutdown log**, for the actual cause:
+2. **WSL crash dumps (especially on VM reboot).** With
+   `WSL_ENABLE_CRASH_DUMP=1` on the kernel cmdline (default on current WSL2
+   builds here), look first at:
+   `%LOCALAPPDATA%\Temp\wsl-crashes\`
+   (`/mnt/c/Users/<you>/AppData/Local/Temp/wsl-crashes/` from WSL). Newest
+   `kernel-panic-*.txt` is the smoking gun when journal fragments end mid-line.
+3. **The previous instance's shutdown log**, for memory-class causes:
    `journalctl --file /var/log/journal/<machine-id>/system@<seq>.journal~ -n 60 --no-pager`
    (pick the newest with `ls -t`). `init.scope: Failed with result 'oom-kill'`
    plus the `memory peak` / `memory swap peak` line is guest memory exhaustion.
-3. **Restart count** ≈ number of `*.journal~` fragments — journald renames the
+4. **Restart count** ≈ number of `*.journal~` fragments — journald renames the
    file on every unclean start.
 
-Guest OOM is the confirmed failure pattern on this host, and the standing
-hardening (`wezterm-oom-protect` / `wezterm-oom-record` units, the pre-kill
-process snapshot in `/var/log/wezterm-oom-guard.log`) lives in
-[`guest-oom.md`](./guest-oom.md). Go there once step 2
-points at OOM; stay here if it points at the Windows side instead.
+### Fatal machine check (MCE) — reference 2026-09-23
+
+**MCE** = Machine Check Exception: the CPU reported a hardware-class error
+(cache / bus / memory path / internal state). When the guest sees
+`Machine check: Processor context corrupt` then
+`Kernel panic - not syncing: Fatal machine check`, the WSL2 VM dies immediately.
+`oom_kill` stays 0; earlyoom is silent; `wezterm.log` shows a clean gap then
+`gui-startup` if the GUI is relaunched.
+
+Reference dump (this host):
+`kernel-panic-1790142568-{d45c82f5-3302-40a0-bcf1-3048fd2780a9}.txt` at
+13:49:28 +08 — CPU 14, bank `b200000080060001`, followed by VM boot at
+13:49:36 (`dmesg` from `[0.000000]`). Prelude in the previous journal: repeated
+`UtilAcceptVsock: Waiting for abnormally long accept(11)` and
+`Clock change detected` while guest mem/swap still looked healthy (~57% /
+~50% free at 13:35). Same blast surface as the high-order vsock death in
+[`guest-oom.md`](./guest-oom.md) (UtilAcceptVsock spam → VM gone), different
+cause — do not treat UtilAcceptVsock alone as proof of fragmentation.
+
+**Triage once the dump says Fatal machine check:**
+
+| Check | Why |
+|---|---|
+| Windows Event Viewer → **WHEA-Logger** / Kernel-Power / Hyper-V-Worker around the panic timestamp | Host-side hardware / hypervisor echo of the same MCE |
+| Thermal / power / recent full-load compile | Common MCE triggers on a busy workstation |
+| Memory diagnostic / XMP / undervolt settings | Persistent recurrence → host hardware path |
+
+Guest OOM remains the confirmed *standing* failure pattern on this host; its
+hardening lives in [`guest-oom.md`](./guest-oom.md). Go there when step 3
+points at OOM or high-order allocation. Stay on this page when step 2 shows
+MCE / kernel-panic, or when the Windows side is otherwise implicated.
 
 ## Agent-CLI Stalls On IPv6 / AAAA DNS
 
