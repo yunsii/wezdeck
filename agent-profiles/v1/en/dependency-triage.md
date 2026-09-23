@@ -8,7 +8,10 @@ triggers:
   - open-source issues discussions search
   - internal service or private package triage
   - dependency-related fault investigation
-tags: [troubleshooting, dependencies, upstream, evidence, triage]
+  - fault outside current branch ownership
+  - lagging feature branch versus mainline
+  - CI or platform flake unrelated to branch diff
+tags: [troubleshooting, dependencies, upstream, evidence, triage, mainline]
 ---
 
 # Dependency Triage
@@ -20,6 +23,11 @@ behavior likely involves a **dependency** — a third-party library,
 package registry artifact, open-source upstream, vendor SaaS / SDK,
 or an **internal** service / private package / org platform — rather
 than only first-party application logic you own in the current repo.
+
+Also read when evidence already says the fault is **outside the
+current branch's ownership** (CI / cache / platform scripts, untouched
+shared packages, same-code pass/fail flake): the out-of-branch gate
+below is the prerequisite before designing a local fix.
 
 ## When Not To Read
 
@@ -33,10 +41,10 @@ evidence-tool choice; this file is the **fault-triage** playbook.
 
 Dependency faults are a vertical SRE-style case: the owning system is
 often **outside** the current checkout. Local reading alone invents
-patches for problems the upstream tracker, changelog, or discussions
-already named. Community practice converges on: classify the
-dependency, search upstream communication surfaces early, stay
-systematic (symptom → hypothesis → test), and prefer reproduce /
+patches for problems the upstream tracker, changelog, discussions, or
+**same-repo mainline** already named. Community practice converges on:
+classify the dependency, search upstream communication surfaces early,
+stay systematic (symptom → hypothesis → test), and prefer reproduce /
 version-narrowing over guess-and-retry. This topic makes that default
 mandatory for agents across repositories.
 
@@ -47,6 +55,34 @@ Related posture (do not duplicate full text):
 - Generic evidence tools → [tool-use-38]–[tool-use-43]
 - Reproduce / root cause → [validation-33]–[validation-36]
 - Closed-loop reporting → [reporting-33]–[reporting-35]
+- Integrating an already-found mainline fix (rebase / merge) → [vcs.md](./vcs.md)
+
+## Out-Of-Branch Ownership Gate
+
+Run this **before** inventing a CI / platform / shared-infra fix on a
+feature branch. Public/vendor/internal lanes still apply after the
+gate when mainline has no solution yet.
+
+- [dependency-triage-04] When evidence points outside the current
+  branch's ownership — CI or build-cache infra, platform scripts,
+  packages or services the branch did not touch, or the **same code**
+  both passing and failing across runs — mark the symptom card
+  `ownership: outside-current-branch` (or equivalent wording). Do not
+  treat "it failed on my branch" as proof the branch owns the fault.
+- [dependency-triage-05] After that mark, treat **fresh same-repo
+  `origin/HEAD`** (and the owning internal package / platform repo
+  HEAD when the surface lives there) as the **first** upstream to
+  check: fetch, then look for an existing fix, workaround, self-heal,
+  or documented disposition. Prefer **adopting** that path (rebase /
+  merge / upgrade / reuse the existing mechanism — VCS steps per
+  [vcs.md](./vcs.md)) over designing a parallel fix on the lagging
+  tip. Only when the refreshed tip has no solution do you continue
+  into the public / vendor / internal evidence lanes and new design.
+- [dependency-triage-06] A stale local `master` / `main` ref is **not**
+  evidence. Do not claim "mainline lacks X" or "capability missing"
+  without a fresh fetch (or an authoritative registry / lockfile view
+  of the version you actually run). Version and capability conclusions
+  must name the refreshed tip or resolved version checked.
 
 ## Classify First
 
@@ -55,7 +91,9 @@ Before deep diving, name the dependency and its class:
 - [dependency-triage-01] Capture the **narrow symptom card** first:
   failing command or stack slice, package / service name, pinned or
   resolved version (lockfile / SBOM / image tag when present), and
-  whether the break started after a bump, sync, or deploy.
+  whether the break started after a bump, sync, or deploy. Include the
+  out-of-branch ownership mark from [dependency-triage-04] when it
+  applies.
 - [dependency-triage-02] Classify as one of:
 
   - **Public external** — OSS library, public registry package,
@@ -68,7 +106,9 @@ Before deep diving, name the dependency and its class:
 - [dependency-triage-03] If class is unclear, spend one short pass to
   resolve ownership (manifest, import path, deploy config, CODEOWNERS)
   before choosing the evidence lane. Do not default to "rewrite local
-  code" while ownership is unknown.
+  code" while ownership is unknown. Same-repo mainline / platform
+  ownership still goes through the out-of-branch gate first
+  ([dependency-triage-05]).
 
 ## Evidence Lanes (Hard Defaults)
 
@@ -125,10 +165,13 @@ Before deep diving, name the dependency and its class:
 
 ## Systematic Loop
 
-- [dependency-triage-40] Stay systematic: symptom card → classify →
+- [dependency-triage-40] Stay systematic: symptom card → out-of-branch
+  gate ([dependency-triage-04]–[dependency-triage-06]) → classify →
   evidence lane → hypothesis → smallest test → update the card.
   Skipping the hypothesis step and patching from vibes is a failure
-  mode ([validation-36]).
+  mode ([validation-36]). Skipping the gate and designing a parallel
+  platform fix on a lagging tip is also a failure mode
+  ([dependency-triage-75]).
 - [dependency-triage-41] Reproduce or version-narrow when practical
   (minimal failing case, pin / bisect / last-known-good). A flaky or
   unreproduced dependency blame is not yet a root cause
@@ -141,9 +184,13 @@ Before deep diving, name the dependency and its class:
   "won't fix", prefer adopting that path (upgrade, pin, documented
   workaround, or explicit local adaptation) over a silent divergent
   fork — unless project policy forbids it; state the choice.
+  **Upstream here includes** same-repo `origin/HEAD` and owning
+  internal platform / package HEADs from [dependency-triage-05], not
+  only public trackers.
 - [dependency-triage-44] Batch independent evidence calls in one turn
-  ([tool-use-08]): e.g. web search + issue search + local lockfile
-  read together when they do not depend on each other.
+  ([tool-use-08]): e.g. fetch + mainline log search + web / issue
+  search + local lockfile read together when they do not depend on
+  each other.
 
 ## Capability Map (Examples, Not Hard-Coded Tools)
 
@@ -172,10 +219,12 @@ host; resolve them via available skills.
 - [dependency-triage-60] In the investigation or fix report, name the
   dependency class, evidence lane used, and the concrete upstream or
   internal sources checked (issue / discussion / changelog / log
-  query). Align with [reporting-26].
+  query, and refreshed `origin/HEAD` or owning-repo tip when the
+  out-of-branch gate ran). Align with [reporting-26].
 - [dependency-triage-61] Distinguish: upstream confirmed bug, local
-  misuse of a public contract, internal outage / misconfig, and
-  still-unknown. Do not blur them.
+  misuse of a public contract, internal outage / misconfig,
+  mainline-already-fixed (adopted), and still-unknown. Do not blur
+  them.
 
 ## Anti-Patterns
 
@@ -189,6 +238,12 @@ host; resolve them via available skills.
   forum reply as stronger than changelog + tracker + current source.
 - [dependency-triage-74] Opening a new upstream issue before searching
   existing threads (duplicate noise).
+- [dependency-triage-75] Designing a CI / platform / self-heal (or
+  other shared-infra) fix on a feature branch without first checking
+  whether refreshed same-repo mainline — or the owning platform tip —
+  already solved it ([dependency-triage-05]).
+- [dependency-triage-76] Asserting "mainline / upstream has no X" from
+  a stale local default-branch tip ([dependency-triage-06]).
 
 ## Prior Art (Adopted / Adapted)
 
@@ -206,6 +261,9 @@ Adopted and adapted for agent defaults:
   (community regression tools such as dependency bisect utilities).
 - Events / recent-change first before deep config archaeology (common
   SRE playbook pattern).
+- Same-repo mainline as first upstream when ownership leaves the
+  current branch (recurring feature-branch vs `origin/HEAD` lag in
+  multi-agent / long-lived branch workflows).
 
 Rejected as the primary frame: org-wide dependency-*governance*
 programs (central artifact policy, training curricula) — useful for

@@ -78,7 +78,7 @@ Do not merge:
 - [tool-use-41] Prefer source-indexed upstream repository analysis for external implementation behavior.
 - [tool-use-42] Prefer official docs, specs, changelogs, and release notes for supported public contracts.
 - [tool-use-43] Use current web or issue-history research when ecosystem state, regressions, release timing, security advisories, or recent behavior matters.
-- [tool-use-44] When the symptom likely involves a dependency (third-party package, upstream project, vendor SDK, or internal service/package), load [dependency-triage.md](./dependency-triage.md) and follow its classify → lane → systematic loop. Do not treat [tool-use-38]–[tool-use-43] alone as a complete dependency fault playbook.
+- [tool-use-44] When the symptom likely involves a dependency (third-party package, upstream project, vendor SDK, or internal service/package), or evidence already points outside the current branch's ownership (CI / platform / shared infra flake), load [dependency-triage.md](./dependency-triage.md) and follow its out-of-branch gate → classify → lane → systematic loop. Do not treat [tool-use-38]–[tool-use-43] alone as a complete dependency fault playbook.
 
 ## Task Tracking
 

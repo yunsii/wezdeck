@@ -51,7 +51,7 @@ For non-trivial diagnosis, design, architecture, dependency, performance, securi
 
   - Level 0: trivial command, typo, formatting, or direct lookup. No broader research required.
   - Level 1: local implementation question. Inspect local source and, when useful, nearby tests.
-  - Level 2: bug, design choice, dependency behavior, or unclear requirement. Inspect local evidence plus one external authority when relevant. If the bug looks dependency-owned, follow [dependency-triage.md](./dependency-triage.md) rather than stopping at a single local read.
+  - Level 2: bug, design choice, dependency behavior, or unclear requirement. Inspect local evidence plus one external authority when relevant. If the bug looks dependency-owned or outside the current branch's ownership, follow [dependency-triage.md](./dependency-triage.md) (out-of-branch gate first) rather than stopping at a single local read.
   - Level 3: architecture, security, migration, performance, public behavior, or irreversible change. Use multiple evidence types and present options before acting.
 
 ## Organize Around Ownership

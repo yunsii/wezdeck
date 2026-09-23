@@ -20,7 +20,7 @@ Topic files under `en/`:
 - [en/refactor.md](./en/refactor.md)
 - [en/automation.md](./en/automation.md)
 - [en/tool-use.md](./en/tool-use.md)
-- [en/dependency-triage.md](./en/dependency-triage.md) — dependency / upstream / internal-service fault triage playbook
+- [en/dependency-triage.md](./en/dependency-triage.md) — dependency / upstream / internal-service fault triage playbook (includes out-of-branch → mainline gate)
 - [en/documentation.md](./en/documentation.md)
 - [en/platform-actions.md](./en/platform-actions.md)
 - [en/vcs.md](./en/vcs.md)
