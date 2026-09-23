@@ -132,6 +132,11 @@ If `~/.agent/tickets/config.yml` lacks the target, add it (path + aliases) befor
 "$D" show --id <id>
 ```
 
+`--to .` / `--from .` resolve the allowlist key from cwd via the **primary**
+git worktree root (`git rev-parse --git-common-dir`), so a linked worktree
+(`…/.worktrees/<repo>/dev-…`) counts as the same repo as the primary checkout —
+never as the worktree slug basename.
+
 Read the **full** ticket, then **edit code in the current worktree/TUI**.  
 If claim returns lease held → stop; do not dual-write.  
 **Do not** call `"$D" run` after a successful session claim.

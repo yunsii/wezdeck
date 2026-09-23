@@ -77,6 +77,20 @@ fi
 inbox="$(cd "$fake_wez" && "$run" inbox --to . 2>/dev/null)"
 check "inbox sees ticket" jq -e --arg id "$id" '.count >= 1 and (.tickets | map(.id) | index($id) != null)' <<<"$inbox"
 
+# --- --to . from a linked worktree must resolve to the primary allowlist key ---
+# (basename of the worktree slug must NOT be treated as the target key)
+fake_wt_parent="$tmp/.worktrees/fake-wezdeck"
+mkdir -p "$fake_wt_parent"
+git -C "$fake_wez" worktree add -q -b task/delegate-resolve "$fake_wt_parent/task-delegate-resolve" >/dev/null
+inbox_wt="$(cd "$fake_wt_parent/task-delegate-resolve" && "$run" inbox --to . 2>/dev/null)"
+check "inbox --to . from linked worktree resolves primary" \
+  jq -e --arg id "$id" '.ok == true and .to == "wezdeck" and (.tickets | map(.id) | index($id) != null)' <<<"$inbox_wt"
+key_wt="$(cd "$fake_wt_parent/task-delegate-resolve" && bash -c '
+  source "'"$here"'/lib/common.sh"
+  delegate_resolve_target_key .
+')"
+check "resolve_target_key from linked worktree == wezdeck" test "$key_wt" = "wezdeck"
+
 # --- claim / lease conflict (Mode 2 = session) ---
 claim1="$("$run" claim --id "$id" --by agent-a --lease-hours 2 2>/dev/null)"
 check "claim a ok" jq -e '.ok == true and .claimed_by == "agent-a"' <<<"$claim1"

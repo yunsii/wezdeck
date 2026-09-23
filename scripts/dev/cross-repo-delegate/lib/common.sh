@@ -121,6 +121,58 @@ def norm(p):
     except Exception:
         return p
 
+def git_main_worktree_root(start: Path):
+    """Primary checkout root for cwd inside a primary or linked worktree.
+
+    Linked worktrees have a `.git` *file* whose basename is the worktree
+    slug (e.g. dev-foo), which must not be treated as the allowlist key.
+    Prefer `git rev-parse --git-common-dir` → parent of `.git`.
+    """
+    import subprocess
+
+    git_root = None
+    for cand in [start, *start.parents]:
+        g = cand / ".git"
+        if g.exists() or g.is_file():
+            git_root = cand
+            break
+    if git_root is None:
+        return None
+    try:
+        common = subprocess.check_output(
+            [
+                "git",
+                "-C",
+                str(git_root),
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-common-dir",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        common_p = Path(common)
+        if common_p.name == ".git":
+            return common_p.parent
+    except Exception:
+        pass
+    # Fallback: parse gitdir file → …/repo/.git/worktrees/<slug>
+    g = git_root / ".git"
+    if g.is_file():
+        try:
+            text = g.read_text(encoding="utf-8").strip()
+        except Exception:
+            text = ""
+        if text.lower().startswith("gitdir:"):
+            gitdir = Path(text.split(":", 1)[1].strip())
+            if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+                return gitdir.parent.parent.parent
+            if gitdir.name == ".git":
+                return gitdir.parent
+    if g.is_dir():
+        return git_root
+    return None
+
 alias_map = {}
 path_map = {}
 for key, meta in targets.items():
@@ -133,20 +185,34 @@ for key, meta in targets.items():
 hint = hint or ""
 if not hint or hint in (".", "cwd"):
     cwd = norm(os.getcwd())
-    # walk up for git root
     p = Path(cwd)
     hit = None
+    # 1) Exact allowlisted path while walking parents (primary + subdirs).
     for cand in [p, *p.parents]:
         n = norm(cand)
         if n in path_map:
             hit = path_map[n]
             break
-        if (cand / ".git").exists() or (cand / ".git").is_file():
-            # match by basename aliases
-            base = cand.name.lower()
-            if base in alias_map:
-                hit = alias_map[base]
-            break
+    # 2) Linked worktree / nested checkout → map via primary worktree root.
+    if not hit:
+        main = git_main_worktree_root(p)
+        if main is not None:
+            n = norm(main)
+            if n in path_map:
+                hit = path_map[n]
+            else:
+                base = Path(n).name.lower()
+                if base in alias_map:
+                    hit = alias_map[base]
+    # 3) Longest allowlisted path-prefix of cwd (odd layouts / non-git dirs).
+    if not hit:
+        best = None
+        best_len = -1
+        for path, key in path_map.items():
+            if cwd == path or cwd.startswith(path + os.sep):
+                if len(path) > best_len:
+                    best, best_len = key, len(path)
+        hit = best
     if not hit:
         print("error: cannot resolve target from cwd; pass --to <key>", file=sys.stderr)
         sys.exit(2)

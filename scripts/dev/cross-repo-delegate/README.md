@@ -24,11 +24,13 @@ Product multi-dir mounts (Claude `--add-dir`, Codex multi-folder, …) are **tac
 delegate create --to <target> --from . --title "…" \
   --observed "…" --assumed "…"
 
-# Mode 2 — claim + develop in this session:
-delegate inbox --to .
+# Mode 2 — claim + develop in this session (primary *or* linked worktree cwd):
+delegate inbox --to .            # `.` → allowlist key via primary worktree root
 delegate claim --id req-…
 delegate show --id req-…
 # …edit code here; challenge / close — do NOT run
+# Linked worktrees (…/.worktrees/<repo>/<slug>) resolve to the same target as
+# the primary checkout — not to the worktree slug basename.
 
 # Mode 3 — file + headless dispatch on target worktree:
 delegate create --to <target> --from . --title "…" \

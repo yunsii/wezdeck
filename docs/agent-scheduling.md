@@ -98,7 +98,8 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 | **2. 主会话认领并开发** | `claim` → 当前 TUI/cwd 改码 | `owner=human`；**禁止**自动 worktree/worker | 主会话参与 Alt+/ |
 | **3. 主会话建单并委托开发** | `create --run` / `run --phase auto` | headless worker + `delegate-*` worktree | SKIP（`DELEGATE_HEADLESS`） |
 
-**硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。
+**硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。  
+Mode 2 的 `--to .` / `--from .` 按 **主 worktree 根** 解析 allowlist（`git rev-parse --git-common-dir`）：在 `…/.worktrees/<repo>/<slug>` 里认领等于在主仓认领，不会把 slug basename 当成仓库名。
 
 ### Ticket vs multi-dir mount
 
