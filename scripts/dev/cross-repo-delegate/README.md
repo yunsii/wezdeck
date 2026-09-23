@@ -2,6 +2,9 @@
 
 Platform skill + runner. Skill id: **`cross-repo-delegate`**. See [`SKILL.md`](./SKILL.md).
 
+**Standing policy:** tickets are the cross-repo **protocol** (delegate / claim / challenge / close).  
+Product multi-dir mounts (Claude `--add-dir`, Codex multi-folder, …) are **tactical** same-intent co-edits only — see [`docs/agent-scheduling.md#ticket-vs-multi-dir-mount`](../../../docs/agent-scheduling.md#ticket-vs-multi-dir-mount) and the skill’s **Routing** section.
+
 ## Three modes
 
 | Mode | Command | Who develops |

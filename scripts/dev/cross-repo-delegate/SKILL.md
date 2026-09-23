@@ -32,8 +32,20 @@ Skill id: **`cross-repo-delegate`**. Short CLI on PATH (optional): **`delegate`*
 
 Concrete repo names live only in `~/.agent/tickets/config.yml` (and the user’s words), not in this skill’s trigger text.
 
-**Skip / redirect:** long exploratory design → interactive TUI / OpenClaw C2 handoff, not a ticket loop.
+## Routing: ticket vs multi-dir mount
 
+**Default for 跨仓委托 / 认领 / 挑战 / 关单:** this skill (Modes 1–3).  
+Product multi-dir mounts (Claude `--add-dir`, Codex multi-folder, Cursor multi-root, parent-folder workspaces) are a **tactical** way to keep one semantic edit coherent across checkouts. They do **not** replace the ticket protocol (ownership, `observed`/`assumed`, challenge/reply, allowlist, audit).
+
+| User signal | You do |
+| --- | --- |
+| 提单 / 跨仓委托 / 有没有我的单 / 认领 / 挑战假设 / 关单 / 派工人 | Modes 1–3 below |
+| Same intent must land in 2+ repos in one sitting (shared type rename, co-edited contract) | Allow a **short** product multi-dir session; do not invent a second ticket store; prefer tickets when ownership or challenge is needed |
+| Source-repo agent wants to “keep context” by writing the allowlisted target as standing practice | **Refuse that framing** — file/claim on the target (Mode 1/2) or Mode 3 worker on a target worktree |
+
+More visible files are not better cross-repo context for delegation: the target session must load **that** repo’s `AGENTS.md` / `CLAUDE.md`, keep the single-writer lease, and leave a reviewable contract. Policy detail: [`docs/agent-scheduling.md#ticket-vs-multi-dir-mount`](../../../docs/agent-scheduling.md#ticket-vs-multi-dir-mount) (from repo root: `docs/agent-scheduling.md#ticket-vs-multi-dir-mount`).
+
+**Skip / redirect:** long exploratory design → interactive TUI / OpenClaw C2 handoff, not a ticket loop.
 ## Mode 3 only — explicit headless dispatch
 
 ```bash
@@ -180,6 +192,7 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 - Don’t treat Ticket-headless as C3 ACP (or the reverse); OpenClaw Main picks **执行通道** — see `openclaw/docs/agent-interaction.md` §6
 - **Don’t** after `claim` (session) call `run` / spawn `delegate-*` worktree / headless worker
 - **Don’t** use `--run` / `run` unless the user asked to 委托 / 后台 / 派工人 (Mode 3)
+- **Don’t** replace Modes 1–3 with a standing multi-dir mount from the source repo into the target (“context is better if I edit both”) — tickets own delegation; mounts are tactical same-intent co-edits only
 
 ## Tests (operators / CI — not the user path)
 
@@ -192,4 +205,4 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 - Runner: `run.sh` · lib: `lib/` (`lifecycle.sh` = claim/run/reply) · offline: `test.sh`
 - Link: `scripts/dev/link-platform-skills.sh`
 - Sibling: `adversarial-review`, `brainstorm`
-- Scheduling: `docs/agent-scheduling.md`
+- Scheduling: `docs/agent-scheduling.md` (ticket vs multi-dir: `#ticket-vs-multi-dir-mount`)

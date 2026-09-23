@@ -232,7 +232,7 @@ Claw 侧速查：
 | 你想… | 用 |
 | --- | --- |
 | 飞书边聊边改、要 steer / cancel | **ACP C3** |
-| 跨仓契约 / research→implement | **Ticket-headless**（同一 skill `cross-repo-delegate`） |
+| 跨仓契约 / research→implement | **Ticket-headless**（同一 skill `cross-repo-delegate`；票仓协议，多目录挂载仅战术，见平台 `#ticket-vs-multi-dir-mount`） |
 | 飞书小改、编排台账 | **Main 飞书**（C1） |
 | 人盯全程 | **TUI**（H2/C2） |
 

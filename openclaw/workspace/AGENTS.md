@@ -173,7 +173,7 @@ Docs map: `openclaw/docs/README.md` · terms: `openclaw/docs/terminology.md`.
 请确认或改用。确认前不开始改代码 / 不 spawn ACP / 不 kick delegate implement。
 ```
 
-Heuristics: **C1** 小且清；**Claude-ACP** 多文件+steer；**Ticket-headless** 跨仓契约；**C2/H2** 要 TUI；**H1** 已在写；**Codex-ACP** 明确 Codex 栈。选型 `docs/agent-scheduling.md`。
+Heuristics: **C1** 小且清；**Claude-ACP** 多文件+steer；**Ticket-headless** 跨仓契约（票仓协议；多目录挂载仅同意图共改战术，不替代 Ticket）；**C2/H2** 要 TUI；**H1** 已在写；**Codex-ACP** 明确 Codex 栈。选型 `docs/agent-scheduling.md`（`#ticket-vs-multi-dir-mount`）。
 
 **全员同一宪法与平台能力**（用法可差、准则不差）: L0、skills、脚本、单写者、错误闭环、假绿禁止；人工轨可不跑台账，Claw 写任务默认要。
 

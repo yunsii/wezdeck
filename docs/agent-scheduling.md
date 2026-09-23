@@ -86,6 +86,7 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 | 人要盯全程 / 深改 | **Handoff/TUI** |
 | 飞书边聊边改、要 steer/cancel | **ACP** |
 | 跨仓契约、只交票 / 主会话认领改 / 明确委托工人 | **Ticket**（同一 skill；见下表三模式） |
+| 同意图必须同时改 2+ 仓（共享类型 / 契约共改） | **战术多目录挂载**（产品能力；见 [Ticket vs multi-dir](#ticket-vs-multi-dir-mount)） |
 | 小且清、Main 自己写 | **Main自写** |
 | 多角色找茬 / 发散 | **Review-headless**（非写码工人） |
 
@@ -98,6 +99,41 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 | **3. 主会话建单并委托开发** | `create --run` / `run --phase auto` | headless worker + `delegate-*` worktree | SKIP（`DELEGATE_HEADLESS`） |
 
 **硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。
+
+### Ticket vs multi-dir mount
+
+**站位政策：**跨仓委托 / 认领 / 挑战假设 / 关单 → **票仓协议**（`cross-repo-delegate`）。  
+厂商「多目录挂载」（Claude `--add-dir`、Codex multi-folder、Cursor multi-root 等）是 **同意图共改时的战术手段**，补不了所有权、契约与审计。
+
+**更多可见文件 ≠ 更好的跨仓上下文。** 委托类工作要的是：目标仓会话加载本仓 `AGENTS.md` / `CLAUDE.md`、单写者 lease、可复盘的 `observed`/`assumed` 与 challenge 线程。源仓会话挂进目标仓目录后，常带着源仓世界观写目标仓，并冲掉 Git/PR 所有权边界。
+
+| 信号 | 选 |
+| --- | --- |
+| 跨仓委托、异步交接、只交意图、要 challenge / reply | **Ticket**（Mode 1–3） |
+| 一次语义变更必须同时落 2+ 仓（共享类型 rename、契约共改） | **战术多目录挂载**；做完即拆，不常驻 |
+| 建票前只核对目标仓现状 | **只读**挂载或读目标仓；**写**仍落目标仓会话（Mode 2）或 Mode 3 worker |
+| 源仓 agent「为了上下文」直接改 allowlist 目标仓当常驻协同 | **Out of policy** |
+
+#### 厂商能力快照（约 2026-09；战术选型参考）
+
+| 产品 | 直接跨仓能做什么 | 对委托类工作的缺口 |
+| --- | --- | --- |
+| **Claude Code** | `--add-dir` / `additionalDirectories` 读写邻仓；可选加载对方 `CLAUDE.md`；云端 Projects 可按仓开 thread + PR | 仍有主 cwd；挂载默认不加载对方仓规；无票状态机 |
+| **Codex** | multi-folder 跨目录读写；CLI 早有 `--add-dir`；同仓 worktree 并行强 | **一个 primary Git root**：PR / `AGENTS.md` / skill 发现绑主 folder；次仓无对等交付面 |
+| **Grok Build** | 单 workspace / `repo_root`；memory 按仓；subagent worktree 同仓隔离 | 无原生多根挂载；跨仓靠本调度层 |
+| **Cursor** | multi-root：一会话挂多仓、意图不断裂 | multi-root 下 worktree / cloud agent 受限 |
+
+行业共性：产品强化「看得见、改得动多目录」；**跨仓所有权与契约交接**仍由本仓票协议承担。
+
+#### 刻意不合（补充）
+
+| 双轨 | 政策 |
+| --- | --- |
+| 多目录挂载 ↛ 票仓状态机 | 挂载会话 **不** 替代 `submitted`/`challenge`/`close`；禁止另建第二票库 |
+| 源仓 TUI 常驻写目标仓 | 目标仓开发走 Mode 2（本仓 cwd）或 Mode 3（目标 `delegate-*` worktree） |
+| 「上下文更好」作绕过理由 | 紧耦合同意图共改才用战术挂载；委托 / 异步仍走票 |
+
+手续与触发词：[`scripts/dev/cross-repo-delegate/SKILL.md`](../scripts/dev/cross-repo-delegate/SKILL.md)。
 
 ---
 

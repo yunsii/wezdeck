@@ -46,8 +46,10 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`development-environment-troubleshooting.md`](./development-environment-troubleshooting.md).
 - Entry points, ownership, and runtime design:
   Read [`architecture.md`](./architecture.md).
-- Agent 执行通道调度（人工 TUI / 跨仓工单 / OpenClaw ACP·Main / 审查 headless；统一 vs 刻意不合）:
-  Read [`agent-scheduling.md`](./agent-scheduling.md).
+- Agent 执行通道调度（人工 TUI / 跨仓工单 / OpenClaw ACP·Main / 审查 headless；
+  统一 vs 刻意不合；票仓协议 vs 多目录挂载）:
+  Read [`agent-scheduling.md`](./agent-scheduling.md)
+  ([`#ticket-vs-multi-dir-mount`](./agent-scheduling.md#ticket-vs-multi-dir-mount)).
 - Big-picture map of session management (workspace/tab/tmux/worktree/agent/attention) and interop (host TUI ↔ session-bridge ↔ Feishu), with a built / convention / not-built status table:
   Read [`architecture.md#session--interop-overview`](./architecture.md#session--interop-overview).
 - Unified WezTerm event bus (OSC vs file transport, registered events):

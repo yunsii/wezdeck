@@ -154,9 +154,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
 - Agent 执行通道调度（人工 TUI / 跨仓工单 Ticket-headless / OpenClaw ACP·Main /
-  审查 headless）、`host-agent-invoke` 读写分档、或「统一什么 / 刻意不合什么」:
-  Read [`docs/agent-scheduling.md`](docs/agent-scheduling.md)（平台知识；**不**放
-  `openclaw/docs/`）。
+  审查 headless）、`host-agent-invoke` 读写分档、「统一什么 / 刻意不合什么」、
+  或跨仓 **票仓协议 vs 多目录挂载（战术）**:
+  Read [`docs/agent-scheduling.md`](docs/agent-scheduling.md)（含
+  [`#ticket-vs-multi-dir-mount`](docs/agent-scheduling.md#ticket-vs-multi-dir-mount)；
+  平台知识；**不**放 `openclaw/docs/`）。
 - Env loading, secret placement, the `~/.config/shell-env.d/`
   convention, `runtime-env-lib.sh::runtime_env_load_managed`, or
   deciding whether a value belongs in `wezterm-x/local/shared.env`
