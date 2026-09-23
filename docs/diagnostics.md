@@ -118,9 +118,10 @@ Decision messages in `runtime.log`:
 | level | message | Meaning |
 |---|---|---|
 | `info` | `Ctrl+n matched agent pane; staging /new` | `@agent_pane_match=1` → injected `/new` |
+| `info` | `Ctrl+n detected agent via process cmdline; staging /new` | leaf name missed (e.g. hand-started Grok as `python3` / `grok-focus-filter`) but pane process tree cmdline matched → injected `/new`; field `detected_agent=` |
 | `info` | `Ctrl+n non-agent pane; injecting clear` | normal non-agent pane → injected `clear`+Enter |
-| `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`, window has managed `primary_command`, but pane role tag empty — keep raw `Ctrl+n` (do not clear into a likely agent composer); the Alt+g tagging-gap class of bug |
-| `info` | `Ctrl+n completed` | terminal row; `outcome=new\|clear\|pass_through_suspected\|aborted` + `duration_ms` (no toast — keystrokes are the UX) |
+| `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`/`python3`, window has managed `primary_command`, but pane role tag empty — keep raw `Ctrl+n` (do not clear into a likely agent composer); the Alt+g tagging-gap class of bug |
+| `info` | `Ctrl+n completed` | terminal row; `outcome=new\|new_cmdline\|clear\|pass_through_suspected\|aborted` + `duration_ms` (no toast — keystrokes are the UX) |
 
 Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`, `outcome`, `duration_ms`.
 

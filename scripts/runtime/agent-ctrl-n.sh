@@ -8,6 +8,10 @@
 # (leaf=sh/node) silently falls through and is indistinguishable from
 # "user pressed Ctrl+n in a shell" after the fact.
 #
+# Hand-started Grok often shows as `python3` (grok-focus-filter / grok.real),
+# so leaf-name match alone misses it. After @agent_pane_match fails we probe
+# the pane process tree cmdlines before injecting clear.
+#
 # Outcome contract (log-only, no toast — keystrokes are the user-visible
 # effect): invoked is implicit in the decision row; each path ends with
 # `Ctrl+n completed` + duration_ms + outcome=.
@@ -21,6 +25,57 @@ export WEZTERM_RUNTIME_LOG_SOURCE="agent-ctrl-n.sh"
 usage() {
   echo "usage: $0 <pane-or-window-target>" >&2
   exit 2
+}
+
+# Walk pane_pid + descendants; print grok|claude|codex on first hit.
+# Covers hand-started secondary panes where leaf is python3/node/sh.
+agent_ctrl_n_detect_from_cmdline() {
+  local pane_id="${1:-}"
+  local root_pid=""
+  local pid=""
+  local cmdline=""
+  local -a queue=()
+  local -A seen=()
+  local child=""
+
+  root_pid="$(tmux display-message -p -t "$pane_id" '#{pane_pid}' 2>/dev/null || true)"
+  [[ "$root_pid" =~ ^[0-9]+$ ]] || return 1
+  queue=("$root_pid")
+
+  while ((${#queue[@]} > 0)); do
+    pid="${queue[0]}"
+    queue=("${queue[@]:1}")
+    [[ -n "${seen[$pid]+x}" ]] && continue
+    seen[$pid]=1
+    [[ -r "/proc/$pid/cmdline" ]] || continue
+    cmdline="$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)"
+    # Match path basenames and wrapper argv. Grok often hides behind
+    # python3 + grok-focus-filter / grok.real; Codex behind node + codex.js;
+    # Claude is usually an ELF named claude (leaf match already works) but
+    # still detect from cmdline for resume wrappers / odd installs.
+    # Trailing space from tr '\0' ' ' is common — prefer prefix globs
+    # (*claude*) over exact suffix. Avoid matching only ".claude/" config
+    # paths: require bin/claude, an argv token, or codex.js / @openai/codex.
+    case "$cmdline" in
+      *grok-focus-filter*|*grok.real*|*/bin/grok*|*/grok[[:space:]]*|*/grok|*" grok "*|*" grok")
+        printf 'grok\n'
+        return 0
+        ;;
+      */bin/claude*|*/claude[[:space:]]*|*/claude|*" claude "*|*" claude")
+        printf 'claude\n'
+        return 0
+        ;;
+      *codex.js*|*/@openai/codex*|*/bin/codex*|*/codex[[:space:]]*|*/codex|*" codex "*|*" codex")
+        printf 'codex\n'
+        return 0
+        ;;
+    esac
+    while IFS= read -r child; do
+      [[ "$child" =~ ^[0-9]+$ ]] || continue
+      queue+=("$child")
+    done < <(pgrep -P "$pid" 2>/dev/null || true)
+  done
+  return 1
 }
 
 target="${1-}"
@@ -80,10 +135,26 @@ complete() {
     "outcome=$outcome"
 }
 
+# Tests may override the /new injector via AGENT_NEW_INTO_PANE_SH.
+new_into_sh="${AGENT_NEW_INTO_PANE_SH:-$SCRIPT_DIR/agent-new-into-pane.sh}"
+
 if [[ "$match" == "1" ]]; then
   runtime_log_info agent_cli "Ctrl+n matched agent pane; staging /new" "${common_fields[@]}"
-  bash "$SCRIPT_DIR/agent-new-into-pane.sh" "$pane_id"
+  bash "$new_into_sh" "$pane_id"
   complete "new"
+  exit 0
+fi
+
+# Hand-started Grok (and similar) often leaves pane_current_command as
+# python3 / node while the real agent is in the process tree.
+detected_agent=""
+detected_agent="$(agent_ctrl_n_detect_from_cmdline "$pane_id" || true)"
+if [[ -n "$detected_agent" ]]; then
+  runtime_log_info agent_cli "Ctrl+n detected agent via process cmdline; staging /new" \
+    "${common_fields[@]}" \
+    "detected_agent=$detected_agent"
+  bash "$new_into_sh" "$pane_id"
+  complete "new_cmdline"
   exit 0
 fi
 
@@ -94,7 +165,7 @@ fi
 cmd_base="${cmd##*/}"
 suspected_miss=0
 case "$cmd_base" in
-  sh|node|ash|dash)
+  sh|node|ash|dash|python|python3)
     if [[ -z "$role" && -n "$primary_meta" ]]; then
       suspected_miss=1
     fi
