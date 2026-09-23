@@ -62,18 +62,38 @@ if [[ -z "$target_common_dir" ]]; then
   exit 0
 fi
 
-context="$(tmux_worktree_context_for_context "$source_window_id" "$cwd" || true)"
-if [[ -z "$context" ]]; then
-  runtime_log_warn worktree "current context could not be resolved during worktree switch" "session_name=$session_name" "worktree_root=$worktree_root" "source_window_id=$source_window_id" "cwd=$cwd"
-  tmux display-message 'Current pane is not inside a git worktree'
-  exit 0
+# Session peer fallback covers reclaim-self zombie panes; if even that
+# fails, trust the already-validated target (picker filtered one family).
+context="$(tmux_worktree_context_for_context "$source_window_id" "$cwd" "$session_name" || true)"
+repo_common_dir=""
+source_worktree_root=""
+context_origin="target"
+if [[ -n "$context" ]]; then
+  IFS=$'\t' read -r source_worktree_root repo_common_dir _ _ context_origin <<< "$context"
+  if [[ "$context_origin" == "session" ]]; then
+    runtime_log_warn worktree "worktree switch recovered context from session peer" \
+      "session_name=$session_name" \
+      "worktree_root=$worktree_root" \
+      "source_window_id=$source_window_id" \
+      "cwd=$cwd" \
+      "peer_worktree_root=$source_worktree_root"
+    source_worktree_root=""
+  fi
+else
+  runtime_log_warn worktree "source context unavailable; using target as repo family" \
+    "session_name=$session_name" \
+    "worktree_root=$worktree_root" \
+    "source_window_id=$source_window_id" \
+    "cwd=$cwd"
+  repo_common_dir="$target_common_dir"
+  context_origin="target"
 fi
 
-IFS=$'\t' read -r source_worktree_root repo_common_dir _ _ <<< "$context"
 runtime_log_info worktree "worktree switch resolved current context" \
   "session_name=$session_name" \
   "source_window_id=$source_window_id" \
   "cwd=$cwd" \
+  "context_origin=$context_origin" \
   "source_worktree_root=$source_worktree_root" \
   "repo_common_dir=$repo_common_dir" \
   "target_common_dir=$target_common_dir" \

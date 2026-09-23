@@ -66,6 +66,106 @@ func TestWorktreeRenderShowsSelectedDetail(t *testing.T) {
 	if !strings.Contains(out, "Ctrl+y path") || !strings.Contains(out, "Ctrl+b branch") {
 		t.Fatalf("footer missing copy hints: %q", out)
 	}
+	if !strings.Contains(out, "Ctrl+d reclaim") {
+		t.Fatalf("footer missing reclaim hint: %q", out)
+	}
+}
+
+func TestWorktreeBeginReclaimConfirm(t *testing.T) {
+	ui := &worktreeUI{
+		rows: []worktreeRow{
+			{label: "main", path: "/home/yuns/work/coco-forge", branch: "master", accelerator: "1"},
+			{label: "dev-x", path: "/home/yuns/work/.worktrees/coco-forge/dev-x", branch: "dev/x", accelerator: "2"},
+			{label: "task-y", path: "/home/yuns/work/.worktrees/coco-forge/task-y", branch: "task/y", accelerator: "3"},
+		},
+		selected: 0,
+	}
+	ui.beginReclaimConfirm()
+	if ui.pendingReclaim != "" || ui.flash != "refusing primary worktree" {
+		t.Fatalf("primary: pending=%q flash=%q", ui.pendingReclaim, ui.flash)
+	}
+
+	ui.flash = ""
+	ui.selected = 1
+	ui.beginReclaimConfirm()
+	if ui.pendingReclaim != "Reclaim long-lived dev-x?" {
+		t.Fatalf("dev confirm: got %q", ui.pendingReclaim)
+	}
+
+	ui.pendingReclaim = ""
+	ui.selected = 2
+	ui.beginReclaimConfirm()
+	if ui.pendingReclaim != "Reclaim task-y?" {
+		t.Fatalf("task confirm: got %q", ui.pendingReclaim)
+	}
+}
+
+func TestWorktreeReclaimSelectedRemovesRow(t *testing.T) {
+	orig := runWorktreeReclaim
+	runWorktreeReclaim = func(openScript, sessionName, worktreePath, sourceWindowID, cwd string) (string, string, error) {
+		if worktreePath != "/repo/.worktrees/r/task-a" {
+			t.Fatalf("path: %q", worktreePath)
+		}
+		return "OK", "task-a", nil
+	}
+	t.Cleanup(func() { runWorktreeReclaim = orig })
+
+	ui := &worktreeUI{
+		rows: []worktreeRow{
+			{label: "task-a", path: "/repo/.worktrees/r/task-a", branch: "task/a", accelerator: "1"},
+			{label: "task-b", path: "/repo/.worktrees/r/task-b", branch: "task/b", accelerator: "2"},
+		},
+		selected:   0,
+		openScript: "/runtime/scripts/runtime/tmux-worktree-open.sh",
+	}
+	if !ui.reclaimSelected() {
+		t.Fatal("expected row removal")
+	}
+	if len(ui.rows) != 1 || ui.rows[0].label != "task-b" {
+		t.Fatalf("rows after reclaim: %+v", ui.rows)
+	}
+	if ui.rows[0].accelerator != "1" {
+		t.Fatalf("accelerator not reassigned: %q", ui.rows[0].accelerator)
+	}
+	if ui.flash != "reclaimed task-a" {
+		t.Fatalf("flash: %q", ui.flash)
+	}
+}
+
+func TestWorktreeReclaimSelectedRefuseKeepsRow(t *testing.T) {
+	orig := runWorktreeReclaim
+	runWorktreeReclaim = func(openScript, sessionName, worktreePath, sourceWindowID, cwd string) (string, string, error) {
+		return "REFUSE", "task-a has uncommitted changes", nil
+	}
+	t.Cleanup(func() { runWorktreeReclaim = orig })
+
+	ui := &worktreeUI{
+		rows: []worktreeRow{
+			{label: "task-a", path: "/repo/.worktrees/r/task-a", branch: "task/a", accelerator: "1"},
+		},
+		selected:   0,
+		openScript: "/runtime/scripts/runtime/tmux-worktree-open.sh",
+	}
+	if ui.reclaimSelected() {
+		t.Fatal("refuse should not report list change")
+	}
+	if len(ui.rows) != 1 {
+		t.Fatalf("row count: %d", len(ui.rows))
+	}
+	if ui.flash != "task-a has uncommitted changes" {
+		t.Fatalf("flash: %q", ui.flash)
+	}
+}
+
+func TestWorktreeRenderReclaimConfirm(t *testing.T) {
+	ui := &worktreeUI{pendingReclaim: "Reclaim task-a?"}
+	out := captureStdout(t, func() { ui.render() })
+	if !strings.Contains(out, "Reclaim task-a?") {
+		t.Fatalf("confirm title missing: %q", out)
+	}
+	if !strings.Contains(out, "Enter / y confirm") {
+		t.Fatalf("confirm hint missing: %q", out)
+	}
 }
 
 func TestWorktreeCopySelectedPathAndBranch(t *testing.T) {

@@ -39,20 +39,33 @@ fi
 
 runtime_log_info worktree "worktree menu invoked" "session_name=$session_name" "current_window_id=$current_window_id" "cwd=$cwd"
 
-context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" || true)"
+# Pass session_name so a zombie pane (cwd deleted after reclaim-self)
+# still resolves the repo family from a live sibling window.
+context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" "$session_name" || true)"
 if [[ -z "$context" ]]; then
   runtime_log_warn worktree "worktree menu could not resolve current context" "session_name=$session_name" "current_window_id=$current_window_id" "cwd=$cwd"
-  tmux display-message 'Current pane is not inside a git worktree'
+  tmux display-message 'No git worktree in this session (pane cwd may be deleted)'
   exit 0
 fi
 
-IFS=$'\t' read -r current_worktree_root repo_common_dir main_worktree_root repo_label <<< "$context"
+IFS=$'\t' read -r current_worktree_root repo_common_dir main_worktree_root repo_label context_origin <<< "$context"
 list_root="$main_worktree_root"
+# Session-peer recovery must not preselect the sibling as "current".
+if [[ "$context_origin" == "session" ]]; then
+  runtime_log_warn worktree "worktree menu recovered context from session peer" \
+    "session_name=$session_name" \
+    "current_window_id=$current_window_id" \
+    "cwd=$cwd" \
+    "peer_worktree_root=$current_worktree_root" \
+    "repo_common_dir=$repo_common_dir"
+  current_worktree_root=""
+fi
 bench_mark context_resolved
 runtime_log_info worktree "worktree menu resolved current context" \
   "session_name=$session_name" \
   "current_window_id=$current_window_id" \
   "cwd=$cwd" \
+  "context_origin=$context_origin" \
   "current_worktree_root=$current_worktree_root" \
   "repo_common_dir=$repo_common_dir" \
   "main_worktree_root=$main_worktree_root" \

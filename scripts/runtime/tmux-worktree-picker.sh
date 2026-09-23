@@ -100,9 +100,12 @@ if [[ -n "$prefetched_file" && -r "$prefetched_file" ]]; then
     append_item "$worktree_label" "$worktree_path" "$branch_name" "$local_window_id"
   done < "$prefetched_file"
 else
-  context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" || true)"
+  context="$(tmux_worktree_context_for_context "$current_window_id" "$cwd" "$session_name" || true)"
   if [[ -n "$context" ]]; then
-    IFS=$'\t' read -r current_worktree_root _ _ repo_label <<< "$context"
+    IFS=$'\t' read -r current_worktree_root _ _ repo_label context_origin <<< "$context"
+    if [[ "$context_origin" == "session" ]]; then
+      current_worktree_root=""
+    fi
   else
     current_worktree_root=""
     repo_label='repo'

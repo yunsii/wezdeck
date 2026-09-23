@@ -8,6 +8,7 @@
 //   Enter    → open selected worktree window
 //   Ctrl+Y   → copy selected worktree path to the Windows clipboard
 //   Ctrl+B   → copy selected branch name to the Windows clipboard
+//   Ctrl+D   → reclaim focused linked worktree (confirm with Enter / y)
 //   Up/Down  → move
 //   1-9,0,a-z → accelerator open
 //   Esc / Ctrl+C / Alt+g → close
@@ -28,6 +29,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -66,6 +68,9 @@ type worktreeUI struct {
 	// flash is a one-shot status line (e.g. "copied path") shown on the
 	// path row until the next move/render clears it.
 	flash string
+	// pendingReclaim is non-empty while the Ctrl+d confirm overlay is up.
+	// Holds the human-readable confirm prompt for the focused row.
+	pendingReclaim string
 }
 
 type worktreePicker struct{}
@@ -129,6 +134,27 @@ func (worktreePicker) Run(args []string) int {
 	ui.ts.emitFirstPaint("worktree.perf", "worktree", "worktree picker paint timing", len(ui.rows), ui.selected, nil)
 
 	return runKeyLoop(func(key string) (loopAction, int) {
+		// Reclaim confirm overlay: Enter/y confirms, Esc/n cancels.
+		if ui.pendingReclaim != "" {
+			switch key {
+			case "\r", "\n", "y", "Y":
+				ui.pendingReclaim = ""
+				if ui.reclaimSelected() {
+					if len(ui.rows) == 0 {
+						return loopExit, 0
+					}
+				}
+				ui.render()
+			case "\x1b", "n", "N":
+				ui.pendingReclaim = ""
+				ui.flash = "reclaim cancelled"
+				ui.render()
+			case "\x03", "\x1bg":
+				return loopExit, 0
+			}
+			return loopContinue, 0
+		}
+
 		switch key {
 		case "\r", "\n":
 			ui.dispatch(fd, state)
@@ -138,6 +164,9 @@ func (worktreePicker) Run(args []string) int {
 			ui.render()
 		case "\x02": // Ctrl+B — copy focused branch name; stay open
 			ui.copySelected("branch")
+			ui.render()
+		case "\x04": // Ctrl+D — reclaim focused linked worktree (confirm next)
+			ui.beginReclaimConfirm()
 			ui.render()
 		case "\x1b", "\x03", "\x1bg":
 			// Bare Esc / Ctrl+C / forwarded Alt+g (the chord that opened
@@ -324,6 +353,11 @@ func (ui *worktreeUI) findAccelerator(key string) int {
 }
 
 func (ui *worktreeUI) render() {
+	if ui.pendingReclaim != "" {
+		ui.renderReclaimConfirm()
+		return
+	}
+
 	cols, lines := getTermSize()
 	// Title + showing + path detail + blank + footer reserve ≈ 7 chrome lines
 	// (rows start at screen line 5; one blank before footer).
@@ -437,7 +471,7 @@ func (ui *worktreeUI) render() {
 	// Footer.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	b.WriteString("\x1b[2mEnter open · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z open · Esc close  ·  powered by ")
+	b.WriteString("\x1b[2mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	ui.ts.renderFooterTail(&b)
@@ -445,6 +479,149 @@ func (ui *worktreeUI) render() {
 	b.WriteString("\x1b[J")
 
 	_, _ = os.Stdout.WriteString(b.String())
+}
+
+func (ui *worktreeUI) renderReclaimConfirm() {
+	const reset = "\x1b[0m"
+	const clearEOL = "\x1b[K"
+	var b strings.Builder
+	b.WriteString("\x1b[H\x1b[2J")
+	b.WriteString("\x1b[1;1H\x1b[1m")
+	b.WriteString(ui.pendingReclaim)
+	b.WriteString(reset)
+	b.WriteString(clearEOL)
+	b.WriteString("\x1b[3;1H\x1b[2mEnter / y confirm · Esc / n cancel")
+	b.WriteString(reset)
+	b.WriteString(clearEOL)
+	_, _ = os.Stdout.WriteString(b.String())
+}
+
+// beginReclaimConfirm arms the Ctrl+d overlay. Primary / missing rows are
+// refused immediately with a flash (no confirm).
+func (ui *worktreeUI) beginReclaimConfirm() {
+	ui.flash = ""
+	if ui.selected < 0 || ui.selected >= len(ui.rows) {
+		return
+	}
+	r := ui.rows[ui.selected]
+	if r.path == "" {
+		ui.flash = "no worktree to reclaim"
+		return
+	}
+	// Heuristic refuse for the primary checkout: linked trees live under
+	// `.worktrees/`; the real gate still lives in tmux-worktree-reclaim.sh.
+	base := filepath.Base(r.path)
+	if !strings.Contains(r.path, "/.worktrees/") && !strings.HasPrefix(base, "dev-") &&
+		!strings.HasPrefix(base, "task-") && !strings.HasPrefix(base, "hotfix-") &&
+		!strings.HasPrefix(base, "fix-") && !strings.HasPrefix(base, "delegate-") &&
+		!strings.HasPrefix(base, "claw-") {
+		ui.flash = "refusing primary worktree"
+		return
+	}
+	if strings.HasPrefix(base, "dev-") {
+		ui.pendingReclaim = "Reclaim long-lived " + base + "?"
+		return
+	}
+	ui.pendingReclaim = "Reclaim " + base + "?"
+}
+
+// reclaimSelected runs tmux-worktree-reclaim.sh synchronously, removes the
+// row on OK, and sets flash from the protocol line. Returns true when the
+// row list changed (caller may exit if empty).
+func (ui *worktreeUI) reclaimSelected() bool {
+	if ui.selected < 0 || ui.selected >= len(ui.rows) {
+		return false
+	}
+	r := ui.rows[ui.selected]
+	ui.flash = "reclaiming " + filepath.Base(r.path) + "…"
+	ui.render()
+
+	status, detail, err := runWorktreeReclaim(ui.openScript, ui.sessionName, r.path, ui.currentWindowID, ui.cwd)
+	if err != nil {
+		ui.flash = "reclaim failed"
+		return false
+	}
+	switch status {
+	case "OK":
+		slug := detail
+		if slug == "" {
+			slug = filepath.Base(r.path)
+		}
+		ui.removeSelectedRow()
+		ui.flash = "reclaimed " + slug
+		return true
+	case "REFUSE":
+		if detail == "" {
+			detail = "reclaim refused"
+		}
+		ui.flash = detail
+		return false
+	default:
+		if detail == "" {
+			detail = "reclaim failed"
+		}
+		ui.flash = detail
+		return false
+	}
+}
+
+func (ui *worktreeUI) removeSelectedRow() {
+	if ui.selected < 0 || ui.selected >= len(ui.rows) {
+		return
+	}
+	ui.rows = append(ui.rows[:ui.selected], ui.rows[ui.selected+1:]...)
+	// Reassign positional accelerators after deletion so [1] stays first.
+	accels := []string{
+		"1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+		"k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+		"u", "v", "w", "x", "y", "z",
+	}
+	for i := range ui.rows {
+		if i < len(accels) {
+			ui.rows[i].accelerator = accels[i]
+		} else {
+			ui.rows[i].accelerator = ""
+		}
+	}
+	if len(ui.rows) == 0 {
+		ui.selected = 0
+		return
+	}
+	if ui.selected >= len(ui.rows) {
+		ui.selected = len(ui.rows) - 1
+	}
+}
+
+// runWorktreeReclaim invokes scripts/runtime/tmux-worktree-reclaim.sh next
+// to openScript. Tests may override runWorktreeReclaimHook.
+var runWorktreeReclaim = runWorktreeReclaimDefault
+
+func runWorktreeReclaimDefault(openScript, sessionName, worktreePath, sourceWindowID, cwd string) (status, detail string, err error) {
+	if openScript == "" {
+		return "", "", fmt.Errorf("open script path empty")
+	}
+	script := filepath.Join(filepath.Dir(openScript), "tmux-worktree-reclaim.sh")
+	cmd := exec.Command("bash", script, sessionName, worktreePath, sourceWindowID, cwd)
+	cmd.Stdin = nil
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = nil
+	runErr := cmd.Run()
+	line := strings.TrimSpace(stdout.String())
+	if line == "" {
+		if runErr != nil {
+			return "ERROR", runErr.Error(), nil
+		}
+		return "ERROR", "empty reclaim response", nil
+	}
+	// Protocol: STATUS<TAB>detail (detail may contain spaces).
+	parts := strings.SplitN(line, "\t", 2)
+	status = parts[0]
+	if len(parts) > 1 {
+		detail = parts[1]
+	}
+	return status, detail, nil
 }
 
 // selectedDetailLine is the idle detail-row text:
