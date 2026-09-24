@@ -125,6 +125,49 @@ lua_runtime_path() {
   printf '%s\n' "$path"
 }
 
+check_windows_powershell_interop() {
+  local target_home="${1:?missing target home}"
+
+  # A /mnt/<drive> target means the runtime is hosted by Windows. Verify the
+  # WSL interop boundary before canary work starts; command -v alone is not
+  # sufficient when binfmt_misc/WSLInterop is disabled.
+  [[ "$target_home" =~ ^/mnt/[A-Za-z]/ ]] || return 0
+
+  sync_trace "step=powershell-interop status=checking target_home=$target_home"
+  if ! command -v powershell.exe >/dev/null 2>&1; then
+    sync_trace "step=powershell-interop status=failed reason=missing_powershell"
+    cat >&2 <<'EOF'
+[sync] Windows target detected, but powershell.exe is not on PATH.
+[sync] Restore WSL interop and Windows PATH integration in /etc/wsl.conf:
+
+[interop]
+enabled=true
+appendWindowsPath=true
+
+[sync] Then run `wsl --shutdown` from Windows and reopen WSL.
+EOF
+    return 1
+  fi
+
+  local probe_output=""
+  if ! probe_output="$(powershell.exe -NoProfile -NonInteractive -Command '[Console]::Write("interop-ok")' 2>&1)"; then
+    sync_trace "step=powershell-interop status=failed reason=unexecutable output=$(printf '%s' "$probe_output" | tr '\r\n' '  ' | cut -c1-180)"
+    cat >&2 <<'EOF'
+[sync] powershell.exe was found but could not execute (WSL interop is likely disabled).
+[sync] Ensure /etc/wsl.conf contains:
+
+[interop]
+enabled=true
+appendWindowsPath=true
+
+[sync] Then run `wsl --shutdown` from Windows and reopen WSL before retrying sync.
+EOF
+    return 1
+  fi
+
+  sync_trace "step=powershell-interop status=completed"
+}
+
 run_lua_source_syntax_check() {
   # Pre-sync gate: byte-compile every *.lua under the source tree with
   # `luac -p` so a syntax error in any file (not just the ones constants.lua
@@ -360,6 +403,8 @@ sync_trace "step=target target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir
 if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
   sync_trace "step=target live_bootstrap=$LIVE_TARGET_FILE live_runtime=$LIVE_TARGET_RUNTIME_DIR canary_root=$CANARY_ROOT"
 fi
+
+check_windows_powershell_interop "$TARGET_HOME"
 
 prepare_runtime_subflow() {
   local repo_root_path="${1:?missing repo root path}"

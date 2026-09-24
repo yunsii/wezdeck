@@ -63,6 +63,21 @@ wezterm.exe -n start --always-new-process
 
 ## Runtime Sync
 
+For a Windows target such as `/mnt/c/Users/<user>`, `sync-runtime.sh` first
+probes `powershell.exe` through the WSL interop boundary before creating the
+canary tree. `command -v powershell.exe` alone is insufficient: if
+`/proc/sys/fs/binfmt_misc/WSLInterop` is unavailable, the file can be visible
+but not executable and helper installation would fail late in the sync. The
+precheck aborts early with the repair text. Ensure `/etc/wsl.conf` contains:
+
+```ini
+[interop]
+enabled=true
+appendWindowsPath=true
+```
+
+Then run `wsl --shutdown` from Windows, reopen WSL, and retry the sync.
+
 If repo-root `.sync-target` already points at a valid home, you can sync directly:
 
 ```bash
@@ -190,4 +205,3 @@ Fixture self-check: `scripts/dev/repo-hygiene/test.sh`.
 
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
 - Ensure the repo-hygiene pre-commit hook is installed (see [Repo hygiene](#repo-hygiene)) before relying on commits to catch basic doc/script rot.
-

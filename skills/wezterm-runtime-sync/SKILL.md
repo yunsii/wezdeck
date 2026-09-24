@@ -13,7 +13,10 @@ The scripts under `skills/wezterm-runtime-sync/scripts/` are the source of truth
 
 1. Run from the repository root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the skill scripts.
 2. **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is untouched and sync exits 1). Skip probe with `WEZTERM_SYNC_SKIP_CANARY_AUTO=1`. Use `--live` to publish straight to the running GUI. Details: [`docs/daily-workflow.md`](../../docs/daily-workflow.md).
-2. If repo-root `.sync-target` or `WEZTERM_SYNC_TARGET` already points at an existing directory, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` with no extra arguments.
+   Windows targets are preflighted with a real `powershell.exe` probe before
+   any canary files are written; if WSL interop is disabled, sync exits with
+   the `/etc/wsl.conf` and `wsl --shutdown` repair steps.
+3. If repo-root `.sync-target` or `WEZTERM_SYNC_TARGET` already points at an existing directory, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` with no extra arguments.
 3. If there is no valid cached target, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh --list-targets` to print candidate user home directories.
 4. Present the candidates to the user and ask which path should be used. Accept either one of the listed paths or another absolute path the user explicitly provides.
 5. After the user confirms a target, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /absolute/path`.
