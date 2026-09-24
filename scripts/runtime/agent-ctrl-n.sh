@@ -137,10 +137,35 @@ complete() {
 
 # Tests may override the /new injector via AGENT_NEW_INTO_PANE_SH.
 new_into_sh="${AGENT_NEW_INTO_PANE_SH:-$SCRIPT_DIR/agent-new-into-pane.sh}"
+codex_selector_sh="${CODEX_NEW_CURRENT_CHECKOUT_SH:-$SCRIPT_DIR/codex-new-current-checkout.sh}"
+
+stage_agent_new() {
+  local agent_kind="${1:-}"
+
+  bash "$new_into_sh" "$pane_id"
+  [[ "$agent_kind" == "codex" ]] || return 0
+
+  if bash "$codex_selector_sh" "$pane_id"; then
+    runtime_log_info agent_cli \
+      "Codex new conversation selected current checkout" \
+      "${common_fields[@]}" \
+      "selection=current_checkout"
+  else
+    runtime_log_warn agent_cli \
+      "Codex current checkout selector timed out" \
+      "${common_fields[@]}" \
+      "selection=manual_required"
+  fi
+}
+
+agent_kind_from_role=""
+case "$role" in
+  agent-cli:*) agent_kind_from_role="${role#agent-cli:}" ;;
+esac
 
 if [[ "$match" == "1" ]]; then
   runtime_log_info agent_cli "Ctrl+n matched agent pane; staging /new" "${common_fields[@]}"
-  bash "$new_into_sh" "$pane_id"
+  stage_agent_new "$agent_kind_from_role"
   complete "new"
   exit 0
 fi
@@ -153,7 +178,7 @@ if [[ -n "$detected_agent" ]]; then
   runtime_log_info agent_cli "Ctrl+n detected agent via process cmdline; staging /new" \
     "${common_fields[@]}" \
     "detected_agent=$detected_agent"
-  bash "$new_into_sh" "$pane_id"
+  stage_agent_new "$detected_agent"
   complete "new_cmdline"
   exit 0
 fi

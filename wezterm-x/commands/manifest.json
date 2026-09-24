@@ -321,7 +321,7 @@
   {
     "id": "agent.new-conversation",
     "label": "Agent CLI: Start a new conversation (/new) / shell clear",
-    "description": "When the current pane's foreground process is a known agent CLI (claude / codex / grok), type `/new`, briefly pause, then press Enter to start a fresh conversation. Otherwise inject `clear` and Enter to clear the shell screen.",
+    "description": "When the current pane's foreground process is a known agent CLI (claude / codex / grok), type `/new`, briefly pause, then press Enter to start a fresh conversation. Codex then selects `1. Current checkout` when its chooser is visible. Otherwise inject `clear` and Enter to clear the shell screen.",
     "scope": "project-navigation",
     "context": "any",
     "binding": {

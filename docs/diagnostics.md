@@ -119,9 +119,20 @@ Decision messages in `runtime.log`:
 |---|---|---|
 | `info` | `Ctrl+n matched agent pane; staging /new` | `@agent_pane_match=1` → injected `/new` |
 | `info` | `Ctrl+n detected agent via process cmdline; staging /new` | leaf name missed (e.g. hand-started Grok as `python3` / `grok-focus-filter`) but pane process tree cmdline matched → injected `/new`; field `detected_agent=` |
+| `info` | `Codex new conversation selected current checkout` | Codex's `/new` chooser was visible in the tmux pane and the helper selected option 1 |
+| `warn` | `Codex current checkout selector timed out` | Codex chooser did not paint its expected English anchors before the bounded poll expired; the user can choose manually |
 | `info` | `Ctrl+n non-agent pane; injecting clear` | normal non-agent pane → injected `clear`+Enter |
 | `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`/`python3`, window has managed `primary_command`, but pane role tag empty — keep raw `Ctrl+n` (do not clear into a likely agent composer); the Alt+g tagging-gap class of bug |
 | `info` | `Ctrl+n completed` | terminal row; `outcome=new\|new_cmdline\|clear\|pass_through_suspected\|aborted` + `duration_ms` (no toast — keystrokes are the UX) |
+
+For managed Codex panes, the existing `/new` injection is followed by a bounded
+`tmux capture-pane` probe. When the exact chooser title and `1. Current
+checkout` are visible, `1` and `Enter` are sent as separate keystrokes. This
+is intentionally scoped to Codex; Claude, Grok, shells, and hand-started
+non-Codex panes keep their existing Ctrl+n behavior. The probe is a UI fallback
+because Codex does not expose this transient chooser state through its session
+files or a supported API. Tune `CODEX_CURRENT_CHECKOUT_POLL_S` and
+`CODEX_CURRENT_CHECKOUT_MAX_POLLS` only for diagnostics or slow environments.
 
 Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`, `outcome`, `duration_ms`.
 
