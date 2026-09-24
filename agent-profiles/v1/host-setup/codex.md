@@ -148,10 +148,15 @@ Filesystem-backed equivalent of slash commands. Drop a `.md` per prompt;
 recall in a session via Codex's `/` menu. Common candidates from this
 repo: "sync runtime", "reload tmux", "render hotkey report".
 
-### 8. `disable_response_storage = true` (optional, compliance)
+### 8. Removed top-level settings
 
-Set when conversations should not persist on the provider's servers.
-Independent of permission policy; listed here for completeness.
+Do not add these legacy top-level keys to current Codex config files:
+`disable_response_storage`, `network_access`, and
+`windows_wsl_setup_acknowledged`. Codex CLI 0.156.1 reports each as an
+unrecognized startup setting. Configure `network_access` under the relevant
+`[profiles.<name>.<sandbox_mode>]` table instead, as shown above. The other
+two settings have no current config key; omit them rather than suppressing
+the warning.
 
 ## What This File Is Not
 
