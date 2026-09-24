@@ -142,7 +142,8 @@ case "$agent" in
     ;;
   codex)
     log_resume_boot codex
-    exec sh -c 'codex resume --last || { bash "$1" codex; printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }' \
+    exec sh -c 'bash "$1" codex resume --last || { bash "$3" codex; printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }' \
+      "$script_dir/codex-resume-takeover.sh" \
       sh "$fallback_log_script"
     ;;
   grok)
