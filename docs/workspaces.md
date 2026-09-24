@@ -75,14 +75,14 @@ Three layers, most specific wins:
 | Layer | Where | Example |
 |---|---|---|
 | **Repo** | `items[].launcher` in `workspaces.lua` | one opensource checkout on `codex_resume` |
-| **Workspace** | `defaults.launcher` for that workspace | `config` / `opensource` → `grok_resume` (tracked baseline + local example) |
+| **Workspace** | `defaults.launcher` for that workspace | `config` / `opensource` inherit the machine default (`MANAGED_AGENT_PROFILE`) |
 | **Global** | `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env` (else `WT_PROVIDER_AGENT_PROFILE` / built-in `claude`) | machine default for `work` when its defaults still point at `managed_launcher` |
 
 ```lua
 config = {
-  defaults = { launcher = 'grok_resume' },  -- workspace default
+  defaults = { launcher = managed_launcher },  -- workspace default
   items = {
-    { cwd = '/home/you/github/wezterm-config' },                 -- inherits grok
+    { cwd = '/home/you/github/wezterm-config' },                 -- inherits machine default
     { cwd = '/home/you/github/special', launcher = 'codex_resume' }, -- repo override
     { cwd = '/home/you/github/legacy', command = { 'bash' } },   -- no managed agent
   },
