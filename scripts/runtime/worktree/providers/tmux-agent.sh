@@ -435,6 +435,22 @@ provider_resolve_variant() {
   printf 'light\n'
 }
 
+provider_command_matches_agent_config() {
+  local hint="${1:-}"
+  local configured="${WT_PROVIDER_AGENT_COMMAND:-}"
+  local configured_light="${WT_PROVIDER_AGENT_COMMAND_LIGHT:-}"
+  local configured_dark="${WT_PROVIDER_AGENT_COMMAND_DARK:-}"
+
+  [[ -n "$hint" ]] || return 1
+  for configured in "$configured" "$configured_light" "$configured_dark"; do
+    [[ -n "$configured" ]] || continue
+    case "$hint" in
+      *"$configured"*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
 provider_build_pane_command() {
   local resolved_variant="${1:?missing variant}"
   local command_string="env"
@@ -532,6 +548,17 @@ provider_launch() {
       command_hint="$(provider_session_command_hint "$session_name" "$WT_REPO_COMMON_DIR" "$current_window_id" || true)"
     else
       command_hint="$(provider_session_command_hint "$session_name" "$WT_REPO_COMMON_DIR" || true)"
+    fi
+    # A reused pane may still contain a launcher from an older default
+    # profile (for example Grok after switching the machine default to
+    # Codex). Reuse the hint only for the currently selected agent; the
+    # variant hint is still useful when it matches.
+    if [[ -n "$command_hint" ]] && ! provider_command_matches_agent_config "$command_hint"; then
+      runtime_log_info provider "discarded stale session agent command hint" \
+        "session_name=$session_name" \
+        "configured_profile=${WT_PROVIDER_AGENT_PROFILE:-}" \
+        "hint=$command_hint"
+      command_hint=""
     fi
   fi
 
