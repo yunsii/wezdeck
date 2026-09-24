@@ -206,13 +206,17 @@ home. Hooks/permissions still come from a symlink to
 
 ## Windows Launch Hotkey
 
-For `hybrid-wsl` on Windows, pin WezTerm to the taskbar together with the two apps you reach most often so the built-in `Win+N` shortcut can launch or focus them without a background hotkey daemon. Recommended layout:
+For `hybrid-wsl` on Windows, pinning WezTerm (and other daily apps) to the
+taskbar lets the built-in `Win+N` / Meta+N slot shortcuts launch or focus them
+without a background hotkey daemon. Slot order is **personal** — pick whatever
+order you want; this repo does not require a particular `Win+N` mapping. The
+binding survives reboots, needs no extra tooling, and stays out of the
+in-WezTerm keymap documented in [`keybindings.md`](./keybindings.md).
 
-- `Win+1`: WezTerm
-- `Win+2`: primary browser
-- `Win+3`: primary IM client (Feishu, Slack, Teams, etc.)
-
-Pin each app, then drag the icons so WezTerm sits in slot 1, the browser in slot 2, and the IM client in slot 3. The binding survives reboots, needs no extra tooling, and stays out of the in-WezTerm keymap documented in [`keybindings.md`](./keybindings.md).
+Taskbar-pin **Run** (Normal vs Maximized) is machine-local Windows shortcut
+state and is outside `wezterm-runtime-sync`. If a pin opens large while a
+shell `wezterm` / `wezterm-gui` stays small, see
+[`development-environment-troubleshooting.md#taskbar-pin-vs-cli-window-size-windows`](./development-environment-troubleshooting.md#taskbar-pin-vs-cli-window-size-windows).
 
 ## Agent Attention Hooks
 

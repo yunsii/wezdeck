@@ -353,6 +353,31 @@ Do not work around a managed DNS failure by permanently replacing an
 automatically assigned Windows DNS server with a public resolver; that can
 silently break internal and split-horizon domains.
 
+## Taskbar Pin vs CLI Window Size (Windows)
+
+**hybrid-wsl / Windows only.** Same machine and synced runtime: launching via
+the **taskbar pin** (including whatever `Win+N` / Meta+N slot you personally
+assigned) opens a large / maximized window, while `wezterm` or `wezterm-gui`
+from a shell opens a small one. This is almost never a missing sync or a
+missing Lua maximize hook.
+
+**Owner:** the pin’s **Run** property on its `.lnk` (`ShowCmd`: `3` =
+Maximized, `1` = Normal). Taskbar / `Win+N` use that shortcut; the CLI does
+not. The property is **machine-local** and is **not** carried by this repo or
+`wezterm-runtime-sync`. This stack sets `window_decorations = 'RESIZE'` but
+does not set `initial_cols` / `initial_rows` and does not call `maximize()` on
+`gui-startup`, so CLI starts at the default cell size (~80×24).
+
+**Adjust the pin:** taskbar WezTerm → right-click the icon → right-click
+**WezTerm** in the jump list → **Properties** → **Run** → Maximized or Normal
+→ OK. Start Menu’s `WezTerm.lnk` is a different file. Pinned path is under
+`%AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\`.
+
+Skip hunting `gui-startup` / a CLI `--maximized` flag / another clone’s
+`wezterm-x/local/` unless both launch paths disagree with the pin’s Run
+setting. Lock→unlock “maximized covers the tray” is a different failure —
+see the next section.
+
 ## Windows Taskbar After Lock→Unlock
 
 After locking the workstation for a while and unlocking, the Windows shell can
