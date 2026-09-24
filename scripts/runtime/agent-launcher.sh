@@ -142,9 +142,9 @@ case "$agent" in
     ;;
   codex)
     log_resume_boot codex
-    exec sh -c 'bash "$1" codex resume --last || { bash "$3" codex; printf "\033[2J\033[H\n\n  \033[2;36mLoading codex ...\033[0m\n"; exec codex; }' \
+    exec sh -c 'exec bash "$1" codex resume --last' \
       "$script_dir/codex-resume-takeover.sh" \
-      sh "$fallback_log_script"
+      sh
     ;;
   grok)
     # Grok Build: `--continue` resumes the most recent session for cwd
