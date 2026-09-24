@@ -17,20 +17,31 @@ The biggest lever. Codex defaults to `untrusted` × `read-only`, which
 prompts on essentially everything. Two practical bundles:
 
 ```toml
-# Default daily driver — agent can write inside cwd, asks before stepping
-# outside or running anything dangerous.
-approval_policy = "on-request"
+# Auto mode — run commands inside the checkout without asking each time;
+# pause only when the sandbox blocks the operation.
+approval_policy = "on-failure"
 sandbox_mode    = "workspace-write"
 ```
 
 ```toml
-# "Yolo" sessions — equivalent to `codex --full-auto`. Prompts only on
-# sandbox failures, not on agent-initiated escalations. Trades the
-# `[platform-actions-41]` "shift-to-side-effect must be declared" semantics
-# for fewer prompts.
-approval_policy = "on-failure"
+# Conservative mode — ask before each command that is not already covered
+# by the sandbox or an explicit approval.
+approval_policy = "on-request"
 sandbox_mode    = "workspace-write"
 ```
+
+The repository's current operator default is the first bundle. It is the
+configuration equivalent of `codex --full-auto` for normal development, not
+a Claude-style per-command classifier: Codex has no host-side allowlist that
+auto-approves individual command patterns. A new interactive session must be
+started after changing `~/.codex/config.toml`; existing sessions keep the
+policy they started with.
+
+Commands that talk to an external tmux socket or write Windows-side runtime
+state can still hit a sandbox boundary. `on-failure` removes the routine
+approval prompt, but it cannot make an operation inside `workspace-write`
+safe. Keep those prompts as the signal that the command needs an explicit
+cross-filesystem allowance or a deliberately broader sandbox.
 
 ### 2. `[profiles.X]` presets for different work modes
 
@@ -44,7 +55,7 @@ sandbox_mode    = "read-only"
 network_access = false
 
 [profiles.dev]
-approval_policy = "on-request"
+approval_policy = "on-failure"
 sandbox_mode    = "workspace-write"
 [profiles.dev.sandbox_workspace_write]
 network_access = true
