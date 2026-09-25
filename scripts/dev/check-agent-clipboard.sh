@@ -59,7 +59,7 @@ host_check_pass "agent-clipboard text write processed"
 sleep 1
 
 image_trace="agent-clipboard-image-$(date +%Y%m%dT%H%M%S)-$$"
-test_png="$REPO_ROOT/assets/copy-test.png"
+test_png="$REPO_ROOT/scripts/dev/windows-runtime-host/cases/fixtures/copy-test.png"
 [[ -f "$test_png" ]] || host_check_die "missing image smoke asset: $test_png"
 host_check_trace "step=write-image cli=$CLI_PATH trace_id=$image_trace image_path=$test_png"
 "$CLI_PATH" write-image-file "$test_png" --trace-id "$image_trace" --quiet

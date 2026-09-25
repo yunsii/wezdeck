@@ -1,6 +1,6 @@
 # Browser Debug Workflow
 
-Use this doc when you need anything about the headless Chrome debug instance the Windows host helper runs: the four daily paths (auto-start, agent / MCP attach, `chrome://inspect`, manual `Alt+b` / `Alt+Shift+b`), the launch hardening flags, the right-status `CDP·…` badge, or the status-file contract that drives the badge.
+Use this doc when you need anything about the headless Chrome debug instance the Windows WezDeck Runtime runs: the four daily paths (auto-start, agent / MCP attach, `chrome://inspect`, manual `Alt+b` / `Alt+Shift+b`), the launch hardening flags, the right-status `CDP·…` badge, or the status-file contract that drives the badge.
 
 The keyboard summary lives in [`keybindings.md#project-navigation`](./keybindings.md#project-navigation); this doc owns the workflow detail.
 
@@ -36,7 +36,7 @@ Browser extensions are **not** disabled — install whatever you need via `Alt+S
 
 If a visible-mode Chrome is already holding the same port + `--user-data-dir`, the helper terminates it (entire process tree) before launching headless so the Chrome singleton lock is released — this is the automatic mode switch; `Alt+Shift+b` is the visible-direction companion.
 
-In `hybrid-wsl` this goes through the same Windows native helper path as `Alt+v`. In `posix-local` it stays unavailable until a native host helper exists.
+In `hybrid-wsl` this goes through the same Windows native helper path as `Alt+v`. In `posix-local` it stays unavailable until a native WezDeck Runtime exists.
 
 ## `Alt+Shift+b` — visible launch / reuse
 

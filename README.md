@@ -171,7 +171,7 @@ Full setup walkthrough: [`docs/setup.md`](docs/setup.md). Optional guards on WSL
 - [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md) · [Dev-env troubleshooting](docs/development-environment-troubleshooting.md)
 
 **Releases**
-- [Host helper](docs/host-helper-release.md) · [Picker](docs/picker-release.md)
+- [WezDeck Runtime](docs/wezdeck-runtime-release.md) · [Picker](docs/picker-release.md)
 
 Docs map: [`docs/README.md`](docs/README.md). Agent rules: [`AGENTS.md`](AGENTS.md). Reusable user-level profiles: [`agent-profiles/`](agent-profiles/). Chinese twin: [`README.zh-CN.md`](README.zh-CN.md) — keep in structural sync (repo-hygiene L0 checks heading outline, relative links, fences/tables, and durable tokens).
 

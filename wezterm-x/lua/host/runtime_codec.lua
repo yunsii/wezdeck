@@ -80,7 +80,7 @@ function M.decode_helper_response_env(values)
     status = values.status,
     decision_path = values.decision_path,
     result_type = values.result_type,
-    helperctl_elapsed_ms = values.helperctl_elapsed_ms,
+    wezdeck_runtime_cli_elapsed_ms = values.wezdeck_runtime_cli_elapsed_ms,
   }
 
   local result = {}

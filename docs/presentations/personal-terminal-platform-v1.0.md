@@ -30,7 +30,7 @@ author: AI 生成初稿，人工微调
 
 —— 知道概念，没碰过。
 
-这次是把它**做进了一条运行中的控制链路**。Windows 侧有一个长驻 `helper-manager.exe`（C#），WSL 侧每次按 `Alt+v` / `Alt+b` / `Ctrl+v` 都通过 `helperctl.exe` 发请求过去，名命管道（`\\.\pipe\wezterm-host-helper-v1`）做传输，typed envelope 回来。
+这次是把它**做进了一条运行中的控制链路**。Windows 侧有一个长驻 `wezdeck-runtime.exe`（C#），WSL 侧每次按 `Alt+v` / `Alt+b` / `Ctrl+v` 都通过 `wezdeck-runtime-cli.exe` 发请求过去，名命管道（`\\.\pipe\wezdeck-runtime-v1`）做传输，typed envelope 回来。
 
 碰上才发现的事情：
 

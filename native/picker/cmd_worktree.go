@@ -13,7 +13,7 @@
 //   1-9,0,a-z → accelerator open
 //   Esc / Ctrl+C / Alt+g → close
 //
-// Clipboard writes go through agent-clipboard.sh / host helper — NOT OSC 52.
+// Clipboard writes go through agent-clipboard.sh / WezDeck Runtime — NOT OSC 52.
 // Why keyboard copy instead of mouse select: plain drag is intentionally
 // unbound (tmux pane-local select needs Shift+drag; terminal-wide select
 // needs Super+drag). Inside a live raw-mode TUI popup, Shift+drag enters
@@ -328,7 +328,7 @@ func writeClipboardTextDefault(openScript, text string) error {
 	}
 	script := filepath.Join(filepath.Dir(openScript), "agent-clipboard.sh")
 	cmd := exec.Command("bash", script, "write-text", "--text", text, "--quiet")
-	// Detach from the popup pty so agent-clipboard / helperctl cannot
+	// Detach from the popup pty so agent-clipboard / wezdeck-runtime-cli cannot
 	// corrupt the raw-mode TUI if they write diagnostics to stdout.
 	cmd.Stdin = nil
 	cmd.Stdout = nil

@@ -384,13 +384,13 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host,
     return
   end
 
-  logger.warn('chrome', 'chrome debug shortcut is unavailable without a native host helper', common.merge_fields(trace_id, {
+  logger.warn('chrome', 'chrome debug shortcut is unavailable without a native WezDeck Runtime', common.merge_fields(trace_id, {
     runtime_mode = runtime_mode,
     executable = chrome.executable,
     port = chrome.remote_debugging_port,
     headless = chrome.headless,
   }))
-  window:toast_notification('WezTerm', shortcut_label .. ' is only available when a native host helper is configured.', nil, 4000)
+  window:toast_notification('WezTerm', shortcut_label .. ' is only available when a native WezDeck Runtime is configured.', nil, 4000)
 end
 
 return M

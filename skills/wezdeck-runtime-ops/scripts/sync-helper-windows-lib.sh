@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sync-helper-windows-lib.sh
 #
-# Windows host-helper install + ensure round-trips for sync-runtime.sh.
+# Windows wezdeck-runtime install + ensure round-trips for sync-runtime.sh.
 # Sourced (do not execute). Each entry point bails out cleanly on hosts
 # where the WSL/Windows runtime path or PowerShell isn't available.
 #
@@ -24,7 +24,7 @@
 
 helper_install_skip_if_current() {
   # Returns 0 if a previous install is still current — i.e., the install
-  # state file and helper-manager binary exist AND no relevant source file
+  # state file and wezdeck-runtime binary exist AND no relevant source file
   # is newer than the state file. Caller should skip the dotnet-publish
   # round-trip into PowerShell when this returns 0. Only checks the local
   # build path's inputs (.NET sources + release manifest); the release
@@ -37,9 +37,9 @@ helper_install_skip_if_current() {
   target_home="$(dirname "$target_runtime_dir")"
   install_root="$target_home/AppData/Local/wezterm-runtime/bin"
   state_file="$install_root/helper-install-state.json"
-  binary_path="$install_root/helper-manager.exe"
-  src_dir="$NATIVE_SOURCE_DIR/host-helper/windows/src"
-  manifest="$NATIVE_SOURCE_DIR/host-helper/windows/release-manifest.json"
+  binary_path="$install_root/wezdeck-runtime.exe"
+  src_dir="$NATIVE_SOURCE_DIR/wezdeck-runtime/windows/src"
+  manifest="$NATIVE_SOURCE_DIR/wezdeck-runtime/windows/release-manifest.json"
 
   [[ -f "$state_file" ]] || return 1
   [[ -f "$binary_path" ]] || return 1
@@ -55,10 +55,10 @@ helper_install_skip_if_current() {
 
 install_windows_helper_manager() {
   local target_runtime_dir="${1:?missing target runtime dir}"
-  local install_script="$target_runtime_dir/scripts/install-windows-runtime-helper-manager.ps1"
+  local install_script="$target_runtime_dir/scripts/install-wezdeck-runtime.ps1"
   local install_script_win="" runtime_dir_win="" install_output="" manager_path=""
   local target_home="" target_home_win="" diagnostics_file_win=""
-  local install_source="${WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE:-auto}"
+  local install_source="${WEZDECK_RUNTIME_INSTALL_SOURCE:-auto}"
 
   [[ "$target_runtime_dir" =~ ^/mnt/[A-Za-z]/Users/ ]] || return 0
   command -v powershell.exe >/dev/null 2>&1 || return 0
@@ -67,7 +67,7 @@ install_windows_helper_manager() {
   case "$install_source" in
     auto|local|release) ;;
     *)
-      printf 'Unsupported WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE: %s\n' "$install_source" >&2
+      printf 'Unsupported WEZDECK_RUNTIME_INSTALL_SOURCE: %s\n' "$install_source" >&2
       return 1
       ;;
   esac
@@ -180,7 +180,7 @@ helper_ensure_skip_if_running() {
 
 ensure_windows_helper_running() {
   local target_runtime_dir="${1:?missing target runtime dir}"
-  local ensure_script="$target_runtime_dir/scripts/ensure-windows-runtime-helper.ps1"
+  local ensure_script="$target_runtime_dir/scripts/ensure-wezdeck-runtime.ps1"
   local ensure_script_win="" target_home="" target_home_win=""
   local state_path_win="" diagnostics_file_win="" ensure_output=""
 

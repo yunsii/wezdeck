@@ -2,7 +2,7 @@
 
 host_check_run_clipboard_case() {
   local trace_id="$1"
-  local test_png="${HOST_CHECK_REPO_ROOT}/assets/copy-test.png"
+  local test_png="${HOST_CHECK_REPO_ROOT}/scripts/dev/windows-runtime-host/cases/fixtures/copy-test.png"
   local text_payload=""
   local write_text_response=""
   local resolve_text_response=""

@@ -9,7 +9,7 @@ The picker itself is the static Go binary that powers the high-frequency `Alt+/`
 - You changed something under `native/picker/` that needs to land on machines without a local Go toolchain (required after Go-only popups — see [Install path](#install-path)).
 - You want a local dry-run of the release tarball before tagging.
 
-To cut **both** picker (Go) and host-helper (C#) in one session:
+To cut **both** picker (Go) and wezdeck-runtime (C#) in one session:
 
 ```bash
 scripts/dev/prepare-native-releases.sh --dry-run-package
@@ -45,7 +45,7 @@ The standard flow is tag-push + merge the manifest-update PR the workflow opens 
    gh run watch "$run_id" --exit-status
    ```
 
-   If `update-manifest` fails on the final "Create manifest update PR" step, see [`host-helper-release.md#troubleshooting`](./host-helper-release.md#troubleshooting) — the same `Allow GitHub Actions to create PRs` permission gate applies, and the same one-shot fix + `gh run rerun --failed` pattern works.
+   If `update-manifest` fails on the final "Create manifest update PR" step, see [`wezdeck-runtime-release.md#troubleshooting`](./wezdeck-runtime-release.md#troubleshooting) — the same `Allow GitHub Actions to create PRs` permission gate applies, and the same one-shot fix + `gh run rerun --failed` pattern works.
 
 4. Review and merge the auto-PR; this updates `native/picker/release-manifest.json` on the default branch.
 
@@ -73,7 +73,7 @@ The SHA-256 is in the workflow summary or via `gh release view "$tag" --json ass
 
 ## Manifest schema
 
-`native/picker/release-manifest.json` uses a multi-asset map keyed by `<os>-<arch>`, in contrast to `native/host-helper/windows/release-manifest.json` (single-asset) — picker can grow into additional architectures via Go cross-compile, and pre-baking the map avoids a `schemaVersion` bump later.
+`native/picker/release-manifest.json` uses a multi-asset map keyed by `<os>-<arch>`, in contrast to `native/wezdeck-runtime/windows/release-manifest.json` (single-asset) — picker can grow into additional architectures via Go cross-compile, and pre-baking the map avoids a `schemaVersion` bump later.
 
 ```json
 {
@@ -126,4 +126,4 @@ Emergency escape hatch only: set `WEZTERM_ALLOW_BASH_PICKER=1` to re-enable the 
 WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 ```
 
-Use `WEZTERM_PICKER_INSTALL_SOURCE=local` to force the build path explicitly. Same shape as the host-helper's `WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE` toggle.
+Use `WEZTERM_PICKER_INSTALL_SOURCE=local` to force the build path explicitly. Same shape as the wezdeck-runtime's `WEZDECK_RUNTIME_INSTALL_SOURCE` toggle.

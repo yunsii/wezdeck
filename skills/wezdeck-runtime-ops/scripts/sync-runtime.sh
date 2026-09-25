@@ -533,15 +533,15 @@ run_runtime_native_flow() {
   run_lua_precheck "$TARGET_RUNTIME_DIR"
 
   # Helper is always installed against the *live* runtime so the main GUI
-  # keeps a working host-helper path even when this sync only staged canary.
+  # keeps a working wezdeck-runtime path even when this sync only staged canary.
   local helper_runtime_dir="$TARGET_RUNTIME_DIR"
   if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
     helper_runtime_dir="$LIVE_TARGET_RUNTIME_DIR"
     mkdir -p "$helper_runtime_dir"
     # Keep helper scripts in live tree roughly current without promoting
     # the whole canary runtime: copy only the ensure script tree if missing.
-    if [[ ! -f "$helper_runtime_dir/scripts/ensure-windows-runtime-helper.ps1" \
-        && -f "$TARGET_RUNTIME_DIR/scripts/ensure-windows-runtime-helper.ps1" ]]; then
+    if [[ ! -f "$helper_runtime_dir/scripts/ensure-wezdeck-runtime.ps1" \
+        && -f "$TARGET_RUNTIME_DIR/scripts/ensure-wezdeck-runtime.ps1" ]]; then
       mkdir -p "$helper_runtime_dir/scripts"
       rsync -a "$TARGET_RUNTIME_DIR/scripts/" "$helper_runtime_dir/scripts/" || true
     fi

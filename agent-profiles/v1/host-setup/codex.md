@@ -111,7 +111,7 @@ that the endpoint actually serves.
 ### 4. `writable_roots` for cross-fs work
 
 This repo's runtime sync writes paths outside the WSL home (Windows-side
-runtime, host helper state, machine cache). Without these in
+runtime, WezDeck Runtime state, machine cache). Without these in
 `writable_roots`, every sync invocation re-prompts:
 
 ```toml

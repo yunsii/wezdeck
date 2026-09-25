@@ -158,8 +158,8 @@ flowchart LR
   subgraph WIN["Windows · host processes"]
     direction TB
     H_WEZ["wezterm.exe"]
-    H_CTL["helperctl.exe"]
-    H_MGR["helper-manager.exe"]
+    H_CTL["wezdeck-runtime-cli.exe"]
+    H_MGR["wezdeck-runtime.exe"]
     H_CHR["Chrome (CDP)"]
     H_VSC["VS Code"]
   end
@@ -185,16 +185,16 @@ flowchart LR
 
 为什么状态文件落 `/mnt/c` 而不是 WSL ext4？因为消费方在 Windows 侧（`wezterm.exe` 4Hz tick 读）—— bench 实测 wezterm.exe 读 `/mnt/c` 是 0.02ms，读 `\\wsl$\…` 是 3.12ms，**150 倍差距**。这条选址规则是 WezDeck 所有跨 FS 决策的载重点。
 
-### 4. Native Host Helper —— 让宿主能力变成"一个请求"
+### 4. Native WezDeck Runtime —— 让宿主能力变成"一个请求"
 
 每次按 `Alt+v`、`Alt+b`、`Ctrl+v`，WSL 里的 Lua / bash 不会自己去调 PowerShell，而是发一个 typed request 给一个**长驻的 C# helper**：
 
 ```mermaid
 flowchart LR
   A["WezTerm Lua<br/>Alt+v / Alt+b / Ctrl+v"] --> B["runtime.lua<br/>build request + trace_id"]
-  B --> C["helperctl.exe<br/>request client"]
+  B --> C["wezdeck-runtime-cli.exe<br/>request client"]
   C --> D["Named Pipe"]
-  D --> E["helper-manager.exe<br/>single native control plane"]
+  D --> E["wezdeck-runtime.exe<br/>single native control plane"]
   E --> F["Reuse policy<br/>window-cache + process scan"]
   E --> G["Clipboard service<br/>STA thread"]
   F --> H["Activate / launch app"]
@@ -232,7 +232,7 @@ picker 二进制本身有独立的发布管线（[`docs/picker-release.md`](../p
 | 交互层 | WezTerm + tmux | 工作区、面板、快捷键、命令路由 |
 | 运行时层 | bash + Go (`picker` binary) | sync、bootstrap、diagnostics、popup pickers、worktree-task |
 | 宿主桥接层 | PowerShell | Windows 安装、兼容、bootstrap |
-| 原生控制层 | C# (.NET) | helper-manager.exe / helperctl.exe / IPC control plane |
+| 原生控制层 | C# (.NET) | wezdeck-runtime.exe / wezdeck-runtime-cli.exe / IPC control plane |
 | 协作层 | docs + agent profiles + manifest | 让 AI 和人都能稳定消费平台能力 |
 
 难点不是"语言多"，是**每一层该放什么、边界要怎么收**。这套环境真正硬的工作是 2026-04 的 `v5` 阶段把这条边界确定下来 —— 在那之前所有"宿主动作"是临时拼起来的脚本树。

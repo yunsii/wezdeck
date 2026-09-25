@@ -12,7 +12,7 @@ Four log files, segmented by **which process writes**. The file lives on the wri
 |---|---|---|
 | `~/.local/state/wezterm-runtime/logs/runtime.log` (WSL ext4) | every bash script in `scripts/runtime/`, every `picker` invocation, the Claude/Codex agent hooks | WSL-native; ~150× faster than `/mnt/c` per the cross-FS routing rule in [`performance.md`](./performance.md) |
 | `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (Windows NTFS) | WezTerm Lua via `wezterm.log_*` + `append_file` in `wezterm-x/lua/logger.lua` | wezterm.exe is a Windows process |
-| `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` (Windows NTFS) | `helper-manager.exe` (.NET host helper) | helper is a Windows process |
+| `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` (Windows NTFS) | `wezdeck-runtime.exe` (.NET WezDeck Runtime) | helper is a Windows process |
 | `/var/log/wezterm-oom-guard.log` (WSL ext4, root-owned) | `scripts/runtime/wsl-oom-guard.sh` under the `wezterm-oom-*` systemd units | root-owned system service, not a user session — see the exception below |
 
 Never hard-code paths. Bash sources `scripts/runtime/wsl-runtime-paths-lib.sh` for `WSL_RUNTIME_LOG_FILE`; Lua reads `diagnostics.wezterm.file` from `wezterm-x/local/constants.lua`; the Go picker honors `WEZTERM_RUNTIME_LOG_FILE` else derives the same XDG default.
@@ -54,8 +54,8 @@ If you genuinely need ad-hoc render-path debugging, gate it behind an explicit e
 Add a new category only when an existing one would dilute its meaning. Currently registered:
 
 - **bash** (`scripts/runtime/`): `attention` (jump toast / empty / completed), `agent_cleanup`, `agent_cli` (Ctrl+n `/new` decision + `@wezterm_pane_role` set/clear), `agent_run`, `clipboard`, `command_panel`, `layout` (fix-layout), `managed_command`, `overflow`, `popup`, `primary_pane` (managed agent launch **and** Grok focus-filter / theme ensure heals), `provider`, `session_bridge` (`Ctrl+k w` claw take), `sync`, `task`, `vscode`, `workspace`, `worktree`
-- **Lua** (`wezterm-x/lua/`): `attention`, `agent_cli` (Ctrl+n forward into tmux / non-tmux `/new`), `chrome`, `clipboard`, `command_panel`, `event_bus`, `host_helper`, `hotkey`, `keybindings`, `layout`, `link`, `latency`, `tab_visibility`, `vscode`, `workspace`
-- **C# helper** (`helper-manager.exe`): owned in `native/host-helper/` — `vscode`, `chrome`, `clipboard`, `host_helper`, `foreground` (OS foreground process-name edges; no window titles). Treat as read-only from the WSL/Lua side
+- **Lua** (`wezterm-x/lua/`): `attention`, `agent_cli` (Ctrl+n forward into tmux / non-tmux `/new`), `chrome`, `clipboard`, `command_panel`, `event_bus`, `wezdeck_runtime`, `hotkey`, `keybindings`, `layout`, `link`, `latency`, `tab_visibility`, `vscode`, `workspace`
+- **C# helper** (`wezdeck-runtime.exe`): owned in `native/wezdeck-runtime/` — `vscode`, `chrome`, `clipboard`, `wezdeck_runtime`, `foreground` (OS foreground process-name edges; no window titles). Treat as read-only from the WSL/Lua side
 
 Rules:
 

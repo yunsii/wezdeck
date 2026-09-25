@@ -77,7 +77,7 @@ function M.apply(opts)
       end
 
       helper_prewarm_started = true
-      logger.info('host_helper', 'prewarming windows helper in background', {
+      logger.info('wezdeck_runtime', 'prewarming windows helper in background', {
         reason = 'gui-startup',
       })
 
@@ -86,7 +86,7 @@ function M.apply(opts)
         return
       end
 
-      logger.warn('host_helper', 'background prewarm for windows helper failed', {
+      logger.warn('wezdeck_runtime', 'background prewarm for windows helper failed', {
         reason = 'gui-startup',
         ensure_reason = ensure_reason,
       })

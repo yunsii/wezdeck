@@ -35,11 +35,11 @@ function M.build_helper_command(runtime)
 
   local integration = runtime:helper_integration()
   local runtime_dir = runtime:helper_runtime_dir()
-  local helper_script = integration.helper_script or 'scripts\\ensure-windows-runtime-helper.ps1'
+  local helper_script = integration.helper_script or 'scripts\\ensure-wezdeck-runtime.ps1'
   local diagnostics = runtime.constants.diagnostics and runtime.constants.diagnostics.wezterm or {}
   local helper_log_file = integration.helper_log_file or diagnostics.file or ''
   local clipboard = runtime:integration 'clipboard_image'
-  local helper_category_enabled = M.diagnostics_capture_enabled(runtime.constants, 'host_helper')
+  local helper_category_enabled = M.diagnostics_capture_enabled(runtime.constants, 'wezdeck_runtime')
     or M.diagnostics_capture_enabled(runtime.constants, 'vscode')
     or M.diagnostics_capture_enabled(runtime.constants, 'chrome')
     or M.diagnostics_capture_enabled(runtime.constants, 'clipboard')
@@ -49,7 +49,7 @@ function M.build_helper_command(runtime)
     and type(chrome_debug.executable) == 'string' and chrome_debug.executable ~= ''
     and type(chrome_debug.user_data_dir) == 'string' and chrome_debug.user_data_dir ~= ''
 
-  -- OS foreground sampling only (host helper → helper.log).
+  -- OS foreground sampling only (WezDeck Runtime → helper.log).
   -- Does NOT gate WezDeck-internal logs (hotkey / worktree / attention / …).
   -- workflow.device_profile: personal → allowlist, work → all
   -- workflow.foreground_sampling: explicit 'allowlist' | 'all' | 'off'

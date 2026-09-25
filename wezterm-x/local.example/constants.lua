@@ -34,7 +34,7 @@ return {
         clipboard = true,
         command_panel = true,
         chrome = true,
-        host_helper = true,
+        wezdeck_runtime = true,
         workspace = true,
         tab_visibility = true,
         -- Alt+j/k/l jumps + sticky/overflow inconsistency warns

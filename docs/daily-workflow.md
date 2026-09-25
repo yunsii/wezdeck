@@ -93,9 +93,9 @@ skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --target-home /mnt/c/Users/yo
 
 Run those commands from the repo root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the script from elsewhere.
 
-The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\host-helper\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/host-helper/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
+The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\wezdeck-runtime\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/wezdeck-runtime/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
 
-The helper is a daemon-like process and can outlive a canary window. For an explicit recovery or canary cleanup, use `scripts/dev/stop-windows-runtime-helper.sh --canary`; use the default form for the live helper, and `--all` only when deliberately stopping every helper manager so the next ensure can recreate it.
+The helper is a daemon-like process and can outlive a canary window. For an explicit recovery or canary cleanup, use `scripts/dev/stop-wezdeck-runtime.sh --canary`; use the default form for the live helper, and `--all` only when deliberately stopping every helper manager so the next ensure can recreate it.
 It also refreshes `$HOME/.wezterm-x/agent-tools.env` on the **WSL user home** (regardless of where the wezterm runtime files go) so WSL-resident agent platforms — Claude Code, Codex CLI, etc. — can discover repo-local wrappers from one stable marker file. Schema and contract: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
 
 After the runtime copy, sync runs the read-only `scripts/dev/agent-hooks.sh check --provider all` check. A missing, partial, stale, or invalid user-level hook configuration is an advisory warning and does not block runtime publication; repair it explicitly with `scripts/dev/agent-hooks.sh install --provider codex|claude|all`. Set `WEZTERM_SYNC_SKIP_AGENT_HOOK_CHECK=1` only when diagnosing the sync path itself.
@@ -116,7 +116,7 @@ Most sync steps short-circuit when their inputs haven't changed since the last s
 
 | Gate | What it checks | Force-bypass var |
 |---|---|---|
-| `helper-install` | install state file + `helper-manager.exe` exist; no `host-helper/windows/src/**` or `release-manifest.json` newer than the state file | `WEZTERM_SYNC_FORCE_HELPER_INSTALL=1` |
+| `helper-install` | install state file + `wezdeck-runtime.exe` exist; no `wezdeck-runtime/windows/src/**` or `release-manifest.json` newer than the state file | `WEZTERM_SYNC_FORCE_HELPER_INSTALL=1` |
 | `helper-ensure` | state.env shows `ready=1`, file mtime within 10s of now (clock-skew tolerant), `runtime_dir` matches; no runtime file is newer than state.env | `WEZTERM_SYNC_FORCE_HELPER_ENSURE=1` |
 | `lua-precheck` | a sentinel `lua-precheck.ok` exists; no input under `lua/` / `repo-worktree-task.env` / the precheck script itself is newer than the sentinel | `WEZTERM_SYNC_FORCE_LUA_PRECHECK=1` |
 | `node-runtime-check` | managed runtime resolves a working Node and reports whether it is still supplied by nvm | `WEZTERM_SYNC_SKIP_NODE_RUNTIME_CHECK=1` |
@@ -130,7 +130,7 @@ Each gate emits its decision to the `[sync] step=...` traces and to the runtime 
 
 ## Host Helper Release
 
-Cutting a Windows host-helper release, updating `release-manifest.json`, forcing the release-install branch locally, or side-loading a pre-fetched zip is maintainer flow — see [`host-helper-release.md`](./host-helper-release.md).
+Cutting a Windows wezdeck-runtime release, updating `release-manifest.json`, forcing the release-install branch locally, or side-loading a pre-fetched zip is maintainer flow — see [`wezdeck-runtime-release.md`](./wezdeck-runtime-release.md).
 
 ## Reload Rules
 
@@ -202,7 +202,7 @@ Install once per clone / shared git dir (covers all worktrees):
 skills/repo-hygiene/install-hooks.sh
 ```
 
-L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, **new** files (or newly crossing) over hard line budgets in `skills/repo-hygiene/budgets.conf`, and — when `README.md` / `README.zh-CN.md` is staged — **bilingual README parity** (heading-level outline, relative link set, fence/table counts, shared durable tokens in `skills/repo-hygiene/readme-parity.conf`, language switcher). Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
+L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, **new** files (or newly crossing) over hard line budgets in `skills/repo-hygiene/budgets.conf`, and — when `README.md` / `README.zh-CN.md` is staged — **bilingual README parity** (heading-level outline, relative link set, fence/table counts, shared durable tokens in `skills/repo-hygiene/readme-parity.conf`, language switcher). When `web/` files are staged, the same gate also runs the Web console's Prettier, ESLint, TypeScript, and Lingui catalog checks; the production build remains a CI check. Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
 
 `run.sh audit` prints a **summary first** (samples of each bucket). Pass `--verbose` for full lists, `--backticks` for basename/path backtick heuristics (off by default — too noisy for prose filenames), `--strict` to fail on non-allowlisted OVER-HARD files.
 

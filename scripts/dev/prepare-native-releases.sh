@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # prepare-native-releases.sh — readiness + dry-run packaging for the two
-# native release trains (Go picker + C# host-helper).
+# native release trains (Go picker + C# wezdeck-runtime).
 #
 # Does NOT push tags or create GitHub releases. Prints the exact cut
 # commands after verifying local state. Docs:
 #   docs/picker-release.md
-#   docs/host-helper-release.md
+#   docs/wezdeck-runtime-release.md
 #
 # Usage:
 #   scripts/dev/prepare-native-releases.sh
@@ -35,11 +35,11 @@ done
 
 today="$(date +%Y.%m.%d)"
 suggest_picker_tag="picker-v${today}.1"
-suggest_helper_tag="host-helper-v${today}.1"
+suggest_helper_tag="wezdeck-runtime-v${today}.1"
 
 # Bump .N if same-day tag already exists on remote/local.
 bump_tag() {
-  local base="$1" # picker-vYYYY.MM.DD or host-helper-vYYYY.MM.DD
+  local base="$1" # picker-vYYYY.MM.DD or wezdeck-runtime-vYYYY.MM.DD
   local n=1
   local remote_hit=""
   while true; do
@@ -59,7 +59,7 @@ bump_tag() {
 }
 
 suggest_picker_tag="$(bump_tag "picker-v${today}")"
-suggest_helper_tag="$(bump_tag "host-helper-v${today}")"
+suggest_helper_tag="$(bump_tag "wezdeck-runtime-v${today}")"
 
 section() { printf '\n==> %s\n' "$1"; }
 ok() { printf '  [ok] %s\n' "$1"; }
@@ -91,7 +91,7 @@ fi
 section "current manifests (pinned product versions)"
 if command -v jq >/dev/null 2>&1; then
   info "picker: $(jq -r '"\(.version) enabled=\(.enabled) assets=\(.assets|keys|join(","))"' native/picker/release-manifest.json)"
-  info "host-helper: $(jq -r '"\(.version) enabled=\(.enabled)"' native/host-helper/windows/release-manifest.json)"
+  info "wezdeck-runtime: $(jq -r '"\(.version) enabled=\(.enabled)"' native/wezdeck-runtime/windows/release-manifest.json)"
 else
   info "jq missing — skip manifest summary"
 fi
@@ -104,10 +104,10 @@ if git rev-parse -q --verify picker-v2026.04.26.1 >/dev/null 2>&1; then
 else
   info "local tag picker-v2026.04.26.1 not present (ok if shallow)"
 fi
-if git rev-parse -q --verify host-helper-v2026.06.02.1 >/dev/null 2>&1; then
-  n="$(git rev-list --count host-helper-v2026.06.02.1..HEAD -- native/host-helper/ 2>/dev/null || echo 0)"
-  info "native/host-helper commits since host-helper-v2026.06.02.1: $n"
-  git log --oneline host-helper-v2026.06.02.1..HEAD -- native/host-helper/ 2>/dev/null | head -8 | sed 's/^/      /'
+if git rev-parse -q --verify wezdeck-runtime-v2026.06.02.1 >/dev/null 2>&1; then
+  n="$(git rev-list --count wezdeck-runtime-v2026.06.02.1..HEAD -- native/wezdeck-runtime/ 2>/dev/null || echo 0)"
+  info "native/wezdeck-runtime commits since wezdeck-runtime-v2026.06.02.1: $n"
+  git log --oneline wezdeck-runtime-v2026.06.02.1..HEAD -- native/wezdeck-runtime/ 2>/dev/null | head -8 | sed 's/^/      /'
 fi
 
 section "tooling"
@@ -129,9 +129,9 @@ else
   warn "gh missing — install for release watch / PR merge"
 fi
 if command -v dotnet >/dev/null 2>&1; then
-  ok "dotnet: $(dotnet --version 2>/dev/null || true) (WSL — host-helper package needs Windows)"
+  ok "dotnet: $(dotnet --version 2>/dev/null || true) (WSL — wezdeck-runtime package needs Windows)"
 else
-  info "dotnet not in WSL (expected) — host-helper packages on windows-latest CI"
+  info "dotnet not in WSL (expected) — wezdeck-runtime packages on windows-latest CI"
 fi
 
 if (( dry_run_package )); then
@@ -145,14 +145,14 @@ if (( dry_run_package )); then
   }
   printf '%s\n' "$out" | sed 's/^/  /'
   ok "picker tarball(s) written under \$TMPDIR/picker-release-$suggest_picker_tag"
-  section "dry-run package: C# host-helper"
+  section "dry-run package: C# wezdeck-runtime"
   info "package-release.ps1 requires Windows + dotnet 8 — CI runs it on tag push"
-  info "local force path after release: WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=release sync-runtime.sh"
+  info "local force path after release: WEZDECK_RUNTIME_INSTALL_SOURCE=release sync-runtime.sh"
 fi
 
 section "suggested tags (today $today)"
 info "picker:      $suggest_picker_tag"
-info "host-helper: $suggest_helper_tag"
+info "wezdeck-runtime: $suggest_helper_tag"
 
 section "cut commands (after push to origin/$branch)"
 cat <<EOF
@@ -168,12 +168,12 @@ cat <<EOF
   pr_num=\$(gh pr list --head "ci/update-picker-manifest-$suggest_picker_tag" --json number --jq '.[0].number')
   gh pr view "\$pr_num" && gh pr merge "\$pr_num" --squash --delete-branch
 
-  # 2) C# host-helper release
+  # 2) C# wezdeck-runtime release
   git tag $suggest_helper_tag
   git push origin $suggest_helper_tag
-  run_id=\$(gh run list --workflow=host-helper-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+  run_id=\$(gh run list --workflow=wezdeck-runtime-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
   gh run watch "\$run_id" --exit-status
-  pr_num=\$(gh pr list --head "ci/update-host-helper-manifest-$suggest_helper_tag" --json number --jq '.[0].number')
+  pr_num=\$(gh pr list --head "ci/update-wezdeck-runtime-manifest-$suggest_helper_tag" --json number --jq '.[0].number')
   gh pr view "\$pr_num" && gh pr merge "\$pr_num" --squash --delete-branch
 
   # 3) Pull manifests + sync runtime
@@ -182,7 +182,7 @@ cat <<EOF
 
   # Optional: force release-install paths
   WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
-  WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
+  WEZDECK_RUNTIME_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
-Full narrative: docs/picker-release.md · docs/host-helper-release.md
+Full narrative: docs/picker-release.md · docs/wezdeck-runtime-release.md
 EOF

@@ -127,7 +127,7 @@ function M.default_windows_runtime_helper_client_path(host_os, runtime_state_dir
     return nil
   end
 
-  return join_path(runtime_state_dir, 'bin', 'helperctl.exe')
+  return join_path(runtime_state_dir, 'bin', 'wezdeck-runtime-cli.exe')
 end
 
 function M.default_windows_helper_diagnostics_file(host_os, runtime_state_dir, join_path)
@@ -143,7 +143,7 @@ function M.default_windows_runtime_helper_ipc_endpoint(host_os)
     return nil
   end
 
-  return '\\\\.\\pipe\\wezterm-host-helper-v1'
+  return '\\\\.\\pipe\\wezdeck-runtime-v1'
 end
 
 function M.default_launch_menu(host_os)

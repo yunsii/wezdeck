@@ -61,11 +61,11 @@ windows_runtime_detect_paths() {
   WINDOWS_HELPER_STATE_WIN="${WINDOWS_RUNTIME_STATE_WIN}\\state\\helper\\state.env"
   WINDOWS_HELPER_STATE_WSL="${WINDOWS_RUNTIME_STATE_WSL}/state/helper/state.env"
   WINDOWS_HELPER_WINDOW_CACHE_WSL="${WINDOWS_RUNTIME_STATE_WSL}/cache/helper/window-cache.json"
-  WINDOWS_HELPER_CLIENT_WSL="${WINDOWS_RUNTIME_STATE_WSL}/bin/helperctl.exe"
+  WINDOWS_HELPER_CLIENT_WSL="${WINDOWS_RUNTIME_STATE_WSL}/bin/wezdeck-runtime-cli.exe"
   WINDOWS_HELPER_LOG_WSL="${WINDOWS_RUNTIME_STATE_WSL}/logs/helper.log"
-  WINDOWS_HELPER_ENSURE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\ensure-windows-runtime-helper.ps1"
-  WINDOWS_HELPER_ENSURE_SCRIPT_WSL="${WINDOWS_RUNTIME_HOME_WSL}/scripts/ensure-windows-runtime-helper.ps1"
-  WINDOWS_HELPER_IPC_ENDPOINT='\\.\pipe\wezterm-host-helper-v1'
+  WINDOWS_HELPER_ENSURE_SCRIPT_WIN="${WINDOWS_RUNTIME_HOME_WIN}\\scripts\\ensure-wezdeck-runtime.ps1"
+  WINDOWS_HELPER_ENSURE_SCRIPT_WSL="${WINDOWS_RUNTIME_HOME_WSL}/scripts/ensure-wezdeck-runtime.ps1"
+  WINDOWS_HELPER_IPC_ENDPOINT='\\.\pipe\wezdeck-runtime-v1'
 
   WINDOWS_CLIPBOARD_OUTPUT_WIN="${WINDOWS_RUNTIME_STATE_WIN}\\state\\clipboard\\exports"
 

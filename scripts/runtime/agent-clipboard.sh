@@ -16,12 +16,12 @@ usage:
   scripts/runtime/agent-clipboard.sh write-text --text TEXT [--timeout-ms N] [--trace-id ID] [--quiet]
   scripts/runtime/agent-clipboard.sh write-image-file IMAGE_PATH [--timeout-ms N] [--trace-id ID] [--quiet]
 
-Write text or an image file to the Windows clipboard through the existing host helper.
+Write text or an image file to the Windows clipboard through the existing WezDeck Runtime.
 
 options:
   --stdin         Read text payload from stdin.
   --text TEXT     Use TEXT as the clipboard payload.
-  --timeout-ms N  helperctl request timeout in milliseconds. Default: 5000.
+  --timeout-ms N  wezdeck-runtime-cli request timeout in milliseconds. Default: 5000.
   --trace-id ID   Override the trace id used for runtime/helper logs.
   --quiet         Suppress success output.
   -h, --help      Show this help text.
@@ -67,7 +67,7 @@ require_windows_helper_environment() {
   RUNTIME_STATE_WIN="$WINDOWS_RUNTIME_STATE_WIN"
 
   [[ -f "$HELPER_ENSURE_WSL" ]] || die "windows helper bootstrap is missing; sync the runtime first" "helper_ensure_wsl=$HELPER_ENSURE_WSL"
-  [[ -f "$HELPER_CLIENT_WSL" ]] || runtime_log_info clipboard "helperctl not installed yet; ensure step will install it" "helper_client_wsl=$HELPER_CLIENT_WSL"
+  [[ -f "$HELPER_CLIENT_WSL" ]] || runtime_log_info clipboard "wezdeck-runtime-cli not installed yet; ensure step will install it" "helper_client_wsl=$HELPER_CLIENT_WSL"
 }
 
 helper_state_is_fresh() {
@@ -123,7 +123,7 @@ request_write_text() {
 
   output="$(invoke_helper_request_capture "$request_body" 2>&1)" || {
     exit_status=$?
-    die "helperctl clipboard write_text request failed" \
+    die "wezdeck-runtime-cli clipboard write_text request failed" \
       "helper_client_wsl=$HELPER_CLIENT_WSL" \
       "exit_code=$exit_status" \
       "helper_output=$output"
@@ -136,7 +136,7 @@ request_write_text() {
   runtime_log_info clipboard "agent-clipboard wrote text to clipboard" \
     "status=$status" \
     "text_length=${#text}" \
-    "helperctl_elapsed_ms=$(env_value_from_text helperctl_elapsed_ms "$output")"
+    "wezdeck_runtime_cli_elapsed_ms=$(env_value_from_text wezdeck_runtime_cli_elapsed_ms "$output")"
 
   if [[ "$QUIET" != "1" ]]; then
     printf 'Wrote %d characters to the Windows clipboard.\n' "${#text}"
@@ -158,7 +158,7 @@ request_write_image_file() {
 
   output="$(invoke_helper_request_capture "$request_body" 2>&1)" || {
     exit_status=$?
-    die "helperctl clipboard write_image_file request failed" \
+    die "wezdeck-runtime-cli clipboard write_image_file request failed" \
       "helper_client_wsl=$HELPER_CLIENT_WSL" \
       "exit_code=$exit_status" \
       "helper_output=$output"
@@ -170,7 +170,7 @@ request_write_image_file() {
   runtime_log_info clipboard "agent-clipboard wrote image file to clipboard" \
     "status=$status" \
     "image_path=$image_path" \
-    "helperctl_elapsed_ms=$(env_value_from_text helperctl_elapsed_ms "$output")"
+    "wezdeck_runtime_cli_elapsed_ms=$(env_value_from_text wezdeck_runtime_cli_elapsed_ms "$output")"
 
   if [[ "$QUIET" != "1" ]]; then
     printf 'Wrote image %s to the Windows clipboard.\n' "$image_path"

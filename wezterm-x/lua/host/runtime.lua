@@ -95,13 +95,13 @@ function M:ensure_helper_running(reason)
     return false, command_reason
   end
 
-  self.logger.info('host_helper', 'ensuring windows runtime helper is running', {
+  self.logger.info('wezdeck_runtime', 'ensuring windows runtime helper is running', {
     reason = reason,
   })
 
   local ok, err = pcall(self.wezterm.background_child_process, command)
   if not ok then
-    self.logger.error('host_helper', 'failed to start windows runtime helper', {
+    self.logger.error('wezdeck_runtime', 'failed to start windows runtime helper', {
       error = err,
       reason = reason,
     })
@@ -117,13 +117,13 @@ function M:ensure_helper_running_sync(reason)
     return false, command_reason
   end
 
-  self.logger.info('host_helper', 'ensuring windows runtime helper synchronously', {
+  self.logger.info('wezdeck_runtime', 'ensuring windows runtime helper synchronously', {
     reason = reason,
   })
 
   local ok, success, stdout, stderr = pcall(self.wezterm.run_child_process, command)
   if not ok then
-    self.logger.error('host_helper', 'synchronous windows runtime helper launch raised an error', {
+    self.logger.error('wezdeck_runtime', 'synchronous windows runtime helper launch raised an error', {
       error = success,
       reason = reason,
     })
@@ -131,7 +131,7 @@ function M:ensure_helper_running_sync(reason)
   end
 
   if not success then
-    self.logger.warn('host_helper', 'synchronous windows runtime helper launch failed', {
+    self.logger.warn('wezdeck_runtime', 'synchronous windows runtime helper launch failed', {
       reason = reason,
       stdout = stdout,
       stderr = stderr,
@@ -218,7 +218,7 @@ function M:invoke_helper_request(trace_id, category, request_domain, request_act
     result_type = response and response.result_type or nil,
     phase = phase or 'direct',
     elapsed_ms = tostring(elapsed_ms),
-    helperctl_elapsed_ms = response and response.helperctl_elapsed_ms or nil,
+    wezdeck_runtime_cli_elapsed_ms = response and response.wezdeck_runtime_cli_elapsed_ms or nil,
     timeout_ms = tostring(request_timeout_ms or 0),
   }))
 
@@ -248,7 +248,7 @@ function M:write_request_with_response(trace_id, category, request_domain, reque
   local request_phase = 'direct'
 
   if not state_is_fresh then
-    self.logger.info('host_helper', 'windows runtime helper state is stale before request; ensuring synchronously', codec.merge_fields(trace_id, {
+    self.logger.info('wezdeck_runtime', 'windows runtime helper state is stale before request; ensuring synchronously', codec.merge_fields(trace_id, {
       request_domain = request_domain,
       request_action = request_action,
       preflight_reason = state_reason,

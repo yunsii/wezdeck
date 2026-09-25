@@ -1,0 +1,551 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-25 18:18+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh\n"
+
+#: src/features/landing-page.tsx:217
+msgid "3 waiting · 2 running · 1 done"
+msgstr "3 个等待 · 2 个运行中 · 1 个已完成"
+
+#: src/features/landing-page.tsx:210
+msgid "6 slots"
+msgstr "6 个槽位"
+
+#: src/features/landing-page.tsx:58
+msgid "A flight deck for your AI agents — built on WezTerm, tmux, and git worktrees."
+msgstr "本地优先的 AI Agent 工作台，构建于 WezTerm、tmux 和 git worktree 之上。"
+
+#: src/features/landing-page.tsx:182
+msgid "A flight deck for your AI agents."
+msgstr "面向 AI Agent 的本地工作台。"
+
+#: src/features/landing-page.tsx:148
+msgid "A local view into the Deck runtime."
+msgstr "从本地查看 Deck 运行时。"
+
+#: src/features/landing-page.tsx:170
+#~ msgid "A local-first control plane for terminal work."
+#~ msgstr "面向终端工作的本地优先控制平面。"
+
+#: src/features/landing-page.tsx:126
+#~ msgid "A loopback API makes the host runtime available to tools you build next."
+#~ msgstr "回环 API 让你接下来构建的工具可以使用主机运行时。"
+
+#: src/features/runtime-console.tsx:123
+msgid "A loopback WebSocket that tells the console when it should refresh local Runtime snapshots."
+msgstr "本机 WebSocket 事件流，用来通知控制台刷新 Runtime 快照。"
+
+#: src/features/landing-page.tsx:135
+#~ msgid "A signal before a surprise."
+#~ msgstr "在意外发生前看到信号。"
+
+#: src/features/landing-page.tsx:76
+msgid "Agents"
+msgstr "Agent"
+
+#: src/features/landing-page.tsx:40
+msgid "AI Deck"
+msgstr "AI Deck"
+
+#: src/features/landing-page.tsx:105
+msgid "Attention at a glance"
+msgstr "一眼看见待处理事项"
+
+#: src/features/landing-page.tsx:134
+#~ msgid "Built for observability"
+#~ msgstr "为可观察性而生"
+
+#: src/features/landing-page.tsx:41
+#: src/features/runtime-console.tsx:150
+msgid "Capabilities"
+msgstr "能力"
+
+#: src/features/runtime-console.tsx:172
+#~ msgid "CDP port"
+#~ msgstr "CDP 端口"
+
+#: src/lib/i18n.tsx:61
+#~ msgid "characters"
+#~ msgstr "字符"
+
+#: src/features/runtime-console.tsx:110
+#: src/features/runtime-console.tsx:170
+msgid "Characters committed through Rime during the current local day."
+msgstr "当前本地日期内通过 Rime 上屏的字符数。"
+
+#: src/features/runtime-console.tsx:194
+#~ msgid "characters observed"
+#~ msgstr "已采集字符"
+
+#: src/features/runtime-console.tsx:257
+#~ msgid "Checking"
+#~ msgstr "检查中"
+
+#: src/features/runtime-console.tsx:215
+msgid "Chrome debug"
+msgstr "Chrome 调试"
+
+#: src/features/runtime-console.tsx:111
+#~ msgid "commit events"
+#~ msgstr "次上屏事件"
+
+#: src/features/runtime-console.tsx:232
+msgid "Connection"
+msgstr "连接"
+
+#: src/features/landing-page.tsx:80
+msgid "Control"
+msgstr "控制"
+
+#: src/features/landing-page.tsx:92
+msgid "Coordinate agent work without leaving the terminal."
+msgstr "无需离开终端即可协调 Agent 工作。"
+
+#: src/features/runtime-console.tsx:109
+msgid "Current local day"
+msgstr "当前本地日期"
+
+#: src/features/runtime-console.tsx:463
+msgid "Current sample is from the foreground WezTerm window."
+msgstr "当前样本来自前台 WezTerm 窗口。"
+
+#: src/features/runtime-console.tsx:489
+msgid "Dark theme"
+msgstr "暗色主题"
+
+#: src/features/landing-page.tsx:106
+#~ msgid "Designed for the work between commands"
+#~ msgstr "为命令之间的工作而设计"
+
+#: src/features/landing-page.tsx:202
+msgid "done"
+msgstr "已完成"
+
+#: src/features/runtime-console.tsx:238
+msgid "Endpoint"
+msgstr "端点"
+
+#: src/features/runtime-console.tsx:539
+msgid "English"
+msgstr "English"
+
+#: src/features/landing-page.tsx:174
+msgid "Enter Runtime Console"
+msgstr "进入 Runtime 控制台"
+
+#: src/features/landing-page.tsx:163
+#~ msgid "Enter WezDeck"
+#~ msgstr "进入 WezDeck"
+
+#: src/features/runtime-console.tsx:116
+msgid "Event stream"
+msgstr "事件流"
+
+#: src/features/runtime-console.tsx:184
+msgid "events"
+msgstr "事件"
+
+#: src/features/landing-page.tsx:62
+msgid "Explore the AI Deck"
+msgstr "了解 AI Agent 工作台"
+
+#: src/features/landing-page.tsx:125
+#~ msgid "Extend locally"
+#~ msgstr "在本地扩展"
+
+#: src/features/runtime-console.tsx:490
+msgid "Follow system theme"
+msgstr "跟随系统主题"
+
+#: src/features/landing-page.tsx:116
+#~ msgid "Health, input method, browser debug, and event streams in one readable surface."
+#~ msgstr "在一个清晰的界面中查看健康状态、输入法、浏览器调试和事件流。"
+
+#: src/features/runtime-console.tsx:202
+msgid "Host signals"
+msgstr "主机信号"
+
+#: src/features/runtime-console.tsx:162
+#~ msgid "IME language"
+#~ msgstr "输入语言"
+
+#: src/features/runtime-console.tsx:461
+msgid "IME state is unavailable because the Runtime is offline."
+msgstr "Runtime 离线，暂时没有 IME 状态。"
+
+#: src/features/runtime-console.tsx:208
+msgid "Input method"
+msgstr "输入法"
+
+#: src/features/runtime-console.tsx:144
+msgid "Instance"
+msgstr "实例"
+
+#: src/features/landing-page.tsx:101
+msgid "Keep each repository, linked worktree, and agent conversation in a predictable slot."
+msgstr "让每个仓库、关联 worktree 和 Agent 对话都位于可预测的槽位中。"
+
+#: src/features/landing-page.tsx:81
+msgid "Keyboard first"
+msgstr "键盘优先"
+
+#: src/features/landing-page.tsx:121
+#~ msgid "Keyboard-first controls keep common terminal work quick and repeatable."
+#~ msgstr "键盘优先的控制让常见终端工作快速且可重复。"
+
+#: src/features/runtime-console.tsx:529
+msgid "Language"
+msgstr "语言"
+
+#: src/features/runtime-console.tsx:159
+msgid "Last sample"
+msgstr "最近采样"
+
+#: src/features/runtime-console.tsx:190
+msgid "latest"
+msgstr "最近"
+
+#: src/features/runtime-console.tsx:488
+msgid "Light theme"
+msgstr "亮色主题"
+
+#: src/features/landing-page.tsx:100
+#~ msgid "Live signals, one local view."
+#~ msgstr "实时信号，一个本地视图。"
+
+#: src/features/landing-page.tsx:139
+#~ msgid "Local runtime health and capabilities"
+#~ msgstr "本地 Runtime 健康状态与能力"
+
+#: src/features/landing-page.tsx:54
+msgid "Local-first AI Deck"
+msgstr "本地优先的 AI Agent 工作台"
+
+#: src/features/landing-page.tsx:52
+#~ msgid "Local-first terminal control plane"
+#~ msgstr "本地优先的终端控制平面"
+
+#: src/features/landing-page.tsx:76
+#~ msgid "Loopback by default"
+#~ msgstr "默认使用回环连接"
+
+#: src/features/landing-page.tsx:107
+#~ msgid "Make the terminal feel like a system."
+#~ msgstr "让终端成为一个系统。"
+
+#: src/features/runtime-console.tsx:470
+msgid "No foreground window was available when the helper sampled the IME."
+msgstr "helper 采样 IME 时没有可用的前台窗口。"
+
+#: src/features/runtime-console.tsx:98
+msgid "No local endpoint"
+msgstr "未发现本地端点"
+
+#: src/features/runtime-console.tsx:224
+msgid "No state"
+msgstr "暂无状态"
+
+#: src/features/runtime-console.tsx:186
+msgid "Number of commit events recorded by the Rime counter."
+msgstr "Rime 计数器记录的上屏事件数量。"
+
+#: src/features/landing-page.tsx:84
+#~ msgid "Observable"
+#~ msgstr "可观察"
+
+#: src/features/runtime-console.tsx:97
+msgid "Offline"
+msgstr "离线"
+
+#: src/features/landing-page.tsx:56
+#~ msgid "One calm control surface for WezTerm, tmux, agents, and the host signals around them."
+#~ msgstr "用一个从容的控制界面统一管理 WezTerm、tmux、Agent 及其周围的主机信号。"
+
+#: src/features/landing-page.tsx:73
+msgid "One home for every repo"
+msgstr "每个仓库都有统一入口"
+
+#: src/features/runtime-console.tsx:97
+msgid "Online"
+msgstr "在线"
+
+#: src/features/landing-page.tsx:125
+msgid "Open Runtime Console"
+msgstr "打开 Runtime 控制台"
+
+#: src/features/landing-page.tsx:40
+#~ msgid "Open source"
+#~ msgstr "开源"
+
+#: src/features/landing-page.tsx:157
+msgid "Open source, local by design"
+msgstr "开源，生来本地优先"
+
+#: src/features/landing-page.tsx:67
+msgid "Open web console"
+msgstr "打开 Web 控制台"
+
+#: src/features/landing-page.tsx:119
+msgid "Optional browser companion"
+msgstr "可选的浏览器伴侣"
+
+#: src/features/landing-page.tsx:39
+#~ msgid "Principles"
+#~ msgstr "原则"
+
+#: src/features/landing-page.tsx:38
+#~ msgid "Product"
+#~ msgstr "产品"
+
+#: src/features/runtime-console.tsx:155
+msgid "Read-only and action surfaces currently advertised by the Runtime API."
+msgstr "Runtime API 当前公布的只读和操作能力。"
+
+#: src/features/runtime-console.tsx:117
+msgid "Ready"
+msgstr "就绪"
+
+#: src/features/runtime-console.tsx:249
+msgid "Refresh snapshot"
+msgstr "刷新快照"
+
+#: src/features/landing-page.tsx:110
+msgid "Resume the thread"
+msgstr "继续对话线程"
+
+#: src/features/landing-page.tsx:77
+msgid "Resumed conversations"
+msgstr "可恢复的对话"
+
+#: src/features/runtime-console.tsx:274
+msgid "Retry"
+msgstr "重试"
+
+#: src/features/landing-page.tsx:111
+msgid "Return to the right agent session after a restart and keep the loop moving."
+msgstr "重启后回到正确的 Agent 会话，让工作循环继续运行。"
+
+#: src/features/landing-page.tsx:143
+#~ msgid "Rime commit statistics that stay on your machine"
+#~ msgstr "留在本机的 Rime 上屏统计"
+
+#: src/features/runtime-console.tsx:168
+msgid "Rime commits"
+msgstr "Rime 上屏"
+
+#: src/features/runtime-console.tsx:105
+msgid "Rime today"
+msgstr "Rime 今日上屏"
+
+#: src/features/landing-page.tsx:200
+msgid "running"
+msgstr "运行中"
+
+#: src/features/landing-page.tsx:83
+#~ msgid "Runtime"
+#~ msgstr "运行时"
+
+#: src/features/runtime-console.tsx:259
+#~ msgid "Runtime connected"
+#~ msgstr "Runtime 已连接"
+
+#: src/features/runtime-console.tsx:81
+#: src/features/runtime-console.tsx:96
+msgid "Runtime Console"
+msgstr "Runtime 控制台"
+
+#: src/features/landing-page.tsx:120
+msgid "Runtime Console keeps the local signals in view."
+msgstr "Runtime 控制台让本地信号始终可见。"
+
+#: src/features/runtime-console.tsx:260
+#~ msgid "Runtime offline"
+#~ msgstr "Runtime 离线"
+
+#: src/features/runtime-console.tsx:138
+msgid "Runtime snapshot"
+msgstr "Runtime 快照"
+
+#: src/features/landing-page.tsx:115
+#~ msgid "See the whole runtime"
+#~ msgstr "看见完整运行时"
+
+#: src/features/landing-page.tsx:160
+msgid "Start with the keyboard-first control plane and add the browser view when you need it."
+msgstr "从键盘优先的控制平面开始，在需要时再打开浏览器视图。"
+
+#: src/features/landing-page.tsx:159
+#~ msgid "Start with the Runtime Console and grow the surface around the way you actually work."
+#~ msgstr "从 Runtime 控制台开始，围绕真实工作方式扩展你的控制界面。"
+
+#: src/features/landing-page.tsx:120
+#~ msgid "Stay in your flow"
+#~ msgstr "保持工作流"
+
+#: src/features/landing-page.tsx:91
+msgid "The deck is the product"
+msgstr "工作台才是产品本身"
+
+#: src/features/runtime-console.tsx:466
+msgid "The foreground app is not WezTerm, so the helper is holding the last WezTerm sample."
+msgstr "当前前台应用不是 WezTerm，因此 helper 保留上一次 WezTerm 样本。"
+
+#: src/lib/i18n.tsx:55
+#~ msgid "The helper has not produced a fresh IME sample yet."
+#~ msgstr "helper 尚未产生新的 IME 样本。"
+
+#: src/features/runtime-console.tsx:474
+msgid "The helper reported reason:"
+msgstr "helper 返回的原因是："
+
+#: src/features/runtime-console.tsx:226
+msgid "The helper-owned Chrome debug instance and its CDP liveness state."
+msgstr "由 helper 管理的 Chrome 调试实例及其 CDP 存活状态。"
+
+#: src/features/runtime-console.tsx:164
+#~ msgid "The keyboard layout language from the latest eligible foreground sample."
+#~ msgstr "最近一次有效前台采样得到的键盘布局语言。"
+
+#: src/features/runtime-console.tsx:161
+msgid "The last time the Runtime API returned a health snapshot."
+msgstr "Runtime API 最近一次返回健康快照的时间。"
+
+#: src/features/runtime-console.tsx:204
+#: src/features/runtime-console.tsx:211
+msgid "The latest IME sample associated with the foreground WezTerm window. Non-WezTerm foregrounds are deliberately not sampled."
+msgstr "与前台 WezTerm 窗口关联的最新 IME 采样；前台不是 WezTerm 时会主动跳过采样。"
+
+#: src/features/runtime-console.tsx:178
+#~ msgid "The local Chrome DevTools Protocol port advertised by the helper."
+#~ msgstr "helper 公布的本机 Chrome DevTools Protocol 端口。"
+
+#: src/features/runtime-console.tsx:99
+#: src/features/runtime-console.tsx:140
+msgid "The local Runtime process that owns host state, actions, and the browser event stream."
+msgstr "负责主机状态、操作和浏览器事件流的本地 Runtime 进程。"
+
+#: src/features/runtime-console.tsx:234
+#: src/features/runtime-console.tsx:240
+msgid "The loopback HTTP endpoint used by this page. Data stays on the local machine."
+msgstr "本页面使用的本机回环 HTTP 端点；数据留在本机。"
+
+#: src/features/runtime-console.tsx:146
+msgid "The Runtime process identity. It changes after a helper restart."
+msgstr "Runtime 进程标识；helper 重启后会变化。"
+
+#: src/features/runtime-console.tsx:178
+msgid "The summary above is the current day total."
+msgstr "上方摘要是今天的总量。"
+
+#: src/features/runtime-console.tsx:495
+msgid "Theme"
+msgstr "主题"
+
+#: src/features/runtime-console.tsx:192
+msgid "Timestamp of the newest Rime commit event."
+msgstr "最近一次 Rime 上屏事件的时间。"
+
+#: src/features/landing-page.tsx:75
+#~ msgid "Transport"
+#~ msgstr "传输"
+
+#: src/features/landing-page.tsx:70
+#~ msgid "View on GitHub"
+#~ msgstr "在 GitHub 查看"
+
+#: src/features/landing-page.tsx:170
+msgid "View the source"
+msgstr "查看源码"
+
+#: src/features/landing-page.tsx:201
+msgid "waiting"
+msgstr "等待中"
+
+#: src/features/runtime-console.tsx:117
+msgid "Waiting"
+msgstr "等待中"
+
+#: src/features/runtime-console.tsx:121
+msgid "Waiting for Runtime"
+msgstr "等待 Runtime"
+
+#: src/features/landing-page.tsx:106
+msgid "Waiting, done, and running signals stay visible so you know where to jump next."
+msgstr "等待、完成和运行中的信号保持可见，让你知道下一步该跳到哪里。"
+
+#: src/features/landing-page.tsx:42
+msgid "Web console"
+msgstr "Web 控制台"
+
+#: src/features/runtime-console.tsx:120
+msgid "WebSocket endpoint detected"
+msgstr "已发现 WebSocket 端点"
+
+#: src/features/landing-page.tsx:146
+#~ msgid "WebSocket events for live browser views"
+#~ msgstr "为实时浏览器视图提供 WebSocket 事件"
+
+#: src/features/landing-page.tsx:56
+#: src/features/runtime-console.tsx:78
+msgid "WezDeck"
+msgstr "WezDeck"
+
+#: src/features/landing-page.tsx:109
+#~ msgid "WezDeck keeps the state you care about visible, the actions close at hand, and the local boundary explicit."
+#~ msgstr "WezDeck 让你关心的状态保持可见，让操作触手可及，也让本地边界清晰明确。"
+
+#: src/features/landing-page.tsx:138
+#~ msgid "WezDeck Runtime Console showing live local runtime signals"
+#~ msgstr "展示本地运行时实时信号的 WezDeck Runtime 控制台"
+
+#: src/features/landing-page.tsx:145
+msgid "WezDeck Runtime Console showing live local runtime signals in dark theme"
+msgstr "展示暗色主题本地运行时实时信号的 WezDeck Runtime 控制台"
+
+#: src/features/landing-page.tsx:140
+msgid "WezDeck Runtime Console showing live local runtime signals in light theme"
+msgstr "展示亮色主题本地运行时实时信号的 WezDeck Runtime 控制台"
+
+#: src/features/landing-page.tsx:94
+msgid "WezDeck turns workspaces, git worktrees, agent sessions, and attention into one surface you can navigate by feel."
+msgstr "WezDeck 将 workspace、git worktree、Agent 会话和待处理事项统一到一个凭直觉即可导航的界面中。"
+
+#: src/features/landing-page.tsx:122
+msgid "When you want a browser window, the local web console shows Runtime health, IME state, Chrome debug, and Rime statistics. It observes the Deck; it does not replace it."
+msgstr "需要浏览器窗口时，本地 Web 控制台会展示 Runtime 健康状态、IME 状态、Chrome 调试和 Rime 统计。它观察 Deck，但不取代 Deck。"
+
+#: src/features/landing-page.tsx:79
+#~ msgid "Workflow"
+#~ msgstr "工作流"
+
+#: src/features/landing-page.tsx:72
+msgid "Workspace"
+msgstr "Workspace"
+
+#: src/features/landing-page.tsx:214
+msgid "WORKSPACE"
+msgstr "工作区"
+
+#: src/features/landing-page.tsx:100
+msgid "Workspace × worktree × agent"
+msgstr "Workspace × worktree × Agent"
+
+#: src/features/landing-page.tsx:233
+msgid "Workspaces, worktrees, and agents in one keyboard-first frame."
+msgstr "在一个键盘优先的界面中管理 workspace、worktree 和 Agent。"
+
+#: src/features/landing-page.tsx:158
+msgid "Your agents. Your worktrees. Your deck."
+msgstr "你的 Agent、你的 worktree、你的工作台。"
+
+#: src/features/landing-page.tsx:157
+#~ msgid "Your terminal. Your signals. Your control plane."
+#~ msgstr "你的终端，你的信号，你的控制平面。"
+
+#: src/features/runtime-console.tsx:542
+msgid "中文"
+msgstr "中文"

@@ -1,5 +1,7 @@
 # Docs
 
+- [WezDeck 产品概念](./product-concepts.md)：产品边界、术语层级和首页文案基线。
+
 Use this doc when you need the shortest possible map of the repository docs.
 
 ## Read Next
@@ -29,8 +31,8 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`reminders.md`](./reminders.md).
 - Phone / Android remote work (OpenClaw; Happy + Tailscale phone shell retired):
   Read [`mobile-access.md`](./mobile-access.md).
-- Cutting a Windows host-helper release, updating `release-manifest.json`, side-loading the release zip:
-  Read [`host-helper-release.md`](./host-helper-release.md).
+- Cutting a Windows wezdeck-runtime release, updating `release-manifest.json`, side-loading the release zip:
+  Read [`wezdeck-runtime-release.md`](./wezdeck-runtime-release.md).
 - Cutting a Go picker release or install-source toggle (`WEZTERM_PICKER_INSTALL_SOURCE`):
   Read [`picker-release.md`](./picker-release.md).
 - Logs, diagnostics, smoke tests, latency / hotkey counters:

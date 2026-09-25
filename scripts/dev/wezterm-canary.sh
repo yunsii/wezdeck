@@ -146,7 +146,7 @@ for ($attempt = 0; $attempt -lt 20; $attempt++) {
     ($_.CommandLine -match "wezdeck-canary" -or $_.CommandLine -match "wezterm-runtime\\canary")
   }
   $helpers = Get-CimInstance Win32_Process | Where-Object {
-    ($_.Name -eq "helper-manager.exe") -and
+    ($_.Name -eq "wezdeck-runtime.exe") -and
     ($_.CommandLine -match "wezterm-runtime\\canary")
   }
   $all = @($procs) + @($helpers)
@@ -160,7 +160,7 @@ for ($attempt = 0; $attempt -lt 20; $attempt++) {
 }
 Write-Output ("killed=" + $killed)
 ' 2>/dev/null || true
-  bash "$repo_root/scripts/dev/stop-windows-runtime-helper.sh" --canary >/dev/null 2>&1 || true
+  bash "$repo_root/scripts/dev/stop-wezdeck-runtime.sh" --canary >/dev/null 2>&1 || true
 }
 
 backup_tree() {

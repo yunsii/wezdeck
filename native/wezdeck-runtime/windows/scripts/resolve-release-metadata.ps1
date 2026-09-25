@@ -1,0 +1,34 @@
+param(
+  [Parameter(Mandatory = $true)]
+  [string]$ReleaseTag,
+
+  [string]$ReleaseName = ''
+)
+
+Set-StrictMode -Version 3.0
+$ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($ReleaseTag)) {
+  throw 'release tag is required'
+}
+
+if ([string]::IsNullOrWhiteSpace($ReleaseName)) {
+  $ReleaseName = "WezDeck Runtime $ReleaseTag"
+}
+
+$assetVersion = $ReleaseTag -replace '^wezdeck-runtime-', ''
+$assetName = "wezdeck-windows-runtime-$assetVersion-win-x64.zip"
+
+$outputs = [ordered]@{
+  release_tag = $ReleaseTag
+  release_name = $ReleaseName
+  asset_name = $assetName
+}
+
+foreach ($entry in $outputs.GetEnumerator()) {
+  $line = "$($entry.Key)=$($entry.Value)"
+  Write-Output $line
+  if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_OUTPUT)) {
+    Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value $line
+  }
+}

@@ -1,9 +1,9 @@
 -- Chrome debug browser status segment.
 --
--- Reads the JSON state file written by the Windows host helper after each
+-- Reads the JSON state file written by the Windows WezDeck Runtime after each
 -- successful Alt+b / Alt+Shift+b request, and after Chrome exits
 -- (ChromeRequestHandler.WriteState / WriteStateNone, plus the
--- ChromeLivenessWatcher in native/host-helper/windows/src/HelperManager).
+-- ChromeLivenessWatcher in native/wezdeck-runtime/windows/src/HelperManager).
 -- Renders a compact right-status segment that stays at a fixed visual width
 -- so the bar does not jitter between states:
 --

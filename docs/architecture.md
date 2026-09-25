@@ -129,7 +129,7 @@ The host TUI agents (`claude` / `codex`, plus `grok` when run natively) live ins
 | Interop | `lease` + `host-send-keys` + `bot-send` + attention inference + audit receipt (P2) | **Built** |
 | Interop | `say-as-me` (P3, lark-cli user identity) | **Built**, default `--dry-run` — **convention**: `--confirm` to actually send |
 | Interop | Single-writer boundary (nudge ≠ write-code rights; Main stops on C2) | **Convention** (not machine-enforced) |
-| Host | `posix-local` native host helper (focus/open, clipboard, reuse policy) | **Not built** — Windows-only today; see [*Posix Host*](#posix-host) |
+| Host | `posix-local` native WezDeck Runtime (focus/open, clipboard, reuse policy) | **Not built** — Windows-only today; see [*Posix Host*](#posix-host) |
 | Interop | Feishu as a second full TUI / a CRDT session store | **Not built — explicit non-goal** ([`session-bridge.md`](../openclaw/docs/session-bridge.md) §0) |
 
 ## Command Manifest
@@ -176,13 +176,13 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `scripts/runtime/open-project-session.sh`: tmux bootstrap for managed project tabs
 - `scripts/runtime/primary-pane-wrapper.sh`: traps INT/HUP/TERM around the managed agent and execs the login shell on exit so the primary pane survives agent death
 - `scripts/runtime/run-managed-command.sh`: managed startup command launcher
-- `scripts/runtime/agent-clipboard.sh`: repo-local WSL wrapper that writes text or image files to the Windows clipboard through the host helper
+- `scripts/runtime/agent-clipboard.sh`: repo-local WSL wrapper that writes text or image files to the Windows clipboard through the WezDeck Runtime
 - `scripts/runtime/runtime-log-lib.sh`: shared runtime logging helper
 - `wezterm-x/scripts/`: thin runtime bootstrap and install scripts plus remaining cross-platform shell helpers copied by the sync skill
-- `native/host-helper/windows/src/HelperManager/`: Windows `helper-manager.exe` server project
-- `native/host-helper/windows/src/HelperCtl/`: Windows `helperctl.exe` console client project
-- `native/host-helper/windows/src/Shared/`: shared Windows host-helper protocol, transport, and support models
-- `native/host-helper/windows/scripts/`: Windows host-helper release packaging scripts used by GitHub Actions
+- `native/wezdeck-runtime/windows/src/Runtime/`: Windows `wezdeck-runtime.exe` server project
+- `native/wezdeck-runtime/windows/src/RuntimeCli/`: Windows `wezdeck-runtime-cli.exe` console client project
+- `native/wezdeck-runtime/windows/src/Shared/`: shared Windows wezdeck-runtime protocol, transport, and support models
+- `native/wezdeck-runtime/windows/scripts/`: Windows wezdeck-runtime release packaging scripts used by GitHub Actions
 - `tmux.conf`: tmux layout and status rendering
 - `agent-profiles/`: hosted source for versioned user-level agent profiles; not the project-level instruction source for this repo
 
@@ -233,12 +233,13 @@ land under the user's home instead of the checkout.
 
 - In `hybrid-wsl`, WezTerm Lua is only responsible for request generation, helper bootstrap, and request-side diagnostics.
 - `%LOCALAPPDATA%\wezterm-runtime\` is the Windows runtime state root. It keeps `logs/`, `state/`, `cache/`, and `bin/` in one place.
-- `%LOCALAPPDATA%\wezterm-runtime\bin\helper-manager.exe` is the active Windows host control plane.
-- `%LOCALAPPDATA%\wezterm-runtime\bin\helperctl.exe` is the thin console IPC client that WezTerm Lua, tmux-side scripts, and smoke tests invoke when they need a request or response.
-- Repo-local high-level wrappers (`scripts/runtime/agent-clipboard.sh` and friends) and the `$HOME/.wezterm-x/agent-tools.env` discovery marker are documented in [`setup.md#repo-local-runtime-wrappers`](./setup.md#repo-local-runtime-wrappers) (schema: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema)); agent-facing automation should prefer those wrappers over raw `helperctl.exe` IPC. The marker lives on the WSL home, not under `%USERPROFILE%\.wezterm-x\`, because the wrappers it advertises are bash scripts only callable from WSL.
+- `%LOCALAPPDATA%\wezterm-runtime\bin\wezdeck-runtime.exe` is the active Windows host control plane.
+- **WezDeck Runtime API** is the loopback read model for the Web Console. The helper listens on `http://127.0.0.1:35791` when the HTTP surface is enabled, while Named Pipe remains the synchronous compatibility transport for WezTerm and shell callers.
+- `%LOCALAPPDATA%\wezterm-runtime\bin\wezdeck-runtime-cli.exe` is the thin console IPC client that WezTerm Lua, tmux-side scripts, and smoke tests invoke when they need a request or response.
+- Repo-local high-level wrappers (`scripts/runtime/agent-clipboard.sh` and friends) and the `$HOME/.wezterm-x/agent-tools.env` discovery marker are documented in [`setup.md#repo-local-runtime-wrappers`](./setup.md#repo-local-runtime-wrappers) (schema: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema)); agent-facing automation should prefer those wrappers over raw `wezdeck-runtime-cli.exe` IPC. The marker lives on the WSL home, not under `%USERPROFILE%\.wezterm-x\`, because the wrappers it advertises are bash scripts only callable from WSL.
 - Human-only script handoff is a three-layer contract: user-level profile doctrine (`agent-profiles` → `reporting.md`), mandatory platform skill `human-run` (`skills/human-run/`), and wezdeck CLI `wd-run` / `x` (store + CAS + retention). Details: [`agent-run.md`](./agent-run.md).
-- `%USERPROFILE%\.wezterm-native\host-helper\windows\` is the published source tree that sync installs from; `%LOCALAPPDATA%\wezterm-runtime\bin\` is the stable installed binary location that the runtime actually launches.
-- `native/host-helper/windows/release-manifest.json` is the version-pinned release fallback declaration. When Windows `dotnet` is available, the installer publishes from the synced native source tree; otherwise it downloads and verifies the manifest-selected GitHub release asset before replacing `%LOCALAPPDATA%\wezterm-runtime\bin\`. Cutting a release / updating the manifest / side-loading: [`host-helper-release.md`](./host-helper-release.md).
+- `%USERPROFILE%\.wezterm-native\wezdeck-runtime\windows\` is the published source tree that sync installs from; `%LOCALAPPDATA%\wezterm-runtime\bin\` is the stable installed binary location that the runtime actually launches.
+- `native/wezdeck-runtime/windows/release-manifest.json` is the version-pinned release fallback declaration. When Windows `dotnet` is available, the installer publishes from the synced native source tree; otherwise it downloads and verifies the manifest-selected GitHub release asset before replacing `%LOCALAPPDATA%\wezterm-runtime\bin\`. Cutting a release / updating the manifest / side-loading: [`wezdeck-runtime-release.md`](./wezdeck-runtime-release.md).
 - `wezterm-x/scripts/` is intentionally thin on Windows. It keeps the helper installer, launcher, and bootstrap pieces, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.
 - The `vscode` / `focus_or_open` helper request takes an optional `file` field alongside `requested_dir`. The window is still resolved and reused by `distro + folder` (so all files of a repo share one window); when `file` is present the helper reveals it on top — launches append `--file-uri`, and the reuse-existing-window path issues a follow-up `--reuse-window --file-uri`. The WSL entry points are `open-current-dir-in-vscode.sh --file <abs>` and the agent-facing `open-file-in-vscode.sh <file>` wrapper (used to auto-open a generated proposal for review).
 
@@ -246,7 +247,7 @@ land under the user's home instead of the checkout.
 
 Three independent channels cross the WSL ⇄ Windows boundary; everything else in the codebase is a layer on top of these three:
 
-1. **Named-pipe IPC** for synchronous requests (`Alt+v` / `Alt+b` / `Ctrl+v` etc.). WSL bash spawns `helperctl.exe`, which talks to `helper-manager.exe` over `\\.\pipe\wezterm-host-helper-v1` and gets a typed response back. Latency budget: ~50-150 ms.
+1. **Named-pipe IPC** for synchronous requests (`Alt+v` / `Alt+b` / `Ctrl+v` etc.). WSL bash spawns `wezdeck-runtime-cli.exe`, which talks to `wezdeck-runtime.exe` over `\\.\pipe\wezdeck-runtime-v1` and gets a typed response back. Latency budget: ~50-150 ms.
 2. **OSC 1337 escape codes** for async nudges (attention ticks, IME-state pushes). The agent CLI or hook script writes the OSC byte sequence to its tty; tmux DCS-wraps it; `wezterm.exe` consumes it and re-renders within one frame. Latency: under one paint frame (~16 ms).
 3. **Shared NTFS state files under `/mnt/c`** for poll-style reads where both sides need the data at their own cadence. WSL processes write (hooks, jump scripts), Windows processes read on every tick (Lua status update, helper liveness watcher). Cross-FS routing rule lives in [`performance.md`](./performance.md).
 
@@ -278,8 +279,8 @@ flowchart LR
   subgraph WIN["Windows · host processes"]
     direction TB
     H_WEZ["wezterm.exe<br/>(GUI + Lua tick)"]
-    H_CTL["helperctl.exe<br/>(IPC client)"]
-    H_MGR["helper-manager.exe<br/>(control plane)"]
+    H_CTL["wezdeck-runtime-cli.exe<br/>(IPC client)"]
+    H_MGR["wezdeck-runtime.exe<br/>(control plane)"]
     H_CHR["Chrome<br/>(headless / visible)"]
     H_VSC["VS Code"]
   end
@@ -318,9 +319,9 @@ The named-pipe channel above, zoomed in to one Alt+v / Alt+b / Ctrl+v press:
 ```mermaid
 flowchart LR
   A["WezTerm Lua<br/>Alt+v / Alt+b / Ctrl+v"] --> B["runtime.lua<br/>build request + trace_id"]
-  B --> C["helperctl.exe<br/>request client"]
-  C --> D["Named Pipe<br/>\\\\.\\pipe\\wezterm-host-helper-v1"]
-  D --> E["helper-manager.exe<br/>single native control plane"]
+  B --> C["wezdeck-runtime-cli.exe<br/>request client"]
+  C --> D["Named Pipe<br/>\\\\.\\pipe\\wezdeck-runtime-v1"]
+  D --> E["wezdeck-runtime.exe<br/>single native control plane"]
   E --> F["Reuse policy<br/>window-cache.json + process/window scan"]
   E --> G["Clipboard service<br/>single STA thread + live read/write"]
   F --> H["Activate existing window<br/>or launch target app"]
@@ -331,10 +332,22 @@ flowchart LR
   B --> K["WezTerm action<br/>focus app or paste result"]
 ```
 
+### Runtime Web API
+
+The browser-facing surface is an adapter over the same native control plane.
+`GET /api/v1/health`, `/api/v1/rime/stats`, `/api/v1/ime`, and
+`/api/v1/chrome` return read-only snapshots. `/events` is a loopback WebSocket
+that emits invalidation ticks; the Web Console then refetches typed snapshots
+through TanStack Query. The server binds to loopback only and keeps the Named
+Pipe request path unchanged. Browser Origins are checked against the configured
+local-development and Vercel allowlist. The first Web API milestone is read-only; action
+routes must add capability checks and audit fields before they are exposed to
+the public Vercel UI.
+
 ### Constraints
 
-- The hot path should stay on one chain: `Lua -> helperctl.exe -> named pipe -> helper-manager.exe -> response`.
-- `helper-manager.exe` is the single decision point for VS Code directory normalization, Chrome debug instance reuse, clipboard text or image decisions, and foreground-window IME state queries.
+- The hot path should stay on one chain: `Lua -> wezdeck-runtime-cli.exe -> named pipe -> wezdeck-runtime.exe -> response`.
+- `wezdeck-runtime.exe` is the single decision point for VS Code directory normalization, Chrome debug instance reuse, clipboard text or image decisions, and foreground-window IME state queries.
 - Response types stay explicit: current-window reuse returns `result_type=window_ref`, clipboard reads return `clipboard_text` or `clipboard_image`, IME queries return `ime_state` with flat `mode` / `lang` / `reason` fields.
 - Reuse logic depends on persisted cache, process command-line matching, visible window scanning, and foreground binding compensation.
 - The VS Code max-window cap (`WEZTERM_VSCODE_MAX_WINDOWS`) counts real top-level editor windows via `EnumWindows` (visible, unowned, non-tool-window, titled), never `Process.MainWindowHandle`: Electron runs every VS Code window under one `Code.exe` process, so `MainWindowHandle` only ever surfaces one of them and would make the cap count ~1 regardless of how many windows are open.
@@ -344,9 +357,9 @@ flowchart LR
 
 ## Posix Host
 
-- `posix-local` does not have a native host helper yet.
-- When `posix-local` gets a host helper, it should follow the same split as Windows: WezTerm Lua remains a request producer, while a stable per-user native agent owns focus or open logic, clipboard monitoring, reuse policy evaluation, and structured decision logging.
-- The preferred install shape is a stable per-user binary outside the synced runtime tree, with platform-specific source under `native/host-helper/<platform>/` and a thin bootstrap or installer layer under `wezterm-x/scripts/`.
+- `posix-local` does not have a native WezDeck Runtime yet.
+- When `posix-local` gets a WezDeck Runtime, it should follow the same split as Windows: WezTerm Lua remains a request producer, while a stable per-user native agent owns focus or open logic, clipboard monitoring, reuse policy evaluation, and structured decision logging.
+- The preferred install shape is a stable per-user binary outside the synced runtime tree, with platform-specific source under `native/wezdeck-runtime/<platform>/` and a thin bootstrap or installer layer under `wezterm-x/scripts/`.
 
 ## Worktree Task
 

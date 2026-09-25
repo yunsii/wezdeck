@@ -113,6 +113,24 @@ run_popup_guard_if_needed() {
   "$guard"
 }
 
+run_web_check_if_needed() {
+  local root="$1"
+  shift
+  local target
+  for target in "$@"; do
+    if [[ "$target" == web/* ]]; then
+      local checker="$root/scripts/dev/check-web.sh"
+      if [[ ! -x "$checker" ]]; then
+        hygiene_err "web staged but check-web.sh is missing"
+        return 1
+      fi
+      "$checker"
+      return $?
+    fi
+  done
+  return 0
+}
+
 cmd_pre_commit() {
   local root="$HYGIENE_REPO_ROOT"
   if [[ "${WEZTERM_HYGIENE_SKIP:-}" == "1" ]]; then
@@ -162,6 +180,10 @@ cmd_pre_commit() {
   fi
 
   if ! run_popup_guard_if_needed "$root" "${targets[@]}"; then
+    fails=$((fails + 1))
+  fi
+
+  if ! run_web_check_if_needed "$root" "${targets[@]}"; then
     fails=$((fails + 1))
   fi
 

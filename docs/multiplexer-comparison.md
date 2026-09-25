@@ -47,7 +47,7 @@ Total tmux coupling: **≈26,800 lines across 127 files** (851 direct `tmux …`
 call sites, no abstraction layer — `TMUX_BIN` exists only in
 `openclaw/scripts/session-bridge/`).
 
-Unaffected by any mux choice, **≈11,900 lines**: Windows host-helper / IPC
+Unaffected by any mux choice, **≈11,900 lines**: Windows wezdeck-runtime / IPC
 (5,942), skills — adversarial-review / brainstorm / agent-fanout (4,057),
 OOM + disk + diagnostics guards (1,681), agent launch chain (268). WezTerm-layer
 work is also untouched: tab bar, right-status `M·` / `S·` / `D·` / `CDP·`

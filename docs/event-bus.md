@@ -246,13 +246,13 @@ them urgent, but it makes the eventual move cheap.
   `state/chrome-debug/state.json` on every `update-status` tick. State
   changes arrive on a 0–250 ms random-phase delay, and the file is
   stat+read every tick whether or not anything moved. A bus migration
-  has the host-helper publish `chrome.debug.status` after each state
+  has the wezdeck-runtime publish `chrome.debug.status` after each state
   transition; Lua subscribes once. Idle-time stat goes away; sub-frame
   hot path opens when the producer has tty (it currently does not —
-  host-helper is a Windows binary writing to a state file — but the
+  wezdeck-runtime is a Windows binary writing to a state file — but the
   bus contract works for it via the file transport without further
   changes). Producer-side touch lives in
-  `native/host-helper/windows/src/HelperManager/`.
+  `native/wezdeck-runtime/windows/src/Runtime/`.
 - **`vscode.helper.heartbeat`** — same pattern: helper writes
   `state.env`, Lua stats it for liveness on each tick. Migrating to
   `vscode.helper.heartbeat` events lets liveness become "did we get a
@@ -268,7 +268,7 @@ them urgent, but it makes the eventual move cheap.
   parity with.
 
 The point of listing these here is to lock in design intent: when
-someone next touches host-helper or the command palette, the
+someone next touches wezdeck-runtime or the command palette, the
 preferred move is "use the bus", not "invent another ad-hoc IPC". If
 that's no longer the right call (e.g. the bus's worst-case 250 ms
 becomes a problem for chrome.debug.status's 30 Hz updates), this

@@ -2,7 +2,7 @@
 # package-release.sh — build release tarballs for the Go picker.
 #
 # Used by .github/workflows/picker-release.yml and by local dry-runs via
-# scripts/dev/prepare-native-releases.sh. Mirrors the host-helper
+# scripts/dev/prepare-native-releases.sh. Mirrors the wezdeck-runtime
 # package-release.ps1 shape: one script owns packaging; CI only publishes.
 #
 # Usage:

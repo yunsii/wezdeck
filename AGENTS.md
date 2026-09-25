@@ -102,10 +102,10 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   `Alt+Shift+b`, `chrome://inspect` workflow, or the right-status `CDP·…`
   badge:
   Read [`docs/browser-debug.md`](docs/browser-debug.md).
-- Cutting a Windows host-helper release, updating
+- Cutting a Windows wezdeck-runtime release, updating
   `release-manifest.json`, forcing the release-install branch, or
   side-loading the release zip:
-  Read [`docs/host-helper-release.md`](docs/host-helper-release.md).
+  Read [`docs/wezdeck-runtime-release.md`](docs/wezdeck-runtime-release.md).
 - Cutting a Go picker (`native/picker/`) release, updating its
   multi-asset `release-manifest.json`, or the install-side fetcher
   (`WEZTERM_PICKER_INSTALL_SOURCE=auto|local|release`) that lets end

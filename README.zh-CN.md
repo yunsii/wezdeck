@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/brand/banner.svg" alt="WezDeck — 面向 AI agent 的驾驶舱" width="960">
+  <img src="assets/brand/banner.svg" alt="WezDeck — 本地优先的 AI Agent 工作台" width="960">
 </p>
 
 <h1 align="center">WezDeck</h1>
@@ -169,7 +169,7 @@ skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 - [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md) · [Dev-env troubleshooting](docs/development-environment-troubleshooting.md)
 
 **发布**
-- [Host helper](docs/host-helper-release.md) · [Picker](docs/picker-release.md)
+- [WezDeck Runtime](docs/wezdeck-runtime-release.md) · [Picker](docs/picker-release.md)
 
 文档地图：[`docs/README.md`](docs/README.md)。Agent 规则：[`AGENTS.md`](AGENTS.md)。可复用用户级 profile：[`agent-profiles/`](agent-profiles/)。英文版：[`README.md`](README.md) — 与本文件保持结构同步（repo-hygiene L0 校验标题层级、相对链接、代码块/表格数量与耐久 token）。
 

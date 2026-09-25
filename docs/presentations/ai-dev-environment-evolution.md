@@ -155,9 +155,9 @@ A 是物理层（让宿主能力变成"一个请求"），B 是控制层（让 a
 
 ### v5 A · Native Helper（2026-04-18 → 04-19）
 
-Windows 侧从"每次调用都起一次 PowerShell"升级为**长期存活的 C# helper + 命名管道 IPC**。宿主能力（VS Code 打开 / Chrome 调起 / 剪贴板 / 通知）不再是脚本堆，而是走 `helperctl → IPC → helper-manager.exe` 的**统一请求路径**，并且 helper **可构建、可发布、可升级、可回退**。带 `trace_id` 的请求让 helper 端 `helper.log` 和 wezterm 端 `wezterm.log` 用同一个 id 关联，单条 grep 就能拼端到端时间线。
+Windows 侧从"每次调用都起一次 PowerShell"升级为**长期存活的 C# helper + 命名管道 IPC**。宿主能力（VS Code 打开 / Chrome 调起 / 剪贴板 / 通知）不再是脚本堆，而是走 `wezdeck-runtime-cli → IPC → wezdeck-runtime.exe` 的**统一请求路径**，并且 helper **可构建、可发布、可升级、可回退**。带 `trace_id` 的请求让 helper 端 `helper.log` 和 wezterm 端 `wezterm.log` 用同一个 id 关联，单条 grep 就能拼端到端时间线。
 
-具体形态（含 IPC 时序图、典型延迟、reuse policy）见 [outline §核心特性 4](./ai-workspace-sharing-outline.md#4-native-host-helper--让宿主能力变成一个请求)；代表 commit：[`1c62402`](https://github.com/yunsii/wezterm-config/commit/1c62402)、[`1b538da`](https://github.com/yunsii/wezterm-config/commit/1b538da)、[`e79ae01`](https://github.com/yunsii/wezterm-config/commit/e79ae01)。
+具体形态（含 IPC 时序图、典型延迟、reuse policy）见 [outline §核心特性 4](./ai-workspace-sharing-outline.md#4-native-wezdeck-runtime--让宿主能力变成一个请求)；代表 commit：[`1c62402`](https://github.com/yunsii/wezterm-config/commit/1c62402)、[`1b538da`](https://github.com/yunsii/wezterm-config/commit/1b538da)、[`e79ae01`](https://github.com/yunsii/wezterm-config/commit/e79ae01)。
 
 ### v5 B · Agent Attention Pipeline（2026-04-21 → 04-23）
 
@@ -394,7 +394,7 @@ WezDeck 仍是本机驾驶舱（attention、worktree、launcher）；OpenClaw �
 
 ### 仍然 open
 
-- **非 Windows / 非 WSL 场景**下 native helper 子系统是否值得保留还没结论。搬到 macOS，`helper-manager.exe` 这层要整块换实现（AppleScript? ObjC?），现在没方案。
+- **非 Windows / 非 WSL 场景**下 native helper 子系统是否值得保留还没结论。搬到 macOS，`wezdeck-runtime.exe` 这层要整块换实现（AppleScript? ObjC?），现在没方案。
 - **`Alt+x` 一天的真实按键计数还没采到**。布置在 v5 E2（2026-04-29），样本日仍卡在 04-25。（其间 `Alt+x` 只拿到过性能改造 —— [`b4e33ff`](https://github.com/yunsii/wezterm-config/commit/b4e33ff) 把它改成 tick 预计算热路径 —— 和"计数采样"是两回事。）下一次取样要把它纳入"attention 三入口合计"或拆一个新的 "navigation 五入口" 分组。
 - **项目级协作 checklist 仍空缺**。v5 C 把跨项目共识固化为 user-level profile（`[validation-29..30]` / `[tool-use-36]` / `[platform-actions-38..41]`），但本仓库特有的 `manifest.json` 同步校验、`windows-shell-lib` 使用边界、`runtime-sync` 触发时机仍靠 `CLAUDE.md` 单点描述，没进入规则层。
 

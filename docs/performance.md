@@ -163,7 +163,7 @@ flowchart LR
     N1["state/agent-attention/<br/>attention.json + live-panes.json + tmux-focus/*"]
     N2["state/chrome-debug/state.json"]
     N3["state/clipboard/exports/*.png"]
-    N4["bin/helperctl.exe + helper-install-state.json"]
+    N4["bin/wezdeck-runtime-cli.exe + helper-install-state.json"]
     N5["logs/wezterm.log + helper.log"]
   end
 
@@ -176,7 +176,7 @@ flowchart LR
   subgraph WINP["Windows processes"]
     direction TB
     HP1["wezterm.exe<br/>(Lua tick, 4 Hz)"]
-    HP2["helper-manager.exe"]
+    HP2["wezdeck-runtime.exe"]
   end
 
   WP1 -- "bash logging<br/>(~50 lines/s)" --> L1
@@ -420,7 +420,7 @@ independent work, skip what hasn't changed, and treat `/mnt/c` writes as expensi
 ### Wall-time milestones
 
 Each row is a separate change layered on top of the previous. Numbers are warm-state
-median wall time (no source changes since last sync, helper-manager already running):
+median wall time (no source changes since last sync, wezdeck-runtime already running):
 
 | State | Wall time | Headline change |
 |---|---|---|
@@ -429,7 +429,7 @@ median wall time (no source changes since last sync, helper-manager already runn
 | Postsync parallel | ~60s | tmux-reload + setup-vscode-links + check-deps-updates run concurrently with output captured to temp files and replayed in stable order. Still capped by deps-check's ~40s network probes. |
 | deps-check fire-and-forget + daily | ~17.5s | `nohup ... &` + `disown`, redirect to a per-target log, gate next runs on log file's mtime date. Never waits on the network again. |
 | rsync direct → target | ~4.2s | Replaced `cp -R source → temp` + `rm -rf old target` + `mv temp → target` with `rsync -a --delete source → target`. Eliminates the cp's full-tree write and the slow `rm -rf` on `/mnt/c`. |
-| helper-install skip-if-current | ~1.1s | mtime check on `host-helper/windows/src/**` vs `helper-install-state.json` skips the ~1-1.5s `dotnet publish` round-trip when nothing changed. |
+| helper-install skip-if-current | ~1.1s | mtime check on `wezdeck-runtime/windows/src/**` vs `helper-install-state.json` skips the ~1-1.5s `dotnet publish` round-trip when nothing changed. |
 | helper-ensure skip-if-running | ~0.95s | Parse `state.env`, check `ready=1` + state.env mtime fresh + no runtime file newer than state.env → skip the ~400-500ms PowerShell round-trip. |
 | picker / render / lua-precheck idempotency | **~0.7s** | Picker `go build` skipped if binary is at least as new as every `*.go`/`go.mod`/`go.sum`. `render-tmux-bindings.sh` writes via temp + `cmp` + rename so identical output never bumps the file's mtime. `lua-precheck` touches a sentinel on success; rerun gated by `find -newer` on `lua/` + `repo-worktree-task.env` + the precheck script. |
 
