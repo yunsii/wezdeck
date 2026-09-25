@@ -30,3 +30,15 @@ corepack pnpm run build
 The production deployment is configured for Vercel through Nitro. The browser
 connects directly to the user's loopback Runtime; Vercel server code never
 tries to reach the user's local machine.
+
+## Console preview captures
+
+With the local dev server and Chrome CDP session running, refresh both static
+theme previews with:
+
+```sh
+pnpm capture:console-preview
+```
+
+The script removes development overlays before writing
+`public/console-preview-light.png` and `public/console-preview-dark.png`.

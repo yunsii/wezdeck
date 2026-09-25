@@ -16,6 +16,7 @@
     "i18n:check": "lingui check sync && lingui check missing --mode catalog",
     "typecheck": "tsc --noEmit",
     "mock-runtime": "node scripts/mock-runtime.mjs",
+    "capture:console-preview": "node scripts/capture-console-preview.mjs",
     "test:cdp": "vitest run --config vitest.cdp.config.ts",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check ."
