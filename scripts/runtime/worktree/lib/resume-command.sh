@@ -255,16 +255,16 @@ resume_command_active_permission_profile() {
 resume_command_expand_placeholders() {
   local resolved="${1:-}"
   local wezterm_repo="${2:-}"
-  # ${WEZTERM_REPO} is the canonical placeholder for the wezterm-config
+  # ${WEZDECK_REPO} is the canonical placeholder for the wezterm-config
   # repo root in worktree-task.env — used so resume commands can reference
   # repo-internal scripts (agent-launcher.sh) without hardcoding an
   # absolute path. Expanded here (rather than relying on the shell that
   # eventually runs the command) because tmux fork-execs the resolved
-  # string verbatim via `sh -c`, and a bare ${WEZTERM_REPO} would expand
+  # string verbatim via `sh -c`, and a bare ${WEZDECK_REPO} would expand
   # to empty and fail with `not found`.
   # Keep in lockstep with wezterm-x/lua/config/managed_cli.lua::expand_placeholders.
   if [[ -n "$wezterm_repo" && -n "$resolved" ]]; then
-    resolved="${resolved//\$\{WEZTERM_REPO\}/$wezterm_repo}"
+    resolved="${resolved//\$\{WEZDECK_REPO\}/$wezterm_repo}"
   fi
   printf '%s\n' "$resolved"
 }
@@ -331,7 +331,7 @@ resolve_resume_primary_command() {
 # Canonical managed-CLI argv string for every shell launch path that
 # builds a fresh primary pane (Alt+g on-demand, refresh, cold-spawn).
 # Preference: RESUME_COMMAND → bare COMMAND → profile name.
-# Always expands ${WEZTERM_REPO}. Never prints empty when a profile is known.
+# Always expands ${WEZDECK_REPO}. Never prints empty when a profile is known.
 resolve_managed_primary_command() {
   local wezterm_repo="${1:-}"
   local cwd="${2:-}"

@@ -1,0 +1,10 @@
+# name	source	class	user_links	openclaw_link
+adversarial-review	skills/adversarial-review	platform	agents,claude	yes
+brainstorm	skills/brainstorm	platform	agents,claude	yes
+cross-repo-delegate	skills/cross-repo-delegate	platform	agents,claude	yes
+human-run	skills/human-run	platform	agents,claude	yes
+worktree-recycle	skills/worktree-recycle	platform	agents,claude	yes
+yuns-engineer	skills/yuns-engineer	platform	agents,claude	yes
+habit-weekly	skills/habit-weekly	repo-local	none	no
+repo-hygiene	skills/repo-hygiene	repo-local	none	no
+wezdeck-runtime-ops	skills/wezdeck-runtime-ops	repo-local	none	no

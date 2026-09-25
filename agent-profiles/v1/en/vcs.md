@@ -56,7 +56,7 @@ Prefer a **clean, linear git graph**. Compress noise before it becomes permanent
 ### Instance: wezdeck
 
 - [vcs-34] wezdeck (`wezterm-config`) is a personal monorepo: default **primary `master`**; after acceptance **push `master` without a second "merge to main?"** question. Graph hygiene [vcs-36]–[vcs-37] applies; bare force without lease still needs explicit yes.
-- [vcs-40] **wezdeck worktree sync invariant:** linked `dev-*` trees exist for **isolation**, not review. Deliver **directly to mainline** (push/ff `master` → `origin/HEAD`; **no PR**). Then **immediately** recycle so **`dev/*` tip == `origin/HEAD`** — a lagging development branch is out of policy, not a resting state. Keep `WEZTERM_REPO` / user-level skills on the **primary** `master` checkout. Project doc: `docs/workspaces.md` → Maintenance loop.
+- [vcs-40] **wezdeck worktree sync invariant:** linked `dev-*` trees exist for **isolation**, not review. Deliver **directly to mainline** (push/ff `master` → `origin/HEAD`; **no PR**). Then **immediately** recycle so **`dev/*` tip == `origin/HEAD`** — a lagging development branch is out of policy, not a resting state. Keep `WEZDECK_REPO` / user-level skills on the **primary** `master` checkout. Project doc: `docs/workspaces.md` → Maintenance loop.
 
 ### Shared / team repos
 

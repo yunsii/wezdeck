@@ -10,7 +10,7 @@
 # Resolution shape mirrors the lua side and the Alt+g / refresh shell
 # paths: shared `worktree/lib/resume-command.sh` prefers
 # `<base>_RESUME_COMMAND`, falls back to bare `_COMMAND`, then the
-# profile name, and expands `${WEZTERM_REPO}`. open-project-session.sh
+# profile name, and expands `${WEZDECK_REPO}`. open-project-session.sh
 # accepts the resolved argv as its `[command...]` and wraps it in
 # primary-pane-wrapper.sh, which gives the same two-pane layout (left
 # agent, right shell) as a fresh visible tab.
@@ -51,7 +51,7 @@ if tmux has-session -t "$session_name" 2>/dev/null; then
 fi
 
 # Same resolver as Alt+g / refresh — do not reimplement key lookup or
-# ${WEZTERM_REPO} expansion here (hard rule: keep expand sites lockstep
+# ${WEZDECK_REPO} expansion here (hard rule: keep expand sites lockstep
 # with resume-command.sh + managed_cli.lua).
 profile="$(resume_command_active_profile "$repo_root" "$cwd")"
 agent_command_str="$(resolve_managed_primary_command "$repo_root" "$cwd")"

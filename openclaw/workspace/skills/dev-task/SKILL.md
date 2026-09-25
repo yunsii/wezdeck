@@ -176,7 +176,7 @@ Assisted-by: OpenClaw (backend=main, model=grok-4.5)
 **Do not** ask the human to run `run.sh`. On review intent or acceptance:
 
 1. **Load** `skills/adversarial-review/SKILL.md`
-2. **Run** `$REPO/scripts/dev/adversarial-review/run.sh <BASE> --writer <family> --mode strict`
+2. **Run** `$REPO/skills/adversarial-review/run.sh <BASE> --writer <family> --mode strict`
 3. **Report** L0-21 disclosure (writer / form / reviewer / refuter / conclusions)
 
 「对抗审查」= multi-role (find+refute minimum). Same agent twice with opposite

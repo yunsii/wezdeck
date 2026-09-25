@@ -331,7 +331,7 @@ func stopSessionBridgeWatch(r attentionRow) bool {
 	sh := os.Getenv("SESSION_BRIDGE_SH")
 	if sh == "" {
 		// Fallback: sibling of attention-jump.sh is not stable; try common repo layout via env.
-		if root := os.Getenv("WEZTERM_REPO"); root != "" {
+		if root := os.Getenv("WEZDECK_REPO"); root != "" {
 			sh = root + "/openclaw/scripts/session-bridge.sh"
 		}
 	}

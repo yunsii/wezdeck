@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh running"
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/codex.sh running"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh waiting"
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/codex.sh waiting"
           }
         ]
       }
@@ -25,11 +25,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh done"
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/codex.sh done"
           },
           {
             "type": "command",
-            "command": "bash __WEZTERM_REPO__/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
+            "command": "bash __WEZDECK_REPO__/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
           }
         ]
       }
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh resolved"
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/codex.sh resolved"
           }
         ]
       }
@@ -49,11 +49,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh resolved"
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/codex.sh resolved"
           },
           {
             "type": "command",
-            "command": "bash __WEZTERM_REPO__/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
+            "command": "bash __WEZDECK_REPO__/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
           }
         ]
       }
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh pane-evict"
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/codex.sh pane-evict"
           }
         ]
       }

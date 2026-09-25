@@ -497,7 +497,7 @@ run_runtime_native_flow() {
   mkdir -p "$TARGET_RUNTIME_DIR" "$TARGET_NATIVE_DIR"
   sync_trace "step=prepare target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR"
 
-  repo_root_path="${WEZTERM_REPO_ROOT:-}"
+  repo_root_path="${WEZDECK_REPO_ROOT:-}"
   if [[ -z "$repo_root_path" ]]; then
     repo_root_path="$(cd "$REPO_ROOT" && pwd -P)"
   fi

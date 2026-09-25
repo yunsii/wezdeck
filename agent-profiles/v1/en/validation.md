@@ -193,7 +193,7 @@ When the user asks for 对抗审查 / adversarial review, or acceptance recommen
 - [validation-51] 「对抗审查」requires at least **find + refute** (repro recommended). A solo monologue is **设计批判** only — never label it 对抗审查.
 - [validation-52] Prefer backends **outside the writer family** (writer-aware selection). Same-model multi-role is allowed only when availability forces it; label **SINGLE-MODEL** / degraded.
 - [validation-53] **Single source** of the skill+runner unit:
-  `scripts/dev/adversarial-review/` (SKILL.md + run.sh + lib + prompts).
+  `skills/adversarial-review/` (SKILL.md + run.sh + lib + prompts).
   Discovery entrypoints are **symlinks** only (never a second SKILL body):
   1. User-level: `~/.agents/skills/adversarial-review` (+ `~/.claude/skills/…`)
   2. In-repo: `skills/adversarial-review`, `openclaw/workspace/skills/adversarial-review`
@@ -201,7 +201,7 @@ When the user asks for 对抗审查 / adversarial review, or acceptance recommen
 - [validation-54] Resolve **TOOL_HOME** (where `run.sh` lives) separately from **TARGET**
   (git repo under review). Typical invoke from any cwd:
   `$TOOL_HOME/run.sh <BASE_REF> --repo <TARGET> --writer <main|claude|codex|human> --mode strict`
-  Do **not** assume `./scripts/dev/adversarial-review` exists inside TARGET.
+  Do **not** assume `./skills/adversarial-review` exists inside TARGET.
 - [validation-55] Report with disclosure: writer, form/degraded/reason, reviewer, refuter, **impact_filter** (if used), repro status, skipped_gates, conclusions bound to gates. Align with openclaw L0-21 spirit.
 - [validation-56] Review uses **host headless** CLIs (`claude` / `codex-gpt` / `codex-grok`), not OpenClaw ACP `CODEX_HOME` by default.
 - [validation-57] If TOOL_HOME cannot be resolved (tool not linked/installed), say so and fall back to design critique or skip — do not invent a green multi-role review.

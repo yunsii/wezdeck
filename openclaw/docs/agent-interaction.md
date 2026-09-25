@@ -200,15 +200,15 @@ cat smoke-ok.txt   # 期望: headless-ok
 cd /path/to/wezdeck   # 或 claw worktree
 
 # 跨模型（推荐）
-scripts/dev/adversarial-review/run.sh HEAD~1 \
+skills/adversarial-review/run.sh HEAD~1 \
   --reviewer claude --refuter grok --mode strict
 
 # 同能力多角色（SINGLE-MODEL，仍跑 find+refute）
-scripts/dev/adversarial-review/run.sh HEAD~1 \
+skills/adversarial-review/run.sh HEAD~1 \
   --reviewer claude --refuter claude --mode strict
 
 # 只看计划、不调模型
-scripts/dev/adversarial-review/run.sh HEAD~1 --dry-run \
+skills/adversarial-review/run.sh HEAD~1 --dry-run \
   --reviewer claude --refuter grok
 ```
 
@@ -265,7 +265,7 @@ Claw 侧速查：
 | `error-closed-loop-scope.md` | 错误闭环覆盖范围 vs OpenClaw 平台边界 |
 | `docs/adversarial-review.md` | 三门与披露 |
 | `scripts/dev/host-agent-invoke/` | 共享 host headless invoke（工单 write · 审查 read） |
-| `scripts/dev/adversarial-review/` | 审查 headless（provider → host-agent-invoke） |
-| `scripts/dev/cross-repo-delegate/` | 跨仓工单 + Ticket-headless worker |
+| `skills/adversarial-review/` | 审查 headless（provider → host-agent-invoke） |
+| `skills/cross-repo-delegate/` | 跨仓工单 + Ticket-headless worker |
 | `openclaw/scripts/agent-matrix-status.sh` | 本机能力快照 |
 | `workspace/AGENTS.md` | L0、推荐卡、C3 宪法前缀 |

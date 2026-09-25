@@ -106,7 +106,7 @@ Left → right (pressure badges stay absent while healthy — presence *is* the 
 ```bash
 scripts/dev/workflow-timeline.sh --summary
 scripts/dev/habit-report.sh --days 7
-# weekly write-up: load skill habit-weekly → scripts/dev/habit-weekly/run.sh
+# weekly write-up: load skill habit-weekly → skills/habit-weekly/run.sh
 ```
 
 ## 🧭 How It Works

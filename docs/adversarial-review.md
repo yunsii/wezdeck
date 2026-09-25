@@ -1,6 +1,6 @@
 # Adversarial Review (cross-agent) — v0.2
 
-**Authority:** `scripts/dev/adversarial-review/` is the **only** skill+runner unit
+**Authority:** `skills/adversarial-review/` is the **only** skill+runner unit
 (SKILL.md + run.sh + lib + prompts). All other paths are **symlinks**.
 **Procedure:** that directory's `SKILL.md`.
 **This file:** knowledge base (how/why), not a second procedure.
@@ -13,7 +13,7 @@ operator of this script.
 
 | Surface | Discovery |
 | --- | --- |
-| **Single source** | `scripts/dev/adversarial-review/` |
+| **Single source** | `skills/adversarial-review/` |
 | **User-level host** | `~/.agents/skills/adversarial-review` → source |
 | **Claude skills** | `~/.claude/skills/adversarial-review` → agents (or source) |
 | **OpenClaw workspace** | `openclaw/workspace/skills/adversarial-review` → source |
@@ -25,7 +25,7 @@ operator of this script.
 (`--repo` or cwd git toplevel). Do not require TARGET to vendor the scripts.
 
 
-`scripts/dev/adversarial-review/` runs a **cross-agent adversarial code review**
+`skills/adversarial-review/` runs a **cross-agent adversarial code review**
 over a diff, in three gates, and classifies findings so you can use the tool to
 **recursively improve itself** (dogfood) without silent false confidence.
 
@@ -274,7 +274,7 @@ lib/select-backends.sh --writer codex --json --no-probe
 ## Usage
 
 ```bash
-# TOOL_HOME = scripts/dev/adversarial-review (or linked user-level skill dir)
+# TOOL_HOME = skills/adversarial-review (or linked user-level skill dir)
 $TOOL_HOME/run.sh <BASE_REF> [options]
 
   --repo PATH        TARGET git repo to review (default: cwd git toplevel)
@@ -333,7 +333,7 @@ run.sh HEAD~1 --writer main --project-slice-file "$PACK_DIR/project_slice.keep.j
 Intended loop (human or agent supervised — **no autonomous rewrite loop**):
 
 ```text
-1. change scripts/dev/adversarial-review (or claw-worktree path core)
+1. change skills/adversarial-review (or claw-worktree path core)
 2. run.sh dogfood --mode strict
 3. read survivors / needs_human
 4. apply targeted fixes
@@ -343,7 +343,7 @@ Intended loop (human or agent supervised — **no autonomous rewrite loop**):
 
 `dogfood` scopes the diff to:
 
-- `scripts/dev/adversarial-review/**`
+- `skills/adversarial-review/**`
 - `docs/adversarial-review.md`
 - `openclaw/scripts/claw-worktree.sh` (path core often co-evolves)
 
@@ -443,7 +443,7 @@ run.sh HEAD~1 --keep-pack /tmp/adv-pack --writer main --dry-run --no-probe
 ## Structure
 
 ```
-scripts/dev/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
+skills/adversarial-review/     # SINGLE SOURCE (skill + runner unit)
   SKILL.md                   agent procedure (only body)
   run.sh                     three-gate orchestration (agent-agnostic)
   lib/provider.sh            plugin loader + dispatch (NO backend names)

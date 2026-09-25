@@ -12,7 +12,7 @@ runtime_log_init() {
   fi
 
   local repo_root config_file
-  repo_root="${WEZTERM_REPO_ROOT:-$(cd "$__RUNTIME_LOG_LIB_DIR/../.." && pwd)}"
+  repo_root="${WEZDECK_REPO_ROOT:-$(cd "$__RUNTIME_LOG_LIB_DIR/../.." && pwd)}"
   config_file="$repo_root/wezterm-x/local/runtime-logging.sh"
 
   # Source canonical WSL path constants so the default log location

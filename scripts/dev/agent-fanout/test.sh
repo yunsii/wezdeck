@@ -74,7 +74,7 @@ fanout_run_jobs --out "$out_dir" --job "p1|claude|$tmp/diverge-x.full.md" >/dev/
 check "diverge-path mock is JSON array" jq -e 'type=="array" and length>0' "$out_dir/p1.md"
 
 # agent_text still direct (mock via provider basename)
-diverge_pf="$here/../brainstorm/prompts/diverge.md"
+diverge_pf="$here/../../../skills/brainstorm/prompts/diverge.md"
 got="$(printf '=== PROBLEM ===\nx\n' | run_agent claude "$diverge_pf" 2>/dev/null)"
 check "run_agent mock ideas" jq -e 'type=="array" and length>0' <<<"$got"
 
@@ -82,13 +82,13 @@ check "run_agent mock ideas" jq -e 'type=="array" and length>0' <<<"$got"
 # (we already loaded fanout; spawn clean shell)
 clean="$(bash -c '
   set -euo pipefail
-  . "'"$here"'/../adversarial-review/lib/provider.sh"
+  . "'"$here"'/../../../skills/adversarial-review/lib/provider.sh"
   if declare -F fanout_call >/dev/null 2>&1; then echo LOADED; else echo CLEAN; fi
 ')"
 check "provider alone has no fanout_call" test "$clean" = "CLEAN"
 
 # brainstorm regression
-"$here/../brainstorm/test.sh" >/dev/null 2>&1
+"$here/../../../skills/brainstorm/test.sh" >/dev/null 2>&1
 check "brainstorm mock passes" test $? -eq 0
 
 check "providers non-empty" test "$("$here/run.sh" providers | wc -l)" -ge 1

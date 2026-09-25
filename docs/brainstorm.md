@@ -1,6 +1,6 @@
 # Brainstorm — Design Notes
 
-**Authority:** `scripts/dev/brainstorm/` is the only skill+runner unit
+**Authority:** `skills/brainstorm/` is the only skill+runner unit
 (`SKILL.md` + `run.sh` + `lib/` + `prompts/`); other paths are symlinks.
 **Procedure:** that directory's `SKILL.md`.
 **This file:** design rationale (how/why) — not a second procedure.
@@ -413,7 +413,7 @@ profile is welcome, but the review standard lives in the role setting.
 
 ## Related
 
-- Runner + procedure: `scripts/dev/brainstorm/SKILL.md`, `run.sh`, `prompts/`
+- Runner + procedure: `skills/brainstorm/SKILL.md`, `run.sh`, `prompts/`
 - Sibling skill (provider layer source, same effort/no-resume design):
   [`adversarial-review.md`](adversarial-review.md)
 - Link installer: `scripts/dev/link-platform-skills.sh`

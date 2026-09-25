@@ -107,7 +107,7 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
     - 关键结论: …（每条绑定 find/refute/repro 哪一闸）
     ```
     **选路：** 写码家族默认不审自己；`--writer` 自动选 reviewer/refuter（见
-    `scripts/dev/adversarial-review/lib/select-backends.sh`）。
+    `skills/adversarial-review/lib/select-backends.sh`）。
 22. **外部产物落盘 · 仓库外优先**（L1 · claw 侧，不必同步 host profile）— OpenClaw
     下载/接收的外部文件（飞书附件、`curl`/`wget` 拉取、送审稿等**非本仓源码**）
     默认落 **仓库外绝对路径** `~/.openclaw/downloads/`。
@@ -321,7 +321,7 @@ Material failure never re-run green → 状态不得为 **成功**.
 | Host shell risk / exec hygiene | `skills/exec-risk/SKILL.md` · `openclaw/scripts/claw-script-run.sh` |
 | Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
 | Terminology / 文档分层 | `openclaw/docs/terminology.md` |
-| Adversarial review | **单源** `scripts/dev/adversarial-review/`（SKILL+runner）· 用户级链 `~/.agents/skills/adversarial-review` · 仓内链 `skills/` / `workspace/skills/` · `link-platform-skills.sh` · **profiles** `validation.md`；TOOL≠TARGET（`--repo`）；人只下意图；L0-21 披露 |
+| Adversarial review | **单源** `skills/adversarial-review/`（SKILL+runner）· 用户级链 `~/.agents/skills/adversarial-review` · 仓内链 `skills/` / `workspace/skills/` · `link-platform-skills.sh` · **profiles** `validation.md`；TOOL≠TARGET（`--repo`）；人只下意图；L0-21 披露 |
 | Mode theory / ACP | `openclaw/docs/agent-architecture.md`, `openclaw/README.md` |
 | Interaction + 执行通道 | `openclaw/docs/agent-interaction.md` · 平台 `docs/agent-scheduling.md` |
 | Agent matrix probe | `openclaw/scripts/agent-matrix-status.sh` |

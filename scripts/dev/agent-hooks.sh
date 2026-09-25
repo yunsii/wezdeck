@@ -143,7 +143,7 @@ check_provider() {
 merge_config() {
   local source="$1" template="$2" output="$3"
   jq -s --arg repo "$repo_root" '
-    def render: walk(if type == "string" then gsub("__WEZTERM_REPO__"; $repo) else . end);
+    def render: walk(if type == "string" then gsub("__WEZDECK_REPO__"; $repo) else . end);
     (.[0] // {}) as $user | (.[1] | render | .hooks) as $addition
     | if (($user | type) != "object" or (($user.hooks // {}) | type) != "object") then
         error("user config must contain an object-valued hooks field")

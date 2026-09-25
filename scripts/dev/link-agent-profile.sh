@@ -29,7 +29,13 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/../.." && pwd)"
+default_repo_root="$(cd "$script_dir/../.." && pwd)"
+repo_root="${WEZDECK_REPO:-$default_repo_root}"
+repo_root="$(cd "$repo_root" 2>/dev/null && pwd -P)" || {
+  printf 'agent-profile: WEZDECK_REPO is not an existing checkout: %s\n' \
+    "${WEZDECK_REPO:-$repo_root}" >&2
+  exit 1
+}
 source_dir="$repo_root/agent-profiles/v1/en"
 dry_run=0
 force=0

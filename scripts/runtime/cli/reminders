@@ -30,7 +30,7 @@ fi
 if ! crontab -l >/dev/null 2>&1; then
   printf 'no user crontab installed.\n' >&2
   printf 'template: %s/wezterm-x/local.example/crontab\n' \
-    "${WEZTERM_REPO:-$HOME/github/wezterm-config}" >&2
+    "${WEZDECK_REPO:-$HOME/github/wezterm-config}" >&2
   exit 0
 fi
 

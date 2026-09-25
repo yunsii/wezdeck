@@ -29,19 +29,21 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Repository-owned config/skill/script renames, compatibility layers, migration
   warnings, or deciding whether to keep an old interface:
   Read [`docs/compatibility-policy.md`](docs/compatibility-policy.md).
+- External capability source ownership, user-level links, agent profiles,
+  shell injection, `WEZDECK_REPO`, or path resolution:
+  Read [`docs/skill-sources.md`](docs/skill-sources.md).
 - Repo hygiene (doc/code size budgets, broken relative links, pre-commit gate, `run.sh audit`):
-  Read [`docs/daily-workflow.md#repo-hygiene`](docs/daily-workflow.md#repo-hygiene); run `scripts/dev/repo-hygiene/`.
-
+  Read [`docs/daily-workflow.md#repo-hygiene`](docs/daily-workflow.md#repo-hygiene); run `skills/repo-hygiene/`.
 - Resetting a primary checkout or long-lived `dev-*` workstation / 「重置开发分支」 /
   recycle onto `origin/HEAD` / closing a round then starting the next task:
-  Load platform skill [`scripts/dev/worktree-recycle/SKILL.md`](scripts/dev/worktree-recycle/SKILL.md)
+  Load platform skill [`skills/worktree-recycle/SKILL.md`](skills/worktree-recycle/SKILL.md)
   (linked as `worktree-recycle`); do **not** hand-roll `git reset` or ask the
   human to run CLI. Fast path: fetch + dirty check + hard-reset + remote sync;
   delivery gate and project init are off by default. Docs:
   [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-long-lived-dev--round-reset).
   **Standing policy:** after a worktree round is delivered onto mainline, always
   recycle the `dev-*` tree so the next round starts from `origin/HEAD`; keep
-  primary `master` / `WEZTERM_REPO` as the machine source of truth
+  primary `master` / `WEZDECK_REPO` as the machine source of truth
   ([Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy)).
 - Workspace definitions or workspace behavior:
   Read [`docs/workspaces.md`](docs/workspaces.md).
@@ -113,7 +115,7 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   troubleshooting (env knobs, file paths):
   Read [`docs/diagnostics.md`](docs/diagnostics.md).
 - Personal development-habit weekly report（开发习惯周报 / habit weekly）:
-  Load repo-local skill [`scripts/dev/habit-weekly/SKILL.md`](scripts/dev/habit-weekly/SKILL.md)
+  Load repo-local skill [`skills/habit-weekly/SKILL.md`](skills/habit-weekly/SKILL.md)
   (`habit-weekly`; not linked to `~/.agents/skills`); collector is
   `scripts/dev/habit-report.sh`. Not `coco-weekly-report` (business delivery).
 - Guest OOM hardening (distro restart loop, reclaim livelock, high-order
@@ -167,7 +169,7 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   deciding whether a value belongs in `wezterm-x/local/shared.env`
   vs `~/.config/shell-env.d/`:
   Read [`docs/setup.md#env-loading-model`](docs/setup.md#env-loading-model).
-- Agent-CLI launch chain, `agent-launcher.sh`, the `${WEZTERM_REPO}`
+- Agent-CLI launch chain, `agent-launcher.sh`, the `${WEZDECK_REPO}`
   placeholder used in `config/worktree-task.env`, or any path that
   spawns `claude` / `codex`:
   Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
@@ -215,16 +217,16 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Keep workspace definitions in `wezterm-x/workspaces.lua`, not inline in `wezterm.lua`.
 - Keep private machine and project overrides in `wezterm-x/local/` and keep tracked templates in `wezterm-x/local.example/`.
 - User-level secrets (CNB tokens, third-party API keys, etc.) live under `~/.config/shell-env.d/<name>.env` — the canonical convention auto-discovered by both `~/.zshrc` and `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`. Do not introduce new ad-hoc dotfile loaders that hardcode specific filenames; drop a file in `shell-env.d/` instead. Repo-machine config consumed by both Lua and shell stays in `wezterm-x/local/shared.env` (synced to Windows runtime). Full rules: [`docs/setup.md#env-loading-model`](docs/setup.md#env-loading-model).
-- Every agent-CLI launch path must terminate at `scripts/runtime/agent-launcher.sh <profile>` — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn all share this single env-loading site. Do not invoke `claude` / `codex` directly from a `tmux new-window` / `respawn-pane` call site or from a new `*_RESUME_COMMAND` in `config/worktree-task.env`. Shell paths that resolve the resume argv share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command` (cold-spawn included — do not reimplement key lookup). The `${WEZTERM_REPO}` placeholder used in `worktree-task.env` is expanded in lockstep by `resume-command.sh` and `wezterm-x/lua/config/managed_cli.lua::parse_managed_cli_env`.
-- Prefer updating an existing doc in `docs/` over adding a new sibling file; keep presentations under `docs/presentations/`. When a topic doc is already over the soft line budget (see `scripts/dev/repo-hygiene/budgets.conf`), split by decision domain instead of growing it further.
+- Every agent-CLI launch path must terminate at `scripts/runtime/agent-launcher.sh <profile>` — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn all share this single env-loading site. Do not invoke `claude` / `codex` directly from a `tmux new-window` / `respawn-pane` call site or from a new `*_RESUME_COMMAND` in `config/worktree-task.env`. Shell paths that resolve the resume argv share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command` (cold-spawn included — do not reimplement key lookup). The `${WEZDECK_REPO}` placeholder used in `worktree-task.env` is expanded in lockstep by `resume-command.sh` and `wezterm-x/lua/config/managed_cli.lua::parse_managed_cli_env`.
+- Prefer updating an existing doc in `docs/` over adding a new sibling file; keep presentations under `docs/presentations/`. When a topic doc is already over the soft line budget (see `skills/repo-hygiene/budgets.conf`), split by decision domain instead of growing it further.
 
 - Design user-facing features keyboard-first: every new or changed interaction must have a keyboard path, and mouse bindings are only acceptable as fallbacks (for example cross-pane text selection or quick pane focus). Weigh key ergonomics when picking a binding — reachability, OS- / IME-level hotkey conflicts (Ctrl+Space, Alt+Shift, etc.), chord depth, and whether the action already has a keyboard home in `docs/keybindings.md`.
 - Design for an **observable development process** (stance #3): new/changed hot paths must leave reviewable signals (state-transition/outcome category rows; threshold-gated latency when input-feel matters; badges or `workflow-timeline` / `habit-report` when glance or day/week reconstruction is needed). Prefer existing categories / status segments / projectors over ad-hoc prints. Blind behavior changes are incomplete. Detail: [`docs/logging-conventions.md`](docs/logging-conventions.md) · [`docs/diagnostics.md`](docs/diagnostics.md).
 - `wezterm-x/commands/manifest.json` is the single source of truth for every shortcut. Adding or renaming a hotkey means: (1) add / update the manifest item with a `binding` field; (2) for wezterm-layer bindings, add the named handler to `wezterm-x/lua/ui/action_registry.lua`; (3) for tmux-chord leaves, the `binding.exec` tmux-action string is everything — no code changes elsewhere; `scripts/runtime/render-tmux-bindings.sh` regenerates `wezterm-x/tmux/chord-bindings.generated.conf` during `wezdeck-runtime-ops` and `tmux.conf` loads it via `source-file -Fq`. Do not re-declare keys or actions in `keymaps.lua` or `tmux.conf` directly; both are driven by the manifest now. Missing or unregistered ids show up as `(unregistered)` in `scripts/dev/hotkey-usage-report.sh` — treat that report as the audit signal.
 - Per-machine user overrides live in `wezterm-x/local/keybindings.lua` keyed by manifest id (string → new key, `false` → disable, list → per-variant). The WezTerm side applies them at reload; the tmux-chord side applies them when the renderer runs. Template: `wezterm-x/local.example/keybindings.lua`. Full rules in `docs/keybindings.md`.
 - If behavior, keybindings, workspace semantics, tmux UI, or diagnostics change, update the matching docs in the same edit.
-- Markdown with mermaid diagrams: after editing a mermaid code block, run `scripts/dev/check-mermaid.sh` (validates every block via `mermaid.parse` under jsdom — real grammar check, no chromium; deps cached outside the repo). Do not hand-eyeball mermaid syntax. Commits also run this via `scripts/dev/repo-hygiene/` pre-commit when staged `.md` files change.
-- Repo hygiene: install once with `scripts/dev/repo-hygiene/install-hooks.sh`. Every commit runs the L0 gate (broken relative doc links, `bash -n` on staged shells, mermaid on staged docs, secret heuristics, new/crossing line-budget violations, and `README.md` ↔ `README.zh-CN.md` structural parity when either is staged). Full-repo report: `scripts/dev/repo-hygiene/run.sh audit`. Do not use `--no-verify` / `WEZTERM_HYGIENE_SKIP=1` except emergencies. Naming: this is **卫生审计**, not 对抗审查 / 设计评审. Details: [`docs/daily-workflow.md`](docs/daily-workflow.md#repo-hygiene).
+- Markdown with mermaid diagrams: after editing a mermaid code block, run `scripts/dev/check-mermaid.sh` (validates every block via `mermaid.parse` under jsdom — real grammar check, no chromium; deps cached outside the repo). Do not hand-eyeball mermaid syntax. Commits also run this via `skills/repo-hygiene/` pre-commit when staged `.md` files change.
+- Repo hygiene: install once with `skills/repo-hygiene/install-hooks.sh`. Every commit runs the L0 gate (broken relative doc links, `bash -n` on staged shells, mermaid on staged docs, secret heuristics, new/crossing line-budget violations, and `README.md` ↔ `README.zh-CN.md` structural parity when either is staged). Full-repo report: `skills/repo-hygiene/run.sh audit`. Do not use `--no-verify` / `WEZTERM_HYGIENE_SKIP=1` except emergencies. Naming: this is **卫生审计**, not 对抗审查 / 设计评审. Details: [`docs/daily-workflow.md`](docs/daily-workflow.md#repo-hygiene).
 
 - After runtime config changes, run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (Bash, not the `Skill` tool — see the note above). **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is left untouched). Use `--live` to skip the gate; `WEZTERM_SYNC_SKIP_CANARY_AUTO=1` to stage without probing. Full flow: [`docs/daily-workflow.md`](docs/daily-workflow.md).
 - Do not run Git commands that can contend on the index lock in parallel.
@@ -233,6 +235,6 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   Finish a round by delivering **directly onto mainline** (`origin/HEAD` / primary
   `master` push or ff — **no pull request**), then **immediately** recycle so the
   `dev-*` tip **stays equal to** `origin/HEAD` (lagging `dev/*` is out of policy).
-  Keep `WEZTERM_REPO` / platform skills / `agent-tools.env` on the primary tree.
+  Keep `WEZDECK_REPO` / platform skills / `agent-tools.env` on the primary tree.
   Detail:
   [`docs/workspaces.md#maintenance-loop-wezdeck-standing-policy`](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy).

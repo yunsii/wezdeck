@@ -20,12 +20,12 @@ Use this doc when you need to apply or verify changes.
 
 ### Closing a `dev-*` development round
 
-**Standing close-out (wezdeck):** worktrees isolate changes; deliver **directly to mainline (no PR)**, then always recycle the `dev-*` workstation onto `origin/HEAD`, and keep primary `master` / `WEZTERM_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
+**Standing close-out (wezdeck):** worktrees isolate changes; deliver **directly to mainline (no PR)**, then always recycle the `dev-*` workstation onto `origin/HEAD`, and keep primary `master` / `WEZDECK_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
 
 Reset a primary checkout or long-lived linked workstation (`dev-*`) in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery, push, or bootstrap. **Humans / debug CLI:**
 
 ```bash
-scripts/dev/worktree-recycle/run.sh recycle -y --task "describe the next round"
+skills/worktree-recycle/run.sh recycle -y --task "describe the next round"
 # equivalent hard ops only:
 scripts/runtime/worktree/worktree-task recycle -y --task "describe the next round"
 ```
@@ -192,23 +192,23 @@ Layered checks for doc/code rot (not 对抗审查, not 设计评审):
 
 | Layer | When | Command |
 | --- | --- | --- |
-| L0 pre-commit | every commit (after install) | git hook → `scripts/dev/repo-hygiene/run.sh pre-commit` |
-| L1 audit | round close / “全面评审” / recycle prep | `scripts/dev/repo-hygiene/run.sh audit` |
+| L0 pre-commit | every commit (after install) | git hook → `skills/repo-hygiene/run.sh pre-commit` |
+| L1 audit | round close / “全面评审” / recycle prep | `skills/repo-hygiene/run.sh audit` |
 | L2 judgment | after audit queues debt | split oversized topics by decision domain; refresh stale semantics by hand/agent |
 
 Install once per clone / shared git dir (covers all worktrees):
 
 ```bash
-scripts/dev/repo-hygiene/install-hooks.sh
+skills/repo-hygiene/install-hooks.sh
 ```
 
-L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, **new** files (or newly crossing) over hard line budgets in `scripts/dev/repo-hygiene/budgets.conf`, and — when `README.md` / `README.zh-CN.md` is staged — **bilingual README parity** (heading-level outline, relative link set, fence/table counts, shared durable tokens in `scripts/dev/repo-hygiene/readme-parity.conf`, language switcher). Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
+L0 fails the commit on: broken **relative file** links in staged markdown, `bash -n` failures on staged shells, mermaid parse errors on staged docs, secret heuristics, **new** files (or newly crossing) over hard line budgets in `skills/repo-hygiene/budgets.conf`, and — when `README.md` / `README.zh-CN.md` is staged — **bilingual README parity** (heading-level outline, relative link set, fence/table counts, shared durable tokens in `skills/repo-hygiene/readme-parity.conf`, language switcher). Historical over-budget files are allowlisted for commit but still listed by `audit`. Heading-anchor mismatches also fail by default (GFM-style `hook--status` slugs); set `WEZTERM_HYGIENE_SOFT_ANCHORS=1` only if you hit a false positive.
 
 `run.sh audit` prints a **summary first** (samples of each bucket). Pass `--verbose` for full lists, `--backticks` for basename/path backtick heuristics (off by default — too noisy for prose filenames), `--strict` to fail on non-allowlisted OVER-HARD files.
 
 Emergency only: `WEZTERM_HYGIENE_SKIP=1` or `--no-verify` (both discouraged).
 
-Fixture self-check: `scripts/dev/repo-hygiene/test.sh`.
+Fixture self-check: `skills/repo-hygiene/test.sh`.
 
 ## Commit Workflow
 

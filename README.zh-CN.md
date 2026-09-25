@@ -104,7 +104,7 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 ```bash
 scripts/dev/workflow-timeline.sh --summary
 scripts/dev/habit-report.sh --days 7
-# 周报成文：加载 skill habit-weekly → scripts/dev/habit-weekly/run.sh
+# 周报成文：加载 skill habit-weekly → skills/habit-weekly/run.sh
 ```
 
 ## 🧭 工作原理

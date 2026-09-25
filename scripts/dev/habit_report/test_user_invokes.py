@@ -47,7 +47,7 @@ class SkillPathTests(unittest.TestCase):
         )
         self.assertEqual(
             skill_from_path(
-                "/home/u/github/wezterm-config/scripts/dev/adversarial-review/SKILL.md"
+                "/home/u/github/wezterm-config/skills/adversarial-review/SKILL.md"
             ),
             "adversarial-review",
         )

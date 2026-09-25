@@ -330,7 +330,7 @@ scripts/dev/habit-report.sh --paths
 ```
 
 **Weekly write-up (stable template):** repo-local skill
-[`scripts/dev/habit-weekly/`](../scripts/dev/habit-weekly/) — agent loads via
+[`skills/habit-weekly/`](../skills/habit-weekly/) — agent loads via
 `AGENTS.md` and runs `run.sh` (default: **previous complete Mon–Sun**;
 `--week this` for the in-progress week Mon→today; WakaTime on by default;
 `--write` archives under `$WSL_WORKFLOW_DIR/habit-weekly/`; **`--push`**

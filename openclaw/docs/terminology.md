@@ -229,7 +229,7 @@ TUI/Headless = **Host 产品怎么跑**；ACP = **Claw 怎么接到 Host 产品*
 | **L1 场景法则 · Claw** | 只约束飞书/Main 交互与编排 | 飞书克制、精简结果卡、台账、推荐卡、C3 前缀 | **不必**抄进 agent-profiles |
 | **L1 场景法则 · Host** | 只约束本机 TUI/工具习惯 | permissions 分层、通用 tool-use 细节 | **不必**塞进飞书 always-on |
 | **Skill（可执行规程）** | Agent **加载后执行**；人只下意图 | `adversarial-review` · `dev-task` · `error-closed-loop` | 改 skill 即改行为 |
-| **Runner / 脚本** | 唯一实现细节 | `scripts/dev/adversarial-review/run.sh` | 一处实现，多处发现 |
+| **Runner / 脚本** | 唯一实现细节 | `skills/adversarial-review/run.sh` | 一处实现，多处发现 |
 | **知识库 / 说明文档** | 给人与 agent **查阅**；不默认进 always-on | 本文件、`agent-architecture.md`、`terminology.md`、`error-closed-loop-scope.md` | 可长、可表、可演进 |
 | **实例规则** | 核心原则在某仓的落点 | wezdeck = 个人主分支实例；团队仓 = 团队偏隔离 | 实例可变，核心不改 |
 

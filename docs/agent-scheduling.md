@@ -40,7 +40,7 @@
 | **Ticket-headless** | 任意 agent 跑 `delegate`（Host TUI 或 Main） | host headless | claude/codex/grok | `~/.agent/tickets/` + result JSON | SKIP（`DELEGATE_HEADLESS`） |
 | **Review-headless** | adversarial-review / brainstorm | host headless | 同上（provider 插件） | stdout JSON / out 目录 | SKIP |
 
-票仓 **单源**：`scripts/dev/cross-repo-delegate/` → `~/.agent/tickets/`。  
+票仓 **单源**：`skills/cross-repo-delegate/` → `~/.agent/tickets`。
 **禁止**另建 OpenClaw 私有票库。
 
 ---
@@ -134,7 +134,7 @@ Mode 2 的 `--to .` / `--from .` 按 **主 worktree 根** 解析 allowlist（`gi
 | 源仓 TUI 常驻写目标仓 | 目标仓开发走 Mode 2（本仓 cwd）或 Mode 3（目标 `delegate-*` worktree） |
 | 「上下文更好」作绕过理由 | 紧耦合同意图共改才用战术挂载；委托 / 异步仍走票 |
 
-手续与触发词：[`scripts/dev/cross-repo-delegate/SKILL.md`](../scripts/dev/cross-repo-delegate/SKILL.md)。
+手续与触发词：[`skills/cross-repo-delegate/SKILL.md`](../skills/cross-repo-delegate/SKILL.md)。
 
 ---
 
@@ -162,8 +162,8 @@ Ticket 状态机 / phase-view / apply **留在** `cross-repo-delegate/lib/worker
 | 路径 | 角色 |
 | --- | --- |
 | `scripts/dev/host-agent-invoke/` | 共享 host headless invoke |
-| `scripts/dev/cross-repo-delegate/` | 票 + Ticket-headless worker |
-| `scripts/dev/adversarial-review/` | Review-headless（provider，迁移延期） |
+| `skills/cross-repo-delegate/` | 票 + Ticket-headless worker |
+| `skills/adversarial-review/` | Review-headless（provider，迁移延期） |
 | `scripts/dev/agent-fanout/` | 多 backend 并行（依赖 provider） |
 | `scripts/runtime/agent-launcher.sh` | **仅**交互 TUI |
 | `openclaw/scripts/patch-acpx-attention-skip.sh` | ACP attention skip（OpenClaw 侧） |

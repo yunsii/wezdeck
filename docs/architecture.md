@@ -186,6 +186,32 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `tmux.conf`: tmux layout and status rendering
 - `agent-profiles/`: hosted source for versioned user-level agent profiles; not the project-level instruction source for this repo
 
+## Skill Sources And Install Surfaces
+
+There are two repository-owned skill classes:
+
+- **Platform skills** live under `skills/<name>/` and are listed explicitly
+  in `scripts/dev/link-platform-skills.sh`. That script is the only installer;
+  it links the same source tree to `~/.agents/skills/<name>`, optionally
+  `~/.claude/skills/<name>`, `openclaw/workspace/skills/<name>`, and the
+  repository's `skills/<name>` discovery path. `human-run` belongs to this
+  class.
+- **Repo-local skills** live as real directories under `skills/<name>/` and are
+  not installed to user-level skill directories. `wezdeck-runtime-ops` is
+  repo-local because it operates this checkout's runtime and configuration;
+  agents invoke its scripts by repository path.
+
+`skills/<name>` is therefore not an ownership signal by itself: platform
+entries there are symlinks, while repo-local entries are real directories.
+Do not add a repo-local skill to `link-platform-skills.sh` just to make it
+discoverable. Add a platform skill to that installer only when its source,
+user-level installation, and in-repo discovery should all move together.
+
+Platform skill scripts must resolve their physical source path with
+`readlink -f` before walking to the repository root. A user-level symlink such
+as `~/.agents/skills/human-run` otherwise makes a relative `../../..` lookup
+land under the user's home instead of the checkout.
+
 ## Startup Invariants
 
 - Managed project tabs bootstrap through `scripts/runtime/open-project-session.sh`.
@@ -195,7 +221,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - The managed command runs under `primary-pane-wrapper.sh`, which traps INT/HUP/TERM and execs the user's login shell after the agent returns. Logs each transition under `category=primary_pane` so pane deaths can be diagnosed post-mortem.
 - `run-managed-command.sh` is a thin wrapper that logs and execs the command.
 - Managed launcher profiles live in `wezterm-x/lua/constants.lua` and resolve to concrete startup commands before tmux session creation.
-- Every agent-CLI launch path — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn — terminates at `scripts/runtime/agent-launcher.sh <profile>`. The launcher is the single env-loading site (it sources `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`) so secrets reach the agent regardless of whether the chain traverses a zsh rc file, and the single boot-cue site (it prints `Loading <agent> ...` followed by `Mode: <permission_profile>` before exec'ing the agent). Provider adapters map the generic `MANAGED_AGENT_PERMISSION_PROFILE` / workspace `permission_profile` into Claude, Codex, or Grok argv/config. Adding a new entry path means routing it through `agent-launcher.sh`; do not invoke `claude` / `codex` / `grok` directly from a `tmux new-window` / `respawn-pane` call site. Agent selection layers (global / workspace / repo): [`workspaces.md#agent-selection-layers`](./workspaces.md#agent-selection-layers). Shell paths that resolve the resume argv (Alt+g, refresh, cold-spawn) share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command`; that resolver propagates workspace/repo permission intent through `env MANAGED_AGENT_PERMISSION_PROFILE=...`. The `${WEZTERM_REPO}` placeholder in `config/worktree-task.env` is expanded there and in `wezterm-x/lua/config/managed_cli.lua::parse_managed_cli_env` — keep those expand sites in lockstep. Disable the banner with `WEZTERM_NO_LOADING_BANNER=1`.
+- Every agent-CLI launch path — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn — terminates at `scripts/runtime/agent-launcher.sh <profile>`. The launcher is the single env-loading site (it sources `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`) so secrets reach the agent regardless of whether the chain traverses a zsh rc file, and the single boot-cue site (it prints `Loading <agent> ...` followed by `Mode: <permission_profile>` before exec'ing the agent). Provider adapters map the generic `MANAGED_AGENT_PERMISSION_PROFILE` / workspace `permission_profile` into Claude, Codex, or Grok argv/config. Adding a new entry path means routing it through `agent-launcher.sh`; do not invoke `claude` / `codex` / `grok` directly from a `tmux new-window` / `respawn-pane` call site. Agent selection layers (global / workspace / repo): [`workspaces.md#agent-selection-layers`](./workspaces.md#agent-selection-layers). Shell paths that resolve the resume argv (Alt+g, refresh, cold-spawn) share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command`; that resolver propagates workspace/repo permission intent through `env MANAGED_AGENT_PERMISSION_PROFILE=...`. The `${WEZDECK_REPO}` placeholder in `config/worktree-task.env` is expanded there and in `wezterm-x/lua/config/managed_cli.lua::parse_managed_cli_env` — keep those expand sites in lockstep. Disable the banner with `WEZTERM_NO_LOADING_BANNER=1`.
 - Managed Codex resume uses `scripts/runtime/codex-resume-takeover.sh` before `codex resume --last`. Because writer locks are empty markers without a PID, the wrapper terminates existing `codex resume` process groups by command line, removes the markers, and logs the takeover under `primary_pane`. The rollout JSONL under `$CODEX_HOME/sessions/` is retained. A Codex resume error is allowed to remain visible; this path does not silently replace a failed recovery with a fresh conversation.
 - The primary pane wrapper also runs the same script with `--cleanup-only` after a managed Codex command returns or is terminated. This removes the writer marker after startup failures such as a malformed F5 command, so a wrapper error cannot leave the conversation falsely locked. The exit path does not terminate other resume process groups.
 - Claude auth profiles: `claude` (OAuth/team) and `claude-sub2api` (gateway). Profile selection is `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env`; gateway secrets live in `~/.config/claude-profiles/sub2api.env` and are loaded only by the sub2api launcher branch — never via `shell-env.d` auto-glob. Full setup: [`setup.md#claude-auth-profiles`](./setup.md#claude-auth-profiles).
@@ -210,7 +236,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `%LOCALAPPDATA%\wezterm-runtime\bin\helper-manager.exe` is the active Windows host control plane.
 - `%LOCALAPPDATA%\wezterm-runtime\bin\helperctl.exe` is the thin console IPC client that WezTerm Lua, tmux-side scripts, and smoke tests invoke when they need a request or response.
 - Repo-local high-level wrappers (`scripts/runtime/agent-clipboard.sh` and friends) and the `$HOME/.wezterm-x/agent-tools.env` discovery marker are documented in [`setup.md#repo-local-runtime-wrappers`](./setup.md#repo-local-runtime-wrappers) (schema: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema)); agent-facing automation should prefer those wrappers over raw `helperctl.exe` IPC. The marker lives on the WSL home, not under `%USERPROFILE%\.wezterm-x\`, because the wrappers it advertises are bash scripts only callable from WSL.
-- Human-only script handoff is a three-layer contract: user-level profile doctrine (`agent-profiles` → `reporting.md`), mandatory platform skill `human-run` (`scripts/dev/human-run/`), and wezdeck CLI `wd-run` / `x` (store + CAS + retention). Details: [`agent-run.md`](./agent-run.md).
+- Human-only script handoff is a three-layer contract: user-level profile doctrine (`agent-profiles` → `reporting.md`), mandatory platform skill `human-run` (`skills/human-run/`), and wezdeck CLI `wd-run` / `x` (store + CAS + retention). Details: [`agent-run.md`](./agent-run.md).
 - `%USERPROFILE%\.wezterm-native\host-helper\windows\` is the published source tree that sync installs from; `%LOCALAPPDATA%\wezterm-runtime\bin\` is the stable installed binary location that the runtime actually launches.
 - `native/host-helper/windows/release-manifest.json` is the version-pinned release fallback declaration. When Windows `dotnet` is available, the installer publishes from the synced native source tree; otherwise it downloads and verifies the manifest-selected GitHub release asset before replacing `%LOCALAPPDATA%\wezterm-runtime\bin\`. Cutting a release / updating the manifest / side-loading: [`host-helper-release.md`](./host-helper-release.md).
 - `wezterm-x/scripts/` is intentionally thin on Windows. It keeps the helper installer, launcher, and bootstrap pieces, but the old Windows request handlers and worker-plugin chain are no longer part of the active design.

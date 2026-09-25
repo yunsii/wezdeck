@@ -481,8 +481,8 @@ clear_selected_row() {
     sb)
       local job_id="${id#sb::}"
       local sb_sh="${SESSION_BRIDGE_SH:-}"
-      if [[ -z "$sb_sh" && -n "${WEZTERM_REPO:-}" ]]; then
-        sb_sh="${WEZTERM_REPO}/openclaw/scripts/session-bridge.sh"
+      if [[ -z "$sb_sh" && -n "${WEZDECK_REPO:-}" ]]; then
+        sb_sh="${WEZDECK_REPO}/openclaw/scripts/session-bridge.sh"
       fi
       if [[ -z "$sb_sh" || "$job_id" == "$id" || -z "$job_id" ]]; then
         runtime_log_warn attention "sb-watch-stop missing SESSION_BRIDGE_SH" "trace=$trace_id" "id=$id"

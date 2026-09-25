@@ -18,7 +18,7 @@
 #   This script is the one place we explicitly load runtime env files
 #   before exec'ing into the resume-or-fresh agent command. All managed
 #   profiles in config/worktree-task.env reference it via
-#   ${WEZTERM_REPO}/scripts/runtime/agent-launcher.sh <agent>, so every
+#   ${WEZDECK_REPO}/scripts/runtime/agent-launcher.sh <agent>, so every
 #   path (Alt+g on-demand, refresh-current-window, tab-overflow,
 #   workspace first-open) shares the same env view.
 #

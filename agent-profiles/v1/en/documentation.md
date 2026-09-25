@@ -86,7 +86,7 @@ Each topic file should ideally answer:
 
 ## Size budgets (soft numbers)
 
-Numeric gates belong in automation when a repo provides them. Defaults used by wezdeck `scripts/dev/repo-hygiene/budgets.conf` (adjust per repo):
+Numeric gates belong in automation when a repo provides them. Defaults used by wezdeck `skills/repo-hygiene/budgets.conf` (adjust per repo):
 
 - [documentation-35] Entrypoint `AGENTS.md`: soft ~150, hard ~220 (aligns with [repo-bootstrap](./repo-bootstrap.md) sweet spot).
 - [documentation-36] Topic docs: soft ~400, hard ~600 lines; presentations may be higher.

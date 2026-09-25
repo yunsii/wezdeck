@@ -103,7 +103,7 @@ bash tests/hook-units/test_tmux_status_node_resolution.sh
 |---|---|---|
 | User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. One file per service. Files are auto-globbed. |
 | Claude gateway profile (sub2api) | `~/.config/claude-profiles/sub2api.env` | Mode 600. **Not** auto-globbed — only `agent-launcher.sh claude-sub2api` loads it. See [Claude auth profiles](#claude-auth-profiles). |
-| Repo-anchored env (`WEZTERM_REPO`, PATH for `cli/`) | `~/.config/shell-env.d/wezterm-env.env` | Template at `wezterm-x/local.example/shell-env.d/`. |
+| External capability source (`WEZDECK_REPO`, absolute checkout root) | `~/.config/shell-env.d/wezterm-env.env` | Single source anchor for platform skills, agent profiles, shell wrappers, and CLI paths. |
 | Repo-anchored shell helpers (aliases, `cd` functions) | `~/.config/shell-env.d/wezterm-fn.env` | Same template dir. Parent-shell only; runtime-loader treats it as a no-op. |
 | User-facing CLI commands | `scripts/runtime/cli/<name>` | No `.sh` suffix. Auto-PATH'd by `wezterm-env.env`. |
 | Repo-machine config (Lua + shell) | `wezterm-x/local/shared.env` | Synced to Windows runtime. |

@@ -132,7 +132,7 @@ echo "pty=$(python3 -c "import fcntl,termios,struct; fd=open('$TTY','rb'); r,c,x
 tmux list-clients -t "$SESS" -F 'client=#{client_width}x#{client_height}'
 tmux list-panes -t "$SESS" -F 'pane=#{pane_width}x#{pane_height}'
 tmux show-options -qv -t "$SESS" status
-bash "${WEZTERM_REPO:-$HOME/github/wezterm-config}/scripts/runtime/tmux-fix-layout.sh" \
+bash "${WEZDECK_REPO:-$HOME/github/wezterm-config}/scripts/runtime/tmux-fix-layout.sh" \
   --session "$SESS" --cwd "$(tmux display-message -p -t "$SESS" '#{pane_current_path}')" --quiet
 ```
 
@@ -261,7 +261,7 @@ grok --version        # still prints Grok version via grok.real
 **Automation (preferred):**
 
 1. **Launch ensure** — every normal run of `grok-with-focus-filter.sh` quietly promotes the newest `downloads/` artifact into `grok.real`, re-seats `~/.grok/bin/grok` (+ `~/.local/bin/grok`) when update clobbered them, and re-applies the GrokDay `bg_base` cream/Reset patch so active/inactive pane tint survives the stock ELF. Opt out of all ensure: `GROK_FOCUS_FILTER_SKIP_ENSURE=1`. Theme patch alone: `WEZDECK_GROK_THEME_PATCH=0`. Heal failures and real theme rewrites also land in `runtime.log` under `category="primary_pane"` (`grok theme patch failed` / `grok theme patched` / `grok focus-filter unhealthy`) — see [`diagnostics.md`](./diagnostics.md) Hook / wrapper self-check.
-2. **Interactive zsh function** — `~/.config/shell-env.d/grok-focus-filter.env` (template under `wezterm-x/local.example/shell-env.d/`) defines `grok()` that always calls the wrapper by absolute path via `WEZTERM_REPO`, so update cannot steal the name through PATH. Managed panes already do the same via `agent-launcher.sh`.
+2. **Interactive zsh function** — `~/.config/shell-env.d/grok-focus-filter.env` (template under `wezterm-x/local.example/shell-env.d/`) defines `grok()` that always calls the wrapper by absolute path via `WEZDECK_REPO`, so update cannot steal the name through PATH. Managed panes already do the same via `agent-launcher.sh`.
 
 Already-running Grok processes keep the old stdin path / unpatched ELF forever — **exit / `--resume`** those panes after an update. New launches heal themselves (filter + theme).
 

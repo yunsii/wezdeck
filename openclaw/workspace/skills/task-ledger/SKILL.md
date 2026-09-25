@@ -48,7 +48,7 @@ description: >
 ## CLI
 
 ```bash
-# from wezterm-config checkout, or $WEZTERM_REPO if set
+# from wezterm-config checkout, or $WEZDECK_REPO if set
 # --repo: local path (→ origin → https web URL in 仓库) or any git remote form
 # --cwd: local path only → Base field cwd
 ./openclaw/scripts/dev-task-ledger.sh open \

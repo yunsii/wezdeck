@@ -44,8 +44,8 @@ fi
 __RUNTIME_ENV_LIB_LOADED=1
 
 runtime_env_repo_root() {
-  if [[ -n "${WEZTERM_REPO_ROOT:-}" ]]; then
-    printf '%s' "$WEZTERM_REPO_ROOT"
+  if [[ -n "${WEZDECK_REPO_ROOT:-}" ]]; then
+    printf '%s' "$WEZDECK_REPO_ROOT"
     return 0
   fi
   local self_dir

@@ -210,7 +210,7 @@ When a **human** (not the agent) must execute a script or multi-line command:
 - [reporting-54] If `ensure-env.sh` / the skill fails, report that failure and stop — do not fall back to broken TUI copy-paste as the execution channel.
 - [reporting-55] Handoff script bodies must be **non-blocking kickoffs** (trigger / async ack, exit quickly). Do **not** wait for CI, rollouts, or long polls inside `x`; after `wait` returns, the agent owns follow-up with tools.
 
-Skill source (single body): wezdeck `scripts/dev/human-run/SKILL.md`, linked by `scripts/dev/link-platform-skills.sh`. Runtime details: wezdeck `docs/agent-run.md`.
+Skill source (single body): wezdeck `skills/human-run/SKILL.md`, linked by `scripts/dev/link-platform-skills.sh`. Runtime details: wezdeck `docs/agent-run.md`.
 
 ## Human-readable user text
 

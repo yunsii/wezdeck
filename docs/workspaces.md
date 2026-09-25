@@ -211,15 +211,15 @@ Standing loop after finishing a round in a linked worktree:
 
 1. **Deliver onto mainline (no PR)** — commit and push so the tip lands on `origin/HEAD` (prefer ff onto primary `master`, or content absorbed after squash). Graph hygiene [vcs-36]–[vcs-37] still applies.
 2. **Recycle the `dev-*` workstation immediately** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so `dev/*` **stays in sync** with mainline (same tip). Do not leave the workstation behind “until next time”.
-3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZTERM_REPO`) on `master` tracking `origin/master`. After delivery (or when primary lags), run the same **`worktree-recycle`** on the primary tree to hard-reset the default branch onto `origin/HEAD`; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
+3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZDECK_REPO`) on `master` tracking `origin/master`. After delivery (or when primary lags), run the same **`worktree-recycle`** on the primary tree to hard-reset the default branch onto `origin/HEAD`; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
 
 If mainline moved elsewhere (another session pushed `master`) while a `dev-*` tree sat idle, **recycle (or ff-reset onto `origin/HEAD`) before starting new work** on that workstation — same invariant.
 
-Do **not** leave user-level skills / `WEZTERM_REPO` pointed at a stale `dev-*` worktree after the round is closed. Short-lived `task-*` / `hotfix-*` end with **reclaim**, not recycle.
+Do **not** leave user-level skills / `WEZDECK_REPO` pointed at a stale `dev-*` worktree after the round is closed. Short-lived `task-*` / `hotfix-*` end with **reclaim**, not recycle.
 
 ### Recycle (primary or long-lived `dev-*` round reset)
 
-Agents should load the platform skill **`worktree-recycle`** (`scripts/dev/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` — not a bare `git reset`. After a delivered round, recycle is the **default** close-out (see [Maintenance loop](#maintenance-loop-wezdeck-standing-policy)), not an optional cleanup.
+Agents should load the platform skill **`worktree-recycle`** (`skills/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` — not a bare `git reset`. After a delivered round, recycle is the **default** close-out (see [Maintenance loop](#maintenance-loop-wezdeck-standing-policy)), not an optional cleanup.
 
 `worktree-task recycle` is a **fast path**: `git fetch` → dirty check → hard-reset onto `origin/HEAD` → sync `origin/<branch>` to the same tip. The old **delivered / content-absorbed** gate is **off by default** (opt in with `--require-delivered` / `WT_RECYCLE_REQUIRE_DELIVERED=1`; reclaim still uses the full delivery check). Linked `dev-*` worktrees force the branch name to the slug mapping (`dev-agent` → `dev/agent`; opt out with `--keep-branch-name`). The **primary** checkout is allowed: it resets the default branch (`master` / `main`) onto `origin/HEAD` and ensures upstream matches. Remote sync uses fast-forward or `--force-with-lease` when the remote still holds the pre-reset tip; opt out with `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0`.
 

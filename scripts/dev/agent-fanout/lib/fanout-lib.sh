@@ -21,7 +21,7 @@ _FANOUT_LIB_LOADED=1
 
 _FANOUT_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _FANOUT_TOOL_ROOT="$(cd "$_FANOUT_LIB_DIR/.." && pwd)"
-_FANOUT_PROVIDER="${FANOUT_PROVIDER_LIB:-$_FANOUT_TOOL_ROOT/../adversarial-review/lib/provider.sh}"
+_FANOUT_PROVIDER="${FANOUT_PROVIDER_LIB:-$_FANOUT_TOOL_ROOT/../../../skills/adversarial-review/lib/provider.sh}"
 
 [ -f "$_FANOUT_PROVIDER" ] || {
   printf 'error: provider lib not found at %s\n' "$_FANOUT_PROVIDER" >&2

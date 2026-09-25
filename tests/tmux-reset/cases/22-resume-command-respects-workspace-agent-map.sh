@@ -23,8 +23,8 @@ MANAGED_AGENT_PROFILE='claude'
 EOF
 
 cat > "$STAGED_REPO/config/worktree-task.env" <<'EOF'
-WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=${WEZTERM_REPO}/scripts/runtime/agent-launcher.sh claude
-WT_PROVIDER_AGENT_PROFILE_CODEX_RESUME_COMMAND=${WEZTERM_REPO}/scripts/runtime/agent-launcher.sh codex
+WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=${WEZDECK_REPO}/scripts/runtime/agent-launcher.sh claude
+WT_PROVIDER_AGENT_PROFILE_CODEX_RESUME_COMMAND=${WEZDECK_REPO}/scripts/runtime/agent-launcher.sh codex
 EOF
 
 MAPPED_ROOT="$TEST_ROOT/mapped-repo"

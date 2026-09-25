@@ -6,27 +6,30 @@
 # in-repo discovery paths. Mirrors the agent-profiles link pattern: one body,
 # many entrypoints; never copy SKILL.md.
 #
-# Currently linked:
-#   adversarial-review  -> scripts/dev/adversarial-review/
-#   brainstorm          -> scripts/dev/brainstorm/
-#   yuns-engineer      -> scripts/dev/yuns-engineer/
-#   cross-repo-delegate -> scripts/dev/cross-repo-delegate/
-#   worktree-recycle    -> scripts/dev/worktree-recycle/
-#   human-run           -> scripts/dev/human-run/
-#
-# Not linked (repo-local only; route via AGENTS.md):
-#   habit-weekly        -> scripts/dev/habit-weekly/  (WezDeck collector + run.sh)
+# The registry is skills/manifest.tsv. Platform rows are linked to user-level
+# directories; repo-local rows remain in the checkout and are only routed by
+# project docs.
 #
 # Targets (when present / always for in-repo):
 #   ~/.agents/skills/<name>
 #   ~/.claude/skills/<name>   (via ~/.agents when possible)
 #   openclaw/workspace/skills/<name>
-#   skills/<name>             (repo-root thin discovery)
+#   skills/<name>             (the real source directory in this checkout)
 
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/../.." && pwd)"
+default_repo_root="$(cd "$script_dir/../.." && pwd)"
+repo_root="${WEZDECK_REPO:-$default_repo_root}"
+repo_root="$(cd "$repo_root" 2>/dev/null && pwd -P)" || {
+  printf 'platform-skills: WEZDECK_REPO is not an existing checkout: %s\n' \
+    "${WEZDECK_REPO:-$repo_root}" >&2
+  exit 1
+}
+[[ -d "$repo_root/scripts/dev" ]] || {
+  printf 'platform-skills: WEZDECK_REPO is not a wezdeck checkout: %s\n' "$repo_root" >&2
+  exit 1
+}
 dry_run=0
 force=0
 
@@ -43,15 +46,11 @@ while (($#)); do
   esac
 done
 
-# name|relative_source_from_repo_root
-skills=(
-  "adversarial-review|scripts/dev/adversarial-review"
-  "brainstorm|scripts/dev/brainstorm"
-  "yuns-engineer|scripts/dev/yuns-engineer"
-  "cross-repo-delegate|scripts/dev/cross-repo-delegate"
-  "worktree-recycle|scripts/dev/worktree-recycle"
-  "human-run|scripts/dev/human-run"
-)
+manifest="$repo_root/skills/manifest.tsv"
+[[ -f "$manifest" ]] || {
+  printf 'platform-skills: manifest missing: %s\n' "$manifest" >&2
+  exit 1
+}
 
 link_one() {
   local src=$1 dst=$2
@@ -154,20 +153,20 @@ link_one_rel() {
 
 echo "[platform-skills] source repo: $repo_root"
 
-for entry in "${skills[@]}"; do
-  name="${entry%%|*}"
-  rel="${entry#*|}"
+while IFS=$'\t' read -r name rel class user_links openclaw_link; do
+  [[ -n "$name" && "${name:0:1}" != "#" ]] || continue
+  [[ "$class" == platform ]] || continue
   src="$repo_root/$rel"
   echo "[skill] $name  <=  $rel"
 
   # User-level (absolute links; host-local)
-  if [[ -d "$HOME/.agents/skills" ]] || [[ -d "$HOME/.agents" ]] || true; then
+  if [[ "$user_links" == *agents* ]]; then
     mkdir -p "$HOME/.agents/skills" 2>/dev/null || true
     if [[ -d "$HOME/.agents/skills" ]]; then
       link_one "$src" "$HOME/.agents/skills/$name"
     fi
   fi
-  if [[ -d "$HOME/.claude/skills" ]] || [[ -d "$HOME/.claude" ]]; then
+  if [[ "$user_links" == *claude* ]]; then
     mkdir -p "$HOME/.claude/skills" 2>/dev/null || true
     # Prefer chain: claude -> agents -> source (matches coco-* pattern)
     if [[ -L "$HOME/.agents/skills/$name" || -d "$HOME/.agents/skills/$name" ]]; then
@@ -177,18 +176,18 @@ for entry in "${skills[@]}"; do
     fi
   fi
 
-  # In-repo discovery (relative links)
-  link_one_rel "$src" "$repo_root/openclaw/workspace/skills/$name"
-  link_one_rel "$src" "$repo_root/skills/$name"
-done
+  if [[ "$openclaw_link" == yes ]]; then
+    link_one_rel "$src" "$repo_root/openclaw/workspace/skills/$name"
+  fi
+done < "$manifest"
 
 # PATH entry for short CLI `delegate` (idempotent; skill name is cross-repo-delegate)
-if [[ -x "$repo_root/scripts/dev/cross-repo-delegate/run.sh" ]]; then
+if [[ -x "$repo_root/skills/cross-repo-delegate/run.sh" ]]; then
   echo "[cli] delegate → ~/.local/bin/delegate"
   if ((dry_run)); then
-    echo "  (dry run) would run: scripts/dev/cross-repo-delegate/run.sh install-cli"
+    echo "  (dry run) would run: skills/cross-repo-delegate/run.sh install-cli"
   else
-    "$repo_root/scripts/dev/cross-repo-delegate/run.sh" install-cli || true
+    "$repo_root/skills/cross-repo-delegate/run.sh" install-cli || true
   fi
 fi
 

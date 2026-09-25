@@ -94,7 +94,7 @@ function M.parse_managed_cli_env(env, opts)
 
   parsed.active_profile = M.normalize_agent_profile_name(env.WT_PROVIDER_AGENT_PROFILE)
 
-  -- ${WEZTERM_REPO} is the canonical placeholder used in
+  -- ${WEZDECK_REPO} is the canonical placeholder used in
   -- config/worktree-task.env so resume commands can reference repo-internal
   -- scripts (scripts/runtime/agent-launcher.sh) without an absolute path.
   -- Mirror scripts/runtime/worktree/lib/resume-command.sh
@@ -105,7 +105,7 @@ function M.parse_managed_cli_env(env, opts)
     if not spec or spec == '' or not opts.wezterm_repo then
       return spec
     end
-    return (spec:gsub('${WEZTERM_REPO}', function()
+    return (spec:gsub('${WEZDECK_REPO}', function()
       return opts.wezterm_repo
     end))
   end
