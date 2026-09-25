@@ -1,0 +1,4 @@
+interface:
+  display_name: "WezDeck Runtime Ops"
+  short_description: "Check the WezDeck environment and sync runtime configuration."
+  default_prompt: "Run the read-only WezDeck environment and dependency checks, then reuse a valid cached runtime home or list and confirm a target before syncing this repository's runtime configuration."

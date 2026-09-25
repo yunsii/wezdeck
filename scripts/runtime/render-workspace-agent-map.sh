@@ -9,7 +9,7 @@
 #
 # Output is under wezterm-x/local/ (gitignored) because it embeds private
 # project paths. Rows carry cwd, base profile, and optional permission intent.
-# Re-run via wezterm-runtime-sync after editing
+# Re-run via wezdeck-runtime-ops after editing
 # wezterm-x/local/workspaces.lua.
 
 set -euo pipefail

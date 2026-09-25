@@ -112,6 +112,7 @@ normalize_version() {
   local v="$1"
   v="${v#v}"
   v="${v#go}"
+  v="${v#next-}"
   v="$(printf '%s' "$v" | grep -oE '^[0-9]+(\.[0-9]+)*' | head -n1)"
   printf '%s' "$v"
 }

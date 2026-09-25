@@ -7,7 +7,7 @@
 # wezterm-x/lua/config/appearance-presets.lua. Keep the two in lockstep.
 #
 # Output: wezterm-x/tmux/appearance.generated.conf (gitignored). tmux.conf
-# loads it via `source-file -Fq`, so running wezterm-runtime-sync between
+# loads it via `source-file -Fq`, so running wezdeck-runtime-ops between
 # preset changes is what makes them visible to tmux.
 #
 # Presets:

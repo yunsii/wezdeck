@@ -17,7 +17,7 @@
 --     windows.restart-explorer, worktree.quick-create-*, worktree.reclaim-current).
 --     Write the full chord path: 'Ctrl+k s' to rebind the leaf, 'Ctrl+k g e' for
 --     a worktree chord leaf. Only the final segment is consumed (the prefix stays
---     Ctrl+k at the tmux side); rerun wezterm-runtime-sync after editing so the
+--     Ctrl+k at the tmux side); rerun wezdeck-runtime-ops after editing so the
 --     tmux chord table regenerates.
 --
 -- Discover ids: wezterm-x/commands/manifest.json, or run
@@ -79,7 +79,7 @@ return {
   -- ['pane.close-current']              = false,         -- disable
   -- ['windows.restart-explorer']        = 'Ctrl+k e',    -- fix stuck auto-hide taskbar
   -- Chord leaves live in the tmux chord tables. Edits here take effect only
-  -- after wezterm-runtime-sync regenerates wezterm-x/tmux/chord-bindings.generated.conf.
+  -- after wezdeck-runtime-ops regenerates wezterm-x/tmux/chord-bindings.generated.conf.
 
   -- ── Agent attention ───────────────────────────────────
   -- ['attention.jump-waiting']          = 'Alt+j',

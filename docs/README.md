@@ -8,6 +8,9 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`setup.md`](./setup.md).
 - Daily edit, sync, reload, and verification:
   Read [`daily-workflow.md`](./daily-workflow.md).
+- Repository-owned interface changes, migration warnings, and compatibility
+  policy:
+  Read [`compatibility-policy.md`](./compatibility-policy.md).
 - Workspace model and config boundaries:
   Read [`workspaces.md`](./workspaces.md).
 - Shortcut reference:
@@ -75,4 +78,3 @@ Use this doc when you need the shortest possible map of the repository docs.
 - Keep setup, workflow, UI behavior, diagnostics, and architecture separate.
 - Put presentations, outlines, and non-reference material under [`presentations/`](./presentations/).
 - After changing markdown links or mermaid blocks, rely on `scripts/dev/repo-hygiene/` (pre-commit + `run.sh audit`) rather than eyeballing. Operator notes: [`daily-workflow.md#repo-hygiene`](./daily-workflow.md#repo-hygiene).
-

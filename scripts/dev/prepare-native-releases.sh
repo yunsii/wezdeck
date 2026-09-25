@@ -178,11 +178,11 @@ cat <<EOF
 
   # 3) Pull manifests + sync runtime
   git pull --rebase origin $branch
-  skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+  skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
   # Optional: force release-install paths
-  WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezterm-runtime-sync/scripts/sync-runtime.sh
-  WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=release skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+  WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
+  WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
 Full narrative: docs/picker-release.md · docs/host-helper-release.md
 EOF

@@ -62,7 +62,7 @@ The standard flow is tag-push + merge the manifest-update PR the workflow opens 
 
    ```bash
    git pull --rebase origin master
-   skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+   skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
    ```
 
 If you need to update the manifest manually from a repo checkout (e.g. the auto-PR step was blocked and you don't want to rerun):
@@ -100,7 +100,7 @@ After it succeeds, continue from step 4 of [Cutting a release](#cutting-a-releas
 To exercise the release branch on a machine that already has Windows `dotnet`:
 
 ```bash
-WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=release skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 ```
 
 Use `WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=local` when you want to verify the local-build path explicitly. Leave it unset for normal `auto` behavior.

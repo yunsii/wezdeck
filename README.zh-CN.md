@@ -145,7 +145,7 @@ $EDITOR wezterm-x/local/constants.lua   # runtime_mode, default_domain, shell, �
 $EDITOR wezterm-x/local/shared.env      # WAKATIME_API_KEY, MANAGED_AGENT_PROFILE, …
 
 # 2. 同步运行时到 $HOME（写入 ~/.wezterm.lua + ~/.wezterm-x/）
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
 # 3. 重载 WezTerm，确认右状态出现
 #    attention 计数（helper 起来后还有 CDP·…）——说明 attention / CDP 链路活着。

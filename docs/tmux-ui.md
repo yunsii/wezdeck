@@ -95,7 +95,7 @@ In tmux UI terms what shows up here is: a per-tab badge (an unfocused tab filled
 - The third tmux line renders WakaTime only when the toggle is enabled **and** there is real summary data (AI / Code time). No key, warming cache, or zero activity emits an empty line so the row is not reserved.
 - Status rows are packed by visible content: producers that emit empty output are skipped, remaining lines move up into consecutive `status-format` slots, and `status` is set to the packed count (`off` / `on` / `2` / `3`). Placeholder-only rows are not kept.
 - A section still disappears completely when its toggle is disabled. Within a visible line, missing live fields may omit that segment without holding an empty status row.
-- Node.js version lookup falls back to `~/.local/share/fnm/aliases/default/bin` when `node` is not already on `$PATH` (this is the path `fnm` populates from its `default` alias). The resolved version is cached.
+- Node.js version lookup uses the managed runtime path resolver when `node` is not already on `$PATH`. It checks `FNM_DIR`, `${XDG_DATA_HOME:-~/.local/share}/fnm`, `~/.local/share/fnm`, and `~/.fnm`, using each `aliases/default/bin`; it also keeps the existing nvm, Volta, Bun, and `~/.local/bin` candidates. Only a successful version is cached, keyed by the resolved Node executable, so changing the fnm default or repairing a missing install is picked up on the next refresh.
 - WakaTime refresh is cache-backed and reuses summary data for up to 60 seconds.
 
 ## Layout heal (fix-layout)
@@ -288,7 +288,7 @@ Agent triage trigger: user says「直接 grok 还闪」/「update 后又闪」�
 
 ### Mouse scroll (`~/.grok/config.toml` `[ui]`)
 
-Grok’s wheel/trackpad knobs are **not** synced by `wezterm-runtime-sync`; they live in the user’s Grok config (or `/settings` → **Scroll speed** / **Scroll input** / **Scroll lines** / **Invert scroll**). There is no standing “one log line per wheel tick” in this repo’s `runtime.log` — `GROK_LOG_FILE` + `RUST_LOG=debug` is for Grok-internal tracing, not scroll UX metering.
+Grok’s wheel/trackpad knobs are **not** synced by `wezdeck-runtime-ops`; they live in the user’s Grok config (or `/settings` → **Scroll speed** / **Scroll input** / **Scroll lines** / **Invert scroll**). There is no standing “one log line per wheel tick” in this repo’s `runtime.log` — `GROK_LOG_FILE` + `RUST_LOG=debug` is for Grok-internal tracing, not scroll UX metering.
 
 Standing values on this machine (adjust per device):
 

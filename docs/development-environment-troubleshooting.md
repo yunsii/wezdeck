@@ -364,7 +364,7 @@ missing Lua maximize hook.
 **Owner:** the pin’s **Run** property on its `.lnk` (`ShowCmd`: `3` =
 Maximized, `1` = Normal). Taskbar / `Win+N` use that shortcut; the CLI does
 not. The property is **machine-local** and is **not** carried by this repo or
-`wezterm-runtime-sync`. This stack sets `window_decorations = 'RESIZE'` but
+`wezdeck-runtime-ops`. This stack sets `window_decorations = 'RESIZE'` but
 does not set `initial_cols` / `initial_rows` and does not call `maximize()` on
 `gui-startup`, so CLI starts at the default cell size (~80×24).
 

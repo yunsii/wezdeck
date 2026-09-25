@@ -104,6 +104,25 @@ Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME c
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
 - Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
 
+### Tmux status says `Node unavailable`
+
+The status renderer runs from tmux's server environment, which may not have the interactive shell's Node path. The managed resolver loads the runtime environment and checks `FNM_DIR` plus the stable fnm default alias directories; it does not depend on an ephemeral `fnm_multishells` path. Run the narrow regression check first:
+
+```bash
+bash tests/hook-units/test_tmux_status_node_resolution.sh
+```
+
+For a live pane, compare the shell and tmux views, then force a repaint:
+
+```bash
+command -v node
+node -v
+tmux show-environment -g | grep -E '^(FNM_DIR|XDG_DATA_HOME)=' || true
+tmux source-file "$(tmux show -gv @wezterm_runtime_root)/tmux.conf"
+```
+
+If the check passes but the live bar is still unavailable, inspect the configured cache with `tmux show -gv @tmux_status_node_cache` (if set) or `/tmp/.tmux-status-node-cache`; a healthy cache has three lines: timestamp, resolved Node executable, and version. Switching `fnm default` changes the executable identity and causes the next status refresh to recalculate it.
+
 ### Ctrl+n / agent `/new` did nothing
 
 `Ctrl+n` is decided on the **tmux** side (`scripts/runtime/agent-ctrl-n.sh`), not in WezTerm Lua. Lua only logs that it forwarded `\x0e`; the match / `/new` / `clear` outcome is in WSL `runtime.log`.

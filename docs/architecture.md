@@ -5,7 +5,7 @@ Use this doc when you need ownership boundaries, entry points, or runtime design
 ## Source Of Truth
 
 - This repository is the source of truth.
-- Windows runtime files are generated from this repo by `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` (repo-local workflow under `skills/wezterm-runtime-sync/` — not a Claude Code Skill; run the script with Bash).
+- Windows runtime files are generated from this repo by `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (repo-local workflow under `skills/wezdeck-runtime-ops/` — not a Claude Code Skill; run the script with Bash).
 - Live targets:
   - Windows-side (consumed by `wezterm.exe`): `%USERPROFILE%\.wezterm.lua`, `%USERPROFILE%\.wezterm-x\...`, `%USERPROFILE%\.wezterm-native\...`.
   - WSL-side (consumed by WSL-resident agents — Claude Code, Codex CLI, etc.): `$HOME/.wezterm-x/agent-tools.env`. This is the host-effects discovery marker; schema and contract live in [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
@@ -38,7 +38,7 @@ WezTerm process
 ### Ownership rule
 
 - Cross-tab and cross-workspace navigation lives on the WezTerm layer (`Alt+n` / `Alt+Shift+n` / `Alt+1..9` for tabs; `Alt+d` / `Alt+w` / `Alt+c` / `Alt+p` for workspaces). The key → action wiring is driven by `wezterm-x/commands/manifest.json` + `wezterm-x/lua/ui/action_registry.lua` (handler closures) + `wezterm-x/lua/ui/keymaps.lua` (builds `config.keys` by iterating the manifest and dispatching through the registry).
-- `tmux.conf` owns pane splits, copy-mode, mouse handling, worktree-window switching, and status-line rendering. Its chord key tables (`command-chord`, `worktree-chord`) are **generated** from the same `manifest.json` by `scripts/runtime/render-tmux-bindings.sh` into `wezterm-x/tmux/chord-bindings.generated.conf` (gitignored), which `tmux.conf` loads via `source-file -Fq`. The renderer runs during `wezterm-runtime-sync`.
+- `tmux.conf` owns pane splits, copy-mode, mouse handling, worktree-window switching, and status-line rendering. Its chord key tables (`command-chord`, `worktree-chord`) are **generated** from the same `manifest.json` by `scripts/runtime/render-tmux-bindings.sh` into `wezterm-x/tmux/chord-bindings.generated.conf` (gitignored), which `tmux.conf` loads via `source-file -Fq`. The renderer runs during `wezdeck-runtime-ops`.
 - WezTerm keys that mutate tmux state (`Alt+v` / `Alt+g` / `Alt+Shift+g` / `Alt+/` / `Alt+o` / `Ctrl+k` / `Ctrl+Shift+P` / `F5`) resolve through the registry on the WezTerm side; they forward into the active tmux-backed pane via short escape sequences (`\x1bv`, `\x1b/`, `\x0b`, `\e[20102~`, etc.) so tmux owns the execution. The tmux `bind-key -n M-v / M-g / M-/ / User0-3 / User4` lines that receive those bytes are transport infrastructure and stay inline in `tmux.conf`, not user-customizable.
 - Per-machine keybinding overrides live in `wezterm-x/local/keybindings.lua`, addressed by manifest `id`. The WezTerm path consumes them directly at reload (`wezterm-x/lua/ui/keybinding_overrides.lua`); the tmux-chord path consumes the same file at sync time via the bash renderer. Both sides share one source of truth and one override file.
 - Agent attention is layered: provider adapters under `scripts/runtime/agent-attention/adapters/` normalize Claude / Codex hook payloads; `scripts/runtime/agent-attention/emit.sh` writes shared state via `scripts/runtime/attention-state-lib.sh` and publishes an `attention.tick` event through the [event bus](./event-bus.md) (`wezterm_event_send` → OSC `we_attention_tick` when the producer has a regular pane tty, else file). `wezterm-x/lua/titles.lua` registers the bus handler and reloads state for tab badges + right-status (render lives in `wezterm-x/lua/attention.lua`; no pane walking, no user_var state). Jump path splits by entry point: `Alt+j` / `Alt+k` / `Alt+l` are Lua-driven `--direct` calls; `Alt+/` is forwarded into tmux and runs the popup picker. Full pipeline: [`agent-attention.md`](./agent-attention.md).
@@ -159,7 +159,7 @@ Invariants:
 - `palette.accelerator` is unique within a given runtime-mode visibility set.
 - `context = hybrid-wsl` entries only run when the active runtime mode matches.
 
-Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2) for wezterm-layer, new handler function in `action_registry.lua`; (3) for tmux-chord leaves, the `exec` string covers everything — no code changes elsewhere. Rerun `wezterm-runtime-sync` after edits so the tmux chord table regenerates.
+Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2) for wezterm-layer, new handler function in `action_registry.lua`; (3) for tmux-chord leaves, the `exec` string covers everything — no code changes elsewhere. Rerun `wezdeck-runtime-ops` after edits so the tmux chord table regenerates.
 
 ## Entry Points
 
@@ -171,7 +171,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `scripts/runtime/tmux-worktree-menu.sh` + `tmux-worktree-picker.sh`: tmux-popup picker for `Alt+g`. The menu wrapper prefetches the worktree list into a TSV file (7 columns: `label path branch window_id status age reason`, the last three joined from `attention.json` by tmux window id — see [`agent-attention.md`](./agent-attention.md)) before opening `tmux display-popup -E` so the popup paints content on the first frame; the picker dispatches via `tmux run-shell -b tmux-worktree-open.sh` and exits immediately so the popup closes before window creation finishes. `Ctrl+d` in the Go picker confirms then calls `scripts/runtime/tmux-worktree-reclaim.sh` (same dirty/delivery/`dev-*` gates as `reclaim-current-window`) and keeps the popup open after removing the row. Context resolution (`tmux-worktree/context.sh`) falls back from pane cwd → window → session peer when the focused cwd is gone after reclaim-self. Performance contract: [`performance.md`](./performance.md).
 - `wezterm-x/local/`: gitignored machine-local overrides copied by the sync skill when present
 - `config/worktree-task.env`: tracked repo profile for the `worktree-task` runtime; sync-time mirrored to `<runtime_dir>/repo-worktree-task.env` so Windows-side wezterm.exe Lua can read it (the WSL path in `repo-root.txt` is unreachable from Win32 file APIs). `wezterm-x/lua/constants.lua` reads the local copy first; the env file is the single source of truth for `<base>` / `<base>_resume` profile commands.
-- `skills/wezterm-runtime-sync/`: runtime sync workflow, prompt rendering, and prompt regression scripts
+- `skills/wezdeck-runtime-ops/`: runtime sync workflow, prompt rendering, and prompt regression scripts
 - `scripts/runtime/worktree/`: linked worktree task runtime — `worktree-task` CLI, `open-task-window` (Ctrl+k g d/t/h create entry), `reclaim-current-window` (Ctrl+k g r reclaim entry), core libraries under `lib/`, built-in providers under `providers/`
 - `scripts/runtime/open-project-session.sh`: tmux bootstrap for managed project tabs
 - `scripts/runtime/primary-pane-wrapper.sh`: traps INT/HUP/TERM around the managed agent and execs the login shell on exit so the primary pane survives agent death

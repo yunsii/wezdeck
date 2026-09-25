@@ -18,11 +18,12 @@ Use this doc when you need prerequisites and local setup.
   ```
 
   Puts the wrapper at `~/.grok/bin/grok` with the real binary at `grok.real` (required because Grok prepends `~/.grok/bin` in `~/.zshrc`). The shell-env `grok()` always calls the wrapper by absolute path; each launch also quiet-ensures PATH, promotes newer downloads, and re-applies the GrokDay cream/`Color::Reset` theme patch — so after `grok update`, **new** interactive starts self-heal (no flash + active/inactive pane tint). Still **exit / `--resume` live Grok panes** (old stdin path / old ELF). Managed panes already use the absolute wrapper via `agent-launcher.sh`. Full cause / standing ops / repro: [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
-- `lua5.4` (or `lua5.3` / `lua`) **recommended** in the WSL/Linux side. Used by `wezterm-runtime-sync`'s `lua-precheck` step (`skills/wezterm-runtime-sync/scripts/lua-precheck.lua`) to dofile the synced `wezterm-x/lua/constants.lua` under a mocked `wezterm` module and assert that managed-launcher resolution still works (`default_profile` resolves, `default_resume_profile ≠ default_profile`, and the resume command contains a recognized sentinel — `--continue`, `resume`, or `agent-launcher.sh`). Without it, sync skips the precheck with a warning instead of failing — same surface that historically let `<base>-resume` vs `<base>_resume` mis-naming and unreachable WSL-path env files slip through to runtime. Install with `sudo apt install lua5.4` on Ubuntu/Debian.
+- `lua5.4` (or `lua5.3` / `lua`) **recommended** in the WSL/Linux side. Used by `wezdeck-runtime-ops`'s `lua-precheck` step (`skills/wezdeck-runtime-ops/scripts/lua-precheck.lua`) to dofile the synced `wezterm-x/lua/constants.lua` under a mocked `wezterm` module and assert that managed-launcher resolution still works (`default_profile` resolves, `default_resume_profile ≠ default_profile`, and the resume command contains a recognized sentinel — `--continue`, `resume`, or `agent-launcher.sh`). Without it, sync skips the precheck with a warning instead of failing — same surface that historically let `<base>-resume` vs `<base>_resume` mis-naming and unreachable WSL-path env files slip through to runtime. Install with `sudo apt install lua5.4` on Ubuntu/Debian.
 - `jq` **recommended** in the WSL/Linux side. Used by the agent-attention state writer (`scripts/runtime/attention-state-lib.sh`), the focus emit path (`scripts/runtime/tmux-focus-emit.sh`), and the hotkey-usage telemetry (`scripts/runtime/hotkey-usage-bump.sh`); also opportunistically by `scripts/runtime/agent-attention/adapters/*.sh` to extract stable session ids and readable reasons from hook payloads. Without it, attention hooks still write entries but key them to `pane:<WEZTERM_PANE>` with canned per-status labels, and the other call sites take their respective degraded paths. Install with `sudo apt install jq` on Ubuntu/Debian.
+- Node.js is used by the status line and several CLI tools. When migrating from nvm to fnm, install the desired version, set a stable default alias (`fnm default <version>`), and put a non-default fnm data root in `FNM_DIR` (under `~/.config/shell-env.d/` or `wezterm-x/local/shared.env`) if needed. Configure the interactive shell with `eval "$(fnm env --use-on-cd --shell zsh)"` (use the matching shell), then remove the old `nvm.sh` initialization after the fnm version and global CLIs are verified. The runtime resolver deliberately ignores fnm's ephemeral `fnm_multishells` paths. Verify with `bash scripts/dev/check-node-runtime.sh` and `bash tests/hook-units/test_tmux_status_node_resolution.sh`, then refresh tmux or run the runtime sync so existing servers repaint.
 - WakaTime status needs `python3` in that same runtime environment and a private `WAKATIME_API_KEY`. Drop it in `~/.config/shell-env.d/wakatime.env` (the canonical home for user-level secrets — see [Env Loading Model](#env-loading-model)) or, equivalently, in `wezterm-x/local/shared.env` if you prefer to keep it next to the rest of the repo-machine config. Both paths feed the unified loader; if both files set the key, `~/.config/shell-env.d/` wins.
 - Repo-local helper wrappers such as `scripts/runtime/agent-clipboard.sh` require `hybrid-wsl`, `cmd.exe`, `powershell.exe`, `wslpath`, and a synced Windows helper runtime.
-- In `hybrid-wsl` mode, `wezterm.exe` runs on Windows and its Lua cannot resolve WSL-native paths like `/home/yuns/...`, so `wezterm-runtime-sync` mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` (Windows-readable NTFS path) on every sync. Skipping a sync after editing `config/worktree-task.env` will leave wezterm.exe on the previous snapshot. Full pickup chain and the `<base>-resume` / `<base>_resume` naming asymmetry: see [`workspaces.md#behavior`](./workspaces.md#behavior).
+- In `hybrid-wsl` mode, `wezterm.exe` runs on Windows and its Lua cannot resolve WSL-native paths like `/home/yuns/...`, so `wezdeck-runtime-ops` mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` (Windows-readable NTFS path) on every sync. Skipping a sync after editing `config/worktree-task.env` will leave wezterm.exe on the previous snapshot. Full pickup chain and the `<base>-resume` / `<base>_resume` naming asymmetry: see [`workspaces.md#behavior`](./workspaces.md#behavior).
 
 ## Local Setup
 
@@ -55,7 +56,7 @@ deep-merges over the preset (applied in `wezterm-x/lua/ui.lua`):
 - `macos_window_background_blur` — macOS blur radius (integer, e.g. `20`). Ignored off macOS.
 - `front_end` — `'OpenGL'` | `'WebGpu'` | `'Software'`. Escape hatch only, for a GPU that renders the default to an opaque swapchain; leave unset otherwise.
 
-Re-run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` and reload for changes to take effect.
+Re-run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` and reload for changes to take effect.
 
 ## File Boundaries
 
@@ -76,6 +77,27 @@ There is one unified env loader for managed-runtime shell scripts: `scripts/runt
 Managed agent launchers also add stable user CLI directories without starting an interactive shell: the nvm default Node `bin`, fnm's `aliases/default/bin`, Volta, Bun, and `~/.local/bin` when present. This keeps tools such as `codex` reachable from tmux F5/respawn paths even when the tmux server was started with a minimal PATH.
 
 The Lua side reads `shared.env` independently via `helpers.load_optional_env_file`; that is a structural cross-language constraint — Lua cannot call into bash — and is the only second loader implementation that exists.
+
+### Node runtime decision (2026-09-25)
+
+WezDeck uses **fnm as the target Node version manager** and keeps nvm only as a transitional compatibility path. The runtime is launched from tmux's server environment and from plain `sh -c` entry points; nvm is a sourced shell function, so relying on `.zshrc` or `.bashrc` makes those paths lose Node and npm CLIs. fnm provides a stable executable layout under `aliases/default/bin` without sourcing a large shell script. This decision follows the status-bar refactor in commit `b43ff3e` and the cached status refresh work in `154c3d5`.
+
+The migration boundary is deliberate:
+
+- Runtime code resolves fnm's stable default alias first, using `FNM_DIR`, `$XDG_DATA_HOME/fnm`, `~/.local/share/fnm`, or `~/.fnm`; it never persists an ephemeral `fnm_multishells` path.
+- Existing nvm paths remain available so an unfinished migration does not break managed agents, status rendering, or npm-installed tools. The sync check warns when the active Node still resolves through nvm.
+- Do not source nvm and fnm together. Once fnm's Node version and global CLIs are verified, remove the nvm initialization lines from the interactive shell, restart tmux, and rerun the checks.
+- Treat `.nvmrc` edge syntax and npm global packages as migration inputs. Keep a project version file that fnm understands, and reinstall required global packages under the fnm default Node rather than assuming nvm's per-version package directory carries over.
+
+Verification is part of the decision, not an optional manual step:
+
+```bash
+bash scripts/dev/check-node-runtime.sh
+bash tests/hook-units/test_check_node_runtime.sh
+bash tests/hook-units/test_tmux_status_node_resolution.sh
+```
+
+`sync-runtime.sh` runs the same runtime check in advisory mode and prints a migration warning without blocking publication. Remove the nvm compatibility code only after the check reports fnm as healthy on every managed launch path and no shell or service still sources nvm.
 
 | Genre | Goes in | Notes |
 |---|---|---|
@@ -216,7 +238,7 @@ binding survives reboots, needs no extra tooling, and stays out of the
 in-WezTerm keymap documented in [`keybindings.md`](./keybindings.md).
 
 Taskbar-pin **Run** (Normal vs Maximized) is machine-local Windows shortcut
-state and is outside `wezterm-runtime-sync`. If a pin opens large while a
+state and is outside `wezdeck-runtime-ops`. If a pin opens large while a
 shell `wezterm` / `wezterm-gui` stays small, see
 [`development-environment-troubleshooting.md#taskbar-pin-vs-cli-window-size-windows`](./development-environment-troubleshooting.md#taskbar-pin-vs-cli-window-size-windows).
 
@@ -237,6 +259,8 @@ scripts/dev/agent-hooks.sh install --provider codex
 ```
 
 The install command preserves existing hook entries and creates a timestamped backup. Runtime sync only checks and warns; it never edits `~/.codex` or `~/.claude` automatically.
+
+For the complete WezDeck environment check, run [`skills/wezdeck-runtime-ops/scripts/check-runtime.sh`](../skills/wezdeck-runtime-ops/scripts/check-runtime.sh). It covers Lua syntax and managed config precheck, the configured agent CLI binary, agent hooks, the `agent-tools.env` marker, launcher permission overlays, resume/workspace-agent-map wiring, Node/fnm state, and dependency floors; use `--advisory --skip-deps` when upstream access is unavailable.
 
 ## Tmux Status Prompt Hook
 
@@ -321,7 +345,7 @@ This section applies **only to maintainers** who cut releases or develop the nat
   ```
 
   Verify with `gh api repos/<owner>/<repo>/actions/permissions/workflow` — the response should include `"can_approve_pull_request_reviews": true`. The `default_workflow_permissions` field is unrelated; the release workflow declares its own `permissions:` block, so leave whatever value is already set.
-- `go 1.21+` in the WSL/Linux side. **Required** for maintainers iterating on `native/picker/` source — `native/picker/build.sh` builds the static `native/picker/bin/picker` ELF that powers the high-frequency tmux popups: `Alt+/` (attention), `Alt+g` (worktree), `Ctrl+Shift+P` (command palette), and `Alt+t` (overflow). `wezterm-runtime-sync`'s `build-picker` step (`native/picker/build.sh`) auto-discovers `go` in `PATH` → `~/.local/go/bin/go` → `/usr/local/go/bin/go`. End users without Go are covered by the release-fetcher in the same script: with the default `WEZTERM_PICKER_INSTALL_SOURCE=auto`, a missing Go toolchain falls through to the prebuilt tarball pinned in `native/picker/release-manifest.json`, sha256-verified and extracted into `native/picker/bin/picker`; cache lives at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>`. Force a specific source with `WEZTERM_PICKER_INSTALL_SOURCE=local|release`. Only direct Go dep is `golang.org/x/term`. Install Go with `sudo apt install golang-go` on Ubuntu 24.04+ (ships ≥ 1.22), or download from <https://go.dev/dl/> into `~/.local/go`. After install, run `wezterm-runtime-sync` once and confirm `native/picker/bin/picker` exists and the sync trace logs `step=build-picker status=completed`. **Popups are Go-only** — a failed install aborts sync; menus toast and refuse to open when the binary is missing. Emergency only: `WEZTERM_ALLOW_BASH_PICKER=1` re-enables deprecated bash pickers. Full semantics: [`picker-release.md#install-path`](./picker-release.md#install-path).
+- `go 1.21+` in the WSL/Linux side. **Required** for maintainers iterating on `native/picker/` source — `native/picker/build.sh` builds the static `native/picker/bin/picker` ELF that powers the high-frequency tmux popups: `Alt+/` (attention), `Alt+g` (worktree), `Ctrl+Shift+P` (command palette), and `Alt+t` (overflow). `wezdeck-runtime-ops`'s `build-picker` step (`native/picker/build.sh`) auto-discovers `go` in `PATH` → `~/.local/go/bin/go` → `/usr/local/go/bin/go`. End users without Go are covered by the release-fetcher in the same script: with the default `WEZTERM_PICKER_INSTALL_SOURCE=auto`, a missing Go toolchain falls through to the prebuilt tarball pinned in `native/picker/release-manifest.json`, sha256-verified and extracted into `native/picker/bin/picker`; cache lives at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>`. Force a specific source with `WEZTERM_PICKER_INSTALL_SOURCE=local|release`. Only direct Go dep is `golang.org/x/term`. Install Go with `sudo apt install golang-go` on Ubuntu 24.04+ (ships ≥ 1.22), or download from <https://go.dev/dl/> into `~/.local/go`. After install, run `wezdeck-runtime-ops` once and confirm `native/picker/bin/picker` exists and the sync trace logs `step=build-picker status=completed`. **Popups are Go-only** — a failed install aborts sync; menus toast and refuse to open when the binary is missing. Emergency only: `WEZTERM_ALLOW_BASH_PICKER=1` re-enables deprecated bash pickers. Full semantics: [`picker-release.md#install-path`](./picker-release.md#install-path).
 - `dotnet 8.0+` SDK on Windows **required** to build `native/host-helper/windows/...` locally and to verify the local-build install path with `WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE=local` ([`host-helper-release.md#forcing-the-release-path-locally`](./host-helper-release.md#forcing-the-release-path-locally)). Not required for cutting releases — the GitHub Actions runner installs its own SDK via `actions/setup-dotnet@v4`. Install from <https://dotnet.microsoft.com/download/dotnet/8.0>, or with `winget install Microsoft.DotNet.SDK.8`. Verify with `dotnet --list-sdks` from a PowerShell prompt.
 
 ## Read Next

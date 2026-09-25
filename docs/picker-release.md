@@ -59,7 +59,7 @@ The standard flow is tag-push + merge the manifest-update PR the workflow opens 
 
    ```bash
    git pull --rebase origin master
-   skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+   skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
    ```
 
 If you need to update the manifest manually from a repo checkout (e.g. the auto-PR step was blocked and you don't want to rerun):
@@ -116,14 +116,14 @@ Downloaded tarballs are cached at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezde
 
 High-frequency popups (`Alt+/` attention, `Alt+g` worktree, command palette, `Alt+t` overflow) **require** `native/picker/bin/picker`. Menu wrappers resolve it via `scripts/runtime/picker-bin-lib.sh`. When the binary is missing they toast and refuse to open a degraded UI.
 
-`wezterm-runtime-sync`'s `build-picker` step is a **hard gate**: a failed install aborts the native subflow (and thus the sync) so a broken machine does not silently lose popup UX.
+`wezdeck-runtime-ops`'s `build-picker` step is a **hard gate**: a failed install aborts the native subflow (and thus the sync) so a broken machine does not silently lose popup UX.
 
 Emergency escape hatch only: set `WEZTERM_ALLOW_BASH_PICKER=1` to re-enable the deprecated bash pickers (`tmux-*-picker.sh`) or overflow's legacy `display-menu` path. This is for recovery when install is broken — not the default product path. Prefer fixing install (`sync-runtime.sh`, Go toolchain, or a published release asset).
 
-`wezterm-runtime-sync`'s `build-picker` step inherits the env from the calling shell, so a maintainer can force a release-install verification with:
+`wezdeck-runtime-ops`'s `build-picker` step inherits the env from the calling shell, so a maintainer can force a release-install verification with:
 
 ```bash
-WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+WEZTERM_PICKER_INSTALL_SOURCE=release skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 ```
 
 Use `WEZTERM_PICKER_INSTALL_SOURCE=local` to force the build path explicitly. Same shape as the host-helper's `WEZTERM_WINDOWS_HELPER_INSTALL_SOURCE` toggle.

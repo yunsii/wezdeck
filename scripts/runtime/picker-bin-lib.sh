@@ -7,7 +7,7 @@
 # WEZTERM_ALLOW_BASH_PICKER=1 for emergency recovery when install is broken.
 #
 # Install: native/picker/build.sh (local go | release tarball), invoked by
-# wezterm-runtime-sync. See docs/picker-release.md.
+# wezdeck-runtime-ops. See docs/picker-release.md.
 #
 # Sourced only — not a standalone CLI.
 # shellcheck shell=bash
@@ -49,7 +49,7 @@ picker_bin_bash_fallback_allowed() {
 picker_bin_missing_toast() {
   local panel="${1:-picker}"
   tmux display-message -d 5000 \
-    "Picker binary missing for ${panel}. Re-run: skills/wezterm-runtime-sync/scripts/sync-runtime.sh (or set WEZTERM_ALLOW_BASH_PICKER=1)"
+    "Picker binary missing for ${panel}. Re-run: skills/wezdeck-runtime-ops/scripts/sync-runtime.sh (or set WEZTERM_ALLOW_BASH_PICKER=1)"
 }
 
 # picker_bin_require <runtime_dir> <panel_name>

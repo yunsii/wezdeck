@@ -48,7 +48,7 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
     DEF["constants.lua<br/>default_resume_profile<br/>looks up 'claude_resume'"]
     LAUNCH(["workspace open /<br/>Ctrl+k g d/t/h /<br/>Alt+g picker /<br/>refresh-* actions"])
 
-    ENV -->|"wezterm-runtime-sync<br/>(P0 step)"| SYNC
+    ENV -->|"wezdeck-runtime-ops<br/>(P0 step)"| SYNC
     SYNC -->|"io.open from<br/>wezterm.exe Lua"| LUA
     LUA -->|"register"| REG
     REG -->|"name lookup<br/>(underscore)"| DEF
@@ -97,7 +97,7 @@ config = {
 - Permission intent follows the same item-over-defaults layering through
   `permission_profile`; managed launch commands export it as
   `MANAGED_AGENT_PERMISSION_PROFILE` before entering `agent-launcher.sh`.
-- **Shell entry points** (`Alt+g`, `Ctrl+k g d/t/h`, refresh, tab-overflow cold-spawn) read `wezterm-x/local/workspace-agent-map.tsv` (cwd → base profile), which flattens the same merge (repo override, else workspace default). Sync regenerates it via `scripts/runtime/render-workspace-agent-map.sh`. Edit `launcher` / workspace defaults, then run `wezterm-runtime-sync` before expecting shell paths to pick up the change.
+- **Shell entry points** (`Alt+g`, `Ctrl+k g d/t/h`, refresh, tab-overflow cold-spawn) read `wezterm-x/local/workspace-agent-map.tsv` (cwd → base profile), which flattens the same merge (repo override, else workspace default). Sync regenerates it via `scripts/runtime/render-workspace-agent-map.sh`. Edit `launcher` / workspace defaults, then run `wezdeck-runtime-ops` before expecting shell paths to pick up the change.
 - If the map misses the cwd: `MANAGED_AGENT_PROFILE` / `shared.env` → `WT_PROVIDER_AGENT_PROFILE` → `claude`.
 - Within one repo family, a more specific mapped cwd wins over a shorter prefix; when only the family rule applies, the entry whose cwd equals the primary worktree is preferred.
 - Registered profiles today: `claude`, `claude_sub2api`, `codex`, `grok` (each with a `_resume` Lua key / `-resume` shell form). Add new ones in `config/worktree-task.env` + `scripts/runtime/agent-launcher.sh`.

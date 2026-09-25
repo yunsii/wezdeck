@@ -74,7 +74,7 @@ exit 1
 
   local function managed_workspace_prereq_error()
     if #runtime_script_roots() == 0 then
-      return 'Managed workspaces require a synced repo root. Run the wezterm-runtime-sync skill first.'
+      return 'Managed workspaces require a synced repo root. Run the wezdeck-runtime-ops skill first.'
     end
 
     if constants.runtime_mode == 'hybrid-wsl' and (not config.default_domain or config.default_domain == '') then

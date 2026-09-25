@@ -79,4 +79,4 @@ curl -sS http://localhost:<port>/json/version
 
 A healthy chain returns a JSON blob with `Browser`, `Protocol-Version`, and `webSocketDebuggerUrl`; that single response confirms helper, chrome, and the inspect path are all live.
 
-If the badge shows `CDP·?·<port>`, run `wezterm-runtime-sync` or restart WezTerm to respawn the helper. See also [`diagnostics.md`](./diagnostics.md) for the runtime-side traceability fields.
+If the badge shows `CDP·?·<port>`, run `wezdeck-runtime-ops` or restart WezTerm to respawn the helper. See also [`diagnostics.md`](./diagnostics.md) for the runtime-side traceability fields.

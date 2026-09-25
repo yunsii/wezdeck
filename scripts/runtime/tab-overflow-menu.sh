@@ -56,7 +56,7 @@ fi
 
 if (( picker_rc == 2 )); then
   tmux display-message -d 4000 \
-    "Overflow picker binary missing. Re-run wezterm-runtime-sync (WEZTERM_ALLOW_BASH_PICKER no longer covers Alt+x)."
+    "Overflow picker binary missing. Re-run wezdeck-runtime-ops (WEZTERM_ALLOW_BASH_PICKER no longer covers Alt+x)."
   exit 0
 fi
 

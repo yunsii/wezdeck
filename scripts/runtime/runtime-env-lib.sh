@@ -91,6 +91,19 @@ runtime_env_load_dir() {
   shopt -u nullglob 2>/dev/null || true
 }
 
+# Print stable fnm data roots in priority order. The first root is the
+# explicit machine/user override; the remaining roots cover fnm's defaults.
+runtime_env_fnm_roots() {
+  local fnm_dir="${FNM_DIR:-}"
+  local xdg_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+  [[ -n "$fnm_dir" ]] && printf '%s\n' "$fnm_dir"
+  printf '%s\n' "$xdg_data_home/fnm"
+  [[ "$HOME/.local/share/fnm" == "$xdg_data_home/fnm" ]] || \
+    printf '%s\n' "$HOME/.local/share/fnm"
+  printf '%s\n' "$HOME/.fnm"
+}
+
 # Add user-installed CLI directories without sourcing an interactive shell.
 # tmux servers often start with a minimal PATH, while tools such as Codex are
 # installed under nvm/fnm-managed Node versions. Keep this deterministic and
@@ -103,7 +116,9 @@ runtime_env_add_user_cli_paths() {
   local -a candidates=()
   local -a nvm_bins=()
 
-  candidates+=("$HOME/.local/share/fnm/aliases/default/bin")
+  while IFS= read -r dir; do
+    candidates+=("$dir/aliases/default/bin")
+  done < <(runtime_env_fnm_roots)
   candidates+=("$HOME/.volta/bin" "$HOME/.bun/bin" "$HOME/.local/bin")
 
   if [[ -r "$nvm_dir/alias/default" ]]; then

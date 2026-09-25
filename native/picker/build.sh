@@ -13,7 +13,7 @@
 # Hard requirement: popups are Go-only (see docs/picker-release.md).
 # When neither path can produce a binary AND no existing
 # native/picker/bin/picker is present, this script exits non-zero so
-# wezterm-runtime-sync fails loudly. An already-installed binary is
+# wezdeck-runtime-ops fails loudly. An already-installed binary is
 # kept when the toolchain / release fetch is temporarily unavailable.
 # Emergency bash pickers need WEZTERM_ALLOW_BASH_PICKER=1 at menu time.
 #
@@ -180,7 +180,7 @@ keep_existing_or_fail() {
     return 0
   fi
   printf 'build-picker: FAILED %s; no binary at %s\n' "$reason" "$out_path" >&2
-  printf 'build-picker: install Go (local) or enable a release asset, then re-run wezterm-runtime-sync\n' >&2
+  printf 'build-picker: install Go (local) or enable a release asset, then re-run wezdeck-runtime-ops\n' >&2
   return 1
 }
 

@@ -5,7 +5,7 @@ Use this doc when you need to apply or verify changes.
 ## Default Flow
 
 1. Edit files in this repo.
-2. If runtime files changed, run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` (Bash — not a Claude Code Skill tool).
+2. If runtime files changed, run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (Bash — not a Claude Code Skill tool).
 
    **Default path (auto crash gate):**
 
@@ -40,7 +40,7 @@ scripts/dev/wezterm-canary.sh --launch        # probe only
 scripts/dev/wezterm-canary.sh --promote       # force promote without waiting
 scripts/dev/wezterm-canary.sh --recover       # last-good → live
 scripts/dev/wezterm-canary.sh --recover --start
-WEZTERM_SYNC_SKIP_CANARY_AUTO=1 skills/wezterm-runtime-sync/scripts/sync-runtime.sh  # stage only
+WEZTERM_SYNC_SKIP_CANARY_AUTO=1 skills/wezdeck-runtime-ops/scripts/sync-runtime.sh  # stage only
 ```
 
 ### Why canary (not only luac / lua-precheck)
@@ -52,7 +52,7 @@ Static gates catch syntax and some launcher wiring. They do **not** catch runtim
 Skip the gate when you intentionally want the running GUI to reload immediately:
 
 ```bash
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh --live
+skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --live
 ```
 
 ### Hard escape (no last-good)
@@ -81,14 +81,14 @@ Then run `wsl --shutdown` from Windows, reopen WSL, and retry the sync.
 If repo-root `.sync-target` already points at a valid home, you can sync directly:
 
 ```bash
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh
+skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 ```
 
 If you need to choose or change the target home, use the explicit two-step flow:
 
 ```bash
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh --list-targets
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /mnt/c/Users/your-user
+skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --list-targets
+skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --target-home /mnt/c/Users/your-user
 ```
 
 Run those commands from the repo root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the script from elsewhere.
@@ -99,6 +99,10 @@ The helper is a daemon-like process and can outlive a canary window. For an expl
 It also refreshes `$HOME/.wezterm-x/agent-tools.env` on the **WSL user home** (regardless of where the wezterm runtime files go) so WSL-resident agent platforms — Claude Code, Codex CLI, etc. — can discover repo-local wrappers from one stable marker file. Schema and contract: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
 
 After the runtime copy, sync runs the read-only `scripts/dev/agent-hooks.sh check --provider all` check. A missing, partial, stale, or invalid user-level hook configuration is an advisory warning and does not block runtime publication; repair it explicitly with `scripts/dev/agent-hooks.sh install --provider codex|claude|all`. Set `WEZTERM_SYNC_SKIP_AGENT_HOOK_CHECK=1` only when diagnosing the sync path itself.
+
+Sync also runs the read-only [`scripts/dev/check-node-runtime.sh`](../scripts/dev/check-node-runtime.sh) check. It warns when the active Node resolves through nvm, explains the fnm migration path, and warns when Node is unavailable; this is advisory and does not block publication. Set `WEZTERM_SYNC_SKIP_NODE_RUNTIME_CHECK=1` only when diagnosing the sync path itself.
+
+For the complete read-only environment view, run the skill-owned check orchestrator: [`skills/wezdeck-runtime-ops/scripts/check-runtime.sh`](../skills/wezdeck-runtime-ops/scripts/check-runtime.sh). It includes Lua source syntax and managed config precheck, the configured agent CLI binary, agent hook files, the WSL `agent-tools.env` capability marker, launcher permission overlays, managed resume command lockstep, workspace agent selection, Node/fnm state, and upstream dependency floors. `--advisory --skip-deps` is the offline diagnostic form.
 
 Sync also mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` so the Windows-side wezterm.exe can read it; edits to `config/worktree-task.env` only take effect after the next sync. Why this matters for `<base>_resume` profile registration: see [`workspaces.md#behavior`](./workspaces.md#behavior).
 
@@ -115,6 +119,7 @@ Most sync steps short-circuit when their inputs haven't changed since the last s
 | `helper-install` | install state file + `helper-manager.exe` exist; no `host-helper/windows/src/**` or `release-manifest.json` newer than the state file | `WEZTERM_SYNC_FORCE_HELPER_INSTALL=1` |
 | `helper-ensure` | state.env shows `ready=1`, file mtime within 10s of now (clock-skew tolerant), `runtime_dir` matches; no runtime file is newer than state.env | `WEZTERM_SYNC_FORCE_HELPER_ENSURE=1` |
 | `lua-precheck` | a sentinel `lua-precheck.ok` exists; no input under `lua/` / `repo-worktree-task.env` / the precheck script itself is newer than the sentinel | `WEZTERM_SYNC_FORCE_LUA_PRECHECK=1` |
+| `node-runtime-check` | managed runtime resolves a working Node and reports whether it is still supplied by nvm | `WEZTERM_SYNC_SKIP_NODE_RUNTIME_CHECK=1` |
 | `deps-check` | log file mtime is from today's date | `WEZTERM_SYNC_FORCE_DEPS_CHECK=1` (or `WEZTERM_SYNC_SKIP_DEPS_CHECK=1` to skip entirely) |
 | `build-picker` | binary exists; no `.go` / `go.mod` / `go.sum` newer than the binary | (none — Go's own incremental cache covers the unusual case) |
 | `render-tmux-bindings` | rendered output already matches the would-be output byte-for-byte (write goes to a temp + cmp + mv on diff) | (none — content-based, not mtime-based) |

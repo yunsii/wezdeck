@@ -14,7 +14,7 @@ EOF
 
 cat >"$tmp/bin/tmux" <<'EOF'
 #!/usr/bin/env bash
-printf 'tmux 3.7b\n'
+printf 'tmux next-3.7b\n'
 EOF
 
 cat >"$tmp/bin/go" <<'EOF'
@@ -82,6 +82,8 @@ printf '%s\n' "$output"
 }
 grep -Fq 'nightly zip 20260708-045125' <<<"$output"
 grep -Fq 'nightly asset newer' <<<"$output"
+grep -Fq 'tmux      next-3.7b' <<<"$output"
+grep -Fq 'up-to-date' <<<"$output"
 grep -Fq 'nightly tag target_commitish: c53ca64c33d1 (diagnostic only)' <<<"$output"
 if grep -Fq 'behind nightly head' <<<"$output"; then
   printf 'stale target_commitish must not drive update status\n' >&2

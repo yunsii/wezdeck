@@ -51,7 +51,7 @@ return {
 
       -- Per-repo agent override: this checkout uses Codex for every
       -- launch path (workspace first-open, Alt+g, Ctrl+k g, refresh).
-      -- After editing, run wezterm-runtime-sync so shell paths refresh
+      -- After editing, run wezdeck-runtime-ops so shell paths refresh
       -- wezterm-x/local/workspace-agent-map.tsv.
       -- { cwd = '/home/your-user/work/codex-preferred', launcher = 'codex_resume' },
       -- Per-repo permission override (passed through all managed launch paths):

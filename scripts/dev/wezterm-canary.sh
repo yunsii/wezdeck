@@ -197,7 +197,7 @@ promote_tree() {
 
 launch_canary_process() {
   [[ -f "$CANARY_BOOTSTRAP" ]] || {
-    printf 'Canary bootstrap missing: %s\nRun: skills/wezterm-runtime-sync/scripts/sync-runtime.sh\n' \
+    printf 'Canary bootstrap missing: %s\nRun: skills/wezdeck-runtime-ops/scripts/sync-runtime.sh\n' \
       "$CANARY_BOOTSTRAP" >&2
     return 1
   }

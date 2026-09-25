@@ -21,7 +21,7 @@ Single source of truth: `WEZTERM_APPEARANCE_PRESET` in
 WEZTERM_APPEARANCE_PRESET='frosted'
 ```
 
-Then run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh`. Opacity and
+Then run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh`. Opacity and
 colors hot-reload; **acrylic and `front_end` only take effect on a full WezTerm
 restart** (`Alt+Shift+Q` then reopen) because they are window-creation-time
 attributes. There is deliberately no runtime hot-toggle — acrylic cannot be

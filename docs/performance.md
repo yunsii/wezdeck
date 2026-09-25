@@ -53,7 +53,7 @@ performance contract.
 |---|---|
 | `native/picker/build.sh` | Provisions the binary. Default `WEZTERM_PICKER_INSTALL_SOURCE=auto`: local Go build first (auto-discovers `go` from PATH / `~/.local/go/bin` / `/usr/local/go/bin`), then release-tarball fetch from `release-manifest.json` (sha256-verified, cached at `${WEZDECK_PICKER_CACHE:-$XDG_CACHE_HOME/wezdeck/picker}/<version>`). Hard fail when neither path works and no existing binary can be kept — sync aborts. Force `local` or `release` via the same env var. Full semantics: [`picker-release.md#install-path`](./picker-release.md#install-path) |
 | `native/picker/{go.mod, go.sum}` | Go module pinning `golang.org/x/term` |
-| `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` | Added `step=build-picker` between `render-tmux-bindings` and `copy-source` |
+| `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` | Added `step=build-picker` between `render-tmux-bindings` and `copy-source` |
 | `.gitignore` | Excludes `native/picker/bin/` (build artifact) |
 
 ### Diagnostic UI (temporary, slated for removal)
@@ -408,7 +408,7 @@ after each change.
 ## Sync-runtime hot path
 
 The Alt+/ sections above measure a frequent **interactive** chord. The other surface
-that benefits from disciplined optimization is `skills/wezterm-runtime-sync/scripts/sync-runtime.sh`,
+that benefits from disciplined optimization is `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh`,
 which is invoked **after every config edit** to publish the runtime tree from the
 repo into the target home. It is not on the keypress hot path, but a slow sync is
 felt every iteration cycle when actively editing the repo.

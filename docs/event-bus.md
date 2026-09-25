@@ -262,7 +262,7 @@ them urgent, but it makes the eventual move cheap.
   the command palette rebuilds its contents on popup open, so manifest
   edits / worktree switches don't reflect in an already-open palette
   and only land on the next open. With the bus, any script that
-  changes the command set (`wezterm-runtime-sync`, `worktree-task`
+  changes the command set (`wezdeck-runtime-ops`, `worktree-task`
   switch, etc.) sends one event, the palette invalidates its in-memory
   cache. Pure new capability — there is no current equivalent to keep
   parity with.

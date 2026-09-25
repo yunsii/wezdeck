@@ -105,7 +105,7 @@ Key string rules:
 
 - Modifiers joined by `+`: `Ctrl`, `Shift`, `Alt` (aliases: `Opt`, `Option`, `Meta`), `Cmd` (aliases: `Super`, `Win`).
 - The last `+`-separated token is the main key. For single-letter keys, declarations are **case-insensitive**: `Ctrl+P` and `Ctrl+p` both bind Ctrl+P with no Shift. To bind Ctrl+Shift+P, write `Ctrl+Shift+P` (or `Ctrl+Shift+p`) explicitly — `Shift` must be in the modifier list. Multi-character key names (`Enter`, `F1`, `BSpace`), digits, and punctuation are left as written.
-- Chord keys use space-separated segments: `Ctrl+k s` rebinds a `command-chord` leaf, `Ctrl+k g e` rebinds a `worktree-chord` leaf. The chord prefix stays `Ctrl+k` at the tmux side regardless of what you write for the prefix segment — only the final segment is consumed. The leaf segment follows the same case-insensitive rule as the wezterm-layer parser: `Ctrl+k v` and `Ctrl+k V` both bind the leaf `v`, while `Ctrl+k Shift+v` and `Ctrl+k Shift+V` both bind the leaf `V` (which IS Shift+v in tmux's native key syntax — tmux encodes Shift on letters by uppercasing). Chord leaves are regenerated at runtime-sync time (`scripts/runtime/render-tmux-bindings.sh`); rerun `wezterm-runtime-sync` after editing.
+- Chord keys use space-separated segments: `Ctrl+k s` rebinds a `command-chord` leaf, `Ctrl+k g e` rebinds a `worktree-chord` leaf. The chord prefix stays `Ctrl+k` at the tmux side regardless of what you write for the prefix segment — only the final segment is consumed. The leaf segment follows the same case-insensitive rule as the wezterm-layer parser: `Ctrl+k v` and `Ctrl+k V` both bind the leaf `v`, while `Ctrl+k Shift+v` and `Ctrl+k Shift+V` both bind the leaf `V` (which IS Shift+v in tmux's native key syntax — tmux encodes Shift on letters by uppercasing). Chord leaves are regenerated at runtime-sync time (`scripts/runtime/render-tmux-bindings.sh`); rerun `wezdeck-runtime-ops` after editing.
 
 Discoverability:
 
@@ -114,7 +114,7 @@ Discoverability:
 
 Scope and limits:
 
-- **WezTerm-layer and tmux-chord-layer bindings are customizable.** WezTerm-layer changes take effect on the next WezTerm reload; tmux-chord changes require `wezterm-runtime-sync` to regenerate `wezterm-x/tmux/chord-bindings.generated.conf` and for tmux to re-source it.
+- **WezTerm-layer and tmux-chord-layer bindings are customizable.** WezTerm-layer changes take effect on the next WezTerm reload; tmux-chord changes require `wezdeck-runtime-ops` to regenerate `wezterm-x/tmux/chord-bindings.generated.conf` and for tmux to re-source it.
 - `command-palette.chord-prefix` (`Ctrl+k`) remaps only the WezTerm side. The tmux root `bind-key -n C-k` stays pinned: WezTerm forwards a literal Ctrl+K byte (`\x0b`) to tmux regardless of what key you used on the WezTerm side, so the forwarding stays intact. If you want a completely different tmux chord prefix you'd need to edit `render-tmux-bindings.sh`.
 - Chord leaves can be rebound within their chord table but not moved across tables (`pane.split-vertical` stays in `command-chord`, `worktree.quick-create-dev` stays in `worktree-chord`).
 - You cannot bind a new key to a command that has no default binding (e.g. `session.refresh-current-session` / `refresh-current-workspace` / `refresh-all-sessions` that exist only in the palette). `session.refresh-current-window` has default `F5` and can be remapped. The override surface is limited to remapping / disabling bindings already declared in `manifest.json`.

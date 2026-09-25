@@ -121,5 +121,5 @@ cp wezterm-x/local.example/shell-env.d/wezterm-env.env ~/.config/shell-env.d/
 # then open a new shell — wd-run and x resolve via WEZTERM_REPO/scripts/runtime/cli
 
 # agent-tools.env wd_run=… (after sync)
-skills/wezterm-runtime-sync/scripts/sync-runtime.sh   # or your usual sync
+skills/wezdeck-runtime-ops/scripts/sync-runtime.sh   # or your usual sync
 ```

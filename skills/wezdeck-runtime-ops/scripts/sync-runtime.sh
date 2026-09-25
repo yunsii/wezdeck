@@ -31,10 +31,10 @@ sync_trace() {
 usage() {
   cat <<'EOF'
 Usage:
-  skills/wezterm-runtime-sync/scripts/sync-runtime.sh
-  skills/wezterm-runtime-sync/scripts/sync-runtime.sh --live
-  skills/wezterm-runtime-sync/scripts/sync-runtime.sh --list-targets
-  skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /absolute/path
+  skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
+  skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --live
+  skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --list-targets
+  skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --target-home /absolute/path
 
 Options:
   (default)             Stage to the canary tree, auto-launch an isolated
@@ -604,6 +604,41 @@ run_agent_hooks_check() {
   printf '[sync] fix: %s install --provider codex|claude|all\n' "$check_script" >&2
 }
 
+run_node_runtime_check() {
+  local check_script="$REPO_ROOT/scripts/dev/check-node-runtime.sh"
+  local details=""
+  local output=""
+  local rc=0
+
+  if [[ "${WEZTERM_SYNC_SKIP_NODE_RUNTIME_CHECK:-0}" == "1" ]]; then
+    sync_trace "step=node-runtime-check status=skipped reason=env_override"
+    return 0
+  fi
+  if [[ ! -x "$check_script" ]]; then
+    sync_trace "step=node-runtime-check status=skipped reason=script_missing"
+    return 0
+  fi
+
+  output="$("$check_script" --advisory 2>&1)" || rc=$?
+  if (( rc != 0 )); then
+    sync_trace "step=node-runtime-check status=warning rc=$rc"
+    runtime_log_warn sync "node runtime check warning" "check_rc=$rc"
+    printf '[sync] node-runtime-check warning (sync continues):\n%s\n' \
+      "${output:-node runtime check failed without details}" >&2
+    return 0
+  fi
+
+  if [[ "$output" == *'warning:'* ]]; then
+    sync_trace "step=node-runtime-check status=warning"
+    details="$(printf '%s' "$output" | tr '\n' ' ' | cut -c1-240)"
+    runtime_log_warn sync "node runtime check warning" "details=$details"
+    printf '%s\n' "$output" >&2
+  else
+    sync_trace "step=node-runtime-check status=healthy"
+    runtime_log_info sync "node runtime check passed"
+  fi
+}
+
 # Fire-and-forget + daily rate-limit: deps-check is purely advisory (it
 # hits the network to look up wezterm/tmux/go versions) and historically
 # dominates wall time at ~40s. Skip if we already ran today; otherwise
@@ -716,10 +751,15 @@ if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
     printf '[sync] auto-probing canary (launch → healthy.stamp → promote) …\n'
     if bash "$REPO_ROOT/scripts/dev/wezterm-canary.sh" --auto; then
       printf '[sync] canary auto-promote OK — live updated (last-good backed up)\n'
+      # Canary teardown may stop the helper that was ensured before the
+      # probe. Re-ensure the live helper after promotion so status consumers
+      # never inherit a stale heartbeat from the pre-canary process.
+      ensure_windows_helper_running "$LIVE_TARGET_RUNTIME_DIR"
+      sync_trace "step=post-promote-helper-ensure status=completed target_runtime_dir=$LIVE_TARGET_RUNTIME_DIR"
     else
       printf '[sync] canary auto-probe FAILED — live bootstrap left untouched: %s\n' "$LIVE_TARGET_FILE" >&2
       printf '  fix config and re-run sync, or: scripts/dev/wezterm-canary.sh --recover\n' >&2
-      printf '  emergency live publish: skills/wezterm-runtime-sync/scripts/sync-runtime.sh --live\n' >&2
+      printf '  emergency live publish: skills/wezdeck-runtime-ops/scripts/sync-runtime.sh --live\n' >&2
       exit 1
     fi
   fi

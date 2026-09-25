@@ -263,7 +263,7 @@ WezDeck 自己就是用 AI 写出来的（Claude Code 是主力 agent），但�
 
 1. **只想要 attention 计数** → 装 hook（[`docs/agent-attention.md#hook-installation`](../agent-attention.md#hook-installation)），不需要 hybrid-wsl 也不需要 helper
 2. **只想要 worktree 工作流** → `Ctrl+k g d/t/h` + `worktree-task` runtime（[`docs/workspaces.md`](../workspaces.md)），git 仓库就能用
-3. **只想要快的 popup picker** → 装 Go 1.21+ + `wezterm-runtime-sync`，`Alt+/` / `Alt+x` / `Alt+g` / `Ctrl+Shift+P` 自动用 Go 二进制；没装 Go 的同事走 [`docs/picker-release.md`](../picker-release.md) 的 release fetcher
+3. **只想要快的 popup picker** → 装 Go 1.21+ + `wezdeck-runtime-ops`，`Alt+/` / `Alt+x` / `Alt+g` / `Ctrl+Shift+P` 自动用 Go 二进制；没装 Go 的同事走 [`docs/picker-release.md`](../picker-release.md) 的 release fetcher
 4. **完整 hybrid-wsl 体验** → 跟着 [`docs/setup.md`](../setup.md) 走全程
 
 ---

@@ -4,6 +4,10 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$script_dir/tmux-status-lib.sh"
+# shellcheck disable=SC1091
+source "$script_dir/runtime-env-lib.sh"
+runtime_env_load_managed
+runtime_env_add_user_cli_paths
 
 cwd="${1:-$PWD}"
 padding="${TMUX_STATUS_PADDING:- }"
@@ -139,8 +143,10 @@ node_cache_ttl() {
 }
 
 read_cached_node_version() {
+  local expected_identity="${1:-}"
   local cache_file=""
   local cached_time=""
+  local cached_identity=""
   local cached_value=""
   local now=""
   local ttl=""
@@ -149,10 +155,12 @@ read_cached_node_version() {
   [[ -f "$cache_file" ]] || return 1
 
   cached_time="$(head -n 1 "$cache_file" 2>/dev/null || true)"
-  cached_value="$(tail -n +2 "$cache_file" 2>/dev/null || true)"
+  cached_identity="$(sed -n '2p' "$cache_file" 2>/dev/null || true)"
+  cached_value="$(sed -n '3p' "$cache_file" 2>/dev/null || true)"
   if ! [[ "$cached_time" =~ ^[0-9]+$ ]]; then
     return 1
   fi
+  [[ -n "$expected_identity" && "$cached_identity" == "$expected_identity" ]] || return 1
 
   now="$(date +%s)"
   ttl="$(node_cache_ttl)"
@@ -164,20 +172,30 @@ read_cached_node_version() {
 }
 
 write_cached_node_version() {
-  local value="$1"
+  local identity="$1"
+  local value="$2"
   local cache_file=""
 
   cache_file="$(node_cache_file)"
-  printf '%s\n%s\n' "$(date +%s)" "$value" > "$cache_file"
+  printf '%s\n%s\n%s\n' "$(date +%s)" "$identity" "$value" > "$cache_file"
+}
+
+node_identity() {
+  local node_path=""
+
+  node_path="$(command -v node 2>/dev/null || true)"
+  [[ -n "$node_path" ]] || return 1
+  readlink -f "$node_path" 2>/dev/null || printf '%s\n' "$node_path"
 }
 
 resolve_node_version() {
   local cached_value=""
-  local fnm_default_bin=""
   local lock_dir=""
+  local identity=""
   local version=""
 
-  if cached_value="$(read_cached_node_version)"; then
+  identity="$(node_identity || true)"
+  if cached_value="$(read_cached_node_version "$identity")"; then
     if [[ "$cached_value" == "__missing__" ]]; then
       printf '\n'
     else
@@ -188,34 +206,27 @@ resolve_node_version() {
 
   lock_dir="$(node_cache_lock_dir)"
   if ! mkdir "$lock_dir" 2>/dev/null; then
-    cached_value="$(tail -n +2 "$(node_cache_file)" 2>/dev/null || true)"
-    if [[ "$cached_value" == "__missing__" ]]; then
-      printf '\n'
-    else
+    if cached_value="$(read_cached_node_version "$identity")"; then
       printf '%s\n' "$cached_value"
+    else
+      printf '\n'
     fi
     return
   fi
 
-  if ! command -v node >/dev/null 2>&1; then
-    fnm_default_bin="$HOME/.local/share/fnm/aliases/default/bin"
-    if [[ -d "$fnm_default_bin" ]]; then
-      PATH="$fnm_default_bin:$PATH"
-    fi
-  fi
-
-  if command -v node >/dev/null 2>&1; then
+  identity="$(node_identity || true)"
+  if [[ -n "$identity" ]]; then
     version="$(node -v 2>/dev/null || true)"
   fi
 
   if [[ -n "$version" ]]; then
-    write_cached_node_version "$version"
+    write_cached_node_version "$identity" "$version"
     rm -rf "$lock_dir"
     printf '%s\n' "$version"
     return
   fi
 
-  write_cached_node_version "__missing__"
+  rm -f "$(node_cache_file)"
   rm -rf "$lock_dir"
   printf '\n'
 }
