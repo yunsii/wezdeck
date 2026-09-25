@@ -13,14 +13,15 @@ rules in [../en/permissions-claude.md](../en/permissions-claude.md).
 
 ### 1. `approval_policy` × `sandbox_mode` default
 
-The biggest lever. Codex defaults to `untrusted` × `read-only`, which
-prompts on essentially everything. Two practical bundles:
+The biggest lever. Use `workspace-write` for normal development and choose
+whether boundary requests stay interactive or go through automatic review:
 
 ```toml
-# Auto mode — run commands inside the checkout without asking each time;
-# pause only when the sandbox blocks the operation.
-approval_policy = "on-failure"
-sandbox_mode    = "workspace-write"
+# Auto mode with automatic review — run normal workspace commands without
+# stopping for the user; let Codex's reviewer handle eligible boundary asks.
+approval_policy    = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode       = "workspace-write"
 ```
 
 ```toml
@@ -31,17 +32,17 @@ sandbox_mode    = "workspace-write"
 ```
 
 The repository's current operator default is the first bundle. It is the
-configuration equivalent of `codex --full-auto` for normal development, not
-a Claude-style per-command classifier: Codex has no host-side allowlist that
-auto-approves individual command patterns. A new interactive session must be
-started after changing `~/.codex/config.toml`; existing sessions keep the
-policy they started with.
+configuration equivalent of `codex --approve-for-me`: normal workspace
+commands run automatically, while eligible sandbox-boundary requests go
+through the reviewer. A new interactive session must be started after
+changing `~/.codex/config.toml`; existing sessions keep the policy they
+started with.
 
 Commands that talk to an external tmux socket or write Windows-side runtime
-state can still hit a sandbox boundary. `on-failure` removes the routine
-approval prompt, but it cannot make an operation inside `workspace-write`
-safe. Keep those prompts as the signal that the command needs an explicit
-cross-filesystem allowance or a deliberately broader sandbox.
+state can still hit a sandbox boundary. Auto-review handles eligible requests;
+high-risk or rejected requests still surface to the user. Use
+`--sandbox danger-full-access` only for an explicitly trusted, externally
+sandboxed environment.
 
 ### 2. `[profiles.X]` presets for different work modes
 
@@ -55,8 +56,9 @@ sandbox_mode    = "read-only"
 network_access = false
 
 [profiles.dev]
-approval_policy = "on-failure"
-sandbox_mode    = "workspace-write"
+approval_policy    = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode       = "workspace-write"
 [profiles.dev.sandbox_workspace_write]
 network_access = true
 
