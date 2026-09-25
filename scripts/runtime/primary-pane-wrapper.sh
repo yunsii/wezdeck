@@ -40,6 +40,21 @@ source "$SCRIPT_DIR/managed-shell-lib.sh"
 
 login_shell="$(resolve_login_shell)"
 
+codex_command=0
+for wrapper_arg in "$@"; do
+  if [[ "$wrapper_arg" == "codex" || "$wrapper_arg" == */codex || "$wrapper_arg" == *"agent-launcher.sh" ]]; then
+    codex_command=1
+    break
+  fi
+done
+
+cleanup_codex_locks() {
+  (( codex_command == 1 )) || return 0
+  local takeover_script="$SCRIPT_DIR/codex-resume-takeover.sh"
+  [[ -x "$takeover_script" ]] || return 0
+  bash "$takeover_script" --cleanup-only || true
+}
+
 fall_back_to_login_shell() {
   local reason="${1:-unknown}"
   # If the controlling terminal has already been torn down (tmux closed the
@@ -67,6 +82,7 @@ on_int() {
 on_terminating_signal() {
   local sig="$1"
   runtime_log_info primary_pane "wrapper terminating on signal" "pid=$$" "sig=$sig"
+  cleanup_codex_locks
   # 128 + signal number, matching the convention bash uses for signal-induced
   # exits (HUP=1 → 129, TERM=15 → 143).
   case "$sig" in
@@ -90,5 +106,7 @@ runtime_log_info primary_pane "invoking agent" "pid=$$" "command=$1"
 "$@"
 rc=$?
 runtime_log_info primary_pane "agent returned" "pid=$$" "rc=$rc"
+
+cleanup_codex_locks
 
 fall_back_to_login_shell "agent_returned_rc=$rc"

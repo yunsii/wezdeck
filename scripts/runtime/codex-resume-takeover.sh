@@ -12,6 +12,12 @@ WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-codex-resume-takeover.
 
 codex_home="${CODEX_HOME:-$HOME/.codex}"
 lock_dir="$codex_home/thread-writer-locks"
+cleanup_only=0
+
+if [[ "${1:-}" == "--cleanup-only" ]]; then
+  cleanup_only=1
+  shift
+fi
 
 log_event() {
   local level="$1"
@@ -57,13 +63,16 @@ take_over_locks() {
   [[ -d "$lock_dir" ]] || return 0
   local lock base
   local lock_count=0
-  terminate_resume_process_groups
+  if (( cleanup_only == 0 )); then
+    terminate_resume_process_groups
+  fi
   while IFS= read -r -d '' lock; do
     base="${lock##*/}"
     ((lock_count += 1))
     rm -f -- "$lock"
     log_event info "codex resume lock taken over" \
-      "lock_file=$lock" "thread_id=${base%.lock}" "holder_action=process_group_terminate_then_remove"
+      "lock_file=$lock" "thread_id=${base%.lock}" \
+      "holder_action=$( (( cleanup_only == 1 )) && printf 'remove_on_agent_exit' || printf 'process_group_terminate_then_remove' )"
   done < <(find "$lock_dir" -maxdepth 1 -type f -name '*.lock' -print0 2>/dev/null)
   if (( lock_count > 0 )); then
     log_event info "codex resume locks cleared" "lock_count=$lock_count" "codex_home=$codex_home"
@@ -71,4 +80,7 @@ take_over_locks() {
 }
 
 take_over_locks
+if (( cleanup_only == 1 )); then
+  exit 0
+fi
 exec "$@"
