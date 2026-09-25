@@ -46,6 +46,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd -P)"
 # shellcheck disable=SC1091
 . "$script_dir/runtime-env-lib.sh"
 runtime_env_load_managed
+runtime_env_add_user_cli_paths
 # shellcheck disable=SC1091
 . "$script_dir/runtime-log-lib.sh" 2>/dev/null || true
 WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-agent-launcher.sh}"
@@ -114,6 +115,34 @@ log_resume_boot() {
   fi
 }
 
+# Managed panes are spawned by tmux's plain sh -c and therefore do not inherit
+# interactive zsh PATH setup. runtime_env_add_user_cli_paths has already
+# injected the stable user CLI directories before this lookup.
+resolve_agent_binary() {
+  local name="$1"
+  local resolved=""
+
+  resolved="$(command -v "$name" 2>/dev/null || true)"
+  if [[ "$resolved" == /* && -x "$resolved" ]]; then
+    printf '%s\n' "$resolved"
+    return 0
+  fi
+  return 1
+}
+
+require_agent_binary() {
+  local name="$1"
+  local resolved=""
+  resolved="$(resolve_agent_binary "$name" || true)"
+  if [[ -z "$resolved" ]]; then
+    printf 'agent-launcher: %s not found on managed user CLI PATH\n' "$name" >&2
+    _launcher_log_error "agent launcher failed" \
+      "reason=agent_not_found" "agent=$name" "cwd=$PWD"
+    return 127
+  fi
+  printf '%s\n' "$resolved"
+}
+
 # Called from inside `sh -c` fallback — keep argv tiny and best-effort.
 fallback_log_script="$script_dir/agent-resume-fallback-log.sh"
 
@@ -129,22 +158,25 @@ case "$agent" in
   claude)
     clear_anthropic_gateway_env
     log_resume_boot claude
-    exec sh -c 'claude --continue || { bash "$1" claude; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec claude; }' \
-      sh "$fallback_log_script"
+    claude_bin="$(require_agent_binary claude)"
+    exec sh -c '"$0" --continue || { bash "$1" claude; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec "$0"; }' \
+      "$claude_bin" "$fallback_log_script"
     ;;
   claude-sub2api)
     load_claude_sub2api_env
     # Env is inherited by the inner sh -c / claude process. Banner label
     # keeps the identity visible during the multi-second resume window.
     log_resume_boot claude-sub2api
-    exec sh -c 'claude --continue || { bash "$1" claude-sub2api; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude-sub2api ...\033[0m\n"; exec claude; }' \
-      sh "$fallback_log_script"
+    claude_bin="$(require_agent_binary claude)"
+    exec sh -c '"$0" --continue || { bash "$1" claude-sub2api; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude-sub2api ...\033[0m\n"; exec "$0"; }' \
+      "$claude_bin" "$fallback_log_script"
     ;;
   codex)
     log_resume_boot codex
-    exec sh -c 'exec bash "$1" codex resume --last' \
+    codex_bin="$(require_agent_binary codex)"
+    exec sh -c 'exec bash "$0" "$1" resume --last' \
       "$script_dir/codex-resume-takeover.sh" \
-      sh
+      "$codex_bin"
     ;;
   grok)
     # Grok Build: `--continue` resumes the most recent session for cwd
@@ -156,7 +188,7 @@ case "$agent" in
     # docs/tmux-ui.md#grok-build-in-tmux.
     grok_bin="$script_dir/grok-with-focus-filter.sh"
     if [[ ! -x "$grok_bin" ]]; then
-      grok_bin="$(command -v grok || true)"
+      grok_bin="$(resolve_agent_binary grok || true)"
     fi
     if [[ -z "$grok_bin" ]]; then
       printf 'agent-launcher: grok not found (expected %s or PATH)\n' \

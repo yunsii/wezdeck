@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Light layout heal after DPI / RDP / client-size glitches.
 #
-# Does NOT respawn panes or restart agents. For a full rebuild use the
-# palette refresh-current-* actions.
+# Managed two-pane windows also regain a missing secondary pane. This does
+# not respawn the primary agent or restart existing panes.
 #
 # Steps:
 #   1. resync client size to the PTY (refresh-client -S; if still drifted
 #      from TIOCGWINSZ, SIGWINCH the attach client — WezTerm can resize
 #      the pts while tmux keeps a stale client_width/height)
-#   2. rebalance managed two-pane windows (even-horizontal)
+#   2. restore the secondary pane for managed two-pane windows, then
+#      rebalance them (even-horizontal)
 #   3. clear cached status lines, force a status recompute so the bar
 #      packs to the number of visible content rows (not a fixed 3), then
 #      safety-clamp anything still above 3
@@ -201,6 +202,12 @@ refresh_clients
 # a size change without destroying the tree.
 pane_count="$(tmux list-panes -t "$window_id" 2>/dev/null | wc -l | tr -d ' ')"
 layout_meta="$(tmux_worktree_window_metadata "$window_id" @wezterm_window_layout 2>/dev/null || true)"
+if [[ "$layout_meta" == "managed_two_pane" && "${pane_count:-0}" -lt 2 ]]; then
+  tmux_worktree_ensure_window_panes "$window_id" "${cwd:-$(tmux display-message -p -t "$window_id" '#{pane_current_path}' 2>/dev/null || true)}" >/dev/null
+  pane_count="$(tmux list-panes -t "$window_id" 2>/dev/null | wc -l | tr -d ' ')"
+  runtime_log_info layout "restored missing secondary pane" \
+    "window_id=$window_id" "pane_count=${pane_count:-0}"
+fi
 if [[ "${pane_count:-0}" -ge 2 ]]; then
   if [[ "$layout_meta" == "managed_two_pane" || -z "$layout_meta" ]]; then
     tmux select-layout -t "$window_id" even-horizontal >/dev/null 2>&1 || true

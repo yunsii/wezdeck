@@ -107,7 +107,9 @@ Use this section when a managed tab **looks** wrongly sized (uneven panes, conte
 Script: `scripts/runtime/tmux-fix-layout.sh` (helpers in `tmux-fix-layout-lib.sh`).
 
 1. **Resync client → PTY** — `refresh-client -S`; if `TIOCGWINSZ` on the client tty still disagrees with `#{client_width}x#{client_height}`, send `SIGWINCH` to the `tmux attach` process on that tty, then `-S` again. If still drifted, last-resort `resize-window` to PTY cols × (PTY rows − status rows).
-2. **`even-horizontal`** on managed two-pane windows (and unknown layouts).
+2. **Restore the secondary pane** when a `managed_two_pane` window has fewer
+   than two panes, then apply `even-horizontal` (unknown layouts are only
+   rebalanced and are never expanded).
 3. **Status pack + safety clamp** — clear cached `@tmux_status_line_*`, force `tmux-status-refresh.sh` so rows match visible content, clamp anything still `> 3`.
 
 Triggers: manual `Ctrl+k r` / palette `Session: Fix layout`; automatic debounced heal on WezTerm `window-resized` and font zoom (`wezterm-x/lua/layout_heal.lua`); status row-count changes also re-assert `even-horizontal` from `tmux-status-layout.sh`.

@@ -197,6 +197,7 @@ window_refresh_spec() {
         primary_command="$resume_command"
       fi
     fi
+    primary_command="$(build_primary_agent_command "$primary_command")"
   fi
 
   layout="$(window_layout_for_target "$window_target")"
@@ -295,11 +296,34 @@ reset_window_in_place() {
     return 0
   }
   pane_count="$(tmux list-panes -t "$window_id" 2>/dev/null | wc -l | tr -d ' ')"
-  # Identify the primary pane by its pane id (first pane in the window's
-  # list), not by hard-coding pane_index == 0. With `pane-base-index 1`
-  # set in tmux.conf the agent pane's index is 1, not 0, so an
-  # index-based check would always treat the agent pane as a secondary.
-  primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1)"
+  # Prefer the explicit role tag. Pane order can change after split/kill and
+  # is not a semantic primary/secondary marker. Keep first-pane as the
+  # compatibility fallback for older windows without a role tag.
+  primary_pane_id="$(tmux show-window-options -t "$window_id" -v @wezterm_window_primary_pane 2>/dev/null || true)"
+  if [[ -n "$primary_pane_id" ]] \
+    && ! tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | grep -Fxq "$primary_pane_id"; then
+    primary_pane_id=""
+  fi
+  if [[ -z "$primary_pane_id" ]]; then
+    # Pane identity is layout metadata. Never infer it from the process in a
+    # pane: users may legitimately run another Codex/Claude in the secondary.
+    primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}|#{pane_left}' 2>/dev/null \
+      | sort -t '|' -k2,2n | head -n 1 | cut -d '|' -f1)"
+  fi
+  if [[ "$layout" == "managed_two_pane" ]]; then
+    leftmost_pane="$(tmux list-panes -t "$window_id" -F '#{pane_id}|#{pane_left}' 2>/dev/null \
+      | sort -t '|' -k2,2n | head -n 1 | cut -d '|' -f1)"
+    if [[ -n "$leftmost_pane" && "$primary_pane_id" != "$leftmost_pane" ]]; then
+      runtime_log_warn workspace "primary marker repaired from layout" \
+        "window_id=$window_id" "stale_primary=$primary_pane_id" \
+        "leftmost_pane=$leftmost_pane"
+      primary_pane_id="$leftmost_pane"
+      tmux set-window-option -t "$window_id" -q @wezterm_window_primary_pane "$primary_pane_id" 2>/dev/null || true
+    fi
+  fi
+  if [[ -z "$primary_pane_id" ]]; then
+    primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1)"
+  fi
   if [[ -n "$primary_pane_id" && "$target_pane" == "$primary_pane_id" ]]; then
     target_is_primary="1"
   else
@@ -320,7 +344,8 @@ reset_window_in_place() {
     else
       worktree_root="${HOME:-$PWD}"
     fi
-    primary_command="$(build_primary_shell_command)"
+    primary_command="$(tmux display-message -p -t "$target_pane" '#{pane_start_command}' 2>/dev/null || true)"
+    [[ -n "$primary_command" ]] || primary_command="$(build_primary_shell_command)"
   fi
 
   runtime_log_info workspace "resetting tmux window in place" \
@@ -356,14 +381,29 @@ reset_window_in_place() {
   tmux respawn-pane -k -t "$target_pane" -c "$worktree_root" "$primary_command"
   tmux rename-window -t "$window_id" "$window_label" 2>/dev/null || true
 
+  # Record the immediate post-respawn process identity. This distinguishes a
+  # bad command selection from an agent that starts and exits shortly after.
+  runtime_log_info workspace "primary pane respawned" \
+    "pane_id=$target_pane" \
+    "pane_current_command=$(tmux display-message -p -t "$target_pane" '#{pane_current_command}' 2>/dev/null || true)" \
+    "pane_start_command=$(tmux display-message -p -t "$target_pane" '#{pane_start_command}' 2>/dev/null || true)" \
+    "primary_command=$primary_command"
+
   # Tag (or clear) the agent profile on the primary pane so C-n
   # can detect it through the resume wrapper's leaf=sh / leaf=node
   # startup transient. See `@agent_pane_match` in tmux.conf.
   if [[ "$target_is_primary" == "1" ]]; then
     ensure_primary_pane_role_tag "$target_pane" "$role" "${wezterm_config_repo:-}" "$worktree_root"
+    tmux set-window-option -t "$window_id" -q @wezterm_window_primary_pane "$target_pane" 2>/dev/null || true
   fi
-  if [[ "$target_is_primary" == "1" && "$layout" == "managed_two_pane" && "${pane_count:-0}" -lt 2 ]]; then
+  # Always enforce the managed two-pane contract after respawning the
+  # primary. The helper is a no-op when the secondary already exists, and
+  # this also repairs a pane lost during the refresh race.
+  if [[ "$target_is_primary" == "1" && "$layout" == "managed_two_pane" ]]; then
     tmux_worktree_ensure_window_panes "$window_id" "$worktree_root"
+    runtime_log_info workspace "managed window panes enforced" \
+      "window_id=$window_id" \
+      "pane_count=$(tmux list-panes -t "$window_id" 2>/dev/null | wc -l | tr -d ' ')"
   fi
   if [[ "$target_is_primary" == "1" ]]; then
     apply_window_metadata "$session_name" "$window_id" "$worktree_root" "$window_label" "$primary_command" "$layout" "$role"

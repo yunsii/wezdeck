@@ -91,6 +91,45 @@ runtime_env_load_dir() {
   shopt -u nullglob 2>/dev/null || true
 }
 
+# Add user-installed CLI directories without sourcing an interactive shell.
+# tmux servers often start with a minimal PATH, while tools such as Codex are
+# installed under nvm/fnm-managed Node versions. Keep this deterministic and
+# side-effect free: only prepend existing directories and never run a shell rc.
+runtime_env_add_user_cli_paths() {
+  local dir=""
+  local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+  local default_alias=""
+  local nvm_default_bin=""
+  local -a candidates=()
+  local -a nvm_bins=()
+
+  candidates+=("$HOME/.local/share/fnm/aliases/default/bin")
+  candidates+=("$HOME/.volta/bin" "$HOME/.bun/bin" "$HOME/.local/bin")
+
+  if [[ -r "$nvm_dir/alias/default" ]]; then
+    default_alias="$(tr -d '[:space:]' < "$nvm_dir/alias/default")"
+  fi
+  shopt -s nullglob 2>/dev/null || true
+  if [[ "$default_alias" =~ ^v?[0-9]+$ ]]; then
+    nvm_bins=("$nvm_dir/versions/node/v${default_alias#v}"*/bin)
+  else
+    nvm_bins=("$nvm_dir/versions/node"/*/bin)
+  fi
+  shopt -u nullglob 2>/dev/null || true
+  if (( ${#nvm_bins[@]} > 0 )); then
+    nvm_default_bin="$(printf '%s\n' "${nvm_bins[@]}" | sort -V | tail -n 1)"
+  fi
+
+  for dir in "$nvm_default_bin" "${candidates[@]}"; do
+    [[ -d "$dir" ]] || continue
+    case ":$PATH:" in
+      *":$dir:"*) ;;
+      *) PATH="$dir:$PATH" ;;
+    esac
+  done
+  export PATH
+}
+
 runtime_env_load_managed() {
   local repo_root
   repo_root="$(runtime_env_repo_root)"

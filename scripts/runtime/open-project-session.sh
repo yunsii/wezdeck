@@ -211,6 +211,7 @@ if [[ -n "$agent_profile" ]]; then
   primary_pane_id="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1)"
   if [[ -n "$primary_pane_id" ]]; then
     tmux set-option -p -t "$primary_pane_id" @wezterm_pane_role "agent-cli:$agent_profile" 2>/dev/null || true
+    tmux set-window-option -t "$window_id" -q @wezterm_window_primary_pane "$primary_pane_id" 2>/dev/null || true
     runtime_log_info workspace "tagged primary pane with agent role" \
       "session_name=$session_name" \
       "window_id=$window_id" \

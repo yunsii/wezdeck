@@ -85,6 +85,52 @@ build_primary_shell_command() {
   printf '%s -il' "$quoted_shell"
 }
 
+# Keep the managed primary pane alive when a resume command exits before the
+# agent has started. Fresh workspace panes already use this wrapper; refresh
+# and session-replacement paths must use the same contract so a failed agent
+# cannot destroy the pane itself.
+build_primary_agent_command() {
+  local command="${1:-}"
+  local wrapper=""
+  local token=""
+  local -a argv=()
+
+  [[ -n "$command" ]] || {
+    build_primary_shell_command
+    return 0
+  }
+
+  # Metadata from open-project-session already contains the wrapper. Avoid
+  # nesting it when a later refresh reads that metadata back.
+  if [[ "$command" == *"primary-pane-wrapper.sh"* ]]; then
+    printf '%s\n' "$command"
+    return 0
+  fi
+
+  if declare -F resume_command_split_argv >/dev/null 2>&1; then
+    while IFS= read -r token; do
+      [[ -n "$token" ]] && argv+=("$token")
+    done < <(resume_command_split_argv "$command")
+  else
+    argv=("$command")
+  fi
+
+  if (( ${#argv[@]} == 0 )); then
+    build_primary_shell_command
+    return 0
+  fi
+
+  wrapper="${wezterm_config_repo:-}/scripts/runtime/primary-pane-wrapper.sh"
+  if [[ ! -x "$wrapper" ]]; then
+    printf '%s\n' "$command"
+    return 0
+  fi
+
+  printf 'bash %q' "$wrapper"
+  printf ' %q' "${argv[@]}"
+  printf '\n'
+}
+
 # Returns the agent profile base (claude / codex / …) when the active
 # `MANAGED_AGENT_PROFILE` has a configured `*_RESUME_COMMAND` — i.e. when
 # `resolve_resume_primary_command` would actually override the metadata

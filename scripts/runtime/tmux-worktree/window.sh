@@ -76,6 +76,8 @@ tmux_worktree_ensure_window_panes() {
   local cwd="${2:?missing cwd}"
   local pane_count=""
   local first_pane=""
+  local shell_command=""
+  local created_secondary=0
 
   pane_count="$(tmux list-panes -t "$window_target" 2>/dev/null | wc -l | tr -d ' ')"
   first_pane="$(tmux list-panes -t "$window_target" -F '#{pane_id}' 2>/dev/null | head -n 1)"
@@ -86,10 +88,49 @@ tmux_worktree_ensure_window_panes() {
 
   if [[ "${pane_count:-0}" -lt 2 ]]; then
     runtime_log_info worktree "adding missing secondary pane" "window_target=$window_target" "cwd=$cwd" "pane_count=${pane_count:-0}"
-    tmux split-window -d -h -t "$first_pane" -c "$cwd"
+    shell_command="$(resolve_login_shell)"
+    tmux split-window -d -h -t "$first_pane" -c "$cwd" "$shell_command" -il
+    created_secondary=1
   fi
 
-  tmux select-pane -t "$first_pane"
+  # A layout check must not steal focus from the pane the user was using.
+  # Select the primary only when a split was just created and tmux would
+  # otherwise leave focus on the new secondary shell.
+  if (( created_secondary )); then
+    tmux select-pane -t "$first_pane"
+  fi
+}
+
+tmux_worktree_place_primary_left() {
+  local window_target="${1:?missing window target}"
+  local primary_pane="${2:?missing primary pane}"
+  local primary_left=""
+  local other_pane=""
+  local other_left=""
+
+  while IFS='|' read -r pane left; do
+    [[ -n "$pane" ]] || continue
+    if [[ "$pane" == "$primary_pane" ]]; then
+      primary_left="$left"
+    elif [[ -z "$other_pane" ]]; then
+      other_pane="$pane"
+      other_left="$left"
+    fi
+  done < <(tmux list-panes -t "$window_target" -F '#{pane_id}|#{pane_left}' 2>/dev/null || true)
+
+  if [[ "$primary_left" =~ ^[0-9]+$ && "$other_left" =~ ^[0-9]+$ ]] \
+    && (( primary_left > other_left )); then
+    tmux swap-pane -s "$primary_pane" -t "$other_pane" >/dev/null 2>&1 || true
+    runtime_log_info worktree "placed primary pane on left" \
+      "window_target=$window_target" "primary_pane=$primary_pane" \
+      "secondary_pane=$other_pane" "primary_left_before=$primary_left" \
+      "secondary_left_before=$other_left"
+  else
+    runtime_log_info worktree "primary pane placement checked" \
+      "window_target=$window_target" "primary_pane=$primary_pane" \
+      "secondary_pane=${other_pane:-}" "primary_left=${primary_left:-}" \
+      "secondary_left=${other_left:-}" "action=unchanged"
+  fi
 }
 
 tmux_worktree_template_window() {
