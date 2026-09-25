@@ -6,11 +6,22 @@ internal static class ImeStateSampler
 {
     public static ImeStateSample Sample()
     {
-        var hwnd = NativeMethods.GetForegroundWindow();
-        if (hwnd == IntPtr.Zero)
+        var foreground = WindowQuery.GetForegroundWindowInfo();
+        if (foreground is null)
         {
             return new ImeStateSample("unknown", null, "no_foreground", "no_foreground");
         }
+
+        // The right-status badge belongs to WezTerm. Sampling another
+        // foreground app (for example a Chinese editor) would leak that
+        // app's IME mode into every WezTerm window for one heartbeat.
+        if (!string.Equals(foreground.ProcessName, "wezterm-gui", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(foreground.ProcessName, "wezterm", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ImeStateSample("unknown", null, "foreground_not_wezterm", "foreground_not_wezterm");
+        }
+
+        var hwnd = foreground.WindowHandle;
 
         var threadId = NativeMethods.GetWindowThreadProcessId(hwnd, out _);
         var hkl = NativeMethods.GetKeyboardLayout(threadId);

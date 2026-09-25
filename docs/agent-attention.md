@@ -4,6 +4,16 @@ Use this doc when you need anything about the agent-attention pipeline: shared s
 
 The high-level layering (hooks → shared JSON → OSC tick → Lua render) is summarised in [`architecture.md#interaction-layers`](./architecture.md#interaction-layers); this doc owns the implementation detail.
 
+Use `scripts/dev/agent-hooks.sh check --provider all` to inspect the
+user-level Claude/Codex wiring without changing it. Runtime sync runs this
+check in advisory mode and prints a repair command for missing, partial, stale,
+or invalid configuration. `scripts/dev/agent-hooks.sh install --provider
+claude|codex|all` is the explicit write path: it merges the repo template
+idempotently, preserves existing hooks, and backs up an existing file before
+replacement. `scripts/dev/agent-hooks.sh probe` runs the offline adapter smoke
+suite. Codex inline TOML hooks are reported for manual merge rather than being
+rewritten by the installer.
+
 ## Hook installation
 
 The agent-attention feature expects agent CLI lifecycle hooks to call a provider adapter. Adapters under `scripts/runtime/agent-attention/adapters/` normalize provider payloads into the shared emitter at `scripts/runtime/agent-attention/emit.sh`, which is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals. The legacy Claude path `scripts/claude-hooks/emit-agent-status.sh` remains as a compatibility wrapper around the Claude adapter.
@@ -20,7 +30,7 @@ The agent-attention feature expects agent CLI lifecycle hooks to call a provider
 
 ### Claude install / update
 
-Merge the block below into the `hooks` section of `~/.claude/settings.json` (do not replace the file). Each hook event has one shell invocation:
+Use `scripts/dev/agent-hooks.sh install --provider claude` to merge the repo template into `~/.claude/settings.json` (do not replace the file). The equivalent hook block is shown below for manual review; each hook event has one shell invocation:
 
 ```json
 {
@@ -157,7 +167,7 @@ Decision tree:
 
 Codex now exposes lifecycle hooks in `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` / project `.codex/config.toml`. The relevant events map cleanly onto the existing attention state machine: `UserPromptSubmit → running`, `PermissionRequest → waiting`, `Stop → done`, `PreToolUse` / `PostToolUse → resolved`, and `SessionStart` with matcher `clear → pane-evict`.
 
-Use the template at `scripts/runtime/agent-attention/install/codex-hooks.json`, or merge this block into user-level `~/.codex/hooks.json`. Prefer the user-level file for this machine: project-local `.codex/hooks.json` only applies after that project layer is trusted, while the attention counter is a terminal-wide operator surface.
+Use `scripts/dev/agent-hooks.sh install --provider codex` to merge the template into user-level `~/.codex/hooks.json`. The checked-in template uses a repo placeholder that the installer resolves to the current checkout. Prefer the user-level file for this machine: project-local `.codex/hooks.json` only applies after that project layer is trusted, while the attention counter is a terminal-wide operator surface.
 
 ```json
 {

@@ -20,6 +20,20 @@ local function detect_host_os()
 end
 
 local function default_runtime_state_dir(config_dir)
+  local override = wezterm and os.getenv 'WEZTERM_RUNTIME_STATE_DIR'
+  if override and override ~= '' then
+    return override
+  end
+
+  -- Canary WezTerm is launched with a config file under the runtime canary
+  -- tree while `wezterm.config_dir` still points at the shared parent. Keep
+  -- its helper state isolated so the probe cannot race the live helper.
+  local config_file = wezterm.config_file or ''
+  if type(config_file) == 'string'
+    and config_file:lower():find('wezterm%-runtime[/\\]canary[/\\]') then
+    return config_dir
+  end
+
   local host_os = detect_host_os()
 
   if host_os == 'windows' then

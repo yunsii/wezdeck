@@ -575,6 +575,35 @@ finalize_bootstrap_refresh() {
   sync_trace "step=refresh-bootstrap status=completed target_file=$TARGET_FILE"
 }
 
+run_agent_hooks_check() {
+  local check_script="$REPO_ROOT/scripts/dev/agent-hooks.sh"
+  local output=""
+  local rc=0
+
+  if [[ "${WEZTERM_SYNC_SKIP_AGENT_HOOK_CHECK:-0}" == "1" ]]; then
+    sync_trace "step=agent-hooks-check status=skipped reason=env_override"
+    return 0
+  fi
+  if [[ ! -x "$check_script" ]]; then
+    sync_trace "step=agent-hooks-check status=skipped reason=script_missing"
+    return 0
+  fi
+
+  output="$("$check_script" check --provider all --quiet 2>&1)" || rc=$?
+  if (( rc == 0 )); then
+    sync_trace "step=agent-hooks-check status=healthy providers=claude,codex"
+    runtime_log_info sync "agent hooks check passed" "providers=claude,codex"
+    return 0
+  fi
+
+  sync_trace "step=agent-hooks-check status=warning rc=$rc providers=claude,codex"
+  runtime_log_warn sync "agent hooks check warning" \
+    "providers=claude,codex" "check_rc=$rc"
+  printf '[sync] agent-hooks-check warning (sync continues):\n%s\n' \
+    "${output:-agent-hooks check failed without details}" >&2
+  printf '[sync] fix: %s install --provider codex|claude|all\n' "$check_script" >&2
+}
+
 # Fire-and-forget + daily rate-limit: deps-check is purely advisory (it
 # hits the network to look up wezterm/tmux/go versions) and historically
 # dominates wall time at ~40s. Skip if we already ran today; otherwise
@@ -615,6 +644,7 @@ sync_trace "flow=wezdeck-bootstrap status=running async=1 pid=$BOOTSTRAP_FLOW_PI
 wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
 wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
+run_agent_hooks_check
 
 # Discovery marker for WSL-resident agents (Claude Code, Codex CLI, etc.).
 # Lands in $HOME/.wezterm-x/, not $TARGET_HOME/.wezterm-x/, because the

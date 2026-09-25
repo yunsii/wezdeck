@@ -5,17 +5,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh running"
+            "command": "__WEZTERM_REPO__/scripts/claude-hooks/emit-agent-status.sh running"
           }
         ]
       }
     ],
-    "PermissionRequest": [
+    "Notification": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh waiting"
+            "command": "__WEZTERM_REPO__/scripts/claude-hooks/emit-agent-status.sh waiting"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh done"
+            "command": "__WEZTERM_REPO__/scripts/claude-hooks/emit-agent-status.sh done"
           },
           {
             "type": "command",
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh resolved"
+            "command": "__WEZTERM_REPO__/scripts/claude-hooks/emit-agent-status.sh resolved"
           }
         ]
       }
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh resolved"
+            "command": "__WEZTERM_REPO__/scripts/claude-hooks/emit-agent-status.sh resolved"
           },
           {
             "type": "command",
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__WEZTERM_REPO__/scripts/runtime/agent-attention/adapters/codex.sh pane-evict"
+            "command": "__WEZTERM_REPO__/scripts/claude-hooks/emit-agent-status.sh pane-evict"
           }
         ]
       }

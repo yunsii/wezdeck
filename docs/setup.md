@@ -73,6 +73,8 @@ There is one unified env loader for managed-runtime shell scripts: `scripts/runt
 1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [host-disk.md](./host-disk.md)), and VS Code launch overrides.
 2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets. Drop a new file there to add a secret; no loader edits, no rc-file edits. The same dir is sourced by `~/.zshrc`, so interactive zsh and machine-spawned agents share one source of truth.
 
+Managed agent launchers also add stable user CLI directories without starting an interactive shell: the nvm default Node `bin`, fnm's `aliases/default/bin`, Volta, Bun, and `~/.local/bin` when present. This keeps tools such as `codex` reachable from tmux F5/respawn paths even when the tmux server was started with a minimal PATH.
+
 The Lua side reads `shared.env` independently via `helpers.load_optional_env_file`; that is a structural cross-language constraint — Lua cannot call into bash — and is the only second loader implementation that exists.
 
 | Genre | Goes in | Notes |
@@ -222,6 +224,20 @@ shell `wezterm` / `wezterm-gui` stays small, see
 
 Hook install / upgrade templates, "what each hook does", verification, and provider integration live in [`agent-attention.md#hook-installation`](./agent-attention.md#hook-installation). The shared emitter lives at `scripts/runtime/agent-attention/emit.sh`; `scripts/claude-hooks/emit-agent-status.sh` remains as the Claude compatibility wrapper.
 
+After a runtime sync, inspect the user-level hook wiring with:
+
+```bash
+scripts/dev/agent-hooks.sh check --provider all
+```
+
+To install or repair the repo hooks, use the explicit merge command:
+
+```bash
+scripts/dev/agent-hooks.sh install --provider codex
+```
+
+The install command preserves existing hook entries and creates a timestamped backup. Runtime sync only checks and warns; it never edits `~/.codex` or `~/.claude` automatically.
+
 ## Tmux Status Prompt Hook
 
 This is a **recommended** part of local setup. The tmux status line polls git state on a 30-second timer and refreshes when you switch pane, window, or client. Neither path fires right after you run a `git` command from the shell, so branch and change counters can lag up to 30s behind reality. The prompt hook closes that gap: every time the shell returns to the prompt, it asks tmux to force-refresh (debounced to 2s by `@tmux_status_force_debounce`, so rapid commands do not stampede).
@@ -275,14 +291,14 @@ This is **not** a hard repo prerequisite (many flows use VS Code via `EDITOR=cod
 
 In `hybrid-wsl` the WezTerm right status bar renders a compact IME state badge so keyboard-first interactions (chord prefixes, `y/n` confirmations, single-letter shortcuts) do not have to guess which input mode is active.
 
-The badge reflects what the Windows host-helper reads from the foreground window, not WezTerm's internal `use_ime` flag:
+The badge reflects what the Windows host-helper reads from the foreground WezTerm window, not WezTerm's internal `use_ime` flag. When another Windows application is foreground, the helper holds the last WezTerm sample instead of borrowing that application's IME mode:
 
 - `中`: a CJK IME is loaded and currently in native composition mode (about to produce Chinese/Japanese/Korean characters).
 - `英`: a CJK IME is loaded but the user has toggled the IME itself to English mode (typically via `Shift` on Microsoft Pinyin, Sogou, QQ, etc.).
 - `EN`: the active keyboard layout is a non-CJK language (e.g. `en-US`); IMM composition is not in play.
 - `中?` (italic, dim): the helper is unreachable or the IME did not expose a conversion state. Usually transient while the helper is restarting.
 
-The badge is hidden entirely in `posix-local` because no Windows host-helper is running to query IMM. On Windows the helper pulls state via `GetForegroundWindow` → `GetKeyboardLayout` → `ImmGetConversionStatus`, so tapping `Shift` (or your IME's own toggle key) updates the badge within the next `update-status` tick. There is no WezTerm-managed override: the OS IME and this badge agree by construction.
+The badge is hidden entirely in `posix-local` because no Windows host-helper is running to query IMM. On Windows the helper first confirms that `GetForegroundWindow` belongs to `wezterm-gui`, then reads `GetKeyboardLayout` → `ImmGetConversionStatus`; tapping `Shift` (or your IME's own toggle key) updates the badge within the next `update-status` tick. There is no WezTerm-managed override: the OS IME and this badge agree by construction.
 
 ## Windows Script Execution
 

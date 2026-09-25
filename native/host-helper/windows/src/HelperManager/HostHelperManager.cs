@@ -15,6 +15,7 @@ internal sealed class HostHelperManager : IDisposable
     private int heartbeatTickActive;
     private bool disposed;
     private ImeStateSample currentImeSample = new("unknown", null, "uninitialized", "uninitialized");
+    private string? lastImeHoldDecisionPath;
 
     public HostHelperManager(HelperConfig config)
     {
@@ -141,7 +142,24 @@ internal sealed class HostHelperManager : IDisposable
 
         try
         {
-            currentImeSample = ImeStateSampler.Sample();
+            var imeSample = ImeStateSampler.Sample();
+            if (imeSample.DecisionPath is "foreground_not_wezterm" or "no_foreground")
+            {
+                if (!string.Equals(lastImeHoldDecisionPath, imeSample.DecisionPath, StringComparison.Ordinal))
+                {
+                    logger.Info("ime", "ime sample held for non-WezTerm foreground", new Dictionary<string, string?>
+                    {
+                        ["decision_path"] = imeSample.DecisionPath,
+                        ["foreground_process"] = "other",
+                    });
+                    lastImeHoldDecisionPath = imeSample.DecisionPath;
+                }
+            }
+            else
+            {
+                lastImeHoldDecisionPath = null;
+                currentImeSample = imeSample;
+            }
             try
             {
                 foregroundChangeTracker.Sample();
@@ -226,6 +244,7 @@ internal sealed class HostHelperManager : IDisposable
                 $"ime_mode={FileSystemUtil.Sanitize(sample.Mode)}",
                 $"ime_lang={FileSystemUtil.Sanitize(sample.Lang ?? string.Empty)}",
                 $"ime_reason={FileSystemUtil.Sanitize(sample.Reason ?? string.Empty)}",
+                $"ime_decision_path={FileSystemUtil.Sanitize(sample.DecisionPath)}",
             };
 
             FileSystemUtil.WriteAtomicTextFile(config.StatePath, string.Join("\r\n", lines) + "\r\n");

@@ -128,15 +128,39 @@ to_win_path() {
 kill_canary_processes() {
   command -v powershell.exe >/dev/null 2>&1 || return 0
   powershell.exe -NoProfile -Command '
-$procs = Get-CimInstance Win32_Process | Where-Object {
-  ($_.Name -eq "wezterm.exe" -or $_.Name -eq "wezterm-gui.exe") -and
-  ($_.CommandLine -match "wezdeck-canary" -or $_.CommandLine -match "wezterm-runtime\\canary")
+$statePaths = @(
+  (Join-Path $env:LOCALAPPDATA "wezterm-runtime\canary\state\helper\state.env"),
+  (Join-Path $env:LOCALAPPDATA "wezterm-runtime\canary\canary\state\helper\state.env")
+)
+$killed = 0
+for ($attempt = 0; $attempt -lt 20; $attempt++) {
+  $statePids = foreach ($statePath in $statePaths) {
+    if (Test-Path -LiteralPath $statePath) {
+      $line = Get-Content -LiteralPath $statePath -ErrorAction SilentlyContinue |
+        Where-Object { $_ -match "^pid=([0-9]+)$" } | Select-Object -Last 1
+      if ($line -match "^pid=([0-9]+)$") { [int]$Matches[1] }
+    }
+  }
+  $procs = Get-CimInstance Win32_Process | Where-Object {
+    ($_.Name -eq "wezterm.exe" -or $_.Name -eq "wezterm-gui.exe") -and
+    ($_.CommandLine -match "wezdeck-canary" -or $_.CommandLine -match "wezterm-runtime\\canary")
+  }
+  $helpers = Get-CimInstance Win32_Process | Where-Object {
+    ($_.Name -eq "helper-manager.exe") -and
+    ($_.CommandLine -match "wezterm-runtime\\canary")
+  }
+  $all = @($procs) + @($helpers)
+  $ids = @($all.ProcessId) + @($statePids)
+  if (@($ids).Count -eq 0) { break }
+  foreach ($id in $ids | Select-Object -Unique) {
+    Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+    $killed++
+  }
+  Start-Sleep -Milliseconds 200
 }
-foreach ($p in $procs) {
-  Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
-}
-Write-Output ("killed=" + @($procs).Count)
+Write-Output ("killed=" + $killed)
 ' 2>/dev/null || true
+  bash "$repo_root/scripts/dev/stop-windows-runtime-helper.sh" --canary >/dev/null 2>&1 || true
 }
 
 backup_tree() {
@@ -190,6 +214,8 @@ launch_canary_process() {
 
   local cfg_win
   cfg_win="$(to_win_path "$CANARY_BOOTSTRAP")"
+  local state_dir_win
+  state_dir_win="$(to_win_path "$CANARY_ROOT")"
 
   printf 'Launching canary WezTerm\n'
   printf '  exe   : %s\n' "$wez"
@@ -200,14 +226,16 @@ launch_canary_process() {
   # --class: separate windowing class from the main instance
   # --workspace default + --no-auto-connect: light smoke, no managed cold-open
   if [[ "$wez" == *.exe || "$wez" == */wezterm.exe || "$wez" == */wezterm-gui.exe ]]; then
-    "$wez" --config-file "$cfg_win" start \
+    WEZTERM_RUNTIME_STATE_DIR="$state_dir_win" \
+      "$wez" --config-file "$cfg_win" start \
       --always-new-process \
       --class wezdeck-canary \
       --workspace default \
       --no-auto-connect \
       >/dev/null 2>&1 &
   else
-    "$wez" --config-file "$CANARY_BOOTSTRAP" start \
+    WEZTERM_RUNTIME_STATE_DIR="$CANARY_ROOT" \
+      "$wez" --config-file "$CANARY_BOOTSTRAP" start \
       --always-new-process \
       --class wezdeck-canary \
       --workspace default \
@@ -247,6 +275,10 @@ do_auto() {
       # Close probe windows before promote so they do not linger / multiply.
       kill_canary_processes
       do_promote
+      # Helper startup can lag GUI startup by several seconds; reap any
+      # canary manager that appeared after the first close pass.
+      sleep 1
+      kill_canary_processes
       rm -f "$CANARY_ROOT/auto-quit.flag"
       printf 'Auto-promote complete (canary windows closed).\n'
       return 0

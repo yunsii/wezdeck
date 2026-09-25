@@ -94,7 +94,11 @@ skills/wezterm-runtime-sync/scripts/sync-runtime.sh --target-home /mnt/c/Users/y
 Run those commands from the repo root, or set `WEZDECK_REPO=/absolute/path/to/repo` (legacy `WEZTERM_CONFIG_REPO` still accepted) before invoking the script from elsewhere.
 
 The sync step publishes the runtime, updates the stable top-level bootstrap last, and installs the Windows helper on Windows targets. The installer now prefers a local Windows `dotnet` build from `%USERPROFILE%\.wezterm-native\host-helper\windows\src\...`; if `dotnet` is unavailable, it can fall back to a version-pinned GitHub release package declared in `native/host-helper/windows/release-manifest.json`. `.sync-target` is repo-local and gitignored.
+
+The helper is a daemon-like process and can outlive a canary window. For an explicit recovery or canary cleanup, use `scripts/dev/stop-windows-runtime-helper.sh --canary`; use the default form for the live helper, and `--all` only when deliberately stopping every helper manager so the next ensure can recreate it.
 It also refreshes `$HOME/.wezterm-x/agent-tools.env` on the **WSL user home** (regardless of where the wezterm runtime files go) so WSL-resident agent platforms — Claude Code, Codex CLI, etc. — can discover repo-local wrappers from one stable marker file. Schema and contract: [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
+
+After the runtime copy, sync runs the read-only `scripts/dev/agent-hooks.sh check --provider all` check. A missing, partial, stale, or invalid user-level hook configuration is an advisory warning and does not block runtime publication; repair it explicitly with `scripts/dev/agent-hooks.sh install --provider codex|claude|all`. Set `WEZTERM_SYNC_SKIP_AGENT_HOOK_CHECK=1` only when diagnosing the sync path itself.
 
 Sync also mirrors `config/worktree-task.env` into the runtime dir as `repo-worktree-task.env` so the Windows-side wezterm.exe can read it; edits to `config/worktree-task.env` only take effect after the next sync. Why this matters for `<base>_resume` profile registration: see [`workspaces.md#behavior`](./workspaces.md#behavior).
 
