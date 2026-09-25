@@ -28,7 +28,7 @@ Use this doc when you need prerequisites and local setup.
 
 1. Copy `wezterm-x/local.example/` to `wezterm-x/local/`.
 2. Edit `wezterm-x/local/constants.lua` for `runtime_mode`, runtime shell, UI variant, and OS-specific integrations such as `default_domain` or Chrome debug profile path.
-3. Edit `wezterm-x/local/shared.env` for repo-machine config values consumed by both Lua and shell — `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, and so on. For user-level secrets that should not be tied to a specific repo clone (CNB tokens, third-party API keys), prefer `~/.config/shell-env.d/<name>.env` instead — see [Env Loading Model](#env-loading-model) for the contract.
+3. Edit `wezterm-x/local/shared.env` for repo-machine config values consumed by both Lua and shell — `MANAGED_AGENT_PROFILE`, `MANAGED_AGENT_PERMISSION_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, and so on. For user-level secrets that should not be tied to a specific repo clone (CNB tokens, third-party API keys), prefer `~/.config/shell-env.d/<name>.env` instead — see [Env Loading Model](#env-loading-model) for the contract.
 4. Edit `wezterm-x/local/workspaces.lua` for your private project directories.
 5. Optionally create `~/.config/worktree-task/config.env` when you need to point globally installed `worktree-task` back at this checkout with `WEZDECK_REPO=/absolute/path` (legacy `WEZTERM_CONFIG_REPO=...` still accepted).
 6. Optionally edit `wezterm-x/local/command-panel.sh` for machine-local tmux command palette entries exposed through `Ctrl+Shift+P`.
@@ -70,7 +70,7 @@ Re-run `skills/wezterm-runtime-sync/scripts/sync-runtime.sh` and reload for chan
 
 There is one unified env loader for managed-runtime shell scripts: `scripts/runtime/runtime-env-lib.sh`. Any agent / status / hook entry point that needs env should source it and call `runtime_env_load_managed`, which sources two layers in this order (later wins):
 
-1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [host-disk.md](./host-disk.md)), and VS Code launch overrides.
+1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `MANAGED_AGENT_PERMISSION_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [host-disk.md](./host-disk.md)), and VS Code launch overrides.
 2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets. Drop a new file there to add a secret; no loader edits, no rc-file edits. The same dir is sourced by `~/.zshrc`, so interactive zsh and machine-spawned agents share one source of truth.
 
 Managed agent launchers also add stable user CLI directories without starting an interactive shell: the nvm default Node `bin`, fnm's `aliases/default/bin`, Volta, Bun, and `~/.local/bin` when present. This keeps tools such as `codex` reachable from tmux F5/respawn paths even when the tmux server was started with a minimal PATH.

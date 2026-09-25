@@ -43,9 +43,22 @@
 set -eu
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
+# An item/workspace override is injected as an inline environment assignment
+# by Lua or resume-command.sh. Preserve it across the shared env load so the
+# more specific launch context wins over the machine default.
+permission_override_set=0
+permission_override=""
+if [[ -n "${MANAGED_AGENT_PERMISSION_PROFILE+x}" ]]; then
+  permission_override_set=1
+  permission_override="$MANAGED_AGENT_PERMISSION_PROFILE"
+fi
 # shellcheck disable=SC1091
 . "$script_dir/runtime-env-lib.sh"
 runtime_env_load_managed
+if (( permission_override_set )); then
+  MANAGED_AGENT_PERMISSION_PROFILE="$permission_override"
+  export MANAGED_AGENT_PERMISSION_PROFILE
+fi
 runtime_env_add_user_cli_paths
 # shellcheck disable=SC1091
 . "$script_dir/runtime-log-lib.sh" 2>/dev/null || true
@@ -91,27 +104,37 @@ print_loading_banner() {
   [[ "${WEZTERM_NO_LOADING_BANNER:-}" == "1" ]] && return 0
 
   local label="$1"
+  local mode="${2:-base}"
   [[ -n "$label" ]] || label="agent"
 
   # \033[2J\033[H = clear + home so the banner anchors at top-left even
   # if the parent shell painted a prompt bit before this. Two newlines
   # of leading padding so the banner sits a couple rows down instead of
   # hugging the very top edge.
-  printf '\033[2J\033[H\n\n  \033[2;36mLoading %s ...\033[0m\n' "$label"
+  printf '\033[2J\033[H\n\n  \033[2;36mLoading %s ...\033[0m\n  \033[2;36mMode: %s\033[0m\n' \
+    "$label" "$mode"
 }
 
 # shellcheck disable=SC1091
 . "$script_dir/agent-claude-sub2api-lib.sh"
 
-print_loading_banner "$agent"
+loading_mode="base"
+if [[ -n "${MANAGED_AGENT_PERMISSION_PROFILE:-}" ]]; then
+  loading_mode="$MANAGED_AGENT_PERMISSION_PROFILE"
+fi
+print_loading_banner "$agent" "$loading_mode"
 
 # Workflow breadcrumb: every managed primary pane boots as resume-attempt;
 # the || branch logs resume_fallback_fresh when continue/resume finds nothing.
 log_resume_boot() {
   local name="$1"
+  local permission_profile="${2:-base}"
+  local permission_resolution="${3:-base}"
   if declare -F runtime_log_info >/dev/null 2>&1; then
     runtime_log_info primary_pane "agent resume boot" \
-      "agent=$name" "mode=resume_attempt" "cwd=$PWD" || true
+      "agent=$name" "mode=resume_attempt" \
+      "permission_profile=$permission_profile" \
+      "permission_resolution=$permission_resolution" "cwd=$PWD" || true
   fi
 }
 
@@ -146,6 +169,65 @@ require_agent_binary() {
 # Called from inside `sh -c` fallback — keep argv tiny and best-effort.
 fallback_log_script="$script_dir/agent-resume-fallback-log.sh"
 
+ensure_codex_permission_overlay() {
+  local profile="$1"
+  local profile_file="${CODEX_HOME:-$HOME/.codex}/${profile}.config.toml"
+  [[ -f "$profile_file" ]] && return 0
+
+  local linker="$script_dir/../dev/link-codex-permission-profiles.sh"
+  if [[ -x "$linker" ]]; then
+    "$linker" >/dev/null 2>&1 || true
+  fi
+
+  [[ -f "$profile_file" ]] && return 0
+  printf 'agent-launcher: Codex permission overlay unavailable: %s\n' \
+    "$profile_file" >&2
+  _launcher_log_error "agent launcher failed" \
+    "reason=codex_permission_overlay_missing" \
+    "profile=$profile" "expected=$profile_file" "cwd=$PWD"
+  return 1
+}
+
+resolve_claude_permission() {
+  CLAUDE_PERMISSION_ARGS=()
+  CLAUDE_PERMISSION_PROFILE="${MANAGED_AGENT_PERMISSION_PROFILE:-}"
+  CLAUDE_PERMISSION_RESOLUTION=base
+  case "$CLAUDE_PERMISSION_PROFILE" in
+    ''|auto) ;;
+    full-access)
+      CLAUDE_PERMISSION_ARGS=(--permission-mode bypassPermissions)
+      CLAUDE_PERMISSION_RESOLUTION=cli
+      ;;
+    *)
+      if declare -F runtime_log_warn >/dev/null 2>&1; then
+        runtime_log_warn primary_pane "unknown Claude permission profile; using base config" \
+          "profile=$CLAUDE_PERMISSION_PROFILE" "allowed=auto,full-access" || true
+      fi
+      CLAUDE_PERMISSION_PROFILE=""
+      ;;
+  esac
+}
+
+resolve_grok_permission() {
+  GROK_PERMISSION_ARGS=()
+  GROK_PERMISSION_PROFILE="${MANAGED_AGENT_PERMISSION_PROFILE:-}"
+  GROK_PERMISSION_RESOLUTION=base
+  case "$GROK_PERMISSION_PROFILE" in
+    ''|auto) ;;
+    full-access)
+      GROK_PERMISSION_ARGS=(--always-approve)
+      GROK_PERMISSION_RESOLUTION=cli
+      ;;
+    *)
+      if declare -F runtime_log_warn >/dev/null 2>&1; then
+        runtime_log_warn primary_pane "unknown Grok permission profile; using base config" \
+          "profile=$GROK_PERMISSION_PROFILE" "allowed=auto,full-access" || true
+      fi
+      GROK_PERMISSION_PROFILE=""
+      ;;
+  esac
+}
+
 # Fallback re-paint: when `--continue` (or `resume --last`) finds no
 # session, the CLI prints "No conversation found to continue" to the
 # primary screen and exits non-zero. The fresh `<agent>`'s welcome card
@@ -157,26 +239,54 @@ fallback_log_script="$script_dir/agent-resume-fallback-log.sh"
 case "$agent" in
   claude)
     clear_anthropic_gateway_env
-    log_resume_boot claude
+    resolve_claude_permission
+    log_resume_boot claude "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
-    exec sh -c '"$0" --continue || { bash "$1" claude; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude ...\033[0m\n"; exec "$0"; }' \
-      "$claude_bin" "$fallback_log_script"
+    exec bash "$script_dir/agent-resume.sh" claude "$fallback_log_script" \
+      "$claude_bin" "${CLAUDE_PERMISSION_PROFILE:-base}" \
+      "${CLAUDE_PERMISSION_ARGS[@]}"
     ;;
   claude-sub2api)
     load_claude_sub2api_env
     # Env is inherited by the inner sh -c / claude process. Banner label
     # keeps the identity visible during the multi-second resume window.
-    log_resume_boot claude-sub2api
+    resolve_claude_permission
+    log_resume_boot claude-sub2api "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
-    exec sh -c '"$0" --continue || { bash "$1" claude-sub2api; printf "\033[2J\033[H\n\n  \033[2;36mLoading claude-sub2api ...\033[0m\n"; exec "$0"; }' \
-      "$claude_bin" "$fallback_log_script"
+    exec bash "$script_dir/agent-resume.sh" claude-sub2api "$fallback_log_script" \
+      "$claude_bin" "${CLAUDE_PERMISSION_PROFILE:-base}" \
+      "${CLAUDE_PERMISSION_ARGS[@]}"
     ;;
   codex)
-    log_resume_boot codex
     codex_bin="$(require_agent_binary codex)"
-    exec sh -c 'exec bash "$0" "$1" resume --last' \
-      "$script_dir/codex-resume-takeover.sh" \
-      "$codex_bin"
+    codex_profile_args=()
+    if [[ -n "${MANAGED_CODEX_PROFILE:-}" ]] \
+      && declare -F runtime_log_warn >/dev/null 2>&1; then
+      runtime_log_warn primary_pane "deprecated Codex permission variable ignored" \
+        "variable=MANAGED_CODEX_PROFILE" \
+        "replacement=MANAGED_AGENT_PERMISSION_PROFILE" || true
+    fi
+    codex_profile="${MANAGED_AGENT_PERMISSION_PROFILE:-}"
+    codex_permission_resolution="base"
+    case "$codex_profile" in
+      '')
+        ;;
+      auto|full-access)
+        ensure_codex_permission_overlay "$codex_profile" || exit 78
+        codex_profile_args=(--profile "$codex_profile")
+        codex_permission_resolution=profile
+        ;;
+      *)
+        if declare -F runtime_log_warn >/dev/null 2>&1; then
+          runtime_log_warn primary_pane "unknown Codex permission profile; using base config" \
+            "profile=$codex_profile" "allowed=auto,full-access" || true
+        fi
+        codex_profile=''
+        ;;
+    esac
+    log_resume_boot codex "${codex_profile:-base}" "$codex_permission_resolution"
+    exec bash "$script_dir/codex-resume-takeover.sh" \
+      "$codex_bin" "${codex_profile_args[@]}" resume --last
     ;;
   grok)
     # Grok Build: `--continue` resumes the most recent session for cwd
@@ -199,9 +309,11 @@ case "$agent" in
         "cwd=$PWD"
       exit 127
     fi
-    log_resume_boot grok
-    exec sh -c '"$0" --continue || { bash "$1" grok; printf "\033[2J\033[H\n\n  \033[2;36mLoading grok ...\033[0m\n"; exec "$0"; }' \
-      "$grok_bin" "$fallback_log_script"
+    resolve_grok_permission
+    log_resume_boot grok "${GROK_PERMISSION_PROFILE:-base}" "$GROK_PERMISSION_RESOLUTION"
+    exec bash "$script_dir/agent-resume.sh" grok "$fallback_log_script" \
+      "$grok_bin" "${GROK_PERMISSION_PROFILE:-base}" \
+      "${GROK_PERMISSION_ARGS[@]}"
     ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2

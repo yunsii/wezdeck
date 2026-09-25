@@ -107,17 +107,18 @@ resume_command_git_main_root() {
   printf '%s\n' "$main_root"
 }
 
-# resume_command_lookup_workspace_profile <wezterm_repo> <cwd>
-# Prints base profile from workspace-agent-map.tsv, or returns 1.
-resume_command_lookup_workspace_profile() {
+# resume_command_lookup_workspace_selection <wezterm_repo> <cwd>
+# Prints base profile and optional permission profile separated by a tab.
+# Older two-column maps remain valid and produce an empty permission field.
+resume_command_lookup_workspace_selection() {
   local wezterm_repo="${1:-}"
   local cwd="${2:-}"
   local map_file=""
   local needle=""
-  local map_cwd="" map_profile=""
-  local best_prefix_cwd="" best_prefix_profile=""
+  local map_cwd="" map_profile="" map_permission=""
+  local best_prefix_cwd="" best_prefix_profile="" best_prefix_permission=""
   local cwd_common="" map_common="" main_root=""
-  local family_profile="" family_cwd=""
+  local family_profile="" family_permission="" family_cwd=""
 
   [[ -n "$wezterm_repo" && -n "$cwd" ]] || return 1
   map_file="$wezterm_repo/wezterm-x/local/workspace-agent-map.tsv"
@@ -125,7 +126,7 @@ resume_command_lookup_workspace_profile() {
 
   needle="$(resume_command_canonicalize_cwd "$cwd")" || return 1
 
-  while IFS=$'\t' read -r map_cwd map_profile || [[ -n "$map_cwd" ]]; do
+  while IFS=$'\t' read -r map_cwd map_profile map_permission || [[ -n "$map_cwd" ]]; do
     [[ -n "$map_cwd" ]] || continue
     [[ "$map_cwd" =~ ^[[:space:]]*# ]] && continue
     [[ -n "$map_profile" ]] || continue
@@ -133,7 +134,7 @@ resume_command_lookup_workspace_profile() {
     [[ -n "$map_profile" ]] || continue
 
     if [[ "$map_cwd" == "$needle" ]]; then
-      printf '%s\n' "$map_profile"
+      printf '%s\t%s\n' "$map_profile" "$map_permission"
       return 0
     fi
 
@@ -144,12 +145,13 @@ resume_command_lookup_workspace_profile() {
       if [[ -z "$best_prefix_cwd" || ${#map_cwd} -gt ${#best_prefix_cwd} ]]; then
         best_prefix_cwd="$map_cwd"
         best_prefix_profile="$map_profile"
+        best_prefix_permission="$map_permission"
       fi
     fi
   done < "$map_file"
 
   if [[ -n "$best_prefix_profile" ]]; then
-    printf '%s\n' "$best_prefix_profile"
+    printf '%s\t%s\n' "$best_prefix_profile" "$best_prefix_permission"
     return 0
   fi
 
@@ -159,7 +161,7 @@ resume_command_lookup_workspace_profile() {
   cwd_common="$(resume_command_git_common_dir "$needle" 2>/dev/null || true)"
   main_root="$(resume_command_git_main_root "$needle" 2>/dev/null || true)"
   if [[ -n "$cwd_common" ]]; then
-    while IFS=$'\t' read -r map_cwd map_profile || [[ -n "$map_cwd" ]]; do
+    while IFS=$'\t' read -r map_cwd map_profile map_permission || [[ -n "$map_cwd" ]]; do
       [[ -n "$map_cwd" ]] || continue
       [[ "$map_cwd" =~ ^[[:space:]]*# ]] && continue
       [[ -n "$map_profile" ]] || continue
@@ -170,22 +172,36 @@ resume_command_lookup_workspace_profile() {
       [[ -n "$map_profile" ]] || continue
 
       if [[ -n "$main_root" && "$map_cwd" == "$main_root" ]]; then
-        printf '%s\n' "$map_profile"
+        printf '%s\t%s\n' "$map_profile" "$map_permission"
         return 0
       fi
       if [[ -z "$family_cwd" || ${#map_cwd} -gt ${#family_cwd} ]]; then
         family_cwd="$map_cwd"
         family_profile="$map_profile"
+        family_permission="$map_permission"
       fi
     done < "$map_file"
 
     if [[ -n "$family_profile" ]]; then
-      printf '%s\n' "$family_profile"
+      printf '%s\t%s\n' "$family_profile" "$family_permission"
       return 0
     fi
   fi
 
   return 1
+}
+
+resume_command_lookup_workspace_profile() {
+  local selection=""
+  selection="$(resume_command_lookup_workspace_selection "$@" 2>/dev/null)" || return 1
+  printf '%s\n' "${selection%%$'\t'*}"
+}
+
+resume_command_lookup_workspace_permission() {
+  local selection=""
+  selection="$(resume_command_lookup_workspace_selection "$@" 2>/dev/null)" || return 1
+  [[ "$selection" == *$'\t'* ]] || return 1
+  printf '%s\n' "${selection#*$'\t'}"
 }
 
 # resume_command_active_profile <wezterm_config_repo> [cwd]
@@ -218,6 +234,22 @@ resume_command_active_profile() {
   profile="${profile:-claude}"
   profile="$(resume_command_strip_resume_suffix "$profile")"
   printf '%s\n' "$profile"
+}
+
+resume_command_active_permission_profile() {
+  local wezterm_repo="${1:-}"
+  local cwd="${2:-}"
+  local permission=""
+
+  if [[ -n "$cwd" ]]; then
+    permission="$(resume_command_lookup_workspace_permission "$wezterm_repo" "$cwd" 2>/dev/null || true)"
+  fi
+  if [[ -z "$permission" && -n "$wezterm_repo" ]]; then
+    permission="$(resume_command_extract_value \
+      "$wezterm_repo/wezterm-x/local/shared.env" \
+      MANAGED_AGENT_PERMISSION_PROFILE 2>/dev/null || true)"
+  fi
+  printf '%s\n' "$permission"
 }
 
 resume_command_expand_placeholders() {
@@ -259,6 +291,22 @@ resume_command_lookup_profile_key() {
   resume_command_expand_placeholders "$resolved" "$wezterm_repo"
 }
 
+resume_command_apply_permission_profile() {
+  local command="${1:-}"
+  local permission="${2:-}"
+  [[ -n "$command" ]] || return 0
+  if [[ -z "$permission" ]]; then
+    printf '%s\n' "$command"
+    return 0
+  fi
+  local assignment=""
+  printf -v assignment 'MANAGED_AGENT_PERMISSION_PROFILE=%q' "$permission"
+  # The resolved command is passed as argv to primary-pane-wrapper.sh. Keep
+  # `env` as the executable token; a bare VAR=value token would be mistaken
+  # for the command name by the wrapper.
+  printf 'env %s %s\n' "$assignment" "$command"
+}
+
 # resolve_resume_primary_command <wezterm_config_repo> [cwd]
 # Prints the resume command on stdout, or nothing if it cannot be
 # resolved (caller should fall back to the source pane's primary command).
@@ -272,7 +320,11 @@ resolve_resume_primary_command() {
   [[ -n "$normalized" ]] || return 0
 
   local key="WT_PROVIDER_AGENT_PROFILE_${normalized}_RESUME_COMMAND"
-  resume_command_lookup_profile_key "$wezterm_repo" "$key" || return 0
+  local resolved=""
+  resolved="$(resume_command_lookup_profile_key "$wezterm_repo" "$key" || true)"
+  [[ -n "$resolved" ]] || return 0
+  resume_command_apply_permission_profile \
+    "$resolved" "$(resume_command_active_permission_profile "$wezterm_repo" "$cwd")"
 }
 
 # resolve_managed_primary_command <wezterm_config_repo> [cwd]
@@ -288,7 +340,8 @@ resolve_managed_primary_command() {
 
   resolved="$(resolve_resume_primary_command "$wezterm_repo" "$cwd" || true)"
   if [[ -n "$resolved" ]]; then
-    printf '%s\n' "$resolved"
+    resume_command_apply_permission_profile \
+      "$resolved" "$(resume_command_active_permission_profile "$wezterm_repo" "$cwd")"
     return 0
   fi
 
@@ -297,7 +350,8 @@ resolve_managed_primary_command() {
   if [[ -n "$normalized" ]]; then
     key="WT_PROVIDER_AGENT_PROFILE_${normalized}_COMMAND"
     if resolved="$(resume_command_lookup_profile_key "$wezterm_repo" "$key" 2>/dev/null)"; then
-      printf '%s\n' "$resolved"
+      resume_command_apply_permission_profile \
+        "$resolved" "$(resume_command_active_permission_profile "$wezterm_repo" "$cwd")"
       return 0
     fi
   fi

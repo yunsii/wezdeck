@@ -6,7 +6,7 @@
 -- lua5.4 with a minimal wezterm mock; does not need wezterm.exe.
 --
 -- Output columns (stdout):
---   cwd<TAB>base_profile
+--   cwd<TAB>base_profile<TAB>permission_profile
 -- where base_profile has any trailing `_resume` / `-resume` stripped so
 -- shell-side resume-command.sh can re-derive the resume variant.
 --
@@ -97,7 +97,11 @@ for _, def in pairs(workspaces) do
             local launcher = item.launcher or defaults.launcher
             local base = strip_resume_suffix(launcher)
             if base then
-              rows[#rows + 1] = { cwd = item.cwd, profile = base }
+              rows[#rows + 1] = {
+                cwd = item.cwd,
+                profile = base,
+                permission = item.permission_profile or defaults.permission_profile or '',
+              }
             end
           end
         end
@@ -108,6 +112,9 @@ end
 
 table.sort(rows, function(a, b)
   if a.cwd == b.cwd then
+    if a.profile == b.profile then
+      return a.permission < b.permission
+    end
     return a.profile < b.profile
   end
   return a.cwd < b.cwd
@@ -120,6 +127,6 @@ local seen = {}
 for _, row in ipairs(rows) do
   if not seen[row.cwd] then
     seen[row.cwd] = true
-    io.write(row.cwd .. '\t' .. row.profile .. '\n')
+    io.write(row.cwd .. '\t' .. row.profile .. '\t' .. row.permission .. '\n')
   end
 end

@@ -30,7 +30,7 @@ terminate_resume_process_groups() {
   while read -r pid pgid args; do
     [[ "$pid" =~ ^[0-9]+$ && "$pgid" =~ ^[0-9]+$ ]] || continue
     [[ "$pgid" != "$own_pgid" ]] || continue
-    [[ "$args" == *"codex resume"* ]] || continue
+    [[ "$args" =~ codex[[:space:]]+([^[:space:]]+[[:space:]]+)*resume([[:space:]]|$) ]] || continue
     [[ "$args" != *"codex-resume-takeover.sh"* ]] || continue
     groups["$pgid"]="$args"
   done < <(ps -eo pid=,pgid=,args= 2>/dev/null)

@@ -52,6 +52,11 @@ agents; consult when setting up a CLI tool or rotating machines.
 - [host-setup/codex.md](./host-setup/codex.md) — Codex CLI
   (`~/.codex/config.toml`) tuning: approval policy × sandbox mode,
   profiles, writable roots, env policy, MCP mirroring, notify hook.
+- [host-setup/auto.config.toml](./host-setup/auto.config.toml) and
+  [host-setup/full-access.config.toml](./host-setup/full-access.config.toml) —
+  thin Codex permission overlays; link them with
+  `scripts/dev/link-codex-permission-profiles.sh` so the base config remains
+  the single source of truth.
 
 Each topic file carries YAML frontmatter (`name`, `scope`, `triggers`, `tags`) so agents or tools can index and load on demand.
 Each rule carries a stable identifier of the form `[<topic>-NN]` so feedback, memory entries, and reviewers can reference rules precisely.

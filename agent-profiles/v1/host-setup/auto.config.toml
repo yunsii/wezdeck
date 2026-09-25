@@ -1,0 +1,6 @@
+# Codex Auto permission overlay.
+# The base ~/.codex/config.toml supplies model, provider, hooks, MCP, and other
+# user settings; this file only selects the normal permission behavior.
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "workspace-write"

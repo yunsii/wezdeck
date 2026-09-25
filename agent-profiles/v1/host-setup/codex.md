@@ -13,64 +13,102 @@ rules in [../en/permissions-claude.md](../en/permissions-claude.md).
 
 ### 1. `approval_policy` × `sandbox_mode` default
 
-The biggest lever. Use `workspace-write` for normal development and choose
-whether boundary requests stay interactive or go through automatic review:
+The biggest lever. Keep the normal personal default on Codex Auto: commands
+inside the workspace run under the sandbox without per-command prompts, and
+eligible boundary requests go through Codex's automatic reviewer:
 
 ```toml
-# Auto mode with automatic review — run normal workspace commands without
-# stopping for the user; let Codex's reviewer handle eligible boundary asks.
+# Personal default — Codex Auto with automatic boundary review.
 approval_policy    = "on-request"
 approvals_reviewer = "auto_review"
 sandbox_mode       = "workspace-write"
 ```
 
+Codex profiles are overlays: `~/.codex/config.toml` remains the single base
+configuration, while `~/.codex/auto.config.toml` and
+`~/.codex/full-access.config.toml` override only permission fields. Model,
+provider, hooks, MCP, project trust, and other base settings are inherited;
+there is no second full copy to drift out of sync. This is the native
+`codex --profile <name>` behavior in CLI 0.156.1.
+
+Codex CLI 0.156.1 exposes `on-request` and `never`; the older `on-failure`
+value is not a valid replacement for Auto mode. With `on-request`, commands
+already allowed by `workspace-write` run without a user prompt.
+
 ```toml
-# Conservative mode — ask before each command that is not already covered
-# by the sandbox or an explicit approval.
-approval_policy = "on-request"
-sandbox_mode    = "workspace-write"
+# Optional manual-review profile — use when you want user approval.
+approval_policy    = "on-request"
+approvals_reviewer = "user"
+sandbox_mode       = "workspace-write"
 ```
 
-The repository's current operator default is the first bundle. It is the
-configuration equivalent of `codex --approve-for-me`: normal workspace
-commands run automatically, while eligible sandbox-boundary requests go
-through the reviewer. A new interactive session must be started after
+The second bundle can live in `~/.codex/manual-review.config.toml` when you
+want explicit user approval. A new interactive session must be started after
 changing `~/.codex/config.toml`; existing sessions keep the policy they
 started with.
 
-Commands that talk to an external tmux socket or write Windows-side runtime
-state can still hit a sandbox boundary. Auto-review handles eligible requests;
-high-risk or rejected requests still surface to the user. Use
-`--sandbox danger-full-access` only for an explicitly trusted, externally
-sandboxed environment.
+When the automatic reviewer is unavailable or returns an unsupported-model
+error, switch the session to the tracked `full-access` profile. Link both
+overlays once so future repository updates stay synchronized:
 
-### 2. `[profiles.X]` presets for different work modes
+```bash
+scripts/dev/link-codex-permission-profiles.sh
+codex --profile full-access
+```
 
-Switch with `codex --profile <name>` instead of editing config per task.
+Full access is the configuration equivalent of
+`codex --dangerously-bypass-approvals-and-sandbox` (also called `--yolo`). It
+removes both filesystem and network boundaries, so keep it as an explicit
+personal-workstation escape hatch rather than the default.
+
+Auto-review is a reviewer swap, not a permission grant. It is only active when
+`approval_policy` remains interactive, and a reviewer failure can fail closed
+before the requested command runs. When that happens, switch to `full-access`
+for the current personal session instead of changing the default.
+
+### 2. Named profiles for different work modes
+
+Create `~/.codex/<name>.config.toml` as a thin overlay and switch with
+`codex --profile <name>` instead of editing the main config per task.
 
 ```toml
-[profiles.research]
+# ~/.codex/research.config.toml
 approval_policy = "never"
 sandbox_mode    = "read-only"
-[profiles.research.sandbox_workspace_write]
+[sandbox_workspace_write]
 network_access = false
+```
 
-[profiles.dev]
+```toml
+# ~/.codex/manual-review.config.toml
 approval_policy    = "on-request"
-approvals_reviewer = "auto_review"
+approvals_reviewer = "user"
 sandbox_mode       = "workspace-write"
-[profiles.dev.sandbox_workspace_write]
+[sandbox_workspace_write]
 network_access = true
+```
 
-[profiles.deploy]
-approval_policy = "on-request"
+```toml
+# ~/.codex/full-access.config.toml (tracked template)
+approval_policy = "never"
 sandbox_mode    = "danger-full-access"
 ```
 
-`research` for browsing-only sessions, `dev` for normal work, `deploy`
-for explicit elevation moments. Default to `dev`.
+`research` is for browsing-only sessions, `manual-review` is for explicit
+approvals, and `full-access` is the explicit elevated session.
 
-### 3. `writable_roots` for cross-fs work
+### 3. Approval reviewer model
+
+`review_model` configures the model used by the `/review` code-review command;
+it does not select the model used by `approvals_reviewer = "auto_review"`.
+The auto-review model is selected from the active model catalog. A provider can
+return `auto_review_model_override` metadata for its model; there is no stable
+user-level `approval_model` key in `config.toml`. For a custom provider, an
+unavailable `codex-auto-review` catalog entry can make auto-review fail closed.
+Use Full access to bypass that path, or have the provider expose a review model
+that the endpoint actually serves.
+
+### 4. `writable_roots` for cross-fs work
 
 This repo's runtime sync writes paths outside the WSL home (Windows-side
 runtime, host helper state, machine cache). Without these in
@@ -91,7 +129,7 @@ Adjust per machine — these paths are user-specific. Source of truth for
 the runtime path layout is
 [`scripts/runtime/windows-runtime-paths-lib.sh`](../../../scripts/runtime/windows-runtime-paths-lib.sh).
 
-### 4. `[shell_environment_policy]` to limit token surface
+### 5. `[shell_environment_policy]` to limit token surface
 
 Aligns with [../en/secrets.md](../en/secrets.md): keep secret-shaped
 env vars out of agent context.
@@ -109,7 +147,7 @@ exclude = [
 `inherit = "core"` means only PATH / HOME / USER / etc. flow through;
 anything else must be explicitly whitelisted via `set` or `include`.
 
-### 5. Browser / MCP parity with other host agents
+### 6. Browser / MCP parity with other host agents
 
 **Chrome DevTools is not a Codex resident MCP.** Match Claude: drive the
 WezDeck CDP Chrome (`http://127.0.0.1:9222`) through the shared uxc skill
@@ -142,7 +180,7 @@ command = "deepwiki-mcp-cli"
 args    = ["serve"]
 ```
 
-### 6. `notify` hook → desktop / Feishu
+### 7. `notify` hook → desktop / Feishu
 
 Pipe approval-request events to the same notification path the rest of
 this repo uses (`scripts/runtime/agent-clipboard.sh`,
@@ -155,19 +193,19 @@ notify = ["bash", "/home/yuns/github/wezterm-config/scripts/codex-hooks/notify.s
 The notify script does not exist yet — write it when this knob is
 actually wanted.
 
-### 7. `~/.codex/prompts/` for saved prompts
+### 8. `~/.codex/prompts/` for saved prompts
 
 Filesystem-backed equivalent of slash commands. Drop a `.md` per prompt;
 recall in a session via Codex's `/` menu. Common candidates from this
 repo: "sync runtime", "reload tmux", "render hotkey report".
 
-### 8. Removed top-level settings
+### 9. Removed top-level settings
 
 Do not add these legacy top-level keys to current Codex config files:
 `disable_response_storage`, `network_access`, and
 `windows_wsl_setup_acknowledged`. Codex CLI 0.156.1 reports each as an
 unrecognized startup setting. Configure `network_access` under the relevant
-`[profiles.<name>.<sandbox_mode>]` table instead, as shown above. The other
+`[sandbox_workspace_write]` table instead, as shown above. The other
 two settings have no current config key; omit them rather than suppressing
 the warning.
 
@@ -186,8 +224,10 @@ the warning.
 After editing `~/.codex/config.toml`:
 
 ```bash
-codex --help                    # confirms config parses
-codex --profile research        # smoke-test the named profile loads
+codex --strict-config doctor                    # validates the active config
+codex --profile auto --strict-config doctor     # validates the Auto overlay
+codex --profile research --strict-config doctor  # validates a named profile
+codex --profile full-access --strict-config doctor
 ```
 
 If a profile fails to load, Codex usually surfaces the parse error

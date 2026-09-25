@@ -84,7 +84,7 @@ exit 1
     return nil
   end
 
-  local function managed_launcher_command(profile_name, trace_id)
+  local function managed_launcher_command(profile_name, trace_id, permission_profile)
     if not profile_name or profile_name == '' then
       return nil
     end
@@ -118,6 +118,14 @@ exit 1
       wrapped[#wrapped + 1] = part
     end
 
+    if permission_profile and permission_profile ~= '' then
+      local with_permission = { 'env', 'MANAGED_AGENT_PERMISSION_PROFILE=' .. permission_profile }
+      for _, part in ipairs(wrapped) do
+        with_permission[#with_permission + 1] = part
+      end
+      wrapped = with_permission
+    end
+
     return wrapped
   end
 
@@ -137,16 +145,20 @@ exit 1
       if normalized.cwd then
         local raw_command = item.command or defaults.command
         local launcher = item.launcher or defaults.launcher
+        local permission_profile = type(item) == 'table' and item.permission_profile
+          or defaults.permission_profile
 
         normalized.command = helpers.copy_array(raw_command)
         normalized.launcher = launcher
+        normalized.permission_profile = permission_profile
         -- Optional WezTerm tab display override (see project_tab_title).
         if type(item) == 'table' and type(item.title) == 'string' and item.title ~= '' then
           normalized.title = item.title
         end
 
         if not normalized.command and launcher then
-          normalized.command, normalized.command_error = managed_launcher_command(launcher)
+          normalized.command, normalized.command_error = managed_launcher_command(
+            launcher, nil, permission_profile)
         end
 
         items[#items + 1] = normalized
@@ -161,7 +173,8 @@ exit 1
     local agent_profile = nil
 
     if item.launcher then
-      launch_command = managed_launcher_command(item.launcher, trace_id)
+      launch_command = managed_launcher_command(
+        item.launcher, trace_id, item.permission_profile)
       -- e.g. `claude_resume` → `claude`. The resume-variant suffix is
       -- normalized away so the tmux-side `@wezterm_pane_role=agent-cli:<base>`
       -- tag matches the agent CLI's own basename — that's what

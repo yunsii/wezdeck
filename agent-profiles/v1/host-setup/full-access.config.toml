@@ -1,0 +1,8 @@
+# Codex Full access permission overlay.
+# The base ~/.codex/config.toml supplies model, provider, hooks, MCP, and other
+# user settings; this file only selects the explicit elevated behavior.
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[tui]
+screen_reader_detection_done = true

@@ -35,6 +35,8 @@ return {
   work = {
     defaults = {
       launcher = managed_launcher,
+      -- Optional permission overlay inherited by every managed item.
+      -- permission_profile = 'auto' | 'full-access',
     },
     items = {
       -- Primary checkout — keep this one for review, integration, hotfixes.
@@ -52,6 +54,8 @@ return {
       -- After editing, run wezterm-runtime-sync so shell paths refresh
       -- wezterm-x/local/workspace-agent-map.tsv.
       -- { cwd = '/home/your-user/work/codex-preferred', launcher = 'codex_resume' },
+      -- Per-repo permission override (passed through all managed launch paths):
+      -- { cwd = '/home/your-user/work/trusted-local', permission_profile = 'full-access' },
 
       -- Plain shell over a service repo, no managed agent.
       { cwd = '/home/your-user/work/project-c', command = { 'bash' } },
