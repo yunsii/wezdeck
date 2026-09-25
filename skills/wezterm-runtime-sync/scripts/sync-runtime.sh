@@ -645,6 +645,7 @@ wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
 wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
 run_agent_hooks_check
+run_node_runtime_check
 
 # Discovery marker for WSL-resident agents (Claude Code, Codex CLI, etc.).
 # Lands in $HOME/.wezterm-x/, not $TARGET_HOME/.wezterm-x/, because the

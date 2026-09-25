@@ -29,9 +29,12 @@ local function default_runtime_state_dir(config_dir)
   -- tree while `wezterm.config_dir` still points at the shared parent. Keep
   -- its helper state isolated so the probe cannot race the live helper.
   local config_file = wezterm.config_file or ''
-  if type(config_file) == 'string'
-    and config_file:lower():find('wezterm%-runtime[/\\]canary[/\\]') then
-    return config_dir
+  if type(config_file) == 'string' then
+    local normalized_config_file = config_file:gsub('\\', '/')
+    local canary_parent = normalized_config_file:match('^(.*)/canary/[^/]+$')
+    if canary_parent then
+      return (canary_parent .. '/canary'):gsub('/', path_sep)
+    end
   end
 
   local host_os = detect_host_os()
