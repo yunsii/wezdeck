@@ -67,6 +67,7 @@ local base_constants = {
   runtime_mode = defaults.default_runtime_mode(host_os),
   repo_root = nil,
   main_repo_root = nil,
+  repo_aliases = 'wezterm-config=wezdeck',
   default_domain = nil,
   shell = {
     program = nil,
@@ -421,5 +422,11 @@ if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
 end
 constants.repo_root = repo_root_override or constants.repo_root
 constants.main_repo_root = defaults.read_main_repo_root_override(runtime_dir, join_path) or constants.main_repo_root or constants.repo_root
+constants.repo_aliases = shared_env.WEZTERM_REPO_ALIASES
+  or constants.repo_aliases
+if shared_env.WEZTERM_REPO_ALIAS and shared_env.WEZTERM_REPO_ALIAS ~= ''
+  and wezterm.log_warn then
+  wezterm.log_warn('WEZTERM_REPO_ALIAS is obsolete; use WEZTERM_REPO_ALIASES')
+end
 
 return constants

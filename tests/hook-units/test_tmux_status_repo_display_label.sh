@@ -23,21 +23,27 @@ expect_eq() {
 }
 
 # Default remap (no tmux / env override): wezterm-config → wezdeck.
-unset TMUX_STATUS_REPO_ALIAS
+unset TMUX_STATUS_REPO_ALIAS WEZTERM_REPO_ALIASES WEZTERM_REPO_ALIAS
 tmux() { printf ''; }
 export -f tmux
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezdeck' 'default alias wezterm-config→wezdeck'
 expect_eq "$(tmux_status_repo_display_label 'other-repo')" 'other-repo' 'unmapped basename unchanged'
 
+# Shared Lua + shell alias takes effect before the tmux option fallback.
+WEZTERM_REPO_ALIASES='wezterm-config=wd,other-repo=other'
+expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wd' 'shared alias wezterm-config→wd'
+expect_eq "$(tmux_status_repo_display_label 'other-repo')" 'other' 'shared alias other-repo→other'
+unset WEZTERM_REPO_ALIASES
+
 # Explicit custom alias.
-TMUX_STATUS_REPO_ALIAS='team-stat=ts'
+WEZTERM_REPO_ALIASES='team-stat=ts'
 expect_eq "$(tmux_status_repo_display_label 'team-stat')" 'ts' 'custom alias team-stat→ts'
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezterm-config' 'custom alias does not affect other basenames'
 
 # Disable via sentinel / empty env.
-TMUX_STATUS_REPO_ALIAS='none'
+WEZTERM_REPO_ALIASES='none'
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezterm-config' 'none disables remapping'
-TMUX_STATUS_REPO_ALIAS=''
+WEZTERM_REPO_ALIASES=''
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezterm-config' 'empty env disables remapping'
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

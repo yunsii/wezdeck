@@ -139,6 +139,24 @@ exit 1
     local source_items = raw.items or raw
     local items = {}
 
+    local function alias_title(cwd)
+      local aliases = constants.repo_aliases
+      if type(aliases) ~= 'string' or aliases == '' or aliases == 'none' then
+        return nil
+      end
+      for alias in aliases:gmatch('[^,]+') do
+        local key, value = alias:match('^%s*([^=]+)%s*=%s*(.-)%s*$')
+        if key and value and value ~= '' then
+          key = key:gsub('^%s+', ''):gsub('%s+$', '')
+          value = value:gsub('^%s+', ''):gsub('%s+$', '')
+          if helpers.basename(cwd) == key then
+            return value
+          end
+        end
+      end
+      return nil
+    end
+
     for _, item in ipairs(source_items) do
       local normalized = type(item) == 'string' and { cwd = item } or { cwd = item.cwd }
 
@@ -154,6 +172,8 @@ exit 1
         -- Optional WezTerm tab display override (see project_tab_title).
         if type(item) == 'table' and type(item.title) == 'string' and item.title ~= '' then
           normalized.title = item.title
+        else
+          normalized.title = alias_title(normalized.cwd)
         end
 
         if not normalized.command and launcher then

@@ -67,9 +67,10 @@ style() {
 }
 
 # Map a git toplevel basename to a status-bar display label.
-# One optional remap: TMUX_STATUS_REPO_ALIAS / @tmux_status_repo_alias as
-# `basename=label` (default wezterm-config=wezdeck). Set to none|off|0
-# (or an empty env value) to show the raw basename.
+# Remaps use shared.env WEZTERM_REPO_ALIASES as comma-separated
+# `basename=label` entries (default wezterm-config=wezdeck). Legacy
+# TMUX_STATUS_REPO_ALIAS / @tmux_status_repo_alias values are ignored with a
+# warning. Set the shared value to none|off|0 (or empty) to show raw basenames.
 tmux_status_repo_display_label() {
   local label="${1:-}"
   local alias=""
@@ -81,7 +82,19 @@ tmux_status_repo_display_label() {
     return
   }
 
-  alias="$(tmux_option_or_env TMUX_STATUS_REPO_ALIAS @tmux_status_repo_alias 'wezterm-config=wezdeck')"
+  if [[ -n "${TMUX_STATUS_REPO_ALIAS+x}" || -n "${WEZTERM_REPO_ALIAS+x}" ]]; then
+    printf 'warning: legacy repo alias variable ignored; use WEZTERM_REPO_ALIASES\n' >&2
+  fi
+  if [[ -n "${WEZTERM_REPO_ALIASES+x}" ]]; then
+    alias="$WEZTERM_REPO_ALIASES"
+  else
+    local legacy_option
+    legacy_option="$(tmux_option @tmux_status_repo_alias '')"
+    if [[ -n "$legacy_option" ]]; then
+      printf 'warning: legacy tmux repo alias option ignored; use WEZTERM_REPO_ALIASES\n' >&2
+    fi
+    alias='wezterm-config=wezdeck'
+  fi
   case "$alias" in
     ''|none|off|0)
       printf '%s' "$label"
@@ -89,16 +102,19 @@ tmux_status_repo_display_label() {
       ;;
   esac
 
-  key="${alias%%=*}"
-  value="${alias#*=}"
-  key="${key#"${key%%[![:space:]]*}"}"
-  key="${key%"${key##*[![:space:]]}"}"
-  value="${value#"${value%%[![:space:]]*}"}"
-  value="${value%"${value##*[![:space:]]}"}"
-  if [[ "$key" == "$label" && -n "$value" && "$value" != "$alias" ]]; then
-    printf '%s' "$value"
-    return
-  fi
+  local entry key value
+  while IFS= read -r entry; do
+    key="${entry%%=*}"
+    value="${entry#*=}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    if [[ "$key" == "$label" && -n "$value" && "$value" != "$entry" ]]; then
+      printf '%s' "$value"
+      return
+    fi
+  done < <(printf '%s\n' "$alias" | tr ',' '\n')
 
   printf '%s' "$label"
 }
