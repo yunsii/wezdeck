@@ -78,6 +78,35 @@ run_check() {
   rm -f "$output_file"
 }
 
+run_advisory_check() {
+  local name="$1"
+  shift
+  local output_file=""
+  local rc=0
+  local line=""
+
+  check_count=$((check_count + 1))
+  output_file="$(mktemp "${TMPDIR:-/tmp}/wezdeck-runtime-check.XXXXXX")"
+  if "$@" >"$output_file" 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+
+  if (( rc == 0 )); then
+    emit "[runtime-check] check=$name status=healthy"
+  else
+    # Optional integrations must be visible without making the base runtime
+    # check fail. The check itself provides the actionable install command.
+    emit "[runtime-check] check=$name status=warning rc=$rc advisory=1"
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    emit "[runtime-check] check=$name output=$line"
+  done < "$output_file"
+  rm -f "$output_file"
+}
+
 check_agent_tools_marker() {
   local marker="$HOME/.wezterm-x/agent-tools.env"
   local version=""
@@ -216,6 +245,13 @@ if [[ -x "$node_runtime_script" ]]; then
 else
   failures=$((failures + 1))
   emit '[runtime-check] check=node-runtime status=warning reason=script_missing'
+fi
+
+rime_counter_script="$repo_root/scripts/dev/check-rime-commit-counter.sh"
+if [[ -x "$rime_counter_script" ]]; then
+  run_advisory_check rime-commit-counter "$rime_counter_script"
+else
+  emit '[runtime-check] check=rime-commit-counter status=warning advisory=1 reason=script_missing'
 fi
 
 if (( skip_deps )); then

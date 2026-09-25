@@ -104,6 +104,16 @@ Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME c
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
 - Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
 
+### Rime commit counter check
+
+`skills/wezdeck-runtime-ops/scripts/check-runtime.sh` includes an advisory Rime check. It discovers Windows Rime directories without assuming a Windows username. When a Rime directory exists but `wezdeck_commit_counter.lua` or its schema registration is missing, the check prints the exact install command:
+
+```bash
+scripts/dev/rime-commit-counter/install.sh
+```
+
+The check does not install or modify Rime automatically. A machine without a Rime directory reports `status=not-detected`; a missing counter reports `status=warning` but does not fail the base runtime summary. The report collector uses the same username-independent discovery so an installed counter is visible to `habit-report`.
+
 ### Tmux status says `Node unavailable`
 
 The status renderer runs from tmux's server environment, which may not have the interactive shell's Node path. The managed resolver loads the runtime environment and checks `FNM_DIR` plus the stable fnm default alias directories; it does not depend on an ephemeral `fnm_multishells` path. Run the narrow regression check first:

@@ -269,8 +269,7 @@ def resolve_default_paths() -> tuple[Path | None, Path | None]:
         candidates_helper.append(Path(helper))
 
     home = Path.home()
-    for user in ("yuns", "Yuns"):
-        base = Path(f"/mnt/c/Users/{user}/AppData/Local/wezterm-runtime")
+    for base in windows_runtime_bases():
         candidates_commit.append(base / "state" / "rime-commits.jsonl")
         candidates_helper.append(base / "logs" / "helper.log")
     candidates_commit.append(
@@ -285,3 +284,59 @@ def resolve_default_paths() -> tuple[Path | None, Path | None]:
                 break
     helper_path = next((p for p in candidates_helper if p.is_file()), None)
     return commit_path, helper_path
+
+
+def windows_runtime_bases() -> list[Path]:
+    """Return Windows runtime roots without assuming a particular username."""
+    import os
+
+    bases: list[Path] = []
+    profile = os.environ.get("WINDOWS_USERPROFILE_WSL", "").strip()
+    if profile:
+        bases.append(Path(profile) / "AppData/Local/wezterm-runtime")
+
+    users_root = Path("/mnt/c/Users")
+    if users_root.is_dir():
+        for child in sorted(users_root.iterdir()):
+            base = child / "AppData/Local/wezterm-runtime"
+            if base.is_dir():
+                bases.append(base)
+
+    # Keep the local runtime path useful on posix-local hosts as well.
+    bases.append(Path.home() / ".local/state/wezterm-runtime")
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for base in bases:
+        key = str(base)
+        if key not in seen:
+            seen.add(key)
+            unique.append(base)
+    return unique
+
+
+def rime_user_dirs() -> list[Path]:
+    """Return candidate Rime user dirs, ordered by explicit env then mounts."""
+    import os
+
+    candidates: list[Path] = []
+    explicit = os.environ.get("WEZDECK_RIME_USER_DIR", "").strip()
+    if explicit:
+        candidates.append(Path(explicit))
+
+    users_root = Path("/mnt/c/Users")
+    if users_root.is_dir():
+        candidates.extend(
+            child / "AppData/Roaming/Rime"
+            for child in sorted(users_root.iterdir())
+            if child.is_dir()
+        )
+    candidates.append(Path.home() / ".config/rime")
+
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key not in seen:
+            seen.add(key)
+            unique.append(candidate)
+    return unique

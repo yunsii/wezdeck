@@ -18,7 +18,7 @@ The scripts under `skills/wezdeck-runtime-ops/scripts/` are the source of truth 
    skills/wezdeck-runtime-ops/scripts/check-runtime.sh
    ```
 
-   Use `--advisory` for a non-blocking report and `--skip-deps` when the network is unavailable. This check owns the aggregate view of Lua source syntax and managed config precheck, the configured agent CLI binary, agent hooks, the WSL `agent-tools.env` capability marker, launcher permission overlays, resume-command/workspace-agent-map lockstep, Node/fnm runtime state, and WezTerm/tmux/Go dependency floors.
+   Use `--advisory` for a non-blocking report and `--skip-deps` when the network is unavailable. This check owns the aggregate view of Lua source syntax and managed config precheck, the configured agent CLI binary, agent hooks, the WSL `agent-tools.env` capability marker, launcher permission overlays, resume-command/workspace-agent-map lockstep, Node/fnm runtime state, the optional Rime commit counter, and WezTerm/tmux/Go dependency floors. The Rime check is advisory: when a Windows Rime user directory is present but the counter is not installed, it prints the install command without blocking the base runtime check.
 3. **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is untouched and sync exits 1). Skip probe with `WEZTERM_SYNC_SKIP_CANARY_AUTO=1`. Use `--live` to publish straight to the running GUI. Details: [`docs/daily-workflow.md`](../../docs/daily-workflow.md).
    Windows targets are preflighted with a real `powershell.exe` probe before
    any canary files are written; if WSL interop is disabled, sync exits with

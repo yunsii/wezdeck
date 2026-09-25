@@ -3,23 +3,16 @@
 from __future__ import annotations
 
 from datetime import date
-from pathlib import Path
 from typing import Any
 
-from ..rime_commits import collect_rime_commits, resolve_default_paths
+from ..rime_commits import collect_rime_commits, resolve_default_paths, rime_user_dirs
 
 NAME = "rime"
 
 
 def _lua_installed() -> bool:
-    commit_log, _helper = resolve_default_paths()
-    # resolve_default_paths may return a non-existent commit path as hint;
-    # also probe common Rime lua install locations.
-    candidates = [
-        Path("/mnt/c/Users/yuns/AppData/Roaming/Rime/lua/wezdeck_commit_counter.lua"),
-        Path("/mnt/c/Users/Yuns/AppData/Roaming/Rime/lua/wezdeck_commit_counter.lua"),
-    ]
-    for p in candidates:
+    for rime_user in rime_user_dirs():
+        p = rime_user / "lua/wezdeck_commit_counter.lua"
         if p.is_file():
             return True
     return False
