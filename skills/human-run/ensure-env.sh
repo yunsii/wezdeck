@@ -5,7 +5,7 @@
 # Does:
 #   1. Locate CLI in the wezdeck tree that hosts this skill
 #   2. If $WEZDECK_REPO/cli lacks wd-run/x/lib, symlink from that tree
-#      (so wezterm-env PATH and humans' `x` work without waiting for git merge)
+#      (so wezdeck-env PATH and humans' `x` work without waiting for git merge)
 #   3. Refresh ~/.wezterm-x/agent-tools.env wd_run= (and keep other keys)
 #   4. Smoke: wd-run can source lib + print usage
 set -euo pipefail
@@ -34,7 +34,7 @@ die() {
 [[ -x "$SRC_X" ]] || die "skill tree missing x at $SRC_X"
 [[ -f "$SRC_LIB" ]] || die "skill tree missing agent-run-lib.sh at $SRC_LIB"
 
-# Target install tree for PATH consumers (wezterm-env.env)
+# Target install tree for PATH consumers (wezdeck-env.env)
 REPO="${WEZDECK_REPO:-$WEZDECK_FROM_SKILL}"
 REPO="$(cd "$REPO" 2>/dev/null && pwd -P)" || die "WEZDECK_REPO is not an existing checkout: ${WEZDECK_REPO:-$REPO}"
 [[ -f "$REPO/scripts/runtime/agent-run-lib.sh" ]] || die "WEZDECK_REPO is not a wezdeck checkout: $REPO"
@@ -71,7 +71,7 @@ else
 fi
 
 # Agents always get the skill-tree binary (ships with matching agent-run-lib +
-# paths constants). REPO symlinks above are for human PATH / wezterm-env only.
+# paths constants). REPO symlinks above are for human PATH / wezdeck-env only.
 WD_RUN_ABS="$SRC_WD_RUN"
 
 # Refresh agent-tools.env — merge keys, always set wd_run to working binary.

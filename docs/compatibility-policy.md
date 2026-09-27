@@ -86,3 +86,10 @@ display aliases`). It moved the source of truth from the tmux-only
 consumers plus tests, and only warned when a retired variable was still set.
 The retired value never remained behaviorally active. Follow this pattern for
 future repository-owned migrations.
+
+Interactive shell snippets followed the same rule: `wezterm-env.env` and
+`wezterm-fn.env` became `wezdeck-env.env` and `wezdeck-fn.env`, and the
+`~/.zshrc` marker became `wezdeck:shell-env.d`. `runtime_env_load_dir` and
+the zsh snippet skip the old filenames, print the `mv`, and the loader
+records `category=env`. The old file does not set `WEZDECK_REPO`. Drop the
+skip once no machine still has those names.

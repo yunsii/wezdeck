@@ -221,6 +221,7 @@ check_lua_precheck() {
 
 agent_hooks_script="$repo_root/scripts/dev/agent-hooks.sh"
 node_runtime_script="$repo_root/scripts/dev/check-node-runtime.sh"
+shell_env_script="$repo_root/scripts/dev/check-shell-env.sh"
 deps_script="$repo_root/scripts/dev/check-deps-updates.sh"
 
 if [[ -x "$agent_hooks_script" ]]; then
@@ -245,6 +246,13 @@ if [[ -x "$node_runtime_script" ]]; then
 else
   failures=$((failures + 1))
   emit '[runtime-check] check=node-runtime status=warning reason=script_missing'
+fi
+
+if [[ -x "$shell_env_script" ]]; then
+  run_check shell-env "$shell_env_script"
+else
+  failures=$((failures + 1))
+  emit '[runtime-check] check=shell-env status=warning reason=script_missing'
 fi
 
 rime_counter_script="$repo_root/scripts/dev/check-rime-commit-counter.sh"

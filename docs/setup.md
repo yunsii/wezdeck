@@ -8,16 +8,18 @@ Use this doc when you need prerequisites and local setup.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
 - `tmux 3.7+` must be available in the runtime environment that will host managed project tabs (DEC mode 2026 / sync needs 3.6+; copy-mode auto-refresh needs 3.7 `refresh-from-pane`). **If the OS/package-manager `tmux` already meets ≥ 3.7, use it — do not compile a user copy.** Only when the distro package is too old (e.g. Ubuntu 24.04 apt 3.4) install a user-prefix build to `~/.local/bin/tmux` and put that dir first on PATH. Cross-OS decision tree, package options, and fallback script: [`tmux-install.md`](./tmux-install.md). Why the floor: [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
 - **Vim 9.2+ (optional, recommended if you edit in terminal Vim).** `'termsync'` (DEC 2026 synchronized redraw) exists only on 9.2+. Ubuntu 24.04 apt stays on 9.1 — `apt upgrade` cannot get it. Prefer a user-prefix build to `~/.local/bin/vim` (same PATH pattern as the tmux fallback). Merge [`wezterm-x/local.example/vimrc.recommended`](../wezterm-x/local.example/vimrc.recommended) into `~/.vim/vimrc` for `lastline` / `smoothscroll` / tmux DECRPM inject. Scroll/`@`-line / `Shift+drag` behavior: [`tmux-ui.md#vim-in-tmux`](./tmux-ui.md#vim-in-tmux). Details: [Vim 9.2 (optional)](#vim-92-optional).
-- **Grok Build focus-filter (optional, recommended if you run `grok` fullscreen in tmux splits — especially WSL→Windows WezTerm).** Stock Grok clears the alt-screen on every FocusGained under tmux (`focus-events on`). Native macOS often makes that clear **invisible** (client redraw usually finishes inside one 60 Hz frame); this hybrid stack still shows a whole-transcript flash even on a tiny pane, so install the filter here:
+- **Grok Build focus-filter (optional, recommended if you run `grok` fullscreen in tmux splits — especially WSL→Windows WezTerm).** Stock Grok clears the alt-screen on every FocusGained under tmux (`focus-events on`). Native macOS often makes that clear **invisible** (client redraw usually finishes inside one 60 Hz frame); this hybrid stack still shows a whole-transcript flash even on a tiny pane, so install the filter here. The `grok()` function only loads if `~/.zshrc` already sources `shell-env.d` ([snippet](#interactive-zsh-shell-envd)):
 
   ```bash
   scripts/runtime/grok-with-focus-filter.sh --install
   scripts/runtime/grok-with-focus-filter.sh --check
+  mkdir -p ~/.config/shell-env.d && chmod 700 ~/.config/shell-env.d
+  cp wezterm-x/local.example/shell-env.d/wezdeck-env.env ~/.config/shell-env.d/
   cp wezterm-x/local.example/shell-env.d/grok-focus-filter.env ~/.config/shell-env.d/
-  chmod 600 ~/.config/shell-env.d/grok-focus-filter.env
+  chmod 600 ~/.config/shell-env.d/wezdeck-env.env ~/.config/shell-env.d/grok-focus-filter.env
   ```
 
-  Puts the wrapper at `~/.grok/bin/grok` with the real binary at `grok.real` (required because Grok prepends `~/.grok/bin` in `~/.zshrc`). The shell-env `grok()` always calls the wrapper by absolute path; each launch also quiet-ensures PATH, promotes newer downloads, and re-applies the GrokDay cream/`Color::Reset` theme patch — so after `grok update`, **new** interactive starts self-heal (no flash + active/inactive pane tint). Still **exit / `--resume` live Grok panes** (old stdin path / old ELF). Managed panes already use the absolute wrapper via `agent-launcher.sh`. Full cause / standing ops / repro: [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
+  Puts the wrapper at `~/.grok/bin/grok` with the real binary at `grok.real` (required because Grok prepends `~/.grok/bin` in `~/.zshrc`). `wezdeck-env.env` sets `WEZDECK_REPO`; `grok()` then always calls the wrapper by absolute path. Each launch also quiet-ensures PATH, promotes newer downloads, and re-applies the GrokDay cream/`Color::Reset` theme patch — so after `grok update`, **new** interactive starts self-heal (no flash + active/inactive pane tint). Still **exit / `--resume` live Grok panes** (old stdin path / old ELF). Managed panes already use the absolute wrapper via `agent-launcher.sh`. Full cause / standing ops / repro: [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
 - `lua5.4` (or `lua5.3` / `lua`) **recommended** in the WSL/Linux side. Used by `wezdeck-runtime-ops`'s `lua-precheck` step (`skills/wezdeck-runtime-ops/scripts/lua-precheck.lua`) to dofile the synced `wezterm-x/lua/constants.lua` under a mocked `wezterm` module and assert that managed-launcher resolution still works (`default_profile` resolves, `default_resume_profile ≠ default_profile`, and the resume command contains a recognized sentinel — `--continue`, `resume`, or `agent-launcher.sh`). Without it, sync skips the precheck with a warning instead of failing — same surface that historically let `<base>-resume` vs `<base>_resume` mis-naming and unreachable WSL-path env files slip through to runtime. Install with `sudo apt install lua5.4` on Ubuntu/Debian.
 - `jq` **recommended** in the WSL/Linux side. Used by the agent-attention state writer (`scripts/runtime/attention-state-lib.sh`), the focus emit path (`scripts/runtime/tmux-focus-emit.sh`), and the hotkey-usage telemetry (`scripts/runtime/hotkey-usage-bump.sh`); also opportunistically by `scripts/runtime/agent-attention/adapters/*.sh` to extract stable session ids and readable reasons from hook payloads. Without it, attention hooks still write entries but key them to `pane:<WEZTERM_PANE>` with canned per-status labels, and the other call sites take their respective degraded paths. Install with `sudo apt install jq` on Ubuntu/Debian.
 - Node.js is used by the status line and several CLI tools. When migrating from nvm to fnm, install the desired version, set a stable default alias (`fnm default <version>`), and put a non-default fnm data root in `FNM_DIR` (under `~/.config/shell-env.d/` or `wezterm-x/local/shared.env`) if needed. Configure the interactive shell with `eval "$(fnm env --use-on-cd --shell zsh)"` (use the matching shell), then remove the old `nvm.sh` initialization after the fnm version and global CLIs are verified. The runtime resolver deliberately ignores fnm's ephemeral `fnm_multishells` paths. Verify with `bash scripts/dev/check-node-runtime.sh` and `bash tests/hook-units/test_tmux_status_node_resolution.sh`, then refresh tmux or run the runtime sync so existing servers repaint.
@@ -65,14 +67,37 @@ Re-run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` and reload for chang
 - `wezterm-x/local/shared.env`: shared scalar values used by Lua and shell code (repo-machine scope)
 - `wezterm-x/local/constants.lua`: machine-local structured Lua settings
 - `wezterm-x/local.example/`: tracked templates for `wezterm-x/local/`
-- `~/.config/shell-env.d/*.env`: user-level secrets and per-user env vars; auto-discovered by both `~/.zshrc` and `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`. Mode 600 per file, dir mode 700.
+- `~/.config/shell-env.d/*.env`: user-level secrets and per-user env vars. Managed agents glob this directory via `scripts/runtime/runtime-env-lib.sh::runtime_env_load_managed`. Interactive zsh does the same only after the [shell-env.d snippet](#interactive-zsh-shell-envd) is in `~/.zshrc`. Mode 600 per file, dir mode 700.
 
 ## Env Loading Model
 
 There is one unified env loader for managed-runtime shell scripts: `scripts/runtime/runtime-env-lib.sh`. Any agent / status / hook entry point that needs env should source it and call `runtime_env_load_managed`, which sources two layers in this order (later wins):
 
 1. `wezterm-x/local/shared.env` — repo-machine config (synced to Windows runtime; consumed by both Lua and shell). Use for non-secret machine choices like `MANAGED_AGENT_PROFILE`, `MANAGED_AGENT_PERMISSION_PROFILE`, `WEZTERM_VSCODE_PROFILE`, `WEZTERM_VSCODE_MAX_WINDOWS`, `WEZTERM_DISK_VOLUME` / `WEZTERM_DISK_RESERVE_GB` (see [host-disk.md](./host-disk.md)), and VS Code launch overrides.
-2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets. Drop a new file there to add a secret; no loader edits, no rc-file edits. The same dir is sourced by `~/.zshrc`, so interactive zsh and machine-spawned agents share one source of truth.
+2. `${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env` in lex order — user-level secrets and interactive shell functions. Drop a new file there to add a secret; no loader edits. Interactive zsh sees the same directory only after the one-time [snippet](#interactive-zsh-shell-envd) is in `~/.zshrc` (place it after installer PATH blocks). Managed agents do not need that snippet.
+
+### Interactive zsh (`shell-env.d`)
+
+`runtime_env_load_managed` never edits `~/.zshrc`. A fresh checkout therefore has no interactive glob until you append [`wezterm-x/local.example/zshrc-shell-env.zsh`](../wezterm-x/local.example/zshrc-shell-env.zsh). The marker comment is `wezdeck:shell-env.d`.
+
+```sh
+MARKER='wezdeck:shell-env.d'
+SNIPPET="$PWD/wezterm-x/local.example/zshrc-shell-env.zsh"
+grep -q "$MARKER" ~/.zshrc || printf '\n%s\n' "$(cat "$SNIPPET")" >> ~/.zshrc
+```
+
+Put that block **after** the grok installer (`export PATH="$HOME/.grok/bin:$PATH"`). Lex order inside the directory still applies: `wezdeck-env.env` loads before `wezdeck-fn.env` and `grok-focus-filter.env`, so `grok()` can read `WEZDECK_REPO`. Open a new login shell (`zsh -ilc`) to pick it up; an already-running shell keeps the old rc until you source it.
+
+`wezterm-env.env` and `wezterm-fn.env` are retired. Both the zsh snippet and `runtime_env_load_dir` skip them, print the `mv` to `wezdeck-env.env` / `wezdeck-fn.env`, and the loader also writes `category=env` in `runtime.log`. The old file does not set `WEZDECK_REPO`. A `~/.zshrc` that still only has the marker `wezterm-config:shell-env.d` is the previous snippet: replace that block with the current file so the skip is actually in the shell.
+
+Verify from a new interactive zsh:
+
+```sh
+zsh -ilc 'whence -w grok; [[ -n ${WEZDECK_REPO:-} ]] && echo "WEZDECK_REPO=$WEZDECK_REPO"'
+# expect: grok: function
+```
+
+Without the snippet, copying `*.env` into `~/.config/shell-env.d/` only affects managed agents. A direct `grok` then follows PATH and, after `grok update`, can be the bare ELF again.
 
 Managed agent launchers also add stable user CLI directories without starting an interactive shell: the nvm default Node `bin`, fnm's `aliases/default/bin`, Volta, Bun, and `~/.local/bin` when present. This keeps tools such as `codex` reachable from tmux F5/respawn paths even when the tmux server was started with a minimal PATH.
 
@@ -103,9 +128,9 @@ bash tests/hook-units/test_tmux_status_node_resolution.sh
 |---|---|---|
 | User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. One file per service. Files are auto-globbed. |
 | Claude gateway profile (sub2api) | `~/.config/claude-profiles/sub2api.env` | Mode 600. **Not** auto-globbed — only `agent-launcher.sh claude-sub2api` loads it. See [Claude auth profiles](#claude-auth-profiles). |
-| External capability source (`WEZDECK_REPO`, absolute checkout root) | `~/.config/shell-env.d/wezterm-env.env` | Single source anchor for platform skills, agent profiles, shell wrappers, and CLI paths. |
-| Repo-anchored shell helpers (aliases, `cd` functions) | `~/.config/shell-env.d/wezterm-fn.env` | Same template dir. Parent-shell only; runtime-loader treats it as a no-op. |
-| User-facing CLI commands | `scripts/runtime/cli/<name>` | No `.sh` suffix. Auto-PATH'd by `wezterm-env.env`. |
+| External capability source (`WEZDECK_REPO`, absolute checkout root) | `~/.config/shell-env.d/wezdeck-env.env` | Single source anchor for platform skills, agent profiles, shell wrappers, and CLI paths. |
+| Repo-anchored shell helpers (aliases, `cd` functions) | `~/.config/shell-env.d/wezdeck-fn.env` | Same template dir. Parent-shell only; runtime-loader treats it as a no-op. |
+| User-facing CLI commands | `scripts/runtime/cli/<name>` | No `.sh` suffix. Auto-PATH'd by `wezdeck-env.env`. |
 | Repo-machine config (Lua + shell) | `wezterm-x/local/shared.env` | Synced to Windows runtime. |
 | Repo-machine shell init / functions | `wezterm-x/local/runtime-logging.sh`, `wezterm-x/local/command-panel.sh` | Sourced as bash, not as `.env`. |
 | Repo-machine Lua tables | `wezterm-x/local/constants.lua`, `keybindings.lua`, `workspaces.lua` | Lua return-tables. |
@@ -113,9 +138,9 @@ bash tests/hook-units/test_tmux_status_node_resolution.sh
 
 ### Repo-anchored CLI surface
 
-User-facing CLI commands belong in `scripts/runtime/cli/` with no `.sh` suffix (users type the bare word, e.g. `reminders` not `reminders.sh`). The tracked template `wezterm-x/local.example/shell-env.d/wezterm-env.env` prepends that dir to `PATH`, so once a user copies that file into `~/.config/shell-env.d/`, adding a new CLI is a single file drop into `cli/` — no PATH edits, no rc-file edits, no symlinks. The same PATH addition rides into agent-launcher subprocesses via the runtime loader, so commands installed this way are also reachable from machine-spawned agents (Claude Code, Codex CLI, etc.) without extra wiring.
+User-facing CLI commands belong in `scripts/runtime/cli/` with no `.sh` suffix (users type the bare word, e.g. `reminders` not `reminders.sh`). The tracked template `wezterm-x/local.example/shell-env.d/wezdeck-env.env` prepends that dir to `PATH`, so once a user copies that file into `~/.config/shell-env.d/`, adding a new CLI is a single file drop into `cli/` — no PATH edits, no rc-file edits, no symlinks. The same PATH addition rides into agent-launcher subprocesses via the runtime loader, so commands installed this way are also reachable from machine-spawned agents (Claude Code, Codex CLI, etc.) without extra wiring.
 
-Parent-shell-only helpers — `cd`-ing functions, completion hooks, aliases — belong in the sibling `wezterm-fn.env` template instead. They cannot survive a subprocess boundary, so the runtime loader silently no-ops on them (defines, returns, drops). Prefix function and alias names with `wez-` / `wezterm-` so they cannot shadow a real binary a subprocess might rely on.
+Parent-shell-only helpers — `cd`-ing functions, completion hooks, aliases — belong in the sibling `wezdeck-fn.env` template instead. They cannot survive a subprocess boundary, so the runtime loader silently no-ops on them (defines, returns, drops). Prefix function and alias names with `wezdeck-` so they cannot shadow a real binary a subprocess might rely on.
 
 For agent-CLI launch chains specifically, `scripts/runtime/agent-launcher.sh` is the single env-loading site (it calls `runtime_env_load_managed` before exec'ing the agent). All managed launch paths — workspace first-open, `Alt+g` on-demand window, `refresh-current-window`, and tab-overflow cold-spawn — terminate at this launcher. Shell paths that resolve the resume argv share `scripts/runtime/worktree/lib/resume-command.sh::resolve_managed_primary_command`. See [`architecture.md#startup-invariants`](./architecture.md#startup-invariants) for the invariant statement.
 
@@ -156,7 +181,7 @@ claude-sub2api          # resume-or-fresh via agent-launcher
 claude-sub2api -p 'hi'  # forward args to claude after loading gateway env
 ```
 
-`claude-sub2api` is on PATH via the `wezterm-env.env` template (`scripts/runtime/cli/`).
+`claude-sub2api` is on PATH via the `wezdeck-env.env` template (`scripts/runtime/cli/`).
 
 **Verify**
 
@@ -260,7 +285,7 @@ scripts/dev/agent-hooks.sh install --provider codex
 
 The install command preserves existing hook entries and creates a timestamped backup. Runtime sync only checks and warns; it never edits `~/.codex` or `~/.claude` automatically.
 
-For the complete WezDeck environment check, run [`skills/wezdeck-runtime-ops/scripts/check-runtime.sh`](../skills/wezdeck-runtime-ops/scripts/check-runtime.sh). It covers Lua syntax and managed config precheck, the configured agent CLI binary, agent hooks, the `agent-tools.env` marker, launcher permission overlays, resume/workspace-agent-map wiring, Node/fnm state, and dependency floors; use `--advisory --skip-deps` when upstream access is unavailable.
+For the complete WezDeck environment check, run [`skills/wezdeck-runtime-ops/scripts/check-runtime.sh`](../skills/wezdeck-runtime-ops/scripts/check-runtime.sh). It covers Lua syntax and managed config precheck, the configured agent CLI binary, agent hooks, the `agent-tools.env` marker, launcher permission overlays, resume/workspace-agent-map wiring, Node/fnm state, interactive `shell-env.d` injection (`scripts/dev/check-shell-env.sh`), and dependency floors; use `--advisory --skip-deps` when upstream access is unavailable. A missing `wezdeck-env.env` or `wezdeck:shell-env.d` snippet fails this check and is only a warning during sync.
 
 ## Tmux Status Prompt Hook
 

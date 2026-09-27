@@ -480,10 +480,10 @@ Host volume headroom (`ext4.vhdx` growth, sparse-VHD trap, `fstrim` → shutdown
   ```bash
   LOG="${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/logs/runtime.log"
   grep -E 'level="(error|warn)"' "$LOG" | tail -40
-  grep -E 'hook aborted|adapter payload degraded|grok theme|focus-filter unhealthy|agent launcher failed' "$LOG" | tail -40
+  grep -E 'hook aborted|adapter payload degraded|grok theme|focus-filter unhealthy|agent launcher failed|shell-env check' "$LOG" | tail -40
   ```
 
-  Messages: `hook aborted` (emit non-zero exit), `adapter payload degraded` (JSON with no usable fields), `grok theme patch failed` / `grok theme patched`, `grok focus-filter unhealthy`, `agent launcher failed`. Intentional attention skips stay `info`.
+  Messages: `hook aborted` (emit non-zero exit), `adapter payload degraded` (JSON with no usable fields), `grok theme patch failed` / `grok theme patched`, `grok focus-filter unhealthy`, `agent launcher failed`, `shell-env check warning` (`category=sync`, advisory during publish). Intentional attention skips stay `info`. Interactive injection itself is `scripts/dev/check-shell-env.sh` (a gate inside `check-runtime.sh`).
 - If the tmux status line still reflects stale branch or change counts after a local `git` command and only catches up on the next 30s poll, the recommended prompt hook is probably not installed. From an affected tmux pane run `typeset -f __tmux_status_prompt_refresh >/dev/null && echo ok || echo missing`; when it prints `missing`, add the source line documented in [`setup.md`](./setup.md#tmux-status-prompt-hook) to your shell rc and re-source it — existing shells will not pick up the hook until you do.
 - If a managed tab’s layout looks wrong (uneven panes, content not filling the WezTerm window, status “too tall”) and `list-panes` already looks ~equal: **compare PTY `TIOCGWINSZ` to `tmux list-clients` size before trusting pane ratios.** WezTerm can grow the pts while `tmux attach` keeps a stale client size; `refresh-client -S` alone often does not converge. Full symptom table, triage commands, and fix-layout steps: [`tmux-ui.md#layout-heal-fix-layout`](./tmux-ui.md#layout-heal-fix-layout).
 - If text paste is fast but image-path paste stops working in `hybrid-wsl`, sync the runtime, let WezTerm auto-reload, and inspect the shared `trace_id` across the WezTerm and helper logs.

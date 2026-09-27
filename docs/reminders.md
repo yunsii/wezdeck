@@ -89,7 +89,7 @@ The popup interrupts; the attention pipeline does not. They are orthogonal.
 
 ## View
 
-`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezterm-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints every entry in the installed user crontab — popup-driven reminders alongside any other commands you have scheduled — with the next scheduled fire computed via `systemd-analyze calendar` and one or two recent-activity signals.
+`reminders` (under `scripts/runtime/cli/`, on PATH via the `wezdeck-env.env` template — see [setup.md](./setup.md#env-loading-model)) prints every entry in the installed user crontab — popup-driven reminders alongside any other commands you have scheduled — with the next scheduled fire computed via `systemd-analyze calendar` and one or two recent-activity signals.
 
 - **`fired`** counts cron-journal `(yuns) CMD (...)` lines that match the entry's script basename in the configured window. This is evidence cron *started* the command — for popup entries it is NOT proof the popup appeared.
 - **`shown`** (popup entries only) counts `popup` category `message="shown"` rows that `tmux-popup-active.sh` emits to runtime.log immediately before `exec tmux display-popup`. This is the actual "popup reached tmux" signal. The view matches acks to entries by their literal `popup_title` (including any padding spaces), so the parsed title in the View output and the title in the runtime log are always the same string.

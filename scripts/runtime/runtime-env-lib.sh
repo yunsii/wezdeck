@@ -31,9 +31,12 @@
 #       1. <repo>/wezterm-x/local/shared.env   (tracked-template + private)
 #       2. ${SHELL_ENV_DIR:-~/.config/shell-env.d}/*.env in lex order
 #          (the canonical location for user-level secrets; mirror the same
-#          dir from ~/.zshrc / ~/.zshenv so interactive shells and runtime
-#          scripts share one source of truth — adding a new secret means
-#          dropping a file there, no loader changes needed)
+#          dir from ~/.zshrc / ~/.zshenv — one-time snippet
+#          wezterm-x/local.example/zshrc-shell-env.zsh, see
+#          docs/setup.md#interactive-zsh-shell-envd — so interactive
+#          shells and runtime scripts share one source of truth.
+#          Adding a new secret means dropping a file there, no loader
+#          changes needed)
 #     Each step is optional; missing files / dirs are silently skipped.
 #
 # shellcheck shell=bash
@@ -77,6 +80,39 @@ runtime_env_read_key() {
   printf '%s' "$raw"
 }
 
+# Retired shell-env names. Detected, warned, and not sourced — the old
+# file must not keep setting WEZDECK_REPO or PATH. Removal follow-up:
+# delete this case once no machine still has the old filenames.
+runtime_env_retired_shell_file() {
+  case "$(basename "$1")" in
+    wezterm-env.env|wezterm-fn.env) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+runtime_env_warn_retired() {
+  local file="$1"
+  local base replacement
+  base="$(basename "$file")"
+  replacement="wezdeck-${base#wezterm-}"
+  printf 'runtime-env: skip retired %s; mv %s %s\n' \
+    "$base" "$file" "$(dirname "$file")/$replacement" >&2
+  if [[ -z "${__RUNTIME_ENV_LOG_LOADED:-}" ]]; then
+    local log_lib
+    log_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/runtime-log-lib.sh"
+    if [[ -r "$log_lib" ]]; then
+      # shellcheck disable=SC1090
+      . "$log_lib"
+      __RUNTIME_ENV_LOG_LOADED=1
+    fi
+  fi
+  if declare -F runtime_log_warn >/dev/null 2>&1; then
+    runtime_log_init
+    runtime_log_warn env "retired shell-env file skipped" \
+      "file=$file" "replacement=$replacement"
+  fi
+}
+
 runtime_env_load_dir() {
   local dir="${1:?runtime_env_load_dir: missing dir}"
   [[ -d "$dir" ]] || return 0
@@ -86,6 +122,10 @@ runtime_env_load_dir() {
   # erroring on the literal `*.env` pattern.
   shopt -s nullglob 2>/dev/null || true
   for f in "$dir"/*.env; do
+    if runtime_env_retired_shell_file "$f"; then
+      runtime_env_warn_retired "$f"
+      continue
+    fi
     [[ -r "$f" ]] && runtime_env_load_shell "$f"
   done
   shopt -u nullglob 2>/dev/null || true

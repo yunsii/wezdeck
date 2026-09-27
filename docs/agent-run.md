@@ -42,7 +42,7 @@ Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reportin
 
 ## Human / CLI path
 
-On PATH via `wezterm-env.env` (`scripts/runtime/cli/`).
+On PATH via `wezdeck-env.env` (`scripts/runtime/cli/`).
 
 ```bash
 # Prepared by agent (or manually) — --cwd is required
@@ -117,7 +117,7 @@ Same spirit as `runtime.log` rotation:
 ./scripts/dev/link-platform-skills.sh
 
 # CLI on PATH (once per machine)
-cp wezterm-x/local.example/shell-env.d/wezterm-env.env ~/.config/shell-env.d/
+cp wezterm-x/local.example/shell-env.d/wezdeck-env.env ~/.config/shell-env.d/
 # then open a new shell — wd-run and x resolve via WEZDECK_REPO/scripts/runtime/cli
 
 # agent-tools.env wd_run=… (after sync)

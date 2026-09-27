@@ -62,7 +62,7 @@ TOOL_HOME="$(readlink -f "${HUMAN_RUN_HOME:-$HOME/.agents/skills/human-run}")"
 `ensure-env.sh` is idempotent. It:
 
 1. Verifies this skill’s wezdeck tree has `wd-run` / `x` / `agent-run-lib.sh`
-2. If `$WEZDECK_REPO/scripts/runtime/cli` lacks them, **symlinks** from the skill tree (so `wezterm-env` PATH and human `x` work even when that clone’s HEAD is behind)
+2. If `$WEZDECK_REPO/scripts/runtime/cli` lacks them, **symlinks** from the skill tree (so `wezdeck-env` PATH and human `x` work even when that clone’s HEAD is behind)
 3. Writes/updates `~/.wezterm-x/agent-tools.env` with a working `wd_run=`
 4. Smokes the binary; prints the absolute `wd-run` path on stdout
 

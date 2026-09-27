@@ -70,6 +70,10 @@ functions and environment snippets. The repo-root env snippet sets
 `WEZDECK_REPO` and derives all wrapper paths from it; functions such as the
 Grok wrapper must call repository scripts by absolute path. CLI wrappers under
 `scripts/runtime/cli/` follow the same root and are made reachable by `PATH`.
+Interactive zsh loads the directory only after
+[`wezterm-x/local.example/zshrc-shell-env.zsh`](../wezterm-x/local.example/zshrc-shell-env.zsh)
+is appended to `~/.zshrc` (marker `wezdeck:shell-env.d`); see
+[`setup.md#interactive-zsh-shell-envd`](./setup.md#interactive-zsh-shell-envd).
 Do not add a new shell snippet that hard-codes a checkout path or resolves the
 source through `~/.agents/skills`.
 

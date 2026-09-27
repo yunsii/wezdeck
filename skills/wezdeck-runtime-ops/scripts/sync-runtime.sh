@@ -604,6 +604,33 @@ run_agent_hooks_check() {
   printf '[sync] fix: %s install --provider codex|claude|all\n' "$check_script" >&2
 }
 
+run_shell_env_check() {
+  local check_script="$REPO_ROOT/scripts/dev/check-shell-env.sh"
+  local output=""
+  local rc=0
+
+  if [[ "${WEZTERM_SYNC_SKIP_SHELL_ENV_CHECK:-0}" == "1" ]]; then
+    sync_trace "step=shell-env-check status=skipped reason=env_override"
+    return 0
+  fi
+  if [[ ! -x "$check_script" ]]; then
+    sync_trace "step=shell-env-check status=skipped reason=script_missing"
+    return 0
+  fi
+
+  output="$("$check_script" --advisory 2>&1)" || rc=$?
+  if (( rc != 0 )) || [[ "$output" == *'warning:'* ]]; then
+    sync_trace "step=shell-env-check status=warning rc=$rc"
+    runtime_log_warn sync "shell-env check warning" "check_rc=$rc"
+    printf '[sync] shell-env-check warning (sync continues):\n%s\n' \
+      "${output:-shell-env check failed without details}" >&2
+    return 0
+  fi
+
+  sync_trace "step=shell-env-check status=healthy"
+  runtime_log_info sync "shell-env check passed"
+}
+
 run_node_runtime_check() {
   local check_script="$REPO_ROOT/scripts/dev/check-node-runtime.sh"
   local details=""
@@ -681,6 +708,7 @@ wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
 run_agent_hooks_check
 run_node_runtime_check
+run_shell_env_check
 
 # Discovery marker for WSL-resident agents (Claude Code, Codex CLI, etc.).
 # Lands in $HOME/.wezterm-x/, not $TARGET_HOME/.wezterm-x/, because the
