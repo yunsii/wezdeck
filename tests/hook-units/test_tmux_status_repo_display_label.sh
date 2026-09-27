@@ -23,28 +23,39 @@ expect_eq() {
 }
 
 # Default remap (no tmux / env override): wezterm-config → wezdeck.
-unset TMUX_STATUS_REPO_ALIAS WEZTERM_REPO_ALIASES WEZTERM_REPO_ALIAS
+unset TMUX_STATUS_REPO_ALIAS WEZDECK_REPO_ALIASES WEZTERM_REPO_ALIASES WEZTERM_REPO_ALIAS
 tmux() { printf ''; }
 export -f tmux
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezdeck' 'default alias wezterm-config→wezdeck'
 expect_eq "$(tmux_status_repo_display_label 'other-repo')" 'other-repo' 'unmapped basename unchanged'
 
 # Shared Lua + shell alias takes effect before the tmux option fallback.
-WEZTERM_REPO_ALIASES='wezterm-config=wd,other-repo=other'
+WEZDECK_REPO_ALIASES='wezterm-config=wd,other-repo=other'
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wd' 'shared alias wezterm-config→wd'
 expect_eq "$(tmux_status_repo_display_label 'other-repo')" 'other' 'shared alias other-repo→other'
-unset WEZTERM_REPO_ALIASES
+unset WEZDECK_REPO_ALIASES
 
 # Explicit custom alias.
-WEZTERM_REPO_ALIASES='team-stat=ts'
+WEZDECK_REPO_ALIASES='team-stat=ts'
 expect_eq "$(tmux_status_repo_display_label 'team-stat')" 'ts' 'custom alias team-stat→ts'
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezterm-config' 'custom alias does not affect other basenames'
 
 # Disable via sentinel / empty env.
-WEZTERM_REPO_ALIASES='none'
+WEZDECK_REPO_ALIASES='none'
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezterm-config' 'none disables remapping'
-WEZTERM_REPO_ALIASES=''
+WEZDECK_REPO_ALIASES=''
 expect_eq "$(tmux_status_repo_display_label 'wezterm-config')" 'wezterm-config' 'empty env disables remapping'
+
+# Retired name warns and does not override the current key.
+WEZDECK_REPO_ALIASES='wezterm-config=wezdeck'
+WEZTERM_REPO_ALIASES='wezterm-config=old'
+warn="$(tmux_status_repo_display_label 'wezterm-config' 2>&1 >/dev/null || true)"
+expect_eq "$(tmux_status_repo_display_label 'wezterm-config' 2>/dev/null)" 'wezdeck' 'retired WEZTERM_REPO_ALIASES is not applied'
+case "$warn" in
+  *'use WEZDECK_REPO_ALIASES'*) ok 'retired WEZTERM_REPO_ALIASES warns' ;;
+  *) no "retired WEZTERM_REPO_ALIASES warns (got='$warn')" ;;
+esac
+unset WEZTERM_REPO_ALIASES WEZDECK_REPO_ALIASES
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 (( fail == 0 ))

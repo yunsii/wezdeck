@@ -67,10 +67,11 @@ style() {
 }
 
 # Map a git toplevel basename to a status-bar display label.
-# Remaps use shared.env WEZTERM_REPO_ALIASES as comma-separated
-# `basename=label` entries (default wezterm-config=wezdeck). Legacy
-# TMUX_STATUS_REPO_ALIAS / @tmux_status_repo_alias values are ignored with a
-# warning. Set the shared value to none|off|0 (or empty) to show raw basenames.
+# Remaps use shared.env WEZDECK_REPO_ALIASES as comma-separated
+# `basename=label` entries (default wezterm-config=wezdeck). Retired names
+# (WEZTERM_REPO_ALIASES, WEZTERM_REPO_ALIAS, TMUX_STATUS_REPO_ALIAS,
+# @tmux_status_repo_alias) warn and do not apply. Set the shared value to
+# none|off|0 (or empty) to show raw basenames.
 tmux_status_repo_display_label() {
   local label="${1:-}"
   local alias=""
@@ -82,16 +83,16 @@ tmux_status_repo_display_label() {
     return
   }
 
-  if [[ -n "${TMUX_STATUS_REPO_ALIAS+x}" || -n "${WEZTERM_REPO_ALIAS+x}" ]]; then
-    printf 'warning: legacy repo alias variable ignored; use WEZTERM_REPO_ALIASES\n' >&2
+  if [[ -n "${WEZTERM_REPO_ALIASES+x}" || -n "${WEZTERM_REPO_ALIAS+x}" || -n "${TMUX_STATUS_REPO_ALIAS+x}" ]]; then
+    printf 'warning: legacy repo alias variable ignored; use WEZDECK_REPO_ALIASES\n' >&2
   fi
-  if [[ -n "${WEZTERM_REPO_ALIASES+x}" ]]; then
-    alias="$WEZTERM_REPO_ALIASES"
+  if [[ -n "${WEZDECK_REPO_ALIASES+x}" ]]; then
+    alias="$WEZDECK_REPO_ALIASES"
   else
     local legacy_option
     legacy_option="$(tmux_option @tmux_status_repo_alias '')"
     if [[ -n "$legacy_option" ]]; then
-      printf 'warning: legacy tmux repo alias option ignored; use WEZTERM_REPO_ALIASES\n' >&2
+      printf 'warning: legacy tmux repo alias option ignored; use WEZDECK_REPO_ALIASES\n' >&2
     fi
     alias='wezterm-config=wezdeck'
   fi

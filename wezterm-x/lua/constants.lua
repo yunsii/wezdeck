@@ -422,11 +422,15 @@ if shared_env.WAKATIME_API_KEY and shared_env.WAKATIME_API_KEY ~= '' then
 end
 constants.repo_root = repo_root_override or constants.repo_root
 constants.main_repo_root = defaults.read_main_repo_root_override(runtime_dir, join_path) or constants.main_repo_root or constants.repo_root
-constants.repo_aliases = shared_env.WEZTERM_REPO_ALIASES
+constants.repo_aliases = shared_env.WEZDECK_REPO_ALIASES
   or constants.repo_aliases
-if shared_env.WEZTERM_REPO_ALIAS and shared_env.WEZTERM_REPO_ALIAS ~= ''
-  and wezterm.log_warn then
-  wezterm.log_warn('WEZTERM_REPO_ALIAS is obsolete; use WEZTERM_REPO_ALIASES')
+if wezterm.log_warn then
+  if shared_env.WEZTERM_REPO_ALIASES and shared_env.WEZTERM_REPO_ALIASES ~= '' then
+    wezterm.log_warn('WEZTERM_REPO_ALIASES is obsolete; use WEZDECK_REPO_ALIASES')
+  end
+  if shared_env.WEZTERM_REPO_ALIAS and shared_env.WEZTERM_REPO_ALIAS ~= '' then
+    wezterm.log_warn('WEZTERM_REPO_ALIAS is obsolete; use WEZDECK_REPO_ALIASES')
+  end
 end
 
 return constants
