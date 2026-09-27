@@ -1,8 +1,9 @@
 import { setupI18n } from '@lingui/core'
 import { I18nProvider } from '@lingui/react'
-import { useLocation } from '@tanstack/react-router'
+import { useParams } from '@tanstack/react-router'
 import { useEffect, useMemo } from 'react'
 
+import { locales } from '#/route-tree'
 import { LocaleContext } from './locale-context'
 import type { Locale } from './locale-context'
 
@@ -15,11 +16,10 @@ const catalogModules = import.meta.glob<CatalogModule>(
 )
 
 export function AppI18nProvider({ children }: { children: React.ReactNode }) {
-  const location = useLocation()
-  const locale: Locale =
-    location.pathname === '/zh' || location.pathname.startsWith('/zh/')
-      ? 'zh'
-      : 'en'
+  const { locale: localeParam } = useParams({ strict: false })
+  const locale: Locale = locales.includes(localeParam as Locale)
+    ? (localeParam as Locale)
+    : 'en'
   const localeI18n = useMemo(() => {
     const instance = setupI18n()
     for (const [path, catalog] of Object.entries(catalogModules)) {

@@ -8,6 +8,7 @@ internal sealed class RuntimeManager : IDisposable
     private readonly object stateFileWriteLock = new();
     private readonly long startedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     private readonly ClipboardService? clipboardService;
+    private readonly VscodeRequestHandler vscodeHandler;
     private readonly System.Threading.Timer heartbeatTimer;
     private readonly RequestRouter requestRouter;
     private readonly RuntimeWebServer runtimeWebServer;
@@ -26,10 +27,13 @@ internal sealed class RuntimeManager : IDisposable
         var instanceRegistry = new InstanceRegistry(config.WindowCachePath ?? Path.Combine(config.RuntimeDir, "window-cache.json"));
         var windowReuseService = new WindowReuseService(instanceRegistry);
         clipboardService = new ClipboardService(config, logger);
+        vscodeHandler = new VscodeRequestHandler(logger, windowReuseService);
+        var sessionHandler = new SessionRequestHandler(config, logger);
         requestRouter = new RequestRouter(
             logger,
             new ClipboardRequestHandler(clipboardService, logger),
-            new VscodeRequestHandler(logger, windowReuseService),
+            vscodeHandler,
+            sessionHandler,
             new ChromeRequestHandler(logger, windowReuseService),
             new ImeRequestHandler(logger));
         runtimeWebServer = new RuntimeWebServer(config, () => new RuntimeImeStateResult
@@ -37,7 +41,7 @@ internal sealed class RuntimeManager : IDisposable
             Mode = currentImeSample.Mode,
             Lang = currentImeSample.Lang,
             Reason = currentImeSample.Reason,
-        }, logger);
+        }, logger, requestJson => HandleWebRequest(requestJson), vscodeHandler.ReadWindows);
         foregroundChangeTracker = new ForegroundChangeTracker(logger, config.ForegroundSampling);
 
         heartbeatTimer = new System.Threading.Timer(_ => RunHeartbeatTick(), null, Timeout.Infinite, Timeout.Infinite);
@@ -124,6 +128,15 @@ internal sealed class RuntimeManager : IDisposable
         {
             ["error"] = lastError,
             ["runtime_dir"] = config.RuntimeDir,
+        });
+    }
+
+    private string HandleWebRequest(string requestJson)
+    {
+        return requestRouter.HandleRequestJson(requestJson, "http", message =>
+        {
+            lastError = message;
+            WriteHelperState("1", lastError);
         });
     }
 

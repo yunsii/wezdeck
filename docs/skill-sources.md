@@ -54,6 +54,48 @@ user-level skill directories. Use this class when the skill depends on this
 checkout's runtime, generated files, or private project layout. `wezdeck-runtime-ops`
 is repo-local.
 
+### Upstream agent skills
+
+Third-party agent skills that this checkout should carry are installed with
+`npx skills`, not copied by hand and not registered in `skills/manifest.tsv`.
+The shared body lives in `.agents/skills/<name>/`. Grok reads that directory
+directly, so a `.grok/skills/<name>` symlink to the same body is redundant
+and must not be committed. Claude Code does not scan `.agents/skills/`; its
+project discovery root is `.claude/skills/`, so a relative symlink there is
+the Claude-specific link, not a second copy.
+
+From the repository root, name only the skill. Omit `-a` so the body stays
+on the shared surface:
+
+```bash
+npx skills add <github-owner>/<repo> --skill <name> -y
+```
+
+The installer also drops agent symlinks. After it finishes, delete any
+`.grok/skills/<name>` link it created. Keep `.claude/skills/<name>` only
+while Claude Code still requires its own directory. Commit:
+
+- `.agents/skills/<name>/` — the skill body;
+- `.claude/skills/<name>` — relative symlink to that body;
+- `skills-lock.json` — source repo, upstream path, and content hash.
+
+Do not pass `-g`: that installs into `~/.agents/skills/` and leaves this
+checkout. Do not pass `-a grok` or `--copy`: that writes a private copy
+under `.grok/skills/`. Do not install into `skills/<name>/`; that tree is
+only for skills this repository authors. Agent-only config (a Grok hook, a
+Claude permission) stays in that agent's own project directory.
+
+Refresh with `npx skills update <name> -p -y`, drop a recreated
+`.grok/skills/<name>` link, and commit the body, the Claude symlink, and
+the lockfile together. Leave upstream text unchanged.
+
+Current installs:
+
+| Skill | Source | Use |
+| --- | --- | --- |
+| `frontend-design` | `anthropics/skills` | Visual direction for `web/` pages: palette, type, layout |
+| `web-design-guidelines` | `vercel-labs/agent-skills` | Review `web/` UI against the fetched Vercel interface rules |
+
 ### Agent profiles and permission overlays
 
 `agent-profiles/` contains versioned profile source, not project skills. Its

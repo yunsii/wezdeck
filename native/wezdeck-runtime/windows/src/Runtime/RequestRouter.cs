@@ -8,6 +8,7 @@ internal sealed class RequestRouter
     private readonly StructuredLogger logger;
     private readonly ClipboardRequestHandler clipboardHandler;
     private readonly VscodeRequestHandler vscodeHandler;
+    private readonly SessionRequestHandler sessionHandler;
     private readonly ChromeRequestHandler chromeHandler;
     private readonly ImeRequestHandler imeHandler;
 
@@ -15,12 +16,14 @@ internal sealed class RequestRouter
         StructuredLogger logger,
         ClipboardRequestHandler clipboardHandler,
         VscodeRequestHandler vscodeHandler,
+        SessionRequestHandler sessionHandler,
         ChromeRequestHandler chromeHandler,
         ImeRequestHandler imeHandler)
     {
         this.logger = logger;
         this.clipboardHandler = clipboardHandler;
         this.vscodeHandler = vscodeHandler;
+        this.sessionHandler = sessionHandler;
         this.chromeHandler = chromeHandler;
         this.imeHandler = imeHandler;
     }
@@ -99,6 +102,9 @@ internal sealed class RequestRouter
         return (requestDomain, requestAction) switch
         {
             ("vscode", "focus_or_open") => vscodeHandler.FocusOrOpen(payload, traceId),
+            ("vscode", "focus") => vscodeHandler.Focus(payload, traceId),
+            ("vscode", "close") => vscodeHandler.Close(payload, traceId),
+            ("sessions", "focus") => sessionHandler.Focus(payload, traceId),
             ("chrome", "focus_or_start") => chromeHandler.FocusOrStart(payload, traceId),
             ("clipboard", "resolve_for_paste") => clipboardHandler.ResolveForPaste(traceId),
             ("clipboard", "write_text") => clipboardHandler.WriteText(payload, traceId),

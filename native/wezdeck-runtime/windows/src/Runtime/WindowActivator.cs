@@ -4,6 +4,16 @@ namespace WezDeck.Runtime;
 
 internal static class WindowActivator
 {
+    public static bool TryCloseWindow(WindowMatch window)
+    {
+        if (window.WindowHandle == IntPtr.Zero || !NativeMethods.IsWindow(window.WindowHandle))
+        {
+            return false;
+        }
+
+        return NativeMethods.PostMessage(window.WindowHandle, NativeMethods.WmClose, IntPtr.Zero, IntPtr.Zero);
+    }
+
     public static void LaunchDetachedProcess(string executable, IReadOnlyList<string> arguments)
     {
         var startInfo = new ProcessStartInfo

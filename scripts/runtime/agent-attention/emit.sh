@@ -562,6 +562,9 @@ else
       agent_name="$(attention_resolve_agent_name "$session_id" 2>/dev/null || true)"
     fi
   fi
+  if [[ -z "$agent_name" && -n "$provider" && "$provider" != "unknown" ]]; then
+    agent_name="$provider"
+  fi
 
   attention_state_upsert \
     "$session_id" \

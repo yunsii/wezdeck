@@ -1477,8 +1477,8 @@ local function try_activate_pane(target_id, window, source_pane)
                 end
               end
               pcall(function() mux_tab:activate() end)
-              pcall(function() info.pane:activate() end)
-              return true
+              local ok_focus, focused = pcall(function() info.pane:activate() return not window or not window.focus or window:focus() ~= false end)
+              return ok_focus and focused
             end
           end
         end
@@ -1600,7 +1600,7 @@ function M.parse_jump_payload(value)
       tmux_socket  = parts[5],
       tmux_window  = parts[6],
       tmux_pane    = parts[7],
-      tmux_session = parts[8],  -- nil-tolerant: missing → nil
+      tmux_session = parts[8], trace_id = parts[9], -- missing fields stay nil
     }
   elseif kind == 'recent' and #parts >= 8 then
     return {
@@ -1611,7 +1611,7 @@ function M.parse_jump_payload(value)
       tmux_socket  = parts[6],
       tmux_window  = parts[7],
       tmux_pane    = parts[8],
-      tmux_session = parts[9],
+      tmux_session = parts[9], trace_id = parts[10],
     }
   end
   return nil

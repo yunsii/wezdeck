@@ -203,6 +203,11 @@ There are two repository-owned skill classes:
 
 `skills/<name>` is therefore not an ownership signal by itself: platform
 entries there are symlinks, while repo-local entries are real directories.
+Upstream agent skills installed with `npx skills` are a third surface:
+the body in `.agents/skills/<name>/`, a `.claude/skills/<name>` symlink
+for Claude Code, and `skills-lock.json`, outside this manifest. Grok
+reads `.agents/skills/` directly
+([`skill-sources.md`](./skill-sources.md#upstream-agent-skills)).
 Do not add a repo-local skill to `link-platform-skills.sh` just to make it
 discoverable. Add a platform skill to that installer only when its source,
 user-level installation, and in-repo discovery should all move together.
@@ -250,6 +255,7 @@ Three independent channels cross the WSL ⇄ Windows boundary; everything else i
 1. **Named-pipe IPC** for synchronous requests (`Alt+v` / `Alt+b` / `Ctrl+v` etc.). WSL bash spawns `wezdeck-runtime-cli.exe`, which talks to `wezdeck-runtime.exe` over `\\.\pipe\wezdeck-runtime-v1` and gets a typed response back. Latency budget: ~50-150 ms.
 2. **OSC 1337 escape codes** for async nudges (attention ticks, IME-state pushes). The agent CLI or hook script writes the OSC byte sequence to its tty; tmux DCS-wraps it; `wezterm.exe` consumes it and re-renders within one frame. Latency: under one paint frame (~16 ms).
 3. **Shared NTFS state files under `/mnt/c`** for poll-style reads where both sides need the data at their own cadence. WSL processes write (hooks, jump scripts), Windows processes read on every tick (Lua status update, helper liveness watcher). Cross-FS routing rule lives in [`performance.md`](./performance.md).
+4. **WSL Unix socket** for synchronous reads of Linux-owned data. `wezdeck-runtime.exe` keeps one `wsl.exe -d <distro> --user <user> -- wezdeck-wsl attach` process. That process connects to `~/.local/state/wezterm-runtime/wsl.sock`. Frames are a 4-byte little-endian length plus one JSON object, the same `version` / `trace_id` / `domain` / `action` / `payload` envelope as the named pipe, answered with `ok` / `status` / `decision_path` / `result`. The socket file is only the kernel endpoint's name; frames stay in pipe and socket buffers and are not written to disk. Linux writes (jump to a pane, open VS Code, clipboard) stay on channel 1. The socket does not embed Lua inside .NET and does not accept a shell string.
 
 **Design rule for channel (3) — continuous maintenance over press-coupled writes.** When a producer writes a `/mnt/c` file that another process is about to read in response to the same user gesture, do not couple the write to the gesture (synchronous "write file → trigger consumer"). The cross-FS visibility of an `os.rename` is not synchronous between WSL and Windows views of NTFS: a reader on the other side of the mount can land on the previous file content for tens to hundreds of milliseconds after the writer has logically completed. Any defensive freshness gate the reader adds to detect stale data ends up firing on the legitimate write→read race and the consumer falls back to a degraded view.
 
@@ -335,8 +341,28 @@ flowchart LR
 ### Runtime Web API
 
 The browser-facing surface is an adapter over the same native control plane.
-`GET /api/v1/health`, `/api/v1/rime/stats`, `/api/v1/ime`, and
-`/api/v1/chrome` return read-only snapshots. `/events` is a loopback WebSocket
+`GET /api/v1/health`, `/api/v1/rime/stats`, `/api/v1/ime`,
+`/api/v1/chrome`, and `/api/v1/workspaces` return read-only snapshots.
+`workspaces.read`, `worktree.status`, and `wakatime.read` are served through
+channel 4. `workspace.catalog` runs `scripts/runtime/dump-workspace-catalog.lua`:
+it `dofile`s the synced `workspaces.lua` (public baseline, then a whole-table
+local override per name), asks `git worktree list` for each repository, and
+reads `access-ledger.json` for the last visited worktree.
+`git.status` runs `dump-worktree-status.lua` for the tmux-status git change
+label and Node version. `status.wakatime` runs `dump-wakatime-status.lua`
+against the existing tmux WakaTime cache and does not call the WakaTime API.
+`bridge.status` (`GET /api/v1/wsl`, capability `wsl.status`) reports whether
+that socket process is answering, plus its socket path and pid. The Web
+Console overview shows this as its own status; a missing process is
+`available: false` and does not replace the page. The JSON includes every
+defined workspace, its repositories, their worktrees, and a `selection` of the
+newest ledger path. The Web Console keeps its own last workspace, repository,
+and worktree in browser storage and does not follow that ledger selection. A defined workspace with no repositories stays in the
+list. The Web Console treats a
+missing capability, HTTP error, or schema mismatch on one snapshot as an empty
+module with its own status line. A page render error stays inside the console
+content area; navigation and the status band keep rendering.
+`/events` is a loopback WebSocket
 that emits invalidation ticks; the Web Console then refetches typed snapshots
 through TanStack Query. The server binds to loopback only and keeps the Named
 Pipe request path unchanged. Browser Origins are checked against the configured
@@ -347,6 +373,7 @@ the public Vercel UI.
 ### Constraints
 
 - The hot path should stay on one chain: `Lua -> wezdeck-runtime-cli.exe -> named pipe -> wezdeck-runtime.exe -> response`.
+- Linux-owned reads from the Windows Runtime go through `wezdeck-wsl attach`. A dead socket or attach process degrades that HTTP snapshot to `available: false`; it does not open a new `wsl.exe` per request.
 - `wezdeck-runtime.exe` is the single decision point for VS Code directory normalization, Chrome debug instance reuse, clipboard text or image decisions, and foreground-window IME state queries.
 - Response types stay explicit: current-window reuse returns `result_type=window_ref`, clipboard reads return `clipboard_text` or `clipboard_image`, IME queries return `ime_state` with flat `mode` / `lang` / `reason` fields.
 - Reuse logic depends on persisted cache, process command-line matching, visible window scanning, and foreground binding compensation.

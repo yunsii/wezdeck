@@ -13,6 +13,14 @@ export default [
       'sort-imports': 'off',
       '@typescript-eslint/array-type': 'off',
       '@typescript-eslint/require-await': 'off',
+      'max-lines': [
+        'error',
+        { max: 500, skipBlankLines: true, skipComments: true },
+      ],
+      'max-lines-per-function': [
+        'error',
+        { max: 220, skipBlankLines: true, skipComments: true },
+      ],
       'pnpm/json-enforce-catalog': 'off',
     },
   },

@@ -138,6 +138,23 @@ if [[ "${1:-}" == "--direct" ]]; then
     if (( need_forced_refresh )); then
       refresh_jump_target_status "$direct_socket" "$direct_window"
     fi
+
+    if [[ -n "${WEZTERM_RUNTIME_TRACE_ID:-}" ]]; then
+      # Direct jumps are the tmux half of the in-process WezTerm activation.
+      # Keep a receipt with the actual post-select window/pane so the web
+      # diagnostics view can prove the target landed instead of only logging
+      # that the event was dispatched.
+      # shellcheck disable=SC1091
+      . "$script_dir/runtime-log-lib.sh"
+      active_window="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{window_id}' 2>/dev/null || true)"
+      active_pane="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{pane_id}' 2>/dev/null || true)"
+      runtime_log_info attention "attention jump direct completed" \
+        "tmux_socket=$direct_socket" \
+        "requested_window=$direct_window" \
+        "requested_pane=$direct_pane" \
+        "active_window=$active_window" \
+        "active_pane=$active_pane"
+    fi
   fi
   exit 0
 fi

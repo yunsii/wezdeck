@@ -30,7 +30,7 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   warnings, or deciding whether to keep an old interface:
   Read [`docs/compatibility-policy.md`](docs/compatibility-policy.md).
 - External capability source ownership, user-level links, agent profiles,
-  shell injection, `WEZDECK_REPO`, or path resolution:
+  shell injection, `WEZDECK_REPO`, upstream agent skills, or path resolution:
   Read [`docs/skill-sources.md`](docs/skill-sources.md).
 - Repo hygiene (doc/code size budgets, broken relative links, pre-commit gate, `run.sh audit`):
   Read [`docs/daily-workflow.md#repo-hygiene`](docs/daily-workflow.md#repo-hygiene); run `skills/repo-hygiene/`.

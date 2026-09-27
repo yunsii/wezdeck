@@ -44,15 +44,44 @@ describe('Runtime Console through an existing Chromium CDP session', () => {
   it('renders the local Runtime health and Rime snapshot', async () => {
     expect(await page.getByText('Online').isVisible()).toBe(true)
     expect(await page.getByText('Rime today').isVisible()).toBe(true)
-    expect(await page.getByText('Current local day').isVisible()).toBe(true)
-    expect(await page.getByText('Rime commits').isVisible()).toBe(true)
+    expect(await page.getByText('Ops checks').isVisible()).toBe(true)
+    expect(await page.getByText('Rime activity').isVisible()).toBe(true)
+    expect(
+      await page
+        .getByRole('heading', { name: 'Overview', exact: true })
+        .isVisible(),
+    ).toBe(true)
+    await page.getByRole('link', { name: 'Development' }).click()
+    await page.waitForURL('**/console/development')
+    await page
+      .getByRole('button', { name: 'Jump to WezTerm pane' })
+      .first()
+      .waitFor({ state: 'visible' })
+    expect(
+      await page.getByText('Agent sessions', { exact: true }).isVisible(),
+    ).toBe(true)
+    expect(
+      await page.getByText('VS Code windows', { exact: true }).isVisible(),
+    ).toBe(true)
+    expect(
+      await page.getByRole('heading', { name: 'Local tools' }).isVisible(),
+    ).toBe(true)
+    expect(await page.getByText('Chrome debug').isVisible()).toBe(true)
+    expect(
+      await page.getByRole('button', { name: 'Jump to WezTerm pane' }).count(),
+    ).toBeGreaterThan(0)
+    await page.getByRole('link', { name: 'Overview' }).click()
+    await page.waitForURL('http://127.0.0.1:3000/console')
   })
 
   it('switches language and theme without a reload', async () => {
+    await page.goto('http://127.0.0.1:3000/console', {
+      waitUntil: 'domcontentloaded',
+    })
     await page.getByRole('button', { name: '中文' }).click()
     await page.waitForURL('**/zh/console')
     await page.waitForFunction(() => document.documentElement.lang === 'zh-CN')
-    expect(await page.locator('body').innerText()).toContain('Runtime 控制台')
+    expect(await page.locator('body').innerText()).toContain('Runtime 总览')
 
     await page.getByRole('button', { name: '亮色主题' }).click()
     expect(await page.locator('html').getAttribute('data-theme')).toBe('light')
@@ -77,16 +106,19 @@ describe('Runtime Console through an existing Chromium CDP session', () => {
     await page.goto('http://127.0.0.1:3000/console', {
       waitUntil: 'domcontentloaded',
     })
-    expect(await page.getByText('Runtime Console').first().isVisible()).toBe(
-      true,
-    )
+    expect(
+      await page.getByRole('heading', { name: 'Runtime overview' }).isVisible(),
+    ).toBe(true)
 
     await page.goto('http://127.0.0.1:3000/', { waitUntil: 'domcontentloaded' })
-    await page.getByRole('button', { name: 'Light theme' }).click()
-    expect(await page.locator('.console-preview-light').isVisible()).toBe(true)
-    expect(await page.locator('.console-preview-dark').isVisible()).toBe(false)
-    await page.getByRole('button', { name: 'Dark theme' }).click()
-    expect(await page.locator('.console-preview-dark').isVisible()).toBe(true)
-    expect(await page.locator('.console-preview-light').isVisible()).toBe(false)
+    const example = page.getByRole('tab', { name: /team-stat/ })
+    await example.click()
+    expect(await example.getAttribute('aria-selected')).toBe('true')
+    expect(await page.locator('#landing-session-detail').innerText()).toContain(
+      'team-stat',
+    )
+    expect(await page.locator('.landing-signal-list').innerText()).toContain(
+      'Runtime',
+    )
   })
 })

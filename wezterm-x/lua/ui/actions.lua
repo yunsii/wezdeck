@@ -98,13 +98,17 @@ function M.attention_jump_args(constants, pane_ref, trailing_args, logger, trace
       end
       return nil
     end
-    local args = { 'wsl.exe', '-d', distro, '--', 'bash', script_path }
+    local args = {
+      'wsl.exe', '-d', distro, '--', 'env',
+      'WEZTERM_RUNTIME_TRACE_ID=' .. (trace_id or ''),
+      'bash', script_path,
+    }
     for _, a in ipairs(trailing_args) do
       table.insert(args, a)
     end
     return args
   end
-  local args = { 'bash', script_path }
+  local args = { 'env', 'WEZTERM_RUNTIME_TRACE_ID=' .. (trace_id or ''), 'bash', script_path }
   for _, a in ipairs(trailing_args) do
     table.insert(args, a)
   end

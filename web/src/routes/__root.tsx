@@ -3,13 +3,14 @@ import {
   ScriptOnce,
   Scripts,
   createRootRoute,
-  useLocation,
+  useParams,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import appCss from '../styles.css?url'
 import { AppI18nProvider } from '#/lib/i18n'
+import { locales } from '#/route-tree'
 import { QueryProvider } from '#/lib/query-provider'
 import { themeBootstrapScript, ThemeProvider } from '#/lib/theme-provider'
 
@@ -54,11 +55,12 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const location = useLocation()
-  const language =
-    location.pathname === '/zh' || location.pathname.startsWith('/zh/')
+  const { locale } = useParams({ strict: false })
+  const language = locales.includes(locale as (typeof locales)[number])
+    ? locale === 'zh'
       ? 'zh-CN'
-      : 'en'
+      : locale
+    : 'en'
   return (
     <html lang={language} suppressHydrationWarning>
       <head>

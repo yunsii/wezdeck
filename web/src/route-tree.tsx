@@ -1,8 +1,14 @@
-import { createRoute, Outlet } from '@tanstack/react-router'
+import { createRoute, notFound, Outlet } from '@tanstack/react-router'
 
 import { LandingPage } from '#/features/landing-page'
-import { RuntimeConsole } from '#/features/runtime-console'
+import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
+import { ConsoleDevelopmentPage } from '#/features/console-development'
+import { ConsoleOverviewPage } from '#/features/console-overview'
+import { ConsoleRouteLayout } from '#/features/console-shell'
 import { Route as rootRoute } from '#/routes/__root'
+
+export const locales = ['en', 'zh'] as const
+export type AppLocale = (typeof locales)[number]
 
 const siteUrl = (
   import.meta.env.VITE_SITE_URL ??
@@ -52,66 +58,92 @@ function marketingHead({
   }
 }
 
-const landingRoute = createRoute({
+const localeRoute = createRoute({
   getParentRoute: () => rootRoute,
+  path: '/{-$locale}',
+  params: {
+    parse: ({ locale }) => {
+      if (locale !== undefined && !locales.includes(locale as AppLocale)) {
+        throw notFound()
+      }
+      return { locale: locale as AppLocale | undefined }
+    },
+  },
+  component: () => <Outlet />,
+})
+
+const landingRoute = createRoute({
+  getParentRoute: () => localeRoute,
   path: '/',
   component: LandingPage,
-  head: () =>
+  head: ({ params }) =>
     marketingHead({
-      locale: 'en',
-      title: 'WezDeck: A local-first AI Deck',
+      locale: params.locale ?? 'en',
+      title:
+        params.locale === 'zh'
+          ? 'WezDeck：本地优先的 AI Agent 工作台'
+          : 'WezDeck: A local-first control plane for AI coding agents',
       description:
-        'WezDeck is a local-first flight deck for AI agents, built on WezTerm, tmux, and git worktrees.',
+        params.locale === 'zh'
+          ? 'WezDeck 是本地优先的 AI Agent 工作台，构建于 WezTerm、tmux 和 git worktree 之上。'
+          : 'WezDeck is a local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees.',
       path: '/',
     }),
 })
 
 const consoleRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => localeRoute,
   path: 'console',
-  component: RuntimeConsole,
-  head: () => ({
-    meta: [
-      { title: 'WezDeck Runtime Console' },
-      { name: 'robots', content: 'noindex,nofollow' },
-    ],
-  }),
+  component: ConsoleRouteLayout,
 })
 
-const zhRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 'zh',
-  component: () => <Outlet />,
-})
+function consoleHead(title: string) {
+  return {
+    meta: [{ title }, { name: 'robots', content: 'noindex,nofollow' }],
+  }
+}
 
-const zhLandingRoute = createRoute({
-  getParentRoute: () => zhRoute,
+const consoleOverviewRoute = createRoute({
+  getParentRoute: () => consoleRoute,
   path: '/',
-  component: LandingPage,
-  head: () =>
-    marketingHead({
-      locale: 'zh',
-      title: 'WezDeck：本地优先的 AI Agent 工作台',
-      description:
-        'WezDeck 是本地优先的 AI Agent 工作台，构建于 WezTerm、tmux 和 git worktree 之上。',
-      path: '/',
-    }),
+  component: ConsoleOverviewPage,
+  head: ({ params }) =>
+    consoleHead(
+      params.locale === 'zh'
+        ? 'WezDeck 运行时控制台'
+        : 'WezDeck Runtime Console',
+    ),
 })
 
-const zhConsoleRoute = createRoute({
-  getParentRoute: () => zhRoute,
-  path: 'console',
-  component: RuntimeConsole,
-  head: () => ({
-    meta: [
-      { title: 'WezDeck 运行时控制台' },
-      { name: 'robots', content: 'noindex,nofollow' },
-    ],
-  }),
+const consoleDevelopmentRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'development',
+  component: ConsoleDevelopmentPage,
+  head: ({ params }) =>
+    consoleHead(
+      params.locale === 'zh'
+        ? 'WezDeck 开发控制台'
+        : 'WezDeck Development Console',
+    ),
+})
+
+const consoleDiagnosticsRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'diagnostics',
+  component: ConsoleDiagnosticsPage,
+  head: ({ params }) =>
+    consoleHead(
+      params.locale === 'zh' ? 'WezDeck 诊断' : 'WezDeck Diagnostics',
+    ),
 })
 
 export const routeTree = rootRoute.addChildren({
-  landingRoute,
-  consoleRoute,
-  zhRoute: zhRoute.addChildren({ zhLandingRoute, zhConsoleRoute }),
+  localeRoute: localeRoute.addChildren({
+    landingRoute,
+    consoleRoute: consoleRoute.addChildren({
+      consoleOverviewRoute,
+      consoleDevelopmentRoute,
+      consoleDiagnosticsRoute,
+    }),
+  }),
 })

@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react'
 
-export type Locale = string
+import type { AppLocale } from '#/route-tree'
+
+export type Locale = AppLocale
 
 export const LocaleContext = createContext<{ locale: Locale } | null>(null)
 

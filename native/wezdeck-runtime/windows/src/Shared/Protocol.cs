@@ -149,6 +149,21 @@ internal sealed class RuntimeImeStateResult
     public string? Reason { get; init; }
 }
 
+internal sealed class RuntimeVscodeWindowSnapshot
+{
+    [JsonPropertyName("pid")]
+    public int Pid { get; init; }
+
+    [JsonPropertyName("hwnd")]
+    public long Hwnd { get; init; }
+
+    [JsonPropertyName("title")]
+    public string Title { get; init; } = string.Empty;
+
+    [JsonPropertyName("foreground")]
+    public bool Foreground { get; init; }
+}
+
 internal sealed class RuntimeError
 {
     [JsonPropertyName("code")]

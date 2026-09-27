@@ -6,6 +6,7 @@ wezterm-x/local/
 wezterm-x/tmux/chord-bindings.generated.conf
 wezterm-x/tmux/appearance.generated.conf
 native/picker/bin/
+native/wezdeck-wsl/bin/
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 

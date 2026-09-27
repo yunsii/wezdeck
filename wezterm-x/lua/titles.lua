@@ -709,18 +709,27 @@ function M.register(opts)
         table.insert(trailing, coords.tmux_pane)
       end
       local args = actions_mod.attention_jump_args(
-        constants, meta.pane, trailing, logger, nil)
+        constants, meta.pane, trailing, logger, coords.trace_id)
       if args then
         pcall(wezterm.background_child_process, args)
       end
     end
     if logger then
+      local gui_focused = false
+      if meta.window then
+        pcall(function() gui_focused = meta.window:is_focused() == true end)
+      end
       logger.info('attention', 'jump dispatched', {
         kind         = coords.kind,
         session_id   = coords.session_id,
+        trace_id     = coords.trace_id,
         archived_ts  = coords.archived_ts,
         wezterm_pane = coords.wezterm_pane,
         activated    = activated,
+        gui_focused  = gui_focused,
+        tmux_socket  = coords.tmux_socket,
+        tmux_window  = coords.tmux_window,
+        tmux_pane    = coords.tmux_pane,
         transport    = meta.transport,
       })
     end

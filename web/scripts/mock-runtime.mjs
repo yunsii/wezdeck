@@ -29,7 +29,19 @@ const server = http.createServer((req, res) => {
       instance_id: 'mock-runtime',
       ready: true,
       uptime_ms: Date.now() - startedAt,
-      capabilities: ['rime.stats', 'ime.state', 'chrome.state', 'events'],
+      capabilities: [
+        'rime.stats',
+        'ime.state',
+        'chrome.state',
+        'sessions.read',
+        'vscode.windows',
+        'vscode.focus',
+        'vscode.focus_or_open',
+        'vscode.close',
+        'workspaces.read',
+        'diagnostics.logs',
+        'events',
+      ],
       observed_at: new Date().toISOString(),
     })
   } else if (path === '/api/v1/rime/stats') {
@@ -45,6 +57,80 @@ const server = http.createServer((req, res) => {
     json(res, { mode: 'rime', lang: 'zh-CN', reason: 'mock sample' })
   } else if (path === '/api/v1/chrome') {
     json(res, { mode: 'headless', alive: true, port: 9222, pid: null })
+  } else if (path === '/api/v1/workspaces') {
+    json(res, {
+      available: true,
+      workspaces: [
+        {
+          name: 'config',
+          items: [
+            {
+              cwd: '/home/mock/github/example',
+              name: 'example',
+              worktrees: [
+                {
+                  path: '/home/mock/github/example',
+                  name: 'primary',
+                  branch: 'master',
+                  kind: 'primary',
+                },
+              ],
+            },
+          ],
+        },
+        { name: 'opensource', items: [] },
+        {
+          name: 'work',
+          items: [
+            {
+              cwd: '/home/mock/work/example',
+              name: 'example',
+              worktrees: [
+                {
+                  path: '/home/mock/work/example',
+                  name: 'primary',
+                  branch: 'master',
+                  kind: 'primary',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      selection: {
+        workspace: 'work',
+        repo: 'example',
+        worktree: '/home/mock/work/example',
+      },
+    })
+  } else if (path === '/api/v1/sessions') {
+    json(res, { available: true, entries: {}, recent: [] })
+  } else if (path === '/api/v1/vscode') {
+    json(res, { available: true, windows: [] })
+  } else if (path === '/api/v1/diagnostics') {
+    json(res, {
+      available: true,
+      sources: ['mock:runtime.log'],
+      counts: { mock: 1 },
+      entries: [
+        {
+          ts: new Date().toISOString(),
+          level: 'info',
+          source: 'mock-runtime',
+          category: 'mock',
+          trace_id: 'mock-trace',
+          message: 'mock diagnostics entry',
+          stream: 'mock:runtime.log',
+          raw: 'mock diagnostics entry',
+        },
+      ],
+    })
+  } else if (path.startsWith('/api/v1/actions/')) {
+    json(res, {
+      ok: true,
+      status: 'mocked',
+      decision_path: 'mock-runtime',
+    })
   } else if (path === '/events') {
     res.writeHead(426, { 'content-type': 'text/plain; charset=utf-8' })
     res.end(

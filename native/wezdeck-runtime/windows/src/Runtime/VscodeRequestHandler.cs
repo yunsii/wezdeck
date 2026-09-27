@@ -318,4 +318,121 @@ internal sealed class VscodeRequestHandler
             ProcessId: boundWindow?.ProcessId,
             WindowHandle: boundWindow?.WindowHandle.ToInt64());
     }
+
+    public object ReadWindows()
+    {
+        var foreground = NativeMethods.GetForegroundWindow();
+        var windows = EnumerateWindows()
+            .Select(window => new RuntimeVscodeWindowSnapshot
+            {
+                Pid = window.ProcessId,
+                Hwnd = window.WindowHandle.ToInt64(),
+                Title = WindowQuery.GetWindowTitle(window.WindowHandle),
+                Foreground = window.WindowHandle == foreground,
+            })
+            .ToArray();
+        return new
+        {
+            available = true,
+            windows,
+        };
+    }
+
+    public RequestOutcome Close(JsonElement payload, string traceId)
+    {
+        if (!RequestPayloadReader.GetOptionalBool(payload, "confirm"))
+        {
+            throw new InvalidOperationException("vscode close requires confirm=true");
+        }
+
+        var target = RequireWindow(payload);
+
+        if (!WindowActivator.TryCloseWindow(target))
+        {
+            throw new InvalidOperationException("failed to request vscode window close");
+        }
+
+        var cacheKey = windowReuseService.FindKeyByWindowHandle("vscode", target.WindowHandle);
+
+        logger.Info("vscode", "requested vscode window close", new Dictionary<string, string?>
+        {
+            ["trace_id"] = traceId,
+            ["pid"] = target.ProcessId.ToString(),
+            ["hwnd"] = target.WindowHandle.ToInt64().ToString(),
+            ["cache_key"] = cacheKey,
+            ["decision_path"] = "window_wm_close",
+        });
+
+        return new RequestOutcome(
+            Domain: "vscode",
+            Action: "close",
+            Status: "requested",
+            DecisionPath: "window_wm_close",
+            ResultType: "window_ref",
+            Result: new RuntimeWindowRefResult
+            {
+                Pid = target.ProcessId,
+                Hwnd = target.WindowHandle.ToInt64(),
+            },
+            ProcessId: target.ProcessId,
+            WindowHandle: target.WindowHandle.ToInt64());
+    }
+
+    public RequestOutcome Focus(JsonElement payload, string traceId)
+    {
+        var target = RequireWindow(payload);
+        if (!WindowActivator.TryActivateWindow(target))
+        {
+            throw new InvalidOperationException("failed to focus vscode window");
+        }
+
+        logger.Info("vscode", "focused vscode window from web console", new Dictionary<string, string?>
+        {
+            ["trace_id"] = traceId,
+            ["pid"] = target.ProcessId.ToString(),
+            ["hwnd"] = target.WindowHandle.ToInt64().ToString(),
+            ["decision_path"] = "window_activate",
+        });
+
+        return new RequestOutcome(
+            Domain: "vscode",
+            Action: "focus",
+            Status: "focused",
+            DecisionPath: "window_activate",
+            ResultType: "window_ref",
+            Result: new RuntimeWindowRefResult
+            {
+                Pid = target.ProcessId,
+                Hwnd = target.WindowHandle.ToInt64(),
+            },
+            ProcessId: target.ProcessId,
+            WindowHandle: target.WindowHandle.ToInt64());
+    }
+
+    private static IReadOnlyList<WindowMatch> EnumerateWindows()
+    {
+        var windows = new Dictionary<IntPtr, WindowMatch>();
+        foreach (var processName in new[] { "Code", "Code - Insiders", "VSCodium" })
+        {
+            foreach (var window in WindowQuery.EnumerateVisibleTopLevelWindows(processName))
+            {
+                windows[window.WindowHandle] = window;
+            }
+        }
+
+        return windows.Values.ToArray();
+    }
+
+    private static WindowMatch RequireWindow(JsonElement payload)
+    {
+        var requestedHwnd = RequestPayloadReader.GetOptionalPositiveLong(payload, "hwnd");
+        var requestedPid = RequestPayloadReader.GetOptionalPositiveInt(payload, "pid");
+        var candidates = EnumerateWindows();
+        var target = requestedHwnd.HasValue
+            ? candidates.FirstOrDefault(window => window.WindowHandle.ToInt64() == requestedHwnd.Value)
+            : requestedPid.HasValue
+                ? candidates.FirstOrDefault(window => window.ProcessId == requestedPid.Value)
+                : null;
+        return target ?? throw new InvalidOperationException("vscode window was not found");
+    }
 }

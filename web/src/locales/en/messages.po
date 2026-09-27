@@ -7,545 +7,559 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
-#: src/features/landing-page.tsx:217
-msgid "3 waiting · 2 running · 1 done"
-msgstr "3 waiting · 2 running · 1 done"
+#: src/features/landing-example.tsx:71
+msgid "{doneCount} done"
+msgstr "{doneCount} done"
 
-#: src/features/landing-page.tsx:210
-msgid "6 slots"
-msgstr "6 slots"
+#: src/features/landing-example.tsx:70
+msgid "{runningCount} running"
+msgstr "{runningCount} running"
 
-#: src/features/landing-page.tsx:58
-msgid "A flight deck for your AI agents — built on WezTerm, tmux, and git worktrees."
-msgstr "A flight deck for your AI agents — built on WezTerm, tmux, and git worktrees."
+#: src/features/landing-example.tsx:70
+msgid "{waitingCount} waiting"
+msgstr "{waitingCount} waiting"
 
-#: src/features/landing-page.tsx:182
-msgid "A flight deck for your AI agents."
-msgstr "A flight deck for your AI agents."
+#: src/features/landing-example.tsx:148
+msgid "128 today"
+msgstr "128 today"
 
-#: src/features/landing-page.tsx:148
-msgid "A local view into the Deck runtime."
-msgstr "A local view into the Deck runtime."
+#: src/features/landing-page.tsx:65
+msgid "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
+msgstr "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
 
-#: src/features/landing-page.tsx:170
-#~ msgid "A local-first control plane for terminal work."
-#~ msgstr "A local-first control plane for terminal work."
+#: src/features/landing-page.tsx:181
+msgid "A local-first workbench for AI coding agents."
+msgstr "A local-first workbench for AI coding agents."
 
-#: src/features/landing-page.tsx:126
-#~ msgid "A loopback API makes the host runtime available to tools you build next."
-#~ msgstr "A loopback API makes the host runtime available to tools you build next."
+#: src/features/landing-page.tsx:122
+msgid "After a restart, return to the same agent session and continue the work."
+msgstr "After a restart, return to the same agent session and continue the work."
 
-#: src/features/runtime-console.tsx:123
-msgid "A loopback WebSocket that tells the console when it should refresh local Runtime snapshots."
-msgstr "A loopback WebSocket that tells the console when it should refresh local Runtime snapshots."
+#: src/features/landing-example.tsx:116
+msgid "Agent"
+msgstr "Agent"
 
-#: src/features/landing-page.tsx:135
-#~ msgid "A signal before a surprise."
-#~ msgstr "A signal before a surprise."
-
-#: src/features/landing-page.tsx:76
+#: src/features/landing-page.tsx:87
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/landing-page.tsx:40
-msgid "AI Deck"
-msgstr "AI Deck"
+#: src/features/console-diagnostics.tsx:74
+msgid "All categories"
+msgstr "All categories"
 
-#: src/features/landing-page.tsx:105
-msgid "Attention at a glance"
-msgstr "Attention at a glance"
+#: src/features/console-diagnostics.tsx:83
+msgid "All levels"
+msgstr "All levels"
 
-#: src/features/landing-page.tsx:134
-#~ msgid "Built for observability"
-#~ msgstr "Built for observability"
+#: src/features/console-overview.tsx:67
+msgid "All time"
+msgstr "All time"
 
-#: src/features/landing-page.tsx:41
-#: src/features/runtime-console.tsx:150
+#: src/features/landing-example.tsx:130
+msgid "An example. Select a session to see where you would jump back."
+msgstr "An example. Select a session to see where you would jump back."
+
+#: src/features/landing-example.tsx:124
+msgid "Branch"
+msgstr "Branch"
+
+#: src/features/console-overview.tsx:130
+#: src/features/landing-page.tsx:46
 msgid "Capabilities"
 msgstr "Capabilities"
 
-#: src/features/runtime-console.tsx:172
-#~ msgid "CDP port"
-#~ msgstr "CDP port"
+#: src/features/console-diagnostics.tsx:72
+msgid "Category"
+msgstr "Category"
 
-#: src/lib/i18n.tsx:61
-#~ msgid "characters"
-#~ msgstr "characters"
+#: src/features/console-development.tsx:119
+msgid "Close requested"
+msgstr "Close requested"
 
-#: src/features/runtime-console.tsx:110
-#: src/features/runtime-console.tsx:170
-msgid "Characters committed through Rime during the current local day."
-msgstr "Characters committed through Rime during the current local day."
+#: src/features/console-development.tsx:106
+msgid "Close this VS Code window? Unsaved work may ask for confirmation."
+msgstr "Close this VS Code window? Unsaved work may ask for confirmation."
 
-#: src/features/runtime-console.tsx:194
-#~ msgid "characters observed"
-#~ msgstr "characters observed"
+#: src/features/console-development.tsx:432
+msgid "Close VS Code window"
+msgstr "Close VS Code window"
 
-#: src/features/runtime-console.tsx:257
-#~ msgid "Checking"
-#~ msgstr "Checking"
+#: src/features/console-shell.tsx:64
+msgid "Console navigation"
+msgstr "Console navigation"
 
-#: src/features/runtime-console.tsx:215
-msgid "Chrome debug"
-msgstr "Chrome debug"
-
-#: src/features/runtime-console.tsx:111
-#~ msgid "commit events"
-#~ msgstr "commit events"
-
-#: src/features/runtime-console.tsx:232
-msgid "Connection"
-msgstr "Connection"
-
-#: src/features/landing-page.tsx:80
+#: src/features/landing-page.tsx:91
 msgid "Control"
 msgstr "Control"
 
-#: src/features/landing-page.tsx:92
-msgid "Coordinate agent work without leaving the terminal."
-msgstr "Coordinate agent work without leaving the terminal."
-
-#: src/features/runtime-console.tsx:109
-msgid "Current local day"
-msgstr "Current local day"
-
-#: src/features/runtime-console.tsx:463
+#: src/features/console-shared.tsx:350
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
-#: src/features/runtime-console.tsx:489
+#: src/features/console-shared.tsx:378
 msgid "Dark theme"
 msgstr "Dark theme"
 
-#: src/features/landing-page.tsx:106
-#~ msgid "Designed for the work between commands"
-#~ msgstr "Designed for the work between commands"
+#: src/features/console-shell.tsx:92
+msgid "Deck"
+msgstr "Deck"
 
-#: src/features/landing-page.tsx:202
+#: src/features/console-shared.tsx:213
+msgid "Degraded"
+msgstr "Degraded"
+
+#: src/features/console-shell.tsx:78
+msgid "Development"
+msgstr "Development"
+
+#: src/features/console-shell.tsx:85
+msgid "Diagnostics"
+msgstr "Diagnostics"
+
+#: src/features/console-development.tsx:371
+msgid "Directory"
+msgstr "Directory"
+
+#: src/features/landing-example.tsx:52
 msgid "done"
 msgstr "done"
 
-#: src/features/runtime-console.tsx:238
+#: src/features/landing-page.tsx:112
+msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
+msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
+
+#: src/features/console-overview.tsx:54
 msgid "Endpoint"
 msgstr "Endpoint"
 
-#: src/features/runtime-console.tsx:539
+#: src/features/console-shared.tsx:433
+#: src/features/landing-example.tsx:147
 msgid "English"
 msgstr "English"
 
-#: src/features/landing-page.tsx:174
+#: src/features/landing-page.tsx:173
 msgid "Enter Runtime Console"
 msgstr "Enter Runtime Console"
 
-#: src/features/landing-page.tsx:163
-#~ msgid "Enter WezDeck"
-#~ msgstr "Enter WezDeck"
+#: src/features/console-diagnostics.tsx:109
+msgid "Entries"
+msgstr "Entries"
 
-#: src/features/runtime-console.tsx:116
+#: src/features/console-overview.tsx:28
 msgid "Event stream"
 msgstr "Event stream"
 
-#: src/features/runtime-console.tsx:184
-msgid "events"
-msgstr "events"
+#: src/features/landing-example.tsx:67
+#: src/features/landing-example.tsx:157
+msgid "Example"
+msgstr "Example"
 
-#: src/features/landing-page.tsx:62
-msgid "Explore the AI Deck"
-msgstr "Explore the AI Deck"
+#: src/features/landing-example.tsx:77
+msgid "Example agent sessions"
+msgstr "Example agent sessions"
 
-#: src/features/landing-page.tsx:125
-#~ msgid "Extend locally"
-#~ msgstr "Extend locally"
-
-#: src/features/runtime-console.tsx:490
+#: src/features/console-shared.tsx:379
 msgid "Follow system theme"
 msgstr "Follow system theme"
 
-#: src/features/landing-page.tsx:116
-#~ msgid "Health, input method, browser debug, and event streams in one readable surface."
-#~ msgstr "Health, input method, browser debug, and event streams in one readable surface."
+#: src/features/console-development.tsx:369
+msgid "Git"
+msgstr "Git"
 
-#: src/features/runtime-console.tsx:202
+#: src/features/console-overview.tsx:36
+#: src/features/console-overview.tsx:72
+#: src/features/console-overview.tsx:153
 msgid "Host signals"
 msgstr "Host signals"
 
-#: src/features/runtime-console.tsx:162
-#~ msgid "IME language"
-#~ msgstr "IME language"
+#: src/features/console-shared.tsx:348
+msgid "IME state is unavailable because Runtime is offline."
+msgstr "IME state is unavailable because Runtime is offline."
 
-#: src/features/runtime-console.tsx:461
-msgid "IME state is unavailable because the Runtime is offline."
-msgstr "IME state is unavailable because the Runtime is offline."
-
-#: src/features/runtime-console.tsx:208
+#: src/features/console-overview.tsx:73
+#: src/features/landing-example.tsx:141
 msgid "Input method"
 msgstr "Input method"
 
-#: src/features/runtime-console.tsx:144
+#: src/features/console-overview.tsx:53
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/landing-page.tsx:101
-msgid "Keep each repository, linked worktree, and agent conversation in a predictable slot."
-msgstr "Keep each repository, linked worktree, and agent conversation in a predictable slot."
+#: src/features/console-development.tsx:70
+msgid "Jump requested"
+msgstr "Jump requested"
 
-#: src/features/landing-page.tsx:81
+#: src/features/console-development.tsx:421
+msgid "Jump to pane"
+msgstr "Jump to pane"
+
+#: src/features/landing-page.tsx:103
+msgid "Keep every agent in a place you can return to."
+msgstr "Keep every agent in a place you can return to."
+
+#: src/features/landing-page.tsx:92
 msgid "Keyboard first"
 msgstr "Keyboard first"
 
-#: src/features/landing-page.tsx:121
-#~ msgid "Keyboard-first controls keep common terminal work quick and repeatable."
-#~ msgstr "Keyboard-first controls keep common terminal work quick and repeatable."
-
-#: src/features/runtime-console.tsx:529
+#: src/features/console-shared.tsx:420
+#: src/features/console-shared.tsx:422
 msgid "Language"
 msgstr "Language"
 
-#: src/features/runtime-console.tsx:159
+#: src/features/console-overview.tsx:56
+#: src/features/console-shared.tsx:109
+#: src/features/console-shell.tsx:148
 msgid "Last sample"
 msgstr "Last sample"
 
-#: src/features/runtime-console.tsx:190
-msgid "latest"
-msgstr "latest"
+#: src/features/console-overview.tsx:68
+msgid "Latest"
+msgstr "Latest"
 
-#: src/features/runtime-console.tsx:488
+#: src/features/console-diagnostics.tsx:81
+msgid "Level"
+msgstr "Level"
+
+#: src/features/console-shared.tsx:377
 msgid "Light theme"
 msgstr "Light theme"
 
-#: src/features/landing-page.tsx:100
-#~ msgid "Live signals, one local view."
-#~ msgstr "Live signals, one local view."
+#: src/features/console-development.tsx:149
+#: src/features/console-diagnostics.tsx:53
+#: src/features/console-shared.tsx:211
+msgid "Loading…"
+msgstr "Loading…"
 
-#: src/features/landing-page.tsx:139
-#~ msgid "Local runtime health and capabilities"
-#~ msgstr "Local runtime health and capabilities"
+#: src/features/landing-page.tsx:61
+msgid "Local-first control plane"
+msgstr "Local-first control plane"
 
-#: src/features/landing-page.tsx:54
-msgid "Local-first AI Deck"
-msgstr "Local-first AI Deck"
+#: src/features/console-diagnostics.tsx:50
+msgid "Log stream"
+msgstr "Log stream"
 
-#: src/features/landing-page.tsx:52
-#~ msgid "Local-first terminal control plane"
-#~ msgstr "Local-first terminal control plane"
+#: src/features/console-development.tsx:358
+msgid "No active agent sessions"
+msgstr "No active agent sessions"
 
-#: src/features/landing-page.tsx:76
-#~ msgid "Loopback by default"
-#~ msgstr "Loopback by default"
+#: src/features/console-shared.tsx:357
+msgid "No foreground window was available when Runtime sampled the IME."
+msgstr "No foreground window was available when Runtime sampled the IME."
 
-#: src/features/landing-page.tsx:107
-#~ msgid "Make the terminal feel like a system."
-#~ msgstr "Make the terminal feel like a system."
+#: src/features/console-diagnostics.tsx:35
+#: src/features/console-diagnostics.tsx:55
+#: src/features/console-diagnostics.tsx:118
+msgid "No matching log entries"
+msgstr "No matching log entries"
 
-#: src/features/runtime-console.tsx:470
-msgid "No foreground window was available when the helper sampled the IME."
-msgstr "No foreground window was available when the helper sampled the IME."
+#: src/features/console-development.tsx:196
+msgid "No repositories in this workspace."
+msgstr "No repositories in this workspace."
 
-#: src/features/runtime-console.tsx:98
-msgid "No local endpoint"
-msgstr "No local endpoint"
+#: src/features/console-development.tsx:153
+msgid "No workspaces in the local catalog."
+msgstr "No workspaces in the local catalog."
 
-#: src/features/runtime-console.tsx:224
-msgid "No state"
-msgstr "No state"
+#: src/features/console-development.tsx:218
+msgid "No worktrees in this repository."
+msgstr "No worktrees in this repository."
 
-#: src/features/runtime-console.tsx:186
-msgid "Number of commit events recorded by the Rime counter."
-msgstr "Number of commit events recorded by the Rime counter."
+#: src/features/console-development.tsx:370
+msgid "Node"
+msgstr "Node"
 
-#: src/features/landing-page.tsx:84
-#~ msgid "Observable"
-#~ msgstr "Observable"
+#: src/features/console-overview.tsx:81
+msgid "Not on this Runtime"
+msgstr "Not on this Runtime"
 
-#: src/features/runtime-console.tsx:97
+#: src/features/console-shared.tsx:214
 msgid "Offline"
 msgstr "Offline"
 
-#: src/features/landing-page.tsx:56
-#~ msgid "One calm control surface for WezTerm, tmux, agents, and the host signals around them."
-#~ msgstr "One calm control surface for WezTerm, tmux, agents, and the host signals around them."
-
-#: src/features/landing-page.tsx:73
+#: src/features/landing-page.tsx:84
 msgid "One home for every repo"
 msgstr "One home for every repo"
 
-#: src/features/runtime-console.tsx:97
-msgid "Online"
-msgstr "Online"
+#: src/features/console-development.tsx:362
+msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
+msgstr "One tmux session per repository family. Linked worktrees are windows inside that session."
 
-#: src/features/landing-page.tsx:125
+#: src/features/landing-page.tsx:133
+msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
+msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
+
+#: src/features/landing-page.tsx:140
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/landing-page.tsx:40
-#~ msgid "Open source"
-#~ msgstr "Open source"
-
-#: src/features/landing-page.tsx:157
+#: src/features/landing-page.tsx:152
 msgid "Open source, local by design"
 msgstr "Open source, local by design"
 
-#: src/features/landing-page.tsx:67
+#: src/features/console-development.tsx:424
+msgid "Open VS Code"
+msgstr "Open VS Code"
+
+#: src/features/landing-page.tsx:78
 msgid "Open web console"
 msgstr "Open web console"
 
-#: src/features/landing-page.tsx:119
+#: src/features/landing-page.tsx:130
 msgid "Optional browser companion"
 msgstr "Optional browser companion"
 
-#: src/features/landing-page.tsx:39
-#~ msgid "Principles"
-#~ msgstr "Principles"
+#: src/features/console-shell.tsx:71
+msgid "Overview"
+msgstr "Overview"
 
-#: src/features/landing-page.tsx:38
-#~ msgid "Product"
-#~ msgstr "Product"
+#: src/features/console-overview.tsx:87
+msgid "Process"
+msgstr "Process"
 
-#: src/features/runtime-console.tsx:155
-msgid "Read-only and action surfaces currently advertised by the Runtime API."
-msgstr "Read-only and action surfaces currently advertised by the Runtime API."
-
-#: src/features/runtime-console.tsx:117
+#: src/features/console-overview.tsx:83
+#: src/features/console-shared.tsx:212
+#: src/features/console-shell.tsx:175
+#: src/features/landing-example.tsx:145
+#: src/features/landing-example.tsx:146
 msgid "Ready"
 msgstr "Ready"
 
-#: src/features/runtime-console.tsx:249
-msgid "Refresh snapshot"
-msgstr "Refresh snapshot"
+#: src/features/console-development.tsx:200
+msgid "Repositories"
+msgstr "Repositories"
 
-#: src/features/landing-page.tsx:110
+#: src/features/landing-page.tsx:121
 msgid "Resume the thread"
 msgstr "Resume the thread"
 
-#: src/features/landing-page.tsx:77
+#: src/features/landing-page.tsx:88
 msgid "Resumed conversations"
 msgstr "Resumed conversations"
 
-#: src/features/runtime-console.tsx:274
+#: src/features/console-overview.tsx:104
+#: src/features/console-shell.tsx:221
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/landing-page.tsx:111
-msgid "Return to the right agent session after a restart and keep the loop moving."
-msgstr "Return to the right agent session after a restart and keep the loop moving."
+#: src/features/landing-example.tsx:142
+msgid "Rime"
+msgstr "Rime"
 
-#: src/features/landing-page.tsx:143
-#~ msgid "Rime commit statistics that stay on your machine"
-#~ msgstr "Rime commit statistics that stay on your machine"
+#: src/features/console-overview.tsx:32
+#: src/features/console-overview.tsx:60
+msgid "Rime collector"
+msgstr "Rime collector"
 
-#: src/features/runtime-console.tsx:168
-msgid "Rime commits"
-msgstr "Rime commits"
-
-#: src/features/runtime-console.tsx:105
-msgid "Rime today"
-msgstr "Rime today"
-
-#: src/features/landing-page.tsx:200
+#: src/features/landing-example.tsx:50
 msgid "running"
 msgstr "running"
 
-#: src/features/landing-page.tsx:83
-#~ msgid "Runtime"
-#~ msgstr "Runtime"
+#: src/features/console-overview.tsx:119
+#: src/features/landing-example.tsx:139
+msgid "Runtime"
+msgstr "Runtime"
 
-#: src/features/runtime-console.tsx:259
-#~ msgid "Runtime connected"
-#~ msgstr "Runtime connected"
+#: src/features/console-development.tsx:90
+#: src/features/console-development.tsx:95
+#: src/features/console-development.tsx:118
+#: src/features/console-development.tsx:123
+msgid "Runtime action failed"
+msgstr "Runtime action failed"
 
-#: src/features/runtime-console.tsx:81
-#: src/features/runtime-console.tsx:96
+#: src/features/console-overview.tsx:24
+msgid "Runtime API"
+msgstr "Runtime API"
+
+#: src/features/console-shell.tsx:59
+#: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "Runtime Console"
 
-#: src/features/landing-page.tsx:120
-msgid "Runtime Console keeps the local signals in view."
-msgstr "Runtime Console keeps the local signals in view."
+#: src/features/landing-page.tsx:131
+msgid "Runtime Console shows the local signals."
+msgstr "Runtime Console shows the local signals."
 
-#: src/features/runtime-console.tsx:260
-#~ msgid "Runtime offline"
-#~ msgstr "Runtime offline"
+#: src/features/console-diagnostics.tsx:56
+msgid "Runtime diagnostics are unavailable while Runtime is offline."
+msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 
-#: src/features/runtime-console.tsx:138
-msgid "Runtime snapshot"
-msgstr "Runtime snapshot"
+#: src/features/console-shared.tsx:361
+msgid "Runtime reported reason:"
+msgstr "Runtime reported reason:"
 
-#: src/features/landing-page.tsx:115
-#~ msgid "See the whole runtime"
-#~ msgstr "See the whole runtime"
+#: src/features/landing-example.tsx:168
+msgid "Sample signals. The live console reads your local Runtime."
+msgstr "Sample signals. The live console reads your local Runtime."
 
-#: src/features/landing-page.tsx:160
+#: src/features/landing-page.tsx:69
+msgid "See the workbench"
+msgstr "See the workbench"
+
+#: src/features/landing-page.tsx:116
+msgid "See who needs you"
+msgstr "See who needs you"
+
+#: src/features/console-development.tsx:340
+msgid "Select a worktree to see its agent status."
+msgstr "Select a worktree to see its agent status."
+
+#: src/features/console-development.tsx:69
+#: src/features/console-development.tsx:73
+msgid "Session jump failed"
+msgstr "Session jump failed"
+
+#: src/features/console-shell.tsx:106
+msgid "Skip to content"
+msgstr "Skip to content"
+
+#: src/features/console-overview.tsx:86
+msgid "Socket"
+msgstr "Socket"
+
+#: src/features/landing-page.tsx:155
 msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
 
-#: src/features/landing-page.tsx:159
-#~ msgid "Start with the Runtime Console and grow the surface around the way you actually work."
-#~ msgstr "Start with the Runtime Console and grow the surface around the way you actually work."
+#: src/features/console-development.tsx:366
+#: src/features/console-overview.tsx:79
+#: src/features/landing-example.tsx:120
+msgid "Status"
+msgstr "Status"
 
-#: src/features/landing-page.tsx:120
-#~ msgid "Stay in your flow"
-#~ msgstr "Stay in your flow"
+#: src/features/console-shared.tsx:353
+msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
+msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
-#: src/features/landing-page.tsx:91
-msgid "The deck is the product"
-msgstr "The deck is the product"
+#: src/features/landing-page.tsx:102
+msgid "The workbench"
+msgstr "The workbench"
 
-#: src/features/runtime-console.tsx:466
-msgid "The foreground app is not WezTerm, so the helper is holding the last WezTerm sample."
-msgstr "The foreground app is not WezTerm, so the helper is holding the last WezTerm sample."
-
-#: src/lib/i18n.tsx:55
-#~ msgid "The helper has not produced a fresh IME sample yet."
-#~ msgstr "The helper has not produced a fresh IME sample yet."
-
-#: src/features/runtime-console.tsx:474
-msgid "The helper reported reason:"
-msgstr "The helper reported reason:"
-
-#: src/features/runtime-console.tsx:226
-msgid "The helper-owned Chrome debug instance and its CDP liveness state."
-msgstr "The helper-owned Chrome debug instance and its CDP liveness state."
-
-#: src/features/runtime-console.tsx:164
-#~ msgid "The keyboard layout language from the latest eligible foreground sample."
-#~ msgstr "The keyboard layout language from the latest eligible foreground sample."
-
-#: src/features/runtime-console.tsx:161
-msgid "The last time the Runtime API returned a health snapshot."
-msgstr "The last time the Runtime API returned a health snapshot."
-
-#: src/features/runtime-console.tsx:204
-#: src/features/runtime-console.tsx:211
-msgid "The latest IME sample associated with the foreground WezTerm window. Non-WezTerm foregrounds are deliberately not sampled."
-msgstr "The latest IME sample associated with the foreground WezTerm window. Non-WezTerm foregrounds are deliberately not sampled."
-
-#: src/features/runtime-console.tsx:178
-#~ msgid "The local Chrome DevTools Protocol port advertised by the helper."
-#~ msgstr "The local Chrome DevTools Protocol port advertised by the helper."
-
-#: src/features/runtime-console.tsx:99
-#: src/features/runtime-console.tsx:140
-msgid "The local Runtime process that owns host state, actions, and the browser event stream."
-msgstr "The local Runtime process that owns host state, actions, and the browser event stream."
-
-#: src/features/runtime-console.tsx:234
-#: src/features/runtime-console.tsx:240
-msgid "The loopback HTTP endpoint used by this page. Data stays on the local machine."
-msgstr "The loopback HTTP endpoint used by this page. Data stays on the local machine."
-
-#: src/features/runtime-console.tsx:146
-msgid "The Runtime process identity. It changes after a helper restart."
-msgstr "The Runtime process identity. It changes after a helper restart."
-
-#: src/features/runtime-console.tsx:178
-msgid "The summary above is the current day total."
-msgstr "The summary above is the current day total."
-
-#: src/features/runtime-console.tsx:495
+#: src/features/console-shared.tsx:382
+#: src/features/console-shared.tsx:384
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/runtime-console.tsx:192
-msgid "Timestamp of the newest Rime commit event."
-msgstr "Timestamp of the newest Rime commit event."
+#: src/features/console-shell.tsx:218
+msgid "This page hit a rendering error. The rest of the console is still available."
+msgstr "This page hit a rendering error. The rest of the console is still available."
 
-#: src/features/landing-page.tsx:75
-#~ msgid "Transport"
-#~ msgstr "Transport"
+#: src/features/console-development.tsx:151
+msgid "This Runtime does not provide the workspace catalog."
+msgstr "This Runtime does not provide the workspace catalog."
 
-#: src/features/landing-page.tsx:70
-#~ msgid "View on GitHub"
-#~ msgstr "View on GitHub"
+#: src/features/console-development.tsx:373
+msgid "Tmux session"
+msgstr "Tmux session"
 
-#: src/features/landing-page.tsx:170
+#: src/features/console-development.tsx:377
+msgid "Tmux window"
+msgstr "Tmux window"
+
+#: src/features/console-overview.tsx:62
+msgid "Today"
+msgstr "Today"
+
+#: src/features/console-overview.tsx:64
+msgid "Today events"
+msgstr "Today events"
+
+#: src/features/console-diagnostics.tsx:65
+#: src/features/console-diagnostics.tsx:66
+msgid "Trace ID or text"
+msgstr "Trace ID or text"
+
+#: src/features/console-diagnostics.tsx:119
+msgid "Try a different trace, category, or level."
+msgstr "Try a different trace, category, or level."
+
+#: src/features/console-development.tsx:367
+#: src/features/console-development.tsx:369
+#: src/features/console-development.tsx:370
+#: src/features/console-development.tsx:374
+#: src/features/console-development.tsx:378
+#: src/features/console-overview.tsx:53
+#: src/features/console-overview.tsx:73
+#: src/features/console-overview.tsx:84
+#: src/features/console-overview.tsx:86
+#: src/features/console-overview.tsx:87
+#: src/features/console-overview.tsx:132
+msgid "Unavailable"
+msgstr "Unavailable"
+
+#: src/features/console-overview.tsx:55
+#: src/features/console-shared.tsx:115
+#: src/features/console-shell.tsx:154
+msgid "Uptime"
+msgstr "Uptime"
+
+#: src/features/landing-page.tsx:165
 msgid "View the source"
 msgstr "View the source"
 
-#: src/features/landing-page.tsx:201
+#: src/features/landing-example.tsx:51
 msgid "waiting"
 msgstr "waiting"
 
-#: src/features/runtime-console.tsx:117
+#: src/features/console-shell.tsx:175
 msgid "Waiting"
 msgstr "Waiting"
 
-#: src/features/runtime-console.tsx:121
-msgid "Waiting for Runtime"
-msgstr "Waiting for Runtime"
+#: src/features/landing-page.tsx:117
+msgid "Waiting, running, and done stay visible, so the next jump is obvious."
+msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/landing-page.tsx:106
-msgid "Waiting, done, and running signals stay visible so you know where to jump next."
-msgstr "Waiting, done, and running signals stay visible so you know where to jump next."
+#: src/features/console-shell.tsx:123
+msgid "WakaTime"
+msgstr "WakaTime"
 
-#: src/features/landing-page.tsx:42
-msgid "Web console"
-msgstr "Web console"
-
-#: src/features/runtime-console.tsx:120
-msgid "WebSocket endpoint detected"
-msgstr "WebSocket endpoint detected"
-
-#: src/features/landing-page.tsx:146
-#~ msgid "WebSocket events for live browser views"
-#~ msgstr "WebSocket events for live browser views"
-
-#: src/features/landing-page.tsx:56
-#: src/features/runtime-console.tsx:78
+#: src/features/console-shell.tsx:58
+#: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"
 
-#: src/features/landing-page.tsx:109
-#~ msgid "WezDeck keeps the state you care about visible, the actions close at hand, and the local boundary explicit."
-#~ msgstr "WezDeck keeps the state you care about visible, the actions close at hand, and the local boundary explicit."
+#: src/features/landing-page.tsx:105
+msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
+msgstr "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 
-#: src/features/landing-page.tsx:138
-#~ msgid "WezDeck Runtime Console showing live local runtime signals"
-#~ msgstr "WezDeck Runtime Console showing live local runtime signals"
+#: src/features/console-development.tsx:91
+#: src/features/console-development.tsx:119
+msgid "Window focused"
+msgstr "Window focused"
 
-#: src/features/landing-page.tsx:145
-msgid "WezDeck Runtime Console showing live local runtime signals in dark theme"
-msgstr "WezDeck Runtime Console showing live local runtime signals in dark theme"
+#: src/features/landing-example.tsx:106
+msgid "work"
+msgstr "work"
 
-#: src/features/landing-page.tsx:140
-msgid "WezDeck Runtime Console showing live local runtime signals in light theme"
-msgstr "WezDeck Runtime Console showing live local runtime signals in light theme"
+#: src/features/landing-page.tsx:45
+msgid "Workbench"
+msgstr "Workbench"
 
-#: src/features/landing-page.tsx:94
-msgid "WezDeck turns workspaces, git worktrees, agent sessions, and attention into one surface you can navigate by feel."
-msgstr "WezDeck turns workspaces, git worktrees, agent sessions, and attention into one surface you can navigate by feel."
-
-#: src/features/landing-page.tsx:122
-msgid "When you want a browser window, the local web console shows Runtime health, IME state, Chrome debug, and Rime statistics. It observes the Deck; it does not replace it."
-msgstr "When you want a browser window, the local web console shows Runtime health, IME state, Chrome debug, and Rime statistics. It observes the Deck; it does not replace it."
-
-#: src/features/landing-page.tsx:79
-#~ msgid "Workflow"
-#~ msgstr "Workflow"
-
-#: src/features/landing-page.tsx:72
+#: src/features/landing-page.tsx:83
 msgid "Workspace"
 msgstr "Workspace"
 
-#: src/features/landing-page.tsx:214
-msgid "WORKSPACE"
-msgstr "WORKSPACE"
+#: src/features/landing-page.tsx:111
+msgid "Workspace, worktree, agent"
+msgstr "Workspace, worktree, agent"
 
-#: src/features/landing-page.tsx:100
-msgid "Workspace × worktree × agent"
-msgstr "Workspace × worktree × agent"
+#: src/features/console-development.tsx:165
+msgid "Workspaces"
+msgstr "Workspaces"
 
-#: src/features/landing-page.tsx:233
-msgid "Workspaces, worktrees, and agents in one keyboard-first frame."
-msgstr "Workspaces, worktrees, and agents in one keyboard-first frame."
+#: src/features/console-development.tsx:222
+msgid "Worktrees"
+msgstr "Worktrees"
 
-#: src/features/landing-page.tsx:158
-msgid "Your agents. Your worktrees. Your deck."
-msgstr "Your agents. Your worktrees. Your deck."
+#: src/features/console-overview.tsx:40
+#: src/features/console-overview.tsx:76
+#: src/features/landing-example.tsx:140
+msgid "WSL bridge"
+msgstr "WSL bridge"
 
-#: src/features/landing-page.tsx:157
-#~ msgid "Your terminal. Your signals. Your control plane."
-#~ msgstr "Your terminal. Your signals. Your control plane."
+#: src/features/landing-page.tsx:153
+msgid "Your agents. Your worktrees. Your machine."
+msgstr "Your agents. Your worktrees. Your machine."
 
-#: src/features/runtime-console.tsx:542
+#: src/features/console-shared.tsx:434
 msgid "中文"
 msgstr "中文"
