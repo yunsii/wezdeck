@@ -206,6 +206,8 @@ Lua-side Alt+j/k/l also writes `attention` rows to `wezterm.log` when allowliste
 
 If the pane lands in status `COPY` with an empty grid after F5, that was historically **view-mode** opened because `run-shell` received stdout (`reset_window_in_place`). The wrapper now discards reset stdout; a leftover mode is cancelled on the success path. Confirm with `tmux display-message -p -t <pane> '#{pane_in_mode} #{pane_mode}'` (`view-mode` / `copy-mode` vs empty).
 
+A pane that vanishes after F5 on a secondary shell, or after Ctrl+C in the agent pane, is the process exiting while `remain-on-exit` is off. `tmux.conf` keeps dead panes and `pane-died` runs `scripts/runtime/pane-exit-keep.sh`, which respawns a login shell in place. Grep `pane exit keep`. `respawn-pane -k` (F5) and `kill-pane` (`Ctrl+k x`) do not fire `pane-died`. Secondary F5 always respawns `build_primary_shell_command` (`/usr/bin/zsh -il`); feeding `#{pane_start_command}` back in (it is a quoted display string) makes tmux exec a missing binary and the pane dies immediately.
+
 ```bash
 grep 'F5 refresh-current-window' ~/.local/state/wezterm-runtime/logs/runtime.log | tail
 ```

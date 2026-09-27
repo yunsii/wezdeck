@@ -344,8 +344,12 @@ reset_window_in_place() {
     else
       worktree_root="${HOME:-$PWD}"
     fi
-    primary_command="$(tmux display-message -p -t "$target_pane" '#{pane_start_command}' 2>/dev/null || true)"
-    [[ -n "$primary_command" ]] || primary_command="$(build_primary_shell_command)"
+    # #{pane_start_command} is a display string ("/usr/bin/zsh -il", or the
+    # same text wrapped in quotes). Passing that string back as one
+    # respawn-pane argument makes tmux look up a binary named with the
+    # quotes, which exits immediately and — with remain-on-exit off —
+    # destroys the pane. Secondary refresh always wants a login shell.
+    primary_command="$(build_primary_shell_command)"
   fi
 
   runtime_log_info workspace "resetting tmux window in place" \
