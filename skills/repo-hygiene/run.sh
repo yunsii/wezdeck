@@ -97,6 +97,25 @@ run_mermaid_if_needed() {
   return 0
 }
 
+run_tmux_idempotent_if_needed() {
+  local root="$1"
+  shift
+  local need=0 f
+  for f in "$@"; do
+    if [[ "$f" == "tmux.conf" || "$f" == scripts/dev/check-tmux-reload-idempotent.sh ]]; then
+      need=1
+      break
+    fi
+  done
+  (( need )) || return 0
+  local guard="$root/scripts/dev/check-tmux-reload-idempotent.sh"
+  [[ -x "$guard" ]] || {
+    hygiene_err "tmux.conf staged but check-tmux-reload-idempotent.sh is missing"
+    return 1
+  }
+  "$guard" "$root/tmux.conf"
+}
+
 run_popup_guard_if_needed() {
   local root="$1"
   shift
@@ -180,6 +199,10 @@ cmd_pre_commit() {
   fi
 
   if ! run_popup_guard_if_needed "$root" "${targets[@]}"; then
+    fails=$((fails + 1))
+  fi
+
+  if ! run_tmux_idempotent_if_needed "$root" "${targets[@]}"; then
     fails=$((fails + 1))
   fi
 

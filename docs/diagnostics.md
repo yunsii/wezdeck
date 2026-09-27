@@ -208,6 +208,8 @@ If the pane lands in status `COPY` with an empty grid after F5, that was histori
 
 A pane that vanishes after F5 on a secondary shell, or after Ctrl+C in the agent pane, is the process exiting while `remain-on-exit` is off. `tmux.conf` keeps dead panes and `pane-died` runs `scripts/runtime/pane-exit-keep.sh`, which respawns a login shell in place. Grep `pane exit keep`. `respawn-pane -k` (F5) and `kill-pane` (`Ctrl+k x`) do not fire `pane-died`. Secondary F5 always respawns `build_primary_shell_command` (`/usr/bin/zsh -il`); feeding `#{pane_start_command}` back in (it is a quoted display string) makes tmux exec a missing binary and the pane dies immediately.
 
+`source-file` appends `set -ga` / `set -as` / `set-hook -ga` and does not drop the previous copies. A long-lived server therefore grows one extra hook command, `WEZTERM_PANE`, and `terminal-features` entry per reload. `tmux.conf` unsets or replaces those names before appending. `scripts/dev/reload-tmux.sh` counts them after each source and logs `category="sync"` `tmux reload stacked append` (`kind`, `name`, `depth`) when a hook is deeper than 2 or a token appears more than once. `scripts/dev/check-tmux-reload-idempotent.sh` rejects a conf that appends a name it has not already reset; repo-hygiene runs it on commit.
+
 ```bash
 grep 'F5 refresh-current-window' ~/.local/state/wezterm-runtime/logs/runtime.log | tail
 ```

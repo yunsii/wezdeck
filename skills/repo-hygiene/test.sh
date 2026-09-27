@@ -311,6 +311,32 @@ git -C "$fx" add README.md
 assert_exit 1 "readme parity link drift" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
 assert_grep "relative links only in README.md" "$tmp/out" "link drift message"
 
+# 11) tmux.conf append without a prior reset fails the commit.
+# Earlier cases leave a drifted README staged; this check is only about tmux.conf.
+git -C "$fx" reset -q HEAD -- README.md README.zh-CN.md || true
+mkdir -p "$fx/scripts/dev"
+cp "$root/scripts/dev/check-tmux-reload-idempotent.sh" "$fx/scripts/dev/check-tmux-reload-idempotent.sh"
+chmod +x "$fx/scripts/dev/check-tmux-reload-idempotent.sh"
+cat >"$fx/tmux.conf" <<'EOF'
+# comment with set -ga update-environment should not count
+set-hook -ga session-closed "run-shell true"
+EOF
+git -C "$fx" add tmux.conf
+assert_exit 1 "tmux append without reset" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+assert_grep "session-closed" "$tmp/err" "tmux append names the hook"
+
+cat >"$fx/tmux.conf" <<'EOF'
+set -u update-environment
+set -ga update-environment 'WEZTERM_PANE'
+set-hook -g client-attached "run-shell true"
+set-hook -ga client-attached "run-shell true"
+set-hook -g session-closed "run-shell true"
+EOF
+git -C "$fx" add tmux.conf
+assert_exit 0 "tmux append after reset" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+git -C "$fx" reset -q HEAD -- tmux.conf
+rm -f "$fx/tmux.conf"
+
 # Live-repo structural check for diagnostics domain split (skips if absent).
 if [[ -f "$root/docs/guest-oom.md" && -f "$root/skills/repo-hygiene/test-diagnostics-split.sh" ]]; then
   if bash "$root/skills/repo-hygiene/test-diagnostics-split.sh" >"$tmp/split.out" 2>"$tmp/split.err"; then
