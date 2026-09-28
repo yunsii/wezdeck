@@ -395,17 +395,29 @@ symptoms on this hybrid-wsl host:
 ### First action
 
 In a tmux-backed pane press **`Ctrl+k e`** (`windows.restart-explorer`). That
-recycles `explorer.exe` plus shell experience hosts, verifies a new pid in the
-toast, and when auto-hide is off re-fits covering `wezterm-gui` windows into
-the primary working area. Hotkey and palette entry:
+path now:
+
+1. Recycles `explorer.exe` plus `ShellHost` / ShellExperienceHost /
+   StartMenuExperienceHost / SearchHost (a plain explorer kill can leave a
+   days-old `ShellHost` alive while ABM still says autohide=on).
+2. When auto-hide is **on**, bounces `StuckRects3` Settings `byte8` between the
+   ABM-derived off/on values (usually `2`↔`3`), recycling the shell each side.
+   Plain explorer restart alone often leaves the bottom-edge hot zone dead;
+   toast/log field `stuckrects_bounce=` reports `ok_…` or `abort_…`.
+3. When auto-hide is **off**, re-fits covering `wezterm-gui` windows into the
+   primary working area.
+4. Re-maximizes any `wezterm-gui` window that was maximized / full-bleed at the
+   start, so a mid-heal restore does not leave a small window.
+
+Hotkey and palette entry:
 [`keybindings.md`](./keybindings.md) (`Ctrl+k e` / `Windows: Restart Explorer`).
 
 Do **not** clear auto-hide with `ABM_SETSTATE` alone on Windows 11 — it can
-desync live shell state from `StuckRects3` and leave the tray half-drawn.
-Prefer Settings → Personalization → Taskbar → Taskbar behaviors, or a
-StuckRects3 + explorer recycle after you have verified the byte encoding on
-*this* build (`byte8=3` means auto-hide on for the current machine; some
-guides reverse 2/3).
+desync live shell state from `StuckRects3` and leave the tray half-drawn. The
+hotkey’s bounce writes the blob then recycles the shell (with backup-restore
+on ABM mismatch). Manual fallback: Settings → Personalization → Taskbar →
+Taskbar behaviors (toggle auto-hide off then on). On this host `byte8=3` means
+auto-hide on (`2` off); some guides reverse 2/3 — trust ABM, not the guide.
 
 ### If icons still look ungrouped
 

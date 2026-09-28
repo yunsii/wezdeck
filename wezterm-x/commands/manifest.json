@@ -884,7 +884,7 @@
   {
     "id": "windows.restart-explorer",
     "label": "Windows: Restart Explorer",
-    "description": "Recycle Windows Explorer after lock→unlock shell glitches: auto-hide hover dead while Win/Meta still works, and/or maximized WezTerm covering the taskbar band. Verifies a new explorer pid; when auto-hide is off, re-fits covering wezterm-gui windows to the working area. hybrid-wsl only; does not flip the auto-hide setting.",
+    "description": "Recycle Windows Explorer after lock→unlock shell glitches: auto-hide hover dead while Win/Meta still works, and/or maximized WezTerm covering the taskbar band. Recycles explorer + ShellHost; when auto-hide is on, bounces StuckRects3 off→on (ABM-checked). When auto-hide is off, re-fits covering wezterm-gui; re-maximizes windows that were maximized at start. hybrid-wsl only.",
     "scope": "session-maintenance",
     "context": "hybrid-wsl",
     "binding": {
