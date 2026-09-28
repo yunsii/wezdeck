@@ -11,6 +11,9 @@ import (
 )
 
 func repoRoot() string {
+	if value := os.Getenv("WEZDECK_REPO"); value != "" {
+		return value
+	}
 	if value := os.Getenv("WEZTERM_CONFIG_REPO"); value != "" {
 		return value
 	}
@@ -44,6 +47,7 @@ func catalogEnv() []string {
 		runtime = filepath.Join(win, ".wezterm-x")
 	}
 	return []string{
+		"WEZDECK_REPO=" + root,
 		"WEZTERM_CONFIG_REPO=" + root,
 		"WEZTERM_RUNTIME_DIR=" + runtime,
 		"WORKSPACE_CATALOG_CONFIG_DIR=" + filepath.Dir(runtime),

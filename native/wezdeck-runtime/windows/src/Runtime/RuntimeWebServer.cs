@@ -122,6 +122,16 @@ internal sealed class RuntimeWebServer : IDisposable
             context.Response.Headers.Vary = "Origin";
             context.Response.Headers.AccessControlAllowHeaders = "content-type, authorization";
             context.Response.Headers.AccessControlAllowMethods = "GET, POST, OPTIONS";
+            // Public HTTPS console (Vercel) → loopback Runtime needs Chrome's
+            // Private Network Access preflight grant. Without this header the
+            // browser blocks the request and the overview shows Runtime API offline.
+            if (string.Equals(
+                    context.Request.Headers["Access-Control-Request-Private-Network"].ToString(),
+                    "true",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.Headers["Access-Control-Allow-Private-Network"] = "true";
+            }
         }
         if (HttpMethods.IsOptions(context.Request.Method))
         {

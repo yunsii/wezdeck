@@ -255,6 +255,14 @@ else
   emit '[runtime-check] check=shell-env status=warning reason=script_missing'
 fi
 
+wsl_bridge_script="$repo_root/scripts/dev/check-wezdeck-wsl.sh"
+if [[ -x "$wsl_bridge_script" ]]; then
+  run_check wezdeck-wsl "$wsl_bridge_script"
+else
+  failures=$((failures + 1))
+  emit '[runtime-check] check=wezdeck-wsl status=warning reason=script_missing'
+fi
+
 rime_counter_script="$repo_root/scripts/dev/check-rime-commit-counter.sh"
 if [[ -x "$rime_counter_script" ]]; then
   run_advisory_check rime-commit-counter "$rime_counter_script"

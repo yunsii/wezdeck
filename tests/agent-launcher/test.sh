@@ -21,18 +21,11 @@ chmod +x "$FAKE_CODEX"
 printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" > "${CLAUDE_TEST_LOG:?}"\n' > "$FAKE_CLAUDE"
 chmod +x "$FAKE_CLAUDE"
 
-env -i \
-  HOME="$TEST_ROOT/home" \
-  NVM_DIR="$NVM_DIR" \
-  CODEX_HOME="$TEST_ROOT/codex-home" \
-  CODEX_TEST_LOG="$LOG" \
-  PATH=/usr/bin:/bin \
-  WEZTERM_NO_LOADING_BANNER=1 \
-  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
-
-grep -Fxq -- '--profile full-access resume --last' "$LOG"
-test -L "$TEST_ROOT/codex-home/full-access.config.toml"
-printf 'PASS agent-launcher ensures and uses full-access overlay\n'
+# Tracked default in wezterm-x/local.example/shared.env is auto; local/shared.env
+# (loaded by runtime_env_load_managed) should match on this machine.
+grep -Eq "^MANAGED_AGENT_PERMISSION_PROFILE=['\"]?auto['\"]?$" \
+  "$REPO_ROOT/wezterm-x/local.example/shared.env"
+printf 'PASS tracked shared.env default permission profile is auto\n'
 
 env -i \
   HOME="$TEST_ROOT/home" \
@@ -43,10 +36,23 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile full-access resume --last' "$LOG"
-printf 'PASS agent-launcher reuses Codex profile overlay when present\n'
+grep -Fxq -- '--profile auto resume --last' "$LOG"
+test -L "$TEST_ROOT/codex-home/auto.config.toml"
+printf 'PASS agent-launcher ensures and uses Auto overlay by default\n'
 
-printf 'MANAGED_AGENT_PERMISSION_PROFILE=auto\n' \
+env -i \
+  HOME="$TEST_ROOT/home" \
+  NVM_DIR="$NVM_DIR" \
+  CODEX_HOME="$TEST_ROOT/codex-home" \
+  CODEX_TEST_LOG="$LOG" \
+  PATH=/usr/bin:/bin \
+  WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+
+grep -Fxq -- '--profile auto resume --last' "$LOG"
+printf 'PASS agent-launcher reuses Codex Auto overlay when present\n'
+
+printf 'MANAGED_AGENT_PERMISSION_PROFILE=full-access\n' \
   > "$TEST_ROOT/shell-env/99-test.env"
 
 env -i \
@@ -59,14 +65,15 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile auto resume --last' "$LOG"
-test -L "$TEST_ROOT/codex-home/auto.config.toml"
-printf 'PASS agent-launcher ensures and uses Auto overlay\n'
+grep -Fxq -- '--profile full-access resume --last' "$LOG"
+test -L "$TEST_ROOT/codex-home/full-access.config.toml"
+printf 'PASS agent-launcher ensures and uses full-access overlay when requested\n'
 
 env -i \
   HOME="$TEST_ROOT/home" \
   NVM_DIR="$NVM_DIR" \
   CODEX_HOME="$TEST_ROOT/codex-home" \
+  SHELL_ENV_DIR="$TEST_ROOT/shell-env" \
   CLAUDE_TEST_LOG="$CLAUDE_LOG" \
   PATH=/usr/bin:/bin \
   WEZTERM_NO_LOADING_BANNER=1 \

@@ -373,7 +373,8 @@ the public Vercel UI.
 ### Constraints
 
 - The hot path should stay on one chain: `Lua -> wezdeck-runtime-cli.exe -> named pipe -> wezdeck-runtime.exe -> response`.
-- Linux-owned reads from the Windows Runtime go through `wezdeck-wsl attach`. A dead socket or attach process degrades that HTTP snapshot to `available: false`; it does not open a new `wsl.exe` per request.
+- Linux-owned reads from the Windows Runtime go through `wezdeck-wsl attach`. The binary is `native/wezdeck-wsl/bin/wezdeck-wsl` (built by `native/wezdeck-wsl/build.sh` during sync). A missing binary, dead socket, or attach process degrades that HTTP snapshot to `available: false`; it does not open a new `wsl.exe` per request.
+- The Vercel-hosted Web Console talks to loopback Runtime over Chrome Private Network Access. Preflight from a public Origin must receive `Access-Control-Allow-Private-Network: true` or the overview marks **Runtime API** offline.
 - `wezdeck-runtime.exe` is the single decision point for VS Code directory normalization, Chrome debug instance reuse, clipboard text or image decisions, and foreground-window IME state queries.
 - Response types stay explicit: current-window reuse returns `result_type=window_ref`, clipboard reads return `clipboard_text` or `clipboard_image`, IME queries return `ime_state` with flat `mode` / `lang` / `reason` fields.
 - Reuse logic depends on persisted cache, process command-line matching, visible window scanning, and foreground binding compensation.

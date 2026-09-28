@@ -479,6 +479,27 @@ prepare_native_subflow() {
     return 1
   fi
 
+  # Build wezdeck-wsl for the Windows Runtime ↔ Linux socket bridge.
+  # Without it, GET /api/v1/wsl times out and every Linux-owned console
+  # snapshot (workspaces / wakatime / worktree) degrades.
+  if [[ ! -x "$REPO_ROOT/native/wezdeck-wsl/build.sh" ]]; then
+    sync_trace "step=build-wezdeck-wsl status=missing-script"
+    printf 'sync: native/wezdeck-wsl/build.sh missing or not executable\n' >&2
+    return 1
+  fi
+  if "$REPO_ROOT/native/wezdeck-wsl/build.sh"; then
+    sync_trace "step=build-wezdeck-wsl status=completed"
+  else
+    sync_trace "step=build-wezdeck-wsl status=failed"
+    printf 'sync: build-wezdeck-wsl failed — Runtime Web Console WSL bridge needs native/wezdeck-wsl/bin/wezdeck-wsl\n' >&2
+    return 1
+  fi
+  if [[ ! -x "$REPO_ROOT/native/wezdeck-wsl/bin/wezdeck-wsl" ]]; then
+    sync_trace "step=build-wezdeck-wsl status=missing-binary"
+    printf 'sync: native/wezdeck-wsl/bin/wezdeck-wsl missing after build-wezdeck-wsl\n' >&2
+    return 1
+  fi
+
   if [[ -d "$NATIVE_SOURCE_DIR" ]]; then
     rsync -a --delete "$NATIVE_SOURCE_DIR"/ "$TARGET_NATIVE_DIR"/
     sync_trace "step=copy-native status=completed native_source=$NATIVE_SOURCE_DIR"
@@ -505,7 +526,7 @@ run_runtime_native_flow() {
   # Two independent chains run in parallel:
   #   runtime: render-tmux-bindings / appearance / workspace-agent-map
   #            → rsync runtime → write metadata
-  #   native:  picker build → rsync native
+  #   native:  picker + wezdeck-wsl build → rsync native
   # rsync writes incrementally to TARGET (no temp+rename publish step);
   # subsequent syncs only write changed files.
   prepare_runtime_subflow "$repo_root_path" &

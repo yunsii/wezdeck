@@ -285,7 +285,7 @@ scripts/dev/agent-hooks.sh install --provider codex
 
 The install command preserves existing hook entries and creates a timestamped backup. Runtime sync only checks and warns; it never edits `~/.codex` or `~/.claude` automatically.
 
-For the complete WezDeck environment check, run [`skills/wezdeck-runtime-ops/scripts/check-runtime.sh`](../skills/wezdeck-runtime-ops/scripts/check-runtime.sh). It covers Lua syntax and managed config precheck, the configured agent CLI binary, agent hooks, the `agent-tools.env` marker, launcher permission overlays, resume/workspace-agent-map wiring, Node/fnm state, interactive `shell-env.d` injection (`scripts/dev/check-shell-env.sh`), and dependency floors; use `--advisory --skip-deps` when upstream access is unavailable. A missing `wezdeck-env.env` or `wezdeck:shell-env.d` snippet fails this check and is only a warning during sync.
+For the complete WezDeck environment check, run [`skills/wezdeck-runtime-ops/scripts/check-runtime.sh`](../skills/wezdeck-runtime-ops/scripts/check-runtime.sh). It covers Lua syntax and managed config precheck, the configured agent CLI binary, agent hooks, the `agent-tools.env` marker, launcher permission overlays, resume/workspace-agent-map wiring, Node/fnm state, interactive `shell-env.d` injection (`scripts/dev/check-shell-env.sh`), the WSL bridge (`scripts/dev/check-wezdeck-wsl.sh`), and dependency floors; use `--advisory --skip-deps` when upstream access is unavailable. A missing `wezdeck-env.env` or `wezdeck:shell-env.d` snippet fails this check and is only a warning during sync. A missing `native/wezdeck-wsl/bin/wezdeck-wsl` fails the wezdeck-wsl gate (rebuild via `native/wezdeck-wsl/build.sh` or sync).
 
 ## Tmux Status Prompt Hook
 

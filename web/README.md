@@ -47,4 +47,10 @@ corepack pnpm run build
 
 The production deployment is configured for Vercel through Nitro. The browser
 connects directly to the user's loopback Runtime; Vercel server code never
-tries to reach the user's local machine.
+tries to reach the user's local machine. Chrome Private Network Access requires
+the Runtime to answer preflight with
+`Access-Control-Allow-Private-Network: true` (see `RuntimeWebServer`); without
+that grant the overview shows **Runtime API** as offline even when
+`http://127.0.0.1:35791/api/v1/health` works from curl. The **WSL bridge**
+status needs `native/wezdeck-wsl/bin/wezdeck-wsl` (built by sync via
+`native/wezdeck-wsl/build.sh`).
