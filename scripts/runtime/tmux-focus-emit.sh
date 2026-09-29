@@ -151,9 +151,11 @@ if [[ -n "$state_path" ]]; then
     ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)"
     if [[ -n "$ts" ]]; then
       # Hand-built JSON (no jq dependency on the hook path).
-      line=$(printf '{"ts":"%s","pane":"%s","kind":"%s","agent":"%s","cmd":"%s","role":"%s","source":"tmux_focus"}\n' \
+      # Do NOT put the trailing newline inside $(...) — bash strips it —
+      # or the jsonl becomes one concatenated blob and line parsers see 0 rows.
+      line=$(printf '{"ts":"%s","pane":"%s","kind":"%s","agent":"%s","cmd":"%s","role":"%s","source":"tmux_focus"}' \
         "$ts" "$pane" "$kind" "$agent" "$cmd_base" "$role")
-      if printf '%s' "$line" >>"$pane_jsonl" 2>/dev/null; then
+      if printf '%s\n' "$line" >>"$pane_jsonl" 2>/dev/null; then
         printf '%s\n' "$fingerprint" >"$pane_last" 2>/dev/null || true
       fi
     fi

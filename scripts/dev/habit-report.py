@@ -263,6 +263,15 @@ def format_table(report: dict) -> str:
                         f"    {name}: chars={meta.get('chars', 0)}  "
                         f"events={meta.get('events', 0)}"
                     )
+        by_proc = rime.get("by_process") or {}
+        if by_proc:
+            lines.append("  by_process:")
+            for name, meta in list(by_proc.items())[:12]:
+                if isinstance(meta, dict):
+                    lines.append(
+                        f"    {name}: chars={meta.get('chars', 0)}  "
+                        f"events={meta.get('events', 0)}"
+                    )
         for note in rime.get("notes") or []:
             lines.append(f"  note: {note}")
 

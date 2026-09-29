@@ -213,19 +213,51 @@ def classify_mcp_tool(name: str) -> tuple[str, str] | None:
     return m.group(1), f"mcp__{m.group(1)}__{m.group(2)}"
 
 
+def _iter_json_objects_from_text(text: str) -> Iterator[dict[str, Any]]:
+    """Yield dicts from one or more JSON values in ``text``.
+
+    Supports normal JSONL lines and concatenated objects (``}{``) produced when
+    a writer strips the trailing newline inside ``$(…)`` before append.
+    """
+    if not text:
+        return
+    text = text.strip()
+    if not text:
+        return
+    try:
+        row = json.loads(text)
+    except json.JSONDecodeError:
+        row = None
+    if isinstance(row, dict):
+        yield row
+        return
+    if isinstance(row, list):
+        for item in row:
+            if isinstance(item, dict):
+                yield item
+        return
+    decoder = json.JSONDecoder()
+    i = 0
+    n = len(text)
+    while i < n:
+        while i < n and text[i].isspace():
+            i += 1
+        if i >= n:
+            break
+        try:
+            obj, end = decoder.raw_decode(text, i)
+        except json.JSONDecodeError:
+            break
+        if isinstance(obj, dict):
+            yield obj
+        i = end
+
+
 def iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
     try:
         with path.open("r", encoding="utf-8", errors="replace") as fh:
             for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    row = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if isinstance(row, dict):
-                    yield row
+                yield from _iter_json_objects_from_text(line)
     except OSError:
         return
 

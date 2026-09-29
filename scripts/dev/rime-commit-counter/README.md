@@ -35,14 +35,26 @@ detects install/log and runs only then; `--plugins off` disables;
 | `wezterm.agent.claude` / `.codex` / `.grok` | OS WezTerm + focused agent pane |
 | `wezterm.shell` | OS WezTerm + focused non-agent pane |
 | `wezterm` | OS WezTerm but no pane-focus edge yet |
-| `code` / `chrome` / `other` / `unknown` | non-WezTerm OS foreground |
+| `code` / `chrome` | editor / browser family (collapsed) |
+| `Feishu` / `explorer` / … | other OS apps — **process name as bucket** (not folded into `other`) |
+| `unknown` | no matching `host.foreground` edge |
+
+Reports also expose **`by_process`**: raw OS process names from
+`helper.log` (`wezterm-gui`, `chrome`, `Feishu`, …). Join reads
+`helper.log` **and** rotated `helper.log.N` so a week is not truncated to
+the current rotation file.
 
 Pane focus timeline: `tmux-focus-emit.sh` appends
 `<runtime>/state/wezterm-pane-focus.jsonl` on focus **change** (role + cmd
-basename only). Switch panes once after upgrade to start sampling.
+basename only). Each append is one JSON object **plus newline** (bash
+`$(…)` must not own the trailing `\n`, or the file becomes a single
+concatenated blob). Habit parsers also accept historical concatenated
+blobs. Switch panes once after upgrade to start sampling.
 
 ## Compare with habit `typed_chars`
 
 - **Rime chars** ≈ Chinese (and other) commits through the IME.
 - **typed_chars** ≈ session user feed minus protocol injection and \`\`\` fences.
 - Paste / English ASCII / non-Rime input explain most gaps.
+- Character mass is often a few long feeds (`char_buckets`); most turns stay
+  short (`lt_200`).

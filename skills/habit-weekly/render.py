@@ -439,7 +439,7 @@ def render(report: dict[str, Any]) -> str:
         lines.append("")
         by_fg = rime.get("by_foreground") or {}
         if by_fg:
-            lines.append("| 前台进程桶 | 上屏字数 | 事件 |")
+            lines.append("| 前台桶（WezTerm→agent/shell；其它=进程名） | 上屏字数 | 事件 |")
             lines.append("| --- | ---: | ---: |")
             for name, meta in by_fg.items():
                 if not isinstance(meta, dict):
@@ -447,6 +447,21 @@ def render(report: dict[str, Any]) -> str:
                 lines.append(
                     f"| `{name}` | {meta.get('chars', 0)} | {meta.get('events', 0)} |"
                 )
+            lines.append("")
+        by_proc = rime.get("by_process") or {}
+        if by_proc:
+            lines.append("| OS 前台进程名 | 上屏字数 | 事件 |")
+            lines.append("| --- | ---: | ---: |")
+            shown = 0
+            for name, meta in by_proc.items():
+                if not isinstance(meta, dict):
+                    continue
+                lines.append(
+                    f"| `{name}` | {meta.get('chars', 0)} | {meta.get('events', 0)} |"
+                )
+                shown += 1
+                if shown >= 12:
+                    break
             lines.append("")
         typed = int(sess.get("typed_chars") or 0)
         rime_chars = int(rime.get("commit_chars") or 0)
@@ -1069,7 +1084,9 @@ def _render_data_inventory(
                 f"events={rime.get('commit_events')} · "
                 f"chars={rime.get('commit_chars')} · "
                 f"buckets={list((rime.get('by_foreground') or {}).keys())} · "
-                f"pane_edges={rime.get('pane_focus_edges', 0)}",
+                f"procs={list((rime.get('by_process') or {}).keys())[:4]} · "
+                f"pane_edges={rime.get('pane_focus_edges', 0)} · "
+                f"fg_edges={rime.get('foreground_edges', 0)}",
             )
         )
     elif rime.get("enabled") or rime.get("available") or rime.get("detected"):

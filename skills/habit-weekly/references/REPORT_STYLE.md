@@ -11,7 +11,7 @@
 5. **Agent 并发**（pane+TTL；可提一句 raw_sid 虚高勿用）  
 6. **会话形态**（活跃时长/片段/投喂分桶/图链/Goal 工期/改写分布/常用关键词；**禁止**把墙钟当主指标；含 **按端协议注入表**）  
 7. **Token / 费用（分 agent · 分模型）**（Claude `cost-state.modelUsage` / Grok `usage.json` / Codex `last_token_usage`+`turn_context.model`；主读分端与分模型 USD + output/reasoning；`total` 含 cache 不作跨端主 KPI）  
-8. **Rime 上屏 × 前台/pane-focus**（可选插件；`wezterm.agent.*` / `.shell`）  
+8. **Rime 上屏 × 前台/pane-focus**（可选插件；桶=`wezterm.agent.*` / `.shell`；另表 `by_process` 写 OS 进程名）  
 9. **代码变更量**（可选插件 `git_churn`；排除规则见 `git-churn.json`）  
 10. **Skill / CLI / MCP**（Skill/CLI Top 表；MCP 只计真实调用的 Server/工具表，禁止裸 `mcp: N`，禁止把 `mcp_server_starting` 当调用）  
 11. **CDP 验证→迭代**（有数据才写）  

@@ -5,7 +5,9 @@ names only; pane-focus JSONL has pane id / role / cmd basename / agent
 label only (no titles / cwd).
 
 Buckets:
-  - code / chrome / other / unknown — OS foreground outside WezTerm
+  - code / chrome — collapsed OS families (editor / browser)
+  - <ProcessName> — any other known OS foreground (e.g. Feishu)
+  - unknown — no matching host.foreground edge
   - wezterm — OS WezTerm but no pane-focus edge yet
   - wezterm.shell — focused pane classified non-agent
   - wezterm.agent.<claude|codex|grok> — focused agent pane
@@ -50,33 +52,72 @@ def _parse_helper_ts(raw: str) -> datetime | None:
 
 
 def _os_bucket(process: str) -> str:
+    """Coarse family for WezTerm/editor/browser; otherwise keep the process name.
+
+    Older builds folded every non-allowlisted name into ``other``, which hid
+    apps we already knew (Feishu, explorer, …). Only empty/missing process
+    stays ``unknown``.
+    """
+    if not process:
+        return "unknown"
     if process in _WEZTERM_NAMES:
         return "wezterm"
     if process in _CODE_NAMES:
         return "code"
     if process in _CHROME_NAMES:
         return "chrome"
-    if not process:
-        return "unknown"
-    return "other"
+    return process
 
 
-def load_foreground_timeline(helper_log: Path) -> list[FgEdge]:
+def helper_log_rotation_paths(helper_log: Path) -> list[Path]:
+    """Return ``helper.log`` plus rotated siblings ``helper.log.1`` … that exist.
+
+    Current file alone often only covers the newest rotation window; weekly
+    habit joins need older ``.N`` files for in-window foreground edges.
+    """
+    if helper_log is None:
+        return []
+    paths: list[Path] = []
+    if helper_log.is_file():
+        paths.append(helper_log)
+    parent = helper_log.parent
+    name = helper_log.name
+    i = 1
+    while True:
+        rotated = parent / f"{name}.{i}"
+        if not rotated.is_file():
+            break
+        paths.append(rotated)
+        i += 1
+        if i > 32:
+            break
+    return paths
+
+
+def load_foreground_timeline(helper_log: Path | list[Path] | None) -> list[FgEdge]:
     edges: list[FgEdge] = []
-    if not helper_log.is_file():
+    if helper_log is None:
         return edges
-    with helper_log.open(encoding="utf-8", errors="replace") as fh:
-        for line in fh:
-            if 'category="foreground"' not in line:
-                continue
-            if 'message="foreground changed"' not in line:
-                continue
-            kv = dict(_KV_RE.findall(line))
-            ts = _parse_helper_ts(kv.get("ts", ""))
-            proc = kv.get("to_process") or ""
-            if ts is None or not proc:
-                continue
-            edges.append(FgEdge(ts=ts, process=proc))
+    paths = (
+        list(helper_log)
+        if isinstance(helper_log, list)
+        else helper_log_rotation_paths(helper_log)
+    )
+    for path in paths:
+        if not path.is_file():
+            continue
+        with path.open(encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                if 'category="foreground"' not in line:
+                    continue
+                if 'message="foreground changed"' not in line:
+                    continue
+                kv = dict(_KV_RE.findall(line))
+                ts = _parse_helper_ts(kv.get("ts", ""))
+                proc = kv.get("to_process") or ""
+                if ts is None or not proc:
+                    continue
+                edges.append(FgEdge(ts=ts, process=proc))
     edges.sort(key=lambda e: e.ts)
     return edges
 
@@ -176,6 +217,7 @@ def collect_rime_commits(
         "commit_events": 0,
         "commit_chars": 0,
         "by_foreground": {},
+        "by_process": {},
         "notes": [],
         "paths": {},
     }
@@ -187,9 +229,11 @@ def collect_rime_commits(
     if pane_log is None:
         pane_log = resolve_pane_focus_log(commit_log)
 
+    helper_paths = helper_log_rotation_paths(helper_log)
     out["paths"] = {
         "commit_log": str(commit_log),
         "helper_log": str(helper_log),
+        "helper_log_files": [str(p) for p in helper_paths],
         "pane_focus_log": str(pane_log) if pane_log else "",
     }
     if not commit_log.is_file():
@@ -197,11 +241,16 @@ def collect_rime_commits(
         return out
 
     start_dt, end_dt = day_bounds_utc(start, end)
-    edges = load_foreground_timeline(helper_log) if helper_log.is_file() else []
+    edges = load_foreground_timeline(helper_paths)
     pane_edges = load_pane_focus_timeline(pane_log) if pane_log and pane_log.is_file() else []
     if not edges:
         out["notes"].append(
-            "no foreground edges in helper.log — chars counted but unbucketed"
+            "no foreground edges in helper.log(+.N) — chars counted but unbucketed"
+        )
+    elif len(helper_paths) > 1:
+        out["notes"].append(
+            f"foreground joined across {len(helper_paths)} helper.log files "
+            f"(incl. rotations)"
         )
     if not pane_edges:
         out["notes"].append(
@@ -211,6 +260,8 @@ def collect_rime_commits(
 
     by_fg: Counter[str] = Counter()
     by_fg_events: Counter[str] = Counter()
+    by_proc: Counter[str] = Counter()
+    by_proc_events: Counter[str] = Counter()
     total_chars = 0
     events = 0
 
@@ -231,11 +282,14 @@ def collect_rime_commits(
         total_chars += chars
         local = _rime_ts_to_local_naive(ts) if ts else None
         proc = process_at(edges, local) if local else ""
+        proc_label = proc or "unknown"
         os_bucket = _os_bucket(proc) if proc else "unknown"
         pane = pane_at(pane_edges, local) if local else None
         bucket = refine_bucket(os_bucket, pane)
         by_fg[bucket] += chars
         by_fg_events[bucket] += 1
+        by_proc[proc_label] += chars
+        by_proc_events[proc_label] += 1
 
     out["available"] = events > 0 or commit_log.is_file()
     out["commit_events"] = events
@@ -244,7 +298,12 @@ def collect_rime_commits(
         k: {"chars": by_fg[k], "events": by_fg_events[k]}
         for k in sorted(by_fg.keys(), key=lambda x: -by_fg[x])
     }
+    out["by_process"] = {
+        k: {"chars": by_proc[k], "events": by_proc_events[k]}
+        for k in sorted(by_proc.keys(), key=lambda x: -by_proc[x])
+    }
     out["pane_focus_edges"] = len(pane_edges)
+    out["foreground_edges"] = len(edges)
     if pane_edges:
         out["notes"].append(
             "WezTerm bucket refined via tmux focus timeline "
