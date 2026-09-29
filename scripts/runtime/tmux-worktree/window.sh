@@ -78,6 +78,9 @@ tmux_worktree_ensure_window_panes() {
   local first_pane=""
   local shell_command=""
   local created_secondary=0
+  local secondary_command=""
+  local pin="" pin_sid="" pin_agent="" secondary_pane=""
+  local resolve_lib="" repo_root=""
 
   pane_count="$(tmux list-panes -t "$window_target" 2>/dev/null | wc -l | tr -d ' ')"
   first_pane="$(tmux list-panes -t "$window_target" -F '#{pane_id}' 2>/dev/null | head -n 1)"
@@ -89,7 +92,49 @@ tmux_worktree_ensure_window_panes() {
   if [[ "${pane_count:-0}" -lt 2 ]]; then
     runtime_log_info worktree "adding missing secondary pane" "window_target=$window_target" "cwd=$cwd" "pane_count=${pane_count:-0}"
     shell_command="$(resolve_login_shell)"
-    tmux split-window -d -h -t "$first_pane" -c "$cwd" "$shell_command" -il
+    secondary_command=""
+    # After kill-server, pane ids are gone — restore a previously pinned
+    # secondary agent via durable worktree+slot pin when present.
+    repo_root="${wezterm_config_repo:-${WEZDECK_REPO:-}}"
+    if [[ -z "$repo_root" && -n "${script_dir:-}" ]]; then
+      repo_root="$(cd "$script_dir/../.." 2>/dev/null && pwd -P || true)"
+    fi
+    resolve_lib=""
+    if [[ -n "$repo_root" && -f "$repo_root/scripts/runtime/agent-session-resolve.sh" ]]; then
+      resolve_lib="$repo_root/scripts/runtime/agent-session-resolve.sh"
+    fi
+    if [[ -n "$resolve_lib" ]]; then
+      # shellcheck disable=SC1090
+      . "$resolve_lib"
+      pin="$(agent_session_pin_get "$cwd" secondary 2>/dev/null || true)"
+      if [[ -n "$pin" ]]; then
+        pin_sid="${pin%%$'\t'*}"
+        pin_agent="${pin#*$'\t'}"
+        if agent_session_id_usable "${pin_sid:-}" \
+          && agent_session_normalize_agent "${pin_agent:-}" >/dev/null 2>&1; then
+          secondary_command="$(agent_session_build_typed_resume_command \
+            "$repo_root" "$pin_agent" "$pin_sid" 2>/dev/null || true)"
+        fi
+      fi
+    fi
+    if [[ -n "$secondary_command" ]]; then
+      runtime_log_info worktree "restoring secondary agent from durable pin" \
+        "window_target=$window_target" "cwd=$cwd" \
+        "session_id=$pin_sid" "agent=$pin_agent"
+      tmux split-window -d -h -t "$first_pane" -c "$cwd" "$secondary_command"
+      secondary_pane="$(tmux list-panes -t "$window_target" -F '#{pane_id}' 2>/dev/null \
+        | grep -vxF "$first_pane" | head -n 1 || true)"
+      if [[ -n "$secondary_pane" ]]; then
+        tmux set-option -p -t "$secondary_pane" -q \
+          @wezterm_pane_role "agent-cli:$pin_agent" 2>/dev/null || true
+        if declare -F agent_session_pin_pane >/dev/null 2>&1; then
+          agent_session_pin_pane "$secondary_pane" "$pin_sid" "$pin_agent" "$cwd" \
+            2>/dev/null || true
+        fi
+      fi
+    else
+      tmux split-window -d -h -t "$first_pane" -c "$cwd" "$shell_command" -il
+    fi
     created_secondary=1
   fi
 

@@ -344,13 +344,56 @@ reset_window_in_place() {
     else
       worktree_root="${HOME:-$PWD}"
     fi
-    # #{pane_start_command} is a display string ("/usr/bin/zsh -il", or the
-    # same text wrapped in quotes). Passing that string back as one
-    # respawn-pane argument makes tmux look up a binary named with the
-    # quotes, which exits immediately and — with remain-on-exit off —
-    # destroys the pane. Secondary refresh always wants a login shell.
+    # Default: login shell. Overridden below when this secondary pane has a
+    # typed agent session (live process / attention / durable pin).
     primary_command="$(build_primary_shell_command)"
   fi
+
+  # F5 typed resume: resolve the pane's real agent session id before
+  # kill/respawn. Primary always uses the managed resume profile; secondary
+  # only switches from shell → agent-launcher when an id+agent are known.
+  # respawn-pane keeps the same pane id; durable pins cover kill-server.
+  resume_session_id=""
+  resume_mode="continue_fallback"
+  resume_agent=""
+  _resolve_lib=""
+  if [[ -n "${script_dir:-}" && -f "$script_dir/agent-session-resolve.sh" ]]; then
+    _resolve_lib="$script_dir/agent-session-resolve.sh"
+  elif [[ -n "${wezterm_config_repo:-}" && -f "$wezterm_config_repo/scripts/runtime/agent-session-resolve.sh" ]]; then
+    _resolve_lib="$wezterm_config_repo/scripts/runtime/agent-session-resolve.sh"
+  fi
+  if [[ -n "$_resolve_lib" ]]; then
+    # shellcheck disable=SC1090
+    . "$_resolve_lib"
+    resume_session_id="$(agent_session_resolve_for_pane "$target_pane" || true)"
+    if agent_session_id_usable "${resume_session_id:-}"; then
+      resume_agent="$(agent_session_agent_for_pane "$target_pane" || true)"
+      if [[ "$target_is_primary" == "1" && "$role" == managed* ]]; then
+        resume_mode="typed"
+        agent_session_pin_pane "$target_pane" "$resume_session_id" \
+          "${resume_agent:-}" "$worktree_root"
+        primary_command="env WEZDECK_RESUME_SESSION_ID=$(printf '%q' "$resume_session_id") $primary_command"
+      elif [[ "$target_is_primary" != "1" && -n "$resume_agent" ]]; then
+        _typed_cmd="$(agent_session_build_typed_resume_command \
+          "${wezterm_config_repo:-}" "$resume_agent" "$resume_session_id" || true)"
+        if [[ -n "$_typed_cmd" ]]; then
+          resume_mode="typed_secondary"
+          agent_session_pin_pane "$target_pane" "$resume_session_id" \
+            "$resume_agent" "$worktree_root"
+          primary_command="$_typed_cmd"
+        else
+          resume_session_id=""
+          resume_agent=""
+        fi
+        unset _typed_cmd
+      else
+        resume_session_id=""
+      fi
+    else
+      resume_session_id=""
+    fi
+  fi
+  unset _resolve_lib
 
   runtime_log_info workspace "resetting tmux window in place" \
     "session_name=$session_name" \
@@ -363,7 +406,10 @@ reset_window_in_place() {
     "window_label=$window_label" \
     "primary_command=$primary_command" \
     "layout=$layout" \
-    "role=$role"
+    "role=$role" \
+    "resume_session_id=${resume_session_id:-}" \
+    "resume_agent=${resume_agent:-}" \
+    "resume_mode=$resume_mode"
 
   # Heal client size / pane balance / status clamp before respawn so a
   # refresh after RDP or DPI change does not recreate panes into a
@@ -399,6 +445,9 @@ reset_window_in_place() {
   if [[ "$target_is_primary" == "1" ]]; then
     ensure_primary_pane_role_tag "$target_pane" "$role" "${wezterm_config_repo:-}" "$worktree_root"
     tmux set-window-option -t "$window_id" -q @wezterm_window_primary_pane "$target_pane" 2>/dev/null || true
+  elif [[ "$resume_mode" == "typed_secondary" && -n "$resume_agent" ]]; then
+    tmux set-option -p -t "$target_pane" -q \
+      @wezterm_pane_role "agent-cli:$resume_agent" 2>/dev/null || true
   fi
   # Always enforce the managed two-pane contract after respawning the
   # primary. The helper is a no-op when the secondary already exists, and

@@ -390,7 +390,7 @@ WezDeck 仍是本机驾驶舱（attention、worktree、launcher）；OpenClaw �
 
 ### 部分闭环
 
-- **Codex resume 协议 —— 远程有了、本机还差一层**。本机 launcher 这条路仍是字符串拼接（`agent-launcher.sh` 里 `codex resume --last || exec codex`），CLI 一旦改 flag 就会断；v5 E3 对 Claude 兑现的"接入新 CLI 退化为加一行映射"对 Codex 本机路径还没成立。但 v6 在**远程**这条路上已经绕过了这层：OpenClaw 用 ACP（`sessions_spawn(runtime=acp)` 拉起 Codex-ACP）拿到了真正的 session 协议，不再依赖 CLI 的 resume flag。结论是分叉的 —— 远程编排走 ACP 已闭环，本机 pane 的 typed resume 仍是待办。
+- **本机 typed resume —— 主+副 pane + kill-server 已接上（2026-09-29）**。`agent-session-resolve.sh` 解析 pane 绑定 id（attention / pane option / durable `agent-session-pins.json` by worktree+slot）；F5 主/副均可 `--resume <id>`；`ensure_window_panes` 在 kill-server 后按 secondary pin 重建副 agent。远程编排继续走 OpenClaw ACP。
 
 ### 仍然 open
 

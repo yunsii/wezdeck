@@ -735,6 +735,27 @@ else
     "$tmux_window_name" \
     2>/dev/null || true
 
+  # Durable + pane pin so primary/secondary F5 and kill-server reopen can
+  # typed-resume this conversation (not cwd --continue/--last).
+  if [[ -n "$tmux_pane" && -n "$session_id" && "$session_id" != pane:* ]]; then
+    # shellcheck disable=SC1091
+    . "$script_dir/../agent-session-resolve.sh" 2>/dev/null || true
+    if declare -F agent_session_pin_pane >/dev/null 2>&1; then
+      _pin_cwd="${git_dir:-}"
+      if [[ -z "$_pin_cwd" && -n "${TMUX_PANE:-}" ]]; then
+        _pin_cwd="$(tmux display-message -p -t "${TMUX_PANE}" -F '#{pane_current_path}' 2>/dev/null || true)"
+      fi
+      _pin_agent="$provider"
+      case "$_pin_agent" in
+        claude|codex|grok) ;;
+        *) _pin_agent="" ;;
+      esac
+      agent_session_pin_pane "$tmux_pane" "$session_id" "${_pin_agent:-}" "${_pin_cwd:-}" \
+        2>/dev/null || true
+      unset _pin_cwd _pin_agent
+    fi
+  fi
+
   # Spawn the prompt-watcher when a user-action waiting lands.
   # Covers:
   #   - Claude permission_prompt: no hook on Yes/No; without the watcher

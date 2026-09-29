@@ -82,5 +82,33 @@ env -i \
 grep -Fxq -- '--permission-mode bypassPermissions --continue' "$CLAUDE_LOG"
 printf 'PASS agent-launcher maps full-access to Claude permission mode\n'
 
+env -i \
+  HOME="$TEST_ROOT/home" \
+  NVM_DIR="$NVM_DIR" \
+  CODEX_HOME="$TEST_ROOT/codex-home" \
+  SHELL_ENV_DIR="$TEST_ROOT/shell-env" \
+  CODEX_TEST_LOG="$LOG" \
+  WEZDECK_RESUME_SESSION_ID="codex-sid-typed-001" \
+  PATH=/usr/bin:/bin \
+  WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+
+grep -Fxq -- '--profile full-access resume codex-sid-typed-001' "$LOG"
+printf 'PASS agent-launcher typed resume uses codex resume <session_id>\n'
+
+env -i \
+  HOME="$TEST_ROOT/home" \
+  NVM_DIR="$NVM_DIR" \
+  CODEX_HOME="$TEST_ROOT/codex-home" \
+  SHELL_ENV_DIR="$TEST_ROOT/shell-env" \
+  CLAUDE_TEST_LOG="$CLAUDE_LOG" \
+  WEZDECK_RESUME_SESSION_ID="claude-sid-typed-002" \
+  PATH=/usr/bin:/bin \
+  WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
+
+grep -Fxq -- '--permission-mode bypassPermissions --resume claude-sid-typed-002' "$CLAUDE_LOG"
+printf 'PASS agent-launcher typed resume uses claude --resume <session_id>\n'
+
 grep -q -- '--always-approve' "$REPO_ROOT/scripts/runtime/agent-launcher.sh"
 printf 'PASS agent-launcher contains Grok full-access adapter\n'

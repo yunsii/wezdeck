@@ -41,6 +41,9 @@ WSL_HOTKEY_USAGE_FILE="$WSL_RUNTIME_STATE_DIR/hotkey-usage.json"
 # User-access ledger for Alt+g / Alt+x recency + worktree focus restore.
 # Pure WSL bash writer/reader — stays on ext4 (see docs/performance.md).
 WSL_ACCESS_LEDGER_FILE="$WSL_RUNTIME_STATE_DIR/access-ledger.json"
+# Pane-bound agent session pins (worktree cwd + primary|secondary → session id).
+# Survives tmux kill-server; WSL-only ext4. See agent-session-resolve.sh.
+WSL_AGENT_SESSION_PINS_FILE="$WSL_RUNTIME_STATE_DIR/agent-session-pins.json"
 # Alt+x overflow menu base TSV — WSL-only consumer (bash menu + builder).
 # Lives on ext4 so press-time reads avoid /mnt/c (~5× slower). Builder still
 # reads items/stats from the Windows tab-stats dir for Lua co-consumers.

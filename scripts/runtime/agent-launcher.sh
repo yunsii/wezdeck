@@ -285,6 +285,21 @@ case "$agent" in
         ;;
     esac
     log_resume_boot codex "${codex_profile:-base}" "$codex_permission_resolution"
+    # shellcheck disable=SC1091
+    . "$script_dir/agent-session-resolve.sh"
+    codex_session_id="$(agent_session_resolve_current || true)"
+    if agent_session_id_usable "${codex_session_id:-}"; then
+      if declare -F runtime_log_info >/dev/null 2>&1; then
+        runtime_log_info primary_pane "agent resume typed" \
+          "agent=codex" "resume_mode=typed" \
+          "session_id=$codex_session_id" "cwd=$PWD" || true
+      fi
+      if [[ -n "${TMUX_PANE:-}" ]]; then
+        agent_session_pin_pane "$TMUX_PANE" "$codex_session_id" codex "$PWD"
+      fi
+      exec bash "$script_dir/codex-resume-takeover.sh" \
+        "$codex_bin" "${codex_profile_args[@]}" resume "$codex_session_id"
+    fi
     exec bash "$script_dir/codex-resume-takeover.sh" \
       "$codex_bin" "${codex_profile_args[@]}" resume --last
     ;;
