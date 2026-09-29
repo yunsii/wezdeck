@@ -602,6 +602,15 @@ Env: `WEZTERM_ATTENTION_BG_TYPES` (default `shell`; comma-list may add
 `<state>/agent-attention/bg-sidecar/<session_id>.json`. Lib:
 `scripts/runtime/agent-attention/lib/bg-outstanding.sh`.
 
+**Stability (2026-09-29):** `UserPromptSubmit` reconciles sidecar (does not
+wipe live tasks). Cross-session `bg_bump_alive_entries` will not demote to
+`done` while Claude `status=shell` or non-exited `tasks/*.output` remain;
+false demotes use `done_kind=bg_finished` and Lua **skips focus-ack** for that
+kind so `Alt+l` onto the pane cannot erase ●. Observable `runtime.log`
+messages: `stop deferred to bg-running` (+ `bg_recover`), `bg sidecar
+reconciled on prompt`, `bg bump kept` / `bg bump recover shell/live` /
+`bg bump demote skipped` / `bg bump demoted`, `focus ack skipped bg_finished`.
+
 Probe (dry-run / schema):
 
 ```bash

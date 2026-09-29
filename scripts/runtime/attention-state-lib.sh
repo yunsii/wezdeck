@@ -249,8 +249,11 @@ attention_state_upsert() {
   # Background running substate (avoid a 14th positional): emit sets
   # AGENT_ATTENTION_RUNNING_KIND=background and AGENT_ATTENTION_BG_JSON='[…]'
   # before calling upsert. Stored only while status=running.
+  # AGENT_ATTENTION_DONE_KIND=bg_finished marks demoted-bg done so Lua
+  # focus-ack skips it.
   local running_kind="${AGENT_ATTENTION_RUNNING_KIND:-}"
   local bg_json="${AGENT_ATTENTION_BG_JSON:-}"
+  local done_kind="${AGENT_ATTENTION_DONE_KIND:-}"
   local ts; ts="$(attention_state_now_ms)"
   attention_state_init
   local lock
@@ -310,6 +313,7 @@ attention_state_upsert() {
          --arg gb "$git_branch" \
          --arg wk "$waiting_kind" \
          --arg rk "$running_kind" \
+         --arg dk "$done_kind" \
          --argjson bg "$bg_argjson" \
          --arg lup "$last_user_prompt" \
          --arg an "$agent_name" \
@@ -375,6 +379,10 @@ attention_state_upsert() {
                       then {running_kind: "background", bg: {tasks: $bg}}
                       else {}
                       end)
+                   + (if ($st == "done") and ($dk != "")
+                      then {done_kind: $dk}
+                      else {}
+                      end)
                  ))
              end
            | archive_into_recent($evicted; $ts; $cap; $ttl)
@@ -382,6 +390,7 @@ attention_state_upsert() {
     )"
     attention_state_write "$next"
   ) 9>"$lock"
+  unset AGENT_ATTENTION_DONE_KIND || true
 }
 
 attention_state_remove() {

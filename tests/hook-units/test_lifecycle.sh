@@ -606,6 +606,46 @@ MOCK_HOOK_STDIN='{"session_id":"sid-bg-6","hook_event_name":"Notification","noti
 assert_eq "task_complete last task → done" "done" "$(field_for "$sandbox" "sid-bg-6" "status")"
 rm -rf "$sandbox"
 
+# Case 29 — UserPromptSubmit reconciles sidecar (does not wipe live tasks)
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar"
+printf '%s\n' '{"tasks":{"t-keep":{"type":"shell","summary":"npm run dev","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-7.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-7","hook_event_name":"Stop"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "precondition bg-7 background" "background" "$(field_for "$sandbox" "sid-bg-7" "running_kind")"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-7","prompt":"next question"}' \
+  run_hook_in_sandbox "$sandbox" "running" "" "9" "$socket" "$session" "%5"
+assert_eq "prompt clears running_kind (turn)" "" "$(field_for "$sandbox" "sid-bg-7" "running_kind")"
+sidecar_n="$(jq -r '.tasks|length' \
+  "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-7.json" 2>/dev/null || echo 0)"
+assert_eq "prompt keeps sidecar tasks" "1" "$sidecar_n"
+# Stop again must return to bg-running from surviving sidecar
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-7","hook_event_name":"Stop"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "Stop after prompt → background again" "background" \
+  "$(field_for "$sandbox" "sid-bg-7" "running_kind")"
+rm -rf "$sandbox"
+
+# Case 30 — foreign Stop bump must not demote bg when sidecar still has tasks
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar"
+printf '%s\n' '{"tasks":{"t-hold":{"type":"shell","summary":"watch","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-8.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-8","hook_event_name":"Stop"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "precondition bg-8" "background" "$(field_for "$sandbox" "sid-bg-8" "running_kind")"
+# Re-seed: Stop path may have reconciled; ensure sidecar present for bump.
+printf '%s\n' '{"tasks":{"t-hold":{"type":"shell","summary":"watch","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-8.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-other","hook_event_name":"Stop","reason":"end_turn"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%6"
+assert_eq "foreign Stop leaves bg-8 running_kind" "background" \
+  "$(field_for "$sandbox" "sid-bg-8" "running_kind")"
+assert_eq "foreign Stop leaves bg-8 status running" "running" \
+  "$(field_for "$sandbox" "sid-bg-8" "status")"
+rm -rf "$sandbox"
+
 echo
 if (( fail > 0 )); then
   echo "$pass passed, $fail failed"

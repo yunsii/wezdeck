@@ -2043,7 +2043,23 @@ function M.maybe_ack_focused(window, pane)
           floor_ok = false
         end
       end
+      -- done_kind=bg_finished: bump demoted a bg-running row. Do not
+      -- focus-ack — a false demote while the shell still lives would
+      -- erase ● the moment the user Alt+l's onto the pane (see
+      -- docs/agent-attention.md Background running substate).
+      local skip_bg_finished = (entry.status == M.STATUS_DONE
+        and tostring(entry.done_kind or '') == 'bg_finished')
+      if skip_bg_finished and module_logger then
+        module_logger.info('attention', 'focus ack skipped bg_finished', {
+          session_id = sid,
+          pane_id = pane_id_str,
+          tmux_pane = entry.tmux_pane,
+          reason = entry.reason,
+          ts = entry.ts,
+        })
+      end
       if floor_ok
+        and not skip_bg_finished
         and (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
         and M.is_entry_focused(entry, pane_id_str) then
         local ts = entry.ts

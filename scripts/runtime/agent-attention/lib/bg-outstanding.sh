@@ -297,11 +297,123 @@ bg_reason_from_outstanding() {
   ' <<<"$outstanding_json" 2>/dev/null || printf '%s' 'bg·shell'
 }
 
-# Bump ts + refresh bg snapshot for entries still in running_kind=background
-# whose outstanding set is non-empty. Drops to done (via caller) is NOT done
-# here — emit's next Stop/reconcile owns that. Returns count bumped.
+# Claude session harness status for a session_id: shell|busy|idle|waiting|…
+# Empty when no alive ~/.claude/sessions/*.json matches.
+bg_claude_session_status() {
+  local session_id="$1"
+  [[ -n "$session_id" ]] || { printf ''; return 0; }
+  python3 - "$session_id" <<'PY' 2>/dev/null || true
+import json, glob, os, sys
+sid = sys.argv[1]
+for path in glob.glob(os.path.expanduser("~/.claude/sessions/*.json")):
+    try:
+        d = json.load(open(path))
+    except Exception:
+        continue
+    if (d.get("sessionId") or d.get("session_id")) != sid:
+        continue
+    pid = d.get("pid")
+    if not pid or not os.path.exists(f"/proc/{pid}"):
+        continue
+    print(d.get("status") or "")
+    break
+PY
+}
+
+# Scan Claude tasks dir for non-exited shell outputs → outstanding JSON array.
+bg_live_task_outputs_json() {
+  local session_id="$1" tasks_dir
+  command -v jq >/dev/null 2>&1 || { printf '%s' '[]'; return 0; }
+  tasks_dir="$(bg_claude_tasks_dir "$session_id" 2>/dev/null || true)"
+  if [[ -z "$tasks_dir" || ! -d "$tasks_dir" ]]; then
+    printf '%s' '[]'
+    return 0
+  fi
+  python3 - "$tasks_dir" <<'PY' 2>/dev/null || printf '%s' '[]'
+import json, os, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+out = []
+for p in sorted(root.glob("*.output")):
+    if p.is_symlink():
+        continue
+    try:
+        data = p.read_text(errors="replace")
+    except Exception:
+        continue
+    if "[exited with code" in data:
+        continue
+    name = p.name[: -len(".output")] if p.name.endswith(".output") else p.name
+    out.append({"id": name, "type": "shell", "summary": f"task:{name}"})
+print(json.dumps(out, ensure_ascii=False))
+PY
+}
+
+# Merge sidecar collect + entry.bg.tasks + live task outputs.
+# Usage: bg_collect_outstanding_rich <session_id> [stdin_json] [entry_bg_tasks_json]
+bg_collect_outstanding_rich() {
+  local session_id="$1" stdin_json="${2:-}" entry_tasks="${3:-[]}"
+  local from_side from_live
+  command -v jq >/dev/null 2>&1 || { printf '%s' '[]'; return 0; }
+  from_side="$(bg_collect_outstanding "$session_id" "$stdin_json")"
+  from_live="$(bg_live_task_outputs_json "$session_id")"
+  if [[ -z "$entry_tasks" ]] || ! printf '%s' "$entry_tasks" | jq -e . >/dev/null 2>&1; then
+    entry_tasks='[]'
+  fi
+  jq -c -n --argjson side "$from_side" --argjson live "$from_live" \
+    --argjson entry "$entry_tasks" '
+      ($entry
+        | if type == "array" then .
+          elif type == "object" and (.tasks | type) == "array" then .tasks
+          else [] end
+      ) as $ent
+      | ($side + $live + $ent)
+      | map({id:(.id//""), type:(.type//"shell"), summary:(.summary//"")})
+      | map(select(.id != ""))
+      | unique_by(.id)
+    ' 2>/dev/null || printf '%s' '[]'
+}
+
+# Recover outstanding when sidecar was cleared but Claude still in shell /
+# task outputs are still open. Used by Stop gate and bump demote guard.
+bg_recover_if_shell_alive() {
+  local session_id="$1" entry_tasks="${2:-[]}"
+  local st live
+  st="$(bg_claude_session_status "$session_id")"
+  live="$(bg_live_task_outputs_json "$session_id")"
+  if [[ "$st" == "shell" ]]; then
+    if [[ "$(jq -r 'length // 0' <<<"$live" 2>/dev/null || echo 0)" -eq 0 ]]; then
+      # status=shell but no task files yet — keep a placeholder so Stop
+      # does not drop to done while harness says shell.
+      live="$(jq -cn --arg sid "$session_id" \
+        '[{id:("shell-"+($sid|.[0:8])), type:"shell", summary:"claude status=shell"}]')"
+    fi
+    # Re-seed sidecar from recovered list so later bumps see them.
+    if command -v jq >/dev/null 2>&1; then
+      while IFS= read -r row; do
+        [[ -n "$row" ]] || continue
+        local id typ sum
+        id="$(jq -r '.id // empty' <<<"$row")"
+        typ="$(jq -r '.type // "shell"' <<<"$row")"
+        sum="$(jq -r '.summary // empty' <<<"$row")"
+        [[ -n "$id" ]] && bg_sidecar_add "$session_id" "$id" "$typ" "$sum"
+      done < <(jq -c '.[]' <<<"$live" 2>/dev/null || true)
+    fi
+    printf '%s' "$live"
+    return 0
+  fi
+  # Not shell: still return live non-exited outputs if any.
+  if [[ "$(jq -r 'length // 0' <<<"$live" 2>/dev/null || echo 0)" -gt 0 ]]; then
+    printf '%s' "$live"
+    return 0
+  fi
+  printf '%s' '[]'
+}
+
+# Bump ts for bg-running entries. Demote to done only when outstanding is
+# empty AND Claude is not status=shell AND no live task outputs remain.
 bg_bump_alive_entries() {
-  local path lock current next now count
+  local path lock current next now
   command -v jq >/dev/null 2>&1 || return 0
   path="$(attention_state_path)"
   [[ -f "$path" ]] || return 0
@@ -310,14 +422,27 @@ bg_bump_alive_entries() {
   (
     flock -x 9
     current="$(attention_state_read)"
-    # For each background entry, reconcile sidecar and refresh ts/bg when
-    # still outstanding; demote to done when empty (so TTL/focus paths see
-    # a terminal state without waiting for another Stop).
     next="$current"
     while IFS= read -r sid; do
       [[ -n "$sid" ]] || continue
-      outstanding="$(bg_collect_outstanding "$sid" "")"
-      if [[ "$(jq -r 'length' <<<"$outstanding" 2>/dev/null || echo 0)" -gt 0 ]]; then
+      entry_tasks="$(jq -c --arg sid "$sid" '
+        (.entries[$sid].bg.tasks // [])
+      ' <<<"$current" 2>/dev/null || printf '%s' '[]')"
+      outstanding="$(bg_collect_outstanding_rich "$sid" "" "$entry_tasks")"
+      n="$(jq -r 'length // 0' <<<"${outstanding:-[]}" 2>/dev/null || echo 0)"
+      if [[ "${n:-0}" -eq 0 ]]; then
+        recovered="$(bg_recover_if_shell_alive "$sid" "$entry_tasks")"
+        n="$(jq -r 'length // 0' <<<"${recovered:-[]}" 2>/dev/null || echo 0)"
+        if [[ "${n:-0}" -gt 0 ]]; then
+          outstanding="$recovered"
+          if declare -F runtime_log_info >/dev/null 2>&1; then
+            runtime_log_info attention "bg bump recover shell/live" \
+              "session_id=$sid" "bg_count=$n" \
+              "claude_status=$(bg_claude_session_status "$sid")" 2>/dev/null || true
+          fi
+        fi
+      fi
+      if [[ "${n:-0}" -gt 0 ]]; then
         next="$(jq -c --arg sid "$sid" --argjson ts "$now" --argjson tasks "$outstanding" \
           --arg reason "$(bg_reason_from_outstanding "$outstanding")" '
             if (.entries[$sid] // null) == null then .
@@ -327,20 +452,50 @@ bg_bump_alive_entries() {
               | .entries[$sid].status = "running"
               | .entries[$sid].bg = {tasks: $tasks}
               | .entries[$sid].reason = $reason
+              | del(.entries[$sid].done_kind)
             end
           ' <<<"$next")" || true
+        if declare -F runtime_log_info >/dev/null 2>&1; then
+          runtime_log_info attention "bg bump kept" \
+            "session_id=$sid" "bg_count=$n" 2>/dev/null || true
+        fi
       else
-        # No outstanding left: flip to done in place (keep sticky fields).
+        claude_st="$(bg_claude_session_status "$sid")"
+        # Hard hold: never demote while Claude still reports shell.
+        if [[ "$claude_st" == "shell" ]]; then
+          next="$(jq -c --arg sid "$sid" --argjson ts "$now" '
+            if (.entries[$sid] // null) == null then .
+            else
+              .entries[$sid].ts = $ts
+              | .entries[$sid].running_kind = "background"
+              | .entries[$sid].status = "running"
+              | .entries[$sid].reason = "bg·shell (claude status=shell)"
+              | del(.entries[$sid].done_kind)
+            end
+          ' <<<"$next")" || true
+          if declare -F runtime_log_warn >/dev/null 2>&1; then
+            runtime_log_warn attention "bg bump demote skipped" \
+              "session_id=$sid" "reason=claude_status_shell" \
+              "claude_status=$claude_st" 2>/dev/null || true
+          fi
+          continue
+        fi
         next="$(jq -c --arg sid "$sid" --argjson ts "$now" '
             if (.entries[$sid] // null) == null then .
             else
               .entries[$sid].status = "done"
               | .entries[$sid].reason = "bg finished"
+              | .entries[$sid].done_kind = "bg_finished"
               | .entries[$sid].ts = $ts
               | del(.entries[$sid].running_kind, .entries[$sid].bg)
             end
           ' <<<"$next")" || true
         bg_sidecar_clear "$sid"
+        if declare -F runtime_log_info >/dev/null 2>&1; then
+          runtime_log_info attention "bg bump demoted" \
+            "session_id=$sid" "claude_status=${claude_st:-}" \
+            "done_kind=bg_finished" 2>/dev/null || true
+        fi
       fi
     done < <(jq -r '
       (.entries // {}) | to_entries[]

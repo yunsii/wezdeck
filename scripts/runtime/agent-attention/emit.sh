@@ -365,17 +365,42 @@ fi
 bg_bump_alive_entries 2>/dev/null || true
 attention_state_prune 1800000 2>/dev/null || true
 
-# New turn: drop bg substate + sidecar so PostToolUse re-opens cleanly.
+# New turn: do NOT wipe sidecar. Reconcile exited tasks; keep outstanding
+# so a later Stop can still land on running_kind=background. Turn display
+# stays plain running (running_kind cleared) while the agent is mid-turn.
 if [[ "$status" == "running" ]]; then
   unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
-  bg_sidecar_clear "$session_id" 2>/dev/null || true
+  _bg_before="$(bg_sidecar_list_json "$session_id" 2>/dev/null || printf '%s' '[]')"
+  _bg_reconciled="$(bg_reconcile_claude_sidecar "$session_id" 2>/dev/null || printf '%s' '[]')"
+  _bg_n="$(jq -r 'length // 0' <<<"${_bg_reconciled:-[]}" 2>/dev/null || printf '0')"
+  _bg_before_n="$(jq -r 'length // 0' <<<"${_bg_before:-[]}" 2>/dev/null || printf '0')"
+  if [[ "${_bg_before_n:-0}" -gt 0 || "${_bg_n:-0}" -gt 0 ]]; then
+    runtime_log_info attention "bg sidecar reconciled on prompt" \
+      "session_id=$session_id" \
+      "before_count=${_bg_before_n:-0}" \
+      "after_count=${_bg_n:-0}" \
+      "raw_event=${raw_event:-}" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+  fi
 fi
 
 # Stop: if harness still has outstanding shell bg, stay on ● running
 # with running_kind=background instead of done.
 if [[ "$status" == "done" ]]; then
-  _bg_outstanding="$(bg_collect_outstanding "$session_id" "${stdin_payload:-}" 2>/dev/null || printf '%s' '[]')"
+  _bg_entry_tasks="$(jq -r --arg sid "$session_id" \
+    '.entries[$sid].bg.tasks // []' "$(attention_state_path)" 2>/dev/null || printf '%s' '[]')"
+  _bg_outstanding="$(bg_collect_outstanding_rich "$session_id" "${stdin_payload:-}" \
+    "${_bg_entry_tasks:-[]}" 2>/dev/null || printf '%s' '[]')"
   _bg_n="$(jq -r 'length // 0' <<<"${_bg_outstanding:-[]}" 2>/dev/null || printf '0')"
+  _bg_recover=0
+  if [[ "${_bg_n:-0}" -eq 0 ]]; then
+    _bg_outstanding="$(bg_recover_if_shell_alive "$session_id" "${_bg_entry_tasks:-[]}" \
+      2>/dev/null || printf '%s' '[]')"
+    _bg_n="$(jq -r 'length // 0' <<<"${_bg_outstanding:-[]}" 2>/dev/null || printf '0')"
+    if [[ "${_bg_n:-0}" -gt 0 ]]; then
+      _bg_recover=1
+    fi
+  fi
   if [[ "${_bg_n:-0}" -gt 0 ]]; then
     status="running"
     export AGENT_ATTENTION_RUNNING_KIND=background
@@ -385,12 +410,19 @@ if [[ "$status" == "done" ]]; then
       "provider=$provider" \
       "session_id=$session_id" \
       "bg_count=$_bg_n" \
+      "bg_recover=$_bg_recover" \
+      "claude_status=$(bg_claude_session_status "$session_id" 2>/dev/null || true)" \
       "reason=$reason" \
       "wezterm_pane=${WEZTERM_PANE:-}" \
       "tmux_pane=${tmux_pane:-}" \
       "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
   else
     unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
+    runtime_log_info attention "stop cleared; no outstanding bg" \
+      "provider=$provider" \
+      "session_id=$session_id" \
+      "claude_status=$(bg_claude_session_status "$session_id" 2>/dev/null || true)" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
   fi
 fi
 
@@ -421,8 +453,11 @@ if [[ "$status" == "bg-complete" ]]; then
     reason="bg finished"
     unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
     bg_sidecar_clear "$session_id" 2>/dev/null || true
+    # Mark so Lua focus-ack skips (same as bump demote).
+    export AGENT_ATTENTION_DONE_KIND=bg_finished
     runtime_log_info attention "bg task_complete; cleared" \
       "session_id=$session_id" "done_id=${_bg_done_id:-}" \
+      "done_kind=bg_finished" \
       "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
   fi
 fi
