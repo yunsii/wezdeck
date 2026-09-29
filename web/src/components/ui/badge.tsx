@@ -10,12 +10,16 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-brand-border text-brand-text',
-        ready: 'border-brand-done/40 text-brand-done',
-        warning: 'border-brand-waiting/45 text-brand-waiting',
-        loading: 'border-brand-waiting/45 text-brand-waiting',
-        offline: 'border-brand-error/45 text-brand-error',
-        outline: 'border-brand-border text-brand-muted',
+        // Tinted fills match local interactive chips (Button warning /
+        // overview alerts): border + soft bg + semantic text.
+        default: 'border-brand-border bg-brand-soft text-brand-text',
+        ready: 'border-brand-done/40 bg-brand-done/10 text-brand-done',
+        warning:
+          'border-brand-waiting/45 bg-brand-waiting/10 text-brand-waiting',
+        loading:
+          'border-brand-running/45 bg-brand-running/10 text-brand-running',
+        offline: 'border-brand-error/45 bg-brand-error/10 text-brand-error',
+        outline: 'border-brand-border bg-transparent text-brand-muted',
       },
       size: {
         default: 'h-7 px-2.5 text-[length:var(--text-meta)]',

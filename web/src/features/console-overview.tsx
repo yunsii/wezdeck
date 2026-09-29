@@ -89,7 +89,7 @@ export function ConsoleOverviewPage() {
     },
   ]
   const dot = {
-    loading: 'bg-brand-waiting',
+    loading: 'bg-brand-running',
     ready: 'bg-brand-done',
     warning: 'bg-brand-waiting',
     offline: 'bg-brand-error',

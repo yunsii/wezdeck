@@ -19,7 +19,7 @@ param(
 
   [int]$HttpPort = 35791,
 
-  [string]$HttpAllowedOrigins = 'https://*.vercel.app,http://localhost:3000,http://127.0.0.1:3000',
+  [string]$HttpAllowedOrigins = 'https://*.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001',
 
   [string]$DiagnosticsEnabled = '0',
 

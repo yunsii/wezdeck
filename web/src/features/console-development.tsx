@@ -27,6 +27,9 @@ type CatalogRow = {
   cwd: string
   name: string
   worktrees: Worktree[]
+  /** Live attention entries for this repo (may be multiple worktree panes). */
+  liveSessions: AgentSession[]
+  /** Preferred detail/jump target: live first, else most recent archive. */
   session?: AgentSession
   recent: boolean
 }
@@ -202,6 +205,8 @@ export function ConsoleDevelopmentPage() {
           items={activeGroup.items.map((item) => ({
             value: item.name,
             label: item.name,
+            // Same as landing Example: only current live attention status.
+            tone: repoTone(item),
           }))}
           onChange={(next) => {
             const repo = activeGroup.items.find((item) => item.name === next)
@@ -224,6 +229,7 @@ export function ConsoleDevelopmentPage() {
             items={trees.map((tree) => ({
               value: tree.path,
               label: tree.name,
+              tone: worktreeTone(activeRepo, tree),
             }))}
             onChange={(next) => {
               setWorktreePath(next)
@@ -281,6 +287,8 @@ function writeRememberedSelection(value: {
   window.localStorage.setItem(selectionKey, JSON.stringify(value))
 }
 
+type TabTone = 'running' | 'waiting' | 'done'
+
 function LevelTabs({
   label,
   value,
@@ -289,7 +297,7 @@ function LevelTabs({
 }: {
   label: string
   value: string
-  items: Array<{ value: string; label: string }>
+  items: Array<{ value: string; label: string; tone?: TabTone }>
   onChange: (value: string) => void
 }) {
   if (items.length === 0) return null
@@ -307,6 +315,7 @@ function LevelTabs({
         <Toggle
           key={item.value}
           value={item.value}
+          variant={item.tone ?? 'default'}
           className="rounded-none px-3 text-sm"
         >
           {item.label}
@@ -314,6 +323,52 @@ function LevelTabs({
       ))}
     </ToggleGroup>
   )
+}
+
+/** Live attention only — never recent/last_status (landing Example rule). */
+function liveTone(status: string | undefined): TabTone | undefined {
+  const raw = (status || '').toLowerCase()
+  if (raw === 'waiting' || raw === 'running' || raw === 'done') return raw
+  return undefined
+}
+
+function pickTone(tones: Array<TabTone | undefined>): TabTone | undefined {
+  const present = tones.filter((tone): tone is TabTone => Boolean(tone))
+  if (present.includes('waiting')) return 'waiting'
+  if (present.includes('running')) return 'running'
+  if (present.includes('done')) return 'done'
+  return undefined
+}
+
+function repoTone(row: CatalogRow): TabTone | undefined {
+  return pickTone(row.liveSessions.map((session) => liveTone(session.status)))
+}
+
+function worktreeMatchesSession(tree: Worktree, session: AgentSession) {
+  const branch = session.git_branch || ''
+  const windowName = session.tmux_window_name || ''
+  if (branch && tree.branch && branch === tree.branch) return true
+  if (windowName && tree.name && windowName === tree.name) return true
+  // Branch slugs often use '/' while worktree names use '-'.
+  if (branch && tree.name && branch.replaceAll('/', '-') === tree.name)
+    return true
+  if (windowName && tree.branch && windowName.replaceAll('-', '/') === tree.branch)
+    return true
+  return false
+}
+
+function worktreeTone(row: CatalogRow, tree: Worktree): TabTone | undefined {
+  const matched = row.liveSessions.filter((session) =>
+    worktreeMatchesSession(tree, session),
+  )
+  if (matched.length > 0) {
+    return pickTone(matched.map((session) => liveTone(session.status)))
+  }
+  // One worktree in the repo ⇒ the live pane belongs to it.
+  if (row.worktrees.length === 1) {
+    return pickTone(row.liveSessions.map((session) => liveTone(session.status)))
+  }
+  return undefined
 }
 
 function WorktreeStatus({
@@ -442,7 +497,8 @@ function catalogRows(
 ): CatalogRow[] {
   return catalog.flatMap((workspace) =>
     workspace.items.map((item) => {
-      const live = entries.find((entry) => sessionMatches(entry, item))
+      const liveSessions = entries.filter((entry) => sessionMatches(entry, item))
+      const live = liveSessions[0]
       const archived = recent.find((entry) => sessionMatches(entry, item))
       const worktrees =
         item.worktrees.length > 0
@@ -461,6 +517,7 @@ function catalogRows(
         cwd: item.cwd,
         name: item.name,
         worktrees,
+        liveSessions,
         session: live ?? archived,
         recent: !live && Boolean(archived),
       }

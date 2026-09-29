@@ -461,6 +461,59 @@ body {
   );
 }
 
+/* State fills for Example tabs. Classes are is-running|waiting|done on
+   .landing-deck-tab (JSX); older .landing-deck-slot rules stay as aliases. */
+.landing-deck-tab.is-running,
+.landing-deck-slot.is-running {
+  border-color: color-mix(in srgb, var(--landing-cyan) 45%, var(--brand-figure-border));
+  background: color-mix(in srgb, var(--landing-cyan) 14%, var(--brand-figure-surface));
+}
+
+.landing-deck-tab.is-running .landing-deck-state,
+.landing-deck-slot.is-running .landing-deck-state {
+  background: var(--landing-cyan);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--landing-cyan) 18%, transparent);
+}
+
+.landing-deck-tab.is-running[aria-selected='true'] {
+  border-color: var(--landing-cyan);
+  background: color-mix(in srgb, var(--landing-cyan) 24%, var(--brand-figure-surface));
+}
+
+.landing-deck-tab.is-waiting,
+.landing-deck-slot.is-waiting {
+  border-color: color-mix(in srgb, var(--landing-waiting) 45%, var(--brand-figure-border));
+  background: color-mix(in srgb, var(--landing-waiting) 14%, var(--brand-figure-surface));
+}
+
+.landing-deck-tab.is-waiting .landing-deck-state,
+.landing-deck-slot.is-waiting .landing-deck-state {
+  background: var(--landing-waiting);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--landing-waiting) 18%, transparent);
+}
+
+.landing-deck-tab.is-waiting[aria-selected='true'] {
+  border-color: var(--landing-waiting);
+  background: color-mix(in srgb, var(--landing-waiting) 24%, var(--brand-figure-surface));
+}
+
+.landing-deck-tab.is-done,
+.landing-deck-slot.is-done {
+  border-color: color-mix(in srgb, var(--landing-done) 45%, var(--brand-figure-border));
+  background: color-mix(in srgb, var(--landing-done) 14%, var(--brand-figure-surface));
+}
+
+.landing-deck-tab.is-done .landing-deck-state,
+.landing-deck-slot.is-done .landing-deck-state {
+  background: var(--landing-done);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--landing-done) 18%, transparent);
+}
+
+.landing-deck-tab.is-done[aria-selected='true'] {
+  border-color: var(--landing-done);
+  background: color-mix(in srgb, var(--landing-done) 24%, var(--brand-figure-surface));
+}
+
 .landing-deck-detail {
   border-top: 1px solid var(--brand-figure-border);
   padding: 14px;
@@ -503,28 +556,6 @@ body {
   height: 7px;
   border-radius: 999px;
   background: #8c9b94;
-}
-
-.landing-deck-slot.is-running {
-  border-color: rgba(120, 219, 224, 0.38);
-}
-
-.landing-deck-slot.is-running .landing-deck-state {
-  background: var(--landing-cyan);
-  box-shadow: 0 0 0 4px rgba(120, 219, 224, 0.1);
-}
-
-.landing-deck-slot.is-waiting {
-  border-color: rgba(239, 196, 109, 0.38);
-}
-
-.landing-deck-slot.is-waiting .landing-deck-state {
-  background: var(--landing-waiting);
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.1);
-}
-
-.landing-deck-slot.is-done .landing-deck-state {
-  background: var(--landing-done);
 }
 
 .landing-deck-slot > strong {
