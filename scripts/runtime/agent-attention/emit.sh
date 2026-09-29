@@ -30,6 +30,8 @@ repo_root="$(cd "$script_dir/../../.." && pwd)"
 # shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/attention-state-lib.sh"
 # shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/agent-attention/lib/bg-outstanding.sh"
+# shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/runtime-log-lib.sh"
 WEZTERM_RUNTIME_LOG_SOURCE="agent-attention-emit.sh"
 
@@ -248,7 +250,11 @@ if [[ "$status" == "waiting" ]]; then
     esac
   fi
 
-  if (( allow_waiting == 0 )); then
+  # Grok task_complete: bg-outstanding side path (not waiting). Handled
+  # after session_id is finalized below — mark and fall through.
+  if [[ "$ntype" == "task_complete" ]]; then
+    status="bg-complete"
+  elif (( allow_waiting == 0 )); then
     runtime_log_info attention "notification ignored" \
       "provider=$provider" \
       "raw_event=$raw_event" \
@@ -354,9 +360,75 @@ if command -v git >/dev/null 2>&1; then
   fi
 fi
 
+# Refresh ts for long-lived bg-running entries before TTL prune so
+# npm run dev-style shells keep ● while still outstanding.
+bg_bump_alive_entries 2>/dev/null || true
 attention_state_prune 1800000 2>/dev/null || true
 
+# New turn: drop bg substate + sidecar so PostToolUse re-opens cleanly.
+if [[ "$status" == "running" ]]; then
+  unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
+  bg_sidecar_clear "$session_id" 2>/dev/null || true
+fi
+
+# Stop: if harness still has outstanding shell bg, stay on ● running
+# with running_kind=background instead of done.
+if [[ "$status" == "done" ]]; then
+  _bg_outstanding="$(bg_collect_outstanding "$session_id" "${stdin_payload:-}" 2>/dev/null || printf '%s' '[]')"
+  _bg_n="$(jq -r 'length // 0' <<<"${_bg_outstanding:-[]}" 2>/dev/null || printf '0')"
+  if [[ "${_bg_n:-0}" -gt 0 ]]; then
+    status="running"
+    export AGENT_ATTENTION_RUNNING_KIND=background
+    export AGENT_ATTENTION_BG_JSON="$_bg_outstanding"
+    reason="$(bg_reason_from_outstanding "$_bg_outstanding")"
+    runtime_log_info attention "stop deferred to bg-running" \
+      "provider=$provider" \
+      "session_id=$session_id" \
+      "bg_count=$_bg_n" \
+      "reason=$reason" \
+      "wezterm_pane=${WEZTERM_PANE:-}" \
+      "tmux_pane=${tmux_pane:-}" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+  else
+    unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
+  fi
+fi
+
+# Grok Notification task_complete → reconcile; done if empty else refresh bg.
+if [[ "$status" == "bg-complete" ]]; then
+  # Prefer explicit task id from payload when present.
+  _bg_done_id=""
+  if [[ -n "${stdin_payload:-}" ]] && command -v jq >/dev/null 2>&1; then
+    _bg_done_id="$(printf '%s' "$stdin_payload" | jq -r '
+      .task_id // .taskId // .id // .backgroundTaskId // .background_task_id // empty
+    ' 2>/dev/null || true)"
+  fi
+  if [[ -n "$_bg_done_id" ]]; then
+    bg_sidecar_remove_ids "$session_id" "$_bg_done_id" 2>/dev/null || true
+  fi
+  _bg_outstanding="$(bg_collect_outstanding "$session_id" "" 2>/dev/null || printf '%s' '[]')"
+  _bg_n="$(jq -r 'length // 0' <<<"${_bg_outstanding:-[]}" 2>/dev/null || printf '0')"
+  if [[ "${_bg_n:-0}" -gt 0 ]]; then
+    status="running"
+    export AGENT_ATTENTION_RUNNING_KIND=background
+    export AGENT_ATTENTION_BG_JSON="$_bg_outstanding"
+    reason="$(bg_reason_from_outstanding "$_bg_outstanding")"
+    runtime_log_info attention "bg task_complete; still outstanding" \
+      "session_id=$session_id" "bg_count=$_bg_n" "done_id=${_bg_done_id:-}" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+  else
+    status="done"
+    reason="bg finished"
+    unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
+    bg_sidecar_clear "$session_id" 2>/dev/null || true
+    runtime_log_info attention "bg task_complete; cleared" \
+      "session_id=$session_id" "done_id=${_bg_done_id:-}" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+  fi
+fi
+
 if [[ "$status" == "cleared" ]]; then
+  bg_sidecar_clear "$session_id" 2>/dev/null || true
   attention_state_remove "$session_id" 2>/dev/null || true
 elif [[ "$status" == "pane-evict" ]]; then
   # SessionStart source=clear: the new session_id in stdin is for the
@@ -378,6 +450,9 @@ elif [[ "$status" == "pane-evict" ]]; then
   # session, leaving A invisible in both the picker and the counter.
   attention_state_evict_session "$tmux_socket" "$tmux_session" "$session_id" \
     "$tmux_pane" 2>/dev/null || true
+  # Best-effort: drop sidecar for the post-clear session id. Pre-clear
+  # orphans age out via reconcile / next Stop.
+  bg_sidecar_clear "$session_id" 2>/dev/null || true
 elif [[ "$status" == "resolved" ]]; then
   # Wired to BOTH PreToolUse and PostToolUse. The two hooks fire at
   # different lifecycle points and cover different transitions; they
@@ -433,6 +508,45 @@ elif [[ "$status" == "resolved" ]]; then
     exit 0
   fi
 
+  # Bash run_in_background / backgroundTaskId → sidecar (even on no-op
+  # transition). Stop later reads this to keep ● running.
+  if bg_track_from_tool_payload "$session_id" "${stdin_payload:-}" 2>/dev/null; then
+    runtime_log_info attention "bg sidecar opened from tool" \
+      "provider=$provider" \
+      "session_id=$session_id" \
+      "raw_event=$raw_event" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+  fi
+
+  # Auto-wake while badge shows bg-running: promote to turn-running.
+  # transition_to_running no-ops when status is already running.
+  _promoted_bg=0
+  if [[ "$_resolved_status" == "running" ]]; then
+    _rk="$(jq -r --arg sid "$session_id" \
+      '.entries[$sid].running_kind // ""' "$(attention_state_path)" 2>/dev/null || printf '')"
+    if [[ "$_rk" == "background" ]]; then
+      _promote_ts="$(attention_state_now_ms)"
+      (
+        flock -x 9
+        _cur="$(attention_state_read)"
+        _next="$(jq -c --arg sid "$session_id" --argjson ts "$_promote_ts" '
+          if (.entries[$sid] // null) == null then .
+          else
+            .entries[$sid].status = "running"
+            | .entries[$sid].ts = $ts
+            | .entries[$sid].reason = "running…"
+            | del(.entries[$sid].running_kind, .entries[$sid].bg)
+          end
+        ' <<<"$_cur")"
+        attention_state_write "$_next"
+      ) 9>"$(attention_state_lock_path)"
+      _promoted_bg=1
+      runtime_log_info attention "bg-running promoted to turn-running" \
+        "session_id=$session_id" "raw_event=$raw_event" \
+        "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+    fi
+  fi
+
   if ! attention_state_transition_to_running \
       "$session_id" \
       "${WEZTERM_PANE:-}" \
@@ -442,19 +556,23 @@ elif [[ "$status" == "resolved" ]]; then
       "$tmux_pane" \
       "$git_branch" \
       2>/dev/null; then
-    noop_emit_ts_ms="$(date +%s%3N 2>/dev/null || printf '')"
-    noop_elapsed_ms=''
-    if [[ -n "$entry_ts_ms" && -n "$noop_emit_ts_ms" ]]; then
-      noop_elapsed_ms=$(( noop_emit_ts_ms - entry_ts_ms ))
+    if [[ "$_promoted_bg" -eq 1 ]]; then
+      : # fall through to OSC tick so Lua reloads without running_kind
+    else
+      noop_emit_ts_ms="$(date +%s%3N 2>/dev/null || printf '')"
+      noop_elapsed_ms=''
+      if [[ -n "$entry_ts_ms" && -n "$noop_emit_ts_ms" ]]; then
+        noop_elapsed_ms=$(( noop_emit_ts_ms - entry_ts_ms ))
+      fi
+      runtime_log_info attention "hook resolved no-op" \
+        "status=$status" \
+        "session_id=$session_id" \
+        "wezterm_pane=${WEZTERM_PANE:-}" \
+        "tmux_pane=$tmux_pane" \
+        "entry_ts_ms=$entry_ts_ms" \
+        "elapsed_ms=$noop_elapsed_ms" 2>/dev/null || true
+      exit 0
     fi
-    runtime_log_info attention "hook resolved no-op" \
-      "status=$status" \
-      "session_id=$session_id" \
-      "wezterm_pane=${WEZTERM_PANE:-}" \
-      "tmux_pane=$tmux_pane" \
-      "entry_ts_ms=$entry_ts_ms" \
-      "elapsed_ms=$noop_elapsed_ms" 2>/dev/null || true
-    exit 0
   fi
 else
   # Focus-skip: when this firing pane IS the currently-focused tmux

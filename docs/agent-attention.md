@@ -90,7 +90,7 @@ Substitute the absolute path for your clone if different. `jq` is optional — w
 
 - `UserPromptSubmit → running` lights the `⟳ N running` counter the moment a turn begins so the user can see at a glance which panes are mid-turn.
 - `Notification → waiting` raises the `⚠ N waiting` counter **only** for an allowlisted user-action type: `permission_prompt`, `elicitation_dialog`, or Grok's `approval_required`. Everything else on the Notification path is ignored — including empty `notification_type`, Claude's `idle_prompt` / `auth_success`, and Grok's `turn_complete` / `task_complete` / `session_ready`. Stop owns turn-end (`done`); idle is not a turn-end signal (a Monitor subscription can stay mid-turn while idle). Sticky: a second `waiting` on a session whose current status is already `waiting` is a no-op, so repeated prompts inside one turn do not oscillate the counter.
-- `Stop → done` flips the entry to `done` when the turn ends, so the `✓ N done` counter surfaces work that finished while you were elsewhere. The companion `tmux-status-refresh.sh --force --refresh-client` invocation forces a final tmux status repaint so any git/branch state the turn touched lands within a tick instead of waiting on the 30s poll.
+- `Stop → done` flips the entry to `done` when the turn ends **and no harness shell background tasks remain**, so the `✓ N done` counter surfaces work that finished while you were elsewhere. If Claude sidecar / Grok `backgroundTasks` still lists allowed types (default `shell`), Stop keeps `status=running` with `running_kind=background` instead — see [*Background running substate*](#background-running-substate). The companion `tmux-status-refresh.sh --force --refresh-client` invocation forces a final tmux status repaint so any git/branch state the turn touched lands within a tick instead of waiting on the 30s poll.
 - `PreToolUse → resolved` covers the **Monitor wake-up** path: after a prior turn's `Stop` wrote `done`, an async event delivered to a streaming Monitor subscription can wake the agent, and its first tool call needs to flip `done → running` so the counter reflects that Claude is mid-turn again. `PreToolUse` fires once when the agent decides to call a tool — *before* any permission prompt and *before* tool execution — so this is the earliest signal we have for "agent woke up". For the auto-allowed common case where the entry is already `running`, the hook short-circuits via the fast path (`running` is a no-op) and emits a single `hook resolved no-op` log line for the diagnostics trail. **Note**: `PreToolUse` does *not* signal "user approved a permission prompt" — see *Limitation: no signal for permission approval* below.
 - `PostToolUse → resolved` is the only signal that flips `waiting → running` after the user has approved a permission prompt. The hook fires when the tool **completes**, not when it starts, so the badge stays on `⚠ waiting` for the entire tool-execution window — milliseconds for fast tools, minutes for long Bash. It also serves as a belt-and-suspenders for the Monitor wake-up `done → running` flip (PreToolUse usually beats it; the redundancy is free because the second firing short-circuits on `running`). The companion `tmux-status-refresh.sh --force --refresh-client` invocation forces tmux to recompute the status segment after each tool call so file edits / `git` Bash calls reflect immediately; PostToolUse spam is absorbed by the script's 2s `@tmux_status_force_debounce` window.
 - `SessionStart (matcher: "clear") → pane-evict` drops every entry on the current `(tmux_socket, tmux_session, tmux_pane)` when the user runs `/clear`. Without this hook, the discarded session's `running` entry has no mechanism of its own to leave state.json — `/clear` does not fire `Stop` and the session_id resets, so the stale `⟳` sits until the 30-minute TTL or until the next `UserPromptSubmit` on the same pane triggers same-pane eviction. Eviction keys on `tmux_pane` (the firing pane), not the broader `tmux_session`, because split-pane setups can host more than one Claude in the same tmux session — keying on session alone caused `/clear` in pane B to silently archive pane A's still-live entry. tmux pane ids (`%N`) are server-internal monotonic identifiers that survive split-window / swap-pane / break-pane (only true pane destruction recycles them), so they are stable enough to be the key. The matcher is scoped to `clear` so `startup` / `resume` / `compact` SessionStart variants do not touch session state.
@@ -375,9 +375,10 @@ stateDiagram-v2
   waiting --> running: PostToolUse only (resolved)\n[fires when tool completes —\nthe only signal that user\napproved a permission prompt]
   done --> running: PreToolUse (resolved)\n[Monitor wake-up — earliest signal]
   done --> running: PostToolUse (resolved)\n[Monitor wake-up — belt-and-suspenders]
-  running --> done: Stop
+  running --> done: Stop when bg empty
+  running --> running: Stop with outstanding bg\n[sets running_kind=background]
   waiting --> done: Stop
-  running --> running: PreToolUse / PostToolUse\n[no-op: already running]
+  running --> running: PreToolUse / PostToolUse\n[no-op if already running]
   done --> [*]: focus-ack / Alt+k / TTL /\nsame-session eviction
   waiting --> [*]: Alt+/ / TTL /\nsame-session eviction
   note right of waiting
@@ -582,6 +583,33 @@ Pair these with the `hook emitted agent status` lines from `emit-agent-status.sh
 ## Performance
 
 The Alt+/ popup is the hottest chord on this surface (50-100+ presses/day) and the entire popup hot path has its own performance contract, bench harness, and cross-FS routing rule. See [`performance.md`](./performance.md).
+
+## Background running substate
+
+After `Stop`, harness-registered **shell** background tasks keep the entry on
+`status=running` with `running_kind=background` (same `●` counter; reason
+prefix `bg·shell:`). Long-lived servers stay on `●` while outstanding; emit
+bumps `ts` before the 30-minute TTL prune. Not a fourth status.
+
+| Provider | Open account | Stop gate | Clear |
+| --- | --- | --- | --- |
+| Claude | `PreToolUse`/`PostToolUse` Bash `run_in_background` / `backgroundTaskId` → sidecar | sidecar after reconcile of `/tmp/claude-*/…/tasks/<id>.output` | `UserPromptSubmit`; task output `[exited with code…]`; promote on tool wake |
+| Grok | optional sidecar + `Stop.backgroundTasks[]` | merge Stop payload ∪ sidecar; default `type=shell` only | `Notification` `task_complete`; empty outstanding → `done` |
+| Codex | unsupported (Stop stays `done`) | — | — |
+
+Env: `WEZTERM_ATTENTION_BG_TYPES` (default `shell`; comma-list may add
+`monitor` / `subagent`). Sidecar dir:
+`<state>/agent-attention/bg-sidecar/<session_id>.json`. Lib:
+`scripts/runtime/agent-attention/lib/bg-outstanding.sh`.
+
+Probe (dry-run / schema):
+
+```bash
+scripts/dev/attention-bg-probe.sh
+scripts/dev/attention-bg-probe.sh --grok-capture-help
+scripts/dev/attention-bg-probe.sh --provider grok \
+  --validate-grok-stop /path/to/stop-stdin.json
+```
 
 ## Smoke test
 

@@ -24,6 +24,10 @@
 #                          # elicitation_dialog (Grok fires PostToolUse while
 #                          # the Ask dialog is still on screen); the prompt
 #                          # watcher / Stop / next UserPromptSubmit clear it.
+#         "running_kind":   "<optional; only while status=running>",
+#                          # empty/absent = turn-running; "background" =
+#                          # turn ended but harness bg shell still live.
+#         "bg":             <optional object; outstanding bg tasks snapshot>
 #         "ts":             <epoch ms>
 #       }
 #     },
@@ -242,6 +246,11 @@ attention_state_upsert() {
   local last_user_prompt="${11:-}"
   local agent_name="${12:-}"
   local tmux_window_name="${13:-}"
+  # Background running substate (avoid a 14th positional): emit sets
+  # AGENT_ATTENTION_RUNNING_KIND=background and AGENT_ATTENTION_BG_JSON='[…]'
+  # before calling upsert. Stored only while status=running.
+  local running_kind="${AGENT_ATTENTION_RUNNING_KIND:-}"
+  local bg_json="${AGENT_ATTENTION_BG_JSON:-}"
   local ts; ts="$(attention_state_now_ms)"
   attention_state_init
   local lock
@@ -280,6 +289,15 @@ attention_state_upsert() {
     # field so Alt+/ recent rows still show the last real user input and
     # provider session name after reason is overwritten with end_turn /
     # task done.
+    #
+    # running_kind/bg: only attached when status=running and
+    # running_kind=background; otherwise omitted so turn-running stays clean.
+    local bg_argjson='[]'
+    if [[ "$status" == "running" && "$running_kind" == "background" ]]; then
+      if [[ -n "$bg_json" ]] && printf '%s' "$bg_json" | jq -e . >/dev/null 2>&1; then
+        bg_argjson="$bg_json"
+      fi
+    fi
     next="$(
       jq --arg sid "$session_id" \
          --arg wp "$wezterm_pane" \
@@ -291,6 +309,8 @@ attention_state_upsert() {
          --arg rs "$reason" \
          --arg gb "$git_branch" \
          --arg wk "$waiting_kind" \
+         --arg rk "$running_kind" \
+         --argjson bg "$bg_argjson" \
          --arg lup "$last_user_prompt" \
          --arg an "$agent_name" \
          --arg wn "$tmux_window_name" \
@@ -349,6 +369,10 @@ attention_state_upsert() {
                       else {} end)
                    + (if ($st == "waiting") and ($wk != "")
                       then {waiting_kind: $wk}
+                      else {}
+                      end)
+                   + (if ($st == "running") and ($rk == "background")
+                      then {running_kind: "background", bg: {tasks: $bg}}
                       else {}
                       end)
                  ))

@@ -531,6 +531,82 @@ fi
 rm -rf "$sandbox"
 
 echo
+echo "▸ background running substate (Stop + sidecar / Grok Stop payload)"
+
+# Case 23 — Stop with Claude sidecar outstanding → running_kind=background
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar"
+printf '%s\n' '{"tasks":{"t-bg-1":{"type":"shell","summary":"sleep 600","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-1.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-1","prompt":"start sleep"}' \
+  run_hook_in_sandbox "$sandbox" "running" "" "9" "$socket" "$session" "%5"
+# Re-seed sidecar: UserPromptSubmit clears it by design.
+printf '%s\n' '{"tasks":{"t-bg-1":{"type":"shell","summary":"sleep 600","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-1.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-1","hook_event_name":"Stop","reason":"end_turn"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "Stop+sidecar → status stays running" "running" "$(field_for "$sandbox" "sid-bg-1" "status")"
+assert_eq "Stop+sidecar → running_kind=background" "background" "$(field_for "$sandbox" "sid-bg-1" "running_kind")"
+assert_eq "Stop+sidecar → reason has bg prefix" "bg·shell: sleep 600" "$(field_for "$sandbox" "sid-bg-1" "reason")"
+rm -rf "$sandbox"
+
+# Case 24 — Stop with empty sidecar → done (regression)
+sandbox="$(mktemp -d)"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-2","prompt":"no bg"}' \
+  run_hook_in_sandbox "$sandbox" "running" "" "9" "$socket" "$session" "%5"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-2","hook_event_name":"Stop","reason":"end_turn"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "Stop without bg → done" "done" "$(field_for "$sandbox" "sid-bg-2" "status")"
+assert_eq "Stop without bg → no running_kind" "" "$(field_for "$sandbox" "sid-bg-2" "running_kind")"
+rm -rf "$sandbox"
+
+# Case 25 — UserPromptSubmit clears running_kind after bg-running
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar"
+printf '%s\n' '{"tasks":{"t-bg-3":{"type":"shell","summary":"npm run dev","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-3.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-3","hook_event_name":"Stop"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "precondition bg-running" "background" "$(field_for "$sandbox" "sid-bg-3" "running_kind")"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-3","prompt":"next turn"}' \
+  run_hook_in_sandbox "$sandbox" "running" "" "9" "$socket" "$session" "%5"
+assert_eq "new prompt clears running_kind" "" "$(field_for "$sandbox" "sid-bg-3" "running_kind")"
+assert_eq "new prompt is turn-running" "running" "$(field_for "$sandbox" "sid-bg-3" "status")"
+rm -rf "$sandbox"
+
+# Case 26 — Grok Stop.backgroundTasks shell → bg-running (no sidecar)
+sandbox="$(mktemp -d)"
+MOCK_HOOK_STDIN='{"sessionId":"sid-bg-4","hookEventName":"Stop","reason":"end_turn","backgroundTasks":[{"id":"g1","type":"shell","status":"running","command":"sleep 120"}]}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "Grok Stop shell task → running" "running" "$(field_for "$sandbox" "sid-bg-4" "status")"
+assert_eq "Grok Stop shell task → background" "background" "$(field_for "$sandbox" "sid-bg-4" "running_kind")"
+rm -rf "$sandbox"
+
+# Case 27 — Grok Stop only monitor → done under default filter
+sandbox="$(mktemp -d)"
+MOCK_HOOK_STDIN='{"sessionId":"sid-bg-5","hookEventName":"Stop","backgroundTasks":[{"id":"m1","type":"monitor","status":"running","description":"tail -f log"}]}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "Grok Stop monitor-only → done" "done" "$(field_for "$sandbox" "sid-bg-5" "status")"
+assert_eq "Grok Stop monitor-only → no running_kind" "" "$(field_for "$sandbox" "sid-bg-5" "running_kind")"
+rm -rf "$sandbox"
+
+# Case 28 — task_complete Notification clears last bg task → done
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar"
+printf '%s\n' '{"tasks":{"t-done":{"type":"shell","summary":"sleep 1","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-6.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-6","hook_event_name":"Stop"}' \
+  run_hook_in_sandbox "$sandbox" "done" "" "9" "$socket" "$session" "%5"
+assert_eq "precondition for task_complete" "background" "$(field_for "$sandbox" "sid-bg-6" "running_kind")"
+# Re-open sidecar id that Stop deferred on (still present)
+printf '%s\n' '{"tasks":{"t-done":{"type":"shell","summary":"sleep 1","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-6.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-bg-6","hook_event_name":"Notification","notification_type":"task_complete","task_id":"t-done"}' \
+  run_hook_in_sandbox "$sandbox" "waiting" "task_complete" "9" "$socket" "$session" "%5"
+assert_eq "task_complete last task → done" "done" "$(field_for "$sandbox" "sid-bg-6" "status")"
+rm -rf "$sandbox"
+
+echo
 if (( fail > 0 )); then
   echo "$pass passed, $fail failed"
   exit 1
