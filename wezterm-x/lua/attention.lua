@@ -1737,12 +1737,12 @@ end
 --
 -- Cursor precedence for the round-robin step:
 --   1. Live focus via is_entry_focused (wezterm pane + tmux-focus file).
---   2. last_jump_by_kind from M.note_jump — covers the common case where
---      the user already landed via Alt+l but the tmux-focus file has not
---      caught up yet (or never will, when select-* was a no-op). Without
---      (2), focused_idx stays nil and every press re-picks pool[1],
---      which activate_in_gui resolves to the already-focused pane → the
---      key feels dead.
+--   2. last_jump_by_kind from M.note_jump — only when that entry still
+--      sits in the current workspace (or the current workspace has no
+--      local candidates). Covers the case where Alt+l already landed
+--      but the tmux-focus file has not caught up; without (2) every
+--      press re-picks pool[1] and the key feels dead. A foreign
+--      last_jump must not override a local-workspace sweep.
 --   3. No cursor → leftmost of current workspace (rightmost if reverse).
 --
 -- Returns nil when the only candidate is *really focused*: the user is
@@ -1818,7 +1818,27 @@ function M.pick_next(kind, current_pane_id, opts)
     if type(last_key) == 'string' and last_key ~= '' then
       for i, entry in ipairs(pool) do
         if entry_jump_key(entry) == last_key then
-          cursor_idx = i
+          -- last_jump is only a cursor when it still lives in the
+          -- current workspace sweep. Otherwise a config↔default
+          -- ping-pong (last_jump stuck on a foreign entry) steals
+          -- Alt+l while the current workspace still has its own
+          -- running/waiting/done — the user never lands on the local
+          -- pane even though ● shows it (repro 2026-09-29: work
+          -- pane 2 → kept jumping config %2 / default %38 while
+          -- investigation %24 on work pane 5 stayed unreachable).
+          local last_ws = entry_spatial(entry, pane_locs)
+          local current_ws_has_local = false
+          if current_ws ~= '' then
+            for _, e in ipairs(pool) do
+              if entry_spatial(e, pane_locs) == current_ws then
+                current_ws_has_local = true
+                break
+              end
+            end
+          end
+          if (not current_ws_has_local) or last_ws == current_ws then
+            cursor_idx = i
+          end
           break
         end
       end
@@ -1835,6 +1855,15 @@ function M.pick_next(kind, current_pane_id, opts)
         end
       end
       return pool[#pool]
+    end
+    -- Prefer leftmost of current workspace when starting a fresh sweep.
+    if current_ws ~= '' then
+      for i = 1, #pool do
+        local ws = entry_spatial(pool[i], pane_locs)
+        if ws == current_ws then
+          return pool[i]
+        end
+      end
     end
     return pool[1]
   end

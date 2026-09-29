@@ -374,6 +374,72 @@ describe('pick_next — running pool (Alt+l)', function()
     assert_nil(picked, 'pick_next(running) jumped to self')
   end)
 
+  it('prefers current-workspace running over foreign last_jump cursor', function()
+    -- Repro 2026-09-29: investigation ● on work pane 5; Alt+l from work
+    -- pane 2 kept ping-ponging config↔default because last_jump stayed
+    -- on a foreign entry and advanced past local work candidates.
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'ai-video-collection', active_pane = { id = 5 } },
+            { id = 2, title = 'other', active_pane = { id = 2 } },
+          },
+        },
+        {
+          workspace = 'config',
+          tabs = {
+            { id = 3, title = 'wezdeck', active_pane = { id = 1 } },
+          },
+        },
+        {
+          workspace = 'default',
+          tabs = {
+            { id = 4, title = 'shell', active_pane = { id = 0 } },
+          },
+        },
+      },
+    }
+    tab_visibility.set_pane_session(5, 'wezterm_work_ai-video-collection_59200b16b2')
+    tab_visibility.set_pane_session(2, 'wezterm_work_coco-forge_060820bd21')
+    tab_visibility.set_pane_session(1, 'wezterm_config_wezterm-config_1f5ee8662c')
+    tab_visibility.set_pane_session(0, 'wezterm_default_shell_20260928T174232')
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"r_inv":{"session_id":"r_inv","wezterm_pane_id":"5",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_ai-video-collection_59200b16b2",'
+        .. '"tmux_window":"@13","tmux_pane":"%24","status":"running","ts":'
+        .. tostring(now) .. ',"reason":"bg·shell"},'
+      .. '"r_cfg":{"session_id":"r_cfg","wezterm_pane_id":"1",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_config_wezterm-config_1f5ee8662c",'
+        .. '"tmux_window":"@1","tmux_pane":"%2","status":"running","ts":'
+        .. tostring(now + 1) .. ',"reason":"running"},'
+      .. '"r_def":{"session_id":"r_def","wezterm_pane_id":"0",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_default_shell_20260928T174232",'
+        .. '"tmux_window":"@23","tmux_pane":"%38","status":"running","ts":'
+        .. tostring(now + 2) .. ',"reason":"running"}'
+      .. '}}'
+    local tmp = setup_state(entries, '/tmp/sock',
+      'wezterm_work_coco-forge_060820bd21', '%7', {
+        { socket = '/tmp/sock', session = 'wezterm_work_ai-video-collection_59200b16b2', tmux_pane = '%24' },
+        { socket = '/tmp/sock', session = 'wezterm_config_wezterm-config_1f5ee8662c', tmux_pane = '%2' },
+        { socket = '/tmp/sock', session = 'wezterm_default_shell_20260928T174232', tmux_pane = '%38' },
+      })
+    attention.note_jump(attention.STATUS_RUNNING, {
+      session_id = 'r_cfg',
+      tmux_window = '@1',
+      tmux_pane = '%2',
+    })
+    local picked = attention.pick_next(attention.STATUS_RUNNING, 2)
+    cleanup(tmp)
+    assert_truthy(picked, 'expected a local work running pick')
+    assert_eq(picked.session_id, 'r_inv',
+      'foreign last_jump stole Alt+l from work investigation; got '
+        .. tostring(picked and picked.session_id))
+  end)
+
   it('returns the sole running entry after note_jump when focus has moved away', function()
     -- Repro 2026-09-08: sole ● on coco-forge; Alt+l landed there (note_jump);
     -- user manually switched to ai-video-collection; Alt+l logged
