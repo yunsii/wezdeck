@@ -79,6 +79,23 @@ function M.tab_overflow_attach_args(constants, pane_ref, workspace, target_sessi
   return { 'bash', script_path, workspace, target_session }
 end
 
+-- Wall-clock epoch ms for jump-lag accounting. Compared later in WSL
+-- against runtime_log_now_ms(); sub-second Win↔WSL skew is noise, the
+-- signal we care about is multi-second wsl.exe spawn backlog.
+local function attention_jump_dispatch_ms()
+  local ok, formatted = pcall(function()
+    local wezterm = require 'wezterm'
+    return wezterm.time.now():format '%s%3f'
+  end)
+  if ok and type(formatted) == 'string' then
+    local ms = tonumber((formatted:gsub('%.', '')):match('^(%d+)'))
+    if ms then
+      return ms
+    end
+  end
+  return (os.time() or 0) * 1000
+end
+
 function M.attention_jump_args(constants, pane_ref, trailing_args, logger, trace_id)
   local repo_root = constants and constants.repo_root
   if not repo_root or repo_root == '' then
@@ -89,6 +106,9 @@ function M.attention_jump_args(constants, pane_ref, trailing_args, logger, trace
   end
   local script_path = repo_root .. '/scripts/runtime/attention-jump.sh'
   local runtime_mode = (constants and constants.runtime_mode) or 'hybrid-wsl'
+  local dispatch_ms = tostring(attention_jump_dispatch_ms())
+  local trace_env = 'WEZTERM_RUNTIME_TRACE_ID=' .. (trace_id or '')
+  local dispatch_env = 'WEZTERM_ATTENTION_JUMP_DISPATCH_MS=' .. dispatch_ms
   if runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
     local distro = common.wsl_distro_from_domain(pane_ref and pane_ref:get_domain_name())
       or common.wsl_distro_from_domain(constants.default_domain)
@@ -100,7 +120,8 @@ function M.attention_jump_args(constants, pane_ref, trailing_args, logger, trace
     end
     local args = {
       'wsl.exe', '-d', distro, '--', 'env',
-      'WEZTERM_RUNTIME_TRACE_ID=' .. (trace_id or ''),
+      trace_env,
+      dispatch_env,
       'bash', script_path,
     }
     for _, a in ipairs(trailing_args) do
@@ -108,7 +129,7 @@ function M.attention_jump_args(constants, pane_ref, trailing_args, logger, trace
     end
     return args
   end
-  local args = { 'env', 'WEZTERM_RUNTIME_TRACE_ID=' .. (trace_id or ''), 'bash', script_path }
+  local args = { 'env', trace_env, dispatch_env, 'bash', script_path }
   for _, a in ipairs(trailing_args) do
     table.insert(args, a)
   end

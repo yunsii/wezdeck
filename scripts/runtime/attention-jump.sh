@@ -83,8 +83,19 @@ refresh_jump_target_status() {
 # pane. We only need to sync tmux's selection. Skip the state lib, jq,
 # and wezterm.exe invocations entirely so this returns in one tmux
 # round-trip.
+#
+# Lag accounting (Alt+j/k/l feel): Lua stamps WEZTERM_ATTENTION_JUMP_DISPATCH_MS
+# at background_child_process time. We capture entry_ms at script start so
+# completed rows can split end-to-end lag into queue_ms (wsl.exe backlog)
+# + in_script_ms (tmux work). Default slow gate 2000ms — override with
+# WEZTERM_ATTENTION_JUMP_SLOW_MS. Over-threshold emits a warn row; quiet
+# completions stay info with the same fields so grep stays one pattern.
 if [[ "${1:-}" == "--direct" ]]; then
   shift
+  # shellcheck disable=SC1091
+  . "$script_dir/runtime-log-lib.sh"
+  export WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-attention-jump.sh}"
+  direct_entry_ms="$(runtime_log_now_ms)"
   direct_socket=''
   direct_window=''
   direct_pane=''
@@ -139,21 +150,50 @@ if [[ "${1:-}" == "--direct" ]]; then
       refresh_jump_target_status "$direct_socket" "$direct_window"
     fi
 
+    # Receipt + lag split. Always log when we have a trace (Lua Alt+j/k/l
+    # path); without a trace this is an ad-hoc CLI call — skip noise.
     if [[ -n "${WEZTERM_RUNTIME_TRACE_ID:-}" ]]; then
-      # Direct jumps are the tmux half of the in-process WezTerm activation.
-      # Keep a receipt with the actual post-select window/pane so the web
-      # diagnostics view can prove the target landed instead of only logging
-      # that the event was dispatched.
-      # shellcheck disable=SC1091
-      . "$script_dir/runtime-log-lib.sh"
       active_window="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{window_id}' 2>/dev/null || true)"
       active_pane="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{pane_id}' 2>/dev/null || true)"
-      runtime_log_info attention "attention jump direct completed" \
-        "tmux_socket=$direct_socket" \
-        "requested_window=$direct_window" \
-        "requested_pane=$direct_pane" \
-        "active_window=$active_window" \
+      complete_ms="$(runtime_log_now_ms)"
+      in_script_ms="$(runtime_log_duration_ms "$direct_entry_ms")"
+      dispatch_ms="${WEZTERM_ATTENTION_JUMP_DISPATCH_MS:-}"
+      lag_ms=''
+      queue_ms=''
+      if [[ "$dispatch_ms" =~ ^[0-9]+$ && "$complete_ms" =~ ^[0-9]+$ && "$complete_ms" -ge "$dispatch_ms" ]]; then
+        lag_ms=$((complete_ms - dispatch_ms))
+      fi
+      if [[ "$dispatch_ms" =~ ^[0-9]+$ && "$direct_entry_ms" =~ ^[0-9]+$ && "$direct_entry_ms" -ge "$dispatch_ms" ]]; then
+        queue_ms=$((direct_entry_ms - dispatch_ms))
+      fi
+      # End-to-end when dispatch stamp present; else in-script only.
+      duration_ms="${lag_ms:-$in_script_ms}"
+      slow_ms="${WEZTERM_ATTENTION_JUMP_SLOW_MS:-2000}"
+      [[ "$slow_ms" =~ ^[0-9]+$ ]] || slow_ms=2000
+      fields=(
+        "tmux_socket=$direct_socket"
+        "requested_window=$direct_window"
+        "requested_pane=$direct_pane"
+        "active_window=$active_window"
         "active_pane=$active_pane"
+        "duration_ms=$duration_ms"
+        "in_script_ms=$in_script_ms"
+      )
+      if [[ -n "$dispatch_ms" ]]; then
+        fields+=("dispatch_ms=$dispatch_ms")
+      fi
+      if [[ -n "$queue_ms" ]]; then
+        fields+=("queue_ms=$queue_ms")
+      fi
+      if [[ -n "$lag_ms" ]]; then
+        fields+=("lag_ms=$lag_ms")
+      fi
+      runtime_log_info attention "attention jump direct completed" "${fields[@]}"
+      if [[ -n "$lag_ms" && "$lag_ms" -ge "$slow_ms" ]]; then
+        runtime_log_warn attention "attention jump direct slow" \
+          "${fields[@]}" \
+          "threshold_ms=$slow_ms"
+      fi
     fi
   fi
   exit 0

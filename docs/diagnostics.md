@@ -185,9 +185,17 @@ Tag lifecycle (same `agent_cli` category): `set primary pane agent role tag` / `
 | Symptom | Grep |
 |---|---|
 | Alt+j/k/l or User1/User2 “did nothing” | `category="attention"` in `runtime.log` — `attention jump toast` / `attention jump empty` / `attention jump completed` |
+| Alt+j/k/l key reached Lua but pane never moved (spawn backlog) | Pair `wezterm.log` `alt-l jump running` (or j/k) `trace=` with `runtime.log` `attention jump direct completed` same `trace_id`. Completed rows carry `lag_ms` / `queue_ms` / `in_script_ms`. Slow gate: `level="warn" message="attention jump direct slow"` when `lag_ms >= WEZTERM_ATTENTION_JUMP_SLOW_MS` (default 2000). |
 | `Ctrl+k w` claw take failed | `category="session_bridge"` — `session-bridge take failed` (toast alone used to evaporate) |
 
 Lua-side Alt+j/k/l also writes `attention` rows to `wezterm.log` when allowlisted.
+
+**Alt+l press → effect lag (2026-09-29):** Lua `pressed`/`dispatched` only measures the in-process handler (often under 40ms). The visible tmux window switch runs later via `wsl.exe` → `attention-jump.sh --direct`. Lua stamps `WEZTERM_ATTENTION_JUMP_DISPATCH_MS` at spawn; the script logs end-to-end `lag_ms`, `queue_ms` (dispatch→script entry = wsl backlog), and `in_script_ms` (tmux work). Operator one-liner after a sticky burst:
+
+```bash
+grep -a 'attention jump direct slow\|attention jump direct completed' \
+  ~/.local/state/wezterm-runtime/logs/runtime.log | tail -30
+```
 
 ### F5 / refresh current window
 
