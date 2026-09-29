@@ -123,11 +123,21 @@ bg_claude_tasks_dir() {
   return 1
 }
 
-# Drop sidecar tasks whose Claude output shows exit, or missing+stale.
+# True when Claude task output text shows a terminal harness marker.
+# Claude uses both "[exited with code N]" and "[killed]" (Ctrl+C / TaskStop).
+bg_task_output_is_finished() {
+  local data="$1"
+  [[ "$data" == *"[exited with code"* ]] && return 0
+  # Match a line that is exactly [killed] (allow trailing whitespace).
+  printf '%s\n' "$data" | grep -qE '^\[killed\][[:space:]]*$' && return 0
+  return 1
+}
+
+# Drop sidecar tasks whose Claude output shows exit/killed.
 # Keeps empty outputs (still running). Returns remaining tasks JSON array.
 bg_reconcile_claude_sidecar() {
   local session_id="$1"
-  local current tasks_dir next removed id path data
+  local current tasks_dir removed id path data
   command -v jq >/dev/null 2>&1 || { bg_sidecar_list_json "$session_id"; return 0; }
   current="$(bg_sidecar_read "$session_id")"
   tasks_dir="$(bg_claude_tasks_dir "$session_id" 2>/dev/null || true)"
@@ -144,8 +154,8 @@ bg_reconcile_claude_sidecar() {
       continue
     fi
     if [[ -f "$path" ]]; then
-      data="$(head -c 8192 "$path" 2>/dev/null || true)"
-      if [[ "$data" == *"[exited with code"* ]]; then
+      data="$(cat "$path" 2>/dev/null || true)"
+      if bg_task_output_is_finished "$data"; then
         removed+=("$id")
       fi
     fi
@@ -320,7 +330,7 @@ for path in glob.glob(os.path.expanduser("~/.claude/sessions/*.json")):
 PY
 }
 
-# Scan Claude tasks dir for non-exited shell outputs → outstanding JSON array.
+# Scan Claude tasks dir for still-open shell outputs → outstanding JSON array.
 bg_live_task_outputs_json() {
   local session_id="$1" tasks_dir
   command -v jq >/dev/null 2>&1 || { printf '%s' '[]'; return 0; }
@@ -330,9 +340,10 @@ bg_live_task_outputs_json() {
     return 0
   fi
   python3 - "$tasks_dir" <<'PY' 2>/dev/null || printf '%s' '[]'
-import json, os, sys
+import json, re, sys
 from pathlib import Path
 root = Path(sys.argv[1])
+finished_re = re.compile(r"\[exited with code|\n\[killed\]\s*$|^\[killed\]\s*$", re.M)
 out = []
 for p in sorted(root.glob("*.output")):
     if p.is_symlink():
@@ -341,7 +352,7 @@ for p in sorted(root.glob("*.output")):
         data = p.read_text(errors="replace")
     except Exception:
         continue
-    if "[exited with code" in data:
+    if finished_re.search(data) or data.rstrip().endswith("[killed]"):
         continue
     name = p.name[: -len(".output")] if p.name.endswith(".output") else p.name
     out.append({"id": name, "type": "shell", "summary": f"task:{name}"})
@@ -349,25 +360,55 @@ print(json.dumps(out, ensure_ascii=False))
 PY
 }
 
-# Merge sidecar collect + entry.bg.tasks + live task outputs.
+# Merge sidecar collect + still-live entry.bg.tasks + live task outputs.
 # Usage: bg_collect_outstanding_rich <session_id> [stdin_json] [entry_bg_tasks_json]
 bg_collect_outstanding_rich() {
   local session_id="$1" stdin_json="${2:-}" entry_tasks="${3:-[]}"
-  local from_side from_live
+  local from_side from_live tasks_dir
   command -v jq >/dev/null 2>&1 || { printf '%s' '[]'; return 0; }
   from_side="$(bg_collect_outstanding "$session_id" "$stdin_json")"
   from_live="$(bg_live_task_outputs_json "$session_id")"
   if [[ -z "$entry_tasks" ]] || ! printf '%s' "$entry_tasks" | jq -e . >/dev/null 2>&1; then
     entry_tasks='[]'
   fi
+  tasks_dir="$(bg_claude_tasks_dir "$session_id" 2>/dev/null || true)"
+  # Drop entry tasks whose output already finished (exited/killed).
+  entry_tasks="$(ENTRY_JSON="$entry_tasks" TDIR="$tasks_dir" python3 - <<'PY' 2>/dev/null || printf '%s' '[]'
+import json, os, re
+from pathlib import Path
+entry = json.loads(os.environ.get("ENTRY_JSON") or "[]")
+if isinstance(entry, dict):
+    entry = entry.get("tasks") or []
+if not isinstance(entry, list):
+    entry = []
+tdir = os.environ.get("TDIR") or ""
+finished_re = re.compile(r"\[exited with code|\n\[killed\]\s*$|^\[killed\]\s*$", re.M)
+alive = []
+for t in entry:
+    tid = (t or {}).get("id") or ""
+    if not tid:
+        continue
+    if not tdir:
+        alive.append(t)
+        continue
+    p = Path(tdir) / f"{tid}.output"
+    if p.is_symlink():
+        continue
+    if p.is_file():
+        try:
+            data = p.read_text(errors="replace")
+        except Exception:
+            alive.append(t)
+            continue
+        if finished_re.search(data) or data.rstrip().endswith("[killed]"):
+            continue
+    alive.append(t)
+print(json.dumps(alive, ensure_ascii=False))
+PY
+)"
   jq -c -n --argjson side "$from_side" --argjson live "$from_live" \
     --argjson entry "$entry_tasks" '
-      ($entry
-        | if type == "array" then .
-          elif type == "object" and (.tasks | type) == "array" then .tasks
-          else [] end
-      ) as $ent
-      | ($side + $live + $ent)
+      ($side + $live + $entry)
       | map({id:(.id//""), type:(.type//"shell"), summary:(.summary//"")})
       | map(select(.id != ""))
       | unique_by(.id)
@@ -455,10 +496,9 @@ bg_bump_alive_entries() {
               | del(.entries[$sid].done_kind)
             end
           ' <<<"$next")" || true
-        if declare -F runtime_log_info >/dev/null 2>&1; then
-          runtime_log_info attention "bg bump kept" \
-            "session_id=$sid" "bg_count=$n" 2>/dev/null || true
-        fi
+        # Routine keep is silent — every foreign Stop was flooding
+        # runtime.log with bg bump kept. State changes log below.
+        :
       else
         claude_st="$(bg_claude_session_status "$sid")"
         # Hard hold: never demote while Claude still reports shell.

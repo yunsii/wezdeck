@@ -646,6 +646,45 @@ assert_eq "foreign Stop leaves bg-8 status running" "running" \
   "$(field_for "$sandbox" "sid-bg-8" "status")"
 rm -rf "$sandbox"
 
+# Case 31 — [killed] task output is treated as finished (not forever-live)
+sandbox="$(mktemp -d)"
+guard_sandbox_paths "$sandbox/wezterm-runtime"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar" \
+  "$sandbox/fake-claude-tasks"
+printf '%s\n' 'ROLLOUT_DONE' '' '[killed]' \
+  > "$sandbox/fake-claude-tasks/t-killed.output"
+# Point reconcile at fake dir via a real-looking /tmp layout is hard;
+# unit the helper directly instead.
+# shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/attention-state-lib.sh"
+# shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/agent-attention/lib/bg-outstanding.sh"
+export WINDOWS_RUNTIME_STATE_WSL="$sandbox/wezterm-runtime"
+export WEZTERM_NO_PATH_CACHE=1
+__ATTENTION_STATE_PATH_CACHED=""
+if bg_task_output_is_finished "$(cat "$sandbox/fake-claude-tasks/t-killed.output")"; then
+  echo "  ✓ [killed] counts as finished task output"
+  pass=$((pass+1))
+else
+  echo "  ✗ [killed] counts as finished task output"
+  fail=$((fail+1))
+fi
+if bg_task_output_is_finished $'\n[exited with code 0]\n'; then
+  echo "  ✓ [exited with code] still counts as finished"
+  pass=$((pass+1))
+else
+  echo "  ✗ [exited with code] still counts as finished"
+  fail=$((fail+1))
+fi
+if bg_task_output_is_finished $'still running...\n'; then
+  echo "  ✗ live output must not count as finished"
+  fail=$((fail+1))
+else
+  echo "  ✓ live output must not count as finished"
+  pass=$((pass+1))
+fi
+rm -rf "$sandbox"
+
 echo
 if (( fail > 0 )); then
   echo "$pass passed, $fail failed"

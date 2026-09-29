@@ -604,11 +604,14 @@ Env: `WEZTERM_ATTENTION_BG_TYPES` (default `shell`; comma-list may add
 
 **Stability (2026-09-29):** `UserPromptSubmit` reconciles sidecar (does not
 wipe live tasks). Cross-session `bg_bump_alive_entries` will not demote to
-`done` while Claude `status=shell` or non-exited `tasks/*.output` remain;
+`done` while Claude `status=shell` or still-open `tasks/*.output` remain;
 false demotes use `done_kind=bg_finished` and Lua **skips focus-ack** for that
-kind so `Alt+l` onto the pane cannot erase ●. Observable `runtime.log`
-messages: `stop deferred to bg-running` (+ `bg_recover`), `bg sidecar
-reconciled on prompt`, `bg bump kept` / `bg bump recover shell/live` /
+kind so `Alt+l` onto the pane cannot erase ●. Task outputs ending in
+`[exited with code…]` **or** `[killed]` count as finished (Claude TaskStop /
+cancel leaves `[killed]` without an exit code — missing that marker used to
+keep ● forever). Routine `bg bump kept` is silent to avoid log floods;
+state-change lines remain: `stop deferred to bg-running` (+ `bg_recover`),
+`bg sidecar reconciled on prompt`, `bg bump recover shell/live` /
 `bg bump demote skipped` / `bg bump demoted`, `focus ack skipped bg_finished`.
 
 Probe (dry-run / schema):
