@@ -104,6 +104,16 @@ internal static class WindowQuery
     // the window title is the only available evidence that a folder is already
     // on screen. `marker` is "<folder-leaf> [WSL: <distro>]", specific enough
     // that a bare folder-name collision is not enough to match.
+    public static bool WindowTitleContains(IntPtr windowHandle, string? marker)
+    {
+        if (string.IsNullOrEmpty(marker) || windowHandle == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        return GetWindowTitle(windowHandle).Contains(marker, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static WindowMatch? FindWindowShowingFolder(IReadOnlyList<WindowMatch> windows, string? marker)
     {
         if (string.IsNullOrEmpty(marker))
@@ -113,13 +123,38 @@ internal static class WindowQuery
 
         foreach (var window in windows)
         {
-            if (GetWindowTitle(window.WindowHandle).Contains(marker, StringComparison.OrdinalIgnoreCase))
+            if (WindowTitleContains(window.WindowHandle, marker))
             {
                 return window;
             }
         }
 
         return null;
+    }
+
+    // Poll visible windows until one title carries `marker`, or the timeout
+    // elapses. Re-enumerates each tick because VS Code may create, retitle, or
+    // focus a different window after `--reuse-window --folder-uri`.
+    public static WindowMatch? WaitForWindowShowingFolder(string expectedProcessName, string? marker, int timeoutMs)
+    {
+        if (string.IsNullOrEmpty(marker))
+        {
+            return null;
+        }
+
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < timeoutMs)
+        {
+            var match = FindWindowShowingFolder(EnumerateVisibleTopLevelWindows(expectedProcessName), marker);
+            if (match != null)
+            {
+                return match;
+            }
+
+            Thread.Sleep(50);
+        }
+
+        return FindWindowShowingFolder(EnumerateVisibleTopLevelWindows(expectedProcessName), marker);
     }
 
     // EnumWindows walks top-level windows front-to-back in Z order, so the last

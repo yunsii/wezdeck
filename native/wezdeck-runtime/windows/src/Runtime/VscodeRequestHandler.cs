@@ -84,35 +84,64 @@ internal sealed class VscodeRequestHandler
         });
         if (reuseDecision.Window != null)
         {
-            if (fileUri != null)
+            // Registry / cmdline matches only prove we once associated this
+            // hwnd with the folder. After a failed max-windows displace (VS
+            // Code de-dupes into another window, or `--reuse-window
+            // --folder-uri` never retitles the aim window), the cache can
+            // claim a folder lives in a window that still shows something
+            // else — and every later Alt+v then focuses the wrong content.
+            // Title is the same evidence the pre-displace "already open"
+            // check uses; refuse a cache hit that fails it.
+            if (!string.IsNullOrEmpty(titleFolderMarker)
+                && !WindowQuery.WindowTitleContains(reuseDecision.Window.WindowHandle, titleFolderMarker))
             {
-                WindowActivator.LaunchDetachedProcess(
-                    codeExecutable,
-                    codeArguments.Concat(new[] { "--reuse-window", "--file-uri", fileUri }).ToArray());
-            }
-            logger.Info("vscode", "focused cached vscode window", new Dictionary<string, string?>
-            {
-                ["trace_id"] = traceId,
-                ["target_dir"] = targetDir,
-                ["launch_key"] = launchKey,
-                ["pid"] = reuseDecision.Window.ProcessId.ToString(),
-                ["hwnd"] = reuseDecision.Window.WindowHandle.ToInt64().ToString(),
-                ["decision_path"] = reuseDecision.Path,
-                ["file_uri"] = fileUri,
-            });
-            return new RequestOutcome(
-                Domain: "vscode",
-                Action: "focus_or_open",
-                Status: "reused",
-                DecisionPath: reuseDecision.Path,
-                ResultType: "window_ref",
-                Result: new RuntimeWindowRefResult
+                var staleTitle = WindowQuery.GetWindowTitle(reuseDecision.Window.WindowHandle);
+                windowReuseService.ForgetWindow("vscode", launchKey);
+                logger.Info("vscode", "discarded stale vscode registry window whose title no longer matches the folder", new Dictionary<string, string?>
                 {
-                    Pid = reuseDecision.Window.ProcessId,
-                    Hwnd = reuseDecision.Window.WindowHandle.ToInt64(),
-                },
-                ProcessId: reuseDecision.Window.ProcessId,
-                WindowHandle: reuseDecision.Window.WindowHandle.ToInt64());
+                    ["trace_id"] = traceId,
+                    ["target_dir"] = targetDir,
+                    ["launch_key"] = launchKey,
+                    ["title_marker"] = titleFolderMarker,
+                    ["window_title"] = staleTitle,
+                    ["pid"] = reuseDecision.Window.ProcessId.ToString(),
+                    ["hwnd"] = reuseDecision.Window.WindowHandle.ToInt64().ToString(),
+                    ["decision_path"] = "registry_window_title_mismatch",
+                    ["prior_decision_path"] = reuseDecision.Path,
+                });
+            }
+            else
+            {
+                if (fileUri != null)
+                {
+                    WindowActivator.LaunchDetachedProcess(
+                        codeExecutable,
+                        codeArguments.Concat(new[] { "--reuse-window", "--file-uri", fileUri }).ToArray());
+                }
+                logger.Info("vscode", "focused cached vscode window", new Dictionary<string, string?>
+                {
+                    ["trace_id"] = traceId,
+                    ["target_dir"] = targetDir,
+                    ["launch_key"] = launchKey,
+                    ["pid"] = reuseDecision.Window.ProcessId.ToString(),
+                    ["hwnd"] = reuseDecision.Window.WindowHandle.ToInt64().ToString(),
+                    ["decision_path"] = reuseDecision.Path,
+                    ["file_uri"] = fileUri,
+                });
+                return new RequestOutcome(
+                    Domain: "vscode",
+                    Action: "focus_or_open",
+                    Status: "reused",
+                    DecisionPath: reuseDecision.Path,
+                    ResultType: "window_ref",
+                    Result: new RuntimeWindowRefResult
+                    {
+                        Pid = reuseDecision.Window.ProcessId,
+                        Hwnd = reuseDecision.Window.WindowHandle.ToInt64(),
+                    },
+                    ProcessId: reuseDecision.Window.ProcessId,
+                    WindowHandle: reuseDecision.Window.WindowHandle.ToInt64());
+            }
         }
 
         if (maxWindows.HasValue && existingVisibleWindowHandles.Count >= maxWindows.Value)
@@ -184,21 +213,89 @@ internal sealed class VscodeRequestHandler
                 : "max_windows_reuse_visible_window";
             if (replacementWindow != null && WindowActivator.TryActivateWindow(replacementWindow))
             {
+                // Capture the aim window's prior registry key before launch. We
+                // only steal it when the title confirms this window actually
+                // received the folder; otherwise VS Code may have focused a
+                // different already-open window and the aim window still shows
+                // its old content.
+                var replacedLaunchKey = windowReuseService.FindKeyByWindowHandle("vscode", replacementWindow.WindowHandle);
+
                 WindowActivator.LaunchDetachedProcess(
                     codeExecutable,
                     codeArguments.Concat(new[] { "--reuse-window" }).Concat(OpenArgs()).ToArray());
 
-                // The window may still be registered under the folder it used to
-                // hold; move that key rather than leaving it pointing at content
-                // the window no longer shows.
-                var replacedLaunchKey = windowReuseService.FindKeyByWindowHandle("vscode", replacementWindow.WindowHandle);
-                if (replacedLaunchKey != null && !string.Equals(replacedLaunchKey, launchKey, StringComparison.OrdinalIgnoreCase))
+                var confirmedWindow = WindowQuery.WaitForWindowShowingFolder(processName, titleFolderMarker, 2000);
+                string maxWindowsDecisionPath;
+                WindowMatch maxWindowsBoundWindow;
+                if (confirmedWindow != null)
                 {
-                    windowReuseService.ReplaceWindowKey("vscode", replacedLaunchKey, launchKey, replacementWindow);
+                    maxWindowsBoundWindow = confirmedWindow;
+                    if (confirmedWindow.WindowHandle == replacementWindow.WindowHandle)
+                    {
+                        maxWindowsDecisionPath = replacementPath;
+                        if (replacedLaunchKey != null
+                            && !string.Equals(replacedLaunchKey, launchKey, StringComparison.OrdinalIgnoreCase))
+                        {
+                            windowReuseService.ReplaceWindowKey("vscode", replacedLaunchKey, launchKey, maxWindowsBoundWindow);
+                        }
+                        else
+                        {
+                            windowReuseService.RememberWindow("vscode", launchKey, maxWindowsBoundWindow);
+                        }
+                    }
+                    else
+                    {
+                        // Folder landed elsewhere (typical VS Code de-dupe).
+                        // Leave the aim window's prior key alone — it still
+                        // shows its old folder.
+                        maxWindowsDecisionPath = "max_windows_folder_landed_elsewhere";
+                        var showingStaleKey = windowReuseService.FindKeyByWindowHandle("vscode", maxWindowsBoundWindow.WindowHandle);
+                        if (showingStaleKey != null
+                            && !string.Equals(showingStaleKey, launchKey, StringComparison.OrdinalIgnoreCase))
+                        {
+                            windowReuseService.ReplaceWindowKey("vscode", showingStaleKey, launchKey, maxWindowsBoundWindow);
+                        }
+                        else
+                        {
+                            windowReuseService.RememberWindow("vscode", launchKey, maxWindowsBoundWindow);
+                        }
+
+                        WindowActivator.TryActivateWindow(maxWindowsBoundWindow);
+                    }
                 }
                 else
                 {
-                    windowReuseService.RememberWindow("vscode", launchKey, replacementWindow);
+                    // Title never confirmed. Do not write launchKey onto the
+                    // aim window — that is the poison that made Alt+v on the
+                    // primary worktree focus a sibling worktree window.
+                    maxWindowsBoundWindow = replacementWindow;
+                    maxWindowsDecisionPath = "max_windows_reuse_unconfirmed_title";
+                    logger.Info("vscode", "max-windows reuse did not confirm folder title; left registry unbound for this folder", new Dictionary<string, string?>
+                    {
+                        ["trace_id"] = traceId,
+                        ["target_dir"] = targetDir,
+                        ["launch_key"] = launchKey,
+                        ["title_marker"] = titleFolderMarker,
+                        ["replaced_launch_key"] = replacedLaunchKey,
+                        ["pid"] = maxWindowsBoundWindow.ProcessId.ToString(),
+                        ["hwnd"] = maxWindowsBoundWindow.WindowHandle.ToInt64().ToString(),
+                        ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
+                        ["max_windows"] = maxWindows.Value.ToString(),
+                        ["decision_path"] = maxWindowsDecisionPath,
+                    });
+                    return new RequestOutcome(
+                        Domain: "vscode",
+                        Action: "focus_or_open",
+                        Status: "reused",
+                        DecisionPath: maxWindowsDecisionPath,
+                        ResultType: "window_ref",
+                        Result: new RuntimeWindowRefResult
+                        {
+                            Pid = maxWindowsBoundWindow.ProcessId,
+                            Hwnd = maxWindowsBoundWindow.WindowHandle.ToInt64(),
+                        },
+                        ProcessId: maxWindowsBoundWindow.ProcessId,
+                        WindowHandle: maxWindowsBoundWindow.WindowHandle.ToInt64());
                 }
 
                 logger.Info("vscode", "reused least recently activated vscode window because max window count was reached", new Dictionary<string, string?>
@@ -207,25 +304,27 @@ internal sealed class VscodeRequestHandler
                     ["target_dir"] = targetDir,
                     ["launch_key"] = launchKey,
                     ["replaced_launch_key"] = replacedLaunchKey,
-                    ["pid"] = replacementWindow.ProcessId.ToString(),
-                    ["hwnd"] = replacementWindow.WindowHandle.ToInt64().ToString(),
+                    ["title_marker"] = titleFolderMarker,
+                    ["pid"] = maxWindowsBoundWindow.ProcessId.ToString(),
+                    ["hwnd"] = maxWindowsBoundWindow.WindowHandle.ToInt64().ToString(),
+                    ["aim_hwnd"] = replacementWindow.WindowHandle.ToInt64().ToString(),
                     ["existing_visible_window_count"] = existingVisibleWindowHandles.Count.ToString(),
                     ["max_windows"] = maxWindows.Value.ToString(),
-                    ["decision_path"] = replacementPath,
+                    ["decision_path"] = maxWindowsDecisionPath,
                 });
                 return new RequestOutcome(
                     Domain: "vscode",
                     Action: "focus_or_open",
                     Status: "reused",
-                    DecisionPath: replacementPath,
+                    DecisionPath: maxWindowsDecisionPath,
                     ResultType: "window_ref",
                     Result: new RuntimeWindowRefResult
                     {
-                        Pid = replacementWindow.ProcessId,
-                        Hwnd = replacementWindow.WindowHandle.ToInt64(),
+                        Pid = maxWindowsBoundWindow.ProcessId,
+                        Hwnd = maxWindowsBoundWindow.WindowHandle.ToInt64(),
                     },
-                    ProcessId: replacementWindow.ProcessId,
-                    WindowHandle: replacementWindow.WindowHandle.ToInt64());
+                    ProcessId: maxWindowsBoundWindow.ProcessId,
+                    WindowHandle: maxWindowsBoundWindow.WindowHandle.ToInt64());
             }
 
             logger.Info("vscode", "max window count was reached but no focusable vscode window was found", new Dictionary<string, string?>
