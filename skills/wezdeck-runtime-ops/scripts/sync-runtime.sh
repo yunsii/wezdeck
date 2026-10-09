@@ -625,6 +625,37 @@ run_agent_hooks_check() {
   printf '[sync] fix: %s install --provider codex|claude|all\n' "$check_script" >&2
 }
 
+# Advisory: sparse live-panes / orphan mux that used to wipe attention
+# badges within ~1s (2026-10-09). Never fails the sync.
+run_attention_health_check() {
+  local check_script="$REPO_ROOT/scripts/dev/attention-health.sh"
+  local output=""
+  local rc=0
+
+  if [[ "${WEZTERM_SYNC_SKIP_ATTENTION_HEALTH:-0}" == "1" ]]; then
+    sync_trace "step=attention-health-check status=skipped reason=env_override"
+    return 0
+  fi
+  if [[ ! -x "$check_script" ]]; then
+    sync_trace "step=attention-health-check status=skipped reason=script_missing"
+    return 0
+  fi
+
+  output="$("$check_script" --quiet 2>&1)" || rc=$?
+  if (( rc == 0 )); then
+    sync_trace "step=attention-health-check status=healthy"
+    runtime_log_info sync "attention health check passed"
+    return 0
+  fi
+
+  sync_trace "step=attention-health-check status=warning rc=$rc"
+  runtime_log_warn sync "attention health check warning" "check_rc=$rc"
+  printf '[sync] attention-health-check warning (sync continues):\n%s\n' \
+    "${output:-attention-health check failed without details}" >&2
+  printf '[sync] triage: %s  |  docs/diagnostics.md (live-panes orphan mux)\n' \
+    "$check_script" >&2
+}
+
 run_shell_env_check() {
   local check_script="$REPO_ROOT/scripts/dev/check-shell-env.sh"
   local output=""
@@ -728,6 +759,7 @@ wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
 wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
 run_agent_hooks_check
+run_attention_health_check
 run_node_runtime_check
 run_shell_env_check
 

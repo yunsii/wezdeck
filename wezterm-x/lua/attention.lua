@@ -51,6 +51,10 @@ M.PRUNE_INTERVAL_MS = 60000
 -- tmux-attention-menu.sh stays the consumer-side cap; this constant
 -- just determines how often the producer-side refresh fires.
 M.LIVE_SNAPSHOT_INTERVAL_MS = 1000
+-- Throttle for sparse-snapshot / orphan-mux warns on the 1 Hz snapshot
+-- path. Logging every tick would flood wezterm.log; once a minute is
+-- enough for triage (pair with scripts/dev/attention-health.sh).
+M.SNAPSHOT_WARN_INTERVAL_MS = 60000
 -- Focus-based auto-ack removes the entry with no grace window — focusing
 -- the pane *is* the acknowledgement, so the counter should drop as soon
 -- as the user's eyes are there. The `--only-if-ts` guard in the jump
@@ -92,6 +96,17 @@ local tmux_focus_cache = {}
 local last_jump_by_kind = {}
 local last_prune_ms = 0
 local last_live_snapshot_ms = 0
+local last_snapshot_warn_ms = 0
+
+local function maybe_warn_snapshot(message, fields)
+  if not module_logger then return end
+  local now = now_ms()
+  if (now - last_snapshot_warn_ms) < M.SNAPSHOT_WARN_INTERVAL_MS then
+    return
+  end
+  last_snapshot_warn_ms = now
+  module_logger.warn('attention', message, fields)
+end
 local module_logger = nil
 local consistency = nil
 local function load_consistency()
@@ -1301,21 +1316,53 @@ function M.write_live_snapshot(target_path, trace_id)
   -- attention follows. `running` is exempt — the agent may legitimately
   -- be in flight on a detached tmux session whose host is just
   -- temporarily gone (overflow rotation passes through this state for
-  -- one tick before titles.lua updates the map). Forget runs in the
-  -- background subprocess + optimistic hide, mirroring B2.
-  local snapshot_now = now_ms()
-  local unreachable_sessions = {}
-  for _, entry in pairs(state_cache.entries or {}) do
-    if type(entry) == 'table'
-       and entry_is_live(entry, snapshot_now)
-       and (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
-       and nonempty_str(entry.tmux_session)
-       and not entry_reachable(entry, panes_map, sessions_map) then
-      unreachable_sessions[entry.tmux_session] = true
+  -- one tick before titles.lua updates the map).
+  --
+  -- Two hard rules (regression 2026-10-09: live-panes `sessions:{}`
+  -- with only pane 0 visible → every done/waiting looked unreachable
+  -- → `forget_by_tmux_session` wiped sibling `running` on the same
+  -- repo-family tmux session within ~1s, so badges never stuck on
+  -- running and done never reminded):
+  --   1. Empty `sessions_map` means the host reverse map is unknown
+  --      (incomplete mux walk / cold start), not "everything is gone".
+  --      Same posture as the shell prune's empty-alive-map keep.
+  --   2. Forget **per entry**, never session-wide. One repo-family
+  --      tmux session hosts many worktree windows; archiving one
+  --      window's done must not take a sibling window's running with
+  --      it. Overflow rotation still uses `forget_by_tmux_session`
+  --      on the event path where the slot change is positive.
+  local sessions_map_empty = next(sessions_map) == nil
+  if sessions_map_empty then
+    local candidate_n = 0
+    local snapshot_now_skip = now_ms()
+    for _, entry in pairs(state_cache.entries or {}) do
+      if type(entry) == 'table'
+         and entry_is_live(entry, snapshot_now_skip)
+         and (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
+         and nonempty_str(entry.tmux_session) then
+        candidate_n = candidate_n + 1
+      end
     end
-  end
-  for tmux_session, _ in pairs(unreachable_sessions) do
-    M.forget_by_tmux_session(tmux_session)
+    if candidate_n > 0 then
+      local panes_n = 0
+      for _ in pairs(panes_map) do panes_n = panes_n + 1 end
+      maybe_warn_snapshot(
+        'reachability sweep skipped; sessions_map empty', {
+          candidate_count = candidate_n,
+          panes_count = panes_n,
+        })
+    end
+  else
+    local snapshot_now = now_ms()
+    for sid, entry in pairs(state_cache.entries or {}) do
+      if type(entry) == 'table'
+         and entry_is_live(entry, snapshot_now)
+         and (entry.status == M.STATUS_DONE or entry.status == M.STATUS_WAITING)
+         and nonempty_str(entry.tmux_session)
+         and not entry_reachable(entry, panes_map, sessions_map) then
+        M.forget_entry(sid, entry)
+      end
+    end
   end
 
   -- Compute picker rows and counts using the same predicate the badge
@@ -1342,6 +1389,44 @@ function M.write_live_snapshot(target_path, trace_id)
     picker_counts = picker_data.counts,
     focused_wezterm_pane_id = focused_pane_id,
   }
+
+  -- Orphan / secondary mux guard. A GUI that only sees the default
+  -- pane publishes `sessions:{}` and must not clobber a richer
+  -- snapshot from the primary mux. Observed 2026-10-09: `wezterm cli
+  -- list` showed a single idle default client (pane 0) while work /
+  -- config tabs lived in another mux; that idle tick rewrote
+  -- live-panes.json to sessions:{} every second and (with the old
+  -- session-wide forget) wiped attention within ~1s. Keep a fresh
+  -- non-empty reverse map for up to 30s so a truly-dead primary
+  -- eventually yields.
+  local new_sessions_n = 0
+  for _ in pairs(sessions_map) do new_sessions_n = new_sessions_n + 1 end
+  if new_sessions_n == 0 then
+    local existing = read_file(target_path)
+    if existing and existing ~= '' then
+      local parsed = parse_json(existing)
+      if type(parsed) == 'table' then
+        local old_sessions_n = 0
+        for _ in pairs(parsed.sessions or {}) do
+          old_sessions_n = old_sessions_n + 1
+        end
+        local old_ts = tonumber(parsed.ts) or 0
+        local age_ms = now_ms() - old_ts
+        if old_sessions_n > 0 and age_ms >= 0 and age_ms < 30000 then
+          local new_panes_n = 0
+          for _ in pairs(panes_map) do new_panes_n = new_panes_n + 1 end
+          maybe_warn_snapshot(
+            'live-panes write skipped; refuse to clobber richer snapshot', {
+              new_panes = new_panes_n,
+              old_sessions = old_sessions_n,
+              old_age_ms = age_ms,
+            })
+          return false
+        end
+      end
+    end
+  end
+
   local ok_enc, encoded = pcall(wezterm.serde.json_encode, payload)
   if not ok_enc or type(encoded) ~= 'string' then
     return false
@@ -2153,12 +2238,44 @@ function M.optimistically_hide(entry)
 end
 
 -- Archive every active entry whose tmux_session matches. Used when a
+-- Archive one live entry by session_id. Used by the snapshot
+-- reachability sweep so a lone unreachable done/waiting does not
+-- take sibling entries on the same tmux session with it.
+function M.forget_entry(session_id, entry)
+  if type(session_id) ~= 'string' or session_id == '' then return end
+  if type(forget_spawner) ~= 'function' then return end
+  if type(entry) ~= 'table' then
+    entry = (state_cache.entries or {})[session_id]
+  end
+  if type(entry) ~= 'table' then return end
+  local forget_args = { '--forget', session_id }
+  if entry.ts ~= nil then
+    table.insert(forget_args, '--only-if-ts')
+    table.insert(forget_args, tostring(entry.ts))
+  end
+  local args = forget_spawner(forget_args)
+  if type(args) == 'table' and #args > 0 then
+    pcall(function() wezterm.background_child_process(args) end)
+    hidden_entries[session_id] = entry.ts
+    state_cache.entries[session_id] = nil
+    if module_logger then
+      module_logger.info('attention', 'forget entry', {
+        session_id = session_id,
+        tmux_session = entry.tmux_session,
+        status = entry.status,
+      })
+    end
+  end
+end
+
 -- wezterm slot stops hosting a tmux session — overflow rotation
 -- (Alt+x picks a different session), spawn-cap eviction, workspace
 -- close — so the entry leaves `entries` and lands in `recent[]`
 -- instead of dangling indefinitely. Mirrors the Alt+. forget shape
 -- (background --forget + optimistic hide) so the picker / badge
--- update within the same tick.
+-- update within the same tick. Session-wide on purpose: the slot
+-- change is a positive signal from titles.lua. Snapshot reachability
+-- must NOT call this (see write_live_snapshot).
 function M.forget_by_tmux_session(tmux_session)
   if type(tmux_session) ~= 'string' or tmux_session == '' then return end
   if type(forget_spawner) ~= 'function' then return end
