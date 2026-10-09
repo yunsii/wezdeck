@@ -49,8 +49,10 @@ Use this doc when you need the shortest possible map of the repository docs.
 - Logger author surface (categories, levels, render-path discipline):
   Read [`logging-conventions.md`](./logging-conventions.md).
 - Cross-host development environment failures involving Windows, WSL, DNS,
-  VPN/proxy software, shells, or agent CLIs:
-  Read [`development-environment-troubleshooting.md`](./development-environment-troubleshooting.md).
+  VPN/proxy software, shells, or agent CLIs (including
+  `Failed to translate 'C:\…'` / fake `/mnt/c` / unread image-path paste):
+  Read [`development-environment-troubleshooting.md`](./development-environment-troubleshooting.md)
+  ([`#windows-drives-not-mounted-failed-to-translate`](./development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate)).
 - Entry points, ownership, and runtime design:
   Read [`architecture.md`](./architecture.md).
 - Agent 执行通道调度（人工 TUI / 跨仓工单 / OpenClaw ACP·Main / 审查 headless；

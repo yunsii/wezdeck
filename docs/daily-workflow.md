@@ -183,7 +183,7 @@ That suite uses a dedicated temporary `tmux -L ...` socket, a temporary `HOME`, 
 
 ## Common Maintenance Paths
 
-- If text paste is fast but image-path paste stops working in `hybrid-wsl`, sync the runtime, let WezTerm auto-reload, and inspect the shared `trace_id` across `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` and `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log`.
+- If text paste is fast but image-path paste stops working in `hybrid-wsl`, first confirm `/mnt/c` is a real Windows mount (`findmnt /mnt/c`; `Failed to translate 'C:\…'` spam means automount died — [`development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate`](./development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate)). After mounts are healthy: sync the runtime, let WezTerm auto-reload, and inspect the shared `trace_id` across `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` and `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log`.
 - If `scripts/runtime/agent-clipboard.sh` fails, first rerun [`scripts/dev/check-agent-clipboard.sh`](../scripts/dev/check-agent-clipboard.sh) to distinguish a wrapper bug from a lower-level helper or clipboard issue.
 - If an external agent platform cannot find the clipboard wrapper, verify that the latest sync wrote `$HOME/.wezterm-x/agent-tools.env` (on the **WSL** home, not under `%USERPROFILE%\.wezterm-x\`) and that its `agent_clipboard` path still exists.
 - The `open-project-session.sh` helper warns when tmux is older than 3.3. Upgrade tmux before relying on the managed theme if passthrough support is missing.

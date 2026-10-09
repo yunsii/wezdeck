@@ -2,7 +2,7 @@
 
 Use this doc for host disk headroom on the Windows volume that backs the WSL `ext4.vhdx`: why sparse VHD is a trap, reclaim / compact, the disk guard and `D·…` badge, and OEM preinstall inventory.
 
-Operator entry / other diagnostics: [`diagnostics.md`](./diagnostics.md). Guest memory / OOM: [`guest-oom.md`](./guest-oom.md).
+Operator entry / other diagnostics: [`diagnostics.md`](./diagnostics.md). Guest memory / OOM: [`guest-oom.md`](./guest-oom.md). The sampler reads host avail through `/mnt/<drive>`; if the shell spams `wsl: Failed to translate 'C:\…'` or `/mnt/d` is a fake guest directory, fix Windows-drive automount first — [`development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate`](./development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate).
 
 
 The distro lives on a fixed-size host volume, and the failure mode is the same shape as guest OOM: nothing warns you until everything stops. Reference incident (2026-07-25): `D:` (256 GB) reached **331 MB free**. `ext4.vhdx` was 228.4 GiB while the guest filesystem inside it held only 191 GiB.

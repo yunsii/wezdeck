@@ -131,8 +131,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   Record new ones there rather than only in a commit body, which is not
   reviewable day to day.
 - Cross-host failures (Windows, WSL, DNS, VPN/proxy, shells, agent CLIs);
-  WezTerm silent exit / whole distro vanish (distro vs VM reboot; MCE
-  `kernel-panic-*.txt` under `%LOCALAPPDATA%\Temp\wsl-crashes\`):
+  WezTerm silent exit / distro vanish; `Failed to translate 'C:\…'` / fake
+  `/mnt/c` / unread image-path paste:
   Read [`docs/development-environment-troubleshooting.md`](docs/development-environment-troubleshooting.md).
 - Adding or modifying a logger callsite, choosing a category, deciding
   log level / required fields, or moving a log file across the WSL

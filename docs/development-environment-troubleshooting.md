@@ -87,6 +87,63 @@ hardening lives in [`guest-oom.md`](./guest-oom.md). Go there when step 3
 points at OOM or high-order allocation. Stay on this page when step 2 shows
 MCE / kernel-panic, or when the Windows side is otherwise implicated.
 
+## Windows Drives Not Mounted (`Failed to translate`)
+
+Shell startup dumps many lines like
+`wsl: Failed to translate 'C:\WINDOWS\system32'` (and every other Windows
+`PATH` entry), `/mnt/c` / `/mnt/d` look present but empty or wrong, image-path
+paste inserts a `/mnt/c/Users/…/clipboard/exports/….png` that the agent cannot
+open, and `disk-guard` / `wslpath -w /mnt/c/…` behave as if C: were inside the
+distro. **Do not start by debugging the clipboard helper or WezTerm paste.**
+
+### What broke
+
+Automount of fixed Windows drives failed. `/mnt/c`, `/mnt/d`, … remain as
+**placeholder directories on the Linux rootfs** (same `dev` as `/` in `stat`),
+not 9p/virtiofs mounts of `C:\` / `D:\`. Interop then cannot translate Windows
+paths; smart paste still exports the PNG on the real Windows
+`%LOCALAPPDATA%\wezterm-runtime\state\clipboard\exports\`, but the guest path
+points at the fake tree.
+
+WSL 3.x pushes **virtiofs** for Windows↔Linux file access. A known failure mode
+is: when `virtiofs=true` and **any one** drive fails `AddVirtioFsShare`,
+automount of **all** fixed drives can be skipped with little in `dmesg`
+([microsoft/WSL#40773](https://github.com/microsoft/WSL/issues/40773),
+[#40790](https://github.com/microsoft/WSL/issues/40790)). Empty placeholders
+for extra letters (`/mnt/e`, `/mnt/g`, cloud / disconnected volumes) are common
+triggers. Path layout is unchanged (`C:` still means `/mnt/c` when mounted).
+
+Reference on this host: 2026-10-09 after WSL 3.0.1 — translate spam + image
+paste unreadable; `wsl --shutdown` restored `findmnt` → `C:\`/`D:\`/`E:\` as
+9p.
+
+### Confirm
+
+```bash
+findmnt /mnt/c /mnt/d          # expect SOURCE C:\ / D:\, FSTYPE 9p or virtiofs
+df -hT /mnt/c /                # /mnt/c must NOT share the guest ext4 device
+ls /mnt/c/Windows              # must exist when C: is mounted
+wslpath -w /mnt/c/Users        # expect C:\Users…, not \\wsl.localhost\…\mnt\c\…
+```
+
+Fake mount: `stat -c '%d' / /mnt/c` prints the **same** device id; `wslpath -w`
+returns a `\\wsl.localhost\<Distro>\mnt\c\…` UNC.
+
+### Recover
+
+1. From **Windows** (not from the broken guest mount view): `wsl --shutdown`,
+   reopen the distro, re-run the confirm block.
+2. If still empty, mount by hand (often falls back to Plan9 when virtiofs
+   fails): `sudo mount -t drvfs C: /mnt/c` (and `D:`, `E:` as needed).
+3. Lasting: inspect `%UserProfile%\.wslconfig` for `virtiofs=true`; temporarily
+   disable it if a bad drive letter keeps poisoning automount; fix or remove
+   unshareable letters (cloud / stale `E:`/`G:`), then re-enable virtiofs if
+   desired.
+
+After mounts are real, image-path paste and `disk-guard` (vhdx on `/mnt/d`)
+work again without clipboard code changes. Helper/sync `trace_id` triage in
+[`diagnostics.md`](./diagnostics.md) only after `/mnt/c` is confirmed mounted.
+
 ## Agent-CLI Stalls On IPv6 / AAAA DNS
 
 ### Symptoms
