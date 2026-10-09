@@ -23,15 +23,18 @@
 #   reserve   host space deliberately withheld from WSL, so the volume never
 #             goes fully dry even if the distro consumes its whole budget
 #   headroom  avail + gap - reserve — what the distro can still write while
-#             leaving the reserve intact. The badge shows this, and alerting
-#             keys on it, so hitting zero means "WSL is out of budget", not
-#             "the disk is out of space".
+#             leaving the reserve intact. One of two alert inputs.
 #
-# `gap` deliberately does not drive the badge on its own. When the volume is
-# a dedicated WSL disk (the usual arrangement, and the case here), reclaimable
-# space is not waste — it is the distro's own reserve. Compaction converts gap
-# back into avail; it does not create headroom. See docs/host-disk.md
-# "Host disk space".
+# Alerting is a dual gate (take the worse of the two):
+#
+#   1. headroom as a % of budget (warn <10%, crit <5%) — WSL write budget
+#   2. host avail as absolute GiB (warn <10G, crit ≤5G) — volume about to dry
+#
+# Gate 2 exists because a large gap can keep headroom looking healthy while
+# the host volume has only megabytes left — the 2026-07-25 and 2026-10-09
+# incidents both failed that way. `gap` still does not drive a level on its
+# own (on a dedicated WSL disk it is reserve, not waste); compaction converts
+# gap into avail. See docs/host-disk.md.
 #
 # Usage:
 #   scripts/runtime/wsl-disk-guard.sh sample
@@ -47,6 +50,12 @@
 #                                Default 10
 #   WEZTERM_DISK_CRIT_PCT        headroom below this % of budget is `crit`.
 #                                Default 5
+#   WEZTERM_DISK_AVAIL_WARN_GB   host avail below this GiB is at least `warn`.
+#                                Default 10. Set 0 to disable this gate.
+#   WEZTERM_DISK_AVAIL_CRIT_GB   host avail at or below this GiB is `crit`.
+#                                Default 5. Set 0 to disable this gate.
+#   WEZTERM_DISK_HISTORY_MAX     NDJSON samples kept next to status.json.
+#                                Default 288 (~24h at 5 min). 0 disables.
 #
 # WEZTERM_DISK_VOLUME and WEZTERM_DISK_RESERVE_GB also read from
 # wezterm-x/local/shared.env, which is the place to set them per machine.
@@ -75,11 +84,14 @@ VOLUME="${_env_volume:-${WEZTERM_DISK_VOLUME:-}}"
 RESERVE_GB="${_env_reserve:-${WEZTERM_DISK_RESERVE_GB:-5}}"
 WARN_PCT="${WEZTERM_DISK_WARN_PCT:-10}"
 CRIT_PCT="${WEZTERM_DISK_CRIT_PCT:-5}"
+AVAIL_WARN_GB="${WEZTERM_DISK_AVAIL_WARN_GB:-10}"
+AVAIL_CRIT_GB="${WEZTERM_DISK_AVAIL_CRIT_GB:-5}"
+HISTORY_MAX="${WEZTERM_DISK_HISTORY_MAX:-288}"
 ALERT_ENABLED="${WEZTERM_DISK_ALERT:-1}"
 ALERT_COOLDOWN="${WEZTERM_DISK_ALERT_COOLDOWN:-21600}"
 
 usage() {
-  sed -n '2,38p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,55p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 now_ms() {
@@ -295,29 +307,123 @@ measure() {
       'BEGIN { printf "%.1f", h * 100 / b }')"
   fi
 
-  LEVEL="$(classify)"
+  # Test seams: let the unit suite inject host/guest sizes without mocking df.
+  # Unset in production.
+  if [[ "${WEZTERM_DISK_TEST_HOST_AVAIL_BYTES:-}" =~ ^[0-9]+$ ]]; then
+    HOST_AVAIL="$WEZTERM_DISK_TEST_HOST_AVAIL_BYTES"
+  fi
+  if [[ "${WEZTERM_DISK_TEST_HOST_SIZE_BYTES:-}" =~ ^[0-9]+$ ]]; then
+    HOST_SIZE="$WEZTERM_DISK_TEST_HOST_SIZE_BYTES"
+    BUDGET_BYTES=$((HOST_SIZE - RESERVE_BYTES))
+    ((BUDGET_BYTES < 1)) && BUDGET_BYTES=1
+  fi
+  if [[ "${WEZTERM_DISK_TEST_GUEST_USED_BYTES:-}" =~ ^[0-9]+$ ]]; then
+    GUEST_USED="$WEZTERM_DISK_TEST_GUEST_USED_BYTES"
+    if [[ -n "$VHDX_BYTES" ]]; then
+      GAP_BYTES=$((VHDX_BYTES - GUEST_USED))
+      ((GAP_BYTES < 0)) && GAP_BYTES=0
+      GAP_ON_VOLUME=0
+      if [[ -n "$VHDX_MOUNT" && "$VHDX_MOUNT" == "$HOST_MOUNT" ]]; then
+        GAP_ON_VOLUME="$GAP_BYTES"
+      fi
+    fi
+  fi
+  # Recompute headroom after test-seam overrides so classify sees consistent
+  # numbers (avail/gap/reserve must move together).
+  if [[ -n "$HOST_AVAIL" ]]; then
+    HEADROOM_BYTES=$((HOST_AVAIL + GAP_ON_VOLUME - RESERVE_BYTES))
+    ((HEADROOM_BYTES < 0)) && HEADROOM_BYTES=0
+  fi
+  if [[ -n "$HEADROOM_BYTES" && -n "$BUDGET_BYTES" ]]; then
+    HEADROOM_PCT="$(awk -v h="$HEADROOM_BYTES" -v b="$BUDGET_BYTES" \
+      'BEGIN { printf "%.1f", h * 100 / b }')"
+  fi
+
+  classify
 }
 
-# ok < warn < crit, keyed on headroom as a percentage of WSL's budget.
+# Dual gate: worse of (headroom %, host avail GiB). Sets LEVEL, LEVEL_REASON,
+# and BADGE_BYTES (the number the status-bar segment should show).
 #
-# Percent rather than absolute bytes because the same 20G means "plenty" on a
-# 1T volume and "about to stop" on a 128G one, and the threshold should not
-# need re-tuning per machine.
+# Headroom stays percentage-of-budget so the same knobs work across volume
+# sizes. Host avail is absolute because "the NTFS volume is about to dry" is
+# a host-side failure mode that a large gap must not mask — reference
+# incidents 2026-07-25 (331 MB free) and 2026-10-09 (~dozen MB free).
 #
-# Gap is reported but never classified: on a dedicated WSL volume it is the
-# distro's own reserve, not waste, and flagging it would mean a
-# permanently-lit warning that means nothing.
+# Gap alone never escalates: on a dedicated WSL volume it is the distro's own
+# reserve. AVAIL_*_GB=0 disables that gate (tests / unusual layouts).
 classify() {
-  if [[ -z "$HEADROOM_PCT" ]]; then
-    printf 'unknown\n'
-    return 0
+  LEVEL="unknown"
+  LEVEL_REASON="unknown"
+  BADGE_BYTES=""
+
+  local headroom_level="unknown"
+  if [[ -n "$HEADROOM_PCT" ]]; then
+    if awk -v p="$HEADROOM_PCT" -v t="$CRIT_PCT" 'BEGIN { exit !(p < t) }'; then
+      headroom_level="crit"
+    elif awk -v p="$HEADROOM_PCT" -v t="$WARN_PCT" 'BEGIN { exit !(p < t) }'; then
+      headroom_level="warn"
+    else
+      headroom_level="ok"
+    fi
   fi
-  if awk -v p="$HEADROOM_PCT" -v t="$CRIT_PCT" 'BEGIN { exit !(p < t) }'; then
-    printf 'crit\n'
-  elif awk -v p="$HEADROOM_PCT" -v t="$WARN_PCT" 'BEGIN { exit !(p < t) }'; then
-    printf 'warn\n'
+
+  local avail_level="ok"
+  if [[ -n "$HOST_AVAIL" ]]; then
+    local avail_gib
+    avail_gib="$(awk -v b="$HOST_AVAIL" 'BEGIN { printf "%.6f", b / 1073741824 }')"
+    if [[ "$AVAIL_CRIT_GB" =~ ^[0-9]+(\.[0-9]+)?$ ]] \
+      && awk -v a="$avail_gib" -v t="$AVAIL_CRIT_GB" 'BEGIN { exit !(t > 0 && a <= t) }'; then
+      avail_level="crit"
+    elif [[ "$AVAIL_WARN_GB" =~ ^[0-9]+(\.[0-9]+)?$ ]] \
+      && awk -v a="$avail_gib" -v t="$AVAIL_WARN_GB" 'BEGIN { exit !(t > 0 && a < t) }'; then
+      avail_level="warn"
+    fi
   else
-    printf 'ok\n'
+    avail_level="unknown"
+  fi
+
+  local headroom_rank avail_rank
+  headroom_rank="$(level_rank "$headroom_level")"
+  avail_rank="$(level_rank "$avail_level")"
+
+  if ((headroom_rank >= avail_rank)); then
+    LEVEL="$headroom_level"
+  else
+    LEVEL="$avail_level"
+  fi
+  # Prefer a known headroom/avail signal over "unknown" when one side failed
+  # to measure: an unresolved headroom with a live avail still alerts.
+  if [[ "$LEVEL" == "unknown" ]]; then
+    if [[ "$avail_level" != "unknown" ]]; then
+      LEVEL="$avail_level"
+    elif [[ "$headroom_level" != "unknown" ]]; then
+      LEVEL="$headroom_level"
+    fi
+  fi
+
+  local hr_hot=0 av_hot=0
+  ((headroom_rank >= 2)) && hr_hot=1
+  ((avail_rank >= 2)) && av_hot=1
+  if ((hr_hot && av_hot)); then
+    LEVEL_REASON="both"
+  elif ((av_hot)); then
+    LEVEL_REASON="host_avail"
+  elif ((hr_hot)); then
+    LEVEL_REASON="headroom"
+  elif [[ "$LEVEL" == "ok" ]]; then
+    LEVEL_REASON="ok"
+  else
+    LEVEL_REASON="unknown"
+  fi
+
+  # Badge number: when the host volume is the binding constraint, show avail
+  # (a large headroom would lie about how dry the volume is). Otherwise show
+  # headroom — the distro write budget.
+  if [[ "$LEVEL_REASON" == "host_avail" || "$LEVEL_REASON" == "both" ]]; then
+    BADGE_BYTES="$HOST_AVAIL"
+  else
+    BADGE_BYTES="$HEADROOM_BYTES"
   fi
 }
 
@@ -345,6 +451,37 @@ json_field() {
   fi
 }
 
+history_file_path() {
+  printf '%s\n' "$(dirname "$(status_file_path)")/history.ndjson"
+}
+
+# Append one compact sample line and trim to HISTORY_MAX. Survives a crash that
+# overwrites status.json, so the next boot can still reconstruct the approach
+# to a disk-full event. Disabled when HISTORY_MAX=0.
+append_history() {
+  [[ "$HISTORY_MAX" =~ ^[0-9]+$ ]] || return 0
+  ((HISTORY_MAX > 0)) || return 0
+  local path tmp dir
+  path="$(history_file_path)"
+  dir="$(dirname "$path")"
+  mkdir -p "$dir" 2>/dev/null || true
+  tmp="${path}.tmp.$$"
+  {
+    [[ -f "$path" ]] && cat "$path" 2>/dev/null
+    printf '{"ts":"%s","level":"%s","reason":"%s","host_avail_bytes":%s,"gap_bytes":%s,"headroom_bytes":%s,"headroom_pct":%s,"vhdx_bytes":%s,"guest_used_bytes":%s}\n' \
+      "$(date --iso-8601=seconds)" \
+      "$LEVEL" \
+      "$LEVEL_REASON" \
+      "$(json_field "$HOST_AVAIL")" \
+      "$(json_field "$GAP_BYTES")" \
+      "$(json_field "$HEADROOM_BYTES")" \
+      "${HEADROOM_PCT:-null}" \
+      "$(json_field "$VHDX_BYTES")" \
+      "$(json_field "$GUEST_USED")"
+  } 2>/dev/null | tail -n "$HISTORY_MAX" >"$tmp" 2>/dev/null || true
+  mv -f "$tmp" "$path" 2>/dev/null || rm -f "$tmp" 2>/dev/null || true
+}
+
 publish() {
   local path tmp
   path="$(status_file_path)"
@@ -355,8 +492,9 @@ publish() {
   # missing jq must not cost the badge its heartbeat.
   cat >"$tmp" 2>/dev/null <<EOF
 {
-  "version": 1,
+  "version": 2,
   "level": "$LEVEL",
+  "level_reason": "$LEVEL_REASON",
   "host_mount": $( [[ -n "$HOST_MOUNT" ]] && printf '"%s"' "$HOST_MOUNT" || printf 'null' ),
   "host_avail_bytes": $(json_field "$HOST_AVAIL"),
   "host_size_bytes": $(json_field "$HOST_SIZE"),
@@ -366,11 +504,14 @@ publish() {
   "gap_bytes": $(json_field "$GAP_BYTES"),
   "headroom_bytes": $(json_field "$HEADROOM_BYTES"),
   "headroom_pct": ${HEADROOM_PCT:-null},
+  "badge_bytes": $(json_field "$BADGE_BYTES"),
   "budget_bytes": $(json_field "$BUDGET_BYTES"),
   "reserve_bytes": $(json_field "$RESERVE_BYTES"),
   "reserve_gb": $RESERVE_GB,
   "warn_pct": $WARN_PCT,
   "crit_pct": $CRIT_PCT,
+  "avail_warn_gb": $AVAIL_WARN_GB,
+  "avail_crit_gb": $AVAIL_CRIT_GB,
   "last_alert_level": "$LAST_ALERT_LEVEL",
   "last_alert_at_ms": $(json_field "$LAST_ALERT_AT_MS"),
   "heartbeat_at_ms": $(now_ms),
@@ -378,6 +519,7 @@ publish() {
 }
 EOF
   mv -f "$tmp" "$path" 2>/dev/null || rm -f "$tmp" 2>/dev/null || true
+  append_history
 }
 
 # Read back the previous run's alert bookkeeping. Kept as plain grep so a
@@ -419,8 +561,9 @@ fire_alert() {
   local reminder="${WEZTERM_DISK_REMINDER_BIN:-$SCRIPT_DIR/reminder.sh}"
   [[ -x "$reminder" ]] || return 0
 
-  local title message headroom_gib gap_hint=""
+  local title message headroom_gib avail_gib gap_hint=""
   headroom_gib="$(gib "$HEADROOM_BYTES")G（${HEADROOM_PCT}%）"
+  avail_gib="$(gib "$HOST_AVAIL")G"
   # Only worth mentioning when compaction is the actionable move — i.e. the
   # file cannot grow much further but is holding reusable space.
   if [[ -n "$GAP_BYTES" && -n "$HOST_AVAIL" ]] \
@@ -430,11 +573,20 @@ fire_alert() {
 
   if [[ "$LEVEL" == "crit" ]]; then
     title=" WSL 磁盘告急 "
-    message="可写余量仅 ${headroom_gib}${gap_hint}"
   else
     title=" WSL 磁盘偏低 "
-    message="可写余量 ${headroom_gib}${gap_hint}"
   fi
+  case "$LEVEL_REASON" in
+    host_avail)
+      message="宿主可用仅 ${avail_gib}（WSL 预算仍 ${headroom_gib}）${gap_hint}"
+      ;;
+    both)
+      message="宿主可用 ${avail_gib}，WSL 预算 ${headroom_gib}${gap_hint}"
+      ;;
+    *)
+      message="可写余量 ${headroom_gib}${gap_hint}"
+      ;;
+  esac
 
   # tmux run-shell -b, not a bare background job: a popup spawned from a
   # dying timer process would be reaped with it. See docs/reminders.md.
@@ -458,7 +610,7 @@ cmd_status() {
   load_previous
   measure
 
-  printf 'level        %s\n' "$LEVEL"
+  printf 'level        %s  (reason=%s)\n' "$LEVEL" "$LEVEL_REASON"
   printf 'headroom     %sG  (%s%% of budget)   <- WSL budget left\n' \
     "$(gib "$HEADROOM_BYTES")" "${HEADROOM_PCT:-?}"
   printf '  host avail %sG   (room for the vhdx to grow, of %sG volume)\n' \
@@ -472,13 +624,16 @@ cmd_status() {
   printf '  reserve   -%sG   (withheld from WSL so %s never goes dry)\n' \
     "$(gib "$RESERVE_BYTES")" "${HOST_MOUNT:-the volume}"
   printf 'budget       %sG   (volume minus reserve)\n' "$(gib "$BUDGET_BYTES")"
+  printf 'badge        %sG   (number shown when level != ok)\n' "$(gib "$BADGE_BYTES")"
   printf 'host mount   %s%s\n' "${HOST_MOUNT:-<unresolved>}" \
     "$([[ -n "$VOLUME" ]] && printf ' (configured)' || printf ' (from vhdx)')"
   printf 'vhdx         %s\n' "${VHDX_PATH:-<unresolved>}"
   printf 'vhdx size    %sG\n' "$(gib "$VHDX_BYTES")"
   printf 'guest used   %sG\n' "$(gib "$GUEST_USED")"
-  printf 'thresholds   warn<%s%% crit<%s%% of budget (reserve %sG)\n' "$WARN_PCT" "$CRIT_PCT" "$RESERVE_GB"
+  printf 'thresholds   headroom warn<%s%% crit<%s%%; avail warn<%sG crit<=%sG (reserve %sG)\n' \
+    "$WARN_PCT" "$CRIT_PCT" "$AVAIL_WARN_GB" "$AVAIL_CRIT_GB" "$RESERVE_GB"
   printf 'status file  %s\n' "$(status_file_path)"
+  printf 'history file %s  (max %s samples)\n' "$(history_file_path)" "$HISTORY_MAX"
   if [[ -n "$LAST_ALERT_LEVEL" ]]; then
     printf 'last alert   %s\n' "$LAST_ALERT_LEVEL"
   fi
@@ -487,9 +642,12 @@ cmd_status() {
   # only worth doing when the file is out of room to grow while sitting on
   # reusable space — or when something other than WSL needs the volume.
   if [[ -n "$GAP_BYTES" && -n "$HOST_AVAIL" ]] && ((GAP_BYTES > HOST_AVAIL)); then
+    local distro="${WSL_DISTRO_NAME:-Ubuntu-24.04}"
     printf '\nCompaction would move %sG from gap back to host avail.\n' "$(gib "$GAP_BYTES")"
     printf '  sudo fstrim -av\n'
-    printf '  # then, elevated Windows PowerShell:\n'
+    printf '  # then from Windows (preferred on WSL 3.0.1+):\n'
+    printf '  wsl --manage %s --compact\n' "$distro"
+    printf '  # or elevated PowerShell:\n'
     printf '  wsl --shutdown\n'
     printf '  Optimize-VHD -Path "%s" -Mode Full\n' "$(wslpath -w "${VHDX_PATH:-}" 2>/dev/null || printf '<vhdx>')"
     printf 'See docs/host-disk.md.\n'

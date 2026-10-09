@@ -4,23 +4,22 @@
 -- Windows-accessible runtime state dir (same FS as attention.json /
 -- chrome-debug), so WezTerm Lua never crosses \\wsl$ on the 250 ms tick.
 --
--- One number: headroom, meaning what the distro can still write. Neither
--- side's `df` answers that — the guest sees the vhdx's 1 TB virtual capacity
--- (5.7x overstated on a 256G partition here) and the host sees only what the
--- vhdx has not claimed yet. Headroom is host avail plus the gap inside the
--- vhdx, which the guest reuses in place.
+-- One number from the sampler's `badge_bytes` (falls back to `headroom_bytes`
+-- for older status.json). The sampler picks the binding constraint:
+-- headroom (avail + gap - reserve) when the WSL write budget is tight, or
+-- host avail when the volume itself is about to dry — a large gap must not
+-- make the bar show tens of GiB while D: has megabytes left (2026-10-09).
 --
--- The gap is deliberately not surfaced. On a dedicated WSL volume it is the
--- distro's own reserve rather than waste, so showing it would light up a
--- permanent hint that never needs acting on.
+-- The gap is deliberately not surfaced on its own. On a dedicated WSL volume
+-- it is the distro's own reserve rather than waste.
 -- See docs/host-disk.md.
 --
 -- **The badge renders nothing while healthy.** It appears only when there is
 -- something to act on, so its mere presence in the bar is the signal — no
 -- always-on number to learn to ignore, and no width spent on the common case.
 --
---   (absent)   headroom at or above the warn threshold
---   D·22G      below warn (amber)
+--   (absent)   both headroom% and host-avail gates healthy
+--   D·22G      below warn (amber) — number is badge_bytes
 --   D·11G      below crit (red, and the guard pops a reminder on escalation)
 --   D·?        sampler was publishing and went stale — the monitor itself
 --              needs attention. Never published at all renders nothing, so a
@@ -161,11 +160,13 @@ function M.format_text(state, fresh)
   end
 
   local label = mount_label(state.host_mount)
-  local headroom = format_gib(state.headroom_bytes)
-  if not headroom then
+  -- Prefer sampler-chosen badge_bytes (avail when the volume is the binding
+  -- constraint); fall back to headroom_bytes for pre-v2 status files.
+  local shown = format_gib(state.badge_bytes) or format_gib(state.headroom_bytes)
+  if not shown then
     return ' ' .. label .. '·? '
   end
-  return ' ' .. label .. '·' .. headroom .. ' '
+  return ' ' .. label .. '·' .. shown .. ' '
 end
 
 function M.render_status_segment(palette)

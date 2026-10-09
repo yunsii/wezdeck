@@ -7,11 +7,10 @@
 --    rendering an empty segment or an always-on number defeats the point.
 --    Two exceptions that must keep rendering: a stale sampler (the monitor
 --    itself is what needs attention) and missing headroom.
--- 2. It shows headroom — host avail plus the reusable gap inside the vhdx —
---    because that is the only number answering "how much more can the distro
---    write". Neither `df` does: the guest reports the vhdx's virtual
---    capacity, the host reports only unclaimed space. The gap itself never
---    surfaces; on a dedicated WSL volume it is reserve, not waste.
+-- 2. It shows `badge_bytes` from the sampler (falling back to headroom_bytes
+--    for older status.json). The sampler picks the binding constraint:
+--    headroom when the WSL write budget is tight, host avail when the volume
+--    itself is dry. The gap never surfaces on its own.
 --
 -- Drive with scripts/dev/test-lua-units.sh.
 
@@ -139,13 +138,30 @@ it('appears at warn with the amber pair', function()
     host_avail_bytes = 8 * GiB,
     gap_bytes = 10 * GiB,
     headroom_bytes = 22 * GiB,
+    badge_bytes = 22 * GiB,
     heartbeat_at_ms = 1000000,
   }
   assert_eq(badge_text(), ' D\xC2\xB722G ')
   assert_eq(badge_bg(), '#cc9900', 'warn uses the attention-waiting color')
 end)
 
-it('shows headroom, not host avail, once it does appear', function()
+it('shows badge_bytes when the sampler picked host avail as binding', function()
+  fake_now_ms = 1000000
+  write_state {
+    level = 'crit',
+    level_reason = 'host_avail',
+    host_mount = '/mnt/d',
+    host_avail_bytes = 2 * GiB,
+    gap_bytes = 40 * GiB,
+    headroom_bytes = 37 * GiB,
+    badge_bytes = 2 * GiB,
+    heartbeat_at_ms = 1000000,
+  }
+  assert_eq(badge_text(), ' D\xC2\xB72G ',
+    'a large headroom must not hide a dry host volume')
+end)
+
+it('falls back to headroom_bytes when badge_bytes is absent (pre-v2)', function()
   fake_now_ms = 1000000
   write_state {
     level = 'warn',
@@ -155,7 +171,7 @@ it('shows headroom, not host avail, once it does appear', function()
     headroom_bytes = 22 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' D\xC2\xB722G ', 'the number is the sum, not host avail')
+  assert_eq(badge_text(), ' D\xC2\xB722G ', 'older status.json still renders')
 end)
 
 it('crit level uses its own red, not the attention amber', function()

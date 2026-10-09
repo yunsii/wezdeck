@@ -31,12 +31,13 @@ Order matters — compacting before trimming reclaims nothing, and every step af
 
 1. **Delete inside the guest** (see inventory below).
 2. **`sudo fstrim -av`** — marks freed blocks as discardable. **This is the step that determines how much compaction reclaims**, not a precaution: the host cannot read the guest's ext4, so the TRIM record is its only evidence of which blocks are dead (see the mode note in step 4). The root mount already carries `discard` so most of it happens continuously, but run it anyway — it is cheap and idempotent. It reports *all* free space on each run, not a delta, so a large number is not evidence that continuous discard was broken.
-3. **`wsl --shutdown`** from Windows. This kills every tmux session, every agent pane, and the OpenClaw gateway — an agent working inside the distro cannot perform this step or anything after it.
-4. **Compact**, in an elevated PowerShell:
+3. **Stop the distro** from Windows. Prefer `wsl --manage <Distro> --compact` on WSL 3.0.1+ (it force-terminates, discard-checks, then compacts in one shot). Otherwise `wsl --shutdown` then step 4. Either path kills every tmux session, every agent pane, and the OpenClaw gateway — an agent inside the distro cannot perform it.
+4. **Compact** (only if you used `wsl --shutdown` instead of `--compact`), in an elevated PowerShell:
 
    ```powershell
    Optimize-VHD -Path "D:\WSL\<Distro>\ext4.vhdx" -Mode Full
    ```
+
 
    **`-Mode Full` does not actually run as Full here, and that is fine.** [Per the cmdlet docs](https://learn.microsoft.com/en-us/powershell/module/hyper-v/optimize-vhd), `Full` (zero detect + block reclaim) is only permitted when the VHDX is attached read-only; after `wsl --shutdown` it is fully detached, so the call silently degrades to `Prezeroed` (block reclaim only). Nothing is lost — **zero detect is useless against ext4**, which frees blocks by updating metadata and never writes zeros, and Windows cannot enumerate free space inside a non-NTFS guest filesystem the way it can for NTFS. The docs call this case out under `Prezeroed`.
 
@@ -90,7 +91,7 @@ guest reports the vhdx's *virtual* capacity — 1 TB by default, on a 256G
 partition, which overstated real headroom 5.7× on this host. The host reports
 only what the vhdx has not claimed yet, ignoring all the reusable space already
 inside it. [`wsl-disk-guard.sh`](../scripts/runtime/wsl-disk-guard.sh) publishes
-the number that is actually true:
+both sides of the truth:
 
 ```
 headroom = host avail + gap - reserve
@@ -102,27 +103,28 @@ directly: guest usage climbed 94G → 102G in an hour while `ext4.vhdx` stayed a
 exactly 228.4G and host avail never budged.
 
 `reserve` (`WEZTERM_DISK_RESERVE_GB`, default 5) is host space withheld from
-WSL. Without it the badge would count the volume's last byte as WSL's to spend,
-and hitting zero would mean the host volume is dry — which breaks more than the
-distro. With it, headroom reaching zero means "WSL is out of its budget" while
-the volume still has room to breathe, so the alert arrives while the situation
-is still only a WSL problem. Set it to 0 on a volume nothing else uses.
+WSL headroom accounting. Set it to 0 on a volume nothing else uses.
 
-**`gap` deliberately does not drive the badge or alerting.** When the volume is
-a dedicated WSL disk — the usual arrangement, and the case here, where
-everything on `D:` other than the vhdx totals 2.9G — reclaimable space is not
-waste, it is the distro's own reserve. Flagging it would light a permanent hint
-that never needs acting on, which is how a status bar teaches you to ignore it.
-Compaction converts gap into avail; it does not create headroom. That makes it
-worth doing when something *other than* WSL needs the volume, or when the file
-is out of room to grow while sitting on reusable space — `status` prints the
-recipe exactly then, and stays quiet otherwise.
+**Alerting is a dual gate** (take the worse level):
+
+| Gate | Default | Catches |
+|---|---|---|
+| headroom % of budget | warn &lt;10%, crit &lt;5% | WSL write budget running out |
+| host avail absolute | warn &lt;10G, crit ≤5G | NTFS volume about to dry |
+
+Gate 2 exists because a large gap can keep headroom looking healthy while the
+host volume has only megabytes left — **2026-07-25** (331 MB free) and
+**2026-10-09** (~dozen MB free, Kernel-Power 41) both slipped past a
+headroom-only classifier. `gap` still does not escalate on its own: on a
+dedicated WSL disk it is the distro's own reserve, not waste. Compaction
+converts gap into avail; it does not create headroom.
 
 | Piece | Where |
 |---|---|
 | Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` |
 | Timer | `wezterm-disk-guard.timer` — user unit, 1 min after start then every 5 min |
 | Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SB·N` |
+| History | `state/disk-guard/history.ndjson` — last 288 samples (~24h at 5 min) |
 | Escalation popup | `reminder.sh`, the same wrapper cron reminders use |
 
 ```bash
@@ -132,19 +134,16 @@ scripts/runtime/wsl-disk-guard.sh status           # measurement + reclaim recip
 ```
 
 **The badge is absent while healthy.** Its presence in the bar *is* the
-signal — there is nothing to read in the common case, and no always-on number
-to learn to skip. When it does appear it is one number: headroom.
+signal. When it appears it shows `badge_bytes`: host avail when that gate
+binds, otherwise headroom — so a dry volume cannot display a reassuring tens
+of GiB borrowed from gap.
 
 ```
-(absent)   headroom ≥ 10% of budget
-D·22G      below 10% (amber)
-D·11G      below 5%  (red — and the guard pops a reminder)
+(absent)   both gates healthy
+D·22G      warn (amber)
+D·2G       crit (red — and the guard pops a reminder); may be avail-driven
 D·?        the sampler was publishing and went stale
 ```
-
-Thresholds are **percentages of budget**, not absolute sizes: the same 20G is
-"plenty" on a 1 TB volume and "about to stop" on a 128G one, and a percentage
-does not need re-tuning per machine.
 
 The two `?` cases are deliberately different. A sampler that *was* publishing
 and went stale renders `D·?`, because a dead monitor is itself the thing that
@@ -153,14 +152,22 @@ clone without the guard installed shows a clean bar rather than a permanent
 question mark.
 
 To see the numbers when the badge is not showing anything, run
-`wsl-disk-guard.sh status`.
+`wsl-disk-guard.sh status`. After a crash, read `history.ndjson` next to
+`status.json` — the live status file is overwritten on the next sample.
 
 Alerting fires **on escalation only**, plus a cooldown-gated repeat while still
-`crit` (`WEZTERM_DISK_ALERT_COOLDOWN`, default 6h). Improvements never pop: the
-badge already shows recovery, and a popup that interrupts to say things got
-better is training to dismiss popups unread. Rules are pinned in
+`crit` (`WEZTERM_DISK_ALERT_COOLDOWN`, default 6h). Improvements never pop.
+Rules are pinned in
 [`tests/hook-units/test_wsl_disk_guard.sh`](../tests/hook-units/test_wsl_disk_guard.sh),
-including that a large gap must *not* change the level.
+including the tiny-avail + large-gap → crit case.
+
+**Reclaim on WSL 3.0.1+:** prefer `wsl --manage <Distro> --compact` after
+`fstrim` (force-terminates the distro, discard, then CompactVirtualDisk).
+`Optimize-VHD` remains the fallback. Do **not** rely on `sparseVhd=true` in
+`.wslconfig` for an existing distro — that knob only affects newly created
+VHDs; this host's `ext4.vhdx` was confirmed non-sparse under 3.0.1. Sparse
+re-enablement as experimental is a 3.0.2 topic and still trades away the
+reliable manual compact path (see [Do not enable sparse VHD](#do-not-enable-sparse-vhd)).
 
 #### Configuration
 
@@ -170,7 +177,7 @@ an env var you have to remember to export:
 
 ```sh
 WEZTERM_DISK_VOLUME=''        # empty = follow wherever ext4.vhdx lives
-WEZTERM_DISK_RESERVE_GB='5'   # host space withheld from WSL
+WEZTERM_DISK_RESERVE_GB='5'   # host space withheld from WSL headroom
 ```
 
 Leave `WEZTERM_DISK_VOLUME` empty unless the vhdx and the volume you care
@@ -186,7 +193,9 @@ needs care in the script, because `runtime_env_load_shell` is `set -a` plus
 captures the explicit env before loading the file and reapplies it after.
 
 Remaining knobs, env-only: `WEZTERM_DISK_WARN_PCT` (10),
-`WEZTERM_DISK_CRIT_PCT` (5), `WEZTERM_DISK_ALERT` (1),
+`WEZTERM_DISK_CRIT_PCT` (5), `WEZTERM_DISK_AVAIL_WARN_GB` (10),
+`WEZTERM_DISK_AVAIL_CRIT_GB` (5; `0` disables that gate),
+`WEZTERM_DISK_HISTORY_MAX` (288), `WEZTERM_DISK_ALERT` (1),
 `WEZTERM_DISK_ALERT_COOLDOWN` (21600), `WEZTERM_DISK_VHDX`,
 `WEZTERM_DISK_STATUS_FILE`, `WEZTERM_DISK_REMINDER_BIN` (test seam).
 
