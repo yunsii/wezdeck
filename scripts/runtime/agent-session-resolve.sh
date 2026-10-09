@@ -3,10 +3,18 @@
 #
 # Preference order for id (first usable wins):
 #   1. WEZDECK_RESUME_SESSION_ID (caller injection, e.g. F5 pre-respawn)
-#   2. attention.json live entry for (socket, session, pane)
-#   3. attention.json recent[] tombstone for the same pane key
-#   4. tmux pane options @wezterm_agent_session_id (survives respawn-pane)
-#   5. durable pin file keyed by worktree cwd + slot (survives kill-server)
+#   2. tmux pane option @wezterm_agent_session_id (survives respawn-pane; dies with pane)
+#   3. durable pin file keyed by worktree cwd + slot (survives kill-server; cwd-isolated)
+#   4. attention.json live / recent[] for (socket, session, pane) ONLY when the
+#      entry's tmux_window_name matches the current window_name — pane ids are
+#      recycled inside one tmux server, so a bare pane match can steal another
+#      worktree's conversation (e.g. Alt+g create of dev-investigation
+#      reusing %N that previously hosted dev-infra).
+#   5. window option @wezterm_primary_agent_session_id (legacy primary compat)
+#
+# When nothing usable remains, callers fall through to cwd-scoped CLI continue
+# (`claude --continue` / `codex resume --last` / `grok --continue`), which is
+# the agent CLI's native project/cwd isolation.
 #
 # Rejects attention fallback keys (`pane:<N>`) — those are not CLI resume ids.
 # Sourced by agent-resume.sh / agent-launcher.sh / tmux-reset F5 / ensure_window_panes.
@@ -197,24 +205,40 @@ agent_session_pin_window() {
 agent_session_resolve_for_pane() {
   local pane_id="${1:-}"
   local tmux_meta="" tmux_socket="" tmux_session="" tmux_window="" tmux_pane=""
-  local sid="" cwd="" slot="" pin=""
+  local tmux_window_name="" sid="" cwd="" slot="" pin=""
 
   [[ -n "$pane_id" ]] || return 0
 
   tmux_meta="$(tmux display-message -p -t "$pane_id" \
-    -F '#{socket_path}|#{session_name}|#{window_id}|#{pane_id}' 2>/dev/null || true)"
+    -F '#{socket_path}|#{session_name}|#{window_id}|#{pane_id}|#{window_name}' 2>/dev/null || true)"
   if [[ -n "$tmux_meta" ]]; then
-    IFS='|' read -r tmux_socket tmux_session tmux_window tmux_pane <<<"$tmux_meta"
+    IFS='|' read -r tmux_socket tmux_session tmux_window tmux_pane tmux_window_name <<<"$tmux_meta"
   fi
   [[ -n "$tmux_pane" ]] || tmux_pane="$pane_id"
 
-  sid="$(agent_session_resolve_from_attention "$tmux_socket" "$tmux_session" "$tmux_pane" || true)"
+  # Same-pane respawn (F5): pane option survives and is authoritative for this pane.
+  sid="$(tmux show-options -p -t "$pane_id" -v -q @wezterm_agent_session_id 2>/dev/null || true)"
   if agent_session_id_usable "$sid"; then
     printf '%s\n' "$sid"
     return 0
   fi
 
-  sid="$(tmux show-options -p -t "$pane_id" -v -q @wezterm_agent_session_id 2>/dev/null || true)"
+  # Worktree cwd pin: survives kill-server; isolates linked worktrees of one repo family.
+  cwd="$(tmux display-message -p -t "$pane_id" '#{pane_current_path}' 2>/dev/null || true)"
+  slot="$(agent_session_slot_for_pane "$pane_id" 2>/dev/null || true)"
+  if [[ -n "$cwd" && -n "$slot" ]]; then
+    pin="$(agent_session_pin_get "$cwd" "$slot" || true)"
+    sid="${pin%%$'\t'*}"
+    if agent_session_id_usable "$sid"; then
+      printf '%s\n' "$sid"
+      return 0
+    fi
+  fi
+
+  # Attention is pane-keyed; require window_name match so recycled pane ids
+  # cannot pull another worktree's conversation into a newly created window.
+  sid="$(agent_session_resolve_from_attention \
+    "$tmux_socket" "$tmux_session" "$tmux_pane" "$tmux_window_name" || true)"
   if agent_session_id_usable "$sid"; then
     printf '%s\n' "$sid"
     return 0
@@ -223,17 +247,6 @@ agent_session_resolve_for_pane() {
   sid="$(tmux show-options -w -t "$pane_id" -v -q @wezterm_primary_agent_session_id 2>/dev/null || true)"
   if agent_session_id_usable "$sid"; then
     printf '%s\n' "$sid"
-    return 0
-  fi
-
-  cwd="$(tmux display-message -p -t "$pane_id" '#{pane_current_path}' 2>/dev/null || true)"
-  slot="$(agent_session_slot_for_pane "$pane_id" 2>/dev/null || true)"
-  if [[ -n "$cwd" && -n "$slot" ]]; then
-    pin="$(agent_session_pin_get "$cwd" "$slot" || true)"
-    sid="${pin%%$'\t'*}"
-    if agent_session_id_usable "$sid"; then
-      printf '%s\n' "$sid"
-    fi
   fi
 }
 
@@ -331,10 +344,13 @@ agent_session_resolve_current() {
   fi
 }
 
+# Optional $4 = current tmux window_name. When non-empty, the attention entry
+# must carry the same tmux_window_name (fail closed if the entry lacks one).
 agent_session_resolve_from_attention() {
   local tmux_socket="${1:-}"
   local tmux_session="${2:-}"
   local tmux_pane="${3:-}"
+  local tmux_window_name="${4:-}"
   local path="" sid=""
 
   [[ -n "$tmux_pane" ]] || return 0
@@ -352,7 +368,8 @@ agent_session_resolve_from_attention() {
   sid="$(jq -r \
     --arg sock "$tmux_socket" \
     --arg sess "$tmux_session" \
-    --arg pane "$tmux_pane" '
+    --arg pane "$tmux_pane" \
+    --arg wname "$tmux_window_name" '
       def usable:
         (.session_id // "") as $id
         | ($id != "" and ($id | startswith("pane:") | not));
@@ -360,13 +377,23 @@ agent_session_resolve_from_attention() {
         (.tmux_pane // "") == $pane
         and ($sess == "" or (.tmux_session // "") == $sess)
         and ($sock == "" or (.tmux_socket // "") == $sock);
+      # Pane ids recycle inside one tmux server. When the caller knows the
+      # current window_name, require an exact match so a new worktree window
+      # that reused %N cannot resume another worktree conversation. Entries
+      # missing tmux_window_name fail closed under that gate.
+      def window_match:
+        ($wname == "")
+        or (
+          ((.tmux_window_name // "") != "")
+          and (.tmux_window_name // "") == $wname
+        );
       ((.entries // {})
         | to_entries
         | map(.value)
-        | map(select(pane_match and usable))
+        | map(select(pane_match and window_match and usable))
         | .[0].session_id // empty)
       // ((.recent // [])
-        | map(select(pane_match and usable))
+        | map(select(pane_match and window_match and usable))
         | sort_by(-(.archived_ts // 0))
         | .[0].session_id // empty)
     ' "$path" 2>/dev/null || true)"

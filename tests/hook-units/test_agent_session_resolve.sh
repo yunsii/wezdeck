@@ -32,6 +32,7 @@ cat > "$ATT_PATH" <<'JSON'
       "tmux_socket": "/tmp/tmux-1000/default",
       "tmux_session": "wezterm_config_demo",
       "tmux_pane": "%2",
+      "tmux_window_name": "dev-infra",
       "status": "waiting",
       "ts": 100
     },
@@ -40,8 +41,17 @@ cat > "$ATT_PATH" <<'JSON'
       "tmux_socket": "/tmp/tmux-1000/default",
       "tmux_session": "wezterm_config_demo",
       "tmux_pane": "%9",
+      "tmux_window_name": "dev-infra",
       "status": "running",
       "ts": 200
+    },
+    "live-sid-no-wname": {
+      "session_id": "live-sid-no-wname",
+      "tmux_socket": "/tmp/tmux-1000/default",
+      "tmux_session": "wezterm_config_demo",
+      "tmux_pane": "%3",
+      "status": "running",
+      "ts": 150
     }
   },
   "recent": [
@@ -50,6 +60,7 @@ cat > "$ATT_PATH" <<'JSON'
       "tmux_socket": "/tmp/tmux-1000/default",
       "tmux_session": "wezterm_config_demo",
       "tmux_pane": "%7",
+      "tmux_window_name": "dev-investigation",
       "archived_ts": 300
     },
     {
@@ -57,6 +68,7 @@ cat > "$ATT_PATH" <<'JSON'
       "tmux_socket": "/tmp/tmux-1000/default",
       "tmux_session": "wezterm_config_demo",
       "tmux_pane": "%7",
+      "tmux_window_name": "dev-investigation",
       "archived_ts": 100
     }
   ]
@@ -84,6 +96,23 @@ got="$(agent_session_resolve_from_attention \
   "/tmp/tmux-1000/default" "wezterm_config_demo" "%404")"
 [[ -z "$got" ]] || fail "missing pane must be empty, got=$got"
 pass "missing pane returns empty"
+
+# Recycled pane id: same %2 previously hosted dev-infra; new window is
+# dev-investigation — must NOT steal infra's session.
+got="$(agent_session_resolve_from_attention \
+  "/tmp/tmux-1000/default" "wezterm_config_demo" "%2" "dev-investigation")"
+[[ -z "$got" ]] || fail "window_name mismatch must reject, got=$got"
+pass "reject attention hit when window_name mismatches"
+
+got="$(agent_session_resolve_from_attention \
+  "/tmp/tmux-1000/default" "wezterm_config_demo" "%2" "dev-infra")"
+[[ "$got" == "live-sid-aaa" ]] || fail "matching window_name expected, got=$got"
+pass "accept attention hit when window_name matches"
+
+got="$(agent_session_resolve_from_attention \
+  "/tmp/tmux-1000/default" "wezterm_config_demo" "%3" "dev-investigation")"
+[[ -z "$got" ]] || fail "missing tmux_window_name must fail closed, got=$got"
+pass "reject attention entry missing tmux_window_name under gate"
 
 # --- env injection wins in resolve_current ---
 WEZDECK_RESUME_SESSION_ID="env-sid-ccc"
