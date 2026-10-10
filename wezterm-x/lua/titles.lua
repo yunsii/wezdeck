@@ -595,10 +595,34 @@ function M.register(opts)
   -- panes; the bus would route the same handler if it ever lands via
   -- file). Repaints the right-status counter immediately rather than
   -- waiting up to 250 ms for the next update-status tick.
+  -- File-transport ticks are often drained under pane 0 / a non-focused
+  -- window. Reload is global, but refreshing only meta.window left other
+  -- GUI windows on a stale right-status until their next unrelated tick
+  -- (2026-10-10 1→N jump). Repaint every gui window after reload.
+  local function refresh_all_attention_status()
+    local ok, windows = pcall(function()
+      return wezterm.gui.gui_windows()
+    end)
+    if ok and type(windows) == 'table' and #windows > 0 then
+      for _, w in ipairs(windows) do
+        local pane = nil
+        pcall(function()
+          pane = w:active_pane()
+        end)
+        refresh_right_status(w, pane)
+        log_rendered_status(w)
+      end
+      return
+    end
+    -- Fallback: at least refresh the event's window when mux walk fails.
+  end
+
   event_bus.on('attention.tick', function(value, meta)
     if not attention then return end
     if attention.reload_state then attention.reload_state() end
+    refresh_all_attention_status()
     if meta.window then
+      -- Ensure the sourcing window is painted even if gui_windows() was empty.
       refresh_right_status(meta.window, meta.pane)
       log_rendered_status(meta.window)
     end

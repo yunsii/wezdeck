@@ -678,32 +678,39 @@ else
     if [[ -n "$tmux_focused_pane" && "$tmux_focused_pane" == "$tmux_pane" \
           && -n "$wezterm_focused_pane_id" \
           && "$wezterm_focused_pane_id" == "${WEZTERM_PANE:-}" ]]; then
-      # User is actually looking at this pane — treat as already
-      # acknowledged. Remove any prior entry for this session (could
-      # be `running` from an earlier transition that never got a
-      # focused stop), otherwise the badge stays stuck on `running`.
+      # User is looking at this pane — do not raise waiting/done counters.
+      #
+      # waiting vs done diverge on whether we remove the live entry:
+      #   done  → remove (focus is the ack; drop ✓ / clear stale running).
+      #   waiting → keep a live `running` entry. Permission /
+      #     elicitation while focused is still mid-turn; deleting
+      #     running made the right-status drop the focused session
+      #     from ⟳ N until the next UserPromptSubmit (2026-10-10:
+      #     "当前窗口没有 running / 这条消息发送了才 running").
+      #     Skipping the waiting upsert is enough — the pane UI is
+      #     the signal; running stays informational.
       _prev_st="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' \
         "$(attention_state_path)" 2>/dev/null || printf '')"
-      attention_audit_prepare "focus_skip" "$status" "$_prev_st" "" 1
-      attention_state_remove "$session_id" 2>/dev/null || true
-      # Fire the wezterm tick so Lua reloads state_cache from disk and
-      # the badge actually drops the just-removed entry. Without this
-      # the disk is correct but Lua keeps the cached running/done
-      # entry until the next non-skipped hook fires — the user
-      # observed `1 running` stuck on the focused pane even after the
-      # focus-skip path successfully removed the entry on disk.
-      if [[ -e /dev/tty ]]; then
-        # shellcheck disable=SC1091
-        . "$script_dir/../wezterm-event-lib.sh"
-        fs_tick_ms="$(attention_state_now_ms)"
-        wezterm_event_send "attention.tick" "$fs_tick_ms" 2>/dev/null || true
-        # Diagnostic-only echo: when primary picked OSC, also drop a
-        # file-transport copy so wezterm.log records receipt of both
-        # paths and a missing OSC arrival is visible. See attention.tick
-        # echo handler in titles.lua and docs/event-bus.md.
-        if [[ "$(wezterm_event_pick_transport)" == "osc" ]]; then
-          wezterm_event_send_file "attention.tick.echo" \
-            "$fs_tick_ms" 2>/dev/null || true
+      _removed=0
+      _keep_running=0
+      if [[ "$status" == "waiting" && "$_prev_st" == "running" ]]; then
+        _keep_running=1
+        attention_audit_prepare "focus_skip" "$status" "$_prev_st" "keep_running" 1
+      else
+        attention_audit_prepare "focus_skip" "$status" "$_prev_st" "" 1
+        attention_state_remove "$session_id" 2>/dev/null || true
+        _removed=1
+        # Tick so Lua drops the removed entry; without it the cache
+        # keeps a stale running/done until the next non-skipped hook.
+        if [[ -e /dev/tty ]]; then
+          # shellcheck disable=SC1091
+          . "$script_dir/../wezterm-event-lib.sh"
+          fs_tick_ms="$(attention_state_now_ms)"
+          wezterm_event_send "attention.tick" "$fs_tick_ms" 2>/dev/null || true
+          if [[ "$(wezterm_event_pick_transport)" == "osc" ]]; then
+            wezterm_event_send_file "attention.tick.echo" \
+              "$fs_tick_ms" 2>/dev/null || true
+          fi
         fi
       fi
       runtime_log_info attention "hook focus-skipped upsert" \
@@ -713,7 +720,9 @@ else
         "tmux_pane=$tmux_pane" \
         "tmux_focused_pane=$tmux_focused_pane" \
         "wezterm_focused_pane_id=$wezterm_focused_pane_id" \
-        "removed_existing=1" 2>/dev/null || true
+        "removed_existing=$_removed" \
+        "keep_running=$_keep_running" \
+        "prev_status=${_prev_st:-}" 2>/dev/null || true
       exit 0
     fi
   fi
