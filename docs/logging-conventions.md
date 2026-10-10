@@ -114,6 +114,9 @@ Pick the name from the dictionary when one exists; coin a new field only when no
 | guest runnable / total procs | `proc_runnable` / `proc_total` |
 | largest RSS consumer (when badge ≠ ok) | `top_comm` / `top_rss_mib` |
 | slow status tick phase (temporary) | `phase_left_ms` / `phase_tabvis_ms` / `phase_prefetch_ms` / `phase_attention_ms` / `phase_live_snap_ms` / `phase_event_bus_ms` / `phase_right_ms` |
+| attention state generation | `rev` (monotonic write counter in `attention.json`) |
+| attention roster fingerprint | `digest` (short hash of sorted `session:status` roster) |
+| attention disk counts (pre focus-filter) | `disk_running` / `disk_waiting` / `disk_done` |
 
 The dictionary is small on purpose. Before inventing a field, grep existing log lines for an analogous one.
 

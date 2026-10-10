@@ -37,6 +37,7 @@ wezterm_log="${WINDOWS_RUNTIME_STATE_WSL:-}/logs/wezterm.log"
 runtime_log="${WSL_RUNTIME_LOG_FILE}"
 helper_log="${WINDOWS_HELPER_LOG_WSL:-${WINDOWS_RUNTIME_STATE_WSL:-}/logs/helper.log}"
 sb_audit="${HOME}/.openclaw/logs/session-bridge-audit.jsonl"
+attention_journal="${WEZTERM_ATTENTION_JOURNAL_FILE:-$WSL_ATTENTION_JOURNAL_FILE}"
 py="$script_dir/workflow-timeline.py"
 
 resolve_day() {
@@ -90,6 +91,9 @@ if [[ -n "$helper_log" && -f "$helper_log" ]]; then
 fi
 if [[ -n "$sb_audit" && -f "$sb_audit" ]]; then
   args+=(--session-bridge-audit "$sb_audit")
+fi
+if [[ -n "$attention_journal" && -f "$attention_journal" ]]; then
+  args+=(--attention-journal "$attention_journal")
 fi
 for k in "${kinds[@]+"${kinds[@]}"}"; do
   args+=(--kind "$k")

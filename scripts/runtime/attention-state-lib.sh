@@ -4,6 +4,7 @@
 # State file layout (JSON):
 #   {
 #     "version": 1,
+#     "rev": <monotonic int; bumped on every successful write>,
 #     "entries": {
 #       "<session_id>": {
 #         "session_id":     "<string>",
@@ -65,6 +66,13 @@ set -u
 __ATTENTION_STATE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 . "$__ATTENTION_STATE_LIB_DIR/windows-runtime-paths-lib.sh"
+# shellcheck disable=SC1091
+. "$__ATTENTION_STATE_LIB_DIR/wsl-runtime-paths-lib.sh"
+
+# Sparse snapshot retention (count). Overridden by WEZTERM_ATTENTION_SNAPSHOT_KEEP.
+ATTENTION_SNAPSHOT_KEEP_DEFAULT=64
+# Reason truncation for desensitized snapshots (chars).
+ATTENTION_SNAPSHOT_REASON_MAX=120
 
 # Cached state path. Resolved on first call and reused — saves a wslpath /
 # windows_runtime_detect_paths re-evaluation per call. Callers invalidate
@@ -107,7 +115,7 @@ attention_state_init() {
   dir="${path%/*}"
   mkdir -p "$dir"
   if [[ ! -f "$path" ]]; then
-    printf '%s\n' '{"version":1,"entries":{},"recent":[]}' > "$path"
+    printf '%s\n' '{"version":1,"rev":0,"entries":{},"recent":[]}' > "$path"
   fi
 }
 
@@ -213,7 +221,205 @@ attention_state_read() {
         "path=$path" "size=${#content}" 2>/dev/null || true
     fi
   fi
-  printf '%s' '{"version":1,"entries":{},"recent":[]}'
+  printf '%s' '{"version":1,"rev":0,"entries":{},"recent":[]}'
+}
+
+# WSL-native transition journal (ext4). Override for tests via
+# WEZTERM_ATTENTION_JOURNAL_FILE. Empty / WEZTERM_ATTENTION_JOURNAL=0 disables.
+attention_state_journal_path() {
+  if [[ "${WEZTERM_ATTENTION_JOURNAL:-1}" == "0" ]]; then
+    printf ''
+    return 0
+  fi
+  if [[ -n "${WEZTERM_ATTENTION_JOURNAL_FILE:-}" ]]; then
+    printf '%s' "$WEZTERM_ATTENTION_JOURNAL_FILE"
+    return 0
+  fi
+  printf '%s' "${WSL_ATTENTION_JOURNAL_FILE:-}"
+}
+
+# WSL-native sparse snapshot dir. WEZTERM_ATTENTION_SNAPSHOT=0 disables;
+# =always snapshots even when digest unchanged (still desensitized).
+attention_state_snapshots_dir() {
+  case "${WEZTERM_ATTENTION_SNAPSHOT:-auto}" in
+    0|off|false) printf ''; return 0 ;;
+  esac
+  if [[ -n "${WEZTERM_ATTENTION_SNAPSHOTS_DIR:-}" ]]; then
+    printf '%s' "$WEZTERM_ATTENTION_SNAPSHOTS_DIR"
+    return 0
+  fi
+  printf '%s' "${WSL_ATTENTION_SNAPSHOTS_DIR:-}"
+}
+
+# Build roster + counts + short digest from a state JSON payload.
+# Prints one JSON object: {roster:[...], counts:{...}, digest:"..."}.
+# Digest uses sha256sum/shasum (jq @sha256 needs 1.7+).
+attention_state_roster_meta() {
+  local payload="$1" meta roster_text digest
+  meta="$(printf '%s' "$payload" | jq -c '
+    def roster:
+      [.entries // {} | to_entries[]
+       | .key as $sid
+       | .value as $e
+       | ($sid + ":" + ($e.status // ""))
+         + (if ($e.running_kind // "") == "background" then ":background" else "" end)
+      ] | sort;
+    (roster) as $r
+    | {
+        roster: $r,
+        counts: {
+          running: ([.entries // {} | .[] | select(.status == "running")] | length),
+          waiting: ([.entries // {} | .[] | select(.status == "waiting")] | length),
+          done:    ([.entries // {} | .[] | select(.status == "done")]    | length)
+        }
+      }
+  ' 2>/dev/null)" || return 1
+  [[ -n "$meta" ]] || return 1
+  roster_text="$(jq -r '.roster // [] | join("\n")' <<<"$meta" 2>/dev/null || printf '')"
+  digest=""
+  if command -v sha256sum >/dev/null 2>&1; then
+    digest="$(printf '%s' "$roster_text" | sha256sum | awk '{print substr($1,1,8)}')"
+  elif command -v shasum >/dev/null 2>&1; then
+    digest="$(printf '%s' "$roster_text" | shasum -a 256 | awk '{print substr($1,1,8)}')"
+  else
+    # Fallback: length-xor style — not cryptographic, only a change detector.
+    digest="$(printf '%s' "$roster_text" | cksum | awk '{printf "%08x", $1}' | cut -c1-8)"
+  fi
+  jq -c --arg d "$digest" '. + {digest: $d}' <<<"$meta" 2>/dev/null
+}
+
+# Desensitized copy for sparse snapshots: strip prompts, truncate reason.
+attention_state_desensitize() {
+  local payload="$1" max="${2:-$ATTENTION_SNAPSHOT_REASON_MAX}"
+  printf '%s' "$payload" | jq -c --argjson max "$max" '
+    def trim_reason:
+      if type != "string" then .
+      elif length <= $max then .
+      else .[0:$max] + "…"
+      end;
+    .entries = (
+      (.entries // {})
+      | with_entries(
+          .value |= (del(.last_user_prompt)
+                     | if has("reason") then .reason |= trim_reason else . end)
+        )
+    )
+    | .recent = (
+        (.recent // [])
+        | map(del(.last_user_prompt)
+              | if has("last_reason") then .last_reason |= trim_reason else . end)
+      )
+  ' 2>/dev/null
+}
+
+# Best-effort journal + sparse snapshot after a successful write.
+# Enrichment via env (set by emit / callers; all optional):
+#   AGENT_ATTENTION_AUDIT_OP / _SESSION_ID / _PREV_STATUS / _STATUS
+#   AGENT_ATTENTION_AUDIT_OP_DETAIL / _FOCUS_SKIPPED
+#   AGENT_ATTENTION_PROVIDER / AGENT_ATTENTION_RAW_EVENT
+#   WEZTERM_PANE (wezterm_pane) — already in hook env
+# Failure never fails the caller write.
+attention_state_audit_after_write() {
+  local payload="$1"
+  local journal_path snap_dir meta rev digest counts_json roster_json
+  local prev_digest line snap_path keep mode
+  journal_path="$(attention_state_journal_path)"
+  snap_dir="$(attention_state_snapshots_dir)"
+  [[ -n "$journal_path" || -n "$snap_dir" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+
+  meta="$(attention_state_roster_meta "$payload")" || return 0
+  [[ -n "$meta" ]] || return 0
+  rev="$(jq -r '.rev // 0' <<<"$payload" 2>/dev/null || printf '0')"
+  digest="$(jq -r '.digest // ""' <<<"$meta" 2>/dev/null || printf '')"
+  counts_json="$(jq -c '.counts // {}' <<<"$meta" 2>/dev/null || printf '{}')"
+  roster_json="$(jq -c '.roster // []' <<<"$meta" 2>/dev/null || printf '[]')"
+
+  prev_digest=""
+  if [[ -n "$journal_path" && -f "$journal_path" ]]; then
+    prev_digest="$(tail -n 1 "$journal_path" 2>/dev/null | jq -r '.digest // ""' 2>/dev/null || printf '')"
+  fi
+
+  if [[ -n "$journal_path" ]]; then
+    mkdir -p "$(dirname "$journal_path")" 2>/dev/null || true
+    line="$(jq -nc \
+      --argjson ts "$(attention_state_now_ms)" \
+      --argjson rev "$rev" \
+      --arg op "${AGENT_ATTENTION_AUDIT_OP:-write}" \
+      --arg sid "${AGENT_ATTENTION_AUDIT_SESSION_ID:-}" \
+      --arg prev "${AGENT_ATTENTION_AUDIT_PREV_STATUS:-}" \
+      --arg st "${AGENT_ATTENTION_AUDIT_STATUS:-}" \
+      --arg rk "${AGENT_ATTENTION_RUNNING_KIND:-}" \
+      --arg detail "${AGENT_ATTENTION_AUDIT_OP_DETAIL:-}" \
+      --arg provider "${AGENT_ATTENTION_PROVIDER:-}" \
+      --arg raw "${AGENT_ATTENTION_RAW_EVENT:-}" \
+      --arg tp "${AGENT_ATTENTION_AUDIT_TMUX_PANE:-}" \
+      --arg wp "${WEZTERM_PANE:-${AGENT_ATTENTION_AUDIT_WEZTERM_PANE:-}}" \
+      --arg transport "${AGENT_ATTENTION_AUDIT_TRANSPORT:-}" \
+      --arg digest "$digest" \
+      --argjson counts "$counts_json" \
+      --argjson roster "$roster_json" \
+      --argjson focus_skipped "${AGENT_ATTENTION_AUDIT_FOCUS_SKIPPED:-0}" \
+      --arg trace "${WEZTERM_RUNTIME_TRACE_ID:-}" \
+      '{
+        ts_ms: $ts,
+        rev: $rev,
+        op: $op,
+        session_id: (if $sid == "" then null else $sid end),
+        prev_status: (if $prev == "" then null else $prev end),
+        status: (if $st == "" then null else $st end),
+        running_kind: (if $rk == "" then null else $rk end),
+        op_detail: (if $detail == "" then null else $detail end),
+        provider: (if $provider == "" then null else $provider end),
+        raw_event: (if $raw == "" then null else $raw end),
+        tmux_pane: (if $tp == "" then null else $tp end),
+        wezterm_pane: (if $wp == "" then null else $wp end),
+        transport: (if $transport == "" then null else $transport end),
+        focus_skipped: $focus_skipped,
+        counts: $counts,
+        roster: $roster,
+        digest: $digest,
+        trace_id: (if $trace == "" then null else $trace end)
+      }' 2>/dev/null || printf '')"
+    if [[ -n "$line" ]]; then
+      # Simple size roll: if journal exceeds ~20MB, keep a single .1 backup.
+      if [[ -f "$journal_path" ]]; then
+        local sz
+        sz="$(wc -c < "$journal_path" 2>/dev/null | tr -d '[:space:]' || printf '0')"
+        if [[ "${sz:-0}" -gt 20971520 ]]; then
+          mv -f "$journal_path" "${journal_path}.1" 2>/dev/null || true
+        fi
+      fi
+      printf '%s\n' "$line" >> "$journal_path" 2>/dev/null || true
+    fi
+  fi
+
+  mode="${WEZTERM_ATTENTION_SNAPSHOT:-auto}"
+  if [[ -n "$snap_dir" ]]; then
+    local should_snap=0
+    case "$mode" in
+      always|1|on|true) should_snap=1 ;;
+      auto|"")
+        if [[ -n "$digest" && "$digest" != "$prev_digest" ]]; then
+          should_snap=1
+        fi
+        ;;
+    esac
+    if [[ "$should_snap" == "1" && -n "$digest" ]]; then
+      mkdir -p "$snap_dir" 2>/dev/null || true
+      snap_path="$snap_dir/${rev}-${digest}.json"
+      attention_state_desensitize "$payload" > "$snap_path" 2>/dev/null || true
+      keep="${WEZTERM_ATTENTION_SNAPSHOT_KEEP:-$ATTENTION_SNAPSHOT_KEEP_DEFAULT}"
+      # Prune oldest beyond keep count (best-effort).
+      if [[ "$keep" =~ ^[0-9]+$ ]] && [[ "$keep" -gt 0 ]]; then
+        # shellcheck disable=SC2012
+        ls -1t "$snap_dir"/*.json 2>/dev/null | tail -n +"$((keep + 1))" \
+          | while IFS= read -r old; do
+              rm -f "$old" 2>/dev/null || true
+            done
+      fi
+    fi
+  fi
 }
 
 # atomic write via tmp + rename. Caller holds flock. Refuses to write
@@ -224,15 +430,33 @@ attention_state_read() {
 # as empty entries (losing every live entry) or fails outright. The
 # write fails closed instead so the existing on-disk state survives the
 # error and the caller's `2>/dev/null || true` handler can keep going.
+#
+# Also bumps monotonic `.rev` and best-effort appends a transition journal
+# row (+ sparse desensitized snapshot when digest changes). Audit failure
+# never fails the write.
 attention_state_write() {
-  local payload="$1" path tmp
+  local payload="$1" path tmp bumped
   if [[ -z "$payload" ]]; then
+    return 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    path="$(attention_state_path)"
+    tmp="${path}.tmp.$$"
+    printf '%s\n' "$payload" > "$tmp"
+    mv "$tmp" "$path"
+    return 0
+  fi
+  bumped="$(printf '%s' "$payload" | jq -c '
+    .rev = (((.rev // 0) | tonumber) | floor | . + 1)
+  ' 2>/dev/null || printf '')"
+  if [[ -z "$bumped" ]]; then
     return 1
   fi
   path="$(attention_state_path)"
   tmp="${path}.tmp.$$"
-  printf '%s\n' "$payload" > "$tmp"
+  printf '%s\n' "$bumped" > "$tmp"
   mv "$tmp" "$path"
+  attention_state_audit_after_write "$bumped" || true
 }
 
 attention_state_upsert() {

@@ -328,10 +328,23 @@ Two non-obvious properties this picture makes visible:
 
 ## State file
 
-State lives in a shared JSON file at `$runtime_state_dir/state/agent-attention/attention.json`. Two top-level fields:
+State lives in a shared JSON file at `$runtime_state_dir/state/agent-attention/attention.json` (Windows runtime tree via `/mnt/c/…` on hybrid-wsl — **not** the empty leftover under `~/.local/state/…/attention.json`). Top-level fields:
 
+- `rev` — monotonic integer bumped on every successful write. Lua `state reloaded` / `tick received` log the same `rev` so UI can be aligned with the journal.
 - `entries` — the active set, keyed by the provider session/thread id when available and by `pane:<WEZTERM_PANE>` otherwise. Each entry stores `wezterm_pane_id`, tmux `socket`/`session`/`window`/`pane`, optional `tmux_window_name` (worktree leaf from `#{window_name}`), a `status` of `running`, `waiting`, or `done`, a free-text `reason` (may be overwritten by Stop / waiting copy), sticky `last_user_prompt` (UserPromptSubmit first line — never cleared by Stop), optional `agent_name` (Claude `~/.claude/sessions/<pid>.json` `name` when resolvable; otherwise the normalized provider name such as `codex` or `claude`), optional `waiting_kind` while status is `waiting` (`permission_prompt` / `elicitation_dialog` / `approval_required`), the `git_branch` captured at hook-fire time (resolved from provider project dir env → tmux `pane_current_path` → `$PWD`), and an epoch-ms `ts`. Writes are serialized by flock and land via atomic tmp-rename; entries older than 30 minutes are pruned on every write.
 - `recent` — a tombstone array of entries that left `entries` via any exit path. Same sticky display fields as an entry (`last_user_prompt`, `agent_name`, `tmux_window_name`, `git_branch`) plus `last_status` (the status the entry held when archived), `last_reason`, `live_ts` (the entry's `ts` at archive time), and `archived_ts`. Disk dedup key is `(tmux_socket, tmux_session, tmux_pane)` — one tombstone per pane, so repeated `/clear`s or restarts in the same pane collapse into a single newest entry. Cap is 50 entries; TTL is 7 days. The Alt+/ picker further dedups **display** by `(tmux_session, tmux_window)` (one worktree window → one `○ RCNT` row), sorts by activity (`live_ts` / `archived_ts`), and shows at most 20. See *Recent archive* below.
+
+### Observability (transition journal)
+
+Side-channel audit so status flips can be reconstructed without hand-joining two logs:
+
+| Artifact | Path | Role |
+|---|---|---|
+| Journal | `~/.local/state/wezterm-runtime/logs/attention-transitions.jsonl` (WSL ext4) | One NDJSON row per successful write: `rev`, `op`, `prev_status`→`status`, `counts`, `roster`, `digest`, optional `op_detail` (`bg_defer` / `focus_skip` / …). **No** `last_user_prompt`. |
+| Sparse snapshots | `~/.local/state/wezterm-runtime/state/agent-attention/snapshots/<rev>-<digest>.json` | Desensitized full copy when `digest` changes (`WEZTERM_ATTENTION_SNAPSHOT=0` off, `=always` every write). Keep last 64. |
+| UI align | `wezterm.log` `message="state reloaded"` / `tick received` | Carries `rev`, `digest`, `disk_running` / `disk_waiting` / `disk_done`. |
+
+Operator entry: `scripts/dev/attention-forensics.sh --around HH:MM [--session <id>]`. Offline unit: `scripts/dev/test-attention-audit.sh`. Timeline prefers the journal when present (`workflow-timeline.sh --include-transitions`). Stuck-counter recipe and behavior open-questions: [`diagnostics.md`](./diagnostics.md).
 
 ## Transitions
 

@@ -57,4 +57,9 @@ WSL_AGENT_RUN_AUDIT_FILE="$WSL_RUNTIME_LOGS_DIR/agent-run.jsonl"
 # Derived day timeline for workflow forensics (recomputable; see
 # scripts/dev/workflow-timeline.sh). Not a writer hot path.
 WSL_WORKFLOW_DIR="$WSL_RUNTIME_STATE_DIR/workflow"
+# Agent-attention transition journal + sparse desensitized snapshots.
+# WSL-native (ext4): writers are bash hooks; must not ride /mnt/c with
+# attention.json. See docs/agent-attention.md (observability).
+WSL_ATTENTION_JOURNAL_FILE="$WSL_RUNTIME_LOGS_DIR/attention-transitions.jsonl"
+WSL_ATTENTION_SNAPSHOTS_DIR="$WSL_RUNTIME_STATE_DIR/agent-attention/snapshots"
 WSL_WINDOWS_PATHS_CACHE_FILE="$WSL_RUNTIME_CACHE_ROOT/windows-paths.env"

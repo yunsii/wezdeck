@@ -77,6 +77,17 @@ local prune_spawner = nil
 local forget_spawner = nil
 local overflow_project_spawner = nil
 local focus_ack_scheduled = {}
+-- Last successful reload fingerprint (rev + digest + disk counts). Used by
+-- titles.lua to emit a sparse `state reloaded` row when the on-disk
+-- generation actually changes — pairs with the shell transition journal.
+local last_reload_meta = {
+  rev = 0,
+  digest = '',
+  disk_running = 0,
+  disk_waiting = 0,
+  disk_done = 0,
+  changed = false,
+}
 -- Map of session_id → ts for entries we have scheduled for removal and
 -- optimistically hidden from the in-memory cache. reload_state re-applies
 -- the hide until the disk read confirms the entry is gone (or replaced
@@ -793,16 +804,66 @@ function M.reset_per_tick_cache()
   tmux_focus_cache = {}
 end
 
+-- Short change-detector over the roster string. Shell journal uses
+-- sha256[:8]; Lua has no stock sha256 and exact cross-language match is
+-- not required — forensics joins primarily on `rev`.
+local function short_digest(s)
+  local h = 2166136261
+  for i = 1, #s do
+    h = (h * 16777619 + s:byte(i)) % 4294967296
+  end
+  return string.format('%08x', h)
+end
+
+local function compute_reload_meta(cache)
+  local entries = (cache and cache.entries) or {}
+  local running, waiting, done = 0, 0, 0
+  local roster = {}
+  for sid, entry in pairs(entries) do
+    local st = entry and entry.status or ''
+    if st == M.STATUS_RUNNING then
+      running = running + 1
+    elseif st == M.STATUS_WAITING then
+      waiting = waiting + 1
+    elseif st == M.STATUS_DONE then
+      done = done + 1
+    end
+    if st ~= '' then
+      local item = tostring(sid) .. ':' .. st
+      if entry.running_kind == 'background' then
+        item = item .. ':background'
+      end
+      table.insert(roster, item)
+    end
+  end
+  table.sort(roster)
+  local rev = tonumber(cache and cache.rev) or 0
+  return {
+    rev = rev,
+    digest = short_digest(table.concat(roster, '\n')),
+    disk_running = running,
+    disk_waiting = waiting,
+    disk_done = done,
+  }
+end
+
 -- Heavy re-read of state.json + reapplication of optimistic hides.
 -- Called from the attention.tick event handler, NOT from update-status,
 -- so the 4Hz disk read disappears in steady state. Producers that
 -- mutate state.json must publish attention.tick (hooks via OSC,
 -- attention-jump.sh writes via the event bus) so this reload fires
 -- when the file actually changed.
+--
+-- Updates `last_reload_meta` (see M.reload_meta). `changed` is true when
+-- `(rev, digest)` differs from the previous reload — titles.lua uses
+-- that to emit a sparse `state reloaded` log line.
 function M.reload_state()
   M.reset_per_tick_cache()
   if not state_path then
     state_cache = { entries = {} }
+    local meta = compute_reload_meta(state_cache)
+    meta.changed = meta.rev ~= last_reload_meta.rev or meta.digest ~= last_reload_meta.digest
+    last_reload_meta = meta
     return state_cache
   end
   local content = read_file(state_path)
@@ -832,7 +893,15 @@ function M.reload_state()
       end
     end
   end
+  local meta = compute_reload_meta(state_cache)
+  meta.changed = meta.rev ~= last_reload_meta.rev or meta.digest ~= last_reload_meta.digest
+  last_reload_meta = meta
   return state_cache
+end
+
+-- Fingerprint from the most recent reload_state call.
+function M.reload_meta()
+  return last_reload_meta
 end
 
 function M.collect()

@@ -396,6 +396,9 @@ def project_runtime(path: Path, day: date) -> list[dict[str, Any]]:
             continue
 
         if cat == "attention" and msg == "hook emitted agent status":
+            # Prefer attention-transitions.jsonl when available (caller
+            # skips these derived edges). Kept as fallback for days
+            # before the journal existed.
             status = f.get("status", "")
             # User-visible loop statuses only — skip internal mid-turn edges.
             if status not in {"running", "waiting", "done"}:
@@ -420,6 +423,7 @@ def project_runtime(path: Path, day: date) -> list[dict[str, Any]]:
                     tmux_pane=f.get("tmux_pane"),
                     raw_event=f.get("raw_event"),
                     trace_id=f.get("trace_id"),
+                    source="hook_emit",
                 )
             )
             continue
@@ -641,6 +645,65 @@ def resolve_day(raw: str) -> date:
     return date.fromisoformat(raw)
 
 
+def project_attention_journal(path: Path, day: date) -> list[dict[str, Any]]:
+    """Read attention-transitions.jsonl (WSL-native NDJSON journal)."""
+    if not path.is_file():
+        return []
+    out: list[dict[str, Any]] = []
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            o = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        ts_ms = o.get("ts_ms")
+        if ts_ms is None:
+            continue
+        try:
+            dt = datetime.fromtimestamp(int(ts_ms) / 1000.0)
+        except (TypeError, ValueError, OSError):
+            continue
+        if dt.date() != day:
+            continue
+        status = o.get("status") or ""
+        # Keep status edges + focus_skip / remove that change the roster.
+        if status and status not in {"running", "waiting", "done"}:
+            continue
+        if not status and o.get("op") not in {"focus_skip", "remove", "evict", "prune"}:
+            continue
+        counts = o.get("counts") or {}
+        out.append(
+            event(
+                dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+                "attention.transition",
+                "journal",
+                status=status or o.get("op"),
+                prev_status=o.get("prev_status"),
+                provider=o.get("provider"),
+                session_id=o.get("session_id"),
+                wezterm_pane=o.get("wezterm_pane"),
+                tmux_pane=o.get("tmux_pane"),
+                raw_event=o.get("raw_event"),
+                op=o.get("op"),
+                op_detail=o.get("op_detail"),
+                rev=o.get("rev"),
+                digest=o.get("digest"),
+                running=counts.get("running"),
+                waiting=counts.get("waiting"),
+                done=counts.get("done"),
+                trace_id=o.get("trace_id"),
+                source="journal",
+            )
+        )
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--day", default="today", help="today | yesterday | YYYY-MM-DD")
@@ -648,6 +711,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--runtime-log", type=Path, required=True)
     p.add_argument("--helper-log", type=Path, default=None)
     p.add_argument("--session-bridge-audit", type=Path, default=None)
+    p.add_argument(
+        "--attention-journal",
+        type=Path,
+        default=None,
+        help="attention-transitions.jsonl (preferred source for attention.transition)",
+    )
     p.add_argument("--format", choices=("table", "jsonl", "summary"), default="table")
     p.add_argument("--kind", action="append", default=[], help="filter kind (repeatable)")
     p.add_argument(
@@ -666,11 +735,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"runtime_log={args.runtime_log}")
         print(f"helper_log={args.helper_log or ''}")
         print(f"session_bridge_audit={args.session_bridge_audit or ''}")
+        print(f"attention_journal={args.attention_journal or ''}")
         return 0
 
     events: list[dict[str, Any]] = []
     events.extend(project_wezterm(args.wezterm_log, day))
-    events.extend(project_runtime(args.runtime_log, day))
+    runtime_events = project_runtime(args.runtime_log, day)
+    journal_events: list[dict[str, Any]] = []
+    if args.attention_journal:
+        journal_events = project_attention_journal(args.attention_journal, day)
+    if journal_events:
+        # Prefer journal rows; drop hook-derived transitions to avoid doubles.
+        runtime_events = [
+            e
+            for e in runtime_events
+            if not (
+                e.get("kind") == "attention.transition"
+                and e.get("source") == "hook_emit"
+            )
+        ]
+        events.extend(journal_events)
+    events.extend(runtime_events)
     if args.helper_log:
         events.extend(project_helper(args.helper_log, day))
     if args.session_bridge_audit:

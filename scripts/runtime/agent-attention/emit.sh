@@ -462,8 +462,32 @@ if [[ "$status" == "bg-complete" ]]; then
   fi
 fi
 
+# Shared audit context for attention-state-lib journal rows (best-effort).
+attention_audit_prepare() {
+  local op="$1" st="${2:-}" prev="${3:-}" detail="${4:-}" focus_skipped="${5:-0}"
+  export AGENT_ATTENTION_AUDIT_OP="$op"
+  export AGENT_ATTENTION_AUDIT_SESSION_ID="${session_id:-}"
+  export AGENT_ATTENTION_AUDIT_STATUS="$st"
+  export AGENT_ATTENTION_AUDIT_PREV_STATUS="$prev"
+  export AGENT_ATTENTION_AUDIT_OP_DETAIL="$detail"
+  export AGENT_ATTENTION_AUDIT_FOCUS_SKIPPED="$focus_skipped"
+  export AGENT_ATTENTION_AUDIT_TMUX_PANE="${tmux_pane:-}"
+  export AGENT_ATTENTION_AUDIT_WEZTERM_PANE="${WEZTERM_PANE:-}"
+  # Transport is decided later for the tick; preview here for the journal.
+  if [[ -z "${AGENT_ATTENTION_AUDIT_TRANSPORT:-}" ]]; then
+    # shellcheck disable=SC1091
+    . "$script_dir/../wezterm-event-lib.sh" 2>/dev/null || true
+    if declare -F wezterm_event_pick_transport >/dev/null 2>&1; then
+      export AGENT_ATTENTION_AUDIT_TRANSPORT="$(wezterm_event_pick_transport 2>/dev/null || printf '')"
+    fi
+  fi
+}
+
 if [[ "$status" == "cleared" ]]; then
   bg_sidecar_clear "$session_id" 2>/dev/null || true
+  _prev_st="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' \
+    "$(attention_state_path)" 2>/dev/null || printf '')"
+  attention_audit_prepare "remove" "" "$_prev_st" "cleared" 0
   attention_state_remove "$session_id" 2>/dev/null || true
 elif [[ "$status" == "pane-evict" ]]; then
   # SessionStart source=clear: the new session_id in stdin is for the
@@ -483,6 +507,7 @@ elif [[ "$status" == "pane-evict" ]]; then
   # reasoning was wrong. Without pane in the key, /clear in pane B
   # silently archived pane A's still-live entry on the same tmux
   # session, leaving A invisible in both the picker and the counter.
+  attention_audit_prepare "evict" "" "" "pane_evict" 0
   attention_state_evict_session "$tmux_socket" "$tmux_session" "$session_id" \
     "$tmux_pane" 2>/dev/null || true
   # Best-effort: drop sidecar for the post-clear session id. Pre-clear
@@ -573,6 +598,7 @@ elif [[ "$status" == "resolved" ]]; then
             | del(.entries[$sid].running_kind, .entries[$sid].bg)
           end
         ' <<<"$_cur")"
+        attention_audit_prepare "upsert" "running" "running" "bg_promote" 0
         attention_state_write "$_next"
       ) 9>"$(attention_state_lock_path)"
       _promoted_bg=1
@@ -582,6 +608,9 @@ elif [[ "$status" == "resolved" ]]; then
     fi
   fi
 
+  _prev_st="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' \
+    "$(attention_state_path)" 2>/dev/null || printf '')"
+  attention_audit_prepare "transition" "running" "$_prev_st" "resolved" 0
   if ! attention_state_transition_to_running \
       "$session_id" \
       "${WEZTERM_PANE:-}" \
@@ -653,6 +682,9 @@ else
       # acknowledged. Remove any prior entry for this session (could
       # be `running` from an earlier transition that never got a
       # focused stop), otherwise the badge stays stuck on `running`.
+      _prev_st="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' \
+        "$(attention_state_path)" 2>/dev/null || printf '')"
+      attention_audit_prepare "focus_skip" "$status" "$_prev_st" "" 1
       attention_state_remove "$session_id" 2>/dev/null || true
       # Fire the wezterm tick so Lua reloads state_cache from disk and
       # the badge actually drops the just-removed entry. Without this
@@ -718,6 +750,14 @@ else
   if [[ -z "$agent_name" && -n "$provider" && "$provider" != "unknown" ]]; then
     agent_name="$provider"
   fi
+
+  _prev_st="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' \
+    "$(attention_state_path)" 2>/dev/null || printf '')"
+  _audit_detail=""
+  if [[ "${AGENT_ATTENTION_RUNNING_KIND:-}" == "background" ]]; then
+    _audit_detail="bg_defer"
+  fi
+  attention_audit_prepare "upsert" "$status" "$_prev_st" "$_audit_detail" 0
 
   attention_state_upsert \
     "$session_id" \

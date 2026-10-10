@@ -616,12 +616,33 @@ function M.register(opts)
           latency_ms = tonumber(now_str) - tick_ms
         end
       end
+      local reload = attention.reload_meta and attention.reload_meta() or nil
       logger.info('attention', 'tick received', {
         pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
         value = value,
         latency_ms = latency_ms,
         transport = meta.transport,
+        rev = reload and reload.rev or nil,
+        digest = reload and reload.digest or nil,
+        disk_running = reload and reload.disk_running or nil,
+        disk_waiting = reload and reload.disk_waiting or nil,
+        disk_done = reload and reload.disk_done or nil,
       })
+      -- Sparse generation change: pairs with shell attention-transitions
+      -- journal so forensics can align UI reload ↔ disk rev without
+      -- grepping every tick.
+      if reload and reload.changed then
+        logger.info('attention', 'state reloaded', {
+          rev = reload.rev,
+          digest = reload.digest,
+          disk_running = reload.disk_running,
+          disk_waiting = reload.disk_waiting,
+          disk_done = reload.disk_done,
+          tick_ms = value,
+          transport = meta.transport,
+          pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
+        })
+      end
     end
   end)
 
@@ -669,6 +690,7 @@ function M.register(opts)
       if tick_ms and now then
         latency_ms = now - tick_ms
       end
+      local reload = attention and attention.reload_meta and attention.reload_meta() or nil
       logger.info('attention', 'tick echo received', {
         pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
         value = value,
@@ -676,7 +698,21 @@ function M.register(opts)
         transport = meta.transport,
         osc_dropped = (not osc_seen) and 1 or 0,
         fallback_reload = (not osc_seen) and 1 or 0,
+        rev = reload and reload.rev or nil,
       })
+      if (not osc_seen) and reload and reload.changed then
+        logger.info('attention', 'state reloaded', {
+          rev = reload.rev,
+          digest = reload.digest,
+          disk_running = reload.disk_running,
+          disk_waiting = reload.disk_waiting,
+          disk_done = reload.disk_done,
+          tick_ms = value,
+          transport = meta.transport,
+          via = 'echo_fallback',
+          pane_id = meta.pane and meta.pane.pane_id and meta.pane:pane_id() or nil,
+        })
+      end
     end
   end)
 
