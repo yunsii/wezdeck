@@ -120,8 +120,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   `scripts/dev/habit-report.sh`. Not `coco-weekly-report` (business delivery).
 - Guest OOM hardening (distro restart loop, reclaim livelock, high-order
   allocation / VM reboot; `wsl-oom-guard.sh`, `M·…` / earlyoom; standing
-  memory consumers including MCP/`uxc` and IDE `tsgo` / `goMemLimit`):
-  Read [`docs/guest-oom.md`](docs/guest-oom.md).
+  memory consumers including MCP/`uxc` and IDE `tsgo` / `goMemLimit`;
+  guest `free` calm while Windows `VmmemWSL` still large /
+  `scripts/dev/wsl-host-mem.sh`):
+  Read [`docs/guest-oom.md`](docs/guest-oom.md)
+  ([Guest vs host memory meters](docs/guest-oom.md#guest-vs-host-memory-meters)).
 - Host disk space (host volume full, `ext4.vhdx` never shrinking, sparse-VHD
   trap, trim→shutdown→Optimize-VHD / compact, OEM preinstalls, `D·…` badge):
   Read [`docs/host-disk.md`](docs/host-disk.md).

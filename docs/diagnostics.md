@@ -471,7 +471,7 @@ powershell -ExecutionPolicy Bypass -File C:\Users\your-user\Desktop\measure-hybr
 
 ## Guest OOM Hardening
 
-Guest-memory failure modes (distro restart loop, reclaim livelock, high-order allocation / VM reboot), the `M·…` badge, earlyoom, and standing memory consumers live in [`guest-oom.md`](./guest-oom.md). Read that doc when the whole WSL distro vanishes on an interval, cores pin with no OOM record, or vsock dies while swap still looks healthy. For WezTerm silent exit / VM reboot that may be **MCE** rather than OOM, start at [`development-environment-troubleshooting.md#the-whole-wsl-distro-disappears`](./development-environment-troubleshooting.md#the-whole-wsl-distro-disappears).
+Guest-memory failure modes (distro restart loop, reclaim livelock, high-order allocation / VM reboot), the `M·…` badge, earlyoom, standing memory consumers, and **guest↔host meter mismatch** (`free` calm while Windows `VmmemWSL` still ~30 GiB) live in [`guest-oom.md`](./guest-oom.md) ([Guest vs host memory meters](./guest-oom.md#guest-vs-host-memory-meters); helper `scripts/dev/wsl-host-mem.sh`). Read that doc when the whole WSL distro vanishes on an interval, cores pin with no OOM record, or vsock dies while swap still looks healthy. For WezTerm silent exit / VM reboot that may be **MCE** rather than OOM, start at [`development-environment-troubleshooting.md#the-whole-wsl-distro-disappears`](./development-environment-troubleshooting.md#the-whole-wsl-distro-disappears).
 
 ## Host Disk Space
 

@@ -38,6 +38,8 @@ check "host-disk.md <= 600 lines (got $disk_lines)" test "$disk_lines" -le 600
 check "diagnostics stubs link to guest-oom" grep -q 'guest-oom.md' "$diag"
 check "diagnostics stubs link to host-disk" grep -q 'host-disk.md' "$diag"
 check "guest-oom has Standing memory consumers" grep -q '^### Standing memory consumers' "$oom"
+check "guest-oom has Guest vs host memory meters" grep -q '^### Guest vs host memory meters' "$oom"
+check "guest-oom points at wsl-host-mem helper" grep -q 'scripts/dev/wsl-host-mem.sh' "$oom"
 check "guest-oom is primary home for oom-protect unit" grep -q 'wezterm-oom-protect.service' "$oom"
 check "diagnostics is not primary home for oom-protect unit" \
   bash -c "! grep -q 'wezterm-oom-protect.service' \"$diag\""

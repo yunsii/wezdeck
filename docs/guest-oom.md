@@ -223,6 +223,41 @@ sudo systemctl restart wezterm-oom-record
 journalctl -u wezterm-oom-record -n 5 | grep 'frag axis'   # must name the new axis
 ```
 
+### Guest vs host memory meters
+
+When guest `btop` / `free` looks calm but Windows Task Manager still shows
+~30 GiB on WSL (or the reverse), read **three** meters — they answer different
+questions and routinely disagree after a spike:
+
+| Meter | Where | Answers |
+|---|---|---|
+| `free` used / `MemAvailable` / `AnonPages` | guest `/proc/meminfo` | Can this distro allocate more *right now*? |
+| `memory.current` + `memory.peak` | guest `/sys/fs/cgroup/memory.*` | What is the VM still charging, and what was this boot's high water? |
+| `VmmemWSL` WorkingSet + Private | Windows process list | What does the *host* still see held by WSL? |
+
+`scripts/runtime/wsl-oom-guard.sh status` covers the guest axes (and the `M·`
+badge). It does **not** print Windows. For the host side from WSL, use the
+checked-in helper (UTF-8 PowerShell wrapper — never raw `powershell.exe`; see
+[`setup.md` Windows Script Execution](./setup.md#windows-script-execution)):
+
+```bash
+scripts/dev/wsl-host-mem.sh
+# or: source scripts/runtime/windows-shell-lib.sh
+#     windows_run_powershell_command_utf8 'Get-Process VmmemWSL | …'
+```
+
+Reference snapshot **2026-10-10** (after closing VS Code / `tsgo`; agents still
+resident): guest `free` used ~8 GiB and `AnonPages` ~6 GiB, while
+`cgroup.current` ~16 GiB (mostly file cache on top of anon), `cgroup.peak`
+~42 GiB this boot, and Windows `VmmemWSL` WorkingSet ~30 GiB / Private ~36 GiB.
+That is the shape behind "I closed the editor, guest looks fine, Task Manager
+still says 30G".
+
+This host's `%UserProfile%\.wslconfig` caps the VM at `memory=44GB` and sets
+`autoMemoryReclaim=gradual`, so the host footprint drains slowly after guests
+free pages. Instant full return to Windows requires `wsl --shutdown` from the
+host (it tears down every tmux pane, agent session, and the OpenClaw gateway).
+
 ### Standing memory consumers
 
 The guard tells you who died; this section records what is *always* resident, so a snapshot can be read against a known baseline. Measured 2026-07-25 via `/proc/<pid>/status` `VmHWM` (per-process peak RSS) — the top-of-`ps` view understates long-lived processes that have since shrunk.
