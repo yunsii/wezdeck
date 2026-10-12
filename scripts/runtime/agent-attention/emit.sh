@@ -32,6 +32,8 @@ repo_root="$(cd "$script_dir/../../.." && pwd)"
 # shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/agent-attention/lib/bg-outstanding.sh"
 # shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/agent-attention/lib/tmux-coords.sh"
+# shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/runtime-log-lib.sh"
 WEZTERM_RUNTIME_LOG_SOURCE="agent-attention-emit.sh"
 
@@ -277,12 +279,15 @@ if [[ -z "$session_id" ]]; then
 fi
 
 # Best-effort tmux coordinates. Outside tmux these stay empty and the
-# jump script will only have a WezTerm pane id to work with.
+# jump script will only have a WezTerm pane id to work with — unless the
+# pane-session reverse map can recover a hosting session (Claude
+# fork-session / bg-pty hooks inherit WEZTERM_PANE but strip TMUX).
 tmux_socket=""
 tmux_session=""
 tmux_window=""
 tmux_pane=""
 tmux_window_name=""
+tmux_coords_recovered=0
 if [[ -n "${TMUX-}" ]] && command -v tmux >/dev/null 2>&1; then
   # Target our own pane explicitly. Without -t, tmux returns the client's
   # currently active pane regardless of which hook fired, so every entry
@@ -297,6 +302,28 @@ if [[ -n "${TMUX-}" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${tmux_meta:-}" ]]; then
     IFS='|' read -r tmux_socket tmux_session tmux_window tmux_pane tmux_window_name <<<"$tmux_meta"
   fi
+fi
+
+# No TMUX in env (or display-message failed) but WEZTERM_PANE is set —
+# try pane-session/<id>.txt + cwd-matched pane. Fixes Alt+/ `?/?/?/…`
+# labels from Claude fork/bg hooks that still belong to a managed tab.
+if [[ -z "$tmux_pane" && -n "${WEZTERM_PANE:-}" ]]; then
+  _recover_cwd="${CLAUDE_PROJECT_DIR:-${CODEX_PROJECT_DIR:-${PWD:-}}}"
+  tmux_meta="$(attention_recover_tmux_coords "${WEZTERM_PANE}" "${_recover_cwd}" 2>/dev/null || true)"
+  if [[ -n "${tmux_meta:-}" ]]; then
+    IFS='|' read -r tmux_socket tmux_session tmux_window tmux_pane tmux_window_name <<<"$tmux_meta"
+    tmux_coords_recovered=1
+    runtime_log_info attention "tmux coords recovered from pane-session" \
+      "status=$status" \
+      "session_id=${session_id:-}" \
+      "wezterm_pane=${WEZTERM_PANE:-}" \
+      "tmux_session=${tmux_session:-}" \
+      "tmux_pane=${tmux_pane:-}" \
+      "tmux_window_name=${tmux_window_name:-}" \
+      "cwd=${_recover_cwd:-}" \
+      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+  fi
+  unset _recover_cwd
 fi
 
 # Race guard: inside tmux but display-message returned an empty pane id
@@ -320,6 +347,21 @@ case "$status" in
         "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
       exit 0
     fi
+    # Claude fork-session / bg-pty: WEZTERM_PANE set, TMUX stripped, and
+    # pane-session recovery failed. Persisting would recreate the
+    # `done ?/?/?/branch` Alt+/ row. Treat as non-interactive for the
+    # human badge (same spirit as AGENT_ATTENTION_SKIP).
+    if [[ -z "$tmux_pane" && -n "${WEZTERM_PANE:-}" ]] \
+        && attention_is_claude_fork_bg; then
+      runtime_log_info attention "hook skipped: claude fork/bg without tmux coords" \
+        "status=$status" \
+        "provider=${provider:-}" \
+        "session_id=${session_id:-}" \
+        "wezterm_pane=${WEZTERM_PANE:-}" \
+        "tmux_coords_recovered=${tmux_coords_recovered:-0}" \
+        "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+      exit 0
+    fi
     # No jumpable target anywhere: neither a WezTerm pane id nor a tmux
     # pane. Happens when an agent hook fires outside any managed
     # WezTerm/tmux pane (e.g. an OpenClaw-spawned agent). Such an entry
@@ -328,9 +370,10 @@ case "$status" in
     # invisible in the Alt+/ picker (which filters unreachable rows via
     # entry_reachable). Persisting it is the write-side half of the
     # badge/picker desync; drop it here. The "WezTerm pane but no tmux"
-    # case (WEZTERM_PANE set, tmux_pane empty) is a supported non-tmux
-    # jump target and is intentionally NOT skipped. Housekeeping statuses
-    # (resolved/cleared/pane-evict) are not in this case arm and still run.
+    # case (WEZTERM_PANE set, tmux_pane empty) remains a supported
+    # non-tmux jump target when the process is *not* a Claude fork/bg.
+    # Housekeeping statuses (resolved/cleared/pane-evict) are not in
+    # this case arm and still run.
     if [[ -z "${WEZTERM_PANE:-}" && -z "$tmux_pane" ]]; then
       runtime_log_info attention "hook skipped: no wezterm/tmux pane" \
         "status=$status" \

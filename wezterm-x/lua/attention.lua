@@ -447,7 +447,25 @@ local function compute_label(entry)
     leaf = entry.git_branch
   end
 
-  if ws == '?' and tab == '?' and tmux_seg == '?' and leaf == '?' then
+  -- Empty tmux_session (Claude fork/bg before write-side recovery, or
+  -- a true non-tmux WezTerm pane): avoid `?/?/?/branch` which reads as
+  -- "done ?" in Alt+/. Prefer wezterm pane + leaf when we have either.
+  if ws == '?' and tab == '?' and tmux_seg == '?' then
+    local wp = nonempty_str(entry.wezterm_pane_id)
+      and ('wp:' .. tostring(entry.wezterm_pane_id))
+      or nil
+    if leaf == '?' and nonempty_str(entry.agent_name) then
+      leaf = entry.agent_name
+    end
+    if wp and leaf ~= '?' then
+      return wp .. '/' .. leaf
+    end
+    if wp then
+      return wp
+    end
+    if leaf ~= '?' then
+      return leaf
+    end
     return nil
   end
   return ws .. '/' .. tab .. '/' .. tmux_seg .. '/' .. leaf
