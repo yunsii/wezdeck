@@ -121,4 +121,77 @@ function M.maybe_warn_title_session_mismatch(logger, pane_id_str, pane_info, hos
   end
 end
 
+-- Heal same-workspace pane-id recycle: memory still names the previous
+-- occupant while the sticky title (and usually the file tier written by
+-- open-project-session.sh) already name the new one. Cross-workspace
+-- staleness is handled elsewhere; this covers title≠session_label under
+-- the same `wezterm_<ws>_` prefix (2026-10-13: wp=5 titled cnb-plugins
+-- still mapped to ai-video-collection → Alt+l landed on the wrong tab).
+--
+-- clear_memory() must drop only the in-memory tier so reread() can see
+-- the file. Returns: new_hosted, did_heal.
+function M.heal_title_session_mismatch(pane_id_str, pane_info, hosted, is_overflow,
+                                       clear_memory, reread, logger)
+  if is_overflow or type(pane_info) ~= 'table' then
+    return hosted, false
+  end
+  if type(hosted) ~= 'string' or hosted == '' then
+    return hosted, false
+  end
+  local tab_title = pane_info.tab_title or ''
+  if tab_title == '' or tab_title == OVERFLOW_GLYPH then
+    return hosted, false
+  end
+  local label = parse_session_repo(hosted)
+  if not label or label == tab_title then
+    return hosted, false
+  end
+  if type(clear_memory) == 'function' then
+    clear_memory()
+  end
+  local file_hosted = type(reread) == 'function' and reread() or nil
+  local file_label = type(file_hosted) == 'string' and parse_session_repo(file_hosted) or nil
+  if file_label == tab_title then
+    if type(logger) == 'table' and type(logger.info) == 'function' then
+      logger.info('attention', 'healed title/session mismatch from file tier', {
+        wezterm_pane = pane_id_str,
+        workspace = pane_info.workspace or '',
+        tab_title = tab_title,
+        was_session = hosted,
+        now_session = file_hosted,
+      })
+    end
+    last_title_session_mismatch[pane_id_str] = nil
+    return file_hosted, true
+  end
+  -- File missing, or file still names the same session as memory while
+  -- the sticky title disagrees. Common legitimate case: repo display
+  -- alias (`wezterm-config` → `wezdeck`). Only warn — restoring the
+  -- probed value so we do not wipe a correct host edge. Destructive
+  -- clear is reserved for the heal-from-file success path above.
+  if type(logger) == 'table' and type(logger.warn) == 'function' then
+    local sig = tab_title .. '|' .. hosted
+    if last_title_session_mismatch[pane_id_str] ~= sig then
+      last_title_session_mismatch[pane_id_str] = sig
+      logger.warn('attention',
+        'inconsistent: sticky title/session mismatch',
+        {
+          wezterm_pane = pane_id_str,
+          workspace = pane_info.workspace or '',
+          tab_title = tab_title,
+          session = hosted,
+          session_label = label,
+          file_session = file_hosted or '',
+          healed = 'skipped',
+        })
+    end
+  end
+  -- Restore whatever the file (or empty) said after the probe so the
+  -- caller re-memoizes a real edge instead of forgetting a healthy one.
+  if type(file_hosted) == 'string' and file_hosted ~= '' then
+    return file_hosted, true
+  end
+  return hosted, true
+end
+
 return M

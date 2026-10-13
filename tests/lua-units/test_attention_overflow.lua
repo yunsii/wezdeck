@@ -280,9 +280,71 @@ describe('activate_in_gui jumps via session, not stored pane id', function()
   end)
 end)
 
-describe('write_live_snapshot sticky title/session mismatch warn', function()
-  it('emits inconsistent warn when tab title disagrees with hosted session label', function()
+describe('write_live_snapshot same-workspace title/session heal', function()
+  it('heals stale memory from file when sticky title matches the file session', function()
+    -- 2026-10-13 repro: wp=5 titled cnb-plugins still had memory →
+    -- ai-video-collection while pane-session/5.txt already named
+    -- cnb-plugins. Snapshot must prefer the file and stop claiming
+    -- ai-video on the recycled sticky tab.
     reset_global_state()
+    pane_session_files.clear()
+    local infos = {}
+    attention.register {
+      logger = {
+        info = function(category, message, fields)
+          infos[#infos + 1] = { category = category, message = message, fields = fields }
+        end,
+        warn = function() end,
+      },
+    }
+    local stale = 'wezterm_work_ai-video-collection_59200b16b2'
+    local fresh = 'wezterm_work_cnb-plugins_a4c52ab2b6'
+    tab_visibility.set_pane_session(5, stale)
+    tab_visibility.set_pane_session(2, stale)
+    pane_session_files.write(5, fresh)
+    pane_session_files.write(2, stale)
+    mock.set_mux({
+      windows = {
+        { workspace = 'work', tabs = {
+          { id = 2, title = 'ai-video-collection', active_pane = { id = 2 } },
+          { id = 5, title = 'cnb-plugins',         active_pane = { id = 5 } },
+        }},
+      },
+    })
+    local out = tmpfile()
+    local ok = attention.write_live_snapshot(out, 'heal-trace')
+    assert_truthy(ok, 'snapshot write failed')
+    local fd = io.open(out, 'r')
+    local body = fd:read('*a')
+    fd:close()
+    os.remove(out)
+    pane_session_files.clear()
+
+    assert_eq(_G.__WEZTERM_PANE_TMUX_SESSION['5'], fresh,
+      'pane 5 memory should heal to cnb-plugins')
+    assert_eq(_G.__WEZTERM_PANE_TMUX_SESSION['2'], stale,
+      'pane 2 memory should stay on ai-video')
+    assert_eq(tab_visibility.pane_for_session(stale), 2,
+      'ai-video reverse map must not point at recycled pane 5')
+    assert_eq(tab_visibility.pane_for_session(fresh), 5,
+      'cnb-plugins reverse map should land on pane 5')
+    assert_truthy(body:find('"tmux_session":"' .. fresh .. '"', 1, true)
+              or body:find(fresh, 1, true),
+      'live-panes should publish healed cnb-plugins session')
+    local healed = false
+    for _, row in ipairs(infos) do
+      if row.message == 'healed title/session mismatch from file tier' then
+        healed = true
+      end
+    end
+    assert_truthy(healed, 'expected heal info log')
+  end)
+
+  it('warns but keeps the edge when title is only a display alias', function()
+    -- wezterm-config sticky title is often aliased to `wezdeck`. File and
+    -- memory agree on the real session; title disagrees. Must not wipe.
+    reset_global_state()
+    pane_session_files.clear()
     local warns = {}
     attention.register {
       logger = {
@@ -292,10 +354,50 @@ describe('write_live_snapshot sticky title/session mismatch warn', function()
         end,
       },
     }
-    tab_visibility.set_pane_session(4, 'wezterm_work_platform-core-tech-weekly_84aa50b9cc')
-    -- Do not put an overflow placeholder on pane 6 here: eviction of
-    -- recycled pane-session files is memoized per pane id for the
-    -- whole Lua state, and a later test in this file owns pane 6.
+    local sess = 'wezterm_config_wezterm-config_1f5ee8662c'
+    tab_visibility.set_pane_session(7, sess)
+    pane_session_files.write(7, sess)
+    mock.set_mux({
+      windows = {
+        { workspace = 'config', tabs = {
+          { id = 7, title = 'wezdeck', active_pane = { id = 7 } },
+        }},
+      },
+    })
+    local out = tmpfile()
+    local ok = attention.write_live_snapshot(out, 'alias-trace')
+    assert_truthy(ok, 'snapshot write failed')
+    os.remove(out)
+    pane_session_files.clear()
+    assert_eq(_G.__WEZTERM_PANE_TMUX_SESSION['7'], sess,
+      'display-alias title must not clear a healthy pane→session edge')
+    local hit = false
+    for _, w in ipairs(warns) do
+      if w.message == 'inconsistent: sticky title/session mismatch'
+         and w.fields
+         and w.fields.tab_title == 'wezdeck'
+         and w.fields.healed == 'skipped' then
+        hit = true
+      end
+    end
+    assert_truthy(hit, 'expected skipped mismatch warn for alias title')
+  end)
+
+  it('warns when title disagrees and no file can heal', function()
+    reset_global_state()
+    pane_session_files.clear()
+    local warns = {}
+    attention.register {
+      logger = {
+        info = function() end,
+        warn = function(category, message, fields)
+          warns[#warns + 1] = { category = category, message = message, fields = fields }
+        end,
+      },
+    }
+    local sess = 'wezterm_work_platform-core-tech-weekly_84aa50b9cc'
+    tab_visibility.set_pane_session(4, sess)
+    -- No file for cnb-review-pollo — probe restores the memory value.
     mock.set_mux({
       windows = {
         { workspace = 'work', tabs = {
@@ -307,6 +409,8 @@ describe('write_live_snapshot sticky title/session mismatch warn', function()
     local ok = attention.write_live_snapshot(out, 'mismatch-trace')
     assert_truthy(ok, 'snapshot write failed')
     os.remove(out)
+    assert_eq(_G.__WEZTERM_PANE_TMUX_SESSION['4'], sess,
+      'unhealable mismatch keeps the probed edge and only warns')
     local hit = false
     for _, w in ipairs(warns) do
       if w.message == 'inconsistent: sticky title/session mismatch'

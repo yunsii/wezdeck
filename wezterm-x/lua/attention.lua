@@ -1414,19 +1414,47 @@ function M.write_live_snapshot(target_path, trace_id)
               pane_workspace = pane_workspace })
         end
       else
-        sessions_map[hosted] = pane_id_str
-        -- Also stash the hosted session inside the pane entry so picker
-        -- jq can confirm the projection in a single lookup.
-        pane_info.tmux_session = hosted
-        -- Warm the in-memory tier of the unified pane→session map. We
-        -- already paid for the file-tier read above; memoizing here
-        -- means the next jump's pane_for_hosted_session reverse lookup
-        -- hits in-memory instead of falling through to the on-disk
-        -- dir walk.
-        memoize_pane_session(pane_id_key, hosted)
+        -- Same-workspace recycle: memory may still name the previous
+        -- occupant while sticky title + file already name the new one.
+        -- Heal before memoizing so reverse lookup / Alt+l cannot land
+        -- on the recycled sticky tab (see heal_title_session_mismatch).
         local cons = load_consistency()
-        if cons then
-          cons.maybe_warn_title_session_mismatch(module_logger, pane_id_str, pane_info, hosted, is_overflow)
+        if cons and type(cons.heal_title_session_mismatch) == 'function' then
+          local healed_hosted, did_heal = cons.heal_title_session_mismatch(
+            pane_id_str, pane_info, hosted, is_overflow,
+            -- memoize_pane_session no-ops on nil; clear memory via the
+            -- setter so reread can see the file tier.
+            function()
+              local tv = load_tab_visibility()
+              if tv and type(tv.set_pane_session) == 'function' then
+                pcall(tv.set_pane_session, pane_id_key, nil)
+              end
+            end,
+            function() return pane_hosted_session(pane_id_key, false) end,
+            module_logger)
+          if did_heal then
+            if healed_hosted and healed_hosted ~= '' then
+              hosted = healed_hosted
+            else
+              forget_pane_session(pane_id_key)
+              hosted = nil
+            end
+          end
+        end
+        if hosted and hosted ~= '' then
+          sessions_map[hosted] = pane_id_str
+          -- Also stash the hosted session inside the pane entry so picker
+          -- jq can confirm the projection in a single lookup.
+          pane_info.tmux_session = hosted
+          -- Warm the in-memory tier of the unified pane→session map. We
+          -- already paid for the file-tier read above; memoizing here
+          -- means the next jump's pane_for_hosted_session reverse lookup
+          -- hits in-memory instead of falling through to the on-disk
+          -- dir walk.
+          memoize_pane_session(pane_id_key, hosted)
+          if cons then
+            cons.maybe_warn_title_session_mismatch(module_logger, pane_id_str, pane_info, hosted, is_overflow)
+          end
         end
       end
     end
@@ -1710,6 +1738,17 @@ function M.activate_in_gui(pane_id_value, window, source_pane, opts)
 
   if tmux_session_hint and tmux_session_hint ~= '' then
     local found = pane_for_hosted_session(tmux_session_hint)
+    -- Prefer the entry's stored pane when it still hosts this session.
+    -- Guards same-workspace pane-id recycle where the reverse map still
+    -- (or briefly) points a recycled sticky tab at this session —
+    -- observed 2026-10-13: Alt+l running → ai-video on wp=2, reverse
+    -- map also claimed wp=5 (titled cnb-plugins) and GUI landed there.
+    if pane_id_value ~= nil and pane_id_value ~= '' then
+      local stored_hosted = pane_hosted_session(tostring(pane_id_value))
+      if stored_hosted == tmux_session_hint then
+        found = pane_id_value
+      end
+    end
     if found ~= nil and try_activate_pane(tostring(found), window, source_pane) then
       return true
     end

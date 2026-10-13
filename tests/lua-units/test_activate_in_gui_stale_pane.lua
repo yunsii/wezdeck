@@ -150,6 +150,42 @@ describe('activate_in_gui — stale stored wezterm_pane_id', function()
     assert_truthy(ok)
     assert_eq(get_activated(), 2)
   end)
+
+  it('prefers stored pane when reverse map also claims a recycled sticky tab', function()
+    -- 2026-10-13: ai-video running on wp=2; recycled wp=5 (titled
+    -- cnb-plugins) still had memory → ai-video. pairs()-order reverse
+    -- lookup could return 5 and Alt+l would activate the wrong tab.
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 2, title = 'ai-video-collection', active_pane = { id = 2 } },
+            { id = 5, title = 'cnb-plugins',         active_pane = { id = 5 } },
+          },
+        },
+      },
+    }
+    local activated_pane_id
+    for _, win in ipairs(mock.mux.all_windows()) do
+      for _, tab in ipairs(win:tabs()) do
+        for _, info in ipairs(tab:panes_with_info()) do
+          local pid = info.pane.id
+          info.pane.activate = function() activated_pane_id = pid end
+        end
+      end
+    end
+    local AI = 'wezterm_work_ai-video-collection_59200b16b2'
+    -- Both panes claim the same session in memory (the bug shape).
+    tab_visibility.set_pane_session(2, AI)
+    tab_visibility.set_pane_session(5, AI)
+
+    local ok = attention.activate_in_gui('2', nil, {}, { tmux_session = AI })
+    assert_truthy(ok)
+    assert_eq(activated_pane_id, 2,
+      'stored host pane must win over a recycled sticky tab in the reverse map')
+  end)
 end)
 
 describe('activate_in_gui — session promoted out of the overflow tab', function()
