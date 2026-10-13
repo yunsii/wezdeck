@@ -758,6 +758,16 @@ function M.register(opts)
     local activated = attention.activate_in_gui(
       coords.wezterm_pane, meta.window, meta.pane,
       { tmux_session = coords.tmux_session })
+    -- Same settle pin Alt+j/k/l get via note_jump: without it a live
+    -- sibling done on this tab can be focus-acked off a stale
+    -- tmux-focus file before --direct lands (see FOCUS_ACK_SETTLE_MS).
+    if attention.pin_focus_settle then
+      attention.pin_focus_settle({
+        session_id = coords.session_id,
+        tmux_session = coords.tmux_session,
+        tmux_pane = coords.tmux_pane,
+      })
+    end
     if actions_mod and actions_mod.attention_jump_args and constants then
       local trailing = {
         '--direct',

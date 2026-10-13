@@ -70,6 +70,14 @@ M.FOCUS_ACK_DELAY_SECONDS = 0
 -- knowledge signal, and the user almost always sits on the pane through
 -- the prompt → answer cycle, so a floor would just delay the inevitable.
 M.DONE_VISIBILITY_FLOOR_MS = 1500
+-- After Alt+j/k/l (or Alt+/ jump) the Lua side activates immediately, but
+-- `attention-jump.sh --direct` + tmux `after-select-pane` write the
+-- tmux-focus file asynchronously (~100–300 ms). A same-tick
+-- `maybe_ack_focused` that still reads the *pre-jump* pane will archive a
+-- sibling `done`/`waiting` on the same WezTerm tab (repro 2026-10-13:
+-- Alt+k to %21 then focus-ack of %48 → ✓2→0). Pin the landed pane for
+-- this window so is_entry_focused / focus-ack ignore the stale file.
+M.FOCUS_ACK_SETTLE_MS = 1500
 
 local state_path = nil
 local state_cache = { entries = {} }
@@ -105,9 +113,23 @@ local tmux_focus_cache = {}
 -- pool[1] — activate resolves to the already-focused wezterm pane and
 -- the key feels dead. Keyed by kind → "session_id|tmux_window|tmux_pane".
 local last_jump_by_kind = {}
+-- { tmux_session, tmux_pane, until_ms } — see FOCUS_ACK_SETTLE_MS.
+local focus_settle_pin = nil
 local last_prune_ms = 0
 local last_live_snapshot_ms = 0
 local last_snapshot_warn_ms = 0
+
+local module_logger = nil
+
+local function now_ms()
+  local ok, formatted = pcall(function()
+    return wezterm.time.now():format '%s%3f'
+  end)
+  if ok and type(formatted) == 'string' and formatted:match '^%d+$' then
+    return tonumber(formatted)
+  end
+  return os.time() * 1000
+end
 
 local function maybe_warn_snapshot(message, fields)
   if not module_logger then return end
@@ -118,7 +140,6 @@ local function maybe_warn_snapshot(message, fields)
   last_snapshot_warn_ms = now
   module_logger.warn('attention', message, fields)
 end
-local module_logger = nil
 local consistency = nil
 local function load_consistency()
   if consistency ~= nil then return consistency ~= false and consistency or nil end
@@ -137,25 +158,42 @@ local function entry_jump_key(entry)
     .. '|' .. tostring(entry.tmux_pane or '')
 end
 
+-- Pin the pane a jump just targeted so focus-ack / render drop ignore a
+-- still-stale tmux-focus file for FOCUS_ACK_SETTLE_MS. Safe to call from
+-- Alt+/ dispatch (no kind) as well as note_jump.
+function M.pin_focus_settle(entry)
+  if type(entry) ~= 'table' then return end
+  local sess = entry.tmux_session
+  local pane = entry.tmux_pane
+  if type(sess) ~= 'string' or sess == '' then return end
+  if type(pane) ~= 'string' or pane == '' then return end
+  local until_ms = now_ms() + M.FOCUS_ACK_SETTLE_MS
+  focus_settle_pin = {
+    tmux_session = sess,
+    tmux_pane = pane,
+    until_ms = until_ms,
+  }
+  if module_logger then
+    module_logger.info('attention', 'focus settle pin', {
+      tmux_session = sess,
+      tmux_pane = pane,
+      settle_ms = M.FOCUS_ACK_SETTLE_MS,
+      until_ms = until_ms,
+      session_id = entry.session_id,
+    })
+  end
+end
+
 -- Record the entry a jump handler just landed on so the next pick_next
 -- for the same kind advances even when is_entry_focused still reads the
--- pre-jump tmux-focus file.
+-- pre-jump tmux-focus file. Also pins focus-settle (see pin_focus_settle).
 function M.note_jump(kind, entry)
   if type(kind) ~= 'string' or kind == '' then return end
   local key = entry_jump_key(entry)
   if key then
     last_jump_by_kind[kind] = key
   end
-end
-
-local function now_ms()
-  local ok, formatted = pcall(function()
-    return wezterm.time.now():format '%s%3f'
-  end)
-  if ok and type(formatted) == 'string' and formatted:match '^%d+$' then
-    return tonumber(formatted)
-  end
-  return os.time() * 1000
+  M.pin_focus_settle(entry)
 end
 
 local function entry_is_live(entry, now)
@@ -2161,6 +2199,18 @@ function M.is_entry_focused(entry, wezterm_pane_id)
   if hosted ~= entry.tmux_session then
     return false
   end
+  -- Jump settle pin: while --direct / after-select-pane are still
+  -- catching up, trust the pane the jump targeted — not the stale
+  -- tmux-focus file — for this tmux_session only.
+  local pin = focus_settle_pin
+  if pin
+    and type(pin.until_ms) == 'number'
+    and pin.until_ms > now_ms()
+    and pin.tmux_session == entry.tmux_session
+    and type(entry.tmux_pane) == 'string'
+    and entry.tmux_pane ~= '' then
+    return entry.tmux_pane == pin.tmux_pane
+  end
   -- tmux pane-level guard: a single wezterm pane can host an entire
   -- tmux session whose split panes have independent focus. Require the
   -- tmux client's active pane to also match entry.tmux_pane before
@@ -2427,6 +2477,9 @@ function M.register(opts)
     state_path = opts.state_file
   end
   M.configure_icons(opts and opts.constants and opts.constants.attention and opts.constants.attention.icons)
+  -- Tests re-register between cases; drop a leftover settle pin so a
+  -- prior note_jump cannot leak into the next case's focus-ack.
+  focus_settle_pin = nil
 
   M.reload_state()
 

@@ -198,6 +198,103 @@ describe('maybe_ack_focused', function()
 
     assert_eq(#recorded, 0, 'unfocused waiting was acked (cross-pane bleed)')
   end)
+
+  it('stale tmux-focus alone WOULD ack a sibling done (documents the race)', function()
+    reset()
+    -- Same WezTerm tab / tmux session, two done worktrees. Focus file
+    -- still names %48 (pre-jump). Without a settle pin, focus-ack
+    -- archives %48 — the Alt+k ✓2→0 race from 2026-10-13.
+    tab_visibility.set_pane_session(5, 'wezterm_work_ai-video-collection_aaaaaaaaaa')
+    local now = os.time() * 1000
+    local ts = now - (attention.DONE_VISIBILITY_FLOOR_MS + 500)
+    local entries = '{"version":1,"entries":{'
+      .. '"jumped":{"session_id":"jumped","wezterm_pane_id":"5",'
+        .. '"tmux_session":"wezterm_work_ai-video-collection_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@13","tmux_pane":"%21",'
+        .. '"status":"done","ts":' .. tostring(ts) .. ',"reason":"task a"},'
+      .. '"sibling":{"session_id":"sibling","wezterm_pane_id":"5",'
+        .. '"tmux_session":"wezterm_work_ai-video-collection_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@28","tmux_pane":"%48",'
+        .. '"status":"done","ts":' .. tostring(ts) .. ',"reason":"task b"}'
+      .. '}}'
+
+    local recorded = run_focus_ack_with(
+      entries, 5, '/tmp/sock',
+      'wezterm_work_ai-video-collection_aaaaaaaaaa', '%48')
+
+    local got_sibling = false
+    for _, args in ipairs(recorded) do
+      for i, a in ipairs(args) do
+        if a == '--forget' and args[i + 1] == 'sibling' then got_sibling = true end
+      end
+    end
+    assert_truthy(got_sibling,
+      'precondition failed: stale focus file did not ack sibling (race baseline)')
+  end)
+
+  it('settle pin after Alt+k blocks stale-focus ack of sibling done', function()
+    reset()
+    tab_visibility.set_pane_session(5, 'wezterm_work_ai-video-collection_aaaaaaaaaa')
+    local now = os.time() * 1000
+    local ts = now - (attention.DONE_VISIBILITY_FLOOR_MS + 500)
+    local entries = '{"version":1,"entries":{'
+      .. '"jumped":{"session_id":"jumped","wezterm_pane_id":"5",'
+        .. '"tmux_session":"wezterm_work_ai-video-collection_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@13","tmux_pane":"%21",'
+        .. '"status":"done","ts":' .. tostring(ts) .. ',"reason":"task a"},'
+      .. '"sibling":{"session_id":"sibling","wezterm_pane_id":"5",'
+        .. '"tmux_session":"wezterm_work_ai-video-collection_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@28","tmux_pane":"%48",'
+        .. '"status":"done","ts":' .. tostring(ts) .. ',"reason":"task b"}'
+      .. '}}'
+
+    -- Pin as Alt+k / note_jump would, *before* maybe_ack_focused runs
+    -- with the still-stale focus file naming %48.
+    local tmp = os.tmpname() .. '.d'
+    os.execute('mkdir -p ' .. tmp .. '/tmux-focus')
+    local state_file = tmp .. '/state.json'
+    local fd = io.open(state_file, 'w')
+    fd:write(entries)
+    fd:close()
+    local focus_file = tmp .. '/tmux-focus/_tmp_sock__wezterm_work_ai-video-collection_aaaaaaaaaa.txt'
+    local ff = io.open(focus_file, 'w')
+    ff:write('%48')
+    ff:close()
+
+    local recorded = {}
+    attention.register {
+      state_file = state_file,
+      forget_spawner = function(args)
+        table.insert(recorded, args)
+        return { 'true' }
+      end,
+    }
+    attention.reload_state()
+    attention.note_jump(attention.STATUS_DONE, {
+      session_id = 'jumped',
+      tmux_session = 'wezterm_work_ai-video-collection_aaaaaaaaaa',
+      tmux_window = '@13',
+      tmux_pane = '%21',
+    })
+    -- Jump path also hides the target immediately; leave it in state
+    -- here so we can assert the pin allows acking the landed pane only.
+    local pane = { id = 5 }
+    function pane:pane_id() return self.id end
+    attention.maybe_ack_focused(nil, pane)
+    os.execute('rm -rf ' .. tmp)
+
+    local got_sibling, got_jumped = false, false
+    for _, args in ipairs(recorded) do
+      for i, a in ipairs(args) do
+        if a == '--forget' and args[i + 1] == 'sibling' then got_sibling = true end
+        if a == '--forget' and args[i + 1] == 'jumped' then got_jumped = true end
+      end
+    end
+    assert_falsy(got_sibling,
+      'settle pin failed: stale focus still acked sibling done (✓2→0 race)')
+    assert_truthy(got_jumped,
+      'settle pin should still allow ack of the jumped-to pane')
+  end)
 end)
 
 io.write(string.format('\n%d passed, %d failed\n', pass_count, fail_count))

@@ -78,6 +78,28 @@ refresh_jump_target_status() {
     --force --no-debounce --refresh-client >/dev/null 2>&1 || true
 }
 
+# Sync-write the attention tmux-focus file for the pane we just selected.
+# tmux's after-select-pane hook also runs tmux-focus-emit.sh via
+# `run-shell -b`, but that races the WezTerm update-status tick: Lua
+# focus-ack can still read the pre-jump pane and archive a sibling done
+# on the same tab (Alt+k ✓2→0). Writing here closes the gap once
+# --direct returns; Lua's FOCUS_ACK_SETTLE_MS pin covers the window
+# *before* this script finishes.
+sync_jump_tmux_focus() {
+  local socket="$1" window="$2" pane="${3:-}"
+  [[ -n "$socket" && -n "$window" ]] || return 0
+  local session='' landed=''
+  session="$(tmux -S "$socket" display-message -p -t "$window" '#{session_name}' 2>/dev/null || true)"
+  [[ -n "$session" ]] || return 0
+  if [[ -n "$pane" ]]; then
+    landed="$pane"
+  else
+    landed="$(tmux -S "$socket" display-message -p -t "$window" '#{pane_id}' 2>/dev/null || true)"
+  fi
+  [[ -n "$landed" ]] || return 0
+  bash "$script_dir/tmux-focus-emit.sh" "$socket" "$session" "$landed" >/dev/null 2>&1 || true
+}
+
 # Fast path: caller already has the tmux coordinates (Lua looked them up
 # from the in-process state cache) and has already activated the WezTerm
 # pane. We only need to sync tmux's selection. Skip the state lib, jq,
@@ -150,11 +172,16 @@ if [[ "${1:-}" == "--direct" ]]; then
       refresh_jump_target_status "$direct_socket" "$direct_window"
     fi
 
+    # Landed pane for focus sync + receipt. Prefer the pane we selected
+    # (requested or fallback); display-message on the window is the
+    # last resort if both were empty.
+    active_window="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{window_id}' 2>/dev/null || true)"
+    active_pane="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{pane_id}' 2>/dev/null || true)"
+    sync_jump_tmux_focus "$direct_socket" "$direct_window" "${active_pane:-$direct_pane}"
+
     # Receipt + lag split. Always log when we have a trace (Lua Alt+j/k/l
     # path); without a trace this is an ad-hoc CLI call — skip noise.
     if [[ -n "${WEZTERM_RUNTIME_TRACE_ID:-}" ]]; then
-      active_window="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{window_id}' 2>/dev/null || true)"
-      active_pane="$(tmux -S "$direct_socket" display-message -p -t "$direct_window" '#{pane_id}' 2>/dev/null || true)"
       complete_ms="$(runtime_log_now_ms)"
       in_script_ms="$(runtime_log_duration_ms "$direct_entry_ms")"
       dispatch_ms="${WEZTERM_ATTENTION_JUMP_DISPATCH_MS:-}"
@@ -443,6 +470,8 @@ if (( recent_jump )); then
       fi
     fi
     refresh_jump_target_status "$target_tmux_socket" "$target_tmux_window"
+    # Empty pane → read the window's active pane (covers select fallback).
+    sync_jump_tmux_focus "$target_tmux_socket" "$target_tmux_window" ''
   fi
 
   # Recent entries' wezterm_pane_id is whatever was live at archive time.
@@ -555,6 +584,8 @@ if [[ -n "$target_tmux_socket" && -n "$target_tmux_window" ]]; then
     fi
   fi
   refresh_jump_target_status "$target_tmux_socket" "$target_tmux_window"
+  # Empty pane → read the window's active pane (covers select fallback).
+  sync_jump_tmux_focus "$target_tmux_socket" "$target_tmux_window" ''
 fi
 
 wezterm_activated=0
