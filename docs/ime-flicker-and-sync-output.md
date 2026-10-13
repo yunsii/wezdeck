@@ -216,8 +216,8 @@ Verified: no IME flicker, no idle freeze, mouse wheel still works.
 | Approach | Why rejected |
 |---|---|
 | `mux_output_parser_coalesce_delay_ms = 8` | Writes are not byte-fragmented; coalescing has nothing to merge. |
-| `CLAUDE_CODE_NO_FLICKER=1` (alone) | Loses tmux native click-and-drag selection (alt-screen + mouse capture take over). Worth knowing: this *would* also fix the unrelated scrollback-pollution symptom tracked under "Claude Code scrollback frame leak" below — but the rejection here stands on the mouse-selection regression alone. |
-| `CLAUDE_CODE_NO_FLICKER=1 + CLAUDE_CODE_DISABLE_MOUSE=1` | Restores tmux selection but loses mouse-wheel scroll inside Claude. Shift+Up extends selection only when an active mouse selection exists, which DISABLE_MOUSE turns off. Plus [claude-code#42821] — `=1` swallows `Ctrl+J` (chat:newline). UX trade-offs unacceptable. See "Claude Code scrollback frame leak" below for why we still don't reach for this even though it's the only knob that addresses both flicker *and* the scrollback dup. |
+| `CLAUDE_CODE_NO_FLICKER=1` (alone) | Same mouse-capture trade-off as `tui: fullscreen`. Rejected here as an **env blunt force** when the goal was only IME/sync flicker — it also stole tmux native click-and-drag without an explicit renderer choice. Standing machine policy now opts into fullscreen via `~/.claude/settings.json` `"tui": "fullscreen"` (plus `CLAUDE_CODE_SCROLL_SPEED=5`); do not also set this env in shell-env. See [`tmux-ui.md#claude-code-in-tmux`](./tmux-ui.md#claude-code-in-tmux). |
+| `CLAUDE_CODE_NO_FLICKER=1 + CLAUDE_CODE_DISABLE_MOUSE=1` | Restores tmux selection but loses mouse-wheel scroll inside Claude. Shift+Up extends selection only when an active mouse selection exists, which DISABLE_MOUSE turns off. Plus [claude-code#42821] — `=1` swallows `Ctrl+J` (chat:newline). UX trade-offs unacceptable. See "Claude Code scrollback frame leak" below for why we still don't reach for this pair even though fullscreen alone is now the standing `tui` choice. |
 | Wezterm-side: gate `update_text_cursor` on cursor visibility | Claude's renderer does not emit `CSI ?25l/h` around per-frame redraws (those markers are only emitted entering/exiting alt-screen). The hook would fire too rarely to matter. |
 | Wezterm-side: gate IME path on sync state | Equivalent to what we get for free once paint batching works during BSU/ESU. Worth filing upstream as defense-in-depth, but not required to fix the symptom once tmux 3.6+ is in place. |
 | Build a wezterm IME-debounce knob | Not needed once the protocol-level path works. |
@@ -320,11 +320,12 @@ If any of these fail, work backwards through the chain.
   duplicated frames after SIGWINCH or streaming overflow.
 
   Action: upgrade to ≥ v2.1.121 if anyone still sees the dup;
-  do not reach for `CLAUDE_CODE_NO_FLICKER=1`. The rejection table
-  above still applies to the env knob (tmux mouse-selection
-  regression with `=1` alone; Ctrl+J / mouse-wheel regressions with
-  `=1 + DISABLE_MOUSE=1`) and there is no longer a reason to weigh
-  it against the dup.
+  do not reach for `CLAUDE_CODE_NO_FLICKER=1` as a dup workaround.
+  Standing fullscreen is via `"tui": "fullscreen"` in
+  `~/.claude/settings.json` (see [`tmux-ui.md#claude-code-in-tmux`](./tmux-ui.md#claude-code-in-tmux));
+  the rejection table above still applies to the env blunt-force
+  path and to `=1 + DISABLE_MOUSE=1` (Ctrl+J / mouse-wheel
+  regressions).
 
 ## Adjacent issues (for future research)
 

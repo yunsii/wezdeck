@@ -42,7 +42,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - `Ctrl+c` first checks for a WezTerm terminal selection and copies it if one exists; otherwise it sends a normal terminal `Ctrl+c`.
 - tmux emits terminal focus-in and focus-out events to applications, which helps mouse-aware TUIs recover cleanly when the WezTerm window regains focus.
 - Pane and status backgrounds are driven by the active appearance preset (`WEZTERM_APPEARANCE_PRESET`), not hardcoded in `tmux.conf`: `render-tmux-appearance.sh` regenerates `wezterm-x/tmux/appearance.generated.conf` (sourced via `source-file -Fq`) during sync. The `opaque` preset uses cream/dim-cream backgrounds; the `frosted` preset sets `status-style` / `window-style` / `window-active-style` all to `bg=default` so cells inherit WezTerm's window transparency + acrylic (the focused pane is then told apart by border color, not body tint). Giving any of those an explicit `bg=<hex>` paints cells opaque and hides window transparency. Full model: [`appearance-presets.md`](./appearance-presets.md).
-- ANSI 256-color index 255 is remapped to `#dedcd0` via `colors.indexed` in `wezterm-x/lua/ui.lua` (sourced from `palette.indexed` in `constants.lua`). Claude Code's scrollback renderer paints user-message backgrounds with `\e[48;5;255m`, and the default xterm value (`#eeeeee`) is too close to the cream pane background to read clearly. The remap is applied to the wezterm color scheme rather than a Claude theme override because Claude Code's `userMessageBackground` token only takes effect in fullscreen rendering mode; in scrollback mode the only point of intervention is the terminal palette.
+- ANSI 256-color index 255 is remapped to `#dedcd0` via `colors.indexed` in `wezterm-x/lua/ui.lua` (sourced from `palette.indexed` in `constants.lua`). Claude Code's classic (scrollback) renderer paints user-message backgrounds with `\e[48;5;255m`, and the default xterm value (`#eeeeee`) is too close to the cream pane background to read clearly. The remap stays as a palette safety net; with the standing `tui: fullscreen` setting the `userMessageBackground` theme token also applies. Fullscreen + wheel feel: [Claude Code in tmux](#claude-code-in-tmux).
 - Managed agent panes show a single dim-cyan `Loading <agent> ...` line while the agent boots, printed by `scripts/runtime/agent-launcher.sh` right before it execs the CLI. The agent's first paint clears the screen, so the cue is only visible while it's actually useful — covering the multi-second `claude --continue` / `codex resume --last` session-load window where the pane would otherwise stay blank. The shell-chain forks before the launcher (~130ms, dominated by `zsh -ilc` to inherit the interactive PATH) are intentionally kept: the post-agent fallback shell (Ctrl+D / agent crash) execs the same login shell on the same tty, so it pays the equivalent zshrc cost regardless — splitting the env across `~/.zshrc` and `~/.config/shell-env.d/` to shave that 130ms would desync interactive-shell behavior for no perceptual win. Disable the cue with `WEZTERM_NO_LOADING_BANNER=1`.
 
 ## Vim in tmux
@@ -151,6 +151,43 @@ Regression coverage: `tests/hook-units/test_tmux_fix_layout.sh`, `test_tmux_fix_
 - Attention jumps (`Alt+j` / `Alt+k` / `Alt+l` / the `Alt+/` picker, via `attention-jump.sh`) force an un-debounced refresh of the landed session right after the `select-window` / `select-pane`. This is needed because those `select-*` calls are no-ops when the target window/pane is already active (the session was parked there), so the `session-window-changed` / `window-pane-changed` hooks never fire — without the explicit refresh the branch/worktree segment would stay stale until `client-focus-in` or the 30s poll.
 - WakaTime status sources `wezterm-x/local/shared.env`, and WezTerm Lua also reads that same file for shared scalar values.
 - Grok Build fullscreen TUI focus flash / cream `bg_base` tint / mouse-wheel feel: see [Grok Build in tmux](#grok-build-in-tmux) below (not a WezTerm paint bug).
+- Claude Code fullscreen TUI + mouse-wheel feel: see [Claude Code in tmux](#claude-code-in-tmux) (machine-local `~/.claude/settings.json`, not runtime sync).
+
+## Claude Code in tmux
+
+Standing choice on this machine: Claude Code runs the **fullscreen** (alt-screen) renderer, same drawing model as vim / Grok. That trades away tmux native click-and-drag selection inside the Claude pane (in-app selection + auto-copy on release instead). Wheel scrolling is handled inside Claude once `alternate_on` is set; tmux already forwards wheel when `alternate_on` via `WheelUpPane` → `send-keys -M`.
+
+Knobs live in **`~/.claude/settings.json`** (and `/tui` / `/scroll-speed` inside a session). They are **not** synced by `wezdeck-runtime-ops`.
+
+### Standing values
+
+```json
+{
+  "tui": "fullscreen",
+  "env": {
+    "CLAUDE_CODE_SCROLL_SPEED": "5"
+  }
+}
+```
+
+| Knob | Why |
+| --- | --- |
+| `tui: fullscreen` | Flicker-free alt-screen path; mouse expand / click-to-position; flat memory on long chats. Equivalent intent to `/tui fullscreen`. Do **not** also set `CLAUDE_CODE_NO_FLICKER=1` in shell-env — the setting is enough, and the env var was historically rejected here as a blunt force that also stole mouse selection without an explicit `tui` choice. |
+| `CLAUDE_CODE_SCROLL_SPEED=5` | Under WezTerm→tmux, wheel events often arrive as one notch = one line (same class of problem as Grok’s unset `scroll_lines`). `5` matches this host’s tmux copy-mode `Wheel* -N 5` and Grok `scroll_lines = 5`. Official vim-like default suggestion is `3`; raise further (max 20) if notches still feel soft. Interactive tune: `/scroll-speed` (←/→, Enter to save). |
+| `wheelScrollAccelerationEnabled` | Leave unset / `true` so a fast spin covers more distance than slow notches (Claude’s counterpart to Grok’s `scroll_speed` flick boost). Set `false` only if flicks overshoot. |
+
+Background / agent-view attach sessions **always** render fullscreen regardless of `tui`; `/tui default` inside an attach only saves the preference for future direct `claude` launches.
+
+Existing panes keep their process’s renderer until that Claude process relaunches (`/tui fullscreen` in-pane, or exit + managed resume).
+
+### Verify
+
+```bash
+python3 -c "import json; d=json.load(open('$HOME/.claude/settings.json')); print(d.get('tui'), (d.get('env') or {}).get('CLAUDE_CODE_SCROLL_SPEED'))"
+# expect: fullscreen 5
+```
+
+In a relaunched Claude pane: input box stays pinned while output streams; one wheel notch moves ~5 lines; `/scroll-speed` shows the saved multiplier. `tmux display -p '#{alternate_on}'` in that pane should print `1`.
 
 ## Grok Build in tmux
 

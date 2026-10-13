@@ -73,6 +73,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   or Grok follow ▼ click dead while a stock-tmux macOS box works
   (`MouseDown1Pane` must `send-keys -M` when `alternate_on` / `mouse_any_flag`):
   Read [`docs/tmux-ui.md#grok-build-in-tmux`](docs/tmux-ui.md#grok-build-in-tmux).
+- Claude Code fullscreen TUI (`tui: fullscreen` in `~/.claude/settings.json`),
+  mouse-wheel feel under WezTerm→tmux (`CLAUDE_CODE_SCROLL_SPEED`,
+  `/scroll-speed`, `wheelScrollAccelerationEnabled`), or why background /
+  agent-view attach stays fullscreen even after `/tui default`:
+  Read [`docs/tmux-ui.md#claude-code-in-tmux`](docs/tmux-ui.md#claude-code-in-tmux).
 - Window appearance presets (`opaque` / `frosted`), transparency /
   frosted-glass, `win32_system_backdrop`, `window_background_opacity`, the
   `WEZTERM_APPEARANCE_PRESET` selector, `render-tmux-appearance.sh`, or the
