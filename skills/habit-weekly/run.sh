@@ -2,9 +2,11 @@
 # Collect habit-report JSON for a week window and render a stable markdown report.
 #
 # Examples:
-#   run.sh                         # previous complete Mon–Sun (default)
-#   run.sh --week this             # current week so far (Mon → today)
-#   run.sh --week last             # same as default: previous Mon–Sun
+#   run.sh                         # previous complete Mon–Sun (default); catch-up
+#                                  # from day after last archive until when lagged
+#   run.sh --week this             # current week so far (Mon → today); no catch-up
+#   run.sh --week last             # same as default (with catch-up)
+#   run.sh --no-catch-up           # keep a single Mon–Sun even if archive lags
 #   run.sh --since 2026-09-11 --until 2026-09-17
 #   run.sh --write                 # also save under state/workflow/habit-weekly/
 #   run.sh --write --push          # local write + push to habit archive repo
@@ -14,6 +16,11 @@
 #
 # Relies on scripts/dev/habit-report.sh (Claude/Grok/Codex plugins + hotkeys +
 # optional WakaTime). Archive push: push-archive.sh + ~/.config/habit-weekly/state.json.
+#
+# Catch-up (default for --week last): if the habit archive's newest
+# habit-weekly-*_to_<until>.md ends before the default window starts, extend
+# since to until+1 so holiday / skipped weeks land in one report without
+# re-asking for dates. Explicit --since/--until and --week this skip this.
 set -euo pipefail
 
 # pwd -P: follow symlinks so TOOL_HOME is always skills/habit-weekly.
@@ -46,11 +53,13 @@ push=0
 stdout=0
 json_only=0
 wakatime=1
+catch_up=1
 providers='claude,grok,codex'
 out_dir="${WSL_WORKFLOW_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wezterm-runtime/state/workflow}/habit-weekly"
+state_file="${HABIT_WEEKLY_STATE:-$HOME/.config/habit-weekly/state.json}"
 
 usage() {
-  sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # Monday of the ISO week containing $1 (YYYY-MM-DD). GNU date.
@@ -61,6 +70,42 @@ monday_of() {
 
 sunday_of_monday() {
   date -d "$1 +6 days" +%Y-%m-%d
+}
+
+# Newest archive report until-date (YYYY-MM-DD), or empty.
+# Scans archive local_path/reports/**/habit-weekly-*_to_*.md from state.json.
+latest_archive_until() {
+  local archive_path='' reports_root='' newest='' candidate=''
+  if [[ -n "${HABIT_WEEKLY_ARCHIVE_PATH:-}" ]]; then
+    archive_path="$HABIT_WEEKLY_ARCHIVE_PATH"
+  elif [[ -f "$state_file" ]]; then
+    archive_path="$(python3 - "$state_file" <<'PY'
+import json, sys
+from pathlib import Path
+p = Path(sys.argv[1])
+try:
+    data = json.loads(p.read_text(encoding="utf-8"))
+except Exception:
+    print("")
+    raise SystemExit(0)
+print((data.get("archive") or {}).get("local_path") or "")
+PY
+)"
+  fi
+  [[ -n "$archive_path" ]] || return 0
+  reports_root="$archive_path/reports"
+  [[ -d "$reports_root" ]] || return 0
+  # Filenames: habit-weekly-YYYY-MM-DD_to_YYYY-MM-DD.md
+  while IFS= read -r -d '' candidate; do
+    local base until_part
+    base="$(basename "$candidate" .md)"
+    until_part="${base##*_to_}"
+    [[ "$until_part" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || continue
+    if [[ -z "$newest" || "$until_part" > "$newest" ]]; then
+      newest="$until_part"
+    fi
+  done < <(find "$reports_root" -type f -name 'habit-weekly-*_to_*.md' -print0 2>/dev/null)
+  printf '%s' "$newest"
 }
 
 while (( $# )); do
@@ -75,6 +120,7 @@ while (( $# )); do
     --json-only) json_only=1; shift ;;
     --wakatime) wakatime=1; shift ;;
     --no-wakatime) wakatime=0; shift ;;
+    --no-catch-up) catch_up=0; shift ;;
     --out-dir) out_dir="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'unknown arg: %s\n' "$1" >&2; exit 2 ;;
@@ -92,7 +138,9 @@ if (( push )); then
 fi
 
 today="$(date +%Y-%m-%d)"
+explicit_window=0
 if [[ -n "$since" || -n "$until" ]]; then
+  explicit_window=1
   [[ -n "$since" && -n "$until" ]] || {
     echo '--since and --until must both be set' >&2
     exit 2
@@ -114,6 +162,19 @@ else
       until="$(sunday_of_monday "$since")"
       ;;
   esac
+fi
+
+# Holiday / skipped-week catch-up: only for default last-week windows.
+if (( catch_up )) && (( ! explicit_window )) && [[ "$week" == "last" ]]; then
+  archive_until="$(latest_archive_until || true)"
+  if [[ -n "$archive_until" ]]; then
+    catch_since="$(date -d "$archive_until +1 day" +%Y-%m-%d)"
+    if [[ "$catch_since" < "$since" && ! ( "$catch_since" > "$until" ) ]]; then
+      printf 'catch-up: archive ends %s → window %s → %s (was %s → %s)\n' \
+        "$archive_until" "$catch_since" "$until" "$since" "$until" >&2
+      since="$catch_since"
+    fi
+  fi
 fi
 
 # habit-report uses --days + --end (inclusive end).

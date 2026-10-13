@@ -23,10 +23,11 @@ description: >
 
 | 用户意图 | 你做 |
 | --- | --- |
-| 开发习惯周报 / 习惯周报 / habit weekly | `run.sh`（**默认上一完整 Mon–Sun**；默认含 WakaTime） |
-| 上周习惯 / last week | `run.sh` 或 `run.sh --week last`（与默认相同） |
-| 本周迄今 / this week | `run.sh --week this`（Mon→today，未完结周） |
-| 自定义区间 | `run.sh --since YYYY-MM-DD --until YYYY-MM-DD` |
+| 开发习惯周报 / 习惯周报 / habit weekly | `run.sh`（**默认上一完整 Mon–Sun**；若归档仓落后则 **catch-up** 接到上次 `until+1`；默认含 WakaTime） |
+| 上周习惯 / last week | `run.sh` 或 `run.sh --week last`（与默认相同，含 catch-up） |
+| 只要单周、不要接假期缺口 | `run.sh --no-catch-up` |
+| 本周迄今 / this week | `run.sh --week this`（Mon→today，未完结周；**不做** catch-up） |
+| 自定义区间 | `run.sh --since YYYY-MM-DD --until YYYY-MM-DD`（显式窗口，跳过 catch-up） |
 | 只要原始 JSON | `run.sh --json-only` |
 | 落盘归档（本机） | `run.sh --write`（再 `--stdout` 可同时打印正文） |
 | 落盘并推送到私有习惯仓 | `run.sh --write --push`（`--push` 隐含 `--write`） |
@@ -57,6 +58,7 @@ R="$TOOL_HOME/run.sh"
 
 1. **定窗口**（用户没说则默认**上一完整 Mon–Sun**；未完结周须显式 `--week this`）：
    - 默认 / 上周完整周 → 不传或 `--week last`
+   - **Catch-up（默认开）**：读归档仓最新 `habit-weekly-*_to_<until>.md`；若 `until+1` 早于默认窗口起点（假期 / 漏跑），把 `since` 前移到 `until+1`，`until` 仍为上完整周日——**一份报告接缺口，不要再问用户切不切开**。`--no-catch-up` 可关；显式 `--since/--until` 与 `--week this` 不做 catch-up。
    - 本周迄今（未完结）→ `--week this`
    - 点名日期 → `--since` / `--until`，或 `--week YYYY-MM-DD`（取该日所在周 Mon–Sun）
 2. **跑收集 + 渲染**（优先 `--write` 落盘；用户要远端归档时再加 `--push`）：
@@ -71,8 +73,8 @@ R="$TOOL_HOME/run.sh"
    ```bash
    "$R" --week this --write
    ```
-3. **读** `references/REPORT_STYLE.md`，核对渲染稿是否需补一句人话结论（数字已被模板写好；只在环路归纳与分工上可加 1–2 句，**禁止改数字**）。
-4. **汇报**：把 markdown 正文（或落盘路径 + 摘要）用简体中文交给用户。披露数据窗口、`max_running` 口径（pane+TTL）、WakaTime 是否成功。
+3. **读** `references/REPORT_STYLE.md`，核对渲染稿是否需补一句人话结论（数字已被模板写好；只在环路归纳与分工上可加 1–2 句，**禁止改数字**）。窗口若因 catch-up 超过 7 天，结论里可点一句「含假期/空档」。
+4. **汇报**：把 markdown 正文（或落盘路径 + 摘要）用简体中文交给用户。披露数据窗口、`max_running` 口径（pane+TTL）、WakaTime 是否成功、是否发生了 catch-up。
 
 ## 报告固定结构
 
@@ -92,8 +94,9 @@ R="$TOOL_HOME/run.sh"
 
 | Flag | 作用 |
 | --- | --- |
-| `--week this\|last\|DATE` | 默认 `last`（完整 Mon–Sun）；`this`=Mon→today；DATE 取其所在周 Mon–Sun |
-| `--since` / `--until` | 显式闭区间（优先于 `--week`） |
+| `--week this\|last\|DATE` | 默认 `last`（完整 Mon–Sun + catch-up）；`this`=Mon→today；DATE 取其所在周 Mon–Sun |
+| `--no-catch-up` | 关闭归档接续；`last` 只出单周 Mon–Sun |
+| `--since` / `--until` | 显式闭区间（优先于 `--week`；跳过 catch-up） |
 | `--providers csv` | 默认 `claude,grok,codex` |
 | `--wakatime` / `--no-wakatime` | 默认开；关则跳过 WakaTime |
 | `--write` | 写入 `$WSL_WORKFLOW_DIR/habit-weekly/habit-weekly-<since>_to_<until>.{md,json}` |

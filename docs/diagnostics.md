@@ -353,16 +353,18 @@ scripts/dev/habit-report.sh --paths
 
 **Weekly write-up (stable template):** repo-local skill
 [`skills/habit-weekly/`](../skills/habit-weekly/) — agent loads via
-`AGENTS.md` and runs `run.sh` (default: **previous complete Mon–Sun**;
-`--week this` for the in-progress week Mon→today; WakaTime on by default;
-`--write` archives under `$WSL_WORKFLOW_DIR/habit-weekly/`; **`--push`**
-copies into the private habit archive repo configured by
-`~/.config/habit-weekly/state.json` / `HABIT_WEEKLY_ARCHIVE_*` and commits —
-push is explicit, never implied by `--write` alone). Default archive target:
-`yunsii/wezdeck-habit-weekly` (`reports/YYYY/`). Do not confuse with
-`coco-weekly-report` (business delivery / Feishu). **Not** linked by
-`scripts/dev/link-platform-skills.sh` (stays under this repo; needs
-co-located `habit-report.sh`).
+`AGENTS.md` and runs `run.sh` (default: **previous complete Mon–Sun**, with
+**catch-up**: if the habit archive's newest report ends before that Monday,
+`since` moves to `until+1` so holiday / skipped weeks land in one report —
+`--no-catch-up` keeps a single week; explicit `--since/--until` and
+`--week this` skip catch-up; WakaTime on by default; `--write` archives under
+`$WSL_WORKFLOW_DIR/habit-weekly/`; **`--push`** copies into the private habit
+archive repo configured by `~/.config/habit-weekly/state.json` /
+`HABIT_WEEKLY_ARCHIVE_*` and commits — push is explicit, never implied by
+`--write` alone). Default archive target: `yunsii/wezdeck-habit-weekly`
+(`reports/YYYY/`). Do not confuse with `coco-weekly-report` (business
+delivery / Feishu). **Not** linked by `scripts/dev/link-platform-skills.sh`
+(stays under this repo; needs co-located `habit-report.sh`).
 
 Caveats: Claude transcripts age out with `cleanupPeriodDays` (default 30);
 Codex may leave `rollout-*.jsonl.zst` siblings (skipped until decompressed);
