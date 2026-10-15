@@ -11,7 +11,7 @@ import (
 func TestWorktreeRenderHighlightsSelectedRow(t *testing.T) {
 	ui := &worktreeUI{
 		rows: []worktreeRow{
-			{label: "main", path: "/repo", branch: "master", existingWindowID: "@1", accelerator: "1"},
+			{label: "primary", path: "/repo", branch: "master", existingWindowID: "@1", accelerator: "1"},
 			{label: "feature", path: "/repo-feat", branch: "feat", existingWindowID: "", accelerator: "2"},
 		},
 		selected:            1,
@@ -52,7 +52,7 @@ func TestWorktreeRenderHighlightsSelectedRow(t *testing.T) {
 func TestWorktreeRenderShowsSelectedDetail(t *testing.T) {
 	ui := &worktreeUI{
 		rows: []worktreeRow{
-			{label: "main", path: "/home/yuns/github/wezterm-config", branch: "master", existingWindowID: "@1", accelerator: "1"},
+			{label: "primary", path: "/home/yuns/github/wezterm-config", branch: "master", existingWindowID: "@1", accelerator: "1"},
 			{label: "feature", path: "/tmp/feature-wt", branch: "feat/x", existingWindowID: "", accelerator: "2"},
 		},
 		selected:  1,
@@ -74,7 +74,7 @@ func TestWorktreeRenderShowsSelectedDetail(t *testing.T) {
 func TestWorktreeBeginReclaimConfirm(t *testing.T) {
 	ui := &worktreeUI{
 		rows: []worktreeRow{
-			{label: "main", path: "/home/yuns/work/coco-forge", branch: "master", accelerator: "1"},
+			{label: "primary", path: "/home/yuns/work/coco-forge", branch: "master", accelerator: "1"},
 			{label: "dev-x", path: "/home/yuns/work/.worktrees/coco-forge/dev-x", branch: "dev/x", accelerator: "2"},
 			{label: "task-y", path: "/home/yuns/work/.worktrees/coco-forge/task-y", branch: "task/y", accelerator: "3"},
 		},
@@ -179,7 +179,7 @@ func TestWorktreeCopySelectedPathAndBranch(t *testing.T) {
 
 	ui := &worktreeUI{
 		rows: []worktreeRow{
-			{label: "main", path: "/repo/main", branch: "feat/x", existingWindowID: "@1", accelerator: "1"},
+			{label: "primary", path: "/repo/main", branch: "feat/x", existingWindowID: "@1", accelerator: "1"},
 		},
 		selected:   0,
 		repoLabel:  "repo",
@@ -218,7 +218,7 @@ func TestWorktreeCopySelectedEmptyBranch(t *testing.T) {
 	t.Cleanup(func() { writeClipboardText = orig })
 
 	ui := &worktreeUI{
-		rows:       []worktreeRow{{label: "main", path: "/repo", branch: ""}},
+		rows:       []worktreeRow{{label: "primary", path: "/repo", branch: ""}},
 		selected:   0,
 		openScript: "/runtime/tmux-worktree-open.sh",
 	}
@@ -239,7 +239,7 @@ func TestWorktreeCopySelectedReportsFailure(t *testing.T) {
 	t.Cleanup(func() { writeClipboardText = orig })
 
 	ui := &worktreeUI{
-		rows:       []worktreeRow{{label: "main", path: "/repo/main", branch: "master"}},
+		rows:       []worktreeRow{{label: "primary", path: "/repo/main", branch: "master"}},
 		selected:   0,
 		openScript: "/runtime/tmux-worktree-open.sh",
 	}
@@ -327,7 +327,7 @@ func TestLoadWorktreeRowsToleratesLegacyFourColumns(t *testing.T) {
 func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 	ui := &worktreeUI{
 		rows: []worktreeRow{
-			{label: "main", path: "/repo", branch: "master", existingWindowID: "@1", accelerator: "1",
+			{label: "primary", path: "/repo", branch: "master", existingWindowID: "@1", accelerator: "1",
 				status: "running", age: "12s"},
 			{label: "dev-auth", path: "/repo-auth", branch: "dev/auth", existingWindowID: "@2", accelerator: "2",
 				status: "waiting", age: "2m", reason: "needs your permission to use Bash"},
@@ -366,8 +366,9 @@ func TestWorktreeRenderShowsAgentStatusColumn(t *testing.T) {
 		t.Fatalf("detail line missing reason: %q", out)
 	}
 	// Name cells are padded to a common width so the status column aligns:
-	// the longest cell here is "task-perf [task/perf]" (21 runes).
-	if !strings.Contains(out, "main [master]        ") {
+	// the longest cell here is "task-perf [task/perf]" (21 runes);
+	// "primary [master]" is 16 runes → 5 trailing spaces.
+	if !strings.Contains(out, "primary [master]     ") {
 		t.Fatalf("name column not padded for status alignment: %q", out)
 	}
 }

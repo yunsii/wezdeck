@@ -135,7 +135,7 @@ local function git_worktrees(cwd)
       branch = '',
       head = '',
       kind = 'primary',
-      name = leaf_name(cwd),
+      name = 'primary',
     }
   end
   return trees

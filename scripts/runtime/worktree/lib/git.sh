@@ -113,15 +113,12 @@ wt_git_branch_exists() {
 wt_git_worktree_label_for_root() {
   local worktree_root="${1:?missing worktree root}"
   local main_root="${2:-}"
-  local branch=""
 
+  # Keep lockstep with tmux_worktree_label_for_root: primary checkout is
+  # always labeled `primary` so pickers / window titles scan as
+  # `primary [branch]` rather than repeating the branch as the label.
   if [[ -n "$main_root" && "$worktree_root" == "$main_root" ]]; then
-    branch="$(wt_git_branch_for_root "$worktree_root")"
-    if [[ -n "$branch" ]]; then
-      printf '%s\n' "$branch"
-    else
-      printf 'main\n'
-    fi
+    printf 'primary\n'
     return 0
   fi
 

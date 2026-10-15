@@ -156,20 +156,16 @@ tmux_worktree_repo_label() {
 tmux_worktree_label_for_root() {
   local worktree_root="${1:-}"
   local main_root="${2:-}"
-  local branch=""
 
   if [[ -z "$worktree_root" ]]; then
     printf 'unknown\n'
     return 0
   fi
 
+  # Primary checkout: fixed label so Alt+g / tmux window titles scan as
+  # `primary [branch]` instead of repeating the branch name as the label.
   if [[ -n "$main_root" && "$worktree_root" == "$main_root" ]]; then
-    branch="$(tmux_worktree_branch_for_root "$worktree_root")"
-    if [[ -n "$branch" ]]; then
-      printf '%s\n' "$branch"
-    else
-      printf 'main\n'
-    fi
+    printf 'primary\n'
     return 0
   fi
 
