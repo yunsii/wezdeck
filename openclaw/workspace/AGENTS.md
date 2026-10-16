@@ -9,22 +9,11 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 
 ## Role
 
-| You own | You do **not** own |
-| --- | --- |
-| 飞书、台账、worktree 初评/建树、handoff、结果汇报 | 完整 `agent-profiles` / TUI 全历史 |
-| 轻量本机改的 shell 闸门（`claw-run`）与 UI 浏览器验收 | 与 live CLI/ACP **并行**写同一 worktree |
+**负责：** 飞书编排、台账、worktree 初评/建树、handoff、结果汇报；`claw-run` 闸门；UI 浏览器验收。  
+**边界：** 不维护完整 `agent-profiles` / TUI 全历史；同一 cwd 不与 live CLI/ACP 并行写。
 
-| 轨 | 方式 | 旧 | Who codes | Note |
-| --- | --- | --- | --- | --- |
-| 人工 | **H1/H2** | A | 用户 / 原生 CLI | 台账协助、验收；不双写 |
-| Claw | **C1** Main 自写 | B | Main（Main-Grok） | 小改、飞书可跟完 |
-| Claw | **C2** Handoff | C | 本机原生 CLI | 你 **停笔** 该 cwd |
-| Claw | **C3** ACP 后端 | E | ACP→claude/codex | 接入层；单写者 |
-| — | ~~D~~ | D | — | **禁用** |
-
-统一架构（Grok 三分、ACP 接入、命名空间）:
-[`docs/agent-architecture.md`](../docs/agent-architecture.md)。
-模式细节: [`README.md` → Development modes](../README.md#development-modes-who-writes-code)。
+轨与写者（详表与卡片：`skills/dev-task/SKILL.md`）：H1/H2 人工 · C1 Main 自写 · C2 handoff 停笔 · C3 ACP 接入层 · D 禁用。  
+架构：[`docs/agent-architecture.md`](../docs/agent-architecture.md) · 模式：[`README.md` → Development modes](../README.md#development-modes-who-writes-code)。
 
 ## Core doctrine (L0 — always)
 
@@ -58,16 +47,7 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 19. **安全红线** — 密钥不外泄；生产破坏 / 关安全阀：须明确 yes。个人仓（wezdeck）：验收后可直接 push 主分支；隔离分支合入用 ff-only。force-push / 改写历史与团队仓推主：规则见 L0-20 → `agent-profiles` `vcs.md`。
 20. **落实协议与提交卫生** — 落实/落地等：评审 → 验证 → 按变更边界整洁提交（禁无脑碎提交；数量不强制 1–3）→ 推送 → 闭环汇报。个人仓已在主分支则直接 push。Author=主人；协助信息只放 `Assisted-by` trailer。细则与例子：`agent-profiles` `vcs.md` + `skills/dev-task/SKILL.md`（Git author & trailer）。若改了 L0 核心精神，验收须含 agent-profiles 是否已同步。
 21. **对抗审查 = 多角色编排（强制）** — 至少 find+refute（推荐 +repro）；单角色独白只能称「设计批判」。声称「对抗审查」须同轮披露。细则与披露模板：`skills/adversarial-review/SKILL.md`；host 侧：`agent-profiles` `validation.md`。
-22. **外部产物落盘 · 仓库外优先**（L1 · claw 侧，不必同步 host profile）— OpenClaw
-    下载/接收的外部文件（飞书附件、`curl`/`wget` 拉取、送审稿等**非本仓源码**）
-    默认落 **仓库外绝对路径** `~/.openclaw/downloads/`。
-    - **禁落 repo 树**：`~/.openclaw/workspace/` 是 wezterm-config 的 **symlink**——
-      写它的**根目录或任何 tracked 路径 = 写进版本库**。仅 workspace 内 **已 gitignore**
-      的运行时子目录（`tmp/` `state/` `media/` `claude/` `codex/`）可作临时区。
-    - **下载命令传绝对 `--output`**：`lark-cli` / `curl` 等**不得依赖 cwd**——Main 的
-      cwd 常是 `~/.openclaw/workspace`（=repo symlink），相对路径会把外部物落进版本库。
-    - **事故洞（2026-07-21）**：一份飞书送审 `PROTOCOL.md` 因相对 `--output` +
-      cwd=workspace 误落 repo 根、又不在 ignore 兜底内，险被当本仓内容分析 / 误 commit。
+22. **外部产物落盘 · 仓库外优先**（L1）— 飞书附件/`curl` 等非本仓源码默认 `~/.openclaw/downloads/` 绝对路径。`~/.openclaw/workspace` 是仓 symlink：禁写其 tracked 根；下载须绝对 `--output`（相对 cwd 易误落版本库）。可写临时区：已 gitignore 的 `tmp/` `state/` `media/` 等。
 
 Language / identity: personal owner of this Linux/WSL host; never invent `task_id` or success.
 
@@ -107,27 +87,10 @@ Docs map: `openclaw/docs/README.md` · terms: `openclaw/docs/terminology.md`.
 
 未在对应 agent 白名单内：只读问答，不 `open` 写任务台账。可选 `OPENCLAW_TASKS_AGENT` 仅选 agent，不定义路径列表。
 
-## Worktree (strategy only)
+## Worktree / Git（策略摘要）
 
-- **wezdeck 默认不用 worktree**（L0-13）：primary `$HOME/github/wezterm-config` + `master`。
-- **何时建 claw-\***：并行任务、长实验/大回滚、C2/C3 要隔离 cwd、或用户点名隔离。
-- Path: **`dirname(primary)/.worktrees/<repo>/<claw-slug>/`**（claw create 委托 `worktree-task`）。
-- Slugs: `claw-task-*` / `claw-dev-*` / `claw-hotfix-*` only; never human `dev-*`/`task-*`/`hotfix-*`.
-- 需要时：Assess → 初评 → confirm → create；reclaim **never** auto.
-- 团队仓：仍默认 claw-*。Details: `skills/dev-task/SKILL.md`.
-
-## Exec & multi-task
-
-- Host shell 一律经 **`claw-run.sh`** / gate；并行写用分树。细则与 Exec hygiene（短命令、落盘再跑、禁脆弱 `python -c`、gateway 自升级）：`skills/exec-risk/SKILL.md`。
-
-## Git
-
-- **wezdeck 默认：** 在 `master` 上按变更边界合理逻辑 commit → `push origin master`（L0-13/20）。
-- 隔离分支时：rebase → `merge --ff-only` → push；默认不用 `--no-ff`。
-- **Author = 主人**（`Yuns <yuns.xie@qq.com>`）；禁止机器人名 / 机器人邮箱占 Author。
-- Trailer：`Assisted-by: OpenClaw (backend=main|Claude-ACP|…, model=…)`（见 L0-20）。
-- Other repos: no push `main`/`master` without explicit chat yes.
-- No force-push without explicit yes.
+- Worktree：wezdeck 默认 primary `master`；并行/隔离才 `claw-*`。路径与 reclaim：`skills/dev-task/SKILL.md`。
+- Git：wezdeck 上合理逻辑 commit → `push origin master`；Author=主人 + `Assisted-by` trailer（L0-20）。其他仓推主 / force-push 须明确 yes。
 
 ## Completion report (required)
 
