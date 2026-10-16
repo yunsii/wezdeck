@@ -9,7 +9,8 @@ triggers:
   - option recommendations
   - ask human to run or paste a script
   - human-run handoff
-tags: [reporting, honesty, confidence-vocabulary, human-run]
+  - wording in chat or reports
+tags: [reporting, honesty, confidence-vocabulary, human-run, wording]
 ---
 
 # Reporting
@@ -34,7 +35,7 @@ State:
 - [reporting-03] how it was verified
 - [reporting-04] what remains uncertain or not verified
 
-- [reporting-05] Use concise language.
+- [reporting-05] Use concise language. Obeys [preferences-22]–[preferences-23] in [preferences.md](./preferences.md).
 - [reporting-06] Do not turn a straightforward result into a long changelog.
 - [reporting-26] For non-trivial analysis or recommendation, include a concise evidence line: local source, upstream source analysis, official docs, tests/logs, current external references, or deeper research skipped because `<reason>`.
 - [reporting-27] When recommending a path among meaningful alternatives, include the considered options, chosen option, why it wins, and remaining tradeoffs.
@@ -180,7 +181,15 @@ Mention:
 - [reporting-09] what has been learned
 - [reporting-10] what is about to happen next
 
-[reporting-11] Avoid filler and repeated status phrasing.
+[reporting-11] Avoid filler and repeated status phrasing. Obeys [preferences-21] and [preferences-09] in [preferences.md](./preferences.md).
+
+## Wording (chat / progress / final / handoff)
+
+Scope of this file: user-facing **dialogue** — chat answers, progress lines, final responses, and human-run handoff copy. Code comments and in-product strings live in [implementation.md](./implementation.md). Commit/PR bodies live in [vcs.md](./vcs.md).
+
+- [reporting-57] Follow always-on wording discipline (表达纪律) in [preferences.md](./preferences.md) ([preferences-21]–[preferences-27]); this section only adds report-surface constraints.
+- [reporting-58] Lead with the outcome or answer; put procedure and tooling detail after, or omit when the user did not ask for it.
+- [reporting-59] Prefer one positive claim over contrastive padding ("X, not Y" / 「不是 A 而是 B」) when the positive claim alone is clear ([preferences-24]).
 
 ## Honesty
 
@@ -214,7 +223,7 @@ Skill source (single body): wezdeck `skills/human-run/SKILL.md`, linked by `scri
 
 ## Human-readable user text
 
-- [reporting-30] Prefer plain language the user can read without decoding internal codes (mode letters A–E, skill ids, opaque task ids as the only subject).
+- [reporting-30] Prefer plain language the user can read without decoding internal codes (mode letters A–E, skill ids, opaque task ids as the only subject). Same spirit as [preferences-25].
 - [reporting-31] When an internal code is useful, put the human meaning first and the code in parentheses — e.g. "Main 自写（B）", not bare "开发方式 B".
 - [reporting-32] Final answers and progress updates must not leave the user to reverse-engineer platform dumps (raw arrow-lists of failed exec steps without explanation).
 - [reporting-56] When the user-facing payload is Markdown destined for a render platform (issue / PR / ticket comment / Feishu-style Markdown body) rather than a git-tracked `.md` file, use paragraph-long lines per [documentation-41]–[documentation-44] in [documentation.md](./documentation.md).

@@ -9,18 +9,20 @@ triggers:
   - performance
   - evidence gates
   - option comparison
-tags: [design, architecture, complexity, change-size]
+  - code comments
+  - user-visible product copy
+tags: [design, architecture, complexity, change-size, wording]
 ---
 
 # Implementation
 
 ## When To Read
 
-When choosing structure, abstractions, module boundaries, reliability patterns, performance tradeoffs, evidence depth, or whether to compare options before recommending a path.
+When choosing structure, abstractions, module boundaries, reliability patterns, performance tradeoffs, evidence depth, or whether to compare options before recommending a path. Also when writing or revising **code comments** or **user-visible product strings** (errors, hints, CLI help, UI copy) — see Maintainability → Comments and user-visible product copy.
 
 ## When Not To Read
 
-When the change is a localized bug fix with no design decision, or pure text/comment edits. The AGENTS.md one-liner covers those.
+When the change is a localized bug fix with no design decision and no new comments or user-visible strings. The AGENTS.md one-liner covers those.
 
 ## Default
 
@@ -87,6 +89,15 @@ Prefer:
 - [implementation-15] narrow interfaces
 - [implementation-16] straightforward control flow
 - [implementation-17] comments only where intent would otherwise be unclear
+
+### Comments and user-visible product copy
+
+Wording follows [preferences-21]–[preferences-27] in [preferences.md](./preferences.md). Identifier names still follow [preferences-14].
+
+- [implementation-58] Comments explain **why** or a non-obvious constraint. Do not narrate what the next lines already say.
+- [implementation-59] Keep comments short; cut words that do not change meaning ([preferences-23]).
+- [implementation-60] User-visible strings (errors, hints, CLI help, UI copy): short, concrete, active; everyday words first; introduce jargon with a plain gloss on first use in that surface.
+- [implementation-61] Do not put internal mode letters, skill ids, or opaque task ids alone as the subject of a user-visible string; human phrase first, code in parentheses if needed.
 
 Avoid:
 

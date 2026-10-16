@@ -7,7 +7,8 @@ triggers:
   - doc layering decisions
   - Markdown hard-wrap versus render-platform long lines
   - issue or PR or comment body formatting
-tags: [documentation, layering, progressive-disclosure, markdown-surfaces]
+  - wording when writing agent docs
+tags: [documentation, layering, progressive-disclosure, markdown-surfaces, wording]
 ---
 
 # Documentation
@@ -68,6 +69,8 @@ Each topic file should ideally answer:
 - [documentation-21] what to prefer
 - [documentation-22] what to avoid
 - [documentation-23] how to validate
+
+[documentation-46] When writing or revising agent-facing docs, follow always-on wording discipline (表达纪律) in [preferences.md](./preferences.md) ([preferences-21]–[preferences-27]).
 
 ## Avoid
 

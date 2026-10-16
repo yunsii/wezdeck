@@ -8,7 +8,8 @@ triggers:
   - rebase
   - push
   - open pull or merge request
-tags: [git, commits, push, history-safety]
+  - commit or PR wording
+tags: [git, commits, push, history-safety, wording]
 ---
 
 # VCS
@@ -73,6 +74,8 @@ Prefer a **clean, linear git graph**. Compress noise before it becomes permanent
 - [vcs-12] Match the existing project style; read recent log before composing.
 - [vcs-13] Use the body to explain *why* when the *what* alone is not enough.
 - [vcs-14] Do not invent a convention if the project has none. Keep it short and descriptive.
+- [vcs-41] Wording follows [preferences-21]–[preferences-27] in [preferences.md](./preferences.md). Subject: short, concrete, names the change. Body: why, boundaries, and verification that matter; cut empty restatement of the diff. Applies to every commit/PR path — whichever skill, hook, or manual flow is used.
+- [vcs-42] Split ownership: this profile owns **prose density and clarity**. Commit/PR **structure** (Conventional layout, trailers, ticket tokens, validation blocks, etc.) belongs to whichever workflow or skill the session actually uses. Do not hard-wire the profile to one skill name.
 
 ## Conflicts And Recovery
 
@@ -86,6 +89,7 @@ Prefer a **clean, linear git graph**. Compress noise before it becomes permanent
 - [vcs-19] Keep the title short. Put details in the body.
 - [vcs-20] Summarize the full diff since divergence from the base branch, not only the latest commit.
 - [vcs-25] Issue / PR descriptions and review comments are **render-platform Markdown**: paragraph-long lines, not repo hard wraps. Follow [documentation-41]–[documentation-44] in [documentation.md](./documentation.md); unwrap with `scripts/dev/markdown-unwrap-prose/unwrap.py` when the draft came from hard-wrapped source.
+- [vcs-43] PR/issue bodies are user-facing prose: lead with outcome; cover what changed, how it was verified, and what remains uncertain (same elements as [reporting-02]–[reporting-04]); avoid process play-by-play and stock filler. Obey [preferences-21]–[preferences-27].
 
 ## Concurrency
 

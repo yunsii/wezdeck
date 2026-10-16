@@ -58,7 +58,7 @@ Read additional topic files only when the current file points to them or the tas
 - Commits, branches, merges, pushes, pull/merge requests → [vcs.md](./vcs.md)
 - Final responses and progress updates → [reporting.md](./reporting.md)
 - Asking a human to run / paste a script → [reporting.md](./reporting.md) `Human-run handoff` + platform skill `human-run` (mandatory)
-- Tie-breaking between otherwise valid approaches, language and communication style → [preferences.md](./preferences.md)
+- Tie-breaking between otherwise valid approaches, language, communication style, 表达纪律 / wording → [preferences.md](./preferences.md)
 - Pre-approval policy, recurrence-gated promotion, what must stay prompted → [permissions.md](./permissions.md)
 - Claude Code-specific allowlist files (`settings.json` / `.claude/settings.json` / `settings.local.json`), layering, PreToolUse hooks → [permissions-claude.md](./permissions-claude.md)
 
@@ -76,6 +76,7 @@ Full rules live in the routed topic file.
 - Agency / closed loop: on failure, diagnose → safe self-fix → verify → report; do not dump bare errors or undecoded platform failure lists; escalate only with situation + options + recommendation. Detail in [reporting.md](./reporting.md).
 - Critique: user chat is high priority but not unexamined; challenge weak requirements with evidence and alternatives; self-critique process misses. Prefer professional dissent over empty agreement.
 - Human-readable: user-facing text must be understandable without decoding internal codes (mode letters, skill ids); Chinese primary; codes only as parenthetical aids. Full rule in [reporting.md](./reporting.md) / [preferences.md](./preferences.md).
+- 表达纪律 / Wording: short, concrete, active, no stock filler; break style before saying anything false or unclear. Kernel in [preferences.md](./preferences.md) (`Wording discipline`); chat/reports → [reporting.md](./reporting.md); comments and product copy → [implementation.md](./implementation.md); commit/PR bodies → [vcs.md](./vcs.md).
 - Structure opportunity: default to minimal change; when reuse/refactor would help, propose options for user confirm before large structural work. Full rule in [implementation.md](./implementation.md) / [refactor.md](./refactor.md).
 - Impact / boundary: for non-trivial decisions or changes, state blast radius — code (modules/API/data), people (who must help or will feel pain), team/process (release/oncall/collaboration). Do not assume "only the files in front of you". Full rule in [reporting.md](./reporting.md).
 - Constitution sync: keep Default Posture / topic rules aligned with openclaw workspace L0 spirit; when L0 gains or tightens a cross-task principle, update profile in the same delivery (or immediately after). Do not leave Feishu-only or CLI-only doctrine.
@@ -95,6 +96,6 @@ Full rules live in the routed topic file.
 - Single writer: do not edit the same worktree/cwd in parallel with another live agent or human session on that tree; serialize or isolate (worktree) first.
 - Reporting: state what changed, how it was verified, and what remains uncertain; human-readable first. Full rule in [reporting.md](./reporting.md).
 - Human-run handoff: if a **human** must run a script, **mandatory** load skill `human-run` → tell user `x` → `ensure-env` + `propose.sh --cwd …` (default `--wait`) → agent continues; handoff body = non-blocking kickoff only (no CI waits in `x`); never multi-line paste-to-terminal; never wrap agent self-exec. Full rules in [reporting.md](./reporting.md) `Human-run handoff`.
-- Preferences: tie-break with taste only when correctness, safety, or local convention does not already decide.
+- Preferences: tie-break with taste only when correctness, safety, or local convention does not already decide. Language and wording discipline (表达纪律) are always-on (not tie-break).
 - Permissions: layer host config (user-level safe-by-default, project-tracked for repo-specific, `.local.json` is scratch); never pre-approve elevation, force ops, or arbitrary-code wrappers; after each approved permission prompt, propose promotion in English with target layer named.
 - Language: reply in Simplified Chinese (简体中文) — **hard rule, not a tie-break**; see the `语言 / Language (Hard Rule)` block at the top of this file and [preferences.md](./preferences.md) `[preferences-06]`.
