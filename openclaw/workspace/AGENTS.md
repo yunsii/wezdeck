@@ -60,54 +60,8 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
     若用了隔离分支/worktree：合入默认 **fast-forward**；**禁止**默认 `merge --no-ff`。
     **force-push / 改写历史：** 见 L0-20 graph 卫生（个人仓、仅己方或 `force-with-lease` 安全时可整理强推）；**已分享/他人已基于 / 团队仓** 仍须明确 yes。
     **团队仓等** 默认仍：推主前要明确 yes（除非用户另立规矩）。
-20. **落实协议与提交卫生** — 用户说落实/落地/按推荐执行/直接提交推送等：
-    **评审 → 完善验证 → 整洁提交（按变更边界合理压缩，禁止无脑碎提交；数量不强制 1–3）→ 推送 → 闭环汇报**。
-    个人仓已在主分支上则 **直接 push**；仅隔离分支时再 ff 合入（见 L0-13/20）。
-    **Git graph 整洁（个人仓偏好 · 与 agent-profiles `vcs.md` 同步）：**
-    - **未推送：** 推送前按变更边界合理压缩为逻辑清晰的提交（禁止无脑碎提交；数量不强制 1–3）。
-    - **已推送但可改写：** 历史**仅主人自己的提交**，或 `git push --force-with-lease` 可安全覆盖时 → 允许压缩后 **force-with-lease** 强推以保持线性整洁（优先 `--force-with-lease`，非裸 `--force`）。
-    - **不可默认改写：** 他人可能已拉取、协作共享历史、团队仓主分支等 → 不擅自强推；须明确 yes。
-    **Git 作者与 trailer（强制）：**
-    - **Author / Committer 必须是仓库主人**（wezdeck：`Yuns <yuns.xie@qq.com>`）。禁止机器人身份占 Author（旧 bot 名、`yuns@local` 等）。
-    - 提交消息用 conventional subject + 可选 body；协助信息只放 **trailer**，不占 Author。
-    - Footer 格式：
-      - Main 自写（C1）：`Assisted-by: OpenClaw (backend=main, model=<model-id>)`
-        例：`Assisted-by: OpenClaw (backend=main, model=grok-4.5)`（人读写短 model；不必写 provider 的 `*-proxy` 后缀）。
-      - 有写码 agent 后端（C2/C3/H2 且 agent 产出 diff）：
-        `Assisted-by: OpenClaw (backend=<全名>, model=<model-id>)`
-        例：`Assisted-by: OpenClaw (backend=Claude-ACP, model=…)` / `(backend=Codex-ACP, model=grok-4.5)`。
-      - Main 仅整理提交说明：`Assisted-by: OpenClaw (editorial-only)` 或省略 trailer。
-    - `backend=main` = OpenClaw 内置编排 agent（直接调配置的 model API），≠ Claude-ACP/Codex-ACP 外挂后端。
-    若本次改了 **L0 核心** 精神，验收须含 agent-profiles 是否已同步。
-21. **对抗审查 = 多角色编排（强制）** — 名称即约束：
-    - **最低结构**：至少两个对立角色——**找茬 (find/reviewer)** 与 **反驳 (refute/refuter)**；
-      推荐再加 **复现 (repro)**。禁止「一个角色自说自话」仍叫对抗审查。
-    - **优先**不同 agent 家族（如 Claude-TUI × Codex-Grok-profile）。
-    - **若只能同一 agent 能力**：仍须 **分角色编排**（两次独立调用、不同 system/prompt 立场：
-      guilty-until-proven vs 举证责任在 finding），并标 **SINGLE-MODEL**；
-      不得省略 refute 角色。可用 Main 编排两次同后端，或 `run.sh --reviewer X --refuter X`。
-    - **单角色 guilty 独白**（仅 Main-Grok 一段分析）：**禁止**称「对抗审查」；只能称
-      **「设计批判 · Main-Grok」**（或架构评审），且不得暗示 cross-agent / 三门通过。
-    - 凡声称「对抗审查」须同轮披露：
-    | 形态 | 含义 | 可否宣称 cross-agent |
-    | --- | --- | --- |
-    | **三门全量** | find→refute→repro，且 reviewer≠refuter 家族 | 可以（写全名） |
-    | **多角色·单模型** | 有 find+refute（±repro），但同家族/同后端 | **不可**；须标 SINGLE-MODEL |
-    | **设计批判** | 单角色分析，无对立编排 | **不是**对抗审查 |
-    ```text
-    ## 对抗审查披露
-    - writer: 写码后端全名（Claude-ACP / Codex-ACP / Main-Grok / human …）
-    - 形态: 三门全量 | 多角色·单模型 | （若仅设计批判则不要用对抗审查标题）
-    - form/degraded/reason: select-backends 输出（若自动选路）
-    - reviewer 全名 / 角色立场: …
-    - refuter 全名 / 角色立场: …（不可空，除非降级为设计批判）
-    - repro: 已跑 | 跳过（理由）
-    - 命令或范围: run.sh --writer … | …
-    - skipped_gates: … | 无
-    - 关键结论: …（每条绑定 find/refute/repro 哪一闸）
-    ```
-    **选路：** 写码家族默认不审自己；`--writer` 自动选 reviewer/refuter（见
-    `skills/adversarial-review/lib/select-backends.sh`）。
+20. **落实协议与提交卫生** — 落实/落地等：评审 → 验证 → 按变更边界整洁提交（禁无脑碎提交；数量不强制 1–3）→ 推送 → 闭环汇报。个人仓已在主分支则直接 push。Author=主人；协助信息只放 `Assisted-by` trailer。细则与例子：`agent-profiles` `vcs.md` + `skills/dev-task/SKILL.md`（Git author & trailer）。若改了 L0 核心精神，验收须含 agent-profiles 是否已同步。
+21. **对抗审查 = 多角色编排（强制）** — 至少 find+refute（推荐 +repro）；单角色独白只能称「设计批判」。声称「对抗审查」须同轮披露。细则与披露模板：`skills/adversarial-review/SKILL.md`；host 侧：`agent-profiles` `validation.md`。
 22. **外部产物落盘 · 仓库外优先**（L1 · claw 侧，不必同步 host profile）— OpenClaw
     下载/接收的外部文件（飞书附件、`curl`/`wget` 拉取、送审稿等**非本仓源码**）
     默认落 **仓库外绝对路径** `~/.openclaw/downloads/`。
