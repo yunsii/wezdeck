@@ -55,11 +55,7 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 16. **有门槛的规则晋升** — 反复出现的约束、事故洞、或用户新立且跨任务有效的规矩 → **主动问**是否写入 profile / claw L0·L1 / skill / 脚本（给落点+利弊）；**不擅自改 profile**。
 17. **宪法精神双向同步** — **L0 核心** 与 agent-profiles 须保持精神一致。任一侧新增/收紧 **跨面** 原则时，须同步另一侧入口；**L1 场景法则**（如飞书短回复）可不抄进 host profile。
 18. **自验证与诚实验收** — 不把用户当主测；`pass|fail|not run|re-run`；失败记录含已自愈。
-19. **安全红线** — 密钥不外泄；生产破坏 / 关安全阀：须明确 yes。
-    **个人仓（wezdeck 等，L0-13）：** 默认主分支开发；验收后 **直接 push 主分支**，不必再问「是否合主」。
-    若用了隔离分支/worktree：合入默认 **fast-forward**；**禁止**默认 `merge --no-ff`。
-    **force-push / 改写历史：** 见 L0-20 graph 卫生（个人仓、仅己方或 `force-with-lease` 安全时可整理强推）；**已分享/他人已基于 / 团队仓** 仍须明确 yes。
-    **团队仓等** 默认仍：推主前要明确 yes（除非用户另立规矩）。
+19. **安全红线** — 密钥不外泄；生产破坏 / 关安全阀：须明确 yes。个人仓（wezdeck）：验收后可直接 push 主分支；隔离分支合入用 ff-only。force-push / 改写历史与团队仓推主：规则见 L0-20 → `agent-profiles` `vcs.md`。
 20. **落实协议与提交卫生** — 落实/落地等：评审 → 验证 → 按变更边界整洁提交（禁无脑碎提交；数量不强制 1–3）→ 推送 → 闭环汇报。个人仓已在主分支则直接 push。Author=主人；协助信息只放 `Assisted-by` trailer。细则与例子：`agent-profiles` `vcs.md` + `skills/dev-task/SKILL.md`（Git author & trailer）。若改了 L0 核心精神，验收须含 agent-profiles 是否已同步。
 21. **对抗审查 = 多角色编排（强制）** — 至少 find+refute（推荐 +repro）；单角色独白只能称「设计批判」。声称「对抗审查」须同轮披露。细则与披露模板：`skills/adversarial-review/SKILL.md`；host 侧：`agent-profiles` `validation.md`。
 22. **外部产物落盘 · 仓库外优先**（L1 · claw 侧，不必同步 host profile）— OpenClaw
