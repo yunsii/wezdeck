@@ -148,7 +148,7 @@ Always restate mode even if user named it.
 
 ## 落实 / commits
 
-On 落实: review → implement → verify → **1–3 logical commits** → push agreed branch → report.
+On 落实: review → implement → verify → 按变更边界整洁提交（数量不强制 1–3）→ push agreed branch → report.
 **wezdeck:** default work on **primary master**; after green checks **commit + push `master`** (L0-12/13/20). If a task branch/worktree was used, ff-only into master then push.
 Other repos: push main/master only with explicit yes.
 Shell via `claw-run` when required by exec-risk.
