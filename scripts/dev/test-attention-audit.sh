@@ -102,4 +102,37 @@ out="$("$repo_root/scripts/dev/attention-forensics.sh" --paths)"
 echo "$out" | grep -q "$WEZTERM_ATTENTION_JOURNAL_FILE" || fail "forensics paths miss journal"
 pass "forensics --paths"
 
+# --- refuse-to-clobber: empty-heal payload must not wipe a richer disk ---
+# Regression 2026-10-16: attention_state_read returned the empty default
+# while DrvFS still held rev≫0; the next write published rev=1 and wiped
+# every sibling entry (including bg-running).
+rich="$(jq -c '
+  .rev = 59835
+  | .entries = {
+      "sess-a": {"session_id":"sess-a","status":"running","running_kind":"background","ts":1},
+      "sess-b": {"session_id":"sess-b","status":"running","ts":2},
+      "sess-c": {"session_id":"sess-c","status":"done","ts":3}
+    }
+' "$tmp/attention.json")"
+printf '%s\n' "$rich" > "$tmp/attention.json"
+stale_heal='{"version":1,"rev":0,"entries":{"sess-x":{"session_id":"sess-x","status":"running","ts":9}},"recent":[]}'
+if attention_state_write "$stale_heal"; then
+  fail "stale heal write should have been refused"
+fi
+after_rev="$(jq -r '.rev' "$tmp/attention.json")"
+after_n="$(jq -r '.entries | length' "$tmp/attention.json")"
+[[ "$after_rev" == "59835" ]] || fail "disk rev clobbered: $after_rev"
+[[ "$after_n" == "3" ]] || fail "disk entries clobbered: $after_n"
+jq -e '.entries["sess-a"].running_kind=="background"' "$tmp/attention.json" >/dev/null \
+  || fail "bg-running entry lost after refused write"
+pass "refuse-to-clobber newer on-disk rev"
+
+# --- true corruption still heals (guard skipped when disk unparseable) ---
+printf '{"version":1,"entries":{"sess-X":{"sess' > "$tmp/attention.json"
+heal_payload='{"version":1,"rev":0,"entries":{"sess-heal":{"session_id":"sess-heal","status":"running","ts":1}},"recent":[]}'
+attention_state_write "$heal_payload" || fail "corrupt heal write"
+jq -e '.rev==1 and .entries["sess-heal"].status=="running"' "$tmp/attention.json" >/dev/null \
+  || fail "corrupt file did not heal"
+pass "unparseable disk still self-heals"
+
 echo "ALL PASSED"

@@ -95,6 +95,21 @@ attention_state_path() {
 }
 
 attention_state_lock_path() {
+  # Keep the flock on WSL ext4 even when attention.json lives on DrvFS
+  # (/mnt/c). Writers are all WSL bash; Lua only reads the JSON. A native
+  # lock serializes writers across the non-atomic rename windows that
+  # DrvFS can expose to concurrent `cat` (see attention_state_read retry
+  # + attention_state_write refuse-to-clobber). Override for tests via
+  # WEZTERM_ATTENTION_LOCK_FILE.
+  if [[ -n "${WEZTERM_ATTENTION_LOCK_FILE:-}" ]]; then
+    printf '%s' "$WEZTERM_ATTENTION_LOCK_FILE"
+    return 0
+  fi
+  if [[ -n "${WSL_RUNTIME_STATE_DIR:-}" ]]; then
+    mkdir -p "$WSL_RUNTIME_STATE_DIR/agent-attention" 2>/dev/null || true
+    printf '%s' "$WSL_RUNTIME_STATE_DIR/agent-attention/attention.json.lock"
+    return 0
+  fi
   local path
   path="$(attention_state_path)"
   printf '%s.lock' "$path"
@@ -202,23 +217,34 @@ attention_state_now_ms() {
 # the upstream writer's empty $next would then trip attention_state_write's
 # refuse-empty guard, leaving the file stuck corrupt forever.
 #
-# When the file fails the parse check we treat it as the empty default
-# state. The next successful write produces a clean baseline,
-# self-healing the file without operator intervention. Logs a single
-# warn line per recovery so the trail still shows the corruption
-# (otherwise the silent reset would mask whatever wrote bad bytes).
+# Transient DrvFS read windows (rename of attention.json mid-`cat`) can
+# look like corruption for a few milliseconds. Retry a handful of times
+# before falling back to the empty default — the empty fallback plus a
+# subsequent write used to clobber a live multi-entry document
+# (2026-10-16: rev 59835 → 1 wiped bg-running). attention_state_write
+# also refuses to publish a lower-rev payload over a richer on-disk
+# document, so a residual false heal cannot wipe the counter.
+#
+# When retries still fail we treat the file as the empty default state.
+# The next successful write produces a clean baseline. Logs a warn on
+# the final fallback so the trail still shows the corruption.
 attention_state_read() {
-  local path content
+  local path content attempt max_attempts=4
   path="$(attention_state_path)"
   if [[ -f "$path" ]]; then
-    content="$(cat "$path")"
-    if printf '%s' "$content" | jq -e . >/dev/null 2>&1; then
-      printf '%s' "$content"
-      return 0
-    fi
+    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+      content="$(cat "$path" 2>/dev/null || printf '')"
+      if printf '%s' "$content" | jq -e . >/dev/null 2>&1; then
+        printf '%s' "$content"
+        return 0
+      fi
+      if (( attempt < max_attempts )); then
+        sleep 0.02 2>/dev/null || true
+      fi
+    done
     if command -v runtime_log_warn >/dev/null 2>&1; then
       runtime_log_warn attention "state file unparseable; resetting to empty" \
-        "path=$path" "size=${#content}" 2>/dev/null || true
+        "path=$path" "size=${#content}" "attempts=$max_attempts" 2>/dev/null || true
     fi
   fi
   printf '%s' '{"version":1,"rev":0,"entries":{},"recent":[]}'
@@ -431,11 +457,21 @@ attention_state_audit_after_write() {
 # write fails closed instead so the existing on-disk state survives the
 # error and the caller's `2>/dev/null || true` handler can keep going.
 #
+# Also refuses to publish a payload whose bumped rev would go *backwards*
+# relative to a still-parseable on-disk document. That is the signature
+# of a false self-heal: attention_state_read returned the empty default
+# (rev 0) while DrvFS still held a live multi-entry file (rev ≫ 0); the
+# subsequent upsert then wrote rev=1 and wiped every sibling entry
+# (2026-10-16 web-cmdb bg-running). True corruption (unparseable disk)
+# skips this guard so the heal path still works. Mirrors the Lua
+# live-panes "refuse to clobber richer snapshot" stance.
+#
 # Also bumps monotonic `.rev` and best-effort appends a transition journal
 # row (+ sparse desensitized snapshot when digest changes). Audit failure
 # never fails the write.
 attention_state_write() {
   local payload="$1" path tmp bumped
+  local disk_rev new_rev disk_n new_n
   if [[ -z "$payload" ]]; then
     return 1
   fi
@@ -453,6 +489,25 @@ attention_state_write() {
     return 1
   fi
   path="$(attention_state_path)"
+  if [[ -f "$path" ]] && jq -e . "$path" >/dev/null 2>&1; then
+    disk_rev="$(jq -r '(.rev // 0) | tonumber | floor' "$path" 2>/dev/null || printf '0')"
+    new_rev="$(jq -r '(.rev // 0) | tonumber | floor' <<<"$bumped" 2>/dev/null || printf '0')"
+    disk_n="$(jq -r '(.entries // {}) | length' "$path" 2>/dev/null || printf '0')"
+    new_n="$(jq -r '(.entries // {}) | length' <<<"$bumped" 2>/dev/null || printf '0')"
+    # Rev must advance. A lower-or-equal bumped rev means the writer
+    # started from a stale/empty base while disk still holds a newer
+    # document — refuse rather than clobber. Allow equal entry-count
+    # shrinks (forget / clear-all) when rev advances normally.
+    if [[ "$disk_rev" =~ ^[0-9]+$ && "$new_rev" =~ ^[0-9]+$ ]] \
+       && (( disk_rev >= new_rev )); then
+      if command -v runtime_log_warn >/dev/null 2>&1; then
+        runtime_log_warn attention "state write refused; refuse to clobber newer on-disk rev" \
+          "path=$path" "disk_rev=$disk_rev" "new_rev=$new_rev" \
+          "disk_entries=$disk_n" "new_entries=$new_n" 2>/dev/null || true
+      fi
+      return 1
+    fi
+  fi
   tmp="${path}.tmp.$$"
   printf '%s\n' "$bumped" > "$tmp"
   mv "$tmp" "$path"
