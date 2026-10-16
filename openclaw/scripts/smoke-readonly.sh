@@ -61,21 +61,27 @@ else
 fi
 
 # Main protocol markers (orchestration checklist / modes — not full user profile)
-if grep -q 'Hard checklist' "${src_workspace}/AGENTS.md" 2>/dev/null \
+if grep -q 'Write-task checklist' "${src_workspace}/AGENTS.md" 2>/dev/null \
   && grep -q '【开发方式】' "${src_workspace}/AGENTS.md" 2>/dev/null; then
-  ok "AGENTS.md main checklist + 【开发方式】 declaration present"
+  ok "AGENTS.md write-task checklist + 【开发方式】 present"
 else
-  bad "AGENTS.md missing main checklist/【开发方式】 sections"
+  bad "AGENTS.md missing write-task checklist/【开发方式】"
 fi
-if grep -q 'Main checklist' "${src_workspace}/skills/dev-task/SKILL.md" 2>/dev/null; then
-  ok "dev-task main checklist present"
+if grep -q '开发方式推荐卡' "${src_workspace}/skills/dev-task/SKILL.md" 2>/dev/null \
+  && grep -q '精简【结果】卡' "${src_workspace}/skills/dev-task/SKILL.md" 2>/dev/null; then
+  ok "dev-task mode card + 精简结果卡 present"
 else
-  bad "dev-task missing main checklist"
+  bad "dev-task missing 开发方式推荐卡 or 精简【结果】卡"
 fi
-if grep -q 'Development modes' "${pkg_root}/README.md" 2>/dev/null; then
-  ok "README Development modes section present"
+if grep -q 'Development modes' "${pkg_root}/docs/development-modes.md" 2>/dev/null; then
+  ok "docs/development-modes.md present"
 else
-  bad "README missing Development modes section"
+  bad "docs/development-modes.md missing"
+fi
+if grep -q 'Where to read what' "${pkg_root}/README.md" 2>/dev/null; then
+  ok "README reading map present"
+else
+  bad "README missing Where to read what"
 fi
 
 # Offline gate path only (no LLM, no side effects)

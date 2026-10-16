@@ -72,8 +72,8 @@ symlink). It is **not** loaded as the OpenClaw Feishu main agent system prompt.
 | Future ACP `claude` / `codex` (mode E) | **Yes** |
 | Dex main (mode B) | **No** — `openclaw/workspace/AGENTS.md` |
 
-Full mode table (A–E), handoff rhythm, ACP JSON-RPC:
-[openclaw/README.md — Development modes](../../openclaw/README.md#development-modes-who-writes-code).
+Full mode table (H/C rails, legacy A–E), handoff rhythm, ACP JSON-RPC:
+[openclaw/docs/development-modes.md](../../openclaw/docs/development-modes.md).
 
 ## How To Attach
 
