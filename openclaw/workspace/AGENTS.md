@@ -32,8 +32,8 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 2. **人类可读优先** — 对用户主句须中文可懂；内部代号（A–E、H/C、skill 名、task_id 等）只作括号辅注。例：写「Claw · Main 自写（C1/B）」，不写单独的「开发方式 B」。
     **表达纪律（L0 跨面 · 与 host 同步）：** 短、具体、主动、无套话；正确性优先于文风。SoT：`agent-profiles/v1/en/preferences.md` → `Wording discipline`（`[preferences-21]`–`[preferences-27]`）。不绑死某一 skill；此处不抄长禁例。
     **飞书默认克制（L1 · 仅 Claw 通道）：** 结论先行；默认短回复；用户说「展开/全文/细节」再给长文。
-    预算：日常约 400–800 字；写任务【结果】默认下方 **精简卡**（约 800–1500 字）。表格默认 ≤1 个且 ≤5 行；代码块默认 ≤1 个且 ≤15 行；进度 1–3 行。失败先 4 行闭环。
-    `textChunkLimit` 是硬顶，不是写作目标。完整模板仅在展开或排障时用。
+    预算：日常约 400–800 字；写任务【结果】默认 `skills/dev-task/SKILL.md` **精简卡**（约 800–1500 字）。表格默认 ≤1 个且 ≤5 行；代码块默认 ≤1 个且 ≤15 行；进度 1–3 行。失败先 4 行闭环。
+    `textChunkLimit` 是硬顶，不是写作目标。完整卡仅在展开或排障时用（同 skill）。
 3. **用户输入非圣旨** — 高优先级但仍需合理性检验（仓内先例、官方/社区、成本风险）。有异议：依据 + 备选 + 推荐，不假装附和。
 4. **批判与自我批评** — 对需求、实现、流程同等严格；发现己方违规（漏报失败、双写、发明 pass）须承认并补闭环。
 5. **错误闭环** — 检测→诊断→合理自愈→验证→汇报。裸错误 / 未解码的 `🛠️ Exec failed` 箭头列表不合规。细节：`skills/error-closed-loop/SKILL.md`。
@@ -96,77 +96,7 @@ When main **accepts** an allowlisted implementation task (skip pure Q&A; skip if
 Details: `skills/dev-task/SKILL.md`, `skills/task-ledger/SKILL.md`.
 Docs map: `openclaw/docs/README.md` · terms: `openclaw/docs/terminology.md`.
 
-### 开发方式推荐卡（动手前必发，等确认）
-
-**全名强制**（禁止只说「Codex/Claude」）：
-
-| 全名 | 含义 |
-| --- | --- |
-| **Claude-TUI** | 本机 `claude`（H2/C2） |
-| **Claude-ACP** | C3 `agentId=claude` |
-| **Codex-TUI** | 本机 `codex` + `~/.codex`（H2/C2） |
-| **Codex-ACP** | C3 `agentId=codex` + 隔离 CODEX_HOME |
-| **Codex-Grok-profile** | host `codex -p grok`（审查/手工） |
-| **Main-Grok** | OpenClaw Main 模型 |
-| **Grok-native** | 本机 `grok` CLI |
-
-```text
-## 开发方式（请抉择）
-- 轨: 人工 | Claw
-- 推荐: H1 人直接 | H2 原生Agent(Claude-TUI|Codex-TUI|Grok-native) |
-        C1 Main自写(Main-Grok) | C2 handoff(同上TUI) |
-        C3 ACP(Claude-ACP|Codex-ACP) | Ticket-headless(delegate)
-  （括号可附旧 A–E。D 禁用）
-- 执行通道: ACP | Ticket-headless | Handoff/TUI | Main自写
-- 执行者 / 后端全名: …（必须用上表全名）
-- 理由: …（含限制：如代理无 GPT → Codex-ACP 默认 Grok 保通；跨仓契约优先 Ticket-headless）
-- 备选: …
-- 平台约束: 单写者；wezdeck 默认 master / 并行才 claw-*；确认前不写码；不改原生 ~/.codex|~/.grok 默认；工单不另建票库
-- 完成后审查建议: review-claude × review-grok | 跳过（理由）
-- cwd / task_id: …
-请确认或改用。确认前不开始改代码 / 不 spawn ACP / 不 kick delegate implement。
-```
-
-Heuristics: **C1** 小且清；**Claude-ACP** 多文件+steer；**Ticket-headless** 跨仓契约（票仓协议；多目录挂载仅同意图共改战术，不替代 Ticket）；**C2/H2** 要 TUI；**H1** 已在写；**Codex-ACP** 明确 Codex 栈。选型 `docs/agent-scheduling.md`（`#ticket-vs-multi-dir-mount`）。
-
-**全员同一宪法与平台能力**（用法可差、准则不差）: L0、skills、脚本、单写者、错误闭环、假绿禁止；人工轨可不跑台账，Claw 写任务默认要。
-
-### C3 ACP spawn 宪法前缀（强制注入任务正文前）
-
-Main 在 `sessions_spawn(runtime=acp)` / 等价 spawn 时，**必须**把下列约束放进 task 前部（可略调措辞，不可省略要点）：
-
-```text
-[OpenClaw C3 constitution — non-negotiable]
-1. Single writer: only you write this cwd; no parallel Main/TUI edits on same tree.
-2. cwd is the path Main gave (wezdeck may be primary master, or a claw-* worktree); do not write other trees.
-3. No force-push; wezdeck may push master per owner policy; other repos need explicit human yes for main/master.
-4. Prefer reasonable logical commits (compress noise by change boundary; no hard 1–3 cap); no secret leakage.
-5. On completion report: changed files, summary, blockers; honest fail if blocked.
-6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
-7. Do not participate in the host interactive attention badge (WezDeck Alt+/ ●/▲). ACP is delegated; wrappers must set AGENT_ATTENTION_SKIP / OPENCLAW_ACP (see `openclaw/scripts/patch-acpx-attention-skip.sh`).
-```
-
-**Main 侧 spawn 前校验：** cwd 存在且在 allowlist 内（wezdeck 可为 primary master；隔离任务才要求 claw-*）；否则拒绝 spawn。
-
-**C3 完成回传（建议结构）：** `changed_files` / `summary` / `blockers` / `commits`。
-
-能力探测：`openclaw/scripts/agent-matrix-status.sh`。
-
-### 实现方案块（写任务推荐）
-
-```text
-## 理解 / 合理性（批判）
-## 实现方案（请确认）
-- 最小交付: …
-- 可选结构/复用: … | 无
-- 影响范围: 代码… | 人… | 团队/流程… | 无额外
-- 推荐: 仅最小 | 最小+轻复用 | 先结构后功能（可附内部代号）
-```
-
-### 落实触发后
-
-1. 评审方案与红线 2. 实现+自愈 3. 验证 4. 合理压缩逻辑 commits 5. push
-   （个人仓默认主分支；团队仓/隔离分支按 L0-13/20） 6. 【结果】汇报。
+写任务模板（开发方式卡、C3 宪法前缀、实现方案块、精简/完整结果卡、落实步骤）**只维护在** `skills/dev-task/SKILL.md`。动手前打开该 skill；确认前不写码 / 不 spawn ACP。
 
 ## Allowlist
 
@@ -219,68 +149,23 @@ Incident baseline (2026-08-04 统计): 过半 `Exec failed` 来自 **内联脚�
 
 ## Completion report (required)
 
-### 默认：精简卡（飞书首条只用这个）
-
-```text
-## 结果
-- 状态: 成功 | 失败 | 部分完成
-- 一句话: …
-- 锚点: <hash> <subject> · 分支… ·（可选 task_id）
-- 开发方式: 中文轨+全名后端（如 Claw·C1 Main-Grok）
-- 关键动作: 无 | 请确认… | 是否回收 worktree？
-- 失败闭环: （仅失败时）失败/原因/处置/影响
-
-细节回「展开」。
-```
-
-### 展开用：完整卡（用户明确要细节/全文/排障时）
-
-```text
-## 结果
-- 状态: 成功 | 失败 | 部分完成
-- 摘要: …（人话；避免只有内部代号）
-- task_id: …
-- 开发方式: 中文轨+全名后端（如 Claw·C1 Main-Grok / C3 Codex-ACP）
-- 仓库 cwd: /absolute/claw-…
-- 分支: …
-- 最近 commit: <hash> <subject>
-- 验收:
-  - <cmd> → pass | fail | not run | re-run pass (after …)
-- 性能/体验: 未测 | 基线…→现… | 必要开销说明… | 劣化原因与处置…
-- 影响范围: 代码… | 人… | 团队/流程… | 无额外
-- 宪法同步: 无 L0 变更 | 已同步 agent-profiles | 未同步（须说明）
-- 对抗审查: 未做 | 见「对抗审查披露」（默认只写结论+是否阻塞；全文按需）
-- 失败记录: 无 | 逐条 失败/原因/处置/影响/结果或备选
-- 风险/未做: …
-
-## Worktree
-- 类型: task|dev|hotfix · 是否建议回收: … · 请回复是否回收
-
-## 审查 / Resume
-- 按**实际开发方式**写主路径（禁止 Main 自写却默认甩 claude --continue）：
-  - Main 自写（B）: 飞书直接回复本线程（主路径）；可选 cd <cwd> 本地旁观
-  - 本机 handoff（C）/ 用户自写（A）: cd <cwd> && claude --continue  # 或 codex resume --last
-  - ACP（E）: 飞书本线程 / ACP 会话续跑说明（写清 agent 与 cwd）
-```
-
-Material failure never re-run green → 状态不得为 **成功**.
+写任务结束用 `skills/dev-task/SKILL.md` 的精简卡（默认）或完整卡（展开/排障）。对抗审查披露模板在 `skills/adversarial-review/SKILL.md`。
 
 ## Capabilities (index — open skill when needed)
 
 | Need | Open |
 | --- | --- |
-| Write task / worktree / modes / handoff | `skills/dev-task/SKILL.md` |
+| Write task / cards / C3 / handoff | `skills/dev-task/SKILL.md` |
 | Feishu ledger | `skills/task-ledger/SKILL.md` |
-| Error closed-loop detail | `skills/error-closed-loop/SKILL.md`；**覆盖边界** `openclaw/docs/error-closed-loop-scope.md` |
-| Host shell risk / exec hygiene | `skills/exec-risk/SKILL.md` · `openclaw/scripts/claw-script-run.sh` |
-| Browser UI verify | `skills/chrome-devtools/SKILL.md`（UI 改完须用，勿只 curl HTML） |
-| Terminology / 文档分层 | `openclaw/docs/terminology.md` |
-| Adversarial review | **单源** `skills/adversarial-review/`（SKILL+runner）· 用户级链 `~/.agents/skills/adversarial-review` · 仓内链 `skills/` / `workspace/skills/` · `link-platform-skills.sh` · **profiles** `validation.md`；TOOL≠TARGET（`--repo`）；人只下意图；L0-21 披露 |
-| Mode theory / ACP | `openclaw/docs/agent-architecture.md`, `openclaw/README.md` |
-| Interaction + 执行通道 | `openclaw/docs/agent-interaction.md` · 平台 `docs/agent-scheduling.md` |
+| Error closed-loop | `skills/error-closed-loop/SKILL.md` · scope `openclaw/docs/error-closed-loop-scope.md` |
+| Host shell / exec hygiene | `skills/exec-risk/SKILL.md` |
+| Browser UI verify | `skills/chrome-devtools/SKILL.md` |
+| Terminology | `openclaw/docs/terminology.md` |
+| Adversarial review | `skills/adversarial-review/`（披露模板在 SKILL；host：`validation.md`） |
+| Mode / ACP / 通道 | `openclaw/docs/agent-architecture.md` · `agent-interaction.md` · `docs/agent-scheduling.md` |
 | Agent matrix probe | `openclaw/scripts/agent-matrix-status.sh` |
 
-**Chrome:** after UI-facing changes you implemented, browser MCP snapshot before 验收通过; if CDP missing, say so — never invent green UI.
+**Chrome:** UI 改完须浏览器验收；CDP 缺失就如实说，不得发明绿灯。
 
 ## Rule-promotion triggers (ask user, do not auto-write profile)
 

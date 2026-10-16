@@ -120,9 +120,12 @@ cross-repo contract / research→implement; **C2/H2** need TUI; **H1** already c
 1. Single writer: only you write this cwd; no parallel Main/TUI on same tree.
 2. cwd is the path Main gave (wezdeck may be primary master or claw-*).
 3. No force-push; wezdeck may push master per owner policy; other repos need explicit yes.
-4. Prefer 1–3 logical commits; no secret leakage.
+4. Prefer reasonable logical commits (compress by change boundary; no hard 1–3 cap); no secret leakage.
 5. On completion report: changed files, summary, blockers; honest fail if blocked.
 6. You are Claude-ACP or Codex-ACP (access layer), not a replacement for host TUI config.
+7. Do not participate in the host interactive attention badge (WezDeck Alt+/ ●/▲).
+   ACP is delegated; wrappers must set AGENT_ATTENTION_SKIP / OPENCLAW_ACP
+   (see `openclaw/scripts/patch-acpx-attention-skip.sh`).
 ```
 
 Before spawn: reject if cwd missing or outside allowlist. wezdeck may be primary master; 团队仓 usually claw-*.
@@ -132,7 +135,16 @@ Probe: `openclaw/scripts/agent-matrix-status.sh`.
 
 ## 实现方案块
 
-See `AGENTS.md`. Always restate mode even if user named it.
+Always restate mode even if user named it.
+
+```text
+## 理解 / 合理性（批判）
+## 实现方案（请确认）
+- 最小交付: …
+- 可选结构/复用: … | 无
+- 影响范围: 代码… | 人… | 团队/流程… | 无额外
+- 推荐: 仅最小 | 最小+轻复用 | 先结构后功能（可附内部代号）
+```
 
 ## 落实 / commits
 
@@ -144,10 +156,55 @@ Shell via `claw-run` when required by exec-risk.
 ### Feishu report default (brevity)
 
 - Progress while working: **1–3 lines**, not tool play-by-play.
-- Final report: use AGENTS **精简【结果】卡** by default (status, one-liner, commit anchor, decision ask).
+- Final report: **精简【结果】卡** below by default.
 - Do **not** default-paste full acceptance tables, long path lists, full adversarial disclosure, or multi-block bash.
-- User says 展开/全文/细节 → then full completion template.
+- User says 展开/全文/细节 → then **完整卡**.
 - Failures: 4-line closed-loop first (失败/原因/处置/影响).
+- Material failure never re-run green → 状态不得为 **成功**.
+
+#### 精简【结果】卡（飞书首条默认）
+
+```text
+## 结果
+- 状态: 成功 | 失败 | 部分完成
+- 一句话: …
+- 锚点: <hash> <subject> · 分支… ·（可选 task_id）
+- 开发方式: 中文轨+全名后端（如 Claw·C1 Main-Grok）
+- 决策动作: 无 | 请确认… | 是否回收 worktree？
+- 失败闭环: （仅失败时）失败/原因/处置/影响
+
+细节回「展开」。
+```
+
+#### 完整卡（用户要展开/排障时）
+
+```text
+## 结果
+- 状态: 成功 | 失败 | 部分完成
+- 摘要: …（人话；避免只有内部代号）
+- task_id: …
+- 开发方式: 中文轨+全名后端（如 Claw·C1 Main-Grok / C3 Codex-ACP）
+- 仓库 cwd: /absolute/…
+- 分支: …
+- 最近 commit: <hash> <subject>
+- 验收:
+  - <cmd> → pass | fail | not run | re-run pass (after …)
+- 性能/体验: 未测 | 基线…→现… | 必要开销说明… | 劣化原因与处置…
+- 影响范围: 代码… | 人… | 团队/流程… | 无额外
+- 宪法同步: 无 L0 变更 | 已同步 agent-profiles | 未同步（须说明）
+- 对抗审查: 未做 | 见「对抗审查披露」（默认只写结论+是否阻塞；全文按需）
+- 失败记录: 无 | 逐条 失败/原因/处置/影响/结果或备选
+- 风险/未做: …
+
+## Worktree
+- 类型: task|dev|hotfix · 是否建议回收: … · 请回复是否回收
+
+## 审查 / Resume
+- 按**实际开发方式**写主路径：
+  - Main 自写（C1）: 飞书本线程（主路径）；可选 cd <cwd> 旁观
+  - 本机 handoff（C2）/ 用户自写（H1）: cd <cwd> && claude --continue  # 或 codex resume --last
+  - ACP（C3）: 飞书本线程 / ACP 续跑说明（写清 agent 与 cwd）
+```
 
 ### Git author & trailer (mandatory)
 

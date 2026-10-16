@@ -221,4 +221,4 @@ Install / refresh user-level discovery (idempotent):
 - Docs: `docs/adversarial-review.md` (wezdeck)
 - Host doctrine: `agent-profiles/v1/en/validation.md`
 - Link installer: `scripts/dev/link-platform-skills.sh`
-- L0-21 disclosure: OpenClaw `AGENTS.md`
+- OpenClaw L0-21: short always-on rule in `workspace/AGENTS.md`; **disclosure template SoT = this file**
