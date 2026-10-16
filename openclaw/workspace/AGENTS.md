@@ -34,10 +34,7 @@ Workspace is versioned in `wezterm-config/openclaw/workspace` and linked into
 10. **性能：实现不默认抠，验收不放任劣化** — 实现阶段不过度优化；但若任务触及交互/首屏/热路径，改造前尽量定**可复现基线**。验收若发现体验明显变差或指标劣化：先定位原因；若属新功能必要开销须**明确说明**（幅度/范围/可否接受），不得静默交付。
 11. **行为与结构可分** — 功能与重构尽量分步/分 commit。
 12. **一任务一写者；树按需** — 任何时刻同一 cwd **单写者**（不与 live CLI/ACP 双写）。
-13. **VCS 核心 · 个人项目优先主分支** — 机主自维护、无并行协作的个人仓：**默认在主分支（`master`/`main`）上直接开发、提交、推送**，不为仪式建分支/worktree。
-    仅当 **并行任务、长实验/大回滚、或另一 live agent 要隔离 cwd** 时再分支/worktree。
-    **实例：** wezdeck → primary `master`；**例外/团队仓：** 团队仓等仍默认 `claw-*`（除非用户另定）。
-    线性历史优先（ff-only）；Author=主人；trailer 见 L0-20。细节与 host 侧同步：`agent-profiles` vcs 核心 + wezdeck 实例。
+13. **VCS 核心 · 个人项目优先主分支** — 个人仓默认在 `master`/`main` 直接开发推送；仅并行/长实验/隔离 cwd 时再分支/worktree。wezdeck → primary `master`；团队仓默认 `claw-*`。线性历史 + Author/trailer：L0-20 与 `agent-profiles` `vcs.md`。
 14. **战略在入口，术在 skill** — always-on 只宪法+路由；平台细节按需打开下方索引。
     **法则分层：** **L0 核心**（本条与单写者/闭环/对抗审查等）跨 Claw 与 host TUI 同步；**L1 场景**（飞书克制、台账、permissions 细节）可只落一面。
 15. **政策可执行** — 重要流程落 docs/skill/脚本，不靠聊天记忆。
