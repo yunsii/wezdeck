@@ -38,6 +38,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 
 | Id | Theme |
 | --- | --- |
+| L0-2 | Human-readable + **表达纪律** (SoT: `agent-profiles` Wording discipline); Feishu brevity is L1 under this id |
 | L0-12 | Single writer; tree on demand |
 | L0-13 | **Personal projects prefer mainline** |
 | L0-14 | Strategy in entry; L0/L1 layering note |
@@ -45,6 +46,7 @@ Read order for humans and agents. These files are **knowledge base** (not full a
 | L0-19 | Safety + personal push master |
 | L0-20 | 落实 + git Author/trailer |
 | L0-21 | Adversarial = multi-role + disclosure |
+| L0-22 | External downloads outside repo tree (L1) |
 
 Do not invent new bare numbers in other files without updating this table and AGENTS.
 

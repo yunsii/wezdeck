@@ -26,18 +26,16 @@ WezDeck (this repo's tmux / attention / `agent-launcher`) stays the **optional
 review surface**. OpenClaw may run headless; open a pane only when you want to
 watch or take over.
 
-Protocol detail: [`workspace/AGENTS.md`](./workspace/AGENTS.md).
+### Where to read what
 
-**Agent architecture (unified):** human rail H1/H2 + Claw rail C1/C2/C3;
-ACP is an **access layer** (backends: Claude / Codex); Grok is split into
-native CLI vs Main-Grok vs Codex+Grok model. See
-[`docs/agent-architecture.md`](./docs/agent-architecture.md).
-**Docs map / terms:** [`docs/README.md`](./docs/README.md) · [`docs/terminology.md`](./docs/terminology.md).
-Legacy A–E codes remain as parenthetical aliases under
-[Development modes](#development-modes-who-writes-code).
+| Audience | Start here | Do not treat as |
+| --- | --- | --- |
+| **Dex / Main agent (always-on)** | [`workspace/AGENTS.md`](./workspace/AGENTS.md) + skills it points to | This README’s install/ops chapters |
+| **Human operator (install / health / Feishu)** | **This README** below | Always-on constitution (keep thin in AGENTS) |
+| **Policy / terms / architecture** | [`docs/README.md`](./docs/README.md) · [`docs/terminology.md`](./docs/terminology.md) · [`docs/agent-architecture.md`](./docs/agent-architecture.md) | Copying long procedure into AGENTS |
 
-**wezdeck cwd:** personal mainline default = primary **`master`** (no mandatory
-worktree). Isolate with `claw-*` only when parallel or long experiment.
+Rails: H1/H2 + C1/C2/C3；ACP=接入层。Legacy A–E 仅括号别名，见 [Development modes](#development-modes-who-writes-code)。  
+**wezdeck cwd：** 默认 primary **`master`**；并行/长实验才 `claw-*`。
 
 ## Status
 
