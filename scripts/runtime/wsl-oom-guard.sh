@@ -15,9 +15,14 @@
 #            silently immunizes every process spawned under it — measured at 119
 #            immune processes / ~6.7 Gi on this host. Without that sweep this
 #            guard is worse than useless: the kernel still has to reclaim but no
-#            large consumer is an eligible victim. The sweep is scoped to the
-#            watched cgroup so systemd units' deliberate OOMScoreAdjust
-#            (`systemd-udevd`, `sshd`, this guard's own recorder) is never hit.
+#            large consumer is an eligible victim. The sweep walks /proc and
+#            skips anything under system.slice, so systemd units' deliberate
+#            OOMScoreAdjust (`systemd-udevd`, `ssh`, this guard's own recorder)
+#            is never hit. It must NOT be scoped only to init.scope: as of
+#            mid-2026 this WSL puts panes / agents / builds in /non-systemd,
+#            and a scope-only sweep reports leak=0 while ~100 fat processes
+#            stay immune (2026-10-19: next-build 32 Gi, earlyoom killed
+#            udev-worker).
 #
 #   watch    Poll init.scope's cgroup memory.events + guest memory headroom and
 #            dump a process snapshot when an OOM kill lands or usage crosses the
@@ -59,10 +64,12 @@
 #              2. snapshot, then ask the kernel to compact — lossless, and
 #                 aimed at exactly the thing that failed;
 #              3. only if compaction cannot produce a single block of the
-#                 needed order, SIGTERM the largest consumer. That is the
-#                 airbag earlyoom's swap gate withholds, and it is deliberately
-#                 the last step: the cost is one dev server, the alternative is
-#                 the whole VM.
+#                 needed order — or if it can, but mem and swap are both
+#                 already at crit (2026-10-19: buddyinfo bounced while
+#                 next-build kept growing) — SIGTERM the largest consumer.
+#                 That is the airbag earlyoom's swap gate withholds, and it
+#                 is deliberately the last step: the cost is one dev server,
+#                 the alternative is the whole VM.
 #
 #   sample   Take one measurement and publish the JSON the WezTerm M· badge
 #            reads. No root needed. `watch` does this on its own schedule; this
@@ -82,12 +89,20 @@
 #   WEZTERM_OOM_WATCH_INTERVAL   poll seconds. Default 10
 #   WEZTERM_OOM_WATCH_HIGH_PCT   high-water mark, percent of MemTotal. Default 85
 #   WEZTERM_OOM_WATCH_TOP_N      processes per snapshot. Default 8
-#   WEZTERM_OOM_SCOPE            cgroup dir to watch. Default /sys/fs/cgroup/init.scope
+#   WEZTERM_OOM_SCOPE            cgroup dir for oom_kill counter. Default
+#                                /sys/fs/cgroup/init.scope (counter only —
+#                                the inherited-adj sweep walks /proc)
 #   WEZTERM_OOM_PROTECT_ADJ      WSL init oom_score_adj. Default -1000 (exempt)
 #   WEZTERM_OOM_TMUX_ADJ         tmux server oom_score_adj. Default -800
 #   WEZTERM_OOM_PROTECT_TMUX     1 to protect tmux servers, 0 to skip. Default 1
 #   WEZTERM_OOM_RENORMALIZE      1 to sweep inherited values back to 0. Default 1
 #   WEZTERM_OOM_DRY_RUN          1 to count the sweep without writing. Default 0
+#   WEZTERM_OOM_PROC_ROOT        /proc root for the sweep. Default /proc; tests
+#                                point it at a fixture tree
+#   WEZTERM_OOM_SKIP_PROTECT     1 to skip protect writes (test hook). Default 0
+#   WEZTERM_OOM_TEST_PROTECTED_PIDS
+#                                space-separated pids treated as the protected
+#                                set (test hook; skips live init/tmux resolve)
 #   WEZTERM_OOM_STATUS_FILE      badge JSON path. Default: Windows runtime state.
 #                                The record unit bakes this in at install time —
 #                                see scripts/dev/install-wsl-oom-guard.sh.
@@ -140,6 +155,11 @@ PROTECT_TMUX="${WEZTERM_OOM_PROTECT_TMUX:-1}"
 # renormalize_inherited).
 RENORMALIZE="${WEZTERM_OOM_RENORMALIZE:-1}"
 DRY_RUN="${WEZTERM_OOM_DRY_RUN:-0}"
+# Sweep / status walk this tree instead of hard-coding /proc, so the suite can
+# build a fixture with planted -800/-1000 values and assert the reset without
+# touching the live process table.
+PROC_ROOT="${WEZTERM_OOM_PROC_ROOT:-/proc}"
+SKIP_PROTECT="${WEZTERM_OOM_SKIP_PROTECT:-0}"
 PUBLISH_INTERVAL="${WEZTERM_OOM_PUBLISH_INTERVAL:-30}"
 # Badge thresholds. warn defaults to the high-water mark so the bar lights up at
 # the same moment the log starts caring, rather than inventing a second number.
@@ -253,6 +273,11 @@ PROTECTED_PIDS=""
 collect_protected_pids() {
   local pid
   PROTECTED_PIDS=""
+  # Test hook: plant the protected set without resolving live init/tmux.
+  if [[ -n "${WEZTERM_OOM_TEST_PROTECTED_PIDS:-}" ]]; then
+    PROTECTED_PIDS=" ${WEZTERM_OOM_TEST_PROTECTED_PIDS} "
+    return 0
+  fi
   pid="$(resolve_wsl_init_pid)" && PROTECTED_PIDS="$PROTECTED_PIDS $pid"
   if [[ "$PROTECT_TMUX" == 1 ]]; then
     while read -r pid; do
@@ -268,6 +293,7 @@ collect_protected_pids() {
 protect_all() {
   local rc=0 pid
   collect_protected_pids
+  [[ "$SKIP_PROTECT" == 1 ]] && return 0
   if pid="$(resolve_wsl_init_pid)"; then
     protect_pid "$pid" "$PROTECT_ADJ" "wsl-init" || rc=1
   else
@@ -283,51 +309,73 @@ protect_all() {
   return "$rc"
 }
 
+# True when pid lives under system.slice. Those -1000/-900 values are deliberate
+# systemd OOMScoreAdjust= settings (`udevd`, `ssh`, this recorder), not
+# inheritance from WSL init / tmux — the sweep must leave them alone.
+is_system_slice_pid() {
+  local pid="$1" cg
+  cg="$(awk -F: '/^0::/{print $3; exit}' "$PROC_ROOT/$pid/cgroup" 2>/dev/null)" || return 1
+  case "$cg" in
+    /system.slice|/system.slice/*|*/system.slice|*/system.slice/*) return 0 ;;
+  esac
+  return 1
+}
+
 # Strip *inherited* protection. oom_score_adj is inherited across fork, so with
 # WSL init at -1000 every new WSL session — and under tmux every pane shell and
 # every agent it spawns — arrives already immune. Measured on this host right
-# after a `tmux kill-server`: 119 of init.scope's processes carried a protected
-# value when only 2 should have, leaving ~6.7 Gi of the largest consumers off the
-# OOM killer's candidate list. That is strictly worse than no guard at all: the
-# kernel still must reclaim, but nothing worth killing is eligible.
+# after a `tmux kill-server`: 119 processes carried a protected value when only
+# 2 should have, leaving ~6.7 Gi of the largest consumers off the OOM killer's
+# candidate list. That is strictly worse than no guard at all: the kernel still
+# must reclaim, but nothing worth killing is eligible.
 #
-# Scoped to the watched cgroup on purpose. A systemd unit's deliberate
-# OOMScoreAdjust must never be touched — `systemd-udevd` and `sshd` legitimately
-# sit at -1000 in system.slice, and this guard's own recorder at -900. Those live
-# outside init.scope, so restricting the sweep to init.scope separates
-# "inherited by accident" from "set on purpose" without guessing.
+# Walk /proc (not a single cgroup.procs). Older WSL put user sessions in
+# init.scope; current WSL puts them in /non-systemd (and some shells in
+# user.slice/session-*.scope). A sweep scoped only to OOM_SCOPE reported
+# leak=0 on 2026-10-19 while next-build / tsgo / every claude pane still
+# carried -800/-1000, so earlyoom killed udev-worker instead of the 32 Gi hog.
+# Skipping system.slice separates "inherited by accident" from "set on purpose"
+# without guessing per-unit.
 renormalize_inherited() {
   [[ "$RENORMALIZE" == 1 ]] || return 0
-  local pid adj fixed=0
-  while read -r pid; do
-    [[ -n "${pid:-}" ]] || continue
+  local adj_file pid adj fixed=0
+  for adj_file in "$PROC_ROOT"/[0-9]*/oom_score_adj; do
+    [[ -r "$adj_file" ]] || continue
+    pid="${adj_file%/oom_score_adj}"
+    pid="${pid##*/}"
     [[ " $PROTECTED_PIDS " == *" $pid "* ]] && continue
-    adj="$(cat "/proc/$pid/oom_score_adj" 2>/dev/null)" || continue
+    adj="$(cat "$adj_file" 2>/dev/null)" || continue
     [[ "$adj" == "$PROTECT_ADJ" || "$adj" == "$TMUX_ADJ" ]] || continue
+    is_system_slice_pid "$pid" && continue
     if [[ "$DRY_RUN" == 1 ]]; then
       fixed=$((fixed + 1))
       continue
     fi
-    if ( printf '0\n' >"/proc/$pid/oom_score_adj" ) 2>/dev/null; then
+    if ( printf '0\n' >"$adj_file" ) 2>/dev/null; then
       fixed=$((fixed + 1))
     fi
-  done < "$OOM_SCOPE/cgroup.procs" 2>/dev/null
+  done
   if (( fixed > 0 )); then
     log "renormalize: reset $fixed inherited oom_score_adj to 0$([[ "$DRY_RUN" == 1 ]] && printf ' (dry-run, nothing written)')"
   fi
   return 0
 }
 
-# Count init.scope processes wrongly carrying a protected value. Operator signal:
-# a number that stays above zero means the sweep is not keeping up (or is off).
+# Count processes wrongly carrying a protected value (same scope as the sweep).
+# Operator signal: a number that stays above zero means the sweep is not
+# keeping up (or is off).
 count_inherited() {
-  local pid adj n=0
-  while read -r pid; do
-    [[ -n "${pid:-}" ]] || continue
+  local adj_file pid adj n=0
+  for adj_file in "$PROC_ROOT"/[0-9]*/oom_score_adj; do
+    [[ -r "$adj_file" ]] || continue
+    pid="${adj_file%/oom_score_adj}"
+    pid="${pid##*/}"
     [[ " $PROTECTED_PIDS " == *" $pid "* ]] && continue
-    adj="$(cat "/proc/$pid/oom_score_adj" 2>/dev/null)" || continue
-    case "$adj" in "$PROTECT_ADJ"|"$TMUX_ADJ") n=$((n + 1)) ;; esac
-  done < "$OOM_SCOPE/cgroup.procs" 2>/dev/null
+    adj="$(cat "$adj_file" 2>/dev/null)" || continue
+    case "$adj" in "$PROTECT_ADJ"|"$TMUX_ADJ") ;; *) continue ;; esac
+    is_system_slice_pid "$pid" && continue
+    n=$((n + 1))
+  done
   printf '%s\n' "$n"
 }
 
@@ -425,11 +473,11 @@ LAST_FRAG_VICTIM=""
 # step that restores a usable block. Every step logs, because the whole point
 # of this axis is that the previous incidents left no evidence at all.
 frag_relieve() {
-  local reason="$1" mem_pct="$2"
-  local before after pid rss comm sig
+  local reason="$1" mem_pct="$2" swap_pct="${3:-0}"
+  local before after pid rss comm sig force_term=0
 
   before="$(read_frag)"
-  log "frag: $reason — order>=$FRAG_ORDER free blocks=$before (min $FRAG_MIN_BLOCKS) mem=${mem_pct}% action=$FRAG_ACTION"
+  log "frag: $reason — order>=$FRAG_ORDER free blocks=$before (min $FRAG_MIN_BLOCKS) mem=${mem_pct}% swap=${swap_pct}% action=$FRAG_ACTION"
   snapshot "frag-$reason"
 
   [[ "$FRAG_ACTION" == "off" ]] && return 0
@@ -450,8 +498,18 @@ frag_relieve() {
   fi
 
   if (( after >= FRAG_MIN_BLOCKS )); then
-    log "frag: relieved by compaction, no process signalled"
-    return 0
+    # Compaction restored contiguity. On 2026-10-19 that alone was a trap:
+    # buddyinfo bounced (0→12, 21→28) while next-build kept climbing to 32 Gi
+    # and swap hit zero. When *both* percentage axes are already at crit,
+    # treat compaction as insufficient and fall through to SIGTERM.
+    if [[ "$FRAG_ACTION" == "compact+term" ]] \
+      && (( mem_pct >= CRIT_PCT )) && (( swap_pct >= SWAP_CRIT_PCT )); then
+      force_term=1
+      log "frag: compaction restored order>=$FRAG_ORDER ($before -> $after) but mem=${mem_pct}% swap=${swap_pct}% both at crit — signalling anyway"
+    else
+      log "frag: relieved by compaction, no process signalled"
+      return 0
+    fi
   fi
   if [[ "$FRAG_ACTION" != "compact+term" ]]; then
     log "frag: still short of order>=$FRAG_ORDER but action=$FRAG_ACTION — leaving the kill to earlyoom"
@@ -460,7 +518,11 @@ frag_relieve() {
 
   read -r pid rss comm <<<"$(pick_frag_victim)"
   if [[ -z "${pid:-}" ]]; then
-    log "frag: still short of order>=$FRAG_ORDER but no victim over ${FRAG_MIN_RSS_MIB}Mi outside the protected set — nothing safe to do"
+    if (( force_term == 1 )); then
+      log "frag: dual-crit after compaction but no victim over ${FRAG_MIN_RSS_MIB}Mi outside the protected set — nothing safe to do"
+    else
+      log "frag: still short of order>=$FRAG_ORDER but no victim over ${FRAG_MIN_RSS_MIB}Mi outside the protected set — nothing safe to do"
+    fi
     return 0
   fi
 
@@ -720,7 +782,7 @@ cmd_watch() {
     if [[ -n "$frag_reason" ]]; then
       if (( now - last_frag >= FRAG_COOLDOWN )); then
         last_frag="$now"
-        frag_relieve "$frag_reason" "$pct"
+        frag_relieve "$frag_reason" "$pct" "$swap_pct"
       fi
     fi
 
@@ -792,7 +854,7 @@ cmd_status() {
   printf 'alloc failures: %s high-order (order>=4) failure(s) in this VM'"'"'s kernel log%s\n' \
     "$alloc_fails" "$( (( alloc_fails > 0 )) && printf ' — see dmesg for the failing caller' )"
   printf 'cgroup        : %s oom_kill=%s\n' "$OOM_SCOPE" "$(read_oom_kill)"
-  printf 'inherited leak: %s process(es) in the cgroup wrongly carry %s/%s (should be 0)\n' \
+  printf 'inherited leak: %s process(es) outside system.slice wrongly carry %s/%s (should be 0)\n' \
     "$(count_inherited)" "$PROTECT_ADJ" "$TMUX_ADJ"
   printf 'guard log     : %s\n' "$GUARD_LOG"
   if command -v systemctl >/dev/null 2>&1; then

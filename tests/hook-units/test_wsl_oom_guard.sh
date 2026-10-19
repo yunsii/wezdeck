@@ -613,5 +613,117 @@ compact_only_never_signals() {
 }
 it 'compacts but never signals under action=compact' compact_only_never_signals
 
+# Compaction that restores buddy blocks is normally enough. When mem *and*
+# swap are already at crit, it is not: 2026-10-19 bounced buddyinfo while
+# next-build climbed to 32 Gi and swap hit zero. Force the signal then.
+signals_despite_compaction_when_both_axes_crit() {
+  local victim out
+  victim="$(spawn_victim)"
+  victim_rows "$victim" 'next-server (v1'
+  write_buddyinfo "$tmpdir/buddyinfo" 0
+  write_kmsg
+  # 95% mem (crit) + 95% swap used (crit).
+  write_meminfo "$tmpdir/meminfo" 50000 1000000 50000
+  rm -f "$tmpdir/compact"
+  mkfifo "$tmpdir/compact"
+  ( cat "$tmpdir/compact"; write_buddyinfo "$tmpdir/buddyinfo" 500 ) >/dev/null 2>&1 &
+  out="$(run_watch 5)"
+  wait
+  rm -f "$tmpdir/compact"
+  sleep 0.3
+  local alive=0
+  kill -0 "$victim" 2>/dev/null && alive=1
+  kill -KILL "$victim" 2>/dev/null
+  wait "$victim" 2>/dev/null
+  if (( alive == 1 )); then
+    printf '    victim survived dual-crit after compaction:\n%s\n' "$out" >&2
+    return 1
+  fi
+  grep -q 'signalling anyway' <<<"$out" \
+    && grep -q "frag: sent SIGTERM to pid=$victim" <<<"$out" && return 0
+  printf '    missing dual-crit signal path:\n%s\n' "$out" >&2
+  return 1
+}
+it 'signals after compaction when mem and swap are both at crit' \
+  signals_despite_compaction_when_both_axes_crit
+
+# --- inherited-adj sweep (2026-10-19) ------------------------------------
+# The sweep used to read only OOM_SCOPE/cgroup.procs (init.scope). Current WSL
+# parks panes / agents / builds in /non-systemd, so that scope reported leak=0
+# while ~100 processes stayed at -800/-1000 and earlyoom could not pick them.
+# Pin the /proc walk: reset non-systemd leaks, spare system.slice, spare the
+# protected set.
+
+plant_proc() {
+  local pid="$1" adj="$2" cg="$3"
+  mkdir -p "$tmpdir/fakeproc/$pid"
+  printf '%s\n' "$adj" >"$tmpdir/fakeproc/$pid/oom_score_adj"
+  printf '0::%s\n' "$cg" >"$tmpdir/fakeproc/$pid/cgroup"
+}
+
+run_renormalize() {
+  WEZTERM_OOM_PROC_ROOT="$tmpdir/fakeproc" \
+  WEZTERM_OOM_TEST_PROTECTED_PIDS="12" \
+  WEZTERM_OOM_SKIP_PROTECT=1 \
+  WEZTERM_OOM_RENORMALIZE=1 \
+  WEZTERM_OOM_DRY_RUN=0 \
+  WEZTERM_OOM_GUARD_LOG="$tmpdir/renorm.log" \
+  WEZTERM_OOM_PROTECT_TMUX=0 \
+    "$guard" protect >/dev/null 2>&1
+}
+
+renormalize_resets_non_systemd_leak() {
+  rm -rf "$tmpdir/fakeproc"
+  plant_proc 10 -800 /non-systemd
+  plant_proc 11 -1000 /non-systemd
+  plant_proc 12 -1000 /../..          # protected WSL init stand-in
+  plant_proc 13 -1000 /system.slice/ssh.service
+  plant_proc 14 0 /non-systemd
+  run_renormalize
+  [[ "$(cat "$tmpdir/fakeproc/10/oom_score_adj")" == 0 ]] || {
+    printf '    pid 10 still %s\n' "$(cat "$tmpdir/fakeproc/10/oom_score_adj")" >&2
+    return 1
+  }
+  [[ "$(cat "$tmpdir/fakeproc/11/oom_score_adj")" == 0 ]] || {
+    printf '    pid 11 still %s\n' "$(cat "$tmpdir/fakeproc/11/oom_score_adj")" >&2
+    return 1
+  }
+  [[ "$(cat "$tmpdir/fakeproc/12/oom_score_adj")" == -1000 ]] || {
+    printf '    protected pid 12 was rewritten\n' >&2
+    return 1
+  }
+  [[ "$(cat "$tmpdir/fakeproc/13/oom_score_adj")" == -1000 ]] || {
+    printf '    system.slice pid 13 was rewritten\n' >&2
+    return 1
+  }
+  grep -q 'renormalize: reset 2 inherited' "$tmpdir/renorm.log" && return 0
+  printf '    missing renormalize log:\n%s\n' "$(cat "$tmpdir/renorm.log")" >&2
+  return 1
+}
+it 'resets inherited adj under /non-systemd and spares system.slice' \
+  renormalize_resets_non_systemd_leak
+
+status_counts_non_systemd_leak() {
+  rm -rf "$tmpdir/fakeproc"
+  plant_proc 10 -800 /non-systemd
+  plant_proc 12 -1000 /../..
+  plant_proc 13 -1000 /system.slice/ssh.service
+  local line
+  line="$(
+    WEZTERM_OOM_PROC_ROOT="$tmpdir/fakeproc" \
+    WEZTERM_OOM_TEST_PROTECTED_PIDS="12" \
+    WEZTERM_OOM_PROTECT_TMUX=0 \
+    WEZTERM_OOM_MEMINFO="$tmpdir/meminfo" \
+    WEZTERM_OOM_STATUS_FILE="$status_file" \
+    WEZTERM_OOM_BUDDYINFO="$tmpdir/buddyinfo" \
+    WEZTERM_OOM_KMSG_FILE="$tmpdir/kmsg" \
+      "$guard" status 2>/dev/null | grep '^inherited leak:'
+  )"
+  [[ "$line" == *"1 process"* ]] && return 0
+  printf '    expected leak count 1, got: %s\n' "${line:-<none>}" >&2
+  return 1
+}
+it 'status leak count walks /proc, not only init.scope' status_counts_non_systemd_leak
+
 printf 'wsl-oom-guard: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" == 0 ]]
