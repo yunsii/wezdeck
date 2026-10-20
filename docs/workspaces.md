@@ -134,6 +134,7 @@ The worktree-task runtime supports a two-tier model where directory naming encod
 | `dev-*` | weeks–months | `Ctrl+k g d` | `Ctrl+k g r` after explicit long-lived confirmation; CLI requires `--allow-long-lived` | `claude-resume` / `codex-resume` |
 | `task-*` | hours–days | `Ctrl+k g t` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 | `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
+| `delegate-*` | ticket lifetime (hours–days) | Mode 3 `cross-repo-delegate` `run` / `create --run` | `delegate close` (default) + `delegate gc`; keeps branch | none (headless; `--provider none`) |
 
 Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. The CLI refuses reclaim by default; `Ctrl+k g r` can reclaim one only after the normal clean / delivered checks pass and the confirmation prompt names it as long-lived. For day-to-day round closure on a `dev-*` workstation, prefer **`worktree-task recycle`** (in-place reset onto `origin/HEAD`) over reclaim→recreate — the directory, tmux window, and caches stay.
 

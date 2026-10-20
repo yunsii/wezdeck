@@ -333,6 +333,116 @@ else
   printf '%s\n' "$watch_out" >&2
 fi
 
+# --- worktree reclaim on close + gc ---
+export WEZDECK_REPO="${WEZDECK_REPO:-$HOME/github/wezterm-config}"
+if [[ ! -x "$WEZDECK_REPO/scripts/runtime/worktree/worktree-task" ]]; then
+  WEZDECK_REPO="$(cd "$here/../.." && pwd)"
+fi
+id_gc="$("$run" create --to wezdeck --from avc --title "gc reclaim" \
+  --observed "o" --assumed "a" 2>/dev/null | jq -r .id)"
+gc_slug="delegate-${id_gc}"
+gc_wt_parent="$tmp/.worktrees/fake-wezdeck"
+mkdir -p "$gc_wt_parent"
+git -C "$fake_wez" worktree add -q -b "delegate/${id_gc}" "$gc_wt_parent/$gc_slug" >/dev/null
+mkdir -p "$gc_wt_parent/$gc_slug/.delegate"
+printf '{"mock":true}\n' >"$gc_wt_parent/$gc_slug/.delegate/worker-result.json"
+python3 - "$DELEGATE_TICKETS_ROOT" "$id_gc" "$gc_wt_parent/$gc_slug" <<'PY'
+import json, sys
+from pathlib import Path
+root, tid, wt = sys.argv[1], sys.argv[2], sys.argv[3]
+meta = Path(root) / "_data" / tid / "meta.json"
+data = json.loads(meta.read_text()) if meta.is_file() else {}
+data["worktree"] = wt
+meta.write_text(json.dumps(data, indent=2) + "\n")
+PY
+close_gc="$("$run" close --id "$id_gc" --no-doc "gc test" 2>/dev/null)"
+check "close reclaims .delegate-only dirty worktree" \
+  jq -e '.ok == true and .worktree_reclaim.ok == true and (.worktree_reclaim.action == "reclaimed")' <<<"$close_gc"
+check "close removed worktree dir" test ! -d "$gc_wt_parent/$gc_slug"
+meta_wt="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1])).get("worktree"); print("" if v is None else v)' \
+  "$DELEGATE_TICKETS_ROOT/_data/$id_gc/meta.json")"
+check "close cleared meta.worktree" test -z "$meta_wt"
+
+# dirty non-allowlisted → skip on close (keep-worktree off, no --force)
+id_dirty="$("$run" create --to wezdeck --from avc --title "dirty skip" \
+  --observed "o" --assumed "a" 2>/dev/null | jq -r .id)"
+dirty_slug="delegate-${id_dirty}"
+git -C "$fake_wez" worktree add -q -b "delegate/${id_dirty}" "$gc_wt_parent/$dirty_slug" >/dev/null
+printf 'keep-me\n' >"$gc_wt_parent/$dirty_slug/EXTRA_DIRTY.txt"
+python3 - "$DELEGATE_TICKETS_ROOT" "$id_dirty" "$gc_wt_parent/$dirty_slug" <<'PY'
+import json, sys
+from pathlib import Path
+root, tid, wt = sys.argv[1], sys.argv[2], sys.argv[3]
+meta = Path(root) / "_data" / tid / "meta.json"
+data = json.loads(meta.read_text()) if meta.is_file() else {}
+data["worktree"] = wt
+meta.write_text(json.dumps(data, indent=2) + "\n")
+PY
+close_dirty="$("$run" close --id "$id_dirty" --no-doc "dirty" 2>/dev/null)"
+check "close skips non-allowlisted dirty worktree" \
+  jq -e '.ok == true and .worktree_reclaim.ok == false and .worktree_reclaim.reason == "dirty"' <<<"$close_dirty"
+check "dirty worktree still present after close" test -d "$gc_wt_parent/$dirty_slug"
+
+# gc --dry-run sees the leftover closed+dirty tree
+gc_dry="$("$run" gc --dry-run --status closed 2>/dev/null)"
+check "gc dry-run lists closed dirty candidate" \
+  jq -e --arg id "$id_dirty" '.dry_run == true and (.candidates | map(.id) | index($id) != null)' <<<"$gc_dry"
+
+# gc --execute --force reclaims it
+gc_exe="$("$run" gc --execute --force --status closed --id "$id_dirty" 2>/dev/null)"
+check "gc --execute --force reclaims dirty closed tree" \
+  jq -e '.dry_run == false and .reclaimed >= 1' <<<"$gc_exe"
+check "gc removed dirty worktree" test ! -d "$gc_wt_parent/$dirty_slug"
+
+# close --keep-worktree leaves tree
+id_keep="$("$run" create --to wezdeck --from avc --title "keep wt" \
+  --observed "o" --assumed "a" 2>/dev/null | jq -r .id)"
+keep_slug="delegate-${id_keep}"
+git -C "$fake_wez" worktree add -q -b "delegate/${id_keep}" "$gc_wt_parent/$keep_slug" >/dev/null
+python3 - "$DELEGATE_TICKETS_ROOT" "$id_keep" "$gc_wt_parent/$keep_slug" <<'PY'
+import json, sys
+from pathlib import Path
+root, tid, wt = sys.argv[1], sys.argv[2], sys.argv[3]
+meta = Path(root) / "_data" / tid / "meta.json"
+data = json.loads(meta.read_text()) if meta.is_file() else {}
+data["worktree"] = wt
+meta.write_text(json.dumps(data, indent=2) + "\n")
+PY
+close_keep="$("$run" close --id "$id_keep" --no-doc "keep" --keep-worktree 2>/dev/null)"
+check "close --keep-worktree skips reclaim" \
+  jq -e '.ok == true and .worktree_reclaim.reason == "keep_worktree"' <<<"$close_keep"
+check "keep-worktree dir still present" test -d "$gc_wt_parent/$keep_slug"
+# cleanup leftover for trap
+git -C "$fake_wez" worktree remove -f "$gc_wt_parent/$keep_slug" >/dev/null 2>&1 || rm -rf "$gc_wt_parent/$keep_slug"
+
+# --- worktrees decision table ---
+id_wt="$("$run" create --to wezdeck --from avc --title "worktrees report" \
+  --observed "o" --assumed "a" 2>/dev/null | jq -r .id)"
+wt_slug="delegate-${id_wt}"
+git -C "$fake_wez" worktree add -q -b "delegate/${id_wt}" "$gc_wt_parent/$wt_slug" >/dev/null
+mkdir -p "$gc_wt_parent/$wt_slug/.delegate"
+printf 'x\n' >"$gc_wt_parent/$wt_slug/.delegate/ticket.md"
+python3 - "$DELEGATE_TICKETS_ROOT" "$id_wt" "$gc_wt_parent/$wt_slug" <<'PY'
+import json, sys
+from pathlib import Path
+root, tid, wt = sys.argv[1], sys.argv[2], sys.argv[3]
+meta = Path(root) / "_data" / tid / "meta.json"
+data = json.loads(meta.read_text()) if meta.is_file() else {}
+data["worktree"] = wt
+meta.write_text(json.dumps(data, indent=2) + "\n")
+PY
+wt_rep="$("$run" worktrees --id "$id_wt" 2>/dev/null)"
+check "worktrees lists ticket with delegate_only dirty" \
+  jq -e --arg id "$id_wt" '.ok == true and .count == 1 and .worktrees[0].id == $id and .worktrees[0].exists == true and .worktrees[0].dirty == "delegate_only" and (.worktrees[0].suggest | length) > 0' <<<"$wt_rep"
+wt_alive="$("$run" worktrees --alive 2>/dev/null)"
+check "worktrees --alive includes live tree" \
+  jq -e --arg id "$id_wt" '(.worktrees | map(.id) | index($id) != null)' <<<"$wt_alive"
+# close → suggest path gone / clear_meta or absent from --alive
+"$run" close --id "$id_wt" --no-doc "worktrees test" >/dev/null 2>&1
+wt_after="$("$run" worktrees --alive 2>/dev/null)"
+check "worktrees --alive empty after close reclaim" \
+  jq -e --arg id "$id_wt" '(.worktrees | map(.id) | index($id) == null)' <<<"$wt_after"
+
 echo "---"
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
 echo "isolated root: $DELEGATE_TICKETS_ROOT"

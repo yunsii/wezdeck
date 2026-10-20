@@ -41,6 +41,15 @@ delegate run --id req-… --phase research [--backend claude]
 # Session lease held → refused unless --steal
 # Offline: add --mock (no LLM / no worktree)
 # Workers use scripts/dev/host-agent-invoke/ (write). See docs/agent-scheduling.md
+
+# Mode 3 worktree cleanup (close reclaims by default; gc sweeps backlog):
+delegate close --id req-… --doc path.md          # also reclaim delegate-* tree
+delegate close --id req-… --no-doc "…" --keep-worktree
+delegate worktrees                 # ticket × worktree decision table
+delegate worktrees --alive
+delegate gc --dry-run
+delegate gc --execute --status closed,rejected,failed
+delegate gc --execute --include-shipped --min-age 7d
 ```
 
 From wezdeck root, `./scripts/dev/link-platform-skills.sh` links the skill and installs the short CLI.

@@ -101,6 +101,34 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 **硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。  
 Mode 2 的 `--to .` / `--from .` 按 **主 worktree 根** 解析 allowlist（`git rev-parse --git-common-dir`）：在 `…/.worktrees/<repo>/<slug>` 里认领等于在主仓认领，不会把 slug basename 当成仓库名。
 
+### Mode 3 worktree cleanup
+
+Mode 3 creates `.worktrees/<repo>/delegate-<ticket-id>/` via `worktree-task`.  
+`close` **reclaims** that tree by default (strips `.delegate/**` dirt, keeps the local branch; `--keep-worktree` to skip).  
+`delegate gc` sweeps leftovers:
+
+| Flag | Effect |
+| --- | --- |
+| `--dry-run` | list candidates (default) |
+| `--execute` | reclaim |
+| `--status closed,rejected,failed` | default status set |
+| `--include-shipped --min-age 7d` | aged shipped after verify window |
+| `--include-waiting --min-age 14d` | abandoned waiting_* |
+| `--force` | discard non-allowlisted dirt |
+| `--orphans` | scan allowlist `.worktrees/*/delegate-*` with no open ticket |
+
+Delivery gates from `Ctrl+k g r` do **not** apply: ticket terminal status is the authority; unmerged squash branches stay via `--keep-branch`.
+
+Decision skim (ticket × tree, no mutation):
+
+```bash
+delegate worktrees                 # JSON + stderr table
+delegate worktrees --alive         # only dirs still on disk
+delegate worktrees --to coco-forge
+```
+
+Columns: `suggest` (`keep` / `close` / `gc` / `gc --force` / `clear_meta` / `inspect`), `dirty`, `ahead`, `age_days`.
+
 ### Ticket vs multi-dir mount
 
 **站位政策：**跨仓委托 / 认领 / 挑战假设 / 关单 → **票仓协议**（`cross-repo-delegate`）。  

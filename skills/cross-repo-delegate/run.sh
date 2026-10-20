@@ -27,7 +27,14 @@
 #   run.sh set-status --id ID --status STATUS [--owner OWNER] [--phase PHASE]
 #   run.sh status [--id ID] [--mine] [--from SOURCE]
 #   run.sh board [--to TARGET]
-#   run.sh close --id ID [--doc PATH] [--no-doc REASON]
+#   run.sh close --id ID [--doc PATH] [--no-doc REASON] [--keep-worktree]
+#       close also reclaims Mode 3 delegate-* worktree (keep branch; strip .delegate)
+#   run.sh gc [--dry-run|--execute] [--status LIST] [--include-shipped]
+#             [--include-waiting] [--min-age Nd] [--force] [--orphans] [--id ID]
+#       default --dry-run; reclaim terminal-ticket worktrees (and optional aged shipped)
+#   run.sh worktrees [--alive] [--to TARGET|.] [--status LIST] [--min-age Nd]
+#                    [--orphans] [--id ID]
+#       decision table: ticket × worktree (exists/dirty/ahead/age → suggest)
 #   run.sh walkthrough [--seed]
 #   run.sh reindex | selfcheck
 #
@@ -49,7 +56,7 @@ TOOL_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
 
 PY="$TOOL_ROOT/lib/ticket_fs.py"
 usage() {
-  sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,52p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 cmd="${1:-}"
@@ -435,26 +442,27 @@ PY
 }
 
 cmd_close() {
-  local id="" doc="" no_doc=""
+  local id="" doc="" no_doc="" keep_worktree=0
   while (($#)); do
     case "$1" in
       --id) id=$2; shift 2 ;;
       --doc) doc=$2; shift 2 ;;
       --no-doc) no_doc=$2; shift 2 ;;
+      --keep-worktree) keep_worktree=1; shift ;;
       *) delegate_die "unknown close arg: $1" ;;
     esac
   done
   [[ -n "$id" ]] || delegate_die "close requires --id"
   [[ -n "$doc" || -n "$no_doc" ]] || delegate_die "close requires --doc PATH or --no-doc REASON"
   delegate_ensure_tree
-  local root lock
+  local root lock close_json reclaim_json
   root="$(delegate_tickets_root)"
   lock="$root/.locks/tickets.lock"
-  delegate_with_lock "$lock" -- \
-    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
-      ID="$id" DOC="$doc" NO_DOC="$no_doc" python3 - <<'PY'
-import importlib.util, json, os, sys, shutil
-from pathlib import Path
+  close_json="$(
+    delegate_with_lock "$lock" -- \
+      env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
+        ID="$id" DOC="$doc" NO_DOC="$no_doc" python3 - <<'PY'
+import importlib.util, json, os, sys
 spec = importlib.util.spec_from_file_location(
     "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
 )
@@ -497,6 +505,608 @@ marker.write_text(
     encoding="utf-8",
 )
 print(json.dumps({"ok": True, "id": tid, "status": "closed", "solution_doc": meta["solution_doc"]}, ensure_ascii=False))
+PY
+  )" || return $?
+
+  reclaim_json='{"ok":true,"action":"skipped","reason":"keep_worktree"}'
+  if ((keep_worktree == 0)); then
+    # Close already committed; reclaim failure must not undo the ticket status.
+    set +e
+    reclaim_json="$(delegate_reclaim_worktree "$id")"
+    set -e
+  fi
+  CLOSE_JSON="$close_json" RECLAIM_JSON="$reclaim_json" python3 - <<'PY'
+import json, os
+close = json.loads(os.environ["CLOSE_JSON"])
+try:
+    reclaim = json.loads(os.environ["RECLAIM_JSON"] or "{}")
+except json.JSONDecodeError:
+    reclaim = {"ok": False, "reason": "reclaim_parse_error", "raw": os.environ.get("RECLAIM_JSON")}
+close["worktree_reclaim"] = reclaim
+print(json.dumps(close, ensure_ascii=False))
+PY
+}
+
+# Sweep Mode 3 delegate-* worktrees for terminal / aged tickets.
+cmd_gc() {
+  local dry_run=1 execute=0 force=0 orphans=0 include_shipped=0 include_waiting=0
+  local status_list="closed,rejected,failed" min_age="0" only_id=""
+  while (($#)); do
+    case "$1" in
+      --dry-run) dry_run=1; execute=0; shift ;;
+      --execute) execute=1; dry_run=0; shift ;;
+      --force) force=1; shift ;;
+      --orphans) orphans=1; shift ;;
+      --include-shipped) include_shipped=1; shift ;;
+      --include-waiting) include_waiting=1; shift ;;
+      --status) status_list=$2; shift 2 ;;
+      --min-age) min_age=$2; shift 2 ;;
+      --id) only_id=$2; shift 2 ;;
+      -h|--help)
+        cat <<'EOF'
+gc — reclaim Mode 3 delegate-* worktrees for finished tickets
+
+  --dry-run             list candidates only (default)
+  --execute             actually reclaim
+  --status LIST         comma statuses (default: closed,rejected,failed)
+  --include-shipped     also consider shipped (use with --min-age)
+  --include-waiting     also waiting_initiator / waiting_target (use with --min-age)
+  --min-age Nd|Nh|Nm    only if ticket updated_at older than this (default 0)
+  --force               pass through to reclaim (discard non-.delegate dirt)
+  --orphans             also scan allowlist .worktrees/*/delegate-* with no open ticket
+  --id ID               only this ticket
+EOF
+        return 0
+        ;;
+      *) delegate_die "unknown gc arg: $1" ;;
+    esac
+  done
+
+  local min_age_sec
+  min_age_sec="$(delegate_parse_age_seconds "$min_age")" \
+    || delegate_die "invalid --min-age: $min_age (use 7d / 12h / 30m / seconds)"
+
+  delegate_ensure_tree
+  local root
+  root="$(delegate_tickets_root)"
+
+  local statuses="$status_list"
+  if ((include_shipped)); then
+    statuses="${statuses},shipped"
+  fi
+  if ((include_waiting)); then
+    statuses="${statuses},waiting_initiator,waiting_target"
+  fi
+
+  local plan
+  plan="$(
+    DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
+      STATUSES="$statuses" MIN_AGE_SEC="$min_age_sec" ONLY_ID="$only_id" ORPHANS="$orphans" \
+      python3 - <<'PY'
+import importlib.util, json, os, re, time
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location(
+    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+root = mod.tickets_root()
+statuses = {s.strip() for s in os.environ.get("STATUSES", "").split(",") if s.strip()}
+min_age = int(os.environ.get("MIN_AGE_SEC") or "0")
+only_id = (os.environ.get("ONLY_ID") or "").strip()
+want_orphans = os.environ.get("ORPHANS") == "1"
+now = int(time.time())
+
+def parse_iso(s):
+    if not s:
+        return None
+    s = str(s).strip().replace("Z", "+00:00")
+    try:
+        # fromisoformat needs python3.11+ for Z; we replaced Z
+        from datetime import datetime
+        dt = datetime.fromisoformat(s)
+        return int(dt.timestamp())
+    except Exception:
+        return None
+
+candidates = []
+seen_paths = set()
+data = root / "_data"
+if data.is_dir():
+    for d in sorted(data.iterdir()):
+        if not d.is_dir():
+            continue
+        tid = d.name
+        if only_id and tid != only_id:
+            continue
+        try:
+            meta, _body = mod.read_ticket(tid)
+        except FileNotFoundError:
+            continue
+        status = meta.get("status") or ""
+        if status not in statuses:
+            continue
+        mj = mod.read_meta_json(tid)
+        wt = mj.get("worktree") or ""
+        if not wt:
+            continue
+        updated = parse_iso(meta.get("updated_at")) or 0
+        age = max(0, now - updated) if updated else 0
+        if min_age and updated and age < min_age:
+            continue
+        exists = Path(wt).is_dir()
+        candidates.append({
+            "id": tid,
+            "status": status,
+            "worktree": wt,
+            "exists": exists,
+            "age_sec": age,
+            "source": "meta",
+        })
+        if wt:
+            seen_paths.add(str(Path(wt).resolve()) if Path(wt).exists() else wt)
+
+if want_orphans and not only_id:
+    # Load allowlist target paths from config.yml (minimal parse).
+    cfg = root / "config.yml"
+    targets = []
+    if cfg.is_file():
+        cur = None
+        for line in cfg.read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^  ([A-Za-z0-9_-]+):\s*$", line)
+            if m:
+                cur = m.group(1)
+                continue
+            m = re.match(r"^    path:\s*(.+?)\s*$", line)
+            if m and cur:
+                targets.append(os.path.expanduser(m.group(1).strip().strip("\"'")))
+                cur = None
+    # Map live open tickets' worktrees
+    open_statuses = {
+        "submitted", "in_progress", "waiting_initiator", "waiting_target", "shipped",
+    }
+    open_paths = set()
+    ticket_by_slug = {}
+    if data.is_dir():
+        for d in data.iterdir():
+            if not d.is_dir():
+                continue
+            try:
+                meta, _ = mod.read_ticket(d.name)
+            except FileNotFoundError:
+                continue
+            mj = mod.read_meta_json(d.name)
+            wt = mj.get("worktree") or ""
+            st = meta.get("status") or ""
+            if wt and st in open_statuses:
+                open_paths.add(str(Path(wt).resolve()) if Path(wt).exists() else wt)
+            ticket_by_slug[f"delegate-{d.name}"] = (d.name, st)
+
+    for tpath in targets:
+        p = Path(tpath)
+        if not p.is_dir():
+            continue
+        repo = p.name
+        parent = p.parent
+        wt_root = parent / ".worktrees" / repo
+        if not wt_root.is_dir():
+            continue
+        for child in sorted(wt_root.iterdir()):
+            if not child.is_dir():
+                continue
+            name = child.name
+            if not name.startswith("delegate-"):
+                continue
+            resolved = str(child.resolve())
+            if resolved in seen_paths or resolved in open_paths:
+                continue
+            tid = None
+            st = None
+            if name in ticket_by_slug:
+                tid, st = ticket_by_slug[name]
+                if st in open_statuses:
+                    continue
+            # orphan or terminal-without-meta-path
+            if min_age:
+                age = max(0, now - int(child.stat().st_mtime))
+                if age < min_age:
+                    continue
+            else:
+                age = max(0, now - int(child.stat().st_mtime))
+            candidates.append({
+                "id": tid or name,
+                "status": st or "orphan",
+                "worktree": resolved,
+                "exists": True,
+                "age_sec": age,
+                "source": "orphan_scan",
+            })
+            seen_paths.add(resolved)
+
+print(json.dumps({"ok": True, "candidates": candidates}, ensure_ascii=False))
+PY
+  )"
+
+  if ((dry_run)); then
+    printf '%s\n' "$plan" | python3 -c '
+import json,sys
+p=json.load(sys.stdin)
+c=p.get("candidates") or []
+print(json.dumps({"ok": True, "dry_run": True, "count": len(c), "candidates": c}, ensure_ascii=False, indent=2))
+'
+    return 0
+  fi
+
+  local cand_json count i item_id item_src item_wt reclaim_out
+  local results_file
+  results_file="$(mktemp "${TMPDIR:-/tmp}/delegate-gc.XXXXXX")"
+  cand_json="$(printf '%s' "$plan" | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin).get("candidates") or []))')"
+  count="$(printf '%s' "$cand_json" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
+  : >"$results_file"
+  for ((i = 0; i < count; i++)); do
+    item_id="$(printf '%s' "$cand_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)['"$i"']["id"])')"
+    item_src="$(printf '%s' "$cand_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)['"$i"'].get("source") or "")')"
+    item_wt="$(printf '%s' "$cand_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)['"$i"'].get("worktree") or "")')"
+    set +e
+    if [[ "$item_src" == "orphan_scan" && "$item_id" == delegate-* ]]; then
+      if ((force)); then
+        reclaim_out="$(delegate_reclaim_orphan_path "$item_wt" --force)"
+      else
+        reclaim_out="$(delegate_reclaim_orphan_path "$item_wt")"
+      fi
+    else
+      if ((force)); then
+        reclaim_out="$(delegate_reclaim_worktree "$item_id" --force)"
+      else
+        reclaim_out="$(delegate_reclaim_worktree "$item_id")"
+      fi
+    fi
+    set -e
+    printf '%s\n' "$reclaim_out" >>"$results_file"
+  done
+
+  PLAN="$plan" RESULTS_FILE="$results_file" python3 - <<'PY'
+import json, os
+from pathlib import Path
+plan = json.loads(os.environ["PLAN"])
+raw = Path(os.environ["RESULTS_FILE"]).read_text(encoding="utf-8").splitlines()
+results = []
+for line in raw:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        results.append(json.loads(line))
+    except json.JSONDecodeError:
+        results.append({"ok": False, "reason": "parse_error", "raw": line})
+reclaimed = sum(1 for r in results if r.get("ok") and r.get("action") in ("reclaimed", "cleared_meta"))
+skipped = len(results) - reclaimed
+print(json.dumps({
+    "ok": True,
+    "dry_run": False,
+    "planned": len(plan.get("candidates") or []),
+    "reclaimed": reclaimed,
+    "skipped": skipped,
+    "results": results,
+}, ensure_ascii=False, indent=2))
+PY
+  rm -f "$results_file"
+}
+
+# Decision table: ticket status × Mode 3 worktree health.
+cmd_worktrees() {
+  local alive=0 orphans=0 to="" status_list="" min_age="0" only_id=""
+  while (($#)); do
+    case "$1" in
+      --alive) alive=1; shift ;;
+      --orphans) orphans=1; shift ;;
+      --to) to=$2; shift 2 ;;
+      --status) status_list=$2; shift 2 ;;
+      --min-age) min_age=$2; shift 2 ;;
+      --id) only_id=$2; shift 2 ;;
+      -h|--help)
+        cat <<'EOF'
+worktrees — ticket × Mode 3 worktree decision table
+
+  --alive          only rows whose worktree directory still exists
+  --to TARGET|.    filter by ticket target allowlist key
+  --status LIST    comma statuses (default: any with meta.worktree set)
+  --min-age Nd     only if ticket updated_at older than this
+  --orphans        also scan allowlist .worktrees/*/delegate-* without open ticket
+  --id ID          single ticket
+
+stdout: JSON. stderr: skim table (suggest / dirty / ahead / age).
+suggest values: keep | close | gc | gc --force | clear_meta | inspect
+EOF
+        return 0
+        ;;
+      *) delegate_die "unknown worktrees arg: $1" ;;
+    esac
+  done
+
+  local min_age_sec
+  min_age_sec="$(delegate_parse_age_seconds "$min_age")" \
+    || delegate_die "invalid --min-age: $min_age (use 7d / 12h / 30m / seconds)"
+
+  delegate_ensure_tree
+  local root to_key=""
+  root="$(delegate_tickets_root)"
+  if [[ -n "$to" ]]; then
+    to_key="$(delegate_resolve_target_key "$to")"
+  fi
+
+  DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
+    ALIVE="$alive" ORPHANS="$orphans" TO_KEY="$to_key" \
+    STATUSES="$status_list" MIN_AGE_SEC="$min_age_sec" ONLY_ID="$only_id" \
+    python3 - <<'PY'
+import importlib.util, json, os, re, subprocess, time
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location(
+    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+root = mod.tickets_root()
+alive_only = os.environ.get("ALIVE") == "1"
+want_orphans = os.environ.get("ORPHANS") == "1"
+to_key = (os.environ.get("TO_KEY") or "").strip()
+status_filter = {s.strip() for s in (os.environ.get("STATUSES") or "").split(",") if s.strip()}
+min_age = int(os.environ.get("MIN_AGE_SEC") or "0")
+only_id = (os.environ.get("ONLY_ID") or "").strip()
+now = int(time.time())
+ignore_prefixes = tuple(
+    p.strip()
+    for p in os.environ.get("DELEGATE_RECLAIM_IGNORE_GLOBS", ".delegate,.delegate/").split(",")
+    if p.strip()
+)
+
+def parse_iso(s):
+    if not s:
+        return None
+    s = str(s).strip().replace("Z", "+00:00")
+    try:
+        from datetime import datetime
+        return int(datetime.fromisoformat(s).timestamp())
+    except Exception:
+        return None
+
+def git(cwd, *args):
+    try:
+        p = subprocess.run(
+            ["git", "-C", str(cwd), *args],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        if p.returncode != 0:
+            return None
+        return (p.stdout or "").rstrip("\n")
+    except Exception:
+        return None
+
+def path_allowlisted(path: str) -> bool:
+    path = path.strip().strip('"')
+    if " -> " in path:
+        return False
+    for g in ignore_prefixes:
+        g = g.rstrip("/")
+        if path == g or path.startswith(g + "/") or path == "./" + g or path.startswith("./" + g + "/"):
+            return True
+    return False
+
+def dirty_kind(wt: Path):
+    out = git(wt, "status", "--porcelain", "--untracked-files=all")
+    if out is None:
+        return "unknown", 0
+    lines = [ln for ln in out.splitlines() if ln.strip()]
+    if not lines:
+        return "clean", 0
+    other = 0
+    allow = 0
+    for ln in lines:
+        path = ln[3:] if len(ln) >= 3 else ln
+        path = path.lstrip()
+        if path_allowlisted(path):
+            allow += 1
+        else:
+            other += 1
+    if other:
+        return "other", other + allow
+    return "delegate_only", allow
+
+def suggest(status: str, exists: bool, dirty: str, age_sec: int) -> str:
+    if not exists:
+        return "clear_meta"
+    if status in ("closed", "rejected", "failed"):
+        return "gc --force" if dirty == "other" else "gc"
+    if status == "shipped":
+        # initiator should close; aged shipped can gc directly
+        if age_sec >= 7 * 86400:
+            return "gc --force" if dirty == "other" else "gc"
+        return "close"
+    if status in ("waiting_initiator", "waiting_target"):
+        if age_sec >= 14 * 86400:
+            return "inspect"
+        return "keep"
+    if status in ("submitted", "in_progress"):
+        return "keep"
+    if status == "orphan":
+        return "gc --force" if dirty == "other" else "gc"
+    return "inspect"
+
+rows = []
+seen_paths = set()
+data = root / "_data"
+if data.is_dir():
+    for d in sorted(data.iterdir()):
+        if not d.is_dir():
+            continue
+        tid = d.name
+        if only_id and tid != only_id:
+            continue
+        try:
+            meta, _body = mod.read_ticket(tid)
+        except FileNotFoundError:
+            continue
+        status = str(meta.get("status") or "")
+        if to_key and str(meta.get("to") or "") != to_key:
+            continue
+        if status_filter and status not in status_filter:
+            continue
+        mj = mod.read_meta_json(tid)
+        wt = mj.get("worktree") or ""
+        if not wt:
+            continue
+        updated = parse_iso(meta.get("updated_at")) or 0
+        age = max(0, now - updated) if updated else 0
+        if min_age and updated and age < min_age:
+            continue
+        wt_path = Path(wt)
+        exists = wt_path.is_dir()
+        if alive_only and not exists:
+            continue
+        branch = None
+        ahead = None
+        dirty = "missing"
+        dirty_n = 0
+        if exists:
+            branch = git(wt_path, "rev-parse", "--abbrev-ref", "HEAD")
+            ahead_s = git(wt_path, "rev-list", "--count", "origin/HEAD..HEAD")
+            if ahead_s is not None and ahead_s.isdigit():
+                ahead = int(ahead_s)
+            dirty, dirty_n = dirty_kind(wt_path)
+            try:
+                seen_paths.add(str(wt_path.resolve()))
+            except Exception:
+                seen_paths.add(wt)
+        sug = suggest(status, exists, dirty, age)
+        rows.append({
+            "id": tid,
+            "to": meta.get("to"),
+            "title": meta.get("title"),
+            "status": status,
+            "worktree": wt,
+            "exists": exists,
+            "branch": branch,
+            "dirty": dirty,
+            "dirty_count": dirty_n,
+            "ahead": ahead,
+            "age_sec": age,
+            "age_days": round(age / 86400, 1) if updated else None,
+            "suggest": sug,
+            "source": "meta",
+        })
+
+if want_orphans and not only_id:
+    cfg = root / "config.yml"
+    targets = []
+    if cfg.is_file():
+        cur = None
+        for line in cfg.read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^  ([A-Za-z0-9_-]+):\s*$", line)
+            if m:
+                cur = m.group(1)
+                continue
+            m = re.match(r"^    path:\s*(.+?)\s*$", line)
+            if m and cur:
+                targets.append(os.path.expanduser(m.group(1).strip().strip("\"'")))
+                cur = None
+    open_statuses = {
+        "submitted", "in_progress", "waiting_initiator", "waiting_target", "shipped",
+    }
+    ticket_by_slug = {}
+    if data.is_dir():
+        for d in data.iterdir():
+            if not d.is_dir():
+                continue
+            try:
+                meta, _ = mod.read_ticket(d.name)
+            except FileNotFoundError:
+                continue
+            ticket_by_slug[f"delegate-{d.name}"] = (d.name, str(meta.get("status") or ""))
+    for tpath in targets:
+        p = Path(tpath)
+        if not p.is_dir():
+            continue
+        wt_root = p.parent / ".worktrees" / p.name
+        if not wt_root.is_dir():
+            continue
+        for child in sorted(wt_root.iterdir()):
+            if not child.is_dir() or not child.name.startswith("delegate-"):
+                continue
+            try:
+                resolved = str(child.resolve())
+            except Exception:
+                resolved = str(child)
+            if resolved in seen_paths:
+                continue
+            tid = None
+            st = "orphan"
+            if child.name in ticket_by_slug:
+                tid, st = ticket_by_slug[child.name]
+                if st in open_statuses:
+                    continue
+            age = max(0, now - int(child.stat().st_mtime))
+            if min_age and age < min_age:
+                continue
+            if to_key:
+                # orphan rows have no ticket to; skip filter unless path repo matches
+                pass
+            dirty, dirty_n = dirty_kind(child)
+            branch = git(child, "rev-parse", "--abbrev-ref", "HEAD")
+            ahead_s = git(child, "rev-list", "--count", "origin/HEAD..HEAD")
+            ahead = int(ahead_s) if ahead_s and ahead_s.isdigit() else None
+            rows.append({
+                "id": tid or child.name,
+                "to": p.name,
+                "title": None,
+                "status": st,
+                "worktree": resolved,
+                "exists": True,
+                "branch": branch,
+                "dirty": dirty,
+                "dirty_count": dirty_n,
+                "ahead": ahead,
+                "age_sec": age,
+                "age_days": round(age / 86400, 1),
+                "suggest": suggest(st, True, dirty, age),
+                "source": "orphan_scan",
+            })
+            seen_paths.add(resolved)
+
+# suggest histogram for skim
+from collections import Counter
+sug_counts = Counter(r["suggest"] for r in rows)
+payload = {
+    "ok": True,
+    "count": len(rows),
+    "alive": sum(1 for r in rows if r["exists"]),
+    "suggest": dict(sug_counts),
+    "worktrees": rows,
+}
+print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+# human table on stderr
+import sys
+print(
+    f"# worktrees · count={len(rows)} alive={payload['alive']} suggest={dict(sug_counts)}",
+    file=sys.stderr,
+)
+print(
+    f"{'suggest':12} {'status':18} {'dirty':14} {'ahead':5} {'age_d':6} {'id':36} to",
+    file=sys.stderr,
+)
+for r in rows:
+    ahead = "" if r.get("ahead") is None else str(r["ahead"])
+    age = "" if r.get("age_days") is None else f"{r['age_days']:.1f}"
+    print(
+        f"{r['suggest'][:12]:12} {r['status'][:18]:18} {r['dirty'][:14]:14} {ahead[:5]:5} {age[:6]:6} {r['id'][:36]:36} {r.get('to') or ''}",
+        file=sys.stderr,
+    )
 PY
 }
 
@@ -901,6 +1511,8 @@ case "$cmd" in
   status) cmd_status "$@" ;;
   board) cmd_board "$@" ;;
   close) cmd_close "$@" ;;
+  gc) cmd_gc "$@" ;;
+  worktrees) cmd_worktrees "$@" ;;
   walkthrough) cmd_walkthrough "$@" ;;
   reindex) cmd_reindex "$@" ;;
   selfcheck) cmd_selfcheck "$@" ;;

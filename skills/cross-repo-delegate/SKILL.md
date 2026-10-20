@@ -171,6 +171,28 @@ Session-claimed tickets: after `reply`, the **claiming TUI** continues implement
 "$D" close --id <id> --doc <topic-doc-in-target-repo>
 # or explicit skip:
 "$D" close --id <id> --no-doc "<reason>"
+# keep Mode 3 worktree (rare):
+"$D" close --id <id> --no-doc "<reason>" --keep-worktree
+```
+
+`close` also reclaims the Mode 3 `delegate-<id>` worktree when `meta.worktree` is set
+(strips `.delegate/**`, keeps the local branch). Failure to reclaim does **not** undo close.
+
+### F) Inspect Mode 3 worktrees (decision table)
+
+```bash
+"$D" worktrees                 # JSON + stderr skim (suggest/dirty/ahead/age)
+"$D" worktrees --alive         # only trees still on disk
+"$D" worktrees --to .          # filter by target allowlist key
+```
+
+### G) GC leftover Mode 3 worktrees
+
+```bash
+"$D" gc --dry-run
+"$D" gc --execute --status closed,rejected,failed
+"$D" gc --execute --include-shipped --min-age 7d
+"$D" gc --execute --force --id <id>   # discard non-.delegate dirt
 ```
 
 Update/create the **topic solution doc** in the target repo yourself; never commit `~/.agent/tickets/**` into the project.
