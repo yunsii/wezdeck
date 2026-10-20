@@ -340,7 +340,7 @@ Side-channel audit so status flips can be reconstructed without hand-joining two
 
 | Artifact | Path | Role |
 |---|---|---|
-| Journal | `~/.local/state/wezterm-runtime/logs/attention-transitions.jsonl` (WSL ext4) | One NDJSON row per successful write: `rev`, `op`, `prev_status`→`status`, `counts`, `roster`, `digest`, optional `op_detail` (`bg_defer` / `focus_skip` / …). **No** `last_user_prompt`. |
+| Journal | `~/.local/state/wezterm-runtime/logs/attention-transitions.jsonl` (WSL ext4) | One NDJSON row per successful write: `rev`, `op`, `prev_status`→`status`, `counts`, `roster`, `digest`, optional `op_detail` (`bg_defer` / `bg_bump_demote` / `bg_bump_recover` / `bg_bump_hold_shell` / `bg_bump_mixed` / `focus_skip` / …). Cross-session bg bump rows also carry `trigger_session_id` (which emit provoked the scan), `touched_session_ids`, and `bg_bump_actions` (`demote:<sid>` / `recover:<sid>` / `hold_shell:<sid>`). Pure keep / TTL ts refresh sets `AUDIT_SKIP` and does **not** append a journal row (state still updates). **No** `last_user_prompt`. |
 | Sparse snapshots | `~/.local/state/wezterm-runtime/state/agent-attention/snapshots/<rev>-<digest>.json` | Desensitized full copy when `digest` changes (`WEZTERM_ATTENTION_SNAPSHOT=0` off, `=always` every write). Keep last 64. |
 | UI align | `wezterm.log` `message="state reloaded"` / `tick received` | Carries `rev`, `digest`, `disk_running` / `disk_waiting` / `disk_done`. |
 
@@ -633,6 +633,10 @@ keep ● forever). Routine `bg bump kept` is silent to avoid log floods;
 state-change lines remain: `stop deferred to bg-running` (+ `bg_recover`),
 `bg sidecar reconciled on prompt`, `bg bump recover shell/live` /
 `bg bump demote skipped` / `bg bump demoted`, `focus ack skipped bg_finished`.
+Demote/recover/hold also land a journal row with `op_detail=bg_bump_*` plus
+`trigger_session_id` / `touched_session_ids` / `bg_bump_actions` so
+`attention-forensics.sh --around HH:MM` can show which foreign pane cleared a
+● (2026-10-20).
 
 Probe (dry-run / schema):
 

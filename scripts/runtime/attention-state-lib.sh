@@ -342,6 +342,14 @@ attention_state_desensitize() {
 # Enrichment via env (set by emit / callers; all optional):
 #   AGENT_ATTENTION_AUDIT_OP / _SESSION_ID / _PREV_STATUS / _STATUS
 #   AGENT_ATTENTION_AUDIT_OP_DETAIL / _FOCUS_SKIPPED
+#   AGENT_ATTENTION_AUDIT_TRIGGER_SESSION_ID  — emit session that caused a
+#     cross-session side effect (e.g. bg_bump from another pane)
+#   AGENT_ATTENTION_AUDIT_TOUCHED_SESSION_IDS — JSON string array of sessions
+#     mutated by that side effect
+#   AGENT_ATTENTION_AUDIT_BG_BUMP_ACTIONS — JSON string array like
+#     ["demote:<sid>","recover:<sid>","hold_shell:<sid>"]
+#   AGENT_ATTENTION_AUDIT_SKIP=1 — still write state / maybe snapshot, but
+#     skip the journal row (used for pure bg_bump keep / TTL ts refresh)
 #   AGENT_ATTENTION_PROVIDER / AGENT_ATTENTION_RAW_EVENT
 #   WEZTERM_PANE (wezterm_pane) — already in hook env
 # Failure never fails the caller write.
@@ -349,10 +357,16 @@ attention_state_audit_after_write() {
   local payload="$1"
   local journal_path snap_dir meta rev digest counts_json roster_json
   local prev_digest line snap_path keep mode
+  local skip_journal=0
+  local touched_json actions_json
   journal_path="$(attention_state_journal_path)"
   snap_dir="$(attention_state_snapshots_dir)"
   [[ -n "$journal_path" || -n "$snap_dir" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
+
+  case "${AGENT_ATTENTION_AUDIT_SKIP:-0}" in
+    1|true|yes|on) skip_journal=1 ;;
+  esac
 
   meta="$(attention_state_roster_meta "$payload")" || return 0
   [[ -n "$meta" ]] || return 0
@@ -366,8 +380,16 @@ attention_state_audit_after_write() {
     prev_digest="$(tail -n 1 "$journal_path" 2>/dev/null | jq -r '.digest // ""' 2>/dev/null || printf '')"
   fi
 
-  if [[ -n "$journal_path" ]]; then
+  if [[ -n "$journal_path" && "$skip_journal" != "1" ]]; then
     mkdir -p "$(dirname "$journal_path")" 2>/dev/null || true
+    touched_json="${AGENT_ATTENTION_AUDIT_TOUCHED_SESSION_IDS:-[]}"
+    actions_json="${AGENT_ATTENTION_AUDIT_BG_BUMP_ACTIONS:-[]}"
+    if ! printf '%s' "$touched_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      touched_json='[]'
+    fi
+    if ! printf '%s' "$actions_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      actions_json='[]'
+    fi
     line="$(jq -nc \
       --argjson ts "$(attention_state_now_ms)" \
       --argjson rev "$rev" \
@@ -387,6 +409,9 @@ attention_state_audit_after_write() {
       --argjson roster "$roster_json" \
       --argjson focus_skipped "${AGENT_ATTENTION_AUDIT_FOCUS_SKIPPED:-0}" \
       --arg trace "${WEZTERM_RUNTIME_TRACE_ID:-}" \
+      --arg trigger "${AGENT_ATTENTION_AUDIT_TRIGGER_SESSION_ID:-}" \
+      --argjson touched "$touched_json" \
+      --argjson actions "$actions_json" \
       '{
         ts_ms: $ts,
         rev: $rev,
@@ -405,8 +430,14 @@ attention_state_audit_after_write() {
         counts: $counts,
         roster: $roster,
         digest: $digest,
-        trace_id: (if $trace == "" then null else $trace end)
-      }' 2>/dev/null || printf '')"
+        trace_id: (if $trace == "" then null else $trace end),
+        trigger_session_id: (if $trigger == "" then null else $trigger end),
+        touched_session_ids: $touched,
+        bg_bump_actions: $actions
+      }
+      | if (.touched_session_ids | length) == 0 then del(.touched_session_ids) else . end
+      | if (.bg_bump_actions | length) == 0 then del(.bg_bump_actions) else . end
+      ' 2>/dev/null || printf '')"
     if [[ -n "$line" ]]; then
       # Simple size roll: if journal exceeds ~20MB, keep a single .1 backup.
       if [[ -f "$journal_path" ]]; then

@@ -453,13 +453,26 @@ bg_recover_if_shell_alive() {
 
 # Bump ts for bg-running entries. Demote to done only when outstanding is
 # empty AND Claude is not status=shell AND no live task outputs remain.
+#
+# Cross-session forensics: every emit (including foreign panes) may call
+# this. Meaningful outcomes (demote / recover / hold_shell) journal with
+#   op_detail=bg_bump_*
+#   trigger_session_id=<emit session>
+#   touched_session_ids=[…]
+#   bg_bump_actions=["demote:<sid>",…]
+# Pure keep (TTL ts refresh only) still writes state but sets
+# AGENT_ATTENTION_AUDIT_SKIP=1 so the journal is not flooded.
 bg_bump_alive_entries() {
   local path lock current next now
+  local trigger actions_json touched_json detail
+  local -a actions=() touched=()
+  local n_demote=0 n_recover=0 n_hold=0
   command -v jq >/dev/null 2>&1 || return 0
   path="$(attention_state_path)"
   [[ -f "$path" ]] || return 0
   now="$(attention_state_now_ms)"
   lock="$(attention_state_lock_path)"
+  trigger="${AGENT_ATTENTION_TRIGGER_SESSION_ID:-}"
   (
     flock -x 9
     current="$(attention_state_read)"
@@ -476,9 +489,13 @@ bg_bump_alive_entries() {
         n="$(jq -r 'length // 0' <<<"${recovered:-[]}" 2>/dev/null || echo 0)"
         if [[ "${n:-0}" -gt 0 ]]; then
           outstanding="$recovered"
+          actions+=("recover:${sid}")
+          touched+=("$sid")
+          n_recover=$((n_recover + 1))
           if declare -F runtime_log_info >/dev/null 2>&1; then
             runtime_log_info attention "bg bump recover shell/live" \
               "session_id=$sid" "bg_count=$n" \
+              "trigger_session_id=${trigger:-}" \
               "claude_status=$(bg_claude_session_status "$sid")" 2>/dev/null || true
           fi
         fi
@@ -496,8 +513,8 @@ bg_bump_alive_entries() {
               | del(.entries[$sid].done_kind)
             end
           ' <<<"$next")" || true
-        # Routine keep is silent — every foreign Stop was flooding
-        # runtime.log with bg bump kept. State changes log below.
+        # Routine keep is silent in runtime.log — foreign Stop was flooding.
+        # Journal skip for keep-only is decided after the loop.
         :
       else
         claude_st="$(bg_claude_session_status "$sid")"
@@ -513,9 +530,13 @@ bg_bump_alive_entries() {
               | del(.entries[$sid].done_kind)
             end
           ' <<<"$next")" || true
+          actions+=("hold_shell:${sid}")
+          touched+=("$sid")
+          n_hold=$((n_hold + 1))
           if declare -F runtime_log_warn >/dev/null 2>&1; then
             runtime_log_warn attention "bg bump demote skipped" \
               "session_id=$sid" "reason=claude_status_shell" \
+              "trigger_session_id=${trigger:-}" \
               "claude_status=$claude_st" 2>/dev/null || true
           fi
           continue
@@ -531,9 +552,13 @@ bg_bump_alive_entries() {
             end
           ' <<<"$next")" || true
         bg_sidecar_clear "$sid"
+        actions+=("demote:${sid}")
+        touched+=("$sid")
+        n_demote=$((n_demote + 1))
         if declare -F runtime_log_info >/dev/null 2>&1; then
           runtime_log_info attention "bg bump demoted" \
             "session_id=$sid" "claude_status=${claude_st:-}" \
+            "trigger_session_id=${trigger:-}" \
             "done_kind=bg_finished" 2>/dev/null || true
         fi
       fi
@@ -542,7 +567,57 @@ bg_bump_alive_entries() {
       | select(.value.status == "running" and (.value.running_kind // "") == "background")
       | .key
     ' <<<"$current" 2>/dev/null || true)
+
+    # No bg-running rows → nothing to do (avoid rev churn / journal noise).
+    if [[ "$next" == "$current" ]]; then
+      exit 0
+    fi
+
+    actions_json='[]'
+    touched_json='[]'
+    if [[ ${#actions[@]} -gt 0 ]]; then
+      actions_json="$(printf '%s\n' "${actions[@]}" | jq -R . | jq -s -c .)"
+    fi
+    if [[ ${#touched[@]} -gt 0 ]]; then
+      touched_json="$(printf '%s\n' "${touched[@]}" | jq -R . | jq -s -c 'unique')"
+    fi
+
+    if [[ "$n_demote" -gt 0 || "$n_recover" -gt 0 || "$n_hold" -gt 0 ]]; then
+      if [[ "$n_demote" -gt 0 && "$n_recover" -eq 0 && "$n_hold" -eq 0 ]]; then
+        detail="bg_bump_demote"
+      elif [[ "$n_recover" -gt 0 && "$n_demote" -eq 0 && "$n_hold" -eq 0 ]]; then
+        detail="bg_bump_recover"
+      elif [[ "$n_hold" -gt 0 && "$n_demote" -eq 0 && "$n_recover" -eq 0 ]]; then
+        detail="bg_bump_hold_shell"
+      else
+        detail="bg_bump_mixed"
+      fi
+      export AGENT_ATTENTION_AUDIT_OP=write
+      export AGENT_ATTENTION_AUDIT_OP_DETAIL="$detail"
+      export AGENT_ATTENTION_AUDIT_TRIGGER_SESSION_ID="${trigger:-}"
+      export AGENT_ATTENTION_AUDIT_TOUCHED_SESSION_IDS="$touched_json"
+      export AGENT_ATTENTION_AUDIT_BG_BUMP_ACTIONS="$actions_json"
+      # Primary session_id: first touched (forensics column); full list in touched_session_ids.
+      export AGENT_ATTENTION_AUDIT_SESSION_ID="${touched[0]:-}"
+      export AGENT_ATTENTION_AUDIT_PREV_STATUS=running
+      if [[ "$n_demote" -gt 0 && "$n_recover" -eq 0 && "$n_hold" -eq 0 ]]; then
+        export AGENT_ATTENTION_AUDIT_STATUS=done
+        unset AGENT_ATTENTION_RUNNING_KIND || true
+      else
+        export AGENT_ATTENTION_AUDIT_STATUS=running
+        export AGENT_ATTENTION_RUNNING_KIND=background
+      fi
+      unset AGENT_ATTENTION_AUDIT_SKIP || true
+    else
+      # Keep-only TTL refresh: write state, skip journal flood.
+      export AGENT_ATTENTION_AUDIT_SKIP=1
+    fi
+
     attention_state_write "$next"
+    unset AGENT_ATTENTION_AUDIT_SKIP \
+      AGENT_ATTENTION_AUDIT_TRIGGER_SESSION_ID \
+      AGENT_ATTENTION_AUDIT_TOUCHED_SESSION_IDS \
+      AGENT_ATTENTION_AUDIT_BG_BUMP_ACTIONS || true
   ) 9>"$lock"
 }
 

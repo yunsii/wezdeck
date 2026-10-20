@@ -404,8 +404,12 @@ if command -v git >/dev/null 2>&1; then
 fi
 
 # Refresh ts for long-lived bg-running entries before TTL prune so
-# npm run dev-style shells keep ● while still outstanding.
+# npm run dev-style shells keep ● while still outstanding. Pass the
+# emit session as trigger so cross-session demote/recover journal rows
+# name who provoked the bump (forensics: trigger_session_id).
+export AGENT_ATTENTION_TRIGGER_SESSION_ID="${session_id:-}"
 bg_bump_alive_entries 2>/dev/null || true
+unset AGENT_ATTENTION_TRIGGER_SESSION_ID || true
 attention_state_prune 1800000 2>/dev/null || true
 
 # New turn: do NOT wipe sidecar. Reconcile exited tasks; keep outstanding

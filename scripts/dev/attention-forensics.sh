@@ -201,7 +201,10 @@ print(f"# attention forensics day={day} around={around or '-'} session={session 
 print(f"# journal={journal}")
 print(f"# window={lo.strftime('%H:%M:%S')}..{hi.strftime('%H:%M:%S')} rows={len(rows)}")
 print()
-hdr = f"{'time':8} {'rev':>5} {'op':12} {'prev':8} {'status':8} {'r/w/d':7} {'digest':8} {'session':10} {'detail':12} {'ui':24}"
+hdr = (
+    f"{'time':8} {'rev':>5} {'op':12} {'prev':8} {'status':8} {'r/w/d':7} "
+    f"{'digest':8} {'session':10} {'detail':16} {'trigger':10} {'ui':24}"
+)
 print(hdr)
 print("-" * len(hdr))
 
@@ -211,7 +214,8 @@ for dt, o in rows:
     sid = (o.get("session_id") or "-")[:10]
     prev = (o.get("prev_status") or "-")[:8]
     st = (o.get("status") or "-")[:8]
-    detail = (o.get("op_detail") or o.get("raw_event") or "-")[:12]
+    detail = (o.get("op_detail") or o.get("raw_event") or "-")[:16]
+    trigger = (o.get("trigger_session_id") or "-")[:10]
     ui = "-"
     nr = nearest(reloaded, dt)
     if nr:
@@ -229,8 +233,19 @@ for dt, o in rows:
             snap = " snap"
     print(
         f"{dt.strftime('%H:%M:%S'):8} {str(o.get('rev')):>5} {(o.get('op') or '-'):12} "
-        f"{prev:8} {st:8} {cwd:7} {(o.get('digest') or '-'):8} {sid:10} {detail:12} {ui}{snap}"
+        f"{prev:8} {st:8} {cwd:7} {(o.get('digest') or '-'):8} {sid:10} {detail:16} "
+        f"{trigger:10} {ui}{snap}"
     )
+    # Cross-session bg_bump: show who was touched (omit when empty).
+    touched = o.get("touched_session_ids") or []
+    actions = o.get("bg_bump_actions") or []
+    if touched or actions:
+        extra = []
+        if actions:
+            extra.append("actions=" + ",".join(str(a) for a in actions))
+        if touched:
+            extra.append("touched=" + ",".join(str(t)[:13] for t in touched))
+        print(f"{'':8} {'':>5}   # " + " ".join(extra))
 
 if rows:
     print()

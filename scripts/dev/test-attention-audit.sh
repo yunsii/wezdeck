@@ -135,4 +135,50 @@ jq -e '.rev==1 and .entries["sess-heal"].status=="running"' "$tmp/attention.json
   || fail "corrupt file did not heal"
 pass "unparseable disk still self-heals"
 
+# --- bg_bump forensics fields + AUDIT_SKIP ---
+# Reset to a known rev so writes advance cleanly.
+printf '%s\n' '{"version":1,"rev":10,"entries":{"bg-a":{"session_id":"bg-a","status":"running","running_kind":"background","ts":1}},"recent":[]}' \
+  > "$tmp/attention.json"
+: > "$WEZTERM_ATTENTION_JOURNAL_FILE"
+
+export AGENT_ATTENTION_AUDIT_OP=write
+export AGENT_ATTENTION_AUDIT_SESSION_ID=bg-a
+export AGENT_ATTENTION_AUDIT_PREV_STATUS=running
+export AGENT_ATTENTION_AUDIT_STATUS=done
+export AGENT_ATTENTION_AUDIT_OP_DETAIL=bg_bump_demote
+export AGENT_ATTENTION_AUDIT_TRIGGER_SESSION_ID=trigger-sess
+export AGENT_ATTENTION_AUDIT_TOUCHED_SESSION_IDS='["bg-a"]'
+export AGENT_ATTENTION_AUDIT_BG_BUMP_ACTIONS='["demote:bg-a"]'
+unset AGENT_ATTENTION_AUDIT_SKIP || true
+unset AGENT_ATTENTION_RUNNING_KIND || true
+
+payload_demote="$(jq -c '
+  .entries["bg-a"].status="done"
+  | .entries["bg-a"].done_kind="bg_finished"
+  | del(.entries["bg-a"].running_kind)
+' "$tmp/attention.json")"
+attention_state_write "$payload_demote" || fail "bg_bump demote write"
+j_demote="$(tail -n1 "$WEZTERM_ATTENTION_JOURNAL_FILE")"
+echo "$j_demote" | jq -e '
+  .op_detail=="bg_bump_demote"
+  and .trigger_session_id=="trigger-sess"
+  and (.touched_session_ids|index("bg-a"))
+  and (.bg_bump_actions|index("demote:bg-a"))
+  and .status=="done"
+' >/dev/null || fail "bg_bump demote journal missing fields: $j_demote"
+pass "bg_bump demote journal fields"
+
+# Keep-only path: AUDIT_SKIP=1 must not append a journal row.
+lines_before="$(wc -l < "$WEZTERM_ATTENTION_JOURNAL_FILE" | tr -d ' ')"
+export AGENT_ATTENTION_AUDIT_SKIP=1
+export AGENT_ATTENTION_AUDIT_OP_DETAIL=bg_bump_keep
+payload_keep="$(jq -c '.entries["bg-a"].ts=99' "$tmp/attention.json")"
+attention_state_write "$payload_keep" || fail "bg_bump keep write"
+lines_after="$(wc -l < "$WEZTERM_ATTENTION_JOURNAL_FILE" | tr -d ' ')"
+[[ "$lines_after" == "$lines_before" ]] || fail "AUDIT_SKIP still journaled ($lines_before → $lines_after)"
+jq -e '.rev==12 and .entries["bg-a"].ts==99' "$tmp/attention.json" >/dev/null \
+  || fail "keep write did not advance state under AUDIT_SKIP"
+unset AGENT_ATTENTION_AUDIT_SKIP || true
+pass "AUDIT_SKIP skips journal but writes state"
+
 echo "ALL PASSED"
