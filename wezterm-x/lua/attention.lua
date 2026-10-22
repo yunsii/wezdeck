@@ -118,9 +118,11 @@ local focus_settle_pin = nil
 local last_prune_ms = 0
 local last_live_snapshot_ms = 0
 local last_snapshot_warn_ms = 0
+-- Forward declare: pick_next (above the definition site) closes over this
+-- for the soft-session cursor path. Assigned at the real definition below.
+local cached_tmux_focus
 
 local module_logger = nil
-
 local function now_ms()
   local ok, formatted = pcall(function()
     return wezterm.time.now():format '%s%3f'
@@ -1986,13 +1988,24 @@ end
 --
 -- Cursor precedence for the round-robin step:
 --   1. Live focus via is_entry_focused (wezterm pane + tmux-focus file).
---   2. last_jump_by_kind from M.note_jump — only when that entry still
+--   2. Soft session cursor: current wezterm pane hosts a tmux session
+--      that still has a pool entry. Manual Alt+n / click onto a mid-list
+--      ● tab does not call note_jump; when the tmux-focus file lags or
+--      is missing, (1) misses and a stale last_jump at the pool tail
+--      would wrap to pool[1] — skipping every running tab to the right
+--      of the user (repro 2026-10-22: work tab 2 focused, tabs 3+ still
+--      ●, Alt+l jumped to tab 1). Soft cursor beats last_jump so the
+--      sweep continues from the hosted session. When the focus file
+--      names a sibling pane not in the pool, land on the first soft
+--      entry (do not step past) so a primary/secondary split still
+--      reaches the sibling ●.
+--   3. last_jump_by_kind from M.note_jump — only when that entry still
 --      sits in the current workspace (or the current workspace has no
 --      local candidates). Covers the case where Alt+l already landed
---      but the tmux-focus file has not caught up; without (2) every
+--      but the tmux-focus file has not caught up; without (3) every
 --      press re-picks pool[1] and the key feels dead. A foreign
 --      last_jump must not override a local-workspace sweep.
---   3. No cursor → leftmost of current workspace (rightmost if reverse).
+--   4. No cursor → leftmost of current workspace (rightmost if reverse).
 --
 -- Returns nil when the only candidate is *really focused*: the user is
 -- already there and has nothing left to jump to. Old fallback
@@ -2000,12 +2013,13 @@ end
 -- but it still ran the post-jump optimistically_hide + forget side
 -- effects, silently archiving the pane the user was actively looking at.
 --
--- last_jump alone must NOT trigger that nil: the user may have Alt+l'd
--- to the sole running entry, then manually switched workspace/tab, and
--- pressed Alt+l again expecting to jump back. Treating last_jump as
--- "still focused" made the key log `alt-l jump running empty` while the
--- ● counter still showed 1 (repro 2026-09-08: coco-forge sole running,
--- focus on ai-video-collection pane 2 after a prior jump).
+-- last_jump / soft-session alone must NOT trigger that nil: the user may
+-- have Alt+l'd to the sole running entry, then manually switched
+-- workspace/tab, and pressed Alt+l again expecting to jump back.
+-- Treating last_jump as "still focused" made the key log
+-- `alt-l jump running empty` while the ● counter still showed 1
+-- (repro 2026-09-08: coco-forge sole running, focus on
+-- ai-video-collection pane 2 after a prior jump).
 function M.pick_next(kind, current_pane_id, opts)
   local reverse = type(opts) == 'table' and opts.reverse == true
   local waiting, done, running = M.collect()
@@ -2032,12 +2046,12 @@ function M.pick_next(kind, current_pane_id, opts)
   -- Round-robin in spatial order. The older "first non-focused" scan
   -- ping-ponged forever between the two oldest entries whenever the
   -- pool had 3+: from A it picked B, from B it picked A again, and C
-  -- was never reachable. Find the focused / last-jumped slot (if any)
-  -- and step forward (or backward when reverse). When nothing in the
-  -- pool is a cursor, land on the leftmost of the current workspace
-  -- (rightmost if reverse). When the only candidate is *really focused*,
-  -- return nil — last_jump alone must NOT suppress (user may have
-  -- jumped away after Alt+l).
+  -- was never reachable. Find the focused / soft-session / last-jumped
+  -- slot (if any) and step forward (or backward when reverse). When
+  -- nothing in the pool is a cursor, land on the leftmost of the
+  -- current workspace (rightmost if reverse). When the only candidate
+  -- is *really focused*, return nil — last_jump / soft alone must NOT
+  -- suppress (user may have jumped away after Alt+l).
   local focused_idx = nil
   for i, entry in ipairs(pool) do
     local at_current
@@ -2062,6 +2076,47 @@ function M.pick_next(kind, current_pane_id, opts)
     end
   end
   local cursor_idx = focused_idx
+  -- Soft session: hosted session has pool rows but exact pane focus
+  -- missed (focus-file lag after manual tab switch, or sibling split).
+  if not cursor_idx and current then
+    local hosted = pane_hosted_session(current)
+    if type(hosted) == 'string' and hosted ~= '' then
+      local soft_indices = {}
+      for i, entry in ipairs(pool) do
+        if entry.tmux_session == hosted then
+          soft_indices[#soft_indices + 1] = i
+        end
+      end
+      if #soft_indices > 0 then
+        local soft0 = pool[soft_indices[1]]
+        local active = nil
+        if type(soft0.tmux_socket) == 'string' and soft0.tmux_socket ~= '' then
+          active = cached_tmux_focus(soft0.tmux_socket, hosted)
+        end
+        local matched_idx = nil
+        if type(active) == 'string' and active ~= '' then
+          for _, i in ipairs(soft_indices) do
+            if pool[i].tmux_pane == active then
+              matched_idx = i
+              break
+            end
+          end
+        end
+        if matched_idx then
+          -- Focus file names a pool pane: same as live focus for stepping.
+          cursor_idx = matched_idx
+        elseif active == nil then
+          -- Missing focus file after manual tab focus: continue from the
+          -- hosted session (step past) so later ● tabs stay reachable.
+          cursor_idx = soft_indices[1]
+        else
+          -- Focus file names a sibling pane outside this pool — land on
+          -- the first soft entry without stepping past.
+          return pool[soft_indices[1]]
+        end
+      end
+    end
+  end
   if not cursor_idx then
     local last_key = last_jump_by_kind[kind]
     if type(last_key) == 'string' and last_key ~= '' then
@@ -2118,7 +2173,8 @@ function M.pick_next(kind, current_pane_id, opts)
   end
   if #pool == 1 then
     -- Suppress only when live focus says we are on the sole entry.
-    -- A last_jump-only cursor means the user has since moved away.
+    -- A last_jump / soft-session cursor means the user has since moved
+    -- away (or focus-file lagged) — still offer the jump back.
     if focused_idx then
       return nil
     end
@@ -2199,7 +2255,9 @@ end
 -- demand and cleared by reload_state so one render tick shares reads
 -- across is_entry_focused + maybe_ack_focused but successive ticks
 -- always see fresh focus state.
-local function cached_tmux_focus(socket, session)
+-- Assigned (not `local function`) so pick_next above can close over the
+-- upvalue; the forward declare sits with the other module locals.
+cached_tmux_focus = function(socket, session)
   local key = (socket or '') .. '|' .. (session or '')
   local cached = tmux_focus_cache[key]
   if cached == nil then
@@ -2210,7 +2268,6 @@ local function cached_tmux_focus(socket, session)
   if cached == false then return nil end
   return cached
 end
-
 -- True when the entry belongs to the currently-focused (WezTerm pane +
 -- tmux pane). When the entry carries tmux coordinates we require the
 -- tmux-focus file to name the entry's pane; missing or mismatched focus

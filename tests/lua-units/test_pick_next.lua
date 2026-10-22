@@ -686,7 +686,8 @@ describe('pick_next — spatial order (current workspace L→R first)', function
         .. tostring(now - 500) .. ',"reason":"work right"}'
       .. '}}'
     -- Focus on work session a / %1 while running entries are on %2 and
-    -- other panes — no cursor match in the running pool.
+    -- other panes — exact focus misses; soft session lands on the
+    -- sibling ● without stepping past (same result as leftmost).
     local tmp = setup_state(entries, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%1', {
       { socket = '/tmp/sock', session = 'wezterm_work_b_bbbbbbbbbb', tmux_pane = '%1' },
       { socket = '/tmp/sock', session = 'wezterm_other_c_cccccccccc', tmux_pane = '%1' },
@@ -696,6 +697,59 @@ describe('pick_next — spatial order (current workspace L→R first)', function
     assert_truthy(picked, 'no-cursor pick nil')
     assert_eq(picked.session_id, 'r_work_left',
       'no cursor should land on leftmost current-workspace running')
+  end)
+
+  it('soft session cursor beats stale last_jump so mid-tab Alt+l goes forward', function()
+    -- Repro 2026-10-22: user manually focuses work tab 2 (running),
+    -- tabs 3+ still ●, but exact is_entry_focused misses (no / stale
+    -- tmux-focus). A prior Alt+l left last_jump on the rightmost
+    -- entry; without soft session that cursor wraps to pool[1].
+    reset()
+    mock.set_mux {
+      windows = {
+        {
+          workspace = 'work',
+          tabs = {
+            { id = 1, title = 'left', active_pane = { id = 41 } },
+            { id = 2, title = 'mid', active_pane = { id = 42 } },
+            { id = 3, title = 'right', active_pane = { id = 43 } },
+          },
+        },
+      },
+    }
+    tab_visibility.set_pane_session(41, 'wezterm_work_a_aaaaaaaaaa')
+    tab_visibility.set_pane_session(42, 'wezterm_work_b_bbbbbbbbbb')
+    tab_visibility.set_pane_session(43, 'wezterm_work_c_cccccccccc')
+    local now = os.time() * 1000
+    local entries = '{"version":1,"entries":{'
+      .. '"r_left":{"session_id":"r_left","wezterm_pane_id":"41",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_a_aaaaaaaaaa",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 3000) .. ',"reason":"left"},'
+      .. '"r_mid":{"session_id":"r_mid","wezterm_pane_id":"42",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_b_bbbbbbbbbb",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 2000) .. ',"reason":"mid"},'
+      .. '"r_right":{"session_id":"r_right","wezterm_pane_id":"43",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"wezterm_work_c_cccccccccc",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":'
+        .. tostring(now - 1000) .. ',"reason":"right"}'
+      .. '}}'
+    -- Focus files for left/right only — mid has none (manual tab
+    -- switch lag). Stale last_jump points at rightmost.
+    local tmp = setup_state(entries, '/tmp/sock', 'wezterm_work_a_aaaaaaaaaa', '%1', {
+      { socket = '/tmp/sock', session = 'wezterm_work_c_cccccccccc', tmux_pane = '%1' },
+    })
+    attention.note_jump(attention.STATUS_RUNNING, {
+      session_id = 'r_right',
+      tmux_window = '@1',
+      tmux_pane = '%1',
+    })
+    local picked = attention.pick_next(attention.STATUS_RUNNING, 42)
+    cleanup(tmp)
+    assert_truthy(picked, 'soft mid pick nil')
+    assert_eq(picked.session_id, 'r_right',
+      'from mid with missing focus file must step forward, not wrap to left')
   end)
 end)
 
