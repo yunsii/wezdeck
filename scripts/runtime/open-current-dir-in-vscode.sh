@@ -114,6 +114,13 @@ vscode_file_json_fragment() {
   printf ',\"file\":%s' "$(json_escape "$target_file")"
 }
 
+vscode_family_dir_json_fragment() {
+  if [[ -z "${family_dir:-}" ]]; then
+    return 0
+  fi
+  printf ',\"family_dir\":%s' "$(json_escape "$family_dir")"
+}
+
 helper_state_is_fresh() {
   windows_runtime_helper_state_is_fresh "$HELPER_STATE_WSL" 5000
 }
@@ -157,7 +164,7 @@ invoke_helper_request() {
     code_part+="$(json_escape "$code_arg")"
   done
 
-  request_body="{\"version\":2,\"trace_id\":$(json_escape "$trace_id"),\"message_type\":\"request\",\"domain\":\"vscode\",\"action\":\"focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]$(vscode_max_windows_json_fragment)$(vscode_file_json_fragment)}}"
+  request_body="{\"version\":2,\"trace_id\":$(json_escape "$trace_id"),\"message_type\":\"request\",\"domain\":\"vscode\",\"action\":\"focus_or_open\",\"payload\":{\"requested_dir\":$(json_escape "$target_dir"),\"distro\":$(json_escape "$WSL_DISTRO_NAME"),\"code_command\":[${code_part}]$(vscode_max_windows_json_fragment)$(vscode_file_json_fragment)$(vscode_family_dir_json_fragment)}}"
   request_body_b64="$(printf '%s' "$request_body" | base64 | tr -d '\r\n')"
   "$HELPER_CLIENT_WSL" request --pipe "$HELPER_IPC_ENDPOINT" --payload-base64 "$request_body_b64" --timeout-ms 5000 >/dev/null 2>&1
 }
@@ -250,6 +257,7 @@ code_command=()
 tmux_window_id=""
 window_root=""
 target_file=""
+family_dir=""
 start_ms="$(runtime_log_now_ms)"
 trace_id="vscode-$(runtime_log_generate_trace_id)"
 export WEZTERM_RUNTIME_TRACE_ID="$trace_id"
@@ -337,6 +345,17 @@ fi
 
 if [[ -z "$window_root" ]] && repo_root="$(tmux_worktree_repo_root "$target_dir" 2>/dev/null || true)" && [[ -n "$repo_root" ]]; then
   target_dir="$repo_root"
+fi
+
+# Repo-family root (main checkout): reuse key for one VS Code window per family.
+# target_dir stays the live worktree so --folder-uri opens the right tree.
+family_dir=""
+family_common="$(tmux_worktree_common_dir "$target_dir" 2>/dev/null || true)"
+if [[ -n "$family_common" ]]; then
+  family_dir="$(tmux_worktree_main_root "$family_common" 2>/dev/null || true)"
+fi
+if [[ -z "$family_dir" || ! -d "$family_dir" ]]; then
+  family_dir="$target_dir"
 fi
 
 if [[ -z "${WSL_DISTRO_NAME:-}" ]] || ! command -v powershell.exe >/dev/null 2>&1 || ! command -v wslpath >/dev/null 2>&1 || ! detect_windows_paths; then

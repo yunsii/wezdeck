@@ -226,6 +226,69 @@ internal static class WindowQuery
         return null;
     }
 
+    // Post-launch bind for Alt+v. Previously waited up to 4s for the new
+    // window to *already be foreground*, then another 4s for cmdline match
+    // (always empty on Electron), then another 4s for a new hwnd — so a
+    // cold open with an existing Code window sat on a flashing taskbar for
+    // ~8s before TryActivateWindow ran. One poll prefers the earliest
+    // usable signal:
+    //   1. new visible hwnd (taskbar already lit) → activate immediately
+    //   2. title marker (VS Code de-duped into an existing window)
+    //   3. foreground already switched to Code
+    public static LaunchedWindowBind? WaitForLaunchedWindow(
+        string expectedProcessName,
+        IReadOnlySet<IntPtr> existingWindowHandles,
+        ForegroundWindowInfo? initialForeground,
+        string? titleFolderMarker,
+        int timeoutMs)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var acceptSameForeground = initialForeground == null
+            || !string.Equals(initialForeground.ProcessName, expectedProcessName, StringComparison.OrdinalIgnoreCase);
+
+        while (stopwatch.ElapsedMilliseconds < timeoutMs)
+        {
+            var visible = EnumerateVisibleTopLevelWindows(expectedProcessName);
+
+            foreach (var window in visible)
+            {
+                if (!existingWindowHandles.Contains(window.WindowHandle))
+                {
+                    return new LaunchedWindowBind(window, "launch_bind_new_visible_window");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(titleFolderMarker))
+            {
+                var titled = FindWindowShowingFolder(visible, titleFolderMarker);
+                if (titled != null)
+                {
+                    return new LaunchedWindowBind(titled, "launch_bind_title_folder");
+                }
+            }
+
+            var foreground = GetForegroundWindowInfo();
+            if (foreground != null
+                && string.Equals(foreground.ProcessName, expectedProcessName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (acceptSameForeground
+                    || foreground.ProcessId != initialForeground?.ProcessId
+                    || foreground.WindowHandle != initialForeground.WindowHandle)
+                {
+                    return new LaunchedWindowBind(
+                        new WindowMatch(foreground.ProcessId, foreground.WindowHandle),
+                        "launch_bind_foreground_window");
+                }
+            }
+
+            Thread.Sleep(40);
+        }
+
+        return null;
+    }
+
+    internal sealed record LaunchedWindowBind(WindowMatch Window, string DecisionPath);
+
     public static ForegroundWindowInfo? GetForegroundWindowInfo()
     {
         var windowHandle = NativeMethods.GetForegroundWindow();

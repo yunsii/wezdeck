@@ -28,6 +28,77 @@ internal static class PathResolvers
         return normalizedDirectory;
     }
 
+    // Main checkout root for a git repo family (dirname of --git-common-dir).
+    // Linked worktrees under .worktrees/<repo>/<slug> share one family with the
+    // primary so Alt+v reuses a single VS Code window across them.
+    public static string ResolveRepoFamilyRoot(string directory, string distribution)
+    {
+        var worktreeRoot = ResolveWorktreeRoot(directory, distribution);
+        var uncRoot = ConvertToWslUncPath(worktreeRoot, distribution);
+        if (string.IsNullOrWhiteSpace(uncRoot))
+        {
+            return worktreeRoot;
+        }
+
+        var gitDirPath = Path.Combine(uncRoot, ".git");
+        if (Directory.Exists(gitDirPath))
+        {
+            // Primary checkout: .git is a directory → family root is this tree.
+            return worktreeRoot;
+        }
+
+        if (!File.Exists(gitDirPath))
+        {
+            return worktreeRoot;
+        }
+
+        // Linked worktree: .git is a file "gitdir: <abs>/.git/worktrees/<name>".
+        string? gitdirLine;
+        try
+        {
+            gitdirLine = File.ReadLines(gitDirPath).FirstOrDefault();
+        }
+        catch
+        {
+            return worktreeRoot;
+        }
+
+        if (string.IsNullOrWhiteSpace(gitdirLine))
+        {
+            return worktreeRoot;
+        }
+
+        const string prefix = "gitdir:";
+        if (!gitdirLine.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return worktreeRoot;
+        }
+
+        var gitdirValue = gitdirLine[prefix.Length..].Trim().Replace('\\', '/');
+        if (string.IsNullOrWhiteSpace(gitdirValue))
+        {
+            return worktreeRoot;
+        }
+
+        // …/<main>/.git/worktrees/<name> → …/<main>/.git → …/<main>
+        var normalizedGitdir = NormalizeWslPath(gitdirValue);
+        var worktreesMarker = "/.git/worktrees/";
+        var markerIndex = normalizedGitdir.IndexOf(worktreesMarker, StringComparison.OrdinalIgnoreCase);
+        if (markerIndex > 0)
+        {
+            return NormalizeWslPath(normalizedGitdir[..markerIndex]);
+        }
+
+        // …/<main>/.git (unusual pointer) → …/<main>
+        if (normalizedGitdir.EndsWith("/.git", StringComparison.OrdinalIgnoreCase)
+            && normalizedGitdir.Length > 5)
+        {
+            return NormalizeWslPath(normalizedGitdir[..^5]);
+        }
+
+        return worktreeRoot;
+    }
+
     public static string BuildVscodeFolderUri(string distro, string targetDir)
     {
         return $"vscode-remote://wsl+{Uri.EscapeDataString(distro)}{ConvertToVscodeRemotePath(targetDir)}";

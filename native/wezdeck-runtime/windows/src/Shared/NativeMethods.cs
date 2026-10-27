@@ -118,7 +118,30 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    // Undocumented but widely used: forces Z-order + activation the way
+    // Alt+Tab does. Needed when SetForegroundWindow alone only flashes the
+    // taskbar because wezdeck-runtime is not the foreground process.
+    [DllImport("user32.dll")]
+    public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool LockSetForegroundWindow(uint uLockCode);
+
+    public const uint LsfwLock = 1;
+    public const uint LsfwUnlock = 2;
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool AllowSetForegroundWindow(int dwProcessId);
+
+    public const int AsfwAny = -1;
 
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, uint processId);
