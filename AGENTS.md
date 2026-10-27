@@ -239,6 +239,13 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - After runtime config changes, run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (Bash, not the `Skill` tool — see the note above). **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is left untouched). Use `--live` to skip the gate; `WEZTERM_SYNC_SKIP_CANARY_AUTO=1` to stage without probing. Full flow: [`docs/daily-workflow.md`](docs/daily-workflow.md).
 - Do not run Git commands that can contend on the index lock in parallel.
 - Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
+- **Default-branch delivery:** this repo develops on primary `master`. When the
+  user asks to commit and/or push and HEAD is already `master`/`main` (or the
+  resolved default), **do it there** — do **not** ask whether to create a
+  feature branch vs continue on the default branch (any commit helper that
+  prompts that way is overridden here). Still ask on detached HEAD,
+  mid-rebase/merge, or when the user explicitly wants a branch; force-push /
+  history rewrite still needs explicit yes.
 - **Worktree maintenance:** linked `dev-*` trees are for **isolation**, not PRs.
   Finish a round by delivering **directly onto mainline** (`origin/HEAD` / primary
   `master` push or ff — **no pull request**), then **immediately** recycle so the
