@@ -530,6 +530,55 @@ else
 fi
 rm -rf "$sandbox"
 
+# Case 22b — rich-sized unparseable file: hook must NOT wipe it (sync-time
+# DrvFS false-heal, 2026-10-27 rev 4386→2). ≥200 bytes of garbage trips
+# ATTENTION_STATE_RICH_MIN_BYTES; write refuses and leaves the file alone.
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention"
+state_path="$sandbox/wezterm-runtime/state/agent-attention/attention.json"
+python3 -c "open(r'$state_path','wb').write(b'{\"version\":1,\"rev\":4386,\"entries\":{' + b'x'*280)"
+before_size="$(wc -c <"$state_path" | tr -d '[:space:]')"
+MOCK_HOOK_STDIN='{"session_id":"sid-heal-rich","prompt":"should refuse"}' \
+  run_hook_in_sandbox "$sandbox" "running" "" "1" "$socket" "$session" "%5"
+after_size="$(wc -c <"$state_path" | tr -d '[:space:]')"
+if ! jq -e . "$state_path" >/dev/null 2>&1 \
+   && [[ "$after_size" == "$before_size" ]]; then
+  echo "  ✓ rich unparseable state: write refused, file untouched"
+  pass=$((pass+1))
+else
+  echo "  ✗ rich unparseable state: write refused, file untouched"
+  echo "    size before=$before_size after=$after_size parseable=$(jq -e . "$state_path" >/dev/null 2>&1 && echo yes || echo no)"
+  echo "    head=$(head -c 120 "$state_path" | tr '\n' ' ')"
+  fail=$((fail+1))
+fi
+rm -rf "$sandbox"
+
+# Case 22c — parseable multi-entry disk + empty-default read flags must
+# refuse clobber (file settled after a glitch while writer held empty base).
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention"
+state_path="$sandbox/wezterm-runtime/state/agent-attention/attention.json"
+printf '%s\n' '{"version":1,"rev":100,"entries":{"sid-a":{"session_id":"sid-a","status":"running","ts":1},"sid-b":{"session_id":"sid-b","status":"running","ts":2}},"recent":[]}' > "$state_path"
+write_rc="$(
+  guard_sandbox_paths "$sandbox/wezterm-runtime"
+  export WINDOWS_RUNTIME_STATE_WSL="$sandbox/wezterm-runtime"
+  export WINDOWS_LOCALAPPDATA_WSL="$sandbox"
+  export WINDOWS_USERPROFILE_WSL="$sandbox"
+  export WEZTERM_NO_PATH_CACHE=1
+  # shellcheck disable=SC1091
+  source "$lib"
+  ATTENTION_STATE_READ_FLAGS_FILE="$(attention_state_read_flags_path)"
+  attention_state_read_flags_store 1 0
+  empty='{"version":1,"rev":0,"entries":{},"recent":[]}'
+  next="$(jq -n --argjson cur "$empty" --arg sid sid-new \
+    '$cur | .entries[$sid] = {session_id:$sid,status:"running",ts:1}')"
+  if attention_state_write "$next"; then echo OK; else echo REFUSED; fi
+)"
+assert_eq "empty-default clobber over parseable disk refused" "REFUSED" "$write_rc"
+assert_eq "empty-default clobber: sid-a still present" "running" "$(jq -r '.entries["sid-a"].status // empty' "$state_path")"
+assert_eq "empty-default clobber: sid-b still present" "running" "$(jq -r '.entries["sid-b"].status // empty' "$state_path")"
+rm -rf "$sandbox"
+
 echo
 echo "▸ background running substate (Stop + sidecar / Grok Stop payload)"
 

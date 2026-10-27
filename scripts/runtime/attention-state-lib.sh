@@ -217,6 +217,12 @@ attention_state_now_ms() {
 # the upstream writer's empty $next would then trip attention_state_write's
 # refuse-empty guard, leaving the file stuck corrupt forever.
 #
+# Bytes at/above this size mean the on-disk document was almost certainly a
+# live multi-entry counter, not a brand-new empty file. Used to refuse
+# empty-default / unparseable heals that would wipe siblings (sync-time
+# DrvFS pressure, 2026-10-27: rev 4386 → 2 during sync-runtime).
+ATTENTION_STATE_RICH_MIN_BYTES="${ATTENTION_STATE_RICH_MIN_BYTES:-200}"
+
 # Transient DrvFS read windows (rename of attention.json mid-`cat`) can
 # look like corruption for a few milliseconds. Retry a handful of times
 # before falling back to the empty default — the empty fallback plus a
@@ -225,28 +231,85 @@ attention_state_now_ms() {
 # also refuses to publish a lower-rev payload over a richer on-disk
 # document, so a residual false heal cannot wipe the counter.
 #
-# When retries still fail we treat the file as the empty default state.
-# The next successful write produces a clean baseline. Logs a warn on
-# the final fallback so the trail still shows the corruption.
+# When retries still fail we treat the file as the empty default state
+# for the in-memory merge, but mark ATTENTION_STATE_READ_SUSPECT=1 when
+# the on-disk file is still large — write then refuses so sync-time
+# DrvFS glitches cannot publish rev≈1 over a multi-entry counter.
+# Tiny corrupt files (tests / brand-new) still self-heal on the next write.
+# Record read flags where the caller can see them even when the JSON
+# payload is captured via command substitution (which runs in a subshell
+# and would otherwise drop ATTENTION_STATE_READ_* assignments).
+attention_state_read_flags_path() {
+  if [[ -n "${ATTENTION_STATE_READ_FLAGS_FILE:-}" ]]; then
+    printf '%s' "$ATTENTION_STATE_READ_FLAGS_FILE"
+    return 0
+  fi
+  printf '%s.read-flags' "$(attention_state_lock_path)"
+}
+
+attention_state_read_flags_store() {
+  local from_empty="$1" suspect="$2" flags
+  flags="$(attention_state_read_flags_path)"
+  printf 'from_empty=%s\nsuspect=%s\n' "$from_empty" "$suspect" >"$flags" 2>/dev/null || true
+  ATTENTION_STATE_READ_FROM_EMPTY="$from_empty"
+  ATTENTION_STATE_READ_SUSPECT="$suspect"
+}
+
+attention_state_read_flags_load() {
+  local flags line
+  ATTENTION_STATE_READ_FROM_EMPTY=0
+  ATTENTION_STATE_READ_SUSPECT=0
+  flags="$(attention_state_read_flags_path)"
+  [[ -f "$flags" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    case "$line" in
+      from_empty=*) ATTENTION_STATE_READ_FROM_EMPTY="${line#from_empty=}" ;;
+      suspect=*) ATTENTION_STATE_READ_SUSPECT="${line#suspect=}" ;;
+    esac
+  done <"$flags"
+}
+
 attention_state_read() {
-  local path content attempt max_attempts=4
+  local path content attempt max_attempts=8 disk_size=0
   path="$(attention_state_path)"
   if [[ -f "$path" ]]; then
+    disk_size="$(wc -c <"$path" 2>/dev/null | tr -d '[:space:]' || printf '0')"
+    [[ "$disk_size" =~ ^[0-9]+$ ]] || disk_size=0
     for ((attempt = 1; attempt <= max_attempts; attempt++)); do
       content="$(cat "$path" 2>/dev/null || printf '')"
       if printf '%s' "$content" | jq -e . >/dev/null 2>&1; then
+        attention_state_read_flags_store 0 0
         printf '%s' "$content"
         return 0
       fi
       if (( attempt < max_attempts )); then
-        sleep 0.02 2>/dev/null || true
+        # Rich documents get a longer settle — DrvFS under sync-runtime
+        # rsync can return empty/partial for tens of ms.
+        if (( disk_size >= ATTENTION_STATE_RICH_MIN_BYTES )); then
+          sleep 0.05 2>/dev/null || true
+        else
+          sleep 0.02 2>/dev/null || true
+        fi
       fi
     done
-    if command -v runtime_log_warn >/dev/null 2>&1; then
-      runtime_log_warn attention "state file unparseable; resetting to empty" \
-        "path=$path" "size=${#content}" "attempts=$max_attempts" 2>/dev/null || true
+    if (( disk_size >= ATTENTION_STATE_RICH_MIN_BYTES )); then
+      attention_state_read_flags_store 1 1
+      if command -v runtime_log_warn >/dev/null 2>&1; then
+        runtime_log_warn attention "state file unparseable but rich-sized; empty fallback marked suspect" \
+          "path=$path" "size=$disk_size" "attempts=$max_attempts" 2>/dev/null || true
+      fi
+    else
+      attention_state_read_flags_store 1 0
+      if command -v runtime_log_warn >/dev/null 2>&1; then
+        runtime_log_warn attention "state file unparseable; resetting to empty" \
+          "path=$path" "size=${#content}" "attempts=$max_attempts" 2>/dev/null || true
+      fi
     fi
+  else
+    attention_state_read_flags_store 1 0
   fi
+  # Synthetic empty default (missing file or unparseable). Writers must not
+  # publish this over a still-rich on-disk document.
   printf '%s' '{"version":1,"rev":0,"entries":{},"recent":[]}'
 }
 
@@ -502,7 +565,7 @@ attention_state_audit_after_write() {
 # never fails the write.
 attention_state_write() {
   local payload="$1" path tmp bumped
-  local disk_rev new_rev disk_n new_n
+  local disk_rev new_rev disk_n new_n payload_rev disk_size=0
   if [[ -z "$payload" ]]; then
     return 1
   fi
@@ -513,6 +576,7 @@ attention_state_write() {
     mv "$tmp" "$path"
     return 0
   fi
+  payload_rev="$(printf '%s' "$payload" | jq -r '(.rev // 0) | tonumber | floor' 2>/dev/null || printf '0')"
   bumped="$(printf '%s' "$payload" | jq -c '
     .rev = (((.rev // 0) | tonumber) | floor | . + 1)
   ' 2>/dev/null || printf '')"
@@ -520,6 +584,41 @@ attention_state_write() {
     return 1
   fi
   path="$(attention_state_path)"
+  if [[ -f "$path" ]]; then
+    disk_size="$(wc -c <"$path" 2>/dev/null | tr -d '[:space:]' || printf '0')"
+    [[ "$disk_size" =~ ^[0-9]+$ ]] || disk_size=0
+  fi
+
+  # Reload flags written by attention_state_read (command-substitution safe).
+  attention_state_read_flags_load
+
+  # Rich-sized but still-unparseable disk: never heal-by-write (sync-time
+  # DrvFS glitch). Tiny corrupt files keep the self-heal path.
+  if (( disk_size >= ATTENTION_STATE_RICH_MIN_BYTES )) \
+     && ! jq -e . "$path" >/dev/null 2>&1; then
+    if command -v runtime_log_warn >/dev/null 2>&1; then
+      runtime_log_warn attention "state write refused; refuse to clobber rich-sized unparseable disk" \
+        "path=$path" "disk_size=$disk_size" "payload_rev=$payload_rev" \
+        "from_empty=${ATTENTION_STATE_READ_FROM_EMPTY:-0}" \
+        "suspect=${ATTENTION_STATE_READ_SUSPECT:-0}" 2>/dev/null || true
+    fi
+    return 1
+  fi
+
+  # Empty-default read while disk is a parseable multi-entry document:
+  # refuse publishing the heal (file reappeared / settled after glitch).
+  if [[ "${ATTENTION_STATE_READ_FROM_EMPTY:-0}" == "1" ]] \
+     && [[ -f "$path" ]] && jq -e . "$path" >/dev/null 2>&1; then
+    disk_n="$(jq -r '(.entries // {}) | length' "$path" 2>/dev/null || printf '0')"
+    if [[ "$disk_n" =~ ^[0-9]+$ ]] && (( disk_n >= 1 )); then
+      if command -v runtime_log_warn >/dev/null 2>&1; then
+        runtime_log_warn attention "state write refused; refuse empty-default clobber over parseable disk" \
+          "path=$path" "disk_entries=$disk_n" "payload_rev=$payload_rev" 2>/dev/null || true
+      fi
+      return 1
+    fi
+  fi
+
   if [[ -f "$path" ]] && jq -e . "$path" >/dev/null 2>&1; then
     disk_rev="$(jq -r '(.rev // 0) | tonumber | floor' "$path" 2>/dev/null || printf '0')"
     new_rev="$(jq -r '(.rev // 0) | tonumber | floor' <<<"$bumped" 2>/dev/null || printf '0')"
