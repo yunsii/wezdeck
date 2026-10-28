@@ -127,9 +127,13 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   allocation / VM reboot; `wsl-oom-guard.sh`, `M·…` / earlyoom; standing
   memory consumers including MCP/`uxc` and IDE `tsgo` / `goMemLimit`;
   guest `free` calm while Windows `VmmemWSL` still large /
-  `scripts/dev/wsl-host-mem.sh`):
+  `scripts/dev/wsl-host-mem.sh`) or guest CPU-load glanceable badge
+  (`L·…`, typing-stickiness early warning from the same status.json):
   Read [`docs/guest-oom.md`](docs/guest-oom.md)
-  ([Guest vs host memory meters](docs/guest-oom.md#guest-vs-host-memory-meters)).
+  ([Guest vs host memory meters](docs/guest-oom.md#guest-vs-host-memory-meters);
+  [`L·` badge](docs/guest-oom.md#the-l-badge-cpu-load) /
+  [`diagnostics.md` Guest load badge](docs/diagnostics.md#guest-load-badge-l)).
+
 - Host disk space (host volume full, `ext4.vhdx` never shrinking, sparse-VHD
   trap, trim→shutdown→Optimize-VHD / compact, OEM preinstalls, `D·…` badge):
   Read [`docs/host-disk.md`](docs/host-disk.md).

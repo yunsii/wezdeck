@@ -123,7 +123,7 @@ converts gap into avail; it does not create headroom.
 |---|---|
 | Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` |
 | Timer | `wezterm-disk-guard.timer` — user unit, 1 min after start then every 5 min |
-| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SB·N` |
+| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SB·N` (SB itself is absent while the watch poller is idle) |
 | History | `state/disk-guard/history.ndjson` — last 288 samples (~24h at 5 min) |
 | Escalation popup | `reminder.sh`, the same wrapper cron reminders use |
 

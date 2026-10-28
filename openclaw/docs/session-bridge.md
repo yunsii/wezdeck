@@ -98,7 +98,7 @@ P0–P1：**agent-poke** + panic。P2：+ **lease / host-send-keys / bot-send**�
 | 通知呈现 | **确定性 NotifyCard**（`notify_card.py`，**无 LLM**）：优先 **attention 结构化字段**（`reason` / `waiting_kind` / `last_user_prompt` / `agent_name`）+ capture 按 `kind` 族抽题目/选项 → 双通道渲染。飞书默认 markdown；poke 短纯文本 + `【host-watch · …】`。**禁止**整屏 dump / 横线墙。 |
 | need_human 文案 | attention 字段 + kind 族解析器抽题目/选项/当前选中；失败则清洗短摘要。兼容入口仍保留 `format-need-human.py`。 |
 | job 目录 | `~/.openclaw/state/session-bridge-watch/` |
-| WezTerm 徽章 | poller 每 tick 写 `%LOCALAPPDATA%/wezterm-runtime/state/session-bridge-watch/status.json`；right-status 在 **CDP 与 attention 之间** 显示 `◆ SB·-`（未跑）/ `◆ SB·N`（N=job 数）；`◆` 与 Alt+/ 列表里 sb 行的徽章同字形；waiting>0 时用 waiting 色 |
+| WezTerm 徽章 | poller 每 tick 写 `%LOCALAPPDATA%/wezterm-runtime/state/session-bridge-watch/status.json`；right-status 在 **CDP 与 D·/M·/L· 之间**：poller 未跑 / 心跳陈旧时**不渲染**（与 D·/M·/L· 同「有才显示」）；跑着时显示 `◆ SB·N`（N=job 数，含 0）；`◆` 与 Alt+/ 列表里 sb 行的徽章同字形；waiting>0 时用 waiting 色 |
 | Alt+/ 列表 | `tmux-attention-menu.sh` 追加 `session-bridge-watch-picker-rows.sh` 行（status=`sb`，徽章 ◆）；**Enter** 跳 pane；**Ctrl+X** on ◆ SB = `watch-stop --id` **软停**（`active=false`，job 文件保留审计；列表不再显示；**不**动 agent-attention）。同一快捷键在 live attention 行上则 archive+forget 该条（见 [`docs/agent-attention.md`](../../docs/agent-attention.md#keyboard)）。普通 `x` 仍可搜索。Tab 可筛 `[◆ SB watch]`。硬删：`SB_WATCH_PURGE=1 watch-stop` |
 | 默认 TTL | `defaults.watch.ttl_sec`（样例 5400s=90m）；**默认滑动续期** `ttl_renew_on_activity=true`：状态跃迁时重置到期时刻；真正闲置满 TTL 才 `ended`。单次 take 可用 `--ttl SEC` |
 | 遥控写键 | **不做**（take ≠ host-send-keys） |

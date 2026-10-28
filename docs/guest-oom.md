@@ -95,6 +95,18 @@ Same "nothing while healthy" contract as `D·`: presence is the signal, and neve
 
 **It reports whichever axis is worse, and that is the point.** Through the whole 2026-07-26 run-up memory read a calm 88% while swap drained from 20% free to zero. A memory-only badge would have been accurate and useless. Thresholds: warn at 85% memory (same number as the high-water mark, so the bar and the log agree) or 70% swap; crit at 93% / 90%.
 
+##### The `L·` badge (CPU load)
+
+The same `status.json` already carries `loadavg_1` / `loadavg_5` / `loadavg_15` for latency slow-row enrichment. [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua) classifies `loadavg_1` into a right-status badge after `M·`, so a **CPU-only** storm (memory still `ok`) is glanceable before typing feels sticky:
+
+```
+(absent)   loadavg_1 below warn (default 8), or stale / never published
+L·12       warn (amber)
+L·23       crit (red; default loadavg_1 >= 16)
+```
+
+Calibrated 2026-10-28 against sticky-typing reports (`loadavg_1≥8` on most slow status ticks; storm ~15–23). Thresholds live in `constants.load_guard`. Stale-recorder signalling stays on `M·` only. Detail: [`diagnostics.md`](./diagnostics.md) "Guest load badge".
+
 Publishing is on level change plus a 30 s heartbeat, not every 10 s tick — the status file is on the Windows side of the 9p boundary and belongs nowhere near a hot path (see [`performance.md`](./performance.md)).
 
 **The status-file path is resolved at install time and baked into the unit** as `Environment=WEZTERM_OOM_STATUS_FILE=`. The recorder is a *system* unit running as root, where `$HOME` is `/root` (so the per-user Windows-path cache is invisible) and a systemd unit has no Windows interop — it cannot resolve the path itself at runtime. The installer resolves it as `$SUDO_USER` instead. If resolution fails the guard still protects and logs; only the badge goes missing. `install-wsl-oom-guard.sh --check` prints both the path it *would* bake and the one the installed unit actually carries, because a guard that protects but never publishes looks healthy from every other angle:

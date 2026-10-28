@@ -48,9 +48,9 @@ Pressing this when a headless instance is running will kill that headless first,
 
 Right-status order (left → right):
 
-`IME` · **`CDP·…`** · **`◆ SB·N`** (session-bridge watch poller) · **`D·…`** (host disk, absent while healthy) · **`M·…`** (guest mem, absent while healthy) · attention counters
+`IME` · **`CDP·…`** · **`◆ SB·N`** (session-bridge watch, absent while idle) · **`D·…`** (host disk, absent while healthy) · **`M·…`** (guest mem, absent while healthy) · **`L·…`** (guest load, absent while healthy) · attention counters
 
-The `◆ SB·-` / `◆ SB·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); the `◆` matches the glyph the `Alt+/` picker puts on that poller's watch rows and is overridable per machine via `session_bridge_watch.icon` in `wezterm-x/local/constants.lua` (`''` leaves a bare `SB·N`). See [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir. Disk / mem: [`host-disk.md`](./host-disk.md) · [`guest-oom.md`](./guest-oom.md).
+The `◆ SB·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); it renders only while the poller heartbeat is fresh (no always-on `SB·-`). The `◆` matches the glyph the `Alt+/` picker puts on that poller's watch rows and is overridable per machine via `session_bridge_watch.icon` in `wezterm-x/local/constants.lua` (`''` leaves a bare `SB·N`). See [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir. Disk / mem / load: [`host-disk.md`](./host-disk.md) · [`guest-oom.md`](./guest-oom.md) · [`diagnostics.md`](./diagnostics.md) "Guest load badge".
 
 ## Right-status `CDP` badge
 

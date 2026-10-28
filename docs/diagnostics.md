@@ -95,6 +95,18 @@ scripts/dev/latency-report.sh --raw today
 
 Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME candidate-window delay. A quiet log during a felt stutter means the blockage is outside these Lua callbacks — use that as a negative signal, not as "nothing happened". Pressure fields are guest-side (WSL); they will not explain a Windows-host-only CPU spike.
 
+### Guest load badge (`L·`)
+
+Post-hoc `latency` rows explain a stutter after it happened. For **glanceable early warning** the right-status bar also renders a load badge from the same `oom-guard/status.json` `loadavg_1` field (producer cadence ~30 s):
+
+| Badge | Meaning |
+|---|---|
+| *(absent)* | `loadavg_1` below warn, or status file never published / stale |
+| `L·12` | warn — amber; default `loadavg_1 >= 8` |
+| `L·23` | crit — red; default `loadavg_1 >= 16` |
+
+Same "presence is the signal" contract as `D·` / `M·`. Classification is **CPU-only** (ignores mem `level`), so a pure CPU storm with memory still `ok` still lights the bar — the 2026-10-28 typing-stickiness shape. Stale-recorder `?` stays on `M·` (shared producer) so the bar does not grow a duplicate. Renderer: [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua). Thresholds: `constants.load_guard.warn_loadavg_1` / `crit_loadavg_1` (override in `wezterm-x/local/constants.lua`). Placement: after `M·`.
+
 ## Runtime Diagnostics
 
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.

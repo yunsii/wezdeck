@@ -4,9 +4,11 @@
 -- into the Windows-accessible runtime state dir (same FS as attention.json /
 -- chrome-debug), so WezTerm Lua never crosses \\wsl$ on the 250 ms tick.
 --
--- Fixed-width badge so the bar does not jitter:
---   ◆ SB·-    poller not running / heartbeat stale
---   ◆ SB·0…9  poller running, job count (capped display)
+-- **The badge renders nothing while idle.** Same contract as D· / M· / L·:
+-- presence is the signal. A stopped or never-started poller leaves the bar
+-- clean (no more always-on `SB·-`). When the poller is fresh and running:
+--
+--   ◆ SB·0…9  job count
 --   ◆ SB·9+   10+ jobs
 --
 -- The `◆` is the same glyph the Alt+/ picker stamps on session-bridge
@@ -16,7 +18,7 @@
 -- The `SB` letters stay: unlike the attention counters, this segment has
 -- no word label next to it, so the glyph alone would not say what it is.
 --
--- Placement: right-status, between CDP and attention counters.
+-- Placement: right-status, between CDP and the disk/mem/load badges.
 
 local wezterm = require 'wezterm'
 
@@ -121,49 +123,60 @@ local function is_fresh(state)
   return (current_epoch_ms() - hb) <= heartbeat_timeout_ms
 end
 
-function M.render_status_segment(palette)
-  local state = M.reload_state()
-  local running = is_fresh(state)
+local function job_count(state)
+  if type(state) ~= 'table' then
+    return 0
+  end
   local jobs = 0
-  if running and type(state.job_count) == 'number' then
+  if type(state.job_count) == 'number' then
     jobs = math.floor(state.job_count)
-  elseif running and type(state.job_count) == 'string' then
+  elseif type(state.job_count) == 'string' then
     jobs = tonumber(state.job_count) or 0
   end
   if jobs < 0 then
     jobs = 0
   end
+  return jobs
+end
 
-  local text
-  local bg, fg, intensity
-  if not running then
-    text = badge_text('SB·-')
-    bg = palette.tab_bar_background
-    fg = palette.new_tab_fg
-    intensity = 'Normal'
-  else
-    if jobs >= 10 then
-      text = badge_text('SB·9+')
-    else
-      text = badge_text(string.format('SB·%d', jobs))
-    end
-    -- Highlight when at least one job is waiting for human.
-    local waiting = tonumber(state and state.waiting_count) or 0
-    if waiting > 0 then
-      bg = palette.tab_attention_waiting_bg or palette.tab_attention_running_bg
-      fg = palette.tab_attention_waiting_fg or palette.tab_attention_running_fg
-      intensity = 'Bold'
-    else
-      bg = palette.tab_inactive_bg
-      fg = palette.tab_inactive_fg
-      intensity = 'Normal'
-    end
+-- Pure text half for unit tests. Returns nil when there is nothing to show
+-- (idle / never published / stale). Callers must treat nil as "emit no
+-- segment" rather than an empty one.
+function M.format_text(state, fresh)
+  if type(state) ~= 'table' then
+    return nil
+  end
+  if not fresh then
+    return nil
+  end
+  local jobs = job_count(state)
+  if jobs >= 10 then
+    return badge_text('SB·9+')
+  end
+  return badge_text(string.format('SB·%d', jobs))
+end
+
+function M.render_status_segment(palette)
+  local state = M.reload_state()
+  local fresh = is_fresh(state)
+  local text = M.format_text(state, fresh)
+  if not text then
+    return nil
   end
 
-  -- The stale/off state is carried by the dim `tab_bar_background` /
-  -- `new_tab_fg` pair alone. Italic was tried on it and dropped: the
-  -- oblique `◆ SB·-` leaned out of the row of upright badges around it,
-  -- and the color drop already reads as "not running".
+  local bg, fg, intensity
+  -- Highlight when at least one job is waiting for human.
+  local waiting = tonumber(state and state.waiting_count) or 0
+  if waiting > 0 then
+    bg = palette.tab_attention_waiting_bg or palette.tab_attention_running_bg
+    fg = palette.tab_attention_waiting_fg or palette.tab_attention_running_fg
+    intensity = 'Bold'
+  else
+    bg = palette.tab_inactive_bg
+    fg = palette.tab_inactive_fg
+    intensity = 'Normal'
+  end
+
   return wezterm.format {
     { Background = { Color = bg } },
     { Foreground = { Color = fg } },

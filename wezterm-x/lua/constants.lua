@@ -287,7 +287,9 @@ local base_constants = {
     headless = true,
     state_file = defaults.default_chrome_debug_state_file(runtime_state_dir, join_path),
   },
-  -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and attention).
+  -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and D·).
+  -- Absent while the poller is idle/stale — same "presence is the signal"
+  -- contract as D· / M· / L· (no always-on `SB·-`).
   session_bridge_watch = {
     status_file = defaults.default_session_bridge_watch_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 35000,
@@ -308,6 +310,18 @@ local base_constants = {
   mem_guard = {
     status_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 90000,
+  },
+  -- Guest CPU-load badge (right-status, after M·). Same status.json as
+  -- mem_guard — oom-record already publishes loadavg_*; this only
+  -- classifies it for glanceable typing-stickiness early warning.
+  -- Thresholds are absolute loadavg_1 on a ~20-logical-CPU guest;
+  -- calibrated 2026-10-28 (sticky typing ↔ loadavg_1≥8; storm ~15–23).
+  -- Override in wezterm-x/local/constants.lua if core count differs a lot.
+  load_guard = {
+    status_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
+    heartbeat_timeout_ms = 90000,
+    warn_loadavg_1 = 8,
+    crit_loadavg_1 = 16,
   },
   wakatime = {
     api_key = nil,
