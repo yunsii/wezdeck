@@ -112,7 +112,7 @@ R="$TOOL_HOME/run.sh"
 - 默认远程：`yunsii/wezdeck-habit-weekly`
 - 本机偏好：`~/.config/habit-weekly/state.json` → `.archive.{repo,local_path,branch,push_json}`
 - 环境覆盖：`HABIT_WEEKLY_ARCHIVE_REPO` / `HABIT_WEEKLY_ARCHIVE_PATH` / `HABIT_WEEKLY_ARCHIVE_BRANCH` / `HABIT_WEEKLY_PUSH_JSON`
-- WakaTime key：`~/.config/shell-env.d/wakatime.env` 或已由 `runtime_env_load_managed` 加载的 `WAKATIME_API_KEY`
+- WakaTime 读统计：`WAKATIME_OAUTH_TOKEN`（`waka_tok_…`，Bearer）优先；写心跳仍用插件侧 `WAKATIME_API_KEY`。落盘：`~/.config/shell-env.d/wakatime.env`（经 `runtime_env_load_managed`）
 
 ## Don't
 

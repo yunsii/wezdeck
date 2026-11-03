@@ -3,7 +3,10 @@
 Uses GET /api/v1/users/current/summaries?start=&end= so the range matches
 habit-weekly --since/--until (not the fixed stats/last_7_days bucket).
 
-Never embeds the API key in returned payloads.
+WakaTime now treats secret API keys as plugin write-only. Read endpoints
+(summaries/stats/…) need an OAuth access token (`waka_tok_…`). Prefer
+`WAKATIME_OAUTH_TOKEN`; fall back to a `waka_tok_` value in
+`WAKATIME_API_KEY`. Never embeds credentials in returned payloads.
 """
 
 from __future__ import annotations
@@ -23,11 +26,41 @@ USER_AGENT = "wezdeck-habit-weekly"
 
 
 def resolve_api_key() -> str:
-    return (
+    """Legacy helper: first non-empty raw credential (oauth preferred)."""
+    return resolve_read_credential()[0]
+
+
+def resolve_read_credential() -> tuple[str, str]:
+    """Return (token, auth_mode) for read APIs.
+
+    auth_mode is ``bearer`` for OAuth access tokens, ``basic`` for secret
+    API keys (may still work on a few plugin-allowed endpoints).
+    """
+    oauth = (
+        os.environ.get("WAKATIME_OAUTH_TOKEN")
+        or os.environ.get("WAKATIME_ACCESS_TOKEN")
+        or ""
+    ).strip()
+    api_key = (
         os.environ.get("WAKATIME_API_KEY")
         or os.environ.get("TMUX_STATUS_WAKATIME_API_KEY")
         or ""
     ).strip()
+
+    if oauth:
+        return oauth, "bearer"
+    if api_key.startswith("waka_tok_"):
+        return api_key, "bearer"
+    if api_key:
+        return api_key, "basic"
+    return "", "basic"
+
+
+def _auth_header(credential: str, mode: str) -> str:
+    if mode == "bearer":
+        return f"Bearer {credential}"
+    token = base64.b64encode(credential.encode("utf-8")).decode("ascii")
+    return f"Basic {token}"
 
 
 def _humanize_seconds(seconds: float) -> str:
@@ -163,11 +196,16 @@ def fetch_summaries(
     end: date,
     *,
     api_key: str | None = None,
+    auth_mode: str | None = None,
     api_base: str | None = None,
     timeout: float = 20.0,
     top_n: int = 8,
 ) -> dict[str, Any]:
-    key = (api_key if api_key is not None else resolve_api_key()).strip()
+    if api_key is not None:
+        key = api_key.strip()
+        mode = (auth_mode or ("bearer" if key.startswith("waka_tok_") else "basic")).strip()
+    else:
+        key, mode = resolve_read_credential()
     if not key:
         return _failure(start, end, "missing_api_key")
 
@@ -178,11 +216,10 @@ def fetch_summaries(
         {"start": start.isoformat(), "end": end.isoformat()}
     )
     url = f"{base}/users/current/summaries?{query}"
-    token = base64.b64encode(key.encode("utf-8")).decode("ascii")
     request = urllib.request.Request(
         url,
         headers={
-            "Authorization": f"Basic {token}",
+            "Authorization": _auth_header(key, mode),
             "Accept": "application/json",
             "User-Agent": USER_AGENT,
         },

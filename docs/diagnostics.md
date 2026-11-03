@@ -347,10 +347,13 @@ complementary to the workflow timeline (day *loop* reconstruction).
 - **Optional time investment:** WakaTime
   `GET /users/current/summaries?start&end` via
   [`scripts/dev/habit_report/wakatime.py`](../scripts/dev/habit_report/wakatime.py)
-  (`--wakatime` / `--no-wakatime`). Uses `WAKATIME_API_KEY` from
+  (`--wakatime` / `--no-wakatime`). Prefer `WAKATIME_OAUTH_TOKEN`
+  (`waka_tok_…`, Bearer) for read; secret `WAKATIME_API_KEY` is plugin
+  write-only and gets 403 on `summaries`. Loaded via
   `runtime_env_load_managed` (`~/.config/shell-env.d/wakatime.env` or
-  `wezterm-x/local/shared.env`). Missing key degrades the section; does not
-  fail the whole report. Distinct from the tmux status-bar today endpoint.
+  `wezterm-x/local/shared.env`). Missing credential degrades the section; does
+  not fail the whole report. Distinct from the tmux status-bar today endpoint
+  (API key may still work there).
 - Examples:
 
 ```bash
