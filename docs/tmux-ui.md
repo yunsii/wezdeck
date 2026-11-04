@@ -164,6 +164,7 @@ Knobs live in **`~/.claude/settings.json`** (and `/tui` / `/scroll-speed` inside
 ```json
 {
   "tui": "fullscreen",
+  "language": "简体中文",
   "env": {
     "CLAUDE_CODE_SCROLL_SPEED": "5"
   }
@@ -173,6 +174,7 @@ Knobs live in **`~/.claude/settings.json`** (and `/tui` / `/scroll-speed` inside
 | Knob | Why |
 | --- | --- |
 | `tui: fullscreen` | Flicker-free alt-screen path; mouse expand / click-to-position; flat memory on long chats. Equivalent intent to `/tui fullscreen`. Do **not** also set `CLAUDE_CODE_NO_FLICKER=1` in shell-env — the setting is enough, and the env var was historically rejected here as a blunt force that also stole mouse selection without an explicit `tui` choice. |
+| `language: 简体中文` | Claude Code–only system-prompt pin for reply language (also session titles / voice dictation). Required on this host: profile `[preferences-06]` / `AGENTS.md` alone still lose to English tool output and compact summaries. Value is passed verbatim; misspellings are not validated. New sessions pick it up; existing panes need relaunch. Hook-based follow-ups deferred: [`diagnostics.md` open-questions §23](./diagnostics.md#open-questions). |
 | `CLAUDE_CODE_SCROLL_SPEED=5` | Under WezTerm→tmux, wheel events often arrive as one notch = one line (same class of problem as Grok’s unset `scroll_lines`). `5` matches this host’s tmux copy-mode `Wheel* -N 5` and Grok `scroll_lines = 5`. Official vim-like default suggestion is `3`; raise further (max 20) if notches still feel soft. Interactive tune: `/scroll-speed` (←/→, Enter to save). |
 | `wheelScrollAccelerationEnabled` | Leave unset / `true` so a fast spin covers more distance than slow notches (Claude’s counterpart to Grok’s `scroll_speed` flick boost). Set `false` only if flicks overshoot. |
 
@@ -183,8 +185,8 @@ Existing panes keep their process’s renderer until that Claude process relaunc
 ### Verify
 
 ```bash
-python3 -c "import json; d=json.load(open('$HOME/.claude/settings.json')); print(d.get('tui'), (d.get('env') or {}).get('CLAUDE_CODE_SCROLL_SPEED'))"
-# expect: fullscreen 5
+python3 -c "import json; d=json.load(open('$HOME/.claude/settings.json')); print(d.get('tui'), d.get('language'), (d.get('env') or {}).get('CLAUDE_CODE_SCROLL_SPEED'))"
+# expect: fullscreen 简体中文 5
 ```
 
 In a relaunched Claude pane: input box stays pinned while output streams; one wheel notch moves ~5 lines; `/scroll-speed` shows the saved multiplier. `tmux display -p '#{alternate_on}'` in that pane should print `1`.
