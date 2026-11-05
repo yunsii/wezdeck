@@ -281,63 +281,74 @@ ensure_wrapper() {
 
   mkdir -p "$grok_dir" "${HOME}/.local/bin"
 
-  # If update left an ELF or downloads symlink at ~/.grok/bin/grok, park it.
-  if [[ -e "$target" || -L "$target" ]] && ! is_this_wrapper "$target"; then
-    if [[ -f "$target" && ! -L "$target" ]]; then
-      if [[ ! -e "$real" || "$target" -nt "$real" ]]; then
-        mv -f "$target" "$real"
-        ensure_log "moved newer ELF → $real"
-      else
-        rm -f "$target"
-        ensure_log "removed stale ELF (kept $real)"
-      fi
-    else
-      local dest
-      dest="$(readlink -f "$target" 2>/dev/null || true)"
-      if [[ -n "$dest" ]] && is_probable_grok_elf "$dest"; then
-        if [[ ! -e "$real" || "$dest" -nt "$real" ]]; then
-          cp -f "$dest" "$real"
-          chmod +x "$real"
-          ensure_log "promoted $dest → $real"
-        fi
-      elif [[ -n "$dest" ]]; then
-        ensure_log "skip promoting non-ELF symlink target $dest"
-      fi
-      rm -f "$target"
-      ensure_log "removed clobbered symlink at $target"
-    fi
-  fi
+  # One exclusive lock for promote/seed + theme patch, released when the
+  # subshell exits — must not `exec N>lock` in this process or every live
+  # Grok would hold the lock for the whole session and serialize launches.
+  # Cold-open of a multi-item grok workspace used to race on grok.real /
+  # .tmp-theme and leave a truncated ELF (exit 139).
+  local mutate_lock="${real}.mutate.lock"
+  (
+    flock -x 9 || exit 0
 
-  # Seed / upgrade grok.real from newest download (never park a wrapper script).
-  local newest=""
-  if compgen -G "${HOME}/.grok/downloads/grok-*-linux-x86_64" >/dev/null 2>&1; then
-    newest="$(ls -1t "${HOME}/.grok/downloads"/grok-*-linux-x86_64 2>/dev/null | head -1 || true)"
-  fi
-  if ! is_probable_grok_elf "$real"; then
-    if [[ -n "$newest" ]] && is_probable_grok_elf "$newest"; then
+    # If update left an ELF or downloads symlink at ~/.grok/bin/grok, park it.
+    if [[ -e "$target" || -L "$target" ]] && ! is_this_wrapper "$target"; then
+      if [[ -f "$target" && ! -L "$target" ]]; then
+        if [[ ! -e "$real" || "$target" -nt "$real" ]]; then
+          mv -f "$target" "$real"
+          ensure_log "moved newer ELF → $real"
+        else
+          rm -f "$target"
+          ensure_log "removed stale ELF (kept $real)"
+        fi
+      else
+        # Subshell: no `local` here.
+        dest="$(readlink -f "$target" 2>/dev/null || true)"
+        if [[ -n "$dest" ]] && is_probable_grok_elf "$dest"; then
+          if [[ ! -e "$real" || "$dest" -nt "$real" ]]; then
+            cp -f "$dest" "$real"
+            chmod +x "$real"
+            ensure_log "promoted $dest → $real"
+          fi
+        elif [[ -n "$dest" ]]; then
+          ensure_log "skip promoting non-ELF symlink target $dest"
+        fi
+        rm -f "$target"
+        ensure_log "removed clobbered symlink at $target"
+      fi
+    fi
+
+    # Seed / upgrade grok.real from newest download (never park a wrapper script).
+    newest=""
+    if compgen -G "${HOME}/.grok/downloads/grok-*-linux-x86_64" >/dev/null 2>&1; then
+      newest="$(ls -1t "${HOME}/.grok/downloads"/grok-*-linux-x86_64 2>/dev/null | head -1 || true)"
+    fi
+    if ! is_probable_grok_elf "$real"; then
+      if [[ -n "$newest" ]] && is_probable_grok_elf "$newest"; then
+        cp -f "$newest" "$real"
+        chmod +x "$real"
+        ensure_log "seeded $real from $newest"
+      else
+        ensure_log "no grok.real ELF and no downloads seed (resolve_real_bin may still find PATH)"
+      fi
+    elif [[ -n "$newest" ]] && is_probable_grok_elf "$newest" && [[ "$newest" -nt "$real" ]]; then
       cp -f "$newest" "$real"
       chmod +x "$real"
-      ensure_log "seeded $real from $newest"
-    else
-      ensure_log "no grok.real ELF and no downloads seed (resolve_real_bin may still find PATH)"
+      ensure_log "upgraded $real from $newest"
     fi
-  elif [[ -n "$newest" ]] && is_probable_grok_elf "$newest" && [[ "$newest" -nt "$real" ]]; then
-    cp -f "$newest" "$real"
-    chmod +x "$real"
-    ensure_log "upgraded $real from $newest"
-  fi
 
-  if ! is_this_wrapper "$target"; then
-    ln -sfn "$REPO_WRAPPER" "$target"
-    ensure_log "$target → wrapper"
-  fi
-  if ! is_this_wrapper "$local_link"; then
-    ln -sfn "$REPO_WRAPPER" "$local_link"
-    ensure_log "$local_link → wrapper"
-  fi
+    if ! is_this_wrapper "$target"; then
+      ln -sfn "$REPO_WRAPPER" "$target"
+      ensure_log "$target → wrapper"
+    fi
+    if ! is_this_wrapper "$local_link"; then
+      ln -sfn "$REPO_WRAPPER" "$local_link"
+      ensure_log "$local_link → wrapper"
+    fi
 
-  # After any promote/seed of grok.real, re-apply cream/Reset bg_base.
-  ensure_theme_patch "$real" quiet
+    # Hold the mutate lock across the patch so promote+patch stay atomic
+    # relative to peer ensures (patch script skips its own flock).
+    WEZDECK_GROK_MUTATE_LOCK_HELD=1 ensure_theme_patch "$real" quiet
+  ) 9>"$mutate_lock"
 }
 
 # Non-mutating health check for docs / agents / post-update ops.

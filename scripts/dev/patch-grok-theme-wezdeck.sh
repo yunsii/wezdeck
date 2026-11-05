@@ -43,6 +43,16 @@ if [[ ! -f "$GROK_BIN" ]]; then
   exit 1
 fi
 
+# Serialize all writers of this ELF. Workspace cold-open can launch many
+# grok panes at once; each launch ensure used to race on the shared
+# grok.real.tmp-theme path and truncate the binary (SIGSEGV 139). Caller
+# may already hold the same lock (ensure_wrapper) via WEZDECK_GROK_MUTATE_LOCK_HELD=1.
+MUTATE_LOCK="${GROK_BIN}.mutate.lock"
+if [[ "${WEZDECK_GROK_MUTATE_LOCK_HELD:-0}" != "1" ]]; then
+  exec 9>"$MUTATE_LOCK"
+  flock -x 9
+fi
+
 python3 - "$GROK_BIN" "$TARGET_SPEC" "$SOURCE_CANDIDATES" "$QUIET" <<'PY'
 import os, shutil, sys
 from pathlib import Path
@@ -163,17 +173,24 @@ else:
     data[site : site + 4] = target_b
     how = "pair-with-#dedede"
 
-tmp = path.with_name(path.name + ".tmp-theme")
-tmp.write_bytes(data)
-os.chmod(tmp, path.stat().st_mode)
-tmp.replace(path)
-
-verify = path.read_bytes()
-assert verify.count(source_b) == 0, "source color still present"
-if target_b != RESET:
-    assert verify.count(target_b) >= 1, "target color missing after write"
-else:
-    assert verify.find(RESET + dedede) >= 0, "Reset+#dedede pair missing after write"
+# Unique tmp per process so a racing peer cannot unlink our staging file
+# even if flock is skipped; verify on the tmp *before* replace so a failed
+# assert never leaves a truncated/corrupt grok.real in place.
+tmp = path.with_name(f"{path.name}.tmp-theme.{os.getpid()}")
+try:
+    tmp.write_bytes(data)
+    os.chmod(tmp, path.stat().st_mode)
+    verify = tmp.read_bytes()
+    assert len(verify) == len(data), "tmp size mismatch after write"
+    assert verify.count(source_b) == 0, "source color still present"
+    if target_b != RESET:
+        assert verify.count(target_b) >= 1, "target color missing after write"
+    else:
+        assert verify.find(RESET + dedede) >= 0, "Reset+#dedede pair missing after write"
+    tmp.replace(path)
+finally:
+    if tmp.exists():
+        tmp.unlink(missing_ok=True)
 
 say(f"patched: {path} ({how})")
 say(f"  GrokDay bg_base  #{source}  →  {target_label}")
