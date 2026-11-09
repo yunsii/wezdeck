@@ -31,6 +31,17 @@ lib="$(dirname "$script")/tmux-fix-layout-lib.sh"
 grep -q 'tmux-fix-layout-lib.sh' "$script" && assert_yes "fix-layout sources lib" "yes" || assert_yes "fix-layout sources lib" "no"
 grep -q 'tmux_fix_layout_winch_attach_client\|kill -WINCH' "$lib" && assert_yes "SIGWINCH on PTY drift" "yes" || assert_yes "SIGWINCH on PTY drift" "no"
 grep -q 'TIOCGWINSZ\|pty_winsize' "$lib" && assert_yes "PTY winsize probe" "yes" || assert_yes "PTY winsize probe" "no"
+grep -q 'resync_all_attached_clients' "$script" && assert_yes "global client size scan" "yes" || assert_yes "global client size scan" "no"
+grep -q 'global client size scan completed' "$script" && assert_yes "global scan log row" "yes" || assert_yes "global scan log row" "no"
+# Single-quoted '\t' in tmux -F/-p is literal backslash-t and breaks IFS split
+# (WezTerm --quiet auto-heal used to skip with "no tmux client yet").
+if grep -E "display-message -p '#\{|list-clients -F '#\{" "$script" | grep -q '\\t'; then
+  assert_yes "tmux formats use real tabs (\$'\\t')" "no"
+else
+  assert_yes "tmux formats use real tabs (\$'\\t')" "yes"
+fi
+grep -q "display-message -p \$'" "$script" && assert_yes "display-message uses \$'...'" "yes" \
+  || assert_yes "display-message uses \$'...'" "no"
 grep -q 'Layout heal' "$repo_root/docs/tmux-ui.md" && assert_yes "tmux-ui layout heal section" "yes" || assert_yes "tmux-ui layout heal section" "no"
 grep -q 'layout-heal-fix-layout\|PTY.*client' "$repo_root/docs/diagnostics.md" && assert_yes "diagnostics triage pointer" "yes" || assert_yes "diagnostics triage pointer" "no"
 grep -q 'even-horizontal' "$script" && assert_yes "even-horizontal rebalance" "yes" || assert_yes "even-horizontal rebalance" "no"

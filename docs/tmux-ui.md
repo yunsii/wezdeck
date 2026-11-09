@@ -21,7 +21,7 @@ Use this doc when you need visible UI behavior for tabs, panes, or status lines.
 - In tmux-backed panes, navigation actions such as VS Code open and worktree switching resolve through tmux first, including copy-mode and scrollback.
 - `Ctrl+Shift+P` opens a centered tmux popup command palette whenever the current pane is running tmux.
 - A pane process that exits on its own stays in the layout. `remain-on-exit` is on, and the `pane-died` hook (`scripts/runtime/pane-exit-keep.sh`) respawns a login shell in that same pane — agent Ctrl+C / quit, shell Ctrl+D, and a respawn command that fails immediately. `respawn-pane -k` (F5) and `kill-pane` (`Ctrl+k x`) do not fire `pane-died`, so refresh still replaces the pane and close still removes it. Outcome rows: `runtime.log` `pane exit keep invoked` / `completed` / `failed`.
-- tmux refresh (respawn) is command-palette-owned instead of WezTerm-shortcut-owned. The lighter **layout fix** (`scripts/runtime/tmux-fix-layout.sh`) resyncs client size to the PTY (`refresh-client -S`, then `SIGWINCH` on the attach client when `TIOCGWINSZ` still disagrees — WezTerm can grow the pts while tmux keeps a stale `client_width`/`client_height`), rebalances with `even-horizontal`, forces a status recompute that packs to the number of visible content rows (safety-clamp ≤3), and realigns panes. Triggers: manual `Ctrl+k r` / palette `Session: Fix layout`; **automatic** (debounced ~200 ms, min interval 500 ms) on WezTerm `window-resized` and after `Ctrl+-` / `Ctrl+=` / `Ctrl+0` font zoom (`wezterm-x/lua/layout_heal.lua`). Status row-count changes also re-assert `even-horizontal` on managed two-pane windows. It does not respawn panes. Palette `Session: Refresh current window` still respawns the focused pane and runs the same heal first.
+- tmux refresh (respawn) is command-palette-owned instead of WezTerm-shortcut-owned. The lighter **layout fix** (`scripts/runtime/tmux-fix-layout.sh`) first resyncs **every** attached client's size to its PTY (`refresh-client -S`, then `SIGWINCH` on each drifted attach process — WezTerm can grow the pts while tmux keeps a stale `client_width`/`client_height`), then rebalances the focus session with `even-horizontal`, forces a status recompute that packs to the number of visible content rows (safety-clamp ≤3), and realigns panes. Triggers: manual `Ctrl+k r` / palette `Session: Fix layout`; **automatic** (debounced ~200 ms, min interval 500 ms) on WezTerm `window-resized` and after `Ctrl+-` / `Ctrl+=` / `Ctrl+0` font zoom (`wezterm-x/lua/layout_heal.lua`). Status row-count changes also re-assert `even-horizontal` on managed two-pane windows. It does not respawn panes. Palette `Session: Refresh current window` still respawns the focused pane and runs the same heal first. Detail: [Layout heal](#layout-heal-fix-layout).
 - `Ctrl+k` is a tmux chord prefix for memorized low-latency actions such as `Ctrl+k v` for vertical split, `Ctrl+k h` for horizontal split, and `Ctrl+k r` for layout fix.
 - After `Ctrl+k`, tmux temporarily replaces one status line with a generic waiting hint.
 - The Go popup pickers share one selected-row treatment: the focused row gets a full-width warm ANSI 255 background bar plus a leading `▶` caret so row focus is visible without overloading any per-row marker. The `Alt+x` cross-workspace session picker additionally bolds the selected session label; the `Alt+g` worktree picker, `Ctrl+Shift+P` command palette, `Alt+/` agent-attention overlay, and links picker use the same background bar. (The `Alt+j` / `Alt+k` / `Alt+l` attention jumps are direct — they cycle panes without opening a picker, so they have no selected-row surface.) Inner per-cell colors are restored with a background-preserving SGR (`\x1b[22;23;24;27;39m`) rather than a full reset so the bar stays continuous to the end of the line. The bash fallback pickers (used only when the Go binary is unavailable) keep the caret-only look.
@@ -107,7 +107,20 @@ Use this section when a managed tab **looks** wrongly sized (uneven panes, conte
 
 Script: `scripts/runtime/tmux-fix-layout.sh` (helpers in `tmux-fix-layout-lib.sh`).
 
-1. **Resync client → PTY** — `refresh-client -S`; if `TIOCGWINSZ` on the client tty still disagrees with `#{client_width}x#{client_height}`, send `SIGWINCH` to the `tmux attach` process on that tty, then `-S` again. If still drifted, last-resort `resize-window` to PTY cols × (PTY rows − status rows).
+1. **Resync client → PTY (all attached clients first)** — for every
+   `list-clients` row: `refresh-client -S`; if that tty's `TIOCGWINSZ`
+   still disagrees with `#{client_width}x#{client_height}`, send
+   `SIGWINCH` to its `tmux attach` process, then `-S` again. If still
+   drifted, last-resort `resize-window` on that client's window to PTY
+   cols × (PTY rows − status rows). A second pass then covers the focus
+   session. Global scan is required because WezTerm `window-resized`
+   auto-heal used to resolve only the first client (often `default`),
+   leaving background work tabs (e.g. fe1/apps) at a stale 170×46 while
+   the PTY was already 213×56 — Claude footers looked “stuck” and clicks
+   missed. A second bug made auto-heal a no-op: tmux `-F`/`-p` formats
+   used bash single-quoted `'\t'` (literal `\t`), so IFS tab-split never
+   parsed `window_id` and the script logged `fix-layout skipped: no tmux
+   client yet`. Formats now use `$'...\t...'`.
 2. **Restore the secondary pane** when a `managed_two_pane` window has fewer
    than two panes, then apply `even-horizontal` (unknown layouts are only
    rebalanced and are never expanded).

@@ -8,19 +8,21 @@
 # Docs: docs/tmux-ui.md#layout-heal-fix-layout
 
 # Print COLSxROWS from TIOCGWINSZ, or empty on failure.
+# Prefer O_RDWR|O_NOCTTY: read-only open can fail ioctl on some pts
+# slaves and used to make fix-layout silently skip a real drift.
 tmux_fix_layout_pty_winsize() {
   local tty="$1"
   python3 - "$tty" <<'PY' 2>/dev/null || true
-import fcntl, struct, sys, termios
+import fcntl, os, struct, sys, termios
 path = sys.argv[1]
 try:
-    fd = open(path, "rb")
+    fd = os.open(path, os.O_RDWR | os.O_NOCTTY)
 except OSError:
     raise SystemExit(0)
 try:
     rows, cols, _, _ = struct.unpack("HHHH", fcntl.ioctl(fd, termios.TIOCGWINSZ, b"\0" * 8))
 finally:
-    fd.close()
+    os.close(fd)
 if rows > 0 and cols > 0:
     print(f"{cols}x{rows}")
 PY

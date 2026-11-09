@@ -1,7 +1,10 @@
 -- Auto layout heal after font zoom / window resize (RDP, DPI, Ctrl+/-).
--- Spawns scripts/runtime/tmux-fix-layout.sh with debounce so a burst of
--- resize events (holding Ctrl+-) collapses to one heal after the grid
--- settles. Manual Ctrl+k r still works for on-demand fixes.
+-- Spawns scripts/runtime/tmux-fix-layout.sh --quiet with debounce so a
+-- burst of resize events (holding Ctrl+-) collapses to one heal after
+-- the grid settles. The script globally SIGWINCHes every attached tmux
+-- client whose PTY size drifted (background work tabs included); this
+-- Lua side only schedules the spawn and does not pick a session.
+-- Manual Ctrl+k r still works for on-demand fixes.
 
 local M = {}
 

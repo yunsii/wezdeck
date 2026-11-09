@@ -5,9 +5,13 @@
 # not respawn the primary agent or restart existing panes.
 #
 # Steps:
-#   1. resync client size to the PTY (refresh-client -S; if still drifted
-#      from TIOCGWINSZ, SIGWINCH the attach client — WezTerm can resize
-#      the pts while tmux keeps a stale client_width/height)
+#   1. resync **every** attached client's size to its PTY (refresh-client
+#      -S; if still drifted from TIOCGWINSZ, SIGWINCH that attach process
+#      — WezTerm can resize the pts while tmux keeps a stale
+#      client_width/height). A second pass then covers the focus session.
+#      Global scan matters for WezTerm window-resized auto-heal: without
+#      it only the first list-clients row was healed and background tabs
+#      (fe1/apps) stayed small.
 #   2. restore the secondary pane for managed two-pane windows, then
 #      rebalance them (even-horizontal)
 #   3. clear cached status lines, force a status recompute so the bar
@@ -82,7 +86,9 @@ toast() {
 # Detached auto-heal (wsl.exe → bash, no TMUX client) cannot use bare
 # display-message -p; fall back to the first attached client's view.
 if [[ -z "$session_name" || -z "$window_id" ]]; then
-  meta="$(tmux display-message -p '#{session_name}\t#{window_id}\t#{pane_current_path}\t#{client_name}' 2>/dev/null || true)"
+  # Use $'\t' — a single-quoted '\t' is two literal chars and breaks IFS split
+  # (WezTerm auto-heal then saw empty window_id and skipped every client).
+  meta="$(tmux display-message -p $'#{session_name}\t#{window_id}\t#{pane_current_path}\t#{client_name}' 2>/dev/null || true)"
   IFS=$'\t' read -r live_session live_window live_cwd live_client <<< "$meta"
   [[ -n "$session_name" ]] || session_name="$live_session"
   [[ -n "$window_id" ]] || window_id="$live_window"
@@ -98,7 +104,7 @@ if [[ -z "$session_name" || -z "$window_id" ]]; then
     window_id="$c_window"
     [[ -n "$cwd" ]] || cwd="$c_cwd"
     break
-  done < <(tmux list-clients -F '#{client_name}\t#{client_session}\t#{window_id}\t#{pane_current_path}' 2>/dev/null || true)
+  done < <(tmux list-clients -F $'#{client_name}\t#{client_session}\t#{window_id}\t#{pane_current_path}' 2>/dev/null || true)
 fi
 
 if [[ -z "$session_name" || -z "$window_id" ]]; then
@@ -122,27 +128,38 @@ runtime_log_info layout "fix-layout invoked" \
 # ── 1. Re-measure client size (DPI / RDP attach-detach) ──────────────
 # WezTerm can resize the PTY (TIOCGWINSZ) while the tmux attach client
 # keeps a stale client_width/height. refresh-client -S alone does not
-# always pick that up (measured 2026-09-14: pts 213x56 vs client 170x46).
+# always pick that up (measured 2026-09-14: pts 213x56 vs client 170x46;
+# 2026-11-09: fe1/apps background tabs stayed 170x46 after work-window
+# grow while WezTerm/PTY were already 213x56).
 # SIGWINCH the attach process forces a re-read; then -S / rebalance follow.
 # Helpers: tmux-fix-layout-lib.sh (covered by hook-unit tests).
+#
+# Standing gap (fixed 2026-11-09): WezTerm `window-resized` auto-heal
+# used to resolve only the *first* `list-clients` row (often `default`
+# shell), so sibling work tabs never got SIGWINCH. Always scan every
+# attached client for PTY drift first; session-scoped rebalance/status
+# still run for the resolved focus session below.
 resync_client_size() {
   local client="$1"
   local tty="$2"
+  local target_session="${3:-$session_name}"
+  local target_window="${4:-$window_id}"
   local pty_size=""
   local client_size=""
   local cols="" rows="" usable_rows="" status_opt=""
+  local client_session="" client_window=""
 
   [[ -n "$client" ]] || return 0
   tmux refresh-client -S -t "$client" 2>/dev/null || true
 
   if [[ -z "$tty" ]]; then
-    tty="$(tmux list-clients -F '#{client_name}\t#{client_tty}' 2>/dev/null \
+    tty="$(tmux list-clients -F $'#{client_name}\t#{client_tty}' 2>/dev/null \
       | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
   fi
   [[ -n "$tty" ]] || return 0
 
   pty_size="$(tmux_fix_layout_pty_winsize "$tty")"
-  client_size="$(tmux list-clients -F '#{client_name}\t#{client_width}x#{client_height}' 2>/dev/null \
+  client_size="$(tmux list-clients -F $'#{client_name}\t#{client_width}x#{client_height}' 2>/dev/null \
     | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
   tmux_fix_layout_sizes_differ "$pty_size" "$client_size" || return 0
 
@@ -153,21 +170,44 @@ resync_client_size() {
   sleep 0.05
   tmux refresh-client -S -t "$client" 2>/dev/null || true
 
-  client_size="$(tmux list-clients -F '#{client_name}\t#{client_width}x#{client_height}' 2>/dev/null \
+  client_size="$(tmux list-clients -F $'#{client_name}\t#{client_width}x#{client_height}' 2>/dev/null \
     | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
   if tmux_fix_layout_sizes_differ "$pty_size" "$client_size"; then
     cols="${pty_size%x*}"
     rows="${pty_size#*x}"
-    status_opt="$(tmux show-options -qv -t "$session_name" status 2>/dev/null || true)"
+    if [[ -z "$target_session" || -z "$target_window" ]]; then
+      client_session="$(tmux list-clients -F $'#{client_name}\t#{client_session}' 2>/dev/null \
+        | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
+      client_window="$(tmux list-clients -F $'#{client_name}\t#{window_id}' 2>/dev/null \
+        | awk -F '\t' -v c="$client" '$1 == c { print $2; exit }')"
+      [[ -n "$target_session" ]] || target_session="$client_session"
+      [[ -n "$target_window" ]] || target_window="$client_window"
+    fi
+    status_opt="$(tmux show-options -qv -t "$target_session" status 2>/dev/null || true)"
     [[ -n "$status_opt" ]] || status_opt="$(tmux show -gv status 2>/dev/null || printf 'on')"
     usable_rows="$(tmux_fix_layout_usable_rows "$rows" "$status_opt")"
-    if [[ "$cols" =~ ^[0-9]+$ && "$usable_rows" =~ ^[0-9]+$ && -n "$window_id" ]]; then
-      tmux resize-window -t "$window_id" -x "$cols" -y "$usable_rows" >/dev/null 2>&1 || true
+    if [[ "$cols" =~ ^[0-9]+$ && "$usable_rows" =~ ^[0-9]+$ && -n "$target_window" ]]; then
+      tmux resize-window -t "$target_window" -x "$cols" -y "$usable_rows" >/dev/null 2>&1 || true
       runtime_log_warn layout "SIGWINCH did not update client; resized window to PTY" \
-        "window_id=$window_id" "pty_size=$pty_size" "client_size=$client_size" \
+        "window_id=$target_window" "pty_size=$pty_size" "client_size=$client_size" \
         "usable=${cols}x${usable_rows}"
     fi
   fi
+}
+
+# Cheap pass: every attached client, not only the focus session.
+# Returns count of clients that still needed a drift heal attempt.
+resync_all_attached_clients() {
+  local client=""
+  local tty=""
+  local n=0
+  while IFS=$'\t' read -r client tty; do
+    [[ -n "$client" ]] || continue
+    n=$((n + 1))
+    # Empty session/window → resync_client_size resolves per-client.
+    resync_client_size "$client" "$tty" "" ""
+  done < <(tmux list-clients -F $'#{client_name}\t#{client_tty}' 2>/dev/null || true)
+  runtime_log_info layout "global client size scan completed" "clients=$n"
 }
 
 refresh_clients() {
@@ -176,7 +216,7 @@ refresh_clients() {
   if [[ -n "$client_name" ]]; then
     tty="$client_tty"
     if [[ -z "$tty" ]]; then
-      tty="$(tmux list-clients -F '#{client_name}\t#{client_tty}' 2>/dev/null \
+      tty="$(tmux list-clients -F $'#{client_name}\t#{client_tty}' 2>/dev/null \
         | awk -F '\t' -v c="$client_name" '$1 == c { print $2; exit }')"
     fi
     resync_client_size "$client_name" "$tty"
@@ -186,14 +226,19 @@ refresh_clients() {
     while IFS=$'\t' read -r client tty; do
       [[ -n "$client" ]] || continue
       resync_client_size "$client" "$tty"
-    done < <(tmux list-clients -F '#{client_name}\t#{client_tty}' 2>/dev/null \
+    done < <(tmux list-clients -F $'#{client_name}\t#{client_tty}' 2>/dev/null \
       | awk -F '\t' -v tty="$client_tty" '$2 == tty { print $1 "\t" $2 }')
   fi
   while IFS=$'\t' read -r client tty; do
     [[ -n "$client" ]] || continue
     resync_client_size "$client" "$tty"
-  done < <(tmux list-clients -t "$session_name" -F '#{client_name}\t#{client_tty}' 2>/dev/null || true)
+  done < <(tmux list-clients -t "$session_name" -F $'#{client_name}\t#{client_tty}' 2>/dev/null || true)
 }
+
+# Always: heal background tabs whose PTY already matches WezTerm but
+# whose attach client lagged (fe1/apps class). Session-scoped work below
+# still rebalances/status-refreshes the resolved focus session.
+resync_all_attached_clients
 refresh_clients
 
 # ── 2. Rebalance pane layout ─────────────────────────────────────────
