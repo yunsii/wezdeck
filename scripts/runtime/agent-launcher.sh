@@ -172,14 +172,24 @@ fallback_log_script="$script_dir/agent-resume-fallback-log.sh"
 ensure_codex_permission_overlay() {
   local profile="$1"
   local profile_file="${CODEX_HOME:-$HOME/.codex}/${profile}.config.toml"
-  [[ -f "$profile_file" ]] && return 0
+  local applier="$script_dir/../dev/apply-codex-permission-profiles.sh"
 
-  local linker="$script_dir/../dev/link-codex-permission-profiles.sh"
-  if [[ -x "$linker" ]]; then
-    "$linker" >/dev/null 2>&1 || true
+  # Always apply: refreshes managed permission keys from the repo template and
+  # converts any leftover symlink into a host-owned regular file.
+  if [[ -x "$applier" ]]; then
+    if ! "$applier" "$profile" >/dev/null 2>&1; then
+      printf 'agent-launcher: failed to apply Codex permission overlay: %s\n' \
+        "$profile" >&2
+      _launcher_log_error "agent launcher failed" \
+        "reason=codex_permission_overlay_apply_failed" \
+        "profile=$profile" "expected=$profile_file" "cwd=$PWD"
+      return 1
+    fi
   fi
 
-  [[ -f "$profile_file" ]] && return 0
+  if [[ -f "$profile_file" && ! -L "$profile_file" ]]; then
+    return 0
+  fi
   printf 'agent-launcher: Codex permission overlay unavailable: %s\n' \
     "$profile_file" >&2
   _launcher_log_error "agent launcher failed" \

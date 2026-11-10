@@ -1,8 +1,8 @@
-# Codex Full access permission overlay.
+# Codex Full access permission overlay (tracked template).
+# Apply into CODEX_HOME with scripts/dev/apply-codex-permission-profiles.sh.
 # The base ~/.codex/config.toml supplies model, provider, hooks, MCP, and other
 # user settings; this file only selects the explicit elevated behavior.
+# Codex may write extra keys (model, notice, tui, …) into the host copy — those
+# stay on the host file and must not be committed back into this template.
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
-
-[tui]
-screen_reader_detection_done = true

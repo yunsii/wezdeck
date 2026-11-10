@@ -37,8 +37,13 @@ env -i \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
 grep -Fxq -- '--profile auto resume --last' "$LOG"
-test -L "$TEST_ROOT/codex-home/auto.config.toml"
-printf 'PASS agent-launcher ensures and uses Auto overlay by default\n'
+test -f "$TEST_ROOT/codex-home/auto.config.toml"
+test ! -L "$TEST_ROOT/codex-home/auto.config.toml"
+grep -Eq '^approval_policy = "on-request"$' "$TEST_ROOT/codex-home/auto.config.toml"
+printf 'PASS agent-launcher applies Auto overlay as a regular file by default\n'
+
+# Host-owned Codex runtime keys must survive a subsequent apply.
+printf '\nmodel = "gpt-test-keep"\n' >> "$TEST_ROOT/codex-home/auto.config.toml"
 
 env -i \
   HOME="$TEST_ROOT/home" \
@@ -50,7 +55,24 @@ env -i \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
 grep -Fxq -- '--profile auto resume --last' "$LOG"
-printf 'PASS agent-launcher reuses Codex Auto overlay when present\n'
+grep -Eq '^model = "gpt-test-keep"$' "$TEST_ROOT/codex-home/auto.config.toml"
+grep -Eq '^approval_policy = "on-request"$' "$TEST_ROOT/codex-home/auto.config.toml"
+printf 'PASS agent-launcher re-applies Auto overlay and preserves host Codex keys\n'
+
+# Leftover symlink into the checkout must be converted on launch.
+ln -sfn "$REPO_ROOT/agent-profiles/v1/host-setup/auto.config.toml" \
+  "$TEST_ROOT/codex-home/auto.config.toml"
+env -i \
+  HOME="$TEST_ROOT/home" \
+  NVM_DIR="$NVM_DIR" \
+  CODEX_HOME="$TEST_ROOT/codex-home" \
+  CODEX_TEST_LOG="$LOG" \
+  PATH=/usr/bin:/bin \
+  WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+test -f "$TEST_ROOT/codex-home/auto.config.toml"
+test ! -L "$TEST_ROOT/codex-home/auto.config.toml"
+printf 'PASS agent-launcher converts Codex overlay symlink to a regular file\n'
 
 printf 'MANAGED_AGENT_PERMISSION_PROFILE=full-access\n' \
   > "$TEST_ROOT/shell-env/99-test.env"
@@ -66,8 +88,10 @@ env -i \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
 grep -Fxq -- '--profile full-access resume --last' "$LOG"
-test -L "$TEST_ROOT/codex-home/full-access.config.toml"
-printf 'PASS agent-launcher ensures and uses full-access overlay when requested\n'
+test -f "$TEST_ROOT/codex-home/full-access.config.toml"
+test ! -L "$TEST_ROOT/codex-home/full-access.config.toml"
+grep -Eq '^approval_policy = "never"$' "$TEST_ROOT/codex-home/full-access.config.toml"
+printf 'PASS agent-launcher applies full-access overlay when requested\n'
 
 env -i \
   HOME="$TEST_ROOT/home" \

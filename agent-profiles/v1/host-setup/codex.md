@@ -26,10 +26,17 @@ sandbox_mode       = "workspace-write"
 
 Codex profiles are overlays: `~/.codex/config.toml` remains the single base
 configuration, while `~/.codex/auto.config.toml` and
-`~/.codex/full-access.config.toml` override only permission fields. Model,
-provider, hooks, MCP, project trust, and other base settings are inherited;
-there is no second full copy to drift out of sync. This is the native
-`codex --profile <name>` behavior in CLI 0.156.1.
+`~/.codex/full-access.config.toml` override permission fields. Model,
+provider, hooks, MCP, project trust, and other base settings are inherited.
+This is the native `codex --profile <name>` behavior in CLI 0.156.1.
+
+Host profile files are **regular files**, not symlinks into the checkout.
+Tracked templates under `agent-profiles/v1/host-setup/` are applied with
+`scripts/dev/apply-codex-permission-profiles.sh`, which upserts only the
+managed permission keys (`approval_policy`, `approvals_reviewer`,
+`sandbox_mode`) and leaves Codex-written host keys (model, notice, tui, …)
+alone. Symlinking those overlays back into the repo dirties the working tree
+whenever Codex persists runtime state.
 
 Codex CLI 0.156.1 exposes `on-request` and `never`; the older `on-failure`
 value is not a valid replacement for Auto mode. With `on-request`, commands
@@ -48,11 +55,12 @@ changing `~/.codex/config.toml`; existing sessions keep the policy they
 started with.
 
 When the automatic reviewer is unavailable or returns an unsupported-model
-error, switch the session to the tracked `full-access` profile. Link both
-overlays once so future repository updates stay synchronized:
+error, switch the session to the tracked `full-access` profile. Apply both
+overlays once (or let the managed launcher do it on start) so repository
+permission updates reach `CODEX_HOME` without a symlink:
 
 ```bash
-scripts/dev/link-codex-permission-profiles.sh
+scripts/dev/apply-codex-permission-profiles.sh
 codex --profile full-access
 ```
 

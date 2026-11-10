@@ -1,6 +1,9 @@
-# Codex Auto permission overlay.
+# Codex Auto permission overlay (tracked template).
+# Apply into CODEX_HOME with scripts/dev/apply-codex-permission-profiles.sh.
 # The base ~/.codex/config.toml supplies model, provider, hooks, MCP, and other
 # user settings; this file only selects the normal permission behavior.
+# Codex may write extra keys (model, notice, tui, …) into the host copy — those
+# stay on the host file and must not be committed back into this template.
 approval_policy = "on-request"
 approvals_reviewer = "auto_review"
 sandbox_mode = "workspace-write"

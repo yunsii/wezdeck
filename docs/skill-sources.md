@@ -99,11 +99,14 @@ Current installs:
 ### Agent profiles and permission overlays
 
 `agent-profiles/` contains versioned profile source, not project skills. Its
-linker targets `~/.claude/` and `~/.codex/`; it must not be added to the
-platform skill registry. The linker must derive its source from the checkout
-root, and every symlink target must resolve back to that root. Codex permission
-overlays and `agent-tools.env` are separate capability contracts with absolute
-paths. A profile or overlay must not infer a source from the target directory.
+markdown linker targets `~/.claude/` and `~/.codex/`; it must not be added to
+the platform skill registry. The linker must derive its source from the
+checkout root, and every markdown symlink target must resolve back to that
+root. Codex permission overlays are applied (not symlinked) into `CODEX_HOME`
+as host-owned regular files because Codex writes runtime keys back into the
+active profile file. `agent-tools.env` is a separate capability contract with
+absolute paths. A profile or overlay must not infer a source from the target
+directory.
 
 ### Shell injection and CLI wrappers
 
@@ -126,9 +129,10 @@ When developing an externalized capability:
 1. Set `WEZDECK_REPO=/absolute/path/to/wezdeck` in the shell environment used
    by the agent and any user-level runner.
 2. Run the relevant linker or install step to refresh the user-level artifact:
-   `link-platform-skills.sh` for platform skills, `link-agent-profile.sh` or
-   `link-codex-permission-profiles.sh` for profiles, and the shell-env snippet
-   install for zsh/bash capabilities.
+   `link-platform-skills.sh` for platform skills, `link-agent-profile.sh` for
+   markdown profiles, `apply-codex-permission-profiles.sh` for Codex permission
+   overlays (regular files under `CODEX_HOME`, not symlinks), and the
+   shell-env snippet install for zsh/bash capabilities.
 3. Invoke the external entry point and verify it resolves back to the declared
    checkout, not to the symlink or target directory.
 4. Run the capability's narrow test and repo hygiene.
