@@ -2,12 +2,13 @@
 name: human-run
 description: >
   Mandatory handoff when a human (not the agent) must run a script/command.
-  Agent loads this skill, ensure-env, propose.sh --cwd (default --wait until x
-  finishes), then the agent continues follow-up itself. Handoff script bodies
-  must be non-blocking kickoffs (trigger/async ack) — never wait for CI/deploy
-  inside x. Never paste multi-line scripts into chat. Agent self-exec is out of
-  scope. Use when you would otherwise ask the user to paste/run a script, or
-  the command needs TTY / host secrets / out-of-sandbox privileges.
+  Agent loads this skill, ensure-env, emits a user-visible chat line that it is
+  waiting for the human to run x, then propose.sh --cwd (default --wait until x
+  finishes), then continues follow-up itself. Handoff script bodies must be
+  non-blocking kickoffs (trigger/async ack) — never wait for CI/deploy inside x.
+  Never paste multi-line scripts into chat. Agent self-exec is out of scope. Use
+  when you would otherwise ask the user to paste/run a script, or the command
+  needs TTY / host secrets / out-of-sandbox privileges.
 ---
 
 # human-run (platform skill — single source)
@@ -26,7 +27,7 @@ Docs: `docs/agent-run.md`. Profile: `agent-profiles` → `reporting.md`.
 | Actor | Duty |
 | --- | --- |
 | **Human** | In a real terminal: `x` (peek → confirm → run in recorded cwd) |
-| **Any agent** | **Load skill → ensure-env → propose.sh → tell user only `x`** |
+| **Any agent** | **Load skill → ensure-env → 会话里先说清「在等你跑 `x`」→ propose.sh** |
 | **Agent tools** | Self-runnable work — do **not** call this skill |
 
 ## When to load (mandatory)
@@ -103,10 +104,20 @@ echo "triggered workflow=deploy.yml"   # agent scrapes / lists runs next
 2. **Split the work:** handoff body = non-blocking kickoff; post-wait = agent-owned follow-up.
 3. **Ensure env:** `"$TOOL_HOME/ensure-env.sh"` (required).
 4. **Choose cwd** — existing directory; never omit `--cwd`.
-5. **Tell the human first** (one line): 请在本机终端运行 `x` 预览并确认（脚本应很快结束）。Do not paste the script body.
+5. **会话里先提示（硬要求，在 `propose` / wait 之前）** — 用独立可见的一行说清：
+   **我这边已挂起，在等你执行**；动作只有 `x`；不要贴脚本正文。
+
+   推荐模板（可按 summary 改短，语义不得删）：
+
+   ```text
+   ⏸ 等你确认：请在本机终端运行 `x` 预览并确认（我会挂起等待；脚本应很快结束）。
+   ```
+
+   禁止只把「跑 `x`」写进工具描述 / 内部备注而不出现在对用户可见的会话正文。
+   不依赖 attention 徽章或其它 UI 角标来传达「在等你」。
 6. **Propose + wait** — same shape as a normal blocking/background shell task.
    `propose.sh` **defaults to `--wait`** (blocks until `x` finishes — which should
-   be seconds, not CI duration). Prefer host background if needed. **No** attention badge.
+   be seconds, not CI duration). Prefer host background if needed.
 
    ```bash
    "$TOOL_HOME/propose.sh" \
@@ -127,6 +138,7 @@ echo "triggered workflow=deploy.yml"   # agent scrapes / lists runs next
 
 ## Don't
 
+- Don't start `propose` / wait without a prior user-visible chat line that says you are waiting for `x`
 - Don't put long waits / CI watches inside the handoff script body
 - Don't paste multi-line runnable scripts into chat
 - Don't skip `ensure-env.sh` / `propose.sh` and call a guessed `wd-run` path

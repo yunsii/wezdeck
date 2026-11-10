@@ -28,10 +28,12 @@ confirms. Chat should at most show one line: `x`.
 
 1. Load skill `human-run`.
 2. Run `"$TOOL_HOME/ensure-env.sh"` (check + init; idempotent).
-3. Tell the human to run `x` (one line).
+3. **Before propose/wait:** user-visible chat line that you are suspended
+   waiting for the human to run `x` (skill template; not tool-description-only).
 4. `"$TOOL_HOME/propose.sh" --cwd …` — **defaults to `--wait`** so the tool
    call blocks like a normal shell task until `x` finishes; then continue.
-   Prefer host background execution for long waits. No attention badge.
+   Prefer host background execution for long waits. No attention badge;
+   no agent-specific UI path — the chat line is the waiting signal.
 5. Or split: `propose.sh --no-wait` + `wd-run wait --id …`.
 
 **Handoff body = non-blocking kickoff.** Trigger/async ack only; exit quickly.
