@@ -54,7 +54,7 @@ pwd
 EOF
 
 # Human
-x              # peek HEAD → [y/N] → CAS run in recorded cwd
+x              # peek HEAD → Enter=run / other=cancel → CAS run in recorded cwd
 x -            # peek only
 x --id <id>    # run without pager (still CAS against HEAD)
 

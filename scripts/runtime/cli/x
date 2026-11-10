@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/../agent-run-lib.sh"
 usage() {
   cat <<'EOF' >&2
 usage:
-  x           peek HEAD, then [y/N] run the id you just viewed
+  x           peek HEAD, then Enter=run / other=cancel for the id you viewed
   x -         peek only (no confirm)
   x --id ID   CAS-run id without pager (still requires id == HEAD unless
               you use wd-run run --id ID --force-id)
@@ -67,15 +67,12 @@ if [[ ! -t 0 ]]; then
   exit 0
 fi
 
-printf 'Run id=%s in recorded cwd? [y/N] ' "$bound_id" >&2
+printf 'Run id=%s in recorded cwd? [Enter=run / other=cancel] ' "$bound_id" >&2
 read -r ans || ans=""
-case "$ans" in
-  y|Y|yes|YES)
-    # CAS against the id bound at peek time — never silently run a newer HEAD.
-    exec "$WD_RUN" run --id "$bound_id"
-    ;;
-  *)
-    printf 'x: cancelled (HEAD may still be pending)\n' >&2
-    exit 0
-    ;;
-esac
+if [[ -z "$ans" ]]; then
+  # Empty Enter confirms. CAS against the id bound at peek time —
+  # never silently run a newer HEAD.
+  exec "$WD_RUN" run --id "$bound_id"
+fi
+printf 'x: cancelled (HEAD may still be pending)\n' >&2
+exit 0

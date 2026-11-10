@@ -26,7 +26,7 @@ Docs: `docs/agent-run.md`. Profile: `agent-profiles` → `reporting.md`.
 
 | Actor | Duty |
 | --- | --- |
-| **Human** | In a real terminal: `x` (peek → confirm → run in recorded cwd) |
+| **Human** | In a real terminal: `x` (peek → Enter=run / other=cancel → run in recorded cwd) |
 | **Any agent** | **Load skill → ensure-env → 会话里先说清「在等你跑 `x`」→ propose.sh** |
 | **Agent tools** | Self-runnable work — do **not** call this skill |
 
@@ -110,7 +110,7 @@ echo "triggered workflow=deploy.yml"   # agent scrapes / lists runs next
    推荐模板（可按 summary 改短，语义不得删）：
 
    ```text
-   ⏸ 等你确认：请在本机终端运行 `x` 预览并确认（我会挂起等待；脚本应很快结束）。
+   ⏸ 等你确认：请在本机终端运行 `x` 预览后回车执行（其它键取消；我会挂起等待；脚本应很快结束）。
    ```
 
    禁止只把「跑 `x`」写进工具描述 / 内部备注而不出现在对用户可见的会话正文。
