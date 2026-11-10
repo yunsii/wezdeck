@@ -14,6 +14,11 @@ internal sealed class RuntimeConfig
     public List<string> HttpAllowedOrigins { get; init; } = new();
     public string? ChromeDebugStatePath { get; init; }
     public ChromeDebugAutoStartConfig? ChromeDebugAutoStart { get; init; }
+    /// <summary>
+    /// Path to <c>state/browser-agent/status.json</c>. When set, the helper
+    /// heartbeat refreshes ego.alive while backend=ego (see EgoHeartbeatSampler).
+    /// </summary>
+    public string? BrowserAgentStatusPath { get; init; }
     public required DiagnosticConfig Diagnostics { get; init; }
     public string? ClipboardOutputDir { get; init; }
     public string? ClipboardWslDistro { get; init; }
@@ -51,6 +56,9 @@ internal sealed class RuntimeConfig
             HttpAllowedOrigins = parsed.HttpAllowedOrigins ?? new List<string>(),
             ChromeDebugStatePath = string.IsNullOrWhiteSpace(parsed.ChromeDebugStatePath) ? null : parsed.ChromeDebugStatePath,
             ChromeDebugAutoStart = parsed.ChromeDebugAutoStart,
+            BrowserAgentStatusPath = string.IsNullOrWhiteSpace(parsed.BrowserAgentStatusPath)
+                ? null
+                : parsed.BrowserAgentStatusPath,
             Diagnostics = parsed.Diagnostics,
             ClipboardOutputDir = ResolveClipboardOutputDir(parsed.ClipboardOutputDir),
             ClipboardWslDistro = parsed.ClipboardWslDistro,

@@ -72,6 +72,20 @@ internal sealed class RuntimeManager : IDisposable
         clipboardService?.Start();
         heartbeatTimer.Change(config.HeartbeatIntervalMs, config.HeartbeatIntervalMs);
 
+        // Immediate ego badge refresh on helper start (then every ~30s via tick).
+        try
+        {
+            EgoHeartbeatSampler.Tick(logger, config.BrowserAgentStatusPath);
+        }
+        catch (Exception egoEx)
+        {
+            logger.Warn("browser_agent", "ego heartbeat startup tick failed", new Dictionary<string, string?>
+            {
+                ["error"] = egoEx.Message,
+                ["status_file"] = config.BrowserAgentStatusPath,
+            });
+        }
+
         // Reconcile chrome state file before serving requests so a helper
         // restart does not leave the right-status segment lying about a
         // process that died with the previous helper.
@@ -200,6 +214,19 @@ internal sealed class RuntimeManager : IDisposable
                 logger.Warn("foreground", "foreground sample failed", new Dictionary<string, string?>
                 {
                     ["error"] = fgEx.Message,
+                });
+            }
+
+            try
+            {
+                EgoHeartbeatSampler.Tick(logger, config.BrowserAgentStatusPath);
+            }
+            catch (Exception egoEx)
+            {
+                logger.Warn("browser_agent", "ego heartbeat tick failed", new Dictionary<string, string?>
+                {
+                    ["error"] = egoEx.Message,
+                    ["status_file"] = config.BrowserAgentStatusPath,
                 });
             }
 

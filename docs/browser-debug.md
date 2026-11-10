@@ -49,8 +49,14 @@ boot does not also pull up the CDP instance. Switch back with
 `apply-browser-backend --set cdp` (next helper ensure picks it up).
 
 Status file (Windows runtime FS): `state/browser-agent/status.json`, written by
-`apply-browser-backend`, the `ego-browser` CLI wrapper, and the ego Alt+b
-PowerShell helper (`ego-window.ps1` under `~/.wezterm-x/scripts/` after apply).
+`apply-browser-backend`, the `ego-browser` CLI wrapper, the ego Alt+b
+PowerShell helper (`ego-window.ps1` under `~/.wezterm-x/scripts/` after apply),
+and the **helper ego heartbeat** (`EgoHeartbeatSampler` in
+`wezdeck-runtime.exe`): while `backend=ego`, each helper tick may refresh
+`ego.alive` / `updated_at_ms` (throttled to ~30s, or immediately on alive
+flip). That keeps the badge off `Ego·?` when ego is still running but idle.
+`Ego·?` still means the status file itself is stale or missing a usable
+timestamp (helper down, path wrong, or no writer yet).
 
 Probe:
 
@@ -118,6 +124,12 @@ The browser slot follows `WEZDECK_BROWSER_BACKEND` (see [backends](#browser-back
 | `Ego·A` | ego process recently alive (`status.json` ego.alive) | running-attention palette, Bold |
 | `Ego·-` | backend is ego but process not running | idle palette, Italic |
 | `Ego·?` | ego heartbeat older than `browser_agent.ego_heartbeat_timeout_ms` (default 120 s) | warning palette, Italic |
+
+With a live helper, the ~30s ego heartbeat should keep `Ego·A` / `Ego·-`
+current while `backend=ego`. Persistent `Ego·?` usually means the helper is
+not running or `browserAgentStatusPath` is missing from manager-config (re-run
+`wezdeck-runtime-ops` / restart WezTerm so `ensure-wezdeck-runtime.ps1`
+rewrites config).
 
 Marks stay ASCII (same cell width as `CDP·H`) so the tab-bar font does not
 leave a blank hole between IME and attention.

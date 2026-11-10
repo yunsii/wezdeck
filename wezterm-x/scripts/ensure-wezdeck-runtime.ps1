@@ -262,6 +262,10 @@ function Write-ManagerConfig {
       remoteDebuggingPort = $chromeRemotePort
       userDataDir = $chromeUserDataDir
     }
+    # Ego right-status badge heartbeat (EgoHeartbeatSampler). Only refreshes
+    # when status.json already has backend=ego; apply-browser-backend owns the
+    # backend switch. Path mirrors Lua browser_agent.status_file default.
+    browserAgentStatusPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\browser-agent\status.json'
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
