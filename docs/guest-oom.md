@@ -270,6 +270,13 @@ This host's `%UserProfile%\.wslconfig` caps the VM at `memory=44GB` and sets
 free pages. Instant full return to Windows requires `wsl --shutdown` from the
 host (it tears down every tmux pane, agent session, and the OpenClaw gateway).
 
+**Long Windows uptime + sticky console input (2026-11):** when guest meters
+look calm but the **PC keyboard/mouse** feel sticky (average CPU modest,
+Transition Faults high, `VmmemWSL` Private still tens of GiB, multi-week
+`wezterm-gui`), treat it as host reclaim / long-lived GUI pressure — reboot
+helped on **2026-11-10** (Private ~42 GiB → ~9 GiB). Playbook and OPPO/WARP
+confounders: [`oppo-remote-host-input.md`](./oppo-remote-host-input.md).
+
 ### Standing memory consumers
 
 The guard tells you who died; this section records what is *always* resident, so a snapshot can be read against a known baseline. Measured 2026-07-25 via `/proc/<pid>/status` `VmHWM` (per-process peak RSS) — the top-of-`ps` view understates long-lived processes that have since shrunk.

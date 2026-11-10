@@ -8,6 +8,7 @@ on this host after 2026-07-20.
 | --- | --- |
 | Assign / steer / accept coding work remotely | **OpenClaw** (Feishu DM → Dex; C1/C2/C3, including ACP) |
 | Temporary help on a live tmux agent pane | OpenClaw **tmux skill** (capture / send-keys) — not a second full client |
+| Pad / phone **desktop remote control** of this Windows PC (OPPO 互联) | Ops notes: [`oppo-remote-host-input.md`](./oppo-remote-host-input.md) (same-LAN vs cross-net, WARP, long-uptime host input) — not an agent coding path |
 | Phone shell / attach desktop tmux from Android | **Retired** (was Tailscale + Termux ssh; host package to be purged) |
 
 History: evolution **v6** · OpenClaw control plane:
