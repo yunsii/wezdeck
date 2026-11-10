@@ -498,7 +498,7 @@ Guest-memory failure modes (distro restart loop, reclaim livelock, high-order al
 
 ## Host Disk Space
 
-Host volume headroom (`ext4.vhdx` growth, sparse-VHD trap, `fstrim` → shutdown → Optimize-VHD / compact, disk-guard `C·…` / `D·…` badges, system-volume channel, `history` sparklines, OEM preinstalls) lives in [`host-disk.md`](./host-disk.md).
+Host volume headroom (`ext4.vhdx` growth, sparse-VHD trap, `fstrim` → shutdown → Optimize-VHD / compact, disk-guard `C·…` / `D·…` badges, system-volume channel, `history` sparklines, OEM preinstalls, **C: triage playbook** via `scripts/dev/host-disk-triage.sh`) lives in [`host-disk.md`](./host-disk.md) ([system disk triage](./host-disk.md#system-disk-c-triage)).
 
 ## Troubleshooting Notes
 

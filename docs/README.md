@@ -44,7 +44,8 @@ Use this doc when you need the shortest possible map of the repository docs.
 - Guest OOM hardening (restart loop, reclaim livelock, high-order allocation,
   `M·…` / earlyoom, standing memory consumers):
   Read [`guest-oom.md`](./guest-oom.md).
-- Host disk space (`ext4.vhdx`, sparse-VHD trap, compaction, `D·…` badge):
+- Host disk space (`ext4.vhdx`, sparse-VHD trap, compaction, `C·…` / `D·…`,
+  system-disk triage):
   Read [`host-disk.md`](./host-disk.md).
 - Logger author surface (categories, levels, render-path discipline):
   Read [`logging-conventions.md`](./logging-conventions.md).

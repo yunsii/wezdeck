@@ -1,8 +1,15 @@
 # Host Disk Space
 
-Use this doc for host disk headroom on the Windows volume that backs the WSL `ext4.vhdx`: why sparse VHD is a trap, reclaim / compact, the disk guard and `D·…` badge, and OEM preinstall inventory.
+Use this doc for host disk headroom on the Windows volume that backs the WSL
+`ext4.vhdx` **and** the Windows system volume (`C:`): sparse-VHD trap, reclaim /
+compact, the disk guard (`C·…` / `D·…`), history curves, OEM inventory, and the
+[system-disk triage playbook](#system-disk-c-triage).
 
-Operator entry / other diagnostics: [`diagnostics.md`](./diagnostics.md). Guest memory / OOM: [`guest-oom.md`](./guest-oom.md). The sampler reads host avail through `/mnt/<drive>`; if the shell spams `wsl: Failed to translate 'C:\…'` or `/mnt/d` is a fake guest directory, fix Windows-drive automount first — [`development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate`](./development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate).
+Operator entry / other diagnostics: [`diagnostics.md`](./diagnostics.md). Guest
+memory / OOM: [`guest-oom.md`](./guest-oom.md). The sampler reads host avail
+through `/mnt/<drive>`; if the shell spams `wsl: Failed to translate 'C:\…'` or
+`/mnt/d` is a fake guest directory, fix Windows-drive automount first —
+[`development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate`](./development-environment-troubleshooting.md#windows-drives-not-mounted-failed-to-translate).
 
 
 The distro lives on a fixed-size host volume, and the failure mode is the same shape as guest OOM: nothing warns you until everything stops. Reference incident (2026-07-25): `D:` (256 GB) reached **331 MB free**. `ext4.vhdx` was 228.4 GiB while the guest filesystem inside it held only 191 GiB.
@@ -238,9 +245,78 @@ not an optimization. Two consequences are built in:
   WSL's own default install location is deep enough that shallow patterns miss
   a store-installed distro entirely.
 
+### System disk (C:) triage
+
+When the `C·…` badge appears (or `status` shows the system volume at warn/crit),
+**do not** start with a recursive `du` on `/mnt/c` — drvfs makes that
+multi-minute. Use the read-only helper, then walk the ranked recipe.
+
+```bash
+scripts/dev/host-disk-triage.sh              # df + known hotspots + recipe
+scripts/runtime/wsl-disk-guard.sh status     # live levels
+scripts/runtime/wsl-disk-guard.sh history --days 2
+```
+
+#### Size ladder (what usually wins)
+
+Measured 2026-11-10 on this host (`C:` 182G, was 8.6G free / 96%). After Tier A
+cleanup: **88G free / 52%**. Re-run `host-disk-triage.sh` for current numbers —
+paths below are the standing suspects, not a live snapshot.
+
+| Tier | Path (under `C:\Users\<you>\` unless noted) | Typical | Notes |
+|---|---|---|---|
+| **A** | `AppData\Local\Temp\wsl-crashes\*.dmp` | tens of G | Playwright/WebKit / guest crash dumps. 9 files = 64G here. Safe to delete the `.dmp`s; keep the folder. Also check `kernel-panic-*.txt` before wiping if you are triaging a distro vanish ([cross-host](./development-environment-troubleshooting.md#fatal-machine-check-mce--reference-2026-09-23)). |
+| **A** | `AppData\Local\Temp\<GUID>\swap.vhdx` | ~4G | Orphan temp VHD left after a failed/old WSL session. Delete the whole GUID folder when it is only that file. |
+| **A** | `AppData\Local\Google\Chrome\User Data\Default\Service Worker\CacheStorage` | ~5G | Rebuilt on next visit. |
+| **A** | `Downloads\` confirmed junk (deploy tars, duplicate APKs) | varies | Confirm before delete. |
+| **B** | `AppData\Roaming\LarkShell\aha\users` | ~8G | Prefer Feishu/Lark in-app clear-cache; do not hand-delete while Lark is running. |
+| **B** | `AppData\Local\Google\Chrome\…\Cache` / `Code Cache` | ~1G | `chrome://settings/clearBrowserData`. |
+| **B** | `vscode-remote-wsl\stable\<hash>\` | ~8G total | Keep the newest 1–2 server hashes; drop the rest. |
+| **C** | `C:\Windows\WinSxS` | ~18G | Disk Cleanup → system files, or elevated `DISM /Online /Cleanup-Image /StartComponentCleanup`. **Never** `rm` WinSxS. |
+| **C** | `C:\Windows\SoftwareDistribution\Download` | small–G | Same Disk Cleanup path. |
+
+`AppData\Local` as a whole is usually the bulk of `Users\<you>` (here ~90G of
+~124G). If triage shows a new name above 1G that is not in the table, add it
+here in the same edit that cleans it — the table is the standing memory.
+
+#### Tier A cleanup (WSL-side paths)
+
+Replace `<you>` with the Windows profile name (`host-disk-triage.sh` prints it).
+Confirm each target with `du -sh` / `ls` before `rm`.
+
+```bash
+U=/mnt/c/Users/<you>
+# Crash dumps only (keep the directory for future kernel-panic txts)
+rm -f "$U/AppData/Local/Temp/wsl-crashes/"*.dmp
+# Orphan GUID temp (example — verify contents first)
+# rm -rf "$U/AppData/Local/Temp/<GUID>"
+# Chrome SW cache
+rm -rf "$U/AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheStorage"
+mkdir -p "$U/AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheStorage"
+```
+
+Then republish so the badge and history catch up:
+
+```bash
+scripts/runtime/wsl-disk-guard.sh sample
+df -h /mnt/c
+```
+
 ### OEM preinstalls on the same volume
 
-Worth an audit pass when the host volume is tight — on this machine `D:\Program Files\Tencent\Androws` held 22 GiB. Despite the `WeChatAppEx.exe` process it spawns, it is **not** a WeChat component: `HKLM:\SOFTWARE\Tencent\Androws` → `InstallSource` records `"display_name":"腾讯应用宝"`, `"oem_preinstall":1`, `"co_source_id":"microsoft"` — a vendor-bundled Android emulator whose preinstall target is Douyin, carrying its own `WmpfRuntime` mini-program runtime. No WeChat installation exists on this host at all. Read the `InstallSource` JSON before attributing a Tencent directory to whatever app you assume put it there.
+Worth an audit pass when the **WSL** host volume (`D:` here) is tight — on this
+machine `D:\Program Files\Tencent\Androws` held 22 GiB. Despite the
+`WeChatAppEx.exe` process it spawns, it is **not** a WeChat component:
+`HKLM:\SOFTWARE\Tencent\Androws` → `InstallSource` records
+`"display_name":"腾讯应用宝"`, `"oem_preinstall":1`, `"co_source_id":"microsoft"`
+— a vendor-bundled Android emulator whose preinstall target is Douyin, carrying
+its own `WmpfRuntime` mini-program runtime. No WeChat installation exists on
+this host at all. Read the `InstallSource` JSON before attributing a Tencent
+directory to whatever app you assume put it there.
 
-Its `Image/` directory keeps **every** version it has ever updated through (8 × ~1.8 GiB here, oldest six months back) while only the newest is live; the stale ones are safe to delete on their own. Full removal goes through `Application\<version>\Uninstall.exe`, then check for `D:\AndrowsData`, the `AndrowsSvr` service, and the `HKLM`/`HKCU` `SOFTWARE\Tencent\Androws` keys.
+Its `Image/` directory keeps **every** version it has ever updated through
+(8 × ~1.8 GiB here, oldest six months back) while only the newest is live; the
+stale ones are safe to delete on their own. Full removal goes through
+`Application\<version>\Uninstall.exe`, then check for `D:\AndrowsData`, the
+`AndrowsSvr` service, and the `HKLM`/`HKCU` `SOFTWARE\Tencent\Androws` keys.
 
