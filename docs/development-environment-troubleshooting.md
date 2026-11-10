@@ -450,11 +450,31 @@ failure modes that share a symptom surface (“bottom hover / taskbar missing”
 | --- | --- | --- | --- |
 | L1 shell hot zone | After lock→unlock; often windowed **and** maximized | Edge hit-testing dead; Win/Meta still works | Recycle explorer + ShellHost; StuckRects3 `byte8` bounce |
 | L2 ABM race | Right after recycle | ABM briefly reports autohide=off while `byte8=3` → bounce skipped | Wait for settled ABM; if `byte8=3` still treat as on |
-| L3 tray under WezTerm | Auto-hide **on** + maximized WezTerm: hover dead, or bar reveals underneath | Win11 **Rude Window Manager** treats borderless maximized WezTerm (`window_decorations=RESIZE`) as exclusive fullscreen and demotes tray `TOPMOST`; sizing with `HWND_TOP` can also raise WezTerm above the bar | `SetProp(NonRudeHWND)` on wezterm-gui + restore→maximize re-eval (`nonrude=`), remamaximize with `SWP_NOZORDER`, then NOTOPMOST→TOPMOST **last** |
+| L3 tray under WezTerm | Auto-hide **on** + maximized WezTerm: hover dead, or bar reveals underneath | Win11 **Rude Window Manager** / XAML tray demotes `TOPMOST` (borderless maximized WezTerm looks like exclusive fullscreen; Explorer also re-demotes on Start/flyouts/focus) | **Standing:** Windhawk [Taskbar Z-Order Override](https://windhawk.net/mods/taskbar-z-order-override) → **Always on top**. **Episodic:** `Ctrl+k e` (`NonRudeHWND` + tray TOPMOST assert) |
 
-**Standing preference:** WezTerm stays **maximized**. An earlier permanent bottom-gap experiment was rejected. `NonRudeHWND` is the Microsoft-documented (since Windows 7) way to say “this is not exclusive fullscreen” — same class of fix Firefox/Flutter use for custom-chrome maximized windows. Tray **notification badges still popping over WezTerm** is desired; exclusive-fullscreen **games/video** is the other case (those should stay “rude” so the bar stays buried). Do not mark game HWNDs.
+**Standing preference:** WezTerm stays **maximized**. An earlier permanent bottom-gap experiment was rejected. Tray **notification badges still popping over WezTerm** is desired; exclusive-fullscreen **games/video** is the other case (those should stay “rude”).
 
-L1 was the original lock→unlock design. L2–L3 were measured when “windowed hover OK / maximized still wrong or bar covered” showed up. One-shot `SetWindowPos(TOPMOST)` alone is not durable on Win11 XAML tray (Explorer re-demotes on Start/flyouts/focus); `NonRudeHWND` reduces the mis-detect that triggers demotion. `Assert-TrayTopmost` still retries after bounce (`tray_topmost=ok_nN` / `fail_nN`). Re-run `Ctrl+k e` if drift returns. Turning auto-hide off avoids L3 entirely.
+L1/L2 stay on `Ctrl+k e`. L3 **recurs within minutes** after a one-shot `SetWindowPos(TOPMOST)` even when `NonRudeHWND` stays set — Microsoft Q&A treats maximized auto-hide burial as a product issue with no registry/DWM switch. Community durable fix is an Explorer-injected Z-order hook (not a sleep-loop keep-alive).
+
+### Standing fix for L3 (Windhawk)
+
+Installed and verified on this host (2026-11-10):
+
+1. Install [Windhawk](https://windhawk.net/) (`winget install -e --id RamenSoftware.Windhawk`).
+2. In Windhawk **Explore**, search **Taskbar Z-Order Override**
+   ([windhawk.net/mods/taskbar-z-order-override](https://windhawk.net/mods/taskbar-z-order-override)) → **Install**.
+   Prefer the marketplace one-click path; do **not** require pasting GitHub
+   `taskbar-topmost.wh.cpp` unless the catalog entry is missing.
+3. Mod settings → **Always on top** (keeps the bar above normal windows; intended
+   for auto-hide users who need consistent edge access).
+4. Leave Windhawk running (it injects into `explorer.exe`).
+
+Probe after install (maximized WezTerm + focus thrash): `tray_TOPMOST=True`,
+bottom-edge `WindowFromPoint` → `Shell_TrayWnd`. Registry:
+`HKLM\SOFTWARE\Windhawk\Engine\Mods\taskbar-z-order-override` with `Disabled=0`.
+
+`Ctrl+k e` remains for **L1/L2** (lock→unlock hot zone / StuckRects) and as
+backup if Windhawk is disabled. Turning auto-hide off avoids L3 entirely.
 
 ### Typical symptoms on this hybrid-wsl host
 
@@ -474,8 +494,10 @@ L1 was the original lock→unlock design. L2–L3 were measured when “windowed
 
 ### First action
 
-In a tmux-backed pane press **`Ctrl+k e`** (`windows.restart-explorer`). That
-path now:
+For **day-to-day maximized + auto-hide hover** (L3), prefer the Windhawk
+standing fix above. For **lock→unlock / hot zone dead** (L1/L2), or when
+Windhawk is off, press **`Ctrl+k e`** (`windows.restart-explorer`). That
+path:
 
 1. Recycles `explorer.exe` plus `ShellHost` / ShellExperienceHost /
    StartMenuExperienceHost / SearchHost (a plain explorer kill can leave a
@@ -506,9 +528,9 @@ Taskbar behaviors (toggle auto-hide off then on). On this host `byte8=3` means
 auto-hide on (`2` off); some guides reverse 2/3 — prefer settled ABM, and when
 ABM races off while `byte8=3`, the heal still treats auto-hide as on.
 
-If hover fails again after a focus change (tray dropped `TOPMOST`), use **Win**
-to raise the bar or run `Ctrl+k e` again. Maximize itself is expected and
-supported. Turning auto-hide off avoids the Win11 tray Z-order class entirely.
+If L3 returns while Windhawk is supposed to be on: confirm the mod is enabled
+(**Always on top**), that `windhawk` processes are running, then **Win** or
+`Ctrl+k e` as backup. Maximize itself is expected and supported.
 
 ### If icons still look ungrouped
 

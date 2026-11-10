@@ -884,7 +884,7 @@
   {
     "id": "windows.restart-explorer",
     "label": "Windows: Restart Explorer",
-    "description": "Recycle Windows Explorer after lock→unlock shell glitches: auto-hide hover dead while Win/Meta still works; maximized WezTerm covering the tray (auto-hide off); or hover only when WezTerm is windowed (Win11 maximized burial under auto-hide). Recycles explorer + ShellHost; settles ABM vs StuckRects3; when auto-hide is on, bounces StuckRects3 off→on, marks WezTerm NonRudeHWND, re-maximizes, then reasserts tray TOPMOST last. When auto-hide is off, re-fits covering wezterm-gui and re-maximizes windows that were maximized at start. hybrid-wsl only.",
+    "description": "Episodic Windows Explorer recycle for lock→unlock shell glitches (auto-hide edge hot zone / StuckRects). Day-to-day maximized+auto-hide Z-order drift: prefer Windhawk Taskbar Z-Order Override (Always on top). When auto-hide is on, also marks WezTerm NonRudeHWND and asserts tray TOPMOST as backup. hybrid-wsl only.",
     "scope": "session-maintenance",
     "context": "hybrid-wsl",
     "binding": {
