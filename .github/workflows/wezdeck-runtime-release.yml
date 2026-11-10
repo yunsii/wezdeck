@@ -1,9 +1,9 @@
-name: host-helper-release
+name: wezdeck-runtime-release
 
 on:
   push:
     tags:
-      - "host-helper-v*"
+      - "wezdeck-runtime-v*"
   workflow_dispatch:
     inputs:
       release_tag:
@@ -26,7 +26,7 @@ on:
         type: boolean
 
 concurrency:
-  group: host-helper-release-${{ inputs.release_tag || github.ref_name }}
+  group: wezdeck-runtime-release-${{ inputs.release_tag || github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -52,7 +52,7 @@ jobs:
         id: meta
         shell: pwsh
         run: >
-          & ./native/host-helper/windows/scripts/resolve-release-metadata.ps1
+          & ./native/wezdeck-runtime/windows/scripts/resolve-release-metadata.ps1
           -ReleaseTag '${{ inputs.release_tag || github.ref_name }}'
           -ReleaseName '${{ inputs.release_name }}'
 
@@ -60,7 +60,7 @@ jobs:
         id: package
         shell: pwsh
         run: >
-          & ./native/host-helper/windows/scripts/package-release.ps1
+          & ./native/wezdeck-runtime/windows/scripts/package-release.ps1
           -ReleaseTag '${{ steps.meta.outputs.release_tag }}'
           -AssetName '${{ steps.meta.outputs.asset_name }}'
 
@@ -78,7 +78,7 @@ jobs:
       - name: Write manifest snippet
         shell: pwsh
         run: >
-          & ./native/host-helper/windows/scripts/write-release-summary.ps1
+          & ./native/wezdeck-runtime/windows/scripts/write-release-summary.ps1
           -ReleaseTag '${{ steps.meta.outputs.release_tag }}'
           -AssetName '${{ steps.meta.outputs.asset_name }}'
           -Sha256 '${{ steps.package.outputs.sha256 }}'
@@ -95,7 +95,7 @@ jobs:
 
       - name: Update release manifest
         run: >
-          scripts/dev/update-host-helper-release-manifest.sh
+          scripts/dev/update-wezdeck-runtime-release-manifest.sh
           --tag '${{ needs.build.outputs.release_tag }}'
           --sha256 '${{ needs.build.outputs.sha256 }}'
           --repo '${{ github.repository }}'
@@ -104,15 +104,15 @@ jobs:
       - name: Create manifest update PR
         uses: peter-evans/create-pull-request@v8
         with:
-          commit-message: 'chore(scripts): update host helper release manifest'
-          title: 'chore(scripts): update host helper release manifest for ${{ needs.build.outputs.release_tag }}'
+          commit-message: 'chore(scripts): update WezDeck Runtime release manifest'
+          title: 'chore(scripts): update WezDeck Runtime release manifest for ${{ needs.build.outputs.release_tag }}'
           body: |
-            Update the Windows host-helper release manifest after publishing `${{ needs.build.outputs.release_tag }}`.
+            Update the Windows wezdeck-runtime release manifest after publishing `${{ needs.build.outputs.release_tag }}`.
 
             Release asset: `${{ needs.build.outputs.asset_name }}`
             SHA-256: `${{ needs.build.outputs.sha256 }}`
-          branch: ci/update-host-helper-manifest-${{ needs.build.outputs.release_tag }}
+          branch: ci/update-wezdeck-runtime-manifest-${{ needs.build.outputs.release_tag }}
           base: ${{ github.event.repository.default_branch }}
           add-paths: |
-            native/host-helper/windows/release-manifest.json
+            native/wezdeck-runtime/windows/release-manifest.json
           delete-branch: true
