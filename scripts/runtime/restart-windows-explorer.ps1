@@ -16,6 +16,8 @@ public class ExplorerRestartProbe {
   [DllImport("user32.dll")] public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int nIndex);
   [DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr hWnd);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetProp(IntPtr hWnd, string lpString, IntPtr hData);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr GetProp(IntPtr hWnd, string lpString);
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
   [StructLayout(LayoutKind.Sequential)] public struct APPBARDATA {
     public uint cbSize; public IntPtr hWnd; public uint uCallbackMessage; public uint uEdge; public RECT rc; public IntPtr lParam;
@@ -120,28 +122,77 @@ function Remaximize-WezTermHandles([IntPtr[]]$handles) {
   return $n
 }
 
+# Mark wezterm-gui as NonRudeHWND so Win11 Rude Window Manager does not treat
+# borderless maximized WezTerm (window_decorations=RESIZE) as exclusive
+# fullscreen and demote the auto-hide tray. Documented on
+# ITaskbarList2::MarkFullscreenWindow since Windows 7. A property change after
+# the shell already decided may need a restore→maximize to re-evaluate.
+# Exclusive-fullscreen games are a different case (they should stay "rude");
+# WezTerm still wants tray badges / hover — that is this mark.
+function Mark-WezTermNonRude {
+  Add-Type -AssemblyName System.Windows.Forms
+  $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+  $posFlags = [ExplorerRestartProbe]::SWP_NOZORDER -bor [ExplorerRestartProbe]::SWP_FRAMECHANGED -bor [ExplorerRestartProbe]::SWP_SHOWWINDOW -bor [ExplorerRestartProbe]::SWP_NOACTIVATE
+  $n = 0
+  Get-Process wezterm-gui -ErrorAction SilentlyContinue | ForEach-Object {
+    $h = [IntPtr]$_.MainWindowHandle
+    if ($h -eq [IntPtr]::Zero) { return }
+    [void][ExplorerRestartProbe]::SetProp($h, "NonRudeHWND", [IntPtr]1)
+    $wasZoomed = [ExplorerRestartProbe]::IsZoomed($h)
+    [void][ExplorerRestartProbe]::ShowWindow($h, [ExplorerRestartProbe]::SW_RESTORE)
+    Start-Sleep -Milliseconds 100
+    $style = [ExplorerRestartProbe]::GetWindowLongPtr($h, [ExplorerRestartProbe]::GWL_STYLE).ToInt64()
+    $style = $style -bor [ExplorerRestartProbe]::WS_CAPTION -bor [ExplorerRestartProbe]::WS_THICKFRAME
+    [void][ExplorerRestartProbe]::SetWindowLongPtr($h, [ExplorerRestartProbe]::GWL_STYLE, [IntPtr]$style)
+    [void][ExplorerRestartProbe]::SetWindowPos($h, [IntPtr]::Zero, $bounds.X, $bounds.Y, $bounds.Width, $bounds.Height, $posFlags)
+    Start-Sleep -Milliseconds 80
+    if ($wasZoomed) {
+      [void][ExplorerRestartProbe]::ShowWindow($h, [ExplorerRestartProbe]::SW_MAXIMIZE)
+    }
+    $n++
+  }
+  return $n
+}
+
 # Re-arm Shell_TrayWnd as topmost. Measured on this host: with tray TOPMOST
 # stuck, a true maximized WezTerm still leaves bottom-edge hit-testing on
 # Shell_TrayWnd (no need to forbid maximize / leave a permanent gap). A plain
 # HWND_TOPMOST often fails to stick on Win11; toggle NOTOPMOST -> TOPMOST +
-# WS_EX_TOPMOST does. Call this LAST after any WezTerm remamaximize.
+# WS_EX_TOPMOST does. After StuckRects bounce the new tray often clears the
+# bit for ~1s — retry FindWindow + toggle until WS_EX_TOPMOST sticks.
+# Call this LAST after any WezTerm remamaximize.
 function Assert-TrayTopmost {
-  $tray = [ExplorerRestartProbe]::FindWindow("Shell_TrayWnd", $null)
-  if ($tray -eq [IntPtr]::Zero) { return "no_tray" }
   $flags = [ExplorerRestartProbe]::SWP_NOMOVE -bor [ExplorerRestartProbe]::SWP_NOSIZE -bor [ExplorerRestartProbe]::SWP_NOACTIVATE -bor [ExplorerRestartProbe]::SWP_SHOWWINDOW -bor [ExplorerRestartProbe]::SWP_FRAMECHANGED
-  [void][ExplorerRestartProbe]::SetWindowPos($tray, [ExplorerRestartProbe]::HWND_NOTOPMOST, 0, 0, 0, 0, $flags)
-  $ex = [ExplorerRestartProbe]::GetWindowLongPtr($tray, [ExplorerRestartProbe]::GWL_EXSTYLE).ToInt64()
-  [void][ExplorerRestartProbe]::SetWindowLongPtr($tray, [ExplorerRestartProbe]::GWL_EXSTYLE, [IntPtr]($ex -bor [ExplorerRestartProbe]::WS_EX_TOPMOST))
-  [void][ExplorerRestartProbe]::SetWindowPos($tray, [ExplorerRestartProbe]::HWND_TOPMOST, 0, 0, 0, 0, $flags)
-  $abd = New-Object ExplorerRestartProbe+APPBARDATA
-  $abd.cbSize = [uint32][System.Runtime.InteropServices.Marshal]::SizeOf($abd)
-  $abd.hWnd = $tray
-  # ABM_ACTIVATE=6, ABM_WINDOWPOSCHANGED=9
-  try { [void][ExplorerRestartProbe]::SHAppBarMessage(6, [ref]$abd) } catch {}
-  try { [void][ExplorerRestartProbe]::SHAppBarMessage(9, [ref]$abd) } catch {}
-  $ex2 = [ExplorerRestartProbe]::GetWindowLongPtr($tray, [ExplorerRestartProbe]::GWL_EXSTYLE).ToInt64()
-  if (($ex2 -band [ExplorerRestartProbe]::WS_EX_TOPMOST) -ne 0) { return "ok" }
-  return "fail"
+  $deadline = (Get-Date).AddSeconds(4)
+  $attempts = 0
+  do {
+    $attempts++
+    $tray = [ExplorerRestartProbe]::FindWindow("Shell_TrayWnd", $null)
+    if ($tray -eq [IntPtr]::Zero) {
+      Start-Sleep -Milliseconds 200
+      continue
+    }
+    [void][ExplorerRestartProbe]::SetWindowPos($tray, [ExplorerRestartProbe]::HWND_NOTOPMOST, 0, 0, 0, 0, $flags)
+    $ex = [ExplorerRestartProbe]::GetWindowLongPtr($tray, [ExplorerRestartProbe]::GWL_EXSTYLE).ToInt64()
+    [void][ExplorerRestartProbe]::SetWindowLongPtr($tray, [ExplorerRestartProbe]::GWL_EXSTYLE, [IntPtr]($ex -bor [ExplorerRestartProbe]::WS_EX_TOPMOST))
+    [void][ExplorerRestartProbe]::SetWindowPos($tray, [ExplorerRestartProbe]::HWND_TOPMOST, 0, 0, 0, 0, $flags)
+    $abd = New-Object ExplorerRestartProbe+APPBARDATA
+    $abd.cbSize = [uint32][System.Runtime.InteropServices.Marshal]::SizeOf($abd)
+    $abd.hWnd = $tray
+    # ABM_ACTIVATE=6, ABM_WINDOWPOSCHANGED=9
+    try { [void][ExplorerRestartProbe]::SHAppBarMessage(6, [ref]$abd) } catch {}
+    try { [void][ExplorerRestartProbe]::SHAppBarMessage(9, [ref]$abd) } catch {}
+    Start-Sleep -Milliseconds 150
+    # Re-resolve hwnd — bounce can replace the tray between Set and check.
+    $tray2 = [ExplorerRestartProbe]::FindWindow("Shell_TrayWnd", $null)
+    if ($tray2 -eq [IntPtr]::Zero) { $tray2 = $tray }
+    $ex2 = [ExplorerRestartProbe]::GetWindowLongPtr($tray2, [ExplorerRestartProbe]::GWL_EXSTYLE).ToInt64()
+    if (($ex2 -band [ExplorerRestartProbe]::WS_EX_TOPMOST) -ne 0) {
+      return "ok_n$attempts"
+    }
+    Start-Sleep -Milliseconds 250
+  } while ((Get-Date) -lt $deadline)
+  return "fail_n$attempts"
 }
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -177,6 +228,7 @@ $pidOut = if ($after.Count -gt 0) { ($after -join ",") } else { "none" }
 $bounce = "skip"
 $healed = 0
 $trayTopmost = "skip"
+$nonrude = 0
 
 if ($autohideOn) {
   # Bounce StuckRects3 byte8 using ABM to learn which of {2,3} means on.
@@ -250,6 +302,7 @@ if ($autohideOn) {
     $fullish = (($wr.Right - $wr.Left) -ge ($boundsNow.Width - 8)) -and (($wr.Bottom - $wr.Top) -ge ($boundsNow.Height - 8))
     if ([ExplorerRestartProbe]::IsZoomed($h) -or $fullish) { [void]$remaxTargets.Add($h) }
   }
+  $nonrude = Mark-WezTermNonRude
   $healed = $healed + (Remaximize-WezTermHandles @($remaxTargets))
   $trayTopmost = Assert-TrayTopmost
 } else {
@@ -280,4 +333,4 @@ if ($autohideOn) {
   $healed = $healed + $remax
 }
 
-Write-Output ("ok=" + $ok + " pid=" + $pidOut + " start=" + $start + " autohide=" + $autohide + " wezterm_healed=" + $healed + " tray_topmost=" + $trayTopmost + " shellhost_recycled=" + $shellhostRecycled + " stuckrects_bounce=" + $bounce + " abm=" + $abm + " byte8=" + $byte8 + " before=" + (($before -join ",") -replace "^$","none"))
+Write-Output ("ok=" + $ok + " pid=" + $pidOut + " start=" + $start + " autohide=" + $autohide + " wezterm_healed=" + $healed + " nonrude=" + $nonrude + " tray_topmost=" + $trayTopmost + " shellhost_recycled=" + $shellhostRecycled + " stuckrects_bounce=" + $bounce + " abm=" + $abm + " byte8=" + $byte8 + " before=" + (($before -join ",") -replace "^$","none"))

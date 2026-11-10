@@ -450,11 +450,11 @@ failure modes that share a symptom surface (“bottom hover / taskbar missing”
 | --- | --- | --- | --- |
 | L1 shell hot zone | After lock→unlock; often windowed **and** maximized | Edge hit-testing dead; Win/Meta still works | Recycle explorer + ShellHost; StuckRects3 `byte8` bounce |
 | L2 ABM race | Right after recycle | ABM briefly reports autohide=off while `byte8=3` → bounce skipped | Wait for settled ABM; if `byte8=3` still treat as on |
-| L3 tray under WezTerm | Auto-hide **on** + maximized WezTerm: hover dead, or bar reveals underneath | Tray lost `TOPMOST`; sizing with `HWND_TOP` raised WezTerm above the bar | Remamaximize (standing preference), `SWP_NOZORDER`, then NOTOPMOST→TOPMOST + ABM activate **last** |
+| L3 tray under WezTerm | Auto-hide **on** + maximized WezTerm: hover dead, or bar reveals underneath | Win11 **Rude Window Manager** treats borderless maximized WezTerm (`window_decorations=RESIZE`) as exclusive fullscreen and demotes tray `TOPMOST`; sizing with `HWND_TOP` can also raise WezTerm above the bar | `SetProp(NonRudeHWND)` on wezterm-gui + restore→maximize re-eval (`nonrude=`), remamaximize with `SWP_NOZORDER`, then NOTOPMOST→TOPMOST **last** |
 
-**Standing preference:** WezTerm stays **maximized**. An earlier experiment that left a permanent bottom gap forbade maximize and was rejected — with tray `TOPMOST` stuck, `WindowFromPoint` at the bottom edge hits `Shell_TrayWnd` even while WezTerm is `IsZoomed`. Do not reintroduce a gap heal.
+**Standing preference:** WezTerm stays **maximized**. An earlier permanent bottom-gap experiment was rejected. `NonRudeHWND` is the Microsoft-documented (since Windows 7) way to say “this is not exclusive fullscreen” — same class of fix Firefox/Flutter use for custom-chrome maximized windows. Tray **notification badges still popping over WezTerm** is desired; exclusive-fullscreen **games/video** is the other case (those should stay “rude” so the bar stays buried). Do not mark game HWNDs.
 
-L1 was the original lock→unlock design. L2–L3 were measured when “windowed hover OK / maximized still wrong or bar covered” showed up. Win11 can drop tray `TOPMOST` again after focus changes — re-run `Ctrl+k e` (heal is re-entrant). Turning auto-hide off avoids L3 entirely.
+L1 was the original lock→unlock design. L2–L3 were measured when “windowed hover OK / maximized still wrong or bar covered” showed up. One-shot `SetWindowPos(TOPMOST)` alone is not durable on Win11 XAML tray (Explorer re-demotes on Start/flyouts/focus); `NonRudeHWND` reduces the mis-detect that triggers demotion. `Assert-TrayTopmost` still retries after bounce (`tray_topmost=ok_nN` / `fail_nN`). Re-run `Ctrl+k e` if drift returns. Turning auto-hide off avoids L3 entirely.
 
 ### Typical symptoms on this hybrid-wsl host
 
@@ -486,10 +486,11 @@ path now:
    with `autohide=off` in the toast) and leave maximized burial in place.
 3. When auto-hide is **on**, bounces `StuckRects3` Settings `byte8` between the
    ABM-derived off/on values (usually `2`↔`3`), recycling the shell each side
-   (`stuckrects_bounce=`). Then **re-maximizes** WezTerm (standing preference;
-   `SWP_NOZORDER` so sizing does not raise it over the tray) and reasserts the
-   tray as topmost via NOTOPMOST→TOPMOST + `ABM_ACTIVATE` /
-   `ABM_WINDOWPOSCHANGED` (`tray_topmost=`). Tray assert runs **last**.
+   (`stuckrects_bounce=`). Then marks wezterm-gui `NonRudeHWND` and cycles
+   restore→maximize so the shell re-evaluates fullscreen detection
+   (`nonrude=`), remamaximizes with `SWP_NOZORDER`, and reasserts tray
+   topmost via NOTOPMOST→TOPMOST + ABM (`tray_topmost=`). Tray assert runs
+   **last**.
 4. When auto-hide is **off**, re-fits covering `wezterm-gui` windows into the
    primary working area, then re-maximizes windows that were maximized /
    full-bleed at the start so a mid-heal restore does not leave a small window.

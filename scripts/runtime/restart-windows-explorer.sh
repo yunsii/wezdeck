@@ -9,9 +9,9 @@
 #   1. Recycle explorer.exe (+ ShellHost / ShellExperienceHost /
 #      StartMenuExperienceHost / SearchHost) and verify a new explorer PID.
 #   2. Settle ABM against StuckRects3 (post-recycle ABM often races to off).
-#   3. When auto-hide is on: bounce StuckRects3 byte8 off→on, remamaximize
-#      WezTerm (standing preference), then Assert-TrayTopmost LAST so the
-#      bar reveals above a true maximized window (no permanent bottom gap).
+#   3. When auto-hide is on: bounce StuckRects3 byte8 off→on, mark WezTerm
+#      NonRudeHWND (borderless maximize is not exclusive fullscreen), 
+#      remamaximize, then Assert-TrayTopmost LAST.
 #   4. When auto-hide is off: re-fit covering wezterm-gui into the working
 #      area, then remamaximize windows that were maximized at start.
 #
@@ -95,6 +95,7 @@ start_t=""
 autohide=""
 wezterm_healed=""
 tray_topmost=""
+nonrude=""
 shellhost_recycled=""
 stuckrects_bounce=""
 abm_val=""
@@ -105,6 +106,7 @@ if [[ -n "$status_line" ]]; then
   [[ "$status_line" =~ start=([^ ]+) ]] && start_t="${BASH_REMATCH[1]}"
   [[ "$status_line" =~ autohide=([^ ]+) ]] && autohide="${BASH_REMATCH[1]}"
   [[ "$status_line" =~ wezterm_healed=([^ ]+) ]] && wezterm_healed="${BASH_REMATCH[1]}"
+  [[ "$status_line" =~ nonrude=([^ ]+) ]] && nonrude="${BASH_REMATCH[1]}"
   [[ "$status_line" =~ tray_topmost=([^ ]+) ]] && tray_topmost="${BASH_REMATCH[1]}"
   [[ "$status_line" =~ shellhost_recycled=([^ ]+) ]] && shellhost_recycled="${BASH_REMATCH[1]}"
   [[ "$status_line" =~ stuckrects_bounce=([^ ]+) ]] && stuckrects_bounce="${BASH_REMATCH[1]}"
@@ -129,6 +131,9 @@ toast_msg="Explorer ok (pid ${new_pid} @ ${start_t}; autohide ${autohide}"
 if [[ -n "${stuckrects_bounce}" && "${stuckrects_bounce}" != "skip" ]]; then
   toast_msg+=", bounce ${stuckrects_bounce}"
 fi
+if [[ -n "${nonrude}" && "${nonrude}" != "0" ]]; then
+  toast_msg+=", nonrude ${nonrude}"
+fi
 if [[ -n "${wezterm_healed}" && "${wezterm_healed}" != "0" ]]; then
   toast_msg+=", wezterm healed ${wezterm_healed}"
 fi
@@ -148,6 +153,7 @@ runtime_log_info workspace "windows explorer restart completed" \
   "shellhost_recycled=${shellhost_recycled:-}" \
   "stuckrects_bounce=${stuckrects_bounce:-}" \
   "wezterm_healed=${wezterm_healed:-0}" \
+  "nonrude=${nonrude:-0}" \
   "tray_topmost=${tray_topmost:-}" \
   "toast=$toast_msg"
 toast "$toast_msg"
