@@ -370,6 +370,107 @@ function M.open_current_dir_in_vscode(wezterm, window, pane, constants, logger, 
   end
 end
 
+function M.read_browser_backend(constants)
+  local agent = constants.browser_agent or {}
+  local path = agent.status_file
+  if type(path) ~= 'string' or path == '' then
+    return 'cdp'
+  end
+  local f = io.open(path, 'r')
+  if not f then
+    return 'cdp'
+  end
+  local content = f:read('*a')
+  f:close()
+  if type(content) ~= 'string' or content == '' then
+    return 'cdp'
+  end
+  local backend = content:match('"backend"%s*:%s*"(ego)"') or content:match('"backend"%s*:%s*"(cdp)"')
+  if backend == 'ego' then
+    return 'ego'
+  end
+  return 'cdp'
+end
+
+-- Ensure / focus ego (lite). opts: focus=bool, quiet=bool (no toast; for gui-startup).
+function M.ensure_ego(wezterm, constants, logger, trace_id, opts)
+  opts = opts or {}
+  local focus = opts.focus and true or false
+  local quiet = opts.quiet and true or false
+  local window = opts.window
+  local agent = constants.browser_agent or {}
+  local script = agent.ego_window_script
+  local status_file = agent.status_file or ''
+
+  if type(script) ~= 'string' or script == '' then
+    if logger then
+      logger.warn('browser_agent', 'missing ego_window_script', common.merge_fields(trace_id, {
+        focus = focus,
+        quiet = quiet,
+      }))
+    end
+    if window and not quiet then
+      window:toast_notification('WezTerm', 'Ego ensure failed: ego_window_script not configured', nil, 4000)
+    end
+    return false
+  end
+
+  local ps = os.getenv('SystemRoot')
+  if not ps or ps == '' then
+    ps = 'C:\\Windows'
+  end
+  ps = ps .. '\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+
+  local args = {
+    ps,
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-File',
+    script,
+  }
+  if focus then
+    args[#args + 1] = '-Focus'
+  else
+    args[#args + 1] = '-Ensure'
+  end
+  if status_file ~= '' then
+    args[#args + 1] = '-StatusFile'
+    args[#args + 1] = status_file
+  end
+
+  if logger then
+    logger.info('browser_agent', 'ego window request', common.merge_fields(trace_id, {
+      focus = focus,
+      quiet = quiet,
+      script = script,
+      reason = opts.reason or 'manual',
+    }))
+  end
+
+  local ok, err = pcall(wezterm.background_child_process, args)
+  if not ok then
+    if logger then
+      logger.error('browser_agent', 'ego window spawn failed', common.merge_fields(trace_id, {
+        error = err,
+        focus = focus,
+        quiet = quiet,
+      }))
+    end
+    if window and not quiet then
+      window:toast_notification('WezTerm', 'Ego ensure failed. Check WezTerm logs.', nil, 3000)
+    end
+    return false
+  end
+
+  if window and not quiet then
+    local toast = focus and 'Ego: ensure + focus' or 'Ego: ensure (no focus)'
+    window:toast_notification('WezTerm', toast, nil, 2000)
+  end
+  return true
+end
+
 function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host, override_headless)
   local chrome_source = constants.chrome_debug_browser or {}
   local runtime_mode = constants.runtime_mode or 'hybrid-wsl'
@@ -382,6 +483,16 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host,
     chrome.headless = override_headless
   end
   local shortcut_label = chrome.headless and 'Alt+b' or 'Alt+Shift+b'
+  local focus = not chrome.headless
+
+  if M.read_browser_backend(constants) == 'ego' then
+    M.ensure_ego(wezterm, constants, logger, trace_id, {
+      focus = focus,
+      window = window,
+      reason = 'hotkey',
+    })
+    return
+  end
 
   if not chrome.user_data_dir or chrome.user_data_dir == '' then
     logger.warn('chrome', 'missing chrome debug browser user_data_dir', common.merge_fields(trace_id, {

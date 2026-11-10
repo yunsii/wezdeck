@@ -24,6 +24,13 @@ This is **not** the same MCP session as Grok/Claude CLI; all clients share the
 Workflow detail for launch / badge / inspect:
 repo root [`docs/browser-debug.md`](../../../../docs/browser-debug.md).
 
+## Backend gate
+
+Only the default browser path when `WEZDECK_BROWSER_BACKEND=cdp` (after
+`apply-browser-backend --set cdp`). When backend is `ego`, OpenClaw should
+**not** have this MCP resident — use vendor `ego-browser` / platform
+`browser-agent` instead. See repo [`docs/browser-debug.md`](../../../../docs/browser-debug.md#browser-backends-ego--cdp).
+
 ## When to use (Dex · Main)
 
 | Trigger | Action |

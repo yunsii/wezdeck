@@ -80,11 +80,11 @@ Three layers share one idea: **if you cannot see it, you cannot improve it.**
 
 Left → right (pressure badges stay absent while healthy — presence *is* the signal):
 
-`IME` · `CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention counters
+`IME` · `Ego·…`/`CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention counters
 
 | Segment | Meaning | Deep dive |
 |---|---|---|
-| `CDP·H/V/-/?·port` | Headless / visible / down / helper stale | [Browser debug](docs/browser-debug.md) |
+| `Ego·A/-/?` or `CDP·H/V/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
 | `◆ SB·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
 | `D·…` | Host volume headroom under WSL `ext4.vhdx` | [Host disk](docs/host-disk.md) |
 | `M·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |

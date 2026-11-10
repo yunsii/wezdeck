@@ -287,6 +287,15 @@ local base_constants = {
     headless = true,
     state_file = defaults.default_chrome_debug_state_file(runtime_state_dir, join_path),
   },
+  -- Unified browser slot (Alt+b / badge). Runtime switch is
+  -- WEZDECK_BROWSER_BACKEND via apply-browser-backend; this block only
+  -- holds Windows-readable paths for the status file and ego helper script.
+  browser_agent = {
+    status_file = defaults.default_browser_agent_status_file(runtime_state_dir, join_path),
+    ego_window_script = defaults.default_ego_window_script(runtime_dir, join_path),
+    -- Stale ego.alive older than this → Ego·? on the badge.
+    ego_heartbeat_timeout_ms = 120000,
+  },
   -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and D·).
   -- Absent while the poller is idle/stale — same "presence is the signal"
   -- contract as D· / M· / L· (no always-on `SB·-`).

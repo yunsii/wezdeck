@@ -78,11 +78,11 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 
 从左到右（压力徽章在健康时**不出现**——出现本身就是信号）：
 
-`IME` · `CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention 计数
+`IME` · `Ego·…`/`CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention 计数
 
 | 段 | 含义 | 深入阅读 |
 |---|---|---|
-| `CDP·H/V/-/?·port` | 无头 / 有窗 / 已退出 / helper 心跳过期 | [Browser debug](docs/browser-debug.md) |
+| `Ego·A/-/?` 或 `CDP·H/V/-/?·port` | 浏览器槽跟 `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
 | `◆ SB·N` | session-bridge watch 轮询器 | [session-bridge](openclaw/docs/session-bridge.md) |
 | `D·…` | WSL `ext4.vhdx` 背后的主机卷余量 | [Host disk](docs/host-disk.md) |
 | `M·…` | Guest 内存压力 / earlyoom 临近 | [Guest OOM](docs/guest-oom.md) |

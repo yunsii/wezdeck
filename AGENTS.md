@@ -104,9 +104,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
 - Headless Chrome debug instance, auto-start behavior, `Alt+b` /
-  `Alt+Shift+b`, `chrome://inspect` workflow, or the right-status `CDP·…`
-  badge:
-  Read [`docs/browser-debug.md`](docs/browser-debug.md).
+  `Alt+Shift+b`, `chrome://inspect` workflow, the right-status `CDP·…`
+  badge, or switching the agent browser backend (`ego` \| `cdp` via
+  `apply-browser-backend` / `WEZDECK_BROWSER_BACKEND`):
+  Read [`docs/browser-debug.md`](docs/browser-debug.md)
+  ([backends](docs/browser-debug.md#browser-backends-ego--cdp)).
 - Cutting a Windows wezdeck-runtime release, updating
   `release-manifest.json`, forcing the release-install branch, or
   side-loading the release zip:

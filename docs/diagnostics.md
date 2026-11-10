@@ -456,6 +456,11 @@ constants so the helper picks up a new `configHash`.
 
 ## Smoke Tests
 
+- Browser backend (`ego` \| `cdp`): `apply-browser-backend --set ego|cdp` writes
+  `~/.config/shell-env.d/wezdeck-browser-agent.env` and OpenClaw MCP/skill links.
+  Assert with `openclaw/scripts/smoke-readonly.sh` (checks backend, MCP presence/
+  absence, `ego-browser` or CDP `:9222`). Workflow:
+  [`browser-debug.md#browser-backends-ego--cdp`](./browser-debug.md#browser-backends-ego--cdp).
 - For a repeatable live smoke test of the Windows runtime host, run [`scripts/dev/check-windows-runtime-host.sh`](../scripts/dev/check-windows-runtime-host.sh) from WSL.
 - The Windows host smoke test validates both text and image clipboard IPC, including the tracked [`copy-test.png`](../scripts/dev/windows-runtime-host/cases/fixtures/copy-test.png) fixture.
 - For the repo-local agent clipboard wrapper, run [`scripts/dev/check-agent-clipboard.sh`](../scripts/dev/check-agent-clipboard.sh) from WSL. It writes text through `scripts/runtime/agent-clipboard.sh`, reads it back through `resolve_for_paste`, then repeats the flow for the tracked image asset.

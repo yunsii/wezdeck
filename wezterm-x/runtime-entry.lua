@@ -57,11 +57,14 @@ local workspace = workspace_manager.new {
 }
 
 local vscode_integration = (constants.integrations and constants.integrations.vscode) or {}
+local browser_agent = constants.browser_agent or {}
 chrome_debug_status.configure {
   state_file = constants.chrome_debug_browser and constants.chrome_debug_browser.state_file,
   fallback_port = constants.chrome_debug_browser and constants.chrome_debug_browser.remote_debugging_port,
   helper_state_file = vscode_integration.helper_state_path,
   helper_heartbeat_timeout_ms = (vscode_integration.helper_heartbeat_timeout_seconds or 5) * 1000,
+  browser_agent_status_file = browser_agent.status_file,
+  ego_heartbeat_timeout_ms = browser_agent.ego_heartbeat_timeout_ms,
 }
 
 local sb_watch = constants.session_bridge_watch or {}

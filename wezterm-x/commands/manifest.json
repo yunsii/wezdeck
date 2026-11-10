@@ -658,8 +658,8 @@
   },
   {
     "id": "chrome.open-debug-profile",
-    "label": "Chrome: Open debug profile",
-    "description": "Open the configured Chrome debug browser profile from `wezterm-x/local/constants.lua` via the Windows native helper.",
+    "label": "Browser: Ensure ready (no focus)",
+    "description": "Unified browser slot Alt+b. When WEZDECK_BROWSER_BACKEND=ego: ensure ego (lite) is running without activating its window. When backend=cdp: launch/reuse the Chrome debug profile headless via the Windows helper.",
     "scope": "project-navigation",
     "context": "hybrid-wsl",
     "binding": {
@@ -680,8 +680,8 @@
   },
   {
     "id": "chrome.open-debug-profile-visible",
-    "label": "Chrome: Open debug profile (visible)",
-    "description": "Open or reset the Chrome debug browser profile in visible (headful) mode for manual verification; shares the debug `user_data_dir` and port with the headless instance.",
+    "label": "Browser: Ensure + focus",
+    "description": "Unified browser slot Alt+Shift+b. When WEZDECK_BROWSER_BACKEND=ego: ensure ego (lite) is running and activate its window. When backend=cdp: launch/reuse the Chrome debug profile in visible mode for manual verification.",
     "scope": "project-navigation",
     "context": "hybrid-wsl",
     "binding": {

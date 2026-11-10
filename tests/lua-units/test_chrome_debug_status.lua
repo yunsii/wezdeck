@@ -120,8 +120,54 @@ it('refreshes cache on next successful read', function()
   assert_eq(badge_letter(), 'H', 'fresh read must clear staleness')
 end)
 
+local agent_path = tmpdir .. '/wezterm-browser-agent-test-status.json'
+local function write_agent_status(body)
+  local f = assert(io.open(agent_path, 'w'))
+  f:write(body)
+  f:close()
+end
+local function badge_text()
+  local parts = chrome_debug_status.render_status_segment(palette)
+  if type(parts) == 'string' then
+    return parts
+  end
+  for _, p in ipairs(parts) do
+    if p.Text then return p.Text end
+  end
+  return nil
+end
+
+chrome_debug_status.configure {
+  state_file = state_path,
+  fallback_port = 9222,
+  helper_state_file = helper_path,
+  helper_heartbeat_timeout_ms = 5000,
+  browser_agent_status_file = agent_path,
+  ego_heartbeat_timeout_ms = 120000,
+}
+
+it('renders Ego·A when backend=ego and alive', function()
+  fake_now_ms = 2000000
+  write_helper_state(2000000)
+  write_chrome_state('{"schema":2,"mode":"headless","port":9222,"alive":true}')
+  write_agent_status('{"backend":"ego","updated_at_ms":2000000,"ego":{"alive":true,"updated_at_ms":2000000}}')
+  local text = badge_text()
+  assert_eq(text:match('Ego') ~= nil, true, 'should mention Ego, got ' .. tostring(text))
+  assert_eq(text:match('Ego·A') ~= nil or text:match('Ego\xC2\xB7A') ~= nil, true,
+    'should show Ego·A, got ' .. tostring(text))
+end)
+
+it('falls back to CDP when backend=cdp', function()
+  fake_now_ms = 2000000
+  write_helper_state(2000000)
+  write_chrome_state('{"schema":2,"mode":"visible","port":9222,"alive":true}')
+  write_agent_status('{"backend":"cdp","updated_at_ms":2000000,"ego":{"alive":false,"updated_at_ms":2000000}}')
+  assert_eq(badge_letter(), 'V', 'cdp backend should keep CDP badge')
+end)
+
 os.remove(state_path)
 os.remove(helper_path)
+os.remove(agent_path)
 
 io.write(string.format('chrome_debug_status: %d passed, %d failed\n', pass_count, fail_count))
 if fail_count > 0 then os.exit(1) end

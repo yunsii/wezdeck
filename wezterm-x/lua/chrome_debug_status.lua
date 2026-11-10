@@ -1,26 +1,17 @@
--- Chrome debug browser status segment.
+-- Unified browser-slot status segment (right-status).
 --
--- Reads the JSON state file written by the Windows WezDeck Runtime after each
--- successful Alt+b / Alt+Shift+b request, and after Chrome exits
--- (ChromeRequestHandler.WriteState / WriteStateNone, plus the
--- ChromeLivenessWatcher in native/wezdeck-runtime/windows/src/HelperManager).
--- Renders a compact right-status segment that stays at a fixed visual width
--- so the bar does not jitter between states:
+-- When browser-agent status says backend=ego, renders (ASCII marks so the
+-- tab-bar font width matches CDP·H and does not leave a blank hole):
+--   Ego·A   ego process recently seen alive
+--   Ego·-   ego not running
+--   Ego·?   ego heartbeat stale / unknown
 --
---   CDP·H·9222   helper alive, Chrome alive in headless mode
---   CDP·V·9222   helper alive, Chrome alive in visible  mode
---   CDP·-·9222   helper alive, Chrome not running (mode=none / alive=false)
---   CDP·?·9222   helper itself looks dead (helper state.env heartbeat stale)
+-- Otherwise (backend=cdp or status missing) keeps the CDP badge:
+--   CDP·H·9222 / CDP·V·9222 / CDP·-·9222 / CDP·?·9222
 --
--- The helper writes:
---   * state.env (heartbeat every helper_heartbeat_interval_ms, default 250 ms)
---   * chrome-debug/state.json (after every Alt+b request and on Chrome exit)
---
--- This module never spawns subprocesses; both files are local and small, and
--- both reads live inside the 250 ms update-status tick. helper-liveness is
--- decided here by reading the helper state.env heartbeat (the same signal
--- used by helper_state_preflight in host/runtime_helper.lua) -- chrome.json
--- never carries a heartbeat field; helper.env owns that signal.
+-- CDP state: chrome-debug/state.json + helper state.env (unchanged).
+-- Ego / backend: state/browser-agent/status.json (apply-browser-backend,
+-- ego-browser wrapper, Alt+b ego path).
 
 local wezterm = require 'wezterm'
 
@@ -30,15 +21,9 @@ local state_path = nil
 local helper_state_path = nil
 local helper_heartbeat_timeout_ms = 5000
 local fallback_port = nil
+local browser_agent_status_path = nil
+local ego_heartbeat_timeout_ms = 120000
 
--- Last successfully parsed `heartbeat_at_ms` from state.env. The helper
--- rewrites that file every helper_heartbeat_interval_ms (250 ms) via
--- tmp+rename, and we read it on every update-status tick. On NTFS the
--- replace-existing move is atomic at the kernel level but `io.open` can
--- still race with it (ERROR_SHARING_VIOLATION / ERROR_FILE_NOT_FOUND);
--- without the cache a single missed read would flip the badge to `?`
--- for one frame even though the helper is healthy. Falling back to the
--- cached value lets the 5 s timeout do its real job.
 local last_known_heartbeat_at_ms = nil
 
 local function parse_json(text)
@@ -83,6 +68,12 @@ function M.configure(opts)
   if opts and type(opts.helper_heartbeat_timeout_ms) == 'number' and opts.helper_heartbeat_timeout_ms > 0 then
     helper_heartbeat_timeout_ms = opts.helper_heartbeat_timeout_ms
   end
+  if opts and type(opts.browser_agent_status_file) == 'string' and opts.browser_agent_status_file ~= '' then
+    browser_agent_status_path = opts.browser_agent_status_file
+  end
+  if opts and type(opts.ego_heartbeat_timeout_ms) == 'number' and opts.ego_heartbeat_timeout_ms > 0 then
+    ego_heartbeat_timeout_ms = opts.ego_heartbeat_timeout_ms
+  end
 end
 
 function M.reload_state()
@@ -100,11 +91,21 @@ function M.reload_state()
   return nil
 end
 
--- Returns true if the helper looks alive (heartbeat fresh enough to trust).
--- We deliberately fail-open: when the helper state file isn't configured we
--- assume "alive" so single-host setups without a Windows helper do not see a
--- spurious "?" in the right status. The signal only fires when configure()
--- has been told a real helper_state_file path.
+function M.reload_browser_agent_status()
+  if not browser_agent_status_path then
+    return nil
+  end
+  local content = read_file(browser_agent_status_path)
+  if not content or content == '' then
+    return nil
+  end
+  local parsed = parse_json(content)
+  if type(parsed) == 'table' and type(parsed.backend) == 'string' then
+    return parsed
+  end
+  return nil
+end
+
 local function current_epoch_ms()
   local ok, formatted = pcall(function()
     return wezterm.time.now():format '%s%3f'
@@ -141,14 +142,54 @@ local function helper_is_alive()
   return (current_epoch_ms() - heartbeat_at_ms) <= helper_heartbeat_timeout_ms
 end
 
-function M.render_status_segment(palette)
+local function render_parts(text, bg, fg, intensity, italic)
+  return wezterm.format {
+    { Background = { Color = bg } },
+    { Foreground = { Color = fg } },
+    { Attribute = { Intensity = intensity } },
+    { Attribute = { Italic = italic } },
+    { Text = text },
+  }
+end
+
+local function render_ego_segment(palette, agent)
+  local ego = type(agent.ego) == 'table' and agent.ego or {}
+  local updated = tonumber(ego.updated_at_ms) or tonumber(agent.updated_at_ms) or 0
+  local age = current_epoch_ms() - updated
+  local mark, bg, fg, intensity, italic
+
+  if updated <= 0 or age > ego_heartbeat_timeout_ms then
+    mark = '?'
+    bg = palette.tab_bar_background
+    fg = (palette.ansi and palette.ansi[2]) or palette.new_tab_fg
+    intensity = 'Normal'
+    italic = true
+  elseif ego.alive == true then
+    mark = 'A'
+    bg = palette.tab_attention_running_bg
+    fg = palette.tab_attention_running_fg
+    intensity = 'Bold'
+    italic = false
+  else
+    mark = '-'
+    bg = palette.tab_bar_background
+    fg = palette.new_tab_fg
+    intensity = 'Normal'
+    italic = true
+  end
+
+  -- Same left/right padding as CDP·H·port; single ASCII mark avoids
+  -- double-width ✓/– leaving a blank hole in the right-status cluster.
+  local text = string.format(' Ego·%s ', mark)
+  return render_parts(text, bg, fg, intensity, italic)
+end
+
+local function render_cdp_segment(palette)
   local state = M.reload_state()
   local alive_helper = helper_is_alive()
 
   local mode_letter, port, bg, fg, intensity, italic
   if not alive_helper then
-    -- helper state.env heartbeat is stale -- the chrome state file may be
-    -- arbitrarily out of date, so do not pretend to know Chrome's mode.
     mode_letter = '?'
     port = (state and state.port) or fallback_port or 0
     bg = palette.tab_bar_background
@@ -186,14 +227,15 @@ function M.render_status_segment(palette)
   end
 
   local text = string.format(' CDP·%s·%d ', mode_letter, math.floor(port))
-  local parts = {
-    { Background = { Color = bg } },
-    { Foreground = { Color = fg } },
-    { Attribute = { Intensity = intensity } },
-    { Attribute = { Italic = italic } },
-    { Text = text },
-  }
-  return wezterm.format(parts)
+  return render_parts(text, bg, fg, intensity, italic)
+end
+
+function M.render_status_segment(palette)
+  local agent = M.reload_browser_agent_status()
+  if agent and agent.backend == 'ego' then
+    return render_ego_segment(palette, agent)
+  end
+  return render_cdp_segment(palette)
 end
 
 return M

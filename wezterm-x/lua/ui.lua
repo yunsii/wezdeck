@@ -71,6 +71,18 @@ function M.apply(opts)
   local helper_prewarm_started = false
 
   if constants.runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows' then
+    local function ensure_ego_if_selected(reason)
+      if actions.read_browser_backend(constants) ~= 'ego' then
+        return
+      end
+      local trace_id = logger.trace_id and logger.trace_id('browser_agent') or nil
+      actions.ensure_ego(wezterm, constants, logger, trace_id, {
+        focus = false,
+        quiet = true,
+        reason = reason,
+      })
+    end
+
     wezterm.on('gui-startup', function()
       if helper_prewarm_started then
         return
@@ -82,14 +94,22 @@ function M.apply(opts)
       })
 
       local ensured, ensure_reason = host:ensure_running('gui-startup-prewarm', false)
-      if ensured then
-        return
+      if not ensured then
+        logger.warn('wezdeck_runtime', 'background prewarm for windows helper failed', {
+          reason = 'gui-startup',
+          ensure_reason = ensure_reason,
+        })
       end
 
-      logger.warn('wezdeck_runtime', 'background prewarm for windows helper failed', {
-        reason = 'gui-startup',
-        ensure_reason = ensure_reason,
-      })
+      -- Unified browser slot: backend=ego → ensure ego (lite) on GUI start
+      -- (no focus steal), same role CDP auto_start plays for debug Chrome.
+      ensure_ego_if_selected('gui-startup')
+    end)
+
+    -- Ctrl+Shift+R / sync reload does not re-fire gui-startup; refresh the
+    -- ego heartbeat (and start ego if it died) on config reload too.
+    wezterm.on('window-config-reloaded', function()
+      ensure_ego_if_selected('window-config-reloaded')
     end)
   end
 

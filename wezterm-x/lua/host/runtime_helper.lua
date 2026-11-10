@@ -45,7 +45,26 @@ function M.build_helper_command(runtime)
     or M.diagnostics_capture_enabled(runtime.constants, 'clipboard')
 
   local chrome_debug = runtime.constants.chrome_debug_browser or {}
-  local chrome_auto_start_enabled = chrome_debug.auto_start ~= false
+  -- Unified browser slot: when apply-browser-backend set backend=ego, do not
+  -- auto-start the CDP debug Chrome on helper boot (ego is ensured from
+  -- WezTerm gui-startup instead).
+  local browser_backend = 'cdp'
+  do
+    local agent = runtime.constants.browser_agent or {}
+    local status_path = agent.status_file
+    if type(status_path) == 'string' and status_path ~= '' then
+      local f = io.open(status_path, 'r')
+      if f then
+        local content = f:read('*a')
+        f:close()
+        if type(content) == 'string' and content:match('"backend"%s*:%s*"ego"') then
+          browser_backend = 'ego'
+        end
+      end
+    end
+  end
+  local chrome_auto_start_enabled = browser_backend ~= 'ego'
+    and chrome_debug.auto_start ~= false
     and type(chrome_debug.executable) == 'string' and chrome_debug.executable ~= ''
     and type(chrome_debug.user_data_dir) == 'string' and chrome_debug.user_data_dir ~= ''
 

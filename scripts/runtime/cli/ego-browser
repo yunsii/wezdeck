@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# WSL → Windows bridge for ego (lite)'s ego-browser.exe.
+# Dropped into PATH via wezdeck-env.env (scripts/runtime/cli/).
+#
+# Usage matches the Windows CLI: ego-browser skill | nodejs | upgrade | …
+# Stdin is forwarded (heredoc / redirect). Prefer piping script bodies or
+# -e for short probes; for .mjs files, keep them on a Windows-visible path
+# (/mnt/c/…) or pipe the file: ego-browser nodejs < /tmp/task.mjs
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUNTIME_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# shellcheck disable=SC1091
+source "$RUNTIME_DIR/ego-browser-lib.sh"
+# shellcheck disable=SC1091
+source "$RUNTIME_DIR/browser-agent-status-lib.sh" 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$RUNTIME_DIR/runtime-log-lib.sh" 2>/dev/null || true
+
+WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-ego-browser}"
+
+exe=""
+if ! exe="$(ego_browser_resolve_exe)"; then
+  if declare -F runtime_log_error >/dev/null 2>&1; then
+    runtime_log_error browser_agent "ego-browser.exe missing" backend=ego
+  fi
+  exit 127
+fi
+
+started_ms=0
+if declare -F runtime_log_now_ms >/dev/null 2>&1; then
+  started_ms="$(runtime_log_now_ms)"
+elif [[ -n "${EPOCHREALTIME-}" ]]; then
+  started_ms="$(awk -v t="$EPOCHREALTIME" 'BEGIN { printf "%d", t * 1000 }')"
+fi
+
+set +e
+"$exe" "$@"
+status=$?
+set -e
+
+duration_ms=""
+if [[ "$started_ms" != "0" ]]; then
+  if declare -F runtime_log_now_ms >/dev/null 2>&1; then
+    duration_ms="$(($(runtime_log_now_ms) - started_ms))"
+  elif [[ -n "${EPOCHREALTIME-}" ]]; then
+    now_ms="$(awk -v t="$EPOCHREALTIME" 'BEGIN { printf "%d", t * 1000 }')"
+    duration_ms="$((now_ms - started_ms))"
+  fi
+fi
+
+# Keep the right-status Ego· badge fresh while agents drive the CLI.
+if declare -F browser_agent_status_write >/dev/null 2>&1; then
+  if [[ "$status" -eq 0 ]]; then
+    browser_agent_status_write --backend ego --ego-alive 1 >/dev/null 2>&1 || true
+  else
+    browser_agent_status_write --probe-ego >/dev/null 2>&1 || true
+  fi
+fi
+
+if declare -F runtime_log_info >/dev/null 2>&1; then
+  if [[ "$status" -eq 0 ]]; then
+    runtime_log_info browser_agent "ego-browser completed" \
+      backend=ego status="$status" duration_ms="${duration_ms:-}" \
+      argv0="${1:-}"
+  else
+    runtime_log_warn browser_agent "ego-browser failed" \
+      backend=ego status="$status" duration_ms="${duration_ms:-}" \
+      argv0="${1:-}"
+  fi
+fi
+
+exit "$status"

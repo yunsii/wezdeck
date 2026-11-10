@@ -25,6 +25,8 @@ openclaw/workspace/tmp/
 openclaw/workspace/smoke-ok.txt
 openclaw/workspace/**/smoke-ok.txt
 openclaw/workspace/**/marker.txt
+# Vendor ego-browser skill link (absolute /mnt/c/… path from apply-browser-backend)
+openclaw/workspace/skills/ego-browser
 
 # habit_report optional NLP venv
 scripts/dev/habit_report/.venv/

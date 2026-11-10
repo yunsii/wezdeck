@@ -49,7 +49,7 @@ Operational when the checks below pass. Values live under `~/.openclaw/` (not in
 | Model | Custom OpenAI-compatible provider for Grok (local only) |
 | Feishu | `@openclaw/feishu`, WebSocket, probe `connected` / `works`; DM allowlist; groups allowlist + `requireMention` |
 | Host exec | `mode: full`, `ask=off`, `strictInlineEval=false`; agent uses `claw-run` (`skills/exec-risk`) |
-| Chrome MCP | `mcp.servers.chrome-devtools` → CDP `127.0.0.1:9222` — setup in `workspace/skills/chrome-devtools/SKILL.md` |
+| Browser backend | `WEZDECK_BROWSER_BACKEND` via `apply-browser-backend --set ego\|cdp` — writes MCP/skill; see [`docs/browser-debug.md`](../docs/browser-debug.md#browser-backends-ego--cdp) · `skills/browser-agent` · `workspace/skills/chrome-devtools` / `ego-browser` |
 | Task ledger | `scripts/dev-task-ledger.sh` + skill `task-ledger` |
 | Memory search | local `llama-cpp` — [`docs/memory-search.md`](./docs/memory-search.md) |
 | Secrets | mode `600` env files; never commit filled config |
@@ -61,8 +61,11 @@ loginctl show-user "$USER" -p Linger
 systemctl --user is-active openclaw-gateway
 openclaw channels status --probe
 openclaw exec-policy show
-openclaw mcp list && openclaw mcp probe chrome-devtools
-curl -sS -m 3 http://127.0.0.1:9222/json/version
+# Browser: assert against current WEZDECK_BROWSER_BACKEND
+echo "backend=${WEZDECK_BROWSER_BACKEND:-unset}"
+openclaw mcp list
+# cdp: openclaw mcp probe chrome-devtools && curl -sS -m 3 http://127.0.0.1:9222/json/version
+# ego: command -v ego-browser && ego-browser nodejs -e "console.log('ego-browser ready')"
 openclaw memory status --agent main
 openclaw security audit
 ./openclaw/scripts/smoke-readonly.sh

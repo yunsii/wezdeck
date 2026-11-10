@@ -145,23 +145,77 @@ else
   wrn "~/.openclaw missing (onboard later)"
 fi
 
-# Chrome DevTools MCP (core browser) — optional if openclaw + CDP present
+# Browser backend (WEZDECK_BROWSER_BACKEND=ego|cdp) — apply-browser-backend owns MCP
+browser_backend="${WEZDECK_BROWSER_BACKEND:-}"
+if [[ -z "$browser_backend" && -f "${HOME}/.config/shell-env.d/wezdeck-browser-agent.env" ]]; then
+  # shellcheck disable=SC1090
+  browser_backend="$(. "${HOME}/.config/shell-env.d/wezdeck-browser-agent.env" >/dev/null; printf '%s' "${WEZDECK_BROWSER_BACKEND:-}")"
+fi
+if [[ -z "$browser_backend" ]]; then
+  wrn "WEZDECK_BROWSER_BACKEND unset — run: apply-browser-backend --set ego|cdp"
+elif [[ "$browser_backend" != "ego" && "$browser_backend" != "cdp" ]]; then
+  bad "WEZDECK_BROWSER_BACKEND invalid: ${browser_backend}"
+else
+  ok "WEZDECK_BROWSER_BACKEND=${browser_backend}"
+fi
+
 if command -v openclaw >/dev/null 2>&1 && [[ -f "${HOME}/.openclaw/openclaw.json" ]]; then
-  if openclaw mcp list 2>/dev/null | grep -q 'chrome-devtools'; then
-    ok "openclaw mcp chrome-devtools configured"
+  if [[ "$browser_backend" == "cdp" ]]; then
+    if openclaw mcp list 2>/dev/null | grep -q 'chrome-devtools'; then
+      ok "openclaw mcp chrome-devtools configured (backend=cdp)"
+    else
+      bad "openclaw mcp chrome-devtools missing under backend=cdp — apply-browser-backend --set cdp"
+    fi
+  elif [[ "$browser_backend" == "ego" ]]; then
+    if openclaw mcp list 2>/dev/null | grep -q 'chrome-devtools'; then
+      bad "openclaw mcp chrome-devtools still present under backend=ego — apply-browser-backend --set ego"
+    else
+      ok "openclaw mcp chrome-devtools absent (backend=ego)"
+    fi
   else
-    wrn "openclaw mcp chrome-devtools missing — see openclaw/README.md Chrome MCP section"
+    if openclaw mcp list 2>/dev/null | grep -q 'chrome-devtools'; then
+      wrn "openclaw mcp chrome-devtools present (backend unset)"
+    else
+      wrn "openclaw mcp chrome-devtools missing (backend unset)"
+    fi
   fi
 fi
-if curl -sS -m 2 http://127.0.0.1:9222/json/version >/dev/null 2>&1; then
-  ok "CDP http://127.0.0.1:9222 answers"
+
+if [[ "$browser_backend" == "ego" ]]; then
+  if command -v ego-browser >/dev/null 2>&1 \
+    && ego-browser nodejs -e "console.log('ego-browser ready')" 2>&1 | grep -q 'ego-browser ready'; then
+    ok "ego-browser probe ready"
+  else
+    bad "ego-browser probe failed — scripts/runtime/cli/ego-browser + open ego (lite)"
+  fi
 else
-  wrn "CDP 9222 not answering — start WezDeck debug Chrome (docs/browser-debug.md)"
+  if curl -sS -m 2 http://127.0.0.1:9222/json/version >/dev/null 2>&1; then
+    ok "CDP http://127.0.0.1:9222 answers"
+  else
+    wrn "CDP 9222 not answering — start WezDeck debug Chrome (docs/browser-debug.md)"
+  fi
 fi
+
 if [[ -f "${src_workspace}/skills/chrome-devtools/SKILL.md" ]]; then
   ok "skills/chrome-devtools present"
 else
   bad "skills/chrome-devtools missing"
+fi
+repo_browser_agent="$(cd "${pkg_root}/.." && pwd)/skills/browser-agent/SKILL.md"
+if [[ -f "${src_workspace}/skills/browser-agent/SKILL.md" ]] \
+  || [[ -f "${repo_browser_agent}" ]] \
+  || [[ -f "${HOME}/.agents/skills/browser-agent/SKILL.md" ]]; then
+  ok "skills/browser-agent present"
+else
+  wrn "skills/browser-agent missing — link-platform-skills.sh / apply-browser-backend"
+fi
+if [[ "$browser_backend" == "ego" ]]; then
+  if [[ -f "${src_workspace}/skills/ego-browser/SKILL.md" ]] \
+    || [[ -f "${HOME}/.agents/skills/ego-browser/SKILL.md" ]]; then
+    ok "skills/ego-browser discovered"
+  else
+    bad "skills/ego-browser missing under backend=ego — apply-browser-backend --set ego"
+  fi
 fi
 
 if command -v claude >/dev/null 2>&1; then

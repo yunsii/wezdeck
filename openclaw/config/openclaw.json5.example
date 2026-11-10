@@ -20,29 +20,20 @@
   //   },
   // },
 
-  // Core: attach to WezDeck Windows debug Chrome (CDP). Local only — do not
-  // commit live openclaw.json. Port must match chrome_debug_browser.remote_debugging_port.
+  // Browser MCP is owned by scripts/runtime/apply-browser-backend.sh
+  // (CLI: apply-browser-backend --set cdp|ego). Do not hand-edit
+  // mcp.servers.chrome-devtools here — re-run apply after changing
+  // WEZDECK_BROWSER_BACKEND so OpenClaw stays aligned with host agents.
   //
-  // Install the package globally and pinned first (`npm i -g chrome-devtools-mcp@1.6.0`);
-  // a bare command name is enough because the gateway unit's pinned
-  // Environment=PATH= already contains the fnm global bin dir. Re-run that
-  // `npm i -g` after any `fnm default <version>` switch — npm's global prefix is
-  // scoped to the default node version, so the binary drops off PATH entirely.
-  // Driving this from `npx -y chrome-devtools-mcp@latest` instead costs ~85Mi of
-  // resident npm-cli per instance; `--usageStatistics=false` drops a ~135Mi
-  // telemetry watchdog child. Together: 4 processes / ~357Mi → 1 process /
-  // 150Mi. Measurements in repo docs/diagnostics.md "Standing memory consumers".
+  // backend=cdp → writes chrome-devtools (pinned global binary +
+  //   --browser-url=http://127.0.0.1:9222 + --usageStatistics=false).
+  // backend=ego → unsets chrome-devtools; agents use ego-browser skill/CLI.
+  // Port must match chrome_debug_browser.remote_debugging_port when on cdp.
+  // Pin / OOM notes: workspace/skills/chrome-devtools/SKILL.md and
+  // docs/guest-oom.md "Standing memory consumers".
   // mcp: {
   //   servers: {
-  //     "chrome-devtools": {
-  //       command: "chrome-devtools-mcp",
-  //       args: [
-  //         "--browser-url=http://127.0.0.1:9222",
-  //         "--usageStatistics=false",
-  //       ],
-  //       connectTimeout: 60,
-  //       timeout: 90,
-  //     },
+  //     "chrome-devtools": { /* written by apply-browser-backend --set cdp */ },
   //   },
   // },
 

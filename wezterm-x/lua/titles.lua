@@ -302,10 +302,10 @@ function M.register(opts)
     return segments
   end)
 
-  -- Compose the right-status bar from IME, chrome-debug, session-bridge
-  -- watch poller, host-disk, guest-memory, guest-load, and attention
-  -- segments. Order:
-  --   IME | CDP·… | ◆ SB·N | D·151G | M·88% | L·23 | ▲…✓…●…
+  -- Compose the right-status bar from IME, browser slot (Ego·… or CDP·…),
+  -- session-bridge watch, host-disk, guest-memory, guest-load, attention.
+  -- Order:
+  --   IME | Ego·A / CDP·… | ◆ SB·N | D·151G | M·88% | L·23 | ▲…✓…●…
   --   (SB / D / M / L all absent while idle/healthy — presence is the signal)
   -- Kept pure so it can run from both the `update-status` tick (250ms)
   -- and from the event-bus handler when a producer publishes

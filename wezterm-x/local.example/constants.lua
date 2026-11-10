@@ -13,6 +13,13 @@ return {
     -- Use a Windows path in hybrid-wsl and a local path in posix-local.
     user_data_dir = '/path/to/chrome-profile',
   },
+  -- Browser agent backend for host agents + OpenClaw capability apply.
+  -- Canonical runtime switch is WEZDECK_BROWSER_BACKEND in
+  -- ~/.config/shell-env.d/wezdeck-browser-agent.env (written by
+  -- `apply-browser-backend --set ego|cdp`). Values: "ego" | "cdp" only.
+  -- browser_agent = {
+  --   backend = 'ego',
+  -- },
   -- OS foreground sampling only (never mutes WezDeck-internal collection).
   --   device_profile = 'personal' → allowlist WezTerm + VS Code + Chrome
   --   device_profile = 'work'     → every foreground process-name change

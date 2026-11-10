@@ -50,7 +50,7 @@ Allowlisted 写任务（纯问答跳过；用户自写且未交办则跳过）�
 [ ] 3. cwd：wezdeck→primary master；并行/隔离→claw-*；团队仓默认 claw-*
 [ ] 4. ledger 更新 cwd/分支（若用台账）
 [ ] 5. 执行（C1 | C2 停笔 | C3 | 只协助）— 单写者
-[ ] 6. C1：验收（UI→Chrome）；其余等完成再 close
+[ ] 6. C1：验收（UI→浏览器）；其余等完成再 close
 [ ] 7. ledger close + 精简【结果】卡
 [ ] 8. 若用了 worktree：问 reclaim（永不自动）
 ```
@@ -87,13 +87,13 @@ Allowlisted 写任务（纯问答跳过；用户自写且未交办则跳过）�
 | Feishu ledger | `skills/task-ledger/SKILL.md` |
 | Error closed-loop | `skills/error-closed-loop/SKILL.md` · scope `openclaw/docs/error-closed-loop-scope.md` |
 | Host shell / exec hygiene | `skills/exec-risk/SKILL.md` |
-| Browser UI verify | `skills/chrome-devtools/SKILL.md` |
+| Browser / 打开网页 / UI 验收 | `skills/browser-agent/SKILL.md`（按 `WEZDECK_BROWSER_BACKEND` → ego 或 CDP；口头说能力，不说产品名） |
 | Terminology | `openclaw/docs/terminology.md` |
 | Adversarial review | `skills/adversarial-review/`（披露模板在 SKILL；host：`validation.md`） |
 | Mode / ACP / 通道 | `openclaw/docs/development-modes.md` · `agent-architecture.md` · `docs/agent-scheduling.md` |
 | Agent matrix probe | `openclaw/scripts/agent-matrix-status.sh` |
 
-**Chrome:** UI 改完须浏览器验收；CDP 缺失就如实说，不得发明绿灯。
+**浏览器：** UI 改完须浏览器验收（`browser-agent` → 当前 backend）；探活失败就如实说，不得发明绿灯。
 
 ## Rule-promotion triggers (ask user, do not auto-write profile)
 
