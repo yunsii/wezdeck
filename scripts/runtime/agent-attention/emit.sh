@@ -217,7 +217,34 @@ fi
 #   - Codex PermissionRequest (raw_event=PermissionRequest, type empty)
 #   - scripts/dev/test-agent-attention.sh direct `waiting` (no Notification)
 #   - manual emit.sh waiting for diagnosis
+#
+# Grok always-approve: still emits permission_prompt Notifications for every
+# tool, then PostToolUse clears them in ~300–900 ms → right-status ▲ flashes.
+# Under always-approve there is no human permission UI, so ignore that type
+# only. elicitation_dialog / approval_required still raise ⚠ (Ask / real
+# approval). Override: WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE=0|1|on|off.
 # ---------------------------------------------------------------------------
+grok_always_approve_enabled() {
+  case "${WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE:-auto}" in
+    0|false|no|off) return 1 ;;
+    1|true|yes|on) return 0 ;;
+  esac
+  local file="${HOME:-}/.grok/config.toml"
+  [[ -r "$file" ]] || return 1
+  local value=""
+  value="$(awk '
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*permission_mode[[:space:]]*=/ {
+      sub(/^[^=]*=/, "", $0)
+      sub(/[[:space:]]+#.*$/, "", $0)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+      gsub(/^["'\''"]|["'\''"]$/, "", $0)
+      print $0
+    }
+  ' "$file" 2>/dev/null | tail -n 1)"
+  [[ "$value" == "always-approve" ]]
+}
+
 if [[ "$status" == "waiting" ]]; then
   # Normalize separators so approval-required / approval_required match.
   ntype="$(printf '%s' "$notification_type" \
@@ -235,12 +262,20 @@ if [[ "$status" == "waiting" ]]; then
   [[ -n "$ntype" ]] && is_notification_path=1
 
   allow_waiting=0
+  ignore_gate=""
   if (( is_notification_path == 1 )); then
     case "$ntype" in
       permission_prompt|elicitation_dialog|approval_required)
         allow_waiting=1
         ;;
     esac
+    # Grok + always-approve: permission_prompt is noise (no human gate).
+    # Keep elicitation_dialog / approval_required — those still need the user.
+    if [[ "$allow_waiting" -eq 1 && "$ntype" == "permission_prompt" \
+          && "$provider" == "grok" ]] && grok_always_approve_enabled; then
+      allow_waiting=0
+      ignore_gate="grok_always_approve_permission"
+    fi
   else
     # Direct / Codex / diagnostic waiting: allow unless reason is clearly a
     # completion toast (Grok turn_complete with unparsed empty raw_event).
@@ -263,6 +298,7 @@ if [[ "$status" == "waiting" ]]; then
       "status=$status" \
       "notification_type=${notification_type:-}" \
       "reason=${reason:-}" \
+      "gate=${ignore_gate:-}" \
       "session_id=${session_id:-}" \
       "wezterm_pane=${WEZTERM_PANE:-}" \
       "tmux_pane=${TMUX_PANE:-}" \

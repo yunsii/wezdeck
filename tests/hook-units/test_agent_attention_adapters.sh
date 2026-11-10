@@ -63,6 +63,8 @@ TMUX_EOF
   export WEZTERM_NO_PATH_CACHE=1
   export WEZTERM_PANE="42"
   export TMUX_PANE="$tmux_pane"
+  # Do not inherit host always-approve gate into sandboxed Grok tests.
+  unset WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE 2>/dev/null || true
 }
 
 state_file_in() {
@@ -232,6 +234,50 @@ assert_eq "Grok elicitation stores waiting_kind" "elicitation_dialog" "$(field_f
 printf '%s' '{"sessionId":"grok-session-4","hookEventName":"PostToolUse"}' \
   | "$claude_adapter" resolved >/dev/null 2>&1 || true
 assert_eq "Grok PostToolUse does not clear elicitation waiting" "waiting" "$(field_for "$sandbox" "grok-session-4" "status")"
+rm -rf "$sandbox"
+
+# Grok always-approve: permission_prompt Notifications are auto-cleared noise
+# (~300–900 ms flash on ▲). Config permission_mode=always-approve (or env
+# override) must ignore that type; elicitation / approval_required stay.
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+mkdir -p "$sandbox/home/.grok"
+printf '%s\n' 'permission_mode = "always-approve"' > "$sandbox/home/.grok/config.toml"
+printf '%s' '{"sessionId":"grok-aa-1","hookEventName":"UserPromptSubmit","prompt":"go"}' \
+  | "$claude_adapter" running >/dev/null 2>&1 || true
+printf '%s' '{"sessionId":"grok-aa-1","hookEventName":"Notification","notificationType":"permission_prompt","message":"Needs permission"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok always-approve ignores permission_prompt waiting" "running" "$(field_for "$sandbox" "grok-aa-1" "status")"
+if grep -q 'gate="grok_always_approve_permission"' "$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null; then
+  pass=$((pass + 1))
+  echo "  ✓ Grok always-approve ignore logs gate="
+else
+  fail=$((fail + 1))
+  echo "FAIL missing gate=\"grok_always_approve_permission\" in runtime.log" >&2
+fi
+printf '%s' '{"sessionId":"grok-aa-1","hookEventName":"Notification","notificationType":"elicitation_dialog","message":"Waiting on answers"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok always-approve still waits on elicitation_dialog" "waiting" "$(field_for "$sandbox" "grok-aa-1" "status")"
+assert_eq "Grok always-approve elicitation waiting_kind" "elicitation_dialog" "$(field_for "$sandbox" "grok-aa-1" "waiting_kind")"
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+mkdir -p "$sandbox/home/.grok"
+printf '%s\n' 'permission_mode = "always-approve"' > "$sandbox/home/.grok/config.toml"
+export WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE=0
+printf '%s' '{"sessionId":"grok-aa-off","hookEventName":"Notification","notificationType":"permission_prompt","message":"Needs permission"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Env off forces permission_prompt waiting despite config" "waiting" "$(field_for "$sandbox" "grok-aa-off" "status")"
+unset WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE
+rm -rf "$sandbox"
+
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+# No ~/.grok/config.toml → permission_prompt still raises (manual approve).
+printf '%s' '{"sessionId":"grok-manual-1","hookEventName":"Notification","notificationType":"permission_prompt","message":"Needs permission"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok without always-approve keeps permission_prompt waiting" "waiting" "$(field_for "$sandbox" "grok-manual-1" "status")"
 rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"

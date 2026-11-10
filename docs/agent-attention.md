@@ -245,6 +245,7 @@ Mitigations in this repo (no Grok config change required):
 |---|---|
 | `adapters/claude.sh` | Reads snake_case **and** camelCase id/event/type fields; sets `provider=grok` when the payload is camelCase-only or `GROK_*` env is present (log separation). |
 | `emit.sh` waiting gate | **Whitelist** on the Notification path: only `permission_prompt` / `elicitation_dialog` / `approval_required` raise ⚠. Empty type, `turn_complete`, `idle_prompt`, etc. log `notification ignored` and leave state alone. Non-Notification waiting (Codex `PermissionRequest`, `test-agent-attention.sh waiting`) still works. Completion-like reasons (`Turn complete`) are also rejected when they arrive without an allowlisted type (legacy unparsed path). |
+| `emit.sh` Grok always-approve | When `provider=grok` and `~/.grok/config.toml` has `permission_mode = "always-approve"` (or `WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE=1`), **ignore** `permission_prompt` only — Grok still fires that Notification per tool, then `PostToolUse → resolved` within ~300–900 ms, which flashed right-status `▲ N waiting`. Real human waits stay: `elicitation_dialog` (Ask) and `approval_required`. Override with `WEZTERM_ATTENTION_GROK_ALWAYS_APPROVE=0` to force the older waiting behavior for diagnosis. Log: `notification ignored` + `gate=grok_always_approve_permission`. |
 
 Optional: install a dedicated `~/.grok/hooks/*.json` that maps only `approval_required` to waiting, or set `[compat.claude] hooks = false` in `~/.grok/config.toml` if you do not want Grok to share Claude hooks at all. The whitelist above keeps the shared Claude install safe either way.
 
@@ -263,7 +264,7 @@ Mitigation (no Grok config change):
 
 Clearance paths for elicitation waiting: watcher (dialog gone), `Stop → done`, next `UserPromptSubmit → running`, `Alt+/` Ctrl+X clear (or clear-all), TTL. Not PostToolUse.
 
-Regression coverage: `tests/hook-units/test_agent_attention_adapters.sh` (Grok camelCase session id, turn_complete must not overwrite `done`, `approval_required` still waits, elicitation sticky against resolved) and `tests/hook-units/test_lifecycle.sh` case 6c.
+Regression coverage: `tests/hook-units/test_agent_attention_adapters.sh` (Grok camelCase session id, turn_complete must not overwrite `done`, `approval_required` still waits, elicitation sticky against resolved, always-approve ignores `permission_prompt` while keeping elicitation, env override) and `tests/hook-units/test_lifecycle.sh` case 6c.
 
 ## End-to-end walkthrough
 
