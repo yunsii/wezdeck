@@ -344,15 +344,17 @@ reset_window_in_place() {
     else
       worktree_root="${HOME:-$PWD}"
     fi
-    # Default: login shell. Overridden below when this secondary pane has a
-    # typed agent session (live process / attention / durable pin).
+    # Default: login shell. Overridden below only while secondary is still
+    # in agent state (live process) with a typed session id.
     primary_command="$(build_primary_shell_command)"
   fi
 
   # F5 typed resume: resolve the pane's real agent session id before
-  # kill/respawn. Primary always uses the managed resume profile; secondary
-  # only switches from shell → agent-launcher when an id+agent are known.
-  # respawn-pane keeps the same pane id; durable pins cover kill-server.
+  # kill/respawn. Primary always uses the managed resume profile.
+  # Secondary follows current pane state (agent vs shell): shell → stay
+  # shell and drop stale pins; agent → typed resume when id+agent known.
+  # respawn-pane keeps the same pane id; durable pins cover kill-server
+  # only while the secondary was left in agent state (not after exit).
   # After Ctrl+n `/new`, pins should already track the *current* (new)
   # session — F5 resumes that id, not the discarded pre-/new conversation.
   resume_session_id=""
@@ -367,32 +369,44 @@ reset_window_in_place() {
   if [[ -n "$_resolve_lib" ]]; then
     # shellcheck disable=SC1090
     . "$_resolve_lib"
-    resume_session_id="$(agent_session_resolve_for_pane "$target_pane" || true)"
-    if agent_session_id_usable "${resume_session_id:-}"; then
-      resume_agent="$(agent_session_agent_for_pane "$target_pane" || true)"
-      if [[ "$target_is_primary" == "1" && "$role" == managed* ]]; then
-        resume_mode="typed"
-        agent_session_pin_pane "$target_pane" "$resume_session_id" \
-          "${resume_agent:-}" "$worktree_root"
-        primary_command="env WEZDECK_RESUME_SESSION_ID=$(printf '%q' "$resume_session_id") $primary_command"
-      elif [[ "$target_is_primary" != "1" && -n "$resume_agent" ]]; then
-        _typed_cmd="$(agent_session_build_typed_resume_command \
-          "${wezterm_config_repo:-}" "$resume_agent" "$resume_session_id" || true)"
-        if [[ -n "$_typed_cmd" ]]; then
-          resume_mode="typed_secondary"
+    if [[ "$target_is_primary" != "1" ]] \
+      && declare -F agent_session_secondary_in_agent_state >/dev/null 2>&1 \
+      && ! agent_session_secondary_in_agent_state "$target_pane"; then
+      # Shell state wins over leftover pins / attention / role tags.
+      if declare -F agent_session_release_secondary_on_exit >/dev/null 2>&1; then
+        agent_session_release_secondary_on_exit "$target_pane" "$worktree_root" || true
+      fi
+      resume_mode="secondary_shell"
+      resume_session_id=""
+      resume_agent=""
+    else
+      resume_session_id="$(agent_session_resolve_for_pane "$target_pane" || true)"
+      if agent_session_id_usable "${resume_session_id:-}"; then
+        resume_agent="$(agent_session_agent_for_pane "$target_pane" || true)"
+        if [[ "$target_is_primary" == "1" && "$role" == managed* ]]; then
+          resume_mode="typed"
           agent_session_pin_pane "$target_pane" "$resume_session_id" \
-            "$resume_agent" "$worktree_root"
-          primary_command="$_typed_cmd"
+            "${resume_agent:-}" "$worktree_root"
+          primary_command="env WEZDECK_RESUME_SESSION_ID=$(printf '%q' "$resume_session_id") $primary_command"
+        elif [[ "$target_is_primary" != "1" && -n "$resume_agent" ]]; then
+          _typed_cmd="$(agent_session_build_typed_resume_command \
+            "${wezterm_config_repo:-}" "$resume_agent" "$resume_session_id" || true)"
+          if [[ -n "$_typed_cmd" ]]; then
+            resume_mode="typed_secondary"
+            agent_session_pin_pane "$target_pane" "$resume_session_id" \
+              "$resume_agent" "$worktree_root"
+            primary_command="$_typed_cmd"
+          else
+            resume_session_id=""
+            resume_agent=""
+          fi
+          unset _typed_cmd
         else
           resume_session_id=""
-          resume_agent=""
         fi
-        unset _typed_cmd
       else
         resume_session_id=""
       fi
-    else
-      resume_session_id=""
     fi
   fi
   unset _resolve_lib

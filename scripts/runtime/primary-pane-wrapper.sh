@@ -55,6 +55,19 @@ cleanup_codex_locks() {
   bash "$takeover_script" --cleanup-only || true
 }
 
+# Secondary pane state machine: agent exit → shell. The wrapper recovers
+# Ctrl+C / clean agent return without pane-died, so release typed-resume
+# here; primary keeps pins (F5 is the bring-back path there).
+release_secondary_on_shell_fallback() {
+  local pane_id="${TMUX_PANE:-}"
+  [[ -n "$pane_id" ]] || return 0
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/agent-session-resolve.sh" 2>/dev/null || return 0
+  if declare -F agent_session_release_secondary_on_exit >/dev/null 2>&1; then
+    agent_session_release_secondary_on_exit "$pane_id" "${PWD:-}" || true
+  fi
+}
+
 fall_back_to_login_shell() {
   local reason="${1:-unknown}"
   # If the controlling terminal has already been torn down (tmux closed the
@@ -65,6 +78,7 @@ fall_back_to_login_shell() {
     runtime_log_info primary_pane "fallback skipped: no tty" "pid=$$" "reason=$reason"
     exit 0
   fi
+  release_secondary_on_shell_fallback
   runtime_log_info primary_pane "exec fallback shell" "pid=$$" "reason=$reason" "login_shell=$login_shell"
   # Reset terminal state in case the agent left it in raw/non-cooked mode.
   # Without this, the exec'd shell can appear frozen to the user (no echo,

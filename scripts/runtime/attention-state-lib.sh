@@ -81,6 +81,11 @@ ATTENTION_SNAPSHOT_REASON_MAX=120
 __ATTENTION_STATE_PATH_CACHED=""
 
 attention_state_path() {
+  # Test / caller override (same env as agent-session-resolve.sh readers).
+  if [[ -n "${WEZDECK_ATTENTION_STATE_PATH:-}" ]]; then
+    printf '%s' "$WEZDECK_ATTENTION_STATE_PATH"
+    return 0
+  fi
   if [[ -n "$__ATTENTION_STATE_PATH_CACHED" ]]; then
     printf '%s' "$__ATTENTION_STATE_PATH_CACHED"
     return 0
@@ -830,6 +835,45 @@ attention_state_remove() {
              end
          ' <<<"$current"
     )"
+    attention_state_write "$next"
+  ) 9>"$lock"
+}
+
+# Hard-drop live + recent rows for one tmux pane. Used when a secondary
+# agent pane voluntarily exits (Ctrl+C / quit → pane-died): typed resume
+# must not resurrect via attention recent after pins are cleared.
+# Does not archive — the conversation is intentionally released.
+# No-op when socket/session/pane are empty.
+attention_state_forget_pane() {
+  local tmux_socket="${1:-}" tmux_session="${2:-}" tmux_pane="${3:-}"
+  if [[ -z "$tmux_socket" || -z "$tmux_session" || -z "$tmux_pane" ]]; then
+    return 0
+  fi
+  attention_state_init
+  local lock
+  lock="$(attention_state_lock_path)"
+  (
+    flock -x 9
+    local current next
+    current="$(attention_state_read)"
+    next="$(jq --arg tsk "$tmux_socket" \
+               --arg tses "$tmux_session" \
+               --arg tp "$tmux_pane" '
+      .entries = (
+        (.entries // {}) | to_entries
+        | map(select(
+            (.value.tmux_socket // "") != $tsk
+            or (.value.tmux_session // "") != $tses
+            or (.value.tmux_pane // "") != $tp
+          ))
+        | from_entries
+      )
+      | .recent = ((.recent // []) | map(select(
+          (.tmux_socket // "") != $tsk
+          or (.tmux_session // "") != $tses
+          or (.tmux_pane // "") != $tp
+        )))
+    ' <<<"$current")"
     attention_state_write "$next"
   ) 9>"$lock"
 }

@@ -175,6 +175,109 @@ agent_session_pin_clear() {
   ) 9>"${path}.lock"
 }
 
+# Drop every durable pin whose session_id matches. Used when pane_current_path
+# at pane-died time has already fallen back to $HOME and no longer matches the
+# worktree key the pin was stored under.
+agent_session_pin_clear_session() {
+  local sid="${1:-}"
+  local path tmp=""
+  agent_session_id_usable "$sid" || return 0
+  path="$(agent_session_pins_path)"
+  [[ -f "$path" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  (
+    flock -w 2 9 || exit 0
+    tmp="${path}.tmp.$$"
+    jq --arg sid "$sid" '
+      .pins = ((.pins // {}) | with_entries(select(.value.session_id != $sid)))
+    ' "$path" > "$tmp" 2>/dev/null && mv -f "$tmp" "$path"
+    rm -f "$tmp" 2>/dev/null || true
+  ) 9>"${path}.lock"
+}
+
+# Secondary pane mode: agent vs shell (current process), not durable pins.
+# Returns 0 when the pane is still in agent state (non-shell leaf, or a
+# shell/wrapper with an agent descendant). Returns 1 for plain shell —
+# the state after Ctrl+C / quit / wrapper fallback.
+agent_session_secondary_in_agent_state() {
+  local pane_id="${1:-}"
+  local cmd=""
+  [[ -n "$pane_id" ]] || return 1
+  cmd="$(tmux display-message -p -t "$pane_id" '#{pane_current_command}' 2>/dev/null || true)"
+  case "$cmd" in
+    bash|zsh|sh|fish|"")
+      if agent_session_detect_agent_from_cmdline "$pane_id" 2>/dev/null; then
+        return 0
+      fi
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+# Secondary pane voluntary exit (pane-died / wrapper fallback after Ctrl+C
+# or agent return): drop every typed-resume source so a later F5 stays a
+# login shell. Primary keeps pins — F5 is the intentional bring-back path
+# there. Also clears @wezterm_pane_role / @wezterm_agent_profile on
+# secondary (unlike /new, which keeps the same agent identity for a new id).
+# Always returns 0.
+agent_session_release_secondary_on_exit() {
+  local pane_id="${1:-}"
+  local cwd="${2:-}"
+  local slot="" tmux_socket="" tmux_session="" tmux_pane=""
+  local prev_sid="" prev_agent="" window_root=""
+
+  [[ -n "$pane_id" ]] || return 0
+  slot="$(agent_session_slot_for_pane "$pane_id" 2>/dev/null || true)"
+  [[ "$slot" == "secondary" ]] || return 0
+
+  # pane-died often reports a stale/empty pane_current_path; fall back to the
+  # window's durable worktree root before pin clear.
+  if [[ -z "$cwd" || ! -d "$cwd" ]]; then
+    cwd="$(tmux display-message -p -t "$pane_id" '#{pane_current_path}' 2>/dev/null || true)"
+  fi
+  if [[ -z "$cwd" || ! -d "$cwd" ]]; then
+    window_root="$(tmux show-window-options -t "$pane_id" -v -q @wezterm_window_root 2>/dev/null || true)"
+    if [[ -n "$window_root" && -d "$window_root" ]]; then
+      cwd="$window_root"
+    fi
+  fi
+  prev_sid="$(agent_session_resolve_for_pane "$pane_id" 2>/dev/null || true)"
+  prev_agent="$(agent_session_agent_for_pane "$pane_id" 2>/dev/null || true)"
+
+  agent_session_unpin_pane "$pane_id" "$cwd" || true
+  # Belt-and-suspenders: pane path at death may not match the worktree key
+  # the durable pin was stored under (HOME fallback in pane-exit-keep).
+  if agent_session_id_usable "${prev_sid:-}"; then
+    agent_session_pin_clear_session "$prev_sid" || true
+  fi
+  tmux set-option -p -t "$pane_id" -u @wezterm_pane_role 2>/dev/null || true
+  tmux set-option -p -t "$pane_id" -u @wezterm_agent_profile 2>/dev/null || true
+  tmux set-option -p -t "$pane_id" -u @wezterm_agent_discarded_session_id 2>/dev/null || true
+
+  # shellcheck disable=SC1091
+  . "$__AGENT_SESSION_RESOLVE_DIR/attention-state-lib.sh" 2>/dev/null || true
+  if declare -F attention_state_forget_pane >/dev/null 2>&1; then
+    tmux_socket="$(tmux display-message -p -t "$pane_id" '#{socket_path}' 2>/dev/null || true)"
+    tmux_session="$(tmux display-message -p -t "$pane_id" '#{session_name}' 2>/dev/null || true)"
+    tmux_pane="$(tmux display-message -p -t "$pane_id" '#{pane_id}' 2>/dev/null || true)"
+    [[ -n "$tmux_pane" ]] || tmux_pane="$pane_id"
+    attention_state_forget_pane "$tmux_socket" "$tmux_session" "$tmux_pane" \
+      2>/dev/null || true
+  fi
+
+  if command -v runtime_log_info >/dev/null 2>&1; then
+    runtime_log_info workspace "secondary agent exit released typed resume" \
+      "pane_id=$pane_id" \
+      "cwd=${cwd:-}" \
+      "prev_session_id=${prev_sid:-}" \
+      "prev_agent=${prev_agent:-}" || true
+  fi
+  return 0
+}
+
 # Drop every typed-resume source for a pane after `/new` or `/clear`.
 # Without this, F5 still resolves the discarded conversation via pane
 # option → durable pin → window pin (attention is cleared separately).
@@ -313,9 +416,13 @@ agent_session_resolve_for_pane() {
     return 0
   fi
 
-  sid="$(tmux show-options -w -t "$pane_id" -v -q @wezterm_primary_agent_session_id 2>/dev/null || true)"
-  if agent_session_id_usable "$sid"; then
-    printf '%s\n' "$sid"
+  # Window pin is primary-only legacy compat. A secondary pane that has
+  # released its own sources must not inherit the primary conversation.
+  if [[ "$slot" == "primary" ]]; then
+    sid="$(tmux show-options -w -t "$pane_id" -v -q @wezterm_primary_agent_session_id 2>/dev/null || true)"
+    if agent_session_id_usable "$sid"; then
+      printf '%s\n' "$sid"
+    fi
   fi
 }
 
