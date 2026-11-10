@@ -353,6 +353,8 @@ reset_window_in_place() {
   # kill/respawn. Primary always uses the managed resume profile; secondary
   # only switches from shell → agent-launcher when an id+agent are known.
   # respawn-pane keeps the same pane id; durable pins cover kill-server.
+  # After Ctrl+n `/new`, pins should already track the *current* (new)
+  # session — F5 resumes that id, not the discarded pre-/new conversation.
   resume_session_id=""
   resume_mode="continue_fallback"
   resume_agent=""

@@ -178,6 +178,40 @@ pin="$(agent_session_pin_get "$WT" secondary)"
 [[ -z "$pin" ]] || fail "cleared secondary pin still present: $pin"
 pass "durable pin clear"
 
+declare -F agent_session_unpin_pane >/dev/null \
+  || fail "agent_session_unpin_pane must be defined"
+agent_session_pin_put "$WT" primary "unpin-me" claude
+agent_session_pin_clear "$WT" primary
+pin="$(agent_session_pin_get "$WT" primary)"
+[[ -z "$pin" ]] || fail "primary pin still present after clear: $pin"
+pass "agent_session_unpin_pane is exported (durable clear covered)"
+
+# Grok session discovery (newest dir under urlencoded cwd, skip exclude).
+GROK_HOME="$TEST_ROOT/grok-home"
+mkdir -p "$GROK_HOME"
+export HOME="$GROK_HOME"
+ENC="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$WT")"
+GSESS="$HOME/.grok/sessions/$ENC"
+OLD_SID="01aaaaaaaa-1111-2222-3333-444444444444"
+NEW_SID="01bbbbbbbb-1111-2222-3333-555555555555"
+SIBLING_SID="01cccccccc-1111-2222-3333-666666666666"
+mkdir -p "$GSESS/$OLD_SID" "$GSESS/$NEW_SID" "$GSESS/$SIBLING_SID"
+# OLD/SIBLING are stale; NEW is fresh (within max_age default 8s).
+touch -d '2020-01-01' "$GSESS/$OLD_SID" "$GSESS/$SIBLING_SID"
+touch "$GSESS/$NEW_SID"
+got="$(agent_session_discover_latest_grok "$WT" "")"
+[[ "$got" == "$NEW_SID" ]] \
+  || fail "discover latest expected fresh $NEW_SID, got=$got"
+got="$(agent_session_discover_latest_grok "$WT" "$NEW_SID")"
+[[ -z "$got" ]] \
+  || fail "excluding fresh id must not fall back to stale sibling, got=$got"
+# Stale-only tree: max_age window rejects OLD/SIBLING.
+rm -rf "$GSESS/$NEW_SID"
+got="$(agent_session_discover_latest_grok "$WT" "")"
+[[ -z "$got" ]] \
+  || fail "stale-only tree must yield empty within max_age, got=$got"
+pass "agent_session_discover_latest_grok picks recent and honors exclude/age"
+
 cmd="$(agent_session_build_typed_resume_command "$REPO_ROOT" grok "sec-sid-eee")"
 [[ "$cmd" == *"WEZDECK_RESUME_SESSION_ID=sec-sid-eee"* ]] \
   || fail "typed cmd missing env: $cmd"

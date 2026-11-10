@@ -557,6 +557,27 @@ elif [[ "$status" == "pane-evict" ]]; then
   attention_audit_prepare "evict" "" "" "pane_evict" 0
   attention_state_evict_session "$tmux_socket" "$tmux_session" "$session_id" \
     "$tmux_pane" 2>/dev/null || true
+  # /clear discards the old conversation; pin the *new* session_id from the
+  # SessionStart payload so F5 stays on the post-clear conversation.
+  if [[ -n "$tmux_pane" ]]; then
+    # shellcheck disable=SC1091
+    . "$script_dir/../agent-session-resolve.sh" 2>/dev/null || true
+    if declare -F agent_session_unpin_pane >/dev/null 2>&1; then
+      agent_session_unpin_pane "$tmux_pane" "${git_dir:-}" 2>/dev/null || true
+    fi
+    if declare -F agent_session_pin_pane >/dev/null 2>&1 \
+      && declare -F agent_session_id_usable >/dev/null 2>&1 \
+      && agent_session_id_usable "${session_id:-}"; then
+      _pin_agent="$provider"
+      case "$_pin_agent" in
+        claude|codex|grok) ;;
+        *) _pin_agent="" ;;
+      esac
+      agent_session_pin_pane "$tmux_pane" "$session_id" "${_pin_agent:-}" "${git_dir:-}" \
+        2>/dev/null || true
+      unset _pin_agent
+    fi
+  fi
   # Best-effort: drop sidecar for the post-clear session id. Pre-clear
   # orphans age out via reconcile / next Stop.
   bg_sidecar_clear "$session_id" 2>/dev/null || true

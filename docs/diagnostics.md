@@ -159,6 +159,7 @@ Decision messages in `runtime.log`:
 | level | message | Meaning |
 |---|---|---|
 | `info` | `Ctrl+n matched agent pane; staging /new` | `@agent_pane_match=1` → injected `/new` |
+| `info` | `Ctrl+n invalidated typed resume after /new` | Cleared discarded pins + same-pane attention; fields `prev_session_id=` / `new_session_id=` (Grok discover pin when found) so F5 follows the current session |
 | `info` | `Ctrl+n detected agent via process cmdline; staging /new` | leaf name missed (e.g. hand-started Grok as `python3` / `grok-focus-filter`) but pane process tree cmdline matched → injected `/new`; field `detected_agent=` |
 | `info` | `Codex new conversation selected current checkout` | Codex's `/new` chooser was visible in the tmux pane and the helper selected option 1 |
 | `warn` | `Codex current checkout selector timed out` | Codex chooser did not paint its expected English anchors before the bounded poll expired; the user can choose manually |

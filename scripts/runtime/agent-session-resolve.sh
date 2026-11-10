@@ -12,16 +12,20 @@
 #      reusing %N that previously hosted dev-infra).
 #   5. window option @wezterm_primary_agent_session_id (legacy primary compat)
 #
+# Ctrl+n `/new` unpins the discarded id, then best-effort pins the *new*
+# session (Grok: newest dir under ~/.grok/sessions/<urlencoded-cwd>/).
+# `/clear` SessionStart pane-evict unpins then pins the payload's new id.
+# F5 typed-resumes whatever is currently pinned — the live conversation.
+#
 # When nothing usable remains, callers fall through to cwd-scoped CLI continue
-# (`claude --continue` / `codex resume --last` / `grok --continue`), which is
-# the agent CLI's native project/cwd isolation.
+# (`claude --continue` / `codex resume --last` / `grok --continue`).
 #
 # Rejects attention fallback keys (`pane:<N>`) — those are not CLI resume ids.
 # Sourced by agent-resume.sh / agent-launcher.sh / tmux-reset F5 / ensure_window_panes.
 
 set -u
 
-__AGENT_SESSION_RESOLVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__AGENT_SESSION_RESOLVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 agent_session_id_usable() {
   local sid="${1:-}"
@@ -171,6 +175,69 @@ agent_session_pin_clear() {
   ) 9>"${path}.lock"
 }
 
+# Drop every typed-resume source for a pane after `/new` or `/clear`.
+# Without this, F5 still resolves the discarded conversation via pane
+# option → durable pin → window pin (attention is cleared separately).
+# Keeps @wezterm_agent_profile / @wezterm_pane_role — same agent, new id.
+# Always returns 0 so callers under `set -e` keep running.
+agent_session_unpin_pane() {
+  local pane_id="${1:-}"
+  local cwd="${2:-}"
+  local slot=""
+
+  [[ -n "$pane_id" ]] || return 0
+
+  tmux set-option -p -t "$pane_id" -u @wezterm_agent_session_id 2>/dev/null || true
+
+  slot="$(agent_session_slot_for_pane "$pane_id" 2>/dev/null || true)"
+  if [[ "$slot" == "primary" ]]; then
+    tmux set-window-option -t "$pane_id" -u @wezterm_primary_agent_session_id 2>/dev/null || true
+  fi
+
+  if [[ -z "$cwd" ]]; then
+    cwd="$(tmux display-message -p -t "$pane_id" '#{pane_current_path}' 2>/dev/null || true)"
+  fi
+  if [[ -n "$cwd" && -n "$slot" ]]; then
+    agent_session_pin_clear "$cwd" "$slot" || true
+  fi
+  return 0
+}
+
+# Newest *recent* Grok session id for a worktree cwd.
+# Grok stores sessions under ~/.grok/sessions/<urlencoded-cwd>/<session-id>/.
+# $2 = exclude id (discarded pre-/new). $3 = max age seconds (default 8) so
+# we do not steal a sibling pane's older session in the same cwd.
+agent_session_discover_latest_grok() {
+  local cwd="${1:-}" exclude="${2:-}" max_age_s="${3:-8}"
+  local enc="" root="" entry="" now_s="" mtime_s=""
+  [[ -n "$cwd" ]] || return 0
+  if command -v python3 >/dev/null 2>&1; then
+    enc="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$cwd" 2>/dev/null || true)"
+  fi
+  [[ -n "$enc" ]] || return 0
+  root="${HOME}/.grok/sessions/${enc}"
+  [[ -d "$root" ]] || return 0
+  now_s="$(date +%s 2>/dev/null || true)"
+  [[ "$now_s" =~ ^[0-9]+$ ]] || return 0
+  # ls -1t: newest first; only UUID-like directory names created recently.
+  while IFS= read -r entry; do
+    [[ -n "$entry" && -d "$root/$entry" ]] || continue
+    [[ "$entry" == "$exclude" ]] && continue
+    case "$entry" in
+      [0-9a-fA-F]*-*-*-*-*)
+        if agent_session_id_usable "$entry"; then
+          mtime_s="$(stat -c %Y "$root/$entry" 2>/dev/null || true)"
+          [[ "$mtime_s" =~ ^[0-9]+$ ]] || continue
+          if (( now_s - mtime_s <= max_age_s )); then
+            printf '%s\n' "$entry"
+            return 0
+          fi
+        fi
+        ;;
+    esac
+  done < <(ls -1t "$root" 2>/dev/null || true)
+}
+
 # Persist on the live pane (survives respawn-pane) + durable file (survives kill-server).
 agent_session_pin_pane() {
   local pane_id="${1:-}" sid="${2:-}" agent="${3:-}" cwd="${4:-}"
@@ -179,6 +246,8 @@ agent_session_pin_pane() {
   [[ -n "$pane_id" ]] || return 0
   normalized="$(agent_session_normalize_agent "${agent:-}" 2>/dev/null || true)"
   tmux set-option -p -t "$pane_id" -q @wezterm_agent_session_id "$sid" 2>/dev/null || true
+  # Drop legacy prefer_fresh marker from earlier experiments.
+  tmux set-option -p -t "$pane_id" -u @wezterm_agent_prefer_fresh 2>/dev/null || true
   if [[ -n "$normalized" ]]; then
     tmux set-option -p -t "$pane_id" -q @wezterm_agent_profile "$normalized" 2>/dev/null || true
   fi

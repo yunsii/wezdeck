@@ -139,10 +139,68 @@ complete() {
 new_into_sh="${AGENT_NEW_INTO_PANE_SH:-$SCRIPT_DIR/agent-new-into-pane.sh}"
 codex_selector_sh="${CODEX_NEW_CURRENT_CHECKOUT_SH:-$SCRIPT_DIR/codex-new-current-checkout.sh}"
 
+# After `/new`: drop the discarded conversation's typed-resume sources,
+# then best-effort pin the *new* session so a later F5 stays on it.
+# Attention same-pane eviction is best-effort (missing lib/state is a no-op).
+invalidate_typed_resume_after_new() {
+  local tmux_socket="" tmux_session=""
+  local prev_sid="" new_sid="" agent_for_pin=""
+  local discover_gap="${AGENT_NEW_SESSION_DISCOVER_GAP:-0.4}"
+  local agent_kind="${1:-}"
+
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/agent-session-resolve.sh" 2>/dev/null || true
+  if declare -F agent_session_resolve_for_pane >/dev/null 2>&1; then
+    prev_sid="$(agent_session_resolve_for_pane "$pane_id" 2>/dev/null || true)"
+  fi
+  if declare -F agent_session_unpin_pane >/dev/null 2>&1; then
+    agent_session_unpin_pane "$pane_id" "$cwd" || true
+  fi
+  # Remember discarded id so discovery can skip it.
+  if [[ -n "$prev_sid" ]]; then
+    tmux set-option -p -t "$pane_id" -q @wezterm_agent_discarded_session_id "$prev_sid" \
+      2>/dev/null || true
+  fi
+
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/attention-state-lib.sh" 2>/dev/null || true
+  if declare -F attention_state_evict_session >/dev/null 2>&1; then
+    tmux_socket="$(tmux display-message -p -t "$pane_id" '#{socket_path}' 2>/dev/null || true)"
+    tmux_session="$(tmux display-message -p -t "$pane_id" '#{session_name}' 2>/dev/null || true)"
+    if [[ -n "$tmux_socket" && -n "$tmux_session" ]]; then
+      attention_state_evict_session "$tmux_socket" "$tmux_session" "" "$pane_id" \
+        2>/dev/null || true
+    fi
+  fi
+
+  # Grok writes a new session dir under ~/.grok/sessions/<cwd>/ on /new.
+  # Poll briefly so F5 can typed-resume the new id (not cwd --continue to old).
+  agent_for_pin="$agent_kind"
+  if [[ -z "$agent_for_pin" ]] && declare -F agent_session_agent_for_pane >/dev/null 2>&1; then
+    agent_for_pin="$(agent_session_agent_for_pane "$pane_id" 2>/dev/null || true)"
+  fi
+  if [[ "$agent_for_pin" == "grok" ]] \
+    && declare -F agent_session_discover_latest_grok >/dev/null 2>&1; then
+    sleep "$discover_gap" 2>/dev/null || true
+    new_sid="$(agent_session_discover_latest_grok "$cwd" "${prev_sid:-}" 2>/dev/null || true)"
+    if agent_session_id_usable "${new_sid:-}" 2>/dev/null; then
+      agent_session_pin_pane "$pane_id" "$new_sid" grok "$cwd" || true
+      tmux set-option -p -t "$pane_id" -u @wezterm_agent_discarded_session_id 2>/dev/null || true
+    fi
+  fi
+
+  runtime_log_info agent_cli "Ctrl+n invalidated typed resume after /new" \
+    "${common_fields[@]}" \
+    "prev_session_id=${prev_sid:-}" \
+    "new_session_id=${new_sid:-}" \
+    "pinned_agent=${agent_for_pin:-}" || true
+}
+
 stage_agent_new() {
   local agent_kind="${1:-}"
 
   bash "$new_into_sh" "$pane_id"
+  invalidate_typed_resume_after_new "$agent_kind"
   [[ "$agent_kind" == "codex" ]] || return 0
 
   if bash "$codex_selector_sh" "$pane_id"; then
