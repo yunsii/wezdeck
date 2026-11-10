@@ -438,15 +438,38 @@ see the next section.
 ## Windows Taskbar After Lock→Unlock
 
 After locking the workstation for a while and unlocking, the Windows shell can
-leave the taskbar in a bad state even though settings look unchanged. Typical
-symptoms on this hybrid-wsl host:
+leave the taskbar in a bad state even though settings look unchanged.
 
-1. **Auto-hide hover dead, Win/Meta still works** — edge hit-testing for the
-   tray is stuck; the Start key still raises the bar.
-2. **WezTerm “maximized” covers the tray** — the window grows to the full
-   monitor bounds (for example height 1152) instead of the working area
-   (1104), so the taskbar is painted underneath and looks missing.
-3. **Buttons refuse to combine** — labels stay wide even when
+### Failure layers (same hotkey, different bugs)
+
+`Ctrl+k e` is one entry point that grew as layers were measured. Later layers
+do **not** mean the earlier StuckRects work was wrong — they are distinct
+failure modes that share a symptom surface (“bottom hover / taskbar missing”):
+
+| Layer | When it shows | What actually breaks | Heal piece |
+| --- | --- | --- | --- |
+| L1 shell hot zone | After lock→unlock; often windowed **and** maximized | Edge hit-testing dead; Win/Meta still works | Recycle explorer + ShellHost; StuckRects3 `byte8` bounce |
+| L2 ABM race | Right after recycle | ABM briefly reports autohide=off while `byte8=3` → bounce skipped | Wait for settled ABM; if `byte8=3` still treat as on |
+| L3 tray under WezTerm | Auto-hide **on** + maximized WezTerm: hover dead, or bar reveals underneath | Tray lost `TOPMOST`; sizing with `HWND_TOP` raised WezTerm above the bar | Remamaximize (standing preference), `SWP_NOZORDER`, then NOTOPMOST→TOPMOST + ABM activate **last** |
+
+**Standing preference:** WezTerm stays **maximized**. An earlier experiment that left a permanent bottom gap forbade maximize and was rejected — with tray `TOPMOST` stuck, `WindowFromPoint` at the bottom edge hits `Shell_TrayWnd` even while WezTerm is `IsZoomed`. Do not reintroduce a gap heal.
+
+L1 was the original lock→unlock design. L2–L3 were measured when “windowed hover OK / maximized still wrong or bar covered” showed up. Win11 can drop tray `TOPMOST` again after focus changes — re-run `Ctrl+k e` (heal is re-entrant). Turning auto-hide off avoids L3 entirely.
+
+### Typical symptoms on this hybrid-wsl host
+
+1. **Auto-hide hover dead, Win/Meta still works** — L1 (edge hit-testing
+   stuck). Often affects windowed *and* maximized apps until the shell is
+   recycled / StuckRects bounced.
+2. **WezTerm “maximized” covers the tray** — L2/working-area path when
+   auto-hide is **off**: window grows to full monitor bounds (for example
+   height 1152) instead of the working area (1104), so the taskbar is painted
+   underneath and looks missing.
+3. **Maximized + auto-hide: hover dead, or bar reveals under WezTerm** — L3.
+   Win/Meta still raises the bar. Standing layout is maximized WezTerm
+   (`window_decorations = 'RESIZE'`); “fullscreen” here means maximized /
+   full-bleed, not F11 exclusive fullscreen.
+4. **Buttons refuse to combine** — labels stay wide even when
    `TaskbarGlomLevel` says “combine when full”; the bar looks half-rendered.
 
 ### First action
@@ -457,14 +480,19 @@ path now:
 1. Recycles `explorer.exe` plus `ShellHost` / ShellExperienceHost /
    StartMenuExperienceHost / SearchHost (a plain explorer kill can leave a
    days-old `ShellHost` alive while ABM still says autohide=on).
-2. When auto-hide is **on**, bounces `StuckRects3` Settings `byte8` between the
-   ABM-derived off/on values (usually `2`↔`3`), recycling the shell each side.
-   Plain explorer restart alone often leaves the bottom-edge hot zone dead;
-   toast/log field `stuckrects_bounce=` reports `ok_…` or `abort_…`.
-3. When auto-hide is **off**, re-fits covering `wezterm-gui` windows into the
-   primary working area.
-4. Re-maximizes any `wezterm-gui` window that was maximized / full-bleed at the
-   start, so a mid-heal restore does not leave a small window.
+2. Waits for `Shell_TrayWnd` + a stable ABM sample before choosing the heal
+   path. A bare post-recycle ABM read often races to `off` while StuckRects3
+   `byte8` still means on; that used to skip the bounce (`stuckrects_bounce=skip`
+   with `autohide=off` in the toast) and leave maximized burial in place.
+3. When auto-hide is **on**, bounces `StuckRects3` Settings `byte8` between the
+   ABM-derived off/on values (usually `2`↔`3`), recycling the shell each side
+   (`stuckrects_bounce=`). Then **re-maximizes** WezTerm (standing preference;
+   `SWP_NOZORDER` so sizing does not raise it over the tray) and reasserts the
+   tray as topmost via NOTOPMOST→TOPMOST + `ABM_ACTIVATE` /
+   `ABM_WINDOWPOSCHANGED` (`tray_topmost=`). Tray assert runs **last**.
+4. When auto-hide is **off**, re-fits covering `wezterm-gui` windows into the
+   primary working area, then re-maximizes windows that were maximized /
+   full-bleed at the start so a mid-heal restore does not leave a small window.
 
 Hotkey and palette entry:
 [`keybindings.md`](./keybindings.md) (`Ctrl+k e` / `Windows: Restart Explorer`).
@@ -474,7 +502,12 @@ desync live shell state from `StuckRects3` and leave the tray half-drawn. The
 hotkey’s bounce writes the blob then recycles the shell (with backup-restore
 on ABM mismatch). Manual fallback: Settings → Personalization → Taskbar →
 Taskbar behaviors (toggle auto-hide off then on). On this host `byte8=3` means
-auto-hide on (`2` off); some guides reverse 2/3 — trust ABM, not the guide.
+auto-hide on (`2` off); some guides reverse 2/3 — prefer settled ABM, and when
+ABM races off while `byte8=3`, the heal still treats auto-hide as on.
+
+If hover fails again after a focus change (tray dropped `TOPMOST`), use **Win**
+to raise the bar or run `Ctrl+k e` again. Maximize itself is expected and
+supported. Turning auto-hide off avoids the Win11 tray Z-order class entirely.
 
 ### If icons still look ungrouped
 
