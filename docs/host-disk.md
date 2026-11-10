@@ -253,8 +253,10 @@ multi-minute. Use the read-only helper, then walk the ranked recipe.
 
 ```bash
 scripts/dev/host-disk-triage.sh              # df + known hotspots + recipe
-scripts/runtime/wsl-disk-guard.sh status     # live levels
+scripts/runtime/wsl-disk-guard.sh status     # live levels (does not publish)
 scripts/runtime/wsl-disk-guard.sh history --days 2
+# After cleanup always:
+scripts/runtime/wsl-disk-guard.sh sample     # publish — badge reads this file
 ```
 
 #### Size ladder (what usually wins)
@@ -295,11 +297,16 @@ rm -rf "$U/AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheSto
 mkdir -p "$U/AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheStorage"
 ```
 
-Then republish so the badge and history catch up:
+**Hard rule after any reclaim:** run `sample` immediately. `status` only
+measures in-process and **does not** rewrite `status.json`, so the WezTerm
+`C·…` / `D·…` badge keeps the previous warn/crit until the 5‑min timer fires
+(or until you sample). 2026-11-10 cleanup freed ~79G but left the bar lit until
+the next tick for exactly this reason.
 
 ```bash
-scripts/runtime/wsl-disk-guard.sh sample
+scripts/runtime/wsl-disk-guard.sh sample   # publish — required for the badge
 df -h /mnt/c
+scripts/runtime/wsl-disk-guard.sh status   # human-readable check (optional)
 ```
 
 ### OEM preinstalls on the same volume

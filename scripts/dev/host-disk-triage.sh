@@ -128,9 +128,10 @@ cat <<EOF
     • WinSxS / SoftwareDistribution → Disk Cleanup (system files)
       or elevated: DISM /Online /Cleanup-Image /StartComponentCleanup
 
-  After deletes:
+  After ANY reclaim (mandatory — do not wait for the 5 min timer):
+    scripts/runtime/wsl-disk-guard.sh sample   # publishes status.json for the badge
     df -h /mnt/c
-    scripts/runtime/wsl-disk-guard.sh sample
+    # `status` alone does NOT update the badge; it only prints a live measure.
     scripts/runtime/wsl-disk-guard.sh history --days 2
 
   Full playbook: docs/host-disk.md#system-disk-c-triage
