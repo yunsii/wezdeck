@@ -121,28 +121,42 @@ converts gap into avail; it does not create headroom.
 
 | Piece | Where |
 |---|---|
-| Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` |
+| Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` / `history` |
 | Timer | `wezterm-disk-guard.timer` — user unit, 1 min after start then every 5 min |
 | Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SB·N` (SB itself is absent while the watch poller is idle) |
-| History | `state/disk-guard/history.ndjson` — last 288 samples (~24h at 5 min) |
+| History | `state/disk-guard/history.ndjson` (WSL) + `history-system.ndjson` — last 2016 samples each (~7d at 5 min) |
 | Escalation popup | `reminder.sh`, the same wrapper cron reminders use |
 
 ```bash
 ./scripts/dev/install-wsl-disk-guard.sh            # install + enable + prime
 ./scripts/dev/install-wsl-disk-guard.sh --check    # no writes
 scripts/runtime/wsl-disk-guard.sh status           # measurement + reclaim recipe
+scripts/runtime/wsl-disk-guard.sh history          # ASCII sparklines (~7d)
+scripts/runtime/wsl-disk-guard.sh history --days 2 # shorter window
 ```
 
-**The badge is absent while healthy.** Its presence in the bar *is* the
-signal. When it appears it shows `badge_bytes`: host avail when that gate
-binds, otherwise headroom — so a dry volume cannot display a reassuring tens
-of GiB borrowed from gap.
+Two volumes are sampled on each tick:
+
+| Role | Default mount | Gates |
+|---|---|---|
+| WSL | wherever `ext4.vhdx` lives (often `/mnt/d`) | headroom % **and** absolute avail |
+| System | `/mnt/c` when `/mnt/c/Windows` exists | absolute avail only |
+
+Set `WEZTERM_DISK_SYSTEM_VOLUME=''` in `shared.env` to disable the system
+channel. When the system mount equals the WSL mount (vhdx on `C:`), the
+system channel is skipped — the dual gate already covers that disk.
+
+**Badges are absent while healthy.** Presence in the bar *is* the signal.
+Each hot volume renders its own drive letter. The number is `badge_bytes`:
+host avail when that gate binds, otherwise (WSL) headroom — so a dry volume
+cannot display a reassuring tens of GiB borrowed from gap.
 
 ```
-(absent)   both gates healthy
-D·22G      warn (amber)
-D·2G       crit (red — and the guard pops a reminder); may be avail-driven
-D·?        the sampler was publishing and went stale
+(absent)     every watched volume healthy
+D·22G        WSL volume warn (amber)
+C·8G         system volume warn (amber) — same avail thresholds
+C·2G D·11G   both hot (each keeps its own level colour)
+D·?          the sampler was publishing and went stale
 ```
 
 The two `?` cases are deliberately different. A sampler that *was* publishing
@@ -152,14 +166,19 @@ clone without the guard installed shows a clean bar rather than a permanent
 question mark.
 
 To see the numbers when the badge is not showing anything, run
-`wsl-disk-guard.sh status`. After a crash, read `history.ndjson` next to
-`status.json` — the live status file is overwritten on the next sample.
+`wsl-disk-guard.sh status`. For the change curve (what filled the disk, and
+when), run `wsl-disk-guard.sh history` — it downsamples the NDJSON rings into
+ASCII sparklines with first/last/min/max. After a crash, read the history
+files next to `status.json` — the live status file is overwritten on the
+next sample.
 
 Alerting fires **on escalation only**, plus a cooldown-gated repeat while still
-`crit` (`WEZTERM_DISK_ALERT_COOLDOWN`, default 6h). Improvements never pop.
-Rules are pinned in
+`crit` (`WEZTERM_DISK_ALERT_COOLDOWN`, default 6h). WSL and system volumes
+alert independently (separate titles: `WSL 磁盘…` / `系统盘…`). Improvements
+never pop. Rules are pinned in
 [`tests/hook-units/test_wsl_disk_guard.sh`](../tests/hook-units/test_wsl_disk_guard.sh),
-including the tiny-avail + large-gap → crit case.
+including the tiny-avail + large-gap → crit case and the system-volume warn
+path.
 
 **Reclaim on WSL 3.0.1+:** prefer `wsl --manage <Distro> --compact` after
 `fstrim` (force-terminates the distro, discard, then CompactVirtualDisk).
@@ -176,8 +195,9 @@ in `wezterm-x/local/shared.env` (template in `local.example/`) rather than in
 an env var you have to remember to export:
 
 ```sh
-WEZTERM_DISK_VOLUME=''        # empty = follow wherever ext4.vhdx lives
-WEZTERM_DISK_RESERVE_GB='5'   # host space withheld from WSL headroom
+WEZTERM_DISK_VOLUME=''              # empty = follow wherever ext4.vhdx lives
+WEZTERM_DISK_SYSTEM_VOLUME='/mnt/c' # empty = disable; unset = auto /mnt/c
+WEZTERM_DISK_RESERVE_GB='5'         # host space withheld from WSL headroom
 ```
 
 Leave `WEZTERM_DISK_VOLUME` empty unless the vhdx and the volume you care
@@ -194,10 +214,11 @@ captures the explicit env before loading the file and reapplies it after.
 
 Remaining knobs, env-only: `WEZTERM_DISK_WARN_PCT` (10),
 `WEZTERM_DISK_CRIT_PCT` (5), `WEZTERM_DISK_AVAIL_WARN_GB` (10),
-`WEZTERM_DISK_AVAIL_CRIT_GB` (5; `0` disables that gate),
-`WEZTERM_DISK_HISTORY_MAX` (288), `WEZTERM_DISK_ALERT` (1),
-`WEZTERM_DISK_ALERT_COOLDOWN` (21600), `WEZTERM_DISK_VHDX`,
-`WEZTERM_DISK_STATUS_FILE`, `WEZTERM_DISK_REMINDER_BIN` (test seam).
+`WEZTERM_DISK_AVAIL_CRIT_GB` (5; `0` disables that gate; shared by WSL gate 2
+and the system volume), `WEZTERM_DISK_HISTORY_MAX` (2016 ≈ 7d),
+`WEZTERM_DISK_ALERT` (1), `WEZTERM_DISK_ALERT_COOLDOWN` (21600),
+`WEZTERM_DISK_VHDX`, `WEZTERM_DISK_STATUS_FILE`,
+`WEZTERM_DISK_REMINDER_BIN` (test seam).
 
 **A systemd user unit has no Windows interop at all** — no `/mnt/c` on `PATH`,
 no `WSL_INTEROP`, no `WSL_DISTRO_NAME`. Verified with `systemd-run --user`. So

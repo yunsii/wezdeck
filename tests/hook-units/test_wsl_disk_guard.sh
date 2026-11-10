@@ -60,13 +60,16 @@ it() {
 
 # Run one sample with the given threshold overrides.
 # Default: disable the absolute avail gate so the classic pct-driven sequence
-# stays deterministic on whatever volume hosts $tmpdir.
+# stays deterministic on whatever volume hosts $tmpdir. Also disable the
+# system-volume channel unless a case opts in — a dry real /mnt/c on the
+# developer machine must not inflate alert counts for the WSL-only cases.
 sample() {
   env \
     WEZTERM_DISK_STATUS_FILE="$status_file" \
     WEZTERM_DISK_VHDX="$fake_vhdx" \
     WEZTERM_DISK_REMINDER_BIN="$fake_reminder" \
     FAKE_REMINDER_LOG="$alert_log" \
+    WEZTERM_DISK_SYSTEM_VOLUME='' \
     WEZTERM_DISK_AVAIL_WARN_GB="${WEZTERM_DISK_AVAIL_WARN_GB:-0}" \
     WEZTERM_DISK_AVAIL_CRIT_GB="${WEZTERM_DISK_AVAIL_CRIT_GB:-0}" \
     WEZTERM_DISK_HISTORY_MAX="${WEZTERM_DISK_HISTORY_MAX:-32}" \
@@ -285,12 +288,73 @@ fi
 # on its last-known value rather than fail loudly.
 if command -v jq >/dev/null 2>&1; then
   it 'published status is valid JSON' bash -c "jq -e . '$status_file' >/dev/null"
-  it 'status version is 2' bash -c "jq -e '.version == 2' '$status_file' >/dev/null"
+  it 'status version is 3' bash -c "jq -e '.version == 3' '$status_file' >/dev/null"
   it 'gap is derived, not echoed' bash -c \
     "jq -e '.gap_bytes == ([.vhdx_bytes - .guest_used_bytes, 0] | max)' '$status_file' >/dev/null"
 else
   printf '  (jq missing; skipped JSON assertions)\n'
 fi
+
+# --- system volume (avail-only gate) -------------------------------------
+printf '\xE2\x96\xB8 wsl-disk-guard system volume\n'
+sys_history="$tmpdir/history-system.ndjson"
+rm -f "$status_file" "$alert_log" "$sys_history"
+# Pick a mount that is not the fake vhdx's volume — measure_system skips
+# when SYSTEM_VOLUME == HOST_MOUNT (already covered by the WSL dual gate).
+vhdx_mount="$(df --output=target "$fake_vhdx" | tail -1)"
+sys_mount=""
+for candidate in /mnt/c /mnt/d /boot /; do
+  [[ -d "$candidate" ]] || continue
+  [[ "$(df --output=target "$candidate" 2>/dev/null | tail -1)" == "$vhdx_mount" ]] && continue
+  sys_mount="$candidate"
+  break
+done
+
+if [[ -n "$sys_mount" ]] && command -v jq >/dev/null 2>&1; then
+  sample \
+    WEZTERM_DISK_SYSTEM_VOLUME="$sys_mount" \
+    WEZTERM_DISK_WARN_PCT="$low" WEZTERM_DISK_CRIT_PCT="$low" \
+    WEZTERM_DISK_AVAIL_WARN_GB=10 WEZTERM_DISK_AVAIL_CRIT_GB=5 \
+    WEZTERM_DISK_TEST_SYS_AVAIL_BYTES=$((8 * GiB)) \
+    WEZTERM_DISK_TEST_SYS_SIZE_BYTES=$((180 * GiB)) \
+    WEZTERM_DISK_TEST_HOST_AVAIL_BYTES=$((50 * GiB)) \
+    WEZTERM_DISK_TEST_HOST_SIZE_BYTES=$((256 * GiB)) \
+    >/dev/null 2>&1
+  it 'system volume warn publishes nested system.level' bash -c \
+    "jq -e '.system.level == \"warn\"' '$status_file' >/dev/null"
+  it 'WSL top-level stays ok while system is warn' bash -c \
+    "jq -e '.level == \"ok\" and .system.level == \"warn\"' '$status_file' >/dev/null"
+  it 'system warn escalates an alert' alerts_are 1
+  it 'system history ring is written' test -f "$sys_history"
+
+  sample \
+    WEZTERM_DISK_SYSTEM_VOLUME="$sys_mount" \
+    WEZTERM_DISK_WARN_PCT="$low" WEZTERM_DISK_CRIT_PCT="$low" \
+    WEZTERM_DISK_AVAIL_WARN_GB=10 WEZTERM_DISK_AVAIL_CRIT_GB=5 \
+    WEZTERM_DISK_TEST_SYS_AVAIL_BYTES=$((8 * GiB)) \
+    WEZTERM_DISK_TEST_SYS_SIZE_BYTES=$((180 * GiB)) \
+    WEZTERM_DISK_TEST_HOST_AVAIL_BYTES=$((50 * GiB)) \
+    WEZTERM_DISK_TEST_HOST_SIZE_BYTES=$((256 * GiB)) \
+    >/dev/null 2>&1
+  it 'repeated system warn stays silent' alerts_are 1
+else
+  printf '  (no second mount or jq; skipped system-volume cases)\n'
+fi
+
+sample \
+  WEZTERM_DISK_SYSTEM_VOLUME='' \
+  WEZTERM_DISK_WARN_PCT="$low" WEZTERM_DISK_CRIT_PCT="$low" \
+  WEZTERM_DISK_ALERT=0 \
+  >/dev/null 2>&1
+if command -v jq >/dev/null 2>&1; then
+  it 'empty SYSTEM_VOLUME disables the system channel' bash -c \
+    "jq -e '.system == null' '$status_file' >/dev/null"
+fi
+
+# history curve subcommand must not write and must exit 0
+it 'history subcommand renders without error' bash -c \
+  "WEZTERM_DISK_STATUS_FILE='$status_file' WEZTERM_DISK_SYSTEM_VOLUME='' \
+   '$guard' history --days 7 --width 16 >/dev/null"
 
 printf 'wsl-disk-guard: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

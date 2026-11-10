@@ -137,7 +137,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   [`diagnostics.md` Guest load badge](docs/diagnostics.md#guest-load-badge-l)).
 
 - Host disk space (host volume full, `ext4.vhdx` never shrinking, sparse-VHD
-  trap, trim→shutdown→Optimize-VHD / compact, OEM preinstalls, `D·…` badge):
+  trap, trim→shutdown→Optimize-VHD / compact, OEM preinstalls, system + WSL
+  `C·…` / `D·…` badges, `history` sparklines):
   Read [`docs/host-disk.md`](docs/host-disk.md).
 - Unverified claims, deferred decisions, or "what still needs following up" on
   any of the above — dated, each with how to close it:

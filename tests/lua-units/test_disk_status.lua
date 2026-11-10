@@ -275,6 +275,36 @@ it('format_text is pure and needs no file', function()
   assert_eq(disk_status.format_text(nil, false), nil)
 end)
 
+it('v3 system volume warn appears beside a healthy WSL volume', function()
+  fake_now_ms = 1000000
+  -- Nested object: hand-rolled JSON in write_state only supports scalars.
+  local f = assert(io.open(state_path, 'w'))
+  f:write(string.format(
+    '{"level":"ok","host_mount":"/mnt/d","headroom_bytes":%d,"badge_bytes":%d,'
+      .. '"heartbeat_at_ms":1000000,'
+      .. '"system":{"host_mount":"/mnt/c","level":"warn","badge_bytes":%d}}',
+    120 * GiB, 120 * GiB, 8 * GiB))
+  f:close()
+  assert_eq(badge_text(), ' C\xC2\xB78G ',
+    'healthy WSL must not hide a dry system disk')
+end)
+
+it('v3 both volumes hot concatenate letter badges', function()
+  fake_now_ms = 1000000
+  local f = assert(io.open(state_path, 'w'))
+  f:write(string.format(
+    '{"level":"crit","host_mount":"/mnt/d","badge_bytes":%d,"heartbeat_at_ms":1000000,'
+      .. '"system":{"host_mount":"/mnt/c","level":"warn","badge_bytes":%d}}',
+    2 * GiB, 8 * GiB))
+  f:close()
+  local parts = disk_status.render_status_segment(palette)
+  local texts = {}
+  for _, p in ipairs(parts) do
+    if p.Text then table.insert(texts, p.Text) end
+  end
+  assert_eq(table.concat(texts, ''), ' C\xC2\xB78G  D\xC2\xB72G ')
+end)
+
 os.remove(state_path)
 
 io.write(string.format('disk_status: %d passed, %d failed\n', pass_count, fail_count))

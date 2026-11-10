@@ -4,26 +4,26 @@
 -- Windows-accessible runtime state dir (same FS as attention.json /
 -- chrome-debug), so WezTerm Lua never crosses \\wsl$ on the 250 ms tick.
 --
--- One number from the sampler's `badge_bytes` (falls back to `headroom_bytes`
--- for older status.json). The sampler picks the binding constraint:
--- headroom (avail + gap - reserve) when the WSL write budget is tight, or
--- host avail when the volume itself is about to dry — a large gap must not
--- make the bar show tens of GiB while D: has megabytes left (2026-10-09).
+-- status.json v3 carries the WSL volume at the top level (v2 shape) plus an
+-- optional nested `system` object for the Windows system drive. Each volume
+-- that is warn/crit (or stale) renders its own letter badge — e.g. `C·8G`
+-- next to `D·2G` — so a dry system disk cannot hide behind a healthy WSL
+-- volume. See docs/host-disk.md.
 --
--- The gap is deliberately not surfaced on its own. On a dedicated WSL volume
--- it is the distro's own reserve rather than waste.
--- See docs/host-disk.md.
+-- One number per volume from the sampler's `badge_bytes` (falls back to
+-- `headroom_bytes` for older status.json). The WSL sampler picks the binding
+-- constraint: headroom when the write budget is tight, host avail when the
+-- volume itself is about to dry. The system volume is avail-only.
 --
--- **The badge renders nothing while healthy.** It appears only when there is
--- something to act on, so its mere presence in the bar is the signal — no
--- always-on number to learn to ignore, and no width spent on the common case.
+-- **Badges render nothing while healthy.** Presence in the bar is the signal
+-- — no always-on number to learn to ignore, and no width spent on the common
+-- case.
 --
---   (absent)   both headroom% and host-avail gates healthy
---   D·22G      below warn (amber) — number is badge_bytes
---   D·11G      below crit (red, and the guard pops a reminder on escalation)
---   D·?        sampler was publishing and went stale — the monitor itself
---              needs attention. Never published at all renders nothing, so a
---              machine without the guard installed sees a clean bar.
+--   (absent)   every watched volume healthy
+--   D·22G      WSL volume below warn (amber)
+--   C·8G       system volume below warn
+--   C·2G D·11G both volumes hot (each keeps its own level colour)
+--   D·?        sampler was publishing and went stale
 --
 -- Placement: right-status, between the session-bridge and attention counters.
 
@@ -140,44 +140,84 @@ local function mount_label(mount)
   return 'HOST'
 end
 
+local function volume_entries(state)
+  if type(state) ~= 'table' then
+    return {}
+  end
+  local entries = {}
+  -- System drive first (C· before D·) so a dry boot volume is the leftmost
+  -- signal when both are hot.
+  if type(state.system) == 'table' and state.system.host_mount ~= nil then
+    table.insert(entries, {
+      host_mount = state.system.host_mount,
+      level = state.system.level,
+      badge_bytes = state.system.badge_bytes,
+      headroom_bytes = state.system.headroom_bytes or state.system.host_avail_bytes,
+    })
+  end
+  -- Top-level fields are the WSL / vhdx volume (v2 + v3).
+  if state.host_mount ~= nil or state.level ~= nil or state.headroom_bytes ~= nil
+      or state.badge_bytes ~= nil then
+    table.insert(entries, {
+      host_mount = state.host_mount,
+      level = state.level,
+      badge_bytes = state.badge_bytes,
+      headroom_bytes = state.headroom_bytes,
+    })
+  end
+  return entries
+end
+
+local function format_volume_text(vol, fresh)
+  if type(vol) ~= 'table' then
+    return nil, 'unknown'
+  end
+  local label = mount_label(vol.host_mount)
+  if not fresh then
+    return ' ' .. label .. '·? ', 'unknown'
+  end
+  local level = type(vol.level) == 'string' and vol.level or 'unknown'
+  if level == 'ok' then
+    return nil, 'ok'
+  end
+  local shown = format_gib(vol.badge_bytes) or format_gib(vol.headroom_bytes)
+  if not shown then
+    return ' ' .. label .. '·? ', level
+  end
+  return ' ' .. label .. '·' .. shown .. ' ', level
+end
+
 -- Exposed for the unit suite: the pure text half of the render, with no
 -- wezterm.format or palette involved.
 -- Returns nil when there is nothing to show. Callers must treat nil as "emit
 -- no segment at all" rather than rendering an empty one, or the bar keeps a
 -- stray separator where the badge used to be.
+--
+-- When both volumes are hot the texts concatenate (` C·8G  D·2G `). Pass a
+-- single volume-shaped table for the legacy single-volume helper path.
 function M.format_text(state, fresh)
   if type(state) ~= 'table' then
-    -- Nothing was ever published: the guard is not installed on this machine.
     return nil
   end
-  if not fresh then
-    return ' ' .. mount_label(state.host_mount) .. '·? '
+  -- Legacy / unit-suite: a bare volume table (no nested system, has level).
+  if state.system == nil and (state.host_mount ~= nil or state.level ~= nil) then
+    local text = format_volume_text(state, fresh)
+    return text
   end
-
-  local level = type(state.level) == 'string' and state.level or 'unknown'
-  if level == 'ok' then
+  local parts = {}
+  for _, vol in ipairs(volume_entries(state)) do
+    local text = format_volume_text(vol, fresh)
+    if text then
+      table.insert(parts, text)
+    end
+  end
+  if #parts == 0 then
     return nil
   end
-
-  local label = mount_label(state.host_mount)
-  -- Prefer sampler-chosen badge_bytes (avail when the volume is the binding
-  -- constraint); fall back to headroom_bytes for pre-v2 status files.
-  local shown = format_gib(state.badge_bytes) or format_gib(state.headroom_bytes)
-  if not shown then
-    return ' ' .. label .. '·? '
-  end
-  return ' ' .. label .. '·' .. shown .. ' '
+  return table.concat(parts, '')
 end
 
-function M.render_status_segment(palette)
-  local state = M.reload_state()
-  local fresh = is_fresh(state)
-  local text = M.format_text(state, fresh)
-  if not text then
-    return nil
-  end
-  local level = (fresh and type(state) == 'table' and type(state.level) == 'string') and state.level or 'unknown'
-
+local function level_style(palette, level, fresh)
   local bg, fg, intensity, italic
   if not fresh then
     bg = palette.tab_bar_background
@@ -200,14 +240,38 @@ function M.render_status_segment(palette)
     intensity = 'Normal'
     italic = false
   end
+  return bg, fg, intensity, italic
+end
 
-  return wezterm.format {
-    { Background = { Color = bg } },
-    { Foreground = { Color = fg } },
-    { Attribute = { Intensity = intensity } },
-    { Attribute = { Italic = italic } },
-    { Text = text },
-  }
+function M.render_status_segment(palette)
+  local state = M.reload_state()
+  if type(state) ~= 'table' then
+    return nil
+  end
+  local fresh = is_fresh(state)
+  local entries = volume_entries(state)
+  if #entries == 0 then
+    return nil
+  end
+
+  local format_list = {}
+  local any = false
+  for _, vol in ipairs(entries) do
+    local text, level = format_volume_text(vol, fresh)
+    if text then
+      any = true
+      local bg, fg, intensity, italic = level_style(palette, level, fresh)
+      table.insert(format_list, { Background = { Color = bg } })
+      table.insert(format_list, { Foreground = { Color = fg } })
+      table.insert(format_list, { Attribute = { Intensity = intensity } })
+      table.insert(format_list, { Attribute = { Italic = italic } })
+      table.insert(format_list, { Text = text })
+    end
+  end
+  if not any then
+    return nil
+  end
+  return wezterm.format(format_list)
 end
 
 return M

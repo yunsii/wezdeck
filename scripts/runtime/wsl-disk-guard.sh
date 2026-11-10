@@ -7,6 +7,8 @@
 #
 #   status   Print the same measurement human-readably. No writes.
 #
+#   history  Print ASCII sparklines from the NDJSON rings (WSL + system).
+#
 # Why this exists: neither side of the boundary can answer "how much more can
 # I write". The guest's `df` reports the vhdx's *virtual* capacity — 1 TB by
 # default, on a 256G partition — so it overstated real headroom 5.7x on this
@@ -14,7 +16,12 @@
 # the space already inside it. On 2026-07-25 the guest cheerfully reported
 # 766G free while the host volume was down to 331 MB.
 #
-# The number that is actually true is the sum:
+# Two volumes are watched:
+#
+#   wsl       volume holding ext4.vhdx — dual gate (headroom % + avail GiB)
+#   system    Windows system drive (default /mnt/c) — avail GiB only
+#
+# The WSL number that is actually true is the sum:
 #
 #   avail     free space on the host volume holding ext4.vhdx — room for the
 #             file to grow
@@ -25,7 +32,7 @@
 #   headroom  avail + gap - reserve — what the distro can still write while
 #             leaving the reserve intact. One of two alert inputs.
 #
-# Alerting is a dual gate (take the worse of the two):
+# WSL alerting is a dual gate (take the worse of the two):
 #
 #   1. headroom as a % of budget (warn <10%, crit <5%) — WSL write budget
 #   2. host avail as absolute GiB (warn <10G, crit ≤5G) — volume about to dry
@@ -34,17 +41,22 @@
 # the host volume has only megabytes left — the 2026-07-25 and 2026-10-09
 # incidents both failed that way. `gap` still does not drive a level on its
 # own (on a dedicated WSL disk it is reserve, not waste); compaction converts
-# gap into avail. See docs/host-disk.md.
+# gap into avail. The system volume uses gate 2 only (no vhdx gap). See
+# docs/host-disk.md.
 #
 # Usage:
 #   scripts/runtime/wsl-disk-guard.sh sample
 #   scripts/runtime/wsl-disk-guard.sh status
+#   scripts/runtime/wsl-disk-guard.sh history [--days N]
 #
 # Env knobs (see docs/host-disk.md):
 #   WEZTERM_DISK_VHDX            vhdx path, WSL-side. Default: autodetected
 #   WEZTERM_DISK_STATUS_FILE     JSON output path. Default: Windows runtime state
 #   WEZTERM_DISK_VOLUME          WSL-side mount point of the volume to watch,
 #                                e.g. /mnt/d. Default: wherever the vhdx lives
+#   WEZTERM_DISK_SYSTEM_VOLUME   Windows system volume mount, e.g. /mnt/c.
+#                                Default: /mnt/c when /mnt/c/Windows exists;
+#                                empty string disables.
 #   WEZTERM_DISK_RESERVE_GB      host space withheld from WSL. Default 5
 #   WEZTERM_DISK_WARN_PCT        headroom below this % of budget is `warn`.
 #                                Default 10
@@ -54,10 +66,10 @@
 #                                Default 10. Set 0 to disable this gate.
 #   WEZTERM_DISK_AVAIL_CRIT_GB   host avail at or below this GiB is `crit`.
 #                                Default 5. Set 0 to disable this gate.
-#   WEZTERM_DISK_HISTORY_MAX     NDJSON samples kept next to status.json.
-#                                Default 288 (~24h at 5 min). 0 disables.
+#   WEZTERM_DISK_HISTORY_MAX     NDJSON samples kept per history file.
+#                                Default 2016 (~7d at 5 min). 0 disables.
 #
-# WEZTERM_DISK_VOLUME and WEZTERM_DISK_RESERVE_GB also read from
+# WEZTERM_DISK_VOLUME / SYSTEM_VOLUME / RESERVE_GB also read from
 # wezterm-x/local/shared.env, which is the place to set them per machine.
 # An explicit environment variable still wins over the file.
 #   WEZTERM_DISK_ALERT           1 to pop reminders, 0 to stay silent. Default 1
@@ -68,11 +80,20 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/disk-guard-lib.sh"
+
 # Capture explicit env before loading the machine config, because
 # runtime_env_load_shell is `set -a` + source and would otherwise clobber it.
 # Precedence: explicit env > shared.env > built-in default.
 _env_volume="${WEZTERM_DISK_VOLUME:-}"
 _env_reserve="${WEZTERM_DISK_RESERVE_GB:-}"
+_had_system=0
+_env_system=""
+if [[ "${WEZTERM_DISK_SYSTEM_VOLUME+x}" == "x" ]]; then
+  _had_system=1
+  _env_system="${WEZTERM_DISK_SYSTEM_VOLUME}"
+fi
 
 if [[ -f "$SCRIPT_DIR/runtime-env-lib.sh" ]]; then
   # shellcheck disable=SC1091
@@ -82,16 +103,24 @@ fi
 
 VOLUME="${_env_volume:-${WEZTERM_DISK_VOLUME:-}}"
 RESERVE_GB="${_env_reserve:-${WEZTERM_DISK_RESERVE_GB:-5}}"
+if ((_had_system)); then
+  SYSTEM_VOLUME="$_env_system"
+elif [[ "${WEZTERM_DISK_SYSTEM_VOLUME+x}" == "x" ]]; then
+  SYSTEM_VOLUME="${WEZTERM_DISK_SYSTEM_VOLUME}"
+else
+  SYSTEM_VOLUME=""
+  [[ -d /mnt/c/Windows ]] && SYSTEM_VOLUME="/mnt/c"
+fi
 WARN_PCT="${WEZTERM_DISK_WARN_PCT:-10}"
 CRIT_PCT="${WEZTERM_DISK_CRIT_PCT:-5}"
 AVAIL_WARN_GB="${WEZTERM_DISK_AVAIL_WARN_GB:-10}"
 AVAIL_CRIT_GB="${WEZTERM_DISK_AVAIL_CRIT_GB:-5}"
-HISTORY_MAX="${WEZTERM_DISK_HISTORY_MAX:-288}"
+HISTORY_MAX="${WEZTERM_DISK_HISTORY_MAX:-2016}"
 ALERT_ENABLED="${WEZTERM_DISK_ALERT:-1}"
 ALERT_COOLDOWN="${WEZTERM_DISK_ALERT_COOLDOWN:-21600}"
 
 usage() {
-  sed -n '2,55p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,70p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 now_ms() {
@@ -340,6 +369,8 @@ measure() {
   fi
 
   classify
+  disk_guard_measure_system "$SYSTEM_VOLUME" "${HOST_MOUNT:-}" \
+    "$AVAIL_WARN_GB" "$AVAIL_CRIT_GB"
 }
 
 # Dual gate: worse of (headroom %, host avail GiB). Sets LEVEL, LEVEL_REASON,
@@ -452,24 +483,19 @@ json_field() {
 }
 
 history_file_path() {
-  printf '%s\n' "$(dirname "$(status_file_path)")/history.ndjson"
+  disk_guard_history_path "$(status_file_path)" "${1:-wsl}"
 }
 
-# Append one compact sample line and trim to HISTORY_MAX. Survives a crash that
-# overwrites status.json, so the next boot can still reconstruct the approach
-# to a disk-full event. Disabled when HISTORY_MAX=0.
+# Append compact sample lines (WSL + optional system) and trim each ring.
+# Survives a crash that overwrites status.json, so the next boot can still
+# reconstruct the approach to a disk-full event. Disabled when HISTORY_MAX=0.
 append_history() {
-  [[ "$HISTORY_MAX" =~ ^[0-9]+$ ]] || return 0
-  ((HISTORY_MAX > 0)) || return 0
-  local path tmp dir
-  path="$(history_file_path)"
-  dir="$(dirname "$path")"
-  mkdir -p "$dir" 2>/dev/null || true
-  tmp="${path}.tmp.$$"
-  {
-    [[ -f "$path" ]] && cat "$path" 2>/dev/null
-    printf '{"ts":"%s","level":"%s","reason":"%s","host_avail_bytes":%s,"gap_bytes":%s,"headroom_bytes":%s,"headroom_pct":%s,"vhdx_bytes":%s,"guest_used_bytes":%s}\n' \
-      "$(date --iso-8601=seconds)" \
+  local ts
+  ts="$(date --iso-8601=seconds)"
+  disk_guard_append_history "$(history_file_path wsl)" "$HISTORY_MAX" \
+    "$(printf '{"ts":"%s","role":"wsl","mount":%s,"level":"%s","reason":"%s","host_avail_bytes":%s,"gap_bytes":%s,"headroom_bytes":%s,"headroom_pct":%s,"vhdx_bytes":%s,"guest_used_bytes":%s}' \
+      "$ts" \
+      "$( [[ -n "$HOST_MOUNT" ]] && printf '"%s"' "$HOST_MOUNT" || printf 'null' )" \
       "$LEVEL" \
       "$LEVEL_REASON" \
       "$(json_field "$HOST_AVAIL")" \
@@ -477,22 +503,33 @@ append_history() {
       "$(json_field "$HEADROOM_BYTES")" \
       "${HEADROOM_PCT:-null}" \
       "$(json_field "$VHDX_BYTES")" \
-      "$(json_field "$GUEST_USED")"
-  } 2>/dev/null | tail -n "$HISTORY_MAX" >"$tmp" 2>/dev/null || true
-  mv -f "$tmp" "$path" 2>/dev/null || rm -f "$tmp" 2>/dev/null || true
+      "$(json_field "$GUEST_USED")")"
+  if [[ -n "$SYS_MOUNT" ]]; then
+    disk_guard_append_history "$(history_file_path system)" "$HISTORY_MAX" \
+      "$(printf '{"ts":"%s","role":"system","mount":"%s","level":"%s","reason":"%s","host_avail_bytes":%s,"host_size_bytes":%s,"avail_pct":%s}' \
+        "$ts" \
+        "$SYS_MOUNT" \
+        "${SYS_LEVEL:-unknown}" \
+        "${SYS_REASON:-unknown}" \
+        "$(json_field "$SYS_AVAIL")" \
+        "$(json_field "$SYS_SIZE")" \
+        "${SYS_AVAIL_PCT:-null}")"
+  fi
 }
 
 publish() {
-  local path tmp
+  local path tmp system_json
   path="$(status_file_path)"
   mkdir -p "$(dirname "$path")" 2>/dev/null || true
   tmp="${path}.tmp.$$"
+  system_json="$(disk_guard_system_json json_field)"
 
   # Hand-rolled rather than jq-piped: this runs from a systemd timer where a
-  # missing jq must not cost the badge its heartbeat.
+  # missing jq must not cost the badge its heartbeat. Top-level fields stay
+  # the WSL volume (v2 consumers / older Lua); `system` is additive (v3).
   cat >"$tmp" 2>/dev/null <<EOF
 {
-  "version": 2,
+  "version": 3,
   "level": "$LEVEL",
   "level_reason": "$LEVEL_REASON",
   "host_mount": $( [[ -n "$HOST_MOUNT" ]] && printf '"%s"' "$HOST_MOUNT" || printf 'null' ),
@@ -514,6 +551,7 @@ publish() {
   "avail_crit_gb": $AVAIL_CRIT_GB,
   "last_alert_level": "$LAST_ALERT_LEVEL",
   "last_alert_at_ms": $(json_field "$LAST_ALERT_AT_MS"),
+  "system": $system_json,
   "heartbeat_at_ms": $(now_ms),
   "updated_at": "$(date --iso-8601=seconds)"
 }
@@ -524,16 +562,28 @@ EOF
 
 # Read back the previous run's alert bookkeeping. Kept as plain grep so a
 # malformed file degrades to "never alerted" instead of aborting the sample.
+# System-volume fields live under the nested `system` object — extract that
+# block first so top-level WSL keys do not collide.
 load_previous() {
   PREV_LEVEL=""
   LAST_ALERT_LEVEL=""
   LAST_ALERT_AT_MS=""
-  local path
+  SYS_PREV_LEVEL=""
+  SYS_LAST_ALERT_LEVEL=""
+  SYS_LAST_ALERT_AT_MS=""
+  local path body sys_block
   path="$(status_file_path)"
   [[ -f "$path" ]] || return 0
-  PREV_LEVEL="$(grep -o '"level"[[:space:]]*:[[:space:]]*"[a-z]*"' "$path" 2>/dev/null | head -1 | grep -o '[a-z]*"$' | tr -d '"')"
-  LAST_ALERT_LEVEL="$(grep -o '"last_alert_level"[[:space:]]*:[[:space:]]*"[a-z]*"' "$path" 2>/dev/null | head -1 | grep -o '[a-z]*"$' | tr -d '"')"
-  LAST_ALERT_AT_MS="$(grep -o '"last_alert_at_ms"[[:space:]]*:[[:space:]]*[0-9]*' "$path" 2>/dev/null | head -1 | grep -o '[0-9]*$')"
+  body="$(cat "$path" 2>/dev/null)" || return 0
+  PREV_LEVEL="$(printf '%s' "$body" | grep -o '"level"[[:space:]]*:[[:space:]]*"[a-z]*"' | head -1 | grep -o '[a-z]*"$' | tr -d '"')"
+  LAST_ALERT_LEVEL="$(printf '%s' "$body" | grep -o '"last_alert_level"[[:space:]]*:[[:space:]]*"[a-z]*"' | head -1 | grep -o '[a-z]*"$' | tr -d '"')"
+  LAST_ALERT_AT_MS="$(printf '%s' "$body" | grep -o '"last_alert_at_ms"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')"
+  sys_block="$(printf '%s' "$body" | tr '\n' ' ' | grep -o '"system"[[:space:]]*:[[:space:]]*{[^}]*}' | head -1)"
+  if [[ -n "$sys_block" ]]; then
+    SYS_PREV_LEVEL="$(printf '%s' "$sys_block" | grep -o '"level"[[:space:]]*:[[:space:]]*"[a-z]*"' | head -1 | grep -o '[a-z]*"$' | tr -d '"')"
+    SYS_LAST_ALERT_LEVEL="$(printf '%s' "$sys_block" | grep -o '"last_alert_level"[[:space:]]*:[[:space:]]*"[a-z]*"' | head -1 | grep -o '[a-z]*"$' | tr -d '"')"
+    SYS_LAST_ALERT_AT_MS="$(printf '%s' "$sys_block" | grep -o '"last_alert_at_ms"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')"
+  fi
 }
 
 # --- alerting ------------------------------------------------------------
@@ -603,6 +653,10 @@ cmd_sample() {
   if should_alert; then
     fire_alert
   fi
+  if disk_guard_should_alert_system "$ALERT_ENABLED" "$ALERT_COOLDOWN" "$(now_ms)"; then
+    disk_guard_fire_alert_system \
+      "${WEZTERM_DISK_REMINDER_BIN:-$SCRIPT_DIR/reminder.sh}" "$(now_ms)" gib
+  fi
   publish
 }
 
@@ -610,6 +664,7 @@ cmd_status() {
   load_previous
   measure
 
+  printf '=== WSL volume ===\n'
   printf 'level        %s  (reason=%s)\n' "$LEVEL" "$LEVEL_REASON"
   printf 'headroom     %sG  (%s%% of budget)   <- WSL budget left\n' \
     "$(gib "$HEADROOM_BYTES")" "${HEADROOM_PCT:-?}"
@@ -630,12 +685,19 @@ cmd_status() {
   printf 'vhdx         %s\n' "${VHDX_PATH:-<unresolved>}"
   printf 'vhdx size    %sG\n' "$(gib "$VHDX_BYTES")"
   printf 'guest used   %sG\n' "$(gib "$GUEST_USED")"
-  printf 'thresholds   headroom warn<%s%% crit<%s%%; avail warn<%sG crit<=%sG (reserve %sG)\n' \
+  disk_guard_print_system_status "$SYSTEM_VOLUME" "${HOST_MOUNT:-}" gib
+
+  printf '\nthresholds   headroom warn<%s%% crit<%s%%; avail warn<%sG crit<=%sG (reserve %sG)\n' \
     "$WARN_PCT" "$CRIT_PCT" "$AVAIL_WARN_GB" "$AVAIL_CRIT_GB" "$RESERVE_GB"
   printf 'status file  %s\n' "$(status_file_path)"
-  printf 'history file %s  (max %s samples)\n' "$(history_file_path)" "$HISTORY_MAX"
+  printf 'history wsl  %s  (max %s samples)\n' "$(history_file_path wsl)" "$HISTORY_MAX"
+  printf 'history sys  %s\n' "$(history_file_path system)"
   if [[ -n "$LAST_ALERT_LEVEL" ]]; then
-    printf 'last alert   %s\n' "$LAST_ALERT_LEVEL"
+    printf 'last alert   wsl=%s' "$LAST_ALERT_LEVEL"
+    [[ -n "$SYS_LAST_ALERT_LEVEL" ]] && printf ' system=%s' "$SYS_LAST_ALERT_LEVEL"
+    printf '\n'
+  elif [[ -n "$SYS_LAST_ALERT_LEVEL" ]]; then
+    printf 'last alert   system=%s\n' "$SYS_LAST_ALERT_LEVEL"
   fi
 
   # Compaction moves gap into avail. It does not create headroom, so it is
@@ -658,6 +720,10 @@ main() {
   case "${1:-}" in
     sample) cmd_sample ;;
     status) cmd_status ;;
+    history)
+      shift
+      disk_guard_cmd_history "$(history_file_path wsl)" "$(history_file_path system)" "$@"
+      ;;
     -h | --help | help) usage ;;
     *)
       usage >&2
