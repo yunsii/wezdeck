@@ -458,6 +458,14 @@ L1/L2 stay on `Ctrl+k e`. L3 **recurs within minutes** after a one-shot `SetWind
 
 ### Standing fix for L3 (Windhawk)
 
+**What Windhawk does here:** Windhawk is a Windows mod loader. It does not
+replace the taskbar; it injects a small mod into `explorer.exe`. The mod we
+use — **Taskbar Z-Order Override** (mode **Always on top**) — watches focus /
+shell Z-order changes and reasserts `HWND_TOPMOST` on `Shell_TrayWnd` (and
+secondary trays) so an auto-hide bar stays above maximized WezTerm instead of
+being buried. That is event-driven “keep the tray on top,” not a sleep-loop
+heal and not a substitute for StuckRects bounce on lock→unlock.
+
 Installed and verified on this host (2026-11-10):
 
 1. Install [Windhawk](https://windhawk.net/) (`winget install -e --id RamenSoftware.Windhawk`).
@@ -469,12 +477,16 @@ Installed and verified on this host (2026-11-10):
    for auto-hide users who need consistent edge access).
 4. Leave Windhawk running (it injects into `explorer.exe`).
 
-Probe after install (maximized WezTerm + focus thrash): `tray_TOPMOST=True`,
-bottom-edge `WindowFromPoint` → `Shell_TrayWnd`. Registry:
-`HKLM\SOFTWARE\Windhawk\Engine\Mods\taskbar-z-order-override` with `Disabled=0`.
+**Division of labor:** Windhawk holds day-to-day L3 Z-order. `Ctrl+k e` remains
+for **L1/L2** (lock→unlock hot zone / StuckRects) and as backup if Windhawk is
+disabled. Turning auto-hide off avoids L3 entirely.
 
-`Ctrl+k e` remains for **L1/L2** (lock→unlock hot zone / StuckRects) and as
-backup if Windhawk is disabled. Turning auto-hide off avoids L3 entirely.
+**Probe / baseline:** After first install, and again after a clean reboot
+(2026-11-10 ~13:38, ~6 min uptime, build 26200): mod `0.8.1` with
+`Disabled=0`; maximized WezTerm + focus thrash → `tray_TOPMOST=True`,
+bottom-edge `WindowFromPoint` → `Shell_TrayWnd` (no `Ctrl+k e` / no
+`NonRudeHWND` required for that standing path). Registry:
+`HKLM\SOFTWARE\Windhawk\Engine\Mods\taskbar-z-order-override`.
 
 ### Typical symptoms on this hybrid-wsl host
 
