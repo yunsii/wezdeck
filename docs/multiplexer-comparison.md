@@ -299,12 +299,11 @@ per the repo convention.
 - **2026-11-11 — 3.7b → 3.8 (skipped 3.7c).** Closed by the same upgrade;
   copy-mode dual-track (`refresh-from-pane` / `refresh-now`), `theme
   terminal`, and tmux-reset cases 29/30/32/33 verified on 3.8.
-- **2026-11-11 — OSC 133 attention pilot landed (gated).** Partial close:
-  `osc133-tmux-hook.sh` + `tmux.conf` hooks map OSC 133 → `emit.sh` for
-  `agent-cli:grok*` when `@wezdeck_osc133_attention=1`. Claude/Codex unchanged.
-  Still open: confirm live Grok TUI emits OSC 133 (otherwise keep gate off);
-  decide whether to promote default-on or extend to `pane_last_output_time`
-  monitors. Test: `tests/hook-units/test_osc133_tmux_hook.sh`.
+- **2026-11-11 — OSC 133 attention pilot landed (gated).** Closed as a
+  dead-end for Grok badges: live Grok `1.0.77` does **not** emit OSC 133
+  (status goes via OSC 7501 / native hooks). Keep `@wezdeck_osc133_attention`
+  off. Prefer `adapters/grok.sh` + `agent-hooks.sh install --provider grok`.
+  Test: `tests/hook-units/test_osc133_tmux_hook.sh` (injection only).
 - **2026-08-18 — Does tmux 3.8 theme reporting fix the Grok background
   tint conflict?** Secondary only — see [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
   Grok paints opaque `#eeeeee` when it guesses light; 3.8 reports the terminal's

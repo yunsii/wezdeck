@@ -15,6 +15,7 @@ guard_sandbox_paths() {
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 claude_adapter="$repo_root/scripts/runtime/agent-attention/adapters/claude.sh"
 codex_adapter="$repo_root/scripts/runtime/agent-attention/adapters/codex.sh"
+grok_adapter="$repo_root/scripts/runtime/agent-attention/adapters/grok.sh"
 
 pass=0
 fail=0
@@ -209,6 +210,55 @@ assert_eq "Grok Stop becomes done" "done" "$(field_for "$sandbox" "grok-session-
 printf '%s' '{"sessionId":"grok-session-1","hookEventName":"Notification","message":"Turn complete"}' \
   | "$claude_adapter" waiting >/dev/null 2>&1 || true
 assert_eq "Grok turn_complete Notification does not overwrite done" "done" "$(field_for "$sandbox" "grok-session-1" "status")"
+rm -rf "$sandbox"
+
+# Dedicated adapters/grok.sh (native ~/.grok/hooks install).
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+printf '%s' '{"sessionId":"grok-native-1","hookEventName":"UserPromptSubmit","prompt":"via grok adapter\nmore"}' \
+  | "$grok_adapter" running >/dev/null 2>&1 || true
+assert_eq "Grok adapter sessionId keys the entry" "running" "$(field_for "$sandbox" "grok-native-1" "status")"
+assert_eq "Grok adapter provider field" "grok" "$(field_for "$sandbox" "grok-native-1" "agent_name")"
+printf '%s' '{"sessionId":"grok-native-1","hookEventName":"Notification","notificationType":"permission_prompt","message":"Allow Bash?"}' \
+  | "$grok_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok adapter permission_prompt waits" "waiting" "$(field_for "$sandbox" "grok-native-1" "status")"
+printf '%s' '{"sessionId":"grok-native-1","hookEventName":"Stop","stopReason":"end_turn"}' \
+  | "$grok_adapter" done >/dev/null 2>&1 || true
+assert_eq "Grok adapter Stop becomes done" "done" "$(field_for "$sandbox" "grok-native-1" "status")"
+printf '%s' '{"sessionId":"grok-native-1","hookEventName":"Notification","notificationType":"turn_complete","message":"Turn complete"}' \
+  | "$grok_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Grok adapter turn_complete does not overwrite done" "done" "$(field_for "$sandbox" "grok-native-1" "status")"
+rm -rf "$sandbox"
+
+# agent-hooks install/check for grok → ~/.grok/hooks/wezdeck-attention.json
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" install --provider grok >/dev/null
+hooks_file="$sandbox/home/.grok/hooks/wezdeck-attention.json"
+[[ -f "$hooks_file" ]] || { echo "FAIL missing $hooks_file" >&2; fail=$((fail+1)); }
+if jq -e --arg cmd "$grok_adapter running" '
+    [.hooks.UserPromptSubmit[]?.hooks[]? | select(.type=="command") | .command]
+    | any(. == $cmd)
+  ' "$hooks_file" >/dev/null; then
+  pass=$((pass+1)); echo "  ✓ Grok hooks install UserPromptSubmit"
+else
+  fail=$((fail+1)); echo "FAIL Grok hooks install missing UserPromptSubmit" >&2
+fi
+if jq -e --arg cmd "$grok_adapter pane-evict" '
+    [.hooks.SessionStart[]? | select(.matcher=="new") | .hooks[]?
+      | select(.type=="command") | .command]
+    | any(. == $cmd)
+  ' "$hooks_file" >/dev/null; then
+  pass=$((pass+1)); echo "  ✓ Grok SessionStart matcher=new pane-evict"
+else
+  fail=$((fail+1)); echo "FAIL Grok SessionStart matcher=new missing" >&2
+fi
+if AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" check --provider grok --quiet; then
+  pass=$((pass+1)); echo "  ✓ Grok agent-hooks check healthy"
+else
+  fail=$((fail+1)); echo "FAIL Grok agent-hooks check" >&2
+  AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" check --provider grok || true
+fi
 rm -rf "$sandbox"
 
 sandbox="$(mktemp -d)"

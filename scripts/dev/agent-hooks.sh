@@ -12,8 +12,8 @@ quiet=0
 usage() {
   cat <<'EOF'
 usage:
-  scripts/dev/agent-hooks.sh check [--provider all|claude|codex] [--quiet]
-  scripts/dev/agent-hooks.sh install --provider claude|codex|all
+  scripts/dev/agent-hooks.sh check [--provider all|claude|codex|grok] [--quiet]
+  scripts/dev/agent-hooks.sh install --provider claude|codex|grok|all
   scripts/dev/agent-hooks.sh probe
 
 AGENT_HOOKS_HOME overrides the home directory used for user hook settings.
@@ -27,6 +27,8 @@ provider_file() {
   case "$1" in
     claude) printf '%s/.claude/settings.json\n' "$hooks_home" ;;
     codex) printf '%s/.codex/hooks.json\n' "$hooks_home" ;;
+    # Grok loads every ~/.grok/hooks/*.json; keep WezDeck attention in one file.
+    grok) printf '%s/.grok/hooks/wezdeck-attention.json\n' "$hooks_home" ;;
     *) return 1 ;;
   esac
 }
@@ -35,6 +37,7 @@ provider_template() {
   case "$1" in
     claude) printf '%s/claude-hooks.json\n' "$template_dir" ;;
     codex) printf '%s/codex-hooks.json\n' "$template_dir" ;;
+    grok) printf '%s/grok-hooks.json\n' "$template_dir" ;;
     *) return 1 ;;
   esac
 }
@@ -46,12 +49,23 @@ load_requirements() {
       actions=(running waiting done resolved resolved pane-evict)
       adapter_fragment='scripts/claude-hooks/emit-agent-status.sh'
       adapter_path="$repo_root/scripts/claude-hooks/emit-agent-status.sh"
+      session_start_matcher=clear
       ;;
     codex)
       events=(UserPromptSubmit PermissionRequest Stop PreToolUse PostToolUse SessionStart)
       actions=(running waiting done resolved resolved pane-evict)
       adapter_fragment='scripts/runtime/agent-attention/adapters/codex.sh'
       adapter_path="$repo_root/scripts/runtime/agent-attention/adapters/codex.sh"
+      session_start_matcher=clear
+      ;;
+    grok)
+      events=(UserPromptSubmit Notification Stop PreToolUse PostToolUse SessionStart)
+      actions=(running waiting done resolved resolved pane-evict)
+      adapter_fragment='scripts/runtime/agent-attention/adapters/grok.sh'
+      adapter_path="$repo_root/scripts/runtime/agent-attention/adapters/grok.sh"
+      # Grok SessionStart matcher: new covers /new and /clear (Claude's
+      # "clear" never matches — see Grok hooks guide).
+      session_start_matcher=new
       ;;
     *) return 1 ;;
   esac
@@ -72,13 +86,18 @@ json_has_command() {
   ' "$file" >/dev/null 2>&1
 }
 
-json_has_clear_command() {
-  local file="$1" command="$2"
-  jq -e --arg command "$command" '
-    [ .hooks.SessionStart[]? | select(.matcher? == "clear")
+json_has_session_start_command() {
+  local file="$1" command="$2" matcher="${3:-clear}"
+  jq -e --arg command "$command" --arg matcher "$matcher" '
+    [ .hooks.SessionStart[]? | select(.matcher? == $matcher)
       | .hooks[]? | select(.type? == "command") | .command ]
     | any(. == $command)
   ' "$file" >/dev/null 2>&1
+}
+
+# Back-compat alias for older call sites / docs that name Claude's matcher.
+json_has_clear_command() {
+  json_has_session_start_command "$1" "$2" clear
 }
 
 json_has_fragment() {
@@ -114,7 +133,7 @@ check_provider() {
     event="${events[$i]}"; action="${actions[$i]}"
     expected="$(expected_adapter_command "$name" "$action")"
     if [[ "$event" == SessionStart ]]; then
-      json_has_clear_command "$file" "$expected" || {
+      json_has_session_start_command "$file" "$expected" "${session_start_matcher:-clear}" || {
         if json_has_fragment "$file" "$adapter_fragment"; then stale+=("$event"); else missing+=("$event"); fi
       }
     elif ! json_has_command "$file" "$event" "$expected"; then
@@ -201,7 +220,7 @@ install_provider() {
 
 check_all() {
   local rc=0 name
-  for name in claude codex; do
+  for name in claude codex grok; do
     check_provider "$name" || rc=1
   done
   return "$rc"
@@ -228,15 +247,15 @@ case "$action" in
     require_jq
     case "$provider" in
       all) check_all ;;
-      claude|codex) check_provider "$provider" ;;
+      claude|codex|grok) check_provider "$provider" ;;
       *) die "unsupported provider: $provider" ;;
     esac
     ;;
   install)
     require_jq
     case "$provider" in
-      all) install_provider claude; install_provider codex ;;
-      claude|codex) install_provider "$provider" ;;
+      all) install_provider claude; install_provider codex; install_provider grok ;;
+      claude|codex|grok) install_provider "$provider" ;;
       *) die "unsupported provider: $provider" ;;
     esac
     ;;

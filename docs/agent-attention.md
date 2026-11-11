@@ -5,29 +5,25 @@ Use this doc when you need anything about the agent-attention pipeline: shared s
 The high-level layering (hooks → shared JSON → OSC tick → Lua render) is summarised in [`architecture.md#interaction-layers`](./architecture.md#interaction-layers); this doc owns the implementation detail.
 
 Use `scripts/dev/agent-hooks.sh check --provider all` to inspect the
-user-level Claude/Codex wiring without changing it. Runtime sync runs this
+user-level Claude/Codex/Grok wiring without changing it. Runtime sync runs this
 check in advisory mode and prints a repair command for missing, partial, stale,
 or invalid configuration. `scripts/dev/agent-hooks.sh install --provider
-claude|codex|all` is the explicit write path: it merges the repo template
+claude|codex|grok|all` is the explicit write path: it merges the repo template
 idempotently, preserves existing hooks, and backs up an existing file before
-replacement. `scripts/dev/agent-hooks.sh probe` runs the offline adapter smoke
-suite. Codex inline TOML hooks are reported for manual merge rather than being
-rewritten by the installer.
+replacement (Grok → `~/.grok/hooks/wezdeck-attention.json`).
+`scripts/dev/agent-hooks.sh probe` runs the offline adapter smoke suite. Codex
+inline TOML hooks are reported for manual merge rather than being rewritten by
+the installer.
 
 ## Hook installation
 
 The agent-attention feature expects agent CLI lifecycle hooks to call a provider adapter. Adapters under `scripts/runtime/agent-attention/adapters/` normalize provider payloads into the shared emitter at `scripts/runtime/agent-attention/emit.sh`, which is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals. The legacy Claude path `scripts/claude-hooks/emit-agent-status.sh` remains as a compatibility wrapper around the Claude adapter.
 
-### OSC 133 pilot (tmux 3.8+, Grok gap-fill)
+### OSC 133 pilot (tmux 3.8+, not used for Grok badges)
 
-tmux 3.8 fires `pane-command-started` / `pane-command-finished` / `pane-shell-prompt` when a pane emits OSC 133. `scripts/runtime/agent-attention/osc133-tmux-hook.sh` maps those into `emit.sh` `running` / `done` for panes tagged `@wezterm_pane_role=agent-cli:grok*`. Claude/Codex are **not** handled here (they keep vendor hooks).
+tmux 3.8 fires `pane-command-started` / `pane-command-finished` / `pane-shell-prompt` when a pane emits OSC 133. `osc133-tmux-hook.sh` can map those into `emit.sh` for `agent-cli:grok*` when `@wezdeck_osc133_attention=1`.
 
-- **Default off.** Enable for a session/server: `tmux set -g @wezdeck_osc133_attention 1`
-- Hooks are registered from `tmux.conf` only when `tmux -V` is 3.8+.
-- Session id: pane `@wezterm_agent_session_id` when set, else `osc133:%<pane>`.
-- Offline check: `bash tests/hook-units/test_osc133_tmux_hook.sh`
-
-Grok only benefits when the TUI actually emits OSC 133; until then the gate stays off and this path is injection-tested only.
+**Do not rely on this for Grok.** Live Grok Build reports status via **OSC 7501** / native hooks, not OSC 133. Prefer [Grok (native hooks)](#grok-native-hooks--claude-compat) above. Keep the OSC 133 gate off unless diagnosing injection.
 
 > **Upgrading from an earlier version of this doc** — the hook argument for `UserPromptSubmit` changed from `cleared` to `running`. If your existing `~/.claude/settings.json` still points at `... emit-agent-status.sh cleared`, swap it for `running`. Claude Code re-reads `settings.json` on every hook firing, so the change takes effect on the next event (send a fresh prompt to exercise `UserPromptSubmit`) — no Claude restart needed. Use the verification command at the bottom of this section to confirm the new command is firing.
 
@@ -240,9 +236,30 @@ When `~/.codex/config.toml` or the active project `.codex/config.toml` sets `app
 
 Unlike the Claude path, Codex `PermissionRequest` does not currently spawn `attention-prompt-watcher.sh`; in manual approval mode it stays `waiting` until `PostToolUse` / `Stop` unless a future Codex-specific prompt anchor is verified.
 
-### Grok (Claude-compat hooks)
+### Grok (native hooks + Claude-compat)
 
-Grok discovers hooks from `~/.grok/hooks/*.json` **and**, by default, from Claude/Cursor settings (`~/.claude/settings.json`, etc. — see Grok's hooks guide). There is no separate `adapters/grok.sh` today: when Grok loads the Claude install block above, the same `emit-agent-status.sh` / `adapters/claude.sh` path runs.
+**Preferred install** (native Grok hook file):
+
+```bash
+bash scripts/dev/agent-hooks.sh install --provider grok
+bash scripts/dev/agent-hooks.sh check --provider grok
+```
+
+This writes `~/.grok/hooks/wezdeck-attention.json` from
+`scripts/runtime/agent-attention/install/grok-hooks.json`, calling
+`scripts/runtime/agent-attention/adapters/grok.sh` for
+`UserPromptSubmit → running`, `Notification → waiting` (whitelist in
+`emit.sh`), `Stop → done`, `Pre/PostToolUse → resolved`, and
+`SessionStart` matcher **`new`** → `pane-evict` (Grok's `/new` and
+`/clear` both use start source `new`; Claude's `clear` matcher never
+matches on Grok).
+
+Grok still discovers Claude/Cursor settings by default. When it loads the
+Claude install block, `adapters/claude.sh` may also run and set
+`provider=grok` for camelCase payloads. The native file is the durable
+source of truth for WezDeck attention; keep Claude-compat as a fallback
+or set `[compat.claude] hooks = false` in `~/.grok/config.toml` if you
+want only the native path.
 
 That compatibility path caused a false `⚠ waiting` after successful turns:
 

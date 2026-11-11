@@ -1,0 +1,73 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh running"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh waiting"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh done"
+          },
+          {
+            "type": "command",
+            "command": "bash __WEZDECK_REPO__/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh resolved"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh resolved"
+          },
+          {
+            "type": "command",
+            "command": "bash __WEZDECK_REPO__/scripts/runtime/tmux-status-refresh.sh --force --refresh-client >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "new",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh pane-evict"
+          }
+        ]
+      }
+    ]
+  }
+}
