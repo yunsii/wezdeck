@@ -471,12 +471,14 @@ func (ui *worktreeUI) render() {
 	// Footer.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	// Near-cream gray (#c8c8c8): readable only as a whisper on the default
-	// pane background; wording unchanged for discoverability.
-	b.WriteString("\x1b[38;2;200;200;200mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
-	b.WriteString("\x1b[38;2;160;175;160mgo")
-	b.WriteString(reset)
+	// Soft chrome gray (#a8a8a8) — quieter than body text, stronger than
+	// the over-faded #c8c8c8 pass. Timing tail uses the same tone.
+	b.WriteString("\x1b[38;2;168;168;168mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
+	b.WriteString("\x1b[38;2;140;155;140mgo")
+	// Do not reset before the timing tail — keep one soft tone through the
+	// whole footer line (renderFooterTail applies the same gray).
 	ui.ts.renderFooterTail(&b)
+	b.WriteString(reset)
 	b.WriteString(clearEOL)
 	b.WriteString("\x1b[J")
 

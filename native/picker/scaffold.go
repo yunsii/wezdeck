@@ -105,12 +105,15 @@ func (t perfTimings) renderFooterTail(b *strings.Builder) (elapsed, lua, menu, p
 		return 0, 0, 0, 0
 	}
 	const reset = "\x1b[0m"
+	// Match worktree footer's soft chrome gray so timing does not outshine
+	// the key hints (plain \x1b[2m reads louder on cream backgrounds).
+	const soft = "\x1b[38;2;168;168;168m"
 	elapsed, lua, menu, picker = t.stages()
 	if t.menuStartTS > 0 && t.menuDoneTS > 0 {
-		fmt.Fprintf(b, "\x1b[2m  ·  %dms = %d+%d+%d (lua+menu+picker)%s",
-			elapsed, lua, menu, picker, reset)
+		fmt.Fprintf(b, "%s  ·  %dms = %d+%d+%d (lua+menu+picker)%s",
+			soft, elapsed, lua, menu, picker, reset)
 	} else {
-		fmt.Fprintf(b, "\x1b[2m  ·  %dms key→paint%s", elapsed, reset)
+		fmt.Fprintf(b, "%s  ·  %dms key→paint%s", soft, elapsed, reset)
 	}
 	return
 }
