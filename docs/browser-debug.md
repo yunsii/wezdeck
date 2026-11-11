@@ -42,6 +42,7 @@ Ego-only (disable CDP auto-start) is a later operator decision after trial.
 | **WezTerm `gui-startup`** | Quiet ensure ego (lite) running; no focus steal | Helper auto-starts headless debug Chrome (existing) |
 | `Alt+b` | Ensure ego running; **do not** activate window | Headless debug Chrome (existing) |
 | `Alt+Shift+b` | Ensure + **focus** ego window | Visible debug Chrome (existing) |
+| Toast (success) | `Ego is running` on `Alt+b` only; `Alt+Shift+b` quiet (window focus is the signal) | Quiet on success (toast only on failure) |
 | Badge | `Ego·A` / `Ego·-` / `Ego·?` | `CDP·H/V/-/?·port` |
 
 When `backend=ego`, helper **ChromeDebugAutoStart** is turned off so WezTerm

@@ -464,9 +464,10 @@ function M.ensure_ego(wezterm, constants, logger, trace_id, opts)
     return false
   end
 
-  if window and not quiet then
-    local toast = focus and 'Ego: ensure + focus' or 'Ego: ensure (no focus)'
-    window:toast_notification('WezTerm', toast, nil, 2000)
+  -- Success toast only for Alt+b (no focus steal): same quiet-on-success
+  -- rule as the CDP path for Alt+Shift+b, where the focused window is the signal.
+  if window and not quiet and not focus then
+    window:toast_notification('WezTerm', 'Ego is running', nil, 2000)
   end
   return true
 end

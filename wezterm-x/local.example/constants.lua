@@ -64,6 +64,9 @@ return {
         keybindings = true,  -- override ignored / handler missing
         layout = true,       -- auto fix-layout schedule / spawn fail
         link = true,         -- QuickSelect URL open
+        -- Alt+b / Alt+Shift+b ego path (ensure_ego). Without this entry the
+        -- rows are filtered and toast-only failures cannot be audited.
+        browser_agent = true,
       },
       -- Thresholds for category=latency slow events. emit_all writes
       -- every sample under latency.perf (noisy at ~4 Hz status ticks).
