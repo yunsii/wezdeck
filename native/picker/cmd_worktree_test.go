@@ -63,11 +63,11 @@ func TestWorktreeRenderShowsSelectedDetail(t *testing.T) {
 	if !strings.Contains(out, "/tmp/feature-wt · feat/x") {
 		t.Fatalf("selected path·branch missing from detail line: %q", out)
 	}
-	if !strings.Contains(out, "Ctrl+y path") || !strings.Contains(out, "Ctrl+b branch") {
-		t.Fatalf("footer missing copy hints: %q", out)
+	if !strings.Contains(out, "⌃y") || !strings.Contains(out, "⌃b") {
+		t.Fatalf("footer missing copy key hints: %q", out)
 	}
-	if !strings.Contains(out, "Ctrl+d reclaim") {
-		t.Fatalf("footer missing reclaim hint: %q", out)
+	if !strings.Contains(out, "⌃d") {
+		t.Fatalf("footer missing reclaim key hint: %q", out)
 	}
 }
 

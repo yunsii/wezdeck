@@ -471,7 +471,9 @@ func (ui *worktreeUI) render() {
 	// Footer.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	b.WriteString("\x1b[2mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
+	// Keep the footer quiet: keys only, no verb list. Discoverability still
+	// comes from the detail line (path · branch) and Ctrl+d confirm overlay.
+	b.WriteString("\x1b[2mEnter  ⌃d  ⌃y  ⌃b  Esc  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	ui.ts.renderFooterTail(&b)
