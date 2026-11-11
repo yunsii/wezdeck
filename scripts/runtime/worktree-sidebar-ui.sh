@@ -99,6 +99,15 @@ open_selected() {
   bash "$open_script" "$session_name" "$path" "$current_window_id" "$cwd" >/dev/null 2>&1 &
 }
 
+cleanup_pane() {
+  # Kill this floating pane on any exit so global remain-on-exit cannot
+  # respawn a leftover interactive shell (the "ghost window" after q).
+  local pane="${TMUX_PANE:-}"
+  [[ -n "$pane" ]] || return 0
+  tmux kill-pane -t "$pane" 2>/dev/null || true
+}
+trap cleanup_pane EXIT
+
 draw
 while true; do
   IFS= read -r -n1 -s key || break
