@@ -118,6 +118,24 @@ if ! flock -n 9 2>/dev/null; then
   exit 0
 fi
 
+# tmux 3.8 replaced refresh-from-pane with refresh-now (CHANGES / issue 5165).
+# Prefer the new name; fall back so this loop still works on 3.7b until the
+# live server is upgraded.
+copy_mode_refresh_cmd=""
+resolve_copy_mode_refresh_cmd() {
+  local ver=""
+  ver="$("${tmux_cmd[@]}" -V 2>/dev/null | awk '{print $2}')"
+  case "$ver" in
+    3.[89]*|[4-9].*|3.[1-9][0-9]*)
+      copy_mode_refresh_cmd="refresh-now"
+      ;;
+    *)
+      copy_mode_refresh_cmd="refresh-from-pane"
+      ;;
+  esac
+}
+resolve_copy_mode_refresh_cmd
+
 option_enabled || exit 0
 copy_mode_active || exit 0
 
@@ -126,12 +144,16 @@ while sleep "$sleep_s"; do
   copy_mode_active || exit 0
   selection_present && continue
   # Server-global flag set by tmux-display-popup.sh while any overlay
-  # is up. refresh-from-pane during the overlay races the client
+  # is up. A live refresh during the overlay races the client
   # composite and garbles CJK double-width cells into the popup.
   # Boolean only — concurrent popups are vanishingly rare; last closer
   # clears. Stuck flag after a hard kill: `tmux set -gu @wezterm_popup_active`.
   [[ "$(tmux_option @wezterm_popup_active)" == 1 ]] && continue
   outside_prefetch_window && continue
   history_guard_active && continue
-  "${tmux_cmd[@]}" send-keys -t "$pane_id" -X refresh-from-pane 2>/dev/null || exit 0
+  if ! "${tmux_cmd[@]}" send-keys -t "$pane_id" -X "$copy_mode_refresh_cmd" 2>/dev/null; then
+    # Binary may have been swapped under a long-lived hook; re-resolve once.
+    resolve_copy_mode_refresh_cmd
+    "${tmux_cmd[@]}" send-keys -t "$pane_id" -X "$copy_mode_refresh_cmd" 2>/dev/null || exit 0
+  fi
 done
