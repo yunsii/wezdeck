@@ -126,13 +126,19 @@ while true; do
       draw
       ;;
     $'\x1b')
-      IFS= read -r -n1 -s k2 || true
-      if [[ "$k2" == '[' ]]; then
-        IFS= read -r -n1 -s k3 || true
-        case "$k3" in
-          B) (( selected = (selected + 1) % n )); draw ;;
-          A) (( selected = (selected - 1 + n) % n )); draw ;;
-        esac
+      # Arrow keys are ESC [ A/B. A lone Esc must not block waiting for the
+      # next byte — that forced a second Esc to close. Short timeout: if
+      # nothing follows, treat as dismiss.
+      if IFS= read -r -n1 -s -t 0.05 k2; then
+        if [[ "$k2" == '[' ]]; then
+          IFS= read -r -n1 -s -t 0.05 k3 || true
+          case "$k3" in
+            B) (( selected = (selected + 1) % n )); draw ;;
+            A) (( selected = (selected - 1 + n) % n )); draw ;;
+          esac
+        else
+          break
+        fi
       else
         break
       fi
