@@ -65,11 +65,19 @@ True seamless upgrade is not available; **wezdeck-runtime** instead detects
 the outage and **conditionally relaunches WezTerm**.
 
 **Upgrade vs you stopped it:** heal runs only when all of these hold after WSL
-comes back: (1) WSL was latched unhealthy, (2) WezTerm was seen running earlier
-in this helper lifetime and is now gone, (3) a WSL package update appears in
-Event Log inside the evidence window (default 10 min), (4) no
+comes back: (1) WSL was latched unhealthy, (2) a WSL package update appears in
+Event Log inside the evidence window (default 10 min), (3) no
 `state/wsl-heal/suppress-until` and not inside cooldown. No update evidence →
 `skip_no_update_evidence` (manual/`wsl --shutdown`/you closed the window).
+
+Then, independently:
+
+- **WezTerm:** relaunch only if it was seen earlier in this helper lifetime and
+  is now gone (`relaunch_wezterm` / `skip_wezterm_still_alive`).
+- **VS Code:** for up to `vscodeMaxWindows` (default 5) **live** windows still
+  in `window-cache.json`, run
+  `code --reuse-window --folder-uri vscode-remote://wsl+…` to force Remote-WSL
+  reconnect (`reconnect_vscode`). Dead/stale cache ghosts are ignored.
 
 | Artifact | Path |
 |---|---|
@@ -82,13 +90,13 @@ Event Log inside the evidence window (default 10 min), (4) no
 # 倒查
 jq . /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/wsl-heal/status.json
 tail -20 /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/wsl-heal/history.ndjson
+grep 'category=wsl_heal' /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/logs/helper.log | tail -30
 # before intentional wsl --shutdown / compact:
 date +%s%3N | awk '{print $1+900000}' > /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/wsl-heal/suppress-until
 ```
 
-Config: `manager-config.json` → `wslHeal` (default on). Implementation:
-`native/wezdeck-runtime/.../WslHealWatcher.cs`. VS Code reload is still manual
-(v2).
+Config: `manager-config.json` → `wslHeal` (default on; `reconnectVscode=true`).
+Implementation: `native/wezdeck-runtime/.../WslHealWatcher.cs`.
 
 ### Fatal machine check (MCE) — reference 2026-09-23
 

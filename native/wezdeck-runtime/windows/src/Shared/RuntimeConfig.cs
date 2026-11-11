@@ -101,6 +101,9 @@ internal sealed class RuntimeConfig
             SuppressUntilPath = suppressPath,
             WezTermPath = string.IsNullOrWhiteSpace(parsed?.WezTermPath) ? null : parsed!.WezTermPath,
             RelaunchWezTerm = parsed?.RelaunchWezTerm ?? true,
+            ReconnectVscode = parsed?.ReconnectVscode ?? true,
+            VscodeMaxWindows = parsed?.VscodeMaxWindows > 0 ? parsed.VscodeMaxWindows : 5,
+            VscodeCommand = string.IsNullOrWhiteSpace(parsed?.VscodeCommand) ? "code" : parsed!.VscodeCommand!,
             ProbeIntervalMs = parsed?.ProbeIntervalMs > 0 ? parsed.ProbeIntervalMs : 15_000,
             ProbeTimeoutMs = parsed?.ProbeTimeoutMs > 0 ? parsed.ProbeTimeoutMs : 8_000,
             EvidenceQueryIntervalMs = parsed?.EvidenceQueryIntervalMs > 0 ? parsed.EvidenceQueryIntervalMs : 30_000,
@@ -192,6 +195,10 @@ internal sealed class WslHealConfig
     public string? SuppressUntilPath { get; init; }
     public string? WezTermPath { get; init; }
     public bool RelaunchWezTerm { get; init; } = true;
+    /// <summary>Reconnect live VS Code Remote-WSL windows after a package upgrade.</summary>
+    public bool ReconnectVscode { get; init; } = true;
+    public int VscodeMaxWindows { get; init; } = 5;
+    public string? VscodeCommand { get; init; } = "code";
     public int ProbeIntervalMs { get; init; } = 15_000;
     public int ProbeTimeoutMs { get; init; } = 8_000;
     public int EvidenceQueryIntervalMs { get; init; } = 30_000;

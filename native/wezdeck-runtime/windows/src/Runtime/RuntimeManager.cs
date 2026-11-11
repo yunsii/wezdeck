@@ -46,7 +46,7 @@ internal sealed class RuntimeManager : IDisposable
         foregroundChangeTracker = new ForegroundChangeTracker(logger, config.ForegroundSampling);
         if (config.WslHeal is not null)
         {
-            wslHealWatcher = new WslHealWatcher(logger, config.WslHeal, ResolveHealWslDistro);
+            wslHealWatcher = new WslHealWatcher(logger, config.WslHeal, ResolveHealWslDistro, instanceRegistry);
         }
 
         heartbeatTimer = new System.Threading.Timer(_ => RunHeartbeatTick(), null, Timeout.Infinite, Timeout.Infinite);

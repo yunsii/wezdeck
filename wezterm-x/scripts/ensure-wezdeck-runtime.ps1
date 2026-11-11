@@ -287,6 +287,9 @@ function Write-ManagerConfig {
       historyPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\history.ndjson'
       suppressUntilPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\suppress-until'
       relaunchWezTerm = $true
+      reconnectVscode = $true
+      vscodeMaxWindows = 5
+      vscodeCommand = 'code'
       probeIntervalMs = 15000
       updateEvidenceWindowMs = 600000
       cooldownMs = 600000

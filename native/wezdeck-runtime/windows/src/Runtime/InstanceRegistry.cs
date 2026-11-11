@@ -134,6 +134,46 @@ internal sealed class InstanceRegistry
         }
     }
 
+    /// <summary>
+    /// Live hwnds still owned by <paramref name="expectedProcessName"/> for
+    /// this instance type. Used by WSL-upgrade heal to reconnect VS Code
+    /// Remote windows without resurrecting months-old cache ghosts.
+    /// </summary>
+    public IReadOnlyList<(string Key, WindowMatch Window, DateTime LastUsedAtUtc)> ListLiveWindows(
+        string instanceType,
+        string expectedProcessName)
+    {
+        List<(string Key, WindowCacheEntry Entry)> snapshot;
+        lock (stateLock)
+        {
+            if (!entries.TryGetValue(instanceType, out var typeEntries) || typeEntries.Count == 0)
+            {
+                return Array.Empty<(string, WindowMatch, DateTime)>();
+            }
+
+            snapshot = typeEntries.Select(item => (item.Key, item.Value)).ToList();
+        }
+
+        var live = new List<(string Key, WindowMatch Window, DateTime LastUsedAtUtc)>();
+        foreach (var item in snapshot)
+        {
+            using var process = GetLiveProcess(item.Entry.ProcessId, expectedProcessName, item.Entry.ProcessStartTimeUtc);
+            if (process == null || item.Entry.WindowHandle == IntPtr.Zero || !NativeMethods.IsWindow(item.Entry.WindowHandle))
+            {
+                continue;
+            }
+
+            live.Add((
+                item.Key,
+                new WindowMatch(item.Entry.ProcessId, item.Entry.WindowHandle),
+                item.Entry.LastUsedAtUtc ?? DateTime.MinValue));
+        }
+
+        return live
+            .OrderByDescending(item => item.LastUsedAtUtc)
+            .ToList();
+    }
+
     private Dictionary<string, WindowCacheEntry> GetOrCreateTypeEntries(string instanceType)
     {
         if (!entries.TryGetValue(instanceType, out var typeEntries))

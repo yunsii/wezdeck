@@ -23,6 +23,7 @@ internal sealed class WslHealWatcher
     private readonly StructuredLogger logger;
     private readonly WslHealConfig config;
     private readonly Func<string> resolveDistro;
+    private readonly InstanceRegistry? instanceRegistry;
     private readonly object gate = new();
 
     private long lastProbeAtMs;
@@ -38,11 +39,16 @@ internal sealed class WslHealWatcher
     private UpdateEvidence? lastEvidence;
     private bool loggedDisabled;
 
-    public WslHealWatcher(StructuredLogger logger, WslHealConfig config, Func<string> resolveDistro)
+    public WslHealWatcher(
+        StructuredLogger logger,
+        WslHealConfig config,
+        Func<string> resolveDistro,
+        InstanceRegistry? instanceRegistry = null)
     {
         this.logger = logger;
         this.config = config;
         this.resolveDistro = resolveDistro;
+        this.instanceRegistry = instanceRegistry;
     }
 
     public void Tick()
@@ -172,69 +178,96 @@ internal sealed class WslHealWatcher
             return;
         }
 
-        if (!wezTermSeenRunning)
-        {
-            Decide(nowMs, "skip_wezterm_never_seen",
-                "WezTerm was never observed running in this helper lifetime",
-                true, wezTermRunning, evidence,
-                extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
-            return;
-        }
-
-        if (wezTermRunning)
-        {
-            Decide(nowMs, "skip_wezterm_still_alive",
-                "WSL recovered after outage but WezTerm is still running",
-                true, wezTermRunning, evidence,
-                extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
-            phase = "idle";
-            return;
-        }
-
         if (evidence?.Found != true)
         {
             Decide(nowMs, "skip_no_update_evidence",
-                "WSL recovered and WezTerm is gone, but no recent WSL package update evidence — treating as user/manual stop",
+                "WSL recovered but no recent WSL package update evidence — treating as user/manual stop",
                 true, wezTermRunning, evidence,
                 extra: new Dictionary<string, string?>
                 {
                     ["evidence_window_ms"] = config.UpdateEvidenceWindowMs.ToString(),
                     ["probe_detail"] = probeDetail,
+                    ["wezterm_running"] = wezTermRunning ? "1" : "0",
                 });
             phase = "idle";
             return;
         }
 
-        if (!config.RelaunchWezTerm)
+        var didSomething = false;
+
+        // VS Code often survives the upgrade with a dead Remote-WSL session —
+        // reconnect even when WezTerm is still up.
+        if (config.ReconnectVscode)
         {
-            Decide(nowMs, "skip_relaunch_disabled",
-                "update evidence present but relaunchWezTerm=false",
-                true, wezTermRunning, evidence,
+            var vscodeResult = ReconnectVscodeWindows(nowMs, evidence, probeDetail);
+            if (vscodeResult.Attempted)
+            {
+                didSomething = true;
+            }
+        }
+        else
+        {
+            Decide(nowMs, "skip_vscode_disabled", "reconnectVscode=false", true, wezTermRunning, evidence,
                 extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
-            phase = "idle";
-            return;
         }
 
+        if (config.RelaunchWezTerm)
+        {
+            if (!wezTermSeenRunning)
+            {
+                Decide(nowMs, "skip_wezterm_never_seen",
+                    "WezTerm was never observed running in this helper lifetime",
+                    true, wezTermRunning, evidence,
+                    extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
+            }
+            else if (wezTermRunning)
+            {
+                Decide(nowMs, "skip_wezterm_still_alive",
+                    "WezTerm still running after WSL recovery — no relaunch",
+                    true, wezTermRunning, evidence,
+                    extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
+            }
+            else if (RelaunchWezTerm(nowMs, evidence, probeDetail))
+            {
+                didSomething = true;
+            }
+        }
+        else
+        {
+            Decide(nowMs, "skip_relaunch_disabled", "relaunchWezTerm=false", true, wezTermRunning, evidence,
+                extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
+        }
+
+        if (didSomething)
+        {
+            lastHealAtMs = nowMs;
+            phase = "healed";
+        }
+        else
+        {
+            phase = "idle";
+        }
+    }
+
+    private bool RelaunchWezTerm(long nowMs, UpdateEvidence evidence, string probeDetail)
+    {
         var exe = ResolveWezTermGuiPath();
         if (string.IsNullOrWhiteSpace(exe) || !File.Exists(exe))
         {
             Decide(nowMs, "error_wezterm_path",
                 "update evidence present but wezterm-gui.exe was not found",
-                true, wezTermRunning, evidence,
+                true, wezTermRunning: false, evidence,
                 extra: new Dictionary<string, string?>
                 {
                     ["wezterm_path"] = exe,
                     ["probe_detail"] = probeDetail,
                 });
-            phase = "idle";
-            return;
+            return false;
         }
 
         try
         {
             WindowActivator.LaunchDetachedProcess(exe, Array.Empty<string>());
-            lastHealAtMs = nowMs;
-            phase = "healed";
             Decide(nowMs, "relaunch_wezterm", "relaunched WezTerm after WSL package update",
                 true, wezTermRunning: false, evidence,
                 extra: new Dictionary<string, string?>
@@ -244,6 +277,7 @@ internal sealed class WslHealWatcher
                     ["evidence_at"] = evidence.AtIso,
                     ["evidence_summary"] = evidence.Summary,
                 });
+            return true;
         }
         catch (Exception ex)
         {
@@ -255,8 +289,171 @@ internal sealed class WslHealWatcher
                     ["error"] = ex.Message,
                     ["probe_detail"] = probeDetail,
                 });
-            phase = "idle";
+            return false;
         }
+    }
+
+    private sealed record VscodeReconnectResult(bool Attempted, int Reconnected, int Skipped);
+
+    private VscodeReconnectResult ReconnectVscodeWindows(long nowMs, UpdateEvidence evidence, string probeDetail)
+    {
+        if (instanceRegistry is null)
+        {
+            Decide(nowMs, "skip_vscode_no_registry", "instance registry unavailable", true, IsWezTermRunning(), evidence,
+                extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
+            return new VscodeReconnectResult(false, 0, 0);
+        }
+
+        var codeExe = ResolveVscodeCommand();
+        if (string.IsNullOrWhiteSpace(codeExe))
+        {
+            Decide(nowMs, "error_vscode_path", "could not resolve VS Code CLI (code)", true, IsWezTermRunning(), evidence,
+                extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
+            return new VscodeReconnectResult(false, 0, 0);
+        }
+
+        // Prefer Code.exe process name; cache entries from Alt+v use "Code".
+        var live = instanceRegistry.ListLiveWindows("vscode", "Code");
+        if (live.Count == 0)
+        {
+            // Insiders / alternate process name.
+            live = instanceRegistry.ListLiveWindows("vscode", "Code - Insiders");
+        }
+
+        if (live.Count == 0)
+        {
+            Decide(nowMs, "skip_vscode_no_live_windows",
+                "no live VS Code windows in helper window-cache — nothing to reconnect",
+                true, IsWezTermRunning(), evidence,
+                extra: new Dictionary<string, string?> { ["probe_detail"] = probeDetail });
+            return new VscodeReconnectResult(false, 0, 0);
+        }
+
+        var max = Math.Max(1, config.VscodeMaxWindows);
+        var reconnected = 0;
+        var skipped = 0;
+        var keys = new List<string>();
+        foreach (var item in live)
+        {
+            if (reconnected >= max)
+            {
+                skipped += 1;
+                continue;
+            }
+
+            if (!TryParseVscodeCacheKey(item.Key, out var distro, out var path))
+            {
+                skipped += 1;
+                LogInfo("vscode cache key unparseable", new Dictionary<string, string?>
+                {
+                    ["decision"] = "skip_vscode_bad_key",
+                    ["launch_key"] = item.Key,
+                });
+                continue;
+            }
+
+            var folderUri = PathResolvers.BuildVscodeFolderUri(distro, path);
+            try
+            {
+                // --reuse-window retargets the existing hwnd onto a fresh
+                // Remote-WSL session for the same folder (forces reconnect).
+                WindowActivator.LaunchDetachedProcess(
+                    codeExe,
+                    new[] { "--reuse-window", "--folder-uri", folderUri });
+                // Activate so the user sees the reconnect, not a buried window.
+                WindowActivator.TryActivateWindow(item.Window);
+                reconnected += 1;
+                keys.Add(item.Key);
+                LogInfo("reconnected vscode remote window", new Dictionary<string, string?>
+                {
+                    ["decision"] = "reconnect_vscode_window",
+                    ["launch_key"] = item.Key,
+                    ["folder_uri"] = folderUri,
+                    ["pid"] = item.Window.ProcessId.ToString(),
+                    ["hwnd"] = item.Window.WindowHandle.ToInt64().ToString(),
+                    ["evidence_at"] = evidence.AtIso,
+                });
+            }
+            catch (Exception ex)
+            {
+                skipped += 1;
+                logger.Warn("wsl_heal", "failed to reconnect vscode window", new Dictionary<string, string?>
+                {
+                    ["decision"] = "error_vscode_reconnect",
+                    ["launch_key"] = item.Key,
+                    ["folder_uri"] = folderUri,
+                    ["error"] = ex.Message,
+                });
+            }
+        }
+
+        Decide(nowMs, reconnected > 0 ? "reconnect_vscode" : "skip_vscode_all_failed",
+            reconnected > 0
+                ? $"reconnected {reconnected} VS Code Remote-WSL window(s) after WSL package update"
+                : "had live VS Code windows but none reconnected",
+            true, IsWezTermRunning(), evidence,
+            extra: new Dictionary<string, string?>
+            {
+                ["vscode_reconnected"] = reconnected.ToString(),
+                ["vscode_skipped"] = skipped.ToString(),
+                ["vscode_live"] = live.Count.ToString(),
+                ["vscode_keys"] = string.Join(",", keys),
+                ["vscode_command"] = codeExe,
+                ["probe_detail"] = probeDetail,
+                ["evidence_at"] = evidence.AtIso,
+                ["evidence_summary"] = evidence.Summary,
+            });
+
+        return new VscodeReconnectResult(reconnected > 0, reconnected, skipped);
+    }
+
+    private static bool TryParseVscodeCacheKey(string key, out string distro, out string path)
+    {
+        distro = string.Empty;
+        path = string.Empty;
+        var split = key.IndexOf('|');
+        if (split <= 0 || split >= key.Length - 1)
+        {
+            return false;
+        }
+
+        distro = key[..split].Trim();
+        path = key[(split + 1)..].Trim();
+        return !string.IsNullOrWhiteSpace(distro) && !string.IsNullOrWhiteSpace(path);
+    }
+
+    private string? ResolveVscodeCommand()
+    {
+        var configured = config.VscodeCommand?.Trim();
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            if (File.Exists(configured))
+            {
+                return configured;
+            }
+
+            // Bare "code" / "code.cmd" — let CreateProcess search PATH via shell.
+            if (!configured.Contains('\\') && !configured.Contains('/'))
+            {
+                return configured;
+            }
+        }
+
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        foreach (var candidate in new[]
+                 {
+                     Path.Combine(local, "Programs", "Microsoft VS Code", "bin", "code.cmd"),
+                     Path.Combine(local, "Programs", "Microsoft VS Code", "Code.exe"),
+                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Microsoft VS Code", "bin", "code.cmd"),
+                 })
+        {
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return "code";
     }
 
     private bool ProbeWslOk(out string detail)
@@ -641,6 +838,8 @@ internal sealed class WslHealWatcher
                 {
                     ["enabled"] = config.Enabled,
                     ["relaunch_wezterm"] = config.RelaunchWezTerm,
+                    ["reconnect_vscode"] = config.ReconnectVscode,
+                    ["vscode_max_windows"] = config.VscodeMaxWindows,
                     ["evidence_window_ms"] = config.UpdateEvidenceWindowMs,
                     ["cooldown_ms"] = config.CooldownMs,
                     ["probe_interval_ms"] = config.ProbeIntervalMs,
