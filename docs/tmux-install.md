@@ -126,7 +126,7 @@ tmux -V
 | 基线 | Ubuntu apt | `/usr/bin` **3.4** | 系统 |
 | IME/sync 修复 | 源码 **3.6a** | 曾 **`/usr/local/bin`** | 排查期（ime 文档 Step 6，历史） |
 | floor 提到 3.7 | 源码 **3.7b** | **`~/.local/bin`** | WezDeck agent / 维护脚本 |
-| 升 3.8（计划 / 进行中） | 源码 **3.8**（`install-tmux-user.sh --force 3.8`） | **`~/.local/bin`** | 维护窗；conf 已双轨兼容 `refresh-now` |
+| 升 3.8（已落地） | **tmux-builds** 静态包 `tmux-3.8-linux-x86_64`（本机缺 autoconf，源码构建未走通；回滚用 `~/.local/bin/tmux.3.7b.bak`） | **`~/.local/bin`** | live server `#{version}=3.8`；conf 双轨 `refresh-now`；`theme terminal` |
 
 - **3.4 之后、本机上的较新 tmux 多半不是 apt 升的**，而是需求驱动的 agent/维护构建。  
 - 多二进制并存 → `server exited unexpectedly`：保证 **client 与 server 同路径/同版本族**，删多余 shim。

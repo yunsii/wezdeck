@@ -143,9 +143,9 @@ observation that produced them.
 
 ## Upstream tmux 3.8 changes the calculus
 
-Checked 2026-08-18 against `tmux/tmux` master. **3.7c shipped 2026-08-17** (this
-machine runs 3.7b); the master `CHANGES` section is titled "CHANGES FROM 3.7c TO
-3.8", so the following is unreleased but committed. It lands most of what herdr
+First checked 2026-08-18 against `tmux/tmux` master; **3.8 released** and this
+machine upgraded **2026-11-11** (`#{version}=3.8`). The table below is the
+borrow worklist against the released API. It lands most of what herdr
 differentiates on — natively, on one server, with our 26,800 lines of tmux
 coupling still valid.
 
@@ -291,23 +291,22 @@ Two gotchas that cost time on 2026-08-18 and are not herdr's fault:
 These are the reasons to revisit this doc. Each is dated with how to close it,
 per the repo convention.
 
-- **2026-08-18 — tmux 3.8 release timing is unknown.** Every borrow in
-  *Upstream tmux 3.8* is committed to master but unreleased, and the repo
-  install policy prefers system/package tmux
-  ([`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md)). Close
-  it by watching `gh api repos/tmux/tmux/releases --jq '.[0].tag_name'`; until
-  then treat the table as a worklist, not an available API.
-- **2026-08-18 — Upgrade this machine from 3.7b to 3.7c.** Released 2026-08-17
-  as a bug-fix release. Close it by upgrading, then running
-  `scripts/dev/test-lua-units.sh` and `tests/tmux-reset/run.sh`.
+- **2026-11-11 — tmux 3.8 released and this machine upgraded.** Closed:
+  upstream tag `3.8` is live; host `~/.local/bin/tmux` + default server
+  report `#{version}=3.8` (static build from `tmux/tmux-builds` when source
+  build lacked autoconf). Treat the borrow table above as an **available**
+  API worklist, not unreleased master.
+- **2026-11-11 — 3.7b → 3.8 (skipped 3.7c).** Closed by the same upgrade;
+  copy-mode dual-track (`refresh-from-pane` / `refresh-now`), `theme
+  terminal`, and tmux-reset cases 29/30/32/33 verified on 3.8.
 - **2026-08-18 — Can OSC 133 events replace the per-agent attention
-  adapters?** `scripts/runtime/agent-attention/adapters/` has only `claude.sh`
-  and `codex.sh`, so Grok has no attention coverage; tmux 3.8's
-  `pane-command-started` / `pane-command-finished` / `pane-shell-prompt` plus
-  `pane_last_output_time` would be provider-agnostic. Close it by building tmux
-  master, emitting the events from a Grok pane, and comparing the transitions
-  against `attention.json` as produced by the Claude adapter. This is the
-  highest-value borrow on the list.
+  adapters?** Still open as a **3.8 pilot**. `scripts/runtime/agent-attention/adapters/`
+  has only `claude.sh` and `codex.sh`, so Grok has no attention coverage;
+  3.8's `pane-command-started` / `pane-command-finished` / `pane-shell-prompt`
+  plus `pane_last_output_time` would be provider-agnostic. Close it by
+  emitting the events from a Grok pane on this 3.8 server and comparing
+  transitions against `attention.json` from the Claude adapter. Highest-value
+  remaining borrow.
 - **2026-08-18 — Does tmux 3.8 theme reporting fix the Grok background
   tint conflict?** Secondary only — see [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
   Grok paints opaque `#eeeeee` when it guesses light; 3.8 reports the terminal's
