@@ -56,6 +56,10 @@ done
 
 accel=(1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z)
 
+# Arithmetic that can evaluate to 0 must not trip `set -e` (bash ((0)) → status 1).
+move_down() { selected=$(( (selected + 1) % n )); }
+move_up() { selected=$(( (selected - 1 + n) % n )); }
+
 status_glyph() {
   case "${1:-}" in
     waiting) printf '▲' ;;
@@ -66,13 +70,15 @@ status_glyph() {
 }
 
 draw() {
-  local i glyph mark br trail accel_ch
+  local i glyph mark br trail accel_ch line cols
+  cols="${COLUMNS:-$(tput cols 2>/dev/null || echo 40)}"
+  (( cols < 12 )) && cols=12
   clear
   printf ' %s\n' "$repo_label"
   printf ' ───────────────\n'
   for i in "${!paths[@]}"; do
     mark=' '
-    (( i == selected )) && mark='▶'
+    [[ "$i" -eq "$selected" ]] && mark='▶'
     glyph="$(status_glyph "${statuses[$i]}")"
     br="${branches[$i]}"
     [[ -n "$br" ]] && br="[$br]"
@@ -82,12 +88,24 @@ draw() {
       *) [[ -n "${ages[$i]}" ]] && trail="${ages[$i]}" ;;
     esac
     accel_ch=""
-    if (( i < ${#accel[@]} )); then
+    if [[ "$i" -lt "${#accel[@]}" ]]; then
       accel_ch="${accel[$i]} "
     fi
-    printf '%s %s%s %s %s\n' "$mark" "$accel_ch" "${labels[$i]}" "$br" "$trail"
+    line=$(printf '%s %s%s %s %s' "$mark" "$accel_ch" "${labels[$i]}" "$br" "$trail")
+    # Pad / clip to pane width so reverse-video highlights the whole row.
+    if (( ${#line} < cols )); then
+      line+=$(printf "%*s" $(( cols - ${#line} )) '')
+    else
+      line="${line:0:cols}"
+    fi
+    if [[ "$i" -eq "$selected" ]]; then
+      # Reverse video — same idea as the Go popup selected row.
+      printf '\033[7m%s\033[0m\n' "$line"
+    else
+      printf '%s\n' "$line"
+    fi
   done
-  printf '\n j/k Enter  q\n'
+  printf '\n j/k Enter  q/Esc\n'
 }
 
 open_selected() {
@@ -114,11 +132,11 @@ while true; do
   case "$key" in
     q|Q) break ;;
     j)
-      (( selected = (selected + 1) % n ))
+      move_down
       draw
       ;;
     k)
-      (( selected = (selected - 1 + n) % n ))
+      move_up
       draw
       ;;
     ''|$'\n'|$'\r')
@@ -133,8 +151,8 @@ while true; do
         if [[ "$k2" == '[' ]]; then
           IFS= read -r -n1 -s -t 0.05 k3 || true
           case "$k3" in
-            B) (( selected = (selected + 1) % n )); draw ;;
-            A) (( selected = (selected - 1 + n) % n )); draw ;;
+            B) move_down; draw ;;
+            A) move_up; draw ;;
           esac
         else
           break
@@ -145,7 +163,7 @@ while true; do
       ;;
     [0-9a-z])
       for i in "${!accel[@]}"; do
-        if [[ "${accel[$i]}" == "$key" && i -lt n ]]; then
+        if [[ "${accel[$i]}" == "$key" && "$i" -lt "$n" ]]; then
           selected=$i
           open_selected
           draw
