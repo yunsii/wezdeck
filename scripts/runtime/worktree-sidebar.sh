@@ -40,46 +40,19 @@ find_sidebar_pane() {
     | awk -F'|' -v s="$sess" -v r="$ROLE" '$1==s && $3==r {print $2; exit}'
 }
 
-# Cover the other tiled pane (full rectangle). Solo-pane → strip beside focus.
+# Cover the focused tiled pane (full rectangle). Most intuitive: Alt+g paints
+# where you are looking; underlying content stays and returns on close.
 sidebar_geometry() {
-  local win="${1:-}" focus="${2:-}"
-  local cover left top w h client_w focus_left focus_right focus_top focus_h x_pos
+  local focus="${1:-}"
+  local left top w h
 
-  cover=""
-  if [[ -n "$win" ]]; then
-    cover="$(tmux list-panes -t "$win" -F \
-      '#{pane_id}|#{pane_active}|#{pane_floating_flag}|#{pane_left}|#{pane_top}|#{pane_width}|#{pane_height}' \
-      | awk -F'|' '$2==0 && $3==0 {print; exit}')"
-    if [[ -z "$cover" ]]; then
-      cover="$(tmux list-panes -t "$win" -F \
-        '#{pane_id}|#{pane_active}|#{pane_floating_flag}|#{pane_left}|#{pane_top}|#{pane_width}|#{pane_height}' \
-        | awk -F'|' -v f="$focus" '$3==0 && $1!=f {print; exit}')"
-    fi
-  fi
-
-  if [[ -n "$cover" ]]; then
-    IFS='|' read -r _ _ _ left top w h <<< "$cover"
-    (( w < 8 )) && w=8
-    (( h < 8 )) && h=8
-    printf '%s %s %s %s' "$left" "$top" "$w" "$h"
-    return 0
-  fi
-
-  client_w="$(tmux display-message -p -t "$focus" '#{client_width}' 2>/dev/null || echo 120)"
-  focus_left="$(tmux display-message -p -t "$focus" '#{pane_left}' 2>/dev/null || echo 0)"
-  focus_right="$(tmux display-message -p -t "$focus" '#{pane_right}' 2>/dev/null || echo 0)"
-  focus_top="$(tmux display-message -p -t "$focus" '#{pane_top}' 2>/dev/null || echo 0)"
-  focus_h="$(tmux display-message -p -t "$focus" '#{pane_height}' 2>/dev/null || echo 20)"
-  if (( focus_right + 1 + WIDTH <= client_w )); then
-    x_pos=$(( focus_right + 1 ))
-  elif (( focus_left >= WIDTH )); then
-    x_pos=$(( focus_left - WIDTH ))
-  else
-    x_pos=$(( client_w - WIDTH ))
-    (( x_pos < 0 )) && x_pos=0
-  fi
-  (( focus_h < 8 )) && focus_h=8
-  printf '%s %s %s %s' "$x_pos" "$focus_top" "$WIDTH" "$focus_h"
+  left="$(tmux display-message -p -t "$focus" '#{pane_left}' 2>/dev/null || echo 0)"
+  top="$(tmux display-message -p -t "$focus" '#{pane_top}' 2>/dev/null || echo 0)"
+  w="$(tmux display-message -p -t "$focus" '#{pane_width}' 2>/dev/null || echo "$WIDTH")"
+  h="$(tmux display-message -p -t "$focus" '#{pane_height}' 2>/dev/null || echo 20)"
+  (( w < 8 )) && w=8
+  (( h < 8 )) && h=8
+  printf '%s %s %s %s' "$left" "$top" "$w" "$h"
 }
 
 close_sidebar() {
@@ -149,7 +122,7 @@ open_sidebar() {
       | awk '$2==1{print $1; exit}')"
     [[ -n "$focus_target" ]] || focus_target="$win"
   fi
-  geo="$(sidebar_geometry "$win" "$focus_target")"
+  geo="$(sidebar_geometry "$focus_target")"
   read -r x_pos y_pos w h <<< "$geo"
 
   # Wrapper: run Go picker; always remove prefetch; kill this pane on exit
@@ -168,6 +141,7 @@ open_sidebar() {
     "session_name=$sess" \
     "pane_id=$pane_id" \
     "focus_pane=$focus_target" \
+    "cover=focused" \
     "picker=go" \
     "x=$x_pos" \
     "y=$y_pos" \
