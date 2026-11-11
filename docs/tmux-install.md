@@ -71,12 +71,12 @@ type -a tmux     # 确认没有更旧的副本抢在前面
 
 ```bash
 ./scripts/dev/install-tmux-user.sh --check     # 已 ≥ 3.7 则提示可跳过
-./scripts/dev/install-tmux-user.sh             # 默认 tag=3.7b → ~/.local
-./scripts/dev/install-tmux-user.sh 3.7a
-./scripts/dev/install-tmux-user.sh --force     # 即使已满足 floor 仍重装用户级
+./scripts/dev/install-tmux-user.sh             # 默认 tag=3.8 → ~/.local（仅当低于 floor）
+./scripts/dev/install-tmux-user.sh 3.7b        # 显式旧 tag（回滚用）
+./scripts/dev/install-tmux-user.sh --force 3.8 # 已满足 floor 时仍升级到 3.8
 ```
 
-脚本在 **未** `--force` 且检测到 `tmux -V` ≥ 3.7 时会 **退出 0 且不编译**。
+脚本在 **未** `--force` 且检测到 `tmux -V` ≥ 3.7 时会 **退出 0 且不编译**。本机已是 3.7b、要升到 3.8 时必须加 `--force`。
 
 ### 手工步骤（与脚本等价）
 
@@ -93,7 +93,7 @@ sudo apt-get install -y build-essential autoconf automake pkg-config \
 **构建：**
 
 ```bash
-TAG=3.7b
+TAG=3.8
 src="$(mktemp -d)"
 git clone --depth 1 --branch "$TAG" https://github.com/tmux/tmux.git "$src/tmux"
 cd "$src/tmux"
@@ -106,7 +106,7 @@ export PATH="$HOME/.local/bin:$PATH"
 tmux -V
 ```
 
-换用用户级后，若旧 server 仍是别的二进制起的，需在方便时 `tmux kill-server` 或冷启动 WezTerm，避免 client/server 错配。
+换用用户级后，若旧 server 仍是别的二进制起的，需在方便时 `tmux kill-server` 或冷启动 WezTerm，避免 client/server 错配。升级前可备份：`cp -a ~/.local/bin/tmux ~/.local/bin/tmux.3.7b.bak`。
 
 ### PATH（仅用户级场景）
 
@@ -126,6 +126,7 @@ tmux -V
 | 基线 | Ubuntu apt | `/usr/bin` **3.4** | 系统 |
 | IME/sync 修复 | 源码 **3.6a** | 曾 **`/usr/local/bin`** | 排查期（ime 文档 Step 6，历史） |
 | floor 提到 3.7 | 源码 **3.7b** | **`~/.local/bin`** | WezDeck agent / 维护脚本 |
+| 升 3.8（计划 / 进行中） | 源码 **3.8**（`install-tmux-user.sh --force 3.8`） | **`~/.local/bin`** | 维护窗；conf 已双轨兼容 `refresh-now` |
 
 - **3.4 之后、本机上的较新 tmux 多半不是 apt 升的**，而是需求驱动的 agent/维护构建。  
 - 多二进制并存 → `server exited unexpectedly`：保证 **client 与 server 同路径/同版本族**，删多余 shim。

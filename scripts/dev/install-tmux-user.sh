@@ -4,9 +4,10 @@
 #
 # Usage:
 #   ./scripts/dev/install-tmux-user.sh --check
-#   ./scripts/dev/install-tmux-user.sh              # install if needed (tag 3.7b)
-#   ./scripts/dev/install-tmux-user.sh 3.7a
-#   ./scripts/dev/install-tmux-user.sh --force      # build even if floor already met
+#   ./scripts/dev/install-tmux-user.sh              # install if needed (tag 3.8)
+#   ./scripts/dev/install-tmux-user.sh 3.7b
+#   ./scripts/dev/install-tmux-user.sh --force      # rebuild even if floor already met
+#   ./scripts/dev/install-tmux-user.sh --force 3.8  # upgrade user-prefix to 3.8
 #   TMUX_PREFIX=$HOME/.local ./scripts/dev/install-tmux-user.sh
 #
 # Policy: docs/tmux-install.md
@@ -14,7 +15,7 @@ set -euo pipefail
 
 FLOOR_MAJOR=3
 FLOOR_MINOR=7
-DEFAULT_TAG=3.7b
+DEFAULT_TAG=3.8
 PREFIX="${TMUX_PREFIX:-$HOME/.local}"
 REPO_URL="${TMUX_REPO_URL:-https://github.com/tmux/tmux.git}"
 

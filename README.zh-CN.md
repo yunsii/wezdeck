@@ -128,7 +128,7 @@ WezTerm tab          ─┐
 | | 要求 | 说明 |
 |---|---|---|
 | **WezTerm** | nightly | `hybrid-wsl` 模式跑在 Windows nightly 上 |
-| **tmux** | ≥ 3.7 | DEC sync 需 3.6+；`refresh-from-pane` 需 3.7+。系统/brew 包 ≥ 3.7 优先；仅当发行版过旧（如 Ubuntu apt 3.4）才用用户前缀 `~/.local`。[安装](docs/tmux-install.md) · [原因](docs/ime-flicker-and-sync-output.md) |
+| **tmux** | ≥ 3.7（推荐 **3.8**） | DEC sync 需 3.6+；copy-mode 实时刷新需 3.7+（`refresh-from-pane`）/ 3.8+（`refresh-now`）。系统/brew 包 ≥ 3.7 优先；仅当发行版过旧（如 Ubuntu apt 3.4）才用用户前缀 `~/.local`。升级：`install-tmux-user.sh --force 3.8`。[安装](docs/tmux-install.md) · [原因](docs/ime-flicker-and-sync-output.md) |
 | **lua5.4** | 推荐 | 驱动 sync 预检；缺失则跳过预检并警告 |
 | **jq** | 推荐 | Agent-attention 写入与焦点路径；缺失则标签降级 |
 | **go ≥ 1.21** | 可选 | 仅 `native/picker/` 维护者需要。终端用户经 release fetcher 拿 sha256 钉死的预编译包 |
