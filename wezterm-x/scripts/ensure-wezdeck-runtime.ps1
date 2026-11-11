@@ -277,6 +277,21 @@ function Write-ManagerConfig {
       mode = $fgMode
       allowlist = @($fgAllowlist)
     }
+    # WSL package-upgrade heal: relaunch WezTerm only when Windows Update/MSI
+    # evidence says the outage was an upgrade, not a user stop. Audit trail:
+    # state/wsl-heal/status.json + history.ndjson. Docs:
+    # docs/development-environment-troubleshooting.md#wsl-upgrade-heal
+    wslHeal = [ordered]@{
+      enabled = $true
+      statusPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\status.json'
+      historyPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\history.ndjson'
+      suppressUntilPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\suppress-until'
+      relaunchWezTerm = $true
+      probeIntervalMs = 15000
+      updateEvidenceWindowMs = 600000
+      cooldownMs = 600000
+      historyMaxLines = 500
+    }
     diagnostics = [ordered]@{
       enabled = ($DiagnosticsEnabled -eq '1')
       categoryEnabled = ($DiagnosticsCategoryEnabled -eq '1')

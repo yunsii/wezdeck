@@ -13,6 +13,7 @@ internal sealed class RuntimeManager : IDisposable
     private readonly RequestRouter requestRouter;
     private readonly RuntimeWebServer runtimeWebServer;
     private readonly ForegroundChangeTracker foregroundChangeTracker;
+    private readonly WslHealWatcher? wslHealWatcher;
     private string lastError = string.Empty;
     private int heartbeatTickActive;
     private bool disposed;
@@ -43,6 +44,10 @@ internal sealed class RuntimeManager : IDisposable
             Reason = currentImeSample.Reason,
         }, logger, requestJson => HandleWebRequest(requestJson), vscodeHandler.ReadWindows);
         foregroundChangeTracker = new ForegroundChangeTracker(logger, config.ForegroundSampling);
+        if (config.WslHeal is not null)
+        {
+            wslHealWatcher = new WslHealWatcher(logger, config.WslHeal, ResolveHealWslDistro);
+        }
 
         heartbeatTimer = new System.Threading.Timer(_ => RunHeartbeatTick(), null, Timeout.Infinite, Timeout.Infinite);
     }
@@ -230,6 +235,18 @@ internal sealed class RuntimeManager : IDisposable
                 });
             }
 
+            try
+            {
+                wslHealWatcher?.Tick();
+            }
+            catch (Exception healEx)
+            {
+                logger.Warn("wsl_heal", "heal tick failed", new Dictionary<string, string?>
+                {
+                    ["error"] = healEx.Message,
+                });
+            }
+
             WriteHelperState("1", lastError);
         }
         catch (Exception ex)
@@ -309,5 +326,56 @@ internal sealed class RuntimeManager : IDisposable
 
             FileSystemUtil.WriteAtomicTextFile(config.StatePath, string.Join("\r\n", lines) + "\r\n");
         }
+    }
+
+    private string ResolveHealWslDistro()
+    {
+        if (!string.IsNullOrWhiteSpace(config.ClipboardWslDistro))
+        {
+            return config.ClipboardWslDistro!;
+        }
+
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "wsl.exe",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            startInfo.ArgumentList.Add("--list");
+            startInfo.ArgumentList.Add("--quiet");
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process is null)
+            {
+                return string.Empty;
+            }
+
+            // wsl.exe --list writes UTF-16LE; StreamReader default UTF-8 turns
+            // "Ubuntu-24.04" into garbage with NULs and -d then exits -1.
+            using var ms = new System.IO.MemoryStream();
+            process.StandardOutput.BaseStream.CopyTo(ms);
+            process.WaitForExit(5_000);
+            var bytes = ms.ToArray();
+            var output = bytes.Length >= 2 && bytes[1] == 0
+                ? System.Text.Encoding.Unicode.GetString(bytes)
+                : System.Text.Encoding.UTF8.GetString(bytes);
+            foreach (var raw in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var name = raw.Trim().TrimStart('\uFEFF').Replace("\0", string.Empty);
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    return name;
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default distro (no -d).
+        }
+
+        return string.Empty;
     }
 }

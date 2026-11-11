@@ -500,6 +500,8 @@ Guest-memory failure modes (distro restart loop, reclaim livelock, high-order al
 
 Host volume headroom (`ext4.vhdx` growth, sparse-VHD trap, `fstrim` → shutdown → Optimize-VHD / compact, disk-guard `C·…` / `D·…` badges, system-volume channel, `history` sparklines, OEM preinstalls, **C: triage playbook** via `scripts/dev/host-disk-triage.sh`) lives in [`host-disk.md`](./host-disk.md) ([system disk triage](./host-disk.md#system-disk-c-triage)).
 
+WSL MSI/Store auto-upgrade that kills the guest (and often WezTerm): host-runtime heal + 倒查 files under `state/wsl-heal/` — [`development-environment-troubleshooting.md#wsl-upgrade-heal`](./development-environment-troubleshooting.md#wsl-upgrade-heal).
+
 ## Troubleshooting Notes
 
 - If the host volume is full or nearly full, do **not** start by hunting for files on the Windows side — compare `df -h /` against the size of `ext4.vhdx` first. A large gap means the space is trapped in the vhdx and no host-side deletion will touch it; see [`host-disk.md`](./host-disk.md) for the trim-then-compact procedure and why `--set-sparse` is the wrong fix.

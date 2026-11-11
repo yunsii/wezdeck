@@ -54,6 +54,41 @@ Narrow the layer before anything else:
    plus the `memory peak` / `memory swap peak` line is guest memory exhaustion.
 4. **Restart count** ≈ number of `*.journal~` fragments — journald renames the
    file on every unclean start.
+5. **WSL package upgrade (Store / Windows Update MSI).** Guest dies, often
+   WezTerm too; Windows Event Log shows `Windows Subsystem for Linux x.y.z`
+   install (System/`WindowsUpdateClient` 43→19). Heal: below.
+
+### WSL upgrade heal (host runtime)
+
+Microsoft can auto-install a WSL MSI and tear down the guest without asking.
+True seamless upgrade is not available; **wezdeck-runtime** instead detects
+the outage and **conditionally relaunches WezTerm**.
+
+**Upgrade vs you stopped it:** heal runs only when all of these hold after WSL
+comes back: (1) WSL was latched unhealthy, (2) WezTerm was seen running earlier
+in this helper lifetime and is now gone, (3) a WSL package update appears in
+Event Log inside the evidence window (default 10 min), (4) no
+`state/wsl-heal/suppress-until` and not inside cooldown. No update evidence →
+`skip_no_update_evidence` (manual/`wsl --shutdown`/you closed the window).
+
+| Artifact | Path |
+|---|---|
+| Status | `%LOCALAPPDATA%\wezterm-runtime\state\wsl-heal\status.json` |
+| History | `…\state\wsl-heal\history.ndjson` (decision rows for 倒查) |
+| Suppress | write unix-ms or ISO into `…\state\wsl-heal\suppress-until` |
+| Log | `helper.log` category `wsl_heal` (`decision=` / `evidence_summary=`) |
+
+```bash
+# 倒查
+jq . /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/wsl-heal/status.json
+tail -20 /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/wsl-heal/history.ndjson
+# before intentional wsl --shutdown / compact:
+date +%s%3N | awk '{print $1+900000}' > /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/wsl-heal/suppress-until
+```
+
+Config: `manager-config.json` → `wslHeal` (default on). Implementation:
+`native/wezdeck-runtime/.../WslHealWatcher.cs`. VS Code reload is still manual
+(v2).
 
 ### Fatal machine check (MCE) — reference 2026-09-23
 
