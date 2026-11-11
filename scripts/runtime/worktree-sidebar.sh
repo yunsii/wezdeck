@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Floating worktree sidebar (tmux 3.8+). Toggle open/close for one session.
+# Floating worktree container (tmux 3.8+). Same Alt+g hotkey; UI mode
+# WEZTERM_WORKTREE_PICKER_UI=sidebar. The float covers the sibling tiled
+# pane (usually secondary) and runs the **same** Go picker as the centered
+# popup — Ctrl+y/b/d, reverse highlight, hidden cursor, all unchanged.
 #
 # Usage:
 #   worktree-sidebar.sh toggle <session> <window_id> <cwd>
@@ -20,9 +23,10 @@ source "$script_dir/tmux-user-interact-lib.sh"
 source "$script_dir/access-ledger-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/worktree/lib/prefetch-list.sh"
+# shellcheck disable=SC1091
+. "$script_dir/picker-bin-lib.sh"
 
 ROLE='worktree-sidebar'
-# Legacy strip width — only used when the window has a single tiled pane.
 WIDTH="${WEZTERM_WORKTREE_SIDEBAR_WIDTH:-34}"
 
 action="${1:-toggle}"
@@ -36,21 +40,16 @@ find_sidebar_pane() {
     | awk -F'|' -v s="$sess" -v r="$ROLE" '$1==s && $3==r {print $2; exit}'
 }
 
-# Cover target: the other tiled pane in this window (usually the secondary
-# shell). Floating list fills that pane's rectangle so the shell stays
-# underneath and reappears when the overlay closes. Solo-pane windows fall
-# back to a focus-adjacent strip of WIDTH columns.
+# Cover the other tiled pane (full rectangle). Solo-pane → strip beside focus.
 sidebar_geometry() {
   local win="${1:-}" focus="${2:-}"
   local cover left top w h client_w focus_left focus_right focus_top focus_h x_pos
 
   cover=""
   if [[ -n "$win" ]]; then
-    # Prefer inactive tiled sibling (not floating, not the focused pane).
     cover="$(tmux list-panes -t "$win" -F \
       '#{pane_id}|#{pane_active}|#{pane_floating_flag}|#{pane_left}|#{pane_top}|#{pane_width}|#{pane_height}' \
       | awk -F'|' '$2==0 && $3==0 {print; exit}')"
-    # If focus is the inactive one somehow, take any other tiled pane.
     if [[ -z "$cover" ]]; then
       cover="$(tmux list-panes -t "$win" -F \
         '#{pane_id}|#{pane_active}|#{pane_floating_flag}|#{pane_left}|#{pane_top}|#{pane_width}|#{pane_height}' \
@@ -66,7 +65,6 @@ sidebar_geometry() {
     return 0
   fi
 
-  # Single-pane fallback: strip beside focus.
   client_w="$(tmux display-message -p -t "$focus" '#{client_width}' 2>/dev/null || echo 120)"
   focus_left="$(tmux display-message -p -t "$focus" '#{pane_left}' 2>/dev/null || echo 0)"
   focus_right="$(tmux display-message -p -t "$focus" '#{pane_right}' 2>/dev/null || echo 0)"
@@ -91,8 +89,6 @@ close_sidebar() {
     return 0
   fi
   runtime_log_info worktree "sidebar closed" "session_name=$sess" "pane_id=$pane" || true
-  # remain-on-exit is on globally; kill hard so pane-exit-keep cannot
-  # respawn a leftover login shell in the floating slot.
   tmux kill-pane -t "$pane" 2>/dev/null || true
 }
 
@@ -100,7 +96,8 @@ open_sidebar() {
   local sess="$1" win="$2" pane_cwd="$3"
   local existing prefetch_file prefetch_rc=0 pane_id
   local focus_target geo x_pos y_pos w h
-  local ui="$script_dir/worktree-sidebar-ui.sh"
+  local picker_binary picker_rc=0 open_script trace_id start_ms menu_done_ts
+  local picker_command
 
   existing="$(find_sidebar_pane "$sess")"
   if [[ -n "$existing" ]]; then
@@ -108,8 +105,12 @@ open_sidebar() {
     return 0
   fi
 
+  start_ms="$(runtime_log_now_ms)"
+  trace_id="$(runtime_log_current_trace_id)"
   prefetch_file="$(mktemp -t wezterm-worktree-sidebar.XXXXXX)"
+  WORKTREE_PREFETCH_START_MS="$start_ms"
   worktree_prefetch_list "$sess" "$win" "$pane_cwd" "$prefetch_file" || prefetch_rc=$?
+  unset WORKTREE_PREFETCH_START_MS
   if (( prefetch_rc == 2 )); then
     rm -f "$prefetch_file"
     tmux display-message 'No git worktree in this session'
@@ -121,6 +122,27 @@ open_sidebar() {
     return 1
   fi
 
+  picker_binary="$(picker_bin_require "$script_dir" "Alt+g sidebar")" || picker_rc=$?
+  if (( picker_rc == 1 )); then
+    rm -f "$prefetch_file"
+    return 0
+  fi
+  if (( picker_rc != 0 )); then
+    rm -f "$prefetch_file"
+    tmux display-message 'Worktree sidebar needs native picker (no bash UI in sidebar mode)'
+    return 1
+  fi
+
+  open_script="$script_dir/tmux-worktree-open.sh"
+  menu_done_ts=$(( ${EPOCHREALTIME//./} / 1000 ))
+  # Same argv as tmux-worktree-menu.sh popup path.
+  picker_command=$(printf 'WEZTERM_RUNTIME_TRACE_ID=%q %q worktree %q %q %q %q %q %q %q %q %q %q' \
+    "$trace_id" "$picker_binary" \
+    "$prefetch_file" "$open_script" \
+    "$sess" "$win" "$pane_cwd" \
+    "$current_worktree_root" "$repo_label" \
+    "$start_ms" "$start_ms" "$menu_done_ts")
+
   focus_target="${win:-$sess}"
   if [[ -n "$win" ]]; then
     focus_target="$(tmux list-panes -t "$win" -F '#{pane_id} #{pane_active}' \
@@ -130,13 +152,12 @@ open_sidebar() {
   geo="$(sidebar_geometry "$win" "$focus_target")"
   read -r x_pos y_pos w h <<< "$geo"
 
-  # tmux 3.8: new-pane without -h/-v creates a floating pane that covers
-  # the sibling (secondary) pane rectangle. remain-on-exit off so q does
-  # not leave a stray shell via pane-exit-keep.
+  # Wrapper: run Go picker; always remove prefetch; kill this pane on exit
+  # (remain-on-exit off is also set) so Esc/q from picker leaves no float.
   pane_id="$(tmux new-pane -d -P -F '#{pane_id}' -t "$focus_target" \
     -x "$w" -y "$h" -X "$x_pos" -Y "$y_pos" \
     -T "Worktrees: $repo_label" \
-    -- bash "$ui" "$sess" "$win" "$pane_cwd" "$prefetch_file" "$repo_label" "$current_worktree_root")"
+    -- bash -c "trap 'rm -f \"$prefetch_file\"; tmux kill-pane -t \"\$TMUX_PANE\" 2>/dev/null || true' EXIT; $picker_command")"
 
   tmux set-option -p -t "$pane_id" remain-on-exit off
   tmux set-option -p -t "$pane_id" @wezterm_pane_role "$ROLE"
@@ -147,6 +168,7 @@ open_sidebar() {
     "session_name=$sess" \
     "pane_id=$pane_id" \
     "focus_pane=$focus_target" \
+    "picker=go" \
     "x=$x_pos" \
     "y=$y_pos" \
     "w=$w" \
