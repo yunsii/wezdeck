@@ -471,9 +471,9 @@ func (ui *worktreeUI) render() {
 	// Footer.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	// Keep the footer quiet: keys only, no verb list. Discoverability still
-	// comes from the detail line (path · branch) and Ctrl+d confirm overlay.
-	b.WriteString("\x1b[2mEnter  ⌃d  ⌃y  ⌃b  Esc  ·  powered by ")
+	// Soft gray (dim + 256-color) so the chrome stays readable but quieter
+	// than row text; wording unchanged for discoverability.
+	b.WriteString("\x1b[2;38;5;240mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
 	b.WriteString("\x1b[22;1;38;5;108mgo")
 	b.WriteString(reset)
 	ui.ts.renderFooterTail(&b)
