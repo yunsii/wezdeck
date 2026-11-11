@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Floating worktree container (tmux 3.8+). Same Alt+g hotkey; UI mode
-# WEZTERM_WORKTREE_PICKER_UI=sidebar. The float covers the sibling tiled
-# pane (usually secondary) and runs the **same** Go picker as the centered
-# popup — Ctrl+y/b/d, reverse highlight, hidden cursor, all unchanged.
+# PARKED experiment: floating worktree container (tmux 3.8+).
+# Opt-in only via WEZTERM_WORKTREE_PICKER_UI=sidebar. Default Alt+g stays
+# centered display-popup — dogfood preferred popup (agent visible under
+# overlay; cleaner focus after close). This script covers the focused
+# tiled pane and runs the same Go picker as the popup.
 #
 # Usage:
 #   worktree-sidebar.sh toggle <session> <window_id> <cwd>

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Shared worktree list prefetch for Alt+g popup and the floating sidebar pilot.
+# Shared worktree list prefetch for Alt+g (centered popup default; optional
+# parked sidebar path can reuse the same TSV).
 #
 # Requires (sourced by caller before use):
 #   tmux-worktree-lib.sh, attention-state-lib.sh, tmux-user-interact-lib.sh,

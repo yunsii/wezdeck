@@ -19,7 +19,8 @@ source "$script_dir/access-ledger-lib.sh"
 # shellcheck disable=SC1091
 source "$script_dir/worktree/lib/prefetch-list.sh"
 
-# Machine preference: popup (default) | sidebar. See local.example/shared.env.
+# Machine preference: popup (default/recommended) | sidebar (parked experiment).
+# See local.example/shared.env and docs/tmux-ui.md.
 runtime_env_load_managed 2>/dev/null || true
 picker_ui="$(printf '%s' "${WEZTERM_WORKTREE_PICKER_UI:-popup}" | tr '[:upper:]' '[:lower:]')"
 case "$picker_ui" in
@@ -69,8 +70,7 @@ if [[ "$picker_ui" == sidebar ]]; then
     "$session_name" "$current_window_id" "$cwd"
 fi
 
-# Prefetch TSV + arrays shared with the floating-sidebar pilot
-# (worktree/lib/prefetch-list.sh). Popup path below is unchanged.
+# Prefetch TSV + arrays (worktree/lib/prefetch-list.sh). Popup path below.
 prefetch_file="$(mktemp -t wezterm-worktree-picker.XXXXXX)"
 WORKTREE_PREFETCH_START_MS="$start_ms"
 prefetch_rc=0

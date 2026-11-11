@@ -314,12 +314,13 @@ per the repo convention.
   sub-frame redraw can hide it, WSL→Windows cannot — see the same section).
   Beats herdr’s “no per-pane background” outcome (constraint 10) because cream
   active/inactive tint can survive.
-- **2026-08-18 — Is a persistent sidebar worth building on floating panes?**
-  herdr's always-visible agent list was its most convincing UI element, and
-  `new-pane -O` / floating panes make one expressible for the first time —
-  `display-popup` never allowed a persistent overlay. Close it by prototyping a
-  floating pane that renders the `Alt+/` picker content continuously and
-  deciding whether it beats the on-demand popup.
+- **2026-11-11 — Worktree float-over-focus sidebar parked.** Closed for
+  `Alt+g`: prototype (`WEZTERM_WORKTREE_PICKER_UI=sidebar` + same Go picker)
+  covered the focused pane but lost to centered `display-popup` — popup keeps
+  the running agent visible, recovers focus more cleanly (`Alt+l` first press
+  after close), and needs no parallel UI. Code remains opt-in; default stays
+  popup. A persistent always-on agent list (herdr-style / `Alt+/` continuous)
+  is a separate question and still open.
 - **2026-08-18 — Can tmux 3.8 monitors replace hand-rolled polling in the event
   bus?** `set-hook -B` checks a format every second and fires on change, with
   `wait-for -E` / `set-hook -E` / `wait-for -v` around it. Close it by porting

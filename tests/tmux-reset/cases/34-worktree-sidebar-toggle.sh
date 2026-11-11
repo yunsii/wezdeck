@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Floating worktree sidebar toggle (tmux 3.8+ pilot).
+# Parked sidebar path still needs a toggle smoke (tmux 3.8+).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
