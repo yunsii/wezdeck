@@ -299,14 +299,12 @@ per the repo convention.
 - **2026-11-11 — 3.7b → 3.8 (skipped 3.7c).** Closed by the same upgrade;
   copy-mode dual-track (`refresh-from-pane` / `refresh-now`), `theme
   terminal`, and tmux-reset cases 29/30/32/33 verified on 3.8.
-- **2026-08-18 — Can OSC 133 events replace the per-agent attention
-  adapters?** Still open as a **3.8 pilot**. `scripts/runtime/agent-attention/adapters/`
-  has only `claude.sh` and `codex.sh`, so Grok has no attention coverage;
-  3.8's `pane-command-started` / `pane-command-finished` / `pane-shell-prompt`
-  plus `pane_last_output_time` would be provider-agnostic. Close it by
-  emitting the events from a Grok pane on this 3.8 server and comparing
-  transitions against `attention.json` from the Claude adapter. Highest-value
-  remaining borrow.
+- **2026-11-11 — OSC 133 attention pilot landed (gated).** Partial close:
+  `osc133-tmux-hook.sh` + `tmux.conf` hooks map OSC 133 → `emit.sh` for
+  `agent-cli:grok*` when `@wezdeck_osc133_attention=1`. Claude/Codex unchanged.
+  Still open: confirm live Grok TUI emits OSC 133 (otherwise keep gate off);
+  decide whether to promote default-on or extend to `pane_last_output_time`
+  monitors. Test: `tests/hook-units/test_osc133_tmux_hook.sh`.
 - **2026-08-18 — Does tmux 3.8 theme reporting fix the Grok background
   tint conflict?** Secondary only — see [`tmux-ui.md#grok-build-in-tmux`](./tmux-ui.md#grok-build-in-tmux).
   Grok paints opaque `#eeeeee` when it guesses light; 3.8 reports the terminal's

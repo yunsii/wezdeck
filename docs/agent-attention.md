@@ -18,6 +18,17 @@ rewritten by the installer.
 
 The agent-attention feature expects agent CLI lifecycle hooks to call a provider adapter. Adapters under `scripts/runtime/agent-attention/adapters/` normalize provider payloads into the shared emitter at `scripts/runtime/agent-attention/emit.sh`, which is keyboard-first: when it runs it only decorates the pane, so installing it globally is safe and a no-op in non-WezTerm terminals. The legacy Claude path `scripts/claude-hooks/emit-agent-status.sh` remains as a compatibility wrapper around the Claude adapter.
 
+### OSC 133 pilot (tmux 3.8+, Grok gap-fill)
+
+tmux 3.8 fires `pane-command-started` / `pane-command-finished` / `pane-shell-prompt` when a pane emits OSC 133. `scripts/runtime/agent-attention/osc133-tmux-hook.sh` maps those into `emit.sh` `running` / `done` for panes tagged `@wezterm_pane_role=agent-cli:grok*`. Claude/Codex are **not** handled here (they keep vendor hooks).
+
+- **Default off.** Enable for a session/server: `tmux set -g @wezdeck_osc133_attention 1`
+- Hooks are registered from `tmux.conf` only when `tmux -V` is 3.8+.
+- Session id: pane `@wezterm_agent_session_id` when set, else `osc133:%<pane>`.
+- Offline check: `bash tests/hook-units/test_osc133_tmux_hook.sh`
+
+Grok only benefits when the TUI actually emits OSC 133; until then the gate stays off and this path is injection-tested only.
+
 > **Upgrading from an earlier version of this doc** — the hook argument for `UserPromptSubmit` changed from `cleared` to `running`. If your existing `~/.claude/settings.json` still points at `... emit-agent-status.sh cleared`, swap it for `running`. Claude Code re-reads `settings.json` on every hook firing, so the change takes effect on the next event (send a fresh prompt to exercise `UserPromptSubmit`) — no Claude restart needed. Use the verification command at the bottom of this section to confirm the new command is firing.
 
 > **Upgrading from a four-hook install** — a fifth hook, `SessionStart` with `matcher: "clear"`, was added to drop the discarded session's `running` entry when the user runs `/clear`. Without it, the ⟳ counter stays stuck for up to 30 minutes (or until the next `UserPromptSubmit` on the same tmux session triggers same-session eviction). Merge the `SessionStart` block from the template below; no Claude restart needed. To confirm it is wired, run `/clear` in a pane that currently shows a ⟳, and watch the badge drop within one WezTerm status tick.
