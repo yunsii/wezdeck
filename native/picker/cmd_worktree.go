@@ -471,10 +471,10 @@ func (ui *worktreeUI) render() {
 	// Footer.
 	row++
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
-	// Soft gray (dim + 256-color) so the chrome stays readable but quieter
-	// than row text; wording unchanged for discoverability.
-	b.WriteString("\x1b[2;38;5;240mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
-	b.WriteString("\x1b[22;1;38;5;108mgo")
+	// Near-cream gray (#c8c8c8): readable only as a whisper on the default
+	// pane background; wording unchanged for discoverability.
+	b.WriteString("\x1b[38;2;200;200;200mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
+	b.WriteString("\x1b[38;2;160;175;160mgo")
 	b.WriteString(reset)
 	ui.ts.renderFooterTail(&b)
 	b.WriteString(clearEOL)
