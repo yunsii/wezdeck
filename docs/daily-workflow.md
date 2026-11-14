@@ -10,7 +10,7 @@ Use this doc when you need to apply or verify changes.
    **Default path (auto crash gate):**
 
    1. Stage under `%LOCALAPPDATA%\wezterm-runtime\canary\` (live `~/.wezterm.lua` untouched so far).
-   2. Launch an isolated WezTerm (`--always-new-process`, class `wezdeck-canary`, workspace `default`).
+   2. Launch an isolated WezTerm (`--always-new-process`, class `wezdeck-canary`, workspace `default`). The auto probe starts `wezterm-gui.exe` **minimized without activation** (`SW_SHOWMINNOACTIVE` via `WScript.Shell.Run`), so it does not steal focus from the window you are typing in; `wezterm.exe` would re-spawn the GUI without forwarding the show flag, hence the direct `wezterm-gui.exe` launch. If the background launch is unavailable it falls back to a normal foreground window (output line `mode  : …` says which). `WEZTERM_CANARY_LAUNCH_MODE=foreground` forces the old visible probe. Manual `--launch` stays foreground for inspection.
    3. Wait for `canary/healthy.stamp` (written on `gui-startup` when the probe config loads).
    4. On success: close canary processes (command-line match on `wezdeck-canary` / `wezterm-runtime\canary`), backup live → `last-good/`, promote canary → live. Manual `--launch` leaves the probe window open for inspection.
    5. On failure/timeout: kill leftover canary processes, **leave live alone**, exit non-zero — your running wezdeck keeps working.

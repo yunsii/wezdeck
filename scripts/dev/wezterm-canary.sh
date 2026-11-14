@@ -12,6 +12,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck disable=SC1091
 source "$repo_root/scripts/runtime/windows-runtime-paths-lib.sh" 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$repo_root/scripts/runtime/windows-shell-lib.sh" 2>/dev/null || true
 
 target_runtime_state_dir() {
   local target_home="${1:?missing target home}"
@@ -34,7 +36,9 @@ Options:
   --auto       Default path: launch canary, wait for healthy.stamp, promote on
                success. Live tree is left untouched if the probe fails/times out.
   --timeout N  Seconds to wait for healthy.stamp in --auto (default 20).
-  --launch     Start wezterm.exe on the canary tree only (no promote).
+               --auto launches the probe minimized without focus (set
+               WEZTERM_CANARY_LAUNCH_MODE=foreground for a visible window).
+  --launch     Start wezterm.exe on the canary tree only (no promote, foreground).
   --promote    Copy live → last-good, then canary → live.
   --recover    Copy last-good → live. With --start, also launch WezTerm on live.
   -h, --help   Show help.
@@ -195,7 +199,26 @@ promote_tree() {
   touch "$dest_bootstrap"
 }
 
+# Background launch for --auto: start wezterm-gui.exe minimized *without
+# activation* (SW_SHOWMINNOACTIVE = 7 via WScript.Shell.Run) so the probe
+# does not steal focus from the window the user is typing in. wezterm.exe
+# re-spawns wezterm-gui.exe without forwarding STARTUPINFO, so the GUI binary
+# must be launched directly for the show-window flag to take effect.
+launch_canary_background() {
+  local wez="$1" cfg_win="$2" state_dir_win="$3"
+  declare -F windows_run_powershell_command_utf8 >/dev/null || return 1
+  local gui="${wez%/*}/wezterm-gui.exe"
+  [[ -f "$gui" ]] || return 1
+  local gui_win cmdline
+  gui_win="$(to_win_path "$gui")"
+  cmdline="\"$gui_win\" --config-file \"$cfg_win\" start --always-new-process --class wezdeck-canary --workspace default --no-auto-connect"
+  windows_run_powershell_command_utf8 "\$env:WEZTERM_RUNTIME_STATE_DIR = $(windows_powershell_quote "$state_dir_win"); \$null = (New-Object -ComObject WScript.Shell).Run($(windows_powershell_quote "$cmdline"), 7, \$false)" \
+    >/dev/null 2>&1
+}
+
 launch_canary_process() {
+  # $1: background (default for --auto) | foreground (--launch, for inspection)
+  local mode="${1:-foreground}"
   [[ -f "$CANARY_BOOTSTRAP" ]] || {
     printf 'Canary bootstrap missing: %s\nRun: skills/wezdeck-runtime-ops/scripts/sync-runtime.sh\n' \
       "$CANARY_BOOTSTRAP" >&2
@@ -221,6 +244,18 @@ launch_canary_process() {
   printf '  exe   : %s\n' "$wez"
   printf '  config: %s\n' "$cfg_win"
   printf '  class : wezdeck-canary (isolated process)\n'
+
+  if [[ "$mode" == background && "$wez" == *.exe ]]; then
+    if launch_canary_background "$wez" "$cfg_win" "$state_dir_win"; then
+      CANARY_LAUNCH_PID=""
+      printf '  mode  : background (minimized, no focus steal)\n'
+      printf 'Canary process started.\n'
+      return 0
+    fi
+    printf '  mode  : background launch unavailable, falling back to foreground\n'
+  else
+    printf '  mode  : foreground\n'
+  fi
 
   # --always-new-process: do not merge into the live GUI
   # --class: separate windowing class from the main instance
@@ -262,7 +297,7 @@ do_auto() {
   # Best-effort Lua-side quit; Windows kill below is the reliable closer.
   mkdir -p "$CANARY_ROOT"
   : >"$CANARY_ROOT/auto-quit.flag"
-  launch_canary_process || {
+  launch_canary_process "${WEZTERM_CANARY_LAUNCH_MODE:-background}" || {
     rm -f "$CANARY_ROOT/auto-quit.flag"
     exit 1
   }
