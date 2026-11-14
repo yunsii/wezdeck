@@ -625,6 +625,37 @@ run_agent_hooks_check() {
   printf '[sync] fix: %s install --provider codex|claude|all\n' "$check_script" >&2
 }
 
+# Advisory: the shared pre-commit hook is a *copy* of
+# skills/repo-hygiene/hooks/pre-commit. When the tracked source changes, the
+# installed copy goes stale and can silently skip every commit gate (the
+# runner moved out of scripts/dev/ and nobody noticed until 2026-11-14).
+# Never fails the sync.
+run_repo_hygiene_hook_check() {
+  local check_script="$REPO_ROOT/skills/repo-hygiene/run.sh"
+  local output=""
+  local rc=0
+
+  if [[ "${WEZTERM_SYNC_SKIP_HYGIENE_HOOK_CHECK:-0}" == "1" ]]; then
+    sync_trace "step=repo-hygiene-hook-check status=skipped reason=env_override"
+    return 0
+  fi
+  if [[ ! -x "$check_script" ]]; then
+    sync_trace "step=repo-hygiene-hook-check status=skipped reason=script_missing"
+    return 0
+  fi
+
+  output="$("$check_script" hook-status 2>&1)" || rc=$?
+  if (( rc == 0 )); then
+    sync_trace "step=repo-hygiene-hook-check status=healthy"
+    return 0
+  fi
+
+  sync_trace "step=repo-hygiene-hook-check status=warning rc=$rc"
+  runtime_log_warn sync "repo-hygiene hook check warning" "check_rc=$rc"
+  printf '[sync] repo-hygiene-hook-check warning (sync continues):\n%s\n' \
+    "${output:-hook-status failed without details}" >&2
+}
+
 # Advisory: sparse live-panes / orphan mux that used to wipe attention
 # badges within ~1s (2026-10-09). Never fails the sync.
 run_attention_health_check() {
@@ -759,6 +790,7 @@ wait_for_flow runtime-native "$RUNTIME_NATIVE_FLOW_PID"
 wait_for_flow wezdeck-bootstrap "$BOOTSTRAP_FLOW_PID"
 finalize_bootstrap_refresh
 run_agent_hooks_check
+run_repo_hygiene_hook_check
 run_attention_health_check
 run_node_runtime_check
 run_shell_env_check

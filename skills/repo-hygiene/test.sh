@@ -360,6 +360,31 @@ if [[ -f "$root/README.md" && -f "$root/README.zh-CN.md" ]]; then
   fi
 fi
 
+# --- hook-status: installed hook vs tracked source ---
+# Fixture repo has no hook yet → missing.
+assert_exit 1 "hook-status missing" env HYGIENE_REPO_ROOT="$fx" "$runner" hook-status
+assert_grep "hook-status: missing" "$tmp/err" "hook-status missing message"
+# install → ok
+assert_exit 0 "hook install" env HYGIENE_REPO_ROOT="$fx" "$fx/skills/repo-hygiene/run.sh" install
+assert_exit 0 "hook-status ok after install" env HYGIENE_REPO_ROOT="$fx" "$runner" hook-status
+# stale copy (old runner path, as found 2026-11-14) → drift, and audit says so
+fx_hook="$fx/.git/hooks/pre-commit"
+sed -i 's#skills/repo-hygiene/run.sh#scripts/dev/repo-hygiene/run.sh#' "$fx_hook"
+assert_exit 1 "hook-status drift" env HYGIENE_REPO_ROOT="$fx" "$runner" hook-status
+assert_grep "hook-status: drift" "$tmp/err" "hook-status drift message"
+set +e
+env HYGIENE_REPO_ROOT="$fx" "$runner" audit >"$tmp/audit-hook.out" 2>&1
+set -e
+assert_grep "^hook: ADVISORY drift" "$tmp/audit-hook.out" "audit reports hook drift"
+# re-install heals the drift
+assert_exit 0 "hook re-install" env HYGIENE_REPO_ROOT="$fx" "$fx/skills/repo-hygiene/run.sh" install
+assert_exit 0 "hook-status ok after re-install" env HYGIENE_REPO_ROOT="$fx" "$runner" hook-status
+# core.hooksPath elsewhere → shared hook not used
+git -C "$fx" config core.hooksPath .githooks-elsewhere
+assert_exit 1 "hook-status hookspath" env HYGIENE_REPO_ROOT="$fx" "$runner" hook-status
+assert_grep "hook-status: hookspath" "$tmp/err" "hook-status hookspath message"
+git -C "$fx" config --unset core.hooksPath
+
 if (( fail > 0 )); then
   echo "$fail test(s) failed" >&2
   exit 1

@@ -26,6 +26,8 @@ source "$HYGIENE_HOME/lib/links.sh"
 source "$HYGIENE_HOME/lib/sizes.sh"
 # shellcheck source=lib/shell-syntax.sh
 source "$HYGIENE_HOME/lib/shell-syntax.sh"
+# shellcheck source=lib/hook-status.sh
+source "$HYGIENE_HOME/lib/hook-status.sh"
 # shellcheck source=lib/secrets-heuristics.sh
 source "$HYGIENE_HOME/lib/secrets-heuristics.sh"
 # shellcheck source=lib/readme-parity.sh
@@ -39,13 +41,15 @@ MODE=""
 
 usage() {
   cat <<'EOF'
-Usage: run.sh <pre-commit|audit|install> [options]
+Usage: run.sh <pre-commit|audit|install|hook-status> [options]
 
   pre-commit   Fast checks on staged files (hard fail). For git hook.
                Also en/zh README parity when README.md or README.zh-CN.md staged.
   audit        Full-repo report (summary first; fail on broken file links /
                README parity).
   install      Install shared pre-commit hook into git common dir.
+  hook-status  Check the installed hook matches skills/repo-hygiene/hooks/pre-commit
+               (exit 0 ok; 1 missing / drift / core.hooksPath override).
 
 Options:
   --soft-anchors   Missing heading anchors are advisory (not fail).
@@ -258,6 +262,13 @@ cmd_audit() {
 
   echo "=== repo-hygiene audit ==="
   echo "root: $root"
+  # Advisory: a stale installed hook silently skips every pre-commit gate.
+  if hygiene_hook_status "$root"; then
+    echo "hook: ok"
+  else
+    echo "hook: ADVISORY $HYGIENE_HOOK_STATUS — $HYGIENE_HOOK_DETAIL"
+    echo "      fix: skills/repo-hygiene/run.sh install"
+  fi
   echo
 
   # --- links (anchors advisory in audit) ---
@@ -412,12 +423,23 @@ cmd_install() {
   exec "$HYGIENE_HOME/install-hooks.sh"
 }
 
+cmd_hook_status() {
+  if hygiene_hook_status "$HYGIENE_REPO_ROOT"; then
+    hygiene_log "hook-status: ok ($HYGIENE_HOOK_DETAIL)"
+    return 0
+  fi
+  hygiene_err "hook-status: $HYGIENE_HOOK_STATUS ($HYGIENE_HOOK_DETAIL)"
+  hygiene_err "fix: skills/repo-hygiene/run.sh install"
+  return 1
+}
+
 main() {
   parse_args "$@"
   case "$MODE" in
     pre-commit) cmd_pre_commit ;;
     audit) cmd_audit ;;
     install) cmd_install ;;
+    hook-status) cmd_hook_status ;;
     *) usage >&2; exit 2 ;;
   esac
 }
