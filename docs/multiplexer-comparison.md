@@ -233,6 +233,34 @@ flowchart LR
 - Costs: no cross-repo `Alt+1..9`; badges drop from per-repo to per-context
   granularity (4 entities), so "which repo" moves into the herdr sidebar.
 
+### D — WezTerm owns the multiplexer (2026-11-14, not adopted)
+
+Two shapes, both judged against WezTerm nightly `20260826-113637-70c036a2`:
+
+- **WezTerm mux replaces tmux.** `wezterm-mux-server` inside WSL behind a
+  unix domain keeps sessions alive across GUI restarts, so persistence has a
+  substitute. Rejected on cost, not feasibility: 98 scripts under
+  `scripts/runtime/` call `tmux` (1 calls `wezterm cli`); WezTerm has no
+  equivalent of `display-popup` (every Go picker), floating panes (`F2`
+  scratch float), `pane-died` (exit keep-alive) or `#(shell)` status segments;
+  and `wezterm cli spawn` cannot pass args to `wsl.exe` here (constraint 13),
+  which is exactly the external-automation path a mux switch leans on.
+  Mux-server reconnect / long-run stability was **not** measured on this host.
+- **`tmux -CC` (control mode).** tmux keeps processes and sessions; WezTerm
+  renders each tmux window / pane as a native tab / pane. Wins: native scroll,
+  selection, search, images and OSC 9;4 progress with no passthrough, no
+  whole-screen tmux redraw. Loses everything tmux draws: status line badges,
+  `display-popup` pickers, floating panes, chord key tables and the User-key
+  transport would all need a WezTerm-side replacement. Upstream made it "much
+  more usable" (#6602) and fixed a Windows stack overflow (#6704) and input
+  stalls (#8001), so maturity is still moving.
+
+Decision: keep WezTerm → tmux as-is. tmux owns processes, sessions and
+interaction; WezTerm owns windows, appearance and OS integration. Pull
+individual native-rendering wins (progress, images) through passthrough
+instead of switching models. Revisit control mode under the open question
+below.
+
 ## What a migration would still require us to build
 
 Workspace switching itself needs **no** new work: it is
@@ -290,6 +318,16 @@ Two gotchas that cost time on 2026-08-18 and are not herdr's fault:
 
 These are the reasons to revisit this doc. Each is dated with how to close it,
 per the repo convention.
+
+- **2026-11-14 — `tmux -CC` control mode parked for a later trial (option D).**
+  Open. Revisit when any of these holds: WezTerm can render tmux popups /
+  floating panes in control mode; status badges have a WezTerm-side home
+  anyway (e.g. after an OSC 9;4 progress pilot); or tmux-drawn UI becomes the
+  bottleneck (flicker, scroll feel). Close it with an isolated trial: a
+  separate WezTerm window running `tmux -CC` against an **unmanaged** test
+  session (never a `wezterm_*` workspace session), checking IME, scroll,
+  selection, reattach after GUI close, and which of `Alt+/` / `Alt+g` /
+  `Ctrl+k` / `F2` / `F5` still work. Record adopt / reject here.
 
 - **2026-11-11 — tmux 3.8 released and this machine upgraded.** Closed:
   upstream tag `3.8` is live; host `~/.local/bin/tmux` + default server

@@ -86,7 +86,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Choosing or revisiting the inner multiplexer (tmux vs herdr), or planning
   feature work that a tmux upgrade could absorb — the tmux 3.8 borrow list
   (OSC 133 pane events, floating / modal panes, `set-hook -B` monitors, theme
-  reporting, `#{A/count:frames}`), the measured herdr 0.8.0 numbers
+  reporting, `#{A/count:frames}`), WezTerm mux / `tmux -CC` control mode
+  (option D, parked), the measured herdr 0.8.0 numbers
   (per-session server memory, session-level focus, sidebar limits, no
   `#(shell)` equivalent, no ad-hoc popup CLI), and why the 2026-08-18
   evaluation ended with tmux staying:
