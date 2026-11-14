@@ -116,23 +116,6 @@ wait_for_flow() {
   wait "$pid"
 }
 
-lua_quote() {
-  local value="${1-}"
-  value="${value//\\/\\\\}"
-  value="${value//\'/\\\'}"
-  printf "'%s'" "$value"
-}
-
-lua_runtime_path() {
-  local path="${1:?missing path}"
-  if [[ "$path" =~ ^/mnt/[A-Za-z]/ ]]; then
-    wslpath -w "$path"
-    return 0
-  fi
-
-  printf '%s\n' "$path"
-}
-
 maybe_reload_tmux() {
   local repo_root="${1:?missing repo root}"
   local reload_script="$repo_root/scripts/dev/reload-tmux.sh"
