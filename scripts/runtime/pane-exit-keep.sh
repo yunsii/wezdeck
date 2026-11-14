@@ -37,10 +37,21 @@ fi
 tmux_cmd=(tmux -S "$socket_path")
 
 # Another client (or a racing hook) may already have replaced the pane.
-pane_state="$("${tmux_cmd[@]}" display-message -p -t "$pane_id" '#{pane_dead} #{pane_dead_status}' 2>/dev/null || true)"
-pane_dead="${pane_state%% *}"
-dead_status="${pane_state#* }"
+pane_state="$("${tmux_cmd[@]}" display-message -p -t "$pane_id" '#{pane_dead} #{pane_floating_flag} #{pane_dead_status}' 2>/dev/null || true)"
+read -r pane_dead pane_floating dead_status <<<"$pane_state"
 if [[ "$pane_dead" != "1" ]]; then
+  exit 0
+fi
+
+# Floating panes (tmux 3.8 new-pane / Ctrl+drag) are transient overlays,
+# not layout slots: keeping them alive would make `exit` unable to close
+# them. Let them go, the way worktree-sidebar.sh turns remain-on-exit off.
+if [[ "$pane_floating" == "1" ]]; then
+  "${tmux_cmd[@]}" kill-pane -t "$pane_id" 2>/dev/null || true
+  runtime_log_info workspace "pane exit keep skipped floating pane" \
+    "pane_id=$pane_id" \
+    "dead_status=${dead_status:-}" \
+    "outcome=closed_floating"
   exit 0
 fi
 
