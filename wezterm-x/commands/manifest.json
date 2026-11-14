@@ -162,6 +162,25 @@
     }
   },
   {
+    "id": "pane.scratch-float",
+    "label": "Pane: Toggle scratch terminal",
+    "description": "Open a throwaway login shell as a tmux 3.8 floating pane laid over the top 40% of the focused pane (cwd follows that pane). F2 again focuses it from another pane, and closes it when it is focused; `exit` / Ctrl+D also closes it. One scratch float per tmux window.",
+    "scope": "window-and-pane-navigation",
+    "context": "tmux-backed",
+    "binding": {
+      "handler": "pane.scratch_float"
+    },
+    "hotkeys": [
+      {
+        "keys": "F2",
+        "layer": "wezterm"
+      }
+    ],
+    "palette": {
+      "display_only": true
+    }
+  },
+  {
     "id": "pane.close-current",
     "label": "Pane: Close current",
     "description": "Run tmux `kill-pane` on the focused pane; if it is the last pane in the window, tmux closes the window too. Logs invoked/completed (or failed) with duration_ms and a short toast.",

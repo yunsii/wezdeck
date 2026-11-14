@@ -131,6 +131,26 @@ function M.new(ctx)
 
   -- ── Panes ─────────────────────────────────────────────
 
+  -- F2 → tmux User5 (`\e[20104~`). Scratch shell as a floating pane over
+  -- the top of the focused pane; F2 again focuses / closes it.
+  handlers['pane.scratch_float'] = function()
+    return wezterm.action_callback(function(window, pane)
+      local trace_id = logger.trace_id('workspace')
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        logger.info('workspace', 'forwarding F2 scratch-float to tmux', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(wezterm, window, pane, 'F2', '\x1b[20104~', logger, 'workspace', workspace_name, trace_id)
+        return
+      end
+      actions.tmux_only_shortcut(window, logger, 'F2', trace_id)
+    end)
+  end
+
   handlers['pane.rotate_next'] = function()
     return wezterm.action_callback(function(window, pane)
       local trace_id = logger.trace_id('command_panel')
