@@ -137,32 +137,44 @@ $statePaths = @(
   (Join-Path $env:LOCALAPPDATA "wezterm-runtime\canary\canary\state\helper\state.env")
 )
 $killed = 0
+$attempts = 0
 for ($attempt = 0; $attempt -lt 20; $attempt++) {
-  $statePids = foreach ($statePath in $statePaths) {
-    if (Test-Path -LiteralPath $statePath) {
-      $line = Get-Content -LiteralPath $statePath -ErrorAction SilentlyContinue |
-        Where-Object { $_ -match "^pid=([0-9]+)$" } | Select-Object -Last 1
-      if ($line -match "^pid=([0-9]+)$") { [int]$Matches[1] }
-    }
-  }
-  $procs = Get-CimInstance Win32_Process | Where-Object {
-    ($_.Name -eq "wezterm.exe" -or $_.Name -eq "wezterm-gui.exe") -and
+  $attempts++
+  # One process scan per round; canary GUI / CLI / helper all match on the
+  # canary marker in their command line.
+  $all = @(Get-CimInstance Win32_Process)
+  $procs = $all | Where-Object {
+    ($_.Name -eq "wezterm.exe" -or $_.Name -eq "wezterm-gui.exe" -or $_.Name -eq "wezdeck-runtime.exe") -and
     ($_.CommandLine -match "wezdeck-canary" -or $_.CommandLine -match "wezterm-runtime\\canary")
   }
-  $helpers = Get-CimInstance Win32_Process | Where-Object {
-    ($_.Name -eq "wezdeck-runtime.exe") -and
-    ($_.CommandLine -match "wezterm-runtime\\canary")
+  # state.env keeps the last helper pid after that helper exits. Only trust it
+  # while that pid is still a wezdeck-runtime.exe started before the state file
+  # was last written: a dead pid would keep this loop spinning all 20 rounds,
+  # and a recycled pid would make Stop-Process kill an unrelated process.
+  $statePids = foreach ($statePath in $statePaths) {
+    if (Test-Path -LiteralPath $statePath) {
+      $written = (Get-Item -LiteralPath $statePath).LastWriteTime
+      $line = Get-Content -LiteralPath $statePath -ErrorAction SilentlyContinue |
+        Where-Object { $_ -match "^pid=([0-9]+)$" } | Select-Object -Last 1
+      if ($line -match "^pid=([0-9]+)$") {
+        $statePid = [int]$Matches[1]
+        $live = $all | Where-Object {
+          $_.ProcessId -eq $statePid -and $_.Name -eq "wezdeck-runtime.exe" -and
+          $_.CreationDate -le $written.AddSeconds(5)
+        }
+        if ($live) { $statePid }
+      }
+    }
   }
-  $all = @($procs) + @($helpers)
-  $ids = @($all.ProcessId) + @($statePids)
+  $ids = @(@($procs).ProcessId) + @($statePids) | Where-Object { $_ } | Select-Object -Unique
   if (@($ids).Count -eq 0) { break }
-  foreach ($id in $ids | Select-Object -Unique) {
+  foreach ($id in $ids) {
     Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
     $killed++
   }
   Start-Sleep -Milliseconds 200
 }
-Write-Output ("killed=" + $killed)
+Write-Output ("killed=" + $killed + " rounds=" + $attempts)
 ' 2>/dev/null || true
   bash "$repo_root/scripts/dev/stop-wezdeck-runtime.sh" --canary >/dev/null 2>&1 || true
 }
