@@ -74,7 +74,12 @@ R="$TOOL_HOME/run.sh"
    "$R" --week this --write
    ```
 3. **读** `references/REPORT_STYLE.md`，核对渲染稿是否需补一句人话结论（数字已被模板写好；只在环路归纳与分工上可加 1–2 句，**禁止改数字**）。窗口若因 catch-up 超过 7 天，结论里可点一句「含假期/空档」。
-4. **汇报**：把 markdown 正文（或落盘路径 + 摘要）用简体中文交给用户。披露数据窗口、`max_running` 口径（pane+TTL）、WakaTime 是否成功、是否发生了 catch-up。
+4. **汇报**（简体中文；落盘/推送路径可附，但**不能用路径代替指标回传**）：
+   - **元信息：** 数据窗口、`max_running` 口径（pane+TTL）、是否 catch-up、本机/远端归档路径与 commit（若 `--push`）。
+   - **关键指标整表：** 把渲染稿「关键指标」表的**每一行**原样回传（Agent 并行 / 热键·Alt+l / WakaTime / 会话形态 / 常用关键词 / Token·费用 / 代码变更 / Rime / 高频能力 / CDP / 数据覆盖清单）。禁止只挑几条摘要。
+   - **一句话结论**可置于表前。
+   - **查询异常必报：** 读 inventory（「本次提取的数据」）与各段降级说明；凡状态为失败/未配置/无事件，或某源重试前后不一致，单独列出（例：WakaTime `RemoteDisconnected`、缺 OAuth、某 provider 0 sessions）。成功补拉也要写「首跑失败 → 重跑成功」。
+   - 用户未要求时不必把全文 markdown 贴进对话；关键指标表 + 异常清单是硬门槛。
 
 ## 报告固定结构
 
@@ -122,6 +127,7 @@ R="$TOOL_HOME/run.sh"
 - Don't 与 coco-weekly-report 混用（一个是习惯可观测，一个是业务交付周报）  
 - Don't 在未要求时省略 `--push` 却声称已推远端；也不要在仅 `--write` 时 push  
 - Don't 把本 skill 链进 `~/.agents/skills` / `link-platform-skills.sh`（仓库内专用）
+- Don't 归档后只回传窗口/路径/一两句结论；**关键指标整表 + inventory 异常**漏报即未完成汇报
 
 ## Related
 
