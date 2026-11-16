@@ -188,7 +188,7 @@ Knobs live in **`~/.claude/settings.json`** (and `/tui` / `/scroll-speed` inside
 | Knob | Why |
 | --- | --- |
 | `tui: fullscreen` | Flicker-free alt-screen path; mouse expand / click-to-position; flat memory on long chats. Equivalent intent to `/tui fullscreen`. Do **not** also set `CLAUDE_CODE_NO_FLICKER=1` in shell-env — the setting is enough, and the env var was historically rejected here as a blunt force that also stole mouse selection without an explicit `tui` choice. |
-| `language: 简体中文` | Claude Code–only system-prompt pin for reply language (also session titles / voice dictation). Required on this host: profile `[preferences-06]` / `AGENTS.md` alone still lose to English tool output and compact summaries. Value is passed verbatim; misspellings are not validated. New sessions pick it up; existing panes need relaunch. Hook-based follow-ups deferred: [`diagnostics.md` open-questions §23](./diagnostics.md#open-questions). |
+| `language: 简体中文` | Claude Code–only system-prompt pin for reply language (also session titles / voice dictation). Required on this host: profile `[preferences-06]` / `AGENTS.md` alone still lose to English tool output and compact summaries. Value is passed verbatim; misspellings are not validated. New sessions pick it up; existing panes need relaunch. Trial hook that binds to this value: [Reply-language guard](#reply-language-guard-trial). Open item: [`diagnostics.md` §23](./diagnostics.md#open-questions). |
 | `CLAUDE_CODE_SCROLL_SPEED=5` | Under WezTerm→tmux, wheel events often arrive as one notch = one line (same class of problem as Grok’s unset `scroll_lines`). `5` matches this host’s tmux copy-mode `Wheel* -N 5` and Grok `scroll_lines = 5`. Official vim-like default suggestion is `3`; raise further (max 20) if notches still feel soft. Interactive tune: `/scroll-speed` (←/→, Enter to save). |
 | `wheelScrollAccelerationEnabled` | Leave unset / `true` so a fast spin covers more distance than slow notches (Claude’s counterpart to Grok’s `scroll_speed` flick boost). Set `false` only if flicks overshoot. |
 
@@ -204,6 +204,36 @@ python3 -c "import json; d=json.load(open('$HOME/.claude/settings.json')); print
 ```
 
 In a relaunched Claude pane: input box stays pinned while output streams; one wheel notch moves ~5 lines; `/scroll-speed` shows the saved multiplier. `tmux display -p '#{alternate_on}'` in that pane should print `1`.
+
+### Reply-language guard (trial)
+
+Binds user-facing prose to settings `language` (not hard-coded Chinese). Seeded from Adonis’s chinese-reply-check; open item [`diagnostics.md` §23](./diagnostics.md#open-questions).
+
+| Layer | Path | Notes |
+| --- | --- | --- |
+| Repo (commit) | `scripts/claude-hooks/reply-language-guard.py` (+ `.test.zsh`, `.settings-snippet.json`) | Absolute `command` under `Stop` / `PostToolUse`, **append** beside attention hooks |
+| Machine-local | `~/.claude/settings.json` hooks | **Not** synced by `wezdeck-runtime-ops`; re-wire after fresh Claude settings |
+| Telemetry | `~/.local/state/reply-language-guard/events.ndjson` | Append-only; `--report` summarizes; full text off unless `REPLY_LANGUAGE_GUARD_LOG_FULL=1` |
+
+```bash
+# unit
+zsh scripts/claude-hooks/reply-language-guard.test.zsh
+# hooks present (expect reply-language-guard.py on Stop + PostToolUse)
+python3 -c "import json;h=json.load(open('$HOME/.claude/settings.json')).get('hooks',{});
+print([c.get('command') for g in h.get('Stop',[]) for c in g.get('hooks',[])]);
+print([c.get('command') for g in h.get('PostToolUse',[]) for c in g.get('hooks',[])])"
+# trial stats after some real sessions
+scripts/claude-hooks/reply-language-guard.py --report
+```
+
+| Env | Effect |
+| --- | --- |
+| `REPLY_LANGUAGE_GUARD=0` | Off |
+| `REPLY_LANGUAGE_GUARD_MODE=collect` | Log only (no block / nudge) |
+| `REPLY_LANGUAGE_GUARD_LANG=…` | Override preferred language |
+| `REPLY_LANGUAGE_GUARD_STATE=DIR` | State + events dir |
+
+**Delivery scope:** the three `scripts/claude-hooks/reply-language-guard*` files plus this section / `setup.md` / `diagnostics.md` §23; do **not** commit `~/.claude/settings.json`. Threshold / kana follow-ups use `--report` (or the events file) before changing `MIN_LATIN` / `RATIO`.
 
 ## Grok Build in tmux
 

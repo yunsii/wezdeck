@@ -1,0 +1,27 @@
+{
+  "_comment": "Append these groups into ~/.claude/settings.json hooks (do not replace existing Stop/PostToolUse attention entries). Replace <WEZDECK_REPO> with the absolute checkout path. Docs: docs/tmux-ui.md#reply-language-guard-trial",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<WEZDECK_REPO>/scripts/claude-hooks/reply-language-guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<WEZDECK_REPO>/scripts/claude-hooks/reply-language-guard.py --event post-tool-use",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
