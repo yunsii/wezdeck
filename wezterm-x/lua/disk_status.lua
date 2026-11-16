@@ -191,6 +191,12 @@ local function format_volume_text(vol, fresh)
   if level == 'ok' then
     return nil, 'ok'
   end
+  -- Only warn/crit may show a headroom number. A missing/empty/unknown level
+  -- with leftover badge_bytes used to render as e.g. `WslDisk·0G` in crit
+  -- colours — a false alarm. Surface monitor ambiguity as `·?` instead.
+  if level ~= 'warn' and level ~= 'crit' then
+    return ' ' .. label .. '·? ', 'unknown'
+  end
   local shown = format_gib(vol.badge_bytes) or format_gib(vol.headroom_bytes)
   if not shown then
     return ' ' .. label .. '·? ', level

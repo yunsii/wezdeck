@@ -254,6 +254,25 @@ it('missing headroom degrades to ? without losing the mount label', function()
   assert_eq(badge_text(), ' WslDisk\xC2\xB7? ')
 end)
 
+it('missing/empty level never shows a headroom number (false-alarm guard)', function()
+  fake_now_ms = 1000000
+  -- Empty level + leftover badge_bytes used to render as WslDisk·0G in
+  -- crit colours even though the sampler never classified the sample.
+  assert_eq(disk_status.format_text({
+    host_mount = '/mnt/d',
+    badge_bytes = 1000,
+    system = {
+      host_mount = '/mnt/c',
+      badge_bytes = 45 * GiB,
+    },
+  }, true), ' SystemDisk\xC2\xB7?  WslDisk\xC2\xB7? ')
+  assert_eq(disk_status.format_text({
+    level = '',
+    host_mount = '/mnt/d',
+    badge_bytes = 2 * GiB,
+  }, true), ' WslDisk\xC2\xB7? ')
+end)
+
 it('terabyte-scale volumes collapse to a T suffix', function()
   fake_now_ms = 1000000
   write_state {
