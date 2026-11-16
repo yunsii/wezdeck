@@ -948,7 +948,7 @@ func coloredBadge(status string) string {
 	// labels were just visual noise.
 	//
 	// The set is monochrome 1-cell text code points, not emoji: the
-	// picker sits next to a typographic status bar (`D·151G`, `M·88%`)
+	// picker sits next to a typographic status bar (`WslDisk·151G`, `Memory·88%`)
 	// and the color-emoji set read as a foreign body there. Color still
 	// carries the status; the shape keeps the six kinds apart. All
 	// glyphs land at 1 cell; the row layout adds a fixed gap downstream

@@ -31,7 +31,7 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 | 约束 | 实践含义 |
 |---|---|
 | **键盘优先** | 每个新增或改动的交互必须有键盘路径；鼠标仅作兜底。Manifest 与 palette 覆盖同一批动作。 |
-| **Agent 无头验证** | Debug Chrome 默认无头自启（`CDP·H·…`）；agent 经 CDP/MCP 接入，不抢 GUI 焦点。 |
+| **Agent 无头验证** | Debug Chrome 默认无头自启（`CDP·Headless·…`）；agent 经 CDP/MCP 接入，不抢 GUI 焦点。 |
 | **开发过程可观测** | 热路径发出结构化信号，便于复盘一天、门控延迟、优化习惯——而不是靠记忆猜。没有徽章 / 日志 / 投影路径的功能视为**未完成**。 |
 
 第三条是迭代的承重约束：徽章实时告警，日志解释「手感粘」或 attention 卡住，日/周投影把同一批信号变成可复盘闭环。长文见 [`docs/presentations/`](docs/presentations/)。
@@ -78,20 +78,21 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 
 从左到右（压力徽章在健康时**不出现**——出现本身就是信号）：
 
-`IME` · `Ego·…`/`CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention 计数
+`IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention 计数
 
 | 段 | 含义 | 深入阅读 |
 |---|---|---|
-| `Ego·A/-/?` 或 `CDP·H/V/-/?·port` | 浏览器槽跟 `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
-| `◆ SB·N` | session-bridge watch 轮询器 | [session-bridge](openclaw/docs/session-bridge.md) |
-| `D·…` | WSL `ext4.vhdx` 背后的主机卷余量 | [Host disk](docs/host-disk.md) |
-| `M·…` | Guest 内存压力 / earlyoom 临近 | [Guest OOM](docs/guest-oom.md) |
+| `Ego·Alive/-/?` 或 `CDP·Headless/Visible/-/?·port` | 浏览器槽跟 `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
+| `◆ SessionBridge·N` | session-bridge watch 轮询器 | [session-bridge](openclaw/docs/session-bridge.md) |
+| `SystemDisk·…` / `WslDisk·…` | 主机卷余量（系统盘 + WSL `ext4.vhdx`） | [Host disk](docs/host-disk.md) |
+| `Memory·…` / `Swap·…` | Guest 内存压力 / earlyoom 临近 | [Guest OOM](docs/guest-oom.md) |
+| `LoadAvg·…` | Guest CPU 负载（打字粘滞早期预警） | [Diagnostics · load](docs/diagnostics.md#guest-load-badge-loadavg) |
 | `▲ / ✓ / ●` | waiting / done / running attention | [Agent attention](docs/agent-attention.md) |
 
 ### 结构化日志 + latency（为什么手感粘？）
 
 - WSL `runtime.log` + Windows `wezterm.log` / `helper.log` — 按 category 分行（`attention`、`hotkey`、`latency` …）。
-- 阈值门控的慢热键 / status tick 行；慢样本会附带与 `M·` 同源的 guest 压力字段。
+- 阈值门控的慢热键 / status tick 行；慢样本会附带与 `Memory·` 同源的 guest 压力字段。
 - 操作入口：[`docs/diagnostics.md`](docs/diagnostics.md) · 作者约定：[`docs/logging-conventions.md`](docs/logging-conventions.md) · 报告：`scripts/dev/latency-report.sh`。
 
 ### 日 / 周重建（复盘与优化）
@@ -149,7 +150,7 @@ skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
 # 3. 重载 WezTerm，确认右状态出现
 #    attention 计数（helper 起来后还有 CDP·…）——说明 attention / CDP 链路活着。
-#    D· / M· 仅在压力下出现。
+#    WslDisk· / Memory· 仅在压力下出现。
 ```
 
 完整安装：[`docs/setup.md`](docs/setup.md)。WSL 主机可选守卫：[`docs/guest-oom.md`](docs/guest-oom.md) · [`docs/host-disk.md`](docs/host-disk.md)。
@@ -163,7 +164,7 @@ skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 - [Keybindings](docs/keybindings.md) · [tmux UI](docs/tmux-ui.md) · [Agent attention](docs/agent-attention.md) · [Browser debug](docs/browser-debug.md)
 
 **可观测与运维**
-- [Diagnostics](docs/diagnostics.md)（latency · [workflow timeline](docs/diagnostics.md#workflow-timeline) · [habit report](docs/diagnostics.md#habit-report)）· [Guest OOM](docs/guest-oom.md)（`M·`）· [Host disk](docs/host-disk.md)（`D·`）· [Logging conventions](docs/logging-conventions.md)
+- [Diagnostics](docs/diagnostics.md)（latency · [workflow timeline](docs/diagnostics.md#workflow-timeline) · [habit report](docs/diagnostics.md#habit-report)）· [Guest OOM](docs/guest-oom.md)（`Memory·`）· [Host disk](docs/host-disk.md)（`WslDisk·`）· [Logging conventions](docs/logging-conventions.md)
 
 **内部机制**
 - [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md) · [Dev-env troubleshooting](docs/development-environment-troubleshooting.md)

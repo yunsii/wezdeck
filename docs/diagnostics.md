@@ -50,7 +50,7 @@ These fields are investigation instrumentation; drop them once the sticky-tick o
 
 | Field | Source |
 |---|---|
-| `mem_level` / `mem_used_pct` / `mem_avail_mib` / `swap_used_pct` | `state/oom-guard/status.json` (same file as the `M·` badge) |
+| `mem_level` / `mem_used_pct` / `mem_avail_mib` / `swap_used_pct` | `state/oom-guard/status.json` (same file as the `Memory·` badge) |
 | `loadavg_1` / `loadavg_5` / `loadavg_15` | guest `/proc/loadavg`, published by `wsl-oom-guard.sh` |
 | `proc_runnable` / `proc_total` | runnable/total from the same loadavg line |
 | `top_comm` / `top_rss_mib` | only when the badge level is not `ok` |
@@ -95,17 +95,17 @@ scripts/dev/latency-report.sh --raw today
 
 Limits: this does not measure GPU frame time, WSL/tmux internal lag, or OS IME candidate-window delay. A quiet log during a felt stutter means the blockage is outside these Lua callbacks — use that as a negative signal, not as "nothing happened". Pressure fields are guest-side (WSL); they will not explain a Windows-host-only CPU spike.
 
-### Guest load badge (`L·`)
+### Guest load badge (`LoadAvg·`) {#guest-load-badge-loadavg}
 
 Post-hoc `latency` rows explain a stutter after it happened. For **glanceable early warning** the right-status bar also renders a load badge from the same `oom-guard/status.json` `loadavg_1` field (producer cadence ~30 s):
 
 | Badge | Meaning |
 |---|---|
 | *(absent)* | `loadavg_1` below warn, or status file never published / stale |
-| `L·12` | warn — amber; default `loadavg_1 >= 8` |
-| `L·23` | crit — red; default `loadavg_1 >= 16` |
+| `LoadAvg·12` | warn — amber; default `loadavg_1 >= 8` |
+| `LoadAvg·23` | crit — red; default `loadavg_1 >= 16` |
 
-Same "presence is the signal" contract as `D·` / `M·`. Classification is **CPU-only** (ignores mem `level`), so a pure CPU storm with memory still `ok` still lights the bar — the 2026-10-28 typing-stickiness shape. Stale-recorder `?` stays on `M·` (shared producer) so the bar does not grow a duplicate. Renderer: [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua). Thresholds: `constants.load_guard.warn_loadavg_1` / `crit_loadavg_1` (override in `wezterm-x/local/constants.lua`). Placement: after `M·`.
+Same "presence is the signal" contract as `WslDisk·` / `Memory·`. Classification is **CPU-only** (ignores mem `level`), so a pure CPU storm with memory still `ok` still lights the bar — the 2026-10-28 typing-stickiness shape. Stale-recorder `?` stays on `Memory·` (shared producer) so the bar does not grow a duplicate. Renderer: [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua). Thresholds: `constants.load_guard.warn_loadavg_1` / `crit_loadavg_1` (override in `wezterm-x/local/constants.lua`). Placement: after `Memory·`.
 
 ## Runtime Diagnostics
 
@@ -494,11 +494,11 @@ powershell -ExecutionPolicy Bypass -File C:\Users\your-user\Desktop\measure-hybr
 
 ## Guest OOM Hardening
 
-Guest-memory failure modes (distro restart loop, reclaim livelock, high-order allocation / VM reboot), the `M·…` badge, earlyoom, standing memory consumers, and **guest↔host meter mismatch** (`free` calm while Windows `VmmemWSL` still ~30 GiB) live in [`guest-oom.md`](./guest-oom.md) ([Guest vs host memory meters](./guest-oom.md#guest-vs-host-memory-meters); helper `scripts/dev/wsl-host-mem.sh`). Read that doc when the whole WSL distro vanishes on an interval, cores pin with no OOM record, or vsock dies while swap still looks healthy. For WezTerm silent exit / VM reboot that may be **MCE** rather than OOM, start at [`development-environment-troubleshooting.md#the-whole-wsl-distro-disappears`](./development-environment-troubleshooting.md#the-whole-wsl-distro-disappears). Long-uptime **console** stickiness / OPPO Pad remote: [`oppo-remote-host-input.md`](./oppo-remote-host-input.md).
+Guest-memory failure modes (distro restart loop, reclaim livelock, high-order allocation / VM reboot), the `Memory·…` badge, earlyoom, standing memory consumers, and **guest↔host meter mismatch** (`free` calm while Windows `VmmemWSL` still ~30 GiB) live in [`guest-oom.md`](./guest-oom.md) ([Guest vs host memory meters](./guest-oom.md#guest-vs-host-memory-meters); helper `scripts/dev/wsl-host-mem.sh`). Read that doc when the whole WSL distro vanishes on an interval, cores pin with no OOM record, or vsock dies while swap still looks healthy. For WezTerm silent exit / VM reboot that may be **MCE** rather than OOM, start at [`development-environment-troubleshooting.md#the-whole-wsl-distro-disappears`](./development-environment-troubleshooting.md#the-whole-wsl-distro-disappears). Long-uptime **console** stickiness / OPPO Pad remote: [`oppo-remote-host-input.md`](./oppo-remote-host-input.md).
 
 ## Host Disk Space
 
-Host volume headroom (`ext4.vhdx` growth, sparse-VHD trap, `fstrim` → shutdown → Optimize-VHD / compact, disk-guard `C·…` / `D·…` badges, system-volume channel, `history` sparklines, OEM preinstalls, **C: triage playbook** via `scripts/dev/host-disk-triage.sh`) lives in [`host-disk.md`](./host-disk.md) ([system disk triage](./host-disk.md#system-disk-c-triage)).
+Host volume headroom (`ext4.vhdx` growth, sparse-VHD trap, `fstrim` → shutdown → Optimize-VHD / compact, disk-guard `SystemDisk·…` / `WslDisk·…` badges, system-volume channel, `history` sparklines, OEM preinstalls, **C: triage playbook** via `scripts/dev/host-disk-triage.sh`) lives in [`host-disk.md`](./host-disk.md) ([system disk triage](./host-disk.md#system-disk-c-triage)).
 
 WSL MSI/Store auto-upgrade that kills the guest (and often WezTerm): host-runtime heal + 倒查 files under `state/wsl-heal/` — [`development-environment-troubleshooting.md#wsl-upgrade-heal-host-runtime`](./development-environment-troubleshooting.md#wsl-upgrade-heal-host-runtime).
 

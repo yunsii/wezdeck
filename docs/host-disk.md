@@ -2,7 +2,7 @@
 
 Use this doc for host disk headroom on the Windows volume that backs the WSL
 `ext4.vhdx` **and** the Windows system volume (`C:`): sparse-VHD trap, reclaim /
-compact, the disk guard (`C·…` / `D·…`), history curves, OEM inventory, and the
+compact, the disk guard (`SystemDisk·…` / `WslDisk·…`), history curves, OEM inventory, and the
 [system-disk triage playbook](#system-disk-c-triage).
 
 Operator entry / other diagnostics: [`diagnostics.md`](./diagnostics.md). Guest
@@ -130,7 +130,7 @@ converts gap into avail; it does not create headroom.
 |---|---|
 | Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` / `history` |
 | Timer | `wezterm-disk-guard.timer` — user unit, 1 min after start then every 5 min |
-| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SB·N` (SB itself is absent while the watch poller is idle) |
+| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SessionBridge·N` (SessionBridge itself is absent while the watch poller is idle) |
 | History | `state/disk-guard/history.ndjson` (WSL) + `history-system.ndjson` — last 2016 samples each (~7d at 5 min) |
 | Escalation popup | `reminder.sh`, the same wrapper cron reminders use |
 
@@ -160,14 +160,14 @@ cannot display a reassuring tens of GiB borrowed from gap.
 
 ```
 (absent)     every watched volume healthy
-D·22G        WSL volume warn (amber)
-C·8G         system volume warn (amber) — same avail thresholds
-C·2G D·11G   both hot (each keeps its own level colour)
-D·?          the sampler was publishing and went stale
+WslDisk·22G     WSL volume warn (amber)
+SystemDisk·8G   system volume warn (amber) — same avail thresholds
+SystemDisk·2G WslDisk·11G  both hot (each keeps its own level colour)
+WslDisk·?       the sampler was publishing and went stale
 ```
 
 The two `?` cases are deliberately different. A sampler that *was* publishing
-and went stale renders `D·?`, because a dead monitor is itself the thing that
+and went stale renders `WslDisk·?`, because a dead monitor is itself the thing that
 needs attention. A machine that never published at all renders nothing, so a
 clone without the guard installed shows a clean bar rather than a permanent
 question mark.
@@ -247,7 +247,7 @@ not an optimization. Two consequences are built in:
 
 ### System disk (C:) triage
 
-When the `C·…` badge appears (or `status` shows the system volume at warn/crit),
+When the `SystemDisk·…` badge appears (or `status` shows the system volume at warn/crit),
 **do not** start with a recursive `du` on `/mnt/c` — drvfs makes that
 multi-minute. Use the read-only helper, then walk the ranked recipe.
 
@@ -299,7 +299,7 @@ mkdir -p "$U/AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheS
 
 **Hard rule after any reclaim:** run `sample` immediately. `status` only
 measures in-process and **does not** rewrite `status.json`, so the WezTerm
-`C·…` / `D·…` badge keeps the previous warn/crit until the 5‑min timer fires
+`SystemDisk·…` / `WslDisk·…` badge keeps the previous warn/crit until the 5‑min timer fires
 (or until you sample). 2026-11-10 cleanup freed ~79G but left the bar lit until
 the next tick for exactly this reason.
 

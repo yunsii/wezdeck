@@ -13,7 +13,7 @@
 --
 -- Slow rows also attach a cheap guest-pressure snapshot (mem / swap /
 -- loadavg) from the oom-guard status.json on the Windows state dir —
--- same file the M· badge reads — so a sticky tick can be correlated
+-- same file the Memory· badge reads — so a sticky tick can be correlated
 -- with CPU/memory after the fact without paying that cost on the fast
 -- path. Reads are cached briefly so a burst of slow ticks shares one
 -- open+parse.

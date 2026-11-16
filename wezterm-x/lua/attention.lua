@@ -1068,7 +1068,7 @@ function M.render_status_segment(palette, opts)
   -- finished pile to scan; `●` last as ambient "work in flight" context.
   -- Each segment dims to `idle_bg` when zero so the bar width stays stable.
   -- Glyphs are 1-cell monochrome text code points, not emoji: the rest of
-  -- the right status bar is typographic (`CDP·…`, `D·151G`, `M·88%`) and
+  -- the right status bar is typographic (`CDP·…`, `WslDisk·151G`, `Memory·88%`) and
   -- color-filled emoji read as a foreign body next to it. Color still
   -- carries the status; the glyph is a shape cue so the three slots stay
   -- distinguishable when all of them dim to zero. Same set in the Alt+/

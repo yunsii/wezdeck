@@ -42,9 +42,9 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`diagnostics.md#workflow-timeline`](./diagnostics.md#workflow-timeline)
   and [`diagnostics.md#habit-report`](./diagnostics.md#habit-report).
 - Guest OOM hardening (restart loop, reclaim livelock, high-order allocation,
-  `M·…` / earlyoom, standing memory consumers):
+  `Memory·…` / earlyoom, standing memory consumers):
   Read [`guest-oom.md`](./guest-oom.md).
-- Host disk space (`ext4.vhdx`, sparse-VHD trap, compaction, `C·…` / `D·…`,
+- Host disk space (`ext4.vhdx`, sparse-VHD trap, compaction, `SystemDisk·…` / `WslDisk·…`,
   system-disk triage):
   Read [`host-disk.md`](./host-disk.md).
 - Logger author surface (categories, levels, render-path discipline):

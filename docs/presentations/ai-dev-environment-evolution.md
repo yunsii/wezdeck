@@ -318,7 +318,7 @@ D 节描述的是**分工设想**；要让人愿意一天里反复按 `Ctrl+k g 
 
 `Alt+b` 默认把 Chrome debug profile 启成 **headless**；显示窗口必须显式按 `Alt+Shift+b`。启动路径走 v5 A 搭好的 Windows native helper IPC，带一套加固旗标（`--remote-allow-origins=http://localhost:<port>` 修 Chrome 111+ 白屏、`--headless=new`、`--window-size=1920,1080` 修 MCP 截图走样、`--disable-extensions` 等）。
 
-**helper 启动即自启动 Chrome**：开机即可用，Agent / MCP 永远不需要在调用工具前等用户按 `Alt+b`。状态栏右侧固定宽度 badge：`CDP·H·9222` headless / `CDP·V·9222` visible / `CDP·-·<port>` 已退出 / `CDP·?·<port>` helper 心跳过期 —— 四态占同样字符数，bar 不抖。
+**helper 启动即自启动 Chrome**：开机即可用，Agent / MCP 永远不需要在调用工具前等用户按 `Alt+b`。状态栏右侧 badge：`CDP·Headless·9222` / `CDP·Visible·9222` / `CDP·-·<port>` 已退出 / `CDP·?·<port>` helper 心跳过期 —— 用完整单词标模式，一眼可读。
 
 **这对 Agent 协作是一等大事**：Agent 通过 MCP 的 `--browser-url=http://localhost:<port>` 直接连这个实例，**自主跑 DOM 调试 / 截图 / 端到端验证，既不抢我焦点、不在任务栏闪、也不会把窗口推到前台**。
 

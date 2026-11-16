@@ -6,9 +6,9 @@
 --
 -- status.json v3 carries the WSL volume at the top level (v2 shape) plus an
 -- optional nested `system` object for the Windows system drive. Each volume
--- that is warn/crit (or stale) renders its own letter badge — e.g. `C·8G`
--- next to `D·2G` — so a dry system disk cannot hide behind a healthy WSL
--- volume. See docs/host-disk.md.
+-- that is warn/crit (or stale) renders its own word badge — e.g.
+-- `SystemDisk·8G` next to `WslDisk·2G` — so a dry system disk cannot hide
+-- behind a healthy WSL volume. See docs/host-disk.md.
 --
 -- One number per volume from the sampler's `badge_bytes` (falls back to
 -- `headroom_bytes` for older status.json). The WSL sampler picks the binding
@@ -19,11 +19,13 @@
 -- — no always-on number to learn to ignore, and no width spent on the common
 -- case.
 --
---   (absent)   every watched volume healthy
---   D·22G      WSL volume below warn (amber)
---   C·8G       system volume below warn
---   C·2G D·11G both volumes hot (each keeps its own level colour)
---   D·?        sampler was publishing and went stale
+--   (absent)              every watched volume healthy
+--   WslDisk·22G           WSL volume below warn (amber)
+--   SystemDisk·8G         system volume below warn
+--   SystemDisk·2G WslDisk·11G
+--                         both volumes hot (each keeps its own level colour)
+--   WslDisk·?             sampler was publishing and went stale
+--   DiskE·2.0T            legacy / single-volume path keeps Disk{letter}
 --
 -- Placement: right-status, between the session-bridge and attention counters.
 
@@ -126,18 +128,18 @@ local function format_gib(bytes)
   return string.format('%dG', math.floor(g + 0.5))
 end
 
--- Mount point to a single-character label: /mnt/d -> D. Anything that is not
--- a drive letter keeps a neutral marker rather than leaking a long path into
--- the status bar.
+-- Mount point → word label for the legacy / single-volume path.
+-- /mnt/d → DiskD (keeps the drive letter, prefixes a readable word).
+-- Anything else → HostDisk rather than leaking a long path into the bar.
 local function mount_label(mount)
   if type(mount) ~= 'string' then
-    return 'HOST'
+    return 'HostDisk'
   end
   local letter = mount:match '^/mnt/(%a)$'
   if letter then
-    return letter:upper()
+    return 'Disk' .. letter:upper()
   end
-  return 'HOST'
+  return 'HostDisk'
 end
 
 local function volume_entries(state)
@@ -145,10 +147,11 @@ local function volume_entries(state)
     return {}
   end
   local entries = {}
-  -- System drive first (C· before D·) so a dry boot volume is the leftmost
-  -- signal when both are hot.
+  -- System drive first (SystemDisk before WslDisk) so a dry boot volume is
+  -- the leftmost signal when both are hot.
   if type(state.system) == 'table' and state.system.host_mount ~= nil then
     table.insert(entries, {
+      label = 'SystemDisk',
       host_mount = state.system.host_mount,
       level = state.system.level,
       badge_bytes = state.system.badge_bytes,
@@ -159,6 +162,7 @@ local function volume_entries(state)
   if state.host_mount ~= nil or state.level ~= nil or state.headroom_bytes ~= nil
       or state.badge_bytes ~= nil then
     table.insert(entries, {
+      label = 'WslDisk',
       host_mount = state.host_mount,
       level = state.level,
       badge_bytes = state.badge_bytes,
@@ -168,11 +172,18 @@ local function volume_entries(state)
   return entries
 end
 
+local function volume_label(vol)
+  if type(vol) == 'table' and type(vol.label) == 'string' and vol.label ~= '' then
+    return vol.label
+  end
+  return mount_label(vol and vol.host_mount)
+end
+
 local function format_volume_text(vol, fresh)
   if type(vol) ~= 'table' then
     return nil, 'unknown'
   end
-  local label = mount_label(vol.host_mount)
+  local label = volume_label(vol)
   if not fresh then
     return ' ' .. label .. '·? ', 'unknown'
   end
@@ -193,16 +204,12 @@ end
 -- no segment at all" rather than rendering an empty one, or the bar keeps a
 -- stray separator where the badge used to be.
 --
--- When both volumes are hot the texts concatenate (` C·8G  D·2G `). Pass a
--- single volume-shaped table for the legacy single-volume helper path.
+-- When both volumes are hot the texts concatenate
+-- (` SystemDisk·8G  WslDisk·2G `). Pass a single volume-shaped table for the
+-- legacy single-volume helper path.
 function M.format_text(state, fresh)
   if type(state) ~= 'table' then
     return nil
-  end
-  -- Legacy / unit-suite: a bare volume table (no nested system, has level).
-  if state.system == nil and (state.host_mount ~= nil or state.level ~= nil) then
-    local text = format_volume_text(state, fresh)
-    return text
   end
   local parts = {}
   for _, vol in ipairs(volume_entries(state)) do

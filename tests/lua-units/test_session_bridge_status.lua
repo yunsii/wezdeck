@@ -1,6 +1,6 @@
 -- Verifies session_bridge_status.lua "absent while idle" contract.
 --
--- 1. Never published / poller off / stale → nil (no always-on SB·-).
+-- 1. Never published / poller off / stale → nil (no always-on SessionBridge·-).
 -- 2. Fresh poller → ◆ SB·N (including 0 jobs — watch-is-on is the signal).
 -- 3. waiting_count > 0 uses the attention-waiting palette.
 --
@@ -101,7 +101,7 @@ it('renders nothing before anything was ever published', function()
   assert_eq(sb.render_status_segment(palette), nil)
 end)
 
-it('renders nothing when poller is off (no always-on SB·-)', function()
+it('renders nothing when poller is off (no always-on SessionBridge·-)', function()
   fake_now_ms = 1000000
   write_state {
     poller_running = false,
@@ -120,12 +120,12 @@ it('renders nothing when heartbeat is stale even if poller_running was true', fu
     waiting_count = 0,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' \xE2\x97\x86 SB\xC2\xB73 ', 'sanity: fresh shows')
+  assert_eq(badge_text(), ' \xE2\x97\x86 SessionBridge\xC2\xB73 ', 'sanity: fresh shows')
   fake_now_ms = 1000000 + 35001
   assert_eq(badge_text(), nil, 'stale watch leaves the bar clean')
 end)
 
-it('shows SB·0 while watch is on with no jobs', function()
+it('shows SessionBridge·0 while watch is on with no jobs', function()
   fake_now_ms = 2000000
   write_state {
     poller_running = true,
@@ -133,11 +133,11 @@ it('shows SB·0 while watch is on with no jobs', function()
     waiting_count = 0,
     heartbeat_at_ms = 2000000,
   }
-  assert_eq(badge_text(), ' \xE2\x97\x86 SB\xC2\xB70 ')
+  assert_eq(badge_text(), ' \xE2\x97\x86 SessionBridge\xC2\xB70 ')
   assert_eq(badge_bg(), '#222222', 'idle watch uses inactive palette')
 end)
 
-it('caps at SB·9+', function()
+it('caps at SessionBridge·9+', function()
   fake_now_ms = 2000000
   write_state {
     poller_running = true,
@@ -145,7 +145,7 @@ it('caps at SB·9+', function()
     waiting_count = 0,
     heartbeat_at_ms = 2000000,
   }
-  assert_eq(badge_text(), ' \xE2\x97\x86 SB\xC2\xB79+ ')
+  assert_eq(badge_text(), ' \xE2\x97\x86 SessionBridge\xC2\xB79+ ')
 end)
 
 it('highlights when waiting_count > 0', function()
@@ -156,7 +156,7 @@ it('highlights when waiting_count > 0', function()
     waiting_count = 1,
     heartbeat_at_ms = 2000000,
   }
-  assert_eq(badge_text(), ' \xE2\x97\x86 SB\xC2\xB72 ')
+  assert_eq(badge_text(), ' \xE2\x97\x86 SessionBridge\xC2\xB72 ')
   assert_eq(badge_bg(), '#cc9900')
 end)
 
@@ -169,7 +169,7 @@ it('icon empty string drops the glyph', function()
     waiting_count = 0,
     heartbeat_at_ms = 2000000,
   }
-  assert_eq(badge_text(), ' SB\xC2\xB71 ')
+  assert_eq(badge_text(), ' SessionBridge\xC2\xB71 ')
 end)
 
 io.write(string.format('session_bridge_status: %d passed, %d failed\n', pass_count, fail_count))

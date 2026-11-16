@@ -4,19 +4,19 @@
 -- into the Windows-accessible runtime state dir (same FS as attention.json /
 -- chrome-debug), so WezTerm Lua never crosses \\wsl$ on the 250 ms tick.
 --
--- **The badge renders nothing while idle.** Same contract as D· / M· / L·:
--- presence is the signal. A stopped or never-started poller leaves the bar
--- clean (no more always-on `SB·-`). When the poller is fresh and running:
+-- **The badge renders nothing while idle.** Same contract as WslDisk· /
+-- Memory· / LoadAvg·: presence is the signal. A stopped or never-started
+-- poller leaves the bar clean (no more always-on `SessionBridge·-`). When
+-- the poller is fresh and running:
 --
---   ◆ SB·0…9  job count
---   ◆ SB·9+   10+ jobs
+--   ◆ SessionBridge·0…9  job count
+--   ◆ SessionBridge·9+   10+ jobs
 --
 -- The `◆` is the same glyph the Alt+/ picker stamps on session-bridge
 -- watch rows (`native/picker/cmd_attention.go::coloredBadge`, status
--- `sb`) and the same one its `[◆ SB watch]` filter chip carries — the
--- badge and the rows it summarises should be recognisable as one thing.
--- The `SB` letters stay: unlike the attention counters, this segment has
--- no word label next to it, so the glyph alone would not say what it is.
+-- `sb`) and the same one its filter chip carries — the badge and the rows
+-- it summarises should be recognisable as one thing. The word label stays
+-- next to the glyph so the segment is readable without memorising `SB`.
 --
 -- Placement: right-status, between CDP and the disk/mem/load badges.
 
@@ -26,7 +26,7 @@ local M = {}
 
 local state_path = nil
 -- Overridden from constants.session_bridge_watch.icon (runtime-entry.lua).
--- `''` is a valid value and drops the glyph, leaving a bare `SB·N`.
+-- `''` is a valid value and drops the glyph, leaving a bare `SessionBridge·N`.
 local icon = '◆'
 -- Stale after ~3 default 10s ticks + slack.
 local heartbeat_timeout_ms = 35000
@@ -85,7 +85,7 @@ function M.configure(opts)
   end
 end
 
--- ' ◆ SB·1 ' — or ' SB·1 ' when the glyph is configured away.
+-- ' ◆ SessionBridge·1 ' — or ' SessionBridge·1 ' when the glyph is off.
 local function badge_text(body)
   if icon == '' then
     return ' ' .. body .. ' '
@@ -151,9 +151,9 @@ function M.format_text(state, fresh)
   end
   local jobs = job_count(state)
   if jobs >= 10 then
-    return badge_text('SB·9+')
+    return badge_text('SessionBridge·9+')
   end
-  return badge_text(string.format('SB·%d', jobs))
+  return badge_text(string.format('SessionBridge·%d', jobs))
 end
 
 function M.render_status_segment(palette)

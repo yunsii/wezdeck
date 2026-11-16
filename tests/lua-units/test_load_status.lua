@@ -5,7 +5,7 @@
 -- 1. Absent while healthy (loadavg_1 below warn). Presence is the signal.
 -- 2. Classifies from loadavg_1 alone — ignores mem `level`, so a CPU storm
 --    with mem ok still lights the bar (2026-10-28 shape).
--- 3. Stale heartbeat stays silent here; M· owns "recorder died" for the
+-- 3. Stale heartbeat stays silent here; Memory· owns "recorder died" for the
 --    shared status.json so the bar does not grow a duplicate `?`.
 -- 4. Never-published machine renders nothing.
 --
@@ -124,7 +124,7 @@ it('appears at warn with the amber pair', function()
     loadavg_1 = 8.2,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' L\xC2\xB78 ')
+  assert_eq(badge_text(), ' LoadAvg\xC2\xB78 ')
   assert_eq(badge_bg(), '#cc9900')
 end)
 
@@ -136,7 +136,7 @@ it('goes red at crit (2026-10-28 storm shape)', function()
     loadavg_1 = 23.1,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' L\xC2\xB723 ')
+  assert_eq(badge_text(), ' LoadAvg\xC2\xB723 ')
   assert_eq(badge_bg(), '#b4574b')
 end)
 
@@ -148,7 +148,7 @@ it('rounds loadavg for the badge text', function()
     heartbeat_at_ms = 1000000,
   }
   -- 15.6 rounds to 16, which is also the default crit gate
-  assert_eq(badge_text(), ' L\xC2\xB716 ')
+  assert_eq(badge_text(), ' LoadAvg\xC2\xB716 ')
   assert_eq(load_status.classify_load(15.6), 'warn')
 end)
 
@@ -166,10 +166,10 @@ it('stays silent when the shared recorder goes stale', function()
     loadavg_1 = 22,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' L\xC2\xB722 ', 'sanity: fresh storm renders')
+  assert_eq(badge_text(), ' LoadAvg\xC2\xB722 ', 'sanity: fresh storm renders')
 
   fake_now_ms = 1000000 + 90001
-  assert_eq(badge_text(), nil, 'stale is M· territory, not a second ?')
+  assert_eq(badge_text(), nil, 'stale is Memory· territory, not a second ?')
 end)
 
 it('recovers once the recorder publishes a calm sample', function()

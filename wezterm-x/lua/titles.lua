@@ -305,9 +305,10 @@ function M.register(opts)
   -- Compose the right-status bar from IME, browser slot (Ego·… or CDP·…),
   -- session-bridge watch, host-disk, guest-memory, guest-load, attention.
   -- Order:
-  --   IME | Ego·A / CDP·… | ◆ SB·N | C·8G D·22G | M·88% | L·23 | ▲…✓…●…
-  --   (SB / disk letters / M / L all absent while idle/healthy — presence
-  --   is the signal; disk_status may emit both system + WSL letter badges)
+  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N
+  --     | SystemDisk·8G WslDisk·22G | Memory·88% | LoadAvg·23 | ▲…✓…●…
+  --   (SessionBridge / disks / Memory / LoadAvg absent while idle/healthy —
+  --   presence is the signal; disk_status may emit both system + WSL badges)
   -- Kept pure so it can run from both the `update-status` tick (250ms)
   -- and from the event-bus handler when a producer publishes
   -- `attention.tick` (OSC wire `we_attention_tick`).

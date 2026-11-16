@@ -43,7 +43,7 @@ Ego-only (disable CDP auto-start) is a later operator decision after trial.
 | `Alt+b` | Ensure ego running; **do not** activate window | Headless debug Chrome (existing) |
 | `Alt+Shift+b` | Ensure + **focus** ego window | Visible debug Chrome (existing) |
 | Toast (success) | `Ego is running` on `Alt+b` only; `Alt+Shift+b` quiet (window focus is the signal) | Quiet on success (toast only on failure) |
-| Badge | `Ego·A` / `Ego·-` / `Ego·?` | `CDP·H/V/-/?·port` |
+| Badge | `Ego·Alive` / `Ego·-` / `Ego·?` | `CDP·Headless/Visible/-/?·port` |
 
 When `backend=ego`, helper **ChromeDebugAutoStart** is turned off so WezTerm
 boot does not also pull up the CDP instance. Switch back with
@@ -72,10 +72,10 @@ cat "$(wslpath -u "$LOCALAPPDATA")/wezterm-runtime/state/browser-agent/status.js
 
 The default day is **headless**: the Windows helper auto-launches a headless Chrome the moment it boots, MCP / agent tools attach without ever surfacing a window, and nothing is allowed to grab the foreground or flash the taskbar. When you actually need to look at the page yourself, you pivot from your default browser through `chrome://inspect` (or `edge://inspect`) — no need to switch the headless instance to visible just to peek.
 
-1. **Daily — auto-start (zero keystrokes)**. Helper boot runs `ReconcileOnStartup` then mode-agnostic detection on `localhost:<remote_debugging_port>` + the configured `user_data_dir`; if any chrome (visible or headless) is already there it adopts the existing PID, otherwise it launches a fresh headless one. The status segment lands on `CDP·H·<port>` immediately. MCP servers in your agent / Claude Code config can stay attached via `--browser-url=http://localhost:<port>` across sessions; nothing depends on you having pressed `Alt+b`.
-2. **Programmatic — agent tools and MCP**. With auto-start running, every Chrome DevTools MCP server, every agent that takes `--browser-url=http://localhost:<port>`, and every CDP-aware automation script just connects. The endpoint always answers (you can confirm with `curl -sS http://localhost:<port>/json/version` from any pane in WSL or Windows). The agent never has to wait for a human to "set up" the browser. **OpenClaw** registers this as local `mcp.servers.chrome-devtools` (see [`openclaw/README.md`](../openclaw/README.md#chrome-devtools-mcp-core-browser-capability) and skill `openclaw/workspace/skills/chrome-devtools/`); Grok/Claude MCP sessions are separate processes that still attach to the same CDP port.
+1. **Daily — auto-start (zero keystrokes)**. Helper boot runs `ReconcileOnStartup` then mode-agnostic detection on `localhost:<remote_debugging_port>` + the configured `user_data_dir`; if any chrome (visible or headless) is already there it adopts the existing PID, otherwise it launches a fresh headless one. The status segment lands on `CDP·Headless·<port>` immediately. MCP servers in your agent / Claude Code config can stay attached via `--browser-url=http://localhost:<port>` across sessions; nothing depends on you having pressed `Alt+b`.
+2. **Programmatic — agent tools and MCP**. With auto-start running, every Chrome DevTools MCP server, every agent that takes `--browser-url=http://localhost:<port>`, and every CDP-aware automation script just connects. The endpoint always answers (you can confirm with `curl -sS http://localhost:<port>/json/version` from any pane in WSL or Windows). The agent never has to wait for a human to "set up" the browser. **OpenClaw** registers this as local `mcp.servers.chrome-devtools` (see [`openclaw/README.md`](../openclaw/README.md#chrome-devtools-mcp) and skill `openclaw/workspace/skills/chrome-devtools/`); Grok/Claude MCP sessions are separate processes that still attach to the same CDP port.
 3. **Human inspection — `chrome://inspect` from your default browser**. Open your normal Chrome (or Edge / any Chromium) and go to `chrome://inspect/#devices`. Click *Configure…* in the *Discover network targets* row and add `localhost:<remote_debugging_port>` (default `9222`). The headless instance's pages and service workers appear under *Remote Target*; click *inspect* on any one to open the standard DevTools window — Console, Network, Elements, Sources, Performance — fully connected to the headless session your agent is driving. This is the path for "agent broke, let me look at what it sees" and "I need to manually adjust state then hand it back". It works because the launch flags use `--remote-allow-origins=*`, so the WebSocket from `chrome://inspect` is not rejected. The headless instance keeps running afterward; closing the inspector does not change anything in the session.
-4. **Manual override — `Alt+b` / `Alt+Shift+b`**. Reserved for the cases where `chrome://inspect` is not enough: `Alt+b` resets the instance to headless (kills any visible chrome on the same port + user_data_dir first, then relaunches headless), `Alt+Shift+b` kills headless and switches to a fully visible chrome (pops a window into the foreground). Use these when the agent flow requires a clean slate, or when `chrome://inspect`'s read-mostly view is not enough and you need a real visible browser window to type in. After either action the right-status badge flips to `CDP·H·<port>` or `CDP·V·<port>` to confirm.
+4. **Manual override — `Alt+b` / `Alt+Shift+b`**. Reserved for the cases where `chrome://inspect` is not enough: `Alt+b` resets the instance to headless (kills any visible chrome on the same port + user_data_dir first, then relaunches headless), `Alt+Shift+b` kills headless and switches to a fully visible chrome (pops a window into the foreground). Use these when the agent flow requires a clean slate, or when `chrome://inspect`'s read-mostly view is not enough and you need a real visible browser window to type in. After either action the right-status badge flips to `CDP·Headless·<port>` or `CDP·Visible·<port>` to confirm.
 
 ## Auto-start behavior
 
@@ -106,15 +106,15 @@ In `hybrid-wsl` this goes through the same Windows native helper path as `Alt+v`
 
 Launches or reuses the same Chrome debug browser profile in visible (headful) mode for manual acceptance or UI verification. Shares the same `user_data_dir` (cookies, logins, extensions state preserved across mode switches) and same port as `Alt+b`, so only one mode can run at a time.
 
-Pressing this when a headless instance is running will kill that headless first, wait for the `--user-data-dir` singleton lock to release, and start a visible Chrome with the same hardening flags (minus `--headless=new` and `--window-size=1920,1080`, which are headless-only). MCP connections from the previous headless session will drop and can be reestablished on the visible instance. The right-status segment flips to `CDP·V·<port>` after launch.
+Pressing this when a headless instance is running will kill that headless first, wait for the `--user-data-dir` singleton lock to release, and start a visible Chrome with the same hardening flags (minus `--headless=new` and `--window-size=1920,1080`, which are headless-only). MCP connections from the previous headless session will drop and can be reestablished on the visible instance. The right-status segment flips to `CDP·Visible·<port>` after launch.
 
 ## Right-status layout (browser slot and neighbors)
 
 Right-status order (left → right):
 
-`IME` · **browser slot (`Ego·…` or `CDP·…`)** · **`◆ SB·N`** (session-bridge watch, absent while idle) · **`C·…` / `D·…`** (system + WSL host disk, absent while healthy) · **`M·…`** (guest mem, absent while healthy) · **`L·…`** (guest load, absent while healthy) · attention counters
+`IME` · **browser slot (`Ego·…` or `CDP·…`)** · **`◆ SessionBridge·N`** (session-bridge watch, absent while idle) · **`SystemDisk·…` / `WslDisk·…`** (system + WSL host disk, absent while healthy) · **`Memory·…`** (guest mem, absent while healthy) · **`LoadAvg·…`** (guest load, absent while healthy) · attention counters
 
-The browser slot follows `WEZDECK_BROWSER_BACKEND` (see [backends](#browser-backends-ego--cdp)). The `◆ SB·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); it renders only while the poller heartbeat is fresh (no always-on `SB·-`). The `◆` matches the glyph the `Alt+/` picker puts on that poller's watch rows and is overridable per machine via `session_bridge_watch.icon` in `wezterm-x/local/constants.lua` (`''` leaves a bare `SB·N`). See [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir. Disk / mem / load: [`host-disk.md`](./host-disk.md) · [`guest-oom.md`](./guest-oom.md) · [`diagnostics.md`](./diagnostics.md) "Guest load badge".
+The browser slot follows `WEZDECK_BROWSER_BACKEND` (see [backends](#browser-backends-ego--cdp)). The `◆ SessionBridge·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); it renders only while the poller heartbeat is fresh (no always-on `SessionBridge·-`). The `◆` matches the glyph the `Alt+/` picker puts on that poller's watch rows and is overridable per machine via `session_bridge_watch.icon` in `wezterm-x/local/constants.lua` (`''` leaves a bare `SessionBridge·N`). See [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir. Disk / mem / load: [`host-disk.md`](./host-disk.md) · [`guest-oom.md`](./guest-oom.md) · [`diagnostics.md`](./diagnostics.md) "Guest load badge".
 
 ## Right-status browser badge
 
@@ -122,17 +122,17 @@ The browser slot follows `WEZDECK_BROWSER_BACKEND` (see [backends](#browser-back
 
 | Badge | Meaning | Style |
 |---|---|---|
-| `Ego·A` | ego process recently alive (`status.json` ego.alive) | running-attention palette, Bold |
+| `Ego·Alive` | ego process recently alive (`status.json` ego.alive) | running-attention palette, Bold |
 | `Ego·-` | backend is ego but process not running | idle palette, Italic |
 | `Ego·?` | ego heartbeat older than `browser_agent.ego_heartbeat_timeout_ms` (default 120 s) | warning palette, Italic |
 
-With a live helper, the ~30s ego heartbeat should keep `Ego·A` / `Ego·-`
+With a live helper, the ~30s ego heartbeat should keep `Ego·Alive` / `Ego·-`
 current while `backend=ego`. Persistent `Ego·?` usually means the helper is
 not running or `browserAgentStatusPath` is missing from manager-config (re-run
 `wezdeck-runtime-ops` / restart WezTerm so `ensure-wezdeck-runtime.ps1`
 rewrites config).
 
-Marks stay ASCII (same cell width as `CDP·H`) so the tab-bar font does not
+Marks stay ASCII words (readable next to `CDP·Headless`) so the tab-bar font does not
 leave a blank hole between IME and attention.
 
 ### `backend=cdp` (default when status missing)
@@ -141,8 +141,8 @@ The WezTerm right-status renders just to the right of the IME segment as a fixed
 
 | Badge | Meaning | Style |
 |---|---|---|
-| `CDP·H·<port>` | headless ready | inactive palette, Normal intensity |
-| `CDP·V·<port>` | visible ready | running-attention palette, Bold |
+| `CDP·Headless·<port>` | headless ready | inactive palette, Normal intensity |
+| `CDP·Visible·<port>` | visible ready | running-attention palette, Bold |
 | `CDP·-·<port>` | helper alive but Chrome not running (`mode=none` or `alive=false`; auto-start failed or you killed chrome and have not relaunched). The port falls back to `remote_debugging_port` when no state file exists yet | idle palette, Italic |
 | `CDP·?·<port>` | helper itself looks dead — its `state.env` heartbeat is older than `helper_heartbeat_timeout_seconds`, so the chrome state file may be arbitrarily stale and the badge cannot be trusted | warning palette, Italic |
 

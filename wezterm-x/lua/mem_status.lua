@@ -17,13 +17,13 @@
 -- something to act on, so its mere presence in the bar is the signal — no
 -- always-on number to learn to ignore, and no width spent on the common case.
 --
---   (absent)   memory and swap both below the warn thresholds
---   M·88%      memory used, at or above warn (amber)
---   S·95%      swap used, when swap is the worse of the two axes
---   M·94%      at or above crit (red — earlyoom is about to pick a victim)
---   M·?        the recorder was publishing and went stale — the monitor
---              itself needs attention. Never published at all renders
---              nothing, so a machine without the guard sees a clean bar.
+--   (absent)      memory and swap both below the warn thresholds
+--   Memory·88%    memory used, at or above warn (amber)
+--   Swap·95%      swap used, when swap is the worse of the two axes
+--   Memory·94%    at or above crit (red — earlyoom is about to pick a victim)
+--   Memory·?      the recorder was publishing and went stale — the monitor
+--                 itself needs attention. Never published at all renders
+--                 nothing, so a machine without the guard sees a clean bar.
 --
 -- Reporting whichever axis is worse, rather than memory alone, is the whole
 -- point: through the 2026-07-26 incident memory read a calm 88% while swap
@@ -123,10 +123,10 @@ local function dominant_axis(state)
   local mem = tonumber(state.mem_used_pct)
   local swap = tonumber(state.swap_used_pct)
   if swap and (not mem or swap > mem) then
-    return 'S', swap
+    return 'Swap', swap
   end
   if mem then
-    return 'M', mem
+    return 'Memory', mem
   end
   return nil, nil
 end
@@ -142,7 +142,7 @@ function M.format_text(state, fresh)
     return nil
   end
   if not fresh then
-    return ' M·? '
+    return ' Memory·? '
   end
 
   local level = type(state.level) == 'string' and state.level or 'unknown'
@@ -152,7 +152,7 @@ function M.format_text(state, fresh)
 
   local label, pct = dominant_axis(state)
   if not label then
-    return ' M·? '
+    return ' Memory·? '
   end
   return ' ' .. label .. '·' .. string.format('%d', math.floor(pct + 0.5)) .. '% '
 end

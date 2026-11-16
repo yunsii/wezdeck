@@ -141,7 +141,7 @@ it('appears at warn with the amber pair', function()
     badge_bytes = 22 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' D\xC2\xB722G ')
+  assert_eq(badge_text(), ' WslDisk\xC2\xB722G ')
   assert_eq(badge_bg(), '#cc9900', 'warn uses the attention-waiting color')
 end)
 
@@ -157,7 +157,7 @@ it('shows badge_bytes when the sampler picked host avail as binding', function()
     badge_bytes = 2 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' D\xC2\xB72G ',
+  assert_eq(badge_text(), ' WslDisk\xC2\xB72G ',
     'a large headroom must not hide a dry host volume')
 end)
 
@@ -171,7 +171,7 @@ it('falls back to headroom_bytes when badge_bytes is absent (pre-v2)', function(
     headroom_bytes = 22 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' D\xC2\xB722G ', 'older status.json still renders')
+  assert_eq(badge_text(), ' WslDisk\xC2\xB722G ', 'older status.json still renders')
 end)
 
 it('crit level uses its own red, not the attention amber', function()
@@ -184,7 +184,7 @@ it('crit level uses its own red, not the attention amber', function()
     headroom_bytes = 11 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' D\xC2\xB711G ')
+  assert_eq(badge_text(), ' WslDisk\xC2\xB711G ')
   assert_eq(badge_bg(), '#b4574b', 'crit must be visually distinct from waiting')
 end)
 
@@ -218,7 +218,7 @@ it('a stale sampler surfaces even though the last level was ok', function()
   }
   assert_eq(badge_text(), nil, 'sanity: healthy and fresh is invisible')
   fake_now_ms = 1000000 + 780001 -- one ms past the timeout
-  assert_eq(badge_text(), ' D\xC2\xB7? ',
+  assert_eq(badge_text(), ' WslDisk\xC2\xB7? ',
     'a dead monitor is itself actionable, so silence would hide the failure')
 end)
 
@@ -233,7 +233,7 @@ it('never-published renders nothing, so an uninstalled guard is invisible', func
   disk_status.configure { state_file = state_path, heartbeat_timeout_ms = 780000 }
 end)
 
-it('non-drive mount falls back to a neutral label', function()
+it('non-drive top-level volume still uses the WslDisk role label', function()
   fake_now_ms = 1000000
   write_state {
     level = 'warn',
@@ -241,7 +241,7 @@ it('non-drive mount falls back to a neutral label', function()
     headroom_bytes = 40 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' HOST\xC2\xB740G ')
+  assert_eq(badge_text(), ' WslDisk\xC2\xB740G ')
 end)
 
 it('missing headroom degrades to ? without losing the mount label', function()
@@ -251,7 +251,7 @@ it('missing headroom degrades to ? without losing the mount label', function()
     host_mount = '/mnt/d',
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' D\xC2\xB7? ')
+  assert_eq(badge_text(), ' WslDisk\xC2\xB7? ')
 end)
 
 it('terabyte-scale volumes collapse to a T suffix', function()
@@ -262,7 +262,7 @@ it('terabyte-scale volumes collapse to a T suffix', function()
     headroom_bytes = 2048 * GiB,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' E\xC2\xB72.0T ', 'four-digit gigabytes would widen the bar')
+  assert_eq(badge_text(), ' WslDisk\xC2\xB72.0T ', 'four-digit gigabytes would widen the bar')
 end)
 
 it('format_text is pure and needs no file', function()
@@ -270,7 +270,7 @@ it('format_text is pure and needs no file', function()
     level = 'warn',
     host_mount = '/mnt/c',
     headroom_bytes = 12 * GiB,
-  }, true), ' C\xC2\xB712G ')
+  }, true), ' WslDisk\xC2\xB712G ')
   assert_eq(disk_status.format_text({ level = 'ok', headroom_bytes = 99 * GiB }, true), nil)
   assert_eq(disk_status.format_text(nil, false), nil)
 end)
@@ -285,11 +285,11 @@ it('v3 system volume warn appears beside a healthy WSL volume', function()
       .. '"system":{"host_mount":"/mnt/c","level":"warn","badge_bytes":%d}}',
     120 * GiB, 120 * GiB, 8 * GiB))
   f:close()
-  assert_eq(badge_text(), ' C\xC2\xB78G ',
+  assert_eq(badge_text(), ' SystemDisk\xC2\xB78G ',
     'healthy WSL must not hide a dry system disk')
 end)
 
-it('v3 both volumes hot concatenate letter badges', function()
+it('v3 both volumes hot concatenate word badges', function()
   fake_now_ms = 1000000
   local f = assert(io.open(state_path, 'w'))
   f:write(string.format(
@@ -302,7 +302,7 @@ it('v3 both volumes hot concatenate letter badges', function()
   for _, p in ipairs(parts) do
     if p.Text then table.insert(texts, p.Text) end
   end
-  assert_eq(table.concat(texts, ''), ' C\xC2\xB78G  D\xC2\xB72G ')
+  assert_eq(table.concat(texts, ''), ' SystemDisk\xC2\xB78G  WslDisk\xC2\xB72G ')
 end)
 
 os.remove(state_path)

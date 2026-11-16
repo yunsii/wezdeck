@@ -31,7 +31,7 @@ WezDeck is not a pile of hotkeys — it is a **control plane** for multi-agent t
 | Constraint | What it means in practice |
 |---|---|
 | **Keyboard-first** | Every new or changed interaction has a keyboard path; mouse is fallback only. Manifest + palette cover the same actions. |
-| **Headless verify for agents** | Debug Chrome auto-starts headless (`CDP·H·…`); agents attach via CDP/MCP without stealing GUI focus. |
+| **Headless verify for agents** | Debug Chrome auto-starts headless (`CDP·Headless·…`); agents attach via CDP/MCP without stealing GUI focus. |
 | **Observable development process** | Hot paths emit structured signals so a day can be reconstructed, latency gated, and habits reviewed — not guessed from memory. Blind features (no badge / log / projector path) are incomplete. |
 
 The third constraint is load-bearing for iteration: badges warn live, logs explain a sticky key or a stuck attention state, and day/week projectors turn those same signals into a reviewable loop. Longer narrative: [`docs/presentations/`](docs/presentations/).
@@ -80,20 +80,21 @@ Three layers share one idea: **if you cannot see it, you cannot improve it.**
 
 Left → right (pressure badges stay absent while healthy — presence *is* the signal):
 
-`IME` · `Ego·…`/`CDP·…` · `◆ SB·N` · `D·…` · `M·…` · attention counters
+`IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention counters
 
 | Segment | Meaning | Deep dive |
 |---|---|---|
-| `Ego·A/-/?` or `CDP·H/V/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
-| `◆ SB·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
-| `D·…` | Host volume headroom under WSL `ext4.vhdx` | [Host disk](docs/host-disk.md) |
-| `M·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |
+| `Ego·Alive/-/?` or `CDP·Headless/Visible/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
+| `◆ SessionBridge·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
+| `SystemDisk·…` / `WslDisk·…` | Host volume headroom (system + WSL `ext4.vhdx`) | [Host disk](docs/host-disk.md) |
+| `Memory·…` / `Swap·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |
+| `LoadAvg·…` | Guest CPU load (typing-stickiness early warning) | [Diagnostics · load](docs/diagnostics.md#guest-load-badge-loadavg) |
 | `▲ / ✓ / ●` | Waiting / done / running attention | [Agent attention](docs/agent-attention.md) |
 
 ### Structured logs + latency (why did it feel sticky?)
 
 - WSL `runtime.log` + Windows `wezterm.log` / `helper.log` — category-scoped rows (`attention`, `hotkey`, `latency`, …).
-- Threshold-gated slow hotkey / status-tick rows; slow samples attach guest pressure from the same `M·` status file.
+- Threshold-gated slow hotkey / status-tick rows; slow samples attach guest pressure from the same `Memory·` status file.
 - Operator entry: [`docs/diagnostics.md`](docs/diagnostics.md) · author conventions: [`docs/logging-conventions.md`](docs/logging-conventions.md) · report: `scripts/dev/latency-report.sh`.
 
 ### Day / week reconstruction (review & optimize)
@@ -151,7 +152,7 @@ skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
 # 3. Reload WezTerm and confirm the right status shows
 #    attention counters (and CDP·… when the helper is up) — that means the
-#    attention / CDP pipelines are live. D· / M· appear only under pressure.
+#    attention / CDP pipelines are live. WslDisk· / Memory· appear only under pressure.
 ```
 
 Full setup walkthrough: [`docs/setup.md`](docs/setup.md). Optional guards on WSL hosts: [`docs/guest-oom.md`](docs/guest-oom.md) · [`docs/host-disk.md`](docs/host-disk.md).
@@ -165,7 +166,7 @@ Full setup walkthrough: [`docs/setup.md`](docs/setup.md). Optional guards on WSL
 - [Keybindings](docs/keybindings.md) · [tmux UI](docs/tmux-ui.md) · [Agent attention](docs/agent-attention.md) · [Browser debug](docs/browser-debug.md)
 
 **Observability & ops**
-- [Diagnostics](docs/diagnostics.md) (latency · [workflow timeline](docs/diagnostics.md#workflow-timeline) · [habit report](docs/diagnostics.md#habit-report)) · [Guest OOM](docs/guest-oom.md) (`M·`) · [Host disk](docs/host-disk.md) (`D·`) · [Logging conventions](docs/logging-conventions.md)
+- [Diagnostics](docs/diagnostics.md) (latency · [workflow timeline](docs/diagnostics.md#workflow-timeline) · [habit report](docs/diagnostics.md#habit-report)) · [Guest OOM](docs/guest-oom.md) (`Memory·`) · [Host disk](docs/host-disk.md) (`WslDisk·`) · [Logging conventions](docs/logging-conventions.md)
 
 **Internals**
 - [Architecture](docs/architecture.md) · [Performance](docs/performance.md) · [IME & sync output](docs/ime-flicker-and-sync-output.md) · [Dev-env troubleshooting](docs/development-environment-troubleshooting.md)

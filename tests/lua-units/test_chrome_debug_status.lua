@@ -74,10 +74,10 @@ local palette = {
   ansi = { '#000', '#f00', '#0f0', '#ff0', '#00f', '#f0f', '#0ff', '#fff' },
 }
 
-local function badge_letter()
+local function badge_mode()
   local parts = chrome_debug_status.render_status_segment(palette)
   for _, p in ipairs(parts) do
-    if p.Text then return p.Text:match('CDP\xC2\xB7(.)\xC2\xB7') end
+    if p.Text then return p.Text:match('CDP\xC2\xB7([^\xC2]+)\xC2\xB7') end
   end
   return nil
 end
@@ -88,36 +88,36 @@ it('reads heartbeat normally', function()
   fake_now_ms = 1000000
   write_helper_state(1000000)
   write_chrome_state('{"schema":2,"mode":"headless","port":9222,"alive":true}')
-  assert_eq(badge_letter(), 'H', 'badge should be H when helper is alive')
+  assert_eq(badge_mode(), 'Headless', 'badge should be Headless when helper is alive')
 end)
 
 it('falls back to cached heartbeat on transient read failure', function()
   fake_now_ms = 1000100
   write_helper_state(1000100)
-  badge_letter() -- prime the cache
+  badge_mode() -- prime the cache
   remove_helper_state() -- simulate read-during-rename failure
   fake_now_ms = 1000200 -- 100ms after last good heartbeat, well within 5s
-  assert_eq(badge_letter(), 'H', 'transient read failure must not flip to ?')
+  assert_eq(badge_mode(), 'Headless', 'transient read failure must not flip to ?')
 end)
 
 it('flips to ? once cached heartbeat is older than timeout', function()
   fake_now_ms = 1000000
   write_helper_state(1000000)
-  badge_letter() -- prime
+  badge_mode() -- prime
   remove_helper_state()
   fake_now_ms = 1000000 + 6000 -- 6s later, past the 5s timeout
-  assert_eq(badge_letter(), '?', 'stale cache must produce ?')
+  assert_eq(badge_mode(), '?', 'stale cache must produce ?')
 end)
 
 it('refreshes cache on next successful read', function()
   fake_now_ms = 1000000
   write_helper_state(1000000)
-  badge_letter()
+  badge_mode()
   remove_helper_state()
   fake_now_ms = 1000000 + 6000 -- cache now stale
-  assert_eq(badge_letter(), '?', 'sanity: cache went stale')
+  assert_eq(badge_mode(), '?', 'sanity: cache went stale')
   write_helper_state(1006000) -- helper recovers, heartbeat current
-  assert_eq(badge_letter(), 'H', 'fresh read must clear staleness')
+  assert_eq(badge_mode(), 'Headless', 'fresh read must clear staleness')
 end)
 
 local agent_path = tmpdir .. '/wezterm-browser-agent-test-status.json'
@@ -146,15 +146,15 @@ chrome_debug_status.configure {
   ego_heartbeat_timeout_ms = 120000,
 }
 
-it('renders Ego·A when backend=ego and alive', function()
+it('renders Ego·Alive when backend=ego and alive', function()
   fake_now_ms = 2000000
   write_helper_state(2000000)
   write_chrome_state('{"schema":2,"mode":"headless","port":9222,"alive":true}')
   write_agent_status('{"backend":"ego","updated_at_ms":2000000,"ego":{"alive":true,"updated_at_ms":2000000}}')
   local text = badge_text()
   assert_eq(text:match('Ego') ~= nil, true, 'should mention Ego, got ' .. tostring(text))
-  assert_eq(text:match('Ego·A') ~= nil or text:match('Ego\xC2\xB7A') ~= nil, true,
-    'should show Ego·A, got ' .. tostring(text))
+  assert_eq(text:match('Ego·Alive') ~= nil or text:match('Ego\xC2\xB7Alive') ~= nil, true,
+    'should show Ego·Alive, got ' .. tostring(text))
 end)
 
 it('falls back to CDP when backend=cdp', function()
@@ -162,7 +162,7 @@ it('falls back to CDP when backend=cdp', function()
   write_helper_state(2000000)
   write_chrome_state('{"schema":2,"mode":"visible","port":9222,"alive":true}')
   write_agent_status('{"backend":"cdp","updated_at_ms":2000000,"ego":{"alive":false,"updated_at_ms":2000000}}')
-  assert_eq(badge_letter(), 'V', 'cdp backend should keep CDP badge')
+  assert_eq(badge_mode(), 'Visible', 'cdp backend should keep CDP badge')
 end)
 
 os.remove(state_path)

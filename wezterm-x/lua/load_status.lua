@@ -1,7 +1,7 @@
 -- Guest CPU-load segment (typing-stickiness early warning).
 --
 -- Reads the same oom-guard status.json as mem_status.lua — that file already
--- carries loadavg_1/5/15 on every heartbeat (~30 s). The M· badge only
+-- carries loadavg_1/5/15 on every heartbeat (~30 s). The Memory· badge only
 -- classifies memory/swap, so a pure CPU storm (esbuild / agent scan burning
 -- the guest while mem stays `ok`) left the bar quiet while status ticks
 -- crossed 40 ms and typing felt sticky. Reference: 2026-10-28, loadavg_1
@@ -9,13 +9,13 @@
 -- See docs/diagnostics.md "Key / status latency" and docs/guest-oom.md.
 --
 -- **The badge renders nothing while healthy.** Presence is the signal —
--- same contract as D· / M·. Stale-recorder signalling stays on M· (same
--- producer); this segment stays silent when the heartbeat is stale so the
--- bar does not grow a duplicate `?`.
+-- same contract as WslDisk· / Memory·. Stale-recorder signalling stays on
+-- Memory· (same producer); this segment stays silent when the heartbeat is
+-- stale so the bar does not grow a duplicate `?`.
 --
---   (absent)   loadavg_1 below warn, or never published, or stale
---   L·12       loadavg_1 at/above warn (amber)
---   L·23       loadavg_1 at/above crit (red)
+--   (absent)     loadavg_1 below warn, or never published, or stale
+--   LoadAvg·12   loadavg_1 at/above warn (amber)
+--   LoadAvg·23   loadavg_1 at/above crit (red)
 --
 -- Placement: right-status, after the guest-memory badge.
 
@@ -133,7 +133,7 @@ function M.format_text(state, fresh)
   if type(state) ~= 'table' then
     return nil
   end
-  -- Stale monitor is M·'s job (same producer). Stay quiet here.
+  -- Stale monitor is Memory·'s job (same producer). Stay quiet here.
   if not fresh then
     return nil
   end
@@ -148,7 +148,7 @@ function M.format_text(state, fresh)
     return nil
   end
 
-  return ' L·' .. string.format('%d', math.floor(load + 0.5)) .. ' '
+  return ' LoadAvg·' .. string.format('%d', math.floor(load + 0.5)) .. ' '
 end
 
 function M.render_status_segment(palette)

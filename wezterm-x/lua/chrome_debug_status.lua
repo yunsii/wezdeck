@@ -1,13 +1,13 @@
 -- Unified browser-slot status segment (right-status).
 --
--- When browser-agent status says backend=ego, renders (ASCII marks so the
--- tab-bar font width matches CDP·H and does not leave a blank hole):
---   Ego·A   ego process recently seen alive
---   Ego·-   ego not running
---   Ego·?   ego heartbeat stale / unknown
+-- When browser-agent status says backend=ego, renders word marks (readable
+-- at a glance; ASCII so the tab-bar font width stays predictable):
+--   Ego·Alive   ego process recently seen alive
+--   Ego·-       ego not running
+--   Ego·?       ego heartbeat stale / unknown
 --
 -- Otherwise (backend=cdp or status missing) keeps the CDP badge:
---   CDP·H·9222 / CDP·V·9222 / CDP·-·9222 / CDP·?·9222
+--   CDP·Headless·9222 / CDP·Visible·9222 / CDP·-·9222 / CDP·?·9222
 --
 -- CDP state: chrome-debug/state.json + helper state.env (unchanged).
 -- Ego / backend: state/browser-agent/status.json (apply-browser-backend,
@@ -165,7 +165,7 @@ local function render_ego_segment(palette, agent)
     intensity = 'Normal'
     italic = true
   elseif ego.alive == true then
-    mark = 'A'
+    mark = 'Alive'
     bg = palette.tab_attention_running_bg
     fg = palette.tab_attention_running_fg
     intensity = 'Bold'
@@ -178,7 +178,7 @@ local function render_ego_segment(palette, agent)
     italic = true
   end
 
-  -- Same left/right padding as CDP·H·port; single ASCII mark avoids
+  -- Same left/right padding as CDP·Headless·port; ASCII word marks avoid
   -- double-width ✓/– leaving a blank hole in the right-status cluster.
   local text = string.format(' Ego·%s ', mark)
   return render_parts(text, bg, fg, intensity, italic)
@@ -188,37 +188,37 @@ local function render_cdp_segment(palette)
   local state = M.reload_state()
   local alive_helper = helper_is_alive()
 
-  local mode_letter, port, bg, fg, intensity, italic
+  local mode_word, port, bg, fg, intensity, italic
   if not alive_helper then
-    mode_letter = '?'
+    mode_word = '?'
     port = (state and state.port) or fallback_port or 0
     bg = palette.tab_bar_background
     fg = (palette.ansi and palette.ansi[2]) or palette.new_tab_fg
     intensity = 'Normal'
     italic = true
   elseif state and (state.alive == false or state.mode == 'none') then
-    mode_letter = '-'
+    mode_word = '-'
     port = state.port or fallback_port or 0
     bg = palette.tab_bar_background
     fg = palette.new_tab_fg
     intensity = 'Normal'
     italic = true
   elseif state and state.mode == 'headless' then
-    mode_letter = 'H'
+    mode_word = 'Headless'
     port = state.port
     bg = palette.tab_inactive_bg
     fg = palette.tab_inactive_fg
     intensity = 'Normal'
     italic = false
   elseif state and state.mode == 'visible' then
-    mode_letter = 'V'
+    mode_word = 'Visible'
     port = state.port
     bg = palette.tab_attention_running_bg
     fg = palette.tab_attention_running_fg
     intensity = 'Bold'
     italic = false
   else
-    mode_letter = '-'
+    mode_word = '-'
     port = fallback_port or 0
     bg = palette.tab_bar_background
     fg = palette.new_tab_fg
@@ -226,7 +226,7 @@ local function render_cdp_segment(palette)
     italic = true
   end
 
-  local text = string.format(' CDP·%s·%d ', mode_letter, math.floor(port))
+  local text = string.format(' CDP·%s·%d ', mode_word, math.floor(port))
   return render_parts(text, bg, fg, intensity, italic)
 end
 

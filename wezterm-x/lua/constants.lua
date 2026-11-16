@@ -293,34 +293,35 @@ local base_constants = {
   browser_agent = {
     status_file = defaults.default_browser_agent_status_file(runtime_state_dir, join_path),
     ego_window_script = defaults.default_ego_window_script(runtime_dir, join_path),
-    -- Stale ego.alive older than this → Ego·? on the badge.
+    -- Stale ego.alive older than this → Ego·? on the word badge.
     ego_heartbeat_timeout_ms = 120000,
   },
-  -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and D·).
-  -- Absent while the poller is idle/stale — same "presence is the signal"
-  -- contract as D· / M· / L· (no always-on `SB·-`).
+  -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and
+  -- SystemDisk/WslDisk). Absent while the poller is idle/stale — same
+  -- "presence is the signal" contract as WslDisk· / Memory· / LoadAvg·
+  -- (no always-on `SessionBridge·-`).
   session_bridge_watch = {
     status_file = defaults.default_session_bridge_watch_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 35000,
     -- Same glyph the Alt+/ picker stamps on session-bridge watch rows.
-    -- `''` drops it and leaves the bare `SB·N`.
+    -- `''` drops it and leaves the bare `SessionBridge·N`.
     icon = '◆',
   },
-  -- Host-disk badge (right-status, after SB). Producer is the
+  -- Host-disk badge (right-status, after SessionBridge). Producer is the
   -- wezterm-disk-guard systemd user timer; 13 min tolerates two missed
   -- 5 min samples before the badge admits it is stale.
   disk_guard = {
     status_file = defaults.default_disk_guard_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 780000,
   },
-  -- Guest memory-pressure badge (right-status, after D·). Producer is the
-  -- wezterm-oom-record system unit, which republishes every 30 s; 90 s
+  -- Guest memory-pressure badge (right-status, after WslDisk·). Producer is
+  -- the wezterm-oom-record system unit, which republishes every 30 s; 90 s
   -- tolerates two missed writes before the badge admits it is stale.
   mem_guard = {
     status_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 90000,
   },
-  -- Guest CPU-load badge (right-status, after M·). Same status.json as
+  -- Guest CPU-load badge (right-status, after Memory·). Same status.json as
   -- mem_guard — oom-record already publishes loadavg_*; this only
   -- classifies it for glanceable typing-stickiness early warning.
   -- Thresholds are absolute loadavg_1 on a ~20-logical-CPU guest;
@@ -360,7 +361,7 @@ local base_constants = {
     live_panes_file = defaults.default_attention_live_panes_file(runtime_state_dir, join_path),
     -- Right-status counter glyphs. Monochrome 1-cell text code points by
     -- default so the segment sits with the typographic badges around it
-    -- (`CDP·…`, `D·151G`, `M·88%`) instead of reading as a sticker; the
+    -- (`CDP·…`, `WslDisk·151G`, `Memory·88%`) instead of reading as a sticker; the
     -- rationale and the matching picker set live in
     -- docs/agent-attention.md. Override per machine in
     -- wezterm-x/local/constants.lua; `''` drops the glyph and leaves the

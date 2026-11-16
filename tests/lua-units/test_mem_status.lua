@@ -128,7 +128,7 @@ it('appears at warn with the amber pair', function()
     swap_used_pct = 20,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' M\xC2\xB788% ')
+  assert_eq(badge_text(), ' Memory\xC2\xB788% ')
   assert_eq(badge_bg(), '#cc9900', 'warn uses the attention-waiting color')
 end)
 
@@ -140,7 +140,7 @@ it('goes red at crit', function()
     swap_used_pct = 30,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' M\xC2\xB794% ')
+  assert_eq(badge_text(), ' Memory\xC2\xB794% ')
   assert_eq(badge_bg(), '#b4574b', 'crit falls back to the disk-crit red')
 end)
 
@@ -155,7 +155,7 @@ it('reports swap when swap is the worse axis', function()
     swap_used_pct = 100,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' S\xC2\xB7100% ', 'the dominant axis carries the badge')
+  assert_eq(badge_text(), ' Swap\xC2\xB7100% ', 'the dominant axis carries the badge')
 end)
 
 it('prefers memory on a tie, since that is the actionable number', function()
@@ -166,7 +166,7 @@ it('prefers memory on a tie, since that is the actionable number', function()
     swap_used_pct = 86,
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' M\xC2\xB786% ')
+  assert_eq(badge_text(), ' Memory\xC2\xB786% ')
 end)
 
 it('stays absent on a swapless guest, where swap 0% is not a signal', function()
@@ -186,7 +186,7 @@ it('falls back to ? when the level is bad but no percent parsed', function()
     level = 'warn',
     heartbeat_at_ms = 1000000,
   }
-  assert_eq(badge_text(), ' M\xC2\xB7? ')
+  assert_eq(badge_text(), ' Memory\xC2\xB7? ')
 end)
 
 -- A recorder that stopped publishing is itself the problem, so this one case
@@ -202,7 +202,7 @@ it('shows ? and goes italic once the recorder goes stale', function()
   assert_eq(badge_text(), nil, 'sanity: fresh and healthy renders nothing')
 
   fake_now_ms = 1000000 + 90001
-  assert_eq(badge_text(), ' M\xC2\xB7? ', 'a dead recorder must surface even at level ok')
+  assert_eq(badge_text(), ' Memory\xC2\xB7? ', 'a dead recorder must surface even at level ok')
   assert_eq(badge_bg(), '#000000', 'stale uses the bar background, not an alert color')
 end)
 

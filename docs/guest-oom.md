@@ -1,6 +1,6 @@
 # Guest OOM Hardening
 
-Use this doc for guest-memory / OOM hardening on WSL: the restart loop, reclaim livelock, high-order allocation failure, `M·…` / earlyoom, and standing memory consumers.
+Use this doc for guest-memory / OOM hardening on WSL: the restart loop, reclaim livelock, high-order allocation failure, `Memory·…` / earlyoom, and standing memory consumers.
 
 Operator entry / other diagnostics: [`diagnostics.md`](./diagnostics.md). Host volume headroom: [`host-disk.md`](./host-disk.md).
 
@@ -16,7 +16,7 @@ Two units, installed together by [`scripts/dev/install-wsl-oom-guard.sh`](../scr
 | Unit | Type | What it does |
 |---|---|---|
 | `wezterm-oom-protect.service` | oneshot at boot | Writes `-1000` to `oom_score_adj` of WSL's init (comm `init-systemd(Ub…)`, normally PID 2), making it OOM-immune, and `-800` to every tmux server — then **sweeps the inherited copies back to `0`** (see below; without the sweep this unit is worse than useless). Guest OOM still kills the fattest process; it can no longer kill the process WSL uses to decide the distro still has sessions, nor the one holding every pane. `oom_score_adj` resets on every distro start, which is why this is a unit and not a one-off `echo`. |
-| `wezterm-oom-record.service` | long-running | Polls `init.scope/memory.events` + `MemAvailable`; dumps a top-N RSS snapshot (with each PID's `oom_score_adj`) on an `oom_kill` increment, on crossing the high-water mark, and at startup when the counter is already non-zero. Also **re-applies the protection set every tick** and **publishes the `M·` badge JSON** — see below. Runs at `OOMScoreAdjust=-900` so the recorder outlives the pressure it records. |
+| `wezterm-oom-record.service` | long-running | Polls `init.scope/memory.events` + `MemAvailable`; dumps a top-N RSS snapshot (with each PID's `oom_score_adj`) on an `oom_kill` increment, on crossing the high-water mark, and at startup when the counter is already non-zero. Also **re-applies the protection set every tick** and **publishes the `Memory·` badge JSON** — see below. Runs at `OOMScoreAdjust=-900` so the recorder outlives the pressure it records. |
 
 **`oom_score_adj` is inherited across `fork`, and that inversion is the whole trap.** Protecting WSL init does not protect one process — it silently immunizes *every* process spawned under it, because each new WSL session descends from PID 2 and inherits its value. Under tmux the leak compounds: panes inherit the tmux server's `-800`, and so does every agent and dev server started in them. Measured right after a `tmux kill-server` on this host: **119 processes carried a protected value when exactly 2 should have — ~6.7 Gi of the largest consumers (claude, `chrome-devtools-mcp`, node, esbuild) all off the OOM killer's candidate list.** That is strictly worse than installing nothing: the kernel still has to reclaim, but no worthwhile victim is eligible, so it kills small useless processes or fails to reclaim at all.
 
@@ -79,33 +79,33 @@ The consumers were the usual standing set, from the guard's own high-water snaps
 
 **What the guard got wrong here, and what changed.** The protection set was working correctly — `renormalize` was still sweeping at `15:21:19`, so every fat process was an eligible victim at `oom_score_adj=0`. The killer just never ran. The real gap was visibility: the guard crossed its high-water mark at 09:48, again at 11:25, and then **stayed above it for four hours with no further signal**, because the high-water log line is edge-latched and lives in a file nobody reads. Two additions close that:
 
-#### The `M·` badge
+#### The `Memory·` badge {#the-memory-badge}
 
-`wezterm-oom-record` now publishes `state/oom-guard/status.json` next to the disk guard's, and [`wezterm-x/lua/mem_status.lua`](../wezterm-x/lua/mem_status.lua) renders it in right-status after `D·`:
+`wezterm-oom-record` now publishes `state/oom-guard/status.json` next to the disk guard's, and [`wezterm-x/lua/mem_status.lua`](../wezterm-x/lua/mem_status.lua) renders it in right-status after `WslDisk·`:
 
 ```
-(absent)   both axes below warn
-M·88%      memory used, at/above warn (amber)
-S·95%      swap used, when swap is the worse axis
-M·94%      at/above crit (red — earlyoom is close to picking a victim)
-M·?        the recorder was publishing and went stale
+(absent)      both axes below warn
+Memory·88%    memory used, at/above warn (amber)
+Swap·95%      swap used, when swap is the worse axis
+Memory·94%    at/above crit (red — earlyoom is close to picking a victim)
+Memory·?      the recorder was publishing and went stale
 ```
 
-Same "nothing while healthy" contract as `D·`: presence is the signal, and never having published renders nothing at all so a machine without the guard keeps a clean bar.
+Same "nothing while healthy" contract as `WslDisk·`: presence is the signal, and never having published renders nothing at all so a machine without the guard keeps a clean bar.
 
 **It reports whichever axis is worse, and that is the point.** Through the whole 2026-07-26 run-up memory read a calm 88% while swap drained from 20% free to zero. A memory-only badge would have been accurate and useless. Thresholds: warn at 85% memory (same number as the high-water mark, so the bar and the log agree) or 70% swap; crit at 93% / 90%.
 
-##### The `L·` badge (CPU load)
+##### The `LoadAvg·` badge (CPU load) {#the-loadavg-badge-cpu-load}
 
-The same `status.json` already carries `loadavg_1` / `loadavg_5` / `loadavg_15` for latency slow-row enrichment. [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua) classifies `loadavg_1` into a right-status badge after `M·`, so a **CPU-only** storm (memory still `ok`) is glanceable before typing feels sticky:
+The same `status.json` already carries `loadavg_1` / `loadavg_5` / `loadavg_15` for latency slow-row enrichment. [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua) classifies `loadavg_1` into a right-status badge after `Memory·`, so a **CPU-only** storm (memory still `ok`) is glanceable before typing feels sticky:
 
 ```
 (absent)   loadavg_1 below warn (default 8), or stale / never published
-L·12       warn (amber)
-L·23       crit (red; default loadavg_1 >= 16)
+LoadAvg·12 warn (amber)
+LoadAvg·23 crit (red; default loadavg_1 >= 16)
 ```
 
-Calibrated 2026-10-28 against sticky-typing reports (`loadavg_1≥8` on most slow status ticks; storm ~15–23). Thresholds live in `constants.load_guard`. Stale-recorder signalling stays on `M·` only. Detail: [`diagnostics.md`](./diagnostics.md) "Guest load badge".
+Calibrated 2026-10-28 against sticky-typing reports (`loadavg_1≥8` on most slow status ticks; storm ~15–23). Thresholds live in `constants.load_guard`. Stale-recorder signalling stays on `Memory·` only. Detail: [`diagnostics.md`](./diagnostics.md) "Guest load badge".
 
 Publishing is on level change plus a 30 s heartbeat, not every 10 s tick — the status file is on the Windows side of the 9p boundary and belongs nowhere near a hot path (see [`performance.md`](./performance.md)).
 
@@ -187,7 +187,7 @@ The consumers were the standing set again, from the guard's own high-water snaps
 | Layer | Why it did nothing |
 |---|---|
 | kernel OOM killer | `order:7` is above `PAGE_ALLOC_COSTLY_ORDER` (3). The kernel warns and fails; it never selects a victim. Same mechanism as the 2026-07-26 `order:4`. |
-| `M·` badge | Correct and already red — `crit` at 18:19:11 (mem 94%). A number on the bar is not an action, and there were 91 seconds left. |
+| `Memory·` badge | Correct and already red — `crit` at 18:19:11 (mem 94%). A number on the bar is not an action, and there were 91 seconds left. |
 | earlyoom | **The AND gate never armed.** At 18:20:36 memory was 95% used but swap was only 38% used — 62% free, nowhere near the 12%-free trigger. |
 
 So the previous section's conclusion — *"swap is the gate on this host, not memory"* — is **too strong**, and the table above it dates from before this incident. Free swap predicted the 2026-07-26 livelock well and predicts this shape not at all: high-order contiguity can collapse while both percentages still read survivable. That table's `2026-07-27 14:48` row is also an after-the-fact threshold calculation, not an observation — `journalctl -b -2` contains no earlyoom lines at all, because it was still being installed that afternoon. The only *observed* verdict for earlyoom on this failure mode is the 18:20 one: silent.
@@ -247,7 +247,7 @@ questions and routinely disagree after a spike:
 | `memory.current` + `memory.peak` | guest `/sys/fs/cgroup/memory.*` | What is the VM still charging, and what was this boot's high water? |
 | `VmmemWSL` WorkingSet + Private | Windows process list | What does the *host* still see held by WSL? |
 
-`scripts/runtime/wsl-oom-guard.sh status` covers the guest axes (and the `M·`
+`scripts/runtime/wsl-oom-guard.sh status` covers the guest axes (and the `Memory·`
 badge). It does **not** print Windows. For the host side from WSL, use the
 checked-in helper (UTF-8 PowerShell wrapper — never raw `powershell.exe`; see
 [`setup.md` Windows Script Execution](./setup.md#windows-script-execution)):
