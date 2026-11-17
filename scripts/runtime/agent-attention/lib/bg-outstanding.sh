@@ -113,13 +113,17 @@ bg_sidecar_clear() {
 }
 
 # Find Claude tasks dir for a session (best-effort under /tmp/claude-*).
+# WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT overrides the scan root (test hook:
+# suites point it at their sandbox so a hook fire neither walks the host's
+# real /tmp — ~70 ms each — nor sees a live session's tasks dir).
 bg_claude_tasks_dir() {
   local session_id="$1" d
   [[ -n "$session_id" ]] || return 1
   while IFS= read -r -d '' d; do
     printf '%s' "$d"
     return 0
-  done < <(find /tmp -maxdepth 6 -type d -path "*/${session_id}/tasks" 2>/dev/null -print0)
+  done < <(find "${WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT:-/tmp}" -maxdepth 6 -type d \
+    -path "*/${session_id}/tasks" 2>/dev/null -print0)
   return 1
 }
 

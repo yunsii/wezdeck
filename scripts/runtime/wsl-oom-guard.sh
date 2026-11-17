@@ -86,7 +86,10 @@
 #
 # Env knobs (see docs/guest-oom.md):
 #   WEZTERM_OOM_GUARD_LOG        append target. Default /var/log/wezterm-oom-guard.log
-#   WEZTERM_OOM_WATCH_INTERVAL   poll seconds. Default 10
+#   WEZTERM_OOM_WATCH_INTERVAL   poll seconds (fractions ok). Default 10
+#   WEZTERM_OOM_WATCH_MAX_TICKS  exit watch after N ticks; 0 = forever (default).
+#                                Test hook: lets the suite stop on a tick count
+#                                instead of killing the loop on a wall clock
 #   WEZTERM_OOM_WATCH_HIGH_PCT   high-water mark, percent of MemTotal. Default 85
 #   WEZTERM_OOM_WATCH_TOP_N      processes per snapshot. Default 8
 #   WEZTERM_OOM_SCOPE            cgroup dir for oom_kill counter. Default
@@ -126,6 +129,8 @@
 #   WEZTERM_OOM_FRAG_ACTION      off | compact | compact+term. Default
 #                                compact+term
 #   WEZTERM_OOM_FRAG_COOLDOWN    seconds between relief attempts. Default 120
+#   WEZTERM_OOM_COMPACT_SETTLE   seconds to let buddy lists settle after
+#                                compaction before re-reading. Default 1
 #   WEZTERM_OOM_FRAG_MIN_RSS_MIB smallest process the guard will SIGTERM.
 #                                Default 2048 — below that the victim is not the
 #                                cause and killing it only loses work
@@ -142,6 +147,7 @@ set -uo pipefail
 
 GUARD_LOG="${WEZTERM_OOM_GUARD_LOG:-/var/log/wezterm-oom-guard.log}"
 WATCH_INTERVAL="${WEZTERM_OOM_WATCH_INTERVAL:-10}"
+WATCH_MAX_TICKS="${WEZTERM_OOM_WATCH_MAX_TICKS:-0}"
 WATCH_HIGH_PCT="${WEZTERM_OOM_WATCH_HIGH_PCT:-85}"
 WATCH_TOP_N="${WEZTERM_OOM_WATCH_TOP_N:-8}"
 OOM_SCOPE="${WEZTERM_OOM_SCOPE:-/sys/fs/cgroup/init.scope}"
@@ -186,6 +192,7 @@ FRAG_MIN_BLOCKS="${WEZTERM_OOM_FRAG_MIN_BLOCKS:-1}"
 FRAG_MEM_PCT="${WEZTERM_OOM_FRAG_MEM_PCT:-$WATCH_HIGH_PCT}"
 FRAG_ACTION="${WEZTERM_OOM_FRAG_ACTION:-compact+term}"
 FRAG_COOLDOWN="${WEZTERM_OOM_FRAG_COOLDOWN:-120}"
+COMPACT_SETTLE="${WEZTERM_OOM_COMPACT_SETTLE:-1}"
 # A victim smaller than this is collateral, not cause: the observed hogs were
 # 13.4 Gi (next-server) and 4x ~3 Gi (chrome-devtools), while an agent CLI sits
 # around 400 Mi. Below the floor the guard reports and does nothing.
@@ -489,7 +496,7 @@ frag_relieve() {
   if ( printf '1\n' >"$COMPACT_FILE" ) 2>/dev/null; then
     # Compaction is synchronous for the writer, but the buddy lists settle a
     # beat later; re-reading immediately undercounts what was actually freed.
-    sleep 1
+    sleep "$COMPACT_SETTLE"
     after="$(read_frag)"
     log "frag: compacted — order>=$FRAG_ORDER free blocks $before -> $after"
   else
@@ -711,7 +718,7 @@ cmd_protect() {
 cmd_watch() {
   local last_kill cur_kill total avail pct high_latched=0 low_pct
   local swap_total swap_used swap_pct level last_level="" last_publish=0 now
-  local last_alloc_fail cur_alloc_fail frag_blocks frag_reason last_frag=0
+  local last_alloc_fail cur_alloc_fail frag_blocks frag_reason last_frag=0 ticks=0
   low_pct=$((WATCH_HIGH_PCT - 10))
   last_kill="$(read_oom_kill)"
   last_alloc_fail="$(alloc_fail_count)"
@@ -734,7 +741,8 @@ cmd_watch() {
     log "watch: non-zero oom_kill at startup — a kill landed in this or an earlier distro instance"
     snapshot "startup-oom-kill=$last_kill"
   fi
-  while :; do
+  while (( WATCH_MAX_TICKS == 0 || ticks < WATCH_MAX_TICKS )); do
+    ticks=$((ticks + 1))
     sleep "$WATCH_INTERVAL"
     # Re-apply protection every tick: tmux servers start after boot, and a
     # restarted one arrives with oom_score_adj=0. Silent unless something changed.

@@ -303,29 +303,46 @@ esac
 EOF
 chmod +x "$fake_bin/ps"
 
-# Runs the watch loop for a few ticks against fixtures only. Every path that
-# could touch real state is redirected: badge file, guard log, cgroup scope,
-# buddyinfo, kernel log, compaction trigger — and renormalize is off, so no real
-# process's oom_score_adj is ever rewritten by the suite.
+# Runs the watch loop for exactly N ticks against fixtures only, then the loop
+# exits on its own (WEZTERM_OOM_WATCH_MAX_TICKS). Ticks are 50 ms, so a case
+# costs well under a second instead of N wall-clock seconds; the `timeout` is
+# only a safety net for a hung loop. Every path that could touch real state is
+# redirected: badge file, guard log, cgroup scope, buddyinfo, kernel log,
+# compaction trigger — and renormalize is off, so no real process's
+# oom_score_adj is ever rewritten by the suite. Compaction settle defaults to 0
+# (a plain-file compact trigger has nothing to settle); the FIFO cases override.
 run_watch() {
-  local seconds="$1"
+  local ticks="$1"
   shift
   PATH="$fake_bin:$PATH" \
   FAKE_PS_ROWS="$fake_ps_rows" \
-  timeout -s KILL "$seconds" env \
+  timeout -s KILL 30 env \
     WEZTERM_OOM_MEMINFO="$tmpdir/meminfo" \
     WEZTERM_OOM_STATUS_FILE="$status_file" \
     WEZTERM_OOM_GUARD_LOG="$tmpdir/guard.log" \
     WEZTERM_OOM_SCOPE="$tmpdir/scope" \
     WEZTERM_OOM_RENORMALIZE=0 \
     WEZTERM_OOM_PROTECT_TMUX=0 \
-    WEZTERM_OOM_WATCH_INTERVAL=1 \
+    WEZTERM_OOM_WATCH_INTERVAL=0.05 \
+    WEZTERM_OOM_WATCH_MAX_TICKS="$ticks" \
+    WEZTERM_OOM_COMPACT_SETTLE=0 \
     WEZTERM_OOM_BUDDYINFO="$tmpdir/buddyinfo" \
     WEZTERM_OOM_KMSG_FILE="$tmpdir/kmsg" \
     WEZTERM_OOM_COMPACT_FILE="$tmpdir/compact" \
     "$@" \
     "$guard" watch 2>&1
-  return 0   # timeout always ends this; its exit status carries no information
+  return 0   # pass/fail is judged from the log and the victim, not the exit code
+}
+
+# Signal delivery is async and the test shell reaps the child via SIGCHLD;
+# poll up to ~3 s for the pid to vanish instead of a fixed sleep.
+wait_gone() {
+  local pid="$1" i
+  for ((i = 0; i < 60; i++)); do
+    kill -0 "$pid" 2>/dev/null || return 0
+    sleep 0.05
+  done
+  return 0
 }
 
 # A real process to aim at, so "the guard signalled the victim" is observed
@@ -354,9 +371,8 @@ terms_the_largest_consumer() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000   # 95% used, past the gate
   rm -f "$tmpdir/compact"
-  out="$(run_watch 4)"
-  # Give the signal a moment to land before asking whether it did.
-  sleep 0.3
+  out="$(run_watch 3)"
+  wait_gone "$victim"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -383,7 +399,7 @@ quiet_when_memory_is_calm() {
   write_buddyinfo "$tmpdir/buddyinfo" 0
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 800000 1000000 1000000   # 20% used
-  out="$(run_watch 3)"
+  out="$(run_watch 2)"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -404,9 +420,17 @@ acts_on_confirmed_failure_regardless_of_memory() {
   write_kmsg                                # ...and the baseline is clean
   write_meminfo "$tmpdir/meminfo" 800000 1000000 1000000   # ...and memory is calm
   # The failure arrives *after* the loop has taken its baseline, which is the
-  # only thing that counts as new.
-  ( sleep 2; alloc_fail_line 7 >>"$tmpdir/kmsg" ) >/dev/null 2>&1 &
-  out="$(run_watch 5)"
+  # only thing that counts as new. The baseline is taken before the
+  # "frag axis" startup line, so append only once that line is in the log.
+  : >"$tmpdir/guard.log"
+  (
+    for ((i = 0; i < 200; i++)); do
+      grep -q 'frag axis' "$tmpdir/guard.log" 2>/dev/null && break
+      sleep 0.02
+    done
+    alloc_fail_line 7 >>"$tmpdir/kmsg"
+  ) >/dev/null 2>&1 &
+  out="$(run_watch 20)"
   wait
   kill -KILL "$victim" 2>/dev/null
   wait "$victim" 2>/dev/null
@@ -432,7 +456,7 @@ compaction_alone_spares_the_victim() {
   rm -f "$tmpdir/compact"
   mkfifo "$tmpdir/compact"
   ( cat "$tmpdir/compact"; write_buddyinfo "$tmpdir/buddyinfo" 500 ) >/dev/null 2>&1 &
-  out="$(run_watch 5)"
+  out="$(run_watch 3 WEZTERM_OOM_COMPACT_SETTLE=0.5)"
   wait
   rm -f "$tmpdir/compact"
   local alive=0
@@ -458,7 +482,7 @@ never_signals_an_avoided_comm() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  out="$(run_watch 4)"
+  out="$(run_watch 3)"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -480,7 +504,7 @@ never_signals_a_small_process() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  out="$(run_watch 4)"
+  out="$(run_watch 3)"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -502,12 +526,12 @@ cooldown_holds_off_repeats() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  out="$(run_watch 6 WEZTERM_OOM_FRAG_COOLDOWN=999)"
+  out="$(run_watch 5 WEZTERM_OOM_FRAG_COOLDOWN=999)"
   kill -KILL "$victim" 2>/dev/null
   wait "$victim" 2>/dev/null
   attempts="$(grep -c 'frag: high-order-exhaustion' <<<"$out")"
   [[ "$attempts" == 1 ]] && return 0
-  printf '    expected exactly 1 relief attempt in ~5 ticks, got %s\n' "$attempts" >&2
+  printf '    expected exactly 1 relief attempt in 5 ticks, got %s\n' "$attempts" >&2
   return 1
 }
 it 'attempts relief once per cooldown window' cooldown_holds_off_repeats
@@ -530,9 +554,9 @@ escalates_to_sigkill_on_a_repeat_offender() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  # Cooldown short enough for a second attempt inside the run.
-  out="$(run_watch 7 WEZTERM_OOM_FRAG_COOLDOWN=2)"
-  sleep 0.3
+  # Cooldown 0 so the second tick is a second attempt on the same pid.
+  out="$(run_watch 3 WEZTERM_OOM_FRAG_COOLDOWN=0)"
+  wait_gone "$victim"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -557,7 +581,7 @@ dry_run_only_reports() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  out="$(run_watch 4 WEZTERM_OOM_DRY_RUN=1)"
+  out="$(run_watch 3 WEZTERM_OOM_DRY_RUN=1)"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -578,7 +602,7 @@ action_off_disables_the_axis() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  out="$(run_watch 4 WEZTERM_OOM_FRAG_ACTION=off)"
+  out="$(run_watch 3 WEZTERM_OOM_FRAG_ACTION=off)"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -600,7 +624,7 @@ compact_only_never_signals() {
   write_kmsg
   write_meminfo "$tmpdir/meminfo" 50000 1000000 1000000
   rm -f "$tmpdir/compact"
-  out="$(run_watch 4 WEZTERM_OOM_FRAG_ACTION=compact)"
+  out="$(run_watch 3 WEZTERM_OOM_FRAG_ACTION=compact)"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null
@@ -627,10 +651,10 @@ signals_despite_compaction_when_both_axes_crit() {
   rm -f "$tmpdir/compact"
   mkfifo "$tmpdir/compact"
   ( cat "$tmpdir/compact"; write_buddyinfo "$tmpdir/buddyinfo" 500 ) >/dev/null 2>&1 &
-  out="$(run_watch 5)"
+  out="$(run_watch 3 WEZTERM_OOM_COMPACT_SETTLE=0.5)"
   wait
   rm -f "$tmpdir/compact"
-  sleep 0.3
+  wait_gone "$victim"
   local alive=0
   kill -0 "$victim" 2>/dev/null && alive=1
   kill -KILL "$victim" 2>/dev/null

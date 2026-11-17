@@ -647,7 +647,7 @@ bumps `ts` before the 30-minute TTL prune. Not a fourth status.
 | Codex | unsupported (Stop stays `done`) | — | — |
 
 Env: `WEZTERM_ATTENTION_BG_TYPES` (default `shell`; comma-list may add
-`monitor` / `subagent`). Sidecar dir:
+`monitor` / `subagent`); `WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT` (default `/tmp`; tasks-dir scan root, test hook). Sidecar dir:
 `<state>/agent-attention/bg-sidecar/<session_id>.json`. Lib:
 `scripts/runtime/agent-attention/lib/bg-outstanding.sh`.
 
