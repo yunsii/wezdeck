@@ -333,6 +333,45 @@ else
   printf '%s\n' "$watch_out" >&2
 fi
 
+# --- Mode 3 step progress (progress.json + progress cmd + events) ---
+id_prog="$("$run" create --to wezdeck --from avc --title "progress trail" \
+  --observed "o" --assumed "a" --run --mock 2>/dev/null | jq -s -r 'map(select(.id != null)) | .[0].id // empty')"
+if [[ -z "$id_prog" ]]; then
+  # create --run prints multiple JSON lines; id may only be on create line
+  id_prog="$("$run" create --to wezdeck --from avc --title "progress trail2" \
+    --observed "o" --assumed "a" 2>/dev/null | jq -r .id)"
+  "$run" run --id "$id_prog" --phase auto --mock >/dev/null 2>&1 || true
+fi
+prog_json="$("$run" progress --id "$id_prog" 2>/dev/null)" || true
+if jq -e '.ok == true and (.progress.step | tostring | length) > 0' <<<"$prog_json" >/dev/null 2>&1; then
+  ok "progress --id returns snapshot with step"
+else
+  bad "progress --id returns snapshot with step"
+  printf '%s\n' "$prog_json" >&2
+fi
+ev_file="$DELEGATE_TICKETS_ROOT/_data/$id_prog/events.jsonl"
+if [[ -f "$ev_file" ]] && grep -q '"type": "progress"' "$ev_file" \
+  && grep -q 'research_start\|implement_start\|research_done\|implement_done' "$ev_file"; then
+  ok "events.jsonl contains progress milestones"
+else
+  bad "events.jsonl contains progress milestones"
+  [[ -f "$ev_file" ]] && cat "$ev_file" >&2
+fi
+pf="$DELEGATE_TICKETS_ROOT/_data/$id_prog/progress.json"
+if [[ -f "$pf" ]] && jq -e '.step and .message' "$pf" >/dev/null 2>&1; then
+  ok "progress.json written for Mode 3 run"
+else
+  bad "progress.json written for Mode 3 run"
+  [[ -f "$pf" ]] && cat "$pf" >&2
+fi
+watch_prog="$("$run" watch --id "$id_prog" --once --mock 2>/dev/null)" || true
+if jq -e '.ok == true and (has("progress") or has("new_events") or .done == true)' <<<"$watch_prog" >/dev/null 2>&1; then
+  ok "watch --once includes progress fields"
+else
+  bad "watch --once includes progress fields"
+  printf '%s\n' "$watch_prog" >&2
+fi
+
 # --- worktree reclaim on close + gc ---
 export WEZDECK_REPO="${WEZDECK_REPO:-$HOME/github/wezterm-config}"
 if [[ ! -x "$WEZDECK_REPO/scripts/runtime/worktree/worktree-task" ]]; then

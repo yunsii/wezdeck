@@ -130,6 +130,92 @@ def append_event(tid: str, event: dict[str, Any]) -> None:
         f.write(json.dumps(event, ensure_ascii=False) + "\n")
 
 
+def write_progress(
+    tid: str,
+    step: str,
+    message: str,
+    *,
+    heartbeat: bool = False,
+    phase: str | None = None,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Update progress.json; milestone events go to events.jsonl (heartbeats skip)."""
+    d = data_dir(tid)
+    d.mkdir(parents=True, exist_ok=True)
+    meta: dict[str, Any] = {}
+    try:
+        meta, _ = read_ticket(tid)
+    except FileNotFoundError:
+        pass
+    snap: dict[str, Any] = {
+        "id": tid,
+        "step": step,
+        "message": message,
+        "heartbeat": bool(heartbeat),
+        "ts": now_iso(),
+        "epoch": now_epoch(),
+        "status": meta.get("status"),
+        "phase": phase if phase is not None else meta.get("phase"),
+        "owner": meta.get("owner"),
+    }
+    if extra:
+        for k, v in extra.items():
+            if k not in snap:
+                snap[k] = v
+    (d / "progress.json").write_text(
+        json.dumps(snap, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    if not heartbeat:
+        ev: dict[str, Any] = {
+            "type": "progress",
+            "step": step,
+            "message": message,
+        }
+        if phase is not None:
+            ev["phase"] = phase
+        if extra:
+            for k, v in extra.items():
+                if k not in ev:
+                    ev[k] = v
+        append_event(tid, ev)
+        # stderr so sync create --run / watch callers see milestones without polling
+        print(f"[delegate] progress · {step} · {message}", file=sys.stderr)
+    return snap
+
+
+def read_progress(tid: str) -> dict[str, Any] | None:
+    path = data_dir(tid) / "progress.json"
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def list_events(tid: str, *, after: int = 0, limit: int | None = None) -> tuple[list[dict[str, Any]], int]:
+    """Return (events after line offset, total line count). after is 0-based line index."""
+    path = data_dir(tid) / "events.jsonl"
+    if not path.is_file():
+        return [], 0
+    lines = path.read_text(encoding="utf-8").splitlines()
+    total = len(lines)
+    start = max(0, int(after))
+    chunk = lines[start:]
+    if limit is not None and limit >= 0:
+        chunk = chunk[:limit]
+    out: list[dict[str, Any]] = []
+    for line in chunk:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out, total
+
+
 def read_meta_json(tid: str) -> dict[str, Any]:
     path = data_dir(tid) / "meta.json"
     if not path.is_file():
@@ -379,15 +465,107 @@ def cmd_phase_view(argv: list[str]) -> int:
     return 0
 
 
+def cmd_progress_emit(argv: list[str]) -> int:
+    """progress-emit <id> <step> <message> [--heartbeat] [--phase P] [--json EXTRA]"""
+    if len(argv) < 3:
+        print(
+            "usage: ticket_fs.py progress-emit <id> <step> <message> [--heartbeat] [--phase P]",
+            file=sys.stderr,
+        )
+        return 1
+    tid, step, message = argv[0], argv[1], argv[2]
+    heartbeat = False
+    phase: str | None = None
+    extra: dict[str, Any] = {}
+    i = 3
+    while i < len(argv):
+        if argv[i] == "--heartbeat":
+            heartbeat = True
+            i += 1
+        elif argv[i] == "--phase" and i + 1 < len(argv):
+            phase = argv[i + 1]
+            i += 2
+        elif argv[i] == "--json" and i + 1 < len(argv):
+            try:
+                parsed = json.loads(argv[i + 1])
+                if isinstance(parsed, dict):
+                    extra.update(parsed)
+            except json.JSONDecodeError:
+                pass
+            i += 2
+        else:
+            i += 1
+    if phase is not None:
+        try:
+            meta, body = read_ticket(tid)
+            meta["phase"] = phase
+            if meta.get("status") in (None, "submitted"):
+                meta["status"] = "in_progress"
+            write_ticket(tid, meta, body)
+        except FileNotFoundError:
+            pass
+    snap = write_progress(tid, step, message, heartbeat=heartbeat, phase=phase, extra=extra or None)
+    print(json.dumps({"ok": True, "progress": snap}, ensure_ascii=False))
+    return 0
+
+
+def cmd_progress_read(argv: list[str]) -> int:
+    """progress-read <id> [--after N] [--events-limit N]"""
+    if not argv:
+        print("usage: ticket_fs.py progress-read <id> [--after N] [--events-limit N]", file=sys.stderr)
+        return 1
+    tid = argv[0]
+    after = 0
+    events_limit: int | None = 20
+    i = 1
+    while i < len(argv):
+        if argv[i] == "--after" and i + 1 < len(argv):
+            after = int(argv[i + 1])
+            i += 2
+        elif argv[i] == "--events-limit" and i + 1 < len(argv):
+            events_limit = int(argv[i + 1])
+            i += 2
+        else:
+            i += 1
+    try:
+        meta, _ = read_ticket(tid)
+    except FileNotFoundError as e:
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=sys.stderr)
+        return 2
+    new_events, total = list_events(tid, after=after, limit=None)
+    recent = new_events
+    if events_limit is not None and after == 0:
+        recent = new_events[-events_limit:] if events_limit >= 0 else new_events
+    elif events_limit is not None and events_limit >= 0:
+        recent = new_events[:events_limit]
+    out = {
+        "ok": True,
+        "id": tid,
+        "status": meta.get("status"),
+        "phase": meta.get("phase"),
+        "owner": meta.get("owner"),
+        "progress": read_progress(tid),
+        "new_events": new_events if after else recent,
+        "events_total": total,
+        "events_cursor": total,
+    }
+    print(json.dumps(out, ensure_ascii=False))
+    return 0
+
+
 def main(argv: list[str]) -> int:
     if not argv:
-        print("usage: ticket_fs.py reindex|phase-view|…", file=sys.stderr)
+        print("usage: ticket_fs.py reindex|phase-view|progress-emit|progress-read|…", file=sys.stderr)
         return 1
     cmd = argv[0]
     if cmd == "reindex":
         return cmd_reindex(argv[1:])
     if cmd == "phase-view":
         return cmd_phase_view(argv[1:])
+    if cmd == "progress-emit":
+        return cmd_progress_emit(argv[1:])
+    if cmd == "progress-read":
+        return cmd_progress_read(argv[1:])
     print(f"unknown: {cmd}", file=sys.stderr)
     return 1
 

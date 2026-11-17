@@ -42,6 +42,11 @@ delegate run --id req-… --phase research [--backend claude]
 # Offline: add --mock (no LLM / no worktree)
 # Workers use scripts/dev/host-agent-invoke/ (write). See docs/agent-scheduling.md
 
+# Step feedback while Mode 3 runs (progress.json + events; watch ticks each round):
+delegate progress --id req-…
+delegate watch --id req-… --interval 20
+# Heartbeat interval: DELEGATE_PROGRESS_HEARTBEAT_SEC (default 15; 0=off)
+
 # Mode 3 worktree cleanup (close reclaims by default; gc sweeps backlog):
 delegate close --id req-… --doc path.md          # also reclaim delegate-* tree
 delegate close --id req-… --no-doc "…" --keep-worktree

@@ -131,6 +131,13 @@ else:
 
 mod.write_ticket(tid, meta, body)
 mod.append_event(tid, {"type": "research_done", "verdict": verdict, "status": meta["status"], "next_action": next_action})
+mod.write_progress(
+    tid,
+    "research_done",
+    f"research done · verdict={verdict} · next={next_action}",
+    phase=meta["phase"],
+    extra={"verdict": verdict, "next_action": next_action},
+)
 mod.reindex()
 print(json.dumps({
     "ok": True,
@@ -211,6 +218,13 @@ else:
 
 mod.write_ticket(tid, meta, body)
 mod.append_event(tid, {"type": "implement_done", "ready_to_ship": ready, "status": meta["status"], "next_action": next_action})
+mod.write_progress(
+    tid,
+    "implement_done",
+    f"implement done · ready_to_ship={ready} · next={next_action}",
+    phase=meta["phase"],
+    extra={"ready_to_ship": ready, "next_action": next_action},
+)
 mod.reindex()
 print(json.dumps({
     "ok": True,
@@ -312,6 +326,13 @@ delegate_worker_prepare_prompt() {
   printf '%s\n' "$local_result"
 }
 
+# Mark research_start + emit progress (shared by mock/live).
+delegate_worker_mark_research_start() {
+  local ticket_id=$1 backend=$2
+  delegate_progress_emit "$ticket_id" "research_start" \
+    "research phase started (backend=$backend)" --phase researching
+}
+
 # Run research worker. Args: ticket_id worktree_path backend
 delegate_worker_research() {
   local ticket_id=$1 worktree_path=${2:-} backend=${3:-claude}
@@ -320,6 +341,9 @@ delegate_worker_research() {
   ticket_path="$root/_data/${ticket_id}/ticket.md"
   result_path="$root/_data/${ticket_id}/worker-result.json"
   rm -f "$result_path"
+
+  delegate_worker_mark_research_start "$ticket_id" "$backend"
+  delegate_progress_heartbeat_start "$ticket_id" "researching"
 
   if [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" ]]; then
     delegate_log "worker MOCK research id=$ticket_id (via host-agent-invoke)"
@@ -332,12 +356,16 @@ delegate_worker_research() {
       HOST_AGENT_INVOKE_TRACE="${HOST_AGENT_INVOKE_TRACE:-$root/_data/${ticket_id}/host-invoke.trace.jsonl}" \
       delegate_worker_invoke "$backend" "$mock_cwd" "$prompt_path" \
       "$root/_data/${ticket_id}/worker.log" write
+    delegate_progress_heartbeat_stop "$ticket_id"
     delegate_worker_write_mock_result "$result_path" "$ticket_path"
     delegate_worker_apply_result "$ticket_id"
     return 0
   fi
 
-  [[ -n "$worktree_path" && -d "$worktree_path" ]] || delegate_die "worktree required for live worker"
+  [[ -n "$worktree_path" && -d "$worktree_path" ]] || {
+    delegate_progress_heartbeat_stop "$ticket_id"
+    delegate_die "worktree required for live worker"
+  }
   local prepared prompt_path local_result
   prepared="$(delegate_worker_prepare_prompt "$ticket_id" "$worktree_path" research)"
   prompt_path="$(printf '%s\n' "$prepared" | sed -n '1p')"
@@ -345,6 +373,7 @@ delegate_worker_research() {
 
   delegate_worker_invoke "$backend" "$worktree_path" "$prompt_path" \
     "$root/_data/${ticket_id}/worker.log" write
+  delegate_progress_heartbeat_stop "$ticket_id"
 
   if [[ -f "$local_result" ]]; then
     cp -f "$local_result" "$result_path"
@@ -357,6 +386,35 @@ delegate_worker_research() {
   delegate_worker_apply_result "$ticket_id"
 }
 
+delegate_worker_mark_implement_start() {
+  local ticket_id=$1 backend=$2
+  env DELEGATE_TICKETS_ROOT="$(delegate_tickets_root)" TOOL_ROOT="$(delegate_tool_root)" \
+    ID="$ticket_id" BACKEND="$backend" python3 - <<'PY'
+import importlib.util, os
+spec = importlib.util.spec_from_file_location(
+    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+tid = os.environ["ID"]
+backend = os.environ.get("BACKEND") or "claude"
+meta, body = mod.read_ticket(tid)
+meta["status"] = "in_progress"
+meta["owner"] = "worker"
+meta["phase"] = "implementing"
+mod.write_ticket(tid, meta, body)
+mod.append_event(tid, {"type": "implement_start", "backend": backend})
+mod.write_progress(
+    tid,
+    "implement_start",
+    f"implement phase started (backend={backend})",
+    phase="implementing",
+    extra={"backend": backend},
+)
+mod.reindex()
+PY
+}
+
 # Run implement worker. Args: ticket_id worktree_path backend
 delegate_worker_implement() {
   local ticket_id=$1 worktree_path=${2:-} backend=${3:-claude}
@@ -365,6 +423,9 @@ delegate_worker_implement() {
   ticket_path="$root/_data/${ticket_id}/ticket.md"
   result_path="$root/_data/${ticket_id}/implement-result.json"
   rm -f "$result_path"
+
+  delegate_worker_mark_implement_start "$ticket_id" "$backend"
+  delegate_progress_heartbeat_start "$ticket_id" "implementing"
 
   if [[ "${DELEGATE_WORKER_MOCK:-0}" == "1" ]]; then
     delegate_log "worker MOCK implement id=$ticket_id (via host-agent-invoke)"
@@ -377,37 +438,24 @@ delegate_worker_implement() {
       HOST_AGENT_INVOKE_TRACE="${HOST_AGENT_INVOKE_TRACE:-$root/_data/${ticket_id}/host-invoke.trace.jsonl}" \
       delegate_worker_invoke "$backend" "$mock_cwd" "$prompt_path" \
       "$root/_data/${ticket_id}/implement.log" write
+    delegate_progress_heartbeat_stop "$ticket_id"
     delegate_worker_write_mock_implement_result "$result_path"
     delegate_worker_apply_implement_result "$ticket_id"
     return 0
   fi
 
-  [[ -n "$worktree_path" && -d "$worktree_path" ]] || delegate_die "worktree required for live implement"
+  [[ -n "$worktree_path" && -d "$worktree_path" ]] || {
+    delegate_progress_heartbeat_stop "$ticket_id"
+    delegate_die "worktree required for live implement"
+  }
   local prepared prompt_path local_result
   prepared="$(delegate_worker_prepare_prompt "$ticket_id" "$worktree_path" implement)"
   prompt_path="$(printf '%s\n' "$prepared" | sed -n '1p')"
   local_result="$(printf '%s\n' "$prepared" | sed -n '2p')"
 
-  # mark phase
-  env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$(delegate_tool_root)" ID="$ticket_id" python3 - <<'PY'
-import importlib.util, os
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-tid = os.environ["ID"]
-meta, body = mod.read_ticket(tid)
-meta["status"] = "in_progress"
-meta["owner"] = "worker"
-meta["phase"] = "implementing"
-mod.write_ticket(tid, meta, body)
-mod.append_event(tid, {"type": "implement_start"})
-mod.reindex()
-PY
-
   delegate_worker_invoke "$backend" "$worktree_path" "$prompt_path" \
     "$root/_data/${ticket_id}/implement.log" write
+  delegate_progress_heartbeat_stop "$ticket_id"
 
   if [[ -f "$local_result" ]]; then
     cp -f "$local_result" "$result_path"

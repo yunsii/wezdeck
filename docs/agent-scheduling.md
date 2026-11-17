@@ -101,6 +101,11 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 **硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。  
 Mode 2 的 `--to .` / `--from .` 按 **主 worktree 根** 解析 allowlist（`git rev-parse --git-common-dir`）：在 `…/.worktrees/<repo>/<slug>` 里认领等于在主仓认领，不会把 slug basename 当成仓库名。
 
+**Mode 3 分步反馈：** `_data/<id>/progress.json` + `events.jsonl` 的 `progress` 行覆盖
+`research_start` → `research_done` → `implement_start` → `implement_done`（及 worktree /
+watch kick）；长调用心跳只写 `progress.json`。`delegate progress --id` 单次快照；
+`delegate watch` 每轮打出带 `progress`/`new_events` 的 JSON。发起方 agent 应把里程碑转述给用户，避免干等。
+
 ### Mode 3 worktree cleanup
 
 Mode 3 creates `.worktrees/<repo>/delegate-<ticket-id>/` via `worktree-task`.  

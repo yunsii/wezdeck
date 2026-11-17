@@ -13,6 +13,9 @@
 #       refuses a human/session lease unless --steal
 #   run.sh watch --id ID [--interval SEC] [--once] [--max-rounds N] [--backend …] [--mock]
 #       poll until terminal / blocked on human; auto-continue implement when approved
+#       each wait round prints progress + new_events (Mode 3 step feedback)
+#   run.sh progress --id ID [--after N] [--events-limit N]
+#       one-shot progress snapshot (progress.json + recent/new events)
 #   run.sh inbox [--to TARGET|.]
 #   run.sh show --id ID
 #   run.sh next [--to TARGET|.] [--id ID]
@@ -52,7 +55,10 @@ TOOL_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
 . "$TOOL_ROOT/lib/worktree.sh"
 # shellcheck source=/dev/null
 . "$TOOL_ROOT/lib/worker.sh"
+# shellcheck source=/dev/null
 . "$TOOL_ROOT/lib/lifecycle.sh"
+# shellcheck source=/dev/null
+. "$TOOL_ROOT/lib/progress.sh"
 
 PY="$TOOL_ROOT/lib/ticket_fs.py"
 usage() {
@@ -201,93 +207,6 @@ PY
   fi
 }
 
-cmd_watch() {
-  local id="" interval=20 once=0 max_rounds=60 backend="claude" mock=0
-  while (($#)); do
-    case "$1" in
-      --id) id=$2; shift 2 ;;
-      --interval) interval=$2; shift 2 ;;
-      --once) once=1; shift ;;
-      --max-rounds) max_rounds=$2; shift 2 ;;
-      --backend) backend=$2; shift 2 ;;
-      --mock) mock=1; shift ;;
-      *) delegate_die "unknown watch arg: $1" ;;
-    esac
-  done
-  [[ -n "$id" ]] || delegate_die "watch requires --id"
-  delegate_ensure_tree
-  ((mock)) && export DELEGATE_WORKER_MOCK=1
-
-  local round=0 root status phase owner next
-  root="$(delegate_tickets_root)"
-  [[ -f "$root/_data/$id/ticket.md" ]] || delegate_die "ticket not found: $id" 2
-
-  while (( round < max_rounds )); do
-    round=$((round + 1))
-    status="$(awk -F': ' '/^status:/{print $2; exit}' "$root/_data/$id/ticket.md" | tr -d '"')"
-    phase="$(awk -F': ' '/^phase:/{print $2; exit}' "$root/_data/$id/ticket.md" | tr -d '"')"
-    owner="$(awk -F': ' '/^owner:/{print $2; exit}' "$root/_data/$id/ticket.md" | tr -d '"')"
-    delegate_log "watch round=$round status=$status phase=$phase owner=$owner"
-
-    case "$status" in
-      closed|rejected)
-        printf '{"ok":true,"id":"%s","done":true,"status":"%s","phase":"%s","rounds":%s}\n' \
-          "$id" "$status" "$phase" "$round"
-        return 0
-        ;;
-      shipped)
-        printf '{"ok":true,"id":"%s","done":true,"status":"shipped","phase":"%s","rounds":%s,"hint":"initiator verify / close"}\n' \
-          "$id" "$phase" "$round"
-        return 0
-        ;;
-      waiting_initiator|failed)
-        printf '{"ok":true,"id":"%s","blocked":true,"status":"%s","phase":"%s","owner":"initiator","hint":"reply --decision … [--continue]"}\n' \
-          "$id" "$status" "$phase"
-        ((once)) && return 0
-        sleep "$interval"
-        continue
-        ;;
-    esac
-
-    # Auto-continue implement only for worker-owned tickets. Session claims stay in TUI.
-    if [[ "$owner" == "human" && ( "$phase" == "approved_to_implement" || "$phase" == "research_done" || "$phase" == "session" ) ]]; then
-      printf '{"ok":true,"id":"%s","blocked":true,"status":"%s","phase":"%s","owner":"human","hint":"session claim — target TUI implements; do not run/worktree"}\n' \
-        "$id" "$status" "$phase"
-      ((once)) && return 0
-      sleep "$interval"
-      continue
-    fi
-    if [[ "$phase" == "approved_to_implement" || "$phase" == "research_done" ]]; then
-      delegate_log "watch: kicking implement (phase=$phase)"
-      local run_args=(--id "$id" --phase implement --backend "$backend")
-      ((mock)) && run_args+=(--mock)
-      cmd_run "${run_args[@]}"
-      ((once)) && return 0
-      sleep 1
-      continue
-    fi
-
-    if [[ "$phase" == "implement_incomplete" ]]; then
-      delegate_log "watch: retry implement"
-      local run_args=(--id "$id" --phase implement --backend "$backend")
-      ((mock)) && run_args+=(--mock)
-      cmd_run "${run_args[@]}"
-      ((once)) && return 0
-      sleep 1
-      continue
-    fi
-
-    # in_progress / researching / implementing — wait
-    ((once)) && {
-      printf '{"ok":true,"id":"%s","waiting":true,"status":"%s","phase":"%s"}\n' "$id" "$status" "$phase"
-      return 0
-    }
-    sleep "$interval"
-  done
-
-  printf '{"ok":false,"id":"%s","error":"max rounds reached","rounds":%s}\n' "$id" "$max_rounds" >&2
-  return 2
-}
 cmd_set_status() {
   local id="" status="" owner="" phase=""
   while (($#)); do
@@ -1500,6 +1419,7 @@ case "$cmd" in
   create) cmd_create "$@" ;;
   run) cmd_run "$@" ;;
   watch) cmd_watch "$@" ;;
+  progress) cmd_progress "$@" ;;
   inbox) cmd_inbox "$@" ;;
   show) cmd_show "$@" ;;
   next) cmd_next "$@" ;;

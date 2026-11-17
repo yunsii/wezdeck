@@ -40,6 +40,12 @@ mj["worktree"] = os.environ.get("WT") or None
 mj["branch"] = os.environ.get("BR") or None
 mod.write_meta_json(tid, mj)
 mod.append_event(tid, {"type": "worktree_ready", "worktree": mj["worktree"], "branch": mj["branch"]})
+mod.write_progress(
+    tid,
+    "worktree_ready",
+    f"worktree ready: {mj.get('worktree') or '(none)'}",
+    extra={"worktree": mj.get("worktree"), "branch": mj.get("branch")},
+)
 PY
   fi
   printf '%s\n' "$wt_path"

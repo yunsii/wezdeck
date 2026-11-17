@@ -56,7 +56,17 @@ More visible files are not better cross-repo context for delegation: the target 
 "$D" run --id <id> --phase auto|research|implement
 "$D" reply --id <id> --decision "…" --continue   # after challenge (worker-owned only)
 "$D" watch --id <id> [--once] [--interval 20]    # blocked initiator loop (worker-owned)
+"$D" progress --id <id> [--after N]              # one-shot: progress.json + events
 ```
+
+**Step feedback (avoid hard-wait silence):** Mode 3 writes `_data/<id>/progress.json` and
+`progress` rows into `events.jsonl` at milestones (`research_start` → `research_done` →
+`implement_start` → `implement_done`, plus `worktree_ready` / watch kicks). Long invokes also
+heartbeat into `progress.json` (default every 15s; `DELEGATE_PROGRESS_HEARTBEAT_SEC=0` disables).
+`watch` prints a JSON tick **each round** with `progress` + `new_events` (stderr human lines).
+Initiator agents should **relay those ticks to the user** — prefer `create` then background
+`run` + `watch`/`progress` poll when the chat must stay live; sync `create --run` still emits
+`[delegate] progress · …` on stderr during the blocked call.
 
 Policy for **Mode 3**: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing with `--run` means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.
 
@@ -149,8 +159,12 @@ Only when the user explicitly wants a background worker:
 "$D" create … --run [--backend claude|codex|grok]
 # or later:
 "$D" run --id <id> --phase auto
-"$D" watch --id <id>   # initiator blocked on worker
+"$D" watch --id <id>   # initiator blocked on worker; each round → progress tick
+"$D" progress --id <id>  # one-shot snapshot for chat updates
 ```
+
+While Mode 3 runs, **report milestones to the user** (researching / implement / waiting_initiator /
+shipped) from `watch` ticks or `progress` — do not leave them staring at a silent block.
 
 ### D) Challenge (target) → reply (initiator)
 
@@ -229,7 +243,7 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 
 ## Related
 
-- Runner: `run.sh` · lib: `lib/` (`lifecycle.sh` = claim/run/reply) · offline: `test.sh`
+- Runner: `run.sh` · lib: `lib/` (`lifecycle.sh` = claim/run/reply; `progress.sh` = watch/progress) · offline: `test.sh`
 - Link: `scripts/dev/link-platform-skills.sh`
 - Sibling: `adversarial-review`, `brainstorm`
 - Scheduling: `docs/agent-scheduling.md` (ticket vs multi-dir: `#ticket-vs-multi-dir-mount`)

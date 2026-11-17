@@ -27,6 +27,68 @@ delegate_log() {
   printf '\033[2m[delegate]\033[0m %s\n' "$*" >&2
 }
 
+# Mode 3 progress: update progress.json (+ events.jsonl unless --heartbeat).
+# Usage: delegate_progress_emit <id> <step> <message> [--heartbeat] [--phase PHASE]
+delegate_progress_emit() {
+  local id=$1 step=$2 message=$3
+  shift 3 || true
+  local args=()
+  while (($#)); do
+    case "$1" in
+      --heartbeat) args+=(--heartbeat); shift ;;
+      --phase)
+        args+=(--phase "$2")
+        shift 2
+        ;;
+      *) shift ;;
+    esac
+  done
+  # progress-emit writes progress.json / events; milestones also print on stderr
+  env DELEGATE_TICKETS_ROOT="$(delegate_tickets_root)" \
+    python3 "$(delegate_tool_root)/lib/ticket_fs.py" progress-emit "$id" "$step" "$message" "${args[@]}" \
+    >/dev/null
+}
+
+delegate_progress_heartbeat_stop() {
+  local id=$1
+  local root pidfile pid
+  root="$(delegate_tickets_root)"
+  pidfile="$root/_data/$id/.progress-hb.pid"
+  [[ -f "$pidfile" ]] || return 0
+  pid="$(cat "$pidfile" 2>/dev/null || true)"
+  if [[ -n "${pid:-}" ]] && kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+  fi
+  rm -f "$pidfile"
+}
+
+# Background heartbeat while a long invoke runs. Updates progress.json only.
+# Interval: DELEGATE_PROGRESS_HEARTBEAT_SEC (default 15). Set 0 to disable.
+delegate_progress_heartbeat_start() {
+  local id=$1 step=$2
+  local root interval pidfile
+  root="$(delegate_tickets_root)"
+  interval="${DELEGATE_PROGRESS_HEARTBEAT_SEC:-15}"
+  [[ "$interval" =~ ^[0-9]+$ ]] || interval=15
+  if ((interval == 0)); then
+    return 0
+  fi
+  mkdir -p "$root/_data/$id"
+  delegate_progress_heartbeat_stop "$id"
+  pidfile="$root/_data/$id/.progress-hb.pid"
+  (
+    local start elapsed
+    start="$(delegate_now_epoch)"
+    while true; do
+      sleep "$interval" || exit 0
+      elapsed=$(($(delegate_now_epoch) - start))
+      delegate_progress_emit "$id" "$step" "still ${step} (${elapsed}s elapsed)" --heartbeat || true
+    done
+  ) &
+  echo $! >"$pidfile"
+}
+
 # flock wrapper: delegate_with_lock <lockfile> -- command...
 delegate_with_lock() {
   local lockfile=$1
