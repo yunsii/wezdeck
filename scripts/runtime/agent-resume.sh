@@ -33,12 +33,24 @@ log_resume() {
 }
 
 if agent_session_id_usable "${session_id:-}"; then
-  log_resume "agent resume typed" \
-    "resume_mode=typed" "session_id=$session_id"
-  if [[ -n "${TMUX_PANE:-}" ]]; then
-    agent_session_pin_pane "$TMUX_PANE" "$session_id" "$agent" "$PWD"
+  # Claude: refuse typed resume when the transcript jsonl is gone. A bare
+  # pin / .wakatime sidecar still looks "usable" as an id, but
+  # `claude --resume <id>` then exits immediately and primary-pane-wrapper
+  # drops into a login shell — the pane never reaches agent state.
+  if [[ "$agent" == claude* ]] \
+    && ! agent_session_claude_transcript_exists "$session_id" "$PWD"; then
+    log_resume "agent resume typed skipped; transcript missing" \
+      "resume_mode=typed_skip_missing_transcript" "session_id=$session_id"
+    agent_session_forget_typed_id "$session_id" "${TMUX_PANE:-}" "$PWD" || true
+    session_id=""
+  else
+    log_resume "agent resume typed" \
+      "resume_mode=typed" "session_id=$session_id"
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+      agent_session_pin_pane "$TMUX_PANE" "$session_id" "$agent" "$PWD"
+    fi
+    exec "$agent_bin" "$@" --resume "$session_id"
   fi
-  exec "$agent_bin" "$@" --resume "$session_id"
 fi
 
 log_resume "agent resume continue" "resume_mode=continue"

@@ -36,6 +36,62 @@ agent_session_id_usable() {
   return 0
 }
 
+# Claude Code project-dir encoding: absolute cwd with every `/` and `.`
+# turned into `-` (so `/home/u/work/.worktrees/x` →
+# `-home-u-work--worktrees-x`). Transcripts live at
+# `~/.claude/projects/<encoded>/<session-id>.jsonl`.
+agent_session_claude_project_dir_name() {
+  local cwd="${1:-}"
+  local abs=""
+  [[ -n "$cwd" ]] || return 1
+  if [[ -d "$cwd" ]]; then
+    abs="$(cd "$cwd" 2>/dev/null && pwd -P || true)"
+  fi
+  [[ -n "$abs" ]] || abs="$cwd"
+  abs="${abs//\//-}"
+  abs="${abs//./-}"
+  printf '%s' "$abs"
+}
+
+# True when a Claude typed --resume <id> can actually load a transcript for
+# this cwd. A durable pin can outlive the jsonl (only a .wakatime sidecar
+# left); resuming that id exits immediately and the pane-wrapper drops the
+# user into a login shell — "进不去 agent".
+agent_session_claude_transcript_exists() {
+  local sid="${1:-}" cwd="${2:-}"
+  local encoded="" path=""
+  agent_session_id_usable "$sid" || return 1
+  encoded="$(agent_session_claude_project_dir_name "$cwd" 2>/dev/null || true)"
+  [[ -n "$encoded" ]] || return 1
+  path="${HOME:-}/.claude/projects/${encoded}/${sid}.jsonl"
+  [[ -f "$path" && -s "$path" ]]
+}
+
+# Drop pane + window + durable pins for a stale typed id so the next boot
+# falls through to cwd-scoped --continue / fresh instead of retrying it.
+agent_session_forget_typed_id() {
+  local sid="${1:-}" pane_id="${2:-}" cwd="${3:-}"
+  local slot=""
+  agent_session_id_usable "$sid" || return 0
+  agent_session_pin_clear_session "$sid" || true
+  if [[ -n "$pane_id" ]]; then
+    tmux set-option -p -t "$pane_id" -u @wezterm_agent_session_id 2>/dev/null || true
+    slot="$(agent_session_slot_for_pane "$pane_id" 2>/dev/null || true)"
+    if [[ "$slot" == "primary" ]]; then
+      tmux set-window-option -t "$pane_id" -u @wezterm_primary_agent_session_id 2>/dev/null || true
+    fi
+    if [[ -z "$cwd" ]]; then
+      cwd="$(tmux display-message -p -t "$pane_id" '#{pane_current_path}' 2>/dev/null || true)"
+    fi
+    if [[ -n "$cwd" && -n "$slot" ]]; then
+      agent_session_pin_clear "$cwd" "$slot" || true
+    fi
+  elif [[ -n "$cwd" ]]; then
+    agent_session_pin_clear "$cwd" "primary" || true
+    agent_session_pin_clear "$cwd" "secondary" || true
+  fi
+}
+
 agent_session_normalize_agent() {
   local raw="${1:-}"
   case "$raw" in

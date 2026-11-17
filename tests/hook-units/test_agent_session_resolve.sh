@@ -19,6 +19,31 @@ agent_session_id_usable "pane:12" && fail "pane: fallback must be rejected"
 agent_session_id_usable "" && fail "empty must be rejected"
 pass "agent_session_id_usable filters pane: and empty"
 
+# --- Claude project encoding + transcript existence ---
+# Non-existent path still encodes the literal string (/ and . → -).
+encoded="$(agent_session_claude_project_dir_name /tmp/demo/.worktrees/x)"
+[[ "$encoded" == "-tmp-demo--worktrees-x" ]] \
+  || fail "unexpected Claude project encoding: $encoded"
+pass "agent_session_claude_project_dir_name encodes / and ."
+
+FAKE_HOME="$TEST_ROOT/fake-home"
+FAKE_PROJ="$FAKE_HOME/.claude/projects/-tmp-demo--worktrees-x"
+mkdir -p "$FAKE_PROJ"
+OLD_HOME="${HOME:-}"
+export HOME="$FAKE_HOME"
+SID_OK="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+SID_GONE="ffffffff-ffff-ffff-ffff-ffffffffffff"
+printf '{"type":"x"}\n' > "$FAKE_PROJ/${SID_OK}.jsonl"
+printf 'waka\n' > "$FAKE_PROJ/${SID_GONE}.jsonl.wakatime"
+agent_session_claude_transcript_exists "$SID_OK" /tmp/demo/.worktrees/x \
+  || fail "jsonl should count as present"
+agent_session_claude_transcript_exists "$SID_GONE" /tmp/demo/.worktrees/x \
+  && fail "wakatime-only must not count"
+agent_session_claude_transcript_exists "$SID_OK" /tmp/missing-cwd \
+  && fail "missing project dir must not count"
+pass "agent_session_claude_transcript_exists requires non-empty jsonl"
+export HOME="$OLD_HOME"
+
 # --- attention lookup ---
 ATT_DIR="$TEST_ROOT/state/agent-attention"
 mkdir -p "$ATT_DIR"
@@ -155,6 +180,30 @@ env -i \
 grep -Fxq -- '--continue' "$ARGS_LOG" \
   || fail "agent-resume without id must --continue; got=$(cat "$ARGS_LOG")"
 pass "agent-resume without id uses --continue"
+
+# Claude typed id with only a .wakatime sidecar must skip --resume and
+# fall through to --continue (otherwise the pane-wrapper lands in a shell).
+rm -f "$ARGS_LOG"
+STALE_HOME="$TEST_ROOT/stale-home"
+STALE_PROJ="$STALE_HOME/.claude/projects/-tmp-stale"
+mkdir -p "$STALE_PROJ" "$TEST_ROOT/stale-cwd"
+printf 'waka\n' > "$STALE_PROJ/stale-sid-fff.jsonl.wakatime"
+# Encode of /tmp/stale-cwd → -tmp-stale-cwd; point project dir accordingly.
+STALE_ENC="$(agent_session_claude_project_dir_name "$TEST_ROOT/stale-cwd")"
+mkdir -p "$STALE_HOME/.claude/projects/$STALE_ENC"
+printf 'waka\n' > "$STALE_HOME/.claude/projects/$STALE_ENC/stale-sid-fff.jsonl.wakatime"
+env -i \
+  HOME="$STALE_HOME" \
+  PATH="/usr/bin:/bin:$FAKE_BIN" \
+  PWD="$TEST_ROOT/stale-cwd" \
+  WEZDECK_RESUME_SESSION_ID="stale-sid-fff" \
+  bash -c 'cd "$PWD" && exec bash '"$REPO_ROOT/scripts/runtime/agent-resume.sh"' claude '"$FALLBACK"' '"$FAKE_AGENT"' base' \
+  || true
+grep -Fxq -- '--continue' "$ARGS_LOG" \
+  || fail "claude missing transcript must --continue; got=$(cat "$ARGS_LOG" 2>/dev/null || echo missing)"
+grep -Fq -- '--resume' "$ARGS_LOG" 2>/dev/null \
+  && fail "claude missing transcript must not --resume; got=$(cat "$ARGS_LOG")"
+pass "claude typed skip missing transcript falls through to --continue"
 
 # --- durable pin ledger (kill-server survival) ---
 export WEZDECK_AGENT_SESSION_PINS_PATH="$TEST_ROOT/agent-session-pins.json"
