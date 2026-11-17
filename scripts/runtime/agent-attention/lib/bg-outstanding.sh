@@ -12,6 +12,13 @@
 
 set -u
 
+# bg_bump_alive_entries refreshes a still-outstanding entry's ts so the 30-min
+# TTL prune keeps it. It runs on every hook fire of every session, so only
+# re-stamp when something else changed or the ts is older than this (ms);
+# otherwise each tool call rewrote the 9p state file just to move ts.
+BG_BUMP_MIN_MS="${WEZTERM_ATTENTION_BG_BUMP_MIN_MS:-60000}"
+[[ "$BG_BUMP_MIN_MS" =~ ^[0-9]+$ ]] || BG_BUMP_MIN_MS=60000
+
 bg_attention_dir() {
   local state_path
   state_path="$(attention_state_path)"
@@ -112,18 +119,23 @@ bg_sidecar_clear() {
   rm -f "$path" 2>/dev/null || true
 }
 
-# Find Claude tasks dir for a session (best-effort under /tmp/claude-*).
-# WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT overrides the scan root (test hook:
-# suites point it at their sandbox so a hook fire neither walks the host's
-# real /tmp — ~70 ms each — nor sees a live session's tasks dir).
+# Find Claude tasks dir for a session. Claude lays these out as
+# <root>/claude-<uid>/<project-slug>/<session_id>/tasks, so glob that exact
+# shape: cost scales with project count. The old `find /tmp -maxdepth 6`
+# walked every entry under /tmp (~66k on a busy box, 20-100 ms) and ran up
+# to 3x per hook fire on the synchronous PreToolUse/PostToolUse path.
+# WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT overrides <root> (test hook).
 bg_claude_tasks_dir() {
-  local session_id="$1" d
+  local session_id="$1" root d
   [[ -n "$session_id" ]] || return 1
-  while IFS= read -r -d '' d; do
+  # Session ids are uuids; refuse path separators / glob metacharacters.
+  [[ "$session_id" == */* || "$session_id" == *[*?[]* ]] && return 1
+  root="${WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT:-/tmp}"
+  for d in "$root"/claude-*/*/"$session_id"/tasks; do
+    [[ -d "$d" ]] || continue
     printf '%s' "$d"
     return 0
-  done < <(find "${WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT:-/tmp}" -maxdepth 6 -type d \
-    -path "*/${session_id}/tasks" 2>/dev/null -print0)
+  done
   return 1
 }
 
@@ -506,15 +518,19 @@ bg_bump_alive_entries() {
       fi
       if [[ "${n:-0}" -gt 0 ]]; then
         next="$(jq -c --arg sid "$sid" --argjson ts "$now" --argjson tasks "$outstanding" \
+          --argjson min "$BG_BUMP_MIN_MS" \
           --arg reason "$(bg_reason_from_outstanding "$outstanding")" '
             if (.entries[$sid] // null) == null then .
             else
-              .entries[$sid].ts = $ts
-              | .entries[$sid].running_kind = "background"
-              | .entries[$sid].status = "running"
-              | .entries[$sid].bg = {tasks: $tasks}
-              | .entries[$sid].reason = $reason
-              | del(.entries[$sid].done_kind)
+              .entries[$sid] as $e
+              | ($e
+                 | .running_kind = "background"
+                 | .status = "running"
+                 | .bg = {tasks: $tasks}
+                 | .reason = $reason
+                 | del(.done_kind)) as $u
+              | if $u == $e and ($ts - ($e.ts // 0)) < $min then .
+                else .entries[$sid] = ($u | .ts = $ts) end
             end
           ' <<<"$next")" || true
         # Routine keep is silent in runtime.log — foreign Stop was flooding.
@@ -524,14 +540,17 @@ bg_bump_alive_entries() {
         claude_st="$(bg_claude_session_status "$sid")"
         # Hard hold: never demote while Claude still reports shell.
         if [[ "$claude_st" == "shell" ]]; then
-          next="$(jq -c --arg sid "$sid" --argjson ts "$now" '
+          next="$(jq -c --arg sid "$sid" --argjson ts "$now" --argjson min "$BG_BUMP_MIN_MS" '
             if (.entries[$sid] // null) == null then .
             else
-              .entries[$sid].ts = $ts
-              | .entries[$sid].running_kind = "background"
-              | .entries[$sid].status = "running"
-              | .entries[$sid].reason = "bg·shell (claude status=shell)"
-              | del(.entries[$sid].done_kind)
+              .entries[$sid] as $e
+              | ($e
+                 | .running_kind = "background"
+                 | .status = "running"
+                 | .reason = "bg·shell (claude status=shell)"
+                 | del(.done_kind)) as $u
+              | if $u == $e and ($ts - ($e.ts // 0)) < $min then .
+                else .entries[$sid] = ($u | .ts = $ts) end
             end
           ' <<<"$next")" || true
           actions+=("hold_shell:${sid}")

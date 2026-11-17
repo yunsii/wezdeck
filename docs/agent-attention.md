@@ -637,8 +637,8 @@ The Alt+/ popup is the hottest chord on this surface (50-100+ presses/day) and t
 
 After `Stop`, harness-registered **shell** background tasks keep the entry on
 `status=running` with `running_kind=background` (same `●` counter; reason
-prefix `bg·shell:`). Long-lived servers stay on `●` while outstanding; emit
-bumps `ts` before the 30-minute TTL prune. Not a fourth status.
+prefix `bg·shell:`). Long-lived servers stay on `●` while outstanding; emit re-stamps `ts` before the 30-minute TTL prune, at most once per
+`WEZTERM_ATTENTION_BG_BUMP_MIN_MS` (60000) unless the entry changed; a prune that drops nothing skips the write. Not a fourth status.
 
 | Provider | Open account | Stop gate | Clear |
 | --- | --- | --- | --- |

@@ -651,13 +651,12 @@ elif [[ "$status" == "resolved" ]]; then
   # Notification while the dialog is still on screen. transition_to_running
   # refuses that flip unless force=1 (watcher). Log it distinctly so the
   # latency probe does not look like a plain auto-allowed no-op.
-  _resolved_status=""
-  _resolved_waiting_kind=""
+  _resolved_status="" _resolved_waiting_kind="" _rk=""
   if [[ -f "$(attention_state_path)" ]]; then
-    _resolved_status="$(jq -r --arg sid "$session_id" \
-      '.entries[$sid].status // ""' "$(attention_state_path)" 2>/dev/null || printf '')"
-    _resolved_waiting_kind="$(jq -r --arg sid "$session_id" \
-      '.entries[$sid].waiting_kind // ""' "$(attention_state_path)" 2>/dev/null || printf '')"
+    # Hot path: one jq for 3 fields. \x1f not tab (IFS whitespace shifts empties).
+    IFS=$'\x1f' read -r _resolved_status _resolved_waiting_kind _rk < <(jq -r --arg sid "$session_id" \
+      '.entries[$sid] // {} | [.status, .waiting_kind, .running_kind] | map(. // "" | tostring) | join("\u001f")' \
+      "$(attention_state_path)" 2>/dev/null || true) || true
   fi
   if [[ "$_resolved_status" == "waiting" \
         && "$_resolved_waiting_kind" == "elicitation_dialog" ]]; then
@@ -686,8 +685,6 @@ elif [[ "$status" == "resolved" ]]; then
   # transition_to_running no-ops when status is already running.
   _promoted_bg=0
   if [[ "$_resolved_status" == "running" ]]; then
-    _rk="$(jq -r --arg sid "$session_id" \
-      '.entries[$sid].running_kind // ""' "$(attention_state_path)" 2>/dev/null || printf '')"
     if [[ "$_rk" == "background" ]]; then
       _promote_ts="$(attention_state_now_ms)"
       (
@@ -712,10 +709,11 @@ elif [[ "$status" == "resolved" ]]; then
     fi
   fi
 
-  _prev_st="$(jq -r --arg sid "$session_id" '.entries[$sid].status // ""' \
-    "$(attention_state_path)" 2>/dev/null || printf '')"
+  _prev_st="$_resolved_status"   # bg promote keeps status=running
   attention_audit_prepare "transition" "running" "$_prev_st" "resolved" 0
-  if ! attention_state_transition_to_running \
+  # Plain running = transition_to_running's own early return, minus re-reads.
+  if [[ "$_resolved_status" == "running" && "$_promoted_bg" -eq 0 ]] \
+     || ! attention_state_transition_to_running \
       "$session_id" \
       "${WEZTERM_PANE:-}" \
       "$tmux_socket" \

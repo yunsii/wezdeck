@@ -1284,14 +1284,14 @@ attention_state_prune() {
           and $pane != ""
           and ($alive | has($sock))
           and ((($alive[$sock]) // []) | index($pane)) == null;
-      ((.entries // {}) | to_entries | map(.value) | map(select(.ts < $cutoff))) as $pruned_ttl
+      . as $orig | ((.entries // {}) | to_entries | map(.value) | map(select(.ts < $cutoff))) as $pruned_ttl
       | ((.entries // {}) | with_entries(select(.value.ts >= $cutoff))) as $kept_ttl
       | ($kept_ttl | to_entries | map(.value)
          | map(select(is_unreachable($alive)))) as $pruned_dead
       | .entries = ($kept_ttl | with_entries(select((.value | is_unreachable($alive)) | not)))
-      | archive_into_recent($pruned_ttl + $pruned_dead; $now; $cap; $ttl)
+      | archive_into_recent($pruned_ttl + $pruned_dead; $now; $cap; $ttl) | if . == $orig then empty else . end
     ' <<<"$current")"
-    attention_state_write "$next"
+    [[ -z "$next" ]] || attention_state_write "$next"   # unchanged doc: no rev/9p/journal write
   ) 9>"$lock"
 }
 

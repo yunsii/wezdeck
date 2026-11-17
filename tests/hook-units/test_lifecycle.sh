@@ -270,6 +270,10 @@ MOCK_HOOK_STDIN='{"session_id":"sid-life-9"}' \
   run_hook_in_sandbox "$sandbox" "resolved" "" "1" "$socket" "$session" "%5"
 assert_eq "resolved on running keeps reason intact (no-op)" "existing" "$(field_for "$sandbox" "sid-life-9" "reason")"
 assert_eq "resolved on running keeps ts intact (no-op)" "$existing_ts" "$(field_for "$sandbox" "sid-life-9" "ts")"
+# Hot path: nothing to prune, nothing to transition → the state file is not
+# rewritten at all (seed has no rev; any write would stamp rev=1).
+assert_eq "resolved on running does not write state (rev untouched)" "none" \
+  "$(jq -r '.rev // "none"' "$(state_file_in "$sandbox")")"
 rm -rf "$sandbox"
 
 echo
@@ -312,6 +316,11 @@ run_in_sandbox_lib "$sandbox" attention_state_prune 600000
 assert_eq "stale entry pruned" "" "$(field_for "$sandbox" "sid-stale" "status")"
 assert_eq "fresh entry kept" "running" "$(field_for "$sandbox" "sid-fresh" "status")"
 assert_eq "stale archived to recent" "1" "$(recent_count_for_sid "$sandbox" "sid-stale")"
+rev_after_prune="$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+# Second prune has nothing left to drop: it must not rewrite the file.
+run_in_sandbox_lib "$sandbox" attention_state_prune 600000
+assert_eq "no-op prune does not bump rev" "$rev_after_prune" \
+  "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
 rm -rf "$sandbox"
 
 echo
@@ -695,6 +704,49 @@ assert_eq "foreign Stop leaves bg-8 status running" "running" \
   "$(field_for "$sandbox" "sid-bg-8" "status")"
 rm -rf "$sandbox"
 
+# Case 30b — bg keep-alive bump is throttled: a foreign hook re-stamps a stale
+# bg entry once, then leaves ts alone for WEZTERM_ATTENTION_BG_BUMP_MIN_MS.
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar"
+bg_old_ts=$(( $(date +%s%3N) - 120000 ))   # 2 min ago: past the 60 s floor
+seed_state "$sandbox" '{
+  "version":1,
+  "entries":{
+    "sid-bg-9":{"session_id":"sid-bg-9","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%5","status":"running","running_kind":"background","reason":"bg","ts":'"$bg_old_ts"'}
+  },
+  "recent":[]
+}'
+printf '%s\n' '{"tasks":{"t-hold":{"type":"shell","summary":"watch","ts":1}}}' \
+  > "$sandbox/wezterm-runtime/state/agent-attention/bg-sidecar/sid-bg-9.json"
+MOCK_HOOK_STDIN='{"session_id":"sid-other-9"}' \
+  run_hook_in_sandbox "$sandbox" "resolved" "" "2" "$socket" "$session" "%6"
+bg_ts1="$(field_for "$sandbox" "sid-bg-9" "ts")"
+if (( bg_ts1 > bg_old_ts )); then
+  echo "  ✓ stale bg entry re-stamped by a foreign hook"; pass=$((pass+1))
+else
+  echo "  ✗ stale bg entry re-stamped by a foreign hook (ts $bg_old_ts -> $bg_ts1)"; fail=$((fail+1))
+fi
+assert_eq "bg entry stays background after bump" "background" \
+  "$(field_for "$sandbox" "sid-bg-9" "running_kind")"
+rev_bg="$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+sleep 0.01
+MOCK_HOOK_STDIN='{"session_id":"sid-other-9"}' \
+  run_hook_in_sandbox "$sandbox" "resolved" "" "2" "$socket" "$session" "%6"
+assert_eq "second bump inside the floor leaves ts alone" "$bg_ts1" \
+  "$(field_for "$sandbox" "sid-bg-9" "ts")"
+assert_eq "second bump inside the floor does not write state" "$rev_bg" \
+  "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+sleep 0.01
+MOCK_HOOK_STDIN='{"session_id":"sid-other-9"}' WEZTERM_ATTENTION_BG_BUMP_MIN_MS=0 \
+  run_hook_in_sandbox "$sandbox" "resolved" "" "2" "$socket" "$session" "%6"
+bg_ts3="$(field_for "$sandbox" "sid-bg-9" "ts")"
+if (( bg_ts3 > bg_ts1 )); then
+  echo "  ✓ BG_BUMP_MIN_MS=0 re-stamps every fire"; pass=$((pass+1))
+else
+  echo "  ✗ BG_BUMP_MIN_MS=0 re-stamps every fire (ts $bg_ts1 -> $bg_ts3)"; fail=$((fail+1))
+fi
+rm -rf "$sandbox"
+
 # Case 31 — [killed] task output is treated as finished (not forever-live)
 sandbox="$(mktemp -d)"
 guard_sandbox_paths "$sandbox/wezterm-runtime"
@@ -732,6 +784,21 @@ else
   echo "  ✓ live output must not count as finished"
   pass=$((pass+1))
 fi
+rm -rf "$sandbox"
+
+# Case 32 — tasks-dir lookup globs <root>/claude-<uid>/<slug>/<sid>/tasks
+# (replaced a whole-/tmp find that ran up to 3x per hook fire).
+sandbox="$(mktemp -d)"
+mkdir -p "$sandbox/claude-1000/-home-u-proj/sid-tasks-1/tasks" \
+  "$sandbox/claude-1000/-home-u-proj/sid-no-tasks"
+WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT="$sandbox"
+assert_eq "tasks dir found by uuid under claude-<uid>/<slug>" \
+  "$sandbox/claude-1000/-home-u-proj/sid-tasks-1/tasks" \
+  "$(bg_claude_tasks_dir sid-tasks-1)"
+assert_eq "session without tasks dir → not found" "" "$(bg_claude_tasks_dir sid-no-tasks || true)"
+assert_eq "glob metacharacter session id refused" "" "$(bg_claude_tasks_dir '*' || true)"
+assert_eq "path-separator session id refused" "" "$(bg_claude_tasks_dir '-home-u-proj/sid-tasks-1' || true)"
+unset WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT
 rm -rf "$sandbox"
 
 echo
