@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Unit tests for scripts/runtime/cli/browser-history-purge and
 # scripts/runtime/browser-history/chrome_purge.py. Hermetic: temp SQLite
-# fixtures, injected chrome.exe command lines, stubbed ego-browser.
+# fixtures, injected browser process command lines, stubbed ego-browser.
 set -u
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cli="$repo_root/scripts/runtime/cli/browser-history-purge"
 impl="$repo_root/scripts/runtime/browser-history"
+browsers_tsv="$impl/browsers.tsv"
 
 pass=0
 fail=0
@@ -123,9 +124,10 @@ assert_eq "segments cleaned" "$(q "$prof/History" "select group_concat(id) from 
 assert_eq "segment_usage cleaned" "$(q "$prof/History" "select group_concat(segment_id) from segment_usage")" "101"
 assert_eq "shortcuts kept others" "$(q "$prof/Shortcuts" "select group_concat(id) from omni_box_shortcuts")" "b,c"
 assert_eq "top sites kept others" "$(q "$prof/Top Sites" "select group_concat(url) from top_sites")" "https://internal-jl.com/"
-n_bak="$(ls "$prof"/*.bak-* 2>/dev/null | wc -l)"
-assert_eq "three backups" "$n_bak" 3
-assert_eq "backup has old rows" "$(q "$(ls "$prof"/History.bak-*)" "select count(*) from urls")" 7
+bak_stamp_dir="$(ls -d "$prof"/.history-purge-bak/* 2>/dev/null | head -n1)"
+[[ -n "$bak_stamp_dir" && -f "$bak_stamp_dir/History" ]] && ok "backup dir has History" || bad "backup dir has History" "$bak_stamp_dir"
+assert_eq "backup has old rows" "$(q "$bak_stamp_dir/History" "select count(*) from urls")" 7
+ls "$prof"/*.bak-* >/dev/null 2>&1 && bad "no legacy sidecar bak" || ok "no legacy sidecar bak"
 grep -q 'category="browser_agent".*browser-history-purge completed.*target="chrome" mode="apply".*ok="true"' "$WEZTERM_RUNTIME_LOG_FILE" \
   && ok "runtime_log browser_agent row" || bad "runtime_log browser_agent row" "$(cat "$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null)"
 grep -q 'urls="3" visits="4"' "$WEZTERM_RUNTIME_LOG_FILE" && ok "log carries counts" || bad "log carries counts"
@@ -219,7 +221,7 @@ grep -q '^Start-Process' "$PS_LOG" && ok "stubborn: reopened" || bad "stubborn: 
 stop_case stuck stuck
 assert_eq "stuck: exit 3" "$rc" 3
 assert_eq "stuck: nothing deleted" "$urls_left" 7
-ls "$tmp/stop-stuck/User Data/Default/"*.bak-* >/dev/null 2>&1 && bad "stuck: no backup" || ok "stuck: no backup"
+ls -d "$tmp/stop-stuck/User Data/Default/.history-purge-bak"/*/ >/dev/null 2>&1 && bad "stuck: no backup" || ok "stuck: no backup"
 grep -q '^Start-Process' "$PS_LOG" && bad "stuck: no restart" || ok "stuck: no restart"
 grep -q 'browser-history-purge failed.*refused="stop-failed"' "$WEZTERM_RUNTIME_LOG_FILE" \
   && ok "stuck: log refused=stop-failed" || bad "stuck: log refused=stop-failed" "$(tail -n1 "$WEZTERM_RUNTIME_LOG_FILE")"
@@ -284,6 +286,107 @@ grep -q 'dry-run' <<<"$out" && ok "ego dry-run wording" || bad "ego dry-run word
 echo "== template placeholders"
 grep -q '__DOMAIN__' "$impl/ego-history-delete.tmpl.mjs" && grep -q '__MODE__' "$impl/ego-history-delete.tmpl.mjs" \
   && ok "template has placeholders" || bad "template has placeholders"
+
+echo "== backup dir + recycle"
+make_profile "$tmp/bak-ud"
+: > "$tmp/procs-none.txt"
+BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA="$tmp/bak-ud" BROWSER_HISTORY_PURGE_CMDLINES_FILE="$tmp/procs-none.txt" \
+  "$cli" --target chrome --domains coco.pollodev.com --apply >/dev/null
+# Simulate a legacy sidecar + a second stamp dir, then recycle keep=1.
+stamp1="$(ls "$tmp/bak-ud/Default/.history-purge-bak")"
+cp "$tmp/bak-ud/Default/.history-purge-bak/$stamp1/History" "$tmp/bak-ud/Default/History.bak-20200101-000000"
+mkdir -p "$tmp/bak-ud/Default/.history-purge-bak/20200101-000000"
+cp "$tmp/bak-ud/Default/.history-purge-bak/$stamp1/History" "$tmp/bak-ud/Default/.history-purge-bak/20200101-000000/History"
+out="$(BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA="$tmp/bak-ud" \
+  "$cli" --target chrome --recycle-backups --backup-keep 1 2>&1)"; rc=$?
+assert_eq "recycle-backups exit 0" "$rc" 0
+assert_eq "recycle kept one stamp" "$(ls "$tmp/bak-ud/Default/.history-purge-bak" | wc -l)" 1
+[[ ! -f "$tmp/bak-ud/Default/History.bak-20200101-000000" ]] && ok "recycle removed legacy sidecar" \
+  || bad "recycle removed legacy sidecar"
+grep -q '备份回收：删除' <<<"$out" && ok "recycle reports" || bad "recycle reports" "$out"
+BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA="$tmp/bak-ud" \
+  "$cli" --target chrome --recycle-backups --backup-keep 0 >/dev/null
+[[ ! -d "$tmp/bak-ud/Default/.history-purge-bak" ]] && ok "recycle keep=0 removes bak dir" \
+  || bad "recycle keep=0 removes bak dir"
+
+echo "== browsers.tsv + edge / chromium targets"
+grep -q $'^chrome\t' "$browsers_tsv" && grep -q $'^edge\t' "$browsers_tsv" && grep -q $'^brave\t' "$browsers_tsv" \
+  && ok "browsers.tsv has chrome/edge/brave" || bad "browsers.tsv has chrome/edge/brave"
+"$cli" --target chrome-debug --domains a.com >/dev/null 2>&1
+# May exit 0 (dry-run) or 2 (no constants in weird env) — at least accepts target
+"$cli" --target chrome-debug --recycle-backups --backup-keep 0 >/dev/null 2>&1
+assert_eq "chrome-debug target accepted (recycle)" "$?" 0
+"$cli" --target edge --domains a.com --profile /tmp --stop >/dev/null 2>&1
+assert_eq "--stop without --apply exits 2 (edge)" "$?" 2
+"$cli" --target chromium --domains a.com --profile /tmp >/dev/null 2>&1
+assert_eq "--profile with chromium exits 2" "$?" 2
+
+# edge reuses the injected DEFAULT_USER_DATA hook (same SQLite schema).
+make_profile "$tmp/edge-ud"
+before_edge="$(md5sum "$tmp/edge-ud/Default/History" | cut -d' ' -f1)"
+out="$(BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA="$tmp/edge-ud" \
+  "$cli" --target edge --domains coco.pollodev.com 2>&1)"; rc=$?
+assert_eq "edge dry-run exit 0" "$rc" 0
+assert_eq "edge dry-run History unchanged" "$(md5sum "$tmp/edge-ud/Default/History" | cut -d' ' -f1)" "$before_edge"
+grep -q '历史网址 3 条' <<<"$out" && ok "edge dry-run counts" || bad "edge dry-run counts" "$out"
+: > "$tmp/procs-none.txt"
+out="$(BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA="$tmp/edge-ud" BROWSER_HISTORY_PURGE_CMDLINES_FILE="$tmp/procs-none.txt" \
+  "$cli" --target edge --domains coco.pollodev.com --apply 2>&1)"; rc=$?
+assert_eq "edge apply exit 0" "$rc" 0
+assert_eq "edge deleted target urls" "$(q "$tmp/edge-ud/Default/History" "select count(*) from urls")" 4
+grep -q 'target="edge".*mode="apply".*ok="true"' "$WEZTERM_RUNTIME_LOG_FILE" \
+  && ok "edge runtime_log target=edge" || bad "edge runtime_log target=edge" "$(tail -n3 "$WEZTERM_RUNTIME_LOG_FILE")"
+
+# chromium: chrome+edge present under prefix, brave absent → skip brave.
+prefix="$tmp/multi"
+make_profile "$prefix/chrome/User Data"
+make_profile "$prefix/edge/User Data"
+# brave: no History
+mkdir -p "$prefix/brave/User Data/Default"
+out="$(BROWSER_HISTORY_PURGE_USER_DATA_PREFIX="$prefix" BROWSER_HISTORY_PURGE_LOCALAPPDATA="$tmp/empty-local" \
+  BROWSER_HISTORY_PURGE_CMDLINES_FILE="$tmp/procs-none.txt" \
+  "$cli" --target chromium --domains coco.pollodev.com --apply 2>&1)"; rc=$?
+assert_eq "chromium apply exit 0" "$rc" 0
+assert_eq "chromium chrome purged" "$(q "$prefix/chrome/User Data/Default/History" "select count(*) from urls")" 4
+assert_eq "chromium edge purged" "$(q "$prefix/edge/User Data/Default/History" "select count(*) from urls")" 4
+grep -q 'Brave: 未安装或无 History' <<<"$out" && ok "chromium skips brave" || bad "chromium skips brave" "$out"
+grep -q 'chromium 汇总' <<<"$out" && ok "chromium summary line" || bad "chromium summary line" "$out"
+grep -q 'target="chromium".*ok="true"' "$WEZTERM_RUNTIME_LOG_FILE" \
+  && ok "chromium runtime_log" || bad "chromium runtime_log" "$(tail -n3 "$WEZTERM_RUNTIME_LOG_FILE")"
+grep -q 'skipped=brave\|skipped="brave"' "$WEZTERM_RUNTIME_LOG_FILE" \
+  && ok "chromium log skipped=brave" || bad "chromium log skipped=brave" "$(tail -n3 "$WEZTERM_RUNTIME_LOG_FILE")"
+
+# chromium continues after one stop-failed leg.
+stubborn_prefix="$tmp/multi-stop"
+make_profile "$stubborn_prefix/chrome/User Data"
+make_profile "$stubborn_prefix/edge/User Data"
+cat > "$tmp/ps-stub-multi" <<'EOF'
+#!/usr/bin/env bash
+cmd="$1"
+printf '%s\n' "$cmd" >> "${PS_LOG:?}"
+case "$cmd" in
+  Get-CimInstance*)
+    # Only chrome holders; edge has none → chrome stop stuck, edge purges.
+    if [[ -f "${PS_CHROME_STATE:-/dev/null}" ]]; then cat "$PS_CHROME_STATE"; fi
+    ;;
+  taskkill.exe*) ;;  # leave chrome stuck
+  Start-Process*) ;;
+esac
+EOF
+chmod +x "$tmp/ps-stub-multi"
+exe='"C:\Program Files\Google\Chrome\Application\chrome.exe"'
+printf '100\t%s\n101\t%s --type=renderer\n' "$exe" "$exe" > "$tmp/chrome-stuck.state"
+export PS_LOG="$tmp/multi-stop.log" PS_CHROME_STATE="$tmp/chrome-stuck.state"
+: > "$PS_LOG"
+out="$(BROWSER_HISTORY_PURGE_USER_DATA_PREFIX="$stubborn_prefix" BROWSER_HISTORY_PURGE_LOCALAPPDATA="$tmp/empty-local" \
+  BROWSER_HISTORY_PURGE_POWERSHELL="$tmp/ps-stub-multi" \
+  BROWSER_HISTORY_PURGE_STOP_WAIT=1 BROWSER_HISTORY_PURGE_FORCE_WAIT=1 BROWSER_HISTORY_PURGE_LOCK_WAIT=0 \
+  BROWSER_HISTORY_PURGE_POLL_SECONDS=0.05 \
+  "$cli" --target chromium --domains coco.pollodev.com --apply --stop --no-restart 2>&1)"; rc=$?
+assert_eq "chromium partial stop-fail → non-zero" "$rc" 3
+assert_eq "chromium chrome untouched on stop-fail" "$(q "$stubborn_prefix/chrome/User Data/Default/History" "select count(*) from urls")" 7
+assert_eq "chromium edge still purged" "$(q "$stubborn_prefix/edge/User Data/Default/History" "select count(*) from urls")" 4
+grep -q '失败 chrome' <<<"$out" && ok "chromium reports failed chrome" || bad "chromium reports failed chrome" "$out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

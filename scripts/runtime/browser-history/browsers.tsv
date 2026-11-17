@@ -1,0 +1,7 @@
+# Common Chromium browsers for browser-history-purge (SQLite History path).
+# Columns (tab-separated): id	user_data_rel	process_names	label
+# user_data_rel is under %LOCALAPPDATA%. process_names is comma-separated exe names.
+# ego is UI-driven and is not listed here.
+chrome	Google/Chrome/User Data	chrome.exe	Chrome
+edge	Microsoft/Edge/User Data	msedge.exe	Edge
+brave	BraveSoftware/Brave-Browser/User Data	brave.exe	Brave

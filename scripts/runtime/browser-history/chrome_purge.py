@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Delete the given hostnames from a Windows Chrome profile's history and omnibox suggestions.
+"""Delete hostnames from a Chromium-family profile's history and omnibox suggestions.
 
-Invoked by scripts/runtime/cli/browser-history-purge (--target chrome); the
-wrapper resolves Windows paths and enumerates chrome.exe command lines.
+Invoked by scripts/runtime/cli/browser-history-purge for --target
+chrome|edge|brave (and each leg of --target chromium). The wrapper resolves
+Windows paths and enumerates that browser's process command lines
+(browsers.tsv).
 
 Dry-run (default) copies History / Shortcuts / Top Sites to a temp dir and
-counts on the copies, so it is safe while Chrome runs. --apply refuses while
-any chrome.exe occupies the target User Data dir, backs the three files up to
-*.bak-<stamp>, deletes, then runs integrity_check + orphan-visits checks.
+counts on the copies, so it is safe while the browser runs. --apply refuses
+while any matching process occupies the target User Data dir, backs the three
+files up to *.bak-<stamp>, deletes, then runs integrity_check + orphan-visits
+checks.
 
 Hostnames match exactly (a.example.com does not match example.com or
 b.a.example.com).
@@ -105,19 +108,30 @@ def exe_of(cmdline):
     return cmdline.split(" ", 1)[0]
 
 
-def occupying_processes(cmdlines, target_user_data, default_user_data):
-    """Lines (as given, PID prefix kept) of chrome.exe processes holding target_user_data.
+def exe_basename(cmdline):
+    return os.path.basename(exe_of(cmdline).replace("\\", "/")).casefold()
 
-    A process without --user-data-dir uses Chrome's default User Data, so it only
-    counts when the target is that default. WezDeck's debug Chrome passes its own
-    --user-data-dir and is therefore ignored unless it points at the target.
+
+def occupying_processes(cmdlines, target_user_data, default_user_data, process_names=None):
+    """Lines (as given, PID prefix kept) of browser processes holding target_user_data.
+
+    A process without --user-data-dir uses that browser's default User Data, so it
+    only counts when the target is that default. WezDeck's debug Chrome passes its
+    own --user-data-dir and is therefore ignored unless it points at the target.
+
+    process_names: optional iterable of exe basenames (e.g. chrome.exe). When set,
+    lines whose exe is outside the set are ignored — so a shared cmdlines dump
+    cannot make Edge look occupied by Chrome.
     """
     target = _norm_path(target_user_data)
     is_default = default_user_data is not None and _norm_path(default_user_data) == target
+    allowed = {n.casefold() for n in process_names} if process_names else None
     hits = []
     for raw in cmdlines:
         _, line = split_pid(raw)
         if not line:
+            continue
+        if allowed is not None and exe_basename(line) not in allowed:
             continue
         udd = user_data_dir_arg(line)
         if udd is None:
@@ -128,12 +142,12 @@ def occupying_processes(cmdlines, target_user_data, default_user_data):
     return hits
 
 
-def print_occupying(cmdlines, user_data, default_user_data, out=sys.stdout):
+def print_occupying(cmdlines, user_data, default_user_data, out=sys.stdout, process_names=None):
     """For the wrapper's --stop: `PID<TAB>main|child<TAB>exe<TAB>user-data-dir` per holder.
 
     main = browser process (no --type=); it gets the graceful close + restart.
     """
-    for raw in occupying_processes(cmdlines, user_data, default_user_data):
+    for raw in occupying_processes(cmdlines, user_data, default_user_data, process_names):
         pid, line = split_pid(raw)
         if pid is None:
             continue
@@ -226,42 +240,125 @@ def verify_history(path, domains):
 
 
 FILES = ("History", "Shortcuts", "Top Sites")
+BAK_DIR_NAME = ".history-purge-bak"
 
 
-def run(profile, domains, apply, cmdlines, default_user_data, out=sys.stdout):
+def backup_dir(profile):
+    return os.path.join(profile, BAK_DIR_NAME)
+
+
+def list_backup_stamps(profile):
+    """Return sorted stamp ids (oldest first) for legacy sidecars and bak dirs."""
+    stamps = set()
+    for name in FILES:
+        prefix = f"{name}.bak-"
+        try:
+            for ent in os.listdir(profile):
+                if ent.startswith(prefix):
+                    stamps.add(ent[len(prefix):])
+        except FileNotFoundError:
+            pass
+    bdir = backup_dir(profile)
+    if os.path.isdir(bdir):
+        for ent in os.listdir(bdir):
+            if os.path.isdir(os.path.join(bdir, ent)) and not ent.startswith("."):
+                stamps.add(ent)
+    return sorted(stamps)
+
+
+def _remove_stamp(profile, stamp):
+    removed = []
+    for name in FILES:
+        path = os.path.join(profile, f"{name}.bak-{stamp}")
+        if os.path.isfile(path):
+            os.remove(path)
+            removed.append(path)
+    stamp_dir = os.path.join(backup_dir(profile), stamp)
+    if os.path.isdir(stamp_dir):
+        shutil.rmtree(stamp_dir)
+        removed.append(stamp_dir)
+    return removed
+
+
+def recycle_backups(profile, keep, out=sys.stdout):
+    """Keep the newest `keep` backup stamps; delete older (and all if keep<=0)."""
+    stamps = list_backup_stamps(profile)
+    if keep < 0:
+        keep = 0
+    to_delete = stamps if keep == 0 else stamps[:-keep] if len(stamps) > keep else []
+    removed = []
+    for stamp in to_delete:
+        removed.extend(_remove_stamp(profile, stamp))
+    # Drop empty bak root
+    bdir = backup_dir(profile)
+    if os.path.isdir(bdir) and not os.listdir(bdir):
+        os.rmdir(bdir)
+    kept = list_backup_stamps(profile)
+    result = {
+        "recycled": len(to_delete),
+        "removed_paths": len(removed),
+        "kept": kept,
+        "keep": keep,
+    }
+    print(
+        f"备份回收：删除 {len(to_delete)} 组，保留 {len(kept)} 组"
+        + (f"（{', '.join(kept)}）" if kept else "")
+        + f"；policy keep={keep}",
+        file=out,
+    )
+    return result
+
+
+def write_backup(profile, stamp, files):
+    """Copy live DB files into profile/.history-purge-bak/<stamp>/."""
+    dest_root = os.path.join(backup_dir(profile), stamp)
+    os.makedirs(dest_root, exist_ok=True)
+    written = []
+    for name, path in files.items():
+        if os.path.isfile(path):
+            dst = os.path.join(dest_root, name)
+            shutil.copy2(path, dst)
+            written.append(dst)
+    return dest_root, written
+
+
+def run(profile, domains, apply, cmdlines, default_user_data, out=sys.stdout,
+        browser_id="chrome", label="Chrome", process_names=None, backup_keep=1):
     files = {name: os.path.join(profile, name) for name in FILES}
     if not os.path.isfile(files["History"]):
         raise SystemExit(f"找不到 {files['History']}；用 --profile 指定含 History 的 profile 目录")
-    result = {"target": "chrome", "profile": profile, "mode": "apply" if apply else "dry-run"}
+    result = {"target": browser_id, "profile": profile, "mode": "apply" if apply else "dry-run"}
+    names = list(process_names) if process_names else None
 
     if apply:
         user_data = os.path.dirname(profile.rstrip("/"))
         if cmdlines is None:
             result.update(ok=False, refused="process-list-unavailable")
-            print("无法枚举 chrome.exe 进程（PowerShell 不可用），为安全起见不执行", file=sys.stderr)
+            print(f"无法枚举 {label} 进程（PowerShell 不可用），为安全起见不执行", file=sys.stderr)
             return result, EXIT_REFUSED
-        hits = occupying_processes(cmdlines, user_data, default_user_data)
+        hits = occupying_processes(cmdlines, user_data, default_user_data, names)
         if hits:
-            result.update(ok=False, refused="chrome-running", occupying=len(hits))
+            result.update(ok=False, refused="browser-running", occupying=len(hits))
+            hint = "请加 --stop，或完全退出后重试"
+            if browser_id != "chrome-debug":
+                hint += "；WezDeck 调试 Chrome（独立 --user-data-dir）不挡日常浏览器清理"
             print(
-                f"有 {len(hits)} 个 chrome.exe 正在使用 {user_data}。请完全退出 Chrome"
-                "（含托盘后台）后重试；WezDeck 调试 Chrome 用独立 --user-data-dir，不受影响",
+                f"有 {len(hits)} 个进程正在使用 {user_data}。{hint}",
                 file=sys.stderr,
             )
             return result, EXIT_REFUSED
         if os.path.exists(os.path.join(user_data, "lockfile")):
             result.update(ok=False, refused="lockfile")
             print(
-                f"{user_data}/lockfile 存在，Chrome 可能仍在运行。确认 Chrome 已完全退出后，"
-                "该文件是上次异常退出留下的，可手动删除再重试",
+                f"{user_data}/lockfile 存在，{label} 可能仍在运行。确认已完全退出后，"
+                "该文件是上次异常退出留下的，可手动删除再重试；或加 --stop",
                 file=sys.stderr,
             )
             return result, EXIT_REFUSED
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        for path in files.values():
-            if os.path.isfile(path):
-                shutil.copy2(path, f"{path}.bak-{stamp}")
-        result["backup_suffix"] = f".bak-{stamp}"
+        bak_root, _ = write_backup(profile, stamp, files)
+        result["backup_dir"] = bak_root
+        result["backup_stamp"] = stamp
         work = files
         tmp = None
     else:
@@ -286,6 +383,18 @@ def run(profile, domains, apply, cmdlines, default_user_data, out=sys.stdout):
             check = verify_history(work["History"], domains)
             result["verify"] = check
             ok = check["integrity"] == "ok" and check["orphan_visits"] == 0 and check["remaining_urls"] == 0
+            if ok:
+                recycled = recycle_backups(profile, backup_keep, out=out)
+                result["backup_recycle"] = {
+                    "recycled": recycled["recycled"],
+                    "kept": recycled["kept"],
+                    "keep": backup_keep,
+                }
+            else:
+                print(
+                    f"校验失败，保留全部备份（含本次 {result.get('backup_stamp')}）便于回滚",
+                    file=out,
+                )
     finally:
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -302,9 +411,10 @@ def run(profile, domains, apply, cmdlines, default_user_data, out=sys.stdout):
     )
     if apply:
         v = result["verify"]
+        bak = result.get("backup_dir", "")
         print(
             f"校验：integrity_check={v['integrity']} 孤立 visits={v['orphan_visits']} "
-            f"残留网址={v['remaining_urls']}；备份后缀 {result['backup_suffix']}",
+            f"残留网址={v['remaining_urls']}；备份 {bak}",
             file=out,
         )
     return result, 0 if ok else 1
@@ -312,21 +422,44 @@ def run(profile, domains, apply, cmdlines, default_user_data, out=sys.stdout):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--profile", required=True, help="Chrome profile dir (contains History), WSL path")
+    ap.add_argument("--profile", required=True, help="profile dir (contains History), WSL path")
     ap.add_argument("--domains", action="append", default=[], help="comma-separated hostnames (repeatable)")
     ap.add_argument("--domains-file", action="append", default=[], help="one hostname per line; # comments")
     ap.add_argument("--apply", action="store_true")
-    ap.add_argument("--process-cmdlines-file", help="chrome.exe command lines, one per line (from the wrapper)")
-    ap.add_argument("--default-user-data", help="Chrome's default User Data dir, WSL path")
+    ap.add_argument("--process-cmdlines-file",
+                    help="browser process command lines, one per line (from the wrapper)")
+    ap.add_argument("--default-user-data", help="that browser's default User Data dir, WSL path")
+    ap.add_argument("--browser-id", default="chrome", help="id written into result JSON (chrome|edge|brave)")
+    ap.add_argument("--label", default="Chrome", help="human label for refuse messages")
+    ap.add_argument("--process-names", default="",
+                    help="comma-separated exe basenames to treat as this browser (chrome.exe,…)")
+    ap.add_argument("--backup-keep", type=int, default=1,
+                    help="after successful apply, keep this many newest backup stamps (0=delete all)")
+    ap.add_argument("--recycle-backups", action="store_true",
+                    help="only apply backup retention on --profile; no history delete")
     ap.add_argument("--result-json", help="write the machine-readable result here")
     ap.add_argument("--print-occupying", action="store_true",
                     help="only list processes holding the profile's User Data (for --stop), then exit")
     args = ap.parse_args(argv)
+    proc_names = [n.strip() for n in args.process_names.split(",") if n.strip()] or None
+    default_udd = args.default_user_data or None
 
     if args.print_occupying:
         with open(args.process_cmdlines_file or os.devnull, encoding="utf-8", errors="replace") as fh:
             print_occupying(fh.read().splitlines(), os.path.dirname(args.profile.rstrip("/")),
-                            args.default_user_data)
+                            default_udd, process_names=proc_names)
+        return 0
+
+    if args.recycle_backups:
+        recycled = recycle_backups(args.profile, args.backup_keep)
+        result = {
+            "target": args.browser_id, "profile": args.profile, "mode": "recycle-backups",
+            "ok": True, **{k: recycled[k] for k in ("recycled", "kept", "keep")},
+            "removed_paths": recycled["removed_paths"],
+        }
+        if args.result_json:
+            with open(args.result_json, "w", encoding="utf-8") as fh:
+                json.dump(result, fh, ensure_ascii=False)
         return 0
 
     items = list(args.domains)
@@ -341,7 +474,11 @@ def main(argv=None):
         with open(args.process_cmdlines_file, encoding="utf-8", errors="replace") as fh:
             cmdlines = fh.read().splitlines()
 
-    result, code = run(args.profile, domains, args.apply, cmdlines, args.default_user_data)
+    result, code = run(
+        args.profile, domains, args.apply, cmdlines, default_udd,
+        browser_id=args.browser_id, label=args.label, process_names=proc_names,
+        backup_keep=args.backup_keep,
+    )
     result["domains"] = len(domains)
     if args.result_json:
         with open(args.result_json, "w", encoding="utf-8") as fh:

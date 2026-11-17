@@ -17,5 +17,6 @@ prod-status.pollodev.com
 prod-tars.pollodev.com
 test-cmdb.pollodev.com
 test-coco.pollodev.com
+test-tars.pollodev.com
 # Old Cloudflare Access login host
 pollodev.cloudflareaccess.com

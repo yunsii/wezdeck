@@ -1,49 +1,69 @@
 #!/usr/bin/env bash
 # Purge browser history + omnibox suggestions for given hostnames.
 #
-#   browser-history-purge --target chrome|ego (--domains a,b | --domains-file F)... [--apply [--stop [--no-restart]]]
+#   browser-history-purge --target chrome|edge|brave|chromium|chrome-debug|ego \
+#     (--domains a,b | --domains-file F)... [--apply [--stop [--no-restart]]]
+#   browser-history-purge --target … --recycle-backups [--backup-keep N]
 #
 # --target is the browser profile to clean, NOT WEZDECK_BROWSER_BACKEND:
-#   chrome  the user's everyday Windows Chrome (default profile
-#           %LOCALAPPDATA%\Google\Chrome\User Data\Default; --profile overrides).
-#           WezDeck's debug Chrome (own --user-data-dir) is never touched and
-#           does not block --apply. --stop (with --apply) closes only the
-#           chrome.exe processes holding the target profile (graceful close of
-#           the browser process, 20s, then taskkill /F), purges, and reopens
-#           Chrome with --restore-last-session unless --no-restart. It closes
-#           the user's browser: get explicit user confirmation first.
+#   chrome|edge|brave  everyday Windows Chromium browser (Default profile under
+#           %LOCALAPPDATA%; paths in browser-history/browsers.tsv; --profile
+#           overrides). WezDeck's debug Chrome (own --user-data-dir) does not
+#           block everyday --apply. --stop (with --apply) closes only processes
+#           of that browser holding the target profile (graceful close of the
+#           browser process, 20s, then taskkill /F), purges, and reopens with
+#           --restore-last-session unless --no-restart. It closes the user's
+#           browser: get explicit user confirmation first.
+#   chromium  every installed chrome/edge/brave that has Default/History;
+#           skips missing installs. One browser stop-failed → skip that
+#           browser and continue; overall exit non-zero if any leg failed.
+#           --profile is not allowed with chromium.
+#   chrome-debug  WezDeck debug Chrome user_data_dir from
+#           wezterm-x/local/constants.lua (chrome_debug_browser.user_data_dir),
+#           override with BROWSER_HISTORY_PURGE_CHROME_DEBUG_USER_DATA. Prefer
+#           --stop --no-restart (helper auto-starts headless again).
 #   ego     ego (lite) via chrome://history UI automation (ego-browser nodejs);
 #           one process per domain, each time-limited, read back after delete.
+#
+# Backups (chromium-family --apply): copy History/Shortcuts/Top Sites into
+#   <profile>/.history-purge-bak/<stamp>/ before delete. On verify success,
+#   recycle so only the newest --backup-keep stamps remain (default 1; 0=none).
+#   Failed verify keeps every stamp for rollback. Legacy sidecar *.bak-<stamp>
+#   files are included in recycle. --recycle-backups runs retention only.
 #
 # Default is dry-run; --apply deletes. Hostnames match exactly. No built-in
 # domain list: keep yours in wezterm-x/local/ (template:
 # wezterm-x/local.example/browser-history-purge.domains).
 #
-# Exit: 0 ok, 1 verify/delete failed, 2 usage, 3 refused (Chrome holds profile,
-# or --stop could not close it; nothing changed).
+# Exit: 0 ok, 1 verify/delete failed, 2 usage, 3 refused (browser holds profile,
+# or --stop could not close it; nothing changed for that browser).
 # Docs: docs/browser-debug.md#history-purge-by-domain
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIME_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMPL_DIR="$RUNTIME_DIR/browser-history"
+BROWSERS_TSV="${BROWSER_HISTORY_PURGE_BROWSERS_TSV:-$IMPL_DIR/browsers.tsv}"
 
 # shellcheck disable=SC1091
 source "$RUNTIME_DIR/runtime-log-lib.sh" 2>/dev/null || true
 WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-browser-history-purge}"
 
 usage() {
-  sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,40p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   cat <<'EOF'
 
 Options:
-  --target chrome|ego     required
-  --domains a.com,b.com   repeatable
+  --target chrome|edge|brave|chromium|chrome-debug|ego   required
+  --domains a.com,b.com   repeatable (not needed with --recycle-backups)
   --domains-file PATH     one hostname per line, # comments; repeatable
   --apply                 actually delete (default: dry-run)
-  --profile DIR           chrome only: profile dir containing History (WSL path)
-  --stop                  chrome + --apply only: close Chrome holding the profile first
-  --no-restart            with --stop: do not reopen Chrome afterwards
+  --profile DIR           single chromium / chrome-debug: profile with History
+  --stop                  chromium-family + --apply: close that browser first
+  --no-restart            with --stop: do not reopen afterwards
+  --backup-keep N         after successful apply (or with --recycle-backups):
+                          keep N newest backup stamps (default 1; 0=delete all)
+  --recycle-backups       only apply backup retention; no history delete
   --per-domain-timeout S  ego only: seconds per domain process (default 180)
 EOF
 }
@@ -59,7 +79,51 @@ now_ms() {
   if declare -F runtime_log_now_ms >/dev/null 2>&1; then runtime_log_now_ms; else date +%s%3N; fi
 }
 
+# Load browsers.tsv → parallel arrays browser_ids / browser_udd_rel / browser_procs / browser_labels
+browser_ids=() browser_udd_rel=() browser_procs=() browser_labels=()
+load_browsers_tsv() {
+  local line id udd procs label
+  [[ -r "$BROWSERS_TSV" ]] || {
+    printf 'browser-history-purge: cannot read browsers table %s\n' "$BROWSERS_TSV" >&2
+    exit 2
+  }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    IFS=$'\t' read -r id udd procs label <<<"$line"
+    [[ -n "$id" && -n "$udd" && -n "$procs" && -n "$label" ]] || continue
+    browser_ids+=("$id")
+    browser_udd_rel+=("$udd")
+    browser_procs+=("$procs")
+    browser_labels+=("$label")
+  done < "$BROWSERS_TSV"
+  [[ ${#browser_ids[@]} -gt 0 ]] || {
+    printf 'browser-history-purge: browsers table %s has no entries\n' "$BROWSERS_TSV" >&2
+    exit 2
+  }
+}
+
+browser_lookup() {  # id → sets cur_id cur_udd_rel cur_procs cur_label; return 1 if unknown
+  local want="$1" i
+  for i in "${!browser_ids[@]}"; do
+    if [[ "${browser_ids[$i]}" == "$want" ]]; then
+      cur_id="${browser_ids[$i]}"
+      cur_udd_rel="${browser_udd_rel[$i]}"
+      cur_procs="${browser_procs[$i]}"
+      cur_label="${browser_labels[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+is_chromium_id() {
+  local id="$1" x
+  for x in "${browser_ids[@]}"; do [[ "$x" == "$id" ]] && return 0; done
+  return 1
+}
+
 target="" apply=0 stop=0 restart=1 profile="" per_domain_timeout=180
+backup_keep=1 recycle_backups=0
 domain_args=() domain_files=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -74,26 +138,55 @@ while [[ $# -gt 0 ]]; do
     --no-restart) restart=0; shift ;;
     --profile) profile="${2-}"; shift 2 ;;
     --profile=*) profile="${1#*=}"; shift ;;
+    --backup-keep) backup_keep="${2-}"; shift 2 ;;
+    --backup-keep=*) backup_keep="${1#*=}"; shift ;;
+    --recycle-backups) recycle_backups=1; shift ;;
     --per-domain-timeout) per_domain_timeout="${2-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'browser-history-purge: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
+load_browsers_tsv
+
 case "$target" in
-  chrome|ego) ;;
-  "") printf 'browser-history-purge: --target chrome|ego is required\n' >&2; exit 2 ;;
-  *) printf 'browser-history-purge: --target must be chrome or ego (got %s)\n' "$target" >&2; exit 2 ;;
+  ego|chromium|chrome-debug) ;;
+  "") printf 'browser-history-purge: --target chrome|edge|brave|chromium|chrome-debug|ego is required\n' >&2; exit 2 ;;
+  *)
+    if ! is_chromium_id "$target"; then
+      printf 'browser-history-purge: --target must be chrome|edge|brave|chromium|chrome-debug|ego (got %s)\n' "$target" >&2
+      exit 2
+    fi
+    ;;
 esac
 
-if [[ "$stop" -eq 1 && ( "$target" != chrome || "$apply" -ne 1 ) ]]; then
-  printf 'browser-history-purge: --stop only works with --target chrome --apply\n' >&2; exit 2
+if [[ ! "$backup_keep" =~ ^[0-9]+$ ]]; then
+  printf 'browser-history-purge: --backup-keep must be a non-negative integer\n' >&2; exit 2
+fi
+
+if [[ "$recycle_backups" -eq 1 ]]; then
+  if [[ "$target" == ego || "$target" == chromium ]]; then
+    printf 'browser-history-purge: --recycle-backups needs chrome|edge|brave|chrome-debug\n' >&2; exit 2
+  fi
+  if [[ "$apply" -eq 1 || "$stop" -eq 1 ]]; then
+    printf 'browser-history-purge: --recycle-backups cannot combine with --apply/--stop\n' >&2; exit 2
+  fi
+fi
+
+if [[ "$stop" -eq 1 && ( "$apply" -ne 1 || "$target" == ego ) ]]; then
+  printf 'browser-history-purge: --stop only works with a chromium-family --target and --apply\n' >&2; exit 2
 fi
 if [[ "$restart" -eq 0 && "$stop" -ne 1 ]]; then
   printf 'browser-history-purge: --no-restart only makes sense with --stop\n' >&2; exit 2
 fi
+if [[ -n "$profile" && "$target" == chromium ]]; then
+  printf 'browser-history-purge: --profile cannot be used with --target chromium\n' >&2; exit 2
+fi
+if [[ -n "$profile" && "$target" == ego ]]; then
+  printf 'browser-history-purge: --profile is only for chrome|edge|brave|chrome-debug\n' >&2; exit 2
+fi
 
-# Collect + validate hostnames (shared by both targets).
+# Collect + validate hostnames (shared by purge targets; skipped for recycle-only).
 domains=()
 add_domain() {
   local d
@@ -118,18 +211,19 @@ for f in "${domain_files[@]}"; do
     add_domain "$line"
   done < "$f"
 done
-if [[ ${#domains[@]} -eq 0 ]]; then
+if [[ "$recycle_backups" -eq 0 && ${#domains[@]} -eq 0 ]]; then
   printf 'browser-history-purge: no domains; pass --domains or --domains-file\n' >&2
   exit 2
 fi
 
 mode=dry-run
 [[ "$apply" -eq 1 ]] && mode=apply
+[[ "$recycle_backups" -eq 1 ]] && mode=recycle-backups
 started_ms="$(now_ms)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-# ── chrome ───────────────────────────────────────────────────────────
+# ── Windows helpers ──────────────────────────────────────────────────
 # All Windows calls go through windows-shell-lib; tests inject
 # BROWSER_HISTORY_PURGE_POWERSHELL (a script taking the PowerShell command).
 ps_run() {
@@ -142,29 +236,45 @@ ps_run() {
   windows_run_powershell_command_utf8 "$1"
 }
 
-# Writes `PID<TAB>CommandLine` per chrome.exe to $1; non-zero when enumeration failed.
-enum_chrome() {
+# Writes `PID<TAB>CommandLine` for the given exe names (comma-separated) to $1.
+enum_browser_procs() {
+  local out="$1" names_csv="$2"
   if [[ -n "${BROWSER_HISTORY_PURGE_CMDLINES_FILE:-}" ]]; then
-    cp "$BROWSER_HISTORY_PURGE_CMDLINES_FILE" "$1"
+    cp "$BROWSER_HISTORY_PURGE_CMDLINES_FILE" "$out"
     return
   fi
-  ps_run 'Get-CimInstance Win32_Process -Filter "Name='"'"'chrome.exe'"'"'" | ForEach-Object { "{0}`t{1}" -f $_.ProcessId, $_.CommandLine }' \
-    2>/dev/null | tr -d '\r' > "$1"
+  local ps_names="" n
+  IFS=',' read -r -a _names <<< "$names_csv"
+  for n in "${_names[@]}"; do
+    n="${n// /}"
+    [[ -z "$n" ]] && continue
+    [[ -n "$ps_names" ]] && ps_names+=", "
+    ps_names+="'$n'"
+  done
+  # Keep "Get-CimInstance" as the command prefix so test stubs can match it.
+  ps_run "Get-CimInstance Win32_Process | Where-Object { @($ps_names) -contains \$_.Name } | ForEach-Object { \"{0}\`t{1}\" -f \$_.ProcessId, \$_.CommandLine }" \
+    2>/dev/null | tr -d '\r' > "$out"
   [[ "${PIPESTATUS[0]}" -eq 0 ]]
 }
 
 # Prints holders of the target profile (PID role exe udd); non-zero when enumeration failed.
-chrome_holders() {
-  enum_chrome "$tmp/holders-cmdlines.txt" || return 1
-  python3 -I "$IMPL_DIR/chrome_purge.py" --print-occupying --profile "$profile" \
-    --default-user-data "$default_user_data" --process-cmdlines-file "$tmp/holders-cmdlines.txt"
+# Uses globals: profile default_user_data cur_procs
+browser_holders() {
+  enum_browser_procs "$tmp/holders-cmdlines.txt" "$cur_procs" || return 1
+  local occ_args=(--print-occupying --profile "$profile" --process-names "$cur_procs"
+                  --process-cmdlines-file "$tmp/holders-cmdlines.txt")
+  # chrome-debug must not treat flagless chrome.exe as a holder.
+  if [[ "$cur_id" != chrome-debug && -n "${default_user_data:-}" ]]; then
+    occ_args+=(--default-user-data "$default_user_data")
+  fi
+  python3 -I "$IMPL_DIR/chrome_purge.py" "${occ_args[@]}"
 }
 
 wait_no_holders() {
   local secs="$1" i out
   for ((i = 0; i < secs; i++)); do
     sleep "${BROWSER_HISTORY_PURGE_POLL_SECONDS:-1}"
-    out="$(chrome_holders)" || continue
+    out="$(browser_holders)" || continue
     [[ -z "$out" ]] && return 0
   done
   return 1
@@ -178,12 +288,12 @@ taskkill_pids() {  # [/F] pid...
   ps_run "$cmd" >/dev/null 2>&1 || true
 }
 
-# Sets stopped_count / restart_exe / restart_udd. Returns 3 on failure.
+# Sets stopped_count / restart_exe / restart_udd / forced. Returns 3 on failure.
 stopped_count=0 restart_exe="" restart_udd="" forced=0
-stop_chrome() {
+stop_browser() {
   local holders
-  if ! holders="$(chrome_holders)"; then
-    printf 'browser-history-purge: 无法枚举 chrome.exe 进程，--stop 不执行\n' >&2
+  if ! holders="$(browser_holders)"; then
+    printf 'browser-history-purge: 无法枚举 %s 进程，--stop 不执行\n' "$cur_label" >&2
     return 3
   fi
   [[ -z "$holders" ]] && return 0
@@ -197,22 +307,21 @@ stop_chrome() {
   done <<<"$holders"
   [[ ${#mains[@]} -gt 0 ]] || mains=($(cut -f1 <<<"$holders"))
   local wait="${BROWSER_HISTORY_PURGE_STOP_WAIT:-20}"
-  printf '正在关闭占用该 profile 的 Chrome（%d 个进程，主进程 %s），最多等 %ss…\n' \
-    "$stopped_count" "${mains[*]}" "$wait"
+  printf '正在关闭占用该 profile 的 %s（%d 个进程，主进程 %s），最多等 %ss…\n' \
+    "$cur_label" "$stopped_count" "${mains[*]}" "$wait"
   taskkill_pids "${mains[@]}"
   if ! wait_no_holders "$wait"; then
-    holders="$(chrome_holders)" || holders=""
+    holders="$(browser_holders)" || holders=""
     if [[ -n "$holders" ]]; then
       forced="$(printf '%s\n' "$holders" | wc -l)"
       printf '%ss 内未全部退出，强制结束剩余 %d 个进程\n' "$wait" "$forced"
       taskkill_pids /F $(cut -f1 <<<"$holders")
     fi
     if ! wait_no_holders "${BROWSER_HISTORY_PURGE_FORCE_WAIT:-10}"; then
-      printf 'browser-history-purge: Chrome 进程仍未退出，未做任何改动\n' >&2
+      printf 'browser-history-purge: %s 进程仍未退出，未做任何改动\n' "$cur_label" >&2
       return 3
     fi
   fi
-  # Chrome removes User Data/lockfile on exit; give the file handles a moment.
   local i
   for ((i = 0; i < ${BROWSER_HISTORY_PURGE_LOCK_WAIT:-5}; i++)); do
     [[ -e "$(dirname "$profile")/lockfile" ]] || break
@@ -222,35 +331,132 @@ stop_chrome() {
 }
 
 restarted=0
-start_chrome() {
-  local exe="${restart_exe:-chrome.exe}" args="'--restore-last-session'" q="'"
+start_browser() {
+  local exe="${restart_exe:-${cur_procs%%,*}}" args="'--restore-last-session'" q="'"
   [[ -n "$restart_udd" ]] && args+=",'--user-data-dir=${restart_udd//$q/$q$q}'"
   if ps_run "Start-Process -FilePath '${exe//$q/$q$q}' -ArgumentList $args" >/dev/null 2>&1; then
     restarted=1
-    printf '已重新打开 Chrome（--restore-last-session 恢复原标签页）\n'
+    printf '已重新打开 %s（--restore-last-session 恢复原标签页）\n' "$cur_label"
   else
-    printf 'browser-history-purge: 重新打开 Chrome 失败，请手动启动\n' >&2
+    printf 'browser-history-purge: 重新打开 %s 失败，请手动启动\n' "$cur_label" >&2
   fi
 }
 
-default_user_data=""
-run_chrome() {
-  # Test hook / override: skip Windows path detection when both are given.
-  if [[ -n "${BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA:-}" ]]; then
-    default_user_data="$BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA"
-  else
-    # shellcheck disable=SC1091
-    source "$RUNTIME_DIR/windows-runtime-paths-lib.sh"
-    if ! windows_runtime_detect_paths || [[ -z "${WINDOWS_LOCALAPPDATA_WSL:-}" ]]; then
-      printf 'browser-history-purge: cannot resolve Windows LOCALAPPDATA (windows_runtime_detect_paths)\n' >&2
-      return 2
-    fi
-    default_user_data="$WINDOWS_LOCALAPPDATA_WSL/Google/Chrome/User Data"
+resolve_localappdata() {
+  if [[ -n "${BROWSER_HISTORY_PURGE_LOCALAPPDATA:-}" ]]; then
+    printf '%s' "$BROWSER_HISTORY_PURGE_LOCALAPPDATA"
+    return 0
   fi
-  [[ -n "$profile" ]] || profile="$default_user_data/Default"
+  # shellcheck disable=SC1091
+  source "$RUNTIME_DIR/windows-runtime-paths-lib.sh"
+  if ! windows_runtime_detect_paths || [[ -z "${WINDOWS_LOCALAPPDATA_WSL:-}" ]]; then
+    printf 'browser-history-purge: cannot resolve Windows LOCALAPPDATA (windows_runtime_detect_paths)\n' >&2
+    return 2
+  fi
+  printf '%s' "$WINDOWS_LOCALAPPDATA_WSL"
+}
 
-  local py_args=(--profile "$profile" --default-user-data "$default_user_data"
-                 --result-json "$tmp/result.json")
+# Windows path or already-WSL path → WSL path for the debug Chrome user_data_dir.
+resolve_chrome_debug_user_data() {
+  local raw="" win=""
+  if [[ -n "${BROWSER_HISTORY_PURGE_CHROME_DEBUG_USER_DATA:-}" ]]; then
+    raw="$BROWSER_HISTORY_PURGE_CHROME_DEBUG_USER_DATA"
+  else
+    local constants="${WEZDECK_REPO:-$(cd "$RUNTIME_DIR/../.." && pwd)}/wezterm-x/local/constants.lua"
+    [[ -f "$constants" ]] || {
+      printf 'browser-history-purge: missing %s (set BROWSER_HISTORY_PURGE_CHROME_DEBUG_USER_DATA)\n' "$constants" >&2
+      return 2
+    }
+    raw="$(perl -0ne '
+      if (/chrome_debug_browser\s*=\s*\{.*?user_data_dir\s*=\s*'\''([^'\'']+)'\''/s) {
+        my $value = $1;
+        $value =~ s/\\\\/\\/g;
+        print $value;
+      }
+    ' "$constants")"
+    [[ -n "$raw" ]] || {
+      printf 'browser-history-purge: chrome_debug_browser.user_data_dir not set in constants.lua\n' >&2
+      return 2
+    }
+  fi
+  if [[ "$raw" == /mnt/* || "$raw" == /* ]]; then
+    printf '%s' "$raw"
+    return 0
+  fi
+  # E:\chrome-profiles\ai or E:/...
+  if command -v wslpath >/dev/null 2>&1; then
+    wslpath -u "$raw"
+    return
+  fi
+  win="${raw//\\//}"
+  if [[ "$win" =~ ^([A-Za-z]):/(.*)$ ]]; then
+    printf '/mnt/%s/%s' "${BASH_REMATCH[1],,}" "${BASH_REMATCH[2]}"
+    return 0
+  fi
+  printf 'browser-history-purge: cannot convert user_data_dir to WSL path: %s\n' "$raw" >&2
+  return 2
+}
+
+setup_chrome_debug_cur() {
+  cur_id="chrome-debug"
+  cur_procs="chrome.exe"
+  cur_label="调试 Chrome"
+  cur_udd_rel=""  # unused; absolute path via CHROME_DEBUG_UDD
+  local udd
+  udd="$(resolve_chrome_debug_user_data)" || return $?
+  BROWSER_HISTORY_PURGE_CHROME_DEBUG_UDD="$udd"
+  export BROWSER_HISTORY_PURGE_CHROME_DEBUG_UDD
+}
+
+# Run one chromium-family browser. Uses / sets: cur_* profile default_user_data
+# Writes result to $1 (result json path). Returns status code.
+run_one_chromium() {
+  local result_json="$1"
+  local localappdata status=0 occupy_default=""
+  stopped_count=0 restart_exe="" restart_udd="" forced=0 restarted=0
+
+  if [[ "$cur_id" == chrome-debug ]]; then
+    default_user_data="${BROWSER_HISTORY_PURGE_CHROME_DEBUG_UDD:?}"
+    # Empty occupy_default: only explicit --user-data-dir matches debug profile.
+    occupy_default=""
+  elif [[ -n "${BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA:-}" && "$target" != chromium ]]; then
+    # Test / override hook for a single-browser run (existing chrome tests).
+    default_user_data="$BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA"
+    occupy_default="$default_user_data"
+  else
+    localappdata="$(resolve_localappdata)" || return 2
+    default_user_data="$localappdata/$cur_udd_rel"
+    occupy_default="$default_user_data"
+  fi
+  # Per-browser override for chromium multi-run tests.
+  if [[ -n "${BROWSER_HISTORY_PURGE_USER_DATA_PREFIX:-}" && "$cur_id" != chrome-debug ]]; then
+    default_user_data="$BROWSER_HISTORY_PURGE_USER_DATA_PREFIX/$cur_id/User Data"
+    occupy_default="$default_user_data"
+  fi
+
+  local this_profile="$profile"
+  [[ -n "$this_profile" ]] || this_profile="$default_user_data/Default"
+  profile="$this_profile"
+
+  if [[ ! -f "$profile/History" ]]; then
+    printf '%s: 未安装或无 History（%s），跳过\n' "$cur_label" "$profile"
+    printf '{"target":"%s","mode":"%s","ok":true,"skipped":"not-installed","urls":0,"visits":0,"shortcuts":0,"top_sites":0}\n' \
+      "$cur_id" "$mode" > "$result_json"
+    return 0
+  fi
+
+  printf '── %s (%s) ──\n' "$cur_label" "$cur_id"
+
+  if [[ "$recycle_backups" -eq 1 ]]; then
+    python3 -I "$IMPL_DIR/chrome_purge.py" --profile "$profile" --recycle-backups \
+      --backup-keep "$backup_keep" --browser-id "$cur_id" --result-json "$result_json" || status=$?
+    return "$status"
+  fi
+
+  local py_args=(--profile "$profile" --browser-id "$cur_id" --label "$cur_label"
+                 --process-names "$cur_procs" --backup-keep "$backup_keep"
+                 --result-json "$result_json")
+  [[ -n "$occupy_default" ]] && py_args+=(--default-user-data "$occupy_default")
   local joined
   joined="$(IFS=,; printf '%s' "${domains[*]}")"
   py_args+=(--domains "$joined")
@@ -259,22 +465,140 @@ run_chrome() {
     py_args+=(--apply)
     if [[ "$stop" -eq 1 ]]; then
       local st=0
-      stop_chrome || st=$?
+      stop_browser || st=$?
       if [[ "$st" -ne 0 ]]; then
-        printf '{"target":"chrome","mode":"apply","ok":false,"refused":"stop-failed"}' > "$tmp/result.json"
+        printf '{"target":"%s","mode":"apply","ok":false,"refused":"stop-failed"}\n' "$cur_id" > "$result_json"
         return "$st"
       fi
     fi
-    local cmdlines="$tmp/chrome-cmdlines.txt"
-    # On enumeration failure no --process-cmdlines-file → python refuses (safe default).
-    enum_chrome "$cmdlines" && py_args+=(--process-cmdlines-file "$cmdlines")
+    local cmdlines="$tmp/procs-$cur_id.txt"
+    enum_browser_procs "$cmdlines" "$cur_procs" && py_args+=(--process-cmdlines-file "$cmdlines")
   fi
 
-  local status=0
   python3 -I "$IMPL_DIR/chrome_purge.py" "${py_args[@]}" || status=$?
-  # Reopen whatever the purge outcome: we closed the user's browser.
-  [[ "$stopped_count" -gt 0 && "$restart" -eq 1 ]] && start_chrome
+  # chrome-debug: prefer helper auto-start; Start-Process would drop --headless flags.
+  if [[ "$cur_id" == chrome-debug ]]; then
+    [[ "$stopped_count" -gt 0 && "$restart" -eq 1 ]] && \
+      printf '调试 Chrome 已关闭；未自动拉起（用 Alt+b / helper 恢复 headless）。加显式重启需求时再改。\n'
+  else
+    [[ "$stopped_count" -gt 0 && "$restart" -eq 1 ]] && start_browser
+  fi
   return "$status"
+}
+
+sum_field() {
+  python3 -I - "$1" "$2" <<'PY'
+import json, sys
+rows = json.load(open(sys.argv[1], encoding="utf-8"))
+key = sys.argv[2]
+print(sum(int(r.get(key) or 0) for r in rows if not r.get("skipped")))
+PY
+}
+
+run_chromium_targets() {
+  local ids=("$@")
+  local id status=0 worst=0 results=()
+  local total_stopped=0 total_forced=0 total_restarted=0
+  : > "$tmp/chromium-results.jsonl"
+  for id in "${ids[@]}"; do
+    if [[ "$id" == chrome-debug ]]; then
+      setup_chrome_debug_cur || {
+        printf '{"target":"chrome-debug","ok":false,"refused":"no-user-data-dir"}\n' > "$tmp/result-$id.json"
+        status=2
+        [[ "$status" -gt "$worst" ]] && worst="$status"
+        cat "$tmp/result-$id.json" >> "$tmp/chromium-results.jsonl"
+        printf '\n' >> "$tmp/chromium-results.jsonl"
+        continue
+      }
+    else
+      browser_lookup "$id" || continue
+    fi
+    profile=""  # each leg uses its own Default unless single-target set profile before call
+    # For single-target callers that already set profile, keep it only for that id.
+    if [[ "$target" != chromium && -n "${_single_profile:-}" ]]; then
+      profile="$_single_profile"
+    fi
+    local rj="$tmp/result-$id.json"
+    status=0
+    run_one_chromium "$rj" || status=$?
+    [[ -s "$rj" ]] || printf '{"target":"%s","ok":false,"refused":"no-result"}\n' "$id" > "$rj"
+    # Attach stop metrics for logging aggregation
+    python3 -I - "$rj" "$stopped_count" "$forced" "$restarted" <<'PY'
+import json, sys
+p, stopped, forced, restarted = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
+r = json.load(open(p, encoding="utf-8"))
+r["stopped"] = stopped
+r["forced"] = forced
+r["restarted"] = restarted
+json.dump(r, open(p, "w", encoding="utf-8"), ensure_ascii=False)
+PY
+    cat "$rj" >> "$tmp/chromium-results.jsonl"
+    printf '\n' >> "$tmp/chromium-results.jsonl"
+    total_stopped=$((total_stopped + stopped_count))
+    total_forced=$((total_forced + forced))
+    total_restarted=$((total_restarted + restarted))
+    if [[ "$status" -ne 0 ]]; then
+      printf '%s: 失败（exit %s），继续其它浏览器\n' "$cur_label" "$status" >&2
+      [[ "$status" -gt "$worst" ]] && worst="$status"
+    fi
+  done
+  stopped_count="$total_stopped"
+  forced="$total_forced"
+  restarted="$total_restarted"
+
+  python3 -I - "$tmp/chromium-results.jsonl" "$tmp/result.json" "$mode" "$target" <<'PY'
+import json, sys
+rows = [json.loads(l) for l in open(sys.argv[1], encoding="utf-8") if l.strip()]
+mode, target = sys.argv[3], sys.argv[4]
+active = [r for r in rows if not r.get("skipped")]
+skipped = [r["target"] for r in rows if r.get("skipped")]
+failed = [r["target"] for r in active if not r.get("ok", False)]
+res = {
+    "target": target,
+    "mode": mode,
+    "browsers": [r["target"] for r in rows],
+    "skipped": skipped,
+    "failed": failed,
+    "urls": sum(int(r.get("urls") or 0) for r in active),
+    "visits": sum(int(r.get("visits") or 0) for r in active),
+    "shortcuts": sum(int(r.get("shortcuts") or 0) for r in active),
+    "top_sites": sum(int(r.get("top_sites") or 0) for r in active),
+    "ok": not failed,
+}
+refused = [r["refused"] for r in active if r.get("refused")]
+if len(refused) == 1:
+    res["refused"] = refused[0]
+elif refused:
+    res["refused"] = ",".join(refused)
+# Single-browser runs keep a flat result (compat with existing logs/tests).
+if target != "chromium" and len(rows) == 1:
+    flat = dict(rows[0])
+    flat["target"] = target
+    for k in ("urls", "visits", "shortcuts", "top_sites", "ok", "refused", "mode"):
+        if k in res and k not in flat:
+            flat[k] = res[k]
+        elif k in res:
+            flat[k] = res[k]
+    res = flat
+else:
+    res["per_browser"] = rows
+json.dump(res, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False)
+if target == "chromium":
+    n = res.get("urls", 0)
+    verb = "已删除" if mode == "apply" else "将删除（dry-run）"
+    parts = []
+    if skipped:
+        parts.append("跳过 " + ",".join(skipped))
+    if failed:
+        parts.append("失败 " + ",".join(failed))
+    extra = ("；" + "；".join(parts)) if parts else ""
+    print(
+        f"chromium 汇总：历史网址 {n} 条 / 访问 {res.get('visits', 0)} / "
+        f"快捷建议 {res.get('shortcuts', 0)} / 常用网站 {res.get('top_sites', 0)}"
+        f"（{verb}）{extra}"
+    )
+PY
+  return "$worst"
 }
 
 # ── ego ──────────────────────────────────────────────────────────────
@@ -330,22 +654,49 @@ PY
 
 status=0
 case "$target" in
-  chrome) run_chrome || status=$? ;;
   ego) run_ego || status=$? ;;
+  chromium)
+    run_chromium_targets "${browser_ids[@]}" || status=$?
+    ;;
+  chrome-debug)
+    _single_profile="$profile"
+    run_chromium_targets chrome-debug || status=$?
+    ;;
+  *)
+    browser_lookup "$target"
+    _single_profile="$profile"
+    run_chromium_targets "$target" || status=$?
+    ;;
 esac
 
 duration_ms="$(( $(now_ms) - started_ms ))"
 fields=(target="$target" mode="$mode" domains="${#domains[@]}" status="$status" duration_ms="$duration_ms")
 [[ "$stop" -eq 1 ]] && fields+=(stopped="$stopped_count" forced="$forced" restarted="$restarted")
+[[ "$recycle_backups" -eq 1 || "$apply" -eq 1 ]] && fields+=(backup_keep="$backup_keep")
 if [[ -s "$tmp/result.json" ]]; then
   while IFS= read -r kv; do fields+=("$kv"); done < <(
     python3 -I - "$tmp/result.json" <<'PY'
 import json, sys
 r = json.load(open(sys.argv[1], encoding="utf-8"))
-for k in ("urls", "visits", "shortcuts", "top_sites", "found", "deleted", "remaining", "refused", "ok"):
+for k in ("urls", "visits", "shortcuts", "top_sites", "found", "deleted", "remaining",
+          "refused", "ok", "skipped", "recycled", "backup_stamp"):
     if k in r:
         v = r[k]
-        print(f"{k}={json.dumps(v) if isinstance(v, bool) else v}")
+        if isinstance(v, list):
+            print(f"{k}={','.join(str(x) for x in v)}")
+        else:
+            print(f"{k}={json.dumps(v) if isinstance(v, bool) else v}")
+if r.get("browsers"):
+    print("browsers=" + ",".join(r["browsers"]))
+if r.get("failed"):
+    print("failed=" + ",".join(r["failed"]))
+if isinstance(r.get("kept"), list):
+    print("kept=" + ",".join(r["kept"]))
+br = r.get("backup_recycle") or {}
+if br.get("kept") is not None:
+    print("backup_kept=" + ",".join(br["kept"]))
+if "recycled" in br:
+    print(f"backup_recycled={br['recycled']}")
 PY
   )
 fi

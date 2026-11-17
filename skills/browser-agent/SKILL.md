@@ -87,21 +87,28 @@ Triggers: 清理浏览器历史 / 删掉某域名的历史记录 / 地址栏总�
 purge history for a domain.
 
 This is a maintenance CLI, not a page task: it does **not** follow
-`WEZDECK_BROWSER_BACKEND`. Ask which browser the user means and pass
-`--target chrome` (everyday Windows Chrome) or `--target ego`.
+`WEZDECK_BROWSER_BACKEND`. Ask which browser the user means:
+`--target chrome|edge|brave` (everyday Windows Chromium),
+`--target chrome-debug` (WezDeck debug profile),
+`--target chromium` (all installed of chrome/edge/brave), or `--target ego`.
 
 1. Dry-run first:
-   `browser-history-purge --target <chrome|ego> --domains-file "$WEZDECK_REPO/wezterm-x/local/browser-history-purge.domains"`
+   `browser-history-purge --target <chrome|edge|brave|chromium|chrome-debug|ego> --domains-file "$WEZDECK_REPO/wezterm-x/local/browser-history-purge.domains"`
    (or `--domains a.com,b.com`). Report the per-domain counts.
 2. Get explicit user confirmation, then rerun with `--apply`.
-   Chrome target: the user must fully quit everyday Chrome (exit 3 = still
-   running; the WezDeck debug Chrome does not count). Alternatively add
-   `--stop`: it **closes the user's everyday Chrome** (graceful, then forced
-   after 20 s; debug Chrome untouched), purges, and reopens it with
-   `--restore-last-session` (`--no-restart` to skip). Only use `--stop` after
-   the user has explicitly agreed to having their browser closed; exit 3 =
-   could not close it, nothing changed.
-3. Report counts + verify line (Chrome) or per-domain read-back (ego).
+   Chromium-family targets: the user must fully quit that browser (exit 3 =
+   still running). Alternatively add `--stop`: it **closes that browser**
+   (graceful, then forced after 20 s). Everyday targets leave debug Chrome
+   alone; `chrome-debug` only closes the debug profile — prefer
+   `--no-restart` so the helper can bring headless back. Everyday browsers
+   reopen with `--restore-last-session` unless `--no-restart`. Only use
+   `--stop` after the user has explicitly agreed; exit 3 = could not close
+   it, nothing changed for that browser. With `chromium`, a failed leg is
+   skipped and the others continue.
+3. Backups land under `<profile>/.history-purge-bak/<stamp>/`; successful
+   apply keeps the newest `--backup-keep` stamps (default 1). To drop old
+   bak only: `--recycle-backups --backup-keep 0`.
+4. Report counts + verify line (chromium-family) or per-domain read-back (ego).
 
 Detail: [`docs/browser-debug.md#history-purge-by-domain`](../../docs/browser-debug.md#history-purge-by-domain).
 
