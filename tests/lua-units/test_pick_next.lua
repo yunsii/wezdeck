@@ -753,6 +753,69 @@ describe('pick_next — spatial order (current workspace L→R first)', function
   end)
 end)
 
+describe('pick_next — global ring across 3 workspaces', function()
+  -- Repro 2026-11-17: one running entry each in config / opensource /
+  -- work. Ranking the current workspace first re-based the ring on every
+  -- hop, so Alt+l ping-ponged config ↔ opensource and work (fe1) was
+  -- never reached. Following focus hop-by-hop must visit all three.
+  local function setup_three_ws()
+    reset()
+    mock.set_mux {
+      windows = {
+        { workspace = 'config', tabs = { { id = 1, title = 'c', active_pane = { id = 7 } } } },
+        { workspace = 'opensource', tabs = { { id = 1, title = 'o', active_pane = { id = 21 } } } },
+        { workspace = 'work', tabs = { { id = 1, title = 'w', active_pane = { id = 3 } } } },
+      },
+    }
+    tab_visibility.set_pane_session(7, 'wezterm_config_cfg_1111111111')
+    tab_visibility.set_pane_session(21, 'wezterm_opensource_forge_2222222222')
+    tab_visibility.set_pane_session(3, 'wezterm_work_fe1_3333333333')
+    local now = os.time() * 1000
+    local function row(id, pane, session, ts)
+      return '"' .. id .. '":{"session_id":"' .. id .. '","wezterm_pane_id":"' .. pane .. '",'
+        .. '"tmux_socket":"/tmp/sock","tmux_session":"' .. session .. '",'
+        .. '"tmux_window":"@1","tmux_pane":"%1","status":"running","ts":' .. tostring(ts) .. '}'
+    end
+    local entries = '{"version":1,"entries":{'
+      .. row('r_config', '7', 'wezterm_config_cfg_1111111111', now - 3000) .. ','
+      .. row('r_forge', '21', 'wezterm_opensource_forge_2222222222', now - 1000) .. ','
+      .. row('r_fe1', '3', 'wezterm_work_fe1_3333333333', now - 2000)
+      .. '}}'
+    return setup_state(entries, '/tmp/sock', 'wezterm_config_cfg_1111111111', '%1', {
+      { socket = '/tmp/sock', session = 'wezterm_opensource_forge_2222222222', tmux_pane = '%1' },
+      { socket = '/tmp/sock', session = 'wezterm_work_fe1_3333333333', tmux_pane = '%1' },
+    })
+  end
+  local pane_of = { r_config = 7, r_forge = 21, r_fe1 = 3 }
+
+  local function walk(reverse)
+    local tmp = setup_three_ws()
+    local seen, order, current = {}, {}, 7
+    seen.r_config = true
+    for _ = 1, 3 do
+      local picked = attention.pick_next(attention.STATUS_RUNNING, current, { reverse = reverse })
+      assert_truthy(picked, 'pick nil from pane ' .. tostring(current))
+      order[#order + 1] = picked.session_id
+      seen[picked.session_id] = true
+      current = pane_of[picked.session_id]
+    end
+    cleanup(tmp)
+    return seen, table.concat(order, ',')
+  end
+
+  it('forward Alt+l from config visits opensource and work before wrapping', function()
+    local seen, order = walk(false)
+    assert_truthy(seen.r_fe1, 'work/fe1 unreachable; order=' .. order)
+    assert_eq(order, 'r_forge,r_fe1,r_config', 'forward ring order')
+  end)
+
+  it('reverse Alt+Shift+l from config visits all three too', function()
+    local seen, order = walk(true)
+    assert_truthy(seen.r_fe1 and seen.r_forge, 'reverse missed an entry; order=' .. order)
+    assert_eq(order, 'r_fe1,r_forge,r_config', 'reverse ring order')
+  end)
+end)
+
 describe('pick_next — non-tmux fallback', function()
   it('skips an entry whose wezterm_pane_id matches when no tmux_session', function()
     reset()

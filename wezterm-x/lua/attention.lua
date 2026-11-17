@@ -1936,20 +1936,15 @@ local function tmux_coord_num(v)
   return tonumber(s) or 0
 end
 
--- Spatial round-robin order for Alt+j / Alt+k / Alt+l:
---   1. Current workspace first (finish its tabs before switching away).
---   2. Within a workspace: left-to-right by tab_index, then pane left/top.
---   3. Other workspaces by name, same L→R within each.
---   4. tmux window/pane + ts as stable tiebreaks.
--- Oldest-ts-only ordering used to yank the user out of a workspace that
--- still had unread siblings whenever a foreign entry was older.
-local function sort_pool_spatial(pool, current_ws, pane_locs)
+-- Alt+j/k/l round-robin ring, global and position-independent: workspace
+-- name, then tab_index / pane left-top, then tmux coords + ts. Never rank
+-- the current workspace first — that re-based the ring each hop so one ●
+-- per 3 workspaces ping-ponged two and never reached the third (repro
+-- 2026-11-17). "Current workspace first" = pick_next's fresh-sweep start.
+local function sort_pool_spatial(pool, pane_locs)
   table.sort(pool, function(a, b)
     local aw, ati, al, at = entry_spatial(a, pane_locs)
     local bw, bti, bl, bt = entry_spatial(b, pane_locs)
-    local a_here = (current_ws ~= '' and aw == current_ws) and 0 or 1
-    local b_here = (current_ws ~= '' and bw == current_ws) and 0 or 1
-    if a_here ~= b_here then return a_here < b_here end
     if aw ~= bw then return aw < bw end
     if ati ~= bti then return ati < bti end
     if al ~= bl then return al < bl end
@@ -1963,9 +1958,8 @@ local function sort_pool_spatial(pool, current_ws, pane_locs)
 end
 
 -- Pick next entry matching `kind` ('waiting', 'done', or 'running')
--- in spatial round-robin order (current workspace left→right, then
--- other workspaces), so repeated Alt+j / Alt+k / Alt+l presses walk
--- the whole pool without yanking out of a workspace mid-sweep.
+-- in the global spatial ring (fresh sweep starts at current workspace's
+-- leftmost), so repeated presses walk the whole pool.
 -- Returns nil when the pool is empty or the only candidate is already
 -- focused.
 --
@@ -2041,7 +2035,7 @@ function M.pick_next(kind, current_pane_id, opts)
   if current and pane_locs[current] then
     current_ws = pane_locs[current].workspace or ''
   end
-  sort_pool_spatial(pool, current_ws, pane_locs)
+  sort_pool_spatial(pool, pane_locs)
 
   -- Round-robin in spatial order. The older "first non-focused" scan
   -- ping-ponged forever between the two oldest entries whenever the
