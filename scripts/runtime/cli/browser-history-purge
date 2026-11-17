@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+# Purge browser history + omnibox suggestions for given hostnames.
+#
+#   browser-history-purge --target chrome|ego (--domains a,b | --domains-file F)... [--apply [--stop [--no-restart]]]
+#
+# --target is the browser profile to clean, NOT WEZDECK_BROWSER_BACKEND:
+#   chrome  the user's everyday Windows Chrome (default profile
+#           %LOCALAPPDATA%\Google\Chrome\User Data\Default; --profile overrides).
+#           WezDeck's debug Chrome (own --user-data-dir) is never touched and
+#           does not block --apply. --stop (with --apply) closes only the
+#           chrome.exe processes holding the target profile (graceful close of
+#           the browser process, 20s, then taskkill /F), purges, and reopens
+#           Chrome with --restore-last-session unless --no-restart. It closes
+#           the user's browser: get explicit user confirmation first.
+#   ego     ego (lite) via chrome://history UI automation (ego-browser nodejs);
+#           one process per domain, each time-limited, read back after delete.
+#
+# Default is dry-run; --apply deletes. Hostnames match exactly. No built-in
+# domain list: keep yours in wezterm-x/local/ (template:
+# wezterm-x/local.example/browser-history-purge.domains).
+#
+# Exit: 0 ok, 1 verify/delete failed, 2 usage, 3 refused (Chrome holds profile,
+# or --stop could not close it; nothing changed).
+# Docs: docs/browser-debug.md#history-purge-by-domain
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUNTIME_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+IMPL_DIR="$RUNTIME_DIR/browser-history"
+
+# shellcheck disable=SC1091
+source "$RUNTIME_DIR/runtime-log-lib.sh" 2>/dev/null || true
+WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-browser-history-purge}"
+
+usage() {
+  sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  cat <<'EOF'
+
+Options:
+  --target chrome|ego     required
+  --domains a.com,b.com   repeatable
+  --domains-file PATH     one hostname per line, # comments; repeatable
+  --apply                 actually delete (default: dry-run)
+  --profile DIR           chrome only: profile dir containing History (WSL path)
+  --stop                  chrome + --apply only: close Chrome holding the profile first
+  --no-restart            with --stop: do not reopen Chrome afterwards
+  --per-domain-timeout S  ego only: seconds per domain process (default 180)
+EOF
+}
+
+log() {
+  local level="$1"; shift
+  if declare -F "runtime_log_$level" >/dev/null 2>&1; then
+    "runtime_log_$level" browser_agent "$@" || true
+  fi
+}
+
+now_ms() {
+  if declare -F runtime_log_now_ms >/dev/null 2>&1; then runtime_log_now_ms; else date +%s%3N; fi
+}
+
+target="" apply=0 stop=0 restart=1 profile="" per_domain_timeout=180
+domain_args=() domain_files=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target) target="${2-}"; shift 2 ;;
+    --target=*) target="${1#*=}"; shift ;;
+    --domains) domain_args+=("${2-}"); shift 2 ;;
+    --domains=*) domain_args+=("${1#*=}"); shift ;;
+    --domains-file) domain_files+=("${2-}"); shift 2 ;;
+    --domains-file=*) domain_files+=("${1#*=}"); shift ;;
+    --apply) apply=1; shift ;;
+    --stop) stop=1; shift ;;
+    --no-restart) restart=0; shift ;;
+    --profile) profile="${2-}"; shift 2 ;;
+    --profile=*) profile="${1#*=}"; shift ;;
+    --per-domain-timeout) per_domain_timeout="${2-}"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) printf 'browser-history-purge: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+case "$target" in
+  chrome|ego) ;;
+  "") printf 'browser-history-purge: --target chrome|ego is required\n' >&2; exit 2 ;;
+  *) printf 'browser-history-purge: --target must be chrome or ego (got %s)\n' "$target" >&2; exit 2 ;;
+esac
+
+if [[ "$stop" -eq 1 && ( "$target" != chrome || "$apply" -ne 1 ) ]]; then
+  printf 'browser-history-purge: --stop only works with --target chrome --apply\n' >&2; exit 2
+fi
+if [[ "$restart" -eq 0 && "$stop" -ne 1 ]]; then
+  printf 'browser-history-purge: --no-restart only makes sense with --stop\n' >&2; exit 2
+fi
+
+# Collect + validate hostnames (shared by both targets).
+domains=()
+add_domain() {
+  local d
+  d="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+  [[ -z "$d" ]] && return 0
+  if [[ ! "$d" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+    printf 'browser-history-purge: not a hostname: %s\n' "$d" >&2
+    exit 2
+  fi
+  local x
+  for x in "${domains[@]}"; do [[ "$x" == "$d" ]] && return 0; done
+  domains+=("$d")
+}
+for arg in "${domain_args[@]}"; do
+  IFS=',' read -r -a parts <<< "$arg"
+  for p in "${parts[@]}"; do add_domain "$p"; done
+done
+for f in "${domain_files[@]}"; do
+  [[ -r "$f" ]] || { printf 'browser-history-purge: cannot read %s\n' "$f" >&2; exit 2; }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    add_domain "$line"
+  done < "$f"
+done
+if [[ ${#domains[@]} -eq 0 ]]; then
+  printf 'browser-history-purge: no domains; pass --domains or --domains-file\n' >&2
+  exit 2
+fi
+
+mode=dry-run
+[[ "$apply" -eq 1 ]] && mode=apply
+started_ms="$(now_ms)"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+# ── chrome ───────────────────────────────────────────────────────────
+# All Windows calls go through windows-shell-lib; tests inject
+# BROWSER_HISTORY_PURGE_POWERSHELL (a script taking the PowerShell command).
+ps_run() {
+  if [[ -n "${BROWSER_HISTORY_PURGE_POWERSHELL:-}" ]]; then
+    "$BROWSER_HISTORY_PURGE_POWERSHELL" "$1"
+    return
+  fi
+  # shellcheck disable=SC1091
+  declare -F windows_run_powershell_command_utf8 >/dev/null || source "$RUNTIME_DIR/windows-shell-lib.sh"
+  windows_run_powershell_command_utf8 "$1"
+}
+
+# Writes `PID<TAB>CommandLine` per chrome.exe to $1; non-zero when enumeration failed.
+enum_chrome() {
+  if [[ -n "${BROWSER_HISTORY_PURGE_CMDLINES_FILE:-}" ]]; then
+    cp "$BROWSER_HISTORY_PURGE_CMDLINES_FILE" "$1"
+    return
+  fi
+  ps_run 'Get-CimInstance Win32_Process -Filter "Name='"'"'chrome.exe'"'"'" | ForEach-Object { "{0}`t{1}" -f $_.ProcessId, $_.CommandLine }' \
+    2>/dev/null | tr -d '\r' > "$1"
+  [[ "${PIPESTATUS[0]}" -eq 0 ]]
+}
+
+# Prints holders of the target profile (PID role exe udd); non-zero when enumeration failed.
+chrome_holders() {
+  enum_chrome "$tmp/holders-cmdlines.txt" || return 1
+  python3 -I "$IMPL_DIR/chrome_purge.py" --print-occupying --profile "$profile" \
+    --default-user-data "$default_user_data" --process-cmdlines-file "$tmp/holders-cmdlines.txt"
+}
+
+wait_no_holders() {
+  local secs="$1" i out
+  for ((i = 0; i < secs; i++)); do
+    sleep "${BROWSER_HISTORY_PURGE_POLL_SECONDS:-1}"
+    out="$(chrome_holders)" || continue
+    [[ -z "$out" ]] && return 0
+  done
+  return 1
+}
+
+taskkill_pids() {  # [/F] pid...
+  local cmd="taskkill.exe" a
+  for a in "$@"; do
+    if [[ "$a" == /F ]]; then cmd+=" /F"; else cmd+=" /PID $a"; fi
+  done
+  ps_run "$cmd" >/dev/null 2>&1 || true
+}
+
+# Sets stopped_count / restart_exe / restart_udd. Returns 3 on failure.
+stopped_count=0 restart_exe="" restart_udd="" forced=0
+stop_chrome() {
+  local holders
+  if ! holders="$(chrome_holders)"; then
+    printf 'browser-history-purge: 无法枚举 chrome.exe 进程，--stop 不执行\n' >&2
+    return 3
+  fi
+  [[ -z "$holders" ]] && return 0
+  stopped_count="$(printf '%s\n' "$holders" | wc -l)"
+  local mains=() pid role exe udd
+  while IFS=$'\t' read -r pid role exe udd; do
+    if [[ "$role" == main ]]; then
+      mains+=("$pid")
+      [[ -n "$restart_exe" ]] || { restart_exe="$exe"; restart_udd="$udd"; }
+    fi
+  done <<<"$holders"
+  [[ ${#mains[@]} -gt 0 ]] || mains=($(cut -f1 <<<"$holders"))
+  local wait="${BROWSER_HISTORY_PURGE_STOP_WAIT:-20}"
+  printf '正在关闭占用该 profile 的 Chrome（%d 个进程，主进程 %s），最多等 %ss…\n' \
+    "$stopped_count" "${mains[*]}" "$wait"
+  taskkill_pids "${mains[@]}"
+  if ! wait_no_holders "$wait"; then
+    holders="$(chrome_holders)" || holders=""
+    if [[ -n "$holders" ]]; then
+      forced="$(printf '%s\n' "$holders" | wc -l)"
+      printf '%ss 内未全部退出，强制结束剩余 %d 个进程\n' "$wait" "$forced"
+      taskkill_pids /F $(cut -f1 <<<"$holders")
+    fi
+    if ! wait_no_holders "${BROWSER_HISTORY_PURGE_FORCE_WAIT:-10}"; then
+      printf 'browser-history-purge: Chrome 进程仍未退出，未做任何改动\n' >&2
+      return 3
+    fi
+  fi
+  # Chrome removes User Data/lockfile on exit; give the file handles a moment.
+  local i
+  for ((i = 0; i < ${BROWSER_HISTORY_PURGE_LOCK_WAIT:-5}; i++)); do
+    [[ -e "$(dirname "$profile")/lockfile" ]] || break
+    sleep "${BROWSER_HISTORY_PURGE_POLL_SECONDS:-1}"
+  done
+  return 0
+}
+
+restarted=0
+start_chrome() {
+  local exe="${restart_exe:-chrome.exe}" args="'--restore-last-session'" q="'"
+  [[ -n "$restart_udd" ]] && args+=",'--user-data-dir=${restart_udd//$q/$q$q}'"
+  if ps_run "Start-Process -FilePath '${exe//$q/$q$q}' -ArgumentList $args" >/dev/null 2>&1; then
+    restarted=1
+    printf '已重新打开 Chrome（--restore-last-session 恢复原标签页）\n'
+  else
+    printf 'browser-history-purge: 重新打开 Chrome 失败，请手动启动\n' >&2
+  fi
+}
+
+default_user_data=""
+run_chrome() {
+  # Test hook / override: skip Windows path detection when both are given.
+  if [[ -n "${BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA:-}" ]]; then
+    default_user_data="$BROWSER_HISTORY_PURGE_DEFAULT_USER_DATA"
+  else
+    # shellcheck disable=SC1091
+    source "$RUNTIME_DIR/windows-runtime-paths-lib.sh"
+    if ! windows_runtime_detect_paths || [[ -z "${WINDOWS_LOCALAPPDATA_WSL:-}" ]]; then
+      printf 'browser-history-purge: cannot resolve Windows LOCALAPPDATA (windows_runtime_detect_paths)\n' >&2
+      return 2
+    fi
+    default_user_data="$WINDOWS_LOCALAPPDATA_WSL/Google/Chrome/User Data"
+  fi
+  [[ -n "$profile" ]] || profile="$default_user_data/Default"
+
+  local py_args=(--profile "$profile" --default-user-data "$default_user_data"
+                 --result-json "$tmp/result.json")
+  local joined
+  joined="$(IFS=,; printf '%s' "${domains[*]}")"
+  py_args+=(--domains "$joined")
+
+  if [[ "$apply" -eq 1 ]]; then
+    py_args+=(--apply)
+    if [[ "$stop" -eq 1 ]]; then
+      local st=0
+      stop_chrome || st=$?
+      if [[ "$st" -ne 0 ]]; then
+        printf '{"target":"chrome","mode":"apply","ok":false,"refused":"stop-failed"}' > "$tmp/result.json"
+        return "$st"
+      fi
+    fi
+    local cmdlines="$tmp/chrome-cmdlines.txt"
+    # On enumeration failure no --process-cmdlines-file → python refuses (safe default).
+    enum_chrome "$cmdlines" && py_args+=(--process-cmdlines-file "$cmdlines")
+  fi
+
+  local status=0
+  python3 -I "$IMPL_DIR/chrome_purge.py" "${py_args[@]}" || status=$?
+  # Reopen whatever the purge outcome: we closed the user's browser.
+  [[ "$stopped_count" -gt 0 && "$restart" -eq 1 ]] && start_chrome
+  return "$status"
+}
+
+# ── ego ──────────────────────────────────────────────────────────────
+run_ego() {
+  local ego="${BROWSER_HISTORY_PURGE_EGO_BROWSER:-$SCRIPT_DIR/ego-browser}"
+  local tmpl="$IMPL_DIR/ego-history-delete.tmpl.mjs"
+  local d script out rc line failed=0 total_found=0 total_deleted=0 total_remaining=0
+  : > "$tmp/ego-results.jsonl"
+  for d in "${domains[@]}"; do
+    # Hostname is validated above, so it is safe as a bare JSON string.
+    script="$(sed -e "s/__DOMAIN__/\"$d\"/" -e "s/__MODE__/\"$mode\"/" "$tmpl")"
+    rc=0
+    out="$(timeout --kill-after=10 "$per_domain_timeout" "$ego" nodejs -e "$script" 2>&1)" || rc=$?
+    line="$(printf '%s\n' "$out" | grep -o 'BHP_RESULT {.*}' | tail -n1 | sed 's/^BHP_RESULT //')"
+    if [[ -z "$line" ]]; then
+      local why="no-result"
+      [[ "$rc" -eq 124 || "$rc" -eq 137 ]] && why="timeout-${per_domain_timeout}s"
+      line="$(printf '{"domain":"%s","mode":"%s","error":"%s","exit":%d}' "$d" "$mode" "$why" "$rc")"
+      printf '%s\n' "$out" | tail -n 5 >&2
+    fi
+    printf '%s\n' "$line" >> "$tmp/ego-results.jsonl"
+    python3 -I - "$line" <<'PY'
+import json, sys
+r = json.loads(sys.argv[1])
+d = r["domain"]
+if r.get("error"):
+    print(f"  {d}: 失败 {r['error']}（已删 {r.get('deleted', 0)}）")
+elif r.get("mode") == "apply":
+    print(f"  {d}: 删除 {r.get('deleted', 0)} 条，回读剩余 {r.get('remaining')}")
+else:
+    print(f"  {d}: 首屏命中 {r.get('found', 0)} 条（dry-run）")
+PY
+  done
+  python3 -I - "$tmp/ego-results.jsonl" "$tmp/result.json" "$mode" <<'PY'
+import json, sys
+rows = [json.loads(l) for l in open(sys.argv[1], encoding="utf-8") if l.strip()]
+mode = sys.argv[3]
+bad = [r["domain"] for r in rows if r.get("error") or (mode == "apply" and r.get("remaining") != 0)]
+res = {
+    "target": "ego", "mode": mode, "domains": len(rows),
+    "found": sum(r.get("found", 0) for r in rows),
+    "deleted": sum(r.get("deleted", 0) for r in rows),
+    "remaining": sum(r.get("remaining") or 0 for r in rows),
+    "failed_domains": bad, "ok": not bad,
+}
+json.dump(res, open(sys.argv[2], "w", encoding="utf-8"))
+verb = "已删除" if mode == "apply" else "首屏命中（dry-run，加 --apply 执行）"
+n = res["deleted"] if mode == "apply" else res["found"]
+print(f"ego {verb}：{n} 条；失败域名 {len(bad)} 个" + (f"：{','.join(bad)}" if bad else ""))
+PY
+  python3 -I -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["ok"] else 1)' "$tmp/result.json"
+}
+
+status=0
+case "$target" in
+  chrome) run_chrome || status=$? ;;
+  ego) run_ego || status=$? ;;
+esac
+
+duration_ms="$(( $(now_ms) - started_ms ))"
+fields=(target="$target" mode="$mode" domains="${#domains[@]}" status="$status" duration_ms="$duration_ms")
+[[ "$stop" -eq 1 ]] && fields+=(stopped="$stopped_count" forced="$forced" restarted="$restarted")
+if [[ -s "$tmp/result.json" ]]; then
+  while IFS= read -r kv; do fields+=("$kv"); done < <(
+    python3 -I - "$tmp/result.json" <<'PY'
+import json, sys
+r = json.load(open(sys.argv[1], encoding="utf-8"))
+for k in ("urls", "visits", "shortcuts", "top_sites", "found", "deleted", "remaining", "refused", "ok"):
+    if k in r:
+        v = r[k]
+        print(f"{k}={json.dumps(v) if isinstance(v, bool) else v}")
+PY
+  )
+fi
+if [[ "$status" -eq 0 ]]; then
+  log info "browser-history-purge completed" "${fields[@]}"
+else
+  log warn "browser-history-purge failed" "${fields[@]}"
+fi
+exit "$status"

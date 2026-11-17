@@ -1,0 +1,21 @@
+# Hostnames for `browser-history-purge --domains-file` (exact host match;
+# a parent like pollodev.com is NOT implied). Copy to
+# wezterm-x/local/browser-history-purge.domains and edit there.
+#
+# Example: internal services moved from *.pollodev.com to internal-jl.com;
+# the old hosts kept winning omnibox autocomplete.
+coco.pollodev.com
+dev2-jenkins.pollodev.com
+kol-manage-platform-test.pollodev.com
+loc-ui.pollodev.com
+prod-apisix-external.pollodev.com
+prod-bt.pollodev.com
+prod-cmdb.pollodev.com
+prod-grafana.pollodev.com
+prod-jenkins.pollodev.com
+prod-status.pollodev.com
+prod-tars.pollodev.com
+test-cmdb.pollodev.com
+test-coco.pollodev.com
+# Old Cloudflare Access login host
+pollodev.cloudflareaccess.com

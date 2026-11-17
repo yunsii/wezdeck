@@ -81,6 +81,30 @@ Detail: repo [`docs/browser-debug.md`](../../docs/browser-debug.md).
    habits (snapshot before click, etc.).
 2. Prefer live debug Chrome on `:9222` (WezDeck auto-start).
 
+## 历史记录按域名清理
+
+Triggers: 清理浏览器历史 / 删掉某域名的历史记录 / 地址栏总先出旧域名 /
+purge history for a domain.
+
+This is a maintenance CLI, not a page task: it does **not** follow
+`WEZDECK_BROWSER_BACKEND`. Ask which browser the user means and pass
+`--target chrome` (everyday Windows Chrome) or `--target ego`.
+
+1. Dry-run first:
+   `browser-history-purge --target <chrome|ego> --domains-file "$WEZDECK_REPO/wezterm-x/local/browser-history-purge.domains"`
+   (or `--domains a.com,b.com`). Report the per-domain counts.
+2. Get explicit user confirmation, then rerun with `--apply`.
+   Chrome target: the user must fully quit everyday Chrome (exit 3 = still
+   running; the WezDeck debug Chrome does not count). Alternatively add
+   `--stop`: it **closes the user's everyday Chrome** (graceful, then forced
+   after 20 s; debug Chrome untouched), purges, and reopens it with
+   `--restore-last-session` (`--no-restart` to skip). Only use `--stop` after
+   the user has explicitly agreed to having their browser closed; exit 3 =
+   could not close it, nothing changed.
+3. Report counts + verify line (Chrome) or per-domain read-back (ego).
+
+Detail: [`docs/browser-debug.md#history-purge-by-domain`](../../docs/browser-debug.md#history-purge-by-domain).
+
 ## Guardrails
 
 - Prefer this skill over raw `curl` HTML when the user wants to see or operate a page.

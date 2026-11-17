@@ -163,3 +163,57 @@ curl -sS http://localhost:<port>/json/version
 A healthy chain returns a JSON blob with `Browser`, `Protocol-Version`, and `webSocketDebuggerUrl`; that single response confirms helper, chrome, and the inspect path are all live.
 
 If the badge shows `CDP·?·<port>`, run `wezdeck-runtime-ops` or restart WezTerm to respawn the helper. See also [`diagnostics.md`](./diagnostics.md) for the runtime-side traceability fields.
+
+## History purge by domain
+
+`browser-history-purge` (PATH CLI, `scripts/runtime/cli/`) deletes given
+hostnames from a browser's history and address-bar suggestions — e.g. after
+internal services moved domains and the old hosts keep winning autocomplete.
+Agent entry: [`skills/browser-agent/SKILL.md`](../skills/browser-agent/SKILL.md)
+(`历史记录按域名清理`).
+
+```bash
+cp wezterm-x/local.example/browser-history-purge.domains wezterm-x/local/   # once, then edit
+F=wezterm-x/local/browser-history-purge.domains
+browser-history-purge --target chrome --domains-file "$F"           # dry-run (counts only)
+browser-history-purge --target chrome --domains-file "$F" --apply   # quit everyday Chrome first
+browser-history-purge --target chrome --domains-file "$F" --apply --stop   # or: close it, purge, reopen
+browser-history-purge --target ego --domains a.example.com --apply
+```
+
+- `--target` is **required** and names the browser profile to clean; it is
+  deliberately independent of `WEZDECK_BROWSER_BACKEND` (the `cdp` backend is
+  the debug Chrome's own `user_data_dir`, not the everyday profile that
+  pollutes the omnibox). Hostnames match exactly — `pollodev.com` does not
+  cover `a.pollodev.com` and vice versa. No domain list is built in.
+- **`chrome`**: everyday Windows Chrome, default
+  `%LOCALAPPDATA%\Google\Chrome\User Data\Default` (`--profile` overrides).
+  Cleans History (`urls` / `visits` + side tables), Shortcuts
+  (`omni_box_shortcuts`, the main "type a word → old host first" source) and
+  Top Sites. Dry-run reads temp copies, so it is safe while Chrome runs.
+  `--apply` refuses (exit 3) while any `chrome.exe` holds the target User Data
+  — a process without `--user-data-dir`, or one pointing at it — or while its
+  `lockfile` exists; the debug Chrome (own `--user-data-dir`) is ignored.
+  Then it backs up the three files to `*.bak-<stamp>`, deletes, and checks
+  `integrity_check`, orphan visits and residue (exit 1 if any fails). With
+  Chrome Sync on, other devices keep their copies.
+- **`--stop`** (`chrome` + `--apply` only) **closes the user's browser** — get
+  explicit consent first. Using the same holder test, it sends a graceful
+  `taskkill /PID` to the browser process (no `--type=`), waits 20 s, then
+  `taskkill /F` on whatever still holds the profile (Chrome often leaves
+  ~a dozen background processes); the debug Chrome is never touched. Once all
+  are gone (and `lockfile` cleared) the normal backup / delete / verify runs,
+  then Chrome is reopened via `Start-Process <exe> --restore-last-session`
+  (same `--user-data-dir` if it had one) whatever the purge result;
+  `--no-restart` skips that. If processes survive the forced kill it changes
+  nothing and exits 3 (`refused=stop-failed`). All Windows calls go through
+  `windows-shell-lib.sh`.
+- **`ego`**: ego (lite) keeps its DB locked and exposes no CDP, so the purge
+  drives `chrome://history/?q=<host>` through `ego-browser nodejs`: one
+  process per domain (`--per-domain-timeout`, default 180 s), select → shadow
+  DOM `删除` → confirm until the search is empty, then a fresh search must
+  read back 0. Dry-run reports first-page hits only.
+- Observability: one `browser_agent` row per run
+  (`browser-history-purge completed|failed`, `target`, `mode`, counts,
+  `refused`, `duration_ms`; with `--stop` also `stopped` / `forced` /
+  `restarted`). Tests: `tests/hook-units/test_browser_history_purge.sh`.
