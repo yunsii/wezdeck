@@ -56,12 +56,45 @@ if [[ "$pane_floating" == "1" ]]; then
 fi
 
 login_shell="$(resolve_login_shell)"
-# Keep the hook-reported path for typed-resume release before falling
-# back to $HOME for the login-shell respawn (dead panes sometimes lose
-# pane_current_path, which would otherwise clear the wrong pin key).
+# Keep the hook-reported path for typed-resume release before healing.
+# Dead panes often expand #{pane_current_path} to empty; falling straight
+# to $HOME poisons managed windows (F5 then writes @wezterm_window_root=~).
+# Prefer durable window root, then any sibling pane that still has a path.
 release_cwd="$cwd"
+cwd_source="hook"
+window_id=""
+if [[ -z "$cwd" || ! -d "$cwd" ]]; then
+  # Prefer window id: show-window-options -t <dead-pane> is unreliable on
+  # some tmux builds, while #{window_id} still resolves from the dead pane.
+  window_id="$("${tmux_cmd[@]}" display-message -p -t "$pane_id" '#{window_id}' 2>/dev/null || true)"
+  if [[ -n "$window_id" ]]; then
+    cwd="$("${tmux_cmd[@]}" show-window-options -t "$window_id" -v @wezterm_window_root 2>/dev/null || true)"
+  fi
+  if [[ -z "$cwd" || ! -d "$cwd" ]]; then
+    cwd="$("${tmux_cmd[@]}" show-window-options -t "$pane_id" -v -q @wezterm_window_root 2>/dev/null || true)"
+  fi
+  if [[ -n "$cwd" && -d "$cwd" ]]; then
+    cwd_source="window_root"
+  fi
+fi
+if [[ -z "$cwd" || ! -d "$cwd" ]]; then
+  cwd="$("${tmux_cmd[@]}" display-message -p -t "$pane_id" '#{pane_current_path}' 2>/dev/null || true)"
+  if [[ -n "$cwd" && -d "$cwd" ]]; then
+    cwd_source="pane_current_path"
+  fi
+fi
+if [[ -z "$cwd" || ! -d "$cwd" ]]; then
+  list_target="${window_id:-$pane_id}"
+  while IFS= read -r sibling_path; do
+    [[ -n "$sibling_path" && -d "$sibling_path" ]] || continue
+    cwd="$sibling_path"
+    cwd_source="sibling_pane"
+    break
+  done < <("${tmux_cmd[@]}" list-panes -t "$list_target" -F '#{pane_current_path}' 2>/dev/null || true)
+fi
 if [[ -z "$cwd" || ! -d "$cwd" ]]; then
   cwd="${HOME:-/tmp}"
+  cwd_source="home_fallback"
 fi
 
 start_ms="$(runtime_log_now_ms)"
@@ -69,6 +102,7 @@ runtime_log_info workspace "pane exit keep invoked" \
   "pane_id=$pane_id" \
   "dead_status=${dead_status:-}" \
   "cwd=$cwd" \
+  "cwd_source=$cwd_source" \
   "release_cwd=${release_cwd:-}" \
   "login_shell=$login_shell"
 

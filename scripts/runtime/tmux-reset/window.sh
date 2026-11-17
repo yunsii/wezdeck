@@ -96,19 +96,53 @@ window_root_for_target() {
   local requested_cwd="${3:-}"
   local role=""
   local root=""
+  local resolved=""
+  local healed=""
+  local pane_path=""
 
   role="$(window_role_for_target "$window_target" "$session_name")"
   root="$(tmux_worktree_window_metadata "$window_target" @wezterm_window_root)"
 
   if [[ -n "$requested_cwd" ]]; then
-    if [[ "$role" == "managed_primary" ]]; then
-      root="$(resolve_worktree_root_for_cwd "$requested_cwd" || true)"
+    if [[ "$role" == managed* ]]; then
+      # Only adopt requested_cwd when it is inside a git worktree.
+      # pane-exit-keep used to respawn dead agent panes into $HOME when
+      # #{pane_current_path} was empty; F5 then overwrote @wezterm_window_root
+      # with that HOME path and locked the window there.
+      if tmux_worktree_in_git_repo "$requested_cwd" 2>/dev/null; then
+        resolved="$(resolve_worktree_root_for_cwd "$requested_cwd" || true)"
+        if [[ -n "$resolved" && -d "$resolved" ]]; then
+          root="$resolved"
+        fi
+      fi
     else
       root="$requested_cwd"
     fi
   fi
 
-  if [[ -z "$root" && "$role" == "managed_primary" ]]; then
+  # Managed windows: if stored/requested root is missing or not a git
+  # worktree (HOME poison), heal from sibling panes that still sit in-repo.
+  if [[ "$role" == managed* ]] \
+    && { [[ -z "$root" || ! -d "$root" ]] || ! tmux_worktree_in_git_repo "$root" 2>/dev/null; }; then
+    healed="$(tmux_worktree_current_root_for_window "$window_target" || true)"
+    if [[ -n "$healed" && -d "$healed" ]]; then
+      root="$healed"
+    else
+      while IFS= read -r pane_path; do
+        pane_path="$(tmux_worktree_normalize_pane_path "$pane_path")"
+        [[ -n "$pane_path" && -d "$pane_path" ]] || continue
+        if tmux_worktree_in_git_repo "$pane_path" 2>/dev/null; then
+          resolved="$(resolve_worktree_root_for_cwd "$pane_path" || true)"
+          if [[ -n "$resolved" && -d "$resolved" ]]; then
+            root="$resolved"
+            break
+          fi
+        fi
+      done < <(tmux list-panes -t "$window_target" -F '#{pane_current_path}' 2>/dev/null || true)
+    fi
+  fi
+
+  if [[ -z "$root" && "$role" == managed* ]]; then
     root="$(tmux_worktree_current_root_for_window "$window_target" || true)"
   fi
   if [[ -z "$root" ]]; then
