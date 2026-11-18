@@ -49,6 +49,7 @@ Legacy config value `debug` is accepted as an alias of `slot` (same meaning).
 | 「打开到槽里」/ `open_target=slot` | bare「调试浏览器」(sounds CDP-only; slot may be Ego) |
 | 「日常 Chrome / Edge」+ purge `--target chrome` | bare「默认浏览器」(ambiguous: system handler vs everyday profile) |
 | 「当前 backend」/ `apply-browser-backend --set …` | bare「chrome」as “must use CDP” (see `browser-agent` skill) |
+| 「切到 ego / cdp」（另一边应停） | 两边同时常驻当常态（slot exclusivity forbids it） |
 
 Agent skill wording (capability-first): [`skills/browser-agent/SKILL.md`](../skills/browser-agent/SKILL.md).
 
@@ -78,8 +79,18 @@ Config file: `~/.config/shell-env.d/wezdeck-browser-agent.env` (template
 
 Ego is a visible Chromium with Spaces (human can take over). CDP remains the
 headless, no-focus-steal path for UI verify / Network / Console. Do not point
-`--browserUrl` at Ego — it does not expose a public CDP port. Full migration to
-Ego-only (disable CDP auto-start) is a later operator decision after trial.
+`--browserUrl` at Ego — it does not expose a public CDP port.
+
+**Slot exclusivity:** the browser slot holds one backend at a time.
+`apply-browser-backend --set ego|cdp` prepares the selected side, then stops
+the other (`scripts/runtime/browser-slot-mutex-lib.sh`):
+
+| Selected | Prepare | Teardown other |
+| --- | --- | --- |
+| `ego` | (probe Ego) | `chromeDebugAutoStart.enabled=false` + stop `chrome-debug` processes |
+| `cdp` | `auto_start=true` + wait `:9222` | stop Ego processes |
+
+Everyday browsers (`chrome` / `edge` / `brave`) are never touched.
 
 ### Unified hotkeys, badge, and WezTerm startup
 

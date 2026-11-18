@@ -45,7 +45,10 @@ No `auto`. If unset, stop and ask the operator to run `apply-browser-backend --s
 
 Switching backends **must** go through `apply-browser-backend` so OpenClaw
 `mcp.servers` and skill links stay aligned. Do not hand-edit
-`~/.openclaw/openclaw.json` browser MCP entries.
+`~/.openclaw/openclaw.json` browser MCP entries. Apply also enforces **slot
+exclusivity**: the non-selected side is stopped (`ego` ↔ `chrome-debug`);
+everyday browsers are untouched. Detail:
+[`docs/browser-debug.md#browser-backends-ego--cdp`](../../docs/browser-debug.md#browser-backends-ego--cdp).
 
 ## Backend map
 

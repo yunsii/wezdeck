@@ -2,6 +2,7 @@
 # Apply WEZDECK_BROWSER_BACKEND (cdp|ego) to host skill discovery and OpenClaw
 # mcp.servers. Single write entry for browser capability — do not hand-edit
 # OpenClaw chrome-devtools / ego skill links after this script owns them.
+# Also enforces browser-slot exclusivity (stop the non-selected side).
 #
 # Usage:
 #   apply-browser-backend.sh                 # apply current env/config
@@ -9,6 +10,10 @@
 #   apply-browser-backend.sh --dry-run
 #   apply-browser-backend.sh --skip-probe    # skip CDP/Ego liveness checks
 #   apply-browser-backend.sh --skip-reload   # skip openclaw mcp reload
+#
+# Slot mutex: docs/browser-debug.md#browser-backends-ego--cdp
+#   ego → auto_start off + stop chrome-debug
+#   cdp → auto_start on + wait :port + stop ego
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,8 +30,13 @@ source "$SCRIPT_DIR/runtime-env-lib.sh" 2>/dev/null || true
 source "$SCRIPT_DIR/runtime-log-lib.sh" 2>/dev/null || true
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/windows-runtime-paths-lib.sh" 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/windows-shell-lib.sh" 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/browser-slot-mutex-lib.sh"
 
 WEZTERM_RUNTIME_LOG_SOURCE="${WEZTERM_RUNTIME_LOG_SOURCE:-apply-browser-backend}"
+export WEZDECK_REPO="${WEZDECK_REPO:-$REPO_ROOT}"
 
 dry_run=0
 skip_probe=0
@@ -132,6 +142,13 @@ probe_ego() {
     | grep -q 'ego-browser ready'
 }
 
+# Slot mutex — prepare the selected side before probe (cdp needs :port up).
+# Teardown of the other side runs only after probe (or --skip-probe) succeeds.
+if [[ "$backend" == "cdp" ]]; then
+  printf 'slot exclusivity:\n'
+  browser_slot_mutex_prepare_cdp "$dry_run"
+fi
+
 # Probe before writing env / MCP so a failed probe leaves no half-applied state.
 if ((skip_probe == 0)); then
   if [[ "$backend" == "cdp" ]]; then
@@ -158,6 +175,10 @@ if [[ -n "$pending_set" ]]; then
   write_env_file "$pending_set"
   export WEZDECK_BROWSER_BACKEND="$pending_set"
 fi
+
+# Stop the non-selected slot occupant (chrome-debug ↔ ego).
+printf 'slot exclusivity:\n'
+browser_slot_mutex_teardown_other "$backend" "$dry_run"
 
 link_skill() {
   local src=$1 dst=$2
