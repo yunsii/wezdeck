@@ -21,11 +21,13 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 
 - Setup, local prerequisites, or machine-local config:
   Read [`docs/setup.md`](docs/setup.md).
-- Human-only script handoff (`wd-run` / `x`), propose→peek→CAS run, handoff
-  audit / retention, or “do not paste multi-line scripts for the human to run”:
+- Human-only script handoff (`wd-run` / `x`), staged propose→ready(peek header)→wait,
+  handoff audit / retention, or “do not paste multi-line scripts for the human to run”:
   Read [`docs/agent-run.md`](docs/agent-run.md). Agent self-exec is out of scope.
-- Sync, reload, verification, or day-to-day maintenance:
-  Read [`docs/daily-workflow.md`](docs/daily-workflow.md).
+- Sync, reload, verification, day-to-day maintenance, or **落地上线** (auto
+  commit / push / sync-runtime after a finished round):
+  Read [`docs/daily-workflow.md`](docs/daily-workflow.md)
+  ([Commit / land](docs/daily-workflow.md#commit--land-wezdeck-standing-policy)).
 - Repository-owned config/skill/script renames, compatibility layers, migration
   warnings, or deciding whether to keep an old interface:
   Read [`docs/compatibility-policy.md`](docs/compatibility-policy.md).
@@ -250,9 +252,9 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 
 - After runtime config changes, run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (Bash, not the `Skill` tool — see the note above). **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is left untouched). Use `--live` to skip the gate; `WEZTERM_SYNC_SKIP_CANARY_AUTO=1` to stage without probing. Full flow: [`docs/daily-workflow.md`](docs/daily-workflow.md).
 - Do not run Git commands that can contend on the index lock in parallel.
-- Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
-- **Default-branch delivery:** this repo develops on primary `master`. When the
-  user asks to commit and/or push and HEAD is already `master`/`main` (or the
+- **落地上线（本仓 standing）：** 一轮可交付改动做完且验证过、用户未要求「先别提交 / 分步实现 / 等我确认」时，agent **自行** `coco-commit` → push 到 `origin` 默认分支 → 若触及 runtime/skill/CLI/同步面则跑 `sync-runtime.sh`。例外与细节：[`docs/daily-workflow.md#commit--land-wezdeck-standing-policy`](docs/daily-workflow.md#commit--land-wezdeck-standing-policy)。用户明确叫停或仍处 plan/分步未收口时，不要自动提交推送。
+- **Default-branch delivery:** this repo develops on primary `master`. When
+  committing and/or pushing and HEAD is already `master`/`main` (or the
   resolved default), **do it there** — do **not** ask whether to create a
   feature branch vs continue on the default branch (any commit helper that
   prompts that way is overridden here). Still ask on detached HEAD,

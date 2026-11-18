@@ -51,7 +51,8 @@ fi
 
 agent_run_ensure_dirs
 bound_id="$(agent_run_read_head_id)" || {
-  printf 'x: no pending handoff (HEAD empty)\n' >&2
+  printf 'x: 当前没有待执行的人工脚本（HEAD 空）。\n' >&2
+  printf 'x: 若 agent 刚说「正在准备」，等会话出现「脚本已就绪」后再跑 x。\n' >&2
   exit "$AGENT_RUN_EXIT_MISSING"
 }
 
@@ -61,13 +62,24 @@ if [[ "$peek_only" -eq 1 ]]; then
   exit 0
 fi
 
+bound_summary=""
+bound_path="$(agent_run_entry_path "$bound_id")"
+if [[ -s "$bound_path" ]] && command -v jq >/dev/null 2>&1; then
+  bound_summary="$(jq -r '.summary // empty' "$bound_path" 2>/dev/null || true)"
+fi
+
 if [[ ! -t 0 ]]; then
   printf 'x: non-interactive stdin; peeked id=%s — run with: x --id %s\n' \
     "$bound_id" "$bound_id" >&2
   exit 0
 fi
 
-printf 'Run id=%s in recorded cwd? [Enter=run / other=cancel] ' "$bound_id" >&2
+if [[ -n "$bound_summary" ]]; then
+  printf 'Run id=%s 「%s」 in recorded cwd? [Enter=run / other=cancel] ' \
+    "$bound_id" "$bound_summary" >&2
+else
+  printf 'Run id=%s in recorded cwd? [Enter=run / other=cancel] ' "$bound_id" >&2
+fi
 read -r ans || ans=""
 if [[ -z "$ans" ]]; then
   # Empty Enter confirms. CAS against the id bound at peek time —

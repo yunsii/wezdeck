@@ -216,7 +216,21 @@ Emergency only: `WEZTERM_HYGIENE_SKIP=1` or `--no-verify` (both discouraged).
 
 Fixture self-check: `skills/repo-hygiene/test.sh`.
 
-## Commit Workflow
+## Commit / land (wezdeck standing policy)
 
-- Do not auto-commit or auto-push unless the user asks or the task explicitly calls for it.
-- Ensure the repo-hygiene pre-commit hook is installed (see [Repo hygiene](#repo-hygiene)) before relying on commits to catch basic doc/script rot.
+After a coherent task round is **done and verified** on this repo:
+
+1. **Commit** via `coco-commit` (Conventional Commits; hygiene hook on).
+2. **Push** to `origin` on the default branch (`master` / resolved `origin/HEAD`) — no PR; see Default-branch delivery in `CLAUDE.md` / `AGENTS.md`.
+3. **Sync** with `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` when the round touched runtime config, platform skills under `skills/`, `scripts/runtime/`, tmux/WezTerm sync surfaces, or anything else the Default Flow says must reach the live tree.
+
+**Auto-decide** (do not wait for 「提交 / 推送 / sync」) when **all** hold:
+
+- The user did **not** say 先别提交 / 等我确认 message / 分步实现（只改一部分先停） / plan-only
+- The round is not mid plan-mode awaiting approval
+- Git state is normal (not detached / mid-rebase / merge) and the agent owns the dirty set it is landing
+- Force-push / history rewrite is **not** involved
+
+**Hold** (do not auto land) when any of: user asked to pause; staged multi-step plan still open; unrelated dirty files the agent did not change; abnormal git state; only exploratory notes with no verified change.
+
+Ensure the repo-hygiene pre-commit hook is installed (see [Repo hygiene](#repo-hygiene)) before relying on commits to catch basic doc/script rot. After a `dev-*` worktree delivers onto mainline, recycle per [Closing a `dev-*` development round](#closing-a-dev--development-round).

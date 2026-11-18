@@ -534,6 +534,35 @@ agent_run_format_preview() {
   printf '%s\n' '----- end -----'
 }
 
+# Peek-header-shaped ready banner for humans + agents (stderr).
+# Fields/order match agent_run_format_preview page header (minus sha256/body).
+# Usage: agent_run_print_ready <id>
+agent_run_print_ready() {
+  local id="$1"
+  local path json
+  path="$(agent_run_entry_path "$id")"
+  [[ -s "$path" ]] || return 1
+  json="$(cat "$path")"
+  printf 'agent-run: ready\n' >&2
+  printf '  id:      %s\n' "$(jq -r '.id' <<<"$json")" >&2
+  printf '  status:  %s\n' "$(jq -r '.status' <<<"$json")" >&2
+  printf '  actor:   %s\n' "$(jq -r '.actor' <<<"$json")" >&2
+  printf '  cwd:     %s\n' "$(jq -r '.session.cwd' <<<"$json")" >&2
+  printf '  summary: %s\n' "$(jq -r '.summary' <<<"$json")" >&2
+  printf '  action:  run `x` in a real terminal (peek → Enter=run)\n' >&2
+}
+
+# Terminal-status line after wait (stderr). Easy for agents to scrape.
+# Usage: agent_run_print_done <id> <status> [exit_code]
+agent_run_print_done() {
+  local id="$1" status="$2" code="${3:-}"
+  if [[ -n "$code" ]]; then
+    printf 'agent-run: done id=%s status=%s exit=%s\n' "$id" "$status" "$code" >&2
+  else
+    printf 'agent-run: done id=%s status=%s\n' "$id" "$status" >&2
+  fi
+}
+
 # Block until entry reaches a terminal status. For agent "background task"
 # wait — no attention/status badges; just exit when the human finished `x`.
 # Usage: agent_run_wait <id> [timeout_sec] [interval_sec]
@@ -571,16 +600,19 @@ agent_run_wait() {
         code="$(jq -r '.result.exit_code // 1' "$path" 2>/dev/null || printf '1')"
         [[ "$code" =~ ^[0-9]+$ ]] || code=1
         agent_run_audit "wait_end" "$id" "agent" "ok" "status=$status exit_code=$code" || true
+        agent_run_print_done "$id" "$status" "$code"
         return "$code"
         ;;
       cancelled)
         agent_run_audit "wait_end" "$id" "agent" "ok" "status=cancelled" || true
         printf 'wd-run wait: cancelled id=%s\n' "$id" >&2
+        agent_run_print_done "$id" "cancelled"
         return "$AGENT_RUN_EXIT_CANCELLED"
         ;;
       superseded)
         agent_run_audit "wait_end" "$id" "agent" "ok" "status=superseded" || true
         printf 'wd-run wait: superseded id=%s\n' "$id" >&2
+        agent_run_print_done "$id" "superseded"
         return "$AGENT_RUN_EXIT_SUPERSEDED"
         ;;
       pending|running)
@@ -597,6 +629,7 @@ agent_run_wait() {
       if (( elapsed >= timeout_sec )); then
         agent_run_audit "wait_end" "$id" "agent" "fail" "timeout_sec=$timeout_sec" || true
         printf 'wd-run wait: timeout after %ss id=%s\n' "$timeout_sec" "$id" >&2
+        agent_run_print_done "$id" "timeout"
         return "$AGENT_RUN_EXIT_TIMEOUT"
       fi
     fi

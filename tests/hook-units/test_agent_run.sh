@@ -199,6 +199,44 @@ case "$peek_out" in
     ;;
 esac
 
+printf '== ready / done banners + x empty HEAD ==\n'
+ready_err="$(mktemp "$sandbox/ready.XXXXXX")"
+ready_out="$("$wd_run" propose --cwd "$sandbox/work" --actor test-actor --summary 'ready-banner' --stdin <<<"echo ready-body" 2>"$ready_err")"
+ready_id="${ready_out#id=}"
+ready_id="$(printf '%s' "$ready_id" | head -n1 | tr -d '\r')"
+ready_stderr="$(cat "$ready_err")"
+assert_contains "ready banner marker" "$ready_stderr" "agent-run: ready"
+assert_contains "ready banner id" "$ready_stderr" "$ready_id"
+assert_contains "ready banner summary" "$ready_stderr" "summary: ready-banner"
+assert_contains "ready banner actor" "$ready_stderr" "actor:   test-actor"
+assert_contains "ready banner status" "$ready_stderr" "status:  pending"
+assert_contains "ready banner action" "$ready_stderr" "run \`x\`"
+
+(
+  sleep 0.3
+  "$wd_run" run --id "$ready_id" >/dev/null 2>&1
+) &
+set +e
+done_err="$(mktemp "$sandbox/done.XXXXXX")"
+"$wd_run" wait --id "$ready_id" --timeout 10 --interval 1 2>"$done_err"
+done_rc=$?
+set -e
+done_stderr="$(cat "$done_err")"
+assert_eq "wait after ready returns 0" "$done_rc" "0"
+assert_contains "done banner" "$done_stderr" "agent-run: done id=$ready_id"
+assert_contains "done status" "$done_stderr" "status=done"
+
+# Clear HEAD so x reports empty
+rm -f "$AGENT_RUN_HEAD_FILE"
+x_bin="$repo_root/scripts/runtime/cli/x"
+set +e
+x_err="$("$x_bin" 2>&1)"
+x_rc=$?
+set -e
+assert_eq "x empty HEAD exit missing" "$x_rc" "4"
+assert_contains "x empty HEAD zh hint" "$x_err" "当前没有待执行的人工脚本"
+assert_contains "x empty HEAD wait-for-ready hint" "$x_err" "脚本已就绪"
+
 printf '== audit rotate ==\n'
 # Pad audit file past rotate threshold
 agent_run_ensure_dirs

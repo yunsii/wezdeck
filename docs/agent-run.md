@@ -5,7 +5,7 @@ Three layers — do not collapse them:
 | Layer | Role |
 | --- | --- |
 | **User-level profile** (`agent-profiles` → `reporting.md`) | Doctrine: when human must run something, skill is **mandatory**; no chat paste channel; agent self-exec stays on tools |
-| **Platform skill** `human-run` | Procedure agents load: resolve `wd-run`, `propose --cwd`, tell human `x` |
+| **Platform skill** `human-run` | Procedure agents load: resolve `wd-run`, staged chat (preparing → ready peek-header → result), `propose --no-wait` then `wait`, human `x` |
 | **wezdeck runtime CLI** `wd-run` / `x` | Store, CAS, audit, retention, execute in recorded cwd |
 
 Human-only handoff. Agent self-exec is **out of scope**.
@@ -24,17 +24,26 @@ confirms. Chat should at most show one line: `x`.
 | Skill `human-run` → `wd-run propose` → `x` | Attention `waiting`, session-bridge `take` |
 | Audit of handoff lifecycle | Wrapping every managed command |
 
-## Agent path (mandatory)
+## Agent path (mandatory, staged)
 
 1. Load skill `human-run`.
 2. Run `"$TOOL_HOME/ensure-env.sh"` (check + init; idempotent).
-3. **Before propose/wait:** user-visible chat line that you are suspended
-   waiting for the human to run `x` (skill template; not tool-description-only).
-4. `"$TOOL_HOME/propose.sh" --cwd …` — **defaults to `--wait`** so the tool
-   call blocks like a normal shell task until `x` finishes; then continue.
-   Prefer host background execution for long waits. No attention badge;
-   no agent-specific UI path — the chat line is the waiting signal.
-5. Or split: `propose.sh --no-wait` + `wd-run wait --id …`.
+3. **Session① preparing:** user-visible line that a handoff is being written —
+   do **not** ask the human to run `x` yet (skill template).
+4. `"$TOOL_HOME/propose.sh" --no-wait --cwd … --summary …` — require a
+   human-readable `--summary` (peek title). stdout: `id=…`. stderr:
+   `agent-run: ready` block whose fields match the `x` peek page header
+   (`id` / `status` / `actor` / `cwd` / `summary`).
+5. **Session② ready:** restates that peek header, then asks the human to run
+   `x` (only moment that is allowed to say 请跑 `x`). Not
+   tool-description-only; no attention badge as the waiting signal.
+6. `"$WD_RUN" wait --id …` — blocks like a normal shell task until `x`
+   finishes; stderr ends with `agent-run: done id=… status=… [exit=…]`.
+7. **Session③ result** + agent-owned follow-up.
+
+`propose.sh` still defaults to `--wait` for hosts that cannot split tool
+calls; that path cannot insert session② between write and block and is
+race-prone — skill marks it as fallback only.
 
 **Handoff body = non-blocking kickoff.** Trigger/async ack only; exit quickly.
 Do not `gh run watch` / health-poll / rollout-wait inside `x`. After wait
@@ -47,22 +56,30 @@ Profile rules: `agent-profiles/v1/en/reporting.md` `[reporting-50]`…`[reportin
 On PATH via `wezdeck-env.env` (`scripts/runtime/cli/`).
 
 ```bash
-# Prepared by agent (or manually) — --cwd is required
+# Prepared by agent (or manually) — --cwd and a readable --summary are required
 wd-run propose --cwd /abs/or/resolvable/dir --actor grok --summary 'fix dns' --stdin <<'EOF'
 echo hello
 pwd
 EOF
+# stderr: agent-run: ready  (id/status/actor/cwd/summary — same shape as x peek header)
+# stdout: id=<id>
 
-# Human
+# Human (after agent session② says ready)
 x              # peek HEAD → Enter=run / other=cancel → CAS run in recorded cwd
 x -            # peek only
 x --id <id>    # run without pager (still CAS against HEAD)
+
+# Agent after session②
+wd-run wait --id <id>   # stderr ends: agent-run: done id=… status=… [exit=…]
 
 wd-run log --lines 40
 wd-run ls --status pending
 wd-run cancel
 wd-run gc
 ```
+
+Empty HEAD: `x` explains there is no pending handoff and tells the human to
+wait for the agent’s「脚本已就绪」line if prepare is still in flight.
 
 Discovery for agents: `$HOME/.wezterm-x/agent-tools.env` key `wd_run`
 (absolute path to `cli/wd-run`), written by `sync-runtime.sh`.

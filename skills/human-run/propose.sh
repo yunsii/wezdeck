@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Agent entry: ensure env, then wd-run propose.
-# Default: --wait so the tool call blocks until the human finishes `x`
-# (same shape as a normal background/blocking shell task — no attention badge).
-# Pass --no-wait to only enqueue.
+# Default: --wait (blocks until human finishes `x`).
+# Skill-norm path: pass --no-wait, emit session② (peek header), then
+# `wd-run wait --id …` so the human is not told to run `x` before HEAD is ready.
 #
 # Usage: propose.sh --cwd DIR [--actor A] [--summary S] [--timeout SEC] [--no-wait]
 #                  (--file F | --stdin | -)
