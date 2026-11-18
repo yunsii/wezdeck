@@ -152,6 +152,18 @@ assert_no_entry_for_session() {
   echo "  ✓ $label"; pass=$((pass+1))
 }
 
+assert_entry_field() {
+  local label="$1" sandbox="$2" session_id="$3" field="$4" expected="$5" actual
+  actual="$(jq -r --arg s "$session_id" --arg f "$field" '.entries[$s][$f] // "<missing>"' \
+    "$(state_file_in "$sandbox")" 2>/dev/null || printf '<no state>')"
+  if [[ "$actual" == "$expected" ]]; then
+    echo "  ✓ $label"; pass=$((pass+1))
+  else
+    echo "  ✗ $label"; echo "    $session_id.$field expected=$expected actual=$actual"
+    fail=$((fail+1))
+  fi
+}
+
 # Seed the state file with an existing entry before the hook runs —
 # simulates "agent has been running, now hits done while user is
 # focused on the pane".
@@ -228,15 +240,30 @@ MOCK_HOOK_STDIN='{"session_id":"ccdc-test-sid"}' \
 assert_no_entry_for_session "focused done removes prior running entry" "$sandbox" "ccdc-test-sid"
 rm -rf "$sandbox"
 
-# Case 6 (regression): same for waiting — focused waiting should clear
-# any prior running entry too.
+# Case 6: focused waiting skips the ▲ upsert but KEEPS the prior running
+# entry (35cc28d, 2026-10-10): a permission / elicitation prompt on the pane
+# you are looking at is still mid-turn, and removing running dropped the
+# session from ⟳ until the next prompt. Unlike done (Case 5), no removal.
 sandbox="$(mktemp -d)"
 seed_running_entry "$sandbox" "ccdc-test-sid" "10" \
   "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "@1" "%5"
 MOCK_HOOK_STDIN='{"session_id":"ccdc-test-sid"}' \
   run_hook_in_sandbox "$sandbox" "waiting" "permission_prompt" \
   "10" "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "%5" "%5"
-assert_no_entry_for_session "focused waiting removes prior running entry" "$sandbox" "ccdc-test-sid"
+assert_entry_field "focused waiting keeps prior running entry" \
+  "$sandbox" "ccdc-test-sid" "status" "running"
+assert_entry_field "focused waiting leaves the running reason untouched" \
+  "$sandbox" "ccdc-test-sid" "reason" "old running"
+rm -rf "$sandbox"
+
+# Case 6b: focused waiting with no prior entry raises nothing at all.
+sandbox="$(mktemp -d)"
+guard_sandbox_paths "$sandbox/wezterm-runtime"
+MOCK_HOOK_STDIN='{"session_id":"ccdc-fresh-sid"}' \
+  run_hook_in_sandbox "$sandbox" "waiting" "permission_prompt" \
+  "10" "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "%5" "%5"
+assert_no_entry_for_session "focused waiting without prior entry creates none" \
+  "$sandbox" "ccdc-fresh-sid"
 rm -rf "$sandbox"
 
 # Case 7 (cross-workspace bug the user just hit): tmux pane IS focused
