@@ -513,3 +513,52 @@ Remaining ~49ms p50 is dominated by physical limits:
 Going below ~30ms requires either moving the high-tick state files
 (net loss per measurements) or eliminating the bash menu layer entirely
 (maintenance loss). Both rejected with data above.
+
+## Attention hook hot path (2026-11-17)
+
+`PreToolUse` / `PostToolUse` both run `emit-agent-status.sh resolved`
+**synchronously**, so every Claude tool call waits on it twice. Almost all of
+those fires are no-ops (entry already `running`), yet one no-op cost 71 `jq`
+calls and two full rewrites of `attention.json` on `/mnt/c` (each with a
+journal row), plus up to three `find /tmp -maxdepth 6` walks (~66k entries,
+20–100 ms each). Fixed in `b8b48aa`:
+
+- `attention_state_prune` compares inside the same `jq` and skips the write
+  when nothing changed (was an unconditional `rev+1` rewrite every fire).
+- `bg_bump_alive_entries` re-stamps a bg entry's `ts` only when something else
+  changed or it is older than `WEZTERM_ATTENTION_BG_BUMP_MIN_MS` (60 s); the
+  30-min TTL needs nothing finer.
+- The `resolved` branch reads status / waiting_kind / running_kind in one `jq`
+  (`\x1f`-joined — tab is IFS whitespace and shifts empty fields) and takes the
+  `running` early return itself.
+- `bg_claude_tasks_dir` globs `<root>/claude-<uid>/<slug>/<sid>/tasks` instead
+  of walking `/tmp`.
+
+**How it was measured.** Bench: copy the live `attention.json` into a sandbox
+under the Windows temp dir (same 9p cost as live), fire `resolved` for a
+`running` session N times with the old tree (`git archive HEAD`) and the new
+one. Parity: run the same resolved/running/waiting/done sequence on both and
+diff the final state minus `rev` / `ts`. Live: percentiles of `elapsed_ms` on
+`message="hook resolved no-op"` rows in
+`~/.local/state/wezterm-runtime/logs/runtime.log` (`grep -a`; the log holds
+binary bytes), bucketed per day.
+
+| `resolved` no-op, ms | p50 | p90 | p99 |
+|---|---|---|---|
+| 9p bench, old → new (15 fires) | 808 → 448 | 916 → 482 | — |
+| live, best old day (11-15, n=2157) | 258 | 328 | 575 |
+| live, 11-17 before the change (n=3163) | 402 | 997 | 3770 |
+| live, 11-18 after (n=1206) | 122 | 245 | 397 |
+
+Fires over 3 s went from ~40 in one afternoon to 2 in the following day; the
+remaining 22 s outlier coincided with `attention-jump.sh` stalling 2.6–5.4 s
+and a 139-process `renormalize` sweep — a guest-wide stall, not hook logic.
+
+**Not done.** State-changing fires (`running` / `waiting` / `done`) barely
+moved (live p50 ~520 ms): they still pay ~7 `jq` in `attention_state_write`'s
+clobber guards and ~10 in the journal row. Consolidating those touches the
+refuse-to-clobber checks and buys little, since a turn has only a few such
+fires. Making the tool hooks `async` would remove the wait entirely but lets
+`resolved` race `running` / `done` — rejected. What is left in a no-op
+(~120 ms live) is bash startup + lib sourcing and the per-fire bg-entry read
+checks.
