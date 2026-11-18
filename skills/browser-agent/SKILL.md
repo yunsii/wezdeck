@@ -81,16 +81,23 @@ Detail: repo [`docs/browser-debug.md`](../../docs/browser-debug.md).
    habits (snapshot before click, etc.).
 2. Prefer live debug Chrome on `:9222` (WezDeck auto-start).
 
+## Naming
+
+Roles and profile ids (browser slot / backend / everyday / system handler):
+repo [`docs/browser-debug.md#browser-glossary`](../../docs/browser-debug.md#browser-glossary).
+Terminal link opens use `link.open_target` = `slot` \| `system` (not the backend switch).
+
 ## 历史记录按域名清理
 
 Triggers: 清理浏览器历史 / 删掉某域名的历史记录 / 地址栏总先出旧域名 /
 purge history for a domain.
 
 This is a maintenance CLI, not a page task: it does **not** follow
-`WEZDECK_BROWSER_BACKEND`. Ask which browser the user means:
-`--target chrome|edge|brave` (everyday Windows Chromium),
-`--target chrome-debug` (WezDeck debug profile),
-`--target chromium` (all installed of chrome/edge/brave), or `--target ego`.
+`WEZDECK_BROWSER_BACKEND`. Ask which **profile id** the user means (glossary):
+`--target chrome|edge|brave` (everyday),
+`--target chrome-debug` (slot profile when backend=`cdp`),
+`--target chromium` (all installed of chrome/edge/brave), or `--target ego`
+(slot profile when backend=`ego`).
 
 1. Dry-run first:
    `browser-history-purge --target <chrome|edge|brave|chromium|chrome-debug|ego> --domains-file "$WEZDECK_REPO/wezterm-x/local/browser-history-purge.domains"`

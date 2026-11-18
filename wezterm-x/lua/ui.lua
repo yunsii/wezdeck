@@ -104,13 +104,34 @@ function M.apply(opts)
       -- Unified browser slot: backend=ego → ensure ego (lite) on GUI start
       -- (no focus steal), same role CDP auto_start plays for debug Chrome.
       ensure_ego_if_selected('gui-startup')
+      actions.publish_link_open_config(constants, logger, 'gui-startup')
     end)
 
     -- Ctrl+Shift+R / sync reload does not re-fire gui-startup; refresh the
     -- ego heartbeat (and start ego if it died) on config reload too.
     wezterm.on('window-config-reloaded', function()
       ensure_ego_if_selected('window-config-reloaded')
+      actions.publish_link_open_config(constants, logger, 'window-config-reloaded')
     end)
+  end
+
+  -- Ctrl+LeftClick / OpenLinkAtMouseCursor: honor link.open_target.
+  -- Returning false cancels WezTerm's default system-browser open.
+  wezterm.on('open-uri', function(window, pane, uri)
+    if type(uri) ~= 'string' or not uri:match('^https?://') then
+      return
+    end
+    local target = actions.read_link_open_target(constants)
+    if target == 'system' then
+      return
+    end
+    actions.open_url(wezterm, window, constants, logger, host, uri, { source = 'open_uri' })
+    return false
+  end)
+
+  -- Publish even outside hybrid-wsl so bash can still read open_target.
+  if not (constants.runtime_mode == 'hybrid-wsl' and constants.host_os == 'windows') then
+    actions.publish_link_open_config(constants, logger, 'ui-apply')
   end
 
   config.font = constants.fonts.terminal
@@ -244,6 +265,8 @@ function M.apply(opts)
     raw_overrides = raw_keybinding_overrides,
   }
 
+  -- Ctrl+LeftClick still uses OpenLinkAtMouseCursor; the open-uri handler
+  -- above routes http(s) through link.open_target (default: browser slot).
   config.mouse_bindings = {
     {
       event = { Up = { streak = 1, button = 'Left' } },

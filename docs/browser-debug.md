@@ -1,8 +1,56 @@
 # Browser Debug Workflow
 
-Use this doc when you need anything about the headless Chrome debug instance the Windows WezDeck Runtime runs: the four daily paths (auto-start, agent / MCP attach, `chrome://inspect`, manual `Alt+b` / `Alt+Shift+b`), the launch hardening flags, the right-status `CDP·…` badge, or the status-file contract that drives the badge.
+Use this doc when you need anything about the managed browser surface: naming
+([glossary](#browser-glossary)), backends (`ego` \| `cdp`), terminal link
+opens (`link.open_target`), the four CDP daily paths (auto-start, agent / MCP
+attach, `chrome://inspect`, `Alt+b` / `Alt+Shift+b`), history purge targets,
+the right-status browser-slot badge, or the status-file contract.
 
 The keyboard summary lives in [`keybindings.md#project-navigation`](./keybindings.md#project-navigation); this doc owns the workflow detail.
+
+## Browser glossary
+
+Canonical names for day-to-day talk, configs, and CLI flags. Prefer these over
+product nicknames when the role matters.
+
+### Roles
+
+| Term | 中文 | Meaning |
+| --- | --- | --- |
+| **browser slot** | 统一浏览器槽 | The one browser WezDeck manages for agents + `Alt+b` / `Alt+Shift+b` / right-status badge. Filled by the current **backend**. |
+| **backend** | 槽后端 | What fills the slot: `ego` \| `cdp` (`WEZDECK_BROWSER_BACKEND` / `apply-browser-backend`). |
+| **everyday browser** | 日常浏览器 | Human day-to-day Chrome / Edge / Brave (normal `%LOCALAPPDATA%\…\User Data`). Outside the slot. |
+| **system handler** | 系统默认打开 | OS URL association for `http(s)` (`wezterm.open_with` / `Start-Process`). May or may not be the same install as an everyday browser. |
+
+### Profile ids (concrete User Data)
+
+Used by `browser-history-purge --target` and similar maintenance CLIs. **Independent** of backend: scrubbing history names a profile, it does not switch the slot.
+
+| id | Role | Notes |
+| --- | --- | --- |
+| `chrome` / `edge` / `brave` | everyday | Default profile under that product's User Data (`browsers.tsv`). |
+| `chromium` | everyday bundle | Runs chrome + edge + brave for every installed History. |
+| `chrome-debug` | slot profile when backend=`cdp` | WezDeck dedicated debug Chrome (`chrome_debug_browser.user_data_dir`). |
+| `ego` | slot profile when backend=`ego` | Ego lite profile (UI-driven purge path). |
+
+### Open routing
+
+| `link.open_target` | Opens into |
+| --- | --- |
+| `slot` (default) | Current **browser slot** (visible): `cdp` → debug Chrome, `ego` → Ego window. |
+| `system` | **system handler**. |
+
+Legacy config value `debug` is accepted as an alias of `slot` (same meaning).
+
+### How to say it
+
+| Prefer | Avoid when role matters |
+| --- | --- |
+| 「打开到槽里」/ `open_target=slot` | bare「调试浏览器」(sounds CDP-only; slot may be Ego) |
+| 「日常 Chrome / Edge」+ purge `--target chrome` | bare「默认浏览器」(ambiguous: system handler vs everyday profile) |
+| 「当前 backend」/ `apply-browser-backend --set …` | bare「chrome」as “must use CDP” (see `browser-agent` skill) |
+
+Agent skill wording (capability-first): [`skills/browser-agent/SKILL.md`](../skills/browser-agent/SKILL.md).
 
 ## Browser backends (`ego` | `cdp`)
 
@@ -67,6 +115,33 @@ curl -sS -m 3 http://127.0.0.1:9222/json/version
 cat "$(wslpath -u "$LOCALAPPDATA")/wezterm-runtime/state/browser-agent/status.json" 2>/dev/null \
   || cat /mnt/c/Users/$USER/AppData/Local/wezterm-runtime/state/browser-agent/status.json
 ```
+
+## Open links target (`slot` | `system`)
+
+Terminal link opens share one switch — **not** the agent backend, and **not**
+a purge `--target`. See [glossary](#browser-glossary).
+
+| Value | Behavior |
+| --- | --- |
+| `slot` (default) | Ensure the **visible browser slot**, then open the URL there (`cdp` → WezDeck debug Chrome; `ego` → Ego). Alias: legacy `debug`. |
+| `system` | **system handler** (`wezterm.open_with` / `Start-Process`) |
+
+Entry points that honor it:
+
+- `Ctrl+LeftClick` (WezTerm `open-uri` intercepts `OpenLinkAtMouseCursor`)
+- `Ctrl+Shift+P` → **Link: Open URL from viewport** (QuickSelect)
+- `Ctrl+k l` project links picker → `links-dispatch.sh OPEN` → `scripts/runtime/link-open.sh`
+
+Config (machine-local):
+
+```lua
+-- wezterm-x/local/constants.lua
+link = {
+  open_target = 'slot', -- or 'system' (legacy: 'debug' ≡ 'slot')
+},
+```
+
+After edit: `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` then reload WezTerm. On `gui-startup` / config reload, Lua publishes `state/link-open/config.json` under the Windows runtime state dir so bash can read the same value without parsing Lua.
 
 ## The four daily paths (CDP)
 
@@ -186,12 +261,12 @@ browser-history-purge --target chrome --recycle-backups --backup-keep 0    # dro
 browser-history-purge --target ego --domains a.example.com --apply
 ```
 
-- `--target` is **required** and names the browser profile to clean; it is
-  deliberately independent of `WEZDECK_BROWSER_BACKEND` (agent backend switch
-  vs which profile's omnibox/history to scrub). Hostnames match exactly —
+- `--target` is **required** and names a [profile id](#browser-glossary); it is
+  deliberately independent of `WEZDECK_BROWSER_BACKEND` (backend fills the
+  slot; purge names which User Data to scrub). Hostnames match exactly —
   `pollodev.com` does not cover `a.pollodev.com` and vice versa. No domain
   list is built in.
-- **`chrome` / `edge` / `brave`**: everyday Windows Chromium browsers. Default
+- **`chrome` / `edge` / `brave`**: **everyday** Windows Chromium browsers. Default
   profiles and process names live in
   [`scripts/runtime/browser-history/browsers.tsv`](../scripts/runtime/browser-history/browsers.tsv)
   (`%LOCALAPPDATA%\…\User Data\Default`; `--profile` overrides). Same SQLite

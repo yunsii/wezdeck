@@ -13,6 +13,13 @@ return {
     -- Use a Windows path in hybrid-wsl and a local path in posix-local.
     user_data_dir = '/path/to/chrome-profile',
   },
+  -- Where Ctrl+LeftClick / QuickSelect / Ctrl+k l open http(s) URLs.
+  -- Default is 'slot' (visible browser slot: debug Chrome or Ego per
+  -- WEZDECK_BROWSER_BACKEND). Set to 'system' for the OS system handler.
+  -- Legacy 'debug' ≡ 'slot'. Glossary: docs/browser-debug.md#browser-glossary.
+  -- link = {
+  --   open_target = 'slot', -- or 'system'
+  -- },
   -- Browser agent backend for host agents + OpenClaw capability apply.
   -- Canonical runtime switch is WEZDECK_BROWSER_BACKEND in
   -- ~/.config/shell-env.d/wezdeck-browser-agent.env (written by

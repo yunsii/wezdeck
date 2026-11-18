@@ -33,7 +33,7 @@ return {
   -- ['clipboard.copy-selection-strict'] = 'Ctrl+Shift+c',
   -- ['clipboard.paste-smart']           = 'Ctrl+v',
   -- ['clipboard.paste-plain']           = 'Ctrl+Shift+v',
-  -- ['link.open-in-viewport']           = 'Alt+Shift+l', -- no default hotkey; palette / Ctrl+LeftClick
+  -- ['link.open-in-viewport']           = 'Alt+Shift+l', -- no default hotkey; palette / Ctrl+LeftClick (link.open_target)
 
   -- ── Panes / chord prefix ──────────────────────────────
   -- ['session.fix-layout']             = 'Ctrl+k r', -- light heal after RDP/DPI

@@ -66,7 +66,7 @@
   {
     "id": "link.open-in-viewport",
     "label": "Link: Open URL from viewport",
-    "description": "Trigger WezTerm QuickSelect to label every `http(s)://…` URL across the visible pane and WezTerm scrollback; press the label key to open the URL via the system default handler. No default hotkey — invoke from `Ctrl+Shift+P` (command palette) or use `Ctrl+LeftClick` on a URL. Remap via `wezterm-x/local/keybindings.lua` if you want a dedicated key.",
+    "description": "Trigger WezTerm QuickSelect to label every `http(s)://…` URL across the visible pane and WezTerm scrollback; press the label key to open via `link.open_target` (default `slot` = visible browser slot per WEZDECK_BROWSER_BACKEND; set `system` for the OS system handler). Same switch as `Ctrl+LeftClick` and `Ctrl+k l`. No default hotkey — invoke from `Ctrl+Shift+P` or remap in `wezterm-x/local/keybindings.lua`. Glossary: docs/browser-debug.md#browser-glossary.",
     "scope": "clipboard",
     "context": "any",
     "binding": {

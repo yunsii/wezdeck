@@ -104,12 +104,14 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Phone / Android remote work (OpenClaw only; Happy + Tailscale phone
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
-- Headless Chrome debug instance, auto-start behavior, `Alt+b` /
-  `Alt+Shift+b`, `chrome://inspect` workflow, the right-status `CDP·…`
-  badge, or switching the agent browser backend (`ego` \| `cdp` via
+- Browser glossary (slot / backend / everyday / system), headless Chrome
+  debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,
+  the right-status browser-slot badge, link open target, history-purge
+  profile ids, or switching the agent browser backend (`ego` \| `cdp` via
   `apply-browser-backend` / `WEZDECK_BROWSER_BACKEND`):
   Read [`docs/browser-debug.md`](docs/browser-debug.md)
-  ([backends](docs/browser-debug.md#browser-backends-ego--cdp)).
+  ([glossary](docs/browser-debug.md#browser-glossary);
+  [backends](docs/browser-debug.md#browser-backends-ego--cdp)).
 - Cutting a Windows wezdeck-runtime release, updating
   `release-manifest.json`, forcing the release-install branch, or
   side-loading the release zip:

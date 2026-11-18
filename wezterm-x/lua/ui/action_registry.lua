@@ -622,7 +622,7 @@ function M.new(ctx)
   -- ── Link ──────────────────────────────────────────────
 
   handlers['link.open_in_viewport'] = function()
-    return actions.link_quick_select_action(wezterm, logger)
+    return actions.link_quick_select_action(wezterm, logger, constants, host)
   end
 
   -- ── Workspace ─────────────────────────────────────────

@@ -25,8 +25,8 @@ Use this doc when you need the shortest possible map of the repository docs.
   Read [`agent-attention.md`](./agent-attention.md).
 - Window appearance presets (`opaque` / `frosted`), transparency / frosted-glass:
   Read [`appearance-presets.md`](./appearance-presets.md).
-- Headless Chrome debug instance, `Alt+b` / `Alt+Shift+b`, `chrome://inspect` workflow, `CDP·…` badge:
-  Read [`browser-debug.md`](./browser-debug.md).
+- Browser glossary (slot / backend / everyday / system), `Alt+b` / `Alt+Shift+b`, `chrome://inspect`, `CDP·…` badge, link open target (`slot`|`system`):
+  Read [`browser-debug.md`](./browser-debug.md) ([glossary](./browser-debug.md#browser-glossary)).
 - Timed reminders (cron + tmux popups), `reminder.sh`, crontab install:
   Read [`reminders.md`](./reminders.md).
 - Phone / Android remote work (OpenClaw; Happy + Tailscale phone shell retired):

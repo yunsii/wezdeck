@@ -198,6 +198,10 @@ function M.default_browser_agent_status_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'browser-agent', 'status.json')
 end
 
+function M.default_link_open_config_file(runtime_state_dir, join_path)
+  return join_path(runtime_state_dir, 'state', 'link-open', 'config.json')
+end
+
 function M.default_ego_window_script(runtime_dir, join_path)
   return join_path(runtime_dir, 'scripts', 'ego-window.ps1')
 end

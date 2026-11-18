@@ -827,7 +827,7 @@ function M.register(opts)
       end
       return
     end
-    local action = actions_mod.link_quick_select_action(wezterm, logger)
+    local action = actions_mod.link_quick_select_action(wezterm, logger, constants, host)
     local ok, err = pcall(function()
       meta.window:perform_action(action, meta.pane)
     end)

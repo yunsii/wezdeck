@@ -84,7 +84,7 @@ Left → right (pressure badges stay absent while healthy — presence *is* the 
 
 | Segment | Meaning | Deep dive |
 |---|---|---|
-| `Ego·Alive/-/?` or `CDP·Headless/Visible/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND` | [Browser debug](docs/browser-debug.md) |
+| `Ego·Alive/-/?` or `CDP·Headless/Visible/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND`; glossary: [browser-glossary](docs/browser-debug.md#browser-glossary) | [Browser debug](docs/browser-debug.md) |
 | `◆ SessionBridge·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
 | `SystemDisk·…` / `WslDisk·…` | Host volume headroom (system + WSL `ext4.vhdx`) | [Host disk](docs/host-disk.md) |
 | `Memory·…` / `Swap·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |

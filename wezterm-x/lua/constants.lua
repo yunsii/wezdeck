@@ -287,6 +287,17 @@ local base_constants = {
     headless = true,
     state_file = defaults.default_chrome_debug_state_file(runtime_state_dir, join_path),
   },
+  -- Where Ctrl+LeftClick / QuickSelect / Ctrl+k l open http(s) URLs.
+  -- 'slot' → visible browser slot (follows WEZDECK_BROWSER_BACKEND).
+  -- 'system' → OS system handler (wezterm.open_with / Start-Process).
+  -- Legacy 'debug' is accepted as an alias of 'slot'. Glossary:
+  -- docs/browser-debug.md#browser-glossary.
+  -- Lua publishes the resolved value (+ chrome/ego launch hints) to
+  -- config_file so bash links-dispatch can share the same switch.
+  link = {
+    open_target = 'slot',
+    config_file = defaults.default_link_open_config_file(runtime_state_dir, join_path),
+  },
   -- Unified browser slot (Alt+b / badge). Runtime switch is
   -- WEZDECK_BROWSER_BACKEND via apply-browser-backend; this block only
   -- holds Windows-readable paths for the status file and ego helper script.

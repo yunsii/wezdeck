@@ -177,22 +177,311 @@ function M.forward_shortcut_to_pane(wezterm, window, pane, shortcut, sequence, l
   window:perform_action(wezterm.action.SendString(sequence), pane)
 end
 
+-- Resolve link.open_target to 'slot' | 'system'. Legacy 'debug' ≡ 'slot'.
+-- Unknown values fall back to 'slot' (browser-slot default for link opens).
+function M.read_link_open_target(constants)
+  local link = constants and constants.link or {}
+  local target = link.open_target
+  if target == 'system' then
+    return 'system'
+  end
+  -- 'slot' and legacy 'debug' (and anything else) → slot
+  return 'slot'
+end
+
+-- Publish open_target + launch hints for bash (links-dispatch / link-open.sh).
+-- Best-effort: missing config_file or write failure must not break startup.
+function M.publish_link_open_config(constants, logger, reason)
+  local link = constants and constants.link or {}
+  local path = link.config_file
+  if type(path) ~= 'string' or path == '' then
+    return false
+  end
+
+  local chrome = constants.chrome_debug_browser or {}
+  local agent = constants.browser_agent or {}
+  local target = M.read_link_open_target(constants)
+  local backend = M.read_browser_backend(constants)
+  local now_ms = tostring(os.time() * 1000)
+  -- Minimal JSON (no nested encoder dependency). Paths are escaped for
+  -- Windows backslashes and quotes so bash jq/python can read them.
+  local function jesc(s)
+    if type(s) ~= 'string' then
+      return ''
+    end
+    return (s:gsub('\\', '\\\\'):gsub('"', '\\"'):gsub('\r', ''):gsub('\n', ' '))
+  end
+
+  local ego_exe = ''
+  do
+    local status_path = agent.status_file
+    if type(status_path) == 'string' and status_path ~= '' then
+      local f = io.open(status_path, 'r')
+      if f then
+        local content = f:read('*a') or ''
+        f:close()
+        ego_exe = content:match('"exe"%s*:%s*"([^"]+)"') or ''
+      end
+    end
+  end
+  if ego_exe == '' then
+    ego_exe = 'C:\\Program Files\\Citro Labs\\ego lite\\Application\\ego.exe'
+  end
+
+  local body = table.concat({
+    '{',
+    '"open_target":"', target, '",',
+    '"backend":"', backend, '",',
+    '"updated_at_ms":', now_ms, ',',
+    '"chrome_path":"', jesc(chrome.executable or 'chrome.exe'), '",',
+    '"remote_debugging_port":', tostring(chrome.remote_debugging_port or 9222), ',',
+    '"user_data_dir":"', jesc(chrome.user_data_dir or ''), '",',
+    '"ego_exe":"', jesc(ego_exe), '"',
+    '}',
+  })
+
+  local dir = path:match('^(.*)[/\\][^/\\]+$')
+  if dir and dir ~= '' then
+    -- Best-effort mkdir via PowerShell is elsewhere; io.open fails if missing.
+    -- The sync/runtime tree already creates state/; create leaf on write fail.
+    pcall(function()
+      local ps = os.getenv('SystemRoot')
+      if ps and ps ~= '' then
+        -- no-op; directory creation attempted by open below after mkdir via
+        -- wezterm is unavailable here. Caller may pre-create.
+      end
+    end)
+  end
+
+  local tmp = path .. '.tmp'
+  local f, err = io.open(tmp, 'wb')
+  if not f then
+    -- Try creating the parent directory once (Windows + posix).
+    if dir and dir ~= '' then
+      if package.config:sub(1, 1) == '\\' then
+        os.execute('mkdir "' .. dir:gsub('/', '\\') .. '" 2>nul')
+      else
+        os.execute('mkdir -p "' .. dir .. '" 2>/dev/null')
+      end
+      f, err = io.open(tmp, 'wb')
+    end
+  end
+  if not f then
+    if logger then
+      logger.warn('link', 'failed to publish link-open config', {
+        path = path,
+        error = err,
+        reason = reason,
+      })
+    end
+    return false
+  end
+  f:write(body)
+  f:close()
+  local ok_rename = os.rename(tmp, path)
+  if not ok_rename then
+    -- Windows rename over existing may fail; remove then rename.
+    os.remove(path)
+    ok_rename = os.rename(tmp, path)
+  end
+  if logger then
+    logger.info('link', 'published link-open config', {
+      path = path,
+      open_target = target,
+      backend = backend,
+      reason = reason,
+      ok = ok_rename and true or false,
+    })
+  end
+  return ok_rename and true or false
+end
+
+local function powershell_single_quote(s)
+  return "'" .. tostring(s):gsub("'", "''") .. "'"
+end
+
+-- After debug Chrome is visible, open `url` in that profile via a second
+-- chrome.exe launch (singleton hands the URL to the running instance).
+function M.navigate_debug_chrome_url(wezterm, constants, logger, trace_id, url)
+  local chrome = constants.chrome_debug_browser or {}
+  local chrome_path = chrome.executable or 'chrome.exe'
+  local port = tostring(chrome.remote_debugging_port or 9222)
+  local user_data_dir = chrome.user_data_dir or ''
+  if user_data_dir == '' then
+    if logger then
+      logger.warn('link', 'navigate skipped: missing user_data_dir', common.merge_fields(trace_id, {
+        url = url,
+      }))
+    end
+    return false
+  end
+
+  local ps = os.getenv('SystemRoot')
+  if not ps or ps == '' then
+    ps = 'C:\\Windows'
+  end
+  local powershell = ps .. '\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+  -- ArgumentList must be discrete argv entries; a single quoted string
+  -- would land as one chrome arg and fail to open the URL.
+  local cmd = table.concat({
+    'Start-Process -FilePath ', powershell_single_quote(chrome_path),
+    ' -ArgumentList @(',
+    powershell_single_quote('--remote-debugging-port=' .. port), ',',
+    powershell_single_quote('--user-data-dir=' .. user_data_dir), ',',
+    powershell_single_quote('--remote-allow-origins=*'), ',',
+    powershell_single_quote(url),
+    ')',
+  })
+  local args = {
+    powershell,
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy', 'Bypass',
+    '-Command', cmd,
+  }
+  local ok, err = pcall(wezterm.background_child_process, args)
+  if logger then
+    if ok then
+      logger.info('link', 'navigating debug chrome', common.merge_fields(trace_id, {
+        url = url,
+        port = port,
+      }))
+    else
+      logger.error('link', 'debug chrome navigate spawn failed', common.merge_fields(trace_id, {
+        url = url,
+        error = err,
+      }))
+    end
+  end
+  return ok and true or false
+end
+
+function M.navigate_ego_url(wezterm, constants, logger, trace_id, url)
+  local agent = constants.browser_agent or {}
+  local ego_exe = 'C:\\Program Files\\Citro Labs\\ego lite\\Application\\ego.exe'
+  do
+    local status_path = agent.status_file
+    if type(status_path) == 'string' and status_path ~= '' then
+      local f = io.open(status_path, 'r')
+      if f then
+        local content = f:read('*a') or ''
+        f:close()
+        local from_status = content:match('"exe"%s*:%s*"([^"]+)"')
+        if from_status and from_status ~= '' then
+          ego_exe = from_status
+        end
+      end
+    end
+  end
+
+  local ps = os.getenv('SystemRoot')
+  if not ps or ps == '' then
+    ps = 'C:\\Windows'
+  end
+  local powershell = ps .. '\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+  local cmd = 'Start-Process -FilePath '
+    .. powershell_single_quote(ego_exe)
+    .. ' -ArgumentList '
+    .. powershell_single_quote(url)
+  local args = {
+    powershell,
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy', 'Bypass',
+    '-Command', cmd,
+  }
+  local ok, err = pcall(wezterm.background_child_process, args)
+  if logger then
+    if ok then
+      logger.info('link', 'navigating ego', common.merge_fields(trace_id, { url = url }))
+    else
+      logger.error('link', 'ego navigate spawn failed', common.merge_fields(trace_id, {
+        url = url,
+        error = err,
+      }))
+    end
+  end
+  return ok and true or false
+end
+
+-- Open an http(s) URL according to link.open_target.
+-- opts: window (optional toast), source (quick_select|open_uri|…)
+function M.open_url(wezterm, window, constants, logger, host, url, opts)
+  opts = opts or {}
+  if type(url) ~= 'string' or url == '' then
+    return false
+  end
+  -- Trim trailing punctuation that QuickSelect sometimes keeps.
+  url = url:match('^(https?://%S+)') or url
+  url = url:gsub('[\\.,;:%)%]]+$', '')
+
+  local trace_id = logger and logger.trace_id and logger.trace_id('link') or nil
+  local target = M.read_link_open_target(constants)
+  if logger then
+    logger.info('link', 'opening url', common.merge_fields(trace_id, {
+      url = url,
+      open_target = target,
+      source = opts.source,
+    }))
+  end
+
+  if target == 'system' then
+    wezterm.open_with(url)
+    return true
+  end
+
+  if not constants or (constants.runtime_mode or 'hybrid-wsl') ~= 'hybrid-wsl'
+    or constants.host_os ~= 'windows' then
+    if logger then
+      logger.warn('link', 'slot open unavailable; falling back to system handler', common.merge_fields(trace_id, {
+        runtime_mode = constants and constants.runtime_mode,
+        host_os = constants and constants.host_os,
+      }))
+    end
+    wezterm.open_with(url)
+    return true
+  end
+
+  local backend = M.read_browser_backend(constants)
+  if backend == 'ego' then
+    M.ensure_ego(wezterm, constants, logger, trace_id, {
+      focus = true,
+      quiet = true,
+      window = window,
+      reason = opts.source or 'open_url',
+    })
+    return M.navigate_ego_url(wezterm, constants, logger, trace_id, url)
+  end
+
+  if not host then
+    if logger then
+      logger.warn('link', 'slot open missing host; falling back to system', common.merge_fields(trace_id, {
+        url = url,
+      }))
+    end
+    wezterm.open_with(url)
+    return true
+  end
+
+  -- Visible debug Chrome, then hand the URL to that profile.
+  if not M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host, false) then
+    return false
+  end
+  return M.navigate_debug_chrome_url(wezterm, constants, logger, trace_id, url)
+end
+
 -- QuickSelect that labels every http(s) URL in the focused pane / scrollback
--- and opens the chosen one via the system handler. Shared by the (optional)
+-- and opens the chosen one via link.open_target. Shared by the (optional)
 -- WezTerm-layer hotkey and the command-palette → event-bus path
 -- (`link.quick_select`).
-function M.link_quick_select_action(wezterm, logger)
+function M.link_quick_select_action(wezterm, logger, constants, host)
   return wezterm.action.QuickSelectArgs {
     label = 'open url',
     patterns = { 'https?://\\S+' },
     action = wezterm.action_callback(function(window, pane)
       local url = window:get_selection_text_for_pane(pane)
       if not url or url == '' then return end
-      local trace_id = logger and logger.trace_id('link') or nil
-      if logger then
-        logger.info('link', 'opening url via QuickSelect', common.merge_fields(trace_id, { url = url }))
-      end
-      wezterm.open_with(url)
+      M.open_url(wezterm, window, constants, logger, host, url, { source = 'quick_select' })
     end),
   }
 end
@@ -487,12 +776,11 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host,
   local focus = not chrome.headless
 
   if M.read_browser_backend(constants) == 'ego' then
-    M.ensure_ego(wezterm, constants, logger, trace_id, {
+    return M.ensure_ego(wezterm, constants, logger, trace_id, {
       focus = focus,
       window = window,
       reason = 'hotkey',
-    })
-    return
+    }) and true or false
   end
 
   if not chrome.user_data_dir or chrome.user_data_dir == '' then
@@ -500,14 +788,16 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host,
       runtime_mode = runtime_mode,
       headless = chrome.headless,
     }))
-    window:toast_notification('WezTerm', shortcut_label .. ' failed: configure chrome_debug_browser.user_data_dir in wezterm-x/local/constants.lua', nil, 4000)
-    return
+    if window then
+      window:toast_notification('WezTerm', shortcut_label .. ' failed: configure chrome_debug_browser.user_data_dir in wezterm-x/local/constants.lua', nil, 4000)
+    end
+    return false
   end
 
   if runtime_mode == 'hybrid-wsl' then
     local helper_sent, helper_reason = host:request('chrome_debug', trace_id, chrome)
     if helper_sent then
-      return
+      return true
     end
 
     logger.error('chrome', 'windows helper chrome request failed', common.merge_fields(trace_id, {
@@ -517,8 +807,10 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host,
       user_data_dir = chrome.user_data_dir,
       headless = chrome.headless,
     }))
-    window:toast_notification('WezTerm', shortcut_label .. ' failed. Check WezTerm logs.', nil, 3000)
-    return
+    if window then
+      window:toast_notification('WezTerm', shortcut_label .. ' failed. Check WezTerm logs.', nil, 3000)
+    end
+    return false
   end
 
   logger.warn('chrome', 'chrome debug shortcut is unavailable without a native WezDeck Runtime', common.merge_fields(trace_id, {
@@ -527,7 +819,10 @@ function M.open_debug_chrome(wezterm, window, constants, logger, trace_id, host,
     port = chrome.remote_debugging_port,
     headless = chrome.headless,
   }))
-  window:toast_notification('WezTerm', shortcut_label .. ' is only available when a native WezDeck Runtime is configured.', nil, 4000)
+  if window then
+    window:toast_notification('WezTerm', shortcut_label .. ' is only available when a native WezDeck Runtime is configured.', nil, 4000)
+  end
+  return false
 end
 
 return M
