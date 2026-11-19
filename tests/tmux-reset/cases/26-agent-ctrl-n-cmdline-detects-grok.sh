@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regression: hand-started Grok in a secondary pane shows as python3
 # (grok-focus-filter / grok.real). @agent_pane_match is 0 and there is no
-# role tag — Ctrl+n must stage /new via process-cmdline detection, not clear.
+# role tag — Ctrl+n must cold-respawn via process-cmdline detection, not clear.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,13 +19,13 @@ export WEZTERM_RUNTIME_LOG_ENABLED=1
 export WEZTERM_RUNTIME_LOG_LEVEL=info
 export WEZTERM_RUNTIME_LOG_CATEGORIES=""
 
-cat >"$TEST_ROOT/agent-new-into-pane.sh" <<EOF
+cat >"$TEST_ROOT/agent-fresh.sh" <<EOF
 #!/usr/bin/env bash
-printf 'stub-new %s\n' "\$1" >>"$TEST_ROOT/new.calls"
+printf 'stub-fresh %s\n' "\$*" >>"$TEST_ROOT/fresh.calls"
 exit 0
 EOF
-chmod +x "$TEST_ROOT/agent-new-into-pane.sh"
-export AGENT_NEW_INTO_PANE_SH="$TEST_ROOT/agent-new-into-pane.sh"
+chmod +x "$TEST_ROOT/agent-fresh.sh"
+export AGENT_CTRL_N_FRESH_SH="$TEST_ROOT/agent-fresh.sh"
 
 # Keep argv visible in /proc/*/cmdline (do not exec — that would replace
 # the command line with plain `sleep` and hide the grok.real marker).
@@ -47,22 +47,22 @@ tmux set-option -p -t "$PANE_ID" -u @wezterm_pane_role 2>/dev/null || true
 sleep 0.2
 
 : >"$LOG_FILE"
-: >"$TEST_ROOT/new.calls"
+: >"$TEST_ROOT/fresh.calls"
 bash "$CTRL_N" "$PANE_ID"
 
-if ! grep -q 'detected agent via process cmdline; staging /new' "$LOG_FILE"; then
-  printf 'expected cmdline-detect staging in %s\n' "$LOG_FILE" >&2
+if ! grep -q 'detected agent via process cmdline; cold-respawning fresh' "$LOG_FILE"; then
+  printf 'expected cmdline-detect fresh in %s\n' "$LOG_FILE" >&2
   cat "$LOG_FILE" >&2 || true
   pstree -ap "$(tmux display-message -p -t "$PANE_ID" '#{pane_pid}')" 2>/dev/null >&2 || true
   exit 1
 fi
-if ! grep -q 'outcome="new_cmdline"' "$LOG_FILE"; then
-  printf 'expected outcome=new_cmdline\n' >&2
+if ! grep -q 'outcome="fresh_cmdline"' "$LOG_FILE"; then
+  printf 'expected outcome=fresh_cmdline\n' >&2
   cat "$LOG_FILE" >&2 || true
   exit 1
 fi
-if ! grep -q 'stub-new' "$TEST_ROOT/new.calls"; then
-  printf 'expected stub agent-new-into-pane call\n' >&2
+if ! grep -q 'stub-fresh' "$TEST_ROOT/fresh.calls"; then
+  printf 'expected stub AGENT_CTRL_N_FRESH_SH call\n' >&2
   exit 1
 fi
 if grep -q 'injecting clear' "$LOG_FILE"; then

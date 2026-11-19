@@ -656,3 +656,23 @@ agent_session_build_typed_resume_command() {
       "$sid" "$launcher" "$normalized"
   fi
 }
+
+# Cold-start agent-launcher with WEZDECK_FORCE_FRESH_SESSION=1 (no typed id,
+# no cwd --continue). Used by Ctrl+n and recycle --fresh-agent secondary panes.
+agent_session_build_fresh_command() {
+  local repo="${1:-}"
+  local agent="${2:-}"
+  local launcher="" wrapper="" normalized=""
+  normalized="$(agent_session_normalize_agent "$agent" 2>/dev/null || true)"
+  [[ -n "$repo" && -n "$normalized" ]] || return 1
+  launcher="$repo/scripts/runtime/agent-launcher.sh"
+  wrapper="$repo/scripts/runtime/primary-pane-wrapper.sh"
+  [[ -x "$launcher" ]] || return 1
+  if [[ -x "$wrapper" ]]; then
+    printf 'env WEZDECK_FORCE_FRESH_SESSION=1 bash %q bash %q %q\n' \
+      "$wrapper" "$launcher" "$normalized"
+  else
+    printf 'env WEZDECK_FORCE_FRESH_SESSION=1 bash %q %q\n' \
+      "$launcher" "$normalized"
+  fi
+}

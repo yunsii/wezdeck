@@ -3,8 +3,9 @@
 #
 # WezTerm always forwards \x0e here (see manifest `agent.new-conversation`).
 # This script evaluates @agent_pane_match, logs the decision, then either
-# stages `/new`+Enter (agent) or injects `clear`+Enter (non-agent). Without
-# this log, a missing @wezterm_pane_role on a resume-wrapper pane
+# cold-respawns the agent pane (unpin + WEZDECK_FORCE_FRESH_SESSION; no
+# `/new` keystrokes) or injects `clear`+Enter (non-agent). Without this
+# log, a missing @wezterm_pane_role on a resume-wrapper pane
 # (leaf=sh/node) silently falls through and is indistinguishable from
 # "user pressed Ctrl+n in a shell" after the fact.
 #
@@ -12,9 +13,9 @@
 # so leaf-name match alone misses it. After @agent_pane_match fails we probe
 # the pane process tree cmdlines before injecting clear.
 #
-# Outcome contract (log-only, no toast — keystrokes are the user-visible
-# effect): invoked is implicit in the decision row; each path ends with
-# `Ctrl+n completed` + duration_ms + outcome=.
+# Outcome contract (log-only, no toast — keystrokes / respawn are the
+# user-visible effect): invoked is implicit in the decision row; each path
+# ends with `Ctrl+n completed` + duration_ms + outcome=.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -135,17 +136,14 @@ complete() {
     "outcome=$outcome"
 }
 
-# Tests may override the /new injector via AGENT_NEW_INTO_PANE_SH.
-new_into_sh="${AGENT_NEW_INTO_PANE_SH:-$SCRIPT_DIR/agent-new-into-pane.sh}"
-codex_selector_sh="${CODEX_NEW_CURRENT_CHECKOUT_SH:-$SCRIPT_DIR/codex-new-current-checkout.sh}"
+# Tests may override the cold-respawn step via AGENT_CTRL_N_FRESH_SH.
+fresh_sh="${AGENT_CTRL_N_FRESH_SH:-}"
 
-# After `/new`: drop the discarded conversation's typed-resume sources,
-# then best-effort pin the *new* session so a later F5 stays on it.
-# Attention same-pane eviction is best-effort (missing lib/state is a no-op).
-invalidate_typed_resume_after_new() {
+# Drop typed-resume sources before cold respawn so the new process cannot
+# pick up the discarded conversation via pin / attention / --continue.
+invalidate_typed_resume_for_fresh() {
   local tmux_socket="" tmux_session=""
-  local prev_sid="" new_sid="" agent_for_pin=""
-  local discover_gap="${AGENT_NEW_SESSION_DISCOVER_GAP:-0.4}"
+  local prev_sid=""
   local agent_kind="${1:-}"
 
   # shellcheck disable=SC1091
@@ -156,7 +154,6 @@ invalidate_typed_resume_after_new() {
   if declare -F agent_session_unpin_pane >/dev/null 2>&1; then
     agent_session_unpin_pane "$pane_id" "$cwd" || true
   fi
-  # Remember discarded id so discovery can skip it.
   if [[ -n "$prev_sid" ]]; then
     tmux set-option -p -t "$pane_id" -q @wezterm_agent_discarded_session_id "$prev_sid" \
       2>/dev/null || true
@@ -173,47 +170,71 @@ invalidate_typed_resume_after_new() {
     fi
   fi
 
-  # Grok writes a new session dir under ~/.grok/sessions/<cwd>/ on /new.
-  # Poll briefly so F5 can typed-resume the new id (not cwd --continue to old).
-  agent_for_pin="$agent_kind"
-  if [[ -z "$agent_for_pin" ]] && declare -F agent_session_agent_for_pane >/dev/null 2>&1; then
-    agent_for_pin="$(agent_session_agent_for_pane "$pane_id" 2>/dev/null || true)"
-  fi
-  if [[ "$agent_for_pin" == "grok" ]] \
-    && declare -F agent_session_discover_latest_grok >/dev/null 2>&1; then
-    sleep "$discover_gap" 2>/dev/null || true
-    new_sid="$(agent_session_discover_latest_grok "$cwd" "${prev_sid:-}" 2>/dev/null || true)"
-    if agent_session_id_usable "${new_sid:-}" 2>/dev/null; then
-      agent_session_pin_pane "$pane_id" "$new_sid" grok "$cwd" || true
-      tmux set-option -p -t "$pane_id" -u @wezterm_agent_discarded_session_id 2>/dev/null || true
-    fi
-  fi
-
-  runtime_log_info agent_cli "Ctrl+n invalidated typed resume after /new" \
+  runtime_log_info agent_cli "Ctrl+n invalidated typed resume for fresh respawn" \
     "${common_fields[@]}" \
     "prev_session_id=${prev_sid:-}" \
-    "new_session_id=${new_sid:-}" \
-    "pinned_agent=${agent_for_pin:-}" || true
+    "agent_kind=${agent_kind:-}" || true
 }
 
-stage_agent_new() {
+# Cold-respawn focused pane with --fresh-agent (no /new keystrokes).
+stage_agent_fresh() {
   local agent_kind="${1:-}"
+  local reset_bin=""
+  local reset_out=""
+  local ec=0
+  local win=""
 
-  bash "$new_into_sh" "$pane_id"
-  invalidate_typed_resume_after_new "$agent_kind"
-  [[ "$agent_kind" == "codex" ]] || return 0
-
-  if bash "$codex_selector_sh" "$pane_id"; then
-    runtime_log_info agent_cli \
-      "Codex new conversation selected current checkout" \
-      "${common_fields[@]}" \
-      "selection=current_checkout"
-  else
-    runtime_log_warn agent_cli \
-      "Codex current checkout selector timed out" \
-      "${common_fields[@]}" \
-      "selection=manual_required"
+  invalidate_typed_resume_for_fresh "$agent_kind"
+  # Keep / restore intent tag so secondary fresh rebuild can pick the agent.
+  if [[ -n "$agent_kind" ]]; then
+    tmux set-option -p -t "$pane_id" -q @wezterm_pane_role "agent-cli:$agent_kind" \
+      2>/dev/null || true
   fi
+  tmux select-pane -t "$pane_id" 2>/dev/null || true
+  win="${window_id:-}"
+  if [[ -z "$win" ]]; then
+    win="$(tmux display-message -p -t "$pane_id" '#{window_id}' 2>/dev/null || true)"
+  fi
+
+  if [[ -n "$fresh_sh" ]]; then
+    bash "$fresh_sh" "$pane_id" "${session_name:-}" "$win" "${cwd:-}" "$agent_kind"
+    return 0
+  fi
+
+  reset_bin="$SCRIPT_DIR/tmux-reset.sh"
+  if [[ ! -f "$reset_bin" ]]; then
+    runtime_log_warn agent_cli "Ctrl+n fresh respawn missing tmux-reset" \
+      "${common_fields[@]}" \
+      "agent_kind=${agent_kind:-}"
+    return 1
+  fi
+  if [[ -z "${session_name:-}" || -z "$win" ]]; then
+    runtime_log_warn agent_cli "Ctrl+n fresh respawn missing session/window" \
+      "${common_fields[@]}" \
+      "agent_kind=${agent_kind:-}"
+    return 1
+  fi
+
+  reset_out="$(bash "$reset_bin" refresh-current-window \
+    --session-name "$session_name" \
+    --window-id "$win" \
+    --cwd "${cwd:-}" \
+    --fresh-agent 2>/dev/null)" || ec=$?
+  reset_out="${reset_out//$'\r'/}"
+  reset_out="${reset_out##*$'\n'}"
+  if [[ "$ec" -eq 0 && "$reset_out" == "reset_window_in_place" ]]; then
+    runtime_log_info agent_cli "Ctrl+n fresh respawn completed" \
+      "${common_fields[@]}" \
+      "agent_kind=${agent_kind:-}" \
+      "outcome=respawned"
+    return 0
+  fi
+  runtime_log_warn agent_cli "Ctrl+n fresh respawn failed" \
+    "${common_fields[@]}" \
+    "agent_kind=${agent_kind:-}" \
+    "exit_code=$ec" \
+    "reset_out=${reset_out:-}"
+  return 1
 }
 
 agent_kind_from_role=""
@@ -222,9 +243,13 @@ case "$role" in
 esac
 
 if [[ "$match" == "1" ]]; then
-  runtime_log_info agent_cli "Ctrl+n matched agent pane; staging /new" "${common_fields[@]}"
-  stage_agent_new "$agent_kind_from_role"
-  complete "new"
+  runtime_log_info agent_cli "Ctrl+n matched agent pane; cold-respawning fresh" \
+    "${common_fields[@]}"
+  if stage_agent_fresh "$agent_kind_from_role"; then
+    complete "fresh"
+  else
+    complete "fresh_failed"
+  fi
   exit 0
 fi
 
@@ -233,11 +258,14 @@ fi
 detected_agent=""
 detected_agent="$(agent_ctrl_n_detect_from_cmdline "$pane_id" || true)"
 if [[ -n "$detected_agent" ]]; then
-  runtime_log_info agent_cli "Ctrl+n detected agent via process cmdline; staging /new" \
+  runtime_log_info agent_cli "Ctrl+n detected agent via process cmdline; cold-respawning fresh" \
     "${common_fields[@]}" \
     "detected_agent=$detected_agent"
-  stage_agent_new "$detected_agent"
-  complete "new_cmdline"
+  if stage_agent_fresh "$detected_agent"; then
+    complete "fresh_cmdline"
+  else
+    complete "fresh_cmdline_failed"
+  fi
   exit 0
 fi
 

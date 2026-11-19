@@ -114,7 +114,7 @@ Same "presence is the signal" contract as `WslDisk·` / `Memory·`. Classificati
 - `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status. Each gated step (`helper-install`, `helper-ensure`, `lua-precheck`, `deps-check`) emits an explicit `status=skipped reason=...` line when its skip-if-current check passed; full reasons + force-bypass envs are tabulated in [`daily-workflow.md#skip-if-current-and-force-overrides`](./daily-workflow.md#skip-if-current-and-force-overrides).
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
-- Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
+- Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n fresh respawn vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
 
 ### Rime commit counter check
 
@@ -147,7 +147,9 @@ If the check passes but the live bar is still unavailable, inspect the configure
 
 ### Ctrl+n / agent `/new` did nothing
 
-`Ctrl+n` is decided on the **tmux** side (`scripts/runtime/agent-ctrl-n.sh`), not in WezTerm Lua. Lua only logs that it forwarded `\x0e`; the match / `/new` / `clear` outcome is in WSL `runtime.log`.
+<a id="ctrln--agent-fresh-respawn-did-nothing"></a>
+
+`Ctrl+n` is decided on the **tmux** side (`scripts/runtime/agent-ctrl-n.sh`), not in WezTerm Lua. Lua only logs that it forwarded `\x0e`; the match / fresh-respawn / `clear` outcome is in WSL `runtime.log`. Agent panes **do not** receive typed `/new` — they unpin and cold-respawn with `WEZDECK_FORCE_FRESH_SESSION=1` (same family as recycle `--fresh-agent`).
 
 | Where | What to grep |
 |---|---|
@@ -158,23 +160,14 @@ Decision messages in `runtime.log`:
 
 | level | message | Meaning |
 |---|---|---|
-| `info` | `Ctrl+n matched agent pane; staging /new` | `@agent_pane_match=1` → injected `/new` |
-| `info` | `Ctrl+n invalidated typed resume after /new` | Cleared discarded pins + same-pane attention; fields `prev_session_id=` / `new_session_id=` (Grok discover pin when found) so F5 follows the current session |
-| `info` | `Ctrl+n detected agent via process cmdline; staging /new` | leaf name missed (e.g. hand-started Grok as `python3` / `grok-focus-filter`) but pane process tree cmdline matched → injected `/new`; field `detected_agent=` |
-| `info` | `Codex new conversation selected current checkout` | Codex's `/new` chooser was visible in the tmux pane and the helper selected option 1 |
-| `warn` | `Codex current checkout selector timed out` | Codex chooser did not paint its expected English anchors before the bounded poll expired; the user can choose manually |
+| `info` | `Ctrl+n matched agent pane; cold-respawning fresh` | `@agent_pane_match=1` → unpin + `--fresh-agent` respawn |
+| `info` | `Ctrl+n invalidated typed resume for fresh respawn` | Cleared discarded pins + same-pane attention; field `prev_session_id=` |
+| `info` | `Ctrl+n fresh respawn completed` | `tmux-reset` returned `reset_window_in_place` |
+| `warn` | `Ctrl+n fresh respawn failed` | reset non-zero / missing session window; `exit_code=` / `reset_out=` |
+| `info` | `Ctrl+n detected agent via process cmdline; cold-respawning fresh` | leaf name missed (e.g. hand-started Grok as `python3` / `grok-focus-filter`) but pane process tree cmdline matched; field `detected_agent=` |
 | `info` | `Ctrl+n non-agent pane; injecting clear` | normal non-agent pane → injected `clear`+Enter |
 | `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`/`python3`, window has managed `primary_command`, but pane role tag empty — keep raw `Ctrl+n` (do not clear into a likely agent composer); the Alt+g tagging-gap class of bug |
-| `info` | `Ctrl+n completed` | terminal row; `outcome=new\|new_cmdline\|clear\|pass_through_suspected\|aborted` + `duration_ms` (no toast — keystrokes are the UX) |
-
-For managed Codex panes, the existing `/new` injection is followed by a bounded
-`tmux capture-pane` probe. When the exact chooser title and `1. Current
-checkout` are visible, `1` and `Enter` are sent as separate keystrokes. This
-is intentionally scoped to Codex; Claude, Grok, shells, and hand-started
-non-Codex panes keep their existing Ctrl+n behavior. The probe is a UI fallback
-because Codex does not expose this transient chooser state through its session
-files or a supported API. Tune `CODEX_CURRENT_CHECKOUT_POLL_S` and
-`CODEX_CURRENT_CHECKOUT_MAX_POLLS` only for diagnostics or slow environments.
+| `info` | `Ctrl+n completed` | terminal row; `outcome=fresh\|fresh_cmdline\|fresh_failed\|clear\|pass_through_suspected\|aborted` + `duration_ms` |
 
 Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`, `outcome`, `duration_ms`.
 

@@ -394,10 +394,8 @@ reset_window_in_place() {
   # shell and drop stale pins; agent → typed resume when id+agent known.
   # respawn-pane keeps the same pane id; durable pins cover kill-server
   # only while the secondary was left in agent state (not after exit).
-  # After Ctrl+n `/new`, pins should already track the *current* (new)
-  # session — F5 resumes that id, not the discarded pre-/new conversation.
-  # --fresh-agent (recycle round reset): unpin + force cold start so the
-  # pane does not --continue the previous round (replaces Ctrl+n + F5).
+  # --fresh-agent (Ctrl+n / recycle): unpin + force cold start so the pane
+  # does not --continue the previous conversation. No `/new` keystrokes.
   resume_session_id=""
   resume_mode="continue_fallback"
   resume_agent=""
@@ -434,6 +432,25 @@ reset_window_in_place() {
     fi
     if [[ "$target_is_primary" == "1" && "$role" == managed* ]]; then
       primary_command="env WEZDECK_FORCE_FRESH_SESSION=1 $primary_command"
+    elif [[ "$target_is_primary" != "1" ]]; then
+      # Secondary / hand-started: rebuild a fresh launcher from role or pin agent.
+      resume_agent=""
+      _pane_role="$(tmux show-options -p -t "$target_pane" -v -q @wezterm_pane_role 2>/dev/null || true)"
+      case "$_pane_role" in
+        agent-cli:*) resume_agent="${_pane_role#agent-cli:}" ;;
+      esac
+      unset _pane_role
+      if [[ -z "$resume_agent" ]] && declare -F agent_session_agent_for_pane >/dev/null 2>&1; then
+        resume_agent="$(agent_session_agent_for_pane "$target_pane" || true)"
+      fi
+      if [[ -n "$resume_agent" ]] && declare -F agent_session_build_fresh_command >/dev/null 2>&1; then
+        _fresh_cmd="$(agent_session_build_fresh_command \
+          "${wezterm_config_repo:-}" "$resume_agent" || true)"
+        if [[ -n "$_fresh_cmd" ]]; then
+          primary_command="$_fresh_cmd"
+        fi
+        unset _fresh_cmd
+      fi
     fi
   elif [[ -n "$_resolve_lib" ]]; then
     if [[ "$target_is_primary" != "1" ]] \
