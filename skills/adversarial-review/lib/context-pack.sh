@@ -222,6 +222,15 @@ _cp_select_files() {
   fi
 }
 
+# `producer | head -c N` under `set -o pipefail`: once head has N bytes it exits and the producer
+# gets SIGPIPE, so the pipeline returns 141 and `set -e` kills the whole run — exactly when a file is
+# big enough to need truncating. Accept 141 (truncation happened, by design); still fail on anything else.
+_cp_truncated_ok() {
+  local rc=$?
+  [ "$rc" -eq 141 ] && return 0
+  return "$rc"
+}
+
 # Extract content for one path: prefer full file if small, else window around hunks
 _cp_file_body() {
   local f="$1"
@@ -232,7 +241,7 @@ _cp_file_body() {
     # deleted in worktree / head — show base version if any
     if git -C "$repo_root" cat-file -e "$base:$f" 2>/dev/null; then
       body="$(git -C "$repo_root" show "$base:$f" 2>/dev/null || true)"
-      printf '%s' "$body" | head -c "$max_file_bytes"
+      printf '%s' "$body" | head -c "$max_file_bytes" || _cp_truncated_ok
       if [ "${#body}" -gt "$max_file_bytes" ]; then
         printf '\n… [base file truncated at %s bytes]\n' "$max_file_bytes"
         PACK_TRUNCATED+="truncated base:$f"$'\n'
@@ -294,7 +303,7 @@ _cp_file_body() {
       echo "----- lines $start-$end (around +$ln) -----"
       sed -n "${start},${end}p" "$abs"
     done <<< "$hunk_lines"
-  } | head -c "$max_file_bytes"
+  } | head -c "$max_file_bytes" || _cp_truncated_ok
   printf '\n… [window extract capped at %s bytes]\n' "$max_file_bytes"
   PACK_TRUNCATED+="windowed $f"$'\n'
 }
