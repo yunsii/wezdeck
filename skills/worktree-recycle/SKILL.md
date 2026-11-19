@@ -90,7 +90,7 @@ Install / refresh discovery (idempotent, from wezdeck):
 | Dirty outside recycle allowlist | hard (CLI) | Fix or explicit `--force` from user |
 | Delivery / content-absorbed | **off by default** | Opt in with `--require-delivered` |
 | `.delegate/` leftovers | soft | Allowlisted clean on linked trees |
-| Next-task text from user | passthrough | Becomes `--task` / `.task-brief.md` |
+| Next-task text from user | passthrough | Becomes `--task` (stdout/log only; no worktree file) |
 
 ## Desired end state
 

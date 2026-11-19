@@ -157,7 +157,7 @@ flowchart TD
   RCP --> RCP2["fetch + dirty check<br/>reset default branch → origin/HEAD<br/>ensure upstream matches"]
   RC --> RC1{"clean? (delivery optional)"}
   RC1 -->|"dirty without --force"| RCX["Refuse"]
-  RC1 -->|"yes"| RC2["align branch to slug<br/>prune temp locals<br/>clean allowlisted debug files<br/>reset --hard origin/HEAD<br/>sync origin/branch to same tip<br/>optional .task-brief.md"]
+  RC1 -->|"yes"| RC2["align branch to slug<br/>prune temp locals<br/>clean allowlisted debug files<br/>reset --hard origin/HEAD<br/>sync origin/branch to same tip<br/>optional --task in output/log"]
 
   R --> C1{"Main worktree?"}
   C1 -->|"yes"| X1["Refuse<br/>primary worktree is permanent"]
@@ -245,7 +245,7 @@ Behavior:
 - Optionally prunes local branches that match `WT_RECYCLE_TEMP_BRANCH_PREFIXES` (default `backup/,tmp/,wip/,scratch/`), are ancestors of `origin/HEAD`, and are not checked out elsewhere (linked trees; off on primary unless `WT_RECYCLE_PRUNE_ON_PRIMARY=1`).
 - Writes a `backup/<branch-slug>-<timestamp>` tip before reset when HEAD is not already on the base (or when the branch name will change).
 - `git reset --hard` / `git switch -C` onto `origin/HEAD` at the target branch; linked trees never track the default branch. Default remote sync then pushes `origin/<branch>` to the same tip and sets upstream there.
-- `--task` / `--title` writes `WT_RECYCLE_BRIEF_FILE` (default `.task-brief.md`) for the next round; does **not** inject an agent prompt.
+- `--task` / `--title` prints the next-round text in recycle stdout and `runtime.log` only; it does **not** write a worktree file (legacy `.task-brief.md` is deleted if still present) and does **not** inject an agent prompt.
 - Does not delete Claude transcripts. **`--fresh-agent`** unpins typed resume for the worktree’s live tmux window and cold-respawns the primary agent pane with `WEZDECK_FORCE_FRESH_SESSION=1` (skips typed id and cwd `--continue` / `resume --last`) — one step instead of manual `Ctrl+n` `/new` + `F5`. Soft-skips when no tmux window is open. Does not run `sync-runtime`.
 
 ### Reclaim safety

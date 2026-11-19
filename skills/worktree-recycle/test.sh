@@ -109,10 +109,13 @@ origin_tip="$(git -C "$repo" rev-parse origin/HEAD)"
   && assert_pass "branch kept slug mapping" \
   || assert_fail "branch not aligned to slug"
 
-[[ -f "$expect_wt/.task-brief.md" ]] \
-  && grep -q "next from skill" "$expect_wt/.task-brief.md" \
-  && assert_pass "brief written" \
-  || assert_fail "brief missing"
+if [[ -e "$expect_wt/.task-brief.md" ]]; then
+  assert_fail "must not write .task-brief.md into worktree"
+elif grep -q 'next task: next from skill' "$out"; then
+  assert_pass "task text in recycle output only"
+else
+  assert_fail "task text missing from recycle output"
+fi
 
 if grep -q "init recipe:" "$out"; then
   assert_fail "init should be skipped by default"

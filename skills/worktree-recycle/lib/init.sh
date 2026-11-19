@@ -23,28 +23,19 @@ wr_init_run_hook() {
 wr_init_builtin_wezdeck() {
   local root="${1:?}"
   local head=""
-  local brief="$root/${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
 
   head="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo '?')"
   printf 'init recipe: wezdeck\n'
   printf '  HEAD: %s\n' "$head"
   printf '  sync-runtime: skip (pure git recycle does not change Windows runtime staging)\n'
   printf '  agent: resume profile keeps prior transcript; pass --fresh-agent to cold-respawn\n'
-  if [[ -f "$brief" ]]; then
-    printf '  next-task brief: %s\n' "$brief"
-    printf '  ---- brief ----\n'
-    sed -n '1,40p' "$brief"
-    printf '  --------------\n'
-  else
-    printf '  next-task brief: (none)\n'
-  fi
+  printf '  next-task: use recycle --task TEXT (printed in recycle output/log only)\n'
   printf '  ready: workstation is on origin default tip; start the next round here\n'
 }
 
 wr_init_builtin_generic() {
   local root="${1:?}"
   local head=""
-  local brief="$root/${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
   local suggestions=()
 
   head="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo '?')"
@@ -85,14 +76,7 @@ wr_init_builtin_generic() {
     printf '  suggested bootstrap: (none detected — agent should still inspect the tree)\n'
   fi
 
-  if [[ -f "$brief" ]]; then
-    printf '  next-task brief: %s\n' "$brief"
-    printf '  ---- brief ----\n'
-    sed -n '1,40p' "$brief"
-    printf '  --------------\n'
-  else
-    printf '  next-task brief: (none)\n'
-  fi
+  printf '  next-task: use recycle --task TEXT (printed in recycle output/log only)\n'
   printf '  ready: git reset done; agent re-inits this project for its own stack\n'
 }
 

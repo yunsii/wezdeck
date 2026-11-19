@@ -541,10 +541,11 @@ case9_recycle_happy() {
     && assert_pass "debug dirs cleaned" \
     || { assert_fail "debug dirs still present"; return 1; }
 
-  [[ -f "$expect_wt/.task-brief.md" ]] \
-    && grep -q "wire hotkey next" "$expect_wt/.task-brief.md" \
-    && assert_pass "next-task brief written" \
-    || { assert_fail "brief missing or wrong"; return 1; }
+  if [[ -e "$expect_wt/.task-brief.md" ]]; then
+    assert_fail "must not write .task-brief.md into worktree"
+    return 1
+  fi
+  assert_pass "no worktree task-brief file"
 
   [[ -f "$expect_wt/later.txt" ]] \
     && assert_pass "origin/HEAD content visible after recycle" \

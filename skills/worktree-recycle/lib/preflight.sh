@@ -33,9 +33,9 @@ wr_preflight_delegate_hint() {
 
 wr_preflight_brief_hint() {
   local worktree_root="${1:?}"
-  local brief="$worktree_root/.task-brief.md"
+  local brief="$worktree_root/${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
   if [[ -f "$brief" ]]; then
-    printf '  soft: existing %s will be removed by clean allowlist unless --no-clean-files\n' "$brief"
+    printf '  soft: legacy %s present; recycle will delete it (no longer written)\n' "$brief"
   fi
 }
 

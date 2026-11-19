@@ -18,8 +18,8 @@ options:
   --worktree-root PATH    Explicit linked worktree to recycle
   --dry-run               Print planned actions without changing the tree
   --force                 Allow discarding uncommitted/untracked changes
-  --title TEXT            Write next-task brief after reset (alias: --task)
-  --task TEXT             Same as --title
+  --title TEXT            Echo next-task text in recycle output/log (alias: --task)
+  --task TEXT             Same as --title; does not write a worktree file
   --fresh-agent           Unpin + cold-respawn the worktree's agent pane
                           (replaces manual Ctrl+n /new + F5 after recycle)
   --prune-merged-locals   Delete merged temp local branches (default for linked)
@@ -747,7 +747,7 @@ wt_core_recycle() {
     printf '  clean files: (none)\n'
   fi
   if [[ -n "$task_brief" ]]; then
-    printf '  next task brief: %s\n' "${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
+    printf '  next task: %s\n' "$task_brief"
   fi
   if [[ "$fresh_agent" == "1" ]]; then
     printf '  fresh-agent: unpin + cold-respawn agent pane after reset\n'
@@ -819,18 +819,12 @@ wt_core_recycle() {
     WT_RECYCLE_REMOTE_SYNC_RESULT="skipped"
   fi
 
+  # Legacy: older recycle --task wrote .task-brief.md into the worktree.
+  # Never create it; remove leftovers so IDEs do not show a stray green N.
   brief_path="$WT_WORKTREE_PATH/${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
-  if [[ -n "$task_brief" ]]; then
-    cat >"$brief_path" <<EOF
-# Next task
-
-$task_brief
-
-Recycled: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-Worktree: $WT_TASK_SLUG
-Branch: $branch_name
-Base: $WT_DELIVERY_BASE_REF_LABEL ($after_head)
-EOF
+  if [[ -e "$brief_path" ]]; then
+    rm -f "$brief_path"
+    runtime_log_info task "recycle removed legacy task brief file" "path=$brief_path" || true
   fi
 
   printf 'recycle ok\n'
@@ -848,7 +842,7 @@ EOF
     printf '  upstream: (none)\n'
   fi
   if [[ -n "$task_brief" ]]; then
-    printf '  brief: %s\n' "$brief_path"
+    printf '  next task: %s\n' "$task_brief"
   fi
   if [[ "$fresh_agent" == "1" ]]; then
     # Last step: may kill this process if recycle ran inside the target pane.
@@ -866,6 +860,7 @@ EOF
     "after=$after_head" \
     "remote_sync=${WT_RECYCLE_REMOTE_SYNC_RESULT:-skipped}" \
     "fresh_agent=$fresh_agent" \
+    "task_brief=${task_brief:-}" \
     "duration_ms=$(( $(runtime_log_now_ms) - start_ms ))"
 
   wt_tmux_progress "[worktree-task] $WT_TASK_SLUG recycled"
