@@ -295,6 +295,15 @@ case "$agent" in
         ;;
     esac
     log_resume_boot codex "${codex_profile:-base}" "$codex_permission_resolution"
+    # Recycle --fresh-agent / forced F5: skip typed id and resume --last.
+    if [[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]]; then
+      if declare -F runtime_log_info >/dev/null 2>&1; then
+        runtime_log_info primary_pane "agent resume fresh" \
+          "agent=codex" "resume_mode=fresh" \
+          "force=WEZDECK_FORCE_FRESH_SESSION" "cwd=$PWD" || true
+      fi
+      exec "$codex_bin" "${codex_profile_args[@]+"${codex_profile_args[@]}"}"
+    fi
     # shellcheck disable=SC1091
     . "$script_dir/agent-session-resolve.sh"
     codex_session_id="$(agent_session_resolve_current || true)"

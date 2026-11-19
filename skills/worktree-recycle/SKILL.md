@@ -78,8 +78,9 @@ Install / refresh discovery (idempotent, from wezdeck):
    "$R" recycle --cwd "$PWD" -y [--task "…"] [--fresh-agent] [--dry-run]
    ```
    Prefer `-y` when the user explicitly asked to reset. Do **not** invent a “先 push / 手动 reset / 先 bootstrap” fork.
+   Pass **`--fresh-agent`** when the user wants a blank next round (收尾换下一轮 / 重置并开始做 X / “别接着旧会话”). That flag **unpins typed resume and cold-respawns** the worktree’s agent pane (replaces manual `Ctrl+n` `/new` + `F5`). Expect the current agent pane to die after the tool returns — do not plan follow-up turns in the same conversation.
 5. **Do not run init** unless the user asked or you pass `--with-init`. Leave deps/codegen/services to the follow-up task.
-6. **Report** briefly: new HEAD, branch (after slug align), remote sync result, next step (including `/clear` when `--fresh-agent`).
+6. **Report** briefly: new HEAD, branch (after slug align), remote sync result, fresh-agent outcome (respawned / skipped / failed hint).
 
 ## Preflight covers (skill layer)
 
@@ -119,7 +120,7 @@ After a successful recycle:
 - Don't treat attention / ledger / delegate `shipped` as proof of merge
 - Don't run `sync-runtime` or package installs just because recycle finished
 - Don't auto-bootstrap the project inside the skill runner
-- Don't delete Claude transcripts; use `--fresh-agent` + `/clear` when a blank session is wanted
+- Don't delete Claude transcripts; use `--fresh-agent` (unpin + cold respawn) when a blank session is wanted — do not ask the human to press `Ctrl+n` then `F5`
 - Don't maintain a second SKILL.md body outside this directory (link only)
 
 ## Related

@@ -25,10 +25,12 @@ Use this doc when you need to apply or verify changes.
 Reset a primary checkout or long-lived linked workstation (`dev-*`) in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery, push, or bootstrap. **Humans / debug CLI:**
 
 ```bash
-skills/worktree-recycle/run.sh recycle -y --task "describe the next round"
+skills/worktree-recycle/run.sh recycle -y --fresh-agent --task "describe the next round"
 # equivalent hard ops only:
-scripts/runtime/worktree/worktree-task recycle -y --task "describe the next round"
+scripts/runtime/worktree/worktree-task recycle -y --fresh-agent --task "describe the next round"
 ```
+
+`--fresh-agent` unpins typed resume and cold-respawns the worktree’s agent pane (`WEZDECK_FORCE_FRESH_SESSION=1`), so you do not need a manual `Ctrl+n` `/new` + `F5` after the reset.
 
 Full semantics (fast path, optional `--require-delivered`, temp-branch prune, debug-file allowlist, brief file, opt-in `--with-init`): [`workspaces.md` Task Worktree Lifecycle / Recycle](./workspaces.md#recycle-primary-or-long-lived-dev--round-reset). Short-lived `task-*` / `hotfix-*` trees still use `Ctrl+k g r` / `worktree-task reclaim`.
 

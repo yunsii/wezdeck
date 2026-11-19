@@ -120,6 +120,15 @@ env -i \
 grep -Fxq -- '--profile full-access resume codex-sid-typed-001' "$LOG"
 printf 'PASS agent-launcher typed resume uses codex resume <session_id>\n'
 
+# Claude typed resume refuses when the transcript jsonl is missing; plant one
+# under the sandbox HOME so --resume is reachable (same encode as
+# agent_session_claude_project_dir_name: / and . → -).
+claude_cwd="$(pwd -P)"
+claude_proj="${claude_cwd//\//-}"
+claude_proj="${claude_proj//./-}"
+mkdir -p "$TEST_ROOT/home/.claude/projects/$claude_proj"
+printf '{}\n' >"$TEST_ROOT/home/.claude/projects/$claude_proj/claude-sid-typed-002.jsonl"
+
 env -i \
   HOME="$TEST_ROOT/home" \
   NVM_DIR="$NVM_DIR" \
@@ -133,6 +142,41 @@ env -i \
 
 grep -Fxq -- '--permission-mode bypassPermissions --resume claude-sid-typed-002' "$CLAUDE_LOG"
 printf 'PASS agent-launcher typed resume uses claude --resume <session_id>\n'
+
+# FORCE_FRESH must skip typed id and cwd continue / resume --last.
+: >"$LOG"
+: >"$CLAUDE_LOG"
+env -i \
+  HOME="$TEST_ROOT/home" \
+  NVM_DIR="$NVM_DIR" \
+  CODEX_HOME="$TEST_ROOT/codex-home" \
+  SHELL_ENV_DIR="$TEST_ROOT/shell-env" \
+  CODEX_TEST_LOG="$LOG" \
+  WEZDECK_RESUME_SESSION_ID="codex-sid-should-ignore" \
+  WEZDECK_FORCE_FRESH_SESSION=1 \
+  PATH=/usr/bin:/bin \
+  WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+
+grep -Fxq -- '--profile full-access' "$LOG"
+! grep -Eq 'resume' "$LOG"
+printf 'PASS agent-launcher FORCE_FRESH skips Codex resume\n'
+
+env -i \
+  HOME="$TEST_ROOT/home" \
+  NVM_DIR="$NVM_DIR" \
+  CODEX_HOME="$TEST_ROOT/codex-home" \
+  SHELL_ENV_DIR="$TEST_ROOT/shell-env" \
+  CLAUDE_TEST_LOG="$CLAUDE_LOG" \
+  WEZDECK_RESUME_SESSION_ID="claude-sid-should-ignore" \
+  WEZDECK_FORCE_FRESH_SESSION=1 \
+  PATH=/usr/bin:/bin \
+  WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
+
+grep -Fxq -- '--permission-mode bypassPermissions' "$CLAUDE_LOG"
+! grep -Eq -- '--continue|--resume' "$CLAUDE_LOG"
+printf 'PASS agent-launcher FORCE_FRESH skips Claude continue/resume\n'
 
 grep -q -- '--always-approve' "$REPO_ROOT/scripts/runtime/agent-launcher.sh"
 printf 'PASS agent-launcher contains Grok full-access adapter\n'

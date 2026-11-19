@@ -29,7 +29,7 @@ wr_init_builtin_wezdeck() {
   printf 'init recipe: wezdeck\n'
   printf '  HEAD: %s\n' "$head"
   printf '  sync-runtime: skip (pure git recycle does not change Windows runtime staging)\n'
-  printf '  agent: resume profile keeps prior transcript; /clear if you passed --fresh-agent\n'
+  printf '  agent: resume profile keeps prior transcript; pass --fresh-agent to cold-respawn\n'
   if [[ -f "$brief" ]]; then
     printf '  next-task brief: %s\n' "$brief"
     printf '  ---- brief ----\n'

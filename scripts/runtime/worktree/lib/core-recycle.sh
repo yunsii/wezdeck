@@ -20,7 +20,8 @@ options:
   --force                 Allow discarding uncommitted/untracked changes
   --title TEXT            Write next-task brief after reset (alias: --task)
   --task TEXT             Same as --title
-  --fresh-agent           Remind to /clear the resumed agent session
+  --fresh-agent           Unpin + cold-respawn the worktree's agent pane
+                          (replaces manual Ctrl+n /new + F5 after recycle)
   --prune-merged-locals   Delete merged temp local branches (default for linked)
   --keep-temp-branches    Skip local temp-branch pruning
   --no-clean-files        Skip allowlisted debug-file cleanup
@@ -29,6 +30,120 @@ options:
   --require-delivered     Restore the old delivered/content-absorbed gate
   -y, --yes               Skip confirmation (or set WT_RECYCLE_NO_CONFIRM=1)
 EOF
+}
+
+# Soft: locate the managed tmux window for this worktree (by @wezterm_window_root
+# or primary pane cwd). Prints "session_name<TAB>window_id" on success.
+wt_core_recycle_find_tmux_window() {
+  local worktree_path="${1:?missing worktree path}"
+  local abs=""
+  local session_name=""
+  local window_id=""
+  local root=""
+  local root_abs=""
+  local pane_path=""
+  local pane_abs=""
+
+  command -v tmux >/dev/null 2>&1 || return 1
+  tmux list-sessions >/dev/null 2>&1 || return 1
+
+  abs="$(cd "$worktree_path" 2>/dev/null && pwd -P)" || abs="$worktree_path"
+  [[ -n "$abs" ]] || return 1
+
+  while IFS= read -r session_name; do
+    [[ -n "$session_name" ]] || continue
+    while IFS= read -r window_id; do
+      [[ -n "$window_id" ]] || continue
+      root="$(tmux show-options -w -t "$window_id" -v -q @wezterm_window_root 2>/dev/null || true)"
+      if [[ -n "$root" ]]; then
+        root_abs="$(cd "$root" 2>/dev/null && pwd -P || printf '%s' "$root")"
+        if [[ "$root_abs" == "$abs" ]]; then
+          printf '%s\t%s\n' "$session_name" "$window_id"
+          return 0
+        fi
+      fi
+      pane_path="$(tmux list-panes -t "$window_id" -F '#{pane_current_path}' 2>/dev/null | head -n 1 || true)"
+      if [[ -n "$pane_path" && -d "$pane_path" ]]; then
+        pane_abs="$(cd "$pane_path" 2>/dev/null && pwd -P || printf '%s' "$pane_path")"
+        if [[ "$pane_abs" == "$abs" ]]; then
+          printf '%s\t%s\n' "$session_name" "$window_id"
+          return 0
+        fi
+      fi
+    done < <(tmux list-windows -t "$session_name" -F '#{window_id}' 2>/dev/null || true)
+  done < <(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)
+
+  return 1
+}
+
+# After git recycle: unpin typed resume and cold-respawn the primary agent pane.
+# Soft-fail (print hint, return 0) when tmux/window is missing — recycle itself
+# already succeeded. May kill the calling agent if it lives in that pane.
+wt_core_recycle_fresh_agent_pane() {
+  local worktree_path="${1:?missing worktree path}"
+  local session_name=""
+  local window_id=""
+  local found=""
+  local reset_bin=""
+  local reset_out=""
+  local ec=0
+
+  found="$(wt_core_recycle_find_tmux_window "$worktree_path" || true)"
+  if [[ -z "$found" ]]; then
+    printf '  fresh-agent: no live tmux window for this worktree; open it and F5 if needed\n'
+    runtime_log_info task "recycle fresh-agent skipped; no tmux window" \
+      "worktree=$worktree_path" || true
+    return 0
+  fi
+  IFS=$'\t' read -r session_name window_id <<<"$found"
+  [[ -n "$session_name" && -n "$window_id" ]] || return 0
+
+  reset_bin=""
+  if [[ -n "${WEZDECK_REPO:-}" && -f "${WEZDECK_REPO}/scripts/runtime/tmux-reset.sh" ]]; then
+    reset_bin="${WEZDECK_REPO}/scripts/runtime/tmux-reset.sh"
+  elif [[ -n "${WR_WEZDECK_REPO:-}" && -f "${WR_WEZDECK_REPO}/scripts/runtime/tmux-reset.sh" ]]; then
+    reset_bin="${WR_WEZDECK_REPO}/scripts/runtime/tmux-reset.sh"
+  else
+    # core-recycle.sh lives at scripts/runtime/worktree/lib/ → ../../../tmux-reset.sh
+    reset_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/tmux-reset.sh"
+  fi
+  if [[ ! -f "$reset_bin" ]]; then
+    printf '  fresh-agent: tmux-reset.sh missing; run Ctrl+n then F5 manually\n'
+    runtime_log_warn task "recycle fresh-agent missing tmux-reset" \
+      "worktree=$worktree_path" || true
+    return 0
+  fi
+
+  wt_tmux_progress "[worktree-task] recycle: fresh-agent respawn…"
+  # Capture status token; do not print it (view-mode hazard for run-shell callers).
+  reset_out="$(bash "$reset_bin" refresh-current-window \
+    --session-name "$session_name" \
+    --window-id "$window_id" \
+    --cwd "$worktree_path" \
+    --fresh-agent 2>/dev/null)" || ec=$?
+  reset_out="${reset_out//$'\r'/}"
+  reset_out="${reset_out##*$'\n'}"
+
+  if [[ "$ec" -eq 0 && "$reset_out" == "reset_window_in_place" ]]; then
+    printf '  fresh-agent: primary pane cold-respawned (session=%s window=%s)\n' \
+      "$session_name" "$window_id"
+    runtime_log_info task "recycle fresh-agent respawned" \
+      "worktree=$worktree_path" \
+      "session_name=$session_name" \
+      "window_id=$window_id" \
+      "outcome=respawned" || true
+    return 0
+  fi
+
+  printf '  fresh-agent: respawn failed (exit=%s out=%s); try F5 on the agent pane\n' \
+    "$ec" "${reset_out:-}"
+  runtime_log_warn task "recycle fresh-agent respawn failed" \
+    "worktree=$worktree_path" \
+    "session_name=$session_name" \
+    "window_id=$window_id" \
+    "exit_code=$ec" \
+    "reset_out=${reset_out:-}" || true
+  return 0
 }
 
 wt_core_recycle_confirm() {
@@ -635,7 +750,7 @@ wt_core_recycle() {
     printf '  next task brief: %s\n' "${WT_RECYCLE_BRIEF_FILE:-.task-brief.md}"
   fi
   if [[ "$fresh_agent" == "1" ]]; then
-    printf '  fresh-agent: remind /clear after recycle\n'
+    printf '  fresh-agent: unpin + cold-respawn agent pane after reset\n'
   fi
 
   if [[ "$dry_run" == "1" ]]; then
@@ -736,7 +851,9 @@ EOF
     printf '  brief: %s\n' "$brief_path"
   fi
   if [[ "$fresh_agent" == "1" ]]; then
-    printf '  next: open the agent pane and run /clear for a blank session\n'
+    # Last step: may kill this process if recycle ran inside the target pane.
+    wt_core_recycle_fresh_agent_pane "$WT_WORKTREE_PATH"
+    printf '  next: blank agent session (no Ctrl+n / F5 needed)\n'
   else
     printf '  next: ready for the next task (project init left to the follow-up task)\n'
   fi
@@ -748,6 +865,7 @@ EOF
     "before=$before_head" \
     "after=$after_head" \
     "remote_sync=${WT_RECYCLE_REMOTE_SYNC_RESULT:-skipped}" \
+    "fresh_agent=$fresh_agent" \
     "duration_ms=$(( $(runtime_log_now_ms) - start_ms ))"
 
   wt_tmux_progress "[worktree-task] $WT_TASK_SLUG recycled"

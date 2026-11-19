@@ -283,6 +283,7 @@ reset_window_in_place() {
   local pane_count=0
   local primary_pane_id=""
   local target_is_primary=""
+  local fresh_agent="0"
 
   while (($# > 0)); do
     case "$1" in
@@ -297,6 +298,10 @@ reset_window_in_place() {
       --cwd)
         cwd="${2-}"
         shift 2
+        ;;
+      --fresh-agent)
+        fresh_agent="1"
+        shift
         ;;
       *)
         printf 'tmux-reset refresh-current-window: unknown option: %s\n' "$1" >&2
@@ -391,6 +396,8 @@ reset_window_in_place() {
   # only while the secondary was left in agent state (not after exit).
   # After Ctrl+n `/new`, pins should already track the *current* (new)
   # session — F5 resumes that id, not the discarded pre-/new conversation.
+  # --fresh-agent (recycle round reset): unpin + force cold start so the
+  # pane does not --continue the previous round (replaces Ctrl+n + F5).
   resume_session_id=""
   resume_mode="continue_fallback"
   resume_agent=""
@@ -403,6 +410,32 @@ reset_window_in_place() {
   if [[ -n "$_resolve_lib" ]]; then
     # shellcheck disable=SC1090
     . "$_resolve_lib"
+  fi
+  if [[ "$fresh_agent" == "1" ]]; then
+    resume_mode="fresh"
+    if declare -F agent_session_unpin_pane >/dev/null 2>&1; then
+      agent_session_unpin_pane "$target_pane" "$worktree_root" || true
+    fi
+    if [[ -n "${script_dir:-}" && -f "$script_dir/attention-state-lib.sh" ]]; then
+      # shellcheck disable=SC1091
+      . "$script_dir/attention-state-lib.sh" 2>/dev/null || true
+    elif [[ -n "${wezterm_config_repo:-}" && -f "$wezterm_config_repo/scripts/runtime/attention-state-lib.sh" ]]; then
+      # shellcheck disable=SC1090
+      . "$wezterm_config_repo/scripts/runtime/attention-state-lib.sh" 2>/dev/null || true
+    fi
+    if declare -F attention_state_evict_session >/dev/null 2>&1; then
+      _fresh_socket="$(tmux display-message -p -t "$target_pane" '#{socket_path}' 2>/dev/null || true)"
+      _fresh_session="$(tmux display-message -p -t "$target_pane" '#{session_name}' 2>/dev/null || true)"
+      if [[ -n "$_fresh_socket" && -n "$_fresh_session" ]]; then
+        attention_state_evict_session "$_fresh_socket" "$_fresh_session" "" "$target_pane" \
+          2>/dev/null || true
+      fi
+      unset _fresh_socket _fresh_session
+    fi
+    if [[ "$target_is_primary" == "1" && "$role" == managed* ]]; then
+      primary_command="env WEZDECK_FORCE_FRESH_SESSION=1 $primary_command"
+    fi
+  elif [[ -n "$_resolve_lib" ]]; then
     if [[ "$target_is_primary" != "1" ]] \
       && declare -F agent_session_secondary_in_agent_state >/dev/null 2>&1 \
       && ! agent_session_secondary_in_agent_state "$target_pane"; then
@@ -459,7 +492,8 @@ reset_window_in_place() {
     "role=$role" \
     "resume_session_id=${resume_session_id:-}" \
     "resume_agent=${resume_agent:-}" \
-    "resume_mode=$resume_mode"
+    "resume_mode=$resume_mode" \
+    "fresh_agent=$fresh_agent"
 
   # Heal client size / pane balance / status clamp before respawn so a
   # refresh after RDP or DPI change does not recreate panes into a
