@@ -114,7 +114,7 @@ Same "presence is the signal" contract as `WslDisk·` / `Memory·`. Classificati
 - `sync-runtime.sh` also prints `[sync] step=...` milestones for the chosen target, helper install, bootstrap refresh, and tmux reload status. Each gated step (`helper-install`, `helper-ensure`, `lua-precheck`, `deps-check`) emits an explicit `status=skipped reason=...` line when its skip-if-current check passed; full reasons + force-bypass envs are tabulated in [`daily-workflow.md#skip-if-current-and-force-overrides`](./daily-workflow.md#skip-if-current-and-force-overrides).
 - Runtime logs rotate with `WEZTERM_RUNTIME_LOG_ROTATE_BYTES` and `WEZTERM_RUNTIME_LOG_ROTATE_COUNT`.
 - Leave `WEZTERM_RUNTIME_LOG_CATEGORIES` empty to capture all runtime categories, or set a comma-separated list such as `vscode,workspace,worktree`.
-- Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n fresh respawn vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
+- Current runtime categories include `vscode`, `workspace` (includes F5 `refresh-current-window` invoked/completed/failed), `worktree`, `managed_command`, `command_panel`, `task`, `provider`, `sync`, `agent_cli` (Ctrl+n `/new` vs Ctrl+Shift+n fresh respawn vs `clear` + pane role tag set/clear), `attention` (jump toast / empty / completed), `layout`, and `session_bridge` (`Ctrl+k w` claw take).
 
 ### Rime commit counter check
 
@@ -147,44 +147,23 @@ If the check passes but the live bar is still unavailable, inspect the configure
 
 ### Ctrl+n / agent `/new` did nothing
 
+<a id="ctrln--agent-new-did-nothing"></a>
 <a id="ctrln--agent-fresh-respawn-did-nothing"></a>
 
-`Ctrl+n` is decided on the **tmux** side (`scripts/runtime/agent-ctrl-n.sh`), not in WezTerm Lua. Lua only logs that it forwarded `\x0e`; the match / fresh-respawn / `clear` outcome is in WSL `runtime.log`. Agent panes **do not** receive typed `/new` — they unpin and cold-respawn with `WEZDECK_FORCE_FRESH_SESSION=1` (same family as recycle `--fresh-agent`).
+`Ctrl+n` (typed `/new`) and `Ctrl+Shift+n` (cold-respawn via User6 `\e[20105~`) are decided on the **tmux** side (`scripts/runtime/agent-ctrl-n.sh` [`--fresh`]), not in WezTerm Lua. Grep `category="agent_cli"` in `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (forward) and `~/.local/state/wezterm-runtime/logs/runtime.log` (decision). Useful fields: `pane_id`, `pane_role`, `agent_pane_match`, `hotkey_id`, `mode`, `outcome`, `duration_ms`.
 
-| Where | What to grep |
+| Hotkey | Key decision rows (`info` unless noted) |
 |---|---|
-| `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` | `category="agent_cli"` — `forwarding Ctrl+n to tmux-backed pane` (key reached Lua) |
-| `~/.local/state/wezterm-runtime/logs/runtime.log` | `category="agent_cli"` — decision |
-
-Decision messages in `runtime.log`:
-
-| level | message | Meaning |
-|---|---|---|
-| `info` | `Ctrl+n matched agent pane; cold-respawning fresh` | `@agent_pane_match=1` → unpin + `--fresh-agent` respawn |
-| `info` | `Ctrl+n invalidated typed resume for fresh respawn` | Cleared discarded pins + same-pane attention; field `prev_session_id=` |
-| `info` | `Ctrl+n fresh respawn completed` | `tmux-reset` returned `reset_window_in_place` |
-| `warn` | `Ctrl+n fresh respawn failed` | reset non-zero / missing session window; `exit_code=` / `reset_out=` |
-| `info` | `Ctrl+n detected agent via process cmdline; cold-respawning fresh` | leaf name missed (e.g. hand-started Grok as `python3` / `grok-focus-filter`) but pane process tree cmdline matched; field `detected_agent=` |
-| `info` | `Ctrl+n non-agent pane; injecting clear` | normal non-agent pane → injected `clear`+Enter |
-| `warn` | `Ctrl+n pass-through on suspected agent pane (missing @wezterm_pane_role?)` | leaf is `sh`/`node`/`python3`, window has managed `primary_command`, but pane role tag empty — keep raw `Ctrl+n` (do not clear into a likely agent composer); the Alt+g tagging-gap class of bug |
-| `info` | `Ctrl+n completed` | terminal row; `outcome=fresh\|fresh_cmdline\|fresh_failed\|clear\|pass_through_suspected\|aborted` + `duration_ms` |
-
-Useful fields on those rows: `pane_id`, `session_name`, `window_id`, `cwd`, `pane_current_command`, `pane_role`, `agent_pane_match`, `primary_command`, `outcome`, `duration_ms`.
+| `Ctrl+n` | `matched … staging /new`; `detected … staging /new`; `invalidated typed resume after /new`; Codex `selected current checkout` / `warn` timeout; `non-agent … injecting clear`; `warn` pass-through suspected; `completed` (`outcome=new\|new_cmdline\|clear\|pass_through_suspected\|aborted`) |
+| `Ctrl+Shift+n` | `matched … cold-respawning fresh`; `detected … cold-respawning fresh`; `invalidated … for fresh respawn`; `fresh respawn completed` / `warn` failed; `non-agent … no-op`; `warn` pass-through suspected; `completed` (`outcome=fresh\|fresh_cmdline\|fresh_failed\|noop_non_agent\|pass_through_suspected\|aborted`) |
 
 ```bash
-# After reproducing a dead Ctrl+n:
 grep 'category="agent_cli"' ~/.local/state/wezterm-runtime/logs/runtime.log | tail
-
-# Live pane probe (no keypress needed):
 tmux display-message -p \
   'cmd=#{pane_current_command} role=#{@wezterm_pane_role} match=#{E:#{@agent_pane_match}}'
 ```
 
-Heal a suspected miss without refresh:  
-`tmux set-option -p -t <pane_id> @wezterm_pane_role agent-cli:<claude|codex|grok>`  
-Or re-select the worktree via `Alt+g` (retag on select) / run session refresh.
-
-Tag lifecycle (same `agent_cli` category): `set primary pane agent role tag` / `cleared primary pane agent role tag` from `ensure_primary_pane_role_tag`.
+Heal a suspected miss without refresh: `tmux set-option -p -t <pane_id> @wezterm_pane_role agent-cli:<claude|codex|grok>` (or `Alt+g` re-select / session refresh). Tag lifecycle rows: `set/cleared primary pane agent role tag` from `ensure_primary_pane_role_tag`.
 
 ### Attention jump / Claw take toast-only gaps
 

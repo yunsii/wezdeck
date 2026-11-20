@@ -339,6 +339,41 @@ function M.new(ctx)
     end)
   end
 
+  -- Ctrl+Shift+n → tmux User6 (`\e[20105~`). Cold-respawn blank agent
+  -- process (unpin + --fresh-agent). Non-agent panes are a logged no-op
+  -- on the tmux side; outside tmux there is nothing to respawn.
+  handlers['agent.fresh_process'] = function()
+    return wezterm.action_callback(function(window, pane)
+      local trace_id = logger.trace_id('agent_cli')
+      local workspace_name = common.active_workspace_name(window)
+      local tmux_backed, decision_path = actions.is_tmux_backed_pane(constants, window, pane)
+      if tmux_backed then
+        logger.info('agent_cli', 'forwarding Ctrl+Shift+n to tmux-backed pane', common.merge_fields(trace_id, {
+          decision_path = decision_path,
+          domain = pane:get_domain_name(),
+          workspace = workspace_name,
+        }))
+        actions.forward_shortcut_to_pane(
+          wezterm,
+          window,
+          pane,
+          'Ctrl+Shift+n',
+          '\x1b[20105~',
+          logger,
+          'agent_cli',
+          workspace_name,
+          trace_id
+        )
+        return
+      end
+      logger.info('agent_cli', 'Ctrl+Shift+n ignored outside tmux (no agent pane to respawn)', common.merge_fields(trace_id, {
+        decision_path = decision_path,
+        domain = pane:get_domain_name(),
+        workspace = workspace_name,
+      }))
+    end)
+  end
+
   -- ── VS Code ───────────────────────────────────────────
 
   handlers['vscode.open_current_dir'] = function()

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# After Ctrl+n cold-respawns fresh, typed-resume sources for that pane must
-# be cleared so a subsequent F5 cannot resurrect the discarded conversation
+# After Ctrl+n stages /new, typed-resume sources for that pane must be
+# cleared so a subsequent F5 cannot resurrect the discarded conversation
 # via pane option / durable pin / window pin / attention.
 set -euo pipefail
 
@@ -61,38 +61,40 @@ cat > "$ATT_PATH" <<JSON
 }
 JSON
 
-# Stub cold-respawn — we only care that Ctrl+n triggers unpin then fresh.
-export AGENT_CTRL_N_FRESH_SH="$TEST_ROOT/stub-fresh.sh"
-cat > "$AGENT_CTRL_N_FRESH_SH" <<EOF
+# Stub /new injector — we only care that staging triggers unpin.
+# Bake absolute paths into the stub; the child bash does not inherit
+# unexported TEST_ROOT from this script.
+export AGENT_NEW_INTO_PANE_SH="$TEST_ROOT/stub-new.sh"
+cat > "$AGENT_NEW_INTO_PANE_SH" <<EOF
 #!/usr/bin/env bash
-printf 'stub-fresh %s\n' "\${1:-}" >>"$TEST_ROOT/fresh.calls"
+printf 'stub-new %s\n' "\${1:-}" >>"$TEST_ROOT/new.calls"
 EOF
-chmod +x "$AGENT_CTRL_N_FRESH_SH"
-: >"$TEST_ROOT/fresh.calls"
+chmod +x "$AGENT_NEW_INTO_PANE_SH"
+: >"$TEST_ROOT/new.calls"
 
 bash "$CTRL_N" "$PANE_ID"
 
 pane_sid="$(tmux show-options -p -t "$PANE_ID" -v -q @wezterm_agent_session_id 2>/dev/null || true)"
 [[ -z "$pane_sid" ]] || {
-  printf 'pane option still set after fresh: %s\n' "$pane_sid" >&2
+  printf 'pane option still set after /new: %s\n' "$pane_sid" >&2
   exit 1
 }
 
 win_sid="$(tmux show-window-options -t "$WINDOW_ID" -v -q @wezterm_primary_agent_session_id 2>/dev/null || true)"
 [[ -z "$win_sid" ]] || {
-  printf 'window pin still set after fresh: %s\n' "$win_sid" >&2
+  printf 'window pin still set after /new: %s\n' "$win_sid" >&2
   exit 1
 }
 
 pin="$(agent_session_pin_get "$WT" primary || true)"
 [[ -z "$pin" ]] || {
-  printf 'durable pin still set after fresh: %s\n' "$pin" >&2
+  printf 'durable pin still set after /new: %s\n' "$pin" >&2
   exit 1
 }
 
 resolved="$(agent_session_resolve_for_pane "$PANE_ID" || true)"
 [[ -z "$resolved" ]] || {
-  printf 'resolve still returns discarded id after fresh: %s\n' "$resolved" >&2
+  printf 'resolve still returns discarded id after /new: %s\n' "$resolved" >&2
   exit 1
 }
 
@@ -102,7 +104,7 @@ discarded="$(tmux show-options -p -t "$PANE_ID" -v -q @wezterm_agent_discarded_s
   exit 1
 }
 
-if ! grep -Fq 'Ctrl+n invalidated typed resume for fresh respawn' "$LOG_FILE"; then
+if ! grep -Fq 'Ctrl+n invalidated typed resume after /new' "$LOG_FILE"; then
   printf 'expected invalidate log in %s\n' "$LOG_FILE" >&2
   cat "$LOG_FILE" >&2 || true
   exit 1
@@ -112,8 +114,8 @@ if ! grep -Eq 'prev_session_id="?old-sid-before-new"?' "$LOG_FILE"; then
   cat "$LOG_FILE" >&2 || true
   exit 1
 fi
-if ! grep -Fq 'stub-fresh' "$TEST_ROOT/fresh.calls"; then
-  printf 'expected stub AGENT_CTRL_N_FRESH_SH to run\n' >&2
+if ! grep -Fq 'stub-new' "$TEST_ROOT/new.calls"; then
+  printf 'expected stub /new injector to run\n' >&2
   exit 1
 fi
 

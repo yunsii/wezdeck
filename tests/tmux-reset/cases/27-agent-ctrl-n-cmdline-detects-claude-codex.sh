@@ -18,13 +18,13 @@ export WEZTERM_RUNTIME_LOG_ENABLED=1
 export WEZTERM_RUNTIME_LOG_LEVEL=info
 export WEZTERM_RUNTIME_LOG_CATEGORIES=""
 
-cat >"$TEST_ROOT/agent-fresh.sh" <<EOF
+cat >"$TEST_ROOT/agent-new-into-pane.sh" <<EOF
 #!/usr/bin/env bash
-printf 'stub-fresh %s\n' "\$*" >>"$TEST_ROOT/fresh.calls"
+printf 'stub-new %s\n' "\$1" >>"$TEST_ROOT/new.calls"
 exit 0
 EOF
-chmod +x "$TEST_ROOT/agent-fresh.sh"
-export AGENT_CTRL_N_FRESH_SH="$TEST_ROOT/agent-fresh.sh"
+chmod +x "$TEST_ROOT/agent-new-into-pane.sh"
+export AGENT_NEW_INTO_PANE_SH="$TEST_ROOT/agent-new-into-pane.sh"
 
 # Keep argv visible (no exec).
 keeper="$TEST_ROOT/keeper"
@@ -52,7 +52,7 @@ run_one() {
   sleep 0.2
 
   : >"$LOG_FILE"
-  : >"$TEST_ROOT/fresh.calls"
+  : >"$TEST_ROOT/new.calls"
   bash "$CTRL_N" "$pane"
 
   if ! grep -q "detected_agent=\"${expect_agent}\"" "$LOG_FILE"; then
@@ -61,13 +61,9 @@ run_one() {
     pstree -ap "$(tmux display-message -p -t "$pane" '#{pane_pid}')" 2>/dev/null >&2 || true
     exit 1
   fi
-  if ! grep -q 'outcome="fresh_cmdline"' "$LOG_FILE"; then
-    printf '%s: expected outcome=fresh_cmdline\n' "$label" >&2
+  if ! grep -q 'outcome="new_cmdline"' "$LOG_FILE"; then
+    printf '%s: expected outcome=new_cmdline\n' "$label" >&2
     cat "$LOG_FILE" >&2 || true
-    exit 1
-  fi
-  if ! grep -q 'stub-fresh' "$TEST_ROOT/fresh.calls"; then
-    printf '%s: expected stub AGENT_CTRL_N_FRESH_SH call\n' "$label" >&2
     exit 1
   fi
   if grep -q 'injecting clear' "$LOG_FILE"; then

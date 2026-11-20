@@ -30,7 +30,7 @@ skills/worktree-recycle/run.sh recycle -y --fresh-agent --task "describe the nex
 scripts/runtime/worktree/worktree-task recycle -y --fresh-agent --task "describe the next round"
 ```
 
-`--fresh-agent` unpins typed resume and cold-respawns the worktree’s agent pane (`WEZDECK_FORCE_FRESH_SESSION=1`), so you do not need a manual `Ctrl+n` `/new` + `F5` after the reset.
+`--fresh-agent` unpins typed resume and cold-respawns the worktree’s agent pane (`WEZDECK_FORCE_FRESH_SESSION=1`), so you do not need a manual `Ctrl+Shift+n` after the reset.
 
 Full semantics (fast path, optional `--require-delivered`, temp-branch prune, debug-file allowlist, brief file, opt-in `--with-init`): [`workspaces.md` Task Worktree Lifecycle / Recycle](./workspaces.md#recycle-primary-or-long-lived-dev--round-reset). Short-lived `task-*` / `hotfix-*` trees still use `Ctrl+k g r` / `worktree-task reclaim`.
 

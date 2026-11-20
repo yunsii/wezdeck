@@ -42,7 +42,7 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   (linked as `worktree-recycle`); do **not** hand-roll `git reset` or ask the
   human to run CLI. Fast path: fetch + dirty check + hard-reset + remote sync;
   delivery gate and project init are off by default. For a blank next round
-  pass `--fresh-agent` (unpin + cold-respawn; replaces manual `Ctrl+n` + `F5`).
+  pass `--fresh-agent` (unpin + cold-respawn; replaces manual `Ctrl+Shift+n`).
   Docs:
   [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-long-lived-dev--round-reset).
   **Standing policy:** after a worktree round is delivered onto mainline, always

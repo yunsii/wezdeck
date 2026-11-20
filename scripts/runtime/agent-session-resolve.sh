@@ -658,7 +658,8 @@ agent_session_build_typed_resume_command() {
 }
 
 # Cold-start agent-launcher with WEZDECK_FORCE_FRESH_SESSION=1 (no typed id,
-# no cwd --continue). Used by Ctrl+n and recycle --fresh-agent secondary panes.
+# no cwd --continue). Used by Ctrl+Shift+n and recycle --fresh-agent
+# secondary panes.
 agent_session_build_fresh_command() {
   local repo="${1:-}"
   local agent="${2:-}"

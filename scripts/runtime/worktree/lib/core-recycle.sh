@@ -21,7 +21,7 @@ options:
   --title TEXT            Echo next-task text in recycle output/log (alias: --task)
   --task TEXT             Same as --title; does not write a worktree file
   --fresh-agent           Unpin + cold-respawn the worktree's agent pane
-                          (replaces manual Ctrl+n /new + F5 after recycle)
+                          (replaces manual Ctrl+Shift+n after recycle)
   --prune-merged-locals   Delete merged temp local branches (default for linked)
   --keep-temp-branches    Skip local temp-branch pruning
   --no-clean-files        Skip allowlisted debug-file cleanup
@@ -108,7 +108,7 @@ wt_core_recycle_fresh_agent_pane() {
     reset_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/tmux-reset.sh"
   fi
   if [[ ! -f "$reset_bin" ]]; then
-    printf '  fresh-agent: tmux-reset.sh missing; run Ctrl+n then F5 manually\n'
+    printf '  fresh-agent: tmux-reset.sh missing; run Ctrl+Shift+n manually\n'
     runtime_log_warn task "recycle fresh-agent missing tmux-reset" \
       "worktree=$worktree_path" || true
     return 0
@@ -847,7 +847,7 @@ wt_core_recycle() {
   if [[ "$fresh_agent" == "1" ]]; then
     # Last step: may kill this process if recycle ran inside the target pane.
     wt_core_recycle_fresh_agent_pane "$WT_WORKTREE_PATH"
-    printf '  next: blank agent session (no Ctrl+n / F5 needed)\n'
+    printf '  next: blank agent session (no Ctrl+Shift+n needed)\n'
   else
     printf '  next: ready for the next task (project init left to the follow-up task)\n'
   fi

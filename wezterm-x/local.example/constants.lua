@@ -62,9 +62,10 @@ return {
         -- allowlist is non-empty — otherwise "did this hotkey fire?"
         -- cannot be answered from wezterm.log.
         hotkey = true,
-        -- Ctrl+n → tmux agent-ctrl-n decision (forward / /new). Without
-        -- this allowlist entry the Lua-side rows are filtered and you
-        -- only see the bash decision in runtime.log.
+        -- Ctrl+n / Ctrl+Shift+n → tmux agent-ctrl-n decision
+        -- (forward / /new / fresh). Without this allowlist entry the
+        -- Lua-side rows are filtered and you only see the bash
+        -- decision in runtime.log.
         agent_cli = true,
         -- Same class as agent_cli: non-empty allowlist filters these out.
         event_bus = true,    -- unparseable envelope / no-handler

@@ -56,31 +56,14 @@ if ! grep -q 'pane_role=""' "$LOG_FILE" && ! grep -q 'pane_role=' "$LOG_FILE"; t
   exit 1
 fi
 
-# Tag the pane → next press should cold-respawn (info), not warn.
-cat >"$TEST_ROOT/agent-fresh.sh" <<EOF
-#!/usr/bin/env bash
-printf 'stub-fresh\n' >>"$TEST_ROOT/fresh.calls"
-exit 0
-EOF
-chmod +x "$TEST_ROOT/agent-fresh.sh"
-export AGENT_CTRL_N_FRESH_SH="$TEST_ROOT/agent-fresh.sh"
+# Tag the pane → next press should stage /new (info), not warn.
 : > "$LOG_FILE"
-: > "$TEST_ROOT/fresh.calls"
 tmux set-option -p -t "$PANE_ID" @wezterm_pane_role "agent-cli:claude"
 bash "$CTRL_N" "$PANE_ID"
 
-if ! grep -q 'Ctrl+n matched agent pane; cold-respawning fresh' "$LOG_FILE"; then
-  printf 'expected match/cold-respawn info in %s\n' "$LOG_FILE" >&2
+if ! grep -q 'Ctrl+n matched agent pane; staging /new' "$LOG_FILE"; then
+  printf 'expected match/staging info in %s\n' "$LOG_FILE" >&2
   cat "$LOG_FILE" >&2 || true
-  exit 1
-fi
-if ! grep -q 'outcome="fresh"' "$LOG_FILE"; then
-  printf 'expected outcome=fresh\n' >&2
-  cat "$LOG_FILE" >&2 || true
-  exit 1
-fi
-if ! grep -q 'stub-fresh' "$TEST_ROOT/fresh.calls"; then
-  printf 'expected stub AGENT_CTRL_N_FRESH_SH call\n' >&2
   exit 1
 fi
 if grep -q 'suspected agent pane' "$LOG_FILE"; then

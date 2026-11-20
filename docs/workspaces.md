@@ -246,7 +246,7 @@ Behavior:
 - Writes a `backup/<branch-slug>-<timestamp>` tip before reset when HEAD is not already on the base (or when the branch name will change).
 - `git reset --hard` / `git switch -C` onto `origin/HEAD` at the target branch; linked trees never track the default branch. Default remote sync then pushes `origin/<branch>` to the same tip and sets upstream there.
 - `--task` / `--title` prints the next-round text in recycle stdout and `runtime.log` only; it does **not** write a worktree file (legacy `.task-brief.md` is deleted if still present) and does **not** inject an agent prompt.
-- Does not delete Claude transcripts. **`--fresh-agent`** unpins typed resume for the worktree’s live tmux window and cold-respawns the primary agent pane with `WEZDECK_FORCE_FRESH_SESSION=1` (skips typed id and cwd `--continue` / `resume --last`) — one step instead of manual `Ctrl+n` `/new` + `F5`. Soft-skips when no tmux window is open. Does not run `sync-runtime`.
+- Does not delete Claude transcripts. **`--fresh-agent`** unpins typed resume for the worktree’s live tmux window and cold-respawns the primary agent pane with `WEZDECK_FORCE_FRESH_SESSION=1` (skips typed id and cwd `--continue` / `resume --last`) — one step instead of manual `Ctrl+Shift+n`. Soft-skips when no tmux window is open. Does not run `sync-runtime`.
 
 ### Reclaim safety
 
