@@ -56,6 +56,46 @@ _host_agent_trace() {
   fi
 }
 
+# Grok read profile: plan mode + read-only command allowlist + no web.
+# Plain "no --always-approve" is NOT read-only for headless grok (verified by
+# fe1 2026-11-20: it still wrote files). Keep this list to commands without
+# side effects; anything not listed stays denied by plan mode.
+HOST_AGENT_GROK_READ_ALLOW=(
+  'Bash(git log:*)'
+  'Bash(git show:*)'
+  'Bash(git diff:*)'
+  'Bash(git status:*)'
+  'Bash(git blame:*)'
+  'Bash(git ls-files:*)'
+  'Bash(git grep:*)'
+  'Bash(git rev-parse:*)'
+  'Bash(ls:*)'
+  'Bash(cat:*)'
+  'Bash(head:*)'
+  'Bash(tail:*)'
+  'Bash(wc:*)'
+  'Bash(rg:*)'
+  'Bash(grep:*)'
+)
+
+# Fill _HOST_AGENT_GROK_ARGV (grok args after the binary) for MODE.
+# Args: mode prompt_file model effort
+_host_agent_grok_argv() {
+  local mode=$1 prompt_file=$2 model=$3 effort=$4 rule
+  _HOST_AGENT_GROK_ARGV=(--prompt-file "$prompt_file")
+  if [ "$mode" = "write" ]; then
+    _HOST_AGENT_GROK_ARGV+=(--always-approve)
+  else
+    _HOST_AGENT_GROK_ARGV+=(--output-format json --permission-mode plan --disable-web-search)
+    for rule in "${HOST_AGENT_GROK_READ_ALLOW[@]}"; do
+      _HOST_AGENT_GROK_ARGV+=(--allow "$rule")
+    done
+  fi
+  [ -n "$model" ] && _HOST_AGENT_GROK_ARGV+=(-m "$model")
+  [ -n "$effort" ] && _HOST_AGENT_GROK_ARGV+=(--reasoning-effort "$effort")
+  return 0
+}
+
 # Run one headless host CLI. Returns CLI exit (0 under MOCK).
 host_agent_invoke_run() {
   local backend="" mode="read" cwd="" prompt_file="" add_dir="" log_path="" effort="" model=""
@@ -95,9 +135,13 @@ host_agent_invoke_run() {
     ;;
   esac
 
+  # argv is recorded for grok (built before MOCK return so tests can assert it).
+  local -a _HOST_AGENT_GROK_ARGV=()
+  [ "$backend" = "grok" ] && _host_agent_grok_argv "$mode" "$prompt_file" "$model" "$effort"
+
   local trace_line
-  trace_line="$(python3 -c 'import json,sys; print(json.dumps({"backend":sys.argv[1],"mode":sys.argv[2],"cwd":sys.argv[3],"prompt_file":sys.argv[4],"add_dir":sys.argv[5],"mock":bool(sys.argv[6]=="1"),"capture":bool(sys.argv[7]=="1")}))' \
-    "$backend" "$mode" "$cwd" "$prompt_file" "${add_dir:-}" "${HOST_AGENT_INVOKE_MOCK:-0}" "$capture")"
+  trace_line="$(python3 -c 'import json,sys; print(json.dumps({"backend":sys.argv[1],"mode":sys.argv[2],"cwd":sys.argv[3],"prompt_file":sys.argv[4],"add_dir":sys.argv[5],"mock":bool(sys.argv[6]=="1"),"capture":bool(sys.argv[7]=="1"),"argv":sys.argv[8:]}))' \
+    "$backend" "$mode" "$cwd" "$prompt_file" "${add_dir:-}" "${HOST_AGENT_INVOKE_MOCK:-0}" "$capture" "${_HOST_AGENT_GROK_ARGV[@]}")"
   _host_agent_trace "$trace_line"
 
   if [ "${HOST_AGENT_INVOKE_MOCK:-0}" = "1" ]; then
@@ -160,18 +204,15 @@ host_agent_invoke_run() {
         fi
         ;;
       grok)
+        # Flags come from _host_agent_grok_argv (read = plan + allowlist).
         if [ "$mode" = "write" ]; then
           env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
             AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 HOST_AGENT_HEADLESS=1 \
-            grok --prompt-file "$prompt_file" --always-approve \
-              ${model:+-m "$model"} \
-              ${effort:+--reasoning-effort "$effort"}
+            grok "${_HOST_AGENT_GROK_ARGV[@]}"
         else
           env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
             AGENT_ATTENTION_SKIP=1 HOST_AGENT_HEADLESS=1 \
-            grok --prompt-file "$prompt_file" --output-format json \
-              ${model:+-m "$model"} \
-              ${effort:+--reasoning-effort "$effort"}
+            grok "${_HOST_AGENT_GROK_ARGV[@]}"
         fi
         ;;
     esac

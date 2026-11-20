@@ -18,4 +18,18 @@ host_agent_invoke_run \
   --cwd "$PWD" --prompt-file /path/to/prompt.md --log /tmp/out.log
 ```
 
-Offline: `HOST_AGENT_INVOKE_MOCK=1` + optional `HOST_AGENT_INVOKE_TRACE=…` (JSONL).
+### How each backend enforces `--mode read`
+
+| Backend | `--mode read` (no writes, no side-effect commands) | `--mode write` |
+| --- | --- | --- |
+| claude | `--permission-mode plan --allowed-tools Read Grep Glob` | `--permission-mode bypassPermissions` |
+| codex | `exec --sandbox read-only` (OS sandbox) | `exec --full-auto` |
+| grok | `--permission-mode plan --disable-web-search` + `--allow` per read-only command (`HOST_AGENT_GROK_READ_ALLOW`: `git log/show/diff/status/blame/ls-files/grep/rev-parse`, `ls/cat/head/tail/wc/rg/grep`) | `--always-approve` |
+
+Grok: dropping `--always-approve` alone is **not** read-only headless (it still
+writes files). Its read mode is a permission allowlist, not an OS sandbox like
+codex; `git diff/log --output=<file>` can still write through an allowed prefix.
+Keep the allowlist side-effect free (`test.sh` checks it).
+
+Offline: `HOST_AGENT_INVOKE_MOCK=1` + optional `HOST_AGENT_INVOKE_TRACE=…` (JSONL;
+grok rows carry the full `argv`).

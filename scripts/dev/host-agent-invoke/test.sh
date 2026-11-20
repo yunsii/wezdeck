@@ -55,6 +55,46 @@ else
   cat "$trace" >&2
 fi
 
+# Grok read must be really read-only (plan + allowlist + no web); write unchanged.
+gtrace="$tmp/grok-trace.jsonl"
+HOST_AGENT_INVOKE_TRACE="$gtrace" host_agent_invoke_run --backend grok --mode read \
+  --cwd "$cwd" --prompt-file "$prompt" --model m1 --effort high --capture >/dev/null
+HOST_AGENT_INVOKE_TRACE="$gtrace" host_agent_invoke_run --backend grok --mode write \
+  --cwd "$cwd" --prompt-file "$prompt" --log "$log"
+if jq -e -s '
+  (.[0] | .mode=="read" and (.argv | index("--always-approve") == null)
+    and (.argv | index("--disable-web-search") != null)
+    and (.argv as $a | ($a | index("--permission-mode")) as $i | $i != null and $a[$i+1]=="plan")
+    and (.argv as $a | ($a | index("--output-format")) as $i | $i != null and $a[$i+1]=="json")
+    and ([.argv | indices("--allow")[]] | length >= 5)
+    and (.argv | index("Bash(git log:*)") != null)
+    and (.argv | index("Bash(git show:*)") != null)
+    and (.argv as $a | ($a | index("-m")) as $i | $a[$i+1]=="m1")
+    and (.argv as $a | ($a | index("--reasoning-effort")) as $i | $a[$i+1]=="high"))
+' <"$gtrace" >/dev/null; then
+  ok "grok read argv: plan + --allow list + --disable-web-search, no --always-approve"
+else
+  bad "grok read argv: plan + --allow list + --disable-web-search, no --always-approve"
+  cat "$gtrace" >&2
+fi
+if jq -e -s '
+  (.[1] | .mode=="write" and (.argv | index("--always-approve") != null)
+    and (.argv | index("--permission-mode") == null)
+    and (.argv | index("--allow") == null))
+' <"$gtrace" >/dev/null; then
+  ok "grok write argv keeps --always-approve, no plan/allow"
+else
+  bad "grok write argv keeps --always-approve, no plan/allow"
+  cat "$gtrace" >&2
+fi
+# Allowlist must stay side-effect free: no shell/editors/writers.
+if printf '%s\n' "${HOST_AGENT_GROK_READ_ALLOW[@]}" \
+  | grep -qE '^Bash\((rm|mv|cp|tee|sed|awk|python|sh|bash|find|git (commit|push|checkout|reset|apply|add|stash))[ :]'; then
+  bad "grok read allowlist has no mutating commands"
+else
+  ok "grok read allowlist has no mutating commands"
+fi
+
 if host_agent_invoke_run --backend nope --mode write --cwd "$cwd" --prompt-file "$prompt" --log "$log" 2>/dev/null; then
   bad "unknown backend rejected"
 else
@@ -90,7 +130,7 @@ else
 fi
 
 # Review providers must call shared invoke (not private env|claude case).
-prov="$here/../adversarial-review/lib/providers"
+prov="$here/../../../skills/adversarial-review/lib/providers"
 if grep -q 'host_agent_invoke_run' "$prov/claude.sh" \
   && grep -q 'host_agent_invoke_run' "$prov/codex.sh" \
   && grep -q 'host_agent_invoke_run' "$prov/grok.sh" \
