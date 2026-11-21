@@ -6,6 +6,9 @@
     "prettier.config.js",
     "vite.config.js"
   ],
+  // Worker-only code (Durable Object, server entry) type-checks against
+  // workers-types in tsconfig.worker.json; DOM and workers globals clash.
+  "exclude": ["node_modules", "dist", "src/server.ts", "src/relay/**"],
 
   "compilerOptions": {
     "target": "ES2022",

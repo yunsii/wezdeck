@@ -397,15 +397,15 @@ content area; navigation and the status band keep rendering.
 that emits invalidation ticks; the Web Console then refetches typed snapshots
 through TanStack Query. The server binds to loopback only and keeps the Named
 Pipe request path unchanged. Browser Origins are checked against the configured
-local-development and Vercel allowlist. The first Web API milestone is read-only; action
+local-development and `https://wezdeck.yuns.love` allowlist. The first Web API milestone is read-only; action
 routes must add capability checks and audit fields before they are exposed to
-the public Vercel UI.
+the public Web UI (remote access goes through `wezdeck-wsl relay` instead, [`remote-access.md`](./remote-access.md)).
 
 ### Constraints
 
 - The hot path should stay on one chain: `Lua -> wezdeck-runtime-cli.exe -> named pipe -> wezdeck-runtime.exe -> response`.
 - Linux-owned reads from the Windows Runtime go through `wezdeck-wsl attach`. The binary is `native/wezdeck-wsl/bin/wezdeck-wsl` (built by `native/wezdeck-wsl/build.sh` during sync). A missing binary, dead socket, or attach process degrades that HTTP snapshot to `available: false`; it does not open a new `wsl.exe` per request.
-- The Vercel-hosted Web Console talks to loopback Runtime over Chrome Private Network Access. Preflight from a public Origin must receive `Access-Control-Allow-Private-Network: true` or the overview marks **Runtime API** offline.
+- The Cloudflare-hosted Web Console (`wezdeck.yuns.love`) talks to loopback Runtime over Chrome Private Network Access. Preflight from a public Origin must receive `Access-Control-Allow-Private-Network: true` or the overview marks **Runtime API** offline.
 - `wezdeck-runtime.exe` is the single decision point for VS Code directory normalization, Chrome debug instance reuse, clipboard text or image decisions, and foreground-window IME state queries.
 - Response types stay explicit: current-window reuse returns `result_type=window_ref`, clipboard reads return `clipboard_text` or `clipboard_image`, IME queries return `ime_state` with flat `mode` / `lang` / `reason` fields.
 - Reuse logic depends on persisted cache keyed by **repo family** (`distro|main-worktree-root`), process command-line matching, visible window scanning, and foreground binding compensation. The folder opened is still the live worktree (`--folder-uri`); a cache hit that currently shows a sibling worktree is retargeted in place (`registry_family_retarget`), not discarded.

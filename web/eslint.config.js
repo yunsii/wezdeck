@@ -25,6 +25,13 @@ export default [
     },
   },
   {
+    // Worker code type-checks against workers-types (tsconfig.worker.json).
+    files: ['src/server.ts', 'src/relay/**/*.ts'],
+    languageOptions: {
+      parserOptions: { project: './tsconfig.worker.json' },
+    },
+  },
+  {
     ignores: [
       'eslint.config.js',
       'prettier.config.js',

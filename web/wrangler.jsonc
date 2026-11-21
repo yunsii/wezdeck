@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wezdeck",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // yuns.love DNS lives in the same Cloudflare account (same as forge);
+  // workers.dev stays as a fallback entry.
+  "routes": [{ "pattern": "wezdeck.yuns.love", "custom_domain": true }],
+  "workers_dev": true,
+  // One HostRelay instance (idFromName("default")) bridges the home host and
+  // remote browsers. Secrets: RELAY_HOST_TOKEN, RELAY_CLIENT_TOKEN
+  // (wrangler secret put; local dev reads .dev.vars). docs/remote-access.md
+  "durable_objects": {
+    "bindings": [{ "name": "HOST_RELAY", "class_name": "HostRelay" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HostRelay"] }],
+}

@@ -50,9 +50,12 @@ corepack pnpm run build
 #   WEZDECK_WEB_URL=http://127.0.0.1:3017/console/collab pnpm exec vitest run --config vitest.cdp.config.ts tests/collab.cdp.test.ts
 ```
 
-The production deployment is configured for Vercel through Nitro. The browser
-connects directly to the user's loopback Runtime; Vercel server code never
-tries to reach the user's local machine. Chrome Private Network Access requires
+Production runs on Cloudflare Workers at `https://wezdeck.yuns.love`
+(`wrangler.jsonc`, `src/server.ts`; deploy with `corepack pnpm run deploy`).
+On the host the browser connects directly to the user's loopback Runtime; the
+Worker never reaches the machine itself. Away from the host, the collab view
+goes through the HostRelay Durable Object and a WebRTC DataChannel to
+`wezdeck-wsl relay` — see [`docs/remote-access.md`](../docs/remote-access.md). Chrome Private Network Access requires
 the Runtime to answer preflight with
 `Access-Control-Allow-Private-Network: true` (see `RuntimeWebServer`); without
 that grant the overview shows **Runtime API** as offline even when

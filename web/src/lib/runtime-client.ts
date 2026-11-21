@@ -22,6 +22,7 @@ import {
   worktreeStatusSchema,
   vscodeStateSchema,
 } from './runtime-contract'
+import { remoteLink } from './remote-link'
 import type {
   RuntimeActionResponse,
   DiagnosticsState,
@@ -70,6 +71,24 @@ async function requireRuntime() {
   const connection = await probeRuntime()
   if (!connection) throw new Error('WezDeck Runtime is not reachable')
   return connection
+}
+
+// A paired remote device would otherwise re-probe loopback (and wait for its
+// timeout) before every collab request.
+let lastProbe:
+  { at: number; value: Awaited<ReturnType<typeof probeRuntime>> } | undefined
+async function probeRuntimeCached() {
+  // `?remote=1` forces the remote link even where loopback works (acceptance
+  // on the host itself).
+  if (
+    typeof location !== 'undefined' &&
+    new URLSearchParams(location.search).get('remote') === '1'
+  )
+    return null
+  if (lastProbe && Date.now() - lastProbe.at < 15_000) return lastProbe.value
+  const value = await probeRuntime()
+  lastProbe = { at: Date.now(), value }
+  return value
 }
 
 export async function probeRuntime() {
@@ -291,7 +310,26 @@ export async function getCollab<TCommand extends CollabCommand>(
       ok: false,
       error: { code: 'unavailable', message },
     }) as CollabResult<TCommand>
-  const { baseUrl, health } = await requireRuntime()
+  const local = await probeRuntimeCached()
+  if (!local) {
+    // No loopback Runtime (phone / tablet): go through the paired remote
+    // link (WebRTC DataChannel, else the Cloudflare relay socket).
+    remoteLink.start()
+    if (!remoteLink.token()) {
+      return unavailable('WezDeck Runtime is not reachable')
+    }
+    try {
+      const args = Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      )
+      return schema.parse(
+        await remoteLink.rpc(command, args),
+      ) as CollabResult<TCommand>
+    } catch (error) {
+      return unavailable(error instanceof Error ? error.message : String(error))
+    }
+  }
+  const { baseUrl, health } = local
   if (!health.capabilities.includes('collab.read')) {
     return unavailable('Runtime does not expose collab.read yet')
   }

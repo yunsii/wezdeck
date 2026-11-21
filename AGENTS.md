@@ -108,6 +108,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Phone / Android remote work (OpenClaw only; Happy + Tailscale phone
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
+- Viewing collab tickets from a phone / tablet anywhere (`wezdeck.yuns.love`
+  on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
+  DataChannel first / WebSocket relay fallback, link badge + latency,
+  pairing tokens, `install-remote-relay.sh`):
+  Read [`docs/remote-access.md`](docs/remote-access.md).
 - Driving this PC from a Pad / phone remote client feels laggy (layered
   triage: remote link → office side → home router / client Wi‑Fi → host;
   incident history, home-router and long-uptime lessons). Remote clients are

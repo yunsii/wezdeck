@@ -71,7 +71,7 @@ func ensureServe() error {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: wezdeck-wsl serve|attach")
+		fmt.Fprintln(os.Stderr, "usage: wezdeck-wsl serve|attach|relay")
 		os.Exit(2)
 	}
 	var err error
@@ -80,6 +80,8 @@ func main() {
 		err = serve()
 	case "attach":
 		err = attach()
+	case "relay":
+		err = runRelay()
 	default:
 		err = fmt.Errorf("unknown command %q", os.Args[1])
 	}

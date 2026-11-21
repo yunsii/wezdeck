@@ -13,6 +13,7 @@ import type {
 import { cn } from '#/lib/utils'
 import { useRuntimeData } from './console-data'
 import { RunDetail } from './console-collab-run'
+import { RemoteBadge } from './remote-badge'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Inspector, Reading } from './inspector'
 import type { InspectorItem } from './inspector'
@@ -177,8 +178,11 @@ function MetricsBand({
       className="grid gap-2 border border-brand-border bg-brand-surface p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-sm font-semibold">{t`Cross-repo collab`}</h1>
-        <div className="w-32">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h1 className="text-sm font-semibold">{t`Cross-repo collab`}</h1>
+          <RemoteBadge />
+        </div>
+        <div className="w-32 shrink-0">
           <Select
             value={window}
             onValueChange={onWindow}
