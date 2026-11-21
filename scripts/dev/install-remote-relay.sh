@@ -95,7 +95,13 @@ case "$MODE" in
     load_tokens
     url="$ORIGIN/console/collab#pair=$WEZDECK_RELAY_CLIENT_TOKEN"
     printf 'Open on the phone / tablet (stores the token in that browser):\n%s\n\n' "$url"
-    npx --yes qrcode@1.5.4 -t utf8 "$url" 2>/dev/null || printf '(QR unavailable: npx qrcode failed)\n'
+    # @paulmillr/qr (web devDependency, zero deps, no npx round trip): its
+    # "ascii" output is half blocks with light modules as blocks, so it scans
+    # as-is on a dark terminal (~45 cols).
+    if ! (cd "$REPO_ROOT/web" && node --input-type=module -e \
+      'import qr from "@paulmillr/qr"; console.log(qr(process.argv[1], "ascii"))' "$url" 2>/dev/null); then
+      printf '(QR unavailable: run corepack pnpm install in web/; open the link above instead)\n'
+    fi
     ;;
   check)
     systemctl --user is-active "$UNIT" || true
