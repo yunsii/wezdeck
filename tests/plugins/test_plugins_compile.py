@@ -123,14 +123,22 @@ class CompileTest(unittest.TestCase):
     def test_agent_and_producer_files_checked(self):
         plugin(self.builtin, "agent-x", kind="agent", agent={"habit_provider": "habit.py"},
                cli={"status": "bin/status.sh"}, producer={"install": "bin/install.sh --flag"})
-        _, errs = self.run_compile()
+        reg, errs = self.run_compile()
         self.assertEqual(errs, [])
+        entry = next(p for p in reg["plugins"] if p["id"] == "agent-x")
+        self.assertEqual(entry["agent_files"]["habit_provider"], str((self.builtin / "agent-x/habit.py").resolve()))
 
     def test_repo_builtin_plugins_compile(self):
         """The real built-in plugins in this repo must always validate."""
         reg, errs = pc.compile_plugins(REPO, None, self.tmp / "none.json", self.out)
         self.assertEqual(errs, [])
-        self.assertIn("oppo-remote", [p["id"] for p in reg["plugins"]])
+        ids = [p["id"] for p in reg["plugins"]]
+        for pid in ("oppo-remote", "disk-guard", "mem-guard", "load-guard", "session-bridge",
+                    "agent-claude", "agent-codex", "agent-grok"):
+            self.assertIn(pid, ids)
+        for p in reg["plugins"]:
+            for f in p.get("agent_files", {}).values():
+                self.assertTrue(Path(f).is_file(), f)
 
 
 if __name__ == "__main__":

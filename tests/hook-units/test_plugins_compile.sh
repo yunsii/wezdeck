@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Plugin compiler (scripts/runtime/plugins_compile.py) unit tests.
+# Plugin system Python suites (tests/plugins): compiler + agent-provider
+# discovery for habit_report.
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-exec python3 -m unittest -v "$repo_root/tests/plugins/test_plugins_compile.py" 2>&1
+cd "$repo_root"
+exec python3 -m unittest discover -s tests/plugins -p 'test_*.py' -v 2>&1

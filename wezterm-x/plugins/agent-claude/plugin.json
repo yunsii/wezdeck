@@ -1,0 +1,18 @@
+{
+  "$comment": "Claude Code (claude CLI) as a WezDeck agent provider. Launch still goes through scripts/runtime/agent-launcher.sh (AGENTS.md hard rule); this plugin governs provider discovery for habit-report and adversarial-review / brainstorm / agent-fanout.",
+  "id": "agent-claude",
+  "name": "Claude Code (claude CLI)",
+  "kind": "agent",
+  "default_enabled": true,
+  "requires": {
+    "host": [
+      "hybrid-wsl",
+      "posix"
+    ]
+  },
+  "agent": {
+    "review_provider": "../../../skills/adversarial-review/lib/providers/claude.sh",
+    "habit_provider": "../../../scripts/dev/habit_report/providers/claude.py"
+  },
+  "docs": "README.md"
+}

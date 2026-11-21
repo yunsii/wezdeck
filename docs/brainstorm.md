@@ -346,13 +346,22 @@ Adversarial selection additionally excludes the writer's family (see the Design
 
 ### Adding a backend or model (plugin interface)
 
-Backends are **plugins** in `../adversarial-review/lib/providers/<name>.sh`, each
-implementing `<name>__available / __family / __model / __invoke` (+ optional
-`__aliases`). `provider.sh` loads them all and dispatches by name — it contains
-no backend names.
+Backends are provider files implementing `<name>__available / __family /
+__model / __invoke` (+ optional `__aliases`), declared by an enabled
+`kind: agent` WezDeck plugin (`agent.review_provider` in
+`wezterm-x/plugins/<id>/plugin.json`; built-ins: `agent-claude`, `agent-codex`,
+`agent-grok`). `provider.sh` loads the enabled ones from the compiled plugin
+registry and dispatches by name — it contains no backend names. Without a
+registry it loads every built-in `../adversarial-review/lib/providers/*.sh`.
+See [`plugin-architecture.md#agent-providers`](./plugin-architecture.md#agent-providers).
 
-- **Add a backend:** drop `providers/<name>.sh` and list `<name>` in the
+- **Add a backend:** write `<name>.sh`, add an agent plugin whose
+  `agent.review_provider` points at it (built-in: `wezterm-x/plugins/`;
+  machine-only: `~/.config/wezdeck/plugins/`), run
+  `scripts/runtime/render-plugins.sh` (sync does it), and list `<name>` in the
   candidate columns of `roles.conf`. No core edits.
+- **Drop a backend on one machine:** `"disabled": ["agent-<name>"]` in
+  `wezterm-x/local/plugins.json`, then `scripts/runtime/render-plugins.sh`.
 - **Change a model:** edit that plugin's `__model`, or set its `ADV_MODEL_*` env.
 - Disclosure (report + `--json`) prints the **actual model** each role used.
 

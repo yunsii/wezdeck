@@ -1,0 +1,18 @@
+{
+  "$comment": "OpenAI Codex CLI (codex) as a WezDeck agent provider. Launch still goes through scripts/runtime/agent-launcher.sh (AGENTS.md hard rule); this plugin governs provider discovery for habit-report and adversarial-review / brainstorm / agent-fanout.",
+  "id": "agent-codex",
+  "name": "OpenAI Codex CLI (codex)",
+  "kind": "agent",
+  "default_enabled": true,
+  "requires": {
+    "host": [
+      "hybrid-wsl",
+      "posix"
+    ]
+  },
+  "agent": {
+    "review_provider": "../../../skills/adversarial-review/lib/providers/codex.sh",
+    "habit_provider": "../../../scripts/dev/habit_report/providers/codex.py"
+  },
+  "docs": "README.md"
+}

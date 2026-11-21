@@ -3,7 +3,8 @@
 #
 # Plugin interface (providers/<name>.sh):
 #   <name>__available / __family / __model / __invoke  [+ optional __aliases]
-# Adding a backend = drop a plugin file; no core edits. This file has no
+# Adding a backend = provider file + a `kind: agent` WezDeck plugin that
+# declares it (see _provider_files below); no core edits. This file has no
 # backend names.
 #
 # Single-shot (hot path): agent_text / run_agent → plugin __invoke directly.
@@ -29,9 +30,46 @@ esac
 # --- load plugins & build the registry --------------------------------------
 _ALL_PROVIDERS=()
 declare -A _ALIAS_MAP=()
+# Which provider files to load: the enabled `kind: agent` plugins in the
+# WezDeck plugin registry (wezterm-x/plugins/<id>/plugin.json →
+# agent.review_provider), so a machine without a CLI disables its plugin in
+# wezterm-x/local/plugins.json and it drops out of review / brainstorm /
+# fanout. No registry, or a registry that declares no agent plugins yet
+# (compiled before agent plugins existed) → every built-in providers/*.sh.
+# Docs: docs/plugin-architecture.md#agent-providers
+_provider_registry() {
+  # -P: the skill dir is symlinked into user-level skill roots; resolve to the
+  # repo so ../../../wezterm-x points at the real checkout.
+  printf '%s' "${WEZDECK_PLUGIN_REGISTRY:-$(cd "$_PROVIDER_LIB_DIR" && pwd -P)/../../../wezterm-x/plugins/registry.generated.json}"
+}
+_provider_files() {
+  local reg out
+  reg="$(_provider_registry)"
+  if [ -f "$reg" ] && command -v python3 >/dev/null 2>&1; then
+    if out="$(python3 - "$reg" <<'PY'
+import json, sys
+plugins = json.load(open(sys.argv[1], encoding="utf-8")).get("plugins", [])
+agents = [p for p in plugins if "review_provider" in p.get("agent_files", {})]
+if not agents:
+    sys.exit(3)
+for p in agents:
+    if p.get("enabled"):
+        print(p["agent_files"]["review_provider"])
+PY
+)"; then
+      [ -n "$out" ] && printf '%s\n' "$out"
+      return 0
+    fi
+  fi
+  local f
+  for f in "$_PROVIDER_LIB_DIR/providers/"*.sh; do
+    [ -e "$f" ] && printf '%s\n' "$f"
+  done
+  return 0
+}
 _load_providers() {
   local f name al
-  for f in "$_PROVIDER_LIB_DIR/providers/"*.sh; do
+  while IFS= read -r f; do
     [ -e "$f" ] || continue
     # shellcheck source=/dev/null
     . "$f"
@@ -41,7 +79,7 @@ _load_providers() {
     if declare -F "${name}__aliases" >/dev/null 2>&1; then
       for al in $("${name}__aliases" 2>/dev/null); do _ALIAS_MAP["$al"]="$name"; done
     fi
-  done
+  done < <(_provider_files)
 }
 _load_providers
 

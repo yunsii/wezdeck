@@ -307,8 +307,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--end", default="today")
     ap.add_argument(
         "--providers",
-        default="claude,grok,codex",
-        help=f"comma list; available={','.join(available_providers())}",
+        default=",".join(available_providers()),
+        help=f"comma list (default: enabled agent plugins); available={','.join(available_providers())}",
     )
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--no-lifetime", action="store_true")
@@ -407,7 +407,7 @@ def main(argv: list[str] | None = None) -> int:
         "hotkeys": hotkeys,
         "lifetime": lifetime,
         "notes": [
-            "Providers are pluggable under scripts/dev/habit_report/providers/.",
+            "Providers come from enabled agent plugins (wezterm-x/plugins/agent-*; docs/plugin-architecture.md).",
             "Skill/MCP/CLI is the primary habit signal; hotkeys are secondary.",
             "CDP verify→iterate is a same-session heuristic (≤60m after chrome-devtools).",
         ],

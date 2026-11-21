@@ -131,7 +131,7 @@ R="$TOOL_HOME/run.sh"
 
 ## Related
 
-- Collector: `scripts/dev/habit-report.sh` + `scripts/dev/habit_report/providers/` + `habit_report/wakatime.py`  
+- Collector: `scripts/dev/habit-report.sh` + `scripts/dev/habit_report/providers/` (discovered via enabled agent plugins `wezterm-x/plugins/agent-*`) + `habit_report/wakatime.py`  
 - Push: `skills/habit-weekly/push-archive.sh`
 - Docs: `docs/diagnostics.md` → Habit report  
 - Sibling timeline: `scripts/dev/workflow-timeline.sh`  

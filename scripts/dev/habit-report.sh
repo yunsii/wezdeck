@@ -3,7 +3,8 @@
 #
 # Primary:
 #   - concurrent agent sessions (runtime.log attention edges)
-#   - skills / MCP / CLI via providers under scripts/dev/habit_report/providers/
+#   - skills / MCP / CLI via providers from enabled agent plugins
+#     (wezterm-x/plugins/agent-*; default --providers = all enabled)
 # Secondary:
 #   - wezterm.log hotkey pressed rows + hotkey-usage.json intensity
 #
@@ -35,7 +36,7 @@ runtime_env_load_managed
 
 days=7
 end='today'
-providers='claude,grok,codex'
+providers=''  # empty → enabled agent plugins (habit-report.py default)
 format_json=0
 no_lifetime=0
 no_hotkeys=0
@@ -84,13 +85,13 @@ fi
 args=(
   --days "$days"
   --end "$end"
-  --providers "$providers"
   --wezterm-log "$wezterm_log"
   --runtime-log "$runtime_log"
   --claude-root "$claude_root"
   --grok-root "$grok_root"
   --codex-root "$codex_root"
 )
+[[ -n "$providers" ]] && args+=(--providers "$providers")
 [[ -n "$usage_json" ]] && args+=(--usage-json "$usage_json")
 (( format_json )) && args+=(--json)
 (( no_lifetime )) && args+=(--no-lifetime)

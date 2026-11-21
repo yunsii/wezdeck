@@ -179,6 +179,10 @@ def compile_plugins(repo: Path, external_dir: Path | None, local_cfg_path: Path,
             "requires_host": m.get("requires", {}).get("host", []),
             "manifest": m,
         }
+        if "agent" in m:
+            # Absolute paths so consumers (provider.sh, habit_report) need no
+            # knowledge of plugin layout.
+            entry["agent_files"] = {k: str((d / rel).resolve()) for k, rel in m["agent"].items()}
         if "badge" in m:
             cfg = dict(m["badge"].get("config", {}))
             cfg.update(overrides.get(pid, {}))
