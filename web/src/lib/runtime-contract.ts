@@ -192,7 +192,7 @@ export type RuntimeSnapshot = {
 }
 
 // ---------------------------------------------------------------- collab
-// Mirrors skills/cross-repo-delegate/schema/*.schema.json (delegate api v1),
+// Mirrors skills/agent-collab/schema/*.schema.json (ticket api v1),
 // served through Runtime GET /api/v1/collab/<command> → wezdeck-wsl bridge.
 const nnum = z.number().nullable().optional()
 const nstr = z.string().nullable().optional()

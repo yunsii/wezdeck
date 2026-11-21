@@ -206,9 +206,9 @@ if grep -q 'host_agent_invoke_run' "$prov/claude.sh" \
   && grep -q 'host_agent_invoke_run' "$prov/codex.sh" \
   && grep -q 'host_agent_invoke_run' "$prov/grok.sh" \
   && ! grep -qE 'AGENT_ATTENTION_SKIP=1 \\\s*$' "$prov/claude.sh"; then
-  ok "review providers delegate CLI launch to host-agent-invoke"
+  ok "review providers ticket CLI launch to host-agent-invoke"
 else
-  bad "review providers delegate CLI launch to host-agent-invoke"
+  bad "review providers ticket CLI launch to host-agent-invoke"
 fi
 
 echo "---"

@@ -673,8 +673,8 @@ msgid "Ticket unavailable"
 msgstr "工单不可用"
 
 #: src/features/console-collab.tsx:128
-msgid "Tickets appear here when delegate files or runs cross-repo work."
-msgstr "delegate 提单或运行跨仓任务后，工单会出现在这里。"
+msgid "Tickets appear here when ticket files or runs cross-repo work."
+msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
 #: src/features/console-development.tsx:410
 msgid "Tmux session"

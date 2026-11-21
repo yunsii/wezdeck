@@ -14,10 +14,10 @@ import (
 	"time"
 )
 
-// collabFlags is the allowlist of `delegate api <action>` commands the bridge
+// collabFlags is the allowlist of `ticket api <action>` commands the bridge
 // exposes, with the payload keys each one may forward as `--<key> <value>`.
 // Read-only by construction: api.py has no write verbs. Keep in lockstep with
-// RuntimeWebServer.cs CollabActions and skills/cross-repo-delegate/schema/.
+// RuntimeWebServer.cs CollabActions and skills/agent-collab/schema/.
 var collabFlags = map[string][]string{
 	"health":     {},
 	"list":       {"status", "repo", "parent", "since", "limit"},
@@ -68,7 +68,7 @@ func collabArgs(action string, payload json.RawMessage) ([]string, error) {
 	return args, nil
 }
 
-// runCollab executes `python3 <repo>/skills/cross-repo-delegate/lib/api.py`.
+// runCollab executes `python3 <repo>/skills/agent-collab/lib/api.py`.
 // api.py always prints one JSON envelope ({"v":1,"ok":…}); a non-ok envelope
 // is passed through as the result so the console can show the reason.
 func runCollab(action string, payload json.RawMessage) (any, error) {
@@ -80,14 +80,14 @@ func runCollab(action string, payload json.RawMessage) (any, error) {
 	if root == "" {
 		return nil, errors.New("repo root is empty")
 	}
-	script := filepath.Join(root, "skills", "cross-repo-delegate", "lib", "api.py")
+	script := filepath.Join(root, "skills", "agent-collab", "lib", "api.py")
 	if _, err := os.Stat(script); err != nil {
-		return nil, fmt.Errorf("delegate api missing: %w", err)
+		return nil, fmt.Errorf("ticket api missing: %w", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "python3", append([]string{script}, args...)...)
-	cmd.Env = append(os.Environ(), "DELEGATE_RUNTIME_LOG=0")
+	cmd.Env = append(os.Environ(), "TICKET_RUNTIME_LOG=0")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

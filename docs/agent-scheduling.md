@@ -22,7 +22,7 @@
   ├─ Claw C1 Main自写          → Gateway 内嵌 Main-Grok
   ├─ Claw C2 Handoff           → brief 后人手开 TUI
   ├─ Claw C3 ACP               → sessions_spawn / acpx → claude|codex
-  ├─ Ticket-headless           → cross-repo-delegate → host-agent-invoke (write)
+  ├─ Ticket-headless           → tickets → host-agent-invoke (write)
   └─ Review-headless           → adversarial-review / fanout → provider __invoke (read)
 ```
 
@@ -37,10 +37,10 @@
 | **Handoff/TUI** | 人（H2 / C2 brief 后） | 交互 CLI | Claude/Codex/Grok-native | pane / resume | **参与** Alt+/ |
 | **Main自写** | OpenClaw Gateway Main | 内嵌模型 | Main-Grok | 飞书会话 + git | 不进 Alt+/ 工人徽章 |
 | **ACP** | Main `/acp` · `sessions_spawn` | acpx | Claude-ACP / Codex-ACP（无 grok spawn） | ACP session；可 steer/cancel | SKIP（`OPENCLAW_ACP` 等） |
-| **Ticket-headless** | 任意 agent 跑 `delegate`（Host TUI 或 Main） | host headless | claude/codex/grok | `~/.agent/tickets/` + result JSON | SKIP（`DELEGATE_HEADLESS`） |
+| **Ticket-headless** | 任意 agent 跑 `ticket`（Host TUI 或 Main） | host headless | claude/codex/grok | `~/.agent/tickets/` + result JSON | SKIP（`TICKET_HEADLESS`） |
 | **Review-headless** | adversarial-review / brainstorm | host headless | 同上（provider 插件） | stdout JSON / out 目录 | SKIP |
 
-票仓 **单源**：`skills/cross-repo-delegate/` → `~/.agent/tickets`。
+票仓 **单源**：`skills/agent-collab/` → `~/.agent/tickets`。
 **禁止**另建 OpenClaw 私有票库。
 
 ---
@@ -51,7 +51,7 @@
 
 | 层 | 真相 |
 | --- | --- |
-| 票仓 + skill | 同一 `cross-repo-delegate`；OpenClaw workspace 仅链接 |
+| 票仓 + skill | 同一 `agent-collab`；OpenClaw workspace 仅链接 |
 | Ticket host CLI 起法 | `scripts/dev/host-agent-invoke/`（`read`\|`write`）；工单 research/implement 走 **`write`**（结果文件契约） |
 | Attention 语义 | 委托工人 `AGENT_ATTENTION_SKIP`；不写 Alt+/ ●/▲ |
 | 单写者 / CODEX_HOME | host 审查/工单 `env -u CODEX_HOME`；ACP Codex 仅用 `~/.openclaw/acpx/codex-home` |
@@ -69,7 +69,7 @@
 
 | 消费者 | 模式 | 入口 |
 | --- | --- | --- |
-| Ticket-headless | `write` | `cross-repo-delegate` → `host_agent_invoke_run` |
+| Ticket-headless | `write` | `agent-collab` → `host_agent_invoke_run` |
 | Review-headless | `read` | `providers/*.sh` `__invoke` → `host_agent_invoke_run --capture` |
 | agent-fanout | `read`（经 provider） | 同上 |
 
@@ -90,27 +90,27 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 | 小且清、Main 自己写 | **Main自写** |
 | 多角色找茬 / 发散 | **Review-headless**（非写码工人） |
 
-### cross-repo-delegate 三模式（票仓内）
+### tickets 三模式（票仓内）
 
 | 模式 | 命令 | 开发者 | Attention |
 | --- | --- | --- | --- |
 | **1. 主会话创建工单** | `create`（无 `--run`） | 尚未开发；票进 inbox | 无工人 |
 | **2. 主会话认领并开发** | `claim` → 当前 TUI/cwd 改码 | `owner=human`；**禁止**自动 worktree/worker | 主会话参与 Alt+/ |
-| **3. 主会话建单并委托开发** | `create --run` / `run --phase auto` | headless worker + `delegate-*` worktree | SKIP（`DELEGATE_HEADLESS`） |
+| **3. 主会话建单并委托开发** | `create --run` / `run --phase auto` | headless worker + `ticket-*` worktree | SKIP（`TICKET_HEADLESS`） |
 
 **硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。  
 Mode 2 的 `--to .` / `--from .` 按 **主 worktree 根** 解析 allowlist（`git rev-parse --git-common-dir`）：在 `…/.worktrees/<repo>/<slug>` 里认领等于在主仓认领，不会把 slug basename 当成仓库名。
 
 **Mode 3 分步反馈：** `_data/<id>/progress.json` + `events.jsonl` 的 `progress` 行覆盖
 `research_start` → `research_done` → `implement_start` → `implement_done`（及 worktree /
-watch kick）；长调用心跳只写 `progress.json`。`delegate progress --id` 单次快照；
-`delegate watch` 每轮打出带 `progress`/`new_events` 的 JSON。发起方 agent 应把里程碑转述给用户，避免干等。
+watch kick）；长调用心跳只写 `progress.json`。`ticket progress --id` 单次快照；
+`ticket watch` 每轮打出带 `progress`/`new_events` 的 JSON。发起方 agent 应把里程碑转述给用户，避免干等。
 
 ### Mode 3 worktree cleanup
 
-Mode 3 creates `.worktrees/<repo>/delegate-<ticket-id>/` via `worktree-task`.  
-`close` **reclaims** that tree by default (strips `.delegate/**` dirt, keeps the local branch; `--keep-worktree` to skip).  
-`delegate gc` sweeps leftovers:
+Mode 3 creates `.worktrees/<repo>/ticket-<ticket-id>/` via `worktree-task`.  
+`close` **reclaims** that tree by default (strips `.ticket/**` dirt, keeps the local branch; `--keep-worktree` to skip).  
+`ticket gc` sweeps leftovers:
 
 | Flag | Effect |
 | --- | --- |
@@ -120,23 +120,23 @@ Mode 3 creates `.worktrees/<repo>/delegate-<ticket-id>/` via `worktree-task`.
 | `--include-shipped --min-age 7d` | aged shipped after verify window |
 | `--include-waiting --min-age 14d` | abandoned waiting_* |
 | `--force` | discard non-allowlisted dirt |
-| `--orphans` | scan allowlist `.worktrees/*/delegate-*` with no open ticket |
+| `--orphans` | scan allowlist `.worktrees/*/ticket-*` with no open ticket |
 
 Delivery gates from `Ctrl+k g r` do **not** apply: ticket terminal status is the authority; unmerged squash branches stay via `--keep-branch`.
 
 Decision skim (ticket × tree, no mutation):
 
 ```bash
-delegate worktrees                 # JSON + stderr table
-delegate worktrees --alive         # only dirs still on disk
-delegate worktrees --to coco-forge
+ticket worktrees                 # JSON + stderr table
+ticket worktrees --alive         # only dirs still on disk
+ticket worktrees --to coco-forge
 ```
 
 Columns: `suggest` (`keep` / `close` / `gc` / `gc --force` / `clear_meta` / `inspect`), `dirty`, `ahead`, `age_days`.
 
 ### Ticket vs multi-dir mount
 
-**站位政策：**跨仓委托 / 认领 / 挑战假设 / 关单 → **票仓协议**（`cross-repo-delegate`）。  
+**站位政策：**跨仓委托 / 认领 / 挑战假设 / 关单 → **票仓协议**（`agent-collab`）。  
 厂商「多目录挂载」（Claude `--add-dir`、Codex multi-folder、Cursor multi-root 等）是 **同意图共改时的战术手段**，补不了所有权、契约与审计。
 
 **更多可见文件 ≠ 更好的跨仓上下文。** 委托类工作要的是：目标仓会话加载本仓 `AGENTS.md` / `CLAUDE.md`、单写者 lease、可复盘的 `observed`/`assumed` 与 challenge 线程。源仓会话挂进目标仓目录后，常带着源仓世界观写目标仓，并冲掉 Git/PR 所有权边界。
@@ -164,10 +164,10 @@ Columns: `suggest` (`keep` / `close` / `gc` / `gc --force` / `clear_meta` / `ins
 | 双轨 | 政策 |
 | --- | --- |
 | 多目录挂载 ↛ 票仓状态机 | 挂载会话 **不** 替代 `submitted`/`challenge`/`close`；禁止另建第二票库 |
-| 源仓 TUI 常驻写目标仓 | 目标仓开发走 Mode 2（本仓 cwd）或 Mode 3（目标 `delegate-*` worktree） |
+| 源仓 TUI 常驻写目标仓 | 目标仓开发走 Mode 2（本仓 cwd）或 Mode 3（目标 `ticket-*` worktree） |
 | 「上下文更好」作绕过理由 | 紧耦合同意图共改才用战术挂载；委托 / 异步仍走票 |
 
-手续与触发词：[`skills/cross-repo-delegate/SKILL.md`](../skills/cross-repo-delegate/SKILL.md)。
+手续与触发词：[`skills/agent-collab/SKILL.md`](../skills/agent-collab/SKILL.md)。
 
 ---
 
@@ -180,13 +180,13 @@ scripts/dev/host-agent-invoke/lib/host-agent-invoke.sh
 
 | mode | 用途 | 典型 flags |
 | --- | --- | --- |
-| `write` | 工单 research/implement（须写 `.delegate/*-result.json`） | claude `bypassPermissions`；codex `--full-auto`；grok `--always-approve` |
+| `write` | 工单 research/implement（须写 `.ticket/*-result.json`） | claude `bypassPermissions`；codex `--full-auto`；grok `--always-approve` |
 | `read` | 审查类（默认非写） | claude `plan` + Read/Grep/Glob；codex `read-only` sandbox |
 
 Mock：`HOST_AGENT_INVOKE_MOCK=1` + `HOST_AGENT_INVOKE_TRACE`（JSONL）。  
-工单 offline：`delegate … --mock` 仍走该面再写假 result（见 `cross-repo-delegate/test.sh`）。
+工单 offline：`ticket … --mock` 仍走该面再写假 result（见 `tickets/test.sh`）。
 
-Ticket 状态机 / phase-view / apply **留在** `cross-repo-delegate/lib/worker.sh`，不塞进 invoke 库。
+Ticket 状态机 / phase-view / apply **留在** `tickets/lib/worker.sh`，不塞进 invoke 库。
 
 ---
 
@@ -195,7 +195,7 @@ Ticket 状态机 / phase-view / apply **留在** `cross-repo-delegate/lib/worker
 | 路径 | 角色 |
 | --- | --- |
 | `scripts/dev/host-agent-invoke/` | 共享 host headless invoke |
-| `skills/cross-repo-delegate/` | 票 + Ticket-headless worker |
+| `skills/agent-collab/` | 票 + Ticket-headless worker |
 | `skills/adversarial-review/` | Review-headless（provider，迁移延期） |
 | `scripts/dev/agent-fanout/` | 多 backend 并行（依赖 provider） |
 | `scripts/runtime/agent-launcher.sh` | **仅**交互 TUI |

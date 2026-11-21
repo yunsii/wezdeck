@@ -24,10 +24,10 @@ wr_preflight_is_primary() {
   [[ "$(cd "$worktree_root" && pwd -P)" == "$(cd "$primary_toplevel" && pwd -P)" ]]
 }
 
-wr_preflight_delegate_hint() {
+wr_preflight_ticket_hint() {
   local worktree_root="${1:?}"
-  if [[ -d "$worktree_root/.delegate" ]]; then
-    printf '  soft: %s/.delegate present (will be cleaned by allowlist; ensure ticket is closed/shipped)\n' "$worktree_root"
+  if [[ -d "$worktree_root/.ticket" || -d "$worktree_root/.delegate" ]]; then  # legacy delegate-* / delegate/* / .delegate until no such worktree remains (docs/compatibility-policy.md)
+    printf '  soft: %s/.ticket (or legacy .delegate) present (will be cleaned by allowlist; ensure ticket is closed/shipped)\n' "$worktree_root"
   fi
 }
 
@@ -93,7 +93,7 @@ wr_preflight_run() {
   fi
 
   if [[ "$is_primary" != "1" ]]; then
-    wr_preflight_delegate_hint "$worktree_root"
+    wr_preflight_ticket_hint "$worktree_root"
     wr_preflight_brief_hint "$worktree_root"
   fi
   wr_preflight_dirty_hint "$worktree_root"

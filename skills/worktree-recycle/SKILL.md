@@ -89,7 +89,7 @@ Install / refresh discovery (idempotent, from wezdeck):
 | Primary **or** linked `dev-*` | hard | `task-*` / `hotfix-*` → reclaim |
 | Dirty outside recycle allowlist | hard (CLI) | Fix or explicit `--force` from user |
 | Delivery / content-absorbed | **off by default** | Opt in with `--require-delivered` |
-| `.delegate/` leftovers | soft | Allowlisted clean on linked trees |
+| `.ticket/` leftovers | soft | Allowlisted clean on linked trees |
 | Next-task text from user | passthrough | Becomes `--task` (stdout/log only; no worktree file) |
 
 ## Desired end state
@@ -117,7 +117,7 @@ After a successful recycle:
 - Don't re-ask squash / push / manual-reset questions after the user already said 重置开发分支
 - Don't use recycle for short-lived `task-*` / `hotfix-*` (use reclaim)
 - Don't `--force` away dirty trees without an explicit user override
-- Don't treat attention / ledger / delegate `shipped` as proof of merge
+- Don't treat attention / ledger / ticket `shipped` as proof of merge
 - Don't run `sync-runtime` or package installs just because recycle finished
 - Don't auto-bootstrap the project inside the skill runner
 - Don't delete Claude transcripts; use `--fresh-agent` (unpin + cold respawn) when a blank session is wanted — do not ask the human to press `Ctrl+Shift+n`

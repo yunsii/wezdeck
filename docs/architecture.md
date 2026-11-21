@@ -378,10 +378,10 @@ A running `serve` closes its socket within 30 s once sync rewrites
 `exit: binary replaced`); the next `attach` starts the new build, so new
 bridge actions never hit a stale dispatch table.
 `collab.<command>` (`GET /api/v1/collab/<command>`, capability `collab.read`)
-runs the read-only `delegate api` (`skills/cross-repo-delegate/lib/api.py`);
+runs the read-only `ticket api` (`skills/agent-collab/lib/api.py`);
 commands and forwarded query keys are allowlisted on both sides
 (`native/wezdeck-wsl/collab.go`, `RuntimeWebServer.CollabQueryKeys`) — see
-[`cross-repo-collab.md`](./cross-repo-collab.md).
+[`collab.md`](./collab.md).
 `bridge.status` (`GET /api/v1/wsl`, capability `wsl.status`) reports whether
 that socket process is answering, plus its socket path and pid. The Web
 Console overview shows this as its own status; a missing process is

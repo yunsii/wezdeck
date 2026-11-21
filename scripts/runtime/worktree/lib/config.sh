@@ -11,7 +11,7 @@ wt_config_set_defaults() {
   WT_POLICY_SLUG_FALLBACK="task"
   WT_POLICY_RECLAIM_DIRTY="refuse"
   WT_POLICY_RECLAIM_DELETE_BRANCH="merged-into-primary-head"
-  WT_RECYCLE_CLEAN_GLOBS=".delegate,.delegate/**,.scratch,.scratch/**,*.orig,*.rej,.task-brief.md"
+  WT_RECYCLE_CLEAN_GLOBS=".ticket,.ticket/**,.delegate,.delegate/**,.scratch,.scratch/**,*.orig,*.rej,.task-brief.md"
   WT_RECYCLE_TEMP_BRANCH_PREFIXES="backup/,tmp/,wip/,scratch/"
   WT_RECYCLE_BRIEF_FILE=".task-brief.md"
   # After local reset, publish the same tip to origin/<branch> (FF or

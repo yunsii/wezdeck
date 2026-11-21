@@ -673,8 +673,8 @@ msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
 #: src/features/console-collab.tsx:128
-msgid "Tickets appear here when delegate files or runs cross-repo work."
-msgstr "Tickets appear here when delegate files or runs cross-repo work."
+msgid "Tickets appear here when ticket files or runs cross-repo work."
+msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
 #: src/features/console-development.tsx:410
 msgid "Tmux session"

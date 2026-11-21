@@ -30,7 +30,7 @@ The Runtime Console reads these loopback endpoints:
 - `POST /api/v1/actions/sessions/focus` — focus an active or recent Agent session in its WezTerm pane (`session_id`, optional `recent` and `archived_ts`).
 - `GET /api/v1/diagnostics` — aggregate Windows Runtime, WezTerm, and WSL runtime logs. Supports `limit`, `source`, `category`, `level`, `trace`, and `q` filters.
 - `GET /api/v1/vscode` — visible VS Code windows with process and window handles.
-- `GET /api/v1/collab/{health,list,show,events,run,prompt,transcript,metrics}` — read-only cross-repo collab data (`delegate api`; tickets, runs with session reuse / tokens / cache hit, launch records with trigger chain and initial prompt, transcripts, metrics). Shown on **Console → Collab**. The mock runtime proxies these to the real `delegate api`; set `WEZDECK_MOCK_TICKETS_ROOT` to a fixture store.
+- `GET /api/v1/collab/{health,list,show,events,run,prompt,transcript,metrics}` — read-only cross-repo collab data (`ticket api`; tickets, runs with session reuse / tokens / cache hit, launch records with trigger chain and initial prompt, transcripts, metrics). Shown on **Console → Collab**. The mock runtime proxies these to the real `ticket api`; set `WEZDECK_MOCK_TICKETS_ROOT` to a fixture store.
 - `POST /api/v1/actions/vscode/focus_or_open` — open or reuse a WSL folder (`requested_dir`, `distro`, `code_command`).
 - `POST /api/v1/actions/vscode/focus` — focus a listed window by `hwnd`.
 - `POST /api/v1/actions/vscode/close` — request a graceful window close by `hwnd`; requires `confirm: true`.

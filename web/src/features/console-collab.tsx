@@ -125,7 +125,7 @@ export function ConsoleCollabPage() {
           ) : (
             <Reading
               title={t`No ticket selected`}
-              body={t`Tickets appear here when delegate files or runs cross-repo work.`}
+              body={t`Tickets appear here when ticket files or runs cross-repo work.`}
             />
           )
         }

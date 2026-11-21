@@ -17,9 +17,9 @@
         │             │             ├─ C1 Main-Grok 自写
         │             │             ├─ C2 Handoff → 你开 TUI
         │             │             ├─ C3 ACP → Claude/Codex 后端
-        │             │             └─ 亦可调同一 skill：cross-repo-delegate
+        │             │             └─ 亦可调同一 skill：tickets
         │             ├─ 审查 / brainstorm（provider）
-        │             └─ 跨仓工单（delegate run = Ticket-headless）
+        │             └─ 跨仓工单（ticket run = Ticket-headless）
         └──────┬──────┘
                ▼
      host 原生 Agent 产品
@@ -108,7 +108,7 @@ codex exec "List the top-level files and stop"
 | C1 Main 自写 | 飞书 | Main-Grok |
 | C2 Handoff | 飞书 brief → 你开 **TUI** | 同上 host 原生 |
 | C3 ACP | 飞书 | Claude-ACP / Codex-ACP |
-| **Ticket-headless** | 飞书/TUI 编排 → `delegate run` | Claude/Codex/Grok **host headless**（票在 `~/.agent/tickets/`） |
+| **Ticket-headless** | 飞书/TUI 编排 → `ticket run` | Claude/Codex/Grok **host headless**（票在 `~/.agent/tickets/`） |
 | 对抗审查 | **Headless CLI** 多角色 | Claude-host + Codex-Grok-profile（等） |
 
 **执行通道（与「后端全名」正交）：** 推荐卡除写 Claude-ACP / Codex-TUI 等全名外，还要写清通道是 **ACP**、**Ticket-headless**、还是 **Handoff/TUI**。同一后端产品可以走不同通道（例如 Claude-ACP ≠ Claude-host-headless 工单工人）。
@@ -232,7 +232,7 @@ Claw 侧速查：
 | 你想… | 用 |
 | --- | --- |
 | 飞书边聊边改、要 steer / cancel | **ACP C3** |
-| 跨仓契约 / research→implement | **Ticket-headless**（同一 skill `cross-repo-delegate`；票仓协议，多目录挂载仅战术，见平台 `#ticket-vs-multi-dir-mount`） |
+| 跨仓契约 / research→implement | **Ticket-headless**（同一 skill `agent-collab`；票仓协议，多目录挂载仅战术，见平台 `#ticket-vs-multi-dir-mount`） |
 | 飞书小改、编排台账 | **Main 飞书**（C1） |
 | 人盯全程 | **TUI**（H2/C2） |
 
@@ -266,6 +266,6 @@ Claw 侧速查：
 | `docs/adversarial-review.md` | 三门与披露 |
 | `scripts/dev/host-agent-invoke/` | 共享 host headless invoke（工单 write · 审查 read） |
 | `skills/adversarial-review/` | 审查 headless（provider → host-agent-invoke） |
-| `skills/cross-repo-delegate/` | 跨仓工单 + Ticket-headless worker |
+| `skills/agent-collab/` | 跨仓工单 + Ticket-headless worker |
 | `openclaw/scripts/agent-matrix-status.sh` | 本机能力快照 |
 | `workspace/AGENTS.md` | L0、推荐卡、C3 宪法前缀 |

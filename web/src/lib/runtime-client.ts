@@ -252,7 +252,7 @@ export function runtimeEventsUrl(baseUrl: string) {
 }
 
 // ---------------------------------------------------------------- collab
-// `delegate api` through Runtime GET /api/v1/collab/<command>. A missing
+// `ticket api` through Runtime GET /api/v1/collab/<command>. A missing
 // capability, HTTP error, or schema mismatch degrades to {ok:false} so the
 // page renders "unavailable" instead of an error screen.
 export type CollabCommand =

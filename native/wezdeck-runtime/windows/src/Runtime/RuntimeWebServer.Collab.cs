@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace WezDeck.Runtime;
 
-// Read-only `delegate api` passthrough (docs/cross-repo-collab.md): GET
+// Read-only `ticket api` passthrough (docs/collab.md): GET
 // /api/v1/collab/<command> → WSL bridge `collab.<command>`. The allowlist
 // mirrors native/wezdeck-wsl/collab.go collabFlags; never a generic bridge proxy.
 internal sealed partial class RuntimeWebServer

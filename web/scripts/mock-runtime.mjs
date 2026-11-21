@@ -3,12 +3,12 @@ import http from 'node:http'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// Collab passthrough runs the real `delegate api` (same contract the Go bridge
+// Collab passthrough runs the real `ticket api` (same contract the Go bridge
 // serves). Point WEZDECK_MOCK_TICKETS_ROOT at a fixture store for tests;
 // default is the live ~/.agent/tickets (read-only).
-const delegateApi = resolve(
+const ticketApi = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  '../../skills/cross-repo-delegate/lib/api.py',
+  '../../skills/agent-collab/lib/api.py',
 )
 const collabKeys = {
   health: [],
@@ -49,14 +49,14 @@ const server = http.createServer((req, res) => {
     const command = path.slice('/api/v1/collab/'.length)
     const keys = collabKeys[command]
     if (!keys) return json(res, { error: 'not_found' }, 404)
-    const args = [delegateApi, command]
+    const args = [ticketApi, command]
     for (const key of keys) {
       const value = url.searchParams.get(key)
       if (value) args.push(`--${key}`, value)
     }
     const env = { ...process.env }
     if (process.env.WEZDECK_MOCK_TICKETS_ROOT) {
-      env.DELEGATE_TICKETS_ROOT = process.env.WEZDECK_MOCK_TICKETS_ROOT
+      env.TICKETS_ROOT = process.env.WEZDECK_MOCK_TICKETS_ROOT
     }
     execFile('python3', args, { env, timeout: 5_000 }, (error, stdout) => {
       if (error) return json(res, { available: false, error: String(error) })

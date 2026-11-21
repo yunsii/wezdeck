@@ -134,7 +134,7 @@ The worktree-task runtime supports a two-tier model where directory naming encod
 | `dev-*` | weeks–months | `Ctrl+k g d` | `Ctrl+k g r` after explicit long-lived confirmation; CLI requires `--allow-long-lived` | `claude-resume` / `codex-resume` |
 | `task-*` | hours–days | `Ctrl+k g t` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
 | `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
-| `delegate-*` | ticket lifetime (hours–days) | Mode 3 `cross-repo-delegate` `run` / `create --run` | `delegate close` (default) + `delegate gc`; keeps branch | none (headless; `--provider none`) |
+| `ticket-*` | ticket lifetime (hours–days) | Mode 3 `agent-collab` `run` / `create --run` | `ticket close` (default) + `ticket gc`; keeps branch | none (headless; `--provider none`) |
 
 Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. The CLI refuses reclaim by default; `Ctrl+k g r` can reclaim one only after the normal clean / delivered checks pass and the confirmation prompt names it as long-lived. For day-to-day round closure on a `dev-*` workstation, prefer **`worktree-task recycle`** (in-place reset onto `origin/HEAD`) over reclaim→recreate — the directory, tmux window, and caches stay.
 
@@ -241,7 +241,7 @@ Project init is **skipped by default** — follow-up tasks bootstrap what they n
 Behavior:
 
 - Accepts the primary worktree **or** linked `dev-*` slugs (use `reclaim` for `task-*` / `hotfix-*`).
-- Refuses dirty trees except allowlisted debug leftovers (`WT_RECYCLE_CLEAN_GLOBS`, default `.delegate` / `.scratch` / `*.orig` / `*.rej` / `.task-brief.md`) and `--force`.
+- Refuses dirty trees except allowlisted debug leftovers (`WT_RECYCLE_CLEAN_GLOBS`, default `.ticket` / `.scratch` / `*.orig` / `*.rej` / `.task-brief.md`) and `--force`.
 - Optionally prunes local branches that match `WT_RECYCLE_TEMP_BRANCH_PREFIXES` (default `backup/,tmp/,wip/,scratch/`), are ancestors of `origin/HEAD`, and are not checked out elsewhere (linked trees; off on primary unless `WT_RECYCLE_PRUNE_ON_PRIMARY=1`).
 - Writes a `backup/<branch-slug>-<timestamp>` tip before reset when HEAD is not already on the base (or when the branch name will change).
 - `git reset --hard` / `git switch -C` onto `origin/HEAD` at the target branch; linked trees never track the default branch. Default remote sync then pushes `origin/<branch>` to the same tip and sets upstream there.

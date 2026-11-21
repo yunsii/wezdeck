@@ -494,9 +494,9 @@ case9_recycle_happy() {
   git -C "$repo" commit -q -m "unmerged wip"
   git -C "$repo" checkout -q main
 
-  mkdir -p "$expect_wt/.scratch" "$expect_wt/.delegate"
+  mkdir -p "$expect_wt/.scratch" "$expect_wt/.ticket"
   echo junk >"$expect_wt/.scratch/tmp.log"
-  echo ticket >"$expect_wt/.delegate/note.md"
+  echo ticket >"$expect_wt/.ticket/note.md"
 
   HOME="$SANDBOX_HOME" \
   WEZDECK_REPO="$REPO_ROOT" \
@@ -537,7 +537,7 @@ case9_recycle_happy() {
     && assert_pass "unmerged wip/keep kept" \
     || { assert_fail "wip/keep was pruned incorrectly"; return 1; }
 
-  [[ ! -e "$expect_wt/.scratch" && ! -e "$expect_wt/.delegate" ]] \
+  [[ ! -e "$expect_wt/.scratch" && ! -e "$expect_wt/.ticket" ]] \
     && assert_pass "debug dirs cleaned" \
     || { assert_fail "debug dirs still present"; return 1; }
 

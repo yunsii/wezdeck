@@ -314,7 +314,7 @@ host_agent_invoke_run() {
     local -a env_args=(env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET)
     [ "$backend" = "codex" ] && env_args+=(-u CODEX_HOME)
     env_args+=(AGENT_ATTENTION_SKIP=1 HOST_AGENT_HEADLESS=1)
-    [ "$mode" = "write" ] && env_args+=(DELEGATE_HEADLESS=1)
+    [ "$mode" = "write" ] && env_args+=(TICKET_HEADLESS=1)
     if [ "$backend" = "grok" ]; then
       # grok reads --prompt-file itself
       "${env_args[@]}" "${_HOST_AGENT_ARGV[@]}"

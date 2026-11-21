@@ -58,7 +58,7 @@ Scripts: `dev-task-ledger.sh`, `claw-worktree.sh`, `claw-run.sh`.
 | Claw | C1 Main 自写 | B | Main (Main-Grok) | Implement + verify |
 | Claw | C2 Handoff | C | Host CLI after handoff | **Stop coding** that cwd |
 | Claw | C3 ACP 后端 | E | ACP → claude \| codex | Spawn/close; single writer |
-| Claw | Ticket-headless | — | `delegate` host headless | 跑同一 skill `cross-repo-delegate`；票在 `~/.agent/tickets/` |
+| Claw | Ticket-headless | — | `ticket` host headless | 跑同一 skill `agent-collab`；票在 `~/.agent/tickets/` |
 | — | D | D | — | **Forbidden** |
 
 **ACP** = access layer only; backends are Claude/Codex. No `spawn grok`.
@@ -98,7 +98,7 @@ Before code or ACP, post and wait:
 ## 开发方式（请抉择）
 - 轨: 人工 | Claw
 - 推荐: H1 | H2 (Claude-TUI|Codex-TUI|Grok-native) | C1 Main-Grok |
-        C2 handoff | C3 (Claude-ACP|Codex-ACP) | Ticket-headless (delegate)
+        C2 handoff | C3 (Claude-ACP|Codex-ACP) | Ticket-headless (ticket)
 - 执行通道: ACP | Ticket-headless | Handoff/TUI | Main自写
 - 执行者 / 后端全名: …
 - 理由: …（含限制/degraded；跨仓契约优先 Ticket-headless）
@@ -106,7 +106,7 @@ Before code or ACP, post and wait:
 - 平台约束: 单写者、claw-*、确认前不写码；不改原生默认配置；工单不另建票库
 - 审查建议: review-claude × review-grok | 跳过（理由）
 - cwd / task_id: …
-请确认。确认前不改代码 / 不 spawn ACP / 不 kick delegate implement。
+请确认。确认前不改代码 / 不 spawn ACP / 不 kick ticket implement。
 ```
 
 Heuristics: **C1** small/clear; **Claude-ACP** multi-file + 飞书 steer; **Ticket-headless**

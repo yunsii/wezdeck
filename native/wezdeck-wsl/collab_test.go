@@ -35,8 +35,8 @@ func TestCollabArgsAllowlist(t *testing.T) {
 func TestRunCollabHealth(t *testing.T) {
 	repo, _ := filepath.Abs("../..")
 	t.Setenv("WEZDECK_REPO", repo)
-	t.Setenv("DELEGATE_TICKETS_ROOT", t.TempDir())
-	if _, err := os.Stat(filepath.Join(repo, "skills", "cross-repo-delegate", "lib", "api.py")); err != nil {
+	t.Setenv("TICKETS_ROOT", t.TempDir())
+	if _, err := os.Stat(filepath.Join(repo, "skills", "agent-collab", "lib", "api.py")); err != nil {
 		t.Skip("api.py not present")
 	}
 	out, err := runCollab("health", nil)

@@ -10,6 +10,7 @@ wezterm-x/tmux/appearance.generated.conf
 wezterm-x/plugins/registry.generated.*
 wezterm-x/plugins/.external/
 native/picker/bin/
+native/picker/picker
 native/wezdeck-wsl/bin/
 .claude/scheduled_tasks.lock
 .claude/settings.local.json

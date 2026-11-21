@@ -181,13 +181,13 @@ while IFS=$'\t' read -r name rel class user_links openclaw_link; do
   fi
 done < "$manifest"
 
-# PATH entry for short CLI `delegate` (idempotent; skill name is cross-repo-delegate)
-if [[ -x "$repo_root/skills/cross-repo-delegate/run.sh" ]]; then
-  echo "[cli] delegate → ~/.local/bin/delegate"
+# PATH entry for short CLI `ticket` (idempotent; skill name is tickets)
+if [[ -x "$repo_root/skills/agent-collab/run.sh" ]]; then
+  echo "[cli] ticket → ~/.local/bin/ticket"
   if ((dry_run)); then
-    echo "  (dry run) would run: skills/cross-repo-delegate/run.sh install-cli"
+    echo "  (dry run) would run: skills/agent-collab/run.sh install-cli"
   else
-    "$repo_root/skills/cross-repo-delegate/run.sh" install-cli || true
+    "$repo_root/skills/agent-collab/run.sh" install-cli || true
   fi
 fi
 

@@ -47,8 +47,8 @@ Events (`run_start`, `session_init`, `tool`, `milestone` = agent lines starting
 `进展：`, `error`, `run_end`) go to `--sink-py` (`sink_events(arg, run, batch)`)
 or `<run>.events.jsonl`. `--resume ID [--fork]` continues / branches a backend
 session (codex resume uses `-c sandbox_mode=…` because `exec resume` has no
-`--full-auto`). Exclusive with `--capture`. Consumer: `cross-repo-delegate`
-([`docs/cross-repo-collab.md`](../../../docs/cross-repo-collab.md)).
+`--full-auto`). Exclusive with `--capture`. Consumer: `agent-collab`
+([`docs/collab.md`](../../../docs/collab.md)).
 
 Offline: `HOST_AGENT_INVOKE_MOCK=1` + optional `HOST_AGENT_INVOKE_TRACE=…` (JSONL;
 grok rows carry the full `argv`). With `--run-dir`,

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ticket-api/events.schema.json",
+  "title": "ticket api events (v1)",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "command",
+        "events",
+        "next",
+        "head",
+        "more"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": true
+        },
+        "command": {
+          "const": "events"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "ticket"
+            ],
+            "properties": {
+              "v": {
+                "type": "integer"
+              },
+              "seq": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "ticket": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "parent": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "run": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "kind": {
+                "type": "string"
+              },
+              "ts": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "next": {
+          "type": "integer"
+        },
+        "head": {
+          "type": "integer"
+        },
+        "more": {
+          "type": "boolean"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": false
+        },
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "bad_request",
+                "not_found",
+                "unknown_command",
+                "internal"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

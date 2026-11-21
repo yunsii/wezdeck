@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ticket-api/transcript.schema.json",
+  "title": "ticket api transcript (v1)",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "command",
+        "ticket",
+        "run",
+        "lines",
+        "total"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": true
+        },
+        "command": {
+          "const": "transcript"
+        },
+        "ticket": {
+          "type": "string"
+        },
+        "run": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind"
+            ]
+          }
+        },
+        "total": {
+          "type": "integer"
+        },
+        "final_text_tail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": false
+        },
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "bad_request",
+                "not_found",
+                "unknown_command",
+                "internal"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

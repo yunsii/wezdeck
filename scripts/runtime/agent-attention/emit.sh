@@ -113,13 +113,13 @@ if [[ -z "$status" ]]; then
 fi
 
 # Delegated / non-interactive agents must not inflate the human attention
-# badge (Alt+/ · right-status ●/▲). Covers: cross-repo-delegate workers,
+# badge (Alt+/ · right-status ●/▲). Covers: tickets workers,
 # OpenClaw C3 ACP backends, adversarial-review / brainstorm headless, CI.
 #
 # Spawner should set AGENT_ATTENTION_SKIP=1 (preferred). Also honor aliases
 # and OpenClaw ACP markers so a regenerated wrapper that only sets OPENCLAW_ACP
 # still skips.
-_attention_skip_val="${AGENT_ATTENTION_SKIP:-${WEZTERM_ATTENTION_SKIP:-${DELEGATE_HEADLESS:-${OPENCLAW_ACP:-0}}}}"
+_attention_skip_val="${AGENT_ATTENTION_SKIP:-${WEZTERM_ATTENTION_SKIP:-${TICKET_HEADLESS:-${OPENCLAW_ACP:-0}}}}"
 case "${_attention_skip_val}" in
   1|true|TRUE|yes|YES)
     runtime_log_info attention "hook skipped: AGENT_ATTENTION_SKIP" \

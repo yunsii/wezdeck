@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ticket-api/run.schema.json",
+  "title": "ticket api run (v1)",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "command",
+        "ticket",
+        "launch",
+        "record",
+        "running"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": true
+        },
+        "command": {
+          "const": "run"
+        },
+        "ticket": {
+          "type": "string"
+        },
+        "launch": {
+          "type": "object",
+          "required": [
+            "run",
+            "invocation",
+            "prompt"
+          ],
+          "properties": {
+            "invocation": {
+              "type": "object",
+              "required": [
+                "backend",
+                "mode",
+                "cwd",
+                "argv"
+              ]
+            },
+            "prompt": {
+              "type": "object",
+              "required": [
+                "sha256",
+                "bytes",
+                "est_tokens"
+              ]
+            },
+            "trigger": {
+              "type": "object"
+            },
+            "composition": {
+              "type": "array"
+            },
+            "session": {
+              "type": "object"
+            }
+          }
+        },
+        "record": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "run",
+                "backend",
+                "tokens",
+                "session",
+                "exit"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "type": "boolean"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": false
+        },
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "bad_request",
+                "not_found",
+                "unknown_command",
+                "internal"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
