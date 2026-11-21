@@ -186,6 +186,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   normalization formula, or planning the top-N tab bar slots / overflow
   tab / warm preheat layer:
   Read [`docs/tab-visibility.md`](docs/tab-visibility.md).
+- Plugins: `wezterm-x/plugins/<id>/plugin.json`, enabling / disabling /
+  configuring a capability per machine (`wezterm-x/local/plugins.json`),
+  adding a right-status badge or background sampler, `render-plugins.sh`,
+  `wezdeck-plugin.sh`, agent-provider discovery:
+  Read [`docs/plugin-architecture.md`](docs/plugin-architecture.md).
 - Ownership boundaries, runtime architecture, or entry points:
   Read [`docs/architecture.md`](docs/architecture.md).
 - Agent 执行通道调度（人工 TUI / 跨仓工单 Ticket-headless / OpenClaw ACP·Main /
