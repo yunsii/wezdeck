@@ -6,14 +6,14 @@ local service, the tmux badge, humans with jq. Every response carries
 ``"v": 1`` and is described by ``schema/<command>.schema.json``. Errors are
 ``{"v":1,"ok":false,"error":{"code","message"}}`` with exit 0.
 
-  api health
+  api health [--repo R]
   api list [--status S[,S]] [--repo R] [--parent ID] [--since ISO] [--limit N]
   api show --id ID
   api events --after SEQ [--ticket ID] [--limit N]
   api run --run RUN
   api prompt --sha SHA256
   api transcript --run RUN [--tail N]
-  api metrics [--window 1h|24h|7d|30d|all] [--ticket ID] [--parent ID]
+  api metrics [--window 1h|24h|7d|30d|all] [--ticket ID] [--parent ID] [--repo R]
 """
 from __future__ import annotations
 
@@ -164,13 +164,16 @@ def seq_head() -> int:
 # ------------------------------------------------------------------ commands
 
 
-def cmd_health(_argv: list[str]) -> dict[str, Any]:
+def cmd_health(argv: list[str]) -> dict[str, Any]:
+    repo = opt(argv, "--repo")
     by_status: dict[str, int] = {}
     running = waiting = 0
     for tid in ticket_ids():
         try:
             meta, _b, _m = load_meta(tid)
         except (OSError, ValueError):
+            continue
+        if repo and repo not in (meta.get("from"), meta.get("to")):
             continue
         st = str(meta.get("status") or "submitted")
         by_status[st] = by_status.get(st, 0) + 1
@@ -187,6 +190,7 @@ def cmd_health(_argv: list[str]) -> dict[str, Any]:
         "waiting_human": waiting,
         "seq_head": seq_head(),
         "capabilities": CAPABILITIES,
+        "scope": {"repo": repo},
         "observed_at": ticket_fs.now_iso(),
     }
 
@@ -371,6 +375,7 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
         raise ApiError("bad_request", f"--window must be one of {', '.join(WINDOWS)}")
     only_ticket = check_tid(opt(argv, "--ticket"))
     parent = check_tid(opt(argv, "--parent"))
+    repo = opt(argv, "--repo")
     span = WINDOWS[window]
     cutoff = None if span is None else time.time() - span
     runs: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
@@ -381,6 +386,8 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
         try:
             meta, _b, _m = load_meta(tid)
         except (OSError, ValueError):
+            continue
+        if repo and repo not in (meta.get("from"), meta.get("to")):
             continue
         d = root() / "_data" / tid / "runs"
         for rec in run_records(tid):
@@ -481,7 +488,7 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
             parallelism = round(sum(w for _, _, w in spans) / 1000 / critical, 2)
     return {
         "window": window,
-        "scope": {"ticket": only_ticket, "parent": parent},
+        "scope": {"ticket": only_ticket, "parent": parent, "repo": repo},
         "realized_parallelism": parallelism,
         "runs": len(runs),
         "failed_runs": failed,

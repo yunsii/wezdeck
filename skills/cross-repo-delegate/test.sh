@@ -536,6 +536,9 @@ done
 met="$("$run" api metrics --window all --ticket "$id_obs")"
 check "metrics: sessions, reuse mix, cache hit, trigger" \
   jq -e '.runs==2 and .sessions==1 and .by_reuse.resume.runs==1 and .reuse_reasons.warm_cache==1 and .cache_hit_rate==0.6566 and .by_trigger.cli==2 and .by_backend.claude.runs==2' <<<"$met"
+check "health --repo matches from/to" jq -e '.tickets>=1 and .scope.repo=="wezdeck"' <<<"$("$run" api health --repo wezdeck)"
+check "health --repo unknown → 0" jq -e '.tickets==0' <<<"$("$run" api health --repo nope)"
+check "metrics --repo unknown → 0 runs" jq -e '.runs==0 and .scope.repo=="nope"' <<<"$("$run" api metrics --window all --repo nope)"
 cur="$("$run" api events --after 0 --limit 3 | jq '.next')"
 check "events cursor pages forward" jq -e --argjson c "$cur" '.events[0].seq == ($c+1)' <<<"$("$run" api events --after "$cur" --limit 1)"
 
