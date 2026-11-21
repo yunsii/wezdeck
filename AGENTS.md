@@ -108,6 +108,10 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Phone / Android remote work (OpenClaw only; Happy + Tailscale phone
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
+- OPPO 互联 Pad remote control feels laggy / link quality, same-LAN vs
+  cross-net, WARP, long-uptime host input stickiness
+  (`scripts/dev/oppo-remote-quality.sh report|timeline|watch`):
+  Read [`docs/oppo-remote-host-input.md`](docs/oppo-remote-host-input.md).
 - Browser glossary (slot / backend / everyday / system), headless Chrome
   debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,
   the right-status browser-slot badge, link open target, history-purge

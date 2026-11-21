@@ -66,8 +66,8 @@ PC prefix `/22` covers `192.168.0.0`–`192.168.3.255` only — **`192.168.31.x`
 is cross-net**.
 
 `delay r:/c:` is **hole-punch probe RTT**, not keypress→pixels latency.
-Local OPPO logs do **not** record end-to-end input delay; `desktop_agent`
-session files are often **0 bytes**.
+For the actual per-session link quality use the
+[Link quality probe](#link-quality-probe).
 
 ## Cloudflare One Client (WARP) and OPPO
 
@@ -92,11 +92,58 @@ Infra can verify mis-routed private traffic in Zero Trust **Gateway
 Network/DNS logs** by Device ID during a failed OPPO connect window (traffic
 that never enters the tunnel will not appear).
 
+## Link quality probe
+
+`desktop_agent.*.log` (one file per remote session, ~1 week kept) logs the
+encoder's congestion controller. That is enough to reconstruct **when the
+link stalled and how far behind the Pad's picture was**, after the fact:
+
+```bash
+scripts/dev/oppo-remote-quality.sh report            # one row per session, last 7d
+scripts/dev/oppo-remote-quality.sh timeline          # newest session, per minute
+scripts/dev/oppo-remote-quality.sh timeline 20261121-0859 --bucket 10
+scripts/dev/oppo-remote-quality.sh watch --keys      # live STALL / OK lines while you work
+```
+
+Signal (field meanings inferred from behaviour, not vendor docs):
+
+```text
+[EncoderQualityCalc] limit=0(isdrop=1, 0.78), bandwidth=…(recv=1319,1485657), …, diff=34(0,113), 11027, …, drop=11, send=10
+                                   ^quality            ^acked  ^in-flight bytes            ^queue delay ms
+[CSingleDesktop] Too few frames sent, drop 7, send 7, fps 40
+```
+
+| Healthy | Stalled |
+|---|---|
+| in-flight ≈ 0, queue delay ≈ 35–200 ms | in-flight 0.5–1.7 MB, queue delay 2–11 s, acked bytes collapse to ~KB |
+| `Too few frames` with `drop 0` (static screen — not a symptom) | `Too few frames` with `drop > 0`; encoder raises crf / lowers bitrate |
+
+A *stall second* = queue delay ≥1 s, `isdrop=1`, or `Too few frames` with
+`drop > 0`; runs within 5 s merge into one episode. `keys@stall` counts key
+presses that landed inside an episode (the "typing lags" feel).
+Topology (`same-LAN` / `same-WAN` / `cross-net`) joins the session window
+against `rc-daemon-sdk*.log` (own `receive public ip` vs peer `receive P2P
+request`). Verdict: `BAD` = stall ≥20 % of the session or worst lag ≥5 s;
+`rough` = any episode.
+
+Reading it: a stall with large in-flight bytes is the **network path**
+(Pad Wi‑Fi / home uplink / ISP route) not draining. Host CPU/memory
+stickiness shows up instead as sluggish **console** input with in-flight ≈ 0
+(see [Triage first](#triage-first-do-not-merge-causes)).
+
+Baseline (2026-11-14 → 11-21, 26 sessions, all **cross-net**: Pad
+`192.168.31.106` at home behind a changing WAN, PC `192.168.3.55` at the
+office): long smooth sessions exist (10 h / 4 h at 0 % stall), while BAD
+ones cluster in short reconnect bursts (11-15 08:4x, 11-17 22:50–23:45,
+11-21 08:5x) with 3–11 s worst lag and 40–60 % stall. Which hop is at fault
+is still open — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §25.
+
 ## What to capture for a “good” baseline
 
 When remote feels good, record at least:
 
-1. Subjective note + whether **console** input is also fine.
+1. Subjective note + whether **console** input is also fine;
+   `scripts/dev/oppo-remote-quality.sh report --days 1`.
 2. PC IPv4 / prefix; latest sdk `receive P2P request` peer `local` + public.
 3. `warp-cli status`.
 4. `scripts/dev/wsl-host-mem.sh` (`VmmemWSL` Private / host free).
@@ -113,7 +160,7 @@ WARP Connected, gateway ping &lt;1 ms, relay ICMP ~8 ms, P2P `r≈10` /
 |---|---|
 | `%APPDATA%\O+Connect\devicespace\rc-daemon-sdk*.log` | Login, P2P request / `P2PHolePunch`, `delay r/c` |
 | `%APPDATA%\O+Connect\devicespace\*rc-daemon-service*.log` | `Server Address` / connect address (cloud entry; series recreated **2026-10-15 01:33**) |
-| `E:\Program Files\Oppo Connect\daemon\log\desktop_agent.*.log` | Encode fps/bitrate when non-empty |
+| `%APPDATA%\O+Connect\devicespace\desktop_agent.*.log` | Per-session congestion controller (in-flight bytes, queue delay, drops) + key events — parsed by `oppo-remote-quality.sh` |
 | `oplus_remote_service` TCP | Often `47.112.110.179:3443` (control); peer media may be UDP P2P |
 | `warp-cli status` / `warp-cli settings` | One Client state + Include list |
 
