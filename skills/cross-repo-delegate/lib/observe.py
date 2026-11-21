@@ -115,10 +115,11 @@ LOG_KINDS = {
     "research_start", "research_done", "implement_start", "implement_done",
     "worktree_ready", "run_start", "run_end", "error", "queued", "dispatched", "merge",
 }
+VIA_KINDS = {"created", "claimed", "released", "reply", "challenge", "status", "closed"}
 LOG_FIELDS = (
     "status", "phase", "owner", "decision", "verdict", "backend", "model", "reuse",
     "reuse_reason", "trigger", "exit", "turns", "cache_hit_rate", "cost_usd", "wall_ms",
-    "rss_peak_mb", "tool_calls", "where", "message", "gate", "result", "from", "to",
+    "rss_peak_mb", "tool_calls", "where", "message", "gate", "result", "from", "to", "via",
 )
 
 
@@ -180,6 +181,9 @@ def write_events(tid: str, events: list[dict[str, Any]], *, run: str | None = No
             seq += 1
             ev = _shrink(dict(ev))
             kind = ev.get("type") or ev.get("kind") or "event"
+            # who drove a lifecycle change (terminal vs fe1 web vs scheduler): DELEGATE_TRIGGER_SOURCE
+            if kind in VIA_KINDS and os.environ.get("DELEGATE_TRIGGER_SOURCE"):
+                ev.setdefault("via", os.environ["DELEGATE_TRIGGER_SOURCE"])
             ev["type"] = kind
             ev.setdefault("ts", now_iso())
             ev.setdefault("id", tid)

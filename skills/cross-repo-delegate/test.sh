@@ -539,6 +539,9 @@ check "metrics: sessions, reuse mix, cache hit, trigger" \
 check "health --repo matches from/to" jq -e '.tickets>=1 and .scope.repo=="wezdeck"' <<<"$("$run" api health --repo wezdeck)"
 check "health --repo unknown → 0" jq -e '.tickets==0' <<<"$("$run" api health --repo nope)"
 check "metrics --repo unknown → 0 runs" jq -e '.runs==0 and .scope.repo=="nope"' <<<"$("$run" api metrics --window all --repo nope)"
+DELEGATE_TRIGGER_SOURCE=fe1-web "$run" set-status --id "$id_obs" --status shipped --owner initiator >/dev/null 2>&1
+check "lifecycle events record via (fe1-web)" jq -e -s 'map(select(.kind=="status"))|last|.via=="fe1-web"' "$DELEGATE_TICKETS_ROOT/_data/$id_obs/events.jsonl"
+check "runtime.log collab row carries via" grep -q 'via="fe1-web"' "$WEZTERM_RUNTIME_LOG_FILE"
 cur="$("$run" api events --after 0 --limit 3 | jq '.next')"
 check "events cursor pages forward" jq -e --argjson c "$cur" '.events[0].seq == ($c+1)' <<<"$("$run" api events --after "$cur" --limit 1)"
 
