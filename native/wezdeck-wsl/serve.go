@@ -37,9 +37,13 @@ func serve() error {
 	if err := os.Chmod(path, 0o600); err != nil {
 		return err
 	}
+	go exitWhenReplaced(listener)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				return nil
+			}
 			return err
 		}
 		go handle(conn)

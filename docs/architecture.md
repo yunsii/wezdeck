@@ -373,6 +373,10 @@ reads `access-ledger.json` for the last visited worktree.
 `git.status` runs `dump-worktree-status.lua` for the tmux-status git change
 label and Node version. `status.wakatime` runs `dump-wakatime-status.lua`
 against the existing tmux WakaTime cache and does not call the WakaTime API.
+A running `serve` closes its socket within 30 s once sync rewrites
+`native/wezdeck-wsl/bin/wezdeck-wsl` (`upgrade.go`, bridge log line
+`exit: binary replaced`); the next `attach` starts the new build, so new
+bridge actions never hit a stale dispatch table.
 `collab.<command>` (`GET /api/v1/collab/<command>`, capability `collab.read`)
 runs the read-only `delegate api` (`skills/cross-repo-delegate/lib/api.py`);
 commands and forwarded query keys are allowlisted on both sides
