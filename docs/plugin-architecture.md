@@ -39,6 +39,15 @@ covers all of them, so the contract between a plugin and the core is:
 
 Lua is the one in-process surface: a badge plugin may ship a Lua module with
 the existing badge interface (`configure(opts)` + `render_status_segment(palette)`).
+Shared status.json plumbing (`parse_json`, `read_file`, `current_epoch_ms`)
+comes from the badge SDK, `require 'wezdeck.badge'`
+([`wezterm-x/lua/badge_common.lua`](../wezterm-x/lua/badge_common.lua)),
+which `plugin_host` registers before loading any plugin.
+
+Built-in plugins may point `producer` / `cli` at existing repo scripts with a
+relative path (`../../../scripts/runtime/wsl-disk-guard.sh`) when the script
+has other callers; a self-contained capability keeps its scripts in
+`bin/` (see `oppo-remote`).
 
 The WezTerm status tick runs every 250 ms and must not scan directories or
 parse manifests, so `sync-runtime` **compiles** the enabled plugins into a

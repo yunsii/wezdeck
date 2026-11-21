@@ -43,6 +43,10 @@ mock.time = {
 
 local host_mod = dofile './wezterm-x/lua/plugin_host.lua'
 
+-- Tests that do not exercise SDK loading run with the SDK already registered.
+local SDK_PATH = './wezterm-x/lua/badge_common.lua'
+package.loaded['wezdeck.badge'] = dofile(SDK_PATH)
+
 local tmp = os.getenv('TMPDIR') or '/tmp'
 local root = tmp .. '/wezdeck-plugin-host-test-' .. tostring(os.time()) .. '-' .. tostring(math.random(1e6))
 os.execute('mkdir -p ' .. root .. '/plugins/a/lua ' .. root .. '/plugins/b/lua ' .. root .. '/plugins/broken/lua ' .. root .. '/plugins/boom/lua')
@@ -129,6 +133,24 @@ it('missing registry yields no badges and one warning', function()
   assert_eq(#h.render_segments({}), 0)
   assert_eq(#log.rows, 1)
   assert_eq(log.rows[1].category, 'plugins')
+end)
+
+it('registers the badge SDK from sdk_path when not yet loaded', function()
+  local saved = package.loaded['wezdeck.badge']
+  package.loaded['wezdeck.badge'] = nil
+  local log = new_logger()
+  host_mod.new { runtime_dir = root, runtime_state_dir = '/s', runtime_mode = 'hybrid-wsl', logger = log,
+    path_sep = '/', sdk_path = SDK_PATH }
+  assert(type(package.loaded['wezdeck.badge']) == 'table', 'SDK registered')
+  assert(type(package.loaded['wezdeck.badge'].read_file) == 'function')
+  package.loaded['wezdeck.badge'] = nil
+  local log2 = new_logger()
+  host_mod.new { runtime_dir = root, runtime_state_dir = '/s', runtime_mode = 'hybrid-wsl', logger = log2,
+    path_sep = '/', sdk_path = root .. '/missing.lua' }
+  local sdk_warn = 0
+  for _, r in ipairs(log2.rows) do if r.message:find('badge SDK failed', 1, true) then sdk_warn = sdk_warn + 1 end end
+  assert_eq(sdk_warn, 1, 'missing SDK warns')
+  package.loaded['wezdeck.badge'] = saved
 end)
 
 it('moved constants key in a machine override warns once', function()

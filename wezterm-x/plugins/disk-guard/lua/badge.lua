@@ -30,6 +30,8 @@
 -- Placement: right-status, between the session-bridge and attention counters.
 
 local wezterm = require 'wezterm'
+local badge = require 'wezdeck.badge'
+local parse_json, read_file, current_epoch_ms = badge.parse_json, badge.read_file, badge.current_epoch_ms
 
 local M = {}
 
@@ -38,45 +40,6 @@ local state_path = nil
 -- calling the reading stale.
 local heartbeat_timeout_ms = 780000
 local last_known = nil
-
-local function parse_json(text)
-  if type(text) ~= 'string' or text == '' then
-    return nil
-  end
-  if wezterm.json_parse then
-    local ok, parsed = pcall(wezterm.json_parse, text)
-    if ok then
-      return parsed
-    end
-  end
-  if wezterm.serde and wezterm.serde.json_decode then
-    local ok, parsed = pcall(wezterm.serde.json_decode, text)
-    if ok then
-      return parsed
-    end
-  end
-  return nil
-end
-
-local function read_file(path)
-  local f = io.open(path, 'r')
-  if not f then
-    return nil
-  end
-  local content = f:read('*a')
-  f:close()
-  return content
-end
-
-local function current_epoch_ms()
-  local ok, formatted = pcall(function()
-    return wezterm.time.now():format '%s%3f'
-  end)
-  if ok and type(formatted) == 'string' and formatted:match '^%d+$' then
-    return tonumber(formatted)
-  end
-  return math.floor(os.time() * 1000)
-end
 
 function M.configure(opts)
   if opts and type(opts.state_file) == 'string' and opts.state_file ~= '' then

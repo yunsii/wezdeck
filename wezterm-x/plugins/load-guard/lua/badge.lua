@@ -1,6 +1,6 @@
 -- Guest CPU-load segment (typing-stickiness early warning).
 --
--- Reads the same oom-guard status.json as mem_status.lua — that file already
+-- Reads the same oom-guard status.json as the mem-guard badge — that file already
 -- carries loadavg_1/5/15 on every heartbeat (~30 s). The Memory· badge only
 -- classifies memory/swap, so a pure CPU storm (esbuild / agent scan burning
 -- the guest while mem stays `ok`) left the bar quiet while status ticks
@@ -20,55 +20,18 @@
 -- Placement: right-status, after the guest-memory badge.
 
 local wezterm = require 'wezterm'
+local badge = require 'wezdeck.badge'
+local parse_json, read_file, current_epoch_ms = badge.parse_json, badge.read_file, badge.current_epoch_ms
 
 local M = {}
 
 local state_path = nil
 local heartbeat_timeout_ms = 90000
 -- Absolute loadavg_1 gates. Calibrated on a ~20-logical-CPU WSL guest;
--- override via configure() / constants.load_guard.
+-- override via configure() / wezterm-x/local/plugins.json (load-guard).
 local warn_loadavg_1 = 8
 local crit_loadavg_1 = 16
 local last_known = nil
-
-local function parse_json(text)
-  if type(text) ~= 'string' or text == '' then
-    return nil
-  end
-  if wezterm.json_parse then
-    local ok, parsed = pcall(wezterm.json_parse, text)
-    if ok then
-      return parsed
-    end
-  end
-  if wezterm.serde and wezterm.serde.json_decode then
-    local ok, parsed = pcall(wezterm.serde.json_decode, text)
-    if ok then
-      return parsed
-    end
-  end
-  return nil
-end
-
-local function read_file(path)
-  local f = io.open(path, 'r')
-  if not f then
-    return nil
-  end
-  local content = f:read('*a')
-  f:close()
-  return content
-end
-
-local function current_epoch_ms()
-  local ok, formatted = pcall(function()
-    return wezterm.time.now():format '%s%3f'
-  end)
-  if ok and type(formatted) == 'string' and formatted:match '^%d+$' then
-    return tonumber(formatted)
-  end
-  return math.floor(os.time() * 1000)
-end
 
 function M.configure(opts)
   if opts and type(opts.state_file) == 'string' and opts.state_file ~= '' then

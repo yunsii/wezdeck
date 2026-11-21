@@ -17,6 +17,10 @@ local M = {}
 -- truth) and gets a one-time migration warning pointing at local/plugins.json.
 local LEGACY_CONSTANT_KEYS = {
   oppo_remote = 'oppo-remote',
+  session_bridge_watch = 'session-bridge',
+  disk_guard = 'disk-guard',
+  mem_guard = 'mem-guard',
+  load_guard = 'load-guard',
 }
 
 local function expand(value, vars, path_sep)
@@ -74,6 +78,20 @@ function M.new(opts)
         legacy_key = key,
         plugin = plugin_id,
         replacement = 'wezterm-x/local/plugins.json → {"config": {"' .. plugin_id .. '": {...}}}',
+      })
+    end
+  end
+
+  -- Badge SDK for plugin modules (`require 'wezdeck.badge'`).
+  if not package.loaded['wezdeck.badge'] then
+    local sdk_path = opts.sdk_path or join(opts.runtime_dir, 'lua', 'badge_common.lua')
+    local sdk_ok, sdk = pcall(dofile, sdk_path)
+    if sdk_ok and type(sdk) == 'table' then
+      package.loaded['wezdeck.badge'] = sdk
+    else
+      warn('sdk', 'badge SDK failed to load; plugin badges that need it will be dropped', {
+        path = sdk_path,
+        error = tostring(sdk),
       })
     end
   end

@@ -77,12 +77,9 @@ function M.config(constants)
     emit_all = categories['latency.perf'] == true
   end
 
-  local mem_guard = constants and constants.mem_guard or {}
   local pressure_file = nil
   if type(latency.pressure_state_file) == 'string' and latency.pressure_state_file ~= '' then
     pressure_file = latency.pressure_state_file
-  elseif type(mem_guard.status_file) == 'string' and mem_guard.status_file ~= '' then
-    pressure_file = mem_guard.status_file
   end
 
   return {

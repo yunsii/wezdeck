@@ -10,6 +10,7 @@ package.path = './tests/lua-units/?.lua;./wezterm-x/lua/?.lua;' .. package.path
 
 local mock = require 'wezterm_mock'
 package.preload['wezterm'] = function() return mock end
+package.preload['wezdeck.badge'] = function() return dofile './wezterm-x/lua/badge_common.lua' end
 
 local fail_count, pass_count = 0, 0
 local function it(n, fn)
@@ -56,8 +57,7 @@ end
 
 os.remove(state_path)
 
-package.loaded['session_bridge_status'] = nil
-local sb = require 'session_bridge_status'
+local sb = dofile './wezterm-x/plugins/session-bridge/lua/badge.lua'
 sb.configure {
   state_file = state_path,
   heartbeat_timeout_ms = 35000,

@@ -130,7 +130,7 @@ converts gap into avail; it does not create headroom.
 |---|---|
 | Sampler | `scripts/runtime/wsl-disk-guard.sh sample` / `status` / `history` |
 | Timer | `wezterm-disk-guard.timer` — user unit, 1 min after start then every 5 min |
-| Badge | `wezterm-x/lua/disk_status.lua`, right-status after `◆ SessionBridge·N` (SessionBridge itself is absent while the watch poller is idle) |
+| Badge | `wezterm-x/plugins/disk-guard/lua/badge.lua`, right-status after `◆ SessionBridge·N` (SessionBridge itself is absent while the watch poller is idle) |
 | History | `state/disk-guard/history.ndjson` (WSL) + `history-system.ndjson` — last 2016 samples each (~7d at 5 min) |
 | Escalation popup | `reminder.sh`, the same wrapper cron reminders use |
 

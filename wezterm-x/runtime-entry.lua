@@ -22,10 +22,6 @@ local ui = load_module 'ui'
 local workspace_manager = load_module 'workspace_manager'
 local attention = load_module 'attention'
 local chrome_debug_status = load_module 'chrome_debug_status'
-local session_bridge_status = load_module 'session_bridge_status'
-local disk_status = load_module 'disk_status'
-local mem_status = load_module 'mem_status'
-local load_status = load_module 'load_status'
 local plugin_host_module = load_module 'plugin_host'
 local logger = load_module('logger').new {
   wezterm = wezterm,
@@ -68,33 +64,6 @@ chrome_debug_status.configure {
   ego_heartbeat_timeout_ms = browser_agent.ego_heartbeat_timeout_ms,
 }
 
-local sb_watch = constants.session_bridge_watch or {}
-session_bridge_status.configure {
-  state_file = sb_watch.status_file,
-  heartbeat_timeout_ms = sb_watch.heartbeat_timeout_ms,
-  icon = sb_watch.icon,
-}
-
-local disk_guard = constants.disk_guard or {}
-disk_status.configure {
-  state_file = disk_guard.status_file,
-  heartbeat_timeout_ms = disk_guard.heartbeat_timeout_ms,
-}
-
-local mem_guard = constants.mem_guard or {}
-mem_status.configure {
-  state_file = mem_guard.status_file,
-  heartbeat_timeout_ms = mem_guard.heartbeat_timeout_ms,
-}
-
-local load_guard = constants.load_guard or {}
-load_status.configure {
-  state_file = load_guard.status_file or mem_guard.status_file,
-  heartbeat_timeout_ms = load_guard.heartbeat_timeout_ms or mem_guard.heartbeat_timeout_ms,
-  warn_loadavg_1 = load_guard.warn_loadavg_1,
-  crit_loadavg_1 = load_guard.crit_loadavg_1,
-}
-
 local plugin_host = plugin_host_module.new {
   runtime_dir = runtime_dir,
   runtime_state_dir = constants.runtime_state_dir,
@@ -108,10 +77,6 @@ titles.register {
   palette = constants.palette,
   attention = attention,
   chrome_debug_status = chrome_debug_status,
-  session_bridge_status = session_bridge_status,
-  disk_status = disk_status,
-  mem_status = mem_status,
-  load_status = load_status,
   plugin_host = plugin_host,
   host = host,
   logger = logger,

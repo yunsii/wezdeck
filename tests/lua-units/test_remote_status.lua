@@ -16,6 +16,7 @@ package.path = './tests/lua-units/?.lua;./wezterm-x/lua/?.lua;' .. package.path
 
 local mock = require 'wezterm_mock'
 package.preload['wezterm'] = function() return mock end
+package.preload['wezdeck.badge'] = function() return dofile './wezterm-x/lua/badge_common.lua' end
 
 local fail_count, pass_count = 0, 0
 local function it(n, fn)

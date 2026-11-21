@@ -223,17 +223,6 @@ function M.default_ego_window_script(runtime_dir, join_path)
   return join_path(runtime_dir, 'scripts', 'ego-window.ps1')
 end
 
-function M.default_session_bridge_watch_status_file(runtime_state_dir, join_path)
-  return join_path(runtime_state_dir, 'state', 'session-bridge-watch', 'status.json')
-end
-
--- Host-disk sample published by scripts/runtime/wsl-disk-guard.sh. Mirrors
--- the path that script's status_file_path() computes on the WSL side, so
--- both agree without either reaching across the boundary to ask.
-function M.default_disk_guard_status_file(runtime_state_dir, join_path)
-  return join_path(runtime_state_dir, 'state', 'disk-guard', 'status.json')
-end
-
 function M.default_mem_guard_status_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'oom-guard', 'status.json')
 end

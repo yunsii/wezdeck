@@ -1,0 +1,29 @@
+{
+  "$comment": "Host-disk badge (SystemDisk· / WslDisk·). Producer: wezterm-disk-guard systemd user timer every 5 min; 13 min stale tolerates two missed samples.",
+  "id": "disk-guard",
+  "name": "Host disk guard",
+  "kind": "guard",
+  "default_enabled": true,
+  "requires": {
+    "host": [
+      "hybrid-wsl"
+    ]
+  },
+  "badge": {
+    "module": "lua/badge.lua",
+    "order": 30,
+    "config": {
+      "state_file": "${runtime_state_dir}/state/disk-guard/status.json",
+      "heartbeat_timeout_ms": 780000
+    }
+  },
+  "producer": {
+    "install": "../../../scripts/dev/install-wsl-disk-guard.sh",
+    "check": "../../../scripts/dev/install-wsl-disk-guard.sh --check",
+    "uninstall": "../../../scripts/dev/install-wsl-disk-guard.sh --uninstall"
+  },
+  "cli": {
+    "wsl-disk-guard": "../../../scripts/runtime/wsl-disk-guard.sh"
+  },
+  "docs": "README.md"
+}

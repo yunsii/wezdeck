@@ -105,7 +105,7 @@ Post-hoc `latency` rows explain a stutter after it happened. For **glanceable ea
 | `LoadAvg·12` | warn — amber; default `loadavg_1 >= 8` |
 | `LoadAvg·23` | crit — red; default `loadavg_1 >= 16` |
 
-Same "presence is the signal" contract as `WslDisk·` / `Memory·`. Classification is **CPU-only** (ignores mem `level`), so a pure CPU storm with memory still `ok` still lights the bar — the 2026-10-28 typing-stickiness shape. Stale-recorder `?` stays on `Memory·` (shared producer) so the bar does not grow a duplicate. Renderer: [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua). Thresholds: `constants.load_guard.warn_loadavg_1` / `crit_loadavg_1` (override in `wezterm-x/local/constants.lua`). Placement: after `Memory·`.
+Same "presence is the signal" contract as `WslDisk·` / `Memory·`. Classification is **CPU-only** (ignores mem `level`), so a pure CPU storm with memory still `ok` still lights the bar — the 2026-10-28 typing-stickiness shape. Stale-recorder `?` stays on `Memory·` (shared producer) so the bar does not grow a duplicate. Renderer: [`wezterm-x/plugins/load-guard/lua/badge.lua`](../wezterm-x/plugins/load-guard/lua/badge.lua). Thresholds: `warn_loadavg_1` / `crit_loadavg_1` in the `load-guard` plugin config (override in `wezterm-x/local/plugins.json`). Placement: after `Memory·`.
 
 ## Runtime Diagnostics
 

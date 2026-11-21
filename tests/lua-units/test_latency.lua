@@ -234,13 +234,20 @@ it('observe slow row attaches pressure from status file', function()
   os.remove(tmp)
 end)
 
-it('config picks mem_guard.status_file for pressure enrichment', function()
+it('config reads pressure_state_file from diagnostics.wezterm.latency', function()
   local cfg = latency.config {
-    mem_guard = { status_file = '/tmp/oom-status.json' },
-    diagnostics = { wezterm = { latency = {} } },
+    diagnostics = { wezterm = { latency = { pressure_state_file = '/tmp/oom-status.json' } } },
   }
   assert_eq(cfg.pressure_state_file, '/tmp/oom-status.json')
   assert_true(cfg.pressure_enrich)
+end)
+
+it('moved constants.mem_guard no longer feeds pressure enrichment', function()
+  local cfg = latency.config {
+    mem_guard = { status_file = '/tmp/legacy.json' },
+    diagnostics = { wezterm = { latency = {} } },
+  }
+  assert_eq(cfg.pressure_state_file, nil)
 end)
 
 io.write(string.format('latency: %d passed, %d failed\n', pass_count, fail_count))

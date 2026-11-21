@@ -156,7 +156,7 @@ local base_constants = {
     -- Host-disk badge at crit. Deliberately outside the Tailwind attention
     -- tokens above: it is not an agent status, and "the disk is about to
     -- stop the machine" must never read as "an agent is waiting on you".
-    -- disk_status.lua falls back to the amber pair when a preset palette
+    -- the disk-guard badge falls back to the amber pair when a preset palette
     -- omits these.
     disk_crit_bg = '#b4574b',
     disk_crit_fg = '#fbf1ef',
@@ -308,43 +308,6 @@ local base_constants = {
     -- Stale ego.alive older than this → Ego·? on the word badge.
     ego_heartbeat_timeout_ms = 120000,
   },
-  -- Ctrl+K w session-bridge watch-loop badge (right-status between CDP and
-  -- SystemDisk/WslDisk). Absent while the poller is idle/stale — same
-  -- "presence is the signal" contract as WslDisk· / Memory· / LoadAvg·
-  -- (no always-on `SessionBridge·-`).
-  session_bridge_watch = {
-    status_file = defaults.default_session_bridge_watch_status_file(runtime_state_dir, join_path),
-    heartbeat_timeout_ms = 35000,
-    -- Same glyph the Alt+/ picker stamps on session-bridge watch rows.
-    -- `''` drops it and leaves the bare `SessionBridge·N`.
-    icon = '◆',
-  },
-  -- Host-disk badge (right-status, after SessionBridge). Producer is the
-  -- wezterm-disk-guard systemd user timer; 13 min tolerates two missed
-  -- 5 min samples before the badge admits it is stale.
-  disk_guard = {
-    status_file = defaults.default_disk_guard_status_file(runtime_state_dir, join_path),
-    heartbeat_timeout_ms = 780000,
-  },
-  -- Guest memory-pressure badge (right-status, after WslDisk·). Producer is
-  -- the wezterm-oom-record system unit, which republishes every 30 s; 90 s
-  -- tolerates two missed writes before the badge admits it is stale.
-  mem_guard = {
-    status_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
-    heartbeat_timeout_ms = 90000,
-  },
-  -- Guest CPU-load badge (right-status, after Memory·). Same status.json as
-  -- mem_guard — oom-record already publishes loadavg_*; this only
-  -- classifies it for glanceable typing-stickiness early warning.
-  -- Thresholds are absolute loadavg_1 on a ~20-logical-CPU guest;
-  -- calibrated 2026-10-28 (sticky typing ↔ loadavg_1≥8; storm ~15–23).
-  -- Override in wezterm-x/local/constants.lua if core count differs a lot.
-  load_guard = {
-    status_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
-    heartbeat_timeout_ms = 90000,
-    warn_loadavg_1 = 8,
-    crit_loadavg_1 = 16,
-  },
   wakatime = {
     api_key = nil,
   },
@@ -365,6 +328,9 @@ local base_constants = {
         hotkey_slow_ms = 50,
         status_slow_ms = 40,
         emit_all = false,
+        -- Guest pressure fields on slow rows come from the oom-guard
+        -- status.json (mem-guard plugin's producer).
+        pressure_state_file = defaults.default_mem_guard_status_file(runtime_state_dir, join_path),
       },
     },
   },

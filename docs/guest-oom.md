@@ -81,7 +81,7 @@ The consumers were the usual standing set, from the guard's own high-water snaps
 
 #### The `Memory·` badge {#the-memory-badge}
 
-`wezterm-oom-record` now publishes `state/oom-guard/status.json` next to the disk guard's, and [`wezterm-x/lua/mem_status.lua`](../wezterm-x/lua/mem_status.lua) renders it in right-status after `WslDisk·`:
+`wezterm-oom-record` now publishes `state/oom-guard/status.json` next to the disk guard's, and [`wezterm-x/plugins/mem-guard/lua/badge.lua`](../wezterm-x/plugins/mem-guard/lua/badge.lua) renders it in right-status after `WslDisk·`:
 
 ```
 (absent)      both axes below warn
@@ -97,7 +97,7 @@ Same "nothing while healthy" contract as `WslDisk·`: presence is the signal, an
 
 ##### The `LoadAvg·` badge (CPU load) {#the-loadavg-badge-cpu-load}
 
-The same `status.json` already carries `loadavg_1` / `loadavg_5` / `loadavg_15` for latency slow-row enrichment. [`wezterm-x/lua/load_status.lua`](../wezterm-x/lua/load_status.lua) classifies `loadavg_1` into a right-status badge after `Memory·`, so a **CPU-only** storm (memory still `ok`) is glanceable before typing feels sticky:
+The same `status.json` already carries `loadavg_1` / `loadavg_5` / `loadavg_15` for latency slow-row enrichment. [`wezterm-x/plugins/load-guard/lua/badge.lua`](../wezterm-x/plugins/load-guard/lua/badge.lua) classifies `loadavg_1` into a right-status badge after `Memory·`, so a **CPU-only** storm (memory still `ok`) is glanceable before typing feels sticky:
 
 ```
 (absent)   loadavg_1 below warn (default 8), or stale / never published
@@ -105,7 +105,7 @@ LoadAvg·12 warn (amber)
 LoadAvg·23 crit (red; default loadavg_1 >= 16)
 ```
 
-Calibrated 2026-10-28 against sticky-typing reports (`loadavg_1≥8` on most slow status ticks; storm ~15–23). Thresholds live in `constants.load_guard`. Stale-recorder signalling stays on `Memory·` only. Detail: [`diagnostics.md`](./diagnostics.md) "Guest load badge".
+Calibrated 2026-10-28 against sticky-typing reports (`loadavg_1≥8` on most slow status ticks; storm ~15–23). Thresholds live in the `load-guard` plugin config (override per machine in `wezterm-x/local/plugins.json`). Stale-recorder signalling stays on `Memory·` only. Detail: [`diagnostics.md`](./diagnostics.md) "Guest load badge".
 
 Publishing is on level change plus a 30 s heartbeat, not every 10 s tick — the status file is on the Windows side of the 9p boundary and belongs nowhere near a hot path (see [`performance.md`](./performance.md)).
 
@@ -221,7 +221,7 @@ A non-zero `alloc failures` count means this VM has *already* been where both re
 
 Notes:
 
-- **`frag_order`, `frag_free_blocks`, `frag_min_blocks` and `alloc_failures` are published in `status.json`, but the badge level is unchanged** — it still comes from the two percentage axes only, so `mem_status.lua` needs no update. The fields are there for diagnosis and for a future axis on the bar; the incident's badge was already red, so a fourth colour would have added nothing.
+- **`frag_order`, `frag_free_blocks`, `frag_min_blocks` and `alloc_failures` are published in `status.json`, but the badge level is unchanged** — it still comes from the two percentage axes only, so the mem-guard badge needs no update. The fields are there for diagnosis and for a future axis on the bar; the incident's badge was already red, so a fourth colour would have added nothing.
 - **The buddy column count is derived from the line, not fixed at 11.** `MAX_ORDER` changed meaning in 6.4 and `/proc/buddyinfo`'s width follows the kernel.
 - **The kernel-log count is a count, not a watermark** (same shape as `read_oom_kill`): the guard acts only when it grows and re-baselines on any change, so the wrapping `dmesg` ring buffer degrades to "missed one" instead of a stuck alarm. The predictive trigger is the backstop for exactly that.
 - Env knobs: `WEZTERM_OOM_FRAG_ORDER` (7), `WEZTERM_OOM_FRAG_MIN_BLOCKS` (1), `WEZTERM_OOM_FRAG_MEM_PCT` (high-water mark), `WEZTERM_OOM_FRAG_ACTION` (`compact+term`; also `compact` to hand the kill back to earlyoom, or `off`), `WEZTERM_OOM_FRAG_COOLDOWN` (120), `WEZTERM_OOM_COMPACT_SETTLE` (1s; test hook), `WEZTERM_OOM_FRAG_MIN_RSS_MIB` (2048), `WEZTERM_OOM_FRAG_AVOID`, `WEZTERM_OOM_BUDDYINFO`, `WEZTERM_OOM_COMPACT_FILE`, `WEZTERM_OOM_KMSG_FILE` (test hook). `WEZTERM_OOM_DRY_RUN=1` reports and snapshots without compacting or signalling.

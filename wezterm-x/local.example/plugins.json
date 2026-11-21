@@ -1,0 +1,9 @@
+{
+  "$comment": "Machine-local plugin switches. Copy to wezterm-x/local/plugins.json. disabled / enabled take plugin ids; config shallow-merges over a plugin's badge.config. Docs: docs/plugin-architecture.md",
+  "disabled": [],
+  "enabled": [],
+  "config": {
+    "session-bridge": { "icon": "◆" },
+    "load-guard": { "warn_loadavg_1": 8, "crit_loadavg_1": 16 }
+  }
+}

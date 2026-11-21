@@ -1,0 +1,23 @@
+{
+  "$comment": "Ctrl+K w session-bridge watch-loop badge (◆ SessionBridge·N). Absent while the poller is idle/stale. Producer is the watch loop started from the hotkey, not a service.",
+  "id": "session-bridge",
+  "name": "Session-bridge watch",
+  "kind": "agent-interop",
+  "default_enabled": true,
+  "requires": {
+    "host": [
+      "hybrid-wsl",
+      "posix"
+    ]
+  },
+  "badge": {
+    "module": "lua/badge.lua",
+    "order": 10,
+    "config": {
+      "state_file": "${runtime_state_dir}/state/session-bridge-watch/status.json",
+      "heartbeat_timeout_ms": 35000,
+      "icon": "◆"
+    }
+  },
+  "docs": "README.md"
+}

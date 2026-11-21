@@ -51,7 +51,7 @@ Unaffected by any mux choice, **≈11,900 lines**: Windows wezdeck-runtime / IPC
 (5,942), skills — adversarial-review / brainstorm / agent-fanout (4,057),
 OOM + disk + diagnostics guards (1,681), agent launch chain (268). WezTerm-layer
 work is also untouched: tab bar, right-status `Memory·` / `Swap·` / `WslDisk·` / `CDP·`
-badges (`mem_status.lua`, `disk_status.lua`, `chrome_debug_status.lua`),
+badges (`mem-guard` / `disk-guard` plugin badges, `chrome_debug_status.lua`),
 appearance presets, workspace switching.
 
 ## Measured constraints

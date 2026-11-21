@@ -1,0 +1,23 @@
+{
+  "$comment": "Guest CPU-load badge (LoadAvg·). Reads the oom-guard status.json (mem-guard producer). Thresholds are absolute loadavg_1 on a ~20-logical-CPU guest, calibrated 2026-10-28 (sticky typing ↔ loadavg_1≥8; storm ~15–23); override per machine in wezterm-x/local/plugins.json.",
+  "id": "load-guard",
+  "name": "Guest load badge",
+  "kind": "guard",
+  "default_enabled": true,
+  "requires": {
+    "host": [
+      "hybrid-wsl"
+    ]
+  },
+  "badge": {
+    "module": "lua/badge.lua",
+    "order": 50,
+    "config": {
+      "state_file": "${runtime_state_dir}/state/oom-guard/status.json",
+      "heartbeat_timeout_ms": 90000,
+      "warn_loadavg_1": 8,
+      "crit_loadavg_1": 16
+    }
+  },
+  "docs": "README.md"
+}

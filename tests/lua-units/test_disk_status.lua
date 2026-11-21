@@ -18,6 +18,7 @@ package.path = './tests/lua-units/?.lua;./wezterm-x/lua/?.lua;' .. package.path
 
 local mock = require 'wezterm_mock'
 package.preload['wezterm'] = function() return mock end
+package.preload['wezdeck.badge'] = function() return dofile './wezterm-x/lua/badge_common.lua' end
 
 local fail_count, pass_count = 0, 0
 local function it(n, fn)
@@ -63,8 +64,7 @@ local function write_state(fields)
   f:close()
 end
 
-package.loaded['disk_status'] = nil
-disk_status = require "disk_status"
+disk_status = dofile "./wezterm-x/plugins/disk-guard/lua/badge.lua"
 disk_status.configure {
   state_file = state_path,
   heartbeat_timeout_ms = 780000,
@@ -223,13 +223,11 @@ it('a stale sampler surfaces even though the last level was ok', function()
 end)
 
 it('never-published renders nothing, so an uninstalled guard is invisible', function()
-  package.loaded['disk_status'] = nil
-  local fresh_module = require 'disk_status'
+    local fresh_module = dofile './wezterm-x/plugins/disk-guard/lua/badge.lua'
   fresh_module.configure { state_file = tmpdir .. '/wezterm-disk-guard-absent.json' }
   assert_eq(fresh_module.render_status_segment(palette), nil)
   -- Restore the suite's module instance and its state path.
-  package.loaded['disk_status'] = nil
-  disk_status = require 'disk_status'
+    disk_status = dofile './wezterm-x/plugins/disk-guard/lua/badge.lua'
   disk_status.configure { state_file = state_path, heartbeat_timeout_ms = 780000 }
 end)
 

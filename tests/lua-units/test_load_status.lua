@@ -15,6 +15,7 @@ package.path = './tests/lua-units/?.lua;./wezterm-x/lua/?.lua;' .. package.path
 
 local mock = require 'wezterm_mock'
 package.preload['wezterm'] = function() return mock end
+package.preload['wezdeck.badge'] = function() return dofile './wezterm-x/lua/badge_common.lua' end
 
 local fail_count, pass_count = 0, 0
 local function it(n, fn)
@@ -59,8 +60,7 @@ end
 
 os.remove(state_path)
 
-package.loaded['load_status'] = nil
-local load_status = require 'load_status'
+local load_status = dofile './wezterm-x/plugins/load-guard/lua/badge.lua'
 load_status.configure {
   state_file = state_path,
   heartbeat_timeout_ms = 90000,

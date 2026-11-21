@@ -1,0 +1,28 @@
+{
+  "$comment": "Guest memory-pressure badge (Memory· / Swap·). Producer: wezterm-oom-record system unit republishing every 30 s; 90 s stale tolerates two missed writes.",
+  "id": "mem-guard",
+  "name": "Guest memory guard",
+  "kind": "guard",
+  "default_enabled": true,
+  "requires": {
+    "host": [
+      "hybrid-wsl"
+    ]
+  },
+  "badge": {
+    "module": "lua/badge.lua",
+    "order": 40,
+    "config": {
+      "state_file": "${runtime_state_dir}/state/oom-guard/status.json",
+      "heartbeat_timeout_ms": 90000
+    }
+  },
+  "producer": {
+    "install": "../../../scripts/dev/install-wsl-oom-guard.sh",
+    "check": "../../../scripts/dev/install-wsl-oom-guard.sh --check"
+  },
+  "cli": {
+    "wsl-oom-guard": "../../../scripts/runtime/wsl-oom-guard.sh"
+  },
+  "docs": "README.md"
+}

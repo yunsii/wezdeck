@@ -23,10 +23,6 @@ function M.register(opts)
   local palette = opts.palette
   local attention = opts.attention
   local chrome_debug_status = opts.chrome_debug_status
-  local session_bridge_status = opts.session_bridge_status
-  local disk_status = opts.disk_status
-  local mem_status = opts.mem_status
-  local load_status = opts.load_status
   local plugin_host = opts.plugin_host
   local host = opts.host
   local logger = opts.logger
@@ -303,13 +299,14 @@ function M.register(opts)
     return segments
   end)
 
-  -- Compose the right-status bar from IME, browser slot (Ego·… or CDP·…),
-  -- session-bridge watch, host-disk, guest-memory, guest-load, attention.
+  -- Compose the right-status bar: IME, browser slot (Ego·… or CDP·…), plugin
+  -- badges in badge.order, attention counters.
   -- Order:
-  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N | <plugin badges, e.g. OppoRemote·OK>
-  --     | SystemDisk·8G WslDisk·22G | Memory·88% | LoadAvg·23 | ▲…✓…●…
-  --   (SessionBridge / disks / Memory / LoadAvg absent while idle/healthy —
-  --   presence is the signal; disk_status may emit both system + WSL badges)
+  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N (10) | OppoRemote·OK (20)
+  --     | SystemDisk·8G WslDisk·22G (30) | Memory·88% (40) | LoadAvg·23 (50) | ▲…✓…●…
+  --   (plugin badges live in wezterm-x/plugins/<id>; most are absent while
+  --   idle/healthy — presence is the signal; disk-guard may emit both system +
+  --   WSL badges. Docs: docs/plugin-architecture.md)
   -- Kept pure so it can run from both the `update-status` tick (250ms)
   -- and from the event-bus handler when a producer publishes
   -- `attention.tick` (OSC wire `we_attention_tick`).
@@ -327,29 +324,11 @@ function M.register(opts)
     if chrome_debug_segment then
       table.insert(right_segments, chrome_debug_segment)
     end
-    local sb_segment = session_bridge_status
-      and session_bridge_status.render_status_segment(palette)
-      or nil
-    if sb_segment then
-      table.insert(right_segments, sb_segment)
-    end
     -- Plugin badges (wezterm-x/plugins/<id>, ordered by badge.order).
     if plugin_host then
       for _, segment in ipairs(plugin_host.render_segments(palette)) do
         table.insert(right_segments, segment)
       end
-    end
-    local disk_segment = disk_status and disk_status.render_status_segment(palette) or nil
-    if disk_segment then
-      table.insert(right_segments, disk_segment)
-    end
-    local mem_segment = mem_status and mem_status.render_status_segment(palette) or nil
-    if mem_segment then
-      table.insert(right_segments, mem_segment)
-    end
-    local load_segment = load_status and load_status.render_status_segment(palette) or nil
-    if load_segment then
-      table.insert(right_segments, load_segment)
     end
     local active_pane_id = nil
     if pane and type(pane.pane_id) == 'function' then
