@@ -8,10 +8,10 @@
 #
 # The service runs `oppo-remote-quality.sh daemon`: tails the newest
 # desktop_agent log, republishes state/oppo-remote/status.json (2 s while a
-# session is active, 30 s idle) for the WezTerm `Pad·` badge, and appends
+# session is active, 30 s idle) for the WezTerm `OppoRemote·` badge, and appends
 # stall episodes with an office-vs-beyond blame to episodes.ndjson.
 # Paths are resolved once here and baked into the unit, so the service never
-# needs cmd.exe interop. Docs: docs/oppo-remote-host-input.md#pad-badge
+# needs cmd.exe interop. Docs: docs/oppo-remote-host-input.md#opporemote-badge
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,7 +39,7 @@ STATUS_FILE="${WEZTERM_OPPO_STATUS_FILE:-$WINDOWS_RUNTIME_STATE_WSL/state/oppo-r
 unit_text() {
   cat <<EOF
 [Unit]
-Description=WezDeck: OPPO 互联 remote link quality → Pad· badge
+Description=WezDeck: OPPO 互联 remote link quality → OppoRemote· badge
 Documentation=file://$REPO_ROOT/docs/oppo-remote-host-input.md
 ConditionVirtualization=wsl
 

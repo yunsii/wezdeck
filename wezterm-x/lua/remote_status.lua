@@ -1,19 +1,23 @@
--- OPPO 互联 remote-control link badge (Pad· on the right status).
+-- OPPO 互联 remote-control link badge (OppoRemote· on the right status).
+--
+-- Named after the remote link, not the client device: what it measures is the
+-- O+ Connect stream (Pad or phone), and the word must read on its own in a
+-- crowded bar next to SystemDisk· / Memory·.
 --
 -- Producer: `scripts/dev/oppo-remote-quality.sh daemon` (systemd user unit
 -- wezterm-oppo-remote.service) tails the vendor's desktop_agent log and
 -- republishes status.json every ~2 s while a remote session is active, every
--- 30 s while idle. See docs/oppo-remote-host-input.md#pad-badge.
+-- 30 s while idle. See docs/oppo-remote-host-input.md#opporemote-badge.
 --
 -- Unlike WslDisk· / Memory·, this badge is visible for the whole remote
 -- session: knowing the PC is being driven from the Pad is itself the signal.
 --
 --   (absent)   no active remote session, or never published
---   Pad·ok     connected, < warn_pct of the last 5 min stalled (muted)
---   Pad·23%    not stalled right now, but ≥ warn_pct of last 5 min was (amber)
---   Pad·4.4s   stalled now; picture ~4.4 s behind (red)
---   Pad·76%    stalled now without a queue-delay reading (encoder dropping) (red)
---   Pad·?      session was active and the producer went stale
+--   OppoRemote·ok     connected, < warn_pct of the last 5 min stalled (muted)
+--   OppoRemote·23%    not stalled right now, but ≥ warn_pct of last 5 min was (amber)
+--   OppoRemote·4.4s   stalled now; picture ~4.4 s behind (red)
+--   OppoRemote·76%    stalled now without a queue-delay reading (encoder dropping) (red)
+--   OppoRemote·?      session was active and the producer went stale
 --
 -- Placement: right-status, after the session-bridge badge.
 
@@ -104,21 +108,13 @@ local function is_fresh(state)
   return (current_epoch_ms() - hb) <= heartbeat_timeout_ms
 end
 
-local function label(state)
-  local device = type(state.device) == 'string' and state.device or ''
-  if device == '' or device:find('Pad', 1, true) then
-    return 'Pad'
-  end
-  return 'Remote'
-end
-
 -- Pure text + level for the unit suite. Returns nil when nothing to show;
 -- level is 'ok' | 'warn' | 'crit' | 'unknown'.
 function M.format_text(state, fresh)
   if type(state) ~= 'table' or state.active ~= true then
     return nil
   end
-  local name = label(state)
+  local name = 'OppoRemote'
   if not fresh then
     return ' ' .. name .. '·? ', 'unknown'
   end

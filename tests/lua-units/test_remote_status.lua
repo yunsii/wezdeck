@@ -1,14 +1,14 @@
--- Verifies the OPPO 互联 Pad· badge in remote_status.lua.
+-- Verifies the OPPO 互联 OppoRemote· badge in remote_status.lua.
 --
 -- Design properties that are easy to regress:
 --
 -- 1. Absent when no session is active (active=false) or never published.
--- 2. Visible for the whole session: `Pad·ok` while healthy.
+-- 2. Visible for the whole session: `OppoRemote·ok` while healthy.
 -- 3. Stalled now → crit; shows seconds when a queue-delay reading exists,
 --    otherwise the 5-min stall share (encoder-dropping stalls carry no lag).
 -- 4. Recovered but ≥warn_pct of the last 5 min stalled → warn with the share.
--- 5. Active session + stale producer → `Pad·?`; inactive + stale → absent.
--- 6. A non-Pad peer device renders as `Remote·`.
+-- 5. Active session + stale producer → `OppoRemote·?`; inactive + stale → absent.
+-- 6. Label is always `OppoRemote·`, whatever the client device.
 --
 -- Drive with scripts/dev/test-lua-units.sh.
 
@@ -66,39 +66,39 @@ it('inactive session renders nothing (fresh or stale)', function()
   assert_eq(rs.format_text(S { active = false }, false), nil)
 end)
 
-it('healthy active session shows Pad·ok', function()
+it('healthy active session shows OppoRemote·ok', function()
   local text, level = rs.format_text(S { active = true, state = 'ok', stall_pct_5m = 3, device = 'OPPO Pad 5 Pro' }, true)
-  assert_eq(text, ' Pad·ok ')
+  assert_eq(text, ' OppoRemote·ok ')
   assert_eq(level, 'ok')
 end)
 
 it('stalled with queue delay shows seconds, crit', function()
   local text, level = rs.format_text(S { active = true, state = 'stall', lag_ms = 4430, stall_pct_5m = 40 }, true)
-  assert_eq(text, ' Pad·4.4s ')
+  assert_eq(text, ' OppoRemote·4.4s ')
   assert_eq(level, 'crit')
 end)
 
 it('stalled without queue delay shows 5-min share, crit', function()
   local text, level = rs.format_text(S { active = true, state = 'stall', lag_ms = 0, stall_pct_5m = 76 }, true)
-  assert_eq(text, ' Pad·76% ')
+  assert_eq(text, ' OppoRemote·76% ')
   assert_eq(level, 'crit')
 end)
 
 it('recovered but rough last 5 min is warn', function()
   local text, level = rs.format_text(S { active = true, state = 'ok', stall_pct_5m = 23 }, true)
-  assert_eq(text, ' Pad·23% ')
+  assert_eq(text, ' OppoRemote·23% ')
   assert_eq(level, 'warn')
 end)
 
-it('active + stale producer shows Pad·?', function()
+it('active + stale producer shows OppoRemote·?', function()
   local text, level = rs.format_text(S { active = true, state = 'ok' }, false)
-  assert_eq(text, ' Pad·? ')
+  assert_eq(text, ' OppoRemote·? ')
   assert_eq(level, 'unknown')
 end)
 
-it('non-Pad device is labelled Remote', function()
+it('label does not depend on the client device', function()
   local text = rs.format_text(S { active = true, state = 'ok', device = 'Find X8' }, true)
-  assert_eq(text, ' Remote·ok ')
+  assert_eq(text, ' OppoRemote·ok ')
 end)
 
 it('render reads the file and honours heartbeat staleness', function()
@@ -111,9 +111,9 @@ it('render reads the file and honours heartbeat staleness', function()
       if p.Text then return p.Text end
     end
   end
-  assert_eq(text_of(rs.render_status_segment(palette)), ' Pad·ok ')
+  assert_eq(text_of(rs.render_status_segment(palette)), ' OppoRemote·ok ')
   fake_now_ms = fake_now_ms + 30000
-  assert_eq(text_of(rs.render_status_segment(palette)), ' Pad·? ')
+  assert_eq(text_of(rs.render_status_segment(palette)), ' OppoRemote·? ')
 end)
 
 os.remove(state_path)

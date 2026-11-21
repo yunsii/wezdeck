@@ -664,7 +664,7 @@ def main() -> int:
     t.add_argument("--bucket", type=int, default=60, help="seconds per row (default 60)")
     w = sub.add_parser("watch", help="live STALL/OK transitions for the current session")
     w.add_argument("--keys", action="store_true", help="also print each key press")
-    d = sub.add_parser("daemon", help="publish live status.json for the Pad· badge (systemd)")
+    d = sub.add_parser("daemon", help="publish live status.json for the OppoRemote· badge (systemd)")
     d.add_argument("--status-file", required=True)
     d.add_argument("--interval", type=float, default=2.0)
     e = sub.add_parser("episodes", help="stall episodes recorded by the daemon, with blame")

@@ -18,13 +18,13 @@ Read the layers in this order; each has its own glanceable signal.
 
 | # | Check | Signal | If bad → |
 |---|---|---|---|
-| 1 | Is the remote **link** stalling? | `Pad·4.4s` / `Pad·76%` red (or `oppo-remote-quality.sh report`) | go to 2 |
+| 1 | Is the remote **link** stalling? | `OppoRemote·4.4s` / `OppoRemote·76%` red (or `oppo-remote-quality.sh report`) | go to 2 |
 | 2 | Does the **office side** move with the stall? | `episodes` blame `office` (relay/gateway ping degrades with it) | PC uplink / office LAN / WARP |
 | 3 | Office flat, link stalling | blame `beyond-office` | **Pad side**: home router → Pad Wi‑Fi → home ISP ([Home router](#home-router-long-uptime)) |
-| 4 | `Pad·ok` but typing still sticky | console (Notepad on the PC) also sticky? `Memory·` / `LoadAvg·` | **host** stickiness ([Long uptime](#long-uptime--host-memory-local-input)) |
+| 4 | `OppoRemote·ok` but typing still sticky | console (Notepad on the PC) also sticky? `Memory·` / `LoadAvg·` | **host** stickiness ([Long uptime](#long-uptime--host-memory-local-input)) |
 | — | Whole desktop “new login / PIN” mid-work | — | RDP auto-reconnect — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §21 |
 
-`Pad·` only proves the stream backed up; it cannot see inside the PC
+`OppoRemote·` only proves the stream backed up; it cannot see inside the PC
 (input injection, compositor). `Memory·` / `LoadAvg·` cannot see the network.
 Use both before concluding.
 
@@ -33,7 +33,7 @@ Use both before concluding.
 | When | Cause (confirmed by) | Signal that would have shown it | Fix |
 |---|---|---|---|
 | 2026-10-15 → 11-10 | **Host**: ~26 d Windows uptime, `VmmemWSL` Private ~42 GiB, console also sticky (reboot → RAM 16 → 41 GiB free, smooth same day) | `Memory·`, console test | Windows reboot |
-| 2026-11-14 → 11-21 | **Home router** long uptime: stalls on the direct P2P path, office gateway 0.3 ms / relay 12.6 ms flat (`beyond-office`), PC rebooted 8 h earlier (host ruled out); router reboot 09:5x → 44 min @ 78 % stalled before, 0 % after | `Pad·` red + `episodes` blame `beyond-office` | Home router reboot |
+| 2026-11-14 → 11-21 | **Home router** long uptime: stalls on the direct P2P path, office gateway 0.3 ms / relay 12.6 ms flat (`beyond-office`), PC rebooted 8 h earlier (host ruled out); router reboot 09:5x → 44 min @ 78 % stalled before, 0 % after | `OppoRemote·` red + `episodes` blame `beyond-office` | Home router reboot |
 
 Both were cross-net (Pad at home, PC at the office); cross-net alone is
 **not** the cause — multi-hour 0 % sessions exist on the same topology.
@@ -152,7 +152,7 @@ ones cluster in short reconnect bursts (11-15 08:4x, 11-17 22:50–23:45,
 11-21 08:5x) with 3–11 s worst lag and 40–60 % stall. Root cause for that
 stretch: the home router — see [Incident history](#incident-history).
 
-## Pad badge
+## OppoRemote badge
 
 Live view of the same signal on the WezTerm right status, plus a per-stall
 history that says **which side** was at fault.
@@ -166,10 +166,10 @@ scripts/dev/oppo-remote-quality.sh episodes         # recorded stalls + blame
 | Badge | Meaning |
 |---|---|
 | (absent) | no active O+ Connect session |
-| `Pad·ok` (muted) | connected, <10 % of the last 5 min stalled |
-| `Pad·23%` (amber) | not stalled now, but 23 % of the last 5 min was |
-| `Pad·4.4s` / `Pad·76%` (red) | stalled now — picture ~4.4 s behind, or (no delay reading) 76 % of the last 5 min stalled |
-| `Pad·?` | session active but the producer went stale (>20 s) |
+| `OppoRemote·ok` (muted) | connected, <10 % of the last 5 min stalled |
+| `OppoRemote·23%` (amber) | not stalled now, but 23 % of the last 5 min was |
+| `OppoRemote·4.4s` / `OppoRemote·76%` (red) | stalled now — picture ~4.4 s behind, or (no delay reading) 76 % of the last 5 min stalled |
+| `OppoRemote·?` | session active but the producer went stale (>20 s) |
 
 Producer: `oppo-remote-quality.sh daemon` tails the newest
 `desktop_agent.*.log` (session = no `SLUninitialize` yet and written within
@@ -211,7 +211,7 @@ Which router subsystem degraded is **not** known — a reboot clears all of
 them at once: Wi‑Fi channel chosen at boot now crowded by neighbours,
 conntrack / buffer build-up (bufferbloat — fits the “backlog then drains”
 shape best), or a degraded wireless driver. To separate them next time:
-when `Pad·` turns red with `beyond-office`, first **switch the Wi‑Fi channel
+when `OppoRemote·` turns red with `beyond-office`, first **switch the Wi‑Fi channel
 only**; reboot only if that does not help. Note the router uptime at each
 recurrence; if it degrades on a stable period, enable the router's scheduled
 reboot.

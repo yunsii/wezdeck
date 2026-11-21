@@ -5,7 +5,7 @@
 #   scripts/dev/oppo-remote-quality.sh timeline [SESSION] [--bucket SEC]
 #   scripts/dev/oppo-remote-quality.sh watch [--keys]
 #   scripts/dev/oppo-remote-quality.sh episodes [--days N]   # daemon-recorded stalls + blame
-#   scripts/dev/oppo-remote-quality.sh status                # current Pad· badge JSON
+#   scripts/dev/oppo-remote-quality.sh status                # current OppoRemote· badge JSON
 #   scripts/dev/oppo-remote-quality.sh daemon                # systemd producer (install-oppo-remote-watch.sh)
 #
 # Reads only vendor logs (daemon writes its own status.json). Log dir: %APPDATA%\O+Connect\devicespace (override with
