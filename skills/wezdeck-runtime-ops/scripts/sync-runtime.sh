@@ -561,7 +561,12 @@ if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
       # Canary teardown may stop the helper that was ensured before the
       # probe. Re-ensure the live helper after promotion so status consumers
       # never inherit a stale heartbeat from the pre-canary process.
-      ensure_windows_helper_running "$LIVE_TARGET_RUNTIME_DIR"
+      # Force it: the canary's ensure kills every wezdeck-runtime (shared
+      # Local\WezDeckRuntime mutex), so the live state.env can still be <10 s
+      # old here while its pid is already dead — the mtime skip check would
+      # wrongly report heartbeat-fresh (2026-11-21: IME / browser badges sat
+      # at `?` for 34 min until a paste re-ensured the helper).
+      WEZTERM_SYNC_FORCE_HELPER_ENSURE=1 ensure_windows_helper_running "$LIVE_TARGET_RUNTIME_DIR"
       sync_trace "step=post-promote-helper-ensure status=completed target_runtime_dir=$LIVE_TARGET_RUNTIME_DIR"
     else
       printf '[sync] canary auto-probe FAILED — live bootstrap left untouched: %s\n' "$LIVE_TARGET_FILE" >&2

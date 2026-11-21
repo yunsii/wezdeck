@@ -125,6 +125,14 @@ function Test-HelperStateFresh {
     return $false
   }
 
+  # A helper killed seconds ago (e.g. by a canary ensure's Stop-StaleProcesses)
+  # leaves a state.env whose heartbeat still looks fresh. Trust it only while
+  # the recorded pid is a live wezdeck-runtime process.
+  $helperProcess = Get-Process -Id $helperPid -ErrorAction SilentlyContinue
+  if ($null -eq $helperProcess -or $helperProcess.ProcessName -ne 'wezdeck-runtime') {
+    return $false
+  }
+
   $heartbeatAtMs = 0
   [void][long]::TryParse([string]$State.heartbeat_at_ms, [ref]$heartbeatAtMs)
   if ($heartbeatAtMs -le 0) {
