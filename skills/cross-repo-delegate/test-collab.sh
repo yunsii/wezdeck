@@ -204,20 +204,20 @@ cat >"$tmp/research.stream.jsonl" <<'EOF'
 {"type":"result","subtype":"success","session_id":"sess-r","num_turns":3,"total_cost_usd":0.02,"result":"结论如下\n```json\n{\"verdict\": \"done\", \"evidence\": [\"rx@abc\"]}\n```","usage":{"input_tokens":5,"cache_read_input_tokens":50,"cache_creation_input_tokens":10,"output_tokens":9}}
 EOF
 rs="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/research.stream.jsonl" HOST_AGENT_INVOKE_TRACE="$tmp/research-trace.jsonl" \
-  "$run" research --from src --repos rx,ry --title "核对承诺 #12" --prompt-file "$tmp/task.md" --system-file "$tmp/system.md" \
+  "$run" research --from src --repos rx,yy=ry --title "核对承诺 #12" --prompt-file "$tmp/task.md" --system-file "$tmp/system.md" \
   --allow-tool Read --allow-tool 'Bash(git -C {repo} log:*)' --max-turns 60 --origin '{"system":"fe1-flows","flow":12,"step":3}' \
   --result-file "$tmp/research.json")"
 RID="$(jq -r .id <<<"$rs")"
 check "research returns parsed result + repo bases" \
-  jq -e '.ok and .ok_result and .result.verdict=="done" and (.repos|map(.repo)==["rx","ry"]) and (.repos[0].head|length==40)' <<<"$rs"
+  jq -e '.ok and .ok_result and .result.verdict=="done" and (.repos|map(.repo)==["rx","yy"]) and .repos[1].target=="ry" and (.repos[0].head|length==40)' <<<"$rs"
 check "research ticket: kind research, shipped, origin kept" \
-  bash -c "jq -e '.kind==\"research\" and .origin.flow==12 and (.repos|length==2)' '$DELEGATE_TICKETS_ROOT/_data/$RID/meta.json' >/dev/null && grep -q '^status: shipped' '$DELEGATE_TICKETS_ROOT/_data/$RID/ticket.md'"
+  bash -c "jq -e '.kind==\"research\" and .origin.flow==12 and .repos==[\"rx\",\"ry\"]' '$DELEGATE_TICKETS_ROOT/_data/$RID/meta.json' >/dev/null && grep -q '^status: shipped' '$DELEGATE_TICKETS_ROOT/_data/$RID/ticket.md'"
 check "research worktrees cleaned up" bash -c "! git -C '$tmp/rx' worktree list | grep -q delegate-research && ! git -C '$tmp/ry' worktree list | grep -q delegate-research"
 check "research argv: {repo} rules expanded per repo, read mode, max turns" \
   jq -e -s '.[-1] | .mode=="read" and .run_id!=null' "$tmp/research-trace.jsonl"
 rl="$(ls "$DELEGATE_TICKETS_ROOT/_data/$RID/runs/"*.launch.json | head -1)"
 check "research launch: trigger fe1-flows, system+task parts, allow rules in argv" \
-  jq -e '.trigger.source=="fe1-flows" and (.composition|map(.kind)|index("system")!=null and index("task")!=null) and (.invocation.argv|index("Bash(git -C ry log:*)")!=null) and (.invocation.argv|index("--max-turns")!=null) and .session.reason=="research_oneshot"' "$rl"
+  jq -e '.trigger.source=="fe1-flows" and (.composition|map(.kind)|index("system")!=null and index("task")!=null) and (.invocation.argv|index("Bash(git -C yy log:*)")!=null) and (.invocation.argv|index("--max-turns")!=null) and .session.reason=="research_oneshot"' "$rl"
 check "research events: checkout per repo + research_done" \
   jq -e -s 'map(.kind) | (map(select(.=="checkout"))|length==2) and index("research_done")!=null and index("milestone")!=null' "$DELEGATE_TICKETS_ROOT/_data/$RID/events.jsonl"
 check "api list --kind research" jq -e --arg r "$RID" '.total==1 and .tickets[0].id==$r and .tickets[0].kind=="research"' <<<"$("$run" api list --kind research)"

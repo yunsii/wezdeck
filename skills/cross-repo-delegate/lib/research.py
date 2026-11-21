@@ -5,7 +5,7 @@ The execution + observability substrate for callers that own their own product
 semantics (fe1 flag-flows' check step): they keep prompts, result schemas and
 evidence checks; delegate owns checkout, invocation, run records and cleanup.
 
-  research --from KEY --repos A[,B…] --title T --prompt-file F
+  research --from KEY --repos A[,B…|name=KEY…] --title T --prompt-file F
            [--system-file F] [--allow-tool RULE]… [--max-turns N]
            [--backend claude|codex|grok] [--model M] [--result-file OUT.json]
            [--origin JSON]          # caller context, e.g. {"system":"fe1-flows","flow":12,"step":3}
@@ -85,7 +85,10 @@ def release(states: list[dict[str, Any]], root: Path | None) -> None:
 
 def run(argv: list[str]) -> dict[str, Any]:
     src = collab.opt(argv, "--from")
-    repos = collab.csv(collab.opt(argv, "--repos"))
+    # "name=key": the caller's own repo name (subdir, {repo}, evidence refs) mapped to a delegate target
+    pairs = [(x.split("=", 1) if "=" in x else (x, x)) for x in collab.csv(collab.opt(argv, "--repos"))]
+    repos = [name for name, _ in pairs]
+    keys = dict(pairs)
     title = collab.opt(argv, "--title")
     prompt_file = collab.opt(argv, "--prompt-file")
     if not (src and repos and title and prompt_file and Path(prompt_file).is_file()):
@@ -96,13 +99,13 @@ def run(argv: list[str]) -> dict[str, Any]:
     allow = [argv[i + 1] for i, a in enumerate(argv) if a == "--allow-tool" and i + 1 < len(argv)]
 
     created = collab.run_sh(
-        "create", "--to", repos[0], "--from", src, "--title", title,
+        "create", "--to", keys[repos[0]], "--from", src, "--title", title,
         "--observed", f"read-only research over {', '.join(repos)}",
         "--assumed", "caller owns prompt, result schema and evidence checks",
     )
     tid = created["id"]
     mj = ticket_fs.read_meta_json(tid)
-    mj.update({"kind": "research", "repos": repos, "origin": origin or None})
+    mj.update({"kind": "research", "repos": [keys[r] for r in repos], "origin": origin or None})
     ticket_fs.write_meta_json(tid, mj)
     collab.set_status(tid, "in_progress", owner="worker", phase="researching")
 
@@ -110,12 +113,12 @@ def run(argv: list[str]) -> dict[str, Any]:
     states: list[dict[str, Any]] = []
     t0 = time.time()
     try:
-        for key in repos:
-            dest = root / key if len(repos) > 1 else root / "wt"
-            st = checkout(key, dest)
-            st["worktree"] = str(dest)
+        for name in repos:
+            dest = root / name if len(repos) > 1 else root / "wt"
+            st = checkout(keys[name], dest)
+            st.update({"worktree": str(dest), "repo": name, "target": keys[name]})
             states.append(st)
-            collab.event(tid, "checkout", repo=key, base=st["base"], head=st["head"], fetched=st["fetched"])
+            collab.event(tid, "checkout", repo=name, target=keys[name], base=st["base"], head=st["head"], fetched=st["fetched"])
         cwd = str(root) if len(repos) > 1 else states[0]["worktree"]
         rules: list[str] = []
         for r in allow:
@@ -165,7 +168,7 @@ def run(argv: list[str]) -> dict[str, Any]:
                  wall_ms=int((time.time() - t0) * 1000))
     out = {
         "id": tid, "run": prep["run_id"], "ok_result": ok, "result": result, "final_text": text,
-        "repos": [{k: s[k] for k in ("repo", "base", "head", "fetched")} for s in states],
+        "repos": [{k: s[k] for k in ("repo", "target", "base", "head", "fetched")} for s in states],
         "record": {k: record.get(k) for k in ("model", "turns", "tokens", "cache_hit_rate", "cost_usd",
                                                "wall_ms", "tool_calls", "denials", "exit", "session")},
     }
