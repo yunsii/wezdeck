@@ -134,6 +134,24 @@ else
   bad "argv profiles: read/write, observe stream formats, resume/fork per backend"
   printf '%s\n---\n' "$a_cwo" "$a_xwr" "$a_gwo" >&2
 fi
+# read profile parameters: custom allowlist, appended system prompt, max turns
+ptrace="$tmp/profile-trace.jsonl"; printf 'SYS RULES\n' >"$tmp/sys.md"
+_HOST_AGENT_ALLOW=(); prof="$(
+  _HOST_AGENT_ALLOW=(Read Grep 'Bash(git -C rx log:*)'); _HOST_AGENT_SYSTEM_TEXT="SYS RULES"; _HOST_AGENT_MAX_TURNS=40
+  argv_of claude read 1 '' 0)"
+if has "$prof" 'Bash(git -C rx log:*)' && has "$prof" --append-system-prompt && has "$prof" "SYS RULES" && has "$prof" --max-turns && has "$prof" 40 && ! has "$prof" Glob; then
+  ok "claude read profile: custom allowlist replaces default, system appended, max turns"
+else
+  bad "claude read profile parameters"; printf '%s\n' "$prof" >&2
+fi
+HOST_AGENT_INVOKE_TRACE="$ptrace" host_agent_invoke_run --backend grok --mode read --cwd "$cwd" --prompt-file "$prompt" \
+  --allow-tool Read --allow-tool 'Bash(git -C rx log:*)' --append-system-file "$tmp/sys.md" --capture >/dev/null
+if jq -e '(.argv|index("Bash(git -C rx log:*)")!=null) and (.prompt_file|endswith(".with-system.md"))' "$ptrace" >/dev/null \
+  && grep -q 'SYS RULES' "$prompt.with-system.md"; then
+  ok "grok read: extra Bash allow rules + system prepended to a prompt copy"
+else
+  bad "grok read profile parameters"; cat "$ptrace" >&2
+fi
 lib="$here/lib/host-agent-invoke.sh"
 if grep -q 'AGENT_ATTENTION_SKIP=1' "$lib" && grep -q -- '-u CODEX_HOME' "$lib"; then
   ok "lib keeps attention-skip + host CODEX_HOME unset"

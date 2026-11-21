@@ -443,6 +443,14 @@ def cmd_prepare_run(argv: list[str]) -> int:
             "kind": "phase_view", "source": f"ticket:{tid}#{phase}",
             "bytes": len(v), "sha256": hashlib.sha256(v).hexdigest(),
         })
+    # generic parts: --part kind=path (repeatable), e.g. system=…/system.md task=…/task.md
+    for i, a in enumerate(argv):
+        if a == "--part" and i + 1 < len(argv) and "=" in argv[i + 1]:
+            kind, path = argv[i + 1].split("=", 1)
+            if Path(path).is_file():
+                b = Path(path).read_bytes()
+                composition.append({"kind": kind, "source": Path(path).name, "bytes": len(b),
+                                    "sha256": hashlib.sha256(b).hexdigest()})
     contract_file = _opt(argv, "--contract-file")
     if contract_file and Path(contract_file).is_file():
         c = Path(contract_file).read_bytes()

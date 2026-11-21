@@ -7,7 +7,7 @@ local service, the tmux badge, humans with jq. Every response carries
 ``{"v":1,"ok":false,"error":{"code","message"}}`` with exit 0.
 
   api health [--repo R]
-  api list [--status S[,S]] [--repo R] [--parent ID] [--since ISO] [--limit N]
+  api list [--status S[,S]] [--repo R] [--parent ID] [--kind ticket,child,parent,research] [--since ISO] [--limit N]
   api show --id ID
   api events --after SEQ [--ticket ID] [--limit N]
   api run --run RUN
@@ -143,6 +143,7 @@ def summary(tid: str) -> dict[str, Any]:
         "phase": meta.get("phase"),
         "owner": meta.get("owner"),
         "parent": mj.get("parent") or meta.get("parent"),
+        "kind": mj.get("kind") or ("child" if mj.get("parent") else "ticket"),
         "created_at": meta.get("created_at"),
         "updated_at": meta.get("updated_at"),
         "worktree": mj.get("worktree"),
@@ -199,6 +200,7 @@ def cmd_list(argv: list[str]) -> dict[str, Any]:
     statuses = set(filter(None, (opt(argv, "--status") or "").split(",")))
     repo = opt(argv, "--repo")
     parent = check_tid(opt(argv, "--parent"))
+    kinds = set(filter(None, (opt(argv, "--kind") or "").split(",")))
     since = parse_iso(opt(argv, "--since"))
     limit = int_opt(argv, "--limit", 50)
     rows = []
@@ -212,6 +214,8 @@ def cmd_list(argv: list[str]) -> dict[str, Any]:
         if repo and repo not in (s["to"], s["from"]):
             continue
         if parent and s["parent"] != parent:
+            continue
+        if kinds and s["kind"] not in kinds:
             continue
         if since is not None and (parse_iso(s["updated_at"]) or 0) < since:
             continue

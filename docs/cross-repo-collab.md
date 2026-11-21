@@ -4,8 +4,11 @@ Status (2026-11-21): **P0–P3 live** — run observability + session reuse +
 `delegate api` (P0), wezdeck Console → Collab via Runtime
 `wezdeck-runtime-v2026.11.21.1` (P1), `delegate collab` parent/child scheduler
 with merge + fresh verify (P2), fe1 local service v7 `collab.read` + fe1
-⚙ › 跨仓协作 (P3). **P4 deferred** — see
-[Open questions](diagnostics.md#open-questions).
+⚙ › 跨仓协作 (P3). **P4 re-scoped** (2026-11-21, with the fe1 owner): wezdeck
+sees everything; fe1 filters to fe1-related (`--repo fe1`, live); fe1 research
+and future code changes run *as tickets* — step 1 `delegate research` landed,
+steps 2–3 (flows check behind a flag with parity, "交给 Agent 改" → collab
+parent) wait on decisions in [Open questions](diagnostics.md#open-questions).
 
 Related: [`agent-scheduling.md`](agent-scheduling.md) (channels, ticket vs
 multi-dir mount), [`workspaces.md`](workspaces.md) (worktrees),
@@ -67,8 +70,12 @@ parent ticket (协同单, meta.kind=parent)   delegate collab plan --contract FI
   runs: phases, retries, resumes, integration verify.
 - **Session.** The backend's conversation id. One session can span several
   runs (resume) or branch off another (fork).
-- **Read-only multi-repo research** (fe1's current mode) stays a single run
-  over a shared parent dir. Any write always splits into children.
+- **Research ticket** (`meta.kind=research`, `delegate research`): one
+  read-only run over one or more repos checked out detached at `origin/HEAD`
+  (several repos → one subdir each), straight to shipped/failed, worktrees
+  removed. Callers keep product semantics (prompt, `--system-file`, per-repo
+  `--allow-tool 'Bash(git -C {repo} log:*)'`, result JSON, evidence checks) —
+  the substrate for fe1 flows' check step. Any write splits into children.
 
 ## 4. Session launch observability (initial message and why)
 

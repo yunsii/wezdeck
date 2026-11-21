@@ -9,6 +9,7 @@
 #   host_agent_invoke_run --backend NAME --mode read|write --cwd DIR \
 #     --prompt-file PATH [--add-dir PATH] [--log PATH] [--effort LEVEL] \
 #     [--model ID] [--capture]
+#     [--allow-tool RULE]... [--append-system-file F] [--max-turns N]   (read profile)
 #     [--run-dir DIR [--run-id ID] [--launch-extra JSON_FILE]
 #      [--sink-py FILE --sink-arg ARG]] [--resume SESSION_ID [--fork]]
 #
@@ -107,6 +108,9 @@ _host_agent_grok_argv() {
     for rule in "${HOST_AGENT_GROK_READ_ALLOW[@]}"; do
       _HOST_AGENT_GROK_ARGV+=(--allow "$rule")
     done
+    for rule in ${_HOST_AGENT_ALLOW[@]+"${_HOST_AGENT_ALLOW[@]}"}; do
+      case "$rule" in Bash\(*) _HOST_AGENT_GROK_ARGV+=(--allow "$rule") ;; esac
+    done
   fi
   [ -n "$model" ] && _HOST_AGENT_GROK_ARGV+=(-m "$model")
   [ -n "$effort" ] && _HOST_AGENT_GROK_ARGV+=(--reasoning-effort "$effort")
@@ -125,9 +129,13 @@ _host_agent_cli_argv() {
       _HOST_AGENT_ARGV=(claude -p)
       if [ "$mode" = "write" ]; then
         _HOST_AGENT_ARGV+=(--permission-mode bypassPermissions)
+      elif [ -n "${_HOST_AGENT_ALLOW[*]:-}" ]; then
+        _HOST_AGENT_ARGV+=(--permission-mode plan --allowed-tools "${_HOST_AGENT_ALLOW[@]}")
       else
         _HOST_AGENT_ARGV+=(--permission-mode plan --allowed-tools Read Grep Glob)
       fi
+      [ -n "${_HOST_AGENT_SYSTEM_TEXT:-}" ] && _HOST_AGENT_ARGV+=(--append-system-prompt "$_HOST_AGENT_SYSTEM_TEXT")
+      [ -n "${_HOST_AGENT_MAX_TURNS:-}" ] && _HOST_AGENT_ARGV+=(--max-turns "$_HOST_AGENT_MAX_TURNS")
       if [ "$observe" = "1" ]; then
         _HOST_AGENT_ARGV+=(--output-format stream-json --verbose)
       elif [ "$mode" = "write" ]; then
@@ -177,7 +185,9 @@ _host_agent_cli_argv() {
 # Run one headless host CLI. Returns CLI exit (0 under MOCK).
 host_agent_invoke_run() {
   local backend="" mode="read" cwd="" prompt_file="" add_dir="" log_path="" effort="" model=""
-  local capture=0 run_dir="" run_id="" resume="" fork=0 launch_extra="" sink_py="" sink_arg=""
+  local capture=0 run_dir="" run_id="" resume="" fork=0 launch_extra="" sink_py="" sink_arg="" system_file=""
+  local -a _HOST_AGENT_ALLOW=()
+  local _HOST_AGENT_MAX_TURNS="" _HOST_AGENT_SYSTEM_TEXT=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --backend) backend="${2:-}"; shift 2 ;;
@@ -196,6 +206,9 @@ host_agent_invoke_run() {
       --launch-extra) launch_extra="${2:-}"; shift 2 ;;
       --sink-py) sink_py="${2:-}"; shift 2 ;;
       --sink-arg) sink_arg="${2:-}"; shift 2 ;;
+      --allow-tool) _HOST_AGENT_ALLOW+=("${2:-}"); shift 2 ;;
+      --append-system-file) system_file="${2:-}"; shift 2 ;;
+      --max-turns) _HOST_AGENT_MAX_TURNS="${2:-}"; shift 2 ;;
       *)
         printf 'host_agent_invoke_run: unknown option %s\n' "$1" >&2
         return 1
@@ -228,6 +241,18 @@ host_agent_invoke_run() {
   if [ "$fork" -eq 1 ] && [ -z "$resume" ]; then
     printf 'host_agent_invoke_run: --fork needs --resume ID\n' >&2
     return 1
+  fi
+
+  if [ -n "$system_file" ]; then
+    [ -f "$system_file" ] || { printf 'host_agent_invoke_run: system file missing: %s\n' "$system_file" >&2; return 1; }
+    if [ "$backend" = "claude" ]; then
+      _HOST_AGENT_SYSTEM_TEXT="$(cat "$system_file")"
+    else
+      # no append-system flag on codex/grok: prepend it to a copy of the prompt
+      local merged="${prompt_file}.with-system.md"
+      { cat "$system_file"; printf '\n\n---\n\n'; cat "$prompt_file"; } >"$merged"
+      prompt_file="$merged"
+    fi
   fi
 
   # argv is recorded for grok (built before MOCK return so tests can assert it).
