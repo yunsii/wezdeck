@@ -3,10 +3,15 @@
 // Durable Object is always kept: it carries presence, WebRTC signaling, and
 // is the fallback transport. On top of it we try a WebRTC DataChannel straight
 // to `wezdeck-wsl relay`; once open, requests use it and the relay only
-// forwards nothing but signaling. Design: docs/remote-access.md.
+// carries only signaling. Design: docs/remote-access.md.
 
 export type RemoteMode =
-  'unpaired' | 'connecting' | 'host-offline' | 'websocket' | 'webrtc'
+  | 'unpaired'
+  | 'unauthorized'
+  | 'connecting'
+  | 'host-offline'
+  | 'websocket'
+  | 'webrtc'
 /** How the DataChannel got through: same LAN, NAT punched, or TURN relay. */
 export type RemotePath = 'lan' | 'internet' | 'turn'
 
@@ -119,6 +124,7 @@ class RemoteLink {
   private started = false
   private wsRetry = 1_000
   private rtcTimer?: ReturnType<typeof setTimeout>
+  private hashListener?: () => void
 
   token() {
     return storage()?.getItem(TOKEN_KEY) ?? ''
@@ -127,6 +133,16 @@ class RemoteLink {
   /** Idempotent; called by the first consumer (getCollab / the badge). */
   start() {
     if (this.started || typeof window === 'undefined') return
+    // Opening a new pairing link in an already-open tab only changes the
+    // hash (no reload): adopt it and reload so the new token is used.
+    if (!this.hashListener) {
+      this.hashListener = () => {
+        if (!/[#&]pair=/.test(location.hash)) return
+        adoptPairingHash()
+        location.reload()
+      }
+      window.addEventListener('hashchange', this.hashListener)
+    }
     adoptPairingHash()
     if (!this.token()) return
     this.started = true
@@ -153,17 +169,52 @@ class RemoteLink {
       `token.${this.token()}`,
     ])
     this.ws = ws
+    let opened = false
     ws.onmessage = (event) => this.onFrame(String(event.data), 'websocket')
     ws.onopen = () => {
+      opened = true
       this.wsRetry = 1_000
     }
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       if (this.ws !== ws) return
       this.ws = undefined
       this.closeRtc('relay socket closed')
       this.set({ mode: 'connecting', path: undefined, rttMs: undefined })
-      setTimeout(() => this.openSocket(), this.wsRetry)
-      this.wsRetry = Math.min(this.wsRetry * 2, 30_000)
+      // 4401: the DO evicted us after the token was rotated. A handshake that
+      // never opened may be a refused token too; the browser hides the 401,
+      // so ask /relay/auth before retrying.
+      const refused =
+        event.code === 4401
+          ? Promise.resolve(true)
+          : opened
+            ? Promise.resolve(false)
+            : this.tokenRefused()
+      void refused.then((isRefused) => {
+        if (isRefused) {
+          this.set({
+            mode: 'unauthorized',
+            rtcNote: 'pairing token rejected; pair this device again',
+          })
+          return
+        }
+        setTimeout(() => this.openSocket(), this.wsRetry)
+        this.wsRetry = Math.min(this.wsRetry * 2, 30_000)
+      })
+    }
+  }
+
+  private async tokenRefused() {
+    try {
+      const response = await fetch(
+        `${relayBase().replace(/^ws/, 'http')}/relay/auth`,
+        {
+          headers: { authorization: `Bearer ${this.token()}` },
+          cache: 'no-store',
+        },
+      )
+      return response.status === 401
+    } catch {
+      return false
     }
   }
 
@@ -274,7 +325,9 @@ class RemoteLink {
       throw new Error(
         this.state.mode === 'host-offline'
           ? 'home host is offline'
-          : 'remote link is not connected',
+          : this.state.mode === 'unauthorized'
+            ? 'pairing token rejected; pair this device again'
+            : 'remote link is not connected',
       )
     }
     return new Promise((resolve, reject) => {

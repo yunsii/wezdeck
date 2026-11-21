@@ -29,6 +29,7 @@ export function RemoteBadge() {
   const label = {
     connecting: t`Connecting…`,
     'host-offline': t`Host offline`,
+    unauthorized: t`Token rejected — pair again`,
     websocket: t`WebSocket relay`,
     webrtc: state.path ? t`WebRTC direct · ${pathLabel}` : t`WebRTC direct`,
   }[state.mode]
@@ -37,7 +38,7 @@ export function RemoteBadge() {
       ? 'bg-emerald-500'
       : state.mode === 'websocket'
         ? 'bg-amber-500'
-        : state.mode === 'host-offline'
+        : state.mode === 'host-offline' || state.mode === 'unauthorized'
           ? 'bg-red-500'
           : 'bg-zinc-400'
   const rtt = state.rttMs

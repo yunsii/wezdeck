@@ -11,15 +11,21 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 
-// Headless Chromium under WSL sometimes reports ERR_NETWORK_CHANGED while
-// interfaces (IPv6 / tunnel) settle right after launch; retry that once.
+// Headless Chromium under WSL drops in-flight loads with ERR_NETWORK_CHANGED
+// whenever a mirrored Windows adapter flaps (seen: a VPN adapter re-added
+// every ~2 s). A page whose bundle died never renders, so reload fast instead
+// of waiting out a long timeout.
 async function open(page: Page, url: string) {
-  try {
-    await page.goto(url)
-  } catch (error) {
-    if (!String(error).includes('ERR_NETWORK_CHANGED')) throw error
-    await page.waitForTimeout(1_000)
-    await page.goto(url)
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await page.goto(url)
+      await page
+        .getByRole('heading', { name: 'Cross-repo collab' })
+        .waitFor({ timeout: 5_000 })
+      return
+    } catch (error) {
+      if (attempt >= 3) throw error
+    }
   }
 }
 
@@ -31,7 +37,7 @@ async function badge(page: Page, mode: string) {
       return b?.getAttribute('data-mode') === m && b.getAttribute('data-rtt')
     },
     [mode],
-    { timeout: 30_000 },
+    { timeout: 15_000 },
   )
   return {
     text: (await el.textContent()) ?? '',
@@ -61,7 +67,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     expect(['lan', 'internet']).toContain(b.path)
     expect(b.rtt).toBeGreaterThanOrEqual(0)
     const list = page.getByRole('listbox', { name: 'Collab tickets' })
-    await list.getByRole('option').first().waitFor({ timeout: 20_000 })
+    await list.getByRole('option').first().waitFor({ timeout: 10_000 })
     expect(await list.getByRole('option').count()).toBeGreaterThan(0)
     // Requests issued after the DataChannel opened must use it: open a
     // ticket that is not loaded yet (falls back to the 30 s idle poll).
@@ -74,7 +80,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
             ?.getAttribute('data-rpc-webrtc'),
         ) > 0,
       undefined,
-      { timeout: 40_000 },
+      { timeout: 15_000 },
     )
     await page.close()
   }, 90_000)
@@ -89,7 +95,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     const b = await badge(page, 'websocket')
     expect(b.text).toContain('WebSocket')
     const list = page.getByRole('listbox', { name: 'Collab tickets' })
-    await list.getByRole('option').first().waitFor({ timeout: 20_000 })
+    await list.getByRole('option').first().waitFor({ timeout: 10_000 })
     await context.close()
   }, 60_000)
 
@@ -108,4 +114,19 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     expect(code).not.toBe(0)
     await page.close()
   })
+
+  it('shows a rejected token instead of connecting forever', async () => {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    await open(page, `${base}/console/collab?remote=1#pair=not-the-token`)
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector('[data-testid="remote-badge"]')
+          ?.getAttribute('data-mode') === 'unauthorized',
+      undefined,
+      { timeout: 10_000 },
+    )
+    await context.close()
+  }, 40_000)
 })

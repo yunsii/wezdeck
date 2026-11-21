@@ -708,6 +708,10 @@ msgstr "Today"
 msgid "Today events"
 msgstr "Today events"
 
+#: src/features/remote-badge.tsx:32
+msgid "Token rejected — pair again"
+msgstr "Token rejected — pair again"
+
 #: src/features/console-collab-run.tsx:71
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
@@ -796,19 +800,19 @@ msgstr "Wall"
 msgid "Wall p50"
 msgstr "Wall p50"
 
-#: src/features/remote-badge.tsx:33
+#: src/features/remote-badge.tsx:34
 msgid "WebRTC direct"
 msgstr "WebRTC direct"
 
-#: src/features/remote-badge.tsx:33
+#: src/features/remote-badge.tsx:34
 msgid "WebRTC direct · {pathLabel}"
 msgstr "WebRTC direct · {pathLabel}"
 
-#: src/features/remote-badge.tsx:53
+#: src/features/remote-badge.tsx:54
 msgid "WebRTC: {note}"
 msgstr "WebRTC: {note}"
 
-#: src/features/remote-badge.tsx:32
+#: src/features/remote-badge.tsx:33
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 

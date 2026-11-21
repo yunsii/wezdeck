@@ -16,7 +16,23 @@ export interface RelayEnv {
   RELAY_CLIENT_TOKEN: string
 }
 
-type Attachment = { role: 'host' } | { role: 'client'; cid: string }
+type Attachment =
+  { role: 'host' } | { role: 'client'; cid: string; tag: string }
+
+/** Short digest of a token, kept on each client socket so a rotated secret can evict it. */
+async function tokenTag(token: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(token),
+  )
+  return [...new Uint8Array(digest).slice(0, 8)]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function logEvent(event: string, fields: Record<string, unknown> = {}) {
+  console.log(JSON.stringify({ category: 'relay', event, ...fields }))
+}
 
 const PRESENCE_KEY = 'host_presence'
 
@@ -33,6 +49,7 @@ export class HostRelay extends DurableObject<RelayEnv> {
     if (request.headers.get('upgrade') !== 'websocket') {
       return Response.json(await this.presence())
     }
+    await this.evictRotatedClients()
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
     if (role === 'host') {
@@ -44,8 +61,13 @@ export class HostRelay extends DurableObject<RelayEnv> {
       await this.setPresence(true)
     } else {
       const cid = crypto.randomUUID()
+      const tag = request.headers.get('x-relay-token-tag') ?? ''
       this.ctx.acceptWebSocket(server, ['client', cid])
-      server.serializeAttachment({ role: 'client', cid } satisfies Attachment)
+      server.serializeAttachment({
+        role: 'client',
+        cid,
+        tag,
+      } satisfies Attachment)
       server.send(JSON.stringify({ t: 'host', ...(await this.presence()) }))
     }
     const headers = new Headers()
@@ -73,6 +95,10 @@ export class HostRelay extends DurableObject<RelayEnv> {
       return
     }
     if (meta?.role !== 'client') return
+    if (meta.tag !== (await this.clientTag())) {
+      ws.close(4401, 'pairing token rotated')
+      return
+    }
     if (!['rpc', 'sig', 'ping'].includes(String(frame.t))) return
     const host = this.ctx.getWebSockets('host').at(0)
     if (!host) {
@@ -110,6 +136,24 @@ export class HostRelay extends DurableObject<RelayEnv> {
     await this.webSocketClose(ws, 1011)
   }
 
+  private currentTag?: Promise<string>
+  private clientTag() {
+    this.currentTag ??= tokenTag(this.env.RELAY_CLIENT_TOKEN)
+    return this.currentTag
+  }
+
+  /** Sockets opened with a token that is no longer the secret (rotation) are closed. */
+  private async evictRotatedClients() {
+    const current = await this.clientTag()
+    for (const ws of this.ctx.getWebSockets('client')) {
+      const meta = ws.deserializeAttachment() as Attachment | null
+      if (meta?.role === 'client' && meta.tag !== current) {
+        ws.close(4401, 'pairing token rotated')
+        logEvent('client_evicted', { cid: meta.cid })
+      }
+    }
+  }
+
   private async presence() {
     const stored = await this.ctx.storage.get<{ since: string }>(PRESENCE_KEY)
     return {
@@ -134,7 +178,7 @@ function safeEqual(a: string, b: string) {
   return diff === 0
 }
 
-/** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/health */
+/** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/auth · /relay/health */
 export async function relayFetch(request: Request, env: RelayEnv) {
   const url = new URL(request.url)
   const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName('default'))
@@ -147,6 +191,19 @@ export async function relayFetch(request: Request, env: RelayEnv) {
       },
     })
   }
+  if (url.pathname === '/relay/auth') {
+    // Browsers cannot read a refused WebSocket handshake's status; the page
+    // asks here to tell "token rejected" from "network down".
+    const ok = safeEqual(
+      request.headers.get('authorization') ?? '',
+      `Bearer ${env.RELAY_CLIENT_TOKEN}`,
+    )
+    if (!ok) logEvent('auth_failed', { role: 'client', via: 'probe' })
+    return new Response(null, {
+      status: ok ? 204 : 401,
+      headers: { 'cache-control': 'no-store' },
+    })
+  }
   if (request.headers.get('upgrade') !== 'websocket') {
     return new Response('expected websocket', { status: 426 })
   }
@@ -154,6 +211,7 @@ export async function relayFetch(request: Request, env: RelayEnv) {
   if (url.pathname === '/relay/host') {
     const auth = request.headers.get('authorization') ?? ''
     if (!safeEqual(auth, `Bearer ${env.RELAY_HOST_TOKEN}`)) {
+      logEvent('auth_failed', { role: 'host' })
       return new Response('unauthorized', { status: 401 })
     }
     headers.set('x-relay-role', 'host')
@@ -168,9 +226,11 @@ export async function relayFetch(request: Request, env: RelayEnv) {
       !protocols.includes('wezdeck.v1') ||
       !safeEqual(token, env.RELAY_CLIENT_TOKEN)
     ) {
+      logEvent('auth_failed', { role: 'client', via: 'websocket' })
       return new Response('unauthorized', { status: 401 })
     }
     headers.set('x-relay-role', 'client')
+    headers.set('x-relay-token-tag', await tokenTag(token))
     headers.set('x-relay-protocol', 'wezdeck.v1')
   } else {
     return new Response('not found', { status: 404 })
