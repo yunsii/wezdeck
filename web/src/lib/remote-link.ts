@@ -51,14 +51,19 @@ function storage() {
 }
 
 /** `#pair=<token>` in the URL stores the client token on this device. */
+/** Token from a pairing link opened in this page; wins over (possibly stale or unwritable) storage. */
+let pairedToken = ''
+
 function adoptPairingHash() {
   if (typeof location === 'undefined') return
   const match = /[#&]pair=([^&]+)/.exec(location.hash)
   if (!match) return
+  pairedToken = decodeURIComponent(match[1])
   try {
-    storage()?.setItem(TOKEN_KEY, decodeURIComponent(match[1]))
+    storage()?.setItem(TOKEN_KEY, pairedToken)
   } catch {
-    // Private mode: the pairing lasts for this page only.
+    // Storage blocked (private mode / in-app browser): the token from the
+    // link still applies to this page via pairedToken.
   }
   history.replaceState(null, '', location.pathname + location.search)
 }
@@ -127,7 +132,12 @@ class RemoteLink {
   private hashListener?: () => void
 
   token() {
-    return storage()?.getItem(TOKEN_KEY) ?? ''
+    if (pairedToken) return pairedToken
+    try {
+      return storage()?.getItem(TOKEN_KEY) ?? ''
+    } catch {
+      return ''
+    }
   }
 
   /** Idempotent; called by the first consumer (getCollab / the badge). */

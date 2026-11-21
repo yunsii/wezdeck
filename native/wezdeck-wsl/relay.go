@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -298,7 +299,41 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 	}
 	body, _ := json.Marshal(relaySignal{Type: "answer", SDP: pc.LocalDescription().SDP})
 	r.send(relayFrame{T: "sig", Cid: cid, Data: body})
-	r.logf("rtc_answer", "cid=%s gather_ms=%d", cid, time.Since(started).Milliseconds())
+	r.logf("rtc_answer", "cid=%s gather_ms=%d offer_cands=%q answer_cands=%q", cid, time.Since(started).Milliseconds(), candidateSummary(sig.SDP), candidateSummary(pc.LocalDescription().SDP))
+}
+
+// candidateSummary counts ICE candidates by type for the log, e.g.
+// "host=2(mdns=2) srflx=1": shows whether the phone hid its LAN address
+// behind mDNS or offered a public one, without logging the addresses.
+func candidateSummary(sdp string) string {
+	counts := map[string]int{}
+	mdns := 0
+	for _, line := range strings.Split(sdp, "\n") {
+		if !strings.HasPrefix(line, "a=candidate:") {
+			continue
+		}
+		fields := strings.Fields(line)
+		for i := 0; i+1 < len(fields); i++ {
+			if fields[i] == "typ" {
+				counts[fields[i+1]]++
+				if fields[i+1] == "host" && len(fields) > 4 && strings.HasSuffix(fields[4], ".local") {
+					mdns++
+				}
+			}
+		}
+	}
+	parts := []string{}
+	for _, typ := range []string{"host", "srflx", "prflx", "relay"} {
+		if counts[typ] == 0 {
+			continue
+		}
+		part := fmt.Sprintf("%s=%d", typ, counts[typ])
+		if typ == "host" && mdns > 0 {
+			part += fmt.Sprintf("(mdns=%d)", mdns)
+		}
+		parts = append(parts, part)
+	}
+	return strings.Join(parts, " ")
 }
 
 func (r *relay) dropPeer(cid string) {

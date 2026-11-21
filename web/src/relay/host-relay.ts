@@ -30,6 +30,11 @@ async function tokenTag(token: string) {
     .join('')
 }
 
+/** What a refused token was, without logging it: digest + length (stale vs truncated). */
+async function tokenFacts(token: string) {
+  return { tag: token ? await tokenTag(token) : '', len: token.length }
+}
+
 function logEvent(event: string, fields: Record<string, unknown> = {}) {
   console.log(JSON.stringify({ category: 'relay', event, ...fields }))
 }
@@ -194,11 +199,17 @@ export async function relayFetch(request: Request, env: RelayEnv) {
   if (url.pathname === '/relay/auth') {
     // Browsers cannot read a refused WebSocket handshake's status; the page
     // asks here to tell "token rejected" from "network down".
-    const ok = safeEqual(
-      request.headers.get('authorization') ?? '',
-      `Bearer ${env.RELAY_CLIENT_TOKEN}`,
+    const presented = (request.headers.get('authorization') ?? '').replace(
+      /^Bearer /,
+      '',
     )
-    if (!ok) logEvent('auth_failed', { role: 'client', via: 'probe' })
+    const ok = safeEqual(presented, env.RELAY_CLIENT_TOKEN)
+    if (!ok)
+      logEvent('auth_failed', {
+        role: 'client',
+        via: 'probe',
+        ...(await tokenFacts(presented)),
+      })
     return new Response(null, {
       status: ok ? 204 : 401,
       headers: { 'cache-control': 'no-store' },
@@ -226,7 +237,11 @@ export async function relayFetch(request: Request, env: RelayEnv) {
       !protocols.includes('wezdeck.v1') ||
       !safeEqual(token, env.RELAY_CLIENT_TOKEN)
     ) {
-      logEvent('auth_failed', { role: 'client', via: 'websocket' })
+      logEvent('auth_failed', {
+        role: 'client',
+        via: 'websocket',
+        ...(await tokenFacts(token)),
+      })
       return new Response('unauthorized', { status: 401 })
     }
     headers.set('x-relay-role', 'client')

@@ -34,3 +34,12 @@ func TestRelayFrameRoundTrip(t *testing.T) {
 		t.Fatalf("round trip: %s → %+v (%v)", body, back, err)
 	}
 }
+
+func TestCandidateSummary(t *testing.T) {
+	sdp := "v=0\na=candidate:1 1 udp 2122260223 abcd-1234.local 54321 typ host generation 0\n" +
+		"a=candidate:2 1 udp 2122194687 192.168.3.20 54322 typ host\n" +
+		"a=candidate:3 1 udp 1686052607 203.0.113.9 40000 typ srflx raddr 0.0.0.0 rport 0\n"
+	if got := candidateSummary(sdp); got != "host=2(mdns=1) srflx=1" {
+		t.Fatalf("got %q", got)
+	}
+}
