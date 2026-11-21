@@ -26,8 +26,8 @@ wr_preflight_is_primary() {
 
 wr_preflight_ticket_hint() {
   local worktree_root="${1:?}"
-  if [[ -d "$worktree_root/.ticket" || -d "$worktree_root/.delegate" ]]; then  # legacy delegate-* / delegate/* / .delegate until no such worktree remains (docs/compatibility-policy.md)
-    printf '  soft: %s/.ticket (or legacy .delegate) present (will be cleaned by allowlist; ensure ticket is closed/shipped)\n' "$worktree_root"
+  if [[ -d "$worktree_root/.ticket" ]]; then
+    printf '  soft: %s/.ticket present (will be cleaned by allowlist; ensure ticket is closed/shipped)\n' "$worktree_root"
   fi
 }
 

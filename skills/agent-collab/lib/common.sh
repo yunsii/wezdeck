@@ -9,6 +9,12 @@
 : "${TICKET_ORIGIN_CWD:=$PWD}"
 export TICKET_CMDLINE TICKET_ORIGIN_CWD
 
+# Rename boundary detector: at most daily, if a pre-rename delegate-* worktree
+# shows up, print the one-time migration command (observe.py legacy-check).
+if [[ "${TICKET_LEGACY_NOTICE:-1}" != "0" ]]; then
+  python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/observe.py" legacy-check >/dev/null 2>&2 || true
+fi
+
 ticket_tool_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }

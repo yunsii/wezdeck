@@ -12,6 +12,8 @@ CLI (used by worker.sh):
   observe.py prepare-run --ticket ID --phase P --role R --backend B
       --prompt-file F [--worktree W] [--template T] [--view-file V] [--force-fresh]
   observe.py finish-run --ticket ID --role R --run-id RUN
+  observe.py legacy-check [--force]   (pre-rename worktree detector; daily from common.sh)
+  observe.py legacy-migrate [--dry-run]  (delegate-* → ticket-* worktrees, branches, manifests)
   observe.py retention [--force]      (also runs at most daily from prepare-run)
 """
 from __future__ import annotations
@@ -114,6 +116,7 @@ LOG_KINDS = {
     "created", "claimed", "released", "status", "reply", "challenge", "closed",
     "research_start", "research_done", "implement_start", "implement_done",
     "worktree_ready", "run_start", "run_end", "error", "queued", "dispatched", "merge",
+    "legacy_compat",
 }
 VIA_KINDS = {"created", "claimed", "released", "reply", "challenge", "status", "closed"}
 LOG_FIELDS = (
@@ -401,6 +404,127 @@ def retention(*, force: bool = False) -> dict[str, int]:
     return out
 
 
+# ------------------------------------------------------------------ rename compat reminder
+
+
+def _target_paths() -> list[str]:
+    cfg = root() / "config.yml"
+    if not cfg.is_file():
+        return []
+    paths = re.findall(r"^\s+path:\s*(\S+)\s*$", cfg.read_text(encoding="utf-8"), flags=re.M)
+    return [str(Path(p).expanduser()) for p in paths]
+
+
+def legacy_worktrees() -> list[str]:
+    """Pre-rename `delegate-*` worktrees still registered in any configured target repo."""
+    out: list[str] = []
+    for repo in _target_paths():
+        try:
+            r = subprocess.run(["git", "-C", repo, "worktree", "list", "--porcelain"],
+                               capture_output=True, text=True, timeout=10, check=False)
+        except Exception:  # noqa: BLE001
+            continue
+        for line in r.stdout.splitlines():
+            if line.startswith("worktree ") and Path(line[9:]).name.startswith("delegate-"):
+                out.append(line[9:])
+    return out
+
+
+def legacy_migrate(*, dry_run: bool = False) -> dict[str, Any]:
+    """One-time rename migration of pre-rename worktrees: delegate-<id> → ticket-<id>.
+
+    Moves the worktree (`git worktree move`), renames a `delegate/<id>` branch to
+    `ticket/<id>` (any other branch, e.g. a pushed feature branch, keeps its name),
+    renames the `.delegate/` scratch dir to `.ticket/`, and rewrites the
+    worktree-task manifest (`.task-meta/<slug>.json`) and the ticket's meta.json.
+    Refuses a worktree with uncommitted changes outside `.delegate/` or a process
+    whose cwd is inside it."""
+    done: list[dict[str, Any]] = []
+    for w in legacy_worktrees():
+        old = Path(w)
+        new = old.with_name("ticket-" + old.name[len("delegate-"):])
+        tid = old.name[len("delegate-"):]
+        common = subprocess.run(["git", "-C", w, "rev-parse", "--path-format=absolute", "--git-common-dir"],
+                                capture_output=True, text=True, check=False).stdout.strip()
+        repo = str(Path(common).parent)
+        branch = subprocess.run(["git", "-C", w, "rev-parse", "--abbrev-ref", "HEAD"],
+                                capture_output=True, text=True, check=False).stdout.strip()
+        dirty = [ln for ln in subprocess.run(["git", "-C", w, "status", "--porcelain"], capture_output=True,
+                                             text=True, check=False).stdout.splitlines() if ".delegate" not in ln]
+        busy = []
+        for proc in Path("/proc").iterdir():
+            if proc.name.isdigit():
+                try:
+                    if os.readlink(proc / "cwd").startswith(w):
+                        busy.append(proc.name)
+                except OSError:
+                    pass
+        row: dict[str, Any] = {"from": w, "to": str(new), "ticket": tid, "branch": branch}
+        if dirty or busy or new.exists():
+            row["skipped"] = "dirty" if dirty else ("in use by pid " + ",".join(busy[:3])) if busy else "target exists"
+            done.append(row)
+            continue
+        new_branch = "ticket/" + branch[len("delegate/"):] if branch.startswith("delegate/") else branch
+        row["new_branch"] = new_branch
+        if not dry_run:
+            if new_branch != branch:
+                subprocess.run(["git", "-C", repo, "branch", "-m", branch, new_branch], check=True, capture_output=True)
+            subprocess.run(["git", "-C", repo, "worktree", "move", w, str(new)], check=True, capture_output=True)
+            if (new / ".delegate").is_dir() and not (new / ".ticket").exists():
+                (new / ".delegate").rename(new / ".ticket")
+            tm_old = old.parent / ".task-meta" / f"{old.name}.json"
+            if tm_old.is_file():
+                tm = json.loads(tm_old.read_text(encoding="utf-8"))
+                tm.update({"task_slug": new.name, "worktree_path": str(new), "branch_name": new_branch})
+                (old.parent / ".task-meta" / f"{new.name}.json").write_text(json.dumps(tm, indent=2) + "\n", encoding="utf-8")
+                tm_old.unlink()
+            if (_data_dir(tid) / "meta.json").is_file():
+                meta = _meta_json(tid)
+                meta["worktree"] = str(new)
+                meta["branch"] = new_branch
+                _write_meta_json(tid, meta)
+                write_events(tid, [{"type": "worktree_migrated", "from": w, "to": str(new), "branch": new_branch}])
+        row["migrated"] = not dry_run
+        done.append(row)
+    # kept branches of already-reclaimed tickets: rename local-only delegate/* (pushed ones keep their name)
+    branches: list[dict[str, Any]] = []
+    for repo in _target_paths():
+        if not Path(repo, ".git").exists():
+            continue
+        out = subprocess.run(["git", "-C", repo, "for-each-ref", "--format=%(refname:short)", "refs/heads/delegate/"],
+                             capture_output=True, text=True, check=False).stdout.split()
+        remote = set(subprocess.run(["git", "-C", repo, "for-each-ref", "--format=%(refname:short)", "refs/remotes/"],
+                                    capture_output=True, text=True, check=False).stdout.split())
+        for b in out:
+            row = {"repo": repo, "branch": b, "new_branch": "ticket/" + b[len("delegate/"):]}
+            if any(r.endswith("/" + b) for r in remote):
+                row["skipped"] = "pushed"
+            elif not dry_run:
+                r = subprocess.run(["git", "-C", repo, "branch", "-m", b, row["new_branch"]], capture_output=True, text=True, check=False)
+                row["renamed"] = r.returncode == 0
+                if r.returncode:
+                    row["skipped"] = r.stderr.strip()[-160:]
+            branches.append(row)
+    return {"dry_run": dry_run, "worktrees": done, "branches": branches}
+
+
+def legacy_reminder(*, force: bool = False) -> dict[str, Any]:
+    """Once a day: if pre-rename delegate-* worktrees still exist (e.g. on another
+    machine), tell the user the exact migration command (stderr + runtime.log)."""
+    stamp = root() / ".locks" / "legacy-delegate.stamp"
+    if not force and stamp.is_file() and time.time() - stamp.stat().st_mtime < 86400:
+        return {"skipped": True}
+    stamp.parent.mkdir(parents=True, exist_ok=True)
+    stamp.touch()
+    left = legacy_worktrees()
+    if left:
+        here = Path(__file__).resolve()
+        print(f"[ticket] 发现 {len(left)} 个改名前的 delegate-* worktree（delegate → ticket 已改名），迁移："
+              f"python3 {here} legacy-migrate [--dry-run]。不想再看到：TICKET_LEGACY_NOTICE=0。", file=sys.stderr)
+        _runtime_log([{"type": "legacy_compat", "id": "-", "message": f"{len(left)} pre-rename delegate-* worktree(s); run legacy-migrate"}])
+    return {"remaining": len(left), "worktrees": left}
+
+
 # ------------------------------------------------------------------ CLI
 
 
@@ -528,6 +652,12 @@ def main(argv: list[str]) -> int:
         return cmd_prepare_run(rest)
     if cmd == "finish-run":
         return cmd_finish_run(rest)
+    if cmd == "legacy-migrate":
+        print(json.dumps(legacy_migrate(dry_run="--dry-run" in rest), ensure_ascii=False, indent=2))
+        return 0
+    if cmd == "legacy-check":
+        print(json.dumps(legacy_reminder(force="--force" in rest), ensure_ascii=False))
+        return 0
     if cmd == "retention":
         print(json.dumps(retention(force="--force" in rest)))
         return 0

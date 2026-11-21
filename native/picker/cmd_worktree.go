@@ -517,7 +517,7 @@ func (ui *worktreeUI) beginReclaimConfirm() {
 	base := filepath.Base(r.path)
 	if !strings.Contains(r.path, "/.worktrees/") && !strings.HasPrefix(base, "dev-") &&
 		!strings.HasPrefix(base, "task-") && !strings.HasPrefix(base, "hotfix-") &&
-		!strings.HasPrefix(base, "fix-") && !strings.HasPrefix(base, "ticket-") && !strings.HasPrefix(base, "delegate-") &&
+		!strings.HasPrefix(base, "fix-") && !strings.HasPrefix(base, "ticket-") &&
 		!strings.HasPrefix(base, "claw-") {
 		ui.flash = "refusing primary worktree"
 		return

@@ -201,10 +201,10 @@ tmux_worktree_is_delegated() {
   [[ -n "$worktree_root" ]] || return 1
   base="$(basename "$worktree_root")"
   case "$base" in
-    ticket-*|delegate-*|claw-*) return 0 ;;  # legacy delegate-* / delegate/* / .delegate until no such worktree remains (docs/compatibility-policy.md)
+    ticket-*|claw-*) return 0 ;;
   esac
   case "$branch" in
-    ticket/*|delegate/*|claw/*) return 0 ;;
+    ticket/*|claw/*) return 0 ;;
   esac
   return 1
 }

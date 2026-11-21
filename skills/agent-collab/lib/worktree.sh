@@ -73,7 +73,7 @@ ticket_ensure_worktree() {
 
 # Allowlisted dirt that Mode 3 workers leave behind (never blocks reclaim).
 # Comma-separated path prefixes relative to the worktree root.
-TICKET_RECLAIM_IGNORE_GLOBS="${TICKET_RECLAIM_IGNORE_GLOBS:-.ticket,.ticket/,.delegate,.delegate/}"  # .delegate: legacy scratch dir
+TICKET_RECLAIM_IGNORE_GLOBS="${TICKET_RECLAIM_IGNORE_GLOBS:-.ticket,.ticket/}"
 
 # True if porcelain line is only under an allowlisted prefix.
 ticket_reclaim_line_allowlisted() {
@@ -203,8 +203,7 @@ ticket_reclaim_worktree() {
   fi
 
   slug="$(basename "$path")"
-  # legacy delegate-<id> worktrees (pre-rename) are still ours until none remain
-  if [[ "$slug" != "$expected" && "$slug" != "delegate-${ticket_id}" ]]; then
+  if [[ "$slug" != "$expected" ]]; then
     ticket_reclaim_record "$ticket_id" "worktree_reclaim_skipped" "slug_mismatch" "$path" 0 >/dev/null
     printf '{"ok":false,"id":"%s","action":"skipped","reason":"slug_mismatch","worktree":"%s","expected":"%s"}\n' \
       "$ticket_id" "$path" "$expected"
@@ -317,7 +316,7 @@ ticket_reclaim_orphan_path() {
   local slug
   slug="$(basename "$path")"
   case "$slug" in
-    ticket-*|delegate-*) ;;  # legacy delegate-* until none remain
+    ticket-*) ;;
     *)
       printf '{"ok":false,"action":"skipped","reason":"not_ticket_slug","worktree":"%s"}\n' "$path"
       return 1

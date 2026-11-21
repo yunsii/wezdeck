@@ -28,10 +28,13 @@ multi-dir mount), [`workspaces.md`](workspaces.md) (worktrees),
 | Log source | `source=ticket` (category `collab`) |
 
 Renamed from `cross-repo-delegate` / `delegate` / `DELEGATE_*` in one change
-([`compatibility-policy.md`](compatibility-policy.md)). The only compat kept is
-at the worktree-reclaim boundary for pre-rename `delegate-*` / `delegate/*` /
-`.delegate` worktrees still on disk; remove it once `ticket worktrees --alive`
-lists none of them.
+([`compatibility-policy.md`](compatibility-policy.md)) with **no compat layer**:
+pre-rename data was migrated once (`python3 skills/agent-collab/lib/observe.py
+legacy-migrate [--dry-run]`: `delegate-<id>` worktrees → `ticket-<id>`, local-only
+`delegate/*` branches → `ticket/*`, `.delegate/` → `.ticket/`, task-meta and
+meta.json rewritten; pushed branches keep their names). The boundary detector
+(`legacy-check`, at most daily from `ticket`) prints that command if a
+pre-rename worktree ever shows up again (e.g. on another machine).
 
 ## 1. Goal and non-goals
 

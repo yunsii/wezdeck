@@ -228,6 +228,21 @@ import sys; sys.path.insert(0,'$here/lib'); import research as r
 assert r.parse_json('x {\"a\": 1} y')=={'a':1}
 assert r.parse_json('\x60\x60\x60json\n{\"b\": [1]}\n\x60\x60\x60')=={'b':[1]}
 assert r.parse_json('nothing') is None"
+# rename migration: delegate-<id> worktree → ticket-<id> (branch, .delegate, task-meta, meta.json)
+LT="req-20250101-000000-abcdef"; LWT="$tmp/.worktrees/rx/delegate-$LT"
+git -C "$tmp/rx" worktree add -q -b "delegate/$LT" "$LWT" origin/main
+mkdir -p "$LWT/.delegate" "$tmp/.worktrees/rx/.task-meta"; printf 'scratch\n' >"$LWT/.delegate/ticket.md"
+printf '{"task_slug":"delegate-%s","worktree_path":"%s","branch_name":"delegate/%s"}\n' "$LT" "$LWT" "$LT" >"$tmp/.worktrees/rx/.task-meta/delegate-$LT.json"
+mkdir -p "$TICKETS_ROOT/_data/$LT"; printf '{"worktree":"%s","branch":null}\n' "$LWT" >"$TICKETS_ROOT/_data/$LT/meta.json"
+check "legacy-check sees the pre-rename worktree" jq -e '.remaining==1' <<<"$(python3 "$here/lib/observe.py" legacy-check --force 2>/dev/null)"
+mig="$(python3 "$here/lib/observe.py" legacy-migrate)"
+NWT="$tmp/.worktrees/rx/ticket-$LT"
+check "legacy-migrate moves worktree, renames branch + scratch, rewrites task-meta + meta.json" bash -c "
+  test -d '$NWT/.ticket' && test ! -e '$LWT' && test \"\$(git -C '$NWT' rev-parse --abbrev-ref HEAD)\" = 'ticket/$LT' &&
+  jq -e '.task_slug==\"ticket-$LT\" and .branch_name==\"ticket/$LT\"' '$tmp/.worktrees/rx/.task-meta/ticket-$LT.json' >/dev/null &&
+  test ! -e '$tmp/.worktrees/rx/.task-meta/delegate-$LT.json' &&
+  jq -e '.worktree==\"$NWT\" and .branch==\"ticket/$LT\"' '$TICKETS_ROOT/_data/$LT/meta.json' >/dev/null"
+check "after migration nothing is left to remind about" jq -e '.remaining==0' <<<"$(python3 "$here/lib/observe.py" legacy-check --force 2>/dev/null)"
 check "verdict parser" python3 -c "
 import sys; sys.path.insert(0,'$here/lib'); import fanout as collab
 assert collab.parse_verdict('进展：x\n{\"verdict\": \"pass\", \"findings\": []}')['verdict']=='pass'
