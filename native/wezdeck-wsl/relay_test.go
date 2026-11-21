@@ -43,3 +43,18 @@ func TestCandidateSummary(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestSamePublic(t *testing.T) {
+	phone := "a=candidate:3 1 udp 1 203.0.113.9 40000 typ srflx raddr 0.0.0.0 rport 0\n"
+	host := "a=candidate:4 1 udp 1 203.0.113.9 50000 typ srflx raddr 0.0.0.0 rport 0\n"
+	other := "a=candidate:5 1 udp 1 198.51.100.7 50000 typ srflx raddr 0.0.0.0 rport 0\n"
+	if got := samePublic(phone, host); got != "yes" {
+		t.Fatalf("same network: %s", got)
+	}
+	if got := samePublic(phone, other); got != "no" {
+		t.Fatalf("different networks: %s", got)
+	}
+	if got := samePublic(phone, "a=candidate:1 1 udp 1 10.0.0.2 1 typ host\n"); got != "unknown" {
+		t.Fatalf("no srflx: %s", got)
+	}
+}

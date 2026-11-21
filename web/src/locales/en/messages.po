@@ -63,6 +63,10 @@ msgstr "All statuses"
 msgid "All time"
 msgstr "All time"
 
+#: src/features/remote-badge.tsx:121
+msgid "Allow LAN direct"
+msgstr "Allow LAN direct"
+
 #: src/features/landing-example.tsx:130
 msgid "An example. Select a session to see where you would jump back."
 msgstr "An example. Select a session to see where you would jump back."
@@ -142,7 +146,7 @@ msgstr "Command"
 msgid "conflict"
 msgstr "conflict"
 
-#: src/features/remote-badge.tsx:30
+#: src/features/remote-badge.tsx:76
 msgid "Connecting…"
 msgstr "Connecting…"
 
@@ -249,11 +253,15 @@ msgstr "Follow system theme"
 msgid "Git"
 msgstr "Git"
 
+#: src/features/remote-badge.tsx:120
+msgid "Grant failed ({micError}) — retry"
+msgstr "Grant failed ({micError}) — retry"
+
 #: src/features/console-collab-run.tsx:117
 msgid "Hide initial prompt"
 msgstr "Hide initial prompt"
 
-#: src/features/remote-badge.tsx:31
+#: src/features/remote-badge.tsx:77
 msgid "Host offline"
 msgstr "Host offline"
 
@@ -285,7 +293,7 @@ msgstr "Instance"
 msgid "Integration"
 msgstr "Integration"
 
-#: src/features/remote-badge.tsx:24
+#: src/features/remote-badge.tsx:70
 msgid "internet"
 msgstr "internet"
 
@@ -305,7 +313,7 @@ msgstr "Keep every agent in a place you can return to."
 msgid "Keyboard first"
 msgstr "Keyboard first"
 
-#: src/features/remote-badge.tsx:23
+#: src/features/remote-badge.tsx:69
 msgid "LAN"
 msgstr "LAN"
 
@@ -422,6 +430,10 @@ msgstr "One home for every repo"
 #: src/features/console-development.tsx:399
 msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
 msgstr "One tmux session per repository family. Linked worktrees are windows inside that session."
+
+#: src/features/remote-badge.tsx:116
+msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
+msgstr "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 
 #: src/features/landing-page.tsx:133
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
@@ -708,7 +720,7 @@ msgstr "Today"
 msgid "Today events"
 msgstr "Today events"
 
-#: src/features/remote-badge.tsx:32
+#: src/features/remote-badge.tsx:78
 msgid "Token rejected — pair again"
 msgstr "Token rejected — pair again"
 
@@ -734,7 +746,7 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/remote-badge.tsx:25
+#: src/features/remote-badge.tsx:71
 msgid "TURN relay"
 msgstr "TURN relay"
 
@@ -800,19 +812,19 @@ msgstr "Wall"
 msgid "Wall p50"
 msgstr "Wall p50"
 
-#: src/features/remote-badge.tsx:34
+#: src/features/remote-badge.tsx:80
 msgid "WebRTC direct"
 msgstr "WebRTC direct"
 
-#: src/features/remote-badge.tsx:34
+#: src/features/remote-badge.tsx:80
 msgid "WebRTC direct · {pathLabel}"
 msgstr "WebRTC direct · {pathLabel}"
 
-#: src/features/remote-badge.tsx:54
+#: src/features/remote-badge.tsx:102
 msgid "WebRTC: {note}"
 msgstr "WebRTC: {note}"
 
-#: src/features/remote-badge.tsx:33
+#: src/features/remote-badge.tsx:79
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 

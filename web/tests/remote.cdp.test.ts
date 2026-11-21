@@ -25,6 +25,8 @@ async function open(page: Page, url: string) {
       return
     } catch (error) {
       if (attempt >= 3) throw error
+      // Adapter flaps come in bursts; give the network a moment to settle.
+      await page.waitForTimeout(1_000)
     }
   }
 }
@@ -50,7 +52,12 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
   let browser: Browser
 
   beforeAll(async () => {
-    browser = await chromium.launch()
+    browser = await chromium.launch({
+      args: [
+        '--use-fake-ui-for-media-stream',
+        '--use-fake-device-for-media-stream',
+      ],
+    })
   })
 
   afterAll(async () => {
@@ -127,6 +134,20 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
       undefined,
       { timeout: 10_000 },
     )
+    await context.close()
+  }, 40_000)
+
+  it('offers the mic grant while on the relay and drops it once granted', async () => {
+    const context = await browser.newContext({ permissions: [] })
+    const page = await context.newPage()
+    await open(
+      page,
+      `${base}/console/collab?remote=1&transport=websocket#pair=${token}`,
+    )
+    const button = page.getByTestId('remote-mic')
+    await button.waitFor({ timeout: 15_000 })
+    await button.click()
+    await button.waitFor({ state: 'detached', timeout: 10_000 })
     await context.close()
   }, 40_000)
 })

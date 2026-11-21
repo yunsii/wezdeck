@@ -355,6 +355,11 @@ class RemoteLink {
     })
   }
 
+  /** Try the DataChannel again now (e.g. after the mic grant exposed a real LAN address). */
+  retryDirect() {
+    if (this.state.mode === 'websocket' && !this.pc) this.scheduleRtc(0)
+  }
+
   private scheduleRtc(delay: number) {
     clearTimeout(this.rtcTimer)
     this.rtcTimer = setTimeout(() => void this.startRtc(), delay)

@@ -47,6 +47,22 @@ flowchart LR
    nothing else. Not open within 15 s or ICE failed → stay on the WebSocket
    relay, retry WebRTC every 60 s.
 
+Why direct often fails on a phone, and the mic button: mobile browsers hide
+their LAN address behind mDNS (`xxxx.local`); the host cannot resolve it
+(multicast replies do not reach WSL) and cannot be dialed first either — the
+Hyper-V firewall blocks all inbound to WSL (`DefaultInboundAction: Block`),
+and opening it on a work machine is not the trade we want. So while on the
+relay after a failed attempt the badge offers **授权以局域网直连**: a
+microphone grant makes the browser offer its real address (stream closed
+immediately, nothing recorded — fe1's meeting-link trick), the host then dials
+out and the stateful firewall lets the replies in. It only helps on the same
+LAN; across networks direct needs hole punching or TURN.
+
+`rtc_answer` log rows carry `offer_cands` / `answer_cands` (counts per
+candidate type, `mdns=` for hidden host addresses) and `same_public=yes|no|unknown`
+(both sides' STUN addresses equal or not; addresses are not logged). First
+phone record: `host=4(mdns=4) srflx=2` → ICE failed after 30 s.
+
 No TURN yet: when hole punching fails (common on carrier CGNAT) the
 WebSocket relay is the fallback. `?transport=websocket` forces it.
 

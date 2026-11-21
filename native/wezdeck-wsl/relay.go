@@ -299,7 +299,7 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 	}
 	body, _ := json.Marshal(relaySignal{Type: "answer", SDP: pc.LocalDescription().SDP})
 	r.send(relayFrame{T: "sig", Cid: cid, Data: body})
-	r.logf("rtc_answer", "cid=%s gather_ms=%d offer_cands=%q answer_cands=%q", cid, time.Since(started).Milliseconds(), candidateSummary(sig.SDP), candidateSummary(pc.LocalDescription().SDP))
+	r.logf("rtc_answer", "cid=%s gather_ms=%d offer_cands=%q answer_cands=%q same_public=%s", cid, time.Since(started).Milliseconds(), candidateSummary(sig.SDP), candidateSummary(pc.LocalDescription().SDP), samePublic(sig.SDP, pc.LocalDescription().SDP))
 }
 
 // candidateSummary counts ICE candidates by type for the log, e.g.
@@ -334,6 +334,34 @@ func candidateSummary(sdp string) string {
 		parts = append(parts, part)
 	}
 	return strings.Join(parts, " ")
+}
+
+func srflxAddresses(sdp string) map[string]bool {
+	out := map[string]bool{}
+	for _, line := range strings.Split(sdp, "\n") {
+		fields := strings.Fields(strings.TrimSpace(line))
+		if len(fields) > 7 && strings.HasPrefix(fields[0], "a=candidate:") && fields[6] == "typ" && fields[7] == "srflx" {
+			out[fields[4]] = true
+		}
+	}
+	return out
+}
+
+// samePublic tells whether both sides reported the same public (STUN) address:
+// "yes" = same network, direct needs a LAN path or router hairpinning; "no" =
+// different networks, direct needs hole punching; "unknown" = a side had none.
+// Addresses themselves stay out of the log.
+func samePublic(offer, answer string) string {
+	a, b := srflxAddresses(offer), srflxAddresses(answer)
+	if len(a) == 0 || len(b) == 0 {
+		return "unknown"
+	}
+	for addr := range a {
+		if b[addr] {
+			return "yes"
+		}
+	}
+	return "no"
 }
 
 func (r *relay) dropPeer(cid string) {

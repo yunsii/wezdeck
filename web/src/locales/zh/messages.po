@@ -63,6 +63,10 @@ msgstr "全部状态"
 msgid "All time"
 msgstr "累计"
 
+#: src/features/remote-badge.tsx:121
+msgid "Allow LAN direct"
+msgstr "授权以局域网直连"
+
 #: src/features/landing-example.tsx:130
 msgid "An example. Select a session to see where you would jump back."
 msgstr "这是示例。选一个会话，看你会跳回哪里。"
@@ -142,7 +146,7 @@ msgstr "命令"
 msgid "conflict"
 msgstr "冲突"
 
-#: src/features/remote-badge.tsx:30
+#: src/features/remote-badge.tsx:76
 msgid "Connecting…"
 msgstr "连接中…"
 
@@ -249,11 +253,15 @@ msgstr "跟随系统主题"
 msgid "Git"
 msgstr "Git"
 
+#: src/features/remote-badge.tsx:120
+msgid "Grant failed ({micError}) — retry"
+msgstr "授权失败（{micError}），点此重试"
+
 #: src/features/console-collab-run.tsx:117
 msgid "Hide initial prompt"
 msgstr "收起初始消息"
 
-#: src/features/remote-badge.tsx:31
+#: src/features/remote-badge.tsx:77
 msgid "Host offline"
 msgstr "主机离线"
 
@@ -285,7 +293,7 @@ msgstr "实例"
 msgid "Integration"
 msgstr "集成"
 
-#: src/features/remote-badge.tsx:24
+#: src/features/remote-badge.tsx:70
 msgid "internet"
 msgstr "公网"
 
@@ -305,7 +313,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/remote-badge.tsx:23
+#: src/features/remote-badge.tsx:69
 msgid "LAN"
 msgstr "局域网"
 
@@ -422,6 +430,10 @@ msgstr "每个仓库都有自己的位置"
 #: src/features/console-development.tsx:399
 msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
 msgstr "每个仓库家族一个 tmux 会话。关联的 worktree 是这个会话里的窗口。"
+
+#: src/features/remote-badge.tsx:116
+msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
+msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
 
 #: src/features/landing-page.tsx:133
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
@@ -708,7 +720,7 @@ msgstr "今日"
 msgid "Today events"
 msgstr "今日事件"
 
-#: src/features/remote-badge.tsx:32
+#: src/features/remote-badge.tsx:78
 msgid "Token rejected — pair again"
 msgstr "令牌无效，请重新配对"
 
@@ -734,7 +746,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/remote-badge.tsx:25
+#: src/features/remote-badge.tsx:71
 msgid "TURN relay"
 msgstr "TURN 中继"
 
@@ -800,19 +812,19 @@ msgstr "耗时"
 msgid "Wall p50"
 msgstr "耗时 p50"
 
-#: src/features/remote-badge.tsx:34
+#: src/features/remote-badge.tsx:80
 msgid "WebRTC direct"
 msgstr "WebRTC 直连"
 
-#: src/features/remote-badge.tsx:34
+#: src/features/remote-badge.tsx:80
 msgid "WebRTC direct · {pathLabel}"
 msgstr "WebRTC 直连 · {pathLabel}"
 
-#: src/features/remote-badge.tsx:54
+#: src/features/remote-badge.tsx:102
 msgid "WebRTC: {note}"
 msgstr "WebRTC：{note}"
 
-#: src/features/remote-badge.tsx:33
+#: src/features/remote-badge.tsx:79
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
