@@ -25,8 +25,8 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section className="grid gap-3 border border-brand-border bg-brand-surface p-4">
-      <h2 className="text-sm font-semibold">{title}</h2>
+    <section className="key grid gap-3 rounded-[16px] p-4">
+      <h2 className="text-[15px] font-semibold">{title}</h2>
       {children}
     </section>
   )
@@ -105,7 +105,7 @@ export function ConsoleMePage() {
     : '—'
   return (
     <div className="grid max-w-2xl content-start gap-4">
-      <h1 className="text-base font-semibold">{t`Settings`}</h1>
+      <h1 className="hidden text-base font-semibold md:block">{t`Settings`}</h1>
       <Section title={t`Connection`}>
         {consoleMode === 'local' ? (
           <Row label={t`Mode`} value={t`This computer (local Runtime)`} />

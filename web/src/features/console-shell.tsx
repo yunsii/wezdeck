@@ -44,13 +44,6 @@ export function ConsoleRouteLayout() {
   )
 }
 
-function navClass(active: boolean) {
-  return cn(
-    'w-full justify-start rounded-none border-transparent px-3 text-sm text-brand-muted hover:bg-brand-soft hover:text-brand-text',
-    active && 'bg-brand-soft text-brand-running',
-  )
-}
-
 type Section =
   | 'overview'
   | 'development'
@@ -199,14 +192,17 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
 
   return (
-    <main className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]">
+    <main
+      data-deck
+      className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
+    >
       {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
       <div className="hidden md:block">
         {mode === 'local' ? <StatusBand /> : <RemoteBand />}
       </div>
-      <header className="flex items-center gap-2 border-b border-brand-border bg-brand-surface px-4 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 md:hidden">
-        <img src="/brand-icon.svg" alt="" width="24" height="24" />
-        <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
+      <header className="flex items-center gap-2.5 bg-brand-deck px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-2 md:hidden">
+        <img src="/brand-icon.svg" alt="" width="28" height="28" />
+        <h1 className="min-w-0 flex-1 truncate text-[19px] font-semibold tracking-tight">
           {title ?? t`WezDeck`}
         </h1>
         <Link
@@ -219,7 +215,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         </Link>
       </header>
       <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
-        <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-brand-border bg-brand-surface md:flex">
+        <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
           <div className="flex items-center gap-2 px-3 py-3">
             <img src="/brand-icon.svg" alt="" width="28" height="28" />
             <div>
@@ -230,30 +226,39 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <nav
-            className="grid min-h-0 gap-0.5 overflow-y-auto px-2"
+            className="grid min-h-0 content-start gap-1.5 overflow-y-auto px-2.5"
             aria-label={t`Console navigation`}
           >
-            {sidebar.map((item) => (
-              <Button
-                key={item.id}
-                variant="ghost"
-                className={navClass(current === item.id)}
-                title={`g ${Object.entries(JUMP_KEYS).find(([, s]) => s === item.id)?.[0] ?? ''}`}
-                render={
-                  <Link
-                    to={SECTION_PATH[item.id]}
-                    params={{ locale: localeParam }}
-                    aria-current={current === item.id ? 'page' : undefined}
-                  />
-                }
-              >
-                {item.icon}
-                <span className="flex-1">{item.label}</span>
-                {item.id === 'inbox' && waiting > 0 ? (
-                  <CountBadge value={waiting} />
-                ) : null}
-              </Button>
-            ))}
+            {sidebar.map((item) => {
+              const active = current === item.id
+              const jump = Object.entries(JUMP_KEYS).find(
+                ([, section]) => section === item.id,
+              )?.[0]
+              return (
+                <Link
+                  key={item.id}
+                  to={SECTION_PATH[item.id]}
+                  params={{ locale: localeParam }}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'key-press flex min-h-10 items-center gap-2.5 rounded-[10px] border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                    active
+                      ? 'border-brand-edge bg-brand-deck text-brand-text shadow-[var(--key-pressed)]'
+                      : 'key key-hover border-brand-edge text-brand-muted',
+                  )}
+                >
+                  <span className={active ? 'text-brand-running' : ''}>
+                    {item.icon}
+                  </span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.id === 'inbox' && waiting > 0 ? (
+                    <CountBadge value={waiting} />
+                  ) : jump ? (
+                    <kbd className="text-[11px] text-brand-label">g {jump}</kbd>
+                  ) : null}
+                </Link>
+              )
+            })}
           </nav>
           <div className="mt-auto flex items-center gap-2 p-3">
             <Link
@@ -285,7 +290,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       </div>
       <nav
         aria-label={t`Sections`}
-        className="grid grid-cols-4 border-t border-brand-border bg-brand-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="grid grid-cols-4 gap-2 bg-brand-deck px-3 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
       >
         {tabs.map((item) => {
           const active = current === item.id
@@ -306,14 +311,18 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                 })
               }}
               className={cn(
-                'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] text-brand-label',
-                active && 'text-brand-running',
+                'key-press relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[12px] border text-[12px]',
+                active
+                  ? 'border-brand-edge bg-brand-deck text-brand-text shadow-[var(--key-pressed)]'
+                  : 'key text-brand-label',
               )}
             >
-              {item.icon}
+              <span className={active ? 'text-brand-running' : ''}>
+                {item.icon}
+              </span>
               <span>{item.label}</span>
               {item.id === 'inbox' && waiting > 0 ? (
-                <span className="absolute top-1.5 left-[calc(50%+6px)]">
+                <span className="absolute top-1.5 right-2">
                   <CountBadge value={waiting} />
                 </span>
               ) : null}
@@ -327,7 +336,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
 
 function CountBadge({ value }: { value: number }) {
   return (
-    <span className="min-w-4 rounded-full bg-brand-waiting px-1 text-center font-mono text-[10px] leading-4 text-black">
+    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-waiting px-1.5 text-[11px] leading-5 font-semibold text-[#1b1406]">
       {value > 99 ? '99+' : value}
     </span>
   )

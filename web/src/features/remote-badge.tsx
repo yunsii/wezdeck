@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 
 import { remoteLink } from '#/lib/remote-link'
 import type { RemoteState } from '#/lib/remote-link'
-import { cn } from '#/lib/utils'
+import { Led } from '#/components/deck/led'
 
 const SERVER_STATE: RemoteState = {
   mode: 'unpaired',
@@ -90,14 +90,15 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
     webrtc: state.path ? t`WebRTC direct · ${pathLabel}` : t`WebRTC direct`,
   }[state.mode]
   const text = compact ? short[state.mode] : label
-  const tone =
+  // direct = live (breathing ●), relay = degraded (amber ▲), down = ✕
+  const ledTone =
     state.mode === 'webrtc'
-      ? 'bg-emerald-500'
+      ? 'running'
       : state.mode === 'websocket'
-        ? 'bg-amber-500'
+        ? 'waiting'
         : state.mode === 'host-offline' || state.mode === 'unauthorized'
-          ? 'bg-red-500'
-          : 'bg-zinc-400'
+          ? 'error'
+          : 'muted'
   const rtt = state.rttMs
   const micError = mic.error
   return (
@@ -111,12 +112,12 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
         data-rpc-webrtc={state.rpcCount.webrtc}
         data-rpc-websocket={state.rpcCount.websocket}
         title={note ? t`WebRTC: ${note}` : undefined}
-        className="inline-flex items-center gap-1.5 border border-brand-border px-2 py-0.5 font-mono text-xs"
+        className="key inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-xs whitespace-nowrap"
       >
-        <span className={cn('size-2 rounded-full', tone)} aria-hidden />
+        <Led tone={ledTone} size={10} />
         {text}
         {rtt !== undefined && (
-          <span className="text-brand-label">· {rtt} ms</span>
+          <span className="text-brand-label">{rtt} ms</span>
         )}
       </span>
       {offerMic && (
@@ -125,7 +126,7 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
           data-testid="remote-mic"
           onClick={() => void mic.request()}
           title={t`Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded.`}
-          className="border border-brand-border px-2 py-0.5 text-xs underline-offset-2 hover:underline"
+          className="key key-press inline-flex min-h-8 items-center rounded-full px-3 text-xs"
         >
           {micError
             ? t`Grant failed (${micError}) — retry`

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/instrument-sans';
 
 @theme inline {
   --color-brand-deck: var(--brand-deck);
@@ -14,6 +15,8 @@
   --color-brand-done-soft: var(--brand-done-soft);
   --color-brand-error: var(--brand-error);
   --color-brand-violet: var(--brand-violet);
+  --color-brand-key: var(--brand-key);
+  --color-brand-edge: var(--brand-edge);
 }
 
 :root {
@@ -963,5 +966,96 @@ body {
 
   .console-shell:has([data-collapsed]) {
     grid-template-columns: calc(var(--spacing) * 18) minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ deck
+ * Console theme (docs/web-pwa.md "Visual language"): the app icon's 3×3 key
+ * deck. Slate plate (not near-black), raised keys with a visible edge, and
+ * four signal lights that differ by shape as well as color (● ▲ ✓ ✕).
+ * Scoped to the console so the landing page keeps its own look.
+ */
+[data-deck] {
+  --brand-deck: #141b26;
+  --brand-surface: #1d2635;
+  --brand-key: #1d2635;
+  --brand-edge: #2b3647;
+  --brand-text: #e6ebf2;
+  --brand-muted: #a9b4c4;
+  --brand-label: #8794a8;
+  --brand-border: #2b3647;
+  --brand-soft: rgba(135, 148, 168, 0.12);
+  --brand-running: #4cc3ff;
+  --brand-waiting: #f2b134;
+  --brand-done: #3ecf7a;
+  --brand-error: #ff6b6b;
+  --key-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 2px 0 #0c1119;
+  --key-pressed: inset 0 2px 0 #0c1119;
+  font-family:
+    'Instrument Sans Variable', 'PingFang SC', 'Hiragino Sans GB',
+    'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-feature-settings: 'tnum' 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html[data-theme='light'] [data-deck] {
+  --brand-deck: #e6ebf1;
+  --brand-surface: #fbfcfd;
+  --brand-key: #fbfcfd;
+  --brand-edge: #c9d2dd;
+  --brand-text: #172131;
+  --brand-muted: #4a586b;
+  --brand-label: #5f6d80;
+  --brand-border: #c9d2dd;
+  --brand-soft: rgba(23, 33, 49, 0.06);
+  --brand-running: #0a76b8;
+  --brand-waiting: #a86b00;
+  --brand-done: #1b8a4b;
+  --brand-error: #c83a3a;
+  --key-shadow: 0 2px 0 #c2cbd6;
+  --key-pressed: inset 0 2px 0 #c2cbd6;
+}
+
+/* A raised key: the deck's basic surface for rows, panels and tabs. */
+.key {
+  background: var(--brand-key);
+  border: 1px solid var(--brand-edge);
+  box-shadow: var(--key-shadow);
+}
+
+.key-press {
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out;
+}
+
+.key-press:active {
+  transform: translateY(1px);
+  box-shadow: var(--key-pressed);
+}
+
+/* The one ambient motion: a running light breathes. */
+@keyframes led-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.led-running {
+  animation: led-breathe 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .led-running {
+    animation: none;
+  }
+  .key-press:active {
+    transform: none;
+  }
+}
+
+@media (hover: hover) {
+  .key-hover:hover {
+    border-color: color-mix(in srgb, var(--brand-edge), var(--brand-text) 25%);
   }
 }

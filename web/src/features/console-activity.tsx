@@ -5,6 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { Led } from '#/components/deck/led'
+import type { LedTone } from '#/components/deck/led'
+
 import { getCollab } from '#/lib/runtime-client'
 import { useLocale } from '#/lib/locale-context'
 import { useAgo } from './tickets-view'
@@ -66,6 +69,24 @@ function useKindLabel() {
   return (kind: string) => labels[kind] ?? kind
 }
 
+function toneOf(event: Event): LedTone {
+  if (event.kind === 'run_start' || event.kind === 'session_init')
+    return 'running'
+  if (event.kind === 'run_end')
+    return event.exit === 0 || event.exit === undefined ? 'done' : 'error'
+  if (event.kind === 'research_done' || event.kind === 'milestone')
+    return 'done'
+  if (event.kind === 'status') {
+    const status = String(event.status ?? '')
+    if (status.startsWith('waiting')) return 'waiting'
+    if (status === 'failed' || status === 'rejected') return 'error'
+    if (status === 'shipped') return 'done'
+    return 'running'
+  }
+  if (event.kind === 'created') return 'waiting'
+  return 'muted'
+}
+
 function detailOf(event: Event) {
   const pick = ['title', 'status', 'repo', 'message', 'name', 'phase', 'tool']
   return pick
@@ -89,8 +110,10 @@ export function ConsoleActivityPage() {
   return (
     <div className="grid max-w-3xl content-start gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-base font-semibold">{t`Activity`}</h1>
-        <label className="inline-flex min-h-10 items-center gap-2 text-xs text-brand-muted">
+        <h1 className="hidden text-base font-semibold md:block">
+          {t`Activity`}
+        </h1>
+        <label className="ml-auto inline-flex min-h-10 items-center gap-2 text-xs text-brand-muted">
           <input
             type="checkbox"
             checked={showTools}
@@ -111,32 +134,40 @@ export function ConsoleActivityPage() {
             : (events.data?.error ?? t`No activity yet`)}
         </p>
       ) : (
-        <ol
-          aria-label={t`Collab activity`}
-          className="-mx-4 divide-y divide-brand-border border-y border-brand-border md:mx-0 md:border"
-        >
-          {rows.map((event) => (
+        <ol aria-label={t`Collab activity`} className="relative grid">
+          {rows.map((event, index) => (
             <li
               key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm"
+              className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] gap-x-3 py-2.5 text-sm"
             >
-              <span className="font-medium text-brand-text">
-                {label(event.kind)}
+              <span className="relative flex justify-center pt-1">
+                <Led tone={toneOf(event)} size={11} />
+                {index < rows.length - 1 ? (
+                  <span
+                    aria-hidden
+                    className="absolute top-5 -bottom-4 w-px bg-brand-edge"
+                  />
+                ) : null}
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-brand-text">
+                  {label(event.kind)}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-brand-muted">
+                  {event.ticket ? (
+                    <Link
+                      to="/{-$locale}/console/collab/$id"
+                      params={{ locale: localeParam, id: event.ticket }}
+                      className="font-mono text-brand-running"
+                    >
+                      {event.ticket.slice(-6)}
+                    </Link>
+                  ) : null}
+                  {event.ticket && detailOf(event) ? '  ' : ''}
+                  {detailOf(event)}
+                </span>
               </span>
               <span className="text-xs text-brand-label">{ago(event.ts)}</span>
-              <span className="col-span-2 truncate text-xs text-brand-muted">
-                {event.ticket ? (
-                  <Link
-                    to="/{-$locale}/console/collab/$id"
-                    params={{ locale: localeParam, id: event.ticket }}
-                    className="font-mono text-brand-running"
-                  >
-                    {event.ticket.slice(-6)}
-                  </Link>
-                ) : null}
-                {event.ticket && detailOf(event) ? ' · ' : ''}
-                {detailOf(event)}
-              </span>
             </li>
           ))}
         </ol>

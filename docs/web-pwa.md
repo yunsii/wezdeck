@@ -60,6 +60,29 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
   banner "主机离线 · 数据截至 HH:MM".
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
 
+## Visual language (2026-11-22)
+
+Taken from the app icon — a 3×3 key deck with three lit signals — instead of
+a generic dashboard look:
+
+- **Signals by shape, then color** (`web/src/components/deck/led.tsx`):
+  ● running `#4cc3ff` (the only ambient motion: it breathes, off under
+  reduced motion), ▲ waiting `#f2b134`, ✓ shipped `#3ecf7a`, ✕ failed
+  `#ff6b6b`, ○ idle / closed. Readable without color.
+- **Keys on a slate plate** (`[data-deck]` tokens in `web/src/styles.css`,
+  console only — the landing page keeps its look): plate `#141b26`, key
+  `#1d2635` with a visible edge `#2b3647` and a 2 px drop; the current tab,
+  section or filter is a *pressed* key (inset shadow). Radii by hierarchy:
+  10 px keys, 14 px ticket / run keys, 16 px panels, pills for repo tags.
+  Light theme keeps the same structure (`#e6ebf1` plate, white keys).
+- **Status keys** on 工单 count and filter in one control (全部 / 等你处理 /
+  运行中 / 失败 / 已交付 / 已关闭) — all sections share one ticket read and
+  filter client-side.
+- **Type**: Instrument Sans (bundled via `@fontsource-variable`, works
+  offline) with the system CJK face; tabular numbers; monospace only for
+  ids, commands and branches. Meta strings are structured (status word +
+  `from → to` repo tags + time), not dot-joined.
+
 ## As built (2026-11-22)
 
 | Piece | Code |

@@ -1,3 +1,4 @@
+import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 
 export type InspectorItem = {
@@ -6,14 +7,6 @@ export type InspectorItem = {
   detail?: string
   status?: string
   tone?: 'running' | 'waiting' | 'done' | 'error' | 'muted'
-}
-
-const toneClass = {
-  running: 'text-brand-running',
-  waiting: 'text-brand-waiting',
-  done: 'text-brand-done',
-  error: 'text-brand-error',
-  muted: 'text-brand-label',
 }
 
 export function Inspector({
@@ -54,7 +47,7 @@ export function Inspector({
   }
 
   return (
-    <div className="grid h-full min-h-0 border border-brand-border bg-brand-surface max-md:grid-cols-1 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+    <div className="grid h-full min-h-0 overflow-hidden rounded-[16px] border border-brand-edge bg-brand-surface max-md:grid-cols-1 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
       <div className="flex min-h-0 flex-col border-r border-brand-border max-md:border-r-0 max-md:border-b">
         {toolbar ? (
           <div className="border-b border-brand-border p-3">{toolbar}</div>
@@ -95,18 +88,15 @@ export function Inspector({
                   className={cn(
                     'grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-brand-border px-3 py-2.5 text-left text-sm',
                     active
-                      ? 'bg-brand-soft text-brand-text'
+                      ? 'bg-brand-deck text-brand-text shadow-[inset_3px_0_0_var(--brand-running)]'
                       : 'text-brand-muted hover:bg-brand-soft/70',
                   )}
                   disabled={item.id.startsWith('workspace-')}
                   onClick={() => onSelect(item.id)}
                 >
-                  <span
-                    className={cn(
-                      'row-span-2 size-1.5 shrink-0 rounded-full bg-current',
-                      toneClass[item.tone ?? 'muted'],
-                    )}
-                  />
+                  <span className="row-span-2 self-start pt-1">
+                    <Led tone={item.tone ?? 'muted'} size={11} />
+                  </span>
                   <span className="min-w-0 truncate">{item.name}</span>
                   {item.status ? (
                     <span className="max-w-24 truncate font-mono text-xs text-brand-label">
@@ -138,29 +128,27 @@ export function Reading({
   facts,
   children,
 }: {
-  kicker?: string
+  kicker?: React.ReactNode
   title: string
   body?: string
-  facts?: Array<{ label: string; value: string }>
+  facts?: Array<{ label: string; value: React.ReactNode }>
   children?: React.ReactNode
 }) {
   return (
     <div className="grid content-start gap-4">
-      {kicker ? (
-        <p className="font-mono text-xs text-brand-running">{kicker}</p>
-      ) : null}
-      <h1 className="text-2xl font-semibold tracking-tight text-brand-text">
+      {kicker ? <div className="text-sm">{kicker}</div> : null}
+      <h1 className="text-[22px] leading-tight font-semibold tracking-tight text-balance text-brand-text md:text-2xl">
         {title}
       </h1>
       {body ? (
         <p className="max-w-prose text-sm leading-6 text-brand-muted">{body}</p>
       ) : null}
       {facts?.length ? (
-        <dl className="grid grid-cols-2 gap-px bg-brand-border">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-brand-edge bg-brand-edge">
           {facts.map((fact) => (
-            <div key={fact.label} className="bg-brand-deck px-3 py-2">
+            <div key={fact.label} className="bg-brand-key px-3 py-2.5">
               <dt className="text-xs text-brand-label">{fact.label}</dt>
-              <dd className="mt-1 truncate font-mono text-sm text-brand-text">
+              <dd className="mt-1 truncate text-sm text-brand-text">
                 {fact.value}
               </dd>
             </div>

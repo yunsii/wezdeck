@@ -15,7 +15,8 @@ import { RunDetail } from './console-collab-run'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { InspectorItem } from './inspector'
-import { TicketsView } from './tickets-view'
+import { RepoRoute, TicketsView, useStatusLabel } from './tickets-view'
+import { Led } from '#/components/deck/led'
 
 export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
   if (ticket.running.length > 0) return 'running'
@@ -27,17 +28,18 @@ export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
     case 'failed':
     case 'rejected':
       return 'error'
+    case 'in_progress':
+      return 'running'
     case 'shipped':
-    case 'closed':
       return 'done'
     default:
+      // closed (abandoned / superseded) and unknown states: an unlit key
       return 'muted'
   }
 }
 
 export function ConsoleCollabPage() {
   const { t } = useLingui()
-  const [status, setStatus] = useState('')
   const [window, setWindow] = useState('24h')
   const wide = useIsWide()
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
@@ -53,54 +55,38 @@ export function ConsoleCollabPage() {
   return (
     <TicketsView
       base="collab"
-      status={status}
-      empty={t`No collab tickets yet`}
+      empty={t`No tickets match this filter.`}
       top={
         wide ? (
           band
         ) : (
-          <details className="border border-brand-border">
-            <summary className="min-h-11 cursor-pointer px-3 py-3 text-sm">
-              {t`Metrics`}
+          <details className="key group rounded-[14px]">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-3.5 text-sm text-brand-muted">
+              {t`Runs, cache hit and cost`}
+              <span aria-hidden className="transition group-open:rotate-90">
+                ›
+              </span>
             </summary>
-            {band}
+            <div className="border-t border-brand-edge p-2">{band}</div>
           </details>
         )
-      }
-      toolbar={
-        <div className="w-40">
-          <Select
-            value={status}
-            onValueChange={setStatus}
-            aria-label={t`Status`}
-            options={[
-              { value: '', label: t`All statuses` },
-              { value: 'submitted,in_progress', label: t`Active` },
-              {
-                value: 'waiting_initiator,waiting_target',
-                label: t`Waiting`,
-              },
-              { value: 'shipped', label: 'shipped' },
-              { value: 'closed,rejected,failed', label: t`Finished` },
-            ]}
-          />
-        </div>
       }
     />
   )
 }
-
-/** Waiting on me + failed: what the phone opens to (docs/web-pwa.md). */
-export const INBOX_STATUS = 'waiting_initiator,failed'
 
 export function ConsoleInboxPage() {
   const { t } = useLingui()
   return (
     <TicketsView
       base="inbox"
-      status={INBOX_STATUS}
-      empty={t`Nothing is waiting on you.`}
-      top={<h1 className="text-base font-semibold">{t`Waiting on you`}</h1>}
+      filter="inbox"
+      empty={t`Nothing is waiting on you. Replies and failed runs show up here.`}
+      top={
+        <h1 className="hidden text-base font-semibold md:block">
+          {t`Waiting on you`}
+        </h1>
+      }
     />
   )
 }
@@ -145,7 +131,7 @@ export function MetricsBand({
   return (
     <section
       aria-label={t`Collab metrics`}
-      className="grid gap-2 border border-brand-border bg-brand-surface p-3"
+      className="grid gap-2 rounded-[16px] border border-brand-edge bg-brand-surface p-3"
     >
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-sm font-semibold">{t`Cross-repo collab`}</h1>
@@ -161,11 +147,14 @@ export function MetricsBand({
           />
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-px bg-brand-border sm:grid-cols-5">
+      <dl className="grid grid-cols-2 overflow-hidden rounded-[12px] border-t border-l border-brand-edge sm:grid-cols-5">
         {facts.map((fact) => (
-          <div key={fact.label} className="bg-brand-deck px-3 py-2">
+          <div
+            key={fact.label}
+            className="border-r border-b border-brand-edge bg-brand-key px-3 py-2"
+          >
             <dt className="text-xs text-brand-label">{fact.label}</dt>
-            <dd className="mt-1 truncate font-mono text-sm">{fact.value}</dd>
+            <dd className="mt-1 truncate text-[15px]">{fact.value}</dd>
           </div>
         ))}
       </dl>
@@ -192,6 +181,7 @@ export function TicketReading({
 }) {
   const { t } = useLingui()
   const show = useCollab('show', { id }, { refetchInterval: poll })
+  const statusLabel = useStatusLabel()
   const [run, setRun] = useState('')
   const data = show.data
   if (!data) return <Reading title={t`Loading…`} />
@@ -205,10 +195,21 @@ export function TicketReading({
   const currentRun = runs.find((item) => item.run === run) ?? runs.at(-1)
   return (
     <Reading
-      kicker={`${ticket.status ?? '?'} · ${ticket.phase ?? ''}`}
+      kicker={
+        <span className="flex flex-wrap items-center gap-2">
+          <Led tone={ticketTone(ticket) ?? 'muted'} size={13} />
+          <span className="font-medium">{statusLabel(ticket)}</span>
+          {ticket.phase ? (
+            <span className="text-brand-label">{ticket.phase}</span>
+          ) : null}
+        </span>
+      }
       title={ticket.title || ticket.id}
       facts={[
-        { label: t`Route`, value: `${ticket.from} → ${ticket.to}` },
+        {
+          label: t`Route`,
+          value: <RepoRoute from={ticket.from} to={ticket.to} />,
+        },
         { label: t`Owner`, value: ticket.owner ?? '—' },
         { label: t`Progress`, value: ticket.progress?.message ?? '—' },
         { label: t`Worktree`, value: ticket.branch ?? ticket.worktree ?? '—' },
@@ -230,6 +231,69 @@ export function TicketReading({
   )
 }
 
+/** Phone: one key per run, the four numbers that matter, tap to open its record below. */
+function RunKeys({
+  runs,
+  selected,
+  onSelect,
+}: {
+  runs: Array<CollabRunSummary>
+  selected: string
+  onSelect: (run: string) => void
+}) {
+  const { t } = useLingui()
+  return (
+    <ul aria-label={t`Runs`} className="grid gap-2">
+      {runs.map((item) => {
+        const active = item.run === selected
+        const tone =
+          item.exit == null ? 'running' : item.exit === 0 ? 'done' : 'error'
+        return (
+          <li key={item.run}>
+            <button
+              type="button"
+              aria-pressed={active}
+              onClick={() => onSelect(item.run)}
+              className={cn(
+                'key-press grid w-full gap-2 rounded-[14px] border px-3.5 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                active
+                  ? 'border-brand-edge bg-brand-deck shadow-[var(--key-pressed)]'
+                  : 'key',
+              )}
+            >
+              <span className="flex items-center gap-2 text-sm">
+                <Led tone={tone} size={12} />
+                <span className="font-medium">{item.phase ?? '—'}</span>
+                <span className="text-brand-label">
+                  {item.session?.reuse ?? ''}
+                </span>
+                <span className="ml-auto font-mono text-xs text-brand-label">
+                  {item.run.slice(-6)}
+                </span>
+              </span>
+              <dl className="grid grid-cols-4 gap-2 text-xs">
+                {[
+                  [t`Turns`, num(item.turns)],
+                  [t`Cache hit`, pct(item.cache_hit_rate)],
+                  [t`Cost`, usd(item.cost_usd)],
+                  [t`Wall`, secs(item.wall_ms)],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-brand-label">{label}</dt>
+                    <dd className="mt-0.5 text-[15px] text-brand-text">
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function RunTable({
   runs,
   selected,
@@ -240,13 +304,16 @@ function RunTable({
   onSelect: (run: string) => void
 }) {
   const { t } = useLingui()
+  const wide = useIsWide()
   if (runs.length === 0) {
     return (
       <p className="text-sm text-brand-muted">{t`No headless runs recorded for this ticket.`}</p>
     )
   }
+  if (!wide)
+    return <RunKeys runs={runs} selected={selected} onSelect={onSelect} />
   return (
-    <div className="overflow-x-auto border border-brand-border">
+    <div className="overflow-x-auto rounded-[14px] border border-brand-edge">
       <table
         className="w-full text-left font-mono text-xs"
         aria-label={t`Runs`}
