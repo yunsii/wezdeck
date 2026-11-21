@@ -108,6 +108,11 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Phone / Android remote work (OpenClaw only; Happy + Tailscale phone
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
+- Web console as an installable PWA (manifest, hand-written service worker,
+  update toast, persisted query cache, safe area), phone vs desktop layouts
+  (bottom tabs / pushed detail / sheets vs split view + keyboard / command
+  palette), capability-aware navigation, Web Push:
+  Read [`docs/web-pwa.md`](docs/web-pwa.md).
 - Viewing collab tickets from a phone / tablet anywhere (`wezdeck.yuns.love`
   on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
   DataChannel first / WebSocket relay fallback, link badge + latency,
