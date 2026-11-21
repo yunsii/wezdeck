@@ -1,11 +1,11 @@
 # Cross-repo collaboration (core CLI)
 
-Status (2026-11-21): **P0 landed** — launch/run records, CLI event streams,
-session reuse, global event cursor, `delegate api` + `schema/*.json`, `collab`
-log category. **P1 code landed** — bridge `collab.*`, Runtime
-`/api/v1/collab/*`, Console → Collab page; live on Windows after the next
-runtime release. P2–P4 are planned. The machine contract lives in
-`skills/cross-repo-delegate/schema/`; this doc keeps decisions and rationale.
+Status (2026-11-21): **P0–P3 live** — run observability + session reuse +
+`delegate api` (P0), wezdeck Console → Collab via Runtime
+`wezdeck-runtime-v2026.11.21.1` (P1), `delegate collab` parent/child scheduler
+with merge + fresh verify (P2), fe1 local service v7 `collab.read` + fe1
+⚙ › 跨仓协作 (P3). **P4 deferred** — see
+[Open questions](diagnostics.md#open-questions).
 
 Related: [`agent-scheduling.md`](agent-scheduling.md) (channels, ticket vs
 multi-dir mount), [`workspaces.md`](workspaces.md) (worktrees),
@@ -362,7 +362,9 @@ table. Offline: `test-collab.sh` (caps, overlap serialization, deps order, mem
 gate hold/resume, human gate blocking, retry, merge ok/conflict, verdict
 parser). Live e2e result is in §13.
 
-**P3: fe1 web.** The local-service routes and the pages. Verify with fe1's
+**P3 (live 2026-11-21): fe1 web.** fe1 `5eb846b`: contract `GET /collab/{command}`
+(capability `collab.read`, allowlisted params, fe1 origin only), `collab-route.ts`
+running `delegate api`, ⚙ › 跨仓协作 page. Original plan: the local-service routes and the pages. Verify with fe1's
 oRPC contract tests against recorded `delegate api` fixtures, plus a page CDP
 smoke.
 
