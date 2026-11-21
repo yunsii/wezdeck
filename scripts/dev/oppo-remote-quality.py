@@ -474,7 +474,7 @@ class Live:
         self.ep: dict | None = None
         self.base_relay: list[float] = []
         self.last_base_ping = 0.0
-        self.topo_loaded = False
+        self.topo_at = 0.0
 
     def switch(self, path: Path) -> None:
         if self.fh:
@@ -482,7 +482,7 @@ class Live:
         self.path, self.fh = path, path.open(encoding="utf-8", errors="replace")
         self.ticks, self.keys, self.ended, self.ep = [], [], False, None
         self.session = Session(path=path)
-        self.topo_loaded = False
+        self.topo_at = 0.0
         self.device = ""
         self.relay = relay_server(self.log_dir)
 
@@ -538,10 +538,12 @@ def cmd_daemon(args, log_dir: Path) -> int:
                 last_idle_write = time.time()
             time.sleep(args.interval)
             continue
-        if not live.topo_loaded:
+        # The P2P request lands ~20-40 s after the session log starts, so
+        # retry every 30 s until the peer shows up.
+        if live.session.topo == "?" and time.time() - live.topo_at >= 30:
             attach_topology([live.session], load_topology(log_dir))
-            live.device = peer_device(log_dir, {"nut", os.uname().nodename})
-            live.topo_loaded = True
+            live.device = live.device or peer_device(log_dir, {"nut", os.uname().nodename})
+            live.topo_at = time.time()
 
         bad = [t for t in live.ticks if t.congested]
         stalled = bool(bad) and (now - bad[-1].t).total_seconds() <= STALL_HOLD
