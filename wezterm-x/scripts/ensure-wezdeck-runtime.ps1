@@ -125,7 +125,7 @@ function Test-HelperStateFresh {
     return $false
   }
 
-  # A helper killed seconds ago (e.g. by a canary ensure's Stop-StaleProcesses)
+  # A helper killed seconds ago (e.g. by the installer swapping the binary)
   # leaves a state.env whose heartbeat still looks fresh. Trust it only while
   # the recorded pid is a live wezdeck-runtime process.
   $helperProcess = Get-Process -Id $helperPid -ErrorAction SilentlyContinue
@@ -160,36 +160,54 @@ function Get-ExpectedRuntimeDir {
 }
 
 function Get-ManagerPaths {
-  $managerRoot = Join-Path $env:LOCALAPPDATA 'wezterm-runtime'
+  # Instance root = <root>\state\helper\state.env, three levels up. The live
+  # instance is %LOCALAPPDATA%\wezterm-runtime; anything else (the sync canary
+  # runs with WEZTERM_RUNTIME_STATE_DIR=…\wezterm-runtime\canary) gets its own
+  # config, pipe, HTTP port and state files so it can coexist with live. The
+  # Lua side mirrors the endpoint rule in
+  # defaults.default_windows_runtime_helper_ipc_endpoint.
+  $liveRoot = Join-Path $env:LOCALAPPDATA 'wezterm-runtime'
+  $instanceRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $StatePath))
+  $isLive = [string]::IsNullOrWhiteSpace($instanceRoot) -or
+    [string]::Equals($instanceRoot.TrimEnd('\'), $liveRoot.TrimEnd('\'), [System.StringComparison]::OrdinalIgnoreCase)
+  if ($isLive) {
+    $instanceRoot = $liveRoot
+    $ipcEndpoint = '\\.\pipe\wezdeck-runtime-v1'
+    $httpPort = $HttpPort
+  } else {
+    $suffix = ((Split-Path -Leaf $instanceRoot).ToLowerInvariant() -replace '[^a-z0-9-]', '_')
+    $ipcEndpoint = '\\.\pipe\wezdeck-runtime-v1-' + $suffix
+    $httpPort = $HttpPort + 1
+  }
   return @{
-    Root = $managerRoot
-    Exe = Join-Path $managerRoot 'bin\wezdeck-runtime.exe'
-    Config = Join-Path $managerRoot 'state\helper\manager-config.json'
-    WindowCache = Join-Path $managerRoot 'cache\helper\window-cache.json'
-    IpcEndpoint = '\\.\pipe\wezdeck-runtime-v1'
+    Root = $instanceRoot
+    IsLive = $isLive
+    # One shared binary; only config / pipe / state are per instance.
+    Exe = Join-Path $liveRoot 'bin\wezdeck-runtime.exe'
+    Config = Join-Path $instanceRoot 'state\helper\manager-config.json'
+    WindowCache = Join-Path $instanceRoot 'cache\helper\window-cache.json'
+    IpcEndpoint = $ipcEndpoint
+    HttpPort = $httpPort
   }
 }
 
 function Stop-StaleProcesses {
-  param([hashtable]$State)
+  param([hashtable]$ManagerPaths)
 
-  foreach ($process in @(Get-Process -Name 'wezdeck-runtime' -ErrorAction SilentlyContinue)) {
+  # Only this instance's helpers: every helper is started with
+  # `--config <instance>\state\helper\manager-config.json`, so the command line
+  # tells live and canary apart. Killing every wezdeck-runtime here used to let
+  # the sync canary evict the live helper (2026-11-21).
+  $configPath = [string]$ManagerPaths.Config
+  $targets = @(Get-CimInstance Win32_Process -Filter "Name = 'wezdeck-runtime.exe'" -ErrorAction SilentlyContinue | Where-Object {
+    $cmd = [string]$_.CommandLine
+    (-not [string]::IsNullOrWhiteSpace($cmd)) -and
+      $cmd.IndexOf($configPath, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+  })
+  foreach ($process in $targets) {
     try {
-      Stop-Process -Id $process.Id -Force -ErrorAction Stop
+      Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop
     } catch {
-    } finally {
-      $process.Dispose()
-    }
-  }
-
-  if ($null -ne $State) {
-    $helperPid = 0
-    [void][int]::TryParse([string]$State.pid, [ref]$helperPid)
-    if ($helperPid -gt 0) {
-      try {
-        Stop-Process -Id $helperPid -Force -ErrorAction Stop
-      } catch {
-      }
     }
   }
 }
@@ -257,15 +275,16 @@ function Write-ManagerConfig {
     statePath = $StatePath
     windowCachePath = $ManagerPaths.WindowCache
     ipcEndpoint = $ManagerPaths.IpcEndpoint
-    httpPort = $HttpPort
+    httpPort = $ManagerPaths.HttpPort
     httpAllowedOrigins = @(
       $HttpAllowedOrigins.Split(',') |
         ForEach-Object { $_.Trim() } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
     )
-    chromeDebugStatePath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\chrome-debug\state.json'
+    chromeDebugStatePath = Join-Path $ManagerPaths.Root 'state\chrome-debug\state.json'
     chromeDebugAutoStart = [ordered]@{
-      enabled = $chromeAutoStartEnabled
+      # A non-live instance (sync canary) must not start / adopt Chrome.
+      enabled = ($chromeAutoStartEnabled -and $ManagerPaths.IsLive)
       chromePath = $chromeChromePath
       remoteDebuggingPort = $chromeRemotePort
       userDataDir = $chromeUserDataDir
@@ -273,7 +292,7 @@ function Write-ManagerConfig {
     # Ego right-status badge heartbeat (EgoHeartbeatSampler). Only refreshes
     # when status.json already has backend=ego; apply-browser-backend owns the
     # backend switch. Path mirrors Lua browser_agent.status_file default.
-    browserAgentStatusPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\browser-agent\status.json'
+    browserAgentStatusPath = Join-Path $ManagerPaths.Root 'state\browser-agent\status.json'
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
@@ -290,10 +309,11 @@ function Write-ManagerConfig {
     # state/wsl-heal/status.json + history.ndjson. Docs:
     # docs/development-environment-troubleshooting.md#wsl-upgrade-heal
     wslHeal = [ordered]@{
-      enabled = $true
-      statusPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\status.json'
-      historyPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\history.ndjson'
-      suppressUntilPath = Join-Path $env:LOCALAPPDATA 'wezterm-runtime\state\wsl-heal\suppress-until'
+      # Only the live helper may relaunch WezTerm / reconnect VS Code.
+      enabled = $ManagerPaths.IsLive
+      statusPath = Join-Path $ManagerPaths.Root 'state\wsl-heal\status.json'
+      historyPath = Join-Path $ManagerPaths.Root 'state\wsl-heal\history.ndjson'
+      suppressUntilPath = Join-Path $ManagerPaths.Root 'state\wsl-heal\suppress-until'
       relaunchWezTerm = $true
       reconnectVscode = $true
       vscodeMaxWindows = 5
@@ -372,7 +392,7 @@ try {
     exit 0
   }
 
-  Stop-StaleProcesses -State $state
+  Stop-StaleProcesses -ManagerPaths $managerPaths
   Ensure-ManagerInstalled -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
 
   $child = Start-Process -FilePath $managerPaths.Exe -ArgumentList @('--config', $managerPaths.Config) -PassThru

@@ -110,6 +110,10 @@ install_windows_helper_manager() {
 
   [[ -n "$install_output" ]] && printf '%s\n' "$install_output"
   manager_path="$(printf '%s\n' "$install_output" | tail -n 1)"
+  # The installer stops the running helper to swap the binary, but state.env
+  # stays <10 s old for a moment — make the next ensure in this sync run
+  # instead of trusting the mtime skip below.
+  HELPER_INSTALLED_THIS_SYNC=1
   sync_trace "step=helper-install status=completed manager_path=${manager_path:-unknown} install_source=$install_source"
   runtime_log_info sync "installed windows helper manager after sync" \
     "target_runtime_dir=$target_runtime_dir" \
@@ -130,6 +134,7 @@ helper_ensure_skip_if_running() {
   local state_mtime now_s age_s newer_runtime
 
   [[ "${WEZTERM_SYNC_FORCE_HELPER_ENSURE:-0}" == "1" ]] && return 1
+  [[ "${HELPER_INSTALLED_THIS_SYNC:-0}" == "1" ]] && return 1
 
   target_home="$(dirname "$target_runtime_dir")"
   state_env="$target_home/AppData/Local/wezterm-runtime/state/helper/state.env"

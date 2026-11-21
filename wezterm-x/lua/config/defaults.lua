@@ -138,12 +138,29 @@ function M.default_windows_helper_diagnostics_file(host_os, runtime_state_dir, j
   return join_path(runtime_state_dir, 'logs', 'helper.log')
 end
 
-function M.default_windows_runtime_helper_ipc_endpoint(host_os)
+-- Mirrors Get-ManagerPaths in scripts/ensure-wezdeck-runtime.ps1: the live
+-- instance (%LOCALAPPDATA%\\wezterm-runtime) owns the historical pipe; any
+-- other runtime_state_dir (the sync canary's …\\wezterm-runtime\\canary) gets
+-- `wezdeck-runtime-v1-<leaf>` so its requests reach its own helper.
+function M.default_windows_runtime_helper_ipc_endpoint(host_os, runtime_state_dir)
   if host_os ~= 'windows' then
     return nil
   end
 
-  return '\\\\.\\pipe\\wezdeck-runtime-v1'
+  local live = '\\\\.\\pipe\\wezdeck-runtime-v1'
+  local local_app_data = os.getenv 'LOCALAPPDATA'
+  if type(runtime_state_dir) ~= 'string' or runtime_state_dir == ''
+      or not local_app_data or local_app_data == '' then
+    return live
+  end
+  local function norm(p)
+    return (p:gsub('/', '\\'):gsub('\\+$', ''):lower())
+  end
+  if norm(runtime_state_dir) == norm(local_app_data .. '\\wezterm-runtime') then
+    return live
+  end
+  local leaf = norm(runtime_state_dir):match('([^\\]+)$') or ''
+  return live .. '-' .. (leaf:gsub('[^a-z0-9%-]', '_'))
 end
 
 function M.default_launch_menu(host_os)
