@@ -275,7 +275,7 @@ look calm but the **PC keyboard/mouse** feel sticky (average CPU modest,
 Transition Faults high, `VmmemWSL` Private still tens of GiB, multi-week
 `wezterm-gui`), treat it as host reclaim / long-lived GUI pressure — reboot
 helped on **2026-11-10** (Private ~42 GiB → ~9 GiB). Playbook and OPPO/WARP
-confounders: [`oppo-remote-host-input.md`](./oppo-remote-host-input.md).
+confounders: [`remote-input-stickiness.md`](./remote-input-stickiness.md).
 
 ### Standing memory consumers
 

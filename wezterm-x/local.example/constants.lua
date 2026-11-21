@@ -119,8 +119,8 @@ return {
   -- attention = {
   --   icons = { waiting = '▲', done = '✓', running = '●' },
   -- },
-  -- Right-status badges (SessionBridge·, OppoRemote·, WslDisk·, Memory·,
-  -- LoadAvg·) are plugins now: enable / disable / tune them in
+  -- Right-status badges (SessionBridge·, WslDisk·, Memory·, LoadAvg·, plus
+  -- any machine plugin's) are plugins now: enable / disable / tune them in
   -- wezterm-x/local/plugins.json (template: local.example/plugins.json).
   -- Frequency-driven tab layout. By default no workspace opts in, so
   -- existing tab bars behave identically. Enabled workspaces get

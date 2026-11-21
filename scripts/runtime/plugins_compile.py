@@ -210,7 +210,10 @@ def compile_plugins(repo: Path, external_dir: Path | None, local_cfg_path: Path,
         shutil.rmtree(ext_root)
     for p in plugins:
         if p["source"] == "external" and p["enabled"]:
-            shutil.copytree(p["dir"], ext_root / p["id"])
+            # Ship only what the runtime needs: a plugin dir is often its own
+            # git checkout (e.g. ~/.config/wezdeck/plugins/<id> → a repo).
+            shutil.copytree(p["dir"], ext_root / p["id"],
+                            ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
 
     write_atomic(out_dir / "registry.generated.json", json.dumps(registry, ensure_ascii=False, indent=2) + "\n")
     badges = sorted(

@@ -38,7 +38,7 @@ printf '{"n":7,"heartbeat_at_ms":%s}\n' "$(date +%s%3N)" >"$tmp/state/state/hell
 
 out="$(cli list)"
 expect "list shows the external plugin enabled" '[[ "$out" == *"hello"*"external"*"on"*"badge@90"*"cli:greet"* ]]'
-expect "list shows built-ins" '[[ "$out" == *"oppo-remote"* && "$out" == *"agent-grok"* ]]'
+expect "list shows built-ins" '[[ "$out" == *"disk-guard"* && "$out" == *"agent-grok"* ]]'
 
 cli disable hello >/dev/null
 expect "disable writes local config" 'grep -q "\"hello\"" "$tmp/local/plugins.json"'

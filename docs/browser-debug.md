@@ -198,7 +198,7 @@ Pressing this when a headless instance is running will kill that headless first,
 
 Right-status order (left → right):
 
-`IME` · **browser slot (`Ego·…` or `CDP·…`)** · **`◆ SessionBridge·N`** (session-bridge watch, absent while idle) · **`OppoRemote·…`** (OPPO remote link, only while connected) · **`SystemDisk·…` / `WslDisk·…`** (system + WSL host disk, absent while healthy) · **`Memory·…`** (guest mem, absent while healthy) · **`LoadAvg·…`** (guest load, absent while healthy) · attention counters
+`IME` · **browser slot (`Ego·…` or `CDP·…`)** · **`◆ SessionBridge·N`** (session-bridge watch, absent while idle) · **plugin badges** (e.g. an external remote plugin's `OppoRemote·…`) · **`SystemDisk·…` / `WslDisk·…`** (system + WSL host disk, absent while healthy) · **`Memory·…`** (guest mem, absent while healthy) · **`LoadAvg·…`** (guest load, absent while healthy) · attention counters
 
 The browser slot follows `WEZDECK_BROWSER_BACKEND` (see [backends](#browser-backends-ego--cdp)). The `◆ SessionBridge·N` badge is owned by session-bridge take/watch (`Ctrl+K w`); it renders only while the poller heartbeat is fresh (no always-on `SessionBridge·-`). The `◆` matches the glyph the `Alt+/` picker puts on that poller's watch rows and is overridable per machine via `session_bridge_watch.icon` in `wezterm-x/local/constants.lua` (`''` leaves a bare `SessionBridge·N`). See [`openclaw/docs/session-bridge.md`](../openclaw/docs/session-bridge.md). Heartbeat file: `state/session-bridge-watch/status.json` under the WezTerm runtime state dir. Disk / mem / load: [`host-disk.md`](./host-disk.md) · [`guest-oom.md`](./guest-oom.md) · [`diagnostics.md`](./diagnostics.md) "Guest load badge".
 

@@ -7,7 +7,7 @@
 -- 3. Missing registry, a module that fails to load, a render error — each
 --    drops only that badge and logs once under category `plugins`.
 -- 4. A machine override still using a moved constants key warns once.
--- 5. Parity: the real oppo-remote plugin rendered through the host equals the
+-- 5. Parity: the real load-guard plugin rendered through the host equals the
 --    module rendered directly (same text, colours, attributes).
 --
 -- Drive with scripts/dev/test-lua-units.sh.
@@ -162,25 +162,27 @@ it('moved constants key in a machine override warns once', function()
   assert_eq(found, 1)
 end)
 
-it('parity: real oppo-remote plugin via host == module rendered directly', function()
+it('parity: real load-guard plugin via host == module rendered directly', function()
   local state_dir = root .. '/state'
-  os.execute('mkdir -p ' .. state_dir .. '/state/oppo-remote')
-  local status_path = state_dir .. '/state/oppo-remote/status.json'
+  os.execute('mkdir -p ' .. state_dir .. '/state/oom-guard')
+  local status_path = state_dir .. '/state/oom-guard/status.json'
   local palette = {
     tab_inactive_bg = '#111', tab_inactive_fg = '#eee', tab_bar_background = '#000', new_tab_fg = '#999',
     tab_attention_waiting_bg = '#a80', tab_attention_waiting_fg = '#fff', disk_crit_bg = '#b45', disk_crit_fg = '#fef',
+    mem_crit_bg = '#c00', mem_crit_fg = '#fff',
   }
-  -- Registry pointing at the repo's real plugin, with its real config.
+  -- Registry pointing at the repo's real built-in plugin, with its real config.
   local repo = io.popen('pwd'):read('*l')
   local reg = root .. '/plugins/reg-real.lua'
-  write(reg, string.format([[return { badges = { { id = 'oppo-remote', dir = 'wezterm-x/plugins/oppo-remote',
-    module = 'lua/badge.lua', order = 20, requires_host = { 'hybrid-wsl' },
-    config = { state_file = '${runtime_state_dir}/state/oppo-remote/status.json',
-               heartbeat_timeout_ms = 20000, warn_pct = 10 } } } }]]))
+  write(reg, [[return { badges = { { id = 'load-guard', dir = 'wezterm-x/plugins/load-guard',
+    module = 'lua/badge.lua', order = 50, requires_host = { 'hybrid-wsl' },
+    config = { state_file = '${runtime_state_dir}/state/oom-guard/status.json',
+               heartbeat_timeout_ms = 90000, warn_loadavg_1 = 8, crit_loadavg_1 = 16 } } } }]])
   local h = host_mod.new { runtime_dir = repo, runtime_state_dir = state_dir, runtime_mode = 'hybrid-wsl',
     path_sep = '/', registry_path = reg, logger = new_logger() }
-  local direct = dofile './wezterm-x/plugins/oppo-remote/lua/badge.lua'
-  direct.configure { state_file = status_path, heartbeat_timeout_ms = 20000, warn_pct = 10 }
+  assert_eq(table.concat(h.ids(), ','), 'load-guard')
+  local direct = dofile './wezterm-x/plugins/load-guard/lua/badge.lua'
+  direct.configure { state_file = status_path, heartbeat_timeout_ms = 90000, warn_loadavg_1 = 8, crit_loadavg_1 = 16 }
   local function same(a, b)
     if type(a) ~= type(b) then return false end
     if type(a) ~= 'table' then return a == b end
@@ -189,19 +191,21 @@ it('parity: real oppo-remote plugin via host == module rendered directly', funct
     return true
   end
   local fixtures = {
-    string.format('{"active":true,"state":"ok","stall_pct_5m":2,"heartbeat_at_ms":%d}', fake_now_ms),
-    string.format('{"active":true,"state":"ok","stall_pct_5m":23,"heartbeat_at_ms":%d}', fake_now_ms),
-    string.format('{"active":true,"state":"stall","lag_ms":4430,"stall_pct_5m":40,"heartbeat_at_ms":%d}', fake_now_ms),
-    string.format('{"active":true,"state":"stall","lag_ms":0,"stall_pct_5m":76,"heartbeat_at_ms":%d}', fake_now_ms),
-    string.format('{"active":false,"heartbeat_at_ms":%d}', fake_now_ms),
-    string.format('{"active":true,"state":"ok","heartbeat_at_ms":%d}', fake_now_ms - 60000),
+    string.format('{"loadavg_1":0.9,"heartbeat_at_ms":%d}', fake_now_ms),
+    string.format('{"loadavg_1":9.4,"heartbeat_at_ms":%d}', fake_now_ms),
+    string.format('{"loadavg_1":23.6,"heartbeat_at_ms":%d}', fake_now_ms),
+    string.format('{"level":"crit","heartbeat_at_ms":%d}', fake_now_ms),
+    string.format('{"loadavg_1":23.6,"heartbeat_at_ms":%d}', fake_now_ms - 600000),
   }
+  local rendered = 0
   for i, body in ipairs(fixtures) do
     write(status_path, body)
     local via_host = h.render_segments(palette)[1]
     local via_module = direct.render_status_segment(palette)
     assert(same(via_host, via_module), 'fixture ' .. i .. ' differs')
+    if via_host then rendered = rendered + 1 end
   end
+  assert_eq(rendered, 2, 'warn + crit render; healthy / no reading / stale stay absent')
 end)
 
 os.execute('rm -rf ' .. root)

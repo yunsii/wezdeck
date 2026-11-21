@@ -46,7 +46,7 @@ which `plugin_host` registers before loading any plugin.
 Built-in plugins may point `producer` / `cli` at existing repo scripts with a
 relative path (`../../../scripts/runtime/wsl-disk-guard.sh`) when the script
 has other callers; a self-contained capability keeps its scripts in
-`bin/` (see `oppo-remote`).
+`bin/` (see the external `oppo-remote` plugin).
 
 The WezTerm status tick runs every 250 ms and must not scan directories or
 parse manifests, so `sync-runtime` **compiles** the enabled plugins into a
@@ -65,6 +65,9 @@ wezterm-x/plugins/<id>/plugin.json   ~/.config/wezdeck/plugins/<id>/plugin.json
 ```
 
 ## plugin.json
+
+Example: the manifest of the external `oppo-remote` plugin
+(`wezdeck-plugin-oppo-remote`).
 
 ```json
 {
@@ -103,7 +106,7 @@ wezterm-x/plugins/<id>/plugin.json   ~/.config/wezdeck/plugins/<id>/plugin.json
 `wezterm-x/local/plugins.json` (machine-local, gitignored):
 
 ```json
-{ "disabled": ["oppo-remote"], "config": { "load-guard": { "warn_loadavg_1": 12 } } }
+{ "disabled": ["agent-grok"], "config": { "load-guard": { "warn_loadavg_1": 12 } } }
 ```
 
 `config` entries shallow-merge over the plugin's `badge.config`.
@@ -122,20 +125,19 @@ status schema is extracted when a second remote appears).
 | `cli` | oppo-remote, disk-guard, … | `wezdeck-plugin.sh run <id> <name>` |
 | `agent` | claude, codex, grok | provider discovery for habit-report and adversarial-review |
 
-Kept **out** of the plugin system:
+## Not pluginized (yet)
 
-- **Windows helper request domains** (clipboard, IME, VS Code, Chrome, WSL
-  heal) stay compiled into `wezdeck-runtime.exe`. Runtime-loading C# plugins
-  costs more than it buys and the helper lifecycle is the most fragile part
-  of the stack (see [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §26).
-- **IME and browser-slot badges** — they are fed by the helper and wired into
-  key handling, not standalone producers.
-- **Hotkeys** — `commands/manifest.json` remains the single source of truth
-  (AGENTS.md hard rule). A plugin exposes actions as CLIs; binding one is an
-  ordinary manifest edit.
-- **Agent launch** — every agent launch still terminates at
-  `scripts/runtime/agent-launcher.sh <profile>` (AGENTS.md hard rule); the
-  `agent` point only covers discovery for reporting / review.
+What stays in core, why (checked against the code on 2026-11-21), and what
+would have to be true before it moves. Tracked in
+[`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §27.
+
+| Capability | Why it is still core | Closes when |
+|---|---|---|
+| **Windows helper request domains** (clipboard, IME sampling, VS Code, Chrome, WSL heal) | Compiled into `wezdeck-runtime.exe` (`*RequestHandler.cs`, `ImeStateSampler.cs`, `WslHealWatcher*.cs`). Runtime-loading C# is costly and the helper lifecycle is the most fragile part of the stack (§26). | A capability needs to ship without a helper release; then add a generic "exec" request domain rather than C# plugins. |
+| **IME badge** (`中` / `英` / `EN`) | Not a standalone producer: `ImeStateSampler` inside the helper writes `ime_mode` into the helper's `state.env`, and Lua reads it through the host feature layer (`host:feature('ime_state')`, rendered in `titles.lua`). It is **not** tied to key handling. A badge-only plugin is possible; the plugin contract just has no "fed by the helper" producer kind yet. | `producer` gains a `helper` kind (badge reads the helper's state via an SDK call), then the badge moves; sampling stays in the helper. |
+| **Browser slot badge** (`Ego·…` / `CDP·…`) | One config block (`constants.browser_agent` / `chrome_debug_browser`) is shared by the badge, the `Alt+b` / `Alt+Shift+b` actions (`ui/actions.lua`, 4 call sites), link-open publishing, and the helper's Chrome auto-start args (`host/runtime_helper.lua`). Moving only the badge would split one capability's config in two. | The whole browser capability (actions, link-open, backend switch, badge) moves together — which first needs plugin-contributed actions (next row). |
+| **Hotkeys** | `wezterm-x/commands/manifest.json` is the single source for every binding (AGENTS.md hard rule); WezTerm keys and tmux chords are generated from it. A plugin cannot declare its own binding today — binding a plugin CLI is a manual manifest edit. | Plugins contribute `commands` that `render-plugins.sh` merges into the manifest render with namespaced ids and a key-conflict check; the manifest stays the one place bindings resolve. |
+| **Agent launch** | Every `claude` / `codex` / `grok` launch terminates at `scripts/runtime/agent-launcher.sh <profile>` (AGENTS.md hard rule: one env-loading site); launch / resume argv lives in `config/worktree-task.env` and `managed_cli.lua`. `agent` plugins only cover provider discovery for review and habit reports, so a new agent CLI still needs a launcher profile edit. | `agent` gains a `launch` contribution that the launcher reads (still the single launch site), replacing the per-CLI `*_RESUME_COMMAND` keys. |
 
 ## Agent providers
 
@@ -168,8 +170,8 @@ scripts/dev/wezdeck-plugin.sh list                     # discovered plugins, on/
 scripts/dev/wezdeck-plugin.sh disable agent-grok       # writes wezterm-x/local/plugins.json + recompiles
 scripts/dev/wezdeck-plugin.sh enable agent-grok --sync # … and runs sync-runtime (badges reach WezTerm)
 scripts/dev/wezdeck-plugin.sh doctor                   # files, producer check, status freshness
-scripts/dev/wezdeck-plugin.sh install oppo-remote      # producer.install (uninstall / check likewise)
-scripts/dev/wezdeck-plugin.sh run oppo-remote oppo-remote-quality report
+scripts/dev/wezdeck-plugin.sh install disk-guard       # producer.install (uninstall / check likewise)
+scripts/dev/wezdeck-plugin.sh run disk-guard wsl-disk-guard status
 ```
 
 Agent-provider changes apply as soon as the registry recompiles; badge

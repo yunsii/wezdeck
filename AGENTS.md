@@ -108,12 +108,12 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Phone / Android remote work (OpenClaw only; Happy + Tailscale phone
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
-- OPPO 互联 Pad remote control feels laggy / link quality (layered triage:
-  link → office → home router / Pad Wi‑Fi → host; incident history), same-LAN vs
-  cross-net, WARP, long-uptime host input stickiness
-  (`wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh report|timeline|watch|episodes`,
-  `OppoRemote·` badge / `wezterm-x/plugins/oppo-remote/bin/install.sh`):
-  Read [`docs/oppo-remote-host-input.md`](docs/oppo-remote-host-input.md).
+- Driving this PC from a Pad / phone remote client feels laggy (layered
+  triage: remote link → office side → home router / client Wi‑Fi → host;
+  incident history, home-router and long-uptime lessons). Remote clients are
+  external plugins (OPPO 互联: `wezdeck-plugin-oppo-remote`, its own
+  `docs/oppo.md`), not core:
+  Read [`docs/remote-input-stickiness.md`](docs/remote-input-stickiness.md).
 - Browser glossary (slot / backend / everyday / system), headless Chrome
   debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,
   the right-status browser-slot badge, link open target, history-purge

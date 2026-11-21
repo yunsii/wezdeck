@@ -302,7 +302,7 @@ function M.register(opts)
   -- Compose the right-status bar: IME, browser slot (Ego·… or CDP·…), plugin
   -- badges in badge.order, attention counters.
   -- Order:
-  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N (10) | OppoRemote·OK (20)
+  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N (10) | <machine plugins, e.g. OppoRemote·OK (20)>
   --     | SystemDisk·8G WslDisk·22G (30) | Memory·88% (40) | LoadAvg·23 (50) | ▲…✓…●…
   --   (plugin badges live in wezterm-x/plugins/<id>; most are absent while
   --   idle/healthy — presence is the signal; disk-guard may emit both system +

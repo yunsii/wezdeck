@@ -111,10 +111,12 @@ class CompileTest(unittest.TestCase):
         self.assertEqual(errs, [], "a disabled plugin does not claim its order")
 
     def test_external_plugin_copied_and_duplicate_id_rejected(self):
-        plugin(self.ext, "mine", badge=badge(50))
+        d = plugin(self.ext, "mine", badge=badge(50))
+        write(d / ".git/HEAD", "ref: refs/heads/main\n")
         reg, errs = self.run_compile()
         self.assertEqual(errs, [])
         self.assertTrue((self.out / ".external/mine/lua/badge.lua").is_file())
+        self.assertFalse((self.out / ".external/mine/.git").exists(), "plugin checkout's .git is not shipped")
         self.assertIn('"plugins/.external/mine"', (self.out / "registry.generated.lua").read_text())
         plugin(self.builtin, "mine", badge=badge(60))
         _, errs = self.run_compile()
@@ -133,7 +135,8 @@ class CompileTest(unittest.TestCase):
         reg, errs = pc.compile_plugins(REPO, None, self.tmp / "none.json", self.out)
         self.assertEqual(errs, [])
         ids = [p["id"] for p in reg["plugins"]]
-        for pid in ("oppo-remote", "disk-guard", "mem-guard", "load-guard", "session-bridge",
+        self.assertNotIn("oppo-remote", ids, "remote control is an external plugin, not core")
+        for pid in ("disk-guard", "mem-guard", "load-guard", "session-bridge",
                     "agent-claude", "agent-codex", "agent-grok"):
             self.assertIn(pid, ids)
         for p in reg["plugins"]:
