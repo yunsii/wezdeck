@@ -1,4 +1,25 @@
+import { execFile } from 'node:child_process'
 import http from 'node:http'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// Collab passthrough runs the real `delegate api` (same contract the Go bridge
+// serves). Point WEZDECK_MOCK_TICKETS_ROOT at a fixture store for tests;
+// default is the live ~/.agent/tickets (read-only).
+const delegateApi = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../skills/cross-repo-delegate/lib/api.py',
+)
+const collabKeys = {
+  health: [],
+  list: ['status', 'repo', 'parent', 'since', 'limit'],
+  show: ['id'],
+  events: ['after', 'ticket', 'limit'],
+  run: ['run'],
+  prompt: ['sha'],
+  transcript: ['run', 'tail'],
+  metrics: ['window', 'ticket', 'parent'],
+}
 
 const port = Number(process.env.WEZDECK_RUNTIME_PORT || 35791)
 const startedAt = Date.now()
@@ -22,7 +43,27 @@ const server = http.createServer((req, res) => {
     res.end()
     return
   }
-  const path = new URL(req.url || '/', `http://${req.headers.host}`).pathname
+  const url = new URL(req.url || '/', `http://${req.headers.host}`)
+  const path = url.pathname
+  if (path.startsWith('/api/v1/collab/')) {
+    const command = path.slice('/api/v1/collab/'.length)
+    const keys = collabKeys[command]
+    if (!keys) return json(res, { error: 'not_found' }, 404)
+    const args = [delegateApi, command]
+    for (const key of keys) {
+      const value = url.searchParams.get(key)
+      if (value) args.push(`--${key}`, value)
+    }
+    const env = { ...process.env }
+    if (process.env.WEZDECK_MOCK_TICKETS_ROOT) {
+      env.DELEGATE_TICKETS_ROOT = process.env.WEZDECK_MOCK_TICKETS_ROOT
+    }
+    execFile('python3', args, { env, timeout: 5_000 }, (error, stdout) => {
+      if (error) return json(res, { available: false, error: String(error) })
+      json(res, JSON.parse(stdout))
+    })
+    return
+  }
   if (path === '/api/v1/health') {
     json(res, {
       api_version: 'v1',
@@ -41,6 +82,7 @@ const server = http.createServer((req, res) => {
         'workspaces.read',
         'diagnostics.logs',
         'events',
+        'collab.read',
       ],
       observed_at: new Date().toISOString(),
     })

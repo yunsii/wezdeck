@@ -373,6 +373,11 @@ reads `access-ledger.json` for the last visited worktree.
 `git.status` runs `dump-worktree-status.lua` for the tmux-status git change
 label and Node version. `status.wakatime` runs `dump-wakatime-status.lua`
 against the existing tmux WakaTime cache and does not call the WakaTime API.
+`collab.<command>` (`GET /api/v1/collab/<command>`, capability `collab.read`)
+runs the read-only `delegate api` (`skills/cross-repo-delegate/lib/api.py`);
+commands and forwarded query keys are allowlisted on both sides
+(`native/wezdeck-wsl/collab.go`, `RuntimeWebServer.CollabQueryKeys`) — see
+[`cross-repo-collab.md`](./cross-repo-collab.md).
 `bridge.status` (`GET /api/v1/wsl`, capability `wsl.status`) reports whether
 that socket process is answering, plus its socket path and pid. The Web
 Console overview shows this as its own status; a missing process is

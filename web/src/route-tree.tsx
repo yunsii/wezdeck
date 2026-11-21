@@ -1,6 +1,7 @@
 import { createRoute, notFound, Outlet } from '@tanstack/react-router'
 
 import { LandingPage } from '#/features/landing-page'
+import { ConsoleCollabPage } from '#/features/console-collab'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
 import { ConsoleDevelopmentPage } from '#/features/console-development'
 import { ConsoleOverviewPage } from '#/features/console-overview'
@@ -137,6 +138,14 @@ const consoleDiagnosticsRoute = createRoute({
     ),
 })
 
+const consoleCollabRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'collab',
+  component: ConsoleCollabPage,
+  head: ({ params }) =>
+    consoleHead(params.locale === 'zh' ? 'WezDeck 跨仓协作' : 'WezDeck Collab'),
+})
+
 export const routeTree = rootRoute.addChildren({
   localeRoute: localeRoute.addChildren({
     landingRoute,
@@ -144,6 +153,7 @@ export const routeTree = rootRoute.addChildren({
       consoleOverviewRoute,
       consoleDevelopmentRoute,
       consoleDiagnosticsRoute,
+      consoleCollabRoute,
     }),
   }),
 })

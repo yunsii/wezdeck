@@ -190,3 +190,237 @@ export type RuntimeSnapshot = {
   ime: ImeState | null
   chrome: ChromeState | null
 }
+
+// ---------------------------------------------------------------- collab
+// Mirrors skills/cross-repo-delegate/schema/*.schema.json (delegate api v1),
+// served through Runtime GET /api/v1/collab/<command> → wezdeck-wsl bridge.
+const nnum = z.number().nullable().optional()
+const nstr = z.string().nullable().optional()
+
+export const collabTokensSchema = z.object({
+  input: nnum,
+  cache_read: nnum,
+  cache_write: nnum,
+  output: nnum,
+})
+
+export const collabSessionSchema = z
+  .object({ id: nstr, reuse: nstr, reason: nstr, from: nstr })
+  .passthrough()
+
+export const collabRunSummarySchema = z
+  .object({
+    run: z.string(),
+    phase: nstr,
+    role: nstr,
+    backend: nstr,
+    model: nstr,
+    started_at: nstr,
+    ended_at: nstr,
+    wall_ms: nnum,
+    turns: nnum,
+    tokens: collabTokensSchema.nullable().optional(),
+    cache_hit_rate: nnum,
+    cache_ttl: nstr,
+    cost_usd: nnum,
+    tool_calls: nnum,
+    rss_peak_mb: nnum,
+    exit: nnum,
+    session: collabSessionSchema.nullable().optional(),
+    trigger: z.unknown().optional(),
+    prompt_sha256: nstr,
+  })
+  .passthrough()
+
+export const collabTicketSchema = z
+  .object({
+    id: z.string(),
+    title: nstr,
+    from: nstr,
+    to: nstr,
+    status: nstr,
+    phase: nstr,
+    owner: nstr,
+    parent: nstr,
+    created_at: nstr,
+    updated_at: nstr,
+    worktree: nstr,
+    branch: nstr,
+    progress: z
+      .object({ step: nstr, message: nstr, ts: nstr })
+      .nullable()
+      .optional(),
+    runs: z.number().default(0),
+    running: z.array(z.string()).default([]),
+    last_run: collabRunSummarySchema.nullable().optional(),
+  })
+  .passthrough()
+
+const collabError = z
+  .object({ code: z.string(), message: z.string() })
+  .optional()
+
+function collabEnvelope<T extends z.ZodRawShape>(shape: T) {
+  return z
+    .object({ v: z.number(), ok: z.boolean(), error: collabError, ...shape })
+    .passthrough()
+}
+
+export const collabHealthSchema = collabEnvelope({
+  tickets: z.number().default(0),
+  by_status: z.record(z.string(), z.number()).default({}),
+  running: z.number().default(0),
+  queued: z.number().default(0),
+  waiting_human: z.number().default(0),
+  seq_head: z.number().default(0),
+})
+
+export const collabListSchema = collabEnvelope({
+  total: z.number().default(0),
+  tickets: z.array(collabTicketSchema).default([]),
+})
+
+export const collabEventSchema = z
+  .object({
+    seq: z.number().nullable().optional(),
+    ticket: nstr,
+    run: nstr,
+    kind: z.string().default('event'),
+    ts: nstr,
+  })
+  .passthrough()
+
+export const collabShowSchema = collabEnvelope({
+  ticket: collabTicketSchema.optional(),
+  sessions: z.record(z.string(), z.unknown()).default({}),
+  sections: z
+    .array(z.object({ title: z.string(), text: z.string() }))
+    .default([]),
+  children: z.array(z.string()).default([]),
+  runs: z.array(collabRunSummarySchema).default([]),
+})
+
+export const collabEventsSchema = collabEnvelope({
+  events: z.array(collabEventSchema).default([]),
+  next: z.number().default(0),
+  head: z.number().default(0),
+  more: z.boolean().default(false),
+})
+
+export const collabCompositionSchema = z
+  .object({
+    kind: z.string(),
+    source: nstr,
+    git_blob: nstr,
+    bytes: z.number().default(0),
+    sha256: nstr,
+  })
+  .passthrough()
+
+export const collabRunSchema = collabEnvelope({
+  ticket: z.string().optional(),
+  running: z.boolean().default(false),
+  launch: z
+    .object({
+      run: z.string(),
+      ts: nstr,
+      phase: nstr,
+      role: nstr,
+      trigger: z
+        .object({
+          source: nstr,
+          actor: nstr,
+          origin_session: nstr,
+          origin_cwd: nstr,
+          cmdline: nstr,
+        })
+        .passthrough()
+        .nullable()
+        .optional(),
+      prompt: z
+        .object({
+          sha256: z.string(),
+          store_sha256: nstr,
+          bytes: z.number(),
+          est_tokens: z.number(),
+          redactions: z.array(z.string()).optional(),
+        })
+        .passthrough(),
+      composition: z.array(collabCompositionSchema).default([]),
+      session: collabSessionSchema.nullable().optional(),
+      invocation: z
+        .object({
+          backend: z.string(),
+          mode: z.string(),
+          model: nstr,
+          cwd: z.string(),
+          base_sha: nstr,
+          argv: z.array(z.string()).default([]),
+        })
+        .passthrough(),
+    })
+    .passthrough()
+    .optional(),
+  record: collabRunSummarySchema
+    .extend({
+      cli_init: z.record(z.string(), z.unknown()).nullable().optional(),
+      final_text_tail: nstr,
+      denials: nnum,
+      errors: nnum,
+    })
+    .nullable()
+    .optional(),
+})
+
+export const collabPromptSchema = collabEnvelope({
+  sha256: z.string().optional(),
+  bytes: z.number().optional(),
+  text: z.string().default(''),
+})
+
+export const collabTranscriptSchema = collabEnvelope({
+  lines: z.array(collabEventSchema).default([]),
+  total: z.number().default(0),
+  final_text_tail: nstr,
+})
+
+const collabGroup = z.record(
+  z.string(),
+  z
+    .object({
+      runs: z.number().default(0),
+      cache_hit_rate: nnum,
+      cost_usd: nnum,
+    })
+    .passthrough(),
+)
+
+export const collabMetricsSchema = collabEnvelope({
+  window: z.string().default('24h'),
+  runs: z.number().default(0),
+  failed_runs: z.number().default(0),
+  sessions: z.number().default(0),
+  turns: z.number().default(0),
+  tokens: collabTokensSchema.optional(),
+  cache_hit_rate: nnum,
+  cost_usd: nnum,
+  wall_ms: z.object({ p50: nnum, p95: nnum, sum: nnum }).partial().optional(),
+  rss_peak_mb: z.object({ p95: nnum, max: nnum }).partial().optional(),
+  by_backend: collabGroup.default({}),
+  by_reuse: collabGroup.default({}),
+  reuse_reasons: z.record(z.string(), z.number()).default({}),
+  by_repo: collabGroup.default({}),
+  by_trigger: z.record(z.string(), z.number()).default({}),
+})
+
+export type CollabHealth = z.infer<typeof collabHealthSchema>
+export type CollabList = z.infer<typeof collabListSchema>
+export type CollabTicket = z.infer<typeof collabTicketSchema>
+export type CollabShow = z.infer<typeof collabShowSchema>
+export type CollabEvents = z.infer<typeof collabEventsSchema>
+export type CollabEvent = z.infer<typeof collabEventSchema>
+export type CollabRun = z.infer<typeof collabRunSchema>
+export type CollabRunSummary = z.infer<typeof collabRunSummarySchema>
+export type CollabPrompt = z.infer<typeof collabPromptSchema>
+export type CollabTranscript = z.infer<typeof collabTranscriptSchema>
+export type CollabMetrics = z.infer<typeof collabMetricsSchema>

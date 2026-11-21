@@ -2,7 +2,9 @@
 
 Status (2026-11-21): **P0 landed** — launch/run records, CLI event streams,
 session reuse, global event cursor, `delegate api` + `schema/*.json`, `collab`
-log category. P1–P4 are planned. The machine contract lives in
+log category. **P1 code landed** — bridge `collab.*`, Runtime
+`/api/v1/collab/*`, Console → Collab page; live on Windows after the next
+runtime release. P2–P4 are planned. The machine contract lives in
 `skills/cross-repo-delegate/schema/`; this doc keeps decisions and rationale.
 
 Related: [`agent-scheduling.md`](agent-scheduling.md) (channels, ticket vs
@@ -324,10 +326,14 @@ streams in `scripts/dev/host-agent-invoke/tests/fixtures/` drive
 `cross-repo-delegate/test.sh` (schema validation of every `api` command,
 reuse reasons, redaction, cursor paging, resume fallback).
 
-**P1: wezdeck web, read-only.** The bridge cases, C# routes, schemas and the
-Collab page. Verify with the mock runtime (`web/scripts/mock-runtime.mjs` plus
-`collab` fixtures) and a CDP test that renders board → swimlane → run
-inspector without stealing focus. Then cut the runtime release.
+**P1 (code landed 2026-11-21): wezdeck web, read-only.** `native/wezdeck-wsl/collab.go`
+(allowlisted `delegate api` exec, 5 s timeout, Go tests), `RuntimeWebServer`
+`/api/v1/collab/<command>` + `collab.read`, `web/src/features/console-collab.tsx`
+(metrics band, keyboard listbox of tickets, run table, launch record with
+trigger chain / composition / initial prompt, live transcript; 2 s poll while
+anything runs, 30 s idle). Verified with the mock runtime proxying the real
+`delegate api` over the e2e store and `web/tests/collab.cdp.test.ts` (headless
+CDP). Parent swimlanes wait for P2's parent/child model.
 
 **P2: parent/child + scheduler.** Covers:
 

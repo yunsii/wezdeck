@@ -6,33 +6,11 @@ import { Button } from '#/components/ui/button'
 import { Toggle } from '#/components/ui/toggle'
 import { ToggleGroup } from '#/components/ui/toggle-group'
 import { getWorktreeStatus, postRuntimeAction } from '#/lib/runtime-client'
-import type {
-  AgentSession,
-  VscodeWindow,
-  WorkspaceCatalog,
-} from '#/lib/runtime-contract'
+import type { AgentSession, VscodeWindow } from '#/lib/runtime-contract'
 import { runtimeQuery, useRuntimeData } from './console-data'
 import { Reading } from './inspector'
-
-type Worktree = {
-  path: string
-  name: string
-  branch: string
-  kind: string
-}
-
-type CatalogRow = {
-  id: string
-  workspace: string
-  cwd: string
-  name: string
-  worktrees: Worktree[]
-  /** Live attention entries for this repo (may be multiple worktree panes). */
-  liveSessions: AgentSession[]
-  /** Preferred detail/jump target: live first, else most recent archive. */
-  session?: AgentSession
-  recent: boolean
-}
+import { catalogRows, windowFor } from './console-development-rows'
+import type { CatalogRow, Worktree } from './console-development-rows'
 
 export function ConsoleDevelopmentPage() {
   const { t } = useLingui()
@@ -352,7 +330,11 @@ function worktreeMatchesSession(tree: Worktree, session: AgentSession) {
   // Branch slugs often use '/' while worktree names use '-'.
   if (branch && tree.name && branch.replaceAll('/', '-') === tree.name)
     return true
-  if (windowName && tree.branch && windowName.replaceAll('-', '/') === tree.branch)
+  if (
+    windowName &&
+    tree.branch &&
+    windowName.replaceAll('-', '/') === tree.branch
+  )
     return true
   return false
 }
@@ -488,59 +470,4 @@ function RowActions({
       </Button>
     </span>
   )
-}
-
-function catalogRows(
-  catalog: WorkspaceCatalog['workspaces'],
-  entries: AgentSession[],
-  recent: AgentSession[],
-): CatalogRow[] {
-  return catalog.flatMap((workspace) =>
-    workspace.items.map((item) => {
-      const liveSessions = entries.filter((entry) => sessionMatches(entry, item))
-      const live = liveSessions[0]
-      const archived = recent.find((entry) => sessionMatches(entry, item))
-      const worktrees =
-        item.worktrees.length > 0
-          ? item.worktrees
-          : [
-              {
-                path: item.cwd,
-                name: item.name,
-                branch: '',
-                kind: 'primary',
-              },
-            ]
-      return {
-        id: workspace.name + ':' + item.cwd,
-        workspace: workspace.name,
-        cwd: item.cwd,
-        name: item.name,
-        worktrees,
-        liveSessions,
-        session: live ?? archived,
-        recent: !live && Boolean(archived),
-      }
-    }),
-  )
-}
-
-function sessionMatches(
-  entry: AgentSession,
-  item: { cwd: string; name: string },
-) {
-  const repo = entry.repo || deriveRepo(entry.tmux_session)
-  return repo === item.name
-}
-
-function windowFor(windows: VscodeWindow[], name: string) {
-  const match = windows.find((window) =>
-    (window.title || window.Title || '').includes(name),
-  )
-  return match?.hwnd ?? match?.Hwnd
-}
-
-function deriveRepo(session: string | undefined) {
-  const match = session?.match(/^wezterm_[^_]+_(.+)_[0-9a-f]{10}$/i)
-  return match?.[1] ?? ''
 }

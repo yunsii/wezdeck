@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace WezDeck.Runtime;
 
-internal sealed class RuntimeWebServer : IDisposable
+internal sealed partial class RuntimeWebServer : IDisposable
 {
     private readonly RuntimeConfig config;
     private readonly StructuredLogger logger;
@@ -158,6 +158,7 @@ internal sealed class RuntimeWebServer : IDisposable
             return;
         }
 
+        if (await TryHandleCollabAsync(context)) return;
         var body = context.Request.Path.Value?.ToLowerInvariant() switch
         {
             "/api/v1/health" => new Dictionary<string, object?>
@@ -170,7 +171,7 @@ internal sealed class RuntimeWebServer : IDisposable
                 {
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
                     "vscode.windows", "vscode.focus", "vscode.focus_or_open", "vscode.close",
-                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events",
+                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read",
                 },
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             },

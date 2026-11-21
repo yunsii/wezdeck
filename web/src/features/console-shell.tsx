@@ -1,5 +1,11 @@
 import { useLingui } from '@lingui/react/macro'
-import { Activity, Code2, House, Server } from 'lucide-react'
+import {
+  Activity,
+  Code2,
+  GitPullRequestArrow,
+  House,
+  Server,
+} from 'lucide-react'
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { Link, Outlet, useLocation } from '@tanstack/react-router'
@@ -45,6 +51,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const location = useLocation().pathname
   const isDevelopment = location.endsWith('/development')
   const isDiagnostics = location.endsWith('/diagnostics')
+  const isCollab = location.endsWith('/collab')
   const localeParam = locale === 'en' ? undefined : locale
 
   return (
@@ -64,7 +71,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             aria-label={t`Console navigation`}
           >
             <ModeLink
-              active={!isDevelopment && !isDiagnostics}
+              active={!isDevelopment && !isDiagnostics && !isCollab}
               to="/{-$locale}/console"
               locale={localeParam}
               icon={<Server size={15} aria-hidden />}
@@ -83,6 +90,13 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               locale={localeParam}
               icon={<Activity size={15} aria-hidden />}
               label={t`Diagnostics`}
+            />
+            <ModeLink
+              active={isCollab}
+              to="/{-$locale}/console/collab"
+              locale={localeParam}
+              icon={<GitPullRequestArrow size={15} aria-hidden />}
+              label={t`Collab`}
             />
           </nav>
           <div className="mt-auto flex items-center gap-2 p-3 max-[899px]:mt-0">
@@ -236,6 +250,7 @@ function ModeLink({
     | '/{-$locale}/console'
     | '/{-$locale}/console/development'
     | '/{-$locale}/console/diagnostics'
+    | '/{-$locale}/console/collab'
   locale: 'zh' | undefined
   icon: React.ReactNode
   label: string

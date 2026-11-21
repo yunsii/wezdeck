@@ -1,4 +1,14 @@
+import type { z } from 'zod'
+
 import {
+  collabEventsSchema,
+  collabHealthSchema,
+  collabListSchema,
+  collabMetricsSchema,
+  collabPromptSchema,
+  collabRunSchema,
+  collabShowSchema,
+  collabTranscriptSchema,
   chromeStateSchema,
   diagnosticsStateSchema,
   healthSchema,
@@ -239,4 +249,66 @@ export function runtimeEventsUrl(baseUrl: string) {
   const url = new URL('/events', baseUrl)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   return url.toString()
+}
+
+// ---------------------------------------------------------------- collab
+// `delegate api` through Runtime GET /api/v1/collab/<command>. A missing
+// capability, HTTP error, or schema mismatch degrades to {ok:false} so the
+// page renders "unavailable" instead of an error screen.
+export type CollabCommand =
+  | 'health'
+  | 'list'
+  | 'show'
+  | 'events'
+  | 'run'
+  | 'prompt'
+  | 'transcript'
+  | 'metrics'
+
+const collabParsers = {
+  health: collabHealthSchema,
+  list: collabListSchema,
+  show: collabShowSchema,
+  events: collabEventsSchema,
+  run: collabRunSchema,
+  prompt: collabPromptSchema,
+  transcript: collabTranscriptSchema,
+  metrics: collabMetricsSchema,
+} as const
+
+type CollabResult<TCommand extends CollabCommand> = z.infer<
+  (typeof collabParsers)[TCommand]
+>
+
+export async function getCollab<TCommand extends CollabCommand>(
+  command: TCommand,
+  params: Record<string, string | number | undefined> = {},
+): Promise<CollabResult<TCommand>> {
+  const schema = collabParsers[command]
+  const unavailable = (message: string) =>
+    schema.parse({
+      v: 1,
+      ok: false,
+      error: { code: 'unavailable', message },
+    }) as CollabResult<TCommand>
+  const { baseUrl, health } = await requireRuntime()
+  if (!health.capabilities.includes('collab.read')) {
+    return unavailable('Runtime does not expose collab.read yet')
+  }
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') query.set(key, String(value))
+  }
+  const suffix = query.toString()
+  try {
+    return (await requestJson(
+      baseUrl,
+      `/api/v1/collab/${command}${suffix ? `?${suffix}` : ''}`,
+      (value) => schema.parse(value),
+      {},
+      6_000,
+    )) as CollabResult<TCommand>
+  } catch (error) {
+    return unavailable(error instanceof Error ? error.message : String(error))
+  }
 }

@@ -95,6 +95,9 @@ func dispatch(req request) response {
 		res.Result, err = runDump("dump-worktree-status.lua", []string{payload.Path}, nil)
 	case "status.wakatime":
 		res.Result, err = runDump("dump-wakatime-status.lua", nil, nil)
+	case "collab.health", "collab.list", "collab.show", "collab.events",
+		"collab.run", "collab.prompt", "collab.transcript", "collab.metrics":
+		res.Result, err = runCollab(req.Action, req.Payload)
 	case "bridge.status":
 		res.Result = map[string]any{
 			"available": true,
