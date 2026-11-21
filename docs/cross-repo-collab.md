@@ -6,9 +6,10 @@ Status (2026-11-21): **P0–P3 live** — run observability + session reuse +
 with merge + fresh verify (P2), fe1 local service v7 `collab.read` + fe1
 ⚙ › 跨仓协作 (P3). **P4 re-scoped** (2026-11-21, with the fe1 owner): wezdeck
 sees everything; fe1 filters to fe1-related (`--repo fe1`, live); fe1 research
-and future code changes run *as tickets* — step 1 `delegate research` landed,
-steps 2–3 (flows check behind a flag with parity, "交给 Agent 改" → collab
-parent) wait on decisions in [Open questions](diagnostics.md#open-questions).
+and future code changes run *as tickets* — `delegate research` landed; fe1
+flows' check runs on it behind `FLOWS_ENGINE=delegate` (parity matched on two
+real flags); default flip and "交给 Agent 改" → collab parent wait on decisions in
+[Open questions](diagnostics.md#open-questions).
 
 Related: [`agent-scheduling.md`](agent-scheduling.md) (channels, ticket vs
 multi-dir mount), [`workspaces.md`](workspaces.md) (worktrees),
