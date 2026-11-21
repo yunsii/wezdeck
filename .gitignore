@@ -7,6 +7,8 @@ __pycache__/
 wezterm-x/local/
 wezterm-x/tmux/chord-bindings.generated.conf
 wezterm-x/tmux/appearance.generated.conf
+wezterm-x/plugins/registry.generated.*
+wezterm-x/plugins/.external/
 native/picker/bin/
 native/wezdeck-wsl/bin/
 .claude/scheduled_tasks.lock

@@ -27,7 +27,7 @@ function M.register(opts)
   local disk_status = opts.disk_status
   local mem_status = opts.mem_status
   local load_status = opts.load_status
-  local remote_status = opts.remote_status
+  local plugin_host = opts.plugin_host
   local host = opts.host
   local logger = opts.logger
   local constants = opts.constants
@@ -306,7 +306,7 @@ function M.register(opts)
   -- Compose the right-status bar from IME, browser slot (Ego·… or CDP·…),
   -- session-bridge watch, host-disk, guest-memory, guest-load, attention.
   -- Order:
-  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N | OppoRemote·OK
+  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N | <plugin badges, e.g. OppoRemote·OK>
   --     | SystemDisk·8G WslDisk·22G | Memory·88% | LoadAvg·23 | ▲…✓…●…
   --   (SessionBridge / disks / Memory / LoadAvg absent while idle/healthy —
   --   presence is the signal; disk_status may emit both system + WSL badges)
@@ -333,9 +333,11 @@ function M.register(opts)
     if sb_segment then
       table.insert(right_segments, sb_segment)
     end
-    local remote_segment = remote_status and remote_status.render_status_segment(palette) or nil
-    if remote_segment then
-      table.insert(right_segments, remote_segment)
+    -- Plugin badges (wezterm-x/plugins/<id>, ordered by badge.order).
+    if plugin_host then
+      for _, segment in ipairs(plugin_host.render_segments(palette)) do
+        table.insert(right_segments, segment)
+      end
     end
     local disk_segment = disk_status and disk_status.render_status_segment(palette) or nil
     if disk_segment then

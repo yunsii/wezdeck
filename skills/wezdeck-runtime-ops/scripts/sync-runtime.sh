@@ -260,6 +260,14 @@ prepare_runtime_subflow() {
     return 1
   fi
 
+  # Plugins compile first: a validation error must fail before publication.
+  if ! "$REPO_ROOT/scripts/runtime/render-plugins.sh"; then
+    sync_trace "step=render-plugins status=failed"
+    printf 'sync-runtime: plugin validation failed (see render-plugins lines above)\n' >&2
+    return 1
+  fi
+  sync_trace "step=render-plugins status=completed"
+
   if [[ -x "$REPO_ROOT/scripts/runtime/render-tmux-bindings.sh" ]]; then
     "$REPO_ROOT/scripts/runtime/render-tmux-bindings.sh"
     sync_trace "step=render-tmux-bindings status=completed"

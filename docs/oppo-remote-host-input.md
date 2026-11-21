@@ -113,10 +113,10 @@ encoder's congestion controller. That is enough to reconstruct **when the
 link stalled and how far behind the Pad's picture was**, after the fact:
 
 ```bash
-scripts/dev/oppo-remote-quality.sh report            # one row per session, last 7d
-scripts/dev/oppo-remote-quality.sh timeline          # newest session, per minute
-scripts/dev/oppo-remote-quality.sh timeline 20261121-0859 --bucket 10
-scripts/dev/oppo-remote-quality.sh watch --keys      # live STALL / OK lines while you work
+wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh report            # one row per session, last 7d
+wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh timeline          # newest session, per minute
+wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh timeline 20261121-0859 --bucket 10
+wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh watch --keys      # live STALL / OK lines while you work
 ```
 
 Signal (field meanings inferred from behaviour, not vendor docs):
@@ -158,9 +158,9 @@ Live view of the same signal on the WezTerm right status, plus a per-stall
 history that says **which side** was at fault.
 
 ```bash
-scripts/dev/install-oppo-remote-watch.sh            # systemd user unit wezterm-oppo-remote.service
-scripts/dev/install-oppo-remote-watch.sh --check    # unit state + status.json
-scripts/dev/oppo-remote-quality.sh episodes         # recorded stalls + blame
+wezterm-x/plugins/oppo-remote/bin/install.sh            # systemd user unit wezterm-oppo-remote.service
+wezterm-x/plugins/oppo-remote/bin/install.sh --check    # unit state + status.json
+wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh episodes         # recorded stalls + blame
 ```
 
 | Badge | Meaning |
@@ -225,7 +225,7 @@ the Mi WiFi / Mi Home app.
 When remote feels good, record at least:
 
 1. Subjective note + whether **console** input is also fine;
-   `scripts/dev/oppo-remote-quality.sh report --days 1`.
+   `wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh report --days 1`.
 2. PC IPv4 / prefix; latest sdk `receive P2P request` peer `local` + public.
 3. `warp-cli status`.
 4. `scripts/dev/wsl-host-mem.sh` (`VmmemWSL` Private / host free).

@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # OPPO 互联 remote-control link quality from the vendor's own host logs.
 #
-#   scripts/dev/oppo-remote-quality.sh report [--days N] [--json]
-#   scripts/dev/oppo-remote-quality.sh timeline [SESSION] [--bucket SEC]
-#   scripts/dev/oppo-remote-quality.sh watch [--keys]
-#   scripts/dev/oppo-remote-quality.sh episodes [--days N]   # daemon-recorded stalls + blame
-#   scripts/dev/oppo-remote-quality.sh status                # current OppoRemote· badge JSON
-#   scripts/dev/oppo-remote-quality.sh daemon                # systemd producer (install-oppo-remote-watch.sh)
+#   wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh report [--days N] [--json]
+#   wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh timeline [SESSION] [--bucket SEC]
+#   wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh watch [--keys]
+#   wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh episodes [--days N]   # daemon-recorded stalls + blame
+#   wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh status                # current OppoRemote· badge JSON
+#   wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh daemon                # systemd producer (bin/install.sh)
 #
 # Reads only vendor logs (daemon writes its own status.json). Log dir: %APPDATA%\O+Connect\devicespace (override with
 # WEZTERM_OPPO_LOG_DIR). Docs: docs/oppo-remote-host-input.md#link-quality-probe
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/../.." && pwd)"
+repo_root="$(cd "$script_dir/../../../.." && pwd)"
 
 log_dir="${WEZTERM_OPPO_LOG_DIR:-}"
 if [[ -z "$log_dir" ]]; then

@@ -1,0 +1,24 @@
+{
+  "$comment": "OPPO 互联 (O+ Connect) remote-control link quality. Docs: docs/oppo-remote-host-input.md",
+  "id": "oppo-remote",
+  "name": "OPPO 互联 remote link",
+  "kind": "remote",
+  "default_enabled": true,
+  "requires": { "host": ["hybrid-wsl"] },
+  "badge": {
+    "module": "lua/badge.lua",
+    "order": 20,
+    "config": {
+      "state_file": "${runtime_state_dir}/state/oppo-remote/status.json",
+      "heartbeat_timeout_ms": 20000,
+      "warn_pct": 10
+    }
+  },
+  "producer": {
+    "install": "bin/install.sh",
+    "check": "bin/install.sh --check",
+    "uninstall": "bin/install.sh --uninstall"
+  },
+  "cli": { "oppo-remote-quality": "bin/oppo-remote-quality.sh" },
+  "docs": "README.md"
+}

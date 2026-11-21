@@ -633,7 +633,7 @@ def close_episode(live: Live, hist_path: Path, now: dt.datetime) -> None:
 def cmd_episodes(args, log_dir: Path) -> int:
     p = Path(args.status_file).with_name("episodes.ndjson")
     if not p.exists():
-        print(f"no stall episode has closed yet ({p}); check the daemon with install-oppo-remote-watch.sh --check")
+        print(f"no stall episode has closed yet ({p}); check the daemon with wezterm-x/plugins/oppo-remote/bin/install.sh --check")
         return 0
     rows = [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
     cutoff = dt.datetime.now() - dt.timedelta(days=args.days)

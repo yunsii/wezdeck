@@ -1,4 +1,4 @@
--- Verifies the OPPO 互联 OppoRemote· badge in remote_status.lua.
+-- Verifies the OPPO 互联 OppoRemote· badge (wezterm-x/plugins/oppo-remote/lua/badge.lua).
 --
 -- Design properties that are easy to regress:
 --
@@ -45,8 +45,8 @@ local tmpdir = os.getenv('TMPDIR') or '/tmp'
 local state_path = tmpdir .. '/wezterm-oppo-remote-test-status.json'
 os.remove(state_path)
 
-package.loaded['remote_status'] = nil
-local rs = require 'remote_status'
+-- The badge ships as a plugin module (wezterm-x/plugins/oppo-remote).
+local rs = dofile './wezterm-x/plugins/oppo-remote/lua/badge.lua'
 rs.configure { state_file = state_path, heartbeat_timeout_ms = 20000, warn_pct = 10 }
 
 local function S(t)

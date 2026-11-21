@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Install the OPPO 互联 link-quality producer as a systemd user service.
 #
-#   scripts/dev/install-oppo-remote-watch.sh             # install + enable + start
-#   scripts/dev/install-oppo-remote-watch.sh --check     # unit state + current status.json
-#   scripts/dev/install-oppo-remote-watch.sh --print     # show the unit, no writes
-#   scripts/dev/install-oppo-remote-watch.sh --uninstall
+#   wezterm-x/plugins/oppo-remote/bin/install.sh             # install + enable + start
+#   wezterm-x/plugins/oppo-remote/bin/install.sh --check     # unit state + current status.json
+#   wezterm-x/plugins/oppo-remote/bin/install.sh --print     # show the unit, no writes
+#   wezterm-x/plugins/oppo-remote/bin/install.sh --uninstall
 #
 # The service runs `oppo-remote-quality.sh daemon`: tails the newest
 # desktop_agent log, republishes state/oppo-remote/status.json (2 s while a
@@ -15,8 +15,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TOOL="$REPO_ROOT/scripts/dev/oppo-remote-quality.sh"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+TOOL="$SCRIPT_DIR/oppo-remote-quality.sh"
 UNIT_DIR="${SYSTEMD_USER_UNIT_DIR:-$HOME/.config/systemd/user}"
 UNIT="wezterm-oppo-remote.service"
 

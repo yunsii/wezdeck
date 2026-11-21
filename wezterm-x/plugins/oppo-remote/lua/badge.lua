@@ -4,7 +4,7 @@
 -- O+ Connect stream (Pad or phone), and the word must read on its own in a
 -- crowded bar next to SystemDisk· / Memory·.
 --
--- Producer: `scripts/dev/oppo-remote-quality.sh daemon` (systemd user unit
+-- Producer: `wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh daemon` (systemd user unit
 -- wezterm-oppo-remote.service) tails the vendor's desktop_agent log and
 -- republishes status.json every ~2 s while a remote session is active, every
 -- 30 s while idle. See docs/oppo-remote-host-input.md#opporemote-badge.

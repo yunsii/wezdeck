@@ -65,6 +65,7 @@ end
 local base_constants = {
   host_os = host_os,
   runtime_mode = defaults.default_runtime_mode(host_os),
+  runtime_state_dir = runtime_state_dir,
   repo_root = nil,
   main_repo_root = nil,
   repo_aliases = 'wezterm-config=wezdeck',
@@ -317,15 +318,6 @@ local base_constants = {
     -- Same glyph the Alt+/ picker stamps on session-bridge watch rows.
     -- `''` drops it and leaves the bare `SessionBridge·N`.
     icon = '◆',
-  },
-  -- OPPO 互联 remote badge (right-status, after SessionBridge). Producer
-  -- is wezterm-oppo-remote.service (2 s while a session is active, 30 s
-  -- idle); 20 s stale → `OppoRemote·?`. warn_pct = stalled share of the last
-  -- 5 min that turns `OppoRemote·OK` amber.
-  oppo_remote = {
-    status_file = defaults.default_oppo_remote_status_file(runtime_state_dir, join_path),
-    heartbeat_timeout_ms = 20000,
-    warn_pct = 10,
   },
   -- Host-disk badge (right-status, after SessionBridge). Producer is the
   -- wezterm-disk-guard systemd user timer; 13 min tolerates two missed

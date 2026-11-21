@@ -67,7 +67,7 @@ wezterm-x/plugins/<id>/plugin.json   ~/.config/wezdeck/plugins/<id>/plugin.json
   "requires": { "host": ["hybrid-wsl"] },
   "badge": {
     "module": "lua/badge.lua",
-    "order": 30,
+    "order": 20,
     "config": {
       "state_file": "${runtime_state_dir}/state/oppo-remote/status.json",
       "heartbeat_timeout_ms": 20000,
@@ -75,7 +75,7 @@ wezterm-x/plugins/<id>/plugin.json   ~/.config/wezdeck/plugins/<id>/plugin.json
     }
   },
   "producer": { "install": "bin/install.sh", "check": "bin/install.sh --check" },
-  "cli": { "oppo-remote": "bin/oppo-remote-quality.sh" },
+  "cli": { "oppo-remote-quality": "bin/oppo-remote-quality.sh" },
   "docs": "README.md"
 }
 ```
