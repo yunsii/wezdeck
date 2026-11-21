@@ -1,9 +1,11 @@
 # OPPO Remote + Host Input Stickiness
 
-Operator notes from the **2026-10 → 2026-11-10** investigation on host
+Operator notes from the **2026-10 → 2026-11-21** investigation on host
 `nut`: OPPO 互联 (O+ Connect) Pad remote-control, Cloudflare One Client
-(WARP), long Windows uptime, and “CPU looks fine but typing/mouse feel
-sticky”.
+(WARP), long Windows uptime, the home router, and “CPU looks fine but
+typing/mouse feel sticky”. The same symptom (“typing on the Pad lags, then
+is fine again”) has had **different causes at different times** — triage by
+layer, do not carry the last incident's conclusion forward.
 
 Related: [`guest-oom.md#guest-vs-host-memory-meters`](./guest-oom.md#guest-vs-host-memory-meters)
 (`VmmemWSL` / `wsl-host-mem.sh`),
@@ -12,17 +14,29 @@ latency), open-questions §21 (RDP lid-close vs Oppo confounder).
 
 ## Triage first (do not merge causes)
 
-| Feel | Primary suspect |
-|---|---|
-| Sticky **only** inside the Pad remote view; console keyboard/mouse fine | Remote path (same-LAN vs cross-net, Wi‑Fi RTT, encode/refresh) |
-| Sticky **at the PC console** (Notepad / desktop) as well | Host state (long uptime, `VmmemWSL`, soft faults, long-lived WezTerm) |
-| Whole desktop “new login / PIN” mid-work | RDP auto-reconnect — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §21 |
+Read the layers in this order; each has its own glanceable signal.
 
-Reference close: console + remote felt bad after ~**26 d** Windows uptime
-(boot **2026-10-15**); after reboot **2026-11-10**, host free RAM ~16 GiB →
-~41 GiB, `VmmemWSL` Private ~42 GiB → ~9 GiB; later the same day **cross-net**
-remote felt smooth. Operator conclusion: **long uptime / host memory
-stickiness was the larger input-delay factor** for that incident.
+| # | Check | Signal | If bad → |
+|---|---|---|---|
+| 1 | Is the remote **link** stalling? | `Pad·4.4s` / `Pad·76%` red (or `oppo-remote-quality.sh report`) | go to 2 |
+| 2 | Does the **office side** move with the stall? | `episodes` blame `office` (relay/gateway ping degrades with it) | PC uplink / office LAN / WARP |
+| 3 | Office flat, link stalling | blame `beyond-office` | **Pad side**: home router → Pad Wi‑Fi → home ISP ([Home router](#home-router-long-uptime)) |
+| 4 | `Pad·ok` but typing still sticky | console (Notepad on the PC) also sticky? `Memory·` / `LoadAvg·` | **host** stickiness ([Long uptime](#long-uptime--host-memory-local-input)) |
+| — | Whole desktop “new login / PIN” mid-work | — | RDP auto-reconnect — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §21 |
+
+`Pad·` only proves the stream backed up; it cannot see inside the PC
+(input injection, compositor). `Memory·` / `LoadAvg·` cannot see the network.
+Use both before concluding.
+
+### Incident history
+
+| When | Cause (confirmed by) | Signal that would have shown it | Fix |
+|---|---|---|---|
+| 2026-10-15 → 11-10 | **Host**: ~26 d Windows uptime, `VmmemWSL` Private ~42 GiB, console also sticky (reboot → RAM 16 → 41 GiB free, smooth same day) | `Memory·`, console test | Windows reboot |
+| 2026-11-14 → 11-21 | **Home router** long uptime: stalls on the direct P2P path, office gateway 0.3 ms / relay 12.6 ms flat (`beyond-office`), PC rebooted 8 h earlier (host ruled out); router reboot 09:5x → 44 min @ 78 % stalled before, 0 % after | `Pad·` red + `episodes` blame `beyond-office` | Home router reboot |
+
+Both were cross-net (Pad at home, PC at the office); cross-net alone is
+**not** the cause — multi-hour 0 % sessions exist on the same topology.
 
 ## Long uptime / host memory (local input)
 
@@ -132,11 +146,11 @@ stickiness shows up instead as sluggish **console** input with in-flight ≈ 0
 (see [Triage first](#triage-first-do-not-merge-causes)).
 
 Baseline (2026-11-14 → 11-21, 26 sessions, all **cross-net**: Pad
-`192.168.31.106` at home behind a changing WAN, PC `192.168.3.55` at the
+`192.168.31.x` at home behind a changing WAN, PC `192.168.3.55` at the
 office): long smooth sessions exist (10 h / 4 h at 0 % stall), while BAD
 ones cluster in short reconnect bursts (11-15 08:4x, 11-17 22:50–23:45,
-11-21 08:5x) with 3–11 s worst lag and 40–60 % stall. Which hop is at fault
-is tracked by the [Pad badge](#pad-badge) episodes — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §25.
+11-21 08:5x) with 3–11 s worst lag and 40–60 % stall. Root cause for that
+stretch: the home router — see [Incident history](#incident-history).
 
 ## Pad badge
 
@@ -180,6 +194,31 @@ Media path note: O+ Connect is built on the Oray SDK (`MPStream`). A session
 starts on relay TCP (`switch mode to fw(tcp4)`) and moves to direct UDP once
 hole-punching succeeds (`P2P_CONNECTED_0`, ~40 s on 2026-11-21); stalls seen
 that day happened on the direct P2P path, not during relay↔P2P flapping.
+
+## Home router (long uptime)
+
+Closed **2026-11-21**: the 11-14 → 11-21 stalls were the home router
+(Xiaomi-style LAN `192.168.31.0/24`). Evidence chain:
+
+1. Stall shape = stream backlog on the **direct P2P** path (in-flight up to
+   2 MB, acked bytes ~KB), not relay↔P2P flapping.
+2. Office path flat during the stall (`blame=beyond-office`), PC rebooted the
+   same night → PC, office LAN and WARP ruled out.
+3. Only the router changed (Pad got a new DHCP lease `.106` → `.99`, home WAN
+   IP unchanged), and the next session went from 78 % to 0 % stalled.
+
+Which router subsystem degraded is **not** known — a reboot clears all of
+them at once: Wi‑Fi channel chosen at boot now crowded by neighbours,
+conntrack / buffer build-up (bufferbloat — fits the “backlog then drains”
+shape best), or a degraded wireless driver. To separate them next time:
+when `Pad·` turns red with `beyond-office`, first **switch the Wi‑Fi channel
+only**; reboot only if that does not help. Note the router uptime at each
+recurrence; if it degrades on a stable period, enable the router's scheduled
+reboot.
+
+The router is not reachable from the PC (office LAN; `miwifi.com` resolves to
+Xiaomi's public site from outside). Use the Pad browser (`192.168.31.1`) or
+the Mi WiFi / Mi Home app.
 
 ## What to capture for a “good” baseline
 
