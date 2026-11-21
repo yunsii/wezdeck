@@ -210,7 +210,7 @@ parity = the final artifact matches the pre-change path.
 | 2. Kernel + `oppo-remote` | `d2beeb1` | compiler 8 tests; plugin_host parity (6 states) vs direct module; live + canary load without `plugins` warnings |
 | 3. Other badges + SDK | `1a5e4a7` | 55 fixtures old vs new modules identical; full plugin bar via host vs old hard-coded order identical in 3 scenarios |
 | 4. Agent providers | `e71675c` | provider discovery 6 + habit discovery 4 tests; real `disabled: agent-grok` drops grok from review and habit, restore brings it back; fanout / host-invoke / brainstorm offline suites green |
-| 5. CLI + machine plugins | this step | CLI end-to-end 16 tests (external badge rendered by plugin_host); live probe plugin loaded by canary **and** live WezTerm, then removed cleanly |
+| 5. CLI + machine plugins | `f472b31` | CLI end-to-end 16 tests (external badge rendered by plugin_host); live probe plugin loaded by canary **and** live WezTerm, then removed cleanly |
 
 ## Design review
 
