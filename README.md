@@ -86,7 +86,7 @@ Left → right (pressure badges stay absent while healthy — presence *is* the 
 |---|---|---|
 | `Ego·Alive/-/?` or `CDP·Headless/Visible/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND`; glossary: [browser-glossary](docs/browser-debug.md#browser-glossary) | [Browser debug](docs/browser-debug.md) |
 | `◆ SessionBridge·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
-| plugin badges | Contributed by enabled plugins, e.g. an external remote-control plugin's link quality (`OppoRemote·…`) | [Plugins](docs/plugin-architecture.md) |
+| plugin badges | Contributed by enabled plugins, e.g. the optional `contrib/plugins/oppo-remote` link quality (`OppoRemote·…`) | [Plugins](docs/plugin-architecture.md) |
 | `SystemDisk·…` / `WslDisk·…` | Host volume headroom (system + WSL `ext4.vhdx`) | [Host disk](docs/host-disk.md) |
 | `Memory·…` / `Swap·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |
 | `LoadAvg·…` | Guest CPU load (typing-stickiness early warning) | [Diagnostics · load](docs/diagnostics.md#guest-load-badge-loadavg) |

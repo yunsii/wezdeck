@@ -1,10 +1,19 @@
 # Plugin Architecture
 
-WezDeck capabilities ship as **plugins**: the built-in ones (disk / memory /
-load guards, OPPO remote, session-bridge watch, agent CLIs) live under
-`wezterm-x/plugins/<id>/`, and a machine can add its own under
-`~/.config/wezdeck/plugins/<id>/`. Different people run different remotes,
-agents and browsers; a plugin is the unit they enable, disable and configure.
+WezDeck capabilities ship as **plugins**. Different people run different
+remotes, agents and browsers; a plugin is the unit they enable, disable and
+configure. Three sources:
+
+| Source | Where | Default | For |
+|---|---|---|---|
+| built-in | `wezterm-x/plugins/<id>/` | on | core control-plane capabilities (disk / memory / load guards, session-bridge, agent CLIs) |
+| contrib | `contrib/plugins/<id>/` | **off** until a machine enables it | optional, situation-specific capabilities kept in this repo (e.g. `oppo-remote`, a remote-control client) |
+| machine | `~/.config/wezdeck/plugins/<id>/` (`$WEZDECK_PLUGIN_DIR`) | on | private plugins that never enter the repo |
+
+Contrib plugins depend on core only through the plugin contract
+(`WEZDECK_REPO` + badge SDK), so the folder can later become a separate
+`wezdeck-plugins` collection without changing a plugin. One repo per plugin is
+deliberately avoided.
 
 Status: **adopted and rolled out 2026-11-21** — see [Rollout](#rollout).
 
@@ -46,7 +55,7 @@ which `plugin_host` registers before loading any plugin.
 Built-in plugins may point `producer` / `cli` at existing repo scripts with a
 relative path (`../../../scripts/runtime/wsl-disk-guard.sh`) when the script
 has other callers; a self-contained capability keeps its scripts in
-`bin/` (see the external `oppo-remote` plugin).
+`bin/` (see `contrib/plugins/oppo-remote`).
 
 The WezTerm status tick runs every 250 ms and must not scan directories or
 parse manifests, so `sync-runtime` **compiles** the enabled plugins into a
@@ -54,8 +63,8 @@ generated registry — the same pattern as `render-tmux-bindings.sh` →
 `chord-bindings.generated.conf`.
 
 ```text
-wezterm-x/plugins/<id>/plugin.json   ~/.config/wezdeck/plugins/<id>/plugin.json
-                 \                    /
+wezterm-x/plugins/<id>   contrib/plugins/<id>   ~/.config/wezdeck/plugins/<id>
+                 \              |              /
      wezterm-x/local/plugins.json (enable / disable / config per machine)
                           |
       scripts/runtime/render-plugins.sh  (validate → generate, in sync)
@@ -66,8 +75,8 @@ wezterm-x/plugins/<id>/plugin.json   ~/.config/wezdeck/plugins/<id>/plugin.json
 
 ## plugin.json
 
-Example: the manifest of the external `oppo-remote` plugin
-(`wezdeck-plugin-oppo-remote`).
+Example: the manifest of the optional `oppo-remote` plugin
+(`contrib/plugins/oppo-remote/plugin.json`).
 
 ```json
 {
@@ -213,6 +222,7 @@ parity = the final artifact matches the pre-change path.
 | 3. Other badges + SDK | `1a5e4a7` | 55 fixtures old vs new modules identical; full plugin bar via host vs old hard-coded order identical in 3 scenarios |
 | 4. Agent providers | `e71675c` | provider discovery 6 + habit discovery 4 tests; real `disabled: agent-grok` drops grok from review and habit, restore brings it back; fanout / host-invoke / brainstorm offline suites green |
 | 5. CLI + machine plugins | `f472b31` | CLI end-to-end 16 tests (external badge rendered by plugin_host); live probe plugin loaded by canary **and** live WezTerm, then removed cleanly |
+| 6. Remote out of core → `contrib/` | this step | oppo-remote off by default, enabled per machine via `local/plugins.json`; contrib compile / CLI tests; the plugin's own `tests/run.sh` runs in the core suite; live render of the deployed plugin |
 
 ## Design review
 

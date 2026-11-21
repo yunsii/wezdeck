@@ -8,10 +8,12 @@ again”) has had **different causes at different times** — triage by layer,
 do not carry the last incident's conclusion forward.
 
 Remote-control clients are **not** part of WezDeck core. Each one is an
-external plugin that contributes a remote-link badge and a report CLI; the
-one in use on this host is **`wezdeck-plugin-oppo-remote`** (OPPO 互联 /
+optional plugin that contributes a remote-link badge and a report CLI; the
+one in use on this host is **`contrib/plugins/oppo-remote`** (OPPO 互联 /
 O+ Connect — `OppoRemote·` badge, sampler, signal meanings, OPPO / WARP
-topology notes in its own `docs/oppo.md`). Install / enable:
+topology notes in
+[`contrib/plugins/oppo-remote/docs/oppo.md`](../contrib/plugins/oppo-remote/docs/oppo.md)).
+Contrib plugins are off until a machine enables them:
 [`plugin-architecture.md#operating`](./plugin-architecture.md#operating).
 
 Related: [`guest-oom.md#guest-vs-host-memory-meters`](./guest-oom.md#guest-vs-host-memory-meters)

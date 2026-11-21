@@ -70,6 +70,13 @@ for _, s in ipairs(h.render_segments({})) do if s:find('Hello', 1, true) then io
 ")"
 expect "plugin_host renders the external badge from its status file" '[[ "$seg" == " Hello·hi·7 " ]]'
 
+expect "list shows contrib oppo-remote off by default" '[[ "$(cli list)" == *"oppo-remote"*"contrib"*"off"* ]]'
+cli enable oppo-remote >/dev/null
+expect "enable contrib writes it to local enabled" 'python3 -c "import json,sys; sys.exit(0 if \"oppo-remote\" in json.load(open(\"$tmp/local/plugins.json\")).get(\"enabled\", []) else 1)"'
+expect "enabled contrib plugin is shipped" '[[ -f "$tmp/rt/plugins/.external/oppo-remote/lua/badge.lua" ]]'
+cli disable oppo-remote >/dev/null
+expect "disable contrib leaves the registry" '! grep -q "oppo-remote" "$tmp/rt/plugins/registry.generated.lua"'
+
 expect "unknown id is rejected" '! cli disable no-such-plugin 2>/dev/null'
 mkdir -p "$tmp/ext/broken"; printf '{"id":"broken","requires":{"host":[]},"badge":{"module":"lua/missing.lua","order":91}}' >"$tmp/ext/broken/plugin.json"
 expect "invalid external plugin fails the compile" '! cli enable hello 2>/dev/null'

@@ -111,8 +111,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Driving this PC from a Pad / phone remote client feels laggy (layered
   triage: remote link → office side → home router / client Wi‑Fi → host;
   incident history, home-router and long-uptime lessons). Remote clients are
-  external plugins (OPPO 互联: `wezdeck-plugin-oppo-remote`, its own
-  `docs/oppo.md`), not core:
+  optional contrib plugins, not core (OPPO 互联:
+  `contrib/plugins/oppo-remote`, its own `docs/oppo.md`):
   Read [`docs/remote-input-stickiness.md`](docs/remote-input-stickiness.md).
 - Browser glossary (slot / backend / everyday / system), headless Chrome
   debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,

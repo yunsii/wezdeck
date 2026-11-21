@@ -84,7 +84,7 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 |---|---|---|
 | `Ego·Alive/-/?` 或 `CDP·Headless/Visible/-/?·port` | 浏览器槽（browser slot）跟 `WEZDECK_BROWSER_BACKEND`；术语表见 [glossary](docs/browser-debug.md#browser-glossary) | [Browser debug](docs/browser-debug.md) |
 | `◆ SessionBridge·N` | session-bridge watch 轮询器 | [session-bridge](openclaw/docs/session-bridge.md) |
-| 插件徽章 | 由已启用插件提供，例如外部远控插件的链路质量（`OppoRemote·…`） | [Plugins](docs/plugin-architecture.md) |
+| 插件徽章 | 由已启用插件提供，例如可选插件 `contrib/plugins/oppo-remote` 的链路质量（`OppoRemote·…`） | [Plugins](docs/plugin-architecture.md) |
 | `SystemDisk·…` / `WslDisk·…` | 主机卷余量（系统盘 + WSL `ext4.vhdx`） | [Host disk](docs/host-disk.md) |
 | `Memory·…` / `Swap·…` | Guest 内存压力 / earlyoom 临近 | [Guest OOM](docs/guest-oom.md) |
 | `LoadAvg·…` | Guest CPU 负载（打字粘滞早期预警） | [Diagnostics · load](docs/diagnostics.md#guest-load-badge-loadavg) |

@@ -122,6 +122,24 @@ class CompileTest(unittest.TestCase):
         _, errs = self.run_compile()
         self.assertTrue(any("duplicate id 'mine'" in e for e in errs), errs)
 
+    def test_contrib_plugins_are_opt_in(self):
+        contrib = self.repo / "contrib/plugins"
+        plugin(contrib, "extra", default_enabled=True, badge=badge(70))
+        reg, errs = self.run_compile()
+        self.assertEqual(errs, [])
+        p = next(p for p in reg["plugins"] if p["id"] == "extra")
+        self.assertEqual((p["source"], p["enabled"]), ("contrib", False), "default_enabled is ignored for contrib")
+        self.assertNotIn('"extra"', (self.out / "registry.generated.lua").read_text())
+        write(self.local, json.dumps({"enabled": ["extra"]}))
+        reg, errs = self.run_compile()
+        self.assertEqual(errs, [])
+        self.assertTrue(next(p for p in reg["plugins"] if p["id"] == "extra")["enabled"])
+        self.assertIn('"plugins/.external/extra"', (self.out / "registry.generated.lua").read_text())
+        self.assertTrue((self.out / ".external/extra/lua/badge.lua").is_file(), "contrib shipped like a machine plugin")
+        plugin(self.ext, "extra", badge=badge(71))
+        _, errs = self.run_compile()
+        self.assertTrue(any("duplicate id 'extra'" in e for e in errs), errs)
+
     def test_agent_and_producer_files_checked(self):
         plugin(self.builtin, "agent-x", kind="agent", agent={"habit_provider": "habit.py"},
                cli={"status": "bin/status.sh"}, producer={"install": "bin/install.sh --flag"})
@@ -135,7 +153,10 @@ class CompileTest(unittest.TestCase):
         reg, errs = pc.compile_plugins(REPO, None, self.tmp / "none.json", self.out)
         self.assertEqual(errs, [])
         ids = [p["id"] for p in reg["plugins"]]
-        self.assertNotIn("oppo-remote", ids, "remote control is an external plugin, not core")
+        self.assertNotIn("oppo-remote", [p["id"] for p in reg["plugins"] if p["source"] == "builtin"],
+                         "remote control is a contrib plugin, not core")
+        self.assertFalse(next(p for p in reg["plugins"] if p["id"] == "oppo-remote")["enabled"],
+                         "contrib oppo-remote is off without a local enable")
         for pid in ("disk-guard", "mem-guard", "load-guard", "session-bridge",
                     "agent-claude", "agent-codex", "agent-grok"):
             self.assertIn(pid, ids)

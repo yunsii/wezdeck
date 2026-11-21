@@ -83,7 +83,7 @@ def edit_local(ctx: Ctx, ids: list[str], enable: bool) -> None:
     cfg = json.loads(ctx.local_cfg.read_text(encoding="utf-8")) if ctx.local_cfg.exists() else {}
     disabled, enabled = list(cfg.get("disabled", [])), list(cfg.get("enabled", []))
     for pid in ids:
-        default_on = known[pid]["manifest"].get("default_enabled", True)
+        default_on = known[pid]["manifest"].get("default_enabled", True) and known[pid]["source"] != "contrib"
         disabled = [x for x in disabled if x != pid]
         enabled = [x for x in enabled if x != pid]
         if enable and not default_on:

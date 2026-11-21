@@ -2,7 +2,9 @@
 """Compile WezDeck plugins into generated registries.
 
 Inputs
-  <repo>/wezterm-x/plugins/<id>/plugin.json        built-in plugins
+  <repo>/wezterm-x/plugins/<id>/plugin.json        built-in plugins (default on)
+  <repo>/contrib/plugins/<id>/plugin.json          optional plugins (off unless
+                                                   listed in local "enabled")
   $WEZDECK_PLUGIN_DIR/<id>/plugin.json             machine plugins
                                                    (default ~/.config/wezdeck/plugins)
   <repo>/wezterm-x/local/plugins.json              {"disabled": [...], "enabled": [...],
@@ -10,7 +12,7 @@ Inputs
 Outputs (gitignored, under <repo>/wezterm-x/plugins/)
   registry.generated.json   every discovered plugin + enabled flag (CLIs read)
   registry.generated.lua    enabled plugins with a badge (WezTerm reads)
-  .external/<id>/           copy of each enabled machine plugin, so sync ships
+  .external/<id>/           copy of each enabled contrib / machine plugin, so sync ships
                             its Lua to the Windows runtime tree
 
 Exit 1 with one line per violation when any plugin is invalid — sync runs
@@ -38,10 +40,11 @@ def load_json(path: Path) -> dict:
         return json.load(fh)
 
 
-def discover(builtin_dir: Path, external_dir: Path | None) -> list[tuple[str, Path, dict | None, str]]:
+def discover(builtin_dir: Path, external_dir: Path | None,
+             contrib_dir: Path | None = None) -> list[tuple[str, Path, dict | None, str]]:
     """(source, plugin_dir, manifest or None, parse_error)."""
     out = []
-    for source, root in (("builtin", builtin_dir), ("external", external_dir)):
+    for source, root in (("builtin", builtin_dir), ("contrib", contrib_dir), ("external", external_dir)):
         if not root or not root.is_dir():
             continue
         for d in sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")):
@@ -154,7 +157,7 @@ def compile_plugins(repo: Path, external_dir: Path | None, local_cfg_path: Path,
     errors: list[str] = []
     plugins = []
     seen: dict[str, str] = {}
-    for source, d, m, perr in discover(builtin_dir, external_dir):
+    for source, d, m, perr in discover(builtin_dir, external_dir, repo / "contrib" / "plugins"):
         if perr:
             errors.append(perr)
             continue
@@ -166,7 +169,9 @@ def compile_plugins(repo: Path, external_dir: Path | None, local_cfg_path: Path,
         if errs:
             errors.extend(errs)
             continue
-        enabled = (m.get("default_enabled", True) or pid in force_on) and pid not in disabled
+        # contrib plugins are opt-in per machine whatever their manifest says.
+        default_on = m.get("default_enabled", True) and source != "contrib"
+        enabled = (default_on or pid in force_on) and pid not in disabled
         rel_dir = f"plugins/{pid}" if source == "builtin" else f"plugins/.external/{pid}"
         entry = {
             "id": pid,
@@ -209,7 +214,7 @@ def compile_plugins(repo: Path, external_dir: Path | None, local_cfg_path: Path,
     if ext_root.exists():
         shutil.rmtree(ext_root)
     for p in plugins:
-        if p["source"] == "external" and p["enabled"]:
+        if p["source"] in ("contrib", "external") and p["enabled"]:
             # Ship only what the runtime needs: a plugin dir is often its own
             # git checkout (e.g. ~/.config/wezdeck/plugins/<id> → a repo).
             shutil.copytree(p["dir"], ext_root / p["id"],
