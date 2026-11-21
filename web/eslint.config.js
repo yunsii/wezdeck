@@ -37,6 +37,8 @@ export default [
       'prettier.config.js',
       '.output/**',
       'node_modules/**',
+      // plain service-worker script, not part of the TS project
+      'public/sw.js',
     ],
   },
 ]

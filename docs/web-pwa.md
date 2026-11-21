@@ -1,6 +1,6 @@
 # Web console as a PWA (phone + desktop)
 
-Status: **design agreed 2026-11-22**, phase 1 in progress. Remote transport
+Status: **phases 1–2 live 2026-11-22** (plus desktop `j`/`k` and `g`+letter); command palette, run sheet and Web Push are next. Remote transport
 (WebRTC / WebSocket relay) is [`remote-access.md`](./remote-access.md); this
 doc is the app shell, layout and interaction on top of it.
 
@@ -59,6 +59,24 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 - Query cache persisted to IndexedDB (7 d, buster = contract hash); stale
   banner "主机离线 · 数据截至 HH:MM".
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
+
+## As built (2026-11-22)
+
+| Piece | Code |
+| --- | --- |
+| Manifest, icons (rendered from `brand-icon.svg`) | `web/public/manifest.webmanifest`, `web/public/icons/` |
+| Service worker | `web/public/sw.js` (shell `/console`, `/console/inbox`; per-path navigation cache) |
+| Build id, precache list | `pwaBuildInfo` in `web/vite.config.ts` → `dist/client/build.json`, `precache.json` |
+| Registration, update toast, install state | `web/src/lib/pwa.ts`, `web/src/features/pwa-boot.tsx` |
+| Persisted query cache (collab reads only) | `web/src/lib/query-provider.tsx`; keep-last-good reads `web/src/lib/collab-query.ts` |
+| Shell: sidebar / phone top bar + tabs, `g`+letter, `/` | `web/src/features/console-shell.tsx`; mode `console-mode.ts` |
+| Inbox / tickets (split vs pushed detail) | `web/src/features/tickets-view.tsx`, `console-collab.tsx` |
+| Activity, Settings | `console-activity.tsx`, `console-me.tsx` |
+| Acceptance | `web/tests/pwa.cdp.test.ts` (`WEZDECK_PWA_PROD=1` adds worker + offline) |
+
+Deviations from the plan: the run detail stays inline on the pushed ticket
+page (no sheet yet); jump keys are `g o/d/x/i/c/a/m`; `?remote=1` is sticky
+per tab (sessionStorage) so in-app navigation keeps the remote path.
 
 ## Observability
 

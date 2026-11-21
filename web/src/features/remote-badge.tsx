@@ -50,7 +50,7 @@ function useMicGrant() {
 }
 
 /** Connection mode + latency of the remote link; hidden when the page talks to the loopback Runtime. */
-export function RemoteBadge() {
+export function RemoteBadge({ compact = false }: { compact?: boolean }) {
   const { t } = useLingui()
   const state = useSyncExternalStore(
     remoteLink.subscribe,
@@ -60,6 +60,7 @@ export function RemoteBadge() {
   const mic = useMicGrant()
   if (state.mode === 'unpaired') return null
   const offerMic =
+    !compact &&
     state.mode === 'websocket' &&
     Boolean(state.rtcNote) &&
     // A mic grant only reveals a LAN address; useless across networks.
@@ -74,6 +75,13 @@ export function RemoteBadge() {
   }
   const pathLabel = state.path ? path[state.path] : ''
   const note = state.rtcNote ?? ''
+  const short = {
+    connecting: t`Connecting…`,
+    'host-offline': t`Host offline`,
+    unauthorized: t`Pair again`,
+    websocket: t`Relay`,
+    webrtc: t`Direct`,
+  }
   const label = {
     connecting: t`Connecting…`,
     'host-offline': t`Host offline`,
@@ -81,6 +89,7 @@ export function RemoteBadge() {
     websocket: t`WebSocket relay`,
     webrtc: state.path ? t`WebRTC direct · ${pathLabel}` : t`WebRTC direct`,
   }[state.mode]
+  const text = compact ? short[state.mode] : label
   const tone =
     state.mode === 'webrtc'
       ? 'bg-emerald-500'
@@ -94,7 +103,7 @@ export function RemoteBadge() {
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
       <span
-        data-testid="remote-badge"
+        data-testid={compact ? 'remote-badge-compact' : 'remote-badge'}
         data-mode={state.mode}
         data-path={state.path ?? ''}
         data-path-detail={state.pathDetail ?? ''}
@@ -105,7 +114,7 @@ export function RemoteBadge() {
         className="inline-flex items-center gap-1.5 border border-brand-border px-2 py-0.5 font-mono text-xs"
       >
         <span className={cn('size-2 rounded-full', tone)} aria-hidden />
-        {label}
+        {text}
         {rtt !== undefined && (
           <span className="text-brand-label">· {rtt} ms</span>
         )}

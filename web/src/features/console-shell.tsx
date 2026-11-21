@@ -4,13 +4,18 @@ import {
   Code2,
   GitPullRequestArrow,
   House,
+  Inbox,
+  ListTree,
   Server,
+  UserRound,
 } from 'lucide-react'
-import { Component } from 'react'
+import { Component, useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Link, Outlet, useLocation } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
+import { useCollab } from '#/lib/collab-query'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
 import { useTheme } from '#/lib/theme-provider'
@@ -26,6 +31,8 @@ import {
   formatDuration,
   formatTime,
 } from './console-shared'
+import { useConsoleMode } from './console-mode'
+import { RemoteBadge } from './remote-badge'
 
 export function ConsoleRouteLayout() {
   return (
@@ -44,62 +51,211 @@ function navClass(active: boolean) {
   )
 }
 
+type Section =
+  | 'overview'
+  | 'development'
+  | 'diagnostics'
+  | 'inbox'
+  | 'collab'
+  | 'activity'
+  | 'me'
+
+const SECTION_PATH = {
+  overview: '/{-$locale}/console',
+  development: '/{-$locale}/console/development',
+  diagnostics: '/{-$locale}/console/diagnostics',
+  inbox: '/{-$locale}/console/inbox',
+  collab: '/{-$locale}/console/collab',
+  activity: '/{-$locale}/console/activity',
+  me: '/{-$locale}/console/me',
+} as const
+
+/** `g` + letter jumps (keyboard-first stance); shown in sidebar titles. */
+const JUMP_KEYS: Partial<Record<string, Section>> = {
+  o: 'overview',
+  d: 'development',
+  x: 'diagnostics',
+  i: 'inbox',
+  c: 'collab',
+  a: 'activity',
+  m: 'me',
+}
+
+function sectionOf(pathname: string): Section {
+  const rest = pathname
+    .replace(/^\/(zh|en)(?=\/)/, '')
+    .replace(/^\/console\/?/, '')
+  const first = rest.split('/')[0]
+  return (
+    first in SECTION_PATH ? first : first === '' ? 'overview' : 'collab'
+  ) as Section
+}
+
+function useSections() {
+  const { t } = useLingui()
+  const mode = useConsoleMode()
+  const all: Array<{
+    id: Section
+    label: string
+    icon: ReactNode
+    local?: boolean
+  }> = [
+    {
+      id: 'overview',
+      label: t`Overview`,
+      icon: <Server size={16} aria-hidden />,
+      local: true,
+    },
+    {
+      id: 'development',
+      label: t`Development`,
+      icon: <Code2 size={16} aria-hidden />,
+      local: true,
+    },
+    {
+      id: 'diagnostics',
+      label: t`Diagnostics`,
+      icon: <Activity size={16} aria-hidden />,
+      local: true,
+    },
+    { id: 'inbox', label: t`Inbox`, icon: <Inbox size={16} aria-hidden /> },
+    {
+      id: 'collab',
+      label: t`Tickets`,
+      icon: <GitPullRequestArrow size={16} aria-hidden />,
+    },
+    {
+      id: 'activity',
+      label: t`Activity`,
+      icon: <ListTree size={16} aria-hidden />,
+    },
+    { id: 'me', label: t`Settings`, icon: <UserRound size={16} aria-hidden /> },
+  ]
+  return {
+    mode,
+    sidebar: all.filter((item) => mode === 'local' || !item.local),
+    tabs: all.filter((item) => !item.local),
+  }
+}
+
+function useJumpKeys(go: (section: Section) => void) {
+  useEffect(() => {
+    let armed = 0
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target?.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        return
+      if (event.key === '/') {
+        const box = document.querySelector<HTMLInputElement>('[data-search]')
+        if (box) {
+          event.preventDefault()
+          box.focus()
+        }
+        return
+      }
+      if (event.key === 'g') {
+        armed = Date.now()
+        return
+      }
+      const section = JUMP_KEYS[event.key]
+      if (armed && Date.now() - armed < 1200 && section) {
+        event.preventDefault()
+        go(section)
+      }
+      armed = 0
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [go])
+}
+
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
-  const { mode, setMode } = useTheme()
+  const { mode: theme, setMode } = useTheme()
   const location = useLocation().pathname
-  const isDevelopment = location.endsWith('/development')
-  const isDiagnostics = location.endsWith('/diagnostics')
-  const isCollab = location.endsWith('/collab')
+  const navigate = useNavigate()
+  const client = useQueryClient()
+  const current = sectionOf(location)
   const localeParam = locale === 'en' ? undefined : locale
+  const { mode, sidebar, tabs } = useSections()
+  const health = useCollab('health', {}, { refetchInterval: 15_000 })
+  const waiting = health.data?.waiting_human ?? 0
+  const scroller = useRef<HTMLDivElement>(null)
+  const go = useCallback(
+    (section: Section) =>
+      void navigate({
+        to: SECTION_PATH[section],
+        params: { locale: localeParam },
+      }),
+    [navigate, localeParam],
+  )
+  useJumpKeys(go)
+  const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
 
   return (
-    <main className="grid h-dvh grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-brand-deck text-brand-text">
-      <StatusBand />
-      <div className="grid min-h-0 max-[899px]:grid-cols-1 lg:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
-        <aside className="flex min-h-0 flex-col overflow-hidden border-r border-brand-border bg-brand-surface max-[899px]:flex-row max-[899px]:items-center max-[899px]:overflow-x-auto max-[899px]:border-r-0 max-[899px]:border-b">
+    <main className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]">
+      {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
+      <div className="hidden md:block">
+        {mode === 'local' ? <StatusBand /> : <RemoteBand />}
+      </div>
+      <header className="flex items-center gap-2 border-b border-brand-border bg-brand-surface px-4 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 md:hidden">
+        <img src="/brand-icon.svg" alt="" width="24" height="24" />
+        <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
+          {title ?? t`WezDeck`}
+        </h1>
+        <Link
+          to="/{-$locale}/console/me"
+          params={{ locale: localeParam }}
+          aria-label={t`Connection details`}
+          className="max-w-[55%] truncate"
+        >
+          <RemoteBadge compact />
+        </Link>
+      </header>
+      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
+        <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-brand-border bg-brand-surface md:flex">
           <div className="flex items-center gap-2 px-3 py-3">
             <img src="/brand-icon.svg" alt="" width="28" height="28" />
-            <div className="max-[899px]:hidden">
+            <div>
               <p className="text-sm font-semibold">{t`WezDeck`}</p>
-              <p className="text-xs text-brand-muted">{t`Runtime Console`}</p>
+              <p className="text-xs text-brand-muted">
+                {mode === 'local' ? t`Runtime Console` : t`Remote`}
+              </p>
             </div>
           </div>
           <nav
-            className="grid min-h-0 gap-0.5 overflow-y-auto px-2 max-[899px]:flex max-[899px]:flex-1 max-[899px]:overflow-visible"
+            className="grid min-h-0 gap-0.5 overflow-y-auto px-2"
             aria-label={t`Console navigation`}
           >
-            <ModeLink
-              active={!isDevelopment && !isDiagnostics && !isCollab}
-              to="/{-$locale}/console"
-              locale={localeParam}
-              icon={<Server size={15} aria-hidden />}
-              label={t`Overview`}
-            />
-            <ModeLink
-              active={isDevelopment}
-              to="/{-$locale}/console/development"
-              locale={localeParam}
-              icon={<Code2 size={15} aria-hidden />}
-              label={t`Development`}
-            />
-            <ModeLink
-              active={isDiagnostics}
-              to="/{-$locale}/console/diagnostics"
-              locale={localeParam}
-              icon={<Activity size={15} aria-hidden />}
-              label={t`Diagnostics`}
-            />
-            <ModeLink
-              active={isCollab}
-              to="/{-$locale}/console/collab"
-              locale={localeParam}
-              icon={<GitPullRequestArrow size={15} aria-hidden />}
-              label={t`Collab`}
-            />
+            {sidebar.map((item) => (
+              <Button
+                key={item.id}
+                variant="ghost"
+                className={navClass(current === item.id)}
+                title={`g ${Object.entries(JUMP_KEYS).find(([, s]) => s === item.id)?.[0] ?? ''}`}
+                render={
+                  <Link
+                    to={SECTION_PATH[item.id]}
+                    params={{ locale: localeParam }}
+                    aria-current={current === item.id ? 'page' : undefined}
+                  />
+                }
+              >
+                {item.icon}
+                <span className="flex-1">{item.label}</span>
+                {item.id === 'inbox' && waiting > 0 ? (
+                  <CountBadge value={waiting} />
+                ) : null}
+              </Button>
+            ))}
           </nav>
-          <div className="mt-auto flex items-center gap-2 p-3 max-[899px]:mt-0">
+          <div className="mt-auto flex items-center gap-2 p-3">
             <Link
               to="/{-$locale}"
               params={{ locale: localeParam }}
@@ -109,22 +265,81 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               <House size={15} />
             </Link>
             <LanguageSwitcher locale={locale} side="top" />
-            <ThemeSwitcher mode={mode} onChange={setMode} side="top" />
+            <ThemeSwitcher mode={theme} onChange={setMode} side="top" />
           </div>
         </aside>
-        <div className="min-h-0 min-w-0 overflow-y-auto">
+        <div
+          ref={scroller}
+          className="min-h-0 min-w-0 overflow-y-auto overscroll-contain"
+        >
           <a
             href="#console-main"
             className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-40 focus:bg-brand-surface focus:px-3 focus:py-2 focus:text-sm focus:ring-2 focus:ring-brand-running"
           >
             {t`Skip to content`}
           </a>
-          <div id="console-main" className="p-4">
+          <div id="console-main" className="h-full p-4">
             <PageBoundary>{children}</PageBoundary>
           </div>
         </div>
       </div>
+      <nav
+        aria-label={t`Sections`}
+        className="grid grid-cols-4 border-t border-brand-border bg-brand-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      >
+        {tabs.map((item) => {
+          const active = current === item.id
+          return (
+            <Link
+              key={item.id}
+              to={SECTION_PATH[item.id]}
+              params={{ locale: localeParam }}
+              replace
+              aria-current={active ? 'page' : undefined}
+              onClick={(event) => {
+                if (!active) return
+                // Re-tap the current tab: back to top + refresh (no pull-to-refresh).
+                event.preventDefault()
+                scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                void client.invalidateQueries({
+                  queryKey: ['runtime', 'collab'],
+                })
+              }}
+              className={cn(
+                'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] text-brand-label',
+                active && 'text-brand-running',
+              )}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+              {item.id === 'inbox' && waiting > 0 ? (
+                <span className="absolute top-1.5 left-[calc(50%+6px)]">
+                  <CountBadge value={waiting} />
+                </span>
+              ) : null}
+            </Link>
+          )
+        })}
+      </nav>
     </main>
+  )
+}
+
+function CountBadge({ value }: { value: number }) {
+  return (
+    <span className="min-w-4 rounded-full bg-brand-waiting px-1 text-center font-mono text-[10px] leading-4 text-black">
+      {value > 99 ? '99+' : value}
+    </span>
+  )
+}
+
+function RemoteBand() {
+  const { t } = useLingui()
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-brand-border bg-brand-surface px-4 py-2 text-xs">
+      <span className="text-brand-label">{t`Remote access`}</span>
+      <RemoteBadge />
+    </div>
   )
 }
 
@@ -235,40 +450,5 @@ function PageError({
         {t`Retry`}
       </Button>
     </div>
-  )
-}
-
-function ModeLink({
-  active,
-  to,
-  locale,
-  icon,
-  label,
-}: {
-  active: boolean
-  to:
-    | '/{-$locale}/console'
-    | '/{-$locale}/console/development'
-    | '/{-$locale}/console/diagnostics'
-    | '/{-$locale}/console/collab'
-  locale: 'zh' | undefined
-  icon: React.ReactNode
-  label: string
-}) {
-  return (
-    <Button
-      variant="ghost"
-      className={navClass(active)}
-      render={
-        <Link
-          to={to}
-          params={{ locale }}
-          aria-current={active ? 'page' : undefined}
-        />
-      }
-    >
-      {icon}
-      <span>{label}</span>
-    </Button>
   )
 }

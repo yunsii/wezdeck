@@ -12,6 +12,7 @@ import appCss from '../styles.css?url'
 import { AppI18nProvider } from '#/lib/i18n'
 import { locales } from '#/route-tree'
 import { QueryProvider } from '#/lib/query-provider'
+import { PwaBoot } from '#/features/pwa-boot'
 import { themeBootstrapScript, ThemeProvider } from '#/lib/theme-provider'
 
 const fontBootstrapStyle = `
@@ -33,13 +34,34 @@ export const Route = createRootRoute({
       },
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        // viewport-fit=cover: the installed app draws under the notch /
+        // home indicator; layouts pad with env(safe-area-inset-*).
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       {
         title: 'WezDeck Runtime Console',
       },
+      {
+        name: 'theme-color',
+        content: '#f3f6fa',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        name: 'theme-color',
+        content: '#0b0f16',
+        media: '(prefers-color-scheme: dark)',
+      },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-title', content: 'WezDeck' },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'black-translucent',
+      },
     ],
     links: [
+      { rel: 'manifest', href: '/manifest.webmanifest' },
+      { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
       {
         rel: 'stylesheet',
         href: appCss,
@@ -71,7 +93,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ThemeProvider>
           <AppI18nProvider>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              {children}
+              <PwaBoot />
+            </QueryProvider>
           </AppI18nProvider>
         </ThemeProvider>
         {import.meta.env.DEV ? (

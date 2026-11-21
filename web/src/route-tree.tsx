@@ -1,7 +1,9 @@
 import { createRoute, notFound, Outlet } from '@tanstack/react-router'
 
 import { LandingPage } from '#/features/landing-page'
-import { ConsoleCollabPage } from '#/features/console-collab'
+import { ConsoleCollabPage, ConsoleInboxPage } from '#/features/console-collab'
+import { ConsoleActivityPage } from '#/features/console-activity'
+import { ConsoleMePage } from '#/features/console-me'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
 import { ConsoleDevelopmentPage } from '#/features/console-development'
 import { ConsoleOverviewPage } from '#/features/console-overview'
@@ -146,6 +148,44 @@ const consoleCollabRoute = createRoute({
     consoleHead(params.locale === 'zh' ? 'WezDeck 跨仓协作' : 'WezDeck Collab'),
 })
 
+const collabTitle = (locale: string | undefined, zh: string, en: string) =>
+  consoleHead(locale === 'zh' ? `WezDeck ${zh}` : `WezDeck ${en}`)
+
+const consoleCollabTicketRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'collab/$id',
+  component: ConsoleCollabPage,
+  head: ({ params }) => collabTitle(params.locale, '工单', 'Ticket'),
+})
+
+const consoleInboxRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'inbox',
+  component: ConsoleInboxPage,
+  head: ({ params }) => collabTitle(params.locale, '待处理', 'Inbox'),
+})
+
+const consoleInboxTicketRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'inbox/$id',
+  component: ConsoleInboxPage,
+  head: ({ params }) => collabTitle(params.locale, '待处理', 'Inbox'),
+})
+
+const consoleActivityRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'activity',
+  component: ConsoleActivityPage,
+  head: ({ params }) => collabTitle(params.locale, '动态', 'Activity'),
+})
+
+const consoleMeRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'me',
+  component: ConsoleMePage,
+  head: ({ params }) => collabTitle(params.locale, '我的', 'Settings'),
+})
+
 export const routeTree = rootRoute.addChildren({
   localeRoute: localeRoute.addChildren({
     landingRoute,
@@ -154,6 +194,11 @@ export const routeTree = rootRoute.addChildren({
       consoleDevelopmentRoute,
       consoleDiagnosticsRoute,
       consoleCollabRoute,
+      consoleCollabTicketRoute,
+      consoleInboxRoute,
+      consoleInboxTicketRoute,
+      consoleActivityRoute,
+      consoleMeRoute,
     }),
   }),
 })

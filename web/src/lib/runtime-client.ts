@@ -22,7 +22,7 @@ import {
   worktreeStatusSchema,
   vscodeStateSchema,
 } from './runtime-contract'
-import { remoteLink } from './remote-link'
+import { forcedRemote, remoteLink } from './remote-link'
 import type {
   RuntimeActionResponse,
   DiagnosticsState,
@@ -80,11 +80,7 @@ let lastProbe:
 async function probeRuntimeCached() {
   // `?remote=1` forces the remote link even where loopback works (acceptance
   // on the host itself).
-  if (
-    typeof location !== 'undefined' &&
-    new URLSearchParams(location.search).get('remote') === '1'
-  )
-    return null
+  if (forcedRemote()) return null
   if (lastProbe && Date.now() - lastProbe.at < 15_000) return lastProbe.value
   const value = await probeRuntime()
   lastProbe = { at: Date.now(), value }

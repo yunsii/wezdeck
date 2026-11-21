@@ -70,6 +70,21 @@ function adoptPairingHash() {
   history.replaceState(null, '', location.pathname + location.search)
 }
 
+/**
+ * `?remote=1` forces the remote link even where loopback works (acceptance on
+ * the host). Remembered for the tab so in-app navigation keeps it.
+ */
+export function forcedRemote() {
+  if (typeof location === 'undefined') return false
+  try {
+    if (new URLSearchParams(location.search).get('remote') === '1')
+      sessionStorage.setItem('wezdeck.remote.forced', '1')
+    return sessionStorage.getItem('wezdeck.remote.forced') === '1'
+  } catch {
+    return new URLSearchParams(location.search).get('remote') === '1'
+  }
+}
+
 function relayBase() {
   const configured = import.meta.env.VITE_WEZDECK_RELAY_URL?.trim()
   if (configured) return configured.replace(/\/$/, '')

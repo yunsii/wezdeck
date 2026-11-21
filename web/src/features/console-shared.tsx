@@ -62,10 +62,10 @@ export function CategoryHeading({
   description?: string
 }) {
   return (
-    <div className="mb-3.5 flex items-end justify-between gap-6 max-[899px]:flex-col max-[899px]:items-start max-[899px]:gap-1.5">
+    <div className="mb-3.5 flex items-end justify-between gap-6 max-md:flex-col max-md:items-start max-md:gap-1.5">
       <h2 className="text-lg font-semibold text-brand-text">{title}</h2>
       {description ? (
-        <p className="max-w-xl text-right text-xs leading-normal text-brand-muted max-[899px]:text-left">
+        <p className="max-w-xl text-right text-xs leading-normal text-brand-muted max-md:text-left">
           {description}
         </p>
       ) : null}
@@ -85,7 +85,7 @@ export function ConsolePageHeader({
   return (
     <Card
       className={cn(
-        'grid items-center gap-7 border-t-2 border-t-brand-running px-6 py-5 max-[899px]:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto]',
+        'grid items-center gap-7 border-t-2 border-t-brand-running px-6 py-5 max-md:grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto]',
       )}
     >
       <div className="min-w-0">

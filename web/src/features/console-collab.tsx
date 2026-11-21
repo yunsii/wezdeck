@@ -1,9 +1,9 @@
 import { useLingui } from '@lingui/react/macro'
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { Select } from '#/components/ui/select'
-import { getCollab } from '#/lib/runtime-client'
+import { useCollab } from '#/lib/collab-query'
+import { useIsWide } from '#/lib/use-media'
 import type {
   CollabShow,
   CollabMetrics,
@@ -11,17 +11,13 @@ import type {
   CollabTicket,
 } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
-import { useRuntimeData } from './console-data'
 import { RunDetail } from './console-collab-run'
-import { RemoteBadge } from './remote-badge'
 import { num, pct, secs, usd } from './console-collab-format'
-import { Inspector, Reading } from './inspector'
+import { Reading } from './inspector'
 import type { InspectorItem } from './inspector'
+import { TicketsView } from './tickets-view'
 
-const ACTIVE_POLL_MS = 2_000
-const IDLE_POLL_MS = 30_000
-
-function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
+export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
   if (ticket.running.length > 0) return 'running'
   switch (ticket.status) {
     case 'waiting_initiator':
@@ -41,69 +37,38 @@ function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
 
 export function ConsoleCollabPage() {
   const { t } = useLingui()
-  const runtime = useRuntimeData()
   const [status, setStatus] = useState('')
   const [window, setWindow] = useState('24h')
-  const health = useQuery({
-    queryKey: ['runtime', 'collab', 'health'],
-    queryFn: () => getCollab('health'),
-    enabled: typeof globalThis.window !== 'undefined',
-    refetchInterval: (query) =>
-      (query.state.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS,
-  })
-  const active = (health.data?.running ?? 0) > 0
-  const poll = active ? ACTIVE_POLL_MS : IDLE_POLL_MS
-  const list = useQuery({
-    queryKey: ['runtime', 'collab', 'list', status, health.data?.seq_head],
-    queryFn: () => getCollab('list', { limit: 100, status }),
-    enabled: typeof globalThis.window !== 'undefined',
-    refetchInterval: poll,
-  })
-  const metrics = useQuery({
-    queryKey: ['runtime', 'collab', 'metrics', window, health.data?.seq_head],
-    queryFn: () => getCollab('metrics', { window }),
-    enabled: typeof globalThis.window !== 'undefined',
-    refetchInterval: IDLE_POLL_MS,
-  })
-  const tickets = list.data?.tickets ?? []
-  const items: Array<InspectorItem> = tickets.map((ticket) => ({
-    id: ticket.id,
-    name: ticket.title || ticket.id,
-    detail: `${ticket.from ?? '?'} → ${ticket.to ?? '?'} · ${
-      ticket.progress?.message ?? ticket.phase ?? ''
-    }`,
-    status: ticket.running.length > 0 ? t`running` : (ticket.status ?? ''),
-    tone: ticketTone(ticket),
-  }))
-  const [selected, setSelected] = useState('')
-  const current =
-    items.find((item) => item.id === selected)?.id ?? items.at(0)?.id ?? ''
-  const unavailable =
-    health.data && !health.data.ok ? health.data.error?.message : undefined
-
+  const wide = useIsWide()
+  const health = useCollab('health', {}, { refetchInterval: 15_000 })
+  const metrics = useCollab('metrics', { window }, { refetchInterval: 30_000 })
+  const band = (
+    <MetricsBand
+      metrics={metrics.data}
+      health={health.data}
+      window={window}
+      onWindow={setWindow}
+    />
+  )
   return (
-    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
-      <MetricsBand
-        metrics={metrics.data}
-        health={health.data}
-        window={window}
-        onWindow={setWindow}
-      />
-      <Inspector
-        label={t`Collab tickets`}
-        empty={
-          list.isPending
-            ? t`Loading…`
-            : unavailable
-              ? t`Collab data unavailable: ${unavailable}`
-              : runtime.connected
-                ? t`No collab tickets yet`
-                : t`Runtime is offline.`
-        }
-        items={items}
-        selected={current}
-        onSelect={setSelected}
-        toolbar={
+    <TicketsView
+      base="collab"
+      status={status}
+      empty={t`No collab tickets yet`}
+      top={
+        wide ? (
+          band
+        ) : (
+          <details className="border border-brand-border">
+            <summary className="min-h-11 cursor-pointer px-3 py-3 text-sm">
+              {t`Metrics`}
+            </summary>
+            {band}
+          </details>
+        )
+      }
+      toolbar={
+        <div className="w-40">
           <Select
             value={status}
             onValueChange={setStatus}
@@ -119,23 +84,28 @@ export function ConsoleCollabPage() {
               { value: 'closed,rejected,failed', label: t`Finished` },
             ]}
           />
-        }
-        reading={
-          current ? (
-            <TicketReading id={current} poll={poll} onOpen={setSelected} />
-          ) : (
-            <Reading
-              title={t`No ticket selected`}
-              body={t`Tickets appear here when ticket files or runs cross-repo work.`}
-            />
-          )
-        }
-      />
-    </div>
+        </div>
+      }
+    />
   )
 }
 
-function MetricsBand({
+/** Waiting on me + failed: what the phone opens to (docs/web-pwa.md). */
+export const INBOX_STATUS = 'waiting_initiator,failed'
+
+export function ConsoleInboxPage() {
+  const { t } = useLingui()
+  return (
+    <TicketsView
+      base="inbox"
+      status={INBOX_STATUS}
+      empty={t`Nothing is waiting on you.`}
+      top={<h1 className="text-base font-semibold">{t`Waiting on you`}</h1>}
+    />
+  )
+}
+
+export function MetricsBand({
   metrics,
   health,
   window,
@@ -178,10 +148,7 @@ function MetricsBand({
       className="grid gap-2 border border-brand-border bg-brand-surface p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h1 className="text-sm font-semibold">{t`Cross-repo collab`}</h1>
-          <RemoteBadge />
-        </div>
+        <h1 className="text-sm font-semibold">{t`Cross-repo collab`}</h1>
         <div className="w-32 shrink-0">
           <Select
             value={window}
@@ -214,7 +181,7 @@ function MetricsBand({
   )
 }
 
-function TicketReading({
+export function TicketReading({
   id,
   poll,
   onOpen,
@@ -224,11 +191,7 @@ function TicketReading({
   onOpen: (id: string) => void
 }) {
   const { t } = useLingui()
-  const show = useQuery({
-    queryKey: ['runtime', 'collab', 'show', id],
-    queryFn: () => getCollab('show', { id }),
-    refetchInterval: poll,
-  })
+  const show = useCollab('show', { id }, { refetchInterval: poll })
   const [run, setRun] = useState('')
   const data = show.data
   if (!data) return <Reading title={t`Loading…`} />

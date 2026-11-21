@@ -54,8 +54,8 @@ export function Inspector({
   }
 
   return (
-    <div className="grid h-full min-h-0 border border-brand-border bg-brand-surface max-[899px]:grid-cols-1 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
-      <div className="flex min-h-0 flex-col border-r border-brand-border max-[899px]:border-r-0 max-[899px]:border-b">
+    <div className="grid h-full min-h-0 border border-brand-border bg-brand-surface max-md:grid-cols-1 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+      <div className="flex min-h-0 flex-col border-r border-brand-border max-md:border-r-0 max-md:border-b">
         {toolbar ? (
           <div className="border-b border-brand-border p-3">{toolbar}</div>
         ) : null}
@@ -68,10 +68,10 @@ export function Inspector({
             tabIndex={0}
             className="min-h-0 flex-1 overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
             onKeyDown={(event) => {
-              if (event.key === 'ArrowDown') {
+              if (event.key === 'ArrowDown' || event.key === 'j') {
                 event.preventDefault()
                 move(1)
-              } else if (event.key === 'ArrowUp') {
+              } else if (event.key === 'ArrowUp' || event.key === 'k') {
                 event.preventDefault()
                 move(-1)
               } else if (event.key === 'Enter' && onActivate) {
@@ -156,7 +156,7 @@ export function Reading({
         <p className="max-w-prose text-sm leading-6 text-brand-muted">{body}</p>
       ) : null}
       {facts?.length ? (
-        <dl className="grid gap-px bg-brand-border sm:grid-cols-2">
+        <dl className="grid grid-cols-2 gap-px bg-brand-border">
           {facts.map((fact) => (
             <div key={fact.label} className="bg-brand-deck px-3 py-2">
               <dt className="text-xs text-brand-label">{fact.label}</dt>
