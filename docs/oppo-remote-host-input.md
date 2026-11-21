@@ -136,7 +136,50 @@ Baseline (2026-11-14 → 11-21, 26 sessions, all **cross-net**: Pad
 office): long smooth sessions exist (10 h / 4 h at 0 % stall), while BAD
 ones cluster in short reconnect bursts (11-15 08:4x, 11-17 22:50–23:45,
 11-21 08:5x) with 3–11 s worst lag and 40–60 % stall. Which hop is at fault
-is still open — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §25.
+is tracked by the [Pad badge](#pad-badge) episodes — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §25.
+
+## Pad badge
+
+Live view of the same signal on the WezTerm right status, plus a per-stall
+history that says **which side** was at fault.
+
+```bash
+scripts/dev/install-oppo-remote-watch.sh            # systemd user unit wezterm-oppo-remote.service
+scripts/dev/install-oppo-remote-watch.sh --check    # unit state + status.json
+scripts/dev/oppo-remote-quality.sh episodes         # recorded stalls + blame
+```
+
+| Badge | Meaning |
+|---|---|
+| (absent) | no active O+ Connect session |
+| `Pad·ok` (muted) | connected, <10 % of the last 5 min stalled |
+| `Pad·23%` (amber) | not stalled now, but 23 % of the last 5 min was |
+| `Pad·4.4s` / `Pad·76%` (red) | stalled now — picture ~4.4 s behind, or (no delay reading) 76 % of the last 5 min stalled |
+| `Pad·?` | session active but the producer went stale (>20 s) |
+
+Producer: `oppo-remote-quality.sh daemon` tails the newest
+`desktop_agent.*.log` (session = no `SLUninitialize` yet and written within
+2 min), writes `state/oppo-remote/status.json` every 2 s while active / 30 s
+idle, and reads the Pad model from `*_main.log` (`deviceName`). While a stall
+is open it pings the office gateway and the OPPO relay (`Server [ip:4118]`
+from the sdk log) every tick, plus a 30 s baseline while healthy, and on close
+appends one row to `state/oppo-remote/episodes.ndjson`:
+
+- `blame=office` — relay ping loss ≥20 % or max > 3× / +40 ms over baseline
+  during the stall: own uplink/LAN is part of it.
+- `blame=beyond-office` — office path flat while the stream backed up: the
+  Pad side (home Wi‑Fi / home router / ISP) is the bottleneck.
+
+The Pad-side Wi‑Fi (RSSI, band) and the home router are **not visible from
+the PC** — O+ Connect logs nothing about them and the home LAN is not
+reachable from the office. Check them on the Pad (router admin page, e.g.
+`192.168.31.1` on a Xiaomi-style LAN) and compare `episodes` before/after a
+change (router reboot, 5 GHz, moving closer).
+
+Media path note: O+ Connect is built on the Oray SDK (`MPStream`). A session
+starts on relay TCP (`switch mode to fw(tcp4)`) and moves to direct UDP once
+hole-punching succeeds (`P2P_CONNECTED_0`, ~40 s on 2026-11-21); stalls seen
+that day happened on the direct P2P path, not during relay↔P2P flapping.
 
 ## What to capture for a “good” baseline
 

@@ -217,6 +217,10 @@ function M.default_disk_guard_status_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'disk-guard', 'status.json')
 end
 
+function M.default_oppo_remote_status_file(runtime_state_dir, join_path)
+  return join_path(runtime_state_dir, 'state', 'oppo-remote', 'status.json')
+end
+
 function M.default_mem_guard_status_file(runtime_state_dir, join_path)
   return join_path(runtime_state_dir, 'state', 'oom-guard', 'status.json')
 end

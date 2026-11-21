@@ -26,6 +26,7 @@ local session_bridge_status = load_module 'session_bridge_status'
 local disk_status = load_module 'disk_status'
 local mem_status = load_module 'mem_status'
 local load_status = load_module 'load_status'
+local remote_status = load_module 'remote_status'
 local logger = load_module('logger').new {
   wezterm = wezterm,
   constants = constants,
@@ -94,6 +95,13 @@ load_status.configure {
   crit_loadavg_1 = load_guard.crit_loadavg_1,
 }
 
+local oppo_remote = constants.oppo_remote or {}
+remote_status.configure {
+  state_file = oppo_remote.status_file,
+  heartbeat_timeout_ms = oppo_remote.heartbeat_timeout_ms,
+  warn_pct = oppo_remote.warn_pct,
+}
+
 titles.register {
   wezterm = wezterm,
   palette = constants.palette,
@@ -103,6 +111,7 @@ titles.register {
   disk_status = disk_status,
   mem_status = mem_status,
   load_status = load_status,
+  remote_status = remote_status,
   host = host,
   logger = logger,
   constants = constants,

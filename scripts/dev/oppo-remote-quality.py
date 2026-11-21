@@ -372,6 +372,284 @@ def cmd_watch(args, log_dir: Path) -> int:
         return 0
 
 
+# --- daemon: live status.json + episode history for the WezTerm badge ------
+
+STALL_HOLD = 15      # s; mid-stall log gaps reach ~13 s, so a shorter hold flaps
+WINDOW = 300         # s; rolling window for stall_pct_5m
+ACTIVE_IDLE = 120    # s; newest log untouched this long → session gone (crash)
+RE_SERVER = re.compile(r"Server \[([\d.]+):\d+\] receive public ip")
+RE_DEVNAME = re.compile(r'deviceName"\s*:\s*"([^"]+)"')
+
+
+def now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def ping_ms(host: str) -> float | None:
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["ping", "-n", "-c", "1", "-W", "1", host],
+            capture_output=True, text=True, timeout=3,
+        ).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    m = re.search(r"time=([\d.]+) ms", out)
+    return float(m.group(1)) if m else None
+
+
+def default_gateway() -> str | None:
+    try:
+        for line in Path("/proc/net/route").read_text().splitlines()[1:]:
+            f = line.split()
+            if f[1] == "00000000" and f[2] != "00000000":
+                return str(ipaddress.IPv4Address(bytes.fromhex(f[2])[::-1]))
+    except (OSError, IndexError, ValueError):
+        pass
+    return None
+
+
+def tail_text(path: Path, nbytes: int) -> str:
+    try:
+        with path.open("rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            fh.seek(max(0, fh.tell() - nbytes))
+            return fh.read().decode("utf-8", "replace")
+    except OSError:
+        return ""
+
+
+def peer_device(log_dir: Path, own: set[str]) -> str:
+    mains = sorted(log_dir.glob("*_main.log"))
+    if not mains:
+        return ""
+    names = [n for n in RE_DEVNAME.findall(tail_text(mains[-1], 512 * 1024)) if n not in own]
+    return names[-1] if names else ""
+
+
+def relay_server(log_dir: Path) -> str:
+    sdks = sorted(log_dir.glob("rc-daemon-sdk*.log"))
+    hits = RE_SERVER.findall(tail_text(sdks[-1], 1 << 20)) if sdks else []
+    return hits[-1] if hits else ""
+
+
+def stats(xs: list[float | None]) -> dict:
+    ok = sorted(x for x in xs if x is not None)
+    if not xs:
+        return {}
+    d = {"n": len(xs), "loss_pct": round(100 * (len(xs) - len(ok)) / len(xs))}
+    if ok:
+        d["p50_ms"] = round(ok[len(ok) // 2], 1)
+        d["max_ms"] = round(ok[-1], 1)
+    return d
+
+
+def blame(during: dict, base: float | None) -> str:
+    """office = our own uplink/LAN degraded alongside the stall;
+    beyond-office = office path flat, so the pad side (home Wi-Fi / router /
+    ISP) is the likely bottleneck."""
+    if not during or "p50_ms" not in during and during.get("loss_pct", 0) < 100:
+        return "unknown"
+    if during.get("loss_pct", 0) >= 20:
+        return "office"
+    b = base or during.get("p50_ms", 0)
+    if during.get("max_ms", 0) > max(3 * b, b + 40):
+        return "office"
+    return "beyond-office"
+
+
+class Live:
+    def __init__(self, log_dir: Path):
+        self.log_dir = log_dir
+        self.path: Path | None = None
+        self.fh = None
+        self.ticks: list[Tick] = []
+        self.keys: list[dt.datetime] = []
+        self.ended = False
+        self.session: Session | None = None
+        self.device = ""
+        self.relay = ""
+        self.gw = default_gateway()
+        self.ep: dict | None = None
+        self.base_relay: list[float] = []
+        self.last_base_ping = 0.0
+        self.topo_loaded = False
+
+    def switch(self, path: Path) -> None:
+        if self.fh:
+            self.fh.close()
+        self.path, self.fh = path, path.open(encoding="utf-8", errors="replace")
+        self.ticks, self.keys, self.ended, self.ep = [], [], False, None
+        self.session = Session(path=path)
+        self.topo_loaded = False
+        self.device = ""
+        self.relay = relay_server(self.log_dir)
+
+    def pump(self) -> None:
+        for line in self.fh:
+            if "SLUninitialize" in line:
+                self.ended = True
+            m = RE_ANY_TS.search(line)
+            if m and self.session.start is None:
+                self.session.start = parse_ts(m.group(1))
+            if m:
+                self.session.end = parse_ts(m.group(1))
+            tk = parse_line(line)
+            if tk:
+                self.ticks.append(tk)
+            elif RE_KEY.search(line):
+                self.keys.append(parse_ts(RE_KEY.search(line).group(1)))
+        cutoff = dt.datetime.now() - dt.timedelta(seconds=WINDOW + 60)
+        self.ticks = [t for t in self.ticks if t.t >= cutoff]
+        self.keys = [k for k in self.keys if k >= cutoff]
+
+
+def write_json(path: Path, obj: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(obj, ensure_ascii=False))
+    os.replace(tmp, path)
+
+
+def cmd_daemon(args, log_dir: Path) -> int:
+    status_path = Path(args.status_file)
+    hist_path = status_path.with_name("episodes.ndjson")
+    live = Live(log_dir)
+    last_idle_write = 0.0
+    while True:
+        paths = sorted(log_dir.glob("desktop_agent.*.log"))
+        if paths and paths[-1] != live.path:
+            live.switch(paths[-1])
+        if live.fh:
+            live.pump()
+        try:
+            idle_s = time.time() - live.path.stat().st_mtime if live.path else 1e9
+        except OSError:
+            idle_s = 1e9
+        active = bool(live.path) and not live.ended and idle_s < ACTIVE_IDLE
+        now = dt.datetime.now()
+        if not active:
+            if live.ep:
+                close_episode(live, hist_path, now)
+            if time.time() - last_idle_write >= 30:
+                write_json(status_path, {"version": 1, "heartbeat_at_ms": now_ms(), "active": False,
+                                         "session": live.path.name if live.path else ""})
+                last_idle_write = time.time()
+            time.sleep(args.interval)
+            continue
+        if not live.topo_loaded:
+            attach_topology([live.session], load_topology(log_dir))
+            live.device = peer_device(log_dir, {"nut", os.uname().nodename})
+            live.topo_loaded = True
+
+        bad = [t for t in live.ticks if t.congested]
+        stalled = bool(bad) and (now - bad[-1].t).total_seconds() <= STALL_HOLD
+        win = now - dt.timedelta(seconds=WINDOW)
+        span = min(WINDOW, max(1.0, (now - live.session.start).total_seconds())) if live.session.start else WINDOW
+        stall_s = len({int(t.t.timestamp()) for t in bad if t.t >= win})
+
+        relay_ms = gw_ms = None
+        if live.relay and (stalled or time.time() - live.last_base_ping >= 30):
+            relay_ms = ping_ms(live.relay)
+            gw_ms = ping_ms(live.gw) if live.gw else None
+            if not stalled:
+                live.last_base_ping = time.time()
+                if relay_ms is not None:
+                    live.base_relay = (live.base_relay + [relay_ms])[-20:]
+
+        if stalled:
+            if not live.ep:
+                i = len(bad) - 1
+                while i > 0 and (bad[i].t - bad[i - 1].t).total_seconds() <= STALL_HOLD:
+                    i -= 1
+                live.ep = {"start": bad[i].t, "lag": 0, "inflight": 0, "relay": [], "gw": []}
+            ep = live.ep
+            for t in bad:
+                if t.t >= ep["start"]:
+                    ep["lag"] = max(ep["lag"], t.lag_ms)
+                    ep["inflight"] = max(ep["inflight"], t.inflight)
+            ep["end"] = bad[-1].t
+            ep["relay"].append(relay_ms)
+            ep["gw"].append(gw_ms)
+        elif live.ep:
+            close_episode(live, hist_path, now)
+
+        base = sorted(live.base_relay)[len(live.base_relay) // 2] if live.base_relay else None
+        st = {
+            "version": 1,
+            "heartbeat_at_ms": now_ms(),
+            "active": True,
+            "session": live.path.name,
+            "device": live.device,
+            "topology": live.session.topo,
+            "peer": live.session.peer,
+            "state": "stall" if stalled else "ok",
+            "lag_ms": live.ep["lag"] if live.ep else 0,
+            "inflight_kb": (live.ep["inflight"] if live.ep else 0) // 1024,
+            "stall_pct_5m": round(100 * stall_s / span),
+            "keys_5m": sum(1 for k in live.keys if k >= win),
+            "relay": live.relay,
+            "relay_base_ms": base,
+            "relay_ms": relay_ms,
+            "gw_ms": gw_ms,
+        }
+        if live.ep:
+            st["blame"] = blame(stats(live.ep["relay"]), base)
+        write_json(status_path, st)
+        time.sleep(args.interval)
+
+
+def close_episode(live: Live, hist_path: Path, now: dt.datetime) -> None:
+    ep, live.ep = live.ep, None
+    base = sorted(live.base_relay)[len(live.base_relay) // 2] if live.base_relay else None
+    relay = stats(ep["relay"])
+    rec = {
+        "ts": ep["start"].isoformat(timespec="seconds"),
+        "end": ep["end"].isoformat(timespec="seconds"),
+        "dur_s": int((ep["end"] - ep["start"]).total_seconds()) + 1,
+        "session": live.path.name if live.path else "",
+        "device": live.device,
+        "topology": live.session.topo if live.session else "?",
+        "peer": live.session.peer if live.session else "",
+        "worst_lag_ms": ep["lag"],
+        "worst_inflight_kb": ep["inflight"] // 1024,
+        "keys": sum(1 for k in live.keys if ep["start"] <= k <= ep["end"] + dt.timedelta(seconds=1)),
+        "relay_base_ms": base,
+        "relay": relay,
+        "gw": stats(ep["gw"]),
+        "blame": blame(relay, base),
+    }
+    hist_path.parent.mkdir(parents=True, exist_ok=True)
+    with hist_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    lines = hist_path.read_text(encoding="utf-8").splitlines()
+    if len(lines) > 5000:
+        hist_path.write_text("\n".join(lines[-4000:]) + "\n", encoding="utf-8")
+
+
+def cmd_episodes(args, log_dir: Path) -> int:
+    p = Path(args.status_file).with_name("episodes.ndjson")
+    if not p.exists():
+        print(f"no stall episode has closed yet ({p}); check the daemon with install-oppo-remote-watch.sh --check")
+        return 0
+    rows = [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
+    cutoff = dt.datetime.now() - dt.timedelta(days=args.days)
+    rows = [r for r in rows if dt.datetime.fromisoformat(r["ts"]) >= cutoff]
+    print(f"{'start':19} {'dur':>5} {'lag':>6} {'inflight':>8} {'keys':>4} {'relay p50/max/loss':>20}  blame")
+    for r in rows:
+        rl = r.get("relay") or {}
+        rs = f"{rl.get('p50_ms', '-')}/{rl.get('max_ms', '-')}/{rl.get('loss_pct', '-')}%"
+        print(f"{r['ts'].replace('T', ' '):19} {r['dur_s']:>4}s {r['worst_lag_ms'] / 1000:>5.1f}s "
+              f"{r['worst_inflight_kb']:>6}KB {r['keys']:>4} {rs:>20}  {r['blame']}")
+    from collections import Counter
+    c = Counter(r["blame"] for r in rows)
+    if rows:
+        print("\nblame: " + ", ".join(f"{k}={v}" for k, v in c.most_common()))
+        print("office = own uplink/LAN degraded with the stall; beyond-office = office path flat → pad side (home Wi‑Fi / router / ISP)")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--log-dir", required=True)
@@ -384,12 +662,20 @@ def main() -> int:
     t.add_argument("--bucket", type=int, default=60, help="seconds per row (default 60)")
     w = sub.add_parser("watch", help="live STALL/OK transitions for the current session")
     w.add_argument("--keys", action="store_true", help="also print each key press")
+    d = sub.add_parser("daemon", help="publish live status.json for the Pad· badge (systemd)")
+    d.add_argument("--status-file", required=True)
+    d.add_argument("--interval", type=float, default=2.0)
+    e = sub.add_parser("episodes", help="stall episodes recorded by the daemon, with blame")
+    e.add_argument("--status-file", required=True)
+    e.add_argument("--days", type=float, default=7)
     args = ap.parse_args()
     log_dir = Path(args.log_dir)
     if not log_dir.is_dir():
         print(f"log dir not found: {log_dir}", file=sys.stderr)
         return 1
-    return {"report": cmd_report, "timeline": cmd_timeline, "watch": cmd_watch}[args.cmd](args, log_dir)
+    cmds = {"report": cmd_report, "timeline": cmd_timeline, "watch": cmd_watch,
+            "daemon": cmd_daemon, "episodes": cmd_episodes}
+    return cmds[args.cmd](args, log_dir)
 
 
 if __name__ == "__main__":

@@ -80,12 +80,13 @@ Three layers share one idea: **if you cannot see it, you cannot improve it.**
 
 Left → right (pressure badges stay absent while healthy — presence *is* the signal):
 
-`IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention counters
+`IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · `Pad·…` · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention counters
 
 | Segment | Meaning | Deep dive |
 |---|---|---|
 | `Ego·Alive/-/?` or `CDP·Headless/Visible/-/?·port` | Browser slot follows `WEZDECK_BROWSER_BACKEND`; glossary: [browser-glossary](docs/browser-debug.md#browser-glossary) | [Browser debug](docs/browser-debug.md) |
 | `◆ SessionBridge·N` | Session-bridge watch poller | [session-bridge](openclaw/docs/session-bridge.md) |
+| `Pad·…` | OPPO 互联 Pad remote session link quality (present only while connected) | [OPPO remote](docs/oppo-remote-host-input.md#pad-badge) |
 | `SystemDisk·…` / `WslDisk·…` | Host volume headroom (system + WSL `ext4.vhdx`) | [Host disk](docs/host-disk.md) |
 | `Memory·…` / `Swap·…` | Guest memory pressure / earlyoom proximity | [Guest OOM](docs/guest-oom.md) |
 | `LoadAvg·…` | Guest CPU load (typing-stickiness early warning) | [Diagnostics · load](docs/diagnostics.md#guest-load-badge-loadavg) |

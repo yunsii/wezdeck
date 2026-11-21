@@ -78,12 +78,13 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 
 从左到右（压力徽章在健康时**不出现**——出现本身就是信号）：
 
-`IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention 计数
+`IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · `Pad·…` · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention 计数
 
 | 段 | 含义 | 深入阅读 |
 |---|---|---|
 | `Ego·Alive/-/?` 或 `CDP·Headless/Visible/-/?·port` | 浏览器槽（browser slot）跟 `WEZDECK_BROWSER_BACKEND`；术语表见 [glossary](docs/browser-debug.md#browser-glossary) | [Browser debug](docs/browser-debug.md) |
 | `◆ SessionBridge·N` | session-bridge watch 轮询器 | [session-bridge](openclaw/docs/session-bridge.md) |
+| `Pad·…` | OPPO 互联平板远控链路质量（仅连接时出现） | [OPPO remote](docs/oppo-remote-host-input.md#pad-badge) |
 | `SystemDisk·…` / `WslDisk·…` | 主机卷余量（系统盘 + WSL `ext4.vhdx`） | [Host disk](docs/host-disk.md) |
 | `Memory·…` / `Swap·…` | Guest 内存压力 / earlyoom 临近 | [Guest OOM](docs/guest-oom.md) |
 | `LoadAvg·…` | Guest CPU 负载（打字粘滞早期预警） | [Diagnostics · load](docs/diagnostics.md#guest-load-badge-loadavg) |

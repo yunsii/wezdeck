@@ -318,6 +318,15 @@ local base_constants = {
     -- `''` drops it and leaves the bare `SessionBridge·N`.
     icon = '◆',
   },
+  -- OPPO 互联 remote badge (right-status, after SessionBridge). Producer
+  -- is wezterm-oppo-remote.service (2 s while a session is active, 30 s
+  -- idle); 20 s stale → `Pad·?`. warn_pct = stalled share of the last
+  -- 5 min that turns `Pad·ok` amber.
+  oppo_remote = {
+    status_file = defaults.default_oppo_remote_status_file(runtime_state_dir, join_path),
+    heartbeat_timeout_ms = 20000,
+    warn_pct = 10,
+  },
   -- Host-disk badge (right-status, after SessionBridge). Producer is the
   -- wezterm-disk-guard systemd user timer; 13 min tolerates two missed
   -- 5 min samples before the badge admits it is stale.

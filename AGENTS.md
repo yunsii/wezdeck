@@ -110,7 +110,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
 - OPPO 互联 Pad remote control feels laggy / link quality, same-LAN vs
   cross-net, WARP, long-uptime host input stickiness
-  (`scripts/dev/oppo-remote-quality.sh report|timeline|watch`):
+  (`scripts/dev/oppo-remote-quality.sh report|timeline|watch|episodes`,
+  `Pad·` badge / `install-oppo-remote-watch.sh`):
   Read [`docs/oppo-remote-host-input.md`](docs/oppo-remote-host-input.md).
 - Browser glossary (slot / backend / everyday / system), headless Chrome
   debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,
