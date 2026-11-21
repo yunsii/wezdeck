@@ -161,6 +161,8 @@ mkbranch rx "$I1" src/a/x.txt a
 # I2: uncommitted edit in its own worktree (how implement workers leave it) → snapshot commit
 git -C "$tmp/rx" worktree add -q -b "delegate/$I2" "$tmp/wt-$I2" origin/main
 mkdir -p "$tmp/wt-$I2/src/b" "$tmp/wt-$I2/.delegate"; printf 'b\n' >"$tmp/wt-$I2/src/b/y.txt"; printf 'scratch\n' >"$tmp/wt-$I2/.delegate/ticket.md"
+mkdir -p "$tmp/wt-$I2/src/b/__pycache__"; printf 'x' >"$tmp/wt-$I2/src/b/__pycache__/y.cpython-312.pyc"
+printf '__pycache__/\n' >"$tmp/wt-$I2/.gitignore"  # the repo's own rule decides what is generated
 python3 - "$DELEGATE_TICKETS_ROOT/_data/$I2/meta.json" "$tmp/wt-$I2" <<'PY'
 import json, sys
 p, w = sys.argv[1:]; m = json.load(open(p)); m["worktree"] = w; json.dump(m, open(p, "w"))
@@ -170,8 +172,8 @@ iwt="$(jq -r '.integration.repos.rx.worktree' <<<"$r4")"
 check "integration merges both child branches" \
   bash -c "jq -e '.result==\"done\" and (.integration.repos.rx.merged|length==2)' <<<'$r4' >/dev/null && test -f '$iwt/src/a/x.txt' && test -f '$iwt/src/b/y.txt'"
 check "merge events ok" jq -e -s '[.[]|select(.kind=="merge")|.result]|all(.=="ok") and length==2' "$DELEGATE_TICKETS_ROOT/_data/$P4/events.jsonl"
-check "uncommitted child work snapshotted onto its branch (no .delegate/)" \
-  bash -c "jq -e -s '[.[]|select(.kind==\"snapshot\")]|length==1 and .[0].files==1' '$DELEGATE_TICKETS_ROOT/_data/$P4/events.jsonl' >/dev/null && ! git -C '$iwt' ls-files | grep -q '^.delegate/' && test \"\$(jq -r .branch '$DELEGATE_TICKETS_ROOT/_data/$I2/meta.json')\" = 'delegate/$I2'"
+check "child work snapshotted onto its branch; repo .gitignore respected, .delegate/ excluded" \
+  bash -c "jq -e -s '[.[]|select(.kind==\"snapshot\")]|length==1 and .[0].files==2' '$DELEGATE_TICKETS_ROOT/_data/$P4/events.jsonl' >/dev/null && ! git -C '$iwt' ls-files | grep -qE '^.delegate/|__pycache__' && test \"\$(jq -r .branch '$DELEGATE_TICKETS_ROOT/_data/$I2/meta.json')\" = 'delegate/$I2'"
 
 P5="$(c plan --from src --title "conflict" --contract "$tmp/contract.md" | jq -r .id)"
 K1="$(c add --parent "$P5" --to ry --title K1 | jq -r .id)"

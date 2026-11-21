@@ -46,6 +46,10 @@ import ticket_fs  # noqa: E402
 DONE = {"shipped", "closed"}
 FAILED = {"failed", "rejected"}
 HUMAN = {"waiting_initiator"}
+# Snapshot follows the target repo's own .gitignore (generated files are the
+# repo's call, not delegate's); only delegate's own scratch dir is excluded.
+# Anything that slips through is caught by the fresh-session verify step.
+SNAPSHOT_EXCLUDES = (":(exclude).delegate",)
 TICK_S = float(os.environ.get("DELEGATE_COLLAB_TICK", "15"))
 
 
@@ -460,7 +464,7 @@ class Integration:
         if not wt or not Path(wt).is_dir():
             return mj.get("branch")
         branch = git(wt, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip() or mj.get("branch")
-        git(wt, "add", "-A", "--", ".", ":(exclude).delegate")
+        git(wt, "add", "-A", "--", ".", *SNAPSHOT_EXCLUDES)
         staged = git(wt, "diff", "--cached", "--name-only").stdout.split()
         if staged:
             meta, _ = ticket_fs.read_ticket(cid)
