@@ -63,7 +63,7 @@ msgstr "全部状态"
 msgid "All time"
 msgstr "累计"
 
-#: src/features/remote-badge.tsx:121
+#: src/features/remote-badge.tsx:123
 msgid "Allow LAN direct"
 msgstr "授权以局域网直连"
 
@@ -146,7 +146,7 @@ msgstr "命令"
 msgid "conflict"
 msgstr "冲突"
 
-#: src/features/remote-badge.tsx:76
+#: src/features/remote-badge.tsx:78
 msgid "Connecting…"
 msgstr "连接中…"
 
@@ -253,7 +253,7 @@ msgstr "跟随系统主题"
 msgid "Git"
 msgstr "Git"
 
-#: src/features/remote-badge.tsx:120
+#: src/features/remote-badge.tsx:122
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
@@ -261,7 +261,7 @@ msgstr "授权失败（{micError}），点此重试"
 msgid "Hide initial prompt"
 msgstr "收起初始消息"
 
-#: src/features/remote-badge.tsx:77
+#: src/features/remote-badge.tsx:79
 msgid "Host offline"
 msgstr "主机离线"
 
@@ -293,7 +293,7 @@ msgstr "实例"
 msgid "Integration"
 msgstr "集成"
 
-#: src/features/remote-badge.tsx:70
+#: src/features/remote-badge.tsx:72
 msgid "internet"
 msgstr "公网"
 
@@ -313,7 +313,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/remote-badge.tsx:69
+#: src/features/remote-badge.tsx:71
 msgid "LAN"
 msgstr "局域网"
 
@@ -431,7 +431,7 @@ msgstr "每个仓库都有自己的位置"
 msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
 msgstr "每个仓库家族一个 tmux 会话。关联的 worktree 是这个会话里的窗口。"
 
-#: src/features/remote-badge.tsx:116
+#: src/features/remote-badge.tsx:118
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
 
@@ -720,7 +720,7 @@ msgstr "今日"
 msgid "Today events"
 msgstr "今日事件"
 
-#: src/features/remote-badge.tsx:78
+#: src/features/remote-badge.tsx:80
 msgid "Token rejected — pair again"
 msgstr "令牌无效，请重新配对"
 
@@ -746,7 +746,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/remote-badge.tsx:71
+#: src/features/remote-badge.tsx:73
 msgid "TURN relay"
 msgstr "TURN 中继"
 
@@ -812,19 +812,19 @@ msgstr "耗时"
 msgid "Wall p50"
 msgstr "耗时 p50"
 
-#: src/features/remote-badge.tsx:80
+#: src/features/remote-badge.tsx:82
 msgid "WebRTC direct"
 msgstr "WebRTC 直连"
 
-#: src/features/remote-badge.tsx:80
+#: src/features/remote-badge.tsx:82
 msgid "WebRTC direct · {pathLabel}"
 msgstr "WebRTC 直连 · {pathLabel}"
 
-#: src/features/remote-badge.tsx:102
+#: src/features/remote-badge.tsx:104
 msgid "WebRTC: {note}"
 msgstr "WebRTC：{note}"
 
-#: src/features/remote-badge.tsx:79
+#: src/features/remote-badge.tsx:81
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 

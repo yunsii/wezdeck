@@ -47,6 +47,9 @@ type relayFrame struct {
 type relaySignal struct {
 	Type string `json:"type"`
 	SDP  string `json:"sdp"`
+	// SamePublic (answer only): "yes" | "no" | "unknown", so the page knows
+	// whether a LAN path (mic grant) can help at all.
+	SamePublic string `json:"samePublic,omitempty"`
 }
 
 type relay struct {
@@ -297,7 +300,7 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 	case <-gathered:
 	case <-time.After(5 * time.Second):
 	}
-	body, _ := json.Marshal(relaySignal{Type: "answer", SDP: pc.LocalDescription().SDP})
+	body, _ := json.Marshal(relaySignal{Type: "answer", SDP: pc.LocalDescription().SDP, SamePublic: samePublic(sig.SDP, pc.LocalDescription().SDP)})
 	r.send(relayFrame{T: "sig", Cid: cid, Data: body})
 	r.logf("rtc_answer", "cid=%s gather_ms=%d offer_cands=%q answer_cands=%q same_public=%s", cid, time.Since(started).Milliseconds(), candidateSummary(sig.SDP), candidateSummary(pc.LocalDescription().SDP), samePublic(sig.SDP, pc.LocalDescription().SDP))
 }

@@ -56,12 +56,17 @@ relay after a failed attempt the badge offers **授权以局域网直连**: a
 microphone grant makes the browser offer its real address (stream closed
 immediately, nothing recorded — fe1's meeting-link trick), the host then dials
 out and the stateful firewall lets the replies in. It only helps on the same
-LAN; across networks direct needs hole punching or TURN.
+LAN; across networks direct needs hole punching or TURN. The host's answer
+carries `samePublic`, so the button is hidden when the phone is on another
+network and the badge tooltip says hole punching failed.
 
 `rtc_answer` log rows carry `offer_cands` / `answer_cands` (counts per
 candidate type, `mdns=` for hidden host addresses) and `same_public=yes|no|unknown`
 (both sides' STUN addresses equal or not; addresses are not logged). First
-phone record: `host=4(mdns=4) srflx=2` → ICE failed after 30 s.
+phone records: `host=4(mdns=4) srflx=2 same_public=no` → ICE failed after
+30 s every time (phone and the office host on different networks; the office
+side / VPN blocks UDP hole punching). Steady state there is the WebSocket
+relay unless TURN is added.
 
 No TURN yet: when hole punching fails (common on carrier CGNAT) the
 WebSocket relay is the fallback. `?transport=websocket` forces it.

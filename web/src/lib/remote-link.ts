@@ -25,6 +25,8 @@ export interface RemoteState {
   rtcNote?: string
   /** answered requests per transport (observability for the badge / tests) */
   rpcCount: { webrtc: number; websocket: number }
+  /** host's verdict: both sides behind the same public address (LAN path possible) */
+  samePublic?: 'yes' | 'no'
   /** selected ICE pair, e.g. "local=host remote=srflx 203.0.113.5" */
   pathDetail?: string
 }
@@ -251,11 +253,20 @@ class RemoteLink {
         return
       }
       case 'sig': {
-        const data = frame.data as RTCSessionDescriptionInit | undefined
+        const data = frame.data as
+          { type?: string; sdp?: string; samePublic?: string } | undefined
         if (data?.type === 'answer' && this.pc) {
-          void this.pc.setRemoteDescription(data).catch((error: unknown) => {
-            this.closeRtc(`answer rejected: ${String(error)}`)
+          this.set({
+            samePublic:
+              data.samePublic === 'yes' || data.samePublic === 'no'
+                ? data.samePublic
+                : undefined,
           })
+          void this.pc
+            .setRemoteDescription({ type: 'answer', sdp: data.sdp })
+            .catch((error: unknown) => {
+              this.closeRtc(`answer rejected: ${String(error)}`)
+            })
         }
         return
       }
@@ -355,6 +366,12 @@ class RemoteLink {
     })
   }
 
+  private failNote(reason: string) {
+    return this.state.samePublic === 'no'
+      ? `${reason}: phone and host are on different networks and hole punching failed`
+      : reason
+  }
+
   /** Try the DataChannel again now (e.g. after the mic grant exposed a real LAN address). */
   retryDirect() {
     if (this.state.mode === 'websocket' && !this.pc) this.scheduleRtc(0)
@@ -396,11 +413,12 @@ class RemoteLink {
       if (this.pc === pc) this.closeRtc('data channel closed')
     }
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed') this.closeRtc('ICE failed')
+      if (pc.connectionState === 'failed')
+        this.closeRtc(this.failNote('ICE failed'))
     }
     this.rtcTimer = setTimeout(() => {
       if (this.pc === pc && dc.readyState !== 'open')
-        this.closeRtc('no direct path within 15 s')
+        this.closeRtc(this.failNote('no direct path within 15 s'))
     }, RTC_OPEN_TIMEOUT_MS)
     await pc.setLocalDescription(await pc.createOffer())
     await new Promise<void>((resolve) => {

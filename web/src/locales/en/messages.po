@@ -63,7 +63,7 @@ msgstr "All statuses"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/remote-badge.tsx:121
+#: src/features/remote-badge.tsx:123
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
 
@@ -146,7 +146,7 @@ msgstr "Command"
 msgid "conflict"
 msgstr "conflict"
 
-#: src/features/remote-badge.tsx:76
+#: src/features/remote-badge.tsx:78
 msgid "Connecting…"
 msgstr "Connecting…"
 
@@ -253,7 +253,7 @@ msgstr "Follow system theme"
 msgid "Git"
 msgstr "Git"
 
-#: src/features/remote-badge.tsx:120
+#: src/features/remote-badge.tsx:122
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
@@ -261,7 +261,7 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Hide initial prompt"
 msgstr "Hide initial prompt"
 
-#: src/features/remote-badge.tsx:77
+#: src/features/remote-badge.tsx:79
 msgid "Host offline"
 msgstr "Host offline"
 
@@ -293,7 +293,7 @@ msgstr "Instance"
 msgid "Integration"
 msgstr "Integration"
 
-#: src/features/remote-badge.tsx:70
+#: src/features/remote-badge.tsx:72
 msgid "internet"
 msgstr "internet"
 
@@ -313,7 +313,7 @@ msgstr "Keep every agent in a place you can return to."
 msgid "Keyboard first"
 msgstr "Keyboard first"
 
-#: src/features/remote-badge.tsx:69
+#: src/features/remote-badge.tsx:71
 msgid "LAN"
 msgstr "LAN"
 
@@ -431,7 +431,7 @@ msgstr "One home for every repo"
 msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
 msgstr "One tmux session per repository family. Linked worktrees are windows inside that session."
 
-#: src/features/remote-badge.tsx:116
+#: src/features/remote-badge.tsx:118
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 
@@ -720,7 +720,7 @@ msgstr "Today"
 msgid "Today events"
 msgstr "Today events"
 
-#: src/features/remote-badge.tsx:78
+#: src/features/remote-badge.tsx:80
 msgid "Token rejected — pair again"
 msgstr "Token rejected — pair again"
 
@@ -746,7 +746,7 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/remote-badge.tsx:71
+#: src/features/remote-badge.tsx:73
 msgid "TURN relay"
 msgstr "TURN relay"
 
@@ -812,19 +812,19 @@ msgstr "Wall"
 msgid "Wall p50"
 msgstr "Wall p50"
 
-#: src/features/remote-badge.tsx:80
+#: src/features/remote-badge.tsx:82
 msgid "WebRTC direct"
 msgstr "WebRTC direct"
 
-#: src/features/remote-badge.tsx:80
+#: src/features/remote-badge.tsx:82
 msgid "WebRTC direct · {pathLabel}"
 msgstr "WebRTC direct · {pathLabel}"
 
-#: src/features/remote-badge.tsx:102
+#: src/features/remote-badge.tsx:104
 msgid "WebRTC: {note}"
 msgstr "WebRTC: {note}"
 
-#: src/features/remote-badge.tsx:79
+#: src/features/remote-badge.tsx:81
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 

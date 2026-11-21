@@ -62,6 +62,8 @@ export function RemoteBadge() {
   const offerMic =
     state.mode === 'websocket' &&
     Boolean(state.rtcNote) &&
+    // A mic grant only reveals a LAN address; useless across networks.
+    state.samePublic !== 'no' &&
     mic.state !== 'granted' &&
     typeof navigator !== 'undefined' &&
     'mediaDevices' in navigator
