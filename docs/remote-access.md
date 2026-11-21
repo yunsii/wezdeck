@@ -60,6 +60,7 @@ The collab header shows the link when the page is remote:
 | `WebRTC 直连 · 公网 · N ms` | DataChannel through NAT / public IPv6 |
 | `WebSocket 中转 · N ms` | via the Durable Object |
 | `主机离线` | host socket not connected (DO presence) |
+| `令牌无效，请重新配对` | handshake refused (checked via `/relay/auth`) or evicted with close 4401 after a token rotation; no retry loop |
 
 N = median of the last 5 round trips (ping every 2 s, end-to-end to the host
 process). Hover shows the last WebRTC failure. Data attributes
@@ -99,6 +100,11 @@ mirrored as Worker secrets `RELAY_HOST_TOKEN` / `RELAY_CLIENT_TOKEN`:
 - browser: subprotocols `wezdeck.v1, token.<secret>` (browsers cannot set
   WebSocket headers); stored per device in `localStorage` from a
   `#pair=<token>` link (the fragment never reaches the server).
+
+Rotation (`rm` the env file, rerun install + `--push-secrets`) evicts open
+browser sockets: each carries a SHA-256 tag of its token, checked by the DO on
+every message and on every new connection (the host reconnects with the new
+token right away).
 
 Cloudflare Access in front of `/console` + `/relay/client` and pinned DTLS
 fingerprints are follow-ups ([open questions](./diagnostics.md#open-questions)).
