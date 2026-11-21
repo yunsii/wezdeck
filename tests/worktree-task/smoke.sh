@@ -394,9 +394,11 @@ case7_transcript_preserved() {
     || { assert_fail ".archive/ unexpectedly created — archive code may not be fully removed"; return 1; }
 }
 
-# ---------- case 8: recycle refuses undelivered work ----------
+# ---------- case 8: recycle delivery gate (--require-delivered) vs fast path ----------
+# Since 41f9052 the delivery gate is opt-in: --require-delivered refuses
+# undelivered work; the default fast path hard-resets onto origin/HEAD.
 case8_recycle_undelivered() {
-  printf '\n=== case 8: recycle refuses undelivered ===\n'
+  printf '\n=== case 8: recycle --require-delivered refuses undelivered; default fast path resets ===\n'
 
   local remote="$WORK_DIR/remote8.git"
   local repo="$WORK_DIR/origin8"
@@ -433,14 +435,27 @@ case8_recycle_undelivered() {
      WT_RECYCLE_NO_CONFIRM=1 \
      "$WORKTREE_TASK" recycle \
        --worktree-root "$expect_wt" \
+       --require-delivered \
        -y >/dev/null 2>"$stderr_file"; then
-    assert_fail "recycle should refuse undelivered branch"
+    assert_fail "recycle --require-delivered should refuse undelivered branch"
     return 1
   fi
-  assert_pass "recycle refused undelivered"
+  assert_pass "recycle --require-delivered refused undelivered"
   [[ "$(git -C "$expect_wt" rev-parse HEAD)" == "$before" ]] \
     && assert_pass "tip unchanged after refused recycle" \
     || { assert_fail "tip moved despite refusal"; return 1; }
+
+  # default fast path: no delivery gate, tip reset onto origin/HEAD
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  WT_RECYCLE_NO_CONFIRM=1 \
+  "$WORKTREE_TASK" recycle \
+    --worktree-root "$expect_wt" \
+    -y >/dev/null 2>"$stderr_file" \
+    || { assert_fail "default fast-path recycle failed: $(tail -1 "$stderr_file")"; return 1; }
+  [[ "$(git -C "$expect_wt" rev-parse HEAD)" == "$(git -C "$repo" rev-parse origin/main)" ]] \
+    && assert_pass "fast path reset tip onto origin/HEAD (undelivered commit discarded by design)" \
+    || { assert_fail "fast path did not reset tip onto origin/HEAD"; return 1; }
 }
 
 # ---------- case 9: recycle happy path ----------
