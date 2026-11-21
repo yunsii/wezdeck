@@ -115,18 +115,71 @@ else
   printf 'got=%s\n' "$cap" >&2
 fi
 
-# Structural: read vs write branches exist in the shipped lib (review vs ticket profiles).
-lib="$here/lib/host-agent-invoke.sh"
-if grep -q 'permission-mode bypassPermissions' "$lib" \
-  && grep -q 'permission-mode plan' "$lib" \
-  && grep -q 'sandbox read-only' "$lib" \
-  && grep -q 'full-auto' "$lib" \
-  && grep -q 'AGENT_ATTENTION_SKIP=1' "$lib" \
-  && grep -q 'env -u CODEX_HOME' "$lib" \
-  && grep -q -- '--capture' "$lib"; then
-  ok "lib encodes distinct read/write flags + attention-skip + host CODEX_HOME unset + capture"
+# Behavioral: per-backend argv profiles (read vs write, observe, resume/fork).
+argv_of() { local -a _HOST_AGENT_GROK_ARGV=() _HOST_AGENT_ARGV=()
+  [ "$1" = grok ] && _host_agent_grok_argv "$2" "$prompt" "" "" "$3" "$4" "$5"
+  _host_agent_cli_argv "$1" "$2" "" "" "" "$3" "$4" "$5"; printf '%s\n' "${_HOST_AGENT_ARGV[@]}"; }
+has() { grep -qxF -- "$2" <<<"$1"; }
+a_cw="$(argv_of claude write 0 '' 0)"; a_cr="$(argv_of claude read 0 '' 0)"
+a_cwo="$(argv_of claude write 1 sess-1 1)"
+a_xw="$(argv_of codex write 0 '' 0)"; a_xr="$(argv_of codex read 0 '' 0)"; a_xwr="$(argv_of codex write 1 th-1 0)"
+a_gwo="$(argv_of grok write 1 g-1 1)"
+if has "$a_cw" bypassPermissions && has "$a_cw" text && has "$a_cr" plan && has "$a_cr" json \
+  && has "$a_cwo" stream-json && has "$a_cwo" --verbose && has "$a_cwo" --resume && has "$a_cwo" sess-1 && has "$a_cwo" --fork-session \
+  && has "$a_xw" --full-auto && has "$a_xr" read-only && has "$a_xr" --json \
+  && has "$a_xwr" resume && has "$a_xwr" th-1 && has "$a_xwr" --json && has "$a_xwr" 'sandbox_mode="workspace-write"' && ! has "$a_xwr" --full-auto \
+  && has "$a_gwo" streaming-json && has "$a_gwo" --resume && has "$a_gwo" --fork-session && has "$a_gwo" --always-approve; then
+  ok "argv profiles: read/write, observe stream formats, resume/fork per backend"
 else
-  bad "lib encodes distinct read/write flags + attention-skip + host CODEX_HOME unset + capture"
+  bad "argv profiles: read/write, observe stream formats, resume/fork per backend"
+  printf '%s\n---\n' "$a_cwo" "$a_xwr" "$a_gwo" >&2
+fi
+lib="$here/lib/host-agent-invoke.sh"
+if grep -q 'AGENT_ATTENTION_SKIP=1' "$lib" && grep -q -- '-u CODEX_HOME' "$lib"; then
+  ok "lib keeps attention-skip + host CODEX_HOME unset"
+else
+  bad "lib keeps attention-skip + host CODEX_HOME unset"
+fi
+if host_agent_invoke_run --backend claude --mode write --cwd "$cwd" --prompt-file "$prompt" --capture --run-dir "$tmp/r" 2>/dev/null; then
+  bad "--run-dir with --capture rejected"
+else
+  ok "--run-dir with --capture rejected"
+fi
+
+# Observability: recorded real streams → launch record + run record + events.
+fx="$here/tests/fixtures"
+for b in claude codex grok; do
+  rd="$tmp/runs-$b"
+  extra="$tmp/extra-$b.json"
+  printf '{"trigger":{"source":"cli"},"session":{"reuse":"fresh","reason":"no_prior"},"ticket":"req-x","phase":"research"}' >"$extra"
+  HOST_AGENT_INVOKE_MOCK_STREAM="$fx/$b.stream.jsonl" host_agent_invoke_run --backend "$b" --mode write \
+    --cwd "$cwd" --prompt-file "$prompt" --log "$log" --run-dir "$rd" --run-id run-t --launch-extra "$extra"
+  if jq -e '.invocation.backend=="'"$b"'" and (.prompt.sha256|length==64) and .trigger.source=="cli" and .session.reuse=="fresh" and (.invocation.argv|length>1)' "$rd/run-t.launch.json" >/dev/null \
+    && jq -e '.exit==0 and .ticket=="req-x" and (.session.id|type=="string") and .tool_calls>=1 and (.tokens.output|type=="number")' "$rd/run-t.json" >/dev/null \
+    && jq -e -s 'map(.kind) as $k | ($k|index("run_start")!=null) and ($k|index("session_init")!=null) and ($k|index("tool")!=null) and ($k|index("milestone")!=null) and ($k|index("run_end")!=null)' "$rd/run-t.events.jsonl" >/dev/null \
+    && [ -s "$rd/run-t.stream.jsonl" ]; then
+    ok "observe/$b: launch + run record + events (run_start/session_init/tool/milestone/run_end)"
+  else
+    bad "observe/$b: launch + run record + events"
+    cat "$rd/run-t.json" "$rd/run-t.events.jsonl" >&2 2>/dev/null
+  fi
+done
+if jq -e '.tokens.input==4 and .tokens.cache_read==51198 and .tokens.cache_write==26768 and .cache_hit_rate==0.6566 and .turns==2 and (.cache_ttl|type=="string")' "$tmp/runs-claude/run-t.json" >/dev/null; then
+  ok "claude usage normalized (cache read/write, ttl, hit rate)"
+else
+  bad "claude usage normalized"; jq '{tokens,cache_ttl,cache_hit_rate,turns}' "$tmp/runs-claude/run-t.json" >&2
+fi
+if jq -e '.tokens.input==800 and .tokens.cache_read==1200 and .tokens.cache_write==null and .cache_hit_rate==0.6 and .turns==null' "$tmp/runs-codex/run-t.json" >/dev/null; then
+  ok "codex usage normalized (input excludes cached, unknown stays null)"
+else
+  bad "codex usage normalized"; jq '{tokens,cache_hit_rate,turns}' "$tmp/runs-codex/run-t.json" >&2
+fi
+HOST_AGENT_INVOKE_MOCK_RC=7 HOST_AGENT_INVOKE_MOCK_STREAM="$fx/claude.stream.jsonl" host_agent_invoke_run --backend claude --mode write \
+  --cwd "$cwd" --prompt-file "$prompt" --log "$log" --run-dir "$tmp/runs-rc" --run-id run-rc; got_rc=$?
+if [ "$got_rc" -eq 7 ] && jq -e '.exit==7' "$tmp/runs-rc/run-rc.json" >/dev/null; then
+  ok "non-zero CLI exit propagates to caller and run record"
+else
+  bad "non-zero CLI exit propagates (rc=$got_rc)"
 fi
 
 # Review providers must call shared invoke (not private env|claude case).

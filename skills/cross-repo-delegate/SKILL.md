@@ -68,6 +68,16 @@ Initiator agents should **relay those ticks to the user** — prefer `create` th
 `run` + `watch`/`progress` poll when the chat must stay live; sync `create --run` still emits
 `[delegate] progress · …` on stderr during the blocked call.
 
+**Run observability (every headless worker run):** `_data/<id>/runs/<run>.{launch.json,stream.jsonl,json}`
+— trigger chain (who/which session started it), content-addressed redacted initial prompt
+(`prompts/<sha>.md`) + composition (template git blob, phase view), session reuse decision
+(`resume` inside one role chain when the cache is warm / history small; one fresh retry if resume
+fails), turns · tokens · cache hit · cost · peak RSS. Events get a global `seq`
+(`~/.agent/tickets/events.jsonl`). Read it all through `"$D" api …` (JSON, `schema/*.json`):
+`health · list · show --id · events --after N · run --run · prompt --sha · transcript --run · metrics --window`.
+Agents print `进展：…` lines that stream as `milestone` events. Design + phases:
+`docs/cross-repo-collab.md`.
+
 Policy for **Mode 3**: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing with `--run` means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.
 
 If a ticket is already **session-claimed** (`owner=human`), `run` / `reply --continue` / `watch` **will not** steal the lease unless the user explicitly asks to force headless (`run --steal`). Prefer developing in the claiming TUI.

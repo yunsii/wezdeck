@@ -2,6 +2,13 @@
 # Shared paths + helpers for cross-repo delegate tickets.
 # shellcheck shell=bash
 
+# Trigger chain for observable runs (lib/observe.py trigger_from_env). Sourced
+# from run.sh, so $* is the CLI argv; the outermost delegate call wins so nested
+# calls keep the human / agent origin.
+: "${DELEGATE_CMDLINE:=delegate $*}"
+: "${DELEGATE_ORIGIN_CWD:=$PWD}"
+export DELEGATE_CMDLINE DELEGATE_ORIGIN_CWD
+
 delegate_tool_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }

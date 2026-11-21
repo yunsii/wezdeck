@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "delegate-api/health.schema.json",
+  "title": "delegate api health (v1)",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "command",
+        "store",
+        "tickets",
+        "running",
+        "queued",
+        "waiting_human",
+        "seq_head",
+        "capabilities"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": true
+        },
+        "command": {
+          "const": "health"
+        },
+        "store": {
+          "type": "string"
+        },
+        "tickets": {
+          "type": "integer"
+        },
+        "by_status": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "running": {
+          "type": "integer"
+        },
+        "queued": {
+          "type": "integer"
+        },
+        "waiting_human": {
+          "type": "integer"
+        },
+        "seq_head": {
+          "type": "integer"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "v",
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "ok": {
+          "const": false
+        },
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "bad_request",
+                "not_found",
+                "unknown_command",
+                "internal"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{"type": "available_commands", "tools": ["run_terminal_command", "read_file", "search_replace", "list_dir", "grep", "kill_command_or_subagent"]}
+{"type": "available_commands", "tools": ["run_terminal_command", "read_file", "search_replace", "list_dir", "grep", "kill_command_or_subagent"]}
+{"type": "thought", "data": "Reading f.txt to retrieve"}
+{"type": "thought", "data": " its content and reply"}
+{"type": "thought", "data": " with the file contents"}
+{"type": "thought", "data": " plus a line starting"}
+{"type": "thought", "data": " with \"进展：done\"."}
+{"type": "text", "data": "先"}
+{"type": "text", "data": "读取"}
+{"type": "text", "data": " `"}
+{"type": "text", "data": "f"}
+{"type": "text", "data": ".txt"}
+{"type": "text", "data": "`"}
+{"type": "text", "data": "，"}
+{"type": "text", "data": "再"}
+{"type": "text", "data": "按"}
+{"type": "text", "data": "你"}
+{"type": "text", "data": "的"}
+{"type": "text", "data": "要求"}
+{"type": "text", "data": "回复"}
+{"type": "text", "data": "。"}
+{"type": "available_commands", "tools": ["run_terminal_command", "read_file", "search_replace", "list_dir", "grep", "kill_command_or_subagent"]}
+{"type": "usage", "usage": {"input_tokens": 23030, "output_tokens": 225, "cache_read_input_tokens": 128, "cache_creation_input_tokens": 0, "reasoning_tokens": 146}}
+{"type": "tool_call", "toolCallId": "call-add8ff87-71cb-41f3-accd-d8f66f8f460c-0", "title": "read_file", "kind": "read", "status": "pending", "toolName": "read_file", "rawInput": {"target_file": "/tmp/fixture/a/f.txt"}, "content": [], "locations": []}
+{"type": "tool_call_update", "toolCallId": "call-add8ff87-71cb-41f3-accd-d8f66f8f460c-0", "status": null, "content": [], "rawOutput": null, "locations": [{"path": "/tmp/fixture/a/f.txt"}]}
+{"type": "tool_call_update", "toolCallId": "call-add8ff87-71cb-41f3-accd-d8f66f8f460c-0", "status": "completed", "content": [{"type": "content", "content": {"type": "text", "text": "1→hello\n"}}], "rawOutput": {"type": "ReadFile"}, "locations": []}
+{"type": "thought", "data": "已读取 f.txt，内容为 \"hello\"。将回复该内容并添加"}
+{"type": "thought", "data": " \"进展：done\"。"}
+{"type": "text", "data": "hello"}
+{"type": "text", "data": "\n\n"}
+{"type": "text", "data": "进展"}
+{"type": "text", "data": "："}
+{"type": "text", "data": "done"}
+{"type": "available_commands", "tools": ["run_terminal_command", "read_file", "search_replace", "list_dir", "grep", "kill_command_or_subagent"]}
+{"type": "usage", "usage": {"input_tokens": 358, "output_tokens": 103, "cache_read_input_tokens": 23040, "cache_creation_input_tokens": 0, "reasoning_tokens": 98}}
+{"type": "end", "stopReason": "end_turn", "sessionId": "01a1fcda-60a9-7c23-871d-267c40f31187", "requestId": "970a1142-38e0-4117-83b1-3ac99fc34348", "cwd": "/tmp/fixture/a", "usage": {"input_tokens": 23388, "cache_read_input_tokens": 23168, "cache_creation_input_tokens": 0, "output_tokens": 328, "reasoning_tokens": 244, "total_tokens": 46884}, "num_turns": 2, "total_cost_usd": 0.018936096, "total_cost_usd_ticks": 189360960, "modelUsage": {"grok-4.5-build": {"inputTokens": 23388, "outputTokens": 328, "cacheReadInputTokens": 23168, "cacheCreationInputTokens": 0, "modelCalls": 2, "costUSD": 0.018936096}}}

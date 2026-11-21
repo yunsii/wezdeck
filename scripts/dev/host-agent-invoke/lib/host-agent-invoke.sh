@@ -9,6 +9,14 @@
 #   host_agent_invoke_run --backend NAME --mode read|write --cwd DIR \
 #     --prompt-file PATH [--add-dir PATH] [--log PATH] [--effort LEVEL] \
 #     [--model ID] [--capture]
+#     [--run-dir DIR [--run-id ID] [--launch-extra JSON_FILE]
+#      [--sink-py FILE --sink-arg ARG]] [--resume SESSION_ID [--fork]]
+#
+#   --run-dir  → observability: writes <run>.launch.json before the CLI starts,
+#                switches the CLI to its event stream, tees it to
+#                <run>.stream.jsonl and writes the run record <run>.json
+#                (lib/run_observe.py). Exclusive with --capture.
+#   --resume / --fork → continue or branch a prior backend session by id.
 #
 #   --capture  → CLI stdout is printed on this function's stdout (stderr→log
 #                or /dev/null). Used by review providers that post-process text.
@@ -17,6 +25,8 @@
 # Env:
 #   HOST_AGENT_INVOKE_MOCK=1  → no real CLI; append one JSON line to trace; exit 0
 #   HOST_AGENT_INVOKE_TRACE   → trace path (JSONL)
+#   HOST_AGENT_INVOKE_MOCK_STREAM / _MOCK_RC → under MOCK + --run-dir, feed this
+#                recorded CLI stream through run_observe.py (offline tests)
 #
 # shellcheck shell=bash
 
@@ -81,12 +91,19 @@ HOST_AGENT_GROK_READ_ALLOW=(
 # Fill _HOST_AGENT_GROK_ARGV (grok args after the binary) for MODE.
 # Args: mode prompt_file model effort
 _host_agent_grok_argv() {
-  local mode=$1 prompt_file=$2 model=$3 effort=$4 rule
+  local mode=$1 prompt_file=$2 model=$3 effort=$4 observe=${5:-0} resume=${6:-} fork=${7:-0} rule
+  local fmt=json
+  [ "$observe" = "1" ] && fmt=streaming-json
   _HOST_AGENT_GROK_ARGV=(--prompt-file "$prompt_file")
+  if [ -n "$resume" ]; then
+    _HOST_AGENT_GROK_ARGV+=(--resume "$resume")
+    [ "$fork" = "1" ] && _HOST_AGENT_GROK_ARGV+=(--fork-session)
+  fi
   if [ "$mode" = "write" ]; then
     _HOST_AGENT_GROK_ARGV+=(--always-approve)
+    [ "$observe" = "1" ] && _HOST_AGENT_GROK_ARGV+=(--output-format "$fmt")
   else
-    _HOST_AGENT_GROK_ARGV+=(--output-format json --permission-mode plan --disable-web-search)
+    _HOST_AGENT_GROK_ARGV+=(--output-format "$fmt" --permission-mode plan --disable-web-search)
     for rule in "${HOST_AGENT_GROK_READ_ALLOW[@]}"; do
       _HOST_AGENT_GROK_ARGV+=(--allow "$rule")
     done
@@ -96,10 +113,71 @@ _host_agent_grok_argv() {
   return 0
 }
 
+# Build the full CLI argv (binary first) into _HOST_AGENT_ARGV.
+# Args: backend mode model effort add_dir observe resume fork
+# observe=1 switches every backend to its machine-readable event stream
+# (claude stream-json, codex --json, grok streaming-json) for run_observe.py.
+_host_agent_cli_argv() {
+  local backend=$1 mode=$2 model=$3 effort=$4 add_dir=$5 observe=$6 resume=$7 fork=$8
+  _HOST_AGENT_ARGV=()
+  case "$backend" in
+    claude)
+      _HOST_AGENT_ARGV=(claude -p)
+      if [ "$mode" = "write" ]; then
+        _HOST_AGENT_ARGV+=(--permission-mode bypassPermissions)
+      else
+        _HOST_AGENT_ARGV+=(--permission-mode plan --allowed-tools Read Grep Glob)
+      fi
+      if [ "$observe" = "1" ]; then
+        _HOST_AGENT_ARGV+=(--output-format stream-json --verbose)
+      elif [ "$mode" = "write" ]; then
+        _HOST_AGENT_ARGV+=(--output-format text)
+      else
+        _HOST_AGENT_ARGV+=(--output-format json)
+      fi
+      if [ -n "$resume" ]; then
+        _HOST_AGENT_ARGV+=(--resume "$resume")
+        [ "$fork" = "1" ] && _HOST_AGENT_ARGV+=(--fork-session)
+      fi
+      [ -n "$model" ] && _HOST_AGENT_ARGV+=(--model "$model")
+      [ -n "$effort" ] && _HOST_AGENT_ARGV+=(--effort "$effort")
+      [ -n "$add_dir" ] && [ "$mode" = "write" ] && _HOST_AGENT_ARGV+=(--add-dir "$add_dir")
+      _HOST_AGENT_ARGV+=(--settings '{"disableAllHooks":true}')
+      ;;
+    codex)
+      local bin
+      bin="$(_host_agent_codex_bin)" || bin=codex
+      _HOST_AGENT_ARGV=("$bin" exec)
+      if [ -n "$resume" ]; then
+        # `exec resume|fork` take no --full-auto/--sandbox; same profile via -c.
+        if [ "$fork" = "1" ]; then _HOST_AGENT_ARGV+=(fork); else _HOST_AGENT_ARGV+=(resume); fi
+        if [ "$mode" = "write" ]; then
+          _HOST_AGENT_ARGV+=(-c 'sandbox_mode="workspace-write"' -c 'approval_policy="never"')
+        else
+          _HOST_AGENT_ARGV+=(-c 'sandbox_mode="read-only"' -c 'approval_policy="never"')
+        fi
+        _HOST_AGENT_ARGV+=(--json)
+      elif [ "$mode" = "write" ]; then
+        _HOST_AGENT_ARGV+=(--full-auto)
+        [ "$observe" = "1" ] && _HOST_AGENT_ARGV+=(--json)
+      else
+        _HOST_AGENT_ARGV+=(--json --sandbox read-only)
+      fi
+      [ -n "$model" ] && _HOST_AGENT_ARGV+=(-c "model=\"$model\"")
+      [ -n "$effort" ] && _HOST_AGENT_ARGV+=(-c "model_reasoning_effort=\"$effort\"")
+      [ -n "$resume" ] && _HOST_AGENT_ARGV+=("$resume")
+      _HOST_AGENT_ARGV+=(-)
+      ;;
+    grok)
+      _HOST_AGENT_ARGV=(grok "${_HOST_AGENT_GROK_ARGV[@]}")
+      ;;
+  esac
+}
+
 # Run one headless host CLI. Returns CLI exit (0 under MOCK).
 host_agent_invoke_run() {
   local backend="" mode="read" cwd="" prompt_file="" add_dir="" log_path="" effort="" model=""
-  local capture=0
+  local capture=0 run_dir="" run_id="" resume="" fork=0 launch_extra="" sink_py="" sink_arg=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --backend) backend="${2:-}"; shift 2 ;;
@@ -111,6 +189,13 @@ host_agent_invoke_run() {
       --effort) effort="${2:-}"; shift 2 ;;
       --model) model="${2:-}"; shift 2 ;;
       --capture) capture=1; shift ;;
+      --run-dir) run_dir="${2:-}"; shift 2 ;;
+      --run-id) run_id="${2:-}"; shift 2 ;;
+      --resume) resume="${2:-}"; shift 2 ;;
+      --fork) fork=1; shift ;;
+      --launch-extra) launch_extra="${2:-}"; shift 2 ;;
+      --sink-py) sink_py="${2:-}"; shift 2 ;;
+      --sink-arg) sink_arg="${2:-}"; shift 2 ;;
       *)
         printf 'host_agent_invoke_run: unknown option %s\n' "$1" >&2
         return 1
@@ -134,17 +219,56 @@ host_agent_invoke_run() {
     return 1
     ;;
   esac
+  local observe=0
+  if [ -n "$run_dir" ]; then
+    [ "$capture" -eq 0 ] || { printf 'host_agent_invoke_run: --run-dir and --capture are exclusive\n' >&2; return 1; }
+    [ -n "$run_id" ] || run_id="run-$(date -u +%Y%m%d-%H%M%S)-$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')"
+    observe=1
+  fi
+  if [ "$fork" -eq 1 ] && [ -z "$resume" ]; then
+    printf 'host_agent_invoke_run: --fork needs --resume ID\n' >&2
+    return 1
+  fi
 
   # argv is recorded for grok (built before MOCK return so tests can assert it).
   local -a _HOST_AGENT_GROK_ARGV=()
-  [ "$backend" = "grok" ] && _host_agent_grok_argv "$mode" "$prompt_file" "$model" "$effort"
+  [ "$backend" = "grok" ] && _host_agent_grok_argv "$mode" "$prompt_file" "$model" "$effort" "$observe" "$resume" "$fork"
+  local -a _HOST_AGENT_ARGV=()
+  _host_agent_cli_argv "$backend" "$mode" "$model" "$effort" "$add_dir" "$observe" "$resume" "$fork"
 
   local trace_line
-  trace_line="$(python3 -c 'import json,sys; print(json.dumps({"backend":sys.argv[1],"mode":sys.argv[2],"cwd":sys.argv[3],"prompt_file":sys.argv[4],"add_dir":sys.argv[5],"mock":bool(sys.argv[6]=="1"),"capture":bool(sys.argv[7]=="1"),"argv":sys.argv[8:]}))' \
-    "$backend" "$mode" "$cwd" "$prompt_file" "${add_dir:-}" "${HOST_AGENT_INVOKE_MOCK:-0}" "$capture" "${_HOST_AGENT_GROK_ARGV[@]}")"
+  trace_line="$(python3 -c 'import json,sys; print(json.dumps({"backend":sys.argv[1],"mode":sys.argv[2],"cwd":sys.argv[3],"prompt_file":sys.argv[4],"add_dir":sys.argv[5],"mock":bool(sys.argv[6]=="1"),"capture":bool(sys.argv[7]=="1"),"run_id":sys.argv[8] or None,"resume":sys.argv[9] or None,"fork":sys.argv[10]=="1","argv":sys.argv[11:]}))' \
+    "$backend" "$mode" "$cwd" "$prompt_file" "${add_dir:-}" "${HOST_AGENT_INVOKE_MOCK:-0}" "$capture" "$run_id" "$resume" "$fork" "${_HOST_AGENT_GROK_ARGV[@]}")"
   _host_agent_trace "$trace_line"
 
+  local observe_py="$_HOST_AGENT_INVOKE_LIB_DIR/run_observe.py"
+  local -a sink_args=()
+  [ -n "$sink_py" ] && sink_args=(--sink-py "$sink_py" --sink-arg "$sink_arg")
+  if [ "$observe" -eq 1 ]; then
+    mkdir -p "$run_dir"
+    python3 "$observe_py" launch --run-dir "$run_dir" --run-id "$run_id" \
+      --backend "$backend" --mode "$mode" --cwd "$cwd" --prompt-file "$prompt_file" \
+      --model "$model" --effort "$effort" --add-dir "$add_dir" \
+      ${resume:+--resume "$resume"} $( [ "$fork" -eq 1 ] && printf -- '--fork' ) \
+      ${launch_extra:+--extra "$launch_extra"} "${sink_args[@]}" \
+      -- "${_HOST_AGENT_ARGV[@]}" \
+      || printf 'host_agent_invoke_run: launch record failed (continuing)\n' >&2
+  fi
+
   if [ "${HOST_AGENT_INVOKE_MOCK:-0}" = "1" ]; then
+    if [ "$observe" -eq 1 ]; then
+      local mock_rc="${HOST_AGENT_INVOKE_MOCK_RC:-0}" rcf="$run_dir/$run_id.rc"
+      printf '%s\n' "$mock_rc" >"$rcf"
+      if [ -n "${HOST_AGENT_INVOKE_MOCK_STREAM:-}" ] && [ -f "$HOST_AGENT_INVOKE_MOCK_STREAM" ]; then
+        python3 "$observe_py" parse --run-dir "$run_dir" --run-id "$run_id" --backend "$backend" \
+          --rc-file "$rcf" "${sink_args[@]}" <"$HOST_AGENT_INVOKE_MOCK_STREAM" 2>>"${log_path:-/dev/null}"
+      else
+        python3 "$observe_py" parse --run-dir "$run_dir" --run-id "$run_id" --backend "$backend" \
+          --rc-file "$rcf" "${sink_args[@]}" </dev/null 2>>"${log_path:-/dev/null}"
+      fi
+      rm -f "$rcf"
+      return "$mock_rc"
+    fi
     if [ "$capture" -eq 1 ]; then
       # Shape-stable empty payload so callers' jq pipes do not crash.
       case "$backend" in
@@ -158,67 +282,40 @@ host_agent_invoke_run() {
 
   local rc=0
   _host_agent_run_cli() {
-    cd "$cwd"
-    case "$backend" in
-      claude)
-        # Claude has no --prompt-file; -p with no argv prompt reads stdin (avoids ARG_MAX).
-        if [ "$mode" = "write" ]; then
-          env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-            AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 HOST_AGENT_HEADLESS=1 \
-            claude -p --permission-mode bypassPermissions \
-              --output-format text \
-              ${model:+--model "$model"} \
-              ${effort:+--effort "$effort"} \
-              ${add_dir:+--add-dir "$add_dir"} \
-              --settings '{"disableAllHooks":true}' \
-              <"$prompt_file"
-        else
-          env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-            AGENT_ATTENTION_SKIP=1 HOST_AGENT_HEADLESS=1 \
-            claude -p --output-format json \
-              --permission-mode plan \
-              --allowed-tools Read Grep Glob \
-              ${model:+--model "$model"} \
-              ${effort:+--effort "$effort"} \
-              --settings '{"disableAllHooks":true}' \
-              <"$prompt_file"
-        fi
-        ;;
-      codex)
-        local bin
-        bin="$(_host_agent_codex_bin)" || exit 3
-        if [ "$mode" = "write" ]; then
-          env -u CODEX_HOME -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-            AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 HOST_AGENT_HEADLESS=1 \
-            "$bin" exec --full-auto \
-              ${model:+-c model="$model"} \
-              ${effort:+-c model_reasoning_effort="$effort"} \
-              - <"$prompt_file"
-        else
-          env -u CODEX_HOME -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-            AGENT_ATTENTION_SKIP=1 HOST_AGENT_HEADLESS=1 \
-            "$bin" exec --json --sandbox read-only \
-              ${model:+-c model="$model"} \
-              ${effort:+-c model_reasoning_effort="$effort"} \
-              - <"$prompt_file"
-        fi
-        ;;
-      grok)
-        # Flags come from _host_agent_grok_argv (read = plan + allowlist).
-        if [ "$mode" = "write" ]; then
-          env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-            AGENT_ATTENTION_SKIP=1 DELEGATE_HEADLESS=1 HOST_AGENT_HEADLESS=1 \
-            grok "${_HOST_AGENT_GROK_ARGV[@]}"
-        else
-          env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET \
-            AGENT_ATTENTION_SKIP=1 HOST_AGENT_HEADLESS=1 \
-            grok "${_HOST_AGENT_GROK_ARGV[@]}"
-        fi
-        ;;
-    esac
+    cd "$cwd" || exit 3
+    if [ "$backend" = "codex" ]; then
+      [ -n "$(_host_agent_codex_bin)" ] || exit 3
+    fi
+    local -a env_args=(env -u TMUX -u TMUX_PANE -u WEZTERM_PANE -u WEZTERM_UNIX_SOCKET)
+    [ "$backend" = "codex" ] && env_args+=(-u CODEX_HOME)
+    env_args+=(AGENT_ATTENTION_SKIP=1 HOST_AGENT_HEADLESS=1)
+    [ "$mode" = "write" ] && env_args+=(DELEGATE_HEADLESS=1)
+    if [ "$backend" = "grok" ]; then
+      # grok reads --prompt-file itself
+      "${env_args[@]}" "${_HOST_AGENT_ARGV[@]}"
+    else
+      # Prompt via stdin (avoids ARG_MAX).
+      "${env_args[@]}" "${_HOST_AGENT_ARGV[@]}" <"$prompt_file"
+    fi
   }
 
-  if [ "$capture" -eq 1 ]; then
+  if [ "$observe" -eq 1 ]; then
+    local fifo pidf rcf parser_pid cli_pid
+    fifo="$run_dir/$run_id.fifo"; pidf="$run_dir/$run_id.pid"; rcf="$run_dir/$run_id.rc"
+    rm -f "$fifo" "$pidf" "$rcf"
+    mkfifo "$fifo"
+    python3 "$observe_py" parse --run-dir "$run_dir" --run-id "$run_id" --backend "$backend" \
+      --pid-file "$pidf" --rc-file "$rcf" "${sink_args[@]}" \
+      <"$fifo" 2>>"${log_path:-/dev/null}" &
+    parser_pid=$!
+    _host_agent_run_cli >"$fifo" 2>>"${log_path:-/dev/null}" &
+    cli_pid=$!
+    printf '%s\n' "$cli_pid" >"$pidf"
+    wait "$cli_pid" || rc=$?
+    printf '%s\n' "$rc" >"$rcf"
+    wait "$parser_pid" 2>/dev/null || true
+    rm -f "$fifo" "$pidf" "$rcf"
+  elif [ "$capture" -eq 1 ]; then
     _host_agent_run_cli 2>"${log_path:-/dev/null}" || rc=$?
   else
     _host_agent_run_cli >"${log_path:-/dev/null}" 2>&1 || rc=$?

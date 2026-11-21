@@ -40,6 +40,7 @@
 #       decision table: ticket × worktree (exists/dirty/ahead/age → suggest)
 #   run.sh walkthrough [--seed]
 #   run.sh reindex | selfcheck
+#   run.sh api health|list|show|events|run|prompt|transcript|metrics … (read-only JSON, schema/)
 #
 # Tickets live under ~/.agent/tickets (override: DELEGATE_TICKETS_ROOT).
 # Three modes: create | claim(session develop) | create --run (delegate develop).
@@ -50,19 +51,11 @@ set -euo pipefail
 
 TOOL_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
 # shellcheck source=/dev/null
-. "$TOOL_ROOT/lib/common.sh"
-# shellcheck source=/dev/null
-. "$TOOL_ROOT/lib/worktree.sh"
-# shellcheck source=/dev/null
-. "$TOOL_ROOT/lib/worker.sh"
-# shellcheck source=/dev/null
-. "$TOOL_ROOT/lib/lifecycle.sh"
-# shellcheck source=/dev/null
-. "$TOOL_ROOT/lib/progress.sh"
+for _lib in common worktree worker lifecycle progress; do . "$TOOL_ROOT/lib/$_lib.sh"; done
 
 PY="$TOOL_ROOT/lib/ticket_fs.py"
 usage() {
-  sed -n '2,52p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,49p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 cmd="${1:-}"
@@ -1436,5 +1429,6 @@ case "$cmd" in
   walkthrough) cmd_walkthrough "$@" ;;
   reindex) cmd_reindex "$@" ;;
   selfcheck) cmd_selfcheck "$@" ;;
+  api) exec python3 "$TOOL_ROOT/lib/api.py" "$@" ;;
   *) usage; delegate_die "unknown command: $cmd" ;;
 esac

@@ -65,3 +65,9 @@ Worker prompts embed a **phase view** (not the full `ticket.md`): both phases
 keep Summary+Assumptions (the contract); implement also gets Verification+Decision.
 `Thread` / `events.jsonl` stay on disk for humans / on-demand Read — trim noise,
 not the contract.
+
+## Observability
+
+Headless runs leave launch/run records + a global event stream; read them via
+`delegate api …` (read-only JSON, `schema/*.json`). Session reuse, metrics and
+the web/fe1 consumers: [`docs/cross-repo-collab.md`](../../docs/cross-repo-collab.md).

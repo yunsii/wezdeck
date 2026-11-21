@@ -208,6 +208,10 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   placeholder used in `config/worktree-task.env`, or any path that
   spawns `claude` / `codex`:
   Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
+- Cross-repo collaboration as a core CLI (`delegate api`, launch/run records,
+  initial-prompt store, session reuse / cache-hit metrics, `collab` log rows,
+  planned parent/child scheduler + wezdeck/fe1 web views):
+  Read [`docs/cross-repo-collab.md`](docs/cross-repo-collab.md).
 - Adversarial code review skill (find→refute→repro), cross-agent backend
   selection, the shared `lib/provider.sh` layer, per-stage reasoning effort,
   the no-session-resume rationale, or offline mock testing:

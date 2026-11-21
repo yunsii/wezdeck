@@ -240,10 +240,13 @@ PY
 }
 
 # Headless invoke via shared host-agent-invoke (write profile: ticket result-file contract).
-# Args: backend worktree_path prompt_path log_path [mode=write]
+# Args: backend worktree_path prompt_path log_path [mode=write] [ticket_id] [phase] [role=worker]
+# With ticket_id: observable run (docs/cross-repo-collab.md) — launch record with
+# trigger + prompt composition, CLI event stream → ticket/global events, run
+# record, session reuse (resume when warm; one fresh retry if resume fails).
 delegate_worker_invoke() {
   local backend=$1 worktree_path=$2 prompt_path=$3 log_path=$4
-  local mode=${5:-write}
+  local mode=${5:-write} ticket_id=${6:-} phase=${7:-} role=${8:-worker}
   local add_dir="" rc=0
   delegate_log "worker backend=$backend mode=$mode cwd=$worktree_path (host-agent-invoke)"
   case "$backend" in claude|codex|grok) ;; *)
@@ -253,20 +256,46 @@ delegate_worker_invoke() {
   if [[ "$backend" == "claude" && -d "$worktree_path/.delegate" ]]; then
     add_dir="$worktree_path/.delegate"
   fi
-  rc=0
-  if [[ -n "$add_dir" ]]; then
-    host_agent_invoke_run \
-      --backend "$backend" --mode "$mode" \
-      --cwd "$worktree_path" --prompt-file "$prompt_path" \
-      --add-dir "$add_dir" --log "$log_path" || rc=$?
-  else
-    host_agent_invoke_run \
-      --backend "$backend" --mode "$mode" \
-      --cwd "$worktree_path" --prompt-file "$prompt_path" \
-      --log "$log_path" || rc=$?
+  local -a base=(--backend "$backend" --mode "$mode" --cwd "$worktree_path" --prompt-file "$prompt_path" --log "$log_path")
+  [[ -n "$add_dir" ]] && base+=(--add-dir "$add_dir")
+  if [[ -z "$ticket_id" ]]; then
+    host_agent_invoke_run "${base[@]}" || rc=$?
+    [[ "$rc" -eq 0 ]] || delegate_log "warn: host-agent-invoke backend=$backend exited $rc (see $(basename "$log_path"))"
+    return 0
   fi
+
+  local root obs prep run_id run_dir extra reuse reason resume_id force=""
+  root="$(delegate_tickets_root)"
+  obs="$(delegate_tool_root)/lib/observe.py"
+  local attempt
+  for attempt in 1 2; do
+    prep="$(env DELEGATE_TICKETS_ROOT="$root" python3 "$obs" prepare-run --ticket "$ticket_id" \
+      --phase "$phase" --role "$role" --backend "$backend" --prompt-file "$prompt_path" \
+      --worktree "$worktree_path" --template "$(delegate_tool_root)/prompts/${phase}.md" \
+      --view-file "$root/_data/${ticket_id}/ticket-view-${phase}.md" $force)" \
+      || { delegate_log "warn: observe prepare-run failed; running unobserved"; host_agent_invoke_run "${base[@]}" || true; return 0; }
+    run_id="$(jq -r '.run_id' <<<"$prep")"; run_dir="$(jq -r '.run_dir' <<<"$prep")"
+    extra="$(jq -r '.extra' <<<"$prep")"; reuse="$(jq -r '.reuse' <<<"$prep")"
+    reason="$(jq -r '.reason' <<<"$prep")"; resume_id="$(jq -r '.resume_id // ""' <<<"$prep")"
+    delegate_log "run $run_id phase=$phase session=$reuse ($reason)"
+    rc=0
+    DELEGATE_TICKETS_ROOT="$root" host_agent_invoke_run "${base[@]}" \
+      --run-dir "$run_dir" --run-id "$run_id" --launch-extra "$extra" \
+      --sink-py "$obs" --sink-arg "$ticket_id" ${resume_id:+--resume "$resume_id"} || rc=$?
+    local fin
+    fin="$(env DELEGATE_TICKETS_ROOT="$root" python3 "$obs" finish-run --ticket "$ticket_id" \
+      --role "$role" --run-id "$run_id" --worktree "$worktree_path" 2>/dev/null || true)"
+    [[ -n "$fin" ]] && delegate_log "run $run_id end $(jq -c '{exit,reuse,turns,cache_hit_rate,cost_usd,wall_ms,rss_peak_mb}' <<<"$fin" 2>/dev/null)"
+    # Resume can fail when the backend lost the session; retry once fresh.
+    if [[ "$reuse" == "resume" && "$rc" -ne 0 && "$attempt" -eq 1 ]]; then
+      delegate_log "warn: resume run exited $rc; retrying with a fresh session"
+      force="--force-fresh --fresh-reason resume_failed"
+      continue
+    fi
+    break
+  done
   if [[ "$rc" -ne 0 ]]; then
-    delegate_log "warn: host-agent-invoke backend=$backend exited $rc (see $(basename "$log_path"))"
+    delegate_log "warn: host-agent-invoke backend=$backend exited $rc (see runs/$run_id.stream.jsonl)"
   fi
   return 0
 }
@@ -355,7 +384,7 @@ delegate_worker_research() {
     HOST_AGENT_INVOKE_MOCK=1 \
       HOST_AGENT_INVOKE_TRACE="${HOST_AGENT_INVOKE_TRACE:-$root/_data/${ticket_id}/host-invoke.trace.jsonl}" \
       delegate_worker_invoke "$backend" "$mock_cwd" "$prompt_path" \
-      "$root/_data/${ticket_id}/worker.log" write
+      "$root/_data/${ticket_id}/worker.log" write "$ticket_id" research
     delegate_progress_heartbeat_stop "$ticket_id"
     delegate_worker_write_mock_result "$result_path" "$ticket_path"
     delegate_worker_apply_result "$ticket_id"
@@ -372,7 +401,7 @@ delegate_worker_research() {
   local_result="$(printf '%s\n' "$prepared" | sed -n '2p')"
 
   delegate_worker_invoke "$backend" "$worktree_path" "$prompt_path" \
-    "$root/_data/${ticket_id}/worker.log" write
+    "$root/_data/${ticket_id}/worker.log" write "$ticket_id" research
   delegate_progress_heartbeat_stop "$ticket_id"
 
   if [[ -f "$local_result" ]]; then
@@ -437,7 +466,7 @@ delegate_worker_implement() {
     HOST_AGENT_INVOKE_MOCK=1 \
       HOST_AGENT_INVOKE_TRACE="${HOST_AGENT_INVOKE_TRACE:-$root/_data/${ticket_id}/host-invoke.trace.jsonl}" \
       delegate_worker_invoke "$backend" "$mock_cwd" "$prompt_path" \
-      "$root/_data/${ticket_id}/implement.log" write
+      "$root/_data/${ticket_id}/implement.log" write "$ticket_id" implement
     delegate_progress_heartbeat_stop "$ticket_id"
     delegate_worker_write_mock_implement_result "$result_path"
     delegate_worker_apply_implement_result "$ticket_id"
@@ -454,7 +483,7 @@ delegate_worker_implement() {
   local_result="$(printf '%s\n' "$prepared" | sed -n '2p')"
 
   delegate_worker_invoke "$backend" "$worktree_path" "$prompt_path" \
-    "$root/_data/${ticket_id}/implement.log" write
+    "$root/_data/${ticket_id}/implement.log" write "$ticket_id" implement
   delegate_progress_heartbeat_stop "$ticket_id"
 
   if [[ -f "$local_result" ]]; then

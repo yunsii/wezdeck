@@ -120,14 +120,20 @@ def write_ticket(tid: str, meta: dict[str, Any], body: str) -> None:
     (d / "ticket.md").write_text(dump_frontmatter(meta, body), encoding="utf-8")
 
 
+def _observe():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "delegate_observe", Path(__file__).resolve().parent / "observe.py"
+    )
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
 def append_event(tid: str, event: dict[str, Any]) -> None:
-    d = data_dir(tid)
-    d.mkdir(parents=True, exist_ok=True)
-    event = dict(event)
-    event.setdefault("ts", now_iso())
-    event.setdefault("id", tid)
-    with (d / "events.jsonl").open("a", encoding="utf-8") as f:
-        f.write(json.dumps(event, ensure_ascii=False) + "\n")
+    """Per-ticket + global event stream with the v1 envelope (lib/observe.py)."""
+    _observe().write_events(tid, [dict(event)])
 
 
 def write_progress(

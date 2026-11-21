@@ -36,6 +36,8 @@ git -C "$fake_wez" config user.name test
 git -C "$fake_wez" commit --allow-empty -qm init
 
 export DELEGATE_TICKETS_ROOT="$tmp/tickets"
+export WEZTERM_RUNTIME_LOG_FILE="$tmp/runtime.log"
+export WEZTERM_RUNTIME_LOG_ENABLED=1
 "$run" init >/dev/null
 
 cat >"$DELEGATE_TICKETS_ROOT/config.yml" <<EOF
@@ -481,6 +483,104 @@ check "worktrees --alive includes live tree" \
 wt_after="$("$run" worktrees --alive 2>/dev/null)"
 check "worktrees --alive empty after close reclaim" \
   jq -e --arg id "$id_wt" '(.worktrees | map(.id) | index($id) == null)' <<<"$wt_after"
+
+# ---------------------------------------------------------------- observability (docs/cross-repo-collab.md)
+echo "observability"
+fx="$here/../../scripts/dev/host-agent-invoke/tests/fixtures"
+obs_out="$(HOST_AGENT_INVOKE_MOCK_STREAM="$fx/claude.stream.jsonl" DELEGATE_TRIGGER_SOURCE=cli "$run" create \
+  --to wezdeck --from avc --title "obs ticket" --observed "o" --assumed "a token=abcdefghijklmnop1234" \
+  --run --mock 2>"$tmp/obs.err")"
+id_obs="$(head -1 <<<"$obs_out" | jq -r '.id')"
+runs_dir="$DELEGATE_TICKETS_ROOT/_data/$id_obs/runs"
+n_launch="$(find "$runs_dir" -name '*.launch.json' 2>/dev/null | wc -l)"
+n_rec="$(find "$runs_dir" -name 'run-*.json' ! -name '*.launch.json' 2>/dev/null | wc -l)"
+check "research + implement each leave launch + run record" test "$n_launch" -eq 2 -a "$n_rec" -eq 2
+first_launch="$(find "$runs_dir" -name '*.launch.json' | sort | head -1)"
+check "launch record: trigger, prompt sha, composition (template git blob + phase view), session" \
+  jq -e '.trigger.source=="cli" and (.prompt.sha256|length==64) and (.prompt.store_sha256|length==64)
+    and (.composition|map(.kind)|index("template")!=null and index("phase_view")!=null)
+    and ((.composition[]|select(.kind=="template")|.git_blob)|type=="string")
+    and .session.reuse=="fresh" and .session.reason=="no_prior" and .invocation.backend=="claude"' "$first_launch"
+sha="$(jq -r '.prompt.store_sha256' "$first_launch")"
+check "stored prompt is content-addressed and redacted" \
+  bash -c "test -f '$DELEGATE_TICKETS_ROOT/prompts/$sha.md' && grep -q 'redacted:assignment' '$DELEGATE_TICKETS_ROOT/prompts/$sha.md' && ! grep -q abcdefghijklmnop1234 '$DELEGATE_TICKETS_ROOT/prompts/$sha.md'"
+check "redaction rule names recorded in launch" jq -e '.prompt.redactions|index("assignment")!=null' "$first_launch"
+check "implement resumed the research session (warm cache)" \
+  jq -e -s 'map(select(.phase=="implement"))[0].session | .reuse=="resume" and .reason=="warm_cache"' "$runs_dir"/run-*[0-9a-f].json
+check "meta.json sessions.worker carries id + history + ttl" \
+  jq -e '.sessions.worker | (.id|type=="string") and (.history_tokens>0) and .cache_ttl=="1h"' "$DELEGATE_TICKETS_ROOT/_data/$id_obs/meta.json"
+check "events: envelope + strictly increasing global seq" \
+  jq -e -s '(map(.seq)) as $s | ($s|length>5) and ([range(1;$s|length)] | all(. as $i | $s[$i] > $s[$i-1])) and all(.v==1 and (.kind|type=="string") and (.ticket|type=="string"))' "$DELEGATE_TICKETS_ROOT/events.jsonl"
+check "run events flow into ticket stream (session_init/tool/milestone/run_end)" \
+  jq -e -s 'map(.kind) as $k | ["run_start","session_init","tool","milestone","run_end"] | all(. as $x | $k|index($x)!=null)' "$DELEGATE_TICKETS_ROOT/_data/$id_obs/events.jsonl"
+check "runtime.log gets collab rows (lifecycle + run_end), not tool noise" \
+  bash -c "grep -q 'category=\"collab\" .*message=\"collab run_end\"' '$WEZTERM_RUNTIME_LOG_FILE' && grep -q 'message=\"collab created\"' '$WEZTERM_RUNTIME_LOG_FILE' && ! grep -q 'collab tool' '$WEZTERM_RUNTIME_LOG_FILE'"
+
+# api contract: every command validates against schema/*.json
+run_one="$(jq -r 'select(.phase=="research")|.run' "$runs_dir"/run-*[0-9a-f].json | head -1)"
+api_ok=1
+for spec in "health" "list --limit 5" "show --id $id_obs" "events --after 0 --limit 50" "events --ticket $id_obs" \
+  "run --run $run_one" "prompt --sha $sha" "transcript --run $run_one" "metrics --window all" "metrics --ticket $id_obs" \
+  "show --id req-nope-000" "prompt --sha zz" "events --ticket ../x" "bogus"; do
+  # shellcheck disable=SC2086
+  cmd="${spec%% *}"; [[ "$cmd" == bogus ]] && cmd=health
+  out="$("$run" api $spec)"
+  if ! python3 "$here/lib/validate_api.py" "$cmd" <<<"$out" 2>"$tmp/val.err"; then
+    rc=$?
+    [[ $rc -eq 2 ]] && { ok "api schema validation skipped (jsonschema missing)"; api_ok=2; break; }
+    api_ok=0; printf 'api %s: %s\n' "$spec" "$(cat "$tmp/val.err")" >&2
+  fi
+done
+[[ $api_ok -eq 1 ]] && ok "api outputs (8 commands + errors) validate against schema/"
+[[ $api_ok -eq 0 ]] && bad "api outputs validate against schema/"
+met="$("$run" api metrics --window all --ticket "$id_obs")"
+check "metrics: sessions, reuse mix, cache hit, trigger" \
+  jq -e '.runs==2 and .sessions==1 and .by_reuse.resume.runs==1 and .reuse_reasons.warm_cache==1 and .cache_hit_rate==0.6566 and .by_trigger.cli==2 and .by_backend.claude.runs==2' <<<"$met"
+cur="$("$run" api events --after 0 --limit 3 | jq '.next')"
+check "events cursor pages forward" jq -e --argjson c "$cur" '.events[0].seq == ($c+1)' <<<"$("$run" api events --after "$cur" --limit 1)"
+
+# reuse decisions (observe.py decide_reuse)
+dr() { python3 -c "import sys; sys.path.insert(0,'$here/lib'); import observe as o, json; print(json.dumps(o.decide_reuse('$id_obs','worker',sys.argv[1],sys.argv[2])))" "$@"; }
+wt_obs="$(jq -r '.sessions.worker.worktree' "$DELEGATE_TICKETS_ROOT/_data/$id_obs/meta.json")"
+check "reuse: other backend → fresh/backend_changed" jq -e '.reuse=="fresh" and .reason=="backend_changed"' <<<"$(dr codex "$wt_obs")"
+check "reuse: other worktree → fresh/worktree_changed" jq -e '.reason=="worktree_changed"' <<<"$(dr claude /elsewhere)"
+python3 - "$DELEGATE_TICKETS_ROOT/_data/$id_obs/meta.json" <<'PY2'
+import json,sys
+p=sys.argv[1]; m=json.load(open(p)); m["sessions"]["worker"]["last_used_epoch"]-=7200; m["sessions"]["worker"]["history_tokens"]=200000; json.dump(m,open(p,"w"))
+PY2
+check "reuse: idle past ttl + big history → fresh/stale_cache" jq -e '.reuse=="fresh" and .reason=="stale_cache"' <<<"$(dr claude "$wt_obs")"
+python3 - "$DELEGATE_TICKETS_ROOT/_data/$id_obs/meta.json" <<'PY2'
+import json,sys
+p=sys.argv[1]; m=json.load(open(p)); m["sessions"]["worker"]["history_tokens"]=5000; json.dump(m,open(p,"w"))
+PY2
+check "reuse: idle past ttl + small history → resume/small_history" jq -e '.reuse=="resume" and .reason=="small_history"' <<<"$(dr claude "$wt_obs")"
+check "reuse: DELEGATE_SESSION_REUSE=0 → fresh/disabled" jq -e '.reason=="disabled"' <<<"$(DELEGATE_SESSION_REUSE=0 dr claude "$wt_obs")"
+
+# resume failure falls back to one fresh run with reason resume_failed
+python3 - "$DELEGATE_TICKETS_ROOT/_data/$id_obs/meta.json" <<'PY2'
+import json,sys,time
+p=sys.argv[1]; m=json.load(open(p)); m["sessions"]["worker"]["last_used_epoch"]=int(time.time()); json.dump(m,open(p,"w"))
+PY2
+(
+  # shellcheck source=/dev/null
+  . "$here/lib/common.sh" 2>/dev/null; . "$here/../../scripts/dev/host-agent-invoke/lib/host-agent-invoke.sh"; . "$here/lib/worker.sh"
+  TOOL_ROOT="$here"; printf 'x\n' >"$tmp/p.md"
+  HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_RC=1 HOST_AGENT_INVOKE_MOCK_STREAM="$fx/claude.stream.jsonl" \
+    delegate_worker_invoke claude "$wt_obs" "$tmp/p.md" "$tmp/w.log" write "$id_obs" implement >/dev/null 2>&1
+)
+check "resume failure retries once fresh (reason resume_failed)" \
+  jq -e -s 'map(.session) | (map(select(.reason=="resume_failed"))|length==1)' "$runs_dir"/run-*[0-9a-f].json
+
+# retention: old streams/launches/unreferenced prompts/global events pruned; run records kept
+old_run="$runs_dir/run-19990101-000000-aaaaaa"
+printf '{}\n' >"$old_run.stream.jsonl"; printf '{"prompt":{"store_sha256":"%s"}}\n' "$(printf 0%.0s {1..64})" >"$old_run.launch.json"
+printf '{"run":"x"}\n' >"$old_run.json"
+printf 'old\n' >"$DELEGATE_TICKETS_ROOT/prompts/$(printf 1%.0s {1..64}).md"
+touch -d '40 days ago' "$old_run.stream.jsonl" "$old_run.launch.json" "$DELEGATE_TICKETS_ROOT/prompts/$(printf 1%.0s {1..64}).md"
+printf '{"v":1,"seq":0,"ticket":"x","kind":"old","ts":"1999-01-01T00:00:00Z"}\n' >>"$DELEGATE_TICKETS_ROOT/events.jsonl"
+ret="$(python3 "$here/lib/observe.py" retention --force)"
+check "retention prunes old stream/launch/prompt/global events, keeps run record + live prompt" \
+  bash -c "jq -e '.streams>=1 and .launches>=1 and .prompts==1 and .events==1' <<<'$ret' >/dev/null && test -f '$old_run.json' && test ! -f '$old_run.stream.jsonl' && test -f '$DELEGATE_TICKETS_ROOT/prompts/$sha.md'"
 
 echo "---"
 printf 'pass=%d fail=%d\n' "$pass" "$fail"

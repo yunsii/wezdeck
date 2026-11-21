@@ -31,5 +31,26 @@ writes files). Its read mode is a permission allowlist, not an OS sandbox like
 codex; `git diff/log --output=<file>` can still write through an allowed prefix.
 Keep the allowlist side-effect free (`test.sh` checks it).
 
+### Observable runs (`--run-dir`)
+
+`--run-dir DIR [--run-id ID] [--launch-extra JSON] [--sink-py FILE --sink-arg ARG]`
+switches the CLI to its event stream (claude `stream-json`, codex `--json`,
+grok `streaming-json`) and, via `lib/run_observe.py`, writes:
+
+| File | Content |
+| --- | --- |
+| `<run>.launch.json` | before start: argv (no prompt body), env key names, base sha, prompt sha/bytes/est tokens, origin session, caller extras |
+| `<run>.stream.jsonl` | raw CLI stream |
+| `<run>.json` | run record: session id + reuse, turns, tokens (input / cache_read / cache_write / output; unknown = `null`), cache hit rate + TTL, cost, wall ms, peak RSS of the CLI tree, tool calls, denials, exit |
+
+Events (`run_start`, `session_init`, `tool`, `milestone` = agent lines starting
+`进展：`, `error`, `run_end`) go to `--sink-py` (`sink_events(arg, run, batch)`)
+or `<run>.events.jsonl`. `--resume ID [--fork]` continues / branches a backend
+session (codex resume uses `-c sandbox_mode=…` because `exec resume` has no
+`--full-auto`). Exclusive with `--capture`. Consumer: `cross-repo-delegate`
+([`docs/cross-repo-collab.md`](../../../docs/cross-repo-collab.md)).
+
 Offline: `HOST_AGENT_INVOKE_MOCK=1` + optional `HOST_AGENT_INVOKE_TRACE=…` (JSONL;
-grok rows carry the full `argv`).
+grok rows carry the full `argv`). With `--run-dir`,
+`HOST_AGENT_INVOKE_MOCK_STREAM=<recorded stream>` (fixtures in
+`tests/fixtures/`) and `HOST_AGENT_INVOKE_MOCK_RC` drive the parser offline.

@@ -1,0 +1,6 @@
+{"type": "thread.started", "thread_id": "01a1fcd8-0000-7000-8000-000000000001"}
+{"type": "turn.started"}
+{"type": "item.completed", "item": {"id": "item_0", "type": "reasoning", "text": "Plan: read f.txt"}}
+{"type": "item.completed", "item": {"id": "item_1", "type": "command_execution", "command": "bash -lc 'cat f.txt'", "aggregated_output": "hello\n", "exit_code": 0, "status": "completed"}}
+{"type": "item.completed", "item": {"id": "item_2", "type": "agent_message", "text": "进展：读完了\nhello"}}
+{"type": "turn.completed", "usage": {"input_tokens": 2000, "cached_input_tokens": 1200, "output_tokens": 40}}

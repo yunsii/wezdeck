@@ -34,6 +34,13 @@ Write exactly one JSON object to `{{RESULT_PATH}}`:
 - `challenge` — assumptions wrong or incomplete; initiator must decide.
 - `need_input` — blocked on missing info from initiator.
 
+## Progress lines (observability)
+
+At each meaningful step (finished reading context, chose an approach, edited,
+ran checks, wrote the result file) print one plain-text line starting with
+`进展：` followed by a short Chinese summary, e.g. `进展：已读完相关代码，准备改 README`.
+Observers stream these lines live; keep them short and do not print secrets.
+
 ## Ticket id
 
 `{{TICKET_ID}}`
