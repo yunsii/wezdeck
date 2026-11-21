@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "enabled": true,
-  "version": "wezdeck-runtime-v2026.11.10.1",
-  "assetName": "wezdeck-windows-runtime-v2026.11.10.1-win-x64.zip",
-  "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/wezdeck-runtime-v2026.11.10.1/wezdeck-windows-runtime-v2026.11.10.1-win-x64.zip",
-  "sha256": "001b8f6ea3632e018b6c6e604e42cdede6ec5811b800ce21814c40000700e355"
+  "version": "wezdeck-runtime-v2026.11.21.1",
+  "assetName": "wezdeck-windows-runtime-v2026.11.21.1-win-x64.zip",
+  "downloadUrl": "https://github.com/yunsii/wezdeck/releases/download/wezdeck-runtime-v2026.11.21.1/wezdeck-windows-runtime-v2026.11.21.1-win-x64.zip",
+  "sha256": "e1b6524908e5cb9a08671fb0a9294b5a4f197cae2fb036a76dc0a2afd86731df"
 }
