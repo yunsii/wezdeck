@@ -6,8 +6,7 @@ load guards, OPPO remote, session-bridge watch, agent CLIs) live under
 `~/.config/wezdeck/plugins/<id>/`. Different people run different remotes,
 agents and browsers; a plugin is the unit they enable, disable and configure.
 
-Status: **adopted 2026-11-21** (RFC → rollout in the same round; see
-[Rollout](#rollout)).
+Status: **adopted and rolled out 2026-11-21** — see [Rollout](#rollout).
 
 ## Why
 
@@ -162,19 +161,56 @@ plugin drops out of both.
   observability).
 - `badge.order` unique among enabled plugins.
 
+## Operating
+
+```bash
+scripts/dev/wezdeck-plugin.sh list                     # discovered plugins, on/off, contributions
+scripts/dev/wezdeck-plugin.sh disable agent-grok       # writes wezterm-x/local/plugins.json + recompiles
+scripts/dev/wezdeck-plugin.sh enable agent-grok --sync # … and runs sync-runtime (badges reach WezTerm)
+scripts/dev/wezdeck-plugin.sh doctor                   # files, producer check, status freshness
+scripts/dev/wezdeck-plugin.sh install oppo-remote      # producer.install (uninstall / check likewise)
+scripts/dev/wezdeck-plugin.sh run oppo-remote oppo-remote-quality report
+```
+
+Agent-provider changes apply as soon as the registry recompiles; badge
+changes need `sync-runtime.sh` (or `--sync`). `doctor` exits non-zero only on
+FAIL (missing file, failing producer check, compile error); a stale status is
+WARN — e.g. `session-bridge` while its watch loop is off.
+
+### Writing a machine plugin
+
+Put it in `~/.config/wezdeck/plugins/<id>/` (or `$WEZDECK_PLUGIN_DIR`).
+`render-plugins.sh` validates it and copies it to
+`wezterm-x/plugins/.external/<id>/` so sync ships its Lua to the Windows
+runtime. Badge modules use the SDK for status files:
+
+```lua
+local badge = require 'wezdeck.badge'
+local M = { cfg = {} }
+function M.configure(c) M.cfg = c end
+function M.render_status_segment(palette)
+  local st = badge.parse_json(badge.read_file(M.cfg.state_file) or '')
+  if not st then return nil end            -- absent while nothing to say
+  return ' Hello·' .. tostring(st.n) .. ' ' -- or wezterm.format { … } with palette colours
+end
+return M
+```
+
+A machine habit provider (`agent.habit_provider`) is loaded by path and
+must use absolute imports (`from habit_report.schema import ProviderMetrics`).
+
 ## Rollout
 
-Each step lands, is verified, and syncs on its own; parity = the final
-artifact (rendered badge text / colours for fixture states, generated
-files) matches the pre-change path.
+All five steps landed 2026-11-21, each verified and synced on its own;
+parity = the final artifact matches the pre-change path.
 
-1. RFC (this doc).
-2. Kernel: compiler + Lua plugin host + `oppo-remote` migrated.
-3. Remaining badges (disk, mem, load, session-bridge) migrated; per-module
-   read / parse / freshness boilerplate folded into `badge_common.lua`.
-4. Agent providers (claude, codex, grok) discovered from plugins.
-5. `wezdeck-plugin.sh list|enable|disable|doctor|install|run` + external
-   plugin directory.
+| Step | Landed | Acceptance |
+|---|---|---|
+| 1. RFC | `df19de4` | this doc + design review |
+| 2. Kernel + `oppo-remote` | `d2beeb1` | compiler 8 tests; plugin_host parity (6 states) vs direct module; live + canary load without `plugins` warnings |
+| 3. Other badges + SDK | `1a5e4a7` | 55 fixtures old vs new modules identical; full plugin bar via host vs old hard-coded order identical in 3 scenarios |
+| 4. Agent providers | `e71675c` | provider discovery 6 + habit discovery 4 tests; real `disabled: agent-grok` drops grok from review and habit, restore brings it back; fanout / host-invoke / brainstorm offline suites green |
+| 5. CLI + machine plugins | this step | CLI end-to-end 16 tests (external badge rendered by plugin_host); live probe plugin loaded by canary **and** live WezTerm, then removed cleanly |
 
 ## Design review
 
