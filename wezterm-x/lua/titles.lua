@@ -306,7 +306,7 @@ function M.register(opts)
   -- Compose the right-status bar from IME, browser slot (Ego·… or CDP·…),
   -- session-bridge watch, host-disk, guest-memory, guest-load, attention.
   -- Order:
-  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N | OppoRemote·ok
+  --   IME | Ego·Alive / CDP·Headless·… | ◆ SessionBridge·N | OppoRemote·OK
   --     | SystemDisk·8G WslDisk·22G | Memory·88% | LoadAvg·23 | ▲…✓…●…
   --   (SessionBridge / disks / Memory / LoadAvg absent while idle/healthy —
   --   presence is the signal; disk_status may emit both system + WSL badges)

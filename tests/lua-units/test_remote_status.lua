@@ -3,7 +3,7 @@
 -- Design properties that are easy to regress:
 --
 -- 1. Absent when no session is active (active=false) or never published.
--- 2. Visible for the whole session: `OppoRemote·ok` while healthy.
+-- 2. Visible for the whole session: `OppoRemote·OK` while healthy.
 -- 3. Stalled now → crit; shows seconds when a queue-delay reading exists,
 --    otherwise the 5-min stall share (encoder-dropping stalls carry no lag).
 -- 4. Recovered but ≥warn_pct of the last 5 min stalled → warn with the share.
@@ -66,9 +66,9 @@ it('inactive session renders nothing (fresh or stale)', function()
   assert_eq(rs.format_text(S { active = false }, false), nil)
 end)
 
-it('healthy active session shows OppoRemote·ok', function()
+it('healthy active session shows OppoRemote·OK', function()
   local text, level = rs.format_text(S { active = true, state = 'ok', stall_pct_5m = 3, device = 'OPPO Pad 5 Pro' }, true)
-  assert_eq(text, ' OppoRemote·ok ')
+  assert_eq(text, ' OppoRemote·OK ')
   assert_eq(level, 'ok')
 end)
 
@@ -98,7 +98,7 @@ end)
 
 it('label does not depend on the client device', function()
   local text = rs.format_text(S { active = true, state = 'ok', device = 'Find X8' }, true)
-  assert_eq(text, ' OppoRemote·ok ')
+  assert_eq(text, ' OppoRemote·OK ')
 end)
 
 it('render reads the file and honours heartbeat staleness', function()
@@ -111,7 +111,7 @@ it('render reads the file and honours heartbeat staleness', function()
       if p.Text then return p.Text end
     end
   end
-  assert_eq(text_of(rs.render_status_segment(palette)), ' OppoRemote·ok ')
+  assert_eq(text_of(rs.render_status_segment(palette)), ' OppoRemote·OK ')
   fake_now_ms = fake_now_ms + 30000
   assert_eq(text_of(rs.render_status_segment(palette)), ' OppoRemote·? ')
 end)

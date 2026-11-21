@@ -321,7 +321,7 @@ local base_constants = {
   -- OPPO 互联 remote badge (right-status, after SessionBridge). Producer
   -- is wezterm-oppo-remote.service (2 s while a session is active, 30 s
   -- idle); 20 s stale → `OppoRemote·?`. warn_pct = stalled share of the last
-  -- 5 min that turns `OppoRemote·ok` amber.
+  -- 5 min that turns `OppoRemote·OK` amber.
   oppo_remote = {
     status_file = defaults.default_oppo_remote_status_file(runtime_state_dir, join_path),
     heartbeat_timeout_ms = 20000,

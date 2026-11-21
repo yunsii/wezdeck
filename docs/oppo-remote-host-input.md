@@ -21,7 +21,7 @@ Read the layers in this order; each has its own glanceable signal.
 | 1 | Is the remote **link** stalling? | `OppoRemote·4.4s` / `OppoRemote·76%` red (or `oppo-remote-quality.sh report`) | go to 2 |
 | 2 | Does the **office side** move with the stall? | `episodes` blame `office` (relay/gateway ping degrades with it) | PC uplink / office LAN / WARP |
 | 3 | Office flat, link stalling | blame `beyond-office` | **Pad side**: home router → Pad Wi‑Fi → home ISP ([Home router](#home-router-long-uptime)) |
-| 4 | `OppoRemote·ok` but typing still sticky | console (Notepad on the PC) also sticky? `Memory·` / `LoadAvg·` | **host** stickiness ([Long uptime](#long-uptime--host-memory-local-input)) |
+| 4 | `OppoRemote·OK` but typing still sticky | console (Notepad on the PC) also sticky? `Memory·` / `LoadAvg·` | **host** stickiness ([Long uptime](#long-uptime--host-memory-local-input)) |
 | — | Whole desktop “new login / PIN” mid-work | — | RDP auto-reconnect — [`diagnostics.md#open-questions`](./diagnostics.md#open-questions) §21 |
 
 `OppoRemote·` only proves the stream backed up; it cannot see inside the PC
@@ -166,7 +166,7 @@ scripts/dev/oppo-remote-quality.sh episodes         # recorded stalls + blame
 | Badge | Meaning |
 |---|---|
 | (absent) | no active O+ Connect session |
-| `OppoRemote·ok` (muted) | connected, <10 % of the last 5 min stalled |
+| `OppoRemote·OK` (muted) | connected, <10 % of the last 5 min stalled |
 | `OppoRemote·23%` (amber) | not stalled now, but 23 % of the last 5 min was |
 | `OppoRemote·4.4s` / `OppoRemote·76%` (red) | stalled now — picture ~4.4 s behind, or (no delay reading) 76 % of the last 5 min stalled |
 | `OppoRemote·?` | session active but the producer went stale (>20 s) |

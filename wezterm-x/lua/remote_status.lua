@@ -13,7 +13,7 @@
 -- session: knowing the PC is being driven from the Pad is itself the signal.
 --
 --   (absent)   no active remote session, or never published
---   OppoRemote·ok     connected, < warn_pct of the last 5 min stalled (muted)
+--   OppoRemote·OK     connected, < warn_pct of the last 5 min stalled (muted)
 --   OppoRemote·23%    not stalled right now, but ≥ warn_pct of last 5 min was (amber)
 --   OppoRemote·4.4s   stalled now; picture ~4.4 s behind (red)
 --   OppoRemote·76%    stalled now without a queue-delay reading (encoder dropping) (red)
@@ -129,7 +129,7 @@ function M.format_text(state, fresh)
   if pct >= warn_pct then
     return string.format(' %s·%d%% ', name, pct), 'warn'
   end
-  return ' ' .. name .. '·ok ', 'ok'
+  return ' ' .. name .. '·OK ', 'ok'
 end
 
 function M.render_status_segment(palette)
