@@ -540,6 +540,10 @@ def cmd_parse(ns: argparse.Namespace) -> int:
     (run_dir / f"{ns.run_id}.json").write_text(
         json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+    if rec["final_text"]:
+        # full final answer for callers that parse a JSON verdict (read mode
+        # cannot write result files); retention prunes it with the stream
+        (run_dir / f"{ns.run_id}.final.txt").write_text(rec["final_text"], encoding="utf-8")
     summary = {k: record[k] for k in (
         "backend", "model", "turns", "tokens", "cache_hit_rate", "cost_usd",
         "wall_ms", "tool_calls", "denials", "errors", "rss_peak_mb", "exit")}

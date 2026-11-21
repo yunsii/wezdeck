@@ -40,7 +40,7 @@
 #       decision table: ticket × worktree (exists/dirty/ahead/age → suggest)
 #   run.sh walkthrough [--seed]
 #   run.sh reindex | selfcheck
-#   run.sh api health|list|show|events|run|prompt|transcript|metrics … (read-only JSON, schema/)
+#   run.sh api …(read-only JSON, schema/) · run.sh collab plan|add|run|status (parent/child scheduler)
 #
 # Tickets live under ~/.agent/tickets (override: DELEGATE_TICKETS_ROOT).
 # Three modes: create | claim(session develop) | create --run (delegate develop).
@@ -1429,6 +1429,6 @@ case "$cmd" in
   walkthrough) cmd_walkthrough "$@" ;;
   reindex) cmd_reindex "$@" ;;
   selfcheck) cmd_selfcheck "$@" ;;
-  api) exec python3 "$TOOL_ROOT/lib/api.py" "$@" ;;
+  api|collab) exec python3 "$TOOL_ROOT/lib/$cmd.py" "$@" ;;
   *) usage; delegate_die "unknown command: $cmd" ;;
 esac

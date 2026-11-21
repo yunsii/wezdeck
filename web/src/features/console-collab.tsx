@@ -5,35 +5,20 @@ import { useState } from 'react'
 import { Select } from '#/components/ui/select'
 import { getCollab } from '#/lib/runtime-client'
 import type {
+  CollabShow,
   CollabMetrics,
   CollabRunSummary,
   CollabTicket,
 } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
 import { useRuntimeData } from './console-data'
+import { RunDetail } from './console-collab-run'
+import { num, pct, secs, usd } from './console-collab-format'
 import { Inspector, Reading } from './inspector'
 import type { InspectorItem } from './inspector'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
-
-function pct(value: number | null | undefined) {
-  return typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : '—'
-}
-
-function num(value: number | null | undefined, digits = 0) {
-  return typeof value === 'number'
-    ? value.toLocaleString(undefined, { maximumFractionDigits: digits })
-    : '—'
-}
-
-function usd(value: number | null | undefined) {
-  return typeof value === 'number' ? `$${value.toFixed(3)}` : '—'
-}
-
-function secs(ms: number | null | undefined) {
-  return typeof ms === 'number' ? `${(ms / 1000).toFixed(1)}s` : '—'
-}
 
 function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
   if (ticket.running.length > 0) return 'running'
@@ -136,7 +121,7 @@ export function ConsoleCollabPage() {
         }
         reading={
           current ? (
-            <TicketReading id={current} poll={poll} />
+            <TicketReading id={current} poll={poll} onOpen={setSelected} />
           ) : (
             <Reading
               title={t`No ticket selected`}
@@ -176,6 +161,13 @@ function MetricsBand({
       value: `${pct(reuse.resume?.cache_hit_rate)} / ${pct(reuse.fresh?.cache_hit_rate)}`,
     },
     { label: t`Cost`, value: usd(metrics?.cost_usd) },
+    {
+      label: t`Parallelism`,
+      value:
+        typeof metrics?.realized_parallelism === 'number'
+          ? `${metrics.realized_parallelism}×`
+          : '—',
+    },
     { label: t`Wall p50`, value: secs(metrics?.wall_ms?.p50) },
     { label: t`Peak RSS`, value: `${num(metrics?.rss_peak_mb?.max, 1)} MB` },
   ]
@@ -218,7 +210,15 @@ function MetricsBand({
   )
 }
 
-function TicketReading({ id, poll }: { id: string; poll: number }) {
+function TicketReading({
+  id,
+  poll,
+  onOpen,
+}: {
+  id: string
+  poll: number
+  onOpen: (id: string) => void
+}) {
   const { t } = useLingui()
   const show = useQuery({
     queryKey: ['runtime', 'collab', 'show', id],
@@ -247,6 +247,12 @@ function TicketReading({ id, poll }: { id: string; poll: number }) {
         { label: t`Worktree`, value: ticket.branch ?? ticket.worktree ?? '—' },
       ]}
     >
+      {data.children_detail.length > 0 ? (
+        <ChildrenTable children={data.children_detail} onOpen={onOpen} />
+      ) : null}
+      {data.collab?.integration ? (
+        <IntegrationSummary integration={data.collab.integration} />
+      ) : null}
       <RunTable
         runs={runs}
         selected={currentRun?.run ?? ''}
@@ -344,167 +350,105 @@ function RunTable({
   )
 }
 
-function RunDetail({ run, poll }: { run: string; poll: number }) {
+type CollabChild = CollabShow['children_detail'][number]
+
+function ChildrenTable({
+  children,
+  onOpen,
+}: {
+  children: Array<CollabChild>
+  onOpen: (id: string) => void
+}) {
   const { t } = useLingui()
-  const detail = useQuery({
-    queryKey: ['runtime', 'collab', 'run', run],
-    queryFn: () => getCollab('run', { run }),
-    refetchInterval: (query) => (query.state.data?.running ? poll : false),
-  })
-  const transcript = useQuery({
-    queryKey: ['runtime', 'collab', 'transcript', run],
-    queryFn: () => getCollab('transcript', { run, tail: 200 }),
-    refetchInterval: () => (detail.data?.running ? poll : false),
-  })
-  const [showPrompt, setShowPrompt] = useState(false)
-  const launch = detail.data?.launch
-  const sha = launch?.prompt.store_sha256 ?? ''
-  const prompt = useQuery({
-    queryKey: ['runtime', 'collab', 'prompt', sha],
-    queryFn: () => getCollab('prompt', { sha }),
-    enabled: showPrompt && Boolean(sha),
-  })
-  if (!launch) return null
-  const record = detail.data?.record
-  const tokens = record?.tokens
+  const byId = new Map(children.map((child) => [child.id, child]))
   return (
-    <section className="grid gap-3" aria-label={t`Run detail`}>
-      <h2 className="text-sm font-semibold">{t`Launch`}</h2>
-      <dl className="grid gap-px bg-brand-border sm:grid-cols-2">
-        {[
-          {
-            label: t`Trigger`,
-            value: `${launch.trigger?.source ?? '?'} · ${launch.trigger?.actor ?? ''}`,
-          },
-          {
-            label: t`Origin session`,
-            value: launch.trigger?.origin_session ?? '—',
-          },
-          { label: t`Command`, value: launch.trigger?.cmdline ?? '—' },
-          {
-            label: t`Session`,
-            value: `${launch.session?.reuse ?? '?'} · ${launch.session?.reason ?? ''}${
-              launch.session?.from
-                ? ` ← ${launch.session.from.slice(0, 8)}`
-                : ''
-            }`,
-          },
-          {
-            label: t`Backend`,
-            value: `${launch.invocation.backend} · ${record?.model ?? launch.invocation.model ?? ''} · ${launch.invocation.mode}`,
-          },
-          {
-            label: t`Base commit`,
-            value: launch.invocation.base_sha?.slice(0, 12) ?? '—',
-          },
-          {
-            label: t`Initial prompt`,
-            value: `${num(launch.prompt.est_tokens)} tok est · ${num(launch.prompt.bytes)} B${
-              launch.prompt.redactions?.length
-                ? ` · redacted ${launch.prompt.redactions.join(',')}`
-                : ''
-            }`,
-          },
-          {
-            label: t`Tokens in / cache r / cache w / out`,
-            value: `${num(tokens?.input)} / ${num(tokens?.cache_read)} / ${num(tokens?.cache_write)} / ${num(tokens?.output)}`,
-          },
-        ].map((fact) => (
-          <div key={fact.label} className="bg-brand-deck px-3 py-2">
-            <dt className="text-xs text-brand-label">{fact.label}</dt>
-            <dd className="mt-1 font-mono text-xs break-all">{fact.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <div className="overflow-x-auto border border-brand-border">
-        <table
-          className="w-full text-left font-mono text-xs"
-          aria-label={t`Prompt composition`}
-        >
-          <thead className="bg-brand-deck text-brand-label">
-            <tr>
-              <th className="px-2 py-1 font-normal">{t`Part`}</th>
-              <th className="px-2 py-1 font-normal">{t`Source`}</th>
-              <th className="px-2 py-1 font-normal">{t`Version`}</th>
-              <th className="px-2 py-1 font-normal">{t`Bytes`}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {launch.composition.map((part, index) => (
-              <tr
-                key={`${part.kind}-${index}`}
-                className="border-t border-brand-border"
-              >
-                <td className="px-2 py-1">{part.kind}</td>
-                <td className="px-2 py-1 break-all">{part.source ?? '—'}</td>
-                <td className="px-2 py-1">
-                  {(part.git_blob ?? part.sha256 ?? '').slice(0, 10) || '—'}
-                </td>
-                <td className="px-2 py-1">{num(part.bytes)}</td>
-              </tr>
+    <div className="overflow-x-auto border border-brand-border">
+      <table
+        className="w-full text-left font-mono text-xs"
+        aria-label={t`Children`}
+      >
+        <thead className="bg-brand-deck text-brand-label">
+          <tr>
+            {[
+              t`Child`,
+              t`Repo`,
+              t`Status`,
+              t`Depends on`,
+              t`Scope`,
+              t`Cache hit`,
+            ].map((head) => (
+              <th key={head} className="px-2 py-1.5 font-normal">
+                {head}
+              </th>
             ))}
-          </tbody>
-        </table>
-      </div>
-      <button
-        type="button"
-        className="justify-self-start border border-brand-border px-3 py-1.5 text-xs text-brand-muted hover:border-brand-running hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:outline-none"
-        onClick={() => setShowPrompt((value) => !value)}
-        aria-expanded={showPrompt}
-      >
-        {showPrompt ? t`Hide initial prompt` : t`Show initial prompt`}
-      </button>
-      {showPrompt ? (
-        <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-xs whitespace-pre-wrap text-brand-muted">
-          {prompt.data?.ok
-            ? prompt.data.text
-            : (prompt.data?.error?.message ?? t`Loading…`)}
-        </pre>
-      ) : null}
-      <h2 className="text-sm font-semibold">
-        {t`Transcript`}{' '}
-        <span className="font-mono text-xs font-normal text-brand-label">
-          {detail.data?.running ? t`live` : ''} {num(transcript.data?.total)}
-        </span>
-      </h2>
-      <ol
-        className="grid max-h-96 gap-px overflow-auto border border-brand-border bg-brand-border font-mono text-xs"
-        aria-label={t`Transcript`}
-      >
-        {(transcript.data?.lines ?? []).map((line, index) => {
-          const row = line as Record<string, unknown>
-          const text =
-            line.kind === 'tool'
-              ? `${String(row.name ?? '')} ${String(row.target ?? '')}`
-              : line.kind === 'milestone'
-                ? String(row.text ?? '')
-                : line.kind === 'run_end'
-                  ? `exit ${String(row.exit)} · ${pct(row.cache_hit_rate as number)} · ${usd(row.cost_usd as number)}`
-                  : String(row.message ?? row.reuse ?? row.session_id ?? '')
-          return (
-            <li
-              key={`${line.seq ?? index}`}
-              className="grid grid-cols-[6rem_minmax(0,1fr)] gap-2 bg-brand-deck px-2 py-1"
+          </tr>
+        </thead>
+        <tbody>
+          {children.map((child) => (
+            <tr
+              key={child.id}
+              tabIndex={0}
+              onClick={() => onOpen(child.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  onOpen(child.id)
+                }
+              }}
+              className="cursor-pointer border-t border-brand-border outline-none hover:bg-brand-soft/60 focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
             >
-              <span
+              <td className="px-2 py-1.5">{child.title || child.id}</td>
+              <td className="px-2 py-1.5">{child.to ?? '—'}</td>
+              <td
                 className={cn(
-                  line.kind === 'milestone' && 'text-brand-running',
-                  line.kind === 'error' && 'text-brand-error',
-                  'text-brand-label',
+                  'px-2 py-1.5',
+                  child.running.length > 0 && 'text-brand-running',
+                  child.status === 'waiting_initiator' && 'text-brand-waiting',
+                  child.status === 'failed' && 'text-brand-error',
                 )}
               >
-                {line.kind}
-              </span>
-              <span className="break-all text-brand-muted">{text}</span>
-            </li>
-          )
-        })}
-      </ol>
-      {record?.final_text_tail ? (
-        <pre className="overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-xs whitespace-pre-wrap text-brand-muted">
-          {record.final_text_tail}
-        </pre>
-      ) : null}
+                {child.running.length > 0 ? t`running` : child.status}
+              </td>
+              <td className="px-2 py-1.5">
+                {child.depends_on
+                  .map((dep) => byId.get(dep)?.title ?? dep.slice(-6))
+                  .join(', ') || '—'}
+              </td>
+              <td className="px-2 py-1.5">{child.scope.join(', ') || '*'}</td>
+              <td className="px-2 py-1.5">
+                {pct(child.last_run?.cache_hit_rate)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function IntegrationSummary({
+  integration,
+}: {
+  integration: NonNullable<NonNullable<CollabShow['collab']>['integration']>
+}) {
+  const { t } = useLingui()
+  return (
+    <section aria-label={t`Integration`} className="grid gap-1">
+      <h2 className="text-sm font-semibold">{t`Integration`}</h2>
+      {Object.entries(integration).map(([repo, info]) => (
+        <p key={repo} className="font-mono text-xs text-brand-muted">
+          {repo}:{' '}
+          {info.conflict ? (
+            <span className="text-brand-error">
+              {t`conflict`} ({info.conflict.files.join(', ')})
+            </span>
+          ) : info.skipped ? (
+            info.skipped
+          ) : (
+            `${t`merged`} ${info.merged.length} → ${info.branch ?? ''}`
+          )}
+        </p>
+      ))}
     </section>
   )
 }

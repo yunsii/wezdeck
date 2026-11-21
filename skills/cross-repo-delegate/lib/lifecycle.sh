@@ -27,7 +27,9 @@ delegate_prepare_worker_cwd() {
     if [[ -z "$wt_path" || ! -d "$wt_path" ]]; then
       wt_path="$(delegate_ensure_worktree "$to_path" "$id" "$title")"
     fi
-    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" ID="$id" WT="$wt_path" BR="${DELEGATE_WORKTREE_BRANCH:-}" python3 - <<'PY'
+    # delegate_ensure_worktree ran in $(…), so its DELEGATE_WORKTREE_BRANCH never reached us: read it back
+    env DELEGATE_TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" ID="$id" WT="$wt_path" \
+      BR="$(git -C "$wt_path" rev-parse --abbrev-ref HEAD 2>/dev/null || true)" python3 - <<'PY'
 import importlib.util, os
 spec = importlib.util.spec_from_file_location(
     "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")

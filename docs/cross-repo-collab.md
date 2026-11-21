@@ -48,26 +48,27 @@ multi-dir mount), [`workspaces.md`](workspaces.md) (worktrees),
 ## 3. Concepts
 
 ```
-parent ticket (协同单)
- ├─ plan run          → contract.md (interfaces, order, per-child path scope)
- ├─ child ticket A    (repo X, worktree delegate-A)  ─┐
- ├─ child ticket B    (repo X, worktree delegate-B)  ─┼─ parallel when gates allow
- ├─ child ticket C    (repo Y, worktree delegate-C)  ─┘
- └─ integration child (depends_on A,B,C; fresh session; merges + cross-verifies)
+parent ticket (协同单, meta.kind=parent)   delegate collab plan --contract FILE
+ ├─ contract.md       interfaces, order, per-child path scope (authored by the
+ │                    initiating TUI agent; embedded into every child prompt)
+ ├─ child A  (repo X, worktree delegate-A, scope src/a/**)  ─┐
+ ├─ child B  (repo X, worktree delegate-B, scope src/b/**)  ─┼─ parallel when gates allow
+ ├─ child C  (repo Y, depends_on A)                         ─┘
+ └─ integration step  merge child branches per repo → fresh-session verify
 ```
 
-- **Ticket.** The existing model. A **child** is a ticket with `parent` and
-  `depends_on` fields, so every existing verb works on it unchanged.
-- **Parent statuses:** `planning → dispatching → running → integrating → done`.
-  The side exits are `waiting_human` and `failed`. Each child keeps the
-  existing status set.
-- **Run.** One agent process invocation, with an id of the form `run-<ts>-<hex6>`.
-  A ticket has many runs: phases, retries, resumes.
+- **Ticket.** The existing model. A **child** is a ticket whose `meta.json`
+  carries `parent`, `depends_on` and `scope`, so claim / challenge / reply work
+  on it unchanged. `delegate collab add` creates one.
+- **Parent phases** (ticket `phase`): `planning → running → integrating →
+  done`; side exits `waiting_initiator` with phase `running` (a child waits on
+  a human or failed), `integration_conflict`, `verify_failed`.
+- **Run.** One agent process invocation (`run-<ts>-<hex6>`). A ticket has many
+  runs: phases, retries, resumes, integration verify.
 - **Session.** The backend's conversation id. One session can span several
   runs (resume) or branch off another (fork).
 - **Read-only multi-repo research** (fe1's current mode) stays a single run
-  over a shared parent dir: `delegate create --mode research --repos a,b,c`.
-  Any write always splits into children.
+  over a shared parent dir. Any write always splits into children.
 
 ## 4. Session launch observability (initial message and why)
 
@@ -123,35 +124,54 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
 `small_history`, `stale_cache`, `forced_independent`, `backend_changed` or
 `no_prior`. That makes the threshold tunable from data.
 
-## 6. Scheduler
+## 6. Scheduler (`lib/collab.py`)
 
-- **Entry point.** `delegate run --parent <id>` starts a detached scheduler:
-  - It runs via `setsid` with a pid file, plus a single lock
-    `.locks/scheduler.<parent>.lock`.
-  - When started from a tmux popup, it runs through `tmux run-shell -b`, since
-    popups kill their children.
-  - One scheduler drives one parent. A global semaphore lives in
-    `.locks/slots/` (one lockfile per slot) so parallel parents share the cap.
-- **Gates.** Each candidate child is checked in order. The first failing gate
-  emits a `queued` event with its reason:
-  1. `deps`: every `depends_on` child is `shipped`.
-  2. `slot`: a global slot is free (`DELEGATE_MAX_PARALLEL`, default 3).
-  3. `repo_cap`: per-repo running count is below `DELEGATE_MAX_PER_REPO` (default 2).
-  4. `path_overlap`: the child's `scope` globs from `contract.md` do not intersect any running child in the same repo.
-  5. `mem`: `MemAvailable − running × DELEGATE_RUN_MEM_MB (default 1500)` stays above `DELEGATE_MEM_FLOOR_MB` (default 2048). This reuses the same `/proc/meminfo` read as the `Memory·` badge.
-- **Re-evaluation.** Gates are re-checked on every child exit and every 15 s.
-- **Failure handling.**
-  - A failed child retries once (resume if warm).
-  - If it fails again: the child goes to `failed` and the parent to `waiting_human`.
-  - If the scheduler itself dies, leases expire and children return to the
-    inbox. `delegate run --parent` resumes from the store.
-- **Integration child.**
-  1. Creates `delegate/<parent>-integration` from `origin/HEAD` in each repo.
-  2. Merges the child branches in dependency order.
-  3. On conflict: emits a `merge` event with `result: conflict`, aborts, and sets the parent to `waiting_human`.
-  4. Otherwise runs a fresh agent to cross-verify the work against
-     `contract.md`, reusing fe1's `verifyAcross` approach for `slug@sha` and
-     `slug:path:line` refs.
+- **Entry point.** `delegate collab run --parent <id> [--detach]`. It holds
+  `.locks/scheduler.<parent>.lock` (one scheduler per parent) and writes
+  `_data/<parent>/scheduler.pid`; `--detach` re-execs in a new session with
+  its log at `_data/<parent>/scheduler.log`. Rerunning is safe: it picks up
+  from the store (after a human `reply`, or after fixing a conflict).
+- **Children** run as `run.sh run --id <child> --phase auto` subprocesses with
+  `DELEGATE_TRIGGER_SOURCE=parent`, so each child keeps its own worktree,
+  lease, session reuse and run records.
+- **Gates**, in order; the first failing one emits a `queued` event on the
+  parent (only when the reason changes):
+  1. `deps` — every `depends_on` child is `shipped`/`closed` (`blocked` when a
+     dependency failed or waits on a human).
+  2. `slot` — this scheduler's `--max-parallel` and a free lock in the global
+     pool `.locks/slots/` (`DELEGATE_MAX_PARALLEL`, default 3) shared by all
+     parents.
+  3. `repo_cap` — running children in the same repo < `DELEGATE_MAX_PER_REPO` (2).
+  4. `path_overlap` — scope prefixes (glob text before the first wildcard) do
+     not overlap a running sibling in the same repo; no scope = whole repo.
+  5. `mem` — `MemAvailable − DELEGATE_RUN_MEM_MB (1500) ≥ DELEGATE_MEM_FLOOR_MB
+     (2048)`. MemAvailable already reflects running children, so they are not
+     subtracted twice. Tests point `DELEGATE_MEMINFO_PATH` at a fake file.
+- **Events on the parent:** `scheduler_start`, `queued`, `dispatched` (slot,
+  queue wait, attempt, pid, MemAvailable), `child_exit`, `retry`, `merge`,
+  `verify`, `scheduler_end` (done / waiting / failed / blocked, peak
+  parallelism, wall time). `api metrics --parent` adds `realized_parallelism`
+  = Σ run wall ÷ (last end − first start).
+- **Failure handling.** A child that exits without a terminal status is
+  dispatched once more (its session resumes when warm); a second miss marks it
+  `failed`. A child in `waiting_initiator` blocks its dependents; when nothing
+  else can start the parent goes to `waiting_initiator` and the scheduler exits.
+- **Integration step** (after every child shipped; `--no-integrate` skips):
+  1. Per repo, a worktree `.worktrees/<repo>/delegate-<parent>-integration` on
+     branch `delegate/<parent>-integration` from `origin/HEAD`.
+  2. Implement workers edit without committing, so each child's worktree
+     changes are first committed onto its own `delegate/<id>` branch
+     (`snapshot` event; `.delegate/` excluded; the repo's `.gitignore`
+     applies). Branches then merge `--no-ff` in dependency order; merged ones
+     are skipped, so reruns are idempotent.
+  3. Conflict → `merge --abort`, a `merge` event with the conflicted files,
+     parent `waiting_initiator` / `integration_conflict`.
+  4. Otherwise a **fresh** read-only verify run per repo
+     (`prompts/integrate.md`: contract + merged diffstat; reuse reason
+     `forced_independent`) prints a `{"verdict","findings"}` JSON, read from
+     `runs/<run>.final.txt`. Pass → parent `shipped` / `done`.
+- **Deferred:** a plan agent that drafts `contract.md` (and fork from its
+  session into children); today the initiating TUI agent writes the contract.
 
 ## 7. Data layout
 
@@ -335,20 +355,12 @@ anything runs, 30 s idle). Verified with the mock runtime proxying the real
 `delegate api` over the e2e store and `web/tests/collab.cdp.test.ts` (headless
 CDP). Parent swimlanes wait for P2's parent/child model.
 
-**P2: parent/child + scheduler.** Covers:
-
-- `create --parent` / `--depends-on` / `--scope`;
-- the plan phase that writes `contract.md`;
-- the scheduler with its gates, the integration child, and the plan → child fork.
-
-Verify with a mock DAG of 3 repos × 2 worktrees (`DELEGATE_WORKER_MOCK`, fake
-`/proc/meminfo` via `DELEGATE_MEMINFO_PATH`). Assert:
-
-- the slot, repo and memory caps;
-- `path_overlap` serialization;
-- a conflict produces `waiting_human`;
-- after a scheduler kill, leases expire and `run --parent` resumes;
-- reuse reasons are recorded per run.
+**P2 (landed 2026-11-21): parent/child + scheduler.** `lib/collab.py`,
+`prompts/integrate.md`, contract embedding in child phase views, `api show`
+children/integration, `api metrics --parent` parallelism, Collab page children
+table. Offline: `test-collab.sh` (caps, overlap serialization, deps order, mem
+gate hold/resume, human gate blocking, retry, merge ok/conflict, verdict
+parser). Live e2e result is in §13.
 
 **P3: fe1 web.** The local-service routes and the pages. Verify with fe1's
 oRPC contract tests against recorded `delegate api` fixtures, plus a page CDP
@@ -377,7 +389,7 @@ the same change, following the standing policy.
 | C# route change needs a Windows release | Bundle P1 into one release. The bridge allowlist keeps later actions C#-free where possible |
 | Same-repo branches drift semantically despite clean merges | The integration child's fresh-session verify, plus the existing delivery gate before ship |
 
-## 13. P0 measurements (2026-11-21, closed)
+## 13. Measurements (2026-11-21)
 
 | Question | Result | Consequence |
 | --- | --- | --- |
@@ -386,6 +398,8 @@ the same change, following the standing policy.
 | Codex `exec resume` / `fork` with write flags? | Both accept `--json`, but **not** `--full-auto` / `--sandbox` | resume/fork pass `-c sandbox_mode=… -c approval_policy="never"`. Live run still unverified: the codex gateway returned 503 during the probe; the codex fixture is synthetic |
 | Prompt-cache sharing between fresh sessions? | Claude fresh sessions share ~12.3k tokens (tool block) regardless of cwd; the rest is written per session. Resume/fork read ~19k | fork / resume is the only way to share real context |
 | Real e2e (scratch repos, Claude) | research fresh: hit 75.3%, 19 s, 304 MB · implement resumed (`warm_cache`, idle 14 s): hit **94.9%**, 15 s, 300 MB | resume is the default inside a role chain |
+
+| P2 real e2e (3 scratch repos, Claude) | A ∥ B in one repo (disjoint scopes), C queued on `deps` until A shipped; peak 3, 113 s; children resume hit 95.2% vs fresh 77.9%; integration snapshot + merge 2 + 1 branches, two fresh verify runs pass; merged code matches the contract | found + fixed: `meta.json` `branch` was never recorded (set in a `$(…)` subshell), and verify reported `pass` when nothing merged (now `skipped` → `done_unmerged`) |
 
 Still open: a live codex run once its gateway is back (`delegate create … --run
 --backend codex` against a scratch target), then replace the synthetic fixture.

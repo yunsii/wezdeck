@@ -31,7 +31,7 @@ msgstr "A local-first control plane for AI coding agents, built on WezTerm, tmux
 msgid "A local-first workbench for AI coding agents."
 msgstr "A local-first workbench for AI coding agents."
 
-#: src/features/console-collab.tsx:127
+#: src/features/console-collab.tsx:112
 msgid "Active"
 msgstr "Active"
 
@@ -55,7 +55,7 @@ msgstr "All categories"
 msgid "All levels"
 msgstr "All levels"
 
-#: src/features/console-collab.tsx:126
+#: src/features/console-collab.tsx:111
 msgid "All statuses"
 msgstr "All statuses"
 
@@ -67,11 +67,11 @@ msgstr "All time"
 msgid "An example. Select a session to see where you would jump back."
 msgstr "An example. Select a session to see where you would jump back."
 
-#: src/features/console-collab.tsx:393
+#: src/features/console-collab-run.tsx:55
 msgid "Backend"
 msgstr "Backend"
 
-#: src/features/console-collab.tsx:397
+#: src/features/console-collab-run.tsx:59
 msgid "Base commit"
 msgstr "Base commit"
 
@@ -79,12 +79,13 @@ msgstr "Base commit"
 msgid "Branch"
 msgstr "Branch"
 
-#: src/features/console-collab.tsx:429
+#: src/features/console-collab-run.tsx:91
 msgid "Bytes"
 msgstr "Bytes"
 
-#: src/features/console-collab.tsx:173
-#: src/features/console-collab.tsx:288
+#: src/features/console-collab.tsx:158
+#: src/features/console-collab.tsx:294
+#: src/features/console-collab.tsx:378
 msgid "Cache hit"
 msgstr "Cache hit"
 
@@ -96,6 +97,14 @@ msgstr "Capabilities"
 #: src/features/console-diagnostics.tsx:72
 msgid "Category"
 msgstr "Category"
+
+#: src/features/console-collab.tsx:373
+msgid "Child"
+msgstr "Child"
+
+#: src/features/console-collab.tsx:368
+msgid "Children"
+msgstr "Children"
 
 #: src/features/console-development.tsx:100
 msgid "Close requested"
@@ -113,21 +122,25 @@ msgstr "Close VS Code window"
 msgid "Collab"
 msgstr "Collab"
 
-#: src/features/console-collab.tsx:112
+#: src/features/console-collab.tsx:97
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
-#: src/features/console-collab.tsx:184
+#: src/features/console-collab.tsx:176
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
-#: src/features/console-collab.tsx:107
+#: src/features/console-collab.tsx:92
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
-#: src/features/console-collab.tsx:383
+#: src/features/console-collab-run.tsx:45
 msgid "Command"
 msgstr "Command"
+
+#: src/features/console-collab.tsx:443
+msgid "conflict"
+msgstr "conflict"
 
 #: src/features/console-shell.tsx:71
 msgid "Console navigation"
@@ -137,12 +150,12 @@ msgstr "Console navigation"
 msgid "Control"
 msgstr "Control"
 
-#: src/features/console-collab.tsx:178
-#: src/features/console-collab.tsx:289
+#: src/features/console-collab.tsx:163
+#: src/features/console-collab.tsx:295
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/console-collab.tsx:188
+#: src/features/console-collab.tsx:180
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -161,6 +174,10 @@ msgstr "Deck"
 #: src/features/console-shared.tsx:213
 msgid "Degraded"
 msgstr "Degraded"
+
+#: src/features/console-collab.tsx:376
+msgid "Depends on"
+msgstr "Depends on"
 
 #: src/features/console-shell.tsx:85
 msgid "Development"
@@ -212,11 +229,11 @@ msgstr "Example"
 msgid "Example agent sessions"
 msgstr "Example agent sessions"
 
-#: src/features/console-collab.tsx:292
+#: src/features/console-collab.tsx:298
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/console-collab.tsx:133
+#: src/features/console-collab.tsx:118
 msgid "Finished"
 msgstr "Finished"
 
@@ -228,7 +245,7 @@ msgstr "Follow system theme"
 msgid "Git"
 msgstr "Git"
 
-#: src/features/console-collab.tsx:455
+#: src/features/console-collab-run.tsx:117
 msgid "Hide initial prompt"
 msgstr "Hide initial prompt"
 
@@ -242,7 +259,7 @@ msgstr "Host signals"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
-#: src/features/console-collab.tsx:401
+#: src/features/console-collab-run.tsx:63
 msgid "Initial prompt"
 msgstr "Initial prompt"
 
@@ -254,6 +271,11 @@ msgstr "Input method"
 #: src/features/console-overview.tsx:53
 msgid "Instance"
 msgstr "Instance"
+
+#: src/features/console-collab.tsx:436
+#: src/features/console-collab.tsx:437
+msgid "Integration"
+msgstr "Integration"
 
 #: src/features/console-development.tsx:51
 msgid "Jump requested"
@@ -286,7 +308,7 @@ msgstr "Last sample"
 msgid "Latest"
 msgstr "Latest"
 
-#: src/features/console-collab.tsx:372
+#: src/features/console-collab-run.tsx:34
 msgid "Launch"
 msgstr "Launch"
 
@@ -298,13 +320,13 @@ msgstr "Level"
 msgid "Light theme"
 msgstr "Light theme"
 
-#: src/features/console-collab.tsx:467
+#: src/features/console-collab-run.tsx:129
 msgid "live"
 msgstr "live"
 
-#: src/features/console-collab.tsx:110
+#: src/features/console-collab-run.tsx:123
+#: src/features/console-collab.tsx:95
 #: src/features/console-collab.tsx:230
-#: src/features/console-collab.tsx:461
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-shared.tsx:211
@@ -319,7 +341,11 @@ msgstr "Local-first control plane"
 msgid "Log stream"
 msgstr "Log stream"
 
-#: src/features/console-collab.tsx:193
+#: src/features/console-collab.tsx:448
+msgid "merged"
+msgstr "merged"
+
+#: src/features/console-collab.tsx:185
 msgid "Metrics window"
 msgstr "Metrics window"
 
@@ -327,7 +353,7 @@ msgstr "Metrics window"
 msgid "No active agent sessions"
 msgstr "No active agent sessions"
 
-#: src/features/console-collab.tsx:114
+#: src/features/console-collab.tsx:99
 msgid "No collab tickets yet"
 msgstr "No collab tickets yet"
 
@@ -335,7 +361,7 @@ msgstr "No collab tickets yet"
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
-#: src/features/console-collab.tsx:272
+#: src/features/console-collab.tsx:278
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
@@ -349,7 +375,7 @@ msgstr "No matching log entries"
 msgid "No repositories in this workspace."
 msgstr "No repositories in this workspace."
 
-#: src/features/console-collab.tsx:142
+#: src/features/console-collab.tsx:127
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -405,7 +431,7 @@ msgstr "Open web console"
 msgid "Optional browser companion"
 msgstr "Optional browser companion"
 
-#: src/features/console-collab.tsx:380
+#: src/features/console-collab-run.tsx:42
 msgid "Origin session"
 msgstr "Origin session"
 
@@ -417,15 +443,19 @@ msgstr "Overview"
 msgid "Owner"
 msgstr "Owner"
 
-#: src/features/console-collab.tsx:426
+#: src/features/console-collab.tsx:165
+msgid "Parallelism"
+msgstr "Parallelism"
+
+#: src/features/console-collab-run.tsx:88
 msgid "Part"
 msgstr "Part"
 
-#: src/features/console-collab.tsx:180
+#: src/features/console-collab.tsx:172
 msgid "Peak RSS"
 msgstr "Peak RSS"
 
-#: src/features/console-collab.tsx:285
+#: src/features/console-collab.tsx:291
 msgid "Phase"
 msgstr "Phase"
 
@@ -437,7 +467,7 @@ msgstr "Process"
 msgid "Progress"
 msgstr "Progress"
 
-#: src/features/console-collab.tsx:422
+#: src/features/console-collab-run.tsx:84
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
@@ -449,11 +479,15 @@ msgstr "Prompt composition"
 msgid "Ready"
 msgstr "Ready"
 
+#: src/features/console-collab.tsx:374
+msgid "Repo"
+msgstr "Repo"
+
 #: src/features/console-development.tsx:181
 msgid "Repositories"
 msgstr "Repositories"
 
-#: src/features/console-collab.tsx:175
+#: src/features/console-collab.tsx:160
 msgid "Resume / fresh hit"
 msgstr "Resume / fresh hit"
 
@@ -470,7 +504,7 @@ msgstr "Resumed conversations"
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/console-collab.tsx:211
+#: src/features/console-collab.tsx:203
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
@@ -487,29 +521,30 @@ msgstr "Rime collector"
 msgid "Route"
 msgstr "Route"
 
-#: src/features/console-collab.tsx:291
+#: src/features/console-collab.tsx:297
 msgid "RSS"
 msgstr "RSS"
 
-#: src/features/console-collab.tsx:284
+#: src/features/console-collab.tsx:290
 msgid "Run"
 msgstr "Run"
 
-#: src/features/console-collab.tsx:371
+#: src/features/console-collab-run.tsx:33
 msgid "Run detail"
 msgstr "Run detail"
 
-#: src/features/console-collab.tsx:89
+#: src/features/console-collab.tsx:74
+#: src/features/console-collab.tsx:410
 #: src/features/landing-example.tsx:50
 msgid "running"
 msgstr "running"
 
-#: src/features/console-collab.tsx:168
+#: src/features/console-collab.tsx:153
 msgid "Running"
 msgstr "Running"
 
-#: src/features/console-collab.tsx:170
-#: src/features/console-collab.tsx:279
+#: src/features/console-collab.tsx:155
+#: src/features/console-collab.tsx:285
 msgid "Runs"
 msgstr "Runs"
 
@@ -542,7 +577,7 @@ msgstr "Runtime Console shows the local signals."
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 
-#: src/features/console-collab.tsx:115
+#: src/features/console-collab.tsx:100
 msgid "Runtime is offline."
 msgstr "Runtime is offline."
 
@@ -553,6 +588,10 @@ msgstr "Runtime reported reason:"
 #: src/features/landing-example.tsx:168
 msgid "Sample signals. The live console reads your local Runtime."
 msgstr "Sample signals. The live console reads your local Runtime."
+
+#: src/features/console-collab.tsx:377
+msgid "Scope"
+msgstr "Scope"
 
 #: src/features/landing-page.tsx:69
 msgid "See the workbench"
@@ -566,8 +605,8 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/console-collab.tsx:286
-#: src/features/console-collab.tsx:385
+#: src/features/console-collab-run.tsx:47
+#: src/features/console-collab.tsx:292
 msgid "Session"
 msgstr "Session"
 
@@ -576,11 +615,11 @@ msgstr "Session"
 msgid "Session jump failed"
 msgstr "Session jump failed"
 
-#: src/features/console-collab.tsx:171
+#: src/features/console-collab.tsx:156
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-collab.tsx:455
+#: src/features/console-collab-run.tsx:117
 msgid "Show initial prompt"
 msgstr "Show initial prompt"
 
@@ -592,7 +631,7 @@ msgstr "Skip to content"
 msgid "Socket"
 msgstr "Socket"
 
-#: src/features/console-collab.tsx:427
+#: src/features/console-collab-run.tsx:89
 msgid "Source"
 msgstr "Source"
 
@@ -600,7 +639,8 @@ msgstr "Source"
 msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
 
-#: src/features/console-collab.tsx:124
+#: src/features/console-collab.tsx:109
+#: src/features/console-collab.tsx:375
 #: src/features/console-development.tsx:403
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:120
@@ -632,7 +672,7 @@ msgstr "This Runtime does not provide the workspace catalog."
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-collab.tsx:143
+#: src/features/console-collab.tsx:128
 msgid "Tickets appear here when delegate files or runs cross-repo work."
 msgstr "Tickets appear here when delegate files or runs cross-repo work."
 
@@ -652,7 +692,7 @@ msgstr "Today"
 msgid "Today events"
 msgstr "Today events"
 
-#: src/features/console-collab.tsx:409
+#: src/features/console-collab-run.tsx:71
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
 
@@ -661,12 +701,12 @@ msgstr "Tokens in / cache r / cache w / out"
 msgid "Trace ID or text"
 msgstr "Trace ID or text"
 
-#: src/features/console-collab.tsx:465
-#: src/features/console-collab.tsx:472
+#: src/features/console-collab-run.tsx:127
+#: src/features/console-collab-run.tsx:134
 msgid "Transcript"
 msgstr "Transcript"
 
-#: src/features/console-collab.tsx:376
+#: src/features/console-collab-run.tsx:38
 msgid "Trigger"
 msgstr "Trigger"
 
@@ -674,8 +714,8 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/console-collab.tsx:172
-#: src/features/console-collab.tsx:287
+#: src/features/console-collab.tsx:157
+#: src/features/console-collab.tsx:293
 msgid "Turns"
 msgstr "Turns"
 
@@ -699,7 +739,7 @@ msgstr "Unavailable"
 msgid "Uptime"
 msgstr "Uptime"
 
-#: src/features/console-collab.tsx:428
+#: src/features/console-collab-run.tsx:90
 msgid "Version"
 msgstr "Version"
 
@@ -711,12 +751,12 @@ msgstr "View the source"
 msgid "waiting"
 msgstr "waiting"
 
-#: src/features/console-collab.tsx:130
+#: src/features/console-collab.tsx:115
 #: src/features/console-shell.tsx:189
 msgid "Waiting"
 msgstr "Waiting"
 
-#: src/features/console-collab.tsx:169
+#: src/features/console-collab.tsx:154
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
@@ -728,11 +768,11 @@ msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:290
+#: src/features/console-collab.tsx:296
 msgid "Wall"
 msgstr "Wall"
 
-#: src/features/console-collab.tsx:179
+#: src/features/console-collab.tsx:171
 msgid "Wall p50"
 msgstr "Wall p50"
 

@@ -250,6 +250,13 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
         "sessions": mj.get("sessions") or {},
         "sections": sections,
         "children": children,
+        "children_detail": [
+            {**summary(c), "depends_on": ticket_fs.read_meta_json(c).get("depends_on") or [],
+             "scope": ticket_fs.read_meta_json(c).get("scope") or []}
+            for c in children
+        ],
+        "collab": {"kind": mj.get("kind"), "contract_sha256": mj.get("contract_sha256"),
+                   "integration": mj.get("integration")} if mj.get("kind") == "parent" else None,
         "runs": runs,
         "running": in_flight_runs(tid),
     }
@@ -464,9 +471,18 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
                 g["cost_usd"] = round(g["cost_usd"], 4)
         return groups
 
+    parallelism = None
+    spans = [(parse_iso(r.get("started_at")), parse_iso(r.get("ended_at")), r.get("wall_ms"))
+             for _t, r, _l in runs]
+    spans = [(a, b, w) for a, b, w in spans if a is not None and b is not None and isinstance(w, (int, float))]
+    if parent and spans:
+        critical = max(b for _, b, _ in spans) - min(a for a, _, _ in spans)
+        if critical > 0:
+            parallelism = round(sum(w for _, _, w in spans) / 1000 / critical, 2)
     return {
         "window": window,
         "scope": {"ticket": only_ticket, "parent": parent},
+        "realized_parallelism": parallelism,
         "runs": len(runs),
         "failed_runs": failed,
         "sessions": len(sessions),

@@ -78,6 +78,22 @@ fails), turns · tokens · cache hit · cost · peak RSS. Events get a global `s
 Agents print `进展：…` lines that stream as `milestone` events. Design + phases:
 `docs/cross-repo-collab.md`.
 
+**Multi-repo / multi-worktree work (`collab`):** when one intent needs changes in several repos,
+or several independent slices of one repo, the initiating agent writes a contract (interfaces,
+order, per-child `scope` globs) and fans it out instead of one long ticket:
+
+```bash
+P=$("$D" collab plan --from . --title "…" --contract /tmp/contract.md | jq -r .id)
+A=$("$D" collab add --parent "$P" --to <repo> --title "…" --observed "…" --assumed "…" --scope 'src/a/**' | jq -r .id)
+"$D" collab add --parent "$P" --to <repo2> --title "…" --depends-on "$A" --scope 'pkg/**'
+"$D" collab run --parent "$P" --detach        # scheduler: caps, path overlap, mem gate, merge + fresh verify
+"$D" collab status --parent "$P"              # children, scheduler pid, integration
+```
+
+Children are normal tickets (challenge / reply still apply; rerun `collab run` after a reply or a
+merge-conflict fix). Disjoint scopes in the same repo run in parallel worktrees; overlapping
+scopes serialize. Every queue/dispatch/merge/verify decision is an event on the parent.
+
 Policy for **Mode 3**: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing with `--run` means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.
 
 If a ticket is already **session-claimed** (`owner=human`), `run` / `reply --continue` / `watch` **will not** steal the lease unless the user explicitly asks to force headless (`run --steal`). Prefer developing in the claiming TUI.

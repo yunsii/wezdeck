@@ -353,7 +353,7 @@ def retention(*, force: bool = False) -> dict[str, int]:
     referenced: set[str] = set()
     for runs in (r / "_data").glob("*/runs"):
         for p in runs.iterdir():
-            if p.name.endswith(".stream.jsonl") or p.name.endswith(".events.jsonl"):
+            if p.name.endswith((".stream.jsonl", ".events.jsonl", ".final.txt")):
                 if p.stat().st_mtime < cutoff:
                     p.unlink(missing_ok=True)
                     out["streams"] += 1
@@ -442,6 +442,13 @@ def cmd_prepare_run(argv: list[str]) -> int:
         composition.append({
             "kind": "phase_view", "source": f"ticket:{tid}#{phase}",
             "bytes": len(v), "sha256": hashlib.sha256(v).hexdigest(),
+        })
+    contract_file = _opt(argv, "--contract-file")
+    if contract_file and Path(contract_file).is_file():
+        c = Path(contract_file).read_bytes()
+        composition.append({
+            "kind": "contract", "source": f"parent:{Path(contract_file).parent.name}/contract.md",
+            "bytes": len(c), "sha256": hashlib.sha256(c).hexdigest(),
         })
     known = sum(c["bytes"] for c in composition)
     composition.append({"kind": "glue", "bytes": max(stored["bytes"] - known, 0)})

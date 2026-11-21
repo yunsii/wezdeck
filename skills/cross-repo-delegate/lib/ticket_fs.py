@@ -468,7 +468,35 @@ def cmd_phase_view(argv: list[str]) -> int:
     tid, phase = argv[0], argv[1]
     meta, body = read_ticket(tid)
     sys.stdout.write(render_phase_view(meta, body, phase))
+    sys.stdout.write(render_parent_contract(tid))
     return 0
+
+
+def render_parent_contract(tid: str) -> str:
+    """Collab children: embed the parent's contract + this child's scope."""
+    mj = read_meta_json(tid)
+    parent = mj.get("parent")
+    if not parent:
+        return ""
+    path = data_dir(parent) / "contract.md"
+    contract = path.read_text(encoding="utf-8") if path.is_file() else "(parent contract missing)"
+    scope = mj.get("scope") or []
+    deps = mj.get("depends_on") or []
+    lines = [
+        "",
+        f"## Parent contract ({parent}, read-only)",
+        "",
+        contract.rstrip(),
+        "",
+        "## Your scope in this collab",
+        "",
+        "- Allowed paths: " + (", ".join(f"`{g}`" for g in scope) if scope else "whole repo (no scope set)"),
+        "- Depends on (already shipped): " + (", ".join(deps) if deps else "none"),
+        "- Sibling children change other paths in parallel. If the contract is wrong or the work needs "
+        "paths outside your scope, **challenge** instead of editing them.",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def cmd_progress_emit(argv: list[str]) -> int:

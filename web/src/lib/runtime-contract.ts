@@ -297,6 +297,42 @@ export const collabShowSchema = collabEnvelope({
     .array(z.object({ title: z.string(), text: z.string() }))
     .default([]),
   children: z.array(z.string()).default([]),
+  children_detail: z
+    .array(
+      collabTicketSchema.extend({
+        depends_on: z.array(z.string()).default([]),
+        scope: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+  collab: z
+    .object({
+      kind: nstr,
+      contract_sha256: nstr,
+      integration: z
+        .record(
+          z.string(),
+          z
+            .object({
+              worktree: nstr,
+              branch: nstr,
+              merged: z.array(z.string()).default([]),
+              skipped: nstr,
+              conflict: z
+                .object({
+                  child: z.string(),
+                  files: z.array(z.string()).default([]),
+                })
+                .nullable()
+                .optional(),
+            })
+            .passthrough(),
+        )
+        .nullable()
+        .optional(),
+    })
+    .nullable()
+    .optional(),
   runs: z.array(collabRunSummarySchema).default([]),
 })
 
@@ -397,6 +433,7 @@ const collabGroup = z.record(
 
 export const collabMetricsSchema = collabEnvelope({
   window: z.string().default('24h'),
+  realized_parallelism: nnum,
   runs: z.number().default(0),
   failed_runs: z.number().default(0),
   sessions: z.number().default(0),

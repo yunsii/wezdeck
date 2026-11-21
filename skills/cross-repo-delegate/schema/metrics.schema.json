@@ -113,6 +113,12 @@
         },
         "prompt_est_tokens_by_phase": {
           "type": "object"
+        },
+        "realized_parallelism": {
+          "type": [
+            "number",
+            "null"
+          ]
         }
       }
     },
