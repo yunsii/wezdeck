@@ -7,7 +7,7 @@
 -- Producer: `wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh daemon` (systemd user unit
 -- wezterm-oppo-remote.service) tails the vendor's desktop_agent log and
 -- republishes status.json every ~2 s while a remote session is active, every
--- 30 s while idle. See docs/oppo-remote-host-input.md#opporemote-badge.
+-- 10 s while idle. See docs/oppo-remote-host-input.md#opporemote-badge.
 --
 -- Unlike WslDisk· / Memory·, this badge is visible for the whole remote
 -- session: knowing the PC is being driven from the Pad is itself the signal.

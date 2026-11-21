@@ -173,7 +173,7 @@ wezterm-x/plugins/oppo-remote/bin/oppo-remote-quality.sh episodes         # reco
 
 Producer: `oppo-remote-quality.sh daemon` tails the newest
 `desktop_agent.*.log` (session = no `SLUninitialize` yet and written within
-2 min), writes `state/oppo-remote/status.json` every 2 s while active / 30 s
+2 min), writes `state/oppo-remote/status.json` every 2 s while active / 10 s
 idle, and reads the Pad model from `*_main.log` (`deviceName`). While a stall
 is open it pings the office gateway and the OPPO relay (`Server [ip:4118]`
 from the sdk log) every tick, plus a 30 s baseline while healthy, and on close

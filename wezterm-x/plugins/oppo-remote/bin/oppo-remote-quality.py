@@ -377,6 +377,7 @@ def cmd_watch(args, log_dir: Path) -> int:
 STALL_HOLD = 15      # s; mid-stall log gaps reach ~13 s, so a shorter hold flaps
 WINDOW = 300         # s; rolling window for stall_pct_5m
 ACTIVE_IDLE = 120    # s; newest log untouched this long → session gone (crash)
+IDLE_WRITE_S = 10    # s; idle heartbeat — must stay under the badge's 20 s heartbeat_timeout_ms
 RE_SERVER = re.compile(r"Server \[([\d.]+):\d+\] receive public ip")
 RE_DEVNAME = re.compile(r'deviceName"\s*:\s*"([^"]+)"')
 
@@ -532,7 +533,7 @@ def cmd_daemon(args, log_dir: Path) -> int:
         if not active:
             if live.ep:
                 close_episode(live, hist_path, now)
-            if time.time() - last_idle_write >= 30:
+            if time.time() - last_idle_write >= IDLE_WRITE_S:
                 write_json(status_path, {"version": 1, "heartbeat_at_ms": now_ms(), "active": False,
                                          "session": live.path.name if live.path else ""})
                 last_idle_write = time.time()

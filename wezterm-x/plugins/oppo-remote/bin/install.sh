@@ -8,7 +8,7 @@
 #
 # The service runs `oppo-remote-quality.sh daemon`: tails the newest
 # desktop_agent log, republishes state/oppo-remote/status.json (2 s while a
-# session is active, 30 s idle) for the WezTerm `OppoRemote·` badge, and appends
+# session is active, 10 s idle) for the WezTerm `OppoRemote·` badge, and appends
 # stall episodes with an office-vs-beyond blame to episodes.ndjson.
 # Paths are resolved once here and baked into the unit, so the service never
 # needs cmd.exe interop. Docs: docs/oppo-remote-host-input.md#opporemote-badge
