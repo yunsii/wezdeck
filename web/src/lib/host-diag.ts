@@ -11,6 +11,8 @@
 //       never a write control: nothing inside a <form> or [data-write]
 //   {do:"scroll", to:"top"|"bottom"|number}
 //   {do:"wait", ms:800}                    ≤ 10 s
+//   {do:"layout"}  what overflows the viewport: offending elements with
+//                  their box, font size and text; root font size, text zoom
 // Each step records its result and the frames of the next `sample` ms
 // (default 700).
 import type { AnyRouter } from '@tanstack/react-router'
@@ -68,6 +70,45 @@ function findTarget(step: Step): HTMLElement | null {
   )
 }
 
+/** elements sticking out of the viewport (horizontal overflow on a phone) */
+function layoutReport(): Record<string, unknown> {
+  const vw = document.documentElement.clientWidth
+  const box = scroller()
+  const offenders: Array<Record<string, unknown>> = []
+  for (const el of document.querySelectorAll<HTMLElement>('body *')) {
+    const r = el.getBoundingClientRect()
+    // width ≤ 1: visually hidden (sr-only skip link)
+    if (r.width <= 1 || (r.right <= vw + 0.5 && r.left >= -0.5)) continue
+    // the innermost ones say most: skip containers whose children overflow too
+    if (
+      [...el.children].some((c) => c.getBoundingClientRect().right > vw + 0.5)
+    )
+      continue
+    const cs = getComputedStyle(el)
+    offenders.push({
+      tag: el.tagName.toLowerCase(),
+      cls: el.className.toString().slice(0, 120),
+      left: Math.round(r.left),
+      right: Math.round(r.right),
+      width: Math.round(r.width),
+      fontSize: cs.fontSize,
+      whiteSpace: cs.whiteSpace,
+      text: el.textContent.trim().slice(0, 60),
+    })
+    if (offenders.length >= 15) break
+  }
+  const root = getComputedStyle(document.documentElement)
+  return {
+    vw,
+    innerWidth: window.innerWidth,
+    docScrollWidth: document.documentElement.scrollWidth,
+    scroller: box ? [box.scrollWidth, box.clientWidth] : null,
+    rootFontSize: root.fontSize,
+    textSizeAdjust: root.getPropertyValue('text-size-adjust') || null,
+    offenders,
+  }
+}
+
 async function runStep(
   router: AnyRouter,
   step: Step,
@@ -106,6 +147,8 @@ async function runStep(
     case 'wait':
       await new Promise((r) => setTimeout(r, Math.min(step.ms ?? 500, 10_000)))
       return { ok: true }
+    case 'layout':
+      return layoutReport()
   }
   return { skipped: `unknown step ${step.do}` }
 }
