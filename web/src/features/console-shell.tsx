@@ -320,7 +320,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       </div>
       <nav
         aria-label={t`Sections`}
-        className="grid grid-cols-4 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden"
+        className={cn(
+          'grid grid-cols-4 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden',
+          // detail pages are full screen (like a chat): back bar on top, no tabs
+          detail && 'hidden',
+        )}
       >
         {tabs.map((item) => {
           const active = current === item.id

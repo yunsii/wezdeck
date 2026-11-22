@@ -241,6 +241,43 @@ function Bubble({ message }: { message: Message }) {
   )
 }
 
+/**
+ * Land at the newest message, and follow new ones while the reader is at
+ * the bottom. Deferred a few frames: the router's scroll restoration runs
+ * after mount and would otherwise put the page back at the top.
+ */
+function useStickToBottom(
+  end: React.RefObject<HTMLDivElement | null>,
+  count: number,
+) {
+  const stuck = useRef(true)
+  useEffect(() => {
+    if (!count || !stuck.current) return
+    // to the very bottom: the sticky composer would cover the last message
+    // if only the end marker were scrolled into view
+    const go = () => {
+      const scroller = end.current?.closest('.overflow-y-auto')
+      if (scroller) scroller.scrollTop = scroller.scrollHeight
+    }
+    const frame = requestAnimationFrame(() => requestAnimationFrame(go))
+    const timer = setTimeout(go, 150)
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(timer)
+    }
+  }, [count])
+  useEffect(() => {
+    const scroller = end.current?.closest('.overflow-y-auto')
+    if (!scroller) return
+    const onScroll = () => {
+      stuck.current =
+        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 120
+    }
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => scroller.removeEventListener('scroll', onScroll)
+  }, [])
+}
+
 function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const router = useRouter()
@@ -261,9 +298,7 @@ function SessionDetail({ id }: { id: string }) {
   const end = useRef<HTMLDivElement>(null)
   const data = detail.data
   const count = data?.messages?.length ?? 0
-  useEffect(() => {
-    end.current?.scrollIntoView({ block: 'end' })
-  }, [count])
+  useStickToBottom(end, count)
   const back = () => {
     if (window.history.length > 1) router.history.back()
     else
@@ -390,7 +425,7 @@ function SessionDetail({ id }: { id: string }) {
       </div>
 
       <form
-        className="sticky bottom-0 grid gap-1.5 bg-brand-deck pt-1 pb-1"
+        className="sticky bottom-0 grid gap-1.5 bg-brand-deck pt-1 pb-[max(env(safe-area-inset-bottom),0.25rem)]"
         onSubmit={(event) => {
           event.preventDefault()
           if (text.trim()) void run('send', { text })
@@ -425,6 +460,11 @@ function SessionDetail({ id }: { id: string }) {
           <textarea
             id="session-composer"
             value={text}
+            onFocus={(event) => {
+              // keep the composer above the keyboard once it has opened
+              const form = event.currentTarget.form
+              setTimeout(() => form?.scrollIntoView({ block: 'end' }), 300)
+            }}
             onChange={(event) => setText(event.target.value)}
             rows={1}
             placeholder={t`Message`}

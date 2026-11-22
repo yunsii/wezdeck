@@ -117,7 +117,7 @@ msgstr "返回"
 msgid "Backend"
 msgstr "后端"
 
-#: src/features/console-sessions.tsx:324
+#: src/features/console-sessions.tsx:359
 msgid "Background tasks"
 msgstr "后台任务"
 
@@ -181,7 +181,7 @@ msgstr "子单"
 msgid "claimed"
 msgstr "认领"
 
-#: src/features/console-sessions.tsx:405
+#: src/features/console-sessions.tsx:440
 msgid "Claude is working; your message joins its queue and it decides when to take it."
 msgstr "Claude 正在运行，消息会进入它的队列，由它自己安排什么时候处理。"
 
@@ -350,7 +350,7 @@ msgstr "端点"
 msgid "English"
 msgstr "English"
 
-#: src/features/console-sessions.tsx:373
+#: src/features/console-sessions.tsx:408
 msgid "Enter"
 msgstr "回车"
 
@@ -362,7 +362,7 @@ msgstr "进入 Runtime 控制台"
 msgid "Entries"
 msgstr "条目"
 
-#: src/features/console-sessions.tsx:374
+#: src/features/console-sessions.tsx:409
 msgid "Esc"
 msgstr "Esc"
 
@@ -535,7 +535,7 @@ msgstr "上次直连"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:109
-#: src/features/console-shell.tsx:413
+#: src/features/console-shell.tsx:417
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -574,7 +574,7 @@ msgstr "实时"
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:136
 #: src/features/console-sessions.tsx:133
-#: src/features/console-sessions.tsx:320
+#: src/features/console-sessions.tsx:355
 #: src/features/console-shared.tsx:211
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
@@ -592,11 +592,11 @@ msgstr "日志流"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/console-sessions.tsx:430
+#: src/features/console-sessions.tsx:470
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/console-sessions.tsx:423
+#: src/features/console-sessions.tsx:458
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -731,7 +731,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:416
+#: src/features/console-sessions.tsx:451
 msgid "Open settings"
 msgstr "去设置"
 
@@ -810,7 +810,7 @@ msgstr "初始消息组成"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:212
-#: src/features/console-shell.tsx:440
+#: src/features/console-shell.tsx:444
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
 msgid "Ready"
@@ -832,7 +832,7 @@ msgstr "刷新"
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:376
+#: src/features/console-shell.tsx:380
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -885,7 +885,7 @@ msgid "Resumed conversations"
 msgstr "可恢复的会话"
 
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:486
+#: src/features/console-shell.tsx:490
 msgid "Retry"
 msgstr "重试"
 
@@ -1011,11 +1011,11 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/console-sessions.tsx:435
+#: src/features/console-sessions.tsx:475
 msgid "Send"
 msgstr "发送"
 
-#: src/features/console-sessions.tsx:290
+#: src/features/console-sessions.tsx:325
 msgid "Sent to the session"
 msgstr "已发送到会话"
 
@@ -1035,7 +1035,7 @@ msgstr "会话开始"
 
 #: src/features/console-collab.tsx:114
 #: src/features/console-sessions.tsx:119
-#: src/features/console-sessions.tsx:309
+#: src/features/console-sessions.tsx:344
 msgid "Sessions"
 msgstr "会话数"
 
@@ -1109,11 +1109,11 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/console-sessions.tsx:364
+#: src/features/console-sessions.tsx:399
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:281
+#: src/features/console-sessions.tsx:316
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1121,7 +1121,7 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/console-sessions.tsx:279
+#: src/features/console-sessions.tsx:314
 msgid "The agent is working. You can send once it stops."
 msgstr "Agent 正在运行，等它停下后才能发送。"
 
@@ -1152,7 +1152,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-shell.tsx:483
+#: src/features/console-shell.tsx:487
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -1252,7 +1252,7 @@ msgstr "更新于 {time}"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:115
-#: src/features/console-shell.tsx:419
+#: src/features/console-shell.tsx:423
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -1282,7 +1282,7 @@ msgstr "查看源码"
 msgid "waiting"
 msgstr "等待中"
 
-#: src/features/console-shell.tsx:440
+#: src/features/console-shell.tsx:444
 msgid "Waiting"
 msgstr "等待中"
 
@@ -1322,7 +1322,7 @@ msgstr "等你 {mine}"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:388
+#: src/features/console-shell.tsx:392
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -1402,7 +1402,7 @@ msgstr "工作区迁移"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:277
+#: src/features/console-sessions.tsx:312
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

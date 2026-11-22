@@ -36,7 +36,11 @@ export const Route = createRootRoute({
         name: 'viewport',
         // viewport-fit=cover: the installed app draws under the notch /
         // home indicator; layouts pad with env(safe-area-inset-*).
-        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+        // interactive-widget: the on-screen keyboard shrinks the layout (Android
+        // Chrome otherwise only shrinks the visual viewport and covers the
+        // bottom composer until typing starts).
+        content:
+          'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
       },
       {
         title: 'WezDeck Runtime Console',
