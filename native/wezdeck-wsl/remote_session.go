@@ -390,6 +390,20 @@ type transcript struct {
 	size     int64
 	messages []chatMessage
 	tools    map[string]int // tool_use_id → index in messages
+	usage    sessionUsage
+	lastMsg  string // message id whose usage was counted (one reply spans several lines)
+}
+
+// sessionUsage: what the session has spent, from each reply's `usage`.
+// Context = the last reply's full input (fresh + cache read + cache write).
+type sessionUsage struct {
+	Model        string `json:"model,omitempty"`
+	Context      int    `json:"context"`
+	ContextLimit int    `json:"context_limit"`
+	Turns        int    `json:"turns"`
+	Output       int    `json:"output"`
+	Input        int    `json:"input"`      // fresh + cache write
+	CacheRead    int    `json:"cache_read"` // served from cache
 }
 
 var (
@@ -411,11 +425,30 @@ func (t *transcript) feedLine(raw []byte) {
 		Timestamp string `json:"timestamp"`
 		IsMeta    bool   `json:"isMeta"`
 		Message   struct {
+			ID      string          `json:"id"`
+			Model   string          `json:"model"`
 			Content json.RawMessage `json:"content"`
+			Usage   *struct {
+				Input       int `json:"input_tokens"`
+				CacheWrite  int `json:"cache_creation_input_tokens"`
+				CacheRead   int `json:"cache_read_input_tokens"`
+				OutputCount int `json:"output_tokens"`
+			} `json:"usage"`
 		} `json:"message"`
 	}
 	if json.Unmarshal(raw, &line) != nil || line.IsMeta || (line.Type != "user" && line.Type != "assistant") {
 		return
+	}
+	if u := line.Message.Usage; line.Type == "assistant" && u != nil && line.Message.ID != t.lastMsg {
+		t.lastMsg = line.Message.ID
+		if line.Message.Model != "" && !strings.HasPrefix(line.Message.Model, "<") {
+			t.usage.Model = line.Message.Model
+		}
+		t.usage.Context = u.Input + u.CacheWrite + u.CacheRead
+		t.usage.Turns++
+		t.usage.Output += u.OutputCount
+		t.usage.Input += u.Input + u.CacheWrite
+		t.usage.CacheRead += u.CacheRead
 	}
 	var text string
 	if json.Unmarshal(line.Message.Content, &text) == nil {
@@ -474,6 +507,55 @@ func (t *transcript) feedLine(raw []byte) {
 			delete(t.tools, b.ToolUseID)
 		}
 	}
+}
+
+var (
+	catalogMu    sync.Mutex
+	catalogLimit map[string]int
+	catalogAt    time.Time
+)
+
+// contextLimit: the model's max input tokens from Claude Code's local model
+// catalog (~/.claude/cache/model-catalog), 200k when unknown.
+func contextLimit(model string) int {
+	catalogMu.Lock()
+	defer catalogMu.Unlock()
+	if catalogLimit == nil || time.Since(catalogAt) > 10*time.Minute {
+		catalogLimit = map[string]int{}
+		catalogAt = time.Now()
+		home, _ := os.UserHomeDir()
+		files, _ := filepath.Glob(filepath.Join(home, ".claude", "cache", "model-catalog", "*.json"))
+		for _, f := range files {
+			data, err := os.ReadFile(f)
+			if err != nil {
+				continue
+			}
+			var doc struct {
+				Catalog struct {
+					Config struct {
+						Models []struct {
+							ID      string `json:"id"`
+							Runtime struct {
+								MaxInput int `json:"max_input_tokens"`
+							} `json:"runtime"`
+						} `json:"models"`
+					} `json:"config"`
+				} `json:"catalog"`
+			}
+			if json.Unmarshal(data, &doc) != nil {
+				continue
+			}
+			for _, m := range doc.Catalog.Config.Models {
+				if m.Runtime.MaxInput > 0 {
+					catalogLimit[m.ID] = m.Runtime.MaxInput
+				}
+			}
+		}
+	}
+	if v, ok := catalogLimit[strings.TrimSuffix(model, "[1m]")]; ok {
+		return v
+	}
+	return 200000
 }
 
 // loadTranscript returns the parsed transcript, reading only what was
@@ -564,6 +646,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		transcriptsMu.Unlock()
 		out["total"] = total
 		out["start"] = start
+		usage := t.usage
+		usage.ContextLimit = contextLimit(usage.Model)
+		out["usage"] = usage
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {

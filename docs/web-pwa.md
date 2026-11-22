@@ -58,8 +58,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
   are SSR (TanStack Start), so the fallback is a cached `/console` document.
 - Update: compare build id on `visibilitychange` (≤ every 10 min) → toast
   "有新版本 · 刷新"; one reload on chunk preload error.
-- Query cache persisted to IndexedDB (7 d, buster = contract hash); stale
-  banner "主机离线 · 数据截至 HH:MM".
+- Query cache persisted to IndexedDB (7 d, buster = contract hash): collab
+  reads plus the remote session list and conversations, so a session opens
+  from cache at once and new messages stream in after the refresh; a session
+  shows 「暂时拿不到最新内容，显示的是 HH:MM 的内容」 above the composer when a
+  refresh fails or the device is offline.
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
 
 ## Visual language (2026-11-22, revised)

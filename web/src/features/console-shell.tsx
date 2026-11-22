@@ -297,7 +297,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           </a>
           <div
             id="console-main"
-            className="min-h-full px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4"
+            className="flex min-h-full flex-col px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4"
           >
             {detail ? null : (
               <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">

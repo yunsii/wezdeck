@@ -35,11 +35,15 @@ function createPersister() {
   }
 }
 
-/** Only successful collab reads are worth keeping offline. */
+/**
+ * Kept offline: collab reads and the remote session list / conversations,
+ * so a session opens with its last messages at once and only the new ones
+ * arrive (and stream in) after the refresh.
+ */
 const shouldPersist = (query: Query) =>
   query.state.status === 'success' &&
-  query.queryKey[0] === 'runtime' &&
-  query.queryKey[1] === 'collab'
+  ((query.queryKey[0] === 'runtime' && query.queryKey[1] === 'collab') ||
+    query.queryKey[0] === 'remote')
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(

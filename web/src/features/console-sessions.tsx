@@ -5,7 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router'
-import { ChevronLeft, SendHorizontal } from 'lucide-react'
+import { SendHorizontal } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
@@ -14,6 +14,7 @@ import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
 import { useDeviceState } from './device-state'
 import { useAgo } from './tickets-view'
+import { SessionHeader } from './session-header'
 import { ChatThread, SendQueue, settle } from './chat-thread'
 import type { Message, Pending } from './chat-thread'
 
@@ -44,8 +45,19 @@ export type BgTask = { id: string; type: string; summary: string }
 export const isBusy = (row: { status: string; running_kind?: string }) =>
   row.status === 'running' && row.running_kind !== 'background'
 
-type Detail = {
+export type Usage = {
+  model?: string
+  context: number
+  context_limit: number
+  turns: number
+  output: number
+  input: number
+  cache_read: number
+}
+
+export type Detail = {
   id: string
+  usage?: Usage
   total?: number
   start?: number
   agent?: string
@@ -65,7 +77,7 @@ export function sessionTone(status: string, kind?: string): LedTone {
   return 'muted'
 }
 
-function useStatusText() {
+export function useStatusText() {
   const { t } = useLingui()
   return (status: string, kind?: string, runningKind?: string, bg = 0) =>
     kind
@@ -242,57 +254,6 @@ function useStickToBottom(
   }, [])
 }
 
-function SessionHeader({
-  data,
-  onBack,
-}: {
-  data: Detail | undefined
-  onBack: () => void
-}) {
-  const { t } = useLingui()
-  const statusText = useStatusText()
-  const tone = sessionTone(data?.status ?? '', data?.waiting_kind)
-  return (
-    <div className="grid gap-2">
-      <button
-        type="button"
-        onClick={onBack}
-        className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
-      >
-        <ChevronLeft size={20} aria-hidden />
-        {t({ message: 'Sessions', context: 'nav' })}
-      </button>
-      <p className="inline-flex items-center gap-2 text-sm text-brand-muted">
-        <Led tone={tone} size={11} />
-        {data
-          ? statusText(
-              data.status,
-              data.waiting_kind,
-              data.running_kind,
-              data.background?.length ?? 0,
-            )
-          : t`Loading…`}
-      </p>
-      {data?.background?.length ? (
-        <ul
-          aria-label={t`Background tasks`}
-          className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
-        >
-          {data.background.map((task) => (
-            <li
-              key={task.id}
-              className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
-            >
-              <Led tone="running" size={9} />
-              {task.summary || task.id}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
-  )
-}
-
 /**
  * Loading earlier messages grows the page above the reader: remember the
  * distance from the bottom before, restore it once the older ones render.
@@ -387,7 +348,7 @@ function SessionDetail({ id }: { id: string }) {
     }
   }
   return (
-    <div className="grid min-h-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
+    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
       <SessionHeader data={data} onBack={back} />
 
       <div
@@ -465,14 +426,14 @@ function SessionDetail({ id }: { id: string }) {
           if (text.trim()) void run('send', { text })
         }}
       >
-        {detail.isError && data ? (
+        {(detail.isError || detail.fetchStatus === 'paused') && data ? (
           <p
             role="status"
             data-testid="session-stale"
             className="rounded-[10px] bg-brand-waiting/10 px-3 py-1.5 text-xs text-brand-text"
           >
             {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
-            {detail.error.message}
+            {detail.error?.message ?? t`this device is offline`}
           </p>
         ) : null}
         <SendQueue pending={pending} busy={busy} />

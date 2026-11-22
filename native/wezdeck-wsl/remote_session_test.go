@@ -267,7 +267,8 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	}
 	write(
 		`{"type":"user","message":{"content":"改一下标题"}}`,
-		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Edit","input":{"file_path":"a.md","old_string":"旧标题","new_string":"新标题"}}]}}`,
+		`{"type":"assistant","message":{"id":"m1","model":"claude-x","usage":{"input_tokens":5,"cache_creation_input_tokens":100,"cache_read_input_tokens":900,"output_tokens":40},"content":[{"type":"tool_use","id":"t1","name":"Edit","input":{"file_path":"a.md","old_string":"旧标题","new_string":"新标题"}}]}}`,
+		`{"type":"assistant","message":{"id":"m1","model":"claude-x","usage":{"input_tokens":5,"cache_creation_input_tokens":100,"cache_read_input_tokens":900,"output_tokens":40},"content":[{"type":"text","text":""}]}}`,
 		`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":"The file a.md has been updated."}]}}`,
 	)
 	tr, err := loadTranscript(path)
@@ -278,6 +279,9 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	if edit.Tool != "Edit" || edit.Text != "Edit a.md" || edit.Body != "- 旧标题\n+ 新标题" || !strings.Contains(edit.Result, "updated") ||
 		edit.File != "a.md" || edit.Added != 1 || edit.Removed != 1 {
 		t.Fatalf("tool details: %+v", edit)
+	}
+	if u := tr.usage; u.Model != "claude-x" || u.Context != 1005 || u.Turns != 1 || u.Output != 40 || u.CacheRead != 900 {
+		t.Fatalf("usage (one reply over two lines counts once): %+v", u)
 	}
 	offset := tr.offset
 	write(`{"type":"assistant","message":{"content":[{"type":"text","text":"改好了"}]}}`)
