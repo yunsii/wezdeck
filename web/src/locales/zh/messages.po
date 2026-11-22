@@ -139,7 +139,7 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:174
+#: src/features/session-list.tsx:177
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -163,7 +163,7 @@ msgstr "全部分类"
 msgid "All levels"
 msgstr "全部级别"
 
-#: src/features/console-now.tsx:214
+#: src/features/console-now.tsx:217
 msgid "All sessions"
 msgstr "全部会话"
 
@@ -641,7 +641,7 @@ msgstr "Git"
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/session-list.tsx:159
+#: src/features/session-list.tsx:162
 msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 msgstr "按仓库与 worktree 分组；有 tmux 挂载时标主 / 副 pane。"
 
@@ -855,12 +855,12 @@ msgstr "正在加载原图…"
 #: src/features/console-collab.tsx:193
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:233
+#: src/features/console-now.tsx:236
 #: src/features/console-sessions.tsx:388
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:239
-#: src/features/session-list.tsx:171
+#: src/features/session-list.tsx:174
 #: src/features/tickets-view.tsx:231
 msgid "Loading…"
 msgstr "加载中…"
@@ -917,7 +917,7 @@ msgstr "修改时间"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/console-now.tsx:190
+#: src/features/console-now.tsx:193
 #: src/features/session-header.tsx:260
 msgid "Needs you"
 msgstr "需要你处理"
@@ -950,7 +950,7 @@ msgstr "没有活动 Agent 会话"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:171
+#: src/features/session-list.tsx:174
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -966,8 +966,8 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/console-now.tsx:163
-#: src/features/session-list.tsx:139
+#: src/features/console-now.tsx:166
+#: src/features/session-list.tsx:142
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -1021,11 +1021,11 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/console-now.tsx:228
+#: src/features/console-now.tsx:231
 msgid "Nothing needs you and nothing is running."
 msgstr "没有需要你处理的事，也没有在运行的任务。"
 
-#: src/features/console-now.tsx:187
+#: src/features/console-now.tsx:190
 #: src/features/console-shell.tsx:118
 msgid "Now"
 msgstr "现在"
@@ -1185,7 +1185,7 @@ msgstr "预览图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/console-now.tsx:138
+#: src/features/console-now.tsx:141
 #: src/features/session-list.tsx:95
 msgid "Primary"
 msgstr "主"
@@ -1235,7 +1235,7 @@ msgstr "就绪"
 msgid "Reason"
 msgstr "原因"
 
-#: src/features/console-now.tsx:207
+#: src/features/console-now.tsx:210
 msgid "Recently active"
 msgstr "最近活跃"
 
@@ -1417,7 +1417,7 @@ msgstr "运行中"
 msgid "Running in pane"
 msgstr "窗格里在跑"
 
-#: src/features/console-now.tsx:198
+#: src/features/console-now.tsx:201
 msgid "Running now"
 msgstr "正在运行"
 
@@ -1484,7 +1484,7 @@ msgstr "改动范围"
 #~ msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 #~ msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
-#: src/features/console-now.tsx:140
+#: src/features/console-now.tsx:143
 #: src/features/session-list.tsx:95
 msgid "Secondary"
 msgstr "副"
@@ -1548,7 +1548,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:126
 #: src/features/session-header.tsx:223
-#: src/features/session-list.tsx:156
+#: src/features/session-list.tsx:159
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
@@ -1727,7 +1727,7 @@ msgid "This Runtime does not provide the workspace catalog."
 msgstr "当前 Runtime 没有提供 workspace 目录。"
 
 #: src/features/console-activity.tsx:204
-#: src/features/console-now.tsx:241
+#: src/features/console-now.tsx:244
 #: src/features/console-shell.tsx:131
 msgid "Ticket activity"
 msgstr "工单动态"

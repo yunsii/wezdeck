@@ -139,7 +139,7 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:174
+#: src/features/session-list.tsx:177
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -163,7 +163,7 @@ msgstr "All categories"
 msgid "All levels"
 msgstr "All levels"
 
-#: src/features/console-now.tsx:214
+#: src/features/console-now.tsx:217
 msgid "All sessions"
 msgstr "All sessions"
 
@@ -641,7 +641,7 @@ msgstr "Git"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-list.tsx:159
+#: src/features/session-list.tsx:162
 msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 msgstr "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 
@@ -855,12 +855,12 @@ msgstr "Loading original…"
 #: src/features/console-collab.tsx:193
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:233
+#: src/features/console-now.tsx:236
 #: src/features/console-sessions.tsx:388
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:239
-#: src/features/session-list.tsx:171
+#: src/features/session-list.tsx:174
 #: src/features/tickets-view.tsx:231
 msgid "Loading…"
 msgstr "Loading…"
@@ -917,7 +917,7 @@ msgstr "Modified"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/console-now.tsx:190
+#: src/features/console-now.tsx:193
 #: src/features/session-header.tsx:260
 msgid "Needs you"
 msgstr "Needs you"
@@ -950,7 +950,7 @@ msgstr "No active agent sessions"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:171
+#: src/features/session-list.tsx:174
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -966,8 +966,8 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/console-now.tsx:163
-#: src/features/session-list.tsx:139
+#: src/features/console-now.tsx:166
+#: src/features/session-list.tsx:142
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -1021,11 +1021,11 @@ msgstr "Not on this Runtime"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/console-now.tsx:228
+#: src/features/console-now.tsx:231
 msgid "Nothing needs you and nothing is running."
 msgstr "Nothing needs you and nothing is running."
 
-#: src/features/console-now.tsx:187
+#: src/features/console-now.tsx:190
 #: src/features/console-shell.tsx:118
 msgid "Now"
 msgstr "Now"
@@ -1185,7 +1185,7 @@ msgstr "Preview image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/console-now.tsx:138
+#: src/features/console-now.tsx:141
 #: src/features/session-list.tsx:95
 msgid "Primary"
 msgstr "Primary"
@@ -1235,7 +1235,7 @@ msgstr "Ready"
 msgid "Reason"
 msgstr "Reason"
 
-#: src/features/console-now.tsx:207
+#: src/features/console-now.tsx:210
 msgid "Recently active"
 msgstr "Recently active"
 
@@ -1417,7 +1417,7 @@ msgstr "Running"
 msgid "Running in pane"
 msgstr "Running in pane"
 
-#: src/features/console-now.tsx:198
+#: src/features/console-now.tsx:201
 msgid "Running now"
 msgstr "Running now"
 
@@ -1484,7 +1484,7 @@ msgstr "Scope"
 #~ msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 #~ msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
-#: src/features/console-now.tsx:140
+#: src/features/console-now.tsx:143
 #: src/features/session-list.tsx:95
 msgid "Secondary"
 msgstr "Secondary"
@@ -1548,7 +1548,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:126
 #: src/features/session-header.tsx:223
-#: src/features/session-list.tsx:156
+#: src/features/session-list.tsx:159
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
@@ -1727,7 +1727,7 @@ msgid "This Runtime does not provide the workspace catalog."
 msgstr "This Runtime does not provide the workspace catalog."
 
 #: src/features/console-activity.tsx:204
-#: src/features/console-now.tsx:241
+#: src/features/console-now.tsx:244
 #: src/features/console-shell.tsx:131
 msgid "Ticket activity"
 msgstr "Ticket activity"

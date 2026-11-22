@@ -102,7 +102,10 @@ export function SessionList() {
     row.id.slice(0, 8)
 
   const tag = (text: string) => (
-    <span className="shrink-0 rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label">
+    <span
+      title={text}
+      className="max-w-full min-w-0 truncate rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label"
+    >
       {text}
     </span>
   )
