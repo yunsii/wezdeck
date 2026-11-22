@@ -390,11 +390,11 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:298
+#: src/features/console-shell.tsx:303
 msgid "Connection details"
 msgstr "连接详情"
 
-#: src/features/console-shell.tsx:217
+#: src/features/console-shell.tsx:222
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -483,7 +483,7 @@ msgstr "暗色主题"
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
-#: src/features/console-shell.tsx:264
+#: src/features/console-shell.tsx:269
 msgid "Deck"
 msgstr "工作台"
 
@@ -821,7 +821,7 @@ msgstr "上次直连"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:110
-#: src/features/console-shell.tsx:408
+#: src/features/console-shell.tsx:413
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -1269,7 +1269,7 @@ msgstr "读了 {reads} 个文件"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:213
-#: src/features/console-shell.tsx:435
+#: src/features/console-shell.tsx:440
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
 msgid "Ready"
@@ -1303,11 +1303,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:211
+#: src/features/console-shell.tsx:216
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:371
+#: src/features/console-shell.tsx:376
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -1409,7 +1409,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 
 #: src/features/chat-images.tsx:47
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:481
+#: src/features/console-shell.tsx:486
 msgid "Retry"
 msgstr "重试"
 
@@ -1499,7 +1499,7 @@ msgstr "Runtime 操作失败"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:211
+#: src/features/console-shell.tsx:216
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "运行时控制台"
@@ -1537,7 +1537,7 @@ msgstr "改动范围"
 msgid "Secondary"
 msgstr "副"
 
-#: src/features/console-shell.tsx:310
+#: src/features/console-shell.tsx:315
 msgid "Sections"
 msgstr "栏目"
 
@@ -1634,7 +1634,7 @@ msgstr "显示的是上次的数据"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/console-shell.tsx:281
+#: src/features/console-shell.tsx:286
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -1766,7 +1766,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-shell.tsx:478
+#: src/features/console-shell.tsx:483
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -1918,7 +1918,7 @@ msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:116
-#: src/features/console-shell.tsx:414
+#: src/features/console-shell.tsx:419
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -1957,7 +1957,7 @@ msgstr "查看源码"
 msgid "waiting"
 msgstr "等待中"
 
-#: src/features/console-shell.tsx:435
+#: src/features/console-shell.tsx:440
 msgid "Waiting"
 msgstr "等待中"
 
@@ -2001,7 +2001,7 @@ msgstr "等你 {mine}"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:383
+#: src/features/console-shell.tsx:388
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -2030,8 +2030,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:209
-#: src/features/console-shell.tsx:293
+#: src/features/console-shell.tsx:214
+#: src/features/console-shell.tsx:298
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"

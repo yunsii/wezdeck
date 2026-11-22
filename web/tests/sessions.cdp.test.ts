@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
@@ -157,14 +157,10 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await page
       .locator('[data-testid=session-sync]')
       .waitFor({ timeout: 10_000 })
-    // report a problem: diagnostics + a screenshot ride along as attachments
+    // a screenshot rides along as an attachment (diagnostics are pulled by
+    // the host now: wezdeck-wsl diag, not a composer toggle)
     if (uploadsDir) {
-      await page.getByRole('button', { name: '诊断' }).click()
-      expect(
-        await page
-          .getByRole('button', { name: '诊断' })
-          .getAttribute('aria-pressed'),
-      ).toBe('true')
+      expect(await page.getByRole('button', { name: '诊断' }).count()).toBe(0)
       await page
         .locator('[data-testid=composer-tools] input[type=file]')
         .setInputFiles({
@@ -192,16 +188,8 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
         await page.waitForTimeout(250)
       }
       expect(screen).toContain('[手机附件]')
-      expect(screen).toContain('客户端诊断: ')
       const files = readdirSync(uploadsDir)
-      const diag = files.find((name) => name.startsWith('diagnostics-'))
       expect(files.some((name) => /^img-.*\.jpg$/.test(name))).toBe(true)
-      const snapshot = JSON.parse(
-        readFileSync(join(uploadsDir, diag ?? ''), 'utf8'),
-      ) as { viewport: unknown; events: Array<unknown>; page: string }
-      expect(snapshot.viewport).toBeTruthy()
-      expect(snapshot.events.length).toBeGreaterThan(0)
-      expect(snapshot.page).not.toContain('#')
     }
     await context.close()
   }, 120_000)

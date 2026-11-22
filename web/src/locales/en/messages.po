@@ -390,11 +390,11 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:298
+#: src/features/console-shell.tsx:303
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/console-shell.tsx:217
+#: src/features/console-shell.tsx:222
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -483,7 +483,7 @@ msgstr "Dark theme"
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
-#: src/features/console-shell.tsx:264
+#: src/features/console-shell.tsx:269
 msgid "Deck"
 msgstr "Deck"
 
@@ -821,7 +821,7 @@ msgstr "Last direct attempt"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:110
-#: src/features/console-shell.tsx:408
+#: src/features/console-shell.tsx:413
 msgid "Last sample"
 msgstr "Last sample"
 
@@ -1269,7 +1269,7 @@ msgstr "read {reads} files"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:213
-#: src/features/console-shell.tsx:435
+#: src/features/console-shell.tsx:440
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
 msgid "Ready"
@@ -1303,11 +1303,11 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:211
+#: src/features/console-shell.tsx:216
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:371
+#: src/features/console-shell.tsx:376
 msgid "Remote access"
 msgstr "Remote access"
 
@@ -1409,7 +1409,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 
 #: src/features/chat-images.tsx:47
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:481
+#: src/features/console-shell.tsx:486
 msgid "Retry"
 msgstr "Retry"
 
@@ -1499,7 +1499,7 @@ msgstr "Runtime action failed"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:211
+#: src/features/console-shell.tsx:216
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "Runtime Console"
@@ -1537,7 +1537,7 @@ msgstr "Scope"
 msgid "Secondary"
 msgstr "Secondary"
 
-#: src/features/console-shell.tsx:310
+#: src/features/console-shell.tsx:315
 msgid "Sections"
 msgstr "Sections"
 
@@ -1634,7 +1634,7 @@ msgstr "showing the last copy"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/console-shell.tsx:281
+#: src/features/console-shell.tsx:286
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -1766,7 +1766,7 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-shell.tsx:478
+#: src/features/console-shell.tsx:483
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -1918,7 +1918,7 @@ msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:116
-#: src/features/console-shell.tsx:414
+#: src/features/console-shell.tsx:419
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -1957,7 +1957,7 @@ msgstr "View the source"
 msgid "waiting"
 msgstr "waiting"
 
-#: src/features/console-shell.tsx:435
+#: src/features/console-shell.tsx:440
 msgid "Waiting"
 msgstr "Waiting"
 
@@ -2001,7 +2001,7 @@ msgstr "Waiting on you {mine}"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/console-shell.tsx:383
+#: src/features/console-shell.tsx:388
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -2030,8 +2030,8 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:209
-#: src/features/console-shell.tsx:293
+#: src/features/console-shell.tsx:214
+#: src/features/console-shell.tsx:298
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"

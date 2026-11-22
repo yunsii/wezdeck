@@ -195,7 +195,12 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   return (
     <main
       data-deck
-      className="grid h-dvh grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
+      // fixed inset-0, not h-dvh: after an update reload Chrome's installed
+      // app kept a stale, 56 px taller 100dvh for the shell (770 vs a 714 px
+      // viewport, measured by host diagnostics) and the bottom tab bar sat
+      // below the screen until restart. The fixed box follows the real layout
+      // viewport, keyboard included (interactive-widget=resizes-content).
+      className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
     >
       {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
       <div className="hidden md:block">
