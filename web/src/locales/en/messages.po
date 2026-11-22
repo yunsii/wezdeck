@@ -378,11 +378,11 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:319
+#: src/features/console-shell.tsx:298
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/console-shell.tsx:250
+#: src/features/console-shell.tsx:217
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -459,7 +459,7 @@ msgstr "Current plan"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
-#: src/features/console-me.tsx:241
+#: src/features/console-me.tsx:242
 msgid "Dark"
 msgstr "Dark"
 
@@ -471,7 +471,7 @@ msgstr "Dark theme"
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
-#: src/features/console-shell.tsx:285
+#: src/features/console-shell.tsx:264
 msgid "Deck"
 msgstr "Deck"
 
@@ -491,8 +491,8 @@ msgstr "Depends on"
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
-#: src/features/console-me.tsx:262
-#: src/features/console-shell.tsx:112
+#: src/features/console-me.tsx:263
+#: src/features/console-shell.tsx:108
 msgid "Development"
 msgstr "Development"
 
@@ -500,8 +500,8 @@ msgstr "Development"
 msgid "diagnostics"
 msgstr "diagnostics"
 
-#: src/features/console-me.tsx:269
-#: src/features/console-shell.tsx:118
+#: src/features/console-me.tsx:270
+#: src/features/console-shell.tsx:114
 #: src/features/session-composer.tsx:350
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -547,7 +547,7 @@ msgstr "Ended {ended}"
 msgid "Endpoint"
 msgstr "Endpoint"
 
-#: src/features/console-shared.tsx:433
+#: src/features/console-shared.tsx:435
 #: src/features/landing-example.tsx:147
 msgid "English"
 msgstr "English"
@@ -656,7 +656,7 @@ msgstr "Hide initial prompt"
 msgid "Host offline"
 msgstr "Host offline"
 
-#: src/features/console-me.tsx:249
+#: src/features/console-me.tsx:250
 msgid "Host sections"
 msgstr "Host sections"
 
@@ -798,7 +798,7 @@ msgstr "Last direct attempt"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:109
-#: src/features/console-shell.tsx:426
+#: src/features/console-shell.tsx:408
 msgid "Last sample"
 msgstr "Last sample"
 
@@ -823,7 +823,7 @@ msgstr "Lets this phone send messages to agent sessions and reply to tickets. A 
 msgid "Level"
 msgstr "Level"
 
-#: src/features/console-me.tsx:240
+#: src/features/console-me.tsx:241
 msgid "Light"
 msgstr "Light"
 
@@ -1027,7 +1027,7 @@ msgid "Nothing needs you and nothing is running."
 msgstr "Nothing needs you and nothing is running."
 
 #: src/features/console-now.tsx:187
-#: src/features/console-shell.tsx:122
+#: src/features/console-shell.tsx:118
 msgid "Now"
 msgstr "Now"
 
@@ -1125,8 +1125,8 @@ msgstr "output {outputTokens}"
 msgid "Output tokens"
 msgstr "Output tokens"
 
-#: src/features/console-me.tsx:255
-#: src/features/console-shell.tsx:106
+#: src/features/console-me.tsx:256
+#: src/features/console-shell.tsx:102
 msgid "Overview"
 msgstr "Overview"
 
@@ -1226,7 +1226,7 @@ msgstr "read {reads} files"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:212
-#: src/features/console-shell.tsx:453
+#: src/features/console-shell.tsx:435
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
 msgid "Ready"
@@ -1260,11 +1260,11 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:244
+#: src/features/console-shell.tsx:211
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:389
+#: src/features/console-shell.tsx:371
 msgid "Remote access"
 msgstr "Remote access"
 
@@ -1362,7 +1362,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 
 #: src/features/chat-images.tsx:47
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:499
+#: src/features/console-shell.tsx:481
 msgid "Retry"
 msgstr "Retry"
 
@@ -1452,7 +1452,7 @@ msgstr "Runtime action failed"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:244
+#: src/features/console-shell.tsx:211
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "Runtime Console"
@@ -1490,7 +1490,7 @@ msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the la
 msgid "Secondary"
 msgstr "Secondary"
 
-#: src/features/console-shell.tsx:331
+#: src/features/console-shell.tsx:310
 msgid "Sections"
 msgstr "Sections"
 
@@ -1547,7 +1547,7 @@ msgstr "Session jump failed"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:130
+#: src/features/console-shell.tsx:126
 #: src/features/session-header.tsx:223
 #: src/features/session-list.tsx:156
 msgctxt "nav"
@@ -1559,7 +1559,7 @@ msgstr "Sessions"
 #~ msgstr "Sessions waiting for you"
 
 #: src/features/console-me.tsx:174
-#: src/features/console-shell.tsx:138
+#: src/features/console-shell.tsx:134
 msgid "Settings"
 msgstr "Settings"
 
@@ -1587,7 +1587,7 @@ msgstr "showing the last copy"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/console-shell.tsx:302
+#: src/features/console-shell.tsx:281
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -1640,7 +1640,7 @@ msgstr "Status updated"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/console-me.tsx:239
+#: src/features/console-me.tsx:240
 msgid "System"
 msgstr "System"
 
@@ -1696,14 +1696,14 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "The workbench"
 msgstr "The workbench"
 
-#: src/features/console-me.tsx:233
-#: src/features/console-me.tsx:235
+#: src/features/console-me.tsx:234
+#: src/features/console-me.tsx:236
 #: src/features/console-shared.tsx:382
 #: src/features/console-shared.tsx:384
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/console-me.tsx:248
+#: src/features/console-me.tsx:249
 msgid "This computer"
 msgstr "This computer"
 
@@ -1719,7 +1719,7 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-shell.tsx:496
+#: src/features/console-shell.tsx:478
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -1729,7 +1729,7 @@ msgstr "This Runtime does not provide the workspace catalog."
 
 #: src/features/console-activity.tsx:204
 #: src/features/console-now.tsx:241
-#: src/features/console-shell.tsx:135
+#: src/features/console-shell.tsx:131
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -1737,7 +1737,7 @@ msgstr "Ticket activity"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-shell.tsx:125
+#: src/features/console-shell.tsx:121
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -1856,7 +1856,7 @@ msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:115
-#: src/features/console-shell.tsx:432
+#: src/features/console-shell.tsx:414
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -1895,7 +1895,7 @@ msgstr "View the source"
 msgid "waiting"
 msgstr "waiting"
 
-#: src/features/console-shell.tsx:453
+#: src/features/console-shell.tsx:435
 msgid "Waiting"
 msgstr "Waiting"
 
@@ -1939,7 +1939,7 @@ msgstr "Waiting on you {mine}"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:383
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -1968,8 +1968,8 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:242
-#: src/features/console-shell.tsx:314
+#: src/features/console-shell.tsx:209
+#: src/features/console-shell.tsx:293
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -2059,6 +2059,6 @@ msgstr "Your decision, extra context, or an answer to the challenge"
 msgid "Your reply"
 msgstr "Your reply"
 
-#: src/features/console-shared.tsx:434
+#: src/features/console-shared.tsx:436
 msgid "中文"
 msgstr "中文"

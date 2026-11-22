@@ -1,5 +1,7 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router'
 
+import { keepTabsFirst } from './lib/go-to-tab'
+import { transitionTypes } from './lib/view-transition'
 import { routeTree } from './route-tree'
 
 export function getRouter() {
@@ -8,7 +10,9 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    defaultViewTransition: { types: transitionTypes },
   })
+  keepTabsFirst(router)
 
   return router
 }

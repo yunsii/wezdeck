@@ -217,6 +217,7 @@ export function ConsoleMePage() {
               onChange={(next) =>
                 void navigate({
                   to: '.',
+                  replace: true,
                   params: {
                     ...params,
                     locale: next === 'en' ? undefined : next,

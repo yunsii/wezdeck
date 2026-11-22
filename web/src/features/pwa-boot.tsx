@@ -20,10 +20,13 @@ export function PwaBoot() {
     })
   }, [update, t])
   return (
-    <Toaster
-      position="top-center"
-      offset="calc(env(safe-area-inset-top) + 12px)"
-      theme={mode === 'system' ? 'system' : mode}
-    />
+    // its own transition layer that never moves with a page (styles.css)
+    <div className="toast-layer pointer-events-none fixed inset-0 z-[70]">
+      <Toaster
+        position="top-center"
+        offset="calc(env(safe-area-inset-top) + 12px)"
+        theme={mode === 'system' ? 'system' : mode}
+      />
+    </div>
   )
 }

@@ -1128,3 +1128,83 @@ html[data-theme='dark'] [data-deck] {
     background: color-mix(in srgb, var(--brand-key), var(--brand-text) 4%);
   }
 }
+
+/*
+ * Page transitions (lib/view-transition.ts, the forge way): deeper pages push
+ * in from the right, back slides back from the left, same depth cross-fades.
+ * Between two tab pages the bottom tab bar is its own layer and stays put;
+ * toasts never move with a page (they belong to no page).
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+}
+html:active-view-transition-type(tabs) .tabbar-vt {
+  view-transition-name: tabbar;
+}
+::view-transition-old(tabbar) {
+  display: none;
+}
+::view-transition-new(tabbar) {
+  animation: none;
+}
+.toast-layer {
+  view-transition-name: toasts;
+}
+.toast-layer [data-sonner-toast] {
+  pointer-events: auto;
+}
+::view-transition-group(toasts) {
+  z-index: 1;
+}
+::view-transition-old(toasts) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(toasts) {
+  animation: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:active-view-transition-type(forward)::view-transition-old(root) {
+    animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-out-left;
+  }
+  html:active-view-transition-type(forward)::view-transition-new(root) {
+    animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in-right;
+  }
+  html:active-view-transition-type(back)::view-transition-old(root) {
+    animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-out-right;
+  }
+  html:active-view-transition-type(back)::view-transition-new(root) {
+    animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in-left;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+@keyframes vt-in-right {
+  from {
+    transform: translateX(24%);
+    opacity: 0;
+  }
+}
+@keyframes vt-in-left {
+  from {
+    transform: translateX(-24%);
+    opacity: 0;
+  }
+}
+@keyframes vt-out-left {
+  to {
+    transform: translateX(-12%);
+    opacity: 0;
+  }
+}
+@keyframes vt-out-right {
+  to {
+    transform: translateX(12%);
+    opacity: 0;
+  }
+}

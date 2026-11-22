@@ -13,10 +13,17 @@ import {
 import { Component, useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  Link,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
 import { useCollab } from '#/lib/collab-query'
+import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
 import { useTheme } from '#/lib/theme-provider'
@@ -33,6 +40,7 @@ import {
   formatTime,
 } from './console-shared'
 import { useConsoleMode } from './console-mode'
+import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { RemoteBadge } from './remote-badge'
 import { installClientTrace } from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
@@ -47,7 +55,7 @@ export function ConsoleRouteLayout() {
   )
 }
 
-type Section =
+export type Section =
   | 'overview'
   | 'development'
   | 'diagnostics'
@@ -69,18 +77,6 @@ const SECTION_PATH = {
   activity: '/{-$locale}/console/activity',
   me: '/{-$locale}/console/me',
 } as const
-
-/** `g` + letter jumps (keyboard-first stance); shown in sidebar titles. */
-const JUMP_KEYS: Partial<Record<string, Section>> = {
-  o: 'overview',
-  d: 'development',
-  x: 'diagnostics',
-  n: 'now',
-  c: 'collab',
-  s: 'sessions',
-  a: 'activity',
-  m: 'me',
-}
 
 function sectionOf(pathname: string): Section {
   const rest = pathname
@@ -146,42 +142,6 @@ function useSections() {
   }
 }
 
-function useJumpKeys(go: (section: Section) => void) {
-  useEffect(() => {
-    let armed = 0
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey ||
-        target?.closest('input, textarea, select, [contenteditable="true"]')
-      )
-        return
-      if (event.key === '/') {
-        const box = document.querySelector<HTMLInputElement>('[data-search]')
-        if (box) {
-          event.preventDefault()
-          box.focus()
-        }
-        return
-      }
-      if (event.key === 'g') {
-        armed = Date.now()
-        return
-      }
-      const section = JUMP_KEYS[event.key]
-      if (armed && Date.now() - armed < 1200 && section) {
-        event.preventDefault()
-        go(section)
-      }
-      armed = 0
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [go])
-}
-
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -195,13 +155,20 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
   const waiting = health.data?.waiting_human ?? 0
   const scroller = useRef<HTMLDivElement>(null)
-  const go = useCallback(
+  const router = useRouter()
+  const goToTab = useGoToTab()
+  // sections are first-level pages: they hold the first history entry only
+  const hrefOf = useCallback(
     (section: Section) =>
-      void navigate({
+      router.buildLocation({
         to: SECTION_PATH[section],
         params: { locale: localeParam },
-      }),
-    [navigate, localeParam],
+      }).href,
+    [router, localeParam],
+  )
+  const go = useCallback(
+    (section: Section) => goToTab(hrefOf(section)),
+    [goToTab, hrefOf],
   )
   useJumpKeys(go)
   const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
@@ -260,6 +227,18 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                   to={SECTION_PATH[item.id]}
                   params={{ locale: localeParam }}
                   aria-current={active ? 'page' : undefined}
+                  onClick={(event) => {
+                    // a modified click still opens a new tab / window
+                    if (
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.button !== 0
+                    )
+                      return
+                    event.preventDefault()
+                    if (!active) go(item.id)
+                  }}
                   className={cn(
                     'flex min-h-9 items-center gap-2.5 rounded-[10px] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
                     active
@@ -330,7 +309,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       <nav
         aria-label={t`Sections`}
         className={cn(
-          'grid grid-cols-4 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden',
+          'tabbar-vt grid grid-cols-4 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden',
           // detail pages are full screen (like a chat): back bar on top, no tabs
           detail && 'hidden',
         )}
@@ -345,9 +324,12 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               replace
               aria-current={active ? 'page' : undefined}
               onClick={(event) => {
-                if (!active) return
-                // Re-tap the current tab: back to top + refresh (no pull-to-refresh).
                 event.preventDefault()
+                if (!active) {
+                  go(item.id)
+                  return
+                }
+                // Re-tap the current tab: back to top + refresh (no pull-to-refresh).
                 scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
                 void client.invalidateQueries({
                   queryKey: ['runtime', 'collab'],

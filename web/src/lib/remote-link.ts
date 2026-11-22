@@ -70,7 +70,14 @@ function adoptPairingHash() {
     // Storage blocked (private mode / in-app browser): the token from the
     // link still applies to this page via pairedToken.
   }
-  history.replaceState(null, '', location.pathname + location.search)
+  // keep the router's entry state (__TSR_index / key): null here made the
+  // first entry look like it came from outside the app (useCanGoBack, the
+  // tab-history rule and the transition direction all read it)
+  history.replaceState(
+    history.state as unknown,
+    '',
+    location.pathname + location.search,
+  )
 }
 
 /**

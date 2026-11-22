@@ -116,6 +116,22 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   It reads TanStack Router's `useCanGoBack` (the in-app index in each
   entry's state), never `window.history.length`, which counts pages from
   before the app — "back" used to leave the app from a directly opened page.
+- First-level pages (the bottom tabs and the desktop sections) only ever
+  hold the first history entry, forge's rule (`lib/go-to-tab.ts`, Android
+  Navigation's `popUpTo(start)`): back on one leaves the app. Tabs, sidebar
+  links and `g`+letter go back to entry 0 in one step, then replace it;
+  `keepTabsFirst` collapses any first-level page found at index > 0 (entries
+  an older build pushed survive in the tab's history; in-page links such as
+  the header badge). A language switch replaces. The `#pair=` cleanup keeps
+  the router's entry state — `replaceState(null)` had wiped `__TSR_index`.
+- Page transitions (`lib/view-transition.ts`, styles.css): View Transitions
+  through the router's `defaultViewTransition`. Into a detail pushes in from
+  the right, back slides back from the left (direction from the history
+  position first, depth when it does not change), tabs slide in their
+  left-to-right order (now, tickets, sessions, me) while the tab bar stays
+  as its own layer; toasts sit in a `toast-layer` that never moves; nothing
+  animates under reduced motion, and browsers without
+  `:active-view-transition-type` fall back to the default cross-fade.
 - 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
   header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
   host-built `reference` block for another agent: id, transcript path, cwd,
@@ -216,6 +232,9 @@ per tab (sessionStorage) so in-app navigation keeps the remote path.
   frame the host logs (`category=relay event=client_mode`).
 - Worker logs `sw_update_offered`, `install`, `push_subscribed`,
   `push_sent` rows.
+- Client trace (诊断) keeps a `nav` row per navigation (`path`, history
+  `index`, `length`) and `nav-collapse` when a first-level page is folded
+  back to the first entry.
 
 ## Phases and verification
 

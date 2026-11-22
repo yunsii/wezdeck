@@ -378,11 +378,11 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:319
+#: src/features/console-shell.tsx:298
 msgid "Connection details"
 msgstr "连接详情"
 
-#: src/features/console-shell.tsx:250
+#: src/features/console-shell.tsx:217
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -459,7 +459,7 @@ msgstr "当前计划"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
-#: src/features/console-me.tsx:241
+#: src/features/console-me.tsx:242
 msgid "Dark"
 msgstr "深色"
 
@@ -471,7 +471,7 @@ msgstr "暗色主题"
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
-#: src/features/console-shell.tsx:285
+#: src/features/console-shell.tsx:264
 msgid "Deck"
 msgstr "工作台"
 
@@ -491,8 +491,8 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "电脑前空闲"
 
-#: src/features/console-me.tsx:262
-#: src/features/console-shell.tsx:112
+#: src/features/console-me.tsx:263
+#: src/features/console-shell.tsx:108
 msgid "Development"
 msgstr "开发"
 
@@ -500,8 +500,8 @@ msgstr "开发"
 msgid "diagnostics"
 msgstr "诊断数据"
 
-#: src/features/console-me.tsx:269
-#: src/features/console-shell.tsx:118
+#: src/features/console-me.tsx:270
+#: src/features/console-shell.tsx:114
 #: src/features/session-composer.tsx:350
 msgid "Diagnostics"
 msgstr "诊断"
@@ -547,7 +547,7 @@ msgstr "已结束 {ended}"
 msgid "Endpoint"
 msgstr "端点"
 
-#: src/features/console-shared.tsx:433
+#: src/features/console-shared.tsx:435
 #: src/features/landing-example.tsx:147
 msgid "English"
 msgstr "English"
@@ -656,7 +656,7 @@ msgstr "收起初始消息"
 msgid "Host offline"
 msgstr "主机离线"
 
-#: src/features/console-me.tsx:249
+#: src/features/console-me.tsx:250
 msgid "Host sections"
 msgstr "本机功能"
 
@@ -798,7 +798,7 @@ msgstr "上次直连"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:109
-#: src/features/console-shell.tsx:426
+#: src/features/console-shell.tsx:408
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -823,7 +823,7 @@ msgstr "让这台手机能给 Agent 会话发消息、回复工单。密钥在�
 msgid "Level"
 msgstr "级别"
 
-#: src/features/console-me.tsx:240
+#: src/features/console-me.tsx:241
 msgid "Light"
 msgstr "浅色"
 
@@ -1027,7 +1027,7 @@ msgid "Nothing needs you and nothing is running."
 msgstr "没有需要你处理的事，也没有在运行的任务。"
 
 #: src/features/console-now.tsx:187
-#: src/features/console-shell.tsx:122
+#: src/features/console-shell.tsx:118
 msgid "Now"
 msgstr "现在"
 
@@ -1125,8 +1125,8 @@ msgstr "输出 {outputTokens}"
 msgid "Output tokens"
 msgstr "输出 token"
 
-#: src/features/console-me.tsx:255
-#: src/features/console-shell.tsx:106
+#: src/features/console-me.tsx:256
+#: src/features/console-shell.tsx:102
 msgid "Overview"
 msgstr "总览"
 
@@ -1226,7 +1226,7 @@ msgstr "读了 {reads} 个文件"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:212
-#: src/features/console-shell.tsx:453
+#: src/features/console-shell.tsx:435
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
 msgid "Ready"
@@ -1260,11 +1260,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:244
+#: src/features/console-shell.tsx:211
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:389
+#: src/features/console-shell.tsx:371
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -1362,7 +1362,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 
 #: src/features/chat-images.tsx:47
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:499
+#: src/features/console-shell.tsx:481
 msgid "Retry"
 msgstr "重试"
 
@@ -1452,7 +1452,7 @@ msgstr "Runtime 操作失败"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:244
+#: src/features/console-shell.tsx:211
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "运行时控制台"
@@ -1490,7 +1490,7 @@ msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近
 msgid "Secondary"
 msgstr "副"
 
-#: src/features/console-shell.tsx:331
+#: src/features/console-shell.tsx:310
 msgid "Sections"
 msgstr "栏目"
 
@@ -1547,7 +1547,7 @@ msgstr "会话跳转失败"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:130
+#: src/features/console-shell.tsx:126
 #: src/features/session-header.tsx:223
 #: src/features/session-list.tsx:156
 msgctxt "nav"
@@ -1559,7 +1559,7 @@ msgstr "会话"
 #~ msgstr "等你回复的会话"
 
 #: src/features/console-me.tsx:174
-#: src/features/console-shell.tsx:138
+#: src/features/console-shell.tsx:134
 msgid "Settings"
 msgstr "我的"
 
@@ -1587,7 +1587,7 @@ msgstr "显示的是上次的数据"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/console-shell.tsx:302
+#: src/features/console-shell.tsx:281
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -1640,7 +1640,7 @@ msgstr "状态更新于"
 msgid "submitted"
 msgstr "已提交"
 
-#: src/features/console-me.tsx:239
+#: src/features/console-me.tsx:240
 msgid "System"
 msgstr "跟随系统"
 
@@ -1696,14 +1696,14 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 msgid "The workbench"
 msgstr "工作台"
 
-#: src/features/console-me.tsx:233
-#: src/features/console-me.tsx:235
+#: src/features/console-me.tsx:234
+#: src/features/console-me.tsx:236
 #: src/features/console-shared.tsx:382
 #: src/features/console-shared.tsx:384
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/console-me.tsx:248
+#: src/features/console-me.tsx:249
 msgid "This computer"
 msgstr "本机"
 
@@ -1719,7 +1719,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-shell.tsx:496
+#: src/features/console-shell.tsx:478
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -1729,7 +1729,7 @@ msgstr "当前 Runtime 没有提供 workspace 目录。"
 
 #: src/features/console-activity.tsx:204
 #: src/features/console-now.tsx:241
-#: src/features/console-shell.tsx:135
+#: src/features/console-shell.tsx:131
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -1737,7 +1737,7 @@ msgstr "工单动态"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:125
+#: src/features/console-shell.tsx:121
 msgid "Tickets"
 msgstr "工单"
 
@@ -1856,7 +1856,7 @@ msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:115
-#: src/features/console-shell.tsx:432
+#: src/features/console-shell.tsx:414
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -1895,7 +1895,7 @@ msgstr "查看源码"
 msgid "waiting"
 msgstr "等待中"
 
-#: src/features/console-shell.tsx:453
+#: src/features/console-shell.tsx:435
 msgid "Waiting"
 msgstr "等待中"
 
@@ -1939,7 +1939,7 @@ msgstr "等你 {mine}"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:383
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -1968,8 +1968,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:242
-#: src/features/console-shell.tsx:314
+#: src/features/console-shell.tsx:209
+#: src/features/console-shell.tsx:293
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -2059,6 +2059,6 @@ msgstr "你的决定、补充信息，或对质疑的答复"
 msgid "Your reply"
 msgstr "你的回复"
 
-#: src/features/console-shared.tsx:434
+#: src/features/console-shared.tsx:436
 msgid "中文"
 msgstr "中文"

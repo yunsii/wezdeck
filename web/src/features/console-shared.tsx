@@ -427,6 +427,8 @@ export function LanguageSwitcher({
           void navigate({
             to: '.',
             params: { ...params, locale: next === 'en' ? undefined : next },
+            // a language switch is the same page: no new history entry
+            replace: true,
           })
         }}
       >
