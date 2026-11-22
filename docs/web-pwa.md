@@ -88,7 +88,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new
   reply streams in at ~300 chars/s (0.4–3 s), a backlog over 8 jumps to the
-  newest; a ResizeObserver keeps the page at the bottom while a reply grows
+  newest; the page stays pinned to the bottom while a reply grows
+  (`chat-scroll.ts`: only a finger, wheel or key can unpin it, never the
+  page's own scrolling; back near the bottom re-pins; while unpinned a
+  "回到最新 / N 条新消息" button jumps back)
   (tables and code scroll in their own box); runs of tool calls
   collapse into one line, each call expands to its diff / preview / command
   and result; "N messages, showing M" with 加载更早 keeping the reading

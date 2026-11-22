@@ -31,9 +31,13 @@ msgstr "{needCount} tickets need you, {runCount} things are running"
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
 
-#: src/features/console-sessions.tsx:370
+#: src/features/console-sessions.tsx:340
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
+
+#: src/features/console-sessions.tsx:219
+msgid "{unread} new"
+msgstr "{unread} new"
 
 #: src/features/landing-example.tsx:70
 msgid "{waitingCount} waiting"
@@ -68,7 +72,7 @@ msgstr "After a restart, return to the same agent session and continue the work.
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:147
+#: src/features/console-sessions.tsx:148
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -76,7 +80,7 @@ msgstr "Agent sessions"
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/console-sessions.tsx:131
+#: src/features/console-sessions.tsx:132
 msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 msgstr "Agents running in tmux on the host. Open one to read it and talk to it."
 
@@ -160,7 +164,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:435
+#: src/features/console-sessions.tsx:410
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -209,7 +213,7 @@ msgstr "Children"
 msgid "claimed"
 msgstr "claimed"
 
-#: src/features/console-sessions.tsx:446
+#: src/features/console-sessions.tsx:421
 msgid "Claude is working; your message joins its queue and it decides when to take it."
 msgstr "Claude is working; your message joins its queue and it decides when to take it."
 
@@ -386,7 +390,7 @@ msgstr "Endpoint"
 msgid "English"
 msgstr "English"
 
-#: src/features/console-sessions.tsx:403
+#: src/features/console-sessions.tsx:373
 msgid "Enter"
 msgstr "Enter"
 
@@ -398,7 +402,7 @@ msgstr "Enter Runtime Console"
 msgid "Entries"
 msgstr "Entries"
 
-#: src/features/console-sessions.tsx:404
+#: src/features/console-sessions.tsx:374
 msgid "Esc"
 msgstr "Esc"
 
@@ -439,7 +443,7 @@ msgstr "Filter tickets"
 #~ msgid "Finished"
 #~ msgstr "Finished"
 
-#: src/features/console-sessions.tsx:94
+#: src/features/console-sessions.tsx:95
 msgid "finished its turn"
 msgstr "finished its turn"
 
@@ -484,7 +488,7 @@ msgstr "Host unreachable right now"
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/console-sessions.tsx:88
+#: src/features/console-sessions.tsx:89
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
@@ -576,6 +580,7 @@ msgid "Last sample"
 msgstr "Last sample"
 
 #: src/features/console-overview.tsx:68
+#: src/features/console-sessions.tsx:219
 msgid "Latest"
 msgstr "Latest"
 
@@ -603,7 +608,7 @@ msgstr "Light theme"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:380
+#: src/features/console-sessions.tsx:350
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -613,8 +618,8 @@ msgstr "Load earlier"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:136
-#: src/features/console-sessions.tsx:143
-#: src/features/console-sessions.tsx:380
+#: src/features/console-sessions.tsx:144
+#: src/features/console-sessions.tsx:350
 #: src/features/console-shared.tsx:211
 #: src/features/session-header.tsx:90
 #: src/features/tickets-view.tsx:222
@@ -633,11 +638,11 @@ msgstr "Log stream"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/console-sessions.tsx:476
+#: src/features/console-sessions.tsx:451
 msgid "Message"
 msgstr "Message"
 
-#: src/features/console-sessions.tsx:464
+#: src/features/console-sessions.tsx:439
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -677,7 +682,7 @@ msgstr "No active agent sessions"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/console-sessions.tsx:143
+#: src/features/console-sessions.tsx:144
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -772,7 +777,7 @@ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, an
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:457
+#: src/features/console-sessions.tsx:432
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1072,7 +1077,7 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/console-sessions.tsx:481
+#: src/features/console-sessions.tsx:456
 msgid "Send"
 msgstr "Send"
 
@@ -1098,7 +1103,7 @@ msgstr "session started"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-sessions.tsx:128
+#: src/features/console-sessions.tsx:129
 #: src/features/console-shell.tsx:129
 #: src/features/session-header.tsx:79
 msgctxt "nav"
@@ -1170,11 +1175,11 @@ msgstr "submitted"
 msgid "System"
 msgstr "System"
 
-#: src/features/console-sessions.tsx:394
+#: src/features/console-sessions.tsx:364
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:331
+#: src/features/console-sessions.tsx:301
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -1186,7 +1191,7 @@ msgstr "The agent is waiting for your answer"
 msgid "The agent is working"
 msgstr "The agent is working"
 
-#: src/features/console-sessions.tsx:329
+#: src/features/console-sessions.tsx:299
 msgid "The agent is working. You can send once it stops."
 msgstr "The agent is working. You can send once it stops."
 
@@ -1217,7 +1222,7 @@ msgstr "This computer (local Runtime)"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:436
+#: src/features/console-sessions.tsx:411
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -1287,7 +1292,7 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/console-sessions.tsx:86
+#: src/features/console-sessions.tsx:87
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "turn finished, {bg} background tasks running; you can send"
 
@@ -1359,11 +1364,11 @@ msgstr "Waiting"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "Waiting for the host to approve this phone. On the host run:"
 
-#: src/features/console-sessions.tsx:92
+#: src/features/console-sessions.tsx:93
 msgid "waiting for you"
 msgstr "waiting for you"
 
-#: src/features/console-sessions.tsx:84
+#: src/features/console-sessions.tsx:85
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
@@ -1443,7 +1448,7 @@ msgstr "work"
 msgid "Workbench"
 msgstr "Workbench"
 
-#: src/features/console-sessions.tsx:90
+#: src/features/console-sessions.tsx:91
 msgid "working"
 msgstr "working"
 
@@ -1471,7 +1476,7 @@ msgstr "worktree migrated"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/features/console-sessions.tsx:327
+#: src/features/console-sessions.tsx:297
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "Writing is not enabled on this phone yet (Settings › Phone writing)."

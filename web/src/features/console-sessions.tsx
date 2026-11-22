@@ -5,8 +5,8 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router'
-import { SendHorizontal } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ArrowDown, SendHorizontal } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
@@ -15,6 +15,7 @@ import { remoteLink } from '#/lib/remote-link'
 import { useDeviceState } from './device-state'
 import { useAgo } from './tickets-view'
 import { SessionHeader } from './session-header'
+import { useChatScroll } from './chat-scroll'
 import { ChatThread, SendQueue, settle } from './chat-thread'
 import type { Message, Pending } from './chat-thread'
 
@@ -196,62 +197,28 @@ function SessionList() {
   )
 }
 
-/**
- * Land at the newest message, and follow new ones while the reader is at
- * the bottom. Deferred a few frames: the router's scroll restoration runs
- * after mount and would otherwise put the page back at the top.
- */
-function useStickToBottom(
-  end: React.RefObject<HTMLDivElement | null>,
-  count: number,
-) {
-  const stuck = useRef(true)
-  const landed = useRef(false)
-  useEffect(() => {
-    if (!count || !stuck.current) return
-    const smooth =
-      landed.current && !matchMedia('(prefers-reduced-motion: reduce)').matches
-    // to the very bottom: the sticky composer would cover the last message
-    // if only the end marker were scrolled into view
-    const go = () => {
-      const scroller = end.current?.closest('.overflow-y-auto')
-      if (!scroller) return
-      scroller.scrollTo({
-        top: scroller.scrollHeight,
-        behavior: smooth ? 'smooth' : 'auto',
-      })
-      landed.current = true
-    }
-    const frame = requestAnimationFrame(() => requestAnimationFrame(go))
-    const timer = setTimeout(go, 150)
-    return () => {
-      cancelAnimationFrame(frame)
-      clearTimeout(timer)
-    }
-  }, [count])
-  // While the reader is at the bottom, follow the thread as it grows — a
-  // streaming reply grows every frame without changing the message count.
-  useEffect(() => {
-    const scroller = end.current?.closest('.overflow-y-auto')
-    const thread = end.current?.parentElement
-    if (!scroller || !thread || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => {
-      if (stuck.current && landed.current)
-        scroller.scrollTop = scroller.scrollHeight
-    })
-    observer.observe(thread)
-    return () => observer.disconnect()
-  }, [end])
-  useEffect(() => {
-    const scroller = end.current?.closest('.overflow-y-auto')
-    if (!scroller) return
-    const onScroll = () => {
-      stuck.current =
-        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 120
-    }
-    scroller.addEventListener('scroll', onScroll, { passive: true })
-    return () => scroller.removeEventListener('scroll', onScroll)
-  }, [])
+function JumpLatest({
+  pinned,
+  unread,
+  onJump,
+}: {
+  pinned: boolean
+  unread: number
+  onJump: () => void
+}) {
+  const { t } = useLingui()
+  if (pinned) return null
+  return (
+    <button
+      type="button"
+      onClick={onJump}
+      data-testid="jump-latest"
+      className="chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full bg-brand-text px-4 text-[13px] font-medium text-brand-deck shadow-lg"
+    >
+      <ArrowDown size={15} aria-hidden />
+      {unread > 0 ? t`${unread} new` : t`Latest`}
+    </button>
+  )
 }
 
 /**
@@ -302,7 +269,10 @@ function SessionDetail({ id }: { id: string }) {
   const messages: Array<Message> = data?.messages ?? []
   const pending = settle(pendingRaw, messages)
   const busy = Boolean(data && isBusy(data))
-  useStickToBottom(end, messages.length + pending.length + (busy ? 1 : 0))
+  const follow = useChatScroll(
+    end,
+    messages.length + pending.length + (busy ? 1 : 0),
+  )
   const staleAt = detail.dataUpdatedAt
     ? new Date(detail.dataUpdatedAt).toLocaleTimeString([], {
         hour: '2-digit',
@@ -420,12 +390,17 @@ function SessionDetail({ id }: { id: string }) {
       </div>
 
       <form
-        className="sticky bottom-0 grid gap-1.5 bg-brand-deck pt-1 pb-[max(env(safe-area-inset-bottom),0.25rem)]"
+        className="sticky bottom-0 grid gap-1.5 bg-brand-deck pt-1 relative pb-[max(env(safe-area-inset-bottom),0.25rem)]"
         onSubmit={(event) => {
           event.preventDefault()
           if (text.trim()) void run('send', { text })
         }}
       >
+        <JumpLatest
+          pinned={follow.pinned}
+          unread={follow.unread}
+          onJump={follow.jump}
+        />
         {(detail.isError || detail.fetchStatus === 'paused') && data ? (
           <p
             role="status"
