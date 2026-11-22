@@ -87,6 +87,23 @@ export function forcedRemote() {
   }
 }
 
+/** `?room=` (sticky per tab) selects a separate relay room — used by tests. */
+function relayRoom() {
+  if (typeof location === 'undefined') return ''
+  try {
+    const fromUrl = new URLSearchParams(location.search).get('room')
+    if (fromUrl) sessionStorage.setItem('wezdeck.remote.room', fromUrl)
+    return sessionStorage.getItem('wezdeck.remote.room') ?? ''
+  } catch {
+    return new URLSearchParams(location.search).get('room') ?? ''
+  }
+}
+
+const roomQuery = () => {
+  const room = relayRoom()
+  return room ? `?room=${encodeURIComponent(room)}` : ''
+}
+
 function relayBase() {
   const configured = import.meta.env.VITE_WEZDECK_RELAY_URL?.trim()
   if (configured) return configured.replace(/\/$/, '')
@@ -193,7 +210,7 @@ class RemoteLink {
   }
 
   private openSocket() {
-    const ws = new WebSocket(`${relayBase()}/relay/client`, [
+    const ws = new WebSocket(`${relayBase()}/relay/client${roomQuery()}`, [
       'wezdeck.v1',
       `token.${this.token()}`,
     ])
@@ -235,7 +252,7 @@ class RemoteLink {
   private async tokenRefused() {
     try {
       const response = await fetch(
-        `${relayBase().replace(/^ws/, 'http')}/relay/auth`,
+        `${relayBase().replace(/^ws/, 'http')}/relay/auth${roomQuery()}`,
         {
           headers: { authorization: `Bearer ${this.token()}` },
           cache: 'no-store',

@@ -15,6 +15,9 @@ export type Message = {
   tool?: string
   body?: string
   result?: string
+  file?: string
+  added?: number
+  removed?: number
 }
 
 export type Pending = { text: string; at: number }
@@ -104,7 +107,7 @@ function ToolBody({ text }: { text: string }) {
   const lines = text.split('\n')
   const isDiff = lines.some((l) => l.startsWith('- ') || l.startsWith('+ '))
   return (
-    <pre className="max-h-72 overflow-auto rounded-[8px] bg-brand-deck py-1.5 font-mono text-[11.5px] leading-snug">
+    <pre className="max-h-72 max-w-full min-w-0 overflow-auto rounded-[8px] bg-brand-deck py-1.5 font-mono text-[11.5px] leading-snug">
       {lines.map((line, index) => (
         <div
           key={index}
@@ -134,14 +137,14 @@ function ToolRow({ tool }: { tool: Message }) {
       </p>
     )
   return (
-    <details className="group/tool rounded-[8px]">
+    <details className="group/tool min-w-0 rounded-[8px]">
       <summary className="flex cursor-pointer list-none items-center gap-1 truncate px-1 font-mono text-[12px] text-brand-muted">
         <span aria-hidden className="transition group-open/tool:rotate-90">
           ›
         </span>
         <span className="truncate">{tool.text}</span>
       </summary>
-      <div className="grid gap-1.5 py-1.5 pl-3">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">
         {tool.body ? <ToolBody text={tool.body} /> : null}
         {tool.result ? (
           <div className="grid gap-0.5">
@@ -167,6 +170,13 @@ function ToolGroup({
 }) {
   const { t } = useLingui()
   const count = tools.length
+  const { files, edited, added, removed, commands, reads } = toolDigest(tools)
+  const summaryParts = [
+    edited ? t`changed ${edited} files +${added} −${removed}` : '',
+    commands ? t`ran ${commands} commands` : '',
+    reads ? t`read ${reads} files` : '',
+    t`${count} tool calls`,
+  ].filter(Boolean)
   const shown = useRef(onShown)
   shown.current = onShown
   useEffect(() => {
@@ -175,23 +185,80 @@ function ToolGroup({
     return () => clearTimeout(timer)
   }, [stream])
   return (
-    <details className={cn('group px-1', fresh && 'chat-in')}>
-      <summary className="cursor-pointer list-none py-1 text-[12px] text-brand-label">
-        {t`Used ${count} tools`}{' '}
-        <span
-          aria-hidden
-          className="inline-block transition group-open:rotate-90"
-        >
-          ›
+    <details className={cn('group min-w-0 px-1', fresh && 'chat-in')}>
+      <summary className="grid min-w-0 cursor-pointer list-none gap-1 py-1 text-[12px] text-brand-label">
+        <span className="flex flex-wrap items-center gap-x-1.5">
+          {summaryParts.join('，')}
+          <span
+            aria-hidden
+            className="inline-block transition group-open:rotate-90"
+          >
+            ›
+          </span>
         </span>
+        {files.length ? (
+          <span className="flex min-w-0 flex-wrap gap-1">
+            {files.map((file) => (
+              <span
+                key={file.path}
+                className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 font-mono text-[11px]"
+              >
+                <span className="truncate text-brand-muted">{file.name}</span>
+                {file.added ? (
+                  <span className="text-brand-done">+{file.added}</span>
+                ) : null}
+                {file.removed ? (
+                  <span className="text-brand-error">−{file.removed}</span>
+                ) : null}
+              </span>
+            ))}
+          </span>
+        ) : null}
       </summary>
-      <div className="grid gap-1 pt-1">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 pt-1">
         {tools.map((tool, index) => (
           <ToolRow key={index} tool={tool} />
         ))}
       </div>
     </details>
   )
+}
+
+/** What a run of tool calls did, readable without expanding it. */
+function toolDigest(tools: Array<Message>) {
+  const byFile = new Map<
+    string,
+    { path: string; name: string; added: number; removed: number }
+  >()
+  let commands = 0
+  let reads = 0
+  for (const tool of tools) {
+    if (tool.tool === 'Bash') commands++
+    else if (tool.tool === 'Read') reads++
+    else if (
+      tool.file &&
+      ['Edit', 'MultiEdit', 'Write'].includes(tool.tool ?? '')
+    ) {
+      const entry = byFile.get(tool.file) ?? {
+        path: tool.file,
+        name: tool.file.split('/').at(-1) ?? tool.file,
+        added: 0,
+        removed: 0,
+      }
+      entry.added += tool.added ?? 0
+      entry.removed += tool.removed ?? 0
+      byFile.set(tool.file, entry)
+    }
+  }
+  const files = [...byFile.values()]
+  return {
+    files,
+    edited: files.length,
+    added: files.reduce((sum, file) => sum + file.added, 0),
+    removed: files.reduce((sum, file) => sum + file.removed, 0),
+    commands,
+    reads,
+  }
 }
 
 type Item =

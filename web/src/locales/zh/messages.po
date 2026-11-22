@@ -7,13 +7,17 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/chat-thread.tsx:307
+#: src/features/chat-thread.tsx:374
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/chat-thread.tsx:306
+#: src/features/chat-thread.tsx:373
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
+
+#: src/features/chat-thread.tsx:178
+msgid "{count} tool calls"
+msgstr "共 {count} 次工具调用"
 
 #: src/features/landing-example.tsx:71
 msgid "{doneCount} done"
@@ -27,7 +31,7 @@ msgstr "{needCount} 张工单等你处理，{runCount} 个任务正在运行"
 msgid "{runningCount} running"
 msgstr "{runningCount} 个运行中"
 
-#: src/features/console-sessions.tsx:399
+#: src/features/console-sessions.tsx:409
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -152,6 +156,10 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
+#: src/features/console-sessions.tsx:474
+msgid "Can't get the latest from the host, showing {staleAt}:"
+msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
+
 #: src/features/console-overview.tsx:130
 #: src/features/landing-page.tsx:46
 msgid "Capabilities"
@@ -164,6 +172,10 @@ msgstr "分类"
 #: src/features/console-activity.tsx:67
 msgid "challenged"
 msgstr "质疑"
+
+#: src/features/chat-thread.tsx:175
+msgid "changed {edited} files +{added} −{removed}"
+msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
 #: src/features/console-me.tsx:147
 msgid "Check again"
@@ -193,7 +205,7 @@ msgstr "子单"
 msgid "claimed"
 msgstr "认领"
 
-#: src/features/console-sessions.tsx:465
+#: src/features/console-sessions.tsx:485
 msgid "Claude is working; your message joins its queue and it decides when to take it."
 msgstr "Claude 正在运行，消息会进入它的队列，由它自己安排什么时候处理。"
 
@@ -366,7 +378,7 @@ msgstr "端点"
 msgid "English"
 msgstr "English"
 
-#: src/features/console-sessions.tsx:432
+#: src/features/console-sessions.tsx:442
 msgid "Enter"
 msgstr "回车"
 
@@ -378,7 +390,7 @@ msgstr "进入 Runtime 控制台"
 msgid "Entries"
 msgstr "条目"
 
-#: src/features/console-sessions.tsx:433
+#: src/features/console-sessions.tsx:443
 msgid "Esc"
 msgstr "Esc"
 
@@ -583,7 +595,7 @@ msgstr "亮色主题"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:409
+#: src/features/console-sessions.tsx:419
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -595,7 +607,7 @@ msgstr "加载更早"
 #: src/features/console-now.tsx:136
 #: src/features/console-sessions.tsx:131
 #: src/features/console-sessions.tsx:274
-#: src/features/console-sessions.tsx:409
+#: src/features/console-sessions.tsx:419
 #: src/features/console-shared.tsx:211
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
@@ -613,11 +625,11 @@ msgstr "日志流"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/console-sessions.tsx:495
+#: src/features/console-sessions.tsx:515
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/console-sessions.tsx:483
+#: src/features/console-sessions.tsx:503
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -752,7 +764,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:476
+#: src/features/console-sessions.tsx:496
 msgid "Open settings"
 msgstr "去设置"
 
@@ -829,9 +841,17 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/chat-thread.tsx:303
+#: src/features/chat-thread.tsx:370
 msgid "Queued messages"
 msgstr "排队中的消息"
+
+#: src/features/chat-thread.tsx:176
+msgid "ran {commands} commands"
+msgstr "运行 {commands} 条命令"
+
+#: src/features/chat-thread.tsx:177
+msgid "read {reads} files"
+msgstr "读了 {reads} 个文件"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:212
@@ -897,7 +917,7 @@ msgstr "请求数（WebRTC / 中转）"
 msgid "research done"
 msgstr "调研完成"
 
-#: src/features/chat-thread.tsx:148
+#: src/features/chat-thread.tsx:151
 msgid "Result"
 msgstr "结果"
 
@@ -1040,7 +1060,7 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/console-sessions.tsx:500
+#: src/features/console-sessions.tsx:520
 msgid "Send"
 msgstr "发送"
 
@@ -1138,11 +1158,11 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/console-sessions.tsx:423
+#: src/features/console-sessions.tsx:433
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:363
+#: src/features/console-sessions.tsx:370
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1150,11 +1170,11 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/chat-thread.tsx:219
+#: src/features/chat-thread.tsx:286
 msgid "The agent is working"
 msgstr "Agent 正在处理"
 
-#: src/features/console-sessions.tsx:361
+#: src/features/console-sessions.tsx:368
 msgid "The agent is working. You can send once it stops."
 msgstr "Agent 正在运行，等它停下后才能发送。"
 
@@ -1299,8 +1319,8 @@ msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。
 #~ msgstr "调用了 {0} 个工具"
 
 #: src/features/chat-thread.tsx:180
-msgid "Used {count} tools"
-msgstr "调用了 {count} 个工具"
+#~ msgid "Used {count} tools"
+#~ msgstr "调用了 {count} 个工具"
 
 #: src/features/console-collab-run.tsx:90
 #: src/features/console-me.tsx:70
@@ -1435,7 +1455,7 @@ msgstr "工作区迁移"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:359
+#: src/features/console-sessions.tsx:366
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

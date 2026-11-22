@@ -342,6 +342,13 @@ function SessionDetail({ id }: { id: string }) {
   const pending = settle(pendingRaw, messages)
   const busy = Boolean(data && isBusy(data))
   useStickToBottom(end, messages.length + pending.length + (busy ? 1 : 0))
+  const staleAt = detail.dataUpdatedAt
+    ? new Date(detail.dataUpdatedAt).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    : '—'
   const total = data?.total ?? messages.length
   const shown = messages.length
   const start = data?.start ?? 0
@@ -380,11 +387,14 @@ function SessionDetail({ id }: { id: string }) {
     }
   }
   return (
-    <div className="grid min-h-full grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
+    <div className="grid min-h-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
       <SessionHeader data={data} onBack={back} />
 
-      <div className="grid content-end gap-2" aria-live="polite">
-        {detail.isError ? (
+      <div
+        className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2"
+        aria-live="polite"
+      >
+        {detail.isError && !data ? (
           <p
             role="status"
             className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-sm"
@@ -455,6 +465,16 @@ function SessionDetail({ id }: { id: string }) {
           if (text.trim()) void run('send', { text })
         }}
       >
+        {detail.isError && data ? (
+          <p
+            role="status"
+            data-testid="session-stale"
+            className="rounded-[10px] bg-brand-waiting/10 px-3 py-1.5 text-xs text-brand-text"
+          >
+            {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
+            {detail.error.message}
+          </p>
+        ) : null}
         <SendQueue pending={pending} busy={busy} />
         {error ? (
           <p role="alert" className="text-xs text-brand-error">

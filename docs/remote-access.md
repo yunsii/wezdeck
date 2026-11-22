@@ -193,8 +193,12 @@ Logs: `category=relay` rows (`connected` / `disconnected` / `rtc_state` /
 `journalctl --user -u wezdeck-relay` and `relay.log` beside
 `wsl-bridge.log`; Worker logs via Cloudflare observability.
 
+Relay rooms: `/relay/host?room=<name>` and a page opened with `?room=<name>`
+(sticky per tab) share their own Durable Object, so a throwaway test host
+never displaces the real one — never stop `wezdeck-relay` to test.
+
 Acceptance (local: `vite dev` with `.dev.vars` + a relay pointed at it;
-production: the deployed site):
+production: the deployed site, test relay in `room=test`):
 
 ```bash
 WEZDECK_REMOTE_URL=https://wezdeck.yuns.love WEZDECK_REMOTE_TOKEN=<client token> \

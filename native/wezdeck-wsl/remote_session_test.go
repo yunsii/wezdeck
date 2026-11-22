@@ -275,7 +275,8 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 		t.Fatalf("first read: %v %+v", err, tr)
 	}
 	edit := tr.messages[1]
-	if edit.Tool != "Edit" || edit.Text != "Edit a.md" || edit.Body != "- 旧标题\n+ 新标题" || !strings.Contains(edit.Result, "updated") {
+	if edit.Tool != "Edit" || edit.Text != "Edit a.md" || edit.Body != "- 旧标题\n+ 新标题" || !strings.Contains(edit.Result, "updated") ||
+		edit.File != "a.md" || edit.Added != 1 || edit.Removed != 1 {
 		t.Fatalf("tool details: %+v", edit)
 	}
 	offset := tr.offset

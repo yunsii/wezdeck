@@ -286,6 +286,41 @@ type chatMessage struct {
 	Tool   string `json:"tool,omitempty"`   // tool name (role=tool)
 	Body   string `json:"body,omitempty"`   // what the tool was asked to do: diff, file preview, command
 	Result string `json:"result,omitempty"` // what came back (clipped)
+	// File / Added / Removed: what a file tool touched, counted on the full
+	// input (Body is clipped for the phone).
+	File    string `json:"file,omitempty"`
+	Added   int    `json:"added,omitempty"`
+	Removed int    `json:"removed,omitempty"`
+}
+
+func lineCount(s string) int {
+	if s == "" {
+		return 0
+	}
+	return strings.Count(strings.TrimRight(s, "\n"), "\n") + 1
+}
+
+// toolStats: file and changed-line counts for Edit / MultiEdit / Write.
+func toolStats(name string, input map[string]any) (file string, added, removed int) {
+	file, _ = input["file_path"].(string)
+	str := func(m map[string]any, key string) string { v, _ := m[key].(string); return v }
+	switch name {
+	case "Edit":
+		return file, lineCount(str(input, "new_string")), lineCount(str(input, "old_string"))
+	case "MultiEdit":
+		edits, _ := input["edits"].([]any)
+		for _, e := range edits {
+			m, _ := e.(map[string]any)
+			added += lineCount(str(m, "new_string"))
+			removed += lineCount(str(m, "old_string"))
+		}
+		return file, added, removed
+	case "Write":
+		return file, lineCount(str(input, "content")), 0
+	case "Read", "NotebookEdit":
+		return file, 0, 0
+	}
+	return "", 0, 0
 }
 
 func clip(s string, n int) string {
@@ -411,8 +446,9 @@ func (t *transcript) feedLine(raw []byte) {
 		case b.Type == "tool_use":
 			var input map[string]any
 			_ = json.Unmarshal(b.Input, &input)
+			file, added, removed := toolStats(b.Name, input)
 			t.messages = append(t.messages, chatMessage{Role: "tool", Tool: b.Name, Text: toolSummary(b.Name, input),
-				Body: toolBody(b.Name, input), TS: line.Timestamp})
+				Body: toolBody(b.Name, input), TS: line.Timestamp, File: file, Added: added, Removed: removed})
 			if b.ID != "" {
 				t.tools[b.ID] = len(t.messages) - 1
 			}

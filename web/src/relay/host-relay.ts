@@ -186,7 +186,12 @@ function safeEqual(a: string, b: string) {
 /** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/auth · /relay/health */
 export async function relayFetch(request: Request, env: RelayEnv) {
   const url = new URL(request.url)
-  const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName('default'))
+  // ?room= picks a separate relay (one DO per room): tests run a throwaway
+  // host + browser in their own room and never touch the real one.
+  const room = url.searchParams.get('room') ?? 'default'
+  if (!/^[a-z0-9-]{1,32}$/.test(room))
+    return new Response('bad room', { status: 400 })
+  const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(room))
   if (url.pathname === '/relay/health') {
     const presence = await stub.fetch('https://relay/presence')
     return new Response(presence.body, {

@@ -18,6 +18,10 @@ const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 const devicesFile = process.env.WEZDECK_TEST_DEVICES ?? ''
 const repo = join(import.meta.dirname, '..', '..')
+// A relay room keeps the throwaway host + browser off the real relay; start
+// the test relay with WEZDECK_RELAY_URL=…/relay/host?room=$WEZDECK_REMOTE_ROOM.
+const room = process.env.WEZDECK_REMOTE_ROOM ?? ''
+const roomQuery = room ? `&room=${room}` : ''
 
 describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
   let browser: Browser
@@ -69,7 +73,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       locale: 'zh-CN',
     })
     const page = await context.newPage()
-    await page.goto(`${base}/zh/console/me?remote=1#pair=${token}`)
+    await page.goto(`${base}/zh/console/me?remote=1${roomQuery}#pair=${token}`)
     // the compact link badge renders only after hydration: clicks land
     await page
       .locator('[data-testid=remote-badge-compact]')
