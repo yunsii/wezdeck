@@ -246,14 +246,18 @@ func listSessions() (any, error) {
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
 			RunningKind: e.RunningKind, Background: backgroundOf(e)}
+		// Activity = when the conversation last moved. A Claude transcript is
+		// written only by real turns (messages, tool calls), so it alone is
+		// the clock; the status ts (bumped for background-only sessions) and
+		// tmux window_activity (any pane in the window, TUI redraws) would
+		// reorder idle sessions. Agents without a transcript fall back to them.
 		if path := claudeTranscript(e.SessionID); path != "" {
 			card.Agent = "claude"
 			card.Transcript = true
-			if info, err := os.Stat(path); err == nil && info.ModTime().UnixMilli() > card.TS {
+			if info, err := os.Stat(path); err == nil {
 				card.TS = info.ModTime().UnixMilli()
 			}
-		}
-		if act := windowActivity(e); act > card.TS {
+		} else if act := windowActivity(e); act > card.TS {
 			card.TS = act
 		}
 		if act := deskActivity(e); act > 0 {
@@ -263,7 +267,7 @@ func listSessions() (any, error) {
 		}
 		cards = append(cards, card)
 	}
-	// newest activity first: status update, transcript write or window output
+	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
 	return map[string]any{"v": 1, "ok": true, "sessions": cards}, nil
 }
