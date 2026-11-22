@@ -118,8 +118,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   re-pins; while unpinned a "回到最新 / N 条新消息" button jumps back)
   (tables and code scroll in their own box); messages run full width and
   are told apart by background alone (user: ink `brand-text` with deck text,
-  reply: `brand-surface`); runs of tool calls collapse into one line, each call
-  expands to its diff / preview / command and result; the newest run while
+  reply: `brand-surface`); runs of tool calls collapse into one line (`chat-tools.tsx`), each call
+  expands to its diff / preview / command and result — descriptions and
+  bodies wrap (folded rows show up to 3 lines, open rows all) instead of
+  being cut off or scrolling sideways; the newest run while
   the agent works is open, shows its last 3 calls ("N earlier calls" above)
   with a breathing light on the call in flight (host `pending`: sent, no
   result yet) and a check on finished ones, and collapses once the run is
