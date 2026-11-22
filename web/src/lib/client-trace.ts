@@ -95,6 +95,43 @@ const describe = (target: EventTarget | null) =>
 
 let installed = false
 
+/**
+ * The console shell's geometry: where the bottom tab bar sits, how tall the
+ * shell is against the viewport and what `100dvh` measures — for "the tab bar
+ * vanished after an update reload".
+ */
+export function shellMetrics(): Record<string, unknown> {
+  const rect = (el: Element | null) => {
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return {
+      top: Math.round(r.top),
+      bottom: Math.round(r.bottom),
+      h: Math.round(r.height),
+    }
+  }
+  const bar = document.querySelector('nav.tabbar-vt')
+  const probe = document.createElement('div')
+  probe.style.cssText =
+    'position:fixed;top:0;height:100dvh;width:0;visibility:hidden'
+  document.body.append(probe)
+  const dvh = Math.round(probe.getBoundingClientRect().height)
+  probe.remove()
+  const vv = window.visualViewport
+  return {
+    path: location.pathname,
+    tabbar: bar
+      ? { ...rect(bar), display: getComputedStyle(bar).display }
+      : null,
+    shell: rect(document.querySelector('main[data-deck]')),
+    innerHeight: window.innerHeight,
+    dvh,
+    vv: vv ? { h: Math.round(vv.height), top: Math.round(vv.offsetTop) } : null,
+    scrollY: Math.round(window.scrollY),
+    docHeight: document.documentElement.scrollHeight,
+  }
+}
+
 const PREVIOUS_KEY = 'wezdeck-trace-previous'
 function previousDocument() {
   try {
@@ -178,6 +215,12 @@ export function installClientTrace() {
   })
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) trace('pageshow-bfcache', { path: location.pathname })
+  })
+  setTimeout(() => trace('shell', shellMetrics()), 2000)
+  let shellTimer: ReturnType<typeof setTimeout> | undefined
+  window.addEventListener('resize', () => {
+    clearTimeout(shellTimer)
+    shellTimer = setTimeout(() => trace('shell', shellMetrics()), 700)
   })
   const vv = window.visualViewport
   let lastTop = -1

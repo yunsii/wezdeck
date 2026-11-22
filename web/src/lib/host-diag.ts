@@ -18,7 +18,12 @@
 import type { AnyRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
-import { diagnosticsSnapshot, sampleFrames, trace } from '#/lib/client-trace'
+import {
+  diagnosticsSnapshot,
+  sampleFrames,
+  shellMetrics,
+  trace,
+} from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
 
 type Step = {
@@ -105,6 +110,7 @@ function layoutReport(): Record<string, unknown> {
     scroller: box ? [box.scrollWidth, box.clientWidth] : null,
     rootFontSize: root.fontSize,
     textSizeAdjust: root.getPropertyValue('text-size-adjust') || null,
+    shell: shellMetrics(),
     offenders,
   }
 }
