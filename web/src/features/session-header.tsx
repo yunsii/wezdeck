@@ -6,7 +6,7 @@
 // are, and the background tasks (counted in the meter row). The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { ChevronLeft } from 'lucide-react'
+import { Check, ChevronLeft, Copy } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
@@ -146,6 +146,48 @@ function Meters({
   )
 }
 
+/**
+ * Copy a reference an agent can act on (host-built, remote_reference.go):
+ * session id, transcript path, cwd / branch, tmux pane. Paste it into
+ * another agent's chat and it can read or drive this session.
+ */
+function CopyReference({ text }: { text: string }) {
+  const { t } = useLingui()
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      // older / insecure contexts: a hidden textarea still copies
+      const area = document.createElement('textarea')
+      area.value = text
+      area.style.cssText = 'position:fixed;opacity:0'
+      document.body.append(area)
+      area.select()
+      document.execCommand('copy')
+      area.remove()
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1_500)
+  }
+  return (
+    <button
+      type="button"
+      data-testid="copy-reference"
+      onClick={() => void copy()}
+      aria-label={copied ? t`Copied` : t`Copy session reference for an agent`}
+      title={t`Copy session reference for an agent`}
+      className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-brand-muted"
+    >
+      {copied ? (
+        <Check size={17} aria-hidden className="text-brand-done" />
+      ) : (
+        <Copy size={17} aria-hidden />
+      )}
+    </button>
+  )
+}
+
 export function SessionHeader({
   data,
   onBack,
@@ -234,6 +276,7 @@ export function SessionHeader({
             </span>
           ) : null}
         </div>
+        {data?.reference ? <CopyReference text={data.reference} /> : null}
         <span
           title={long}
           className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] text-brand-muted"

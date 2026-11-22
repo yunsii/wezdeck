@@ -96,6 +96,8 @@ export type Detail = {
   branch?: string
   usage?: Usage
   account?: AccountLimits
+  /** host-built block an agent can act on (remote_reference.go) */
+  reference?: string
   total?: number
   start?: number
   agent?: string

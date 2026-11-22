@@ -627,11 +627,11 @@ func listSessions() (any, error) {
 			gitCache[cwd] = [3]string{repo, root, wt}
 			card.Repo, card.RepoRoot, card.Worktree = repo, root, wt
 		}
-		// Activity = when the conversation last moved. A transcript (Claude,
-		// Grok, Codex) is written only by real turns (messages, tool calls), so
-		// it alone is the clock; the status ts (bumped for background-only sessions) and
-		// tmux window_activity (any pane in the window, TUI redraws) would
-		// reorder idle sessions. Agents without a transcript fall back to them.
+		// Activity = when the conversation last moved: the newest turn in the
+		// transcript (remote_activity.go); the status ts (bumped for
+		// background-only sessions) and tmux window_activity (any pane in the
+		// window, TUI redraws) would reorder idle sessions, so they are only
+		// the fallback for agents without a transcript.
 		if path, agent := findTranscript(e.SessionID); path != "" {
 			card.Agent = agent
 			card.Transcript = true
@@ -1269,7 +1269,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,
 		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent",
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
-	if path, agent := findTranscript(e.SessionID); path != "" {
+	path, agent := findTranscript(e.SessionID)
+	out["reference"] = sessionReference(e, path, agent)
+	if path != "" {
 		out["agent"] = agent
 		if title := readSessionTitle(path, agent); title != "" {
 			out["title"] = title

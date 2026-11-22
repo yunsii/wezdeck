@@ -92,7 +92,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   settings as segmented rows instead of popovers, a translucent bottom bar
   with four tabs (hidden on detail pages, which are full screen).
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session name (+ branch), one status word (full sentence as the
+  back, session name (+ branch), 复制引用 (copies the host-built
+  `reference` block so another agent can locate the session: id,
+  transcript path, cwd, tmux pane), one status word (full sentence as the
   tooltip), and meters — context, Claude 5 h / 7 d limits with reset time
   ([`remote-access.md` Account limits](remote-access.md#account-limits)),
   background tasks — filled by share, amber from 75 %, red from 90 %;
