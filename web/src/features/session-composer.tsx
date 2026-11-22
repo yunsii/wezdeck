@@ -1,9 +1,9 @@
-// The session composer: text, plus an attach tray for reporting a problem
-// from the phone — a "attach diagnostics" checkbox (lib/client-trace.ts) and
-// screenshots. Attachments upload first (lib/upload.ts), then the message is
+// The session composer: text, plus a one-line toolbar above it for reporting
+// a problem from the phone — add screenshots, toggle "attach diagnostics"
+// (lib/client-trace.ts); thumbnails sit in the same row. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
-import { ImagePlus, Paperclip, SendHorizontal, X } from 'lucide-react'
+import { Activity, ImagePlus, SendHorizontal, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { diagnosticsSnapshot } from '#/lib/client-trace'
@@ -33,7 +33,6 @@ export function useComposer({
   const [text, setText] = useState('')
   const [images, setImages] = useState<Array<Picked>>([])
   const [diag, setDiag] = useState(false)
-  const [open, setOpen] = useState(false)
   const [progress, setProgress] = useState('')
   const urls = useRef(images)
   urls.current = images
@@ -99,7 +98,6 @@ export function useComposer({
       images.forEach((image) => URL.revokeObjectURL(image.url))
       setImages([])
       setDiag(false)
-      setOpen(false)
     }
   }
   return {
@@ -110,8 +108,6 @@ export function useComposer({
     remove,
     diag,
     setDiag,
-    open,
-    setOpen,
     progress,
     ready,
     submit,
@@ -120,50 +116,30 @@ export function useComposer({
 
 type Composer = ReturnType<typeof useComposer>
 
-function AttachTray({ composer }: { composer: Composer }) {
+const tool =
+  'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
+
+/** Above the input: add images, toggle diagnostics, then the picked thumbnails. */
+function Toolbar({ composer }: { composer: Composer }) {
   const { t } = useLingui()
   const full = composer.images.length >= MAX_IMAGES
   return (
-    <div
-      data-testid="attach-tray"
-      className="grid gap-2.5 rounded-[16px] bg-brand-surface p-3"
-    >
-      <label className="flex items-start gap-2.5 text-[14px]">
-        <input
-          type="checkbox"
-          checked={composer.diag}
-          onChange={(event) => composer.setDiag(event.target.checked)}
-          className="mt-0.5 size-[18px] accent-[var(--color-brand-running)]"
-        />
-        <span className="grid gap-0.5">
-          <span>{t`Attach this phone's diagnostics`}</span>
-          <span className="text-[12px] leading-snug text-brand-label">
-            {t`Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text.`}
-          </span>
-        </span>
-      </label>
-      <div className="flex flex-wrap items-center gap-2">
-        {composer.images.map((image) => (
-          <div key={image.key} className="relative size-16">
-            <img
-              src={image.url}
-              alt=""
-              className="size-16 rounded-[10px] object-cover"
-            />
-            <button
-              type="button"
-              aria-label={t`Remove image`}
-              onClick={() => composer.remove(image.key)}
-              className="absolute -top-1.5 -right-1.5 inline-flex size-6 items-center justify-center rounded-full bg-brand-text text-brand-deck"
-            >
-              <X size={13} aria-hidden />
-            </button>
-          </div>
-        ))}
+    <div className="grid gap-1">
+      <div
+        role="toolbar"
+        aria-label={t`Attachments`}
+        data-testid="composer-tools"
+        className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+      >
         {full ? null : (
-          <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-[12px] border border-dashed border-brand-edge px-3 text-[13px] text-brand-muted focus-within:ring-2 focus-within:ring-brand-running">
-            <ImagePlus size={16} aria-hidden />
-            {t`Add images`}
+          <label
+            className={cn(
+              tool,
+              'cursor-pointer bg-brand-surface text-brand-muted focus-within:ring-2 focus-within:ring-brand-running',
+            )}
+          >
+            <ImagePlus size={14} aria-hidden />
+            {t`Images`}
             <input
               type="file"
               accept="image/*"
@@ -176,7 +152,44 @@ function AttachTray({ composer }: { composer: Composer }) {
             />
           </label>
         )}
+        <button
+          type="button"
+          aria-pressed={composer.diag}
+          title={t`Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text.`}
+          onClick={() => composer.setDiag(!composer.diag)}
+          className={cn(
+            tool,
+            composer.diag
+              ? 'bg-brand-text text-brand-deck'
+              : 'bg-brand-surface text-brand-muted',
+          )}
+        >
+          <Activity size={14} aria-hidden />
+          {t`Diagnostics`}
+        </button>
+        {composer.images.map((image) => (
+          <span key={image.key} className="relative size-8 shrink-0">
+            <img
+              src={image.url}
+              alt=""
+              className="size-8 rounded-[8px] object-cover"
+            />
+            <button
+              type="button"
+              aria-label={t`Remove image`}
+              onClick={() => composer.remove(image.key)}
+              className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-brand-text text-brand-deck"
+            >
+              <X size={10} aria-hidden />
+            </button>
+          </span>
+        ))}
       </div>
+      {composer.diag ? (
+        <p className="px-1 text-[11.5px] leading-snug text-brand-label">
+          {t`Sends sizes, scroll state and recent page events; no tokens, no message text.`}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -184,38 +197,23 @@ function AttachTray({ composer }: { composer: Composer }) {
 export function ComposerBox({
   composer,
   blocked,
+  writable,
 }: {
   composer: Composer
   blocked: boolean
+  /** this phone may write: only then are attachments offered */
+  writable: boolean
 }) {
   const { t } = useLingui()
-  const attached = composer.images.length + (composer.diag ? 1 : 0)
   return (
     <>
-      {composer.open ? <AttachTray composer={composer} /> : null}
+      {writable ? <Toolbar composer={composer} /> : null}
       {composer.progress ? (
         <p role="status" className="px-1 text-xs text-brand-muted">
           {composer.progress}
         </p>
       ) : null}
-      <div className="flex items-end gap-1.5 rounded-[22px] bg-brand-surface p-1.5">
-        <button
-          type="button"
-          aria-label={t`Attachments`}
-          aria-expanded={composer.open}
-          onClick={() => composer.setOpen(!composer.open)}
-          className={cn(
-            'relative inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted',
-            composer.open && 'bg-brand-deck text-brand-text',
-          )}
-        >
-          <Paperclip size={18} aria-hidden />
-          {attached ? (
-            <span className="absolute top-0.5 right-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-brand-running px-1 text-[10px] leading-4 font-medium text-brand-deck">
-              {attached}
-            </span>
-          ) : null}
-        </button>
+      <div className="flex items-end gap-2 rounded-[22px] bg-brand-surface p-1.5">
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
         </label>
@@ -230,7 +228,7 @@ export function ComposerBox({
           onChange={(event) => composer.setText(event.target.value)}
           rows={1}
           placeholder={t`Message`}
-          className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-[16px] outline-none [field-sizing:content] placeholder:text-brand-label"
+          className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-[16px] outline-none [field-sizing:content] placeholder:text-brand-label"
         />
         <button
           type="submit"

@@ -7,19 +7,19 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
-#: src/features/session-composer.tsx:96
+#: src/features/session-composer.tsx:95
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:415
+#: src/features/chat-thread.tsx:438
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:94
+#: src/features/session-composer.tsx:93
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/chat-thread.tsx:414
+#: src/features/chat-thread.tsx:437
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
@@ -71,10 +71,6 @@ msgstr "A local-first workbench for AI coding agents."
 #: src/features/console-shell.tsx:135
 msgid "Activity"
 msgstr "Activity"
-
-#: src/features/session-composer.tsx:166
-msgid "Add images"
-msgstr "Add images"
 
 #: src/features/landing-page.tsx:122
 msgid "After a restart, return to the same agent session and continue the work."
@@ -141,11 +137,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/session-composer.tsx:139
-msgid "Attach this phone's diagnostics"
-msgstr "Attach this phone's diagnostics"
-
-#: src/features/session-composer.tsx:204
+#: src/features/session-composer.tsx:130
 msgid "Attachments"
 msgstr "Attachments"
 
@@ -372,12 +364,13 @@ msgstr "Depends on"
 msgid "Development"
 msgstr "Development"
 
-#: src/features/session-composer.tsx:94
+#: src/features/session-composer.tsx:93
 msgid "diagnostics"
 msgstr "diagnostics"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
+#: src/features/session-composer.tsx:168
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -519,6 +512,10 @@ msgstr "Host up since"
 #: src/features/console-sessions.tsx:91
 msgid "idle, you can send"
 msgstr "idle, you can send"
+
+#: src/features/session-composer.tsx:142
+msgid "Images"
+msgstr "Images"
 
 #: src/features/console-shared.tsx:348
 msgid "IME state is unavailable because Runtime is offline."
@@ -666,11 +663,11 @@ msgstr "Log stream"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:232
+#: src/features/session-composer.tsx:230
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:220
+#: src/features/session-composer.tsx:218
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -886,7 +883,7 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/chat-thread.tsx:411
+#: src/features/chat-thread.tsx:434
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -926,7 +923,7 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/session-composer.tsx:155
+#: src/features/session-composer.tsx:179
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -1093,7 +1090,7 @@ msgstr "Sample signals. The live console reads your local Runtime."
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-composer.tsx:141
+#: src/features/session-composer.tsx:158
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
@@ -1113,9 +1110,13 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:237
+#: src/features/session-composer.tsx:235
 msgid "Send"
 msgstr "Send"
+
+#: src/features/session-composer.tsx:190
+msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
+msgstr "Sends sizes, scroll state and recent page events; no tokens, no message text."
 
 #: src/features/console-sessions.tsx:325
 #~ msgid "Sent to the session"
@@ -1223,7 +1224,7 @@ msgstr "The agent is asking for a confirmation: answer it with the keys above."
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:327
+#: src/features/chat-thread.tsx:346
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -1368,8 +1369,8 @@ msgstr "Up to date, {at}"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:73
-#: src/features/session-composer.tsx:84
+#: src/features/session-composer.tsx:72
+#: src/features/session-composer.tsx:83
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 

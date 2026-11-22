@@ -59,10 +59,15 @@ export function useChatScroll(
       userUntil.current = performance.now() + 400
       holdUntil.current = 0 // the reader takes over: stop holding the bottom
     }
+    // a finger dragging the history down keeps it unpinned until it lifts;
+    // re-pinning from scroll events mid-drag made the state (and the jump
+    // button) flap every frame near the bottom
+    let readingBack = false
+    const nearBottom = () =>
+      el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM
     const onScroll = () => {
-      const gap = el.scrollHeight - el.scrollTop - el.clientHeight
-      if (gap < NEAR_BOTTOM) {
-        if (!pinnedRef.current) pin(true)
+      if (nearBottom()) {
+        if (!pinnedRef.current && !readingBack) pin(true)
       } else if (
         performance.now() < userUntil.current &&
         performance.now() > holdUntil.current &&
@@ -84,10 +89,15 @@ export function useChatScroll(
       if (Math.abs(moved) < DRAG) return // a tap's wobble is no intent
       intent()
       // finger moving down = reading back: leave the bottom right away
-      if (moved > 0 && pinnedRef.current) pin(false)
+      if (moved > 0) {
+        readingBack = true
+        if (pinnedRef.current) pin(false)
+      }
     }
     const onTouchEnd = () => {
       touching.current = false
+      if (readingBack && nearBottom()) pin(true)
+      readingBack = false
     }
     el.addEventListener('wheel', intent, { passive: true })
     el.addEventListener('touchstart', onTouchStart, { passive: true })
@@ -135,7 +145,9 @@ export function useChatScroll(
   // shrinks the scroller: either way a pinned thread follows its newest line
   useEffect(() => {
     const el = scroller()
-    const thread = end.current?.parentElement
+    // the whole page content: the thread and the composer (which grows with
+    // the toolbar, thumbnails or a multi-line draft)
+    const thread = document.getElementById('console-main')
     if (!el || !thread || typeof ResizeObserver === 'undefined') return
     const follow = () => {
       if (pinnedRef.current && landed.current && !touching.current)

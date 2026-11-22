@@ -105,8 +105,15 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (ResizeObserver on the scroller + `visualViewport` resize) so the newest
   message stays in view; composer focus / blur and viewport resizes also
   hold a pinned thread at the bottom every frame for up to 1 s, and a tap's
-  wobble (< 8 px) never counts as scrolling away. The composer's 附件 tray
-  attaches the client diagnostics snapshot and screenshots
+  wobble (< 8 px) never counts as scrolling away; a finger dragging the
+  history down keeps it unpinned until it lifts (re-pinning from scroll
+  events mid-drag flapped the state every frame). The follow observes the
+  whole page content, so a growing composer (toolbar, thumbnails, a long
+  draft) keeps a pinned thread at the bottom too. The reveal cursor never
+  stays inside a run of tool calls that grew after it was shown
+  (`settleCursor`, `npm run test:unit`), which had stalled the thread until
+  the page reopened. The toolbar above the composer (图片 / 诊断) attaches
+  the client diagnostics snapshot and screenshots
   ([`remote-access.md` Attachments](remote-access.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
   that padding the moment a drag starts. Back from the background the page

@@ -103,8 +103,9 @@ pane gets a 4 s `手机发来一条消息` notice.
 
 ### Attachments
 
-Reporting a problem from the phone (composer › 附件, `session-composer.tsx`):
-check 附带本机诊断数据 and/or add up to 5 images. Images are shrunk on the
+Reporting a problem from the phone (the toolbar above the composer,
+`session-composer.tsx`): toggle 诊断 and/or add up to 5 images with 图片
+(thumbnails sit in the same row; the toolbar shows only on an approved phone). Images are shrunk on the
 phone (long edge ≤ 1600 px, JPEG 0.82, `lib/upload.ts`); every file goes up
 as signed `upload` chunks of 36 KB (small enough for one DataChannel
 message), then `send` names the stored files and the host appends
@@ -127,7 +128,8 @@ The diagnostics snapshot (`lib/client-trace.ts`) holds build id, page path
 screen / viewport / `visualViewport` / safe-area sizes, the viewport meta,
 the scroller metrics, link mode / path / RTT, session status, chat pinning,
 and the last 150 page events (viewport resizes with scroller metrics, focus,
-`chat-pin` / `chat-hold`, visibility, link changes, errors). No tokens, no
+`chat-pin` / `chat-hold`, a `viewport-settled` sample 0.7 s after each
+resize, visibility, link changes, errors). No tokens, no
 message text.
 
 ## Writes: device keys

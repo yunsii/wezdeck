@@ -457,7 +457,7 @@ function SessionDetail({ id }: { id: string }) {
       </div>
 
       <form
-        className="sticky bottom-0 -mb-4 grid gap-1.5 bg-brand-deck pt-1 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
+        className="sticky bottom-0 -mb-4 grid gap-1.5 bg-brand-deck pt-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]"
         onSubmit={(event) => {
           event.preventDefault()
           setError('')
@@ -508,6 +508,7 @@ function SessionDetail({ id }: { id: string }) {
         <ComposerBox
           composer={composer}
           blocked={sending || Boolean(blocked)}
+          writable={device.state === 'approved'}
         />
       </form>
     </div>

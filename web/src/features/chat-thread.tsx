@@ -302,12 +302,31 @@ function toolDigest(tools: Array<Message>) {
   }
 }
 
-type Item =
+export type Item =
   | { kind: 'message'; message: Message; index: number }
   | { kind: 'tools'; tools: Array<Message>; index: number }
 
+/**
+ * A run of tool calls can grow after it was revealed (the agent is still
+ * calling tools); a cursor left inside it would match no item and stall the
+ * thread until the page reopens. Move such a cursor to the end of the run.
+ */
+export function settleCursor(
+  items: Array<Item>,
+  start: number,
+  cursor: number,
+) {
+  for (const item of items) {
+    if (item.kind !== 'tools') continue
+    const from = start + item.index
+    const to = from + item.tools.length
+    if (from < cursor && cursor < to) return to
+  }
+  return cursor
+}
+
 /** Consecutive tool calls collapse into one expandable line. */
-function group(messages: Array<Message>) {
+export function group(messages: Array<Message>) {
   const out: Array<Item> = []
   messages.forEach((message, index) => {
     const last = out.at(-1)
@@ -355,8 +374,12 @@ export function ChatThread({
   const [cursor, setCursor] = useState<number | null>(null)
   if (baseline.current === null && messages.length > 0) baseline.current = end
   // a long backlog (phone was away) jumps to the newest instead of replaying
-  const effective =
-    cursor === null ? (baseline.current ?? end) : Math.max(cursor, end - 8)
+  const items = group(messages)
+  const effective = settleCursor(
+    items,
+    start,
+    cursor === null ? (baseline.current ?? end) : Math.max(cursor, end - 8),
+  )
   const advance = useCallback(
     (to: number) => setCursor((current) => Math.max(current ?? 0, to)),
     [],
@@ -365,7 +388,7 @@ export function ChatThread({
     baseline.current !== null && start + index >= baseline.current
   return (
     <>
-      {group(messages).map((item) => {
+      {items.map((item) => {
         const at = start + item.index
         if (at > effective) return null
         const stream = at === effective

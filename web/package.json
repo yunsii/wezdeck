@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",
     "mock-runtime": "node scripts/mock-runtime.mjs",
     "test:cdp": "vitest run --config vitest.cdp.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
     "deploy": "vite build && wrangler deploy"

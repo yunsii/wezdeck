@@ -7,19 +7,19 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/session-composer.tsx:96
+#: src/features/session-composer.tsx:95
 msgid ", "
 msgstr "、"
 
-#: src/features/chat-thread.tsx:415
+#: src/features/chat-thread.tsx:438
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:94
+#: src/features/session-composer.tsx:93
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/chat-thread.tsx:414
+#: src/features/chat-thread.tsx:437
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
 
@@ -71,10 +71,6 @@ msgstr "面向 AI Agent 的本地工作台。"
 #: src/features/console-shell.tsx:135
 msgid "Activity"
 msgstr "动态"
-
-#: src/features/session-composer.tsx:166
-msgid "Add images"
-msgstr "添加图片"
 
 #: src/features/landing-page.tsx:122
 msgid "After a restart, return to the same agent session and continue the work."
@@ -141,11 +137,7 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
-#: src/features/session-composer.tsx:139
-msgid "Attach this phone's diagnostics"
-msgstr "附带本机诊断数据"
-
-#: src/features/session-composer.tsx:204
+#: src/features/session-composer.tsx:130
 msgid "Attachments"
 msgstr "附件"
 
@@ -372,12 +364,13 @@ msgstr "依赖"
 msgid "Development"
 msgstr "开发"
 
-#: src/features/session-composer.tsx:94
+#: src/features/session-composer.tsx:93
 msgid "diagnostics"
 msgstr "诊断数据"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
+#: src/features/session-composer.tsx:168
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -519,6 +512,10 @@ msgstr "主机上线于"
 #: src/features/console-sessions.tsx:91
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
+
+#: src/features/session-composer.tsx:142
+msgid "Images"
+msgstr "图片"
 
 #: src/features/console-shared.tsx:348
 msgid "IME state is unavailable because Runtime is offline."
@@ -666,11 +663,11 @@ msgstr "日志流"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:232
+#: src/features/session-composer.tsx:230
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:220
+#: src/features/session-composer.tsx:218
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -886,7 +883,7 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/chat-thread.tsx:411
+#: src/features/chat-thread.tsx:434
 msgid "Queued messages"
 msgstr "排队中的消息"
 
@@ -926,7 +923,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:155
+#: src/features/session-composer.tsx:179
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -1093,7 +1090,7 @@ msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-composer.tsx:141
+#: src/features/session-composer.tsx:158
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
@@ -1113,9 +1110,13 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:237
+#: src/features/session-composer.tsx:235
 msgid "Send"
 msgstr "发送"
+
+#: src/features/session-composer.tsx:190
+msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
+msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
 
 #: src/features/console-sessions.tsx:325
 #~ msgid "Sent to the session"
@@ -1223,7 +1224,7 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/chat-thread.tsx:327
+#: src/features/chat-thread.tsx:346
 msgid "The agent is working"
 msgstr "Agent 正在处理"
 
@@ -1368,8 +1369,8 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:73
-#: src/features/session-composer.tsx:84
+#: src/features/session-composer.tsx:72
+#: src/features/session-composer.tsx:83
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 

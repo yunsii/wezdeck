@@ -151,10 +151,14 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       .waitFor({ timeout: 10_000 })
     // report a problem: diagnostics + a screenshot ride along as attachments
     if (uploadsDir) {
-      await page.getByRole('button', { name: '附件' }).click()
-      await page.getByLabel('附带本机诊断数据').check()
+      await page.getByRole('button', { name: '诊断' }).click()
+      expect(
+        await page
+          .getByRole('button', { name: '诊断' })
+          .getAttribute('aria-pressed'),
+      ).toBe('true')
       await page
-        .locator('[data-testid=attach-tray] input[type=file]')
+        .locator('[data-testid=composer-tools] input[type=file]')
         .setInputFiles({
           name: 'shot.png',
           mimeType: 'image/png',

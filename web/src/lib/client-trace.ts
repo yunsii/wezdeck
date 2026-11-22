@@ -56,6 +56,7 @@ export function installClientTrace() {
   installed = true
   const vv = window.visualViewport
   let lastTop = -1
+  let settled: ReturnType<typeof setTimeout> | undefined
   const onViewport = (source: string) => () => {
     if (source === 'vv-scroll') {
       const top = Math.round(vv?.offsetTop ?? 0)
@@ -63,6 +64,13 @@ export function installClientTrace() {
       lastTop = top
     }
     trace('viewport', { source, ...viewport(), scroller: scroller() })
+    // where things ended up once the page has reacted (keyboard follow etc.)
+    if (source !== 'vv-scroll') {
+      clearTimeout(settled)
+      settled = setTimeout(() => {
+        trace('viewport-settled', { ...viewport(), scroller: scroller() })
+      }, 700)
+    }
   }
   window.addEventListener('resize', onViewport('window'))
   vv?.addEventListener('resize', onViewport('vv'))
