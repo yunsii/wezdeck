@@ -6,7 +6,8 @@ package main
 //
 //   - one writer: a tmux-hosted session only ever receives a paste into its
 //     own TUI (never a second process resuming the same session id);
-//   - only when the agent waits for input (attention status != running);
+//   - mid-turn only for Claude Code (it queues input itself); other agents
+//     once the turn is over or only background tasks are left;
 //   - not while someone typed at the desk in the last DeskIdle seconds;
 //   - every write is signed by an approved device key (ECDSA P-256, the
 //     private key never leaves the phone) — Cloudflare cannot forge one;
@@ -51,6 +52,24 @@ type attentionEntry struct {
 	LastUserPrompt string `json:"last_user_prompt"`
 	AgentName      string `json:"agent_name"`
 	WindowName     string `json:"tmux_window_name"`
+	// running_kind=background: the turn ended but harness background tasks
+	// (bg.tasks) are still alive — the TUI takes input (agent-attention.md
+	// "Background running substate").
+	RunningKind string `json:"running_kind"`
+	Bg          struct {
+		Tasks []bgTask `json:"tasks"`
+	} `json:"bg"`
+}
+
+type bgTask struct {
+	ID      string `json:"id"`
+	Type    string `json:"type"`
+	Summary string `json:"summary"`
+}
+
+// busy: the agent is mid-turn (not just waiting on background tasks).
+func (e attentionEntry) busy() bool {
+	return e.Status == "running" && e.RunningKind != "background"
 }
 
 func attentionFile() string {
@@ -126,18 +145,20 @@ func claudeTranscript(sessionID string) string {
 }
 
 type sessionCard struct {
-	ID          string `json:"id"`
-	Agent       string `json:"agent"`
-	Name        string `json:"name"`
-	Window      string `json:"window"`
-	Cwd         string `json:"cwd"`
-	Branch      string `json:"branch"`
-	Status      string `json:"status"`
-	WaitingKind string `json:"waiting_kind,omitempty"`
-	LastPrompt  string `json:"last_prompt"`
-	TS          int64  `json:"ts"`
-	Transcript  bool   `json:"transcript"`
-	DeskIdleS   int64  `json:"desk_idle_s"`
+	ID          string   `json:"id"`
+	Agent       string   `json:"agent"`
+	Name        string   `json:"name"`
+	Window      string   `json:"window"`
+	Cwd         string   `json:"cwd"`
+	Branch      string   `json:"branch"`
+	Status      string   `json:"status"`
+	WaitingKind string   `json:"waiting_kind,omitempty"`
+	LastPrompt  string   `json:"last_prompt"`
+	TS          int64    `json:"ts"`
+	Transcript  bool     `json:"transcript"`
+	DeskIdleS   int64    `json:"desk_idle_s"`
+	RunningKind string   `json:"running_kind,omitempty"`
+	Background  []bgTask `json:"background"`
 }
 
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
@@ -158,7 +179,8 @@ func listSessions() (any, error) {
 			continue
 		}
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
-			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent"}
+			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
+			RunningKind: e.RunningKind, Background: backgroundOf(e)}
 		if claudeTranscript(e.SessionID) != "" {
 			card.Agent = "claude"
 			card.Transcript = true
@@ -172,6 +194,17 @@ func listSessions() (any, error) {
 	}
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
 	return map[string]any{"v": 1, "ok": true, "sessions": cards}, nil
+}
+
+func backgroundOf(e attentionEntry) []bgTask {
+	if e.RunningKind != "background" || e.Bg.Tasks == nil {
+		return []bgTask{}
+	}
+	out := make([]bgTask, 0, len(e.Bg.Tasks))
+	for _, t := range e.Bg.Tasks {
+		out = append(out, bgTask{ID: t.ID, Type: t.Type, Summary: clip(t.Summary, 120)})
+	}
+	return out
 }
 
 type chatMessage struct {
@@ -295,8 +328,10 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	if !ok {
 		return nil, errors.New("session not found (ended or not tracked)")
 	}
-	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind}
+	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,
+		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent"}
 	if path := claudeTranscript(e.SessionID); path != "" {
+		out["agent"] = "claude"
 		data, err := tailFile(path, 4<<20)
 		if err != nil {
 			return nil, err
@@ -509,7 +544,9 @@ func sendToSession(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if e.Status == "running" {
+	// Claude Code queues input typed mid-turn and schedules it itself; other
+	// agents only take input once the turn is over (or only background is left).
+	if e.busy() && claudeTranscript(e.SessionID) == "" {
 		return nil, errors.New("the agent is still working; send when it stops")
 	}
 	if e.WaitingKind != "" {

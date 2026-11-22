@@ -10,7 +10,7 @@ import { useCollab } from '#/lib/collab-query'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
 import { ticketTone } from './console-collab'
-import { sessionTone, useSessions } from './console-sessions'
+import { isBusy, sessionTone, useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { useAgo, useStatusLabel } from './tickets-view'
 
@@ -46,9 +46,9 @@ export function ConsoleNowPage() {
   )
   const running = tickets.filter((ticket) => ticket.running.length > 0)
   const live: Array<SessionCard> = sessions.data?.sessions ?? []
-  // "done" means the agent ended its turn: it is waiting for your next message
-  const waitingSessions = live.filter((row) => row.status !== 'running')
-  const workingSessions = live.filter((row) => row.status === 'running')
+  // "done" (turn ended) and background-only sessions take your next message
+  const waitingSessions = live.filter((row) => !isBusy(row))
+  const workingSessions = live.filter((row) => isBusy(row))
   const needCount = needs.length
   const runCount = workingSessions.length + running.length
   const summary = t`${needCount} tickets need you, ${runCount} things are running`

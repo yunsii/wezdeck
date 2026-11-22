@@ -114,10 +114,16 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 	}
 	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
 	pane, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", "t", "#{pane_id}").Output()
-	write := func(status, kind string) {
-		doc := map[string]any{"entries": map[string]any{"sess-1": map[string]any{
+	write := func(status, kind string, extra ...map[string]any) {
+		entry := map[string]any{
 			"session_id": "sess-1", "tmux_socket": socket, "tmux_session": "t", "tmux_pane": strings.TrimSpace(string(pane)),
-			"status": status, "waiting_kind": kind, "agent_name": "demo"}}}
+			"status": status, "waiting_kind": kind, "agent_name": "demo"}
+		for _, m := range extra {
+			for k, v := range m {
+				entry[k] = v
+			}
+		}
+		doc := map[string]any{"entries": map[string]any{"sess-1": entry}}
 		data, _ := json.Marshal(doc)
 		if err := os.WriteFile(filepath.Join(dir, "attention.json"), data, 0o600); err != nil {
 			t.Fatal(err)
@@ -125,7 +131,7 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 	}
 	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
 
-	write("running", "")
+	write("running", "") // not a Claude session (no transcript): must wait
 	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"hello"}`)); err == nil || !strings.Contains(err.Error(), "still working") {
 		t.Fatalf("running agent must not receive input, got %v", err)
 	}
@@ -133,8 +139,22 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"hello"}`)); err == nil || !strings.Contains(err.Error(), "confirmation") {
 		t.Fatalf("permission prompt must block free text, got %v", err)
 	}
-	write("done", "")
+	// turn over, only a background shell left: input is allowed
+	write("running", "", map[string]any{"running_kind": "background",
+		"bg": map[string]any{"tasks": []map[string]any{{"id": "b1", "type": "shell", "summary": "npm run dev"}}}})
 	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := list.(map[string]any)["sessions"].([]sessionCard)[0]
+	if card.RunningKind != "background" || len(card.Background) != 1 || card.Background[0].Summary != "npm run dev" {
+		t.Fatalf("background not reported: %+v", card)
+	}
+	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"while bg runs"}`)); err != nil {
+		t.Fatalf("background-only session must take input: %v", err)
+	}
+	write("done", "")
+	list, err = listSessions()
 	if err != nil || len(list.(map[string]any)["sessions"].([]sessionCard)) != 1 {
 		t.Fatalf("list: %v %v", list, err)
 	}
@@ -157,5 +177,32 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 	}
 	if _, err := keyToSession(json.RawMessage(`{"id":"sess-1","key":"Escape"}`)); err != nil {
 		t.Fatalf("allowed key: %v", err)
+	}
+}
+
+func TestClaudeSessionTakesInputMidTurn(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	home := filepath.Join(dir, "home")
+	if err := os.MkdirAll(filepath.Join(home, ".claude", "projects", "p"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.WriteFile(filepath.Join(home, ".claude", "projects", "p", "claude-1.jsonl"), []byte("{}\n"), 0o600)
+	t.Setenv("HOME", home)
+	socket := filepath.Join(dir, "s")
+	if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", "c", "cat").CombinedOutput(); err != nil {
+		t.Fatalf("tmux: %s", out)
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	pane, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", "c", "#{pane_id}").Output()
+	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{"claude-1": map[string]any{
+		"session_id": "claude-1", "tmux_socket": socket, "tmux_session": "c",
+		"tmux_pane": strings.TrimSpace(string(pane)), "status": "running"}}})
+	_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+	if _, err := sendToSession(json.RawMessage(`{"id":"claude-1","text":"queued while busy"}`)); err != nil {
+		t.Fatalf("Claude must accept input mid-turn: %v", err)
 	}
 }

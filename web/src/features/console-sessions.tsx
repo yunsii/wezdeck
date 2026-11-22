@@ -30,7 +30,15 @@ export type SessionCard = {
   ts: number
   transcript: boolean
   desk_idle_s: number
+  running_kind?: string
+  background?: Array<BgTask>
 }
+
+export type BgTask = { id: string; type: string; summary: string }
+
+/** Mid-turn. A session that only waits on background tasks takes input. */
+export const isBusy = (row: { status: string; running_kind?: string }) =>
+  row.status === 'running' && row.running_kind !== 'background'
 
 type Message = {
   role: 'user' | 'assistant' | 'tool'
@@ -40,8 +48,11 @@ type Message = {
 
 type Detail = {
   id: string
+  agent?: string
   status: string
   waiting_kind?: string
+  running_kind?: string
+  background?: Array<BgTask>
   messages?: Array<Message>
   screen?: string
 }
@@ -56,16 +67,18 @@ export function sessionTone(status: string, kind?: string): LedTone {
 
 function useStatusText() {
   const { t } = useLingui()
-  return (status: string, kind?: string) =>
+  return (status: string, kind?: string, runningKind?: string, bg = 0) =>
     kind
       ? t`waiting for your confirmation`
-      : status === 'running'
-        ? t`working`
-        : status === 'waiting'
-          ? t`waiting for you`
-          : status === 'done'
-            ? t`finished its turn`
-            : status
+      : status === 'running' && runningKind === 'background'
+        ? t`turn finished, ${bg} background tasks running; you can send`
+        : status === 'running'
+          ? t`working`
+          : status === 'waiting'
+            ? t`waiting for you`
+            : status === 'done'
+              ? t`finished its turn`
+              : status
 }
 
 const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
@@ -146,11 +159,21 @@ function SessionList() {
                   </span>
                   <span className="truncate text-sm text-brand-muted">
                     {row.last_prompt ||
-                      statusText(row.status, row.waiting_kind)}
+                      statusText(
+                        row.status,
+                        row.waiting_kind,
+                        row.running_kind,
+                        row.background?.length ?? 0,
+                      )}
                   </span>
                   <span className="truncate text-xs text-brand-label">
-                    {statusText(row.status, row.waiting_kind)}，
-                    {row.cwd.split('/').filter(Boolean).at(-1) ?? ''}
+                    {statusText(
+                      row.status,
+                      row.waiting_kind,
+                      row.running_kind,
+                      row.background?.length ?? 0,
+                    )}
+                    ，{row.cwd.split('/').filter(Boolean).at(-1) ?? ''}
                     {row.branch ? `（${row.branch}）` : ''}
                   </span>
                 </span>
@@ -252,7 +275,7 @@ function SessionDetail({ id }: { id: string }) {
   const blocked =
     device.state !== 'approved'
       ? t`Writing is not enabled on this phone yet (Settings › Phone writing).`
-      : data?.status === 'running'
+      : data && isBusy(data) && data.agent !== 'claude'
         ? t`The agent is working. You can send once it stops.`
         : data?.waiting_kind
           ? t`The agent is asking for a confirmation: answer it with the keys above.`
@@ -287,8 +310,31 @@ function SessionDetail({ id }: { id: string }) {
         </button>
         <p className="inline-flex items-center gap-2 text-sm text-brand-muted">
           <Led tone={tone} size={11} />
-          {data ? statusText(data.status, data.waiting_kind) : t`Loading…`}
+          {data
+            ? statusText(
+                data.status,
+                data.waiting_kind,
+                data.running_kind,
+                data.background?.length ?? 0,
+              )
+            : t`Loading…`}
         </p>
+        {data?.background?.length ? (
+          <ul
+            aria-label={t`Background tasks`}
+            className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
+          >
+            {data.background.map((task) => (
+              <li
+                key={task.id}
+                className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
+              >
+                <Led tone="running" size={9} />
+                {task.summary || task.id}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       <div className="grid content-end gap-2" aria-live="polite">
@@ -353,6 +399,10 @@ function SessionDetail({ id }: { id: string }) {
         {error ? (
           <p role="alert" className="text-xs text-brand-error">
             {error}
+          </p>
+        ) : !blocked && data && isBusy(data) ? (
+          <p className="text-xs text-brand-muted">
+            {t`Claude is working; your message joins its queue and it decides when to take it.`}
           </p>
         ) : blocked ? (
           <p className="text-xs text-brand-muted">

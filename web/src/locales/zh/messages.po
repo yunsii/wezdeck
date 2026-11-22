@@ -52,7 +52,7 @@ msgstr "重启后回到同一个 Agent 会话，继续手头的工作。"
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:118
+#: src/features/console-sessions.tsx:131
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -60,7 +60,7 @@ msgstr "Agent 会话"
 msgid "Agents"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:102
+#: src/features/console-sessions.tsx:115
 msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 msgstr "主机上 tmux 里正在跑的 Agent。点进去可以查看对话，也可以给它发消息。"
 
@@ -116,6 +116,10 @@ msgstr "返回"
 #: src/features/console-collab-run.tsx:55
 msgid "Backend"
 msgstr "后端"
+
+#: src/features/console-sessions.tsx:324
+msgid "Background tasks"
+msgstr "后台任务"
 
 #: src/features/console-collab-run.tsx:59
 msgid "Base commit"
@@ -176,6 +180,10 @@ msgstr "子单"
 #: src/features/console-activity.tsx:66
 msgid "claimed"
 msgstr "认领"
+
+#: src/features/console-sessions.tsx:405
+msgid "Claude is working; your message joins its queue and it decides when to take it."
+msgstr "Claude 正在运行，消息会进入它的队列，由它自己安排什么时候处理。"
 
 #: src/features/console-development.tsx:100
 msgid "Close requested"
@@ -342,7 +350,7 @@ msgstr "端点"
 msgid "English"
 msgstr "English"
 
-#: src/features/console-sessions.tsx:327
+#: src/features/console-sessions.tsx:373
 msgid "Enter"
 msgstr "回车"
 
@@ -354,7 +362,7 @@ msgstr "进入 Runtime 控制台"
 msgid "Entries"
 msgstr "条目"
 
-#: src/features/console-sessions.tsx:328
+#: src/features/console-sessions.tsx:374
 msgid "Esc"
 msgstr "Esc"
 
@@ -395,7 +403,7 @@ msgstr "筛选工单"
 #~ msgid "Finished"
 #~ msgstr "已结束"
 
-#: src/features/console-sessions.tsx:67
+#: src/features/console-sessions.tsx:80
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
@@ -561,8 +569,8 @@ msgstr "实时"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:128
-#: src/features/console-sessions.tsx:114
-#: src/features/console-sessions.tsx:290
+#: src/features/console-sessions.tsx:127
+#: src/features/console-sessions.tsx:320
 #: src/features/console-shared.tsx:211
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
@@ -580,11 +588,11 @@ msgstr "日志流"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/console-sessions.tsx:380
+#: src/features/console-sessions.tsx:430
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/console-sessions.tsx:373
+#: src/features/console-sessions.tsx:423
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -624,7 +632,7 @@ msgstr "没有活动 Agent 会话"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/console-sessions.tsx:114
+#: src/features/console-sessions.tsx:127
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -719,7 +727,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:366
+#: src/features/console-sessions.tsx:416
 msgid "Open settings"
 msgstr "去设置"
 
@@ -999,11 +1007,11 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/console-sessions.tsx:385
+#: src/features/console-sessions.tsx:435
 msgid "Send"
 msgstr "发送"
 
-#: src/features/console-sessions.tsx:267
+#: src/features/console-sessions.tsx:290
 msgid "Sent to the session"
 msgstr "已发送到会话"
 
@@ -1022,8 +1030,8 @@ msgid "session started"
 msgstr "会话开始"
 
 #: src/features/console-collab.tsx:114
-#: src/features/console-sessions.tsx:100
-#: src/features/console-sessions.tsx:286
+#: src/features/console-sessions.tsx:113
+#: src/features/console-sessions.tsx:309
 msgid "Sessions"
 msgstr "会话数"
 
@@ -1097,11 +1105,11 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/console-sessions.tsx:318
+#: src/features/console-sessions.tsx:364
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:258
+#: src/features/console-sessions.tsx:281
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1109,7 +1117,7 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/console-sessions.tsx:256
+#: src/features/console-sessions.tsx:279
 msgid "The agent is working. You can send once it stops."
 msgstr "Agent 正在运行，等它停下后才能发送。"
 
@@ -1206,6 +1214,10 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
+#: src/features/console-sessions.tsx:74
+msgid "turn finished, {bg} background tasks running; you can send"
+msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
+
 #: src/features/remote-badge.tsx:74
 msgid "TURN relay"
 msgstr "TURN 中继"
@@ -1249,7 +1261,7 @@ msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。
 #~ msgid "Used {0} tools"
 #~ msgstr "调用了 {0} 个工具"
 
-#: src/features/console-sessions.tsx:172
+#: src/features/console-sessions.tsx:195
 msgid "Used {count} tools"
 msgstr "调用了 {count} 个工具"
 
@@ -1274,11 +1286,11 @@ msgstr "等待中"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:65
+#: src/features/console-sessions.tsx:78
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/console-sessions.tsx:61
+#: src/features/console-sessions.tsx:72
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
@@ -1358,7 +1370,7 @@ msgstr "work"
 msgid "Workbench"
 msgstr "工作台"
 
-#: src/features/console-sessions.tsx:63
+#: src/features/console-sessions.tsx:76
 msgid "working"
 msgstr "运行中"
 
@@ -1386,7 +1398,7 @@ msgstr "工作区迁移"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:254
+#: src/features/console-sessions.tsx:277
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

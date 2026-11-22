@@ -90,8 +90,11 @@ tmux socket / session / pane, status `running|waiting|done` and
 
 Guards on every write (`remote_session.go`): one writer — a tmux-hosted
 session only ever receives a paste into its own TUI, never a second process
-resuming the same session id; free text only when the agent is not
-`running` and no confirmation is pending; nothing while someone typed at the
+resuming the same session id; free text anytime for a Claude Code session
+(it queues input typed mid-turn and schedules it itself), for other agents
+only once the turn is over or only background tasks are left
+(`running_kind=background`, listed from `bg.tasks` on the phone); never
+while a confirmation is pending; nothing while someone typed at the
 desk in the last 30 s (`client_activity` of the attached tmux clients); the
 pane gets a 4 s `手机发来一条消息` notice.
 
