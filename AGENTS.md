@@ -109,7 +109,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
 - Web console as an installable PWA (manifest, hand-written service worker,
-  update toast, persisted query cache, safe area), phone vs desktop layouts
+  update toast, persisted query cache, safe area, why the phone app is
+  installed from Chrome — Firefox PWA blank window on back), phone vs desktop layouts
   (bottom tabs / pushed detail / sheets vs split view + keyboard / command
   palette), capability-aware navigation, Web Push:
   Read [`docs/web-pwa.md`](docs/web-pwa.md).

@@ -34,7 +34,7 @@ function Group({
   footer?: React.ReactNode
 }) {
   return (
-    <section className="grid gap-2">
+    <section className="grid grid-cols-[minmax(0,1fr)] gap-2">
       <h2 className="text-[19px] font-bold">{title}</h2>
       <ul className="overflow-hidden rounded-[16px] bg-brand-surface">
         {children}
@@ -96,7 +96,7 @@ export function ConsoleNowPage() {
         <span className="pt-1.5">
           <Led tone={ticketTone(ticket) ?? 'muted'} size={12} />
         </span>
-        <span className="grid min-w-0 flex-1 gap-0.5">
+        <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
           <span className="line-clamp-2 text-[16px] leading-snug font-semibold">
             {ticket.title || ticket.id}
           </span>
@@ -153,7 +153,7 @@ export function ConsoleNowPage() {
           <span className="pt-1.5">
             <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
           </span>
-          <span className="grid min-w-0 flex-1 gap-0.5">
+          <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
             <span className="flex items-baseline justify-between gap-2">
               <span className="truncate text-[16px] font-semibold">
                 {sessionTitle(row)}
@@ -186,7 +186,7 @@ export function ConsoleNowPage() {
     !sessions.isPending
 
   return (
-    <div className="grid max-w-2xl content-start gap-5">
+    <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-5">
       <h1 className="hidden text-base font-semibold md:block">{t`Now`}</h1>
       <p className="-mt-2 text-[16px] text-brand-muted md:mt-0">{summary}</p>
       {needCount > 0 ? (

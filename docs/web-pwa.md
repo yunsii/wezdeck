@@ -216,6 +216,20 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   refetches at once and shows 正在拉取最新消息（上次 HH:MM:SS）→ 已同步
   (`useResumeSync`), instead of silently showing old messages.
 
+## Supported browser (2026-11-23)
+
+Install the phone app from **Chrome** (Android). Firefox for Android 162 as
+an installed PWA mishandles the back gesture on the app's first history
+entry: the page is unloaded (`visibilitychange → hidden`, `pagehide`, **no**
+`popstate`) and the window stays open on a blank gray shell; only a second
+back closes it, and nothing in the page can intercept the first one. Measured
+with host-pulled diagnostics (boot `length:1 index:0`, then `previous`
+ending in `pagehide` only), so the app's own history is correct — first-level
+pages hold entry 0. Same symptom as Mozilla
+[bug 1967825](https://bugzilla.mozilla.org/show_bug.cgi?id=1967825) (fixed
+in 140; back on 162). Chrome closes the app on that back press like any
+Android app. Open question: [`diagnostics.md`](diagnostics.md#open-questions).
+
 ## As built (2026-11-22)
 
 | Piece | Code |

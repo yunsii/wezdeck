@@ -139,7 +139,7 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:177
+#: src/features/session-list.tsx:178
 msgid "Agent sessions"
 msgstr "Agent sessions"
 

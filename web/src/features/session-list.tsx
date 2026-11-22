@@ -129,7 +129,7 @@ export function SessionList() {
         <span className="pt-1.5">
           <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
         </span>
-        <span className="grid min-w-0 flex-1 gap-0.5">
+        <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
           <span className="flex items-baseline justify-between gap-2">
             <span className="truncate text-[16px] font-semibold">
               {titleOf(row)}
@@ -154,7 +154,7 @@ export function SessionList() {
   }
 
   return (
-    <div className="grid max-w-2xl content-start gap-3">
+    <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
       <h1 className="hidden text-base font-semibold md:block">
         {t({ message: 'Sessions', context: 'nav' })}
       </h1>
@@ -174,7 +174,10 @@ export function SessionList() {
           {sessions.isPending ? t`Loading…` : t`No agent sessions are running.`}
         </p>
       ) : (
-        <div aria-label={t`Agent sessions`} className="grid gap-3">
+        <div
+          aria-label={t`Agent sessions`}
+          className="grid grid-cols-[minmax(0,1fr)] gap-3"
+        >
           {tree.map((repo) => (
             <section
               key={repo.key}
