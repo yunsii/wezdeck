@@ -16,7 +16,7 @@
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev'
 const PREFIX = 'wezdeck-'
 const CACHE = `${PREFIX}${VERSION}`
-const SHELL = ['/console/now', '/console/collab', '/console/sessions']
+const SHELL = ['/console/sessions', '/console/collab']
 const CONCURRENCY = 4
 
 const isAsset = (res) =>
@@ -105,7 +105,7 @@ self.addEventListener('fetch', (event) => {
         } catch {
           return (
             (await caches.match(url.pathname)) ??
-            (await caches.match('/console/now')) ??
+            (await caches.match('/console/sessions')) ??
             Response.error()
           )
         }

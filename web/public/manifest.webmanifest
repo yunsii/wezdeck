@@ -4,7 +4,7 @@
   "short_name": "WezDeck",
   "description": "Control plane for AI coding agents: cross-repo tickets, runs and host status.",
   "lang": "zh-CN",
-  "start_url": "/console/now",
+  "start_url": "/console/sessions",
   "scope": "/",
   "display": "standalone",
   "background_color": "#141b26",

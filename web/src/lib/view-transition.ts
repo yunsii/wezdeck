@@ -12,9 +12,8 @@ export function consolePath(pathname: string): string | null {
 
 /** first-level pages, in the phone tab order first, then desktop-only ones */
 const FIRST_LEVEL = [
-  'now',
-  'collab',
   'sessions',
+  'collab',
   'me',
   '',
   'inbox',

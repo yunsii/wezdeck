@@ -74,6 +74,8 @@ start() {
     WEZDECK_REMOTE_UPLOADS="$STATE/uploads" \
     WEZDECK_CLAUDE_STATUS_DIR="$STATE/claude-status" \
     WEZDECK_RELAY_CONTROL="$STATE/relay.sock" \
+    WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
+    WEZDECK_TODO_DB="$STATE/todo.db" \
     "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
     >"$STATE/relay.out" 2>&1 </dev/null &
   echo $! >"$STATE/relay.pid"

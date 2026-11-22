@@ -16,6 +16,7 @@ import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { InspectorItem } from './inspector'
 import { RepoRoute, TicketsView, useStatusLabel } from './tickets-view'
+import { ActivityLink } from './console-activity'
 import {
   TicketAttach,
   TicketReply,
@@ -66,15 +67,18 @@ export function ConsoleCollabPage() {
         wide ? (
           band
         ) : (
-          <details className="key group rounded-[14px]">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-3.5 text-sm text-brand-muted">
-              {t`Runs, cache hit and cost`}
-              <span aria-hidden className="transition group-open:rotate-90">
-                ›
-              </span>
-            </summary>
-            <div className="border-t border-brand-edge p-2">{band}</div>
-          </details>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
+            <details className="key group rounded-[14px]">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-3.5 text-sm text-brand-muted">
+                {t`Runs, cache hit and cost`}
+                <span aria-hidden className="transition group-open:rotate-90">
+                  ›
+                </span>
+              </summary>
+              <div className="border-t border-brand-edge p-2">{band}</div>
+            </details>
+            <ActivityLink />
+          </div>
         )
       }
     />

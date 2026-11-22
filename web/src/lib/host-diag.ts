@@ -5,7 +5,7 @@
 // `diag.submit` chunks. A toast says the host read diagnostics.
 //
 // Steps (allowlisted; anything else is reported as skipped):
-//   {do:"navigate", to:"/zh/console/now"}  in-app path only
+//   {do:"navigate", to:"/zh/console/sessions"}  in-app path only
 //   {do:"back"}
 //   {do:"click", text?:"会话", selector?:"[data-session=…]"}
 //       never a write control: nothing inside a <form> or [data-write]

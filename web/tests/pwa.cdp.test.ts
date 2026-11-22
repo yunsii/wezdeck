@@ -52,7 +52,7 @@ describe('PWA shell on phone and desktop', () => {
     await page.locator('[data-value=ended]').click()
     await page.locator('[data-ticket]').first().waitFor({ timeout: 15_000 })
     const tabs = page.getByRole('navigation', { name: '栏目' })
-    expect(await tabs.getByRole('link').count()).toBe(4)
+    expect(await tabs.getByRole('link').count()).toBe(3)
     const first = page.locator('[data-ticket]').first()
     const id = await first.getAttribute('data-ticket')
     await first.click()
@@ -61,8 +61,8 @@ describe('PWA shell on phone and desktop', () => {
     await page.waitForURL(/\/console\/collab(\?[^/]*)?$/)
     await tabs.getByRole('link', { name: /会话/ }).click()
     await page.waitForURL(/\/console\/sessions$/)
-    await tabs.getByRole('link', { name: /现在/ }).click()
-    await page.waitForURL(/\/console\/now$/)
+    await tabs.getByRole('link', { name: /工单/ }).click()
+    await page.waitForURL(/\/console\/collab$/)
     await page.getByRole('link', { name: '工单动态' }).click()
     await page.waitForURL(/\/console\/activity$/)
     await page
@@ -113,7 +113,7 @@ describe('PWA shell on phone and desktop', () => {
       const manifest = (await (
         await page.request.get(`${base}/manifest.webmanifest`)
       ).json()) as { start_url: string; icons: Array<{ purpose?: string }> }
-      expect(manifest.start_url).toBe('/console/now')
+      expect(manifest.start_url).toBe('/console/sessions')
       expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBe(
         true,
       )

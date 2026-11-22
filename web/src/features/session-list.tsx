@@ -1,86 +1,52 @@
-// Sessions list as a repo → worktree → pane tree. Grouping is by git path so
-// ticket agents on the same worktree can join later; tmux primary/secondary
-// is optional mount info only.
+// 会话, the phone's home: every live agent session as a repo → worktree →
+// pane tree. Order follows where you went — the later of the desk visit
+// (access ledger, like Alt+g) and a visit from this phone — never agent
+// output, so the list holds still while agents work. Sessions waiting on you
+// sit in a band on top; the filter mirrors Alt+/ (Tab cycles the status).
 import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
+import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
+import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
+import { phoneVisits, recordVisit } from '#/lib/session-visits'
+import { OpenTodos } from './session-todos'
+import { buildSessionTree, visitOf, worktreeKey } from './session-order'
 import { useAgo } from './tickets-view'
 import {
   humanPrompt,
+  isBusy,
+  needsYou,
   sessionTone,
   useSessions,
   useStatusText,
 } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 
-type WorktreeGroup = {
-  key: string
-  label: string
-  ts: number
-  rows: Array<SessionCard>
+export type SessionFilter = 'all' | 'waiting' | 'running' | 'idle'
+
+// wrapped, not `waiting: needsYou`: console-sessions imports this module, so
+// its exports are not initialised yet while this object is built
+const FILTERS: Record<SessionFilter, (row: SessionCard) => boolean> = {
+  all: () => true,
+  waiting: (row) => needsYou(row),
+  running: (row) => !needsYou(row) && isBusy(row),
+  idle: (row) => !needsYou(row) && !isBusy(row),
 }
 
-type RepoGroup = {
-  key: string
-  label: string
-  ts: number
-  worktrees: Array<WorktreeGroup>
+const FILTER_KEY = 'wezdeck-session-filter'
+
+function storedFilter(): SessionFilter {
+  try {
+    const value = localStorage.getItem(FILTER_KEY)
+    return value && value in FILTERS ? (value as SessionFilter) : 'all'
+  } catch {
+    return 'all'
+  }
 }
 
 const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
-
-/** Group by repo family → worktree path; tmux pane_role only sorts within a worktree. */
-export function buildSessionTree(rows: Array<SessionCard>): Array<RepoGroup> {
-  const repos = new Map<
-    string,
-    { label: string; ts: number; trees: Map<string, WorktreeGroup> }
-  >()
-  for (const row of rows) {
-    const repoKey = row.repo_root || row.repo || row.cwd || row.id
-    const repoLabel =
-      row.repo ||
-      row.repo_root?.split('/').filter(Boolean).at(-1) ||
-      row.cwd.split('/').filter(Boolean).at(-1) ||
-      row.id.slice(0, 8)
-    const wtKey = row.worktree || row.cwd || row.id
-    const wtLabel =
-      (row.worktree || row.cwd).split('/').filter(Boolean).at(-1) || wtKey
-    let repo = repos.get(repoKey)
-    if (!repo) {
-      repo = { label: repoLabel, ts: 0, trees: new Map() }
-      repos.set(repoKey, repo)
-    }
-    let tree = repo.trees.get(wtKey)
-    if (!tree) {
-      tree = { key: wtKey, label: wtLabel, ts: 0, rows: [] }
-      repo.trees.set(wtKey, tree)
-    }
-    tree.rows.push(row)
-    tree.ts = Math.max(tree.ts, row.ts || 0)
-    repo.ts = Math.max(repo.ts, row.ts || 0)
-  }
-  const roleRank = (role?: string) =>
-    role === 'primary' ? 0 : role === 'secondary' ? 1 : 2
-  return [...repos.entries()]
-    .map(([key, repo]) => ({
-      key,
-      label: repo.label,
-      ts: repo.ts,
-      worktrees: [...repo.trees.values()]
-        .map((tree) => ({
-          ...tree,
-          rows: [...tree.rows].sort((a, b) => {
-            const byRole = roleRank(a.pane_role) - roleRank(b.pane_role)
-            if (byRole) return byRole
-            return (b.ts || 0) - (a.ts || 0)
-          }),
-        }))
-        .sort((a, b) => b.ts - a.ts),
-    }))
-    .sort((a, b) => b.ts - a.ts)
-}
 
 export function SessionList() {
   const { t } = useLingui()
@@ -89,8 +55,31 @@ export function SessionList() {
   const sessions = useSessions()
   const ago = useAgo()
   const statusText = useStatusText()
+  const [filter, setFilterState] = useState<SessionFilter>(storedFilter)
+  const setFilter = (value: SessionFilter) => {
+    setFilterState(value)
+    try {
+      localStorage.setItem(FILTER_KEY, value)
+    } catch {
+      // the choice just won't be remembered
+    }
+  }
   const rows = sessions.data?.sessions ?? []
-  const tree = buildSessionTree(rows)
+  const phone = phoneVisits()
+  const waiting = rows
+    .filter(needsYou)
+    .sort((a, b) => visitOf(b, phone) - visitOf(a, phone))
+  // 全部: the waiting band on top, the tree holds the rest
+  const treeRows =
+    filter === 'all'
+      ? rows.filter((row) => !needsYou(row))
+      : rows.filter(FILTERS[filter])
+  const tree = buildSessionTree(treeRows, phone)
+  const count = (value: SessionFilter) => rows.filter(FILTERS[value]).length
+  const waitingCount = count('waiting')
+  const runningCount = count('running')
+  const idleCount = count('idle')
+  const allCount = rows.length
   const paneLabel = (role?: string) =>
     role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
@@ -110,7 +99,7 @@ export function SessionList() {
     </span>
   )
 
-  const sessionLink = (row: SessionCard) => {
+  const sessionLink = (row: SessionCard, showRepo = false) => {
     const prompt = humanPrompt(row.last_prompt)
     const status = statusText(
       row.status,
@@ -124,6 +113,7 @@ export function SessionList() {
         params={{ locale: localeParam, id: row.id }}
         data-session={row.id}
         data-pane-role={row.pane_role || undefined}
+        onClick={() => recordVisit(worktreeKey(row))}
         className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
       >
         <span className="pt-1.5">
@@ -142,6 +132,7 @@ export function SessionList() {
             {prompt || t`No human message yet`}
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-1">
+            {showRepo && row.repo ? tag(row.repo) : null}
             {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
             {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
             {row.name && row.name !== row.agent ? tag(row.name) : null}
@@ -153,14 +144,32 @@ export function SessionList() {
     )
   }
 
+  const emptyText =
+    filter === 'waiting'
+      ? t`Nothing is waiting on you.`
+      : filter === 'running'
+        ? t`No agent is working right now.`
+        : filter === 'idle'
+          ? t`No idle sessions.`
+          : t`No agent sessions are running.`
+
   return (
     <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
       <h1 className="hidden text-base font-semibold md:block">
         {t({ message: 'Sessions', context: 'nav' })}
       </h1>
-      <p className="text-sm text-brand-muted">
-        {t`Grouped by repo and worktree. Primary / secondary mark tmux panes when present.`}
-      </p>
+      <Segmented
+        label={t`Status`}
+        value={filter}
+        onChange={setFilter}
+        className="md:max-w-md"
+        options={[
+          { value: 'all', label: t`All ${allCount}` },
+          { value: 'waiting', label: t`Needs you ${waitingCount}` },
+          { value: 'running', label: t`Working ${runningCount}` },
+          { value: 'idle', label: t`Idle ${idleCount}` },
+        ]}
+      />
       {sessions.isError ? (
         <p
           role="status"
@@ -169,10 +178,32 @@ export function SessionList() {
           {String(sessions.error.message)}
         </p>
       ) : null}
-      {rows.length === 0 && !sessions.isError ? (
-        <p className="rounded-[14px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
-          {sessions.isPending ? t`Loading…` : t`No agent sessions are running.`}
-        </p>
+      {filter === 'all' && waiting.length ? (
+        <section
+          data-testid="sessions-waiting"
+          className="overflow-hidden rounded-[16px] border border-brand-waiting/40 bg-brand-surface"
+        >
+          <h2 className="border-b border-brand-edge px-4 py-2.5 text-[15px] font-semibold">
+            {t`Needs you`}
+          </h2>
+          <ul>
+            {waiting.map((row) => (
+              <li
+                key={row.id}
+                className="border-b border-brand-edge last:border-b-0"
+              >
+                {sessionLink(row, true)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {tree.length === 0 && !(filter === 'all' && waiting.length) ? (
+        sessions.isError ? null : (
+          <p className="rounded-[14px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
+            {sessions.isPending ? t`Loading…` : emptyText}
+          </p>
+        )
       ) : (
         <div
           aria-label={t`Agent sessions`}
@@ -214,6 +245,7 @@ export function SessionList() {
           ))}
         </div>
       )}
+      {filter === 'all' ? <OpenTodos /> : null}
     </div>
   )
 }

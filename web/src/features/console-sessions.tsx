@@ -61,7 +61,13 @@ export type SessionCard = {
   pane_index?: number
   /** primary | secondary when mounted in tmux; absent for future ticket agents. */
   pane_role?: string
+  /** last visit to this worktree at the desk (ms, access ledger behind Alt+g) */
+  visited?: number
 }
+
+/** waiting on a human: a permission / question prompt, or the turn asked you */
+export const needsYou = (row: { status: string; waiting_kind?: string }) =>
+  Boolean(row.waiting_kind) || row.status === 'waiting'
 
 /** Last prompt the user typed; harness-injected ones (<task-notification>…) are not. */
 export const humanPrompt = (prompt?: string) =>

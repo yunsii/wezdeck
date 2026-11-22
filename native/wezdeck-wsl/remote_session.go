@@ -311,6 +311,9 @@ type sessionCard struct {
 	TmuxPane    string `json:"tmux_pane,omitempty"`
 	PaneIndex   int    `json:"pane_index,omitempty"`
 	PaneRole    string `json:"pane_role,omitempty"` // primary | secondary
+	// Visited: when you last visited this worktree at the desk (ms, access
+	// ledger, session_visits.go); the phone sorts by it, not by output
+	Visited int64 `json:"visited,omitempty"`
 }
 
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
@@ -323,6 +326,7 @@ func listSessions() (any, error) {
 	now := time.Now().Unix()
 	cards := []sessionCard{}
 	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
+	visits := worktreeVisits()
 	for id, e := range entries {
 		if e.TmuxPane == "" {
 			continue
@@ -342,6 +346,7 @@ func listSessions() (any, error) {
 			gitCache[cwd] = [3]string{repo, root, wt}
 			card.Repo, card.RepoRoot, card.Worktree = repo, root, wt
 		}
+		card.Visited = visitOf(visits, card.Worktree, cwd)
 		// Activity = when the conversation last moved: the newest turn in the
 		// transcript (remote_activity.go); the status ts (bumped for
 		// background-only sessions) and tmux window_activity (any pane in the

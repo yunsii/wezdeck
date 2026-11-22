@@ -1,6 +1,6 @@
 # Web console as a PWA (phone + desktop)
 
-Status: **live 2026-11-22**: ink theme, WD icon, four phone tabs (现在 / 工单 / 会话 / 我的), sessions with phone writes ([`remote-access.md`](./remote-access.md)). Command palette and Web Push are next. Remote transport
+Status: **live 2026-11-22**: ink theme, WD icon, three phone tabs (会话 / 工单 / 我的; 现在 retired 2026-11-23), sessions with phone writes ([`remote-access.md`](./remote-access.md)). Command palette and Web Push are next. Remote transport
 (WebRTC / WebSocket relay) is [`remote-access.md`](./remote-access.md); this
 doc is the app shell, layout and interaction on top of it.
 
@@ -29,13 +29,22 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    900–1023 px (neither `max-[899px]` nor `lg:` applies).
 3. **Capability-aware navigation**: loopback Runtime → every section; remote
    link only → collab sections only (no "Runtime offline" pages).
-4. **Phone IA — four bottom tabs** (revised): 现在 (three bands — needs you
-   (tickets + sessions waiting on you), running now, recently active top-5
-   by conversation activity including idle, with a link to all sessions;
-   工单动态 is one link down: cross-repo ticket events as sentences — one
-   card per ticket run of events under its title and from → to repo, day
-   headings, a clock time per line; tool calls, checkouts, session init and
-   worktree moves left out; sessions are not in it) · 工单 · 会话 (repo →
+4. **Phone IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
+   bands reshuffled on every agent turn and it duplicated both lists).
+   会话 is the home: a status filter like `Alt+/` (全部 / 等你 / 运行中 /
+   空闲, remembered per device), a 等你 band on top under 全部, then the
+   repo → worktree → pane tree ordered by **visits**, never output — the
+   later of the desk visit (`visited`, the access ledger behind `Alt+g` /
+   `Alt+x`, `session_visits.go`) and a visit from this phone
+   (`lib/session-visits.ts`); never-visited groups (ticket agents) sink by
+   name (`features/session-order.ts`); 待跟进 to-dos at the bottom. What
+   waits on you badges its own tab: 会话 counts sessions waiting on you,
+   工单 the tickets (`waiting_human`). `/console/now` stays as a redirect
+   to 会话 for installed apps whose manifest still starts there. 工单
+   links 工单动态: cross-repo ticket events as sentences — one card per
+   ticket run of events under its title and from → to repo, day headings,
+   a clock time per line; tool calls, checkouts, session init and worktree
+   moves left out; sessions are not in it. 会话 rows: repo →
    worktree → pane tree; primary/secondary when tmux-mounted; path-based
    so ticket worktrees can join later; Grok Ask shows tappable options
    from `elicitation`) · 我的 (connection, phone writing, install, theme,
@@ -125,7 +134,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   the header badge). A language switch replaces. The `#pair=` cleanup keeps
   the router's entry state — `replaceState(null)` had wiped `__TSR_index`.
 - The chosen language survives a cold start: the manifest `start_url` is
-  `/console/now` (no locale prefix), so a language switch stores the
+  `/console/sessions` (no locale prefix), so a language switch stores the
   `wezdeck-locale` cookie (`lib/locale-pref.ts`) and the Worker
   (`src/locale-redirect.ts`, from `server.ts`) 302s a prefix-less `/console`
   request to `/zh/…` when it says zh — or, with no cookie yet, when

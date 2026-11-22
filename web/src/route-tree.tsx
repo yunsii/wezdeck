@@ -1,11 +1,10 @@
-import { createRoute, notFound, Outlet } from '@tanstack/react-router'
+import { createRoute, notFound, Outlet, redirect } from '@tanstack/react-router'
 
 import { LandingPage } from '#/features/landing-page'
 import { ConsoleCollabPage, ConsoleInboxPage } from '#/features/console-collab'
 import { ConsoleActivityPage } from '#/features/console-activity'
 import { ConsoleMePage } from '#/features/console-me'
 import { ConsoleSessionsPage } from '#/features/console-sessions'
-import { ConsoleNowPage } from '#/features/console-now'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
 import { ConsoleDevelopmentPage } from '#/features/console-development'
 import { ConsoleOverviewPage } from '#/features/console-overview'
@@ -188,11 +187,19 @@ const consoleMeRoute = createRoute({
   head: ({ params }) => collabTitle(params.locale, '我的', 'Settings'),
 })
 
+// 现在 is gone (会话 is the home, waiting items badge their own tab); the
+// route stays as a redirect: installed apps still start at /console/now
+// until Chrome refreshes their manifest
 const consoleNowRoute = createRoute({
   getParentRoute: () => consoleRoute,
   path: 'now',
-  component: ConsoleNowPage,
-  head: ({ params }) => collabTitle(params.locale, '现在', 'Now'),
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/{-$locale}/console/sessions',
+      params: { locale: params.locale },
+      replace: true,
+    })
+  },
 })
 
 const consoleSessionsRoute = createRoute({

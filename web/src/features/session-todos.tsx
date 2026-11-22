@@ -2,7 +2,7 @@
 // runs in, kept by the host (scripts/runtime/todo.py, SQLite `todos`) so they
 // outlive the conversation. The session page opens them as a toolbar panel —
 // add, mark done, or put one into the composer to hand it to this agent;
-// 现在 lists every open one under 待跟进. Writes are signed (`todo`), reads
+// 会话 lists every open one under 待跟进. Writes are signed (`todo`), reads
 // are not (`todos`).
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -225,7 +225,7 @@ export function TodoPanel({
 }
 
 /**
- * 现在 › 待跟进: every open to-do, grouped by repo. To act on one, open any
+ * 会话 › 待跟进: every open to-do, grouped by repo. To act on one, open any
  * session of that repo and use its 待办 panel (the noting session may be gone).
  */
 export function OpenTodos() {

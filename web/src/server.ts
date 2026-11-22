@@ -14,7 +14,7 @@ export default {
     if (new URL(request.url).pathname.startsWith('/relay/')) {
       return relayFetch(request, env)
     }
-    // the PWA starts at /console/now: honour the language last chosen
+    // the PWA starts at /console/sessions: honour the language last chosen
     const localized = request.method === 'GET' ? localeRedirect(request) : null
     if (localized)
       return new Response(null, {

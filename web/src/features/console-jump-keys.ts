@@ -9,7 +9,6 @@ export const JUMP_KEYS: Partial<Record<string, Section>> = {
   o: 'overview',
   d: 'development',
   x: 'diagnostics',
-  n: 'now',
   c: 'collab',
   s: 'sessions',
   a: 'activity',

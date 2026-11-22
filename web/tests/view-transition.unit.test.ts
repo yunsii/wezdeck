@@ -31,7 +31,6 @@ describe('page levels', () => {
     for (const p of [
       '/console',
       '/console/',
-      '/zh/console/now',
       '/console/sessions',
       '/zh/console/me',
       '/console/collab',
@@ -45,16 +44,11 @@ describe('page levels', () => {
     ])
       expect(isFirstLevel(p)).toBe(false)
   })
-  it('phone tabs rank left to right: now, tickets, sessions, me', () => {
-    expect(routeRank('/zh/console/now')).toBeLessThan(
+  it('phone tabs rank left to right: sessions, tickets, me', () => {
+    expect(routeRank('/zh/console/sessions')).toBeLessThan(
       routeRank('/zh/console/collab'),
     )
-    expect(routeRank('/console/collab')).toBeLessThan(
-      routeRank('/console/sessions'),
-    )
-    expect(routeRank('/console/sessions')).toBeLessThan(
-      routeRank('/console/me'),
-    )
+    expect(routeRank('/console/collab')).toBeLessThan(routeRank('/console/me'))
   })
 })
 
@@ -69,29 +63,28 @@ describe('transition direction', () => {
   })
   it('between tabs follows the tab order and keeps the tab bar', () => {
     expect(
-      transitionTypes(nav('/zh/console/now', '/zh/console/sessions')),
+      transitionTypes(nav('/zh/console/sessions', '/zh/console/collab')),
     ).toEqual(['forward', 'tabs'])
-    expect(transitionTypes(nav('/zh/console/me', '/zh/console/now'))).toEqual([
-      'back',
-      'tabs',
-    ])
+    expect(
+      transitionTypes(nav('/zh/console/me', '/zh/console/sessions')),
+    ).toEqual(['back', 'tabs'])
   })
   it('the history position wins over depth', () => {
     expect(
-      transitionTypes(navAt('/console/sessions/s1', 1, '/console/now', 0)),
+      transitionTypes(navAt('/console/sessions/s1', 1, '/console/collab', 0)),
     ).toEqual(['back'])
-    expect(transitionTypes(navAt('/console/me', 0, '/console/now', 0))).toEqual(
-      ['back', 'tabs'],
-    )
+    expect(
+      transitionTypes(navAt('/console/me', 0, '/console/collab', 0)),
+    ).toEqual(['back', 'tabs'])
   })
   it('same depth fades; first load, search-only and leaving the console do not animate', () => {
     expect(
       transitionTypes(nav('/console/sessions/a', '/console/sessions/b')),
     ).toEqual(['fade'])
-    expect(transitionTypes(nav('/console/now', '/console/now', false))).toBe(
-      false,
-    )
-    expect(transitionTypes(nav(undefined, '/console/now'))).toBe(false)
-    expect(transitionTypes(nav('/zh', '/zh/console/now'))).toBe(false)
+    expect(
+      transitionTypes(nav('/console/sessions', '/console/sessions', false)),
+    ).toBe(false)
+    expect(transitionTypes(nav(undefined, '/console/sessions'))).toBe(false)
+    expect(transitionTypes(nav('/zh', '/zh/console/sessions'))).toBe(false)
   })
 })

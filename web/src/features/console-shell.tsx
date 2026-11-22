@@ -4,7 +4,6 @@ import {
   Code2,
   GitPullRequestArrow,
   House,
-  CircleDot,
   ListTree,
   MessagesSquare,
   Server,
@@ -42,6 +41,7 @@ import {
 import { useConsoleMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { RemoteBadge } from './remote-badge'
+import { needsYou, useSessions } from './console-sessions'
 import { installClientTrace } from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
 
@@ -59,7 +59,6 @@ export type Section =
   | 'overview'
   | 'development'
   | 'diagnostics'
-  | 'now'
   | 'inbox'
   | 'collab'
   | 'sessions'
@@ -70,7 +69,6 @@ const SECTION_PATH = {
   overview: '/{-$locale}/console',
   development: '/{-$locale}/console/development',
   diagnostics: '/{-$locale}/console/diagnostics',
-  now: '/{-$locale}/console/now',
   inbox: '/{-$locale}/console/inbox',
   collab: '/{-$locale}/console/collab',
   sessions: '/{-$locale}/console/sessions',
@@ -115,7 +113,6 @@ function useSections() {
       icon: <Activity size={16} aria-hidden />,
       local: true,
     },
-    { id: 'now', label: t`Now`, icon: <CircleDot size={16} aria-hidden /> },
     {
       id: 'collab',
       label: t`Tickets`,
@@ -136,8 +133,9 @@ function useSections() {
   return {
     mode,
     sidebar: all.filter((item) => mode === 'local' || !item.local),
-    tabs: all.filter((item) =>
-      ['now', 'collab', 'sessions', 'me'].includes(item.id),
+    // phone tabs, in this order: 会话 is the home
+    tabs: (['sessions', 'collab', 'me'] as const).map((id) =>
+      all.find((item) => item.id === id)!,
     ),
   }
 }
@@ -153,7 +151,12 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const localeParam = locale === 'en' ? undefined : locale
   const { mode, sidebar, tabs } = useSections()
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
-  const waiting = health.data?.waiting_human ?? 0
+  // what waits on you, on the tab that holds it
+  const sessions = useSessions()
+  const badges: Partial<Record<Section, number>> = {
+    collab: health.data?.waiting_human ?? 0,
+    sessions: (sessions.data?.sessions ?? []).filter(needsYou).length,
+  }
   const scroller = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const goToTab = useGoToTab()
@@ -182,11 +185,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
   // a session chat runs closer to the edges (bubbles, like a messenger)
   const chat = /\/console\/sessions\/[^/]+$/.test(location)
-  // the host overview needs the local Runtime; remote devices start at 现在
+  // the host overview needs the local Runtime; remote devices start at 会话
   useEffect(() => {
     if (mode === 'remote' && current === 'overview')
       void navigate({
-        to: SECTION_PATH.now,
+        to: SECTION_PATH.sessions,
         params: { locale: localeParam },
         replace: true,
       })
@@ -253,8 +256,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                 >
                   <span>{item.icon}</span>
                   <span className="flex-1">{item.label}</span>
-                  {item.id === 'now' && waiting > 0 ? (
-                    <CountBadge value={waiting} />
+                  {badges[item.id] ? (
+                    <CountBadge value={badges[item.id]!} />
                   ) : jump ? (
                     <kbd className="text-[11px] text-brand-label">g {jump}</kbd>
                   ) : null}
@@ -314,7 +317,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       <nav
         aria-label={t`Sections`}
         className={cn(
-          'tabbar-vt grid grid-cols-4 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden',
+          'tabbar-vt grid grid-cols-3 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden',
           // detail pages are full screen (like a chat): back bar on top, no tabs
           detail && 'hidden',
         )}
@@ -348,9 +351,9 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             >
               <span className="[&>svg]:size-6">{item.icon}</span>
               <span>{item.label}</span>
-              {item.id === 'now' && waiting > 0 ? (
+              {badges[item.id] ? (
                 <span className="absolute top-0.5 left-[calc(50%+4px)]">
-                  <CountBadge value={waiting} />
+                  <CountBadge value={badges[item.id]!} />
                 </span>
               ) : null}
             </Link>
