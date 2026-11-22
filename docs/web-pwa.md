@@ -138,15 +138,16 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   draft) keeps a pinned thread at the bottom too. The reveal cursor never
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
-  the page reopened. The toolbar above the composer (图片 / 诊断) attaches
-  the client diagnostics snapshot and screenshots (what a tool opens
-  renders above the row); a **快捷 / Keys** chip above the composer opens a
-  pad of allowlisted pane keys (`Enter` / `Esc` / `Ctrl+C` / ↑↓ / `Tab` /
-  `1`–`4`) so the phone can confirm, cancel, or interrupt without typing
-  (host `key` RPC; `C-c` is required to stop Grok). The chip stays visible
-  even before phone writing is enabled (keys inside stay disabled with a
-  hint); the confirmation strip that appears when `waiting_kind` is set
-  still offers the same keys inline. The composer is
+  the page reopened. One toolbar row above the composer holds every tool:
+  快捷 (always shown; disabled with a hint until phone writing is enabled),
+  then 图片 / 诊断 once the phone may write, then the picked thumbnails.
+  What a tool opens renders above the row in one card style, never as a
+  popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
+  `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and stays
+  open between taps; 诊断 shows what the snapshot holds. Choices (digits,
+  arrows, `Tab`) are deliberately not keys: questions, plans and
+  permission prompts get their own tap targets on the page
+  (`session-elicitation.tsx`, the confirmation strip). The composer is
   set off from the thread by a
   full-width hairline and an upward shadow, and the chat page uses 10 px
   side gutters (other pages 16 px). Reading back, the user's message that

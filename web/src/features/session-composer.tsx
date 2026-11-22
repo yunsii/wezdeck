@@ -14,11 +14,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
 import { diagnosticsSnapshot } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
@@ -200,163 +195,172 @@ type Composer = ReturnType<typeof useComposer>
 const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
 
-/** Host allowlist names (`remote_session.go` allowedKeys) → button label. */
+/**
+ * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
+ * are not here: questions and plans get their own tap targets on the page
+ * (session-elicitation.tsx, permission keys), which is where they belong.
+ */
 function useQuickKeys() {
   const { t } = useLingui()
   return [
-    { key: 'Enter', label: t`Enter` },
-    { key: 'Escape', label: t`Esc` },
-    { key: 'C-c', label: t`Ctrl+C` },
-    { key: 'Up', label: '↑' },
-    { key: 'Down', label: '↓' },
-    { key: 'Tab', label: t`Tab` },
-    { key: '1', label: '1' },
-    { key: '2', label: '2' },
-    { key: '3', label: '3' },
-    { key: '4', label: '4' },
+    { key: 'Enter', label: 'Enter', hint: t`confirm` },
+    { key: 'Escape', label: 'Esc', hint: t`cancel` },
+    { key: 'C-c', label: 'Ctrl+C', hint: t`interrupt` },
   ] as const
 }
 
 /**
- * Always-on key pad for the session TUI: confirm, cancel, interrupt (Ctrl+C
- * for Grok), and choice digits. Opens above the composer on a phone.
+ * Confirm / cancel / interrupt for the session TUI (Ctrl+C stops Grok).
+ * Opens above the toolbar like every tool; each key says what it does.
  */
-function QuickKeys({
+function KeyPanel({
   disabled,
   onKey,
+  onClose,
 }: {
   disabled: boolean
   onKey: (key: string) => void
+  onClose: () => void
 }) {
   const { t } = useLingui()
   const keys = useQuickKeys()
-  const [open, setOpen] = useState(false)
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        type="button"
-        aria-label={t`Quick keys`}
-        title={t`Send Enter, Esc, Ctrl+C, or a choice key into the agent pane`}
-        className={cn(
-          tool,
-          'bg-brand-surface text-brand-muted data-popup-open:bg-brand-text data-popup-open:text-brand-deck',
-        )}
-      >
-        <Keyboard size={14} aria-hidden />
-        {t`Keys`}
-      </PopoverTrigger>
-      <PopoverContent
-        side="top"
-        sideOffset={10}
-        className="w-[min(100vw-1.5rem,20rem)] rounded-[16px] border-brand-edge bg-brand-deck p-2 shadow-[0_-8px_28px_-12px_rgb(0_0_0/0.35)]"
-      >
-        <p className="px-1.5 pb-1.5 text-[11.5px] text-brand-label">
+    <div className="grid gap-1.5 rounded-[16px] bg-brand-surface p-2">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <span className="text-[11.5px] text-brand-label">
           {disabled
             ? t`Enable phone writing in Settings to send these keys`
             : t`Tap to send into the agent pane`}
-        </p>
-        <div
-          role="menu"
-          aria-label={t`Quick keys`}
-          data-testid="session-quick-keys"
-          className="grid grid-cols-3 gap-1.5"
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t`Close keys`}
+          className="inline-flex size-7 items-center justify-center rounded-full text-brand-muted"
         >
-          {keys.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              role="menuitem"
-              disabled={disabled}
-              onClick={() => {
-                onKey(key)
-                setOpen(false)
-              }}
-              className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-surface px-2 text-[15px] font-medium disabled:opacity-40"
-            >
+          <X size={14} aria-hidden />
+        </button>
+      </div>
+      <div
+        role="group"
+        aria-label={t`Quick keys`}
+        data-testid="session-quick-keys"
+        className="grid grid-cols-3 gap-1.5"
+      >
+        {keys.map(({ key, label, hint }) => (
+          <button
+            key={key}
+            type="button"
+            disabled={disabled}
+            onClick={() => onKey(key)}
+            className="key-press grid h-12 place-content-center gap-0.5 rounded-[10px] border border-brand-edge bg-brand-deck px-1 disabled:opacity-40"
+          >
+            <span className="text-[14px] leading-none font-medium">
               {label}
-            </button>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+            </span>
+            <span className="text-[11px] leading-none text-brand-label">
+              {hint}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
 /**
- * Above the input: images + diagnostics (only when this phone may write),
- * then the picked thumbnails. Quick keys sit in their own row so the entry
- * stays visible even before writing is enabled (button disabled until then).
+ * One row above the input: 快捷 (always), then 图片 and 诊断 once this phone
+ * may write, then the picked thumbnails. What a tool opens — the key pad,
+ * the diagnostics note — renders above the row in the same card style.
  */
-function Toolbar({ composer }: { composer: Composer }) {
+function Toolbar({
+  composer,
+  writable,
+  keysOpen,
+  onKeys,
+}: {
+  composer: Composer
+  writable: boolean
+  keysOpen: boolean
+  onKeys: () => void
+}) {
   const { t } = useLingui()
   const full = composer.images.length >= MAX_IMAGES
+  const chip = (on: boolean) =>
+    cn(
+      tool,
+      on
+        ? 'bg-brand-text text-brand-deck'
+        : 'bg-brand-surface text-brand-muted',
+    )
   return (
-    <div className="grid gap-1">
-      {composer.diag ? (
-        <p className="px-1 text-[11.5px] leading-snug text-brand-label">
-          {t`Sends sizes, scroll state and recent page events; no tokens, no message text.`}
-        </p>
-      ) : null}
-      <div
-        role="toolbar"
-        aria-label={t`Attachments`}
-        data-testid="composer-tools"
-        className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+    <div
+      role="toolbar"
+      aria-label={t`Composer tools`}
+      data-testid="composer-tools"
+      className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+    >
+      <button
+        type="button"
+        aria-pressed={keysOpen}
+        aria-label={t`Quick keys`}
+        title={t`Send Enter, Esc or Ctrl+C into the agent pane`}
+        onClick={onKeys}
+        className={chip(keysOpen)}
       >
-        {full ? null : (
-          <label
-            className={cn(
-              tool,
-              'cursor-pointer bg-brand-surface text-brand-muted focus-within:ring-2 focus-within:ring-brand-running',
-            )}
-          >
-            <ImagePlus size={14} aria-hidden />
-            {t`Images`}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              onChange={(event) => {
-                composer.pick(event.target.files)
-                event.target.value = ''
-              }}
-            />
-          </label>
-        )}
+        <Keyboard size={14} aria-hidden />
+        {t`Keys`}
+      </button>
+      {writable && !full ? (
+        <label
+          className={cn(
+            chip(false),
+            'cursor-pointer focus-within:ring-2 focus-within:ring-brand-running',
+          )}
+        >
+          <ImagePlus size={14} aria-hidden />
+          {t`Images`}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              composer.pick(event.target.files)
+              event.target.value = ''
+            }}
+          />
+        </label>
+      ) : null}
+      {writable ? (
         <button
           type="button"
           aria-pressed={composer.diag}
           title={t`Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text.`}
           onClick={() => composer.setDiag(!composer.diag)}
-          className={cn(
-            tool,
-            composer.diag
-              ? 'bg-brand-text text-brand-deck'
-              : 'bg-brand-surface text-brand-muted',
-          )}
+          className={chip(composer.diag)}
         >
           <Activity size={14} aria-hidden />
           {t`Diagnostics`}
         </button>
-        {composer.images.map((image) => (
-          <span key={image.key} className="relative size-8 shrink-0">
-            <img
-              src={image.url}
-              alt=""
-              className="size-8 rounded-[8px] object-cover"
-            />
-            <button
-              type="button"
-              aria-label={t`Remove image`}
-              onClick={() => composer.remove(image.key)}
-              className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-brand-text text-brand-deck"
-            >
-              <X size={10} aria-hidden />
-            </button>
-          </span>
-        ))}
-      </div>
+      ) : null}
+      {composer.images.map((image) => (
+        <span key={image.key} className="relative size-8 shrink-0">
+          <img
+            src={image.url}
+            alt=""
+            className="size-8 rounded-[8px] object-cover"
+          />
+          <button
+            type="button"
+            aria-label={t`Remove image`}
+            onClick={() => composer.remove(image.key)}
+            className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-brand-text text-brand-deck"
+          >
+            <X size={10} aria-hidden />
+          </button>
+        </span>
+      ))}
     </div>
   )
 }
@@ -378,15 +382,27 @@ export function ComposerBox({
   onKey: (key: string) => void
 }) {
   const { t } = useLingui()
+  const [keysOpen, setKeysOpen] = useState(false)
   return (
     <>
-      <div
-        data-testid="composer-keys-row"
-        className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
-      >
-        <QuickKeys disabled={keysDisabled} onKey={onKey} />
-      </div>
-      {writable ? <Toolbar composer={composer} /> : null}
+      {keysOpen ? (
+        <KeyPanel
+          disabled={keysDisabled}
+          onKey={onKey}
+          onClose={() => setKeysOpen(false)}
+        />
+      ) : null}
+      {composer.diag ? (
+        <p className="rounded-[12px] bg-brand-surface px-3 py-2 text-[11.5px] leading-snug text-brand-label">
+          {t`Sends sizes, scroll state and recent page events; no tokens, no message text.`}
+        </p>
+      ) : null}
+      <Toolbar
+        composer={composer}
+        writable={writable}
+        keysOpen={keysOpen}
+        onKeys={() => setKeysOpen(!keysOpen)}
+      />
       {composer.progress ? (
         <p role="status" className="px-1 text-xs text-brand-muted">
           {composer.progress}
