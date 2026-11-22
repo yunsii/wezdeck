@@ -11,7 +11,7 @@ msgstr ""
 msgid ", "
 msgstr "、"
 
-#: src/features/chat-thread.tsx:472
+#: src/features/chat-thread.tsx:527
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
@@ -19,17 +19,21 @@ msgstr "{count} 条已送达，等 Agent 处理"
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/chat-thread.tsx:471
+#: src/features/chat-thread.tsx:526
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
 
-#: src/features/chat-thread.tsx:252
+#: src/features/chat-thread.tsx:285
 msgid "{count} tool calls"
 msgstr "共 {count} 次工具调用"
 
 #: src/features/landing-example.tsx:71
 msgid "{doneCount} done"
 msgstr "{doneCount} 个已完成"
+
+#: src/features/chat-thread.tsx:334
+msgid "{earlier} earlier calls"
+msgstr "还有 {earlier} 个更早的调用"
 
 #: src/features/console-now.tsx:62
 msgid "{needCount} tickets need you, {runCount} things are running"
@@ -197,7 +201,7 @@ msgstr "分类"
 msgid "challenged"
 msgstr "质疑"
 
-#: src/features/chat-thread.tsx:249
+#: src/features/chat-thread.tsx:282
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
@@ -396,6 +400,10 @@ msgstr "目录"
 
 #: src/features/landing-example.tsx:52
 msgid "done"
+msgstr "已完成"
+
+#: src/features/chat-thread.tsx:215
+msgid "Done"
 msgstr "已完成"
 
 #: src/features/landing-page.tsx:112
@@ -899,15 +907,15 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/chat-thread.tsx:468
+#: src/features/chat-thread.tsx:523
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/chat-thread.tsx:250
+#: src/features/chat-thread.tsx:283
 msgid "ran {commands} commands"
 msgstr "运行 {commands} 条命令"
 
-#: src/features/chat-thread.tsx:251
+#: src/features/chat-thread.tsx:284
 msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
@@ -979,7 +987,7 @@ msgstr "请求数（WebRTC / 中转）"
 msgid "research done"
 msgstr "调研完成"
 
-#: src/features/chat-thread.tsx:225
+#: src/features/chat-thread.tsx:247
 msgid "Result"
 msgstr "结果"
 
@@ -1043,6 +1051,7 @@ msgstr "开始运行"
 msgid "running"
 msgstr "运行中"
 
+#: src/features/chat-thread.tsx:212
 #: src/features/console-collab.tsx:111
 msgid "Running"
 msgstr "运行中"
@@ -1244,7 +1253,7 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/chat-thread.tsx:379
+#: src/features/chat-thread.tsx:433
 msgid "The agent is working"
 msgstr "Agent 正在处理"
 

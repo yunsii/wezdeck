@@ -6,6 +6,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 
@@ -19,6 +20,8 @@ export type Message = {
   file?: string
   added?: number
   removed?: number
+  /** the call went out and its result has not come back yet */
+  pending?: boolean
 }
 
 export type Pending = { text: string; at: number; note?: string }
@@ -56,7 +59,7 @@ function SentAttachments({ text }: { text: string }) {
             <span
               key={file.name}
               title={file.name}
-              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-[12px]"
+              className="rounded-full bg-brand-surface px-2 py-0.5 text-[12px]"
             >
               {file.label}
             </span>
@@ -150,20 +153,15 @@ function Bubble({
     if (stream && mine) onShown?.()
   }, [stream, mine, onShown])
   return (
-    <div
-      className={cn(
-        'flex',
-        mine ? 'justify-end' : 'justify-start',
-        fresh && 'chat-in',
-      )}
-    >
+    <div className={cn('grid min-w-0', fresh && 'chat-in')}>
+      {/* full width; who wrote it is told by the background alone */}
       <div
         data-user-at={mine ? at : undefined}
         className={cn(
-          'max-w-[88%] min-w-0 rounded-[18px] px-3.5 py-2.5',
+          'min-w-0 rounded-[14px] px-3.5 py-2.5 text-brand-text',
           mine
-            ? 'rounded-br-[6px] bg-brand-text text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-deck'
-            : 'rounded-bl-[6px] bg-brand-surface text-brand-text',
+            ? 'bg-brand-edge text-[15px] leading-relaxed break-words whitespace-pre-wrap'
+            : 'bg-brand-surface',
         )}
       >
         {mine ? (
@@ -202,12 +200,35 @@ function ToolBody({ text }: { text: string }) {
   )
 }
 
-function ToolRow({ tool }: { tool: Message }) {
+/** While a run is live: a breathing light for the call in flight, a check once it returned. */
+function ToolStatus({ status }: { status?: 'running' | 'done' }) {
+  const { t } = useLingui()
+  if (!status) return null
+  return status === 'running' ? (
+    <Led
+      tone="running"
+      size={9}
+      className="led-running shrink-0"
+      label={t`Running`}
+    />
+  ) : (
+    <Led tone="done" size={9} className="shrink-0" label={t`Done`} />
+  )
+}
+
+function ToolRow({
+  tool,
+  status,
+}: {
+  tool: Message
+  status?: 'running' | 'done'
+}) {
   const { t } = useLingui()
   if (!tool.body && !tool.result)
     return (
-      <p className="truncate px-1 font-mono text-[12px] text-brand-label">
-        {tool.text}
+      <p className="flex min-w-0 items-center gap-1.5 px-1 font-mono text-[12px] text-brand-label">
+        <ToolStatus status={status} />
+        <span className="truncate">{tool.text}</span>
       </p>
     )
   return (
@@ -216,6 +237,7 @@ function ToolRow({ tool }: { tool: Message }) {
         <span aria-hidden className="transition group-open/tool:rotate-90">
           ›
         </span>
+        <ToolStatus status={status} />
         <span className="truncate">{tool.text}</span>
       </summary>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">
@@ -231,18 +253,29 @@ function ToolRow({ tool }: { tool: Message }) {
   )
 }
 
+/** a live run shows only its newest calls */
+const LIVE_ROWS = 3
+
 function ToolGroup({
   tools,
   fresh,
   stream,
+  live,
   onShown,
 }: {
   tools: Array<Message>
   fresh: boolean
   stream: boolean
+  /** the newest run while the agent works: open, newest calls, status lights */
+  live: boolean
   onShown?: () => void
 }) {
   const { t } = useLingui()
+  // open while live, collapsed once the run is over (a tap still opens it)
+  const [opened, setOpened] = useState(false)
+  const open = live || opened
+  const rows = live ? tools.slice(-LIVE_ROWS) : tools
+  const earlier = tools.length - rows.length
   const count = tools.length
   const { files, edited, added, removed, commands, reads } = toolDigest(tools)
   const summaryParts = [
@@ -259,7 +292,13 @@ function ToolGroup({
     return () => clearTimeout(timer)
   }, [stream])
   return (
-    <details className={cn('group min-w-0 px-1', fresh && 'chat-in')}>
+    <details
+      open={open}
+      onToggle={(event) => {
+        if (!live) setOpened(event.currentTarget.open)
+      }}
+      className={cn('group min-w-0 px-1', fresh && 'chat-in')}
+    >
       <summary className="grid min-w-0 cursor-pointer list-none gap-1 py-1 text-[12px] text-brand-label">
         <span className="flex flex-wrap items-center gap-x-1.5">
           {summaryParts.join('，')}
@@ -290,8 +329,17 @@ function ToolGroup({
         ) : null}
       </summary>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 pt-1">
-        {tools.map((tool, index) => (
-          <ToolRow key={index} tool={tool} />
+        {earlier ? (
+          <p className="px-1 text-[11.5px] text-brand-label">
+            {t`${earlier} earlier calls`}
+          </p>
+        ) : null}
+        {rows.map((tool, index) => (
+          <ToolRow
+            key={earlier + index}
+            tool={tool}
+            status={live ? (tool.pending ? 'running' : 'done') : undefined}
+          />
         ))}
       </div>
     </details>
@@ -358,6 +406,12 @@ export function settleCursor(
   return cursor
 }
 
+/** The newest item is a run of tool calls with one still out: its light says "working". */
+const callInFlight = (items: Array<Item>) => {
+  const last = items.at(-1)
+  return last?.kind === 'tools' && last.tools.some((tool) => tool.pending)
+}
+
 /** Consecutive tool calls collapse into one expandable line. */
 export function group(messages: Array<Message>) {
   const out: Array<Item> = []
@@ -378,7 +432,7 @@ function Typing() {
       className="chat-in flex justify-start"
       aria-label={t`The agent is working`}
     >
-      <div className="flex gap-1 rounded-[18px] rounded-bl-[6px] bg-brand-surface px-3.5 py-3">
+      <div className="flex gap-1 rounded-[14px] bg-brand-surface px-3.5 py-3">
         <span className="typing-dot" />
         <span className="typing-dot [animation-delay:150ms]" />
         <span className="typing-dot [animation-delay:300ms]" />
@@ -421,7 +475,7 @@ export function ChatThread({
     baseline.current !== null && start + index >= baseline.current
   return (
     <>
-      {items.map((item) => {
+      {items.map((item, position) => {
         const at = start + item.index
         if (at > effective) return null
         const stream = at === effective
@@ -432,6 +486,7 @@ export function ChatThread({
               tools={item.tools}
               fresh={isFresh(item.index)}
               stream={stream}
+              live={busy && position === items.length - 1}
               onShown={
                 stream ? () => advance(at + item.tools.length) : undefined
               }
@@ -448,7 +503,7 @@ export function ChatThread({
           />
         )
       })}
-      {busy && effective >= end ? <Typing /> : null}
+      {busy && effective >= end && !callInFlight(items) ? <Typing /> : null}
     </>
   )
 }
@@ -474,7 +529,7 @@ export function SendQueue({
       {pending.map((item) => (
         <div
           key={item.at}
-          className="chat-in ml-auto max-w-[88%] truncate rounded-[14px] border border-dashed border-brand-edge px-3 py-1.5 text-[14px] text-brand-muted"
+          className="chat-in truncate rounded-[14px] border border-dashed border-brand-edge px-3 py-1.5 text-[14px] text-brand-muted"
         >
           {item.text}
           {item.note ? (

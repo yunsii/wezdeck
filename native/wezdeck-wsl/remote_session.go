@@ -307,6 +307,9 @@ type chatMessage struct {
 	Tool   string `json:"tool,omitempty"`   // tool name (role=tool)
 	Body   string `json:"body,omitempty"`   // what the tool was asked to do: diff, file preview, command
 	Result string `json:"result,omitempty"` // what came back (clipped)
+	// Pending: the call has gone out and no result came back yet (the phone
+	// shows it as running while the session is busy)
+	Pending bool `json:"pending,omitempty"`
 	// File / Added / Removed: what a file tool touched, counted on the full
 	// input (Body is clipped for the phone).
 	File    string `json:"file,omitempty"`
@@ -567,6 +570,7 @@ func (t *transcript) feedLine(raw []byte) {
 				Body: toolBody(b.Name, input), TS: line.Timestamp, File: file, Added: added, Removed: removed})
 			if b.ID != "" {
 				t.tools[b.ID] = len(t.messages) - 1
+				t.messages[len(t.messages)-1].Pending = true
 			}
 		case b.Type == "tool_result":
 			idx, ok := t.tools[b.ToolUseID]
@@ -587,6 +591,7 @@ func (t *transcript) feedLine(raw []byte) {
 				}
 			}
 			t.messages[idx].Result = clipLines(clip(out, 3000), 40)
+			t.messages[idx].Pending = false
 			delete(t.tools, b.ToolUseID)
 		}
 	}
@@ -651,12 +656,14 @@ func (t *transcript) addTool(id, name, argsJSON, ts string) {
 		Body: toolBody(name, input), TS: ts, File: file, Added: added, Removed: removed})
 	if id != "" {
 		t.tools[id] = len(t.messages) - 1
+		t.messages[len(t.messages)-1].Pending = true
 	}
 }
 
 func (t *transcript) setResult(id, out string) {
 	if idx, ok := t.tools[id]; ok {
 		t.messages[idx].Result = clipLines(clip(out, 3000), 40)
+		t.messages[idx].Pending = false
 		delete(t.tools, id)
 	}
 }

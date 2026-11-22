@@ -324,6 +324,25 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	}
 }
 
+func TestToolCallPendingUntilItsResult(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "pending.jsonl")
+	appendLine := func(l string) {
+		f, _ := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+		_, _ = f.WriteString(l + "\n")
+		f.Close()
+	}
+	appendLine(`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t9","name":"Bash","input":{"command":"go test ./..."}}]}}`)
+	tr, err := loadTranscript(path, "claude")
+	if err != nil || len(tr.messages) != 1 || !tr.messages[0].Pending {
+		t.Fatalf("a call without its result is pending: %v %+v", err, tr.messages)
+	}
+	appendLine(`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t9","content":""}]}}`)
+	tr, _ = loadTranscript(path, "claude")
+	if tr.messages[0].Pending {
+		t.Fatalf("an (empty) result ends pending: %+v", tr.messages[0])
+	}
+}
+
 func TestGrokAndCodexTranscriptsParseAlike(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
