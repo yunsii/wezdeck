@@ -131,9 +131,9 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 	}
 	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
 
-	write("running", "") // not a Claude session (no transcript): must wait
-	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"hello"}`)); err == nil || !strings.Contains(err.Error(), "still working") {
-		t.Fatalf("running agent must not receive input, got %v", err)
+	write("running", "") // any agent takes input mid-turn (queued / steered by its TUI)
+	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"mid-turn"}`)); err != nil {
+		t.Fatalf("running agent must take input, got %v", err)
 	}
 	write("waiting", "permission_prompt")
 	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"hello"}`)); err == nil || !strings.Contains(err.Error(), "confirmation") {

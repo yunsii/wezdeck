@@ -67,7 +67,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     tmux('kill-server')
   })
 
-  it('enable → approve → send arrives in the pane; running blocks sending', async () => {
+  it('enable → approve → send arrives in the pane, also mid-turn', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
       locale: 'zh-CN',
@@ -109,14 +109,40 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       await page.waitForTimeout(200)
     }
 
+    // the sticky composer rests flush with the scroller bottom, so starting
+    // a drag never makes it jump down by the page padding
+    const gap = await page.evaluate(() => {
+      const form = document.querySelector('#session-composer')?.closest('form')
+      const scroller = form?.closest('.overflow-y-auto')
+      if (!form || !scroller) return -1
+      return Math.round(
+        scroller.getBoundingClientRect().bottom -
+          form.getBoundingClientRect().bottom,
+      )
+    })
+    expect(gap).toBe(0)
+
+    // every hosted agent takes input mid-turn (queued / steered by its TUI)
     setStatus('running')
     await page
-      .getByText('Agent 正在运行，等它停下后才能发送。')
+      .getByText('Agent 正在运行，会在这一轮中或结束后立刻接收你的消息。')
       .waitFor({ timeout: 15_000 })
-    await box.fill('不该发出去')
-    expect(await page.getByRole('button', { name: '发送' }).isDisabled()).toBe(
-      true,
-    )
+    await box.fill('运行中也能发')
+    await page.getByRole('button', { name: '发送' }).click()
+    const busyDeadline = Date.now() + 8_000
+    while (!tmux('capture-pane', '-p', '-t', 'demo').includes('运行中也能发')) {
+      if (Date.now() > busyDeadline)
+        throw new Error('mid-turn message never reached the pane')
+      await page.waitForTimeout(200)
+    }
+
+    // back from the background: the page refetches at once and says so
+    await page.evaluate(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    await page
+      .locator('[data-testid=session-sync]')
+      .waitFor({ timeout: 10_000 })
     await context.close()
   }, 90_000)
 })

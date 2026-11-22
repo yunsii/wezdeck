@@ -6,7 +6,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router'
 import { ArrowDown, SendHorizontal } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
@@ -243,6 +243,57 @@ function useKeepPlace(
   }
 }
 
+/**
+ * A page left in the background stops polling; coming back it refetches at
+ * once and says so, instead of silently showing minutes-old messages:
+ * syncing while that fetch runs, then "up to date" for two seconds.
+ */
+function useResumeSync(id: string, fetching: boolean, updatedAt: number) {
+  const client = useQueryClient()
+  const [state, setState] = useState<'idle' | 'syncing' | 'synced'>('idle')
+  const since = useRef(0)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      since.current = Date.now()
+      setState('syncing')
+      void client.invalidateQueries({ queryKey: ['remote', 'session', id] })
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [client, id])
+  useEffect(() => {
+    if (state !== 'syncing' || fetching || updatedAt < since.current) return
+    setState('synced')
+    const timer = setTimeout(() => setState('idle'), 2_000)
+    return () => clearTimeout(timer)
+  }, [state, fetching, updatedAt])
+  return state
+}
+
+function SyncStatus({
+  state,
+  at,
+}: {
+  state: 'idle' | 'syncing' | 'synced'
+  at: string
+}) {
+  const { t } = useLingui()
+  if (state === 'idle') return null
+  return (
+    <p
+      role="status"
+      data-testid="session-sync"
+      className="flex items-center gap-1.5 px-1 text-xs text-brand-muted"
+    >
+      <Led tone={state === 'syncing' ? 'running' : 'done'} size={10} />
+      {state === 'syncing'
+        ? t`Back on the page, fetching the latest (last ${at})…`
+        : t`Up to date, ${at}`}
+    </p>
+  )
+}
+
 function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const router = useRouter()
@@ -284,6 +335,7 @@ function SessionDetail({ id }: { id: string }) {
   const shown = messages.length
   const start = data?.start ?? 0
   const keepPlace = useKeepPlace(end, start)
+  const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
   const back = () => {
     if (window.history.length > 1) router.history.back()
     else
@@ -295,11 +347,9 @@ function SessionDetail({ id }: { id: string }) {
   const blocked =
     device.state !== 'approved'
       ? t`Writing is not enabled on this phone yet (Settings › Phone writing).`
-      : data && isBusy(data) && data.agent !== 'claude'
-        ? t`The agent is working. You can send once it stops.`
-        : data?.waiting_kind
-          ? t`The agent is asking for a confirmation: answer it with the keys above.`
-          : ''
+      : data?.waiting_kind
+        ? t`The agent is asking for a confirmation: answer it with the keys above.`
+        : ''
   const run = async (action: 'send' | 'key', args: Record<string, unknown>) => {
     setSending(true)
     setError('')
@@ -390,7 +440,7 @@ function SessionDetail({ id }: { id: string }) {
       </div>
 
       <form
-        className="sticky bottom-0 grid gap-1.5 bg-brand-deck pt-1 relative pb-[max(env(safe-area-inset-bottom),0.25rem)]"
+        className="sticky bottom-0 -mb-4 grid gap-1.5 bg-brand-deck pt-1 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
         onSubmit={(event) => {
           event.preventDefault()
           if (text.trim()) void run('send', { text })
@@ -401,6 +451,7 @@ function SessionDetail({ id }: { id: string }) {
           unread={follow.unread}
           onJump={follow.jump}
         />
+        {detail.isError ? null : <SyncStatus state={sync} at={staleAt} />}
         {(detail.isError || detail.fetchStatus === 'paused') && data ? (
           <p
             role="status"
@@ -418,7 +469,7 @@ function SessionDetail({ id }: { id: string }) {
           </p>
         ) : !blocked && data && isBusy(data) ? (
           <p className="text-xs text-brand-muted">
-            {t`Claude is working; your message joins its queue and it decides when to take it.`}
+            {t`The agent is working; it picks up your message during or right after this turn.`}
           </p>
         ) : blocked ? (
           <p className="text-xs text-brand-muted">

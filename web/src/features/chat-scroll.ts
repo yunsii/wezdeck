@@ -3,6 +3,10 @@
 // scrolls up themselves — only a finger, wheel or key counts, never our own
 // scrolling — and pin again once they come back to the bottom. While unpinned
 // the page offers a "jump to latest" button with the number of new messages.
+// A finger dragging the history down unpins at once (no 48 px dead zone where
+// a growing reply would yank the page back), nothing auto-scrolls while a
+// finger is on the screen, and when the viewport shrinks (the keyboard opens)
+// a pinned thread stays on its newest message.
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const NEAR_BOTTOM = 48
@@ -15,6 +19,7 @@ export function useChatScroll(
   const pinnedRef = useRef(true)
   const landed = useRef(false)
   const userUntil = useRef(0)
+  const touching = useRef(false)
   const [unread, setUnread] = useState(0)
   const seen = useRef(count)
 
@@ -55,13 +60,34 @@ export function useChatScroll(
     const onKey = (event: KeyboardEvent) => {
       if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) intent()
     }
+    let touchY = 0
+    const onTouchStart = (event: TouchEvent) => {
+      touching.current = true
+      touchY = event.touches.item(0)?.clientY ?? 0
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      intent()
+      const y = event.touches.item(0)?.clientY ?? touchY
+      // finger moving down = reading back: leave the bottom right away
+      if (y - touchY > 4 && pinnedRef.current) pin(false)
+      touchY = y
+    }
+    const onTouchEnd = () => {
+      touching.current = false
+    }
     el.addEventListener('wheel', intent, { passive: true })
-    el.addEventListener('touchmove', intent, { passive: true })
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: true })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true })
     el.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('keydown', onKey)
     return () => {
       el.removeEventListener('wheel', intent)
-      el.removeEventListener('touchmove', intent)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
       el.removeEventListener('scroll', onScroll)
       window.removeEventListener('keydown', onKey)
     }
@@ -79,6 +105,7 @@ export function useChatScroll(
     const smooth =
       landed.current && !matchMedia('(prefers-reduced-motion: reduce)').matches
     const go = () => {
+      if (touching.current) return
       toBottom(smooth)
       landed.current = true
     }
@@ -90,16 +117,25 @@ export function useChatScroll(
     }
   }, [count, toBottom])
 
-  // a streaming reply grows without changing the count: follow its height
+  // a streaming reply grows without changing the count, and the keyboard
+  // shrinks the scroller: either way a pinned thread follows its newest line
   useEffect(() => {
     const el = scroller()
     const thread = end.current?.parentElement
     if (!el || !thread || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => {
-      if (pinnedRef.current && landed.current) el.scrollTop = el.scrollHeight
-    })
+    const follow = () => {
+      if (pinnedRef.current && landed.current && !touching.current)
+        el.scrollTop = el.scrollHeight
+    }
+    const observer = new ResizeObserver(follow)
     observer.observe(thread)
-    return () => observer.disconnect()
+    observer.observe(el)
+    const viewport = window.visualViewport
+    viewport?.addEventListener('resize', follow)
+    return () => {
+      observer.disconnect()
+      viewport?.removeEventListener('resize', follow)
+    }
   }, [end])
 
   const jump = useCallback(() => {

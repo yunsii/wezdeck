@@ -90,8 +90,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   reply streams in at ~300 chars/s (0.4–3 s), a backlog over 8 jumps to the
   newest; the page stays pinned to the bottom while a reply grows
   (`chat-scroll.ts`: only a finger, wheel or key can unpin it, never the
-  page's own scrolling; back near the bottom re-pins; while unpinned a
-  "回到最新 / N 条新消息" button jumps back)
+  page's own scrolling; a finger dragging the history down unpins at once
+  and nothing auto-scrolls while a finger is down; back near the bottom
+  re-pins; while unpinned a "回到最新 / N 条新消息" button jumps back)
   (tables and code scroll in their own box); runs of tool calls
   collapse into one line, each call expands to its diff / preview / command
   and result; "N messages, showing M" with 加载更早 keeping the reading
@@ -100,7 +101,13 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   reply unfolds over ≤ 500 ms, typing dots while the agent works, smooth
   follow at the bottom), all off under reduced motion; polling 1 s while the
   agent works. Keyboard: `interactive-widget=resizes-content` keeps the
-  composer above it.
+  composer above it, and a pinned thread follows the shrinking scroller
+  (ResizeObserver on the scroller + `visualViewport` resize) so the newest
+  message stays in view. The sticky composer rests flush with the scroller
+  bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
+  that padding the moment a drag starts. Back from the background the page
+  refetches at once and shows 正在拉取最新消息（上次 HH:MM:SS）→ 已同步
+  (`useResumeSync`), instead of silently showing old messages.
 
 ## As built (2026-11-22)
 

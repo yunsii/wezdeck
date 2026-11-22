@@ -221,13 +221,6 @@ func findTranscript(sessionID string) (path, agent string) {
 	return "", ""
 }
 
-func claudeTranscript(sessionID string) string {
-	if path, agent := findTranscript(sessionID); agent == "claude" {
-		return path
-	}
-	return ""
-}
-
 type sessionCard struct {
 	ID          string   `json:"id"`
 	Agent       string   `json:"agent"`
@@ -1100,11 +1093,10 @@ func sendToSession(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Claude Code queues input typed mid-turn and schedules it itself; other
-	// agents only take input once the turn is over (or only background is left).
-	if e.busy() && claudeTranscript(e.SessionID) == "" {
-		return nil, errors.New("the agent is still working; send when it stops")
-	}
+	// No busy guard: every agent TUI we host takes input mid-turn. Claude Code
+	// queues it and schedules it itself, Grok queues a follow-up for after the
+	// turn (`[ui].follow_up_behavior`, default "queue"), Codex steers the
+	// active turn with it. Only a pending confirmation blocks free text.
 	if e.WaitingKind != "" {
 		return nil, errors.New("the agent is asking for a confirmation; answer it with the keys first")
 	}
