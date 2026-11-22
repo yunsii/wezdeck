@@ -169,11 +169,16 @@ export function useComposer({
     const note = [count ? t`${count} images` : '', diag ? t`diagnostics` : '']
       .filter(Boolean)
       .join(t`, `)
-    if (await onSend({ text: text.trim(), attachments, note })) {
-      setText('')
+    // clear right away, like a chat app: the message shows in the queue
+    // above; if the host refuses it, the text comes back with the error
+    const typed = text
+    setText('')
+    if (await onSend({ text: typed.trim(), attachments, note })) {
       images.forEach((image) => URL.revokeObjectURL(image.url))
       setImages([])
       setDiag(false)
+    } else {
+      setText((current) => current || typed)
     }
   }
   return {

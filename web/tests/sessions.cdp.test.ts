@@ -113,6 +113,8 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       .toBe('还没发的草稿')
     await box.fill('来自手机的消息')
     await page.getByRole('button', { name: '发送' }).click()
+    // the composer empties as the message goes out, not after a refetch
+    await expect.poll(() => box.inputValue(), { timeout: 1_000 }).toBe('')
     await page.getByText(/条已送达/).waitFor({ timeout: 15_000 })
     const deadline = Date.now() + 5_000
     while (

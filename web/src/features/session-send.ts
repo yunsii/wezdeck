@@ -47,7 +47,8 @@ export function useSessionWrites(id: string) {
     setError('')
     try {
       await job()
-      await refresh()
+      // the poll would catch up anyway; don't hold the composer on it
+      void refresh()
       return true
     } catch (e) {
       setError((e as Error).message)

@@ -164,7 +164,7 @@ msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/session-composer.tsx:297
+#: src/features/session-composer.tsx:302
 msgid "Attachments"
 msgstr "附件"
 
@@ -355,7 +355,7 @@ msgstr "花费"
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
-#: src/features/session-composer.tsx:204
+#: src/features/session-composer.tsx:209
 #: src/features/session-elicitation.tsx:78
 #: src/features/session-elicitation.tsx:126
 msgid "Ctrl+C"
@@ -408,7 +408,7 @@ msgstr "诊断数据"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:335
+#: src/features/session-composer.tsx:340
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -432,7 +432,7 @@ msgstr "已完成"
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去的位置。"
 
-#: src/features/session-composer.tsx:250
+#: src/features/session-composer.tsx:255
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
 
@@ -457,7 +457,7 @@ msgstr "端点"
 msgid "English"
 msgstr "English"
 
-#: src/features/session-composer.tsx:202
+#: src/features/session-composer.tsx:207
 #: src/features/session-elicitation.tsx:124
 msgid "Enter"
 msgstr "回车"
@@ -470,7 +470,7 @@ msgstr "进入 Runtime 控制台"
 msgid "Entries"
 msgstr "条目"
 
-#: src/features/session-composer.tsx:203
+#: src/features/session-composer.tsx:208
 #: src/features/session-elicitation.tsx:70
 #: src/features/session-elicitation.tsx:125
 msgid "Esc"
@@ -570,7 +570,7 @@ msgstr "空闲"
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
-#: src/features/session-composer.tsx:309
+#: src/features/session-composer.tsx:314
 msgid "Images"
 msgstr "图片"
 
@@ -644,7 +644,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/session-composer.tsx:241
+#: src/features/session-composer.tsx:246
 msgid "Keys"
 msgstr "快捷"
 
@@ -736,11 +736,11 @@ msgstr "有进展"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:404
+#: src/features/session-composer.tsx:409
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:392
+#: src/features/session-composer.tsx:397
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -983,8 +983,8 @@ msgstr "初始消息组成"
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/session-composer.tsx:233
-#: src/features/session-composer.tsx:255
+#: src/features/session-composer.tsx:238
+#: src/features/session-composer.tsx:260
 msgid "Quick keys"
 msgstr "快捷键"
 
@@ -1032,7 +1032,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:346
+#: src/features/session-composer.tsx:351
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -1225,7 +1225,7 @@ msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-composer.tsx:325
+#: src/features/session-composer.tsx:330
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
@@ -1250,15 +1250,15 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:409
+#: src/features/session-composer.tsx:414
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:239
 msgid "Send Enter, Esc, Ctrl+C, or a choice key into the agent pane"
 msgstr "向 Agent 窗格发送 Enter、Esc、Ctrl+C 或选项键"
 
-#: src/features/session-composer.tsx:292
+#: src/features/session-composer.tsx:297
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
 
@@ -1356,7 +1356,7 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/session-composer.tsx:207
+#: src/features/session-composer.tsx:212
 msgid "Tab"
 msgstr "Tab"
 
@@ -1364,7 +1364,7 @@ msgstr "Tab"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:251
+#: src/features/session-composer.tsx:256
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
