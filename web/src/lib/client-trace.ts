@@ -98,7 +98,7 @@ let installed = false
 const PREVIOUS_KEY = 'wezdeck-trace-previous'
 function previousDocument() {
   try {
-    return JSON.parse(sessionStorage.getItem(PREVIOUS_KEY) ?? 'null') as unknown
+    return JSON.parse(localStorage.getItem(PREVIOUS_KEY) ?? 'null') as unknown
   } catch {
     return null
   }
@@ -141,15 +141,29 @@ export function installClientTrace() {
       routerEntry: routerIndex() !== undefined,
       length: history.length,
     })
+    persist('popstate')
+    // what the page actually shows half a second later ("empty content"?)
+    setTimeout(() => {
+      const main = document.getElementById('console-main')
+      trace('after-back', {
+        path: location.pathname,
+        main: main ? main.childElementCount : -1,
+        text: (main?.innerText ?? document.body.innerText).trim().length,
+        visibility: document.visibilityState,
+      })
+      persist('after-back')
+    }, 500)
   })
-  // keep the last events across a document change in this tab (reload,
-  // back into another document): the next snapshot carries them as `previous`
-  window.addEventListener('pagehide', () => {
+  // keep the last events past this document — a reload, or the app being
+  // closed by a back press (localStorage: sessionStorage dies with the
+  // window): the next snapshot carries them as `previous`
+  const persist = (why: string) => {
     try {
-      sessionStorage.setItem(
+      localStorage.setItem(
         PREVIOUS_KEY,
         JSON.stringify({
           at: new Date().toISOString(),
+          why,
           path: location.pathname,
           events: events.slice(-60),
         }),
@@ -157,6 +171,10 @@ export function installClientTrace() {
     } catch {
       // storage blocked: the snapshot just lacks `previous`
     }
+  }
+  window.addEventListener('pagehide', () => persist('pagehide'))
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') persist('hidden')
   })
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) trace('pageshow-bfcache', { path: location.pathname })

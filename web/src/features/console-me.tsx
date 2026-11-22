@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
+import { rememberLocale } from '#/lib/locale-pref'
 import { useLocale } from '#/lib/locale-context'
 import {
   buildId,
@@ -214,7 +215,8 @@ export function ConsoleMePage() {
             <Segmented
               label={t`Language`}
               value={locale === 'zh' ? 'zh' : 'en'}
-              onChange={(next) =>
+              onChange={(next) => {
+                rememberLocale(next)
                 void navigate({
                   to: '.',
                   replace: true,
@@ -223,7 +225,7 @@ export function ConsoleMePage() {
                     locale: next === 'en' ? undefined : next,
                   },
                 })
-              }
+              }}
               options={[
                 { value: 'zh', label: '中文' },
                 { value: 'en', label: 'English' },

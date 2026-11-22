@@ -179,7 +179,7 @@ msgstr "累计"
 msgid "Allow LAN direct"
 msgstr "授权以局域网直连"
 
-#: src/features/console-me.tsx:82
+#: src/features/console-me.tsx:83
 msgid "Already the latest"
 msgstr "已是最新版本"
 
@@ -191,12 +191,12 @@ msgstr "这是示例。选一个会话，看你会跳回哪里。"
 msgid "Anything to add (optional)"
 msgstr "补充说明（可选）"
 
-#: src/features/console-me.tsx:51
-#: src/features/console-me.tsx:198
+#: src/features/console-me.tsx:52
+#: src/features/console-me.tsx:199
 msgid "App"
 msgstr "应用"
 
-#: src/features/console-me.tsx:210
+#: src/features/console-me.tsx:211
 msgid "Appearance"
 msgstr "外观"
 
@@ -276,15 +276,15 @@ msgstr "分类"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
-#: src/features/console-me.tsx:148
+#: src/features/console-me.tsx:149
 msgid "Check again"
 msgstr "重新检查"
 
-#: src/features/console-me.tsx:87
+#: src/features/console-me.tsx:88
 msgid "Check for updates"
 msgstr "检查更新"
 
-#: src/features/console-me.tsx:103
+#: src/features/console-me.tsx:104
 msgid "Checking…"
 msgstr "检查中…"
 
@@ -374,7 +374,7 @@ msgstr "冲突"
 msgid "Connecting…"
 msgstr "连接中…"
 
-#: src/features/console-me.tsx:175
+#: src/features/console-me.tsx:176
 msgid "Connection"
 msgstr "连接"
 
@@ -420,7 +420,7 @@ msgstr "已复制"
 msgid "Copy"
 msgstr "复制"
 
-#: src/features/console-me.tsx:145
+#: src/features/console-me.tsx:146
 msgid "Copy command"
 msgstr "复制命令"
 
@@ -455,15 +455,15 @@ msgstr "Ctrl+C"
 msgid "Current plan"
 msgstr "当前计划"
 
-#: src/features/console-shared.tsx:350
+#: src/features/console-shared.tsx:351
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
-#: src/features/console-me.tsx:242
+#: src/features/console-me.tsx:244
 msgid "Dark"
 msgstr "深色"
 
-#: src/features/console-shared.tsx:378
+#: src/features/console-shared.tsx:379
 msgid "Dark theme"
 msgstr "暗色主题"
 
@@ -475,7 +475,7 @@ msgstr "数据截至 {time}"
 msgid "Deck"
 msgstr "工作台"
 
-#: src/features/console-shared.tsx:213
+#: src/features/console-shared.tsx:214
 msgid "Degraded"
 msgstr "受限"
 
@@ -491,7 +491,7 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "电脑前空闲"
 
-#: src/features/console-me.tsx:263
+#: src/features/console-me.tsx:265
 #: src/features/console-shell.tsx:108
 msgid "Development"
 msgstr "开发"
@@ -500,7 +500,7 @@ msgstr "开发"
 #~ msgid "diagnostics"
 #~ msgstr "诊断数据"
 
-#: src/features/console-me.tsx:270
+#: src/features/console-me.tsx:272
 #: src/features/console-shell.tsx:114
 msgid "Diagnostics"
 msgstr "诊断"
@@ -530,11 +530,11 @@ msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去�
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
 
-#: src/features/console-me.tsx:120
+#: src/features/console-me.tsx:121
 msgid "Enable writing"
 msgstr "启用写入"
 
-#: src/features/console-me.tsx:107
+#: src/features/console-me.tsx:108
 msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 msgstr "已启用。这台手机可以给会话发消息、回复工单。"
 
@@ -546,7 +546,7 @@ msgstr "已结束 {ended}"
 msgid "Endpoint"
 msgstr "端点"
 
-#: src/features/console-shared.tsx:435
+#: src/features/console-shared.tsx:437
 #: src/features/landing-example.tsx:147
 msgid "English"
 msgstr "English"
@@ -625,7 +625,7 @@ msgstr "这一轮已结束"
 msgid "First turn"
 msgstr "第一轮"
 
-#: src/features/console-shared.tsx:379
+#: src/features/console-shared.tsx:380
 msgid "Follow system theme"
 msgstr "跟随系统主题"
 
@@ -655,7 +655,7 @@ msgstr "收起初始消息"
 msgid "Host offline"
 msgstr "主机离线"
 
-#: src/features/console-me.tsx:250
+#: src/features/console-me.tsx:252
 msgid "Host sections"
 msgstr "本机功能"
 
@@ -670,7 +670,7 @@ msgstr "主机信号"
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
-#: src/features/console-me.tsx:185
+#: src/features/console-me.tsx:186
 msgid "Host up since"
 msgstr "主机上线于"
 
@@ -694,7 +694,7 @@ msgstr "图片预览"
 msgid "Images"
 msgstr "图片"
 
-#: src/features/console-shared.tsx:348
+#: src/features/console-shared.tsx:349
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
@@ -706,7 +706,7 @@ msgstr "进行中"
 msgid "In progress {active}"
 msgstr "进行中 {active}"
 
-#: src/features/console-me.tsx:59
+#: src/features/console-me.tsx:60
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
 
@@ -723,11 +723,11 @@ msgstr "初始消息"
 msgid "Input method"
 msgstr "输入法"
 
-#: src/features/console-me.tsx:55
+#: src/features/console-me.tsx:56
 msgid "Install WezDeck"
 msgstr "安装 WezDeck"
 
-#: src/features/console-me.tsx:51
+#: src/features/console-me.tsx:52
 msgid "Installed"
 msgstr "已安装"
 
@@ -784,19 +784,19 @@ msgstr "快捷"
 msgid "LAN"
 msgstr "局域网"
 
-#: src/features/console-me.tsx:213
-#: src/features/console-me.tsx:215
-#: src/features/console-shared.tsx:420
-#: src/features/console-shared.tsx:422
+#: src/features/console-me.tsx:214
+#: src/features/console-me.tsx:216
+#: src/features/console-shared.tsx:421
+#: src/features/console-shared.tsx:423
 msgid "Language"
 msgstr "语言"
 
-#: src/features/console-me.tsx:192
+#: src/features/console-me.tsx:193
 msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-overview.tsx:56
-#: src/features/console-shared.tsx:109
+#: src/features/console-shared.tsx:110
 #: src/features/console-shell.tsx:408
 msgid "Last sample"
 msgstr "最近采样"
@@ -814,7 +814,7 @@ msgstr "最近"
 msgid "Launch"
 msgstr "启动"
 
-#: src/features/console-me.tsx:117
+#: src/features/console-me.tsx:118
 msgid "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
 msgstr "让这台手机能给 Agent 会话发消息、回复工单。密钥在这台手机上生成，只留在这里；主机确认一次即可。"
 
@@ -822,11 +822,11 @@ msgstr "让这台手机能给 Agent 会话发消息、回复工单。密钥在�
 msgid "Level"
 msgstr "级别"
 
-#: src/features/console-me.tsx:241
+#: src/features/console-me.tsx:243
 msgid "Light"
 msgstr "浅色"
 
-#: src/features/console-shared.tsx:377
+#: src/features/console-shared.tsx:378
 msgid "Light theme"
 msgstr "亮色主题"
 
@@ -857,7 +857,7 @@ msgstr "正在加载原图…"
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:233
 #: src/features/console-sessions.tsx:388
-#: src/features/console-shared.tsx:211
+#: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:239
 #: src/features/session-list.tsx:171
@@ -901,7 +901,7 @@ msgstr "消息数"
 msgid "Metrics window"
 msgstr "统计窗口"
 
-#: src/features/console-me.tsx:177
+#: src/features/console-me.tsx:178
 msgid "Mode"
 msgstr "模式"
 
@@ -930,7 +930,7 @@ msgstr "新的会话标题"
 msgid "New version available"
 msgstr "有新版本"
 
-#: src/features/console-me.tsx:79
+#: src/features/console-me.tsx:80
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
 
@@ -958,7 +958,7 @@ msgstr "现在没有正在运行的 Agent 会话。"
 #~ msgid "No collab tickets yet"
 #~ msgstr "还没有协作工单"
 
-#: src/features/console-shared.tsx:357
+#: src/features/console-shared.tsx:358
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 
@@ -1034,11 +1034,11 @@ msgstr "现在"
 msgid "now {label}"
 msgstr "状态：{label}"
 
-#: src/features/console-shared.tsx:214
+#: src/features/console-shared.tsx:215
 msgid "Offline"
 msgstr "离线"
 
-#: src/features/console-me.tsx:81
+#: src/features/console-me.tsx:82
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
@@ -1074,7 +1074,7 @@ msgstr "去设置"
 msgid "Open source, local by design"
 msgstr "开源，并且默认在本地"
 
-#: src/features/console-me.tsx:60
+#: src/features/console-me.tsx:61
 msgid "Open this page in the system browser first, then install it from there."
 msgstr "先在系统浏览器里打开本页，再从那里安装。"
 
@@ -1124,7 +1124,7 @@ msgstr "输出 {outputTokens}"
 msgid "Output tokens"
 msgstr "输出 token"
 
-#: src/features/console-me.tsx:256
+#: src/features/console-me.tsx:258
 #: src/features/console-shell.tsx:102
 msgid "Overview"
 msgstr "总览"
@@ -1165,7 +1165,7 @@ msgstr "内存峰值"
 msgid "Phase"
 msgstr "阶段"
 
-#: src/features/console-me.tsx:202
+#: src/features/console-me.tsx:203
 msgid "Phone writing"
 msgstr "手机写入"
 
@@ -1224,7 +1224,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-overview.tsx:83
-#: src/features/console-shared.tsx:212
+#: src/features/console-shared.tsx:213
 #: src/features/console-shell.tsx:435
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
@@ -1319,7 +1319,7 @@ msgstr "仓库根目录"
 msgid "Request changes"
 msgstr "请修改"
 
-#: src/features/console-me.tsx:187
+#: src/features/console-me.tsx:188
 msgid "Requests (WebRTC / relay)"
 msgstr "请求数（WebRTC / 中转）"
 
@@ -1468,7 +1468,7 @@ msgstr "Runtime 离线时无法获取诊断数据。"
 #~ msgid "Runtime is offline."
 #~ msgstr "Runtime 离线。"
 
-#: src/features/console-shared.tsx:361
+#: src/features/console-shared.tsx:362
 msgid "Runtime reported reason:"
 msgstr "Runtime 报告的原因："
 
@@ -1557,7 +1557,7 @@ msgstr "会话"
 #~ msgid "Sessions waiting for you"
 #~ msgstr "等你回复的会话"
 
-#: src/features/console-me.tsx:174
+#: src/features/console-me.tsx:175
 #: src/features/console-shell.tsx:134
 msgid "Settings"
 msgstr "我的"
@@ -1639,7 +1639,7 @@ msgstr "状态更新于"
 msgid "submitted"
 msgstr "已提交"
 
-#: src/features/console-me.tsx:240
+#: src/features/console-me.tsx:242
 msgid "System"
 msgstr "跟随系统"
 
@@ -1687,7 +1687,7 @@ msgstr "Agent 正在处理"
 #~ msgid "The agent is working. You can send once it stops."
 #~ msgstr "Agent 正在运行，等它停下后才能发送。"
 
-#: src/features/console-shared.tsx:353
+#: src/features/console-shared.tsx:354
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTerm 样本。"
 
@@ -1695,22 +1695,22 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 msgid "The workbench"
 msgstr "工作台"
 
-#: src/features/console-me.tsx:234
 #: src/features/console-me.tsx:236
-#: src/features/console-shared.tsx:382
-#: src/features/console-shared.tsx:384
+#: src/features/console-me.tsx:238
+#: src/features/console-shared.tsx:383
+#: src/features/console-shared.tsx:385
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/console-me.tsx:249
+#: src/features/console-me.tsx:251
 msgid "This computer"
 msgstr "本机"
 
-#: src/features/console-me.tsx:177
+#: src/features/console-me.tsx:178
 msgid "This computer (local Runtime)"
 msgstr "本机（本地运行时）"
 
-#: src/features/console-me.tsx:180
+#: src/features/console-me.tsx:181
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
@@ -1853,12 +1853,12 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
-#: src/features/console-shared.tsx:115
+#: src/features/console-shared.tsx:116
 #: src/features/console-shell.tsx:414
 msgid "Uptime"
 msgstr "运行时长"
 
-#: src/features/console-me.tsx:206
+#: src/features/console-me.tsx:207
 #: src/features/session-info.tsx:40
 msgid "Usage"
 msgstr "用量"
@@ -1867,7 +1867,7 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/console-me.tsx:61
+#: src/features/console-me.tsx:62
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。"
 
@@ -1881,7 +1881,7 @@ msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。
 #~ msgstr "调用了 {count} 个工具"
 
 #: src/features/console-collab-run.tsx:90
-#: src/features/console-me.tsx:71
+#: src/features/console-me.tsx:72
 msgid "Version"
 msgstr "版本"
 
@@ -1901,7 +1901,7 @@ msgstr "等待中"
 msgid "Waiting for"
 msgstr "等待类型"
 
-#: src/features/console-me.tsx:132
+#: src/features/console-me.tsx:133
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
@@ -2057,6 +2057,6 @@ msgstr "你的决定、补充信息，或对质疑的答复"
 msgid "Your reply"
 msgstr "你的回复"
 
-#: src/features/console-shared.tsx:436
+#: src/features/console-shared.tsx:438
 msgid "中文"
 msgstr "中文"

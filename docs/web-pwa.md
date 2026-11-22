@@ -124,6 +124,13 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   an older build pushed survive in the tab's history; in-page links such as
   the header badge). A language switch replaces. The `#pair=` cleanup keeps
   the router's entry state — `replaceState(null)` had wiped `__TSR_index`.
+- The chosen language survives a cold start: the manifest `start_url` is
+  `/console/now` (no locale prefix), so a language switch stores the
+  `wezdeck-locale` cookie (`lib/locale-pref.ts`) and the Worker
+  (`src/locale-redirect.ts`, from `server.ts`) 302s a prefix-less `/console`
+  request to `/zh/…` when it says zh — or, with no cookie yet, when
+  `Accept-Language` prefers zh. The hash (a `#pair=` token) survives the
+  redirect; the service worker caches `/zh/console` pages too.
 - Page transitions (`lib/view-transition.ts`, styles.css): View Transitions
   through the router's `defaultViewTransition`. Into a detail pushes in from
   the right, back slides back from the left (direction from the history
@@ -233,6 +240,12 @@ per tab (sessionStorage) so in-app navigation keeps the remote path.
   frame the host logs (`category=relay event=client_mode`).
 - Worker logs `sw_update_offered`, `install`, `push_subscribed`,
   `push_sent` rows.
+- Client trace: `boot` (load URL without hash, navigation type, history
+  length / router index), `popstate` (landing path, router index, whether the
+  app wrote that entry) and `after-back` (what `#console-main` shows 0.5 s
+  later); the last 60 events are saved to localStorage on hide / back and
+  come back as `previous` in the next snapshot, even after the app was
+  closed.
 - Client trace (pulled with `wezdeck-wsl diag`) keeps a `nav` row per navigation (`path`, history
   `index`, `length`) and `nav-collapse` when a first-level page is folded
   back to the first entry.

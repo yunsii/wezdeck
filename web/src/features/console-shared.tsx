@@ -25,6 +25,7 @@ import { ToggleGroup } from '#/components/ui/toggle-group'
 import { Tooltip } from '#/components/ui/tooltip'
 import type { ImeState } from '#/lib/runtime-contract'
 import type { ThemeMode } from '#/lib/theme-provider'
+import { rememberLocale } from '#/lib/locale-pref'
 import { cn } from '#/lib/utils'
 import { useRuntimeData } from './console-data'
 
@@ -424,6 +425,7 @@ export function LanguageSwitcher({
         onValueChange={(values) => {
           const next = values[0]
           if (next !== 'en' && next !== 'zh') return
+          rememberLocale(next)
           void navigate({
             to: '.',
             params: { ...params, locale: next === 'en' ? undefined : next },

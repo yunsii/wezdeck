@@ -95,7 +95,7 @@ self.addEventListener('fetch', (event) => {
       (async () => {
         try {
           const res = await fetch(request)
-          if (res.ok && url.pathname.startsWith('/console')) {
+          if (res.ok && /^(\/zh)?\/console(\/|$)/.test(url.pathname)) {
             const copy = res.clone()
             event.waitUntil(
               caches.open(CACHE).then((c) => c.put(url.pathname, copy)),
