@@ -3,7 +3,7 @@
 // that arrive after the page opened slide in and a new reply unfolds over at
 // most half a second; nothing animates under prefers-reduced-motion.
 import { useLingui } from '@lingui/react/macro'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
@@ -23,31 +23,56 @@ const reducedMotion = () =>
   typeof matchMedia !== 'undefined' &&
   matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/** Grow the visible text to its full length over ≤ 500 ms. */
-function useReveal(text: string, animate: boolean) {
-  const [shown, setShown] = useState(animate ? 0 : text.length)
+/**
+ * Stream a just-arrived reply in at a reading pace (about 300 chars/s, at
+ * least 0.4 s and at most 3 s for the whole message), like the agent typing
+ * it; Streamdown renders the half-written Markdown in between.
+ */
+function useStream(text: string, active: boolean, onDone?: () => void) {
+  const [shown, setShown] = useState(active ? 0 : text.length)
+  const done = useRef(onDone)
+  done.current = onDone
   useEffect(() => {
-    if (!animate || reducedMotion()) {
+    if (!active || reducedMotion() || document.hidden) {
       setShown(text.length)
+      done.current?.()
       return
     }
     const started = performance.now()
-    const total = Math.min(500, 120 + text.length * 2)
+    const total = Math.min(3000, Math.max(400, (text.length / 300) * 1000))
     let frame = 0
     const tick = (now: number) => {
       const progress = Math.min(1, (now - started) / total)
       setShown(Math.ceil(text.length * progress))
       if (progress < 1) frame = requestAnimationFrame(tick)
+      else done.current?.()
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [text, animate])
-  return text.slice(0, shown)
+  }, [text, active])
+  return {
+    text: text.slice(0, shown),
+    streaming: active && shown < text.length,
+  }
 }
 
-function Bubble({ message, fresh }: { message: Message; fresh: boolean }) {
+function Bubble({
+  message,
+  fresh,
+  stream,
+  onShown,
+}: {
+  message: Message
+  fresh: boolean
+  /** this is the reply being streamed in right now */
+  stream: boolean
+  onShown?: () => void
+}) {
   const mine = message.role === 'user'
-  const text = useReveal(message.text, fresh && !mine)
+  const live = useStream(message.text, stream && !mine, onShown)
+  useEffect(() => {
+    if (stream && mine) onShown?.()
+  }, [stream, mine, onShown])
   return (
     <div
       className={cn(
@@ -64,7 +89,11 @@ function Bubble({ message, fresh }: { message: Message; fresh: boolean }) {
             : 'rounded-bl-[6px] bg-brand-surface text-brand-text',
         )}
       >
-        {mine ? message.text : <ChatMarkdown text={text} />}
+        {mine ? (
+          message.text
+        ) : (
+          <ChatMarkdown text={live.text} streaming={live.streaming} />
+        )}
       </div>
     </div>
   )
@@ -128,12 +157,23 @@ function ToolRow({ tool }: { tool: Message }) {
 function ToolGroup({
   tools,
   fresh,
+  stream,
+  onShown,
 }: {
   tools: Array<Message>
   fresh: boolean
+  stream: boolean
+  onShown?: () => void
 }) {
   const { t } = useLingui()
   const count = tools.length
+  const shown = useRef(onShown)
+  shown.current = onShown
+  useEffect(() => {
+    if (!stream) return
+    const timer = setTimeout(() => shown.current?.(), 160)
+    return () => clearTimeout(timer)
+  }, [stream])
   return (
     <details className={cn('group px-1', fresh && 'chat-in')}>
       <summary className="cursor-pointer list-none py-1 text-[12px] text-brand-label">
@@ -197,31 +237,53 @@ export function ChatThread({
   start: number
   busy: boolean
 }) {
-  // messages present when the page opened render still; later ones animate.
-  // Absolute indices, so loading earlier messages neither re-keys nor animates.
+  // Messages present when the page opened render still. Later ones are
+  // revealed one at a time through `cursor` (absolute index of the first
+  // message not shown yet): a reply streams in, a user message or a run of
+  // tool calls just appears, then the next one goes. Absolute indices, so
+  // loading earlier messages neither re-keys nor replays anything.
+  const end = start + messages.length
   const baseline = useRef<number | null>(null)
-  if (baseline.current === null && messages.length > 0)
-    baseline.current = start + messages.length
+  const [cursor, setCursor] = useState<number | null>(null)
+  if (baseline.current === null && messages.length > 0) baseline.current = end
+  // a long backlog (phone was away) jumps to the newest instead of replaying
+  const effective =
+    cursor === null ? (baseline.current ?? end) : Math.max(cursor, end - 8)
+  const advance = useCallback(
+    (to: number) => setCursor((current) => Math.max(current ?? 0, to)),
+    [],
+  )
   const isFresh = (index: number) =>
     baseline.current !== null && start + index >= baseline.current
   return (
     <>
-      {group(messages).map((item) =>
-        item.kind === 'tools' ? (
-          <ToolGroup
-            key={`t${start + item.index}`}
-            tools={item.tools}
-            fresh={isFresh(item.index)}
-          />
-        ) : (
+      {group(messages).map((item) => {
+        const at = start + item.index
+        if (at > effective) return null
+        const stream = at === effective
+        if (item.kind === 'tools')
+          return (
+            <ToolGroup
+              key={`t${at}`}
+              tools={item.tools}
+              fresh={isFresh(item.index)}
+              stream={stream}
+              onShown={
+                stream ? () => advance(at + item.tools.length) : undefined
+              }
+            />
+          )
+        return (
           <Bubble
-            key={`m${start + item.index}`}
+            key={`m${at}`}
             message={item.message}
             fresh={isFresh(item.index)}
+            stream={stream}
+            onShown={stream ? () => advance(at + 1) : undefined}
           />
-        ),
-      )}
-      {busy ? <Typing /> : null}
+        )
+      })}
+      {busy && effective >= end ? <Typing /> : null}
     </>
   )
 }

@@ -112,7 +112,9 @@ function SessionList() {
   const rows = sessions.data?.sessions ?? []
   return (
     <div className="grid max-w-2xl content-start gap-3">
-      <h1 className="hidden text-base font-semibold md:block">{t`Sessions`}</h1>
+      <h1 className="hidden text-base font-semibold md:block">
+        {t({ message: 'Sessions', context: 'nav' })}
+      </h1>
       <p className="text-sm text-brand-muted">
         {t`Agents running in tmux on the host. Open one to read it and talk to it.`}
       </p>
@@ -215,6 +217,19 @@ function useStickToBottom(
       clearTimeout(timer)
     }
   }, [count])
+  // While the reader is at the bottom, follow the thread as it grows — a
+  // streaming reply grows every frame without changing the message count.
+  useEffect(() => {
+    const scroller = end.current?.closest('.overflow-y-auto')
+    const thread = end.current?.parentElement
+    if (!scroller || !thread || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      if (stuck.current && landed.current)
+        scroller.scrollTop = scroller.scrollHeight
+    })
+    observer.observe(thread)
+    return () => observer.disconnect()
+  }, [end])
   useEffect(() => {
     const scroller = end.current?.closest('.overflow-y-auto')
     if (!scroller) return
@@ -245,7 +260,7 @@ function SessionHeader({
         className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
       >
         <ChevronLeft size={20} aria-hidden />
-        {t`Sessions`}
+        {t({ message: 'Sessions', context: 'nav' })}
       </button>
       <p className="inline-flex items-center gap-2 text-sm text-brand-muted">
         <Led tone={tone} size={11} />

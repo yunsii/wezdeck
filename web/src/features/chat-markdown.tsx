@@ -1,9 +1,9 @@
-// Claude's replies are Markdown: render them for a phone instead of showing
-// the raw syntax. Tables and code scroll sideways inside their own box so a
+// Claude's replies are Markdown, rendered with Vercel's Streamdown: a
+// react-markdown replacement that renders half-written Markdown (an open
+// code fence or table mid-stream) correctly, so a reply can stream in. Tables and code scroll sideways inside their own box so a
 // wide block never widens the page; links open outside the app.
-import ReactMarkdown from 'react-markdown'
-import type { Components } from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { Streamdown } from 'streamdown'
+import type { Components } from 'streamdown'
 
 const components: Components = {
   p: ({ children }) => (
@@ -85,12 +85,18 @@ const components: Components = {
   ),
 }
 
-export function ChatMarkdown({ text }: { text: string }) {
+export function ChatMarkdown({
+  text,
+  streaming = false,
+}: {
+  text: string
+  streaming?: boolean
+}) {
   return (
     <div className="text-[15px] leading-relaxed break-words">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <Streamdown components={components} animated isAnimating={streaming}>
         {text}
-      </ReactMarkdown>
+      </Streamdown>
     </div>
   )
 }

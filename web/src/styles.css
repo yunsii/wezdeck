@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import 'streamdown/styles.css';
+/* Streamdown's renderers use Tailwind classes from its build output. */
+@source '../node_modules/streamdown/dist/*.js';
 
 @theme inline {
   --color-brand-deck: var(--brand-deck);
@@ -1015,6 +1018,21 @@ html[data-theme='dark'] [data-deck] {
   --segment-track: #232933;
   --segment-thumb: #3a4250;
   --bar-bg: rgba(30, 35, 44, 0.92);
+}
+
+/* Streamdown (chat Markdown) reads shadcn-style tokens: map them onto ink. */
+[data-deck] {
+  --background: var(--brand-surface);
+  --foreground: var(--brand-text);
+  --card: var(--brand-surface);
+  --card-foreground: var(--brand-text);
+  --muted: var(--brand-deck);
+  --muted-foreground: var(--brand-muted);
+  --border: var(--brand-edge);
+  --input: var(--brand-edge);
+  --primary: var(--brand-text);
+  --primary-foreground: var(--brand-surface);
+  --radius: 10px;
 }
 
 /* A row / panel on the paper: a filled surface, no border or shadow. */

@@ -81,8 +81,12 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   lists, a three-way segmented control on 工单 (进行中 / 等你 / 已结束),
   settings as segmented rows instead of popovers, a translucent bottom bar
   with four tabs (hidden on detail pages, which are full screen).
-- Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered as
-  Markdown (tables and code scroll in their own box); runs of tool calls
+- Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
+  with Vercel's Streamdown (react-markdown replacement that renders
+  half-written Markdown); new messages are revealed one at a time and a new
+  reply streams in at ~300 chars/s (0.4–3 s), a backlog over 8 jumps to the
+  newest; a ResizeObserver keeps the page at the bottom while a reply grows
+  (tables and code scroll in their own box); runs of tool calls
   collapse into one line, each call expands to its diff / preview / command
   and result; "N messages, showing M" with 加载更早 keeping the reading
   position; messages sent from the phone queue above the composer until the
