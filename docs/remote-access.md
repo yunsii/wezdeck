@@ -136,9 +136,16 @@ the uploads dir only): `thumb:true` answers one frame with a ≤360 px JPEG
 of 48 KB that the phone reassembles into a blob (`lib/upload-image.ts`,
 cached per page). The viewer fits the screen, a tap toggles actual size
 (scroll to pan), Esc / × / backdrop close, ← / → step through a message's
-images; the blurred thumbnail stands in until the original arrives. Images
-pasted at the desk live base64 inside the Claude transcript and are not
-shown yet.
+images; the blurred thumbnail stands in until the original arrives. A
+thumbnail that fails while the link is still coming up retries with backoff;
+Only the host's "no longer on the host" shows 已过期, other failures show 重试
+(tap reloads). Images embedded base64 in a Claude transcript — pasted at the
+desk (`[Image #1]` + image block) or returned by a tool (Read of a .png,
+browser screenshots) — become refs on the message (`images`:
+`<line byte offset>.<nth image in that line>`, `agent_claude.go`) and are
+read with `session.image {id, ref, thumb, offset}` (`remote_image.go`),
+which re-reads that one line and answers like `upload.get`; tool images load
+only once the call is opened.
 
 The diagnostics snapshot (`lib/client-trace.ts`) holds build id, page path
 (no hash: it can carry the pairing token), user agent, standalone mode,

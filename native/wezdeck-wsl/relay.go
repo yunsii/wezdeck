@@ -235,6 +235,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return registerDevice(f.Args)
 	case "upload.get":
 		return uploadGet(f.Args)
+	case "session.image":
+		return sessionImage(f.Args)
 	case "send", "key", "reply", "attach", "upload":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {

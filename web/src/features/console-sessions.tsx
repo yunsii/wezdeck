@@ -393,7 +393,12 @@ function SessionDetail({ id }: { id: string }) {
                 ) : null}
               </div>
             ) : null}
-            <ChatThread messages={messages} start={start} busy={busy} />
+            <ChatThread
+              messages={messages}
+              start={start}
+              busy={busy}
+              sessionId={id}
+            />
           </>
         ) : data?.screen ? (
           <pre className="overflow-x-auto rounded-[14px] bg-brand-surface p-3 font-mono text-[12px] leading-snug">

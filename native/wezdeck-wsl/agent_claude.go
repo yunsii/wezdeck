@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -159,6 +160,16 @@ func (t *transcript) feedLine(raw []byte) {
 		}
 		return
 	}
+	// images in this line, numbered in walk order (direct blocks and
+	// tool_result parts alike) — transcriptImage walks the same way
+	nImage := 0
+	nextRef := func() string {
+		ref := fmt.Sprintf("%d.%d", t.lineOff, nImage)
+		nImage++
+		return ref
+	}
+	var pasted []string
+	userAt := -1
 	var blocks []struct {
 		Type      string          `json:"type"`
 		Text      string          `json:"text"`
@@ -181,6 +192,11 @@ func (t *transcript) feedLine(raw []byte) {
 				}
 			}
 			t.messages = append(t.messages, chatMessage{Role: line.Type, Text: clip(text, 8000), TS: line.Timestamp})
+			if line.Type == "user" {
+				userAt = len(t.messages) - 1
+			}
+		case b.Type == "image":
+			pasted = append(pasted, nextRef())
 		case b.Type == "tool_use":
 			var input map[string]any
 			_ = json.Unmarshal(b.Input, &input)
@@ -195,6 +211,7 @@ func (t *transcript) feedLine(raw []byte) {
 		case b.Type == "tool_result":
 			idx, ok := t.tools[b.ToolUseID]
 			if !ok {
+				nImage += countImages(b.Content)
 				continue
 			}
 			var out string
@@ -205,8 +222,11 @@ func (t *transcript) feedLine(raw []byte) {
 				}
 				_ = json.Unmarshal(b.Content, &parts)
 				for _, p := range parts {
-					if p.Type == "text" {
+					switch p.Type {
+					case "text":
 						out += p.Text + "\n"
+					case "image":
+						t.messages[idx].Images = append(t.messages[idx].Images, nextRef())
 					}
 				}
 			}
@@ -215,6 +235,29 @@ func (t *transcript) feedLine(raw []byte) {
 			delete(t.tools, b.ToolUseID)
 		}
 	}
+	if len(pasted) > 0 && line.Type == "user" {
+		if userAt < 0 {
+			t.messages = append(t.messages, chatMessage{Role: "user", TS: line.Timestamp})
+			userAt = len(t.messages) - 1
+		}
+		t.messages[userAt].Images = append(t.messages[userAt].Images, pasted...)
+	}
+}
+
+// countImages: image parts inside a tool_result content (string content has none).
+func countImages(content json.RawMessage) int {
+	var parts []struct {
+		Type string `json:"type"`
+	}
+	n := 0
+	if json.Unmarshal(content, &parts) == nil {
+		for _, p := range parts {
+			if p.Type == "image" {
+				n++
+			}
+		}
+	}
+	return n
 }
 
 var (

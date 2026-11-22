@@ -50,28 +50,25 @@ func uploadGet(args json.RawMessage) (any, error) {
 	if base != a.Name || !strings.HasPrefix(base, "img-") || !ok {
 		return nil, errors.New("not a phone image")
 	}
-	f, err := os.Open(filepath.Join(uploadDir(), base))
+	data, err := os.ReadFile(filepath.Join(uploadDir(), base))
 	if err != nil {
 		return nil, errors.New("image is no longer on the host (kept 30 days)")
 	}
-	defer f.Close()
-	if a.Thumb {
-		return thumbnail(f)
+	return serveImage(data, mime, a.Thumb, a.Offset)
+}
+
+// serveImage answers one frame: a thumbnail, or a chunk of the original.
+func serveImage(data []byte, mime string, thumb bool, offset int64) (any, error) {
+	if thumb {
+		return thumbnail(bytes.NewReader(data))
 	}
-	info, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	if a.Offset < 0 || a.Offset > info.Size() {
+	size := int64(len(data))
+	if offset < 0 || offset > size {
 		return nil, errors.New("bad offset")
 	}
-	buf := make([]byte, downloadChunk)
-	n, err := f.ReadAt(buf, a.Offset)
-	if err != nil && err != io.EOF {
-		return nil, err
-	}
-	return map[string]any{"mime": mime, "size": info.Size(), "offset": a.Offset,
-		"data": base64.StdEncoding.EncodeToString(buf[:n])}, nil
+	end := min(offset+downloadChunk, size)
+	return map[string]any{"mime": mime, "size": size, "offset": offset,
+		"data": base64.StdEncoding.EncodeToString(data[offset:end])}, nil
 }
 
 func thumbnail(r io.Reader) (any, error) {

@@ -400,6 +400,10 @@ type chatMessage struct {
 	File    string `json:"file,omitempty"`
 	Added   int    `json:"added,omitempty"`
 	Removed int    `json:"removed,omitempty"`
+	// Images: refs ("<line byte offset>.<nth image in that line>") to images
+	// embedded base64 in the transcript — pasted at the desk, or returned by a
+	// tool; the phone fetches them with session.image (remote_image.go).
+	Images []string `json:"images,omitempty"`
 }
 
 func lineCount(s string) int {
@@ -534,6 +538,7 @@ type transcript struct {
 	tools    map[string]int // tool_use_id → index in messages
 	usage    sessionUsage
 	lastMsg  string // message id whose usage was counted (one reply spans several lines)
+	lineOff  int64  // file offset of the line being fed
 }
 
 // markCompact appends a context-compaction marker (role system, kind compact;
@@ -595,8 +600,12 @@ func (t *transcript) feed(data []byte) {
 	if adapter == nil {
 		adapter = claudeAdapter{}
 	}
+	// lineOff: where the line being fed starts in the file (image refs)
+	t.lineOff = t.offset
 	for scanner.Scan() {
-		adapter.Feed(t, scanner.Bytes())
+		line := scanner.Bytes()
+		adapter.Feed(t, line)
+		t.lineOff += int64(len(line)) + 1
 	}
 }
 

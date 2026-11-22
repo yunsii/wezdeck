@@ -11,7 +11,7 @@ msgstr ""
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:425
+#: src/features/chat-thread.tsx:377
 msgid "· summary"
 msgstr "· summary"
 
@@ -19,7 +19,7 @@ msgstr "· summary"
 msgid "(pick any)"
 msgstr "(pick any)"
 
-#: src/features/chat-thread.tsx:456
+#: src/features/chat-thread.tsx:408
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
@@ -27,11 +27,11 @@ msgstr "{count} delivered, waiting for the agent"
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/chat-thread.tsx:455
+#: src/features/chat-thread.tsx:407
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
-#: src/features/chat-tools.tsx:154
+#: src/features/chat-tools.tsx:161
 msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
@@ -39,7 +39,7 @@ msgstr "{count} tool calls"
 msgid "{doneCount} done"
 msgstr "{doneCount} done"
 
-#: src/features/chat-tools.tsx:203
+#: src/features/chat-tools.tsx:210
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
@@ -254,7 +254,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:455
+#: src/features/console-sessions.tsx:460
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -272,7 +272,7 @@ msgstr "Capabilities"
 msgid "Category"
 msgstr "Category"
 
-#: src/features/chat-tools.tsx:151
+#: src/features/chat-tools.tsx:158
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
@@ -395,11 +395,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:414
+#: src/features/chat-thread.tsx:366
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:415
+#: src/features/chat-thread.tsx:367
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -519,7 +519,7 @@ msgstr "Directory"
 msgid "done"
 msgstr "done"
 
-#: src/features/chat-tools.tsx:70
+#: src/features/chat-tools.tsx:71
 msgid "Done"
 msgstr "Done"
 
@@ -590,6 +590,10 @@ msgstr "Example agent sessions"
 msgid "Exit"
 msgstr "Exit"
 
+#: src/features/chat-images.tsx:47
+msgid "Expired"
+msgstr "Expired"
+
 #: src/features/tickets-view.tsx:80
 msgid "failed"
 msgstr "failed"
@@ -631,8 +635,8 @@ msgid "Git"
 msgstr "Git"
 
 #: src/features/chat-thread.tsx:81
-msgid "Gone"
-msgstr "Gone"
+#~ msgid "Gone"
+#~ msgstr "Gone"
 
 #: src/features/remote-badge.tsx:132
 msgid "Grant failed ({micError}) — retry"
@@ -679,7 +683,7 @@ msgstr "How the WebSocket is billed"
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
-#: src/features/chat-thread.tsx:81
+#: src/features/chat-images.tsx:47
 msgid "Image"
 msgstr "Image"
 
@@ -1055,7 +1059,7 @@ msgstr "Only lets the browser reveal its LAN address so the host can connect dir
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 
-#: src/features/chat-thread.tsx:74
+#: src/features/chat-images.tsx:40
 msgid "Open image"
 msgstr "Open image"
 
@@ -1063,7 +1067,7 @@ msgstr "Open image"
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:475
+#: src/features/console-sessions.tsx:480
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1199,7 +1203,7 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/chat-thread.tsx:452
+#: src/features/chat-thread.tsx:404
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -1212,11 +1216,11 @@ msgstr "Quick keys"
 msgid "Quit plan"
 msgstr "Quit plan"
 
-#: src/features/chat-tools.tsx:152
+#: src/features/chat-tools.tsx:159
 msgid "ran {commands} commands"
 msgstr "ran {commands} commands"
 
-#: src/features/chat-tools.tsx:153
+#: src/features/chat-tools.tsx:160
 msgid "read {reads} files"
 msgstr "read {reads} files"
 
@@ -1336,7 +1340,7 @@ msgstr "resets {fiveReset}"
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
 
-#: src/features/chat-tools.tsx:115
+#: src/features/chat-tools.tsx:121
 msgid "Result"
 msgstr "Result"
 
@@ -1356,6 +1360,7 @@ msgstr "Resumed conversations"
 msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
+#: src/features/chat-images.tsx:47
 #: src/features/console-overview.tsx:104
 #: src/features/console-shell.tsx:499
 msgid "Retry"
@@ -1404,7 +1409,7 @@ msgstr "run finished"
 msgid "running"
 msgstr "running"
 
-#: src/features/chat-tools.tsx:67
+#: src/features/chat-tools.tsx:68
 #: src/features/console-collab.tsx:116
 msgid "Running"
 msgstr "Running"
@@ -1594,7 +1599,7 @@ msgstr "Socket"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:462
+#: src/features/console-sessions.tsx:467
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -1675,7 +1680,7 @@ msgstr "The agent is asking you"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:301
+#: src/features/chat-thread.tsx:250
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -1710,7 +1715,7 @@ msgstr "This computer (local Runtime)"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:456
+#: src/features/console-sessions.tsx:461
 msgid "this device is offline"
 msgstr "this device is offline"
 

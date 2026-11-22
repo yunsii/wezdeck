@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
+import { TranscriptImages } from './chat-images'
 import type { Message } from './chat-thread'
 
 /** A diff (lines starting "- " / "+ ") gets red / green rows; anything else is plain. */
@@ -81,10 +82,15 @@ function ToolRow({
   status?: 'running' | 'done'
 }) {
   const { t } = useLingui()
-  const details = Boolean(tool.body || tool.result)
+  const details = Boolean(tool.body || tool.result || tool.images?.length)
   const { name, target } = splitTool(tool)
+  // images load only once the call is opened (a run can hold many screenshots)
+  const [opened, setOpened] = useState(false)
   return (
-    <details className="group/tool min-w-0 rounded-[8px]">
+    <details
+      className="group/tool min-w-0 rounded-[8px]"
+      onToggle={(event) => setOpened(event.currentTarget.open)}
+    >
       {/* one line in the list; the whole description once this call is opened */}
       <summary className="flex min-w-0 cursor-pointer list-none items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted">
         <span aria-hidden className={LINE}>
@@ -116,6 +122,7 @@ function ToolRow({
               <ToolBody text={tool.result} />
             </div>
           ) : null}
+          {opened ? <TranscriptImages refs={tool.images} /> : null}
         </div>
       ) : null}
     </details>
