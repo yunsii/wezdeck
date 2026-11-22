@@ -13,12 +13,12 @@ import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
 import { useDeviceState } from './device-state'
-import { useAgo } from './tickets-view'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
 import { ChatThread, SendQueue, settle } from './chat-thread'
 import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
+import { SessionList } from './session-list'
 import { useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
 
@@ -37,6 +37,17 @@ export type SessionCard = {
   desk_idle_s: number
   running_kind?: string
   background?: Array<BgTask>
+  /** Repo family label (git main checkout basename). */
+  repo?: string
+  /** Absolute path of the git main checkout when known. */
+  repo_root?: string
+  /** Absolute path of this worktree (grouping key with repo_root). */
+  worktree?: string
+  tmux_session?: string
+  tmux_pane?: string
+  pane_index?: number
+  /** primary | secondary when mounted in tmux; absent for future ticket agents. */
+  pane_role?: string
 }
 
 /** Last prompt the user typed; harness-injected ones (<task-notification>…) are not. */
@@ -112,8 +123,6 @@ export function useStatusText() {
                 : status
 }
 
-const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
-
 export function useSessions() {
   return useQuery({
     queryKey: ['remote', 'sessions'],
@@ -129,88 +138,6 @@ export function useSessions() {
 export function ConsoleSessionsPage() {
   const { id } = useParams({ strict: false })
   return id ? <SessionDetail id={id} /> : <SessionList />
-}
-
-function SessionList() {
-  const { t } = useLingui()
-  const { locale } = useLocale()
-  const localeParam = locale === 'en' ? undefined : locale
-  const sessions = useSessions()
-  const ago = useAgo()
-  const statusText = useStatusText()
-  const rows = sessions.data?.sessions ?? []
-  return (
-    <div className="grid max-w-2xl content-start gap-3">
-      <h1 className="hidden text-base font-semibold md:block">
-        {t({ message: 'Sessions', context: 'nav' })}
-      </h1>
-      <p className="text-sm text-brand-muted">
-        {t`Agents running in tmux on the host. Open one to read it and talk to it.`}
-      </p>
-      {sessions.isError ? (
-        <p
-          role="status"
-          className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-sm"
-        >
-          {String(sessions.error.message)}
-        </p>
-      ) : null}
-      {rows.length === 0 && !sessions.isError ? (
-        <p className="rounded-[14px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
-          {sessions.isPending ? t`Loading…` : t`No agent sessions are running.`}
-        </p>
-      ) : (
-        <ul
-          aria-label={t`Agent sessions`}
-          className="overflow-hidden rounded-[16px] bg-brand-surface"
-        >
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="border-b border-brand-edge last:border-b-0"
-            >
-              <Link
-                to="/{-$locale}/console/sessions/$id"
-                params={{ locale: localeParam, id: row.id }}
-                data-session={row.id}
-                className="key-press flex min-h-16 items-start gap-3 px-4 py-3"
-              >
-                <span className="pt-1.5">
-                  <Led
-                    tone={sessionTone(row.status, row.waiting_kind)}
-                    size={12}
-                  />
-                </span>
-                <span className="grid min-w-0 flex-1 gap-0.5">
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-[16px] font-semibold">
-                      {row.name || row.window || row.id.slice(0, 8)}
-                    </span>
-                    <span className="shrink-0 text-xs text-brand-label">
-                      {ago(ts(row.ts))}
-                    </span>
-                  </span>
-                  <span className="truncate text-sm text-brand-muted">
-                    {humanPrompt(row.last_prompt) || row.window}
-                  </span>
-                  <span className="truncate text-xs text-brand-label">
-                    {statusText(
-                      row.status,
-                      row.waiting_kind,
-                      row.running_kind,
-                      row.background?.length ?? 0,
-                    )}
-                    ，{row.cwd.split('/').filter(Boolean).at(-1) ?? ''}
-                    {row.branch ? `（${row.branch}）` : ''}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
 }
 
 function JumpLatest({

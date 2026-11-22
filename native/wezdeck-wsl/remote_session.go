@@ -157,7 +157,7 @@ func liveSessions() (map[string]attentionEntry, error) {
 			continue
 		}
 		panes[key] = true
-		_, _, cmd, alive := paneState(r.attentionEntry)
+		_, _, cmd, _, alive := paneState(r.attentionEntry)
 		if !alive || !isAgentPane(cmd, r.attentionEntry) {
 			continue
 		}
@@ -179,17 +179,19 @@ func tmuxCmd(socket string, args ...string) *exec.Cmd {
 	return exec.Command("tmux", full...)
 }
 
-// paneState: the pane's id, cwd, current command, and whether it exists.
-func paneState(e attentionEntry) (id, cwd, cmd string, alive bool) {
-	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{pane_id}\t#{pane_current_path}\t#{pane_current_command}").Output()
+// paneState: the pane's id, cwd, current command, index, and whether it exists.
+func paneState(e attentionEntry) (id, cwd, cmd string, index int, alive bool) {
+	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
+		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}").Output()
 	if err != nil {
-		return "", "", "", false
+		return "", "", "", 0, false
 	}
-	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 3)
-	if len(parts) != 3 || parts[0] != e.TmuxPane {
-		return "", "", "", false
+	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 4)
+	if len(parts) != 4 || parts[0] != e.TmuxPane {
+		return "", "", "", 0, false
 	}
-	return parts[0], parts[1], parts[2], true
+	index, _ = strconv.Atoi(parts[3])
+	return parts[0], parts[1], parts[2], index, true
 }
 
 // windowActivity: last output in the session's tmux window (unix ms), 0 if unknown.
@@ -207,8 +209,63 @@ func windowActivity(e attentionEntry) int64 {
 
 // paneInfo: cwd and whether the pane still exists.
 func paneInfo(e attentionEntry) (cwd string, alive bool) {
-	_, cwd, _, alive = paneState(e)
+	_, cwd, _, _, alive = paneState(e)
 	return cwd, alive
+}
+
+// gitRepoMeta: repo family label + main checkout root + this worktree path.
+// Soft-fails fast so listSessions stays snappy when git is missing or slow.
+func gitRepoMeta(cwd string) (repo, repoRoot, worktree string) {
+	worktree = cwd
+	if cwd == "" {
+		return "", "", ""
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", cwd, "rev-parse", "--show-toplevel", "--git-common-dir").Output()
+	if err != nil {
+		return filepath.Base(cwd), "", cwd
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) == 0 || lines[0] == "" {
+		return filepath.Base(cwd), "", cwd
+	}
+	worktree = lines[0]
+	repo = filepath.Base(worktree)
+	if len(lines) < 2 || lines[1] == "" {
+		return repo, worktree, worktree
+	}
+	common := lines[1]
+	if !filepath.IsAbs(common) {
+		common = filepath.Clean(filepath.Join(cwd, common))
+	}
+	repoRoot = mainWorktreeFromGitCommon(common)
+	if repoRoot == "" {
+		repoRoot = worktree
+	} else {
+		repo = filepath.Base(repoRoot)
+	}
+	return repo, repoRoot, worktree
+}
+
+// mainWorktreeFromGitCommon turns git-common-dir into the primary checkout path.
+func mainWorktreeFromGitCommon(common string) string {
+	clean := filepath.Clean(common)
+	const marker = string(filepath.Separator) + ".git" + string(filepath.Separator) + "worktrees" + string(filepath.Separator)
+	if i := strings.Index(clean, marker); i >= 0 {
+		return clean[:i]
+	}
+	if filepath.Base(clean) == ".git" {
+		return filepath.Dir(clean)
+	}
+	return ""
+}
+
+func paneRole(index int) string {
+	if index <= 1 {
+		return "primary"
+	}
+	return "secondary"
 }
 
 // deskActivity: newest keyboard activity of any client attached to the
@@ -263,6 +320,15 @@ type sessionCard struct {
 	DeskIdleS   int64    `json:"desk_idle_s"`
 	RunningKind string   `json:"running_kind,omitempty"`
 	Background  []bgTask `json:"background"`
+	// Tree grouping (repo family → worktree → pane). tmux fields are optional
+	// mount info so ticket agents on the same worktree can join later.
+	Repo        string `json:"repo,omitempty"`
+	RepoRoot    string `json:"repo_root,omitempty"`
+	Worktree    string `json:"worktree,omitempty"`
+	TmuxSession string `json:"tmux_session,omitempty"`
+	TmuxPane    string `json:"tmux_pane,omitempty"`
+	PaneIndex   int    `json:"pane_index,omitempty"`
+	PaneRole    string `json:"pane_role,omitempty"` // primary | secondary
 }
 
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
@@ -274,17 +340,26 @@ func listSessions() (any, error) {
 	}
 	now := time.Now().Unix()
 	cards := []sessionCard{}
+	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
 	for id, e := range entries {
 		if e.TmuxPane == "" {
 			continue
 		}
-		cwd, alive := paneInfo(e)
+		_, cwd, _, index, alive := paneState(e)
 		if !alive {
 			continue
 		}
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
-			RunningKind: e.RunningKind, Background: backgroundOf(e)}
+			RunningKind: e.RunningKind, Background: backgroundOf(e),
+			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index)}
+		if meta, ok := gitCache[cwd]; ok {
+			card.Repo, card.RepoRoot, card.Worktree = meta[0], meta[1], meta[2]
+		} else {
+			repo, root, wt := gitRepoMeta(cwd)
+			gitCache[cwd] = [3]string{repo, root, wt}
+			card.Repo, card.RepoRoot, card.Worktree = repo, root, wt
+		}
 		// Activity = when the conversation last moved. A transcript (Claude,
 		// Grok, Codex) is written only by real turns (messages, tool calls), so
 		// it alone is the clock; the status ts (bumped for background-only sessions) and

@@ -32,13 +32,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 4. **Phone IA — four bottom tabs** (revised): 现在 (three bands — needs you
    (tickets + sessions waiting on you), running now, recently active top-5
    by conversation activity including idle, with a link to all sessions;
-   动态 is one link down) · 工单 · 会话 (live agent sessions) · 我的
-   (connection, phone writing, install, theme, language). Ticket detail is
-   a pushed page; a run opens in a bottom sheet (transcript, prompt).
-   Connection chip in the top bar opens a sheet (mode, path, RTT, last
-   direct failure, host since, mic grant). Re-tap active tab = scroll top +
-   refresh; sheets swipe down / Android back closes. No pull-to-refresh
-   (neither reference has it).
+   动态 is one link down) · 工单 · 会话 (repo → worktree → pane tree;
+   primary/secondary when tmux-mounted; path-based so ticket worktrees can
+   join later) · 我的 (connection, phone writing, install, theme,
+   language). Ticket detail is a pushed page; a run opens in a bottom
+   sheet (transcript, prompt). Connection chip in the top bar opens a
+   sheet (mode, path, RTT, last direct failure, host since, mic grant).
+   Re-tap active tab = scroll top + refresh; sheets swipe down / Android
+   back closes. No pull-to-refresh (neither reference has it).
 5. **Desktop keyboard**: `j`/`k` move, `Enter` open, `Esc` back, `/` filter,
    `g`+letter section jump, `Ctrl+K` command palette; one registry, hints in
    the UI.

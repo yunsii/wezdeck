@@ -281,6 +281,22 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+func TestMainWorktreeFromGitCommon(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"/home/yuns/github/wezterm-config/.git", "/home/yuns/github/wezterm-config"},
+		{"/home/yuns/github/wezterm-config/.git/worktrees/dev-foo", "/home/yuns/github/wezterm-config"},
+		{"/tmp/not-git", ""},
+	}
+	for _, c := range cases {
+		if got := mainWorktreeFromGitCommon(c.in); got != c.want {
+			t.Fatalf("mainWorktreeFromGitCommon(%q)=%q want %q", c.in, got, c.want)
+		}
+	}
+	if paneRole(1) != "primary" || paneRole(2) != "secondary" {
+		t.Fatal("paneRole: index 1 primary, else secondary")
+	}
+}
+
 // Grok panes run under grok-focus-filter.py, so pane_current_command is
 // python3. Archived ones must still list as idle when a Grok transcript
 // (or agent_name) identifies them; plain python3 must not.
