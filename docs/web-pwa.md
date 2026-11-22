@@ -147,8 +147,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   then 图片 / 诊断 once the phone may write, then the picked thumbnails.
   What a tool opens renders above the row in one card style, never as a
   popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
-  `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and stays
-  open between taps; 诊断 shows what the snapshot holds. Choices (digits,
+  `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
+  closes once a key is sent; 诊断 shows what the snapshot holds. Choices (digits,
   arrows, `Tab`) are deliberately not keys: questions, plans and
   permission prompts get their own tap targets on the page
   (`session-elicitation.tsx`, the confirmation strip). The composer is

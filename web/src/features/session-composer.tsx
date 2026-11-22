@@ -211,7 +211,8 @@ function useQuickKeys() {
 
 /**
  * Confirm / cancel / interrupt for the session TUI (Ctrl+C stops Grok).
- * Opens above the toolbar like every tool; each key says what it does.
+ * Opens above the toolbar like every tool; each key says what it does,
+ * and the panel closes once a key is sent.
  */
 function KeyPanel({
   disabled,
@@ -252,7 +253,10 @@ function KeyPanel({
             key={key}
             type="button"
             disabled={disabled}
-            onClick={() => onKey(key)}
+            onClick={() => {
+              onKey(key)
+              onClose()
+            }}
             className="key-press grid h-12 place-content-center gap-0.5 rounded-[10px] border border-brand-edge bg-brand-deck px-1 disabled:opacity-40"
           >
             <span className="text-[14px] leading-none font-medium">
