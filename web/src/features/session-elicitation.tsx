@@ -32,6 +32,7 @@ export function SessionElicitation({
     <div
       className="grid gap-3 rounded-[16px] border border-brand-waiting/40 bg-brand-waiting/10 p-3"
       data-testid="session-elicitation"
+      data-write
     >
       <p className="text-sm font-medium">{t`The agent is asking you`}</p>
       {elicitation.questions.map((q, qi) => (
@@ -111,7 +112,7 @@ export function SessionPermissionKeys({
 }) {
   const { t } = useLingui()
   return (
-    <div className="grid gap-2 rounded-[16px] bg-brand-surface p-3">
+    <div data-write className="grid gap-2 rounded-[16px] bg-brand-surface p-3">
       <p className="text-sm font-medium">{t`The agent asks:`}</p>
       <pre className="max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
         {(screen ?? '').split('\n').slice(-14).join('\n')}
@@ -170,6 +171,7 @@ export function SessionPlanReview({
     <div
       className="grid gap-3 rounded-[16px] border border-brand-running/40 bg-brand-running/10 p-3"
       data-testid="session-plan-review"
+      data-write
     >
       <p className="text-sm font-medium">{t`Plan ready for review`}</p>
       {excerpt ? (

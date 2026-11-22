@@ -228,6 +228,7 @@ export function SessionHeader({
         <div className="grid min-w-0 flex-1">
           <button
             type="button"
+            data-write
             disabled={!onRename || renameDisabled}
             onClick={rename}
             title={

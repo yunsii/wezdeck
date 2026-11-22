@@ -26,6 +26,7 @@ export WEZDECK_TEST_ATTENTION=$STATE/attention.json
 export WEZDECK_TEST_DEVICES=$STATE/devices.json
 export WEZDECK_TEST_UPLOADS=$STATE/uploads
 export WEZDECK_TEST_CLAUDE_STATUS=$STATE/claude-status
+export WEZDECK_RELAY_CONTROL=$STATE/relay.sock
 EOF
 }
 
@@ -72,6 +73,7 @@ start() {
     WEZDECK_REMOTE_DEVICES="$STATE/devices.json" \
     WEZDECK_REMOTE_UPLOADS="$STATE/uploads" \
     WEZDECK_CLAUDE_STATUS_DIR="$STATE/claude-status" \
+    WEZDECK_RELAY_CONTROL="$STATE/relay.sock" \
     "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
     >"$STATE/relay.out" 2>&1 </dev/null &
   echo $! >"$STATE/relay.pid"

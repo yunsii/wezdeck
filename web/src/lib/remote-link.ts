@@ -336,6 +336,11 @@ class RemoteLink {
         this.set({ rttMs: Math.round(median(this.samples)) })
         return
       }
+      case 'diag.request': {
+        // pushed by the host (relay_diag.go); lib/host-diag.ts answers
+        this.hostRequest?.(frame)
+        return
+      }
       case 'res': {
         const entry = this.pending.get(frame.id ?? '')
         if (!entry) return
@@ -393,6 +398,13 @@ class RemoteLink {
         resolve(true)
       })
     })
+  }
+
+  private hostRequest?: (frame: Frame) => void
+
+  /** frames the host pushes unasked (diagnostics requests) */
+  onHostRequest(handler: (frame: Frame) => void) {
+    this.hostRequest = handler
   }
 
   async rpc(action: string, args: Record<string, unknown>): Promise<unknown> {

@@ -1,5 +1,5 @@
-// What this page saw lately, for "attach diagnostics" in the session
-// composer: a ring buffer of viewport / keyboard changes, focus, scroll
+// What this page saw lately, for diagnostics the host pulls (lib/host-diag.ts,
+// `wezdeck-wsl diag`): a ring buffer of viewport / keyboard changes, focus, scroll
 // pinning, visibility, link mode and errors, plus a snapshot of the device
 // and page. It never holds tokens or message text (the URL hash, which can
 // carry the pairing token, is dropped).
@@ -8,8 +8,52 @@ import { remoteLink } from '#/lib/remote-link'
 
 type TraceEvent = { t: number; kind: string; data?: Record<string, unknown> }
 
-const MAX_EVENTS = 150
+const MAX_EVENTS = 300
 const events: Array<TraceEvent> = []
+
+/** page state for the snapshot (the session page registers its own) */
+let pageState: () => Record<string, unknown> = () => ({})
+export function setDiagnosticsPage(fn: () => Record<string, unknown>) {
+  pageState = fn
+  return () => {
+    if (pageState === fn) pageState = () => ({})
+  }
+}
+
+/**
+ * Frame timing for `ms` from now (rAF): how many frames, the longest gap, how
+ * many gaps over 50 ms — the evidence for "the animation feels bad".
+ */
+export function sampleFrames(ms: number): Promise<Record<string, number>> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === 'undefined') {
+      resolve({})
+      return
+    }
+    const start = performance.now()
+    let last = start
+    let frames = 0
+    let maxGap = 0
+    let janks = 0
+    const tick = (now: number) => {
+      frames++
+      const gap = now - last
+      maxGap = Math.max(maxGap, gap)
+      if (gap > 50) janks++
+      last = now
+      if (now - start < ms) requestAnimationFrame(tick)
+      else
+        resolve({
+          ms: Math.round(now - start),
+          frames,
+          fps: Math.round((frames * 1000) / Math.max(1, now - start)),
+          maxGapMs: Math.round(maxGap),
+          janks,
+        })
+    }
+    requestAnimationFrame(tick)
+  })
+}
 
 export function trace(kind: string, data?: Record<string, unknown>) {
   if (typeof performance === 'undefined') return
@@ -54,6 +98,15 @@ let installed = false
 export function installClientTrace() {
   if (installed || typeof window === 'undefined') return
   installed = true
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries())
+        if (entry.duration >= 80)
+          trace('longtask', { ms: Math.round(entry.duration) })
+    }).observe({ type: 'longtask', buffered: false })
+  } catch {
+    // not supported (Firefox, Safari): frame sampling still covers jank
+  }
   const vv = window.visualViewport
   let lastTop = -1
   let settled: ReturnType<typeof setTimeout> | undefined
@@ -152,6 +205,16 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
     serviceWorker: Boolean(navigator.serviceWorker.controller),
     deviceMemory: nav.deviceMemory,
     connection: nav.connection?.effectiveType,
+    history: {
+      index: (history.state as { __TSR_index?: number } | null)?.__TSR_index,
+      length: history.length,
+    },
+    viewTransition: {
+      api: 'startViewTransition' in document,
+      types:
+        typeof CSS !== 'undefined' &&
+        CSS.supports('selector(:active-view-transition-type(a))'),
+    },
     link: {
       mode: link.mode,
       path: link.path,
@@ -159,6 +222,7 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
       samePublic: link.samePublic,
       rtcNote: link.rtcNote,
     },
+    ...pageState(),
     ...extra,
     // t is ms before this snapshot, newest last
     events: events.map((event) => ({ ...event, t: event.t - now })),

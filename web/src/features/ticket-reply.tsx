@@ -151,7 +151,10 @@ export function TicketReply({
     }
   }
   return (
-    <section className="grid gap-2 rounded-[16px] bg-brand-surface p-4">
+    <section
+      data-write
+      className="grid gap-2 rounded-[16px] bg-brand-surface p-4"
+    >
       <h2 className="text-[16px] font-semibold">{t`The agent is waiting for your answer`}</h2>
       {asked.length ? (
         <div className="grid gap-4" data-testid="ticket-questions">
@@ -267,7 +270,10 @@ export function TicketAttach({
     }
   }
   return (
-    <section className="grid gap-2 rounded-[16px] bg-brand-surface p-4">
+    <section
+      data-write
+      className="grid gap-2 rounded-[16px] bg-brand-surface p-4"
+    >
       <button
         type="button"
         disabled={busy || running || device.state !== 'approved'}

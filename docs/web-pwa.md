@@ -183,11 +183,12 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. One toolbar row above the composer holds every tool:
   快捷 (always shown; disabled with a hint until phone writing is enabled),
-  then 图片 / 诊断 once the phone may write, then the picked thumbnails.
+  then 图片 once the phone may write, then the picked thumbnails.
   What a tool opens renders above the row in one card style, never as a
   popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
   `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
-  closes once a key is sent; 诊断 shows what the snapshot holds. Choices (digits,
+  closes once a key is sent (diagnostics are pulled by the host, see
+  remote-access.md "Diagnostics on demand"). Choices (digits,
   arrows, `Tab`) are deliberately not keys: questions, plans and
   permission prompts get their own tap targets on the page
   (`session-elicitation.tsx`, the confirmation strip). The composer is
@@ -232,7 +233,7 @@ per tab (sessionStorage) so in-app navigation keeps the remote path.
   frame the host logs (`category=relay event=client_mode`).
 - Worker logs `sw_update_offered`, `install`, `push_subscribed`,
   `push_sent` rows.
-- Client trace (诊断) keeps a `nav` row per navigation (`path`, history
+- Client trace (pulled with `wezdeck-wsl diag`) keeps a `nav` row per navigation (`path`, history
   `index`, `length`) and `nav-collapse` when a first-level page is folded
   back to the first entry.
 

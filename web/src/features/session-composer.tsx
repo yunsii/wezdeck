@@ -1,10 +1,10 @@
-// The session composer: text, plus a one-line toolbar above it for reporting
-// a problem from the phone — add screenshots, toggle "attach diagnostics"
-// (lib/client-trace.ts); thumbnails sit in the same row. Attachments upload first (lib/upload.ts), then the message is
+// The session composer: text, plus a one-line toolbar above it (quick keys,
+// screenshots; thumbnails sit in the same row). Diagnostics are no longer a
+// toggle here: the host pulls them when it needs them (lib/host-diag.ts);
+// this page only registers its state for that snapshot. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
 import {
-  Activity,
   Check,
   Copy,
   ImagePlus,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { diagnosticsSnapshot } from '#/lib/client-trace'
+import { setDiagnosticsPage } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
 import { ImageViewer } from './image-viewer'
@@ -26,7 +26,7 @@ type Picked = { key: string; file: File; url: string }
 export type Outgoing = {
   text: string
   attachments: Array<string>
-  /** shown on the queued bubble, e.g. "2 images, diagnostics" */
+  /** shown on the queued bubble, e.g. "2 images" */
   note: string
 }
 
@@ -104,9 +104,11 @@ export function useComposer({
   const { t } = useLingui()
   const [text, setText] = useDraft(id)
   const [images, setImages] = useState<Array<Picked>>([])
-  const [diag, setDiag] = useState(false)
   const [progress, setProgress] = useState('')
   const urls = useRef(images)
+  const pageState = useRef(diagnostics)
+  pageState.current = diagnostics
+  useEffect(() => setDiagnosticsPage(() => pageState.current()), [])
   urls.current = images
   useEffect(
     () => () => urls.current.forEach((image) => URL.revokeObjectURL(image.url)),
@@ -133,23 +135,12 @@ export function useComposer({
     })
   }
 
-  const ready = Boolean(text.trim() || images.length || diag)
+  const ready = Boolean(text.trim() || images.length)
   const submit = async () => {
     if (!ready || progress) return
-    const steps = images.length + (diag ? 1 : 0)
+    const steps = images.length
     const attachments: Array<string> = []
     try {
-      if (diag) {
-        const step = attachments.length + 1
-        setProgress(t`Uploading ${step}/${steps}…`)
-        const json = JSON.stringify(diagnosticsSnapshot(diagnostics()))
-        attachments.push(
-          await uploadBlob(
-            new Blob([json], { type: 'application/json' }),
-            'application/json',
-          ),
-        )
-      }
       for (const image of images) {
         const step = attachments.length + 1
         setProgress(t`Uploading ${step}/${steps}…`)
@@ -162,9 +153,7 @@ export function useComposer({
     }
     setProgress('')
     const count = images.length
-    const note = [count ? t`${count} images` : '', diag ? t`diagnostics` : '']
-      .filter(Boolean)
-      .join(t`, `)
+    const note = count ? t`${count} images` : ''
     // clear right away, like a chat app: the message shows in the queue
     // above; if the host refuses it, the text comes back with the error
     const typed = text
@@ -172,7 +161,6 @@ export function useComposer({
     if (await onSend({ text: typed.trim(), attachments, note })) {
       images.forEach((image) => URL.revokeObjectURL(image.url))
       setImages([])
-      setDiag(false)
     } else {
       setText((current) => current || typed)
     }
@@ -183,8 +171,6 @@ export function useComposer({
     images,
     pick,
     remove,
-    diag,
-    setDiag,
     progress,
     ready,
     submit,
@@ -227,7 +213,10 @@ function KeyPanel({
   const { t } = useLingui()
   const keys = useQuickKeys()
   return (
-    <div className="grid gap-1.5 rounded-[16px] bg-brand-surface p-2">
+    <div
+      data-write
+      className="grid gap-1.5 rounded-[16px] bg-brand-surface p-2"
+    >
       <div className="flex items-center justify-between gap-2 px-1">
         <span className="text-[11.5px] text-brand-label">
           {disabled
@@ -338,18 +327,6 @@ function Toolbar({
           />
         </label>
       ) : null}
-      {writable ? (
-        <button
-          type="button"
-          aria-pressed={composer.diag}
-          title={t`Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text.`}
-          onClick={() => composer.setDiag(!composer.diag)}
-          className={chip(composer.diag)}
-        >
-          <Activity size={14} aria-hidden />
-          {t`Diagnostics`}
-        </button>
-      ) : null}
       {composer.images.map((image, i) => (
         <span key={image.key} className="relative size-8 shrink-0">
           <button
@@ -415,11 +392,6 @@ export function ComposerBox({
           onKey={onKey}
           onClose={() => setKeysOpen(false)}
         />
-      ) : null}
-      {composer.diag ? (
-        <p className="rounded-[12px] bg-brand-surface px-3 py-2 text-[11.5px] leading-snug text-brand-label">
-          {t`Sends sizes, scroll state and recent page events; no tokens, no message text.`}
-        </p>
       ) : null}
       <Toolbar
         composer={composer}

@@ -57,7 +57,9 @@ type relay struct {
 	mu    sync.Mutex
 	conn  *websocket.Conn
 	peers map[string]*webrtc.PeerConnection
-	log   *os.File
+	// phones: pages seen recently, for host → phone pushes (relay_diag.go)
+	phones map[string]*phoneChan
+	log    *os.File
 }
 
 func relayLogPath() string {
@@ -88,7 +90,7 @@ func runRelay() error {
 	if url == "" {
 		url = relayDefaultURL
 	}
-	r := &relay{peers: map[string]*webrtc.PeerConnection{}}
+	r := &relay{peers: map[string]*webrtc.PeerConnection{}, phones: map[string]*phoneChan{}}
 	if path := relayLogPath(); path != "" {
 		_ = os.MkdirAll(filepath.Dir(path), 0o755)
 		if f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
@@ -96,6 +98,7 @@ func runRelay() error {
 			defer f.Close()
 		}
 	}
+	r.serveControl()
 	backoff := time.Second
 	for {
 		started := time.Now()
@@ -191,17 +194,20 @@ func (r *relay) session(url, token string) error {
 		}
 		switch f.T {
 		case "rpc":
+			r.touchPhone(f.Cid)
 			go func(f relayFrame) {
 				res := handleRPC(f, "websocket", r)
 				res.Cid = f.Cid
 				r.send(res)
 			}(f)
 		case "ping":
+			r.touchPhone(f.Cid)
 			r.send(relayFrame{T: "pong", Cid: f.Cid, ID: f.ID})
 		case "sig":
 			go r.answer(f.Cid, f.Data)
 		case "bye":
 			r.dropPeer(f.Cid)
+			r.forgetPhone(f.Cid)
 		}
 	}
 }
@@ -235,6 +241,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return registerDevice(f.Args)
 	case "upload.get":
 		return uploadGet(f.Args)
+	case "diag.submit":
+		return diagSubmit(f.Args, r)
 	case "session.image":
 		return sessionImage(f.Args)
 	case "send", "key", "reply", "attach", "upload":
@@ -311,11 +319,13 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 		}
 	})
 	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
+		r.attachDataChannel(cid, dc)
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 			var f relayFrame
 			if json.Unmarshal(msg.Data, &f) != nil {
 				return
 			}
+			r.touchPhone(cid)
 			switch f.T {
 			case "ping":
 				body, _ := json.Marshal(relayFrame{T: "pong", ID: f.ID})

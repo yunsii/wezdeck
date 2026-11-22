@@ -108,7 +108,7 @@ pane gets a 4 s `手机发来一条消息` notice.
 ### Attachments
 
 Reporting a problem from the phone (the toolbar above the composer,
-`session-composer.tsx`): toggle 诊断 and/or add up to 5 images with 图片
+`session-composer.tsx`): add up to 5 images with 图片
 (thumbnails sit in the same row; the toolbar shows only on an approved phone). Images are shrunk on the
 phone (long edge ≤ 1600 px, JPEG 0.82, `lib/upload.ts`); every file goes up
 as signed `upload` chunks of 36 KB (small enough for one DataChannel
@@ -116,7 +116,6 @@ message), then `send` names the stored files and the host appends
 
 ```
 [手机附件]
-- 客户端诊断: ~/.local/state/wezdeck/remote-uploads/diagnostics-<ts>-<id>.json
 - 图片: ~/.local/state/wezdeck/remote-uploads/img-<ts>-<id>.jpg
 ```
 
@@ -147,14 +146,31 @@ read with `session.image {id, ref, thumb, offset}` (`remote_image.go`),
 which re-reads that one line and answers like `upload.get`; tool images load
 only once the call is opened.
 
-The diagnostics snapshot (`lib/client-trace.ts`) holds build id, page path
-(no hash: it can carry the pairing token), user agent, standalone mode,
-screen / viewport / `visualViewport` / safe-area sizes, the viewport meta,
-the scroller metrics, link mode / path / RTT, session status, chat pinning,
-and the last 150 page events (viewport resizes with scroller metrics, focus,
-`chat-pin` / `chat-hold`, a `viewport-settled` sample 0.7 s after each
-resize, visibility, link changes, errors). No tokens, no
-message text.
+### Diagnostics on demand
+
+No 诊断 button: the host pulls what it needs. `wezdeck-wsl diag [--wait 15]
+[--reason TEXT] [--steps JSON | --steps-file F]` asks the running relay over
+its control socket (`~/.local/state/wezdeck/relay.sock`, 0600;
+`WEZDECK_RELAY_CONTROL` overrides) to push `{t:"diag.request"}` to every
+phone seen in the last 3 min (DataChannel when open, else the DO by cid;
+`relay_diag.go`). With `--steps` the phone first drives its own UI
+(`lib/host-diag.ts`: `navigate` in-app paths, `back`, `click` by `text` or
+`selector`, `scroll`, `wait`; never a control inside a form or under
+`[data-write]` — send, reply, take over, keys, options, rename), recording
+each step's frames (count, fps, longest gap, gaps > 50 ms). It answers with
+the snapshot as `diag.submit` chunks — accepted only for a live request id —
+stored as `diagnostics-<ts>-<id>-<phone>.json` in the uploads dir; the CLI
+prints the paths. The phone shows a toast that the host read diagnostics;
+relay log rows `diag_request` / `diag_received` / `diag_done`.
+
+The snapshot (`lib/client-trace.ts`) holds build id, page path (no hash: it
+can carry the pairing token), user agent, standalone mode, screen / viewport
+/ `visualViewport` / safe-area sizes, the scroller, link mode / path / RTT,
+history index / length, View Transitions support, the session page's state,
+the host's step results, and the last 300 page events (viewport, focus,
+`chat-pin`, visibility, link changes, errors, `nav` / `nav-collapse`,
+`nav-frames` for every page change, `longtask` ≥ 80 ms where supported). No
+tokens, no message text.
 
 ### Account limits
 

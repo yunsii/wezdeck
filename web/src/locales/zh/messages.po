@@ -8,8 +8,8 @@ msgstr ""
 "Language: zh\n"
 
 #: src/features/session-composer.tsx:167
-msgid ", "
-msgstr "、"
+#~ msgid ", "
+#~ msgstr "、"
 
 #: src/features/chat-thread.tsx:377
 msgid "· summary"
@@ -23,7 +23,7 @@ msgstr "（可多选）"
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:165
+#: src/features/session-composer.tsx:156
 msgid "{count} images"
 msgstr "{count} 张图片"
 
@@ -63,7 +63,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/ticket-reply.tsx:195
+#: src/features/ticket-reply.tsx:198
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
@@ -99,7 +99,7 @@ msgstr "7 天额度"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
-#: src/features/ticket-reply.tsx:282
+#: src/features/ticket-reply.tsx:288
 msgid "A headless run is still going; take over when it finishes."
 msgstr "后台还在跑，等它结束再接管。"
 
@@ -187,7 +187,7 @@ msgstr "已是最新版本"
 msgid "An example. Select a session to see where you would jump back."
 msgstr "这是示例。选一个会话，看你会跳回哪里。"
 
-#: src/features/ticket-reply.tsx:183
+#: src/features/ticket-reply.tsx:186
 msgid "Anything to add (optional)"
 msgstr "补充说明（可选）"
 
@@ -200,11 +200,11 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
-#: src/features/session-elicitation.tsx:189
+#: src/features/session-elicitation.tsx:191
 msgid "Approve plan"
 msgstr "批准计划"
 
-#: src/features/session-elicitation.tsx:209
+#: src/features/session-elicitation.tsx:211
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
@@ -258,7 +258,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-composer.tsx:208
+#: src/features/session-composer.tsx:194
 msgid "cancel"
 msgstr "取消"
 
@@ -309,7 +309,7 @@ msgstr "认领"
 msgid "Close"
 msgstr "关闭"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-composer.tsx:229
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -357,11 +357,11 @@ msgstr "协作工单"
 msgid "Command"
 msgstr "命令"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:294
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/session-composer.tsx:207
+#: src/features/session-composer.tsx:193
 msgid "confirm"
 msgstr "确认"
 
@@ -446,12 +446,12 @@ msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} �
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
-#: src/features/session-elicitation.tsx:78
-#: src/features/session-elicitation.tsx:126
+#: src/features/session-elicitation.tsx:79
+#: src/features/session-elicitation.tsx:127
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/session-elicitation.tsx:161
+#: src/features/session-elicitation.tsx:162
 msgid "Current plan"
 msgstr "当前计划"
 
@@ -497,12 +497,11 @@ msgid "Development"
 msgstr "开发"
 
 #: src/features/session-composer.tsx:165
-msgid "diagnostics"
-msgstr "诊断数据"
+#~ msgid "diagnostics"
+#~ msgstr "诊断数据"
 
 #: src/features/console-me.tsx:270
 #: src/features/console-shell.tsx:114
-#: src/features/session-composer.tsx:350
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -527,7 +526,7 @@ msgstr "已完成"
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去的位置。"
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:223
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
 
@@ -552,7 +551,7 @@ msgstr "端点"
 msgid "English"
 msgstr "English"
 
-#: src/features/session-elicitation.tsx:124
+#: src/features/session-elicitation.tsx:125
 msgid "Enter"
 msgstr "回车"
 
@@ -564,8 +563,8 @@ msgstr "进入 Runtime 控制台"
 msgid "Entries"
 msgstr "条目"
 
-#: src/features/session-elicitation.tsx:70
-#: src/features/session-elicitation.tsx:125
+#: src/features/session-elicitation.tsx:71
+#: src/features/session-elicitation.tsx:126
 msgid "Esc"
 msgstr "Esc"
 
@@ -691,7 +690,7 @@ msgstr "图片"
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/session-composer.tsx:328
+#: src/features/session-composer.tsx:317
 msgid "Images"
 msgstr "图片"
 
@@ -745,7 +744,7 @@ msgstr "集成"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-composer.tsx:209
+#: src/features/session-composer.tsx:195
 msgid "interrupt"
 msgstr "打断"
 
@@ -777,7 +776,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/session-composer.tsx:318
+#: src/features/session-composer.tsx:307
 msgid "Keys"
 msgstr "快捷"
 
@@ -860,7 +859,7 @@ msgstr "正在加载原图…"
 #: src/features/console-sessions.tsx:388
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
-#: src/features/session-header.tsx:238
+#: src/features/session-header.tsx:239
 #: src/features/session-list.tsx:171
 #: src/features/tickets-view.tsx:231
 msgid "Loading…"
@@ -882,11 +881,11 @@ msgstr "有进展"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:449
+#: src/features/session-composer.tsx:421
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:437
+#: src/features/session-composer.tsx:409
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -919,7 +918,7 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/console-now.tsx:190
-#: src/features/session-header.tsx:259
+#: src/features/session-header.tsx:260
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -978,7 +977,7 @@ msgstr "还没有人工消息"
 msgid "No matching log entries"
 msgstr "没有匹配的日志条目"
 
-#: src/features/session-elicitation.tsx:180
+#: src/features/session-elicitation.tsx:182
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
@@ -1093,7 +1092,7 @@ msgstr "打开 Web 控制台"
 #~ msgid "Opened in tmux: {0} ({1})"
 #~ msgstr ""
 
-#: src/features/ticket-reply.tsx:260
+#: src/features/ticket-reply.tsx:263
 msgid "Opened in tmux: {windowName} ({tmuxSession})"
 msgstr "已在 tmux 打开：{windowName}（{tmuxSession}）"
 
@@ -1105,7 +1104,7 @@ msgstr "开单：{from} → {to}"
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
 
-#: src/features/ticket-reply.tsx:278
+#: src/features/ticket-reply.tsx:284
 msgid "Opening…"
 msgstr "正在打开…"
 
@@ -1170,7 +1169,7 @@ msgstr "阶段"
 msgid "Phone writing"
 msgstr "手机写入"
 
-#: src/features/session-elicitation.tsx:174
+#: src/features/session-elicitation.tsx:176
 msgid "Plan ready for review"
 msgstr "计划待你确认"
 
@@ -1178,7 +1177,7 @@ msgstr "计划待你确认"
 msgid "Plan review"
 msgstr "计划确认"
 
-#: src/features/session-composer.tsx:357
+#: src/features/session-composer.tsx:334
 msgid "Preview image"
 msgstr "预览图片"
 
@@ -1207,12 +1206,12 @@ msgstr "初始消息组成"
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/session-composer.tsx:248
-#: src/features/session-composer.tsx:312
+#: src/features/session-composer.tsx:237
+#: src/features/session-composer.tsx:301
 msgid "Quick keys"
 msgstr "快捷键"
 
-#: src/features/session-elicitation.tsx:205
+#: src/features/session-elicitation.tsx:207
 msgid "Quit plan"
 msgstr "退出计划"
 
@@ -1268,11 +1267,11 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:369
+#: src/features/session-composer.tsx:346
 msgid "Remove image"
 msgstr "移除图片"
 
-#: src/features/session-header.tsx:234
+#: src/features/session-header.tsx:235
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
@@ -1292,11 +1291,11 @@ msgstr "已回复，Agent 继续处理"
 msgid "replied: {body}"
 msgstr "回复：{body}"
 
-#: src/features/ticket-reply.tsx:210
+#: src/features/ticket-reply.tsx:213
 msgid "Reply"
 msgstr "回复"
 
-#: src/features/ticket-reply.tsx:218
+#: src/features/ticket-reply.tsx:221
 msgid "Reply and continue"
 msgstr "回复并继续"
 
@@ -1316,7 +1315,7 @@ msgstr "仓库"
 msgid "Repository root"
 msgstr "仓库根目录"
 
-#: src/features/session-elicitation.tsx:197
+#: src/features/session-elicitation.tsx:199
 msgid "Request changes"
 msgstr "请修改"
 
@@ -1356,7 +1355,7 @@ msgstr "继续对话线程"
 msgid "Resumed conversations"
 msgstr "可恢复的会话"
 
-#: src/features/ticket-reply.tsx:283
+#: src/features/ticket-reply.tsx:289
 msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
@@ -1482,8 +1481,8 @@ msgid "Scope"
 msgstr "改动范围"
 
 #: src/features/session-composer.tsx:345
-msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
-msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
+#~ msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
+#~ msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
 #: src/features/console-now.tsx:140
 #: src/features/session-list.tsx:95
@@ -1506,17 +1505,17 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:454
+#: src/features/session-composer.tsx:426
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:313
+#: src/features/session-composer.tsx:302
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
 #: src/features/session-composer.tsx:421
-msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
-msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
+#~ msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
+#~ msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
 
 #: src/features/console-sessions.tsx:325
 #~ msgid "Sent to the session"
@@ -1532,7 +1531,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:266
+#: src/features/session-header.tsx:267
 #: src/features/session-info.tsx:236
 #: src/features/session-info.tsx:242
 msgid "Session info"
@@ -1644,7 +1643,7 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/ticket-reply.tsx:278
+#: src/features/ticket-reply.tsx:284
 msgid "Take over in tmux"
 msgstr "接管到 tmux"
 
@@ -1652,11 +1651,11 @@ msgstr "接管到 tmux"
 msgid "Tap a row to copy its value."
 msgstr "点任意一行即可复制它的值。"
 
-#: src/features/session-elicitation.tsx:82
+#: src/features/session-elicitation.tsx:83
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:235
+#: src/features/session-composer.tsx:224
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -1664,7 +1663,7 @@ msgstr "点一下就会发到 Agent 窗格"
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
-#: src/features/session-elicitation.tsx:115
+#: src/features/session-elicitation.tsx:116
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
@@ -1672,11 +1671,11 @@ msgstr "Agent 在问："
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
-#: src/features/session-elicitation.tsx:36
+#: src/features/session-elicitation.tsx:37
 msgid "The agent is asking you"
 msgstr "Agent 在问你"
 
-#: src/features/ticket-reply.tsx:155
+#: src/features/ticket-reply.tsx:158
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
@@ -1849,8 +1848,7 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:144
-#: src/features/session-composer.tsx:155
+#: src/features/session-composer.tsx:146
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
@@ -2029,7 +2027,7 @@ msgid "Worktrees"
 msgstr "Worktree"
 
 #: src/features/console-sessions.tsx:327
-#: src/features/ticket-reply.tsx:190
+#: src/features/ticket-reply.tsx:193
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"
 
@@ -2051,11 +2049,11 @@ msgstr "昨天"
 msgid "Your agents. Your worktrees. Your machine."
 msgstr "你的 Agent。你的 worktree。你的机器。"
 
-#: src/features/ticket-reply.tsx:184
+#: src/features/ticket-reply.tsx:187
 msgid "Your decision, extra context, or an answer to the challenge"
 msgstr "你的决定、补充信息，或对质疑的答复"
 
-#: src/features/ticket-reply.tsx:174
+#: src/features/ticket-reply.tsx:177
 msgid "Your reply"
 msgstr "你的回复"
 
