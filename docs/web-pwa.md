@@ -91,6 +91,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   lists, a three-way segmented control on 工单 (进行中 / 等你 / 已结束),
   settings as segmented rows instead of popovers, a translucent bottom bar
   with four tabs (hidden on detail pages, which are full screen).
+- Screen stays on while a session page is open (`lib/wake-lock.ts`, Screen
+  Wake Lock): taken on entry and again when the page comes back to the
+  front (browsers drop it while hidden), released on leaving; unsupported
+  browsers just don't get it, and every outcome is a `wake-lock` client
+  trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
   back, session name (+ branch), 复制引用 (copies the host-built
   `reference` block so another agent can locate the session: id,

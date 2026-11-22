@@ -12,6 +12,7 @@ import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
+import { useScreenWakeLock } from '#/lib/wake-lock'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
@@ -290,6 +291,8 @@ function SessionDetail({ id }: { id: string }) {
   const start = data?.start ?? 0
   const keepPlace = useKeepPlace(end, start)
   const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
+  // the phone often sits on the desk following the agent: keep it awake
+  useScreenWakeLock(true)
   const back = () => {
     if (window.history.length > 1) router.history.back()
     else
