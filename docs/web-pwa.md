@@ -32,7 +32,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 4. **Phone IA — four bottom tabs** (revised): 现在 (three bands — needs you
    (tickets + sessions waiting on you), running now, recently active top-5
    by conversation activity including idle, with a link to all sessions;
-   动态 is one link down) · 工单 · 会话 (repo → worktree → pane tree;
+   工单动态 is one link down: cross-repo ticket events as sentences — one
+   card per ticket run of events under its title and from → to repo, day
+   headings, a clock time per line; tool calls, checkouts, session init and
+   worktree moves left out; sessions are not in it) · 工单 · 会话 (repo → worktree → pane tree;
    primary/secondary when tmux-mounted; path-based so ticket worktrees can
    join later) · 我的 (connection, phone writing, install, theme,
    language). Ticket detail is a pushed page; a run opens in a bottom

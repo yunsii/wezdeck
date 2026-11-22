@@ -238,7 +238,7 @@ export function ConsoleNowPage() {
         params={{ locale: localeParam }}
         className="key-press flex min-h-12 items-center justify-between rounded-[16px] bg-brand-surface px-4 text-[15px]"
       >
-        {t`All activity`}
+        {t`Ticket activity`}
         <ChevronRight size={18} aria-hidden className="text-brand-label" />
       </Link>
     </div>

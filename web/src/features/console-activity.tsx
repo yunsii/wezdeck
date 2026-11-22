@@ -1,16 +1,20 @@
-// 动态: the latest collab events as a timeline (newest first). Tool calls are
-// the bulk of events; hidden by default, one toggle away.
+// 工单动态: what the cross-repo tickets have been doing, in sentences. Events
+// of one ticket in a row form one card under its title (from → to repo);
+// cards fall under day headings, newest first. Plumbing (tool calls,
+// checkouts, session init, worktree moves) is left out: it is most of the
+// stream and says nothing on its own. Sessions are not here (会话 tab).
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 
+import { useCollab } from '#/lib/collab-query'
 import { getCollab } from '#/lib/runtime-client'
+import type { CollabTicket } from '#/lib/runtime-contract'
 import { useLocale } from '#/lib/locale-context'
-import { useAgo } from './tickets-view'
+import { useStatusLabel } from './tickets-view'
 
 type Event = Record<string, unknown> & {
   seq?: number | null
@@ -48,129 +52,226 @@ function useLatestEvents() {
   })
 }
 
-function useKindLabel() {
+/** event kinds worth a line; the rest is plumbing */
+const SHOWN = new Set([
+  'created',
+  'status',
+  'run_start',
+  'run_end',
+  'milestone',
+  'research_done',
+  'reply',
+  'claimed',
+  'challenged',
+  'closed',
+])
+
+const text = (value: unknown) => (typeof value === 'string' ? value : '')
+
+/** One event as a sentence about its ticket. */
+function useSentence() {
   const { t } = useLingui()
-  const labels: Record<string, string> = {
-    created: t`opened`,
-    status: t`status`,
-    run_start: t`run started`,
-    run_end: t`run finished`,
-    milestone: t`milestone`,
-    checkout: t`checked out`,
-    research_done: t`research done`,
-    session_init: t`session started`,
-    tool: t`tool call`,
-    reply: t`reply`,
-    closed: t`closed`,
-    worktree_migrated: t`worktree migrated`,
-    claimed: t`claimed`,
-    challenged: t`challenged`,
+  const statusLabel = useStatusLabel()
+  return (event: Event) => {
+    switch (event.kind) {
+      case 'created': {
+        const from = text(event.from) || '?'
+        const to = text(event.to) || '?'
+        return t`opened, ${from} → ${to}`
+      }
+      case 'status': {
+        const label = statusLabel({
+          status: text(event.status),
+          running: [],
+        } as unknown as CollabTicket)
+        return t`now ${label}`
+      }
+      case 'run_start':
+        return event.mode === 'read'
+          ? t`started researching`
+          : t`started working on it`
+      case 'run_end':
+        return event.exit === 0 || event.exit === undefined
+          ? t`run finished`
+          : t`run failed`
+      case 'research_done':
+        return event.ok === false ? t`research failed` : t`research done`
+      case 'milestone':
+        return text(event.text) || t`made progress`
+      case 'reply': {
+        const body = text(event.text) || text(event.message)
+        return body ? t`replied: ${body}` : t`replied`
+      }
+      case 'claimed':
+        return t`claimed`
+      case 'challenged':
+        return t`assumptions challenged`
+      case 'closed':
+        return t({ message: 'closed', context: 'ticket status' })
+      default:
+        return event.kind
+    }
   }
-  return (kind: string) => labels[kind] ?? kind
 }
 
 function toneOf(event: Event): LedTone {
-  if (event.kind === 'run_start' || event.kind === 'session_init')
-    return 'running'
+  if (event.kind === 'run_start') return 'running'
   if (event.kind === 'run_end')
     return event.exit === 0 || event.exit === undefined ? 'done' : 'error'
-  if (event.kind === 'research_done' || event.kind === 'milestone')
-    return 'done'
+  if (event.kind === 'research_done')
+    return event.ok === false ? 'error' : 'done'
   if (event.kind === 'status') {
-    const status = String(event.status ?? '')
+    const status = text(event.status)
     if (status.startsWith('waiting')) return 'waiting'
     if (status === 'failed' || status === 'rejected') return 'error'
-    if (status === 'shipped') return 'done'
+    if (status === 'shipped' || status === 'closed') return 'done'
     return 'running'
   }
   if (event.kind === 'created') return 'waiting'
   return 'muted'
 }
 
-function detailOf(event: Event) {
-  const pick = ['title', 'status', 'repo', 'message', 'name', 'phase', 'tool']
-  return pick
-    .map((key) => event[key])
-    .filter((value) => typeof value === 'string' && value)
-    .slice(0, 2)
-    .join(' · ')
+type Card = { ticket: string; day: string; events: Array<Event> }
+
+/** Consecutive events of one ticket become one card; cards carry their day. */
+function cards(events: Array<Event>, dayOf: (iso?: string | null) => string) {
+  const out: Array<Card> = []
+  for (const event of events) {
+    const ticket = event.ticket ?? ''
+    const day = dayOf(event.ts)
+    const last = out.at(-1)
+    if (last && last.ticket === ticket && last.day === day)
+      last.events.push(event)
+    else out.push({ ticket, day, events: [event] })
+  }
+  return out
+}
+
+function useDayOf() {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  const format = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  })
+  return (iso?: string | null) => {
+    if (!iso) return ''
+    const date = new Date(iso)
+    const today = new Date()
+    const yesterday = new Date(today.getTime() - 86_400_000)
+    if (date.toDateString() === today.toDateString()) return t`Today`
+    if (date.toDateString() === yesterday.toDateString()) return t`Yesterday`
+    return format.format(date)
+  }
 }
 
 export function ConsoleActivityPage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
-  const [showTools, setShowTools] = useState(false)
   const events = useLatestEvents()
-  const ago = useAgo()
-  const label = useKindLabel()
-  const rows = (events.data?.events ?? []).filter(
-    (event) => showTools || event.kind !== 'tool',
+  const list = useCollab('list', { limit: 200 }, { refetchInterval: 60_000 })
+  const sentence = useSentence()
+  // the day is the heading above, so a row only needs its time
+  const clock = (iso?: string | null) =>
+    iso
+      ? new Date(iso).toLocaleTimeString(locale === 'zh' ? 'zh-CN' : 'en', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : ''
+  const dayOf = useDayOf()
+  const tickets = new Map<string, CollabTicket>(
+    (list.data?.ok ? list.data.tickets : []).map((ticket) => [
+      ticket.id,
+      ticket,
+    ]),
   )
+  // titles also ride on "created" events, for tickets no longer listed
+  const created = new Map<string, Event>()
+  for (const event of events.data?.events ?? [])
+    if (event.kind === 'created' && event.ticket)
+      created.set(event.ticket, event)
+  const groups = cards(
+    (events.data?.events ?? []).filter((event) => SHOWN.has(event.kind)),
+    dayOf,
+  )
+  let lastDay = ''
   return (
     <div className="grid max-w-3xl content-start gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="hidden text-base font-semibold md:block">
-          {t`Activity`}
-        </h1>
-        <label className="ml-auto inline-flex min-h-10 items-center gap-2 text-xs text-brand-muted">
-          <input
-            type="checkbox"
-            checked={showTools}
-            onChange={(event) => setShowTools(event.target.checked)}
-          />
-          {t`Show tool calls`}
-        </label>
-      </div>
+      <h1 className="hidden text-base font-semibold md:block">
+        {t`Ticket activity`}
+      </h1>
+      <p className="text-sm text-brand-muted">
+        {t`What cross-repo tickets have been doing. Sessions are on the Sessions tab.`}
+      </p>
       {events.isError ? (
         <p role="status" className="text-xs text-brand-waiting">
-          {t`Host unreachable right now`} · {t`showing the last copy`}
+          {t`Host unreachable right now`}，{t`showing the last copy`}
         </p>
       ) : null}
-      {rows.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="py-8 text-center text-sm text-brand-muted">
           {events.isPending
             ? t`Loading…`
             : (events.data?.error ?? t`No activity yet`)}
         </p>
       ) : (
-        <ol aria-label={t`Collab activity`} className="relative grid">
-          {rows.map((event, index) => (
-            <li
-              key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
-              className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] gap-x-3 py-2.5 text-sm"
+        groups.map((group) => {
+          const ticket = tickets.get(group.ticket)
+          const origin = created.get(group.ticket)
+          const title =
+            ticket?.title || text(origin?.title) || group.ticket.slice(-6)
+          const from = ticket?.from ?? text(origin?.from)
+          const to = ticket?.to ?? text(origin?.to)
+          const heading = group.day !== lastDay ? group.day : ''
+          lastDay = group.day
+          return (
+            <section
+              key={`${group.ticket}-${group.events[0]?.seq ?? ''}`}
+              className="grid gap-2"
             >
-              <span className="relative flex justify-center pt-1">
-                <Led tone={toneOf(event)} size={11} />
-                {index < rows.length - 1 ? (
-                  <span
-                    aria-hidden
-                    className="absolute top-5 -bottom-4 w-px bg-brand-edge"
-                  />
-                ) : null}
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium text-brand-text">
-                  {label(event.kind)}
-                </span>
-                <span className="mt-0.5 block truncate text-xs text-brand-muted">
-                  {event.ticket ? (
-                    <Link
-                      to="/{-$locale}/console/collab/$id"
-                      params={{ locale: localeParam, id: event.ticket }}
-                      className="font-mono text-brand-running"
-                    >
-                      {event.ticket.slice(-6)}
-                    </Link>
+              {heading ? (
+                <h2 className="pt-2 text-[15px] font-bold">{heading}</h2>
+              ) : null}
+              <div className="rounded-[16px] bg-brand-surface px-4 py-3">
+                <Link
+                  to="/{-$locale}/console/collab/$id"
+                  params={{ locale: localeParam, id: group.ticket }}
+                  className="grid gap-0.5"
+                >
+                  <span className="line-clamp-2 text-[15.5px] leading-snug font-semibold">
+                    {title}
+                  </span>
+                  {from || to ? (
+                    <span className="text-xs text-brand-label">
+                      {from || '?'} → {to || '?'}
+                    </span>
                   ) : null}
-                  {event.ticket && detailOf(event) ? '  ' : ''}
-                  {detailOf(event)}
-                </span>
-              </span>
-              <span className="text-xs text-brand-label">{ago(event.ts)}</span>
-            </li>
-          ))}
-        </ol>
+                </Link>
+                <ol className="mt-2 grid gap-1.5">
+                  {group.events.map((event) => (
+                    <li
+                      key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
+                      className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-sm"
+                    >
+                      <span className="pt-1">
+                        <Led tone={toneOf(event)} size={9} />
+                      </span>
+                      <span className="line-clamp-3 text-brand-text">
+                        {sentence(event)}
+                      </span>
+                      <span className="text-xs text-brand-label tabular-nums">
+                        {clock(event.ts)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </section>
+          )
+        })
       )}
     </div>
   )

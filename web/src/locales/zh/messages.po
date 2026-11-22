@@ -87,11 +87,6 @@ msgstr "面向 AI Agent 的本地工作台。"
 #~ msgid "Active"
 #~ msgstr "进行中"
 
-#: src/features/console-activity.tsx:114
-#: src/features/console-shell.tsx:135
-msgid "Activity"
-msgstr "动态"
-
 #: src/features/landing-page.tsx:122
 msgid "After a restart, return to the same agent session and continue the work."
 msgstr "重启后回到同一个 Agent 会话，继续手头的工作。"
@@ -115,10 +110,6 @@ msgstr "Agent"
 #: src/features/tickets-view.tsx:167
 #~ msgid "All"
 #~ msgstr "全部"
-
-#: src/features/console-now.tsx:241
-msgid "All activity"
-msgstr "全部动态"
 
 #: src/features/console-diagnostics.tsx:74
 msgid "All categories"
@@ -160,6 +151,10 @@ msgstr "应用"
 #: src/features/console-me.tsx:204
 msgid "Appearance"
 msgstr "外观"
+
+#: src/features/console-activity.tsx:108
+msgid "assumptions challenged"
+msgstr "对前提提出了质疑"
 
 #: src/features/session-composer.tsx:297
 msgid "Attachments"
@@ -217,10 +212,6 @@ msgstr "能力"
 msgid "Category"
 msgstr "分类"
 
-#: src/features/console-activity.tsx:67
-msgid "challenged"
-msgstr "质疑"
-
 #: src/features/chat-thread.tsx:291
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
@@ -232,10 +223,6 @@ msgstr "重新检查"
 #: src/features/console-me.tsx:86
 msgid "Check for updates"
 msgstr "检查更新"
-
-#: src/features/console-activity.tsx:59
-msgid "checked out"
-msgstr "检出"
 
 #: src/features/console-me.tsx:102
 msgid "Checking…"
@@ -249,7 +236,7 @@ msgstr "子单"
 msgid "Children"
 msgstr "子单"
 
-#: src/features/console-activity.tsx:66
+#: src/features/console-activity.tsx:106
 msgid "claimed"
 msgstr "认领"
 
@@ -269,10 +256,7 @@ msgstr "关闭这个 VS Code 窗口？未保存的工作可能会再次请求确
 msgid "Close VS Code window"
 msgstr "关闭 VS Code 窗口"
 
-#: src/features/console-activity.tsx:64
-msgid "closed"
-msgstr "关单"
-
+#: src/features/console-activity.tsx:110
 #: src/features/tickets-view.tsx:77
 msgctxt "ticket status"
 msgid "closed"
@@ -286,10 +270,6 @@ msgstr "已关闭"
 #: src/features/console-shell.tsx:99
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
-
-#: src/features/console-activity.tsx:137
-msgid "Collab activity"
-msgstr "协作动态"
 
 #: src/features/tickets-view.tsx:224
 msgid "Collab data unavailable: {unavailable}"
@@ -559,7 +539,7 @@ msgstr "本机功能"
 msgid "Host signals"
 msgstr "主机信号"
 
-#: src/features/console-activity.tsx:127
+#: src/features/console-activity.tsx:211
 #: src/features/tickets-view.tsx:110
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
@@ -712,7 +692,7 @@ msgstr "实时"
 msgid "Load earlier"
 msgstr "加载更早"
 
-#: src/features/console-activity.tsx:133
+#: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:123
 #: src/features/console-collab.tsx:188
 #: src/features/console-development.tsx:130
@@ -734,6 +714,10 @@ msgstr "本地优先的控制平面"
 msgid "Log stream"
 msgstr "日志流"
 
+#: src/features/console-activity.tsx:100
+msgid "made progress"
+msgstr "有进展"
+
 #: src/features/console-collab.tsx:487
 msgid "merged"
 msgstr "已合并"
@@ -753,10 +737,6 @@ msgstr "发给 Agent 的消息"
 #: src/features/console-collab.tsx:143
 msgid "Metrics window"
 msgstr "统计窗口"
-
-#: src/features/console-activity.tsx:58
-msgid "milestone"
-msgstr "里程碑"
 
 #: src/features/console-me.tsx:176
 msgid "Mode"
@@ -783,7 +763,7 @@ msgstr "新版本已就绪，刷新后生效"
 msgid "No active agent sessions"
 msgstr "没有活动 Agent 会话"
 
-#: src/features/console-activity.tsx:134
+#: src/features/console-activity.tsx:218
 msgid "No activity yet"
 msgstr "还没有动态"
 
@@ -859,6 +839,10 @@ msgstr "没有需要你处理的事，也没有在运行的任务。"
 msgid "Now"
 msgstr "现在"
 
+#: src/features/console-activity.tsx:87
+msgid "now {label}"
+msgstr "状态：{label}"
+
 #: src/features/console-shared.tsx:214
 msgid "Offline"
 msgstr "离线"
@@ -907,9 +891,9 @@ msgstr "打开 VS Code"
 msgid "Open web console"
 msgstr "打开 Web 控制台"
 
-#: src/features/console-activity.tsx:54
-msgid "opened"
-msgstr "开单"
+#: src/features/console-activity.tsx:80
+msgid "opened, {from} → {to}"
+msgstr "开单：{from} → {to}"
 
 #: src/features/landing-page.tsx:130
 msgid "Optional browser companion"
@@ -1030,6 +1014,10 @@ msgstr "移除图片"
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
+#: src/features/console-activity.tsx:103
+msgid "replied"
+msgstr "已回复"
+
 #: src/features/ticket-reply.tsx:41
 msgid "Replied"
 msgstr "已回复"
@@ -1038,9 +1026,9 @@ msgstr "已回复"
 msgid "Replied, the agent continues"
 msgstr "已回复，Agent 继续处理"
 
-#: src/features/console-activity.tsx:63
-msgid "reply"
-msgstr "回复"
+#: src/features/console-activity.tsx:103
+msgid "replied: {body}"
+msgstr "回复：{body}"
 
 #: src/features/ticket-reply.tsx:85
 msgid "Reply"
@@ -1062,9 +1050,13 @@ msgstr "仓库"
 msgid "Requests (WebRTC / relay)"
 msgstr "请求数（WebRTC / 中转）"
 
-#: src/features/console-activity.tsx:60
+#: src/features/console-activity.tsx:98
 msgid "research done"
 msgstr "调研完成"
+
+#: src/features/console-activity.tsx:98
+msgid "research failed"
+msgstr "调研失败"
 
 #: src/features/session-header.tsx:101
 msgid "resets {fiveReset}"
@@ -1124,13 +1116,13 @@ msgstr "运行"
 msgid "Run detail"
 msgstr "运行详情"
 
-#: src/features/console-activity.tsx:57
+#: src/features/console-activity.tsx:96
+msgid "run failed"
+msgstr "运行失败"
+
+#: src/features/console-activity.tsx:95
 msgid "run finished"
 msgstr "运行结束"
-
-#: src/features/console-activity.tsx:56
-msgid "run started"
-msgstr "开始运行"
 
 #: src/features/console-collab.tsx:449
 #: src/features/landing-example.tsx:50
@@ -1254,10 +1246,6 @@ msgstr "会话"
 msgid "Session jump failed"
 msgstr "会话跳转失败"
 
-#: src/features/console-activity.tsx:61
-msgid "session started"
-msgstr "会话开始"
-
 #: src/features/console-collab.tsx:114
 msgid "Sessions"
 msgstr "会话数"
@@ -1290,11 +1278,7 @@ msgstr "已交付"
 msgid "Show initial prompt"
 msgstr "查看初始消息"
 
-#: src/features/console-activity.tsx:122
-msgid "Show tool calls"
-msgstr "显示工具调用"
-
-#: src/features/console-activity.tsx:127
+#: src/features/console-activity.tsx:211
 msgid "showing the last copy"
 msgstr "显示的是上次的数据"
 
@@ -1318,9 +1302,13 @@ msgstr "来源"
 msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 msgstr "从键盘优先的控制平面开始，在需要时再打开浏览器视图。"
 
-#: src/features/console-activity.tsx:55
-msgid "status"
-msgstr "状态"
+#: src/features/console-activity.tsx:91
+msgid "started researching"
+msgstr "开始调研"
+
+#: src/features/console-activity.tsx:92
+msgid "started working on it"
+msgstr "开始处理"
 
 #: src/features/console-collab.tsx:414
 #: src/features/console-development.tsx:403
@@ -1405,6 +1393,12 @@ msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 msgid "This Runtime does not provide the workspace catalog."
 msgstr "当前 Runtime 没有提供 workspace 目录。"
 
+#: src/features/console-activity.tsx:204
+#: src/features/console-now.tsx:241
+#: src/features/console-shell.tsx:135
+msgid "Ticket activity"
+msgstr "工单动态"
+
 #: src/features/console-collab.tsx:191
 msgid "Ticket unavailable"
 msgstr "工单不可用"
@@ -1425,6 +1419,7 @@ msgstr "tmux 会话"
 msgid "Tmux window"
 msgstr "tmux 窗口"
 
+#: src/features/console-activity.tsx:163
 #: src/features/console-overview.tsx:62
 msgid "Today"
 msgstr "今日"
@@ -1440,10 +1435,6 @@ msgstr "令牌无效，请重新配对"
 #: src/features/console-collab-run.tsx:71
 msgid "Tokens in / cache r / cache w / out"
 msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
-
-#: src/features/console-activity.tsx:62
-msgid "tool call"
-msgstr "工具调用"
 
 #: src/features/console-diagnostics.tsx:65
 #: src/features/console-diagnostics.tsx:66
@@ -1619,6 +1610,10 @@ msgstr "WezDeck"
 msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 msgstr "WezDeck 把 workspace、git worktree 和 Agent 会话组织成一个键盘优先的本地控制平面。"
 
+#: src/features/console-activity.tsx:207
+msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
+msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
+
 #: src/features/console-development.tsx:72
 #: src/features/console-development.tsx:100
 msgid "Window focused"
@@ -1652,10 +1647,6 @@ msgstr "工作区"
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/console-activity.tsx:65
-msgid "worktree migrated"
-msgstr "工作区迁移"
-
 #: src/features/console-development.tsx:205
 msgid "Worktrees"
 msgstr "Worktree"
@@ -1670,6 +1661,10 @@ msgstr "这台手机还没启用写入（我的 › 手机写入）。"
 #: src/features/landing-example.tsx:140
 msgid "WSL bridge"
 msgstr "WSL 通道"
+
+#: src/features/console-activity.tsx:164
+msgid "Yesterday"
+msgstr "昨天"
 
 #: src/features/landing-page.tsx:153
 msgid "Your agents. Your worktrees. Your machine."

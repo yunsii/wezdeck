@@ -132,7 +132,7 @@ function useSections() {
     },
     {
       id: 'activity',
-      label: t`Activity`,
+      label: t`Ticket activity`,
       icon: <ListTree size={16} aria-hidden />,
     },
     { id: 'me', label: t`Settings`, icon: <UserRound size={16} aria-hidden /> },
