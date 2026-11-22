@@ -109,6 +109,13 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   the meters shows model, tokens, cache hit, limit freshness and the
   background task list. Its height is
   `--session-head`, which the sticky prompt sits under.
+- Back from a detail page (`lib/go-back.ts` `useGoBack`, adapted from
+  forge's `TopBar`): came from inside the app → `history.back()` (the list
+  returns where it was); opened directly (shared link, refresh, PWA cold
+  start, notification) → `replace` to the list, no extra history entry.
+  It reads TanStack Router's `useCanGoBack` (the in-app index in each
+  entry's state), never `window.history.length`, which counts pages from
+  before the app — "back" used to leave the app from a directly opened page.
 - 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
   header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
   host-built `reference` block for another agent: id, transcript path, cwd,

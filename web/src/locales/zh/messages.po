@@ -51,11 +51,11 @@ msgstr "{runningCount} 个运行中"
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
-#: src/features/console-sessions.tsx:366
+#: src/features/console-sessions.tsx:361
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/console-sessions.tsx:190
+#: src/features/console-sessions.tsx:191
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -192,11 +192,11 @@ msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/tickets-view.tsx:301
+#: src/features/tickets-view.tsx:297
 msgid "Back"
 msgstr "返回"
 
-#: src/features/console-sessions.tsx:262
+#: src/features/console-sessions.tsx:263
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 
@@ -234,7 +234,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:440
+#: src/features/console-sessions.tsx:435
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -305,7 +305,7 @@ msgid "Close VS Code window"
 msgstr "关闭 VS Code 窗口"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:77
+#: src/features/tickets-view.tsx:78
 msgctxt "ticket status"
 msgid "closed"
 msgstr "已关闭"
@@ -319,7 +319,7 @@ msgstr "已关闭"
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
 
-#: src/features/tickets-view.tsx:224
+#: src/features/tickets-view.tsx:233
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
@@ -327,8 +327,8 @@ msgstr "协作数据不可用：{unavailable}"
 msgid "Collab metrics"
 msgstr "协作指标"
 
-#: src/features/tickets-view.tsx:258
-#: src/features/tickets-view.tsx:361
+#: src/features/tickets-view.tsx:267
+#: src/features/tickets-view.tsx:357
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -434,7 +434,7 @@ msgstr "深色"
 msgid "Dark theme"
 msgstr "暗色主题"
 
-#: src/features/tickets-view.tsx:124
+#: src/features/tickets-view.tsx:125
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
@@ -506,7 +506,7 @@ msgstr "启用写入"
 msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 msgstr "已启用。这台手机可以给会话发消息、回复工单。"
 
-#: src/features/tickets-view.tsx:176
+#: src/features/tickets-view.tsx:177
 msgid "Ended {ended}"
 msgstr "已结束 {ended}"
 
@@ -557,7 +557,7 @@ msgstr "示例 Agent 会话"
 msgid "Exit"
 msgstr "退出码"
 
-#: src/features/tickets-view.tsx:79
+#: src/features/tickets-view.tsx:80
 msgid "failed"
 msgstr "失败"
 
@@ -569,11 +569,11 @@ msgstr "失败"
 msgid "File"
 msgstr "文件"
 
-#: src/features/tickets-view.tsx:145
+#: src/features/tickets-view.tsx:146
 msgid "Filter by title, repo or id"
 msgstr "按标题、仓库或编号筛选"
 
-#: src/features/tickets-view.tsx:146
+#: src/features/tickets-view.tsx:147
 msgid "Filter tickets"
 msgstr "筛选工单"
 
@@ -581,7 +581,7 @@ msgstr "筛选工单"
 #~ msgid "Finished"
 #~ msgstr "已结束"
 
-#: src/features/console-sessions.tsx:150
+#: src/features/console-sessions.tsx:151
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
@@ -611,7 +611,7 @@ msgstr "收起初始消息"
 
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
-#: src/features/tickets-view.tsx:109
+#: src/features/tickets-view.tsx:110
 msgid "Host offline"
 msgstr "主机离线"
 
@@ -626,7 +626,7 @@ msgid "Host signals"
 msgstr "主机信号"
 
 #: src/features/console-activity.tsx:211
-#: src/features/tickets-view.tsx:110
+#: src/features/tickets-view.tsx:111
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
@@ -638,7 +638,7 @@ msgstr "主机上线于"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/console-sessions.tsx:144
+#: src/features/console-sessions.tsx:145
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
@@ -650,11 +650,11 @@ msgstr "图片"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
-#: src/features/tickets-view.tsx:73
+#: src/features/tickets-view.tsx:74
 msgid "in progress"
 msgstr "进行中"
 
-#: src/features/tickets-view.tsx:174
+#: src/features/tickets-view.tsx:175
 msgid "In progress {active}"
 msgstr "进行中 {active}"
 
@@ -758,7 +758,7 @@ msgid "Last turn"
 msgstr "最后一轮"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:190
+#: src/features/console-sessions.tsx:191
 msgid "Latest"
 msgstr "最近"
 
@@ -790,7 +790,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:376
+#: src/features/console-sessions.tsx:371
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -800,12 +800,12 @@ msgstr "加载更早"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:233
-#: src/features/console-sessions.tsx:376
+#: src/features/console-sessions.tsx:371
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:238
 #: src/features/session-list.tsx:171
-#: src/features/tickets-view.tsx:222
+#: src/features/tickets-view.tsx:231
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -925,7 +925,7 @@ msgstr "还没有写计划"
 msgid "No repositories in this workspace."
 msgstr "这个工作区里没有仓库。"
 
-#: src/features/tickets-view.tsx:269
+#: src/features/tickets-view.tsx:278
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -1002,7 +1002,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:455
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1153,7 +1153,7 @@ msgstr "原因"
 msgid "Recently active"
 msgstr "最近活跃"
 
-#: src/features/tickets-view.tsx:78
+#: src/features/tickets-view.tsx:79
 msgid "rejected"
 msgstr "已拒绝"
 
@@ -1313,7 +1313,7 @@ msgstr "运行结束"
 
 #: src/features/console-collab.tsx:449
 #: src/features/landing-example.tsx:50
-#: src/features/tickets-view.tsx:83
+#: src/features/tickets-view.tsx:84
 msgid "running"
 msgstr "运行中"
 
@@ -1471,7 +1471,7 @@ msgstr "会话"
 msgid "Settings"
 msgstr "我的"
 
-#: src/features/tickets-view.tsx:76
+#: src/features/tickets-view.tsx:77
 msgid "shipped"
 msgstr "已交付"
 
@@ -1503,7 +1503,7 @@ msgstr "套接字"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:447
+#: src/features/console-sessions.tsx:442
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -1532,7 +1532,7 @@ msgstr "状态"
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:120
 #: src/features/session-info.tsx:67
-#: src/features/tickets-view.tsx:169
+#: src/features/tickets-view.tsx:170
 msgid "Status"
 msgstr "状态"
 
@@ -1540,7 +1540,7 @@ msgstr "状态"
 msgid "Status updated"
 msgstr "状态更新于"
 
-#: src/features/tickets-view.tsx:72
+#: src/features/tickets-view.tsx:73
 msgid "submitted"
 msgstr "已提交"
 
@@ -1568,7 +1568,7 @@ msgstr "问答可点选项"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:324
+#: src/features/console-sessions.tsx:319
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1615,7 +1615,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:441
+#: src/features/console-sessions.tsx:436
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -1641,7 +1641,7 @@ msgstr "工单不可用"
 msgid "Tickets"
 msgstr "工单"
 
-#: src/features/tickets-view.tsx:270
+#: src/features/tickets-view.tsx:279
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -1713,7 +1713,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/console-sessions.tsx:142
+#: src/features/console-sessions.tsx:143
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
@@ -1741,11 +1741,11 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
-#: src/features/console-sessions.tsx:263
+#: src/features/console-sessions.tsx:264
 msgid "Up to date, {at}"
 msgstr "已同步到最新，{at}"
 
-#: src/features/tickets-view.tsx:124
+#: src/features/tickets-view.tsx:125
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
@@ -1807,11 +1807,11 @@ msgstr "等待类型"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:148
+#: src/features/console-sessions.tsx:149
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/console-sessions.tsx:140
+#: src/features/console-sessions.tsx:141
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
@@ -1819,11 +1819,11 @@ msgstr "在等你确认"
 msgid "Waiting on human"
 msgstr "等人处理"
 
-#: src/features/tickets-view.tsx:75
+#: src/features/tickets-view.tsx:76
 msgid "waiting on target"
 msgstr "等对方"
 
-#: src/features/tickets-view.tsx:74
+#: src/features/tickets-view.tsx:75
 msgid "waiting on you"
 msgstr "等你回复"
 
@@ -1831,7 +1831,7 @@ msgstr "等你回复"
 msgid "Waiting on you"
 msgstr "等你处理"
 
-#: src/features/tickets-view.tsx:175
+#: src/features/tickets-view.tsx:176
 msgid "Waiting on you {mine}"
 msgstr "等你 {mine}"
 
@@ -1903,7 +1903,7 @@ msgstr "工作台"
 msgid "Worker requests"
 msgstr "Worker 请求"
 
-#: src/features/console-sessions.tsx:146
+#: src/features/console-sessions.tsx:147
 msgid "working"
 msgstr "运行中"
 
@@ -1928,7 +1928,7 @@ msgstr "工作树"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:322
+#: src/features/console-sessions.tsx:317
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

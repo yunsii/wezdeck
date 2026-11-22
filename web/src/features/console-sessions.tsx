@@ -4,13 +4,14 @@
 // (remote_session.go); the page explains them before the user hits them.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
+import { useGoBack } from '#/lib/go-back'
 import { remoteLink } from '#/lib/remote-link'
 import { useScreenWakeLock } from '#/lib/wake-lock'
 import { useDeviceState } from './device-state'
@@ -267,8 +268,6 @@ function SyncStatus({
 
 function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
-  const router = useRouter()
-  const navigate = useNavigate()
   const { locale } = useLocale()
   const device = useDeviceState()
   const [limit, setLimit] = useState(60)
@@ -306,14 +305,10 @@ function SessionDetail({ id }: { id: string }) {
   const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
   // the phone often sits on the desk following the agent: keep it awake
   useScreenWakeLock(true)
-  const back = () => {
-    if (window.history.length > 1) router.history.back()
-    else
-      void navigate({
-        to: '/{-$locale}/console/sessions',
-        params: { locale: locale === 'en' ? undefined : locale },
-      })
-  }
+  const back = useGoBack({
+    to: '/{-$locale}/console/sessions',
+    params: { locale: locale === 'en' ? undefined : locale },
+  })
   const elicitation = data?.elicitation
   const asking = Boolean(elicitation && elicitation.questions.length > 0)
   const planReview = Boolean(data?.plan?.awaiting_approval)

@@ -51,11 +51,11 @@ msgstr "{runningCount} running"
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
-#: src/features/console-sessions.tsx:366
+#: src/features/console-sessions.tsx:361
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
-#: src/features/console-sessions.tsx:190
+#: src/features/console-sessions.tsx:191
 msgid "{unread} new"
 msgstr "{unread} new"
 
@@ -192,11 +192,11 @@ msgstr "Approve sends a, request changes sends s (then type notes below), quit s
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/tickets-view.tsx:301
+#: src/features/tickets-view.tsx:297
 msgid "Back"
 msgstr "Back"
 
-#: src/features/console-sessions.tsx:262
+#: src/features/console-sessions.tsx:263
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "Back on the page, fetching the latest (last {at})…"
 
@@ -234,7 +234,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:440
+#: src/features/console-sessions.tsx:435
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -305,7 +305,7 @@ msgid "Close VS Code window"
 msgstr "Close VS Code window"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:77
+#: src/features/tickets-view.tsx:78
 msgctxt "ticket status"
 msgid "closed"
 msgstr "closed"
@@ -319,7 +319,7 @@ msgstr "closed"
 #~ msgid "Collab"
 #~ msgstr "Collab"
 
-#: src/features/tickets-view.tsx:224
+#: src/features/tickets-view.tsx:233
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -327,8 +327,8 @@ msgstr "Collab data unavailable: {unavailable}"
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
-#: src/features/tickets-view.tsx:258
-#: src/features/tickets-view.tsx:361
+#: src/features/tickets-view.tsx:267
+#: src/features/tickets-view.tsx:357
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -434,7 +434,7 @@ msgstr "Dark"
 msgid "Dark theme"
 msgstr "Dark theme"
 
-#: src/features/tickets-view.tsx:124
+#: src/features/tickets-view.tsx:125
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
@@ -506,7 +506,7 @@ msgstr "Enable writing"
 msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
-#: src/features/tickets-view.tsx:176
+#: src/features/tickets-view.tsx:177
 msgid "Ended {ended}"
 msgstr "Ended {ended}"
 
@@ -557,7 +557,7 @@ msgstr "Example agent sessions"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/tickets-view.tsx:79
+#: src/features/tickets-view.tsx:80
 msgid "failed"
 msgstr "failed"
 
@@ -569,11 +569,11 @@ msgstr "failed"
 msgid "File"
 msgstr "File"
 
-#: src/features/tickets-view.tsx:145
+#: src/features/tickets-view.tsx:146
 msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
 
-#: src/features/tickets-view.tsx:146
+#: src/features/tickets-view.tsx:147
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
@@ -581,7 +581,7 @@ msgstr "Filter tickets"
 #~ msgid "Finished"
 #~ msgstr "Finished"
 
-#: src/features/console-sessions.tsx:150
+#: src/features/console-sessions.tsx:151
 msgid "finished its turn"
 msgstr "finished its turn"
 
@@ -611,7 +611,7 @@ msgstr "Hide initial prompt"
 
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
-#: src/features/tickets-view.tsx:109
+#: src/features/tickets-view.tsx:110
 msgid "Host offline"
 msgstr "Host offline"
 
@@ -626,7 +626,7 @@ msgid "Host signals"
 msgstr "Host signals"
 
 #: src/features/console-activity.tsx:211
-#: src/features/tickets-view.tsx:110
+#: src/features/tickets-view.tsx:111
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
@@ -638,7 +638,7 @@ msgstr "Host up since"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/console-sessions.tsx:144
+#: src/features/console-sessions.tsx:145
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
@@ -650,11 +650,11 @@ msgstr "Images"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
-#: src/features/tickets-view.tsx:73
+#: src/features/tickets-view.tsx:74
 msgid "in progress"
 msgstr "in progress"
 
-#: src/features/tickets-view.tsx:174
+#: src/features/tickets-view.tsx:175
 msgid "In progress {active}"
 msgstr "In progress {active}"
 
@@ -758,7 +758,7 @@ msgid "Last turn"
 msgstr "Last turn"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:190
+#: src/features/console-sessions.tsx:191
 msgid "Latest"
 msgstr "Latest"
 
@@ -790,7 +790,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:376
+#: src/features/console-sessions.tsx:371
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -800,12 +800,12 @@ msgstr "Load earlier"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:233
-#: src/features/console-sessions.tsx:376
+#: src/features/console-sessions.tsx:371
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:238
 #: src/features/session-list.tsx:171
-#: src/features/tickets-view.tsx:222
+#: src/features/tickets-view.tsx:231
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -925,7 +925,7 @@ msgstr "No plan written yet"
 msgid "No repositories in this workspace."
 msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:269
+#: src/features/tickets-view.tsx:278
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1002,7 +1002,7 @@ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, an
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:455
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1153,7 +1153,7 @@ msgstr "Reason"
 msgid "Recently active"
 msgstr "Recently active"
 
-#: src/features/tickets-view.tsx:78
+#: src/features/tickets-view.tsx:79
 msgid "rejected"
 msgstr "rejected"
 
@@ -1313,7 +1313,7 @@ msgstr "run finished"
 
 #: src/features/console-collab.tsx:449
 #: src/features/landing-example.tsx:50
-#: src/features/tickets-view.tsx:83
+#: src/features/tickets-view.tsx:84
 msgid "running"
 msgstr "running"
 
@@ -1471,7 +1471,7 @@ msgstr "Sessions"
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/tickets-view.tsx:76
+#: src/features/tickets-view.tsx:77
 msgid "shipped"
 msgstr "shipped"
 
@@ -1503,7 +1503,7 @@ msgstr "Socket"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:447
+#: src/features/console-sessions.tsx:442
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -1532,7 +1532,7 @@ msgstr "State"
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:120
 #: src/features/session-info.tsx:67
-#: src/features/tickets-view.tsx:169
+#: src/features/tickets-view.tsx:170
 msgid "Status"
 msgstr "Status"
 
@@ -1540,7 +1540,7 @@ msgstr "Status"
 msgid "Status updated"
 msgstr "Status updated"
 
-#: src/features/tickets-view.tsx:72
+#: src/features/tickets-view.tsx:73
 msgid "submitted"
 msgstr "submitted"
 
@@ -1568,7 +1568,7 @@ msgstr "Tappable Ask options"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:324
+#: src/features/console-sessions.tsx:319
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -1615,7 +1615,7 @@ msgstr "This computer (local Runtime)"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:441
+#: src/features/console-sessions.tsx:436
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -1641,7 +1641,7 @@ msgstr "Ticket unavailable"
 msgid "Tickets"
 msgstr "Tickets"
 
-#: src/features/tickets-view.tsx:270
+#: src/features/tickets-view.tsx:279
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -1713,7 +1713,7 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/console-sessions.tsx:142
+#: src/features/console-sessions.tsx:143
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "turn finished, {bg} background tasks running; you can send"
 
@@ -1741,11 +1741,11 @@ msgstr "Turns"
 msgid "Unavailable"
 msgstr "Unavailable"
 
-#: src/features/console-sessions.tsx:263
+#: src/features/console-sessions.tsx:264
 msgid "Up to date, {at}"
 msgstr "Up to date, {at}"
 
-#: src/features/tickets-view.tsx:124
+#: src/features/tickets-view.tsx:125
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
@@ -1807,11 +1807,11 @@ msgstr "Waiting for"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "Waiting for the host to approve this phone. On the host run:"
 
-#: src/features/console-sessions.tsx:148
+#: src/features/console-sessions.tsx:149
 msgid "waiting for you"
 msgstr "waiting for you"
 
-#: src/features/console-sessions.tsx:140
+#: src/features/console-sessions.tsx:141
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
@@ -1819,11 +1819,11 @@ msgstr "waiting for your confirmation"
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
-#: src/features/tickets-view.tsx:75
+#: src/features/tickets-view.tsx:76
 msgid "waiting on target"
 msgstr "waiting on target"
 
-#: src/features/tickets-view.tsx:74
+#: src/features/tickets-view.tsx:75
 msgid "waiting on you"
 msgstr "waiting on you"
 
@@ -1831,7 +1831,7 @@ msgstr "waiting on you"
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/tickets-view.tsx:175
+#: src/features/tickets-view.tsx:176
 msgid "Waiting on you {mine}"
 msgstr "Waiting on you {mine}"
 
@@ -1903,7 +1903,7 @@ msgstr "Workbench"
 msgid "Worker requests"
 msgstr "Worker requests"
 
-#: src/features/console-sessions.tsx:146
+#: src/features/console-sessions.tsx:147
 msgid "working"
 msgstr "working"
 
@@ -1928,7 +1928,7 @@ msgstr "Worktree"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/features/console-sessions.tsx:322
+#: src/features/console-sessions.tsx:317
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "Writing is not enabled on this phone yet (Settings › Phone writing)."

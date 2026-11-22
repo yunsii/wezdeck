@@ -6,13 +6,14 @@
 // All sections share one "all tickets" read and filter on the client, so
 // switching tabs costs no request and the status keys can show counts.
 import { useLingui } from '@lingui/react/macro'
-import { useNavigate, useParams, useRouter } from '@tanstack/react-router'
+import { useNavigate, useParams } from '@tanstack/react-router'
 import { ChevronLeft, Search } from 'lucide-react'
 import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import type { LedTone } from '#/components/deck/led'
+import { useGoBack } from '#/lib/go-back'
 import { useCollab } from '#/lib/collab-query'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
@@ -194,9 +195,17 @@ export function TicketsView({
   const { t } = useLingui()
   const { id } = useParams({ strict: false })
   const navigate = useNavigate()
-  const router = useRouter()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
+  // opened from the list → back like a native page; opened directly (a
+  // notification / shared link) → the list, without a history entry
+  const back = useGoBack({
+    to:
+      base === 'inbox'
+        ? '/{-$locale}/console/inbox'
+        : '/{-$locale}/console/collab',
+    params: { locale: localeParam },
+  })
   const wide = useIsWide()
   const statusLabel = useStatusLabel()
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
@@ -277,19 +286,6 @@ export function TicketsView({
   }
 
   if (id) {
-    const back = () => {
-      // Opened from the list: go back like a native page. Opened from a
-      // notification / shared link (no history): go to the list instead.
-      if (window.history.length > 1) router.history.back()
-      else
-        void navigate({
-          to:
-            base === 'inbox'
-              ? '/{-$locale}/console/inbox'
-              : '/{-$locale}/console/collab',
-          params: { locale: localeParam },
-        })
-    }
     return (
       <div className="grid content-start gap-3">
         <button
