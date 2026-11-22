@@ -390,14 +390,14 @@ type elicitOption struct {
 }
 
 type elicitQuestion struct {
-	Question    string          `json:"question"`
-	Options     []elicitOption  `json:"options"`
-	MultiSelect bool            `json:"multi_select,omitempty"`
+	Question    string         `json:"question"`
+	Options     []elicitOption `json:"options"`
+	MultiSelect bool           `json:"multi_select,omitempty"`
 }
 
 type elicitation struct {
-	ToolCallID string            `json:"tool_call_id,omitempty"`
-	Questions  []elicitQuestion  `json:"questions"`
+	ToolCallID string           `json:"tool_call_id,omitempty"`
+	Questions  []elicitQuestion `json:"questions"`
 }
 
 // readTailFile reads the last window bytes of path (for huge updates.jsonl).
@@ -636,7 +636,11 @@ func listSessions() (any, error) {
 			card.Agent = agent
 			card.Transcript = true
 			card.Title = readSessionTitle(path, agent)
-			if info, err := os.Stat(path); err == nil {
+			// the newest turn's own timestamp; mtime only for formats
+			// without one (remote_activity.go: Claude touches idle files)
+			if at := lastTurnAt(path, agent); at > 0 {
+				card.TS = at
+			} else if info, err := os.Stat(path); err == nil {
 				card.TS = info.ModTime().UnixMilli()
 			}
 		} else if act := windowActivity(e); act > card.TS {
