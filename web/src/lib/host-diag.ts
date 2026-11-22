@@ -51,13 +51,21 @@ function findTarget(step: Step): HTMLElement | null {
     }
   }
   if (!step.text) return null
-  const candidates = document.querySelectorAll<HTMLElement>(
-    'a, button, summary, [role=button], [role=tab]',
+  const want = step.text
+  const visible = [
+    ...document.querySelectorAll<HTMLElement>(
+      'a, button, summary, [role=button], [role=tab]',
+    ),
+  ].filter((el) => el.offsetParent !== null)
+  // exact text first (「工单」 must not hit 「工单动态」), then the shortest match
+  return (
+    visible.find((el) => el.textContent.trim() === want) ??
+    visible
+      .filter((el) => el.textContent.includes(want))
+      .sort((x, y) => x.textContent.length - y.textContent.length)
+      .at(0) ??
+    null
   )
-  for (const el of candidates)
-    if (el.offsetParent !== null && el.textContent.trim().includes(step.text))
-      return el
-  return null
 }
 
 async function runStep(
