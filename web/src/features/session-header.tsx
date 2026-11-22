@@ -23,6 +23,15 @@ function SessionUsage({ usage }: { usage: Usage }) {
   const used = tokens(usage.context)
   const limit = tokens(usage.context_limit)
   const output = tokens(usage.output)
+  if (!usage.context_limit || !usage.context)
+    return usage.model ? (
+      <p
+        data-testid="session-usage"
+        className="rounded-[12px] bg-brand-surface px-3 py-2 text-[11px] text-brand-label"
+      >
+        {usage.model}
+      </p>
+    ) : null
   const tone =
     share >= 85
       ? 'bg-brand-error'

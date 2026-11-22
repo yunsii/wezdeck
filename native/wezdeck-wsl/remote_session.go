@@ -200,13 +200,32 @@ func deskActivity(e attentionEntry) int64 {
 	return newest
 }
 
-func claudeTranscript(sessionID string) string {
-	home, _ := os.UserHomeDir()
-	matches, _ := filepath.Glob(filepath.Join(home, ".claude", "projects", "*", sessionID+".jsonl"))
-	if len(matches) == 0 {
-		return ""
+// findTranscript locates a session's conversation file and its agent:
+// Claude ~/.claude/projects/*/<id>.jsonl, Grok
+// ~/.grok/sessions/*/<id>/chat_history.jsonl, Codex
+// ~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl.
+func findTranscript(sessionID string) (path, agent string) {
+	if !sessionIDPattern.MatchString(sessionID) {
+		return "", ""
 	}
-	return matches[0]
+	home, _ := os.UserHomeDir()
+	for _, c := range []struct{ agent, pattern string }{
+		{"claude", filepath.Join(home, ".claude", "projects", "*", sessionID+".jsonl")},
+		{"grok", filepath.Join(home, ".grok", "sessions", "*", sessionID, "chat_history.jsonl")},
+		{"codex", filepath.Join(home, ".codex", "sessions", "*", "*", "*", "rollout-*-"+sessionID+".jsonl")},
+	} {
+		if matches, _ := filepath.Glob(c.pattern); len(matches) > 0 {
+			return matches[0], c.agent
+		}
+	}
+	return "", ""
+}
+
+func claudeTranscript(sessionID string) string {
+	if path, agent := findTranscript(sessionID); agent == "claude" {
+		return path
+	}
+	return ""
 }
 
 type sessionCard struct {
@@ -246,13 +265,13 @@ func listSessions() (any, error) {
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
 			RunningKind: e.RunningKind, Background: backgroundOf(e)}
-		// Activity = when the conversation last moved. A Claude transcript is
-		// written only by real turns (messages, tool calls), so it alone is
-		// the clock; the status ts (bumped for background-only sessions) and
+		// Activity = when the conversation last moved. A transcript (Claude,
+		// Grok, Codex) is written only by real turns (messages, tool calls), so
+		// it alone is the clock; the status ts (bumped for background-only sessions) and
 		// tmux window_activity (any pane in the window, TUI redraws) would
 		// reorder idle sessions. Agents without a transcript fall back to them.
-		if path := claudeTranscript(e.SessionID); path != "" {
-			card.Agent = "claude"
+		if path, agent := findTranscript(e.SessionID); path != "" {
+			card.Agent = agent
 			card.Transcript = true
 			if info, err := os.Stat(path); err == nil {
 				card.TS = info.ModTime().UnixMilli()
@@ -304,27 +323,58 @@ func lineCount(s string) int {
 	return strings.Count(strings.TrimRight(s, "\n"), "\n") + 1
 }
 
-// toolStats: file and changed-line counts for Edit / MultiEdit / Write.
+func inputString(m map[string]any, keys ...string) string {
+	for _, k := range keys {
+		if v, ok := m[k].(string); ok && v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func toolFile(input map[string]any) string {
+	return inputString(input, "file_path", "target_file", "path", "filename")
+}
+
+func editPairs(input map[string]any) [][2]string {
+	if o, n := inputString(input, "old_string", "old_str"), inputString(input, "new_string", "new_str"); o != "" || n != "" {
+		return [][2]string{{o, n}}
+	}
+	var out [][2]string
+	edits, _ := input["edits"].([]any)
+	for _, e := range edits {
+		m, _ := e.(map[string]any)
+		out = append(out, [2]string{inputString(m, "old_string", "old_str"), inputString(m, "new_string", "new_str")})
+	}
+	return out
+}
+
+// writes: a whole-file write (Claude Write, Grok write/create_file, …).
+func writeContent(name string, input map[string]any) (string, bool) {
+	content := inputString(input, "content", "contents", "file_text")
+	lower := strings.ToLower(name)
+	if content == "" || toolFile(input) == "" || !(strings.Contains(lower, "write") || strings.Contains(lower, "create")) {
+		return "", false
+	}
+	return content, true
+}
+
+// toolStats: file and changed-line counts, judged by the input's shape so
+// Claude, Grok and Codex tools count alike (old/new strings = edit,
+// content + write/create = whole-file write).
 func toolStats(name string, input map[string]any) (file string, added, removed int) {
-	file, _ = input["file_path"].(string)
-	str := func(m map[string]any, key string) string { v, _ := m[key].(string); return v }
-	switch name {
-	case "Edit":
-		return file, lineCount(str(input, "new_string")), lineCount(str(input, "old_string"))
-	case "MultiEdit":
-		edits, _ := input["edits"].([]any)
-		for _, e := range edits {
-			m, _ := e.(map[string]any)
-			added += lineCount(str(m, "new_string"))
-			removed += lineCount(str(m, "old_string"))
+	file = toolFile(input)
+	if pairs := editPairs(input); len(pairs) > 0 && file != "" {
+		for _, p := range pairs {
+			removed += lineCount(p[0])
+			added += lineCount(p[1])
 		}
 		return file, added, removed
-	case "Write":
-		return file, lineCount(str(input, "content")), 0
-	case "Read", "NotebookEdit":
-		return file, 0, 0
 	}
-	return "", 0, 0
+	if content, ok := writeContent(name, input); ok {
+		return file, lineCount(content), 0
+	}
+	return file, 0, 0
 }
 
 func clip(s string, n int) string {
@@ -345,7 +395,6 @@ func clipLines(s string, lines int) string {
 
 // toolBody: the part of a tool call a reviewer wants to see on a phone.
 func toolBody(name string, input map[string]any) string {
-	str := func(key string) string { v, _ := input[key].(string); return v }
 	diff := func(oldText, newText string) string {
 		var b strings.Builder
 		for _, l := range strings.Split(oldText, "\n") {
@@ -354,42 +403,45 @@ func toolBody(name string, input map[string]any) string {
 		for _, l := range strings.Split(newText, "\n") {
 			b.WriteString("+ " + l + "\n")
 		}
-		return clipLines(strings.TrimRight(b.String(), "\n"), 80)
+		return strings.TrimRight(b.String(), "\n")
 	}
-	switch name {
-	case "Edit":
-		return diff(str("old_string"), str("new_string"))
-	case "MultiEdit":
-		edits, _ := input["edits"].([]any)
+	if pairs := editPairs(input); len(pairs) > 0 {
 		var parts []string
-		for _, e := range edits {
-			m, _ := e.(map[string]any)
-			o, _ := m["old_string"].(string)
-			n, _ := m["new_string"].(string)
-			parts = append(parts, diff(o, n))
+		for _, p := range pairs {
+			parts = append(parts, diff(p[0], p[1]))
 		}
 		return clipLines(strings.Join(parts, "\n…\n"), 120)
-	case "Write":
-		return clipLines(str("content"), 40)
-	case "Bash":
-		return clip(str("command"), 2000)
+	}
+	if content, ok := writeContent(name, input); ok {
+		return clipLines(content, 40)
+	}
+	if cmd := inputString(input, "command", "cmd"); cmd != "" {
+		return clip(cmd, 2000)
+	}
+	if list, ok := input["command"].([]any); ok { // codex shell: ["bash","-lc","…"]
+		var words []string
+		for _, w := range list {
+			if v, ok := w.(string); ok {
+				words = append(words, v)
+			}
+		}
+		return clip(strings.Join(words, " "), 2000)
 	}
 	return ""
 }
 
 func toolSummary(name string, input map[string]any) string {
-	for _, key := range []string{"file_path", "description", "command", "pattern", "url", "prompt"} {
-		if v, ok := input[key].(string); ok && v != "" {
-			return clip(name+" "+v, 160)
-		}
+	if v := inputString(input, "file_path", "target_file", "path", "description", "command", "cmd", "pattern", "query", "url", "prompt"); v != "" {
+		return clip(name+" "+v, 160)
 	}
 	return name
 }
 
-// transcript: a Claude session file parsed incrementally — only bytes
+// transcript: a session file (Claude / Grok / Codex) parsed incrementally — only bytes
 // appended since the last read are parsed, so a 30 MB transcript is read
 // once and each poll costs the new lines.
 type transcript struct {
+	format   string // claude | grok | codex
 	offset   int64
 	size     int64
 	messages []chatMessage
@@ -419,7 +471,14 @@ func (t *transcript) feed(data []byte) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	scanner.Buffer(make([]byte, 1<<20), 64<<20)
 	for scanner.Scan() {
-		t.feedLine(scanner.Bytes())
+		switch t.format {
+		case "grok":
+			t.feedGrok(scanner.Bytes())
+		case "codex":
+			t.feedCodex(scanner.Bytes())
+		default:
+			t.feedLine(scanner.Bytes())
+		}
 	}
 }
 
@@ -562,9 +621,188 @@ func contextLimit(model string) int {
 	return 200000
 }
 
+func (t *transcript) addTool(id, name, argsJSON, ts string) {
+	var input map[string]any
+	if json.Unmarshal([]byte(argsJSON), &input) != nil {
+		input = map[string]any{"command": argsJSON}
+	}
+	file, added, removed := toolStats(name, input)
+	t.messages = append(t.messages, chatMessage{Role: "tool", Tool: name, Text: toolSummary(name, input),
+		Body: toolBody(name, input), TS: ts, File: file, Added: added, Removed: removed})
+	if id != "" {
+		t.tools[id] = len(t.messages) - 1
+	}
+}
+
+func (t *transcript) setResult(id, out string) {
+	if idx, ok := t.tools[id]; ok {
+		t.messages[idx].Result = clipLines(clip(out, 3000), 40)
+		delete(t.tools, id)
+	}
+}
+
+// userText: what the person typed; harness-injected context (<user_info>,
+// <system-reminder>…) is dropped, a <user_query> wrapper is unwrapped.
+func userText(text string) string {
+	if i := strings.Index(text, "<user_query>"); i >= 0 {
+		rest := text[i+len("<user_query>"):]
+		if j := strings.Index(rest, "</user_query>"); j >= 0 {
+			rest = rest[:j]
+		}
+		return strings.TrimSpace(rest)
+	}
+	if strings.HasPrefix(strings.TrimSpace(text), "<") {
+		return ""
+	}
+	return text
+}
+
+// feedGrok: ~/.grok/sessions/…/chat_history.jsonl lines
+// {type:user|assistant|tool_result|reasoning|system}.
+func (t *transcript) feedGrok(raw []byte) {
+	var line struct {
+		Type       string          `json:"type"`
+		Content    json.RawMessage `json:"content"`
+		ModelID    string          `json:"model_id"`
+		ToolCallID string          `json:"tool_call_id"`
+		ToolCalls  []struct {
+			ID        string `json:"id"`
+			Name      string `json:"name"`
+			Arguments string `json:"arguments"`
+		} `json:"tool_calls"`
+	}
+	if json.Unmarshal(raw, &line) != nil {
+		return
+	}
+	text := func() string {
+		var s string
+		if json.Unmarshal(line.Content, &s) == nil {
+			return s
+		}
+		var blocks []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		}
+		_ = json.Unmarshal(line.Content, &blocks)
+		var parts []string
+		for _, b := range blocks {
+			if b.Text != "" {
+				parts = append(parts, b.Text)
+			}
+		}
+		return strings.Join(parts, "\n")
+	}
+	switch line.Type {
+	case "user":
+		if u := userText(text()); u != "" {
+			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(u, 8000)})
+		}
+	case "assistant":
+		if line.ModelID != "" {
+			t.usage.Model = line.ModelID
+		}
+		t.usage.Turns++
+		if body := strings.TrimSpace(text()); body != "" {
+			t.messages = append(t.messages, chatMessage{Role: "assistant", Text: clip(body, 8000)})
+		}
+		for _, c := range line.ToolCalls {
+			t.addTool(c.ID, c.Name, c.Arguments, "")
+		}
+	case "tool_result":
+		t.setResult(line.ToolCallID, text())
+	}
+}
+
+// feedCodex: ~/.codex/sessions/…/rollout-*.jsonl lines
+// {type:response_item|event_msg|…, payload}.
+func (t *transcript) feedCodex(raw []byte) {
+	var line struct {
+		Type      string `json:"type"`
+		Timestamp string `json:"timestamp"`
+		Payload   struct {
+			Type    string `json:"type"`
+			Role    string `json:"role"`
+			Content []struct {
+				Type string `json:"type"`
+				Text string `json:"text"`
+			} `json:"content"`
+			Name      string          `json:"name"`
+			Arguments string          `json:"arguments"`
+			Input     string          `json:"input"`
+			CallID    string          `json:"call_id"`
+			Output    json.RawMessage `json:"output"`
+			Model     string          `json:"model"`
+			Settings  struct {
+				Model string `json:"model"`
+			} `json:"thread_settings"`
+			Info *struct {
+				Last struct {
+					Input  int `json:"input_tokens"`
+					Cached int `json:"cached_input_tokens"`
+					Output int `json:"output_tokens"`
+				} `json:"last_token_usage"`
+				Total struct {
+					Input  int `json:"input_tokens"`
+					Cached int `json:"cached_input_tokens"`
+					Output int `json:"output_tokens"`
+				} `json:"total_token_usage"`
+				Window int `json:"model_context_window"`
+			} `json:"info"`
+		} `json:"payload"`
+	}
+	if json.Unmarshal(raw, &line) != nil {
+		return
+	}
+	p := line.Payload
+	switch {
+	case line.Type == "response_item" && p.Type == "message" && (p.Role == "user" || p.Role == "assistant"):
+		var parts []string
+		for _, c := range p.Content {
+			if c.Text != "" {
+				parts = append(parts, c.Text)
+			}
+		}
+		text := strings.Join(parts, "\n")
+		if p.Role == "user" {
+			text = userText(text)
+		}
+		if strings.TrimSpace(text) != "" {
+			t.messages = append(t.messages, chatMessage{Role: p.Role, Text: clip(text, 8000), TS: line.Timestamp})
+		}
+	case line.Type == "response_item" && (p.Type == "function_call" || p.Type == "custom_tool_call"):
+		args := p.Arguments
+		if args == "" {
+			args = p.Input
+		}
+		t.addTool(p.CallID, p.Name, args, line.Timestamp)
+	case line.Type == "response_item" && (p.Type == "function_call_output" || p.Type == "custom_tool_call_output"):
+		var out string
+		if json.Unmarshal(p.Output, &out) != nil {
+			var obj struct {
+				Content string `json:"content"`
+				Output  string `json:"output"`
+			}
+			_ = json.Unmarshal(p.Output, &obj)
+			out = obj.Content + obj.Output
+		}
+		t.setResult(p.CallID, out)
+	case line.Type == "event_msg" && p.Type == "thread_settings_applied" && p.Settings.Model != "":
+		t.usage.Model = p.Settings.Model
+	case line.Type == "turn_context" && p.Model != "":
+		t.usage.Model = p.Model
+	case line.Type == "event_msg" && p.Type == "token_count" && p.Info != nil:
+		t.usage.Turns++
+		t.usage.Context = p.Info.Last.Input
+		t.usage.ContextLimit = p.Info.Window
+		t.usage.Output = p.Info.Total.Output
+		t.usage.CacheRead = p.Info.Total.Cached
+		t.usage.Input = p.Info.Total.Input - p.Info.Total.Cached
+	}
+}
+
 // loadTranscript returns the parsed transcript, reading only what was
 // appended since last time (a shrunk file is re-read from the start).
-func loadTranscript(path string) (*transcript, error) {
+func loadTranscript(path, format string) (*transcript, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -573,7 +811,7 @@ func loadTranscript(path string) (*transcript, error) {
 	defer transcriptsMu.Unlock()
 	t := transcripts[path]
 	if t == nil || info.Size() < t.size {
-		t = &transcript{tools: map[string]int{}}
+		t = &transcript{format: format, tools: map[string]int{}}
 		transcripts[path] = t
 	}
 	if info.Size() == t.offset {
@@ -602,7 +840,7 @@ func loadTranscript(path string) (*transcript, error) {
 
 // parseClaudeTranscript parses a whole transcript (tests and one-off use).
 func parseClaudeTranscript(data []byte, limit int) []chatMessage {
-	t := &transcript{tools: map[string]int{}}
+	t := &transcript{format: "claude", tools: map[string]int{}}
 	t.feed(data)
 	if len(t.messages) > limit {
 		return t.messages[len(t.messages)-limit:]
@@ -634,9 +872,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	}
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,
 		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent"}
-	if path := claudeTranscript(e.SessionID); path != "" {
-		out["agent"] = "claude"
-		t, err := loadTranscript(path)
+	if path, agent := findTranscript(e.SessionID); path != "" {
+		out["agent"] = agent
+		t, err := loadTranscript(path, agent)
 		if err != nil {
 			return nil, err
 		}
@@ -651,7 +889,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		out["total"] = total
 		out["start"] = start
 		usage := t.usage
-		usage.ContextLimit = contextLimit(usage.Model)
+		if usage.ContextLimit == 0 {
+			usage.ContextLimit = contextLimit(usage.Model)
+		}
 		out["usage"] = usage
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()

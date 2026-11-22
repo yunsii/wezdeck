@@ -137,7 +137,7 @@ msgstr "Back"
 msgid "Backend"
 msgstr "Backend"
 
-#: src/features/session-header.tsx:95
+#: src/features/session-header.tsx:104
 msgid "Background tasks"
 msgstr "Background tasks"
 
@@ -160,7 +160,7 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:55
+#: src/features/session-header.tsx:64
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -289,7 +289,7 @@ msgstr "Connection details"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/session-header.tsx:39
+#: src/features/session-header.tsx:48
 msgid "Context {used} / {limit}"
 msgstr "Context {used} / {limit}"
 
@@ -621,7 +621,7 @@ msgstr "Load earlier"
 #: src/features/console-sessions.tsx:144
 #: src/features/console-sessions.tsx:350
 #: src/features/console-shared.tsx:211
-#: src/features/session-header.tsx:90
+#: src/features/session-header.tsx:99
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
 msgstr "Loading…"
@@ -809,7 +809,7 @@ msgstr "Optional browser companion"
 msgid "Origin session"
 msgstr "Origin session"
 
-#: src/features/session-header.tsx:54
+#: src/features/session-header.tsx:63
 msgid "output {output}"
 msgstr "output {output}"
 
@@ -1105,7 +1105,7 @@ msgstr "Sessions"
 
 #: src/features/console-sessions.tsx:129
 #: src/features/console-shell.tsx:129
-#: src/features/session-header.tsx:79
+#: src/features/session-header.tsx:88
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"

@@ -271,7 +271,7 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 		`{"type":"assistant","message":{"id":"m1","model":"claude-x","usage":{"input_tokens":5,"cache_creation_input_tokens":100,"cache_read_input_tokens":900,"output_tokens":40},"content":[{"type":"text","text":""}]}}`,
 		`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":"The file a.md has been updated."}]}}`,
 	)
-	tr, err := loadTranscript(path)
+	tr, err := loadTranscript(path, "claude")
 	if err != nil || len(tr.messages) != 2 {
 		t.Fatalf("first read: %v %+v", err, tr)
 	}
@@ -285,7 +285,7 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	}
 	offset := tr.offset
 	write(`{"type":"assistant","message":{"content":[{"type":"text","text":"改好了"}]}}`)
-	tr, _ = loadTranscript(path)
+	tr, _ = loadTranscript(path, "claude")
 	if len(tr.messages) != 3 || tr.messages[2].Text != "改好了" || tr.offset <= offset {
 		t.Fatalf("incremental read: %+v", tr.messages)
 	}
@@ -293,8 +293,59 @@ func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	f, _ := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o600)
 	_, _ = f.WriteString(`{"type":"user","message":{"content":"半`)
 	f.Close()
-	tr, _ = loadTranscript(path)
+	tr, _ = loadTranscript(path, "claude")
 	if len(tr.messages) != 3 {
 		t.Fatalf("partial line must wait: %d", len(tr.messages))
+	}
+}
+
+func TestGrokAndCodexTranscriptsParseAlike(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	grokDir := filepath.Join(home, ".grok", "sessions", "%2Fwork", "grok-1")
+	_ = os.MkdirAll(grokDir, 0o755)
+	_ = os.WriteFile(filepath.Join(grokDir, "chat_history.jsonl"), []byte(strings.Join([]string{
+		`{"type":"system","content":"You are Grok"}`,
+		`{"type":"user","content":[{"type":"text","text":"<user_info>x</user_info>\n<user_query>修一下按钮</user_query>"}]}`,
+		`{"type":"reasoning","summary":[]}`,
+		`{"type":"assistant","model_id":"grok-4.5","content":"好的","tool_calls":[{"id":"c1","name":"search_replace","arguments":"{\"file_path\":\"b.tsx\",\"old_string\":\"a\",\"new_string\":\"b\\nc\"}"}]}`,
+		`{"type":"tool_result","tool_call_id":"c1","content":"ok"}`,
+	}, "\n")+"\n"), 0o600)
+	codexDir := filepath.Join(home, ".codex", "sessions", "2026", "11", "22")
+	_ = os.MkdirAll(codexDir, 0o755)
+	_ = os.WriteFile(filepath.Join(codexDir, "rollout-2026-11-22T00-00-00-codex-1.jsonl"), []byte(strings.Join([]string{
+		`{"type":"event_msg","payload":{"type":"thread_settings_applied","thread_settings":{"model":"gpt-5.5"}}}`,
+		`{"type":"response_item","payload":{"type":"message","role":"developer","content":[{"type":"input_text","text":"rules"}]}}`,
+		`{"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"跑测试"}]}}`,
+		`{"type":"response_item","payload":{"type":"function_call","name":"shell","arguments":"{\"command\":[\"bash\",\"-lc\",\"go test ./...\"]}","call_id":"k1"}}`,
+		`{"type":"response_item","payload":{"type":"function_call_output","call_id":"k1","output":"ok"}}`,
+		`{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"通过了"}]}}`,
+		`{"type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":5000},"total_token_usage":{"input_tokens":9000,"cached_input_tokens":4000,"output_tokens":300},"model_context_window":272000}}}`,
+	}, "\n")+"\n"), 0o600)
+
+	path, agent := findTranscript("grok-1")
+	if agent != "grok" {
+		t.Fatalf("grok not found: %q %q", path, agent)
+	}
+	g, err := loadTranscript(path, agent)
+	if err != nil || len(g.messages) != 3 || g.messages[0].Text != "修一下按钮" || g.usage.Model != "grok-4.5" {
+		t.Fatalf("grok: %v %+v %+v", err, g.messages, g.usage)
+	}
+	if tool := g.messages[2]; tool.File != "b.tsx" || tool.Added != 2 || tool.Removed != 1 || tool.Result != "ok" {
+		t.Fatalf("grok tool: %+v", tool)
+	}
+	path, agent = findTranscript("codex-1")
+	if agent != "codex" {
+		t.Fatalf("codex not found: %q %q", path, agent)
+	}
+	c, err := loadTranscript(path, agent)
+	if err != nil || len(c.messages) != 3 || c.messages[0].Text != "跑测试" || c.messages[2].Text != "通过了" {
+		t.Fatalf("codex: %v %+v", err, c.messages)
+	}
+	if tool := c.messages[1]; tool.Body != "bash -lc go test ./..." || tool.Result != "ok" {
+		t.Fatalf("codex tool: %+v", tool)
+	}
+	if u := c.usage; u.Model != "gpt-5.5" || u.Context != 5000 || u.ContextLimit != 272000 || u.Output != 300 || u.CacheRead != 4000 {
+		t.Fatalf("codex usage: %+v", u)
 	}
 }

@@ -137,7 +137,7 @@ msgstr "返回"
 msgid "Backend"
 msgstr "后端"
 
-#: src/features/session-header.tsx:95
+#: src/features/session-header.tsx:104
 msgid "Background tasks"
 msgstr "后台任务"
 
@@ -160,7 +160,7 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:55
+#: src/features/session-header.tsx:64
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -289,7 +289,7 @@ msgstr "连接详情"
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/session-header.tsx:39
+#: src/features/session-header.tsx:48
 msgid "Context {used} / {limit}"
 msgstr "上下文 {used} / {limit}"
 
@@ -621,7 +621,7 @@ msgstr "加载更早"
 #: src/features/console-sessions.tsx:144
 #: src/features/console-sessions.tsx:350
 #: src/features/console-shared.tsx:211
-#: src/features/session-header.tsx:90
+#: src/features/session-header.tsx:99
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
 msgstr "加载中…"
@@ -809,7 +809,7 @@ msgstr "可选的浏览器伴侣"
 msgid "Origin session"
 msgstr "发起会话"
 
-#: src/features/session-header.tsx:54
+#: src/features/session-header.tsx:63
 msgid "output {output}"
 msgstr "输出 {output}"
 
@@ -1105,7 +1105,7 @@ msgstr "会话数"
 
 #: src/features/console-sessions.tsx:129
 #: src/features/console-shell.tsx:129
-#: src/features/session-header.tsx:79
+#: src/features/session-header.tsx:88
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
