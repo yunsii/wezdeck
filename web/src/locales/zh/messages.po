@@ -7,23 +7,23 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/session-composer.tsx:95
+#: src/features/session-composer.tsx:165
 msgid ", "
 msgstr "、"
 
-#: src/features/chat-thread.tsx:464
+#: src/features/chat-thread.tsx:472
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:93
+#: src/features/session-composer.tsx:163
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/chat-thread.tsx:463
+#: src/features/chat-thread.tsx:471
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
 
-#: src/features/chat-thread.tsx:245
+#: src/features/chat-thread.tsx:252
 msgid "{count} tool calls"
 msgstr "共 {count} 次工具调用"
 
@@ -39,11 +39,11 @@ msgstr "{needCount} 张工单等你处理，{runCount} 个任务正在运行"
 msgid "{runningCount} running"
 msgstr "{runningCount} 个运行中"
 
-#: src/features/console-sessions.tsx:407
+#: src/features/console-sessions.tsx:382
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/console-sessions.tsx:221
+#: src/features/console-sessions.tsx:222
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -80,7 +80,7 @@ msgstr "重启后回到同一个 Agent 会话，继续手头的工作。"
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:150
+#: src/features/console-sessions.tsx:151
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -88,7 +88,7 @@ msgstr "Agent 会话"
 msgid "Agents"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:134
+#: src/features/console-sessions.tsx:135
 msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 msgstr "主机上 tmux 里正在跑的 Agent。点进去可以查看对话，也可以给它发消息。"
 
@@ -137,7 +137,7 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
-#: src/features/session-composer.tsx:138
+#: src/features/session-composer.tsx:208
 msgid "Attachments"
 msgstr "附件"
 
@@ -145,7 +145,7 @@ msgstr "附件"
 msgid "Back"
 msgstr "返回"
 
-#: src/features/console-sessions.tsx:293
+#: src/features/console-sessions.tsx:294
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 
@@ -180,7 +180,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:481
+#: src/features/console-sessions.tsx:456
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -197,7 +197,7 @@ msgstr "分类"
 msgid "challenged"
 msgstr "质疑"
 
-#: src/features/chat-thread.tsx:242
+#: src/features/chat-thread.tsx:249
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
@@ -313,9 +313,21 @@ msgstr "上下文 {used} / {limit}"
 msgid "Control"
 msgstr "控制"
 
+#: src/features/session-composer.tsx:85
+msgid "Copied"
+msgstr "已复制"
+
+#: src/features/session-composer.tsx:85
+msgid "Copy"
+msgstr "复制"
+
 #: src/features/console-me.tsx:144
 msgid "Copy command"
 msgstr "复制命令"
+
+#: src/features/session-composer.tsx:77
+msgid "Copy error"
+msgstr "复制错误信息"
 
 #: src/features/console-collab.tsx:121
 #: src/features/console-collab.tsx:283
@@ -364,13 +376,13 @@ msgstr "依赖"
 msgid "Development"
 msgstr "开发"
 
-#: src/features/session-composer.tsx:93
+#: src/features/session-composer.tsx:163
 msgid "diagnostics"
 msgstr "诊断数据"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:176
+#: src/features/session-composer.tsx:246
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -411,7 +423,7 @@ msgstr "端点"
 msgid "English"
 msgstr "English"
 
-#: src/features/console-sessions.tsx:440
+#: src/features/console-sessions.tsx:415
 msgid "Enter"
 msgstr "回车"
 
@@ -423,7 +435,7 @@ msgstr "进入 Runtime 控制台"
 msgid "Entries"
 msgstr "条目"
 
-#: src/features/console-sessions.tsx:441
+#: src/features/console-sessions.tsx:416
 msgid "Esc"
 msgstr "Esc"
 
@@ -464,7 +476,7 @@ msgstr "筛选工单"
 #~ msgid "Finished"
 #~ msgstr "已结束"
 
-#: src/features/console-sessions.tsx:97
+#: src/features/console-sessions.tsx:98
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
@@ -509,11 +521,11 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-sessions.tsx:91
+#: src/features/console-sessions.tsx:92
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
-#: src/features/session-composer.tsx:150
+#: src/features/session-composer.tsx:220
 msgid "Images"
 msgstr "图片"
 
@@ -575,6 +587,10 @@ msgstr "已请求跳转"
 msgid "Jump to pane"
 msgstr "跳到窗格"
 
+#: src/features/chat-sticky.tsx:99
+msgid "Jump to your message: {text}"
+msgstr "跳到你的消息：{text}"
+
 #: src/features/landing-page.tsx:103
 msgid "Keep every agent in a place you can return to."
 msgstr "每个 Agent 都待在你能回去的位置。"
@@ -605,7 +621,7 @@ msgid "Last sample"
 msgstr "最近采样"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:221
+#: src/features/console-sessions.tsx:222
 msgid "Latest"
 msgstr "最近"
 
@@ -633,7 +649,7 @@ msgstr "亮色主题"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:417
+#: src/features/console-sessions.tsx:392
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -643,8 +659,8 @@ msgstr "加载更早"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:136
-#: src/features/console-sessions.tsx:146
-#: src/features/console-sessions.tsx:417
+#: src/features/console-sessions.tsx:147
+#: src/features/console-sessions.tsx:392
 #: src/features/console-shared.tsx:211
 #: src/features/session-header.tsx:99
 #: src/features/tickets-view.tsx:222
@@ -663,11 +679,11 @@ msgstr "日志流"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:233
+#: src/features/session-composer.tsx:303
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:221
+#: src/features/session-composer.tsx:291
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -707,7 +723,7 @@ msgstr "没有活动 Agent 会话"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/console-sessions.tsx:146
+#: src/features/console-sessions.tsx:147
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -802,7 +818,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:499
+#: src/features/console-sessions.tsx:476
 msgid "Open settings"
 msgstr "去设置"
 
@@ -883,15 +899,15 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/chat-thread.tsx:460
+#: src/features/chat-thread.tsx:468
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/chat-thread.tsx:243
+#: src/features/chat-thread.tsx:250
 msgid "ran {commands} commands"
 msgstr "运行 {commands} 条命令"
 
-#: src/features/chat-thread.tsx:244
+#: src/features/chat-thread.tsx:251
 msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
@@ -923,7 +939,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:187
+#: src/features/session-composer.tsx:257
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -963,7 +979,7 @@ msgstr "请求数（WebRTC / 中转）"
 msgid "research done"
 msgstr "调研完成"
 
-#: src/features/chat-thread.tsx:218
+#: src/features/chat-thread.tsx:225
 msgid "Result"
 msgstr "结果"
 
@@ -1090,7 +1106,7 @@ msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-composer.tsx:166
+#: src/features/session-composer.tsx:236
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
@@ -1110,11 +1126,11 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:238
+#: src/features/session-composer.tsx:308
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:133
+#: src/features/session-composer.tsx:203
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
 
@@ -1140,7 +1156,7 @@ msgstr "会话开始"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-sessions.tsx:131
+#: src/features/console-sessions.tsx:132
 #: src/features/console-shell.tsx:130
 #: src/features/session-header.tsx:88
 msgctxt "nav"
@@ -1184,6 +1200,10 @@ msgstr "跳到内容"
 msgid "Socket"
 msgstr "套接字"
 
+#: src/features/console-sessions.tsx:463
+msgid "Someone just used the desk; sending in {retryIn}s…"
+msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
+
 #: src/features/console-collab-run.tsx:89
 msgid "Source"
 msgstr "来源"
@@ -1212,11 +1232,11 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/console-sessions.tsx:431
+#: src/features/console-sessions.tsx:406
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:352
+#: src/features/console-sessions.tsx:351
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1224,7 +1244,7 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/chat-thread.tsx:372
+#: src/features/chat-thread.tsx:379
 msgid "The agent is working"
 msgstr "Agent 正在处理"
 
@@ -1259,7 +1279,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:482
+#: src/features/console-sessions.tsx:457
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -1329,7 +1349,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/console-sessions.tsx:89
+#: src/features/console-sessions.tsx:90
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
@@ -1357,7 +1377,7 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
-#: src/features/console-sessions.tsx:294
+#: src/features/console-sessions.tsx:295
 msgid "Up to date, {at}"
 msgstr "已同步到最新，{at}"
 
@@ -1365,8 +1385,8 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:72
-#: src/features/session-composer.tsx:83
+#: src/features/session-composer.tsx:142
+#: src/features/session-composer.tsx:153
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
@@ -1410,11 +1430,11 @@ msgstr "等待中"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:95
+#: src/features/console-sessions.tsx:96
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/console-sessions.tsx:87
+#: src/features/console-sessions.tsx:88
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
@@ -1494,7 +1514,7 @@ msgstr "work"
 msgid "Workbench"
 msgstr "工作台"
 
-#: src/features/console-sessions.tsx:93
+#: src/features/console-sessions.tsx:94
 msgid "working"
 msgstr "运行中"
 
@@ -1522,7 +1542,7 @@ msgstr "工作区迁移"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:350
+#: src/features/console-sessions.tsx:349
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

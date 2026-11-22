@@ -103,6 +103,14 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await page.locator('[data-session=demo-session]').click()
     await page.waitForURL('**/console/sessions/demo-session')
     const box = page.getByLabel('发给 Agent 的消息')
+    // an unsent draft survives leaving the page
+    await box.fill('还没发的草稿')
+    await page.reload()
+    await expect
+      .poll(() => page.getByLabel('发给 Agent 的消息').inputValue(), {
+        timeout: 15_000,
+      })
+      .toBe('还没发的草稿')
     await box.fill('来自手机的消息')
     await page.getByRole('button', { name: '发送' }).click()
     await page.getByText(/条已送达/).waitFor({ timeout: 15_000 })

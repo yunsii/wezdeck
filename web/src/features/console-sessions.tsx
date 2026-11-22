@@ -17,9 +17,10 @@ import { useAgo } from './tickets-view'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
 import { ChatThread, SendQueue, settle } from './chat-thread'
-import { ComposerBox, useComposer } from './session-composer'
-import type { Outgoing } from './session-composer'
-import type { Message, Pending } from './chat-thread'
+import { StickyPrompt } from './chat-sticky'
+import { ComposerBox, ErrorLine, useComposer } from './session-composer'
+import { useSessionWrites } from './session-send'
+import type { Message } from './chat-thread'
 
 export type SessionCard = {
   id: string
@@ -301,7 +302,6 @@ function SessionDetail({ id }: { id: string }) {
   const router = useRouter()
   const navigate = useNavigate()
   const { locale } = useLocale()
-  const client = useQueryClient()
   const device = useDeviceState()
   const [limit, setLimit] = useState(60)
   const detail = useQuery({
@@ -313,9 +313,8 @@ function SessionDetail({ id }: { id: string }) {
     queryFn: async () =>
       (await remoteLink.rpc('session', { id, limit })) as Detail,
   })
-  const [pendingRaw, setPending] = useState<Array<Pending>>([])
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
+  const { sending, error, setError, retryIn, pendingRaw, send, run } =
+    useSessionWrites(id)
   const end = useRef<HTMLDivElement>(null)
   const data = detail.data
   const messages: Array<Message> = data?.messages ?? []
@@ -351,33 +350,8 @@ function SessionDetail({ id }: { id: string }) {
       : data?.waiting_kind
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''
-  const run = async (action: 'send' | 'key', args: Record<string, unknown>) => {
-    setSending(true)
-    setError('')
-    try {
-      await remoteLink.write(action, { id, ...args })
-      await client.invalidateQueries({ queryKey: ['remote', 'session', id] })
-      return true
-    } catch (e) {
-      setError((e as Error).message)
-      return false
-    } finally {
-      setSending(false)
-    }
-  }
-  const send = async (message: Outgoing) => {
-    const ok = await run('send', {
-      text: message.text,
-      attachments: message.attachments,
-    })
-    if (ok)
-      setPending((items) => [
-        ...items,
-        { text: message.text, note: message.note, at: Date.now() },
-      ])
-    return ok
-  }
   const composer = useComposer({
+    id,
     onSend: send,
     diagnostics: () => ({
       session: { id, agent: data?.agent, status: data?.status, busy },
@@ -402,6 +376,7 @@ function SessionDetail({ id }: { id: string }) {
         ) : null}
         {messages.length || pending.length ? (
           <>
+            <StickyPrompt end={end} messages={messages} start={start} />
             {total > 0 ? (
               <div className="flex items-center justify-between gap-2 px-1 text-[12px] text-brand-label">
                 <span>{t`${total} messages, showing ${shown}`}</span>
@@ -483,10 +458,12 @@ function SessionDetail({ id }: { id: string }) {
           </p>
         ) : null}
         <SendQueue pending={pending} busy={busy} />
-        {error ? (
-          <p role="alert" className="text-xs text-brand-error">
-            {error}
+        {retryIn ? (
+          <p role="status" className="text-xs text-brand-muted">
+            {t`Someone just used the desk; sending in ${retryIn}s…`}
           </p>
+        ) : error ? (
+          <ErrorLine message={error} />
         ) : blocked ? (
           <p className="text-xs text-brand-muted">
             {blocked}{' '}

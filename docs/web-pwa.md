@@ -121,7 +121,15 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   the client diagnostics snapshot and screenshots (what a tool opens
   renders above the row); the composer is set off from the thread by a
   full-width hairline and an upward shadow, and the chat page uses 10 px
-  side gutters (other pages 16 px)
+  side gutters (other pages 16 px). Reading back, the user's message that
+  owns the content at the top of the screen pins there as one truncated
+  line once it has scrolled out (`chat-sticky.tsx`, zero-height sticky box
+  so it never moves the thread); tapping it glides back to that message,
+  shown in full with a short highlight (`chat-jump-prompt` trace). Unsent
+  composer text is kept per session in `localStorage`
+  (`wezdeck.draft.<id>`, cleared on a successful send); errors have a
+  one-tap copy; a "desk was just used" refusal counts down and resends
+  (`session-send.ts`)
   ([`remote-access.md` Attachments](remote-access.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
   that padding the moment a drag starts. Back from the background the page

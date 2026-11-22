@@ -26,6 +26,9 @@ export type Pending = { text: string; at: number; note?: string }
 /** First line of the note the host appends for phone attachments (remote_upload.go). */
 const ATTACHMENT_MARK = '[手机附件]'
 
+/** What the user typed, without the host's attachment note. */
+export const typedText = (text: string) => splitAttachments(text).typed
+
 /** Split a sent message into what was typed and its attachment lines. */
 function splitAttachments(text: string) {
   const at = text.indexOf(ATTACHMENT_MARK)
@@ -128,11 +131,14 @@ function useStream(text: string, active: boolean, onDone?: () => void) {
 
 function Bubble({
   message,
+  at,
   fresh,
   stream,
   onShown,
 }: {
   message: Message
+  /** absolute transcript index; marks the user's messages for StickyPrompt */
+  at: number
   fresh: boolean
   /** this is the reply being streamed in right now */
   stream: boolean
@@ -152,6 +158,7 @@ function Bubble({
       )}
     >
       <div
+        data-user-at={mine ? at : undefined}
         className={cn(
           'max-w-[88%] min-w-0 rounded-[18px] px-3.5 py-2.5',
           mine
@@ -434,6 +441,7 @@ export function ChatThread({
           <Bubble
             key={`m${at}`}
             message={item.message}
+            at={at}
             fresh={isFresh(item.index)}
             stream={stream}
             onShown={stream ? () => advance(at + 1) : undefined}

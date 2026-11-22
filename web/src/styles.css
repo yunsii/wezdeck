@@ -1071,6 +1071,31 @@ html[data-theme='dark'] [data-deck] {
   animation: chat-in 180ms ease-out;
 }
 
+/* Jumped-to message (sticky prompt): a ring that fades out. */
+@keyframes chat-flash {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  25% {
+    box-shadow: 0 0 0 3px var(--brand-running);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.chat-flash {
+  animation: chat-flash 1.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-flash {
+    animation: none;
+    outline: 2px solid var(--brand-running);
+    outline-offset: 2px;
+  }
+}
+
 /* Streaming reply: each new word (Streamdown's animate plugin) rises out of
    a light blur instead of popping in; overrides the package's sd-blurIn. */
 @keyframes sd-blurIn {

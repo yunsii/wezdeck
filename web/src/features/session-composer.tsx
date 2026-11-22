@@ -3,7 +3,14 @@
 // (lib/client-trace.ts); thumbnails sit in the same row. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
-import { Activity, ImagePlus, SendHorizontal, X } from 'lucide-react'
+import {
+  Activity,
+  Check,
+  Copy,
+  ImagePlus,
+  SendHorizontal,
+  X,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { diagnosticsSnapshot } from '#/lib/client-trace'
@@ -21,16 +28,79 @@ export type Outgoing = {
   note: string
 }
 
+const draftKey = (id: string) => `wezdeck.draft.${id}`
+
+/** Unsent text survives leaving the page (per session, this browser only). */
+function useDraft(id: string) {
+  const [text, setText] = useState('')
+  const loaded = useRef(false)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(draftKey(id))
+      if (saved) setText(saved)
+    } catch {
+      // storage blocked: drafts just don't persist
+    }
+    loaded.current = true
+  }, [id])
+  useEffect(() => {
+    if (!loaded.current) return
+    try {
+      if (text) localStorage.setItem(draftKey(id), text)
+      else localStorage.removeItem(draftKey(id))
+    } catch {
+      // storage blocked or full
+    }
+  }, [id, text])
+  return [text, setText] as const
+}
+
+/** An error line with a one-tap copy, for pasting it elsewhere. */
+export function ErrorLine({ message }: { message: string }) {
+  const { t } = useLingui()
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1_500)
+    } catch {
+      setCopied(false)
+    }
+  }
+  return (
+    <p role="alert" className="flex items-start gap-2 text-xs text-brand-error">
+      <span className="min-w-0 flex-1 break-words select-text">{message}</span>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        aria-label={t`Copy error`}
+        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 text-brand-muted"
+      >
+        {copied ? (
+          <Check size={12} aria-hidden />
+        ) : (
+          <Copy size={12} aria-hidden />
+        )}
+        {copied ? t`Copied` : t`Copy`}
+      </button>
+    </p>
+  )
+}
+
 export function useComposer({
+  id,
   onSend,
   diagnostics,
 }: {
+  /** session id: the unsent draft is kept per session */
+  id: string
   onSend: (message: Outgoing) => Promise<boolean>
   /** page state merged into the diagnostics snapshot */
   diagnostics: () => Record<string, unknown>
 }) {
   const { t } = useLingui()
-  const [text, setText] = useState('')
+  const [text, setText] = useDraft(id)
   const [images, setImages] = useState<Array<Picked>>([])
   const [diag, setDiag] = useState(false)
   const [progress, setProgress] = useState('')

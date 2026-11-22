@@ -37,7 +37,12 @@ import (
 	"time"
 )
 
-const deskIdle = 30 * time.Second
+// deskIdle: a phone write waits this long after the last input at the desk
+// (tmux client_activity: keys, mouse, focus) so it never lands in the middle
+// of someone typing there. 30 s blocked the phone for half a minute after
+// merely answering a prompt at the desk; the phone now counts down and
+// resends on its own ("retry in Ns").
+const deskIdle = 10 * time.Second
 
 type attentionEntry struct {
 	SessionID      string `json:"session_id"`
@@ -491,8 +496,30 @@ func (t *transcript) feedLine(raw []byte) {
 				OutputCount int `json:"output_tokens"`
 			} `json:"usage"`
 		} `json:"message"`
+		Attachment struct {
+			Type        string `json:"type"`
+			Prompt      string `json:"prompt"`
+			CommandMode string `json:"commandMode"`
+			Origin      struct {
+				Kind string `json:"kind"`
+			} `json:"origin"`
+		} `json:"attachment"`
 	}
-	if json.Unmarshal(raw, &line) != nil || line.IsMeta || (line.Type != "user" && line.Type != "assistant") {
+	if json.Unmarshal(raw, &line) != nil || line.IsMeta {
+		return
+	}
+	// A message typed (or sent from the phone) while Claude is mid-turn is
+	// queued and lands as an attachment, not a user line. Keep the human
+	// ones; task notifications, subagent hand-backs and auto-continuations
+	// are harness traffic.
+	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "prompt" {
+		human := a.Origin.Kind == "human" || (a.Origin.Kind == "" && !strings.HasPrefix(strings.TrimSpace(a.Prompt), "<"))
+		if human && strings.TrimSpace(a.Prompt) != "" {
+			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(a.Prompt, 8000), TS: line.Timestamp})
+		}
+		return
+	}
+	if line.Type != "user" && line.Type != "assistant" {
 		return
 	}
 	if u := line.Message.Usage; line.Type == "assistant" && u != nil && line.Message.ID != t.lastMsg {
@@ -1076,7 +1103,10 @@ func guardSession(id string) (attentionEntry, error) {
 		return attentionEntry{}, errors.New("the session's tmux pane is gone")
 	}
 	if act := deskActivity(e); act > 0 && time.Since(time.Unix(act, 0)) < deskIdle {
-		return attentionEntry{}, fmt.Errorf("someone typed at the desk %ds ago; try again shortly", int(time.Since(time.Unix(act, 0)).Seconds()))
+		ago := time.Since(time.Unix(act, 0))
+		// "retry in Ns" is parsed by the phone, which counts down and resends
+		return attentionEntry{}, fmt.Errorf("someone typed at the desk %ds ago; retry in %ds",
+			int(ago.Seconds()), int((deskIdle-ago).Seconds())+1)
 	}
 	return e, nil
 }

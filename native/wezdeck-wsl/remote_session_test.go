@@ -36,6 +36,31 @@ func TestParseClaudeTranscriptKeepsPromptsTextAndToolLines(t *testing.T) {
 	}
 }
 
+func TestClaudeMidTurnMessagesShowAsUserLines(t *testing.T) {
+	lines := []string{
+		`{"type":"user","message":{"role":"user","content":"先做这个"}}`,
+		`{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"在做"}]}}`,
+		// typed / sent from the phone while Claude was mid-turn
+		`{"type":"attachment","attachment":{"type":"queued_command","prompt":"顺便改一下这个","commandMode":"prompt","origin":{"kind":"human"},"humanTurn":true}}`,
+		// harness traffic stays out
+		`{"type":"attachment","attachment":{"type":"queued_command","prompt":"<task-notification>x</task-notification>","commandMode":"task-notification","origin":{"kind":"task-notification"}}}`,
+		`{"type":"attachment","attachment":{"type":"queued_command","prompt":"<agent-message>done</agent-message>","commandMode":"prompt","origin":{"kind":"peer"}}}`,
+		`{"type":"attachment","attachment":{"type":"queued_command","prompt":"Goal set: x","commandMode":"prompt","origin":{"kind":"auto-continuation"}}}`,
+		`{"type":"attachment","attachment":{"type":"queued_command","prompt":"<bash-input>ls</bash-input>","commandMode":"prompt"}}`,
+		`{"type":"attachment","attachment":{"type":"queued_command","prompt":"旧版本没有 origin","commandMode":"prompt"}}`,
+	}
+	got := parseClaudeTranscript([]byte(strings.Join(lines, "\n")), 20)
+	var users []string
+	for _, m := range got {
+		if m.Role == "user" {
+			users = append(users, m.Text)
+		}
+	}
+	if strings.Join(users, "|") != "先做这个|顺便改一下这个|旧版本没有 origin" {
+		t.Fatalf("user lines: %q", users)
+	}
+}
+
 func newDevice(t *testing.T) (*ecdsa.PrivateKey, string) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
