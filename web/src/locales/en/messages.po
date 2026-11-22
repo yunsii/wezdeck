@@ -75,6 +75,10 @@ msgstr "5 h"
 msgid "7 d"
 msgstr "7 d"
 
+#: src/features/console-usage.tsx:138
+msgid "A direct WebRTC link skips the relay entirely and costs nothing."
+msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
+
 #: src/features/landing-page.tsx:65
 msgid "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
 msgstr "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
@@ -86,6 +90,10 @@ msgstr "A local-first workbench for AI coding agents."
 #: src/features/console-collab.tsx:78
 #~ msgid "Active"
 #~ msgstr "Active"
+
+#: src/features/console-usage.tsx:119
+msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
+msgstr "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 
 #: src/features/landing-page.tsx:122
 msgid "After a restart, return to the same agent session and continue the work."
@@ -135,7 +143,7 @@ msgstr "All time"
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
 
-#: src/features/console-me.tsx:81
+#: src/features/console-me.tsx:82
 msgid "Already the latest"
 msgstr "Already the latest"
 
@@ -143,12 +151,12 @@ msgstr "Already the latest"
 msgid "An example. Select a session to see where you would jump back."
 msgstr "An example. Select a session to see where you would jump back."
 
-#: src/features/console-me.tsx:50
-#: src/features/console-me.tsx:197
+#: src/features/console-me.tsx:51
+#: src/features/console-me.tsx:198
 msgid "App"
 msgstr "App"
 
-#: src/features/console-me.tsx:204
+#: src/features/console-me.tsx:210
 msgid "Appearance"
 msgstr "Appearance"
 
@@ -224,15 +232,15 @@ msgstr "Category"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
-#: src/features/console-me.tsx:147
+#: src/features/console-me.tsx:148
 msgid "Check again"
 msgstr "Check again"
 
-#: src/features/console-me.tsx:86
+#: src/features/console-me.tsx:87
 msgid "Check for updates"
 msgstr "Check for updates"
 
-#: src/features/console-me.tsx:102
+#: src/features/console-me.tsx:103
 msgid "Checking…"
 msgstr "Checking…"
 
@@ -317,7 +325,7 @@ msgstr "conflict"
 msgid "Connecting…"
 msgstr "Connecting…"
 
-#: src/features/console-me.tsx:174
+#: src/features/console-me.tsx:175
 msgid "Connection"
 msgstr "Connection"
 
@@ -350,7 +358,7 @@ msgstr "Copied"
 msgid "Copy"
 msgstr "Copy"
 
-#: src/features/console-me.tsx:144
+#: src/features/console-me.tsx:145
 msgid "Copy command"
 msgstr "Copy command"
 
@@ -386,7 +394,7 @@ msgstr "Current plan"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
-#: src/features/console-me.tsx:235
+#: src/features/console-me.tsx:241
 msgid "Dark"
 msgstr "Dark"
 
@@ -414,7 +422,7 @@ msgstr "Degraded"
 msgid "Depends on"
 msgstr "Depends on"
 
-#: src/features/console-me.tsx:256
+#: src/features/console-me.tsx:262
 #: src/features/console-shell.tsx:112
 msgid "Development"
 msgstr "Development"
@@ -423,7 +431,7 @@ msgstr "Development"
 msgid "diagnostics"
 msgstr "diagnostics"
 
-#: src/features/console-me.tsx:263
+#: src/features/console-me.tsx:269
 #: src/features/console-shell.tsx:118
 #: src/features/session-composer.tsx:348
 msgid "Diagnostics"
@@ -453,11 +461,11 @@ msgstr "Each repository, linked worktree, and agent session keeps a place you ca
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "Enable phone writing in Settings to send these keys"
 
-#: src/features/console-me.tsx:119
+#: src/features/console-me.tsx:120
 msgid "Enable writing"
 msgstr "Enable writing"
 
-#: src/features/console-me.tsx:106
+#: src/features/console-me.tsx:107
 msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
@@ -494,6 +502,10 @@ msgstr "Esc"
 #: src/features/console-overview.tsx:28
 msgid "Event stream"
 msgstr "Event stream"
+
+#: src/features/console-usage.tsx:132
+msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
+msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 
 #: src/features/landing-example.tsx:67
 #: src/features/landing-example.tsx:157
@@ -558,7 +570,7 @@ msgstr "Hide initial prompt"
 msgid "Host offline"
 msgstr "Host offline"
 
-#: src/features/console-me.tsx:243
+#: src/features/console-me.tsx:249
 msgid "Host sections"
 msgstr "Host sections"
 
@@ -573,9 +585,13 @@ msgstr "Host signals"
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
-#: src/features/console-me.tsx:184
+#: src/features/console-me.tsx:185
 msgid "Host up since"
 msgstr "Host up since"
+
+#: src/features/console-usage.tsx:127
+msgid "How the WebSocket is billed"
+msgstr "How the WebSocket is billed"
 
 #: src/features/session-header.tsx:229
 msgid "Idle"
@@ -601,7 +617,7 @@ msgstr "in progress"
 msgid "In progress {active}"
 msgstr "In progress {active}"
 
-#: src/features/console-me.tsx:58
+#: src/features/console-me.tsx:59
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "In Safari tap Share, then “Add to Home Screen”."
 
@@ -618,11 +634,11 @@ msgstr "Initial prompt"
 msgid "Input method"
 msgstr "Input method"
 
-#: src/features/console-me.tsx:54
+#: src/features/console-me.tsx:55
 msgid "Install WezDeck"
 msgstr "Install WezDeck"
 
-#: src/features/console-me.tsx:50
+#: src/features/console-me.tsx:51
 msgid "Installed"
 msgstr "Installed"
 
@@ -671,14 +687,14 @@ msgstr "Keys"
 msgid "LAN"
 msgstr "LAN"
 
-#: src/features/console-me.tsx:207
-#: src/features/console-me.tsx:209
+#: src/features/console-me.tsx:213
+#: src/features/console-me.tsx:215
 #: src/features/console-shared.tsx:420
 #: src/features/console-shared.tsx:422
 msgid "Language"
 msgstr "Language"
 
-#: src/features/console-me.tsx:191
+#: src/features/console-me.tsx:192
 msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
@@ -697,7 +713,7 @@ msgstr "Latest"
 msgid "Launch"
 msgstr "Launch"
 
-#: src/features/console-me.tsx:116
+#: src/features/console-me.tsx:117
 msgid "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
 msgstr "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
 
@@ -705,7 +721,7 @@ msgstr "Lets this phone send messages to agent sessions and reply to tickets. A 
 msgid "Level"
 msgstr "Level"
 
-#: src/features/console-me.tsx:234
+#: src/features/console-me.tsx:240
 msgid "Light"
 msgstr "Light"
 
@@ -733,6 +749,7 @@ msgstr "Load earlier"
 #: src/features/console-now.tsx:233
 #: src/features/console-sessions.tsx:363
 #: src/features/console-shared.tsx:211
+#: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:271
 #: src/features/session-list.tsx:171
 #: src/features/tickets-view.tsx:222
@@ -771,7 +788,7 @@ msgstr "Message to the agent"
 msgid "Metrics window"
 msgstr "Metrics window"
 
-#: src/features/console-me.tsx:176
+#: src/features/console-me.tsx:177
 msgid "Mode"
 msgstr "Mode"
 
@@ -788,7 +805,7 @@ msgstr "New session title"
 msgid "New version available"
 msgstr "New version available"
 
-#: src/features/console-me.tsx:78
+#: src/features/console-me.tsx:79
 msgid "New version ready, reload to use it"
 msgstr "New version ready, reload to use it"
 
@@ -855,6 +872,10 @@ msgstr "No worktrees in this repository."
 msgid "Node"
 msgstr "Node"
 
+#: src/features/console-usage.tsx:87
+msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
+msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
+
 #: src/features/console-overview.tsx:81
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
@@ -884,7 +905,7 @@ msgstr "now {label}"
 msgid "Offline"
 msgstr "Offline"
 
-#: src/features/console-me.tsx:80
+#: src/features/console-me.tsx:81
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
@@ -916,7 +937,7 @@ msgstr "Open settings"
 msgid "Open source, local by design"
 msgstr "Open source, local by design"
 
-#: src/features/console-me.tsx:59
+#: src/features/console-me.tsx:60
 msgid "Open this page in the system browser first, then install it from there."
 msgstr "Open this page in the system browser first, then install it from there."
 
@@ -932,6 +953,10 @@ msgstr "Open web console"
 msgid "opened, {from} → {to}"
 msgstr "opened, {from} → {to}"
 
+#: src/features/console-usage.tsx:130
+msgid "Opening the connection is one request."
+msgstr "Opening the connection is one request."
+
 #: src/features/landing-page.tsx:130
 msgid "Optional browser companion"
 msgstr "Optional browser companion"
@@ -944,7 +969,7 @@ msgstr "Origin session"
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
-#: src/features/console-me.tsx:249
+#: src/features/console-me.tsx:255
 #: src/features/console-shell.tsx:106
 msgid "Overview"
 msgstr "Overview"
@@ -952,6 +977,10 @@ msgstr "Overview"
 #: src/features/console-collab.tsx:214
 msgid "Owner"
 msgstr "Owner"
+
+#: src/features/console-usage.tsx:99
+msgid "Pages, the relay handshake and the usage check; static files are free."
+msgstr "Pages, the relay handshake and the usage check; static files are free."
 
 #: src/features/remote-badge.tsx:81
 msgid "Pair again"
@@ -973,7 +1002,7 @@ msgstr "Peak RSS"
 msgid "Phase"
 msgstr "Phase"
 
-#: src/features/console-me.tsx:201
+#: src/features/console-me.tsx:202
 msgid "Phone writing"
 msgstr "Phone writing"
 
@@ -1039,6 +1068,14 @@ msgstr "rejected"
 msgid "Relay"
 msgstr "Relay"
 
+#: src/features/console-usage.tsx:112
+msgid "Relay duration"
+msgstr "Relay duration"
+
+#: src/features/console-usage.tsx:102
+msgid "Relay requests (Durable Object)"
+msgstr "Relay requests (Durable Object)"
+
 #: src/features/pwa-boot.tsx:19
 msgid "Reload"
 msgstr "Reload"
@@ -1095,7 +1132,7 @@ msgstr "Repositories"
 msgid "Request changes"
 msgstr "Request changes"
 
-#: src/features/console-me.tsx:186
+#: src/features/console-me.tsx:187
 msgid "Requests (WebRTC / relay)"
 msgstr "Requests (WebRTC / relay)"
 
@@ -1310,7 +1347,7 @@ msgstr "Sessions"
 #~ msgid "Sessions waiting for you"
 #~ msgstr "Sessions waiting for you"
 
-#: src/features/console-me.tsx:173
+#: src/features/console-me.tsx:174
 #: src/features/console-shell.tsx:138
 msgid "Settings"
 msgstr "Settings"
@@ -1338,6 +1375,10 @@ msgstr "Skip to content"
 #: src/features/console-overview.tsx:86
 msgid "Socket"
 msgstr "Socket"
+
+#: src/features/console-usage.tsx:92
+msgid "Some numbers are missing: {missing}"
+msgstr "Some numbers are missing: {missing}"
 
 #: src/features/console-sessions.tsx:434
 msgid "Someone just used the desk; sending in {retryIn}s…"
@@ -1371,7 +1412,7 @@ msgstr "Status"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/console-me.tsx:233
+#: src/features/console-me.tsx:239
 msgid "System"
 msgstr "System"
 
@@ -1415,22 +1456,22 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "The workbench"
 msgstr "The workbench"
 
-#: src/features/console-me.tsx:227
-#: src/features/console-me.tsx:229
+#: src/features/console-me.tsx:233
+#: src/features/console-me.tsx:235
 #: src/features/console-shared.tsx:382
 #: src/features/console-shared.tsx:384
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/console-me.tsx:242
+#: src/features/console-me.tsx:248
 msgid "This computer"
 msgstr "This computer"
 
-#: src/features/console-me.tsx:176
+#: src/features/console-me.tsx:177
 msgid "This computer (local Runtime)"
 msgstr "This computer (local Runtime)"
 
-#: src/features/console-me.tsx:179
+#: src/features/console-me.tsx:180
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
@@ -1464,6 +1505,10 @@ msgstr "Tickets"
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
+#: src/features/console-usage.tsx:135
+msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
+msgstr "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
+
 #: src/features/console-development.tsx:410
 msgid "Tmux session"
 msgstr "Tmux session"
@@ -1476,6 +1521,10 @@ msgstr "Tmux window"
 #: src/features/console-overview.tsx:62
 msgid "Today"
 msgstr "Today"
+
+#: src/features/console-usage.tsx:123
+msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
+msgstr "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 
 #: src/features/console-overview.tsx:64
 msgid "Today events"
@@ -1558,7 +1607,11 @@ msgstr "Uploading {step}/{steps}…"
 msgid "Uptime"
 msgstr "Uptime"
 
-#: src/features/console-me.tsx:60
+#: src/features/console-me.tsx:206
+msgid "Usage"
+msgstr "Usage"
+
+#: src/features/console-me.tsx:61
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "Use the browser menu: “Install app” / “Add to Home screen”."
 
@@ -1572,7 +1625,7 @@ msgstr "Use the browser menu: “Install app” / “Add to Home screen”."
 #~ msgstr "Used {count} tools"
 
 #: src/features/console-collab-run.tsx:90
-#: src/features/console-me.tsx:70
+#: src/features/console-me.tsx:71
 msgid "Version"
 msgstr "Version"
 
@@ -1588,7 +1641,7 @@ msgstr "waiting"
 msgid "Waiting"
 msgstr "Waiting"
 
-#: src/features/console-me.tsx:131
+#: src/features/console-me.tsx:132
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "Waiting for the host to approve this phone. On the host run:"
 
@@ -1649,6 +1702,10 @@ msgstr "WebRTC direct · {pathLabel}"
 msgid "WebRTC: {note}"
 msgstr "WebRTC: {note}"
 
+#: src/features/console-usage.tsx:108
+msgid "WebSocket messages today: {wsIn} in (counted 20:1, about {billable} requests), {wsOut} out (free)."
+msgstr "WebSocket messages today: {wsIn} in (counted 20:1, about {billable} requests), {wsOut} out (free)."
+
 #: src/features/remote-badge.tsx:89
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
@@ -1679,6 +1736,10 @@ msgstr "work"
 #: src/features/landing-page.tsx:45
 msgid "Workbench"
 msgstr "Workbench"
+
+#: src/features/console-usage.tsx:96
+msgid "Worker requests"
+msgstr "Worker requests"
 
 #: src/features/console-sessions.tsx:133
 msgid "working"

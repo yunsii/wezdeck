@@ -239,6 +239,51 @@ Writes add device signatures (above). Cloudflare Access in front of
 ([open questions](./diagnostics.md#open-questions)); Access is not enabled on
 the account yet.
 
+## Cost and free tier
+
+Everything runs on the Cloudflare **Workers Free** plan; nothing here can
+produce a bill — over a limit, that kind of call fails until 00:00 UTC
+(08:00 Beijing) and then works again. Checked against the official
+[Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)
+in 2026-11:
+
+| Resource | What uses it | Free limit / day |
+|---|---|---|
+| Worker requests | SSR pages, the relay handshake, `/relay/auth`, `/relay/health`, `/relay/usage` (static assets are free) | 100,000 |
+| Durable Object requests | the `HostRelay` object: each WebSocket **upgrade** is 1, **incoming** WebSocket messages count **20:1**; outgoing messages and protocol pings are free | 100,000 |
+| Durable Object duration | 128 MB × wall time while the object is active and cannot hibernate | 13,000 GB-s |
+
+Why WebSocket stays cheap here: `HostRelay` uses the hibernation API
+(`ctx.acceptWebSocket`), so between messages it is hibernation-eligible and
+bills no duration even with phone and host connected all day; the host's
+keepalive `ping` is answered by `setWebSocketAutoResponse` (no wake, no
+time). What is billed is the incoming messages: every RPC is two (phone →
+relay, host → relay) and the phone's RTT ping every 2 s is two more. The
+busiest hour in the relay log (2026-11-22) had 810 WebSocket RPCs: ≈ 1,620
++ 3,600 ping messages ≈ 5,400 incoming / h ≈ 270 requests / h — a full day
+at that rate is ≈ 6,500 of the 100,000 Durable Object requests. A direct
+WebRTC DataChannel bypasses the relay and costs nothing. Free plan requires
+SQLite-backed Durable Objects (`new_sqlite_classes` in `wrangler.jsonc`).
+
+**Usage card** (我的 › 用量, `console-usage.tsx` → `/relay/usage`,
+`relay/usage.ts`, adapted from forge's admin usage page): today's Worker
+requests, Durable Object requests / duration and WebSocket messages in /
+out against those limits, from the Cloudflare GraphQL Analytics API
+(`workersInvocationsAdaptive`, `durableObjectsInvocationsAdaptiveGroups`,
+`durableObjectsPeriodicGroups`; one query each so a failing field only
+blanks its own number), cached 5 minutes. It needs two Worker secrets — an
+API token with only **Account › Account Analytics › Read** and the account
+id:
+
+```bash
+cd web
+npx wrangler secret put CF_ANALYTICS_TOKEN   # paste the read-only token
+npx wrangler secret put CF_ACCOUNT_ID        # the account id (dashboard / wrangler whoami)
+```
+
+Without them the card says so and shows dashes; `/relay/usage` requires the
+phone's client token (401 otherwise) and never wakes the relay object.
+
 ## Operate
 
 ```bash

@@ -8,12 +8,16 @@
 //   client → DO   {t:"rpc"|"sig"|"ping", …}      DO adds cid → host
 //   host   → DO   {t:"res"|"sig"|"pong", cid, …} DO strips cid → that client
 //   DO     → client {t:"host", online, since}    presence on connect/change
+import { usageFetch } from './usage'
 import { DurableObject } from 'cloudflare:workers'
 
 export interface RelayEnv {
   HOST_RELAY: DurableObjectNamespace<HostRelay>
   RELAY_HOST_TOKEN: string
   RELAY_CLIENT_TOKEN: string
+  /** read-only Cloudflare analytics for /relay/usage (optional) */
+  CF_ACCOUNT_ID?: string
+  CF_ANALYTICS_TOKEN?: string
 }
 
 type Attachment =
@@ -183,7 +187,7 @@ function safeEqual(a: string, b: string) {
   return diff === 0
 }
 
-/** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/auth · /relay/health */
+/** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/auth · /relay/health · /relay/usage */
 export async function relayFetch(request: Request, env: RelayEnv) {
   const url = new URL(request.url)
   // ?room= picks a separate relay (one DO per room): tests run a throwaway
@@ -191,6 +195,9 @@ export async function relayFetch(request: Request, env: RelayEnv) {
   const room = url.searchParams.get('room') ?? 'default'
   if (!/^[a-z0-9-]{1,32}$/.test(room))
     return new Response('bad room', { status: 400 })
+  // today's Cloudflare usage (Worker-side; never wakes the relay object)
+  if (url.pathname === '/relay/usage')
+    return usageFetch(request, env, safeEqual)
   const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(room))
   if (url.pathname === '/relay/health') {
     const presence = await stub.fetch('https://relay/presence')

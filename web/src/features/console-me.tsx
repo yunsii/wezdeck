@@ -17,6 +17,7 @@ import { useConsoleMode, useRemoteState } from './console-mode'
 import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
+import { UsageCard } from './console-usage'
 
 function Section({
   title,
@@ -201,6 +202,11 @@ export function ConsoleMePage() {
       <Section title={t`Phone writing`}>
         <PhoneWriting />
       </Section>
+      {remote.mode === 'unpaired' ? null : (
+        <Section title={t`Usage`}>
+          <UsageCard />
+        </Section>
+      )}
       <Section title={t`Appearance`}>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
