@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -44,6 +45,9 @@ REPO = Path(os.environ.get("WEZDECK_REPO") or TOOL_ROOT.parent.parent)
 TERMINAL = {"closed", "rejected", "shipped", "failed"}
 PROFILES = {"claude": "claude", "codex": "codex", "grok": "grok"}
 COPIES: list[tuple[Path, Path]] = []  # transcript moves, done only on a real attach
+# an agent CLI session id: meta.json is written by ticket workers, and the id
+# is joined into globs, file copies and tmux -e, so nothing else gets through
+SESSION_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 
 def fail(code: int, error: str, **extra: Any) -> None:
@@ -180,6 +184,8 @@ def main(argv: list[str]) -> None:
     if not profile:
         fail(2, f"backend {backend} cannot be resumed interactively")
     sid = str(sess["id"])
+    if not SESSION_ID.match(sid):
+        fail(2, "the recorded session id is not a valid agent session id")
     cwd, cwd_source = session_cwd(meta, mj, sess, backend, sid)
     tmux_session = tmux_session_for(cwd)
     launcher = REPO / "scripts/runtime/agent-launcher.sh"

@@ -35,6 +35,15 @@ func sessionImage(args json.RawMessage) (any, error) {
 	if m == nil {
 		return nil, errors.New("bad image ref")
 	}
+	// only sessions the phone can see (live or recent), like `session`: an id
+	// alone must not open any past transcript's pasted screenshots
+	listed, err := liveSessions()
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := listed[a.ID]; !ok {
+		return nil, errors.New("session not found (ended or not tracked)")
+	}
 	path, agent := findTranscript(a.ID)
 	if path == "" || agent != "claude" {
 		return nil, errors.New("transcript not found")

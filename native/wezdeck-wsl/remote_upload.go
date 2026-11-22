@@ -104,8 +104,10 @@ func uploadChunk(args json.RawMessage) (any, error) {
 	}
 	if p.chunks[a.Seq] == nil {
 		p.got++
-		p.size += len(data)
 	}
+	// a resent chunk replaces the old one: count the difference, or 1-byte
+	// chunks resent at 64 KB would slip past uploadFileMax
+	p.size += len(data) - len(p.chunks[a.Seq])
 	p.chunks[a.Seq] = data
 	p.seen = time.Now()
 	if p.size > uploadFileMax {

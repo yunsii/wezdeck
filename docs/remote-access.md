@@ -284,6 +284,21 @@ rejects a clock skew over 2 min and any reused nonce. Store:
 the pairing token) can read but cannot forge a write. Logs: `event=write` /
 `event=write_denied` rows with device id.
 
+Hardening (2026-11-23 review): the device store is read-modify-written by
+both the relay (register) and `install-remote-relay.sh` (approve / revoke)
+under one `flock` on `remote-devices.json.lock`, and the relay writes it
+atomically (tmp + rename), so a revoke cannot be undone by a racing register;
+device names drop control characters (stored and printed) so `--devices`
+cannot be spoofed with escape sequences. A pairing-token rotation also sends
+the host `bye` for every evicted cid, closing that client's WebRTC peer, not
+only its DO socket. `diag.submit` accepts chunks only from the cids the
+request was pushed to, once each. A `#pair=` link must look like a token
+(`[A-Za-z0-9_-]{16,128}`) and needs a confirmation before it replaces a
+different token on the device. Each paste uses its own tmux buffer, a resent
+upload chunk counts toward the 8 MB limit, relay log `action=` values are
+quoted, `session.image` serves only listed sessions, and `ticket attach`
+rejects a recorded session id that is not `[A-Za-z0-9_-]{1,128}`.
+
 ## Badge
 
 The collab header shows the link when the page is remote:

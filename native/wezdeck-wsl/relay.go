@@ -244,13 +244,13 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	case "todos":
 		return listTodos(f.Args)
 	case "diag.submit":
-		return diagSubmit(f.Args, r)
+		return diagSubmit(f.Args, f.Cid, r)
 	case "session.image":
 		return sessionImage(f.Args)
 	case "send", "key", "reply", "attach", "upload", "todo":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
-			r.logf("write_denied", "via=%s action=%s err=%q", via, f.Action, err)
+			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
 			return nil, err
 		}
 		var result any
@@ -274,7 +274,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		default:
 			result, err = replyTicket(w.Args)
 		}
-		r.logf("write", "via=%s action=%s device=%s ok=%t err=%q", via, w.Action, device, err == nil, errText(err))
+		r.logf("write", "via=%s action=%q device=%s ok=%t err=%q", via, w.Action, device, err == nil, errText(err))
 		return result, err
 	}
 	return runCollab(f.Action, f.Args)
@@ -285,7 +285,7 @@ func handleRPC(f relayFrame, via string, r *relay) relayFrame {
 	started := time.Now()
 	result, err := dispatchRPC(f, via, r)
 	ok := err == nil
-	r.logf("rpc", "via=%s action=%s ok=%t ms=%d err=%q", via, f.Action, ok, time.Since(started).Milliseconds(), errText(err))
+	r.logf("rpc", "via=%s action=%q ok=%t ms=%d err=%q", via, f.Action, ok, time.Since(started).Milliseconds(), errText(err))
 	if err != nil {
 		return relayFrame{T: "res", ID: f.ID, OK: &ok, Error: err.Error()}
 	}
@@ -335,8 +335,13 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 				body, _ := json.Marshal(relayFrame{T: "pong", ID: f.ID})
 				_ = dc.SendText(string(body))
 			case "rpc":
+				// the DataChannel belongs to this cid: requests carry it like the
+				// DO path does (diag.submit only accepts the cids it asked)
+				f.Cid = cid
 				go func() {
-					body, _ := json.Marshal(handleRPC(f, "webrtc", r))
+					res := handleRPC(f, "webrtc", r)
+					res.Cid = ""
+					body, _ := json.Marshal(res)
 					_ = dc.SendText(string(body))
 				}()
 			}

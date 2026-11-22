@@ -59,16 +59,41 @@ function storage() {
 /** Token from a pairing link opened in this page; wins over (possibly stale or unwritable) storage. */
 let pairedToken = ''
 
-function adoptPairingHash() {
-  if (typeof location === 'undefined') return
+/**
+ * Adopt a `#pair=` token; true when a new one was taken. Links come from anyone:
+ * replacing a token this device holds needs the person's OK, or one tapped
+ * link silently swaps the pairing (unauthorized until re-paired).
+ */
+function adoptPairingHash(): boolean {
+  if (typeof location === 'undefined') return false
   const match = /[#&]pair=([^&]+)/.exec(location.hash)
-  if (!match) return
-  pairedToken = decodeURIComponent(match[1])
+  if (!match) return false
+  // tokens are [A-Za-z0-9] (install-remote-relay.sh): anything else, or a
+  // %-escape that would make decodeURIComponent throw, is not a pairing link
+  const token = /^[A-Za-z0-9_-]{16,128}$/.test(match[1]) ? match[1] : ''
+  let current = ''
   try {
-    storage()?.setItem(TOKEN_KEY, pairedToken)
+    current = storage()?.getItem(TOKEN_KEY) ?? ''
   } catch {
-    // Storage blocked (private mode / in-app browser): the token from the
-    // link still applies to this page via pairedToken.
+    current = ''
+  }
+  const replace =
+    Boolean(token) &&
+    (!current ||
+      current === token ||
+      window.confirm(
+        document.documentElement.lang.startsWith('zh')
+          ? '这个链接会替换这台设备现在的配对，确定吗？'
+          : 'This link replaces the pairing on this device. Continue?',
+      ))
+  if (replace) {
+    pairedToken = token
+    try {
+      storage()?.setItem(TOKEN_KEY, pairedToken)
+    } catch {
+      // Storage blocked (private mode / in-app browser): the token from the
+      // link still applies to this page via pairedToken.
+    }
   }
   // keep the router's entry state (__TSR_index / key): null here made the
   // first entry look like it came from outside the app (useCanGoBack, the
@@ -78,6 +103,7 @@ function adoptPairingHash() {
     '',
     location.pathname + location.search,
   )
+  return replace && token !== current
 }
 
 /**
@@ -192,8 +218,7 @@ class RemoteLink {
     if (!this.hashListener) {
       this.hashListener = () => {
         if (!/[#&]pair=/.test(location.hash)) return
-        adoptPairingHash()
-        location.reload()
+        if (adoptPairingHash()) location.reload()
       }
       window.addEventListener('hashchange', this.hashListener)
     }

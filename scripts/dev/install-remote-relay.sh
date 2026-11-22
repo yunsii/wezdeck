@@ -113,8 +113,16 @@ case "$MODE" in
     # Device keys live in ~/.config/wezdeck/remote-devices.json (written by
     # `wezdeck-wsl relay` when a phone taps 启用写入; see remote_session.go).
     DEVICE_ID="${DEVICE_ID:-}" MODE="$MODE" python3 - <<'PY'
-import json, os, sys
+import fcntl, json, os, sys, unicodedata
 path = os.path.expanduser(os.environ.get("WEZDECK_REMOTE_DEVICES", "~/.config/wezdeck/remote-devices.json"))
+os.makedirs(os.path.dirname(path), exist_ok=True)
+# same lock as the relay (remote_session.go lockDevices): no lost update
+# between a phone registering and an approve / revoke here
+lock = open(path + ".lock", "a")
+fcntl.flock(lock, fcntl.LOCK_EX)
+def safe(text):
+    # device names come from the phone: never print control characters
+    return "".join(c for c in str(text) if unicodedata.category(c)[0] != "C")
 try:
     store = json.load(open(path))
 except FileNotFoundError:
@@ -123,7 +131,7 @@ mode, wanted = os.environ["MODE"], os.environ["DEVICE_ID"]
 def show():
     for state in ("pending", "approved"):
         for d in store.get(state) or []:
-            print(f"{state:9} {d['id']}  {d.get('name') or '?':20} {d.get('at', '')}")
+            print(f"{state:9} {safe(d['id'])}  {safe(d.get('name') or '?'):20} {safe(d.get('at', ''))}")
     if not (store.get("pending") or store.get("approved")):
         print("no devices yet: on the phone open 我的 › 手机写入 › 启用")
 if mode == "devices":

@@ -34,7 +34,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
+	"unicode"
 )
 
 // deskIdle: a phone write waits this long after the last input at the desk
@@ -831,6 +833,35 @@ func loadDevices() deviceStore {
 	return s
 }
 
+// lockDevices takes the cross-process lock on the device store. The relay
+// (register) and install-remote-relay.sh (--approve / --revoke) both
+// read-modify-write the file; without a shared lock a register racing a
+// revoke could write the revoked device back as approved.
+func lockDevices() (unlock func()) {
+	path := deviceFile() + ".lock"
+	_ = os.MkdirAll(filepath.Dir(path), 0o700)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return func() {}
+	}
+	_ = syscall.Flock(int(f.Fd()), syscall.LOCK_EX)
+	return func() {
+		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+		f.Close()
+	}
+}
+
+// printable drops control characters (ESC, CR, BEL …): a device name is
+// attacker-chosen and is printed in the owner's terminal by --devices.
+func printable(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || r == '\u2028' || r == '\u2029' {
+			return -1
+		}
+		return r
+	}, s)
+}
+
 func saveDevices(s deviceStore) error {
 	// empty lists stay [] (not null) so other readers can iterate them
 	if s.Approved == nil {
@@ -841,7 +872,12 @@ func saveDevices(s deviceStore) error {
 	}
 	_ = os.MkdirAll(filepath.Dir(deviceFile()), 0o700)
 	data, _ := json.MarshalIndent(s, "", "  ")
-	return os.WriteFile(deviceFile(), data, 0o600)
+	// write-then-rename: a reader never sees a half-written store
+	tmp := deviceFile() + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, deviceFile())
 }
 
 func deviceID(pub []byte) string {
@@ -879,6 +915,7 @@ func registerDevice(args json.RawMessage) (any, error) {
 	id := deviceID(raw)
 	deviceMu.Lock()
 	defer deviceMu.Unlock()
+	defer lockDevices()()
 	s := loadDevices()
 	for _, d := range s.Approved {
 		if d.ID == id {
@@ -893,7 +930,7 @@ func registerDevice(args json.RawMessage) (any, error) {
 	if len(s.Pending) >= 5 {
 		s.Pending = s.Pending[1:]
 	}
-	s.Pending = append(s.Pending, deviceRecord{ID: id, Name: clip(a.Name, 40), PublicKey: a.PublicKey, At: time.Now().Format(time.RFC3339)})
+	s.Pending = append(s.Pending, deviceRecord{ID: id, Name: clip(printable(a.Name), 40), PublicKey: a.PublicKey, At: time.Now().Format(time.RFC3339)})
 	if err := saveDevices(s); err != nil {
 		return nil, err
 	}
@@ -1019,7 +1056,10 @@ func sendToSession(args json.RawMessage) (any, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	buffer := "wezdeck-remote"
+	// one buffer per send: two sends in flight (two tabs, two sessions) used
+	// to share "wezdeck-remote", so load(X) load(Y) paste→X could put Y's text
+	// into X's pane
+	buffer := "wezdeck-remote-" + newDiagID()
 	load := exec.CommandContext(ctx, "tmux")
 	load.Args = append(load.Args, socketArgs(e)...)
 	load.Args = append(load.Args, "load-buffer", "-b", buffer, "-")

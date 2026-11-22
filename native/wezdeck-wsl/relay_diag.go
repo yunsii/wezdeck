@@ -86,6 +86,19 @@ func (r *relay) forgetPhone(cid string) {
 	r.mu.Unlock()
 }
 
+// recentPhones: cids seen within phoneSeenWindow.
+func (r *relay) recentPhones() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var out []string
+	for cid, p := range r.phones {
+		if time.Since(p.seen) <= phoneSeenWindow {
+			out = append(out, cid)
+		}
+	}
+	return out
+}
+
 // pushToPhones sends f to every phone seen recently; returns their cids.
 func (r *relay) pushToPhones(f relayFrame) []string {
 	r.mu.Lock()
@@ -127,7 +140,9 @@ type diagResult struct {
 
 type diagRequest struct {
 	deadline time.Time
-	parts    map[string][]string // phone → chunks
+	targets  map[string]bool     // cids the request was pushed to: only they may answer
+	parts    map[string][]string // cid → chunks
+	answered map[string]bool     // one stored answer per cid
 	results  []diagResult
 	notify   chan struct{}
 }
@@ -143,9 +158,12 @@ func newDiagID() string {
 	return hex.EncodeToString(b)
 }
 
-// diagSubmit: one chunk of a phone's answer (rpc `diag.submit`, unsigned —
-// only a live request id this host issued is accepted).
-func diagSubmit(args json.RawMessage, r *relay) (any, error) {
+// diagSubmit: one chunk of a phone's answer (rpc `diag.submit`). Unsigned,
+// so it is held to what the host itself asked: a live request id, from a cid
+// that request was pushed to, one answer per cid. Another client holding the
+// pairing token can neither inject a snapshot (an agent reads it) nor fill
+// memory or the uploads dir under made-up phone ids.
+func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
 	var a struct {
 		ID    string `json:"id"`
 		Phone string `json:"phone"`
@@ -165,10 +183,14 @@ func diagSubmit(args json.RawMessage, r *relay) (any, error) {
 		diagMu.Unlock()
 		return nil, errors.New("no such diagnostics request (expired?)")
 	}
-	parts := req.parts[a.Phone]
+	if !req.targets[cid] || req.answered[cid] {
+		diagMu.Unlock()
+		return nil, errors.New("this client was not asked for diagnostics")
+	}
+	parts := req.parts[cid]
 	if parts == nil || len(parts) != a.Total {
 		parts = make([]string, a.Total)
-		req.parts[a.Phone] = parts
+		req.parts[cid] = parts
 	}
 	parts[a.Seq] = a.Data
 	complete := true
@@ -182,7 +204,8 @@ func diagSubmit(args json.RawMessage, r *relay) (any, error) {
 		diagMu.Unlock()
 		return map[string]any{"received": a.Seq + 1, "total": a.Total}, nil
 	}
-	delete(req.parts, a.Phone)
+	delete(req.parts, cid)
+	req.answered[cid] = true
 	diagMu.Unlock()
 
 	body := []byte(strings.Join(parts, ""))
@@ -213,10 +236,8 @@ func diagSubmit(args json.RawMessage, r *relay) (any, error) {
 // requestDiagnostics pushes a request and waits for the phones' answers.
 func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json.RawMessage) map[string]any {
 	id := newDiagID()
-	req := &diagRequest{deadline: time.Now().Add(wait + 10*time.Second), parts: map[string][]string{}, notify: make(chan struct{}, 8)}
-	diagMu.Lock()
-	diagRequests[id] = req
-	diagMu.Unlock()
+	req := &diagRequest{deadline: time.Now().Add(wait + 10*time.Second), targets: map[string]bool{},
+		parts: map[string][]string{}, answered: map[string]bool{}, notify: make(chan struct{}, 8)}
 	defer func() {
 		// late chunks still land for a few seconds, then the id is dead
 		time.AfterFunc(10*time.Second, func() {
@@ -229,6 +250,14 @@ func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json
 		steps = json.RawMessage("[]")
 	}
 	args, _ := json.Marshal(map[string]any{"reason": reason, "steps": steps})
+	// register the targets before pushing: a fast phone may answer at once
+	targets := r.recentPhones()
+	for _, cid := range targets {
+		req.targets[cid] = true
+	}
+	diagMu.Lock()
+	diagRequests[id] = req
+	diagMu.Unlock()
 	phones := r.pushToPhones(relayFrame{T: "diag.request", ID: id, Data: args})
 	r.logf("diag_request", "id=%s phones=%d reason=%q", id, len(phones), reason)
 	timer := time.NewTimer(wait)

@@ -106,6 +106,10 @@ export class HostRelay extends DurableObject<RelayEnv> {
     if (meta?.role !== 'client') return
     if (meta.tag !== (await this.clientTag())) {
       ws.close(4401, 'pairing token rotated')
+      this.ctx
+        .getWebSockets('host')
+        .at(0)
+        ?.send(JSON.stringify({ t: 'bye', cid: meta.cid }))
       return
     }
     if (!['rpc', 'sig', 'ping'].includes(String(frame.t))) return
@@ -158,6 +162,13 @@ export class HostRelay extends DurableObject<RelayEnv> {
       const meta = ws.deserializeAttachment() as Attachment | null
       if (meta?.role === 'client' && meta.tag !== current) {
         ws.close(4401, 'pairing token rotated')
+        // the host drops this cid's WebRTC peer too: a DataChannel opened
+        // with the old token would otherwise keep reading after rotation
+        // (and a client that never acks the close fires no webSocketClose)
+        this.ctx
+          .getWebSockets('host')
+          .at(0)
+          ?.send(JSON.stringify({ t: 'bye', cid: meta.cid }))
         logEvent('client_evicted', { cid: meta.cid })
       }
     }
