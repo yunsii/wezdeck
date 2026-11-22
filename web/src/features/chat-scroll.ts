@@ -3,13 +3,19 @@
 // scrolls up themselves — only a finger, wheel or key counts, never our own
 // scrolling — and pin again once they come back to the bottom. While unpinned
 // the page offers a "jump to latest" button with the number of new messages.
-// A finger dragging the history down unpins at once (no 48 px dead zone where
-// a growing reply would yank the page back), nothing auto-scrolls while a
-// finger is on the screen, and when the viewport shrinks (the keyboard opens)
-// a pinned thread stays on its newest message.
+// A finger dragging the history down (more than a tap's wobble) unpins at
+// once, nothing auto-scrolls while a finger is on the screen, and while the
+// keyboard opens or closes (composer focus / blur, viewport resize) a pinned
+// thread is held on its newest message every frame, whatever order the
+// browser resizes and scrolls in. Pin changes and holds go to the client
+// trace (lib/client-trace.ts) so a phone can report what happened.
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { trace } from '#/lib/client-trace'
+
 const NEAR_BOTTOM = 48
+/** finger travel that counts as a drag, not a tap */
+const DRAG = 8
 
 export function useChatScroll(
   end: React.RefObject<HTMLDivElement | null>,
@@ -20,12 +26,15 @@ export function useChatScroll(
   const landed = useRef(false)
   const userUntil = useRef(0)
   const touching = useRef(false)
+  const holdUntil = useRef(0)
+  const holding = useRef(false)
   const [unread, setUnread] = useState(0)
   const seen = useRef(count)
 
   const scroller = () =>
     end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
   const pin = useCallback((value: boolean) => {
+    if (pinnedRef.current !== value) trace('chat-pin', { pinned: value })
     pinnedRef.current = value
     setPinned(value)
     if (value) setUnread(0)
@@ -48,29 +57,34 @@ export function useChatScroll(
     if (!el) return
     const intent = () => {
       userUntil.current = performance.now() + 400
+      holdUntil.current = 0 // the reader takes over: stop holding the bottom
     }
     const onScroll = () => {
       const gap = el.scrollHeight - el.scrollTop - el.clientHeight
       if (gap < NEAR_BOTTOM) {
         if (!pinnedRef.current) pin(true)
-      } else if (performance.now() < userUntil.current && pinnedRef.current) {
+      } else if (
+        performance.now() < userUntil.current &&
+        performance.now() > holdUntil.current &&
+        pinnedRef.current
+      ) {
         pin(false)
       }
     }
     const onKey = (event: KeyboardEvent) => {
       if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) intent()
     }
-    let touchY = 0
+    let startY = 0
     const onTouchStart = (event: TouchEvent) => {
       touching.current = true
-      touchY = event.touches.item(0)?.clientY ?? 0
+      startY = event.touches.item(0)?.clientY ?? 0
     }
     const onTouchMove = (event: TouchEvent) => {
+      const moved = (event.touches.item(0)?.clientY ?? startY) - startY
+      if (Math.abs(moved) < DRAG) return // a tap's wobble is no intent
       intent()
-      const y = event.touches.item(0)?.clientY ?? touchY
       // finger moving down = reading back: leave the bottom right away
-      if (y - touchY > 4 && pinnedRef.current) pin(false)
-      touchY = y
+      if (moved > 0 && pinnedRef.current) pin(false)
     }
     const onTouchEnd = () => {
       touching.current = false
@@ -137,6 +151,46 @@ export function useChatScroll(
       viewport?.removeEventListener('resize', follow)
     }
   }, [end])
+
+  // keyboard opening / closing: hold a pinned thread at the bottom every
+  // frame until the browser is done resizing and scrolling
+  useEffect(() => {
+    const el = scroller()
+    if (!el) return
+    const hold = (ms: number, why: string) => {
+      if (!pinnedRef.current || !landed.current) return
+      holdUntil.current = Math.max(holdUntil.current, performance.now() + ms)
+      if (holding.current) return
+      holding.current = true
+      trace('chat-hold', { why, ms })
+      const frame = () => {
+        // check first: a reader who scrolled away this frame wins
+        if (performance.now() >= holdUntil.current || !pinnedRef.current) {
+          holding.current = false
+          return
+        }
+        if (!touching.current) el.scrollTop = el.scrollHeight
+        requestAnimationFrame(frame)
+      }
+      requestAnimationFrame(frame)
+    }
+    const onFocus = (event: FocusEvent) => {
+      if (event.target instanceof HTMLTextAreaElement) hold(1_000, event.type)
+    }
+    const onViewport = () => {
+      hold(500, 'viewport')
+    }
+    el.addEventListener('focusin', onFocus)
+    el.addEventListener('focusout', onFocus)
+    window.visualViewport?.addEventListener('resize', onViewport)
+    window.addEventListener('resize', onViewport)
+    return () => {
+      el.removeEventListener('focusin', onFocus)
+      el.removeEventListener('focusout', onFocus)
+      window.visualViewport?.removeEventListener('resize', onViewport)
+      window.removeEventListener('resize', onViewport)
+    }
+  }, [])
 
   const jump = useCallback(() => {
     pin(true)

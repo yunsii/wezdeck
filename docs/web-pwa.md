@@ -103,7 +103,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   agent works. Keyboard: `interactive-widget=resizes-content` keeps the
   composer above it, and a pinned thread follows the shrinking scroller
   (ResizeObserver on the scroller + `visualViewport` resize) so the newest
-  message stays in view. The sticky composer rests flush with the scroller
+  message stays in view; composer focus / blur and viewport resizes also
+  hold a pinned thread at the bottom every frame for up to 1 s, and a tap's
+  wobble (< 8 px) never counts as scrolling away. The composer's 附件 tray
+  attaches the client diagnostics snapshot and screenshots
+  ([`remote-access.md` Attachments](remote-access.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
   that padding the moment a drag starts. Back from the background the page
   refetches at once and shows 正在拉取最新消息（上次 HH:MM:SS）→ 已同步

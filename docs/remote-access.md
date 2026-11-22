@@ -83,7 +83,8 @@ tmux socket / session / pane, status `running|waiting|done` and
 | --- | --- | --- |
 | `sessions` | read | live entries whose pane still exists, plus archived ones (`recent[]`, status `idle`) whose pane still runs `claude`/`codex`/`grok` (newest session id per pane); newest conversation first: the session's transcript mtime (Claude `~/.claude/projects/*/<id>.jsonl`, Grok `~/.grok/sessions/*/<id>/chat_history.jsonl`, Codex `~/.codex/sessions/*/*/*/rollout-*-<id>.jsonl`; only real turns write them), status ts / tmux `window_activity` only when none is found |
 | `session {id, limit}` | read | the transcript (Claude, Grok or Codex format, same locations) parsed **incrementally** (only bytes appended since the last read; cached per file) into user / assistant text and tool calls with details — edits (any tool whose input has old/new strings) as a `-`/`+` diff, whole-file writes as a preview, commands in full (judged by input shape, so the three agents' tools count alike), plus each call's result matched by `tool_use_id` (clipped); returns the last `limit` (default 60) with `total` and `start` for paging, and `usage` (model, context = last reply's full input vs the model's `max_input_tokens` from `~/.claude/cache/model-catalog`, turns, output, cache-read share; one reply spanning several lines counts once); also the last 60 screen lines (`capture-pane`) |
-| `send {id,text}` | write | paste into the session's own TUI (`load-buffer` + `paste-buffer -p`, then Enter) |
+| `send {id,text,attachments}` | write | paste into the session's own TUI (`load-buffer` + `paste-buffer -p`, then Enter); `attachments` are uploaded file names, appended as a `[手机附件]` block of host paths |
+| `upload {upload,seq,total,mime,data}` | write | one base64 chunk (≤ 64 KB decoded) of a phone attachment; the last chunk stores the file and answers its `name` |
 | `key {id,key}` | write | one key from `1 2 3 4 Enter Escape Up Down Tab` (permission / choice dialogs) |
 | `reply {id,text,continue}` | write | `ticket reply` with `TICKET_TRIGGER_SOURCE=mobile` |
 | `device.register` | read-ish | records a phone's public key as pending |
@@ -99,6 +100,35 @@ follow-up that runs after the turn (`[ui].follow_up_behavior`, default
 while a confirmation is pending; nothing while someone typed at the
 desk in the last 30 s (`client_activity` of the attached tmux clients); the
 pane gets a 4 s `手机发来一条消息` notice.
+
+### Attachments
+
+Reporting a problem from the phone (composer › 附件, `session-composer.tsx`):
+check 附带本机诊断数据 and/or add up to 5 images. Images are shrunk on the
+phone (long edge ≤ 1600 px, JPEG 0.82, `lib/upload.ts`); every file goes up
+as signed `upload` chunks of 36 KB (small enough for one DataChannel
+message), then `send` names the stored files and the host appends
+
+```
+[手机附件]
+- 客户端诊断: ~/.local/state/wezdeck/remote-uploads/diagnostics-<ts>-<id>.json
+- 图片: ~/.local/state/wezdeck/remote-uploads/img-<ts>-<id>.jpg
+```
+
+so the agent can open them. Host side (`remote_upload.go`): types limited to
+JPEG / PNG / WebP / GIF / JSON and checked by magic bytes (JSON must parse),
+8 MB per file, 6 attachments per message, `send` only resolves bare names
+inside the uploads dir (`WEZDECK_REMOTE_UPLOADS` overrides it), half-done
+uploads expire after 10 min, files older than 30 days are pruned on every
+finished upload; one `event=upload` relay log row per stored file.
+
+The diagnostics snapshot (`lib/client-trace.ts`) holds build id, page path
+(no hash: it can carry the pairing token), user agent, standalone mode,
+screen / viewport / `visualViewport` / safe-area sizes, the viewport meta,
+the scroller metrics, link mode / path / RTT, session status, chat pinning,
+and the last 150 page events (viewport resizes with scroller metrics, focus,
+`chat-pin` / `chat-hold`, visibility, link changes, errors). No tokens, no
+message text.
 
 ## Writes: device keys
 

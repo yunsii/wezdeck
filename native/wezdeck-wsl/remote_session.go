@@ -1083,11 +1083,20 @@ func guardSession(id string) (attentionEntry, error) {
 
 func sendToSession(args json.RawMessage) (any, error) {
 	var a struct {
-		ID   string `json:"id"`
-		Text string `json:"text"`
+		ID          string   `json:"id"`
+		Text        string   `json:"text"`
+		Attachments []string `json:"attachments"`
 	}
-	if json.Unmarshal(args, &a) != nil || strings.TrimSpace(a.Text) == "" || len(a.Text) > 20000 {
+	if json.Unmarshal(args, &a) != nil || len(a.Text) > 20000 ||
+		(strings.TrimSpace(a.Text) == "" && len(a.Attachments) == 0) {
 		return nil, errors.New("message must be 1–20000 characters")
+	}
+	note, err := attachmentNote(a.Attachments)
+	if err != nil {
+		return nil, err
+	}
+	if note != "" {
+		a.Text = strings.TrimSpace(strings.TrimSpace(a.Text) + "\n\n" + note)
 	}
 	e, err := guardSession(a.ID)
 	if err != nil {

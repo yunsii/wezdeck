@@ -34,6 +34,7 @@ import {
 } from './console-shared'
 import { useConsoleMode } from './console-mode'
 import { RemoteBadge } from './remote-badge'
+import { installClientTrace } from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
 
 export function ConsoleRouteLayout() {
@@ -206,7 +207,10 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
   // Start the remote link (adopts a #pair= token) on every console page, not
   // only when a collab read happens: settings and sessions need it too.
-  useEffect(() => remoteLink.start(), [])
+  useEffect(() => {
+    installClientTrace()
+    return remoteLink.start()
+  }, [])
   // ticket / session detail pages bring their own back bar instead of a title
   const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
   // the host overview needs the local Runtime; remote devices start at 现在

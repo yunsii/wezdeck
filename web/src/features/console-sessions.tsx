@@ -5,7 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router'
-import { ArrowDown, SendHorizontal } from 'lucide-react'
+import { ArrowDown } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
@@ -17,6 +17,8 @@ import { useAgo } from './tickets-view'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
 import { ChatThread, SendQueue, settle } from './chat-thread'
+import { ComposerBox, useComposer } from './session-composer'
+import type { Outgoing } from './session-composer'
 import type { Message, Pending } from './chat-thread'
 
 export type SessionCard = {
@@ -312,7 +314,6 @@ function SessionDetail({ id }: { id: string }) {
       (await remoteLink.rpc('session', { id, limit })) as Detail,
   })
   const [pendingRaw, setPending] = useState<Array<Pending>>([])
-  const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const end = useRef<HTMLDivElement>(null)
@@ -355,18 +356,34 @@ function SessionDetail({ id }: { id: string }) {
     setError('')
     try {
       await remoteLink.write(action, { id, ...args })
-      if (action === 'send') {
-        const sent = String(args.text ?? '')
-        setText('')
-        setPending((items) => [...items, { text: sent, at: Date.now() }])
-      }
       await client.invalidateQueries({ queryKey: ['remote', 'session', id] })
+      return true
     } catch (e) {
       setError((e as Error).message)
+      return false
     } finally {
       setSending(false)
     }
   }
+  const send = async (message: Outgoing) => {
+    const ok = await run('send', {
+      text: message.text,
+      attachments: message.attachments,
+    })
+    if (ok)
+      setPending((items) => [
+        ...items,
+        { text: message.text, note: message.note, at: Date.now() },
+      ])
+    return ok
+  }
+  const composer = useComposer({
+    onSend: send,
+    diagnostics: () => ({
+      session: { id, agent: data?.agent, status: data?.status, busy },
+      chat: { pinned: follow.pinned, unread: follow.unread, shown, total },
+    }),
+  })
   return (
     <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
       <SessionHeader data={data} onBack={back} />
@@ -443,7 +460,10 @@ function SessionDetail({ id }: { id: string }) {
         className="sticky bottom-0 -mb-4 grid gap-1.5 bg-brand-deck pt-1 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
         onSubmit={(event) => {
           event.preventDefault()
-          if (text.trim()) void run('send', { text })
+          setError('')
+          composer.submit().catch((e: unknown) => {
+            setError((e as Error).message)
+          })
         }}
       >
         <JumpLatest
@@ -485,32 +505,10 @@ function SessionDetail({ id }: { id: string }) {
             ) : null}
           </p>
         ) : null}
-        <div className="flex items-end gap-2 rounded-[22px] bg-brand-surface p-1.5">
-          <label htmlFor="session-composer" className="sr-only">
-            {t`Message to the agent`}
-          </label>
-          <textarea
-            id="session-composer"
-            value={text}
-            onFocus={(event) => {
-              // keep the composer above the keyboard once it has opened
-              const form = event.currentTarget.form
-              setTimeout(() => form?.scrollIntoView({ block: 'end' }), 300)
-            }}
-            onChange={(event) => setText(event.target.value)}
-            rows={1}
-            placeholder={t`Message`}
-            className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[16px] outline-none [field-sizing:content] placeholder:text-brand-label"
-          />
-          <button
-            type="submit"
-            aria-label={t`Send`}
-            disabled={sending || !text.trim() || Boolean(blocked)}
-            className="inline-flex size-10 items-center justify-center rounded-full bg-brand-text text-brand-deck disabled:opacity-30"
-          >
-            <SendHorizontal size={18} aria-hidden />
-          </button>
-        </div>
+        <ComposerBox
+          composer={composer}
+          blocked={sending || Boolean(blocked)}
+        />
       </form>
     </div>
   )

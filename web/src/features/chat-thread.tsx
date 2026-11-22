@@ -20,7 +20,48 @@ export type Message = {
   removed?: number
 }
 
-export type Pending = { text: string; at: number }
+export type Pending = { text: string; at: number; note?: string }
+
+/** First line of the note the host appends for phone attachments (remote_upload.go). */
+const ATTACHMENT_MARK = '[手机附件]'
+
+/** Split a sent message into what was typed and its attachment lines. */
+function splitAttachments(text: string) {
+  const at = text.indexOf(ATTACHMENT_MARK)
+  if (at < 0) return { typed: text, files: [] }
+  const files = text
+    .slice(at + ATTACHMENT_MARK.length)
+    .split('\n')
+    .map((line) => line.replace(/^- /, '').trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [label = '', path = ''] = line.split(/:\s+/, 2)
+      return { label, name: path.split('/').at(-1) ?? path }
+    })
+  return { typed: text.slice(0, at).trim(), files }
+}
+
+function SentAttachments({ text }: { text: string }) {
+  const { typed, files } = splitAttachments(text)
+  return (
+    <>
+      {typed}
+      {files.length ? (
+        <span className="mt-1.5 flex flex-wrap gap-1">
+          {files.map((file) => (
+            <span
+              key={file.name}
+              title={file.name}
+              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-[12px]"
+            >
+              {file.label}
+            </span>
+          ))}
+        </span>
+      ) : null}
+    </>
+  )
+}
 
 const reducedMotion = () =>
   typeof matchMedia !== 'undefined' &&
@@ -93,7 +134,7 @@ function Bubble({
         )}
       >
         {mine ? (
-          message.text
+          <SentAttachments text={message.text} />
         ) : (
           <ChatMarkdown text={live.text} streaming={live.streaming} />
         )}
@@ -379,6 +420,11 @@ export function SendQueue({
           className="chat-in ml-auto max-w-[88%] truncate rounded-[14px] border border-dashed border-brand-edge px-3 py-1.5 text-[14px] text-brand-muted"
         >
           {item.text}
+          {item.note ? (
+            <span className="text-brand-label">
+              {item.text ? ' ' : ''}({item.note})
+            </span>
+          ) : null}
         </div>
       ))}
     </div>
@@ -390,8 +436,14 @@ export function settle(pending: Array<Pending>, messages: Array<Message>) {
   const users = messages
     .filter((message) => message.role === 'user')
     .map((message) => message.text.trim())
+  // the host appends an attachment note after a blank line
+  const shows = (typed: string) =>
+    users.some((text) =>
+      typed
+        ? text === typed || text.startsWith(`${typed}\n\n${ATTACHMENT_MARK}`)
+        : text.startsWith(ATTACHMENT_MARK),
+    )
   return pending.filter(
-    (item) =>
-      Date.now() - item.at < 60_000 && !users.includes(item.text.trim()),
+    (item) => Date.now() - item.at < 60_000 && !shows(item.text.trim()),
   )
 }

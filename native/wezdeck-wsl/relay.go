@@ -233,7 +233,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return sessionDetail(f.Args)
 	case "device.register":
 		return registerDevice(f.Args)
-	case "send", "key", "reply":
+	case "send", "key", "reply", "upload":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%s err=%q", via, f.Action, err)
@@ -245,6 +245,14 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			result, err = sendToSession(w.Args)
 		case "key":
 			result, err = keyToSession(w.Args)
+		case "upload":
+			result, err = uploadChunk(w.Args)
+			if done, ok := result.(map[string]any); ok && done["name"] != nil {
+				r.logf("upload", "via=%s device=%s name=%s bytes=%v", via, device, done["name"], done["bytes"])
+			}
+			if err == nil {
+				return result, nil // one log row per finished file, not per chunk
+			}
 		default:
 			result, err = replyTicket(w.Args)
 		}

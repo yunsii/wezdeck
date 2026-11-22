@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
@@ -17,6 +17,12 @@ const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 const devicesFile = process.env.WEZDECK_TEST_DEVICES ?? ''
+// the relay under test runs with WEZDECK_REMOTE_UPLOADS=$WEZDECK_TEST_UPLOADS
+const uploadsDir = process.env.WEZDECK_TEST_UPLOADS ?? ''
+const onePixelPng = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+)
 const repo = join(import.meta.dirname, '..', '..')
 // A relay room keeps the throwaway host + browser off the real relay; start
 // the test relay with WEZDECK_RELAY_URL=…/relay/host?room=$WEZDECK_REMOTE_ROOM.
@@ -143,6 +149,48 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await page
       .locator('[data-testid=session-sync]')
       .waitFor({ timeout: 10_000 })
+    // report a problem: diagnostics + a screenshot ride along as attachments
+    if (uploadsDir) {
+      await page.getByRole('button', { name: '附件' }).click()
+      await page.getByLabel('附带本机诊断数据').check()
+      await page
+        .locator('[data-testid=attach-tray] input[type=file]')
+        .setInputFiles({
+          name: 'shot.png',
+          mimeType: 'image/png',
+          buffer: onePixelPng,
+        })
+      await box.fill('键盘弹出时消息没跟上')
+      await page.getByRole('button', { name: '发送' }).click()
+      const fileDeadline = Date.now() + 20_000
+      let screen = ''
+      while (
+        !(screen = tmux(
+          'capture-pane',
+          '-p',
+          '-J',
+          '-S',
+          '-60',
+          '-t',
+          'demo',
+        )).includes('图片: ')
+      ) {
+        if (Date.now() > fileDeadline)
+          throw new Error(`attachments never reached the pane:\n${screen}`)
+        await page.waitForTimeout(250)
+      }
+      expect(screen).toContain('[手机附件]')
+      expect(screen).toContain('客户端诊断: ')
+      const files = readdirSync(uploadsDir)
+      const diag = files.find((name) => name.startsWith('diagnostics-'))
+      expect(files.some((name) => /^img-.*\.jpg$/.test(name))).toBe(true)
+      const snapshot = JSON.parse(
+        readFileSync(join(uploadsDir, diag ?? ''), 'utf8'),
+      ) as { viewport: unknown; events: Array<unknown>; page: string }
+      expect(snapshot.viewport).toBeTruthy()
+      expect(snapshot.events.length).toBeGreaterThan(0)
+      expect(snapshot.page).not.toContain('#')
+    }
     await context.close()
-  }, 90_000)
+  }, 120_000)
 })
