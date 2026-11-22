@@ -281,6 +281,59 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+// Grok panes run under grok-focus-filter.py, so pane_current_command is
+// python3. Archived ones must still list as idle when a Grok transcript
+// (or agent_name) identifies them; plain python3 must not.
+func TestArchivedGrokPython3PaneStaysListed(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	home := filepath.Join(dir, "home")
+	grokDir := filepath.Join(home, ".grok", "sessions", "%2Fwork", "grok-py")
+	if err := os.MkdirAll(grokDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.WriteFile(filepath.Join(grokDir, "chat_history.jsonl"), []byte("{}\n"), 0o600)
+	t.Setenv("HOME", home)
+
+	bin := filepath.Join(dir, "bin")
+	_ = os.MkdirAll(bin, 0o755)
+	cat, _ := exec.LookPath("cat")
+	if err := os.Symlink(cat, filepath.Join(bin, "python3")); err != nil {
+		t.Fatal(err)
+	}
+	socket := filepath.Join(dir, "s")
+	for _, s := range []struct{ name, cmd string }{
+		{"grok", filepath.Join(bin, "python3")},
+		{"plain", filepath.Join(bin, "python3")},
+	} {
+		if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", s.name, s.cmd).CombinedOutput(); err != nil {
+			t.Fatalf("tmux: %s", out)
+		}
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOf := func(session string) string {
+		out, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", session, "#{pane_id}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{}, "recent": []map[string]any{
+		{"session_id": "grok-py", "tmux_socket": socket, "tmux_session": "grok", "tmux_pane": paneOf("grok"), "last_status": "done", "archived_ts": 200, "agent_name": ""},
+		{"session_id": "plain-py", "tmux_socket": socket, "tmux_session": "plain", "tmux_pane": paneOf("plain"), "last_status": "done", "archived_ts": 190, "agent_name": "script"},
+	}})
+	_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+	time.Sleep(200 * time.Millisecond)
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != "grok-py" || cards[0].Status != "idle" {
+		t.Fatalf("want only archived Grok-under-python3 as idle, got %+v", cards)
+	}
+}
+
 func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "s.jsonl")
 	write := func(lines ...string) {

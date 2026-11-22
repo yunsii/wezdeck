@@ -113,6 +113,27 @@ func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
 // agentCommands: what an agent TUI pane runs (pane_current_command).
 var agentCommands = map[string]bool{"claude": true, "codex": true, "grok": true, "grok.real": true}
 
+// isAgentPane: true when the pane still hosts an agent TUI. Grok is started
+// under grok-focus-filter.py, so pane_current_command is often "python3"
+// while grok.real is the child — accept that when the session id (or
+// agent_name) is known to be Grok, so archived Grok panes stay on the
+// phone's 会话 list instead of vanishing until the next message.
+func isAgentPane(cmd string, e attentionEntry) bool {
+	if agentCommands[cmd] {
+		return true
+	}
+	if cmd != "python3" {
+		return false
+	}
+	if strings.EqualFold(e.AgentName, "grok") {
+		return true
+	}
+	if _, agent := findTranscript(e.SessionID); agent == "grok" {
+		return true
+	}
+	return false
+}
+
 // liveSessions merges the live entries with archived ones (recent[]) whose
 // pane still runs an agent: an acknowledged or idle-for-30-min session drops
 // out of .entries but is still open and takes input. Archived ones get
@@ -136,7 +157,8 @@ func liveSessions() (map[string]attentionEntry, error) {
 			continue
 		}
 		panes[key] = true
-		if _, _, cmd, alive := paneState(r.attentionEntry); !alive || !agentCommands[cmd] {
+		_, _, cmd, alive := paneState(r.attentionEntry)
+		if !alive || !isAgentPane(cmd, r.attentionEntry) {
 			continue
 		}
 		e := r.attentionEntry
