@@ -27,7 +27,12 @@ function git(command: string, fallback: string) {
 // Build id = commit + build time, so a redeploy of the same commit still
 // offers the update. The query-cache buster only changes with the data
 // contract, so frontend-only deploys keep the persisted tickets.
-const buildId = `${git('git rev-parse --short HEAD', 'dev')}-${Date.now().toString(36)}`
+// One build evaluates this config several times (client, ssr / worker
+// environments); each evaluation used to take its own Date.now(), so the id
+// baked into the client differed from /build.json and every update check
+// said "new version". Memoize it in the process env so all agree.
+const buildId =
+  (process.env.WEZDECK_BUILD_ID ??= `${git('git rev-parse --short HEAD', 'dev')}-${Date.now().toString(36)}`)
 const cacheBuster = createHash('sha256')
   .update(readFileSync('src/lib/runtime-contract.ts'))
   .digest('hex')
@@ -43,6 +48,14 @@ function pwaBuildInfo(): Plugin {
       const assets = readdirSync(join(options.dir, 'assets'))
         .filter((name) => /\.(js|css)$/.test(name))
         .map((name) => `/assets/${name}`)
+      // fail the build rather than ship an update check that never settles
+      const baked = assets.some((url) =>
+        readFileSync(join(options.dir ?? '', url)).includes(buildId),
+      )
+      if (!baked)
+        this.error(
+          `build id ${buildId} is not in the client bundle: /build.json would never match it`,
+        )
       writeFileSync(
         join(options.dir, 'build.json'),
         JSON.stringify({ buildId, builtAt: new Date().toISOString() }),
