@@ -95,6 +95,18 @@ const describe = (target: EventTarget | null) =>
 
 let installed = false
 
+const PREVIOUS_KEY = 'wezdeck-trace-previous'
+function previousDocument() {
+  try {
+    return JSON.parse(sessionStorage.getItem(PREVIOUS_KEY) ?? 'null') as unknown
+  } catch {
+    return null
+  }
+}
+
+const routerIndex = () =>
+  (history.state as { __TSR_index?: number } | null)?.__TSR_index
+
 export function installClientTrace() {
   if (installed || typeof window === 'undefined') return
   installed = true
@@ -107,6 +119,48 @@ export function installClientTrace() {
   } catch {
     // not supported (Firefox, Safari): frame sampling still covers jank
   }
+  // how this page came to be (the "one empty entry before the app" question):
+  // the URL it loaded with (no hash: it can carry the pairing token), how
+  // (navigate / reload / back_forward), and the history it found
+  const entry = performance.getEntriesByType('navigation').at(0) as
+    PerformanceNavigationTiming | undefined
+  const loaded = entry ? new URL(entry.name) : null
+  trace('boot', {
+    url: loaded ? loaded.pathname + loaded.search : null,
+    type: entry?.type,
+    length: history.length,
+    index: routerIndex(),
+    referrer: document.referrer ? new URL(document.referrer).pathname : '',
+  })
+  // every back / forward: where it landed and whether the router owns that
+  // entry (no __TSR_index = an entry the app never wrote)
+  window.addEventListener('popstate', () => {
+    trace('popstate', {
+      path: location.pathname + location.search,
+      index: routerIndex(),
+      routerEntry: routerIndex() !== undefined,
+      length: history.length,
+    })
+  })
+  // keep the last events across a document change in this tab (reload,
+  // back into another document): the next snapshot carries them as `previous`
+  window.addEventListener('pagehide', () => {
+    try {
+      sessionStorage.setItem(
+        PREVIOUS_KEY,
+        JSON.stringify({
+          at: new Date().toISOString(),
+          path: location.pathname,
+          events: events.slice(-60),
+        }),
+      )
+    } catch {
+      // storage blocked: the snapshot just lacks `previous`
+    }
+  })
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) trace('pageshow-bfcache', { path: location.pathname })
+  })
   const vv = window.visualViewport
   let lastTop = -1
   let settled: ReturnType<typeof setTimeout> | undefined
@@ -224,6 +278,8 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
     },
     ...pageState(),
     ...extra,
+    // the last events of the previous document in this tab (pagehide)
+    previous: previousDocument(),
     // t is ms before this snapshot, newest last
     events: events.map((event) => ({ ...event, t: event.t - now })),
   }
