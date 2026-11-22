@@ -97,14 +97,17 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session title (tap to `/rename`) over an agent chip + branch, one
-  status word (full sentence as the tooltip) and **ⓘ 会话信息** at the far
-  right; then meters — context, Claude 5 h / 7 d limits with reset time
-  ([`remote-access.md` Account limits](remote-access.md#account-limits)),
-  background tasks — filled by share, amber from 75 %, red from 90 %; a
-  limit whose reset time has passed shows 「—，已重置，待更新」 instead of a
-  stale percentage. Tapping the meters shows model, tokens, cache hit,
-  limit freshness and the background task list. Its height is
+  back, session title (tap to `/rename`) over an agent chip + branch, a
+  「需要你处理」 chip only while the agent waits for the human (running and
+  done are visible in the thread itself: typing dots, the reply), and **ⓘ
+  会话信息** at the far right; then meters, each shown only once it is close
+  to full (≥ 75 %, `NEAR_FULL`) — context, Claude 5 h / 7 d limits with
+  reset time ([`remote-access.md` Account limits](remote-access.md#account-limits));
+  a limit snapshot whose reset time has passed is ignored — plus background
+  tasks when there are any; the row disappears when nothing qualifies (all
+  numbers stay in 会话信息). Fill is amber from 75 %, red from 90 %; tapping
+  the meters shows model, tokens, cache hit, limit freshness and the
+  background task list. Its height is
   `--session-head`, which the sticky prompt sits under.
 - 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
   header's backdrop blur would trap a fixed sheet): 复制会话引用 (the

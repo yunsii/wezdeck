@@ -11,10 +11,19 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
-import { sessionTone, useStatusText } from './console-sessions'
-import type { AccountLimits, BgTask, Detail, Usage } from './console-sessions'
+import { useStatusText } from './console-sessions'
+import type {
+  AccountLimits,
+  BgTask,
+  Detail,
+  RateWindow,
+  Usage,
+} from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
+
+/** a meter appears once its share reaches this (amber from here on) */
+const NEAR_FULL = 75
 
 const tokens = (n: number) =>
   n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
@@ -29,12 +38,10 @@ function Meter({
   note,
 }: {
   label: string
-  /** null: not known right now (a limit window reset since the snapshot) */
-  percent: number | null
+  percent: number
   note?: string
 }) {
-  const used =
-    percent === null ? 0 : Math.max(0, Math.min(100, Math.round(percent)))
+  const used = Math.max(0, Math.min(100, Math.round(percent)))
   const fill =
     used >= 90
       ? 'bg-brand-error'
@@ -49,9 +56,7 @@ function Meter({
         style={{ width: `${used}%` }}
       />
       <span className="relative">{label}</span>
-      <span className="relative font-semibold text-brand-text">
-        {percent === null ? '—' : `${used}%`}
-      </span>
+      <span className="relative font-semibold text-brand-text">{used}%</span>
       {note ? <span className="relative text-brand-label">{note}</span> : null}
     </span>
   )
@@ -72,18 +77,20 @@ function Meters({
   const context =
     usage?.context_limit && usage.context
       ? (usage.context / usage.context_limit) * 100
-      : null
-  if (context === null && !account && !background.length) return null
-  const five = account?.five_hour
-  const week = account?.seven_day
+      : 0
+  // a snapshot taken before its window reset says nothing about now
+  const current = (w?: RateWindow) =>
+    w && !(w.resets_at && w.resets_at * 1000 < Date.now()) ? w : undefined
+  const five = current(account?.five_hour)
+  const week = current(account?.seven_day)
+  // meters only appear once something is close to full; the numbers are
+  // always in 会话信息 (ⓘ)
+  const showContext = context >= NEAR_FULL
+  const showFive = Boolean(five && five.used_percentage >= NEAR_FULL)
+  const showWeek = Boolean(week && week.used_percentage >= NEAR_FULL)
+  if (!showContext && !showFive && !showWeek && !background.length) return null
   const fiveReset = ago(isoOf(five?.resets_at))
   const weekReset = ago(isoOf(week?.resets_at))
-  // a snapshot taken before its window reset says nothing about now
-  const past = (resetsAt?: number) =>
-    Boolean(resetsAt && resetsAt * 1000 < Date.now())
-  const fiveStale = past(five?.resets_at)
-  const weekStale = past(week?.resets_at)
-  const staleNote = t`reset, waiting for an update`
   const tasks = background.length
   const usedTokens = tokens(usage?.context ?? 0)
   const limitTokens = tokens(usage?.context_limit ?? 0)
@@ -102,33 +109,19 @@ function Meters({
         onClick={() => setOpen(!open)}
         className="flex min-w-0 flex-wrap items-center gap-1.5 text-left"
       >
-        {context !== null ? (
-          <Meter label={t`Context`} percent={context} />
-        ) : null}
-        {five ? (
+        {showContext ? <Meter label={t`Context`} percent={context} /> : null}
+        {showFive && five ? (
           <Meter
             label={t`5 h`}
-            percent={fiveStale ? null : five.used_percentage}
-            note={
-              fiveStale
-                ? staleNote
-                : fiveReset
-                  ? t`resets ${fiveReset}`
-                  : undefined
-            }
+            percent={five.used_percentage}
+            note={fiveReset ? t`resets ${fiveReset}` : undefined}
           />
         ) : null}
-        {week ? (
+        {showWeek && week ? (
           <Meter
             label={t`7 d`}
-            percent={weekStale ? null : week.used_percentage}
-            note={
-              weekStale
-                ? staleNote
-                : weekReset
-                  ? t`resets ${weekReset}`
-                  : undefined
-            }
+            percent={week.used_percentage}
+            note={weekReset ? t`resets ${weekReset}` : undefined}
           />
         ) : null}
         {background.length ? (
@@ -184,7 +177,6 @@ export function SessionHeader({
   const { t } = useLingui()
   const statusText = useStatusText()
   const [infoOpen, setInfoOpen] = useState(false)
-  const tone = sessionTone(data?.status ?? '', data?.waiting_kind)
   const head = useRef<HTMLElement>(null)
   useEffect(() => {
     const el = head.current
@@ -201,15 +193,8 @@ export function SessionHeader({
   }, [])
   const title =
     data?.title || data?.name || data?.window || data?.id.slice(0, 8) || ''
-  // a word next to the light; the full sentence is the tooltip (background
-  // tasks have their own meter)
-  const short = data?.waiting_kind
-    ? t`Needs you`
-    : data?.status === 'running' && data.running_kind !== 'background'
-      ? t`Running`
-      : data?.status === 'idle'
-        ? t`Idle`
-        : t`Turn over`
+  // the page shows running (typing dots) and done (the reply) by itself;
+  // the header only speaks up when the agent needs the human
   const long = data
     ? statusText(
         data.status,
@@ -265,13 +250,15 @@ export function SessionHeader({
             </span>
           ) : null}
         </div>
-        <span
-          title={long}
-          className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] text-brand-muted"
-        >
-          <Led tone={tone} size={10} />
-          {data ? short : null}
-        </span>
+        {data?.waiting_kind ? (
+          <span
+            title={long}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-[12.5px] text-brand-text"
+          >
+            <Led tone="waiting" size={10} />
+            {t`Needs you`}
+          </span>
+        ) : null}
         {data ? (
           <button
             type="button"

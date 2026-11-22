@@ -47,7 +47,7 @@ msgstr "{needCount} 项需要你，{runCount} 项进行中，{recentCount} 个�
 msgid "{runningCount} running"
 msgstr "{runningCount} 个运行中"
 
-#: src/features/session-header.tsx:137
+#: src/features/session-header.tsx:130
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
@@ -67,7 +67,7 @@ msgstr "{waitingCount} 个等待中"
 msgid "128 today"
 msgstr "今日 128"
 
-#: src/features/session-header.tsx:110
+#: src/features/session-header.tsx:115
 msgid "5 h"
 msgstr "5 小时"
 
@@ -75,7 +75,7 @@ msgstr "5 小时"
 msgid "5-hour limit"
 msgstr "5 小时额度"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:122
 msgid "7 d"
 msgstr "7 天"
 
@@ -204,7 +204,7 @@ msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 msgid "Backend"
 msgstr "后端"
 
-#: src/features/session-header.tsx:154
+#: src/features/session-header.tsx:147
 #: src/features/session-info.tsx:73
 msgid "Background tasks"
 msgstr "后台任务"
@@ -230,7 +230,7 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:148
+#: src/features/session-header.tsx:141
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -365,12 +365,12 @@ msgstr "连接详情"
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/session-header.tsx:106
+#: src/features/session-header.tsx:112
 #: src/features/session-info.tsx:74
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:145
+#: src/features/session-header.tsx:138
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -638,10 +638,6 @@ msgstr "主机上线于"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-header.tsx:211
-msgid "Idle"
-msgstr "空闲"
-
 #: src/features/console-sessions.tsx:144
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
@@ -786,7 +782,7 @@ msgstr "浅色"
 msgid "Light theme"
 msgstr "亮色主题"
 
-#: src/features/session-header.tsx:149
+#: src/features/session-header.tsx:142
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -807,7 +803,7 @@ msgstr "加载更早"
 #: src/features/console-sessions.tsx:376
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
-#: src/features/session-header.tsx:253
+#: src/features/session-header.tsx:238
 #: src/features/session-list.tsx:171
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
@@ -866,11 +862,11 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/console-now.tsx:190
-#: src/features/session-header.tsx:207
+#: src/features/session-header.tsx:259
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:208
 msgid "New session title"
 msgstr "新的会话标题"
 
@@ -1042,7 +1038,7 @@ msgstr "可选的浏览器伴侣"
 msgid "Origin session"
 msgstr "发起会话"
 
-#: src/features/session-header.tsx:147
+#: src/features/session-header.tsx:140
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -1189,7 +1185,7 @@ msgstr "远程访问"
 msgid "Remove image"
 msgstr "移除图片"
 
-#: src/features/session-header.tsx:249
+#: src/features/session-header.tsx:234
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
@@ -1249,15 +1245,11 @@ msgstr "调研完成"
 msgid "research failed"
 msgstr "调研失败"
 
-#: src/features/session-header.tsx:86
-msgid "reset, waiting for an update"
-msgstr "已重置，待更新"
-
-#: src/features/session-header.tsx:116
+#: src/features/session-header.tsx:117
 msgid "resets {fiveReset}"
 msgstr "{fiveReset}重置"
 
-#: src/features/session-header.tsx:129
+#: src/features/session-header.tsx:124
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
@@ -1327,7 +1319,6 @@ msgstr "运行中"
 
 #: src/features/chat-tools.tsx:55
 #: src/features/console-collab.tsx:111
-#: src/features/session-header.tsx:209
 msgid "Running"
 msgstr "运行中"
 
@@ -1449,7 +1440,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:279
+#: src/features/session-header.tsx:266
 #: src/features/session-info.tsx:226
 #: src/features/session-info.tsx:232
 msgid "Session info"
@@ -1465,7 +1456,7 @@ msgid "Sessions"
 msgstr "会话数"
 
 #: src/features/console-shell.tsx:130
-#: src/features/session-header.tsx:238
+#: src/features/session-header.tsx:223
 #: src/features/session-list.tsx:156
 msgctxt "nav"
 msgid "Sessions"
@@ -1725,10 +1716,6 @@ msgstr "请尝试其他 trace、分类或级别。"
 #: src/features/console-sessions.tsx:142
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
-
-#: src/features/session-header.tsx:212
-msgid "Turn over"
-msgstr "已结束"
 
 #: src/features/remote-badge.tsx:74
 msgid "TURN relay"

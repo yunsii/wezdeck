@@ -47,7 +47,7 @@ msgstr "{needCount} need you, {runCount} running, {recentCount} recent"
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
 
-#: src/features/session-header.tsx:137
+#: src/features/session-header.tsx:130
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
@@ -67,7 +67,7 @@ msgstr "{waitingCount} waiting"
 msgid "128 today"
 msgstr "128 today"
 
-#: src/features/session-header.tsx:110
+#: src/features/session-header.tsx:115
 msgid "5 h"
 msgstr "5 h"
 
@@ -75,7 +75,7 @@ msgstr "5 h"
 msgid "5-hour limit"
 msgstr "5-hour limit"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:122
 msgid "7 d"
 msgstr "7 d"
 
@@ -204,7 +204,7 @@ msgstr "Back on the page, fetching the latest (last {at})…"
 msgid "Backend"
 msgstr "Backend"
 
-#: src/features/session-header.tsx:154
+#: src/features/session-header.tsx:147
 #: src/features/session-info.tsx:73
 msgid "Background tasks"
 msgstr "Background tasks"
@@ -230,7 +230,7 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:148
+#: src/features/session-header.tsx:141
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -365,12 +365,12 @@ msgstr "Connection details"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/session-header.tsx:106
+#: src/features/session-header.tsx:112
 #: src/features/session-info.tsx:74
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:145
+#: src/features/session-header.tsx:138
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -638,10 +638,6 @@ msgstr "Host up since"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-header.tsx:211
-msgid "Idle"
-msgstr "Idle"
-
 #: src/features/console-sessions.tsx:144
 msgid "idle, you can send"
 msgstr "idle, you can send"
@@ -786,7 +782,7 @@ msgstr "Light"
 msgid "Light theme"
 msgstr "Light theme"
 
-#: src/features/session-header.tsx:149
+#: src/features/session-header.tsx:142
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -807,7 +803,7 @@ msgstr "Load earlier"
 #: src/features/console-sessions.tsx:376
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
-#: src/features/session-header.tsx:253
+#: src/features/session-header.tsx:238
 #: src/features/session-list.tsx:171
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
@@ -866,11 +862,11 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/console-now.tsx:190
-#: src/features/session-header.tsx:207
+#: src/features/session-header.tsx:259
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:208
 msgid "New session title"
 msgstr "New session title"
 
@@ -1042,7 +1038,7 @@ msgstr "Optional browser companion"
 msgid "Origin session"
 msgstr "Origin session"
 
-#: src/features/session-header.tsx:147
+#: src/features/session-header.tsx:140
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -1189,7 +1185,7 @@ msgstr "Remote access"
 msgid "Remove image"
 msgstr "Remove image"
 
-#: src/features/session-header.tsx:249
+#: src/features/session-header.tsx:234
 msgid "Rename via /rename in the agent pane"
 msgstr "Rename via /rename in the agent pane"
 
@@ -1249,15 +1245,11 @@ msgstr "research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/session-header.tsx:86
-msgid "reset, waiting for an update"
-msgstr "reset, waiting for an update"
-
-#: src/features/session-header.tsx:116
+#: src/features/session-header.tsx:117
 msgid "resets {fiveReset}"
 msgstr "resets {fiveReset}"
 
-#: src/features/session-header.tsx:129
+#: src/features/session-header.tsx:124
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
 
@@ -1327,7 +1319,6 @@ msgstr "running"
 
 #: src/features/chat-tools.tsx:55
 #: src/features/console-collab.tsx:111
-#: src/features/session-header.tsx:209
 msgid "Running"
 msgstr "Running"
 
@@ -1449,7 +1440,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:279
+#: src/features/session-header.tsx:266
 #: src/features/session-info.tsx:226
 #: src/features/session-info.tsx:232
 msgid "Session info"
@@ -1465,7 +1456,7 @@ msgid "Sessions"
 msgstr "Sessions"
 
 #: src/features/console-shell.tsx:130
-#: src/features/session-header.tsx:238
+#: src/features/session-header.tsx:223
 #: src/features/session-list.tsx:156
 msgctxt "nav"
 msgid "Sessions"
@@ -1725,10 +1716,6 @@ msgstr "Try a different trace, category, or level."
 #: src/features/console-sessions.tsx:142
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "turn finished, {bg} background tasks running; you can send"
-
-#: src/features/session-header.tsx:212
-msgid "Turn over"
-msgstr "Turn over"
 
 #: src/features/remote-badge.tsx:74
 msgid "TURN relay"
