@@ -356,7 +356,8 @@ if status in ("waiting_target", "in_progress", "submitted"):
 else:
     meta["owner"] = "initiator"
 mod.write_ticket(tid, meta, body)
-mod.append_event(tid, {"type": "reply", "decision": decision, "status": status, "phase": meta.get("phase"), "owner": meta.get("owner")})
+answered = mod.archive_questions(tid, decision)
+mod.append_event(tid, {"type": "reply", "decision": decision, "status": status, "phase": meta.get("phase"), "owner": meta.get("owner"), "answered_questions": answered})
 mod.reindex()
 next_action = "implement" if meta.get("phase") == "approved_to_implement" else "none"
 if session_claim and next_action == "implement":

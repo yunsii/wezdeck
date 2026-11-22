@@ -23,8 +23,7 @@
 #       default = 主会话认领并开发 (owner=human; 禁止自动 worktree/worker)
 #       --as-worker = headless worker 内部认领 only
 #   run.sh release --id ID
-#   run.sh challenge --id ID --measured TEXT --impact TEXT --recommended TEXT \
-#     [--original TEXT] [--needs TEXT]
+#   run.sh challenge --id ID --measured T --impact T --recommended T [--original T] [--needs T] [--questions JSON]
 #   run.sh reply --id ID --decision TEXT [--status waiting_target|in_progress]
 #       [--continue] only for worker-owned tickets (headless implement)
 #   run.sh set-status --id ID --status STATUS [--owner OWNER] [--phase PHASE]
@@ -40,7 +39,7 @@
 #       decision table: ticket × worktree (exists/dirty/ahead/age → suggest)
 #   run.sh walkthrough [--seed]
 #   run.sh reindex | selfcheck
-#   run.sh api …(read-only JSON) · fanout plan|add|run|status · research (read-only multi-repo run)
+#   run.sh api …(read-only JSON) · fanout plan|add|run|status · research (read-only multi-repo run) · attach --id (tmux takeover)
 #
 # Tickets live under ~/.agent/tickets (override: TICKETS_ROOT).
 # Three modes: create | claim(session develop) | create --run (ticket develop).
@@ -1195,7 +1194,7 @@ PY
 }
 
 cmd_challenge() {
-  local id="" measured="" impact="" recommended="" original="" needs=""
+  local id="" measured="" impact="" recommended="" original="" needs="" questions=""
   while (($#)); do
     case "$1" in
       --id) id=$2; shift 2 ;;
@@ -1204,11 +1203,11 @@ cmd_challenge() {
       --recommended) recommended=$2; shift 2 ;;
       --original) original=$2; shift 2 ;;
       --needs) needs=$2; shift 2 ;;
+      --questions) questions=$2; shift 2 ;;
       *) ticket_die "unknown challenge arg: $1" ;;
     esac
   done
-  [[ -n "$id" && -n "$measured" && -n "$impact" && -n "$recommended" ]] \
-    || ticket_die "challenge requires --id --measured --impact --recommended"
+  [[ -n "$id" && -n "$measured" && -n "$impact" && -n "$recommended" ]] || ticket_die "challenge requires --id --measured --impact --recommended"
   ticket_ensure_tree
   local root lock
   root="$(ticket_store_root)"
@@ -1216,7 +1215,7 @@ cmd_challenge() {
   ticket_with_lock "$lock" -- \
     env TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
       ID="$id" MEASURED="$measured" IMPACT="$impact" RECOMMENDED="$recommended" \
-      ORIGINAL="$original" NEEDS="$needs" python3 - <<'PY'
+      ORIGINAL="$original" NEEDS="$needs" QUESTIONS="$questions" python3 - <<'PY'
 import importlib.util, json, os, re, sys
 spec = importlib.util.spec_from_file_location(
     "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
@@ -1247,6 +1246,7 @@ _{stamp}_
 - needs_initiator_decision: {needs}
 
 """
+block, questions = mod.challenge_questions(tid, os.environ.get("QUESTIONS") or "", block)
 if re.search(r"^## Verification\s*$", body, re.M):
     body = re.sub(
         r"^## Verification\s*\n(?:.*\n)*?(?=^## |\Z)",
@@ -1268,9 +1268,9 @@ meta["status"] = "waiting_initiator"
 meta["owner"] = "initiator"
 meta["phase"] = "challenge"
 mod.write_ticket(tid, meta, body)
-mod.append_event(tid, {"type": "challenge", "needs": needs, "measured": measured})
+mod.append_event(tid, {"type": "challenge", "needs": needs, "measured": measured, "questions": len(questions)})
 mod.reindex()
-print(json.dumps({"ok": True, "id": tid, "status": "waiting_initiator", "owner": "initiator"}, ensure_ascii=False))
+print(json.dumps({"ok": True, "id": tid, "status": "waiting_initiator", "owner": "initiator", "questions": len(questions)}, ensure_ascii=False))
 PY
 }
 
@@ -1429,6 +1429,6 @@ case "$cmd" in
   walkthrough) cmd_walkthrough "$@" ;;
   reindex) cmd_reindex "$@" ;;
   selfcheck) cmd_selfcheck "$@" ;;
-  api|fanout|research) exec python3 "$TOOL_ROOT/lib/$cmd.py" "$@" ;;
+  api|fanout|research|attach) exec python3 "$TOOL_ROOT/lib/$cmd.py" "$@" ;;
   *) usage; ticket_die "unknown command: $cmd" ;;
 esac

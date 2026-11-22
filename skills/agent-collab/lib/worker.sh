@@ -93,6 +93,10 @@ _{stamp} · research worker_
 - needs_initiator_decision: {v.get('needs_initiator_decision') or ''}
 
 """
+questions = mod.normalize_questions(data.get("questions")) if verdict in ("challenge", "need_input") else []
+if questions:
+    block = block.rstrip("\n") + "\n\n" + mod.questions_markdown(questions) + "\n\n"
+mod.write_questions(tid, questions, "research")
 if re.search(r"^## Verification\s*$", body, re.M):
     body = re.sub(
         r"^## Verification\s*\n(?:.*\n)*?(?=^## |\Z)",
@@ -130,7 +134,7 @@ else:
     next_action = "implement"
 
 mod.write_ticket(tid, meta, body)
-mod.append_event(tid, {"type": "research_done", "verdict": verdict, "status": meta["status"], "next_action": next_action})
+mod.append_event(tid, {"type": "research_done", "verdict": verdict, "status": meta["status"], "next_action": next_action, "questions": len(questions)})
 mod.write_progress(
     tid,
     "research_done",
@@ -147,6 +151,7 @@ print(json.dumps({
     "owner": meta["owner"],
     "phase": meta["phase"],
     "next_action": next_action,
+    "questions": len(questions),
 }, ensure_ascii=False))
 PY
 }

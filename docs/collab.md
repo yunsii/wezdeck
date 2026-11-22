@@ -304,7 +304,7 @@ nothing is stored twice:
 | --- | --- |
 | `api health` | `{v, store, tickets, running, queued, waiting_human, seq_head, capabilities[]}` |
 | `api list [--status] [--repo] [--parent] [--since] [--limit]` | ticket summaries + last progress + child counts |
-| `api show --id` | meta, sections (sans prompts), children, `contract.md` sha, runs (summaries) |
+| `api show --id` | meta, sections (sans prompts), children, `contract.md` sha, runs (summaries), `questions` (structured challenge options while `waiting_initiator`, else null — see `SKILL.md` D) |
 | `api events --after <seq> [--ticket] [--limit 500]` | `{events[], next}`. This is the poll cursor |
 | `api run --run <run>` | launch record + run record |
 | `api prompt --sha <sha256>` | redacted prompt / continuation body |

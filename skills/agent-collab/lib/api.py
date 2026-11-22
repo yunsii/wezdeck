@@ -267,6 +267,8 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
                    "integration": mj.get("integration")} if mj.get("kind") == "parent" else None,
         "runs": runs,
         "running": in_flight_runs(tid),
+        # structured questions while the worker waits on the initiator
+        "questions": ticket_fs.read_questions(tid) if meta.get("status") == "waiting_initiator" else None,
     }
 
 

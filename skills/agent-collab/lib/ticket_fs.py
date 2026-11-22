@@ -120,6 +120,104 @@ def write_ticket(tid: str, meta: dict[str, Any], body: str) -> None:
     (d / "ticket.md").write_text(dump_frontmatter(meta, body), encoding="utf-8")
 
 
+# --- structured questions (challenge / need_input) ---------------------------
+# A worker that needs the initiator to decide may attach up to 4 questions,
+# each with 2-6 tappable options (same shape as the agents' own AskUserQuestion
+# / elicitation). They live in _data/<id>/questions.json while the ticket waits
+# on the initiator; `reply` moves them to questions-history.jsonl. The phone
+# renders them as buttons and sends the picks as an ordinary reply.
+
+MAX_QUESTIONS = 4
+MAX_OPTIONS = 6
+
+
+def normalize_questions(raw: Any) -> list[dict[str, Any]]:
+    """Validate worker-supplied questions; drop malformed entries silently."""
+    if not isinstance(raw, list):
+        return []
+    out: list[dict[str, Any]] = []
+    for q in raw[:MAX_QUESTIONS]:
+        if not isinstance(q, dict):
+            continue
+        text = str(q.get("question") or "").strip()
+        opts = []
+        for o in q.get("options") or []:
+            if isinstance(o, str):
+                o = {"label": o}
+            if not isinstance(o, dict):
+                continue
+            label = str(o.get("label") or "").strip()
+            if label:
+                opts.append({"label": label[:120], "description": str(o.get("description") or "").strip()[:400]})
+        if not text or len(opts) < 2:
+            continue
+        item: dict[str, Any] = {"question": text[:600], "options": opts[:MAX_OPTIONS],
+                                "multi_select": bool(q.get("multi_select"))}
+        header = str(q.get("header") or "").strip()
+        if header:
+            item["header"] = header[:24]
+        out.append(item)
+    return out
+
+
+def write_questions(tid: str, questions: list[dict[str, Any]], source: str) -> None:
+    path = data_dir(tid) / "questions.json"
+    if not questions:
+        path.unlink(missing_ok=True)
+        return
+    path.write_text(json.dumps({"asked_at": now_iso(), "source": source, "questions": questions},
+                               ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def read_questions(tid: str) -> dict[str, Any] | None:
+    try:
+        data = json.loads((data_dir(tid) / "questions.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    qs = normalize_questions(data.get("questions"))
+    return {"asked_at": data.get("asked_at"), "source": data.get("source"), "questions": qs} if qs else None
+
+
+def questions_markdown(questions: list[dict[str, Any]]) -> str:
+    """Options block appended to the Verification section for humans reading ticket.md."""
+    lines = []
+    for i, q in enumerate(questions, 1):
+        lines.append(f"- Q{i}{' (multi)' if q.get('multi_select') else ''}: {q['question']}")
+        for o in q["options"]:
+            lines.append(f"  - {o['label']}" + (f" — {o['description']}" if o.get("description") else ""))
+    return "\n".join(lines)
+
+
+def challenge_questions(tid: str, raw: str, block: str) -> tuple[str, list[dict[str, Any]]]:
+    """`challenge --questions JSON`: validate, store, and list them under Verification."""
+    try:
+        questions = normalize_questions(json.loads(raw)) if raw else []
+    except json.JSONDecodeError as e:
+        print(json.dumps({"ok": False, "error": f"--questions is not JSON: {e}"}), file=sys.stderr)
+        sys.exit(2)
+    if raw and not questions:
+        print(json.dumps({"ok": False, "error": "--questions has no valid question (each needs question + >=2 options)"}),
+              file=sys.stderr)
+        sys.exit(2)
+    if questions:
+        block = block.rstrip("\n") + "\n\n" + questions_markdown(questions) + "\n\n"
+    write_questions(tid, questions, "challenge")
+    return block, questions
+
+
+def archive_questions(tid: str, decision: str) -> bool:
+    """On reply: keep what was asked next to the answer, then clear it."""
+    current = read_questions(tid)
+    path = data_dir(tid) / "questions.json"
+    if current is None:
+        path.unlink(missing_ok=True)
+        return False
+    with (data_dir(tid) / "questions-history.jsonl").open("a", encoding="utf-8") as f:
+        f.write(json.dumps({**current, "answered_at": now_iso(), "answer": decision}, ensure_ascii=False) + "\n")
+    path.unlink(missing_ok=True)
+    return True
+
+
 def _observe():
     import importlib.util
 

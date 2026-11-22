@@ -24,9 +24,27 @@ Write exactly one JSON object to `{{RESULT_PATH}}`:
     "recommended": "what should happen next in the target repo",
     "needs_initiator_decision": "question for initiator, or empty string if none"
   },
-  "notes": "optional short notes"
+  "notes": "optional short notes",
+  "questions": [
+    {
+      "header": "≤12 chars, optional",
+      "question": "one decision the initiator must make",
+      "options": [
+        {"label": "short choice", "description": "what happens if chosen"},
+        {"label": "another choice", "description": "…"}
+      ],
+      "multi_select": false
+    }
+  ]
 }
 ```
+
+`questions` is optional and only read for `challenge` / `need_input`. When
+the decision is a choice between concrete options, list them here (≤4
+questions, 2–6 options each, recommended option first): the initiator taps one
+on the phone instead of typing an answer. Keep `needs_initiator_decision` as
+the plain-text version of the same question. Leave `questions` out for
+open-ended asks.
 
 ### Verdict meanings
 

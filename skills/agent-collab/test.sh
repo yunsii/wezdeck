@@ -138,9 +138,81 @@ chal="$("$run" challenge --id "$id" \
 check "challenge -> waiting_initiator" jq -e '.status == "waiting_initiator"' <<<"$chal"
 check "ticket body has measured_fact" grep -q "measured_fact: code already does Y" "$TICKETS_ROOT/_data/$id/ticket.md"
 
+check "plain challenge leaves no questions" jq -e '.questions == null' <<<"$("$run" api show --id "$id")"
+
+# --- structured questions (tappable on the phone) ---
+qs='[{"header":"Guard","question":"Drop the consumer guard?","options":[{"label":"Drop it","description":"code already does Y"},{"label":"Keep it"}]},{"question":"bad: one option","options":["only"]}]'
+chal_q="$("$run" challenge --id "$id" --measured "code already does Y" --impact "x" --recommended "drop" \
+  --needs "drop the guard?" --questions "$qs" 2>/dev/null)"
+check "challenge --questions keeps only valid questions" jq -e '.questions == 1' <<<"$chal_q"
+show_q="$("$run" api show --id "$id")"
+check "api show exposes questions while waiting_initiator" \
+  jq -e '.questions.source == "challenge" and (.questions.questions|length)==1 and .questions.questions[0].options[1].label=="Keep it" and .questions.questions[0].multi_select==false' <<<"$show_q"
+check "ticket.md lists the options" grep -q "  - Drop it — code already does Y" "$TICKETS_ROOT/_data/$id/ticket.md"
+if python3 "$here/lib/validate_api.py" show <<<"$show_q" 2>"$tmp/val.err"; then ok "show with questions validates"
+elif [[ $? -eq 2 ]]; then ok "show with questions validation skipped (jsonschema missing)"
+else bad "show with questions validates"; cat "$tmp/val.err" >&2; fi
+bad_q="$("$run" challenge --id "$id" --measured m --impact i --recommended r --questions 'not json' 2>&1)"
+check "challenge rejects non-JSON --questions" grep -q "not JSON" <<<"$bad_q"
+
 reply="$("$run" reply --id "$id" --decision "drop guard" --status waiting_target 2>/dev/null)"
 check "reply -> waiting_target" jq -e '.status == "waiting_target"' <<<"$reply"
 check "decision section written" grep -q "drop guard" "$TICKETS_ROOT/_data/$id/ticket.md"
+check "reply archives the questions with the answer" \
+  bash -c "test ! -e '$TICKETS_ROOT/_data/$id/questions.json' && jq -e '.answer==\"drop guard\" and (.questions|length)==1' '$TICKETS_ROOT/_data/$id/questions-history.jsonl'"
+check "api show has no questions after reply" jq -e '.questions == null' <<<"$("$run" api show --id "$id")"
+check "reply event records answered_questions" \
+  jq -e -s 'map(select(.type=="reply"))|last|.answered_questions==true' "$TICKETS_ROOT/_data/$id/events.jsonl"
+
+# research result with questions → waiting_initiator + questions.json; accept clears them
+apply_research() {
+  printf '%s\n' "$2" >"$TICKETS_ROOT/_data/$1/worker-result.json"
+  bash -c 'source "$1/lib/common.sh"; source "$1/lib/worker.sh"; ticket_worker_apply_result "$2"' _ "$here" "$1" 2>"$tmp/apply.err" | tail -n1
+}
+rq="$(apply_research "$id" '{"verdict":"challenge","verification":{"needs_initiator_decision":"which API?"},"questions":[{"question":"Which API?","options":[{"label":"v1"},{"label":"v2"}],"multi_select":true}]}')"
+check "research challenge with questions" jq -e '.status=="waiting_initiator" and .questions==1' <<<"$rq"
+check "research questions readable via api show" \
+  jq -e '.questions.source=="research" and .questions.questions[0].multi_select==true' <<<"$("$run" api show --id "$id")"
+ra="$(apply_research "$id" '{"verdict":"accept","verification":{},"questions":[{"question":"ignored","options":["a","b"]}]}')"
+check "research accept ignores and clears questions" \
+  bash -c "jq -e '.questions==0' <<<'$ra' >/dev/null && test ! -e '$TICKETS_ROOT/_data/$id/questions.json'"
+"$run" set-status --id "$id" --status waiting_target --owner worker >/dev/null 2>&1
+
+# --- attach: ticket session → tmux window (fake tmux, nothing real touched) ---
+fakebin="$tmp/fakebin"; mkdir -p "$fakebin"
+sess_suffix="$(bash "$here/../../scripts/runtime/tmux-worktree/print-session-names.sh" x "$fake_wez" | cut -f2 | cut -d_ -f3-)"
+cat >"$fakebin/tmux" <<FAKE
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"$tmp/tmux.log"
+case "\$1" in
+  list-sessions) printf '100\twezterm_old_%s\n200\twezterm_work_%s\n300\twezterm_x_other_abc\n' "$sess_suffix" "$sess_suffix" ;;
+  new-window) printf '@9\t%%99\n' ;;
+esac
+FAKE
+chmod +x "$fakebin/tmux"
+python3 - "$TICKETS_ROOT/_data/$id/meta.json" "$fake_wez" <<'PY'
+import json, sys
+p, wt = sys.argv[1], sys.argv[2]
+d = json.load(open(p))
+d["worktree"] = wt
+d["sessions"] = {"research": {"backend": "claude", "id": "11111111-2222-3333-4444-555555555555", "last_used_epoch": 1},
+                 "worker": {"backend": "codex", "id": "66666666-7777-8888-9999-000000000000", "last_used_epoch": 2}}
+json.dump(d, open(p, "w"))
+PY
+att_dry="$(PATH="$fakebin:$PATH" "$run" attach --id "$id" --dry-run)"
+check "attach picks newest session, ticket worktree, most active repo session" \
+  jq -e --arg wt "$fake_wez" '.ok and .role=="worker" and .backend=="codex" and .cwd==$wt and .cwd_source=="ticket_worktree" and (.tmux_session|startswith("wezterm_work_")) and (.command[0]|endswith("scripts/runtime/agent-launcher.sh")) and .command[1]=="codex"' <<<"$att_dry"
+check "attach --dry-run creates no window" bash -c "! grep -q new-window '$tmp/tmux.log'"
+att="$(PATH="$fakebin:$PATH" "$run" attach --id "$id" --role research)"
+check "attach opens a window via agent-launcher with the typed resume id" \
+  bash -c "jq -e '.ok and .pane_id==\"%99\" and .backend==\"claude\"' <<<'$att' >/dev/null && grep -q 'new-window .*WEZDECK_RESUME_SESSION_ID=11111111-2222-3333-4444-555555555555 .*agent-launcher.sh claude' '$tmp/tmux.log' && grep -q 'set-option -p -t %99 @wezterm_pane_role agent-cli:claude' '$tmp/tmux.log'"
+check "attach session-claims the open ticket and records it" \
+  bash -c "jq -e '.claimed==true' <<<'$att' >/dev/null && jq -e '.attached.pane_id==\"%99\" and .claimed_by==\"tmux:%99\"' '$TICKETS_ROOT/_data/$id/meta.json' >/dev/null"
+mkdir -p "$TICKETS_ROOT/_data/$id/runs"; : >"$TICKETS_ROOT/_data/$id/runs/run-x.launch.json"
+PATH="$fakebin:$PATH" "$run" attach --id "$id" --dry-run >/dev/null 2>&1
+check "attach refuses while a headless run is in flight" test $? -eq 3
+rm -f "$TICKETS_ROOT/_data/$id/runs/run-x.launch.json"
+"$run" release --id "$id" >/dev/null 2>&1 || true
 
 # --- re-claim after reply + close ---
 "$run" claim --id "$id" --by agent-a >/dev/null 2>&1

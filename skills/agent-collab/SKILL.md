@@ -196,7 +196,8 @@ shipped) from `watch` ticks or `progress` — do not leave them staring at a sil
 
 ```bash
 "$D" challenge --id <id> \
-  --measured "…" --impact "…" --recommended "…" [--needs "…"]
+  --measured "…" --impact "…" --recommended "…" [--needs "…"] \
+  [--questions '[{"question":"…","options":[{"label":"…","description":"…"},{"label":"…"}],"multi_select":false}]']
 # initiator side:
 "$D" reply --id <id> --decision "…" --status waiting_target
 # Mode 3 worker-owned only:
@@ -204,6 +205,26 @@ shipped) from `watch` ticks or `progress` — do not leave them staring at a sil
 ```
 
 Session-claimed tickets: after `reply`, the **claiming TUI** continues implement — no `--continue`.
+
+**Structured questions.** When the decision is a choice between concrete options, pass
+`--questions` (≤4 questions, 2–6 options each, recommended first; research workers put the same
+array in `worker-result.json` `questions`). The initiator taps them on the phone (ticket detail)
+and the picks arrive as an ordinary `reply` decision (`问题 → 选项`); `reply` archives them to
+`questions-history.jsonl`. `ticket api show` exposes them as `questions` while
+`waiting_initiator`. Keep `--needs` as the plain-text version. Open-ended asks: no `--questions`.
+
+**Take over in tmux.** When a tap is not enough:
+
+```bash
+"$D" attach --id <id> [--role research|worker] [--select] [--dry-run]
+```
+
+resumes the ticket's newest agent session (`sessions.<role>`) in a new window of the target repo's
+tmux session via `agent-launcher.sh` + `WEZDECK_RESUME_SESSION_ID` (cwd = ticket worktree, else
+the transcript's cwd; research run in a removed temp worktree → target repo main checkout, Claude
+transcript copied over). An open ticket is session-claimed (`claimed_by=tmux:<pane>`), so
+`reply --continue` / `run` refuse instead of writing into the same conversation. Refuses while a
+headless run is in flight (`--force` overrides) or when the repo has no tmux session open.
 
 ### E) Close
 
