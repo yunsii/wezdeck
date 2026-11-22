@@ -290,9 +290,34 @@ export const collabEventSchema = z
   })
   .passthrough()
 
+/** structured questions a waiting ticket asks (skills/agent-collab questions.json) */
+export const ticketQuestionsSchema = z.object({
+  asked_at: nstr,
+  source: nstr,
+  questions: z
+    .array(
+      z.object({
+        header: z.string().optional(),
+        question: z.string(),
+        multi_select: z.boolean().default(false),
+        options: z
+          .array(
+            z.object({
+              label: z.string(),
+              description: z.string().optional(),
+            }),
+          )
+          .default([]),
+      }),
+    )
+    .default([]),
+})
+export type TicketQuestions = z.infer<typeof ticketQuestionsSchema>
+
 export const collabShowSchema = collabEnvelope({
   ticket: collabTicketSchema.optional(),
   sessions: z.record(z.string(), z.unknown()).default({}),
+  questions: ticketQuestionsSchema.nullable().optional(),
   sections: z
     .array(z.object({ title: z.string(), text: z.string() }))
     .default([]),

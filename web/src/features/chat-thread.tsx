@@ -11,7 +11,8 @@ import { ChatMarkdown } from './chat-markdown'
 import { ToolGroup } from './chat-tools'
 
 export type Message = {
-  role: 'user' | 'assistant' | 'tool'
+  /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
+  role: 'user' | 'assistant' | 'tool' | 'system'
   text: string
   ts?: string
   tool?: string
@@ -294,6 +295,15 @@ export function ChatThread({
               }
             />
           )
+        if (item.message.role === 'system') {
+          return (
+            <CompactDivider
+              key={`m${at}`}
+              message={item.message}
+              onShown={stream ? () => advance(at + 1) : undefined}
+            />
+          )
+        }
         return (
           <Bubble
             key={`m${at}`}
@@ -307,6 +317,58 @@ export function ChatThread({
       })}
       {busy && effective >= end && !callInFlight(items) ? <Typing /> : null}
     </>
+  )
+}
+
+/**
+ * Context compaction: everything above was summarised for the agent. The
+ * summary it continues from is one tap away; earlier history is still in the
+ * transcript (the page stops loading there unless asked).
+ */
+function CompactDivider({
+  message,
+  onShown,
+}: {
+  message: Message
+  /** the reveal cursor sits here: nothing to animate, move on */
+  onShown?: () => void
+}) {
+  const { t } = useLingui()
+  useEffect(() => {
+    onShown?.()
+  }, [onShown])
+  if (message.kind !== 'compact') return null
+  const when = message.ts
+    ? new Date(message.ts).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+  const label =
+    message.text === 'manual'
+      ? t`Context compacted (/compact)`
+      : t`Context compacted automatically`
+  return (
+    <details className="group py-1" data-testid="compact-divider">
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-[12px] text-brand-label">
+        <span className="h-px flex-1 bg-brand-edge" />
+        <span>
+          {label}
+          {when ? ` ${when}` : ''}
+          {message.body ? (
+            <span className="ml-1 underline-offset-2 group-open:hidden">
+              {t`· summary`}
+            </span>
+          ) : null}
+        </span>
+        <span className="h-px flex-1 bg-brand-edge" />
+      </summary>
+      {message.body ? (
+        <p className="mt-2 max-h-72 overflow-y-auto rounded-[12px] bg-brand-surface px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap text-brand-muted">
+          {message.body}
+        </p>
+      ) : null}
+    </details>
   )
 }
 

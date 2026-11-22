@@ -11,7 +11,15 @@ msgstr ""
 msgid ", "
 msgstr "、"
 
-#: src/features/chat-thread.tsx:329
+#: src/features/chat-thread.tsx:360
+msgid "· summary"
+msgstr "· 摘要"
+
+#: src/features/ticket-reply.tsx:71
+msgid "(pick any)"
+msgstr "（可多选）"
+
+#: src/features/chat-thread.tsx:391
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
@@ -19,7 +27,7 @@ msgstr "{count} 条已送达，等 Agent 处理"
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/chat-thread.tsx:328
+#: src/features/chat-thread.tsx:390
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
 
@@ -51,11 +59,15 @@ msgstr "{runningCount} 个运行中"
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
-#: src/features/console-sessions.tsx:361
+#: src/features/console-sessions.tsx:368
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/console-sessions.tsx:191
+#: src/features/ticket-reply.tsx:195
+msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
+msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
+
+#: src/features/console-sessions.tsx:194
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -71,7 +83,7 @@ msgstr "今日 128"
 msgid "5 h"
 msgstr "5 小时"
 
-#: src/features/session-info.tsx:77
+#: src/features/session-info.tsx:79
 msgid "5-hour limit"
 msgstr "5 小时额度"
 
@@ -79,13 +91,17 @@ msgstr "5 小时额度"
 msgid "7 d"
 msgstr "7 天"
 
-#: src/features/session-info.tsx:78
+#: src/features/session-info.tsx:80
 msgid "7-day limit"
 msgstr "7 天额度"
 
 #: src/features/console-usage.tsx:139
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
+
+#: src/features/ticket-reply.tsx:282
+msgid "A headless run is still going; take over when it finishes."
+msgstr "后台还在跑，等它结束再接管。"
 
 #: src/features/landing-page.tsx:65
 msgid "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
@@ -95,11 +111,11 @@ msgstr "本地优先的 AI Agent 工作台，构建于 WezTerm、tmux 和 git wo
 msgid "A local-first workbench for AI coding agents."
 msgstr "面向 AI Agent 的本地工作台。"
 
-#: src/features/session-info.tsx:83
+#: src/features/session-info.tsx:85
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/session-info.tsx:82
+#: src/features/session-info.tsx:84
 msgid "Account limits"
 msgstr "账号额度"
 
@@ -171,6 +187,10 @@ msgstr "已是最新版本"
 msgid "An example. Select a session to see where you would jump back."
 msgstr "这是示例。选一个会话，看你会跳回哪里。"
 
+#: src/features/ticket-reply.tsx:183
+msgid "Anything to add (optional)"
+msgstr "补充说明（可选）"
+
 #: src/features/console-me.tsx:51
 #: src/features/console-me.tsx:198
 msgid "App"
@@ -196,7 +216,7 @@ msgstr "对前提提出了质疑"
 msgid "Back"
 msgstr "返回"
 
-#: src/features/console-sessions.tsx:263
+#: src/features/console-sessions.tsx:266
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 
@@ -205,7 +225,7 @@ msgid "Backend"
 msgstr "后端"
 
 #: src/features/session-header.tsx:147
-#: src/features/session-info.tsx:73
+#: src/features/session-info.tsx:75
 msgid "Background tasks"
 msgstr "后台任务"
 
@@ -222,11 +242,11 @@ msgstr "分支"
 msgid "Bytes"
 msgstr "字节"
 
-#: src/features/console-collab.tsx:116
-#: src/features/console-collab.tsx:282
-#: src/features/console-collab.tsx:333
-#: src/features/console-collab.tsx:417
-#: src/features/session-info.tsx:76
+#: src/features/console-collab.tsx:121
+#: src/features/console-collab.tsx:296
+#: src/features/console-collab.tsx:347
+#: src/features/console-collab.tsx:431
+#: src/features/session-info.tsx:78
 msgid "Cache hit"
 msgstr "缓存命中"
 
@@ -234,7 +254,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:435
+#: src/features/console-sessions.tsx:451
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -268,11 +288,11 @@ msgstr "检查更新"
 msgid "Checking…"
 msgstr "检查中…"
 
-#: src/features/console-collab.tsx:412
+#: src/features/console-collab.tsx:426
 msgid "Child"
 msgstr "子单"
 
-#: src/features/console-collab.tsx:407
+#: src/features/console-collab.tsx:421
 msgid "Children"
 msgstr "子单"
 
@@ -284,7 +304,7 @@ msgstr "认领"
 #~ msgid "Claude is working; your message joins its queue and it decides when to take it."
 #~ msgstr "Claude 正在运行，消息会进入它的队列，由它自己安排什么时候处理。"
 
-#: src/features/session-info.tsx:236
+#: src/features/session-info.tsx:246
 msgid "Close"
 msgstr "关闭"
 
@@ -323,7 +343,7 @@ msgstr "已关闭"
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
-#: src/features/console-collab.tsx:134
+#: src/features/console-collab.tsx:139
 msgid "Collab metrics"
 msgstr "协作指标"
 
@@ -344,7 +364,7 @@ msgstr "输入工具"
 msgid "confirm"
 msgstr "确认"
 
-#: src/features/console-collab.tsx:482
+#: src/features/console-collab.tsx:496
 msgid "conflict"
 msgstr "冲突"
 
@@ -366,7 +386,7 @@ msgid "Console navigation"
 msgstr "控制台导航"
 
 #: src/features/session-header.tsx:112
-#: src/features/session-info.tsx:74
+#: src/features/session-info.tsx:76
 msgid "Context"
 msgstr "上下文"
 
@@ -374,12 +394,24 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
+#: src/features/chat-thread.tsx:349
+msgid "Context compacted (/compact)"
+msgstr "上下文已手动压缩"
+
+#: src/features/chat-thread.tsx:350
+msgid "Context compacted automatically"
+msgstr "上下文已自动压缩"
+
+#: src/features/session-info.tsx:66
+msgid "Context compactions"
+msgstr "上下文压缩次数"
+
 #: src/features/landing-page.tsx:91
 msgid "Control"
 msgstr "控制"
 
 #: src/features/session-composer.tsx:86
-#: src/features/session-info.tsx:259
+#: src/features/session-info.tsx:269
 msgid "Copied"
 msgstr "已复制"
 
@@ -395,13 +427,13 @@ msgstr "复制命令"
 msgid "Copy error"
 msgstr "复制错误信息"
 
-#: src/features/session-info.tsx:259
+#: src/features/session-info.tsx:269
 msgid "Copy session reference for an agent"
 msgstr "复制会话引用（给 agent 用）"
 
-#: src/features/console-collab.tsx:121
-#: src/features/console-collab.tsx:283
-#: src/features/console-collab.tsx:334
+#: src/features/console-collab.tsx:126
+#: src/features/console-collab.tsx:297
+#: src/features/console-collab.tsx:348
 msgid "Cost"
 msgstr "花费"
 
@@ -409,7 +441,7 @@ msgstr "花费"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/console-collab.tsx:138
+#: src/features/console-collab.tsx:143
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
@@ -450,11 +482,11 @@ msgstr "受限"
 #~ msgid "Delivered, waiting for the agent"
 #~ msgstr "已送达，等待 Agent 处理"
 
-#: src/features/console-collab.tsx:415
+#: src/features/console-collab.tsx:429
 msgid "Depends on"
 msgstr "依赖"
 
-#: src/features/session-info.tsx:72
+#: src/features/session-info.tsx:74
 msgid "Desk idle for"
 msgstr "电脑前空闲"
 
@@ -553,7 +585,7 @@ msgstr "示例"
 msgid "Example agent sessions"
 msgstr "示例 Agent 会话"
 
-#: src/features/console-collab.tsx:337
+#: src/features/console-collab.tsx:351
 msgid "Exit"
 msgstr "退出码"
 
@@ -581,11 +613,11 @@ msgstr "筛选工单"
 #~ msgid "Finished"
 #~ msgstr "已结束"
 
-#: src/features/console-sessions.tsx:151
+#: src/features/console-sessions.tsx:154
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-info.tsx:65
+#: src/features/session-info.tsx:67
 msgid "First turn"
 msgstr "第一轮"
 
@@ -638,7 +670,7 @@ msgstr "主机上线于"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/console-sessions.tsx:145
+#: src/features/console-sessions.tsx:148
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
@@ -687,8 +719,8 @@ msgstr "已安装"
 msgid "Instance"
 msgstr "实例"
 
-#: src/features/console-collab.tsx:475
-#: src/features/console-collab.tsx:476
+#: src/features/console-collab.tsx:489
+#: src/features/console-collab.tsx:490
 msgid "Integration"
 msgstr "集成"
 
@@ -700,11 +732,11 @@ msgstr "公网"
 msgid "interrupt"
 msgstr "打断"
 
-#: src/features/session-info.tsx:216
+#: src/features/session-info.tsx:226
 msgid "is queued"
 msgstr "排队等这一轮结束"
 
-#: src/features/session-info.tsx:216
+#: src/features/session-info.tsx:226
 msgid "joins the current turn"
 msgstr "插入当前这一轮"
 
@@ -753,12 +785,12 @@ msgstr "上次直连"
 msgid "Last sample"
 msgstr "最近采样"
 
-#: src/features/session-info.tsx:66
+#: src/features/session-info.tsx:68
 msgid "Last turn"
 msgstr "最后一轮"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:191
+#: src/features/console-sessions.tsx:194
 msgid "Latest"
 msgstr "最近"
 
@@ -790,17 +822,21 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:371
+#: src/features/console-sessions.tsx:387
 msgid "Load earlier"
 msgstr "加载更早"
 
+#: src/features/session-info.tsx:65
+msgid "Loaded on this page"
+msgstr "本页已加载"
+
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:123
-#: src/features/console-collab.tsx:188
+#: src/features/console-collab.tsx:193
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:233
-#: src/features/console-sessions.tsx:371
+#: src/features/console-sessions.tsx:384
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:238
@@ -821,7 +857,7 @@ msgstr "日志流"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/console-collab.tsx:487
+#: src/features/console-collab.tsx:501
 msgid "merged"
 msgstr "已合并"
 
@@ -841,7 +877,7 @@ msgstr "消息数"
 #~ msgid "Metrics"
 #~ msgstr "指标"
 
-#: src/features/console-collab.tsx:143
+#: src/features/console-collab.tsx:148
 msgid "Metrics window"
 msgstr "统计窗口"
 
@@ -857,7 +893,7 @@ msgstr "模型"
 msgid "Modified"
 msgstr "修改时间"
 
-#: src/features/session-info.tsx:84
+#: src/features/session-info.tsx:86
 msgid "Names sessions"
 msgstr "自动命名会话"
 
@@ -878,7 +914,7 @@ msgstr "有新版本"
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
 
-#: src/features/session-info.tsx:87
+#: src/features/session-info.tsx:89
 msgid "no"
 msgstr "否"
 
@@ -902,7 +938,7 @@ msgstr "现在没有正在运行的 Agent 会话。"
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 
-#: src/features/console-collab.tsx:315
+#: src/features/console-collab.tsx:329
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
@@ -929,7 +965,7 @@ msgstr "这个工作区里没有仓库。"
 msgid "No ticket selected"
 msgstr "未选中工单"
 
-#: src/features/console-collab.tsx:59
+#: src/features/console-collab.tsx:64
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
@@ -957,7 +993,7 @@ msgstr "当前 Runtime 还没有这条通道"
 #~ msgid "Nothing is waiting on you."
 #~ msgstr "没有等你处理的工单。"
 
-#: src/features/console-collab.tsx:85
+#: src/features/console-collab.tsx:90
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -1002,7 +1038,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:455
+#: src/features/console-sessions.tsx:471
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1022,6 +1058,16 @@ msgstr "打开 VS Code"
 msgid "Open web console"
 msgstr "打开 Web 控制台"
 
+#. placeholder {0}: result.window_name ?? ''
+#. placeholder {1}: result.tmux_session ?? ''
+#: src/features/ticket-reply.tsx:259
+#~ msgid "Opened in tmux: {0} ({1})"
+#~ msgstr ""
+
+#: src/features/ticket-reply.tsx:260
+msgid "Opened in tmux: {windowName} ({tmuxSession})"
+msgstr "已在 tmux 打开：{windowName}（{tmuxSession}）"
+
 #: src/features/console-activity.tsx:80
 msgid "opened, {from} → {to}"
 msgstr "开单：{from} → {to}"
@@ -1029,6 +1075,10 @@ msgstr "开单：{from} → {to}"
 #: src/features/console-usage.tsx:131
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
+
+#: src/features/ticket-reply.tsx:278
+msgid "Opening…"
+msgstr "正在打开…"
 
 #: src/features/landing-page.tsx:130
 msgid "Optional browser companion"
@@ -1042,7 +1092,7 @@ msgstr "发起会话"
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
-#: src/features/session-info.tsx:75
+#: src/features/session-info.tsx:77
 msgid "Output tokens"
 msgstr "输出 token"
 
@@ -1051,7 +1101,7 @@ msgstr "输出 token"
 msgid "Overview"
 msgstr "总览"
 
-#: src/features/console-collab.tsx:214
+#: src/features/console-collab.tsx:219
 msgid "Owner"
 msgstr "负责方"
 
@@ -1071,7 +1121,7 @@ msgstr "窗格"
 msgid "Pane role"
 msgstr "窗格角色"
 
-#: src/features/console-collab.tsx:123
+#: src/features/console-collab.tsx:128
 msgid "Parallelism"
 msgstr "实际并行度"
 
@@ -1079,11 +1129,11 @@ msgstr "实际并行度"
 msgid "Part"
 msgstr "组成"
 
-#: src/features/console-collab.tsx:130
+#: src/features/console-collab.tsx:135
 msgid "Peak RSS"
 msgstr "内存峰值"
 
-#: src/features/console-collab.tsx:330
+#: src/features/console-collab.tsx:344
 msgid "Phase"
 msgstr "阶段"
 
@@ -1095,7 +1145,7 @@ msgstr "手机写入"
 msgid "Plan ready for review"
 msgstr "计划待你确认"
 
-#: src/features/session-info.tsx:80
+#: src/features/session-info.tsx:82
 msgid "Plan review"
 msgstr "计划确认"
 
@@ -1108,7 +1158,7 @@ msgstr "主"
 msgid "Process"
 msgstr "进程"
 
-#: src/features/console-collab.tsx:215
+#: src/features/console-collab.tsx:220
 msgid "Progress"
 msgstr "进展"
 
@@ -1116,7 +1166,7 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/chat-thread.tsx:325
+#: src/features/chat-thread.tsx:387
 msgid "Queued messages"
 msgstr "排队中的消息"
 
@@ -1145,7 +1195,7 @@ msgstr "读了 {reads} 个文件"
 msgid "Ready"
 msgstr "就绪"
 
-#: src/features/session-info.tsx:68
+#: src/features/session-info.tsx:70
 msgid "Reason"
 msgstr "原因"
 
@@ -1193,11 +1243,11 @@ msgstr "通过 Agent 窗格的 /rename 改标题"
 msgid "replied"
 msgstr "已回复"
 
-#: src/features/ticket-reply.tsx:41
+#: src/features/ticket-reply.tsx:145
 msgid "Replied"
 msgstr "已回复"
 
-#: src/features/ticket-reply.tsx:41
+#: src/features/ticket-reply.tsx:145
 msgid "Replied, the agent continues"
 msgstr "已回复，Agent 继续处理"
 
@@ -1205,15 +1255,15 @@ msgstr "已回复，Agent 继续处理"
 msgid "replied: {body}"
 msgstr "回复：{body}"
 
-#: src/features/ticket-reply.tsx:85
+#: src/features/ticket-reply.tsx:210
 msgid "Reply"
 msgstr "回复"
 
-#: src/features/ticket-reply.tsx:93
+#: src/features/ticket-reply.tsx:218
 msgid "Reply and continue"
 msgstr "回复并继续"
 
-#: src/features/console-collab.tsx:413
+#: src/features/console-collab.tsx:427
 msgid "Repo"
 msgstr "仓库"
 
@@ -1257,7 +1307,7 @@ msgstr "{weekReset}重置"
 msgid "Result"
 msgstr "结果"
 
-#: src/features/console-collab.tsx:118
+#: src/features/console-collab.tsx:123
 msgid "Resume / fresh hit"
 msgstr "续接 / 新开命中"
 
@@ -1269,12 +1319,16 @@ msgstr "继续对话线程"
 msgid "Resumed conversations"
 msgstr "可恢复的会话"
 
+#: src/features/ticket-reply.tsx:283
+msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
+msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
+
 #: src/features/console-overview.tsx:104
 #: src/features/console-shell.tsx:499
 msgid "Retry"
 msgstr "重试"
 
-#: src/features/console-collab.tsx:164
+#: src/features/console-collab.tsx:169
 msgid "reuse reasons"
 msgstr "复用理由"
 
@@ -1287,15 +1341,15 @@ msgstr "Rime"
 msgid "Rime collector"
 msgstr "Rime 采集器"
 
-#: src/features/console-collab.tsx:211
+#: src/features/console-collab.tsx:216
 msgid "Route"
 msgstr "流向"
 
-#: src/features/console-collab.tsx:336
+#: src/features/console-collab.tsx:350
 msgid "RSS"
 msgstr "内存"
 
-#: src/features/console-collab.tsx:329
+#: src/features/console-collab.tsx:343
 msgid "Run"
 msgstr "运行"
 
@@ -1311,14 +1365,14 @@ msgstr "运行失败"
 msgid "run finished"
 msgstr "运行结束"
 
-#: src/features/console-collab.tsx:449
+#: src/features/console-collab.tsx:463
 #: src/features/landing-example.tsx:50
 #: src/features/tickets-view.tsx:84
 msgid "running"
 msgstr "运行中"
 
 #: src/features/chat-tools.tsx:67
-#: src/features/console-collab.tsx:111
+#: src/features/console-collab.tsx:116
 msgid "Running"
 msgstr "运行中"
 
@@ -1330,17 +1384,17 @@ msgstr "窗格里在跑"
 msgid "Running now"
 msgstr "正在运行"
 
-#: src/features/session-info.tsx:69
+#: src/features/session-info.tsx:71
 msgid "Running substate"
 msgstr "运行子状态"
 
-#: src/features/console-collab.tsx:113
-#: src/features/console-collab.tsx:251
-#: src/features/console-collab.tsx:324
+#: src/features/console-collab.tsx:118
+#: src/features/console-collab.tsx:265
+#: src/features/console-collab.tsx:338
 msgid "Runs"
 msgstr "运行次数"
 
-#: src/features/console-collab.tsx:66
+#: src/features/console-collab.tsx:71
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 
@@ -1385,7 +1439,7 @@ msgstr "Runtime 报告的原因："
 msgid "Sample signals. The live console reads your local Runtime."
 msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 
-#: src/features/console-collab.tsx:416
+#: src/features/console-collab.tsx:430
 msgid "Scope"
 msgstr "改动范围"
 
@@ -1431,7 +1485,7 @@ msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，
 #~ msgstr "已发送到会话"
 
 #: src/features/console-collab-run.tsx:47
-#: src/features/console-collab.tsx:331
+#: src/features/console-collab.tsx:345
 #: src/features/session-info.tsx:36
 msgid "Session"
 msgstr "会话"
@@ -1441,8 +1495,8 @@ msgid "Session id"
 msgstr "会话 ID"
 
 #: src/features/session-header.tsx:266
-#: src/features/session-info.tsx:226
-#: src/features/session-info.tsx:232
+#: src/features/session-info.tsx:236
+#: src/features/session-info.tsx:242
 msgid "Session info"
 msgstr "会话信息"
 
@@ -1451,7 +1505,7 @@ msgstr "会话信息"
 msgid "Session jump failed"
 msgstr "会话跳转失败"
 
-#: src/features/console-collab.tsx:114
+#: src/features/console-collab.tsx:119
 msgid "Sessions"
 msgstr "会话数"
 
@@ -1479,6 +1533,10 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
+#: src/features/console-sessions.tsx:386
+msgid "Show history before compaction"
+msgstr "查看压缩前的记录"
+
 #: src/features/console-collab-run.tsx:117
 msgid "Show initial prompt"
 msgstr "查看初始消息"
@@ -1503,7 +1561,7 @@ msgstr "套接字"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:442
+#: src/features/console-sessions.tsx:458
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -1527,16 +1585,16 @@ msgstr "开始处理"
 msgid "State"
 msgstr "状态"
 
-#: src/features/console-collab.tsx:414
+#: src/features/console-collab.tsx:428
 #: src/features/console-development.tsx:403
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:120
-#: src/features/session-info.tsx:67
+#: src/features/session-info.tsx:69
 #: src/features/tickets-view.tsx:170
 msgid "Status"
 msgstr "状态"
 
-#: src/features/session-info.tsx:71
+#: src/features/session-info.tsx:73
 msgid "Status updated"
 msgstr "状态更新于"
 
@@ -1548,7 +1606,11 @@ msgstr "已提交"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/session-info.tsx:263
+#: src/features/ticket-reply.tsx:278
+msgid "Take over in tmux"
+msgstr "接管到 tmux"
+
+#: src/features/session-info.tsx:273
 msgid "Tap a row to copy its value."
 msgstr "点任意一行即可复制它的值。"
 
@@ -1560,7 +1622,7 @@ msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
-#: src/features/session-info.tsx:79
+#: src/features/session-info.tsx:81
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
@@ -1568,7 +1630,7 @@ msgstr "问答可点选项"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:319
+#: src/features/console-sessions.tsx:326
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1576,11 +1638,11 @@ msgstr "Agent 正在等你确认，先用上面的按键回答。"
 msgid "The agent is asking you"
 msgstr "Agent 在问你"
 
-#: src/features/ticket-reply.tsx:51
+#: src/features/ticket-reply.tsx:155
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/chat-thread.tsx:235
+#: src/features/chat-thread.tsx:236
 msgid "The agent is working"
 msgstr "Agent 正在处理"
 
@@ -1615,7 +1677,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:436
+#: src/features/console-sessions.tsx:452
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -1633,7 +1695,7 @@ msgstr "当前 Runtime 没有提供 workspace 目录。"
 msgid "Ticket activity"
 msgstr "工单动态"
 
-#: src/features/console-collab.tsx:191
+#: src/features/console-collab.tsx:196
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
@@ -1713,7 +1775,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/console-sessions.tsx:143
+#: src/features/console-sessions.tsx:146
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
@@ -1721,9 +1783,9 @@ msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 msgid "TURN relay"
 msgstr "TURN 中继"
 
-#: src/features/console-collab.tsx:115
-#: src/features/console-collab.tsx:281
-#: src/features/console-collab.tsx:332
+#: src/features/console-collab.tsx:120
+#: src/features/console-collab.tsx:295
+#: src/features/console-collab.tsx:346
 msgid "Turns"
 msgstr "轮数"
 
@@ -1741,7 +1803,7 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
-#: src/features/console-sessions.tsx:264
+#: src/features/console-sessions.tsx:267
 msgid "Up to date, {at}"
 msgstr "已同步到最新，{at}"
 
@@ -1765,7 +1827,7 @@ msgstr "运行时长"
 msgid "Usage"
 msgstr "用量"
 
-#: src/features/session-info.tsx:81
+#: src/features/session-info.tsx:83
 msgid "Usage from"
 msgstr "用量来源"
 
@@ -1799,7 +1861,7 @@ msgstr "等待中"
 msgid "Waiting"
 msgstr "等待中"
 
-#: src/features/session-info.tsx:70
+#: src/features/session-info.tsx:72
 msgid "Waiting for"
 msgstr "等待类型"
 
@@ -1807,15 +1869,15 @@ msgstr "等待类型"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:149
+#: src/features/console-sessions.tsx:152
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/console-sessions.tsx:141
+#: src/features/console-sessions.tsx:144
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
-#: src/features/console-collab.tsx:112
+#: src/features/console-collab.tsx:117
 msgid "Waiting on human"
 msgstr "等人处理"
 
@@ -1827,7 +1889,7 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/console-collab.tsx:88
+#: src/features/console-collab.tsx:93
 msgid "Waiting on you"
 msgstr "等你处理"
 
@@ -1843,12 +1905,12 @@ msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:284
-#: src/features/console-collab.tsx:335
+#: src/features/console-collab.tsx:298
+#: src/features/console-collab.tsx:349
 msgid "Wall"
 msgstr "耗时"
 
-#: src/features/console-collab.tsx:129
+#: src/features/console-collab.tsx:134
 msgid "Wall p50"
 msgstr "耗时 p50"
 
@@ -1903,7 +1965,7 @@ msgstr "工作台"
 msgid "Worker requests"
 msgstr "Worker 请求"
 
-#: src/features/console-sessions.tsx:147
+#: src/features/console-sessions.tsx:150
 msgid "working"
 msgstr "运行中"
 
@@ -1919,7 +1981,7 @@ msgstr "工作区、worktree、Agent"
 msgid "Workspaces"
 msgstr "工作区"
 
-#: src/features/console-collab.tsx:216
+#: src/features/console-collab.tsx:221
 #: src/features/session-info.tsx:53
 msgid "Worktree"
 msgstr "工作树"
@@ -1928,8 +1990,8 @@ msgstr "工作树"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:317
-#: src/features/ticket-reply.tsx:70
+#: src/features/console-sessions.tsx:324
+#: src/features/ticket-reply.tsx:190
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"
 
@@ -1939,7 +2001,7 @@ msgstr "这台手机还没启用写入（我的 › 手机写入）。"
 msgid "WSL bridge"
 msgstr "WSL 通道"
 
-#: src/features/session-info.tsx:86
+#: src/features/session-info.tsx:88
 msgid "yes"
 msgstr "是"
 
@@ -1951,11 +2013,11 @@ msgstr "昨天"
 msgid "Your agents. Your worktrees. Your machine."
 msgstr "你的 Agent。你的 worktree。你的机器。"
 
-#: src/features/ticket-reply.tsx:65
+#: src/features/ticket-reply.tsx:184
 msgid "Your decision, extra context, or an answer to the challenge"
 msgstr "你的决定、补充信息，或对质疑的答复"
 
-#: src/features/ticket-reply.tsx:58
+#: src/features/ticket-reply.tsx:174
 msgid "Your reply"
 msgstr "你的回复"
 

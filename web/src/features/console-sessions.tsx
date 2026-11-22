@@ -115,6 +115,9 @@ export type Detail = {
   meta?: Array<{ name: string; rows: Array<{ key: string; value: string }> }>
   total?: number
   start?: number
+  /** index of the latest context-compaction marker; earlier = pre-compaction history */
+  compacted_at?: number
+  compactions?: number
   agent?: string
   status: string
   waiting_kind?: string
@@ -301,6 +304,10 @@ function SessionDetail({ id }: { id: string }) {
   const total = data?.total ?? messages.length
   const shown = messages.length
   const start = data?.start ?? 0
+  const compactedAt = data?.compacted_at
+  // reached the latest compaction marker: what is above is the old context
+  const atCompaction =
+    compactedAt !== undefined && start <= compactedAt && start > 0
   const keepPlace = useKeepPlace(end, start)
   const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
   // the phone often sits on the desk following the agent: keep it awake
@@ -364,11 +371,20 @@ function SessionDetail({ id }: { id: string }) {
                     type="button"
                     onClick={() => {
                       keepPlace()
-                      setLimit((n) => n + 60)
+                      // page back to the compaction marker first; past it only on request
+                      setLimit((n) =>
+                        atCompaction || compactedAt === undefined
+                          ? n + 60
+                          : Math.min(n + 60, total - compactedAt),
+                      )
                     }}
                     className="min-h-9 rounded-full bg-brand-surface px-3 text-brand-text"
                   >
-                    {detail.isFetching ? t`Loading…` : t`Load earlier`}
+                    {detail.isFetching
+                      ? t`Loading…`
+                      : atCompaction
+                        ? t`Show history before compaction`
+                        : t`Load earlier`}
                   </button>
                 ) : null}
               </div>

@@ -62,6 +62,8 @@ function useLabels() {
     bytes: t`Size`,
     modified: t`Modified`,
     messages: t`Messages`,
+    loaded: t`Loaded on this page`,
+    compactions: t`Context compactions`,
     first_turn: t`First turn`,
     last_turn: t`Last turn`,
     status: t`Status`,
@@ -211,8 +213,16 @@ export function SessionInfo({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
   if (!open || typeof document === 'undefined') return null
+  const loaded = {
+    key: 'loaded',
+    value: `${data.messages?.length ?? 0} / ${data.total ?? data.messages?.length ?? 0}`,
+  }
   const groups = [
-    ...(data.meta ?? []),
+    ...(data.meta ?? []).map((group) =>
+      group.name === 'transcript'
+        ? { ...group, rows: [...group.rows, loaded] }
+        : group,
+    ),
     ...extraGroups(data, yes, no, t`joins the current turn`, t`is queued`),
   ]
   return createPortal(
