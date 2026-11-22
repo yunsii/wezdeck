@@ -80,7 +80,17 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 - Phone patterns: large title that scrolls with the page, grouped inset
   lists, a three-way segmented control on 工单 (进行中 / 等你 / 已结束),
   settings as segmented rows instead of popovers, a translucent bottom bar
-  with four tabs, chat bubbles and a bottom composer on a session.
+  with four tabs (hidden on detail pages, which are full screen).
+- Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered as
+  Markdown (tables and code scroll in their own box); runs of tool calls
+  collapse into one line, each call expands to its diff / preview / command
+  and result; "N messages, showing M" with 加载更早 keeping the reading
+  position; messages sent from the phone queue above the composer until the
+  transcript shows them; motion only for what just arrived (slide-in, a new
+  reply unfolds over ≤ 500 ms, typing dots while the agent works, smooth
+  follow at the bottom), all off under reduced motion; polling 1 s while the
+  agent works. Keyboard: `interactive-widget=resizes-content` keeps the
+  composer above it.
 
 ## As built (2026-11-22)
 

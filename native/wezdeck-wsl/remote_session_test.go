@@ -252,3 +252,44 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 		t.Fatalf("idle archived session must take input: %v", err)
 	}
 }
+
+func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "s.jsonl")
+	write := func(lines ...string) {
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, l := range lines {
+			_, _ = f.WriteString(l + "\n")
+		}
+		f.Close()
+	}
+	write(
+		`{"type":"user","message":{"content":"改一下标题"}}`,
+		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Edit","input":{"file_path":"a.md","old_string":"旧标题","new_string":"新标题"}}]}}`,
+		`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":"The file a.md has been updated."}]}}`,
+	)
+	tr, err := loadTranscript(path)
+	if err != nil || len(tr.messages) != 2 {
+		t.Fatalf("first read: %v %+v", err, tr)
+	}
+	edit := tr.messages[1]
+	if edit.Tool != "Edit" || edit.Text != "Edit a.md" || edit.Body != "- 旧标题\n+ 新标题" || !strings.Contains(edit.Result, "updated") {
+		t.Fatalf("tool details: %+v", edit)
+	}
+	offset := tr.offset
+	write(`{"type":"assistant","message":{"content":[{"type":"text","text":"改好了"}]}}`)
+	tr, _ = loadTranscript(path)
+	if len(tr.messages) != 3 || tr.messages[2].Text != "改好了" || tr.offset <= offset {
+		t.Fatalf("incremental read: %+v", tr.messages)
+	}
+	// a partial trailing line waits for the rest
+	f, _ := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o600)
+	_, _ = f.WriteString(`{"type":"user","message":{"content":"半`)
+	f.Close()
+	tr, _ = loadTranscript(path)
+	if len(tr.messages) != 3 {
+		t.Fatalf("partial line must wait: %d", len(tr.messages))
+	}
+}

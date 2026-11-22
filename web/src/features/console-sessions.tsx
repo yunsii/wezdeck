@@ -6,16 +6,16 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router'
 import { ChevronLeft, SendHorizontal } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
-import { cn } from '#/lib/utils'
 import { useDeviceState } from './device-state'
 import { useAgo } from './tickets-view'
+import { ChatThread, SendQueue, settle } from './chat-thread'
+import type { Message, Pending } from './chat-thread'
 
 export type SessionCard = {
   id: string
@@ -44,14 +44,10 @@ export type BgTask = { id: string; type: string; summary: string }
 export const isBusy = (row: { status: string; running_kind?: string }) =>
   row.status === 'running' && row.running_kind !== 'background'
 
-type Message = {
-  role: 'user' | 'assistant' | 'tool'
-  text: string
-  ts?: string
-}
-
 type Detail = {
   id: string
+  total?: number
+  start?: number
   agent?: string
   status: string
   waiting_kind?: string
@@ -186,61 +182,6 @@ function SessionList() {
   )
 }
 
-function ToolGroup({ tools }: { tools: Array<Message> }) {
-  const { t } = useLingui()
-  const count = tools.length
-  return (
-    <details className="px-1">
-      <summary className="cursor-pointer list-none py-1 text-[12px] text-brand-label">
-        {t`Used ${count} tools`} ›
-      </summary>
-      <div className="grid gap-0.5 pt-1">
-        {tools.map((tool, index) => (
-          <Bubble key={index} message={tool} />
-        ))}
-      </div>
-    </details>
-  )
-}
-
-/** Consecutive tool calls collapse into one expandable line. */
-function groupTools(messages: Array<Message>) {
-  const out: Array<Message | Array<Message>> = []
-  for (const message of messages) {
-    const last = out.at(-1)
-    if (message.role === 'tool') {
-      if (Array.isArray(last)) last.push(message)
-      else out.push([message])
-    } else out.push(message)
-  }
-  return out
-}
-
-function Bubble({ message }: { message: Message }) {
-  if (message.role === 'tool') {
-    return (
-      <p className="truncate px-1 font-mono text-[12px] text-brand-label">
-        {message.text}
-      </p>
-    )
-  }
-  const mine = message.role === 'user'
-  return (
-    <div className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
-      <p
-        className={cn(
-          'max-w-[85%] rounded-[18px] px-3.5 py-2.5 text-[15px] leading-relaxed break-words whitespace-pre-wrap',
-          mine
-            ? 'rounded-br-[6px] bg-brand-text text-brand-deck'
-            : 'rounded-bl-[6px] bg-brand-surface text-brand-text',
-        )}
-      >
-        {message.text}
-      </p>
-    </div>
-  )
-}
-
 /**
  * Land at the newest message, and follow new ones while the reader is at
  * the bottom. Deferred a few frames: the router's scroll restoration runs
@@ -251,13 +192,21 @@ function useStickToBottom(
   count: number,
 ) {
   const stuck = useRef(true)
+  const landed = useRef(false)
   useEffect(() => {
     if (!count || !stuck.current) return
+    const smooth =
+      landed.current && !matchMedia('(prefers-reduced-motion: reduce)').matches
     // to the very bottom: the sticky composer would cover the last message
     // if only the end marker were scrolled into view
     const go = () => {
       const scroller = end.current?.closest('.overflow-y-auto')
-      if (scroller) scroller.scrollTop = scroller.scrollHeight
+      if (!scroller) return
+      scroller.scrollTo({
+        top: scroller.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      })
+      landed.current = true
     }
     const frame = requestAnimationFrame(() => requestAnimationFrame(go))
     const timer = setTimeout(go, 150)
@@ -278,27 +227,110 @@ function useStickToBottom(
   }, [])
 }
 
+function SessionHeader({
+  data,
+  onBack,
+}: {
+  data: Detail | undefined
+  onBack: () => void
+}) {
+  const { t } = useLingui()
+  const statusText = useStatusText()
+  const tone = sessionTone(data?.status ?? '', data?.waiting_kind)
+  return (
+    <div className="grid gap-2">
+      <button
+        type="button"
+        onClick={onBack}
+        className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
+      >
+        <ChevronLeft size={20} aria-hidden />
+        {t`Sessions`}
+      </button>
+      <p className="inline-flex items-center gap-2 text-sm text-brand-muted">
+        <Led tone={tone} size={11} />
+        {data
+          ? statusText(
+              data.status,
+              data.waiting_kind,
+              data.running_kind,
+              data.background?.length ?? 0,
+            )
+          : t`Loading…`}
+      </p>
+      {data?.background?.length ? (
+        <ul
+          aria-label={t`Background tasks`}
+          className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
+        >
+          {data.background.map((task) => (
+            <li
+              key={task.id}
+              className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
+            >
+              <Led tone="running" size={9} />
+              {task.summary || task.id}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * Loading earlier messages grows the page above the reader: remember the
+ * distance from the bottom before, restore it once the older ones render.
+ */
+function useKeepPlace(
+  end: React.RefObject<HTMLDivElement | null>,
+  start: number,
+) {
+  const fromBottom = useRef<number | null>(null)
+  useLayoutEffect(() => {
+    const scroller = end.current?.closest('.overflow-y-auto')
+    if (!scroller || fromBottom.current === null) return
+    scroller.scrollTop = scroller.scrollHeight - fromBottom.current
+    fromBottom.current = null
+  }, [start, end])
+  return () => {
+    const scroller = end.current?.closest('.overflow-y-auto')
+    if (scroller)
+      fromBottom.current = scroller.scrollHeight - scroller.scrollTop
+  }
+}
+
 function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const router = useRouter()
   const navigate = useNavigate()
   const { locale } = useLocale()
   const client = useQueryClient()
-  const statusText = useStatusText()
   const device = useDeviceState()
+  const [limit, setLimit] = useState(60)
   const detail = useQuery({
-    queryKey: ['remote', 'session', id],
+    queryKey: ['remote', 'session', id, limit],
+    placeholderData: (previous) => previous,
     enabled: typeof window !== 'undefined',
-    refetchInterval: 2_000,
-    queryFn: async () => (await remoteLink.rpc('session', { id })) as Detail,
+    refetchInterval: (query) =>
+      query.state.data && isBusy(query.state.data) ? 1_000 : 2_500,
+    queryFn: async () =>
+      (await remoteLink.rpc('session', { id, limit })) as Detail,
   })
+  const [pendingRaw, setPending] = useState<Array<Pending>>([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const end = useRef<HTMLDivElement>(null)
   const data = detail.data
-  const count = data?.messages?.length ?? 0
-  useStickToBottom(end, count)
+  const messages: Array<Message> = data?.messages ?? []
+  const pending = settle(pendingRaw, messages)
+  const busy = Boolean(data && isBusy(data))
+  useStickToBottom(end, messages.length + pending.length + (busy ? 1 : 0))
+  const total = data?.total ?? messages.length
+  const shown = messages.length
+  const start = data?.start ?? 0
+  const keepPlace = useKeepPlace(end, start)
   const back = () => {
     if (window.history.length > 1) router.history.back()
     else
@@ -321,8 +353,9 @@ function SessionDetail({ id }: { id: string }) {
     try {
       await remoteLink.write(action, { id, ...args })
       if (action === 'send') {
+        const sent = String(args.text ?? '')
         setText('')
-        toast(t`Sent to the session`)
+        setPending((items) => [...items, { text: sent, at: Date.now() }])
       }
       await client.invalidateQueries({ queryKey: ['remote', 'session', id] })
     } catch (e) {
@@ -331,46 +364,9 @@ function SessionDetail({ id }: { id: string }) {
       setSending(false)
     }
   }
-  const tone = sessionTone(data?.status ?? '', data?.waiting_kind)
   return (
     <div className="grid min-h-full grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
-      <div className="grid gap-2">
-        <button
-          type="button"
-          onClick={back}
-          className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
-        >
-          <ChevronLeft size={20} aria-hidden />
-          {t`Sessions`}
-        </button>
-        <p className="inline-flex items-center gap-2 text-sm text-brand-muted">
-          <Led tone={tone} size={11} />
-          {data
-            ? statusText(
-                data.status,
-                data.waiting_kind,
-                data.running_kind,
-                data.background?.length ?? 0,
-              )
-            : t`Loading…`}
-        </p>
-        {data?.background?.length ? (
-          <ul
-            aria-label={t`Background tasks`}
-            className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
-          >
-            {data.background.map((task) => (
-              <li
-                key={task.id}
-                className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
-              >
-                <Led tone="running" size={9} />
-                {task.summary || task.id}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
+      <SessionHeader data={data} onBack={back} />
 
       <div className="grid content-end gap-2" aria-live="polite">
         {detail.isError ? (
@@ -381,14 +377,27 @@ function SessionDetail({ id }: { id: string }) {
             {String(detail.error.message)}
           </p>
         ) : null}
-        {data?.messages?.length ? (
-          groupTools(data.messages).map((item, index) =>
-            Array.isArray(item) ? (
-              <ToolGroup key={`tools-${index}`} tools={item} />
-            ) : (
-              <Bubble key={`${index}-${item.ts ?? ''}`} message={item} />
-            ),
-          )
+        {messages.length || pending.length ? (
+          <>
+            {total > 0 ? (
+              <div className="flex items-center justify-between gap-2 px-1 text-[12px] text-brand-label">
+                <span>{t`${total} messages, showing ${shown}`}</span>
+                {start > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      keepPlace()
+                      setLimit((n) => n + 60)
+                    }}
+                    className="min-h-9 rounded-full bg-brand-surface px-3 text-brand-text"
+                  >
+                    {detail.isFetching ? t`Loading…` : t`Load earlier`}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            <ChatThread messages={messages} start={start} busy={busy} />
+          </>
         ) : data?.screen ? (
           <pre className="overflow-x-auto rounded-[14px] bg-brand-surface p-3 font-mono text-[12px] leading-snug">
             {data.screen}
@@ -431,6 +440,7 @@ function SessionDetail({ id }: { id: string }) {
           if (text.trim()) void run('send', { text })
         }}
       >
+        <SendQueue pending={pending} busy={busy} />
         {error ? (
           <p role="alert" className="text-xs text-brand-error">
             {error}

@@ -280,9 +280,12 @@ func backgroundOf(e attentionEntry) []bgTask {
 }
 
 type chatMessage struct {
-	Role string `json:"role"` // user | assistant | tool
-	Text string `json:"text"`
-	TS   string `json:"ts,omitempty"`
+	Role   string `json:"role"` // user | assistant | tool
+	Text   string `json:"text"`
+	TS     string `json:"ts,omitempty"`
+	Tool   string `json:"tool,omitempty"`   // tool name (role=tool)
+	Body   string `json:"body,omitempty"`   // what the tool was asked to do: diff, file preview, command
+	Result string `json:"result,omitempty"` // what came back (clipped)
 }
 
 func clip(s string, n int) string {
@@ -293,104 +296,211 @@ func clip(s string, n int) string {
 	return string([]rune(s)[:n]) + "…"
 }
 
-// parseClaudeTranscript keeps what a reader on a phone needs: user prompts,
-// assistant text, and one line per tool call; tool results are dropped.
-func parseClaudeTranscript(data []byte, limit int) []chatMessage {
-	messages := []chatMessage{}
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	scanner.Buffer(make([]byte, 1<<20), 32<<20)
-	for scanner.Scan() {
-		var line struct {
-			Type      string `json:"type"`
-			Timestamp string `json:"timestamp"`
-			IsMeta    bool   `json:"isMeta"`
-			Message   struct {
-				Role    string          `json:"role"`
-				Content json.RawMessage `json:"content"`
-			} `json:"message"`
-		}
-		if json.Unmarshal(scanner.Bytes(), &line) != nil || line.IsMeta {
-			continue
-		}
-		if line.Type != "user" && line.Type != "assistant" {
-			continue
-		}
-		var text string
-		if json.Unmarshal(line.Message.Content, &text) == nil {
-			if line.Type == "user" && !strings.HasPrefix(strings.TrimSpace(text), "<") {
-				messages = append(messages, chatMessage{Role: "user", Text: clip(text, 4000), TS: line.Timestamp})
-			}
-			continue
-		}
-		var blocks []struct {
-			Type  string          `json:"type"`
-			Text  string          `json:"text"`
-			Name  string          `json:"name"`
-			Input json.RawMessage `json:"input"`
-		}
-		if json.Unmarshal(line.Message.Content, &blocks) != nil {
-			continue
-		}
-		for _, b := range blocks {
-			switch {
-			case b.Type == "text" && strings.TrimSpace(b.Text) != "":
-				role := line.Type
-				if role == "user" && strings.HasPrefix(strings.TrimSpace(b.Text), "<") {
-					continue
-				}
-				messages = append(messages, chatMessage{Role: role, Text: clip(b.Text, 4000), TS: line.Timestamp})
-			case b.Type == "tool_use":
-				var input map[string]any
-				_ = json.Unmarshal(b.Input, &input)
-				detail := ""
-				for _, key := range []string{"command", "description", "file_path", "pattern", "url", "prompt"} {
-					if v, ok := input[key].(string); ok && v != "" {
-						detail = v
-						break
-					}
-				}
-				messages = append(messages, chatMessage{Role: "tool", Text: clip(b.Name+" "+detail, 160), TS: line.Timestamp})
-			}
-		}
+func clipLines(s string, lines int) string {
+	parts := strings.Split(s, "\n")
+	if len(parts) <= lines {
+		return s
 	}
-	if len(messages) > limit {
-		messages = messages[len(messages)-limit:]
-	}
-	return messages
+	return strings.Join(parts[:lines], "\n") + fmt.Sprintf("\n… (+%d lines)", len(parts)-lines)
 }
 
-func tailFile(path string, max int64) ([]byte, error) {
+// toolBody: the part of a tool call a reviewer wants to see on a phone.
+func toolBody(name string, input map[string]any) string {
+	str := func(key string) string { v, _ := input[key].(string); return v }
+	diff := func(oldText, newText string) string {
+		var b strings.Builder
+		for _, l := range strings.Split(oldText, "\n") {
+			b.WriteString("- " + l + "\n")
+		}
+		for _, l := range strings.Split(newText, "\n") {
+			b.WriteString("+ " + l + "\n")
+		}
+		return clipLines(strings.TrimRight(b.String(), "\n"), 80)
+	}
+	switch name {
+	case "Edit":
+		return diff(str("old_string"), str("new_string"))
+	case "MultiEdit":
+		edits, _ := input["edits"].([]any)
+		var parts []string
+		for _, e := range edits {
+			m, _ := e.(map[string]any)
+			o, _ := m["old_string"].(string)
+			n, _ := m["new_string"].(string)
+			parts = append(parts, diff(o, n))
+		}
+		return clipLines(strings.Join(parts, "\n…\n"), 120)
+	case "Write":
+		return clipLines(str("content"), 40)
+	case "Bash":
+		return clip(str("command"), 2000)
+	}
+	return ""
+}
+
+func toolSummary(name string, input map[string]any) string {
+	for _, key := range []string{"file_path", "description", "command", "pattern", "url", "prompt"} {
+		if v, ok := input[key].(string); ok && v != "" {
+			return clip(name+" "+v, 160)
+		}
+	}
+	return name
+}
+
+// transcript: a Claude session file parsed incrementally — only bytes
+// appended since the last read are parsed, so a 30 MB transcript is read
+// once and each poll costs the new lines.
+type transcript struct {
+	offset   int64
+	size     int64
+	messages []chatMessage
+	tools    map[string]int // tool_use_id → index in messages
+}
+
+var (
+	transcriptsMu sync.Mutex
+	transcripts   = map[string]*transcript{}
+)
+
+func (t *transcript) feed(data []byte) {
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner.Buffer(make([]byte, 1<<20), 64<<20)
+	for scanner.Scan() {
+		t.feedLine(scanner.Bytes())
+	}
+}
+
+func (t *transcript) feedLine(raw []byte) {
+	var line struct {
+		Type      string `json:"type"`
+		Timestamp string `json:"timestamp"`
+		IsMeta    bool   `json:"isMeta"`
+		Message   struct {
+			Content json.RawMessage `json:"content"`
+		} `json:"message"`
+	}
+	if json.Unmarshal(raw, &line) != nil || line.IsMeta || (line.Type != "user" && line.Type != "assistant") {
+		return
+	}
+	var text string
+	if json.Unmarshal(line.Message.Content, &text) == nil {
+		if line.Type == "user" && !strings.HasPrefix(strings.TrimSpace(text), "<") {
+			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(text, 8000), TS: line.Timestamp})
+		}
+		return
+	}
+	var blocks []struct {
+		Type      string          `json:"type"`
+		Text      string          `json:"text"`
+		ID        string          `json:"id"`
+		Name      string          `json:"name"`
+		Input     json.RawMessage `json:"input"`
+		ToolUseID string          `json:"tool_use_id"`
+		Content   json.RawMessage `json:"content"`
+	}
+	if json.Unmarshal(line.Message.Content, &blocks) != nil {
+		return
+	}
+	for _, b := range blocks {
+		switch {
+		case b.Type == "text" && strings.TrimSpace(b.Text) != "":
+			if line.Type == "user" && strings.HasPrefix(strings.TrimSpace(b.Text), "<") {
+				continue
+			}
+			t.messages = append(t.messages, chatMessage{Role: line.Type, Text: clip(b.Text, 8000), TS: line.Timestamp})
+		case b.Type == "tool_use":
+			var input map[string]any
+			_ = json.Unmarshal(b.Input, &input)
+			t.messages = append(t.messages, chatMessage{Role: "tool", Tool: b.Name, Text: toolSummary(b.Name, input),
+				Body: toolBody(b.Name, input), TS: line.Timestamp})
+			if b.ID != "" {
+				t.tools[b.ID] = len(t.messages) - 1
+			}
+		case b.Type == "tool_result":
+			idx, ok := t.tools[b.ToolUseID]
+			if !ok {
+				continue
+			}
+			var out string
+			if json.Unmarshal(b.Content, &out) != nil {
+				var parts []struct {
+					Type string `json:"type"`
+					Text string `json:"text"`
+				}
+				_ = json.Unmarshal(b.Content, &parts)
+				for _, p := range parts {
+					if p.Type == "text" {
+						out += p.Text + "\n"
+					}
+				}
+			}
+			t.messages[idx].Result = clipLines(clip(out, 3000), 40)
+			delete(t.tools, b.ToolUseID)
+		}
+	}
+}
+
+// loadTranscript returns the parsed transcript, reading only what was
+// appended since last time (a shrunk file is re-read from the start).
+func loadTranscript(path string) (*transcript, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	transcriptsMu.Lock()
+	defer transcriptsMu.Unlock()
+	t := transcripts[path]
+	if t == nil || info.Size() < t.size {
+		t = &transcript{tools: map[string]int{}}
+		transcripts[path] = t
+	}
+	if info.Size() == t.offset {
+		return t, nil
+	}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	info, err := f.Stat()
-	if err != nil {
+	buf := make([]byte, info.Size()-t.offset)
+	n, err := f.ReadAt(buf, t.offset)
+	if err != nil && n == 0 {
 		return nil, err
 	}
-	start := info.Size() - max
-	if start < 0 {
-		start = 0
+	buf = buf[:n]
+	end := bytes.LastIndexByte(buf, '\n')
+	if end < 0 {
+		return t, nil // partial line: wait for the rest
 	}
-	buf := make([]byte, info.Size()-start)
-	if _, err := f.ReadAt(buf, start); err != nil {
-		return nil, err
+	t.feed(buf[:end+1])
+	t.offset += int64(end + 1)
+	t.size = info.Size()
+	return t, nil
+}
+
+// parseClaudeTranscript parses a whole transcript (tests and one-off use).
+func parseClaudeTranscript(data []byte, limit int) []chatMessage {
+	t := &transcript{tools: map[string]int{}}
+	t.feed(data)
+	if len(t.messages) > limit {
+		return t.messages[len(t.messages)-limit:]
 	}
-	if start > 0 {
-		if i := bytes.IndexByte(buf, '\n'); i >= 0 {
-			buf = buf[i+1:]
-		}
-	}
-	return buf, nil
+	return t.messages
 }
 
 func sessionDetail(args json.RawMessage) (any, error) {
 	var a struct {
-		ID string `json:"id"`
+		ID    string `json:"id"`
+		Limit int    `json:"limit"`
 	}
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
 		return nil, errors.New("invalid session id")
+	}
+	if a.Limit <= 0 {
+		a.Limit = 60
+	}
+	if a.Limit > 5000 {
+		a.Limit = 5000
 	}
 	entries, err := liveSessions()
 	if err != nil {
@@ -404,11 +514,20 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent"}
 	if path := claudeTranscript(e.SessionID); path != "" {
 		out["agent"] = "claude"
-		data, err := tailFile(path, 4<<20)
+		t, err := loadTranscript(path)
 		if err != nil {
 			return nil, err
 		}
-		out["messages"] = parseClaudeTranscript(data, 80)
+		transcriptsMu.Lock()
+		total := len(t.messages)
+		start := total - a.Limit
+		if start < 0 {
+			start = 0
+		}
+		out["messages"] = append([]chatMessage(nil), t.messages[start:]...)
+		transcriptsMu.Unlock()
+		out["total"] = total
+		out["start"] = start
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {

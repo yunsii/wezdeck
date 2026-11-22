@@ -70,6 +70,10 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     })
     const page = await context.newPage()
     await page.goto(`${base}/zh/console/me?remote=1#pair=${token}`)
+    // the compact link badge renders only after hydration: clicks land
+    await page
+      .locator('[data-testid=remote-badge-compact]')
+      .waitFor({ timeout: 20_000 })
     await page.getByRole('button', { name: '启用写入' }).click()
     const command = page.locator('code', { hasText: '--approve' })
     await command.waitFor({ timeout: 20_000 })
@@ -91,7 +95,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     const box = page.getByLabel('发给 Agent 的消息')
     await box.fill('来自手机的消息')
     await page.getByRole('button', { name: '发送' }).click()
-    await page.getByText('已发送到会话').waitFor({ timeout: 15_000 })
+    await page.getByText(/条已送达/).waitFor({ timeout: 15_000 })
     const deadline = Date.now() + 5_000
     while (
       !tmux('capture-pane', '-p', '-t', 'demo').includes('来自手机的消息')
