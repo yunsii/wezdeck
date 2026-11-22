@@ -1130,6 +1130,24 @@ html[data-theme='dark'] [data-deck] {
 }
 
 /*
+ * The canvas under the page: the console's deck color, per resolved theme.
+ * A page transition slides and fades the page snapshots, which uncovers the
+ * root; with no background there the browser painted white edges in dark
+ * mode (seen on Android Firefox).
+ */
+html {
+  background: #f6f7f9;
+  color-scheme: light;
+}
+html[data-theme='dark'] {
+  background: #14181f;
+  color-scheme: dark;
+}
+::view-transition {
+  background: inherit;
+}
+
+/*
  * Page transitions (lib/view-transition.ts, the forge way): deeper pages push
  * in from the right, back slides back from the left, same depth cross-fades.
  * Between two tab pages the bottom tab bar is its own layer and stays put;
