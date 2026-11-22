@@ -87,9 +87,14 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new
-  reply streams in at ~300 chars/s (0.4–3 s), a backlog over 8 jumps to the
-  newest; the page stays pinned to the bottom while a reply grows
-  (`chat-scroll.ts`: only a finger, wheel or key can unpin it, never the
+  reply writes itself Gemini-style: whole words every 50 ms at ~350 chars/s
+  (0.5–3 s), each new word rising out of a light blur (Streamdown `animated`
+  blurIn 520 ms, stagger 12 ms, keyframes toned down in `styles.css`), kept
+  animating 550 ms after the last word so the tail never pops; a backlog
+  over 8 jumps to the newest; the page stays pinned to the bottom while a reply grows
+  (`chat-scroll.ts`: content growth glides — each frame covers a fifth of
+  the distance left — while a scroller resize (keyboard) jumps; only a
+  finger, wheel or key can unpin it, never the
   page's own scrolling; a finger dragging the history down unpins at once
   and nothing auto-scrolls while a finger is down; back near the bottom
   re-pins; while unpinned a "回到最新 / N 条新消息" button jumps back)
@@ -113,7 +118,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. The toolbar above the composer (图片 / 诊断) attaches
-  the client diagnostics snapshot and screenshots
+  the client diagnostics snapshot and screenshots (what a tool opens
+  renders above the row); the composer is set off from the thread by a
+  full-width hairline and an upward shadow, and the chat page uses 10 px
+  side gutters (other pages 16 px)
   ([`remote-access.md` Attachments](remote-access.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
   that padding the moment a drag starts. Back from the background the page

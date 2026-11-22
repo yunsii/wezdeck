@@ -213,6 +213,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   }, [])
   // ticket / session detail pages bring their own back bar instead of a title
   const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
+  // a session chat runs closer to the edges (bubbles, like a messenger)
+  const chat = /\/console\/sessions\/[^/]+$/.test(location)
   // the host overview needs the local Runtime; remote devices start at 现在
   useEffect(() => {
     if (mode === 'remote' && current === 'overview')
@@ -301,7 +303,10 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           </a>
           <div
             id="console-main"
-            className="flex min-h-full flex-col px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4"
+            className={cn(
+              'flex min-h-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4',
+              chat ? 'px-2.5' : 'px-4',
+            )}
           >
             {detail ? null : (
               <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">

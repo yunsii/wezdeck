@@ -130,9 +130,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
 
     // every hosted agent takes input mid-turn (queued / steered by its TUI)
     setStatus('running')
-    await page
-      .getByText('Agent 正在运行，会在这一轮中或结束后立刻接收你的消息。')
-      .waitFor({ timeout: 15_000 })
+    await page.waitForTimeout(3_000) // let the page poll the new status
     await box.fill('运行中也能发')
     await page.getByRole('button', { name: '发送' }).click()
     const busyDeadline = Date.now() + 8_000

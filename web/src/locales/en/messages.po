@@ -11,7 +11,7 @@ msgstr ""
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:438
+#: src/features/chat-thread.tsx:464
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
@@ -19,11 +19,11 @@ msgstr "{count} delivered, waiting for the agent"
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/chat-thread.tsx:437
+#: src/features/chat-thread.tsx:463
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
-#: src/features/chat-thread.tsx:219
+#: src/features/chat-thread.tsx:245
 msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
@@ -137,7 +137,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/session-composer.tsx:130
+#: src/features/session-composer.tsx:138
 msgid "Attachments"
 msgstr "Attachments"
 
@@ -197,7 +197,7 @@ msgstr "Category"
 msgid "challenged"
 msgstr "challenged"
 
-#: src/features/chat-thread.tsx:216
+#: src/features/chat-thread.tsx:242
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
@@ -297,11 +297,11 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:314
+#: src/features/console-shell.tsx:319
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/console-shell.tsx:248
+#: src/features/console-shell.tsx:250
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -343,7 +343,7 @@ msgstr "Dark theme"
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
-#: src/features/console-shell.tsx:283
+#: src/features/console-shell.tsx:285
 msgid "Deck"
 msgstr "Deck"
 
@@ -370,7 +370,7 @@ msgstr "diagnostics"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:168
+#: src/features/session-composer.tsx:176
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -513,7 +513,7 @@ msgstr "Host up since"
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
-#: src/features/session-composer.tsx:142
+#: src/features/session-composer.tsx:150
 msgid "Images"
 msgstr "Images"
 
@@ -600,7 +600,7 @@ msgstr "Last direct attempt"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:109
-#: src/features/console-shell.tsx:421
+#: src/features/console-shell.tsx:426
 msgid "Last sample"
 msgstr "Last sample"
 
@@ -663,11 +663,11 @@ msgstr "Log stream"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:230
+#: src/features/session-composer.tsx:233
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:218
+#: src/features/session-composer.tsx:221
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -802,7 +802,7 @@ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, an
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:503
+#: src/features/console-sessions.tsx:499
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -883,21 +883,21 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/chat-thread.tsx:434
+#: src/features/chat-thread.tsx:460
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/chat-thread.tsx:217
+#: src/features/chat-thread.tsx:243
 msgid "ran {commands} commands"
 msgstr "ran {commands} commands"
 
-#: src/features/chat-thread.tsx:218
+#: src/features/chat-thread.tsx:244
 msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:212
-#: src/features/console-shell.tsx:448
+#: src/features/console-shell.tsx:453
 #: src/features/landing-example.tsx:145
 #: src/features/landing-example.tsx:146
 msgid "Ready"
@@ -915,15 +915,15 @@ msgstr "Relay"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:242
+#: src/features/console-shell.tsx:244
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:384
+#: src/features/console-shell.tsx:389
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/session-composer.tsx:179
+#: src/features/session-composer.tsx:187
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -963,7 +963,7 @@ msgstr "Requests (WebRTC / relay)"
 msgid "research done"
 msgstr "research done"
 
-#: src/features/chat-thread.tsx:192
+#: src/features/chat-thread.tsx:218
 msgid "Result"
 msgstr "Result"
 
@@ -980,7 +980,7 @@ msgid "Resumed conversations"
 msgstr "Resumed conversations"
 
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:494
+#: src/features/console-shell.tsx:499
 msgid "Retry"
 msgstr "Retry"
 
@@ -1061,7 +1061,7 @@ msgstr "Runtime action failed"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:242
+#: src/features/console-shell.tsx:244
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "Runtime Console"
@@ -1090,11 +1090,11 @@ msgstr "Sample signals. The live console reads your local Runtime."
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-composer.tsx:158
+#: src/features/session-composer.tsx:166
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
-#: src/features/console-shell.tsx:326
+#: src/features/console-shell.tsx:331
 msgid "Sections"
 msgstr "Sections"
 
@@ -1110,11 +1110,11 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:235
+#: src/features/session-composer.tsx:238
 msgid "Send"
 msgstr "Send"
 
-#: src/features/session-composer.tsx:190
+#: src/features/session-composer.tsx:133
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "Sends sizes, scroll state and recent page events; no tokens, no message text."
 
@@ -1176,7 +1176,7 @@ msgstr "Show tool calls"
 msgid "showing the last copy"
 msgstr "showing the last copy"
 
-#: src/features/console-shell.tsx:300
+#: src/features/console-shell.tsx:302
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -1224,13 +1224,9 @@ msgstr "The agent is asking for a confirmation: answer it with the keys above."
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:346
+#: src/features/chat-thread.tsx:372
 msgid "The agent is working"
 msgstr "The agent is working"
-
-#: src/features/console-sessions.tsx:492
-msgid "The agent is working; it picks up your message during or right after this turn."
-msgstr "The agent is working; it picks up your message during or right after this turn."
 
 #: src/features/console-sessions.tsx:299
 #~ msgid "The agent is working. You can send once it stops."
@@ -1267,7 +1263,7 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-shell.tsx:491
+#: src/features/console-shell.tsx:496
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -1376,7 +1372,7 @@ msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:115
-#: src/features/console-shell.tsx:427
+#: src/features/console-shell.tsx:432
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -1406,7 +1402,7 @@ msgstr "View the source"
 msgid "waiting"
 msgstr "waiting"
 
-#: src/features/console-shell.tsx:448
+#: src/features/console-shell.tsx:453
 msgid "Waiting"
 msgstr "Waiting"
 
@@ -1446,7 +1442,7 @@ msgstr "Waiting on you {mine}"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/console-shell.tsx:396
+#: src/features/console-shell.tsx:401
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -1475,8 +1471,8 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:240
-#: src/features/console-shell.tsx:309
+#: src/features/console-shell.tsx:242
+#: src/features/console-shell.tsx:314
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"

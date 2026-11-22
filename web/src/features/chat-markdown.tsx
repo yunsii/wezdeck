@@ -85,6 +85,20 @@ const components: Components = {
   ),
 }
 
+/**
+ * New words blur in softly and overlap (Gemini-like): long enough to read as
+ * one flowing motion, staggered a little, never queued far behind the text.
+ * The keyframes (sd-blurIn) are toned down in styles.css.
+ */
+const reveal = {
+  animation: 'blurIn',
+  duration: 520,
+  easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
+  sep: 'word',
+  stagger: 12,
+  maxBacklogMs: 480,
+} as const
+
 export function ChatMarkdown({
   text,
   streaming = false,
@@ -94,7 +108,11 @@ export function ChatMarkdown({
 }) {
   return (
     <div className="text-[15px] leading-relaxed break-words">
-      <Streamdown components={components} animated isAnimating={streaming}>
+      <Streamdown
+        components={components}
+        animated={reveal}
+        isAnimating={streaming}
+      >
         {text}
       </Streamdown>
     </div>

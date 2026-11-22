@@ -119,12 +119,20 @@ type Composer = ReturnType<typeof useComposer>
 const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
 
-/** Above the input: add images, toggle diagnostics, then the picked thumbnails. */
+/**
+ * Above the input: add images, toggle diagnostics, then the picked
+ * thumbnails. What a tool opens renders above the row, away from the input.
+ */
 function Toolbar({ composer }: { composer: Composer }) {
   const { t } = useLingui()
   const full = composer.images.length >= MAX_IMAGES
   return (
     <div className="grid gap-1">
+      {composer.diag ? (
+        <p className="px-1 text-[11.5px] leading-snug text-brand-label">
+          {t`Sends sizes, scroll state and recent page events; no tokens, no message text.`}
+        </p>
+      ) : null}
       <div
         role="toolbar"
         aria-label={t`Attachments`}
@@ -185,11 +193,6 @@ function Toolbar({ composer }: { composer: Composer }) {
           </span>
         ))}
       </div>
-      {composer.diag ? (
-        <p className="px-1 text-[11.5px] leading-snug text-brand-label">
-          {t`Sends sizes, scroll state and recent page events; no tokens, no message text.`}
-        </p>
-      ) : null}
     </div>
   )
 }

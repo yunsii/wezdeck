@@ -1,7 +1,8 @@
 // The conversation on a phone: Markdown replies, one collapsed line per run
 // of tool calls, and motion only where something just happened — messages
-// that arrive after the page opened slide in and a new reply unfolds over at
-// most half a second; nothing animates under prefers-reduced-motion.
+// that arrive after the page opened slide in and a new reply writes itself
+// word by word, each word blurring in; nothing animates under
+// prefers-reduced-motion.
 import { useLingui } from '@lingui/react/macro'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -67,36 +68,61 @@ const reducedMotion = () =>
   typeof matchMedia !== 'undefined' &&
   matchMedia('(prefers-reduced-motion: reduce)').matches
 
+const TICK_MS = 50
+/** let the last words finish blurring in (reveal duration in chat-markdown.tsx) */
+const SETTLE_MS = 550
+
+/** Move a reveal index to the end of the word it landed in (CJK: every char). */
+function wordEnd(text: string, at: number) {
+  let end = at
+  while (end < text.length && /[\w\-./:@#%&+=~]/.test(text[end] ?? '')) end++
+  return end
+}
+
 /**
- * Stream a just-arrived reply in at a reading pace (about 300 chars/s, at
- * least 0.4 s and at most 3 s for the whole message), like the agent typing
- * it; Streamdown renders the half-written Markdown in between.
+ * Stream a just-arrived reply in like a chat model writes it: whole words
+ * every 50 ms at a reading pace (about 350 chars/s, the whole message in
+ * 0.5–3 s); Streamdown fades each new word in (chat-markdown.tsx) and the
+ * thread glides down after it (chat-scroll.ts). Text that grows mid-stream
+ * continues from where it is, never from the start.
  */
 function useStream(text: string, active: boolean, onDone?: () => void) {
   const [shown, setShown] = useState(active ? 0 : text.length)
+  // the last words are still blurring in when the text is complete
+  const [settling, setSettling] = useState(false)
+  const at = useRef(shown)
   const done = useRef(onDone)
   done.current = onDone
   useEffect(() => {
     if (!active || reducedMotion() || document.hidden) {
+      at.current = text.length
       setShown(text.length)
       done.current?.()
       return
     }
-    const started = performance.now()
-    const total = Math.min(3000, Math.max(400, (text.length / 300) * 1000))
-    let frame = 0
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - started) / total)
-      setShown(Math.ceil(text.length * progress))
-      if (progress < 1) frame = requestAnimationFrame(tick)
-      else done.current?.()
+    const total = Math.min(3000, Math.max(500, (text.length / 350) * 1000))
+    const step = Math.max(1, Math.ceil(text.length / (total / TICK_MS)))
+    let tail: ReturnType<typeof setTimeout> | undefined
+    const timer = setInterval(() => {
+      at.current = wordEnd(text, Math.min(text.length, at.current + step))
+      setShown(at.current)
+      if (at.current >= text.length) {
+        clearInterval(timer)
+        setSettling(true)
+        tail = setTimeout(() => {
+          setSettling(false)
+          done.current?.()
+        }, SETTLE_MS)
+      }
+    }, TICK_MS)
+    return () => {
+      clearInterval(timer)
+      clearTimeout(tail)
     }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
   }, [text, active])
   return {
     text: text.slice(0, shown),
-    streaming: active && shown < text.length,
+    streaming: active && (shown < text.length || settling),
   }
 }
 

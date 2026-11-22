@@ -149,18 +149,42 @@ export function useChatScroll(
     // the toolbar, thumbnails or a multi-line draft)
     const thread = document.getElementById('console-main')
     if (!el || !thread || typeof ResizeObserver === 'undefined') return
-    const follow = () => {
-      if (pinnedRef.current && landed.current && !touching.current)
-        el.scrollTop = el.scrollHeight
+    const following = () =>
+      pinnedRef.current && landed.current && !touching.current
+    const jumpDown = () => {
+      if (following()) el.scrollTop = el.scrollHeight
     }
-    const observer = new ResizeObserver(follow)
+    // content growth (a reply writing itself line by line) glides: each frame
+    // covers a fifth of what is left, so new lines push the thread up
+    // smoothly instead of the page jumping a line at a time
+    let glide = 0
+    const glideDown = () => {
+      if (glide || !following()) return
+      const frame = () => {
+        const left = el.scrollHeight - el.clientHeight - el.scrollTop
+        if (!following() || left <= 0.5 || holding.current) {
+          glide = 0
+          return
+        }
+        el.scrollTop += Math.max(1, left * 0.2)
+        glide = requestAnimationFrame(frame)
+      }
+      glide = requestAnimationFrame(frame)
+    }
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
+    const observer = new ResizeObserver((entries) => {
+      // the scroller itself resized (keyboard): be at the bottom right away
+      if (!smooth || entries.some((entry) => entry.target === el)) jumpDown()
+      else glideDown()
+    })
     observer.observe(thread)
     observer.observe(el)
     const viewport = window.visualViewport
-    viewport?.addEventListener('resize', follow)
+    viewport?.addEventListener('resize', jumpDown)
     return () => {
+      cancelAnimationFrame(glide)
       observer.disconnect()
-      viewport?.removeEventListener('resize', follow)
+      viewport?.removeEventListener('resize', jumpDown)
     }
   }, [end])
 
