@@ -36,18 +36,28 @@ function ToolBody({ text }: { text: string }) {
 }
 
 /** While a run is live: a breathing light for the call in flight, a check once it returned. */
+/**
+ * Icons in a tool row sit in a box one text line tall (LINE), so they stay
+ * centred on the first line however many lines the description wraps to.
+ */
+const LINE = 'inline-flex h-5 shrink-0 items-center'
+
 function ToolStatus({ status }: { status?: 'running' | 'done' }) {
   const { t } = useLingui()
   if (!status) return null
-  return status === 'running' ? (
-    <Led
-      tone="running"
-      size={9}
-      className="led-running shrink-0"
-      label={t`Running`}
-    />
-  ) : (
-    <Led tone="done" size={9} className="shrink-0" label={t`Done`} />
+  return (
+    <span className={LINE}>
+      {status === 'running' ? (
+        <Led
+          tone="running"
+          size={9}
+          className="led-running"
+          label={t`Running`}
+        />
+      ) : (
+        <Led tone="done" size={9} label={t`Done`} />
+      )}
+    </span>
   )
 }
 
@@ -61,7 +71,7 @@ function ToolRow({
   const { t } = useLingui()
   if (!tool.body && !tool.result)
     return (
-      <p className="flex min-w-0 items-start gap-1.5 px-1 font-mono text-[12px] text-brand-label">
+      <p className="flex min-w-0 items-start gap-1.5 px-1 font-mono text-[12px] leading-5 text-brand-label">
         <ToolStatus status={status} />
         <span className="min-w-0 break-all whitespace-pre-wrap">
           {tool.text}
@@ -71,12 +81,9 @@ function ToolRow({
   return (
     <details className="group/tool min-w-0 rounded-[8px]">
       {/* the whole description wraps (up to 3 lines folded, all when open) */}
-      <summary className="flex min-w-0 cursor-pointer list-none items-start gap-1 px-1 font-mono text-[12px] text-brand-muted">
-        <span
-          aria-hidden
-          className="shrink-0 transition group-open/tool:rotate-90"
-        >
-          ›
+      <summary className="flex min-w-0 cursor-pointer list-none items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted">
+        <span aria-hidden className={LINE}>
+          <span className="transition group-open/tool:rotate-90">›</span>
         </span>
         <ToolStatus status={status} />
         <span className="line-clamp-3 min-w-0 break-all whitespace-pre-wrap group-open/tool:line-clamp-none">
