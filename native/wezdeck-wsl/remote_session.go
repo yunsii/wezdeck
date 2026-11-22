@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"os/exec"
@@ -305,10 +306,89 @@ func findTranscript(sessionID string) (path, agent string) {
 	return "", ""
 }
 
+// readSessionTitle: agent-generated or /rename'd display title when known.
+// Claude: last type=ai-title in the jsonl (covers auto + /rename). Grok:
+// summary.json generated_title / session_summary. Codex: none yet.
+func readSessionTitle(path, agent string) string {
+	switch agent {
+	case "claude":
+		return lastClaudeAITitle(path)
+	case "grok":
+		return grokSessionTitle(path)
+	default:
+		return ""
+	}
+}
+
+func lastClaudeAITitle(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return ""
+	}
+	const window = 512 << 10
+	start := info.Size() - window
+	if start < 0 {
+		start = 0
+	}
+	if _, err := f.Seek(start, io.SeekStart); err != nil {
+		return ""
+	}
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return ""
+	}
+	text := string(data)
+	if start > 0 {
+		if i := strings.IndexByte(text, '\n'); i >= 0 {
+			text = text[i+1:]
+		}
+	}
+	lines := strings.Split(text, "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		var row struct {
+			Type    string `json:"type"`
+			AITitle string `json:"aiTitle"`
+		}
+		if json.Unmarshal([]byte(line), &row) == nil && row.Type == "ai-title" && row.AITitle != "" {
+			return row.AITitle
+		}
+	}
+	return ""
+}
+
+func grokSessionTitle(chatHistoryPath string) string {
+	summaryPath := filepath.Join(filepath.Dir(chatHistoryPath), "summary.json")
+	data, err := os.ReadFile(summaryPath)
+	if err != nil {
+		return ""
+	}
+	var doc struct {
+		GeneratedTitle  string `json:"generated_title"`
+		SessionSummary  string `json:"session_summary"`
+	}
+	if json.Unmarshal(data, &doc) != nil {
+		return ""
+	}
+	if doc.GeneratedTitle != "" {
+		return doc.GeneratedTitle
+	}
+	return doc.SessionSummary
+}
+
 type sessionCard struct {
 	ID          string   `json:"id"`
 	Agent       string   `json:"agent"`
 	Name        string   `json:"name"`
+	Title       string   `json:"title,omitempty"` // auto /rename title when known
 	Window      string   `json:"window"`
 	Cwd         string   `json:"cwd"`
 	Branch      string   `json:"branch"`
@@ -368,6 +448,7 @@ func listSessions() (any, error) {
 		if path, agent := findTranscript(e.SessionID); path != "" {
 			card.Agent = agent
 			card.Transcript = true
+			card.Title = readSessionTitle(path, agent)
 			if info, err := os.Stat(path); err == nil {
 				card.TS = info.ModTime().UnixMilli()
 			}
@@ -999,6 +1080,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
 	if path, agent := findTranscript(e.SessionID); path != "" {
 		out["agent"] = agent
+		if title := readSessionTitle(path, agent); title != "" {
+			out["title"] = title
+		}
 		t, err := loadTranscript(path, agent)
 		if err != nil {
 			return nil, err

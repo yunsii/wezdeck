@@ -281,6 +281,29 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+func TestReadSessionTitleClaudeAndGrok(t *testing.T) {
+	dir := t.TempDir()
+	claude := filepath.Join(dir, "c.jsonl")
+	_ = os.WriteFile(claude, []byte(
+		`{"type":"user","message":{"role":"user","content":"hi"}}`+"\n"+
+			`{"type":"ai-title","aiTitle":"First title"}`+"\n"+
+			`{"type":"ai-title","aiTitle":"Renamed title"}`+"\n",
+	), 0o600)
+	if got := readSessionTitle(claude, "claude"); got != "Renamed title" {
+		t.Fatalf("claude title=%q", got)
+	}
+	grokDir := filepath.Join(dir, "g")
+	_ = os.MkdirAll(grokDir, 0o755)
+	chat := filepath.Join(grokDir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	_ = os.WriteFile(filepath.Join(grokDir, "summary.json"), []byte(
+		`{"generated_title":"Grok auto title","session_summary":"fallback"}`,
+	), 0o600)
+	if got := readSessionTitle(chat, "grok"); got != "Grok auto title" {
+		t.Fatalf("grok title=%q", got)
+	}
+}
+
 func TestMainWorktreeFromGitCommon(t *testing.T) {
 	cases := []struct{ in, want string }{
 		{"/home/yuns/github/wezterm-config/.git", "/home/yuns/github/wezterm-config"},

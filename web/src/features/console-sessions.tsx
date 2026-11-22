@@ -26,6 +26,8 @@ export type SessionCard = {
   id: string
   agent: string
   name: string
+  /** Auto or /rename title from Claude aiTitle / Grok summary. */
+  title?: string
   window: string
   cwd: string
   branch: string
@@ -82,6 +84,7 @@ export type AccountLimits = {
 export type Detail = {
   id: string
   name?: string
+  title?: string
   window?: string
   branch?: string
   usage?: Usage
@@ -300,7 +303,18 @@ function SessionDetail({ id }: { id: string }) {
   })
   return (
     <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
-      <SessionHeader data={data} onBack={back} />
+      <SessionHeader
+        data={data}
+        onBack={back}
+        renameDisabled={sending || device.state !== 'approved'}
+        onRename={(title) =>
+          void send({
+            text: `/rename ${title}`,
+            attachments: [],
+            note: 'rename',
+          })
+        }
+      />
 
       <div
         className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2"

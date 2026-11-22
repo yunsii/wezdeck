@@ -95,6 +95,7 @@ export function SessionList() {
     role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
   const titleOf = (row: SessionCard) =>
+    row.title ||
     row.window ||
     row.worktree?.split('/').filter(Boolean).at(-1) ||
     row.cwd.split('/').filter(Boolean).at(-1) ||

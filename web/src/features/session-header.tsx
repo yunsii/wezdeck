@@ -149,9 +149,14 @@ function Meters({
 export function SessionHeader({
   data,
   onBack,
+  onRename,
+  renameDisabled,
 }: {
   data: Detail | undefined
   onBack: () => void
+  /** Paste `/rename <title>` into the agent TUI (Claude and Grok both honor it). */
+  onRename?: (title: string) => void
+  renameDisabled?: boolean
 }) {
   const { t } = useLingui()
   const statusText = useStatusText()
@@ -170,7 +175,8 @@ export function SessionHeader({
       page.style.removeProperty('--session-head')
     }
   }, [])
-  const title = data?.name || data?.window || data?.id.slice(0, 8) || ''
+  const title =
+    data?.title || data?.name || data?.window || data?.id.slice(0, 8) || ''
   // a word next to the light; the full sentence is the tooltip (background
   // tasks have their own meter)
   const short = data?.waiting_kind
@@ -188,6 +194,13 @@ export function SessionHeader({
         data.background?.length ?? 0,
       )
     : undefined
+  const rename = () => {
+    if (!onRename || renameDisabled) return
+    const next = window.prompt(t`New session title`, title)
+    const trimmed = next?.trim()
+    if (!trimmed || trimmed === title) return
+    onRename(trimmed)
+  }
   return (
     <header
       ref={head}
@@ -204,9 +217,17 @@ export function SessionHeader({
           <ChevronLeft size={22} aria-hidden />
         </button>
         <div className="grid min-w-0 flex-1">
-          <h1 className="truncate text-[16px] leading-tight font-semibold">
+          <button
+            type="button"
+            disabled={!onRename || renameDisabled}
+            onClick={rename}
+            title={
+              onRename ? t`Rename via /rename in the agent pane` : undefined
+            }
+            className="truncate text-left text-[16px] leading-tight font-semibold disabled:opacity-100"
+          >
             {title || t`Loading…`}
-          </h1>
+          </button>
           {data?.branch ? (
             <span className="truncate font-mono text-[11.5px] text-brand-label">
               {data.branch}

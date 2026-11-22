@@ -113,6 +113,7 @@ export function ConsoleNowPage() {
   )
 
   const sessionTitle = (row: SessionCard) =>
+    row.title ||
     row.window ||
     row.worktree?.split('/').filter(Boolean).at(-1) ||
     row.cwd.split('/').filter(Boolean).at(-1) ||
