@@ -22,14 +22,10 @@ import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
-import {
-  pickElicitationOption,
-  SessionElicitation,
-  SessionPermissionKeys,
-  SessionPlanReview,
-} from './session-elicitation'
+import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { SessionList } from './session-list'
+import { AskCard } from './session-ask-claude'
 import { useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
 
@@ -416,15 +412,12 @@ function SessionDetail({ id }: { id: string }) {
           </pre>
         ) : null}
         {asking && elicitation ? (
-          <SessionElicitation
+          <AskCard
+            agent={data.agent}
             elicitation={elicitation}
+            screen={data.screen}
             disabled={sending || device.state !== 'approved'}
-            onKey={(key) => void run('key', { key })}
-            onPick={(_qi, oi) =>
-              void (async () => {
-                await pickElicitationOption(oi, (key) => run('key', { key }))
-              })()
-            }
+            sendKey={(key) => run('key', { key })}
           />
         ) : null}
         {!asking && (data?.plan?.excerpt || planReview) ? (

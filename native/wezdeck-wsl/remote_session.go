@@ -807,6 +807,12 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	if err == nil {
 		out["screen"] = strings.TrimRight(string(screen), "\n ")
 	}
+	if agent == "claude" && path != "" {
+		if el := pendingClaudeElicitation(path); el != nil {
+			el.Review = askReviewing(string(screen))
+			out["elicitation"] = el
+		}
+	}
 	return out, nil
 }
 

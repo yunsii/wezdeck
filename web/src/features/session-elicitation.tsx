@@ -6,6 +6,7 @@ import { useLingui } from '@lingui/react/macro'
 
 export type ElicitOption = { label: string; description?: string }
 export type ElicitQuestion = {
+  header?: string
   question: string
   options: Array<ElicitOption>
   multi_select?: boolean
@@ -13,6 +14,8 @@ export type ElicitQuestion = {
 export type Elicitation = {
   tool_call_id?: string
   questions: Array<ElicitQuestion>
+  /** Claude: all answered, the TUI waits on its "Submit answers" page */
+  review?: boolean
 }
 
 export function SessionElicitation({

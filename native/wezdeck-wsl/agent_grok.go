@@ -37,6 +37,7 @@ type elicitOption struct {
 }
 
 type elicitQuestion struct {
+	Header      string         `json:"header,omitempty"` // short chip label (Claude)
 	Question    string         `json:"question"`
 	Options     []elicitOption `json:"options"`
 	MultiSelect bool           `json:"multi_select,omitempty"`
@@ -45,6 +46,9 @@ type elicitQuestion struct {
 type elicitation struct {
 	ToolCallID string           `json:"tool_call_id,omitempty"`
 	Questions  []elicitQuestion `json:"questions"`
+	// Review: every question is answered and the TUI waits on its "Submit
+	// answers" page (Claude, read from the pane) — Enter sends them
+	Review bool `json:"review,omitempty"`
 }
 
 // readTailFile reads the last window bytes of path (for huge updates.jsonl).
@@ -127,9 +131,17 @@ func pendingGrokElicitation(chatHistoryPath string) *elicitation {
 	if pendingID == "" || completed[pendingID] || len(pendingRaw) == 0 {
 		return nil
 	}
+	return parseAskQuestions(pendingID, pendingRaw)
+}
+
+// parseAskQuestions reads an AskUserQuestion input ({questions:[{question,
+// header, multiSelect, options:[{label, description}]}]}), Grok and Claude
+// alike.
+func parseAskQuestions(id string, input json.RawMessage) *elicitation {
 	var raw struct {
 		Questions []struct {
 			Question    string `json:"question"`
+			Header      string `json:"header"`
 			MultiSelect *bool  `json:"multiSelect"`
 			Options     []struct {
 				Label       string `json:"label"`
@@ -137,12 +149,12 @@ func pendingGrokElicitation(chatHistoryPath string) *elicitation {
 			} `json:"options"`
 		} `json:"questions"`
 	}
-	if json.Unmarshal(pendingRaw, &raw) != nil || len(raw.Questions) == 0 {
+	if json.Unmarshal(input, &raw) != nil || len(raw.Questions) == 0 {
 		return nil
 	}
-	out := &elicitation{ToolCallID: pendingID}
+	out := &elicitation{ToolCallID: id}
 	for _, q := range raw.Questions {
-		eq := elicitQuestion{Question: q.Question}
+		eq := elicitQuestion{Question: q.Question, Header: q.Header}
 		if q.MultiSelect != nil {
 			eq.MultiSelect = *q.MultiSelect
 		}
