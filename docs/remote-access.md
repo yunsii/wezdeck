@@ -348,6 +348,18 @@ npx wrangler secret put CF_ACCOUNT_ID        # the account id (dashboard / wrang
 Without them the card says so and shows dashes; `/relay/usage` requires the
 phone's client token (401 otherwise) and never wakes the relay object.
 
+## Testing locally
+
+`scripts/dev/remote-test-stack.sh start [--home DIR]` builds the web app,
+serves the production build with the Worker + `HostRelay` on `:3018`
+(`vite preview`) and starts a throwaway host relay whose attention file,
+device approvals, uploads and Claude status snapshots all live in a temp dir
+(`--home` also points it at fixture transcripts); it prints the `export`
+lines the cdp tests need (`WEZDECK_TEST_ATTENTION`, `WEZDECK_TEST_DEVICES`,
+`WEZDECK_TEST_UPLOADS`). `stop` ends it; the systemd relay is never touched.
+Hand-typed stacks twice forgot `WEZDECK_REMOTE_UPLOADS` and wrote test
+uploads into the real uploads dir — use the script.
+
 ## Operate
 
 ```bash
