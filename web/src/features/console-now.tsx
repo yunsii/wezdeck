@@ -1,6 +1,6 @@
-// 现在: the phone's home. One screen answers "what needs me, what is
-// running": tickets waiting on you or failed, sessions waiting for input,
-// and what is working right now. Everything links into its detail.
+// 现在: the phone's home. Three bands — needs you, running, recently
+// active (top 5 by conversation activity, including idle) — then a link
+// into 会话 / 动态. Everything links into its detail.
 import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
@@ -15,26 +15,41 @@ import {
   isBusy,
   sessionTone,
   useSessions,
+  useStatusText,
 } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { useAgo, useStatusLabel } from './tickets-view'
 
+const RECENT_CAP = 5
+
+const sessionTs = (ms?: number) => (ms ? new Date(ms).toISOString() : undefined)
+
 function Group({
   title,
   children,
+  footer,
 }: {
   title: string
   children: React.ReactNode
+  footer?: React.ReactNode
 }) {
   return (
     <section className="grid gap-2">
       <h2 className="text-[19px] font-bold">{title}</h2>
       <ul className="overflow-hidden rounded-[16px] bg-brand-surface">
         {children}
+        {footer ? (
+          <li className="border-t border-brand-edge last:border-b-0">
+            {footer}
+          </li>
+        ) : null}
       </ul>
     </section>
   )
 }
+
+const needsYouSession = (row: SessionCard) =>
+  Boolean(row.waiting_kind) || row.status === 'waiting'
 
 export function ConsoleNowPage() {
   const { t } = useLingui()
@@ -42,24 +57,33 @@ export function ConsoleNowPage() {
   const localeParam = locale === 'en' ? undefined : locale
   const ago = useAgo()
   const statusLabel = useStatusLabel()
+  const statusText = useStatusText()
   const list = useCollab('list', { limit: 200 }, { refetchInterval: 15_000 })
   const sessions = useSessions()
   const tickets: Array<CollabTicket> = list.data?.ok ? list.data.tickets : []
-  const needs = tickets.filter(
+  const live: Array<SessionCard> = sessions.data?.sessions ?? []
+
+  const needTickets = tickets.filter(
     (ticket) =>
       ticket.status === 'waiting_initiator' || ticket.status === 'failed',
   )
-  const running = tickets.filter((ticket) => ticket.running.length > 0)
-  const live: Array<SessionCard> = sessions.data?.sessions ?? []
-  // "done" (turn ended) and background-only sessions take your next message
-  // idle (archived but still open) sessions live on the 会话 tab, not here
-  const waitingSessions = live.filter(
-    (row) => !isBusy(row) && row.status !== 'idle',
-  )
+  const needSessions = live.filter(needsYouSession)
+  const runningTickets = tickets.filter((ticket) => ticket.running.length > 0)
   const workingSessions = live.filter((row) => isBusy(row))
-  const needCount = needs.length
-  const runCount = workingSessions.length + running.length
-  const summary = t`${needCount} tickets need you, ${runCount} things are running`
+
+  const claimed = new Set([
+    ...needSessions.map((row) => row.id),
+    ...workingSessions.map((row) => row.id),
+  ])
+  const recentSessions = [...live]
+    .filter((row) => !claimed.has(row.id))
+    .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+    .slice(0, RECENT_CAP)
+
+  const needCount = needTickets.length + needSessions.length
+  const runCount = workingSessions.length + runningTickets.length
+  const recentCount = recentSessions.length
+  const summary = t`${needCount} need you, ${runCount} running, ${recentCount} recent`
 
   const ticketRow = (ticket: CollabTicket, right: string) => (
     <li key={ticket.id} className="border-b border-brand-edge last:border-b-0">
@@ -87,6 +111,7 @@ export function ConsoleNowPage() {
       </Link>
     </li>
   )
+
   const sessionRow = (row: SessionCard) => (
     <li key={row.id} className="border-b border-brand-edge last:border-b-0">
       <Link
@@ -99,42 +124,83 @@ export function ConsoleNowPage() {
           <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
         </span>
         <span className="grid min-w-0 flex-1 gap-0.5">
-          <span className="truncate text-[16px] font-semibold">
-            {row.name || row.window}
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-[16px] font-semibold">
+              {row.name || row.window || row.id.slice(0, 8)}
+            </span>
+            <span className="shrink-0 text-xs text-brand-label">
+              {ago(sessionTs(row.ts))}
+            </span>
           </span>
           <span className="truncate text-sm text-brand-muted">
-            {humanPrompt(row.last_prompt) || row.window}
+            {humanPrompt(row.last_prompt) ||
+              statusText(
+                row.status,
+                row.waiting_kind,
+                row.running_kind,
+                row.background?.length ?? 0,
+              ) ||
+              row.window}
           </span>
         </span>
       </Link>
     </li>
   )
 
+  const empty =
+    needCount + runCount + recentCount === 0 &&
+    !list.isPending &&
+    !sessions.isPending
+
   return (
     <div className="grid max-w-2xl content-start gap-5">
       <h1 className="hidden text-base font-semibold md:block">{t`Now`}</h1>
       <p className="-mt-2 text-[16px] text-brand-muted md:mt-0">{summary}</p>
-      {needs.length > 0 ? (
+      {needCount > 0 ? (
         <Group title={t`Needs you`}>
-          {needs.map((ticket) => ticketRow(ticket, ago(ticket.updated_at)))}
+          {needTickets.map((ticket) =>
+            ticketRow(ticket, ago(ticket.updated_at)),
+          )}
+          {needSessions.map(sessionRow)}
         </Group>
       ) : null}
-      {waitingSessions.length > 0 ? (
-        <Group title={t`Sessions waiting for you`}>
-          {waitingSessions.map(sessionRow)}
-        </Group>
-      ) : null}
-      {running.length + workingSessions.length > 0 ? (
+      {runCount > 0 ? (
         <Group title={t`Running now`}>
           {workingSessions.map(sessionRow)}
-          {running.map((ticket) => ticketRow(ticket, ago(ticket.updated_at)))}
+          {runningTickets.map((ticket) =>
+            ticketRow(ticket, ago(ticket.updated_at)),
+          )}
         </Group>
       ) : null}
-      {needs.length + live.length + running.length === 0 ? (
+      {recentCount > 0 ? (
+        <Group
+          title={t`Recently active`}
+          footer={
+            <Link
+              to="/{-$locale}/console/sessions"
+              params={{ locale: localeParam }}
+              className="key-press flex min-h-12 items-center justify-between px-4 text-[15px]"
+            >
+              {t`All sessions`}
+              <ChevronRight
+                size={18}
+                aria-hidden
+                className="text-brand-label"
+              />
+            </Link>
+          }
+        >
+          {recentSessions.map(sessionRow)}
+        </Group>
+      ) : null}
+      {empty ? (
         <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
-          {list.isPending
-            ? t`Loading…`
-            : t`Nothing needs you and nothing is running.`}
+          {t`Nothing needs you and nothing is running.`}
+        </p>
+      ) : null}
+      {list.isPending && needCount + runCount + recentCount === 0 ? (
+        <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
+          {t`Loading…`}
         </p>
       ) : null}
       <Link

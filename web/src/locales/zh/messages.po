@@ -35,9 +35,13 @@ msgstr "{doneCount} 个已完成"
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
+#: src/features/console-now.tsx:86
+msgid "{needCount} need you, {runCount} running, {recentCount} recent"
+msgstr "{needCount} 项需要你，{runCount} 项进行中，{recentCount} 个最近活跃"
+
 #: src/features/console-now.tsx:62
-msgid "{needCount} tickets need you, {runCount} things are running"
-msgstr "{needCount} 张工单等你处理，{runCount} 个任务正在运行"
+#~ msgid "{needCount} tickets need you, {runCount} things are running"
+#~ msgstr "{needCount} 张工单等你处理，{runCount} 个任务正在运行"
 
 #: src/features/landing-example.tsx:70
 msgid "{runningCount} running"
@@ -112,7 +116,7 @@ msgstr "主机上 tmux 里正在跑的 Agent。点进去可以查看对话，也
 #~ msgid "All"
 #~ msgstr "全部"
 
-#: src/features/console-now.tsx:145
+#: src/features/console-now.tsx:211
 msgid "All activity"
 msgstr "全部动态"
 
@@ -123,6 +127,10 @@ msgstr "全部分类"
 #: src/features/console-diagnostics.tsx:83
 msgid "All levels"
 msgstr "全部级别"
+
+#: src/features/console-now.tsx:184
+msgid "All sessions"
+msgstr "全部会话"
 
 #: src/features/console-collab.tsx:77
 #~ msgid "All statuses"
@@ -705,7 +713,7 @@ msgstr "加载更早"
 #: src/features/console-collab.tsx:188
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:136
+#: src/features/console-now.tsx:203
 #: src/features/console-sessions.tsx:160
 #: src/features/console-sessions.tsx:405
 #: src/features/console-shared.tsx:211
@@ -750,7 +758,7 @@ msgstr "里程碑"
 msgid "Mode"
 msgstr "模式"
 
-#: src/features/console-now.tsx:118
+#: src/features/console-now.tsx:160
 #: src/features/session-header.tsx:177
 msgid "Needs you"
 msgstr "需要你处理"
@@ -829,11 +837,11 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/console-now.tsx:137
+#: src/features/console-now.tsx:198
 msgid "Nothing needs you and nothing is running."
 msgstr "没有需要你处理的事，也没有在运行的任务。"
 
-#: src/features/console-now.tsx:115
+#: src/features/console-now.tsx:157
 #: src/features/console-shell.tsx:122
 msgid "Now"
 msgstr "现在"
@@ -971,6 +979,10 @@ msgstr "读了 {reads} 个文件"
 #: src/features/landing-example.tsx:146
 msgid "Ready"
 msgstr "就绪"
+
+#: src/features/console-now.tsx:177
+msgid "Recently active"
+msgstr "最近活跃"
 
 #: src/features/tickets-view.tsx:78
 msgid "rejected"
@@ -1110,7 +1122,7 @@ msgstr "运行中"
 msgid "Running"
 msgstr "运行中"
 
-#: src/features/console-now.tsx:128
+#: src/features/console-now.tsx:168
 msgid "Running now"
 msgstr "正在运行"
 
@@ -1231,8 +1243,8 @@ msgid "Sessions"
 msgstr "会话"
 
 #: src/features/console-now.tsx:123
-msgid "Sessions waiting for you"
-msgstr "等你回复的会话"
+#~ msgid "Sessions waiting for you"
+#~ msgstr "等你回复的会话"
 
 #: src/features/console-me.tsx:173
 #: src/features/console-shell.tsx:138
