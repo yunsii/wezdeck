@@ -23,7 +23,7 @@ msgstr "{count} 张图片"
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
 
-#: src/features/chat-tools.tsx:129
+#: src/features/chat-tools.tsx:154
 msgid "{count} tool calls"
 msgstr "共 {count} 次工具调用"
 
@@ -31,7 +31,7 @@ msgstr "共 {count} 次工具调用"
 msgid "{doneCount} done"
 msgstr "{doneCount} 个已完成"
 
-#: src/features/chat-tools.tsx:178
+#: src/features/chat-tools.tsx:203
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
@@ -252,7 +252,7 @@ msgstr "能力"
 msgid "Category"
 msgstr "分类"
 
-#: src/features/chat-tools.tsx:126
+#: src/features/chat-tools.tsx:151
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
@@ -486,7 +486,7 @@ msgstr "目录"
 msgid "done"
 msgstr "已完成"
 
-#: src/features/chat-tools.tsx:58
+#: src/features/chat-tools.tsx:70
 msgid "Done"
 msgstr "已完成"
 
@@ -1129,11 +1129,11 @@ msgstr "快捷键"
 msgid "Quit plan"
 msgstr "退出计划"
 
-#: src/features/chat-tools.tsx:127
+#: src/features/chat-tools.tsx:152
 msgid "ran {commands} commands"
 msgstr "运行 {commands} 条命令"
 
-#: src/features/chat-tools.tsx:128
+#: src/features/chat-tools.tsx:153
 msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
@@ -1253,7 +1253,7 @@ msgstr "{fiveReset}重置"
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
-#: src/features/chat-tools.tsx:90
+#: src/features/chat-tools.tsx:115
 msgid "Result"
 msgstr "结果"
 
@@ -1317,7 +1317,7 @@ msgstr "运行结束"
 msgid "running"
 msgstr "运行中"
 
-#: src/features/chat-tools.tsx:55
+#: src/features/chat-tools.tsx:67
 #: src/features/console-collab.tsx:111
 msgid "Running"
 msgstr "运行中"

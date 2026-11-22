@@ -42,6 +42,18 @@ function ToolBody({ text }: { text: string }) {
  */
 const LINE = 'inline-flex h-5 shrink-0 items-center'
 
+/**
+ * The host writes "<tool name> <target>" (toolSummary); show the two parts
+ * apart — name quiet, target in text colour — split by a hairline.
+ */
+function splitTool(tool: Message) {
+  const name = tool.tool ?? ''
+  const prefix = `${name} `
+  return name && tool.text.startsWith(prefix)
+    ? { name, target: tool.text.slice(prefix.length) }
+    : { name, target: '' }
+}
+
 function ToolStatus({ status }: { status?: 'running' | 'done' }) {
   const { t } = useLingui()
   if (!status) return null
@@ -70,6 +82,7 @@ function ToolRow({
 }) {
   const { t } = useLingui()
   const details = Boolean(tool.body || tool.result)
+  const { name, target } = splitTool(tool)
   return (
     <details className="group/tool min-w-0 rounded-[8px]">
       {/* one line in the list; the whole description once this call is opened */}
@@ -78,9 +91,21 @@ function ToolRow({
           <span className="transition group-open/tool:rotate-90">›</span>
         </span>
         <ToolStatus status={status} />
-        <span className="min-w-0 truncate group-open/tool:break-all group-open/tool:whitespace-pre-wrap">
-          {tool.text}
-        </span>
+        {target ? (
+          <>
+            <span className="shrink-0 text-brand-label">{name}</span>
+            <span aria-hidden className={cn(LINE, 'px-1')}>
+              <span className="h-3.5 w-px bg-brand-label/50" />
+            </span>
+            <span className="min-w-0 truncate text-brand-text group-open/tool:break-all group-open/tool:whitespace-pre-wrap">
+              {target}
+            </span>
+          </>
+        ) : (
+          <span className="min-w-0 truncate group-open/tool:break-all group-open/tool:whitespace-pre-wrap">
+            {tool.text}
+          </span>
+        )}
       </summary>
       {details ? (
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">

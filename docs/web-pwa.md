@@ -134,7 +134,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   are told apart by background alone (user: ink `brand-text` with deck text,
   reply: `brand-surface`); runs of tool calls collapse into one line (`chat-tools.tsx`), each call
   expands to its diff / preview / command and result — in the list
-  every call is one truncated line; opening a call shows its whole
+  every call is one truncated line — the tool name (quiet) and its target
+  (text colour) split by a hairline, from the host's "<name> <target>"
+  summary; opening a call shows its whole
   description, and bodies wrap instead of scrolling sideways; the newest run while
   the agent works is open, shows its last 3 calls ("N earlier calls" above)
   with a breathing light on the call in flight (host `pending`: sent, no
