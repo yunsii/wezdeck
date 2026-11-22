@@ -16,7 +16,10 @@ export type UsageReply = {
   limits: typeof FREE
   worker: { requests: number | null; errors: number | null }
   durableObject: {
+    /** billable: otherRequests + incoming WebSocket messages ÷ 20 */
     requests: number | null
+    /** upgrades and other HTTP calls into the relay object */
+    otherRequests: number | null
     /** GB-s: active seconds × 0.125 GB */
     durationGbs: number | null
     activeSeconds: number | null

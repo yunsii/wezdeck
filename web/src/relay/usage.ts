@@ -45,7 +45,10 @@ async function graph(env: UsageEnv, query: string, vars: object) {
     throw new Error(body.errors?.[0]?.message ?? `HTTP ${res.status}`)
   const accounts = (body.data as { viewer?: { accounts?: Array<unknown> } })
     .viewer?.accounts
-  return (accounts?.[0] ?? {}) as Record<string, Array<{ sum?: object }>>
+  return (accounts?.[0] ?? {}) as Record<
+    string,
+    Array<{ sum?: object }> | undefined
+  >
 }
 
 const total = (rows: Array<{ sum?: object }> | undefined, key: string) =>
@@ -66,6 +69,7 @@ async function collect(env: UsageEnv): Promise<UsageReply> {
     worker: { requests: null, errors: null },
     durableObject: {
       requests: null,
+      otherRequests: null,
       durationGbs: null,
       activeSeconds: null,
       wsIn: null,
@@ -92,36 +96,65 @@ async function collect(env: UsageEnv): Promise<UsageReply> {
       reply.worker.requests = total(a.workersInvocationsAdaptive, 'requests')
       reply.worker.errors = total(a.workersInvocationsAdaptive, 'errors')
     }),
+    // Durable Object: invocations by type ("hibernation" = one incoming
+    // WebSocket message delivered to the hibernating relay, "http" =
+    // upgrades and presence fetches). Analytics count every message; billing
+    // counts incoming messages 20:1. The periodic dataset (active time,
+    // outgoing messages) cannot filter by script, so it is summed over the
+    // namespaces the invocations reported.
     graph(
       env,
       `query ($account: String!, $script: String!, $day: Date!) {
         viewer { accounts(filter: { accountTag: $account }) {
-          durableObjectsInvocationsAdaptiveGroups(limit: 1000, filter: { scriptName: $script, date_geq: $day, date_leq: $day }) { sum { requests } }
-        } } }`,
-      vars,
-    ).then((a) => {
-      reply.durableObject.requests = total(
-        a.durableObjectsInvocationsAdaptiveGroups,
-        'requests',
-      )
-    }),
-    graph(
-      env,
-      `query ($account: String!, $script: String!, $start: Time!, $end: Time!) {
-        viewer { accounts(filter: { accountTag: $account }) {
-          durableObjectsPeriodicGroups(limit: 1000, filter: { scriptName: $script, datetimeMinute_geq: $start, datetimeMinute_leq: $end }) {
-            sum { activeTime inboundWebsocketMsgCount outboundWebsocketMsgCount }
+          durableObjectsInvocationsAdaptiveGroups(limit: 1000, filter: { scriptName: $script, date_geq: $day, date_leq: $day }) {
+            sum { requests } dimensions { type namespaceId }
           }
         } } }`,
       vars,
-    ).then((a) => {
-      const rows = a.durableObjectsPeriodicGroups
+    ).then(async (a) => {
+      const rows = (a.durableObjectsInvocationsAdaptiveGroups ?? []) as Array<{
+        sum?: { requests?: number }
+        dimensions?: { type?: string; namespaceId?: string }
+      }>
+      let messages = 0
+      let other = 0
+      const namespaces = new Set<string>()
+      for (const row of rows) {
+        const n = Number(row.sum?.requests ?? 0)
+        if (row.dimensions?.type === 'hibernation') messages += n
+        else other += n
+        if (row.dimensions?.namespaceId)
+          namespaces.add(row.dimensions.namespaceId)
+      }
+      const unit = reply.durableObject
+      unit.wsIn = messages
+      unit.otherRequests = other
+      unit.requests = other + Math.ceil(messages / 20)
+      if (!namespaces.size) {
+        unit.activeSeconds = 0
+        unit.durationGbs = 0
+        unit.wsOut = 0
+        return
+      }
+      const periodic = await graph(
+        env,
+        `query ($account: String!, $start: Time!, $end: Time!, $ns: [String!]) {
+          viewer { accounts(filter: { accountTag: $account }) {
+            durableObjectsPeriodicGroups(limit: 1000, filter: { namespaceId_in: $ns, datetimeMinute_geq: $start, datetimeMinute_leq: $end }) {
+              sum { activeTime outboundWebsocketMsgCount }
+            }
+          } } }`,
+        { ...vars, ns: [...namespaces] },
+      )
       // activeTime is in microseconds; duration bills 128 MB = 0.125 GB
-      const seconds = total(rows, 'activeTime') / 1e6
-      reply.durableObject.activeSeconds = Math.round(seconds)
-      reply.durableObject.durationGbs = Math.round(seconds * 0.125 * 10) / 10
-      reply.durableObject.wsIn = total(rows, 'inboundWebsocketMsgCount')
-      reply.durableObject.wsOut = total(rows, 'outboundWebsocketMsgCount')
+      const seconds =
+        total(periodic.durableObjectsPeriodicGroups, 'activeTime') / 1e6
+      unit.activeSeconds = Math.round(seconds)
+      unit.durationGbs = Math.round(seconds * 0.125 * 10) / 10
+      unit.wsOut = total(
+        periodic.durableObjectsPeriodicGroups,
+        'outboundWebsocketMsgCount',
+      )
     }),
   ]
   const results = await Promise.allSettled(jobs)

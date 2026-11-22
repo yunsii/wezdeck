@@ -79,6 +79,7 @@ export function UsageCard() {
   const wsIn = fmt(doUnit.wsIn ?? 0)
   const wsOut = fmt(doUnit.wsOut ?? 0)
   const billable = fmt(billableIn ?? 0)
+  const other = fmt(doUnit.otherRequests ?? 0)
   const active = fmt(doUnit.activeSeconds ?? 0)
   return (
     <div className="grid gap-3">
@@ -105,7 +106,7 @@ export function UsageCard() {
         hint={
           billableIn === null
             ? undefined
-            : t`WebSocket messages today: ${wsIn} in (counted 20:1, about ${billable} requests), ${wsOut} out (free).`
+            : t`Counted: ${other} calls + ${wsIn} incoming WebSocket messages ÷ 20 (≈ ${billable}); ${wsOut} outgoing messages are free.`
         }
       />
       <Meter

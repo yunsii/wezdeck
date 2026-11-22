@@ -75,7 +75,7 @@ msgstr "5 小时"
 msgid "7 d"
 msgstr "7 天"
 
-#: src/features/console-usage.tsx:138
+#: src/features/console-usage.tsx:139
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
@@ -91,7 +91,7 @@ msgstr "面向 AI Agent 的本地工作台。"
 #~ msgid "Active"
 #~ msgstr "进行中"
 
-#: src/features/console-usage.tsx:119
+#: src/features/console-usage.tsx:120
 msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 msgstr "活跃 {active} 秒 × 128 MB；中转空闲时会休眠，不计时长。"
 
@@ -377,6 +377,10 @@ msgstr "复制会话引用（给 agent 用）"
 msgid "Cost"
 msgstr "花费"
 
+#: src/features/console-usage.tsx:109
+msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
+msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
+
 #: src/features/console-collab.tsx:138
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
@@ -503,7 +507,7 @@ msgstr "Esc"
 msgid "Event stream"
 msgstr "事件流"
 
-#: src/features/console-usage.tsx:132
+#: src/features/console-usage.tsx:133
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协议层 ping 免费。"
 
@@ -589,7 +593,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-usage.tsx:127
+#: src/features/console-usage.tsx:128
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
@@ -872,7 +876,7 @@ msgstr "这个仓库里没有 worktree。"
 msgid "Node"
 msgstr "Node"
 
-#: src/features/console-usage.tsx:87
+#: src/features/console-usage.tsx:88
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
 
@@ -953,7 +957,7 @@ msgstr "打开 Web 控制台"
 msgid "opened, {from} → {to}"
 msgstr "开单：{from} → {to}"
 
-#: src/features/console-usage.tsx:130
+#: src/features/console-usage.tsx:131
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
 
@@ -978,7 +982,7 @@ msgstr "总览"
 msgid "Owner"
 msgstr "负责方"
 
-#: src/features/console-usage.tsx:99
+#: src/features/console-usage.tsx:100
 msgid "Pages, the relay handshake and the usage check; static files are free."
 msgstr "页面、中转握手和用量查询；静态文件免费。"
 
@@ -1068,11 +1072,11 @@ msgstr "已拒绝"
 msgid "Relay"
 msgstr "中转"
 
-#: src/features/console-usage.tsx:112
+#: src/features/console-usage.tsx:113
 msgid "Relay duration"
 msgstr "中转时长"
 
-#: src/features/console-usage.tsx:102
+#: src/features/console-usage.tsx:103
 msgid "Relay requests (Durable Object)"
 msgstr "中转请求（Durable Object）"
 
@@ -1376,7 +1380,7 @@ msgstr "跳到内容"
 msgid "Socket"
 msgstr "套接字"
 
-#: src/features/console-usage.tsx:92
+#: src/features/console-usage.tsx:93
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
@@ -1505,7 +1509,7 @@ msgstr "工单"
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
-#: src/features/console-usage.tsx:135
+#: src/features/console-usage.tsx:136
 msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，手机一直连着也一样。"
 
@@ -1522,7 +1526,7 @@ msgstr "tmux 窗口"
 msgid "Today"
 msgstr "今日"
 
-#: src/features/console-usage.tsx:123
+#: src/features/console-usage.tsx:124
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "今天（UTC）{day}，{at}更新。额度每天北京时间 8 点重置；超出只会让这类调用失败到重置为止，不会扣费。"
 
@@ -1702,10 +1706,6 @@ msgstr "WebRTC 直连 · {pathLabel}"
 msgid "WebRTC: {note}"
 msgstr "WebRTC：{note}"
 
-#: src/features/console-usage.tsx:108
-msgid "WebSocket messages today: {wsIn} in (counted 20:1, about {billable} requests), {wsOut} out (free)."
-msgstr "今天 WebSocket 消息：收到 {wsIn} 条（按 20:1 折算约 {billable} 次请求），发出 {wsOut} 条（免费）。"
-
 #: src/features/remote-badge.tsx:89
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
@@ -1737,7 +1737,7 @@ msgstr "work"
 msgid "Workbench"
 msgstr "工作台"
 
-#: src/features/console-usage.tsx:96
+#: src/features/console-usage.tsx:97
 msgid "Worker requests"
 msgstr "Worker 请求"
 

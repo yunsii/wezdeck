@@ -268,10 +268,21 @@ SQLite-backed Durable Objects (`new_sqlite_classes` in `wrangler.jsonc`).
 **Usage card** (我的 › 用量, `console-usage.tsx` → `/relay/usage`,
 `relay/usage.ts`, adapted from forge's admin usage page): today's Worker
 requests, Durable Object requests / duration and WebSocket messages in /
-out against those limits, from the Cloudflare GraphQL Analytics API
-(`workersInvocationsAdaptive`, `durableObjectsInvocationsAdaptiveGroups`,
-`durableObjectsPeriodicGroups`; one query each so a failing field only
-blanks its own number), cached 5 minutes. It needs two Worker secrets — an
+out against those limits, from the Cloudflare GraphQL Analytics API,
+cached 5 minutes. Analytics count every message while billing counts
+incoming ones 20:1, so the card computes the billable number itself:
+`durableObjectsInvocationsAdaptiveGroups` grouped by `type` —
+`hibernation` is one incoming WebSocket message delivered to the
+hibernating relay (the periodic dataset's `inboundWebsocketMsgCount` stays
+0 under hibernation), `http` is upgrades and presence fetches — billable =
+http + ⌈hibernation ÷ 20⌉. `durableObjectsPeriodicGroups` (`activeTime` in
+µs, `outboundWebsocketMsgCount`) cannot filter by script, so it is summed
+over the `namespaceId`s the invocations reported; `workersInvocationsAdaptive`
+filters by `scriptName`. Measured 2026-11-22 (UTC day, ≈ 13 h in): Worker
+949 requests; relay 245 http + 30,505 messages ≈ 1,771 billable of 100,000;
+active 16.5 s ≈ 2 GB-s of 13,000. The token lives in the account that owns
+the Worker (`Yuns.xie@qq.com's Account`, where `wrangler whoami` points),
+named `wezdeck usage (analytics read)`. It needs two Worker secrets — an
 API token with only **Account › Account Analytics › Read** and the account
 id:
 
