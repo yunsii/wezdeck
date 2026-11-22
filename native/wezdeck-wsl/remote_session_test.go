@@ -560,3 +560,18 @@ func TestClaudeCompactionBecomesMarkerNotUserMessage(t *testing.T) {
 		t.Fatalf("compactions = %d,%d", n, last)
 	}
 }
+
+func TestClaudePastedPhoneMessageIsKept(t *testing.T) {
+	data := []byte(strings.Join([]string{
+		`{"type":"user","timestamp":"t1","message":{"content":"\n\n<pasted_content id=\"d783\">\n加载更多反复？\n\n[手机附件]\n- 图片: /x/img.jpg\n</pasted_content id=\"d783\">\n"}}`,
+		`{"type":"attachment","timestamp":"t2","attachment":{"type":"queued_command","commandMode":"prompt","prompt":"<pasted_content id=\"a1\">\nmid-turn\nline2\n</pasted_content id=\"a1\">"}}`,
+		`{"type":"user","timestamp":"t3","message":{"content":"<system-reminder>harness</system-reminder>"}}`,
+	}, "\n"))
+	msgs := parseClaudeTranscript(data, 100)
+	if len(msgs) != 2 {
+		t.Fatalf("want 2 user messages, got %d: %+v", len(msgs), msgs)
+	}
+	if msgs[0].Text != "加载更多反复？\n\n[手机附件]\n- 图片: /x/img.jpg" || msgs[1].Text != "mid-turn\nline2" {
+		t.Fatalf("unwrapped wrong: %q / %q", msgs[0].Text, msgs[1].Text)
+	}
+}

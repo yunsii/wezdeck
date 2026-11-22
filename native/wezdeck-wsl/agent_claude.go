@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -58,6 +59,18 @@ func lastClaudeAITitle(path string) string {
 	return ""
 }
 
+// pastedTag: Claude Code wraps a multi-line paste — every phone message with
+// an attachment block arrives by paste-buffer — in
+// <pasted_content id="…">…</pasted_content id="…">. Without unwrapping, the
+// "starts with <" harness filter dropped those messages and the phone kept
+// them in its send queue forever.
+var pastedTag = regexp.MustCompile(`</?pasted_content(?: id="[^"]*")?>`)
+
+// unwrapPasted strips paste wrappers and surrounding blank lines.
+func unwrapPasted(s string) string {
+	return strings.TrimSpace(pastedTag.ReplaceAllString(s, ""))
+}
+
 func (t *transcript) feedLine(raw []byte) {
 	var line struct {
 		Type             string `json:"type"`
@@ -96,9 +109,10 @@ func (t *transcript) feedLine(raw []byte) {
 	// ones; task notifications, subagent hand-backs and auto-continuations
 	// are harness traffic.
 	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "prompt" {
-		human := a.Origin.Kind == "human" || (a.Origin.Kind == "" && !strings.HasPrefix(strings.TrimSpace(a.Prompt), "<"))
-		if human && strings.TrimSpace(a.Prompt) != "" {
-			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(a.Prompt, 8000), TS: line.Timestamp})
+		prompt := unwrapPasted(a.Prompt)
+		human := a.Origin.Kind == "human" || (a.Origin.Kind == "" && !strings.HasPrefix(prompt, "<"))
+		if human && prompt != "" {
+			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(prompt, 8000), TS: line.Timestamp})
 		}
 		return
 	}
@@ -140,7 +154,7 @@ func (t *transcript) feedLine(raw []byte) {
 	}
 	var text string
 	if json.Unmarshal(line.Message.Content, &text) == nil {
-		if line.Type == "user" && !strings.HasPrefix(strings.TrimSpace(text), "<") {
+		if text = unwrapPasted(text); line.Type == "user" && text != "" && !strings.HasPrefix(text, "<") {
 			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(text, 8000), TS: line.Timestamp})
 		}
 		return
@@ -160,10 +174,13 @@ func (t *transcript) feedLine(raw []byte) {
 	for _, b := range blocks {
 		switch {
 		case b.Type == "text" && strings.TrimSpace(b.Text) != "":
-			if line.Type == "user" && strings.HasPrefix(strings.TrimSpace(b.Text), "<") {
-				continue
+			text := b.Text
+			if line.Type == "user" {
+				if text = unwrapPasted(text); strings.HasPrefix(text, "<") {
+					continue
+				}
 			}
-			t.messages = append(t.messages, chatMessage{Role: line.Type, Text: clip(b.Text, 8000), TS: line.Timestamp})
+			t.messages = append(t.messages, chatMessage{Role: line.Type, Text: clip(text, 8000), TS: line.Timestamp})
 		case b.Type == "tool_use":
 			var input map[string]any
 			_ = json.Unmarshal(b.Input, &input)
