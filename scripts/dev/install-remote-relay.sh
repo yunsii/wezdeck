@@ -122,22 +122,22 @@ except FileNotFoundError:
 mode, wanted = os.environ["MODE"], os.environ["DEVICE_ID"]
 def show():
     for state in ("pending", "approved"):
-        for d in store.get(state, []):
+        for d in store.get(state) or []:
             print(f"{state:9} {d['id']}  {d.get('name') or '?':20} {d.get('at', '')}")
-    if not store.get("pending") and not store.get("approved"):
+    if not (store.get("pending") or store.get("approved")):
         print("no devices yet: on the phone open 我的 › 手机写入 › 启用")
 if mode == "devices":
     show(); sys.exit(0)
 if not wanted:
     sys.exit("usage: --approve|--revoke <device id> (see --devices)")
 if mode == "approve":
-    hit = [d for d in store.get("pending", []) if d["id"] == wanted]
+    hit = [d for d in store.get("pending") or [] if d["id"] == wanted]
     if not hit:
         sys.exit(f"no pending device {wanted}")
-    store["pending"] = [d for d in store["pending"] if d["id"] != wanted]
-    store.setdefault("approved", []).append(hit[0])
+    store["pending"] = [d for d in store.get("pending") or [] if d["id"] != wanted]
+    store["approved"] = (store.get("approved") or []) + [hit[0]]
 else:
-    store["approved"] = [d for d in store.get("approved", []) if d["id"] != wanted]
+    store["approved"] = [d for d in store.get("approved") or [] if d["id"] != wanted]
 os.makedirs(os.path.dirname(path), exist_ok=True)
 tmp = path + ".tmp"
 with open(tmp, "w") as f:

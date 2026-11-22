@@ -343,6 +343,13 @@ func loadDevices() deviceStore {
 }
 
 func saveDevices(s deviceStore) error {
+	// empty lists stay [] (not null) so other readers can iterate them
+	if s.Approved == nil {
+		s.Approved = []deviceRecord{}
+	}
+	if s.Pending == nil {
+		s.Pending = []deviceRecord{}
+	}
 	_ = os.MkdirAll(filepath.Dir(deviceFile()), 0o700)
 	data, _ := json.MarshalIndent(s, "", "  ")
 	return os.WriteFile(deviceFile(), data, 0o600)
