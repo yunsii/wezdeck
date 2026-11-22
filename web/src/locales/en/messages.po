@@ -55,11 +55,19 @@ msgstr "{needCount} need you, {runCount} running, {recentCount} recent"
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
 
+#: src/features/session-subagents.tsx:104
+msgid "{runningCount} subagents running"
+msgstr "{runningCount} subagents running"
+
 #: src/features/session-header.tsx:130
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
-#: src/features/console-sessions.tsx:371
+#: src/features/session-subagents.tsx:79
+msgid "{tools} tool calls"
+msgstr "{tools} tool calls"
+
+#: src/features/console-sessions.tsx:375
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -67,7 +75,7 @@ msgstr "{total} messages, showing {shown}"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 
-#: src/features/console-sessions.tsx:194
+#: src/features/console-sessions.tsx:198
 msgid "{unread} new"
 msgstr "{unread} new"
 
@@ -224,13 +232,17 @@ msgstr "assumptions challenged"
 msgid "Back"
 msgstr "Back"
 
-#: src/features/console-sessions.tsx:266
+#: src/features/console-sessions.tsx:270
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "Back on the page, fetching the latest (last {at})…"
 
 #: src/features/console-collab-run.tsx:55
 msgid "Backend"
 msgstr "Backend"
+
+#: src/features/session-subagents.tsx:78
+msgid "background"
+msgstr "background"
 
 #: src/features/session-header.tsx:147
 #: src/features/session-info.tsx:75
@@ -262,7 +274,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:464
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -629,11 +641,15 @@ msgstr "Filter by title, repo or id"
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
-#: src/features/console-collab.tsx:84
-#~ msgid "Finished"
-#~ msgstr "Finished"
+#: src/features/session-subagents.tsx:74
+msgid "Finished"
+msgstr "Finished"
 
-#: src/features/console-sessions.tsx:154
+#: src/features/session-subagents.tsx:120
+msgid "Finished ({doneCount})"
+msgstr "Finished ({doneCount})"
+
+#: src/features/console-sessions.tsx:158
 msgid "finished its turn"
 msgstr "finished its turn"
 
@@ -669,6 +685,10 @@ msgstr "Grouped by repo and worktree. Primary / secondary mark tmux panes when p
 msgid "Hide done"
 msgstr "Hide done"
 
+#: src/features/session-subagents.tsx:120
+msgid "Hide finished subagents"
+msgstr "Hide finished subagents"
+
 #: src/features/console-collab-run.tsx:117
 msgid "Hide initial prompt"
 msgstr "Hide initial prompt"
@@ -702,7 +722,7 @@ msgstr "Host up since"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/console-sessions.tsx:148
+#: src/features/console-sessions.tsx:152
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
@@ -830,7 +850,7 @@ msgid "Last turn"
 msgstr "Last turn"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:194
+#: src/features/console-sessions.tsx:198
 msgid "Latest"
 msgstr "Latest"
 
@@ -862,7 +882,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:391
+#: src/features/console-sessions.tsx:395
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -880,7 +900,7 @@ msgstr "Loading original…"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:238
-#: src/features/console-sessions.tsx:388
+#: src/features/console-sessions.tsx:392
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:239
@@ -977,6 +997,10 @@ msgstr "no"
 #: src/features/console-development.tsx:395
 msgid "No active agent sessions"
 msgstr "No active agent sessions"
+
+#: src/features/session-subagents.tsx:72
+msgid "No activity for a while"
+msgstr "No activity for a while"
 
 #: src/features/console-activity.tsx:218
 msgid "No activity yet"
@@ -1102,7 +1126,7 @@ msgstr "Open image"
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:480
+#: src/features/console-sessions.tsx:485
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1618,7 +1642,7 @@ msgstr "shipped"
 #~ msgid "Shipped"
 #~ msgstr "Shipped"
 
-#: src/features/console-sessions.tsx:390
+#: src/features/console-sessions.tsx:394
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -1646,7 +1670,7 @@ msgstr "Socket"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:467
+#: src/features/console-sessions.tsx:472
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -1665,6 +1689,10 @@ msgstr "started researching"
 #: src/features/console-activity.tsx:92
 msgid "started working on it"
 msgstr "started working on it"
+
+#: src/features/session-subagents.tsx:74
+msgid "Starting…"
+msgstr "Starting…"
 
 #: src/features/session-info.tsx:39
 msgid "State"
@@ -1715,7 +1743,7 @@ msgstr "Tappable Ask options"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:329
+#: src/features/console-sessions.tsx:333
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -1762,7 +1790,7 @@ msgstr "This computer (local Runtime)"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:461
+#: src/features/console-sessions.tsx:465
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -1876,7 +1904,7 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/console-sessions.tsx:146
+#: src/features/console-sessions.tsx:150
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "turn finished, {bg} background tasks running; you can send"
 
@@ -1904,7 +1932,7 @@ msgstr "Turns"
 msgid "Unavailable"
 msgstr "Unavailable"
 
-#: src/features/console-sessions.tsx:267
+#: src/features/console-sessions.tsx:271
 msgid "Up to date, {at}"
 msgstr "Up to date, {at}"
 
@@ -1969,11 +1997,11 @@ msgstr "Waiting for"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "Waiting for the host to approve this phone. On the host run:"
 
-#: src/features/console-sessions.tsx:152
+#: src/features/console-sessions.tsx:156
 msgid "waiting for you"
 msgstr "waiting for you"
 
-#: src/features/console-sessions.tsx:144
+#: src/features/console-sessions.tsx:148
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
@@ -2065,7 +2093,7 @@ msgstr "Workbench"
 msgid "Worker requests"
 msgstr "Worker requests"
 
-#: src/features/console-sessions.tsx:150
+#: src/features/console-sessions.tsx:154
 msgid "working"
 msgstr "working"
 
@@ -2090,7 +2118,7 @@ msgstr "Worktree"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/features/console-sessions.tsx:327
+#: src/features/console-sessions.tsx:331
 #: src/features/ticket-reply.tsx:193
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "Writing is not enabled on this phone yet (Settings › Phone writing)."

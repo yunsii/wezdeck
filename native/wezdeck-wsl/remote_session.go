@@ -785,6 +785,10 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			out["capabilities"] = a.Capabilities()
 		}
 		if agent == "claude" {
+			// what its subagents (Agent tool, forked skills) are doing
+			out["subagents"] = subagentsOf(path)
+		}
+		if agent == "claude" {
 			if size := claudeContextSize(e.SessionID); size > 0 {
 				usage.ContextLimit = size
 				out["usage"] = usage

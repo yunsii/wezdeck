@@ -55,11 +55,19 @@ msgstr "{needCount} 项需要你，{runCount} 项进行中，{recentCount} 个�
 msgid "{runningCount} running"
 msgstr "{runningCount} 个运行中"
 
+#: src/features/session-subagents.tsx:104
+msgid "{runningCount} subagents running"
+msgstr "{runningCount} 个子 agent 运行中"
+
 #: src/features/session-header.tsx:130
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
-#: src/features/console-sessions.tsx:371
+#: src/features/session-subagents.tsx:79
+msgid "{tools} tool calls"
+msgstr "{tools} 次工具调用"
+
+#: src/features/console-sessions.tsx:375
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -67,7 +75,7 @@ msgstr "共 {total} 条，已显示 {shown} 条"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
-#: src/features/console-sessions.tsx:194
+#: src/features/console-sessions.tsx:198
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -224,13 +232,17 @@ msgstr "对前提提出了质疑"
 msgid "Back"
 msgstr "返回"
 
-#: src/features/console-sessions.tsx:266
+#: src/features/console-sessions.tsx:270
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 
 #: src/features/console-collab-run.tsx:55
 msgid "Backend"
 msgstr "后端"
+
+#: src/features/session-subagents.tsx:78
+msgid "background"
+msgstr "后台"
 
 #: src/features/session-header.tsx:147
 #: src/features/session-info.tsx:75
@@ -262,7 +274,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:464
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -629,11 +641,15 @@ msgstr "按标题、仓库或编号筛选"
 msgid "Filter tickets"
 msgstr "筛选工单"
 
-#: src/features/console-collab.tsx:84
-#~ msgid "Finished"
-#~ msgstr "已结束"
+#: src/features/session-subagents.tsx:74
+msgid "Finished"
+msgstr "已结束"
 
-#: src/features/console-sessions.tsx:154
+#: src/features/session-subagents.tsx:120
+msgid "Finished ({doneCount})"
+msgstr "已完成（{doneCount}）"
+
+#: src/features/console-sessions.tsx:158
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
@@ -669,6 +685,10 @@ msgstr "按仓库与 worktree 分组；有 tmux 挂载时标主 / 副 pane。"
 msgid "Hide done"
 msgstr "收起已完成"
 
+#: src/features/session-subagents.tsx:120
+msgid "Hide finished subagents"
+msgstr "收起已完成的子 agent"
+
 #: src/features/console-collab-run.tsx:117
 msgid "Hide initial prompt"
 msgstr "收起初始消息"
@@ -702,7 +722,7 @@ msgstr "主机上线于"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/console-sessions.tsx:148
+#: src/features/console-sessions.tsx:152
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
@@ -830,7 +850,7 @@ msgid "Last turn"
 msgstr "最后一轮"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:194
+#: src/features/console-sessions.tsx:198
 msgid "Latest"
 msgstr "最近"
 
@@ -862,7 +882,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:391
+#: src/features/console-sessions.tsx:395
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -880,7 +900,7 @@ msgstr "正在加载原图…"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:238
-#: src/features/console-sessions.tsx:388
+#: src/features/console-sessions.tsx:392
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:239
@@ -977,6 +997,10 @@ msgstr "否"
 #: src/features/console-development.tsx:395
 msgid "No active agent sessions"
 msgstr "没有活动 Agent 会话"
+
+#: src/features/session-subagents.tsx:72
+msgid "No activity for a while"
+msgstr "有一阵子没动静了"
 
 #: src/features/console-activity.tsx:218
 msgid "No activity yet"
@@ -1102,7 +1126,7 @@ msgstr "查看图片"
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:480
+#: src/features/console-sessions.tsx:485
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1618,7 +1642,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-sessions.tsx:390
+#: src/features/console-sessions.tsx:394
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -1646,7 +1670,7 @@ msgstr "套接字"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:467
+#: src/features/console-sessions.tsx:472
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -1665,6 +1689,10 @@ msgstr "开始调研"
 #: src/features/console-activity.tsx:92
 msgid "started working on it"
 msgstr "开始处理"
+
+#: src/features/session-subagents.tsx:74
+msgid "Starting…"
+msgstr "正在启动…"
 
 #: src/features/session-info.tsx:39
 msgid "State"
@@ -1715,7 +1743,7 @@ msgstr "问答可点选项"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:329
+#: src/features/console-sessions.tsx:333
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1762,7 +1790,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:461
+#: src/features/console-sessions.tsx:465
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -1876,7 +1904,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/console-sessions.tsx:146
+#: src/features/console-sessions.tsx:150
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
@@ -1904,7 +1932,7 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
-#: src/features/console-sessions.tsx:267
+#: src/features/console-sessions.tsx:271
 msgid "Up to date, {at}"
 msgstr "已同步到最新，{at}"
 
@@ -1969,11 +1997,11 @@ msgstr "等待类型"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:152
+#: src/features/console-sessions.tsx:156
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/console-sessions.tsx:144
+#: src/features/console-sessions.tsx:148
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
@@ -2065,7 +2093,7 @@ msgstr "工作台"
 msgid "Worker requests"
 msgstr "Worker 请求"
 
-#: src/features/console-sessions.tsx:150
+#: src/features/console-sessions.tsx:154
 msgid "working"
 msgstr "运行中"
 
@@ -2090,7 +2118,7 @@ msgstr "工作树"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:327
+#: src/features/console-sessions.tsx:331
 #: src/features/ticket-reply.tsx:193
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

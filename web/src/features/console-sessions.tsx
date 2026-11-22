@@ -18,6 +18,8 @@ import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
 import { ChatThread, SendQueue, settle } from './chat-thread'
+import { SessionSubagents } from './session-subagents'
+import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import {
@@ -115,6 +117,8 @@ export type Detail = {
   meta?: Array<{ name: string; rows: Array<{ key: string; value: string }> }>
   total?: number
   start?: number
+  /** Claude subagents (Agent tool, forked skills) and what they are doing */
+  subagents?: Array<Subagent>
   /** index of the latest context-compaction marker; earlier = pre-compaction history */
   compacted_at?: number
   compactions?: number
@@ -461,6 +465,7 @@ function SessionDetail({ id }: { id: string }) {
             {detail.error?.message ?? t`this device is offline`}
           </p>
         ) : null}
+        <SessionSubagents agents={data?.subagents} />
         <SendQueue pending={pending} busy={busy} />
         {retryIn ? (
           <p role="status" className="text-xs text-brand-muted">
