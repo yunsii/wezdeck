@@ -59,7 +59,7 @@ msgstr "{runningCount} 个运行中"
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
-#: src/features/console-sessions.tsx:368
+#: src/features/console-sessions.tsx:371
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -254,7 +254,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:451
+#: src/features/console-sessions.tsx:455
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -822,7 +822,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:387
+#: src/features/console-sessions.tsx:391
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -836,7 +836,7 @@ msgstr "本页已加载"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:233
-#: src/features/console-sessions.tsx:384
+#: src/features/console-sessions.tsx:388
 #: src/features/console-shared.tsx:211
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:238
@@ -1038,7 +1038,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:471
+#: src/features/console-sessions.tsx:475
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1533,7 +1533,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-sessions.tsx:386
+#: src/features/console-sessions.tsx:390
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -1561,7 +1561,7 @@ msgstr "套接字"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:458
+#: src/features/console-sessions.tsx:462
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -1630,7 +1630,7 @@ msgstr "问答可点选项"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:326
+#: src/features/console-sessions.tsx:329
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -1677,7 +1677,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:452
+#: src/features/console-sessions.tsx:456
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -1990,7 +1990,7 @@ msgstr "工作树"
 msgid "Worktrees"
 msgstr "Worktree"
 
-#: src/features/console-sessions.tsx:324
+#: src/features/console-sessions.tsx:327
 #: src/features/ticket-reply.tsx:190
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "这台手机还没启用写入（我的 › 手机写入）。"

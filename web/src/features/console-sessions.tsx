@@ -308,6 +308,9 @@ function SessionDetail({ id }: { id: string }) {
   // reached the latest compaction marker: what is above is the old context
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
+  // only a requested page shows 加载中: the 1–2.5 s polls refetch the same
+  // key and must not flip the button (isFetching is true on every poll)
+  const pagingIn = detail.isPlaceholderData
   const keepPlace = useKeepPlace(end, start)
   const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
   // the phone often sits on the desk following the agent: keep it awake
@@ -369,6 +372,7 @@ function SessionDetail({ id }: { id: string }) {
                 {start > 0 ? (
                   <button
                     type="button"
+                    disabled={pagingIn}
                     onClick={() => {
                       keepPlace()
                       // page back to the compaction marker first; past it only on request
@@ -380,7 +384,7 @@ function SessionDetail({ id }: { id: string }) {
                     }}
                     className="min-h-9 rounded-full bg-brand-surface px-3 text-brand-text"
                   >
-                    {detail.isFetching
+                    {pagingIn
                       ? t`Loading…`
                       : atCompaction
                         ? t`Show history before compaction`
