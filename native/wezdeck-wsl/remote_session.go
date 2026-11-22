@@ -372,8 +372,8 @@ func grokSessionTitle(chatHistoryPath string) string {
 		return ""
 	}
 	var doc struct {
-		GeneratedTitle  string `json:"generated_title"`
-		SessionSummary  string `json:"session_summary"`
+		GeneratedTitle string `json:"generated_title"`
+		SessionSummary string `json:"session_summary"`
 	}
 	if json.Unmarshal(data, &doc) != nil {
 		return ""
@@ -382,6 +382,147 @@ func grokSessionTitle(chatHistoryPath string) string {
 		return doc.GeneratedTitle
 	}
 	return doc.SessionSummary
+}
+
+type elicitOption struct {
+	Label       string `json:"label"`
+	Description string `json:"description,omitempty"`
+}
+
+type elicitQuestion struct {
+	Question    string          `json:"question"`
+	Options     []elicitOption  `json:"options"`
+	MultiSelect bool            `json:"multi_select,omitempty"`
+}
+
+type elicitation struct {
+	ToolCallID string            `json:"tool_call_id,omitempty"`
+	Questions  []elicitQuestion  `json:"questions"`
+}
+
+// readTailFile reads the last window bytes of path (for huge updates.jsonl).
+func readTailFile(path string, window int64) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	start := info.Size() - window
+	if start < 0 {
+		start = 0
+	}
+	if _, err := f.Seek(start, io.SeekStart); err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	if start > 0 {
+		if i := bytes.IndexByte(data, '\n'); i >= 0 {
+			data = data[i+1:]
+		}
+	}
+	return data, nil
+}
+
+// pendingGrokElicitation finds the newest unanswered ask_user_question in updates.jsonl.
+func pendingGrokElicitation(chatHistoryPath string) *elicitation {
+	updatesPath := filepath.Join(filepath.Dir(chatHistoryPath), "updates.jsonl")
+	data, err := readTailFile(updatesPath, 2<<20)
+	if err != nil {
+		return nil
+	}
+	completed := map[string]bool{}
+	var pendingID string
+	var pendingRaw json.RawMessage
+	for _, line := range bytes.Split(data, []byte("\n")) {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		var row struct {
+			Params struct {
+				Update struct {
+					SessionUpdate string          `json:"sessionUpdate"`
+					ToolCallID    string          `json:"toolCallId"`
+					Status        string          `json:"status"`
+					Title         string          `json:"title"`
+					RawInput      json.RawMessage `json:"rawInput"`
+				} `json:"update"`
+			} `json:"params"`
+		}
+		if json.Unmarshal(line, &row) != nil {
+			continue
+		}
+		u := row.Params.Update
+		switch u.SessionUpdate {
+		case "tool_call":
+			if u.Title == "ask_user_question" && len(u.RawInput) > 0 {
+				pendingID = u.ToolCallID
+				pendingRaw = u.RawInput
+			}
+		case "tool_call_update":
+			if u.Status == "completed" && u.ToolCallID != "" {
+				completed[u.ToolCallID] = true
+			}
+			// Some builds only put AskUserQuestion on the update row.
+			if len(u.RawInput) > 0 && bytes.Contains(u.RawInput, []byte(`"AskUserQuestion"`)) {
+				pendingID = u.ToolCallID
+				pendingRaw = u.RawInput
+			}
+		}
+	}
+	if pendingID == "" || completed[pendingID] || len(pendingRaw) == 0 {
+		return nil
+	}
+	var raw struct {
+		Questions []struct {
+			Question    string `json:"question"`
+			MultiSelect *bool  `json:"multiSelect"`
+			Options     []struct {
+				Label       string `json:"label"`
+				Description string `json:"description"`
+			} `json:"options"`
+		} `json:"questions"`
+	}
+	if json.Unmarshal(pendingRaw, &raw) != nil || len(raw.Questions) == 0 {
+		return nil
+	}
+	out := &elicitation{ToolCallID: pendingID}
+	for _, q := range raw.Questions {
+		eq := elicitQuestion{Question: q.Question}
+		if q.MultiSelect != nil {
+			eq.MultiSelect = *q.MultiSelect
+		}
+		for _, o := range q.Options {
+			eq.Options = append(eq.Options, elicitOption{Label: o.Label, Description: o.Description})
+		}
+		out.Questions = append(out.Questions, eq)
+	}
+	return out
+}
+
+// grokPlanExcerpt returns a short plan.md preview when present next to the transcript.
+func grokPlanExcerpt(chatHistoryPath string, limit int) string {
+	planPath := filepath.Join(filepath.Dir(chatHistoryPath), "plan.md")
+	data, err := os.ReadFile(planPath)
+	if err != nil || len(data) == 0 {
+		return ""
+	}
+	text := strings.TrimSpace(string(data))
+	if limit > 0 && len(text) > limit {
+		// avoid cutting mid-rune
+		r := []rune(text)
+		if len(r) > limit {
+			text = string(r[:limit]) + "…"
+		}
+	}
+	return text
 }
 
 type sessionCard struct {
@@ -1082,6 +1223,15 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		out["agent"] = agent
 		if title := readSessionTitle(path, agent); title != "" {
 			out["title"] = title
+		}
+		if agent == "grok" {
+			// Prefer disk truth: an unanswered Ask may outlive a flaky waiting flag.
+			if el := pendingGrokElicitation(path); el != nil {
+				out["elicitation"] = el
+			}
+			if plan := grokPlanExcerpt(path, 2500); plan != "" {
+				out["plan"] = map[string]any{"excerpt": plan}
+			}
 		}
 		t, err := loadTranscript(path, agent)
 		if err != nil {

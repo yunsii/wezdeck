@@ -281,6 +281,32 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+func TestPendingGrokElicitationParsesUnansweredAsk(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	updates := filepath.Join(dir, "updates.jsonl")
+	_ = os.WriteFile(updates, []byte(strings.Join([]string{
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"ask-1","title":"ask_user_question","rawInput":{"questions":[{"question":"Pick one?","options":[{"label":"A","description":"alpha"},{"label":"B","description":"beta"}]}]}}}}`,
+		`{"params":{"update":{"sessionUpdate":"tool_call_update","toolCallId":"other","status":"completed"}}}`,
+	}, "\n")), 0o600)
+	el := pendingGrokElicitation(chat)
+	if el == nil || el.ToolCallID != "ask-1" || len(el.Questions) != 1 || len(el.Questions[0].Options) != 2 {
+		t.Fatalf("pending ask: %+v", el)
+	}
+	_ = os.WriteFile(updates, append([]byte("\n"), []byte(
+		`{"params":{"update":{"sessionUpdate":"tool_call_update","toolCallId":"ask-1","status":"completed"}}}`+"\n",
+	)...), 0o600)
+	// rewrite full file with completed ask
+	_ = os.WriteFile(updates, []byte(strings.Join([]string{
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"ask-1","title":"ask_user_question","rawInput":{"questions":[{"question":"Pick one?","options":[{"label":"A"},{"label":"B"}]}]}}}}`,
+		`{"params":{"update":{"sessionUpdate":"tool_call_update","toolCallId":"ask-1","status":"completed"}}}`,
+	}, "\n")), 0o600)
+	if pendingGrokElicitation(chat) != nil {
+		t.Fatal("completed ask must not stay pending")
+	}
+}
+
 func TestReadSessionTitleClaudeAndGrok(t *testing.T) {
 	dir := t.TempDir()
 	claude := filepath.Join(dir, "c.jsonl")

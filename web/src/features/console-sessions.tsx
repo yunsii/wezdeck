@@ -18,6 +18,13 @@ import { useChatScroll } from './chat-scroll'
 import { ChatThread, SendQueue, settle } from './chat-thread'
 import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
+import {
+  pickElicitationOption,
+  SessionElicitation,
+  SessionPermissionKeys,
+  SessionPlanExcerpt,
+} from './session-elicitation'
+import type { Elicitation } from './session-elicitation'
 import { SessionList } from './session-list'
 import { useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
@@ -98,6 +105,8 @@ export type Detail = {
   background?: Array<BgTask>
   messages?: Array<Message>
   screen?: string
+  elicitation?: Elicitation
+  plan?: { excerpt: string }
 }
 
 export function sessionTone(status: string, kind?: string): LedTone {
@@ -287,10 +296,12 @@ function SessionDetail({ id }: { id: string }) {
         params: { locale: locale === 'en' ? undefined : locale },
       })
   }
+  const elicitation = data?.elicitation
+  const asking = Boolean(elicitation && elicitation.questions.length > 0)
   const blocked =
     device.state !== 'approved'
       ? t`Writing is not enabled on this phone yet (Settings › Phone writing).`
-      : data?.waiting_kind
+      : data?.waiting_kind && !asking
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''
   const composer = useComposer({
@@ -355,33 +366,27 @@ function SessionDetail({ id }: { id: string }) {
             {data.screen}
           </pre>
         ) : null}
-        {data?.waiting_kind ? (
-          <div className="grid gap-2 rounded-[16px] bg-brand-surface p-3">
-            <p className="text-sm font-medium">{t`The agent asks:`}</p>
-            <pre className="max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
-              {(data.screen ?? '').split('\n').slice(-14).join('\n')}
-            </pre>
-            <div className="flex flex-wrap gap-2">
-              {[
-                ['1', '1'],
-                ['2', '2'],
-                ['3', '3'],
-                ['Enter', t`Enter`],
-                ['Escape', t`Esc`],
-                ['C-c', t`Ctrl+C`],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  disabled={sending || device.state !== 'approved'}
-                  onClick={() => void run('key', { key })}
-                  className="key-press min-h-11 min-w-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+        {asking && elicitation ? (
+          <SessionElicitation
+            elicitation={elicitation}
+            disabled={sending || device.state !== 'approved'}
+            onKey={(key) => void run('key', { key })}
+            onPick={(_qi, oi) =>
+              void (async () => {
+                await pickElicitationOption(oi, (key) => run('key', { key }))
+              })()
+            }
+          />
+        ) : null}
+        {data?.plan?.excerpt && !asking ? (
+          <SessionPlanExcerpt excerpt={data.plan.excerpt} />
+        ) : null}
+        {data?.waiting_kind && !asking ? (
+          <SessionPermissionKeys
+            screen={data.screen}
+            disabled={sending || device.state !== 'approved'}
+            onKey={(key) => void run('key', { key })}
+          />
         ) : null}
         <div ref={end} />
       </div>
