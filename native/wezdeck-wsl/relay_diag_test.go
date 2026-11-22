@@ -17,7 +17,9 @@ func TestDiagRequestRoundTrip(t *testing.T) {
 	}
 
 	done := make(chan map[string]any)
-	go func() { done <- r.requestDiagnostics(5*time.Second, "test", json.RawMessage(`[{"do":"wait","ms":10}]`)) }()
+	go func() {
+		done <- r.requestDiagnostics(5*time.Second, "test", json.RawMessage(`[{"do":"wait","ms":10}]`))
+	}()
 	// the phone answers in two chunks once the request exists
 	var id string
 	for deadline := time.Now().Add(2 * time.Second); id == "" && time.Now().Before(deadline); {

@@ -11,6 +11,24 @@ type TraceEvent = { t: number; kind: string; data?: Record<string, unknown> }
 const MAX_EVENTS = 300
 const events: Array<TraceEvent> = []
 
+// React's recoverable hydration errors (#418 …) only reach console.error, and
+// they happen before any effect runs: wrap it when this module loads (client
+// only — the SSR bundle has no window)
+if (typeof window !== 'undefined') {
+  const consoleError = console.error.bind(console)
+  let consoleErrors = 0
+  console.error = (...args: Array<unknown>) => {
+    if (consoleErrors++ < 20)
+      trace('console-error', {
+        message: args
+          .map((a) => (a instanceof Error ? a.message : String(a)))
+          .join(' ')
+          .slice(0, 300),
+      })
+    consoleError(...args)
+  }
+}
+
 /** page state for the snapshot (the session page registers its own) */
 let pageState: () => Record<string, unknown> = () => ({})
 export function setDiagnosticsPage(fn: () => Record<string, unknown>) {
@@ -133,12 +151,10 @@ export function shellMetrics(): Record<string, unknown> {
 }
 
 const PREVIOUS_KEY = 'wezdeck-trace-previous'
+// read once at boot, before this document saves its own events under the key
+let previousDoc: unknown = null
 function previousDocument() {
-  try {
-    return JSON.parse(localStorage.getItem(PREVIOUS_KEY) ?? 'null') as unknown
-  } catch {
-    return null
-  }
+  return previousDoc
 }
 
 const routerIndex = () =>
@@ -216,6 +232,11 @@ export function installClientTrace() {
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) trace('pageshow-bfcache', { path: location.pathname })
   })
+  try {
+    previousDoc = JSON.parse(localStorage.getItem(PREVIOUS_KEY) ?? 'null')
+  } catch {
+    previousDoc = null
+  }
   setTimeout(() => trace('shell', shellMetrics()), 2000)
   let shellTimer: ReturnType<typeof setTimeout> | undefined
   window.addEventListener('resize', () => {

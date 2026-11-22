@@ -241,11 +241,13 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return registerDevice(f.Args)
 	case "upload.get":
 		return uploadGet(f.Args)
+	case "todos":
+		return listTodos(f.Args)
 	case "diag.submit":
 		return diagSubmit(f.Args, r)
 	case "session.image":
 		return sessionImage(f.Args)
-	case "send", "key", "reply", "attach", "upload":
+	case "send", "key", "reply", "attach", "upload", "todo":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%s err=%q", via, f.Action, err)
@@ -267,6 +269,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			}
 		case "attach":
 			result, err = attachTicket(w.Args)
+		case "todo":
+			result, err = writeTodo(w.Args)
 		default:
 			result, err = replyTicket(w.Args)
 		}

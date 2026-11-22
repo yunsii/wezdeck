@@ -88,6 +88,8 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `key {id,key}` | write | one key from `1 2 3 4 Enter Escape Up Down Tab C-c a s q y` (permission / Ask digits, Ctrl+C interrupt, and Grok plan-review `a`/`s`/`q`/`y`) |
 | `reply {id,text,continue}` | write | `ticket reply` with `TICKET_TRIGGER_SOURCE=mobile` |
 | `attach {id}` | write | `ticket attach --id` (skills/agent-collab/lib/attach.py): the ticket's agent conversation opens in a new window of the target repo's tmux session through `agent-launcher.sh` with `WEZDECK_RESUME_SESSION_ID`, and an open ticket is session-claimed so headless runs stop writing to it — the phone's 接管到 tmux |
+| `todos {session? \| all}` | read | the repo to-dos of the session's repo, or every open one (`scripts/runtime/todo.py list --json`) |
+| `todo {op, session, text?, id?}` | write | `add` (to the session's repo, source `phone`) / `done` / `reopen` / `delete` a repo to-do |
 | `device.register` | read-ish | records a phone's public key as pending |
 
 Guards on every write (`remote_session.go`): one writer — a tmux-hosted
@@ -145,6 +147,20 @@ browser screenshots) — become refs on the message (`images`:
 read with `session.image {id, ref, thumb, offset}` (`remote_image.go`),
 which re-reads that one line and answers like `upload.get`; tool images load
 only once the call is opened.
+
+### Repo to-dos
+
+A big change gets a follow-up note that belongs to the **repository**, not to
+the conversation: a later session there (or another agent) picks it up after
+the original one is gone. Stored in SQLite (`~/.local/state/wezdeck/wezdeck.db`,
+table `todos`, `WEZDECK_TODO_DB` overrides) by `scripts/runtime/todo.py`,
+keyed by the git common dir so every worktree of a repo shares one list.
+Agents call it from the repo: `todo.py add [--session ID] -- TEXT`,
+`todo.py list [--open|--all] [--json]`, `todo.py done|reopen|delete ID`. On the
+phone, the session toolbar's 待办 panel lists the session repo's to-dos — add,
+mark done, or put one into the composer to hand it to this agent — and 现在
+shows every open one under 待跟进. The relay only maps a session to its
+directory (`remote_todo.go`).
 
 ### Diagnostics on demand
 

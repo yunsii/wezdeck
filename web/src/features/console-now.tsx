@@ -5,6 +5,7 @@ import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 
+import { OpenTodos } from './session-todos'
 import { Led } from '#/components/deck/led'
 import { useCollab } from '#/lib/collab-query'
 import { useLocale } from '#/lib/locale-context'
@@ -205,6 +206,7 @@ export function ConsoleNowPage() {
           )}
         </Group>
       ) : null}
+      <OpenTodos />
       {recentCount > 0 ? (
         <Group
           title={t`Recently active`}

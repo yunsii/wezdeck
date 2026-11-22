@@ -23,7 +23,7 @@ msgstr "（可多选）"
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:156
+#: src/features/session-composer.tsx:158
 msgid "{count} images"
 msgstr "{count} 张图片"
 
@@ -43,7 +43,7 @@ msgstr "{doneCount} 个已完成"
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
-#: src/features/console-now.tsx:86
+#: src/features/console-now.tsx:87
 msgid "{needCount} need you, {runCount} running, {recentCount} recent"
 msgstr "{needCount} 项需要你，{runCount} 项进行中，{recentCount} 个最近活跃"
 
@@ -95,6 +95,10 @@ msgstr "7 天"
 msgid "7-day limit"
 msgstr "7 天额度"
 
+#: src/features/session-todos.tsx:127
+msgid "A big change to follow up later…"
+msgstr "记下要后续跟进的大改动…"
+
 #: src/features/console-usage.tsx:139
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
@@ -126,6 +130,10 @@ msgstr "账号额度"
 #: src/features/console-usage.tsx:120
 msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 msgstr "活跃 {active} 秒 × 128 MB；中转空闲时会休眠，不计时长。"
+
+#: src/features/session-todos.tsx:136
+msgid "Add"
+msgstr "添加"
 
 #: src/features/landing-page.tsx:122
 msgid "After a restart, return to the same agent session and continue the work."
@@ -163,7 +171,7 @@ msgstr "全部分类"
 msgid "All levels"
 msgstr "全部级别"
 
-#: src/features/console-now.tsx:217
+#: src/features/console-now.tsx:219
 msgid "All sessions"
 msgstr "全部会话"
 
@@ -258,7 +266,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-composer.tsx:194
+#: src/features/session-composer.tsx:198
 msgid "cancel"
 msgstr "取消"
 
@@ -309,7 +317,7 @@ msgstr "认领"
 msgid "Close"
 msgstr "关闭"
 
-#: src/features/session-composer.tsx:229
+#: src/features/session-composer.tsx:233
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -320,6 +328,10 @@ msgstr "已请求关闭"
 #: src/features/console-development.tsx:87
 msgid "Close this VS Code window? Unsaved work may ask for confirmation."
 msgstr "关闭这个 VS Code 窗口？未保存的工作可能会再次请求确认。"
+
+#: src/features/session-todos.tsx:105
+msgid "Close to-dos"
+msgstr "关闭待办"
 
 #: src/features/console-development.tsx:469
 msgid "Close VS Code window"
@@ -357,11 +369,11 @@ msgstr "协作工单"
 msgid "Command"
 msgstr "命令"
 
-#: src/features/session-composer.tsx:294
+#: src/features/session-composer.tsx:302
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/session-composer.tsx:193
+#: src/features/session-composer.tsx:197
 msgid "confirm"
 msgstr "确认"
 
@@ -411,12 +423,12 @@ msgstr "上下文压缩次数"
 msgid "Control"
 msgstr "控制"
 
-#: src/features/session-composer.tsx:87
+#: src/features/session-composer.tsx:89
 #: src/features/session-info.tsx:269
 msgid "Copied"
 msgstr "已复制"
 
-#: src/features/session-composer.tsx:87
+#: src/features/session-composer.tsx:89
 msgid "Copy"
 msgstr "复制"
 
@@ -424,7 +436,7 @@ msgstr "复制"
 msgid "Copy command"
 msgstr "复制命令"
 
-#: src/features/session-composer.tsx:79
+#: src/features/session-composer.tsx:81
 msgid "Copy error"
 msgstr "复制错误信息"
 
@@ -522,11 +534,15 @@ msgstr "已完成"
 msgid "Done"
 msgstr "已完成"
 
+#: src/features/session-todos.tsx:196
+msgid "Done ({doneCount})"
+msgstr "已完成（{doneCount}）"
+
 #: src/features/landing-page.tsx:112
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去的位置。"
 
-#: src/features/session-composer.tsx:223
+#: src/features/session-composer.tsx:227
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
 
@@ -629,6 +645,10 @@ msgstr "第一轮"
 msgid "Follow system theme"
 msgstr "跟随系统主题"
 
+#: src/features/session-composer.tsx:320
+msgid "Follow-ups of this repo"
+msgstr "这个仓库的待跟进事项"
+
 #: src/features/console-development.tsx:406
 msgid "Git"
 msgstr "Git"
@@ -644,6 +664,10 @@ msgstr "授权失败（{micError}），点此重试"
 #: src/features/session-list.tsx:162
 msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 msgstr "按仓库与 worktree 分组；有 tmux 挂载时标主 / 副 pane。"
+
+#: src/features/session-todos.tsx:196
+msgid "Hide done"
+msgstr "收起已完成"
 
 #: src/features/console-collab-run.tsx:117
 msgid "Hide initial prompt"
@@ -690,7 +714,7 @@ msgstr "图片"
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/session-composer.tsx:317
+#: src/features/session-composer.tsx:340
 msgid "Images"
 msgstr "图片"
 
@@ -744,7 +768,7 @@ msgstr "集成"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-composer.tsx:195
+#: src/features/session-composer.tsx:199
 msgid "interrupt"
 msgstr "打断"
 
@@ -776,7 +800,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/session-composer.tsx:307
+#: src/features/session-composer.tsx:315
 msgid "Keys"
 msgstr "快捷"
 
@@ -855,7 +879,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab.tsx:193
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:236
+#: src/features/console-now.tsx:238
 #: src/features/console-sessions.tsx:388
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
@@ -877,15 +901,19 @@ msgstr "日志流"
 msgid "made progress"
 msgstr "有进展"
 
+#: src/features/session-todos.tsx:179
+msgid "Mark done"
+msgstr "标为完成"
+
 #: src/features/console-collab.tsx:501
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:421
+#: src/features/session-composer.tsx:459
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:409
+#: src/features/session-composer.tsx:447
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -917,7 +945,7 @@ msgstr "修改时间"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/console-now.tsx:193
+#: src/features/console-now.tsx:194
 #: src/features/session-header.tsx:260
 msgid "Needs you"
 msgstr "需要你处理"
@@ -925,6 +953,10 @@ msgstr "需要你处理"
 #: src/features/session-header.tsx:208
 msgid "New session title"
 msgstr "新的会话标题"
+
+#: src/features/session-todos.tsx:116
+msgid "New to-do"
+msgstr "新待办"
 
 #: src/features/pwa-boot.tsx:16
 msgid "New version available"
@@ -966,7 +998,7 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/console-now.tsx:166
+#: src/features/console-now.tsx:167
 #: src/features/session-list.tsx:142
 msgid "No human message yet"
 msgstr "还没有人工消息"
@@ -1021,11 +1053,15 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/console-now.tsx:231
+#: src/features/console-now.tsx:233
 msgid "Nothing needs you and nothing is running."
 msgstr "没有需要你处理的事，也没有在运行的任务。"
 
-#: src/features/console-now.tsx:190
+#: src/features/session-todos.tsx:153
+msgid "Nothing to follow up in this repo."
+msgstr "这个仓库暂时没有要跟进的事。"
+
+#: src/features/console-now.tsx:191
 #: src/features/console-shell.tsx:118
 msgid "Now"
 msgstr "现在"
@@ -1177,7 +1213,7 @@ msgstr "计划待你确认"
 msgid "Plan review"
 msgstr "计划确认"
 
-#: src/features/session-composer.tsx:334
+#: src/features/session-composer.tsx:357
 msgid "Preview image"
 msgstr "预览图片"
 
@@ -1185,7 +1221,7 @@ msgstr "预览图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/console-now.tsx:141
+#: src/features/console-now.tsx:142
 #: src/features/session-list.tsx:95
 msgid "Primary"
 msgstr "主"
@@ -1202,12 +1238,20 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
+#: src/features/session-todos.tsx:168
+msgid "Put into the message"
+msgstr "填进消息"
+
+#: src/features/session-todos.tsx:169
+msgid "Put into the message for this agent"
+msgstr "填进消息，交给这个 agent"
+
 #: src/features/chat-thread.tsx:404
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/session-composer.tsx:237
-#: src/features/session-composer.tsx:301
+#: src/features/session-composer.tsx:241
+#: src/features/session-composer.tsx:309
 msgid "Quick keys"
 msgstr "快捷键"
 
@@ -1235,7 +1279,7 @@ msgstr "就绪"
 msgid "Reason"
 msgstr "原因"
 
-#: src/features/console-now.tsx:210
+#: src/features/console-now.tsx:212
 msgid "Recently active"
 msgstr "最近活跃"
 
@@ -1267,13 +1311,17 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:346
+#: src/features/session-composer.tsx:369
 msgid "Remove image"
 msgstr "移除图片"
 
 #: src/features/session-header.tsx:235
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
+
+#: src/features/session-todos.tsx:212
+msgid "Reopen"
+msgstr "重新打开"
 
 #: src/features/console-activity.tsx:103
 msgid "replied"
@@ -1417,7 +1465,7 @@ msgstr "运行中"
 msgid "Running in pane"
 msgstr "窗格里在跑"
 
-#: src/features/console-now.tsx:201
+#: src/features/console-now.tsx:202
 msgid "Running now"
 msgstr "正在运行"
 
@@ -1484,7 +1532,7 @@ msgstr "改动范围"
 #~ msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 #~ msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
-#: src/features/console-now.tsx:143
+#: src/features/console-now.tsx:144
 #: src/features/session-list.tsx:95
 msgid "Secondary"
 msgstr "副"
@@ -1505,11 +1553,11 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:426
+#: src/features/session-composer.tsx:464
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:302
+#: src/features/session-composer.tsx:310
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
@@ -1655,7 +1703,7 @@ msgstr "点任意一行即可复制它的值。"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:224
+#: src/features/session-composer.tsx:228
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -1727,7 +1775,7 @@ msgid "This Runtime does not provide the workspace catalog."
 msgstr "当前 Runtime 没有提供 workspace 目录。"
 
 #: src/features/console-activity.tsx:204
-#: src/features/console-now.tsx:244
+#: src/features/console-now.tsx:246
 #: src/features/console-shell.tsx:131
 msgid "Ticket activity"
 msgstr "工单动态"
@@ -1771,6 +1819,22 @@ msgstr "tmux 窗口"
 #: src/features/console-development.tsx:414
 msgid "Tmux window"
 msgstr "tmux 窗口"
+
+#: src/features/session-todos.tsx:244
+msgid "To follow up"
+msgstr "待跟进"
+
+#: src/features/session-composer.tsx:325
+msgid "To-dos"
+msgstr "待办"
+
+#: src/features/session-todos.tsx:99
+msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
+msgstr "{repo} 的待办：跟着仓库走，任何会话都能接着做"
+
+#: src/features/session-todos.tsx:100
+msgid "To-dos of this repo"
+msgstr "这个仓库的待办"
 
 #: src/features/console-activity.tsx:163
 #: src/features/console-overview.tsx:62
@@ -1848,7 +1912,7 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:146
+#: src/features/session-composer.tsx:148
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 

@@ -114,6 +114,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   (bottom tabs / pushed detail / sheets vs split view + keyboard / command
   palette), capability-aware navigation, Web Push:
   Read [`docs/web-pwa.md`](docs/web-pwa.md).
+- Repo to-dos / follow-ups (`scripts/runtime/todo.py`, SQLite `todos`, phone 待办 panel):
+  Read [`docs/remote-access.md#repo-to-dos`](docs/remote-access.md#repo-to-dos).
 - Viewing collab tickets from a phone / tablet anywhere (`wezdeck.yuns.love`
   on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
   DataChannel first / WebSocket relay fallback, link badge + latency,

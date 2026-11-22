@@ -9,6 +9,7 @@ import {
   Copy,
   ImagePlus,
   Keyboard,
+  ListTodo,
   SendHorizontal,
   X,
 } from 'lucide-react'
@@ -18,6 +19,7 @@ import { setDiagnosticsPage } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
 import { ImageViewer } from './image-viewer'
+import { TodoPanel, useTodos } from './session-todos'
 
 const MAX_IMAGES = 5
 
@@ -166,6 +168,7 @@ export function useComposer({
     }
   }
   return {
+    id,
     text,
     setText,
     images,
@@ -178,6 +181,7 @@ export function useComposer({
 }
 
 type Composer = ReturnType<typeof useComposer>
+type Panel = 'keys' | 'todos' | null
 
 const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
@@ -270,16 +274,20 @@ function KeyPanel({
 function Toolbar({
   composer,
   writable,
-  keysOpen,
-  onKeys,
+  panel,
+  onPanel,
 }: {
   composer: Composer
   writable: boolean
-  keysOpen: boolean
-  onKeys: () => void
+  panel: Panel
+  onPanel: (panel: Panel) => void
 }) {
   const { t } = useLingui()
   const [preview, setPreview] = useState<number | null>(null)
+  const todos = useTodos(composer.id)
+  const openTodos = (todos.data?.todos ?? []).filter(
+    (todo) => !todo.done,
+  ).length
   const full = composer.images.length >= MAX_IMAGES
   const chip = (on: boolean) =>
     cn(
@@ -297,14 +305,29 @@ function Toolbar({
     >
       <button
         type="button"
-        aria-pressed={keysOpen}
+        aria-pressed={panel === 'keys'}
         aria-label={t`Quick keys`}
         title={t`Send Enter, Esc or Ctrl+C into the agent pane`}
-        onClick={onKeys}
-        className={chip(keysOpen)}
+        onClick={() => onPanel(panel === 'keys' ? null : 'keys')}
+        className={chip(panel === 'keys')}
       >
         <Keyboard size={14} aria-hidden />
         {t`Keys`}
+      </button>
+      <button
+        type="button"
+        aria-pressed={panel === 'todos'}
+        title={t`Follow-ups of this repo`}
+        onClick={() => onPanel(panel === 'todos' ? null : 'todos')}
+        className={chip(panel === 'todos')}
+      >
+        <ListTodo size={14} aria-hidden />
+        {t`To-dos`}
+        {openTodos ? (
+          <span className="text-[11px] tabular-nums opacity-80">
+            {openTodos}
+          </span>
+        ) : null}
       </button>
       {writable && !full ? (
         <label
@@ -383,21 +406,36 @@ export function ComposerBox({
   onKey: (key: string) => void
 }) {
   const { t } = useLingui()
-  const [keysOpen, setKeysOpen] = useState(false)
+  // one tool panel at a time, above the toolbar
+  const [panel, setPanel] = useState<Panel>(null)
   return (
     <>
-      {keysOpen ? (
+      {panel === 'keys' ? (
         <KeyPanel
           disabled={keysDisabled}
           onKey={onKey}
-          onClose={() => setKeysOpen(false)}
+          onClose={() => setPanel(null)}
+        />
+      ) : null}
+      {panel === 'todos' ? (
+        <TodoPanel
+          session={composer.id}
+          writable={writable}
+          onUse={(text) => {
+            composer.setText((current) =>
+              current.trim() ? `${current.trimEnd()}\n${text}` : text,
+            )
+            setPanel(null)
+            document.getElementById('session-composer')?.focus()
+          }}
+          onClose={() => setPanel(null)}
         />
       ) : null}
       <Toolbar
         composer={composer}
         writable={writable}
-        keysOpen={keysOpen}
-        onKeys={() => setKeysOpen(!keysOpen)}
+        panel={panel}
+        onPanel={setPanel}
       />
       {composer.progress ? (
         <p role="status" className="px-1 text-xs text-brand-muted">
