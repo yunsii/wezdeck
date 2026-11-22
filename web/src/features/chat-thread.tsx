@@ -4,10 +4,13 @@
 // word by word, each word blurring in; nothing animates under
 // prefers-reduced-motion.
 import { useLingui } from '@lingui/react/macro'
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { loadUploadOriginal, useUploadThumb } from '#/lib/upload-image'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
+import { ImageViewer } from './image-viewer'
 import { ToolGroup } from './chat-tools'
 
 export type Message = {
@@ -51,14 +54,60 @@ function splitAttachments(text: string) {
   return { typed: text.slice(0, at).trim(), files }
 }
 
+const isPhoneImage = (name: string) =>
+  /^img-.*\.(jpe?g|png|gif|webp)$/i.test(name)
+
+/** A phone image in a sent message: the host's thumbnail, tap for the original. */
+function AttachmentThumb({
+  name,
+  onOpen,
+}: {
+  name: string
+  onOpen: () => void
+}) {
+  const { t } = useLingui()
+  const thumb = useUploadThumb(name)
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={t`Open image`}
+      className="relative size-16 overflow-hidden rounded-[10px] bg-brand-deck/15"
+    >
+      {thumb.data ? (
+        <img src={thumb.data.url} alt="" className="size-full object-cover" />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center text-[11px] opacity-70">
+          {thumb.isError ? t`Gone` : t`Image`}
+        </span>
+      )}
+    </button>
+  )
+}
+
 function SentAttachments({ text }: { text: string }) {
   const { typed, files } = splitAttachments(text)
+  const [open, setOpen] = useState<number | null>(null)
+  const client = useQueryClient()
+  const images = files.filter((file) => isPhoneImage(file.name))
+  const others = files.filter((file) => !isPhoneImage(file.name))
   return (
     <>
       {typed}
-      {files.length ? (
+      {images.length ? (
+        <span className="mt-1.5 flex flex-wrap gap-1.5">
+          {images.map((file, i) => (
+            <AttachmentThumb
+              key={file.name}
+              name={file.name}
+              onOpen={() => setOpen(i)}
+            />
+          ))}
+        </span>
+      ) : null}
+      {others.length ? (
         <span className="mt-1.5 flex flex-wrap gap-1">
-          {files.map((file) => (
+          {others.map((file) => (
             <span
               key={file.name}
               title={file.name}
@@ -68,6 +117,22 @@ function SentAttachments({ text }: { text: string }) {
             </span>
           ))}
         </span>
+      ) : null}
+      {open !== null ? (
+        <ImageViewer
+          images={images.map((file) => ({
+            key: file.name,
+            load: () => loadUploadOriginal(file.name),
+            placeholder: client.getQueryData<{ url: string }>([
+              'remote',
+              'upload-thumb',
+              file.name,
+            ])?.url,
+          }))}
+          index={open}
+          onIndex={setOpen}
+          onClose={() => setOpen(null)}
+        />
       ) : null}
     </>
   )

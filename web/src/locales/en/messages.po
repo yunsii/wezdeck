@@ -7,11 +7,11 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
-#: src/features/session-composer.tsx:166
+#: src/features/session-composer.tsx:167
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:360
+#: src/features/chat-thread.tsx:425
 msgid "· summary"
 msgstr "· summary"
 
@@ -19,15 +19,15 @@ msgstr "· summary"
 msgid "(pick any)"
 msgstr "(pick any)"
 
-#: src/features/chat-thread.tsx:391
+#: src/features/chat-thread.tsx:456
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:164
+#: src/features/session-composer.tsx:165
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/chat-thread.tsx:390
+#: src/features/chat-thread.tsx:455
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
@@ -258,7 +258,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:207
+#: src/features/session-composer.tsx:208
 msgid "cancel"
 msgstr "cancel"
 
@@ -304,11 +304,12 @@ msgstr "claimed"
 #~ msgid "Claude is working; your message joins its queue and it decides when to take it."
 #~ msgstr "Claude is working; your message joins its queue and it decides when to take it."
 
+#: src/features/image-viewer.tsx:125
 #: src/features/session-info.tsx:246
 msgid "Close"
 msgstr "Close"
 
-#: src/features/session-composer.tsx:239
+#: src/features/session-composer.tsx:240
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -356,11 +357,11 @@ msgstr "Collab tickets"
 msgid "Command"
 msgstr "Command"
 
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:305
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:206
+#: src/features/session-composer.tsx:207
 msgid "confirm"
 msgstr "confirm"
 
@@ -394,11 +395,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:349
+#: src/features/chat-thread.tsx:414
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:350
+#: src/features/chat-thread.tsx:415
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -410,12 +411,12 @@ msgstr "Context compactions"
 msgid "Control"
 msgstr "Control"
 
-#: src/features/session-composer.tsx:86
+#: src/features/session-composer.tsx:87
 #: src/features/session-info.tsx:269
 msgid "Copied"
 msgstr "Copied"
 
-#: src/features/session-composer.tsx:86
+#: src/features/session-composer.tsx:87
 msgid "Copy"
 msgstr "Copy"
 
@@ -423,7 +424,7 @@ msgstr "Copy"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:78
+#: src/features/session-composer.tsx:79
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -495,13 +496,13 @@ msgstr "Desk idle for"
 msgid "Development"
 msgstr "Development"
 
-#: src/features/session-composer.tsx:164
+#: src/features/session-composer.tsx:165
 msgid "diagnostics"
 msgstr "diagnostics"
 
 #: src/features/console-me.tsx:269
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:348
+#: src/features/session-composer.tsx:350
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -526,7 +527,7 @@ msgstr "Done"
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 
-#: src/features/session-composer.tsx:233
+#: src/features/session-composer.tsx:234
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "Enable phone writing in Settings to send these keys"
 
@@ -629,6 +630,10 @@ msgstr "Follow system theme"
 msgid "Git"
 msgstr "Git"
 
+#: src/features/chat-thread.tsx:81
+msgid "Gone"
+msgstr "Gone"
+
 #: src/features/remote-badge.tsx:132
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
@@ -674,7 +679,15 @@ msgstr "How the WebSocket is billed"
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
-#: src/features/session-composer.tsx:326
+#: src/features/chat-thread.tsx:81
+msgid "Image"
+msgstr "Image"
+
+#: src/features/image-viewer.tsx:88
+msgid "Image preview"
+msgstr "Image preview"
+
+#: src/features/session-composer.tsx:328
 msgid "Images"
 msgstr "Images"
 
@@ -728,7 +741,7 @@ msgstr "Integration"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:208
+#: src/features/session-composer.tsx:209
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -760,7 +773,7 @@ msgstr "Keep every agent in a place you can return to."
 msgid "Keyboard first"
 msgstr "Keyboard first"
 
-#: src/features/session-composer.tsx:316
+#: src/features/session-composer.tsx:318
 msgid "Keys"
 msgstr "Keys"
 
@@ -830,6 +843,10 @@ msgstr "Load earlier"
 msgid "Loaded on this page"
 msgstr "Loaded on this page"
 
+#: src/features/image-viewer.tsx:120
+msgid "Loading original…"
+msgstr "Loading original…"
+
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:123
 #: src/features/console-collab.tsx:193
@@ -861,11 +878,11 @@ msgstr "made progress"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:429
+#: src/features/session-composer.tsx:449
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:417
+#: src/features/session-composer.tsx:437
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -913,6 +930,10 @@ msgstr "New version available"
 #: src/features/console-me.tsx:79
 msgid "New version ready, reload to use it"
 msgstr "New version ready, reload to use it"
+
+#: src/features/image-viewer.tsx:145
+msgid "Next image"
+msgstr "Next image"
 
 #: src/features/session-info.tsx:89
 msgid "no"
@@ -1034,6 +1055,10 @@ msgstr "Only lets the browser reveal its LAN address so the host can connect dir
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 
+#: src/features/chat-thread.tsx:74
+msgid "Open image"
+msgstr "Open image"
+
 #: src/features/landing-page.tsx:140
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
@@ -1149,6 +1174,14 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
+#: src/features/session-composer.tsx:357
+msgid "Preview image"
+msgstr "Preview image"
+
+#: src/features/image-viewer.tsx:135
+msgid "Previous image"
+msgstr "Previous image"
+
 #: src/features/console-now.tsx:138
 #: src/features/session-list.tsx:95
 msgid "Primary"
@@ -1166,12 +1199,12 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/chat-thread.tsx:387
+#: src/features/chat-thread.tsx:452
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/session-composer.tsx:247
-#: src/features/session-composer.tsx:310
+#: src/features/session-composer.tsx:248
+#: src/features/session-composer.tsx:312
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1231,7 +1264,7 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/session-composer.tsx:360
+#: src/features/session-composer.tsx:369
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -1443,7 +1476,7 @@ msgstr "Sample signals. The live console reads your local Runtime."
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-composer.tsx:343
+#: src/features/session-composer.tsx:345
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
@@ -1468,15 +1501,15 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:434
+#: src/features/session-composer.tsx:454
 msgid "Send"
 msgstr "Send"
 
-#: src/features/session-composer.tsx:311
+#: src/features/session-composer.tsx:313
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
-#: src/features/session-composer.tsx:401
+#: src/features/session-composer.tsx:421
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "Sends sizes, scroll state and recent page events; no tokens, no message text."
 
@@ -1618,7 +1651,7 @@ msgstr "Tap a row to copy its value."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:235
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -1642,7 +1675,7 @@ msgstr "The agent is asking you"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:236
+#: src/features/chat-thread.tsx:301
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -1811,8 +1844,8 @@ msgstr "Up to date, {at}"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:143
-#: src/features/session-composer.tsx:154
+#: src/features/session-composer.tsx:144
+#: src/features/session-composer.tsx:155
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 

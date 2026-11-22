@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react'
 import { diagnosticsSnapshot } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
+import { ImageViewer } from './image-viewer'
 
 const MAX_IMAGES = 5
 
@@ -289,6 +290,7 @@ function Toolbar({
   onKeys: () => void
 }) {
   const { t } = useLingui()
+  const [preview, setPreview] = useState<number | null>(null)
   const full = composer.images.length >= MAX_IMAGES
   const chip = (on: boolean) =>
     cn(
@@ -348,13 +350,20 @@ function Toolbar({
           {t`Diagnostics`}
         </button>
       ) : null}
-      {composer.images.map((image) => (
+      {composer.images.map((image, i) => (
         <span key={image.key} className="relative size-8 shrink-0">
-          <img
-            src={image.url}
-            alt=""
-            className="size-8 rounded-[8px] object-cover"
-          />
+          <button
+            type="button"
+            aria-label={t`Preview image`}
+            onClick={() => setPreview(i)}
+            className="block size-8"
+          >
+            <img
+              src={image.url}
+              alt=""
+              className="size-8 rounded-[8px] object-cover"
+            />
+          </button>
           <button
             type="button"
             aria-label={t`Remove image`}
@@ -365,6 +374,17 @@ function Toolbar({
           </button>
         </span>
       ))}
+      {preview !== null && composer.images.length ? (
+        <ImageViewer
+          images={composer.images.map((image) => ({
+            key: image.key,
+            src: image.url,
+          }))}
+          index={Math.min(preview, composer.images.length - 1)}
+          onIndex={setPreview}
+          onClose={() => setPreview(null)}
+        />
+      ) : null}
     </div>
   )
 }

@@ -7,11 +7,11 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/session-composer.tsx:166
+#: src/features/session-composer.tsx:167
 msgid ", "
 msgstr "、"
 
-#: src/features/chat-thread.tsx:360
+#: src/features/chat-thread.tsx:425
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -19,15 +19,15 @@ msgstr "· 摘要"
 msgid "(pick any)"
 msgstr "（可多选）"
 
-#: src/features/chat-thread.tsx:391
+#: src/features/chat-thread.tsx:456
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:164
+#: src/features/session-composer.tsx:165
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/chat-thread.tsx:390
+#: src/features/chat-thread.tsx:455
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
 
@@ -258,7 +258,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-composer.tsx:207
+#: src/features/session-composer.tsx:208
 msgid "cancel"
 msgstr "取消"
 
@@ -304,11 +304,12 @@ msgstr "认领"
 #~ msgid "Claude is working; your message joins its queue and it decides when to take it."
 #~ msgstr "Claude 正在运行，消息会进入它的队列，由它自己安排什么时候处理。"
 
+#: src/features/image-viewer.tsx:125
 #: src/features/session-info.tsx:246
 msgid "Close"
 msgstr "关闭"
 
-#: src/features/session-composer.tsx:239
+#: src/features/session-composer.tsx:240
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -356,11 +357,11 @@ msgstr "协作工单"
 msgid "Command"
 msgstr "命令"
 
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:305
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/session-composer.tsx:206
+#: src/features/session-composer.tsx:207
 msgid "confirm"
 msgstr "确认"
 
@@ -394,11 +395,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:349
+#: src/features/chat-thread.tsx:414
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:350
+#: src/features/chat-thread.tsx:415
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -410,12 +411,12 @@ msgstr "上下文压缩次数"
 msgid "Control"
 msgstr "控制"
 
-#: src/features/session-composer.tsx:86
+#: src/features/session-composer.tsx:87
 #: src/features/session-info.tsx:269
 msgid "Copied"
 msgstr "已复制"
 
-#: src/features/session-composer.tsx:86
+#: src/features/session-composer.tsx:87
 msgid "Copy"
 msgstr "复制"
 
@@ -423,7 +424,7 @@ msgstr "复制"
 msgid "Copy command"
 msgstr "复制命令"
 
-#: src/features/session-composer.tsx:78
+#: src/features/session-composer.tsx:79
 msgid "Copy error"
 msgstr "复制错误信息"
 
@@ -495,13 +496,13 @@ msgstr "电脑前空闲"
 msgid "Development"
 msgstr "开发"
 
-#: src/features/session-composer.tsx:164
+#: src/features/session-composer.tsx:165
 msgid "diagnostics"
 msgstr "诊断数据"
 
 #: src/features/console-me.tsx:269
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:348
+#: src/features/session-composer.tsx:350
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -526,7 +527,7 @@ msgstr "已完成"
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去的位置。"
 
-#: src/features/session-composer.tsx:233
+#: src/features/session-composer.tsx:234
 msgid "Enable phone writing in Settings to send these keys"
 msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
 
@@ -629,6 +630,10 @@ msgstr "跟随系统主题"
 msgid "Git"
 msgstr "Git"
 
+#: src/features/chat-thread.tsx:81
+msgid "Gone"
+msgstr "已过期"
+
 #: src/features/remote-badge.tsx:132
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
@@ -674,7 +679,15 @@ msgstr "WebSocket 怎么计费"
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
-#: src/features/session-composer.tsx:326
+#: src/features/chat-thread.tsx:81
+msgid "Image"
+msgstr "图片"
+
+#: src/features/image-viewer.tsx:88
+msgid "Image preview"
+msgstr "图片预览"
+
+#: src/features/session-composer.tsx:328
 msgid "Images"
 msgstr "图片"
 
@@ -728,7 +741,7 @@ msgstr "集成"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-composer.tsx:208
+#: src/features/session-composer.tsx:209
 msgid "interrupt"
 msgstr "打断"
 
@@ -760,7 +773,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/session-composer.tsx:316
+#: src/features/session-composer.tsx:318
 msgid "Keys"
 msgstr "快捷"
 
@@ -830,6 +843,10 @@ msgstr "加载更早"
 msgid "Loaded on this page"
 msgstr "本页已加载"
 
+#: src/features/image-viewer.tsx:120
+msgid "Loading original…"
+msgstr "正在加载原图…"
+
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:123
 #: src/features/console-collab.tsx:193
@@ -861,11 +878,11 @@ msgstr "有进展"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:429
+#: src/features/session-composer.tsx:449
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:417
+#: src/features/session-composer.tsx:437
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -913,6 +930,10 @@ msgstr "有新版本"
 #: src/features/console-me.tsx:79
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
+
+#: src/features/image-viewer.tsx:145
+msgid "Next image"
+msgstr "下一张"
 
 #: src/features/session-info.tsx:89
 msgid "no"
@@ -1034,6 +1055,10 @@ msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时再打开浏览器。控制台观察工作台，工作仍留在终端里。"
 
+#: src/features/chat-thread.tsx:74
+msgid "Open image"
+msgstr "查看图片"
+
 #: src/features/landing-page.tsx:140
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
@@ -1149,6 +1174,14 @@ msgstr "计划待你确认"
 msgid "Plan review"
 msgstr "计划确认"
 
+#: src/features/session-composer.tsx:357
+msgid "Preview image"
+msgstr "预览图片"
+
+#: src/features/image-viewer.tsx:135
+msgid "Previous image"
+msgstr "上一张"
+
 #: src/features/console-now.tsx:138
 #: src/features/session-list.tsx:95
 msgid "Primary"
@@ -1166,12 +1199,12 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/chat-thread.tsx:387
+#: src/features/chat-thread.tsx:452
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/session-composer.tsx:247
-#: src/features/session-composer.tsx:310
+#: src/features/session-composer.tsx:248
+#: src/features/session-composer.tsx:312
 msgid "Quick keys"
 msgstr "快捷键"
 
@@ -1231,7 +1264,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:360
+#: src/features/session-composer.tsx:369
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -1443,7 +1476,7 @@ msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-composer.tsx:343
+#: src/features/session-composer.tsx:345
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
@@ -1468,15 +1501,15 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:434
+#: src/features/session-composer.tsx:454
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:311
+#: src/features/session-composer.tsx:313
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
-#: src/features/session-composer.tsx:401
+#: src/features/session-composer.tsx:421
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
 
@@ -1618,7 +1651,7 @@ msgstr "点任意一行即可复制它的值。"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:235
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -1642,7 +1675,7 @@ msgstr "Agent 在问你"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/chat-thread.tsx:236
+#: src/features/chat-thread.tsx:301
 msgid "The agent is working"
 msgstr "Agent 正在处理"
 
@@ -1811,8 +1844,8 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:143
-#: src/features/session-composer.tsx:154
+#: src/features/session-composer.tsx:144
+#: src/features/session-composer.tsx:155
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 

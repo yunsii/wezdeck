@@ -127,6 +127,19 @@ inside the uploads dir (`WEZDECK_REMOTE_UPLOADS` overrides it), half-done
 uploads expire after 10 min, files older than 30 days are pruned on every
 finished upload; one `event=upload` relay log row per stored file.
 
+Viewing them (`features/image-viewer.tsx`): a composer thumbnail opens the
+local pick full screen; in the conversation a `[手机附件]` image renders as a
+thumbnail and opens the original. Both come back through the read action
+`upload.get {name, thumb}` (`remote_upload_get.go`, bare `img-*` names inside
+the uploads dir only): `thumb:true` answers one frame with a ≤360 px JPEG
+(stdlib decode + box filter), otherwise `{mime, size, offset, data}` chunks
+of 48 KB that the phone reassembles into a blob (`lib/upload-image.ts`,
+cached per page). The viewer fits the screen, a tap toggles actual size
+(scroll to pan), Esc / × / backdrop close, ← / → step through a message's
+images; the blurred thumbnail stands in until the original arrives. Images
+pasted at the desk live base64 inside the Claude transcript and are not
+shown yet.
+
 The diagnostics snapshot (`lib/client-trace.ts`) holds build id, page path
 (no hash: it can carry the pairing token), user agent, standalone mode,
 screen / viewport / `visualViewport` / safe-area sizes, the viewport meta,
