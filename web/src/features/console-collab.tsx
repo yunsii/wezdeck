@@ -16,6 +16,7 @@ import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { InspectorItem } from './inspector'
 import { RepoRoute, TicketsView, useStatusLabel } from './tickets-view'
+import { TicketReply, TicketSections, openQuestion } from './ticket-reply'
 import { Led } from '#/components/deck/led'
 
 export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
@@ -215,6 +216,10 @@ export function TicketReading({
         { label: t`Worktree`, value: ticket.branch ?? ticket.worktree ?? '—' },
       ]}
     >
+      {ticket.status === 'waiting_initiator' ? (
+        <TicketReply id={ticket.id} question={openQuestion(data.sections)} />
+      ) : null}
+      <TicketSections sections={data.sections} />
       {data.children_detail.length > 0 ? (
         <ChildrenTable children={data.children_detail} onOpen={onOpen} />
       ) : null}

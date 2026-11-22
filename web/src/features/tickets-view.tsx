@@ -11,6 +11,7 @@ import { ChevronLeft, Search } from 'lucide-react'
 import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
+import { Segmented } from '#/components/deck/segmented'
 import type { LedTone } from '#/components/deck/led'
 import { useCollab } from '#/lib/collab-query'
 import { useLocale } from '#/lib/locale-context'
@@ -25,20 +26,17 @@ import type { InspectorItem } from './inspector'
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
 
-/** Status keys on the tickets page; `inbox` is the 待处理 tab's fixed filter. */
-export type TicketFilter =
-  'all' | 'mine' | 'running' | 'failed' | 'shipped' | 'closed' | 'inbox'
+/** Segments on the tickets page; `inbox` is the old 待处理 route's fixed filter. */
+export type TicketFilter = 'active' | 'mine' | 'ended' | 'inbox'
 
-const isRunning = (t: CollabTicket) =>
-  t.running.length > 0 || t.status === 'in_progress' || t.status === 'submitted'
+const ENDED = new Set(['shipped', 'closed', 'failed', 'rejected'])
 
 const FILTERS: Record<TicketFilter, (t: CollabTicket) => boolean> = {
-  all: () => true,
+  active: (t) =>
+    t.running.length > 0 ||
+    (!ENDED.has(t.status ?? '') && t.status !== 'waiting_initiator'),
   mine: (t) => t.status === 'waiting_initiator',
-  running: isRunning,
-  failed: (t) => t.status === 'failed' || t.status === 'rejected',
-  shipped: (t) => t.status === 'shipped',
-  closed: (t) => t.status === 'closed',
+  ended: (t) => t.running.length === 0 && ENDED.has(t.status ?? ''),
   inbox: (t) => t.status === 'waiting_initiator' || t.status === 'failed',
 }
 
@@ -152,8 +150,7 @@ function SearchBox({
   )
 }
 
-/** The signature row: status keys that both count and filter. */
-function StatusKeys({
+function StatusSegments({
   tickets,
   value,
   onChange,
@@ -163,52 +160,22 @@ function StatusKeys({
   onChange: (value: TicketFilter) => void
 }) {
   const { t } = useLingui()
-  const keys: Array<{ id: TicketFilter; label: string; tone: LedTone }> = [
-    { id: 'all', label: t`All`, tone: 'muted' },
-    { id: 'mine', label: t`Waiting on you`, tone: 'waiting' },
-    { id: 'running', label: t`Running`, tone: 'running' },
-    { id: 'failed', label: t`Failed`, tone: 'error' },
-    { id: 'shipped', label: t`Shipped`, tone: 'done' },
-    {
-      id: 'closed',
-      label: t({ message: 'Closed', context: 'filter' }),
-      tone: 'muted',
-    },
-  ]
+  const count = (filter: TicketFilter) => tickets.filter(FILTERS[filter]).length
+  const active = count('active')
+  const mine = count('mine')
+  const ended = count('ended')
   return (
-    <div
-      role="radiogroup"
-      aria-label={t`Status`}
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0"
-    >
-      {keys.map((key) => {
-        const count = tickets.filter(FILTERS[key.id]).length
-        const active = value === key.id
-        return (
-          <button
-            key={key.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            data-filter={key.id}
-            onClick={() => onChange(key.id)}
-            className={cn(
-              'key-press flex min-h-11 shrink-0 items-center gap-2 rounded-[10px] border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-running md:min-h-9',
-              active
-                ? 'border-brand-edge bg-brand-deck text-brand-text shadow-[var(--key-pressed)]'
-                : 'key key-hover text-brand-muted',
-            )}
-          >
-            <Led
-              tone={count > 0 || key.id === 'all' ? key.tone : 'muted'}
-              size={11}
-            />
-            <span>{key.label}</span>
-            <span className="text-brand-label">{count}</span>
-          </button>
-        )
-      })}
-    </div>
+    <Segmented
+      label={t`Status`}
+      value={value}
+      onChange={onChange}
+      className="md:max-w-md"
+      options={[
+        { value: 'active', label: t`In progress ${active}` },
+        { value: 'mine', label: t`Waiting on you ${mine}` },
+        { value: 'ended', label: t`Ended ${ended}` },
+      ]}
+    />
   )
 }
 
@@ -235,7 +202,7 @@ export function TicketsView({
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
   const poll = (health.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS
   const list = useCollab('list', { limit: 200 }, { refetchInterval: poll })
-  const [chosen, setChosen] = useState<TicketFilter>('all')
+  const [chosen, setChosen] = useState<TicketFilter>('active')
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
@@ -269,7 +236,7 @@ export function TicketsView({
     <Freshness updatedAt={list.dataUpdatedAt} failed={list.isError} />
   )
   const keys = fixedFilter ? null : (
-    <StatusKeys tickets={all} value={chosen} onChange={setChosen} />
+    <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
   )
 
   if (wide) {
@@ -384,27 +351,33 @@ function TicketKeys({
   const statusLabel = useStatusLabel()
   if (tickets.length === 0) {
     return (
-      <p className="rounded-[14px] border border-dashed border-brand-edge px-4 py-10 text-center text-sm text-brand-muted">
+      <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
         {empty}
       </p>
     )
   }
   return (
-    <ul aria-label={t`Collab tickets`} className="grid gap-2">
+    <ul
+      aria-label={t`Collab tickets`}
+      className="overflow-hidden rounded-[16px] bg-brand-surface"
+    >
       {tickets.map((ticket) => {
         const tone = ticketTone(ticket) ?? 'muted'
         return (
-          <li key={ticket.id}>
+          <li
+            key={ticket.id}
+            className="border-b border-brand-edge last:border-b-0"
+          >
             <button
               type="button"
               data-ticket={ticket.id}
               onClick={() => onOpen(ticket.id)}
-              className="key key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 rounded-[14px] px-3.5 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+              className="key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
             >
               <span className="pt-1">
                 <Led tone={tone} size={13} />
               </span>
-              <span className="line-clamp-2 text-[15px] leading-snug font-medium text-brand-text">
+              <span className="line-clamp-2 text-[16px] leading-snug font-semibold text-brand-text">
                 {ticket.title || ticket.id}
               </span>
               <span className="pt-0.5 text-xs text-brand-label">

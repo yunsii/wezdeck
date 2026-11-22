@@ -46,8 +46,11 @@ describe('PWA shell on phone and desktop', () => {
     await open(
       page,
       `${base}/zh/console/collab?remote=1#pair=${token}`,
-      '[data-ticket]',
+      '[data-testid=remote-badge-compact]',
     )
+    // the badge only renders after hydration, so the segment click lands
+    await page.locator('[data-value=ended]').click()
+    await page.locator('[data-ticket]').first().waitFor({ timeout: 15_000 })
     const tabs = page.getByRole('navigation', { name: '栏目' })
     expect(await tabs.getByRole('link').count()).toBe(4)
     const first = page.locator('[data-ticket]').first()
@@ -56,7 +59,11 @@ describe('PWA shell on phone and desktop', () => {
     await page.waitForURL(`**/console/collab/${id}`)
     await page.getByRole('button', { name: '返回' }).click()
     await page.waitForURL(/\/console\/collab(\?[^/]*)?$/)
-    await tabs.getByRole('link', { name: /动态/ }).click()
+    await tabs.getByRole('link', { name: /会话/ }).click()
+    await page.waitForURL(/\/console\/sessions$/)
+    await tabs.getByRole('link', { name: /现在/ }).click()
+    await page.waitForURL(/\/console\/now$/)
+    await page.getByRole('link', { name: '全部动态' }).click()
     await page.waitForURL(/\/console\/activity$/)
     await page
       .getByRole('list', { name: '协作动态' })
@@ -72,8 +79,14 @@ describe('PWA shell on phone and desktop', () => {
     await open(
       page,
       `${base}/console/collab?remote=1#pair=${token}`,
-      '[role=listbox] [role=option]',
+      '[data-testid=remote-badge]',
     )
+    // the badge only renders after hydration, so the segment click lands
+    await page.locator('[data-value=ended]').click()
+    await page
+      .locator('[role=listbox] [role=option]')
+      .first()
+      .waitFor({ timeout: 15_000 })
     const list = page.getByRole('listbox', { name: 'Collab tickets' })
     const options = list.getByRole('option')
     const second = await options.nth(1).getAttribute('id')
@@ -100,7 +113,7 @@ describe('PWA shell on phone and desktop', () => {
       const manifest = (await (
         await page.request.get(`${base}/manifest.webmanifest`)
       ).json()) as { start_url: string; icons: Array<{ purpose?: string }> }
-      expect(manifest.start_url).toBe('/console')
+      expect(manifest.start_url).toBe('/console/now')
       expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBe(
         true,
       )

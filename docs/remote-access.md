@@ -1,9 +1,10 @@
 # Remote access (phone / tablet → collab tickets)
 
-Status: **MVP, read-only** (2026-11-21). A paired phone or tablet opens
-`https://wezdeck.yuns.love/console/collab` from anywhere and sees the same
-collab view as the host: ticket list, metrics, run detail, transcripts.
-Writes (reply / close / re-run / new ticket) are the next step.
+Status: **live** (2026-11-22). A paired phone opens
+`https://wezdeck.yuns.love/console/now` from anywhere: collab tickets, runs and
+transcripts, every live agent session on the host (read its conversation,
+send it a message, answer its confirmation dialog), and replies to tickets
+waiting on you. Writes need a device key the host approved once.
 
 Agent coding from the phone is still OpenClaw ([`mobile-access.md`](./mobile-access.md));
 this doc covers the structured ticket view.
@@ -71,6 +72,48 @@ relay unless TURN is added.
 No TURN yet: when hole punching fails (common on carrier CGNAT) the
 WebSocket relay is the fallback. `?transport=websocket` forces it.
 
+## Sessions
+
+Source: the agent-attention state (`attention.json`, keyed by session id with
+tmux socket / session / pane, status `running|waiting|done` and
+`waiting_kind`), the only place that already knows every hooked agent
+(Claude, codex, grok) and its pane. `wezdeck-wsl relay` answers:
+
+| Action | Kind | What it does |
+| --- | --- | --- |
+| `sessions` | read | live entries whose pane still exists, with cwd, branch, last prompt, desk idle seconds |
+| `session {id}` | read | Claude transcript (`~/.claude/projects/*/<id>.jsonl`, tail 4 MB → user / assistant text, one line per tool call) plus the last 60 screen lines (`capture-pane`) |
+| `send {id,text}` | write | paste into the session's own TUI (`load-buffer` + `paste-buffer -p`, then Enter) |
+| `key {id,key}` | write | one key from `1 2 3 4 Enter Escape Up Down Tab` (permission / choice dialogs) |
+| `reply {id,text,continue}` | write | `ticket reply` with `TICKET_TRIGGER_SOURCE=mobile` |
+| `device.register` | read-ish | records a phone's public key as pending |
+
+Guards on every write (`remote_session.go`): one writer — a tmux-hosted
+session only ever receives a paste into its own TUI, never a second process
+resuming the same session id; free text only when the agent is not
+`running` and no confirmation is pending; nothing while someone typed at the
+desk in the last 30 s (`client_activity` of the attached tmux clients); the
+pane gets a 4 s `手机发来一条消息` notice.
+
+## Writes: device keys
+
+The phone creates an ECDSA P-256 key in the browser (non-extractable,
+IndexedDB `wezdeck-device`) and registers its public half; the host approves
+it once:
+
+```bash
+scripts/dev/install-remote-relay.sh --devices          # pending / approved
+scripts/dev/install-remote-relay.sh --approve <id>     # id = sha256(pub)[:8] hex, shown on the phone
+scripts/dev/install-remote-relay.sh --revoke <id>
+```
+
+Each write carries `{device, payload, sig}`: the host verifies the signature
+over the exact payload text, then uses only the signed `action` / `args`,
+rejects a clock skew over 2 min and any reused nonce. Store:
+`~/.config/wezdeck/remote-devices.json` (0600). Cloudflare (or anyone holding
+the pairing token) can read but cannot forge a write. Logs: `event=write` /
+`event=write_denied` rows with device id.
+
 ## Badge
 
 The collab header shows the link when the page is remote:
@@ -127,8 +170,10 @@ browser sockets: each carries a SHA-256 tag of its token, checked by the DO on
 every message and on every new connection (the host reconnects with the new
 token right away).
 
-Cloudflare Access in front of `/console` + `/relay/client` and pinned DTLS
-fingerprints are follow-ups ([open questions](./diagnostics.md#open-questions)).
+Writes add device signatures (above). Cloudflare Access in front of
+`/console` + `/relay/client` and pinned DTLS fingerprints remain follow-ups
+([open questions](./diagnostics.md#open-questions)); Access is not enabled on
+the account yet.
 
 ## Operate
 

@@ -12,6 +12,9 @@
 #   ./scripts/dev/install-remote-relay.sh --push-secrets  # wrangler secret put both tokens
 #   ./scripts/dev/install-remote-relay.sh --pair        # print the phone pairing link + QR
 #   ./scripts/dev/install-remote-relay.sh --check       # unit + presence, no writes
+#   ./scripts/dev/install-remote-relay.sh --devices     # phones that asked to write / are approved
+#   ./scripts/dev/install-remote-relay.sh --approve <id>  # let that phone write (send / keys / reply)
+#   ./scripts/dev/install-remote-relay.sh --revoke <id>
 #   ./scripts/dev/install-remote-relay.sh --uninstall
 set -euo pipefail
 
@@ -29,6 +32,9 @@ case "${1:-}" in
   --push-secrets) MODE=push ;;
   --pair) MODE=pair ;;
   --check) MODE=check ;;
+  --devices) MODE=devices ;;
+  --approve) MODE=approve; DEVICE_ID="${2:-}" ;;
+  --revoke) MODE=revoke; DEVICE_ID="${2:-}" ;;
   --uninstall) MODE=uninstall ;;
   -h|--help) sed -n '2,/^set -/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
   *) printf 'unknown option: %s\n' "$1" >&2; exit 2 ;;
@@ -64,7 +70,7 @@ Type=simple
 EnvironmentFile=$ENV_FILE
 # ticket api resolves the repo and python3 from these (no login shell here).
 Environment=WEZDECK_REPO=$REPO_ROOT
-Environment=PATH=/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin
+Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=$BIN relay
 Restart=always
 RestartSec=5
@@ -102,6 +108,44 @@ case "$MODE" in
       'import qr from "@paulmillr/qr"; console.log(qr(process.argv[1], "ascii"))' "$url" 2>/dev/null); then
       printf '(QR unavailable: run corepack pnpm install in web/; open the link above instead)\n'
     fi
+    ;;
+  devices|approve|revoke)
+    # Device keys live in ~/.config/wezdeck/remote-devices.json (written by
+    # `wezdeck-wsl relay` when a phone taps 启用写入; see remote_session.go).
+    DEVICE_ID="${DEVICE_ID:-}" MODE="$MODE" python3 - <<'PY'
+import json, os, sys
+path = os.path.expanduser(os.environ.get("WEZDECK_REMOTE_DEVICES", "~/.config/wezdeck/remote-devices.json"))
+try:
+    store = json.load(open(path))
+except FileNotFoundError:
+    store = {"approved": [], "pending": []}
+mode, wanted = os.environ["MODE"], os.environ["DEVICE_ID"]
+def show():
+    for state in ("pending", "approved"):
+        for d in store.get(state, []):
+            print(f"{state:9} {d['id']}  {d.get('name') or '?':20} {d.get('at', '')}")
+    if not store.get("pending") and not store.get("approved"):
+        print("no devices yet: on the phone open 我的 › 手机写入 › 启用")
+if mode == "devices":
+    show(); sys.exit(0)
+if not wanted:
+    sys.exit("usage: --approve|--revoke <device id> (see --devices)")
+if mode == "approve":
+    hit = [d for d in store.get("pending", []) if d["id"] == wanted]
+    if not hit:
+        sys.exit(f"no pending device {wanted}")
+    store["pending"] = [d for d in store["pending"] if d["id"] != wanted]
+    store.setdefault("approved", []).append(hit[0])
+else:
+    store["approved"] = [d for d in store.get("approved", []) if d["id"] != wanted]
+os.makedirs(os.path.dirname(path), exist_ok=True)
+tmp = path + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(store, f, indent=2)
+os.chmod(tmp, 0o600)
+os.replace(tmp, path)
+show()
+PY
     ;;
   check)
     systemctl --user is-active "$UNIT" || true

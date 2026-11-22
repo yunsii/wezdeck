@@ -221,11 +221,43 @@ func (r *relay) send(f relayFrame) {
 	_ = conn.Write(ctx, websocket.MessageText, body)
 }
 
-// handleRPC runs one read-only `ticket api` action. Same allowlist as the
-// Runtime bridge (collabFlags); writes are not exposed in the MVP.
+// dispatchRPC routes one request: reads (`ticket api` actions from the same
+// allowlist as the Runtime bridge, sessions, device registration) run
+// directly; writes (send / key / reply) must carry a signature from an
+// approved device (remote_session.go).
+func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
+	switch f.Action {
+	case "sessions":
+		return listSessions()
+	case "session":
+		return sessionDetail(f.Args)
+	case "device.register":
+		return registerDevice(f.Args)
+	case "send", "key", "reply":
+		w, device, err := verifyWrite(f.Action, f.Args)
+		if err != nil {
+			r.logf("write_denied", "via=%s action=%s err=%q", via, f.Action, err)
+			return nil, err
+		}
+		var result any
+		switch w.Action {
+		case "send":
+			result, err = sendToSession(w.Args)
+		case "key":
+			result, err = keyToSession(w.Args)
+		default:
+			result, err = replyTicket(w.Args)
+		}
+		r.logf("write", "via=%s action=%s device=%s ok=%t err=%q", via, w.Action, device, err == nil, errText(err))
+		return result, err
+	}
+	return runCollab(f.Action, f.Args)
+}
+
+// handleRPC answers one request frame and logs it.
 func handleRPC(f relayFrame, via string, r *relay) relayFrame {
 	started := time.Now()
-	result, err := runCollab(f.Action, f.Args)
+	result, err := dispatchRPC(f, via, r)
 	ok := err == nil
 	r.logf("rpc", "via=%s action=%s ok=%t ms=%d err=%q", via, f.Action, ok, time.Since(started).Milliseconds(), errText(err))
 	if err != nil {

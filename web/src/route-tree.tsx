@@ -4,6 +4,8 @@ import { LandingPage } from '#/features/landing-page'
 import { ConsoleCollabPage, ConsoleInboxPage } from '#/features/console-collab'
 import { ConsoleActivityPage } from '#/features/console-activity'
 import { ConsoleMePage } from '#/features/console-me'
+import { ConsoleSessionsPage } from '#/features/console-sessions'
+import { ConsoleNowPage } from '#/features/console-now'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
 import { ConsoleDevelopmentPage } from '#/features/console-development'
 import { ConsoleOverviewPage } from '#/features/console-overview'
@@ -186,6 +188,27 @@ const consoleMeRoute = createRoute({
   head: ({ params }) => collabTitle(params.locale, '我的', 'Settings'),
 })
 
+const consoleNowRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'now',
+  component: ConsoleNowPage,
+  head: ({ params }) => collabTitle(params.locale, '现在', 'Now'),
+})
+
+const consoleSessionsRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'sessions',
+  component: ConsoleSessionsPage,
+  head: ({ params }) => collabTitle(params.locale, '会话', 'Sessions'),
+})
+
+const consoleSessionRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'sessions/$id',
+  component: ConsoleSessionsPage,
+  head: ({ params }) => collabTitle(params.locale, '会话', 'Session'),
+})
+
 export const routeTree = rootRoute.addChildren({
   localeRoute: localeRoute.addChildren({
     landingRoute,
@@ -199,6 +222,9 @@ export const routeTree = rootRoute.addChildren({
       consoleInboxTicketRoute,
       consoleActivityRoute,
       consoleMeRoute,
+      consoleNowRoute,
+      consoleSessionsRoute,
+      consoleSessionRoute,
     }),
   }),
 })

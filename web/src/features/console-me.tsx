@@ -1,7 +1,7 @@
 // 我的: connection, install, version, appearance, and (on the host) links to
 // the local-only console sections.
 import { useLingui } from '@lingui/react/macro'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -14,7 +14,8 @@ import {
 } from '#/lib/pwa'
 import { useTheme } from '#/lib/theme-provider'
 import { useConsoleMode, useRemoteState } from './console-mode'
-import { LanguageSwitcher, ThemeSwitcher } from './console-shared'
+import { Segmented } from '#/components/deck/segmented'
+import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
 
 function Section({
@@ -93,10 +94,74 @@ function UpdateCheck() {
   )
 }
 
+function PhoneWriting() {
+  const { t } = useLingui()
+  const device = useDeviceState()
+  const command = `scripts/dev/install-remote-relay.sh --approve ${device.id ?? ''}`
+  if (device.state === 'checking')
+    return <p className="text-sm text-brand-muted">{t`Checking…`}</p>
+  if (device.state === 'approved')
+    return (
+      <p className="text-sm">
+        {t`Enabled. This phone can send messages to sessions and reply to tickets.`}
+        <span className="mt-1 block font-mono text-xs text-brand-label">
+          {device.id}
+        </span>
+      </p>
+    )
+  if (device.state === 'none')
+    return (
+      <div className="grid gap-2">
+        <p className="text-sm text-brand-muted">
+          {t`Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once.`}
+        </p>
+        <Button className="min-h-11" onClick={() => void device.enable()}>
+          {t`Enable writing`}
+        </Button>
+        {device.error ? (
+          <p role="alert" className="text-xs text-brand-error">
+            {device.error}
+          </p>
+        ) : null}
+      </div>
+    )
+  return (
+    <div className="grid gap-2">
+      <p className="text-sm">
+        {t`Waiting for the host to approve this phone. On the host run:`}
+      </p>
+      <code className="block rounded-[10px] bg-brand-deck px-3 py-2 font-mono text-xs break-all select-all">
+        {command}
+      </code>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          className="min-h-11"
+          onClick={() =>
+            void navigator.clipboard.writeText(command).catch(() => undefined)
+          }
+        >
+          {t`Copy command`}
+        </Button>
+        <Button className="min-h-11" onClick={() => void device.refresh()}>
+          {t`Check again`}
+        </Button>
+      </div>
+      {device.error ? (
+        <p role="alert" className="text-xs text-brand-error">
+          {device.error}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 export function ConsoleMePage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const { mode, setMode } = useTheme()
+  const navigate = useNavigate()
+  const params = useParams({ strict: false })
   const consoleMode = useConsoleMode()
   const remote = useRemoteState()
   const localeParam = locale === 'en' ? undefined : locale
@@ -133,10 +198,44 @@ export function ConsoleMePage() {
         <InstallEntry />
         <UpdateCheck />
       </Section>
+      <Section title={t`Phone writing`}>
+        <PhoneWriting />
+      </Section>
       <Section title={t`Appearance`}>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher locale={locale} side="bottom" />
-          <ThemeSwitcher mode={mode} onChange={setMode} side="bottom" />
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <span className="text-sm text-brand-muted">{t`Language`}</span>
+            <Segmented
+              label={t`Language`}
+              value={locale === 'zh' ? 'zh' : 'en'}
+              onChange={(next) =>
+                void navigate({
+                  to: '.',
+                  params: {
+                    ...params,
+                    locale: next === 'en' ? undefined : next,
+                  },
+                })
+              }
+              options={[
+                { value: 'zh', label: '中文' },
+                { value: 'en', label: 'English' },
+              ]}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-sm text-brand-muted">{t`Theme`}</span>
+            <Segmented
+              label={t`Theme`}
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'system', label: t`System` },
+                { value: 'light', label: t`Light` },
+                { value: 'dark', label: t`Dark` },
+              ]}
+            />
+          </div>
         </div>
       </Section>
       {consoleMode === 'local' ? (

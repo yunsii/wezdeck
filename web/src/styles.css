@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/instrument-sans';
 
 @theme inline {
   --color-brand-deck: var(--brand-deck);
@@ -970,68 +969,65 @@ body {
 }
 
 /* ------------------------------------------------------------------ deck
- * Console theme (docs/web-pwa.md "Visual language"): the app icon's 3×3 key
- * deck. Slate plate (not near-black), raised keys with a visible edge, and
- * four signal lights that differ by shape as well as color (● ▲ ✓ ✕).
- * Scoped to the console so the landing page keeps its own look.
+ * Console theme "ink" (docs/web-pwa.md "Visual language"): the interface is
+ * neutral ink on paper; the only chroma is the status lights (● ▲ ✓ ✕ ○),
+ * so whatever is lit is what needs attention. System font for a native feel
+ * on phones. Scoped to the console; the landing page keeps its look.
  */
 [data-deck] {
-  --brand-deck: #141b26;
-  --brand-surface: #1d2635;
-  --brand-key: #1d2635;
-  --brand-edge: #2b3647;
-  --brand-text: #e6ebf2;
-  --brand-muted: #a9b4c4;
-  --brand-label: #8794a8;
-  --brand-border: #2b3647;
-  --brand-soft: rgba(135, 148, 168, 0.12);
-  --brand-running: #4cc3ff;
-  --brand-waiting: #f2b134;
-  --brand-done: #3ecf7a;
-  --brand-error: #ff6b6b;
-  --key-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 2px 0 #0c1119;
-  --key-pressed: inset 0 2px 0 #0c1119;
+  --brand-deck: #f6f7f9;
+  --brand-surface: #ffffff;
+  --brand-key: #ffffff;
+  --brand-edge: #e3e6eb;
+  --brand-text: #11151c;
+  --brand-muted: #5b6472;
+  --brand-label: #6f7887;
+  --brand-border: #e3e6eb;
+  --brand-soft: rgba(17, 21, 28, 0.05);
+  --brand-running: #1f7fe6;
+  --brand-waiting: #c27c00;
+  --brand-done: #158a3f;
+  --brand-error: #d93d42;
+  --segment-track: #e9ecf0;
+  --segment-thumb: #ffffff;
+  --bar-bg: rgba(255, 255, 255, 0.92);
   font-family:
-    'Instrument Sans Variable', 'PingFang SC', 'Hiragino Sans GB',
-    'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Noto Sans SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
   font-feature-settings: 'tnum' 1;
   -webkit-tap-highlight-color: transparent;
 }
 
-html[data-theme='light'] [data-deck] {
-  --brand-deck: #e6ebf1;
-  --brand-surface: #fbfcfd;
-  --brand-key: #fbfcfd;
-  --brand-edge: #c9d2dd;
-  --brand-text: #172131;
-  --brand-muted: #4a586b;
-  --brand-label: #5f6d80;
-  --brand-border: #c9d2dd;
-  --brand-soft: rgba(23, 33, 49, 0.06);
-  --brand-running: #0a76b8;
-  --brand-waiting: #a86b00;
-  --brand-done: #1b8a4b;
-  --brand-error: #c83a3a;
-  --key-shadow: 0 2px 0 #c2cbd6;
-  --key-pressed: inset 0 2px 0 #c2cbd6;
+html[data-theme='dark'] [data-deck] {
+  --brand-deck: #14181f;
+  --brand-surface: #1e232c;
+  --brand-key: #1e232c;
+  --brand-edge: #2c323c;
+  --brand-text: #f1f3f6;
+  --brand-muted: #a3abb8;
+  --brand-label: #8b94a3;
+  --brand-border: #2c323c;
+  --brand-soft: rgba(241, 243, 246, 0.06);
+  --brand-running: #4aa8ff;
+  --brand-waiting: #f5a524;
+  --brand-done: #34c369;
+  --brand-error: #ff6b6f;
+  --segment-track: #232933;
+  --segment-thumb: #3a4250;
+  --bar-bg: rgba(30, 35, 44, 0.92);
 }
 
-/* A raised key: the deck's basic surface for rows, panels and tabs. */
+/* A row / panel on the paper: a filled surface, no border or shadow. */
 .key {
   background: var(--brand-key);
-  border: 1px solid var(--brand-edge);
-  box-shadow: var(--key-shadow);
 }
 
 .key-press {
-  transition:
-    transform 80ms ease-out,
-    box-shadow 80ms ease-out;
+  transition: background-color 120ms ease-out;
 }
 
 .key-press:active {
-  transform: translateY(1px);
-  box-shadow: var(--key-pressed);
+  background: color-mix(in srgb, var(--brand-key), var(--brand-text) 6%);
 }
 
 /* The one ambient motion: a running light breathes. */
@@ -1049,13 +1045,10 @@ html[data-theme='light'] [data-deck] {
   .led-running {
     animation: none;
   }
-  .key-press:active {
-    transform: none;
-  }
 }
 
 @media (hover: hover) {
   .key-hover:hover {
-    border-color: color-mix(in srgb, var(--brand-edge), var(--brand-text) 25%);
+    background: color-mix(in srgb, var(--brand-key), var(--brand-text) 4%);
   }
 }

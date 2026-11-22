@@ -1,3 +1,5 @@
+import { loadDeviceKey, signPayload } from './device-key'
+
 // Remote access to the home host when the loopback Runtime is unreachable
 // (phone / tablet on wezdeck.yuns.love). One WebSocket to the HostRelay
 // Durable Object is always kept: it carries presence, WebRTC signaling, and
@@ -390,6 +392,26 @@ class RemoteLink {
   /** Try the DataChannel again now (e.g. after the mic grant exposed a real LAN address). */
   retryDirect() {
     if (this.state.mode === 'websocket' && !this.pc) this.scheduleRtc(0)
+  }
+
+  /**
+   * A write (send / key / reply): signed with this device's key so the host
+   * can tell it came from an approved phone (device-key.ts).
+   */
+  async write(action: string, args: Record<string, unknown>) {
+    const key = await loadDeviceKey()
+    if (!key) throw new Error('writing is not enabled on this device')
+    const payload = JSON.stringify({
+      action,
+      args,
+      ts: Date.now(),
+      nonce: crypto.randomUUID(),
+    })
+    return this.rpc(action, {
+      device: key.id,
+      payload,
+      sig: await signPayload(key, payload),
+    })
   }
 
   private scheduleRtc(delay: number) {

@@ -1,6 +1,6 @@
 # Web console as a PWA (phone + desktop)
 
-Status: **phases 1–2 live 2026-11-22** (plus desktop `j`/`k` and `g`+letter); command palette, run sheet and Web Push are next. Remote transport
+Status: **live 2026-11-22**: ink theme, WD icon, four phone tabs (现在 / 工单 / 会话 / 我的), sessions with phone writes ([`remote-access.md`](./remote-access.md)). Command palette and Web Push are next. Remote transport
 (WebRTC / WebSocket relay) is [`remote-access.md`](./remote-access.md); this
 doc is the app shell, layout and interaction on top of it.
 
@@ -29,9 +29,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    900–1023 px (neither `max-[899px]` nor `lg:` applies).
 3. **Capability-aware navigation**: loopback Runtime → every section; remote
    link only → collab sections only (no "Runtime offline" pages).
-4. **Phone IA — four bottom tabs**: 待处理 (waiting on me + failed, badge
-   count) · 工单 (all, filter + search) · 动态 (event timeline) · 我的
-   (connection, pairing, install, theme, language). Ticket detail is a pushed
+4. **Phone IA — four bottom tabs** (revised): 现在 (tickets that need you,
+   sessions waiting for you, what is running; 动态 is one link down) · 工单 ·
+   会话 (live agent sessions) · 我的 (connection, phone writing, install,
+   theme, language). Ticket detail is a pushed
    page; a run opens in a bottom sheet (transcript, prompt). Connection chip
    in the top bar opens a sheet (mode, path, RTT, last direct failure, host
    since, mic grant). Re-tap active tab = scroll top + refresh; sheets swipe
@@ -39,8 +40,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 5. **Desktop keyboard**: `j`/`k` move, `Enter` open, `Esc` back, `/` filter,
    `g`+letter section jump, `Ctrl+K` command palette; one registry, hints in
    the UI.
-6. **Writes (reply / close / re-run / new ticket) deferred**; the detail page
-   reserves a bottom action bar for them.
+6. **Writes**: ticket reply (and reply-and-continue) plus session send /
+   keys, signed by an approved device key; close / re-run / new ticket still
+   deferred.
 7. **Notifications: Web Push** for "waiting on you" / "failed" plus
    `setAppBadge` count; subscription stored in the HostRelay DO, pushed when
    the host relays the event. iOS needs 16.4+ and an installed app.
@@ -60,28 +62,25 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
   banner "主机离线 · 数据截至 HH:MM".
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
 
-## Visual language (2026-11-22)
+## Visual language (2026-11-22, revised)
 
-Taken from the app icon — a 3×3 key deck with three lit signals — instead of
-a generic dashboard look:
+Chosen on the design canvas (icon 1, theme A): the console is **ink on
+paper** — no brand color in the interface; the only chroma is the status
+lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
+`web/src/components/deck/led.tsx`), so whatever is lit needs attention.
 
-- **Signals by shape, then color** (`web/src/components/deck/led.tsx`):
-  ● running `#4cc3ff` (the only ambient motion: it breathes, off under
-  reduced motion), ▲ waiting `#f2b134`, ✓ shipped `#3ecf7a`, ✕ failed
-  `#ff6b6b`, ○ idle / closed. Readable without color.
-- **Keys on a slate plate** (`[data-deck]` tokens in `web/src/styles.css`,
-  console only — the landing page keeps its look): plate `#141b26`, key
-  `#1d2635` with a visible edge `#2b3647` and a 2 px drop; the current tab,
-  section or filter is a *pressed* key (inset shadow). Radii by hierarchy:
-  10 px keys, 14 px ticket / run keys, 16 px panels, pills for repo tags.
-  Light theme keeps the same structure (`#e6ebf1` plate, white keys).
-- **Status keys** on 工单 count and filter in one control (全部 / 等你处理 /
-  运行中 / 失败 / 已交付 / 已关闭) — all sections share one ticket read and
-  filter client-side.
-- **Type**: Instrument Sans (bundled via `@fontsource-variable`, works
-  offline) with the system CJK face; tabular numbers; monospace only for
-  ids, commands and branches. Meta strings are structured (status word +
-  `from → to` repo tags + time), not dot-joined.
+- Icon: a **WD monogram** in round-capped strokes on an ink tile
+  (`web/public/brand-icon.svg`; the favicon uses heavier strokes for 16 px).
+  Repo brand assets (`assets/brand/`, README banner) still use the old deck
+  icon.
+- Tokens: `[data-deck]` in `web/src/styles.css` (light `#f6f7f9` paper /
+  `#ffffff` surface / `#11151c` ink; dark `#14181f` / `#1e232c` / `#f1f3f6`),
+  console only. System font (PingFang / Noto Sans SC / Segoe UI), tabular
+  numbers.
+- Phone patterns: large title that scrolls with the page, grouped inset
+  lists, a three-way segmented control on 工单 (进行中 / 等你 / 已结束),
+  settings as segmented rows instead of popovers, a translucent bottom bar
+  with four tabs, chat bubbles and a bottom composer on a session.
 
 ## As built (2026-11-22)
 

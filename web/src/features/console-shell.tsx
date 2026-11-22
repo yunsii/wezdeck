@@ -4,8 +4,9 @@ import {
   Code2,
   GitPullRequestArrow,
   House,
-  Inbox,
+  CircleDot,
   ListTree,
+  MessagesSquare,
   Server,
   UserRound,
 } from 'lucide-react'
@@ -33,6 +34,7 @@ import {
 } from './console-shared'
 import { useConsoleMode } from './console-mode'
 import { RemoteBadge } from './remote-badge'
+import { remoteLink } from '#/lib/remote-link'
 
 export function ConsoleRouteLayout() {
   return (
@@ -48,8 +50,10 @@ type Section =
   | 'overview'
   | 'development'
   | 'diagnostics'
+  | 'now'
   | 'inbox'
   | 'collab'
+  | 'sessions'
   | 'activity'
   | 'me'
 
@@ -57,8 +61,10 @@ const SECTION_PATH = {
   overview: '/{-$locale}/console',
   development: '/{-$locale}/console/development',
   diagnostics: '/{-$locale}/console/diagnostics',
+  now: '/{-$locale}/console/now',
   inbox: '/{-$locale}/console/inbox',
   collab: '/{-$locale}/console/collab',
+  sessions: '/{-$locale}/console/sessions',
   activity: '/{-$locale}/console/activity',
   me: '/{-$locale}/console/me',
 } as const
@@ -68,8 +74,9 @@ const JUMP_KEYS: Partial<Record<string, Section>> = {
   o: 'overview',
   d: 'development',
   x: 'diagnostics',
-  i: 'inbox',
+  n: 'now',
   c: 'collab',
+  s: 'sessions',
   a: 'activity',
   m: 'me',
 }
@@ -111,11 +118,16 @@ function useSections() {
       icon: <Activity size={16} aria-hidden />,
       local: true,
     },
-    { id: 'inbox', label: t`Inbox`, icon: <Inbox size={16} aria-hidden /> },
+    { id: 'now', label: t`Now`, icon: <CircleDot size={16} aria-hidden /> },
     {
       id: 'collab',
       label: t`Tickets`,
       icon: <GitPullRequestArrow size={16} aria-hidden />,
+    },
+    {
+      id: 'sessions',
+      label: t({ message: 'Sessions', context: 'nav' }),
+      icon: <MessagesSquare size={16} aria-hidden />,
     },
     {
       id: 'activity',
@@ -127,7 +139,9 @@ function useSections() {
   return {
     mode,
     sidebar: all.filter((item) => mode === 'local' || !item.local),
-    tabs: all.filter((item) => !item.local),
+    tabs: all.filter((item) =>
+      ['now', 'collab', 'sessions', 'me'].includes(item.id),
+    ),
   }
 }
 
@@ -190,30 +204,30 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   )
   useJumpKeys(go)
   const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
+  // Start the remote link (adopts a #pair= token) on every console page, not
+  // only when a collab read happens: settings and sessions need it too.
+  useEffect(() => remoteLink.start(), [])
+  // ticket / session detail pages bring their own back bar instead of a title
+  const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
+  // the host overview needs the local Runtime; remote devices start at 现在
+  useEffect(() => {
+    if (mode === 'remote' && current === 'overview')
+      void navigate({
+        to: SECTION_PATH.now,
+        params: { locale: localeParam },
+        replace: true,
+      })
+  }, [mode, current, navigate, localeParam])
 
   return (
     <main
       data-deck
-      className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
+      className="grid h-dvh grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
     >
       {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
       <div className="hidden md:block">
         {mode === 'local' ? <StatusBand /> : <RemoteBand />}
       </div>
-      <header className="flex items-center gap-2.5 bg-brand-deck px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-2 md:hidden">
-        <img src="/brand-icon.svg" alt="" width="28" height="28" />
-        <h1 className="min-w-0 flex-1 truncate text-[19px] font-semibold tracking-tight">
-          {title ?? t`WezDeck`}
-        </h1>
-        <Link
-          to="/{-$locale}/console/me"
-          params={{ locale: localeParam }}
-          aria-label={t`Connection details`}
-          className="max-w-[55%] truncate"
-        >
-          <RemoteBadge compact />
-        </Link>
-      </header>
       <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
         <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
           <div className="flex items-center gap-2 px-3 py-3">
@@ -241,17 +255,15 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                   params={{ locale: localeParam }}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'key-press flex min-h-10 items-center gap-2.5 rounded-[10px] border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                    'flex min-h-9 items-center gap-2.5 rounded-[10px] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
                     active
-                      ? 'border-brand-edge bg-brand-deck text-brand-text shadow-[var(--key-pressed)]'
-                      : 'key key-hover border-brand-edge text-brand-muted',
+                      ? 'bg-brand-surface font-semibold text-brand-text'
+                      : 'text-brand-muted hover:bg-brand-soft',
                   )}
                 >
-                  <span className={active ? 'text-brand-running' : ''}>
-                    {item.icon}
-                  </span>
+                  <span>{item.icon}</span>
                   <span className="flex-1">{item.label}</span>
-                  {item.id === 'inbox' && waiting > 0 ? (
+                  {item.id === 'now' && waiting > 0 ? (
                     <CountBadge value={waiting} />
                   ) : jump ? (
                     <kbd className="text-[11px] text-brand-label">g {jump}</kbd>
@@ -283,14 +295,32 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           >
             {t`Skip to content`}
           </a>
-          <div id="console-main" className="h-full p-4">
+          <div
+            id="console-main"
+            className="min-h-full px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4"
+          >
+            {detail ? null : (
+              <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">
+                <h1 className="min-w-0 truncate text-[32px] leading-tight font-bold tracking-tight">
+                  {title ?? t`WezDeck`}
+                </h1>
+                <Link
+                  to="/{-$locale}/console/me"
+                  params={{ locale: localeParam }}
+                  aria-label={t`Connection details`}
+                  className="shrink-0"
+                >
+                  <RemoteBadge compact />
+                </Link>
+              </div>
+            )}
             <PageBoundary>{children}</PageBoundary>
           </div>
         </div>
       </div>
       <nav
         aria-label={t`Sections`}
-        className="grid grid-cols-4 gap-2 bg-brand-deck px-3 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
+        className="grid grid-cols-4 border-t border-brand-edge bg-[var(--bar-bg)] pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden"
       >
         {tabs.map((item) => {
           const active = current === item.id
@@ -309,20 +339,17 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                 void client.invalidateQueries({
                   queryKey: ['runtime', 'collab'],
                 })
+                void client.invalidateQueries({ queryKey: ['remote'] })
               }}
               className={cn(
-                'key-press relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[12px] border text-[12px]',
-                active
-                  ? 'border-brand-edge bg-brand-deck text-brand-text shadow-[var(--key-pressed)]'
-                  : 'key text-brand-label',
+                'relative flex min-h-12 flex-col items-center justify-center gap-0.5 text-[11px]',
+                active ? 'font-semibold text-brand-text' : 'text-brand-label',
               )}
             >
-              <span className={active ? 'text-brand-running' : ''}>
-                {item.icon}
-              </span>
+              <span className="[&>svg]:size-6">{item.icon}</span>
               <span>{item.label}</span>
-              {item.id === 'inbox' && waiting > 0 ? (
-                <span className="absolute top-1.5 right-2">
+              {item.id === 'now' && waiting > 0 ? (
+                <span className="absolute top-0.5 left-[calc(50%+4px)]">
                   <CountBadge value={waiting} />
                 </span>
               ) : null}

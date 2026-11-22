@@ -73,6 +73,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     // exposes (a public IPv6 host candidate counts as "internet").
     expect(['lan', 'internet']).toContain(b.path)
     expect(b.rtt).toBeGreaterThanOrEqual(0)
+    await page.locator('[data-value=ended]').click()
     const list = page.getByRole('listbox', { name: 'Collab tickets' })
     await list.getByRole('option').first().waitFor({ timeout: 10_000 })
     expect(await list.getByRole('option').count()).toBeGreaterThan(0)
@@ -101,6 +102,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     )
     const b = await badge(page, 'websocket')
     expect(b.text).toContain('WebSocket')
+    await page.locator('[data-value=ended]').click()
     const list = page.getByRole('listbox', { name: 'Collab tickets' })
     await list.getByRole('option').first().waitFor({ timeout: 10_000 })
     await context.close()
