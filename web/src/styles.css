@@ -1096,21 +1096,6 @@ html[data-theme='dark'] [data-deck] {
   }
 }
 
-/* Streaming reply: each new word (Streamdown's animate plugin) rises out of
-   a light blur instead of popping in; overrides the package's sd-blurIn. */
-@keyframes sd-blurIn {
-  from {
-    opacity: 0;
-    filter: blur(3px);
-    transform: translateY(1px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-    transform: none;
-  }
-}
-
 @keyframes typing {
   0%,
   80%,

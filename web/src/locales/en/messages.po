@@ -11,7 +11,7 @@ msgstr ""
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:527
+#: src/features/chat-thread.tsx:536
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
@@ -19,11 +19,11 @@ msgstr "{count} delivered, waiting for the agent"
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/chat-thread.tsx:526
+#: src/features/chat-thread.tsx:535
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
-#: src/features/chat-thread.tsx:285
+#: src/features/chat-thread.tsx:294
 msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
@@ -31,7 +31,7 @@ msgstr "{count} tool calls"
 msgid "{doneCount} done"
 msgstr "{doneCount} done"
 
-#: src/features/chat-thread.tsx:334
+#: src/features/chat-thread.tsx:343
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
@@ -201,7 +201,7 @@ msgstr "Category"
 msgid "challenged"
 msgstr "challenged"
 
-#: src/features/chat-thread.tsx:282
+#: src/features/chat-thread.tsx:291
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
@@ -402,7 +402,7 @@ msgstr "Directory"
 msgid "done"
 msgstr "done"
 
-#: src/features/chat-thread.tsx:215
+#: src/features/chat-thread.tsx:224
 msgid "Done"
 msgstr "Done"
 
@@ -907,15 +907,15 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/chat-thread.tsx:523
+#: src/features/chat-thread.tsx:532
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/chat-thread.tsx:283
+#: src/features/chat-thread.tsx:292
 msgid "ran {commands} commands"
 msgstr "ran {commands} commands"
 
-#: src/features/chat-thread.tsx:284
+#: src/features/chat-thread.tsx:293
 msgid "read {reads} files"
 msgstr "read {reads} files"
 
@@ -987,7 +987,7 @@ msgstr "Requests (WebRTC / relay)"
 msgid "research done"
 msgstr "research done"
 
-#: src/features/chat-thread.tsx:247
+#: src/features/chat-thread.tsx:256
 msgid "Result"
 msgstr "Result"
 
@@ -1051,7 +1051,7 @@ msgstr "run started"
 msgid "running"
 msgstr "running"
 
-#: src/features/chat-thread.tsx:212
+#: src/features/chat-thread.tsx:221
 #: src/features/console-collab.tsx:111
 msgid "Running"
 msgstr "Running"
@@ -1253,7 +1253,7 @@ msgstr "The agent is asking for a confirmation: answer it with the keys above."
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:433
+#: src/features/chat-thread.tsx:442
 msgid "The agent is working"
 msgstr "The agent is working"
 

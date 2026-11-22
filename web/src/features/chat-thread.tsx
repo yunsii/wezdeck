@@ -59,7 +59,7 @@ function SentAttachments({ text }: { text: string }) {
             <span
               key={file.name}
               title={file.name}
-              className="rounded-full bg-brand-surface px-2 py-0.5 text-[12px]"
+              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-[12px]"
             >
               {file.label}
             </span>
@@ -74,23 +74,32 @@ const reducedMotion = () =>
   typeof matchMedia !== 'undefined' &&
   matchMedia('(prefers-reduced-motion: reduce)').matches
 
-const TICK_MS = 50
-/** let the last words finish blurring in (reveal duration in chat-markdown.tsx) */
-const SETTLE_MS = 550
+/** a new batch every 120 ms: calm, phrase-sized steps rather than a ticker */
+const TICK_MS = 120
+/** let the last batch finish fading in (reveal duration in chat-markdown.tsx) */
+const SETTLE_MS = 700
+const BREAK = /[\s，。！？；：、,.!?;:）)\]】」』]/
 
-/** Move a reveal index to the end of the word it landed in (CJK: every char). */
-function wordEnd(text: string, at: number) {
-  let end = at
+/**
+ * Where the next batch ends: at least `step` chars on, then on to the next
+ * phrase break (punctuation or space) if one is near, else the end of the
+ * word; a batch reads as a phrase appearing, not letters ticking in.
+ */
+function batchEnd(text: string, from: number, step: number) {
+  let end = Math.min(text.length, from + step)
+  const reach = Math.min(text.length, end + step)
+  for (let at = end; at < reach; at++)
+    if (BREAK.test(text[at] ?? '')) return at + 1
   while (end < text.length && /[\w\-./:@#%&+=~]/.test(text[end] ?? '')) end++
   return end
 }
 
 /**
- * Stream a just-arrived reply in like a chat model writes it: whole words
- * every 50 ms at a reading pace (about 350 chars/s, the whole message in
- * 0.5–3 s); Streamdown fades each new word in (chat-markdown.tsx) and the
- * thread glides down after it (chat-scroll.ts). Text that grows mid-stream
- * continues from where it is, never from the start.
+ * Stream a just-arrived reply in the way Gemini's feels: a phrase-sized
+ * batch every 120 ms at a reading pace (about 350 chars/s, the whole
+ * message in 0.6–3 s), each batch fading in softly (chat-markdown.tsx) while
+ * the thread glides down after it (chat-scroll.ts). Text that grows
+ * mid-stream continues from where it is, never from the start.
  */
 function useStream(text: string, active: boolean, onDone?: () => void) {
   const [shown, setShown] = useState(active ? 0 : text.length)
@@ -106,11 +115,11 @@ function useStream(text: string, active: boolean, onDone?: () => void) {
       done.current?.()
       return
     }
-    const total = Math.min(3000, Math.max(500, (text.length / 350) * 1000))
-    const step = Math.max(1, Math.ceil(text.length / (total / TICK_MS)))
+    const total = Math.min(3000, Math.max(600, (text.length / 350) * 1000))
+    const step = Math.max(2, Math.ceil(text.length / (total / TICK_MS)))
     let tail: ReturnType<typeof setTimeout> | undefined
     const timer = setInterval(() => {
-      at.current = wordEnd(text, Math.min(text.length, at.current + step))
+      at.current = batchEnd(text, at.current, step)
       setShown(at.current)
       if (at.current >= text.length) {
         clearInterval(timer)
@@ -158,10 +167,10 @@ function Bubble({
       <div
         data-user-at={mine ? at : undefined}
         className={cn(
-          'min-w-0 rounded-[14px] px-3.5 py-2.5 text-brand-text',
+          'min-w-0 rounded-[14px] px-3.5 py-2.5',
           mine
-            ? 'bg-brand-edge text-[15px] leading-relaxed break-words whitespace-pre-wrap'
-            : 'bg-brand-surface',
+            ? 'bg-brand-text text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-deck'
+            : 'bg-brand-surface text-brand-text',
         )}
       >
         {mine ? (

@@ -87,10 +87,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new
-  reply writes itself Gemini-style: whole words every 50 ms at ~350 chars/s
-  (0.5–3 s), each new word rising out of a light blur (Streamdown `animated`
-  blurIn 520 ms, stagger 12 ms, keyframes toned down in `styles.css`), kept
-  animating 550 ms after the last word so the tail never pops; a backlog
+  reply writes itself in phrase-sized batches every 120 ms at ~350 chars/s
+  (0.6–3 s), each batch ending at punctuation or a space and fading in by
+  opacity alone (Streamdown `animated` fadeIn 650 ms, stagger 6 ms capped at
+  260 ms; a per-word blur + lift made the leading edge shimmer), kept
+  animating 700 ms after the last batch so the tail never pops; a backlog
   over 8 jumps to the newest; the page stays pinned to the bottom while a reply grows
   (`chat-scroll.ts`: content growth glides — each frame covers a fifth of
   the distance left — while a scroller resize (keyboard) jumps; only a
@@ -99,8 +100,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   and nothing auto-scrolls while a finger is down; back near the bottom
   re-pins; while unpinned a "回到最新 / N 条新消息" button jumps back)
   (tables and code scroll in their own box); messages run full width and
-  are told apart by background alone (user `brand-edge`, reply
-  `brand-surface`); runs of tool calls collapse into one line, each call
+  are told apart by background alone (user: ink `brand-text` with deck text,
+  reply: `brand-surface`); runs of tool calls collapse into one line, each call
   expands to its diff / preview / command and result; the newest run while
   the agent works is open, shows its last 3 calls ("N earlier calls" above)
   with a breathing light on the call in flight (host `pending`: sent, no

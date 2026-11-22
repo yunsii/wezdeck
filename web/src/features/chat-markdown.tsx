@@ -86,17 +86,18 @@ const components: Components = {
 }
 
 /**
- * New words blur in softly and overlap (Gemini-like): long enough to read as
- * one flowing motion, staggered a little, never queued far behind the text.
- * The keyframes (sd-blurIn) are toned down in styles.css.
+ * New text fades in softly, batch by batch (Gemini-like): opacity only — a
+ * blur or a lift on every word made the leading edge shimmer — long enough
+ * to read as one calm motion, with a tiny stagger so a batch sweeps in from
+ * the left, capped so it never trails the text.
  */
 const reveal = {
-  animation: 'blurIn',
-  duration: 520,
-  easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
+  animation: 'fadeIn',
+  duration: 650,
+  easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
   sep: 'word',
-  stagger: 12,
-  maxBacklogMs: 480,
+  stagger: 6,
+  maxBacklogMs: 260,
 } as const
 
 export function ChatMarkdown({
