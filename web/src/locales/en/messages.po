@@ -100,7 +100,7 @@ msgstr "After a restart, return to the same agent session and continue the work.
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/session-list.tsx:161
+#: src/features/session-list.tsx:173
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -116,7 +116,7 @@ msgstr "Agents"
 #~ msgid "All"
 #~ msgstr "All"
 
-#: src/features/console-now.tsx:211
+#: src/features/console-now.tsx:240
 msgid "All activity"
 msgstr "All activity"
 
@@ -128,7 +128,7 @@ msgstr "All categories"
 msgid "All levels"
 msgstr "All levels"
 
-#: src/features/console-now.tsx:184
+#: src/features/console-now.tsx:213
 msgid "All sessions"
 msgstr "All sessions"
 
@@ -535,7 +535,7 @@ msgstr "Git"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-list.tsx:146
+#: src/features/session-list.tsx:158
 msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 msgstr "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 
@@ -717,11 +717,11 @@ msgstr "Load earlier"
 #: src/features/console-collab.tsx:188
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:203
+#: src/features/console-now.tsx:232
 #: src/features/console-sessions.tsx:332
 #: src/features/console-shared.tsx:211
 #: src/features/session-header.tsx:208
-#: src/features/session-list.tsx:158
+#: src/features/session-list.tsx:170
 #: src/features/tickets-view.tsx:222
 msgid "Loading…"
 msgstr "Loading…"
@@ -762,7 +762,7 @@ msgstr "milestone"
 msgid "Mode"
 msgstr "Mode"
 
-#: src/features/console-now.tsx:160
+#: src/features/console-now.tsx:189
 #: src/features/session-header.tsx:177
 msgid "Needs you"
 msgstr "Needs you"
@@ -783,7 +783,7 @@ msgstr "No active agent sessions"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:158
+#: src/features/session-list.tsx:170
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -798,6 +798,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 #: src/features/console-collab.tsx:315
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
+
+#: src/features/console-now.tsx:162
+#: src/features/session-list.tsx:138
+msgid "No human message yet"
+msgstr "No human message yet"
 
 #: src/features/console-diagnostics.tsx:35
 #: src/features/console-diagnostics.tsx:55
@@ -841,11 +846,11 @@ msgstr "Not on this Runtime"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/console-now.tsx:198
+#: src/features/console-now.tsx:227
 msgid "Nothing needs you and nothing is running."
 msgstr "Nothing needs you and nothing is running."
 
-#: src/features/console-now.tsx:157
+#: src/features/console-now.tsx:186
 #: src/features/console-shell.tsx:122
 msgid "Now"
 msgstr "Now"
@@ -947,6 +952,7 @@ msgstr "Phase"
 msgid "Phone writing"
 msgstr "Phone writing"
 
+#: src/features/console-now.tsx:137
 #: src/features/session-list.tsx:95
 msgid "Primary"
 msgstr "Primary"
@@ -988,7 +994,7 @@ msgstr "read {reads} files"
 msgid "Ready"
 msgstr "Ready"
 
-#: src/features/console-now.tsx:177
+#: src/features/console-now.tsx:206
 msgid "Recently active"
 msgstr "Recently active"
 
@@ -1130,7 +1136,7 @@ msgstr "running"
 msgid "Running"
 msgstr "Running"
 
-#: src/features/console-now.tsx:168
+#: src/features/console-now.tsx:197
 msgid "Running now"
 msgstr "Running now"
 
@@ -1193,6 +1199,7 @@ msgstr "Scope"
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
+#: src/features/console-now.tsx:139
 #: src/features/session-list.tsx:95
 msgid "Secondary"
 msgstr "Secondary"
@@ -1249,7 +1256,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:130
 #: src/features/session-header.tsx:201
-#: src/features/session-list.tsx:143
+#: src/features/session-list.tsx:155
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"

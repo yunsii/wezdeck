@@ -94,48 +94,60 @@ export function SessionList() {
   const paneLabel = (role?: string) =>
     role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
-  const sessionLink = (row: SessionCard) => (
-    <Link
-      to="/{-$locale}/console/sessions/$id"
-      params={{ locale: localeParam, id: row.id }}
-      data-session={row.id}
-      data-pane-role={row.pane_role || undefined}
-      className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
-    >
-      <span className="pt-1.5">
-        <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
-      </span>
-      <span className="grid min-w-0 flex-1 gap-0.5">
-        <span className="flex items-baseline justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-1.5">
-            {row.pane_role ? (
-              <span className="shrink-0 rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label">
-                {paneLabel(row.pane_role)}
-              </span>
-            ) : null}
+  const titleOf = (row: SessionCard) =>
+    row.window ||
+    row.worktree?.split('/').filter(Boolean).at(-1) ||
+    row.cwd.split('/').filter(Boolean).at(-1) ||
+    row.id.slice(0, 8)
+
+  const tag = (text: string) => (
+    <span className="shrink-0 rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label">
+      {text}
+    </span>
+  )
+
+  const sessionLink = (row: SessionCard) => {
+    const prompt = humanPrompt(row.last_prompt)
+    const status = statusText(
+      row.status,
+      row.waiting_kind,
+      row.running_kind,
+      row.background?.length ?? 0,
+    )
+    return (
+      <Link
+        to="/{-$locale}/console/sessions/$id"
+        params={{ locale: localeParam, id: row.id }}
+        data-session={row.id}
+        data-pane-role={row.pane_role || undefined}
+        className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
+      >
+        <span className="pt-1.5">
+          <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
+        </span>
+        <span className="grid min-w-0 flex-1 gap-0.5">
+          <span className="flex items-baseline justify-between gap-2">
             <span className="truncate text-[16px] font-semibold">
-              {row.name || row.agent || row.window || row.id.slice(0, 8)}
+              {titleOf(row)}
+            </span>
+            <span className="shrink-0 text-xs text-brand-label">
+              {ago(ts(row.ts))}
             </span>
           </span>
-          <span className="shrink-0 text-xs text-brand-label">
-            {ago(ts(row.ts))}
+          <span className="truncate text-sm text-brand-muted">
+            {prompt || t`No human message yet`}
+          </span>
+          <span className="flex min-w-0 flex-wrap items-center gap-1">
+            {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
+            {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
+            {row.name && row.name !== row.agent ? tag(row.name) : null}
+            {status ? tag(status) : null}
+            {row.branch ? tag(row.branch) : null}
           </span>
         </span>
-        <span className="truncate text-sm text-brand-muted">
-          {humanPrompt(row.last_prompt) || row.window || row.agent}
-        </span>
-        <span className="truncate text-xs text-brand-label">
-          {statusText(
-            row.status,
-            row.waiting_kind,
-            row.running_kind,
-            row.background?.length ?? 0,
-          )}
-          {row.branch ? ` · ${row.branch}` : ''}
-        </span>
-      </span>
-    </Link>
-  )
+      </Link>
+    )
+  }
 
   return (
     <div className="grid max-w-2xl content-start gap-3">

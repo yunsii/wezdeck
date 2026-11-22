@@ -112,40 +112,69 @@ export function ConsoleNowPage() {
     </li>
   )
 
-  const sessionRow = (row: SessionCard) => (
-    <li key={row.id} className="border-b border-brand-edge last:border-b-0">
-      <Link
-        to="/{-$locale}/console/sessions/$id"
-        params={{ locale: localeParam, id: row.id }}
-        data-session={row.id}
-        className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
-      >
-        <span className="pt-1.5">
-          <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
-        </span>
-        <span className="grid min-w-0 flex-1 gap-0.5">
-          <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-[16px] font-semibold">
-              {row.name || row.window || row.id.slice(0, 8)}
-            </span>
-            <span className="shrink-0 text-xs text-brand-label">
-              {ago(sessionTs(row.ts))}
-            </span>
-          </span>
-          <span className="truncate text-sm text-brand-muted">
-            {humanPrompt(row.last_prompt) ||
-              statusText(
-                row.status,
-                row.waiting_kind,
-                row.running_kind,
-                row.background?.length ?? 0,
-              ) ||
-              row.window}
-          </span>
-        </span>
-      </Link>
-    </li>
+  const sessionTitle = (row: SessionCard) =>
+    row.window ||
+    row.worktree?.split('/').filter(Boolean).at(-1) ||
+    row.cwd.split('/').filter(Boolean).at(-1) ||
+    row.id.slice(0, 8)
+
+  const sessionTag = (text: string) => (
+    <span className="shrink-0 rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label">
+      {text}
+    </span>
   )
+
+  const sessionRow = (row: SessionCard) => {
+    const prompt = humanPrompt(row.last_prompt)
+    const status = statusText(
+      row.status,
+      row.waiting_kind,
+      row.running_kind,
+      row.background?.length ?? 0,
+    )
+    const pane =
+      row.pane_role === 'primary'
+        ? t`Primary`
+        : row.pane_role === 'secondary'
+          ? t`Secondary`
+          : ''
+    return (
+      <li key={row.id} className="border-b border-brand-edge last:border-b-0">
+        <Link
+          to="/{-$locale}/console/sessions/$id"
+          params={{ locale: localeParam, id: row.id }}
+          data-session={row.id}
+          className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
+        >
+          <span className="pt-1.5">
+            <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
+          </span>
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="truncate text-[16px] font-semibold">
+                {sessionTitle(row)}
+              </span>
+              <span className="shrink-0 text-xs text-brand-label">
+                {ago(sessionTs(row.ts))}
+              </span>
+            </span>
+            <span className="truncate text-sm text-brand-muted">
+              {prompt || t`No human message yet`}
+            </span>
+            <span className="flex min-w-0 flex-wrap items-center gap-1">
+              {pane ? sessionTag(pane) : null}
+              {row.agent && row.agent !== 'agent'
+                ? sessionTag(row.agent)
+                : null}
+              {row.name && row.name !== row.agent ? sessionTag(row.name) : null}
+              {status ? sessionTag(status) : null}
+              {row.branch ? sessionTag(row.branch) : null}
+            </span>
+          </span>
+        </Link>
+      </li>
+    )
+  }
 
   const empty =
     needCount + runCount + recentCount === 0 &&
