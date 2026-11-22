@@ -183,7 +183,10 @@ name, for display), **`kind`**, `body`, `result`, `file` / `added` /
 `removed` (counted from the input's shape) and `pending`. Session: `usage`
 (context, limit, output, cache), `account` (Claude limits), `elicitation`
 (Ask questions) and the plan-review flag, `reference`, and
-**`capabilities`**:
+**`capabilities`**, and `meta` (`remote_meta.go`: everything the host
+knows, grouped `session` / `location` / `transcript` / `state` as
+`{name, rows: [{key, value}]}`, empty values left out — the phone's
+会话信息 sheet):
 
 | Field | Meaning | claude / grok / codex |
 |---|---|---|

@@ -110,6 +110,8 @@ export type Detail = {
   /** host-built block an agent can act on (remote_reference.go) */
   reference?: string
   capabilities?: AgentCapabilities
+  /** everything the host knows, grouped (remote_meta.go) */
+  meta?: Array<{ name: string; rows: Array<{ key: string; value: string }> }>
   total?: number
   start?: number
   agent?: string

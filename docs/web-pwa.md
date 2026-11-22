@@ -97,15 +97,21 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session name (+ branch), 复制引用 (copies the host-built
-  `reference` block so another agent can locate the session: id,
-  transcript path, cwd, tmux pane), one status word (full sentence as the
-  tooltip), and meters — context, Claude 5 h / 7 d limits with reset time
+  back, session title (tap to `/rename`) over an agent chip + branch, one
+  status word (full sentence as the tooltip) and **ⓘ 会话信息** at the far
+  right; then meters — context, Claude 5 h / 7 d limits with reset time
   ([`remote-access.md` Account limits](remote-access.md#account-limits)),
-  background tasks — filled by share, amber from 75 %, red from 90 %;
-  tapping them shows model, tokens, cache hit, limit freshness and the
-  background task list. Its height is `--session-head`, which the sticky
-  prompt sits under.
+  background tasks — filled by share, amber from 75 %, red from 90 %; a
+  limit whose reset time has passed shows 「—，已重置，待更新」 instead of a
+  stale percentage. Tapping the meters shows model, tokens, cache hit,
+  limit freshness and the background task list. Its height is
+  `--session-head`, which the sticky prompt sits under.
+- 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
+  header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
+  host-built `reference` block for another agent: id, transcript path, cwd,
+  tmux pane), then the host's `meta` groups — 会话, 运行位置, 会话记录, 状态 —
+  plus 用量 and 能力 (the adapter's `capabilities`); tap any row to copy its
+  value; Esc, the backdrop or × closes it.
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new

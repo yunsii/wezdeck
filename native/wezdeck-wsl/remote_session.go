@@ -687,6 +687,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
 	path, agent := findTranscript(e.SessionID)
 	out["reference"] = sessionReference(e, path, agent)
+	out["meta"] = sessionMeta(e, path, agent, nil)
 	if path != "" {
 		out["agent"] = agent
 		if title := readSessionTitle(path, agent); title != "" {
@@ -712,6 +713,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+		out["meta"] = sessionMeta(e, path, agent, t)
 		transcriptsMu.Lock()
 		total := len(t.messages)
 		start := total - a.Limit

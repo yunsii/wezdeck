@@ -6,7 +6,7 @@
 // are, and the background tasks (counted in the meter row). The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { Check, ChevronLeft, Copy } from 'lucide-react'
+import { ChevronLeft, Info } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
@@ -14,6 +14,7 @@ import { cn } from '#/lib/utils'
 import { sessionTone, useStatusText } from './console-sessions'
 import type { AccountLimits, BgTask, Detail, Usage } from './console-sessions'
 import { useAgo } from './tickets-view'
+import { SessionInfo } from './session-info'
 
 const tokens = (n: number) =>
   n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
@@ -28,10 +29,12 @@ function Meter({
   note,
 }: {
   label: string
-  percent: number
+  /** null: not known right now (a limit window reset since the snapshot) */
+  percent: number | null
   note?: string
 }) {
-  const used = Math.max(0, Math.min(100, Math.round(percent)))
+  const used =
+    percent === null ? 0 : Math.max(0, Math.min(100, Math.round(percent)))
   const fill =
     used >= 90
       ? 'bg-brand-error'
@@ -46,7 +49,9 @@ function Meter({
         style={{ width: `${used}%` }}
       />
       <span className="relative">{label}</span>
-      <span className="relative font-semibold text-brand-text">{used}%</span>
+      <span className="relative font-semibold text-brand-text">
+        {percent === null ? '—' : `${used}%`}
+      </span>
       {note ? <span className="relative text-brand-label">{note}</span> : null}
     </span>
   )
@@ -73,6 +78,12 @@ function Meters({
   const week = account?.seven_day
   const fiveReset = ago(isoOf(five?.resets_at))
   const weekReset = ago(isoOf(week?.resets_at))
+  // a snapshot taken before its window reset says nothing about now
+  const past = (resetsAt?: number) =>
+    Boolean(resetsAt && resetsAt * 1000 < Date.now())
+  const fiveStale = past(five?.resets_at)
+  const weekStale = past(week?.resets_at)
+  const staleNote = t`reset, waiting for an update`
   const tasks = background.length
   const usedTokens = tokens(usage?.context ?? 0)
   const limitTokens = tokens(usage?.context_limit ?? 0)
@@ -97,15 +108,27 @@ function Meters({
         {five ? (
           <Meter
             label={t`5 h`}
-            percent={five.used_percentage}
-            note={fiveReset ? t`resets ${fiveReset}` : undefined}
+            percent={fiveStale ? null : five.used_percentage}
+            note={
+              fiveStale
+                ? staleNote
+                : fiveReset
+                  ? t`resets ${fiveReset}`
+                  : undefined
+            }
           />
         ) : null}
         {week ? (
           <Meter
             label={t`7 d`}
-            percent={week.used_percentage}
-            note={weekReset ? t`resets ${weekReset}` : undefined}
+            percent={weekStale ? null : week.used_percentage}
+            note={
+              weekStale
+                ? staleNote
+                : weekReset
+                  ? t`resets ${weekReset}`
+                  : undefined
+            }
           />
         ) : null}
         {background.length ? (
@@ -146,48 +169,6 @@ function Meters({
   )
 }
 
-/**
- * Copy a reference an agent can act on (host-built, remote_reference.go):
- * session id, transcript path, cwd / branch, tmux pane. Paste it into
- * another agent's chat and it can read or drive this session.
- */
-function CopyReference({ text }: { text: string }) {
-  const { t } = useLingui()
-  const [copied, setCopied] = useState(false)
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      // older / insecure contexts: a hidden textarea still copies
-      const area = document.createElement('textarea')
-      area.value = text
-      area.style.cssText = 'position:fixed;opacity:0'
-      document.body.append(area)
-      area.select()
-      document.execCommand('copy')
-      area.remove()
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1_500)
-  }
-  return (
-    <button
-      type="button"
-      data-testid="copy-reference"
-      onClick={() => void copy()}
-      aria-label={copied ? t`Copied` : t`Copy session reference for an agent`}
-      title={t`Copy session reference for an agent`}
-      className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-brand-muted"
-    >
-      {copied ? (
-        <Check size={17} aria-hidden className="text-brand-done" />
-      ) : (
-        <Copy size={17} aria-hidden />
-      )}
-    </button>
-  )
-}
-
 export function SessionHeader({
   data,
   onBack,
@@ -202,6 +183,7 @@ export function SessionHeader({
 }) {
   const { t } = useLingui()
   const statusText = useStatusText()
+  const [infoOpen, setInfoOpen] = useState(false)
   const tone = sessionTone(data?.status ?? '', data?.waiting_kind)
   const head = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -270,13 +252,19 @@ export function SessionHeader({
           >
             {title || t`Loading…`}
           </button>
-          {data?.branch ? (
-            <span className="truncate font-mono text-[11.5px] text-brand-label">
-              {data.branch}
+          {data?.agent || data?.branch ? (
+            <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-brand-label">
+              {data.agent && data.agent !== 'agent' ? (
+                <span className="shrink-0 rounded-[5px] bg-brand-surface px-1.5 font-mono leading-[1.35rem]">
+                  {data.agent}
+                </span>
+              ) : null}
+              {data.branch ? (
+                <span className="truncate font-mono">{data.branch}</span>
+              ) : null}
             </span>
           ) : null}
         </div>
-        {data?.reference ? <CopyReference text={data.reference} /> : null}
         <span
           title={long}
           className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] text-brand-muted"
@@ -284,12 +272,31 @@ export function SessionHeader({
           <Led tone={tone} size={10} />
           {data ? short : null}
         </span>
+        {data ? (
+          <button
+            type="button"
+            onClick={() => setInfoOpen(true)}
+            aria-label={t`Session info`}
+            aria-haspopup="dialog"
+            data-testid="session-info-button"
+            className="-mr-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
+          >
+            <Info size={19} aria-hidden />
+          </button>
+        ) : null}
       </div>
       <Meters
         usage={data?.usage}
         account={data?.account}
         background={data?.background ?? []}
       />
+      {data ? (
+        <SessionInfo
+          data={data}
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+        />
+      ) : null}
     </header>
   )
 }
