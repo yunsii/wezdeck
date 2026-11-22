@@ -140,16 +140,74 @@ export function SessionPermissionKeys({
   )
 }
 
-export function SessionPlanExcerpt({ excerpt }: { excerpt: string }) {
+/** Grok plan review: a=approve, s=request changes, q=quit (TUI plan approval bar). */
+export function SessionPlanReview({
+  excerpt,
+  awaitingApproval,
+  disabled,
+  onKey,
+}: {
+  excerpt?: string
+  awaitingApproval?: boolean
+  disabled: boolean
+  onKey: (key: string) => void
+}) {
   const { t } = useLingui()
+  if (!excerpt && !awaitingApproval) return null
+  if (!awaitingApproval) {
+    return (
+      <details className="rounded-[16px] bg-brand-surface p-3">
+        <summary className="cursor-pointer text-sm font-medium">
+          {t`Current plan`}
+        </summary>
+        <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap font-mono text-[12px] leading-snug text-brand-muted">
+          {excerpt}
+        </pre>
+      </details>
+    )
+  }
   return (
-    <details className="rounded-[16px] bg-brand-surface p-3">
-      <summary className="cursor-pointer text-sm font-medium">
-        {t`Current plan`}
-      </summary>
-      <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap font-mono text-[12px] leading-snug text-brand-muted">
-        {excerpt}
-      </pre>
-    </details>
+    <div
+      className="grid gap-3 rounded-[16px] border border-brand-running/40 bg-brand-running/10 p-3"
+      data-testid="session-plan-review"
+    >
+      <p className="text-sm font-medium">{t`Plan ready for review`}</p>
+      {excerpt ? (
+        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-[12px] bg-brand-deck p-3 font-mono text-[12px] leading-snug text-brand-muted">
+          {excerpt}
+        </pre>
+      ) : (
+        <p className="text-sm text-brand-muted">{t`No plan written yet`}</p>
+      )}
+      <div className="grid gap-2">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onKey('a')}
+          className="key-press min-h-12 rounded-[12px] bg-brand-text px-3 text-[15px] font-semibold text-brand-deck disabled:opacity-40"
+        >
+          {t`Approve plan`}
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onKey('s')}
+          className="key-press min-h-12 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+        >
+          {t`Request changes`}
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onKey('q')}
+          className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] text-brand-muted disabled:opacity-40"
+        >
+          {t`Quit plan`}
+        </button>
+      </div>
+      <p className="text-[11.5px] text-brand-label">
+        {t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}
+      </p>
+    </div>
   )
 }

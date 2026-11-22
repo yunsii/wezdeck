@@ -525,6 +525,52 @@ func grokPlanExcerpt(chatHistoryPath string, limit int) string {
 	return text
 }
 
+// pendingGrokPlanApproval: exit_plan_mode opened the TUI review and has not completed.
+func pendingGrokPlanApproval(chatHistoryPath string) bool {
+	updatesPath := filepath.Join(filepath.Dir(chatHistoryPath), "updates.jsonl")
+	data, err := readTailFile(updatesPath, 2<<20)
+	if err != nil {
+		return false
+	}
+	completed := map[string]bool{}
+	var pendingID string
+	for _, line := range bytes.Split(data, []byte("\n")) {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		var row struct {
+			Params struct {
+				Update struct {
+					SessionUpdate string `json:"sessionUpdate"`
+					ToolCallID    string `json:"toolCallId"`
+					Status        string `json:"status"`
+					Title         string `json:"title"`
+				} `json:"update"`
+			} `json:"params"`
+		}
+		if json.Unmarshal(line, &row) != nil {
+			continue
+		}
+		u := row.Params.Update
+		switch u.SessionUpdate {
+		case "tool_call":
+			if u.Title == "exit_plan_mode" {
+				pendingID = u.ToolCallID
+			}
+		case "tool_call_update":
+			if u.Status == "completed" && u.ToolCallID != "" {
+				completed[u.ToolCallID] = true
+			}
+			// Some builds title the update "Plan mode exited" / similar after approve.
+			if u.Title == "exit_plan_mode" && u.ToolCallID != "" && u.Status == "" {
+				pendingID = u.ToolCallID
+			}
+		}
+	}
+	return pendingID != "" && !completed[pendingID]
+}
+
 type sessionCard struct {
 	ID          string   `json:"id"`
 	Agent       string   `json:"agent"`
@@ -1229,8 +1275,15 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			if el := pendingGrokElicitation(path); el != nil {
 				out["elicitation"] = el
 			}
-			if plan := grokPlanExcerpt(path, 2500); plan != "" {
-				out["plan"] = map[string]any{"excerpt": plan}
+			plan := map[string]any{}
+			if excerpt := grokPlanExcerpt(path, 2500); excerpt != "" {
+				plan["excerpt"] = excerpt
+			}
+			if pendingGrokPlanApproval(path) {
+				plan["awaiting_approval"] = true
+			}
+			if len(plan) > 0 {
+				out["plan"] = plan
 			}
 		}
 		t, err := loadTranscript(path, agent)
@@ -1517,9 +1570,12 @@ func socketArgs(e attentionEntry) []string {
 
 // Keys a phone may press: answer a permission / choice dialog, move in a
 // picker, or interrupt (C-c — Grok and many TUIs only stop on Ctrl+C).
+// Keys a phone may press: dialog digits, nav, interrupt, and Grok plan-review
+// letters (a=approve, s=request changes, q=quit plan, y=copy — see Grok plan mode docs).
 var allowedKeys = map[string]bool{
 	"Enter": true, "Escape": true, "Up": true, "Down": true, "Tab": true,
 	"1": true, "2": true, "3": true, "4": true, "C-c": true,
+	"a": true, "s": true, "q": true, "y": true,
 }
 
 func keyToSession(args json.RawMessage) (any, error) {

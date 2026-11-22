@@ -22,7 +22,7 @@ import {
   pickElicitationOption,
   SessionElicitation,
   SessionPermissionKeys,
-  SessionPlanExcerpt,
+  SessionPlanReview,
 } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { SessionList } from './session-list'
@@ -106,7 +106,7 @@ export type Detail = {
   messages?: Array<Message>
   screen?: string
   elicitation?: Elicitation
-  plan?: { excerpt: string }
+  plan?: { excerpt?: string; awaiting_approval?: boolean }
 }
 
 export function sessionTone(status: string, kind?: string): LedTone {
@@ -298,10 +298,11 @@ function SessionDetail({ id }: { id: string }) {
   }
   const elicitation = data?.elicitation
   const asking = Boolean(elicitation && elicitation.questions.length > 0)
+  const planReview = Boolean(data?.plan?.awaiting_approval)
   const blocked =
     device.state !== 'approved'
       ? t`Writing is not enabled on this phone yet (Settings › Phone writing).`
-      : data?.waiting_kind && !asking
+      : data?.waiting_kind && !asking && !planReview
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''
   const composer = useComposer({
@@ -378,10 +379,15 @@ function SessionDetail({ id }: { id: string }) {
             }
           />
         ) : null}
-        {data?.plan?.excerpt && !asking ? (
-          <SessionPlanExcerpt excerpt={data.plan.excerpt} />
+        {!asking && (data?.plan?.excerpt || planReview) ? (
+          <SessionPlanReview
+            excerpt={data?.plan?.excerpt}
+            awaitingApproval={planReview}
+            disabled={sending || device.state !== 'approved'}
+            onKey={(key) => void run('key', { key })}
+          />
         ) : null}
-        {data?.waiting_kind && !asking ? (
+        {data?.waiting_kind && !asking && !planReview ? (
           <SessionPermissionKeys
             screen={data.screen}
             disabled={sending || device.state !== 'approved'}

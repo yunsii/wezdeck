@@ -281,6 +281,26 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+func TestPendingGrokPlanApproval(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	updates := filepath.Join(dir, "updates.jsonl")
+	_ = os.WriteFile(updates, []byte(
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"plan-1","title":"exit_plan_mode"}}}`+"\n",
+	), 0o600)
+	if !pendingGrokPlanApproval(chat) {
+		t.Fatal("open exit_plan_mode should await approval")
+	}
+	_ = os.WriteFile(updates, []byte(strings.Join([]string{
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"plan-1","title":"exit_plan_mode"}}}`,
+		`{"params":{"update":{"sessionUpdate":"tool_call_update","toolCallId":"plan-1","status":"completed"}}}`,
+	}, "\n")), 0o600)
+	if pendingGrokPlanApproval(chat) {
+		t.Fatal("completed exit_plan_mode must clear awaiting")
+	}
+}
+
 func TestPendingGrokElicitationParsesUnansweredAsk(t *testing.T) {
 	dir := t.TempDir()
 	chat := filepath.Join(dir, "chat_history.jsonl")

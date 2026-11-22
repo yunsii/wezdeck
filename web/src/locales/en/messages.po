@@ -51,7 +51,7 @@ msgstr "{runningCount} running"
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
-#: src/features/console-sessions.tsx:347
+#: src/features/console-sessions.tsx:348
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -152,6 +152,14 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
+#: src/features/session-elicitation.tsx:189
+msgid "Approve plan"
+msgstr "Approve plan"
+
+#: src/features/session-elicitation.tsx:209
+msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
+msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
+
 #: src/features/console-activity.tsx:108
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
@@ -199,7 +207,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:416
+#: src/features/console-sessions.tsx:422
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -353,7 +361,7 @@ msgstr "Cross-repo collab"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/session-elicitation.tsx:148
+#: src/features/session-elicitation.tsx:161
 msgid "Current plan"
 msgstr "Current plan"
 
@@ -694,7 +702,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:357
+#: src/features/console-sessions.tsx:358
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -704,7 +712,7 @@ msgstr "Load earlier"
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-now.tsx:233
-#: src/features/console-sessions.tsx:357
+#: src/features/console-sessions.tsx:358
 #: src/features/console-shared.tsx:211
 #: src/features/session-header.tsx:229
 #: src/features/session-list.tsx:171
@@ -800,6 +808,10 @@ msgstr "No human message yet"
 msgid "No matching log entries"
 msgstr "No matching log entries"
 
+#: src/features/session-elicitation.tsx:180
+msgid "No plan written yet"
+msgstr "No plan written yet"
+
 #: src/features/console-development.tsx:177
 msgid "No repositories in this workspace."
 msgstr "No repositories in this workspace."
@@ -877,7 +889,7 @@ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, an
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:436
+#: src/features/console-sessions.tsx:442
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -946,6 +958,10 @@ msgstr "Phase"
 msgid "Phone writing"
 msgstr "Phone writing"
 
+#: src/features/session-elicitation.tsx:174
+msgid "Plan ready for review"
+msgstr "Plan ready for review"
+
 #: src/features/console-now.tsx:138
 #: src/features/session-list.tsx:95
 msgid "Primary"
@@ -971,6 +987,10 @@ msgstr "Queued messages"
 #: src/features/session-composer.tsx:255
 msgid "Quick keys"
 msgstr "Quick keys"
+
+#: src/features/session-elicitation.tsx:205
+msgid "Quit plan"
+msgstr "Quit plan"
 
 #: src/features/chat-thread.tsx:292
 msgid "ran {commands} commands"
@@ -1051,6 +1071,10 @@ msgstr "Repo"
 #: src/features/console-development.tsx:181
 msgid "Repositories"
 msgstr "Repositories"
+
+#: src/features/session-elicitation.tsx:197
+msgid "Request changes"
+msgstr "Request changes"
 
 #: src/features/console-me.tsx:186
 msgid "Requests (WebRTC / relay)"
@@ -1296,7 +1320,7 @@ msgstr "Skip to content"
 msgid "Socket"
 msgstr "Socket"
 
-#: src/features/console-sessions.tsx:423
+#: src/features/console-sessions.tsx:429
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -1348,7 +1372,7 @@ msgstr "Tap to send into the agent pane"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:305
+#: src/features/console-sessions.tsx:306
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -1395,7 +1419,7 @@ msgstr "This computer (local Runtime)"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:417
+#: src/features/console-sessions.tsx:423
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -1665,7 +1689,7 @@ msgstr "Worktree"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/features/console-sessions.tsx:303
+#: src/features/console-sessions.tsx:304
 #: src/features/ticket-reply.tsx:70
 msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 msgstr "Writing is not enabled on this phone yet (Settings › Phone writing)."
