@@ -69,36 +69,30 @@ function ToolRow({
   status?: 'running' | 'done'
 }) {
   const { t } = useLingui()
-  if (!tool.body && !tool.result)
-    return (
-      <p className="flex min-w-0 items-start gap-1.5 px-1 font-mono text-[12px] leading-5 text-brand-label">
-        <ToolStatus status={status} />
-        <span className="min-w-0 break-all whitespace-pre-wrap">
-          {tool.text}
-        </span>
-      </p>
-    )
+  const details = Boolean(tool.body || tool.result)
   return (
     <details className="group/tool min-w-0 rounded-[8px]">
-      {/* the whole description wraps (up to 3 lines folded, all when open) */}
+      {/* one line in the list; the whole description once this call is opened */}
       <summary className="flex min-w-0 cursor-pointer list-none items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted">
         <span aria-hidden className={LINE}>
           <span className="transition group-open/tool:rotate-90">›</span>
         </span>
         <ToolStatus status={status} />
-        <span className="line-clamp-3 min-w-0 break-all whitespace-pre-wrap group-open/tool:line-clamp-none">
+        <span className="min-w-0 truncate group-open/tool:break-all group-open/tool:whitespace-pre-wrap">
           {tool.text}
         </span>
       </summary>
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">
-        {tool.body ? <ToolBody text={tool.body} /> : null}
-        {tool.result ? (
-          <div className="grid gap-0.5">
-            <span className="text-[11px] text-brand-label">{t`Result`}</span>
-            <ToolBody text={tool.result} />
-          </div>
-        ) : null}
-      </div>
+      {details ? (
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">
+          {tool.body ? <ToolBody text={tool.body} /> : null}
+          {tool.result ? (
+            <div className="grid gap-0.5">
+              <span className="text-[11px] text-brand-label">{t`Result`}</span>
+              <ToolBody text={tool.result} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </details>
   )
 }

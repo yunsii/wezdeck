@@ -23,7 +23,7 @@ msgstr "{count} images"
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
-#: src/features/chat-tools.tsx:135
+#: src/features/chat-tools.tsx:129
 msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
@@ -31,7 +31,7 @@ msgstr "{count} tool calls"
 msgid "{doneCount} done"
 msgstr "{doneCount} done"
 
-#: src/features/chat-tools.tsx:184
+#: src/features/chat-tools.tsx:178
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
@@ -220,7 +220,7 @@ msgstr "Capabilities"
 msgid "Category"
 msgstr "Category"
 
-#: src/features/chat-tools.tsx:132
+#: src/features/chat-tools.tsx:126
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
@@ -1011,11 +1011,11 @@ msgstr "Quick keys"
 msgid "Quit plan"
 msgstr "Quit plan"
 
-#: src/features/chat-tools.tsx:133
+#: src/features/chat-tools.tsx:127
 msgid "ran {commands} commands"
 msgstr "ran {commands} commands"
 
-#: src/features/chat-tools.tsx:134
+#: src/features/chat-tools.tsx:128
 msgid "read {reads} files"
 msgstr "read {reads} files"
 
@@ -1115,7 +1115,7 @@ msgstr "resets {fiveReset}"
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
 
-#: src/features/chat-tools.tsx:97
+#: src/features/chat-tools.tsx:90
 msgid "Result"
 msgstr "Result"
 
