@@ -89,7 +89,7 @@ export function StickyPrompt({
   return (
     <div
       ref={box}
-      className="sticky top-[env(safe-area-inset-top)] z-20 -mb-2 h-0"
+      className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0"
     >
       {text ? (
         <button

@@ -59,9 +59,22 @@ export type Usage = {
   cache_read: number
 }
 
+export type RateWindow = { used_percentage: number; resets_at?: number }
+
+/** the Claude account's limits as Claude Code last reported them (remote_limits.go) */
+export type AccountLimits = {
+  five_hour?: RateWindow
+  seven_day?: RateWindow
+  at: number
+}
+
 export type Detail = {
   id: string
+  name?: string
+  window?: string
+  branch?: string
   usage?: Usage
+  account?: AccountLimits
   total?: number
   start?: number
   agent?: string

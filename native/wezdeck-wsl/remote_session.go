@@ -898,7 +898,8 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		return nil, errors.New("session not found (ended or not tracked)")
 	}
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,
-		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent"}
+		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent",
+		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
 	if path, agent := findTranscript(e.SessionID); path != "" {
 		out["agent"] = agent
 		t, err := loadTranscript(path, agent)
@@ -920,6 +921,15 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			usage.ContextLimit = contextLimit(usage.Model)
 		}
 		out["usage"] = usage
+		if agent == "claude" {
+			if size := claudeContextSize(e.SessionID); size > 0 {
+				usage.ContextLimit = size
+				out["usage"] = usage
+			}
+			if limits := claudeAccountLimits(); limits != nil {
+				out["account"] = limits
+			}
+		}
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {

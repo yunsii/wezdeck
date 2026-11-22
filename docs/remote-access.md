@@ -135,6 +135,30 @@ and the last 150 page events (viewport resizes with scroller metrics, focus,
 resize, visibility, link changes, errors). No tokens, no
 message text.
 
+### Account limits
+
+The session header shows the Claude account's 5-hour and 7-day limits the
+way Claude Code's own status line does — from the same source, no
+credentials or API calls: Claude Code pipes a JSON snapshot (with
+`rate_limits.five_hour` / `seven_day`: `used_percentage`, `resets_at`, and
+`context_window`) to its statusLine command on every refresh. The statusLine
+script hands it on, in the background:
+
+```bash
+printf '%s' "$input" | bash "${WEZDECK_REPO:-$HOME/github/wezterm-config}/scripts/runtime/claude-statusline-tap.sh" >/dev/null 2>&1 &
+```
+
+`claude-statusline-tap.sh` writes `{session_id, ts, model, context_window,
+rate_limits}` to `~/.local/state/wezdeck/claude-status/<session_id>.json`
+(atomic, ids validated, 30-day prune; `WEZDECK_CLAUDE_STATUS_DIR`
+overrides). `remote_limits.go`: limits are account-wide, so the newest
+snapshot from any session answers (`account` in the `session` reply, Claude
+sessions only, hidden when older than 7 days); a session's own
+`context_window_size` replaces the model-catalog context limit (it knows
+the 1M variants). Codex reports `rate_limits` in its `token_count` events
+too, but through the gateway used here they are all null, so Codex shows
+context only; Grok's transcript has no token counts.
+
 ## Writes: device keys
 
 The phone creates an ECDSA P-256 key in the browser (non-extractable,

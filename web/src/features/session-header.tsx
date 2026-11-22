@@ -1,68 +1,147 @@
-// Top of a session page: back, status, context / spend, background tasks.
+// Top of a session page, pinned while the thread scrolls under it: back,
+// which session this is, its status, and three meters — context used,
+// the Claude account's 5-hour and 7-day limits (reported by Claude Code to
+// its status line, scripts/runtime/claude-statusline-tap.sh). Tapping the
+// meters shows the spend (model, output, cache hit), how fresh the limits
+// are, and the background tasks (counted in the meter row). The header's height is shared
+// as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
 import { ChevronLeft } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import { sessionTone, useStatusText } from './console-sessions'
-import type { Detail, Usage } from './console-sessions'
+import type { AccountLimits, BgTask, Detail, Usage } from './console-sessions'
+import { useAgo } from './tickets-view'
 
 const tokens = (n: number) =>
   n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
 
-/** Context used vs the model's limit, plus what the session has spent. */
-function SessionUsage({ usage }: { usage: Usage }) {
-  const { t } = useLingui()
-  const share = usage.context_limit
-    ? Math.min(100, Math.round((usage.context / usage.context_limit) * 100))
-    : 0
-  const hit =
-    usage.input + usage.cache_read
-      ? Math.round((usage.cache_read / (usage.input + usage.cache_read)) * 100)
-      : 0
-  const used = tokens(usage.context)
-  const limit = tokens(usage.context_limit)
-  const output = tokens(usage.output)
-  if (!usage.context_limit || !usage.context)
-    return usage.model ? (
-      <p
-        data-testid="session-usage"
-        className="rounded-[12px] bg-brand-surface px-3 py-2 text-[11px] text-brand-label"
-      >
-        {usage.model}
-      </p>
-    ) : null
-  const tone =
-    share >= 85
+const isoOf = (unixSeconds?: number) =>
+  unixSeconds ? new Date(unixSeconds * 1000).toISOString() : undefined
+
+/** One meter: the label, how much is used, and a fill behind it. */
+function Meter({
+  label,
+  percent,
+  note,
+}: {
+  label: string
+  percent: number
+  note?: string
+}) {
+  const used = Math.max(0, Math.min(100, Math.round(percent)))
+  const fill =
+    used >= 90
       ? 'bg-brand-error'
-      : share >= 60
+      : used >= 75
         ? 'bg-brand-waiting'
         : 'bg-brand-running'
   return (
-    <div
-      data-testid="session-usage"
-      className="grid gap-1.5 rounded-[12px] bg-brand-surface px-3 py-2"
-    >
-      <div className="flex items-baseline justify-between gap-2 text-[12px]">
-        <span className="text-brand-muted">
-          {t`Context ${used} / ${limit}`}
-        </span>
-        <span className="font-medium">{share}%</span>
-      </div>
-      <div
-        className="h-1.5 overflow-hidden rounded-full bg-brand-deck"
+    <span className="relative inline-flex h-6 shrink-0 items-center gap-1 overflow-hidden rounded-full bg-brand-surface px-2 text-[11.5px] text-brand-muted">
+      <span
         aria-hidden
+        className={cn('absolute inset-y-0 left-0 opacity-20', fill)}
+        style={{ width: `${used}%` }}
+      />
+      <span className="relative">{label}</span>
+      <span className="relative font-semibold text-brand-text">{used}%</span>
+      {note ? <span className="relative text-brand-label">{note}</span> : null}
+    </span>
+  )
+}
+
+function Meters({
+  usage,
+  account,
+  background,
+}: {
+  usage?: Usage
+  account?: AccountLimits
+  background: Array<BgTask>
+}) {
+  const { t } = useLingui()
+  const ago = useAgo()
+  const [open, setOpen] = useState(false)
+  const context =
+    usage?.context_limit && usage.context
+      ? (usage.context / usage.context_limit) * 100
+      : null
+  if (context === null && !account && !background.length) return null
+  const five = account?.five_hour
+  const week = account?.seven_day
+  const fiveReset = ago(isoOf(five?.resets_at))
+  const weekReset = ago(isoOf(week?.resets_at))
+  const tasks = background.length
+  const usedTokens = tokens(usage?.context ?? 0)
+  const limitTokens = tokens(usage?.context_limit ?? 0)
+  const outputTokens = tokens(usage?.output ?? 0)
+  const limitsAt = ago(isoOf(account?.at))
+  const hit =
+    usage && usage.input + usage.cache_read
+      ? Math.round((usage.cache_read / (usage.input + usage.cache_read)) * 100)
+      : 0
+  return (
+    <div className="grid gap-1">
+      <button
+        type="button"
+        data-testid="session-usage"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="flex min-w-0 flex-wrap items-center gap-1.5 text-left"
       >
-        <div
-          className={cn('h-full rounded-full', tone)}
-          style={{ width: `${share}%` }}
-        />
-      </div>
-      <div className="flex flex-wrap gap-x-3 text-[11px] text-brand-label">
-        {usage.model ? <span>{usage.model}</span> : null}
-        <span>{t`output ${output}`}</span>
-        <span>{t`cache hit ${hit}%`}</span>
-      </div>
+        {context !== null ? (
+          <Meter label={t`Context`} percent={context} />
+        ) : null}
+        {five ? (
+          <Meter
+            label={t`5 h`}
+            percent={five.used_percentage}
+            note={fiveReset ? t`resets ${fiveReset}` : undefined}
+          />
+        ) : null}
+        {week ? (
+          <Meter
+            label={t`7 d`}
+            percent={week.used_percentage}
+            note={weekReset ? t`resets ${weekReset}` : undefined}
+          />
+        ) : null}
+        {background.length ? (
+          <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2 text-[11.5px] text-brand-muted">
+            <Led tone="running" size={8} className="led-running" />
+            {t`${tasks} background tasks`}
+          </span>
+        ) : null}
+      </button>
+      {open ? (
+        <p className="flex flex-wrap gap-x-3 px-1 text-[11px] text-brand-label">
+          {usage?.model ? <span>{usage.model}</span> : null}
+          {usage?.context_limit ? (
+            <span>{t`Context ${usedTokens} / ${limitTokens}`}</span>
+          ) : null}
+          {usage ? <span>{t`output ${outputTokens}`}</span> : null}
+          {usage ? <span>{t`cache hit ${hit}%`}</span> : null}
+          {account ? <span>{t`limits as of ${limitsAt}`}</span> : null}
+        </p>
+      ) : null}
+      {open && background.length ? (
+        <ul
+          aria-label={t`Background tasks`}
+          className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
+        >
+          {background.map((task) => (
+            <li
+              key={task.id}
+              className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
+            >
+              <Led tone="running" size={9} />
+              {task.summary || task.id}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   )
 }
@@ -77,44 +156,76 @@ export function SessionHeader({
   const { t } = useLingui()
   const statusText = useStatusText()
   const tone = sessionTone(data?.status ?? '', data?.waiting_kind)
+  const head = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = head.current
+    const page = document.getElementById('console-main')
+    if (!el || !page || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      page.style.setProperty('--session-head', `${el.offsetHeight}px`)
+    })
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      page.style.removeProperty('--session-head')
+    }
+  }, [])
+  const title = data?.name || data?.window || data?.id.slice(0, 8) || ''
+  // a word next to the light; the full sentence is the tooltip (background
+  // tasks have their own meter)
+  const short = data?.waiting_kind
+    ? t`Needs you`
+    : data?.status === 'running' && data.running_kind !== 'background'
+      ? t`Running`
+      : data?.status === 'idle'
+        ? t`Idle`
+        : t`Turn over`
+  const long = data
+    ? statusText(
+        data.status,
+        data.waiting_kind,
+        data.running_kind,
+        data.background?.length ?? 0,
+      )
+    : undefined
   return (
-    <div className="grid gap-2">
-      <button
-        type="button"
-        onClick={onBack}
-        className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
-      >
-        <ChevronLeft size={20} aria-hidden />
-        {t({ message: 'Sessions', context: 'nav' })}
-      </button>
-      <p className="inline-flex items-center gap-2 text-sm text-brand-muted">
-        <Led tone={tone} size={11} />
-        {data
-          ? statusText(
-              data.status,
-              data.waiting_kind,
-              data.running_kind,
-              data.background?.length ?? 0,
-            )
-          : t`Loading…`}
-      </p>
-      {data?.usage?.turns ? <SessionUsage usage={data.usage} /> : null}
-      {data?.background?.length ? (
-        <ul
-          aria-label={t`Background tasks`}
-          className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
+    <header
+      ref={head}
+      data-testid="session-header"
+      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck/95 px-2.5 pt-1 pb-2 backdrop-blur"
+    >
+      <div className="flex min-w-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label={t({ message: 'Sessions', context: 'nav' })}
+          className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-brand-muted"
         >
-          {data.background.map((task) => (
-            <li
-              key={task.id}
-              className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
-            >
-              <Led tone="running" size={9} />
-              {task.summary || task.id}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
+          <ChevronLeft size={22} aria-hidden />
+        </button>
+        <div className="grid min-w-0 flex-1">
+          <h1 className="truncate text-[16px] leading-tight font-semibold">
+            {title || t`Loading…`}
+          </h1>
+          {data?.branch ? (
+            <span className="truncate font-mono text-[11.5px] text-brand-label">
+              {data.branch}
+            </span>
+          ) : null}
+        </div>
+        <span
+          title={long}
+          className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] text-brand-muted"
+        >
+          <Led tone={tone} size={10} />
+          {data ? short : null}
+        </span>
+      </div>
+      <Meters
+        usage={data?.usage}
+        account={data?.account}
+        background={data?.background ?? []}
+      />
+    </header>
   )
 }
