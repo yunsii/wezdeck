@@ -11,7 +11,7 @@ msgstr ""
 msgid "{doneCount} done"
 msgstr "{doneCount} 个已完成"
 
-#: src/features/console-now.tsx:54
+#: src/features/console-now.tsx:62
 msgid "{needCount} tickets need you, {runCount} things are running"
 msgstr "{needCount} 张工单等你处理，{runCount} 个任务正在运行"
 
@@ -52,7 +52,7 @@ msgstr "重启后回到同一个 Agent 会话，继续手头的工作。"
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:131
+#: src/features/console-sessions.tsx:137
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -60,7 +60,7 @@ msgstr "Agent 会话"
 msgid "Agents"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:115
+#: src/features/console-sessions.tsx:121
 msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 msgstr "主机上 tmux 里正在跑的 Agent。点进去可以查看对话，也可以给它发消息。"
 
@@ -68,7 +68,7 @@ msgstr "主机上 tmux 里正在跑的 Agent。点进去可以查看对话，也
 #~ msgid "All"
 #~ msgstr "全部"
 
-#: src/features/console-now.tsx:137
+#: src/features/console-now.tsx:145
 msgid "All activity"
 msgstr "全部动态"
 
@@ -403,7 +403,7 @@ msgstr "筛选工单"
 #~ msgid "Finished"
 #~ msgstr "已结束"
 
-#: src/features/console-sessions.tsx:80
+#: src/features/console-sessions.tsx:86
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
@@ -447,6 +447,10 @@ msgstr "暂时连不上主机"
 #: src/features/console-me.tsx:184
 msgid "Host up since"
 msgstr "主机上线于"
+
+#: src/features/console-sessions.tsx:80
+msgid "idle, you can send"
+msgstr "空闲，可以发消息"
 
 #: src/features/console-shared.tsx:348
 msgid "IME state is unavailable because Runtime is offline."
@@ -568,8 +572,8 @@ msgstr "实时"
 #: src/features/console-collab.tsx:188
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:128
-#: src/features/console-sessions.tsx:127
+#: src/features/console-now.tsx:136
+#: src/features/console-sessions.tsx:133
 #: src/features/console-sessions.tsx:320
 #: src/features/console-shared.tsx:211
 #: src/features/tickets-view.tsx:222
@@ -612,7 +616,7 @@ msgstr "里程碑"
 msgid "Mode"
 msgstr "模式"
 
-#: src/features/console-now.tsx:110
+#: src/features/console-now.tsx:118
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -632,7 +636,7 @@ msgstr "没有活动 Agent 会话"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/console-sessions.tsx:127
+#: src/features/console-sessions.tsx:133
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -690,11 +694,11 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/console-now.tsx:129
+#: src/features/console-now.tsx:137
 msgid "Nothing needs you and nothing is running."
 msgstr "没有需要你处理的事，也没有在运行的任务。"
 
-#: src/features/console-now.tsx:107
+#: src/features/console-now.tsx:115
 #: src/features/console-shell.tsx:121
 msgid "Now"
 msgstr "现在"
@@ -932,7 +936,7 @@ msgstr "运行中"
 msgid "Running"
 msgstr "运行中"
 
-#: src/features/console-now.tsx:120
+#: src/features/console-now.tsx:128
 msgid "Running now"
 msgstr "正在运行"
 
@@ -1030,7 +1034,7 @@ msgid "session started"
 msgstr "会话开始"
 
 #: src/features/console-collab.tsx:114
-#: src/features/console-sessions.tsx:113
+#: src/features/console-sessions.tsx:119
 #: src/features/console-sessions.tsx:309
 msgid "Sessions"
 msgstr "会话数"
@@ -1040,7 +1044,7 @@ msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/console-now.tsx:115
+#: src/features/console-now.tsx:123
 msgid "Sessions waiting for you"
 msgstr "等你回复的会话"
 
@@ -1214,7 +1218,7 @@ msgstr "触发来源"
 msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
-#: src/features/console-sessions.tsx:74
+#: src/features/console-sessions.tsx:78
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
@@ -1286,11 +1290,11 @@ msgstr "等待中"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:78
+#: src/features/console-sessions.tsx:84
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/console-sessions.tsx:72
+#: src/features/console-sessions.tsx:76
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
@@ -1370,7 +1374,7 @@ msgstr "work"
 msgid "Workbench"
 msgstr "工作台"
 
-#: src/features/console-sessions.tsx:76
+#: src/features/console-sessions.tsx:82
 msgid "working"
 msgstr "运行中"
 

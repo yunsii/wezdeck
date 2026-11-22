@@ -10,7 +10,12 @@ import { useCollab } from '#/lib/collab-query'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
 import { ticketTone } from './console-collab'
-import { isBusy, sessionTone, useSessions } from './console-sessions'
+import {
+  humanPrompt,
+  isBusy,
+  sessionTone,
+  useSessions,
+} from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { useAgo, useStatusLabel } from './tickets-view'
 
@@ -47,7 +52,10 @@ export function ConsoleNowPage() {
   const running = tickets.filter((ticket) => ticket.running.length > 0)
   const live: Array<SessionCard> = sessions.data?.sessions ?? []
   // "done" (turn ended) and background-only sessions take your next message
-  const waitingSessions = live.filter((row) => !isBusy(row))
+  // idle (archived but still open) sessions live on the 会话 tab, not here
+  const waitingSessions = live.filter(
+    (row) => !isBusy(row) && row.status !== 'idle',
+  )
   const workingSessions = live.filter((row) => isBusy(row))
   const needCount = needs.length
   const runCount = workingSessions.length + running.length
@@ -95,7 +103,7 @@ export function ConsoleNowPage() {
             {row.name || row.window}
           </span>
           <span className="truncate text-sm text-brand-muted">
-            {row.last_prompt}
+            {humanPrompt(row.last_prompt) || row.window}
           </span>
         </span>
       </Link>

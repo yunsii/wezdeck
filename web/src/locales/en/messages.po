@@ -11,7 +11,7 @@ msgstr ""
 msgid "{doneCount} done"
 msgstr "{doneCount} done"
 
-#: src/features/console-now.tsx:54
+#: src/features/console-now.tsx:62
 msgid "{needCount} tickets need you, {runCount} things are running"
 msgstr "{needCount} tickets need you, {runCount} things are running"
 
@@ -52,7 +52,7 @@ msgstr "After a restart, return to the same agent session and continue the work.
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/console-sessions.tsx:131
+#: src/features/console-sessions.tsx:137
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -60,7 +60,7 @@ msgstr "Agent sessions"
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/console-sessions.tsx:115
+#: src/features/console-sessions.tsx:121
 msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 msgstr "Agents running in tmux on the host. Open one to read it and talk to it."
 
@@ -68,7 +68,7 @@ msgstr "Agents running in tmux on the host. Open one to read it and talk to it."
 #~ msgid "All"
 #~ msgstr "All"
 
-#: src/features/console-now.tsx:137
+#: src/features/console-now.tsx:145
 msgid "All activity"
 msgstr "All activity"
 
@@ -403,7 +403,7 @@ msgstr "Filter tickets"
 #~ msgid "Finished"
 #~ msgstr "Finished"
 
-#: src/features/console-sessions.tsx:80
+#: src/features/console-sessions.tsx:86
 msgid "finished its turn"
 msgstr "finished its turn"
 
@@ -447,6 +447,10 @@ msgstr "Host unreachable right now"
 #: src/features/console-me.tsx:184
 msgid "Host up since"
 msgstr "Host up since"
+
+#: src/features/console-sessions.tsx:80
+msgid "idle, you can send"
+msgstr "idle, you can send"
 
 #: src/features/console-shared.tsx:348
 msgid "IME state is unavailable because Runtime is offline."
@@ -568,8 +572,8 @@ msgstr "live"
 #: src/features/console-collab.tsx:188
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-now.tsx:128
-#: src/features/console-sessions.tsx:127
+#: src/features/console-now.tsx:136
+#: src/features/console-sessions.tsx:133
 #: src/features/console-sessions.tsx:320
 #: src/features/console-shared.tsx:211
 #: src/features/tickets-view.tsx:222
@@ -612,7 +616,7 @@ msgstr "milestone"
 msgid "Mode"
 msgstr "Mode"
 
-#: src/features/console-now.tsx:110
+#: src/features/console-now.tsx:118
 msgid "Needs you"
 msgstr "Needs you"
 
@@ -632,7 +636,7 @@ msgstr "No active agent sessions"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/console-sessions.tsx:127
+#: src/features/console-sessions.tsx:133
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -690,11 +694,11 @@ msgstr "Not on this Runtime"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/console-now.tsx:129
+#: src/features/console-now.tsx:137
 msgid "Nothing needs you and nothing is running."
 msgstr "Nothing needs you and nothing is running."
 
-#: src/features/console-now.tsx:107
+#: src/features/console-now.tsx:115
 #: src/features/console-shell.tsx:121
 msgid "Now"
 msgstr "Now"
@@ -932,7 +936,7 @@ msgstr "running"
 msgid "Running"
 msgstr "Running"
 
-#: src/features/console-now.tsx:120
+#: src/features/console-now.tsx:128
 msgid "Running now"
 msgstr "Running now"
 
@@ -1030,7 +1034,7 @@ msgid "session started"
 msgstr "session started"
 
 #: src/features/console-collab.tsx:114
-#: src/features/console-sessions.tsx:113
+#: src/features/console-sessions.tsx:119
 #: src/features/console-sessions.tsx:309
 msgid "Sessions"
 msgstr "Sessions"
@@ -1040,7 +1044,7 @@ msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-now.tsx:115
+#: src/features/console-now.tsx:123
 msgid "Sessions waiting for you"
 msgstr "Sessions waiting for you"
 
@@ -1214,7 +1218,7 @@ msgstr "Trigger"
 msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
-#: src/features/console-sessions.tsx:74
+#: src/features/console-sessions.tsx:78
 msgid "turn finished, {bg} background tasks running; you can send"
 msgstr "turn finished, {bg} background tasks running; you can send"
 
@@ -1286,11 +1290,11 @@ msgstr "Waiting"
 msgid "Waiting for the host to approve this phone. On the host run:"
 msgstr "Waiting for the host to approve this phone. On the host run:"
 
-#: src/features/console-sessions.tsx:78
+#: src/features/console-sessions.tsx:84
 msgid "waiting for you"
 msgstr "waiting for you"
 
-#: src/features/console-sessions.tsx:72
+#: src/features/console-sessions.tsx:76
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
@@ -1370,7 +1374,7 @@ msgstr "work"
 msgid "Workbench"
 msgstr "Workbench"
 
-#: src/features/console-sessions.tsx:76
+#: src/features/console-sessions.tsx:82
 msgid "working"
 msgstr "working"
 

@@ -84,18 +84,64 @@ func attentionFile() string {
 	return filepath.Join(home, ".local/state/wezterm-runtime/state/agent-attention/attention.json")
 }
 
-func readAttention() (map[string]attentionEntry, error) {
+type recentEntry struct {
+	attentionEntry
+	LastStatus string `json:"last_status"`
+	ArchivedTS int64  `json:"archived_ts"`
+}
+
+func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
 	data, err := os.ReadFile(attentionFile())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var doc struct {
 		Entries map[string]attentionEntry `json:"entries"`
+		Recent  []recentEntry             `json:"recent"`
 	}
 	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, nil, err
+	}
+	return doc.Entries, doc.Recent, nil
+}
+
+// agentCommands: what an agent TUI pane runs (pane_current_command).
+var agentCommands = map[string]bool{"claude": true, "codex": true, "grok": true, "grok.real": true}
+
+// liveSessions merges the live entries with archived ones (recent[]) whose
+// pane still runs an agent: an acknowledged or idle-for-30-min session drops
+// out of .entries but is still open and takes input. Archived ones get
+// status "idle"; per pane only the newest session id counts (/clear makes a
+// new one).
+func liveSessions() (map[string]attentionEntry, error) {
+	entries, recent, err := readAttentionDoc()
+	if err != nil {
 		return nil, err
 	}
-	return doc.Entries, nil
+	out := map[string]attentionEntry{}
+	panes := map[string]bool{}
+	for id, e := range entries {
+		out[id] = e
+		panes[e.TmuxSocket+"|"+e.TmuxPane] = true
+	}
+	sort.Slice(recent, func(i, j int) bool { return recent[i].ArchivedTS > recent[j].ArchivedTS })
+	for _, r := range recent {
+		key := r.TmuxSocket + "|" + r.TmuxPane
+		if r.SessionID == "" || r.TmuxPane == "" || panes[key] {
+			continue
+		}
+		panes[key] = true
+		if _, _, cmd, alive := paneState(r.attentionEntry); !alive || !agentCommands[cmd] {
+			continue
+		}
+		e := r.attentionEntry
+		e.Status = "idle"
+		e.WaitingKind = ""
+		e.RunningKind = ""
+		e.TS = r.ArchivedTS
+		out[r.SessionID] = e
+	}
+	return out, nil
 }
 
 func tmuxCmd(socket string, args ...string) *exec.Cmd {
@@ -106,17 +152,36 @@ func tmuxCmd(socket string, args ...string) *exec.Cmd {
 	return exec.Command("tmux", full...)
 }
 
+// paneState: the pane's id, cwd, current command, and whether it exists.
+func paneState(e attentionEntry) (id, cwd, cmd string, alive bool) {
+	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{pane_id}\t#{pane_current_path}\t#{pane_current_command}").Output()
+	if err != nil {
+		return "", "", "", false
+	}
+	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 3)
+	if len(parts) != 3 || parts[0] != e.TmuxPane {
+		return "", "", "", false
+	}
+	return parts[0], parts[1], parts[2], true
+}
+
+// windowActivity: last output in the session's tmux window (unix ms), 0 if unknown.
+func windowActivity(e attentionEntry) int64 {
+	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{window_activity}").Output()
+	if err != nil {
+		return 0
+	}
+	v, err := strconv.ParseInt(strings.TrimSpace(string(out)), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return v * 1000
+}
+
 // paneInfo: cwd and whether the pane still exists.
 func paneInfo(e attentionEntry) (cwd string, alive bool) {
-	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{pane_id}\t#{pane_current_path}").Output()
-	if err != nil {
-		return "", false
-	}
-	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 2)
-	if len(parts) != 2 || parts[0] != e.TmuxPane {
-		return "", false
-	}
-	return parts[1], true
+	_, cwd, _, alive = paneState(e)
+	return cwd, alive
 }
 
 // deskActivity: newest keyboard activity of any client attached to the
@@ -164,7 +229,7 @@ type sessionCard struct {
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
 
 func listSessions() (any, error) {
-	entries, err := readAttention()
+	entries, err := liveSessions()
 	if err != nil {
 		return nil, err
 	}
@@ -181,9 +246,15 @@ func listSessions() (any, error) {
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
 			RunningKind: e.RunningKind, Background: backgroundOf(e)}
-		if claudeTranscript(e.SessionID) != "" {
+		if path := claudeTranscript(e.SessionID); path != "" {
 			card.Agent = "claude"
 			card.Transcript = true
+			if info, err := os.Stat(path); err == nil && info.ModTime().UnixMilli() > card.TS {
+				card.TS = info.ModTime().UnixMilli()
+			}
+		}
+		if act := windowActivity(e); act > card.TS {
+			card.TS = act
 		}
 		if act := deskActivity(e); act > 0 {
 			card.DeskIdleS = now - act
@@ -192,6 +263,7 @@ func listSessions() (any, error) {
 		}
 		cards = append(cards, card)
 	}
+	// newest activity first: status update, transcript write or window output
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
 	return map[string]any{"v": 1, "ok": true, "sessions": cards}, nil
 }
@@ -320,7 +392,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
 		return nil, errors.New("invalid session id")
 	}
-	entries, err := readAttention()
+	entries, err := liveSessions()
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +587,7 @@ func guardSession(id string) (attentionEntry, error) {
 	if !sessionIDPattern.MatchString(id) {
 		return attentionEntry{}, errors.New("invalid session id")
 	}
-	entries, err := readAttention()
+	entries, err := liveSessions()
 	if err != nil {
 		return attentionEntry{}, err
 	}

@@ -34,6 +34,10 @@ export type SessionCard = {
   background?: Array<BgTask>
 }
 
+/** Last prompt the user typed; harness-injected ones (<task-notification>…) are not. */
+export const humanPrompt = (prompt?: string) =>
+  prompt && !prompt.trim().startsWith('<') ? prompt : ''
+
 export type BgTask = { id: string; type: string; summary: string }
 
 /** Mid-turn. A session that only waits on background tasks takes input. */
@@ -72,13 +76,15 @@ function useStatusText() {
       ? t`waiting for your confirmation`
       : status === 'running' && runningKind === 'background'
         ? t`turn finished, ${bg} background tasks running; you can send`
-        : status === 'running'
-          ? t`working`
-          : status === 'waiting'
-            ? t`waiting for you`
-            : status === 'done'
-              ? t`finished its turn`
-              : status
+        : status === 'idle'
+          ? t`idle, you can send`
+          : status === 'running'
+            ? t`working`
+            : status === 'waiting'
+              ? t`waiting for you`
+              : status === 'done'
+                ? t`finished its turn`
+                : status
 }
 
 const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
@@ -158,13 +164,7 @@ function SessionList() {
                     </span>
                   </span>
                   <span className="truncate text-sm text-brand-muted">
-                    {row.last_prompt ||
-                      statusText(
-                        row.status,
-                        row.waiting_kind,
-                        row.running_kind,
-                        row.background?.length ?? 0,
-                      )}
+                    {humanPrompt(row.last_prompt) || row.window}
                   </span>
                   <span className="truncate text-xs text-brand-label">
                     {statusText(

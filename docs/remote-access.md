@@ -81,7 +81,7 @@ tmux socket / session / pane, status `running|waiting|done` and
 
 | Action | Kind | What it does |
 | --- | --- | --- |
-| `sessions` | read | live entries whose pane still exists, with cwd, branch, last prompt, desk idle seconds |
+| `sessions` | read | live entries whose pane still exists, plus archived ones (`recent[]`, status `idle`) whose pane still runs `claude`/`codex`/`grok` (newest session id per pane); newest activity first (max of status ts, transcript mtime, tmux `window_activity`) |
 | `session {id}` | read | Claude transcript (`~/.claude/projects/*/<id>.jsonl`, tail 4 MB → user / assistant text, one line per tool call) plus the last 60 screen lines (`capture-pane`) |
 | `send {id,text}` | write | paste into the session's own TUI (`load-buffer` + `paste-buffer -p`, then Enter) |
 | `key {id,key}` | write | one key from `1 2 3 4 Enter Escape Up Down Tab` (permission / choice dialogs) |

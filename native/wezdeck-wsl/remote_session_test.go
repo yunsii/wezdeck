@@ -206,3 +206,49 @@ func TestClaudeSessionTakesInputMidTurn(t *testing.T) {
 		t.Fatalf("Claude must accept input mid-turn: %v", err)
 	}
 }
+
+// An acknowledged session leaves .entries for recent[] but is still open:
+// it must stay listed (idle, sendable) while its pane runs an agent, and a
+// tombstone whose pane went back to a shell must not.
+func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "bin")
+	_ = os.MkdirAll(bin, 0o755)
+	cat, _ := exec.LookPath("cat")
+	if err := os.Symlink(cat, filepath.Join(bin, "claude")); err != nil {
+		t.Fatal(err)
+	}
+	socket := filepath.Join(dir, "s")
+	for _, s := range []struct{ name, cmd string }{{"agent", filepath.Join(bin, "claude")}, {"shell", cat}} {
+		if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", s.name, s.cmd).CombinedOutput(); err != nil {
+			t.Fatalf("tmux: %s", out)
+		}
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOf := func(session string) string {
+		out, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", session, "#{pane_id}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{}, "recent": []map[string]any{
+		{"session_id": "old-1", "tmux_socket": socket, "tmux_session": "agent", "tmux_pane": paneOf("agent"), "last_status": "done", "archived_ts": 100, "agent_name": "a"},
+		{"session_id": "older-1", "tmux_socket": socket, "tmux_session": "agent", "tmux_pane": paneOf("agent"), "last_status": "done", "archived_ts": 50},
+		{"session_id": "gone-1", "tmux_socket": socket, "tmux_session": "shell", "tmux_pane": paneOf("shell"), "last_status": "done", "archived_ts": 90},
+	}})
+	_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+	time.Sleep(200 * time.Millisecond) // let tmux settle pane_current_command
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != "old-1" || cards[0].Status != "idle" {
+		t.Fatalf("want only the newest archived agent pane as idle, got %+v", cards)
+	}
+	if _, err := sendToSession(json.RawMessage(`{"id":"old-1","text":"back again"}`)); err != nil {
+		t.Fatalf("idle archived session must take input: %v", err)
+	}
+}
