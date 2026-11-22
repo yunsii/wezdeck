@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "_doc": "Which browser identity an agent uses, per scene. Copy to wezterm-x/local/browser-profiles.json. docs/browser-debug.md#scenes-and-profiles",
+  "fallback": "ask",
+  "scenes": {
+    "work": {
+      "label": "办公",
+      "default": "work",
+      "paths": ["~/work"]
+    },
+    "personal": {
+      "label": "个人",
+      "default": "personal",
+      "paths": ["~/github"]
+    }
+  },
+  "profiles": {
+    "work": {
+      "scene": "work",
+      "label": "办公",
+      "backends": { "ego": "Profile 1" },
+      "accounts": { "dash.cloudflare.com": "you@company.example" }
+    },
+    "personal": {
+      "scene": "personal",
+      "label": "个人",
+      "backends": { "ego": "Profile 4" },
+      "accounts": { "dash.cloudflare.com": "you@personal.example" }
+    },
+    "anon": {
+      "scene": null,
+      "label": "匿名验收",
+      "anonymous": true,
+      "backends": { "ego": "Profile 2" }
+    }
+  }
+}

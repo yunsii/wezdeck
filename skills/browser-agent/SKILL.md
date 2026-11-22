@@ -66,8 +66,46 @@ Detail: repo [`docs/browser-debug.md`](../../docs/browser-debug.md).
    - `ego`: `ego-browser nodejs -e "console.log('ego-browser ready')"`
    - `cdp`: `curl -sS -m 3 http://127.0.0.1:9222/json/version`
 3. If probe fails, report the fix (open Ego / Alt+b) — do not invent success.
-4. Run the task **only** on that backend.
-5. Finish: report backend used, URL/result, blockers (简体中文).
+4. **Pick the browser identity** before opening anything (see
+   [Scenes and profiles](#scenes-and-profiles)); tell the human which one
+   and why in one line.
+5. Run the task **only** on that backend and profile; **check the logged-in
+   account** on any registered site before acting on it.
+6. Finish: report backend, profile, URL/result, blockers (简体中文).
+
+## Scenes and profiles
+
+Two scenes — **个人 personal** and **办公 work** — each with a default browser
+profile (more profiles per scene can be added later). Never open a task in
+whatever profile happens to be default: the 2026-11-22 incident created a
+Cloudflare token in the office account because nothing said which one.
+
+1. Resolve (the CLI decides; do not guess):
+   ```bash
+   "$WEZDECK_REPO/scripts/runtime/browser-profile.sh" resolve --cwd "$PWD"
+   # the human named one: --profile <id> | --scene work|personal | --anon
+   ```
+   - exit 0 → use `backend_profile` (ego: pass it as
+     `taskSpace(name, { profileId })`; only applies to a **new** space) and
+     say e.g. 「用的是 个人（ego Profile 4），因为仓库在 ~/github 下」.
+   - exit 2 (`need: "ask"`) → ask the human which scene, listing `choices`.
+   - exit 1 → report the error (config missing, profile lacks this backend).
+2. After a registered site loads, read who is logged in from the page and
+   check it — **before** any write (creating tokens, saving settings, sending):
+   ```bash
+   "$WEZDECK_REPO/scripts/runtime/browser-profile.sh" check \
+     --profile <id> --url "<page url>" --actual "<account shown on the page>"
+   ```
+   `mismatch` (exit 3) → stop and tell the human 「期望 A，实际是 B」; do not
+   switch profiles on your own. Logged out → hand off for login in that same
+   profile. `unregistered` → proceed, but name the account you saw.
+3. When a CLI acts on the same service (wrangler, gh), cross-check its
+   identity too (e.g. `wrangler whoami` account id vs the dashboard URL).
+
+Config: `wezterm-x/local/browser-profiles.json` (template
+`wezterm-x/local.example/browser-profiles.json`); scene = longest matching
+`paths` prefix of the task's cwd. Detail:
+[`docs/browser-debug.md#scenes-and-profiles`](../../docs/browser-debug.md#scenes-and-profiles).
 
 ### When backend is `ego`
 
@@ -129,3 +167,5 @@ Detail: [`docs/browser-debug.md#history-purge-by-domain`](../../docs/browser-deb
 - Do not drive both backends against the same user goal in one turn.
 - Do not fork the vendor `ego-browser` SKILL.md body.
 - Destructive browser actions still need explicit user confirmation.
+- Never create a TaskSpace without a resolved profile, and never write on a
+  registered site whose logged-in account fails `browser-profile.sh check`.

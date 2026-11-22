@@ -21,6 +21,8 @@ product nicknames when the role matters.
 | **backend** | 槽后端 | What fills the slot: `ego` \| `cdp` (`WEZDECK_BROWSER_BACKEND` / `apply-browser-backend`). |
 | **everyday browser** | 日常浏览器 | Human day-to-day Chrome / Edge / Brave (normal `%LOCALAPPDATA%\…\User Data`). Outside the slot. |
 | **system handler** | 系统默认打开 | OS URL association for `http(s)` (`wezterm.open_with` / `Start-Process`). May or may not be the same install as an everyday browser. |
+| **scene** | 场景 | Personal vs work (`personal` / `work`): decides which **identity** a task's browser uses. See [Scenes and profiles](#scenes-and-profiles). |
+| **identity / browser profile** | 浏览器身份 | A logged-in browser profile inside the slot (ego profile id, later a cdp user-data dir) bound to a scene, with the accounts it is expected to be logged into. |
 
 ### Profile ids (concrete User Data)
 
@@ -52,6 +54,43 @@ Legacy config value `debug` is accepted as an alias of `slot` (same meaning).
 | 「切到 ego / cdp」（另一边应停） | 两边同时常驻当常态（slot exclusivity forbids it） |
 
 Agent skill wording (capability-first): [`skills/browser-agent/SKILL.md`](../skills/browser-agent/SKILL.md).
+
+## Scenes and profiles
+
+Agents must not open a page in whatever profile happens to be the default:
+on 2026-11-22 a Cloudflare API token was created in the office account
+(ego default profile, `yuns@mail.pollo.ai`) while the Worker lives in the
+personal one (`Yuns.xie@qq.com`), because nothing said which identity a
+task needs. Three parts:
+
+1. **Register** — `wezterm-x/local/browser-profiles.json` (machine-local;
+   template `wezterm-x/local.example/browser-profiles.json`): `scenes`
+   (`label`, `default` profile, `paths` prefixes) and `profiles` (`scene`,
+   `label`, `backends: { ego: "<Profile N>", cdp: … }`, `accounts: { host:
+   expected login }`, optional `anonymous: true`), plus `fallback` (`ask` or
+   a scene). A scene can hold more profiles later; its `default` is used
+   unless the human names another. `accounts` is for checking, not choosing.
+2. **Resolve** — `scripts/runtime/browser-profile.sh resolve` decides, in
+   order: `--profile` (human named it) → `--anon` → `--scene` → `--cwd`
+   (longest matching `paths` prefix, `~` expanded) → `fallback`; `ask`
+   exits 2 with the choices. ego uses `backend_profile` as
+   `taskSpace(name, { profileId })` (new spaces only). A profile without an
+   id for the current backend fails (exit 1) instead of falling back.
+3. **Check** — once a registered site is open, the agent reads the
+   logged-in account from the page and runs `browser-profile.sh check
+   --profile <id> --url <url> --actual <account>`: `match` / `unregistered`
+   exit 0, `mismatch` exits 3 and the agent stops with 「期望 A，实际是 B」
+   (it never switches identity on its own). `expect` returns the registered
+   account for a URL. Services with a CLI are cross-checked too
+   (`wrangler whoami` account id vs the dashboard URL).
+
+Every resolve and check is a `browser_agent` log row (`browser profile
+resolved` with `outcome` / `profile` / `reason`, `browser identity checked`
+with `verdict` / `expected` / `actual`). The `browser-agent` skill makes
+both steps mandatory and has the agent say which identity it used and why.
+cdp: one user-data dir per profile is the planned shape (`backends.cdp`);
+not wired yet — a cdp-only machine resolves to an error until it is.
+Tests: `scripts/dev/browser-profile/test.sh` (temp HOME + config).
 
 ## Browser backends (`ego` | `cdp`)
 

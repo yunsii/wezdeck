@@ -127,7 +127,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Browser glossary (slot / backend / everyday / system), headless Chrome
   debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,
   the right-status browser-slot badge, link open target, history-purge
-  profile ids, or switching the agent browser backend (`ego` \| `cdp` via
+  profile ids, personal vs work browser identity (scenes / profiles,
+  `browser-profile.sh`), or switching the agent browser backend (`ego` \| `cdp` via
   `apply-browser-backend` / `WEZDECK_BROWSER_BACKEND`):
   Read [`docs/browser-debug.md`](docs/browser-debug.md)
   ([glossary](docs/browser-debug.md#browser-glossary);
