@@ -383,7 +383,7 @@ func backgroundOf(e attentionEntry) []bgTask {
 }
 
 type chatMessage struct {
-	Role   string `json:"role"` // user | assistant | tool
+	Role   string `json:"role"` // user | assistant | tool | system (Kind "compact": context compaction marker, Body = summary)
 	Text   string `json:"text"`
 	TS     string `json:"ts,omitempty"`
 	Tool   string `json:"tool,omitempty"`   // tool name (role=tool)
@@ -534,6 +534,41 @@ type transcript struct {
 	tools    map[string]int // tool_use_id → index in messages
 	usage    sessionUsage
 	lastMsg  string // message id whose usage was counted (one reply spans several lines)
+}
+
+// markCompact appends a context-compaction marker (role system, kind compact;
+// Text = what triggered it: auto | manual).
+func (t *transcript) markCompact(trigger, ts string) {
+	if trigger == "" {
+		trigger = "auto"
+	}
+	t.messages = append(t.messages, chatMessage{Role: "system", Kind: "compact", Text: trigger, TS: ts})
+}
+
+// attachCompactSummary puts the summary the agent continues from on the
+// latest compact marker (it follows the boundary line).
+func (t *transcript) attachCompactSummary(summary string) {
+	for i := len(t.messages) - 1; i >= 0; i-- {
+		if t.messages[i].Kind == "compact" {
+			if t.messages[i].Body == "" {
+				t.messages[i].Body = clip(summary, 6000)
+			}
+			return
+		}
+	}
+}
+
+// compactions: how many times the context was compacted and the index of the
+// latest marker (-1 when never).
+func (t *transcript) compactions() (count, last int) {
+	last = -1
+	for i, m := range t.messages {
+		if m.Kind == "compact" {
+			count++
+			last = i
+		}
+	}
+	return count, last
 }
 
 // sessionUsage: what the session has spent, from each reply's `usage`.
@@ -721,9 +756,15 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			start = 0
 		}
 		out["messages"] = append([]chatMessage(nil), t.messages[start:]...)
+		compactions, lastCompact := t.compactions()
 		transcriptsMu.Unlock()
 		out["total"] = total
 		out["start"] = start
+		if compactions > 0 {
+			// the phone pages back to here by default; earlier is pre-compaction history
+			out["compacted_at"] = lastCompact
+			out["compactions"] = compactions
+		}
 		usage := t.usage
 		if usage.ContextLimit == 0 {
 			usage.ContextLimit = contextLimit(usage.Model)
@@ -1035,11 +1076,29 @@ func replyTicket(args json.RawMessage) (any, error) {
 	if json.Unmarshal(args, &a) != nil || !ticketIDPattern.MatchString(a.ID) || strings.TrimSpace(a.Text) == "" || len(a.Text) > 20000 {
 		return nil, errors.New("invalid reply")
 	}
-	root := repoRoot()
-	argv := []string{filepath.Join(root, "skills", "agent-collab", "ticket"), "reply", "--id", a.ID, "--decision", a.Text}
+	argv := []string{"reply", "--id", a.ID, "--decision", a.Text}
 	if a.Continue {
 		argv = append(argv, "--continue")
 	}
+	return runTicketCLI("ticket reply", argv)
+}
+
+// attachTicket opens the ticket's agent session in a tmux window of the
+// target repo (`ticket attach`, skills/agent-collab/lib/attach.py): the
+// escape hatch when a tappable answer is not enough.
+func attachTicket(args json.RawMessage) (any, error) {
+	var a struct {
+		ID string `json:"id"`
+	}
+	if json.Unmarshal(args, &a) != nil || !ticketIDPattern.MatchString(a.ID) {
+		return nil, errors.New("invalid attach")
+	}
+	return runTicketCLI("ticket attach", []string{"attach", "--id", a.ID})
+}
+
+// runTicketCLI runs skills/agent-collab/ticket and returns its last JSON line.
+func runTicketCLI(label string, args []string) (any, error) {
+	argv := append([]string{filepath.Join(repoRoot(), "skills", "agent-collab", "ticket")}, args...)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
@@ -1050,7 +1109,14 @@ func replyTicket(args json.RawMessage) (any, error) {
 		last = last[i+1:]
 	}
 	if err != nil {
-		return nil, fmt.Errorf("ticket reply: %s", clip(last, 300))
+		// attach prints {"ok":false,"error":…} on stdout; surface just the reason
+		var failed struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal([]byte(last), &failed) == nil && failed.Error != "" {
+			last = failed.Error
+		}
+		return nil, fmt.Errorf("%s: %s", label, clip(last, 300))
 	}
 	var result any
 	if json.Unmarshal([]byte(last), &result) != nil {

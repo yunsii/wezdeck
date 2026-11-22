@@ -80,6 +80,9 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 	}
 	if t != nil {
 		file.add("messages", itoa(int64(len(t.messages))))
+		if n, _ := t.compactions(); n > 0 {
+			file.add("compactions", itoa(int64(n)))
+		}
 		for _, m := range t.messages {
 			if m.TS != "" {
 				file.add("first_turn", m.TS)

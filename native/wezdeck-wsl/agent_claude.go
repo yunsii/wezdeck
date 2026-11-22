@@ -60,10 +60,15 @@ func lastClaudeAITitle(path string) string {
 
 func (t *transcript) feedLine(raw []byte) {
 	var line struct {
-		Type      string `json:"type"`
-		Timestamp string `json:"timestamp"`
-		IsMeta    bool   `json:"isMeta"`
-		Message   struct {
+		Type             string `json:"type"`
+		Subtype          string `json:"subtype"`
+		Timestamp        string `json:"timestamp"`
+		IsMeta           bool   `json:"isMeta"`
+		IsCompactSummary bool   `json:"isCompactSummary"`
+		CompactMetadata  struct {
+			Trigger string `json:"trigger"`
+		} `json:"compactMetadata"`
+		Message struct {
 			ID      string          `json:"id"`
 			Model   string          `json:"model"`
 			Content json.RawMessage `json:"content"`
@@ -95,6 +100,28 @@ func (t *transcript) feedLine(raw []byte) {
 		if human && strings.TrimSpace(a.Prompt) != "" {
 			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(a.Prompt, 8000), TS: line.Timestamp})
 		}
+		return
+	}
+	// Context compaction: a boundary line, then a user line carrying the
+	// summary. The boundary becomes a compact marker (the phone draws a
+	// divider and stops "load earlier" there); the summary rides on it
+	// instead of showing up as something the human typed.
+	if line.Type == "system" && line.Subtype == "compact_boundary" {
+		t.markCompact(line.CompactMetadata.Trigger, line.Timestamp)
+		return
+	}
+	if line.Type == "user" && line.IsCompactSummary {
+		var summary string
+		if json.Unmarshal(line.Message.Content, &summary) != nil {
+			var blocks []struct {
+				Text string `json:"text"`
+			}
+			_ = json.Unmarshal(line.Message.Content, &blocks)
+			for _, b := range blocks {
+				summary += b.Text
+			}
+		}
+		t.attachCompactSummary(summary)
 		return
 	}
 	if line.Type != "user" && line.Type != "assistant" {

@@ -223,7 +223,7 @@ func (r *relay) send(f relayFrame) {
 
 // dispatchRPC routes one request: reads (`ticket api` actions from the same
 // allowlist as the Runtime bridge, sessions, device registration) run
-// directly; writes (send / key / reply) must carry a signature from an
+// directly; writes (send / key / reply / attach / upload) must carry a signature from an
 // approved device (remote_session.go).
 func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	switch f.Action {
@@ -233,7 +233,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return sessionDetail(f.Args)
 	case "device.register":
 		return registerDevice(f.Args)
-	case "send", "key", "reply", "upload":
+	case "send", "key", "reply", "attach", "upload":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%s err=%q", via, f.Action, err)
@@ -253,6 +253,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			if err == nil {
 				return result, nil // one log row per finished file, not per chunk
 			}
+		case "attach":
+			result, err = attachTicket(w.Args)
 		default:
 			result, err = replyTicket(w.Args)
 		}

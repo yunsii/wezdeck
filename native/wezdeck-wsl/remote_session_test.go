@@ -534,3 +534,29 @@ func TestGrokAndCodexTranscriptsParseAlike(t *testing.T) {
 		t.Fatalf("codex usage: %+v", u)
 	}
 }
+
+func TestClaudeCompactionBecomesMarkerNotUserMessage(t *testing.T) {
+	data := []byte(strings.Join([]string{
+		`{"type":"user","timestamp":"t1","message":{"content":"before compaction"}}`,
+		`{"type":"system","subtype":"compact_boundary","timestamp":"t2","compactMetadata":{"trigger":"auto"}}`,
+		`{"type":"user","isCompactSummary":true,"timestamp":"t3","message":{"content":"This session is being continued from a previous conversation"}}`,
+		`{"type":"user","timestamp":"t4","message":{"content":"after compaction"}}`,
+	}, "\n"))
+	msgs := parseClaudeTranscript(data, 100)
+	if len(msgs) != 3 {
+		t.Fatalf("want 3 messages (prompt, marker, prompt), got %d: %+v", len(msgs), msgs)
+	}
+	m := msgs[1]
+	if m.Role != "system" || m.Kind != "compact" || m.Text != "auto" || !strings.HasPrefix(m.Body, "This session is being continued") {
+		t.Fatalf("compact marker wrong: %+v", m)
+	}
+	for _, x := range msgs {
+		if x.Role == "user" && strings.Contains(x.Text, "being continued") {
+			t.Fatalf("summary leaked as a user message")
+		}
+	}
+	tr := &transcript{messages: msgs}
+	if n, last := tr.compactions(); n != 1 || last != 1 {
+		t.Fatalf("compactions = %d,%d", n, last)
+	}
+}
