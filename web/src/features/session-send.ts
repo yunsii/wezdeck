@@ -57,7 +57,7 @@ export function useSessionWrites(id: string) {
       setRetryIn(0)
     }
   }
-  /** a confirmation key (1/2/3/Enter/Esc) */
+  /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c) */
   const run = (action: 'key', args: Record<string, unknown>) =>
     write(async () => {
       await remoteLink.write(action, { id, ...args })

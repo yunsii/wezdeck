@@ -7,7 +7,7 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/session-composer.tsx:165
+#: src/features/session-composer.tsx:171
 msgid ", "
 msgstr "、"
 
@@ -15,7 +15,7 @@ msgstr "、"
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:163
+#: src/features/session-composer.tsx:169
 msgid "{count} images"
 msgstr "{count} 张图片"
 
@@ -153,7 +153,7 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
-#: src/features/session-composer.tsx:208
+#: src/features/session-composer.tsx:297
 msgid "Attachments"
 msgstr "附件"
 
@@ -196,7 +196,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:469
+#: src/features/console-sessions.tsx:470
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -333,11 +333,11 @@ msgstr "上下文 {usedTokens} / {limitTokens}"
 msgid "Control"
 msgstr "控制"
 
-#: src/features/session-composer.tsx:85
+#: src/features/session-composer.tsx:91
 msgid "Copied"
 msgstr "已复制"
 
-#: src/features/session-composer.tsx:85
+#: src/features/session-composer.tsx:91
 msgid "Copy"
 msgstr "复制"
 
@@ -345,7 +345,7 @@ msgstr "复制"
 msgid "Copy command"
 msgstr "复制命令"
 
-#: src/features/session-composer.tsx:77
+#: src/features/session-composer.tsx:83
 msgid "Copy error"
 msgstr "复制错误信息"
 
@@ -358,6 +358,11 @@ msgstr "花费"
 #: src/features/console-collab.tsx:138
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
+
+#: src/features/console-sessions.tsx:430
+#: src/features/session-composer.tsx:204
+msgid "Ctrl+C"
+msgstr "Ctrl+C"
 
 #: src/features/console-shared.tsx:350
 msgid "Current sample is from the foreground WezTerm window."
@@ -396,13 +401,13 @@ msgstr "依赖"
 msgid "Development"
 msgstr "开发"
 
-#: src/features/session-composer.tsx:163
+#: src/features/session-composer.tsx:169
 msgid "diagnostics"
 msgstr "诊断数据"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:246
+#: src/features/session-composer.tsx:335
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -426,6 +431,10 @@ msgstr "已完成"
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去的位置。"
 
+#: src/features/session-composer.tsx:250
+msgid "Enable phone writing in Settings to send these keys"
+msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
+
 #: src/features/console-me.tsx:119
 msgid "Enable writing"
 msgstr "启用写入"
@@ -448,6 +457,7 @@ msgid "English"
 msgstr "English"
 
 #: src/features/console-sessions.tsx:428
+#: src/features/session-composer.tsx:202
 msgid "Enter"
 msgstr "回车"
 
@@ -460,6 +470,7 @@ msgid "Entries"
 msgstr "条目"
 
 #: src/features/console-sessions.tsx:429
+#: src/features/session-composer.tsx:203
 msgid "Esc"
 msgstr "Esc"
 
@@ -553,7 +564,7 @@ msgstr "空闲"
 msgid "idle, you can send"
 msgstr "空闲，可以发消息"
 
-#: src/features/session-composer.tsx:220
+#: src/features/session-composer.tsx:309
 msgid "Images"
 msgstr "图片"
 
@@ -626,6 +637,10 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 #: src/features/landing-page.tsx:92
 msgid "Keyboard first"
 msgstr "键盘优先"
+
+#: src/features/session-composer.tsx:241
+msgid "Keys"
+msgstr "快捷"
 
 #: src/features/remote-badge.tsx:72
 msgid "LAN"
@@ -711,11 +726,11 @@ msgstr "日志流"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:404
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:291
+#: src/features/session-composer.tsx:392
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -851,7 +866,7 @@ msgstr "需要看 Runtime 健康、输入法、Chrome 调试和 Rime 统计时�
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:489
+#: src/features/console-sessions.tsx:490
 msgid "Open settings"
 msgstr "去设置"
 
@@ -936,6 +951,11 @@ msgstr "初始消息组成"
 msgid "Queued messages"
 msgstr "排队中的消息"
 
+#: src/features/session-composer.tsx:233
+#: src/features/session-composer.tsx:255
+msgid "Quick keys"
+msgstr "快捷键"
+
 #: src/features/chat-thread.tsx:292
 msgid "ran {commands} commands"
 msgstr "运行 {commands} 条命令"
@@ -972,7 +992,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:257
+#: src/features/session-composer.tsx:346
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -1149,7 +1169,7 @@ msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-composer.tsx:236
+#: src/features/session-composer.tsx:325
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
@@ -1169,11 +1189,15 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:308
+#: src/features/session-composer.tsx:409
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:203
+#: src/features/session-composer.tsx:234
+msgid "Send Enter, Esc, Ctrl+C, or a choice key into the agent pane"
+msgstr "向 Agent 窗格发送 Enter、Esc、Ctrl+C 或选项键"
+
+#: src/features/session-composer.tsx:292
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "将附带尺寸、滚动状态和最近的页面事件；不含令牌，不含消息内容。"
 
@@ -1243,7 +1267,7 @@ msgstr "跳到内容"
 msgid "Socket"
 msgstr "套接字"
 
-#: src/features/console-sessions.tsx:476
+#: src/features/console-sessions.tsx:477
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -1274,6 +1298,14 @@ msgstr "已提交"
 #: src/features/console-me.tsx:233
 msgid "System"
 msgstr "跟随系统"
+
+#: src/features/session-composer.tsx:207
+msgid "Tab"
+msgstr "Tab"
+
+#: src/features/session-composer.tsx:251
+msgid "Tap to send into the agent pane"
+msgstr "点一下就会发到 Agent 窗格"
 
 #: src/features/console-sessions.tsx:419
 msgid "The agent asks:"
@@ -1322,7 +1354,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:470
+#: src/features/console-sessions.tsx:471
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -1432,8 +1464,8 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:142
-#: src/features/session-composer.tsx:153
+#: src/features/session-composer.tsx:148
+#: src/features/session-composer.tsx:159
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 

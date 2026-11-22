@@ -427,6 +427,7 @@ function SessionDetail({ id }: { id: string }) {
                 ['3', '3'],
                 ['Enter', t`Enter`],
                 ['Escape', t`Esc`],
+                ['C-c', t`Ctrl+C`],
               ].map(([key, label]) => (
                 <button
                   key={key}
@@ -494,7 +495,9 @@ function SessionDetail({ id }: { id: string }) {
         <ComposerBox
           composer={composer}
           blocked={sending || Boolean(blocked)}
+          keysDisabled={sending || device.state !== 'approved'}
           writable={device.state === 'approved'}
+          onKey={(key) => void run('key', { key })}
         />
       </form>
     </div>

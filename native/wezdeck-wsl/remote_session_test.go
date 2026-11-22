@@ -197,11 +197,14 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	if _, err := keyToSession(json.RawMessage(`{"id":"sess-1","key":"C-c"}`)); err == nil {
+	if _, err := keyToSession(json.RawMessage(`{"id":"sess-1","key":"C-z"}`)); err == nil {
 		t.Fatal("keys outside the allowlist must be refused")
 	}
 	if _, err := keyToSession(json.RawMessage(`{"id":"sess-1","key":"Escape"}`)); err != nil {
 		t.Fatalf("allowed key: %v", err)
+	}
+	if _, err := keyToSession(json.RawMessage(`{"id":"sess-1","key":"C-c"}`)); err != nil {
+		t.Fatalf("interrupt key: %v", err)
 	}
 }
 

@@ -1184,8 +1184,12 @@ func socketArgs(e attentionEntry) []string {
 	return []string{"-S", e.TmuxSocket}
 }
 
-// Keys a phone may press: enough to answer a permission / choice dialog.
-var allowedKeys = map[string]bool{"Enter": true, "Escape": true, "Up": true, "Down": true, "Tab": true, "1": true, "2": true, "3": true, "4": true}
+// Keys a phone may press: answer a permission / choice dialog, move in a
+// picker, or interrupt (C-c — Grok and many TUIs only stop on Ctrl+C).
+var allowedKeys = map[string]bool{
+	"Enter": true, "Escape": true, "Up": true, "Down": true, "Tab": true,
+	"1": true, "2": true, "3": true, "4": true, "C-c": true,
+}
 
 func keyToSession(args json.RawMessage) (any, error) {
 	var a struct {

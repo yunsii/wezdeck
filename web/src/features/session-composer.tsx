@@ -8,11 +8,17 @@ import {
   Check,
   Copy,
   ImagePlus,
+  Keyboard,
   SendHorizontal,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '#/components/ui/popover'
 import { diagnosticsSnapshot } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
@@ -189,9 +195,92 @@ type Composer = ReturnType<typeof useComposer>
 const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
 
+/** Host allowlist names (`remote_session.go` allowedKeys) → button label. */
+function useQuickKeys() {
+  const { t } = useLingui()
+  return [
+    { key: 'Enter', label: t`Enter` },
+    { key: 'Escape', label: t`Esc` },
+    { key: 'C-c', label: t`Ctrl+C` },
+    { key: 'Up', label: '↑' },
+    { key: 'Down', label: '↓' },
+    { key: 'Tab', label: t`Tab` },
+    { key: '1', label: '1' },
+    { key: '2', label: '2' },
+    { key: '3', label: '3' },
+    { key: '4', label: '4' },
+  ] as const
+}
+
 /**
- * Above the input: add images, toggle diagnostics, then the picked
- * thumbnails. What a tool opens renders above the row, away from the input.
+ * Always-on key pad for the session TUI: confirm, cancel, interrupt (Ctrl+C
+ * for Grok), and choice digits. Opens above the composer on a phone.
+ */
+function QuickKeys({
+  disabled,
+  onKey,
+}: {
+  disabled: boolean
+  onKey: (key: string) => void
+}) {
+  const { t } = useLingui()
+  const keys = useQuickKeys()
+  const [open, setOpen] = useState(false)
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        type="button"
+        aria-label={t`Quick keys`}
+        title={t`Send Enter, Esc, Ctrl+C, or a choice key into the agent pane`}
+        className={cn(
+          tool,
+          'bg-brand-surface text-brand-muted data-popup-open:bg-brand-text data-popup-open:text-brand-deck',
+        )}
+      >
+        <Keyboard size={14} aria-hidden />
+        {t`Keys`}
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        sideOffset={10}
+        className="w-[min(100vw-1.5rem,20rem)] rounded-[16px] border-brand-edge bg-brand-deck p-2 shadow-[0_-8px_28px_-12px_rgb(0_0_0/0.35)]"
+      >
+        <p className="px-1.5 pb-1.5 text-[11.5px] text-brand-label">
+          {disabled
+            ? t`Enable phone writing in Settings to send these keys`
+            : t`Tap to send into the agent pane`}
+        </p>
+        <div
+          role="menu"
+          aria-label={t`Quick keys`}
+          data-testid="session-quick-keys"
+          className="grid grid-cols-3 gap-1.5"
+        >
+          {keys.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              role="menuitem"
+              disabled={disabled}
+              onClick={() => {
+                onKey(key)
+                setOpen(false)
+              }}
+              className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-surface px-2 text-[15px] font-medium disabled:opacity-40"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/**
+ * Above the input: images + diagnostics (only when this phone may write),
+ * then the picked thumbnails. Quick keys sit in their own row so the entry
+ * stays visible even before writing is enabled (button disabled until then).
  */
 function Toolbar({ composer }: { composer: Composer }) {
   const { t } = useLingui()
@@ -270,16 +359,28 @@ function Toolbar({ composer }: { composer: Composer }) {
 export function ComposerBox({
   composer,
   blocked,
+  keysDisabled,
   writable,
+  onKey,
 }: {
   composer: Composer
   blocked: boolean
-  /** this phone may write: only then are attachments offered */
+  /** false while a confirmation is pending so Enter / Esc / Ctrl+C still work */
+  keysDisabled: boolean
+  /** this phone may write: only then are image / diagnostics attachments offered */
   writable: boolean
+  /** send an allowlisted key into the agent pane (Enter / Esc / Ctrl+C / …) */
+  onKey: (key: string) => void
 }) {
   const { t } = useLingui()
   return (
     <>
+      <div
+        data-testid="composer-keys-row"
+        className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+      >
+        <QuickKeys disabled={keysDisabled} onKey={onKey} />
+      </div>
       {writable ? <Toolbar composer={composer} /> : null}
       {composer.progress ? (
         <p role="status" className="px-1 text-xs text-brand-muted">

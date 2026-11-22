@@ -133,7 +133,14 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. The toolbar above the composer (图片 / 诊断) attaches
   the client diagnostics snapshot and screenshots (what a tool opens
-  renders above the row); the composer is set off from the thread by a
+  renders above the row); a **快捷 / Keys** chip above the composer opens a
+  pad of allowlisted pane keys (`Enter` / `Esc` / `Ctrl+C` / ↑↓ / `Tab` /
+  `1`–`4`) so the phone can confirm, cancel, or interrupt without typing
+  (host `key` RPC; `C-c` is required to stop Grok). The chip stays visible
+  even before phone writing is enabled (keys inside stay disabled with a
+  hint); the confirmation strip that appears when `waiting_kind` is set
+  still offers the same keys inline. The composer is
+  set off from the thread by a
   full-width hairline and an upward shadow, and the chat page uses 10 px
   side gutters (other pages 16 px). Reading back, the user's message that
   owns the content at the top of the screen pins there as one truncated

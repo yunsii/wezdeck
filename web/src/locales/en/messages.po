@@ -7,7 +7,7 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
-#: src/features/session-composer.tsx:165
+#: src/features/session-composer.tsx:171
 msgid ", "
 msgstr ", "
 
@@ -15,7 +15,7 @@ msgstr ", "
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:163
+#: src/features/session-composer.tsx:169
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -153,7 +153,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/session-composer.tsx:208
+#: src/features/session-composer.tsx:297
 msgid "Attachments"
 msgstr "Attachments"
 
@@ -196,7 +196,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:469
+#: src/features/console-sessions.tsx:470
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -333,11 +333,11 @@ msgstr "Context {usedTokens} / {limitTokens}"
 msgid "Control"
 msgstr "Control"
 
-#: src/features/session-composer.tsx:85
+#: src/features/session-composer.tsx:91
 msgid "Copied"
 msgstr "Copied"
 
-#: src/features/session-composer.tsx:85
+#: src/features/session-composer.tsx:91
 msgid "Copy"
 msgstr "Copy"
 
@@ -345,7 +345,7 @@ msgstr "Copy"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:77
+#: src/features/session-composer.tsx:83
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -358,6 +358,11 @@ msgstr "Cost"
 #: src/features/console-collab.tsx:138
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
+
+#: src/features/console-sessions.tsx:430
+#: src/features/session-composer.tsx:204
+msgid "Ctrl+C"
+msgstr "Ctrl+C"
 
 #: src/features/console-shared.tsx:350
 msgid "Current sample is from the foreground WezTerm window."
@@ -396,13 +401,13 @@ msgstr "Depends on"
 msgid "Development"
 msgstr "Development"
 
-#: src/features/session-composer.tsx:163
+#: src/features/session-composer.tsx:169
 msgid "diagnostics"
 msgstr "diagnostics"
 
 #: src/features/console-me.tsx:263
 #: src/features/console-shell.tsx:118
-#: src/features/session-composer.tsx:246
+#: src/features/session-composer.tsx:335
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -426,6 +431,10 @@ msgstr "Done"
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 
+#: src/features/session-composer.tsx:250
+msgid "Enable phone writing in Settings to send these keys"
+msgstr "Enable phone writing in Settings to send these keys"
+
 #: src/features/console-me.tsx:119
 msgid "Enable writing"
 msgstr "Enable writing"
@@ -448,6 +457,7 @@ msgid "English"
 msgstr "English"
 
 #: src/features/console-sessions.tsx:428
+#: src/features/session-composer.tsx:202
 msgid "Enter"
 msgstr "Enter"
 
@@ -460,6 +470,7 @@ msgid "Entries"
 msgstr "Entries"
 
 #: src/features/console-sessions.tsx:429
+#: src/features/session-composer.tsx:203
 msgid "Esc"
 msgstr "Esc"
 
@@ -553,7 +564,7 @@ msgstr "Idle"
 msgid "idle, you can send"
 msgstr "idle, you can send"
 
-#: src/features/session-composer.tsx:220
+#: src/features/session-composer.tsx:309
 msgid "Images"
 msgstr "Images"
 
@@ -626,6 +637,10 @@ msgstr "Keep every agent in a place you can return to."
 #: src/features/landing-page.tsx:92
 msgid "Keyboard first"
 msgstr "Keyboard first"
+
+#: src/features/session-composer.tsx:241
+msgid "Keys"
+msgstr "Keys"
 
 #: src/features/remote-badge.tsx:72
 msgid "LAN"
@@ -711,11 +726,11 @@ msgstr "Log stream"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:404
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:291
+#: src/features/session-composer.tsx:392
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -851,7 +866,7 @@ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, an
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:489
+#: src/features/console-sessions.tsx:490
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -936,6 +951,11 @@ msgstr "Prompt composition"
 msgid "Queued messages"
 msgstr "Queued messages"
 
+#: src/features/session-composer.tsx:233
+#: src/features/session-composer.tsx:255
+msgid "Quick keys"
+msgstr "Quick keys"
+
 #: src/features/chat-thread.tsx:292
 msgid "ran {commands} commands"
 msgstr "ran {commands} commands"
@@ -972,7 +992,7 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/session-composer.tsx:257
+#: src/features/session-composer.tsx:346
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -1149,7 +1169,7 @@ msgstr "Sample signals. The live console reads your local Runtime."
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-composer.tsx:236
+#: src/features/session-composer.tsx:325
 msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
@@ -1169,11 +1189,15 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:308
+#: src/features/session-composer.tsx:409
 msgid "Send"
 msgstr "Send"
 
-#: src/features/session-composer.tsx:203
+#: src/features/session-composer.tsx:234
+msgid "Send Enter, Esc, Ctrl+C, or a choice key into the agent pane"
+msgstr "Send Enter, Esc, Ctrl+C, or a choice key into the agent pane"
+
+#: src/features/session-composer.tsx:292
 msgid "Sends sizes, scroll state and recent page events; no tokens, no message text."
 msgstr "Sends sizes, scroll state and recent page events; no tokens, no message text."
 
@@ -1243,7 +1267,7 @@ msgstr "Skip to content"
 msgid "Socket"
 msgstr "Socket"
 
-#: src/features/console-sessions.tsx:476
+#: src/features/console-sessions.tsx:477
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -1274,6 +1298,14 @@ msgstr "submitted"
 #: src/features/console-me.tsx:233
 msgid "System"
 msgstr "System"
+
+#: src/features/session-composer.tsx:207
+msgid "Tab"
+msgstr "Tab"
+
+#: src/features/session-composer.tsx:251
+msgid "Tap to send into the agent pane"
+msgstr "Tap to send into the agent pane"
 
 #: src/features/console-sessions.tsx:419
 msgid "The agent asks:"
@@ -1322,7 +1354,7 @@ msgstr "This computer (local Runtime)"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:470
+#: src/features/console-sessions.tsx:471
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -1432,8 +1464,8 @@ msgstr "Up to date, {at}"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:142
-#: src/features/session-composer.tsx:153
+#: src/features/session-composer.tsx:148
+#: src/features/session-composer.tsx:159
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 

@@ -85,7 +85,7 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `session {id, limit}` | read | the transcript (Claude, Grok or Codex format, same locations) parsed **incrementally** (only bytes appended since the last read; cached per file) into user / assistant text and tool calls with details — edits (any tool whose input has old/new strings) as a `-`/`+` diff, whole-file writes as a preview, commands in full (judged by input shape, so the three agents' tools count alike), plus each call's result matched by `tool_use_id` (clipped); returns the last `limit` (default 60) with `total` and `start` for paging, and `usage` (model, context = last reply's full input vs the model's `max_input_tokens` from `~/.claude/cache/model-catalog`, turns, output, cache-read share; one reply spanning several lines counts once); also the last 60 screen lines (`capture-pane`) |
 | `send {id,text,attachments}` | write | paste into the session's own TUI (`load-buffer` + `paste-buffer -p`, then Enter); `attachments` are uploaded file names, appended as a `[手机附件]` block of host paths |
 | `upload {upload,seq,total,mime,data}` | write | one base64 chunk (≤ 64 KB decoded) of a phone attachment; the last chunk stores the file and answers its `name` |
-| `key {id,key}` | write | one key from `1 2 3 4 Enter Escape Up Down Tab` (permission / choice dialogs) |
+| `key {id,key}` | write | one key from `1 2 3 4 Enter Escape Up Down Tab C-c` (permission / choice dialogs, and Ctrl+C to interrupt — Grok and many TUIs only stop on that) |
 | `reply {id,text,continue}` | write | `ticket reply` with `TICKET_TRIGGER_SOURCE=mobile` |
 | `device.register` | read-ish | records a phone's public key as pending |
 
