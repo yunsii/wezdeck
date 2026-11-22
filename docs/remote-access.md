@@ -159,6 +159,56 @@ the 1M variants). Codex reports `rate_limits` in its `token_count` events
 too, but through the gateway used here they are all null, so Codex shows
 context only; Grok's transcript has no token counts.
 
+### Agent adapters and the session contract
+
+Everything that differs between agent CLIs stays on the host, behind one
+interface (`native/wezdeck-wsl/agent_adapter.go`); the relay, the transport
+and the web page only see the shared contract. Each agent is one file —
+`agent_claude.go`, `agent_grok.go`, `agent_codex.go` — implementing:
+
+| Method | Does |
+|---|---|
+| `Name()` | agent id the phone sees (`claude` / `grok` / `codex`) |
+| `Locate(home, id)` | the session's transcript path, or `""` |
+| `Feed(t, line)` | one transcript line → shared messages / usage |
+| `Title(path)` | agent-generated or `/rename`'d title |
+| `ToolKind(name, input)` | the shared kind of a tool call (below) |
+| `Capabilities()` | which agent-specific features the phone may offer |
+
+A new agent is one more file plus an entry in `agentAdapters`.
+
+**Contract** (the `session` reply; `v: 1`). Messages: `role` (`user` /
+`assistant` / `tool`), `text`, `ts`; tool calls add `tool` (the agent's own
+name, for display), **`kind`**, `body`, `result`, `file` / `added` /
+`removed` (counted from the input's shape) and `pending`. Session: `usage`
+(context, limit, output, cache), `account` (Claude limits), `elicitation`
+(Ask questions) and the plan-review flag, `reference`, and
+**`capabilities`**:
+
+| Field | Meaning | claude / grok / codex |
+|---|---|---|
+| `ask_options` | structured questions with tappable options | – / ✓ / – |
+| `plan_review` | a plan waiting for approve / revise / exit | – / ✓ / – |
+| `usage` | where context / spend comes from | `transcript` / `none` / `token_count` |
+| `account_limits` | 5 h / 7 d limits from the status line | ✓ / – / – |
+| `mid_turn_input` | what a message sent mid-turn does | `queue` / `queue` / `steer` |
+| `title` | the agent names sessions, honours `/rename` | ✓ / ✓ / – |
+
+Tool `kind`: `command`, `read`, `edit`, `write`, `search`, `task`, `todo`,
+`web`, `ask`, `other` — from each adapter's name table, falling back to the
+input's shape (edit pairs → edit, whole content → write, a command →
+command, a file path → read), so an unknown tool still lands sensibly. The
+phone's run digest (files changed, commands run, files read) counts kinds,
+not names — Grok's `run_terminal_command` / `search_replace` / `read_file`
+used to fall through a Claude-name filter and showed only a call count.
+
+Versioning: changes are additive (new fields, new kind or capability
+values); pages ignore what they do not know and fall back when a field is
+missing (the digest maps Claude names when `kind` is absent). A change of
+meaning bumps `v`. Writes are still per-agent keys today; the next step is
+intents (`answer`, `approve`, `interrupt`) that each adapter turns into its
+agent's keys, so the page never encodes an agent's key sequence.
+
 ## Writes: device keys
 
 The phone creates an ECDSA P-256 key in the browser (non-extractable,

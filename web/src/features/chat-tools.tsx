@@ -191,6 +191,19 @@ export function ToolGroup({
 }
 
 /** What a run of tool calls did, readable without expanding it. */
+/** Claude tool names, for hosts older than the shared `kind` field. */
+const LEGACY_KINDS: Partial<Record<string, string>> = {
+  Bash: 'command',
+  Read: 'read',
+  Edit: 'edit',
+  MultiEdit: 'edit',
+  Write: 'write',
+}
+
+/** The shared tool kind from the host's agent adapter (agent_adapter.go). */
+const kindOf = (tool: Message) =>
+  tool.kind ?? LEGACY_KINDS[tool.tool ?? ''] ?? 'other'
+
 function toolDigest(tools: Array<Message>) {
   const byFile = new Map<
     string,
@@ -199,12 +212,10 @@ function toolDigest(tools: Array<Message>) {
   let commands = 0
   let reads = 0
   for (const tool of tools) {
-    if (tool.tool === 'Bash') commands++
-    else if (tool.tool === 'Read') reads++
-    else if (
-      tool.file &&
-      ['Edit', 'MultiEdit', 'Write'].includes(tool.tool ?? '')
-    ) {
+    const kind = kindOf(tool)
+    if (kind === 'command') commands++
+    else if (kind === 'read') reads++
+    else if (tool.file && (kind === 'edit' || kind === 'write')) {
       const entry = byFile.get(tool.file) ?? {
         path: tool.file,
         name: tool.file.split('/').at(-1) ?? tool.file,

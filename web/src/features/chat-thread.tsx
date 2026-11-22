@@ -22,6 +22,8 @@ export type Message = {
   removed?: number
   /** the call went out and its result has not come back yet */
   pending?: boolean
+  /** shared tool kind: command | read | edit | write | search | task | todo | web | ask | other */
+  kind?: string
 }
 
 export type Pending = { text: string; at: number; note?: string }

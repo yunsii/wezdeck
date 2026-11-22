@@ -89,6 +89,16 @@ export type AccountLimits = {
   at: number
 }
 
+/** What the phone may offer for this agent (host agent_adapter.go agentCaps). */
+export type AgentCapabilities = {
+  ask_options: boolean
+  plan_review: boolean
+  usage: 'transcript' | 'token_count' | 'none'
+  account_limits: boolean
+  mid_turn_input: 'queue' | 'steer'
+  title: boolean
+}
+
 export type Detail = {
   id: string
   name?: string
@@ -99,6 +109,7 @@ export type Detail = {
   account?: AccountLimits
   /** host-built block an agent can act on (remote_reference.go) */
   reference?: string
+  capabilities?: AgentCapabilities
   total?: number
   start?: number
   agent?: string

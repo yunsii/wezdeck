@@ -392,6 +392,9 @@ type chatMessage struct {
 	// Pending: the call has gone out and no result came back yet (the phone
 	// shows it as running while the session is busy)
 	Pending bool `json:"pending,omitempty"`
+	// Kind: the shared tool kind (agent_adapter.go toolKind*), so the phone
+	// summarises a run without knowing each agent's tool names.
+	Kind string `json:"kind,omitempty"`
 	// File / Added / Removed: what a file tool touched, counted on the full
 	// input (Body is clipped for the phone).
 	File    string `json:"file,omitempty"`
@@ -562,6 +565,14 @@ func (t *transcript) feed(data []byte) {
 	}
 }
 
+// toolKind asks this transcript's adapter for the shared kind of a tool call.
+func (t *transcript) toolKind(name string, input map[string]any) string {
+	if a := adapterFor(t.format); a != nil {
+		return a.ToolKind(name, input)
+	}
+	return toolKindByName(nil, name, input)
+}
+
 func (t *transcript) addTool(id, name, argsJSON, ts string) {
 	var input map[string]any
 	if json.Unmarshal([]byte(argsJSON), &input) != nil {
@@ -569,7 +580,8 @@ func (t *transcript) addTool(id, name, argsJSON, ts string) {
 	}
 	file, added, removed := toolStats(name, input)
 	t.messages = append(t.messages, chatMessage{Role: "tool", Tool: name, Text: toolSummary(name, input),
-		Body: toolBody(name, input), TS: ts, File: file, Added: added, Removed: removed})
+		Body: toolBody(name, input), TS: ts, File: file, Added: added, Removed: removed,
+		Kind: t.toolKind(name, input)})
 	if id != "" {
 		t.tools[id] = len(t.messages) - 1
 		t.messages[len(t.messages)-1].Pending = true
@@ -715,6 +727,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			usage.ContextLimit = contextLimit(usage.Model)
 		}
 		out["usage"] = usage
+		if a := adapterFor(agent); a != nil {
+			out["capabilities"] = a.Capabilities()
+		}
 		if agent == "claude" {
 			if size := claudeContextSize(e.SessionID); size > 0 {
 				usage.ContextLimit = size
