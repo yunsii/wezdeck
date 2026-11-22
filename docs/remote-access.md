@@ -428,6 +428,15 @@ lines the cdp tests need (`WEZDECK_TEST_ATTENTION`, `WEZDECK_TEST_DEVICES`,
 Hand-typed stacks twice forgot `WEZDECK_REMOTE_UPLOADS` and wrote test
 uploads into the real uploads dir — use the script.
 
+Versions are source fingerprints (`scripts/dev/source-fingerprint.sh DIR`:
+the last commit touching it, `-dirty-<hash>` with uncommitted edits; web
+tests excluded): the stack builds the web with it as the build id, and
+`build.sh` stamps it into the relay, which logs `event=connected
+version=…`. Before any cdp test, `web/tests/version.setup.ts` compares the
+served `/build.json` and the test relay's version with the working tree and
+stops with "restart the stack" on a mismatch — a stale stack once passed for
+a real bug (`WEZDECK_SKIP_VERSION_CHECK=1` to probe an old build on purpose).
+
 ## Operate
 
 ```bash
@@ -435,8 +444,16 @@ scripts/dev/install-remote-relay.sh               # tokens (once) + build + user
 scripts/dev/install-remote-relay.sh --push-secrets  # after creating / rotating tokens
 scripts/dev/install-remote-relay.sh --pair        # pairing link + QR for the phone
 scripts/dev/install-remote-relay.sh --check       # unit state + /relay/health presence
-cd web && corepack pnpm run deploy                # vite build + wrangler deploy
+scripts/dev/wezdeck-release.sh                    # ship a committed round (below)
 ```
+
+`wezdeck-release.sh` runs push, relay and web **in parallel** (logs under
+`~/.local/state/wezdeck/release/<stamp>/`, one summary row per run in
+`release.log`). A part whose running version already equals its fingerprint
+is skipped — a web-only round does not restart the relay and drop phone
+links; `--only push|relay|web`, `--force`. It refuses uncommitted tracked
+changes. A deploy that succeeds is done; the version check belongs before
+the tests, not after the deploy.
 
 Logs: `category=relay` rows (`connected` / `disconnected` / `rtc_state` /
 `rtc_answer` / `rpc via=webrtc|websocket ms err`) in

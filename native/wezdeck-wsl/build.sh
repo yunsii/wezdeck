@@ -4,8 +4,8 @@
 # native/wezdeck-wsl/bin/wezdeck-wsl.
 #
 # Local Go build only (no release tarball yet). CGO_ENABLED=0 + GOOS=linux
-# for a fully static ELF. Skip-if-current when sources are not newer than
-# the existing binary.
+# for a fully static ELF. Skip-if-current when the source fingerprint
+# (scripts/dev/source-fingerprint.sh) equals the one stamped in bin/.version.
 #
 # A missing binary makes GET /api/v1/wsl time out and degrades every
 # Linux-owned snapshot (workspaces / wakatime / worktree status) on the
@@ -39,24 +39,23 @@ go_bin="$(resolve_go)" || {
 
 mkdir -p "$script_dir/bin"
 
-if [[ -x "$out_path" ]]; then
-  newer_src="$(
-    cd "$script_dir"
-    find . -maxdepth 4 \( -name '*.go' -o -name 'go.mod' -o -name 'go.sum' \) \
-      -not -path './bin/*' -newer "$out_path" -print -quit 2>/dev/null
-  )"
-  if [[ -z "$newer_src" ]]; then
-    printf 'build-wezdeck-wsl: up-to-date %s (%s) — skipping go build\n' \
-      "$out_path" \
-      "$(stat -c '%s bytes' "$out_path" 2>/dev/null || echo 'unknown size')"
-    exit 0
-  fi
+# version (version.go): the source fingerprint — last commit touching this
+# tree, plus a hash of uncommitted edits — so any edit rebuilds and the cdp
+# tests / release can compare it with what the relay reports
+version="$("$script_dir/../../scripts/dev/source-fingerprint.sh" native/wezdeck-wsl 2>/dev/null || echo dev)"
+stamp_path="$script_dir/bin/.version"
+
+if [[ -x "$out_path" && "$version" != dev && "$(cat "$stamp_path" 2>/dev/null)" == "$version" ]]; then
+  printf 'build-wezdeck-wsl: up-to-date %s (version %s) — skipping go build\n' "$out_path" "$version"
+  exit 0
 fi
 
 (
   cd "$script_dir"
-  CGO_ENABLED=0 GOOS=linux "$go_bin" build -trimpath -ldflags='-s -w' -o "$out_path" .
+  CGO_ENABLED=0 GOOS=linux "$go_bin" build -trimpath \
+    -ldflags="-s -w -X main.buildVersion=$version" -o "$out_path" .
 )
+printf '%s\n' "$version" >"$stamp_path"
 printf 'build-wezdeck-wsl: wrote %s (%s) via local go build using %s\n' \
   "$out_path" \
   "$(stat -c '%s bytes' "$out_path" 2>/dev/null || echo 'unknown size')" \

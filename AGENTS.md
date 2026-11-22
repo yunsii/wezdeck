@@ -119,7 +119,8 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 - Viewing collab tickets from a phone / tablet anywhere (`wezdeck.yuns.love`
   on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
   DataChannel first / WebSocket relay fallback, link badge + latency,
-  pairing tokens, `install-remote-relay.sh`):
+  pairing tokens, `install-remote-relay.sh`, shipping a round with
+  `wezdeck-release.sh`, the cdp tests' source-version precheck):
   Read [`docs/remote-access.md`](docs/remote-access.md).
 - Driving this PC from a Pad / phone remote client feels laggy (layered
   triage: remote link → office side → home router / client Wi‑Fi → host;

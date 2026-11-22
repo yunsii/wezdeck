@@ -27,6 +27,7 @@ export WEZDECK_TEST_DEVICES=$STATE/devices.json
 export WEZDECK_TEST_UPLOADS=$STATE/uploads
 export WEZDECK_TEST_CLAUDE_STATUS=$STATE/claude-status
 export WEZDECK_RELAY_CONTROL=$STATE/relay.sock
+export WEZDECK_TEST_STACK_DIR=$STATE
 EOF
 }
 
@@ -54,7 +55,10 @@ start() {
   mkdir -p "$STATE/uploads" "$STATE/claude-status" "$STATE/relaylog"
   [[ -f "$STATE/attention.json" ]] || echo '{"entries":{}}' >"$STATE/attention.json"
   PATH="$HOME/.local/go/bin:$PATH" "$REPO/native/wezdeck-wsl/build.sh" >/dev/null 2>&1
-  (cd "$REPO/web" && corepack pnpm exec vite build >"$STATE/build.log" 2>&1)
+  # build id = web/ source fingerprint: the cdp tests compare it with the
+  # sources they test (web/tests/version.setup.ts) and refuse a stale stack
+  (cd "$REPO/web" && WEZDECK_BUILD_ID="$("$REPO/scripts/dev/source-fingerprint.sh" web)" \
+    corepack pnpm exec vite build >"$STATE/build.log" 2>&1)
   # the whole subshell is redirected and backgrounded: an un-redirected
   # backgrounded `cd && cmd` keeps $(…) callers' pipe open forever
   (cd "$REPO/web" && exec env VITE_WEZDECK_RUNTIME_URL=http://127.0.0.1:9 \

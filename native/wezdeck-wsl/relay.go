@@ -146,7 +146,7 @@ func (r *relay) session(url, token string) error {
 	}()
 	host, _ := os.Hostname()
 	r.send(relayFrame{T: "hello", Host: host, Ver: "1"})
-	r.logf("connected", "url=%s", url)
+	r.logf("connected", "url=%s version=%s", url, buildVersion)
 
 	// Keepalive: the DO answers the literal "ping" with "pong" without waking
 	// (setWebSocketAutoResponse). Any inbound frame counts as liveness.
