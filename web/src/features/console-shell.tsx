@@ -21,7 +21,7 @@ import {
 } from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
-import { useCollab } from '#/lib/collab-query'
+import { useTicketSync } from '#/lib/ticket-sync'
 import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
@@ -142,15 +142,15 @@ function useSections() {
 
 /**
  * Section switches have no transition, so the next section must be ready:
- * keep the ticket list warm (the shell's sessions list already is; both
- * persist to IndexedDB) and load every section's route code once idle.
+ * the ticket list is kept warm by useTicketSync (the sessions list by the
+ * shell's badge query; both persist to IndexedDB); this loads every
+ * section's route code once idle.
  */
 function useWarmSections(
   sections: Array<Section>,
   locale: 'en' | 'zh' | undefined,
 ) {
   const router = useRouter()
-  useCollab('list', { limit: 200 }, { refetchInterval: 60_000 })
   const key = sections.join(' ')
   useEffect(() => {
     const preload = () => {
@@ -181,7 +181,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const current = sectionOf(location)
   const localeParam = locale === 'en' ? undefined : locale
   const { mode, sidebar, tabs } = useSections()
-  const health = useCollab('health', {}, { refetchInterval: 15_000 })
+  // drives the ticket list for every console page (lib/ticket-sync)
+  const health = useTicketSync()
   // what waits on you, on the tab that holds it
   const sessions = useSessions()
   const badges: Partial<Record<Section, number>> = {

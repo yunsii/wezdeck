@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { useGoBack } from '#/lib/go-back'
-import { useCollab } from '#/lib/collab-query'
+import { useTicketHealth, useTicketList } from '#/lib/ticket-sync'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
 import { useIsWide } from '#/lib/use-media'
@@ -241,9 +241,9 @@ export function TicketsView({
     params: { locale: localeParam },
   })
   const wide = useIsWide()
-  const health = useCollab('health', {}, { refetchInterval: 15_000 })
+  const health = useTicketHealth()
   const poll = (health.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS
-  const list = useCollab('list', { limit: 200 }, { refetchInterval: poll })
+  const list = useTicketList()
   const [chosen, setChosen] = useState<TicketFilter>('active')
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')

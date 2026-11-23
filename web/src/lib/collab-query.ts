@@ -16,7 +16,11 @@ export function collabKey(command: CollabCommand, params: Params = {}) {
 export function useCollab<TCommand extends CollabCommand>(
   command: TCommand,
   params: Params = {},
-  options: { refetchInterval?: number; enabled?: boolean } = {},
+  options: {
+    refetchInterval?: number
+    enabled?: boolean
+    staleTime?: number
+  } = {},
 ) {
   const client = useQueryClient()
   const key = collabKey(command, params)
@@ -31,5 +35,6 @@ export function useCollab<TCommand extends CollabCommand>(
     },
     enabled: options.enabled ?? typeof window !== 'undefined',
     refetchInterval: options.refetchInterval,
+    staleTime: options.staleTime,
   })
 }

@@ -81,7 +81,12 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): the
    list sticky on the left (search above it), the ticket beside it in the
    page scroll, j / k move through the list (not while typing or a sheet is
-   open), rows replace instead of push. A run opens in a bottom
+   open), rows replace instead of push. The ticket list syncs on change
+   (`lib/ticket-sync.ts`): the shell polls collab health (~380 B; 3 s while a
+   run is in flight, 15 s otherwise) and refetches the list (~45 KB) when its
+   events head, counts or runs move, with a backstop of 10 s while running /
+   5 min idle; pages read that cache without timers of their own, so going
+   back to 工单 refetches nothing. A run opens in a bottom
    sheet (transcript, prompt). Connection chip in the top bar opens a
    sheet (mode, path, RTT, last direct failure, host since, mic grant).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android

@@ -10,7 +10,7 @@ import { Link } from '@tanstack/react-router'
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 
-import { useCollab } from '#/lib/collab-query'
+import { useTicketList } from '#/lib/ticket-sync'
 import { getCollab } from '#/lib/runtime-client'
 import type { CollabTicket } from '#/lib/runtime-contract'
 import { useLocale } from '#/lib/locale-context'
@@ -171,7 +171,7 @@ export function ConsoleActivityPage() {
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
   const events = useLatestEvents()
-  const list = useCollab('list', { limit: 200 }, { refetchInterval: 60_000 })
+  const list = useTicketList()
   const sentence = useSentence()
   // the day is the heading above, so a row only needs its time
   const clock = (iso?: string | null) =>

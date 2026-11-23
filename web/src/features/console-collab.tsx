@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Field, FieldList } from '#/components/ui/field'
 import { Select } from '#/components/ui/select'
 import { useCollab } from '#/lib/collab-query'
+import { useTicketHealth } from '#/lib/ticket-sync'
 import { useIsWide } from '#/lib/use-media'
 import type {
   CollabShow,
@@ -53,7 +54,7 @@ export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
 export function ConsoleCollabPage() {
   const { t } = useLingui()
   const [window, setWindow] = useState('24h')
-  const health = useCollab('health', {}, { refetchInterval: 15_000 })
+  const health = useTicketHealth()
   const metrics = useCollab('metrics', { window }, { refetchInterval: 30_000 })
   const band = (
     <MetricsBand
