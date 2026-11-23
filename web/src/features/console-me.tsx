@@ -28,7 +28,7 @@ import { UsageCard } from './console-usage'
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex min-h-9 items-center justify-between gap-3 text-sm">
+    <div className="flex min-h-9 items-baseline justify-between gap-3 py-2 text-sm">
       <span className="text-brand-label">{label}</span>
       <span className="min-w-0 truncate text-right font-mono text-xs">
         {value}
@@ -77,11 +77,11 @@ function UpdateCheck() {
   // the right — not a big outlined button
   return (
     <div className="grid gap-1">
-      <div className="flex min-h-9 items-center justify-between gap-3 text-sm">
+      <div className="flex min-h-9 items-baseline justify-between gap-3 py-2 text-sm">
         <span className="shrink-0 whitespace-nowrap text-brand-label">
           {t`Version`}
         </span>
-        <span className="flex min-w-0 items-center gap-3">
+        <span className="flex min-w-0 items-baseline gap-3">
           <span className="min-w-0 truncate font-mono text-xs">{buildId}</span>
           <Button
             variant="plain"
