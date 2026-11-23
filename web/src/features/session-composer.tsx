@@ -175,22 +175,19 @@ const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
 
 /**
- * The three keys any agent TUI understands, plus Claude Code's Ctrl+B
- * (move the running command or agent to the background). At the desk that
- * takes Ctrl+B twice — tmux's prefix eats the first; send-keys reaches the
- * pane directly, so one is enough here. Choices (digits, arrows, Tab) are
- * not here: questions and plans get their own tap targets on the page
- * (session-elicitation.tsx, permission keys), which is where they belong.
+ * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
+ * are not here: questions and plans get their own tap targets on the page
+ * (session-elicitation.tsx, permission keys), which is where they belong;
+ * so does Claude Code's Ctrl+B — 转到后台 on the working line, shown only
+ * while a foreground command or subagent runs (chat-thread.tsx).
  */
-function useQuickKeys(claude: boolean) {
+function useQuickKeys() {
   const { t } = useLingui()
-  const keys = [
+  return [
     { key: 'Enter', label: 'Enter', hint: t`confirm` },
     { key: 'Escape', label: 'Esc', hint: t`cancel` },
     { key: 'C-c', label: 'Ctrl+C', hint: t`interrupt` },
-  ]
-  if (claude) keys.push({ key: 'C-b', label: 'Ctrl+B', hint: t`to background` })
-  return keys
+  ] as const
 }
 
 /**
@@ -200,18 +197,15 @@ function useQuickKeys(claude: boolean) {
  */
 function KeyPanel({
   disabled,
-  claude,
   onKey,
   onClose,
 }: {
   disabled: boolean
-  /** a Claude session: add Ctrl+B (to background) */
-  claude: boolean
   onKey: (key: string) => void
   onClose: () => void
 }) {
   const { t } = useLingui()
-  const keys = useQuickKeys(claude)
+  const keys = useQuickKeys()
   return (
     <div
       data-write
@@ -237,10 +231,7 @@ function KeyPanel({
         role="group"
         aria-label={t`Quick keys`}
         data-testid="session-quick-keys"
-        className={cn(
-          'grid gap-1.5',
-          keys.length > 3 ? 'grid-cols-4' : 'grid-cols-3',
-        )}
+        className="grid grid-cols-3 gap-1.5"
       >
         {keys.map(({ key, label, hint }) => (
           <Button
@@ -456,7 +447,6 @@ export function ComposerBox({
       {panel === 'keys' ? (
         <KeyPanel
           disabled={keysDisabled}
-          claude={Boolean(commands)}
           onKey={onKey}
           onClose={() => setPanel(null)}
         />

@@ -428,6 +428,10 @@ type chatMessage struct {
 	// Pending: the call has gone out and no result came back yet (the phone
 	// shows it as running while the session is busy)
 	Pending bool `json:"pending,omitempty"`
+	// Background: the call asked to run in the background
+	// (run_in_background) — a pending foreground Bash / Agent call is what
+	// the phone offers to move there (Claude Code's Ctrl+B)
+	Background bool `json:"background,omitempty"`
 	// Kind: the shared tool kind (agent_adapter.go toolKind*), so the phone
 	// summarises a run without knowing each agent's tool names.
 	Kind string `json:"kind,omitempty"`

@@ -9,6 +9,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
 import { cn } from '#/lib/utils'
 import { Led } from '#/components/deck/led'
+import { Button } from '#/components/ui/button'
 import { ChatMarkdown } from './chat-markdown'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup } from './chat-tools'
@@ -28,6 +29,8 @@ export type Message = {
   removed?: number
   /** the call went out and its result has not come back yet */
   pending?: boolean
+  /** the call asked to run in the background (run_in_background) */
+  background?: boolean
   /** shared tool kind: command | read | edit | write | search | task | todo | web | ask | other */
   kind?: string
   /** refs to images embedded in the transcript (session.image) */
@@ -240,6 +243,24 @@ export function settleCursor(
   return cursor
 }
 
+/** Claude Code tools that Ctrl+B moves to the background while they run. */
+const BACKGROUNDABLE = new Set(['Bash', 'Agent', 'Task'])
+
+/**
+ * The agent waits on a foreground command or subagent: the newest call is
+ * still out, is one Ctrl+B can move to the background, and did not ask to
+ * run there already. That is when the working line offers 转到后台.
+ */
+export function foregroundCall(messages: Array<Message>) {
+  const last = messages.at(-1)
+  return Boolean(
+    last?.role === 'tool' &&
+    last.pending &&
+    !last.background &&
+    BACKGROUNDABLE.has(last.tool ?? ''),
+  )
+}
+
 /** Consecutive tool calls collapse into one expandable line. */
 export function group(messages: Array<Message>) {
   const out: Array<Item> = []
@@ -270,7 +291,14 @@ export type Activity = {
  * call is out (it used to swap between a dots bubble and a bare line on
  * every tool call).
  */
-function Typing({ activity }: { activity?: Activity }) {
+function Typing({
+  activity,
+  onBackground,
+}: {
+  activity?: Activity
+  /** a foreground command / subagent runs: send Ctrl+B (to background) */
+  onBackground?: () => void
+}) {
   const { t } = useLingui()
   const compacting = activity?.compactSince !== undefined
   const from = activity?.compactSince ?? activity?.since
@@ -285,13 +313,13 @@ function Typing({ activity }: { activity?: Activity }) {
     .filter(Boolean)
     .join(' · ')
   return (
-    <div
-      className="chat-in flex justify-start"
-      role="status"
-      aria-label={detail ? `${label} ${detail}` : t`The agent is working`}
-      data-activity={compacting ? 'compacting' : 'working'}
-    >
-      <div className="flex min-w-0 items-center gap-2 px-1 py-0.5">
+    <div className="chat-in flex min-w-0 items-center gap-2">
+      <div
+        role="status"
+        aria-label={detail ? `${label} ${detail}` : t`The agent is working`}
+        data-activity={compacting ? 'compacting' : 'working'}
+        className="flex min-w-0 flex-1 items-center gap-2 px-1 py-0.5"
+      >
         <Led
           tone={compacting ? 'waiting' : 'running'}
           size={9}
@@ -308,6 +336,19 @@ function Typing({ activity }: { activity?: Activity }) {
           ) : null}
         </span>
       </div>
+      {onBackground ? (
+        <Button
+          variant="plain"
+          type="button"
+          data-write
+          data-testid="to-background"
+          title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
+          onClick={onBackground}
+          className="inline-flex h-7 shrink-0 items-center rounded-full bg-brand-surface px-2.5 text-[12px] text-brand-text"
+        >
+          {t`Run in background`}
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -318,8 +359,11 @@ export function ChatThread({
   busy,
   activity,
   pending = [],
+  onBackground,
   sessionId = '',
 }: {
+  /** Claude, writable: Ctrl+B into the pane (shown while a foreground call runs) */
+  onBackground?: () => void
   messages: Array<Message>
   /** sent from the phone (unsettled): settled here against what is shown */
   pending?: Array<Pending>
@@ -413,7 +457,14 @@ export function ChatThread({
       />
       {/* last: the working line says what the agent does now, below
           everything in the thread — queued messages included */}
-      {busy && effective >= end ? <Typing activity={activity} /> : null}
+      {busy && effective >= end ? (
+        <Typing
+          activity={activity}
+          onBackground={
+            onBackground && foregroundCall(messages) ? onBackground : undefined
+          }
+        />
+      ) : null}
     </SessionIdContext.Provider>
   )
 }

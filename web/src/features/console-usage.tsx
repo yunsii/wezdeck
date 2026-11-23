@@ -19,12 +19,15 @@ function Meter({
   used,
   limit,
   unit = '',
+  format = fmt,
   hint,
 }: {
   label: string
   used: number | null
   limit: number
   unit?: string
+  /** how used / limit read (default: a grouped number) */
+  format?: (n: number) => string
   hint?: string
 }) {
   const share = used === null ? 0 : Math.min(100, (used / limit) * 100)
@@ -43,9 +46,9 @@ function Meter({
         <span className="min-w-0">{label}</span>
         <span className="shrink-0 whitespace-nowrap text-brand-label tabular-nums">
           <span className="text-brand-text">
-            {used === null ? '—' : fmt(used)}
+            {used === null ? '—' : format(used)}
           </span>{' '}
-          / {fmt(limit)}
+          / {format(limit)}
           {unit}
         </span>
       </div>
@@ -63,9 +66,31 @@ function Meter({
   )
 }
 
+/** the relay object is billed at a fixed 128 MB: GB-s ÷ 0.125 = seconds active */
+const RELAY_GB = 0.125
+
+/** seconds as people say them: 9 秒 / 12 分钟 / 28.9 小时 */
+function useDuration() {
+  const { t } = useLingui()
+  return (gbs: number) => {
+    const s = gbs / RELAY_GB
+    if (s < 60) {
+      const n = Math.round(s)
+      return t`${n} s`
+    }
+    if (s < 3600) {
+      const n = Math.round(s / 60)
+      return t`${n} min`
+    }
+    const n = (s / 3600).toFixed(1)
+    return t`${n} h`
+  }
+}
+
 export function UsageCard() {
   const { t } = useLingui()
   const ago = useAgo()
+  const duration = useDuration()
   const usage = useQuery({
     queryKey: ['remote', 'usage'],
     enabled: typeof window !== 'undefined' && Boolean(remoteLink.token()),
@@ -87,7 +112,7 @@ export function UsageCard() {
   const wsOut = fmt(doUnit.wsOut ?? 0)
   const billable = fmt(billableIn ?? 0)
   const other = fmt(doUnit.otherRequests ?? 0)
-  const active = fmt(doUnit.activeSeconds ?? 0)
+  const gbs = `${fmt(doUnit.durationGbs ?? 0)} / ${fmt(u.limits.doDurationGbsPerDay)}`
   return (
     <div className="grid gap-3">
       {u.analytics === 'unconfigured' ? (
@@ -120,12 +145,8 @@ export function UsageCard() {
         label={t`Relay duration`}
         used={doUnit.durationGbs}
         limit={u.limits.doDurationGbsPerDay}
-        unit=" GB-s"
-        hint={
-          doUnit.activeSeconds === null
-            ? undefined
-            : t`Active ${active} s × 128 MB; an idle relay hibernates and is not counted.`
-        }
+        format={duration}
+        hint={t`Time the relay was busy. Cloudflare bills it as 128 MB × seconds (${gbs} GB-s); an idle relay hibernates and is not counted.`}
       />
       <p className="text-[11.5px] text-brand-label">
         {t`Today (UTC) ${day}, updated ${at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed.`}

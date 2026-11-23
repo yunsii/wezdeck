@@ -319,6 +319,19 @@ function useSessionDetail(id: string) {
   return { detail, data: detail.data, pagingIn, loadEarlier }
 }
 
+/**
+ * Claude Code's Ctrl+B (the running foreground command / subagent goes on
+ * in the background), offered on the working line when this device writes.
+ */
+const toBackground = (
+  data: Detail | undefined,
+  device: string,
+  run: (action: 'key', args: Record<string, unknown>) => Promise<boolean>,
+) =>
+  data?.agent === 'claude' && device === 'approved'
+    ? () => void run('key', { key: 'C-b' })
+    : undefined
+
 /** absolute index just past the newest message the page has */
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
@@ -461,6 +474,7 @@ export function SessionDetail({ id }: { id: string }) {
                   : undefined
               }
               pending={pendingRaw}
+              onBackground={toBackground(data, device.state, run)}
               sessionId={id}
             />
           </>

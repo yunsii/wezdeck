@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:463
+#: src/features/chat-thread.tsx:514
 msgid "· summary"
 msgstr "· summary"
 
@@ -63,6 +63,18 @@ msgstr "{hours} h ago"
 msgid "{minutes} min ago"
 msgstr "{minutes} min ago"
 
+#: src/features/console-usage.tsx:86
+msgid "{n} h"
+msgstr "{n} h"
+
+#: src/features/console-usage.tsx:83
+msgid "{n} min"
+msgstr "{n} min"
+
+#: src/features/console-usage.tsx:79
+msgid "{n} s"
+msgstr "{n} s"
+
 #: src/features/console-now.tsx:87
 #~ msgid "{needCount} need you, {runCount} running, {recentCount} recent"
 #~ msgstr "{needCount} need you, {runCount} running, {recentCount} recent"
@@ -99,7 +111,7 @@ msgstr "{tasks} background tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:422
+#: src/features/console-sessions.tsx:435
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -115,7 +127,7 @@ msgstr "{unread} new"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/chat-thread.tsx:283
+#: src/features/chat-thread.tsx:311
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -143,7 +155,7 @@ msgstr "7-day limit"
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
-#: src/features/console-usage.tsx:147
+#: src/features/console-usage.tsx:168
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
 
@@ -192,8 +204,8 @@ msgstr "Account limits"
 #~ msgstr "Active"
 
 #: src/features/console-usage.tsx:127
-msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
-msgstr "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
+#~ msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
+#~ msgstr "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 
 #: src/features/session-todos.tsx:141
 msgid "Add"
@@ -372,11 +384,11 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:502
+#: src/features/console-sessions.tsx:516
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:189
+#: src/features/session-composer.tsx:188
 msgid "cancel"
 msgstr "cancel"
 
@@ -456,7 +468,7 @@ msgstr "Close"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:230
+#: src/features/session-composer.tsx:224
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -517,11 +529,11 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:219
-#: src/features/session-composer.tsx:331
+#: src/features/session-composer.tsx:322
 msgid "Commands"
 msgstr "Commands"
 
-#: src/features/chat-thread.tsx:278
+#: src/features/chat-thread.tsx:306
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -529,11 +541,11 @@ msgstr "Compacting conversation"
 msgid "compacting the context"
 msgstr "compacting the context"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:296
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:188
+#: src/features/session-composer.tsx:187
 msgid "confirm"
 msgstr "confirm"
 
@@ -567,11 +579,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:447
+#: src/features/chat-thread.tsx:498
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:448
+#: src/features/chat-thread.tsx:499
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -647,7 +659,7 @@ msgstr "cost and limits"
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/console-usage.tsx:116
+#: src/features/console-usage.tsx:141
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
@@ -853,7 +865,7 @@ msgstr "Esc"
 msgid "Event stream"
 msgstr "Event stream"
 
-#: src/features/console-usage.tsx:141
+#: src/features/console-usage.tsx:162
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 
@@ -928,7 +940,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:338
+#: src/features/session-composer.tsx:329
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1008,7 +1020,7 @@ msgstr "hotfix: an urgent fix"
 msgid "How it fits together"
 msgstr "How it fits together"
 
-#: src/features/console-usage.tsx:136
+#: src/features/console-usage.tsx:157
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
@@ -1038,7 +1050,7 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/session-composer.tsx:358
+#: src/features/session-composer.tsx:349
 msgid "Images"
 msgstr "Images"
 
@@ -1105,7 +1117,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:190
+#: src/features/session-composer.tsx:189
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1145,7 +1157,7 @@ msgstr "Keep planning"
 #~ msgid "Keyboard first"
 #~ msgstr "Keyboard first"
 
-#: src/features/session-composer.tsx:319
+#: src/features/session-composer.tsx:310
 msgid "Keys"
 msgstr "Keys"
 
@@ -1222,7 +1234,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:445
+#: src/features/console-sessions.tsx:458
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1238,9 +1250,9 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:442
+#: src/features/console-sessions.tsx:455
 #: src/features/console-shared.tsx:208
-#: src/features/console-usage.tsx:77
+#: src/features/console-usage.tsx:102
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:252
 #: src/features/session-list.tsx:251
@@ -1282,11 +1294,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:518
+#: src/features/session-composer.tsx:508
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:505
+#: src/features/session-composer.tsx:495
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1455,7 +1467,7 @@ msgstr "No tickets match this filter."
 #~ msgid "Node"
 #~ msgstr "Node"
 
-#: src/features/console-usage.tsx:95
+#: src/features/console-usage.tsx:120
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 
@@ -1548,7 +1560,7 @@ msgstr "Open in VS Code"
 #~ msgid "Open Runtime Console"
 #~ msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:525
+#: src/features/console-sessions.tsx:539
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1586,7 +1598,7 @@ msgstr "Opened in tmux: {windowName} ({tmuxSession})"
 msgid "opened, {from} → {to}"
 msgstr "opened, {from} → {to}"
 
-#: src/features/console-usage.tsx:139
+#: src/features/console-usage.tsx:160
 msgid "Opening the connection is one request."
 msgstr "Opening the connection is one request."
 
@@ -1619,7 +1631,7 @@ msgstr "Output tokens"
 msgid "Owner"
 msgstr "Owner"
 
-#: src/features/console-usage.tsx:107
+#: src/features/console-usage.tsx:132
 msgid "Pages, the relay handshake and the usage check; static files are free."
 msgstr "Pages, the relay handshake and the usage check; static files are free."
 
@@ -1679,7 +1691,7 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
-#: src/features/session-composer.tsx:395
+#: src/features/session-composer.tsx:386
 msgid "Preview image"
 msgstr "Preview image"
 
@@ -1711,7 +1723,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/chat-thread.tsx:490
+#: src/features/chat-thread.tsx:541
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -1719,8 +1731,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:238
-#: src/features/session-composer.tsx:313
+#: src/features/session-composer.tsx:232
+#: src/features/session-composer.tsx:304
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1763,11 +1775,11 @@ msgstr "rejected"
 msgid "Relay"
 msgstr "Relay"
 
-#: src/features/console-usage.tsx:120
+#: src/features/console-usage.tsx:145
 msgid "Relay duration"
 msgstr "Relay duration"
 
-#: src/features/console-usage.tsx:110
+#: src/features/console-usage.tsx:135
 msgid "Relay requests (Durable Object)"
 msgstr "Relay requests (Durable Object)"
 
@@ -1783,7 +1795,7 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/session-composer.tsx:409
+#: src/features/session-composer.tsx:400
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -1926,6 +1938,10 @@ msgstr "run failed"
 msgid "run finished"
 msgstr "run finished"
 
+#: src/features/chat-thread.tsx:349
+msgid "Run in background"
+msgstr "Run in background"
+
 #: src/features/console-me.tsx:221
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
@@ -2037,11 +2053,15 @@ msgstr "Sections"
 #~ msgid "Select a worktree to see its agent status."
 #~ msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:527
+#: src/features/session-composer.tsx:517
 msgid "Send"
 msgstr "Send"
 
-#: src/features/session-composer.tsx:314
+#: src/features/chat-thread.tsx:345
+msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
+msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
+
+#: src/features/session-composer.tsx:305
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2114,7 +2134,7 @@ msgstr "shipped"
 #~ msgid "Shipped"
 #~ msgstr "Shipped"
 
-#: src/features/console-sessions.tsx:444
+#: src/features/console-sessions.tsx:457
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -2134,7 +2154,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:326
+#: src/features/session-composer.tsx:317
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2146,11 +2166,11 @@ msgstr "Socket"
 msgid "Solution"
 msgstr "Solution"
 
-#: src/features/console-usage.tsx:100
+#: src/features/console-usage.tsx:125
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:509
+#: src/features/console-sessions.tsx:523
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -2257,7 +2277,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:224
+#: src/features/session-composer.tsx:218
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2277,7 +2297,7 @@ msgstr "Terminal"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:372
+#: src/features/console-sessions.tsx:385
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -2294,7 +2314,7 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:291
+#: src/features/chat-thread.tsx:319
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -2347,7 +2367,7 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:503
+#: src/features/console-sessions.tsx:517
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -2411,13 +2431,17 @@ msgstr "Tidy up the phone interactions"
 msgid "Time"
 msgstr "Time"
 
-#: src/features/console-usage.tsx:144
+#: src/features/console-usage.tsx:165
 msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
 msgstr "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
 
 #: src/features/console-usage.tsx:136
 #~ msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 #~ msgstr "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
+
+#: src/features/console-usage.tsx:149
+msgid "Time the relay was busy. Cloudflare bills it as 128 MB × seconds ({gbs} GB-s); an idle relay hibernates and is not counted."
+msgstr "Time the relay was busy. Cloudflare bills it as 128 MB × seconds ({gbs} GB-s); an idle relay hibernates and is not counted."
 
 #: src/features/session-info.tsx:39
 #: src/features/ticket-new.tsx:176
@@ -2449,14 +2473,14 @@ msgid "To"
 msgstr "To"
 
 #: src/features/session-composer.tsx:192
-msgid "to background"
-msgstr "to background"
+#~ msgid "to background"
+#~ msgstr "to background"
 
 #: src/features/session-todos.tsx:253
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:343
+#: src/features/session-composer.tsx:334
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2473,7 +2497,7 @@ msgstr "To-dos of this repo"
 msgid "Today"
 msgstr "Today"
 
-#: src/features/console-usage.tsx:131
+#: src/features/console-usage.tsx:152
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 
@@ -2520,7 +2544,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:223
+#: src/features/session-composer.tsx:217
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2764,7 +2788,7 @@ msgstr "Worker notes"
 msgid "Worker question"
 msgstr "Worker question"
 
-#: src/features/console-usage.tsx:104
+#: src/features/console-usage.tsx:129
 msgid "Worker requests"
 msgstr "Worker requests"
 
@@ -2773,7 +2797,7 @@ msgstr "Worker requests"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-thread.tsx:278
+#: src/features/chat-thread.tsx:306
 msgid "Working"
 msgstr "Working"
 
@@ -2815,7 +2839,7 @@ msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final n
 msgid "Write access"
 msgstr "Write access"
 
-#: src/features/console-sessions.tsx:370
+#: src/features/console-sessions.tsx:383
 #: src/features/ticket-reply.tsx:205
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "Writing is not enabled on this device yet (Settings › Write access)."

@@ -248,7 +248,7 @@ func (t *transcript) feedLine(raw []byte) {
 			file, added, removed := toolStats(b.Name, input)
 			t.messages = append(t.messages, chatMessage{Role: "tool", Tool: b.Name, Text: toolSummary(b.Name, input),
 				Body: toolBody(b.Name, input), TS: line.Timestamp, File: file, Added: added, Removed: removed,
-				Kind: claudeAdapter{}.ToolKind(b.Name, input)})
+				Kind: claudeAdapter{}.ToolKind(b.Name, input), Background: input["run_in_background"] == true})
 			if b.ID != "" {
 				t.tools[b.ID] = len(t.messages) - 1
 				t.messages[len(t.messages)-1].Pending = true
