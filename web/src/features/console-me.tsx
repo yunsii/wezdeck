@@ -27,6 +27,7 @@ import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
 import { HostPage, useHostSummary } from './me-host'
+import { InteractionsPage } from './console-interactions'
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -181,6 +182,7 @@ export const ME_PAGES = [
   'appearance',
   'app',
   'host',
+  'interactions',
 ] as const
 export type MePage = (typeof ME_PAGES)[number]
 
@@ -193,6 +195,7 @@ function useMeTitles(): Record<MePage, string> {
     appearance: t`Appearance`,
     app: t`App`,
     host: t`This computer`,
+    interactions: t`Interaction debugging`,
   }
 }
 
@@ -408,16 +411,11 @@ function MeIndex({ active }: { active?: MePage }) {
           value={buildId.split('-')[0]}
         />
         {/* sample data only: useful on any device */}
-        <li className="border-b border-brand-edge last:border-b-0">
-          <Link
-            to="/{-$locale}/console/interactions"
-            params={{ locale: localeParam }}
-            className="key-press flex min-h-13 items-center justify-between px-4 text-[16px]"
-          >
-            {t`Interaction debugging`}
-            <ChevronRight size={18} aria-hidden className="text-brand-label" />
-          </Link>
-        </li>
+        <EntryRow
+          page="interactions"
+          active={active === 'interactions'}
+          title={titles.interactions}
+        />
       </ul>
       {consoleMode === 'local' ? (
         <ul className={group}>
@@ -468,9 +466,17 @@ function MeSubPage({ page }: { page: MePage }) {
       </>
     ),
     host: <HostPage />,
+    interactions: <InteractionsPage />,
   }[page]
   return (
-    <div className="grid max-w-2xl content-start gap-3" data-me-page={page}>
+    <div
+      // 交互调试 lays out a list beside its detail: give it the room
+      className={cn(
+        'grid content-start gap-3',
+        page === 'interactions' ? 'max-w-4xl' : 'max-w-2xl',
+      )}
+      data-me-page={page}
+    >
       <div className="-ml-2 flex items-center gap-1 pt-1 md:ml-0 md:min-h-11">
         <Button
           variant="plain"
