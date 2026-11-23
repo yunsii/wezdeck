@@ -28,13 +28,8 @@ const navAt = (
 
 describe('page levels', () => {
   it('sections are first level with or without the locale prefix', () => {
-    for (const p of [
-      '/console',
-      '/console/',
-      '/console/sessions',
-      '/zh/console/me',
-      '/console/collab',
-    ])
+    // /console itself redirects to 会话: not a page of its own
+    for (const p of ['/console/sessions', '/zh/console/me', '/console/collab'])
       expect(isFirstLevel(p)).toBe(true)
     for (const p of [
       '/console/sessions/abc',

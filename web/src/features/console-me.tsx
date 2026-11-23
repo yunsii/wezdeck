@@ -25,6 +25,7 @@ import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
+import { HostPage, useHostSummary } from './me-host'
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -172,6 +173,7 @@ export const ME_PAGES = [
   'usage',
   'appearance',
   'app',
+  'host',
 ] as const
 export type MePage = (typeof ME_PAGES)[number]
 
@@ -183,6 +185,7 @@ function useMeTitles(): Record<MePage, string> {
     usage: t`Usage`,
     appearance: t`Appearance`,
     app: t`App`,
+    host: t`This computer`,
   }
 }
 
@@ -329,6 +332,7 @@ function MeIndex({ active }: { active?: MePage }) {
         : device.state === 'none'
           ? t`Off`
           : ''
+  const hostSummary = useHostSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
   const group = 'overflow-hidden rounded-[16px] bg-brand-surface'
@@ -384,28 +388,28 @@ function MeIndex({ active }: { active?: MePage }) {
         />
       </ul>
       {consoleMode === 'local' ? (
-        <nav className={group} aria-label={t`Host sections`}>
-          {(
-            [
-              ['/{-$locale}/console', t`Overview`],
-              ['/{-$locale}/console/diagnostics', t`Diagnostics`],
-            ] as const
-          ).map(([to, label]) => (
+        <ul className={group}>
+          <EntryRow
+            page="host"
+            active={active === 'host'}
+            title={titles.host}
+            value={hostSummary}
+          />
+          <li className="border-b border-brand-edge last:border-b-0">
             <Link
-              key={to}
-              to={to}
+              to="/{-$locale}/console/diagnostics"
               params={{ locale: localeParam }}
-              className="key-press flex min-h-13 items-center justify-between border-b border-brand-edge px-4 text-[16px] last:border-b-0"
+              className="key-press flex min-h-13 items-center justify-between px-4 text-[16px]"
             >
-              {label}
+              {t`Diagnostics`}
               <ChevronRight
                 size={18}
                 aria-hidden
                 className="text-brand-label"
               />
             </Link>
-          ))}
-        </nav>
+          </li>
+        </ul>
       ) : null}
     </div>
   )
@@ -431,6 +435,7 @@ function MeSubPage({ page }: { page: MePage }) {
         <UpdateCheck />
       </>
     ),
+    host: <HostPage />,
   }[page]
   return (
     <div className="grid max-w-2xl content-start gap-3" data-me-page={page}>

@@ -18,7 +18,6 @@ const FIRST_LEVEL = [
   'sessions',
   'collab',
   'me',
-  '',
   'inbox',
   'activity',
   'diagnostics',
@@ -41,7 +40,7 @@ export const isFirstLevel = (pathname: string) => {
 type Loc = { pathname: string; state?: { __TSR_index?: number } }
 type ChangeInfo = { fromLocation?: Loc; toLocation: Loc; pathChanged: boolean }
 
-/** first path segment under /console ('' = overview) */
+/** first path segment under /console ('' = the index, a redirect to 会话) */
 function sectionOf(pathname: string) {
   return (consolePath(pathname) ?? '')
     .replace(/^\/console\/?/, '')

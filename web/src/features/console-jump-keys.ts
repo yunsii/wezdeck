@@ -6,7 +6,6 @@ import type { Section } from './console-shell'
 
 /** `g` + letter jumps (keyboard-first stance); shown in sidebar titles. */
 export const JUMP_KEYS: Partial<Record<string, Section>> = {
-  o: 'overview',
   x: 'diagnostics',
   c: 'collab',
   s: 'sessions',

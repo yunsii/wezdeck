@@ -7,7 +7,6 @@ import { ConsoleActivityPage } from '#/features/console-activity'
 import { ConsoleMePage } from '#/features/console-me'
 import { ConsoleSessionsPage } from '#/features/session-split'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
-import { ConsoleOverviewPage } from '#/features/console-overview'
 import { ConsoleRouteLayout } from '#/features/console-shell'
 import { Route as rootRoute } from '#/routes/__root'
 
@@ -107,16 +106,18 @@ function consoleHead(title: string) {
   }
 }
 
+// 总览 is gone (its Runtime / IME / WSL facts are 我的 › 本机): the console
+// index opens 会话 on every device, like the phone always did
 const consoleOverviewRoute = createRoute({
   getParentRoute: () => consoleRoute,
   path: '/',
-  component: ConsoleOverviewPage,
-  head: ({ params }) =>
-    consoleHead(
-      params.locale === 'zh'
-        ? 'WezDeck 运行时控制台'
-        : 'WezDeck Runtime Console',
-    ),
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/{-$locale}/console/sessions',
+      params: { locale: params.locale },
+      replace: true,
+    })
+  },
 })
 
 // 开发 is gone: 会话's repo → worktree tree covers it, and 打开 VS Code moved

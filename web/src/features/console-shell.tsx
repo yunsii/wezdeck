@@ -5,19 +5,12 @@ import {
   House,
   ListTree,
   MessagesSquare,
-  Server,
   UserRound,
 } from 'lucide-react'
 import { Component, useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  Link,
-  Outlet,
-  useNavigate,
-  useRouter,
-  useRouterState,
-} from '@tanstack/react-router'
+import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
 import { useTicketSync } from '#/lib/ticket-sync'
@@ -55,16 +48,9 @@ export function ConsoleRouteLayout() {
 }
 
 export type Section =
-  | 'overview'
-  | 'diagnostics'
-  | 'inbox'
-  | 'collab'
-  | 'sessions'
-  | 'activity'
-  | 'me'
+  'diagnostics' | 'inbox' | 'collab' | 'sessions' | 'activity' | 'me'
 
 const SECTION_PATH = {
-  overview: '/{-$locale}/console',
   diagnostics: '/{-$locale}/console/diagnostics',
   inbox: '/{-$locale}/console/inbox',
   collab: '/{-$locale}/console/collab',
@@ -79,7 +65,7 @@ function sectionOf(pathname: string): Section {
     .replace(/^\/console\/?/, '')
   const first = rest.split('/')[0]
   return (
-    first in SECTION_PATH ? first : first === '' ? 'overview' : 'collab'
+    first in SECTION_PATH ? first : first === '' ? 'sessions' : 'collab'
   ) as Section
 }
 
@@ -92,12 +78,6 @@ function useSections() {
     icon: ReactNode
     local?: boolean
   }> = [
-    {
-      id: 'overview',
-      label: t`Overview`,
-      icon: <Server size={16} aria-hidden />,
-      local: true,
-    },
     {
       id: 'diagnostics',
       label: t`Diagnostics`,
@@ -167,7 +147,6 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const location = useRouterState({
     select: (state) => (state.resolvedLocation ?? state.location).pathname,
   })
-  const navigate = useNavigate()
   const client = useQueryClient()
   const current = sectionOf(location)
   const localeParam = locale === 'en' ? undefined : locale
@@ -214,16 +193,6 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const subPage = /\/console\/me\/[^/]+$/.test(location)
   // a session chat runs closer to the edges (bubbles, like a messenger)
   const chat = /\/console\/sessions\/[^/]+$/.test(location)
-  // the host overview needs the local Runtime; remote devices start at 会话
-  useEffect(() => {
-    if (mode === 'remote' && current === 'overview')
-      void navigate({
-        to: SECTION_PATH.sessions,
-        params: { locale: localeParam },
-        replace: true,
-      })
-  }, [mode, current, navigate, localeParam])
-
   return (
     <main
       data-deck
