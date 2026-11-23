@@ -66,8 +66,12 @@ function Meter({
   )
 }
 
-/** the relay object is billed at a fixed 128 MB: GB-s ÷ 0.125 = seconds active */
-const RELAY_GB = 0.125
+/**
+ * the relay object is billed at a fixed 128 MB, which Cloudflare's own pricing
+ * examples count as 0.128 GB (decimal: "seconds * 128 MB / 1 GB"), so
+ * GB-s ÷ 0.128 = seconds active; 13,000 GB-s a day ≈ 28.2 h
+ */
+const RELAY_GB = 0.128
 
 /** seconds as people say them: 9 秒 / 12 分钟 / 28.9 小时 */
 function useDuration() {
@@ -112,7 +116,9 @@ export function UsageCard() {
   const wsOut = fmt(doUnit.wsOut ?? 0)
   const billable = fmt(billableIn ?? 0)
   const other = fmt(doUnit.otherRequests ?? 0)
-  const gbs = `${fmt(doUnit.durationGbs ?? 0)} / ${fmt(u.limits.doDurationGbsPerDay)}`
+  const usedGbs = fmt(doUnit.durationGbs ?? 0)
+  const freeGbs = fmt(u.limits.doDurationGbsPerDay)
+  const freeTime = duration(u.limits.doDurationGbsPerDay)
   return (
     <div className="grid gap-3">
       {u.analytics === 'unconfigured' ? (
@@ -146,7 +152,7 @@ export function UsageCard() {
         used={doUnit.durationGbs}
         limit={u.limits.doDurationGbsPerDay}
         format={duration}
-        hint={t`Time the relay was busy. Cloudflare bills it as 128 MB × seconds (${gbs} GB-s); an idle relay hibernates and is not counted.`}
+        hint={t`Time the relay was actually handling messages; while idle it hibernates and is not counted.`}
       />
       <p className="text-[11.5px] text-brand-label">
         {t`Today (UTC) ${day}, updated ${at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed.`}
@@ -162,7 +168,10 @@ export function UsageCard() {
             {t`Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free.`}
           </li>
           <li>
-            {t`Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected.`}
+            {t`Time counts only while the relay is busy; between messages it hibernates and costs nothing, even with a device connected.`}
+          </li>
+          <li>
+            {t`Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; ${freeGbs} GB-s free a day is about ${freeTime}. Used today: ${usedGbs} GB-s.`}
           </li>
           <li>
             {t`A direct WebRTC link skips the relay entirely and costs nothing.`}

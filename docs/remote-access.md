@@ -226,9 +226,11 @@ over the `namespaceId`s the invocations reported; `workersInvocationsAdaptive`
 filters by `scriptName`. Measured 2026-11-22 (UTC day, ≈ 13 h in): Worker
 949 requests; relay 245 http + 30,505 messages ≈ 1,771 billable of 100,000;
 active 16.5 s ≈ 2 GB-s of 13,000. The card shows relay duration as time
-(GB-s ÷ 0.125, the relay's fixed 128 MB: 13,000 GB-s ≈ 28.9 h a day) with
-the GB-s figure in its note, since nobody reads GB-s; numbers keep to one
-line (the name wraps instead). The token lives in the account that owns
+(GB-s ÷ 0.128 — the relay's fixed 128 MB, counted decimal as Cloudflare's
+pricing examples do, "seconds * 128 MB / 1 GB": 13,000 GB-s ≈ 28.2 h a day);
+GB-s itself is explained once, in words, under 怎么计费 (zh 「GB-秒」, the
+domestic clouds' rendering; Cloudflare's own zh pages keep "GB-s"), never as
+a bare ratio. Numbers keep to one line (the name wraps instead). The token lives in the account that owns
 the Worker (`Yuns.xie@qq.com's Account`, where `wrangler whoami` points),
 named `wezdeck usage (analytics read)`. It needs two Worker secrets — an
 API token with only **Account › Account Analytics › Read** and the account

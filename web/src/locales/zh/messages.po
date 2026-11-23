@@ -63,15 +63,15 @@ msgstr "{hours} 小时前"
 msgid "{minutes} min ago"
 msgstr "{minutes} 分钟前"
 
-#: src/features/console-usage.tsx:86
+#: src/features/console-usage.tsx:90
 msgid "{n} h"
 msgstr "{n} 小时"
 
-#: src/features/console-usage.tsx:83
+#: src/features/console-usage.tsx:87
 msgid "{n} min"
 msgstr "{n} 分钟"
 
-#: src/features/console-usage.tsx:79
+#: src/features/console-usage.tsx:83
 msgid "{n} s"
 msgstr "{n} 秒"
 
@@ -155,7 +155,7 @@ msgstr "7 天额度"
 msgid "A big change to follow up later…"
 msgstr "记下要后续跟进的大改动…"
 
-#: src/features/console-usage.tsx:168
+#: src/features/console-usage.tsx:177
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
@@ -499,6 +499,10 @@ msgstr "已关闭"
 #~ msgid "Closed"
 #~ msgstr "已关闭"
 
+#: src/features/console-usage.tsx:174
+msgid "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
+msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒数。中转固定按 128 MB 计，运行 1 秒记 0.128 GB-秒；每天免费 {freeGbs} GB-秒，约 {freeTime}。今天已用 {usedGbs} GB-秒。"
+
 #: src/features/console-shell.tsx:99
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
@@ -659,7 +663,7 @@ msgstr "费用与额度"
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/console-usage.tsx:141
+#: src/features/console-usage.tsx:147
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
@@ -865,7 +869,7 @@ msgstr "Esc"
 msgid "Event stream"
 msgstr "事件流"
 
-#: src/features/console-usage.tsx:162
+#: src/features/console-usage.tsx:168
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协议层 ping 免费。"
 
@@ -1020,7 +1024,7 @@ msgstr "hotfix：紧急修复"
 msgid "How it fits together"
 msgstr "架构解析"
 
-#: src/features/console-usage.tsx:157
+#: src/features/console-usage.tsx:163
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
@@ -1252,7 +1256,7 @@ msgstr "正在加载原图…"
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:455
 #: src/features/console-shared.tsx:208
-#: src/features/console-usage.tsx:102
+#: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:252
 #: src/features/session-list.tsx:251
@@ -1467,7 +1471,7 @@ msgstr "没有符合这个筛选的工单。"
 #~ msgid "Node"
 #~ msgstr "Node"
 
-#: src/features/console-usage.tsx:120
+#: src/features/console-usage.tsx:126
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
 
@@ -1598,7 +1602,7 @@ msgstr "已在 tmux 打开：{windowName}（{tmuxSession}）"
 msgid "opened, {from} → {to}"
 msgstr "开单：{from} → {to}"
 
-#: src/features/console-usage.tsx:160
+#: src/features/console-usage.tsx:166
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
 
@@ -1631,7 +1635,7 @@ msgstr "输出 token"
 msgid "Owner"
 msgstr "负责方"
 
-#: src/features/console-usage.tsx:132
+#: src/features/console-usage.tsx:138
 msgid "Pages, the relay handshake and the usage check; static files are free."
 msgstr "页面、中转握手和用量查询；静态文件免费。"
 
@@ -1775,11 +1779,11 @@ msgstr "已拒绝"
 msgid "Relay"
 msgstr "中转"
 
-#: src/features/console-usage.tsx:145
+#: src/features/console-usage.tsx:151
 msgid "Relay duration"
 msgstr "中转时长"
 
-#: src/features/console-usage.tsx:135
+#: src/features/console-usage.tsx:141
 msgid "Relay requests (Durable Object)"
 msgstr "中转请求（Durable Object）"
 
@@ -2166,7 +2170,7 @@ msgstr "套接字"
 msgid "Solution"
 msgstr "方案"
 
-#: src/features/console-usage.tsx:125
+#: src/features/console-usage.tsx:131
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
@@ -2432,16 +2436,24 @@ msgid "Time"
 msgstr "时间"
 
 #: src/features/console-usage.tsx:165
-msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
-msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，设备一直连着也一样。"
+#~ msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
+#~ msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，设备一直连着也一样。"
 
 #: src/features/console-usage.tsx:136
 #~ msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 #~ msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，手机一直连着也一样。"
 
+#: src/features/console-usage.tsx:171
+msgid "Time counts only while the relay is busy; between messages it hibernates and costs nothing, even with a device connected."
+msgstr "只在中转忙碌时计时；消息间隙它会休眠，即使设备一直连着也不花钱。"
+
+#: src/features/console-usage.tsx:155
+msgid "Time the relay was actually handling messages; while idle it hibernates and is not counted."
+msgstr "中转真正在处理消息的时间；空闲时休眠，不计时长。"
+
 #: src/features/console-usage.tsx:149
-msgid "Time the relay was busy. Cloudflare bills it as 128 MB × seconds ({gbs} GB-s); an idle relay hibernates and is not counted."
-msgstr "中转实际忙碌的时间。Cloudflare 按 128 MB × 秒计费（{gbs} GB-s）；中转空闲时休眠，不计时长。"
+#~ msgid "Time the relay was busy. Cloudflare bills it as 128 MB × seconds ({gbs} GB-s); an idle relay hibernates and is not counted."
+#~ msgstr "中转实际忙碌的时间。Cloudflare 按 128 MB × 秒计费（{gbs} GB-s）；中转空闲时休眠，不计时长。"
 
 #: src/features/session-info.tsx:39
 #: src/features/ticket-new.tsx:176
@@ -2497,7 +2509,7 @@ msgstr "这个仓库的待办"
 msgid "Today"
 msgstr "今日"
 
-#: src/features/console-usage.tsx:152
+#: src/features/console-usage.tsx:158
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "今天（UTC）{day}，{at}更新。额度每天北京时间 8 点重置；超出只会让这类调用失败到重置为止，不会扣费。"
 
@@ -2788,7 +2800,7 @@ msgstr "执行方备注"
 msgid "Worker question"
 msgstr "执行方提问"
 
-#: src/features/console-usage.tsx:129
+#: src/features/console-usage.tsx:135
 msgid "Worker requests"
 msgstr "Worker 请求"
 
