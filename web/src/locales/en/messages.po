@@ -143,7 +143,7 @@ msgstr "A message sent mid-turn"
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:392
+#: src/features/tickets-view.tsx:440
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -271,7 +271,7 @@ msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
 #: src/features/console-me.tsx:443
-#: src/features/tickets-view.tsx:356
+#: src/features/tickets-view.tsx:369
 msgid "Back"
 msgstr "Back"
 
@@ -420,7 +420,7 @@ msgstr "closed"
 #~ msgid "Collab"
 #~ msgstr "Collab"
 
-#: src/features/tickets-view.tsx:270
+#: src/features/tickets-view.tsx:269
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -428,8 +428,8 @@ msgstr "Collab data unavailable: {unavailable}"
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
-#: src/features/ticket-keys.tsx:52
-#: src/features/tickets-view.tsx:325
+#: src/features/ticket-keys.tsx:59
+#: src/features/tickets-view.tsx:329
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -763,7 +763,7 @@ msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
 
 #: src/features/tickets-view.tsx:169
-#: src/features/tickets-view.tsx:294
+#: src/features/tickets-view.tsx:293
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
@@ -819,7 +819,7 @@ msgstr "Grant failed ({micError}) — retry"
 #~ msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 #~ msgstr "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 
-#: src/features/tickets-view.tsx:391
+#: src/features/tickets-view.tsx:439
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -927,7 +927,7 @@ msgstr "In Safari tap Share, then “Add to Home Screen”."
 msgid "Initial prompt"
 msgstr "Initial prompt"
 
-#: src/features/tickets-view.tsx:390
+#: src/features/tickets-view.tsx:438
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -1086,7 +1086,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
 #: src/features/session-list.tsx:248
-#: src/features/tickets-view.tsx:268
+#: src/features/tickets-view.tsx:267
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -1270,7 +1270,7 @@ msgstr "No plan written yet"
 msgid "No repositories in this workspace."
 msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:336
+#: src/features/tickets-view.tsx:349
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1306,7 +1306,7 @@ msgstr "Not paired"
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:424
+#: src/features/tickets-view.tsx:472
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -1523,7 +1523,7 @@ msgstr "Queued messages"
 msgid "Quick keys"
 msgstr "Quick keys"
 
-#: src/features/ticket-keys.tsx:70
+#: src/features/ticket-keys.tsx:82
 msgid "Quiet for over a week ({count})"
 msgstr "Quiet for over a week ({count})"
 
@@ -2155,7 +2155,7 @@ msgstr "Tickets"
 msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/tickets-view.tsx:337
+#: src/features/tickets-view.tsx:350
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -2389,7 +2389,7 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/tickets-view.tsx:427
+#: src/features/tickets-view.tsx:475
 msgid "Waiting on you"
 msgstr "Waiting on you"
 

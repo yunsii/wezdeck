@@ -78,13 +78,16 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    writes it newest first; the initiator on the right, the newest question
    ringed while it waits on you; a note when the API cut the oldest off at
    8000 characters); the reply box keeps a draft and sends with Ctrl+Enter.
-   A run opens in a bottom
+   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): the
+   list sticky on the left (search above it), the ticket beside it in the
+   page scroll, j / k move through the list (not while typing or a sheet is
+   open), rows replace instead of push. A run opens in a bottom
    sheet (transcript, prompt). Connection chip in the top bar opens a
    sheet (mode, path, RTT, last direct failure, host since, mic grant).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
 5. **Wide screens (≥ 768 px, 2026-11-23)**: no phone layout blown up.
-   会话 is a split like 工单's inspector (`session-split.tsx`): the list
+   会话 and 工单 are the same split (`session-split.tsx`): the list
    sticky on the left with its own scroll, the open conversation beside it
    on the page scroll (so the chat's pin-to-bottom is unchanged), capped at
    900 px; the current row is highlighted, picking another replaces the

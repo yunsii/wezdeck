@@ -8,7 +8,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { ChevronLeft, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
@@ -18,10 +18,10 @@ import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
-import { TicketReading, ticketTone } from './console-collab'
+import { TicketReading } from './console-collab'
 import { useRemoteState } from './console-mode'
-import { Inspector, Reading } from './inspector'
-import type { InspectorItem } from './inspector'
+import { Reading } from './inspector'
+import { nextInCycle } from './session-order'
 import { NewTicketButton } from './ticket-new'
 import { TicketKeys } from './ticket-keys'
 import { Button } from '#/components/ui/button'
@@ -241,7 +241,6 @@ export function TicketsView({
     params: { locale: localeParam },
   })
   const wide = useIsWide()
-  const statusLabel = useStatusLabel()
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
   const poll = (health.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS
   const list = useCollab('list', { limit: 200 }, { refetchInterval: poll })
@@ -306,39 +305,53 @@ export function TicketsView({
     </div>
   )
 
+  const { recent, older } =
+    filter === 'active' && !needle
+      ? splitQuiet(tickets)
+      : { recent: tickets, older: [] }
+
   if (wide) {
-    const items: Array<InspectorItem> = tickets.map((ticket) => ({
-      id: ticket.id,
-      name: ticket.title || ticket.id,
-      detail: `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`,
-      status: statusLabel(ticket),
-      tone: ticketTone(ticket),
-    }))
-    const current =
-      items.find((item) => item.id === id)?.id ?? id ?? items.at(0)?.id ?? ''
+    // a split like 会话 (session-split.tsx): the list sticky on the left, the
+    // ticket beside it in the page scroll, j / k move through the list
+    const current = id ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
     return (
-      <div className="grid h-full min-h-0 grid-rows-[auto_auto_auto_minmax(0,1fr)] gap-3">
-        <div>{top}</div>
-        {keys ?? <div />}
-        {freshness}
-        <Inspector
-          label={t`Collab tickets`}
-          empty={emptyText}
-          items={items}
-          selected={current}
-          onSelect={(next) => open(next, true)}
-          toolbar={<SearchBox value={query} onChange={setQuery} />}
-          reading={
-            current ? (
+      <div className="grid content-start gap-3">
+        {top}
+        {keys}
+        {list.isError ? freshness : null}
+        <TicketListKeys
+          ids={[...recent, ...older].map((ticket) => ticket.id)}
+          current={current}
+          onGo={(next) => open(next, true)}
+        />
+        <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start gap-5">
+          <aside
+            aria-label={t`Collab tickets`}
+            className="vt-split-list sticky top-0 grid max-h-[calc(100dvh-6rem)] content-start gap-3 overflow-y-auto pr-1"
+          >
+            <SearchBox value={query} onChange={setQuery} />
+            <TicketKeys
+              tickets={recent}
+              older={older}
+              empty={emptyText}
+              base={base}
+              selected={current}
+            />
+          </aside>
+          <div
+            className="vt-split-pane max-w-[900px] min-w-0 rounded-[16px] bg-brand-surface p-5"
+            data-testid="ticket-pane"
+          >
+            {current ? (
               <TicketReading id={current} poll={poll} onOpen={open} />
             ) : (
               <Reading
                 title={t`No ticket selected`}
                 body={t`Tickets appear here when ticket files or runs cross-repo work.`}
               />
-            )
-          }
-        />
+            )}
+          </div>
+        </div>
       </div>
     )
   }
@@ -360,10 +373,6 @@ export function TicketsView({
     )
   }
 
-  const { recent, older } =
-    filter === 'active' && !needle
-      ? splitQuiet(tickets)
-      : { recent: tickets, older: [] }
   return (
     <div className="grid content-start gap-3">
       {top}
@@ -381,6 +390,45 @@ export function TicketsView({
       />
     </div>
   )
+}
+
+/** j / k: the next / previous ticket in the list (wide split), like 会话 */
+function TicketListKeys({
+  ids,
+  current,
+  onGo,
+}: {
+  ids: Array<string>
+  current: string
+  onGo: (id: string) => void
+}) {
+  const key = ids.join(' ')
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (
+        (event.key !== 'j' && event.key !== 'k') ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        // a sheet (新工单) is open: the keys belong to it
+        document.querySelector('[role="dialog"]')
+      )
+        return
+      const next = nextInCycle(
+        key.split(' '),
+        current,
+        event.key === 'j' ? 1 : -1,
+      )
+      if (!next) return
+      event.preventDefault()
+      onGo(next)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [key, current, onGo])
+  return null
 }
 
 /** who holds the ticket now, in words (the CLI's owner field) */

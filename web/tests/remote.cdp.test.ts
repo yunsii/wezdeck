@@ -74,12 +74,12 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     expect(['lan', 'internet']).toContain(b.path)
     expect(b.rtt).toBeGreaterThanOrEqual(0)
     await page.locator('[data-value=ended]').click()
-    const list = page.getByRole('listbox', { name: 'Collab tickets' })
-    await list.getByRole('option').first().waitFor({ timeout: 10_000 })
-    expect(await list.getByRole('option').count()).toBeGreaterThan(0)
+    const rows = page.locator('a[data-ticket]')
+    await rows.first().waitFor({ timeout: 10_000 })
+    expect(await rows.count()).toBeGreaterThan(0)
     // Requests issued after the DataChannel opened must use it: open a
     // ticket that is not loaded yet (falls back to the 30 s idle poll).
-    await list.getByRole('option').last().click()
+    await rows.last().click()
     await page.waitForFunction(
       () =>
         Number(
@@ -103,8 +103,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     const b = await badge(page, 'websocket')
     expect(b.text).toContain('WebSocket')
     await page.locator('[data-value=ended]').click()
-    const list = page.getByRole('listbox', { name: 'Collab tickets' })
-    await list.getByRole('option').first().waitFor({ timeout: 10_000 })
+    await page.locator('a[data-ticket]').first().waitFor({ timeout: 10_000 })
     await context.close()
   }, 60_000)
 

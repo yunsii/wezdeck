@@ -143,7 +143,7 @@ msgstr "运行中发来的消息"
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:392
+#: src/features/tickets-view.tsx:440
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -271,7 +271,7 @@ msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
 #: src/features/console-me.tsx:443
-#: src/features/tickets-view.tsx:356
+#: src/features/tickets-view.tsx:369
 msgid "Back"
 msgstr "返回"
 
@@ -420,7 +420,7 @@ msgstr "已关闭"
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
 
-#: src/features/tickets-view.tsx:270
+#: src/features/tickets-view.tsx:269
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
@@ -428,8 +428,8 @@ msgstr "协作数据不可用：{unavailable}"
 msgid "Collab metrics"
 msgstr "协作指标"
 
-#: src/features/ticket-keys.tsx:52
-#: src/features/tickets-view.tsx:325
+#: src/features/ticket-keys.tsx:59
+#: src/features/tickets-view.tsx:329
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -763,7 +763,7 @@ msgid "Filter by title, repo or id"
 msgstr "按标题、仓库或编号筛选"
 
 #: src/features/tickets-view.tsx:169
-#: src/features/tickets-view.tsx:294
+#: src/features/tickets-view.tsx:293
 msgid "Filter tickets"
 msgstr "筛选工单"
 
@@ -819,7 +819,7 @@ msgstr "授权失败（{micError}），点此重试"
 #~ msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 #~ msgstr "按仓库与 worktree 分组；有 tmux 挂载时标主 / 副 pane。"
 
-#: src/features/tickets-view.tsx:391
+#: src/features/tickets-view.tsx:439
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -927,7 +927,7 @@ msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
 msgid "Initial prompt"
 msgstr "初始消息"
 
-#: src/features/tickets-view.tsx:390
+#: src/features/tickets-view.tsx:438
 msgid "Initiator"
 msgstr "发起方"
 
@@ -1086,7 +1086,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
 #: src/features/session-list.tsx:248
-#: src/features/tickets-view.tsx:268
+#: src/features/tickets-view.tsx:267
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -1270,7 +1270,7 @@ msgstr "还没有写计划"
 msgid "No repositories in this workspace."
 msgstr "这个工作区里没有仓库。"
 
-#: src/features/tickets-view.tsx:336
+#: src/features/tickets-view.tsx:349
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -1306,7 +1306,7 @@ msgstr "未配对"
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:424
+#: src/features/tickets-view.tsx:472
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -1523,7 +1523,7 @@ msgstr "排队中的消息"
 msgid "Quick keys"
 msgstr "快捷键"
 
-#: src/features/ticket-keys.tsx:70
+#: src/features/ticket-keys.tsx:82
 msgid "Quiet for over a week ({count})"
 msgstr "一周以上没动静（{count}）"
 
@@ -2155,7 +2155,7 @@ msgstr "工单"
 msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "工单和会话从本地 Runtime 读取；写入走远程链接，这个浏览器还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/tickets-view.tsx:337
+#: src/features/tickets-view.tsx:350
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -2389,7 +2389,7 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/tickets-view.tsx:427
+#: src/features/tickets-view.tsx:475
 msgid "Waiting on you"
 msgstr "等你处理"
 

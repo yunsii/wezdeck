@@ -83,19 +83,15 @@ describe('PWA shell on phone and desktop', () => {
     )
     // the badge only renders after hydration, so the segment click lands
     await page.locator('[data-value=ended]').click()
-    await page
-      .locator('[role=listbox] [role=option]')
-      .first()
-      .waitFor({ timeout: 15_000 })
-    const list = page.getByRole('listbox', { name: 'Collab tickets' })
-    const options = list.getByRole('option')
-    const second = await options.nth(1).getAttribute('id')
-    await options.first().click()
-    await list.focus()
+    // a split like 会话: link rows beside the ticket, j moves on (global)
+    const rows = page.locator('a[data-ticket]')
+    await rows.first().waitFor({ timeout: 15_000 })
+    const second = await rows.nth(1).getAttribute('data-ticket')
+    await rows.first().click()
+    await page.waitForURL(/\/console\/collab\/req-/)
+    await page.mouse.click(900, 500)
     await page.keyboard.press('j')
-    await page.waitForURL(
-      `**/console/collab/${(second ?? '').replace('inspector-', '')}`,
-    )
+    await page.waitForURL(`**/console/collab/${second ?? ''}`)
     await page.keyboard.press('g')
     await page.keyboard.press('a')
     await page.waitForURL(/\/console\/activity$/)

@@ -27,22 +27,29 @@ export function TicketKeys({
   older,
   empty,
   base,
+  selected,
 }: {
   tickets: Array<CollabTicket>
+  /** wide split: the open ticket, marked; rows replace instead of push */
+  selected?: string
   /** quiet ones (splitQuiet), folded at the end */
   older: Array<CollabTicket>
   empty: string
   base: 'collab' | 'inbox'
 }) {
   const { t } = useLingui()
-  // folded only when something recent sits above it; all quiet → shown
-  const [showOlder, setShowOlder] = useState(tickets.length === 0)
+  const [showOlder, setShowOlder] = useState(false)
   if (tickets.length === 0 && older.length === 0) {
     return (
       <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
         {empty}
       </p>
     )
+  }
+  // folded only under something recent; all quiet → a plain list, no header
+  if (tickets.length === 0) {
+    tickets = older
+    older = []
   }
   const count = older.length
   return (
@@ -53,7 +60,12 @@ export function TicketKeys({
           className="overflow-hidden rounded-[16px] bg-brand-surface"
         >
           {tickets.map((ticket) => (
-            <TicketKey key={ticket.id} ticket={ticket} base={base} />
+            <TicketKey
+              key={ticket.id}
+              ticket={ticket}
+              base={base}
+              selected={selected}
+            />
           ))}
         </ul>
       ) : null}
@@ -78,7 +90,12 @@ export function TicketKeys({
           {showOlder ? (
             <ul className="border-t border-brand-edge">
               {older.map((ticket) => (
-                <TicketKey key={ticket.id} ticket={ticket} base={base} />
+                <TicketKey
+                  key={ticket.id}
+                  ticket={ticket}
+                  base={base}
+                  selected={selected}
+                />
               ))}
             </ul>
           ) : null}
@@ -91,10 +108,13 @@ export function TicketKeys({
 function TicketKey({
   ticket,
   base,
+  selected,
 }: {
   ticket: CollabTicket
   base: 'collab' | 'inbox'
+  selected?: string
 }) {
+  const active = selected === ticket.id
   const { locale } = useLocale()
   const ago = useAgo()
   const statusLabel = useStatusLabel()
@@ -109,12 +129,18 @@ function TicketKey({
         }
         params={{ locale: locale === 'en' ? undefined : locale, id: ticket.id }}
         data-ticket={ticket.id}
-        className="key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
+        // beside the list there is nothing to go back to: switching replaces
+        replace={selected !== undefined}
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          active && 'bg-brand-deck shadow-[inset_3px_0_0_var(--brand-running)]',
+          'key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:py-2.5',
+        )}
       >
         <span className="pt-1">
           <Led tone={tone} size={13} />
         </span>
-        <span className="line-clamp-2 text-[16px] leading-snug font-semibold text-brand-text">
+        <span className="line-clamp-2 text-[16px] leading-snug font-semibold text-brand-text md:text-[14px]">
           {ticket.title || ticket.id}
         </span>
         <span className="pt-0.5 text-xs text-brand-label">
