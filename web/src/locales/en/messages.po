@@ -367,7 +367,7 @@ msgstr "claimed"
 msgid "Clearing…"
 msgstr "Clearing…"
 
-#: src/components/ui/sheet.tsx:59
+#: src/components/ui/sheet.tsx:65
 #: src/features/image-viewer.tsx:127
 msgid "Close"
 msgstr "Close"

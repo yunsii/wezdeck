@@ -1,12 +1,15 @@
-import { Dialog } from '@base-ui/react/dialog'
+import { Drawer } from '@base-ui/react/drawer'
 import { useLingui } from '@lingui/react/macro'
 import { X } from 'lucide-react'
 
 import { cn } from '#/lib/utils'
 
 /**
- * The phone's bottom sheet (Base UI Dialog: focus trap, Esc, backdrop tap
- * and background scroll lock come with it). Kept on the paper colour so the
+ * The phone's bottom sheet (Base UI Drawer: swipe down to dismiss, plus the
+ * focus trap, Esc, backdrop tap and background scroll lock of a modal). The
+ * swipe moves the popup through --drawer-swipe-movement-y (our transform;
+ * enter / exit use the separate `translate` property, so they compose), with
+ * transitions off while the finger is down. Kept on the paper colour so the
  * cards inside read as before; what separates it from the page is a darker
  * backdrop, a top edge with a shadow and a grab handle — on the dark theme
  * the old sheet (same colour as the page, 30 % backdrop) had no visible edge.
@@ -31,41 +34,45 @@ export function Sheet({
 }) {
   const { t } = useLingui()
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Backdrop
+    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Backdrop
           data-deck
           className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0"
         />
-        <Dialog.Popup
-          data-deck
-          data-testid={testId}
-          data-write={write ? '' : undefined}
-          className={cn(
-            'fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[88dvh] w-full overflow-y-auto rounded-t-[20px] border-t border-brand-edge bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none transition-transform duration-200 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full md:max-w-xl',
-            className,
-          )}
-        >
-          <div className="sticky top-0 z-10 bg-brand-deck px-4 pt-2 pb-2">
-            <div
-              aria-hidden
-              className="mx-auto mb-2 h-1 w-10 rounded-full bg-brand-label/40"
-            />
-            <div className="flex items-center justify-between gap-2">
-              <Dialog.Title className="text-[16px] font-semibold">
-                {title}
-              </Dialog.Title>
-              <Dialog.Close
-                aria-label={t`Close`}
-                className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
-              >
-                <X size={18} aria-hidden />
-              </Dialog.Close>
+        <Drawer.Viewport className="fixed inset-0 z-50 flex items-end justify-center">
+          <Drawer.Popup
+            data-deck
+            data-testid={testId}
+            data-write={write ? '' : undefined}
+            className={cn(
+              'max-h-[88dvh] w-full overflow-y-auto overscroll-contain rounded-t-[20px] border-t border-brand-edge bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none md:max-w-xl',
+              '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform] duration-200 ease-out data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full',
+              className,
+            )}
+          >
+            <div className="sticky top-0 z-10 bg-brand-deck px-4 pt-2 pb-2">
+              {/* the grab handle: drag the sheet down to close it */}
+              <div
+                aria-hidden
+                className="mx-auto mb-2 h-1 w-10 rounded-full bg-brand-label/40"
+              />
+              <div className="flex items-center justify-between gap-2">
+                <Drawer.Title className="text-[16px] font-semibold">
+                  {title}
+                </Drawer.Title>
+                <Drawer.Close
+                  aria-label={t`Close`}
+                  className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+                >
+                  <X size={18} aria-hidden />
+                </Drawer.Close>
+              </div>
             </div>
-          </div>
-          {children}
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
+            {children}
+          </Drawer.Popup>
+        </Drawer.Viewport>
+      </Drawer.Portal>
+    </Drawer.Root>
   )
 }

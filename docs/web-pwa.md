@@ -130,8 +130,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   `default` dense desktop), `Textarea` (`field` / `bare`), `Select`
   (`size="lg"` on phones; popup above the z-50 sheets), `Checkbox`,
   `Disclosure` (a folding section: title + turning ›, `chevron={false}` for
-  a custom row), `Sheet` (the phone's bottom sheet on Base UI Dialog — focus
-  trap, Esc, backdrop tap, scroll lock; paper colour kept, set apart from the
+  a custom row), `Sheet` (the phone's bottom sheet on Base UI Drawer — swipe
+  down to dismiss (a short drag springs back; inside scrolled content the
+  drag scrolls first), focus trap, Esc, backdrop tap, scroll lock; the swipe
+  moves it through `--drawer-swipe-movement-y`; paper colour kept, set apart from the
   page by a 50 % backdrop, a top edge with a shadow and a grab handle: the
   old sheet had no visible edge on the dark theme), plus `Segmented`,
   `Toggle`, `Popover`, `Tooltip`. A

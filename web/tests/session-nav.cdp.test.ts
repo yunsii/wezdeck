@@ -113,4 +113,53 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await expect.poll(() => sheet.count()).toBe(0)
     await context.close()
   })
+
+  it('the switcher sheet closes by swiping down, not by a small drag', async () => {
+    const context = await browser.newContext({
+      ...devices['iPhone 13'],
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await openList(page)
+    await page.locator('[data-session=nav-a]').click()
+    await page.waitForURL('**/console/sessions/nav-a')
+    const sheet = page.getByTestId('session-switcher')
+    const cdp = await context.newCDPSession(page)
+    const drag = async (dy: number) => {
+      const box = await sheet.boundingBox()
+      if (!box) throw new Error('sheet has no box')
+      const x = box.x + box.width / 2
+      const y = box.y + 12 // the grab handle
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x, y }],
+      })
+      for (let step = 1; step <= 10; step++)
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x, y: y + (dy * step) / 10 }],
+        })
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      })
+    }
+    // a small drag springs back
+    await page.getByTestId('session-title').click()
+    await sheet.waitFor()
+    await page.waitForTimeout(400)
+    await drag(20)
+    await page.waitForTimeout(600)
+    expect(await sheet.count()).toBe(1)
+    // a real swipe down dismisses it
+    await drag(320)
+    await expect.poll(() => sheet.count(), { timeout: 3_000 }).toBe(0)
+    // and a tap on the backdrop above it does too
+    await page.getByTestId('session-title').click()
+    await sheet.waitFor()
+    await page.waitForTimeout(400)
+    await page.mouse.click(20, 40)
+    await expect.poll(() => sheet.count(), { timeout: 3_000 }).toBe(0)
+    await context.close()
+  })
 })
