@@ -388,7 +388,6 @@ function MeIndex({ active }: { active?: MePage }) {
           {(
             [
               ['/{-$locale}/console', t`Overview`],
-              ['/{-$locale}/console/development', t`Development`],
               ['/{-$locale}/console/diagnostics', t`Diagnostics`],
             ] as const
           ).map(([to, label]) => (

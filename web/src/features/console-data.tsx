@@ -3,12 +3,9 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import { createContext, useContext, useEffect } from 'react'
 
 import {
-  getRuntimeSessions,
   getRuntimeSnapshot,
-  getVscodeState,
   getWslBridgeStatus,
   getWakatimeStatus,
-  getWorkspaces,
   probeRuntime,
   runtimeEventsUrl,
 } from '#/lib/runtime-client'
@@ -46,12 +43,6 @@ function useRuntimeDataQuery() {
     enabled: typeof window !== 'undefined',
     refetchInterval: 5_000,
   })
-  const sessions = useQuery({
-    queryKey: ['runtime', 'sessions'],
-    queryFn: getRuntimeSessions,
-    enabled: typeof window !== 'undefined',
-    refetchInterval: 5_000,
-  })
   const wsl = useQuery({
     queryKey: ['runtime', 'wsl'],
     queryFn: getWslBridgeStatus,
@@ -68,26 +59,17 @@ function useRuntimeDataQuery() {
     throwOnError: false,
   })
 
-  const workspaces = useQuery({
-    queryKey: ['runtime', 'workspaces'],
-    queryFn: getWorkspaces,
-    enabled: typeof window !== 'undefined',
-    refetchInterval: 30_000,
-    throwOnError: false,
-  })
-  const vscode = useQuery({
-    queryKey: ['runtime', 'vscode'],
-    queryFn: getVscodeState,
-    enabled: typeof window !== 'undefined',
-    refetchInterval: 5_000,
-  })
-
   useEffect(() => {
     const baseUrl = probe.data?.baseUrl
     if (!baseUrl || typeof window === 'undefined') return
     const socket = new WebSocket(runtimeEventsUrl(baseUrl))
+    // a runtime event refreshes the runtime reads, not the ticket ones:
+    // those sync on their own change signal (lib/ticket-sync.ts)
     socket.onmessage = () =>
-      void queryClient.invalidateQueries({ queryKey: ['runtime'] })
+      void queryClient.invalidateQueries({
+        queryKey: ['runtime'],
+        predicate: (query) => query.queryKey[1] !== 'collab',
+      })
     return () => socket.close()
   }, [probe.data?.baseUrl, queryClient])
 
@@ -95,11 +77,8 @@ function useRuntimeDataQuery() {
     Promise.all([
       snapshot.refetch(),
       probe.refetch(),
-      sessions.refetch(),
       wsl.refetch(),
       wakatime.refetch(),
-      workspaces.refetch(),
-      vscode.refetch(),
     ]).then(() => undefined)
   const data = snapshot.data
 
@@ -107,11 +86,8 @@ function useRuntimeDataQuery() {
     data,
     snapshot,
     probe,
-    sessions,
     wsl,
     wakatime,
-    workspaces,
-    vscode,
     connected: Boolean(data?.health.ready),
     eventReady: Boolean(probe.data),
     loading: snapshot.isPending || probe.isPending,

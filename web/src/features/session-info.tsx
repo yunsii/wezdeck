@@ -5,7 +5,7 @@
 // backdrop or × closes it. Portalled to <body>: the header's backdrop blur
 // would otherwise become the containing block of a fixed sheet.
 import { useLingui } from '@lingui/react/macro'
-import { Check, Copy, Pencil } from 'lucide-react'
+import { Check, Code2, Copy, Pencil } from 'lucide-react'
 import { useState } from 'react'
 
 import type { Detail } from './console-sessions'
@@ -14,6 +14,9 @@ import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { Field, FieldList } from '#/components/ui/field'
 import { copyText } from '#/lib/clipboard'
+import { postRuntimeAction } from '#/lib/runtime-client'
+import { toast } from 'sonner'
+import { useConsoleMode } from './console-mode'
 
 export type MetaGroup = {
   name: string
@@ -239,6 +242,7 @@ export function SessionInfo({
             {t`Rename via /rename in the agent pane`}
           </Button>
         ) : null}
+        <OpenInVsCode cwd={metaValue(data, 'cwd')} />
         <p className="px-1 text-[11.5px] text-brand-label">
           {t`Tap a row to copy its value; long-press or right-click for more.`}
         </p>
@@ -261,5 +265,51 @@ export function SessionInfo({
         ))}
       </div>
     </Sheet>
+  )
+}
+
+function metaValue(data: Detail, key: string) {
+  for (const group of data.meta ?? [])
+    for (const row of group.rows) if (row.key === key) return row.value
+  return ''
+}
+
+/**
+ * 在 VS Code 中打开 — what was left worth keeping of the old 开发 page. Only
+ * on this computer: it asks the local Runtime to focus the window for the
+ * session's directory, or open one.
+ */
+function OpenInVsCode({ cwd }: { cwd: string }) {
+  const { t } = useLingui()
+  const mode = useConsoleMode()
+  const [busy, setBusy] = useState(false)
+  if (mode !== 'local' || !cwd) return null
+  const open = async () => {
+    setBusy(true)
+    try {
+      const response = await postRuntimeAction('vscode', 'focus_or_open', {
+        requested_dir: cwd,
+        distro: 'Ubuntu',
+      })
+      if (!response.ok)
+        throw new Error(response.error?.message || t`Runtime action failed`)
+      toast(t`VS Code window focused`)
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t`Runtime action failed`)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button
+      variant="plain"
+      type="button"
+      disabled={busy}
+      onClick={() => void open()}
+      className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
+    >
+      <Code2 size={15} aria-hidden />
+      {t`Open in VS Code`}
+    </Button>
   )
 }

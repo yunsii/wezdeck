@@ -7,7 +7,6 @@ import { ConsoleActivityPage } from '#/features/console-activity'
 import { ConsoleMePage } from '#/features/console-me'
 import { ConsoleSessionsPage } from '#/features/session-split'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
-import { ConsoleDevelopmentPage } from '#/features/console-development'
 import { ConsoleOverviewPage } from '#/features/console-overview'
 import { ConsoleRouteLayout } from '#/features/console-shell'
 import { Route as rootRoute } from '#/routes/__root'
@@ -120,16 +119,18 @@ const consoleOverviewRoute = createRoute({
     ),
 })
 
+// 开发 is gone: 会话's repo → worktree tree covers it, and 打开 VS Code moved
+// into 会话信息 (local mode). Old links / `g d` habits land on 会话.
 const consoleDevelopmentRoute = createRoute({
   getParentRoute: () => consoleRoute,
   path: 'development',
-  component: ConsoleDevelopmentPage,
-  head: ({ params }) =>
-    consoleHead(
-      params.locale === 'zh'
-        ? 'WezDeck 开发控制台'
-        : 'WezDeck Development Console',
-    ),
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/{-$locale}/console/sessions',
+      params: { locale: params.locale },
+      replace: true,
+    })
+  },
 })
 
 const consoleDiagnosticsRoute = createRoute({

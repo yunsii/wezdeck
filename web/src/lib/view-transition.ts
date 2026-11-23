@@ -21,7 +21,6 @@ const FIRST_LEVEL = [
   '',
   'inbox',
   'activity',
-  'development',
   'diagnostics',
 ]
 

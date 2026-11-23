@@ -1,7 +1,6 @@
 import { useLingui } from '@lingui/react/macro'
 import {
   Activity,
-  Code2,
   GitPullRequestArrow,
   House,
   ListTree,
@@ -57,7 +56,6 @@ export function ConsoleRouteLayout() {
 
 export type Section =
   | 'overview'
-  | 'development'
   | 'diagnostics'
   | 'inbox'
   | 'collab'
@@ -67,7 +65,6 @@ export type Section =
 
 const SECTION_PATH = {
   overview: '/{-$locale}/console',
-  development: '/{-$locale}/console/development',
   diagnostics: '/{-$locale}/console/diagnostics',
   inbox: '/{-$locale}/console/inbox',
   collab: '/{-$locale}/console/collab',
@@ -99,12 +96,6 @@ function useSections() {
       id: 'overview',
       label: t`Overview`,
       icon: <Server size={16} aria-hidden />,
-      local: true,
-    },
-    {
-      id: 'development',
-      label: t`Development`,
-      icon: <Code2 size={16} aria-hidden />,
       local: true,
     },
     {

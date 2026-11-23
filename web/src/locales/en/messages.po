@@ -103,7 +103,7 @@ msgstr "128 today"
 msgid "5 h"
 msgstr "5 h"
 
-#: src/features/session-info.tsx:69
+#: src/features/session-info.tsx:72
 msgid "5-hour limit"
 msgstr "5-hour limit"
 
@@ -111,7 +111,7 @@ msgstr "5-hour limit"
 msgid "7 d"
 msgstr "7 d"
 
-#: src/features/session-info.tsx:70
+#: src/features/session-info.tsx:73
 msgid "7-day limit"
 msgstr "7-day limit"
 
@@ -135,7 +135,7 @@ msgstr "A local-first control plane for AI coding agents, built on WezTerm, tmux
 msgid "A local-first workbench for AI coding agents."
 msgstr "A local-first workbench for AI coding agents."
 
-#: src/features/session-info.tsx:75
+#: src/features/session-info.tsx:78
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
 
@@ -151,7 +151,7 @@ msgstr "A person (taken over)"
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
-#: src/features/session-info.tsx:74
+#: src/features/session-info.tsx:77
 msgid "Account limits"
 msgstr "Account limits"
 
@@ -175,7 +175,7 @@ msgstr "After a restart, return to the same agent session and continue the work.
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/session-info.tsx:37
+#: src/features/session-info.tsx:40
 msgid "Agent name"
 msgstr "Agent name"
 
@@ -270,7 +270,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-me.tsx:443
+#: src/features/console-me.tsx:442
 #: src/features/tickets-view.tsx:369
 msgid "Back"
 msgstr "Back"
@@ -288,7 +288,7 @@ msgid "background"
 msgstr "background"
 
 #: src/features/session-header.tsx:155
-#: src/features/session-info.tsx:65
+#: src/features/session-info.tsx:68
 msgid "Background tasks"
 msgstr "Background tasks"
 
@@ -301,7 +301,7 @@ msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 
 #: src/features/landing-example.tsx:126
-#: src/features/session-info.tsx:44
+#: src/features/session-info.tsx:47
 msgid "Branch"
 msgstr "Branch"
 
@@ -313,7 +313,7 @@ msgstr "Bytes"
 #: src/features/console-collab.tsx:292
 #: src/features/console-collab.tsx:343
 #: src/features/console-collab.tsx:427
-#: src/features/session-info.tsx:68
+#: src/features/session-info.tsx:71
 msgid "Cache hit"
 msgstr "Cache hit"
 
@@ -335,7 +335,7 @@ msgstr "Cancel (Esc)"
 
 #: src/features/console-overview.tsx:130
 #: src/features/landing-page.tsx:46
-#: src/features/session-info.tsx:31
+#: src/features/session-info.tsx:34
 msgid "Capabilities"
 msgstr "Capabilities"
 
@@ -390,20 +390,20 @@ msgid "Close keys"
 msgstr "Close keys"
 
 #: src/features/console-development.tsx:100
-msgid "Close requested"
-msgstr "Close requested"
+#~ msgid "Close requested"
+#~ msgstr "Close requested"
 
 #: src/features/console-development.tsx:87
-msgid "Close this VS Code window? Unsaved work may ask for confirmation."
-msgstr "Close this VS Code window? Unsaved work may ask for confirmation."
+#~ msgid "Close this VS Code window? Unsaved work may ask for confirmation."
+#~ msgstr "Close this VS Code window? Unsaved work may ask for confirmation."
 
 #: src/features/session-todos.tsx:109
 msgid "Close to-dos"
 msgstr "Close to-dos"
 
 #: src/features/console-development.tsx:469
-msgid "Close VS Code window"
-msgstr "Close VS Code window"
+#~ msgid "Close VS Code window"
+#~ msgstr "Close VS Code window"
 
 #: src/features/console-activity.tsx:110
 #: src/features/tickets-view.tsx:104
@@ -458,16 +458,16 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:346
+#: src/features/console-shell.tsx:337
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/console-shell.tsx:263
+#: src/features/console-shell.tsx:254
 msgid "Console navigation"
 msgstr "Console navigation"
 
 #: src/features/session-header.tsx:120
-#: src/features/session-info.tsx:66
+#: src/features/session-info.tsx:69
 msgid "Context"
 msgstr "Context"
 
@@ -483,7 +483,7 @@ msgstr "Context compacted (/compact)"
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
-#: src/features/session-info.tsx:56
+#: src/features/session-info.tsx:59
 msgid "Context compactions"
 msgstr "Context compactions"
 
@@ -492,7 +492,7 @@ msgid "Control"
 msgstr "Control"
 
 #: src/features/session-composer.tsx:75
-#: src/features/session-info.tsx:217
+#: src/features/session-info.tsx:220
 msgid "Copied"
 msgstr "Copied"
 
@@ -521,7 +521,7 @@ msgstr "Copy command"
 msgid "Copy error"
 msgstr "Copy error"
 
-#: src/features/session-info.tsx:217
+#: src/features/session-info.tsx:220
 msgid "Copy session reference for an agent"
 msgstr "Copy session reference for an agent"
 
@@ -594,7 +594,7 @@ msgstr "data as of {time}"
 msgid "Decision"
 msgstr "Decision"
 
-#: src/features/console-shell.tsx:310
+#: src/features/console-shell.tsx:301
 msgid "Deck"
 msgstr "Deck"
 
@@ -610,7 +610,7 @@ msgstr "Degraded"
 msgid "Depends on"
 msgstr "Depends on"
 
-#: src/features/session-info.tsx:64
+#: src/features/session-info.tsx:67
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
@@ -620,15 +620,15 @@ msgstr "dev: a long-lived workstation for parallel work"
 
 #: src/features/console-me.tsx:391
 #: src/features/console-shell.tsx:106
-msgid "Development"
-msgstr "Development"
+#~ msgid "Development"
+#~ msgstr "Development"
 
 #: src/features/session-composer.tsx:165
 #~ msgid "diagnostics"
 #~ msgstr "diagnostics"
 
-#: src/features/console-me.tsx:392
-#: src/features/console-shell.tsx:112
+#: src/features/console-me.tsx:391
+#: src/features/console-shell.tsx:103
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -636,8 +636,7 @@ msgstr "Diagnostics"
 msgid "Direct"
 msgstr "Direct"
 
-#: src/features/console-development.tsx:408
-#: src/features/session-info.tsx:40
+#: src/features/session-info.tsx:43
 msgid "Directory"
 msgstr "Directory"
 
@@ -754,7 +753,7 @@ msgstr "failed"
 #~ msgid "Failed"
 #~ msgstr "Failed"
 
-#: src/features/session-info.tsx:51
+#: src/features/session-info.tsx:54
 msgid "File"
 msgstr "File"
 
@@ -787,7 +786,7 @@ msgstr "finished its turn"
 msgid "First message to the agent"
 msgstr "First message to the agent"
 
-#: src/features/session-info.tsx:57
+#: src/features/session-info.tsx:60
 msgid "First turn"
 msgstr "First turn"
 
@@ -804,8 +803,8 @@ msgid "From"
 msgstr "From"
 
 #: src/features/console-development.tsx:406
-msgid "Git"
-msgstr "Git"
+#~ msgid "Git"
+#~ msgstr "Git"
 
 #: src/features/chat-thread.tsx:81
 #~ msgid "Gone"
@@ -961,21 +960,21 @@ msgstr "internet"
 msgid "interrupt"
 msgstr "interrupt"
 
-#: src/features/session-info.tsx:188
+#: src/features/session-info.tsx:191
 msgid "is queued"
 msgstr "is queued"
 
-#: src/features/session-info.tsx:188
+#: src/features/session-info.tsx:191
 msgid "joins the current turn"
 msgstr "joins the current turn"
 
 #: src/features/console-development.tsx:51
-msgid "Jump requested"
-msgstr "Jump requested"
+#~ msgid "Jump requested"
+#~ msgstr "Jump requested"
 
 #: src/features/console-development.tsx:458
-msgid "Jump to pane"
-msgstr "Jump to pane"
+#~ msgid "Jump to pane"
+#~ msgstr "Jump to pane"
 
 #: src/features/chat-sticky.tsx:101
 msgid "Jump to your message: {text}"
@@ -1014,11 +1013,11 @@ msgstr "Last direct attempt"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:110
-#: src/features/console-shell.tsx:457
+#: src/features/console-shell.tsx:448
 msgid "Last sample"
 msgstr "Last sample"
 
-#: src/features/session-info.tsx:58
+#: src/features/session-info.tsx:61
 msgid "Last turn"
 msgstr "Last turn"
 
@@ -1068,7 +1067,7 @@ msgstr "live"
 msgid "Load earlier"
 msgstr "Load earlier"
 
-#: src/features/session-info.tsx:55
+#: src/features/session-info.tsx:58
 msgid "Loaded on this page"
 msgstr "Loaded on this page"
 
@@ -1079,7 +1078,6 @@ msgstr "Loading original…"
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
-#: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
 #: src/features/console-sessions.tsx:429
 #: src/features/console-shared.tsx:212
@@ -1127,7 +1125,7 @@ msgstr "Message"
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
-#: src/features/session-info.tsx:54
+#: src/features/session-info.tsx:57
 msgid "Messages"
 msgstr "Messages"
 
@@ -1143,11 +1141,11 @@ msgstr "Metrics window"
 msgid "Mode"
 msgstr "Mode"
 
-#: src/features/session-info.tsx:39
+#: src/features/session-info.tsx:42
 msgid "Model"
 msgstr "Model"
 
-#: src/features/session-info.tsx:53
+#: src/features/session-info.tsx:56
 msgid "Modified"
 msgstr "Modified"
 
@@ -1155,7 +1153,7 @@ msgstr "Modified"
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 
-#: src/features/session-info.tsx:76
+#: src/features/session-info.tsx:79
 msgid "Names sessions"
 msgstr "Names sessions"
 
@@ -1183,7 +1181,7 @@ msgstr "New session"
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-info.tsx:233
+#: src/features/session-info.tsx:236
 msgid "New session title"
 msgstr "New session title"
 
@@ -1212,13 +1210,13 @@ msgstr "New version ready, reload to use it"
 msgid "Next image"
 msgstr "Next image"
 
-#: src/features/session-info.tsx:79
+#: src/features/session-info.tsx:82
 msgid "no"
 msgstr "no"
 
 #: src/features/console-development.tsx:395
-msgid "No active agent sessions"
-msgstr "No active agent sessions"
+#~ msgid "No active agent sessions"
+#~ msgstr "No active agent sessions"
 
 #: src/features/session-subagents.tsx:75
 msgid "No activity for a while"
@@ -1267,8 +1265,8 @@ msgid "No plan written yet"
 msgstr "No plan written yet"
 
 #: src/features/console-development.tsx:177
-msgid "No repositories in this workspace."
-msgstr "No repositories in this workspace."
+#~ msgid "No repositories in this workspace."
+#~ msgstr "No repositories in this workspace."
 
 #: src/features/tickets-view.tsx:349
 msgid "No ticket selected"
@@ -1279,16 +1277,16 @@ msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
 #: src/features/console-development.tsx:134
-msgid "No workspaces in the local catalog."
-msgstr "No workspaces in the local catalog."
+#~ msgid "No workspaces in the local catalog."
+#~ msgstr "No workspaces in the local catalog."
 
 #: src/features/console-development.tsx:201
-msgid "No worktrees in this repository."
-msgstr "No worktrees in this repository."
+#~ msgid "No worktrees in this repository."
+#~ msgstr "No worktrees in this repository."
 
 #: src/features/console-development.tsx:407
-msgid "Node"
-msgstr "Node"
+#~ msgid "Node"
+#~ msgstr "Node"
 
 #: src/features/console-usage.tsx:89
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
@@ -1348,8 +1346,8 @@ msgid "One home for every repo"
 msgstr "One home for every repo"
 
 #: src/features/console-development.tsx:399
-msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
-msgstr "One tmux session per repository family. Linked worktrees are windows inside that session."
+#~ msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
+#~ msgstr "One tmux session per repository family. Linked worktrees are windows inside that session."
 
 #: src/features/remote-badge.tsx:130
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
@@ -1362,6 +1360,10 @@ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, an
 #: src/features/chat-images.tsx:42
 msgid "Open image"
 msgstr "Open image"
+
+#: src/features/session-info.tsx:312
+msgid "Open in VS Code"
+msgstr "Open in VS Code"
 
 #: src/features/landing-page.tsx:140
 msgid "Open Runtime Console"
@@ -1380,8 +1382,8 @@ msgid "Open this page in the system browser first, then install it from there."
 msgstr "Open this page in the system browser first, then install it from there."
 
 #: src/features/console-development.tsx:461
-msgid "Open VS Code"
-msgstr "Open VS Code"
+#~ msgid "Open VS Code"
+#~ msgstr "Open VS Code"
 
 #: src/features/landing-page.tsx:78
 msgid "Open web console"
@@ -1421,12 +1423,12 @@ msgstr "Origin session"
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
-#: src/features/session-info.tsx:67
+#: src/features/session-info.tsx:70
 msgid "Output tokens"
 msgstr "Output tokens"
 
 #: src/features/console-me.tsx:390
-#: src/features/console-shell.tsx:100
+#: src/features/console-shell.tsx:97
 msgid "Overview"
 msgstr "Overview"
 
@@ -1442,11 +1444,11 @@ msgstr "Pages, the relay handshake and the usage check; static files are free."
 msgid "Pair again"
 msgstr "Pair again"
 
-#: src/features/session-info.tsx:50
+#: src/features/session-info.tsx:53
 msgid "Pane"
 msgstr "Pane"
 
-#: src/features/session-info.tsx:48
+#: src/features/session-info.tsx:51
 msgid "Pane role"
 msgstr "Pane role"
 
@@ -1478,7 +1480,7 @@ msgstr "Pick a session on the left. j / k move through the list."
 msgid "Plan ready for review"
 msgstr "Plan ready for review"
 
-#: src/features/session-info.tsx:72
+#: src/features/session-info.tsx:75
 msgid "Plan review"
 msgstr "Plan review"
 
@@ -1541,13 +1543,13 @@ msgstr "read {reads} files"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:213
-#: src/features/console-shell.tsx:484
+#: src/features/console-shell.tsx:475
 #: src/features/landing-example.tsx:147
 #: src/features/landing-example.tsx:148
 msgid "Ready"
 msgstr "Ready"
 
-#: src/features/session-info.tsx:60
+#: src/features/session-info.tsx:63
 msgid "Reason"
 msgstr "Reason"
 
@@ -1575,11 +1577,11 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:257
+#: src/features/console-shell.tsx:248
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:420
+#: src/features/console-shell.tsx:411
 msgid "Remote access"
 msgstr "Remote access"
 
@@ -1587,7 +1589,7 @@ msgstr "Remote access"
 msgid "Remove image"
 msgstr "Remove image"
 
-#: src/features/session-info.tsx:239
+#: src/features/session-info.tsx:242
 msgid "Rename via /rename in the agent pane"
 msgstr "Rename via /rename in the agent pane"
 
@@ -1624,15 +1626,15 @@ msgid "Repo"
 msgstr "Repo"
 
 #: src/features/console-development.tsx:181
-msgid "Repositories"
-msgstr "Repositories"
+#~ msgid "Repositories"
+#~ msgstr "Repositories"
 
-#: src/features/session-info.tsx:41
+#: src/features/session-info.tsx:44
 #: src/features/session-new.tsx:195
 msgid "Repository"
 msgstr "Repository"
 
-#: src/features/session-info.tsx:42
+#: src/features/session-info.tsx:45
 msgid "Repository root"
 msgstr "Repository root"
 
@@ -1682,7 +1684,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 
 #: src/features/chat-images.tsx:49
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:530
+#: src/features/console-shell.tsx:521
 msgid "Retry"
 msgstr "Retry"
 
@@ -1734,7 +1736,7 @@ msgstr "running"
 msgid "Running"
 msgstr "Running"
 
-#: src/features/session-info.tsx:49
+#: src/features/session-info.tsx:52
 msgid "Running in pane"
 msgstr "Running in pane"
 
@@ -1742,7 +1744,7 @@ msgstr "Running in pane"
 #~ msgid "Running now"
 #~ msgstr "Running now"
 
-#: src/features/session-info.tsx:61
+#: src/features/session-info.tsx:64
 msgid "Running substate"
 msgstr "Running substate"
 
@@ -1765,10 +1767,8 @@ msgstr "Runs, cache hit and cost"
 msgid "Runtime"
 msgstr "Runtime"
 
-#: src/features/console-development.tsx:71
-#: src/features/console-development.tsx:76
-#: src/features/console-development.tsx:99
-#: src/features/console-development.tsx:104
+#: src/features/session-info.tsx:295
+#: src/features/session-info.tsx:298
 msgid "Runtime action failed"
 msgstr "Runtime action failed"
 
@@ -1776,7 +1776,7 @@ msgstr "Runtime action failed"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:257
+#: src/features/console-shell.tsx:248
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "Runtime Console"
@@ -1817,7 +1817,7 @@ msgstr "Scope"
 msgid "Secondary"
 msgstr "Secondary"
 
-#: src/features/console-shell.tsx:358
+#: src/features/console-shell.tsx:349
 msgid "Sections"
 msgstr "Sections"
 
@@ -1830,8 +1830,8 @@ msgid "See who needs you"
 msgstr "See who needs you"
 
 #: src/features/console-development.tsx:377
-msgid "Select a worktree to see its agent status."
-msgstr "Select a worktree to see its agent status."
+#~ msgid "Select a worktree to see its agent status."
+#~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/session-composer.tsx:459
 msgid "Send"
@@ -1855,29 +1855,29 @@ msgstr "Sending the first message…"
 
 #: src/features/console-collab-run.tsx:116
 #: src/features/console-collab.tsx:341
-#: src/features/session-info.tsx:26
+#: src/features/session-info.tsx:29
 msgid "Session"
 msgstr "Session"
 
-#: src/features/session-info.tsx:34
+#: src/features/session-info.tsx:37
 msgid "Session id"
 msgstr "Session id"
 
 #: src/features/session-header.tsx:296
-#: src/features/session-info.tsx:196
+#: src/features/session-info.tsx:199
 msgid "Session info"
 msgstr "Session info"
 
 #: src/features/console-development.tsx:50
 #: src/features/console-development.tsx:54
-msgid "Session jump failed"
-msgstr "Session jump failed"
+#~ msgid "Session jump failed"
+#~ msgstr "Session jump failed"
 
 #: src/features/console-collab.tsx:95
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:123
+#: src/features/console-shell.tsx:114
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
 msgctxt "nav"
@@ -1893,7 +1893,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 #~ msgstr "Sessions waiting for you"
 
 #: src/features/console-me.tsx:337
-#: src/features/console-shell.tsx:131
+#: src/features/console-shell.tsx:122
 msgid "Settings"
 msgstr "Settings"
 
@@ -1917,11 +1917,11 @@ msgstr "Show initial prompt"
 msgid "showing the last copy"
 msgstr "showing the last copy"
 
-#: src/features/session-info.tsx:52
+#: src/features/session-info.tsx:55
 msgid "Size"
 msgstr "Size"
 
-#: src/features/console-shell.tsx:329
+#: src/features/console-shell.tsx:320
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -1973,21 +1973,20 @@ msgstr "Starting the agent…"
 msgid "Starting…"
 msgstr "Starting…"
 
-#: src/features/session-info.tsx:29
+#: src/features/session-info.tsx:32
 msgid "State"
 msgstr "State"
 
 #: src/features/console-collab.tsx:424
-#: src/features/console-development.tsx:403
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:122
-#: src/features/session-info.tsx:59
+#: src/features/session-info.tsx:62
 #: src/features/session-list.tsx:185
 #: src/features/tickets-view.tsx:192
 msgid "Status"
 msgstr "Status"
 
-#: src/features/session-info.tsx:63
+#: src/features/session-info.tsx:66
 msgid "Status updated"
 msgstr "Status updated"
 
@@ -2024,7 +2023,7 @@ msgstr "System"
 msgid "Take over in tmux"
 msgstr "Take over in tmux"
 
-#: src/features/session-info.tsx:243
+#: src/features/session-info.tsx:247
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "Tap a row to copy its value; long-press or right-click for more."
 
@@ -2040,7 +2039,7 @@ msgstr "Tap an option to send its number and Enter into the agent pane."
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
-#: src/features/session-info.tsx:71
+#: src/features/session-info.tsx:74
 msgid "Tappable Ask options"
 msgstr "Tappable Ask options"
 
@@ -2120,13 +2119,13 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-shell.tsx:527
+#: src/features/console-shell.tsx:518
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
 #: src/features/console-development.tsx:132
-msgid "This Runtime does not provide the workspace catalog."
-msgstr "This Runtime does not provide the workspace catalog."
+#~ msgid "This Runtime does not provide the workspace catalog."
+#~ msgstr "This Runtime does not provide the workspace catalog."
 
 #: src/features/ticket-reply.tsx:333
 #: src/features/ticket-thread-view.tsx:53
@@ -2139,7 +2138,7 @@ msgstr "Ticket"
 
 #: src/features/console-activity.tsx:204
 #: src/features/console-activity.tsx:293
-#: src/features/console-shell.tsx:128
+#: src/features/console-shell.tsx:119
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -2147,7 +2146,7 @@ msgstr "Ticket activity"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-shell.tsx:118
+#: src/features/console-shell.tsx:109
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2171,30 +2170,30 @@ msgstr "Time counts only while the relay is busy (128 MB × seconds); between me
 #~ msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 #~ msgstr "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 
-#: src/features/session-info.tsx:36
+#: src/features/session-info.tsx:39
 #: src/features/ticket-new.tsx:177
 msgid "Title"
 msgstr "Title"
 
-#: src/features/session-info.tsx:47
+#: src/features/session-info.tsx:50
 msgid "tmux pane"
 msgstr "tmux pane"
 
-#: src/features/session-info.tsx:46
+#: src/features/session-info.tsx:49
 msgid "tmux session"
 msgstr "tmux session"
 
 #: src/features/console-development.tsx:410
-msgid "Tmux session"
-msgstr "Tmux session"
+#~ msgid "Tmux session"
+#~ msgstr "Tmux session"
 
-#: src/features/session-info.tsx:38
+#: src/features/session-info.tsx:41
 msgid "tmux window"
 msgstr "tmux window"
 
 #: src/features/console-development.tsx:414
-msgid "Tmux window"
-msgstr "Tmux window"
+#~ msgid "Tmux window"
+#~ msgstr "Tmux window"
 
 #: src/features/ticket-new.tsx:169
 msgid "To"
@@ -2244,7 +2243,7 @@ msgstr "Trace ID or text"
 
 #: src/features/console-collab-run.tsx:46
 #: src/features/console-collab-run.tsx:56
-#: src/features/session-info.tsx:28
+#: src/features/session-info.tsx:31
 msgid "Transcript"
 msgstr "Transcript"
 
@@ -2274,11 +2273,6 @@ msgstr "TURN relay"
 msgid "Turns"
 msgstr "Turns"
 
-#: src/features/console-development.tsx:404
-#: src/features/console-development.tsx:406
-#: src/features/console-development.tsx:407
-#: src/features/console-development.tsx:411
-#: src/features/console-development.tsx:415
 #: src/features/console-overview.tsx:53
 #: src/features/console-overview.tsx:73
 #: src/features/console-overview.tsx:84
@@ -2302,16 +2296,16 @@ msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:116
-#: src/features/console-shell.tsx:463
+#: src/features/console-shell.tsx:454
 msgid "Uptime"
 msgstr "Uptime"
 
 #: src/features/console-me.tsx:183
-#: src/features/session-info.tsx:30
+#: src/features/session-info.tsx:33
 msgid "Usage"
 msgstr "Usage"
 
-#: src/features/session-info.tsx:73
+#: src/features/session-info.tsx:76
 msgid "Usage from"
 msgstr "Usage from"
 
@@ -2341,15 +2335,19 @@ msgstr "Version"
 msgid "View the source"
 msgstr "View the source"
 
+#: src/features/session-info.tsx:296
+msgid "VS Code window focused"
+msgstr "VS Code window focused"
+
 #: src/features/landing-example.tsx:52
 msgid "waiting"
 msgstr "waiting"
 
-#: src/features/console-shell.tsx:484
+#: src/features/console-shell.tsx:475
 msgid "Waiting"
 msgstr "Waiting"
 
-#: src/features/session-info.tsx:62
+#: src/features/session-info.tsx:65
 msgid "Waiting for"
 msgstr "Waiting for"
 
@@ -2406,7 +2404,7 @@ msgstr "Waiting on you"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/console-shell.tsx:432
+#: src/features/console-shell.tsx:423
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -2435,8 +2433,8 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:255
-#: src/features/console-shell.tsx:341
+#: src/features/console-shell.tsx:246
+#: src/features/console-shell.tsx:332
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -2469,14 +2467,14 @@ msgstr "What you assume"
 msgid "What you saw"
 msgstr "What you saw"
 
-#: src/features/session-info.tsx:27
+#: src/features/session-info.tsx:30
 msgid "Where it runs"
 msgstr "Where it runs"
 
 #: src/features/console-development.tsx:72
 #: src/features/console-development.tsx:100
-msgid "Window focused"
-msgstr "Window focused"
+#~ msgid "Window focused"
+#~ msgstr "Window focused"
 
 #: src/features/landing-example.tsx:108
 msgid "work"
@@ -2524,11 +2522,11 @@ msgid "Workspace, worktree, agent"
 msgstr "Workspace, worktree, agent"
 
 #: src/features/console-development.tsx:146
-msgid "Workspaces"
-msgstr "Workspaces"
+#~ msgid "Workspaces"
+#~ msgstr "Workspaces"
 
 #: src/features/console-collab.tsx:199
-#: src/features/session-info.tsx:43
+#: src/features/session-info.tsx:46
 msgid "Worktree"
 msgstr "Worktree"
 
@@ -2537,8 +2535,8 @@ msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final na
 msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 
 #: src/features/console-development.tsx:205
-msgid "Worktrees"
-msgstr "Worktrees"
+#~ msgid "Worktrees"
+#~ msgstr "Worktrees"
 
 #: src/features/console-me.tsx:182
 msgid "Write access"
@@ -2560,7 +2558,7 @@ msgstr "Writing is not enabled on this device yet (Settings › Write access)."
 msgid "WSL bridge"
 msgstr "WSL bridge"
 
-#: src/features/session-info.tsx:78
+#: src/features/session-info.tsx:81
 msgid "yes"
 msgstr "yes"
 
