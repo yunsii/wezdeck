@@ -1,4 +1,38 @@
+import { trace } from '#/lib/client-trace'
 import { cn } from '#/lib/utils'
+
+/** the nearest ancestor that scrolls (the sheet body, the page) */
+function scrollerOf(el: HTMLElement) {
+  for (let node = el.parentElement; node; node = node.parentElement)
+    if (/auto|scroll/.test(getComputedStyle(node).overflowY)) return node
+  return document.scrollingElement as HTMLElement | null
+}
+
+/**
+ * The heading's section (its parent's parent: heading > button) to the top
+ * of its scroller. Traced as `section-jump` — scroller position and the
+ * section's offset before and after — because it worked headless yet not on
+ * a phone (2026-11-23): the next `wezdeck-wsl diag` shows what happened.
+ */
+function jumpToSection(button: HTMLElement) {
+  const section = button.parentElement?.parentElement
+  const box = scrollerOf(button)
+  if (!section || !box) return
+  const offset = () =>
+    Math.round(
+      section.getBoundingClientRect().top - box.getBoundingClientRect().top,
+    )
+  const before = { scrollTop: Math.round(box.scrollTop), offset: offset() }
+  box.scrollBy({ top: offset(), behavior: 'smooth' })
+  setTimeout(() => {
+    trace('section-jump', {
+      heading: button.textContent.slice(0, 30),
+      scroller: `${box.tagName.toLowerCase()}${box.id ? `#${box.id}` : ''}`,
+      before,
+      after: { scrollTop: Math.round(box.scrollTop), offset: offset() },
+    })
+  }, 700)
+}
 
 /**
  * A section's heading in long, sectioned scrolling content (会话信息, 本机,
@@ -8,11 +42,12 @@ import { cn } from '#/lib/utils'
  * (chat-sticky.tsx). A tap brings its section to the top. Interaction
  * convention: docs/web-pwa.md "Sticky context".
  *
- * `className` brings the surface's fill. A `before:` layer repeats that fill
- * past the heading's box — 8 px up (less than any gap between sections, so
- * it never covers the card above) and to the sides — because on a fast fling
- * the sticky box can trail the content by a frame and rows flashed through
- * the gaps around it.
+ * `className` brings the surface's fill; `.section-cover` (styles/deck.css)
+ * repeats it past the heading's box, because on a phone's fast fling the
+ * sticky box can trail the content by a frame and rows flashed through the
+ * gaps: to the sides always, 8 px up in place (less than any gap between
+ * sections, so it never covers the card above), 32 px up once stuck
+ * (`scroll-state(stuck: top)`), and the heading gets its own layer.
  */
 export function SectionHeading({
   as: Tag = 'h3',
@@ -27,20 +62,15 @@ export function SectionHeading({
   return (
     <Tag
       className={cn(
-        'sticky top-0 z-10 text-caption font-semibold text-brand-muted',
-        "before:pointer-events-none before:absolute before:-inset-x-3 before:-top-2 before:bottom-0 before:-z-10 before:bg-inherit before:content-['']",
+        'section-heading sticky top-0 z-10 text-caption font-semibold text-brand-muted',
         className,
       )}
     >
+      <span aria-hidden className="section-cover" />
       <button
         type="button"
-        // the heading's section (its parent) to the top of the scroller
-        onClick={(event) =>
-          event.currentTarget.parentElement?.parentElement?.scrollIntoView({
-            block: 'start',
-            behavior: 'smooth',
-          })
-        }
+        data-section-heading
+        onClick={(event) => jumpToSection(event.currentTarget)}
         className="block w-full cursor-pointer px-1 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
       >
         {children}

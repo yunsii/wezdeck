@@ -78,3 +78,26 @@ html[data-theme='dark'] [data-deck] {
 html[data-theme='dark'] .key-press:active {
   box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.1);
 }
+
+/* SectionHeading (components/ui/section-heading.tsx): the heading's fill,
+   carried past its box so a fast fling never shows rows around a sticky
+   box that trails by a frame — wider always, higher only once stuck (in
+   place it must not cover the card above, and sections are ≥ 12 px apart). */
+.section-heading {
+  container-type: scroll-state;
+  will-change: transform;
+}
+
+.section-cover {
+  position: absolute;
+  inset: -8px -12px 0;
+  z-index: -1;
+  background: inherit;
+  pointer-events: none;
+}
+
+@container scroll-state(stuck: top) {
+  .section-cover {
+    top: -32px;
+  }
+}

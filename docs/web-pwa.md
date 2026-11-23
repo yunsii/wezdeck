@@ -184,10 +184,15 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   交互调试, any new page of titled groups — pins the nearest section heading
   with `components/ui/section-heading.tsx` (`position: sticky; top: 0` inside
   its section, so the next heading pushes it off; `className` carries the
-  surface's fill, which a `before:` layer repeats 8 px up and to the sides —
-  on a fast fling the sticky box can trail the content by a frame and rows
+  surface's fill, which `.section-cover` (`styles/deck.css`) repeats past
+  the box — to the sides, 8 px up in place, 32 px up once stuck via
+  `@container scroll-state(stuck: top)` — on its own layer: on a phone's
+  fast fling the sticky box can trail the content by a frame and rows
   flashed through the gaps). A tap on either brings what it names into view:
-  the user's message, or the heading's section scrolled to the top. Don't hand-roll a section
+  the user's message, or the heading's section — `scrollBy` on the heading's
+  own scroller (not `scrollIntoView`, which may move an outer ancestor such
+  as the sheet's), traced as `section-jump` (scroller, offset before / after)
+  for `wezdeck-wsl diag`. Don't hand-roll a section
   `<h2>` / `<h3>` in scrolling content; no `overflow: hidden` between the
   heading and its scroller, or sticky silently stops.
 - Back (2026-11-23): every pushed page (a session, a 我的 group, a ticket)
