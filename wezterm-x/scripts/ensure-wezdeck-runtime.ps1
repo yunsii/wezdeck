@@ -258,6 +258,24 @@ function Write-ManagerConfig {
     }
   }
 
+  # Browser slot exclusivity (docs/browser-debug.md): with backend=ego the CDP
+  # debug Chrome must not auto-start, whoever runs this ensure. An ensure
+  # without chrome args inherits the previous enabled flag, so a stale `true`
+  # (a switch to ego that never reached the helper) kept relaunching / adopting
+  # the debug Chrome on every sync. The status file apply-browser-backend
+  # writes is the source of truth here.
+  $browserStatus = Join-Path $ManagerPaths.Root 'state\browser-agent\status.json'
+  if ($chromeAutoStartEnabled -and (Test-Path -LiteralPath $browserStatus)) {
+    try {
+      $slot = Get-Content -LiteralPath $browserStatus -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+      if ($slot -and [string]$slot.backend -eq 'ego') {
+        $chromeAutoStartEnabled = $false
+      }
+    } catch {
+      # unreadable status: keep the requested / inherited value
+    }
+  }
+
   $fgAllowlist = @()
   if (-not [string]::IsNullOrWhiteSpace($fgAllowlistRaw)) {
     $fgAllowlist = @(

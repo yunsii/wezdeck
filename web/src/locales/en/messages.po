@@ -1614,7 +1614,7 @@ msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:209
-#: src/features/console-shell.tsx:439
+#: src/features/console-shell.tsx:434
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
 msgid "Ready"
@@ -1754,7 +1754,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:49
-#: src/features/console-shell.tsx:485
+#: src/features/console-shell.tsx:480
 #: src/features/me-host.tsx:87
 msgid "Retry"
 msgstr "Retry"
@@ -2199,7 +2199,7 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-shell.tsx:482
+#: src/features/console-shell.tsx:477
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -2436,8 +2436,8 @@ msgstr "VS Code window focused"
 #~ msgstr "waiting"
 
 #: src/features/console-shell.tsx:439
-msgid "Waiting"
-msgstr "Waiting"
+#~ msgid "Waiting"
+#~ msgstr "Waiting"
 
 #: src/features/session-info.tsx:65
 msgid "Waiting for"

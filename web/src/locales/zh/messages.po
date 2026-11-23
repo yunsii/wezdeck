@@ -1614,7 +1614,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:209
-#: src/features/console-shell.tsx:439
+#: src/features/console-shell.tsx:434
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
 msgid "Ready"
@@ -1754,7 +1754,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:49
-#: src/features/console-shell.tsx:485
+#: src/features/console-shell.tsx:480
 #: src/features/me-host.tsx:87
 msgid "Retry"
 msgstr "重试"
@@ -2199,7 +2199,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-shell.tsx:482
+#: src/features/console-shell.tsx:477
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -2436,8 +2436,8 @@ msgstr "已切到 VS Code 窗口"
 #~ msgstr "等待中"
 
 #: src/features/console-shell.tsx:439
-msgid "Waiting"
-msgstr "等待中"
+#~ msgid "Waiting"
+#~ msgstr "等待中"
 
 #: src/features/session-info.tsx:65
 msgid "Waiting for"

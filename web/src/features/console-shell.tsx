@@ -421,24 +421,19 @@ function StatusBand() {
         </strong>
       </span>
       <WakatimeStatus />
-      <a
-        href={
-          'http://127.0.0.1:' + (data?.chrome?.port ?? 9222) + '/json/version'
-        }
-        target="_blank"
-        rel="noreferrer"
-        className="ml-auto font-mono text-brand-label hover:text-brand-text"
-      >
-        CDP {data?.chrome?.port ?? 9222}
-        <span
-          className={
-            data?.chrome?.alive ? ' text-brand-done' : ' text-brand-waiting'
-          }
+      {/* only while the debug Chrome runs: with the browser slot on ego it
+          is off on purpose (docs/browser-debug.md), not something to wait for */}
+      {data?.chrome?.alive ? (
+        <a
+          href={'http://127.0.0.1:' + data.chrome.port + '/json/version'}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-auto font-mono text-brand-label hover:text-brand-text"
         >
-          {' '}
-          {data?.chrome?.alive ? t`Ready` : t`Waiting`}
-        </span>
-      </a>
+          CDP {data.chrome.port}
+          <span className="text-brand-done"> {t`Ready`}</span>
+        </a>
+      ) : null}
     </div>
   )
 }
