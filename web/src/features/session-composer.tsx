@@ -60,7 +60,10 @@ export function ErrorLine({ message }: { message: string }) {
     }
   }
   return (
-    <p role="alert" className="flex items-start gap-2 text-xs text-brand-error">
+    <p
+      role="alert"
+      className="flex items-start gap-2 text-meta text-brand-error"
+    >
       <span className="min-w-0 flex-1 break-words select-text">{message}</span>
       <Button
         variant="plain"
@@ -172,7 +175,7 @@ type Composer = ReturnType<typeof useComposer>
 type Panel = 'keys' | 'todos' | 'commands' | null
 
 const tool =
-  'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
+  'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-caption'
 
 /**
  * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
@@ -207,12 +210,9 @@ function KeyPanel({
   const { t } = useLingui()
   const keys = useQuickKeys()
   return (
-    <div
-      data-write
-      className="grid gap-1.5 rounded-[16px] bg-brand-surface p-2"
-    >
+    <div data-write className="grid gap-1.5 rounded-2xl bg-brand-surface p-2">
       <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-[11.5px] text-brand-label">
+        <span className="text-meta text-brand-label">
           {disabled
             ? t`Turn on write access in Settings to send these keys`
             : t`Tap to send into the agent pane`}
@@ -243,12 +243,10 @@ function KeyPanel({
               onKey(key)
               onClose()
             }}
-            className="grid h-12 place-content-center gap-0.5 rounded-[10px] px-1 disabled:opacity-40"
+            className="grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40"
           >
-            <span className="text-[14px] leading-none font-medium">
-              {label}
-            </span>
-            <span className="text-[11px] leading-none text-brand-label">
+            <span className="text-body leading-none font-medium">{label}</span>
+            <span className="text-meta leading-none text-brand-label">
               {hint}
             </span>
           </Button>
@@ -333,9 +331,7 @@ function Toolbar({
         <ListTodo size={14} aria-hidden />
         {t`To-dos`}
         {openTodos ? (
-          <span className="text-[11px] tabular-nums opacity-80">
-            {openTodos}
-          </span>
+          <span className="text-meta tabular-nums opacity-80">{openTodos}</span>
         ) : null}
       </Button>
       {writable && !full ? (
@@ -390,7 +386,7 @@ function PickedImages({ composer }: { composer: Composer }) {
             <img
               src={image.url}
               alt=""
-              className="size-16 rounded-[12px] object-cover"
+              className="size-16 rounded-xl object-cover"
             />
           </Button>
           <Button
@@ -486,11 +482,11 @@ export function ComposerBox({
         onPanel={setPanel}
       />
       {composer.progress ? (
-        <p role="status" className="px-1 text-xs text-brand-muted">
+        <p role="status" className="px-1 text-meta text-brand-muted">
           {composer.progress}
         </p>
       ) : null}
-      <div className="flex items-end gap-2 rounded-[22px] bg-brand-surface p-1.5">
+      <div className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5">
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
         </label>
@@ -506,7 +502,7 @@ export function ComposerBox({
           onChange={(event) => composer.setText(event.target.value)}
           rows={1}
           placeholder={t`Message`}
-          className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-[16px] outline-none [field-sizing:content] placeholder:text-brand-label"
+          className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
         <Button
           variant="solid"

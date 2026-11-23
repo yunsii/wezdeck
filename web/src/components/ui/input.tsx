@@ -6,10 +6,10 @@ import { cn } from '#/lib/utils'
 const looks = {
   /** dense desktop field */
   default:
-    'min-h-8 w-full rounded-md border border-brand-border bg-brand-soft px-2.5 text-xs text-brand-text outline-none transition focus:border-brand-running focus:ring-2 focus:ring-brand-running/20',
+    'min-h-8 w-full rounded-lg border border-brand-border bg-brand-soft px-2.5 text-meta text-brand-text outline-none transition focus:border-brand-running focus:ring-2 focus:ring-brand-running/20',
   /** phone form field: 44 px tall, 15 px text */
   field:
-    'min-h-11 w-full rounded-[10px] bg-brand-surface px-3 text-[15px] text-brand-text outline-none placeholder:text-brand-label focus-visible:ring-2 focus-visible:ring-brand-running/40 disabled:opacity-60',
+    'min-h-11 w-full rounded-xl bg-brand-surface px-3 text-body text-brand-text outline-none placeholder:text-brand-label focus-visible:ring-2 focus-visible:ring-brand-running/40 disabled:opacity-60',
   /** no chrome: sits inside a styled container (search box, composer) */
   bare: 'min-w-0 bg-transparent outline-none placeholder:text-brand-label',
 }

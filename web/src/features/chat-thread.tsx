@@ -89,7 +89,7 @@ function SentAttachments({ text }: { text: string }) {
             <span
               key={file.name}
               title={file.name}
-              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-[12px]"
+              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-meta"
             >
               {file.label}
             </span>
@@ -133,9 +133,9 @@ const Bubble = memo(function BubbleView({
       <div
         data-user-at={mine ? at : undefined}
         className={cn(
-          'min-w-0 rounded-[14px] px-3.5 py-2.5',
+          'min-w-0 rounded-xl px-3.5 py-2.5',
           mine
-            ? 'bg-brand-text text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-deck'
+            ? 'bg-brand-text text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck'
             : 'bg-brand-surface text-brand-text',
         )}
       >
@@ -242,7 +242,7 @@ function Typing({ activity }: { activity?: Activity }) {
           size={9}
           className="led-running"
         />
-        <span className="min-w-0 truncate text-[13px] text-brand-muted">
+        <span className="min-w-0 truncate text-caption text-brand-muted">
           <span className={cn(compacting && 'text-brand-waiting')}>
             {label}…
           </span>
@@ -422,7 +422,7 @@ function CompactDivider({
       className="py-1"
       data-testid="compact-divider"
       chevron={false}
-      triggerClassName="text-[12px] text-brand-label"
+      triggerClassName="text-meta text-brand-label"
       title={
         <>
           <span className="h-px flex-1 bg-brand-edge" />
@@ -440,7 +440,7 @@ function CompactDivider({
       }
     >
       {message.body ? (
-        <p className="mt-2 max-h-72 overflow-y-auto rounded-[12px] bg-brand-surface px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap text-brand-muted">
+        <p className="mt-2 max-h-72 overflow-y-auto rounded-xl bg-brand-surface px-3 py-2 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
           {message.body}
         </p>
       ) : null}
@@ -465,7 +465,7 @@ function PendingBubbles({ pending }: { pending: Array<Pending> }) {
         <div
           key={item.at}
           data-pending={item.state ?? 'queued'}
-          className="chat-in min-w-0 rounded-[14px] bg-brand-text px-3.5 py-2.5 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55"
+          className="chat-in min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55"
         >
           {item.text}
           {item.note ? (

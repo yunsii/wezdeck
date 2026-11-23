@@ -124,7 +124,7 @@ export function NextWaitingChip({
       onClick={onNext}
       data-testid="next-waiting"
       title="Alt+j"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-[12.5px] text-brand-text"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-caption text-brand-text"
     >
       <Led tone="waiting" size={10} />
       {t`${count} more need you`} ›
@@ -165,10 +165,10 @@ export function SessionSwitcher({
           size={10}
         />
         <span className="grid min-w-0 flex-1">
-          <span className="truncate text-[15px] font-medium">
+          <span className="truncate text-body font-medium">
             {titleOf(session)}
           </span>
-          <span className="flex min-w-0 gap-1.5 text-[12px] text-brand-label">
+          <span className="flex min-w-0 gap-1.5 text-meta text-brand-label">
             {session.agent !== 'agent' || session.name ? (
               <span className="shrink-0">
                 {session.name && session.name !== session.agent
@@ -193,8 +193,8 @@ export function SessionSwitcher({
     >
       <div className="grid gap-3 px-3">
         {nav.waiting.length ? (
-          <section className="overflow-hidden rounded-[14px] border border-brand-waiting/40 bg-brand-surface">
-            <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
+          <section className="overflow-hidden rounded-xl border border-brand-waiting/40 bg-brand-surface">
+            <h3 className="px-4 pt-2 text-caption font-semibold text-brand-muted">
               {t`Needs you`}
             </h3>
             <ul>
@@ -205,9 +205,9 @@ export function SessionSwitcher({
         {nav.tree.map((repo) => (
           <section
             key={repo.key}
-            className="overflow-hidden rounded-[14px] bg-brand-surface"
+            className="overflow-hidden rounded-xl bg-brand-surface"
           >
-            <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
+            <h3 className="px-4 pt-2 text-caption font-semibold text-brand-muted">
               {repo.label}
             </h3>
             <ul>
@@ -224,7 +224,7 @@ export function SessionSwitcher({
             </ul>
           </section>
         ))}
-        <p className="px-1 text-[11.5px] text-brand-label">
+        <p className="px-1 text-meta text-brand-label">
           {t`On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list.`}
         </p>
       </div>

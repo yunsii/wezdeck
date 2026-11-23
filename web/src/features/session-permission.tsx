@@ -42,24 +42,24 @@ export function PermissionCard({
     <div
       data-write
       data-testid="permission-card"
-      className="grid gap-2.5 rounded-[16px] bg-brand-surface p-3"
+      className="grid gap-2.5 rounded-2xl bg-brand-surface p-3"
     >
-      <p className="text-sm font-medium">
+      <p className="text-body font-medium">
         {call.plan
           ? t`Claude wants to leave plan mode and start on this plan`
           : t`Claude asks to run this`}
       </p>
       {call.plan ? (
-        <div className="max-h-96 overflow-y-auto rounded-[12px] bg-brand-deck px-3 py-2">
+        <div className="max-h-96 overflow-y-auto rounded-xl bg-brand-deck px-3 py-2">
           <ChatMarkdown text={call.body ?? ''} />
         </div>
       ) : (
         <div className="grid gap-1.5">
-          <p className="flex min-w-0 items-baseline gap-2 text-[13.5px]">
+          <p className="flex min-w-0 items-baseline gap-2 text-caption">
             <span className="shrink-0 text-brand-label">{call.tool}</span>
             {/* a command is shown whole below, not twice */}
             {call.body !== target ? (
-              <span className="min-w-0 truncate font-mono text-[12.5px]">
+              <span className="min-w-0 truncate font-mono text-caption">
                 {target}
               </span>
             ) : null}
@@ -73,7 +73,7 @@ export function PermissionCard({
           type="button"
           disabled={disabled}
           onClick={() => onKey(PERMISSION_KEYS.allow)}
-          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {call.plan ? t`Approve the plan` : t`Allow`}
         </Button>
@@ -82,12 +82,12 @@ export function PermissionCard({
           type="button"
           disabled={disabled}
           onClick={() => onKey(PERMISSION_KEYS.deny)}
-          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {call.plan ? t`Keep planning` : t`Deny`}
         </Button>
       </div>
-      <p className="text-[12px] leading-relaxed text-brand-label">
+      <p className="text-meta leading-relaxed text-brand-label">
         {call.plan
           ? t`Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change.`
           : t`After deny, say in the box below what to do instead. "Don't ask again" and other options are at the desk.`}
@@ -95,9 +95,9 @@ export function PermissionCard({
       {screen ? (
         <Disclosure
           title={t`Terminal`}
-          triggerClassName="min-h-8 text-[12.5px] font-normal text-brand-label"
+          triggerClassName="min-h-8 text-caption font-normal text-brand-label"
         >
-          <pre className="max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
+          <pre className="max-h-48 overflow-auto font-mono text-meta leading-snug text-brand-muted">
             {screen.split('\n').slice(-14).join('\n')}
           </pre>
         </Disclosure>

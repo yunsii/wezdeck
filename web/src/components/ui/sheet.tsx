@@ -58,7 +58,7 @@ export function Sheet({
               'motion-reduce:data-[ending-style]:translate-y-0 motion-reduce:data-[ending-style]:opacity-0 motion-reduce:data-[starting-style]:translate-y-0 motion-reduce:data-[starting-style]:opacity-0 motion-reduce:starting:translate-y-0 motion-reduce:starting:opacity-0',
               // a desk-sized window: a centred dialog (fade + scale), not a
               // strip stuck to the bottom with a phone's grab handle
-              'md:max-h-[85dvh] md:rounded-[20px] md:border md:data-[ending-style]:translate-y-0 md:data-[ending-style]:scale-[0.96] md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-0 md:data-[starting-style]:scale-[0.96] md:data-[starting-style]:opacity-0 md:starting:translate-y-0 md:starting:scale-[0.96] md:starting:opacity-0',
+              'md:max-h-[85dvh] md:rounded-2xl md:border md:data-[ending-style]:translate-y-0 md:data-[ending-style]:scale-[0.96] md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-0 md:data-[starting-style]:scale-[0.96] md:data-[starting-style]:opacity-0 md:starting:translate-y-0 md:starting:scale-[0.96] md:starting:opacity-0',
               className,
             )}
           >
@@ -69,7 +69,7 @@ export function Sheet({
                 className="mx-auto mb-2 h-1 w-10 rounded-full bg-brand-label/40 md:hidden"
               />
               <div className="flex items-center justify-between gap-2">
-                <Drawer.Title className="text-[16px] font-semibold">
+                <Drawer.Title className="text-title font-semibold">
                   {title}
                 </Drawer.Title>
                 <Drawer.Close

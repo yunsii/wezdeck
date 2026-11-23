@@ -95,17 +95,17 @@ function ResumeSheet({
       testId="resume-sheet"
       write
     >
-      <p className="px-1 pb-2 text-[12.5px] text-brand-label">
+      <p className="px-1 pb-2 text-caption text-brand-label">
         {t`Earlier conversations of this project. The pane switches to the one you pick; this page follows.`}
       </p>
       {history.isPending ? (
-        <p className="py-6 text-center text-sm text-brand-muted">{t`Loading…`}</p>
+        <p className="py-6 text-center text-caption text-brand-muted">{t`Loading…`}</p>
       ) : history.isError ? (
-        <p className="py-6 text-center text-sm text-brand-error">
+        <p className="py-6 text-center text-body text-brand-error">
           {history.error.message}
         </p>
       ) : items.length === 0 ? (
-        <p className="py-6 text-center text-sm text-brand-muted">
+        <p className="py-6 text-center text-caption text-brand-muted">
           {t`No earlier conversations in this project`}
         </p>
       ) : (
@@ -118,18 +118,18 @@ function ResumeSheet({
                 disabled={item.open}
                 data-resume={item.id}
                 onClick={() => onPick(item.id)}
-                className="grid w-full gap-0.5 rounded-[14px] bg-brand-surface px-3.5 py-2.5 text-left disabled:opacity-50"
+                className="grid w-full gap-0.5 rounded-xl bg-brand-surface px-3.5 py-2.5 text-left disabled:opacity-50"
               >
                 <span className="flex min-w-0 items-baseline justify-between gap-3">
-                  <span className="truncate text-[15px] font-medium">
+                  <span className="truncate text-body font-medium">
                     {item.title || item.prompt || item.id.slice(0, 8)}
                   </span>
-                  <span className="shrink-0 text-xs text-brand-label">
+                  <span className="shrink-0 text-meta text-brand-label">
                     {item.open ? t`open in a pane` : ago(item.at)}
                   </span>
                 </span>
                 {item.title && item.prompt ? (
-                  <span className="line-clamp-2 text-[13px] text-brand-muted">
+                  <span className="line-clamp-2 text-caption text-brand-muted">
                     {item.prompt}
                   </span>
                 ) : null}
@@ -192,14 +192,11 @@ export function CommandPanel({
   ]
   const models = ['opus', 'sonnet', 'haiku', 'default']
   const key =
-    'grid h-12 place-content-center gap-0.5 rounded-[10px] px-1 disabled:opacity-40'
+    'grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40'
   return (
-    <div
-      data-write
-      className="grid gap-1.5 rounded-[16px] bg-brand-surface p-2"
-    >
+    <div data-write className="grid gap-1.5 rounded-2xl bg-brand-surface p-2">
       <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-[11.5px] text-brand-label">
+        <span className="text-meta text-brand-label">
           {disabled
             ? t`Turn on write access in Settings to send commands`
             : t`Claude commands, sent into the pane`}
@@ -232,17 +229,17 @@ export function CommandPanel({
             }}
             className={key}
           >
-            <span className="font-mono text-[13.5px] leading-none">
+            <span className="font-mono text-caption leading-none">
               {command.label}
             </span>
-            <span className="text-[11px] leading-none text-brand-label">
+            <span className="text-meta leading-none text-brand-label">
               {command.hint}
             </span>
           </Button>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1">
-        <span className="text-[11.5px] text-brand-label">/model</span>
+        <span className="text-meta text-brand-label">/model</span>
         {models.map((model) => (
           <Button
             variant="key"
@@ -253,7 +250,7 @@ export function CommandPanel({
               onCommand(`/model ${model}`)
               onClose()
             }}
-            className={cn('h-8 rounded-full px-3 font-mono text-[12.5px]')}
+            className={cn('h-8 rounded-full px-3 font-mono text-caption')}
           >
             {model}
           </Button>

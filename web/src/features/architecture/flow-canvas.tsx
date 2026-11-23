@@ -57,7 +57,7 @@ const CardNode = memo(function CardView({ data }: NodeProps<Node<CardData>>) {
       onPointerLeave={() => setHover(null)}
       style={{ width: CARD_W, height: CARD_H }}
       className={cn(
-        'grid cursor-pointer content-start gap-1 rounded-[14px] border bg-brand-surface px-3.5 py-3 text-left shadow-[0_1px_0_var(--brand-border)] transition-[opacity,border-color,box-shadow] duration-[var(--motion-short)]',
+        'grid cursor-pointer content-start gap-1 rounded-xl border bg-brand-surface px-3.5 py-3 text-left shadow-[0_1px_0_var(--brand-border)] transition-[opacity,border-color,box-shadow] duration-[var(--motion-short)]',
         state === 'selected'
           ? 'border-brand-running shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-running)_22%,transparent)]'
           : state === 'lit'
@@ -87,20 +87,20 @@ const CardNode = memo(function CardView({ data }: NodeProps<Node<CardData>>) {
       ])}
       <span className="flex min-w-0 items-baseline gap-2">
         {numbered ? (
-          <span className="shrink-0 text-xs font-semibold text-brand-running tabular-nums">
+          <span className="shrink-0 text-meta font-semibold text-brand-running tabular-nums">
             {index + 1}
           </span>
         ) : null}
-        <span className="truncate text-[14.5px] font-semibold text-brand-text">
+        <span className="truncate text-body font-semibold text-brand-text">
           {pick(card.title, lang)}
         </span>
         {card.planned ? (
-          <span className="ml-auto shrink-0 rounded-full border border-dashed border-brand-border px-1.5 text-[11px] text-brand-label">
+          <span className="ml-auto shrink-0 rounded-full border border-dashed border-brand-border px-1.5 text-meta text-brand-label">
             {lang === 'zh' ? '规划中' : 'planned'}
           </span>
         ) : null}
       </span>
-      <span className="line-clamp-2 text-[12.5px] leading-snug text-brand-muted">
+      <span className="line-clamp-2 text-caption leading-snug text-brand-muted">
         {pick(card.sub, lang)}
       </span>
     </div>
@@ -113,11 +113,11 @@ const LaneNode = memo(function LaneView({ data }: NodeProps<Node<LaneData>>) {
     <div
       style={{ width: data.w, height: data.h }}
       className={cn(
-        'rounded-[18px] border border-brand-border',
+        'rounded-2xl border border-brand-border',
         data.tone % 2 ? 'bg-brand-soft' : 'bg-transparent',
       )}
     >
-      <div className="px-4 pt-3.5 text-[13px] font-semibold text-brand-label">
+      <div className="px-4 pt-3.5 text-caption font-semibold text-brand-label">
         {data.label}
       </div>
     </div>

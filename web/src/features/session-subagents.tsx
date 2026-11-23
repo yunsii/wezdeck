@@ -65,18 +65,18 @@ function Row({ agent, now }: { agent: Subagent; now: number }) {
       </span>
       <span className="grid min-w-0 gap-0.5">
         <span className="flex min-w-0 items-baseline justify-between gap-2">
-          <span className="truncate text-[14px] font-medium">{title}</span>
-          <span className="shrink-0 text-[11.5px] text-brand-label tabular-nums">
+          <span className="truncate text-body font-medium">{title}</span>
+          <span className="shrink-0 text-meta text-brand-label tabular-nums">
             {ran}
           </span>
         </span>
-        <span className="truncate font-mono text-[11.5px] text-brand-muted">
+        <span className="truncate font-mono text-meta text-brand-muted">
           {agent.state === 'stale'
             ? t`No activity for a while`
             : (agent.last_tool ??
               (agent.state === 'done' ? t`Finished` : t`Starting…`))}
         </span>
-        <span className="text-[11px] text-brand-label">
+        <span className="text-meta text-brand-label">
           {agent.type}
           {agent.background ? ` · ${t`background`}` : ''}
           {tools ? ` · ${t`${tools} tool calls`}` : ''}
@@ -104,14 +104,14 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
   return (
     <section
       data-testid="session-subagents"
-      className="overflow-hidden rounded-[14px] bg-brand-surface"
+      className="overflow-hidden rounded-xl bg-brand-surface"
     >
       <Button
         variant="plain"
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="flex min-h-10 w-full min-w-0 items-center gap-2 px-3 text-left text-[12.5px]"
+        className="flex min-h-10 w-full min-w-0 items-center gap-2 px-3 text-left text-caption"
       >
         <Led tone={runningCount ? 'running' : 'waiting'} size={9} />
         <span className="shrink-0 font-medium text-brand-muted">
@@ -120,7 +120,7 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
             : t`${staleCount} subagents silent for a while`}
         </span>
         {doing ? (
-          <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-brand-label">
+          <span className="min-w-0 flex-1 truncate font-mono text-meta text-brand-label">
             {doing}
           </span>
         ) : (

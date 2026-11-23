@@ -93,10 +93,10 @@ export function TodoPanel({
     <div
       data-write
       data-testid="todo-panel"
-      className="grid grid-cols-[minmax(0,1fr)] gap-2 rounded-[16px] bg-brand-surface p-2"
+      className="grid grid-cols-[minmax(0,1fr)] gap-2 rounded-2xl bg-brand-surface p-2"
     >
       <div className="flex items-center justify-between gap-2 px-1">
-        <span className="min-w-0 truncate text-[11.5px] text-brand-label">
+        <span className="min-w-0 truncate text-meta text-brand-label">
           {repo
             ? t`To-dos of ${repo}: they stay with the repo, any session can pick them up`
             : t`To-dos of this repo`}
@@ -136,34 +136,34 @@ export function TodoPanel({
             type="button"
             onClick={() => void add()}
             disabled={!text.trim() || write.busy}
-            className="shrink-0 rounded-[10px] px-3 text-[14px] font-medium disabled:opacity-40"
+            className="shrink-0 rounded-xl px-3 text-body font-medium disabled:opacity-40"
           >
             {t`Add`}
           </Button>
         </div>
       ) : null}
       {write.error ? (
-        <p role="alert" className="px-1 text-xs text-brand-error">
+        <p role="alert" className="px-1 text-meta text-brand-error">
           {write.error}
         </p>
       ) : null}
       {list.isError ? (
-        <p className="px-1 text-xs text-brand-muted">
+        <p className="px-1 text-meta text-brand-muted">
           {String(list.error.message)}
         </p>
       ) : null}
       <ul className="grid max-h-64 grid-cols-[minmax(0,1fr)] gap-1 overflow-y-auto">
         {open.length === 0 && !list.isPending ? (
-          <li className="px-1 py-2 text-[13px] text-brand-muted">
+          <li className="px-1 py-2 text-caption text-brand-muted">
             {t`Nothing to follow up in this repo.`}
           </li>
         ) : null}
         {open.map((todo) => (
           <li
             key={todo.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1 rounded-[10px] bg-brand-deck px-2.5 py-2"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1 rounded-xl bg-brand-deck px-2.5 py-2"
           >
-            <span className="text-[14px] leading-snug break-words">
+            <span className="text-body leading-snug break-words">
               {todo.text}
             </span>
             <span className="flex gap-1">
@@ -199,7 +199,7 @@ export function TodoPanel({
             variant="plain"
             type="button"
             onClick={() => setShowDone(!showDone)}
-            className="px-1 text-left text-[12px] text-brand-label"
+            className="px-1 text-left text-meta text-brand-label"
           >
             {showDone ? t`Hide done` : t`Done (${doneCount})`}
           </Button>
@@ -207,7 +207,7 @@ export function TodoPanel({
             ? done.slice(0, 20).map((todo) => (
                 <div
                   key={todo.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 px-2.5 text-[13px] text-brand-muted line-through"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 px-2.5 text-caption text-brand-muted line-through"
                 >
                   <span className="break-words">{todo.text}</span>
                   {writable ? (
@@ -250,20 +250,20 @@ export function OpenTodos() {
       className="grid grid-cols-[minmax(0,1fr)] gap-2"
       data-testid="open-todos"
     >
-      <h2 className="text-[19px] font-bold">{t`To follow up`}</h2>
-      <ul className="overflow-hidden rounded-[16px] bg-brand-surface">
+      <h2 className="text-heading font-semibold">{t`To follow up`}</h2>
+      <ul className="overflow-hidden rounded-2xl bg-brand-surface">
         {[...repos].map(([repo, items]) => (
           <li
             key={repo}
             className="grid gap-1 border-b border-brand-edge px-4 py-3 last:border-b-0"
           >
-            <span className="text-[13px] font-semibold text-brand-muted">
+            <span className="text-caption font-semibold text-brand-muted">
               {repo}
             </span>
             {items.map((todo) => (
               <span
                 key={todo.id}
-                className="text-[15px] leading-snug break-words"
+                className="text-body leading-snug break-words"
               >
                 {todo.text}
               </span>

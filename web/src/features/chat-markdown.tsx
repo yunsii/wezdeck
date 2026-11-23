@@ -10,20 +10,22 @@ const components: Components = {
     <p className="my-1.5 first:mt-0 last:mb-0">{children}</p>
   ),
   h1: ({ children }) => (
-    <h3 className="mt-3 mb-1 text-[16px] font-bold first:mt-0">{children}</h3>
+    <h3 className="mt-3 mb-1 text-title font-semibold first:mt-0">
+      {children}
+    </h3>
   ),
   h2: ({ children }) => (
-    <h3 className="mt-3 mb-1 text-[16px] font-bold first:mt-0">{children}</h3>
+    <h3 className="mt-3 mb-1 text-title font-semibold first:mt-0">
+      {children}
+    </h3>
   ),
   h3: ({ children }) => (
-    <h4 className="mt-2.5 mb-1 text-[15px] font-semibold first:mt-0">
+    <h4 className="mt-2.5 mb-1 text-body font-semibold first:mt-0">
       {children}
     </h4>
   ),
   h4: ({ children }) => (
-    <h4 className="mt-2 mb-1 text-[15px] font-semibold first:mt-0">
-      {children}
-    </h4>
+    <h4 className="mt-2 mb-1 text-body font-semibold first:mt-0">{children}</h4>
   ),
   ul: ({ children }) => (
     <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>
@@ -57,18 +59,18 @@ const components: Components = {
     className ? (
       <code className={className}>{children}</code>
     ) : (
-      <code className="rounded-[5px] bg-brand-soft px-1 py-px font-mono text-[13px]">
+      <code className="rounded-lg bg-brand-soft px-1 py-px font-mono text-caption">
         {children}
       </code>
     ),
   pre: ({ children }) => (
-    <pre className="my-2 overflow-x-auto rounded-[10px] bg-brand-deck p-2.5 font-mono text-[12px] leading-snug">
+    <pre className="my-2 overflow-x-auto rounded-xl bg-brand-deck p-2.5 font-mono text-meta leading-snug">
       {children}
     </pre>
   ),
   table: ({ children }) => (
-    <div className="my-2 overflow-x-auto rounded-[10px] border border-brand-edge">
-      <table className="w-max min-w-full border-collapse text-[13px]">
+    <div className="my-2 overflow-x-auto rounded-xl border border-brand-edge">
+      <table className="w-max min-w-full border-collapse text-caption">
         {children}
       </table>
     </div>
@@ -113,7 +115,7 @@ export function ChatMarkdown({
   streaming?: boolean
 }) {
   return (
-    <div className="text-[15px] leading-relaxed break-words">
+    <div className="text-body leading-relaxed break-words">
       <Streamdown
         components={components}
         animated={reveal}

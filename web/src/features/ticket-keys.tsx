@@ -41,7 +41,7 @@ export function TicketKeys({
   const [showOlder, setShowOlder] = useState(false)
   if (tickets.length === 0 && older.length === 0) {
     return (
-      <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
+      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
         {empty}
       </p>
     )
@@ -57,7 +57,7 @@ export function TicketKeys({
       {tickets.length ? (
         <ul
           aria-label={t`Collab tickets`}
-          className="overflow-hidden rounded-[16px] bg-brand-surface"
+          className="overflow-hidden rounded-2xl bg-brand-surface"
         >
           {tickets.map((ticket) => (
             <TicketKey
@@ -70,14 +70,14 @@ export function TicketKeys({
         </ul>
       ) : null}
       {count ? (
-        <section className="overflow-hidden rounded-[16px] bg-brand-surface">
+        <section className="overflow-hidden rounded-2xl bg-brand-surface">
           <Button
             variant="plain"
             type="button"
             aria-expanded={showOlder}
             onClick={() => setShowOlder(!showOlder)}
             data-testid="tickets-older"
-            className="flex min-h-11 w-full items-center justify-between px-4 text-left text-[14px] text-brand-muted"
+            className="flex min-h-11 w-full items-center justify-between px-4 text-left text-caption text-brand-muted"
           >
             {t`Quiet for over a week (${count})`}
             <span
@@ -140,14 +140,14 @@ function TicketKey({
         <span className="pt-1">
           <Led tone={tone} size={13} />
         </span>
-        <span className="line-clamp-2 text-[16px] leading-snug font-semibold text-brand-text md:text-[14px]">
+        <span className="line-clamp-2 text-title leading-snug font-semibold text-brand-text md:text-body">
           {ticket.title || ticket.id}
         </span>
-        <span className="pt-0.5 text-xs text-brand-label">
+        <span className="pt-0.5 text-meta text-brand-label">
           {ago(ticket.updated_at)}
         </span>
         <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className={cn('text-xs font-medium', toneText[tone])}>
+          <span className={cn('text-meta font-medium', toneText[tone])}>
             {statusLabel(ticket)}
           </span>
           <RepoRoute from={ticket.from} to={ticket.to} />

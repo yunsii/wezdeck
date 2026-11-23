@@ -33,7 +33,7 @@ export function TicketThread({
   const entries = parseThread(text)
   if (entries.length === 0)
     return (
-      <p className="px-4 pb-4 text-[14px] whitespace-pre-wrap text-brand-muted">
+      <p className="px-4 pb-4 text-caption whitespace-pre-wrap text-brand-muted">
         {text.trim()}
       </p>
     )
@@ -55,7 +55,7 @@ export function TicketThread({
       className="grid gap-3 px-3 pb-4"
     >
       {threadClipped(text) ? (
-        <li className="justify-self-center text-[12px] text-brand-label">
+        <li className="justify-self-center text-meta text-brand-label">
           {t`Earlier messages are left out here; the ticket file has them all.`}
         </li>
       ) : null}
@@ -71,7 +71,7 @@ export function TicketThread({
             )}
           >
             {mine ? null : (
-              <span className="px-1 text-[12px] text-brand-label">
+              <span className="px-1 text-meta text-brand-label">
                 {whoName(entry.who)}
               </span>
             )}
@@ -79,7 +79,7 @@ export function TicketThread({
               data-asking={asking ? '' : undefined}
               className={cn(
                 // anywhere, not break-word: long paths / ids must not widen the bubble
-                'rounded-[14px] px-3.5 py-2.5 text-[14px] leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap',
+                'rounded-xl px-3.5 py-2.5 text-body leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap',
                 mine
                   ? 'bg-brand-text text-brand-deck'
                   : 'bg-brand-deck text-brand-text',
@@ -90,7 +90,7 @@ export function TicketThread({
             </div>
             <span
               className={cn(
-                'px-1 text-[11px] text-brand-label tabular-nums',
+                'px-1 text-meta text-brand-label tabular-nums',
                 mine && 'text-right',
               )}
             >

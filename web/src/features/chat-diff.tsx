@@ -107,7 +107,7 @@ export function ToolBody({ text, file }: { text: string; file?: string }) {
   let at = 0 // index into tokens (code rows only)
   return (
     <pre
-      className="max-h-80 max-w-full min-w-0 overflow-auto rounded-[8px] bg-brand-deck py-1.5 font-mono text-[11.5px] leading-snug"
+      className="max-h-80 max-w-full min-w-0 overflow-auto rounded-lg bg-brand-deck py-1.5 font-mono text-meta leading-snug"
       data-lang={lang ?? undefined}
     >
       {rows.map((row, index) => {

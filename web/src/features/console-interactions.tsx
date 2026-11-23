@@ -138,7 +138,7 @@ export function InteractionsPage() {
     >
       {GROUPS.map((group) => (
         <div key={group.id} className="grid gap-1">
-          <h2 className="px-2 text-[12.5px] font-semibold text-brand-label">
+          <h2 className="px-2 text-caption font-semibold text-brand-label">
             {p(group.title)}
           </h2>
           <ul className="grid gap-0.5">
@@ -153,7 +153,7 @@ export function InteractionsPage() {
                     aria-current={current?.id === s.id ? 'true' : undefined}
                     onClick={() => pick(s.id)}
                     className={cn(
-                      'flex min-h-10 w-full items-center justify-between gap-2 rounded-[10px] px-2.5 text-left text-[14px]',
+                      'flex min-h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-left text-body',
                       current?.id === s.id
                         ? 'bg-brand-surface font-medium text-brand-text'
                         : 'text-brand-muted hover:bg-brand-soft',
@@ -182,10 +182,10 @@ export function InteractionsPage() {
       data-interaction={current.id}
       className="grid min-w-0 content-start gap-3"
     >
-      <h2 className="text-[17px] font-semibold">{p(current.title)}</h2>
-      <dl className="grid gap-1.5 text-[13px]">
+      <h2 className="text-title font-semibold">{p(current.title)}</h2>
+      <dl className="grid gap-1.5 text-caption">
         <div className="grid gap-0.5">
-          <dt className="text-[12px] text-brand-label">
+          <dt className="text-meta text-brand-label">
             {p({ zh: '怎么识别', en: 'Where it comes from' })}
           </dt>
           <dd className="leading-relaxed text-brand-muted">
@@ -193,7 +193,7 @@ export function InteractionsPage() {
           </dd>
         </div>
         <div className="grid gap-0.5">
-          <dt className="text-[12px] text-brand-label">
+          <dt className="text-meta text-brand-label">
             {p({ zh: '点了发什么', en: 'What a tap sends' })}
           </dt>
           <dd className="leading-relaxed text-brand-muted">
@@ -206,13 +206,13 @@ export function InteractionsPage() {
         data-testid="interaction-log"
         className="grid gap-0.5 border-t border-brand-edge pt-2"
       >
-        <span className="text-[12px] text-brand-label">
+        <span className="text-meta text-brand-label">
           {p({
             zh: '按键日志（这里不会发到任何窗格）',
             en: 'Key log (nothing here reaches a pane)',
           })}
         </span>
-        <p className="min-h-5 font-mono text-[12.5px] whitespace-pre-wrap text-brand-muted">
+        <p className="min-h-5 font-mono text-caption whitespace-pre-wrap text-brand-muted">
           {log.length
             ? log.join('\n')
             : p({ zh: '还没有按键', en: 'No keys yet' })}
@@ -221,7 +221,7 @@ export function InteractionsPage() {
     </section>
   ) : null
   if (!wide)
-    return detail ?? <div className="key rounded-[16px] px-2 py-3">{list}</div>
+    return detail ?? <div className="key rounded-2xl px-2 py-3">{list}</div>
   return (
     <div className="grid grid-cols-[12.5rem_minmax(0,1fr)] gap-6">
       <div className="border-r border-brand-edge pr-3">{list}</div>

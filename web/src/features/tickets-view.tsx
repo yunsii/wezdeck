@@ -133,9 +133,9 @@ function Freshness({
       data-testid="freshness"
       data-stale={stale ? 'true' : 'false'}
       className={cn(
-        'flex items-center gap-2 text-xs',
+        'flex items-center gap-2 text-meta',
         stale
-          ? 'rounded-[10px] border border-brand-waiting/40 bg-brand-waiting/10 px-3 py-2 text-brand-text'
+          ? 'rounded-xl border border-brand-waiting/40 bg-brand-waiting/10 px-3 py-2 text-brand-text'
           : 'text-brand-label',
       )}
     >
@@ -156,7 +156,7 @@ function SearchBox({
 }) {
   const { t } = useLingui()
   return (
-    <label className="flex min-h-11 flex-1 items-center gap-2 rounded-[10px] border border-brand-edge bg-brand-deck px-3 text-[15px] focus-within:ring-2 focus-within:ring-brand-running md:min-h-9 md:text-sm">
+    <label className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-brand-edge bg-brand-deck px-3 text-body focus-within:ring-2 focus-within:ring-brand-running md:min-h-9 md:text-body">
       <Search size={15} aria-hidden className="text-brand-label" />
       <Input
         variant="bare"
@@ -296,7 +296,7 @@ export function TicketsView({
             setSearching(!searching)
             if (searching) setQuery('')
           }}
-          className="size-11 shrink-0 rounded-[12px]"
+          className="size-11 shrink-0 rounded-xl"
         >
           <Search size={18} aria-hidden />
         </Button>
@@ -339,7 +339,7 @@ export function TicketsView({
             />
           </aside>
           <div
-            className="vt-split-pane max-w-[900px] min-w-0 rounded-[16px] bg-brand-surface p-5"
+            className="vt-split-pane max-w-[900px] min-w-0 rounded-2xl bg-brand-surface p-5"
             data-testid="ticket-pane"
           >
             {current ? (
@@ -363,7 +363,7 @@ export function TicketsView({
           variant="plain"
           type="button"
           onClick={back}
-          className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
+          className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-body text-brand-muted"
         >
           <ChevronLeft size={20} aria-hidden />
           {t`Back`}
@@ -450,7 +450,7 @@ export function RepoRoute({
   to?: string | null
 }) {
   const tag =
-    'max-w-full truncate rounded-full border border-brand-edge px-2 py-0.5 text-xs text-brand-muted'
+    'max-w-full truncate rounded-full border border-brand-edge px-2 py-0.5 text-meta text-brand-muted'
   return (
     <span className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-1">
       <span className={tag}>{from ?? '?'}</span>
@@ -471,7 +471,7 @@ export function ConsoleInboxPage() {
       filter="inbox"
       empty={t`Nothing is waiting on you. Replies and failed runs show up here.`}
       top={
-        <h1 className="hidden text-base font-semibold md:block">
+        <h1 className="hidden text-body font-semibold md:block">
           {t`Waiting on you`}
         </h1>
       }

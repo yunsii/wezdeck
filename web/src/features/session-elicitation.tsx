@@ -39,14 +39,14 @@ export function SessionElicitation({
   const { t } = useLingui()
   return (
     <div
-      className="grid gap-3 rounded-[16px] border border-brand-waiting/40 bg-brand-waiting/10 p-3"
+      className="grid gap-3 rounded-2xl border border-brand-waiting/40 bg-brand-waiting/10 p-3"
       data-testid="session-elicitation"
       data-write
     >
-      <p className="text-sm font-medium">{t`The agent is asking you`}</p>
+      <p className="text-body font-medium">{t`The agent is asking you`}</p>
       {elicitation.questions.map((q, qi) => (
         <div key={`${qi}-${q.question.slice(0, 24)}`} className="grid gap-2">
-          <p className="text-[15px] leading-snug font-semibold">{q.question}</p>
+          <p className="text-body leading-snug font-semibold">{q.question}</p>
           <div className="grid gap-2">
             {q.options.map((opt, oi) => (
               <Button
@@ -57,12 +57,12 @@ export function SessionElicitation({
                 onClick={() => onPick(qi, oi)}
                 className="grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40"
               >
-                <span className="text-[15px] font-medium">
+                <span className="text-body font-medium">
                   {oi < 9 ? `${oi + 1}. ` : ''}
                   {opt.label}
                 </span>
                 {opt.description ? (
-                  <span className="text-[12.5px] text-brand-muted">
+                  <span className="text-caption text-brand-muted">
                     {opt.description}
                   </span>
                 ) : null}
@@ -77,7 +77,7 @@ export function SessionElicitation({
           type="button"
           disabled={disabled}
           onClick={() => onKey('Escape')}
-          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {t`Esc`}
         </Button>
@@ -86,12 +86,12 @@ export function SessionElicitation({
           type="button"
           disabled={disabled}
           onClick={() => onKey('C-c')}
-          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {t`Ctrl+C`}
         </Button>
       </div>
-      <p className="text-[11.5px] text-brand-label">
+      <p className="text-meta text-brand-label">
         {t`Tap an option to send its number and Enter into the agent pane.`}
       </p>
     </div>
@@ -124,9 +124,9 @@ export function SessionPermissionKeys({
 }) {
   const { t } = useLingui()
   return (
-    <div data-write className="grid gap-2 rounded-[16px] bg-brand-surface p-3">
-      <p className="text-sm font-medium">{t`The agent asks:`}</p>
-      <pre className="max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
+    <div data-write className="grid gap-2 rounded-2xl bg-brand-surface p-3">
+      <p className="text-body font-medium">{t`The agent asks:`}</p>
+      <pre className="max-h-48 overflow-auto font-mono text-meta leading-snug text-brand-muted">
         {(screen ?? '').split('\n').slice(-14).join('\n')}
       </pre>
       <div className="flex flex-wrap gap-2">
@@ -144,7 +144,7 @@ export function SessionPermissionKeys({
             type="button"
             disabled={disabled}
             onClick={() => onKey(key)}
-            className="min-h-11 min-w-11 px-3 text-[15px] disabled:opacity-40"
+            className="min-h-11 min-w-11 px-3 text-body disabled:opacity-40"
           >
             {label}
           </Button>
@@ -171,11 +171,11 @@ export function SessionPlanReview({
   if (!awaitingApproval) {
     return (
       <Disclosure
-        className="rounded-[16px] bg-brand-surface px-3"
+        className="rounded-2xl bg-brand-surface px-3"
         triggerClassName="font-medium"
         title={t`Current plan`}
       >
-        <pre className="mb-3 max-h-56 overflow-auto font-mono text-[12px] leading-snug whitespace-pre-wrap text-brand-muted">
+        <pre className="mb-3 max-h-56 overflow-auto font-mono text-meta leading-snug whitespace-pre-wrap text-brand-muted">
           {excerpt}
         </pre>
       </Disclosure>
@@ -183,17 +183,17 @@ export function SessionPlanReview({
   }
   return (
     <div
-      className="grid gap-3 rounded-[16px] border border-brand-running/40 bg-brand-running/10 p-3"
+      className="grid gap-3 rounded-2xl border border-brand-running/40 bg-brand-running/10 p-3"
       data-testid="session-plan-review"
       data-write
     >
-      <p className="text-sm font-medium">{t`Plan ready for review`}</p>
+      <p className="text-body font-medium">{t`Plan ready for review`}</p>
       {excerpt ? (
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-[12px] bg-brand-deck p-3 font-mono text-[12px] leading-snug text-brand-muted">
+        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl bg-brand-deck p-3 font-mono text-meta leading-snug text-brand-muted">
           {excerpt}
         </pre>
       ) : (
-        <p className="text-sm text-brand-muted">{t`No plan written yet`}</p>
+        <p className="text-caption text-brand-muted">{t`No plan written yet`}</p>
       )}
       <div className="grid gap-2">
         <Button
@@ -201,7 +201,7 @@ export function SessionPlanReview({
           type="button"
           disabled={disabled}
           onClick={() => onKey('a')}
-          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-12 px-3 text-body disabled:opacity-40"
         >
           {t`Approve plan`}
         </Button>
@@ -210,7 +210,7 @@ export function SessionPlanReview({
           type="button"
           disabled={disabled}
           onClick={() => onKey('s')}
-          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-12 px-3 text-body disabled:opacity-40"
         >
           {t`Request changes`}
         </Button>
@@ -219,12 +219,12 @@ export function SessionPlanReview({
           type="button"
           disabled={disabled}
           onClick={() => onKey('q')}
-          className="min-h-11 px-3 text-[15px] text-brand-muted disabled:opacity-40"
+          className="min-h-11 px-3 text-body text-brand-muted disabled:opacity-40"
         >
           {t`Quit plan`}
         </Button>
       </div>
-      <p className="text-[11.5px] text-brand-label">
+      <p className="text-meta text-brand-label">
         {t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}
       </p>
     </div>

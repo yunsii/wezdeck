@@ -15,7 +15,7 @@ import type { Diagram, Lang, Text } from './model'
 export function Legend({ lang }: { lang: Lang }) {
   return (
     // the legend explains canvas lines: no canvas on a phone, no legend
-    <div className="hidden flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-brand-muted md:flex">
+    <div className="hidden flex-wrap items-center gap-x-5 gap-y-1.5 text-caption text-brand-muted md:flex">
       <span className="text-brand-label">{pick(COPY.legend, lang)}</span>
       {KINDS.map(({ kind, label }) => (
         <span key={kind} className="inline-flex items-center gap-2">
@@ -57,15 +57,15 @@ export function CardDetail({
   return (
     <aside
       aria-label={p(card.title)}
-      className="absolute top-14 right-2.5 z-10 grid max-h-[calc(100%-4.5rem)] w-80 content-start gap-2 overflow-y-auto rounded-[16px] border border-brand-edge bg-brand-surface p-4 shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+      className="absolute top-14 right-2.5 z-10 grid max-h-[calc(100%-4.5rem)] w-80 content-start gap-2 overflow-y-auto rounded-2xl border border-brand-edge bg-brand-surface p-4 shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="grid gap-0.5">
-          <span className="text-[12.5px] text-brand-label">
+          <span className="text-caption text-brand-label">
             {diagram.numbered ? `${index + 1} · ` : ''}
             {lane ? p(lane.label) : ''}
           </span>
-          <h3 className="text-[16px] font-semibold">{p(card.title)}</h3>
+          <h3 className="text-title font-semibold">{p(card.title)}</h3>
         </div>
         <Button
           variant="ghost"
@@ -77,15 +77,15 @@ export function CardDetail({
           <X size={15} aria-hidden />
         </Button>
       </div>
-      <p className="text-[14px] leading-relaxed text-brand-muted">
+      <p className="text-caption leading-relaxed text-brand-muted">
         {p(card.body)}
       </p>
       {card.impl ? (
         <Disclosure
           title={p(COPY.impl)}
-          triggerClassName="min-h-8 text-[13px] font-medium text-brand-label"
+          triggerClassName="min-h-8 text-caption font-medium text-brand-label"
         >
-          <p className="pb-1 font-mono text-[12.5px] leading-relaxed break-words text-brand-muted">
+          <p className="pb-1 font-mono text-caption leading-relaxed break-words text-brand-muted">
             {p(card.impl)}
           </p>
         </Disclosure>
@@ -113,7 +113,7 @@ export function StepList({
   const List = diagram.numbered ? 'ol' : 'ul'
   return (
     <div className="grid content-start gap-2">
-      <h3 className="text-[13px] font-semibold text-brand-label">
+      <h3 className="text-caption font-semibold text-brand-label">
         {p(diagram.numbered ? COPY.steps : COPY.parts)}
       </h3>
       <List className="grid items-start gap-1.5 md:grid-cols-2 lg:grid-cols-3">
@@ -129,7 +129,7 @@ export function StepList({
               <li
                 key={`lane:${card.lane}`}
                 role="presentation"
-                className="col-span-full pt-2 text-[13px] font-semibold text-brand-text first:pt-0"
+                className="col-span-full pt-2 text-caption font-semibold text-brand-text first:pt-0"
               >
                 {lane}
               </li>
@@ -137,7 +137,7 @@ export function StepList({
             <li
               key={card.id}
               className={cn(
-                'rounded-[14px] border bg-brand-surface transition-colors duration-[var(--motion-short)]',
+                'rounded-xl border bg-brand-surface transition-colors duration-[var(--motion-short)]',
                 open ? 'border-brand-running/70' : 'border-brand-edge',
                 card.planned && 'border-dashed',
               )}
@@ -149,25 +149,25 @@ export function StepList({
                 aria-expanded={open}
                 onClick={() => onSelect(open ? null : card.id)}
                 className={cn(
-                  'grid w-full cursor-pointer items-baseline gap-x-2 rounded-[14px] px-3 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                  'grid w-full cursor-pointer items-baseline gap-x-2 rounded-xl px-3 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
                   diagram.numbered && 'grid-cols-[1.25rem_minmax(0,1fr)]',
                 )}
               >
                 {diagram.numbered ? (
-                  <span className="text-xs font-semibold text-brand-running tabular-nums">
+                  <span className="text-meta font-semibold text-brand-running tabular-nums">
                     {index + 1}
                   </span>
                 ) : null}
                 <span className="grid gap-0.5">
-                  <span className="text-[14.5px] font-semibold">
+                  <span className="text-body font-semibold">
                     {p(card.title)}
                     {card.planned ? (
-                      <span className="ml-2 text-[12px] font-normal text-brand-label">
+                      <span className="ml-2 text-meta font-normal text-brand-label">
                         {lang === 'zh' ? '规划中' : 'planned'}
                       </span>
                     ) : null}
                   </span>
-                  <span className="text-[12.5px] text-brand-label">
+                  <span className="text-caption text-brand-label">
                     {diagram.numbered
                       ? `${laneLabel.get(card.lane) ?? ''} · ${p(card.sub)}`
                       : p(card.sub)}
@@ -181,15 +181,15 @@ export function StepList({
                     diagram.numbered && 'pl-[2.75rem]',
                   )}
                 >
-                  <p className="text-[14px] leading-relaxed text-brand-muted">
+                  <p className="text-caption leading-relaxed text-brand-muted">
                     {p(card.body)}
                   </p>
                   {card.impl ? (
                     <Disclosure
                       title={p(COPY.impl)}
-                      triggerClassName="min-h-8 text-[13px] font-medium text-brand-label"
+                      triggerClassName="min-h-8 text-caption font-medium text-brand-label"
                     >
-                      <p className="pb-1 font-mono text-[12.5px] leading-relaxed break-words text-brand-muted">
+                      <p className="pb-1 font-mono text-caption leading-relaxed break-words text-brand-muted">
                         {p(card.impl)}
                       </p>
                     </Disclosure>
@@ -209,8 +209,8 @@ export function Capabilities({ lang }: { lang: Lang }) {
   return (
     <section id="capabilities" className="grid scroll-mt-6 gap-5">
       <div className="grid max-w-3xl gap-2">
-        <h2 className="text-[24px] font-bold">{p(COPY.capabilities)}</h2>
-        <p className="text-[15.5px] leading-relaxed text-brand-muted">
+        <h2 className="text-display font-semibold">{p(COPY.capabilities)}</h2>
+        <p className="text-body leading-relaxed text-brand-muted">
           {p(COPY.capabilitiesLead)}
         </p>
       </div>
@@ -218,17 +218,17 @@ export function Capabilities({ lang }: { lang: Lang }) {
         {capabilityGroups.map((group) => (
           <Disclosure
             key={group.id}
-            className="min-w-0 rounded-[16px] border border-brand-edge bg-brand-surface px-4"
+            className="min-w-0 rounded-2xl border border-brand-edge bg-brand-surface px-4"
             triggerClassName="py-2"
             title={
               <span className="grid gap-0.5 py-1">
-                <span className="text-[15.5px] font-semibold">
+                <span className="text-body font-semibold">
                   {p(group.title)}
-                  <span className="ml-2 text-[13px] font-normal text-brand-label tabular-nums">
+                  <span className="ml-2 text-caption font-normal text-brand-label tabular-nums">
                     {group.items.length}
                   </span>
                 </span>
-                <span className="text-[13.5px] leading-relaxed font-normal text-brand-muted">
+                <span className="text-caption leading-relaxed font-normal text-brand-muted">
                   {p(group.summary)}
                 </span>
               </span>
@@ -237,24 +237,24 @@ export function Capabilities({ lang }: { lang: Lang }) {
             {/* a list, not a table: on a phone the entry sits above its
                 description instead of pushing the card off the screen */}
             <div className="pb-4">
-              <div className="hidden grid-cols-[17rem_minmax(0,1fr)] gap-x-4 py-2 text-[13.5px] text-brand-label md:grid">
+              <div className="hidden grid-cols-[17rem_minmax(0,1fr)] gap-x-4 py-2 text-caption text-brand-label md:grid">
                 <span>{p(COPY.entry)}</span>
                 <span>{p(COPY.what)}</span>
               </div>
-              <dl className="text-[13.5px]">
+              <dl className="text-caption">
                 {group.items.map((item) => (
                   <div
                     key={item.name}
                     className="grid gap-x-4 gap-y-0.5 border-t border-brand-border py-2 md:grid-cols-[17rem_minmax(0,1fr)]"
                   >
-                    <dt className="font-mono text-[12.5px] break-all text-brand-text">
+                    <dt className="font-mono text-caption break-all text-brand-text">
                       {item.name}
                     </dt>
                     <dd className="text-brand-muted">{p(item.what)}</dd>
                   </div>
                 ))}
               </dl>
-              <p className="pt-2 font-mono text-[12px] text-brand-label">
+              <p className="pt-2 font-mono text-meta text-brand-label">
                 {group.source}
               </p>
             </div>
@@ -270,24 +270,24 @@ export function Threats({ lang }: { lang: Lang }) {
   const p = (text: Text) => pick(text, lang)
   return (
     <div className="grid gap-2">
-      <h3 className="text-[13px] font-semibold text-brand-label">
+      <h3 className="text-caption font-semibold text-brand-label">
         {p(COPY.threats)}
       </h3>
       <ul className="grid items-start gap-1.5 md:grid-cols-2">
         {threats.map((item) => (
           <li
             key={item.threat.en}
-            className="rounded-[14px] border border-brand-edge bg-brand-surface px-3.5"
+            className="rounded-xl border border-brand-edge bg-brand-surface px-3.5"
           >
             <Disclosure
               title={item.threat[lang]}
-              triggerClassName="min-h-11 text-[14.5px] font-normal"
+              triggerClassName="min-h-11 text-body font-normal"
             >
               <div className="grid gap-1.5 pb-3">
-                <p className="text-[14px] leading-relaxed text-brand-muted">
+                <p className="text-caption leading-relaxed text-brand-muted">
                   {p(item.guard)}
                 </p>
-                <p className="font-mono text-[12.5px] break-words text-brand-label">
+                <p className="font-mono text-caption break-words text-brand-label">
                   {p(item.impl)}
                 </p>
               </div>

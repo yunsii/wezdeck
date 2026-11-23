@@ -42,7 +42,7 @@ function Meter({
       {/* the name may wrap, the numbers never: proportional digits in the
           body font (monospace was too wide and broke "1,031 / 100,000"),
           the used share in ink, the unit once */}
-      <div className="flex items-baseline justify-between gap-3 text-sm">
+      <div className="flex items-baseline justify-between gap-3 text-body">
         <span className="min-w-0">{label}</span>
         <span className="shrink-0 whitespace-nowrap text-brand-label tabular-nums">
           <span className="text-brand-text">
@@ -61,7 +61,7 @@ function Meter({
           style={{ width: `${Math.max(share, used ? 1 : 0)}%` }}
         />
       </div>
-      {hint ? <p className="text-[11.5px] text-brand-label">{hint}</p> : null}
+      {hint ? <p className="text-meta text-brand-label">{hint}</p> : null}
     </div>
   )
 }
@@ -103,9 +103,9 @@ export function UsageCard() {
     queryFn: () => remoteLink.usage(),
   })
   if (usage.isPending)
-    return <p className="text-sm text-brand-muted">{t`Loading…`}</p>
+    return <p className="text-caption text-brand-muted">{t`Loading…`}</p>
   if (usage.isError)
-    return <p className="text-sm text-brand-error">{usage.error.message}</p>
+    return <p className="text-body text-brand-error">{usage.error.message}</p>
   const u = usage.data
   const doUnit = u.durableObject
   const billableIn = doUnit.wsIn === null ? null : Math.ceil(doUnit.wsIn / 20)
@@ -122,12 +122,12 @@ export function UsageCard() {
   return (
     <div className="grid gap-3">
       {u.analytics === 'unconfigured' ? (
-        <p className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-[12.5px]">
+        <p className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-caption">
           {t`Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission "Account Analytics: Read").`}
         </p>
       ) : null}
       {u.errors.length ? (
-        <p className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-[12px] break-all">
+        <p className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-meta break-all">
           {t`Some numbers are missing: ${missing}`}
         </p>
       ) : null}
@@ -154,12 +154,12 @@ export function UsageCard() {
         format={duration}
         hint={t`Time the relay was actually handling messages; while idle it hibernates and is not counted.`}
       />
-      <p className="text-[11.5px] text-brand-label">
+      <p className="text-meta text-brand-label">
         {t`Today (UTC) ${day}, updated ${at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed.`}
       </p>
       <Disclosure
-        className="text-[12.5px] text-brand-muted"
-        triggerClassName="min-h-9 text-[12.5px] font-normal text-brand-text"
+        className="text-caption text-brand-muted"
+        triggerClassName="min-h-9 text-caption font-normal text-brand-text"
         title={t`How the WebSocket is billed`}
       >
         <ul className="mt-1.5 grid list-disc gap-1 pl-4">

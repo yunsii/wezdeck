@@ -100,7 +100,7 @@ function SplitView({ id }: { id?: string }) {
         {id ? (
           <SessionDetail key={id} id={id} />
         ) : (
-          <p className="rounded-[16px] bg-brand-surface px-6 py-16 text-center text-sm text-brand-muted">
+          <p className="rounded-2xl bg-brand-surface px-6 py-16 text-center text-caption text-brand-muted">
             {t`Pick a session on the left. j / k move through the list.`}
           </p>
         )}

@@ -70,7 +70,7 @@ export function SwipeToClear({
         tabIndex={open ? 0 : -1}
         aria-hidden={!open}
         onClick={() => void clear(id).then((ok) => ok && setOffset(0))}
-        className="absolute inset-y-0 right-0 flex items-center justify-center bg-brand-done px-3 text-[14px] font-semibold text-white disabled:opacity-60"
+        className="absolute inset-y-0 right-0 flex items-center justify-center bg-brand-done px-3 text-body font-semibold text-white disabled:opacity-60"
         style={{ width: OPEN }}
       >
         {busy ? t`Clearing…` : t`Mark read`}
@@ -123,7 +123,7 @@ export function SwipeToClear({
         {children}
       </div>
       {error ? (
-        <p role="alert" className="px-4 pb-2 text-xs text-brand-error">
+        <p role="alert" className="px-4 pb-2 text-meta text-brand-error">
           {error}
         </p>
       ) : null}
@@ -156,12 +156,12 @@ export function ClearButton({
         disabled={busy || done}
         title={t`Same as Ctrl+X in the Alt+/ picker`}
         onClick={() => void clear(id).then(setDone)}
-        className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
       >
         {done ? t`Marked read` : t`Mark read`}
       </Button>
       {error ? (
-        <p role="alert" className="px-1 text-xs text-brand-error">
+        <p role="alert" className="px-1 text-meta text-brand-error">
           {error}
         </p>
       ) : null}

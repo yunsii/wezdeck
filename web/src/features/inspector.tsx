@@ -29,15 +29,17 @@ export function Reading({
   const lonely = halves.length % 2 ? halves.at(-1) : undefined
   return (
     <div className="grid content-start gap-4">
-      {kicker ? <div className="text-sm">{kicker}</div> : null}
-      <h1 className="text-[22px] leading-tight font-semibold tracking-tight text-balance text-brand-text md:text-2xl">
+      {kicker ? <div className="text-body">{kicker}</div> : null}
+      <h1 className="text-heading leading-tight font-semibold tracking-tight text-balance text-brand-text md:text-display">
         {title}
       </h1>
       {body ? (
-        <p className="max-w-prose text-sm leading-6 text-brand-muted">{body}</p>
+        <p className="max-w-prose text-caption leading-6 text-brand-muted">
+          {body}
+        </p>
       ) : null}
       {shownFacts.length ? (
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-brand-edge bg-brand-edge">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-brand-edge bg-brand-edge">
           {shownFacts.map((fact) => (
             <FactCell
               key={fact.label}
@@ -65,10 +67,10 @@ function FactCell({
   const label = fact.label
   const body = (
     <>
-      <dt className="text-xs text-brand-label">{fact.label}</dt>
+      <dt className="text-meta text-brand-label">{fact.label}</dt>
       <dd
         className={cn(
-          'mt-1 text-sm text-brand-text',
+          'mt-1 text-body text-brand-text',
           fact.wide ? 'break-words' : 'truncate',
         )}
       >

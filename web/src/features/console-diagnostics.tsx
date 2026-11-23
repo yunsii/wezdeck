@@ -109,7 +109,7 @@ export function ConsoleDiagnosticsPage() {
 
   const filters = (
     <div className="grid gap-2">
-      <label className="flex min-h-11 items-center gap-2 rounded-[10px] border border-brand-edge bg-brand-deck px-3 focus-within:ring-2 focus-within:ring-brand-running md:min-h-9">
+      <label className="flex min-h-11 items-center gap-2 rounded-xl border border-brand-edge bg-brand-deck px-3 focus-within:ring-2 focus-within:ring-brand-running md:min-h-9">
         <Search size={15} aria-hidden className="text-brand-label" />
         <Input
           variant="bare"
@@ -118,7 +118,7 @@ export function ConsoleDiagnosticsPage() {
           aria-label={t`Trace ID or text`}
           placeholder={t`Trace ID or text`}
           onChange={(event) => setQuery(event.target.value.trim())}
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-[15px] outline-none placeholder:text-brand-label md:text-sm"
+          className="min-w-0 flex-1 bg-transparent py-1.5 text-body outline-none placeholder:text-brand-label md:text-caption"
         />
       </label>
       <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export function ConsoleDiagnosticsPage() {
   if (wide)
     return (
       <div className="grid content-start gap-3">
-        <h1 className="text-base font-semibold">{t`Diagnostics`}</h1>
+        <h1 className="text-body font-semibold">{t`Diagnostics`}</h1>
         <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-5">
           <aside
             aria-label={t`Log stream`}
@@ -176,10 +176,10 @@ export function ConsoleDiagnosticsPage() {
           </aside>
           <div
             data-testid="diagnostics-pane"
-            className="max-w-[900px] min-w-0 rounded-[16px] bg-brand-surface p-5"
+            className="max-w-[900px] min-w-0 rounded-2xl bg-brand-surface p-5"
           >
             {detail ?? (
-              <p className="py-10 text-center text-sm text-brand-muted">
+              <p className="py-10 text-center text-caption text-brand-muted">
                 {empty}
               </p>
             )}
@@ -254,14 +254,14 @@ function EntryList({
   const { t } = useLingui()
   if (entries.length === 0)
     return (
-      <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
+      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
         {empty}
       </p>
     )
   return (
     <ul
       aria-label={t`Log stream`}
-      className="overflow-hidden rounded-[16px] bg-brand-surface"
+      className="overflow-hidden rounded-2xl bg-brand-surface"
     >
       {entries.map((entry) => {
         const active = entry.id === selected
@@ -285,14 +285,14 @@ function EntryList({
               <span className="pt-1">
                 <Led tone={toneOf(entry.level)} size={10} />
               </span>
-              <span className="line-clamp-2 text-[14px] leading-snug text-brand-text">
+              <span className="line-clamp-2 text-body leading-snug text-brand-text">
                 {entry.message}
               </span>
-              <span className="pt-0.5 font-mono text-[11px] text-brand-label tabular-nums">
+              <span className="pt-0.5 font-mono text-meta text-brand-label tabular-nums">
                 {clockOf(entry.ts)}
               </span>
               {entry.category ? (
-                <span className="col-start-2 truncate text-[12px] text-brand-label">
+                <span className="col-start-2 truncate text-meta text-brand-label">
                   {entry.category}
                 </span>
               ) : null}
@@ -325,7 +325,7 @@ function EntryDetail({
         <span className="pt-1.5">
           <Led tone={toneOf(entry.level)} size={11} />
         </span>
-        <h2 className="text-[18px] leading-snug font-semibold break-words md:text-xl">
+        <h2 className="text-heading leading-snug font-semibold break-words md:text-heading">
           {entry.message}
         </h2>
       </div>
@@ -360,7 +360,7 @@ function EntryDetail({
           </Button>
         ) : null}
       </div>
-      <pre className="overflow-auto rounded-[12px] bg-brand-deck p-3 font-mono text-[12px] leading-relaxed whitespace-pre-wrap text-brand-muted [overflow-wrap:anywhere]">
+      <pre className="overflow-auto rounded-xl bg-brand-deck p-3 font-mono text-meta leading-relaxed whitespace-pre-wrap text-brand-muted [overflow-wrap:anywhere]">
         {entry.raw}
       </pre>
     </div>

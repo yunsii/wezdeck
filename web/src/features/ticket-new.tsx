@@ -60,7 +60,7 @@ export function NewTicketButton() {
         onClick={show}
         data-testid="new-ticket"
         title={t`New ticket (n)`}
-        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[14px] md:min-h-9"
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
       >
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New ticket`}</span>
@@ -141,7 +141,7 @@ function NewTicketSheet({
     onChange: (value: string) => void,
     label: string,
   ) => (
-    <label className="grid min-w-0 gap-1 text-[13px] text-brand-muted">
+    <label className="grid min-w-0 gap-1 text-caption text-brand-muted">
       {label}
       <Select
         size="lg"
@@ -168,11 +168,11 @@ function NewTicketSheet({
           {repoSelect(toKey, setTo, t`To`)}
         </div>
         {fromKey && fromKey === toKey ? (
-          <p className="text-[12px] text-brand-error">
+          <p className="text-meta text-brand-error">
             {t`A ticket goes to another repository.`}
           </p>
         ) : null}
-        <label className="grid gap-1 text-[13px] text-brand-muted">
+        <label className="grid gap-1 text-caption text-brand-muted">
           {t`Title`}
           <Input
             variant="field"
@@ -183,7 +183,7 @@ function NewTicketSheet({
             placeholder={t`What the other repository should do`}
           />
         </label>
-        <label className="grid gap-1 text-[13px] text-brand-muted">
+        <label className="grid gap-1 text-caption text-brand-muted">
           {t`What you saw`}
           <Textarea
             value={observed}
@@ -193,7 +193,7 @@ function NewTicketSheet({
             placeholder={t`The behaviour, error or data you actually observed`}
           />
         </label>
-        <label className="grid gap-1 text-[13px] text-brand-muted">
+        <label className="grid gap-1 text-caption text-brand-muted">
           {t`What you assume`}
           <Textarea
             value={assumed}
@@ -203,12 +203,12 @@ function NewTicketSheet({
             placeholder={t`The contract or behaviour you expect from it — the target checks this first`}
           />
         </label>
-        <label className="flex min-h-11 items-center gap-2 text-[14px]">
+        <label className="flex min-h-11 items-center gap-2 text-body">
           <Checkbox checked={run} disabled={busy} onCheckedChange={setRun} />
           {t`Start working on it now (a headless run on the host)`}
         </label>
         {error ? (
-          <p role="alert" className="text-[13px] text-brand-error">
+          <p role="alert" className="text-caption text-brand-error">
             {error}
           </p>
         ) : null}
@@ -217,7 +217,7 @@ function NewTicketSheet({
           type="button"
           disabled={!ready || busy}
           onClick={() => void submit()}
-          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-12 px-3 text-body disabled:opacity-40"
         >
           {busy ? t`Creating…` : t`Create ticket`}
         </Button>

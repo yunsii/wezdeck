@@ -53,17 +53,17 @@ export function ClaudeAsk({
 
   return (
     <div
-      className="grid gap-3 rounded-[16px] border border-brand-waiting/40 bg-brand-waiting/10 p-3"
+      className="grid gap-3 rounded-2xl border border-brand-waiting/40 bg-brand-waiting/10 p-3"
       data-testid="session-ask"
       data-write
     >
-      <p className="text-sm font-medium">
+      <p className="text-body font-medium">
         {total > 1 && !review
           ? t`The agent is asking you (question ${number} of ${total})`
           : t`The agent is asking you`}
       </p>
       {labels.length ? (
-        <ul className="grid gap-1 text-[13px]">
+        <ul className="grid gap-1 text-caption">
           {labels.map((label, i) => (
             <li
               key={`${i}-${label}`}
@@ -79,7 +79,7 @@ export function ClaudeAsk({
       ) : null}
       {review ? (
         <div className="grid gap-2">
-          <p className="text-[14px] leading-snug">
+          <p className="text-body leading-snug">
             {t`All questions answered. The agent waits until you submit.`}
           </p>
           <Button
@@ -88,18 +88,18 @@ export function ClaudeAsk({
             disabled={disabled}
             onClick={() => onKey('Enter')}
             data-testid="ask-submit"
-            className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+            className="min-h-12 px-3 text-body disabled:opacity-40"
           >
             {t`Submit answers`}
           </Button>
         </div>
       ) : current ? (
         <div className="grid gap-2">
-          <p className="text-[15px] leading-snug font-semibold">
+          <p className="text-body leading-snug font-semibold">
             {current.question}
           </p>
           {current.multi_select ? (
-            <p className="text-[12px] text-brand-label">
+            <p className="text-meta text-brand-label">
               {t`Multiple choice: each tap toggles an option; check the screen below, then press Enter.`}
             </p>
           ) : null}
@@ -116,11 +116,11 @@ export function ClaudeAsk({
               }
               className="grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40"
             >
-              <span className="text-[15px] font-medium">
+              <span className="text-body font-medium">
                 {oi + 1}. {opt.label}
               </span>
               {opt.description ? (
-                <span className="text-[12.5px] text-brand-muted">
+                <span className="text-caption text-brand-muted">
                   {opt.description}
                 </span>
               ) : null}
@@ -135,7 +135,7 @@ export function ClaudeAsk({
                 onKey('Enter')
                 setPicked({ id: askId, labels: [...labels, '✓'] })
               }}
-              className="min-h-11 px-3 text-[15px] disabled:opacity-40"
+              className="min-h-11 px-3 text-body disabled:opacity-40"
             >
               {t`Enter`}
             </Button>
@@ -151,17 +151,17 @@ export function ClaudeAsk({
             onKey('Escape')
             setPicked({ id: askId, labels: [] })
           }}
-          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {t`Cancel (Esc)`}
         </Button>
       </div>
       {screen ? (
         <Disclosure
-          triggerClassName="min-h-9 text-[12px] font-normal text-brand-label"
+          triggerClassName="min-h-9 text-meta font-normal text-brand-label"
           title={t`What the terminal shows`}
         >
-          <pre className="max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
+          <pre className="max-h-48 overflow-auto font-mono text-meta leading-snug text-brand-muted">
             {screen.split('\n').slice(-16).join('\n')}
           </pre>
         </Disclosure>

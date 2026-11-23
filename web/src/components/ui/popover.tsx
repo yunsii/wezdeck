@@ -29,7 +29,7 @@ function PopoverContent({
           // them it fell back to the old theme's blue)
           data-deck
           className={
-            'motion-pop rounded-[14px] border border-brand-edge bg-brand-surface p-1.5 text-brand-text shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] outline-none ' +
+            'motion-pop rounded-xl border border-brand-edge bg-brand-surface p-1.5 text-brand-text shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] outline-none ' +
             (className ?? '')
           }
           {...props}

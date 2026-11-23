@@ -28,7 +28,7 @@ export function FieldList({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-[14px] bg-brand-surface md:grid md:grid-cols-[max-content_minmax(0,1fr)_auto] md:gap-x-4',
+        'overflow-hidden rounded-xl bg-brand-surface md:grid md:grid-cols-[max-content_minmax(0,1fr)_auto] md:gap-x-4',
         className,
       )}
     >
@@ -72,13 +72,13 @@ export function Field({
           className={cn(
             'min-w-0 break-all text-brand-text md:col-start-2 md:row-start-1',
             mono
-              ? 'font-mono text-[13px] md:text-[12px]'
-              : 'text-[15px] md:text-[13px]',
+              ? 'font-mono text-caption md:text-meta'
+              : 'text-body md:text-caption',
           )}
         >
           {value}
         </span>
-        <span className="text-[12px] text-brand-label md:col-start-1 md:row-start-1 md:text-[13px]">
+        <span className="text-meta text-brand-label md:col-start-1 md:row-start-1 md:text-caption">
           {label}
         </span>
         <span
@@ -100,18 +100,18 @@ export function Field({
           <ContextMenu.Popup
             // portalled out of the console: bring its colour tokens along
             data-deck
-            className="motion-pop min-w-40 rounded-[12px] border border-brand-edge bg-brand-surface p-1 text-[14px] text-brand-text shadow-lg outline-none"
+            className="motion-pop min-w-40 rounded-xl border border-brand-edge bg-brand-surface p-1 text-body text-brand-text shadow-lg outline-none"
           >
             <ContextMenu.Item
               onClick={() => copy(value, label)}
-              className="flex cursor-default items-center gap-2 rounded-[8px] px-3 py-2 outline-none data-[highlighted]:bg-brand-soft"
+              className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-brand-soft"
             >
               <Copy size={14} aria-hidden />
               {t`Copy value`}
             </ContextMenu.Item>
             <ContextMenu.Item
               onClick={() => copy(pair, label)}
-              className="flex cursor-default items-center gap-2 rounded-[8px] px-3 py-2 outline-none data-[highlighted]:bg-brand-soft"
+              className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-brand-soft"
             >
               <Copy size={14} aria-hidden />
               {t`Copy “${label}: …”`}

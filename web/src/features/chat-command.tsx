@@ -24,7 +24,7 @@ export function SlashCommandRow({
   const command = message.text || t`Command output`
   const output = message.body ?? ''
   const head = (
-    <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-brand-label">
+    <span className="flex min-w-0 items-center gap-1.5 text-caption text-brand-label">
       <SquareSlash size={13} aria-hidden className="shrink-0" />
       <span className="truncate font-mono text-brand-muted">{command}</span>
     </span>
@@ -37,11 +37,11 @@ export function SlashCommandRow({
       ) : short ? (
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
           {head}
-          <span className="text-[12.5px] text-brand-muted">{output}</span>
+          <span className="text-caption text-brand-muted">{output}</span>
         </span>
       ) : (
         <Disclosure chevron={false} title={head} triggerClassName="w-auto">
-          <pre className="mt-1 max-h-72 overflow-auto rounded-[10px] bg-brand-surface px-3 py-2 font-mono text-[12px] leading-snug whitespace-pre-wrap text-brand-muted">
+          <pre className="mt-1 max-h-72 overflow-auto rounded-xl bg-brand-surface px-3 py-2 font-mono text-meta leading-snug whitespace-pre-wrap text-brand-muted">
             {output}
           </pre>
         </Disclosure>

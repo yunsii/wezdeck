@@ -139,7 +139,7 @@ export function ImageViewer({
         ) : null}
       </div>
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between p-[max(env(safe-area-inset-top),0.75rem)] px-3 text-white">
-        <span className="text-[13px] opacity-80">
+        <span className="text-caption opacity-80">
           {images.length > 1 ? `${index + 1} / ${images.length}` : ''}
           {!src && !error ? ` ${t`Loading original…`}` : ''}
           {error ? ` ${error}` : ''}

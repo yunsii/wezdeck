@@ -56,7 +56,7 @@ function Meter({
         ? 'bg-brand-waiting'
         : 'bg-brand-running'
   return (
-    <span className="relative inline-flex h-6 shrink-0 items-center gap-1 overflow-hidden rounded-full bg-brand-surface px-2 text-[11.5px] text-brand-muted">
+    <span className="relative inline-flex h-6 shrink-0 items-center gap-1 overflow-hidden rounded-full bg-brand-surface px-2 text-meta text-brand-muted">
       <span
         aria-hidden
         className={cn('absolute inset-y-0 left-0 opacity-20', fill)}
@@ -133,14 +133,14 @@ function Meters({
           />
         ) : null}
         {background.length ? (
-          <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2 text-[11.5px] text-brand-muted">
+          <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2 text-meta text-brand-muted">
             <Led tone="running" size={8} className="led-running" />
             {t`${tasks} background tasks`}
           </span>
         ) : null}
       </Button>
       {open ? (
-        <p className="flex flex-wrap gap-x-3 px-1 text-[11px] text-brand-label">
+        <p className="flex flex-wrap gap-x-3 px-1 text-meta text-brand-label">
           {usage?.model ? <span>{usage.model}</span> : null}
           {usage?.context_limit ? (
             <span>{t`Context ${usedTokens} / ${limitTokens}`}</span>
@@ -153,12 +153,12 @@ function Meters({
       {open && background.length ? (
         <ul
           aria-label={t`Background tasks`}
-          className="grid gap-1 rounded-[12px] bg-brand-surface px-3 py-2"
+          className="grid gap-1 rounded-xl bg-brand-surface px-3 py-2"
         >
           {background.map((task) => (
             <li
               key={task.id}
-              className="flex items-center gap-2 truncate font-mono text-[12px] text-brand-muted"
+              className="flex items-center gap-2 truncate font-mono text-meta text-brand-muted"
             >
               <Led tone="running" size={9} />
               {task.summary || task.id}
@@ -247,7 +247,7 @@ export function SessionHeader({
             aria-haspopup="dialog"
             data-testid="session-title"
             title={t`Switch session (Alt+g)`}
-            className="flex min-w-0 items-center gap-1 text-left text-[16px] leading-tight font-semibold"
+            className="flex min-w-0 items-center gap-1 text-left text-title leading-tight font-semibold"
           >
             <span className="truncate">{title || t`Loading…`}</span>
             <ChevronDown
@@ -257,9 +257,9 @@ export function SessionHeader({
             />
           </Button>
           {data?.agent || data?.branch ? (
-            <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-brand-label">
+            <span className="flex min-w-0 items-center gap-1.5 text-meta text-brand-label">
               {data.agent && data.agent !== 'agent' ? (
-                <span className="shrink-0 rounded-[5px] bg-brand-surface px-1.5 font-mono leading-[1.35rem]">
+                <span className="shrink-0 rounded-lg bg-brand-surface px-1.5 font-mono leading-[1.35rem]">
                   {data.agent}
                 </span>
               ) : null}
@@ -272,7 +272,7 @@ export function SessionHeader({
         {data?.waiting_kind ? (
           <span
             title={long}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-[12.5px] text-brand-text"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-caption text-brand-text"
           >
             <Led tone="waiting" size={10} />
             {t`Needs you`}

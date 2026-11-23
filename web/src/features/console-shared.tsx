@@ -60,9 +60,9 @@ export function CategoryHeading({
 }) {
   return (
     <div className="mb-3.5 flex items-end justify-between gap-6 max-md:flex-col max-md:items-start max-md:gap-1.5">
-      <h2 className="text-lg font-semibold text-brand-text">{title}</h2>
+      <h2 className="text-heading font-semibold text-brand-text">{title}</h2>
       {description ? (
-        <p className="max-w-xl text-right text-xs leading-normal text-brand-muted max-md:text-left">
+        <p className="max-w-xl text-right text-meta leading-normal text-brand-muted max-md:text-left">
           {description}
         </p>
       ) : null}
@@ -90,27 +90,27 @@ export function ConsolePageHeader({
           <StatusPill
             status={loading ? 'loading' : connected ? 'ready' : 'offline'}
           />
-          <span className="text-xs text-brand-label">
+          <span className="text-meta text-brand-label">
             {data?.health.api_version ?? 'v1'}
           </span>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-text sm:text-3xl">
+        <h1 className="text-display font-semibold tracking-tight text-brand-text sm:text-3xl">
           {title}
         </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-brand-muted">
+        <p className="mt-2 max-w-3xl text-caption leading-6 text-brand-muted">
           {description}
         </p>
       </div>
-      <div className="flex flex-wrap gap-x-6 gap-y-3 text-[length:var(--text-nav)] text-brand-text">
+      <div className="flex flex-wrap gap-x-6 gap-y-3 text-caption text-brand-text">
         <div className="grid gap-1">
-          <span className="text-xs text-brand-label">{t`Last sample`}</span>
-          <strong className="font-mono text-sm font-medium tabular-nums">
+          <span className="text-meta text-brand-label">{t`Last sample`}</span>
+          <strong className="font-mono text-body font-medium tabular-nums">
             {formatTime(data?.health.observed_at)}
           </strong>
         </div>
         <div className="grid gap-1">
-          <span className="text-xs text-brand-label">{t`Uptime`}</span>
-          <strong className="font-mono text-sm font-medium tabular-nums">
+          <span className="text-meta text-brand-label">{t`Uptime`}</span>
+          <strong className="font-mono text-body font-medium tabular-nums">
             {formatDuration(data?.health.uptime_ms)}
           </strong>
         </div>
@@ -146,7 +146,7 @@ export function MetricPanel({
   return (
     <Card className="min-h-36">
       <div
-        className={`mb-4 flex items-center gap-2 text-sm font-medium ${tone}`}
+        className={`mb-4 flex items-center gap-2 text-body font-medium ${tone}`}
       >
         {icon}
         {label}
@@ -159,10 +159,12 @@ export function MetricPanel({
         </>
       ) : (
         <>
-          <p className="text-2xl font-semibold tracking-tight tabular-nums">
+          <p className="text-display font-semibold tracking-tight tabular-nums">
             {value}
           </p>
-          <p className="mt-1 truncate text-sm text-brand-muted">{detail}</p>
+          <p className="mt-1 truncate text-caption text-brand-muted">
+            {detail}
+          </p>
         </>
       )}
     </Card>
@@ -182,13 +184,13 @@ export function MiniMetric({
 }) {
   return (
     <div className="min-w-0 border border-brand-border bg-brand-deck px-3 py-2.5">
-      <p className="text-xs text-brand-label">
+      <p className="text-meta text-brand-label">
         {label} {info ? <InfoTip text={info} /> : null}
       </p>
       {loading ? (
         <Skeleton className="mt-2 h-4 w-20" />
       ) : (
-        <p className="mt-1 font-mono text-sm font-medium text-brand-text tabular-nums">
+        <p className="mt-1 font-mono text-body font-medium text-brand-text tabular-nums">
           {value}
         </p>
       )}
@@ -260,13 +262,13 @@ export function StatusRow({
         className,
       )}
     >
-      <p className="font-mono text-[length:var(--text-kicker)] text-brand-label">
+      <p className="font-mono text-meta text-brand-label">
         {label} {info ? <InfoTip text={info} /> : null}
       </p>
       {loading ? (
         <Skeleton className="mt-2 h-4 w-32" />
       ) : (
-        <p className="mt-1 truncate font-mono text-sm text-brand-text">
+        <p className="mt-1 truncate font-mono text-body text-brand-text">
           {value}
         </p>
       )}
@@ -293,20 +295,20 @@ export function SignalLine({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-brand-border py-3 first:pt-0 last:border-0 last:pb-0">
       <div className="min-w-0">
-        <p className="text-sm text-brand-text">
+        <p className="text-body text-brand-text">
           {label} {info ? <InfoTip text={info} /> : null}
         </p>
         {loading ? (
           <Skeleton className="mt-2 h-3 w-48" />
         ) : (
-          <p className="mt-1 truncate text-xs text-brand-label">{detail}</p>
+          <p className="mt-1 truncate text-meta text-brand-label">{detail}</p>
         )}
       </div>
       {loading ? (
         <Skeleton className="h-4 w-16" />
       ) : (
         <span
-          className={`inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold ${healthy ? 'text-brand-done' : 'text-brand-muted'}`}
+          className={`inline-flex shrink-0 items-center gap-1.5 text-meta font-semibold ${healthy ? 'text-brand-done' : 'text-brand-muted'}`}
         >
           {healthy ? <Check size={14} /> : <CircleAlert size={14} />}
           {state}
@@ -333,8 +335,8 @@ export function EmptyPanelState({
 }) {
   return (
     <div className="border border-dashed border-brand-border bg-brand-deck px-4 py-5">
-      <p className="text-sm font-medium text-brand-text">{text}</p>
-      <p className="mt-1 text-xs text-brand-label">{detail}</p>
+      <p className="text-body font-medium text-brand-text">{text}</p>
+      <p className="mt-1 text-meta text-brand-label">{detail}</p>
     </div>
   )
 }

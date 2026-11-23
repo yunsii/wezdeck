@@ -40,12 +40,12 @@ function ImageThumb({ src, onOpen }: { src: ImageSource; onOpen: () => void }) {
         onOpen()
       }}
       aria-label={t`Open image`}
-      className="relative size-16 overflow-hidden rounded-[10px] bg-brand-deck/15"
+      className="relative size-16 overflow-hidden rounded-xl bg-brand-deck/15"
     >
       {thumb.data ? (
         <img src={thumb.data.url} alt="" className="size-full object-cover" />
       ) : (
-        <span className="absolute inset-0 flex items-center justify-center text-[11px] opacity-70">
+        <span className="absolute inset-0 flex items-center justify-center text-meta opacity-70">
           {gone ? t`Expired` : thumb.isError ? t`Retry` : t`Image`}
         </span>
       )}

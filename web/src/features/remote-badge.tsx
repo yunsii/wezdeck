@@ -113,7 +113,7 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
         data-rpc-webrtc={state.rpcCount.webrtc}
         data-rpc-websocket={state.rpcCount.websocket}
         title={note ? t`WebRTC: ${note}` : undefined}
-        className="key inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-xs whitespace-nowrap"
+        className="key inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-meta whitespace-nowrap"
       >
         <Led tone={ledTone} size={10} />
         {text}
@@ -128,7 +128,7 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
           data-testid="remote-mic"
           onClick={() => void mic.request()}
           title={t`Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded.`}
-          className="key key-press inline-flex min-h-8 items-center rounded-full px-3 text-xs"
+          className="key key-press inline-flex min-h-8 items-center rounded-full px-3 text-meta"
         >
           {micError
             ? t`Grant failed (${micError}) — retry`

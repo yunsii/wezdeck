@@ -44,7 +44,7 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
         title={
           <span>
             {t`Transcript`}{' '}
-            <span className="font-mono text-xs font-normal text-brand-label">
+            <span className="font-mono text-meta font-normal text-brand-label">
               {detail.data?.running ? t`live` : ''}{' '}
               {num(transcript.data?.total)}
             </span>
@@ -52,7 +52,7 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
         }
       >
         <ol
-          className="grid max-h-96 gap-px overflow-auto border border-brand-border bg-brand-border font-mono text-xs"
+          className="grid max-h-96 gap-px overflow-auto border border-brand-border bg-brand-border font-mono text-meta"
           aria-label={t`Transcript`}
         >
           {(transcript.data?.lines ?? []).map((line, index) => {
@@ -92,7 +92,7 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
           className="grid gap-2"
           title={t`Final output`}
         >
-          <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-xs whitespace-pre-wrap text-brand-muted">
+          <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-meta whitespace-pre-wrap text-brand-muted">
             {record.final_text_tail}
           </pre>
         </Disclosure>
@@ -142,8 +142,8 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
               },
             ].map((fact) => (
               <div key={fact.label} className="bg-brand-deck px-3 py-2">
-                <dt className="text-xs text-brand-label">{fact.label}</dt>
-                <dd className="mt-1 font-mono text-xs break-all">
+                <dt className="text-meta text-brand-label">{fact.label}</dt>
+                <dd className="mt-1 font-mono text-meta break-all">
                   {fact.value}
                 </dd>
               </div>
@@ -151,7 +151,7 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
           </dl>
           <div className="overflow-x-auto border border-brand-border">
             <table
-              className="w-full text-left font-mono text-xs"
+              className="w-full text-left font-mono text-meta"
               aria-label={t`Prompt composition`}
             >
               <thead className="bg-brand-deck text-brand-label">
@@ -184,14 +184,14 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
           <Button
             variant="plain"
             type="button"
-            className="justify-self-start border border-brand-border px-3 py-1.5 text-xs text-brand-muted hover:border-brand-running hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:outline-none"
+            className="justify-self-start border border-brand-border px-3 py-1.5 text-meta text-brand-muted hover:border-brand-running hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:outline-none"
             onClick={() => setShowPrompt((value) => !value)}
             aria-expanded={showPrompt}
           >
             {showPrompt ? t`Hide initial prompt` : t`Show initial prompt`}
           </Button>
           {showPrompt ? (
-            <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-xs whitespace-pre-wrap text-brand-muted">
+            <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-meta whitespace-pre-wrap text-brand-muted">
               {prompt.data?.ok
                 ? prompt.data.text
                 : (prompt.data?.error?.message ?? t`Loading…`)}

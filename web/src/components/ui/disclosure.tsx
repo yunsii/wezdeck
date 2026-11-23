@@ -36,7 +36,7 @@ export function Disclosure({
     <BaseCollapsible.Trigger
       className={cn(
         'group flex w-full cursor-pointer items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
-        chevron && 'min-h-11 justify-between text-sm font-semibold',
+        chevron && 'min-h-11 justify-between text-body font-semibold',
         triggerClassName,
       )}
     >

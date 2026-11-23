@@ -88,7 +88,7 @@ export function NewSessionButton() {
         onClick={show}
         data-testid="new-session"
         title={t`New session (c)`}
-        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[14px] md:min-h-9"
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
       >
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New session`}</span>
@@ -190,7 +190,7 @@ function NewSessionSheet({
       write
     >
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
-        <label className="grid gap-1 text-[13px] text-brand-muted">
+        <label className="grid gap-1 text-caption text-brand-muted">
           {t`Repository`}
           <Select
             size="lg"
@@ -214,9 +214,9 @@ function NewSessionSheet({
               { value: 'hotfix', label: 'hotfix' },
             ]}
           />
-          <p className="px-1 text-[12px] text-brand-label">{kinds[kind]}</p>
+          <p className="px-1 text-meta text-brand-label">{kinds[kind]}</p>
         </div>
-        <label className="grid gap-1 text-[13px] text-brand-muted">
+        <label className="grid gap-1 text-caption text-brand-muted">
           {t`Subject`}
           <Input
             variant="field"
@@ -226,13 +226,13 @@ function NewSessionSheet({
             onChange={(event) => setSubject(event.target.value)}
             placeholder={t`e.g. phone-create`}
           />
-          <span className="px-1 text-[12px] text-brand-label">
+          <span className="px-1 text-meta text-brand-label">
             {subject.trim()
               ? t`Worktree ${kind}-${name}, branch ${kind}/${name} (the host makes the final names; a taken one gets -2)`
               : t`Becomes the worktree and branch name, like Ctrl+k g at the desk.`}
           </span>
         </label>
-        <label className="grid gap-1 text-[13px] text-brand-muted">
+        <label className="grid gap-1 text-caption text-brand-muted">
           {t`First message to the agent`}
           <Textarea
             value={prompt}
@@ -249,20 +249,20 @@ function NewSessionSheet({
             data-stage={current.stage}
             className={
               current.stage === 'failed'
-                ? 'rounded-[10px] bg-brand-error/10 px-3 py-2 text-[13px] text-brand-error'
-                : 'rounded-[10px] bg-brand-surface px-3 py-2 text-[13px]'
+                ? 'rounded-xl bg-brand-error/10 px-3 py-2 text-caption text-brand-error'
+                : 'rounded-xl bg-brand-surface px-3 py-2 text-caption'
             }
           >
             {stageText(current)}
             {current.branch ? (
-              <span className="block text-[12px] text-brand-label">
+              <span className="block text-meta text-brand-label">
                 {current.branch}
               </span>
             ) : null}
           </p>
         ) : null}
         {error ? (
-          <p role="alert" className="text-[13px] text-brand-error">
+          <p role="alert" className="text-caption text-brand-error">
             {error}
           </p>
         ) : null}
@@ -271,7 +271,7 @@ function NewSessionSheet({
           type="button"
           disabled={!ready || busy}
           onClick={() => void submit()}
-          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+          className="min-h-12 px-3 text-body disabled:opacity-40"
         >
           {t`Create session`}
         </Button>

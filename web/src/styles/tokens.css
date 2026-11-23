@@ -10,6 +10,23 @@
     'Microsoft YaHei', system-ui, sans-serif;
   --font-mono:
     'JetBrains Mono Variable', 'Noto Sans SC Variable', ui-monospace, monospace;
+
+  /* Type scale (2026-11-23): six named steps instead of ~20 pixel sizes —
+     half-pixel neighbours (12 / 12.5 / 13 / 13.5…) read as misalignment,
+     not hierarchy. Each step carries its line height; `leading-*` still
+     overrides. A unit test keeps arbitrary text-[Npx] out of the console. */
+  --text-meta: 0.75rem; /* 12: timestamps, counts, hints */
+  --text-meta--line-height: 1.5;
+  --text-caption: 0.8125rem; /* 13: secondary lines, labels, tool rows */
+  --text-caption--line-height: 1.5;
+  --text-body: 0.9375rem; /* 15: messages, list rows, controls */
+  --text-body--line-height: 1.6;
+  --text-title: 1.0625rem; /* 17: row titles, section headings */
+  --text-title--line-height: 1.45;
+  --text-heading: 1.25rem; /* 20: sub-page titles */
+  --text-heading--line-height: 1.35;
+  --text-display: 1.625rem; /* 26: a page's large title */
+  --text-display--line-height: 1.25;
 }
 
 @theme inline {
@@ -31,9 +48,6 @@
 }
 
 :root {
-  --text-kicker: 0.625rem;
-  --text-meta: 0.6875rem;
-  --text-nav: 0.8125rem;
   --tracking-label: 0.12em;
   --tracking-brand: 0.16em;
   /* Mirrors assets/brand/README.md: deck plate + running/waiting/done colors. */

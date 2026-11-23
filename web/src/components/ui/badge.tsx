@@ -6,7 +6,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { cn } from '#/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border font-bold whitespace-nowrap [&>svg]:pointer-events-none',
+  'inline-flex w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border font-semibold whitespace-nowrap [&>svg]:pointer-events-none',
   {
     variants: {
       variant: {
@@ -22,8 +22,8 @@ const badgeVariants = cva(
         outline: 'border-brand-border bg-transparent text-brand-muted',
       },
       size: {
-        default: 'h-7 px-2.5 text-[length:var(--text-meta)]',
-        sm: 'h-6 px-2 text-[length:var(--text-kicker)]',
+        default: 'h-7 px-2.5 text-meta',
+        sm: 'h-6 px-2 text-meta',
       },
     },
     defaultVariants: {

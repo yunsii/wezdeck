@@ -202,16 +202,16 @@ export function ConsoleActivityPage() {
   let lastDay = ''
   return (
     <div className="grid max-w-3xl content-start gap-3">
-      <h1 className="hidden text-base font-semibold md:block">
+      <h1 className="hidden text-body font-semibold md:block">
         {t`Ticket activity`}
       </h1>
       {events.isError ? (
-        <p role="status" className="text-xs text-brand-waiting">
+        <p role="status" className="text-meta text-brand-waiting">
           {t`Host unreachable right now`}，{t`showing the last copy`}
         </p>
       ) : null}
       {groups.length === 0 ? (
-        <p className="py-8 text-center text-sm text-brand-muted">
+        <p className="py-8 text-center text-caption text-brand-muted">
           {events.isPending
             ? t`Loading…`
             : (events.data?.error ?? t`No activity yet`)}
@@ -232,19 +232,19 @@ export function ConsoleActivityPage() {
               className="grid gap-2"
             >
               {heading ? (
-                <h2 className="pt-2 text-[15px] font-bold">{heading}</h2>
+                <h2 className="pt-2 text-body font-semibold">{heading}</h2>
               ) : null}
-              <div className="rounded-[16px] bg-brand-surface px-4 py-3">
+              <div className="rounded-2xl bg-brand-surface px-4 py-3">
                 <Link
                   to="/{-$locale}/console/collab/$id"
                   params={{ locale: localeParam, id: group.ticket }}
                   className="grid gap-0.5"
                 >
-                  <span className="line-clamp-2 text-[15.5px] leading-snug font-semibold">
+                  <span className="line-clamp-2 text-body leading-snug font-semibold">
                     {title}
                   </span>
                   {from || to ? (
-                    <span className="text-xs text-brand-label">
+                    <span className="text-meta text-brand-label">
                       {from || '?'} → {to || '?'}
                     </span>
                   ) : null}
@@ -253,7 +253,7 @@ export function ConsoleActivityPage() {
                   {group.events.map((event) => (
                     <li
                       key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
-                      className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-sm"
+                      className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-body"
                     >
                       <span className="pt-1">
                         <Led tone={toneOf(event)} size={9} />
@@ -261,7 +261,7 @@ export function ConsoleActivityPage() {
                       <span className="line-clamp-3 text-brand-text">
                         {sentence(event)}
                       </span>
-                      <span className="text-xs text-brand-label tabular-nums">
+                      <span className="text-meta text-brand-label tabular-nums">
                         {clock(event.ts)}
                       </span>
                     </li>
@@ -286,7 +286,7 @@ export function ActivityLink({ className }: { className?: string }) {
       params={{ locale: locale === 'en' ? undefined : locale }}
       className={
         className ??
-        'key flex min-h-11 min-w-0 items-center justify-between gap-1 rounded-[14px] px-3.5 text-sm text-brand-muted'
+        'key flex min-h-11 min-w-0 items-center justify-between gap-1 rounded-xl px-3.5 text-caption text-brand-muted'
       }
     >
       <span className="truncate">{t`Ticket activity`}</span>

@@ -208,7 +208,7 @@ function JumpLatest({
       // a light chip with an edge and a deep shadow, not the dark solid
       // style: it floats over the conversation, and over a user bubble
       // (same dark fill) the solid chip vanished
-      className="key-press chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full border border-brand-edge bg-brand-surface px-4 text-[13px] font-medium text-brand-text shadow-[0_8px_24px_rgb(0_0_0/0.22)]"
+      className="key-press chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full border border-brand-edge bg-brand-surface px-4 text-caption font-medium text-brand-text shadow-[0_8px_24px_rgb(0_0_0/0.22)]"
     >
       <ArrowDown size={15} aria-hidden />
       {unread > 0 ? t`${unread} new` : t`Latest`}
@@ -445,7 +445,7 @@ export function SessionDetail({ id }: { id: string }) {
         {detail.isError && !data ? (
           <p
             role="status"
-            className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-sm"
+            className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
           >
             {String(detail.error.message)}
           </p>
@@ -454,7 +454,7 @@ export function SessionDetail({ id }: { id: string }) {
           <>
             <StickyPrompt end={end} messages={messages} start={start} />
             {total > 0 ? (
-              <div className="flex items-center justify-between gap-2 px-1 text-[12px] text-brand-label">
+              <div className="flex items-center justify-between gap-2 px-1 text-meta text-brand-label">
                 <span>{t`${total} messages, showing ${shown}`}</span>
                 {start > 0 ? (
                   <Button
@@ -502,7 +502,7 @@ export function SessionDetail({ id }: { id: string }) {
             />
           </>
         ) : data?.screen ? (
-          <pre className="overflow-x-auto rounded-[14px] bg-brand-surface p-3 font-mono text-[12px] leading-snug">
+          <pre className="overflow-x-auto rounded-xl bg-brand-surface p-3 font-mono text-meta leading-snug">
             {data.screen}
           </pre>
         ) : null}
@@ -534,7 +534,7 @@ export function SessionDetail({ id }: { id: string }) {
           <p
             role="status"
             data-testid="session-stale"
-            className="rounded-[10px] bg-brand-waiting/10 px-3 py-1.5 text-xs text-brand-text"
+            className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
           >
             {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
             {detail.error?.message ?? t`this device is offline`}
@@ -542,13 +542,13 @@ export function SessionDetail({ id }: { id: string }) {
         ) : null}
         <SessionSubagents agents={data?.subagents} />
         {retryIn ? (
-          <p role="status" className="text-xs text-brand-muted">
+          <p role="status" className="text-meta text-brand-muted">
             {t`Someone just used the desk; sending in ${retryIn}s…`}
           </p>
         ) : error ? (
           <ErrorLine message={error} />
         ) : blocked ? (
-          <p className="text-xs text-brand-muted">
+          <p className="text-meta text-brand-muted">
             {blocked}{' '}
             {device.state !== 'approved' ? (
               <Link

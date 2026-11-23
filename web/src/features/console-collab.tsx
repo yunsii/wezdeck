@@ -113,10 +113,10 @@ export function MetricsBand({
   return (
     <section
       aria-label={t`Collab metrics`}
-      className="grid gap-2 rounded-[16px] border border-brand-edge bg-brand-surface p-3"
+      className="grid gap-2 rounded-2xl border border-brand-edge bg-brand-surface p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-sm font-semibold">{t`Cross-repo collab`}</h1>
+        <h1 className="text-body font-semibold">{t`Cross-repo collab`}</h1>
         <div className="w-32 shrink-0">
           <Select
             value={window}
@@ -129,19 +129,19 @@ export function MetricsBand({
           />
         </div>
       </div>
-      <dl className="grid grid-cols-2 overflow-hidden rounded-[12px] border-t border-l border-brand-edge sm:grid-cols-5">
+      <dl className="grid grid-cols-2 overflow-hidden rounded-xl border-t border-l border-brand-edge sm:grid-cols-5">
         {facts.map((fact) => (
           <div
             key={fact.label}
             className="border-r border-b border-brand-edge bg-brand-key px-3 py-2"
           >
-            <dt className="text-xs text-brand-label">{fact.label}</dt>
-            <dd className="mt-1 truncate text-[15px]">{fact.value}</dd>
+            <dt className="text-meta text-brand-label">{fact.label}</dt>
+            <dd className="mt-1 truncate text-body">{fact.value}</dd>
           </div>
         ))}
       </dl>
       {metrics && Object.keys(metrics.reuse_reasons).length > 0 ? (
-        <p className="font-mono text-xs text-brand-muted">
+        <p className="font-mono text-meta text-brand-muted">
           {t`reuse reasons`}:{' '}
           {Object.entries(metrics.reuse_reasons)
             .map(([key, value]) => `${key} ${value}`)
@@ -270,23 +270,23 @@ function RunKeys({
               aria-pressed={active}
               onClick={() => onSelect(item.run)}
               className={cn(
-                'key-press grid w-full gap-2 rounded-[14px] border px-3.5 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                'key-press grid w-full gap-2 rounded-xl border px-3.5 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
                 active
                   ? 'border-brand-edge bg-brand-deck shadow-[var(--key-pressed)]'
                   : 'key',
               )}
             >
-              <span className="flex items-center gap-2 text-sm">
+              <span className="flex items-center gap-2 text-body">
                 <Led tone={tone} size={12} />
                 <span className="font-medium">{item.phase ?? '—'}</span>
                 <span className="text-brand-label">
                   {item.session?.reuse ?? ''}
                 </span>
-                <span className="ml-auto font-mono text-xs text-brand-label">
+                <span className="ml-auto font-mono text-meta text-brand-label">
                   {item.run.slice(-6)}
                 </span>
               </span>
-              <dl className="grid grid-cols-4 gap-2 text-xs">
+              <dl className="grid grid-cols-4 gap-2 text-meta">
                 {[
                   [t`Turns`, num(item.turns)],
                   [t`Cache hit`, pct(item.cache_hit_rate)],
@@ -295,7 +295,7 @@ function RunKeys({
                 ].map(([label, value]) => (
                   <div key={label}>
                     <dt className="text-brand-label">{label}</dt>
-                    <dd className="mt-0.5 text-[15px] text-brand-text">
+                    <dd className="mt-0.5 text-body text-brand-text">
                       {value}
                     </dd>
                   </div>
@@ -322,15 +322,15 @@ function RunTable({
   const wide = useIsWide()
   if (runs.length === 0) {
     return (
-      <p className="text-sm text-brand-muted">{t`No headless runs recorded for this ticket.`}</p>
+      <p className="text-caption text-brand-muted">{t`No headless runs recorded for this ticket.`}</p>
     )
   }
   if (!wide)
     return <RunKeys runs={runs} selected={selected} onSelect={onSelect} />
   return (
-    <div className="overflow-x-auto rounded-[14px] border border-brand-edge">
+    <div className="overflow-x-auto rounded-xl border border-brand-edge">
       <table
-        className="w-full text-left font-mono text-xs"
+        className="w-full text-left font-mono text-meta"
         aria-label={t`Runs`}
       >
         <thead className="bg-brand-deck text-brand-label">
@@ -413,7 +413,7 @@ function ChildrenTable({
   return (
     <div className="overflow-x-auto border border-brand-border">
       <table
-        className="w-full text-left font-mono text-xs"
+        className="w-full text-left font-mono text-meta"
         aria-label={t`Children`}
       >
         <thead className="bg-brand-deck text-brand-label">
@@ -483,9 +483,9 @@ function IntegrationSummary({
   const { t } = useLingui()
   return (
     <section aria-label={t`Integration`} className="grid gap-1">
-      <h2 className="text-sm font-semibold">{t`Integration`}</h2>
+      <h2 className="text-body font-semibold">{t`Integration`}</h2>
       {Object.entries(integration).map(([repo, info]) => (
-        <p key={repo} className="font-mono text-xs text-brand-muted">
+        <p key={repo} className="font-mono text-meta text-brand-muted">
           {repo}:{' '}
           {info.conflict ? (
             <span className="text-brand-error">

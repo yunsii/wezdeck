@@ -1,11 +1,9 @@
-// 我的: an index of groups — connection, write access, usage, appearance,
-// app — each row showing how it stands now, each group its own pushed page
-// (/console/me/$page, back returns to the index; the tab bar stays, like a
-// settings tab). On the host, links to the local-only console sections.
+// 我的: an index of groups (connection, write access, usage, appearance, app),
+// each row showing how it stands, each group a pushed page (/console/me/$page;
+// back returns to the index, the tab bar stays). On the host, local links too.
 import { useLingui } from '@lingui/react/macro'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Field, FieldList } from '#/components/ui/field'
@@ -14,12 +12,7 @@ import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWide, useIsWidePhoneFirst } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
-import {
-  buildId,
-  checkForUpdate,
-  promptInstall,
-  useInstallState,
-} from '#/lib/pwa'
+import { buildId } from '#/lib/pwa'
 import { useTheme } from '#/lib/theme-provider'
 import { useConsoleMode, useRemoteState } from './console-mode'
 import { Segmented } from '#/components/deck/segmented'
@@ -27,102 +20,26 @@ import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
 import { HostPage, useHostSummary } from './me-host'
+import { InstallEntry, Row, UpdateCheck } from './me-app'
 import { InteractionsPage, useInteractionsBack } from './console-interactions'
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex min-h-9 items-baseline justify-between gap-3 py-2 text-sm">
-      <span className="text-brand-label">{label}</span>
-      <span className="min-w-0 truncate text-right font-mono text-xs">
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function InstallEntry() {
-  const { t } = useLingui()
-  const state = useInstallState()
-  if (state === 'installed') return <Row label={t`App`} value={t`Installed`} />
-  if (state === 'prompt')
-    return (
-      <Button onClick={() => void promptInstall()} className="min-h-11">
-        {t`Install WezDeck`}
-      </Button>
-    )
-  const hint = {
-    ios: t`In Safari tap Share, then “Add to Home Screen”.`,
-    'in-app': t`Open this page in the system browser first, then install it from there.`,
-    unavailable: t`Use the browser menu: “Install app” / “Add to Home screen”.`,
-  }[state]
-  return <p className="text-sm text-brand-muted">{hint}</p>
-}
-
-function UpdateCheck() {
-  const { t } = useLingui()
-  const [result, setResult] = useState('')
-  const [checking, setChecking] = useState(false)
-  const check = () => {
-    setChecking(true)
-    void checkForUpdate()
-      .then((r) =>
-        setResult(
-          r === 'new'
-            ? t`New version ready, reload to use it`
-            : r === 'offline'
-              ? t`Offline, try again later`
-              : t`Already the latest`,
-        ),
-      )
-      .finally(() => setChecking(false))
-  }
-  // one settings row: 版本 on the left, the build and a quiet text action on
-  // the right — not a big outlined button
-  return (
-    <div className="grid gap-1">
-      <div className="flex min-h-9 items-baseline justify-between gap-3 py-2 text-sm">
-        <span className="shrink-0 whitespace-nowrap text-brand-label">
-          {t`Version`}
-        </span>
-        <span className="flex min-w-0 items-baseline gap-3">
-          <span className="min-w-0 truncate font-mono text-xs">{buildId}</span>
-          <Button
-            variant="plain"
-            type="button"
-            disabled={checking}
-            onClick={check}
-            className="shrink-0 text-sm text-brand-running disabled:opacity-50"
-          >
-            {checking ? t`Checking…` : t`Check for updates`}
-          </Button>
-        </span>
-      </div>
-      {result ? (
-        <p role="status" className="text-right text-xs text-brand-muted">
-          {result}
-        </p>
-      ) : null}
-    </div>
-  )
-}
 
 function PhoneWriting() {
   const { t } = useLingui()
   const device = useDeviceState()
   const command = `scripts/dev/install-remote-relay.sh --approve ${device.id ?? ''}`
   if (device.state === 'checking')
-    return <p className="text-sm text-brand-muted">{t`Checking…`}</p>
+    return <p className="text-caption text-brand-muted">{t`Checking…`}</p>
   if (device.state === 'approved' && device.id === 'local')
     return (
-      <p className="text-sm">
+      <p className="text-body">
         {t`Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own.`}
       </p>
     )
   if (device.state === 'approved')
     return (
-      <p className="text-sm">
+      <p className="text-body">
         {t`Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own.`}
-        <span className="mt-1 block font-mono text-xs text-brand-label">
+        <span className="mt-1 block font-mono text-meta text-brand-label">
           {device.id}
         </span>
       </p>
@@ -130,14 +47,14 @@ function PhoneWriting() {
   if (device.state === 'none')
     return (
       <div className="grid gap-2">
-        <p className="text-sm text-brand-muted">
+        <p className="text-caption text-brand-muted">
           {t`Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once.`}
         </p>
         <Button className="min-h-11" onClick={() => void device.enable()}>
           {t`Enable writing`}
         </Button>
         {device.error ? (
-          <p role="alert" className="text-xs text-brand-error">
+          <p role="alert" className="text-meta text-brand-error">
             {device.error}
           </p>
         ) : null}
@@ -145,10 +62,10 @@ function PhoneWriting() {
     )
   return (
     <div className="grid gap-2">
-      <p className="text-sm">
+      <p className="text-body">
         {t`Waiting for the host to approve this device. On the host run:`}
       </p>
-      <code className="block rounded-[10px] bg-brand-deck px-3 py-2 font-mono text-xs break-all select-all">
+      <code className="block rounded-xl bg-brand-deck px-3 py-2 font-mono text-meta break-all select-all">
         {command}
       </code>
       <div className="flex flex-wrap gap-2">
@@ -166,7 +83,7 @@ function PhoneWriting() {
         </Button>
       </div>
       {device.error ? (
-        <p role="alert" className="text-xs text-brand-error">
+        <p role="alert" className="text-meta text-brand-error">
           {device.error}
         </p>
       ) : null}
@@ -210,14 +127,14 @@ function ConnectionPage() {
     return (
       <div className="grid gap-4">
         <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
-        <p className="text-sm text-brand-muted">
+        <p className="text-caption text-brand-muted">
           {t`This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here.`}
         </p>
         <section className="grid gap-1.5">
-          <h2 className="text-[13px] font-semibold text-brand-muted">
+          <h2 className="text-caption font-semibold text-brand-muted">
             {t`Phone or tablet`}
           </h2>
-          <p className="text-[13px] text-brand-muted">
+          <p className="text-caption text-brand-muted">
             {t`Run this on the host, then open the link it prints on that device:`}
           </p>
           <FieldList>
@@ -232,7 +149,7 @@ function ConnectionPage() {
     )
   if (remote.mode === 'unpaired')
     return (
-      <p className="text-sm text-brand-muted">
+      <p className="text-caption text-brand-muted">
         {t`This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code.`}
       </p>
     )
@@ -245,7 +162,7 @@ function ConnectionPage() {
         value={`${remote.rpcCount.webrtc} / ${remote.rpcCount.websocket}`}
       />
       {remote.rtcNote ? (
-        <p className="text-xs text-brand-muted">
+        <p className="text-meta text-brand-muted">
           {t`Last direct attempt`}: {remote.rtcNote}
         </p>
       ) : null}
@@ -262,7 +179,7 @@ function AppearancePage() {
   return (
     <div className="grid gap-3">
       <div className="grid gap-1.5">
-        <span className="text-sm text-brand-muted">{t`Language`}</span>
+        <span className="text-caption text-brand-muted">{t`Language`}</span>
         <Segmented
           label={t`Language`}
           value={locale === 'zh' ? 'zh' : 'en'}
@@ -281,7 +198,7 @@ function AppearancePage() {
         />
       </div>
       <div className="grid gap-1.5">
-        <span className="text-sm text-brand-muted">{t`Theme`}</span>
+        <span className="text-caption text-brand-muted">{t`Theme`}</span>
         <Segmented
           label={t`Theme`}
           value={mode}
@@ -326,8 +243,8 @@ function EntryRow({
           active && 'bg-brand-soft',
         )}
       >
-        <span className="flex-1 text-[16px]">{title}</span>
-        <span className="min-w-0 truncate text-[14px] text-brand-muted">
+        <span className="flex-1 text-body">{title}</span>
+        <span className="min-w-0 truncate text-caption text-brand-muted">
           {value}
         </span>
         <ChevronRight
@@ -362,10 +279,10 @@ function MeIndex({ active }: { active?: MePage }) {
   const hostSummary = useHostSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
-  const group = 'overflow-hidden rounded-[16px] bg-brand-surface'
+  const group = 'overflow-hidden rounded-2xl bg-brand-surface'
   return (
     <div className="grid max-w-2xl content-start gap-4">
-      <h1 className="hidden text-base font-semibold md:block">{t`Settings`}</h1>
+      <h1 className="hidden text-body font-semibold md:block">{t`Settings`}</h1>
       <ul className={group}>
         <EntryRow
           page="connection"
@@ -429,7 +346,7 @@ function MeIndex({ active }: { active?: MePage }) {
             <Link
               to="/{-$locale}/console/diagnostics"
               params={{ locale: localeParam }}
-              className="key-press flex min-h-13 items-center justify-between px-4 text-[16px]"
+              className="key-press flex min-h-13 items-center justify-between px-4 text-body"
             >
               {t`Diagnostics`}
               <ChevronRight
@@ -489,7 +406,7 @@ function MeSubPage({ page }: { page: MePage }) {
         >
           <ChevronLeft size={22} aria-hidden />
         </Button>
-        <h1 className="min-w-0 flex-1 truncate text-[20px] font-semibold">
+        <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
           {titles[page]}
         </h1>
         {/* the same link chip as every first-level page, top right */}
@@ -501,7 +418,7 @@ function MeSubPage({ page }: { page: MePage }) {
       {page === 'interactions' ? (
         body
       ) : (
-        <section className="key grid gap-3 rounded-[16px] p-4">{body}</section>
+        <section className="key grid gap-3 rounded-2xl p-4">{body}</section>
       )}
     </div>
   )

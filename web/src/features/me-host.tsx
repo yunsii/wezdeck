@@ -68,7 +68,7 @@ export function HostPage() {
   const none = t`Unavailable`
   const group = (title: string, rows: Array<[string, string]>) => (
     <section className="grid gap-1">
-      <h2 className="px-1 text-[12.5px] font-semibold text-brand-muted">
+      <h2 className="px-1 text-caption font-semibold text-brand-muted">
         {title}
       </h2>
       <FieldList>
@@ -81,14 +81,14 @@ export function HostPage() {
   return (
     <div className="grid gap-4">
       {error && !loading ? (
-        <div className="flex items-center justify-between gap-3 rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-sm">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-brand-waiting/10 px-3 py-2 text-body">
           <span>{error}</span>
           <Button size="sm" variant="warning" onClick={() => void refreshAll()}>
             {t`Retry`}
           </Button>
         </div>
       ) : null}
-      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-1 text-[13px] text-brand-muted">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-1 text-caption text-brand-muted">
         {checks.map((check) => (
           <li key={check.name} className="inline-flex items-center gap-1.5">
             <Led tone={check.tone} size={9} />
@@ -116,7 +116,7 @@ export function HostPage() {
           [t`All time`, formatNumber(data?.rime?.chars)],
           [t`Latest`, formatTime(data?.rime?.last_ts)],
         ])}
-        <p className="px-1 text-[12px] text-brand-label">
+        <p className="px-1 text-meta text-brand-label">
           <ImeDetail ime={data?.ime} />
         </p>
       </section>
@@ -133,11 +133,11 @@ export function HostPage() {
         [t`Process`, wsl.data?.pid ? String(wsl.data.pid) : none],
       ])}
       <Disclosure
-        className="overflow-hidden rounded-[14px] bg-brand-surface"
-        triggerClassName="min-h-11 px-3 text-[14px] font-medium"
+        className="overflow-hidden rounded-xl bg-brand-surface"
+        triggerClassName="min-h-11 px-3 text-body font-medium"
         title={t`Capabilities (${capabilityCount})`}
       >
-        <p className="px-3 pb-3 font-mono text-[12px] leading-relaxed break-words text-brand-muted">
+        <p className="px-3 pb-3 font-mono text-meta leading-relaxed break-words text-brand-muted">
           {data?.health.capabilities.join('  ') || none}
         </p>
       </Disclosure>

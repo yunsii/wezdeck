@@ -56,15 +56,15 @@ function QuestionOptions({
   const { t } = useLingui()
   return (
     <fieldset className="grid gap-2" disabled={disabled}>
-      <legend className="mb-2 text-[15px] leading-snug font-semibold">
+      <legend className="mb-2 text-body leading-snug font-semibold">
         {question.header ? (
-          <span className="mr-1.5 rounded-[6px] bg-brand-deck px-1.5 py-0.5 text-[12px] font-medium text-brand-muted">
+          <span className="mr-1.5 rounded-lg bg-brand-deck px-1.5 py-0.5 text-meta font-medium text-brand-muted">
             {question.header}
           </span>
         ) : null}
         {question.question}
         {question.multi_select ? (
-          <span className="ml-1 text-[12px] font-normal text-brand-label">
+          <span className="ml-1 text-meta font-normal text-brand-label">
             {t`(pick any)`}
           </span>
         ) : null}
@@ -79,16 +79,16 @@ function QuestionOptions({
             aria-pressed={on}
             onClick={() => onToggle(oi)}
             className={cn(
-              'key-press grid min-h-12 grid-cols-[minmax(0,1fr)_1.25rem] items-center gap-2 rounded-[12px] border px-3 py-2.5 text-left disabled:opacity-40',
+              'key-press grid min-h-12 grid-cols-[minmax(0,1fr)_1.25rem] items-center gap-2 rounded-xl border px-3 py-2.5 text-left disabled:opacity-40',
               on
                 ? 'border-brand-text bg-brand-text/[0.06]'
                 : 'border-brand-edge bg-brand-deck',
             )}
           >
             <span className="grid gap-0.5">
-              <span className="text-[15px] font-medium">{option.label}</span>
+              <span className="text-body font-medium">{option.label}</span>
               {option.description ? (
-                <span className="text-[12.5px] text-brand-muted">
+                <span className="text-caption text-brand-muted">
                   {option.description}
                 </span>
               ) : null}
@@ -150,11 +150,8 @@ export function TicketReply({
     }
   }
   return (
-    <section
-      data-write
-      className="grid gap-2 rounded-[16px] bg-brand-surface p-4"
-    >
-      <h2 className="text-[16px] font-semibold">{t`The agent is waiting for your answer`}</h2>
+    <section data-write className="grid gap-2 rounded-2xl bg-brand-surface p-4">
+      <h2 className="text-title font-semibold">{t`The agent is waiting for your answer`}</h2>
       {asked.length ? (
         <div className="grid gap-4" data-testid="ticket-questions">
           {asked.map((q, qi) => (
@@ -168,7 +165,7 @@ export function TicketReply({
           ))}
         </div>
       ) : question ? (
-        <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+        <p className="text-body leading-relaxed whitespace-pre-wrap">
           {question}
         </p>
       ) : null}
@@ -198,20 +195,20 @@ export function TicketReply({
             ? t`Anything to add (optional)`
             : t`Your decision, extra context, or an answer to the challenge`
         }
-        className="min-h-24 rounded-[12px] bg-brand-deck text-[16px]"
+        className="min-h-24 rounded-xl bg-brand-deck text-body"
       />
       {device.state !== 'approved' ? (
-        <p className="text-xs text-brand-muted">
+        <p className="text-meta text-brand-muted">
           {t`Writing is not enabled on this device yet (Settings › Write access).`}
         </p>
       ) : null}
       {asked.length > 1 && unanswered > 0 && answer ? (
-        <p className="text-xs text-brand-muted">
+        <p className="text-meta text-brand-muted">
           {t`${unanswered} question(s) still unanswered; the agent sees only what you picked.`}
         </p>
       ) : null}
       {error ? (
-        <p role="alert" className="text-xs text-brand-error">
+        <p role="alert" className="text-meta text-brand-error">
           {error}
         </p>
       ) : null}
@@ -221,7 +218,7 @@ export function TicketReply({
           type="button"
           disabled={busy || !answer.trim() || device.state !== 'approved'}
           onClick={() => void send(false)}
-          className="key-press min-h-11 rounded-[12px] border border-brand-edge text-[15px] disabled:opacity-40"
+          className="key-press min-h-11 rounded-xl border border-brand-edge text-body disabled:opacity-40"
         >
           {t`Reply`}
         </Button>
@@ -230,10 +227,10 @@ export function TicketReply({
           type="button"
           disabled={busy || !answer.trim() || device.state !== 'approved'}
           onClick={() => void send(true)}
-          className="min-h-11 text-[15px] disabled:opacity-40"
+          className="min-h-11 text-body disabled:opacity-40"
         >
           {t`Reply and continue`}
-          <kbd className="ml-1.5 hidden text-[11px] opacity-60 md:inline">
+          <kbd className="ml-1.5 hidden text-meta opacity-60 md:inline">
             Ctrl+Enter
           </kbd>
         </Button>
@@ -287,27 +284,24 @@ export function TicketAttach({
     }
   }
   return (
-    <section
-      data-write
-      className="grid gap-2 rounded-[16px] bg-brand-surface p-4"
-    >
+    <section data-write className="grid gap-2 rounded-2xl bg-brand-surface p-4">
       <Button
         variant="plain"
         type="button"
         disabled={busy || running || device.state !== 'approved'}
         onClick={() => void attach()}
-        className="key-press flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge text-[15px] disabled:opacity-40"
+        className="key-press flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge text-body disabled:opacity-40"
       >
         <SquareTerminal size={17} aria-hidden />
         {busy ? t`Opening…` : t`Take over in tmux`}
       </Button>
-      <p className="text-[12px] text-brand-muted">
+      <p className="text-meta text-brand-muted">
         {running
           ? t`A headless run is still going; take over when it finishes.`
           : t`Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it.`}
       </p>
       {error ? (
-        <p role="alert" className="text-xs text-brand-error">
+        <p role="alert" className="text-meta text-brand-error">
           {error}
         </p>
       ) : null}
@@ -339,7 +333,7 @@ export function TicketSections({
   )
   if (shown.length === 0) return null
   return (
-    <div className="overflow-hidden rounded-[16px] bg-brand-surface">
+    <div className="overflow-hidden rounded-2xl bg-brand-surface">
       {shown.map((section) => (
         <Disclosure
           key={section.title}
@@ -349,7 +343,7 @@ export function TicketSections({
             (waiting && section.title === 'Thread')
           }
           className="border-b border-brand-edge last:border-b-0"
-          triggerClassName="min-h-12 px-4 text-[15px] font-medium"
+          triggerClassName="min-h-12 px-4 text-body font-medium"
           title={names[section.title] ?? section.title}
         >
           {section.title === 'Thread' ? (
@@ -358,7 +352,7 @@ export function TicketSections({
               waiting={waiting}
             />
           ) : (
-            <p className="px-4 pb-4 text-[14px] leading-relaxed whitespace-pre-wrap text-brand-muted">
+            <p className="px-4 pb-4 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
               {section.text.replace(/^##.*\n?/m, '').trim()}
             </p>
           )}

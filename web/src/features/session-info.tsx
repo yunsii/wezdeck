@@ -210,7 +210,7 @@ export function SessionInfo({
                 setTimeout(() => setCopiedRef(false), 1_500)
               })
             }}
-            className="flex min-h-11 items-center justify-center gap-2 px-3 text-[14px] font-medium"
+            className="flex min-h-11 items-center justify-center gap-2 px-3 text-body font-medium"
           >
             {copiedRef ? (
               <Check size={16} aria-hidden />
@@ -236,19 +236,19 @@ export function SessionInfo({
               const next = window.prompt(t`New session title`, title)?.trim()
               if (next && next !== title) onRename(next)
             }}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
           >
             <Pencil size={15} aria-hidden />
             {t`Rename via /rename in the agent pane`}
           </Button>
         ) : null}
         <OpenInVsCode cwd={metaValue(data, 'cwd')} />
-        <p className="px-1 text-[11.5px] text-brand-label">
+        <p className="px-1 text-meta text-brand-label">
           {t`Tap a row to copy its value; long-press or right-click for more.`}
         </p>
         {groups.map((group) => (
           <section key={group.name} className="grid gap-1">
-            <h3 className="px-1 text-[12.5px] font-semibold text-brand-muted">
+            <h3 className="px-1 text-caption font-semibold text-brand-muted">
               {groupLabels[group.name] ?? group.name}
             </h3>
             <FieldList>
@@ -306,7 +306,7 @@ function OpenInVsCode({ cwd }: { cwd: string }) {
       type="button"
       disabled={busy}
       onClick={() => void open()}
-      className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
+      className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
     >
       <Code2 size={15} aria-hidden />
       {t`Open in VS Code`}

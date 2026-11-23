@@ -48,7 +48,7 @@ function ToBackground({ onClick }: { onClick: () => void }) {
       title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
       onClick={onClick}
       // the row is h-5 (leading-5) and its panel clips: stay within it
-      className="inline-flex h-5 shrink-0 items-center rounded-full bg-brand-surface px-2 text-[11px] leading-none text-brand-text"
+      className="inline-flex h-5 shrink-0 items-center rounded-full bg-brand-surface px-2 text-meta leading-none text-brand-text"
     >
       {t`Run in background`}
     </Button>
@@ -103,12 +103,12 @@ function ToolRow({
   const [opened, setOpened] = useState(false)
   return (
     <Disclosure
-      className="min-w-0 rounded-[8px]"
+      className="min-w-0 rounded-lg"
       onOpenChange={setOpened}
       chevron={false}
       // 转到后台 on this call's own line, beside its trigger
       aside={onBackground ? <ToBackground onClick={onBackground} /> : undefined}
-      triggerClassName="flex min-w-0 items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted"
+      triggerClassName="flex min-w-0 items-start gap-1 px-1 font-mono text-meta leading-5 text-brand-muted"
       title={
         <>
           <span aria-hidden className={LINE}>
@@ -140,7 +140,7 @@ function ToolRow({
           {tool.body ? <ToolBody text={tool.body} file={tool.file} /> : null}
           {tool.result ? (
             <div className="grid gap-0.5">
-              <span className="text-[11px] text-brand-label">{t`Result`}</span>
+              <span className="text-meta text-brand-label">{t`Result`}</span>
               <ToolBody text={tool.result} />
             </div>
           ) : null}
@@ -200,7 +200,7 @@ function ToolGroupView({
       }}
       className={cn('min-w-0 px-1', fresh && 'chat-in')}
       chevron={false}
-      triggerClassName="grid min-w-0 gap-1 py-1 text-[12px] text-brand-label"
+      triggerClassName="grid min-w-0 gap-1 py-1 text-meta text-brand-label"
       title={
         <>
           <span className="flex flex-wrap items-center gap-x-1.5">
@@ -217,7 +217,7 @@ function ToolGroupView({
               {files.map((file) => (
                 <span
                   key={file.path}
-                  className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 font-mono text-[11px]"
+                  className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 font-mono text-meta"
                 >
                   <span className="truncate text-brand-muted">{file.name}</span>
                   {file.added ? (
@@ -235,7 +235,7 @@ function ToolGroupView({
     >
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 pt-1">
         {earlier ? (
-          <p className="px-1 text-[11.5px] text-brand-label">
+          <p className="px-1 text-meta text-brand-label">
             {t`${earlier} earlier calls`}
           </p>
         ) : null}

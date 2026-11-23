@@ -19,10 +19,10 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
     return (
       <div className="grid gap-3">
         {/* the page title, like 会话 / 我的 on a wide screen */}
-        <h1 className="text-base font-semibold">{t`Cross-repo collab`}</h1>
+        <h1 className="text-body font-semibold">{t`Cross-repo collab`}</h1>
         <Disclosure
-          className="key rounded-[14px] px-3.5"
-          triggerClassName="text-sm font-normal text-brand-muted"
+          className="key rounded-xl px-3.5"
+          triggerClassName="text-caption font-normal text-brand-muted"
           title={t`Runs, cache hit and cost`}
         >
           <div className="pb-3">{band}</div>
@@ -32,7 +32,7 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
   // phone: one quiet line of two text links, not two cards — the list
   // starts higher (it held the first screen to three tickets)
   const link =
-    'inline-flex min-h-9 items-center gap-1 text-[13px] text-brand-muted'
+    'inline-flex min-h-9 items-center gap-1 text-caption text-brand-muted'
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
       <div className="-mt-2 flex items-center gap-5">
@@ -50,7 +50,7 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
         </Button>
         <ActivityLink className={link} />
       </div>
-      {open ? <div className="key rounded-[14px] p-2">{band}</div> : null}
+      {open ? <div className="key rounded-xl p-2">{band}</div> : null}
     </div>
   )
 }

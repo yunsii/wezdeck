@@ -177,6 +177,17 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   `size-adjust` / ascent / descent overrides for Inter — stands in until it
   loads, so the swap does not shift the layout. CJK slices are not preloaded
   (which ones depends on the page) and need no metric fallback.
+- Scale (2026-11-23): six named sizes with their line heights in
+  `web/src/styles/tokens.css` — `text-meta` 12 · `caption` 13 · `body` 15 ·
+  `title` 17 · `heading` 20 · `display` 26 — replaced ~20 pixel sizes
+  (12 / 12.5 / 13 / 13.5…: neighbours that read as misalignment, not
+  hierarchy); 14 px went to caption when muted, else body; 16 px to title
+  when semibold, else body. Weights normal / medium / semibold (no bold);
+  radii Tailwind's `rounded-lg` 8 · `xl` 12 · `2xl` 16 · `3xl` · `full`.
+  `cn()` registers the names with tailwind-merge, which otherwise took
+  `text-meta` for a colour and dropped it beside `text-brand-*`.
+  `web/tests/type-scale.unit.test.ts` rejects `text-[Npx]`, `rounded-[Npx]`
+  and `font-bold` outside the landing / architecture pages.
 - Tokens: `[data-deck]` in `web/src/styles/deck.css` (light `#f6f7f9` paper /
   `#ffffff` surface / `#11151c` ink; dark `#14181f` / `#1e232c` / `#f1f3f6`),
   console only. `web/src/styles.css` only imports `web/src/styles/*.css`

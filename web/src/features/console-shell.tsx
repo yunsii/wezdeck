@@ -211,12 +211,12 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           <Link
             to="/{-$locale}"
             params={{ locale: localeParam }}
-            className="m-1.5 flex items-center gap-2 rounded-[12px] px-2 py-2 outline-none hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
+            className="m-1.5 flex items-center gap-2 rounded-xl px-2 py-2 outline-none hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
           >
             <img src="/brand-icon.svg" alt="" width="28" height="28" />
             <div>
-              <p className="text-sm font-semibold">{t`WezDeck`}</p>
-              <p className="text-xs text-brand-muted">
+              <p className="text-body font-semibold">{t`WezDeck`}</p>
+              <p className="text-meta text-brand-muted">
                 {mode === 'local'
                   ? t`This computer`
                   : mode === 'remote'
@@ -253,7 +253,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                     if (!active) go(item.id)
                   }}
                   className={cn(
-                    'flex min-h-9 items-center gap-2.5 rounded-[10px] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                    'flex min-h-9 items-center gap-2.5 rounded-xl px-3 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
                     active
                       ? 'bg-brand-surface font-semibold text-brand-text'
                       : 'text-brand-muted hover:bg-brand-soft',
@@ -264,7 +264,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                   {badges[item.id] ? (
                     <CountBadge value={badges[item.id]!} />
                   ) : jump ? (
-                    <kbd className="text-[11px] text-brand-label">g {jump}</kbd>
+                    <kbd className="text-meta text-brand-label">g {jump}</kbd>
                   ) : null}
                 </Link>
               )
@@ -279,7 +279,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         >
           <a
             href="#console-main"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-40 focus:bg-brand-surface focus:px-3 focus:py-2 focus:text-sm focus:ring-2 focus:ring-brand-running"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-40 focus:bg-brand-surface focus:px-3 focus:py-2 focus:text-body focus:ring-2 focus:ring-brand-running"
           >
             {t`Skip to content`}
           </a>
@@ -292,7 +292,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           >
             {detail || subPage ? null : (
               <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">
-                <h1 className="min-w-0 truncate text-[32px] leading-tight font-bold tracking-tight">
+                <h1 className="min-w-0 truncate text-display leading-tight font-semibold tracking-tight">
                   {title ?? t`WezDeck`}
                 </h1>
                 <Link
@@ -341,7 +341,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                 void client.invalidateQueries({ queryKey: ['remote'] })
               }}
               className={cn(
-                'relative flex min-h-12 flex-col items-center justify-center gap-0.5 text-[11px]',
+                'relative flex min-h-12 flex-col items-center justify-center gap-0.5 text-meta',
                 active ? 'font-semibold text-brand-text' : 'text-brand-label',
               )}
             >
@@ -362,7 +362,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
 
 function CountBadge({ value }: { value: number }) {
   return (
-    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-waiting px-1.5 text-[11px] leading-5 font-semibold text-[#1b1406]">
+    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-waiting px-1.5 text-meta leading-5 font-semibold text-[#1b1406]">
       {value > 99 ? '99+' : value}
     </span>
   )
@@ -371,7 +371,7 @@ function CountBadge({ value }: { value: number }) {
 function RemoteBand() {
   const { t } = useLingui()
   return (
-    <div className="flex h-full flex-nowrap items-center gap-x-4 overflow-hidden px-4 text-xs whitespace-nowrap">
+    <div className="flex h-full flex-nowrap items-center gap-x-4 overflow-hidden px-4 text-meta whitespace-nowrap">
       <span className="text-brand-label">{t`Remote access`}</span>
       <RemoteBadge />
     </div>
@@ -439,7 +439,7 @@ function StatusBand() {
   const { t } = useLingui()
   const { data, connected, loading } = useRuntimeData()
   return (
-    <div className="flex h-full flex-nowrap items-center gap-x-5 overflow-hidden px-4 text-xs whitespace-nowrap">
+    <div className="flex h-full flex-nowrap items-center gap-x-5 overflow-hidden px-4 text-meta whitespace-nowrap">
       <StatusPill
         compact
         status={loading ? 'loading' : connected ? 'ready' : 'offline'}
@@ -498,8 +498,10 @@ function PageError({
       role="alert"
       className="grid max-w-xl content-start gap-3 border border-brand-waiting bg-brand-waiting/10 px-3 py-3"
     >
-      <p className="text-sm text-brand-text">{t`This page hit a rendering error. The rest of the console is still available.`}</p>
-      <p className="font-mono text-xs break-all text-brand-muted">{message}</p>
+      <p className="text-body text-brand-text">{t`This page hit a rendering error. The rest of the console is still available.`}</p>
+      <p className="font-mono text-meta break-all text-brand-muted">
+        {message}
+      </p>
       <Button size="sm" variant="warning" onClick={onRetry}>
         {t`Retry`}
       </Button>

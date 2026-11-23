@@ -5,7 +5,7 @@ function Card({ className, ...props }: React.ComponentProps<'section'>) {
     <section
       data-slot="card"
       className={cn(
-        'flex flex-col gap-4 rounded-none border border-brand-border bg-brand-surface p-5 text-sm text-brand-text',
+        'flex flex-col gap-4 rounded-none border border-brand-border bg-brand-surface p-5 text-body text-brand-text',
         className,
       )}
       {...props}
@@ -27,7 +27,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      className={cn('text-sm font-semibold text-brand-text', className)}
+      className={cn('text-body font-semibold text-brand-text', className)}
       {...props}
     />
   )

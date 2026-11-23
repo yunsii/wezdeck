@@ -28,7 +28,7 @@ export function Segmented<TValue extends string>({
       role="radiogroup"
       aria-label={label}
       className={cn(
-        'flex rounded-[12px] bg-[var(--segment-track)] p-[3px]',
+        'flex rounded-xl bg-[var(--segment-track)] p-[3px]',
         className,
       )}
     >
@@ -44,11 +44,11 @@ export function Segmented<TValue extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               // never wrap: 「运行中 3」 broke in two on a 320 px phone
-              'min-h-10 min-w-0 truncate rounded-[9px] whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-brand-running md:min-h-8 md:text-[13px]',
+              'min-h-10 min-w-0 truncate rounded-lg whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-brand-running md:min-h-8 md:text-caption',
               // filters with counts size by their text (「已结束 80」 is wider
               // than 「等你 3」); equal thirds would cut the long one
               counted ? 'flex-auto' : 'flex-1',
-              dense ? 'px-1 text-[13px]' : 'px-2 text-[14px]',
+              dense ? 'px-1 text-caption' : 'px-2 text-body',
               active
                 ? 'bg-[var(--segment-thumb)] font-semibold text-brand-text shadow-[0_1px_2px_rgba(17,21,28,0.12)]'
                 : 'text-brand-muted',

@@ -87,7 +87,7 @@ function SessionRow({
   const tag = (text: string) => (
     <span
       title={text}
-      className="max-w-full min-w-0 truncate rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label"
+      className="max-w-full min-w-0 truncate rounded-full bg-brand-deck px-1.5 py-0.5 text-meta text-brand-label"
     >
       {text}
     </span>
@@ -120,12 +120,12 @@ function SessionRow({
         </span>
         <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
           <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-[16px] font-semibold">{title}</span>
-            <span className="shrink-0 text-xs text-brand-label">
+            <span className="truncate text-title font-semibold">{title}</span>
+            <span className="shrink-0 text-meta text-brand-label">
               {ago(ts(row.ts))}
             </span>
           </span>
-          <span className="truncate text-sm text-brand-muted">
+          <span className="truncate text-caption text-brand-muted">
             {prompt || t`No human message yet`}
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-1">
@@ -180,7 +180,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
 
   return (
     <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
-      <h1 className="hidden text-base font-semibold md:block">
+      <h1 className="hidden text-body font-semibold md:block">
         {t({ message: 'Sessions', context: 'nav' })}
       </h1>
       <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
       {sessions.isError ? (
         <p
           role="status"
-          className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-sm"
+          className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
         >
           {sessions.error.message === NOT_PAIRED
             ? t`Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`
@@ -228,9 +228,9 @@ export function SessionList({ selected }: { selected?: string } = {}) {
       {filter === 'all' && waiting.length ? (
         <section
           data-testid="sessions-waiting"
-          className="overflow-hidden rounded-[16px] border border-brand-waiting/40 bg-brand-surface"
+          className="overflow-hidden rounded-2xl border border-brand-waiting/40 bg-brand-surface"
         >
-          <h2 className="border-b border-brand-edge px-4 py-2.5 text-[15px] font-semibold">
+          <h2 className="border-b border-brand-edge px-4 py-2.5 text-body font-semibold">
             {t`Needs you`}
           </h2>
           <ul>
@@ -247,7 +247,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
       ) : null}
       {tree.length === 0 && !(filter === 'all' && waiting.length) ? (
         sessions.isError ? null : (
-          <p className="rounded-[14px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
+          <p className="rounded-xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
             {sessions.isPending ? t`Loading…` : emptyText}
           </p>
         )
@@ -259,10 +259,10 @@ export function SessionList({ selected }: { selected?: string } = {}) {
           {tree.map((repo) => (
             <section
               key={repo.key}
-              className="overflow-hidden rounded-[16px] bg-brand-surface"
+              className="overflow-hidden rounded-2xl bg-brand-surface"
               data-repo={repo.label}
             >
-              <h2 className="border-b border-brand-edge px-4 py-2.5 text-[15px] font-semibold">
+              <h2 className="border-b border-brand-edge px-4 py-2.5 text-body font-semibold">
                 {repo.label}
               </h2>
               {repo.worktrees.map((wt) => {
@@ -271,7 +271,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
                 return (
                   <div key={wt.key} data-worktree={wt.label}>
                     {showWt ? (
-                      <p className="border-b border-brand-edge px-4 py-1.5 text-[12px] text-brand-label">
+                      <p className="border-b border-brand-edge px-4 py-1.5 text-meta text-brand-label">
                         {wt.label}
                       </p>
                     ) : null}
