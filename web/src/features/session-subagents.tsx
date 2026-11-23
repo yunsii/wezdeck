@@ -2,12 +2,13 @@
 // as /code-review): the parent transcript only shows a launch line, so the
 // host reads each subagent's own transcript (native agent_subagents.go) and
 // the session reply carries `subagents`. Running ones show by default with
-// their latest tool, call count and run time; recently finished ones fold
-// under 已完成.
+// their latest tool, call count and run time. Folded to one line (count +
+// what the first one is doing); tap for the list, finished ones included.
 import { useLingui } from '@lingui/react/macro'
 import { useEffect, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
+import { cn } from '#/lib/utils'
 
 export type Subagent = {
   id: string
@@ -85,7 +86,9 @@ function Row({ agent, now }: { agent: Subagent; now: number }) {
 
 export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
   const { t } = useLingui()
-  const [showDone, setShowDone] = useState(false)
+  // folded to one line by default: above the composer a full list pushed the
+  // conversation off a small screen
+  const [open, setOpen] = useState(false)
   const list = agents ?? []
   const running = list.filter((agent) => agent.state === 'running')
   const rest = list.filter((agent) => agent.state !== 'running')
@@ -93,40 +96,45 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
   if (list.length === 0) return null
   const runningCount = running.length
   const doneCount = rest.length
+  const lead = running.at(0)
+  const doing = lead ? lead.last_tool || lead.description : ''
   return (
     <section
       data-testid="session-subagents"
       className="overflow-hidden rounded-[14px] bg-brand-surface"
     >
-      {running.length ? (
-        <>
-          <p className="px-3 pt-2 text-[12px] font-medium text-brand-muted">
-            {t`${runningCount} subagents running`}
-          </p>
-          <ul className="divide-y divide-brand-edge">
-            {running.map((agent) => (
-              <Row key={agent.id} agent={agent} now={now} />
-            ))}
-          </ul>
-        </>
-      ) : null}
-      {rest.length ? (
-        <>
-          <button
-            type="button"
-            onClick={() => setShowDone(!showDone)}
-            className="w-full px-3 py-2 text-left text-[12px] text-brand-label"
-          >
-            {showDone ? t`Hide finished subagents` : t`Finished (${doneCount})`}
-          </button>
-          {showDone ? (
-            <ul className="divide-y divide-brand-edge border-t border-brand-edge">
-              {rest.map((agent) => (
-                <Row key={agent.id} agent={agent} now={now} />
-              ))}
-            </ul>
-          ) : null}
-        </>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="flex min-h-10 w-full min-w-0 items-center gap-2 px-3 text-left text-[12.5px]"
+      >
+        <Led tone={runningCount ? 'running' : 'done'} size={9} />
+        <span className="shrink-0 font-medium text-brand-muted">
+          {runningCount
+            ? t`${runningCount} subagents running`
+            : t`Finished (${doneCount})`}
+        </span>
+        {doing ? (
+          <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-brand-label">
+            {doing}
+          </span>
+        ) : (
+          <span className="flex-1" />
+        )}
+        <span
+          aria-hidden
+          className={cn('text-brand-label transition', open && 'rotate-90')}
+        >
+          ›
+        </span>
+      </button>
+      {open ? (
+        <ul className="divide-y divide-brand-edge border-t border-brand-edge">
+          {[...running, ...rest].map((agent) => (
+            <Row key={agent.id} agent={agent} now={now} />
+          ))}
+        </ul>
       ) : null}
     </section>
   )

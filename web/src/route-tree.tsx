@@ -1,7 +1,8 @@
 import { createRoute, notFound, Outlet, redirect } from '@tanstack/react-router'
 
 import { LandingPage } from '#/features/landing-page'
-import { ConsoleCollabPage, ConsoleInboxPage } from '#/features/console-collab'
+import { ConsoleCollabPage } from '#/features/console-collab'
+import { ConsoleInboxPage } from '#/features/tickets-view'
 import { ConsoleActivityPage } from '#/features/console-activity'
 import { ConsoleMePage } from '#/features/console-me'
 import { ConsoleSessionsPage } from '#/features/console-sessions'

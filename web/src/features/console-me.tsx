@@ -56,30 +56,45 @@ function InstallEntry() {
 function UpdateCheck() {
   const { t } = useLingui()
   const [result, setResult] = useState('')
+  const [checking, setChecking] = useState(false)
+  const check = () => {
+    setChecking(true)
+    void checkForUpdate()
+      .then((r) =>
+        setResult(
+          r === 'new'
+            ? t`New version ready, reload to use it`
+            : r === 'offline'
+              ? t`Offline, try again later`
+              : t`Already the latest`,
+        ),
+      )
+      .finally(() => setChecking(false))
+  }
+  // one settings row: 版本 on the left, the build and a quiet text action on
+  // the right — not a big outlined button
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Row label={t`Version`} value={buildId} />
-      <Button
-        variant="outline"
-        className="min-h-11"
-        onClick={() =>
-          void checkForUpdate().then((r) =>
-            setResult(
-              r === 'new'
-                ? t`New version ready, reload to use it`
-                : r === 'offline'
-                  ? t`Offline, try again later`
-                  : t`Already the latest`,
-            ),
-          )
-        }
-      >
-        {t`Check for updates`}
-      </Button>
-      {result ? (
-        <span role="status" className="text-xs text-brand-muted">
-          {result}
+    <div className="grid gap-1">
+      <div className="flex min-h-9 items-center justify-between gap-3 text-sm">
+        <span className="shrink-0 whitespace-nowrap text-brand-label">
+          {t`Version`}
         </span>
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="min-w-0 truncate font-mono text-xs">{buildId}</span>
+          <button
+            type="button"
+            disabled={checking}
+            onClick={check}
+            className="shrink-0 text-sm text-brand-running disabled:opacity-50"
+          >
+            {checking ? t`Checking…` : t`Check for updates`}
+          </button>
+        </span>
+      </div>
+      {result ? (
+        <p role="status" className="text-right text-xs text-brand-muted">
+          {result}
+        </p>
       ) : null}
     </div>
   )

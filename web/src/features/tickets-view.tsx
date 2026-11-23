@@ -330,6 +330,17 @@ export function TicketsView({
   )
 }
 
+/** who holds the ticket now, in words (the CLI's owner field) */
+export function useOwnerLabel() {
+  const { t } = useLingui()
+  const owners: Partial<Record<string, string>> = {
+    initiator: t`Initiator`,
+    worker: t`Headless worker`,
+    human: t`A person (taken over)`,
+  }
+  return (owner?: string | null) => (owner ? (owners[owner] ?? owner) : '—')
+}
+
 export function RepoRoute({
   from,
   to,
@@ -338,9 +349,9 @@ export function RepoRoute({
   to?: string | null
 }) {
   const tag =
-    'max-w-[9.5rem] truncate rounded-full border border-brand-edge px-2 py-0.5 text-xs text-brand-muted'
+    'max-w-full truncate rounded-full border border-brand-edge px-2 py-0.5 text-xs text-brand-muted'
   return (
-    <span className="inline-flex min-w-0 items-center gap-1">
+    <span className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-1">
       <span className={tag}>{from ?? '?'}</span>
       <span aria-hidden className="text-brand-label">
         →
@@ -408,5 +419,22 @@ function TicketKeys({
         )
       })}
     </ul>
+  )
+}
+
+/** 待处理 (the old inbox route): tickets waiting on you or failed */
+export function ConsoleInboxPage() {
+  const { t } = useLingui()
+  return (
+    <TicketsView
+      base="inbox"
+      filter="inbox"
+      empty={t`Nothing is waiting on you. Replies and failed runs show up here.`}
+      top={
+        <h1 className="hidden text-base font-semibold md:block">
+          {t`Waiting on you`}
+        </h1>
+      }
+    />
   )
 }

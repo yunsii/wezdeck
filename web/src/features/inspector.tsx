@@ -131,9 +131,15 @@ export function Reading({
   kicker?: React.ReactNode
   title: string
   body?: string
-  facts?: Array<{ label: string; value: React.ReactNode }>
+  /** wide: the fact takes the whole row and may wrap (a repo route) */
+  facts?: Array<{ label: string; value: React.ReactNode; wide?: boolean }>
   children?: React.ReactNode
 }) {
+  // empty facts say nothing; an odd one out spans the row instead of
+  // leaving a blank grey cell beside it
+  const shownFacts = (facts ?? []).filter((fact) => fact.value !== '—')
+  const halves = shownFacts.filter((fact) => !fact.wide)
+  const lonely = halves.length % 2 ? halves.at(-1) : undefined
   return (
     <div className="grid content-start gap-4">
       {kicker ? <div className="text-sm">{kicker}</div> : null}
@@ -143,12 +149,23 @@ export function Reading({
       {body ? (
         <p className="max-w-prose text-sm leading-6 text-brand-muted">{body}</p>
       ) : null}
-      {facts?.length ? (
+      {shownFacts.length ? (
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-brand-edge bg-brand-edge">
-          {facts.map((fact) => (
-            <div key={fact.label} className="bg-brand-key px-3 py-2.5">
+          {shownFacts.map((fact) => (
+            <div
+              key={fact.label}
+              className={cn(
+                'bg-brand-key px-3 py-2.5',
+                (fact.wide || fact === lonely) && 'col-span-2',
+              )}
+            >
               <dt className="text-xs text-brand-label">{fact.label}</dt>
-              <dd className="mt-1 truncate text-sm text-brand-text">
+              <dd
+                className={cn(
+                  'mt-1 text-sm text-brand-text',
+                  fact.wide ? 'break-words' : 'truncate',
+                )}
+              >
                 {fact.value}
               </dd>
             </div>

@@ -302,6 +302,17 @@ export function TicketSections({
 }: {
   sections: Array<{ title: string; text: string }>
 }) {
+  const { t } = useLingui()
+  // the ticket template's fixed headings, in the page language; any other
+  // heading an agent wrote stays as written
+  const names: Partial<Record<string, string>> = {
+    Summary: t`Summary`,
+    Assumptions: t`Assumptions`,
+    Verification: t`Verification`,
+    Thread: t`Thread`,
+    Decision: t`Decision`,
+    Solution: t`Solution`,
+  }
   const shown = sections.filter(
     (section) => section.text.replace(/^##.*$/m, '').trim().length > 0,
   )
@@ -314,7 +325,7 @@ export function TicketSections({
           className="group border-b border-brand-edge last:border-b-0"
         >
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-[15px] font-medium">
-            {section.title}
+            {names[section.title] ?? section.title}
             <span
               aria-hidden
               className="text-brand-label transition group-open:rotate-90"

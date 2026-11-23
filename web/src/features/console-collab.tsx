@@ -15,7 +15,12 @@ import { RunDetail } from './console-collab-run'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { InspectorItem } from './inspector'
-import { RepoRoute, TicketsView, useStatusLabel } from './tickets-view'
+import {
+  RepoRoute,
+  TicketsView,
+  useOwnerLabel,
+  useStatusLabel,
+} from './tickets-view'
 import { CollabTopBar } from './collab-top-bar'
 import {
   TicketAttach,
@@ -64,22 +69,6 @@ export function ConsoleCollabPage() {
       base="collab"
       empty={t`No tickets match this filter.`}
       top={wide ? band : <CollabTopBar band={band} />}
-    />
-  )
-}
-
-export function ConsoleInboxPage() {
-  const { t } = useLingui()
-  return (
-    <TicketsView
-      base="inbox"
-      filter="inbox"
-      empty={t`Nothing is waiting on you. Replies and failed runs show up here.`}
-      top={
-        <h1 className="hidden text-base font-semibold md:block">
-          {t`Waiting on you`}
-        </h1>
-      }
     />
   )
 }
@@ -185,16 +174,17 @@ export function TicketReading({
   }
   const ticket = data.ticket
   const runs = data.runs
+  const ownerLabel = useOwnerLabel()
   const currentRun = runs.find((item) => item.run === run) ?? runs.at(-1)
   return (
     <Reading
       kicker={
         <span className="flex flex-wrap items-center gap-2">
           <Led tone={ticketTone(ticket) ?? 'muted'} size={13} />
-          <span className="font-medium">{statusLabel(ticket)}</span>
-          {ticket.phase ? (
-            <span className="text-brand-label">{ticket.phase}</span>
-          ) : null}
+          {/* the phase code (research_done …) only as a hint: the label says it */}
+          <span className="font-medium" title={ticket.phase ?? undefined}>
+            {statusLabel(ticket)}
+          </span>
         </span>
       }
       title={ticket.title || ticket.id}
@@ -202,8 +192,12 @@ export function TicketReading({
         {
           label: t`Route`,
           value: <RepoRoute from={ticket.from} to={ticket.to} />,
+          wide: true,
         },
-        { label: t`Owner`, value: ticket.owner ?? '—' },
+        {
+          label: t`Owner`,
+          value: ownerLabel(ticket.owner),
+        },
         { label: t`Progress`, value: ticket.progress?.message ?? '—' },
         { label: t`Worktree`, value: ticket.branch ?? ticket.worktree ?? '—' },
       ]}
