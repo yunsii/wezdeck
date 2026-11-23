@@ -238,8 +238,8 @@ knows, grouped `session` / `location` / `transcript` / `state` as
 
 | Field | Meaning | claude / grok / codex |
 |---|---|---|
-| `ask_options` | structured questions with tappable options | – / ✓ / – |
-| `plan_review` | a plan waiting for approve / revise / exit | – / ✓ / – |
+| `ask_options` | structured questions with tappable options | ✓ / ✓ / – |
+| `plan_review` | a plan waiting for approve / revise / exit | ✓ / ✓ / – |
 | `usage` | where context / spend comes from | `transcript` / `none` / `token_count` |
 | `account_limits` | 5 h / 7 d limits from the status line | ✓ / – / – |
 | `mid_turn_input` | what a message sent mid-turn does | `queue` / `queue` / `steer` |

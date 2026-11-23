@@ -51,11 +51,14 @@ export function Field({
 }) {
   const { t } = useLingui()
   const [copied, setCopied] = useState(false)
-  const copy = (text: string, what: string) => {
+  // the toast shows what landed on the clipboard, not the row's name: a tap
+  // copies the value, and "Copied <label>" read as if the label was copied
+  const copy = (text: string) => {
     void copyText(text).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1_200)
-      toast(t`Copied ${what}`)
+      const shown = text.length > 40 ? `${text.slice(0, 39)}…` : text
+      toast(t`Copied: ${shown}`)
     })
   }
   const pair = `${label}: ${value}`
@@ -64,7 +67,7 @@ export function Field({
     <ContextMenu.Root>
       <ContextMenu.Trigger
         render={<button type="button" />}
-        onClick={() => copy(value, label)}
+        onClick={() => copy(value)}
         data-field={label}
         className={cn(
           'group w-full px-3 py-2.5 md:pr-4 text-left outline-none select-none [-webkit-touch-callout:none]',
@@ -120,14 +123,14 @@ export function Field({
             className="motion-pop min-w-40 rounded-xl border border-brand-edge bg-brand-surface p-1 text-body text-brand-text shadow-lg outline-none"
           >
             <ContextMenu.Item
-              onClick={() => copy(value, label)}
+              onClick={() => copy(value)}
               className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-brand-soft"
             >
               <Copy size={14} aria-hidden />
               {t`Copy value`}
             </ContextMenu.Item>
             <ContextMenu.Item
-              onClick={() => copy(pair, label)}
+              onClick={() => copy(pair)}
               className="flex cursor-default items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-brand-soft"
             >
               <Copy size={14} aria-hidden />

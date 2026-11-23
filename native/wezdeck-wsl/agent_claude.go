@@ -192,6 +192,7 @@ func (t *transcript) feedLine(raw []byte) {
 			t.usage.Model = line.Message.Model
 		}
 		t.usage.Context = u.Input + u.CacheWrite + u.CacheRead
+		t.usage.ContextPending = false
 		t.usage.Turns++
 		t.usage.Output += u.OutputCount
 		t.markOutput(line.Timestamp, u.OutputCount)

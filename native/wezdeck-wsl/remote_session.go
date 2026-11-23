@@ -596,6 +596,8 @@ func (t *transcript) markCompact(trigger, ts string) {
 		trigger = "auto"
 	}
 	t.messages = append(t.messages, chatMessage{Role: "system", Kind: "compact", Text: trigger, TS: ts})
+	t.usage.Context = 0
+	t.usage.ContextPending = true
 }
 
 // attachCompactSummary puts the summary the agent continues from on the
@@ -634,6 +636,11 @@ type sessionUsage struct {
 	Output       int    `json:"output"`
 	Input        int    `json:"input"`      // fresh + cache write
 	CacheRead    int    `json:"cache_read"` // served from cache
+	// ContextPending: compacted since the last reply. Context comes from the
+	// newest reply's usage, which still counts the pre-compaction history
+	// (a 92% that only drops after the next reply), so it is withheld until
+	// a reply arrives.
+	ContextPending bool `json:"context_pending,omitempty"`
 }
 
 var (

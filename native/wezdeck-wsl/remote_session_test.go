@@ -622,3 +622,21 @@ func TestClaudePastedPhoneMessageIsKept(t *testing.T) {
 		t.Fatalf("unwrapped wrong: %q / %q", msgs[0].Text, msgs[1].Text)
 	}
 }
+
+// After a compaction the newest reply's usage still counts the old history:
+// context is withheld (pending) until the next reply reports it.
+func TestClaudeCompactionWithholdsStaleContext(t *testing.T) {
+	tr := &transcript{}
+	tr.feedLine([]byte(`{"type":"assistant","timestamp":"t1","message":{"id":"a1","model":"claude-opus-5-5","content":"x","usage":{"input_tokens":2,"cache_creation_input_tokens":1000,"cache_read_input_tokens":919000,"output_tokens":5}}}`))
+	if tr.usage.Context != 920002 || tr.usage.ContextPending {
+		t.Fatalf("before: %+v", tr.usage)
+	}
+	tr.feedLine([]byte(`{"type":"system","subtype":"compact_boundary","timestamp":"t2","compactMetadata":{"trigger":"auto"}}`))
+	if tr.usage.Context != 0 || !tr.usage.ContextPending {
+		t.Fatalf("after compaction: %+v", tr.usage)
+	}
+	tr.feedLine([]byte(`{"type":"assistant","timestamp":"t3","message":{"id":"a2","model":"claude-opus-5-5","content":"y","usage":{"input_tokens":2,"cache_creation_input_tokens":500,"cache_read_input_tokens":90000,"output_tokens":5}}}`))
+	if tr.usage.Context != 90502 || tr.usage.ContextPending {
+		t.Fatalf("after the next reply: %+v", tr.usage)
+	}
+}

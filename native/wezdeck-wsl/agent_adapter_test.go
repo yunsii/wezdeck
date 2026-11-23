@@ -48,8 +48,15 @@ func TestEveryAdapterDeclaresCapabilities(t *testing.T) {
 			t.Errorf("%s: capabilities must say usage and mid-turn input: %+v", a.Name(), caps)
 		}
 	}
-	if !adapterFor("grok").Capabilities().AskOptions || adapterFor("claude").Capabilities().PlanReview {
-		t.Fatal("grok has Ask options; claude has no plan review on the phone")
+	// both answer Ask questions and plan approvals from the phone
+	// (session-ask-claude.tsx, session-permission.tsx); codex does neither yet
+	for _, name := range []string{"claude", "grok"} {
+		if c := adapterFor(name).Capabilities(); !c.AskOptions || !c.PlanReview {
+			t.Errorf("%s: Ask options and plan review are on the phone: %+v", name, c)
+		}
+	}
+	if c := adapterFor("codex").Capabilities(); c.AskOptions || c.PlanReview {
+		t.Errorf("codex claims Ask options / plan review: %+v", c)
 	}
 }
 

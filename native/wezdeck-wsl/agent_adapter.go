@@ -167,7 +167,7 @@ func (claudeAdapter) ToolKind(name string, input map[string]any) string {
 	return toolKindByName(claudeToolKinds, name, input)
 }
 func (claudeAdapter) Capabilities() agentCaps {
-	return agentCaps{Usage: "transcript", AccountLimits: true, MidTurnInput: "queue", Title: true}
+	return agentCaps{AskOptions: true, PlanReview: true, Usage: "transcript", AccountLimits: true, MidTurnInput: "queue", Title: true}
 }
 
 // Grok: ~/.grok/sessions/*/<id>/chat_history.jsonl; title from summary.json.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { settle } from '#/features/chat-thread'
+import { settle, settleMatches } from '#/features/chat-thread'
 import type { Message, Pending } from '#/features/chat-thread'
 
 const ask = (text: string): Message => ({ role: 'user', text })
@@ -75,5 +75,13 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
       sent('slow host', 0, { at: NOW - 5 * 60_000, state: 'sending' }),
     ]
     expect(settle(slow, [], 0, false, NOW)).toHaveLength(1)
+  })
+
+  it('reports which transcript line took each bubble (it solidifies in place)', () => {
+    const pending = [sent('first', 11), sent('second', 11)]
+    const shown = [say('a'), ask('second')]
+    const { left, took } = settleMatches(pending, shown, 10, true, NOW)
+    expect(left.map((p) => p.text)).toEqual(['first'])
+    expect([...took]).toEqual([11])
   })
 })

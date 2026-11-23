@@ -112,6 +112,7 @@ function extraGroups(
   no: string,
   steer: string,
   queue: string,
+  compacted: string,
 ) {
   const groups: Array<MetaGroup> = []
   const u = data.usage
@@ -119,7 +120,9 @@ function extraGroups(
   if (u?.context_limit)
     usage.rows.push({
       key: 'context',
-      value: `${u.context.toLocaleString()} / ${u.context_limit.toLocaleString()} (${Math.round((u.context / u.context_limit) * 100)}%)`,
+      value: u.context_pending
+        ? compacted
+        : `${u.context.toLocaleString()} / ${u.context_limit.toLocaleString()} (${Math.round((u.context / u.context_limit) * 100)}%)`,
     })
   if (u?.output)
     usage.rows.push({ key: 'output', value: u.output.toLocaleString() })
@@ -191,7 +194,14 @@ export function SessionInfo({
         ? { ...group, rows: [...group.rows, loaded] }
         : group,
     ),
-    ...extraGroups(data, yes, no, t`joins the current turn`, t`is queued`),
+    ...extraGroups(
+      data,
+      yes,
+      no,
+      t`joins the current turn`,
+      t`is queued`,
+      t`Just compacted; updates after the next reply`,
+    ),
   ]
   return (
     <Sheet

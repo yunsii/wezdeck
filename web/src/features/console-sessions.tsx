@@ -82,6 +82,8 @@ export type Usage = {
   model?: string
   context: number
   context_limit: number
+  /** compacted since the last reply: `context` is unknown until the next one */
+  context_pending?: boolean
   turns: number
   output: number
   input: number

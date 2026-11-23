@@ -110,12 +110,15 @@ const Bubble = memo(function BubbleView({
   fresh,
   stream,
   rush = false,
+  settles = false,
   onShown,
 }: {
   message: Message
   /** absolute transcript index; marks the user's messages for StickyPrompt */
   at: number
   fresh: boolean
+  /** replaces a faded queued bubble: solidify in place, no slide-in */
+  settles?: boolean
   /** this is the reply being streamed in right now */
   stream: boolean
   /** messages are queued behind this one: stream faster to catch up */
@@ -124,11 +127,16 @@ const Bubble = memo(function BubbleView({
 }) {
   const mine = message.role === 'user'
   const live = useStream(message.text, stream && !mine, onShown, rush)
+  // decided once at mount: a later render (the queued bubble gone from the
+  // list, a poll) must not swap the class and replay an entrance
+  const [entry] = useState(() =>
+    settles ? 'chat-settle' : fresh ? 'chat-in' : '',
+  )
   useEffect(() => {
     if (stream && mine) onShown?.()
   }, [stream, mine, onShown])
   return (
-    <div className={cn('grid min-w-0', fresh && 'chat-in')}>
+    <div className={cn('grid min-w-0', entry)}>
       {/* full width; who wrote it is told by the background alone */}
       <div
         data-user-at={mine ? at : undefined}
@@ -301,6 +309,15 @@ export function ChatThread({
   )
   const isFresh = (index: number) =>
     baseline.current !== null && start + index >= baseline.current
+  // settle against the revealed messages only: the faded bubble stays
+  // until its normal bubble is on screen, not while an earlier reply is
+  // still unfolding — and that bubble then solidifies in its place
+  const queue = settleMatches(
+    pending,
+    messages.slice(0, Math.max(0, effective - start + 1)),
+    start,
+    busy,
+  )
   // items waiting behind the one streaming now: two or more → catch up
   const queued = items.filter((item) => start + item.index > effective).length
   const renderItem = (item: Item, position: number, at: number) => {
@@ -346,6 +363,7 @@ export function ChatThread({
         fresh={isFresh(item.index)}
         stream={stream}
         rush={queued >= 2}
+        settles={queue.took.has(at)}
         onShown={stream ? () => advance(at + 1) : undefined}
       />
     )
@@ -371,17 +389,7 @@ export function ChatThread({
           </div>
         )
       })}
-      {/* settle against the revealed messages only: the faded bubble
-          stays until its normal bubble is on screen, not while an earlier
-          reply is still unfolding */}
-      <PendingBubbles
-        pending={settle(
-          pending,
-          messages.slice(0, Math.max(0, effective - start + 1)),
-          start,
-          busy,
-        )}
-      />
+      <PendingBubbles pending={queue.left} />
       {/* last: the working line says what the agent does now, below
           everything in the thread — queued messages included */}
       {busy && effective >= end ? <Typing activity={activity} /> : null}
@@ -493,6 +501,17 @@ export function settle(
   busy = false,
   now = Date.now(),
 ) {
+  return settleMatches(pending, messages, start, busy, now).left
+}
+
+/** settle(), plus the transcript index of each line that settled a bubble */
+export function settleMatches(
+  pending: Array<Pending>,
+  messages: Array<Message>,
+  start = 0,
+  busy = false,
+  now = Date.now(),
+) {
   const users = messages
     .map((message, index) => ({ message, at: start + index }))
     .filter(({ message }) => message.role === 'user')
@@ -503,7 +522,7 @@ export function settle(
     typed
       ? text === typed || text.startsWith(`${typed}\n\n${ATTACHMENT_MARK}`)
       : text.startsWith(ATTACHMENT_MARK)
-  return pending.filter((item) => {
+  const left = pending.filter((item) => {
     const typed = item.text.trim()
     const line = users.find(
       (user) =>
@@ -518,4 +537,5 @@ export function settle(
     if (item.state === 'sending' || busy) return true
     return now - item.at < 60_000
   })
+  return { left, took: used }
 }

@@ -369,9 +369,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   result yet) and a check on finished ones, and collapses once the run is
   over (a tap still opens it in full); "N messages, showing M" with 加载更早 keeping the reading
   position; a message sent from the phone shows at once at the end of the
-  thread as a dashed bubble (发送中… → 排队中 / 已送达, like Claude Code's
-  queued input) and becomes a normal user bubble only when the transcript
-  shows it — the agent may take queued ones in any order; each transcript
+  thread as the user bubble faded (like Claude Code's queued input) and
+  becomes a normal user bubble only when the transcript shows it — in
+  place, solidifying from the faded opacity (`chat-settle`), never a
+  second slide-in — the agent may take queued ones in any order; each transcript
   line after the send settles one bubble (`settle`, `chat-thread.tsx`), and
   a bubble is never dropped while the agent works, only a minute after it is
   idle; motion only for what just arrived (slide-in, a new

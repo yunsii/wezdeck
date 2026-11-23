@@ -23,6 +23,18 @@
   animation: chat-in var(--motion-medium) var(--ease-enter);
 }
 
+/* A queued message the agent took: the faded bubble (opacity-55) becomes
+   the normal one in place — it solidifies, it does not enter again. */
+@keyframes chat-settle {
+  from {
+    opacity: 0.55;
+  }
+}
+
+.chat-settle {
+  animation: chat-settle var(--motion-short) var(--ease-standard);
+}
+
 /* Jumped-to message (sticky prompt): a ring that fades out. */
 @keyframes chat-flash {
   0% {
