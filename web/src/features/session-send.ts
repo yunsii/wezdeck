@@ -33,51 +33,78 @@ export async function withDeskRetry<T>(
   }
 }
 
+type WriteState = { sending: boolean; error: string; retryIn: number }
+const IDLE: WriteState = { sending: false, error: '', retryIn: 0 }
+const NONE: Array<Pending> = []
+
+/**
+ * Per session, not per page: the session page stays mounted while you move
+ * to another session (Alt+j, the switcher, the split list), so queued
+ * bubbles, the sending state, an error or a countdown kept in plain state
+ * showed up under the next session. Everything is keyed by the session id
+ * the write was for, which also keeps a late reply from landing elsewhere.
+ */
 export function useSessionWrites(id: string) {
   const client = useQueryClient()
-  const [pendingRaw, setPending] = useState<Array<Pending>>([])
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-  const [retryIn, setRetryIn] = useState(0)
-  const refresh = () =>
-    client.invalidateQueries({ queryKey: ['remote', 'session', id] })
+  const [pendingBy, setPendingBy] = useState<Record<string, Array<Pending>>>({})
+  const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
+  const state = stateBy[id] ?? IDLE
+  const patch = (target: string, next: Partial<WriteState>) =>
+    setStateBy((all) => ({
+      ...all,
+      [target]: { ...(all[target] ?? IDLE), ...next },
+    }))
 
-  const write = async (job: () => Promise<void>) => {
-    setSending(true)
-    setError('')
+  const write = async (target: string, job: () => Promise<void>) => {
+    patch(target, { sending: true, error: '' })
     try {
       await job()
       // the poll would catch up anyway; don't hold the composer on it
-      void refresh()
+      void client.invalidateQueries({ queryKey: ['remote', 'session', target] })
       return true
     } catch (e) {
-      setError((e as Error).message)
+      patch(target, { error: (e as Error).message })
       return false
     } finally {
-      setSending(false)
-      setRetryIn(0)
+      patch(target, { sending: false, retryIn: 0 })
     }
   }
   /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c) */
-  const run = (action: 'key', args: Record<string, unknown>) =>
-    write(async () => {
-      await hostWrite(action, { id, ...args })
+  const run = (action: 'key', args: Record<string, unknown>) => {
+    const target = id
+    return write(target, async () => {
+      await hostWrite(action, { id: target, ...args })
     })
-  const send = (message: Outgoing) =>
-    write(async () => {
+  }
+  const send = (message: Outgoing) => {
+    const target = id
+    return write(target, async () => {
       await withDeskRetry(
         () =>
           hostWrite('send', {
-            id,
+            id: target,
             text: message.text,
             attachments: message.attachments,
           }),
-        setRetryIn,
+        (seconds) => patch(target, { retryIn: seconds }),
       )
-      setPending((items) => [
-        ...items,
-        { text: message.text, note: message.note, at: Date.now() },
-      ])
+      setPendingBy((all) => ({
+        ...all,
+        [target]: [
+          ...(all[target] ?? []),
+          { text: message.text, note: message.note, at: Date.now() },
+        ],
+      }))
     })
-  return { sending, error, setError, retryIn, pendingRaw, send, run }
+  }
+  const setError = (error: string) => patch(id, { error })
+  return {
+    sending: state.sending,
+    error: state.error,
+    setError,
+    retryIn: state.retryIn,
+    pendingRaw: pendingBy[id] ?? NONE,
+    send,
+    run,
+  }
 }

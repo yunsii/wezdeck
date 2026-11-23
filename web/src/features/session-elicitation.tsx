@@ -5,6 +5,9 @@
 import { useLingui } from '@lingui/react/macro'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { cn } from '#/lib/utils'
+import { AskCard } from './session-ask-claude'
+import type { Detail } from './console-sessions'
 
 export type ElicitOption = { label: string; description?: string }
 export type ElicitQuestion = {
@@ -223,6 +226,60 @@ export function SessionPlanReview({
       <p className="text-[11.5px] text-brand-label">
         {t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}
       </p>
+    </div>
+  )
+}
+
+/**
+ * What the agent waits on — an Ask, a plan to review, a permission prompt —
+ * as keys. While a key is on its way the panel keeps its look and only stops
+ * taking taps: dimming it per key (disabled) flashed the whole panel, several
+ * times for an Ask answer sent as a run of keys. Dimmed means this device
+ * cannot write.
+ */
+export function PromptPanels({
+  data,
+  sending,
+  canWrite,
+  onKey,
+}: {
+  data?: Detail
+  sending: boolean
+  canWrite: boolean
+  onKey: (key: string) => Promise<unknown>
+}) {
+  const elicitation = data?.elicitation
+  const asking = Boolean(elicitation && elicitation.questions.length > 0)
+  const planReview = Boolean(data?.plan?.awaiting_approval)
+  return (
+    <div
+      aria-busy={sending}
+      className={cn('contents', sending && 'pointer-events-none')}
+    >
+      {data && asking && elicitation ? (
+        <AskCard
+          agent={data.agent}
+          elicitation={elicitation}
+          screen={data.screen}
+          disabled={!canWrite}
+          sendKey={onKey}
+        />
+      ) : null}
+      {!asking && (data?.plan?.excerpt || planReview) ? (
+        <SessionPlanReview
+          excerpt={data?.plan?.excerpt}
+          awaitingApproval={planReview}
+          disabled={!canWrite}
+          onKey={(key) => void onKey(key)}
+        />
+      ) : null}
+      {data?.waiting_kind && !asking && !planReview ? (
+        <SessionPermissionKeys
+          screen={data.screen}
+          disabled={!canWrite}
+          onKey={(key) => void onKey(key)}
+        />
+      ) : null}
     </div>
   )
 }

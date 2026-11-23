@@ -56,6 +56,18 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
             last_user_prompt: '整理移动端交互',
             ts: Date.now(),
           },
+          // a second session to move to: what was queued in one must not
+          // show under another (the session page stays mounted)
+          'other-session': {
+            session_id: 'other-session',
+            tmux_socket: socket,
+            tmux_session: 'demo',
+            tmux_pane: pane,
+            status: 'done',
+            agent_name: 'other-agent',
+            last_user_prompt: '另一个会话',
+            ts: Date.now() - 1_000,
+          },
         },
       }),
     )
@@ -126,6 +138,20 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
         throw new Error('message never reached the pane')
       await page.waitForTimeout(200)
     }
+
+    // queued bubbles belong to their session: switch away and back
+    await page.getByTestId('session-title').click()
+    const sheet = page.getByTestId('session-switcher')
+    await sheet.getByRole('button', { name: /other-agent|另一个会话/ }).click()
+    await page.waitForURL('**/console/sessions/other-session')
+    await page.waitForTimeout(500)
+    expect(await page.getByText(/条已送达/).count()).toBe(0)
+    await page.getByTestId('session-title').click()
+    await sheet
+      .getByRole('button', { name: /demo-agent|整理移动端交互/ })
+      .click()
+    await page.waitForURL('**/console/sessions/demo-session')
+    await page.getByText(/条已送达/).waitFor({ timeout: 5_000 })
 
     // the sticky composer rests flush with the scroller bottom, so starting
     // a drag never makes it jump down by the page padding

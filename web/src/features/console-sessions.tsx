@@ -23,9 +23,8 @@ import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
-import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
+import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
-import { AskCard } from './session-ask-claude'
 import { useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
@@ -465,30 +464,12 @@ export function SessionDetail({ id }: { id: string }) {
             {data.screen}
           </pre>
         ) : null}
-        {asking && elicitation ? (
-          <AskCard
-            agent={data.agent}
-            elicitation={elicitation}
-            screen={data.screen}
-            disabled={sending || device.state !== 'approved'}
-            sendKey={(key) => run('key', { key })}
-          />
-        ) : null}
-        {!asking && (data?.plan?.excerpt || planReview) ? (
-          <SessionPlanReview
-            excerpt={data?.plan?.excerpt}
-            awaitingApproval={planReview}
-            disabled={sending || device.state !== 'approved'}
-            onKey={(key) => void run('key', { key })}
-          />
-        ) : null}
-        {data?.waiting_kind && !asking && !planReview ? (
-          <SessionPermissionKeys
-            screen={data.screen}
-            disabled={sending || device.state !== 'approved'}
-            onKey={(key) => void run('key', { key })}
-          />
-        ) : null}
+        <PromptPanels
+          data={data}
+          sending={sending}
+          canWrite={device.state === 'approved'}
+          onKey={(key) => run('key', { key })}
+        />
         <div ref={end} />
       </div>
 
