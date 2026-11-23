@@ -17,8 +17,6 @@ async function open(page: Page, url: string, ready: string) {
         .locator(ready)
         .first()
         .waitFor({ state: 'attached', timeout: 15_000 })
-      // the markup is server-rendered: wait for hydration before clicking
-      await page.waitForLoadState('networkidle')
       return
     } catch (error) {
       if (attempt >= 3) throw error
@@ -77,10 +75,16 @@ describe('Architecture page', () => {
     expect(
       await page.locator('#send-message li button[aria-expanded]').count(),
     ).toBe(8)
+    // server-rendered markup: a click before hydration does nothing, so
+    // click until the group reports itself open (not networkidle, which the
+    // deployed site never reaches)
     const group = page.locator('#capabilities [aria-expanded]').first()
-    await group.click()
     await expect
-      .poll(() => page.locator('#capabilities dl').first().isVisible())
+      .poll(async () => {
+        if ((await group.getAttribute('aria-expanded')) !== 'true')
+          await group.click()
+        return page.locator('#capabilities dl').first().isVisible()
+      })
       .toBe(true)
     expect(
       await page.locator('#capabilities dl').first().textContent(),
