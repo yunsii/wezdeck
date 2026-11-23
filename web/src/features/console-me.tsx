@@ -27,7 +27,7 @@ import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
 import { HostPage, useHostSummary } from './me-host'
-import { InteractionsPage } from './console-interactions'
+import { InteractionsPage, useInteractionsBack } from './console-interactions'
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -450,10 +450,11 @@ function MeSubPage({ page }: { page: MePage }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const titles = useMeTitles()
-  const back = useGoBack({
+  const leave = useGoBack({
     to: '/{-$locale}/console/me',
     params: { locale: locale === 'en' ? undefined : locale },
   })
+  const back = useInteractionsBack(page === 'interactions', leave)
   const body = {
     connection: <ConnectionPage />,
     writing: <PhoneWriting />,
@@ -496,7 +497,12 @@ function MeSubPage({ page }: { page: MePage }) {
           <RemoteBadge compact />
         </span>
       </div>
-      <section className="key grid gap-3 rounded-[16px] p-4">{body}</section>
+      {/* 交互调试 brings its own cards (the real components): no card around them */}
+      {page === 'interactions' ? (
+        body
+      ) : (
+        <section className="key grid gap-3 rounded-[16px] p-4">{body}</section>
+      )}
     </div>
   )
 }

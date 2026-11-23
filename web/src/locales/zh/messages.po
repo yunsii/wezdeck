@@ -322,7 +322,7 @@ msgstr "假设"
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/console-me.tsx:485
+#: src/features/console-me.tsx:486
 #: src/features/tickets-view.tsx:369
 msgid "Back"
 msgstr "返回"

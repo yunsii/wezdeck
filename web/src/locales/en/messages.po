@@ -322,7 +322,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-me.tsx:485
+#: src/features/console-me.tsx:486
 #: src/features/tickets-view.tsx:369
 msgid "Back"
 msgstr "Back"

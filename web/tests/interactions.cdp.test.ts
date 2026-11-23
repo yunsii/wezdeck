@@ -76,7 +76,7 @@ describe('Interaction debugging page', () => {
     await context.close()
   })
 
-  it('phone: the list first, an item opens, back returns', async () => {
+  it('phone: the list first, an item opens, back returns to the list', async () => {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
       locale: 'zh-CN',
@@ -92,10 +92,20 @@ describe('Interaction debugging page', () => {
         return page.getByTestId('interaction-detail').count()
       })
       .toBe(1)
-    await page.getByRole('button', { name: '全部交互' }).click()
+    // the system back returns to the list, still on 交互调试
+    await page.goBack()
     await expect
       .poll(() => page.getByTestId('interaction-detail').count())
       .toBe(0)
+    expect(await page.locator('[data-me-page=interactions]').count()).toBe(1)
+    // and so does the header's back arrow
+    await item.click()
+    await page.getByTestId('interaction-detail').waitFor()
+    await page.getByRole('button', { name: '返回', exact: true }).click()
+    await expect
+      .poll(() => page.getByTestId('interaction-detail').count())
+      .toBe(0)
+    expect(await page.locator('[data-me-page=interactions]').count()).toBe(1)
     await context.close()
   })
 })

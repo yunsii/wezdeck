@@ -4,7 +4,8 @@
 // tap sends; here the keys only go to the log at the top, nothing reaches a
 // pane. Debug copy is bilingual inline (like the architecture page), not in
 // the message catalogs.
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCanGoBack, useLocation, useNavigate } from '@tanstack/react-router'
+import { ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -108,29 +109,25 @@ export function InteractionsPage() {
     return Promise.resolve()
   }
   const sections = buildSections(keyFor, Date.now())
-  const [selected, setSelected] = useState<string | null>(() => {
-    const hash =
-      typeof window === 'undefined' ? '' : window.location.hash.slice(1)
-    return sections.some((s) => s.id === hash) ? hash : null
-  })
-  // a link to another #interaction on this page changes only the hash
+  // the selection is the URL hash, through the router: on a phone opening
+  // one pushes a history entry, so the header's back (and the system back)
+  // returns to the list instead of leaving 我的 › 交互调试
+  const navigate = useNavigate()
+  const hash = useLocation({ select: (location) => location.hash })
+  const selected = IDS.has(hash) ? hash : null
   useEffect(() => {
-    const follow = () => {
-      const hash = window.location.hash.slice(1)
-      if (IDS.has(hash)) {
-        setSelected(hash)
-        setLog([])
-      }
-    }
-    window.addEventListener('hashchange', follow)
-    return () => window.removeEventListener('hashchange', follow)
-  }, [])
-  const pick = (id: string | null) => {
-    setSelected(id)
     setLog([])
-    if (typeof window !== 'undefined')
-      window.history.replaceState(null, '', id ? `#${id}` : ' ')
-  }
+  }, [selected])
+  const pick = (id: string) =>
+    void navigate({
+      to: '/{-$locale}/console/me/$page',
+      params: {
+        locale: locale === 'en' ? undefined : locale,
+        page: 'interactions',
+      },
+      hash: id,
+      replace: wide,
+    })
   // a wide screen always shows one; a phone starts on the list
   const current =
     sections.find((s) => s.id === selected) ?? (wide ? sections[0] : undefined)
@@ -158,8 +155,7 @@ export function InteractionsPage() {
                     className={cn(
                       'flex min-h-10 w-full items-center justify-between gap-2 rounded-[10px] px-2.5 text-left text-[14px]',
                       current?.id === s.id
-                        ? // the 我的 page sits on a surface card: the deck colour stands out
-                          'bg-brand-deck font-medium text-brand-text'
+                        ? 'bg-brand-surface font-medium text-brand-text'
                         : 'text-brand-muted hover:bg-brand-soft',
                     )}
                   >
@@ -186,19 +182,8 @@ export function InteractionsPage() {
       data-interaction={current.id}
       className="grid min-w-0 content-start gap-3"
     >
-      {wide ? null : (
-        <Button
-          variant="plain"
-          type="button"
-          onClick={() => pick(null)}
-          className="-ml-1 inline-flex min-h-9 w-fit items-center gap-1 text-[13px] text-brand-running"
-        >
-          <ChevronLeft size={16} aria-hidden />
-          {p({ zh: '全部交互', en: 'All interactions' })}
-        </Button>
-      )}
       <h2 className="text-[17px] font-semibold">{p(current.title)}</h2>
-      <dl className="grid gap-1 rounded-[12px] bg-brand-deck px-3 py-2.5 text-[13px]">
+      <dl className="grid gap-1.5 text-[13px]">
         <div className="grid gap-0.5">
           <dt className="text-[12px] text-brand-label">
             {p({ zh: '怎么识别', en: 'Where it comes from' })}
@@ -216,12 +201,10 @@ export function InteractionsPage() {
           </dd>
         </div>
       </dl>
-      <div className="rounded-[16px] border border-dashed border-brand-edge p-2">
-        {current.demo}
-      </div>
+      {current.demo}
       <div
         data-testid="interaction-log"
-        className="grid gap-1 rounded-[12px] border border-brand-edge px-3 py-2"
+        className="grid gap-0.5 border-t border-brand-edge pt-2"
       >
         <span className="text-[12px] text-brand-label">
           {p({
@@ -237,10 +220,11 @@ export function InteractionsPage() {
       </div>
     </section>
   ) : null
-  if (!wide) return current ? detail : list
+  if (!wide)
+    return detail ?? <div className="key rounded-[16px] px-2 py-3">{list}</div>
   return (
-    <div className="grid grid-cols-[12.5rem_minmax(0,1fr)] gap-5">
-      {list}
+    <div className="grid grid-cols-[12.5rem_minmax(0,1fr)] gap-6">
+      <div className="border-r border-brand-edge pr-3">{list}</div>
       {detail}
     </div>
   )
@@ -250,6 +234,29 @@ export function InteractionsPage() {
 const IDS = new Set(
   buildSections(() => () => Promise.resolve(), 0).map((s) => s.id),
 )
+
+/**
+ * The 我的 page header's back: an open interaction (#id, pushed from its
+ * list) returns to the list; otherwise `leave` (back to 我的).
+ */
+export function useInteractionsBack(active: boolean, leave: () => void) {
+  const navigate = useNavigate()
+  const canGoBack = useCanGoBack()
+  const { locale } = useLocale()
+  const hash = useLocation({ select: (location) => location.hash })
+  if (!active || !hash) return leave
+  return () =>
+    canGoBack
+      ? window.history.back()
+      : void navigate({
+          to: '/{-$locale}/console/me/$page',
+          params: {
+            locale: locale === 'en' ? undefined : locale,
+            page: 'interactions',
+          },
+          replace: true,
+        })
+}
 
 const GROUPS: Array<{ id: Section['group']; title: Text }> = [
   { id: 'prompt', title: { zh: '等待你处理的', en: 'Waiting on you' } },
@@ -308,8 +315,8 @@ function promptSections(
         en: 'Claude questions (several, submit page)',
       },
       source: {
-        zh: '同上；全部答完后 TUI 停在「Submit answers」，review 为 true',
-        en: 'As above; once all are answered the TUI waits on “Submit answers” (review)',
+        zh: '转录里尚未有结果的 AskUserQuestion 调用（多个问题）；全部答完后 TUI 停在「Submit answers」提交页，review 为 true',
+        en: 'An AskUserQuestion call without a result, several questions; once all are answered the TUI waits on “Submit answers” (review)',
       },
       keys: {
         zh: '每题一个序号，最后 Enter 提交',
@@ -368,10 +375,13 @@ function promptSections(
         en: 'Permission prompt (edit, with diff)',
       },
       source: {
-        zh: '同上；Edit 的输入渲染成 diff',
-        en: 'As above; the Edit input rendered as a diff',
+        zh: 'attention 为 waiting / permission_prompt 时，转录里最新一个未返回的 Edit 调用（permission.go），输入渲染成 diff',
+        en: 'While attention is waiting / permission_prompt: the newest Edit call without a result (permission.go), its input as a diff',
       },
-      keys: { zh: '同上', en: 'As above' },
+      keys: {
+        zh: '允许 = 1（第一个 Yes）；拒绝 = Esc',
+        en: 'Allow = 1 (the first Yes); Deny = Esc',
+      },
       demo: (
         <PermissionCard
           call={EDIT}
