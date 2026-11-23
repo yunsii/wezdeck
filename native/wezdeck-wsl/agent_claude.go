@@ -99,8 +99,19 @@ func (t *transcript) feedLine(raw []byte) {
 			CommandMode string `json:"commandMode"`
 			Origin      struct {
 				Kind string `json:"kind"`
+				From string `json:"from"`
+				Body string `json:"body"`
 			} `json:"origin"`
 		} `json:"attachment"`
+		// the Agent tool's own result: since the hand-back protocol the
+		// tool_result text is only a pointer ("delivered to you as a
+		// message"), the report itself rides here and in a peer message
+		ToolUseResult struct {
+			AgentID        string `json:"agentId"`
+			HandbackReport struct {
+				Text string `json:"text"`
+			} `json:"handbackReport"`
+		} `json:"toolUseResult"`
 	}
 	if json.Unmarshal(raw, &line) != nil || line.IsMeta {
 		return
@@ -111,6 +122,17 @@ func (t *transcript) feedLine(raw []byte) {
 	// are harness traffic.
 	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "prompt" {
 		prompt := unwrapPasted(a.Prompt)
+		// a subagent's hand-back (background ones report only this way):
+		// show the report as its Agent call's result
+		if a.Origin.Kind == "peer" {
+			if idx, ok := t.agents[a.Origin.From]; ok {
+				if report := handbackReport(a.Origin.Body); report != "" {
+					t.messages[idx].Result = clipLines(clip(report, 3000), 40)
+					t.messages[idx].Pending = false
+				}
+			}
+			return
+		}
 		human := a.Origin.Kind == "human" || (a.Origin.Kind == "" && !strings.HasPrefix(prompt, "<"))
 		if human && prompt != "" {
 			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(prompt, 8000), TS: line.Timestamp})
@@ -230,6 +252,15 @@ func (t *transcript) feedLine(raw []byte) {
 					}
 				}
 			}
+			if report := strings.TrimSpace(line.ToolUseResult.HandbackReport.Text); report != "" {
+				out = report
+			}
+			if id := line.ToolUseResult.AgentID; id != "" {
+				if t.agents == nil {
+					t.agents = map[string]int{}
+				}
+				t.agents[id] = idx
+			}
 			t.messages[idx].Result = clipLines(clip(out, 3000), 40)
 			t.messages[idx].Pending = false
 			delete(t.tools, b.ToolUseID)
@@ -307,4 +338,20 @@ func contextLimit(model string) int {
 		return v
 	}
 	return 200000
+}
+
+// handbackReport: the report inside a "[Subagent hand-back]" peer message —
+// after the frame's "The report follows:" line, each line indented two
+// spaces by the harness.
+func handbackReport(body string) string {
+	const marker = "The report follows:"
+	i := strings.Index(body, marker)
+	if !strings.HasPrefix(strings.TrimSpace(body), "[Subagent hand-back]") || i < 0 {
+		return ""
+	}
+	lines := strings.Split(strings.TrimPrefix(body[i+len(marker):], "\n"), "\n")
+	for j, l := range lines {
+		lines[j] = strings.TrimPrefix(l, "  ")
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }

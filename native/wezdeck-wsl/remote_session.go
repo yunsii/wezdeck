@@ -543,6 +543,7 @@ type transcript struct {
 	size     int64
 	messages []chatMessage
 	tools    map[string]int // tool_use_id → index in messages
+	agents   map[string]int // Claude subagent id → its Agent call's index (hand-back reports)
 	usage    sessionUsage
 	lastMsg  string // message id whose usage was counted (one reply spans several lines)
 	lineOff  int64  // file offset of the line being fed
