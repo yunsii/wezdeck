@@ -132,7 +132,6 @@ function SessionRow({
             {showRepo && repoName(row) ? tag(repoName(row)) : null}
             {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
             {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
-            {row.name && row.name !== row.agent ? tag(row.name) : null}
             {status ? tag(status) : null}
             {row.branch ? tag(row.branch) : null}
           </span>

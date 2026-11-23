@@ -65,7 +65,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    assume, optionally start the run now. The
    agent's own name (`agent_name`, usually Claude's derived peer address
    such as `wezterm-config-93`) is only a 会话信息 metadata row, not a
-   header tag. Rename (`/rename`) moved into
+   header or list tag. Rename (`/rename`) moved into
    会话信息 (ⓘ). What
    waits on you badges its own tab: 会话 counts sessions waiting on you,
    工单 the tickets (`waiting_human`). `/console/now` stays as a redirect

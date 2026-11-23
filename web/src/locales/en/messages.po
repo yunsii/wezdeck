@@ -219,7 +219,7 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:257
+#: src/features/session-list.tsx:256
 #: src/features/session-split.tsx:91
 msgid "Agent sessions"
 msgstr "Agent sessions"
@@ -236,7 +236,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:197
+#: src/features/session-list.tsx:196
 msgctxt "filter"
 msgid "All"
 msgstr "All"
@@ -1012,7 +1012,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:212
+#: src/features/session-list.tsx:211
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1243,7 +1243,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:71
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:252
-#: src/features/session-list.tsx:252
+#: src/features/session-list.tsx:251
 #: src/features/tickets-view.tsx:267
 msgid "Loading…"
 msgstr "Loading…"
@@ -1323,12 +1323,12 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/session-header.tsx:278
-#: src/features/session-list.tsx:235
+#: src/features/session-list.tsx:234
 #: src/features/session-switcher.tsx:198
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:202
+#: src/features/session-list.tsx:201
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1391,11 +1391,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:177
+#: src/features/session-list.tsx:176
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:180
+#: src/features/session-list.tsx:179
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1419,7 +1419,7 @@ msgstr "No headless runs recorded for this ticket."
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:179
+#: src/features/session-list.tsx:178
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1471,7 +1471,7 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:175
+#: src/features/session-list.tsx:174
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
@@ -2080,12 +2080,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:76
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:185
+#: src/features/session-list.tsx:184
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:225
+#: src/features/session-list.tsx:224
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2190,7 +2190,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:424
 #: src/features/me-host.tsx:125
 #: src/features/session-info.tsx:62
-#: src/features/session-list.tsx:189
+#: src/features/session-list.tsx:188
 #: src/features/tickets-view.tsx:192
 msgid "Status"
 msgstr "Status"
@@ -2765,7 +2765,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:207
+#: src/features/session-list.tsx:206
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"
