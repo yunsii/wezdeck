@@ -43,7 +43,7 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
       viewport: { width: 1280, height: 900 },
     })
     const page = await context.newPage()
-    await page.goto(`${base}/zh/console/me?remote=1#pair=${token}`)
+    await page.goto(`${base}/zh/console/me/writing?remote=1#pair=${token}`)
     await page
       .locator('[data-testid=remote-badge-compact], [data-testid=remote-badge]')
       .first()

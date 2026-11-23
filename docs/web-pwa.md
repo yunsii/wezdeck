@@ -63,8 +63,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    moves left out; sessions are not in it. 会话 rows: repo →
    worktree → pane tree; primary/secondary when tmux-mounted; path-based
    so ticket worktrees can join later; Grok Ask shows tappable options
-   from `elicitation`) · 我的 (connection, phone writing, install, theme,
-   language). Ticket detail is a pushed page; a run opens in a bottom
+   from `elicitation`) · 我的 (an index of groups, each row showing
+   how it stands — 连接 / 写入权限 / 用量 / 外观 / 应用 — each group a pushed
+   page `/console/me/$page` with a back bar; the tab bar stays, re-tapping
+   我的 returns to the index; write access is per device: phone, tablet or
+   another browser each get their own key). Filters with counts never wrap:
+   the count is a smaller figure and segments size by their text, so four
+   statuses plus + fit a 320 px phone; 工单's band and 工单动态 share one row.
+   Ticket detail is a pushed page; a run opens in a bottom
    sheet (transcript, prompt). Connection chip in the top bar opens a
    sheet (mode, path, RTT, last direct failure, host since, mic grant).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
@@ -214,7 +220,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. One toolbar row above the composer holds every tool:
-  快捷 (always shown; disabled with a hint until phone writing is enabled),
+  快捷 (always shown; disabled with a hint until write access is enabled on this device),
   then 图片 once the phone may write, then the picked thumbnails.
   What a tool opens renders above the row in one card style, never as a
   popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,

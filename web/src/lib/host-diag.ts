@@ -174,8 +174,8 @@ async function answer(
         ? `电脑正在复现问题并读取诊断（${steps.length} 步）`
         : `The host is reproducing a problem and reading diagnostics (${steps.length} steps)`
       : zh
-        ? '电脑读取了这台手机的诊断信息'
-        : 'The host read this phone’s diagnostics',
+        ? '电脑读取了这台设备的诊断信息'
+        : 'The host read this device’s diagnostics',
     { id: 'host-diag', duration: 4000 },
   )
   const results: Array<Record<string, unknown>> = []

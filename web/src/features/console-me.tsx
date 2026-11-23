@@ -1,11 +1,15 @@
-// 我的: connection, install, version, appearance, and (on the host) links to
-// the local-only console sections.
+// 我的: an index of groups — connection, write access, usage, appearance,
+// app — each row showing how it stands now, each group its own pushed page
+// (/console/me/$page, back returns to the index; the tab bar stays, like a
+// settings tab). On the host, links to the local-only console sections.
 import { useLingui } from '@lingui/react/macro'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { rememberLocale } from '#/lib/locale-pref'
+import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
 import {
   buildId,
@@ -19,21 +23,6 @@ import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
-
-function Section({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="key grid gap-3 rounded-[16px] p-4">
-      <h2 className="text-[15px] font-semibold">{title}</h2>
-      {children}
-    </section>
-  )
-}
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -105,7 +94,7 @@ function PhoneWriting() {
   if (device.state === 'approved')
     return (
       <p className="text-sm">
-        {t`Enabled. This phone can send messages to sessions and reply to tickets.`}
+        {t`Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own.`}
         <span className="mt-1 block font-mono text-xs text-brand-label">
           {device.id}
         </span>
@@ -115,7 +104,7 @@ function PhoneWriting() {
     return (
       <div className="grid gap-2">
         <p className="text-sm text-brand-muted">
-          {t`Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once.`}
+          {t`Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once.`}
         </p>
         <Button className="min-h-11" onClick={() => void device.enable()}>
           {t`Enable writing`}
@@ -130,7 +119,7 @@ function PhoneWriting() {
   return (
     <div className="grid gap-2">
       <p className="text-sm">
-        {t`Waiting for the host to approve this phone. On the host run:`}
+        {t`Waiting for the host to approve this device. On the host run:`}
       </p>
       <code className="block rounded-[10px] bg-brand-deck px-3 py-2 font-mono text-xs break-all select-all">
         {command}
@@ -158,122 +147,263 @@ function PhoneWriting() {
   )
 }
 
-export function ConsoleMePage() {
+/** 我的 › …: one page per group, pushed from the index */
+export const ME_PAGES = [
+  'connection',
+  'writing',
+  'usage',
+  'appearance',
+  'app',
+] as const
+export type MePage = (typeof ME_PAGES)[number]
+
+function useMeTitles(): Record<MePage, string> {
+  const { t } = useLingui()
+  return {
+    connection: t`Connection`,
+    writing: t`Write access`,
+    usage: t`Usage`,
+    appearance: t`Appearance`,
+    app: t`App`,
+  }
+}
+
+function ConnectionPage() {
+  const { t } = useLingui()
+  const consoleMode = useConsoleMode()
+  const remote = useRemoteState()
+  const since = remote.hostSince
+    ? new Date(remote.hostSince).toLocaleString()
+    : '—'
+  if (consoleMode === 'local')
+    return <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
+  if (remote.mode === 'unpaired')
+    return (
+      <p className="text-sm text-brand-muted">
+        {t`This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code.`}
+      </p>
+    )
+  return (
+    <>
+      <RemoteBadge />
+      <Row label={t`Host up since`} value={since} />
+      <Row
+        label={t`Requests (WebRTC / relay)`}
+        value={`${remote.rpcCount.webrtc} / ${remote.rpcCount.websocket}`}
+      />
+      {remote.rtcNote ? (
+        <p className="text-xs text-brand-muted">
+          {t`Last direct attempt`}: {remote.rtcNote}
+        </p>
+      ) : null}
+    </>
+  )
+}
+
+function AppearancePage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
   const params = useParams({ strict: false })
+  return (
+    <div className="grid gap-3">
+      <div className="grid gap-1.5">
+        <span className="text-sm text-brand-muted">{t`Language`}</span>
+        <Segmented
+          label={t`Language`}
+          value={locale === 'zh' ? 'zh' : 'en'}
+          onChange={(next) => {
+            rememberLocale(next)
+            void navigate({
+              to: '.',
+              replace: true,
+              params: { ...params, locale: next === 'en' ? undefined : next },
+            })
+          }}
+          options={[
+            { value: 'zh', label: '中文' },
+            { value: 'en', label: 'English' },
+          ]}
+        />
+      </div>
+      <div className="grid gap-1.5">
+        <span className="text-sm text-brand-muted">{t`Theme`}</span>
+        <Segmented
+          label={t`Theme`}
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'system', label: t`System` },
+            { value: 'light', label: t`Light` },
+            { value: 'dark', label: t`Dark` },
+          ]}
+        />
+      </div>
+    </div>
+  )
+}
+
+/** one row of the index: what it is, how it stands now, › */
+function EntryRow({
+  page,
+  title,
+  value,
+}: {
+  page: MePage
+  title: string
+  value?: React.ReactNode
+}) {
+  const { locale } = useLocale()
+  return (
+    <li className="border-b border-brand-edge last:border-b-0">
+      <Link
+        to="/{-$locale}/console/me/$page"
+        params={{ locale: locale === 'en' ? undefined : locale, page }}
+        data-me={page}
+        className="key-press flex min-h-13 items-center gap-3 px-4 py-2.5"
+      >
+        <span className="flex-1 text-[16px]">{title}</span>
+        <span className="min-w-0 truncate text-[14px] text-brand-muted">
+          {value}
+        </span>
+        <ChevronRight
+          size={18}
+          aria-hidden
+          className="shrink-0 text-brand-label"
+        />
+      </Link>
+    </li>
+  )
+}
+
+function MeIndex() {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  const { mode } = useTheme()
   const consoleMode = useConsoleMode()
   const remote = useRemoteState()
+  const device = useDeviceState()
+  const titles = useMeTitles()
   const localeParam = locale === 'en' ? undefined : locale
-  const since = remote.hostSince
-    ? new Date(remote.hostSince).toLocaleString()
-    : '—'
+  const writing =
+    device.state === 'approved'
+      ? t`Enabled`
+      : device.state === 'pending'
+        ? t`Waiting for the host`
+        : device.state === 'none'
+          ? t`Off`
+          : ''
+  const theme =
+    mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
+  const group = 'overflow-hidden rounded-[16px] bg-brand-surface'
   return (
     <div className="grid max-w-2xl content-start gap-4">
       <h1 className="hidden text-base font-semibold md:block">{t`Settings`}</h1>
-      <Section title={t`Connection`}>
-        {consoleMode === 'local' ? (
-          <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
-        ) : remote.mode === 'unpaired' ? (
-          <p className="text-sm text-brand-muted">
-            {t`This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code.`}
-          </p>
-        ) : (
-          <>
-            <RemoteBadge />
-            <Row label={t`Host up since`} value={since} />
-            <Row
-              label={t`Requests (WebRTC / relay)`}
-              value={`${remote.rpcCount.webrtc} / ${remote.rpcCount.websocket}`}
-            />
-            {remote.rtcNote ? (
-              <p className="text-xs text-brand-muted">
-                {t`Last direct attempt`}: {remote.rtcNote}
-              </p>
-            ) : null}
-          </>
+      <ul className={group}>
+        <EntryRow
+          page="connection"
+          title={titles.connection}
+          value={
+            consoleMode === 'local' ? (
+              t`This computer`
+            ) : remote.mode === 'unpaired' ? (
+              t`Not paired`
+            ) : (
+              <RemoteBadge compact />
+            )
+          }
+        />
+        <EntryRow page="writing" title={titles.writing} value={writing} />
+        {remote.mode === 'unpaired' ? null : (
+          <EntryRow page="usage" title={titles.usage} />
         )}
-      </Section>
-      <Section title={t`App`}>
-        <InstallEntry />
-        <UpdateCheck />
-      </Section>
-      <Section title={t`Phone writing`}>
-        <PhoneWriting />
-      </Section>
-      {remote.mode === 'unpaired' ? null : (
-        <Section title={t`Usage`}>
-          <UsageCard />
-        </Section>
-      )}
-      <Section title={t`Appearance`}>
-        <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <span className="text-sm text-brand-muted">{t`Language`}</span>
-            <Segmented
-              label={t`Language`}
-              value={locale === 'zh' ? 'zh' : 'en'}
-              onChange={(next) => {
-                rememberLocale(next)
-                void navigate({
-                  to: '.',
-                  replace: true,
-                  params: {
-                    ...params,
-                    locale: next === 'en' ? undefined : next,
-                  },
-                })
-              }}
-              options={[
-                { value: 'zh', label: '中文' },
-                { value: 'en', label: 'English' },
-              ]}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <span className="text-sm text-brand-muted">{t`Theme`}</span>
-            <Segmented
-              label={t`Theme`}
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: 'system', label: t`System` },
-                { value: 'light', label: t`Light` },
-                { value: 'dark', label: t`Dark` },
-              ]}
-            />
-          </div>
-        </div>
-      </Section>
+      </ul>
+      <ul className={group}>
+        <EntryRow
+          page="appearance"
+          title={titles.appearance}
+          value={`${locale === 'zh' ? '中文' : 'English'}, ${theme}`}
+        />
+        {/* the commit only; the full build id is on the page */}
+        <EntryRow page="app" title={titles.app} value={buildId.split('-')[0]} />
+      </ul>
       {consoleMode === 'local' ? (
-        <Section title={t`This computer`}>
-          <nav className="grid gap-1 text-sm" aria-label={t`Host sections`}>
+        <nav className={group} aria-label={t`Host sections`}>
+          {(
+            [
+              ['/{-$locale}/console', t`Overview`],
+              ['/{-$locale}/console/development', t`Development`],
+              ['/{-$locale}/console/diagnostics', t`Diagnostics`],
+            ] as const
+          ).map(([to, label]) => (
             <Link
-              to="/{-$locale}/console"
+              key={to}
+              to={to}
               params={{ locale: localeParam }}
-              className="min-h-10 py-2 text-brand-running"
+              className="key-press flex min-h-13 items-center justify-between border-b border-brand-edge px-4 text-[16px] last:border-b-0"
             >
-              {t`Overview`}
+              {label}
+              <ChevronRight
+                size={18}
+                aria-hidden
+                className="text-brand-label"
+              />
             </Link>
-            <Link
-              to="/{-$locale}/console/development"
-              params={{ locale: localeParam }}
-              className="min-h-10 py-2 text-brand-running"
-            >
-              {t`Development`}
-            </Link>
-            <Link
-              to="/{-$locale}/console/diagnostics"
-              params={{ locale: localeParam }}
-              className="min-h-10 py-2 text-brand-running"
-            >
-              {t`Diagnostics`}
-            </Link>
-          </nav>
-        </Section>
+          ))}
+        </nav>
       ) : null}
     </div>
   )
+}
+
+/** a pushed 我的 page: its own back bar (the shell drops the big title) */
+function MeSubPage({ page }: { page: MePage }) {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  const titles = useMeTitles()
+  const back = useGoBack({
+    to: '/{-$locale}/console/me',
+    params: { locale: locale === 'en' ? undefined : locale },
+  })
+  const body = {
+    connection: <ConnectionPage />,
+    writing: <PhoneWriting />,
+    usage: <UsageCard />,
+    appearance: <AppearancePage />,
+    app: (
+      <>
+        <InstallEntry />
+        <UpdateCheck />
+      </>
+    ),
+  }[page]
+  return (
+    <div className="grid max-w-2xl content-start gap-3" data-me-page={page}>
+      <div className="-ml-2 flex items-center gap-1 pt-1">
+        <button
+          type="button"
+          onClick={back}
+          aria-label={t`Back`}
+          className="inline-flex size-11 shrink-0 items-center justify-center text-brand-muted"
+        >
+          <ChevronLeft size={22} aria-hidden />
+        </button>
+        <h1 className="min-w-0 flex-1 truncate text-[20px] font-semibold">
+          {titles[page]}
+        </h1>
+        {/* the same link chip as every first-level page, top right */}
+        <span className="md:hidden">
+          <RemoteBadge compact />
+        </span>
+      </div>
+      <section className="key grid gap-3 rounded-[16px] p-4">{body}</section>
+    </div>
+  )
+}
+
+export function ConsoleMePage() {
+  const { page } = useParams({ strict: false })
+  const known = ME_PAGES.find((name) => name === page)
+  return known ? <MeSubPage page={known} /> : <MeIndex />
 }

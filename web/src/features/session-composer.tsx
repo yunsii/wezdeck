@@ -224,7 +224,7 @@ function KeyPanel({
       <div className="flex items-center justify-between gap-2 px-1">
         <span className="text-[11.5px] text-brand-label">
           {disabled
-            ? t`Enable phone writing in Settings to send these keys`
+            ? t`Turn on write access in Settings to send these keys`
             : t`Tap to send into the agent pane`}
         </span>
         <button

@@ -190,6 +190,13 @@ const consoleMeRoute = createRoute({
 // 现在 is gone (会话 is the home, waiting items badge their own tab); the
 // route stays as a redirect: installed apps still start at /console/now
 // until Chrome refreshes their manifest
+const consoleMePageRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'me/$page',
+  component: ConsoleMePage,
+  head: ({ params }) => collabTitle(params.locale, '我的', 'Settings'),
+})
+
 const consoleNowRoute = createRoute({
   getParentRoute: () => consoleRoute,
   path: 'now',
@@ -229,6 +236,7 @@ export const routeTree = rootRoute.addChildren({
       consoleInboxTicketRoute,
       consoleActivityRoute,
       consoleMeRoute,
+      consoleMePageRoute,
       consoleNowRoute,
       consoleSessionsRoute,
       consoleSessionRoute,

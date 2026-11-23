@@ -330,7 +330,7 @@ function SessionDetail({ id }: { id: string }) {
   const planReview = Boolean(data?.plan?.awaiting_approval)
   const blocked =
     device.state !== 'approved'
-      ? t`Writing is not enabled on this phone yet (Settings › Phone writing).`
+      ? t`Writing is not enabled on this device yet (Settings › Write access).`
       : data?.waiting_kind && !asking && !planReview
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''
@@ -478,8 +478,11 @@ function SessionDetail({ id }: { id: string }) {
             {blocked}{' '}
             {device.state !== 'approved' ? (
               <Link
-                to="/{-$locale}/console/me"
-                params={{ locale: locale === 'en' ? undefined : locale }}
+                to="/{-$locale}/console/me/$page"
+                params={{
+                  locale: locale === 'en' ? undefined : locale,
+                  page: 'writing',
+                }}
                 className="text-brand-running"
               >
                 {t`Open settings`}

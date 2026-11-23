@@ -11,13 +11,18 @@ export function Segmented<TValue extends string>({
   options,
   onChange,
   className,
+  dense = false,
 }: {
   label: string
   value: TValue
-  options: Array<{ value: TValue; label: React.ReactNode }>
+  /** count: a number shown beside the label, smaller (filters) */
+  options: Array<{ value: TValue; label: React.ReactNode; count?: number }>
   onChange: (value: TValue) => void
   className?: string
+  /** four segments beside a button on a 320 px phone */
+  dense?: boolean
 }) {
+  const counted = options.some((option) => option.count !== undefined)
   return (
     <div
       role="radiogroup"
@@ -38,13 +43,23 @@ export function Segmented<TValue extends string>({
             data-value={option.value}
             onClick={() => onChange(option.value)}
             className={cn(
-              'min-h-10 flex-1 rounded-[9px] px-2 text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-brand-running md:min-h-8 md:text-[13px]',
+              // never wrap: 「运行中 3」 broke in two on a 320 px phone
+              'min-h-10 min-w-0 truncate rounded-[9px] whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-brand-running md:min-h-8 md:text-[13px]',
+              // filters with counts size by their text (「已结束 80」 is wider
+              // than 「等你 3」); equal thirds would cut the long one
+              counted ? 'flex-auto' : 'flex-1',
+              dense ? 'px-1 text-[13px]' : 'px-2 text-[14px]',
               active
                 ? 'bg-[var(--segment-thumb)] font-semibold text-brand-text shadow-[0_1px_2px_rgba(17,21,28,0.12)]'
                 : 'text-brand-muted',
             )}
           >
             {option.label}
+            {option.count !== undefined ? (
+              <span className="ml-1 text-[0.85em] tabular-nums opacity-70">
+                {option.count}
+              </span>
+            ) : null}
           </button>
         )
       })}

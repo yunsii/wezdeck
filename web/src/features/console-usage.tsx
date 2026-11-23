@@ -133,7 +133,7 @@ export function UsageCard() {
             {t`Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free.`}
           </li>
           <li>
-            {t`Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected.`}
+            {t`Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected.`}
           </li>
           <li>
             {t`A direct WebRTC link skips the relay entirely and costs nothing.`}

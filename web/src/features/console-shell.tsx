@@ -183,6 +183,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   }, [])
   // ticket / session detail pages bring their own back bar instead of a title
   const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
+  // 我的 › … pages bring a back bar too, but keep the tab bar (settings tab)
+  const subPage = /\/console\/me\/[^/]+$/.test(location)
   // a session chat runs closer to the edges (bubbles, like a messenger)
   const chat = /\/console\/sessions\/[^/]+$/.test(location)
   // the host overview needs the local Runtime; remote devices start at 会话
@@ -295,14 +297,14 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               chat ? 'px-2.5' : 'px-4',
             )}
           >
-            {detail ? null : (
+            {detail || subPage ? null : (
               <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">
                 <h1 className="min-w-0 truncate text-[32px] leading-tight font-bold tracking-tight">
                   {title ?? t`WezDeck`}
                 </h1>
                 <Link
-                  to="/{-$locale}/console/me"
-                  params={{ locale: localeParam }}
+                  to="/{-$locale}/console/me/$page"
+                  params={{ locale: localeParam, page: 'connection' }}
                   aria-label={t`Connection details`}
                   className="shrink-0"
                 >
@@ -333,7 +335,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               aria-current={active ? 'page' : undefined}
               onClick={(event) => {
                 event.preventDefault()
-                if (!active) {
+                // a pushed page of this tab (我的 › 连接): back to its index
+                if (!active || subPage) {
                   go(item.id)
                   return
                 }

@@ -79,7 +79,9 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       locale: 'zh-CN',
     })
     const page = await context.newPage()
-    await page.goto(`${base}/zh/console/me?remote=1${roomQuery}#pair=${token}`)
+    await page.goto(
+      `${base}/zh/console/me/writing?remote=1${roomQuery}#pair=${token}`,
+    )
     // the compact link badge renders only after hydration: clicks land
     await page
       .locator('[data-testid=remote-badge-compact]')

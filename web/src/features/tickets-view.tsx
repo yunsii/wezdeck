@@ -173,9 +173,21 @@ function StatusSegments({
       onChange={onChange}
       className="md:max-w-md"
       options={[
-        { value: 'active', label: t`In progress ${active}` },
-        { value: 'mine', label: t`Waiting on you ${mine}` },
-        { value: 'ended', label: t`Ended ${ended}` },
+        {
+          value: 'active',
+          label: t({ message: 'In progress', context: 'filter' }),
+          count: active,
+        },
+        {
+          value: 'mine',
+          label: t({ message: 'Waiting on you', context: 'filter' }),
+          count: mine,
+        },
+        {
+          value: 'ended',
+          label: t({ message: 'Ended', context: 'filter' }),
+          count: ended,
+        },
       ]}
     />
   )

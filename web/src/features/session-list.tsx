@@ -171,11 +171,28 @@ export function SessionList() {
           value={filter}
           onChange={setFilter}
           className="min-w-0 flex-1 md:max-w-md"
+          dense
           options={[
-            { value: 'all', label: t`All ${allCount}` },
-            { value: 'waiting', label: t`Needs you ${waitingCount}` },
-            { value: 'running', label: t`Working ${runningCount}` },
-            { value: 'idle', label: t`Idle ${idleCount}` },
+            {
+              value: 'all',
+              label: t({ message: 'All', context: 'filter' }),
+              count: allCount,
+            },
+            {
+              value: 'waiting',
+              label: t({ message: 'Needs you', context: 'filter' }),
+              count: waitingCount,
+            },
+            {
+              value: 'running',
+              label: t({ message: 'Working', context: 'filter' }),
+              count: runningCount,
+            },
+            {
+              value: 'idle',
+              label: t({ message: 'Idle', context: 'filter' }),
+              count: idleCount,
+            },
           ]}
         />
         <NewSessionButton />
