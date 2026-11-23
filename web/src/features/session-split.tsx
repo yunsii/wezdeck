@@ -45,11 +45,14 @@ function SplitView({ id }: { id?: string }) {
     <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start gap-5">
       <aside
         aria-label={t`Agent sessions`}
-        className="sticky top-0 max-h-[calc(100dvh-6rem)] overflow-y-auto pr-1"
+        className="vt-split-list sticky top-0 max-h-[calc(100dvh-6rem)] overflow-y-auto pr-1"
       >
         <SessionList selected={id ?? ''} />
       </aside>
-      <div className="min-w-0 max-w-[900px]" data-testid="session-pane">
+      <div
+        className="vt-split-pane min-w-0 max-w-[900px]"
+        data-testid="session-pane"
+      >
         {id ? (
           <SessionDetail key={id} id={id} />
         ) : (

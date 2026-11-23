@@ -195,12 +195,17 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   `Accept-Language` prefers zh. The hash (a `#pair=` token) survives the
   redirect; the service worker caches `/zh/console` pages too.
 - Page transitions (`lib/view-transition.ts`, styles.css): View Transitions
-  through the router's `defaultViewTransition`. Into a detail pushes in from
-  the right, back slides back from the left (direction from the history
-  position first, depth when it does not change), tabs slide in their
-  left-to-right order (now, tickets, sessions, me) while the tab bar stays
-  as its own layer; toasts sit in a `toast-layer` that never moves; nothing
-  animates under reduced motion, and browsers without
+  through the router's `defaultViewTransition`, in layers. The shell — status
+  band (`vt-band`), sidebar (`vt-sidebar`), tab bar — never moves; the root
+  snapshot keeps only the background. The content column (`vt-page`)
+  cross-fades on any switch to another section (sidebar, tabs, palette:
+  type `section`, never a slide). Within a section (`within`) a phone pushes
+  the column — into a detail from the right, back from the left, direction
+  from the history position first, depth when it does not change — and a
+  wide screen only nudges it 16 px with a fade; in a wide split (会话, 我的)
+  the list (`vt-split-list`) holds still and only the pane beside it
+  (`vt-split-pane`) fades. Toasts sit in a `toast-layer` that never moves;
+  nothing animates under reduced motion, and browsers without
   `:active-view-transition-type` fall back to the default cross-fade.
 - 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
   header's backdrop blur would trap a fixed sheet): 复制会话引用 (the

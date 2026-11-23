@@ -1,8 +1,9 @@
-// Page transitions, the forge way (apps/web/src/lib/viewTransition.ts): the
-// browser's View Transitions through TanStack Router. Going deeper pushes in
-// from the right (forward), going back slides back from the left (back),
-// pages of the same depth cross-fade, and the bottom tabs slide in their
-// left-to-right order while the tab bar itself stays put (styles.css).
+// Page transitions: the browser's View Transitions through TanStack Router,
+// in layers (styles.css). The shell — status band, sidebar, tab bar — never
+// moves. The content layer cross-fades on a section switch (sidebar / tab),
+// pushes in from the right going deeper (forward) and back from the left
+// (back). Within one section on a wide screen the split list stays and only
+// the pane beside it changes (within).
 
 /** console path without the locale prefix, or null outside the console */
 export function consolePath(pathname: string): string | null {
@@ -39,11 +40,20 @@ export const isFirstLevel = (pathname: string) => {
 type Loc = { pathname: string; state?: { __TSR_index?: number } }
 type ChangeInfo = { fromLocation?: Loc; toLocation: Loc; pathChanged: boolean }
 
+/** first path segment under /console ('' = overview) */
+function sectionOf(pathname: string) {
+  return (consolePath(pathname) ?? '')
+    .replace(/^\/console\/?/, '')
+    .split('/')[0]
+}
+
 /**
  * false = no transition (first load, only search / hash changed, leaving the
- * console). Direction follows the history position first — returning to an
- * earlier entry is always "back" — and the depth only when the position does
- * not change (tab switches replace).
+ * console). Another section (sidebar, tabs, palette): `section`, a fade and
+ * never a slide. Within one section (`within`, so a wide split keeps its
+ * list still) the direction follows the history position first — returning
+ * to an earlier entry is always "back" — and the depth only when the
+ * position does not change.
  */
 export function transitionTypes({
   fromLocation,
@@ -54,14 +64,15 @@ export function transitionTypes({
   const from = routeRank(fromLocation.pathname)
   const to = routeRank(toLocation.pathname)
   if (from < 0 || to < 0) return false
-  if (from === to) return ['fade']
+  // another section (sidebar, tabs, palette): fade, whatever the depths
+  if (sectionOf(fromLocation.pathname) !== sectionOf(toLocation.pathname))
+    return ['section']
+  if (from === to) return ['fade', 'within']
   const fromIndex = fromLocation.state?.__TSR_index
   const toIndex = toLocation.state?.__TSR_index
   const forward =
     fromIndex != null && toIndex != null && fromIndex !== toIndex
       ? toIndex > fromIndex
       : to > from
-  const types = [forward ? 'forward' : 'back']
-  if (from < 10 && to < 10) types.push('tabs')
-  return types
+  return [forward ? 'forward' : 'back', 'within']
 }

@@ -208,11 +208,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
     >
       {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
-      <div className="hidden md:block">
+      <div className="vt-band hidden md:block">
         {mode === 'local' ? <StatusBand /> : <RemoteBand />}
       </div>
       <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
-        <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
+        <aside className="vt-sidebar hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
           <div className="flex items-center gap-2 px-3 py-3">
             <img src="/brand-icon.svg" alt="" width="28" height="28" />
             <div>
@@ -282,7 +282,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         </aside>
         <div
           ref={scroller}
-          className="min-h-0 min-w-0 overflow-y-auto overscroll-contain"
+          className="vt-page min-h-0 min-w-0 overflow-y-auto overscroll-contain"
         >
           <a
             href="#console-main"

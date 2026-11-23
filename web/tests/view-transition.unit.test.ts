@@ -53,34 +53,51 @@ describe('page levels', () => {
 })
 
 describe('transition direction', () => {
-  it('into a detail is forward, out of it back', () => {
+  it('into a detail is forward, out of it back, both within the section', () => {
     expect(
       transitionTypes(nav('/zh/console/sessions', '/zh/console/sessions/s1')),
-    ).toEqual(['forward'])
+    ).toEqual(['forward', 'within'])
     expect(
       transitionTypes(nav('/zh/console/sessions/s1', '/zh/console/sessions')),
-    ).toEqual(['back'])
+    ).toEqual(['back', 'within'])
   })
-  it('between tabs follows the tab order and keeps the tab bar', () => {
+  it('switching sections (sidebar / tabs) is a section fade, never a slide', () => {
     expect(
       transitionTypes(nav('/zh/console/sessions', '/zh/console/collab')),
-    ).toEqual(['forward', 'tabs'])
+    ).toEqual(['section'])
     expect(
       transitionTypes(nav('/zh/console/me', '/zh/console/sessions')),
-    ).toEqual(['back', 'tabs'])
+    ).toEqual(['section'])
+    expect(
+      transitionTypes(nav('/console/diagnostics', '/console/development')),
+    ).toEqual(['section'])
+  })
+  it('one session to another keeps the split list (within)', () => {
+    expect(
+      transitionTypes(nav('/console/sessions/a', '/console/sessions/b')),
+    ).toEqual(['fade', 'within'])
+    expect(
+      transitionTypes(nav('/console/sessions/a', '/console/collab/t1')),
+    ).toEqual(['section'])
   })
   it('the history position wins over depth', () => {
     expect(
-      transitionTypes(navAt('/console/sessions/s1', 1, '/console/collab', 0)),
-    ).toEqual(['back'])
+      transitionTypes(navAt('/console/sessions/s1', 1, '/console/sessions', 0)),
+    ).toEqual(['back', 'within'])
+    // another section is a fade, back in history or not
     expect(
-      transitionTypes(navAt('/console/me', 0, '/console/collab', 0)),
-    ).toEqual(['back', 'tabs'])
+      transitionTypes(
+        navAt('/console/me/appearance', 1, '/console/sessions', 0),
+      ),
+    ).toEqual(['section'])
+    expect(
+      transitionTypes(navAt('/console/sessions', 0, '/console/sessions/s1', 0)),
+    ).toEqual(['forward', 'within'])
+    expect(
+      transitionTypes(navAt('/console/sessions', 2, '/console/sessions/s1', 1)),
+    ).toEqual(['back', 'within'])
   })
-  it('same depth fades; first load, search-only and leaving the console do not animate', () => {
-    expect(
-      transitionTypes(nav('/console/sessions/a', '/console/sessions/b')),
-    ).toEqual(['fade'])
+  it('first load, search-only and leaving the console do not animate', () => {
     expect(
       transitionTypes(nav('/console/sessions', '/console/sessions', false)),
     ).toBe(false)

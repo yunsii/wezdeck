@@ -467,8 +467,12 @@ export function ConsoleMePage() {
   if (wide)
     return (
       <div className="grid max-w-5xl grid-cols-[minmax(240px,300px)_minmax(0,1fr)] items-start gap-6">
-        <MeIndex active={known ?? 'connection'} />
-        <MeSubPage page={known ?? 'connection'} />
+        <div className="vt-split-list">
+          <MeIndex active={known ?? 'connection'} />
+        </div>
+        <div className="vt-split-pane min-w-0">
+          <MeSubPage page={known ?? 'connection'} />
+        </div>
       </div>
     )
   return known ? <MeSubPage page={known} /> : <MeIndex />

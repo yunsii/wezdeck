@@ -1148,22 +1148,57 @@ html[data-theme='dark'] {
 }
 
 /*
- * Page transitions (lib/view-transition.ts, the forge way): deeper pages push
- * in from the right, back slides back from the left, same depth cross-fades.
- * Between two tab pages the bottom tab bar is its own layer and stays put;
- * toasts never move with a page (they belong to no page).
+ * Page transitions (lib/view-transition.ts), in layers:
+ *   shell   status band, sidebar, tab bar: never move (old hidden, new as is)
+ *   page    the content column: a section switch fades; forward / back push
+ *           on a phone, a short shift + fade on a wide screen
+ *   split   within one section on a wide screen the list stays still and
+ *           only the pane beside it fades
+ * The root keeps only the background, so nothing outside a layer moves.
+ * Toasts never move with a page (they belong to no page).
  */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 200ms;
+  animation: none;
 }
-html:active-view-transition-type(tabs) .tabbar-vt {
+.vt-band {
+  view-transition-name: band;
+}
+.vt-sidebar {
+  view-transition-name: sidebar;
+}
+html:active-view-transition-type(section) .tabbar-vt {
   view-transition-name: tabbar;
 }
-::view-transition-old(tabbar) {
+.vt-page {
+  view-transition-name: page;
+}
+html:active-view-transition-type(within) .vt-split-list {
+  view-transition-name: split-list;
+}
+html:active-view-transition-type(within) .vt-split-pane {
+  view-transition-name: split-pane;
+}
+::view-transition-group(band),
+::view-transition-group(sidebar),
+::view-transition-group(tabbar),
+::view-transition-group(split-list) {
+  animation: none;
+}
+::view-transition-old(band),
+::view-transition-old(sidebar),
+::view-transition-old(tabbar),
+::view-transition-old(split-list) {
   display: none;
 }
-::view-transition-new(tabbar) {
+::view-transition-new(band),
+::view-transition-new(sidebar),
+::view-transition-new(tabbar),
+::view-transition-new(split-list) {
+  animation: none;
+}
+::view-transition-group(page),
+::view-transition-group(split-pane) {
   animation: none;
 }
 .toast-layer {
@@ -1183,23 +1218,82 @@ html:active-view-transition-type(tabs) .tabbar-vt {
   animation: none;
 }
 @media (prefers-reduced-motion: no-preference) {
-  html:active-view-transition-type(forward)::view-transition-old(root) {
+  /* a section switch / same-depth hop: the content fades, nothing slides */
+  ::view-transition-old(page),
+  ::view-transition-old(split-pane) {
+    animation: 110ms ease-out both vt-fade-out;
+  }
+  ::view-transition-new(page),
+  ::view-transition-new(split-pane) {
+    animation: 190ms ease-out both vt-fade-in;
+  }
+  /* deeper / back on a phone: the content layer pushes */
+  html:active-view-transition-type(forward)::view-transition-old(page) {
     animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-out-left;
   }
-  html:active-view-transition-type(forward)::view-transition-new(root) {
+  html:active-view-transition-type(forward)::view-transition-new(page) {
     animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in-right;
   }
-  html:active-view-transition-type(back)::view-transition-old(root) {
+  html:active-view-transition-type(back)::view-transition-old(page) {
     animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-out-right;
   }
-  html:active-view-transition-type(back)::view-transition-new(root) {
+  html:active-view-transition-type(back)::view-transition-new(page) {
     animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in-left;
+  }
+  /* wide: the sidebar is the map, a push across the whole column is too much */
+  @media (min-width: 768px) {
+    /* a split: the list stays, the pane fades; the column itself holds */
+    html:active-view-transition-type(within):has(
+        .vt-split-list
+      )::view-transition-old(page) {
+      animation: none;
+      display: none;
+    }
+    html:active-view-transition-type(within):has(
+        .vt-split-list
+      )::view-transition-new(page) {
+      animation: none;
+    }
+    html:active-view-transition-type(forward)::view-transition-old(page),
+    html:active-view-transition-type(back)::view-transition-old(page) {
+      animation: 110ms ease-out both vt-fade-out;
+    }
+    html:active-view-transition-type(forward)::view-transition-new(page) {
+      animation: 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-nudge-right;
+    }
+    html:active-view-transition-type(back)::view-transition-new(page) {
+      animation: 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-nudge-left;
+    }
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-old(page),
+  ::view-transition-new(page),
+  ::view-transition-old(split-pane),
+  ::view-transition-new(split-pane) {
     animation: none;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-nudge-right {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+@keyframes vt-nudge-left {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
   }
 }
 @keyframes vt-in-right {
