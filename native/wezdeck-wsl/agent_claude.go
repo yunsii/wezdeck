@@ -175,6 +175,7 @@ func (t *transcript) feedLine(raw []byte) {
 		t.usage.Context = u.Input + u.CacheWrite + u.CacheRead
 		t.usage.Turns++
 		t.usage.Output += u.OutputCount
+		t.markOutput(line.Timestamp, u.OutputCount)
 		t.usage.Input += u.Input + u.CacheWrite
 		t.usage.CacheRead += u.CacheRead
 	}

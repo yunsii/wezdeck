@@ -67,6 +67,25 @@
             "command": "__WEZDECK_REPO__/scripts/claude-hooks/emit-agent-status.sh pane-evict"
           }
         ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/claude-hooks/emit-agent-status.sh compacted"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/claude-hooks/emit-agent-status.sh compacting"
+          }
+        ]
       }
     ]
   }

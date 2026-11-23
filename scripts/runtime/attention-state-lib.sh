@@ -25,7 +25,7 @@
 #                          # elicitation_dialog (Grok fires PostToolUse while
 #                          # the Ask dialog is still on screen); the prompt
 #                          # watcher / Stop / next UserPromptSubmit clear it.
-#         "running_kind":   "<optional; only while status=running>",
+#         "running_kind":   "<optional; only while status=running>", (+ turn fields: agent-attention/turn-lib.sh)
 #                          # empty/absent = turn-running; "background" =
 #                          # turn ended but harness bg shell still live.
 #         "bg":             <optional object; outstanding bg tasks snapshot>
@@ -67,7 +67,7 @@ __ATTENTION_STATE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 . "$__ATTENTION_STATE_LIB_DIR/windows-runtime-paths-lib.sh"
 # shellcheck disable=SC1091
-. "$__ATTENTION_STATE_LIB_DIR/wsl-runtime-paths-lib.sh"
+. "$__ATTENTION_STATE_LIB_DIR/wsl-runtime-paths-lib.sh"; . "$__ATTENTION_STATE_LIB_DIR/agent-attention/turn-lib.sh"
 
 # Sparse snapshot retention (count). Overridden by WEZTERM_ATTENTION_SNAPSHOT_KEEP.
 ATTENTION_SNAPSHOT_KEEP_DEFAULT=64
@@ -735,7 +735,7 @@ attention_state_upsert() {
          --argjson ts "$ts" \
          --argjson cap "$ATTENTION_RECENT_CAP" \
          --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
-         "$__ATTENTION_RECENT_DEF"'
+         "$__ATTENTION_RECENT_DEF$__ATTENTION_TURN_DEF"'
            . as $orig
            | (($orig.entries // {}) | to_entries
               | map(select(
@@ -792,7 +792,7 @@ attention_state_upsert() {
                    + (if ($st == "running") and ($rk == "background")
                       then {running_kind: "background", bg: {tasks: $bg}}
                       else {}
-                      end)
+                      end) + turn_fields($prev; $st; $rk; $ts)
                    + (if ($st == "done") and ($dk != "")
                       then {done_kind: $dk}
                       else {}
@@ -1006,7 +1006,7 @@ attention_state_transition_to_running() {
     fi
     if [[ "$locked_status" == "waiting" || "$locked_status" == "done" ]]; then
       next="$(jq --arg sid "$session_id" --argjson ts "$ts" \
-        '.entries[$sid].status = "running"
+        "$__ATTENTION_TURN_DEF"'.entries[$sid] |= turn_on_running($ts) | .entries[$sid].status = "running"
          | .entries[$sid].reason = ""
          | .entries[$sid].ts = $ts
          | del(.entries[$sid].waiting_kind)' <<<"$current")"
@@ -1058,7 +1058,7 @@ attention_state_transition_to_running() {
                  status: "running",
                  reason: "",
                  git_branch: $gb,
-                 ts: $ts
+                 ts: $ts, turn_started: $ts
                }
              | archive_into_recent($evicted; $ts; $cap; $ttl)
          ' <<<"$current"

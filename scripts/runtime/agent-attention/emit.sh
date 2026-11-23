@@ -152,6 +152,8 @@ case "$status" in
   cleared)    default_reason="" ;;
   resolved)   default_reason="" ;;
   pane-evict) default_reason="" ;;
+  compacting) default_reason="compacting…" ;;
+  compacted)  default_reason="" ;;
   *)          exit 0 ;;
 esac
 
@@ -362,6 +364,9 @@ if [[ -z "$tmux_pane" && -n "${WEZTERM_PANE:-}" ]]; then
   unset _recover_cwd
 fi
 
+# PreCompact / SessionStart compact → running(compacting) / back (turn-lib.sh)
+attention_compaction_translate
+
 # Race guard: inside tmux but display-message returned an empty pane id
 # means the tmux server has not yet finished binding this pane (typical
 # during respawn-pane after `session.refresh-current-session`). Writing a
@@ -451,7 +456,7 @@ attention_state_prune 1800000 2>/dev/null || true
 # New turn: do NOT wipe sidecar. Reconcile exited tasks; keep outstanding
 # so a later Stop can still land on running_kind=background. Turn display
 # stays plain running (running_kind cleared) while the agent is mid-turn.
-if [[ "$status" == "running" ]]; then
+if [[ "$status" == "running" && "${AGENT_ATTENTION_RUNNING_KIND:-}" != "compacting" ]]; then
   unset AGENT_ATTENTION_RUNNING_KIND AGENT_ATTENTION_BG_JSON || true
   _bg_before="$(bg_sidecar_list_json "$session_id" 2>/dev/null || printf '%s' '[]')"
   _bg_reconciled="$(bg_reconcile_claude_sidecar "$session_id" 2>/dev/null || printf '%s' '[]')"
@@ -681,32 +686,13 @@ elif [[ "$status" == "resolved" ]]; then
       "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
   fi
 
-  # Auto-wake while badge shows bg-running: promote to turn-running.
-  # transition_to_running no-ops when status is already running.
+  # Auto-wake while badge shows bg-running (or a compaction just ended):
+  # promote to turn-running (turn-lib.sh). transition_to_running no-ops
+  # when status is already running.
   _promoted_bg=0
-  if [[ "$_resolved_status" == "running" ]]; then
-    if [[ "$_rk" == "background" ]]; then
-      _promote_ts="$(attention_state_now_ms)"
-      (
-        flock -x 9
-        _cur="$(attention_state_read)"
-        _next="$(jq -c --arg sid "$session_id" --argjson ts "$_promote_ts" '
-          if (.entries[$sid] // null) == null then .
-          else
-            .entries[$sid].status = "running"
-            | .entries[$sid].ts = $ts
-            | .entries[$sid].reason = "running…"
-            | del(.entries[$sid].running_kind, .entries[$sid].bg)
-          end
-        ' <<<"$_cur")"
-        attention_audit_prepare "upsert" "running" "running" "bg_promote" 0
-        attention_state_write "$_next"
-      ) 9>"$(attention_state_lock_path)"
-      _promoted_bg=1
-      runtime_log_info attention "bg-running promoted to turn-running" \
-        "session_id=$session_id" "raw_event=$raw_event" \
-        "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
-    fi
+  if [[ "$_resolved_status" == "running" ]] \
+      && attention_promote_to_turn "$session_id" "$_rk" "$raw_event"; then
+    _promoted_bg=1
   fi
 
   _prev_st="$_resolved_status"   # bg promote keeps status=running

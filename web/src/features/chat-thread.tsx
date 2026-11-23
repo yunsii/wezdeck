@@ -6,6 +6,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
+import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
@@ -247,18 +248,21 @@ export function group(messages: Array<Message>) {
   return out
 }
 
-/** The host's reading of the TUI status line (agent_activity.go). */
+/** The running turn, from hooks (lib/turn-progress.ts). */
 export type Activity = {
-  text: string
-  elapsed?: string
-  tokens?: string
-  compacting?: boolean
+  /** ms: when the turn began (attention turn_started) */
+  since?: number
+  /** ms: when a context compaction began; set only while it runs */
+  compactSince?: number
+  /** output tokens of the turn so far */
+  tokens?: number
 }
 
 /**
- * The agent is working: typing dots, and what the desk's status line says —
- * "Compacting conversation 36s", "Gesticulating 4m 39s · ↓ 19.1k tokens".
- * While a tool call is out its row already has a light, so only the words.
+ * The agent is working: typing dots, then "Working… 4m 39s · ↓ 19.1k
+ * tokens", or "Compacting conversation… 36s" in amber while the context is
+ * compacted. While a tool call is out its row already has a light, so only
+ * the words.
  */
 function Typing({
   activity,
@@ -268,11 +272,20 @@ function Typing({
   dots?: boolean
 }) {
   const { t } = useLingui()
-  const label = activity?.compacting
+  const compacting = activity?.compactSince !== undefined
+  const from = activity?.compactSince ?? activity?.since
+  const now = useNow(from !== undefined)
+  const label = compacting
     ? t`Compacting conversation`
-    : activity?.text
-  const tokens = activity?.tokens
-  const detail = [activity?.elapsed, tokens ? t`${tokens} tokens` : '']
+    : from !== undefined
+      ? t`Working`
+      : ''
+  const tokens =
+    !compacting && activity?.tokens ? formatTokens(activity.tokens) : ''
+  const detail = [
+    from !== undefined ? formatElapsed(now - from) : '',
+    tokens ? t`↓ ${tokens} tokens` : '',
+  ]
     .filter(Boolean)
     .join(' · ')
   if (!dots && !label) return null
@@ -281,9 +294,7 @@ function Typing({
       className="chat-in flex justify-start"
       role="status"
       aria-label={label ? `${label} ${detail}` : t`The agent is working`}
-      data-activity={
-        activity?.compacting ? 'compacting' : activity ? 'working' : undefined
-      }
+      data-activity={compacting ? 'compacting' : label ? 'working' : undefined}
     >
       <div
         className={cn(
@@ -300,7 +311,7 @@ function Typing({
         ) : null}
         {label ? (
           <span className="min-w-0 truncate text-[13px] text-brand-muted">
-            <span className={cn(activity?.compacting && 'text-brand-waiting')}>
+            <span className={cn(compacting && 'text-brand-waiting')}>
               {label}…
             </span>
             {detail ? (

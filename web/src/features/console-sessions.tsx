@@ -27,7 +27,7 @@ import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { AskCard } from './session-ask-claude'
 import { useSessionWrites } from './session-send'
-import type { Activity, Message } from './chat-thread'
+import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 
 export type SessionCard = {
@@ -134,8 +134,12 @@ export type Detail = {
   background?: Array<BgTask>
   messages?: Array<Message>
   screen?: string
-  /** what the TUI's status line says mid-turn (agent_activity.go) */
-  activity?: Activity
+  /** ms: when the running turn began (attention turn_started) */
+  turn_started?: number
+  /** ms: when the running context compaction began */
+  compact_started?: number
+  /** output tokens of the running turn (transcript usage) */
+  turn_output?: number
   elicitation?: Elicitation
   plan?: { excerpt?: string; awaiting_approval?: boolean }
 }
@@ -155,15 +159,17 @@ export function useStatusText() {
       ? t`waiting for your confirmation`
       : status === 'running' && runningKind === 'background'
         ? t`${bg} background tasks running`
-        : status === 'idle'
-          ? t({ message: 'Idle', context: 'session status' })
-          : status === 'running'
-            ? t`working`
-            : status === 'waiting'
-              ? t`waiting for you`
-              : status === 'done'
-                ? t`finished its turn`
-                : status
+        : status === 'running' && runningKind === 'compacting'
+          ? t`compacting the context`
+          : status === 'idle'
+            ? t({ message: 'Idle', context: 'session status' })
+            : status === 'running'
+              ? t`working`
+              : status === 'waiting'
+                ? t`waiting for you`
+                : status === 'done'
+                  ? t`finished its turn`
+                  : status
 }
 
 export function useSessions() {
@@ -442,7 +448,15 @@ export function SessionDetail({ id }: { id: string }) {
               messages={messages}
               start={start}
               busy={busy}
-              activity={busy ? data?.activity : undefined}
+              activity={
+                busy
+                  ? {
+                      since: data?.turn_started,
+                      compactSince: data?.compact_started,
+                      tokens: data?.turn_output,
+                    }
+                  : undefined
+              }
               sessionId={id}
             />
           </>

@@ -63,7 +63,11 @@ type attentionEntry struct {
 	// (bg.tasks) are still alive — the TUI takes input (agent-attention.md
 	// "Background running substate").
 	RunningKind string `json:"running_kind"`
-	Bg          struct {
+	// when this turn began / the compaction started (ms; emit.sh +
+	// attention-state-lib.sh): the phone counts elapsed time from them
+	TurnStarted    int64 `json:"turn_started"`
+	CompactStarted int64 `json:"compact_started"`
+	Bg             struct {
 		Tasks []bgTask `json:"tasks"`
 	} `json:"bg"`
 }
@@ -550,8 +554,9 @@ type transcript struct {
 	tools    map[string]int // tool_use_id → index in messages
 	agents   map[string]int // Claude subagent id → its Agent call's index (hand-back reports)
 	usage    sessionUsage
-	lastMsg  string // message id whose usage was counted (one reply spans several lines)
-	lineOff  int64  // file offset of the line being fed
+	lastMsg  string       // message id whose usage was counted (one reply spans several lines)
+	outputs  []outputMark // per reply: when, how many output tokens (turnOutput)
+	lineOff  int64        // file offset of the line being fed
 }
 
 // markCompact appends a context-compaction marker (role system, kind compact;
@@ -739,6 +744,16 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,
 		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent",
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
+	// mid-turn progress from hooks, not the screen: when the turn / the
+	// compaction began (the phone ticks the elapsed time itself)
+	if e.Status == "running" || e.Status == "waiting" {
+		if e.TurnStarted > 0 {
+			out["turn_started"] = e.TurnStarted
+		}
+		if e.RunningKind == "compacting" && e.CompactStarted > 0 {
+			out["compact_started"] = e.CompactStarted
+		}
+	}
 	path, agent := findTranscript(e.SessionID)
 	out["reference"] = sessionReference(e, path, agent)
 	out["meta"] = sessionMeta(e, path, agent, nil)
@@ -773,6 +788,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		start, end, span := sessionWindow(t.messages, a)
 		out["messages"] = append([]chatMessage(nil), t.messages[start:end]...)
 		compactions, lastCompact := t.compactions()
+		if e.TurnStarted > 0 && (e.Status == "running" || e.Status == "waiting") {
+			out["turn_output"] = t.turnOutput(e.TurnStarted)
+		}
 		transcriptsMu.Unlock()
 		out["total"] = total
 		out["start"] = start
@@ -807,13 +825,6 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {
 		out["screen"] = strings.TrimRight(string(screen), "\n ")
-		// what the TUI says it is doing (agent_activity.go): only mid-turn,
-		// a spinner left on an idle screen is stale
-		if e.Status == "running" {
-			if a := parseActivity(agent, string(screen)); a != nil {
-				out["activity"] = a
-			}
-		}
 	}
 	if agent == "claude" && path != "" {
 		if el := pendingClaudeElicitation(path); el != nil {
