@@ -102,6 +102,9 @@ type recentEntry struct {
 	attentionEntry
 	LastStatus string `json:"last_status"`
 	ArchivedTS int64  `json:"archived_ts"`
+	// set by the SessionStart clear hook (/new, /clear): the session that
+	// took this pane over (agent-attention/turn-lib.sh attention_mark_cleared)
+	ClearedTo string `json:"cleared_to"`
 }
 
 func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
@@ -176,38 +179,22 @@ func liveSessions() (map[string]attentionEntry, error) {
 		e.RunningKind = ""
 		e.TS = r.ArchivedTS
 		// /new or /clear in this pane: the hook archived the old session and
-		// pinned the new one to the pane, which has no entry until its first
-		// prompt. List the new session in its place (idle, empty, sendable)
-		// so the phone can follow it; the old id answers replaced_by.
-		if pin := panePinnedSession(r.attentionEntry); pin != "" && pin != r.SessionID {
-			if _, taken := out[pin]; !taken {
+		// marked it cleared_to the new one, which has no entry until its
+		// first prompt. List the new session in its place (idle, empty,
+		// sendable) so the phone can follow; the old id answers replaced_by.
+		if next := r.ClearedTo; sessionIDPattern.MatchString(next) && next != r.SessionID {
+			if _, taken := out[next]; !taken {
 				e.ReplacedFrom = r.SessionID
-				e.SessionID = pin
+				e.SessionID = next
 				e.LastUserPrompt = ""
 				e.AgentName = ""
-				out[pin] = e
+				out[next] = e
 			}
 			continue
 		}
 		out[r.SessionID] = e
 	}
 	return out, nil
-}
-
-// panePinnedSession: the session the pane is pinned to (tmux pane option
-// @wezterm_agent_session_id, set by the SessionStart clear hook —
-// agent-session-resolve.sh agent_session_pin_pane), "" when none.
-func panePinnedSession(e attentionEntry) string {
-	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
-		"#{@wezterm_agent_session_id}").Output()
-	if err != nil {
-		return ""
-	}
-	pin := strings.TrimSpace(string(out))
-	if !sessionIDPattern.MatchString(pin) {
-		return ""
-	}
-	return pin
 }
 
 func tmuxCmd(socket string, args ...string) *exec.Cmd {

@@ -281,8 +281,8 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
-// /new or /clear: the archived session's pane is pinned to a new session
-// with no entry yet. The list shows the new one in its place, the old id
+// /new or /clear: the hook marked the archived session cleared_to a new
+// one with no entry yet. The list shows the new one in its place, the old id
 // answers replaced_by, and the new one takes input.
 func TestClearedPaneListsTheNewSession(t *testing.T) {
 	if _, err := exec.LookPath("tmux"); err != nil {
@@ -302,12 +302,10 @@ func TestClearedPaneListsTheNewSession(t *testing.T) {
 	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
 	paneOut, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", "agent", "#{pane_id}").Output()
 	pane := strings.TrimSpace(string(paneOut))
-	if out, err := exec.Command("tmux", "-S", socket, "set-option", "-p", "-t", pane, "@wezterm_agent_session_id", "new-after-clear").CombinedOutput(); err != nil {
-		t.Fatalf("pin: %s", out)
-	}
 	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{}, "recent": []map[string]any{
 		{"session_id": "before-clear", "tmux_socket": socket, "tmux_session": "agent", "tmux_pane": pane,
-			"last_status": "done", "archived_ts": 100, "agent_name": "old title", "last_user_prompt": "old prompt"},
+			"last_status": "done", "archived_ts": 100, "agent_name": "old title", "last_user_prompt": "old prompt",
+			"cleared_to": "new-after-clear"},
 	}})
 	_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
 	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))

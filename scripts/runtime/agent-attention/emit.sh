@@ -619,8 +619,8 @@ elif [[ "$status" == "pane-evict" ]]; then
       unset _pin_agent
     fi
   fi
-  # Best-effort: drop sidecar for the post-clear session id. Pre-clear
-  # orphans age out via reconcile / next Stop.
+  attention_mark_cleared "$tmux_socket" "$tmux_pane" "$session_id" 2>/dev/null || true # turn-lib.sh
+  # drop the post-clear sidecar; pre-clear orphans age out (reconcile / Stop)
   bg_sidecar_clear "$session_id" 2>/dev/null || true
 elif [[ "$status" == "resolved" ]]; then
   # Wired to BOTH PreToolUse and PostToolUse. The two hooks fire at

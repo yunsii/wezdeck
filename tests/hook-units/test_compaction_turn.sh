@@ -53,16 +53,16 @@ TMUX_EOF
   printf '%s' "$dir"
 }
 
-# hook <sandbox> <status> <event>
+# hook <sandbox> <status> <event> [session id]
 hook() {
-  local sandbox="$1" status="$2" event="$3"
+  local sandbox="$1" status="$2" event="$3" sid="${4:-s1}"
   env HOME="$HOME" USER="${USER:-}" LANG="${LANG:-C}" \
     PATH="$sandbox/bin:$PATH" TMUX="dummy" \
     WINDOWS_RUNTIME_STATE_WSL="$sandbox/wezterm-runtime" \
     WINDOWS_LOCALAPPDATA_WSL="$sandbox" WINDOWS_USERPROFILE_WSL="$sandbox" \
     WEZTERM_NO_PATH_CACHE=1 WEZTERM_PANE="7" TMUX_PANE="%7" \
     bash "$hook" "$status" \
-    <<<"{\"session_id\":\"s1\",\"hook_event_name\":\"$event\",\"prompt\":\"hi\"}" \
+    <<<"{\"session_id\":\"$sid\",\"hook_event_name\":\"$event\",\"prompt\":\"hi\"}" \
     >/dev/null 2>&1 || true
 }
 
@@ -149,6 +149,19 @@ hook "$sb" running UserPromptSubmit
 hook "$sb" done Stop
 hook "$sb" compacted SessionStart
 check "entry untouched" "$(entry "$sb" '.status')" "done"
+rm -rf "$sb"
+
+echo "/clear marks the archived session cleared_to the new one"
+sb="$(new_sandbox)"
+hook "$sb" running UserPromptSubmit
+hook "$sb" done Stop
+hook "$sb" pane-evict SessionStart s2
+recent() {
+  jq -r ".recent // [] | map(select(.session_id == \"$2\")) | .[0] | $3" \
+    "$1/wezterm-runtime/state/agent-attention/attention.json" 2>/dev/null
+}
+check "old entry left .entries" "$(entry "$sb" '.status // "none"')" "none"
+check "archived entry points at the new session" "$(recent "$sb" s1 '.cleared_to // ""')" "s2"
 rm -rf "$sb"
 
 echo

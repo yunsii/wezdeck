@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Turn start and context compaction in attention.json (docs/remote-sessions.md
-# "Turn progress"): the phone shows "运行中… 4m 39s" and "正在压缩上下文… 36s"
+# Turn start, context compaction and /clear in attention.json
+# (docs/remote-sessions.md "Turn progress"): the phone shows "运行中… 4m 39s" and "正在压缩上下文… 36s"
 # from these fields instead of reading the TUI's screen. Sourced by
 # attention-state-lib.sh (the jq defs) and emit.sh (the shell functions);
 # kept out of those two, which are over their line budget.
@@ -113,4 +113,26 @@ attention_promote_to_turn() {
       "entry_ts_ms=${entry_ts_ms:-}" 2>/dev/null || true
   fi
   return 0
+}
+
+# emit.sh pane-evict (SessionStart source=clear: /clear, /new): the old
+# session was just archived into recent[]; mark it cleared_to the new id so
+# the relay lists the new session in its place before its first prompt
+# makes an entry, and answers the old id with replaced_by. A pane pin alone
+# cannot say this: it is also set at launch and goes stale after /resume.
+attention_mark_cleared() {
+  local socket="$1" pane="$2" new_sid="$3"
+  [[ -n "$pane" && -n "$new_sid" ]] || return 0
+  (
+    flock -x 9
+    local cur next
+    cur="$(attention_state_read)"
+    next="$(jq -c --arg tsk "$socket" --arg tp "$pane" --arg sid "$new_sid" '
+      .recent = ((.recent // []) | map(
+        if (.tmux_pane // "") == $tp and (.tmux_socket // "") == $tsk
+           and (.session_id // "") != $sid and (.cleared_to // "") == ""
+        then . + {cleared_to: $sid} else . end))
+    ' <<<"$cur")" || return 0
+    attention_state_write "$next"
+  ) 9>"$(attention_state_lock_path)"
 }

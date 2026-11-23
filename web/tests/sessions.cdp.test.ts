@@ -244,9 +244,8 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
 
 /**
  * /new in the pane: a command is not queued as a message, and once the hook
- * has archived the old session and pinned the pane to a new one (what
- * emit.sh pane-evict leaves: the old entry in recent[], the pane option,
- * no entry for the new id yet), the page follows it.
+ * has archived the old session marked cleared_to the new one (what emit.sh
+ * pane-evict leaves; no entry for the new id yet), the page follows it.
  */
 async function followsNewSession(
   page: Page,
@@ -267,7 +266,6 @@ async function followsNewSession(
   await page.getByText('已发送命令 /new').waitFor({ timeout: 10_000 })
   expect(await queued()).toBe(before)
   const pane = tmux('display-message', '-p', '-t', 'demo', '#{pane_id}').trim()
-  tmux('set-option', '-p', '-t', pane, '@wezterm_agent_session_id', 'demo-next')
   writeFileSync(
     attention,
     JSON.stringify({
@@ -280,6 +278,7 @@ async function followsNewSession(
           tmux_pane: pane,
           last_status: 'done',
           archived_ts: Date.now(),
+          cleared_to: 'demo-next',
         },
       ],
     }),
