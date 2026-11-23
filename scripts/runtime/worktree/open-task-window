@@ -36,7 +36,7 @@ export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.open-window"
 
 usage() {
   cat <<'EOF'
-usage: open-task-window [--type dev|task|hotfix] <name>
+usage: open-task-window [--type dev|task|hotfix] [--no-attach] <name>
 
 Quick-create a task workspace for <name>. `worktree-task` treats <name> as
 a subject title. In lifecycle mode the local worktree slug is
@@ -45,6 +45,7 @@ a subject title. In lifecycle mode the local worktree slug is
 both names to `<subject-slug>-2`, `<subject-slug>-3`, etc. Use `Alt+g` /
 `Alt+Shift+g` to reopen an already-existing worktree instead.
 
+  --no-attach     open the window without switching / attaching to it
   --type dev      long-lived parallel dev workstation
   --type task     short-lived focused task (PR-scoped)
   --type hotfix   urgent fix
@@ -64,6 +65,7 @@ die() {
 
 type_kind=""
 raw=""
+no_attach=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -78,6 +80,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     --type=*)
       type_kind="${1#--type=}"
+      shift
+      ;;
+    --no-attach)
+      # prepare the window without switching / attaching (callers with no
+      # terminal: the phone's new session, native/wezdeck-wsl session_new.go)
+      no_attach=1
       shift
       ;;
     --)
@@ -214,6 +222,9 @@ if [[ -n "$task_slug" ]]; then
 fi
 if [[ -n "$branch_name" ]]; then
   launch_args+=(--branch "$branch_name")
+fi
+if (( no_attach )); then
+  launch_args+=(--no-attach)
 fi
 
 exec "${launch_env[@]}" "$WORKTREE_TASK_CLI" "${launch_args[@]}"

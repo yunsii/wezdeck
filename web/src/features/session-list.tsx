@@ -13,6 +13,7 @@ import { useLocale } from '#/lib/locale-context'
 import { phoneVisits, recordVisit } from '#/lib/session-visits'
 import { OpenTodos } from './session-todos'
 import { clearable, SwipeToClear } from './session-clear'
+import { NewSessionButton } from './session-new'
 import { buildSessionTree, visitOf, worktreeKey } from './session-order'
 import { useAgo } from './tickets-view'
 import {
@@ -164,18 +165,21 @@ export function SessionList() {
       <h1 className="hidden text-base font-semibold md:block">
         {t({ message: 'Sessions', context: 'nav' })}
       </h1>
-      <Segmented
-        label={t`Status`}
-        value={filter}
-        onChange={setFilter}
-        className="md:max-w-md"
-        options={[
-          { value: 'all', label: t`All ${allCount}` },
-          { value: 'waiting', label: t`Needs you ${waitingCount}` },
-          { value: 'running', label: t`Working ${runningCount}` },
-          { value: 'idle', label: t`Idle ${idleCount}` },
-        ]}
-      />
+      <div className="flex items-center gap-2">
+        <Segmented
+          label={t`Status`}
+          value={filter}
+          onChange={setFilter}
+          className="min-w-0 flex-1 md:max-w-md"
+          options={[
+            { value: 'all', label: t`All ${allCount}` },
+            { value: 'waiting', label: t`Needs you ${waitingCount}` },
+            { value: 'running', label: t`Working ${runningCount}` },
+            { value: 'idle', label: t`Idle ${idleCount}` },
+          ]}
+        />
+        <NewSessionButton />
+      </div>
       {sessions.isError ? (
         <p
           role="status"

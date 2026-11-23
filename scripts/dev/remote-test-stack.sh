@@ -32,6 +32,7 @@ EOF
 }
 
 stop() {
+  tmux -S "$STATE/new.sock" kill-server 2>/dev/null || true
   for f in relay vite; do
     if [[ -f "$STATE/$f.pid" ]]; then
       local pid
@@ -54,6 +55,23 @@ start() {
   stop
   mkdir -p "$STATE/uploads" "$STATE/claude-status" "$STATE/relaylog"
   [[ -f "$STATE/attention.json" ]] || echo '{"entries":{}}' >"$STATE/attention.json"
+  # stand-in for open-task-window (phone 新会话, session_new.go): a real
+  # `git worktree add` in whatever throwaway repo the test offers, its pane a
+  # `cat` on the stack's own tmux socket — never a real agent or tmux server
+  cat >"$STATE/fake-open-task-window" <<FAKE
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "\$1" == --no-attach && "\$2" == --type ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+kind="\$3"; subject="\$5"
+path="\$PWD/.worktrees/\$kind-\$subject"
+git worktree add -q -b "\$kind/\$subject" "\$path" >&2
+tmux -S "$STATE/new.sock" new-session -d -s "\$kind-\$subject" -c "\$path" -x 100 -y 20 "sh -c 'echo ready; exec cat'"
+echo "branch_name=\$kind/\$subject"
+echo "worktree_path=\$path"
+echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$kind-\$subject" '#{window_id}')"
+echo "tmux_socket=$STATE/new.sock"
+FAKE
+  chmod +x "$STATE/fake-open-task-window"
   PATH="$HOME/.local/go/bin:$PATH" "$REPO/native/wezdeck-wsl/build.sh" >/dev/null 2>&1
   # build id = web/ source fingerprint: the cdp tests compare it with the
   # sources they test (web/tests/version.setup.ts) and refuse a stale stack
@@ -80,6 +98,7 @@ start() {
     WEZDECK_RELAY_CONTROL="$STATE/relay.sock" \
     WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
     WEZDECK_TODO_DB="$STATE/todo.db" \
+    WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
     "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
     >"$STATE/relay.out" 2>&1 </dev/null &
   echo $! >"$STATE/relay.pid"

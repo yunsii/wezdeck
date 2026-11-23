@@ -81,6 +81,18 @@ func (r *relay) logf(event string, format string, args ...any) {
 	}
 }
 
+// activeRelay: the running relay, for background work (session_new.go) that
+// logs after its RPC has returned
+var activeRelay *relay
+
+func relayLogf(event, format string, args ...any) {
+	if r := activeRelay; r != nil {
+		r.logf(event, format, args...)
+		return
+	}
+	fmt.Fprintf(os.Stderr, "%s category=relay event=%s %s\n", time.Now().Format(time.RFC3339Nano), event, fmt.Sprintf(format, args...))
+}
+
 func runRelay() error {
 	token := os.Getenv("WEZDECK_RELAY_HOST_TOKEN")
 	if token == "" {
@@ -91,6 +103,7 @@ func runRelay() error {
 		url = relayDefaultURL
 	}
 	r := &relay{peers: map[string]*webrtc.PeerConnection{}, phones: map[string]*phoneChan{}}
+	activeRelay = r
 	if path := relayLogPath(); path != "" {
 		_ = os.MkdirAll(filepath.Dir(path), 0o755)
 		if f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
@@ -245,9 +258,13 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return listTodos(f.Args)
 	case "diag.submit":
 		return diagSubmit(f.Args, f.Cid, r)
+	case "repos":
+		return listRepos()
+	case "session.new.job":
+		return newSessionJobStatus(f.Args)
 	case "session.image":
 		return sessionImage(f.Args)
-	case "send", "key", "reply", "attach", "upload", "todo", "clear":
+	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
@@ -273,6 +290,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			result, err = writeTodo(w.Args)
 		case "clear":
 			result, err = clearAttention(w.Args)
+		case "session.new":
+			result, err = startNewSession(w.Args)
 		default:
 			result, err = replyTicket(w.Args)
 		}

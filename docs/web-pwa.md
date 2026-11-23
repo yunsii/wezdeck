@@ -45,7 +45,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    `Alt+g` / `Alt+x` or tapping the title opens a switcher sheet grouped
    like the list. Switching replaces the history entry, so back returns to
    the list. Swiping a running / waiting / done row left offers 标为已读
-   (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The
+   (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The + beside
+   the filter (`c` on a keyboard) is 新会话 — `Ctrl+k g`: repository, dev /
+   task / hotfix, subject, first message; the sheet follows the host job
+   and opens the session once the agent has taken the message. The
    header and the sheet show the agent's own name
    (`agent_name`) beside the window title. Rename (`/rename`) moved into
    会话信息 (ⓘ). What

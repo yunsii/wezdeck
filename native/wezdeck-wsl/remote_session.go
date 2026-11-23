@@ -1069,6 +1069,17 @@ func sendToSession(args json.RawMessage) (any, error) {
 	if e.WaitingKind != "" {
 		return nil, errors.New("the agent is asking for a confirmation; answer it with the keys first")
 	}
+	if err := pasteToPane(e.TmuxSocket, e.TmuxPane, a.Text); err != nil {
+		return nil, err
+	}
+	_ = tmuxCmd(e.TmuxSocket, "display-message", "-d", "4000", "-t", e.TmuxPane, "手机发来一条消息").Run()
+	return map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text))}, nil
+}
+
+// pasteToPane pastes text into a pane as one bracketed paste, then Enter —
+// how the phone's messages reach an agent TUI (also a new session's first
+// message, session_new.go).
+func pasteToPane(socket, pane, text string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// one buffer per send: two sends in flight (two tabs, two sessions) used
@@ -1076,21 +1087,22 @@ func sendToSession(args json.RawMessage) (any, error) {
 	// into X's pane
 	buffer := "wezdeck-remote-" + newDiagID()
 	load := exec.CommandContext(ctx, "tmux")
-	load.Args = append(load.Args, socketArgs(e)...)
-	load.Args = append(load.Args, "load-buffer", "-b", buffer, "-")
-	load.Stdin = strings.NewReader(a.Text)
-	if out, err := load.CombinedOutput(); err != nil {
-		return nil, fmt.Errorf("tmux load-buffer: %s", strings.TrimSpace(string(out)))
+	if socket != "" {
+		load.Args = append(load.Args, "-S", socket)
 	}
-	if out, err := tmuxCmd(e.TmuxSocket, "paste-buffer", "-p", "-d", "-b", buffer, "-t", e.TmuxPane).CombinedOutput(); err != nil {
-		return nil, fmt.Errorf("tmux paste-buffer: %s", strings.TrimSpace(string(out)))
+	load.Args = append(load.Args, "load-buffer", "-b", buffer, "-")
+	load.Stdin = strings.NewReader(text)
+	if out, err := load.CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux load-buffer: %s", strings.TrimSpace(string(out)))
+	}
+	if out, err := tmuxCmd(socket, "paste-buffer", "-p", "-d", "-b", buffer, "-t", pane).CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux paste-buffer: %s", strings.TrimSpace(string(out)))
 	}
 	time.Sleep(150 * time.Millisecond)
-	if out, err := tmuxCmd(e.TmuxSocket, "send-keys", "-t", e.TmuxPane, "Enter").CombinedOutput(); err != nil {
-		return nil, fmt.Errorf("tmux send-keys: %s", strings.TrimSpace(string(out)))
+	if out, err := tmuxCmd(socket, "send-keys", "-t", pane, "Enter").CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux send-keys: %s", strings.TrimSpace(string(out)))
 	}
-	_ = tmuxCmd(e.TmuxSocket, "display-message", "-d", "4000", "-t", e.TmuxPane, "手机发来一条消息").Run()
-	return map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text))}, nil
+	return nil
 }
 
 func socketArgs(e attentionEntry) []string {
