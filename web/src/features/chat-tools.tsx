@@ -11,6 +11,7 @@ import { TranscriptImages } from './chat-images'
 import type { Message } from './chat-thread'
 import { Disclosure } from '#/components/ui/disclosure'
 import { ToolBody } from './chat-diff'
+import { Button } from '#/components/ui/button'
 
 /** While a run is live: a breathing light for the call in flight, a check once it returned. */
 /**
@@ -18,6 +19,41 @@ import { ToolBody } from './chat-diff'
  * centred on the first line however many lines the description wraps to.
  */
 const LINE = 'inline-flex h-5 shrink-0 items-center'
+
+/** Claude Code tools that Ctrl+B moves to the background while they run. */
+const BACKGROUNDABLE = new Set(['Bash', 'Agent', 'Task'])
+
+/**
+ * A call Ctrl+B can move to the background: still out, a Bash command or a
+ * subagent, and not one that asked to run there already.
+ */
+export const canBackground = (tool: Message) =>
+  tool.role === 'tool' &&
+  Boolean(tool.pending) &&
+  !tool.background &&
+  BACKGROUNDABLE.has(tool.tool ?? '')
+
+/**
+ * 转到后台 on the running call itself: Claude Code's Ctrl+B — the command or
+ * subagent keeps going in the background and the agent carries on.
+ */
+function ToBackground({ onClick }: { onClick: () => void }) {
+  const { t } = useLingui()
+  return (
+    <Button
+      variant="plain"
+      type="button"
+      data-write
+      data-testid="to-background"
+      title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
+      onClick={onClick}
+      // the row is h-5 (leading-5) and its panel clips: stay within it
+      className="inline-flex h-5 shrink-0 items-center rounded-full bg-brand-surface px-2 text-[11px] leading-none text-brand-text"
+    >
+      {t`Run in background`}
+    </Button>
+  )
+}
 
 /**
  * The host writes "<tool name> <target>" (toolSummary); show the two parts
@@ -53,9 +89,12 @@ function ToolStatus({ status }: { status?: 'running' | 'done' }) {
 function ToolRow({
   tool,
   status,
+  onBackground,
 }: {
   tool: Message
   status?: 'running' | 'done'
+  /** this running call can go to the background: 转到后台 at the row's end */
+  onBackground?: () => void
 }) {
   const { t } = useLingui()
   const details = Boolean(tool.body || tool.result || tool.images?.length)
@@ -67,6 +106,8 @@ function ToolRow({
       className="min-w-0 rounded-[8px]"
       onOpenChange={setOpened}
       chevron={false}
+      // 转到后台 on this call's own line, beside its trigger
+      aside={onBackground ? <ToBackground onClick={onBackground} /> : undefined}
       triggerClassName="flex min-w-0 items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted"
       title={
         <>
@@ -118,6 +159,7 @@ function ToolGroupView({
   fresh,
   stream,
   live,
+  onBackground,
   onShown,
 }: {
   tools: Array<Message>
@@ -125,6 +167,8 @@ function ToolGroupView({
   stream: boolean
   /** the newest run while the agent works: open, newest calls, status lights */
   live: boolean
+  /** Claude, writable, this run live: Ctrl+B for its running foreground call */
+  onBackground?: () => void
   onShown?: () => void
 }) {
   const { t } = useLingui()
@@ -200,6 +244,11 @@ function ToolGroupView({
             key={earlier + index}
             tool={tool}
             status={live ? (tool.pending ? 'running' : 'done') : undefined}
+            onBackground={
+              live && index === rows.length - 1 && canBackground(tool)
+                ? onBackground
+                : undefined
+            }
           />
         ))}
       </div>
@@ -268,6 +317,9 @@ export const ToolGroup = memo(
     a.fresh === b.fresh &&
     a.stream === b.stream &&
     a.live === b.live &&
+    // the callback is rebuilt every render but always sends Ctrl+B to this
+    // session: only whether it is offered matters
+    Boolean(a.onBackground) === Boolean(b.onBackground) &&
     a.onShown === b.onShown &&
     a.tools.length === b.tools.length &&
     a.tools.every((tool, i) => tool === b.tools[i]),

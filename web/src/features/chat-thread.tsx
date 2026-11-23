@@ -9,11 +9,10 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
 import { cn } from '#/lib/utils'
 import { Led } from '#/components/deck/led'
-import { Button } from '#/components/ui/button'
 import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
-import { ToolGroup } from './chat-tools'
+import { ToolGroup, canBackground } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
 import { SlashCommandRow } from './chat-command'
 
@@ -176,22 +175,14 @@ export function settleCursor(
   return cursor
 }
 
-/** Claude Code tools that Ctrl+B moves to the background while they run. */
-const BACKGROUNDABLE = new Set(['Bash', 'Agent', 'Task'])
-
 /**
- * The agent waits on a foreground command or subagent: the newest call is
- * still out, is one Ctrl+B can move to the background, and did not ask to
- * run there already. That is when its tool group offers 转到后台.
+ * The agent waits on a foreground command or subagent: the newest message is
+ * a call Ctrl+B can move to the background (chat-tools canBackground). That
+ * call's own row then offers 转到后台.
  */
 export function foregroundCall(messages: Array<Message>) {
   const last = messages.at(-1)
-  return Boolean(
-    last?.role === 'tool' &&
-    last.pending &&
-    !last.background &&
-    BACKGROUNDABLE.has(last.tool ?? ''),
-  )
+  return Boolean(last && canBackground(last))
 }
 
 /** Consecutive tool calls collapse into one expandable line. */
@@ -266,28 +257,6 @@ function Typing({ activity }: { activity?: Activity }) {
   )
 }
 
-/**
- * 转到后台, beside the running call it acts on (not on the working line far
- * below): Claude Code's Ctrl+B — the command or subagent keeps going in the
- * background and the agent carries on.
- */
-function ToBackground({ onClick }: { onClick: () => void }) {
-  const { t } = useLingui()
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      data-write
-      data-testid="to-background"
-      title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
-      onClick={onClick}
-      className="mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full bg-brand-surface px-2.5 text-[12px] text-brand-text"
-    >
-      {t`Run in background`}
-    </Button>
-  )
-}
-
 export function ChatThread({
   messages,
   start,
@@ -338,24 +307,18 @@ export function ChatThread({
     const stream = at === effective
     if (item.kind === 'tools') {
       const live = busy && position === items.length - 1
-      const run = (
+      return (
         <ToolGroup
           key={`t${at}`}
           tools={item.tools}
           fresh={isFresh(item.index)}
           stream={stream}
           live={live}
+          onBackground={
+            live && foregroundCall(item.tools) ? onBackground : undefined
+          }
           onShown={stream ? () => advance(at + item.tools.length) : undefined}
         />
-      )
-      // the running run's newest call is a foreground Bash / subagent: offer
-      // 转到后台 right beside it
-      if (!live || !onBackground || !foregroundCall(item.tools)) return run
-      return (
-        <div className="flex min-w-0 items-start gap-2">
-          <div className="min-w-0 flex-1">{run}</div>
-          <ToBackground onClick={onBackground} />
-        </div>
       )
     }
     if (item.message.role === 'system') {
