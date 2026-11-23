@@ -45,8 +45,11 @@ provider_template() {
 load_requirements() {
   case "$1" in
     claude)
-      events=(UserPromptSubmit Notification Stop PreToolUse PostToolUse SessionStart)
-      actions=(running waiting done resolved resolved pane-evict)
+      # PreCompact / SessionStart compact: context compaction for the
+      # phone's progress line (agent-attention/turn-lib.sh)
+      events=(UserPromptSubmit Notification Stop PreToolUse PostToolUse SessionStart
+        PreCompact SessionStart:compact)
+      actions=(running waiting done resolved resolved pane-evict compacting compacted)
       adapter_fragment='scripts/claude-hooks/emit-agent-status.sh'
       adapter_path="$repo_root/scripts/claude-hooks/emit-agent-status.sh"
       session_start_matcher=clear
@@ -100,11 +103,15 @@ json_has_clear_command() {
   json_has_session_start_command "$1" "$2" clear
 }
 
-json_has_fragment() {
-  local file="$1" fragment="$2"
-  jq -r '.. | objects
-    | select(.type? == "command" and (.command? | type == "string"))
-    | .command' "$file" 2>/dev/null | grep -Fq "$fragment"
+# Is there a hook of ours for this event (and SessionStart matcher) at all?
+# stale = ours but at another path (repo moved); missing = none — e.g. an
+# event added after the last install (Claude PreCompact).
+json_event_has_fragment() {
+  local file="$1" event="$2" matcher="$3" fragment="$4"
+  jq -r --arg event "$event" --arg matcher "$matcher" '
+    .hooks[$event][]? | select($matcher == "" or .matcher? == $matcher)
+    | .hooks[]? | select(.type? == "command") | .command' "$file" 2>/dev/null \
+    | grep -Fq "$fragment"
 }
 
 config_is_inline_codex() {
@@ -132,12 +139,16 @@ check_provider() {
   for i in "${!events[@]}"; do
     event="${events[$i]}"; action="${actions[$i]}"
     expected="$(expected_adapter_command "$name" "$action")"
-    if [[ "$event" == SessionStart ]]; then
-      json_has_session_start_command "$file" "$expected" "${session_start_matcher:-clear}" || {
-        if json_has_fragment "$file" "$adapter_fragment"; then stale+=("$event"); else missing+=("$event"); fi
+    # SessionStart[:matcher]: a bare SessionStart uses the provider's
+    # default matcher (clear / new)
+    if [[ "$event" == SessionStart || "$event" == SessionStart:* ]]; then
+      local matcher="${session_start_matcher:-clear}"
+      [[ "$event" == SessionStart:* ]] && matcher="${event#SessionStart:}"
+      json_has_session_start_command "$file" "$expected" "$matcher" || {
+        if json_event_has_fragment "$file" SessionStart "$matcher" "$adapter_fragment"; then stale+=("$event"); else missing+=("$event"); fi
       }
     elif ! json_has_command "$file" "$event" "$expected"; then
-      if json_has_fragment "$file" "$adapter_fragment"; then stale+=("$event"); else missing+=("$event"); fi
+      if json_event_has_fragment "$file" "$event" "" "$adapter_fragment"; then stale+=("$event"); else missing+=("$event"); fi
     fi
   done
 
