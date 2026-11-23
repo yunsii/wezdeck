@@ -118,7 +118,7 @@ function TicketKey({
   const { locale } = useLocale()
   const ago = useAgo()
   const statusLabel = useStatusLabel()
-  const tone = ticketTone(ticket) ?? 'muted'
+  const tone = ticketTone(ticket)
   return (
     <li className="border-b border-brand-edge last:border-b-0">
       <Link

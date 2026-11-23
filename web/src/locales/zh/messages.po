@@ -196,9 +196,9 @@ msgstr "Agent"
 #~ msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 #~ msgstr "主机上 tmux 里正在跑的 Agent。点进去可以查看对话，也可以给它发消息。"
 
-#: src/features/tickets-view.tsx:167
-#~ msgid "All"
-#~ msgstr "全部"
+#: src/features/console-diagnostics.tsx:131
+msgid "All"
+msgstr "全部"
 
 #: src/features/session-list.tsx:193
 msgctxt "filter"
@@ -209,13 +209,13 @@ msgstr "全部"
 #~ msgid "All {allCount}"
 #~ msgstr "全部 {allCount}"
 
-#: src/features/console-diagnostics.tsx:74
+#: src/features/console-diagnostics.tsx:142
 msgid "All categories"
 msgstr "全部分类"
 
 #: src/features/console-diagnostics.tsx:83
-msgid "All levels"
-msgstr "全部级别"
+#~ msgid "All levels"
+#~ msgstr "全部级别"
 
 #: src/features/session-ask-claude.tsx:83
 msgid "All questions answered. The agent waits until you submit."
@@ -346,7 +346,8 @@ msgstr "能力"
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
-#: src/features/console-diagnostics.tsx:72
+#: src/features/console-diagnostics.tsx:140
+#: src/features/console-diagnostics.tsx:318
 msgid "Category"
 msgstr "分类"
 
@@ -504,7 +505,7 @@ msgstr "控制"
 msgid "Copied"
 msgstr "已复制"
 
-#: src/features/inspector.tsx:206
+#: src/features/inspector.tsx:87
 msgid "Copied {label}"
 msgstr "已复制 {label}"
 
@@ -512,7 +513,11 @@ msgstr "已复制 {label}"
 msgid "Copied {what}"
 msgstr "已复制 {what}"
 
-#: src/features/inspector.tsx:204
+#: src/features/console-diagnostics.tsx:345
+msgid "Copied the raw line"
+msgstr "已复制原始日志"
+
+#: src/features/inspector.tsx:85
 #: src/features/session-composer.tsx:75
 msgid "Copy"
 msgstr "复制"
@@ -528,6 +533,10 @@ msgstr "复制命令"
 #: src/features/session-composer.tsx:67
 msgid "Copy error"
 msgstr "复制错误信息"
+
+#: src/features/console-diagnostics.tsx:349
+msgid "Copy raw line"
+msgstr "复制原始日志"
 
 #: src/features/session-info.tsx:220
 msgid "Copy session reference for an agent"
@@ -635,8 +644,9 @@ msgstr "dev：长期并行开发的工作站"
 #~ msgid "diagnostics"
 #~ msgstr "诊断数据"
 
+#: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:404
-#: src/features/console-shell.tsx:83
+#: src/features/console-shell.tsx:98
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -720,8 +730,12 @@ msgid "Enter Runtime Console"
 msgstr "进入 Runtime 控制台"
 
 #: src/features/console-diagnostics.tsx:109
-msgid "Entries"
-msgstr "条目"
+#~ msgid "Entries"
+#~ msgstr "条目"
+
+#: src/features/console-diagnostics.tsx:133
+msgid "Errors"
+msgstr "错误"
 
 #: src/features/session-elicitation.tsx:78
 #: src/features/session-elicitation.tsx:134
@@ -1049,7 +1063,8 @@ msgstr "让这台设备能给 Agent 会话发消息、回复工单。密钥在�
 #~ msgid "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
 #~ msgstr "让这台手机能给 Agent 会话发消息、回复工单。密钥在这台手机上生成，只留在这里；主机确认一次即可。"
 
-#: src/features/console-diagnostics.tsx:81
+#: src/features/console-diagnostics.tsx:126
+#: src/features/console-diagnostics.tsx:317
 msgid "Level"
 msgstr "级别"
 
@@ -1085,7 +1100,7 @@ msgstr "正在加载原图…"
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
-#: src/features/console-diagnostics.tsx:53
+#: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:429
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:71
@@ -1099,7 +1114,12 @@ msgstr "加载中…"
 msgid "Local-first control plane"
 msgstr "本地优先的控制平面"
 
-#: src/features/console-diagnostics.tsx:50
+#: src/features/console-diagnostics.tsx:197
+msgid "Log entry"
+msgstr "日志详情"
+
+#: src/features/console-diagnostics.tsx:171
+#: src/features/console-diagnostics.tsx:263
 msgid "Log stream"
 msgstr "日志流"
 
@@ -1261,9 +1281,7 @@ msgstr "还没有人工消息"
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
-#: src/features/console-diagnostics.tsx:35
-#: src/features/console-diagnostics.tsx:55
-#: src/features/console-diagnostics.tsx:118
+#: src/features/console-diagnostics.tsx:102
 msgid "No matching log entries"
 msgstr "没有匹配的日志条目"
 
@@ -1359,6 +1377,10 @@ msgstr "每个仓库都有自己的位置"
 #: src/features/remote-badge.tsx:130
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
+
+#: src/features/console-diagnostics.tsx:359
+msgid "Only this trace"
+msgstr "只看这个 trace"
 
 #: src/features/landing-page.tsx:133
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
@@ -1792,7 +1814,7 @@ msgstr "运行时控制台"
 msgid "Runtime Console shows the local signals."
 msgstr "Runtime 控制台展示本地信号。"
 
-#: src/features/console-diagnostics.tsx:56
+#: src/features/console-diagnostics.tsx:103
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime 离线时无法获取诊断数据。"
 
@@ -1884,7 +1906,7 @@ msgstr "会话信息"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:94
+#: src/features/console-shell.tsx:83
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
 msgctxt "nav"
@@ -1949,6 +1971,7 @@ msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
 #: src/features/console-collab-run.tsx:160
+#: src/features/console-diagnostics.tsx:319
 msgid "Source"
 msgstr "来源"
 
@@ -2146,7 +2169,7 @@ msgstr "工单编号"
 
 #: src/features/console-activity.tsx:204
 #: src/features/console-activity.tsx:293
-#: src/features/console-shell.tsx:99
+#: src/features/console-shell.tsx:93
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -2154,7 +2177,7 @@ msgstr "工单动态"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:89
+#: src/features/console-shell.tsx:88
 msgid "Tickets"
 msgstr "工单"
 
@@ -2169,6 +2192,10 @@ msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 #: src/features/console-me.tsx:201
 #~ msgid "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "工单从本地 Runtime 读取；会话和写入走远程链接，这个浏览器还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
+
+#: src/features/console-diagnostics.tsx:316
+msgid "Time"
+msgstr "时间"
 
 #: src/features/console-usage.tsx:138
 msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
@@ -2244,8 +2271,12 @@ msgstr "令牌无效，请重新配对"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
 
-#: src/features/console-diagnostics.tsx:65
-#: src/features/console-diagnostics.tsx:66
+#: src/features/console-diagnostics.tsx:320
+msgid "Trace"
+msgstr "Trace"
+
+#: src/features/console-diagnostics.tsx:118
+#: src/features/console-diagnostics.tsx:119
 msgid "Trace ID or text"
 msgstr "Trace ID 或文本"
 
@@ -2260,8 +2291,8 @@ msgid "Trigger"
 msgstr "触发来源"
 
 #: src/features/console-diagnostics.tsx:119
-msgid "Try a different trace, category, or level."
-msgstr "请尝试其他 trace、分类或级别。"
+#~ msgid "Try a different trace, category, or level."
+#~ msgstr "请尝试其他 trace、分类或级别。"
 
 #: src/features/console-sessions.tsx:152
 #~ msgid "turn finished, {bg} background tasks running; you can send"
@@ -2419,6 +2450,10 @@ msgstr "耗时"
 #: src/features/console-collab.tsx:110
 msgid "Wall p50"
 msgstr "耗时 p50"
+
+#: src/features/console-diagnostics.tsx:132
+msgid "Warnings"
+msgstr "警告"
 
 #: src/features/remote-badge.tsx:91
 msgid "WebRTC direct"

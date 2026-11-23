@@ -79,10 +79,9 @@ function useSections() {
     local?: boolean
   }> = [
     {
-      id: 'diagnostics',
-      label: t`Diagnostics`,
-      icon: <Activity size={16} aria-hidden />,
-      local: true,
+      id: 'sessions',
+      label: t({ message: 'Sessions', context: 'nav' }),
+      icon: <MessagesSquare size={16} aria-hidden />,
     },
     {
       id: 'collab',
@@ -90,14 +89,15 @@ function useSections() {
       icon: <GitPullRequestArrow size={16} aria-hidden />,
     },
     {
-      id: 'sessions',
-      label: t({ message: 'Sessions', context: 'nav' }),
-      icon: <MessagesSquare size={16} aria-hidden />,
-    },
-    {
       id: 'activity',
       label: t`Ticket activity`,
       icon: <ListTree size={16} aria-hidden />,
+    },
+    {
+      id: 'diagnostics',
+      label: t`Diagnostics`,
+      icon: <Activity size={16} aria-hidden />,
+      local: true,
     },
     { id: 'me', label: t`Settings`, icon: <UserRound size={16} aria-hidden /> },
   ]

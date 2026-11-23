@@ -1,5 +1,5 @@
 // Ticket list + detail for the collab sections (docs/web-pwa.md):
-// - wide (≥768px): split view (Inspector), selection lives in the URL
+// - wide (≥768px): a split like 会话 (sticky list + ticket), selection lives in the URL
 //   (/console/<base>/$id, replace) so j/k / arrows / clicks are deep-linkable;
 // - phone: a deck of ticket keys; a key pushes /console/<base>/$id (full
 //   page, back returns via history like a native app).

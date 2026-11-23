@@ -196,9 +196,9 @@ msgstr "Agents"
 #~ msgid "Agents running in tmux on the host. Open one to read it and talk to it."
 #~ msgstr "Agents running in tmux on the host. Open one to read it and talk to it."
 
-#: src/features/tickets-view.tsx:167
-#~ msgid "All"
-#~ msgstr "All"
+#: src/features/console-diagnostics.tsx:131
+msgid "All"
+msgstr "All"
 
 #: src/features/session-list.tsx:193
 msgctxt "filter"
@@ -209,13 +209,13 @@ msgstr "All"
 #~ msgid "All {allCount}"
 #~ msgstr "All {allCount}"
 
-#: src/features/console-diagnostics.tsx:74
+#: src/features/console-diagnostics.tsx:142
 msgid "All categories"
 msgstr "All categories"
 
 #: src/features/console-diagnostics.tsx:83
-msgid "All levels"
-msgstr "All levels"
+#~ msgid "All levels"
+#~ msgstr "All levels"
 
 #: src/features/session-ask-claude.tsx:83
 msgid "All questions answered. The agent waits until you submit."
@@ -346,7 +346,8 @@ msgstr "Capabilities"
 msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
 
-#: src/features/console-diagnostics.tsx:72
+#: src/features/console-diagnostics.tsx:140
+#: src/features/console-diagnostics.tsx:318
 msgid "Category"
 msgstr "Category"
 
@@ -504,7 +505,7 @@ msgstr "Control"
 msgid "Copied"
 msgstr "Copied"
 
-#: src/features/inspector.tsx:206
+#: src/features/inspector.tsx:87
 msgid "Copied {label}"
 msgstr "Copied {label}"
 
@@ -512,7 +513,11 @@ msgstr "Copied {label}"
 msgid "Copied {what}"
 msgstr "Copied {what}"
 
-#: src/features/inspector.tsx:204
+#: src/features/console-diagnostics.tsx:345
+msgid "Copied the raw line"
+msgstr "Copied the raw line"
+
+#: src/features/inspector.tsx:85
 #: src/features/session-composer.tsx:75
 msgid "Copy"
 msgstr "Copy"
@@ -528,6 +533,10 @@ msgstr "Copy command"
 #: src/features/session-composer.tsx:67
 msgid "Copy error"
 msgstr "Copy error"
+
+#: src/features/console-diagnostics.tsx:349
+msgid "Copy raw line"
+msgstr "Copy raw line"
 
 #: src/features/session-info.tsx:220
 msgid "Copy session reference for an agent"
@@ -635,8 +644,9 @@ msgstr "dev: a long-lived workstation for parallel work"
 #~ msgid "diagnostics"
 #~ msgstr "diagnostics"
 
+#: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:404
-#: src/features/console-shell.tsx:83
+#: src/features/console-shell.tsx:98
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -720,8 +730,12 @@ msgid "Enter Runtime Console"
 msgstr "Enter Runtime Console"
 
 #: src/features/console-diagnostics.tsx:109
-msgid "Entries"
-msgstr "Entries"
+#~ msgid "Entries"
+#~ msgstr "Entries"
+
+#: src/features/console-diagnostics.tsx:133
+msgid "Errors"
+msgstr "Errors"
 
 #: src/features/session-elicitation.tsx:78
 #: src/features/session-elicitation.tsx:134
@@ -1049,7 +1063,8 @@ msgstr "Lets this device send messages to agent sessions and reply to tickets. A
 #~ msgid "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
 #~ msgstr "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
 
-#: src/features/console-diagnostics.tsx:81
+#: src/features/console-diagnostics.tsx:126
+#: src/features/console-diagnostics.tsx:317
 msgid "Level"
 msgstr "Level"
 
@@ -1085,7 +1100,7 @@ msgstr "Loading original…"
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
-#: src/features/console-diagnostics.tsx:53
+#: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:429
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:71
@@ -1099,7 +1114,12 @@ msgstr "Loading…"
 msgid "Local-first control plane"
 msgstr "Local-first control plane"
 
-#: src/features/console-diagnostics.tsx:50
+#: src/features/console-diagnostics.tsx:197
+msgid "Log entry"
+msgstr "Log entry"
+
+#: src/features/console-diagnostics.tsx:171
+#: src/features/console-diagnostics.tsx:263
 msgid "Log stream"
 msgstr "Log stream"
 
@@ -1261,9 +1281,7 @@ msgstr "No human message yet"
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
-#: src/features/console-diagnostics.tsx:35
-#: src/features/console-diagnostics.tsx:55
-#: src/features/console-diagnostics.tsx:118
+#: src/features/console-diagnostics.tsx:102
 msgid "No matching log entries"
 msgstr "No matching log entries"
 
@@ -1359,6 +1377,10 @@ msgstr "One home for every repo"
 #: src/features/remote-badge.tsx:130
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
+
+#: src/features/console-diagnostics.tsx:359
+msgid "Only this trace"
+msgstr "Only this trace"
 
 #: src/features/landing-page.tsx:133
 msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
@@ -1792,7 +1814,7 @@ msgstr "Runtime Console"
 msgid "Runtime Console shows the local signals."
 msgstr "Runtime Console shows the local signals."
 
-#: src/features/console-diagnostics.tsx:56
+#: src/features/console-diagnostics.tsx:103
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 
@@ -1884,7 +1906,7 @@ msgstr "Session info"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:94
+#: src/features/console-shell.tsx:83
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
 msgctxt "nav"
@@ -1949,6 +1971,7 @@ msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
 #: src/features/console-collab-run.tsx:160
+#: src/features/console-diagnostics.tsx:319
 msgid "Source"
 msgstr "Source"
 
@@ -2146,7 +2169,7 @@ msgstr "Ticket"
 
 #: src/features/console-activity.tsx:204
 #: src/features/console-activity.tsx:293
-#: src/features/console-shell.tsx:99
+#: src/features/console-shell.tsx:93
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -2154,7 +2177,7 @@ msgstr "Ticket activity"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-shell.tsx:89
+#: src/features/console-shell.tsx:88
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2169,6 +2192,10 @@ msgstr "Tickets appear here when ticket files or runs cross-repo work."
 #: src/features/console-me.tsx:201
 #~ msgid "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
+
+#: src/features/console-diagnostics.tsx:316
+msgid "Time"
+msgstr "Time"
 
 #: src/features/console-usage.tsx:138
 msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
@@ -2244,8 +2271,12 @@ msgstr "Token rejected — pair again"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
 
-#: src/features/console-diagnostics.tsx:65
-#: src/features/console-diagnostics.tsx:66
+#: src/features/console-diagnostics.tsx:320
+msgid "Trace"
+msgstr "Trace"
+
+#: src/features/console-diagnostics.tsx:118
+#: src/features/console-diagnostics.tsx:119
 msgid "Trace ID or text"
 msgstr "Trace ID or text"
 
@@ -2260,8 +2291,8 @@ msgid "Trigger"
 msgstr "Trigger"
 
 #: src/features/console-diagnostics.tsx:119
-msgid "Try a different trace, category, or level."
-msgstr "Try a different trace, category, or level."
+#~ msgid "Try a different trace, category, or level."
+#~ msgstr "Try a different trace, category, or level."
 
 #: src/features/console-sessions.tsx:152
 #~ msgid "turn finished, {bg} background tasks running; you can send"
@@ -2419,6 +2450,10 @@ msgstr "Wall"
 #: src/features/console-collab.tsx:110
 msgid "Wall p50"
 msgstr "Wall p50"
+
+#: src/features/console-diagnostics.tsx:132
+msgid "Warnings"
+msgstr "Warnings"
 
 #: src/features/remote-badge.tsx:91
 msgid "WebRTC direct"

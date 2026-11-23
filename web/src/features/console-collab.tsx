@@ -16,7 +16,7 @@ import { cn } from '#/lib/utils'
 import { RunDetail } from './console-collab-run'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
-import type { InspectorItem } from './inspector'
+import type { LedTone } from '#/components/deck/led'
 import { TicketsView, useOwnerLabel, useStatusLabel } from './tickets-view'
 import { CollabTopBar } from './collab-top-bar'
 import {
@@ -28,7 +28,7 @@ import {
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 
-export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
+export function ticketTone(ticket: CollabTicket): LedTone {
   if (ticket.running.length > 0) return 'running'
   switch (ticket.status) {
     // ▲ only where you are the one to act; waiting on the other side is a
@@ -182,7 +182,7 @@ export function TicketReading({
     <Reading
       kicker={
         <span className="flex flex-wrap items-center gap-2">
-          <Led tone={ticketTone(ticket) ?? 'muted'} size={13} />
+          <Led tone={ticketTone(ticket)} size={13} />
           {/* the phase code (research_done …) only as a hint: the label says it */}
           <span className="font-medium" title={ticket.phase ?? undefined}>
             {statusLabel(ticket)}
