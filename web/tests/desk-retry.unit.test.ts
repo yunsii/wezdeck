@@ -58,3 +58,15 @@ describe('withDeskRetry (phone waits out input at the desk)', () => {
     expect(calls).toBe(3)
   })
 })
+
+describe('slash commands', () => {
+  it('a command is recognised, a path is a message', async () => {
+    const { commandOf } = await import('#/features/session-send')
+    expect(commandOf('/new')).toBe('/new')
+    expect(commandOf('  /compact keep the plan ')).toBe('/compact')
+    expect(commandOf('/plugin:run x')).toBe('/plugin:run')
+    expect(commandOf('/home/yuns/shot.png 看下这张')).toBe('')
+    expect(commandOf('请执行 /new')).toBe('')
+    expect(commandOf('/')).toBe('')
+  })
+})

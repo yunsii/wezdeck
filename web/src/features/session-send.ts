@@ -1,9 +1,14 @@
 // Writes from the session page: messages (with attachments) and confirmation
 // keys, the queue of sent-but-not-yet-in-the-transcript bubbles, and the
 // countdown when the host asks to wait for the desk to go quiet.
+import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+import { useLocale } from '#/lib/locale-context'
 import { hostWrite } from '#/lib/runtime-client'
-import { useState } from 'react'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
@@ -33,6 +38,33 @@ export async function withDeskRetry<T>(
   }
 }
 
+/**
+ * "/new" for a slash command ("/new", "/compact focus on x"), else "" — a
+ * path ("/home/me/x.png …") is a message
+ */
+export const commandOf = (text: string) =>
+  /^\/[a-z][\w:-]*(?=\s|$)/i.exec(text.trim())?.[0] ?? ''
+
+/**
+ * /new or /clear in the pane starts another session there; the host then
+ * answers the old id with replaced_by (relay liveSessions). Follow it, in
+ * place of this page in history, and say so.
+ */
+export function useFollowReplacement(replacedBy?: string) {
+  const { t } = useLingui()
+  const navigate = useNavigate()
+  const { locale } = useLocale()
+  useEffect(() => {
+    if (!replacedBy) return
+    toast(t`This pane started a new session`)
+    void navigate({
+      to: '/{-$locale}/console/sessions/$id',
+      params: { locale: locale === 'en' ? undefined : locale, id: replacedBy },
+      replace: true,
+    })
+  }, [replacedBy, navigate, locale, t])
+}
+
 type WriteState = { sending: boolean; error: string; retryIn: number }
 const IDLE: WriteState = { sending: false, error: '', retryIn: 0 }
 const NONE: Array<Pending> = []
@@ -45,6 +77,7 @@ const NONE: Array<Pending> = []
  * the write was for, which also keeps a late reply from landing elsewhere.
  */
 export function useSessionWrites(id: string) {
+  const { t } = useLingui()
   const client = useQueryClient()
   const [pendingBy, setPendingBy] = useState<Record<string, Array<Pending>>>({})
   const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
@@ -88,6 +121,14 @@ export function useSessionWrites(id: string) {
           }),
         (seconds) => patch(target, { retryIn: seconds }),
       )
+      // a slash command (/new, /clear, /compact…) is run by the TUI, never
+      // written to the transcript as a message: queued as one it waited
+      // for the agent forever
+      const command = commandOf(message.text)
+      if (command) {
+        toast(t`Command sent: ${command}`)
+        return
+      }
       setPendingBy((all) => ({
         ...all,
         [target]: [

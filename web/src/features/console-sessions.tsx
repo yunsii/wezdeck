@@ -25,7 +25,7 @@ import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
-import { useSessionWrites } from './session-send'
+import { useFollowReplacement, useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 
@@ -141,6 +141,8 @@ export type Detail = {
   turn_output?: number
   elicitation?: Elicitation
   plan?: { excerpt?: string; awaiting_approval?: boolean }
+  /** cleared in its pane (/new, /clear): the session that took its place */
+  replaced_by?: string
 }
 
 export function sessionTone(status: string, kind?: string): LedTone {
@@ -335,6 +337,7 @@ export function SessionDetail({ id }: { id: string }) {
   const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id)
   const { sending, error, setError, retryIn, pendingRaw, send, run } =
     useSessionWrites(id)
+  useFollowReplacement(data?.replaced_by)
   const end = useRef<HTMLDivElement>(null)
   const messages: Array<Message> = data?.messages ?? []
   const pending = settle(pendingRaw, messages)

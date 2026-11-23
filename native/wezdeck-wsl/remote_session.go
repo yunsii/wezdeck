@@ -65,8 +65,11 @@ type attentionEntry struct {
 	RunningKind string `json:"running_kind"`
 	// when this turn began / the compaction started (ms; emit.sh +
 	// attention-state-lib.sh): the phone counts elapsed time from them
-	TurnStarted    int64 `json:"turn_started"`
-	CompactStarted int64 `json:"compact_started"`
+	// set on a session listed in place of an archived one whose pane was
+	// cleared (/new, /clear): the id it replaced (liveSessions)
+	ReplacedFrom   string `json:"-"`
+	TurnStarted    int64  `json:"turn_started"`
+	CompactStarted int64  `json:"compact_started"`
 	Bg             struct {
 		Tasks []bgTask `json:"tasks"`
 	} `json:"bg"`
@@ -172,9 +175,39 @@ func liveSessions() (map[string]attentionEntry, error) {
 		e.WaitingKind = ""
 		e.RunningKind = ""
 		e.TS = r.ArchivedTS
+		// /new or /clear in this pane: the hook archived the old session and
+		// pinned the new one to the pane, which has no entry until its first
+		// prompt. List the new session in its place (idle, empty, sendable)
+		// so the phone can follow it; the old id answers replaced_by.
+		if pin := panePinnedSession(r.attentionEntry); pin != "" && pin != r.SessionID {
+			if _, taken := out[pin]; !taken {
+				e.ReplacedFrom = r.SessionID
+				e.SessionID = pin
+				e.LastUserPrompt = ""
+				e.AgentName = ""
+				out[pin] = e
+			}
+			continue
+		}
 		out[r.SessionID] = e
 	}
 	return out, nil
+}
+
+// panePinnedSession: the session the pane is pinned to (tmux pane option
+// @wezterm_agent_session_id, set by the SessionStart clear hook —
+// agent-session-resolve.sh agent_session_pin_pane), "" when none.
+func panePinnedSession(e attentionEntry) string {
+	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
+		"#{@wezterm_agent_session_id}").Output()
+	if err != nil {
+		return ""
+	}
+	pin := strings.TrimSpace(string(out))
+	if !sessionIDPattern.MatchString(pin) {
+		return ""
+	}
+	return pin
 }
 
 func tmuxCmd(socket string, args ...string) *exec.Cmd {
@@ -739,6 +772,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	}
 	e, ok := entries[a.ID]
 	if !ok {
+		// cleared in its pane (/new, /clear): point the page at the session
+		// that took its place
+		for id, other := range entries {
+			if other.ReplacedFrom == a.ID {
+				return map[string]any{"v": 1, "ok": true, "id": a.ID, "replaced_by": id, "status": "idle"}, nil
+			}
+		}
 		return nil, errors.New("session not found (ended or not tracked)")
 	}
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,

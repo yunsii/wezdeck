@@ -281,6 +281,54 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+// /new or /clear: the archived session's pane is pinned to a new session
+// with no entry yet. The list shows the new one in its place, the old id
+// answers replaced_by, and the new one takes input.
+func TestClearedPaneListsTheNewSession(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "bin")
+	_ = os.MkdirAll(bin, 0o755)
+	cat, _ := exec.LookPath("cat")
+	if err := os.Symlink(cat, filepath.Join(bin, "claude")); err != nil {
+		t.Fatal(err)
+	}
+	socket := filepath.Join(dir, "s")
+	if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", "agent", filepath.Join(bin, "claude")).CombinedOutput(); err != nil {
+		t.Fatalf("tmux: %s", out)
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOut, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", "agent", "#{pane_id}").Output()
+	pane := strings.TrimSpace(string(paneOut))
+	if out, err := exec.Command("tmux", "-S", socket, "set-option", "-p", "-t", pane, "@wezterm_agent_session_id", "new-after-clear").CombinedOutput(); err != nil {
+		t.Fatalf("pin: %s", out)
+	}
+	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{}, "recent": []map[string]any{
+		{"session_id": "before-clear", "tmux_socket": socket, "tmux_session": "agent", "tmux_pane": pane,
+			"last_status": "done", "archived_ts": 100, "agent_name": "old title", "last_user_prompt": "old prompt"},
+	}})
+	_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+	time.Sleep(200 * time.Millisecond)
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != "new-after-clear" || cards[0].LastPrompt != "" || cards[0].Name != "" {
+		t.Fatalf("want the new session in place of the cleared one, got %+v", cards)
+	}
+	old, err := sessionDetail(json.RawMessage(`{"id":"before-clear"}`))
+	if err != nil || old.(map[string]any)["replaced_by"] != "new-after-clear" {
+		t.Fatalf("old id should point at the new one: %v %v", old, err)
+	}
+	if _, err := sendToSession(json.RawMessage(`{"id":"new-after-clear","text":"first message"}`)); err != nil {
+		t.Fatalf("the new session must take input: %v", err)
+	}
+}
+
 func TestPendingGrokPlanApproval(t *testing.T) {
 	dir := t.TempDir()
 	chat := filepath.Join(dir, "chat_history.jsonl")

@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type { Browser } from '@playwright/test'
+import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // Phone writes end to end (docs/remote-access.md "Writes"): enable writing,
@@ -74,7 +74,24 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
   }
 
   beforeAll(async () => {
-    tmux('new-session', '-d', '-s', 'demo', '-x', '120', '-y', '20', 'cat')
+    // `cat` named claude: echoes like cat, and an archived session on it
+    // still counts as an agent pane (the /new step below)
+    const bin = mkdtempSync(join(tmpdir(), 'wd-bin-'))
+    symlinkSync(
+      execFileSync('which', ['cat']).toString().trim(),
+      join(bin, 'claude'),
+    )
+    tmux(
+      'new-session',
+      '-d',
+      '-s',
+      'demo',
+      '-x',
+      '120',
+      '-y',
+      '20',
+      join(bin, 'claude'),
+    )
     writeFileSync(devicesFile, JSON.stringify({ approved: [], pending: [] }))
     setStatus('done')
     browser = await chromium.launch()
@@ -219,6 +236,53 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       const files = readdirSync(uploadsDir)
       expect(files.some((name) => /^img-.*\.jpg$/.test(name))).toBe(true)
     }
+
+    await followsNewSession(page, tmux, socket, setStatus)
     await context.close()
   }, 120_000)
 })
+
+/**
+ * /new in the pane: a command is not queued as a message, and once the hook
+ * has archived the old session and pinned the pane to a new one (what
+ * emit.sh pane-evict leaves: the old entry in recent[], the pane option,
+ * no entry for the new id yet), the page follows it.
+ */
+async function followsNewSession(
+  page: Page,
+  tmux: (...args: Array<string>) => string,
+  socket: string,
+  setStatus: (status: string) => void,
+) {
+  setStatus('done')
+  await page.waitForTimeout(2_500)
+  const queued = () =>
+    page
+      .getByLabel('排队中的消息')
+      .textContent({ timeout: 1_000 })
+      .catch(() => '')
+  const before = await queued()
+  await page.getByLabel('发给 Agent 的消息').fill('/new')
+  await page.getByRole('button', { name: '发送' }).click()
+  await page.getByText('已发送命令 /new').waitFor({ timeout: 10_000 })
+  expect(await queued()).toBe(before)
+  const pane = tmux('display-message', '-p', '-t', 'demo', '#{pane_id}').trim()
+  tmux('set-option', '-p', '-t', pane, '@wezterm_agent_session_id', 'demo-next')
+  writeFileSync(
+    attention,
+    JSON.stringify({
+      entries: {},
+      recent: [
+        {
+          session_id: 'demo-session',
+          tmux_socket: socket,
+          tmux_session: 'demo',
+          tmux_pane: pane,
+          last_status: 'done',
+          archived_ts: Date.now(),
+        },
+      ],
+    }),
+  )
+  await page.waitForURL('**/console/sessions/demo-next', { timeout: 20_000 })
+}
