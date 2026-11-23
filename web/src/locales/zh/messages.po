@@ -368,7 +368,7 @@ msgstr "认领"
 msgid "Clearing…"
 msgstr "处理中…"
 
-#: src/components/ui/sheet.tsx:68
+#: src/components/ui/sheet.tsx:70
 #: src/features/image-viewer.tsx:127
 msgid "Close"
 msgstr "关闭"

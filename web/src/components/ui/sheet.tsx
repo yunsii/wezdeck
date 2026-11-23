@@ -46,7 +46,9 @@ export function Sheet({
             data-testid={testId}
             data-write={write ? '' : undefined}
             className={cn(
-              'max-h-[88dvh] w-full overflow-y-auto overscroll-contain rounded-t-[20px] border-t border-brand-edge bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none md:max-w-xl',
+              // the header holds still; only the body below it scrolls, so the
+              // scrollbar starts under the title and never runs into a corner
+              'flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-[20px] border-t border-brand-edge bg-brand-deck text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none md:max-w-xl',
               '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity,scale] duration-200 ease-out data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full',
               // a desk-sized window: a centred dialog (fade + scale), not a
               // strip stuck to the bottom with a phone's grab handle
@@ -54,7 +56,7 @@ export function Sheet({
               className,
             )}
           >
-            <div className="sticky top-0 z-10 bg-brand-deck px-4 pt-2 pb-2 md:pt-4">
+            <div className="shrink-0 px-4 pt-2 pb-2 md:pt-4">
               {/* the grab handle: drag the sheet down to close it */}
               <div
                 aria-hidden
@@ -72,7 +74,9 @@ export function Sheet({
                 </Drawer.Close>
               </div>
             </div>
-            {children}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1rem)] md:mb-3">
+              {children}
+            </div>
           </Drawer.Popup>
         </Drawer.Viewport>
       </Drawer.Portal>
