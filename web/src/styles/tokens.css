@@ -6,8 +6,8 @@
    them only cover the moment before the web fonts load. */
 @theme {
   --font-sans:
-    'Inter Variable', 'Noto Sans SC Variable', 'PingFang SC', 'Microsoft YaHei',
-    system-ui, sans-serif;
+    'Inter Variable', 'Inter Fallback', 'Noto Sans SC Variable', 'PingFang SC',
+    'Microsoft YaHei', system-ui, sans-serif;
   --font-mono:
     'JetBrains Mono Variable', 'Noto Sans SC Variable', ui-monospace, monospace;
 }

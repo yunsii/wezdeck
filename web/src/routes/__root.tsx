@@ -9,6 +9,11 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import appCss from '../styles.css?url'
+// the one font file every page needs (Latin, ~48 KB): preloaded so it starts
+// with the HTML instead of after the CSS is parsed; the same hashed asset the
+// @font-face in @fontsource-variable/inter points at. CJK slices depend on
+// the page's characters, so they are left to unicode-range.
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
 import { AppI18nProvider } from '#/lib/i18n'
 import { locales } from '#/route-tree'
 import { QueryProvider } from '#/lib/query-provider'
@@ -17,7 +22,7 @@ import { themeBootstrapScript, ThemeProvider } from '#/lib/theme-provider'
 
 const fontBootstrapStyle = `
 html {
-  font-family: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family: "Inter Variable", "Inter Fallback", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   font-synthesis: none;
 }
 body {
@@ -66,6 +71,13 @@ export const Route = createRootRoute({
     links: [
       { rel: 'manifest', href: '/manifest.webmanifest' },
       { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
+      {
+        rel: 'preload',
+        href: interLatin,
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
       {
         rel: 'stylesheet',
         href: appCss,

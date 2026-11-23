@@ -171,7 +171,12 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   cache that outlives builds, so later visits fetch none. `text-spacing-trim`
   + `text-autospace` tighten full-width punctuation and space Chinese from
   Latin; tabular digits only where numbers line up (`tabular-nums`), no longer
-  page-wide.
+  page-wide. Loading follows `next/font`: the Latin Inter file (~48 KB, on
+  every page) is `<link rel=preload>`ed from `__root.tsx` (same hashed asset
+  the `@font-face` uses), and `Inter Fallback` — local Arial with next/font's
+  `size-adjust` / ascent / descent overrides for Inter — stands in until it
+  loads, so the swap does not shift the layout. CJK slices are not preloaded
+  (which ones depends on the page) and need no metric fallback.
 - Tokens: `[data-deck]` in `web/src/styles/deck.css` (light `#f6f7f9` paper /
   `#ffffff` surface / `#11151c` ink; dark `#14181f` / `#1e232c` / `#f1f3f6`),
   console only. `web/src/styles.css` only imports `web/src/styles/*.css`

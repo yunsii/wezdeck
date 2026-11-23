@@ -12,6 +12,19 @@ body,
   overflow-x: clip;
 }
 
+/* Inter's stand-in while it loads: the local Arial scaled to Inter's metrics
+   (the values next/font generates for Inter), so the swap does not shift
+   the layout. CJK needs none: every system CJK font draws 1em squares. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src:
+    local('Arial'), local('ArialMT'), local('Helvetica Neue'), local('Roboto');
+  size-adjust: 107.4%;
+  ascent-override: 90.2%;
+  descent-override: 22.48%;
+  line-gap-override: 0%;
+}
+
 html {
   font-family: var(--font-sans);
   font-synthesis: none;
