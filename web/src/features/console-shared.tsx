@@ -454,12 +454,11 @@ function OptionMenu({
 }) {
   return (
     <Popover>
+      {/* a click, not a hover: passing the pointer over it used to pop the
+          menu open and leave the button outlined */}
       <PopoverTrigger
-        openOnHover
-        delay={80}
-        closeDelay={120}
         aria-label={label}
-        className="inline-flex size-8 items-center justify-center rounded-md border border-brand-border text-brand-muted transition hover:border-brand-running hover:text-brand-text data-popup-open:border-brand-running data-popup-open:bg-brand-soft data-popup-open:text-brand-text"
+        className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted outline-none transition-colors hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running data-popup-open:bg-brand-soft data-popup-open:text-brand-text"
       >
         {icon}
       </PopoverTrigger>

@@ -23,7 +23,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 
 1. **Manifest scope is the whole site** (`id`/`scope` `/`), `start_url`
    `/console`; installed app opens the console, the landing page stays
-   reachable in-app.
+   reachable in-app (the sidebar's WezDeck mark links it). The landing page
+   uses the console's ink theme ([data-deck]): one line on what it is, 打开控制台
+   and the source, a still of the session list with the real status lights,
+   then sessions / tickets / from anywhere. Language and theme there are
+   click menus (never hover); in the console they live only in 我的 › 外观.
 2. **One route tree, layouts by width**: `<768px` phone, `768–1279px` tablet
    (split, collapsible list), `≥1280px` desktop. Fixes today's gap at
    900–1023 px (neither `max-[899px]` nor `lg:` applies).

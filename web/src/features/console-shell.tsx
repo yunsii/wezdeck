@@ -2,7 +2,6 @@ import { useLingui } from '@lingui/react/macro'
 import {
   Activity,
   GitPullRequestArrow,
-  House,
   ListTree,
   MessagesSquare,
   UserRound,
@@ -17,19 +16,12 @@ import { useTicketSync } from '#/lib/ticket-sync'
 import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
-import { useTheme } from '#/lib/theme-provider'
 import {
   RuntimeDataProvider,
   runtimeQuery,
   useRuntimeData,
 } from './console-data'
-import {
-  LanguageSwitcher,
-  StatusPill,
-  ThemeSwitcher,
-  formatDuration,
-  formatTime,
-} from './console-shared'
+import { StatusPill, formatDuration, formatTime } from './console-shared'
 import { useConsoleMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { RemoteBadge } from './remote-badge'
@@ -140,7 +132,6 @@ function useWarmSections(
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
-  const { mode: theme, setMode } = useTheme()
   // the resolved location, not the pending one: on back the title and back
   // bar must not switch before the page does, or the leaving page's
   // transition snapshot carries the next page's header
@@ -209,15 +200,21 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       </div>
       <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
         <aside className="vt-sidebar hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
-          <div className="flex items-center gap-2 px-3 py-3">
+          {/* the brand is the way home (the landing page); language and
+              theme live in 我的 › 外观, not in a second set of buttons here */}
+          <Link
+            to="/{-$locale}"
+            params={{ locale: localeParam }}
+            className="m-1.5 flex items-center gap-2 rounded-[12px] px-2 py-2 outline-none hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
+          >
             <img src="/brand-icon.svg" alt="" width="28" height="28" />
             <div>
               <p className="text-sm font-semibold">{t`WezDeck`}</p>
               <p className="text-xs text-brand-muted">
-                {mode === 'local' ? t`Runtime Console` : t`Remote`}
+                {mode === 'local' ? t`This computer` : t`Remote`}
               </p>
             </div>
-          </div>
+          </Link>
           <nav
             className="grid min-h-0 content-start gap-1.5 overflow-y-auto px-2.5"
             aria-label={t`Console navigation`}
@@ -263,18 +260,6 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               )
             })}
           </nav>
-          <div className="mt-auto flex items-center gap-2 p-3">
-            <Link
-              to="/{-$locale}"
-              params={{ locale: localeParam }}
-              aria-label={t`Deck`}
-              className="inline-flex size-8 items-center justify-center rounded-md border border-brand-border text-brand-muted transition hover:border-brand-running hover:text-brand-text"
-            >
-              <House size={15} />
-            </Link>
-            <LanguageSwitcher locale={locale} side="top" />
-            <ThemeSwitcher mode={theme} onChange={setMode} side="top" />
-          </div>
         </aside>
         <div
           ref={scroller}

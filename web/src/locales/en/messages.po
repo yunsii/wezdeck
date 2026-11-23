@@ -44,8 +44,8 @@ msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
 #: src/features/landing-example.tsx:72
-msgid "{doneCount} done"
-msgstr "{doneCount} done"
+#~ msgid "{doneCount} done"
+#~ msgstr "{doneCount} done"
 
 #: src/features/chat-tools.tsx:220
 msgid "{earlier} earlier calls"
@@ -64,8 +64,8 @@ msgid "{off} need attention"
 msgstr "{off} need attention"
 
 #: src/features/landing-example.tsx:71
-msgid "{runningCount} running"
-msgstr "{runningCount} running"
+#~ msgid "{runningCount} running"
+#~ msgstr "{runningCount} running"
 
 #: src/features/session-subagents.tsx:119
 msgid "{runningCount} subagents running"
@@ -96,12 +96,12 @@ msgid "{unread} new"
 msgstr "{unread} new"
 
 #: src/features/landing-example.tsx:71
-msgid "{waitingCount} waiting"
-msgstr "{waitingCount} waiting"
+#~ msgid "{waitingCount} waiting"
+#~ msgstr "{waitingCount} waiting"
 
 #: src/features/landing-example.tsx:150
-msgid "128 today"
-msgstr "128 today"
+#~ msgid "128 today"
+#~ msgstr "128 today"
 
 #: src/features/session-header.tsx:123
 msgid "5 h"
@@ -132,16 +132,24 @@ msgid "A headless run is still going; take over when it finishes."
 msgstr "A headless run is still going; take over when it finishes."
 
 #: src/features/landing-page.tsx:65
-msgid "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
-msgstr "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
+#~ msgid "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
+#~ msgstr "A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees."
 
 #: src/features/landing-page.tsx:181
-msgid "A local-first workbench for AI coding agents."
-msgstr "A local-first workbench for AI coding agents."
+#~ msgid "A local-first workbench for AI coding agents."
+#~ msgstr "A local-first workbench for AI coding agents."
+
+#: src/features/landing-page.tsx:56
+msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
+msgstr "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
 
 #: src/features/session-info.tsx:78
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
+
+#: src/features/landing-page.tsx:86
+msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
+msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
 
 #: src/features/ticket-thread-view.tsx:17
 msgid "A person"
@@ -171,13 +179,17 @@ msgstr "Active {active} s × 128 MB; an idle relay hibernates and is not counted
 msgid "Add"
 msgstr "Add"
 
+#: src/features/landing-page.tsx:142
+msgid "Add test ids to the error pages"
+msgstr "Add test ids to the error pages"
+
 #: src/features/landing-page.tsx:122
-msgid "After a restart, return to the same agent session and continue the work."
-msgstr "After a restart, return to the same agent session and continue the work."
+#~ msgid "After a restart, return to the same agent session and continue the work."
+#~ msgstr "After a restart, return to the same agent session and continue the work."
 
 #: src/features/landing-example.tsx:118
-msgid "Agent"
-msgstr "Agent"
+#~ msgid "Agent"
+#~ msgstr "Agent"
 
 #: src/features/session-info.tsx:40
 msgid "Agent name"
@@ -189,8 +201,8 @@ msgid "Agent sessions"
 msgstr "Agent sessions"
 
 #: src/features/landing-page.tsx:87
-msgid "Agents"
-msgstr "Agents"
+#~ msgid "Agents"
+#~ msgstr "Agents"
 
 #: src/features/console-sessions.tsx:148
 #~ msgid "Agents running in tmux on the host. Open one to read it and talk to it."
@@ -242,8 +254,8 @@ msgid "Already the latest"
 msgstr "Already the latest"
 
 #: src/features/landing-example.tsx:132
-msgid "An example. Select a session to see where you would jump back."
-msgstr "An example. Select a session to see where you would jump back."
+#~ msgid "An example. Select a session to see where you would jump back."
+#~ msgstr "An example. Select a session to see where you would jump back."
 
 #: src/features/ticket-reply.tsx:198
 msgid "Anything to add (optional)"
@@ -304,7 +316,6 @@ msgstr "Base commit"
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 
-#: src/features/landing-example.tsx:126
 #: src/features/session-info.tsx:47
 msgid "Branch"
 msgstr "Branch"
@@ -337,7 +348,6 @@ msgstr "cancel"
 msgid "Cancel (Esc)"
 msgstr "Cancel (Esc)"
 
-#: src/features/landing-page.tsx:46
 #: src/features/session-info.tsx:34
 msgid "Capabilities"
 msgstr "Capabilities"
@@ -467,11 +477,11 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:306
+#: src/features/console-shell.tsx:291
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/console-shell.tsx:223
+#: src/features/console-shell.tsx:220
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -497,8 +507,8 @@ msgid "Context compactions"
 msgstr "Context compactions"
 
 #: src/features/landing-page.tsx:91
-msgid "Control"
-msgstr "Control"
+#~ msgid "Control"
+#~ msgstr "Control"
 
 #: src/features/session-composer.tsx:75
 #: src/features/session-info.tsx:220
@@ -612,8 +622,8 @@ msgid "Decision"
 msgstr "Decision"
 
 #: src/features/console-shell.tsx:270
-msgid "Deck"
-msgstr "Deck"
+#~ msgid "Deck"
+#~ msgstr "Deck"
 
 #: src/features/console-shared.tsx:214
 msgid "Degraded"
@@ -646,7 +656,7 @@ msgstr "dev: a long-lived workstation for parallel work"
 
 #: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:404
-#: src/features/console-shell.tsx:98
+#: src/features/console-shell.tsx:90
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -659,8 +669,8 @@ msgid "Directory"
 msgstr "Directory"
 
 #: src/features/landing-example.tsx:53
-msgid "done"
-msgstr "done"
+#~ msgid "done"
+#~ msgstr "done"
 
 #: src/features/chat-tools.tsx:72
 msgid "Done"
@@ -675,8 +685,8 @@ msgid "e.g. phone-create"
 msgstr "e.g. phone-create"
 
 #: src/features/landing-page.tsx:112
-msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
-msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
+#~ msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
+#~ msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 
 #: src/features/ticket-thread-view.tsx:59
 msgid "Earlier messages are left out here; the ticket file has them all."
@@ -716,7 +726,6 @@ msgid "Endpoint"
 msgstr "Endpoint"
 
 #: src/features/console-shared.tsx:437
-#: src/features/landing-example.tsx:149
 msgid "English"
 msgstr "English"
 
@@ -726,8 +735,8 @@ msgid "Enter"
 msgstr "Enter"
 
 #: src/features/landing-page.tsx:173
-msgid "Enter Runtime Console"
-msgstr "Enter Runtime Console"
+#~ msgid "Enter Runtime Console"
+#~ msgstr "Enter Runtime Console"
 
 #: src/features/console-diagnostics.tsx:109
 #~ msgid "Entries"
@@ -750,14 +759,18 @@ msgstr "Event stream"
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 
+#: src/features/landing-page.tsx:78
+msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+
 #: src/features/landing-example.tsx:68
 #: src/features/landing-example.tsx:159
-msgid "Example"
-msgstr "Example"
+#~ msgid "Example"
+#~ msgstr "Example"
 
 #: src/features/landing-example.tsx:78
-msgid "Example agent sessions"
-msgstr "Example agent sessions"
+#~ msgid "Example agent sessions"
+#~ msgstr "Example agent sessions"
 
 #: src/features/console-collab.tsx:347
 msgid "Exit"
@@ -801,6 +814,7 @@ msgstr "Finished"
 #~ msgstr "Finished ({doneCount})"
 
 #: src/features/console-sessions.tsx:161
+#: src/features/landing-page.tsx:143
 msgid "finished its turn"
 msgstr "finished its turn"
 
@@ -824,6 +838,10 @@ msgstr "Follow-ups of this repo"
 msgid "From"
 msgstr "From"
 
+#: src/features/landing-page.tsx:85
+msgid "From anywhere"
+msgstr "From anywhere"
+
 #: src/features/console-development.tsx:406
 #~ msgid "Git"
 #~ msgstr "Git"
@@ -839,6 +857,10 @@ msgstr "Grant failed ({micError}) — retry"
 #: src/features/session-list.tsx:162
 #~ msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 #~ msgstr "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
+
+#: src/features/landing-page.tsx:82
+msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
+msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
 #: src/features/tickets-view.tsx:439
 msgid "Headless worker"
@@ -950,7 +972,6 @@ msgstr "Initial prompt"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/landing-example.tsx:143
 #: src/features/me-host.tsx:106
 #: src/features/me-host.tsx:107
 msgid "Input method"
@@ -1002,12 +1023,12 @@ msgid "Jump to your message: {text}"
 msgstr "Jump to your message: {text}"
 
 #: src/features/landing-page.tsx:103
-msgid "Keep every agent in a place you can return to."
-msgstr "Keep every agent in a place you can return to."
+#~ msgid "Keep every agent in a place you can return to."
+#~ msgstr "Keep every agent in a place you can return to."
 
 #: src/features/landing-page.tsx:92
-msgid "Keyboard first"
-msgstr "Keyboard first"
+#~ msgid "Keyboard first"
+#~ msgstr "Keyboard first"
 
 #: src/features/session-composer.tsx:304
 msgid "Keys"
@@ -1033,7 +1054,7 @@ msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:110
-#: src/features/console-shell.tsx:417
+#: src/features/console-shell.tsx:402
 #: src/features/me-host.tsx:103
 msgid "Last sample"
 msgstr "Last sample"
@@ -1111,8 +1132,8 @@ msgid "Loading…"
 msgstr "Loading…"
 
 #: src/features/landing-page.tsx:61
-msgid "Local-first control plane"
-msgstr "Local-first control plane"
+#~ msgid "Local-first control plane"
+#~ msgstr "Local-first control plane"
 
 #: src/features/console-diagnostics.tsx:197
 msgid "Log entry"
@@ -1367,8 +1388,8 @@ msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next runnin
 msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 
 #: src/features/landing-page.tsx:84
-msgid "One home for every repo"
-msgstr "One home for every repo"
+#~ msgid "One home for every repo"
+#~ msgstr "One home for every repo"
 
 #: src/features/console-development.tsx:399
 #~ msgid "One tmux session per repository family. Linked worktrees are windows inside that session."
@@ -1383,8 +1404,8 @@ msgid "Only this trace"
 msgstr "Only this trace"
 
 #: src/features/landing-page.tsx:133
-msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
-msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
+#~ msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
+#~ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 
 #: src/features/chat-images.tsx:42
 msgid "Open image"
@@ -1395,16 +1416,20 @@ msgid "Open in VS Code"
 msgstr "Open in VS Code"
 
 #: src/features/landing-page.tsx:140
-msgid "Open Runtime Console"
-msgstr "Open Runtime Console"
+#~ msgid "Open Runtime Console"
+#~ msgstr "Open Runtime Console"
 
 #: src/features/console-sessions.tsx:522
 msgid "Open settings"
 msgstr "Open settings"
 
 #: src/features/landing-page.tsx:152
-msgid "Open source, local by design"
-msgstr "Open source, local by design"
+#~ msgid "Open source, local by design"
+#~ msgstr "Open source, local by design"
+
+#: src/features/landing-page.tsx:29
+msgid "Open the console"
+msgstr "Open the console"
 
 #: src/features/console-me.tsx:53
 msgid "Open this page in the system browser first, then install it from there."
@@ -1415,8 +1440,8 @@ msgstr "Open this page in the system browser first, then install it from there."
 #~ msgstr "Open VS Code"
 
 #: src/features/landing-page.tsx:78
-msgid "Open web console"
-msgstr "Open web console"
+#~ msgid "Open web console"
+#~ msgstr "Open web console"
 
 #. placeholder {0}: result.window_name ?? ''
 #. placeholder {1}: result.tmux_session ?? ''
@@ -1441,8 +1466,8 @@ msgid "Opening…"
 msgstr "Opening…"
 
 #: src/features/landing-page.tsx:130
-msgid "Optional browser companion"
-msgstr "Optional browser companion"
+#~ msgid "Optional browser companion"
+#~ msgstr "Optional browser companion"
 
 #: src/features/console-collab-run.tsx:111
 msgid "Origin session"
@@ -1571,9 +1596,7 @@ msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:213
-#: src/features/console-shell.tsx:444
-#: src/features/landing-example.tsx:147
-#: src/features/landing-example.tsx:148
+#: src/features/console-shell.tsx:429
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
 msgid "Ready"
@@ -1607,11 +1630,11 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:217
+#: src/features/console-shell.tsx:214
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:380
+#: src/features/console-shell.tsx:365
 msgid "Remote access"
 msgstr "Remote access"
 
@@ -1701,19 +1724,19 @@ msgid "Resume / fresh hit"
 msgstr "Resume / fresh hit"
 
 #: src/features/landing-page.tsx:121
-msgid "Resume the thread"
-msgstr "Resume the thread"
+#~ msgid "Resume the thread"
+#~ msgstr "Resume the thread"
 
 #: src/features/landing-page.tsx:88
-msgid "Resumed conversations"
-msgstr "Resumed conversations"
+#~ msgid "Resumed conversations"
+#~ msgstr "Resumed conversations"
 
 #: src/features/ticket-reply.tsx:307
 msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:49
-#: src/features/console-shell.tsx:490
+#: src/features/console-shell.tsx:475
 #: src/features/me-host.tsx:87
 msgid "Retry"
 msgstr "Retry"
@@ -1723,8 +1746,8 @@ msgid "reuse reasons"
 msgstr "reuse reasons"
 
 #: src/features/landing-example.tsx:144
-msgid "Rime"
-msgstr "Rime"
+#~ msgid "Rime"
+#~ msgstr "Rime"
 
 #: src/features/me-host.tsx:34
 msgid "Rime collector"
@@ -1755,7 +1778,6 @@ msgid "run finished"
 msgstr "run finished"
 
 #: src/features/console-collab.tsx:459
-#: src/features/landing-example.tsx:51
 #: src/features/tickets-view.tsx:110
 msgid "running"
 msgstr "running"
@@ -1791,7 +1813,6 @@ msgstr "Runs and cost"
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
-#: src/features/landing-example.tsx:141
 #: src/features/me-host.tsx:99
 msgid "Runtime"
 msgstr "Runtime"
@@ -1807,12 +1828,12 @@ msgstr "Runtime API"
 
 #: src/features/console-shell.tsx:217
 #: src/features/landing-page.tsx:47
-msgid "Runtime Console"
-msgstr "Runtime Console"
+#~ msgid "Runtime Console"
+#~ msgstr "Runtime Console"
 
 #: src/features/landing-page.tsx:131
-msgid "Runtime Console shows the local signals."
-msgstr "Runtime Console shows the local signals."
+#~ msgid "Runtime Console shows the local signals."
+#~ msgstr "Runtime Console shows the local signals."
 
 #: src/features/console-diagnostics.tsx:103
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
@@ -1831,8 +1852,8 @@ msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "Same as Ctrl+X in the Alt+/ picker"
 
 #: src/features/landing-example.tsx:170
-msgid "Sample signals. The live console reads your local Runtime."
-msgstr "Sample signals. The live console reads your local Runtime."
+#~ msgid "Sample signals. The live console reads your local Runtime."
+#~ msgstr "Sample signals. The live console reads your local Runtime."
 
 #: src/features/console-collab.tsx:426
 msgid "Scope"
@@ -1846,17 +1867,17 @@ msgstr "Scope"
 msgid "Secondary"
 msgstr "Secondary"
 
-#: src/features/console-shell.tsx:318
+#: src/features/console-shell.tsx:303
 msgid "Sections"
 msgstr "Sections"
 
 #: src/features/landing-page.tsx:69
-msgid "See the workbench"
-msgstr "See the workbench"
+#~ msgid "See the workbench"
+#~ msgstr "See the workbench"
 
 #: src/features/landing-page.tsx:116
-msgid "See who needs you"
-msgstr "See who needs you"
+#~ msgid "See who needs you"
+#~ msgstr "See who needs you"
 
 #: src/features/console-development.tsx:377
 #~ msgid "Select a worktree to see its agent status."
@@ -1906,7 +1927,8 @@ msgstr "Session info"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:83
+#: src/features/console-shell.tsx:75
+#: src/features/landing-page.tsx:77
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
 msgctxt "nav"
@@ -1922,7 +1944,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 #~ msgstr "Sessions waiting for you"
 
 #: src/features/console-me.tsx:341
-#: src/features/console-shell.tsx:102
+#: src/features/console-shell.tsx:94
 msgid "Settings"
 msgstr "Settings"
 
@@ -1950,7 +1972,7 @@ msgstr "showing the last copy"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/console-shell.tsx:289
+#: src/features/console-shell.tsx:274
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -1976,8 +1998,8 @@ msgid "Source"
 msgstr "Source"
 
 #: src/features/landing-page.tsx:155
-msgid "Start with the keyboard-first control plane and add the browser view when you need it."
-msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
+#~ msgid "Start with the keyboard-first control plane and add the browser view when you need it."
+#~ msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
 
 #: src/features/ticket-new.tsx:209
 msgid "Start working on it now (a headless run on the host)"
@@ -2008,7 +2030,6 @@ msgid "State"
 msgstr "State"
 
 #: src/features/console-collab.tsx:424
-#: src/features/landing-example.tsx:122
 #: src/features/me-host.tsx:125
 #: src/features/session-info.tsx:62
 #: src/features/session-list.tsx:185
@@ -2119,8 +2140,8 @@ msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
 #: src/features/landing-page.tsx:102
-msgid "The workbench"
-msgstr "The workbench"
+#~ msgid "The workbench"
+#~ msgstr "The workbench"
 
 #: src/features/console-me.tsx:259
 #: src/features/console-me.tsx:261
@@ -2131,6 +2152,7 @@ msgstr "Theme"
 
 #: src/features/console-me.tsx:188
 #: src/features/console-me.tsx:352
+#: src/features/console-shell.tsx:214
 msgid "This computer"
 msgstr "This computer"
 
@@ -2150,7 +2172,7 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-shell.tsx:487
+#: src/features/console-shell.tsx:472
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -2169,7 +2191,7 @@ msgstr "Ticket"
 
 #: src/features/console-activity.tsx:206
 #: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:93
+#: src/features/console-shell.tsx:85
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -2177,7 +2199,8 @@ msgstr "Ticket activity"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-shell.tsx:88
+#: src/features/console-shell.tsx:80
+#: src/features/landing-page.tsx:81
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2192,6 +2215,10 @@ msgstr "Tickets appear here when ticket files or runs cross-repo work."
 #: src/features/console-me.tsx:201
 #~ msgid "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
+
+#: src/features/landing-page.tsx:135
+msgid "Tidy up the phone interactions"
+msgstr "Tidy up the phone interactions"
 
 #: src/features/console-diagnostics.tsx:316
 msgid "Time"
@@ -2329,7 +2356,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:116
-#: src/features/console-shell.tsx:423
+#: src/features/console-shell.tsx:408
 #: src/features/me-host.tsx:102
 msgid "Uptime"
 msgstr "Uptime"
@@ -2365,7 +2392,7 @@ msgstr "Verification"
 msgid "Version"
 msgstr "Version"
 
-#: src/features/landing-page.tsx:165
+#: src/features/landing-page.tsx:67
 msgid "View the source"
 msgstr "View the source"
 
@@ -2374,10 +2401,10 @@ msgid "VS Code window focused"
 msgstr "VS Code window focused"
 
 #: src/features/landing-example.tsx:52
-msgid "waiting"
-msgstr "waiting"
+#~ msgid "waiting"
+#~ msgstr "waiting"
 
-#: src/features/console-shell.tsx:444
+#: src/features/console-shell.tsx:429
 msgid "Waiting"
 msgstr "Waiting"
 
@@ -2406,6 +2433,7 @@ msgid "Waiting for your answer"
 msgstr "Waiting for your answer"
 
 #: src/features/console-sessions.tsx:151
+#: src/features/landing-page.tsx:129
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
@@ -2435,10 +2463,10 @@ msgstr "Waiting on you"
 #~ msgstr "Waiting on you {mine}"
 
 #: src/features/landing-page.tsx:117
-msgid "Waiting, running, and done stay visible, so the next jump is obvious."
-msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
+#~ msgid "Waiting, running, and done stay visible, so the next jump is obvious."
+#~ msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/console-shell.tsx:392
+#: src/features/console-shell.tsx:377
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -2471,15 +2499,14 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:215
-#: src/features/console-shell.tsx:301
-#: src/features/landing-page.tsx:63
+#: src/features/console-shell.tsx:212
+#: src/features/console-shell.tsx:286
 msgid "WezDeck"
 msgstr "WezDeck"
 
 #: src/features/landing-page.tsx:105
-msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
-msgstr "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
+#~ msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
+#~ msgstr "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 
 #: src/features/console-activity.tsx:207
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
@@ -2509,18 +2536,22 @@ msgstr "What you saw"
 msgid "Where it runs"
 msgstr "Where it runs"
 
+#: src/features/landing-page.tsx:128
+msgid "Which table should the weekly report read?"
+msgstr "Which table should the weekly report read?"
+
 #: src/features/console-development.tsx:72
 #: src/features/console-development.tsx:100
 #~ msgid "Window focused"
 #~ msgstr "Window focused"
 
 #: src/features/landing-example.tsx:108
-msgid "work"
-msgstr "work"
+#~ msgid "work"
+#~ msgstr "work"
 
 #: src/features/landing-page.tsx:45
-msgid "Workbench"
-msgstr "Workbench"
+#~ msgid "Workbench"
+#~ msgstr "Workbench"
 
 #: src/features/ticket-thread-view.tsx:14
 msgid "Worker"
@@ -2539,6 +2570,7 @@ msgid "Worker requests"
 msgstr "Worker requests"
 
 #: src/features/console-sessions.tsx:157
+#: src/features/landing-page.tsx:136
 msgid "working"
 msgstr "working"
 
@@ -2552,12 +2584,12 @@ msgstr "Working"
 #~ msgstr "Working {runningCount}"
 
 #: src/features/landing-page.tsx:83
-msgid "Workspace"
-msgstr "Workspace"
+#~ msgid "Workspace"
+#~ msgstr "Workspace"
 
 #: src/features/landing-page.tsx:111
-msgid "Workspace, worktree, agent"
-msgstr "Workspace, worktree, agent"
+#~ msgid "Workspace, worktree, agent"
+#~ msgstr "Workspace, worktree, agent"
 
 #: src/features/console-development.tsx:146
 #~ msgid "Workspaces"
@@ -2590,7 +2622,6 @@ msgstr "Writing is not enabled on this device yet (Settings › Write access)."
 #~ msgid "Writing is not enabled on this phone yet (Settings › Phone writing)."
 #~ msgstr "Writing is not enabled on this phone yet (Settings › Phone writing)."
 
-#: src/features/landing-example.tsx:142
 #: src/features/me-host.tsx:37
 #: src/features/me-host.tsx:123
 msgid "WSL bridge"
@@ -2609,8 +2640,8 @@ msgid "You (initiator)"
 msgstr "You (initiator)"
 
 #: src/features/landing-page.tsx:153
-msgid "Your agents. Your worktrees. Your machine."
-msgstr "Your agents. Your worktrees. Your machine."
+#~ msgid "Your agents. Your worktrees. Your machine."
+#~ msgstr "Your agents. Your worktrees. Your machine."
 
 #: src/features/ticket-reply.tsx:199
 msgid "Your decision, extra context, or an answer to the challenge"

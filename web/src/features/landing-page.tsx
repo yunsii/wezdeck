@@ -1,204 +1,183 @@
+// The landing page, in the console's ink theme ([data-deck]): what WezDeck
+// is in one line, one way in (the console) and the source, a still of the
+// session list with the console's own status lights, and the three things it
+// does — sessions, tickets, from anywhere. No marketing chrome: no eyebrow
+// labels, no capital-letter captions, no second copy of the same CTA.
 import { useLingui } from '@lingui/react/macro'
-import {
-  ArrowRight,
-  Command,
-  GitBranch,
-  Keyboard,
-  MonitorCog,
-  Radio,
-  Zap,
-} from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { ArrowRight, GitBranch } from 'lucide-react'
 
+import { Led } from '#/components/deck/led'
+import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { useTheme } from '#/lib/theme-provider'
-
 import { LanguageSwitcher, ThemeSwitcher } from './console-shared'
-import { ConsoleExample, WorkbenchExample } from './landing-example'
+
+const SOURCE = 'https://github.com/yunsii/wezterm-config'
 
 export function LandingPage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const { mode, setMode } = useTheme()
   const localeParam = locale === 'en' ? undefined : locale
-
+  const console_ = (
+    <Link
+      to="/{-$locale}/console"
+      params={{ locale: localeParam }}
+      className="key-press inline-flex min-h-11 items-center gap-2 rounded-[12px] bg-brand-text px-5 text-[15px] font-semibold text-brand-deck"
+    >
+      {t`Open the console`}
+      <ArrowRight size={16} aria-hidden />
+    </Link>
+  )
   return (
-    <main className="landing-shell">
-      <header className="landing-nav">
-        <div className="landing-container flex items-center justify-between gap-4 py-5">
-          <Link
-            to="/{-$locale}"
-            params={{ locale: localeParam }}
-            className="landing-brand"
-          >
-            <img
-              className="landing-brand-mark"
-              src="/brand-icon.svg"
-              alt=""
-              width="30"
-              height="30"
-            />
-            <span>WezDeck</span>
-          </Link>
-          <div className="flex items-center gap-8">
-            <nav className="hidden items-center gap-6 text-sm text-brand-muted md:flex">
-              <a href="#deck">{t`Workbench`}</a>
-              <a href="#capabilities">{t`Capabilities`}</a>
-              <a href="#console">{t`Runtime Console`}</a>
-            </nav>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher locale={locale} />
-              <ThemeSwitcher mode={mode} onChange={setMode} />
-            </div>
-          </div>
+    <main data-deck className="min-h-dvh bg-brand-deck text-brand-text">
+      <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
+        <Link
+          to="/{-$locale}"
+          params={{ locale: localeParam }}
+          className="inline-flex items-center gap-2.5 text-[16px] font-semibold"
+        >
+          <img src="/brand-icon.svg" alt="" width="28" height="28" />
+          WezDeck
+        </Link>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher locale={locale} />
+          <ThemeSwitcher mode={mode} onChange={setMode} />
         </div>
       </header>
 
-      <section id="deck" className="landing-hero landing-container">
-        <div className="landing-hero-copy">
-          <p className="landing-eyebrow">
-            <span className="landing-eyebrow-dot" />
-            {t`Local-first control plane`}
+      <section className="mx-auto grid max-w-5xl items-center gap-10 px-5 pt-10 pb-16 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:pt-20">
+        <div className="grid content-start gap-5">
+          <h1 className="text-[44px] leading-none font-bold tracking-tight md:text-[64px]">
+            WezDeck
+          </h1>
+          <p className="max-w-xl text-[17px] leading-relaxed text-brand-muted md:text-[19px]">
+            {t`A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone.`}
           </p>
-          <h1>{t`WezDeck`}</h1>
-          <p className="landing-lede">
-            {t`A local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees.`}
-          </p>
-          <div className="landing-actions">
-            <a href="#capabilities" className="landing-primary-action">
-              {t`See the workbench`}
-              <ArrowRight size={17} />
+          <div className="flex flex-wrap items-center gap-3">
+            {console_}
+            <a
+              href={SOURCE}
+              target="_blank"
+              rel="noreferrer"
+              className="key-press inline-flex min-h-11 items-center gap-2 rounded-[12px] border border-brand-edge bg-brand-surface px-4 text-[15px] font-medium"
+            >
+              <GitBranch size={16} aria-hidden />
+              {t`View the source`}
             </a>
-            <Link
-              to="/{-$locale}/console"
-              params={{ locale: localeParam }}
-              className="landing-secondary-action"
-            >
-              <MonitorCog size={16} />
-              {t`Open web console`}
-            </Link>
           </div>
-          <dl className="landing-proof-row">
-            <div>
-              <dt>{t`Workspace`}</dt>
-              <dd>{t`One home for every repo`}</dd>
-            </div>
-            <div>
-              <dt>{t`Agents`}</dt>
-              <dd>{t`Resumed conversations`}</dd>
-            </div>
-            <div>
-              <dt>{t`Control`}</dt>
-              <dd>{t`Keyboard first`}</dd>
-            </div>
-          </dl>
         </div>
-
-        <WorkbenchExample />
+        <SessionStill />
       </section>
 
-      <section id="capabilities" className="landing-section landing-container">
-        <div className="landing-section-heading">
-          <p className="landing-eyebrow">{t`The workbench`}</p>
-          <h2>{t`Keep every agent in a place you can return to.`}</h2>
-          <p>
-            {t`WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane.`}
-          </p>
-        </div>
-        <div className="landing-feature-grid">
-          <FeatureTile
-            icon={<MonitorCog size={20} />}
-            title={t`Workspace, worktree, agent`}
-            body={t`Each repository, linked worktree, and agent session keeps a place you can jump back to.`}
+      <section className="border-t border-brand-edge bg-brand-surface">
+        <div className="mx-auto grid max-w-5xl gap-8 px-5 py-14 md:grid-cols-3 md:gap-10">
+          <Point
+            title={t({ message: 'Sessions', context: 'nav' })}
+            body={t`Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone.`}
           />
-          <FeatureTile
-            icon={<Radio size={20} />}
-            title={t`See who needs you`}
-            body={t`Waiting, running, and done stay visible, so the next jump is obvious.`}
+          <Point
+            title={t`Tickets`}
+            body={t`Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you.`}
           />
-          <FeatureTile
-            icon={<Keyboard size={20} />}
-            title={t`Resume the thread`}
-            body={t`After a restart, return to the same agent session and continue the work.`}
+          <Point
+            title={t`From anywhere`}
+            body={t`A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host.`}
           />
         </div>
       </section>
 
-      <section id="console" className="landing-band">
-        <div className="landing-container landing-companion">
-          <div className="landing-companion-copy">
-            <p className="landing-eyebrow">{t`Optional browser companion`}</p>
-            <h2>{t`Runtime Console shows the local signals.`}</h2>
-            <p>
-              {t`Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal.`}
-            </p>
-            <Link
-              to="/{-$locale}/console"
-              params={{ locale: localeParam }}
-              className="landing-primary-action"
-            >
-              {t`Open Runtime Console`}
-              <ArrowRight size={17} />
-            </Link>
-          </div>
-          <ConsoleExample />
-        </div>
-      </section>
-
-      <section className="landing-final landing-container">
-        <div className="landing-final-icon">
-          <Command size={22} />
-        </div>
-        <p className="landing-eyebrow">{t`Open source, local by design`}</p>
-        <h2>{t`Your agents. Your worktrees. Your machine.`}</h2>
-        <p>
-          {t`Start with the keyboard-first control plane and add the browser view when you need it.`}
-        </p>
-        <div className="landing-actions">
-          <a
-            href="https://github.com/yunsii/wezterm-config"
-            className="landing-primary-action"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <GitBranch size={16} />
-            {t`View the source`}
-          </a>
-          <Link
-            to="/{-$locale}/console"
-            params={{ locale: localeParam }}
-            className="landing-secondary-action"
-          >
-            <Zap size={17} />
-            {t`Enter Runtime Console`}
-          </Link>
-        </div>
-      </section>
-
-      <footer className="landing-footer">
-        <div className="landing-container flex flex-wrap items-center justify-between gap-3 py-6">
-          <span>WezDeck</span>
-          <span>{t`A local-first workbench for AI coding agents.`}</span>
-        </div>
+      <footer className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-8 text-[13px] text-brand-label">
+        <span>WezDeck</span>
+        <a
+          href={SOURCE}
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-brand-text"
+        >
+          github.com/yunsii/wezterm-config
+        </a>
       </footer>
     </main>
   )
 }
 
-function FeatureTile({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode
-  title: string
-  body: string
-}) {
+function Point({ title, body }: { title: string; body: string }) {
   return (
-    <article className="landing-feature-tile">
-      <div className="landing-feature-icon">{icon}</div>
-      <h3>{title}</h3>
-      <p>{body}</p>
+    <article className="grid content-start gap-2">
+      <h2 className="text-[17px] font-semibold">{title}</h2>
+      <p className="text-[15px] leading-relaxed text-brand-muted">{body}</p>
     </article>
+  )
+}
+
+/** a still of the 会话 list: the console's own rows and lights, not a mock-up style */
+function SessionStill() {
+  const { t } = useLingui()
+  const rows: Array<{
+    tone: LedTone
+    title: string
+    prompt: string
+    state: string
+    tags: Array<string>
+  }> = [
+    {
+      tone: 'waiting',
+      title: 'team-stat',
+      prompt: t`Which table should the weekly report read?`,
+      state: t`waiting for your confirmation`,
+      tags: ['claude', 'dev-report'],
+    },
+    {
+      tone: 'running',
+      title: 'wezterm-config',
+      prompt: t`Tidy up the phone interactions`,
+      state: t`working`,
+      tags: ['claude', 'master'],
+    },
+    {
+      tone: 'done',
+      title: 'coco-platform',
+      prompt: t`Add test ids to the error pages`,
+      state: t`finished its turn`,
+      tags: ['codex', 'task-e2e'],
+    },
+  ]
+  return (
+    <figure
+      aria-hidden
+      className="overflow-hidden rounded-[18px] border border-brand-edge bg-brand-surface shadow-[0_18px_50px_-24px_rgb(0_0_0/0.35)]"
+    >
+      <ul>
+        {rows.map((row) => (
+          <li
+            key={row.title}
+            className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-b border-brand-edge px-4 py-3.5 last:border-b-0"
+          >
+            <span className="pt-1">
+              <Led tone={row.tone} size={11} />
+            </span>
+            <span className="truncate text-[15px] font-semibold">
+              {row.title}
+            </span>
+            <span className="col-start-2 truncate text-[14px] text-brand-muted">
+              {row.prompt}
+            </span>
+            <span className="col-start-2 flex flex-wrap gap-1.5 text-[12px] text-brand-label">
+              <span>{row.state}</span>
+              {row.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-brand-edge px-2"
+                >
+                  {tag}
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </figure>
   )
 }
