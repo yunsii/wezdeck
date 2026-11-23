@@ -19,6 +19,10 @@ msgstr "· summary"
 msgid "(pick any)"
 msgstr "(pick any)"
 
+#: src/features/console-sessions.tsx:152
+msgid "{bg} background tasks running"
+msgstr "{bg} background tasks running"
+
 #: src/features/chat-thread.tsx:416
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
@@ -860,13 +864,18 @@ msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
 
+#: src/features/console-sessions.tsx:154
+msgctxt "session status"
+msgid "Idle"
+msgstr "Idle"
+
 #: src/features/session-list.tsx:178
 #~ msgid "Idle {idleCount}"
 #~ msgstr "Idle {idleCount}"
 
 #: src/features/console-sessions.tsx:154
-msgid "idle, you can send"
-msgstr "idle, you can send"
+#~ msgid "idle, you can send"
+#~ msgstr "idle, you can send"
 
 #: src/features/chat-images.tsx:49
 msgid "Image"
@@ -2230,8 +2239,8 @@ msgid "Try a different trace, category, or level."
 msgstr "Try a different trace, category, or level."
 
 #: src/features/console-sessions.tsx:152
-msgid "turn finished, {bg} background tasks running; you can send"
-msgstr "turn finished, {bg} background tasks running; you can send"
+#~ msgid "turn finished, {bg} background tasks running; you can send"
+#~ msgstr "turn finished, {bg} background tasks running; you can send"
 
 #: src/features/session-composer.tsx:240
 msgid "Turn on write access in Settings to send these keys"

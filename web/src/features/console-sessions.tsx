@@ -149,9 +149,9 @@ export function useStatusText() {
     kind
       ? t`waiting for your confirmation`
       : status === 'running' && runningKind === 'background'
-        ? t`turn finished, ${bg} background tasks running; you can send`
+        ? t`${bg} background tasks running`
         : status === 'idle'
-          ? t`idle, you can send`
+          ? t({ message: 'Idle', context: 'session status' })
           : status === 'running'
             ? t`working`
             : status === 'waiting'

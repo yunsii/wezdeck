@@ -19,6 +19,10 @@ msgstr "· 摘要"
 msgid "(pick any)"
 msgstr "（可多选）"
 
+#: src/features/console-sessions.tsx:152
+msgid "{bg} background tasks running"
+msgstr "{bg} 个后台任务在跑"
+
 #: src/features/chat-thread.tsx:416
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
@@ -860,13 +864,18 @@ msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
 
+#: src/features/console-sessions.tsx:154
+msgctxt "session status"
+msgid "Idle"
+msgstr "空闲"
+
 #: src/features/session-list.tsx:178
 #~ msgid "Idle {idleCount}"
 #~ msgstr "空闲 {idleCount}"
 
 #: src/features/console-sessions.tsx:154
-msgid "idle, you can send"
-msgstr "空闲，可以发消息"
+#~ msgid "idle, you can send"
+#~ msgstr "空闲，可以发消息"
 
 #: src/features/chat-images.tsx:49
 msgid "Image"
@@ -2230,8 +2239,8 @@ msgid "Try a different trace, category, or level."
 msgstr "请尝试其他 trace、分类或级别。"
 
 #: src/features/console-sessions.tsx:152
-msgid "turn finished, {bg} background tasks running; you can send"
-msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
+#~ msgid "turn finished, {bg} background tasks running; you can send"
+#~ msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
 #: src/features/session-composer.tsx:240
 msgid "Turn on write access in Settings to send these keys"
