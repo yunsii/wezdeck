@@ -178,7 +178,7 @@ const tool =
  * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
  * are not here: questions and plans get their own tap targets on the page
  * (session-elicitation.tsx, permission keys), which is where they belong;
- * so does Claude Code's Ctrl+B — 转到后台 on the working line, shown only
+ * so does Claude Code's Ctrl+B — 转到后台 beside the running tool group, shown only
  * while a foreground command or subagent runs (chat-thread.tsx).
  */
 function useQuickKeys() {

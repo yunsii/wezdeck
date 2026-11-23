@@ -321,7 +321,7 @@ function useSessionDetail(id: string) {
 
 /**
  * Claude Code's Ctrl+B (the running foreground command / subagent goes on
- * in the background), offered on the working line when this device writes.
+ * in the background), offered beside the running tool group when this device writes.
  */
 const toBackground = (
   data: Detail | undefined,

@@ -249,7 +249,7 @@ const BACKGROUNDABLE = new Set(['Bash', 'Agent', 'Task'])
 /**
  * The agent waits on a foreground command or subagent: the newest call is
  * still out, is one Ctrl+B can move to the background, and did not ask to
- * run there already. That is when the working line offers 转到后台.
+ * run there already. That is when its tool group offers 转到后台.
  */
 export function foregroundCall(messages: Array<Message>) {
   const last = messages.at(-1)
@@ -291,14 +291,7 @@ export type Activity = {
  * call is out (it used to swap between a dots bubble and a bare line on
  * every tool call).
  */
-function Typing({
-  activity,
-  onBackground,
-}: {
-  activity?: Activity
-  /** a foreground command / subagent runs: send Ctrl+B (to background) */
-  onBackground?: () => void
-}) {
+function Typing({ activity }: { activity?: Activity }) {
   const { t } = useLingui()
   const compacting = activity?.compactSince !== undefined
   const from = activity?.compactSince ?? activity?.since
@@ -336,20 +329,29 @@ function Typing({
           ) : null}
         </span>
       </div>
-      {onBackground ? (
-        <Button
-          variant="plain"
-          type="button"
-          data-write
-          data-testid="to-background"
-          title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
-          onClick={onBackground}
-          className="inline-flex h-7 shrink-0 items-center rounded-full bg-brand-surface px-2.5 text-[12px] text-brand-text"
-        >
-          {t`Run in background`}
-        </Button>
-      ) : null}
     </div>
+  )
+}
+
+/**
+ * 转到后台, beside the running call it acts on (not on the working line far
+ * below): Claude Code's Ctrl+B — the command or subagent keeps going in the
+ * background and the agent carries on.
+ */
+function ToBackground({ onClick }: { onClick: () => void }) {
+  const { t } = useLingui()
+  return (
+    <Button
+      variant="plain"
+      type="button"
+      data-write
+      data-testid="to-background"
+      title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
+      onClick={onClick}
+      className="mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full bg-brand-surface px-2.5 text-[12px] text-brand-text"
+    >
+      {t`Run in background`}
+    </Button>
   )
 }
 
@@ -399,17 +401,28 @@ export function ChatThread({
     baseline.current !== null && start + index >= baseline.current
   const renderItem = (item: Item, position: number, at: number) => {
     const stream = at === effective
-    if (item.kind === 'tools')
-      return (
+    if (item.kind === 'tools') {
+      const live = busy && position === items.length - 1
+      const run = (
         <ToolGroup
           key={`t${at}`}
           tools={item.tools}
           fresh={isFresh(item.index)}
           stream={stream}
-          live={busy && position === items.length - 1}
+          live={live}
           onShown={stream ? () => advance(at + item.tools.length) : undefined}
         />
       )
+      // the running run's newest call is a foreground Bash / subagent: offer
+      // 转到后台 right beside it
+      if (!live || !onBackground || !foregroundCall(item.tools)) return run
+      return (
+        <div className="flex min-w-0 items-start gap-2">
+          <div className="min-w-0 flex-1">{run}</div>
+          <ToBackground onClick={onBackground} />
+        </div>
+      )
+    }
     if (item.message.role === 'system') {
       if (item.message.kind === 'slash')
         return (
@@ -472,14 +485,7 @@ export function ChatThread({
       />
       {/* last: the working line says what the agent does now, below
           everything in the thread — queued messages included */}
-      {busy && effective >= end ? (
-        <Typing
-          activity={activity}
-          onBackground={
-            onBackground && foregroundCall(messages) ? onBackground : undefined
-          }
-        />
-      ) : null}
+      {busy && effective >= end ? <Typing activity={activity} /> : null}
     </SessionIdContext.Provider>
   )
 }
