@@ -72,9 +72,16 @@ same way as `POST /api/v1/remote/<action>` with a JSON object body
 `todo`, `clear`, `session.new`, `ticket.new`) into `runWrite`
 (`remote_write.go`) — the very function the relay calls after
 `verifyWrite`, so every guard inside the actions applies — with no device
-key: the Runtime listens on loopback and answers 403 to an origin outside its
-allowlist (415 to a non-JSON body, so a form post from another page cannot
-write), the trust its other host actions (VS Code, focus) already run on.
+key: the Runtime listens on loopback and answers only a loopback `Host`
+(`127.0.0.1` / `localhost` / `[::1]` on its port; anything else 421 — a DNS
+rebinding page sends no Origin on its same-origin GETs), 403 to an origin
+outside its allowlist, and takes writes only with an `Origin` that is
+allowlisted **and not loopback**: the production console writes, a local dev
+server (`localhost:3000`, any project's) only reads (`IsWriteOriginAllowed`).
+415 to a non-JSON body (a form post cannot write), 400 past 256 KB before
+the body is read. Writes use their own bridge connection with a 75 s timeout
+(the page waits 80 s), so a slow `ticket.new` neither blocks reads nor is
+reported failed and retried into a duplicate.
 Each write leaves `event=write via=local device=local` in `relay.log` (the
 bridge process appends there; `relayLogf`). The web's `hostRead` /
 `hostWrite` try the Runtime first and fall back to the remote link

@@ -440,7 +440,10 @@ export async function hostWrite(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(args),
     },
-    15_000,
+    // past the Runtime's own write timeout (75 s; the ticket CLI takes up
+    // to 60 s): giving up first said "failed" while the write went on, and
+    // a retry made a second ticket
+    80_000,
   )
   if (
     result &&

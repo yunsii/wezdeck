@@ -40,10 +40,21 @@ internal sealed class WslBridge : IDisposable
             var stdin = process.StandardInput.BaseStream;
             stdin.Write(frame);
             stdin.Flush();
-            if (!TryRead(stdout, timeoutMs, out var body))
+            // A blocking pipe read never looked at its deadline: read on a
+            // worker and stop waiting at the timeout. Stopping the process
+            // closes the pipe, which ends the stranded read.
+            var read = Task.Run(() => ReadFrame(stdout));
+            if (!read.Wait(timeoutMs))
             {
                 Stop();
+                _ = read.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
                 throw new IOException("wsl bridge timed out");
+            }
+            var body = read.Result;
+            if (body == null)
+            {
+                Stop();
+                throw new IOException("wsl bridge closed");
             }
             using var document = JsonDocument.Parse(body);
             var root = document.RootElement;
@@ -120,27 +131,21 @@ internal sealed class WslBridge : IDisposable
         return frame;
     }
 
-    private static bool TryRead(Stream stream, int timeoutMs, out byte[] body)
+    private static byte[]? ReadFrame(Stream stream)
     {
-        body = Array.Empty<byte>();
-        var head = ReadExact(stream, 4, timeoutMs);
-        if (head == null) return false;
+        var head = ReadExact(stream, 4);
+        if (head == null) return null;
         var size = BinaryPrimitives.ReadInt32LittleEndian(head);
-        if (size < 0 || size > 8 * 1024 * 1024) return false;
-        var payload = ReadExact(stream, size, timeoutMs);
-        if (payload == null) return false;
-        body = payload;
-        return true;
+        if (size < 0 || size > 8 * 1024 * 1024) return null;
+        return ReadExact(stream, size);
     }
 
-    private static byte[]? ReadExact(Stream stream, int size, int timeoutMs)
+    private static byte[]? ReadExact(Stream stream, int size)
     {
         var buffer = new byte[size];
         var offset = 0;
-        var deadline = Environment.TickCount64 + timeoutMs;
         while (offset < size)
         {
-            if (Environment.TickCount64 > deadline) return null;
             var read = stream.Read(buffer, offset, size - offset);
             if (read == 0) return null;
             offset += read;

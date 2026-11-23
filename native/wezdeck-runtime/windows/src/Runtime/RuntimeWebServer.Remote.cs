@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace WezDeck.Runtime;
 
@@ -44,6 +45,14 @@ internal sealed partial class RuntimeWebServer
             await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "not_found" });
             return true;
         }
+        // the production console only: no Origin (curl, a script) or a
+        // loopback dev origin cannot write (IsWriteOriginAllowed)
+        if (!IsWriteOriginAllowed(context.Request.Headers.Origin.ToString()))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "writes are not allowed from this origin" });
+            return true;
+        }
         // JSON only: a form post (no CORS preflight) from another page cannot write
         if (!(context.Request.ContentType ?? string.Empty).StartsWith("application/json", StringComparison.OrdinalIgnoreCase))
         {
@@ -55,12 +64,22 @@ internal sealed partial class RuntimeWebServer
         JsonElement remoteArgs;
         try
         {
+            // cap the body before reading it (Kestrel's default is 30 MB, and
+            // the length check after ReadToEnd counted UTF-16 chars)
+            if (context.Request.ContentLength > RemoteWriteMaxBytes) throw new JsonException("body too large");
+            var limit = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+            if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = RemoteWriteMaxBytes;
             using var reader = new StreamReader(context.Request.Body);
             var raw = await reader.ReadToEndAsync();
-            if (raw.Length > RemoteWriteMaxBytes) throw new JsonException("body too large");
             using var document = JsonDocument.Parse(string.IsNullOrEmpty(raw) ? "{}" : raw);
             if (document.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("body must be an object");
             remoteArgs = document.RootElement.Clone();
+        }
+        catch (BadHttpRequestException)
+        {
+            context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "body too large" });
+            return true;
         }
         catch (JsonException exception)
         {
@@ -69,7 +88,7 @@ internal sealed partial class RuntimeWebServer
             return true;
         }
 
-        await WriteJsonAsync(context, ReadBridge("remote", remoteAction, remoteArgs));
+        await WriteJsonAsync(context, ReadBridge("remote", remoteAction, remoteArgs, write: true));
         return true;
     }
 

@@ -28,6 +28,10 @@ internal sealed partial class RuntimeWebServer : IDisposable
     private object? workspaceCatalog;
     private long workspaceCatalogAtMs;
     private readonly WslBridge wslBridge;
+    // writes on their own connection: a ticket.new running its CLI for up
+    // to 60 s held the one bridge lock, and every read (session polls,
+    // worktree, workspaces) waited behind it
+    private readonly WslBridge writeBridge;
 
     public RuntimeWebServer(
         RuntimeConfig config,
@@ -42,6 +46,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
         this.actionDispatcher = actionDispatcher;
         this.vscodeProvider = vscodeProvider;
         wslBridge = new WslBridge(ResolveWslDistro, ResolveWslUser, () => Path.GetDirectoryName(config.RuntimeDir) ?? config.RuntimeDir, ReadRepoRoot);
+        writeBridge = new WslBridge(ResolveWslDistro, ResolveWslUser, () => Path.GetDirectoryName(config.RuntimeDir) ?? config.RuntimeDir, ReadRepoRoot);
     }
 
     public bool IsReady { get; private set; }
@@ -89,6 +94,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
 
         IsReady = false;
         wslBridge.Dispose();
+        writeBridge.Dispose();
         stopSource.Cancel();
         try
         {
@@ -110,6 +116,15 @@ internal sealed partial class RuntimeWebServer : IDisposable
 
     private async Task HandleHttpAsync(HttpContext context)
     {
+        // DNS rebinding: a page on evil.example rebound to 127.0.0.1 is
+        // same-origin to itself, so its GETs carry no Origin header and the
+        // origin check below never runs. The Host it sends is its own name,
+        // though: only this listener's loopback names get an answer.
+        if (!IsLoopbackHost(context.Request.Host))
+        {
+            context.Response.StatusCode = StatusCodes.Status421MisdirectedRequest;
+            return;
+        }
         var origin = context.Request.Headers.Origin.ToString();
         if (!string.IsNullOrWhiteSpace(origin) && !IsOriginAllowed(origin))
         {
@@ -236,11 +251,15 @@ internal sealed partial class RuntimeWebServer : IDisposable
         await WriteRawJsonAsync(context, responseJson);
     }
 
-    private object ReadBridge(string domain, string action, object payload)
+    private object ReadBridge(string domain, string action, object payload, bool write = false)
     {
         try
         {
-            return wslBridge.Call(domain, action, payload, 8_000);
+            // writes: longer than the slowest one (the ticket CLI, 60 s), so
+            // a still-running write is not reported failed and sent again
+            return write
+                ? writeBridge.Call(domain, action, payload, 75_000)
+                : wslBridge.Call(domain, action, payload, 8_000);
         }
         catch (Exception exception)
         {
@@ -399,6 +418,35 @@ internal sealed partial class RuntimeWebServer : IDisposable
     {
         context.Response.ContentType = "application/json; charset=utf-8";
         await context.Response.WriteAsync(body);
+    }
+
+    private bool IsLoopbackHost(HostString host)
+    {
+        if (!host.HasValue || host.Port != config.HttpPort)
+        {
+            return false;
+        }
+        return host.Host is "127.0.0.1" or "[::1]" ||
+            string.Equals(host.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Writes into agent panes: an allowlisted origin that is not this
+    /// computer's own http://localhost / 127.0.0.1 — any dev server on those
+    /// ports (another project's Next.js, a bad dependency, an XSS) could
+    /// otherwise type into an agent. Local development reads only.
+    /// </summary>
+    private bool IsWriteOriginAllowed(string origin)
+    {
+        if (string.IsNullOrWhiteSpace(origin) || !IsOriginAllowed(origin))
+        {
+            return false;
+        }
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+        return !(uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsOriginAllowed(string origin)
