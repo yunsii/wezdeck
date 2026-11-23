@@ -538,6 +538,12 @@ func toolBody(name string, input map[string]any) string {
 		}
 		return clipLines(strings.Join(parts, "\n…\n"), 120)
 	}
+	// the plan Claude asks to leave plan mode with (permission.go)
+	if name == "ExitPlanMode" {
+		if plan := inputString(input, "plan"); plan != "" {
+			return clip(plan, 20000)
+		}
+	}
 	if content, ok := writeContent(name, input); ok {
 		return clipLines(content, 40)
 	}
@@ -824,6 +830,11 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		compactions, lastCompact := t.compactions()
 		if e.TurnStarted > 0 && (e.Status == "running" || e.Status == "waiting") {
 			out["turn_output"] = t.turnOutput(e.TurnStarted)
+		}
+		if e.Status == "waiting" && e.WaitingKind == "permission_prompt" {
+			if p := pendingPermission(t.messages); p != nil {
+				out["permission"] = p
+			}
 		}
 		transcriptsMu.Unlock()
 		out["total"] = total

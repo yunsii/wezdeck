@@ -29,6 +29,7 @@ import { useFollowReplacement, useSessionWrites } from './session-send'
 import { isBareResume, useResumeSheet } from './session-commands'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
+import type { PendingCall } from './session-permission'
 
 export type SessionCard = {
   id: string
@@ -142,6 +143,8 @@ export type Detail = {
   turn_output?: number
   elicitation?: Elicitation
   plan?: { excerpt?: string; awaiting_approval?: boolean }
+  /** a permission prompt: the call it is about (host permission.go) */
+  permission?: PendingCall
   /** cleared in its pane (/new, /clear): the session that took its place */
   replaced_by?: string
 }

@@ -407,6 +407,17 @@ function MeIndex({ active }: { active?: MePage }) {
           title={titles.app}
           value={buildId.split('-')[0]}
         />
+        {/* sample data only: useful on any device */}
+        <li className="border-b border-brand-edge last:border-b-0">
+          <Link
+            to="/{-$locale}/console/interactions"
+            params={{ locale: localeParam }}
+            className="key-press flex min-h-13 items-center justify-between px-4 text-[16px]"
+          >
+            {t`Interaction debugging`}
+            <ChevronRight size={18} aria-hidden className="text-brand-label" />
+          </Link>
+        </li>
       </ul>
       {consoleMode === 'local' ? (
         <ul className={group}>

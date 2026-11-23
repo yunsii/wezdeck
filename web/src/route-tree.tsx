@@ -8,6 +8,7 @@ import { ConsoleActivityPage } from '#/features/console-activity'
 import { ConsoleMePage } from '#/features/console-me'
 import { ConsoleSessionsPage } from '#/features/session-split'
 import { ConsoleDiagnosticsPage } from '#/features/console-diagnostics'
+import { ConsoleInteractionsPage } from '#/features/console-interactions'
 import { ConsoleRouteLayout } from '#/features/console-shell'
 import { Route as rootRoute } from '#/routes/__root'
 
@@ -154,6 +155,16 @@ const consoleDevelopmentRoute = createRoute({
   },
 })
 
+const consoleInteractionsRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: 'interactions',
+  component: ConsoleInteractionsPage,
+  head: ({ params }) =>
+    consoleHead(
+      params.locale === 'zh' ? 'WezDeck 交互调试' : 'WezDeck Interactions',
+    ),
+})
+
 const consoleDiagnosticsRoute = createRoute({
   getParentRoute: () => consoleRoute,
   path: 'diagnostics',
@@ -254,6 +265,7 @@ export const routeTree = rootRoute.addChildren({
       consoleOverviewRoute,
       consoleDevelopmentRoute,
       consoleDiagnosticsRoute,
+      consoleInteractionsRoute,
       consoleCollabRoute,
       consoleCollabTicketRoute,
       consoleInboxRoute,

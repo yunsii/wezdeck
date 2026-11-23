@@ -8,6 +8,7 @@ import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import { AskCard } from './session-ask-claude'
 import type { Detail } from './console-sessions'
+import { PermissionCard } from './session-permission'
 
 export type ElicitOption = { label: string; description?: string }
 export type ElicitQuestion = {
@@ -273,7 +274,14 @@ export function PromptPanels({
           onKey={(key) => void onKey(key)}
         />
       ) : null}
-      {data?.waiting_kind && !asking && !planReview ? (
+      {data?.permission && !asking && !planReview ? (
+        <PermissionCard
+          call={data.permission}
+          screen={data.screen}
+          disabled={!canWrite}
+          onKey={(key) => void onKey(key)}
+        />
+      ) : data?.waiting_kind && !asking && !planReview ? (
         <SessionPermissionKeys
           screen={data.screen}
           disabled={!canWrite}
