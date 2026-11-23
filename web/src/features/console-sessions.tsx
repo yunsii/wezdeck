@@ -187,11 +187,14 @@ function JumpLatest({
   if (pinned) return null
   return (
     <Button
-      variant="solid"
+      variant="plain"
       type="button"
       onClick={onJump}
       data-testid="jump-latest"
-      className="chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium shadow-lg"
+      // a light chip with an edge and a deep shadow, not the dark solid
+      // style: it floats over the conversation, and over a user bubble
+      // (same dark fill) the solid chip vanished
+      className="key-press chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full border border-brand-edge bg-brand-surface px-4 text-[13px] font-medium text-brand-text shadow-[0_8px_24px_rgb(0_0_0/0.22)]"
     >
       <ArrowDown size={15} aria-hidden />
       {unread > 0 ? t`${unread} new` : t`Latest`}

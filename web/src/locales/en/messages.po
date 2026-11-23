@@ -79,7 +79,7 @@ msgstr "{tasks} background tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:406
+#: src/features/console-sessions.tsx:409
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -87,7 +87,7 @@ msgstr "{total} messages, showing {shown}"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 
-#: src/features/console-sessions.tsx:197
+#: src/features/console-sessions.tsx:200
 msgid "{unread} new"
 msgstr "{unread} new"
 
@@ -271,7 +271,7 @@ msgstr "assumptions challenged"
 msgid "Back"
 msgstr "Back"
 
-#: src/features/console-sessions.tsx:269
+#: src/features/console-sessions.tsx:272
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "Back on the page, fetching the latest (last {at})…"
 
@@ -317,7 +317,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:495
+#: src/features/console-sessions.tsx:498
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -1014,7 +1014,7 @@ msgid "Last turn"
 msgstr "Last turn"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:197
+#: src/features/console-sessions.tsx:200
 msgid "Latest"
 msgstr "Latest"
 
@@ -1055,7 +1055,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:429
+#: src/features/console-sessions.tsx:432
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1072,7 +1072,7 @@ msgstr "Loading original…"
 #: src/features/console-collab.tsx:169
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-sessions.tsx:426
+#: src/features/console-sessions.tsx:429
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
@@ -1358,7 +1358,7 @@ msgstr "Open image"
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:519
+#: src/features/console-sessions.tsx:522
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1892,7 +1892,7 @@ msgstr "shipped"
 #~ msgid "Shipped"
 #~ msgstr "Shipped"
 
-#: src/features/console-sessions.tsx:428
+#: src/features/console-sessions.tsx:431
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -1924,7 +1924,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:503
+#: src/features/console-sessions.tsx:506
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -2039,7 +2039,7 @@ msgstr "task: a short focused change, reclaimed after delivery"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:363
+#: src/features/console-sessions.tsx:366
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -2103,7 +2103,7 @@ msgstr "This computer, not paired"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:496
+#: src/features/console-sessions.tsx:499
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -2270,7 +2270,7 @@ msgstr "Turns"
 msgid "Unavailable"
 msgstr "Unavailable"
 
-#: src/features/console-sessions.tsx:270
+#: src/features/console-sessions.tsx:273
 msgid "Up to date, {at}"
 msgstr "Up to date, {at}"
 
@@ -2510,7 +2510,7 @@ msgstr "Worktrees"
 msgid "Write access"
 msgstr "Write access"
 
-#: src/features/console-sessions.tsx:361
+#: src/features/console-sessions.tsx:364
 #: src/features/ticket-reply.tsx:197
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "Writing is not enabled on this device yet (Settings › Write access)."

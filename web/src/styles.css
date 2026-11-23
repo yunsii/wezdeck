@@ -1202,6 +1202,13 @@ html:active-view-transition-type(within) .vt-split-pane {
 ::view-transition-group(split-pane) {
   animation: none;
 }
+/* a named element's snapshot is not clipped by the scroller it sits in: the
+   split pane's messages scrolled above the view would paint over the status
+   band mid-switch. The shell stays on top of every content layer. */
+::view-transition-group(band),
+::view-transition-group(sidebar) {
+  z-index: 2;
+}
 ::view-transition-old(band),
 ::view-transition-old(sidebar),
 ::view-transition-old(split-list) {

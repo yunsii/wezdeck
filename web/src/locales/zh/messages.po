@@ -79,7 +79,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:406
+#: src/features/console-sessions.tsx:409
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -87,7 +87,7 @@ msgstr "共 {total} 条，已显示 {shown} 条"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
-#: src/features/console-sessions.tsx:197
+#: src/features/console-sessions.tsx:200
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -271,7 +271,7 @@ msgstr "对前提提出了质疑"
 msgid "Back"
 msgstr "返回"
 
-#: src/features/console-sessions.tsx:269
+#: src/features/console-sessions.tsx:272
 msgid "Back on the page, fetching the latest (last {at})…"
 msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 
@@ -317,7 +317,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:495
+#: src/features/console-sessions.tsx:498
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -1014,9 +1014,9 @@ msgid "Last turn"
 msgstr "最后一轮"
 
 #: src/features/console-overview.tsx:68
-#: src/features/console-sessions.tsx:197
+#: src/features/console-sessions.tsx:200
 msgid "Latest"
-msgstr "最近"
+msgstr "回到最新"
 
 #: src/features/console-collab-run.tsx:34
 #~ msgid "Launch"
@@ -1055,7 +1055,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:429
+#: src/features/console-sessions.tsx:432
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1072,7 +1072,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab.tsx:169
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-sessions.tsx:426
+#: src/features/console-sessions.tsx:429
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
@@ -1358,7 +1358,7 @@ msgstr "查看图片"
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:519
+#: src/features/console-sessions.tsx:522
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1892,7 +1892,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-sessions.tsx:428
+#: src/features/console-sessions.tsx:431
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -1924,7 +1924,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:503
+#: src/features/console-sessions.tsx:506
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -2039,7 +2039,7 @@ msgstr "task：短期聚焦的改动，交付后回收"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:363
+#: src/features/console-sessions.tsx:366
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -2103,7 +2103,7 @@ msgstr "本机，未配对"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:496
+#: src/features/console-sessions.tsx:499
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -2270,7 +2270,7 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
-#: src/features/console-sessions.tsx:270
+#: src/features/console-sessions.tsx:273
 msgid "Up to date, {at}"
 msgstr "已同步到最新，{at}"
 
@@ -2510,7 +2510,7 @@ msgstr "Worktree"
 msgid "Write access"
 msgstr "写入权限"
 
-#: src/features/console-sessions.tsx:361
+#: src/features/console-sessions.tsx:364
 #: src/features/ticket-reply.tsx:197
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "这台设备还没启用写入（我的 › 写入权限）。"
