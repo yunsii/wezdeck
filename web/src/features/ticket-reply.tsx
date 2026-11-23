@@ -14,6 +14,9 @@ import { cn } from '#/lib/utils'
 import { remoteLink } from '#/lib/remote-link'
 import type { TicketQuestions } from '#/lib/runtime-contract'
 import { useDeviceState } from './device-state'
+import { Button } from '#/components/ui/button'
+import { Textarea } from '#/components/ui/textarea'
+import { Disclosure } from '#/components/ui/disclosure'
 
 /** Last entry of the Thread section, e.g. "worker challenge: 确认…". */
 export function openQuestion(sections: Array<{ title: string; text: string }>) {
@@ -75,7 +78,8 @@ function QuestionOptions({
       {question.options.map((option, oi) => {
         const on = picked.includes(oi)
         return (
-          <button
+          <Button
+            variant="plain"
             key={`${oi}-${option.label.slice(0, 24)}`}
             type="button"
             aria-pressed={on}
@@ -96,7 +100,7 @@ function QuestionOptions({
               ) : null}
             </span>
             {on ? <Check size={16} aria-hidden /> : null}
-          </button>
+          </Button>
         )
       })}
     </fieldset>
@@ -176,7 +180,7 @@ export function TicketReply({
       <label htmlFor={`reply-${id}`} className="sr-only">
         {t`Your reply`}
       </label>
-      <textarea
+      <Textarea
         id={`reply-${id}`}
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -186,7 +190,7 @@ export function TicketReply({
             ? t`Anything to add (optional)`
             : t`Your decision, extra context, or an answer to the challenge`
         }
-        className="min-h-24 rounded-[12px] bg-brand-deck px-3 py-2 text-[16px] outline-none focus-visible:ring-2 focus-visible:ring-brand-running placeholder:text-brand-label"
+        className="min-h-24 rounded-[12px] bg-brand-deck text-[16px]"
       />
       {device.state !== 'approved' ? (
         <p className="text-xs text-brand-muted">
@@ -204,22 +208,24 @@ export function TicketReply({
         </p>
       ) : null}
       <div className="grid grid-cols-2 gap-2">
-        <button
+        <Button
+          variant="plain"
           type="button"
           disabled={busy || !answer.trim() || device.state !== 'approved'}
           onClick={() => void send(false)}
           className="key-press min-h-11 rounded-[12px] border border-brand-edge text-[15px] disabled:opacity-40"
         >
           {t`Reply`}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="solid"
           type="button"
           disabled={busy || !answer.trim() || device.state !== 'approved'}
           onClick={() => void send(true)}
-          className="min-h-11 rounded-[12px] bg-brand-text text-[15px] font-semibold text-brand-deck disabled:opacity-40"
+          className="min-h-11 text-[15px] disabled:opacity-40"
         >
           {t`Reply and continue`}
-        </button>
+        </Button>
       </div>
     </section>
   )
@@ -274,7 +280,8 @@ export function TicketAttach({
       data-write
       className="grid gap-2 rounded-[16px] bg-brand-surface p-4"
     >
-      <button
+      <Button
+        variant="plain"
         type="button"
         disabled={busy || running || device.state !== 'approved'}
         onClick={() => void attach()}
@@ -282,7 +289,7 @@ export function TicketAttach({
       >
         <SquareTerminal size={17} aria-hidden />
         {busy ? t`Opening…` : t`Take over in tmux`}
-      </button>
+      </Button>
       <p className="text-[12px] text-brand-muted">
         {running
           ? t`A headless run is still going; take over when it finishes.`
@@ -320,23 +327,16 @@ export function TicketSections({
   return (
     <div className="overflow-hidden rounded-[16px] bg-brand-surface">
       {shown.map((section) => (
-        <details
+        <Disclosure
           key={section.title}
-          className="group border-b border-brand-edge last:border-b-0"
+          className="border-b border-brand-edge last:border-b-0"
+          triggerClassName="min-h-12 px-4 text-[15px] font-medium"
+          title={names[section.title] ?? section.title}
         >
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-[15px] font-medium">
-            {names[section.title] ?? section.title}
-            <span
-              aria-hidden
-              className="text-brand-label transition group-open:rotate-90"
-            >
-              ›
-            </span>
-          </summary>
           <p className="px-4 pb-4 text-[14px] leading-relaxed whitespace-pre-wrap text-brand-muted">
             {section.text.replace(/^##.*\n?/m, '').trim()}
           </p>
-        </details>
+        </Disclosure>
       ))}
     </div>
   )

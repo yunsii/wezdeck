@@ -13,6 +13,8 @@ import {
   SessionElicitation,
 } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
+import { Button } from '#/components/ui/button'
+import { Disclosure } from '#/components/ui/disclosure'
 
 const KEY_DIGITS = 4 // the host key allowlist: 1–4 (AskUserQuestion has ≤ 4)
 
@@ -80,15 +82,16 @@ export function ClaudeAsk({
           <p className="text-[14px] leading-snug">
             {t`All questions answered. The agent waits until you submit.`}
           </p>
-          <button
+          <Button
+            variant="solid"
             type="button"
             disabled={disabled}
             onClick={() => onKey('Enter')}
             data-testid="ask-submit"
-            className="key-press min-h-12 rounded-[12px] bg-brand-text px-3 text-[15px] font-semibold text-brand-deck disabled:opacity-40"
+            className="min-h-12 px-3 text-[15px] disabled:opacity-40"
           >
             {t`Submit answers`}
-          </button>
+          </Button>
         </div>
       ) : current ? (
         <div className="grid gap-2">
@@ -101,7 +104,8 @@ export function ClaudeAsk({
             </p>
           ) : null}
           {current.options.slice(0, KEY_DIGITS).map((opt, oi) => (
-            <button
+            <Button
+              variant="key"
               key={`${oi}-${opt.label}`}
               type="button"
               disabled={disabled}
@@ -110,7 +114,7 @@ export function ClaudeAsk({
                   ? onKey(String(oi + 1))
                   : pick(oi, opt.label)
               }
-              className="key-press grid min-h-12 gap-0.5 rounded-[12px] border border-brand-edge bg-brand-deck px-3 py-2.5 text-left disabled:opacity-40"
+              className="grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40"
             >
               <span className="text-[15px] font-medium">
                 {oi + 1}. {opt.label}
@@ -120,45 +124,47 @@ export function ClaudeAsk({
                   {opt.description}
                 </span>
               ) : null}
-            </button>
+            </Button>
           ))}
           {current.multi_select ? (
-            <button
+            <Button
+              variant="key"
               type="button"
               disabled={disabled}
               onClick={() => {
                 onKey('Enter')
                 setPicked({ id: askId, labels: [...labels, '✓'] })
               }}
-              className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+              className="min-h-11 px-3 text-[15px] disabled:opacity-40"
             >
               {t`Enter`}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
+          variant="key"
           type="button"
           disabled={disabled}
           onClick={() => {
             onKey('Escape')
             setPicked({ id: askId, labels: [] })
           }}
-          className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
         >
           {t`Cancel (Esc)`}
-        </button>
+        </Button>
       </div>
       {screen ? (
-        <details className="text-[12px]">
-          <summary className="cursor-pointer text-brand-label">
-            {t`What the terminal shows`}
-          </summary>
-          <pre className="mt-1 max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
+        <Disclosure
+          triggerClassName="min-h-9 text-[12px] font-normal text-brand-label"
+          title={t`What the terminal shows`}
+        >
+          <pre className="max-h-48 overflow-auto font-mono text-[12px] leading-snug text-brand-muted">
             {screen.split('\n').slice(-16).join('\n')}
           </pre>
-        </details>
+        </Disclosure>
       ) : null}
     </div>
   )

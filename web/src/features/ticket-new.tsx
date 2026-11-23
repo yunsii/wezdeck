@@ -14,6 +14,11 @@ import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
+import { Button } from '#/components/ui/button'
+import { Input } from '#/components/ui/input'
+import { Textarea } from '#/components/ui/textarea'
+import { Select } from '#/components/ui/select'
+import { Checkbox } from '#/components/ui/checkbox'
 
 type Target = { key: string; path: string }
 
@@ -42,16 +47,17 @@ export function NewTicketButton() {
   if (device.state !== 'approved') return null
   return (
     <>
-      <button
+      <Button
+        variant="solid"
         type="button"
         onClick={() => setOpen(true)}
         data-testid="new-ticket"
         title={t`New ticket (n)`}
-        className="key-press inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-[12px] bg-brand-text px-3 text-[14px] font-semibold text-brand-deck md:min-h-9"
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[14px] md:min-h-9"
       >
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New ticket`}</span>
-      </button>
+      </Button>
       {open ? <NewTicketSheet onClose={() => setOpen(false)} /> : null}
     </>
   )
@@ -118,8 +124,6 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
       setBusy(false)
     }
   }
-  const field =
-    'rounded-[10px] bg-brand-surface px-3 text-[15px] text-brand-text outline-none placeholder:text-brand-label'
   const repoSelect = (
     value: string,
     onChange: (value: string) => void,
@@ -127,18 +131,13 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
   ) => (
     <label className="grid min-w-0 gap-1 text-[13px] text-brand-muted">
       {label}
-      <select
+      <Select
+        size="lg"
         value={value}
         disabled={busy}
-        onChange={(event) => onChange(event.target.value)}
-        className={`min-h-11 ${field}`}
-      >
-        {keys.map((key) => (
-          <option key={key} value={key}>
-            {key}
-          </option>
-        ))}
-      </select>
+        onValueChange={onChange}
+        options={keys.map((key) => ({ value: key, label: key }))}
+      />
     </label>
   )
   if (typeof document === 'undefined') return null
@@ -158,14 +157,15 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
           <h2 className="text-[16px] font-semibold">{t`New ticket`}</h2>
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={onClose}
             aria-label={t`Close`}
             className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
           >
             <X size={18} aria-hidden />
-          </button>
+          </Button>
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
@@ -179,45 +179,37 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
           ) : null}
           <label className="grid gap-1 text-[13px] text-brand-muted">
             {t`Title`}
-            <input
+            <Input
+              variant="field"
               value={title}
               disabled={busy}
               maxLength={120}
               onChange={(event) => setTitle(event.target.value)}
               placeholder={t`What the other repository should do`}
-              className={`min-h-11 ${field}`}
             />
           </label>
           <label className="grid gap-1 text-[13px] text-brand-muted">
             {t`What you saw`}
-            <textarea
+            <Textarea
               value={observed}
               disabled={busy}
               rows={3}
               onChange={(event) => setObserved(event.target.value)}
               placeholder={t`The behaviour, error or data you actually observed`}
-              className={`py-2 ${field}`}
             />
           </label>
           <label className="grid gap-1 text-[13px] text-brand-muted">
             {t`What you assume`}
-            <textarea
+            <Textarea
               value={assumed}
               disabled={busy}
               rows={3}
               onChange={(event) => setAssumed(event.target.value)}
               placeholder={t`The contract or behaviour you expect from it — the target checks this first`}
-              className={`py-2 ${field}`}
             />
           </label>
           <label className="flex min-h-11 items-center gap-2 text-[14px]">
-            <input
-              type="checkbox"
-              checked={run}
-              disabled={busy}
-              onChange={(event) => setRun(event.target.checked)}
-              className="size-5"
-            />
+            <Checkbox checked={run} disabled={busy} onCheckedChange={setRun} />
             {t`Start working on it now (a headless run on the host)`}
           </label>
           {error ? (
@@ -225,14 +217,15 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
               {error}
             </p>
           ) : null}
-          <button
+          <Button
+            variant="solid"
             type="button"
             disabled={!ready || busy}
             onClick={() => void submit()}
-            className="key-press min-h-12 rounded-[12px] bg-brand-text px-3 text-[15px] font-semibold text-brand-deck disabled:opacity-40"
+            className="min-h-12 px-3 text-[15px] disabled:opacity-40"
           >
             {busy ? t`Creating…` : t`Create ticket`}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

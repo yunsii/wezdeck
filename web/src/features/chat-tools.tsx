@@ -9,6 +9,7 @@ import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import { TranscriptImages } from './chat-images'
 import type { Message } from './chat-thread'
+import { Disclosure } from '#/components/ui/disclosure'
 
 /** A diff (lines starting "- " / "+ ") gets red / green rows; anything else is plain. */
 function ToolBody({ text }: { text: string }) {
@@ -87,32 +88,37 @@ function ToolRow({
   // images load only once the call is opened (a run can hold many screenshots)
   const [opened, setOpened] = useState(false)
   return (
-    <details
-      className="group/tool min-w-0 rounded-[8px]"
-      onToggle={(event) => setOpened(event.currentTarget.open)}
-    >
-      {/* one line in the list; the whole description once this call is opened */}
-      <summary className="flex min-w-0 cursor-pointer list-none items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted">
-        <span aria-hidden className={LINE}>
-          <span className="transition group-open/tool:rotate-90">›</span>
-        </span>
-        <ToolStatus status={status} />
-        {target ? (
-          <>
-            <span className="shrink-0 text-brand-label">{name}</span>
-            <span aria-hidden className={cn(LINE, 'px-1')}>
-              <span className="h-3.5 w-px bg-brand-label/50" />
+    <Disclosure
+      className="min-w-0 rounded-[8px]"
+      onOpenChange={setOpened}
+      chevron={false}
+      triggerClassName="flex min-w-0 items-start gap-1 px-1 font-mono text-[12px] leading-5 text-brand-muted"
+      title={
+        <>
+          <span aria-hidden className={LINE}>
+            <span className="transition group-data-[panel-open]:rotate-90">
+              ›
             </span>
-            <span className="min-w-0 truncate text-brand-text group-open/tool:break-all group-open/tool:whitespace-pre-wrap">
-              {target}
-            </span>
-          </>
-        ) : (
-          <span className="min-w-0 truncate group-open/tool:break-all group-open/tool:whitespace-pre-wrap">
-            {tool.text}
           </span>
-        )}
-      </summary>
+          <ToolStatus status={status} />
+          {target ? (
+            <>
+              <span className="shrink-0 text-brand-label">{name}</span>
+              <span aria-hidden className={cn(LINE, 'px-1')}>
+                <span className="h-3.5 w-px bg-brand-label/50" />
+              </span>
+              <span className="min-w-0 truncate text-brand-text group-data-[panel-open]:break-all group-data-[panel-open]:whitespace-pre-wrap">
+                {target}
+              </span>
+            </>
+          ) : (
+            <span className="min-w-0 truncate group-data-[panel-open]:break-all group-data-[panel-open]:whitespace-pre-wrap">
+              {tool.text}
+            </span>
+          )}
+        </>
+      }
+    >
       {details ? (
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">
           {tool.body ? <ToolBody text={tool.body} /> : null}
@@ -125,7 +131,7 @@ function ToolRow({
           {opened ? <TranscriptImages refs={tool.images} /> : null}
         </div>
       ) : null}
-    </details>
+    </Disclosure>
   )
 }
 
@@ -168,42 +174,46 @@ export function ToolGroup({
     return () => clearTimeout(timer)
   }, [stream])
   return (
-    <details
+    <Disclosure
       open={open}
-      onToggle={(event) => {
-        if (!live) setOpened(event.currentTarget.open)
+      onOpenChange={(next) => {
+        if (!live) setOpened(next)
       }}
-      className={cn('group min-w-0 px-1', fresh && 'chat-in')}
+      className={cn('min-w-0 px-1', fresh && 'chat-in')}
+      chevron={false}
+      triggerClassName="grid min-w-0 gap-1 py-1 text-[12px] text-brand-label"
+      title={
+        <>
+          <span className="flex flex-wrap items-center gap-x-1.5">
+            {summaryParts.join('，')}
+            <span
+              aria-hidden
+              className="inline-block transition group-data-[panel-open]:rotate-90"
+            >
+              ›
+            </span>
+          </span>
+          {files.length ? (
+            <span className="flex min-w-0 flex-wrap gap-1">
+              {files.map((file) => (
+                <span
+                  key={file.path}
+                  className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 font-mono text-[11px]"
+                >
+                  <span className="truncate text-brand-muted">{file.name}</span>
+                  {file.added ? (
+                    <span className="text-brand-done">+{file.added}</span>
+                  ) : null}
+                  {file.removed ? (
+                    <span className="text-brand-error">−{file.removed}</span>
+                  ) : null}
+                </span>
+              ))}
+            </span>
+          ) : null}
+        </>
+      }
     >
-      <summary className="grid min-w-0 cursor-pointer list-none gap-1 py-1 text-[12px] text-brand-label">
-        <span className="flex flex-wrap items-center gap-x-1.5">
-          {summaryParts.join('，')}
-          <span
-            aria-hidden
-            className="inline-block transition group-open:rotate-90"
-          >
-            ›
-          </span>
-        </span>
-        {files.length ? (
-          <span className="flex min-w-0 flex-wrap gap-1">
-            {files.map((file) => (
-              <span
-                key={file.path}
-                className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 font-mono text-[11px]"
-              >
-                <span className="truncate text-brand-muted">{file.name}</span>
-                {file.added ? (
-                  <span className="text-brand-done">+{file.added}</span>
-                ) : null}
-                {file.removed ? (
-                  <span className="text-brand-error">−{file.removed}</span>
-                ) : null}
-              </span>
-            ))}
-          </span>
-        ) : null}
-      </summary>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 pt-1">
         {earlier ? (
           <p className="px-1 text-[11.5px] text-brand-label">
@@ -218,7 +228,7 @@ export function ToolGroup({
           />
         ))}
       </div>
-    </details>
+    </Disclosure>
   )
 }
 

@@ -9,6 +9,7 @@ import { useRef, useState } from 'react'
 
 import { remoteLink } from '#/lib/remote-link'
 import { useDeviceState } from './device-state'
+import { Button } from '#/components/ui/button'
 
 const OPEN = 104 // px the row slides to show the action
 const ARM = 48 // drag past this to open
@@ -62,7 +63,8 @@ export function SwipeToClear({
   const open = offset <= -OPEN + 1
   return (
     <div className="relative overflow-hidden" data-swipe={id}>
-      <button
+      <Button
+        variant="plain"
         type="button"
         disabled={busy}
         tabIndex={open ? 0 : -1}
@@ -72,7 +74,7 @@ export function SwipeToClear({
         style={{ width: OPEN }}
       >
         {busy ? t`Clearing…` : t`Mark read`}
-      </button>
+      </Button>
       <div
         className="relative bg-brand-surface touch-pan-y"
         style={{
@@ -147,7 +149,8 @@ export function ClearButton({
     return null
   return (
     <div className="grid gap-1">
-      <button
+      <Button
+        variant="plain"
         type="button"
         data-write
         disabled={busy || done}
@@ -156,7 +159,7 @@ export function ClearButton({
         className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
       >
         {done ? t`Marked read` : t`Mark read`}
-      </button>
+      </Button>
       {error ? (
         <p role="alert" className="px-1 text-xs text-brand-error">
           {error}

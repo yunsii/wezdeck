@@ -10,6 +10,7 @@ import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup } from './chat-tools'
+import { Disclosure } from '#/components/ui/disclosure'
 
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
@@ -366,26 +367,33 @@ function CompactDivider({
       ? t`Context compacted (/compact)`
       : t`Context compacted automatically`
   return (
-    <details className="group py-1" data-testid="compact-divider">
-      <summary className="flex cursor-pointer list-none items-center gap-2 text-[12px] text-brand-label">
-        <span className="h-px flex-1 bg-brand-edge" />
-        <span>
-          {label}
-          {when ? ` ${when}` : ''}
-          {message.body ? (
-            <span className="ml-1 underline-offset-2 group-open:hidden">
-              {t`· summary`}
-            </span>
-          ) : null}
-        </span>
-        <span className="h-px flex-1 bg-brand-edge" />
-      </summary>
+    <Disclosure
+      className="py-1"
+      data-testid="compact-divider"
+      chevron={false}
+      triggerClassName="text-[12px] text-brand-label"
+      title={
+        <>
+          <span className="h-px flex-1 bg-brand-edge" />
+          <span>
+            {label}
+            {when ? ` ${when}` : ''}
+            {message.body ? (
+              <span className="ml-1 underline-offset-2 group-data-[panel-open]:hidden">
+                {t`· summary`}
+              </span>
+            ) : null}
+          </span>
+          <span className="h-px flex-1 bg-brand-edge" />
+        </>
+      }
+    >
       {message.body ? (
         <p className="mt-2 max-h-72 overflow-y-auto rounded-[12px] bg-brand-surface px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap text-brand-muted">
           {message.body}
         </p>
       ) : null}
-    </details>
+    </Disclosure>
   )
 }
 

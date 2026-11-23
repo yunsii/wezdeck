@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { remoteLink } from '#/lib/remote-link'
 import type { RemoteState } from '#/lib/remote-link'
 import { Led } from '#/components/deck/led'
+import { Button } from '#/components/ui/button'
 
 const SERVER_STATE: RemoteState = {
   mode: 'unpaired',
@@ -121,7 +122,8 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
         )}
       </span>
       {offerMic && (
-        <button
+        <Button
+          variant="plain"
           type="button"
           data-testid="remote-mic"
           onClick={() => void mic.request()}
@@ -131,7 +133,7 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
           {micError
             ? t`Grant failed (${micError}) — retry`
             : t`Allow LAN direct`}
-        </button>
+        </Button>
       )}
     </span>
   )

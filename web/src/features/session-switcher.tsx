@@ -23,6 +23,7 @@ import {
   visitOf,
   worktreeKey,
 } from './session-order'
+import { Button } from '#/components/ui/button'
 
 export type JumpKind = 'waiting' | 'done' | 'running'
 
@@ -118,7 +119,8 @@ export function NextWaitingChip({
   const { t } = useLingui()
   if (!count) return null
   return (
-    <button
+    <Button
+      variant="plain"
       type="button"
       onClick={onNext}
       data-testid="next-waiting"
@@ -127,7 +129,7 @@ export function NextWaitingChip({
     >
       <Led tone="waiting" size={10} />
       {t`${count} more need you`} ›
-    </button>
+    </Button>
   )
 }
 
@@ -153,7 +155,8 @@ export function SessionSwitcher({
   if (!open || typeof document === 'undefined') return null
   const row = (session: SessionCard, repo?: string) => (
     <li key={session.id}>
-      <button
+      <Button
+        variant="plain"
         type="button"
         aria-current={session.id === current ? 'page' : undefined}
         onClick={() => {
@@ -184,7 +187,7 @@ export function SessionSwitcher({
             {repo ? <span className="truncate">{repo}</span> : null}
           </span>
         </span>
-      </button>
+      </Button>
     </li>
   )
   return createPortal(
@@ -202,14 +205,15 @@ export function SessionSwitcher({
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
           <h2 className="text-[16px] font-semibold">{t`Switch session`}</h2>
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={onClose}
             aria-label={t`Close`}
             className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
           >
             <X size={18} aria-hidden />
-          </button>
+          </Button>
         </div>
         <div className="grid gap-3 px-3">
           {nav.waiting.length ? (

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
+import { Button } from '#/components/ui/button'
 
 export type Subagent = {
   id: string
@@ -103,7 +104,8 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
       data-testid="session-subagents"
       className="overflow-hidden rounded-[14px] bg-brand-surface"
     >
-      <button
+      <Button
+        variant="plain"
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
@@ -128,7 +130,7 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
         >
           ›
         </span>
-      </button>
+      </Button>
       {open ? (
         <ul className="divide-y divide-brand-edge border-t border-brand-edge">
           {[...running, ...rest].map((agent) => (

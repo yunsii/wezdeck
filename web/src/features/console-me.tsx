@@ -81,14 +81,15 @@ function UpdateCheck() {
         </span>
         <span className="flex min-w-0 items-center gap-3">
           <span className="min-w-0 truncate font-mono text-xs">{buildId}</span>
-          <button
+          <Button
+            variant="plain"
             type="button"
             disabled={checking}
             onClick={check}
             className="shrink-0 text-sm text-brand-running disabled:opacity-50"
           >
             {checking ? t`Checking…` : t`Check for updates`}
-          </button>
+          </Button>
         </span>
       </div>
       {result ? (
@@ -396,14 +397,15 @@ function MeSubPage({ page }: { page: MePage }) {
   return (
     <div className="grid max-w-2xl content-start gap-3" data-me-page={page}>
       <div className="-ml-2 flex items-center gap-1 pt-1">
-        <button
+        <Button
+          variant="plain"
           type="button"
           onClick={back}
           aria-label={t`Back`}
           className="inline-flex size-11 shrink-0 items-center justify-center text-brand-muted"
         >
           <ChevronLeft size={22} aria-hidden />
-        </button>
+        </Button>
         <h1 className="min-w-0 flex-1 truncate text-[20px] font-semibold">
           {titles[page]}
         </h1>

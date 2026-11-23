@@ -1,5 +1,6 @@
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
+import { Button } from '#/components/ui/button'
 
 export type InspectorItem = {
   id: string
@@ -79,7 +80,8 @@ export function Inspector({
             {items.map((item) => {
               const active = item.id === selected
               return (
-                <button
+                <Button
+                  variant="plain"
                   key={item.id}
                   id={`inspector-${item.id}`}
                   type="button"
@@ -110,7 +112,7 @@ export function Inspector({
                       {item.detail}
                     </span>
                   ) : null}
-                </button>
+                </Button>
               )
             })}
           </div>

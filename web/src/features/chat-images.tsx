@@ -16,6 +16,7 @@ import {
 } from '#/lib/upload-image'
 import type { ImageSource } from '#/lib/upload-image'
 import { ImageViewer } from './image-viewer'
+import { Button } from '#/components/ui/button'
 
 /** the session whose transcript refs (`session.image`) resolve */
 export const SessionIdContext = createContext('')
@@ -31,7 +32,8 @@ function ImageThumb({ src, onOpen }: { src: ImageSource; onOpen: () => void }) {
   const thumb = useImageThumb(src)
   const gone = thumb.isError && isGone(thumb.error)
   return (
-    <button
+    <Button
+      variant="plain"
       type="button"
       onClick={() => {
         if (thumb.isError && !gone) void thumb.refetch()
@@ -47,7 +49,7 @@ function ImageThumb({ src, onOpen }: { src: ImageSource; onOpen: () => void }) {
           {gone ? t`Expired` : thumb.isError ? t`Retry` : t`Image`}
         </span>
       )}
-    </button>
+    </Button>
   )
 }
 

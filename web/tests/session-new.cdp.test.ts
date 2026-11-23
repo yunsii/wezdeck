@@ -88,7 +88,10 @@ describe.runIf(attention && devicesFile && stack)(
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
-      await expect.poll(() => sheet.locator('select').inputValue()).toBe(repo)
+      // the repository picker (Base UI Select) preselects the visited repo
+      await expect
+        .poll(() => sheet.getByRole('combobox').textContent())
+        .toContain('phone-repo')
       await sheet.locator('[data-value=task]').click()
       await sheet.getByPlaceholder(/phone-create/).fill('phone')
       await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')

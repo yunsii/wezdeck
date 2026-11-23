@@ -27,6 +27,7 @@ import {
   useSessionKeys,
   useSessionNav,
 } from './session-switcher'
+import { Button } from '#/components/ui/button'
 
 /** a meter appears once its share reaches this (amber from here on) */
 const NEAR_FULL = 75
@@ -108,7 +109,8 @@ function Meters({
       : 0
   return (
     <div className="grid gap-1">
-      <button
+      <Button
+        variant="plain"
         type="button"
         data-testid="session-usage"
         aria-expanded={open}
@@ -136,7 +138,7 @@ function Meters({
             {t`${tasks} background tasks`}
           </span>
         ) : null}
-      </button>
+      </Button>
       {open ? (
         <p className="flex flex-wrap gap-x-3 px-1 text-[11px] text-brand-label">
           {usage?.model ? <span>{usage.model}</span> : null}
@@ -222,17 +224,19 @@ export function SessionHeader({
       className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck/95 px-2.5 pt-1 pb-2 backdrop-blur"
     >
       <div className="flex min-w-0 items-center gap-1">
-        <button
+        <Button
+          variant="plain"
           type="button"
           onClick={onBack}
           aria-label={t({ message: 'Sessions', context: 'nav' })}
           className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-brand-muted"
         >
           <ChevronLeft size={22} aria-hidden />
-        </button>
+        </Button>
         <div className="grid min-w-0 flex-1">
           {/* Alt+g / Alt+x at the desk: pick another session */}
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={openSwitcher}
             aria-haspopup="dialog"
@@ -246,7 +250,7 @@ export function SessionHeader({
               aria-hidden
               className="shrink-0 text-brand-label"
             />
-          </button>
+          </Button>
           {data?.agent || data?.name || data?.branch ? (
             <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-brand-label">
               {data.agent && data.agent !== 'agent' ? (
@@ -284,7 +288,8 @@ export function SessionHeader({
           />
         )}
         {data ? (
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={() => setInfoOpen(true)}
             aria-label={t`Session info`}
@@ -293,7 +298,7 @@ export function SessionHeader({
             className="-mr-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
           >
             <Info size={19} aria-hidden />
-          </button>
+          </Button>
         ) : null}
       </div>
       <Meters

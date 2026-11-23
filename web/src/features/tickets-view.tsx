@@ -24,6 +24,8 @@ import { useRemoteState } from './console-mode'
 import { Inspector, Reading } from './inspector'
 import type { InspectorItem } from './inspector'
 import { NewTicketButton } from './ticket-new'
+import { Button } from '#/components/ui/button'
+import { Input } from '#/components/ui/input'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
@@ -139,7 +141,8 @@ function SearchBox({
   return (
     <label className="flex min-h-11 flex-1 items-center gap-2 rounded-[10px] border border-brand-edge bg-brand-deck px-3 text-[15px] focus-within:ring-2 focus-within:ring-brand-running md:min-h-9 md:text-sm">
       <Search size={15} aria-hidden className="text-brand-label" />
-      <input
+      <Input
+        variant="bare"
         data-search
         type="search"
         value={value}
@@ -306,14 +309,15 @@ export function TicketsView({
   if (id) {
     return (
       <div className="grid content-start gap-3">
-        <button
+        <Button
+          variant="plain"
           type="button"
           onClick={back}
           className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-[15px] text-brand-muted"
         >
           <ChevronLeft size={20} aria-hidden />
           {t`Back`}
-        </button>
+        </Button>
         <TicketReading id={id} poll={poll} onOpen={open} />
       </div>
     )
@@ -393,7 +397,8 @@ function TicketKeys({
             key={ticket.id}
             className="border-b border-brand-edge last:border-b-0"
           >
-            <button
+            <Button
+              variant="plain"
               type="button"
               data-ticket={ticket.id}
               onClick={() => onOpen(ticket.id)}
@@ -414,7 +419,7 @@ function TicketKeys({
                 </span>
                 <RepoRoute from={ticket.from} to={ticket.to} />
               </span>
-            </button>
+            </Button>
           </li>
         )
       })}

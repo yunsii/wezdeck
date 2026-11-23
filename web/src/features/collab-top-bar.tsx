@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 import { cn } from '#/lib/utils'
 import { ActivityLink } from './console-activity'
+import { Button } from '#/components/ui/button'
 
 export function CollabTopBar({ band }: { band: React.ReactNode }) {
   const { t } = useLingui()
@@ -13,7 +14,8 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
       <div className="grid grid-cols-2 gap-2">
-        <button
+        <Button
+          variant="plain"
           type="button"
           aria-expanded={open}
           onClick={() => setOpen(!open)}
@@ -23,7 +25,7 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
           <span aria-hidden className={cn('transition', open && 'rotate-90')}>
             ›
           </span>
-        </button>
+        </Button>
         <ActivityLink />
       </div>
       {open ? <div className="key rounded-[14px] p-2">{band}</div> : null}

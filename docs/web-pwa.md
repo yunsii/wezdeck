@@ -118,6 +118,22 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   `#ffffff` surface / `#11151c` ink; dark `#14181f` / `#1e232c` / `#f1f3f6`),
   console only. System font (PingFang / Noto Sans SC / Segoe UI), tabular
   numbers.
+- **Controls come from `web/src/components/ui`, never a native element**
+  (2026-11-23). Business code may not write `<button>`, `<input>`,
+  `<select>`, `<textarea>`, `<details>` / `<summary>` — an eslint
+  `no-restricted-syntax` rule in `web/eslint.config.js` fails the
+  pre-commit check; `components/` is where the natives live. The set (Base
+  UI underneath): `Button` (variants `solid` dark call to action, `key`
+  surface key, `link` quiet text action, `ghost`, `outline`, `plain` for
+  rows that lay themselves out; sizes `lg` / `md` touch targets, `round`
+  icon), `Input` (`field` phone form field, `bare` inside a styled box,
+  `default` dense desktop), `Textarea` (`field` / `bare`), `Select`
+  (`size="lg"` on phones; popup above the z-50 sheets), `Checkbox`,
+  `Disclosure` (a folding section: title + turning ›, `chevron={false}` for
+  a custom row), plus `Segmented`, `Toggle`, `Popover`, `Tooltip`. A
+  missing control is added there first, then used. Tests address them by
+  role: a Select is `combobox` + `option` (the popup is portalled to body),
+  a Checkbox is `checkbox`.
 - Phone patterns: large title that scrolls with the page, grouped inset
   lists, a three-way segmented control on 工单 (进行中 / 等你 / 已结束),
   settings as segmented rows instead of popovers, a translucent bottom bar

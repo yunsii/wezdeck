@@ -25,6 +25,24 @@ export default [
     },
   },
   {
+    // UI rule: controls come from #/components/ui (Base UI underneath), never
+    // a bare native element — one look, focus ring, disabled state and
+    // touch size everywhere. components/ is where the natives live.
+    files: ['src/**/*.tsx'],
+    ignores: ['src/components/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'JSXOpeningElement[name.name=/^(button|input|select|textarea|details|summary)$/]',
+          message:
+            'Use the #/components/ui control (Button, Input, Select, Textarea, Checkbox, Disclosure) instead of a native element.',
+        },
+      ],
+    },
+  },
+  {
     // Worker code type-checks against workers-types (tsconfig.worker.json).
     files: ['src/server.ts', 'src/relay/**/*.ts'],
     languageOptions: {

@@ -18,6 +18,10 @@ import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
+import { Button } from '#/components/ui/button'
+import { Input } from '#/components/ui/input'
+import { Textarea } from '#/components/ui/textarea'
+import { Select } from '#/components/ui/select'
 
 type Repo = { root: string; label: string; visited?: number }
 type Kind = 'dev' | 'task' | 'hotfix'
@@ -71,16 +75,17 @@ export function NewSessionButton() {
   if (device.state !== 'approved') return null
   return (
     <>
-      <button
+      <Button
+        variant="solid"
         type="button"
         onClick={() => setOpen(true)}
         data-testid="new-session"
         title={t`New session (c)`}
-        className="key-press inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-[12px] bg-brand-text px-3 text-[14px] font-semibold text-brand-deck md:min-h-9"
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[14px] md:min-h-9"
       >
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New session`}</span>
-      </button>
+      </Button>
       {open ? <NewSessionSheet onClose={() => setOpen(false)} /> : null}
     </>
   )
@@ -179,30 +184,29 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
           <h2 className="text-[16px] font-semibold">{t`New session`}</h2>
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={onClose}
             aria-label={t`Close`}
             className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
           >
             <X size={18} aria-hidden />
-          </button>
+          </Button>
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
           <label className="grid gap-1 text-[13px] text-brand-muted">
             {t`Repository`}
-            <select
+            <Select
+              size="lg"
               value={chosen}
               disabled={busy}
-              onChange={(event) => setRepo(event.target.value)}
-              className="min-h-11 rounded-[10px] bg-brand-surface px-3 text-[15px] text-brand-text"
-            >
-              {(repos.data?.repos ?? []).map((r) => (
-                <option key={r.root} value={r.root}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={setRepo}
+              options={(repos.data?.repos ?? []).map((r) => ({
+                value: r.root,
+                label: r.label,
+              }))}
+            />
           </label>
           <div className="grid gap-1">
             <Segmented
@@ -219,13 +223,13 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
           </div>
           <label className="grid gap-1 text-[13px] text-brand-muted">
             {t`Subject`}
-            <input
+            <Input
+              variant="field"
               value={subject}
               disabled={busy}
               maxLength={60}
               onChange={(event) => setSubject(event.target.value)}
               placeholder={t`e.g. phone-create`}
-              className="min-h-11 rounded-[10px] bg-brand-surface px-3 text-[15px] text-brand-text outline-none placeholder:text-brand-label"
             />
             <span className="px-1 text-[12px] text-brand-label">
               {subject.trim()
@@ -235,13 +239,12 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
           </label>
           <label className="grid gap-1 text-[13px] text-brand-muted">
             {t`First message to the agent`}
-            <textarea
+            <Textarea
               value={prompt}
               disabled={busy}
               rows={4}
               onChange={(event) => setPrompt(event.target.value)}
               placeholder={t`What should it work on?`}
-              className="rounded-[10px] bg-brand-surface px-3 py-2 text-[15px] text-brand-text outline-none placeholder:text-brand-label"
             />
           </label>
           {current ? (
@@ -268,14 +271,15 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
               {error}
             </p>
           ) : null}
-          <button
+          <Button
+            variant="solid"
             type="button"
             disabled={!ready || busy}
             onClick={() => void submit()}
-            className="key-press min-h-12 rounded-[12px] bg-brand-text px-3 text-[15px] font-semibold text-brand-deck disabled:opacity-40"
+            className="min-h-12 px-3 text-[15px] disabled:opacity-40"
           >
             {t`Create session`}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

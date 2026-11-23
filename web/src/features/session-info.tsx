@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom'
 
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
+import { Button } from '#/components/ui/button'
 
 export type MetaGroup = {
   name: string
@@ -168,7 +169,8 @@ function extraGroups(
 function Row({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
   return (
-    <button
+    <Button
+      variant="plain"
       type="button"
       onClick={() => {
         void copyText(value).then(() => {
@@ -187,7 +189,7 @@ function Row({ label, value }: { label: string; value: string }) {
           <Check size={13} aria-hidden className="text-brand-done" />
         ) : null}
       </span>
-    </button>
+    </Button>
   )
 }
 
@@ -246,18 +248,20 @@ export function SessionInfo({
       >
         <div className="sticky top-0 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
           <h2 className="text-[16px] font-semibold">{t`Session info`}</h2>
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={onClose}
             aria-label={t`Close`}
             className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
           >
             <X size={18} aria-hidden />
-          </button>
+          </Button>
         </div>
         <div className="grid gap-3 px-3">
           {data.reference ? (
-            <button
+            <Button
+              variant="solid"
               type="button"
               onClick={() => {
                 void copyText(data.reference ?? '').then(() => {
@@ -265,7 +269,7 @@ export function SessionInfo({
                   setTimeout(() => setCopiedRef(false), 1_500)
                 })
               }}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] bg-brand-text px-3 text-[14px] font-medium text-brand-deck"
+              className="flex min-h-11 items-center justify-center gap-2 px-3 text-[14px] font-medium"
             >
               {copiedRef ? (
                 <Check size={16} aria-hidden />
@@ -273,7 +277,7 @@ export function SessionInfo({
                 <Copy size={16} aria-hidden />
               )}
               {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
-            </button>
+            </Button>
           ) : null}
           <ClearButton
             id={data.id}
@@ -281,7 +285,8 @@ export function SessionInfo({
             waitingKind={data.waiting_kind}
           />
           {onRename ? (
-            <button
+            <Button
+              variant="plain"
               type="button"
               data-write
               disabled={renameDisabled}
@@ -294,7 +299,7 @@ export function SessionInfo({
             >
               <Pencil size={15} aria-hidden />
               {t`Rename via /rename in the agent pane`}
-            </button>
+            </Button>
           ) : null}
           <p className="px-1 text-[11.5px] text-brand-label">
             {t`Tap a row to copy its value.`}

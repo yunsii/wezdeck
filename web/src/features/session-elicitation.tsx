@@ -3,6 +3,8 @@
 // usual TUI option list; bare Enter alone is easy to misfire so it is not
 // offered here.
 import { useLingui } from '@lingui/react/macro'
+import { Button } from '#/components/ui/button'
+import { Disclosure } from '#/components/ui/disclosure'
 
 export type ElicitOption = { label: string; description?: string }
 export type ElicitQuestion = {
@@ -43,12 +45,13 @@ export function SessionElicitation({
           <p className="text-[15px] leading-snug font-semibold">{q.question}</p>
           <div className="grid gap-2">
             {q.options.map((opt, oi) => (
-              <button
+              <Button
+                variant="key"
                 key={`${oi}-${opt.label.slice(0, 24)}`}
                 type="button"
                 disabled={disabled}
                 onClick={() => onPick(qi, oi)}
-                className="key-press grid min-h-12 gap-0.5 rounded-[12px] border border-brand-edge bg-brand-deck px-3 py-2.5 text-left disabled:opacity-40"
+                className="grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40"
               >
                 <span className="text-[15px] font-medium">
                   {oi < 9 ? `${oi + 1}. ` : ''}
@@ -59,28 +62,30 @@ export function SessionElicitation({
                     {opt.description}
                   </span>
                 ) : null}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
+          variant="key"
           type="button"
           disabled={disabled}
           onClick={() => onKey('Escape')}
-          className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
         >
           {t`Esc`}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="key"
           type="button"
           disabled={disabled}
           onClick={() => onKey('C-c')}
-          className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+          className="min-h-11 px-3 text-[15px] disabled:opacity-40"
         >
           {t`Ctrl+C`}
-        </button>
+        </Button>
       </div>
       <p className="text-[11.5px] text-brand-label">
         {t`Tap an option to send its number and Enter into the agent pane.`}
@@ -129,15 +134,16 @@ export function SessionPermissionKeys({
           ['Escape', t`Esc`],
           ['C-c', t`Ctrl+C`],
         ].map(([key, label]) => (
-          <button
+          <Button
+            variant="key"
             key={key}
             type="button"
             disabled={disabled}
             onClick={() => onKey(key)}
-            className="key-press min-h-11 min-w-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+            className="min-h-11 min-w-11 px-3 text-[15px] disabled:opacity-40"
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
     </div>
@@ -160,14 +166,15 @@ export function SessionPlanReview({
   if (!excerpt && !awaitingApproval) return null
   if (!awaitingApproval) {
     return (
-      <details className="rounded-[16px] bg-brand-surface p-3">
-        <summary className="cursor-pointer text-sm font-medium">
-          {t`Current plan`}
-        </summary>
-        <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap font-mono text-[12px] leading-snug text-brand-muted">
+      <Disclosure
+        className="rounded-[16px] bg-brand-surface px-3"
+        triggerClassName="font-medium"
+        title={t`Current plan`}
+      >
+        <pre className="mb-3 max-h-56 overflow-auto font-mono text-[12px] leading-snug whitespace-pre-wrap text-brand-muted">
           {excerpt}
         </pre>
-      </details>
+      </Disclosure>
     )
   }
   return (
@@ -185,30 +192,33 @@ export function SessionPlanReview({
         <p className="text-sm text-brand-muted">{t`No plan written yet`}</p>
       )}
       <div className="grid gap-2">
-        <button
+        <Button
+          variant="solid"
           type="button"
           disabled={disabled}
           onClick={() => onKey('a')}
-          className="key-press min-h-12 rounded-[12px] bg-brand-text px-3 text-[15px] font-semibold text-brand-deck disabled:opacity-40"
+          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
         >
           {t`Approve plan`}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="key"
           type="button"
           disabled={disabled}
           onClick={() => onKey('s')}
-          className="key-press min-h-12 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] disabled:opacity-40"
+          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
         >
           {t`Request changes`}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="key"
           type="button"
           disabled={disabled}
           onClick={() => onKey('q')}
-          className="key-press min-h-11 rounded-[12px] border border-brand-edge bg-brand-deck px-3 text-[15px] text-brand-muted disabled:opacity-40"
+          className="min-h-11 px-3 text-[15px] text-brand-muted disabled:opacity-40"
         >
           {t`Quit plan`}
-        </button>
+        </Button>
       </div>
       <p className="text-[11.5px] text-brand-label">
         {t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}

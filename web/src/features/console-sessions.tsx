@@ -28,6 +28,7 @@ import { SessionList } from './session-list'
 import { AskCard } from './session-ask-claude'
 import { useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
+import { Button } from '#/components/ui/button'
 
 export type SessionCard = {
   id: string
@@ -190,15 +191,16 @@ function JumpLatest({
   const { t } = useLingui()
   if (pinned) return null
   return (
-    <button
+    <Button
+      variant="solid"
       type="button"
       onClick={onJump}
       data-testid="jump-latest"
-      className="chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full bg-brand-text px-4 text-[13px] font-medium text-brand-deck shadow-lg"
+      className="chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium shadow-lg"
     >
       <ArrowDown size={15} aria-hidden />
       {unread > 0 ? t`${unread} new` : t`Latest`}
-    </button>
+    </Button>
   )
 }
 
@@ -377,7 +379,8 @@ function SessionDetail({ id }: { id: string }) {
               <div className="flex items-center justify-between gap-2 px-1 text-[12px] text-brand-label">
                 <span>{t`${total} messages, showing ${shown}`}</span>
                 {start > 0 ? (
-                  <button
+                  <Button
+                    variant="plain"
                     type="button"
                     disabled={pagingIn}
                     onClick={() => {
@@ -396,7 +399,7 @@ function SessionDetail({ id }: { id: string }) {
                       : atCompaction
                         ? t`Show history before compaction`
                         : t`Load earlier`}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             ) : null}

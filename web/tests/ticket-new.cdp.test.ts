@@ -72,8 +72,13 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
 
     await page.getByTestId('new-ticket').click()
     const sheet = page.getByTestId('new-ticket-sheet')
-    await sheet.locator('select').first().selectOption(from)
-    await sheet.locator('select').nth(1).selectOption(to)
+    // Base UI Select: open the trigger, pick from the popup (portalled to body)
+    const pick = async (index: number, key: string) => {
+      await sheet.getByRole('combobox').nth(index).click()
+      await page.getByRole('option', { name: key, exact: true }).click()
+    }
+    await pick(0, from)
+    await pick(1, to)
     await sheet.getByLabel('标题').fill('从手机提的测试单')
     await sheet.getByLabel('你看到的现象').fill('手机上看到 X')
     await sheet.getByLabel('你的假设').fill('对方应该提供 Y')

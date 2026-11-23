@@ -6,6 +6,8 @@ import { getCollab } from '#/lib/runtime-client'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { num, pct, usd } from './console-collab-format'
+import { Button } from '#/components/ui/button'
+import { Disclosure } from '#/components/ui/disclosure'
 
 export function RunDetail({ run, poll }: { run: string; poll: number }) {
   const { t } = useLingui()
@@ -35,8 +37,11 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
     <section className="grid gap-3" aria-label={t`Run detail`}>
       {/* the agent's own output and the step log: long and mono, so folded
           on a phone (open on a wide screen) */}
-      <details className="group grid gap-2" open={wide}>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold">
+      <Disclosure
+        key={`t-${wide}`}
+        defaultOpen={wide}
+        className="grid gap-2"
+        title={
           <span>
             {t`Transcript`}{' '}
             <span className="font-mono text-xs font-normal text-brand-label">
@@ -44,13 +49,8 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
               {num(transcript.data?.total)}
             </span>
           </span>
-          <span
-            aria-hidden
-            className="text-brand-label transition group-open:rotate-90"
-          >
-            ›
-          </span>
-        </summary>
+        }
+      >
         <ol
           className="grid max-h-96 gap-px overflow-auto border border-brand-border bg-brand-border font-mono text-xs"
           aria-label={t`Transcript`}
@@ -84,35 +84,22 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
             )
           })}
         </ol>
-      </details>
+      </Disclosure>
       {record?.final_text_tail ? (
-        <details className="group grid gap-2" open={wide}>
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold">
-            {t`Final output`}
-            <span
-              aria-hidden
-              className="text-brand-label transition group-open:rotate-90"
-            >
-              ›
-            </span>
-          </summary>
+        <Disclosure
+          key={`o-${wide}`}
+          defaultOpen={wide}
+          className="grid gap-2"
+          title={t`Final output`}
+        >
           <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-xs whitespace-pre-wrap text-brand-muted">
             {record.final_text_tail}
           </pre>
-        </details>
+        </Disclosure>
       ) : null}
       {/* provenance for debugging: trigger, command, backend, tokens,
           prompt parts — two screens on a phone, so folded */}
-      <details className="group grid gap-3">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold">
-          {t`Launch details`}
-          <span
-            aria-hidden
-            className="text-brand-label transition group-open:rotate-90"
-          >
-            ›
-          </span>
-        </summary>
+      <Disclosure className="grid gap-3" title={t`Launch details`}>
         <div className="grid gap-3">
           <dl className="grid gap-px bg-brand-border sm:grid-cols-2">
             {[
@@ -194,14 +181,15 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
               </tbody>
             </table>
           </div>
-          <button
+          <Button
+            variant="plain"
             type="button"
             className="justify-self-start border border-brand-border px-3 py-1.5 text-xs text-brand-muted hover:border-brand-running hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:outline-none"
             onClick={() => setShowPrompt((value) => !value)}
             aria-expanded={showPrompt}
           >
             {showPrompt ? t`Hide initial prompt` : t`Show initial prompt`}
-          </button>
+          </Button>
           {showPrompt ? (
             <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-xs whitespace-pre-wrap text-brand-muted">
               {prompt.data?.ok
@@ -210,7 +198,7 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
             </pre>
           ) : null}
         </div>
-      </details>
+      </Disclosure>
     </section>
   )
 }

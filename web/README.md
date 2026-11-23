@@ -38,6 +38,13 @@ The Runtime Console reads these loopback endpoints:
 The close action posts `WM_CLOSE` to the selected VS Code window. It does not
 terminate the VS Code process, and the browser asks for confirmation first.
 
+## UI components
+
+Controls come from `src/components/ui` (Base UI underneath), never a bare
+native `<button>` / `<input>` / `<select>` / `<textarea>` / `<details>`:
+`eslint.config.js` forbids them outside `src/components/`. The set and its
+variants: [`docs/web-pwa.md` → Visual language](../docs/web-pwa.md#visual-language-2026-11-22-revised).
+
 ## Checks
 
 ```bash

@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { cn } from '#/lib/utils'
+import { Button } from '#/components/ui/button'
 
 export type ViewerImage = {
   key: string
@@ -120,34 +121,37 @@ export function ImageViewer({
           {!src && !error ? ` ${t`Loading original…`}` : ''}
           {error ? ` ${error}` : ''}
         </span>
-        <button
+        <Button
+          variant="plain"
           type="button"
           aria-label={t`Close`}
           onClick={onClose}
           className="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full bg-white/15"
         >
           <X size={20} aria-hidden />
-        </button>
+        </Button>
       </div>
       {index > 0 ? (
-        <button
+        <Button
+          variant="plain"
           type="button"
           aria-label={t`Previous image`}
           onClick={step(-1)}
           className="absolute top-1/2 left-2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white"
         >
           <ChevronLeft size={22} aria-hidden />
-        </button>
+        </Button>
       ) : null}
       {index < images.length - 1 ? (
-        <button
+        <Button
+          variant="plain"
           type="button"
           aria-label={t`Next image`}
           onClick={step(1)}
           className="absolute top-1/2 right-2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white"
         >
           <ChevronRight size={22} aria-hidden />
-        </button>
+        </Button>
       ) : null}
     </div>,
     document.body,

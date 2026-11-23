@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLingui } from '@lingui/react/macro'
+import { Button } from '#/components/ui/button'
 
 type AgentState = 'running' | 'waiting' | 'done'
 
@@ -79,7 +80,8 @@ export function WorkbenchExample() {
         {sessions.map((session) => {
           const selected = session.id === active.id
           return (
-            <button
+            <Button
+              variant="plain"
               key={session.id}
               type="button"
               role="tab"
@@ -92,7 +94,7 @@ export function WorkbenchExample() {
               <span className="landing-deck-state" />
               <strong>{session.repo}</strong>
               <span>{stateLabels[session.state]}</span>
-            </button>
+            </Button>
           )
         })}
       </div>

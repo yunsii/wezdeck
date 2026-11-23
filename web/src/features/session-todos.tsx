@@ -10,6 +10,8 @@ import { Check, CornerDownLeft, RotateCcw, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { remoteLink } from '#/lib/remote-link'
+import { Button } from '#/components/ui/button'
+import { Input } from '#/components/ui/input'
 
 export type Todo = {
   id: number
@@ -99,14 +101,15 @@ export function TodoPanel({
             ? t`To-dos of ${repo}: they stay with the repo, any session can pick them up`
             : t`To-dos of this repo`}
         </span>
-        <button
+        <Button
+          variant="plain"
           type="button"
           onClick={onClose}
           aria-label={t`Close to-dos`}
           className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-brand-muted"
         >
           <X size={14} aria-hidden />
-        </button>
+        </Button>
       </div>
       {writable ? (
         // not a <form>: this panel renders inside the composer's form, and a
@@ -115,7 +118,8 @@ export function TodoPanel({
           <label htmlFor="todo-input" className="sr-only">
             {t`New to-do`}
           </label>
-          <input
+          <Input
+            variant="field"
             id="todo-input"
             value={text}
             onChange={(event) => setText(event.target.value)}
@@ -125,16 +129,17 @@ export function TodoPanel({
               if (text.trim() && !write.busy) void add()
             }}
             placeholder={t`A big change to follow up later…`}
-            className="min-w-0 flex-1 rounded-[10px] bg-brand-deck px-3 py-2 text-[15px] outline-none placeholder:text-brand-label"
+            className="min-h-10 min-w-0 flex-1 bg-brand-deck py-2"
           />
-          <button
+          <Button
+            variant="solid"
             type="button"
             onClick={() => void add()}
             disabled={!text.trim() || write.busy}
-            className="key-press shrink-0 rounded-[10px] bg-brand-text px-3 text-[14px] font-medium text-brand-deck disabled:opacity-40"
+            className="shrink-0 rounded-[10px] px-3 text-[14px] font-medium disabled:opacity-40"
           >
             {t`Add`}
-          </button>
+          </Button>
         </div>
       ) : null}
       {write.error ? (
@@ -162,7 +167,8 @@ export function TodoPanel({
               {todo.text}
             </span>
             <span className="flex gap-1">
-              <button
+              <Button
+                variant="plain"
                 type="button"
                 onClick={() => onUse(todo.text)}
                 aria-label={t`Put into the message`}
@@ -170,9 +176,10 @@ export function TodoPanel({
                 className="inline-flex size-8 items-center justify-center rounded-full text-brand-muted"
               >
                 <CornerDownLeft size={15} aria-hidden />
-              </button>
+              </Button>
               {writable ? (
-                <button
+                <Button
+                  variant="plain"
                   type="button"
                   disabled={write.busy}
                   onClick={() => void write.run({ op: 'done', id: todo.id })}
@@ -180,7 +187,7 @@ export function TodoPanel({
                   className="inline-flex size-8 items-center justify-center rounded-full text-brand-done disabled:opacity-40"
                 >
                   <Check size={16} aria-hidden />
-                </button>
+                </Button>
               ) : null}
             </span>
           </li>
@@ -188,13 +195,14 @@ export function TodoPanel({
       </ul>
       {done.length ? (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-          <button
+          <Button
+            variant="plain"
             type="button"
             onClick={() => setShowDone(!showDone)}
             className="px-1 text-left text-[12px] text-brand-label"
           >
             {showDone ? t`Hide done` : t`Done (${doneCount})`}
-          </button>
+          </Button>
           {showDone
             ? done.slice(0, 20).map((todo) => (
                 <div
@@ -203,7 +211,8 @@ export function TodoPanel({
                 >
                   <span className="break-words">{todo.text}</span>
                   {writable ? (
-                    <button
+                    <Button
+                      variant="plain"
                       type="button"
                       disabled={write.busy}
                       onClick={() =>
@@ -213,7 +222,7 @@ export function TodoPanel({
                       className="inline-flex size-7 items-center justify-center rounded-full no-underline"
                     >
                       <RotateCcw size={13} aria-hidden />
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               ))

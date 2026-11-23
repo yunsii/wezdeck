@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 import { remoteLink } from '#/lib/remote-link'
 import { cn } from '#/lib/utils'
 import { useAgo } from './tickets-view'
+import { Disclosure } from '#/components/ui/disclosure'
 
 const fmt = (n: number) => n.toLocaleString('zh-CN')
 
@@ -123,10 +124,11 @@ export function UsageCard() {
       <p className="text-[11.5px] text-brand-label">
         {t`Today (UTC) ${day}, updated ${at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed.`}
       </p>
-      <details className="text-[12.5px] text-brand-muted">
-        <summary className="cursor-pointer text-brand-text">
-          {t`How the WebSocket is billed`}
-        </summary>
+      <Disclosure
+        className="text-[12.5px] text-brand-muted"
+        triggerClassName="min-h-9 text-[12.5px] font-normal text-brand-text"
+        title={t`How the WebSocket is billed`}
+      >
         <ul className="mt-1.5 grid list-disc gap-1 pl-4">
           <li>{t`Opening the connection is one request.`}</li>
           <li>
@@ -139,7 +141,7 @@ export function UsageCard() {
             {t`A direct WebRTC link skips the relay entirely and costs nothing.`}
           </li>
         </ul>
-      </details>
+      </Disclosure>
     </div>
   )
 }

@@ -20,6 +20,9 @@ import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
 import { ImageViewer } from './image-viewer'
 import { TodoPanel, useTodos } from './session-todos'
+import { Button } from '#/components/ui/button'
+import { Input } from '#/components/ui/input'
+import { Textarea } from '#/components/ui/textarea'
 
 const MAX_IMAGES = 5
 
@@ -75,7 +78,8 @@ export function ErrorLine({ message }: { message: string }) {
   return (
     <p role="alert" className="flex items-start gap-2 text-xs text-brand-error">
       <span className="min-w-0 flex-1 break-words select-text">{message}</span>
-      <button
+      <Button
+        variant="plain"
         type="button"
         onClick={() => void copy()}
         aria-label={t`Copy error`}
@@ -87,7 +91,7 @@ export function ErrorLine({ message }: { message: string }) {
           <Copy size={12} aria-hidden />
         )}
         {copied ? t`Copied` : t`Copy`}
-      </button>
+      </Button>
     </p>
   )
 }
@@ -227,14 +231,15 @@ function KeyPanel({
             ? t`Turn on write access in Settings to send these keys`
             : t`Tap to send into the agent pane`}
         </span>
-        <button
+        <Button
+          variant="plain"
           type="button"
           onClick={onClose}
           aria-label={t`Close keys`}
           className="inline-flex size-7 items-center justify-center rounded-full text-brand-muted"
         >
           <X size={14} aria-hidden />
-        </button>
+        </Button>
       </div>
       <div
         role="group"
@@ -243,7 +248,8 @@ function KeyPanel({
         className="grid grid-cols-3 gap-1.5"
       >
         {keys.map(({ key, label, hint }) => (
-          <button
+          <Button
+            variant="key"
             key={key}
             type="button"
             disabled={disabled}
@@ -251,7 +257,7 @@ function KeyPanel({
               onKey(key)
               onClose()
             }}
-            className="key-press grid h-12 place-content-center gap-0.5 rounded-[10px] border border-brand-edge bg-brand-deck px-1 disabled:opacity-40"
+            className="grid h-12 place-content-center gap-0.5 rounded-[10px] px-1 disabled:opacity-40"
           >
             <span className="text-[14px] leading-none font-medium">
               {label}
@@ -259,7 +265,7 @@ function KeyPanel({
             <span className="text-[11px] leading-none text-brand-label">
               {hint}
             </span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>
@@ -303,7 +309,8 @@ function Toolbar({
       data-testid="composer-tools"
       className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
     >
-      <button
+      <Button
+        variant="plain"
         type="button"
         aria-pressed={panel === 'keys'}
         aria-label={t`Quick keys`}
@@ -313,8 +320,9 @@ function Toolbar({
       >
         <Keyboard size={14} aria-hidden />
         {t`Keys`}
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="plain"
         type="button"
         aria-pressed={panel === 'todos'}
         title={t`Follow-ups of this repo`}
@@ -328,7 +336,7 @@ function Toolbar({
             {openTodos}
           </span>
         ) : null}
-      </button>
+      </Button>
       {writable && !full ? (
         <label
           className={cn(
@@ -338,7 +346,8 @@ function Toolbar({
         >
           <ImagePlus size={14} aria-hidden />
           {t`Images`}
-          <input
+          <Input
+            variant="bare"
             type="file"
             accept="image/*"
             multiple
@@ -352,7 +361,8 @@ function Toolbar({
       ) : null}
       {composer.images.map((image, i) => (
         <span key={image.key} className="relative size-8 shrink-0">
-          <button
+          <Button
+            variant="plain"
             type="button"
             aria-label={t`Preview image`}
             onClick={() => setPreview(i)}
@@ -363,15 +373,16 @@ function Toolbar({
               alt=""
               className="size-8 rounded-[8px] object-cover"
             />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="solid"
             type="button"
             aria-label={t`Remove image`}
             onClick={() => composer.remove(image.key)}
-            className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-brand-text text-brand-deck"
+            className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full"
           >
             <X size={10} aria-hidden />
-          </button>
+          </Button>
         </span>
       ))}
       {preview !== null && composer.images.length ? (
@@ -446,7 +457,8 @@ export function ComposerBox({
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
         </label>
-        <textarea
+        <Textarea
+          variant="bare"
           id="session-composer"
           value={composer.text}
           onFocus={(event) => {
@@ -459,14 +471,15 @@ export function ComposerBox({
           placeholder={t`Message`}
           className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-[16px] outline-none [field-sizing:content] placeholder:text-brand-label"
         />
-        <button
+        <Button
+          variant="solid"
           type="submit"
           aria-label={t`Send`}
           disabled={Boolean(composer.progress) || !composer.ready || blocked}
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-text text-brand-deck disabled:opacity-30"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full disabled:opacity-30"
         >
           <SendHorizontal size={18} aria-hidden />
-        </button>
+        </Button>
       </div>
     </>
   )

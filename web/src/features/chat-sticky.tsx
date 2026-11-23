@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import { trace } from '#/lib/client-trace'
 import { typedText } from './chat-thread'
 import type { Message } from './chat-thread'
+import { Button } from '#/components/ui/button'
 
 /** room the bar takes at the top (its height plus a little air) */
 const BAR = 52
@@ -92,7 +93,8 @@ export function StickyPrompt({
       className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0"
     >
       {text ? (
-        <button
+        <Button
+          variant="plain"
           type="button"
           data-testid="sticky-prompt"
           onClick={jump}
@@ -105,7 +107,7 @@ export function StickyPrompt({
             className="shrink-0 text-brand-label"
           />
           <span className="min-w-0 flex-1 truncate">{text}</span>
-        </button>
+        </Button>
       ) : null}
     </div>
   )

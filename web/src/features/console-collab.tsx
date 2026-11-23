@@ -29,6 +29,7 @@ import {
   openQuestion,
 } from './ticket-reply'
 import { Led } from '#/components/deck/led'
+import { Button } from '#/components/ui/button'
 
 export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
   if (ticket.running.length > 0) return 'running'
@@ -250,7 +251,8 @@ function RunKeys({
           item.exit == null ? 'running' : item.exit === 0 ? 'done' : 'error'
         return (
           <li key={item.run}>
-            <button
+            <Button
+              variant="plain"
               type="button"
               aria-pressed={active}
               onClick={() => onSelect(item.run)}
@@ -286,7 +288,7 @@ function RunKeys({
                   </div>
                 ))}
               </dl>
-            </button>
+            </Button>
           </li>
         )
       })}
