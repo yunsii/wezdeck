@@ -7,9 +7,8 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
@@ -22,6 +21,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
+import { Sheet } from '#/components/ui/sheet'
 
 type Repo = { root: string; label: string; visited?: number }
 type Kind = 'dev' | 'task' | 'hotfix'
@@ -137,13 +137,6 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
       params: { locale: locale === 'en' ? undefined : locale, id: listed.id },
     })
   }, [listed, navigate, locale, onClose])
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
   const busy = Boolean(jobId) && current?.stage !== 'failed'
   const name = subject.trim()
   const ready =
@@ -167,122 +160,103 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
     task: t`task: a short focused change, reclaimed after delivery`,
     hotfix: t`hotfix: an urgent fix`,
   }
-  if (typeof document === 'undefined') return null
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/30"
-      onClick={onClose}
-      data-deck
+  return (
+    <Sheet
+      open={true}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      title={t`New session`}
+      testId="new-session-sheet"
+      write
     >
-      <div
-        role="dialog"
-        aria-label={t`New session`}
-        data-testid="new-session-sheet"
-        data-write
-        onClick={(event) => event.stopPropagation()}
-        className="max-h-[88dvh] w-full overflow-y-auto rounded-t-[20px] bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text"
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
-          <h2 className="text-[16px] font-semibold">{t`New session`}</h2>
-          <Button
-            variant="plain"
-            type="button"
-            onClick={onClose}
-            aria-label={t`Close`}
-            className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
-          >
-            <X size={18} aria-hidden />
-          </Button>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
+        <label className="grid gap-1 text-[13px] text-brand-muted">
+          {t`Repository`}
+          <Select
+            size="lg"
+            value={chosen}
+            disabled={busy}
+            onValueChange={setRepo}
+            options={(repos.data?.repos ?? []).map((r) => ({
+              value: r.root,
+              label: r.label,
+            }))}
+          />
+        </label>
+        <div className="grid gap-1">
+          <Segmented
+            label={t`Kind`}
+            value={kind}
+            onChange={(value) => !busy && setKind(value)}
+            options={[
+              { value: 'dev', label: 'dev' },
+              { value: 'task', label: 'task' },
+              { value: 'hotfix', label: 'hotfix' },
+            ]}
+          />
+          <p className="px-1 text-[12px] text-brand-label">{kinds[kind]}</p>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
-          <label className="grid gap-1 text-[13px] text-brand-muted">
-            {t`Repository`}
-            <Select
-              size="lg"
-              value={chosen}
-              disabled={busy}
-              onValueChange={setRepo}
-              options={(repos.data?.repos ?? []).map((r) => ({
-                value: r.root,
-                label: r.label,
-              }))}
-            />
-          </label>
-          <div className="grid gap-1">
-            <Segmented
-              label={t`Kind`}
-              value={kind}
-              onChange={(value) => !busy && setKind(value)}
-              options={[
-                { value: 'dev', label: 'dev' },
-                { value: 'task', label: 'task' },
-                { value: 'hotfix', label: 'hotfix' },
-              ]}
-            />
-            <p className="px-1 text-[12px] text-brand-label">{kinds[kind]}</p>
-          </div>
-          <label className="grid gap-1 text-[13px] text-brand-muted">
-            {t`Subject`}
-            <Input
-              variant="field"
-              value={subject}
-              disabled={busy}
-              maxLength={60}
-              onChange={(event) => setSubject(event.target.value)}
-              placeholder={t`e.g. phone-create`}
-            />
-            <span className="px-1 text-[12px] text-brand-label">
-              {subject.trim()
-                ? t`Worktree ${kind}-${name}, branch ${kind}/${name} (the host makes the final names; a taken one gets -2)`
-                : t`Becomes the worktree and branch name, like Ctrl+k g at the desk.`}
-            </span>
-          </label>
-          <label className="grid gap-1 text-[13px] text-brand-muted">
-            {t`First message to the agent`}
-            <Textarea
-              value={prompt}
-              disabled={busy}
-              rows={4}
-              onChange={(event) => setPrompt(event.target.value)}
-              placeholder={t`What should it work on?`}
-            />
-          </label>
-          {current ? (
-            <p
-              role="status"
-              data-testid="new-session-stage"
-              data-stage={current.stage}
-              className={
-                current.stage === 'failed'
-                  ? 'rounded-[10px] bg-brand-error/10 px-3 py-2 text-[13px] text-brand-error'
-                  : 'rounded-[10px] bg-brand-surface px-3 py-2 text-[13px]'
-              }
-            >
-              {stageText(current)}
-              {current.branch ? (
-                <span className="block text-[12px] text-brand-label">
-                  {current.branch}
-                </span>
-              ) : null}
-            </p>
-          ) : null}
-          {error ? (
-            <p role="alert" className="text-[13px] text-brand-error">
-              {error}
-            </p>
-          ) : null}
-          <Button
-            variant="solid"
-            type="button"
-            disabled={!ready || busy}
-            onClick={() => void submit()}
-            className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+        <label className="grid gap-1 text-[13px] text-brand-muted">
+          {t`Subject`}
+          <Input
+            variant="field"
+            value={subject}
+            disabled={busy}
+            maxLength={60}
+            onChange={(event) => setSubject(event.target.value)}
+            placeholder={t`e.g. phone-create`}
+          />
+          <span className="px-1 text-[12px] text-brand-label">
+            {subject.trim()
+              ? t`Worktree ${kind}-${name}, branch ${kind}/${name} (the host makes the final names; a taken one gets -2)`
+              : t`Becomes the worktree and branch name, like Ctrl+k g at the desk.`}
+          </span>
+        </label>
+        <label className="grid gap-1 text-[13px] text-brand-muted">
+          {t`First message to the agent`}
+          <Textarea
+            value={prompt}
+            disabled={busy}
+            rows={4}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder={t`What should it work on?`}
+          />
+        </label>
+        {current ? (
+          <p
+            role="status"
+            data-testid="new-session-stage"
+            data-stage={current.stage}
+            className={
+              current.stage === 'failed'
+                ? 'rounded-[10px] bg-brand-error/10 px-3 py-2 text-[13px] text-brand-error'
+                : 'rounded-[10px] bg-brand-surface px-3 py-2 text-[13px]'
+            }
           >
-            {t`Create session`}
-          </Button>
-        </div>
+            {stageText(current)}
+            {current.branch ? (
+              <span className="block text-[12px] text-brand-label">
+                {current.branch}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="text-[13px] text-brand-error">
+            {error}
+          </p>
+        ) : null}
+        <Button
+          variant="solid"
+          type="button"
+          disabled={!ready || busy}
+          onClick={() => void submit()}
+          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+        >
+          {t`Create session`}
+        </Button>
       </div>
-    </div>,
-    document.body,
+    </Sheet>
   )
 }

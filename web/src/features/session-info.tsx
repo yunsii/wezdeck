@@ -5,13 +5,13 @@
 // backdrop or × closes it. Portalled to <body>: the header's backdrop blur
 // would otherwise become the containing block of a fixed sheet.
 import { useLingui } from '@lingui/react/macro'
-import { Check, Copy, Pencil, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Check, Copy, Pencil } from 'lucide-react'
+import { useState } from 'react'
 
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { Button } from '#/components/ui/button'
+import { Sheet } from '#/components/ui/sheet'
 
 export type MetaGroup = {
   name: string
@@ -212,14 +212,6 @@ export function SessionInfo({
   const { t } = useLingui()
   const { groups: groupLabels, keys, yes, no } = useLabels()
   const [copiedRef, setCopiedRef] = useState(false)
-  useEffect(() => {
-    if (!open) return
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
   if (!open || typeof document === 'undefined') return null
   const loaded = {
     key: 'loaded',
@@ -233,96 +225,78 @@ export function SessionInfo({
     ),
     ...extraGroups(data, yes, no, t`joins the current turn`, t`is queued`),
   ]
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/30"
-      onClick={onClose}
-      data-deck
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      title={t`Session info`}
+      testId="session-info"
     >
-      <div
-        role="dialog"
-        aria-label={t`Session info`}
-        data-testid="session-info"
-        onClick={(event) => event.stopPropagation()}
-        className="max-h-[82dvh] w-full overflow-y-auto rounded-t-[20px] bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text"
-      >
-        <div className="sticky top-0 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
-          <h2 className="text-[16px] font-semibold">{t`Session info`}</h2>
+      <div className="grid gap-3 px-3">
+        {data.reference ? (
+          <Button
+            variant="solid"
+            type="button"
+            onClick={() => {
+              void copyText(data.reference ?? '').then(() => {
+                setCopiedRef(true)
+                setTimeout(() => setCopiedRef(false), 1_500)
+              })
+            }}
+            className="flex min-h-11 items-center justify-center gap-2 px-3 text-[14px] font-medium"
+          >
+            {copiedRef ? (
+              <Check size={16} aria-hidden />
+            ) : (
+              <Copy size={16} aria-hidden />
+            )}
+            {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
+          </Button>
+        ) : null}
+        <ClearButton
+          id={data.id}
+          status={data.status}
+          waitingKind={data.waiting_kind}
+        />
+        {onRename ? (
           <Button
             variant="plain"
             type="button"
-            onClick={onClose}
-            aria-label={t`Close`}
-            className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
+            data-write
+            disabled={renameDisabled}
+            onClick={() => {
+              const title = data.title || data.window || data.name || ''
+              const next = window.prompt(t`New session title`, title)?.trim()
+              if (next && next !== title) onRename(next)
+            }}
+            className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
           >
-            <X size={18} aria-hidden />
+            <Pencil size={15} aria-hidden />
+            {t`Rename via /rename in the agent pane`}
           </Button>
-        </div>
-        <div className="grid gap-3 px-3">
-          {data.reference ? (
-            <Button
-              variant="solid"
-              type="button"
-              onClick={() => {
-                void copyText(data.reference ?? '').then(() => {
-                  setCopiedRef(true)
-                  setTimeout(() => setCopiedRef(false), 1_500)
-                })
-              }}
-              className="flex min-h-11 items-center justify-center gap-2 px-3 text-[14px] font-medium"
-            >
-              {copiedRef ? (
-                <Check size={16} aria-hidden />
-              ) : (
-                <Copy size={16} aria-hidden />
-              )}
-              {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
-            </Button>
-          ) : null}
-          <ClearButton
-            id={data.id}
-            status={data.status}
-            waitingKind={data.waiting_kind}
-          />
-          {onRename ? (
-            <Button
-              variant="plain"
-              type="button"
-              data-write
-              disabled={renameDisabled}
-              onClick={() => {
-                const title = data.title || data.window || data.name || ''
-                const next = window.prompt(t`New session title`, title)?.trim()
-                if (next && next !== title) onRename(next)
-              }}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
-            >
-              <Pencil size={15} aria-hidden />
-              {t`Rename via /rename in the agent pane`}
-            </Button>
-          ) : null}
-          <p className="px-1 text-[11.5px] text-brand-label">
-            {t`Tap a row to copy its value.`}
-          </p>
-          {groups.map((group) => (
-            <section key={group.name} className="grid gap-1">
-              <h3 className="px-1 text-[12.5px] font-semibold text-brand-muted">
-                {groupLabels[group.name] ?? group.name}
-              </h3>
-              <div className="overflow-hidden rounded-[14px] bg-brand-surface">
-                {group.rows.map((row) => (
-                  <Row
-                    key={row.key}
-                    label={keys[row.key] ?? row.key}
-                    value={format(row.key, row.value)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        ) : null}
+        <p className="px-1 text-[11.5px] text-brand-label">
+          {t`Tap a row to copy its value.`}
+        </p>
+        {groups.map((group) => (
+          <section key={group.name} className="grid gap-1">
+            <h3 className="px-1 text-[12.5px] font-semibold text-brand-muted">
+              {groupLabels[group.name] ?? group.name}
+            </h3>
+            <div className="overflow-hidden rounded-[14px] bg-brand-surface">
+              {group.rows.map((row) => (
+                <Row
+                  key={row.key}
+                  label={keys[row.key] ?? row.key}
+                  value={format(row.key, row.value)}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
-    </div>,
-    document.body,
+    </Sheet>
   )
 }

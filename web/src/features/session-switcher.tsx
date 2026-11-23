@@ -7,9 +7,7 @@
 // back still returns to the list.
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate } from '@tanstack/react-router'
-import { X } from 'lucide-react'
 import { useCallback, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 
 import { Led } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
@@ -24,6 +22,7 @@ import {
   worktreeKey,
 } from './session-order'
 import { Button } from '#/components/ui/button'
+import { Sheet } from '#/components/ui/sheet'
 
 export type JumpKind = 'waiting' | 'done' | 'running'
 
@@ -144,14 +143,6 @@ export function SessionSwitcher({
 }) {
   const { t } = useLingui()
   const nav = useSessionNav(current)
-  useEffect(() => {
-    if (!open) return
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
   if (!open || typeof document === 'undefined') return null
   const row = (session: SessionCard, repo?: string) => (
     <li key={session.id}>
@@ -190,70 +181,50 @@ export function SessionSwitcher({
       </Button>
     </li>
   )
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/30"
-      onClick={onClose}
-      data-deck
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      title={t`Switch session`}
+      testId="session-switcher"
     >
-      <div
-        role="dialog"
-        aria-label={t`Switch session`}
-        data-testid="session-switcher"
-        onClick={(event) => event.stopPropagation()}
-        className="max-h-[78dvh] w-full overflow-y-auto rounded-t-[20px] bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text"
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
-          <h2 className="text-[16px] font-semibold">{t`Switch session`}</h2>
-          <Button
-            variant="plain"
-            type="button"
-            onClick={onClose}
-            aria-label={t`Close`}
-            className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
+      <div className="grid gap-3 px-3">
+        {nav.waiting.length ? (
+          <section className="overflow-hidden rounded-[14px] border border-brand-waiting/40 bg-brand-surface">
+            <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
+              {t`Needs you`}
+            </h3>
+            <ul>{nav.waiting.map((session) => row(session, session.repo))}</ul>
+          </section>
+        ) : null}
+        {nav.tree.map((repo) => (
+          <section
+            key={repo.key}
+            className="overflow-hidden rounded-[14px] bg-brand-surface"
           >
-            <X size={18} aria-hidden />
-          </Button>
-        </div>
-        <div className="grid gap-3 px-3">
-          {nav.waiting.length ? (
-            <section className="overflow-hidden rounded-[14px] border border-brand-waiting/40 bg-brand-surface">
-              <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
-                {t`Needs you`}
-              </h3>
-              <ul>
-                {nav.waiting.map((session) => row(session, session.repo))}
-              </ul>
-            </section>
-          ) : null}
-          {nav.tree.map((repo) => (
-            <section
-              key={repo.key}
-              className="overflow-hidden rounded-[14px] bg-brand-surface"
-            >
-              <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
-                {repo.label}
-              </h3>
-              <ul>
-                {repo.worktrees.flatMap((wt) =>
-                  wt.rows.map((session) =>
-                    row(
-                      session,
-                      repo.worktrees.length > 1 || wt.label !== repo.label
-                        ? wt.label
-                        : undefined,
-                    ),
+            <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
+              {repo.label}
+            </h3>
+            <ul>
+              {repo.worktrees.flatMap((wt) =>
+                wt.rows.map((session) =>
+                  row(
+                    session,
+                    repo.worktrees.length > 1 || wt.label !== repo.label
+                      ? wt.label
+                      : undefined,
                   ),
-                )}
-              </ul>
-            </section>
-          ))}
-          <p className="px-1 text-[11.5px] text-brand-label">
-            {t`On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list.`}
-          </p>
-        </div>
+                ),
+              )}
+            </ul>
+          </section>
+        ))}
+        <p className="px-1 text-[11.5px] text-brand-label">
+          {t`On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list.`}
+        </p>
       </div>
-    </div>,
-    document.body,
+    </Sheet>
   )
 }

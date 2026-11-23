@@ -6,9 +6,8 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
@@ -19,6 +18,7 @@ import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
 import { Checkbox } from '#/components/ui/checkbox'
+import { Sheet } from '#/components/ui/sheet'
 
 type Target = { key: string; path: string }
 
@@ -86,13 +86,6 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState('')
   const fromKey = from || keys[0] || ''
   const toKey = to || keys.find((key) => key !== fromKey) || ''
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
   const ready =
     Boolean(fromKey) &&
     Boolean(toKey) &&
@@ -140,95 +133,76 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
       />
     </label>
   )
-  if (typeof document === 'undefined') return null
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/30"
-      onClick={onClose}
-      data-deck
+  return (
+    <Sheet
+      open={true}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      title={t`New ticket`}
+      testId="new-ticket-sheet"
+      write
     >
-      <div
-        role="dialog"
-        aria-label={t`New ticket`}
-        data-testid="new-ticket-sheet"
-        data-write
-        onClick={(event) => event.stopPropagation()}
-        className="max-h-[90dvh] w-full overflow-y-auto rounded-t-[20px] bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text"
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-brand-deck px-4 pt-3 pb-2">
-          <h2 className="text-[16px] font-semibold">{t`New ticket`}</h2>
-          <Button
-            variant="plain"
-            type="button"
-            onClick={onClose}
-            aria-label={t`Close`}
-            className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted"
-          >
-            <X size={18} aria-hidden />
-          </Button>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 sm:gap-2">
+          {repoSelect(fromKey, setFrom, t`From`)}
+          {repoSelect(toKey, setTo, t`To`)}
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
-            {repoSelect(fromKey, setFrom, t`From`)}
-            {repoSelect(toKey, setTo, t`To`)}
-          </div>
-          {fromKey && fromKey === toKey ? (
-            <p className="text-[12px] text-brand-error">
-              {t`A ticket goes to another repository.`}
-            </p>
-          ) : null}
-          <label className="grid gap-1 text-[13px] text-brand-muted">
-            {t`Title`}
-            <Input
-              variant="field"
-              value={title}
-              disabled={busy}
-              maxLength={120}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder={t`What the other repository should do`}
-            />
-          </label>
-          <label className="grid gap-1 text-[13px] text-brand-muted">
-            {t`What you saw`}
-            <Textarea
-              value={observed}
-              disabled={busy}
-              rows={3}
-              onChange={(event) => setObserved(event.target.value)}
-              placeholder={t`The behaviour, error or data you actually observed`}
-            />
-          </label>
-          <label className="grid gap-1 text-[13px] text-brand-muted">
-            {t`What you assume`}
-            <Textarea
-              value={assumed}
-              disabled={busy}
-              rows={3}
-              onChange={(event) => setAssumed(event.target.value)}
-              placeholder={t`The contract or behaviour you expect from it — the target checks this first`}
-            />
-          </label>
-          <label className="flex min-h-11 items-center gap-2 text-[14px]">
-            <Checkbox checked={run} disabled={busy} onCheckedChange={setRun} />
-            {t`Start working on it now (a headless run on the host)`}
-          </label>
-          {error ? (
-            <p role="alert" className="text-[13px] text-brand-error">
-              {error}
-            </p>
-          ) : null}
-          <Button
-            variant="solid"
-            type="button"
-            disabled={!ready || busy}
-            onClick={() => void submit()}
-            className="min-h-12 px-3 text-[15px] disabled:opacity-40"
-          >
-            {busy ? t`Creating…` : t`Create ticket`}
-          </Button>
-        </div>
+        {fromKey && fromKey === toKey ? (
+          <p className="text-[12px] text-brand-error">
+            {t`A ticket goes to another repository.`}
+          </p>
+        ) : null}
+        <label className="grid gap-1 text-[13px] text-brand-muted">
+          {t`Title`}
+          <Input
+            variant="field"
+            value={title}
+            disabled={busy}
+            maxLength={120}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder={t`What the other repository should do`}
+          />
+        </label>
+        <label className="grid gap-1 text-[13px] text-brand-muted">
+          {t`What you saw`}
+          <Textarea
+            value={observed}
+            disabled={busy}
+            rows={3}
+            onChange={(event) => setObserved(event.target.value)}
+            placeholder={t`The behaviour, error or data you actually observed`}
+          />
+        </label>
+        <label className="grid gap-1 text-[13px] text-brand-muted">
+          {t`What you assume`}
+          <Textarea
+            value={assumed}
+            disabled={busy}
+            rows={3}
+            onChange={(event) => setAssumed(event.target.value)}
+            placeholder={t`The contract or behaviour you expect from it — the target checks this first`}
+          />
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-[14px]">
+          <Checkbox checked={run} disabled={busy} onCheckedChange={setRun} />
+          {t`Start working on it now (a headless run on the host)`}
+        </label>
+        {error ? (
+          <p role="alert" className="text-[13px] text-brand-error">
+            {error}
+          </p>
+        ) : null}
+        <Button
+          variant="solid"
+          type="button"
+          disabled={!ready || busy}
+          onClick={() => void submit()}
+          className="min-h-12 px-3 text-[15px] disabled:opacity-40"
+        >
+          {busy ? t`Creating…` : t`Create ticket`}
+        </Button>
       </div>
-    </div>,
-    document.body,
+    </Sheet>
   )
 }
