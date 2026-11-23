@@ -12,6 +12,7 @@ import { ChatMarkdown } from './chat-markdown'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
+import { SlashCommandRow } from './chat-command'
 
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
@@ -384,6 +385,14 @@ export function ChatThread({
             />
           )
         if (item.message.role === 'system') {
+          if (item.message.kind === 'slash')
+            return (
+              <SlashCommandRow
+                key={`m${at}`}
+                message={item.message}
+                onShown={stream ? () => advance(at + 1) : undefined}
+              />
+            )
           return (
             <CompactDivider
               key={`m${at}`}

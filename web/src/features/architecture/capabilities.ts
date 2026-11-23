@@ -190,6 +190,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '新开会话任务的进度',
         'Progress of a session being started',
       ),
+      c(
+        'session.history',
+        '同一项目里更早的 Claude 会话，供「恢复会话」选择',
+        'Earlier Claude conversations of the project, for 恢复会话',
+      ),
     ],
   },
   {

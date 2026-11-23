@@ -26,6 +26,7 @@ import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
+import { isBareResume, useResumeSheet } from './session-commands'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 
@@ -377,9 +378,16 @@ export function SessionDetail({ id }: { id: string }) {
       : data?.waiting_kind && !asking && !planReview
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''
+  const resume = useResumeSheet(id, (text) =>
+    send({ text, attachments: [], note: '' }),
+  )
   const composer = useComposer({
     id,
-    onSend: send,
+    // a bare /resume opens 恢复会话 instead of the TUI picker
+    onSend: (message) =>
+      isBareResume(message.text)
+        ? (resume.open(), Promise.resolve(true))
+        : send(message),
     diagnostics: () => ({
       session: { id, agent: data?.agent, status: data?.status, busy },
       chat: { pinned: follow.pinned, unread: follow.unread, shown, total },
@@ -533,7 +541,17 @@ export function SessionDetail({ id }: { id: string }) {
           keysDisabled={sending || device.state !== 'approved'}
           writable={device.state === 'approved'}
           onKey={(key) => void run('key', { key })}
+          commands={
+            data?.agent === 'claude'
+              ? {
+                  send: (text) =>
+                    void send({ text, attachments: [], note: '' }),
+                  resume: resume.open,
+                }
+              : undefined
+          }
         />
+        {resume.element}
       </form>
     </div>
   )

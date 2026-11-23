@@ -25,7 +25,8 @@ func TestParseClaudeTranscriptKeepsPromptsTextAndToolLines(t *testing.T) {
 		`not json`,
 	}
 	got := parseClaudeTranscript([]byte(strings.Join(lines, "\n")), 10)
-	want := []chatMessage{{Role: "user", Text: "帮我看看手机端"}, {Role: "assistant", Text: "好的"}, {Role: "tool", Text: "Bash ls web"}}
+	// the slash command shows as a system "slash" row (claude_command.go)
+	want := []chatMessage{{Role: "user", Text: "帮我看看手机端"}, {Role: "system", Text: "/goal"}, {Role: "assistant", Text: "好的"}, {Role: "tool", Text: "Bash ls web"}}
 	if len(got) != len(want) {
 		t.Fatalf("got %+v", got)
 	}

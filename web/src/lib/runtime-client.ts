@@ -377,6 +377,7 @@ export type HostReadAction =
   | 'ticket.targets'
   | 'session.new.job'
   | 'session.image'
+  | 'session.history'
 
 /**
  * Session reads, the same way collab reads go: a browser on the host asks

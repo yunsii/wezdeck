@@ -12,6 +12,7 @@ import {
   Keyboard,
   ListTodo,
   SendHorizontal,
+  SquareSlash,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -24,6 +25,7 @@ import { TodoPanel, useTodos } from './session-todos'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
+import { CommandPanel } from './session-commands'
 
 const MAX_IMAGES = 5
 
@@ -167,7 +169,7 @@ export function useComposer({
 }
 
 type Composer = ReturnType<typeof useComposer>
-type Panel = 'keys' | 'todos' | null
+type Panel = 'keys' | 'todos' | 'commands' | null
 
 const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
@@ -262,11 +264,14 @@ function KeyPanel({
 function Toolbar({
   composer,
   writable,
+  commands,
   panel,
   onPanel,
 }: {
   composer: Composer
   writable: boolean
+  /** a Claude session: offer the 命令 panel */
+  commands: boolean
   panel: Panel
   onPanel: (panel: Panel) => void
 }) {
@@ -303,6 +308,19 @@ function Toolbar({
         <Keyboard size={14} aria-hidden />
         {t`Keys`}
       </Button>
+      {commands ? (
+        <Button
+          variant="plain"
+          type="button"
+          aria-pressed={panel === 'commands'}
+          title={t`Slash commands for Claude`}
+          onClick={() => onPanel(panel === 'commands' ? null : 'commands')}
+          className={chip(panel === 'commands')}
+        >
+          <SquareSlash size={14} aria-hidden />
+          {t`Commands`}
+        </Button>
+      ) : null}
       <Button
         variant="plain"
         type="button"
@@ -390,6 +408,7 @@ export function ComposerBox({
   keysDisabled,
   writable,
   onKey,
+  commands,
 }: {
   composer: Composer
   blocked: boolean
@@ -399,6 +418,8 @@ export function ComposerBox({
   writable: boolean
   /** send an allowlisted key into the agent pane (Enter / Esc / Ctrl+C / …) */
   onKey: (key: string) => void
+  /** Claude sessions: send a slash command, open 恢复会话 */
+  commands?: { send: (text: string) => void; resume: () => void }
 }) {
   const { t } = useLingui()
   // one tool panel at a time, above the toolbar
@@ -426,9 +447,22 @@ export function ComposerBox({
           onClose={() => setPanel(null)}
         />
       ) : null}
+      {panel === 'commands' && commands ? (
+        <CommandPanel
+          disabled={keysDisabled}
+          onCommand={commands.send}
+          onResume={commands.resume}
+          onDraft={(text) => {
+            composer.setText(text)
+            document.getElementById('session-composer')?.focus()
+          }}
+          onClose={() => setPanel(null)}
+        />
+      ) : null}
       <Toolbar
         composer={composer}
         writable={writable}
+        commands={Boolean(commands)}
         panel={panel}
         onPanel={setPanel}
       />

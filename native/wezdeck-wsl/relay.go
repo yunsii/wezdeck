@@ -282,6 +282,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = listTicketTargets()
 	case "session.new.job":
 		result, err = newSessionJobStatus(args)
+	case "session.history":
+		result, err = sessionHistory(args)
 	case "session.image":
 		result, err = sessionImage(args)
 	default:

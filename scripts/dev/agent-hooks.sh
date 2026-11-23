@@ -47,9 +47,11 @@ load_requirements() {
     claude)
       # PreCompact / SessionStart compact: context compaction for the
       # phone's progress line (agent-attention/turn-lib.sh)
+      # SessionStart resume: /resume switched the pane to another
+      # conversation — handled like clear, so the phone follows it
       events=(UserPromptSubmit Notification Stop PreToolUse PostToolUse SessionStart
-        PreCompact SessionStart:compact)
-      actions=(running waiting done resolved resolved pane-evict compacting compacted)
+        PreCompact SessionStart:compact SessionStart:resume)
+      actions=(running waiting done resolved resolved pane-evict compacting compacted pane-evict)
       adapter_fragment='scripts/claude-hooks/emit-agent-status.sh'
       adapter_path="$repo_root/scripts/claude-hooks/emit-agent-status.sh"
       session_start_matcher=clear

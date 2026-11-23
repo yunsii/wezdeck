@@ -782,6 +782,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		}
 	}
 	path, agent := findTranscript(e.SessionID)
+	if path == "" {
+		// no transcript yet (a fresh session after /new): the pane's command
+		// still says which agent it is, so the page can offer its commands
+		if _, _, cmd, _, alive := paneState(e); alive && agentCommands[cmd] {
+			out["agent"] = strings.TrimSuffix(cmd, ".real")
+		}
+	}
 	out["reference"] = sessionReference(e, path, agent)
 	out["meta"] = sessionMeta(e, path, agent, nil)
 	if path != "" {

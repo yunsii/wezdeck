@@ -237,6 +237,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       expect(files.some((name) => /^img-.*\.jpg$/.test(name))).toBe(true)
     }
 
+    await commandsAndResume(page, tmux)
     await followsNewSession(page, tmux, socket, setStatus)
     await context.close()
   }, 120_000)
@@ -284,4 +285,35 @@ async function followsNewSession(
     }),
   )
   await page.waitForURL('**/console/sessions/demo-next', { timeout: 20_000 })
+}
+
+/**
+ * Claude sessions: 命令 sends a slash command into the pane; a bare /resume
+ * typed in the composer opens 恢复会话 instead of being sent (the TUI picker
+ * is not usable from a phone). The demo pane runs `cat` named claude, so the
+ * host reports the agent from the pane's command (no transcript yet).
+ */
+async function commandsAndResume(
+  page: Page,
+  tmux: (...args: Array<string>) => string,
+) {
+  await page.getByRole('button', { name: '命令' }).click()
+  await page
+    .getByTestId('session-commands')
+    .getByRole('button', { name: /\/context/ })
+    .click()
+  const deadline = Date.now() + 8_000
+  while (!tmux('capture-pane', '-p', '-t', 'demo').includes('/context')) {
+    if (Date.now() > deadline)
+      throw new Error('/context never reached the pane')
+    await page.waitForTimeout(200)
+  }
+  await page.getByLabel('发给 Agent 的消息').fill('/resume')
+  await page.getByRole('button', { name: '发送' }).click()
+  await page.getByTestId('resume-sheet').waitFor({ timeout: 10_000 })
+  expect(tmux('capture-pane', '-p', '-t', 'demo')).not.toMatch(/^\/resume$/m)
+  await page.keyboard.press('Escape')
+  await page
+    .getByTestId('resume-sheet')
+    .waitFor({ state: 'detached', timeout: 5_000 })
 }

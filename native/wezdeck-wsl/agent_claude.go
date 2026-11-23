@@ -74,11 +74,12 @@ func unwrapPasted(s string) string {
 
 func (t *transcript) feedLine(raw []byte) {
 	var line struct {
-		Type             string `json:"type"`
-		Subtype          string `json:"subtype"`
-		Timestamp        string `json:"timestamp"`
-		IsMeta           bool   `json:"isMeta"`
-		IsCompactSummary bool   `json:"isCompactSummary"`
+		Type             string          `json:"type"`
+		Subtype          string          `json:"subtype"`
+		Timestamp        string          `json:"timestamp"`
+		Content          json.RawMessage `json:"content"` // system lines (local_command)
+		IsMeta           bool            `json:"isMeta"`
+		IsCompactSummary bool            `json:"isCompactSummary"`
 		CompactMetadata  struct {
 			Trigger string `json:"trigger"`
 		} `json:"compactMetadata"`
@@ -162,6 +163,11 @@ func (t *transcript) feedLine(raw []byte) {
 			}
 		}
 		t.attachCompactSummary(summary)
+		return
+	}
+	// slash commands and their output (claude_command.go): /model, /compact,
+	// /resume … as a user line or a system local_command line
+	if t.feedCommand(line.Type, line.Subtype, line.Content, line.Message.Content, line.Timestamp) {
 		return
 	}
 	if line.Type != "user" && line.Type != "assistant" {
