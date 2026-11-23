@@ -1,3 +1,5 @@
+// covers: web/src/features/session-clear.tsx web/src/features/session-list.tsx
+// covers: native/wezdeck-wsl/remote_clear.go
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

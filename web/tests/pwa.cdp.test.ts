@@ -1,3 +1,6 @@
+// covers: web/src/features/pwa-boot.tsx web/src/features/console-shell.tsx
+// covers: web/src/features/remote-badge.tsx web/src/features/landing-page.tsx
+// covers: web/src/features/inspector.tsx web/public/*
 import { chromium, devices } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

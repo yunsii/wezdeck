@@ -1,3 +1,4 @@
+// covers: web/src/features/architecture/*
 import { chromium } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

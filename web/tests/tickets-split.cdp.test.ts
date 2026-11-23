@@ -1,3 +1,6 @@
+// covers: web/src/features/tickets-view.tsx web/src/features/ticket-keys.tsx
+// covers: web/src/features/ticket-thread-view.tsx
+// covers: web/src/features/ticket-reply.tsx
 import { chromium } from '@playwright/test'
 import type { Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

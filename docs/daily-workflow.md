@@ -156,6 +156,7 @@ scripts/dev/reload-tmux.sh
 ## Verification
 
 - If only documentation changed, runtime sync and reload are not required.
+- Web console / relay (`web/`, `native/wezdeck-wsl/`): run `scripts/dev/web-affected-tests.sh --run` — only the go / unit / cdp tests the change can reach, on a reused test stack — rather than every suite; `wezdeck-release.sh` runs the same gate on the unpushed commits. Details: [`remote-access.md#testing-locally`](./remote-access.md#testing-locally).
 - Verify workspace shortcuts still match [`keybindings.md`](./keybindings.md).
 - If workspace behavior changed, verify it still matches [`workspaces.md`](./workspaces.md).
 - If tmux styling or status changed, verify it still matches [`tmux-ui.md`](./tmux-ui.md).

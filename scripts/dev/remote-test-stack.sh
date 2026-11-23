@@ -7,6 +7,7 @@
 # the real ~/.local/state/wezdeck/remote-uploads; this script is the fix.
 #
 #   scripts/dev/remote-test-stack.sh start [--home DIR]   # build + start, print env
+#   scripts/dev/remote-test-stack.sh ensure               # reuse a current stack, else start
 #   scripts/dev/remote-test-stack.sh env                  # print the test env again
 #   scripts/dev/remote-test-stack.sh stop
 #
@@ -14,6 +15,12 @@
 # WEZDECK_TEST_DEVICES, WEZDECK_TEST_UPLOADS); `--home DIR` runs the relay
 # with HOME=DIR so it reads fixture transcripts instead of the real ones.
 # The real relay (systemd wezdeck-relay) is never touched.
+# Builds are skip-if-current: the relay by build.sh, the web when
+# web/dist/client/build.json already carries the web source fingerprint (a
+# release then deploys that same dist without building again). `ensure`
+# keeps a running stack whose web build and relay both match the sources —
+# the cdp tests' own version check (web/tests/version.setup.ts), done here
+# first so a current stack is not torn down and rebuilt.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -42,6 +49,33 @@ stop() {
       rm -f "$STATE/$f.pid"
     fi
   done
+}
+
+built_web_id() {
+  sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' "$REPO/web/dist/client/build.json" 2>/dev/null
+}
+
+alive() { [[ -f "$STATE/$1.pid" ]] && kill -0 "$(cat "$STATE/$1.pid")" 2>/dev/null; }
+
+# a running stack serving these sources: web build id and relay version
+current() {
+  alive vite && alive relay || return 1
+  local served running
+  served="$(curl -sf -m 3 "http://127.0.0.1:$PORT/build.json?t=$(date +%s%N)" |
+    sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p')"
+  [[ "$served" == "$("$REPO/scripts/dev/source-fingerprint.sh" web)" ]] || return 1
+  running="$(grep -o 'event=connected .*version=[^ ]*' "$STATE/relay.out" 2>/dev/null |
+    tail -1 | sed 's/.*version=//')"
+  [[ "$running" == "$("$REPO/scripts/dev/source-fingerprint.sh" native/wezdeck-wsl)" ]]
+}
+
+ensure() {
+  if current; then
+    echo "# test stack current on http://127.0.0.1:$PORT (reused)"
+    print_env
+  else
+    start "$@"
+  fi
 }
 
 start() {
@@ -87,8 +121,12 @@ FAKE
   PATH="$HOME/.local/go/bin:$PATH" "$REPO/native/wezdeck-wsl/build.sh" >/dev/null 2>&1
   # build id = web/ source fingerprint: the cdp tests compare it with the
   # sources they test (web/tests/version.setup.ts) and refuse a stale stack
-  (cd "$REPO/web" && WEZDECK_BUILD_ID="$("$REPO/scripts/dev/source-fingerprint.sh" web)" \
-    corepack pnpm exec vite build >"$STATE/build.log" 2>&1)
+  local web_id
+  web_id="$("$REPO/scripts/dev/source-fingerprint.sh" web)"
+  if [[ "$(built_web_id)" != "$web_id" ]]; then
+    (cd "$REPO/web" && WEZDECK_BUILD_ID="$web_id" \
+      corepack pnpm exec vite build >"$STATE/build.log" 2>&1)
+  fi
   # the whole subshell is redirected and backgrounded: an un-redirected
   # backgrounded `cd && cmd` keeps $(…) callers' pipe open forever
   (cd "$REPO/web" && exec env VITE_WEZDECK_RUNTIME_URL=http://127.0.0.1:9 \
@@ -127,7 +165,8 @@ FAKE
 
 case "${1:-}" in
   start) shift; start "$@" ;;
+  ensure) shift; ensure "$@" ;;
   stop) stop ;;
   env) print_env ;;
-  *) echo "usage: $0 start [--home DIR] | env | stop" >&2; exit 1 ;;
+  *) echo "usage: $0 start [--home DIR] | ensure | env | stop" >&2; exit 1 ;;
 esac

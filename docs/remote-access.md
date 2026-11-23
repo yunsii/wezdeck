@@ -262,6 +262,23 @@ version=…`. Before any cdp test, `web/tests/version.setup.ts` compares the
 served `/build.json` and the test relay's version with the working tree and
 stops with "restart the stack" on a mismatch — a stale stack once passed for
 a real bug (`WEZDECK_SKIP_VERSION_CHECK=1` to probe an old build on purpose).
+`ensure` does that check first and keeps a current stack instead of
+rebuilding it; `start` skips `vite build` when `web/dist/client/build.json`
+already carries the fingerprint (and `build.sh` skips a current relay).
+
+**Run what the change can break, not every suite**:
+`scripts/dev/web-affected-tests.sh [--run] [--base REF] [FILE...]` takes the
+uncommitted files (or the given ones) and plans `go test` (Go sources
+changed), `vitest related` (unit tests the web files' import graph reaches)
+and the cdp files whose `// covers:` header globs (repo-relative) match;
+cdp falls back to every file when a shared file changed (`lib/`,
+`components/`, `routes/`, `styles/`, the Worker relay, build config, the
+relay's transport — `SHARED` in the script) or a web / relay source is
+covered by no test (an unmapped file is a gap, not a pass). Locales, docs
+and unit test files alone select no cdp test. `--run` executes the plan on
+`remote-test-stack.sh ensure`. A new cdp test needs its `// covers:` lines;
+a new source file belongs in some test's header. The full suites stay for
+when the script says `all`.
 
 ## Operate
 
@@ -278,7 +295,12 @@ scripts/dev/wezdeck-release.sh                    # ship a committed round (belo
 `release.log`). A part whose running version already equals its fingerprint
 is skipped — a web-only round does not restart the relay and drop phone
 links; `--only push|relay|web`, `--force`. It refuses uncommitted tracked
-changes. `--commit MSGFILE` commits the staged changes first and fixes what
+changes. Before any job it runs the test gate —
+`web-affected-tests.sh --base @{u} --run`, the tests the unpushed commits
+can break — and ships nothing when it fails (`--no-test` skips it, for
+emergencies only). The web job deploys the existing `web/dist` when its
+build id already equals the fingerprint (the gate's stack just built it:
+one `vite build` per release instead of two). `--commit MSGFILE` commits the staged changes first and fixes what
 the pre-commit gate would only report — prettier on the staged web files,
 `lingui extract` for the catalogs — so one command goes from staged to
 live; lint / type errors still stop it before anything ships. A deploy that succeeds is done; the version check belongs before

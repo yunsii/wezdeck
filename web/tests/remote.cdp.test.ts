@@ -1,3 +1,8 @@
+// covers: native/wezdeck-wsl/remote_activity.go
+// covers: native/wezdeck-wsl/remote_limits.go native/wezdeck-wsl/relay_diag.go
+// covers: web/src/features/console-activity.tsx
+// covers: web/src/features/console-usage.tsx
+// covers: web/src/features/console-diagnostics.tsx web/src/features/me-host.tsx
 import { chromium } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

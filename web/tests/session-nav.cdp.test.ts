@@ -1,3 +1,8 @@
+// covers: web/src/features/session-switcher.tsx
+// covers: web/src/features/session-header.tsx web/src/features/session-list.tsx
+// covers: web/src/features/session-split.tsx web/src/features/session-order.ts
+// covers: web/src/features/console-jump-keys.ts
+// covers: native/wezdeck-wsl/session_visits.go
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

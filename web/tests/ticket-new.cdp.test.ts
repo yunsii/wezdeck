@@ -1,3 +1,6 @@
+// covers: web/src/features/ticket-new.tsx web/src/features/ticket-keys.tsx
+// covers: web/src/features/console-jump-keys.ts
+// covers: native/wezdeck-wsl/ticket_new.go
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'

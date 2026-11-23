@@ -1,3 +1,7 @@
+// covers: web/src/features/console-collab* web/src/features/collab-top-bar.tsx
+// covers: web/src/features/tickets-view.tsx
+// covers: web/src/features/ticket-thread-view.tsx
+// covers: web/src/features/ticket-reply.tsx native/wezdeck-wsl/collab.go
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'

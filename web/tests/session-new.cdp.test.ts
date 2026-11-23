@@ -1,3 +1,5 @@
+// covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
+// covers: native/wezdeck-wsl/session_new.go
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

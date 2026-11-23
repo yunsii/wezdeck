@@ -1,3 +1,8 @@
+// covers: web/src/features/console-interactions.tsx
+// covers: web/src/features/session-permission.tsx
+// covers: web/src/features/session-elicitation.tsx
+// covers: web/src/features/session-ask-claude.tsx
+// covers: web/src/features/console-me.tsx
 import { chromium } from '@playwright/test'
 import type { Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
