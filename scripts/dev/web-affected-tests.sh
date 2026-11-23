@@ -13,7 +13,8 @@
 #         shared file changed (SHARED below) or a web source / relay file is
 #         covered by no test — an unmapped file is a gap, not a pass. Runs
 #         against the local test stack (remote-test-stack.sh ensure: reused
-#         when it already serves these sources).
+#         when it already serves these sources). Files that failed only with
+#         ERR_NETWORK_CHANGED (WSL adapter flaps) are rerun once.
 # Not a trigger on their own: locales (the source change that moved the
 # text selects its tests), docs, unit test files (unit only), Go tests.
 set -euo pipefail
@@ -131,5 +132,19 @@ if ((${#selected[@]})); then
   eval "$env_lines"
   rel=()
   for t in "${selected[@]}"; do rel+=("${t#web/}"); done
-  (cd web && corepack pnpm exec vitest run --config vitest.cdp.config.ts "${rel[@]}")
+  log="$(mktemp)"
+  if ! (cd web && corepack pnpm exec vitest run --config vitest.cdp.config.ts "${rel[@]}") 2>&1 | tee "$log"; then
+    # WSL mirrored networking flaps adapters (docs/diagnostics.md open
+    # question 30): Chromium drops loads with ERR_NETWORK_CHANGED. Only then,
+    # rerun just the failed files once; any other failure stands.
+    mapfile -t failed < <(sed -n 's/^ *FAIL  *\(tests\/[^ ]*\.cdp\.test\.ts\).*/\1/p' "$log" | sort -u)
+    if grep -q 'ERR_NETWORK_CHANGED' "$log" && ((${#failed[@]})); then
+      echo "cdp: retrying ${failed[*]} once (ERR_NETWORK_CHANGED: the network flapped)"
+      (cd web && corepack pnpm exec vitest run --config vitest.cdp.config.ts "${failed[@]}") || { rm -f "$log"; exit 1; }
+    else
+      rm -f "$log"
+      exit 1
+    fi
+  fi
+  rm -f "$log"
 fi
