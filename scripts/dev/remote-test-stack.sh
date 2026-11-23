@@ -8,6 +8,7 @@
 #
 #   scripts/dev/remote-test-stack.sh start [--home DIR]   # build + start, print env
 #   scripts/dev/remote-test-stack.sh ensure [--home DIR]  # reuse a current stack, else start
+#   scripts/dev/remote-test-stack.sh restart-relay        # the relay only (browser sockets stay up)
 #   scripts/dev/remote-test-stack.sh env                  # print the test env again
 #   scripts/dev/remote-test-stack.sh stop
 #
@@ -88,6 +89,49 @@ ensure() {
   fi
 }
 
+# the relay alone (start, restart-relay): HOME for fixture transcripts, and
+# gated or open reads as `start` recorded them
+start_relay() {
+  local home="${1:-}"
+  (exec env ${home:+HOME="$home"} \
+    WEZDECK_RELAY_URL="ws://127.0.0.1:$PORT/relay/host" \
+    WEZDECK_RELAY_HOST_TOKEN=dev-host-token \
+    WEZDECK_RELAY_LOG_DIR="$STATE/relaylog" \
+    WEZDECK_ATTENTION_FILE="$STATE/attention.json" \
+    WEZDECK_REMOTE_DEVICES="$STATE/devices.json" \
+    WEZDECK_REMOTE_UPLOADS="$STATE/uploads" \
+    WEZDECK_CLAUDE_STATUS_DIR="$STATE/claude-status" \
+    WEZDECK_RELAY_CONTROL="$STATE/relay.sock" \
+    WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
+    WEZDECK_TODO_DB="$STATE/todo.db" \
+    WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
+    TICKETS_ROOT="$STATE/tickets" \
+    WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
+    WEZDECK_RELAY_OPEN_READS="$([[ "$(cat "$STATE/gated" 2>/dev/null)" == 1 ]] && echo 0 || echo 1)" \
+    "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
+    >"$STATE/relay.out" 2>&1 </dev/null &
+  echo $! >"$STATE/relay.pid"
+  for _ in $(seq 1 20); do
+    grep -q 'event=connected' "$STATE/relay.out" 2>/dev/null && break
+    sleep 0.5
+  done
+  grep -q 'event=connected' "$STATE/relay.out" || { echo "test relay did not connect; see $STATE/relay.out" >&2; exit 1; }
+}
+
+# a relay restart with the browser's socket to the Worker still up: the host
+# forgets which device each connection said hello as (relay_auth.go) — the
+# case remote-link.ts re-says hello for
+restart_relay() {
+  if [[ -f "$STATE/relay.pid" ]]; then
+    local pid
+    pid="$(cat "$STATE/relay.pid")"
+    pkill -P "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+  fi
+  start_relay "$(cat "$STATE/home" 2>/dev/null)"
+  echo "# test relay restarted"
+}
+
 start() {
   local home=''
   while [[ $# -gt 0 ]]; do
@@ -99,6 +143,7 @@ start() {
   stop
   mkdir -p "$STATE/uploads" "$STATE/claude-status" "$STATE/relaylog"
   printf '%s' "$home" >"$STATE/home"
+  printf '%s' "${WEZDECK_TEST_GATED_READS:-}" >"$STATE/gated"
   [[ -f "$STATE/attention.json" ]] || echo '{"entries":{}}' >"$STATE/attention.json"
   # stand-in for open-task-window (phone 新会话, session_new.go): a real
   # `git worktree add` in whatever throwaway repo the test offers, its pane a
@@ -148,29 +193,7 @@ FAKE
     curl -sf -m 2 "http://127.0.0.1:$PORT/relay/health" >/dev/null && break
     sleep 1
   done
-  (exec env ${home:+HOME="$home"} \
-    WEZDECK_RELAY_URL="ws://127.0.0.1:$PORT/relay/host" \
-    WEZDECK_RELAY_HOST_TOKEN=dev-host-token \
-    WEZDECK_RELAY_LOG_DIR="$STATE/relaylog" \
-    WEZDECK_ATTENTION_FILE="$STATE/attention.json" \
-    WEZDECK_REMOTE_DEVICES="$STATE/devices.json" \
-    WEZDECK_REMOTE_UPLOADS="$STATE/uploads" \
-    WEZDECK_CLAUDE_STATUS_DIR="$STATE/claude-status" \
-    WEZDECK_RELAY_CONTROL="$STATE/relay.sock" \
-    WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
-    WEZDECK_TODO_DB="$STATE/todo.db" \
-    WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
-    TICKETS_ROOT="$STATE/tickets" \
-    WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
-    WEZDECK_RELAY_OPEN_READS="$([[ "${WEZDECK_TEST_GATED_READS:-}" == 1 ]] && echo 0 || echo 1)" \
-    "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
-    >"$STATE/relay.out" 2>&1 </dev/null &
-  echo $! >"$STATE/relay.pid"
-  for _ in $(seq 1 20); do
-    grep -q 'event=connected' "$STATE/relay.out" 2>/dev/null && break
-    sleep 0.5
-  done
-  grep -q 'event=connected' "$STATE/relay.out" || { echo "test relay did not connect; see $STATE/relay.out" >&2; exit 1; }
+  start_relay "$home"
   echo "# test stack up on http://127.0.0.1:$PORT (state $STATE)"
   print_env
 }
@@ -178,7 +201,8 @@ FAKE
 case "${1:-}" in
   start) shift; start "$@" ;;
   ensure) shift; ensure "$@" ;;
+  restart-relay) restart_relay ;;
   stop) stop ;;
   env) print_env ;;
-  *) echo "usage: $0 start [--home DIR] | ensure | env | stop" >&2; exit 1 ;;
+  *) echo "usage: $0 start [--home DIR] | ensure [--home DIR] | restart-relay | env | stop" >&2; exit 1 ;;
 esac

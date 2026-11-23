@@ -196,7 +196,12 @@ each relay connection (cid — its DataChannel is the same cid) first sends
 that cid to the device and checks, on every read, that the device is still
 approved — a revoke refuses the next read, no reconnect needed. Open without
 it: `device.register`, `device.hello`, `diag.submit`; writes carry their own
-signature. The page says hello once per socket (`remote-link.ts`) and maps
+signature. The host keeps the cid → device binding in memory, so a relay
+restart (crash, reboot, a release) forgets it while the page's socket to
+the Worker stays up: a read refused as not approved on a socket that already
+said hello says hello again and retries once (`retriable` in
+`remote-auth.ts`; `remote-test-stack.sh restart-relay` reproduces it). The
+page says hello once per socket (`remote-link.ts`) and maps
 the refusal to "not approved — 我的 › 设备授权" (`remote-auth.ts`); a new
 device requests access there (the button was 启用写入). Logs:
 `device_register` (cid, device id, state), `device_hello` (ok / err),

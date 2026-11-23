@@ -1,5 +1,5 @@
 import type { UsageReply } from '#/lib/usage-contract'
-import { OPEN_ACTIONS, describeError } from './remote-auth'
+import { OPEN_ACTIONS, refusal, retriable } from './remote-auth'
 import { loadDeviceKey, signPayload } from './device-key'
 import { ReplyParts } from './reply-parts'
 import { median, selectedPath } from './rtc-path'
@@ -350,8 +350,7 @@ class RemoteLink {
             [via]: this.state.rpcCount[via] + 1,
           },
         })
-        if (frame.ok === false)
-          entry.reject(new Error(describeError(String(frame.error ?? ''))))
+        if (frame.ok === false) entry.reject(refusal(String(frame.error ?? '')))
         else entry.resolve(frame.result)
         return
       }
@@ -405,7 +404,24 @@ class RemoteLink {
     this.hostRequest = handler
   }
 
+  /**
+   * One request. A read refused as "not approved" on a socket that already
+   * said hello means the host forgot it — the relay restarted (crash,
+   * reboot, a release) while this socket stayed up: say hello again and
+   * retry once. A device that really is not approved fails the hello and
+   * keeps the refusal.
+   */
   async rpc(action: string, args: Record<string, unknown>): Promise<unknown> {
+    try {
+      return await this.rpcOnce(action, args)
+    } catch (error) {
+      if (!retriable(error, action) || this.helloWs !== this.ws) throw error
+      this.helloWs = undefined
+      return this.rpcOnce(action, args)
+    }
+  }
+
+  private async rpcOnce(action: string, args: Record<string, unknown>) {
     this.start()
     // no token: nothing will ever connect, so say why now instead of after
     // the timeout (a browser on the host itself reads tickets through the
