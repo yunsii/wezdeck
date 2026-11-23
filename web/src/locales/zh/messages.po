@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr "、"
 
-#: src/features/chat-thread.tsx:461
+#: src/features/chat-thread.tsx:463
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -567,11 +567,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:445
+#: src/features/chat-thread.tsx:447
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:446
+#: src/features/chat-thread.tsx:448
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -1711,7 +1711,7 @@ msgstr "填进消息"
 msgid "Put into the message for this agent"
 msgstr "填进消息，交给这个 agent"
 
-#: src/features/chat-thread.tsx:488
+#: src/features/chat-thread.tsx:490
 msgid "Queued messages"
 msgstr "排队中的消息"
 

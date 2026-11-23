@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:461
+#: src/features/chat-thread.tsx:463
 msgid "· summary"
 msgstr "· summary"
 
@@ -567,11 +567,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:445
+#: src/features/chat-thread.tsx:447
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:446
+#: src/features/chat-thread.tsx:448
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1711,7 +1711,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/chat-thread.tsx:488
+#: src/features/chat-thread.tsx:490
 msgid "Queued messages"
 msgstr "Queued messages"
 

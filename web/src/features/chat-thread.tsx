@@ -400,8 +400,7 @@ export function ChatThread({
           />
         )
       })}
-      {busy && effective >= end ? <Typing activity={activity} /> : null}
-      {/* settle against the revealed messages only: the dashed bubble
+      {/* settle against the revealed messages only: the faded bubble
           stays until its normal bubble is on screen, not while an earlier
           reply is still unfolding */}
       <PendingBubbles
@@ -412,6 +411,9 @@ export function ChatThread({
           busy,
         )}
       />
+      {/* last: the working line says what the agent does now, below
+          everything in the thread — queued messages included */}
+      {busy && effective >= end ? <Typing activity={activity} /> : null}
     </SessionIdContext.Provider>
   )
 }
