@@ -4,7 +4,7 @@
 // (remote_session.go); the page explains them before the user hits them.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useParams } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -24,7 +24,6 @@ import { StickyPrompt } from './chat-sticky'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
-import { SessionList } from './session-list'
 import { AskCard } from './session-ask-claude'
 import { useSessionWrites } from './session-send'
 import type { Message } from './chat-thread'
@@ -174,11 +173,6 @@ export function useSessions() {
   })
 }
 
-export function ConsoleSessionsPage() {
-  const { id } = useParams({ strict: false })
-  return id ? <SessionDetail id={id} /> : <SessionList />
-}
-
 function JumpLatest({
   pinned,
   unread,
@@ -277,7 +271,7 @@ function SyncStatus({
   )
 }
 
-function SessionDetail({ id }: { id: string }) {
+export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const device = useDeviceState()

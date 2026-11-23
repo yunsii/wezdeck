@@ -13,7 +13,7 @@ import {
   SendHorizontal,
   X,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { setDiagnosticsPage } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
@@ -37,28 +37,37 @@ export type Outgoing = {
 
 const draftKey = (id: string) => `wezdeck.draft.${id}`
 
-/** Unsent text survives leaving the page (per session, this browser only). */
+/**
+ * Unsent text survives leaving the page (per session, this browser only).
+ * Loaded on mount, written only when the text is changed: a write effect
+ * keyed on the text ran in the mount pass with the still-empty state and
+ * deleted the draft it was about to load (seen when the page mounted twice).
+ */
 function useDraft(id: string) {
-  const [text, setText] = useState('')
-  const loaded = useRef(false)
+  const [text, setTextState] = useState('')
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(draftKey(id))
-      if (saved) setText(saved)
+      setTextState(localStorage.getItem(draftKey(id)) ?? '')
     } catch {
       // storage blocked: drafts just don't persist
     }
-    loaded.current = true
   }, [id])
-  useEffect(() => {
-    if (!loaded.current) return
-    try {
-      if (text) localStorage.setItem(draftKey(id), text)
-      else localStorage.removeItem(draftKey(id))
-    } catch {
-      // storage blocked or full
-    }
-  }, [id, text])
+  const setText = useCallback(
+    (next: string | ((current: string) => string)) => {
+      setTextState((current) => {
+        const value = typeof next === 'function' ? next(current) : next
+        // idempotent, so a StrictMode double call is harmless
+        try {
+          if (value) localStorage.setItem(draftKey(id), value)
+          else localStorage.removeItem(draftKey(id))
+        } catch {
+          // storage blocked or full
+        }
+        return value
+      })
+    },
+    [id],
+  )
   return [text, setText] as const
 }
 

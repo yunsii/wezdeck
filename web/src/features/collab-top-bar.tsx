@@ -1,9 +1,12 @@
-// 工单 on a phone: the run / cache / cost band and ticket activity as one
-// row of two buttons — two full-width cards pushed the list a screen down.
-// The band opens below on demand.
+// Top of 工单: the run / cache / cost band, folded — eleven cells, mostly —
+// between runs, held the list half a screen down. On a phone it shares a row
+// with ticket activity (no sidebar there); on a wide screen it is one
+// Disclosure (the sidebar links activity).
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
+import { Disclosure } from '#/components/ui/disclosure'
+import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { ActivityLink } from './console-activity'
 import { Button } from '#/components/ui/button'
@@ -11,6 +14,21 @@ import { Button } from '#/components/ui/button'
 export function CollabTopBar({ band }: { band: React.ReactNode }) {
   const { t } = useLingui()
   const [open, setOpen] = useState(false)
+  const wide = useIsWide()
+  if (wide)
+    return (
+      <div className="grid gap-3">
+        {/* the page title, like 会话 / 我的 on a wide screen */}
+        <h1 className="text-base font-semibold">{t`Cross-repo collab`}</h1>
+        <Disclosure
+          className="key rounded-[14px] px-3.5"
+          triggerClassName="text-sm font-normal text-brand-muted"
+          title={t`Runs, cache hit and cost`}
+        >
+          <div className="pb-3">{band}</div>
+        </Disclosure>
+      </div>
+    )
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
       <div className="grid grid-cols-2 gap-2">

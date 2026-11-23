@@ -11,6 +11,8 @@ import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
 import { phoneVisits, recordVisit } from '#/lib/session-visits'
+import { useIsWide } from '#/lib/use-media'
+import { cn } from '#/lib/utils'
 import { OpenTodos } from './session-todos'
 import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton } from './session-new'
@@ -50,13 +52,94 @@ function storedFilter(): SessionFilter {
 
 const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
 
-export function SessionList() {
+/** one session in the list; beside the open session (wide split) picking
+ * another replaces the history entry */
+function SessionRow({
+  row,
+  selected,
+  showRepo = false,
+}: {
+  row: SessionCard
+  selected?: string
+  showRepo?: boolean
+}) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
-  const sessions = useSessions()
   const ago = useAgo()
   const statusText = useStatusText()
+  const wide = useIsWide()
+  const paneLabel = (role?: string) =>
+    role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
+
+  const title =
+    row.title ||
+    row.window ||
+    row.worktree?.split('/').filter(Boolean).at(-1) ||
+    row.cwd.split('/').filter(Boolean).at(-1) ||
+    row.id.slice(0, 8)
+
+  const tag = (text: string) => (
+    <span
+      title={text}
+      className="max-w-full min-w-0 truncate rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label"
+    >
+      {text}
+    </span>
+  )
+
+  const prompt = humanPrompt(row.last_prompt)
+  const status = statusText(
+    row.status,
+    row.waiting_kind,
+    row.running_kind,
+    row.background?.length ?? 0,
+  )
+  return (
+    <SwipeToClear id={row.id} enabled={clearable(row.status, row.waiting_kind)}>
+      <Link
+        to="/{-$locale}/console/sessions/$id"
+        params={{ locale: localeParam, id: row.id }}
+        data-session={row.id}
+        data-pane-role={row.pane_role || undefined}
+        replace={wide && Boolean(selected)}
+        aria-current={row.id === selected ? 'page' : undefined}
+        onClick={() => recordVisit(worktreeKey(row))}
+        className={cn(
+          'key-press flex min-h-14 items-start gap-3 px-4 py-3',
+          row.id === selected && 'bg-brand-soft',
+        )}
+      >
+        <span className="pt-1.5">
+          <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
+        </span>
+        <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-[16px] font-semibold">{title}</span>
+            <span className="shrink-0 text-xs text-brand-label">
+              {ago(ts(row.ts))}
+            </span>
+          </span>
+          <span className="truncate text-sm text-brand-muted">
+            {prompt || t`No human message yet`}
+          </span>
+          <span className="flex min-w-0 flex-wrap items-center gap-1">
+            {showRepo && row.repo ? tag(row.repo) : null}
+            {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
+            {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
+            {row.name && row.name !== row.agent ? tag(row.name) : null}
+            {status ? tag(status) : null}
+            {row.branch ? tag(row.branch) : null}
+          </span>
+        </span>
+      </Link>
+    </SwipeToClear>
+  )
+}
+
+export function SessionList({ selected }: { selected?: string } = {}) {
+  const { t } = useLingui()
+  const sessions = useSessions()
   const [filter, setFilterState] = useState<SessionFilter>(storedFilter)
   const setFilter = (value: SessionFilter) => {
     setFilterState(value)
@@ -82,75 +165,6 @@ export function SessionList() {
   const runningCount = count('running')
   const idleCount = count('idle')
   const allCount = rows.length
-  const paneLabel = (role?: string) =>
-    role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
-
-  const titleOf = (row: SessionCard) =>
-    row.title ||
-    row.window ||
-    row.worktree?.split('/').filter(Boolean).at(-1) ||
-    row.cwd.split('/').filter(Boolean).at(-1) ||
-    row.id.slice(0, 8)
-
-  const tag = (text: string) => (
-    <span
-      title={text}
-      className="max-w-full min-w-0 truncate rounded-full bg-brand-deck px-1.5 py-0.5 text-[11px] text-brand-label"
-    >
-      {text}
-    </span>
-  )
-
-  const sessionLink = (row: SessionCard, showRepo = false) => {
-    const prompt = humanPrompt(row.last_prompt)
-    const status = statusText(
-      row.status,
-      row.waiting_kind,
-      row.running_kind,
-      row.background?.length ?? 0,
-    )
-    return (
-      <SwipeToClear
-        id={row.id}
-        enabled={clearable(row.status, row.waiting_kind)}
-      >
-        <Link
-          to="/{-$locale}/console/sessions/$id"
-          params={{ locale: localeParam, id: row.id }}
-          data-session={row.id}
-          data-pane-role={row.pane_role || undefined}
-          onClick={() => recordVisit(worktreeKey(row))}
-          className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
-        >
-          <span className="pt-1.5">
-            <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
-          </span>
-          <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
-            <span className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-[16px] font-semibold">
-                {titleOf(row)}
-              </span>
-              <span className="shrink-0 text-xs text-brand-label">
-                {ago(ts(row.ts))}
-              </span>
-            </span>
-            <span className="truncate text-sm text-brand-muted">
-              {prompt || t`No human message yet`}
-            </span>
-            <span className="flex min-w-0 flex-wrap items-center gap-1">
-              {showRepo && row.repo ? tag(row.repo) : null}
-              {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
-              {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
-              {row.name && row.name !== row.agent ? tag(row.name) : null}
-              {status ? tag(status) : null}
-              {row.branch ? tag(row.branch) : null}
-            </span>
-          </span>
-        </Link>
-      </SwipeToClear>
-    )
-  }
-
   const emptyText =
     filter === 'waiting'
       ? t`Nothing is waiting on you.`
@@ -219,7 +233,7 @@ export function SessionList() {
                 key={row.id}
                 className="border-b border-brand-edge last:border-b-0"
               >
-                {sessionLink(row, true)}
+                <SessionRow row={row} selected={selected} showRepo />
               </li>
             ))}
           </ul>
@@ -261,7 +275,7 @@ export function SessionList() {
                           key={row.id}
                           className="border-b border-brand-edge last:border-b-0"
                         >
-                          {sessionLink(row)}
+                          <SessionRow row={row} selected={selected} />
                         </li>
                       ))}
                     </ul>

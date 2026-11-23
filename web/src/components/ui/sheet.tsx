@@ -40,22 +40,25 @@ export function Sheet({
           data-deck
           className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0"
         />
-        <Drawer.Viewport className="fixed inset-0 z-50 flex items-end justify-center">
+        <Drawer.Viewport className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
           <Drawer.Popup
             data-deck
             data-testid={testId}
             data-write={write ? '' : undefined}
             className={cn(
               'max-h-[88dvh] w-full overflow-y-auto overscroll-contain rounded-t-[20px] border-t border-brand-edge bg-brand-deck pb-[max(env(safe-area-inset-bottom),1rem)] text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none md:max-w-xl',
-              '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform] duration-200 ease-out data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full',
+              '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity,scale] duration-200 ease-out data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full',
+              // a desk-sized window: a centred dialog (fade + scale), not a
+              // strip stuck to the bottom with a phone's grab handle
+              'md:max-h-[85dvh] md:rounded-[20px] md:border md:data-[ending-style]:translate-y-0 md:data-[ending-style]:scale-95 md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-0 md:data-[starting-style]:scale-95 md:data-[starting-style]:opacity-0',
               className,
             )}
           >
-            <div className="sticky top-0 z-10 bg-brand-deck px-4 pt-2 pb-2">
+            <div className="sticky top-0 z-10 bg-brand-deck px-4 pt-2 pb-2 md:pt-4">
               {/* the grab handle: drag the sheet down to close it */}
               <div
                 aria-hidden
-                className="mx-auto mb-2 h-1 w-10 rounded-full bg-brand-label/40"
+                className="mx-auto mb-2 h-1 w-10 rounded-full bg-brand-label/40 md:hidden"
               />
               <div className="flex items-center justify-between gap-2">
                 <Drawer.Title className="text-[16px] font-semibold">

@@ -78,7 +78,7 @@ describe.runIf(attention && devicesFile)('Mark a session read', () => {
       { env: { ...process.env, WEZDECK_REMOTE_DEVICES: devicesFile } },
     )
     await page.getByRole('button', { name: '重新检查' }).click()
-    await page.getByText('已启用').waitFor({ timeout: 15_000 })
+    await page.getByText(/^已启用。/).waitFor({ timeout: 15_000 })
 
     await page.goto(`${base}/zh/console/sessions`)
     const row = page.locator('[data-swipe=clear-me]')

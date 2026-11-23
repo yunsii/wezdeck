@@ -83,7 +83,7 @@ describe.runIf(attention && devicesFile && stack)(
         },
       )
       await page.getByRole('button', { name: '重新检查' }).click()
-      await page.getByText('已启用').waitFor({ timeout: 15_000 })
+      await page.getByText(/^已启用。/).waitFor({ timeout: 15_000 })
 
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()

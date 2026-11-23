@@ -99,7 +99,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       },
     )
     await page.getByRole('button', { name: '重新检查' }).click()
-    await page.getByText('已启用').waitFor({ timeout: 15_000 })
+    await page.getByText(/^已启用。/).waitFor({ timeout: 15_000 })
 
     await page.goto(`${base}/zh/console/sessions`)
     await page.locator('[data-session=demo-session]').click()

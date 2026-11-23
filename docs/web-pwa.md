@@ -75,13 +75,23 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    sheet (mode, path, RTT, last direct failure, host since, mic grant).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
-5. **Desktop keyboard**: `j`/`k` move, `Enter` open, `Esc` back, `/` filter,
+5. **Wide screens (≥ 768 px, 2026-11-23)**: no phone layout blown up.
+   会话 is a split like 工单's inspector (`session-split.tsx`): the list
+   sticky on the left with its own scroll, the open conversation beside it
+   on the page scroll (so the chat's pin-to-bottom is unchanged), capped at
+   900 px; the current row is highlighted, picking another replaces the
+   history entry, j / k move through the list's order and the URL follows;
+   no back button. 我的 shows its groups on the left and the chosen one
+   beside them (default 连接; group links replace). Sheets become a centred
+   dialog (fade + scale, no grab handle). 工单's run / cache / cost band is
+   folded into one Disclosure (the sidebar links 工单动态).
+6. **Desktop keyboard**: `j`/`k` move, `Enter` open, `Esc` back, `/` filter,
    `g`+letter section jump, `Ctrl+K` command palette; one registry, hints in
    the UI.
-6. **Writes**: ticket reply (and reply-and-continue) plus session send /
+7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
    deferred.
-7. **Notifications: Web Push** for "waiting on you" / "failed" plus
+8. **Notifications: Web Push** for "waiting on you" / "failed" plus
    `setAppBadge` count; subscription stored in the HostRelay DO, pushed when
    the host relays the event. iOS needs 16.4+ and an installed app.
 

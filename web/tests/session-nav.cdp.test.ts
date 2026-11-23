@@ -162,4 +162,28 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await expect.poll(() => sheet.count(), { timeout: 3_000 }).toBe(0)
     await context.close()
   })
+
+  it('wide screen: list and conversation side by side, j moves on', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await openList(page)
+    await page.locator('[data-session=nav-c]').click()
+    await page.waitForURL('**/console/sessions/nav-c')
+    // the list stays beside the open conversation, its row marked
+    await expect
+      .poll(() =>
+        page.locator('[data-session=nav-c]').getAttribute('aria-current'),
+      )
+      .toBe('page')
+    expect(await page.getByTestId('session-pane').count()).toBe(1)
+    await expect
+      .poll(() => page.getByTestId('session-title').textContent())
+      .toContain('nav-c')
+    await page.keyboard.press('j')
+    await expect.poll(() => page.url().split('/').at(-1)).not.toBe('nav-c')
+    await context.close()
+  })
 })

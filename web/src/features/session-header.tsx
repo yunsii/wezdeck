@@ -229,7 +229,8 @@ export function SessionHeader({
           type="button"
           onClick={onBack}
           aria-label={t({ message: 'Sessions', context: 'nav' })}
-          className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-brand-muted"
+          // the list sits beside the conversation on a wide screen
+          className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-brand-muted md:hidden"
         >
           <ChevronLeft size={22} aria-hidden />
         </Button>

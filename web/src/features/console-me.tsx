@@ -11,6 +11,8 @@ import { Button } from '#/components/ui/button'
 import { rememberLocale } from '#/lib/locale-pref'
 import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
+import { useIsWide, useIsWidePhoneFirst } from '#/lib/use-media'
+import { cn } from '#/lib/utils'
 import {
   buildId,
   checkForUpdate,
@@ -265,19 +267,29 @@ function EntryRow({
   page,
   title,
   value,
+  active,
 }: {
   page: MePage
   title: string
   value?: React.ReactNode
+  /** the group shown beside the list (wide screens) */
+  active?: boolean
 }) {
   const { locale } = useLocale()
+  const wide = useIsWide()
   return (
     <li className="border-b border-brand-edge last:border-b-0">
       <Link
         to="/{-$locale}/console/me/$page"
         params={{ locale: locale === 'en' ? undefined : locale, page }}
+        // beside the list a group is a tab, not a page: no history pile-up
+        replace={wide}
+        aria-current={active ? 'page' : undefined}
         data-me={page}
-        className="key-press flex min-h-13 items-center gap-3 px-4 py-2.5"
+        className={cn(
+          'key-press flex min-h-13 items-center gap-3 px-4 py-2.5',
+          active && 'bg-brand-soft',
+        )}
       >
         <span className="flex-1 text-[16px]">{title}</span>
         <span className="min-w-0 truncate text-[14px] text-brand-muted">
@@ -293,7 +305,7 @@ function EntryRow({
   )
 }
 
-function MeIndex() {
+function MeIndex({ active }: { active?: MePage }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const { mode } = useTheme()
@@ -319,6 +331,7 @@ function MeIndex() {
       <ul className={group}>
         <EntryRow
           page="connection"
+          active={active === 'connection'}
           title={titles.connection}
           value={
             consoleMode === 'local' ? (
@@ -330,19 +343,34 @@ function MeIndex() {
             )
           }
         />
-        <EntryRow page="writing" title={titles.writing} value={writing} />
+        <EntryRow
+          page="writing"
+          active={active === 'writing'}
+          title={titles.writing}
+          value={writing}
+        />
         {remote.mode === 'unpaired' ? null : (
-          <EntryRow page="usage" title={titles.usage} />
+          <EntryRow
+            page="usage"
+            active={active === 'usage'}
+            title={titles.usage}
+          />
         )}
       </ul>
       <ul className={group}>
         <EntryRow
           page="appearance"
+          active={active === 'appearance'}
           title={titles.appearance}
           value={`${locale === 'zh' ? '中文' : 'English'}, ${theme}`}
         />
         {/* the commit only; the full build id is on the page */}
-        <EntryRow page="app" title={titles.app} value={buildId.split('-')[0]} />
+        <EntryRow
+          page="app"
+          active={active === 'app'}
+          title={titles.app}
+          value={buildId.split('-')[0]}
+        />
       </ul>
       {consoleMode === 'local' ? (
         <nav className={group} aria-label={t`Host sections`}>
@@ -396,13 +424,14 @@ function MeSubPage({ page }: { page: MePage }) {
   }[page]
   return (
     <div className="grid max-w-2xl content-start gap-3" data-me-page={page}>
-      <div className="-ml-2 flex items-center gap-1 pt-1">
+      <div className="-ml-2 flex items-center gap-1 pt-1 md:ml-0 md:min-h-11">
         <Button
           variant="plain"
           type="button"
           onClick={back}
           aria-label={t`Back`}
-          className="inline-flex size-11 shrink-0 items-center justify-center text-brand-muted"
+          // beside the list on a wide screen there is nothing to go back to
+          className="inline-flex size-11 shrink-0 items-center justify-center text-brand-muted md:hidden"
         >
           <ChevronLeft size={22} aria-hidden />
         </Button>
@@ -422,5 +451,14 @@ function MeSubPage({ page }: { page: MePage }) {
 export function ConsoleMePage() {
   const { page } = useParams({ strict: false })
   const known = ME_PAGES.find((name) => name === page)
+  const wide = useIsWidePhoneFirst()
+  // a desk-sized window: the groups on the left, the chosen one beside them
+  if (wide)
+    return (
+      <div className="grid max-w-5xl grid-cols-[minmax(240px,300px)_minmax(0,1fr)] items-start gap-6">
+        <MeIndex active={known ?? 'connection'} />
+        <MeSubPage page={known ?? 'connection'} />
+      </div>
+    )
   return known ? <MeSubPage page={known} /> : <MeIndex />
 }

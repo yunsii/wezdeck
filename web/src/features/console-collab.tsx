@@ -54,7 +54,6 @@ export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
 export function ConsoleCollabPage() {
   const { t } = useLingui()
   const [window, setWindow] = useState('24h')
-  const wide = useIsWide()
   const health = useCollab('health', {}, { refetchInterval: 15_000 })
   const metrics = useCollab('metrics', { window }, { refetchInterval: 30_000 })
   const band = (
@@ -69,7 +68,7 @@ export function ConsoleCollabPage() {
     <TicketsView
       base="collab"
       empty={t`No tickets match this filter.`}
-      top={wide ? band : <CollabTopBar band={band} />}
+      top={<CollabTopBar band={band} />}
     />
   )
 }
