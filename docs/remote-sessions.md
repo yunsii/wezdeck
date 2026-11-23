@@ -154,7 +154,11 @@ its control socket (`~/.local/state/wezdeck/relay.sock`, 0600;
 phone seen in the last 3 min (DataChannel when open, else the DO by cid;
 `relay_diag.go`). With `--steps` the phone first drives its own UI
 (`lib/host-diag.ts`: `navigate` in-app paths, `back`, `click` by `text` or
-`selector`, `scroll`, `wait`; never a control inside a form or under
+`selector`, `scroll`, `wait`, `reload` — run after the snapshot is sent, the
+page reloads onto the newest deploy; `--reload` appends it, so after a
+release `wezdeck-wsl diag --reload` puts every connected phone on the new
+build (a build older than this step ignores it: get it there once through
+我的 › 应用 › 检查更新 and the toast's 刷新); never a control inside a form or under
 `[data-write]` — send, reply, take over, keys, options, rename), recording
 each step's frames (count, fps, longest gap, gaps > 50 ms). It answers with
 the snapshot as `diag.submit` chunks — accepted only for a live request id —

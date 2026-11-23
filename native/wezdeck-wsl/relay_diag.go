@@ -4,7 +4,10 @@ package main
 // "Diagnostics on demand"): instead of asking the human to tap 诊断 and send,
 // an agent runs
 //
-//	wezdeck-wsl diag [--wait 15] [--reason TEXT] [--steps JSON | --steps-file F]
+//	wezdeck-wsl diag [--wait 15] [--reason TEXT] [--steps JSON | --steps-file F] [--reload]
+//
+// --reload appends the `reload` step: the phone sends its snapshot (still the
+// old build id), then reloads onto the newest deploy — no one taps 刷新.
 //
 // which asks the running relay over its local control socket to push
 // {t:"diag.request", id, reason} to every phone seen in the last few minutes
@@ -332,8 +335,13 @@ func runDiag(args []string) error {
 		Steps  json.RawMessage `json:"steps,omitempty"`
 	}
 	body.Wait = 15
-	usage := errors.New("usage: wezdeck-wsl diag [--wait SECONDS] [--reason TEXT] [--steps JSON | --steps-file FILE]")
+	usage := errors.New("usage: wezdeck-wsl diag [--wait SECONDS] [--reason TEXT] [--steps JSON | --steps-file FILE] [--reload]")
+	reload := false
 	for i := 0; i < len(args); i++ {
+		if args[i] == "--reload" {
+			reload = true
+			continue
+		}
 		if i+1 >= len(args) {
 			return usage
 		}
@@ -362,6 +370,15 @@ func runDiag(args []string) error {
 	}
 	if len(body.Steps) > 0 && !json.Valid(body.Steps) {
 		return errors.New("--steps is not valid JSON")
+	}
+	if reload {
+		// last step: the phone answers first, then reloads onto the new build
+		var steps []json.RawMessage
+		if len(body.Steps) > 0 && json.Unmarshal(body.Steps, &steps) != nil {
+			return errors.New("--steps must be a JSON array to add --reload")
+		}
+		steps = append(steps, json.RawMessage(`{"do":"reload"}`))
+		body.Steps, _ = json.Marshal(steps)
 	}
 	client := http.Client{
 		Timeout: diagWaitMax + 15*time.Second,

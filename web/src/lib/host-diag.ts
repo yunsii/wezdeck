@@ -155,6 +155,10 @@ async function runStep(
       return { ok: true }
     case 'layout':
       return layoutReport()
+    case 'reload':
+      // done after the snapshot is sent (answer): reloading here would
+      // lose the answer
+      return { ok: true, deferred: 'after the snapshot' }
   }
   return { skipped: `unknown step ${step.do}` }
 }
@@ -208,6 +212,10 @@ async function answer(
       total,
       data: json.slice(seq * CHUNK, (seq + 1) * CHUNK),
     })
+  // `reload` step (`wezdeck-wsl diag --reload`): the host just shipped and
+  // wants this phone on the new build without anyone tapping 刷新 — the
+  // snapshot above still reports the build it ran
+  if (steps.some((step) => step.do === 'reload')) location.reload()
 }
 
 let installed = false
