@@ -12,6 +12,7 @@ import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
+import { SectionHeading } from '#/components/ui/section-heading'
 import { Field, FieldList } from '#/components/ui/field'
 import { copyText } from '#/lib/clipboard'
 import { postRuntimeAction } from '#/lib/runtime-client'
@@ -248,9 +249,9 @@ export function SessionInfo({
         </p>
         {groups.map((group) => (
           <section key={group.name} className="grid gap-1">
-            <h3 className="px-1 text-caption font-semibold text-brand-muted">
+            <SectionHeading className="bg-brand-deck">
               {groupLabels[group.name] ?? group.name}
-            </h3>
+            </SectionHeading>
             <FieldList>
               {group.rows.map((row) => (
                 <Field

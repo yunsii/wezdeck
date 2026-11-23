@@ -9,88 +9,28 @@ import { ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
+import { SectionHeading } from '#/components/ui/section-heading'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { SlashCommandRow } from './chat-command'
 import { ToolBody } from './chat-diff'
 import { ChatThread } from './chat-thread'
-import type { Message } from './chat-thread'
 import { AskCard } from './session-ask-claude'
 import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
-import type { Elicitation } from './session-elicitation'
 import { PermissionCard } from './session-permission'
-import type { PendingCall } from './session-permission'
+import {
+  ASK_ONE,
+  ASK_MANY,
+  BASH,
+  EDIT,
+  PLAN,
+  SCREEN,
+  COMPACT,
+  SLASH,
+} from './console-interactions-samples'
 
 type Text = { zh: string; en: string }
-
-const ASK_ONE: Elicitation = {
-  questions: [
-    {
-      header: '数据源',
-      question: '周报读哪张表？',
-      options: [
-        { label: 'dev_report', description: '开发周报明细' },
-        { label: 'team_stat', description: '团队统计汇总' },
-        { label: '都读', description: '合并两张表' },
-      ],
-    },
-  ],
-}
-const ASK_MANY: Elicitation = {
-  questions: [
-    ...ASK_ONE.questions,
-    {
-      header: '范围',
-      question: '统计哪几周？',
-      options: [{ label: '本周' }, { label: '近四周' }],
-    },
-  ],
-}
-const BASH: PendingCall = {
-  tool: 'Bash',
-  text: 'Bash git push origin master',
-  body: 'git push origin master',
-}
-const EDIT: PendingCall = {
-  tool: 'Edit',
-  text: 'Edit /r/web/src/lib/upload.ts',
-  file: '/r/web/src/lib/upload.ts',
-  body: '@@ -8,3 +8,3 @@\n // a phone screenshot is megabytes of PNG\n-const LONG_EDGE = 1600\n+const LONG_EDGE = 1920\n export async function shrinkImage(file: Blob) {',
-}
-const PLAN: PendingCall = {
-  tool: 'ExitPlanMode',
-  text: 'ExitPlanMode',
-  plan: true,
-  body: '## 计划\n\n1. relay 下发等待确认的工具调用\n2. 网页渲染确认卡片\n3. 交互调试页加入对照',
-}
-const SCREEN =
-  ' Do you want to proceed?\n ❯ 1. Yes\n   2. Yes, and don’t ask again for git push commands\n   3. No, and tell Claude what to do differently (esc)'
-const COMPACT: Array<Message> = [
-  { role: 'user', text: '继续上一轮的重构' },
-  {
-    role: 'system',
-    kind: 'compact',
-    text: 'auto',
-    body: '上下文摘要：已完成 A、B，待做 C。',
-    ts: '2026-11-23T10:00:00Z',
-  },
-  { role: 'assistant', text: '好的，接着做 C。' },
-]
-const SLASH: Array<Message> = [
-  {
-    role: 'system',
-    kind: 'slash',
-    text: '/model opus',
-    body: 'Set model to Opus 5.5',
-  },
-  {
-    role: 'system',
-    kind: 'slash',
-    text: '/context',
-    body: 'Context usage\n  System prompt   3.1k\n  Messages       48.2k\n  Free           120k',
-  },
-]
 
 /**
  * 我的 › 交互调试: a list of interactions beside (wide) or before (phone)
@@ -138,9 +78,16 @@ export function InteractionsPage() {
     >
       {GROUPS.map((group) => (
         <div key={group.id} className="grid gap-1">
-          <h2 className="px-2 text-caption font-semibold text-brand-label">
+          {/* the phone list sits on a .key card, the wide sidebar on the page */}
+          <SectionHeading
+            as="h2"
+            className={cn(
+              'px-2 text-brand-label',
+              wide ? 'bg-brand-deck' : 'bg-brand-key',
+            )}
+          >
             {p(group.title)}
-          </h2>
+          </SectionHeading>
           {/* a phone gets the 我的 list row (ink, a rule between rows); a
               wide screen keeps the sidebar look beside the detail */}
           <ul className={cn('grid', wide ? 'gap-0.5' : '')}>

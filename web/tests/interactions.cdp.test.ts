@@ -1,4 +1,4 @@
-// covers: web/src/features/console-interactions.tsx
+// covers: web/src/features/console-interactions*
 // covers: web/src/features/session-permission.tsx
 // covers: web/src/features/session-elicitation.tsx
 // covers: web/src/features/session-ask-claude.tsx

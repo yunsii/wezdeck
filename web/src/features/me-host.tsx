@@ -7,6 +7,7 @@ import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { SectionHeading } from '#/components/ui/section-heading'
 import { Field, FieldList } from '#/components/ui/field'
 import { runtimeQuery, useRuntimeData } from './console-data'
 import {
@@ -68,9 +69,9 @@ export function HostPage() {
   const none = t`Unavailable`
   const group = (title: string, rows: Array<[string, string]>) => (
     <section className="grid gap-1">
-      <h2 className="px-1 text-caption font-semibold text-brand-muted">
+      <SectionHeading as="h2" className="bg-brand-key">
         {title}
-      </h2>
+      </SectionHeading>
       <FieldList>
         {rows.map(([label, value]) => (
           <Field key={label} label={label} value={value} mono />

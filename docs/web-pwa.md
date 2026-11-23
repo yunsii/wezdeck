@@ -177,6 +177,16 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   `size-adjust` / ascent / descent overrides for Inter — stands in until it
   loads, so the swap does not shift the layout. CJK slices are not preloaded
   (which ones depends on the page) and need no metric fallback.
+- Sticky context (2026-11-23, interaction convention): in long scrolling
+  content the reader always sees what the part under the top edge belongs
+  to. A conversation pins the user's message that owns it (`chat-sticky.tsx`,
+  the user bubble folded to one line); sectioned content — 会话信息, 本机,
+  交互调试, any new page of titled groups — pins the nearest section heading
+  with `components/ui/section-heading.tsx` (`position: sticky; top: 0` inside
+  its section, so the next heading pushes it off; `className` carries the
+  surface's fill so rows don't show through). Don't hand-roll a section
+  `<h2>` / `<h3>` in scrolling content; no `overflow: hidden` between the
+  heading and its scroller, or sticky silently stops.
 - Back (2026-11-23): every pushed page (a session, a 我的 group, a ticket)
   backs out with `components/deck/back-button.tsx` — a bare ‹ on a 44 px
   target, then the page name (or the session title) and, on the phone, the
