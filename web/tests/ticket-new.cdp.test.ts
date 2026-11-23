@@ -74,6 +74,11 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
       .locator('[data-testid=remote-badge-compact], [data-testid=remote-badge]')
       .first()
       .waitFor({ timeout: 20_000 })
+    // sessions left by earlier files open in the wide split and focus its
+    // composer, where g / c are typing, not jumps (the real flake)
+    await page.evaluate(() => {
+      ;(document.activeElement as HTMLElement | null)?.blur()
+    })
     await page.keyboard.press('g')
     await page.keyboard.press('c')
     await page.waitForURL(/\/console\/collab$/)
