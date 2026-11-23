@@ -186,6 +186,25 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await expect.poll(() => page.url().split('/').at(-1)).not.toBe('nav-c')
     await context.close()
   })
+  it('wide screen: 会话 opens the last session again, else the top one', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/sessions?remote=1#pair=${token}`)
+    // nothing remembered yet: the top of the list is picked, not a blank pane
+    await page.waitForURL(/\/console\/sessions\/[^/?#]+/, { timeout: 20_000 })
+    await page.locator('[data-session=nav-b]').click()
+    await page.waitForURL('**/console/sessions/nav-b')
+    await page.goto(`${base}/zh/console/sessions`)
+    await page.waitForURL('**/console/sessions/nav-b', { timeout: 20_000 })
+    expect(
+      await page.locator('[data-session=nav-b]').getAttribute('aria-current'),
+    ).toBe('page')
+    await context.close()
+  })
+
   it('an unpaired browser says so at once instead of timing out', async () => {
     const context = await browser.newContext({ locale: 'zh-CN' })
     const page = await context.newPage()

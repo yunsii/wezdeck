@@ -168,7 +168,7 @@ msgid "Agent name"
 msgstr "Agent name"
 
 #: src/features/session-list.tsx:253
-#: src/features/session-split.tsx:47
+#: src/features/session-split.tsx:91
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -1431,7 +1431,7 @@ msgstr "Phase"
 #~ msgid "Phone writing"
 #~ msgstr "Phone writing"
 
-#: src/features/session-split.tsx:60
+#: src/features/session-split.tsx:104
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "Pick a session on the left. j / k move through the list."
 
