@@ -15,7 +15,7 @@ msgstr ""
 msgid "· summary"
 msgstr "· 摘要"
 
-#: src/features/ticket-reply.tsx:74
+#: src/features/ticket-reply.tsx:68
 msgid "(pick any)"
 msgstr "（可多选）"
 
@@ -27,7 +27,7 @@ msgstr "{bg} 个后台任务在跑"
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:171
+#: src/features/session-composer.tsx:144
 msgid "{count} images"
 msgstr "{count} 张图片"
 
@@ -83,7 +83,7 @@ msgstr "{tools} 次工具调用"
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/ticket-reply.tsx:202
+#: src/features/ticket-reply.tsx:210
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
@@ -123,7 +123,7 @@ msgstr "记下要后续跟进的大改动…"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
-#: src/features/ticket-reply.tsx:295
+#: src/features/ticket-reply.tsx:306
 msgid "A headless run is still going; take over when it finishes."
 msgstr "后台还在跑，等它结束再接管。"
 
@@ -138,6 +138,10 @@ msgstr "面向 AI Agent 的本地工作台。"
 #: src/features/session-info.tsx:75
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
+
+#: src/features/ticket-thread-view.tsx:17
+msgid "A person"
+msgstr "人工"
 
 #: src/features/tickets-view.tsx:392
 msgid "A person (taken over)"
@@ -237,7 +241,7 @@ msgstr "已是最新版本"
 msgid "An example. Select a session to see where you would jump back."
 msgstr "这是示例。选一个会话，看你会跳回哪里。"
 
-#: src/features/ticket-reply.tsx:190
+#: src/features/ticket-reply.tsx:198
 msgid "Anything to add (optional)"
 msgstr "补充说明（可选）"
 
@@ -258,7 +262,7 @@ msgstr "批准计划"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
-#: src/features/ticket-reply.tsx:317
+#: src/features/ticket-reply.tsx:331
 msgid "Assumptions"
 msgstr "假设"
 
@@ -306,9 +310,9 @@ msgid "Bytes"
 msgstr "字节"
 
 #: src/features/console-collab.tsx:96
-#: src/features/console-collab.tsx:288
-#: src/features/console-collab.tsx:339
-#: src/features/console-collab.tsx:423
+#: src/features/console-collab.tsx:291
+#: src/features/console-collab.tsx:342
+#: src/features/console-collab.tsx:426
 #: src/features/session-info.tsx:68
 msgid "Cache hit"
 msgstr "缓存命中"
@@ -321,7 +325,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-composer.tsx:211
+#: src/features/session-composer.tsx:184
 msgid "cancel"
 msgstr "取消"
 
@@ -356,11 +360,11 @@ msgstr "检查更新"
 msgid "Checking…"
 msgstr "检查中…"
 
-#: src/features/console-collab.tsx:418
+#: src/features/console-collab.tsx:421
 msgid "Child"
 msgstr "子单"
 
-#: src/features/console-collab.tsx:413
+#: src/features/console-collab.tsx:416
 msgid "Children"
 msgstr "子单"
 
@@ -381,7 +385,7 @@ msgstr "处理中…"
 msgid "Close"
 msgstr "关闭"
 
-#: src/features/session-composer.tsx:247
+#: src/features/session-composer.tsx:220
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -433,15 +437,15 @@ msgstr "协作工单"
 msgid "Command"
 msgstr "命令"
 
-#: src/features/session-composer.tsx:317
+#: src/features/session-composer.tsx:290
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/session-composer.tsx:210
+#: src/features/session-composer.tsx:183
 msgid "confirm"
 msgstr "确认"
 
-#: src/features/console-collab.tsx:488
+#: src/features/console-collab.tsx:491
 msgid "conflict"
 msgstr "冲突"
 
@@ -487,7 +491,7 @@ msgstr "上下文压缩次数"
 msgid "Control"
 msgstr "控制"
 
-#: src/features/session-composer.tsx:102
+#: src/features/session-composer.tsx:75
 #: src/features/session-info.tsx:217
 msgid "Copied"
 msgstr "已复制"
@@ -501,7 +505,7 @@ msgid "Copied {what}"
 msgstr "已复制 {what}"
 
 #: src/features/inspector.tsx:204
-#: src/features/session-composer.tsx:102
+#: src/features/session-composer.tsx:75
 msgid "Copy"
 msgstr "复制"
 
@@ -513,7 +517,7 @@ msgstr "复制「{label}：…」"
 msgid "Copy command"
 msgstr "复制命令"
 
-#: src/features/session-composer.tsx:94
+#: src/features/session-composer.tsx:67
 msgid "Copy error"
 msgstr "复制错误信息"
 
@@ -526,8 +530,8 @@ msgid "Copy value"
 msgstr "复制值"
 
 #: src/features/console-collab.tsx:101
-#: src/features/console-collab.tsx:289
-#: src/features/console-collab.tsx:340
+#: src/features/console-collab.tsx:292
+#: src/features/console-collab.tsx:343
 msgid "Cost"
 msgstr "花费"
 
@@ -586,7 +590,7 @@ msgstr "暗色主题"
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
-#: src/features/ticket-reply.tsx:320
+#: src/features/ticket-reply.tsx:334
 msgid "Decision"
 msgstr "决定"
 
@@ -602,7 +606,7 @@ msgstr "受限"
 #~ msgid "Delivered, waiting for the agent"
 #~ msgstr "已送达，等待 Agent 处理"
 
-#: src/features/console-collab.tsx:421
+#: src/features/console-collab.tsx:424
 msgid "Depends on"
 msgstr "依赖"
 
@@ -656,6 +660,10 @@ msgstr "例如 phone-create"
 #: src/features/landing-page.tsx:112
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "每个仓库、关联 worktree 和 Agent 会话都留着可以跳回去的位置。"
+
+#: src/features/ticket-thread-view.tsx:59
+msgid "Earlier messages are left out here; the ticket file has them all."
+msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 
 #: src/features/session-composer.tsx:227
 #~ msgid "Enable phone writing in Settings to send these keys"
@@ -730,7 +738,7 @@ msgstr "示例"
 msgid "Example agent sessions"
 msgstr "示例 Agent 会话"
 
-#: src/features/console-collab.tsx:343
+#: src/features/console-collab.tsx:346
 msgid "Exit"
 msgstr "退出码"
 
@@ -787,7 +795,7 @@ msgstr "第一轮"
 msgid "Follow system theme"
 msgstr "跟随系统主题"
 
-#: src/features/session-composer.tsx:337
+#: src/features/session-composer.tsx:310
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
 
@@ -886,7 +894,7 @@ msgstr "图片"
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/session-composer.tsx:357
+#: src/features/session-composer.tsx:330
 msgid "Images"
 msgstr "图片"
 
@@ -940,8 +948,8 @@ msgstr "已安装"
 msgid "Instance"
 msgstr "实例"
 
-#: src/features/console-collab.tsx:481
-#: src/features/console-collab.tsx:482
+#: src/features/console-collab.tsx:484
+#: src/features/console-collab.tsx:485
 msgid "Integration"
 msgstr "集成"
 
@@ -949,7 +957,7 @@ msgstr "集成"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-composer.tsx:212
+#: src/features/session-composer.tsx:185
 msgid "interrupt"
 msgstr "打断"
 
@@ -981,7 +989,7 @@ msgstr "每个 Agent 都待在你能回去的位置。"
 msgid "Keyboard first"
 msgstr "键盘优先"
 
-#: src/features/session-composer.tsx:331
+#: src/features/session-composer.tsx:304
 msgid "Keys"
 msgstr "快捷"
 
@@ -1107,15 +1115,15 @@ msgstr "标为已读"
 msgid "Marked read"
 msgstr "已标为已读"
 
-#: src/features/console-collab.tsx:493
+#: src/features/console-collab.tsx:496
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:480
+#: src/features/session-composer.tsx:453
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:467
+#: src/features/session-composer.tsx:440
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -1236,7 +1244,7 @@ msgstr "现在没有正在运行的 Agent 会话。"
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 
-#: src/features/console-collab.tsx:321
+#: src/features/console-collab.tsx:324
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
@@ -1385,7 +1393,7 @@ msgstr "打开 Web 控制台"
 #~ msgid "Opened in tmux: {0} ({1})"
 #~ msgstr ""
 
-#: src/features/ticket-reply.tsx:269
+#: src/features/ticket-reply.tsx:280
 msgid "Opened in tmux: {windowName} ({tmuxSession})"
 msgstr "已在 tmux 打开：{windowName}（{tmuxSession}）"
 
@@ -1397,7 +1405,7 @@ msgstr "开单：{from} → {to}"
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
 
-#: src/features/ticket-reply.tsx:291
+#: src/features/ticket-reply.tsx:302
 msgid "Opening…"
 msgstr "正在打开…"
 
@@ -1454,7 +1462,7 @@ msgstr "组成"
 msgid "Peak RSS"
 msgstr "内存峰值"
 
-#: src/features/console-collab.tsx:336
+#: src/features/console-collab.tsx:339
 msgid "Phase"
 msgstr "阶段"
 
@@ -1474,7 +1482,7 @@ msgstr "计划待你确认"
 msgid "Plan review"
 msgstr "计划确认"
 
-#: src/features/session-composer.tsx:376
+#: src/features/session-composer.tsx:349
 msgid "Preview image"
 msgstr "预览图片"
 
@@ -1510,8 +1518,8 @@ msgstr "填进消息，交给这个 agent"
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/session-composer.tsx:255
-#: src/features/session-composer.tsx:325
+#: src/features/session-composer.tsx:228
+#: src/features/session-composer.tsx:298
 msgid "Quick keys"
 msgstr "快捷键"
 
@@ -1575,7 +1583,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:389
+#: src/features/session-composer.tsx:362
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -1591,11 +1599,11 @@ msgstr "重新打开"
 msgid "replied"
 msgstr "已回复"
 
-#: src/features/ticket-reply.tsx:149
+#: src/features/ticket-reply.tsx:144
 msgid "Replied"
 msgstr "已回复"
 
-#: src/features/ticket-reply.tsx:149
+#: src/features/ticket-reply.tsx:144
 msgid "Replied, the agent continues"
 msgstr "已回复，Agent 继续处理"
 
@@ -1603,15 +1611,15 @@ msgstr "已回复，Agent 继续处理"
 msgid "replied: {body}"
 msgstr "回复：{body}"
 
-#: src/features/ticket-reply.tsx:218
+#: src/features/ticket-reply.tsx:226
 msgid "Reply"
 msgstr "回复"
 
-#: src/features/ticket-reply.tsx:227
+#: src/features/ticket-reply.tsx:235
 msgid "Reply and continue"
 msgstr "回复并继续"
 
-#: src/features/console-collab.tsx:419
+#: src/features/console-collab.tsx:422
 msgid "Repo"
 msgstr "仓库"
 
@@ -1668,7 +1676,7 @@ msgstr "继续对话线程"
 msgid "Resumed conversations"
 msgstr "可恢复的会话"
 
-#: src/features/ticket-reply.tsx:296
+#: src/features/ticket-reply.tsx:307
 msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
@@ -1695,11 +1703,11 @@ msgstr "Rime 采集器"
 msgid "Route"
 msgstr "流向"
 
-#: src/features/console-collab.tsx:342
+#: src/features/console-collab.tsx:345
 msgid "RSS"
 msgstr "内存"
 
-#: src/features/console-collab.tsx:335
+#: src/features/console-collab.tsx:338
 msgid "Run"
 msgstr "运行"
 
@@ -1715,7 +1723,7 @@ msgstr "运行失败"
 msgid "run finished"
 msgstr "运行结束"
 
-#: src/features/console-collab.tsx:455
+#: src/features/console-collab.tsx:458
 #: src/features/landing-example.tsx:51
 #: src/features/tickets-view.tsx:110
 msgid "running"
@@ -1739,8 +1747,8 @@ msgid "Running substate"
 msgstr "运行子状态"
 
 #: src/features/console-collab.tsx:93
-#: src/features/console-collab.tsx:256
-#: src/features/console-collab.tsx:330
+#: src/features/console-collab.tsx:259
+#: src/features/console-collab.tsx:333
 msgid "Runs"
 msgstr "运行次数"
 
@@ -1797,7 +1805,7 @@ msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 msgid "Sample signals. The live console reads your local Runtime."
 msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 
-#: src/features/console-collab.tsx:422
+#: src/features/console-collab.tsx:425
 msgid "Scope"
 msgstr "改动范围"
 
@@ -1825,11 +1833,11 @@ msgstr "看谁需要你"
 msgid "Select a worktree to see its agent status."
 msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:486
+#: src/features/session-composer.tsx:459
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:326
+#: src/features/session-composer.tsx:299
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
@@ -1846,7 +1854,7 @@ msgstr "正在发送第一条消息…"
 #~ msgstr "已发送到会话"
 
 #: src/features/console-collab-run.tsx:116
-#: src/features/console-collab.tsx:337
+#: src/features/console-collab.tsx:340
 #: src/features/session-info.tsx:26
 msgid "Session"
 msgstr "会话"
@@ -1921,7 +1929,7 @@ msgstr "跳到内容"
 msgid "Socket"
 msgstr "套接字"
 
-#: src/features/ticket-reply.tsx:321
+#: src/features/ticket-reply.tsx:335
 msgid "Solution"
 msgstr "方案"
 
@@ -1969,7 +1977,7 @@ msgstr "正在启动…"
 msgid "State"
 msgstr "状态"
 
-#: src/features/console-collab.tsx:420
+#: src/features/console-collab.tsx:423
 #: src/features/console-development.tsx:403
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:122
@@ -1995,7 +2003,7 @@ msgstr "提交答案"
 msgid "submitted"
 msgstr "已提交"
 
-#: src/features/ticket-reply.tsx:316
+#: src/features/ticket-reply.tsx:330
 msgid "Summary"
 msgstr "摘要"
 
@@ -2012,7 +2020,7 @@ msgstr "切换会话（Alt+g）"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/ticket-reply.tsx:291
+#: src/features/ticket-reply.tsx:302
 msgid "Take over in tmux"
 msgstr "接管到 tmux"
 
@@ -2028,7 +2036,7 @@ msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:241
+#: src/features/session-composer.tsx:214
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -2057,7 +2065,7 @@ msgstr "Agent 在问你"
 msgid "The agent is asking you (question {number} of {total})"
 msgstr "Agent 在问你（第 {number}/{total} 题）"
 
-#: src/features/ticket-reply.tsx:162
+#: src/features/ticket-reply.tsx:157
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
@@ -2120,7 +2128,8 @@ msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 msgid "This Runtime does not provide the workspace catalog."
 msgstr "当前 Runtime 没有提供 workspace 目录。"
 
-#: src/features/ticket-reply.tsx:319
+#: src/features/ticket-reply.tsx:333
+#: src/features/ticket-thread-view.tsx:53
 msgid "Thread"
 msgstr "讨论"
 
@@ -2195,7 +2204,7 @@ msgstr "目标仓库"
 msgid "To follow up"
 msgstr "待跟进"
 
-#: src/features/session-composer.tsx:342
+#: src/features/session-composer.tsx:315
 msgid "To-dos"
 msgstr "待办"
 
@@ -2251,7 +2260,7 @@ msgstr "请尝试其他 trace、分类或级别。"
 #~ msgid "turn finished, {bg} background tasks running; you can send"
 #~ msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-composer.tsx:213
 msgid "Turn on write access in Settings to send these keys"
 msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 
@@ -2260,8 +2269,8 @@ msgid "TURN relay"
 msgstr "TURN 中继"
 
 #: src/features/console-collab.tsx:95
-#: src/features/console-collab.tsx:287
-#: src/features/console-collab.tsx:338
+#: src/features/console-collab.tsx:290
+#: src/features/console-collab.tsx:341
 msgid "Turns"
 msgstr "轮数"
 
@@ -2287,7 +2296,7 @@ msgstr "已同步到最新，{at}"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:161
+#: src/features/session-composer.tsx:134
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
@@ -2319,7 +2328,7 @@ msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。
 #~ msgid "Used {count} tools"
 #~ msgstr "调用了 {count} 个工具"
 
-#: src/features/ticket-reply.tsx:318
+#: src/features/ticket-reply.tsx:332
 msgid "Verification"
 msgstr "核实"
 
@@ -2360,6 +2369,10 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 msgid "waiting for you"
 msgstr "在等你"
 
+#: src/features/ticket-thread-view.tsx:97
+msgid "Waiting for your answer"
+msgstr "等你回答"
+
 #: src/features/console-sessions.tsx:151
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
@@ -2397,8 +2410,8 @@ msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:290
-#: src/features/console-collab.tsx:341
+#: src/features/console-collab.tsx:293
+#: src/features/console-collab.tsx:344
 msgid "Wall"
 msgstr "耗时"
 
@@ -2473,6 +2486,18 @@ msgstr "work"
 msgid "Workbench"
 msgstr "工作台"
 
+#: src/features/ticket-thread-view.tsx:14
+msgid "Worker"
+msgstr "执行方"
+
+#: src/features/ticket-thread-view.tsx:15
+msgid "Worker notes"
+msgstr "执行方备注"
+
+#: src/features/ticket-thread-view.tsx:16
+msgid "Worker question"
+msgstr "执行方提问"
+
 #: src/features/console-usage.tsx:98
 msgid "Worker requests"
 msgstr "Worker 请求"
@@ -2520,7 +2545,7 @@ msgid "Write access"
 msgstr "写入权限"
 
 #: src/features/console-sessions.tsx:364
-#: src/features/ticket-reply.tsx:197
+#: src/features/ticket-reply.tsx:205
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "这台设备还没启用写入（我的 › 写入权限）。"
 
@@ -2543,15 +2568,19 @@ msgstr "是"
 msgid "Yesterday"
 msgstr "昨天"
 
+#: src/features/ticket-thread-view.tsx:13
+msgid "You (initiator)"
+msgstr "你（发起方）"
+
 #: src/features/landing-page.tsx:153
 msgid "Your agents. Your worktrees. Your machine."
 msgstr "你的 Agent。你的 worktree。你的机器。"
 
-#: src/features/ticket-reply.tsx:191
+#: src/features/ticket-reply.tsx:199
 msgid "Your decision, extra context, or an answer to the challenge"
 msgstr "你的决定、补充信息，或对质疑的答复"
 
-#: src/features/ticket-reply.tsx:181
+#: src/features/ticket-reply.tsx:176
 msgid "Your reply"
 msgstr "你的回复"
 

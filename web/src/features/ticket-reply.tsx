@@ -17,16 +17,10 @@ import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
 import { Textarea } from '#/components/ui/textarea'
 import { Disclosure } from '#/components/ui/disclosure'
+import { useDraft } from '#/lib/use-draft'
+import { TicketThread } from './ticket-thread-view'
 
-/** Last entry of the Thread section, e.g. "worker challenge: 确认…". */
-export function openQuestion(sections: Array<{ title: string; text: string }>) {
-  const thread = sections.find((section) => section.title === 'Thread')
-  const entries = (thread?.text ?? '')
-    .split('\n')
-    .filter((line) => /^- \(/.test(line.trim()))
-  const last = entries.at(-1)?.trim() ?? ''
-  return last.replace(/^- \([^)]*\)\s*/, '')
-}
+export { openQuestion } from '#/lib/ticket-thread'
 
 type Question = TicketQuestions['questions'][number]
 
@@ -119,7 +113,8 @@ export function TicketReply({
   const { t } = useLingui()
   const client = useQueryClient()
   const device = useDeviceState()
-  const [text, setText] = useState('')
+  // unsent reply survives leaving the page, like the session composer
+  const [text, setText] = useDraft(`wezdeck.draft.ticket.${id}`)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const asked = questions?.questions ?? []
@@ -184,6 +179,19 @@ export function TicketReply({
         id={`reply-${id}`}
         value={text}
         onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          // Ctrl/⌘+Enter: reply and let the agent continue (the main action)
+          if (
+            event.key === 'Enter' &&
+            (event.ctrlKey || event.metaKey) &&
+            !busy &&
+            answer.trim() &&
+            device.state === 'approved'
+          ) {
+            event.preventDefault()
+            void send(true)
+          }
+        }}
         rows={asked.length ? 2 : 3}
         placeholder={
           asked.length
@@ -225,6 +233,9 @@ export function TicketReply({
           className="min-h-11 text-[15px] disabled:opacity-40"
         >
           {t`Reply and continue`}
+          <kbd className="ml-1.5 hidden text-[11px] opacity-60 md:inline">
+            Ctrl+Enter
+          </kbd>
         </Button>
       </div>
     </section>
@@ -306,8 +317,11 @@ export function TicketAttach({
 
 export function TicketSections({
   sections,
+  waiting = false,
 }: {
   sections: Array<{ title: string; text: string }>
+  /** the ticket waits on you: open the thread, mark the question */
+  waiting?: boolean
 }) {
   const { t } = useLingui()
   // the ticket template's fixed headings, in the page language; any other
@@ -330,14 +344,24 @@ export function TicketSections({
         <Disclosure
           key={section.title}
           // the summary is what you came for: open; the rest one tap away
-          defaultOpen={section.title === 'Summary'}
+          defaultOpen={
+            section.title === 'Summary' ||
+            (waiting && section.title === 'Thread')
+          }
           className="border-b border-brand-edge last:border-b-0"
           triggerClassName="min-h-12 px-4 text-[15px] font-medium"
           title={names[section.title] ?? section.title}
         >
-          <p className="px-4 pb-4 text-[14px] leading-relaxed whitespace-pre-wrap text-brand-muted">
-            {section.text.replace(/^##.*\n?/m, '').trim()}
-          </p>
+          {section.title === 'Thread' ? (
+            <TicketThread
+              text={section.text.replace(/^##.*\n?/m, '')}
+              waiting={waiting}
+            />
+          ) : (
+            <p className="px-4 pb-4 text-[14px] leading-relaxed whitespace-pre-wrap text-brand-muted">
+              {section.text.replace(/^##.*\n?/m, '').trim()}
+            </p>
+          )}
         </Disclosure>
       ))}
     </div>

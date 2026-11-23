@@ -4,6 +4,7 @@
 // this page only registers its state for that snapshot. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
+import { useDraft } from '#/lib/use-draft'
 import {
   Check,
   Copy,
@@ -13,7 +14,7 @@ import {
   SendHorizontal,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { setDiagnosticsPage } from '#/lib/client-trace'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
@@ -43,34 +44,6 @@ const draftKey = (id: string) => `wezdeck.draft.${id}`
  * keyed on the text ran in the mount pass with the still-empty state and
  * deleted the draft it was about to load (seen when the page mounted twice).
  */
-function useDraft(id: string) {
-  const [text, setTextState] = useState('')
-  useEffect(() => {
-    try {
-      setTextState(localStorage.getItem(draftKey(id)) ?? '')
-    } catch {
-      // storage blocked: drafts just don't persist
-    }
-  }, [id])
-  const setText = useCallback(
-    (next: string | ((current: string) => string)) => {
-      setTextState((current) => {
-        const value = typeof next === 'function' ? next(current) : next
-        // idempotent, so a StrictMode double call is harmless
-        try {
-          if (value) localStorage.setItem(draftKey(id), value)
-          else localStorage.removeItem(draftKey(id))
-        } catch {
-          // storage blocked or full
-        }
-        return value
-      })
-    },
-    [id],
-  )
-  return [text, setText] as const
-}
-
 /** An error line with a one-tap copy, for pasting it elsewhere. */
 export function ErrorLine({ message }: { message: string }) {
   const { t } = useLingui()
@@ -117,7 +90,7 @@ export function useComposer({
   diagnostics: () => Record<string, unknown>
 }) {
   const { t } = useLingui()
-  const [text, setText] = useDraft(id)
+  const [text, setText] = useDraft(draftKey(id))
   const [images, setImages] = useState<Array<Picked>>([])
   const [progress, setProgress] = useState('')
   const urls = useRef(images)

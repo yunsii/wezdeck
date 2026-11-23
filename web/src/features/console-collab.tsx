@@ -211,7 +211,10 @@ export function TicketReading({
         sessions={data.sessions}
         running={ticket.running.length > 0}
       />
-      <TicketSections sections={data.sections} />
+      <TicketSections
+        sections={data.sections}
+        waiting={ticket.status === 'waiting_initiator'}
+      />
       {data.children_detail.length > 0 ? (
         <ChildrenTable children={data.children_detail} onOpen={onOpen} />
       ) : null}

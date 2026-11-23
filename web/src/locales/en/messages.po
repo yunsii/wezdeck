@@ -15,7 +15,7 @@ msgstr ""
 msgid "· summary"
 msgstr "· summary"
 
-#: src/features/ticket-reply.tsx:74
+#: src/features/ticket-reply.tsx:68
 msgid "(pick any)"
 msgstr "(pick any)"
 
@@ -27,7 +27,7 @@ msgstr "{bg} background tasks running"
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:171
+#: src/features/session-composer.tsx:144
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -83,7 +83,7 @@ msgstr "{tools} tool calls"
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
-#: src/features/ticket-reply.tsx:202
+#: src/features/ticket-reply.tsx:210
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 
@@ -123,7 +123,7 @@ msgstr "A big change to follow up later…"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
 
-#: src/features/ticket-reply.tsx:295
+#: src/features/ticket-reply.tsx:306
 msgid "A headless run is still going; take over when it finishes."
 msgstr "A headless run is still going; take over when it finishes."
 
@@ -138,6 +138,10 @@ msgstr "A local-first workbench for AI coding agents."
 #: src/features/session-info.tsx:75
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
+
+#: src/features/ticket-thread-view.tsx:17
+msgid "A person"
+msgstr "A person"
 
 #: src/features/tickets-view.tsx:392
 msgid "A person (taken over)"
@@ -237,7 +241,7 @@ msgstr "Already the latest"
 msgid "An example. Select a session to see where you would jump back."
 msgstr "An example. Select a session to see where you would jump back."
 
-#: src/features/ticket-reply.tsx:190
+#: src/features/ticket-reply.tsx:198
 msgid "Anything to add (optional)"
 msgstr "Anything to add (optional)"
 
@@ -258,7 +262,7 @@ msgstr "Approve plan"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
-#: src/features/ticket-reply.tsx:317
+#: src/features/ticket-reply.tsx:331
 msgid "Assumptions"
 msgstr "Assumptions"
 
@@ -306,9 +310,9 @@ msgid "Bytes"
 msgstr "Bytes"
 
 #: src/features/console-collab.tsx:96
-#: src/features/console-collab.tsx:288
-#: src/features/console-collab.tsx:339
-#: src/features/console-collab.tsx:423
+#: src/features/console-collab.tsx:291
+#: src/features/console-collab.tsx:342
+#: src/features/console-collab.tsx:426
 #: src/features/session-info.tsx:68
 msgid "Cache hit"
 msgstr "Cache hit"
@@ -321,7 +325,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:211
+#: src/features/session-composer.tsx:184
 msgid "cancel"
 msgstr "cancel"
 
@@ -356,11 +360,11 @@ msgstr "Check for updates"
 msgid "Checking…"
 msgstr "Checking…"
 
-#: src/features/console-collab.tsx:418
+#: src/features/console-collab.tsx:421
 msgid "Child"
 msgstr "Child"
 
-#: src/features/console-collab.tsx:413
+#: src/features/console-collab.tsx:416
 msgid "Children"
 msgstr "Children"
 
@@ -381,7 +385,7 @@ msgstr "Clearing…"
 msgid "Close"
 msgstr "Close"
 
-#: src/features/session-composer.tsx:247
+#: src/features/session-composer.tsx:220
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -433,15 +437,15 @@ msgstr "Collab tickets"
 msgid "Command"
 msgstr "Command"
 
-#: src/features/session-composer.tsx:317
+#: src/features/session-composer.tsx:290
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:210
+#: src/features/session-composer.tsx:183
 msgid "confirm"
 msgstr "confirm"
 
-#: src/features/console-collab.tsx:488
+#: src/features/console-collab.tsx:491
 msgid "conflict"
 msgstr "conflict"
 
@@ -487,7 +491,7 @@ msgstr "Context compactions"
 msgid "Control"
 msgstr "Control"
 
-#: src/features/session-composer.tsx:102
+#: src/features/session-composer.tsx:75
 #: src/features/session-info.tsx:217
 msgid "Copied"
 msgstr "Copied"
@@ -501,7 +505,7 @@ msgid "Copied {what}"
 msgstr "Copied {what}"
 
 #: src/features/inspector.tsx:204
-#: src/features/session-composer.tsx:102
+#: src/features/session-composer.tsx:75
 msgid "Copy"
 msgstr "Copy"
 
@@ -513,7 +517,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:94
+#: src/features/session-composer.tsx:67
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -526,8 +530,8 @@ msgid "Copy value"
 msgstr "Copy value"
 
 #: src/features/console-collab.tsx:101
-#: src/features/console-collab.tsx:289
-#: src/features/console-collab.tsx:340
+#: src/features/console-collab.tsx:292
+#: src/features/console-collab.tsx:343
 msgid "Cost"
 msgstr "Cost"
 
@@ -586,7 +590,7 @@ msgstr "Dark theme"
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
-#: src/features/ticket-reply.tsx:320
+#: src/features/ticket-reply.tsx:334
 msgid "Decision"
 msgstr "Decision"
 
@@ -602,7 +606,7 @@ msgstr "Degraded"
 #~ msgid "Delivered, waiting for the agent"
 #~ msgstr "Delivered, waiting for the agent"
 
-#: src/features/console-collab.tsx:421
+#: src/features/console-collab.tsx:424
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -656,6 +660,10 @@ msgstr "e.g. phone-create"
 #: src/features/landing-page.tsx:112
 msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
+
+#: src/features/ticket-thread-view.tsx:59
+msgid "Earlier messages are left out here; the ticket file has them all."
+msgstr "Earlier messages are left out here; the ticket file has them all."
 
 #: src/features/session-composer.tsx:227
 #~ msgid "Enable phone writing in Settings to send these keys"
@@ -730,7 +738,7 @@ msgstr "Example"
 msgid "Example agent sessions"
 msgstr "Example agent sessions"
 
-#: src/features/console-collab.tsx:343
+#: src/features/console-collab.tsx:346
 msgid "Exit"
 msgstr "Exit"
 
@@ -787,7 +795,7 @@ msgstr "First turn"
 msgid "Follow system theme"
 msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:337
+#: src/features/session-composer.tsx:310
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -886,7 +894,7 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/session-composer.tsx:357
+#: src/features/session-composer.tsx:330
 msgid "Images"
 msgstr "Images"
 
@@ -940,8 +948,8 @@ msgstr "Installed"
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/console-collab.tsx:481
-#: src/features/console-collab.tsx:482
+#: src/features/console-collab.tsx:484
+#: src/features/console-collab.tsx:485
 msgid "Integration"
 msgstr "Integration"
 
@@ -949,7 +957,7 @@ msgstr "Integration"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:212
+#: src/features/session-composer.tsx:185
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -981,7 +989,7 @@ msgstr "Keep every agent in a place you can return to."
 msgid "Keyboard first"
 msgstr "Keyboard first"
 
-#: src/features/session-composer.tsx:331
+#: src/features/session-composer.tsx:304
 msgid "Keys"
 msgstr "Keys"
 
@@ -1107,15 +1115,15 @@ msgstr "Mark read"
 msgid "Marked read"
 msgstr "Marked read"
 
-#: src/features/console-collab.tsx:493
+#: src/features/console-collab.tsx:496
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:480
+#: src/features/session-composer.tsx:453
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:467
+#: src/features/session-composer.tsx:440
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1236,7 +1244,7 @@ msgstr "No agent sessions are running."
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
-#: src/features/console-collab.tsx:321
+#: src/features/console-collab.tsx:324
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
@@ -1385,7 +1393,7 @@ msgstr "Open web console"
 #~ msgid "Opened in tmux: {0} ({1})"
 #~ msgstr "Opened in tmux: {0} ({1})"
 
-#: src/features/ticket-reply.tsx:269
+#: src/features/ticket-reply.tsx:280
 msgid "Opened in tmux: {windowName} ({tmuxSession})"
 msgstr "Opened in tmux: {windowName} ({tmuxSession})"
 
@@ -1397,7 +1405,7 @@ msgstr "opened, {from} → {to}"
 msgid "Opening the connection is one request."
 msgstr "Opening the connection is one request."
 
-#: src/features/ticket-reply.tsx:291
+#: src/features/ticket-reply.tsx:302
 msgid "Opening…"
 msgstr "Opening…"
 
@@ -1454,7 +1462,7 @@ msgstr "Part"
 msgid "Peak RSS"
 msgstr "Peak RSS"
 
-#: src/features/console-collab.tsx:336
+#: src/features/console-collab.tsx:339
 msgid "Phase"
 msgstr "Phase"
 
@@ -1474,7 +1482,7 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
-#: src/features/session-composer.tsx:376
+#: src/features/session-composer.tsx:349
 msgid "Preview image"
 msgstr "Preview image"
 
@@ -1510,8 +1518,8 @@ msgstr "Put into the message for this agent"
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/session-composer.tsx:255
-#: src/features/session-composer.tsx:325
+#: src/features/session-composer.tsx:228
+#: src/features/session-composer.tsx:298
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1575,7 +1583,7 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/session-composer.tsx:389
+#: src/features/session-composer.tsx:362
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -1591,11 +1599,11 @@ msgstr "Reopen"
 msgid "replied"
 msgstr "replied"
 
-#: src/features/ticket-reply.tsx:149
+#: src/features/ticket-reply.tsx:144
 msgid "Replied"
 msgstr "Replied"
 
-#: src/features/ticket-reply.tsx:149
+#: src/features/ticket-reply.tsx:144
 msgid "Replied, the agent continues"
 msgstr "Replied, the agent continues"
 
@@ -1603,15 +1611,15 @@ msgstr "Replied, the agent continues"
 msgid "replied: {body}"
 msgstr "replied: {body}"
 
-#: src/features/ticket-reply.tsx:218
+#: src/features/ticket-reply.tsx:226
 msgid "Reply"
 msgstr "Reply"
 
-#: src/features/ticket-reply.tsx:227
+#: src/features/ticket-reply.tsx:235
 msgid "Reply and continue"
 msgstr "Reply and continue"
 
-#: src/features/console-collab.tsx:419
+#: src/features/console-collab.tsx:422
 msgid "Repo"
 msgstr "Repo"
 
@@ -1668,7 +1676,7 @@ msgstr "Resume the thread"
 msgid "Resumed conversations"
 msgstr "Resumed conversations"
 
-#: src/features/ticket-reply.tsx:296
+#: src/features/ticket-reply.tsx:307
 msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
@@ -1695,11 +1703,11 @@ msgstr "Rime collector"
 msgid "Route"
 msgstr "Route"
 
-#: src/features/console-collab.tsx:342
+#: src/features/console-collab.tsx:345
 msgid "RSS"
 msgstr "RSS"
 
-#: src/features/console-collab.tsx:335
+#: src/features/console-collab.tsx:338
 msgid "Run"
 msgstr "Run"
 
@@ -1715,7 +1723,7 @@ msgstr "run failed"
 msgid "run finished"
 msgstr "run finished"
 
-#: src/features/console-collab.tsx:455
+#: src/features/console-collab.tsx:458
 #: src/features/landing-example.tsx:51
 #: src/features/tickets-view.tsx:110
 msgid "running"
@@ -1739,8 +1747,8 @@ msgid "Running substate"
 msgstr "Running substate"
 
 #: src/features/console-collab.tsx:93
-#: src/features/console-collab.tsx:256
-#: src/features/console-collab.tsx:330
+#: src/features/console-collab.tsx:259
+#: src/features/console-collab.tsx:333
 msgid "Runs"
 msgstr "Runs"
 
@@ -1797,7 +1805,7 @@ msgstr "Same as Ctrl+X in the Alt+/ picker"
 msgid "Sample signals. The live console reads your local Runtime."
 msgstr "Sample signals. The live console reads your local Runtime."
 
-#: src/features/console-collab.tsx:422
+#: src/features/console-collab.tsx:425
 msgid "Scope"
 msgstr "Scope"
 
@@ -1825,11 +1833,11 @@ msgstr "See who needs you"
 msgid "Select a worktree to see its agent status."
 msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:486
+#: src/features/session-composer.tsx:459
 msgid "Send"
 msgstr "Send"
 
-#: src/features/session-composer.tsx:326
+#: src/features/session-composer.tsx:299
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -1846,7 +1854,7 @@ msgstr "Sending the first message…"
 #~ msgstr "Sent to the session"
 
 #: src/features/console-collab-run.tsx:116
-#: src/features/console-collab.tsx:337
+#: src/features/console-collab.tsx:340
 #: src/features/session-info.tsx:26
 msgid "Session"
 msgstr "Session"
@@ -1921,7 +1929,7 @@ msgstr "Skip to content"
 msgid "Socket"
 msgstr "Socket"
 
-#: src/features/ticket-reply.tsx:321
+#: src/features/ticket-reply.tsx:335
 msgid "Solution"
 msgstr "Solution"
 
@@ -1969,7 +1977,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:420
+#: src/features/console-collab.tsx:423
 #: src/features/console-development.tsx:403
 #: src/features/console-overview.tsx:79
 #: src/features/landing-example.tsx:122
@@ -1995,7 +2003,7 @@ msgstr "Submit answers"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/ticket-reply.tsx:316
+#: src/features/ticket-reply.tsx:330
 msgid "Summary"
 msgstr "Summary"
 
@@ -2012,7 +2020,7 @@ msgstr "Switch session (Alt+g)"
 msgid "System"
 msgstr "System"
 
-#: src/features/ticket-reply.tsx:291
+#: src/features/ticket-reply.tsx:302
 msgid "Take over in tmux"
 msgstr "Take over in tmux"
 
@@ -2028,7 +2036,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:241
+#: src/features/session-composer.tsx:214
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2057,7 +2065,7 @@ msgstr "The agent is asking you"
 msgid "The agent is asking you (question {number} of {total})"
 msgstr "The agent is asking you (question {number} of {total})"
 
-#: src/features/ticket-reply.tsx:162
+#: src/features/ticket-reply.tsx:157
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
@@ -2120,7 +2128,8 @@ msgstr "This page hit a rendering error. The rest of the console is still availa
 msgid "This Runtime does not provide the workspace catalog."
 msgstr "This Runtime does not provide the workspace catalog."
 
-#: src/features/ticket-reply.tsx:319
+#: src/features/ticket-reply.tsx:333
+#: src/features/ticket-thread-view.tsx:53
 msgid "Thread"
 msgstr "Thread"
 
@@ -2195,7 +2204,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:342
+#: src/features/session-composer.tsx:315
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2251,7 +2260,7 @@ msgstr "Try a different trace, category, or level."
 #~ msgid "turn finished, {bg} background tasks running; you can send"
 #~ msgstr "turn finished, {bg} background tasks running; you can send"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-composer.tsx:213
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2260,8 +2269,8 @@ msgid "TURN relay"
 msgstr "TURN relay"
 
 #: src/features/console-collab.tsx:95
-#: src/features/console-collab.tsx:287
-#: src/features/console-collab.tsx:338
+#: src/features/console-collab.tsx:290
+#: src/features/console-collab.tsx:341
 msgid "Turns"
 msgstr "Turns"
 
@@ -2287,7 +2296,7 @@ msgstr "Up to date, {at}"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:161
+#: src/features/session-composer.tsx:134
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
@@ -2319,7 +2328,7 @@ msgstr "Use the browser menu: “Install app” / “Add to Home screen”."
 #~ msgid "Used {count} tools"
 #~ msgstr "Used {count} tools"
 
-#: src/features/ticket-reply.tsx:318
+#: src/features/ticket-reply.tsx:332
 msgid "Verification"
 msgstr "Verification"
 
@@ -2360,6 +2369,10 @@ msgstr "Waiting for the host to approve this device. On the host run:"
 msgid "waiting for you"
 msgstr "waiting for you"
 
+#: src/features/ticket-thread-view.tsx:97
+msgid "Waiting for your answer"
+msgstr "Waiting for your answer"
+
 #: src/features/console-sessions.tsx:151
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
@@ -2397,8 +2410,8 @@ msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:290
-#: src/features/console-collab.tsx:341
+#: src/features/console-collab.tsx:293
+#: src/features/console-collab.tsx:344
 msgid "Wall"
 msgstr "Wall"
 
@@ -2473,6 +2486,18 @@ msgstr "work"
 msgid "Workbench"
 msgstr "Workbench"
 
+#: src/features/ticket-thread-view.tsx:14
+msgid "Worker"
+msgstr "Worker"
+
+#: src/features/ticket-thread-view.tsx:15
+msgid "Worker notes"
+msgstr "Worker notes"
+
+#: src/features/ticket-thread-view.tsx:16
+msgid "Worker question"
+msgstr "Worker question"
+
 #: src/features/console-usage.tsx:98
 msgid "Worker requests"
 msgstr "Worker requests"
@@ -2520,7 +2545,7 @@ msgid "Write access"
 msgstr "Write access"
 
 #: src/features/console-sessions.tsx:364
-#: src/features/ticket-reply.tsx:197
+#: src/features/ticket-reply.tsx:205
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "Writing is not enabled on this device yet (Settings › Write access)."
 
@@ -2543,15 +2568,19 @@ msgstr "yes"
 msgid "Yesterday"
 msgstr "Yesterday"
 
+#: src/features/ticket-thread-view.tsx:13
+msgid "You (initiator)"
+msgstr "You (initiator)"
+
 #: src/features/landing-page.tsx:153
 msgid "Your agents. Your worktrees. Your machine."
 msgstr "Your agents. Your worktrees. Your machine."
 
-#: src/features/ticket-reply.tsx:191
+#: src/features/ticket-reply.tsx:199
 msgid "Your decision, extra context, or an answer to the challenge"
 msgstr "Your decision, extra context, or an answer to the challenge"
 
-#: src/features/ticket-reply.tsx:181
+#: src/features/ticket-reply.tsx:176
 msgid "Your reply"
 msgstr "Your reply"
 

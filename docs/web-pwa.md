@@ -69,8 +69,16 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    我的 returns to the index; write access is per device: phone, tablet or
    another browser each get their own key). Filters with counts never wrap:
    the count is a smaller figure and segments size by their text, so four
-   statuses plus + fit a 320 px phone; 工单's band and 工单动态 share one row.
-   Ticket detail is a pushed page; a run opens in a bottom
+   statuses plus + fit a 320 px phone; 工单's band and 工单动态 are one line
+   of text links, search opens from an icon. 进行中 sorts by last activity and
+   folds tickets quiet for over a week (not running, not waiting on you) into
+   一周以上没动静 (`splitQuiet`); ▲ marks only 等你, waiting on the other side is
+   ○; rows are real links. Ticket detail is a pushed page: facts as Field
+   rows, 摘要 open, 讨论 as a conversation (`lib/ticket-thread.ts`: the CLI
+   writes it newest first; the initiator on the right, the newest question
+   ringed while it waits on you; a note when the API cut the oldest off at
+   8000 characters); the reply box keeps a draft and sends with Ctrl+Enter.
+   A run opens in a bottom
    sheet (transcript, prompt). Connection chip in the top bar opens a
    sheet (mode, path, RTT, last direct failure, host since, mic grant).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
