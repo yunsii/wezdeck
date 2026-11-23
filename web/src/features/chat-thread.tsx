@@ -321,7 +321,7 @@ export function ChatThread({
   sessionId = '',
 }: {
   messages: Array<Message>
-  /** sent from the phone, not in the transcript yet (settled) */
+  /** sent from the phone (unsettled): settled here against what is shown */
   pending?: Array<Pending>
   /** the TUI status line while busy (compacting, elapsed, tokens) */
   activity?: Activity
@@ -401,7 +401,17 @@ export function ChatThread({
         )
       })}
       {busy && effective >= end ? <Typing activity={activity} /> : null}
-      <PendingBubbles pending={pending} busy={busy} />
+      {/* settle against the revealed messages only: the dashed bubble
+          stays until its normal bubble is on screen, not while an earlier
+          reply is still unfolding */}
+      <PendingBubbles
+        pending={settle(
+          pending,
+          messages.slice(0, Math.max(0, effective - start + 1)),
+          start,
+          busy,
+        )}
+      />
     </SessionIdContext.Provider>
   )
 }
@@ -467,42 +477,29 @@ function CompactDivider({
 
 /**
  * Messages sent from the phone that the agent has not taken yet: at the end
- * of the thread, dashed, like Claude Code's queued input. Once the
+ * of the thread, the user bubble faded, like Claude Code's queued input. Once the
  * transcript shows one, settle() drops it and the normal user bubble takes
  * its place — in whatever order the agent picks them up.
  */
-function PendingBubbles({
-  pending,
-  busy,
-}: {
-  pending: Array<Pending>
-  busy: boolean
-}) {
+function PendingBubbles({ pending }: { pending: Array<Pending> }) {
   const { t } = useLingui()
   if (pending.length === 0) return null
   return (
     <div aria-label={t`Queued messages`} className="grid gap-1.5">
       {pending.map((item) => (
+        // the user bubble itself, faded (like Claude Code's queued input);
+        // it turns solid once the agent takes the message
         <div
           key={item.at}
           data-pending={item.state ?? 'queued'}
-          className="chat-in grid min-w-0 gap-1 rounded-[14px] border border-dashed border-brand-edge px-3.5 py-2.5"
+          className="chat-in min-w-0 rounded-[14px] bg-brand-text px-3.5 py-2.5 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55"
         >
-          <span className="text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-muted">
-            {item.text}
-            {item.note ? (
-              <span className="text-brand-label">
-                {item.text ? ' ' : ''}({item.note})
-              </span>
-            ) : null}
-          </span>
-          <span className="justify-self-end text-[11px] text-brand-label">
-            {item.state === 'sending'
-              ? t`Sending…`
-              : busy
-                ? t`Queued, the agent takes it when it is ready`
-                : t`Delivered, waiting for the agent`}
-          </span>
+          {item.text}
+          {item.note ? (
+            <span className="opacity-70">
+              {item.text ? ' ' : ''}({item.note})
+            </span>
+          ) : null}
         </div>
       ))}
     </div>

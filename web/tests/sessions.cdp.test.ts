@@ -1,3 +1,11 @@
+// covers: web/src/features/console-sessions.tsx web/src/features/session-*
+// covers: web/src/features/chat-* web/src/features/image-viewer.tsx
+// covers: web/src/features/device-state.ts web/src/features/console-me.tsx
+// covers: native/wezdeck-wsl/remote_*.go native/wezdeck-wsl/session_*.go
+// covers: native/wezdeck-wsl/agent_*.go native/wezdeck-wsl/claude_command.go
+// covers: native/wezdeck-wsl/permission.go native/wezdeck-wsl/paste_safe.go
+// covers: native/wezdeck-wsl/tool_patch.go native/wezdeck-wsl/turn_output.go
+// covers: native/wezdeck-wsl/repo_alias.go
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -201,13 +209,14 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       await page.waitForTimeout(200)
     }
 
-    // back from the background: the page refetches at once and says so
+    // back from the background: the page refetches at once, silently — no
+    // "up to date" line; only repeated failed polls show the stale note
     await page.evaluate(() => {
       document.dispatchEvent(new Event('visibilitychange'))
     })
-    await page
-      .locator('[data-testid=session-sync]')
-      .waitFor({ timeout: 10_000 })
+    await page.waitForTimeout(1_000)
+    expect(await page.getByTestId('session-sync').count()).toBe(0)
+    expect(await page.getByTestId('session-stale').count()).toBe(0)
     // a screenshot rides along as an attachment (diagnostics are pulled by
     // the host now: wezdeck-wsl diag, not a composer toggle)
     if (uploadsDir) {

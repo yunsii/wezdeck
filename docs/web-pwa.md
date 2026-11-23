@@ -143,8 +143,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 - Query cache persisted to IndexedDB (7 d, buster = contract hash): collab
   reads plus the remote session list and conversations, so a session opens
   from cache at once and new messages stream in after the refresh; a session
-  shows 「暂时拿不到最新内容，显示的是 HH:MM 的内容」 above the composer when a
-  refresh fails or the device is offline.
+  shows 「暂时拿不到最新内容，显示的是 HH:MM 的内容」 above the composer only
+  after 3 polls in a row failed (`useFailedPolls`; one flaky poll on a phone
+  link stays quiet) or at once when the device is offline.
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
 
 ## Visual language (2026-11-22, revised)
@@ -349,8 +350,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
   that padding the moment a drag starts. Back from the background the page
-  refetches at once and shows 正在拉取最新消息（上次 HH:MM:SS）→ 已同步
-  (`useResumeSync`), instead of silently showing old messages.
+  refetches at once, silently (`useResumeRefetch`; the old 正在拉取 → 已同步
+  line on every return was noise) — the stale note above covers a refetch
+  that keeps failing.
 
 ## Supported browser (2026-11-23)
 

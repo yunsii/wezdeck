@@ -8,7 +8,6 @@ import { Link } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
@@ -240,54 +239,40 @@ function useKeepPlace(
 }
 
 /**
- * A page left in the background stops polling; coming back it refetches at
- * once and says so, instead of silently showing minutes-old messages:
- * syncing while that fetch runs, then "up to date" for two seconds.
+ * Back from the background (phone unlocked, tab shown): refetch at once
+ * instead of waiting for the next poll. Silent — a status line saying "up
+ * to date" on every return was noise; only repeated failures speak up
+ * (useFailedPolls).
  */
-function useResumeSync(id: string, fetching: boolean, updatedAt: number) {
+function useResumeRefetch(id: string) {
   const client = useQueryClient()
-  const [state, setState] = useState<'idle' | 'syncing' | 'synced'>('idle')
-  const since = useRef(0)
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return
-      since.current = Date.now()
-      setState('syncing')
       void client.invalidateQueries({ queryKey: ['remote', 'session', id] })
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [client, id])
-  useEffect(() => {
-    if (state !== 'syncing' || fetching || updatedAt < since.current) return
-    setState('synced')
-    const timer = setTimeout(() => setState('idle'), 2_000)
-    return () => clearTimeout(timer)
-  }, [state, fetching, updatedAt])
-  return state
 }
 
-function SyncStatus({
-  state,
-  at,
-}: {
-  state: 'idle' | 'syncing' | 'synced'
-  at: string
-}) {
-  const { t } = useLingui()
-  if (state === 'idle') return null
-  return (
-    <p
-      role="status"
-      data-testid="session-sync"
-      className="flex items-center gap-1.5 px-1 text-xs text-brand-muted"
-    >
-      <Led tone={state === 'syncing' ? 'running' : 'done'} size={10} />
-      {state === 'syncing'
-        ? t`Back on the page, fetching the latest (last ${at})…`
-        : t`Up to date, ${at}`}
-    </p>
-  )
+/** consecutive failed polls before the page says it can't get the latest */
+const STALE_AFTER = 3
+
+/**
+ * Polls that failed since the last one that worked (queries don't retry,
+ * so each failed poll is one error update). One flaky poll on a phone link
+ * is not worth a banner; three in a row are.
+ */
+function useFailedPolls(errorUpdateCount: number, dataUpdatedAt: number) {
+  const [base, setBase] = useState({
+    errors: errorUpdateCount,
+    data: dataUpdatedAt,
+  })
+  if (base.data !== dataUpdatedAt)
+    setBase({ errors: errorUpdateCount, data: dataUpdatedAt })
+  // the render that saw new data: nothing failed since (state catches up)
+  return base.data === dataUpdatedAt ? errorUpdateCount - base.errors : 0
 }
 
 /**
@@ -369,7 +354,8 @@ export function SessionDetail({ id }: { id: string }) {
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
   const keepPlace = useKeepPlace(end, start)
-  const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
+  useResumeRefetch(id)
+  const failed = useFailedPolls(detail.errorUpdateCount, detail.dataUpdatedAt)
   // the phone often sits on the desk following the agent: keep it awake
   useScreenWakeLock(true)
   const back = useGoBack({
@@ -474,7 +460,7 @@ export function SessionDetail({ id }: { id: string }) {
                     }
                   : undefined
               }
-              pending={pending}
+              pending={pendingRaw}
               sessionId={id}
             />
           </>
@@ -507,8 +493,7 @@ export function SessionDetail({ id }: { id: string }) {
           unread={follow.unread}
           onJump={follow.jump}
         />
-        {detail.isError ? null : <SyncStatus state={sync} at={staleAt} />}
-        {(detail.isError || detail.fetchStatus === 'paused') && data ? (
+        {(failed >= STALE_AFTER || detail.fetchStatus === 'paused') && data ? (
           <p
             role="status"
             data-testid="session-stale"
