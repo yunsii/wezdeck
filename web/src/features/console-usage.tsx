@@ -36,10 +36,16 @@ function Meter({
         : 'bg-brand-running'
   return (
     <div className="grid gap-1">
-      <div className="flex items-baseline justify-between gap-2 text-sm">
-        <span>{label}</span>
-        <span className="font-mono text-xs text-brand-muted tabular-nums">
-          {used === null ? '—' : `${fmt(used)}${unit}`} / {fmt(limit)}
+      {/* the name may wrap, the numbers never: proportional digits in the
+          body font (monospace was too wide and broke "1,031 / 100,000"),
+          the used share in ink, the unit once */}
+      <div className="flex items-baseline justify-between gap-3 text-sm">
+        <span className="min-w-0">{label}</span>
+        <span className="shrink-0 whitespace-nowrap text-brand-label tabular-nums">
+          <span className="text-brand-text">
+            {used === null ? '—' : fmt(used)}
+          </span>{' '}
+          / {fmt(limit)}
           {unit}
         </span>
       </div>

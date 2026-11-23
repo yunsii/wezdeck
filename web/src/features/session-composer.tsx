@@ -175,17 +175,22 @@ const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px]'
 
 /**
- * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
- * are not here: questions and plans get their own tap targets on the page
+ * The three keys any agent TUI understands, plus Claude Code's Ctrl+B
+ * (move the running command or agent to the background). At the desk that
+ * takes Ctrl+B twice — tmux's prefix eats the first; send-keys reaches the
+ * pane directly, so one is enough here. Choices (digits, arrows, Tab) are
+ * not here: questions and plans get their own tap targets on the page
  * (session-elicitation.tsx, permission keys), which is where they belong.
  */
-function useQuickKeys() {
+function useQuickKeys(claude: boolean) {
   const { t } = useLingui()
-  return [
+  const keys = [
     { key: 'Enter', label: 'Enter', hint: t`confirm` },
     { key: 'Escape', label: 'Esc', hint: t`cancel` },
     { key: 'C-c', label: 'Ctrl+C', hint: t`interrupt` },
-  ] as const
+  ]
+  if (claude) keys.push({ key: 'C-b', label: 'Ctrl+B', hint: t`to background` })
+  return keys
 }
 
 /**
@@ -195,15 +200,18 @@ function useQuickKeys() {
  */
 function KeyPanel({
   disabled,
+  claude,
   onKey,
   onClose,
 }: {
   disabled: boolean
+  /** a Claude session: add Ctrl+B (to background) */
+  claude: boolean
   onKey: (key: string) => void
   onClose: () => void
 }) {
   const { t } = useLingui()
-  const keys = useQuickKeys()
+  const keys = useQuickKeys(claude)
   return (
     <div
       data-write
@@ -229,7 +237,10 @@ function KeyPanel({
         role="group"
         aria-label={t`Quick keys`}
         data-testid="session-quick-keys"
-        className="grid grid-cols-3 gap-1.5"
+        className={cn(
+          'grid gap-1.5',
+          keys.length > 3 ? 'grid-cols-4' : 'grid-cols-3',
+        )}
       >
         {keys.map(({ key, label, hint }) => (
           <Button
@@ -276,7 +287,6 @@ function Toolbar({
   onPanel: (panel: Panel) => void
 }) {
   const { t } = useLingui()
-  const [preview, setPreview] = useState<number | null>(null)
   const todos = useTodos(composer.id)
   const openTodos = (todos.data?.todos ?? []).filter(
     (todo) => !todo.done,
@@ -359,35 +369,52 @@ function Toolbar({
           />
         </label>
       ) : null}
+    </div>
+  )
+}
+
+/**
+ * Picked images, a row of their own above the toolbar (in the toolbar they
+ * crowded the tools, and its horizontal scroll clipped the remove buttons):
+ * a tap previews, the × inside the corner removes.
+ */
+function PickedImages({ composer }: { composer: Composer }) {
+  const { t } = useLingui()
+  const [preview, setPreview] = useState<number | null>(null)
+  if (composer.images.length === 0) return null
+  return (
+    <div
+      data-testid="composer-images"
+      className="flex gap-2 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+    >
       {composer.images.map((image, i) => (
-        <span key={image.key} className="relative size-8 shrink-0">
+        <span key={image.key} className="relative size-16 shrink-0">
           <Button
             variant="plain"
             type="button"
             aria-label={t`Preview image`}
             onClick={() => setPreview(i)}
-            className="block size-8"
+            className="block size-16"
           >
             <img
               src={image.url}
               alt=""
-              className="size-8 rounded-[8px] object-cover"
+              className="size-16 rounded-[12px] object-cover"
             />
           </Button>
           <Button
-            variant="solid"
-            // no side padding: the default size squeezed the × out of a 16 px dot
+            variant="plain"
             size="none"
             type="button"
             aria-label={t`Remove image`}
             onClick={() => composer.remove(image.key)}
-            className="absolute -top-1.5 -right-1.5 inline-flex size-5 items-center justify-center rounded-full"
+            className="absolute top-1 right-1 inline-flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
           >
-            <X size={12} strokeWidth={2.5} aria-hidden className="shrink-0" />
+            <X size={14} strokeWidth={2.5} aria-hidden className="shrink-0" />
           </Button>
         </span>
       ))}
-      {preview !== null && composer.images.length ? (
+      {preview !== null ? (
         <ImageViewer
           images={composer.images.map((image) => ({
             key: image.key,
@@ -429,6 +456,7 @@ export function ComposerBox({
       {panel === 'keys' ? (
         <KeyPanel
           disabled={keysDisabled}
+          claude={Boolean(commands)}
           onKey={onKey}
           onClose={() => setPanel(null)}
         />
@@ -459,6 +487,7 @@ export function ComposerBox({
           onClose={() => setPanel(null)}
         />
       ) : null}
+      <PickedImages composer={composer} />
       <Toolbar
         composer={composer}
         writable={writable}

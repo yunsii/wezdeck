@@ -1,7 +1,8 @@
 // Full-screen image preview shared by the composer (local picks) and the
 // conversation (phone attachments read back from the host). Fits the screen;
 // a tap toggles actual size, which scrolls to pan. Esc / × / the backdrop
-// close it, ← / → (or the side buttons) step through a message's images.
+// close it, and so does the phone's back gesture (it owns a history entry
+// while open); ← / → (or the side buttons) step through a message's images.
 // Portalled to <body> so a blurred header can't become its containing block.
 import { useLingui } from '@lingui/react/macro'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
@@ -65,6 +66,28 @@ export function ImageViewer({
       live = false
     }
   }, [key, have, load])
+
+  // back closes the preview, not the page: open = one history entry (same
+  // URL); back pops it and closes; closing any other way pops it too
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    window.history.pushState(
+      { ...(window.history.state as object | null), imageViewer: true },
+      '',
+    )
+    let popped = false
+    const onPop = () => {
+      popped = true
+      closeRef.current()
+    }
+    window.addEventListener('popstate', onPop)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      const state = window.history.state as { imageViewer?: boolean } | null
+      if (!popped && state?.imageViewer) window.history.back()
+    }
+  }, [])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

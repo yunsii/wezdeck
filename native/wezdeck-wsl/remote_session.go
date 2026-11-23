@@ -1179,13 +1179,14 @@ func socketArgs(e attentionEntry) []string {
 	return []string{"-S", e.TmuxSocket}
 }
 
-// Keys a phone may press: answer a permission / choice dialog, move in a
-// picker, or interrupt (C-c — Grok and many TUIs only stop on Ctrl+C).
-// Keys a phone may press: dialog digits, nav, interrupt, and Grok plan-review
-// letters (a=approve, s=request changes, q=quit plan, y=copy — see Grok plan mode docs).
+// Keys a phone may press: dialog digits, nav, interrupt (C-c — Grok and many
+// TUIs only stop on Ctrl+C), Claude Code's C-b (move the running command to
+// the background; send-keys bypasses tmux's C-b prefix, so one is enough),
+// and Grok plan-review letters (a=approve, s=request changes, q=quit plan,
+// y=copy — see Grok plan mode docs).
 var allowedKeys = map[string]bool{
 	"Enter": true, "Escape": true, "Up": true, "Down": true, "Tab": true,
-	"1": true, "2": true, "3": true, "4": true, "C-c": true,
+	"1": true, "2": true, "3": true, "4": true, "C-c": true, "C-b": true,
 	"a": true, "s": true, "q": true, "y": true,
 }
 

@@ -143,7 +143,7 @@ msgstr "7 天额度"
 msgid "A big change to follow up later…"
 msgstr "记下要后续跟进的大改动…"
 
-#: src/features/console-usage.tsx:141
+#: src/features/console-usage.tsx:147
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
@@ -191,7 +191,7 @@ msgstr "账号额度"
 #~ msgid "Active"
 #~ msgstr "进行中"
 
-#: src/features/console-usage.tsx:121
+#: src/features/console-usage.tsx:127
 msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 msgstr "活跃 {active} 秒 × 128 MB；中转空闲时会休眠，不计时长。"
 
@@ -376,7 +376,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-composer.tsx:186
+#: src/features/session-composer.tsx:189
 msgid "cancel"
 msgstr "取消"
 
@@ -448,7 +448,7 @@ msgid "Clearing…"
 msgstr "处理中…"
 
 #: src/components/ui/sheet.tsx:76
-#: src/features/image-viewer.tsx:127
+#: src/features/image-viewer.tsx:150
 msgid "Close"
 msgstr "关闭"
 
@@ -456,7 +456,7 @@ msgstr "关闭"
 msgid "Close commands"
 msgstr "关闭命令"
 
-#: src/features/session-composer.tsx:222
+#: src/features/session-composer.tsx:230
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -517,7 +517,7 @@ msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
 #: src/features/session-commands.tsx:219
-#: src/features/session-composer.tsx:321
+#: src/features/session-composer.tsx:331
 msgid "Commands"
 msgstr "命令"
 
@@ -529,11 +529,11 @@ msgstr "正在压缩上下文"
 msgid "compacting the context"
 msgstr "正在压缩上下文"
 
-#: src/features/session-composer.tsx:295
+#: src/features/session-composer.tsx:305
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/session-composer.tsx:185
+#: src/features/session-composer.tsx:188
 msgid "confirm"
 msgstr "确认"
 
@@ -647,7 +647,7 @@ msgstr "费用与额度"
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/console-usage.tsx:110
+#: src/features/console-usage.tsx:116
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
@@ -853,7 +853,7 @@ msgstr "Esc"
 msgid "Event stream"
 msgstr "事件流"
 
-#: src/features/console-usage.tsx:135
+#: src/features/console-usage.tsx:141
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协议层 ping 免费。"
 
@@ -928,7 +928,7 @@ msgstr "第一轮"
 #~ msgid "Follow system theme"
 #~ msgstr "跟随系统主题"
 
-#: src/features/session-composer.tsx:328
+#: src/features/session-composer.tsx:338
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
 
@@ -1008,7 +1008,7 @@ msgstr "hotfix：紧急修复"
 msgid "How it fits together"
 msgstr "架构解析"
 
-#: src/features/console-usage.tsx:130
+#: src/features/console-usage.tsx:136
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
@@ -1034,11 +1034,11 @@ msgstr "空闲"
 msgid "Image"
 msgstr "图片"
 
-#: src/features/image-viewer.tsx:89
+#: src/features/image-viewer.tsx:112
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/session-composer.tsx:348
+#: src/features/session-composer.tsx:358
 msgid "Images"
 msgstr "图片"
 
@@ -1105,7 +1105,7 @@ msgstr "交互调试"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-composer.tsx:187
+#: src/features/session-composer.tsx:190
 msgid "interrupt"
 msgstr "打断"
 
@@ -1145,7 +1145,7 @@ msgstr "继续规划"
 #~ msgid "Keyboard first"
 #~ msgstr "键盘优先"
 
-#: src/features/session-composer.tsx:309
+#: src/features/session-composer.tsx:319
 msgid "Keys"
 msgstr "快捷"
 
@@ -1230,7 +1230,7 @@ msgstr "加载更早"
 msgid "Loaded on this page"
 msgstr "本页已加载"
 
-#: src/features/image-viewer.tsx:121
+#: src/features/image-viewer.tsx:144
 msgid "Loading original…"
 msgstr "正在加载原图…"
 
@@ -1240,7 +1240,7 @@ msgstr "正在加载原图…"
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:442
 #: src/features/console-shared.tsx:208
-#: src/features/console-usage.tsx:71
+#: src/features/console-usage.tsx:77
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:252
 #: src/features/session-list.tsx:251
@@ -1282,11 +1282,11 @@ msgstr "已标为已读"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:489
+#: src/features/session-composer.tsx:518
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:476
+#: src/features/session-composer.tsx:505
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -1371,7 +1371,7 @@ msgstr "有新版本"
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
 
-#: src/features/image-viewer.tsx:149
+#: src/features/image-viewer.tsx:172
 msgid "Next image"
 msgstr "下一张"
 
@@ -1455,7 +1455,7 @@ msgstr "没有符合这个筛选的工单。"
 #~ msgid "Node"
 #~ msgstr "Node"
 
-#: src/features/console-usage.tsx:89
+#: src/features/console-usage.tsx:95
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
 
@@ -1586,7 +1586,7 @@ msgstr "已在 tmux 打开：{windowName}（{tmuxSession}）"
 msgid "opened, {from} → {to}"
 msgstr "开单：{from} → {to}"
 
-#: src/features/console-usage.tsx:133
+#: src/features/console-usage.tsx:139
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
 
@@ -1619,7 +1619,7 @@ msgstr "输出 token"
 msgid "Owner"
 msgstr "负责方"
 
-#: src/features/console-usage.tsx:101
+#: src/features/console-usage.tsx:107
 msgid "Pages, the relay handshake and the usage check; static files are free."
 msgstr "页面、中转握手和用量查询；静态文件免费。"
 
@@ -1679,11 +1679,11 @@ msgstr "计划待你确认"
 msgid "Plan review"
 msgstr "计划确认"
 
-#: src/features/session-composer.tsx:367
+#: src/features/session-composer.tsx:395
 msgid "Preview image"
 msgstr "预览图片"
 
-#: src/features/image-viewer.tsx:138
+#: src/features/image-viewer.tsx:161
 msgid "Previous image"
 msgstr "上一张"
 
@@ -1719,8 +1719,8 @@ msgstr "排队中的消息"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "排队中，Agent 空下来会处理"
 
-#: src/features/session-composer.tsx:230
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:238
+#: src/features/session-composer.tsx:313
 msgid "Quick keys"
 msgstr "快捷键"
 
@@ -1763,11 +1763,11 @@ msgstr "已拒绝"
 msgid "Relay"
 msgstr "中转"
 
-#: src/features/console-usage.tsx:114
+#: src/features/console-usage.tsx:120
 msgid "Relay duration"
 msgstr "中转时长"
 
-#: src/features/console-usage.tsx:104
+#: src/features/console-usage.tsx:110
 msgid "Relay requests (Durable Object)"
 msgstr "中转请求（Durable Object）"
 
@@ -1783,7 +1783,7 @@ msgstr "远程"
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/session-composer.tsx:382
+#: src/features/session-composer.tsx:409
 msgid "Remove image"
 msgstr "移除图片"
 
@@ -2037,11 +2037,11 @@ msgstr "栏目"
 #~ msgid "Select a worktree to see its agent status."
 #~ msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/session-composer.tsx:498
+#: src/features/session-composer.tsx:527
 msgid "Send"
 msgstr "发送"
 
-#: src/features/session-composer.tsx:304
+#: src/features/session-composer.tsx:314
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
@@ -2134,7 +2134,7 @@ msgstr "大小"
 msgid "Skip to content"
 msgstr "跳到内容"
 
-#: src/features/session-composer.tsx:316
+#: src/features/session-composer.tsx:326
 msgid "Slash commands for Claude"
 msgstr "Claude 斜杠命令"
 
@@ -2146,7 +2146,7 @@ msgstr "套接字"
 msgid "Solution"
 msgstr "方案"
 
-#: src/features/console-usage.tsx:94
+#: src/features/console-usage.tsx:100
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
@@ -2257,7 +2257,7 @@ msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:216
+#: src/features/session-composer.tsx:224
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -2411,7 +2411,7 @@ msgstr "整理手机端交互"
 msgid "Time"
 msgstr "时间"
 
-#: src/features/console-usage.tsx:138
+#: src/features/console-usage.tsx:144
 msgid "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with a device connected."
 msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，设备一直连着也一样。"
 
@@ -2448,11 +2448,15 @@ msgstr "tmux 窗口"
 msgid "To"
 msgstr "目标仓库"
 
+#: src/features/session-composer.tsx:192
+msgid "to background"
+msgstr "转到后台"
+
 #: src/features/session-todos.tsx:253
 msgid "To follow up"
 msgstr "待跟进"
 
-#: src/features/session-composer.tsx:333
+#: src/features/session-composer.tsx:343
 msgid "To-dos"
 msgstr "待办"
 
@@ -2469,7 +2473,7 @@ msgstr "这个仓库的待办"
 msgid "Today"
 msgstr "今日"
 
-#: src/features/console-usage.tsx:125
+#: src/features/console-usage.tsx:131
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "今天（UTC）{day}，{at}更新。额度每天北京时间 8 点重置；超出只会让这类调用失败到重置为止，不会扣费。"
 
@@ -2516,7 +2520,7 @@ msgstr "触发来源"
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
 
-#: src/features/session-composer.tsx:215
+#: src/features/session-composer.tsx:223
 msgid "Turn on write access in Settings to send these keys"
 msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 
@@ -2760,7 +2764,7 @@ msgstr "执行方备注"
 msgid "Worker question"
 msgstr "执行方提问"
 
-#: src/features/console-usage.tsx:98
+#: src/features/console-usage.tsx:104
 msgid "Worker requests"
 msgstr "Worker 请求"
 

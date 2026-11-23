@@ -228,6 +228,19 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
           mimeType: 'image/png',
           buffer: onePixelPng,
         })
+      // the pick sits in its own row above the toolbar, not inside it
+      const thumbs = page.getByTestId('composer-images')
+      await thumbs.getByRole('button', { name: '预览图片' }).waitFor()
+      expect(
+        await page.getByTestId('composer-tools').locator('img').count(),
+      ).toBe(0)
+      // back (the phone's gesture) closes the preview and stays on the page
+      const here = page.url()
+      await thumbs.getByRole('button', { name: '预览图片' }).click()
+      await page.getByTestId('image-viewer').waitFor()
+      await page.goBack()
+      await expect.poll(() => page.getByTestId('image-viewer').count()).toBe(0)
+      expect(page.url()).toBe(here)
       await box.fill('键盘弹出时消息没跟上')
       await page.getByRole('button', { name: '发送' }).click()
       const fileDeadline = Date.now() + 20_000

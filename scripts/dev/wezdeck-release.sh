@@ -100,7 +100,9 @@ if ((test_gate)); then
   t0=$SECONDS
   if ! scripts/dev/web-affected-tests.sh --base '@{u}' --run >"$RUN/test.log" 2>&1; then
     tail -30 "$RUN/test.log" | sed 's/^/      /'
-    echo "release: test gate failed in $((SECONDS - t0))s (log $RUN/test.log); nothing shipped" >&2
+    echo "release: test gate failed in $((SECONDS - t0))s (log $RUN/test.log); nothing pushed or deployed" >&2
+    [[ -n "$commit_msg" ]] &&
+      echo "release: the commit $(git log -1 --format=%h) stays local — fix, then commit the fix and rerun without --commit (or amend it: not pushed yet)" >&2
     printf '%s head=%s test=FAIL/%ss logs=%s\n' "$(date -Iseconds)" "$head" "$((SECONDS - t0))" "$RUN" >>"$STATE/release.log"
     exit 1
   fi
