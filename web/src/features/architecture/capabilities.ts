@@ -256,6 +256,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Register this device’s public key for approval on the host',
       ),
       c(
+        'device.hello',
+        '每条连接用设备密钥签名报到，之后才能读取',
+        'Sign in on each connection with the device key before any read',
+      ),
+      c(
         'diag.submit',
         '把客户端的连接诊断交给主机记录',
         'Hand the client’s link diagnostics to the host log',
