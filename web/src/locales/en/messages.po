@@ -1322,7 +1322,7 @@ msgstr "Multiple choice: each tap toggles an option; check the screen below, the
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:287
+#: src/features/session-header.tsx:278
 #: src/features/session-list.tsx:235
 #: src/features/session-switcher.tsx:198
 msgid "Needs you"
@@ -2063,7 +2063,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:300
+#: src/features/session-header.tsx:291
 #: src/features/session-info.tsx:199
 msgid "Session info"
 msgstr "Session info"

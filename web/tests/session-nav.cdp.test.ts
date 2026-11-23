@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -31,7 +31,22 @@ describe.runIf(attention)('Session keys on the phone', () => {
     }
     const entries: Record<string, unknown> = {}
     for (const [id, [status, waiting]] of Object.entries(sessions)) {
-      tmux('new-session', '-d', '-s', id, '-x', '100', '-y', '20', 'cat')
+      // untitled cards fall back to the cwd basename (not the window name)
+      const cwd = join(dirname(socket), id)
+      mkdirSync(cwd)
+      tmux(
+        'new-session',
+        '-d',
+        '-s',
+        id,
+        '-c',
+        cwd,
+        '-x',
+        '100',
+        '-y',
+        '20',
+        'cat',
+      )
       entries[id] = {
         session_id: id,
         tmux_socket: socket,
@@ -68,10 +83,10 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await openList(page)
     await page.locator('[data-session=nav-c]').click()
     await page.waitForURL('**/console/sessions/nav-c')
-    // the agent's own name shows beside the window title
+    // the agent's own name stays in 会话信息, not the header
     await expect
-      .poll(() => page.getByTestId('session-agent-name').textContent())
-      .toBe('claude')
+      .poll(() => page.getByTestId('session-agent-name').count())
+      .toBe(0)
     // nav-c is running: the header offers the two waiting ones
     const chip = page.getByTestId('next-waiting')
     await expect.poll(() => chip.textContent()).toContain('还有 2 个等你')

@@ -1322,7 +1322,7 @@ msgstr "多选：每点一次切换一个选项，对照下面的终端画面确
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:287
+#: src/features/session-header.tsx:278
 #: src/features/session-list.tsx:235
 #: src/features/session-switcher.tsx:198
 msgid "Needs you"
@@ -2063,7 +2063,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:300
+#: src/features/session-header.tsx:291
 #: src/features/session-info.tsx:199
 msgid "Session info"
 msgstr "会话信息"

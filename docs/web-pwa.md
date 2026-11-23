@@ -63,8 +63,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    and opens the session once the agent has taken the message. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The
-   header and the sheet show the agent's own name
-   (`agent_name`) beside the window title. Rename (`/rename`) moved into
+   agent's own name (`agent_name`, usually Claude's derived peer address
+   such as `wezterm-config-93`) is only a 会话信息 metadata row, not a
+   header tag. Rename (`/rename`) moved into
    会话信息 (ⓘ). What
    waits on you badges its own tab: 会话 counts sessions waiting on you,
    工单 the tickets (`waiting_human`). `/console/now` stays as a redirect
