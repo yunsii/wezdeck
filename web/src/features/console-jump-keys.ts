@@ -1,6 +1,6 @@
 // `g` + letter jumps between console sections and `/` focuses search
 // (keyboard-first stance); the sidebar shows the letters from JUMP_KEYS.
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import type { Section } from './console-shell'
 
@@ -19,8 +19,13 @@ let armedAt = 0
 export const jumpPending = () => Date.now() - armedAt < 1200
 
 export function useJumpKeys(go: (section: Section) => void) {
+  // One listener for the page's life: when it re-registered on every new
+  // `go` (a poll re-renders the shell every 1–2.5 s), a re-render between
+  // g and the letter reset the armed state and the jump was lost — a slow
+  // second key, or a loaded test run, hit it.
+  const goRef = useRef(go)
+  goRef.current = go
   useEffect(() => {
-    let armed = 0
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (
@@ -39,20 +44,18 @@ export function useJumpKeys(go: (section: Section) => void) {
         return
       }
       if (event.key === 'g') {
-        armed = Date.now()
-        armedAt = armed
+        armedAt = Date.now()
         return
       }
       const section = JUMP_KEYS[event.key]
-      if (armed && Date.now() - armed < 1200 && section) {
+      if (jumpPending() && section) {
         event.preventDefault()
-        go(section)
+        goRef.current(section)
       }
-      armed = 0
       // let page shortcuts (c / n) see the key first, then disarm
       setTimeout(() => (armedAt = 0))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [go])
+  }, [])
 }

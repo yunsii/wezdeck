@@ -74,8 +74,9 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
       .locator('[data-testid=remote-badge-compact], [data-testid=remote-badge]')
       .first()
       .waitFor({ timeout: 20_000 })
-    // sessions left by earlier files open in the wide split and focus its
-    // composer, where g / c are typing, not jumps (the real flake)
+    // keys go to the page, not a field (the flake itself was the jump
+    // listener re-registering on every re-render between g and c —
+    // fixed in console-jump-keys.ts)
     await page.evaluate(() => {
       ;(document.activeElement as HTMLElement | null)?.blur()
     })
