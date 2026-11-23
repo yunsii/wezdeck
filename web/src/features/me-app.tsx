@@ -18,10 +18,12 @@ export function Row({
   label: string
   value: React.ReactNode
 }) {
+  // the settings row everywhere (我的 rows, short Field values): the name in
+  // ink, the value secondary — tabular digits, not monospace
   return (
-    <div className="flex min-h-9 items-baseline justify-between gap-3 py-2 text-body">
-      <span className="text-brand-label">{label}</span>
-      <span className="min-w-0 truncate text-right font-mono text-meta">
+    <div className="flex min-h-12 items-baseline justify-between gap-3 py-2.5 text-body">
+      <span className="shrink-0">{label}</span>
+      <span className="min-w-0 truncate text-right text-brand-muted tabular-nums">
         {value}
       </span>
     </div>

@@ -289,7 +289,7 @@ msgstr "Allow"
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
 
-#: src/features/me-app.tsx:62
+#: src/features/me-app.tsx:64
 msgid "Already the latest"
 msgstr "Already the latest"
 
@@ -302,7 +302,7 @@ msgid "Anything to add (optional)"
 msgstr "Anything to add (optional)"
 
 #: src/features/console-me.tsx:113
-#: src/features/me-app.tsx:34
+#: src/features/me-app.tsx:36
 msgid "App"
 msgstr "App"
 
@@ -417,12 +417,12 @@ msgstr "changed {edited} files +{added} −{removed}"
 msgid "Check again"
 msgstr "Check again"
 
-#: src/features/me-app.tsx:85
+#: src/features/me-app.tsx:87
 msgid "Check for updates"
 msgstr "Check for updates"
 
 #: src/features/console-me.tsx:31
-#: src/features/me-app.tsx:85
+#: src/features/me-app.tsx:87
 #: src/features/me-host.tsx:55
 msgid "Checking…"
 msgstr "Checking…"
@@ -612,7 +612,7 @@ msgstr "Copied"
 msgid "Copied {label}"
 msgstr "Copied {label}"
 
-#: src/components/ui/field.tsx:55
+#: src/components/ui/field.tsx:58
 msgid "Copied {what}"
 msgstr "Copied {what}"
 
@@ -625,7 +625,7 @@ msgstr "Copied the raw line"
 msgid "Copy"
 msgstr "Copy"
 
-#: src/components/ui/field.tsx:117
+#: src/components/ui/field.tsx:134
 msgid "Copy “{label}: …”"
 msgstr "Copy “{label}: …”"
 
@@ -645,7 +645,7 @@ msgstr "Copy raw line"
 msgid "Copy session reference for an agent"
 msgstr "Copy session reference for an agent"
 
-#: src/components/ui/field.tsx:110
+#: src/components/ui/field.tsx:127
 msgid "Copy value"
 msgstr "Copy value"
 
@@ -1075,7 +1075,7 @@ msgstr "In progress"
 #~ msgid "In progress {active}"
 #~ msgstr "In progress {active}"
 
-#: src/features/me-app.tsx:42
+#: src/features/me-app.tsx:44
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "In Safari tap Share, then “Add to Home Screen”."
 
@@ -1096,11 +1096,11 @@ msgstr "Initiator"
 msgid "Input method"
 msgstr "Input method"
 
-#: src/features/me-app.tsx:38
+#: src/features/me-app.tsx:40
 msgid "Install WezDeck"
 msgstr "Install WezDeck"
 
-#: src/features/me-app.tsx:34
+#: src/features/me-app.tsx:36
 msgid "Installed"
 msgstr "Installed"
 
@@ -1383,7 +1383,7 @@ msgstr "New to-do"
 msgid "New version available"
 msgstr "New version available"
 
-#: src/features/me-app.tsx:59
+#: src/features/me-app.tsx:61
 msgid "New version ready, reload to use it"
 msgstr "New version ready, reload to use it"
 
@@ -1520,7 +1520,7 @@ msgstr "Off"
 msgid "Offline"
 msgstr "Offline"
 
-#: src/features/me-app.tsx:61
+#: src/features/me-app.tsx:63
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
@@ -1576,7 +1576,7 @@ msgstr "Open settings"
 msgid "Open the console"
 msgstr "Open the console"
 
-#: src/features/me-app.tsx:43
+#: src/features/me-app.tsx:45
 msgid "Open this page in the system browser first, then install it from there."
 msgstr "Open this page in the system browser first, then install it from there."
 
@@ -2601,7 +2601,7 @@ msgstr "Usage"
 msgid "Usage from"
 msgstr "Usage from"
 
-#: src/features/me-app.tsx:44
+#: src/features/me-app.tsx:46
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "Use the browser menu: “Install app” / “Add to Home screen”."
 
@@ -2619,7 +2619,7 @@ msgid "Verification"
 msgstr "Verification"
 
 #: src/features/console-collab-run.tsx:161
-#: src/features/me-app.tsx:72
+#: src/features/me-app.tsx:74
 msgid "Version"
 msgstr "Version"
 

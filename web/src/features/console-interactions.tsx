@@ -141,11 +141,20 @@ export function InteractionsPage() {
           <h2 className="px-2 text-caption font-semibold text-brand-label">
             {p(group.title)}
           </h2>
-          <ul className="grid gap-0.5">
+          {/* a phone gets the 我的 list row (ink, a rule between rows); a
+              wide screen keeps the sidebar look beside the detail */}
+          <ul className={cn('grid', wide ? 'gap-0.5' : '')}>
             {sections
               .filter((s) => s.group === group.id)
               .map((s) => (
-                <li key={s.id}>
+                <li
+                  key={s.id}
+                  className={
+                    wide
+                      ? undefined
+                      : 'border-b border-brand-edge last:border-b-0'
+                  }
+                >
                   <Button
                     variant="plain"
                     type="button"
@@ -153,18 +162,20 @@ export function InteractionsPage() {
                     aria-current={current?.id === s.id ? 'true' : undefined}
                     onClick={() => pick(s.id)}
                     className={cn(
-                      'flex min-h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-left text-body',
-                      current?.id === s.id
-                        ? 'bg-brand-surface font-medium text-brand-text'
-                        : 'text-brand-muted hover:bg-brand-soft',
+                      'flex w-full items-center justify-between gap-2 px-2.5 text-left text-body',
+                      !wide
+                        ? 'key-press min-h-13 text-brand-text'
+                        : current?.id === s.id
+                          ? 'min-h-10 rounded-xl bg-brand-surface font-medium text-brand-text'
+                          : 'min-h-10 rounded-xl text-brand-muted hover:bg-brand-soft',
                     )}
                   >
                     {p(s.title)}
                     {wide ? null : (
                       <ChevronRight
-                        size={16}
+                        size={18}
                         aria-hidden
-                        className="text-brand-label"
+                        className="shrink-0 text-brand-label"
                       />
                     )}
                   </Button>

@@ -289,7 +289,7 @@ msgstr "允许"
 msgid "Allow LAN direct"
 msgstr "授权以局域网直连"
 
-#: src/features/me-app.tsx:62
+#: src/features/me-app.tsx:64
 msgid "Already the latest"
 msgstr "已是最新版本"
 
@@ -302,7 +302,7 @@ msgid "Anything to add (optional)"
 msgstr "补充说明（可选）"
 
 #: src/features/console-me.tsx:113
-#: src/features/me-app.tsx:34
+#: src/features/me-app.tsx:36
 msgid "App"
 msgstr "应用"
 
@@ -417,12 +417,12 @@ msgstr "改了 {edited} 个文件 +{added} −{removed}"
 msgid "Check again"
 msgstr "重新检查"
 
-#: src/features/me-app.tsx:85
+#: src/features/me-app.tsx:87
 msgid "Check for updates"
 msgstr "检查更新"
 
 #: src/features/console-me.tsx:31
-#: src/features/me-app.tsx:85
+#: src/features/me-app.tsx:87
 #: src/features/me-host.tsx:55
 msgid "Checking…"
 msgstr "检查中…"
@@ -612,7 +612,7 @@ msgstr "已复制"
 msgid "Copied {label}"
 msgstr "已复制 {label}"
 
-#: src/components/ui/field.tsx:55
+#: src/components/ui/field.tsx:58
 msgid "Copied {what}"
 msgstr "已复制 {what}"
 
@@ -625,7 +625,7 @@ msgstr "已复制原始日志"
 msgid "Copy"
 msgstr "复制"
 
-#: src/components/ui/field.tsx:117
+#: src/components/ui/field.tsx:134
 msgid "Copy “{label}: …”"
 msgstr "复制「{label}：…」"
 
@@ -645,7 +645,7 @@ msgstr "复制原始日志"
 msgid "Copy session reference for an agent"
 msgstr "复制会话引用（给 agent 用）"
 
-#: src/components/ui/field.tsx:110
+#: src/components/ui/field.tsx:127
 msgid "Copy value"
 msgstr "复制值"
 
@@ -1075,7 +1075,7 @@ msgstr "进行中"
 #~ msgid "In progress {active}"
 #~ msgstr "进行中 {active}"
 
-#: src/features/me-app.tsx:42
+#: src/features/me-app.tsx:44
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
 
@@ -1096,11 +1096,11 @@ msgstr "发起方"
 msgid "Input method"
 msgstr "输入法"
 
-#: src/features/me-app.tsx:38
+#: src/features/me-app.tsx:40
 msgid "Install WezDeck"
 msgstr "安装 WezDeck"
 
-#: src/features/me-app.tsx:34
+#: src/features/me-app.tsx:36
 msgid "Installed"
 msgstr "已安装"
 
@@ -1383,7 +1383,7 @@ msgstr "新待办"
 msgid "New version available"
 msgstr "有新版本"
 
-#: src/features/me-app.tsx:59
+#: src/features/me-app.tsx:61
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
 
@@ -1520,7 +1520,7 @@ msgstr "未启用"
 msgid "Offline"
 msgstr "离线"
 
-#: src/features/me-app.tsx:61
+#: src/features/me-app.tsx:63
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
@@ -1576,7 +1576,7 @@ msgstr "去设置"
 msgid "Open the console"
 msgstr "打开控制台"
 
-#: src/features/me-app.tsx:43
+#: src/features/me-app.tsx:45
 msgid "Open this page in the system browser first, then install it from there."
 msgstr "先在系统浏览器里打开本页，再从那里安装。"
 
@@ -2601,7 +2601,7 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/me-app.tsx:44
+#: src/features/me-app.tsx:46
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。"
 
@@ -2619,7 +2619,7 @@ msgid "Verification"
 msgstr "核实"
 
 #: src/features/console-collab-run.tsx:161
-#: src/features/me-app.tsx:72
+#: src/features/me-app.tsx:74
 msgid "Version"
 msgstr "版本"
 

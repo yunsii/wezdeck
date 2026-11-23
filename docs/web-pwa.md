@@ -214,8 +214,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   old sheet had no visible edge on the dark theme; only the body under the
   title scrolls), `Field` / `FieldList` (label / value rows to read and copy,
   the Telegram profile way: tap or click copies the value, long-press or
-  right-click opens copy value / copy "label: value"; a phone stacks the
-  value over a small label, a wide screen keeps two columns sharing one
+  right-click opens copy value / copy "label: value"; on a phone a short
+  value (≤ 16 chars) sits on the label's line like a 我的 row — name in ink,
+  value secondary, as `Row` in `me-app.tsx` — and a longer one (URL, path,
+  id) stacks over a small label, a wide screen keeps two columns sharing one
   label width via subgrid and lights the row on hover), plus `Segmented`,
   `Popover` (ink card, tokens carried into its portal; its menus are click-only), `Tooltip`. A
   missing control is added there first, then used. Tests address them by
