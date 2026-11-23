@@ -60,7 +60,7 @@ func uploadGet(args json.RawMessage) (any, error) {
 // serveImage answers one frame: a thumbnail, or a chunk of the original.
 func serveImage(data []byte, mime string, thumb bool, offset int64) (any, error) {
 	if thumb {
-		return thumbnail(bytes.NewReader(data))
+		return thumbnailOf(data, mime)
 	}
 	size := int64(len(data))
 	if offset < 0 || offset > size {
@@ -69,6 +69,28 @@ func serveImage(data []byte, mime string, thumb bool, offset int64) (any, error)
 	end := min(offset+downloadChunk, size)
 	return map[string]any{"mime": mime, "size": size, "offset": offset,
 		"data": base64.StdEncoding.EncodeToString(data[offset:end])}, nil
+}
+
+// thumbMaxPixels: a header is read before anything is decoded — a small
+// PNG can declare 30000×30000, and decoding it took gigabytes (guest OOM).
+const thumbMaxPixels = 40_000_000
+
+// thumbPassThrough: formats the browser shows but Go has no decoder for
+// here (webp: transcript screenshots) go back as they are when small.
+const thumbPassThrough = 1_500_000
+
+func thumbnailOf(data []byte, mime string) (any, error) {
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		if mime == "image/webp" && len(data) <= thumbPassThrough {
+			return map[string]any{"mime": mime, "data": base64.StdEncoding.EncodeToString(data)}, nil
+		}
+		return nil, errors.New("cannot make a thumbnail of this image")
+	}
+	if int64(cfg.Width)*int64(cfg.Height) > thumbMaxPixels {
+		return nil, errors.New("image too large for a thumbnail")
+	}
+	return thumbnail(bytes.NewReader(data))
 }
 
 func thumbnail(r io.Reader) (any, error) {

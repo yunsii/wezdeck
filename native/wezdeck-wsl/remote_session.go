@@ -1022,6 +1022,7 @@ func verifyWrite(frameAction string, args json.RawMessage) (*signedWrite, string
 	}
 	nonceMu.Lock()
 	defer nonceMu.Unlock()
+	loadNonces()
 	for k, at := range nonceSeen {
 		if time.Since(at) > 5*time.Minute {
 			delete(nonceSeen, k)
@@ -1031,6 +1032,7 @@ func verifyWrite(frameAction string, args json.RawMessage) (*signedWrite, string
 		return nil, "", errors.New("replayed request")
 	}
 	nonceSeen[w.Nonce] = time.Now()
+	saveNonces()
 	return &w, env.Device, nil
 }
 
@@ -1099,6 +1101,7 @@ func sendToSession(args json.RawMessage) (any, error) {
 // how the phone's messages reach an agent TUI (also a new session's first
 // message, session_new.go).
 func pasteToPane(socket, pane, text string) error {
+	text = pasteSafe(text)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// one buffer per send: two sends in flight (two tabs, two sessions) used

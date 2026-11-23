@@ -10,6 +10,7 @@
 //   DO     → client {t:"host", online, since}    presence on connect/change
 import { usageFetch } from './usage'
 import { DurableObject } from 'cloudflare:workers'
+import { hostAuthorized, safeEqual } from './auth'
 
 export interface RelayEnv {
   HOST_RELAY: DurableObjectNamespace<HostRelay>
@@ -191,13 +192,6 @@ export class HostRelay extends DurableObject<RelayEnv> {
   }
 }
 
-function safeEqual(a: string, b: string) {
-  if (!a || !b || a.length !== b.length) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diff === 0
-}
-
 /** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/auth · /relay/health · /relay/usage */
 export async function relayFetch(request: Request, env: RelayEnv) {
   const url = new URL(request.url)
@@ -244,7 +238,7 @@ export async function relayFetch(request: Request, env: RelayEnv) {
   const headers = new Headers(request.headers)
   if (url.pathname === '/relay/host') {
     const auth = request.headers.get('authorization') ?? ''
-    if (!safeEqual(auth, `Bearer ${env.RELAY_HOST_TOKEN}`)) {
+    if (!hostAuthorized(auth, env.RELAY_HOST_TOKEN)) {
       logEvent('auth_failed', { role: 'host' })
       return new Response('unauthorized', { status: 401 })
     }

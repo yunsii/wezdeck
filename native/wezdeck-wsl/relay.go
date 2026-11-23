@@ -95,11 +95,23 @@ func relayLogf(event, format string, args ...any) {
 	line := fmt.Sprintf("%s category=relay event=%s %s\n", time.Now().Format(time.RFC3339Nano), event, fmt.Sprintf(format, args...))
 	fmt.Fprint(os.Stderr, line)
 	if path := relayLogPath(); path != "" {
-		if f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
+		if f, err := openRelayLog(path); err == nil {
 			_, _ = f.WriteString(line)
 			_ = f.Close()
 		}
 	}
+}
+
+// openRelayLog: owner-only. The rows name devices, attachments, worktree
+// paths and ticket ids, and carry CLI error text; a file made 0644 before
+// is tightened when opened.
+func openRelayLog(path string) (*os.File, error) {
+	_ = os.MkdirAll(filepath.Dir(path), 0o700)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err == nil {
+		_ = f.Chmod(0o600)
+	}
+	return f, err
 }
 
 func runRelay() error {
@@ -114,8 +126,7 @@ func runRelay() error {
 	r := &relay{peers: map[string]*webrtc.PeerConnection{}, phones: map[string]*phoneChan{}}
 	activeRelay = r
 	if path := relayLogPath(); path != "" {
-		_ = os.MkdirAll(filepath.Dir(path), 0o755)
-		if f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
+		if f, err := openRelayLog(path); err == nil {
 			r.log = f
 			defer f.Close()
 		}

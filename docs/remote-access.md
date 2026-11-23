@@ -95,8 +95,12 @@ scripts/dev/install-remote-relay.sh --revoke <id>
 
 Each write carries `{device, payload, sig}`: the host verifies the signature
 over the exact payload text, then uses only the signed `action` / `args`,
-rejects a clock skew over 2 min and any reused nonce. Store:
-`~/.config/wezdeck/remote-devices.json` (0600). Cloudflare (or anyone holding
+rejects a clock skew over 2 min and any reused nonce (seen nonces kept 5 min
+in `remote-nonces.json` beside the store, so a restart does not reopen the
+window; `nonce_store.go`). Message text is pasted with ESC / control
+characters dropped (`paste_safe.go`): an embedded `ESC[201~` ended the paste
+and the rest typed keys (Shift+Tab) past the `key` allowlist. Store:
+`~/.config/wezdeck/remote-devices.json` (0600); `relay.log` is 0600 too. Cloudflare (or anyone holding
 the pairing token) can read but cannot forge a write. Logs: `event=write` /
 `event=write_denied` rows with device id.
 
@@ -164,7 +168,8 @@ A reply over 200 KB goes over the DataChannel as `part` frames (`{t:"part", id, 
 Two random tokens in `~/.config/shell-env.d/wezdeck-remote.env` (0600),
 mirrored as Worker secrets `RELAY_HOST_TOKEN` / `RELAY_CLIENT_TOKEN`:
 
-- host: `Authorization: Bearer` on `/relay/host`;
+- host: `Authorization: Bearer` on `/relay/host` (an unset secret refuses
+  every host — `relay/auth.ts`; "Bearer undefined" used to get in);
 - browser: subprotocols `wezdeck.v1, token.<secret>` (browsers cannot set
   WebSocket headers); stored per device in `localStorage` from a
   `#pair=<token>` link (the fragment never reaches the server).
