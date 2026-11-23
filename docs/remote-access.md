@@ -300,7 +300,11 @@ scripts/dev/wezdeck-release.sh                    # ship a committed round (belo
 `release.log`). A part whose running version already equals its fingerprint
 is skipped — a web-only round does not restart the relay and drop phone
 links; `--only push|relay|web`, `--force`. It refuses uncommitted tracked
-changes. Before any job it runs the test gate —
+changes. After a web deploy it moves every phone seen in the last 3 min onto
+the new build (`wezdeck-wsl diag --reload`: the phone answers, then reloads —
+a draft survives; retried while a relay restarted in the same release has
+not seen the phones reconnect yet; `--no-reload` skips), so nobody taps 刷新.
+Before any job it runs the test gate —
 `web-affected-tests.sh --base @{u} --run`, the tests the unpushed commits
 can break — and ships nothing when it fails (`--no-test` skips it, for
 emergencies only). The web job deploys the existing `web/dist` when its

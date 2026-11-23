@@ -172,14 +172,19 @@ async function answer(
   trace('host-diag', { id, steps: steps.length, reason: data.reason })
   // outside React (no Lingui provider here): pick the page language
   const zh = document.documentElement.lang.startsWith('zh')
+  const reloadOnly = steps.length === 1 && steps[0].do === 'reload'
   toast(
-    steps.length
+    reloadOnly
       ? zh
-        ? `电脑正在复现问题并读取诊断（${steps.length} 步）`
-        : `The host is reproducing a problem and reading diagnostics (${steps.length} steps)`
-      : zh
-        ? '电脑读取了这台设备的诊断信息'
-        : 'The host read this device’s diagnostics',
+        ? '电脑发布了新版本，正在更新'
+        : 'The host shipped a new version, updating'
+      : steps.length
+        ? zh
+          ? `电脑正在复现问题并读取诊断（${steps.length} 步）`
+          : `The host is reproducing a problem and reading diagnostics (${steps.length} steps)`
+        : zh
+          ? '电脑读取了这台设备的诊断信息'
+          : 'The host read this device’s diagnostics',
     { id: 'host-diag', duration: 4000 },
   )
   const results: Array<Record<string, unknown>> = []

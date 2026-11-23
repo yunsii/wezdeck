@@ -6,7 +6,7 @@
 # succeeds is done — the version check belongs before the tests
 # (web/tests/version.setup.ts), not after the deploy.
 #
-#   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force] [--no-test]
+#   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force] [--no-test] [--no-reload]
 #
 # --commit MSGFILE commits the staged changes first, after fixing what the
 # pre-commit gate only reports: prettier on the staged web files and the
@@ -19,6 +19,11 @@
 # --run — the go / unit / cdp tests the unpushed commits can break, cdp on
 # the local test stack; a failure ships nothing. --no-test skips it
 # (emergencies only, like --no-verify).
+#
+# After a web deploy, every phone seen in the last 3 min is moved onto the new
+# build: `wezdeck-wsl diag --reload` (the phone answers, then reloads; a draft
+# survives). Retried while no phone is known yet — a relay restarted in the
+# same release forgets them until they reconnect. --no-reload skips it.
 #
 # Jobs (concurrent; logs under ~/.local/state/wezdeck/release/<stamp>/):
 #   push   git push origin HEAD:master when HEAD is ahead
@@ -41,6 +46,7 @@ RUN="$STATE/release/$(date +%Y%m%d-%H%M%S)"
 only=()
 force=0
 test_gate=1
+reload_phones=1
 commit_msg=''
 while (($#)); do
   case "$1" in
@@ -48,6 +54,7 @@ while (($#)); do
     --only) only+=("$2"); shift 2 ;;
     --force) force=1; shift ;;
     --no-test) test_gate=0; shift ;;
+    --no-reload) reload_phones=0; shift ;;
     -h | --help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -184,5 +191,20 @@ for name in push relay web; do
   [[ $status == FAIL ]] && sed 's/^/      /' "$RUN/$name.log" | tail -15
   summary+=("$name=$status/${secs}s")
 done
+# the phones onto the build just deployed (not when web was skipped)
+if ((reload_phones && !failed)) && grep -q '^ok: deployed' "$RUN/web.log" 2>/dev/null; then
+  t0=$SECONDS
+  phones=0
+  for _ in 1 2 3; do
+    out="$(native/wezdeck-wsl/bin/wezdeck-wsl diag --reload --wait 10 \
+      --reason "new build $head" 2>&1 | tee -a "$RUN/phones.log")"
+    phones="$(sed -n 's/.*"phones":\([0-9]*\).*/\1/p' <<<"$out")"
+    [[ "${phones:-0}" -gt 0 ]] && break
+    sleep 5
+  done
+  printf '%-5s %-4s %3ss  %s\n' phone ok "$((SECONDS - t0))" \
+    "$( ((${phones:-0} > 0)) && echo "reloaded ${phones} phone(s) onto $head" || echo 'skip: no phone connected')"
+  summary+=("phone=${phones:-0}")
+fi
 printf '%s head=%s %s logs=%s\n' "$(date -Iseconds)" "$head" "${summary[*]}" "$RUN" >>"$STATE/release.log"
 exit $failed
