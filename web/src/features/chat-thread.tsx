@@ -397,51 +397,66 @@ export function ChatThread({
   )
   const isFresh = (index: number) =>
     baseline.current !== null && start + index >= baseline.current
+  const renderItem = (item: Item, position: number, at: number) => {
+    const stream = at === effective
+    if (item.kind === 'tools')
+      return (
+        <ToolGroup
+          key={`t${at}`}
+          tools={item.tools}
+          fresh={isFresh(item.index)}
+          stream={stream}
+          live={busy && position === items.length - 1}
+          onShown={stream ? () => advance(at + item.tools.length) : undefined}
+        />
+      )
+    if (item.message.role === 'system') {
+      if (item.message.kind === 'slash')
+        return (
+          <SlashCommandRow
+            key={`m${at}`}
+            message={item.message}
+            onShown={stream ? () => advance(at + 1) : undefined}
+          />
+        )
+      return (
+        <CompactDivider
+          key={`m${at}`}
+          message={item.message}
+          onShown={stream ? () => advance(at + 1) : undefined}
+        />
+      )
+    }
+    return (
+      <Bubble
+        key={`m${at}`}
+        message={item.message}
+        at={at}
+        fresh={isFresh(item.index)}
+        stream={stream}
+        onShown={stream ? () => advance(at + 1) : undefined}
+      />
+    )
+  }
   return (
     <SessionIdContext.Provider value={sessionId}>
+      {/* what is on screen, for `wezdeck-wsl diag` (client-trace
+          renderedChat): the reveal cursor, then every drawn item's
+          transcript index and role, to compare with the host transcript
+          when a message seems lost */}
+      <span hidden data-chat-reveal={effective} data-chat-end={end} />
       {items.map((item, position) => {
         const at = start + item.index
         if (at > effective) return null
-        const stream = at === effective
-        if (item.kind === 'tools')
-          return (
-            <ToolGroup
-              key={`t${at}`}
-              tools={item.tools}
-              fresh={isFresh(item.index)}
-              stream={stream}
-              live={busy && position === items.length - 1}
-              onShown={
-                stream ? () => advance(at + item.tools.length) : undefined
-              }
-            />
-          )
-        if (item.message.role === 'system') {
-          if (item.message.kind === 'slash')
-            return (
-              <SlashCommandRow
-                key={`m${at}`}
-                message={item.message}
-                onShown={stream ? () => advance(at + 1) : undefined}
-              />
-            )
-          return (
-            <CompactDivider
-              key={`m${at}`}
-              message={item.message}
-              onShown={stream ? () => advance(at + 1) : undefined}
-            />
-          )
-        }
         return (
-          <Bubble
-            key={`m${at}`}
-            message={item.message}
-            at={at}
-            fresh={isFresh(item.index)}
-            stream={stream}
-            onShown={stream ? () => advance(at + 1) : undefined}
-          />
+          <div
+            key={`${item.kind}${at}`}
+            data-msg={at}
+            data-role={item.kind === 'tools' ? 'tool' : item.message.role}
+            className="contents"
+          >
+            {renderItem(item, position, at)}
+          </div>
         )
       })}
       {/* settle against the revealed messages only: the faded bubble

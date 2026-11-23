@@ -165,7 +165,15 @@ relay log rows `diag_request` / `diag_received` / `diag_done`.
 The snapshot (`lib/client-trace.ts`) holds build id, page path (no hash: it
 can carry the pairing token), user agent, standalone mode, screen / viewport
 / `visualViewport` / safe-area sizes, the scroller, link mode / path / RTT,
-history index / length, View Transitions support, the session page's state,
+history index / length, View Transitions support, the session page's state
+(`chat`: loaded window `start` / `shown` / `total` and `loadedUsers`, the
+newest 15 user messages it holds), `renderedChat` — what is actually drawn,
+read from the DOM (`chat-thread.tsx` marks each item `data-msg` = transcript
+index + `data-role`, and the reveal cursor): `reveal` / `end`, every drawn
+user index, the last 40 items with a 40-char snippet, pending bubbles — so a
+"message missing on the phone" splits into never loaded (not in
+`loadedUsers`) vs loaded but not drawn (not in `renderedChat.users`), checked
+against the host transcript without asking the human to look;
 the host's step results, and the last 300 page events (viewport, focus,
 `chat-pin`, visibility, link changes, errors, `nav` / `nav-collapse`,
 `nav-frames` for every page change, `longtask` ≥ 80 ms where supported). No

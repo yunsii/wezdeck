@@ -332,6 +332,29 @@ const toBackground = (
     ? () => void run('key', { key: 'C-b' })
     : undefined
 
+/**
+ * The chat half of the diagnostics snapshot: scroll state, the loaded window
+ * and the newest user messages the page holds — client-trace's renderedChat
+ * says which of them it actually drew.
+ */
+const chatDiag = (
+  follow: { pinned: boolean; unread: number },
+  messages: Array<Message>,
+  start: number,
+  total: number,
+) => ({
+  pinned: follow.pinned,
+  unread: follow.unread,
+  shown: messages.length,
+  total,
+  start,
+  loadedUsers: messages
+    .map((m, i) => ({ at: start + i, role: m.role, text: m.text }))
+    .filter((m) => m.role === 'user')
+    .slice(-15)
+    .map((m) => ({ at: m.at, text: m.text.slice(0, 40) })),
+})
+
 /** absolute index just past the newest message the page has */
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
@@ -396,7 +419,7 @@ export function SessionDetail({ id }: { id: string }) {
         : send(message),
     diagnostics: () => ({
       session: { id, agent: data?.agent, status: data?.status, busy },
-      chat: { pinned: follow.pinned, unread: follow.unread, shown, total },
+      chat: chatDiag(follow, messages, start, total),
     }),
   })
   return (

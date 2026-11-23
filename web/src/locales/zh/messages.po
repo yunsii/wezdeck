@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr "、"
 
-#: src/features/chat-thread.tsx:514
+#: src/features/chat-thread.tsx:529
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -111,7 +111,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:435
+#: src/features/console-sessions.tsx:458
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -384,7 +384,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:516
+#: src/features/console-sessions.tsx:539
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -583,11 +583,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:498
+#: src/features/chat-thread.tsx:513
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:499
+#: src/features/chat-thread.tsx:514
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -1238,7 +1238,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:458
+#: src/features/console-sessions.tsx:481
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1254,7 +1254,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:455
+#: src/features/console-sessions.tsx:478
 #: src/features/console-shared.tsx:208
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
@@ -1564,7 +1564,7 @@ msgstr "在 VS Code 中打开"
 #~ msgid "Open Runtime Console"
 #~ msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:539
+#: src/features/console-sessions.tsx:562
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1727,7 +1727,7 @@ msgstr "填进消息"
 msgid "Put into the message for this agent"
 msgstr "填进消息，交给这个 agent"
 
-#: src/features/chat-thread.tsx:541
+#: src/features/chat-thread.tsx:556
 msgid "Queued messages"
 msgstr "排队中的消息"
 
@@ -2138,7 +2138,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-sessions.tsx:457
+#: src/features/console-sessions.tsx:480
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -2174,7 +2174,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:523
+#: src/features/console-sessions.tsx:546
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -2301,7 +2301,7 @@ msgstr "终端画面"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:385
+#: src/features/console-sessions.tsx:408
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -2371,7 +2371,7 @@ msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:517
+#: src/features/console-sessions.tsx:540
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -2851,7 +2851,7 @@ msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑�
 msgid "Write access"
 msgstr "写入权限"
 
-#: src/features/console-sessions.tsx:383
+#: src/features/console-sessions.tsx:406
 #: src/features/ticket-reply.tsx:205
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "这台设备还没启用写入（我的 › 写入权限）。"

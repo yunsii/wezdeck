@@ -311,6 +311,38 @@ function safeArea() {
   return area
 }
 
+const snippet = (el: Element) =>
+  el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40)
+
+/**
+ * The conversation as drawn (chat-thread.tsx marks every item with
+ * data-msg / data-role and the reveal cursor): compared with the host
+ * transcript and the page's loaded messages (`chat.loadedUsers`), it tells
+ * a message the page never got from one it got but did not draw.
+ */
+function renderedChat() {
+  const marker = document.querySelector<HTMLElement>('[data-chat-reveal]')
+  if (!marker) return undefined
+  const items = [...document.querySelectorAll<HTMLElement>('[data-msg]')]
+  return {
+    reveal: Number(marker.dataset.chatReveal),
+    end: Number(marker.dataset.chatEnd),
+    count: items.length,
+    first: items.length ? Number(items[0].dataset.msg) : -1,
+    users: items
+      .filter((el) => el.dataset.role === 'user')
+      .map((el) => Number(el.dataset.msg)),
+    tail: items.slice(-40).map((el) => ({
+      at: Number(el.dataset.msg),
+      role: el.dataset.role,
+      text: snippet(el),
+    })),
+    pending: [...document.querySelectorAll<HTMLElement>('[data-pending]')].map(
+      (el) => ({ state: el.dataset.pending, text: snippet(el) }),
+    ),
+  }
+}
+
 /** Everything the agent needs to see what the phone saw; `extra` is page state. */
 export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
   const nav = navigator as Navigator & {
@@ -333,6 +365,7 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
       ?.content,
     safeArea: safeArea(),
     scroller: scroller(),
+    renderedChat: renderedChat(),
     colorScheme: matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'
       : 'light',
