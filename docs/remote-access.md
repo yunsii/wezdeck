@@ -238,7 +238,7 @@ at that rate is ≈ 6,500 of the 100,000 Durable Object requests. A direct
 WebRTC DataChannel bypasses the relay and costs nothing. Free plan requires
 SQLite-backed Durable Objects (`new_sqlite_classes` in `wrangler.jsonc`).
 
-**Usage card** (我的 › 用量, `console-usage.tsx` → `/relay/usage`,
+**Usage card** (我的 › 用量, `console-usage.tsx` → host `usage` → `/relay/usage`,
 `relay/usage.ts`, adapted from forge's admin usage page): today's Worker
 requests, Durable Object requests / duration and WebSocket messages in /
 out against those limits, from the Cloudflare GraphQL Analytics API,
@@ -270,8 +270,12 @@ npx wrangler secret put CF_ANALYTICS_TOKEN   # paste the read-only token
 npx wrangler secret put CF_ACCOUNT_ID        # the account id (dashboard / wrangler whoami)
 ```
 
-Without them the card says so and shows dashes; `/relay/usage` requires the
-phone's client token (401 otherwise) and never wakes the relay object.
+Without them the card says so and shows dashes. The page asks the host
+(`usage` over the relay, a gated read: approved devices only —
+`relay_usage.go`), and the host fetches `/relay/usage` with the host token,
+the only credential the Worker accepts there (401 otherwise; it never wakes
+the relay object). It used to take the shared client token, so a revoked or
+never-approved browser still read the account's usage (2026-11-24).
 
 ## Testing locally
 

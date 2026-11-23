@@ -256,6 +256,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Register this device’s public key for approval on the host',
       ),
       c(
+        'usage',
+        '今天的 Cloudflare 用量：主机代为向 Worker 查询，只答复已获批的设备',
+        'Today’s Cloudflare usage: the host asks the Worker for it, and answers approved devices only',
+      ),
+      c(
         'device.hello',
         '每条连接用设备密钥签名报到，之后才能读取',
         'Sign in on each connection with the device key before any read',

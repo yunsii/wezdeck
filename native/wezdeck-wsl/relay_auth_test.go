@@ -114,3 +114,19 @@ func TestOpenReadsOnlyOnAThrowawayRelay(t *testing.T) {
 		t.Fatal("test relay should be open")
 	}
 }
+
+func TestUsageURL(t *testing.T) {
+	got, err := usageURL("wss://wezdeck.example/relay/host?room=test")
+	if err != nil || got != "https://wezdeck.example/relay/usage?room=test" {
+		t.Fatalf("got %q %v", got, err)
+	}
+	if got, _ := usageURL("ws://127.0.0.1:3018/relay/host"); got != "http://127.0.0.1:3018/relay/usage" {
+		t.Fatalf("local: %q", got)
+	}
+	// usage is a gated read: an unapproved connection is refused before the fetch
+	t.Setenv("WEZDECK_RELAY_OPEN_READS", "")
+	t.Setenv("WEZDECK_REMOTE_DEVICES", filepath.Join(t.TempDir(), "d.json"))
+	if _, err := dispatchRPC(relayFrame{Action: "usage", Cid: "x"}, "test", &relay{}); !errors.Is(err, errNotApproved) {
+		t.Fatalf("usage without hello: %v", err)
+	}
+}

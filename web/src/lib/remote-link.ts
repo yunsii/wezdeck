@@ -252,17 +252,13 @@ class RemoteLink {
     }
   }
 
-  /** today's Cloudflare usage (relay/usage.ts), with this device's token */
+  /**
+   * today's Cloudflare usage: asked of the host over the relay (an approved
+   * device only — relay_usage.go), which fetches relay/usage.ts with the
+   * host token; the client token alone no longer reads it
+   */
   async usage() {
-    const response = await fetch(
-      `${relayBase().replace(/^ws/, 'http')}/relay/usage${roomQuery()}`,
-      {
-        headers: { authorization: `Bearer ${this.token()}` },
-        cache: 'no-store',
-      },
-    )
-    if (!response.ok) throw new Error(`usage: HTTP ${response.status}`)
-    return (await response.json()) as UsageReply
+    return (await this.rpc('usage', {})) as UsageReply
   }
 
   private async tokenRefused() {

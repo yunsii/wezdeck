@@ -18,7 +18,7 @@ import { FREE } from '#/lib/usage-contract'
 import type { UsageReply } from '#/lib/usage-contract'
 
 export type UsageEnv = {
-  RELAY_CLIENT_TOKEN: string
+  RELAY_HOST_TOKEN: string
   CF_ACCOUNT_ID?: string
   CF_ANALYTICS_TOKEN?: string
 }
@@ -179,7 +179,11 @@ export async function usageFetch(
     /^Bearer /,
     '',
   )
-  if (!safeEqual(presented, env.RELAY_CLIENT_TOKEN))
+  // the host token only: the page asks the host (`usage` over the relay,
+  // where only an approved device gets an answer — relay_usage.go), and the
+  // host asks here. The shared client token used to be enough, so a revoked
+  // or never-approved browser still saw the account's usage.
+  if (!env.RELAY_HOST_TOKEN || !safeEqual(presented, env.RELAY_HOST_TOKEN))
     return new Response('unauthorized', { status: 401 })
   const cache = (caches as unknown as { default: Cache }).default
   const key = new Request(new URL('/relay/usage/v1', request.url))

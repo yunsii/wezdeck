@@ -322,6 +322,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return result, err
 	}
 	switch f.Action {
+	case "usage":
+		return fetchUsage()
 	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "ticket.new":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
