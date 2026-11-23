@@ -22,7 +22,7 @@ import {
   useRuntimeData,
 } from './console-data'
 import { StatusPill, formatDuration, formatTime } from './console-shared'
-import { useConsoleMode } from './console-mode'
+import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { RemoteBadge } from './remote-badge'
 import { needsYou, useSessions } from './console-sessions'
@@ -63,7 +63,8 @@ function sectionOf(pathname: string): Section {
 
 function useSections() {
   const { t } = useLingui()
-  const mode = useConsoleMode()
+  // layout: last time's mode while the first probe runs (no pop-in)
+  const mode = useLayoutMode()
   const all: Array<{
     id: Section
     label: string
@@ -195,8 +196,13 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
     >
       {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
-      <div className="vt-band hidden md:block">
-        {mode === 'local' ? <StatusBand /> : <RemoteBand />}
+      {/* one fixed height whatever fills it, so the swap never shifts the page */}
+      <div className="vt-band hidden h-9 overflow-hidden border-b border-brand-border bg-brand-surface md:block">
+        {mode === 'local' ? (
+          <StatusBand />
+        ) : mode === 'remote' ? (
+          <RemoteBand />
+        ) : null}
       </div>
       <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
         <aside className="vt-sidebar hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
@@ -211,7 +217,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             <div>
               <p className="text-sm font-semibold">{t`WezDeck`}</p>
               <p className="text-xs text-brand-muted">
-                {mode === 'local' ? t`This computer` : t`Remote`}
+                {mode === 'local'
+                  ? t`This computer`
+                  : mode === 'remote'
+                    ? t`Remote`
+                    : ''}
               </p>
             </div>
           </Link>
@@ -361,7 +371,7 @@ function CountBadge({ value }: { value: number }) {
 function RemoteBand() {
   const { t } = useLingui()
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-brand-border bg-brand-surface px-4 py-2 text-xs">
+    <div className="flex h-full flex-nowrap items-center gap-x-4 overflow-hidden px-4 text-xs whitespace-nowrap">
       <span className="text-brand-label">{t`Remote access`}</span>
       <RemoteBadge />
     </div>
@@ -393,7 +403,7 @@ function StatusBand() {
   const { t } = useLingui()
   const { data, connected, loading } = useRuntimeData()
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-brand-border bg-brand-surface px-4 py-2 text-xs">
+    <div className="flex h-full flex-nowrap items-center gap-x-5 overflow-hidden px-4 text-xs whitespace-nowrap">
       <StatusPill
         compact
         status={loading ? 'loading' : connected ? 'ready' : 'offline'}

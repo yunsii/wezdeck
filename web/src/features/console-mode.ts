@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 
 import { forcedRemote, remoteLink } from '#/lib/remote-link'
 import type { RemoteState } from '#/lib/remote-link'
@@ -38,4 +38,38 @@ export function useConsoleMode(): 'local' | 'remote' | 'checking' {
   if (runtime.connected) return 'local'
   if (runtime.loading) return 'checking'
   return 'remote'
+}
+
+const LAST_MODE = 'wezdeck.console-mode'
+
+/**
+ * For layout only (the top band, local-only sidebar entries): while the
+ * first probe runs, the mode this browser had last time, instead of
+ * rendering the remote layout and swapping it a moment later — the band
+ * flashed 远程访问 and jumped on every load on the host. `checking` stays
+ * only before hydration (the server cannot know), where the band renders
+ * empty at its fixed height.
+ */
+export function useLayoutMode(): 'local' | 'remote' | 'checking' {
+  const mode = useConsoleMode()
+  const hydrated = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  )
+  useEffect(() => {
+    if (mode === 'checking') return
+    try {
+      localStorage.setItem(LAST_MODE, mode)
+    } catch {
+      // storage blocked: the guess just stays "checking"
+    }
+  }, [mode])
+  if (mode !== 'checking' || !hydrated) return mode
+  try {
+    const last = localStorage.getItem(LAST_MODE)
+    return last === 'local' || last === 'remote' ? last : 'checking'
+  } catch {
+    return 'checking'
+  }
 }

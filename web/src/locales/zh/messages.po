@@ -477,11 +477,11 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:291
+#: src/features/console-shell.tsx:301
 msgid "Connection details"
 msgstr "连接详情"
 
-#: src/features/console-shell.tsx:220
+#: src/features/console-shell.tsx:230
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -657,7 +657,7 @@ msgstr "dev：长期并行开发的工作站"
 
 #: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:425
-#: src/features/console-shell.tsx:90
+#: src/features/console-shell.tsx:91
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -1063,7 +1063,7 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:402
+#: src/features/console-shell.tsx:412
 #: src/features/me-host.tsx:103
 msgid "Last sample"
 msgstr "最近采样"
@@ -1614,7 +1614,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:209
-#: src/features/console-shell.tsx:429
+#: src/features/console-shell.tsx:439
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
 msgid "Ready"
@@ -1648,11 +1648,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:214
+#: src/features/console-shell.tsx:223
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:365
+#: src/features/console-shell.tsx:375
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -1754,7 +1754,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:49
-#: src/features/console-shell.tsx:475
+#: src/features/console-shell.tsx:485
 #: src/features/me-host.tsx:87
 msgid "Retry"
 msgstr "重试"
@@ -1889,7 +1889,7 @@ msgstr "改动范围"
 msgid "Secondary"
 msgstr "副"
 
-#: src/features/console-shell.tsx:303
+#: src/features/console-shell.tsx:313
 msgid "Sections"
 msgstr "栏目"
 
@@ -1949,7 +1949,7 @@ msgstr "会话信息"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:75
+#: src/features/console-shell.tsx:76
 #: src/features/landing-page.tsx:77
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
@@ -1966,7 +1966,7 @@ msgstr "会话通过远程链接读取，这台设备还没配对。在主机上
 #~ msgstr "等你回复的会话"
 
 #: src/features/console-me.tsx:365
-#: src/features/console-shell.tsx:94
+#: src/features/console-shell.tsx:95
 msgid "Settings"
 msgstr "我的"
 
@@ -1994,7 +1994,7 @@ msgstr "显示的是上次的数据"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/console-shell.tsx:274
+#: src/features/console-shell.tsx:284
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -2175,7 +2175,7 @@ msgstr "主题"
 
 #: src/features/console-me.tsx:195
 #: src/features/console-me.tsx:374
-#: src/features/console-shell.tsx:214
+#: src/features/console-shell.tsx:221
 msgid "This computer"
 msgstr "本机"
 
@@ -2199,7 +2199,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-shell.tsx:472
+#: src/features/console-shell.tsx:482
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -2218,7 +2218,7 @@ msgstr "工单编号"
 
 #: src/features/console-activity.tsx:206
 #: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:85
+#: src/features/console-shell.tsx:86
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -2226,7 +2226,7 @@ msgstr "工单动态"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:80
+#: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:81
 msgid "Tickets"
 msgstr "工单"
@@ -2387,7 +2387,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:408
+#: src/features/console-shell.tsx:418
 #: src/features/me-host.tsx:102
 msgid "Uptime"
 msgstr "运行时长"
@@ -2435,7 +2435,7 @@ msgstr "已切到 VS Code 窗口"
 #~ msgid "waiting"
 #~ msgstr "等待中"
 
-#: src/features/console-shell.tsx:429
+#: src/features/console-shell.tsx:439
 msgid "Waiting"
 msgstr "等待中"
 
@@ -2497,7 +2497,7 @@ msgstr "等你"
 #~ msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 #~ msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:377
+#: src/features/console-shell.tsx:387
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -2530,8 +2530,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:212
-#: src/features/console-shell.tsx:286
+#: src/features/console-shell.tsx:218
+#: src/features/console-shell.tsx:296
 msgid "WezDeck"
 msgstr "WezDeck"
 
