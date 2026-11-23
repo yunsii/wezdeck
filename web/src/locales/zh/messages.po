@@ -600,18 +600,19 @@ msgstr "Ctrl+C"
 msgid "Current plan"
 msgstr "当前计划"
 
-#: src/features/console-shared.tsx:351
+#: src/features/console-shared.tsx:347
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
 #: src/features/console-me.tsx:273
 #: src/features/console-me.tsx:345
+#: src/features/console-shared.tsx:384
 msgid "Dark"
 msgstr "深色"
 
 #: src/features/console-shared.tsx:379
-msgid "Dark theme"
-msgstr "暗色主题"
+#~ msgid "Dark theme"
+#~ msgstr "暗色主题"
 
 #: src/features/tickets-view.tsx:143
 msgid "data as of {time}"
@@ -625,7 +626,7 @@ msgstr "决定"
 #~ msgid "Deck"
 #~ msgstr "工作台"
 
-#: src/features/console-shared.tsx:214
+#: src/features/console-shared.tsx:210
 msgid "Degraded"
 msgstr "受限"
 
@@ -734,8 +735,8 @@ msgid "Endpoint"
 msgstr "端点"
 
 #: src/features/console-shared.tsx:437
-msgid "English"
-msgstr "English"
+#~ msgid "English"
+#~ msgstr "English"
 
 #: src/features/session-ask-claude.tsx:140
 #: src/features/session-elicitation.tsx:133
@@ -835,8 +836,8 @@ msgid "First turn"
 msgstr "第一轮"
 
 #: src/features/console-shared.tsx:380
-msgid "Follow system theme"
-msgstr "跟随系统主题"
+#~ msgid "Follow system theme"
+#~ msgstr "跟随系统主题"
 
 #: src/features/session-composer.tsx:310
 msgid "Follow-ups of this repo"
@@ -947,7 +948,7 @@ msgstr "图片预览"
 msgid "Images"
 msgstr "图片"
 
-#: src/features/console-shared.tsx:349
+#: src/features/console-shared.tsx:345
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
@@ -1052,8 +1053,8 @@ msgstr "局域网"
 
 #: src/features/console-me.tsx:246
 #: src/features/console-me.tsx:248
-#: src/features/console-shared.tsx:421
-#: src/features/console-shared.tsx:423
+#: src/features/console-shared.tsx:402
+#: src/features/console-shared.tsx:404
 msgid "Language"
 msgstr "语言"
 
@@ -1061,7 +1062,7 @@ msgstr "语言"
 msgid "Last direct attempt"
 msgstr "上次直连"
 
-#: src/features/console-shared.tsx:110
+#: src/features/console-shared.tsx:106
 #: src/features/console-shell.tsx:402
 #: src/features/me-host.tsx:103
 msgid "Last sample"
@@ -1099,12 +1100,13 @@ msgstr "级别"
 
 #: src/features/console-me.tsx:272
 #: src/features/console-me.tsx:345
+#: src/features/console-shared.tsx:383
 msgid "Light"
 msgstr "浅色"
 
 #: src/features/console-shared.tsx:378
-msgid "Light theme"
-msgstr "亮色主题"
+#~ msgid "Light theme"
+#~ msgstr "亮色主题"
 
 #: src/features/session-header.tsx:150
 msgid "limits as of {limitsAt}"
@@ -1131,7 +1133,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:429
-#: src/features/console-shared.tsx:212
+#: src/features/console-shared.tsx:208
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
 #: src/features/session-list.tsx:248
@@ -1294,7 +1296,7 @@ msgstr "现在没有正在运行的 Agent 会话。"
 #~ msgid "No collab tickets yet"
 #~ msgstr "还没有协作工单"
 
-#: src/features/console-shared.tsx:358
+#: src/features/console-shared.tsx:354
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 
@@ -1383,7 +1385,7 @@ msgstr "状态：{label}"
 msgid "Off"
 msgstr "未启用"
 
-#: src/features/console-shared.tsx:215
+#: src/features/console-shared.tsx:211
 msgid "Offline"
 msgstr "离线"
 
@@ -1603,7 +1605,7 @@ msgstr "运行 {commands} 条命令"
 msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
-#: src/features/console-shared.tsx:213
+#: src/features/console-shared.tsx:209
 #: src/features/console-shell.tsx:429
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
@@ -1851,7 +1853,7 @@ msgstr "Runtime 离线时无法获取诊断数据。"
 #~ msgid "Runtime is offline."
 #~ msgstr "Runtime 离线。"
 
-#: src/features/console-shared.tsx:362
+#: src/features/console-shared.tsx:358
 msgid "Runtime reported reason:"
 msgstr "Runtime 报告的原因："
 
@@ -2075,6 +2077,7 @@ msgstr "切换会话（Alt+g）"
 
 #: src/features/console-me.tsx:271
 #: src/features/console-me.tsx:345
+#: src/features/console-shared.tsx:382
 msgid "System"
 msgstr "跟随系统"
 
@@ -2143,7 +2146,7 @@ msgstr "实际观察到的行为、报错或数据"
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "你期望对方提供的约定或行为——对方会先核实这一点"
 
-#: src/features/console-shared.tsx:354
+#: src/features/console-shared.tsx:350
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTerm 样本。"
 
@@ -2153,8 +2156,8 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 
 #: src/features/console-me.tsx:265
 #: src/features/console-me.tsx:267
-#: src/features/console-shared.tsx:383
-#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:375
+#: src/features/console-shared.tsx:377
 msgid "Theme"
 msgstr "主题"
 
@@ -2367,7 +2370,7 @@ msgstr "更新于 {time}"
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
-#: src/features/console-shared.tsx:116
+#: src/features/console-shared.tsx:112
 #: src/features/console-shell.tsx:408
 #: src/features/me-host.tsx:102
 msgid "Uptime"
@@ -2664,5 +2667,5 @@ msgid "Your reply"
 msgstr "你的回复"
 
 #: src/features/console-shared.tsx:438
-msgid "中文"
-msgstr "中文"
+#~ msgid "中文"
+#~ msgstr "中文"

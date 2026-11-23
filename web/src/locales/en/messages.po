@@ -600,18 +600,19 @@ msgstr "Ctrl+C"
 msgid "Current plan"
 msgstr "Current plan"
 
-#: src/features/console-shared.tsx:351
+#: src/features/console-shared.tsx:347
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
 #: src/features/console-me.tsx:273
 #: src/features/console-me.tsx:345
+#: src/features/console-shared.tsx:384
 msgid "Dark"
 msgstr "Dark"
 
 #: src/features/console-shared.tsx:379
-msgid "Dark theme"
-msgstr "Dark theme"
+#~ msgid "Dark theme"
+#~ msgstr "Dark theme"
 
 #: src/features/tickets-view.tsx:143
 msgid "data as of {time}"
@@ -625,7 +626,7 @@ msgstr "Decision"
 #~ msgid "Deck"
 #~ msgstr "Deck"
 
-#: src/features/console-shared.tsx:214
+#: src/features/console-shared.tsx:210
 msgid "Degraded"
 msgstr "Degraded"
 
@@ -734,8 +735,8 @@ msgid "Endpoint"
 msgstr "Endpoint"
 
 #: src/features/console-shared.tsx:437
-msgid "English"
-msgstr "English"
+#~ msgid "English"
+#~ msgstr "English"
 
 #: src/features/session-ask-claude.tsx:140
 #: src/features/session-elicitation.tsx:133
@@ -835,8 +836,8 @@ msgid "First turn"
 msgstr "First turn"
 
 #: src/features/console-shared.tsx:380
-msgid "Follow system theme"
-msgstr "Follow system theme"
+#~ msgid "Follow system theme"
+#~ msgstr "Follow system theme"
 
 #: src/features/session-composer.tsx:310
 msgid "Follow-ups of this repo"
@@ -947,7 +948,7 @@ msgstr "Image preview"
 msgid "Images"
 msgstr "Images"
 
-#: src/features/console-shared.tsx:349
+#: src/features/console-shared.tsx:345
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
@@ -1052,8 +1053,8 @@ msgstr "LAN"
 
 #: src/features/console-me.tsx:246
 #: src/features/console-me.tsx:248
-#: src/features/console-shared.tsx:421
-#: src/features/console-shared.tsx:423
+#: src/features/console-shared.tsx:402
+#: src/features/console-shared.tsx:404
 msgid "Language"
 msgstr "Language"
 
@@ -1061,7 +1062,7 @@ msgstr "Language"
 msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
-#: src/features/console-shared.tsx:110
+#: src/features/console-shared.tsx:106
 #: src/features/console-shell.tsx:402
 #: src/features/me-host.tsx:103
 msgid "Last sample"
@@ -1099,12 +1100,13 @@ msgstr "Level"
 
 #: src/features/console-me.tsx:272
 #: src/features/console-me.tsx:345
+#: src/features/console-shared.tsx:383
 msgid "Light"
 msgstr "Light"
 
 #: src/features/console-shared.tsx:378
-msgid "Light theme"
-msgstr "Light theme"
+#~ msgid "Light theme"
+#~ msgstr "Light theme"
 
 #: src/features/session-header.tsx:150
 msgid "limits as of {limitsAt}"
@@ -1131,7 +1133,7 @@ msgstr "Loading original…"
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:429
-#: src/features/console-shared.tsx:212
+#: src/features/console-shared.tsx:208
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
 #: src/features/session-list.tsx:248
@@ -1294,7 +1296,7 @@ msgstr "No agent sessions are running."
 #~ msgid "No collab tickets yet"
 #~ msgstr "No collab tickets yet"
 
-#: src/features/console-shared.tsx:358
+#: src/features/console-shared.tsx:354
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
@@ -1383,7 +1385,7 @@ msgstr "now {label}"
 msgid "Off"
 msgstr "Off"
 
-#: src/features/console-shared.tsx:215
+#: src/features/console-shared.tsx:211
 msgid "Offline"
 msgstr "Offline"
 
@@ -1603,7 +1605,7 @@ msgstr "ran {commands} commands"
 msgid "read {reads} files"
 msgstr "read {reads} files"
 
-#: src/features/console-shared.tsx:213
+#: src/features/console-shared.tsx:209
 #: src/features/console-shell.tsx:429
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
@@ -1851,7 +1853,7 @@ msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 #~ msgid "Runtime is offline."
 #~ msgstr "Runtime is offline."
 
-#: src/features/console-shared.tsx:362
+#: src/features/console-shared.tsx:358
 msgid "Runtime reported reason:"
 msgstr "Runtime reported reason:"
 
@@ -2075,6 +2077,7 @@ msgstr "Switch session (Alt+g)"
 
 #: src/features/console-me.tsx:271
 #: src/features/console-me.tsx:345
+#: src/features/console-shared.tsx:382
 msgid "System"
 msgstr "System"
 
@@ -2143,7 +2146,7 @@ msgstr "The behaviour, error or data you actually observed"
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
-#: src/features/console-shared.tsx:354
+#: src/features/console-shared.tsx:350
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
@@ -2153,8 +2156,8 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 
 #: src/features/console-me.tsx:265
 #: src/features/console-me.tsx:267
-#: src/features/console-shared.tsx:383
-#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:375
+#: src/features/console-shared.tsx:377
 msgid "Theme"
 msgstr "Theme"
 
@@ -2367,7 +2370,7 @@ msgstr "Updated {time}"
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
-#: src/features/console-shared.tsx:116
+#: src/features/console-shared.tsx:112
 #: src/features/console-shell.tsx:408
 #: src/features/me-host.tsx:102
 msgid "Uptime"
@@ -2664,5 +2667,5 @@ msgid "Your reply"
 msgstr "Your reply"
 
 #: src/features/console-shared.tsx:438
-msgid "中文"
-msgstr "中文"
+#~ msgid "中文"
+#~ msgstr "中文"

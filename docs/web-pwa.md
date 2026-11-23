@@ -176,7 +176,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   right-click opens copy value / copy "label: value"; a phone stacks the
   value over a small label, a wide screen keeps two columns sharing one
   label width via subgrid and lights the row on hover), plus `Segmented`,
-  `Toggle`, `Popover`, `Tooltip`. A
+  `Popover` (ink card, tokens carried into its portal; its menus are click-only), `Tooltip`. A
   missing control is added there first, then used. Tests address them by
   role: a Select is `combobox` + `option` (the popup is portalled to body),
   a Checkbox is `checkbox`.

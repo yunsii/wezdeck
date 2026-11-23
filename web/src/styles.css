@@ -262,12 +262,18 @@ html[data-theme='dark'] [data-deck] {
   background: var(--brand-key);
 }
 
+/* pressed: a thin veil over whatever fill the key has — a dark solid button
+   used to turn light grey with its white label all but gone */
 .key-press {
-  transition: background-color 120ms ease-out;
+  transition: box-shadow 120ms ease-out;
 }
 
 .key-press:active {
-  background: color-mix(in srgb, var(--brand-key), var(--brand-text) 6%);
+  box-shadow: inset 0 0 0 999px rgb(0 0 0 / 0.08);
+}
+
+html[data-theme='dark'] .key-press:active {
+  box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.1);
 }
 
 /* The one ambient motion: a running light breathes. */

@@ -5,13 +5,11 @@ import {
   CircleAlert,
   Info,
   Languages,
-  Monitor,
   Palette,
-  Moon,
-  Sun,
 } from 'lucide-react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 
+import { Segmented } from '#/components/deck/segmented'
 import { Badge } from '#/components/ui/badge'
 import {
   Popover,
@@ -20,8 +18,6 @@ import {
 } from '#/components/ui/popover'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 import { Skeleton } from '#/components/ui/skeleton'
-import { Toggle } from '#/components/ui/toggle'
-import { ToggleGroup } from '#/components/ui/toggle-group'
 import { Tooltip } from '#/components/ui/tooltip'
 import type { ImeState } from '#/lib/runtime-contract'
 import type { ThemeMode } from '#/lib/theme-provider'
@@ -374,35 +370,20 @@ export function ThemeSwitcher({
   side?: 'top' | 'bottom'
 }) {
   const { t } = useLingui()
-  const items: Array<[ThemeMode, React.ReactNode, string]> = [
-    ['light', <Sun size={15} />, t`Light theme`],
-    ['dark', <Moon size={15} />, t`Dark theme`],
-    ['system', <Monitor size={15} />, t`Follow system theme`],
-  ]
+  // the same control as 我的 › 外观: ink segments, a white thumb, words
   return (
-    <OptionMenu label={t`Theme`} icon={<Palette size={15} />} side={side}>
-      <ToggleGroup
-        aria-label={t`Theme`}
-        value={[mode]}
-        onValueChange={(values) => {
-          const next = values[0]
-          if (next === 'light' || next === 'dark' || next === 'system')
-            onChange(next)
-        }}
-      >
-        {items.map(([value, icon, label]) => (
-          <Toggle
-            key={value}
-            value={value}
-            size="icon"
-            aria-label={label}
-            title={label}
-            suppressHydrationWarning
-          >
-            {icon}
-          </Toggle>
-        ))}
-      </ToggleGroup>
+    <OptionMenu label={t`Theme`} icon={<Palette size={16} />} side={side}>
+      <Segmented
+        label={t`Theme`}
+        value={mode}
+        onChange={onChange}
+        className="w-60"
+        options={[
+          { value: 'system', label: t`System` },
+          { value: 'light', label: t`Light` },
+          { value: 'dark', label: t`Dark` },
+        ]}
+      />
     </OptionMenu>
   )
 }
@@ -418,13 +399,12 @@ export function LanguageSwitcher({
   const navigate = useNavigate()
   const params = useParams({ strict: false })
   return (
-    <OptionMenu label={t`Language`} icon={<Languages size={15} />} side={side}>
-      <ToggleGroup
-        aria-label={t`Language`}
-        value={[locale]}
-        onValueChange={(values) => {
-          const next = values[0]
-          if (next !== 'en' && next !== 'zh') return
+    <OptionMenu label={t`Language`} icon={<Languages size={16} />} side={side}>
+      <Segmented
+        label={t`Language`}
+        value={locale === 'zh' ? 'zh' : 'en'}
+        className="w-48"
+        onChange={(next) => {
           rememberLocale(next)
           void navigate({
             to: '.',
@@ -433,10 +413,11 @@ export function LanguageSwitcher({
             replace: true,
           })
         }}
-      >
-        <Toggle value="en" size="default">{t`English`}</Toggle>
-        <Toggle value="zh" size="default">{t`中文`}</Toggle>
-      </ToggleGroup>
+        options={[
+          { value: 'zh', label: '中文' },
+          { value: 'en', label: 'English' },
+        ]}
+      />
     </OptionMenu>
   )
 }
