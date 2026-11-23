@@ -891,6 +891,53 @@ type deviceRecord struct {
 	Name      string `json:"name"`
 	PublicKey string `json:"public_key"` // base64url, uncompressed P-256 point
 	At        string `json:"at"`
+	// Info: what the browser says it is (UA client hints, else the UA), so
+	// `--devices` tells "Chrome 157 · Android 16" from "Firefox 162 ·
+	// Android 16" — the name alone ("Linux") could not; SeenAt: its last
+	// register (every page load), to spot a device no longer used.
+	Info   *deviceInfo `json:"info,omitempty"`
+	SeenAt string      `json:"seen_at,omitempty"`
+}
+
+type deviceInfo struct {
+	Browser    string `json:"browser,omitempty"`
+	OS         string `json:"os,omitempty"`
+	Model      string `json:"model,omitempty"`
+	Mobile     bool   `json:"mobile,omitempty"`
+	Standalone bool   `json:"standalone,omitempty"`
+	Language   string `json:"language,omitempty"`
+	Screen     string `json:"screen,omitempty"`
+	UA         string `json:"ua,omitempty"`
+}
+
+// clean: what a client sent, safe to store and print (no control
+// characters, so `--devices` cannot be spoofed with escape sequences).
+func (i *deviceInfo) clean() *deviceInfo {
+	if i == nil {
+		return nil
+	}
+	return &deviceInfo{
+		Browser: clip(printable(i.Browser), 40), OS: clip(printable(i.OS), 40),
+		Model: clip(printable(i.Model), 40), Mobile: i.Mobile, Standalone: i.Standalone,
+		Language: clip(printable(i.Language), 20), Screen: clip(printable(i.Screen), 20),
+		UA: clip(printable(i.UA), 300),
+	}
+}
+
+// seen refreshes a known device's info and last-seen time; it reports
+// whether the file needs writing (changed info, or an hour since last seen —
+// not every page load).
+func (d *deviceRecord) seen(info *deviceInfo, now time.Time) bool {
+	changed := info != nil && (d.Info == nil || *d.Info != *info)
+	if changed {
+		d.Info = info
+	}
+	last, err := time.Parse(time.RFC3339, d.SeenAt)
+	if changed || err != nil || now.Sub(last) > time.Hour {
+		d.SeenAt = now.Format(time.RFC3339)
+		return true
+	}
+	return false
 }
 
 type deviceStore struct {
@@ -985,12 +1032,15 @@ func parsePublicKey(b64 string) (*ecdsa.PublicKey, []byte, error) {
 // (install-remote-relay.sh --approve).
 func registerDevice(args json.RawMessage) (any, error) {
 	var a struct {
-		PublicKey string `json:"public_key"`
-		Name      string `json:"name"`
+		PublicKey string      `json:"public_key"`
+		Name      string      `json:"name"`
+		Info      *deviceInfo `json:"info"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("invalid payload")
 	}
+	info := a.Info.clean()
+	now := time.Now()
 	_, raw, err := parsePublicKey(a.PublicKey)
 	if err != nil {
 		return nil, err
@@ -1000,20 +1050,27 @@ func registerDevice(args json.RawMessage) (any, error) {
 	defer deviceMu.Unlock()
 	defer lockDevices()()
 	s := loadDevices()
-	for _, d := range s.Approved {
-		if d.ID == id {
+	for i := range s.Approved {
+		if s.Approved[i].ID == id {
+			if s.Approved[i].seen(info, now) {
+				_ = saveDevices(s)
+			}
 			return map[string]any{"v": 1, "ok": true, "id": id, "state": "approved"}, nil
 		}
 	}
-	for _, d := range s.Pending {
-		if d.ID == id {
+	for i := range s.Pending {
+		if s.Pending[i].ID == id {
+			if s.Pending[i].seen(info, now) {
+				_ = saveDevices(s)
+			}
 			return map[string]any{"v": 1, "ok": true, "id": id, "state": "pending"}, nil
 		}
 	}
 	if len(s.Pending) >= 5 {
 		s.Pending = s.Pending[1:]
 	}
-	s.Pending = append(s.Pending, deviceRecord{ID: id, Name: clip(printable(a.Name), 40), PublicKey: a.PublicKey, At: time.Now().Format(time.RFC3339)})
+	s.Pending = append(s.Pending, deviceRecord{ID: id, Name: clip(printable(a.Name), 40), PublicKey: a.PublicKey,
+		At: now.Format(time.RFC3339), Info: info, SeenAt: now.Format(time.RFC3339)})
 	if err := saveDevices(s); err != nil {
 		return nil, err
 	}

@@ -129,9 +129,17 @@ except FileNotFoundError:
     store = {"approved": [], "pending": []}
 mode, wanted = os.environ["MODE"], os.environ["DEVICE_ID"]
 def show():
+    # one line per device: state, id, what it is (browser · OS · model from
+    # its info, else the old name), added, last seen — a device unseen for
+    # days is the one to revoke
     for state in ("pending", "approved"):
         for d in store.get(state) or []:
-            print(f"{state:9} {safe(d['id'])}  {safe(d.get('name') or '?'):20} {safe(d.get('at', ''))}")
+            info = d.get("info") or {}
+            what = " · ".join(x for x in (info.get("browser"), info.get("os"), info.get("model")) if x) or d.get("name") or "?"
+            if info.get("standalone"):
+                what += " (app)"
+            seen = d.get("seen_at") or "-"
+            print(f"{state:9} {safe(d['id'])}  {safe(what):36} added {safe(d.get('at', ''))[:16]}  seen {safe(seen)[:16]}")
     if not (store.get("pending") or store.get("approved")):
         print("no devices yet: on the phone open 我的 › 手机写入 › 启用")
 if mode == "devices":

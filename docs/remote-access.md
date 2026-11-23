@@ -109,7 +109,15 @@ both the relay (register) and `install-remote-relay.sh` (approve / revoke)
 under one `flock` on `remote-devices.json.lock`, and the relay writes it
 atomically (tmp + rename), so a revoke cannot be undone by a racing register;
 device names drop control characters (stored and printed) so `--devices`
-cannot be spoofed with escape sequences. A pairing-token rotation also sends
+cannot be spoofed with escape sequences. A device also sends `info`
+(`clientInfo` in `device-state.ts`: Chromium's UA client hints — real
+brand, major version, OS version, model — else the UA parsed by `bowser`,
+MIT; ua-parser-js 2.x is AGPL — plus standalone, language, screen, the UA
+clipped to 300) and every page load refreshes it and `seen_at` (written
+only when the info changed or an hour passed); `--devices` prints
+"Chrome 157 · Android 16 · model", added, last seen. The name used to be
+the UA's first "(…)" — "Linux" for a Chrome phone (frozen UA), "Android 16"
+for Firefox — too little to pick the device to revoke. A pairing-token rotation also sends
 the host `bye` for every evicted cid, closing that client's WebRTC peer, not
 only its DO socket. `diag.submit` accepts chunks only from the cids the
 request was pushed to, once each. A `#pair=` link must look like a token
