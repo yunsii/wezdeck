@@ -5,13 +5,13 @@
 // tappable options; the picks plus any typed note become the reply text, so
 // the host side needs nothing new — `reply` archives the questions with it.
 import { useLingui } from '@lingui/react/macro'
+import { hostWrite } from '#/lib/runtime-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, SquareTerminal } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { cn } from '#/lib/utils'
-import { remoteLink } from '#/lib/remote-link'
 import type { TicketQuestions } from '#/lib/runtime-contract'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
@@ -138,7 +138,7 @@ export function TicketReply({
     setBusy(true)
     setError('')
     try {
-      await remoteLink.write('reply', { id, text: answer, continue: cont })
+      await hostWrite('reply', { id, text: answer, continue: cont })
       setText('')
       setPicks([])
       toast(cont ? t`Replied, the agent continues` : t`Replied`)
@@ -271,7 +271,7 @@ export function TicketAttach({
     setBusy(true)
     setError('')
     try {
-      const result = (await remoteLink.write('attach', { id })) as {
+      const result = (await hostWrite('attach', { id })) as {
         tmux_session?: string
         window_name?: string
       }

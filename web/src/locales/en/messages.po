@@ -119,7 +119,7 @@ msgstr "7 d"
 msgid "7-day limit"
 msgstr "7-day limit"
 
-#: src/features/session-todos.tsx:132
+#: src/features/session-todos.tsx:131
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
@@ -159,7 +159,7 @@ msgstr "A person"
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
-#: src/features/ticket-new.tsx:173
+#: src/features/ticket-new.tsx:172
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
@@ -175,7 +175,7 @@ msgstr "Account limits"
 msgid "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 msgstr "Active {active} s × 128 MB; an idle relay hibernates and is not counted."
 
-#: src/features/session-todos.tsx:142
+#: src/features/session-todos.tsx:141
 msgid "Add"
 msgstr "Add"
 
@@ -262,11 +262,11 @@ msgid "Anything to add (optional)"
 msgstr "Anything to add (optional)"
 
 #: src/features/console-me.tsx:44
-#: src/features/console-me.tsx:187
+#: src/features/console-me.tsx:193
 msgid "App"
 msgstr "App"
 
-#: src/features/console-me.tsx:186
+#: src/features/console-me.tsx:192
 msgid "Appearance"
 msgstr "Appearance"
 
@@ -286,7 +286,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-me.tsx:447
+#: src/features/console-me.tsx:455
 #: src/features/tickets-view.tsx:369
 msgid "Back"
 msgstr "Back"
@@ -312,7 +312,7 @@ msgstr "Background tasks"
 msgid "Base commit"
 msgstr "Base commit"
 
-#: src/features/session-new.tsx:233
+#: src/features/session-new.tsx:232
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 
@@ -365,7 +365,7 @@ msgstr "Category"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
-#: src/features/console-me.tsx:157
+#: src/features/console-me.tsx:163
 msgid "Check again"
 msgstr "Check again"
 
@@ -416,7 +416,7 @@ msgstr "Close keys"
 #~ msgid "Close this VS Code window? Unsaved work may ask for confirmation."
 #~ msgstr "Close this VS Code window? Unsaved work may ask for confirmation."
 
-#: src/features/session-todos.tsx:109
+#: src/features/session-todos.tsx:108
 msgid "Close to-dos"
 msgstr "Close to-dos"
 
@@ -473,7 +473,7 @@ msgstr "conflict"
 msgid "Connecting…"
 msgstr "Connecting…"
 
-#: src/features/console-me.tsx:183
+#: src/features/console-me.tsx:189
 msgid "Connection"
 msgstr "Connection"
 
@@ -536,7 +536,7 @@ msgstr "Copy"
 msgid "Copy “{label}: …”"
 msgstr "Copy “{label}: …”"
 
-#: src/features/console-me.tsx:154
+#: src/features/console-me.tsx:160
 msgid "Copy command"
 msgstr "Copy command"
 
@@ -562,7 +562,7 @@ msgstr "Copy value"
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/session-new.tsx:49
+#: src/features/session-new.tsx:48
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -570,19 +570,19 @@ msgstr "Could not create it: {reason}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new.tsx:277
+#: src/features/session-new.tsx:276
 msgid "Create session"
 msgstr "Create session"
 
-#: src/features/ticket-new.tsx:223
+#: src/features/ticket-new.tsx:222
 msgid "Create ticket"
 msgstr "Create ticket"
 
-#: src/features/session-new.tsx:42
+#: src/features/session-new.tsx:41
 msgid "Creating the worktree…"
 msgstr "Creating the worktree…"
 
-#: src/features/ticket-new.tsx:223
+#: src/features/ticket-new.tsx:222
 msgid "Creating…"
 msgstr "Creating…"
 
@@ -604,8 +604,8 @@ msgstr "Current plan"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
-#: src/features/console-me.tsx:267
-#: src/features/console-me.tsx:337
+#: src/features/console-me.tsx:273
+#: src/features/console-me.tsx:345
 msgid "Dark"
 msgstr "Dark"
 
@@ -641,7 +641,7 @@ msgstr "Depends on"
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
-#: src/features/session-new.tsx:179
+#: src/features/session-new.tsx:178
 msgid "dev: a long-lived workstation for parallel work"
 msgstr "dev: a long-lived workstation for parallel work"
 
@@ -655,7 +655,7 @@ msgstr "dev: a long-lived workstation for parallel work"
 #~ msgstr "diagnostics"
 
 #: src/features/console-diagnostics.tsx:168
-#: src/features/console-me.tsx:404
+#: src/features/console-me.tsx:412
 #: src/features/console-shell.tsx:90
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -676,11 +676,11 @@ msgstr "Directory"
 msgid "Done"
 msgstr "Done"
 
-#: src/features/session-todos.tsx:205
+#: src/features/session-todos.tsx:204
 msgid "Done ({doneCount})"
 msgstr "Done ({doneCount})"
 
-#: src/features/session-new.tsx:228
+#: src/features/session-new.tsx:227
 msgid "e.g. phone-create"
 msgstr "e.g. phone-create"
 
@@ -696,15 +696,23 @@ msgstr "Earlier messages are left out here; the ticket file has them all."
 #~ msgid "Enable phone writing in Settings to send these keys"
 #~ msgstr "Enable phone writing in Settings to send these keys"
 
-#: src/features/console-me.tsx:129
+#: src/features/console-me.tsx:135
 msgid "Enable writing"
 msgstr "Enable writing"
 
-#: src/features/console-me.tsx:329
+#: src/features/console-me.tsx:337
 msgid "Enabled"
 msgstr "Enabled"
 
+#: src/features/console-me.tsx:336
+msgid "Enabled on this computer"
+msgstr "Enabled on this computer"
+
 #: src/features/console-me.tsx:116
+msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
+msgstr "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
+
+#: src/features/console-me.tsx:122
 msgid "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
 msgstr "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
 
@@ -818,7 +826,7 @@ msgstr "Finished"
 msgid "finished its turn"
 msgstr "finished its turn"
 
-#: src/features/session-new.tsx:237
+#: src/features/session-new.tsx:236
 msgid "First message to the agent"
 msgstr "First message to the agent"
 
@@ -834,7 +842,7 @@ msgstr "Follow system theme"
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
-#: src/features/ticket-new.tsx:168
+#: src/features/ticket-new.tsx:167
 msgid "From"
 msgstr "From"
 
@@ -866,7 +874,7 @@ msgstr "Hand work to another repository as a ticket. A headless agent researches
 msgid "Headless worker"
 msgstr "Headless worker"
 
-#: src/features/session-todos.tsx:205
+#: src/features/session-todos.tsx:204
 msgid "Hide done"
 msgstr "Hide done"
 
@@ -897,11 +905,11 @@ msgstr "Host signals"
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
-#: src/features/console-me.tsx:217
+#: src/features/console-me.tsx:223
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/session-new.tsx:181
+#: src/features/session-new.tsx:180
 msgid "hotfix: an urgent fix"
 msgstr "hotfix: an urgent fix"
 
@@ -1034,7 +1042,7 @@ msgstr "Jump to your message: {text}"
 msgid "Keys"
 msgstr "Keys"
 
-#: src/features/session-new.tsx:209
+#: src/features/session-new.tsx:208
 msgid "Kind"
 msgstr "Kind"
 
@@ -1042,14 +1050,14 @@ msgstr "Kind"
 msgid "LAN"
 msgstr "LAN"
 
-#: src/features/console-me.tsx:240
-#: src/features/console-me.tsx:242
+#: src/features/console-me.tsx:246
+#: src/features/console-me.tsx:248
 #: src/features/console-shared.tsx:421
 #: src/features/console-shared.tsx:423
 msgid "Language"
 msgstr "Language"
 
-#: src/features/console-me.tsx:224
+#: src/features/console-me.tsx:230
 msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
@@ -1076,7 +1084,7 @@ msgstr "Latest"
 msgid "Launch details"
 msgstr "Launch details"
 
-#: src/features/console-me.tsx:126
+#: src/features/console-me.tsx:132
 msgid "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
 msgstr "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
 
@@ -1089,8 +1097,8 @@ msgstr "Lets this device send messages to agent sessions and reply to tickets. A
 msgid "Level"
 msgstr "Level"
 
-#: src/features/console-me.tsx:266
-#: src/features/console-me.tsx:337
+#: src/features/console-me.tsx:272
+#: src/features/console-me.tsx:345
 msgid "Light"
 msgstr "Light"
 
@@ -1148,7 +1156,7 @@ msgstr "Log stream"
 msgid "made progress"
 msgstr "made progress"
 
-#: src/features/session-todos.tsx:187
+#: src/features/session-todos.tsx:186
 msgid "Mark done"
 msgstr "Mark done"
 
@@ -1185,7 +1193,7 @@ msgstr "Messages"
 msgid "Metrics window"
 msgstr "Metrics window"
 
-#: src/features/console-me.tsx:202
+#: src/features/console-me.tsx:208
 msgid "Mode"
 msgstr "Mode"
 
@@ -1220,12 +1228,12 @@ msgstr "Needs you"
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "Needs you {waitingCount}"
 
-#: src/features/session-new.tsx:95
-#: src/features/session-new.tsx:189
+#: src/features/session-new.tsx:94
+#: src/features/session-new.tsx:188
 msgid "New session"
 msgstr "New session"
 
-#: src/features/session-new.tsx:91
+#: src/features/session-new.tsx:90
 msgid "New session (c)"
 msgstr "New session (c)"
 
@@ -1233,16 +1241,16 @@ msgstr "New session (c)"
 msgid "New session title"
 msgstr "New session title"
 
-#: src/features/ticket-new.tsx:67
-#: src/features/ticket-new.tsx:162
+#: src/features/ticket-new.tsx:66
+#: src/features/ticket-new.tsx:161
 msgid "New ticket"
 msgstr "New ticket"
 
-#: src/features/ticket-new.tsx:63
+#: src/features/ticket-new.tsx:62
 msgid "New ticket (n)"
 msgstr "New ticket (n)"
 
-#: src/features/session-todos.tsx:120
+#: src/features/session-todos.tsx:119
 msgid "New to-do"
 msgstr "New to-do"
 
@@ -1342,7 +1350,7 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
 
-#: src/features/console-me.tsx:355
+#: src/features/console-me.tsx:363
 msgid "Not paired"
 msgstr "Not paired"
 
@@ -1358,7 +1366,7 @@ msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 #~ msgid "Nothing needs you and nothing is running."
 #~ msgstr "Nothing needs you and nothing is running."
 
-#: src/features/session-todos.tsx:159
+#: src/features/session-todos.tsx:158
 msgid "Nothing to follow up in this repo."
 msgstr "Nothing to follow up in this repo."
 
@@ -1371,7 +1379,7 @@ msgstr "Nothing to follow up in this repo."
 msgid "now {label}"
 msgstr "now {label}"
 
-#: src/features/console-me.tsx:333
+#: src/features/console-me.tsx:341
 msgid "Off"
 msgstr "Off"
 
@@ -1562,11 +1570,11 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/session-todos.tsx:175
+#: src/features/session-todos.tsx:174
 msgid "Put into the message"
 msgstr "Put into the message"
 
-#: src/features/session-todos.tsx:176
+#: src/features/session-todos.tsx:175
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
@@ -1646,7 +1654,7 @@ msgstr "Remove image"
 msgid "Rename via /rename in the agent pane"
 msgstr "Rename via /rename in the agent pane"
 
-#: src/features/session-todos.tsx:222
+#: src/features/session-todos.tsx:221
 msgid "Reopen"
 msgstr "Reopen"
 
@@ -1683,7 +1691,7 @@ msgstr "Repo"
 #~ msgstr "Repositories"
 
 #: src/features/session-info.tsx:44
-#: src/features/session-new.tsx:195
+#: src/features/session-new.tsx:194
 msgid "Repository"
 msgstr "Repository"
 
@@ -1695,7 +1703,7 @@ msgstr "Repository root"
 msgid "Request changes"
 msgstr "Request changes"
 
-#: src/features/console-me.tsx:219
+#: src/features/console-me.tsx:225
 msgid "Requests (WebRTC / relay)"
 msgstr "Requests (WebRTC / relay)"
 
@@ -1891,7 +1899,7 @@ msgstr "Send"
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
-#: src/features/session-new.tsx:46
+#: src/features/session-new.tsx:45
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -1943,7 +1951,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 #~ msgid "Sessions waiting for you"
 #~ msgstr "Sessions waiting for you"
 
-#: src/features/console-me.tsx:341
+#: src/features/console-me.tsx:349
 #: src/features/console-shell.tsx:94
 msgid "Settings"
 msgstr "Settings"
@@ -2001,7 +2009,7 @@ msgstr "Source"
 #~ msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 #~ msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
 
-#: src/features/ticket-new.tsx:209
+#: src/features/ticket-new.tsx:208
 msgid "Start working on it now (a headless run on the host)"
 msgstr "Start working on it now (a headless run on the host)"
 
@@ -2013,11 +2021,11 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new.tsx:48
+#: src/features/session-new.tsx:47
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new.tsx:44
+#: src/features/session-new.tsx:43
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -2041,7 +2049,7 @@ msgstr "Status"
 msgid "Status updated"
 msgstr "Status updated"
 
-#: src/features/session-new.tsx:221
+#: src/features/session-new.tsx:220
 msgid "Subject"
 msgstr "Subject"
 
@@ -2065,8 +2073,8 @@ msgstr "Switch session"
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
-#: src/features/console-me.tsx:265
-#: src/features/console-me.tsx:337
+#: src/features/console-me.tsx:271
+#: src/features/console-me.tsx:345
 msgid "System"
 msgstr "System"
 
@@ -2094,7 +2102,7 @@ msgstr "Tap to send into the agent pane"
 msgid "Tappable Ask options"
 msgstr "Tappable Ask options"
 
-#: src/features/session-new.tsx:180
+#: src/features/session-new.tsx:179
 msgid "task: a short focused change, reclaimed after delivery"
 msgstr "task: a short focused change, reclaimed after delivery"
 
@@ -2127,11 +2135,11 @@ msgstr "The agent is working"
 #~ msgid "The agent is working. You can send once it stops."
 #~ msgstr "The agent is working. You can send once it stops."
 
-#: src/features/ticket-new.tsx:194
+#: src/features/ticket-new.tsx:193
 msgid "The behaviour, error or data you actually observed"
 msgstr "The behaviour, error or data you actually observed"
 
-#: src/features/ticket-new.tsx:204
+#: src/features/ticket-new.tsx:203
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
@@ -2143,28 +2151,28 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 #~ msgid "The workbench"
 #~ msgstr "The workbench"
 
-#: src/features/console-me.tsx:259
-#: src/features/console-me.tsx:261
+#: src/features/console-me.tsx:265
+#: src/features/console-me.tsx:267
 #: src/features/console-shared.tsx:383
 #: src/features/console-shared.tsx:385
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/console-me.tsx:188
-#: src/features/console-me.tsx:352
+#: src/features/console-me.tsx:194
+#: src/features/console-me.tsx:360
 #: src/features/console-shell.tsx:214
 msgid "This computer"
 msgstr "This computer"
 
-#: src/features/console-me.tsx:202
+#: src/features/console-me.tsx:208
 msgid "This computer (local Runtime)"
 msgstr "This computer (local Runtime)"
 
-#: src/features/console-me.tsx:350
+#: src/features/console-me.tsx:358
 msgid "This computer, not paired"
 msgstr "This computer, not paired"
 
-#: src/features/console-me.tsx:211
+#: src/features/console-me.tsx:217
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
@@ -2204,9 +2212,13 @@ msgstr "Ticket unavailable"
 msgid "Tickets"
 msgstr "Tickets"
 
+#: src/features/console-me.tsx:210
+msgid "Tickets and sessions are read and written through the local Runtime: nothing to pair here. To use a phone or tablet, run scripts/dev/install-remote-relay.sh --pair on the host and open the link there."
+msgstr "Tickets and sessions are read and written through the local Runtime: nothing to pair here. To use a phone or tablet, run scripts/dev/install-remote-relay.sh --pair on the host and open the link there."
+
 #: src/features/console-me.tsx:204
-msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
-msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
+#~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
+#~ msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
 #: src/features/tickets-view.tsx:350
 msgid "Tickets appear here when ticket files or runs cross-repo work."
@@ -2233,7 +2245,7 @@ msgstr "Time counts only while the relay is busy (128 MB × seconds); between me
 #~ msgstr "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 
 #: src/features/session-info.tsx:39
-#: src/features/ticket-new.tsx:177
+#: src/features/ticket-new.tsx:176
 msgid "Title"
 msgstr "Title"
 
@@ -2257,11 +2269,11 @@ msgstr "tmux window"
 #~ msgid "Tmux window"
 #~ msgstr "Tmux window"
 
-#: src/features/ticket-new.tsx:169
+#: src/features/ticket-new.tsx:168
 msgid "To"
 msgstr "To"
 
-#: src/features/session-todos.tsx:254
+#: src/features/session-todos.tsx:253
 msgid "To follow up"
 msgstr "To follow up"
 
@@ -2269,11 +2281,11 @@ msgstr "To follow up"
 msgid "To-dos"
 msgstr "To-dos"
 
-#: src/features/session-todos.tsx:102
+#: src/features/session-todos.tsx:101
 msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
 msgstr "To-dos of {repo}: they stay with the repo, any session can pick them up"
 
-#: src/features/session-todos.tsx:103
+#: src/features/session-todos.tsx:102
 msgid "To-dos of this repo"
 msgstr "To-dos of this repo"
 
@@ -2361,7 +2373,7 @@ msgstr "Uploading {step}/{steps}…"
 msgid "Uptime"
 msgstr "Uptime"
 
-#: src/features/console-me.tsx:185
+#: src/features/console-me.tsx:191
 #: src/features/session-info.tsx:33
 msgid "Usage"
 msgstr "Usage"
@@ -2412,11 +2424,11 @@ msgstr "Waiting"
 msgid "Waiting for"
 msgstr "Waiting for"
 
-#: src/features/console-me.tsx:331
+#: src/features/console-me.tsx:339
 msgid "Waiting for the host"
 msgstr "Waiting for the host"
 
-#: src/features/console-me.tsx:141
+#: src/features/console-me.tsx:147
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "Waiting for the host to approve this device. On the host run:"
 
@@ -2512,11 +2524,11 @@ msgstr "WezDeck"
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 #~ msgstr "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 
-#: src/features/session-new.tsx:243
+#: src/features/session-new.tsx:242
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
-#: src/features/ticket-new.tsx:184
+#: src/features/ticket-new.tsx:183
 msgid "What the other repository should do"
 msgstr "What the other repository should do"
 
@@ -2524,11 +2536,11 @@ msgstr "What the other repository should do"
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
 
-#: src/features/ticket-new.tsx:198
+#: src/features/ticket-new.tsx:197
 msgid "What you assume"
 msgstr "What you assume"
 
-#: src/features/ticket-new.tsx:188
+#: src/features/ticket-new.tsx:187
 msgid "What you saw"
 msgstr "What you saw"
 
@@ -2600,7 +2612,7 @@ msgstr "Working"
 msgid "Worktree"
 msgstr "Worktree"
 
-#: src/features/session-new.tsx:232
+#: src/features/session-new.tsx:231
 msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 
@@ -2608,7 +2620,7 @@ msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final n
 #~ msgid "Worktrees"
 #~ msgstr "Worktrees"
 
-#: src/features/console-me.tsx:184
+#: src/features/console-me.tsx:190
 msgid "Write access"
 msgstr "Write access"
 

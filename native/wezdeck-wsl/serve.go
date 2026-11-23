@@ -110,6 +110,14 @@ func dispatch(req request) response {
 			payload = json.RawMessage("{}")
 		}
 		res.Result, _, err = readRPC(req.Action, payload)
+	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
+		"remote.todo", "remote.clear", "remote.session.new", "remote.ticket.new":
+		// a browser on this computer through the local Runtime (remote_write.go)
+		payload := req.Payload
+		if len(payload) == 0 || string(payload) == "null" {
+			payload = json.RawMessage("{}")
+		}
+		res.Result, err = runWrite(req.Action, payload, "local", "local", relayLogf)
 	case "bridge.status":
 		res.Result = map[string]any{
 			"available": true,

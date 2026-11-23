@@ -10,8 +10,7 @@ import { Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { useLocale } from '#/lib/locale-context'
-import { remoteLink } from '#/lib/remote-link'
-import { hostRead } from '#/lib/runtime-client'
+import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
@@ -117,7 +116,7 @@ function NewTicketSheet({
     setBusy(true)
     setError('')
     try {
-      const res = (await remoteLink.write('ticket.new', {
+      const res = (await hostWrite('ticket.new', {
         from: fromKey,
         to: toKey,
         title: title.trim(),

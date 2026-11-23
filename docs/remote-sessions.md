@@ -47,19 +47,28 @@ merely answering a prompt at the desk) — the error says `retry in Ns` and the
 phone counts down and resends by itself (up to 3 rounds); the
 pane gets a 4 s `手机发来一条消息` notice.
 
-## Local reads
+## Local reads and writes
 
-A browser on the host itself reads sessions without pairing, the way it
-already reads tickets: the loopback Runtime answers
+A browser on the host itself reads and writes sessions without pairing, the
+way it already reads tickets: the loopback Runtime answers
 `GET /api/v1/remote/<action>?args=<json object>` (health capability
 `remote.read`; `RuntimeWebServer.Remote.cs`, fixed allowlist, args ≤ 4 KB)
 through the WSL bridge `remote.<action>`, which runs the relay's own read set
 (`readRPC` in `relay.go`): `sessions`, `session`, `upload.get`, `todos`,
-`repos`, `ticket.targets`, `session.new.job`, `session.image`. The web's
-`hostRead` tries this first and falls back to the remote link (`?remote=1`
-forces the link). Writes and `device.register` never go this way — they need
-an approved device's signature, so an unpaired host browser can read but not
-write (「我的 › 连接」 says so).
+`repos`, `ticket.targets`, `session.new.job`, `session.image`. Writes go the
+same way as `POST /api/v1/remote/<action>` with a JSON object body
+(capability `remote.write`; `send`, `key`, `reply`, `attach`, `upload`,
+`todo`, `clear`, `session.new`, `ticket.new`) into `runWrite`
+(`remote_write.go`) — the very function the relay calls after
+`verifyWrite`, so every guard inside the actions applies — with no device
+key: the Runtime listens on loopback and answers 403 to an origin outside its
+allowlist (415 to a non-JSON body, so a form post from another page cannot
+write), the trust its other host actions (VS Code, focus) already run on.
+Each write leaves `event=write via=local device=local` in `relay.log` (the
+bridge process appends there; `relayLogf`). The web's `hostRead` /
+`hostWrite` try the Runtime first and fall back to the remote link
+(`?remote=1` forces it); on the host 写入权限 reads 本机，已启用. Device
+registration stays relay-only.
 
 ## Attachments
 

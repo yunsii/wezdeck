@@ -9,8 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, CornerDownLeft, RotateCcw, X } from 'lucide-react'
 import { useState } from 'react'
 
-import { remoteLink } from '#/lib/remote-link'
-import { hostRead } from '#/lib/runtime-client'
+import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 
@@ -52,7 +51,7 @@ function useTodoWrite() {
     setBusy(true)
     setError('')
     try {
-      await remoteLink.write('todo', args)
+      await hostWrite('todo', args)
       await client.invalidateQueries({ queryKey: ['remote', 'todos'] })
       return true
     } catch (e) {

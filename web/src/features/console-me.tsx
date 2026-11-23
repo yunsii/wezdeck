@@ -110,6 +110,12 @@ function PhoneWriting() {
   const command = `scripts/dev/install-remote-relay.sh --approve ${device.id ?? ''}`
   if (device.state === 'checking')
     return <p className="text-sm text-brand-muted">{t`Checking…`}</p>
+  if (device.state === 'approved' && device.id === 'local')
+    return (
+      <p className="text-sm">
+        {t`Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own.`}
+      </p>
+    )
   if (device.state === 'approved')
     return (
       <p className="text-sm">
@@ -201,7 +207,7 @@ function ConnectionPage() {
       <>
         <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
         <p className="text-sm text-brand-muted">
-          {t`Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`}
+          {t`Tickets and sessions are read and written through the local Runtime: nothing to pair here. To use a phone or tablet, run scripts/dev/install-remote-relay.sh --pair on the host and open the link there.`}
         </p>
       </>
     )
@@ -326,7 +332,9 @@ function MeIndex({ active }: { active?: MePage }) {
   const localeParam = locale === 'en' ? undefined : locale
   const writing =
     device.state === 'approved'
-      ? t`Enabled`
+      ? device.id === 'local'
+        ? t`Enabled on this computer`
+        : t`Enabled`
       : device.state === 'pending'
         ? t`Waiting for the host`
         : device.state === 'none'

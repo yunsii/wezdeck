@@ -1,10 +1,12 @@
-// Whether this phone may write: none → (enable) → pending → (host runs
-// install-remote-relay.sh --approve <id>) → approved. The host is the
+// Whether this device may write: none → (enable) → pending → (host runs
+// install-remote-relay.sh --approve <id>) → approved. A browser on the host
+// itself is approved at once: it writes through the local Runtime. The host is the
 // source of truth; asking it again is how the phone learns about approval.
 import { useEffect, useSyncExternalStore } from 'react'
 
 import { createDeviceKey, loadDeviceKey } from '#/lib/device-key'
 import { remoteLink } from '#/lib/remote-link'
+import { hasLocalWrite } from '#/lib/runtime-client'
 
 export type DeviceWriteState = 'checking' | 'none' | 'pending' | 'approved'
 
@@ -18,6 +20,11 @@ const set = (next: typeof state) => {
 }
 
 async function ask(create: boolean) {
+  // on this computer the local Runtime takes writes: nothing to pair or approve
+  if (await hasLocalWrite().catch(() => false)) {
+    set({ state: 'approved', id: 'local' })
+    return
+  }
   try {
     const key = create ? await createDeviceKey() : await loadDeviceKey()
     if (!key) {

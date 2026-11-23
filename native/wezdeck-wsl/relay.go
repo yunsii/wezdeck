@@ -90,7 +90,16 @@ func relayLogf(event, format string, args ...any) {
 		r.logf(event, format, args...)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "%s category=relay event=%s %s\n", time.Now().Format(time.RFC3339Nano), event, fmt.Sprintf(format, args...))
+	// no relay in this process (the Runtime bridge, `serve`): the same row
+	// goes to relay.log, so local writes are on record next to remote ones
+	line := fmt.Sprintf("%s category=relay event=%s %s\n", time.Now().Format(time.RFC3339Nano), event, fmt.Sprintf(format, args...))
+	fmt.Fprint(os.Stderr, line)
+	if path := relayLogPath(); path != "" {
+		if f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
+			_, _ = f.WriteString(line)
+			_ = f.Close()
+		}
+	}
 }
 
 func runRelay() error {
@@ -289,35 +298,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
 			return nil, err
 		}
-		var result any
-		switch w.Action {
-		case "send":
-			result, err = sendToSession(w.Args)
-		case "key":
-			result, err = keyToSession(w.Args)
-		case "upload":
-			result, err = uploadChunk(w.Args)
-			if done, ok := result.(map[string]any); ok && done["name"] != nil {
-				r.logf("upload", "via=%s device=%s name=%s bytes=%v", via, device, done["name"], done["bytes"])
-			}
-			if err == nil {
-				return result, nil // one log row per finished file, not per chunk
-			}
-		case "attach":
-			result, err = attachTicket(w.Args)
-		case "todo":
-			result, err = writeTodo(w.Args)
-		case "clear":
-			result, err = clearAttention(w.Args)
-		case "session.new":
-			result, err = startNewSession(w.Args)
-		case "ticket.new":
-			result, err = createTicket(w.Args)
-		default:
-			result, err = replyTicket(w.Args)
-		}
-		r.logf("write", "via=%s action=%q device=%s ok=%t err=%q", via, w.Action, device, err == nil, errText(err))
-		return result, err
+		return runWrite(w.Action, w.Args, via, device, r.logf)
 	}
 	return runCollab(f.Action, f.Args)
 }

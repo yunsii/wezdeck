@@ -12,8 +12,7 @@ import { useEffect, useState } from 'react'
 
 import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
-import { remoteLink } from '#/lib/remote-link'
-import { hostRead } from '#/lib/runtime-client'
+import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
 import { jumpPending } from './console-jump-keys'
@@ -164,7 +163,7 @@ function NewSessionSheet({
   const submit = async () => {
     setError('')
     try {
-      const res = (await remoteLink.write('session.new', {
+      const res = (await hostWrite('session.new', {
         repo: chosen,
         type: kind,
         subject: subject.trim(),

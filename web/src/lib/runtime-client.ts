@@ -390,3 +390,45 @@ export async function hostRead(
   }
   return result
 }
+
+/** the local Runtime takes writes without a device key (remote_write.go) */
+export async function hasLocalWrite() {
+  const local = await probeRuntimeCached()
+  return Boolean(local?.health.capabilities.includes('remote.write'))
+}
+
+/**
+ * Writes into sessions and tickets. On this computer, through the local
+ * Runtime (POST /api/v1/remote/<action>): loopback, origin-checked, no device
+ * key to pair and approve. Elsewhere, over the remote link, signed by this
+ * device's approved key. The host runs the same action and guards either way.
+ */
+export async function hostWrite(
+  action: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const local = await probeRuntimeCached()
+  if (!local?.health.capabilities.includes('remote.write')) {
+    return remoteLink.write(action, args)
+  }
+  const result = await requestJson(
+    local.baseUrl,
+    `/api/v1/remote/${action}`,
+    (value) => value,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(args),
+    },
+    15_000,
+  )
+  if (
+    result &&
+    typeof result === 'object' &&
+    (result as { available?: unknown }).available === false
+  ) {
+    const error = (result as { error?: unknown }).error
+    throw new Error(String(error ?? 'the host bridge is unavailable'))
+  }
+  return result
+}

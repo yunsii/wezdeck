@@ -2,7 +2,7 @@
 // (long edge ≤ 1600 px, JPEG) and every file goes up as signed chunks small
 // enough for one DataChannel message; the host answers the last chunk with
 // the stored file's name, which a later `send` attaches to the message.
-import { remoteLink } from '#/lib/remote-link'
+import { hostWrite } from '#/lib/runtime-client'
 
 const CHUNK = 36 * 1024
 const LONG_EDGE = 1600
@@ -49,7 +49,7 @@ export async function uploadBlob(
   const total = Math.max(1, Math.ceil(bytes.length / CHUNK))
   let name = ''
   for (let seq = 0; seq < total; seq++) {
-    const result = (await remoteLink.write('upload', {
+    const result = (await hostWrite('upload', {
       upload: id,
       seq,
       total,

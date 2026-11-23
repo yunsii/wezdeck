@@ -4,10 +4,10 @@
 // session row left; with a keyboard / pointer: the button in 会话信息.
 // Needs an approved device (signed write).
 import { useLingui } from '@lingui/react/macro'
+import { hostWrite } from '#/lib/runtime-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 
-import { remoteLink } from '#/lib/remote-link'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
 
@@ -26,7 +26,7 @@ export function useClearSession() {
     setBusy(true)
     setError('')
     try {
-      await remoteLink.write('clear', { id })
+      await hostWrite('clear', { id })
       await client.invalidateQueries({ queryKey: ['remote'] })
       return true
     } catch (e) {

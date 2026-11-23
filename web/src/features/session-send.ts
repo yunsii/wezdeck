@@ -2,9 +2,9 @@
 // keys, the queue of sent-but-not-yet-in-the-transcript bubbles, and the
 // countdown when the host asks to wait for the desk to go quiet.
 import { useQueryClient } from '@tanstack/react-query'
+import { hostWrite } from '#/lib/runtime-client'
 import { useState } from 'react'
 
-import { remoteLink } from '#/lib/remote-link'
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
 
@@ -61,13 +61,13 @@ export function useSessionWrites(id: string) {
   /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c) */
   const run = (action: 'key', args: Record<string, unknown>) =>
     write(async () => {
-      await remoteLink.write(action, { id, ...args })
+      await hostWrite(action, { id, ...args })
     })
   const send = (message: Outgoing) =>
     write(async () => {
       await withDeskRetry(
         () =>
-          remoteLink.write('send', {
+          hostWrite('send', {
             id,
             text: message.text,
             attachments: message.attachments,
