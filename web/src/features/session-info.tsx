@@ -232,7 +232,7 @@ export function SessionInfo({
             data-write
             disabled={renameDisabled}
             onClick={() => {
-              const title = data.title || data.window || data.name || ''
+              const title = data.title || ''
               const next = window.prompt(t`New session title`, title)?.trim()
               if (next && next !== title) onRename(next)
             }}
@@ -268,7 +268,7 @@ export function SessionInfo({
   )
 }
 
-function metaValue(data: Detail, key: string) {
+export function metaValue(data: Detail, key: string) {
   for (const group of data.meta ?? [])
     for (const row of group.rows) if (row.key === key) return row.value
   return ''

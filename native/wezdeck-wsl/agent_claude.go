@@ -15,6 +15,11 @@ import (
 	"time"
 )
 
+// lastClaudeAITitle: the session's display title, as Claude Code itself
+// picks it — a /rename (`custom-title`, re-appended every turn and carried
+// across /clear) wins over the generated `ai-title`; Claude stops generating
+// ai-title once a custom title exists, so reading ai-title alone left such
+// sessions untitled.
 func lastClaudeAITitle(path string) string {
 	f, err := os.Open(path)
 	if err != nil {
@@ -44,20 +49,28 @@ func lastClaudeAITitle(path string) string {
 		}
 	}
 	lines := strings.Split(text, "\n")
+	aiTitle := ""
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := strings.TrimSpace(lines[i])
-		if line == "" {
+		if line == "" || !strings.Contains(line, "-title\"") {
 			continue
 		}
 		var row struct {
-			Type    string `json:"type"`
-			AITitle string `json:"aiTitle"`
+			Type        string `json:"type"`
+			AITitle     string `json:"aiTitle"`
+			CustomTitle string `json:"customTitle"`
 		}
-		if json.Unmarshal([]byte(line), &row) == nil && row.Type == "ai-title" && row.AITitle != "" {
-			return row.AITitle
+		if json.Unmarshal([]byte(line), &row) != nil {
+			continue
+		}
+		if row.Type == "custom-title" && row.CustomTitle != "" {
+			return row.CustomTitle
+		}
+		if row.Type == "ai-title" && row.AITitle != "" && aiTitle == "" {
+			aiTitle = row.AITitle
 		}
 	}
-	return ""
+	return aiTitle
 }
 
 // pastedTag: Claude Code wraps a multi-line paste — every phone message with

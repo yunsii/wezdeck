@@ -20,7 +20,7 @@ import type {
   Usage,
 } from './console-sessions'
 import { useAgo } from './tickets-view'
-import { SessionInfo } from './session-info'
+import { SessionInfo, metaValue } from './session-info'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -206,7 +206,11 @@ export function SessionHeader({
     }
   }, [])
   const title =
-    data?.title || data?.window || data?.name || data?.id.slice(0, 8) || ''
+    (data &&
+      (data.title ||
+        metaValue(data, 'cwd').split('/').filter(Boolean).at(-1) ||
+        data.id.slice(0, 8))) ||
+    ''
   // the page shows running (typing dots) and done (the reply) by itself;
   // the header only speaks up when the agent needs the human
   const long = data

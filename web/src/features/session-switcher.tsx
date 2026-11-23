@@ -35,7 +35,6 @@ const KINDS: Record<JumpKind, (row: SessionCard) => boolean> = {
 
 const titleOf = (row: SessionCard) =>
   row.title ||
-  row.window ||
   (row.worktree || row.cwd).split('/').filter(Boolean).at(-1) ||
   row.id.slice(0, 8)
 

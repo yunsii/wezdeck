@@ -80,7 +80,6 @@ function SessionRow({
 
   const title =
     row.title ||
-    row.window ||
     row.worktree?.split('/').filter(Boolean).at(-1) ||
     row.cwd.split('/').filter(Boolean).at(-1) ||
     row.id.slice(0, 8)
