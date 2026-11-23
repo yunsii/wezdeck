@@ -6,7 +6,14 @@
 # succeeds is done — the version check belongs before the tests
 # (web/tests/version.setup.ts), not after the deploy.
 #
-#   scripts/dev/wezdeck-release.sh [--only push|relay|web]... [--force]
+#   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force]
+#
+# --commit MSGFILE commits the staged changes first, after fixing what the
+# pre-commit gate only reports: prettier on the staged web files and the
+# i18n catalogs (`lingui extract`: line refs move with the code). Both used
+# to fail a commit and cost a round trip. Lint / type errors still fail it.
+# Everything to ship must be staged (no unstaged tracked edits): the web is
+# built from the working tree, so it would ship code the commit lacks.
 #
 # Jobs (concurrent; logs under ~/.local/state/wezdeck/release/<stamp>/):
 #   push   git push origin HEAD:master when HEAD is ahead
@@ -27,8 +34,10 @@ STATE="$HOME/.local/state/wezdeck"
 RUN="$STATE/release/$(date +%Y%m%d-%H%M%S)"
 only=()
 force=0
+commit_msg=''
 while (($#)); do
   case "$1" in
+    --commit) commit_msg="$2"; shift 2 ;;
     --only) only+=("$2"); shift 2 ;;
     --force) force=1; shift ;;
     -h | --help) sed -n '2,20p' "$0"; exit 0 ;;
@@ -38,6 +47,39 @@ done
 wanted() { ((${#only[@]} == 0)) || [[ " ${only[*]} " == *" $1 "* ]]; }
 
 cd "$REPO" || exit 1
+
+# the mechanical half of the pre-commit gate, applied instead of reported
+autofix_staged() {
+  local staged=() rel=()
+  mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACMR -- web/)
+  ((${#staged[@]})) || return 0
+  for f in "${staged[@]}"; do rel+=("${f#web/}"); done
+  (cd web && corepack pnpm exec prettier --write --ignore-unknown --log-level warn "${rel[@]}") || return 1
+  git add -- "${staged[@]}"
+  if printf '%s\n' "${staged[@]}" | grep -q '^web/src/'; then
+    (cd web && corepack pnpm run -s i18n:extract >/dev/null) || return 1
+    git add -- web/src/locales
+  fi
+}
+
+if [[ -n "$commit_msg" ]]; then
+  [[ -f "$commit_msg" ]] || { echo "release: no message file $commit_msg" >&2; exit 2; }
+  if ! git diff --quiet; then
+    echo "release: unstaged tracked changes — stage everything to ship (nothing committed)" >&2
+    git diff --name-only | sed 's/^/  /' >&2
+    exit 1
+  fi
+  git diff --cached --quiet && { echo "release: nothing staged to commit" >&2; exit 1; }
+  autofix_staged || { echo "release: auto-fix failed (nothing committed)" >&2; exit 1; }
+  before="$(git rev-parse HEAD)"
+  git commit -q -F "$commit_msg" || true
+  if [[ "$(git rev-parse HEAD)" == "$before" ]]; then
+    echo "release: commit refused by the pre-commit gate (above); nothing shipped" >&2
+    exit 1
+  fi
+  echo "release: committed $(git log -1 --format='%h %s')"
+fi
+
 if ! git diff --quiet HEAD; then
   echo "release: uncommitted tracked changes — commit first (nothing shipped)" >&2
   exit 1

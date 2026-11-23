@@ -452,7 +452,10 @@ scripts/dev/wezdeck-release.sh                    # ship a committed round (belo
 `release.log`). A part whose running version already equals its fingerprint
 is skipped — a web-only round does not restart the relay and drop phone
 links; `--only push|relay|web`, `--force`. It refuses uncommitted tracked
-changes. A deploy that succeeds is done; the version check belongs before
+changes. `--commit MSGFILE` commits the staged changes first and fixes what
+the pre-commit gate would only report — prettier on the staged web files,
+`lingui extract` for the catalogs — so one command goes from staged to
+live; lint / type errors still stop it before anything ships. A deploy that succeeds is done; the version check belongs before
 the tests, not after the deploy.
 
 Logs: `category=relay` rows (`connected` / `disconnected` / `rtc_state` /

@@ -68,6 +68,10 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await openList(page)
     await page.locator('[data-session=nav-c]').click()
     await page.waitForURL('**/console/sessions/nav-c')
+    // the agent's own name shows beside the window title
+    await expect
+      .poll(() => page.getByTestId('session-agent-name').textContent())
+      .toBe('claude')
     // nav-c is running: the header offers the two waiting ones
     const chip = page.getByTestId('next-waiting')
     await expect.poll(() => chip.textContent()).toContain('还有 2 个等你')

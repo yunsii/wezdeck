@@ -173,11 +173,16 @@ export function SessionSwitcher({
           <span className="truncate text-[15px] font-medium">
             {titleOf(session)}
           </span>
-          {repo ? (
-            <span className="truncate text-[12px] text-brand-label">
-              {repo}
-            </span>
-          ) : null}
+          <span className="flex min-w-0 gap-1.5 text-[12px] text-brand-label">
+            {session.agent !== 'agent' || session.name ? (
+              <span className="shrink-0">
+                {session.name && session.name !== session.agent
+                  ? `${session.agent} ${session.name}`
+                  : session.agent}
+              </span>
+            ) : null}
+            {repo ? <span className="truncate">{repo}</span> : null}
+          </span>
         </span>
       </button>
     </li>

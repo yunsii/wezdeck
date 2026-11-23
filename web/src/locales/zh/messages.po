@@ -342,7 +342,7 @@ msgstr "认领"
 
 #: src/features/image-viewer.tsx:125
 #: src/features/session-info.tsx:251
-#: src/features/session-switcher.tsx:203
+#: src/features/session-switcher.tsx:208
 msgid "Close"
 msgstr "关闭"
 
@@ -990,9 +990,9 @@ msgstr "多选：每点一次切换一个选项，对照下面的终端画面确
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:269
+#: src/features/session-header.tsx:278
 #: src/features/session-list.tsx:187
-#: src/features/session-switcher.tsx:213
+#: src/features/session-switcher.tsx:218
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -1139,7 +1139,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:243
+#: src/features/session-switcher.tsx:248
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -1642,7 +1642,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:281
+#: src/features/session-header.tsx:290
 #: src/features/session-info.tsx:241
 #: src/features/session-info.tsx:247
 msgid "Session info"
@@ -1759,8 +1759,8 @@ msgstr "提交答案"
 msgid "submitted"
 msgstr "已提交"
 
-#: src/features/session-switcher.tsx:193
-#: src/features/session-switcher.tsx:199
+#: src/features/session-switcher.tsx:198
+#: src/features/session-switcher.tsx:204
 msgid "Switch session"
 msgstr "切换会话"
 

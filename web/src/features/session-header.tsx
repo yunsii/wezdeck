@@ -247,11 +247,20 @@ export function SessionHeader({
               className="shrink-0 text-brand-label"
             />
           </button>
-          {data?.agent || data?.branch ? (
+          {data?.agent || data?.name || data?.branch ? (
             <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-brand-label">
               {data.agent && data.agent !== 'agent' ? (
                 <span className="shrink-0 rounded-[5px] bg-brand-surface px-1.5 font-mono leading-[1.35rem]">
                   {data.agent}
+                </span>
+              ) : null}
+              {/* the agent's own name (agent_name), when it says more than the CLI */}
+              {data.name && data.name !== data.agent ? (
+                <span
+                  data-testid="session-agent-name"
+                  className="max-w-[40%] shrink-0 truncate rounded-[5px] bg-brand-surface px-1.5 leading-[1.35rem]"
+                >
+                  {data.name}
                 </span>
               ) : null}
               {data.branch ? (
