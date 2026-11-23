@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 
 import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
+import { hostRead } from '#/lib/runtime-client'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
@@ -71,7 +72,7 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
   const targets = useQuery({
     queryKey: ['remote', 'ticket.targets'],
     queryFn: async () =>
-      (await remoteLink.rpc('ticket.targets', {})) as {
+      (await hostRead('ticket.targets', {})) as {
         targets: Array<Target>
       },
   })

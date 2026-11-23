@@ -5,7 +5,7 @@
 // lifetime — neither changes under its name / ref.
 import { useQuery } from '@tanstack/react-query'
 
-import { remoteLink } from '#/lib/remote-link'
+import { hostRead } from '#/lib/runtime-client'
 
 export type ImageSource =
   | { kind: 'upload'; name: string }
@@ -22,8 +22,8 @@ const sourceKey = (src: ImageSource) =>
 
 const call = (src: ImageSource, extra: Record<string, unknown>) =>
   src.kind === 'upload'
-    ? remoteLink.rpc('upload.get', { name: src.name, ...extra })
-    : remoteLink.rpc('session.image', { id: src.id, ref: src.ref, ...extra })
+    ? hostRead('upload.get', { name: src.name, ...extra })
+    : hostRead('session.image', { id: src.id, ref: src.ref, ...extra })
 
 /** The host said the file is gone (uploads are kept 30 days); not worth retrying. */
 export const isGone = (error: unknown) =>

@@ -159,6 +159,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
         }
 
         if (await TryHandleCollabAsync(context)) return;
+        if (await TryHandleRemoteAsync(context)) return;
         var body = context.Request.Path.Value?.ToLowerInvariant() switch
         {
             "/api/v1/health" => new Dictionary<string, object?>
@@ -171,7 +172,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                 {
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
                     "vscode.windows", "vscode.focus", "vscode.focus_or_open", "vscode.close",
-                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read",
+                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read",
                 },
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             },

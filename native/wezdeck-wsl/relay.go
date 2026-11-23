@@ -240,32 +240,49 @@ func (r *relay) send(f relayFrame) {
 	_ = conn.Write(ctx, websocket.MessageText, body)
 }
 
+// readRPC answers the read-only session actions. The relay serves them to
+// paired devices; the Runtime bridge (serve.go, domain "remote") serves the
+// same set to a browser on the host itself, which reads over loopback and
+// never pairs. Writes are not here: they need an approved device's signature.
+func readRPC(action string, args json.RawMessage) (any, bool, error) {
+	var result any
+	var err error
+	switch action {
+	case "sessions":
+		result, err = listSessions()
+	case "session":
+		result, err = sessionDetail(args)
+	case "upload.get":
+		result, err = uploadGet(args)
+	case "todos":
+		result, err = listTodos(args)
+	case "repos":
+		result, err = listRepos()
+	case "ticket.targets":
+		result, err = listTicketTargets()
+	case "session.new.job":
+		result, err = newSessionJobStatus(args)
+	case "session.image":
+		result, err = sessionImage(args)
+	default:
+		return nil, false, nil
+	}
+	return result, true, err
+}
+
 // dispatchRPC routes one request: reads (`ticket api` actions from the same
 // allowlist as the Runtime bridge, sessions, device registration) run
 // directly; writes (send / key / reply / attach / upload) must carry a signature from an
 // approved device (remote_session.go).
 func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
+	if result, ok, err := readRPC(f.Action, f.Args); ok {
+		return result, err
+	}
 	switch f.Action {
-	case "sessions":
-		return listSessions()
-	case "session":
-		return sessionDetail(f.Args)
 	case "device.register":
 		return registerDevice(f.Args)
-	case "upload.get":
-		return uploadGet(f.Args)
-	case "todos":
-		return listTodos(f.Args)
 	case "diag.submit":
 		return diagSubmit(f.Args, f.Cid, r)
-	case "repos":
-		return listRepos()
-	case "ticket.targets":
-		return listTicketTargets()
-	case "session.new.job":
-		return newSessionJobStatus(f.Args)
-	case "session.image":
-		return sessionImage(f.Args)
 	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "ticket.new":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {

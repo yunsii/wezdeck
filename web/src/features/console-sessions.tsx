@@ -12,7 +12,7 @@ import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
-import { remoteLink } from '#/lib/remote-link'
+import { hostRead } from '#/lib/runtime-client'
 import { useScreenWakeLock } from '#/lib/wake-lock'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
@@ -167,7 +167,7 @@ export function useSessions() {
     enabled: typeof window !== 'undefined',
     refetchInterval: 5_000,
     queryFn: async () =>
-      (await remoteLink.rpc('sessions', {})) as {
+      (await hostRead('sessions', {})) as {
         sessions: Array<SessionCard>
       },
   })
@@ -282,8 +282,7 @@ export function SessionDetail({ id }: { id: string }) {
     enabled: typeof window !== 'undefined',
     refetchInterval: (query) =>
       query.state.data && isBusy(query.state.data) ? 1_000 : 2_500,
-    queryFn: async () =>
-      (await remoteLink.rpc('session', { id, limit })) as Detail,
+    queryFn: async () => (await hostRead('session', { id, limit })) as Detail,
   })
   const { sending, error, setError, retryIn, pendingRaw, send, run } =
     useSessionWrites(id)

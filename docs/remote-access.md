@@ -113,6 +113,20 @@ merely answering a prompt at the desk) — the error says `retry in Ns` and the
 phone counts down and resends by itself (up to 3 rounds); the
 pane gets a 4 s `手机发来一条消息` notice.
 
+### Local reads
+
+A browser on the host itself reads sessions without pairing, the way it
+already reads tickets: the loopback Runtime answers
+`GET /api/v1/remote/<action>?args=<json object>` (health capability
+`remote.read`; `RuntimeWebServer.Remote.cs`, fixed allowlist, args ≤ 4 KB)
+through the WSL bridge `remote.<action>`, which runs the relay's own read set
+(`readRPC` in `relay.go`): `sessions`, `session`, `upload.get`, `todos`,
+`repos`, `ticket.targets`, `session.new.job`, `session.image`. The web's
+`hostRead` tries this first and falls back to the remote link (`?remote=1`
+forces the link). Writes and `device.register` never go this way — they need
+an approved device's signature, so an unpaired host browser can read but not
+write (「我的 › 连接」 says so).
+
 ### Attachments
 
 Reporting a problem from the phone (the toolbar above the composer,

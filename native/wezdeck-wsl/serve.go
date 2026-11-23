@@ -102,6 +102,14 @@ func dispatch(req request) response {
 	case "collab.health", "collab.list", "collab.show", "collab.events",
 		"collab.run", "collab.prompt", "collab.transcript", "collab.metrics":
 		res.Result, err = runCollab(req.Action, req.Payload)
+	case "remote.sessions", "remote.session", "remote.upload.get", "remote.todos",
+		"remote.repos", "remote.ticket.targets", "remote.session.new.job", "remote.session.image":
+		// the relay's read-only actions for a browser on the host (readRPC)
+		payload := req.Payload
+		if len(payload) == 0 || string(payload) == "null" {
+			payload = json.RawMessage("{}")
+		}
+		res.Result, _, err = readRPC(req.Action, payload)
 	case "bridge.status":
 		res.Result = map[string]any{
 			"available": true,

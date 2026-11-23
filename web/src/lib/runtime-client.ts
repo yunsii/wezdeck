@@ -346,3 +346,47 @@ export async function getCollab<TCommand extends CollabCommand>(
     return unavailable(error instanceof Error ? error.message : String(error))
   }
 }
+
+/** The relay's read-only session actions (wezdeck-wsl readRPC). */
+export type HostReadAction =
+  | 'sessions'
+  | 'session'
+  | 'upload.get'
+  | 'todos'
+  | 'repos'
+  | 'ticket.targets'
+  | 'session.new.job'
+  | 'session.image'
+
+/**
+ * Session reads, the same way collab reads go: a browser on the host asks
+ * the loopback Runtime (GET /api/v1/remote/<action>, which bridges to the
+ * same readRPC the relay runs), so it sees sessions without pairing; other
+ * devices go over the paired remote link. Writes always take the remote
+ * link: they need an approved device's signature.
+ */
+export async function hostRead(
+  action: HostReadAction,
+  args: Record<string, unknown> = {},
+): Promise<unknown> {
+  const local = await probeRuntimeCached()
+  if (!local?.health.capabilities.includes('remote.read')) {
+    return remoteLink.rpc(action, args)
+  }
+  const result = await requestJson(
+    local.baseUrl,
+    `/api/v1/remote/${action}?args=${encodeURIComponent(JSON.stringify(args))}`,
+    (value) => value,
+    {},
+    9_000,
+  )
+  if (
+    result &&
+    typeof result === 'object' &&
+    (result as { available?: unknown }).available === false
+  ) {
+    const error = (result as { error?: unknown }).error
+    throw new Error(String(error ?? 'the host bridge is unavailable'))
+  }
+  return result
+}

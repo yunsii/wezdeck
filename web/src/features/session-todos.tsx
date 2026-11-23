@@ -10,6 +10,7 @@ import { Check, CornerDownLeft, RotateCcw, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { remoteLink } from '#/lib/remote-link'
+import { hostRead } from '#/lib/runtime-client'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 
@@ -36,7 +37,7 @@ export function useTodos(session: string | null, enabled = true) {
     enabled: enabled && typeof window !== 'undefined',
     refetchInterval: 15_000,
     queryFn: async () =>
-      (await remoteLink.rpc(
+      (await hostRead(
         'todos',
         session ? { session } : { all: true },
       )) as TodoList,

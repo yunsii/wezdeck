@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
+import { hostRead } from '#/lib/runtime-client'
 import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
 import { jumpPending } from './console-jump-keys'
@@ -99,7 +100,7 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
     queryFn: async () =>
-      (await remoteLink.rpc('repos', {})) as { repos: Array<Repo> },
+      (await hostRead('repos', {})) as { repos: Array<Repo> },
   })
   const sessions = useSessions()
   const [repo, setRepo] = useState('')
@@ -117,7 +118,7 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
         ? false
         : 1_000,
     queryFn: async () =>
-      (await remoteLink.rpc('session.new.job', { job: jobId })) as {
+      (await hostRead('session.new.job', { job: jobId })) as {
         job: Job
       },
   })

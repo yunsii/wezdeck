@@ -198,7 +198,7 @@ function ConnectionPage() {
       <>
         <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
         <p className="text-sm text-brand-muted">
-          {t`Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`}
+          {t`Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`}
         </p>
       </>
     )
