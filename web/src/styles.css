@@ -654,3 +654,42 @@ html:active-view-transition-type(within) .vt-split-pane {
     )
     transparent;
 }
+
+/*
+ * 架构解析 (features/architecture): React Flow's controls and attribution in
+ * the deck colors, and the animated main-path lines held still for reduced
+ * motion.
+ */
+.arch-flow .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--brand-border);
+  border-radius: 10px;
+}
+.arch-flow .react-flow__controls-button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-bottom: 1px solid var(--brand-border);
+  background: var(--brand-surface);
+  color: var(--brand-muted);
+}
+.arch-flow .react-flow__controls-button:last-child {
+  border-bottom: 0;
+}
+.arch-flow .react-flow__controls-button:hover {
+  color: var(--brand-text);
+}
+.arch-flow .react-flow__controls-button svg {
+  fill: currentColor;
+}
+.arch-flow .react-flow__attribution {
+  background: transparent;
+}
+.arch-flow .react-flow__attribution a {
+  color: var(--brand-label);
+}
+@media (prefers-reduced-motion: reduce) {
+  .arch-flow .react-flow__edge.animated path {
+    animation: none;
+  }
+}

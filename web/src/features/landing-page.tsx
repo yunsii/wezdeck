@@ -66,6 +66,13 @@ export function LandingPage() {
               <GitBranch size={16} aria-hidden />
               {t`View the source`}
             </a>
+            <Link
+              to="/{-$locale}/architecture"
+              params={{ locale: localeParam }}
+              className="inline-flex min-h-11 items-center px-2 text-[15px] text-brand-muted hover:text-brand-text"
+            >
+              {t`How it fits together`}
+            </Link>
           </div>
         </div>
         <SessionStill />
@@ -89,7 +96,13 @@ export function LandingPage() {
       </section>
 
       <footer className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-8 text-[13px] text-brand-label">
-        <span>WezDeck</span>
+        <Link
+          to="/{-$locale}/architecture"
+          params={{ locale: localeParam }}
+          className="hover:text-brand-text"
+        >
+          {t`How it fits together`}
+        </Link>
         <a
           href={SOURCE}
           target="_blank"

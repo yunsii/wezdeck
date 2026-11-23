@@ -1,6 +1,7 @@
 import { createRoute, notFound, Outlet, redirect } from '@tanstack/react-router'
 
 import { LandingPage } from '#/features/landing-page'
+import { ArchitecturePage } from '#/features/architecture/architecture-page'
 import { ConsoleCollabPage } from '#/features/console-collab'
 import { ConsoleInboxPage } from '#/features/tickets-view'
 import { ConsoleActivityPage } from '#/features/console-activity'
@@ -91,6 +92,25 @@ const landingRoute = createRoute({
           ? 'WezDeck 是本地优先的 AI Agent 工作台，构建于 WezTerm、tmux 和 git worktree 之上。'
           : 'WezDeck is a local-first control plane for AI coding agents, built on WezTerm, tmux, and git worktrees.',
       path: '/',
+    }),
+})
+
+const architectureRoute = createRoute({
+  getParentRoute: () => localeRoute,
+  path: 'architecture',
+  component: ArchitecturePage,
+  head: ({ params }) =>
+    marketingHead({
+      locale: params.locale ?? 'en',
+      title:
+        params.locale === 'zh'
+          ? 'WezDeck 架构解析：会话、工单与本地服务'
+          : 'WezDeck architecture: sessions, tickets and local services',
+      description:
+        params.locale === 'zh'
+          ? 'WezDeck 的整体架构、手机打开会话与发消息的流程、工单生命周期，以及本地 Runtime、relay、bridge 提供的全部能力。'
+          : 'How WezDeck fits together: opening and writing to sessions from a phone, the life of a ticket, and everything the local Runtime, relay and bridge offer.',
+      path: '/architecture',
     }),
 })
 
@@ -229,6 +249,7 @@ const consoleSessionRoute = createRoute({
 export const routeTree = rootRoute.addChildren({
   localeRoute: localeRoute.addChildren({
     landingRoute,
+    architectureRoute,
     consoleRoute: consoleRoute.addChildren({
       consoleOverviewRoute,
       consoleDevelopmentRoute,

@@ -147,7 +147,7 @@ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/landing-page.tsx:86
+#: src/features/landing-page.tsx:93
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
 msgstr "配对过的手机或平板经 WebRTC 直连主机，连不上时走中转。要写入，必须是你在主机上批准过的设备。"
 
@@ -179,7 +179,7 @@ msgstr "活跃 {active} 秒 × 128 MB；中转空闲时会休眠，不计时长�
 msgid "Add"
 msgstr "添加"
 
-#: src/features/landing-page.tsx:142
+#: src/features/landing-page.tsx:155
 msgid "Add test ids to the error pages"
 msgstr "给错误页补 test id"
 
@@ -768,7 +768,7 @@ msgstr "事件流"
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协议层 ping 免费。"
 
-#: src/features/landing-page.tsx:78
+#: src/features/landing-page.tsx:85
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在电脑前按 Alt+j 直接跳过去，离开了就在手机上接着聊。"
 
@@ -823,7 +823,7 @@ msgstr "已结束"
 #~ msgstr "已完成（{doneCount}）"
 
 #: src/features/console-sessions.tsx:161
-#: src/features/landing-page.tsx:143
+#: src/features/landing-page.tsx:156
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
@@ -847,7 +847,7 @@ msgstr "这个仓库的待跟进事项"
 msgid "From"
 msgstr "发起仓库"
 
-#: src/features/landing-page.tsx:85
+#: src/features/landing-page.tsx:92
 msgid "From anywhere"
 msgstr "随处可用"
 
@@ -867,7 +867,7 @@ msgstr "授权失败（{micError}），点此重试"
 #~ msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 #~ msgstr "按仓库与 worktree 分组；有 tmux 挂载时标主 / 副 pane。"
 
-#: src/features/landing-page.tsx:82
+#: src/features/landing-page.tsx:89
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
@@ -913,6 +913,11 @@ msgstr "主机上线于"
 #: src/features/session-new.tsx:180
 msgid "hotfix: an urgent fix"
 msgstr "hotfix：紧急修复"
+
+#: src/features/landing-page.tsx:74
+#: src/features/landing-page.tsx:104
+msgid "How it fits together"
+msgstr "架构解析"
 
 #: src/features/console-usage.tsx:130
 msgid "How the WebSocket is billed"
@@ -1955,7 +1960,7 @@ msgid "Sessions"
 msgstr "会话数"
 
 #: src/features/console-shell.tsx:76
-#: src/features/landing-page.tsx:77
+#: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
 msgctxt "nav"
@@ -2232,7 +2237,7 @@ msgid "Ticket unavailable"
 msgstr "工单不可用"
 
 #: src/features/console-shell.tsx:81
-#: src/features/landing-page.tsx:81
+#: src/features/landing-page.tsx:88
 msgid "Tickets"
 msgstr "工单"
 
@@ -2252,7 +2257,7 @@ msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 #~ msgid "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "工单从本地 Runtime 读取；会话和写入走远程链接，这个浏览器还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/landing-page.tsx:135
+#: src/features/landing-page.tsx:148
 msgid "Tidy up the phone interactions"
 msgstr "整理手机端交互"
 
@@ -2469,7 +2474,7 @@ msgid "Waiting for your answer"
 msgstr "等你回答"
 
 #: src/features/console-sessions.tsx:151
-#: src/features/landing-page.tsx:129
+#: src/features/landing-page.tsx:142
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
@@ -2572,7 +2577,7 @@ msgstr "你看到的现象"
 msgid "Where it runs"
 msgstr "运行位置"
 
-#: src/features/landing-page.tsx:128
+#: src/features/landing-page.tsx:141
 msgid "Which table should the weekly report read?"
 msgstr "周报该读哪张表？"
 
@@ -2606,7 +2611,7 @@ msgid "Worker requests"
 msgstr "Worker 请求"
 
 #: src/features/console-sessions.tsx:157
-#: src/features/landing-page.tsx:136
+#: src/features/landing-page.tsx:149
 msgid "working"
 msgstr "运行中"
 

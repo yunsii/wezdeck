@@ -28,6 +28,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    and the source, a still of the session list with the real status lights,
    then sessions / tickets / from anywhere. Language and theme there are
    click menus (never hover); in the console they live only in 我的 › 外观.
+   `/architecture` (架构解析, linked from the landing page) is the public
+   explainer: concepts and flows in prose, files / endpoints folded. Each
+   diagram is a React Flow canvas (`@xyflow/react`, lazy chunk; desk only)
+   above its step list, which is the keyboard path and the whole diagram on
+   a phone. Data lives in `web/src/features/architecture/` (`overview.ts`,
+   `flows*.ts`, `capabilities.ts`); `tests/architecture.unit.test.ts` reads
+   the Runtime routes / actions, the bridge switch and the relay's
+   `readRPC` / `runWrite` and fails until a new entry point is described.
 2. **One route tree, layouts by width**: `<768px` phone, `768–1279px` tablet
    (split, collapsible list), `≥1280px` desktop. Fixes today's gap at
    900–1023 px (neither `max-[899px]` nor `lg:` applies).

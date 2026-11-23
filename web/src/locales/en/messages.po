@@ -147,7 +147,7 @@ msgstr "A local-first workbench for AI coding agents. Every session keeps its We
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
 
-#: src/features/landing-page.tsx:86
+#: src/features/landing-page.tsx:93
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
 msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
 
@@ -179,7 +179,7 @@ msgstr "Active {active} s × 128 MB; an idle relay hibernates and is not counted
 msgid "Add"
 msgstr "Add"
 
-#: src/features/landing-page.tsx:142
+#: src/features/landing-page.tsx:155
 msgid "Add test ids to the error pages"
 msgstr "Add test ids to the error pages"
 
@@ -768,7 +768,7 @@ msgstr "Event stream"
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 
-#: src/features/landing-page.tsx:78
+#: src/features/landing-page.tsx:85
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 
@@ -823,7 +823,7 @@ msgstr "Finished"
 #~ msgstr "Finished ({doneCount})"
 
 #: src/features/console-sessions.tsx:161
-#: src/features/landing-page.tsx:143
+#: src/features/landing-page.tsx:156
 msgid "finished its turn"
 msgstr "finished its turn"
 
@@ -847,7 +847,7 @@ msgstr "Follow-ups of this repo"
 msgid "From"
 msgstr "From"
 
-#: src/features/landing-page.tsx:85
+#: src/features/landing-page.tsx:92
 msgid "From anywhere"
 msgstr "From anywhere"
 
@@ -867,7 +867,7 @@ msgstr "Grant failed ({micError}) — retry"
 #~ msgid "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 #~ msgstr "Grouped by repo and worktree. Primary / secondary mark tmux panes when present."
 
-#: src/features/landing-page.tsx:82
+#: src/features/landing-page.tsx:89
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
@@ -913,6 +913,11 @@ msgstr "Host up since"
 #: src/features/session-new.tsx:180
 msgid "hotfix: an urgent fix"
 msgstr "hotfix: an urgent fix"
+
+#: src/features/landing-page.tsx:74
+#: src/features/landing-page.tsx:104
+msgid "How it fits together"
+msgstr "How it fits together"
 
 #: src/features/console-usage.tsx:130
 msgid "How the WebSocket is billed"
@@ -1955,7 +1960,7 @@ msgid "Sessions"
 msgstr "Sessions"
 
 #: src/features/console-shell.tsx:76
-#: src/features/landing-page.tsx:77
+#: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:231
 #: src/features/session-list.tsx:181
 msgctxt "nav"
@@ -2232,7 +2237,7 @@ msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
 #: src/features/console-shell.tsx:81
-#: src/features/landing-page.tsx:81
+#: src/features/landing-page.tsx:88
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2252,7 +2257,7 @@ msgstr "Tickets appear here when ticket files or runs cross-repo work."
 #~ msgid "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/landing-page.tsx:135
+#: src/features/landing-page.tsx:148
 msgid "Tidy up the phone interactions"
 msgstr "Tidy up the phone interactions"
 
@@ -2469,7 +2474,7 @@ msgid "Waiting for your answer"
 msgstr "Waiting for your answer"
 
 #: src/features/console-sessions.tsx:151
-#: src/features/landing-page.tsx:129
+#: src/features/landing-page.tsx:142
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
@@ -2572,7 +2577,7 @@ msgstr "What you saw"
 msgid "Where it runs"
 msgstr "Where it runs"
 
-#: src/features/landing-page.tsx:128
+#: src/features/landing-page.tsx:141
 msgid "Which table should the weekly report read?"
 msgstr "Which table should the weekly report read?"
 
@@ -2606,7 +2611,7 @@ msgid "Worker requests"
 msgstr "Worker requests"
 
 #: src/features/console-sessions.tsx:157
-#: src/features/landing-page.tsx:136
+#: src/features/landing-page.tsx:149
 msgid "working"
 msgstr "working"
 
