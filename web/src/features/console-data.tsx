@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect } from 'react'
 import {
   getRuntimeSnapshot,
   getWslBridgeStatus,
+  getBrowserSlot,
   getWakatimeStatus,
   probeRuntime,
   runtimeEventsUrl,
@@ -51,6 +52,13 @@ function useRuntimeDataQuery() {
     throwOnError: false,
   })
 
+  const browser = useQuery({
+    queryKey: ['runtime', 'browser'],
+    queryFn: getBrowserSlot,
+    enabled: typeof window !== 'undefined',
+    refetchInterval: 15_000,
+    throwOnError: false,
+  })
   const wakatime = useQuery({
     queryKey: ['runtime', 'wakatime'],
     queryFn: getWakatimeStatus,
@@ -79,6 +87,7 @@ function useRuntimeDataQuery() {
       probe.refetch(),
       wsl.refetch(),
       wakatime.refetch(),
+      browser.refetch(),
     ]).then(() => undefined)
   const data = snapshot.data
 
@@ -88,6 +97,7 @@ function useRuntimeDataQuery() {
     probe,
     wsl,
     wakatime,
+    browser,
     connected: Boolean(data?.health.ready),
     eventReady: Boolean(probe.data),
     loading: snapshot.isPending || probe.isPending,

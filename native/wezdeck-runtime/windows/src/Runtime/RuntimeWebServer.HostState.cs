@@ -83,4 +83,37 @@ internal sealed partial class RuntimeWebServer
             ["pid"] = state?.Pid,
         };
     }
+
+    /// <summary>
+    /// The browser slot (docs/browser-debug.md): which backend holds it and,
+    /// for ego, whether it was last seen alive — from the status file
+    /// apply-browser-backend / the ego wrapper write. The console band shows
+    /// it instead of a CDP line that is off on purpose under ego.
+    /// </summary>
+    private Dictionary<string, object?> ReadBrowserSlot()
+    {
+        var runtimeStateDir = Path.GetDirectoryName(config.StatePath) ?? string.Empty;
+        var path = Path.GetFullPath(Path.Combine(runtimeStateDir, "..", "browser-agent", "status.json"));
+        var result = new Dictionary<string, object?> { ["backend"] = null };
+        try
+        {
+            if (!File.Exists(path)) return result;
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            var root = document.RootElement;
+            if (root.TryGetProperty("backend", out var backend) && backend.ValueKind == JsonValueKind.String)
+                result["backend"] = backend.GetString();
+            if (root.TryGetProperty("ego", out var ego) && ego.ValueKind == JsonValueKind.Object)
+            {
+                if (ego.TryGetProperty("alive", out var alive) && (alive.ValueKind == JsonValueKind.True || alive.ValueKind == JsonValueKind.False))
+                    result["ego_alive"] = alive.GetBoolean();
+                if (ego.TryGetProperty("updated_at_ms", out var at) && at.TryGetInt64(out var ms))
+                    result["ego_updated_at_ms"] = ms;
+            }
+        }
+        catch (Exception)
+        {
+            // unreadable status: the band falls back to the CDP line
+        }
+        return result;
+    }
 }

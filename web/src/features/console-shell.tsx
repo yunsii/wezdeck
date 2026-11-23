@@ -378,6 +378,42 @@ function RemoteBand() {
   )
 }
 
+/**
+ * The browser slot, by its backend (docs/browser-debug.md): ego → whether Ego
+ * was last seen alive; cdp → the debug Chrome's port when it answers. The
+ * other side is off on purpose, so nothing is shown for it.
+ */
+function BrowserSlotStatus() {
+  const { t } = useLingui()
+  const runtime = useRuntimeData()
+  const slot = runtimeQuery(runtime.browser).data
+  const chrome = runtime.data?.chrome
+  if (slot?.backend === 'ego')
+    return (
+      <span className="ml-auto font-mono text-brand-label">
+        Ego
+        <span
+          className={slot.ego_alive ? 'text-brand-done' : 'text-brand-label'}
+        >
+          {' '}
+          {slot.ego_alive ? t`Running` : t`Not running`}
+        </span>
+      </span>
+    )
+  if (!chrome?.alive) return null
+  return (
+    <a
+      href={'http://127.0.0.1:' + chrome.port + '/json/version'}
+      target="_blank"
+      rel="noreferrer"
+      className="ml-auto font-mono text-brand-label hover:text-brand-text"
+    >
+      CDP {chrome.port}
+      <span className="text-brand-done"> {t`Ready`}</span>
+    </a>
+  )
+}
+
 function WakatimeStatus() {
   const { t } = useLingui()
   const wakatime = runtimeQuery(useRuntimeData().wakatime)
@@ -421,19 +457,7 @@ function StatusBand() {
         </strong>
       </span>
       <WakatimeStatus />
-      {/* only while the debug Chrome runs: with the browser slot on ego it
-          is off on purpose (docs/browser-debug.md), not something to wait for */}
-      {data?.chrome?.alive ? (
-        <a
-          href={'http://127.0.0.1:' + data.chrome.port + '/json/version'}
-          target="_blank"
-          rel="noreferrer"
-          className="ml-auto font-mono text-brand-label hover:text-brand-text"
-        >
-          CDP {data.chrome.port}
-          <span className="text-brand-done"> {t`Ready`}</span>
-        </a>
-      ) : null}
+      <BrowserSlotStatus />
     </div>
   )
 }

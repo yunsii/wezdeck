@@ -151,6 +151,26 @@ export async function getWslBridgeStatus(): Promise<WslBridgeStatus> {
   )
 }
 
+export type BrowserSlot = {
+  /** which backend holds the browser slot (apply-browser-backend) */
+  backend: 'ego' | 'cdp' | null
+  ego_alive?: boolean
+  ego_updated_at_ms?: number
+}
+
+/** the browser slot, from the status file the Runtime reads (/api/v1/browser) */
+export async function getBrowserSlot(): Promise<BrowserSlot> {
+  const fallback: BrowserSlot = { backend: null }
+  const { baseUrl, health } = await requireRuntime()
+  if (!health.capabilities.includes('browser.slot')) return fallback
+  return readOptional(
+    baseUrl,
+    '/api/v1/browser',
+    (value) => value as BrowserSlot,
+    fallback,
+  )
+}
+
 export async function getWakatimeStatus(): Promise<WakatimeStatus> {
   const fallback = { available: false, ai: '', code: '' }
   const { baseUrl, health } = await requireRuntime()

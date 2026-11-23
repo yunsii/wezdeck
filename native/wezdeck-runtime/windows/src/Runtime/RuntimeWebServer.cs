@@ -177,7 +177,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                 {
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
                     "vscode.windows", "vscode.focus", "vscode.focus_or_open", "vscode.close",
-                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write",
+                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot",
                 },
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             },
@@ -189,6 +189,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                 ["reason"] = imeProvider().Reason,
             },
             "/api/v1/chrome" => ReadChromeState(),
+            "/api/v1/browser" => ReadBrowserSlot(),
             "/api/v1/vscode" => vscodeProvider(),
             "/api/v1/sessions" => ReadSessions(),
             "/api/v1/workspaces" => ReadWorkspaces(),

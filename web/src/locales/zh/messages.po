@@ -1063,7 +1063,7 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:412
+#: src/features/console-shell.tsx:448
 #: src/features/me-host.tsx:103
 msgid "Last sample"
 msgstr "最近采样"
@@ -1356,6 +1356,10 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Not paired"
 msgstr "未配对"
 
+#: src/features/console-shell.tsx:399
+msgid "Not running"
+msgstr "未运行"
+
 #: src/features/session-list.tsx:171
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
@@ -1614,7 +1618,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:209
-#: src/features/console-shell.tsx:434
+#: src/features/console-shell.tsx:412
 #: src/features/me-host.tsx:56
 #: src/features/me-host.tsx:129
 msgid "Ready"
@@ -1754,7 +1758,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:49
-#: src/features/console-shell.tsx:480
+#: src/features/console-shell.tsx:504
 #: src/features/me-host.tsx:87
 msgid "Retry"
 msgstr "重试"
@@ -1806,6 +1810,7 @@ msgstr "运行中"
 
 #: src/features/chat-tools.tsx:69
 #: src/features/console-collab.tsx:92
+#: src/features/console-shell.tsx:399
 msgid "Running"
 msgstr "运行中"
 
@@ -2199,7 +2204,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-shell.tsx:477
+#: src/features/console-shell.tsx:501
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -2387,7 +2392,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:418
+#: src/features/console-shell.tsx:454
 #: src/features/me-host.tsx:102
 msgid "Uptime"
 msgstr "运行时长"
@@ -2497,7 +2502,7 @@ msgstr "等你"
 #~ msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 #~ msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:387
+#: src/features/console-shell.tsx:423
 msgid "WakaTime"
 msgstr "WakaTime"
 
