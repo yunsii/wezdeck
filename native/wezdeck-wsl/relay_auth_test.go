@@ -1,0 +1,116 @@
+package main
+
+import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+// a device key as the page makes it (P-256), its id, and a signed hello
+type testDevice struct {
+	key *ecdsa.PrivateKey
+	pub string
+	id  string
+}
+
+func newTestDevice(t *testing.T) testDevice {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw := elliptic.Marshal(elliptic.P256(), key.X, key.Y) //nolint:staticcheck // the page sends this exact form
+	return testDevice{key: key, pub: base64.RawURLEncoding.EncodeToString(raw), id: deviceID(raw)}
+}
+
+func (d testDevice) hello(t *testing.T, nonce string) json.RawMessage {
+	payload, _ := json.Marshal(map[string]any{"action": "device.hello", "args": map[string]any{}, "ts": time.Now().UnixMilli(), "nonce": nonce})
+	digest := sha256.Sum256(payload)
+	r, s, err := ecdsa.Sign(rand.Reader, d.key, digest[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	sig := make([]byte, 64)
+	r.FillBytes(sig[:32])
+	s.FillBytes(sig[32:])
+	args, _ := json.Marshal(map[string]string{"device": d.id, "payload": string(payload), "sig": base64.RawURLEncoding.EncodeToString(sig)})
+	return args
+}
+
+func writeDevices(t *testing.T, path string, approved ...testDevice) {
+	s := deviceStore{Approved: []deviceRecord{}, Pending: []deviceRecord{}}
+	for _, d := range approved {
+		s.Approved = append(s.Approved, deviceRecord{ID: d.id, PublicKey: d.pub, Name: "t"})
+	}
+	data, _ := json.Marshal(s)
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestReadsNeedAnApprovedDevice(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "remote-devices.json")
+	t.Setenv("WEZDECK_REMOTE_DEVICES", path)
+	t.Setenv("WEZDECK_RELAY_OPEN_READS", "")
+	phone, stranger := newTestDevice(t), newTestDevice(t)
+	writeDevices(t, path, phone)
+	r := &relay{}
+
+	// a paired browser that never said hello reads nothing; the request is
+	// refused before it runs
+	if _, err := dispatchRPC(relayFrame{Action: "sessions", Cid: "c1"}, "test", r); !errors.Is(err, errNotApproved) {
+		t.Fatalf("read without hello: %v", err)
+	}
+	// a key that is not on the list cannot say hello
+	if _, err := r.deviceHello(stranger.hello(t, "n-stranger"), "c2", "test"); err == nil {
+		t.Fatal("an unapproved device said hello")
+	}
+	if r.readAllowed("c2") == nil {
+		t.Fatal("unapproved connection may read")
+	}
+	// the approved phone says hello and may read on that connection only
+	if _, err := r.deviceHello(phone.hello(t, "n-phone"), "c1", "test"); err != nil {
+		t.Fatalf("hello: %v", err)
+	}
+	if err := r.readAllowed("c1"); err != nil {
+		t.Fatalf("approved read: %v", err)
+	}
+	if r.readAllowed("c3") == nil {
+		t.Fatal("another connection inherited the phone's hello")
+	}
+	// the same signed hello cannot be replayed onto another connection
+	if _, err := r.deviceHello(phone.hello(t, "n-phone"), "c3", "test"); err == nil {
+		t.Fatal("replayed hello accepted")
+	}
+	// revoke: the next read is refused, without a reconnect
+	writeDevices(t, path)
+	if !errors.Is(r.readAllowed("c1"), errNotApproved) {
+		t.Fatal("revoked device still reads")
+	}
+	// the connection ends: its binding goes
+	writeDevices(t, path, phone)
+	_, _ = r.deviceHello(phone.hello(t, "n-phone-2"), "c1", "test")
+	r.forgetPhone("c1")
+	if r.readAllowed("c1") == nil {
+		t.Fatal("a closed connection's hello survived")
+	}
+}
+
+func TestOpenReadsOnlyOnAThrowawayRelay(t *testing.T) {
+	t.Setenv("WEZDECK_RELAY_OPEN_READS", "1")
+	t.Setenv("WEZDECK_ATTENTION_FILE", "")
+	if openReads() {
+		t.Fatal("open reads without a private attention file")
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(t.TempDir(), "attention.json"))
+	if !openReads() {
+		t.Fatal("test relay should be open")
+	}
+}

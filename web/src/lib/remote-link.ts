@@ -1,4 +1,5 @@
 import type { UsageReply } from '#/lib/usage-contract'
+import { OPEN_ACTIONS, describeError } from './remote-auth'
 import { loadDeviceKey, signPayload } from './device-key'
 import { ReplyParts } from './reply-parts'
 import { median, selectedPath } from './rtc-path'
@@ -155,6 +156,9 @@ class RemoteLink {
   }
   private listeners = new Set<() => void>()
   private ws?: WebSocket
+  /** the socket this device said hello on (reads need it: relay_auth.go) */
+  private helloWs?: WebSocket
+  private hello?: Promise<void>
   private pc?: RTCPeerConnection
   private dc?: RTCDataChannel
   private pending = new Map<string, Pending>()
@@ -351,7 +355,7 @@ class RemoteLink {
           },
         })
         if (frame.ok === false)
-          entry.reject(new Error(String(frame.error ?? 'remote error')))
+          entry.reject(new Error(describeError(String(frame.error ?? ''))))
         else entry.resolve(frame.result)
         return
       }
@@ -420,6 +424,8 @@ class RemoteLink {
             : 'remote link is not connected',
       )
     }
+    // reads need this connection to have said hello as an approved device
+    if (!OPEN_ACTIONS.has(action)) await this.sayHello()
     return new Promise((resolve, reject) => {
       const id = `r${++this.seq}`
       const timer = setTimeout(() => {
@@ -434,6 +440,29 @@ class RemoteLink {
         reject(new Error('remote link is not connected'))
       }
     })
+  }
+
+  /**
+   * Once per relay socket (a reconnect is a new cid): sign `device.hello`
+   * with this device's key so the host serves its reads. No key, or not
+   * approved yet: reads come back "device not approved", which says what to
+   * do (describeError). Concurrent requests share the one hello.
+   */
+  private sayHello() {
+    if (this.helloWs && this.helloWs === this.ws) return Promise.resolve()
+    this.hello ??= (async () => {
+      const ws = this.ws
+      try {
+        if (!(await loadDeviceKey())) return
+        await this.write('device.hello', {})
+        this.helloWs = ws
+      } catch {
+        // not approved (yet): the reads themselves report it
+      } finally {
+        this.hello = undefined
+      }
+    })()
+    return this.hello
   }
 
   private failNote(reason: string) {

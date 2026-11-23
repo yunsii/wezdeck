@@ -59,6 +59,8 @@ type relay struct {
 	peers map[string]*webrtc.PeerConnection
 	// phones: pages seen recently, for host → phone pushes (relay_diag.go)
 	phones map[string]*phoneChan
+	// authed: cid → the approved device that said hello on it (relay_auth.go)
+	authed map[string]string
 	log    *os.File
 }
 
@@ -292,19 +294,34 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 	return result, true, err
 }
 
-// dispatchRPC routes one request: reads (`ticket api` actions from the same
-// allowlist as the Runtime bridge, sessions, device registration) run
-// directly; writes (send / key / reply / attach / upload) must carry a signature from an
-// approved device (remote_session.go).
+// dispatchRPC routes one request. Open: device.register, device.hello,
+// diag.submit. Reads (`ticket api` actions from the Runtime bridge's
+// allowlist, sessions, …) need a connection that said hello as an approved
+// device (relay_auth.go); writes (send / key / reply / attach / upload …)
+// carry their own signature from an approved device (remote_session.go).
 func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
+	switch f.Action {
+	case "device.register":
+		result, err := registerDevice(f.Args)
+		if m, ok := result.(map[string]any); ok {
+			r.logf("device_register", "via=%s cid=%s device=%v state=%v", via, f.Cid, m["id"], m["state"])
+		}
+		return result, err
+	case "device.hello":
+		return r.deviceHello(f.Args, f.Cid, via)
+	case "diag.submit":
+		return diagSubmit(f.Args, f.Cid, r)
+	}
+	if !signedActions[f.Action] {
+		if err := r.readAllowed(f.Cid); err != nil {
+			r.logf("read_denied", "via=%s cid=%s action=%q", via, f.Cid, f.Action)
+			return nil, err
+		}
+	}
 	if result, ok, err := readRPC(f.Action, f.Args); ok {
 		return result, err
 	}
 	switch f.Action {
-	case "device.register":
-		return registerDevice(f.Args)
-	case "diag.submit":
-		return diagSubmit(f.Args, f.Cid, r)
 	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "ticket.new":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
@@ -314,6 +331,13 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return runWrite(w.Action, w.Args, via, device, r.logf)
 	}
 	return runCollab(f.Action, f.Args)
+}
+
+// signedActions carry a per-request device signature (verifyWrite), so
+// they need no hello.
+var signedActions = map[string]bool{
+	"send": true, "key": true, "reply": true, "attach": true, "upload": true,
+	"todo": true, "clear": true, "session.new": true, "ticket.new": true,
 }
 
 // handleRPC answers one request frame and logs it.

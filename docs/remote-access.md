@@ -187,6 +187,26 @@ browser sockets: each carries a SHA-256 tag of its token, checked by the DO on
 every message and on every new connection (the host reconnects with the new
 token right away).
 
+Reads need an approved device too (2026-11-24, `relay_auth.go`). The
+client token is one secret every paired browser shares, so it names no
+device: revoking a device used to drop only its write key while it kept
+reading everything (a revoked Firefox did, re-registering right after). Now
+each relay connection (cid — its DataChannel is the same cid) first sends
+`device.hello`, signed like a write (device key, ts, nonce); the host binds
+that cid to the device and checks, on every read, that the device is still
+approved — a revoke refuses the next read, no reconnect needed. Open without
+it: `device.register`, `device.hello`, `diag.submit`; writes carry their own
+signature. The page says hello once per socket (`remote-link.ts`) and maps
+the refusal to "not approved — 我的 › 设备授权" (`remote-auth.ts`); a new
+device requests access there (the button was 启用写入). Logs:
+`device_register` (cid, device id, state), `device_hello` (ok / err),
+`read_denied` (cid, action). The test stack runs `WEZDECK_RELAY_OPEN_READS=1`
+(honoured only with a private `WEZDECK_ATTENTION_FILE`: its browsers' keys
+cannot be pre-approved); `WEZDECK_TEST_GATED_READS=1` starts it gated to
+walk approve → read → revoke by hand. `/relay/health` answers only
+`{online}` without the client token — `since` and `clients` (when you are
+using it) need `Authorization: Bearer <client token>` (`--check` sends it).
+
 Writes add device signatures (above). Cloudflare Access in front of
 `/console` + `/relay/client` and pinned DTLS fingerprints remain follow-ups
 ([open questions](./diagnostics.md#open-questions)); Access is not enabled on

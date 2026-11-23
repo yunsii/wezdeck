@@ -141,7 +141,7 @@ def show():
             seen = d.get("seen_at") or "-"
             print(f"{state:9} {safe(d['id'])}  {safe(what):36} added {safe(d.get('at', ''))[:16]}  seen {safe(seen)[:16]}")
     if not (store.get("pending") or store.get("approved")):
-        print("no devices yet: on the phone open 我的 › 手机写入 › 启用")
+        print("no devices yet: on the phone open 我的 › 设备授权 › 申请授权")
 if mode == "devices":
     show(); sys.exit(0)
 if not wanted:
@@ -165,7 +165,8 @@ PY
     ;;
   check)
     systemctl --user is-active "$UNIT" || true
-    curl -fsS -m 5 "$ORIGIN/relay/health" && printf '\n'
+    # with the client token: since + clients too (without it only "online")
+    curl -fsS -m 5 -H "authorization: Bearer ${WEZDECK_RELAY_CLIENT_TOKEN:-}" "$ORIGIN/relay/health" && printf '\n'
     ;;
   uninstall)
     systemctl --user disable --now "$UNIT" 2>/dev/null || true

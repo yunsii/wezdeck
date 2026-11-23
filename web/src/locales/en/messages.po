@@ -326,6 +326,10 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
+#: src/features/console-me.tsx:42
+msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
+msgstr "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
+
 #: src/features/ticket-reply.tsx:325
 msgid "Assumptions"
 msgstr "Assumptions"
@@ -752,6 +756,10 @@ msgstr "dev: a long-lived workstation for parallel work"
 #~ msgid "Development"
 #~ msgstr "Development"
 
+#: src/features/console-me.tsx:111
+msgid "Device access"
+msgstr "Device access"
+
 #: src/features/session-composer.tsx:165
 #~ msgid "diagnostics"
 #~ msgstr "diagnostics"
@@ -803,8 +811,8 @@ msgstr "Earlier messages are left out here; the ticket file has them all."
 #~ msgstr "Enable phone writing in Settings to send these keys"
 
 #: src/features/console-me.tsx:55
-msgid "Enable writing"
-msgstr "Enable writing"
+#~ msgid "Enable writing"
+#~ msgstr "Enable writing"
 
 #: src/features/console-me.tsx:274
 msgid "Enabled"
@@ -819,8 +827,8 @@ msgid "Enabled on this computer: writes go through the local Runtime, with no de
 msgstr "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 
 #: src/features/console-me.tsx:42
-msgid "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
-msgstr "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
+#~ msgid "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
+#~ msgstr "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
 
 #: src/features/console-me.tsx:108
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
@@ -1208,8 +1216,8 @@ msgid "Launch details"
 msgstr "Launch details"
 
 #: src/features/console-me.tsx:52
-msgid "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
-msgstr "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
+#~ msgid "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
+#~ msgstr "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
 
 #: src/features/console-me.tsx:118
 #~ msgid "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
@@ -1852,6 +1860,10 @@ msgstr "Repository"
 msgid "Repository root"
 msgstr "Repository root"
 
+#: src/features/console-me.tsx:55
+msgid "Request access"
+msgstr "Request access"
+
 #: src/features/session-elicitation.tsx:215
 msgid "Request changes"
 msgstr "Request changes"
@@ -2367,6 +2379,11 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 #~ msgid "This computer, not paired"
 #~ msgstr "This computer, not paired"
 
+#: src/features/console-sessions.tsx:406
+#: src/features/ticket-reply.tsx:202
+msgid "This device is not approved yet (Settings › Device access)."
+msgstr "This device is not approved yet (Settings › Device access)."
+
 #: src/features/console-me.tsx:154
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
@@ -2374,6 +2391,10 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 #: src/features/console-sessions.tsx:540
 msgid "this device is offline"
 msgstr "this device is offline"
+
+#: src/features/console-me.tsx:52
+msgid "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
+msgstr "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 
 #: src/features/console-shell.tsx:501
 msgid "This page hit a rendering error. The rest of the console is still available."
@@ -2849,13 +2870,13 @@ msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final n
 #~ msgstr "Worktrees"
 
 #: src/features/console-me.tsx:111
-msgid "Write access"
-msgstr "Write access"
+#~ msgid "Write access"
+#~ msgstr "Write access"
 
 #: src/features/console-sessions.tsx:406
 #: src/features/ticket-reply.tsx:202
-msgid "Writing is not enabled on this device yet (Settings › Write access)."
-msgstr "Writing is not enabled on this device yet (Settings › Write access)."
+#~ msgid "Writing is not enabled on this device yet (Settings › Write access)."
+#~ msgstr "Writing is not enabled on this device yet (Settings › Write access)."
 
 #: src/features/console-sessions.tsx:333
 #: src/features/ticket-reply.tsx:193

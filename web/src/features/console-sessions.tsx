@@ -403,7 +403,7 @@ export function SessionDetail({ id }: { id: string }) {
   const planReview = Boolean(data?.plan?.awaiting_approval)
   const blocked =
     device.state !== 'approved'
-      ? t`Writing is not enabled on this device yet (Settings › Write access).`
+      ? t`This device is not approved yet (Settings › Device access).`
       : data?.waiting_kind && !asking && !planReview
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''

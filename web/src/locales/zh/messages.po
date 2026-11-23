@@ -326,6 +326,10 @@ msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。�
 msgid "Approve the plan"
 msgstr "批准计划"
 
+#: src/features/console-me.tsx:42
+msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
+msgstr "已获批。这台设备可以查看电脑上的会话和工单、发消息、回复工单。每台设备（手机、平板、其他浏览器）分别授权；在电脑上撤销后，读取和写入同时失效。"
+
 #: src/features/ticket-reply.tsx:325
 msgid "Assumptions"
 msgstr "假设"
@@ -752,6 +756,10 @@ msgstr "dev：长期并行开发的工作站"
 #~ msgid "Development"
 #~ msgstr "开发"
 
+#: src/features/console-me.tsx:111
+msgid "Device access"
+msgstr "设备授权"
+
 #: src/features/session-composer.tsx:165
 #~ msgid "diagnostics"
 #~ msgstr "诊断数据"
@@ -803,8 +811,8 @@ msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 #~ msgstr "先在「我的 › 手机写入」启用，才能发送这些按键"
 
 #: src/features/console-me.tsx:55
-msgid "Enable writing"
-msgstr "启用写入"
+#~ msgid "Enable writing"
+#~ msgstr "启用写入"
 
 #: src/features/console-me.tsx:274
 msgid "Enabled"
@@ -819,8 +827,8 @@ msgid "Enabled on this computer: writes go through the local Runtime, with no de
 msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备密钥，也不需要批准。手机、平板和其他电脑需要各自单独启用。"
 
 #: src/features/console-me.tsx:42
-msgid "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
-msgstr "已启用。这台设备可以给会话发消息、回复工单。每台设备（手机、平板、其他浏览器）各自启用。"
+#~ msgid "Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own."
+#~ msgstr "已启用。这台设备可以给会话发消息、回复工单。每台设备（手机、平板、其他浏览器）各自启用。"
 
 #: src/features/console-me.tsx:108
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
@@ -1208,8 +1216,8 @@ msgid "Launch details"
 msgstr "启动详情"
 
 #: src/features/console-me.tsx:52
-msgid "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
-msgstr "让这台设备能给 Agent 会话发消息、回复工单。密钥在这个浏览器里生成，只留在这里；每台设备由电脑确认一次。"
+#~ msgid "Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once."
+#~ msgstr "让这台设备能给 Agent 会话发消息、回复工单。密钥在这个浏览器里生成，只留在这里；每台设备由电脑确认一次。"
 
 #: src/features/console-me.tsx:118
 #~ msgid "Lets this phone send messages to agent sessions and reply to tickets. A key is created on this phone and stays here; the host approves it once."
@@ -1852,6 +1860,10 @@ msgstr "仓库"
 msgid "Repository root"
 msgstr "仓库根目录"
 
+#: src/features/console-me.tsx:55
+msgid "Request access"
+msgstr "申请授权"
+
 #: src/features/session-elicitation.tsx:215
 msgid "Request changes"
 msgstr "请修改"
@@ -2367,6 +2379,11 @@ msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要
 #~ msgid "This computer, not paired"
 #~ msgstr "本机，未配对"
 
+#: src/features/console-sessions.tsx:406
+#: src/features/ticket-reply.tsx:202
+msgid "This device is not approved yet (Settings › Device access)."
+msgstr "这台设备还没获批（我的 › 设备授权）。"
+
 #: src/features/console-me.tsx:154
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
@@ -2374,6 +2391,10 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 #: src/features/console-sessions.tsx:540
 msgid "this device is offline"
 msgstr "这台设备当前离线"
+
+#: src/features/console-me.tsx:52
+msgid "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
+msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对链接还不够。会在这个浏览器里生成一把密钥，只存在本机；电脑对每台设备批准一次，同时开通读取和写入。"
 
 #: src/features/console-shell.tsx:501
 msgid "This page hit a rendering error. The rest of the console is still available."
@@ -2849,13 +2870,13 @@ msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑�
 #~ msgstr "Worktree"
 
 #: src/features/console-me.tsx:111
-msgid "Write access"
-msgstr "写入权限"
+#~ msgid "Write access"
+#~ msgstr "写入权限"
 
 #: src/features/console-sessions.tsx:406
 #: src/features/ticket-reply.tsx:202
-msgid "Writing is not enabled on this device yet (Settings › Write access)."
-msgstr "这台设备还没启用写入（我的 › 写入权限）。"
+#~ msgid "Writing is not enabled on this device yet (Settings › Write access)."
+#~ msgstr "这台设备还没启用写入（我的 › 写入权限）。"
 
 #: src/features/console-sessions.tsx:333
 #: src/features/ticket-reply.tsx:193

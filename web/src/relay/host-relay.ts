@@ -206,7 +206,19 @@ export async function relayFetch(request: Request, env: RelayEnv) {
   const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(room))
   if (url.pathname === '/relay/health') {
     const presence = await stub.fetch('https://relay/presence')
-    return new Response(presence.body, {
+    // anyone may ask whether the host is up; when it came up and how many
+    // browsers are connected (when you are using it) need the client token
+    const presented = (request.headers.get('authorization') ?? '').replace(
+      /^Bearer /,
+      '',
+    )
+    const full = safeEqual(presented, env.RELAY_CLIENT_TOKEN)
+    const body = full
+      ? presence.body
+      : JSON.stringify({
+          online: Boolean((await presence.json<{ online?: boolean }>()).online),
+        })
+    return new Response(body, {
       headers: {
         'content-type': 'application/json',
         'cache-control': 'no-store',

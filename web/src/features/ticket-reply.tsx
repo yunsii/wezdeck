@@ -199,7 +199,7 @@ export function TicketReply({
       />
       {device.state !== 'approved' ? (
         <p className="text-meta text-brand-muted">
-          {t`Writing is not enabled on this device yet (Settings › Write access).`}
+          {t`This device is not approved yet (Settings › Device access).`}
         </p>
       ) : null}
       {asked.length > 1 && unanswered > 0 && answer ? (

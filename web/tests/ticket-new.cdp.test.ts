@@ -51,7 +51,7 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
       .locator('[data-testid=remote-badge-compact], [data-testid=remote-badge]')
       .first()
       .waitFor({ timeout: 20_000 })
-    await page.getByRole('button', { name: '启用写入' }).click()
+    await page.getByRole('button', { name: '申请授权' }).click()
     const command = page.locator('code', { hasText: '--approve' })
     await command.waitFor({ timeout: 20_000 })
     const id = ((await command.textContent()) ?? '').trim().split(' ').at(-1)

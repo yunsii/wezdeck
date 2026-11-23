@@ -15,6 +15,10 @@
 # WEZDECK_TEST_DEVICES, WEZDECK_TEST_UPLOADS); `--home DIR` runs the relay
 # with HOME=DIR so it reads fixture transcripts instead of the real ones.
 # The real relay (systemd wezdeck-relay) is never touched.
+# Reads are open on this throwaway relay (WEZDECK_RELAY_OPEN_READS=1: the
+# test browsers' device keys are made in the page and cannot be pre-approved);
+# WEZDECK_TEST_GATED_READS=1 starts it gated like production, to walk the
+# approve-then-read path by hand.
 # Builds are skip-if-current: the relay by build.sh, the web when
 # web/dist/client/build.json already carries the web source fingerprint (a
 # release then deploys that same dist without building again). `ensure`
@@ -158,6 +162,7 @@ FAKE
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
     TICKETS_ROOT="$STATE/tickets" \
     WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
+    WEZDECK_RELAY_OPEN_READS="$([[ "${WEZDECK_TEST_GATED_READS:-}" == 1 ]] && echo 0 || echo 1)" \
     "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
     >"$STATE/relay.out" 2>&1 </dev/null &
   echo $! >"$STATE/relay.pid"

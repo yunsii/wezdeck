@@ -9,8 +9,8 @@ export const securityDiagram: Diagram = {
   id: 'security',
   title: { zh: '信任边界', en: 'Trust boundaries' },
   summary: {
-    zh: '读和写分开授权：配对令牌只能读，写入要么带主机批准过的设备签名，要么来自本机的正式控制台；写入到窗格前还有一组统一的保护。',
-    en: 'Reading and writing are granted apart: the pairing token only reads; a write carries the signature of a device the host approved, or comes from the production console on the host; every write then passes the same guards before it reaches a pane.',
+    zh: '配对令牌只负责连上中转；读和写都要主机批准过的设备：每条连接先用设备密钥签名报到，每次写入再单独签名，撤销设备后读写立即失效。本机的正式控制台直连本地 Runtime；写入到窗格前还有一组统一的保护。',
+    en: 'The pairing token only reaches the relay; reading and writing both need a device the host approved — each connection signs in with the device key, each write is signed again, and a revoke cuts both at once. The production console on the host goes straight to the local Runtime; every write passes the same guards before it reaches a pane.',
   },
   lanes: [DEVICE, CLOUD, WINDOWS, WSL],
   cards: [
@@ -19,10 +19,10 @@ export const securityDiagram: Diagram = {
       lane: 'device',
       row: 0,
       title: { zh: '配对令牌', en: 'Pairing token' },
-      sub: { zh: '只能读', en: 'Reads only' },
+      sub: { zh: '只能连上中转', en: 'Reaches the relay only' },
       body: {
-        zh: '扫码配对后存在这台设备上，用来连上 HostRelay、读会话和工单。拿到它的人能看，不能写。',
-        en: 'Kept on the device after pairing; it joins HostRelay and reads sessions and tickets. Whoever holds it can look, not write.',
+        zh: '扫码配对后存在这台设备上，用来连上 HostRelay。所有配对过的浏览器共用这一个令牌，所以它本身不代表任何一台设备：只拿到它的人连得上，但什么也看不到（2026-11-24 起）。',
+        en: 'Kept on the device after pairing; it joins HostRelay. Every paired browser shares this one token, so it names no device: holding only it gets a connection and nothing to see (since 2026-11-24).',
       },
       impl: {
         zh: 'WebSocket 子协议 token.<secret>；Worker secret RELAY_CLIENT_TOKEN。',
@@ -35,16 +35,16 @@ export const securityDiagram: Diagram = {
       row: 2,
       title: { zh: '设备密钥', en: 'Device key' },
       sub: {
-        zh: '不可导出，主机批准后才能写',
-        en: 'Non-extractable; writes after approval',
+        zh: '不可导出，主机批准后才能读写',
+        en: 'Non-extractable; reads and writes after approval',
       },
       body: {
-        zh: '浏览器里生成的 ECDSA 密钥，私钥导不出来。设备登记后处于待批准，只能在主机上用命令批准。',
-        en: 'An ECDSA key made in the browser whose private half cannot be exported. A registered device waits until it is approved by a command on the host.',
+        zh: '浏览器里生成的 ECDSA 密钥，私钥导不出来。设备登记后处于待批准，只能在主机上用命令批准；每条连接先用它签名报到（device.hello），主机每次读取都核对它是否仍在批准名单里。',
+        en: 'An ECDSA key made in the browser whose private half cannot be exported. A registered device waits until it is approved by a command on the host; each connection signs in with it (device.hello), and every read checks it is still approved.',
       },
       impl: {
-        zh: 'lib/device-key.ts；device.register → install-remote-relay.sh --approve。',
-        en: 'lib/device-key.ts; device.register → install-remote-relay.sh --approve.',
+        zh: 'lib/device-key.ts；device.register → install-remote-relay.sh --approve；relay_auth.go。',
+        en: 'lib/device-key.ts; device.register → install-remote-relay.sh --approve; relay_auth.go.',
       },
     },
     {

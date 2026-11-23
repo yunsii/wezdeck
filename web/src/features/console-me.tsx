@@ -39,7 +39,7 @@ function PhoneWriting() {
   if (device.state === 'approved')
     return (
       <p className="text-body">
-        {t`Enabled. This device can send messages to sessions and reply to tickets. Each device (phone, tablet, another browser) is enabled on its own.`}
+        {t`Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once.`}
         <span className="mt-1 block font-mono text-meta text-brand-label">
           {device.id}
         </span>
@@ -49,10 +49,10 @@ function PhoneWriting() {
     return (
       <div className="grid gap-2">
         <p className="text-caption text-brand-muted">
-          {t`Lets this device send messages to agent sessions and reply to tickets. A key is created in this browser and stays here; the host approves each device once.`}
+          {t`This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing.`}
         </p>
         <Button className="min-h-11" onClick={() => void device.enable()}>
-          {t`Enable writing`}
+          {t`Request access`}
         </Button>
         {device.error ? (
           <p role="alert" className="text-meta text-brand-error">
@@ -108,7 +108,7 @@ function useMeTitles(): Record<MePage, string> {
   const { t } = useLingui()
   return {
     connection: t`Connection`,
-    writing: t`Write access`,
+    writing: t`Device access`,
     usage: t`Usage`,
     appearance: t`Appearance`,
     app: t`App`,

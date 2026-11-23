@@ -84,6 +84,7 @@ func (r *relay) attachDataChannel(cid string, dc *webrtc.DataChannel) {
 }
 
 func (r *relay) forgetPhone(cid string) {
+	r.forgetAuth(cid)
 	r.mu.Lock()
 	delete(r.phones, cid)
 	r.mu.Unlock()
