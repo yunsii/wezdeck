@@ -28,7 +28,7 @@ export function FieldList({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-[14px] bg-brand-surface md:grid md:grid-cols-[max-content_minmax(0,1fr)_1rem] md:gap-x-4',
+        'overflow-hidden rounded-[14px] bg-brand-surface md:grid md:grid-cols-[max-content_minmax(0,1fr)_auto] md:gap-x-4',
         className,
       )}
     >
@@ -63,7 +63,7 @@ export function Field({
         onClick={() => copy(value, label)}
         data-field={label}
         className={cn(
-          'group grid w-full gap-y-0.5 px-3 py-2.5 text-left outline-none select-none [-webkit-touch-callout:none]',
+          'group grid w-full gap-y-0.5 px-3 py-2.5 md:pr-4 text-left outline-none select-none [-webkit-touch-callout:none]',
           'transition-colors active:bg-brand-soft data-[popup-open]:bg-brand-soft focus-visible:bg-brand-soft',
           'md:col-span-3 md:grid-cols-subgrid md:items-baseline md:py-2 md:hover:bg-brand-soft',
         )}
