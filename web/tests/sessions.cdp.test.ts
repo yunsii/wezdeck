@@ -146,7 +146,13 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await page.getByRole('button', { name: '发送' }).click()
     // the composer empties as the message goes out, not after a refetch
     await expect.poll(() => box.inputValue(), { timeout: 1_000 }).toBe('')
-    await page.getByText(/条已送达/).waitFor({ timeout: 15_000 })
+    // optimistic: the dashed bubble is in the thread at once, then turns
+    // queued once the host took it (normal bubble when the transcript has it)
+    const bubble = page.locator('[data-pending]', { hasText: '来自手机的消息' })
+    await bubble.waitFor({ timeout: 1_000 })
+    await expect
+      .poll(() => bubble.getAttribute('data-pending'), { timeout: 15_000 })
+      .toBe('queued')
     const deadline = Date.now() + 5_000
     while (
       !tmux('capture-pane', '-p', '-t', 'demo').includes('来自手机的消息')
@@ -162,13 +168,13 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await sheet.getByRole('button', { name: /other-agent|另一个会话/ }).click()
     await page.waitForURL('**/console/sessions/other-session')
     await page.waitForTimeout(500)
-    expect(await page.getByText(/条已送达/).count()).toBe(0)
+    expect(await page.locator('[data-pending]').count()).toBe(0)
     await page.getByTestId('session-title').click()
     await sheet
       .getByRole('button', { name: /demo-agent|整理移动端交互/ })
       .click()
     await page.waitForURL('**/console/sessions/demo-session')
-    await page.getByText(/条已送达/).waitFor({ timeout: 5_000 })
+    await bubble.waitFor({ timeout: 5_000 })
 
     // the sticky composer rests flush with the scroller bottom, so starting
     // a drag never makes it jump down by the page padding

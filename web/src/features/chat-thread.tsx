@@ -34,7 +34,16 @@ export type Message = {
   images?: Array<string>
 }
 
-export type Pending = { text: string; at: number; note?: string }
+export type Pending = {
+  text: string
+  /** ms when sent; also the key */
+  at: number
+  note?: string
+  /** absolute transcript index where the transcript ended when it was sent */
+  after?: number
+  /** sending: the host has not taken it yet; queued: in the pane, not yet in the transcript */
+  state?: 'sending' | 'queued'
+}
 
 /** First line of the note the host appends for phone attachments (remote_upload.go). */
 const ATTACHMENT_MARK = '[手机附件]'
@@ -308,9 +317,12 @@ export function ChatThread({
   start,
   busy,
   activity,
+  pending = [],
   sessionId = '',
 }: {
   messages: Array<Message>
+  /** sent from the phone, not in the transcript yet (settled) */
+  pending?: Array<Pending>
   /** the TUI status line while busy (compacting, elapsed, tokens) */
   activity?: Activity
   /** resolves transcript image refs (session.image) */
@@ -389,6 +401,7 @@ export function ChatThread({
         )
       })}
       {busy && effective >= end ? <Typing activity={activity} /> : null}
+      <PendingBubbles pending={pending} busy={busy} />
     </SessionIdContext.Provider>
   )
 }
@@ -452,8 +465,13 @@ function CompactDivider({
   )
 }
 
-/** Messages sent from the phone, queued above the composer until the transcript shows them. */
-export function SendQueue({
+/**
+ * Messages sent from the phone that the agent has not taken yet: at the end
+ * of the thread, dashed, like Claude Code's queued input. Once the
+ * transcript shows one, settle() drops it and the normal user bubble takes
+ * its place — in whatever order the agent picks them up.
+ */
+function PendingBubbles({
   pending,
   busy,
 }: {
@@ -462,44 +480,72 @@ export function SendQueue({
 }) {
   const { t } = useLingui()
   if (pending.length === 0) return null
-  const count = pending.length
   return (
     <div aria-label={t`Queued messages`} className="grid gap-1.5">
-      <span className="text-[11px] text-brand-label">
-        {busy
-          ? t`${count} queued, the agent takes them when it is ready`
-          : t`${count} delivered, waiting for the agent`}
-      </span>
       {pending.map((item) => (
         <div
           key={item.at}
-          className="chat-in truncate rounded-[14px] border border-dashed border-brand-edge px-3 py-1.5 text-[14px] text-brand-muted"
+          data-pending={item.state ?? 'queued'}
+          className="chat-in grid min-w-0 gap-1 rounded-[14px] border border-dashed border-brand-edge px-3.5 py-2.5"
         >
-          {item.text}
-          {item.note ? (
-            <span className="text-brand-label">
-              {item.text ? ' ' : ''}({item.note})
-            </span>
-          ) : null}
+          <span className="text-[15px] leading-relaxed break-words whitespace-pre-wrap text-brand-muted">
+            {item.text}
+            {item.note ? (
+              <span className="text-brand-label">
+                {item.text ? ' ' : ''}({item.note})
+              </span>
+            ) : null}
+          </span>
+          <span className="justify-self-end text-[11px] text-brand-label">
+            {item.state === 'sending'
+              ? t`Sending…`
+              : busy
+                ? t`Queued, the agent takes it when it is ready`
+                : t`Delivered, waiting for the agent`}
+          </span>
         </div>
       ))}
     </div>
   )
 }
 
-/** Drop optimistic bubbles once the transcript shows them (or after a minute). */
-export function settle(pending: Array<Pending>, messages: Array<Message>) {
+/**
+ * Drop optimistic bubbles the transcript now shows: each user line after
+ * the point a message was sent settles at most one bubble, so two identical
+ * messages need two lines and an earlier identical one never counts. A
+ * bubble the transcript never shows goes a minute after the agent is idle
+ * (never while it works: a long turn keeps the queue).
+ */
+export function settle(
+  pending: Array<Pending>,
+  messages: Array<Message>,
+  start = 0,
+  busy = false,
+  now = Date.now(),
+) {
   const users = messages
-    .filter((message) => message.role === 'user')
-    .map((message) => message.text.trim())
+    .map((message, index) => ({ message, at: start + index }))
+    .filter(({ message }) => message.role === 'user')
+    .map(({ message, at }) => ({ text: message.text.trim(), at }))
+  const used = new Set<number>()
   // the host appends an attachment note after a blank line
-  const shows = (typed: string) =>
-    users.some((text) =>
-      typed
-        ? text === typed || text.startsWith(`${typed}\n\n${ATTACHMENT_MARK}`)
-        : text.startsWith(ATTACHMENT_MARK),
+  const matches = (typed: string, text: string) =>
+    typed
+      ? text === typed || text.startsWith(`${typed}\n\n${ATTACHMENT_MARK}`)
+      : text.startsWith(ATTACHMENT_MARK)
+  return pending.filter((item) => {
+    const typed = item.text.trim()
+    const line = users.find(
+      (user) =>
+        !used.has(user.at) &&
+        user.at >= (item.after ?? 0) &&
+        matches(typed, user.text),
     )
-  return pending.filter(
-    (item) => Date.now() - item.at < 60_000 && !shows(item.text.trim()),
-  )
+    if (line) {
+      used.add(line.at)
+      return false
+    }
+    if (item.state === 'sending' || busy) return true
+    return now - item.at < 60_000
+  })
 }

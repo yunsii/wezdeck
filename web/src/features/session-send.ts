@@ -4,7 +4,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useLocale } from '#/lib/locale-context'
@@ -76,8 +76,12 @@ const NONE: Array<Pending> = []
  * showed up under the next session. Everything is keyed by the session id
  * the write was for, which also keeps a late reply from landing elsewhere.
  */
-export function useSessionWrites(id: string) {
+export function useSessionWrites(id: string, transcriptEnd = 0) {
   const { t } = useLingui()
+  // where the transcript ended when a message was sent: only user lines
+  // after it can be that message (an earlier identical "继续" is not)
+  const endRef = useRef(transcriptEnd)
+  endRef.current = transcriptEnd
   const client = useQueryClient()
   const [pendingBy, setPendingBy] = useState<Record<string, Array<Pending>>>({})
   const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
@@ -111,31 +115,57 @@ export function useSessionWrites(id: string) {
   }
   const send = (message: Outgoing) => {
     const target = id
-    return write(target, async () => {
-      await withDeskRetry(
-        () =>
-          hostWrite('send', {
-            id: target,
-            text: message.text,
-            attachments: message.attachments,
-          }),
-        (seconds) => patch(target, { retryIn: seconds }),
-      )
-      // a slash command (/new, /clear, /compact…) is run by the TUI, never
-      // written to the transcript as a message: queued as one it waited
-      // for the agent forever
-      const command = commandOf(message.text)
-      if (command) {
-        toast(t`Command sent: ${command}`)
-        return
-      }
+    // a slash command (/new, /clear, /compact…) is run by the TUI, never
+    // written to the transcript as a message: queued as one it waited for
+    // the agent forever
+    const command = commandOf(message.text)
+    // optimistic: the bubble shows at once (sending), turns queued when the
+    // host took it, and leaves when the transcript shows the message
+    const at = Date.now()
+    const mark = (next?: Pending['state']) =>
+      setPendingBy((all) => {
+        const list = all[target] ?? []
+        return {
+          ...all,
+          [target]: next
+            ? list.map((item) =>
+                item.at === at ? { ...item, state: next } : item,
+              )
+            : list.filter((item) => item.at !== at),
+        }
+      })
+    if (!command)
       setPendingBy((all) => ({
         ...all,
         [target]: [
           ...(all[target] ?? []),
-          { text: message.text, note: message.note, at: Date.now() },
+          {
+            text: message.text,
+            note: message.note,
+            at,
+            after: endRef.current,
+            state: 'sending',
+          },
         ],
       }))
+    return write(target, async () => {
+      try {
+        await withDeskRetry(
+          () =>
+            hostWrite('send', {
+              id: target,
+              text: message.text,
+              attachments: message.attachments,
+            }),
+          (seconds) => patch(target, { retryIn: seconds }),
+        )
+      } catch (error) {
+        // refused: the text goes back to the composer with the error
+        if (!command) mark()
+        throw error
+      }
+      if (command) toast(t`Command sent: ${command}`)
+      else mark('queued')
     })
   }
   const setError = (error: string) => patch(id, { error })

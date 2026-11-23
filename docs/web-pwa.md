@@ -303,8 +303,13 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   with a breathing light on the call in flight (host `pending`: sent, no
   result yet) and a check on finished ones, and collapses once the run is
   over (a tap still opens it in full); "N messages, showing M" with 加载更早 keeping the reading
-  position; messages sent from the phone queue above the composer until the
-  transcript shows them; motion only for what just arrived (slide-in, a new
+  position; a message sent from the phone shows at once at the end of the
+  thread as a dashed bubble (发送中… → 排队中 / 已送达, like Claude Code's
+  queued input) and becomes a normal user bubble only when the transcript
+  shows it — the agent may take queued ones in any order; each transcript
+  line after the send settles one bubble (`settle`, `chat-thread.tsx`), and
+  a bubble is never dropped while the agent works, only a minute after it is
+  idle; motion only for what just arrived (slide-in, a new
   reply unfolds over ≤ 500 ms, one working line (running light + 运行中… elapsed · tokens) while the agent works, the same shape whether or not a tool call is out, smooth
   follow at the bottom), all off under reduced motion; polling 1 s while the
   agent works. Keyboard: `interactive-widget=resizes-content` keeps the

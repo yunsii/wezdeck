@@ -18,7 +18,7 @@ import { useScreenWakeLock } from '#/lib/wake-lock'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
-import { ChatThread, SendQueue, settle } from './chat-thread'
+import { ChatThread, settle } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
@@ -334,18 +334,22 @@ function useSessionDetail(id: string) {
   return { detail, data: detail.data, pagingIn, loadEarlier }
 }
 
+/** absolute index just past the newest message the page has */
+const transcriptEnd = (data?: Detail) =>
+  (data?.start ?? 0) + (data?.messages?.length ?? 0)
+
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const device = useDeviceState()
   const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id)
   const { sending, error, setError, retryIn, pendingRaw, send, run } =
-    useSessionWrites(id)
+    useSessionWrites(id, transcriptEnd(detail.data))
   useFollowReplacement(data?.replaced_by)
   const end = useRef<HTMLDivElement>(null)
   const messages: Array<Message> = data?.messages ?? []
-  const pending = settle(pendingRaw, messages)
   const busy = Boolean(data && isBusy(data))
+  const pending = settle(pendingRaw, messages, data?.start ?? 0, busy)
   const follow = useChatScroll(
     end,
     messages.length + pending.length + (busy ? 1 : 0),
@@ -470,6 +474,7 @@ export function SessionDetail({ id }: { id: string }) {
                     }
                   : undefined
               }
+              pending={pending}
               sessionId={id}
             />
           </>
@@ -514,7 +519,6 @@ export function SessionDetail({ id }: { id: string }) {
           </p>
         ) : null}
         <SessionSubagents agents={data?.subagents} />
-        <SendQueue pending={pending} busy={busy} />
         {retryIn ? (
           <p role="status" className="text-xs text-brand-muted">
             {t`Someone just used the desk; sending in ${retryIn}s…`}
