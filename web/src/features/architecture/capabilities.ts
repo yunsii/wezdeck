@@ -300,12 +300,12 @@ export const decisions: Array<Decision> = [
   },
   {
     title: {
-      zh: '远程写入要签名，本机写入靠本地信任',
-      en: 'Remote writes are signed; local writes rely on local trust',
+      zh: '远程写入要签名，本机写入只认正式控制台',
+      en: 'Remote writes are signed; local writes only from the production console',
     },
     body: {
-      zh: '配对令牌只证明「能读」。能往终端里打字的权限要绑定到一台被主机批准过的设备。本机浏览器已经在主机上，签名不增加安全，只增加步骤。',
-      en: 'The pairing token only proves the right to read. Typing into a terminal is bound to a device the host approved. A browser on the host is already on the host: a signature adds steps, not safety.',
+      zh: '配对令牌只证明「能读」。能往终端里打字的权限要绑定到一台被主机批准过的设备。本机浏览器已经在主机上，签名不增加安全，所以不签名；但本机的「来源」不等于可信——localhost 上任何开发服务器都能发请求，因此本机写入只认正式站点来源，并校验 Host 防 DNS rebinding。',
+      en: 'The pairing token only proves the right to read. Typing into a terminal is bound to a device the host approved. A browser on the host gains nothing from a signature, so it does not sign; but being on the host is not trust — any dev server on localhost can send requests — so local writes accept the production origin only, and the Host is checked against DNS rebinding.',
     },
   },
   {

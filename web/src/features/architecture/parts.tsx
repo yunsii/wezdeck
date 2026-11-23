@@ -7,6 +7,7 @@ import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import { capabilityGroups } from './capabilities'
+import { threats } from './security'
 import { COPY, KINDS } from './copy'
 import { KIND_STYLE, pick } from './model'
 import type { Diagram, Lang, Text } from './model'
@@ -261,5 +262,39 @@ export function Capabilities({ lang }: { lang: Lang }) {
         ))}
       </div>
     </section>
+  )
+}
+
+/** each threat folded under its name: the guard, then where it lives */
+export function Threats({ lang }: { lang: Lang }) {
+  const p = (text: Text) => pick(text, lang)
+  return (
+    <div className="grid gap-2">
+      <h3 className="text-[13px] font-semibold text-brand-label">
+        {p(COPY.threats)}
+      </h3>
+      <ul className="grid items-start gap-1.5 md:grid-cols-2">
+        {threats.map((item) => (
+          <li
+            key={item.threat.en}
+            className="rounded-[14px] border border-brand-edge bg-brand-surface px-3.5"
+          >
+            <Disclosure
+              title={item.threat[lang]}
+              triggerClassName="min-h-11 text-[14.5px] font-normal"
+            >
+              <div className="grid gap-1.5 pb-3">
+                <p className="text-[14px] leading-relaxed text-brand-muted">
+                  {p(item.guard)}
+                </p>
+                <p className="font-mono text-[12.5px] break-words text-brand-label">
+                  {p(item.impl)}
+                </p>
+              </div>
+            </Disclosure>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

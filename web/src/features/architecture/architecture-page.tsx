@@ -17,7 +17,8 @@ import { cn } from '#/lib/utils'
 import { LanguageSwitcher, ThemeSwitcher } from '../console-shared'
 import { decisions } from './capabilities'
 import { CONCEPTS, COPY, SOURCE } from './copy'
-import { Capabilities, CardDetail, Legend, StepList } from './parts'
+import { Capabilities, CardDetail, Legend, StepList, Threats } from './parts'
+import { securityDiagram } from './security'
 import { flows } from './flows'
 import { overview } from './overview'
 import { CARD_H, layout } from './layout'
@@ -68,6 +69,12 @@ export function ArchitecturePage() {
               </a>
             ))}
             <a
+              href="#security-design"
+              className="text-brand-running hover:underline"
+            >
+              {p(COPY.security)}
+            </a>
+            <a
               href="#capabilities"
               className="text-brand-running hover:underline"
             >
@@ -101,6 +108,17 @@ export function ArchitecturePage() {
             <DiagramSection key={diagram.id} diagram={diagram} lang={lang} />
           ))}
         </div>
+
+        <section id="security-design" className="grid scroll-mt-6 gap-6">
+          <div className="grid max-w-3xl gap-2">
+            <h2 className="text-[24px] font-bold">{p(COPY.security)}</h2>
+            <p className="text-[15.5px] leading-relaxed text-brand-muted">
+              {p(COPY.securityLead)}
+            </p>
+          </div>
+          <DiagramSection diagram={securityDiagram} lang={lang} />
+          <Threats lang={lang} />
+        </section>
 
         <Capabilities lang={lang} />
 

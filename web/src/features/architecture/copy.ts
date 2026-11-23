@@ -12,6 +12,12 @@ export const COPY = {
   },
   concepts: { zh: '几个概念', en: 'A few concepts' },
   flows: { zh: '流程', en: 'Flows' },
+  security: { zh: '安全设计', en: 'Security design' },
+  securityLead: {
+    zh: '这套系统能往你的终端里打字，所以先把「谁能读、谁能写」分开：配对令牌只能读；写入要么带主机批准过的设备签名，要么来自本机的正式控制台；无论从哪条路来，写进窗格前都过同一组保护。下面是各道边界的位置，以及每种威胁对应的防线。',
+    en: 'This system can type into your terminal, so reading and writing are granted apart: the pairing token only reads; a write carries the signature of a device the host approved, or comes from the production console on the host; either way it passes the same guards before reaching a pane. Below: where each boundary sits, and the guard against each threat.',
+  },
+  threats: { zh: '威胁与防线', en: 'Threats and guards' },
   capabilities: {
     zh: '本地服务提供的能力',
     en: 'What the local services offer',

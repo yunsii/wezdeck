@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { capabilityGroups } from '#/features/architecture/capabilities'
 import { flows } from '#/features/architecture/flows'
 import { overview } from '#/features/architecture/overview'
+import { securityDiagram } from '#/features/architecture/security'
 import { layout, problems } from '#/features/architecture/layout'
 
 // The architecture page (features/architecture) lists every entry point of
@@ -37,7 +38,7 @@ function goCases(source: string, func: RegExp) {
 const sorted = (set: Set<string>) => [...set].sort()
 
 describe('architecture page: diagrams', () => {
-  it.each([overview, ...flows].map((d) => [d.id, d]))(
+  it.each([overview, ...flows, securityDiagram].map((d) => [d.id, d]))(
     '%s is well formed',
     (_, diagram) => {
       expect(problems(diagram)).toEqual([])
