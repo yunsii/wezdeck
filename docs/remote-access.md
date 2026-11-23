@@ -90,6 +90,7 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `attach {id}` | write | `ticket attach --id` (skills/agent-collab/lib/attach.py): the ticket's agent conversation opens in a new window of the target repo's tmux session through `agent-launcher.sh` with `WEZDECK_RESUME_SESSION_ID`, and an open ticket is session-claimed so headless runs stop writing to it — the phone's 接管到 tmux |
 | `todos {session? \| all}` | read | the repo to-dos of the session's repo, or every open one (`scripts/runtime/todo.py list --json`) |
 | `todo {op, session, text?, id?}` | write | `add` (to the session's repo, source `phone`) / `done` / `reopen` / `delete` a repo to-do |
+| `clear {id}` | write | mark a session read — Ctrl+X in `Alt+/`: `attention-jump.sh --forget <id> --only-if-ts <ts>` archives the live entry into `recent[]` and nudges the counters; only a listed session, and only while its entry still has the ts just read (a fresh question is never swallowed). A relay with `WEZDECK_ATTENTION_FILE` clears there (`WEZDECK_ATTENTION_STATE_PATH`), never in the live state (`remote_clear.go`). The phone: swipe a running / waiting / done row left → 标为已读, or the button in 会话信息 |
 | `device.register` | read-ish | records a phone's public key as pending |
 
 Guards on every write (`remote_session.go`): one writer — a tmux-hosted

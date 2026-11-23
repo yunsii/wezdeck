@@ -247,7 +247,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 		return diagSubmit(f.Args, f.Cid, r)
 	case "session.image":
 		return sessionImage(f.Args)
-	case "send", "key", "reply", "attach", "upload", "todo":
+	case "send", "key", "reply", "attach", "upload", "todo", "clear":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
@@ -271,6 +271,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			result, err = attachTicket(w.Args)
 		case "todo":
 			result, err = writeTodo(w.Args)
+		case "clear":
+			result, err = clearAttention(w.Args)
 		default:
 			result, err = replyTicket(w.Args)
 		}

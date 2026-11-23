@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { Detail } from './console-sessions'
+import { ClearButton } from './session-clear'
 
 export type MetaGroup = {
   name: string
@@ -274,6 +275,11 @@ export function SessionInfo({
               {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
             </button>
           ) : null}
+          <ClearButton
+            id={data.id}
+            status={data.status}
+            waitingKind={data.waiting_kind}
+          />
           {onRename ? (
             <button
               type="button"

@@ -44,7 +44,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    phone a 「还有 N 个等你 ›」 chip in the header when another one waits;
    `Alt+g` / `Alt+x` or tapping the title opens a switcher sheet grouped
    like the list. Switching replaces the history entry, so back returns to
-   the list. The header and the sheet show the agent's own name
+   the list. Swiping a running / waiting / done row left offers 标为已读
+   (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The
+   header and the sheet show the agent's own name
    (`agent_name`) beside the window title. Rename (`/rename`) moved into
    会话信息 (ⓘ). What
    waits on you badges its own tab: 会话 counts sessions waiting on you,

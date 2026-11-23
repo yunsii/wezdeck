@@ -12,6 +12,7 @@ import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
 import { phoneVisits, recordVisit } from '#/lib/session-visits'
 import { OpenTodos } from './session-todos'
+import { clearable, SwipeToClear } from './session-clear'
 import { buildSessionTree, visitOf, worktreeKey } from './session-order'
 import { useAgo } from './tickets-view'
 import {
@@ -108,39 +109,44 @@ export function SessionList() {
       row.background?.length ?? 0,
     )
     return (
-      <Link
-        to="/{-$locale}/console/sessions/$id"
-        params={{ locale: localeParam, id: row.id }}
-        data-session={row.id}
-        data-pane-role={row.pane_role || undefined}
-        onClick={() => recordVisit(worktreeKey(row))}
-        className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
+      <SwipeToClear
+        id={row.id}
+        enabled={clearable(row.status, row.waiting_kind)}
       >
-        <span className="pt-1.5">
-          <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
-        </span>
-        <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
-          <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-[16px] font-semibold">
-              {titleOf(row)}
+        <Link
+          to="/{-$locale}/console/sessions/$id"
+          params={{ locale: localeParam, id: row.id }}
+          data-session={row.id}
+          data-pane-role={row.pane_role || undefined}
+          onClick={() => recordVisit(worktreeKey(row))}
+          className="key-press flex min-h-14 items-start gap-3 px-4 py-3"
+        >
+          <span className="pt-1.5">
+            <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
+          </span>
+          <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="truncate text-[16px] font-semibold">
+                {titleOf(row)}
+              </span>
+              <span className="shrink-0 text-xs text-brand-label">
+                {ago(ts(row.ts))}
+              </span>
             </span>
-            <span className="shrink-0 text-xs text-brand-label">
-              {ago(ts(row.ts))}
+            <span className="truncate text-sm text-brand-muted">
+              {prompt || t`No human message yet`}
+            </span>
+            <span className="flex min-w-0 flex-wrap items-center gap-1">
+              {showRepo && row.repo ? tag(row.repo) : null}
+              {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
+              {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
+              {row.name && row.name !== row.agent ? tag(row.name) : null}
+              {status ? tag(status) : null}
+              {row.branch ? tag(row.branch) : null}
             </span>
           </span>
-          <span className="truncate text-sm text-brand-muted">
-            {prompt || t`No human message yet`}
-          </span>
-          <span className="flex min-w-0 flex-wrap items-center gap-1">
-            {showRepo && row.repo ? tag(row.repo) : null}
-            {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
-            {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
-            {row.name && row.name !== row.agent ? tag(row.name) : null}
-            {status ? tag(status) : null}
-            {row.branch ? tag(row.branch) : null}
-          </span>
-        </span>
-      </Link>
+        </Link>
+      </SwipeToClear>
     )
   }
 
