@@ -28,8 +28,12 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    and the source, a still of the session list with the real status lights,
    then sessions / tickets / from anywhere. Language and theme there are
    click menus (never hover); in the console they live only in 我的 › 外观.
-   `/architecture` (架构解析, linked from the landing page) is the public
-   explainer: concepts and flows in prose, files / endpoints folded. Each
+   `/architecture` (架构解析, linked from the landing page and from the
+   console's 我的 list; opened from inside the app it shows the same ‹ back
+   as a pushed page — the installed console has no browser back) is the
+   public explainer: concepts and flows in prose (设备授权 `flows-access.ts`:
+   host tokens and relay join, pairing, device registration, approval,
+   signed hello, per-request checks, revoke), files / endpoints folded. Each
    diagram is a React Flow canvas (`@xyflow/react`, lazy chunk; desk only)
    above its step list, which is the keyboard path and the whole diagram on
    a phone. Data lives in `web/src/features/architecture/` (`overview.ts`,

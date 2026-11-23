@@ -35,7 +35,7 @@ describe('Architecture page', () => {
     await browser.close()
   })
 
-  it('desk: seven canvases; a card opens its notes, the list follows', async () => {
+  it('desk: eight canvases (overview, six flows, trust boundaries); a card opens its notes, the list follows', async () => {
     const context = await browser.newContext({
       viewport: { width: 1440, height: 900 },
       locale: 'zh-CN',
@@ -46,7 +46,7 @@ describe('Architecture page', () => {
       `${base}/zh/architecture`,
       '#open-session .react-flow__node-card',
     )
-    expect(await page.locator('.react-flow').count()).toBe(7)
+    expect(await page.locator('.react-flow').count()).toBe(8)
     const card = page.locator('#open-session .react-flow__node-card').nth(5)
     await card.scrollIntoViewIfNeeded()
     await card.click()

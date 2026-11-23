@@ -338,7 +338,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-me.tsx:401
+#: src/features/console-me.tsx:414
 #: src/features/tickets-view.tsx:367
 msgid "Back"
 msgstr "Back"
@@ -769,7 +769,7 @@ msgstr "Device access"
 #~ msgstr "diagnostics"
 
 #: src/features/console-diagnostics.tsx:168
-#: src/features/console-me.tsx:352
+#: src/features/console-me.tsx:365
 #: src/features/console-shell.tsx:91
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -1031,6 +1031,7 @@ msgstr "Host up since"
 msgid "hotfix: an urgent fix"
 msgstr "hotfix: an urgent fix"
 
+#: src/features/console-me.tsx:346
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"

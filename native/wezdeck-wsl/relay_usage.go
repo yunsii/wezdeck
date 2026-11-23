@@ -18,11 +18,11 @@ import (
 	"time"
 )
 
-// usageURL: WEZDECK_RELAY_URL (wss://…/relay/host?room=…) → https://…/relay/usage?room=…
+// usageURL: the relay URL (wss://…/relay/host?room=…) → https://…/relay/usage?room=…
 func usageURL(relayURL string) (string, error) {
 	u, err := url.Parse(relayURL)
 	if err != nil || u.Host == "" {
-		return "", errors.New("WEZDECK_RELAY_URL is not a URL")
+		return "", errors.New("the relay URL is not a URL")
 	}
 	switch u.Scheme {
 	case "wss":
@@ -37,7 +37,7 @@ func usageURL(relayURL string) (string, error) {
 var usageClient = &http.Client{Timeout: 15 * time.Second}
 
 func fetchUsage() (any, error) {
-	target, err := usageURL(os.Getenv("WEZDECK_RELAY_URL"))
+	target, err := usageURL(relayURL())
 	if err != nil {
 		return nil, err
 	}

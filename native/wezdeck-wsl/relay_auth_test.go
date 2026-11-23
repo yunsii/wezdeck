@@ -123,6 +123,12 @@ func TestUsageURL(t *testing.T) {
 	if got, _ := usageURL("ws://127.0.0.1:3018/relay/host"); got != "http://127.0.0.1:3018/relay/usage" {
 		t.Fatalf("local: %q", got)
 	}
+	// the installed unit sets no WEZDECK_RELAY_URL: usage must follow the
+	// same default as the relay session ("WEZDECK_RELAY_URL is not a URL")
+	t.Setenv("WEZDECK_RELAY_URL", "")
+	if got, err := usageURL(relayURL()); err != nil || got != "https://wezdeck.yuns.love/relay/usage" {
+		t.Fatalf("default: %q %v", got, err)
+	}
 	// usage is a gated read: an unapproved connection is refused before the fetch
 	t.Setenv("WEZDECK_RELAY_OPEN_READS", "")
 	t.Setenv("WEZDECK_REMOTE_DEVICES", filepath.Join(t.TempDir(), "d.json"))

@@ -2,6 +2,7 @@
 // lanes. Same rules as overview.ts: concepts on the cards, files and fields
 // in `impl`.
 import type { Diagram } from './model'
+import { accessFlow } from './flows-access'
 import { imageFlow } from './flows-media'
 import { ticketLife, waitingSignal } from './flows-work'
 import { CLOUD, DEVICE, WINDOWS, WSL } from './lanes'
@@ -305,4 +306,5 @@ export const flows: Array<Diagram> = [
   ticketLife,
   waitingSignal,
   imageFlow,
+  accessFlow,
 ]

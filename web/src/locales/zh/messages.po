@@ -338,7 +338,7 @@ msgstr "假设"
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/console-me.tsx:401
+#: src/features/console-me.tsx:414
 #: src/features/tickets-view.tsx:367
 msgid "Back"
 msgstr "返回"
@@ -769,7 +769,7 @@ msgstr "设备授权"
 #~ msgstr "诊断数据"
 
 #: src/features/console-diagnostics.tsx:168
-#: src/features/console-me.tsx:352
+#: src/features/console-me.tsx:365
 #: src/features/console-shell.tsx:91
 msgid "Diagnostics"
 msgstr "诊断"
@@ -1031,6 +1031,7 @@ msgstr "主机上线于"
 msgid "hotfix: an urgent fix"
 msgstr "hotfix：紧急修复"
 
+#: src/features/console-me.tsx:346
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"

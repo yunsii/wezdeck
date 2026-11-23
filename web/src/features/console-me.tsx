@@ -334,6 +334,19 @@ function MeIndex({ active }: { active?: MePage }) {
           active={active === 'interactions'}
           title={titles.interactions}
         />
+        {/* how it all works, device access included: the public page,
+            with a ‹ back here */}
+        <li className="border-b border-brand-edge last:border-b-0">
+          <Link
+            to="/{-$locale}/architecture"
+            params={{ locale: localeParam }}
+            data-me="architecture"
+            className="key-press flex min-h-13 items-center justify-between px-4 text-body"
+          >
+            {t`How it fits together`}
+            <ChevronRight size={18} aria-hidden className="text-brand-label" />
+          </Link>
+        </li>
       </ul>
       {consoleMode === 'local' ? (
         <ul className={group}>

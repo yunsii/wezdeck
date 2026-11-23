@@ -30,6 +30,15 @@ import (
 
 const relayDefaultURL = "wss://wezdeck.yuns.love/relay/host"
 
+// relayURL: WEZDECK_RELAY_URL, else the production relay. The installed unit
+// does not set it, so every reader (the session, the usage fetch) goes here.
+func relayURL() string {
+	if url := os.Getenv("WEZDECK_RELAY_URL"); url != "" {
+		return url
+	}
+	return relayDefaultURL
+}
+
 type relayFrame struct {
 	T      string          `json:"t"`
 	Cid    string          `json:"cid,omitempty"`
@@ -121,10 +130,7 @@ func runRelay() error {
 	if token == "" {
 		return errors.New("WEZDECK_RELAY_HOST_TOKEN is empty (see docs/remote-access.md)")
 	}
-	url := os.Getenv("WEZDECK_RELAY_URL")
-	if url == "" {
-		url = relayDefaultURL
-	}
+	url := relayURL()
 	r := &relay{peers: map[string]*webrtc.PeerConnection{}, phones: map[string]*phoneChan{}}
 	activeRelay = r
 	if path := relayLogPath(); path != "" {

@@ -5,11 +5,13 @@
 // phone, where the canvas is never loaded). Text is bilingual inline
 // ({zh, en} in copy.ts / overview.ts / flows*.ts / capabilities.ts):
 // long-form page copy, not UI chrome, so the message catalogs stay out of it.
-import { Link } from '@tanstack/react-router'
+import { Link, useCanGoBack } from '@tanstack/react-router'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
+import { BackButton } from '#/components/deck/back-button'
 import { Button } from '#/components/ui/button'
+import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
 import { useTheme } from '#/lib/theme-provider'
 import { useMediaQuery } from '#/lib/use-media'
@@ -33,17 +35,30 @@ export function ArchitecturePage() {
   const lang: Lang = locale === 'zh' ? 'zh' : 'en'
   const localeParam = locale === 'en' ? undefined : locale
   const p = (text: Text) => pick(text, lang)
+  // opened from inside the app (我的 › 架构解析 in the installed console,
+  // which has no browser back button): the same ‹ as every pushed page
+  const canGoBack = useCanGoBack()
+  const back = useGoBack({ to: '/{-$locale}', params: { locale: localeParam } })
   return (
     <main data-deck className="min-h-dvh bg-brand-deck text-brand-text">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
-        <Link
-          to="/{-$locale}"
-          params={{ locale: localeParam }}
-          className="inline-flex items-center gap-2.5 text-[16px] font-semibold"
-        >
-          <img src="/brand-icon.svg" alt="" width="28" height="28" />
-          WezDeck
-        </Link>
+        <div className="flex min-w-0 items-center gap-1">
+          {canGoBack ? (
+            <BackButton
+              onClick={back}
+              label={lang === 'zh' ? '返回' : 'Back'}
+              className="-ml-3"
+            />
+          ) : null}
+          <Link
+            to="/{-$locale}"
+            params={{ locale: localeParam }}
+            className="inline-flex items-center gap-2.5 text-[16px] font-semibold"
+          >
+            <img src="/brand-icon.svg" alt="" width="28" height="28" />
+            WezDeck
+          </Link>
+        </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher locale={locale} />
           <ThemeSwitcher mode={mode} onChange={setMode} />

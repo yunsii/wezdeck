@@ -12,9 +12,9 @@
 #   ./scripts/dev/install-remote-relay.sh --push-secrets  # wrangler secret put both tokens
 #   ./scripts/dev/install-remote-relay.sh --pair        # print the phone pairing link + QR
 #   ./scripts/dev/install-remote-relay.sh --check       # unit + presence, no writes
-#   ./scripts/dev/install-remote-relay.sh --devices     # phones that asked to write / are approved
-#   ./scripts/dev/install-remote-relay.sh --approve <id>  # let that phone write (send / keys / reply)
-#   ./scripts/dev/install-remote-relay.sh --revoke <id>
+#   ./scripts/dev/install-remote-relay.sh --devices     # devices waiting for approval / approved
+#   ./scripts/dev/install-remote-relay.sh --approve <id>  # let that device read and write
+#   ./scripts/dev/install-remote-relay.sh --revoke <id>   # cut its reads and writes at once
 #   ./scripts/dev/install-remote-relay.sh --uninstall
 set -euo pipefail
 
