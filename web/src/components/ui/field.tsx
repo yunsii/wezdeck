@@ -69,7 +69,7 @@ export function Field({
         className={cn(
           'group w-full px-3 py-2.5 md:pr-4 text-left outline-none select-none [-webkit-touch-callout:none]',
           inline
-            ? 'flex min-h-12 items-baseline justify-between gap-3 md:grid'
+            ? 'flex min-h-12 items-baseline justify-between gap-3 md:grid md:min-h-0'
             : 'grid gap-y-0.5',
           'transition-colors active:bg-brand-soft data-[popup-open]:bg-brand-soft focus-visible:bg-brand-soft',
           'md:col-span-3 md:grid-cols-subgrid md:items-baseline md:py-2 md:hover:bg-brand-soft',

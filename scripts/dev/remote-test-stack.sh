@@ -7,7 +7,7 @@
 # the real ~/.local/state/wezdeck/remote-uploads; this script is the fix.
 #
 #   scripts/dev/remote-test-stack.sh start [--home DIR]   # build + start, print env
-#   scripts/dev/remote-test-stack.sh ensure               # reuse a current stack, else start
+#   scripts/dev/remote-test-stack.sh ensure [--home DIR]  # reuse a current stack, else start
 #   scripts/dev/remote-test-stack.sh env                  # print the test env again
 #   scripts/dev/remote-test-stack.sh stop
 #
@@ -57,9 +57,13 @@ built_web_id() {
 
 alive() { [[ -f "$STATE/$1.pid" ]] && kill -0 "$(cat "$STATE/$1.pid")" 2>/dev/null; }
 
-# a running stack serving these sources: web build id and relay version
+# a running stack serving these sources, with the relay HOME asked for
+# (`start` records it; a stack started for fixture transcripts is not the
+# one a plain run wants, and the other way round)
 current() {
+  local want_home="${1:-}"
   alive vite && alive relay || return 1
+  [[ "$(cat "$STATE/home" 2>/dev/null)" == "$want_home" ]] || return 1
   local served running
   served="$(curl -sf -m 3 "http://127.0.0.1:$PORT/build.json?t=$(date +%s%N)" |
     sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p')"
@@ -70,7 +74,9 @@ current() {
 }
 
 ensure() {
-  if current; then
+  local home=''
+  [[ "${1:-}" == --home ]] && home="${2:-}"
+  if current "$home"; then
     echo "# test stack current on http://127.0.0.1:$PORT (reused)"
     print_env
   else
@@ -88,6 +94,7 @@ start() {
   done
   stop
   mkdir -p "$STATE/uploads" "$STATE/claude-status" "$STATE/relaylog"
+  printf '%s' "$home" >"$STATE/home"
   [[ -f "$STATE/attention.json" ]] || echo '{"entries":{}}' >"$STATE/attention.json"
   # stand-in for open-task-window (phone 新会话, session_new.go): a real
   # `git worktree add` in whatever throwaway repo the test offers, its pane a

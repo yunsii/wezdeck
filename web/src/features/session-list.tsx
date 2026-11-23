@@ -120,7 +120,7 @@ function SessionRow({
         </span>
         <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
           <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-title font-semibold">{title}</span>
+            <span className="truncate text-title font-medium">{title}</span>
             <span className="shrink-0 text-meta text-brand-label">
               {ago(ts(row.ts))}
             </span>
@@ -230,7 +230,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
           data-testid="sessions-waiting"
           className="overflow-hidden rounded-2xl border border-brand-waiting/40 bg-brand-surface"
         >
-          <h2 className="border-b border-brand-edge px-4 py-2.5 text-body font-semibold">
+          <h2 className="border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label">
             {t`Needs you`}
           </h2>
           <ul>
@@ -262,7 +262,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
               className="overflow-hidden rounded-2xl bg-brand-surface"
               data-repo={repo.label}
             >
-              <h2 className="border-b border-brand-edge px-4 py-2.5 text-body font-semibold">
+              <h2 className="border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label">
                 {repo.label}
               </h2>
               {repo.worktrees.map((wt) => {

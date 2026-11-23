@@ -267,8 +267,10 @@ version=…`. Before any cdp test, `web/tests/version.setup.ts` compares the
 served `/build.json` and the test relay's version with the working tree and
 stops with "restart the stack" on a mismatch — a stale stack once passed for
 a real bug (`WEZDECK_SKIP_VERSION_CHECK=1` to probe an old build on purpose).
-`ensure` does that check first and keeps a current stack instead of
-rebuilding it; `start` skips `vite build` when `web/dist/client/build.json`
+`ensure [--home DIR]` does that check first — plus the relay HOME the stack
+was started with (`$STATE/home`: a stack the release gate restarted without
+`--home` once served fixture screenshots from the real HOME) — and keeps a
+current stack instead of rebuilding it; `start` skips `vite build` when `web/dist/client/build.json`
 already carries the fingerprint (and `build.sh` skips a current relay).
 
 **Run what the change can break, not every suite**:

@@ -140,7 +140,7 @@ function TicketKey({
         <span className="pt-1">
           <Led tone={tone} size={13} />
         </span>
-        <span className="line-clamp-2 text-title leading-snug font-semibold text-brand-text md:text-body">
+        <span className="line-clamp-2 text-title leading-snug font-medium text-brand-text md:text-body">
           {ticket.title || ticket.id}
         </span>
         <span className="pt-0.5 text-meta text-brand-label">
