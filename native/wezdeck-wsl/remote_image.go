@@ -5,7 +5,7 @@ package main
 // screenshot) shown on the phone. The parser leaves a ref on the message
 // (chatMessage.Images, "<line byte offset>.<nth image in that line>");
 // `session.image {id, ref, thumb, offset}` re-reads that one line and answers
-// like upload.get (serveImage): a ≤360 px thumbnail, or 48 KB chunks.
+// like upload.get (serveImage): 48 KB chunks of the original.
 
 import (
 	"bufio"
@@ -25,7 +25,6 @@ func sessionImage(args json.RawMessage) (any, error) {
 	var a struct {
 		ID     string `json:"id"`
 		Ref    string `json:"ref"`
-		Thumb  bool   `json:"thumb"`
 		Offset int64  `json:"offset"`
 	}
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
@@ -54,7 +53,7 @@ func sessionImage(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return serveImage(data, mime, a.Thumb, a.Offset)
+	return serveImage(data, mime, a.Offset)
 }
 
 // transcriptImage decodes the nth image of the line starting at lineOff,

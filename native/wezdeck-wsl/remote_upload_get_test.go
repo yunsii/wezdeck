@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestUploadGetThumbAndChunks(t *testing.T) {
+func TestUploadGetChunks(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("WEZDECK_REMOTE_UPLOADS", dir)
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 600))
@@ -27,15 +27,14 @@ func TestUploadGetThumbAndChunks(t *testing.T) {
 	_ = os.WriteFile(filepath.Join(dir, name), buf.Bytes(), 0o600)
 	_ = os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("x"), 0o600)
 
+	// an older page still asks for thumb:true: it gets the first chunk of
+	// the original (the phone makes thumbnails now)
 	res, err := uploadGet(json.RawMessage(`{"name":"` + name + `","thumb":true}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := res.(map[string]any)
-	raw, _ := base64.StdEncoding.DecodeString(m["data"].(string))
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(raw))
-	if err != nil || cfg.Width != thumbMax || cfg.Height != thumbMax/2 || m["width"] != 1200 {
-		t.Fatalf("thumb wrong: %v %+v %v", err, cfg, m["width"])
+	if m := res.(map[string]any); m["offset"] != int64(0) || m["mime"] != "image/png" {
+		t.Fatalf("thumb request: %v", m)
 	}
 
 	var got []byte

@@ -111,12 +111,14 @@ finished upload; one `event=upload` relay log row per stored file.
 
 Viewing them (`features/image-viewer.tsx`): a composer thumbnail opens the
 local pick full screen; in the conversation a `[手机附件]` image renders as a
-thumbnail and opens the original. Both come back through the read action
-`upload.get {name, thumb}` (`remote_upload_get.go`, bare `img-*` names inside
-the uploads dir only): `thumb:true` answers one frame with a ≤360 px JPEG
-(stdlib decode + box filter), otherwise `{mime, size, offset, data}` chunks
-of 48 KB that the phone reassembles into a blob (`lib/upload-image.ts`,
-cached per page). The viewer fits the screen, a tap toggles actual size
+thumbnail and opens the original. The host only sends bytes: the read
+action `upload.get {name, offset}` (`remote_upload_get.go`, bare `img-*`
+names inside the uploads dir only) answers `{mime, size, offset, data}`
+chunks of 48 KB that the phone reassembles into a blob (`lib/upload-image.ts`,
+cached per page), and the phone makes the thumbnail itself (createImageBitmap
++ canvas → a ≤720 px JPEG data URL, kept in the persisted query cache). The
+host decodes nothing — a small PNG declaring a huge size cost it gigabytes,
+and it had no webp decoder; a `thumb` field from an older page is ignored. The viewer fits the screen, a tap toggles actual size
 (scroll to pan), Esc / × / backdrop close, ← / → step through a message's
 images; the blurred thumbnail stands in until the original arrives. A
 thumbnail that fails while the link is still coming up retries with backoff;
@@ -125,7 +127,7 @@ Only the host's "no longer on the host" shows 已过期, other failures show 重
 desk (`[Image #1]` + image block) or returned by a tool (Read of a .png,
 browser screenshots) — become refs on the message (`images`:
 `<line byte offset>.<nth image in that line>`, `agent_claude.go`) and are
-read with `session.image {id, ref, thumb, offset}` (`remote_image.go`),
+read with `session.image {id, ref, offset}` (`remote_image.go`),
 which re-reads that one line and answers like `upload.get`; tool images load
 only once the call is opened.
 
