@@ -131,6 +131,10 @@ msgstr "A local-first workbench for AI coding agents."
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
 
+#: src/features/ticket-new.tsx:177
+msgid "A ticket goes to another repository."
+msgstr "A ticket goes to another repository."
+
 #: src/features/session-info.tsx:85
 msgid "Account limits"
 msgstr "Account limits"
@@ -240,7 +244,7 @@ msgstr "Approve sends a, request changes sends s (then type notes below), quit s
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/tickets-view.tsx:297
+#: src/features/tickets-view.tsx:303
 msgid "Back"
 msgstr "Back"
 
@@ -265,7 +269,7 @@ msgstr "Background tasks"
 msgid "Base commit"
 msgstr "Base commit"
 
-#: src/features/session-new.tsx:231
+#: src/features/session-new.tsx:233
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 
@@ -350,8 +354,9 @@ msgstr "Clearing…"
 
 #: src/features/image-viewer.tsx:125
 #: src/features/session-info.tsx:252
-#: src/features/session-new.tsx:183
+#: src/features/session-new.tsx:185
 #: src/features/session-switcher.tsx:208
+#: src/features/ticket-new.tsx:164
 msgid "Close"
 msgstr "Close"
 
@@ -376,7 +381,7 @@ msgid "Close VS Code window"
 msgstr "Close VS Code window"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:78
+#: src/features/tickets-view.tsx:79
 msgctxt "ticket status"
 msgid "closed"
 msgstr "closed"
@@ -390,7 +395,7 @@ msgstr "closed"
 #~ msgid "Collab"
 #~ msgstr "Collab"
 
-#: src/features/tickets-view.tsx:233
+#: src/features/tickets-view.tsx:234
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -398,8 +403,8 @@ msgstr "Collab data unavailable: {unavailable}"
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
-#: src/features/tickets-view.tsx:267
-#: src/features/tickets-view.tsx:357
+#: src/features/tickets-view.tsx:273
+#: src/features/tickets-view.tsx:363
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -488,7 +493,7 @@ msgstr "Copy session reference for an agent"
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/session-new.tsx:43
+#: src/features/session-new.tsx:44
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -496,13 +501,21 @@ msgstr "Could not create it: {reason}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new.tsx:275
+#: src/features/session-new.tsx:277
 msgid "Create session"
 msgstr "Create session"
 
-#: src/features/session-new.tsx:36
+#: src/features/ticket-new.tsx:234
+msgid "Create ticket"
+msgstr "Create ticket"
+
+#: src/features/session-new.tsx:37
 msgid "Creating the worktree…"
 msgstr "Creating the worktree…"
+
+#: src/features/ticket-new.tsx:234
+msgid "Creating…"
+msgstr "Creating…"
 
 #: src/features/console-collab.tsx:147
 msgid "Cross-repo collab"
@@ -529,7 +542,7 @@ msgstr "Dark"
 msgid "Dark theme"
 msgstr "Dark theme"
 
-#: src/features/tickets-view.tsx:125
+#: src/features/tickets-view.tsx:126
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
@@ -553,7 +566,7 @@ msgstr "Depends on"
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
-#: src/features/session-new.tsx:159
+#: src/features/session-new.tsx:161
 msgid "dev: a long-lived workstation for parallel work"
 msgstr "dev: a long-lived workstation for parallel work"
 
@@ -592,7 +605,7 @@ msgstr "Done"
 msgid "Done ({doneCount})"
 msgstr "Done ({doneCount})"
 
-#: src/features/session-new.tsx:225
+#: src/features/session-new.tsx:227
 msgid "e.g. phone-create"
 msgstr "e.g. phone-create"
 
@@ -612,7 +625,7 @@ msgstr "Enable writing"
 msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
-#: src/features/tickets-view.tsx:177
+#: src/features/tickets-view.tsx:178
 msgid "Ended {ended}"
 msgstr "Ended {ended}"
 
@@ -668,7 +681,7 @@ msgstr "Exit"
 msgid "Expired"
 msgstr "Expired"
 
-#: src/features/tickets-view.tsx:80
+#: src/features/tickets-view.tsx:81
 msgid "failed"
 msgstr "failed"
 
@@ -680,11 +693,11 @@ msgstr "failed"
 msgid "File"
 msgstr "File"
 
-#: src/features/tickets-view.tsx:146
+#: src/features/tickets-view.tsx:147
 msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
 
-#: src/features/tickets-view.tsx:147
+#: src/features/tickets-view.tsx:148
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
@@ -700,7 +713,7 @@ msgstr "Finished ({doneCount})"
 msgid "finished its turn"
 msgstr "finished its turn"
 
-#: src/features/session-new.tsx:235
+#: src/features/session-new.tsx:237
 msgid "First message to the agent"
 msgstr "First message to the agent"
 
@@ -715,6 +728,10 @@ msgstr "Follow system theme"
 #: src/features/session-composer.tsx:320
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
+
+#: src/features/ticket-new.tsx:172
+msgid "From"
+msgstr "From"
 
 #: src/features/console-development.tsx:406
 msgid "Git"
@@ -746,7 +763,7 @@ msgstr "Hide initial prompt"
 
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
-#: src/features/tickets-view.tsx:110
+#: src/features/tickets-view.tsx:111
 msgid "Host offline"
 msgstr "Host offline"
 
@@ -761,7 +778,7 @@ msgid "Host signals"
 msgstr "Host signals"
 
 #: src/features/console-activity.tsx:211
-#: src/features/tickets-view.tsx:111
+#: src/features/tickets-view.tsx:112
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
@@ -769,7 +786,7 @@ msgstr "Host unreachable right now"
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/session-new.tsx:161
+#: src/features/session-new.tsx:163
 msgid "hotfix: an urgent fix"
 msgstr "hotfix: an urgent fix"
 
@@ -801,11 +818,11 @@ msgstr "Images"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
-#: src/features/tickets-view.tsx:74
+#: src/features/tickets-view.tsx:75
 msgid "in progress"
 msgstr "in progress"
 
-#: src/features/tickets-view.tsx:175
+#: src/features/tickets-view.tsx:176
 msgid "In progress {active}"
 msgstr "In progress {active}"
 
@@ -883,7 +900,7 @@ msgstr "Keyboard first"
 msgid "Keys"
 msgstr "Keys"
 
-#: src/features/session-new.tsx:207
+#: src/features/session-new.tsx:209
 msgid "Kind"
 msgstr "Kind"
 
@@ -967,7 +984,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:243
 #: src/features/session-list.tsx:214
-#: src/features/tickets-view.tsx:231
+#: src/features/tickets-view.tsx:232
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -1050,19 +1067,29 @@ msgstr "Needs you"
 msgid "Needs you {waitingCount}"
 msgstr "Needs you {waitingCount}"
 
-#: src/features/session-new.tsx:80
-#: src/features/session-new.tsx:172
-#: src/features/session-new.tsx:179
+#: src/features/session-new.tsx:82
+#: src/features/session-new.tsx:174
+#: src/features/session-new.tsx:181
 msgid "New session"
 msgstr "New session"
 
-#: src/features/session-new.tsx:76
+#: src/features/session-new.tsx:78
 msgid "New session (c)"
 msgstr "New session (c)"
 
 #: src/features/session-info.tsx:290
 msgid "New session title"
 msgstr "New session title"
+
+#: src/features/ticket-new.tsx:53
+#: src/features/ticket-new.tsx:153
+#: src/features/ticket-new.tsx:160
+msgid "New ticket"
+msgstr "New ticket"
+
+#: src/features/ticket-new.tsx:49
+msgid "New ticket (n)"
+msgstr "New ticket (n)"
 
 #: src/features/session-todos.tsx:116
 msgid "New to-do"
@@ -1138,7 +1165,7 @@ msgstr "No plan written yet"
 msgid "No repositories in this workspace."
 msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:278
+#: src/features/tickets-view.tsx:284
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1407,7 +1434,7 @@ msgstr "Reason"
 #~ msgid "Recently active"
 #~ msgstr "Recently active"
 
-#: src/features/tickets-view.tsx:79
+#: src/features/tickets-view.tsx:80
 msgid "rejected"
 msgstr "rejected"
 
@@ -1480,7 +1507,7 @@ msgid "Repositories"
 msgstr "Repositories"
 
 #: src/features/session-info.tsx:52
-#: src/features/session-new.tsx:191
+#: src/features/session-new.tsx:193
 msgid "Repository"
 msgstr "Repository"
 
@@ -1577,7 +1604,7 @@ msgstr "run finished"
 
 #: src/features/console-collab.tsx:467
 #: src/features/landing-example.tsx:50
-#: src/features/tickets-view.tsx:84
+#: src/features/tickets-view.tsx:85
 msgid "running"
 msgstr "running"
 
@@ -1689,7 +1716,7 @@ msgstr "Send"
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
-#: src/features/session-new.tsx:40
+#: src/features/session-new.tsx:41
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -1742,7 +1769,7 @@ msgstr "Sessions"
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/tickets-view.tsx:77
+#: src/features/tickets-view.tsx:78
 msgid "shipped"
 msgstr "shipped"
 
@@ -1790,6 +1817,10 @@ msgstr "Source"
 msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
 
+#: src/features/ticket-new.tsx:221
+msgid "Start working on it now (a headless run on the host)"
+msgstr "Start working on it now (a headless run on the host)"
+
 #: src/features/console-activity.tsx:91
 msgid "started researching"
 msgstr "started researching"
@@ -1798,11 +1829,11 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new.tsx:42
+#: src/features/session-new.tsx:43
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new.tsx:38
+#: src/features/session-new.tsx:39
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -1820,7 +1851,7 @@ msgstr "State"
 #: src/features/landing-example.tsx:120
 #: src/features/session-info.tsx:70
 #: src/features/session-list.tsx:170
-#: src/features/tickets-view.tsx:170
+#: src/features/tickets-view.tsx:171
 msgid "Status"
 msgstr "Status"
 
@@ -1828,7 +1859,7 @@ msgstr "Status"
 msgid "Status updated"
 msgstr "Status updated"
 
-#: src/features/session-new.tsx:219
+#: src/features/session-new.tsx:221
 msgid "Subject"
 msgstr "Subject"
 
@@ -1836,7 +1867,7 @@ msgstr "Subject"
 msgid "Submit answers"
 msgstr "Submit answers"
 
-#: src/features/tickets-view.tsx:73
+#: src/features/tickets-view.tsx:74
 msgid "submitted"
 msgstr "submitted"
 
@@ -1873,7 +1904,7 @@ msgstr "Tap to send into the agent pane"
 msgid "Tappable Ask options"
 msgstr "Tappable Ask options"
 
-#: src/features/session-new.tsx:160
+#: src/features/session-new.tsx:162
 msgid "task: a short focused change, reclaimed after delivery"
 msgstr "task: a short focused change, reclaimed after delivery"
 
@@ -1905,6 +1936,14 @@ msgstr "The agent is working"
 #: src/features/console-sessions.tsx:299
 #~ msgid "The agent is working. You can send once it stops."
 #~ msgstr "The agent is working. You can send once it stops."
+
+#: src/features/ticket-new.tsx:198
+msgid "The behaviour, error or data you actually observed"
+msgstr "The behaviour, error or data you actually observed"
+
+#: src/features/ticket-new.tsx:209
+msgid "The contract or behaviour you expect from it — the target checks this first"
+msgstr "The contract or behaviour you expect from it — the target checks this first"
 
 #: src/features/console-shared.tsx:354
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
@@ -1959,7 +1998,7 @@ msgstr "Ticket unavailable"
 msgid "Tickets"
 msgstr "Tickets"
 
-#: src/features/tickets-view.tsx:279
+#: src/features/tickets-view.tsx:285
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -1968,6 +2007,7 @@ msgid "Time counts only while the relay is busy (128 MB × seconds); between mes
 msgstr "Time counts only while the relay is busy (128 MB × seconds); between messages it hibernates and costs nothing, even with the phone connected."
 
 #: src/features/session-info.tsx:47
+#: src/features/ticket-new.tsx:181
 msgid "Title"
 msgstr "Title"
 
@@ -1990,6 +2030,10 @@ msgstr "tmux window"
 #: src/features/console-development.tsx:414
 msgid "Tmux window"
 msgstr "Tmux window"
+
+#: src/features/ticket-new.tsx:173
+msgid "To"
+msgstr "To"
 
 #: src/features/session-todos.tsx:244
 msgid "To follow up"
@@ -2079,7 +2123,7 @@ msgstr "Unavailable"
 msgid "Up to date, {at}"
 msgstr "Up to date, {at}"
 
-#: src/features/tickets-view.tsx:125
+#: src/features/tickets-view.tsx:126
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
@@ -2152,11 +2196,11 @@ msgstr "waiting for your confirmation"
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
-#: src/features/tickets-view.tsx:76
+#: src/features/tickets-view.tsx:77
 msgid "waiting on target"
 msgstr "waiting on target"
 
-#: src/features/tickets-view.tsx:75
+#: src/features/tickets-view.tsx:76
 msgid "waiting on you"
 msgstr "waiting on you"
 
@@ -2164,7 +2208,7 @@ msgstr "waiting on you"
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/tickets-view.tsx:176
+#: src/features/tickets-view.tsx:177
 msgid "Waiting on you {mine}"
 msgstr "Waiting on you {mine}"
 
@@ -2215,13 +2259,25 @@ msgstr "WezDeck organizes workspaces, git worktrees, and agent sessions into one
 msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 msgstr "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 
-#: src/features/session-new.tsx:241
+#: src/features/session-new.tsx:243
 msgid "What should it work on?"
 msgstr "What should it work on?"
+
+#: src/features/ticket-new.tsx:187
+msgid "What the other repository should do"
+msgstr "What the other repository should do"
 
 #: src/features/session-ask-claude.tsx:156
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
+
+#: src/features/ticket-new.tsx:203
+msgid "What you assume"
+msgstr "What you assume"
+
+#: src/features/ticket-new.tsx:192
+msgid "What you saw"
+msgstr "What you saw"
 
 #: src/features/session-info.tsx:38
 msgid "Where it runs"
@@ -2269,7 +2325,7 @@ msgstr "Workspaces"
 msgid "Worktree"
 msgstr "Worktree"
 
-#: src/features/session-new.tsx:230
+#: src/features/session-new.tsx:232
 msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 

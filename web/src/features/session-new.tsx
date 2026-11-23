@@ -16,6 +16,7 @@ import { useLocale } from '#/lib/locale-context'
 import { remoteLink } from '#/lib/remote-link'
 import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
+import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 
 type Repo = { root: string; label: string; visited?: number }
@@ -57,7 +58,8 @@ export function NewSessionButton() {
         event.metaKey ||
         event.ctrlKey ||
         event.altKey ||
-        target?.closest('input, textarea, select, [contenteditable="true"]')
+        target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        jumpPending()
       )
         return
       event.preventDefault()

@@ -48,7 +48,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The + beside
    the filter (`c` on a keyboard) is 新会话 — `Ctrl+k g`: repository, dev /
    task / hotfix, subject, first message; the sheet follows the host job
-   and opens the session once the agent has taken the message. The
+   and opens the session once the agent has taken the message. 工单 has the
+   same + (`n`): 新工单 — from / to repository, title, what you saw, what you
+   assume, optionally start the run now. The
    header and the sheet show the agent's own name
    (`agent_name`) beside the window title. Rename (`/rename`) moved into
    会话信息 (ⓘ). What

@@ -131,6 +131,10 @@ msgstr "面向 AI Agent 的本地工作台。"
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
+#: src/features/ticket-new.tsx:177
+msgid "A ticket goes to another repository."
+msgstr "工单要发给另一个仓库。"
+
 #: src/features/session-info.tsx:85
 msgid "Account limits"
 msgstr "账号额度"
@@ -240,7 +244,7 @@ msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/tickets-view.tsx:297
+#: src/features/tickets-view.tsx:303
 msgid "Back"
 msgstr "返回"
 
@@ -265,7 +269,7 @@ msgstr "后台任务"
 msgid "Base commit"
 msgstr "基线提交"
 
-#: src/features/session-new.tsx:231
+#: src/features/session-new.tsx:233
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
 
@@ -350,8 +354,9 @@ msgstr "处理中…"
 
 #: src/features/image-viewer.tsx:125
 #: src/features/session-info.tsx:252
-#: src/features/session-new.tsx:183
+#: src/features/session-new.tsx:185
 #: src/features/session-switcher.tsx:208
+#: src/features/ticket-new.tsx:164
 msgid "Close"
 msgstr "关闭"
 
@@ -376,7 +381,7 @@ msgid "Close VS Code window"
 msgstr "关闭 VS Code 窗口"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:78
+#: src/features/tickets-view.tsx:79
 msgctxt "ticket status"
 msgid "closed"
 msgstr "已关闭"
@@ -390,7 +395,7 @@ msgstr "已关闭"
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
 
-#: src/features/tickets-view.tsx:233
+#: src/features/tickets-view.tsx:234
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
@@ -398,8 +403,8 @@ msgstr "协作数据不可用：{unavailable}"
 msgid "Collab metrics"
 msgstr "协作指标"
 
-#: src/features/tickets-view.tsx:267
-#: src/features/tickets-view.tsx:357
+#: src/features/tickets-view.tsx:273
+#: src/features/tickets-view.tsx:363
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -488,7 +493,7 @@ msgstr "复制会话引用（给 agent 用）"
 msgid "Cost"
 msgstr "花费"
 
-#: src/features/session-new.tsx:43
+#: src/features/session-new.tsx:44
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -496,13 +501,21 @@ msgstr "创建失败：{reason}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:275
+#: src/features/session-new.tsx:277
 msgid "Create session"
 msgstr "创建会话"
 
-#: src/features/session-new.tsx:36
+#: src/features/ticket-new.tsx:234
+msgid "Create ticket"
+msgstr "创建工单"
+
+#: src/features/session-new.tsx:37
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
+
+#: src/features/ticket-new.tsx:234
+msgid "Creating…"
+msgstr "创建中…"
 
 #: src/features/console-collab.tsx:147
 msgid "Cross-repo collab"
@@ -529,7 +542,7 @@ msgstr "深色"
 msgid "Dark theme"
 msgstr "暗色主题"
 
-#: src/features/tickets-view.tsx:125
+#: src/features/tickets-view.tsx:126
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
@@ -553,7 +566,7 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "电脑前空闲"
 
-#: src/features/session-new.tsx:159
+#: src/features/session-new.tsx:161
 msgid "dev: a long-lived workstation for parallel work"
 msgstr "dev：长期并行开发的工作站"
 
@@ -592,7 +605,7 @@ msgstr "已完成"
 msgid "Done ({doneCount})"
 msgstr "已完成（{doneCount}）"
 
-#: src/features/session-new.tsx:225
+#: src/features/session-new.tsx:227
 msgid "e.g. phone-create"
 msgstr "例如 phone-create"
 
@@ -612,7 +625,7 @@ msgstr "启用写入"
 msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 msgstr "已启用。这台手机可以给会话发消息、回复工单。"
 
-#: src/features/tickets-view.tsx:177
+#: src/features/tickets-view.tsx:178
 msgid "Ended {ended}"
 msgstr "已结束 {ended}"
 
@@ -668,7 +681,7 @@ msgstr "退出码"
 msgid "Expired"
 msgstr "已过期"
 
-#: src/features/tickets-view.tsx:80
+#: src/features/tickets-view.tsx:81
 msgid "failed"
 msgstr "失败"
 
@@ -680,11 +693,11 @@ msgstr "失败"
 msgid "File"
 msgstr "文件"
 
-#: src/features/tickets-view.tsx:146
+#: src/features/tickets-view.tsx:147
 msgid "Filter by title, repo or id"
 msgstr "按标题、仓库或编号筛选"
 
-#: src/features/tickets-view.tsx:147
+#: src/features/tickets-view.tsx:148
 msgid "Filter tickets"
 msgstr "筛选工单"
 
@@ -700,7 +713,7 @@ msgstr "已完成（{doneCount}）"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new.tsx:235
+#: src/features/session-new.tsx:237
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -715,6 +728,10 @@ msgstr "跟随系统主题"
 #: src/features/session-composer.tsx:320
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
+
+#: src/features/ticket-new.tsx:172
+msgid "From"
+msgstr "发起仓库"
 
 #: src/features/console-development.tsx:406
 msgid "Git"
@@ -746,7 +763,7 @@ msgstr "收起初始消息"
 
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
-#: src/features/tickets-view.tsx:110
+#: src/features/tickets-view.tsx:111
 msgid "Host offline"
 msgstr "主机离线"
 
@@ -761,7 +778,7 @@ msgid "Host signals"
 msgstr "主机信号"
 
 #: src/features/console-activity.tsx:211
-#: src/features/tickets-view.tsx:111
+#: src/features/tickets-view.tsx:112
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
@@ -769,7 +786,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/session-new.tsx:161
+#: src/features/session-new.tsx:163
 msgid "hotfix: an urgent fix"
 msgstr "hotfix：紧急修复"
 
@@ -801,11 +818,11 @@ msgstr "图片"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
-#: src/features/tickets-view.tsx:74
+#: src/features/tickets-view.tsx:75
 msgid "in progress"
 msgstr "进行中"
 
-#: src/features/tickets-view.tsx:175
+#: src/features/tickets-view.tsx:176
 msgid "In progress {active}"
 msgstr "进行中 {active}"
 
@@ -883,7 +900,7 @@ msgstr "键盘优先"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/session-new.tsx:207
+#: src/features/session-new.tsx:209
 msgid "Kind"
 msgstr "类型"
 
@@ -967,7 +984,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:70
 #: src/features/session-header.tsx:243
 #: src/features/session-list.tsx:214
-#: src/features/tickets-view.tsx:231
+#: src/features/tickets-view.tsx:232
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -1050,19 +1067,29 @@ msgstr "需要你处理"
 msgid "Needs you {waitingCount}"
 msgstr "等你 {waitingCount}"
 
-#: src/features/session-new.tsx:80
-#: src/features/session-new.tsx:172
-#: src/features/session-new.tsx:179
+#: src/features/session-new.tsx:82
+#: src/features/session-new.tsx:174
+#: src/features/session-new.tsx:181
 msgid "New session"
 msgstr "新会话"
 
-#: src/features/session-new.tsx:76
+#: src/features/session-new.tsx:78
 msgid "New session (c)"
 msgstr "新会话（c）"
 
 #: src/features/session-info.tsx:290
 msgid "New session title"
 msgstr "新的会话标题"
+
+#: src/features/ticket-new.tsx:53
+#: src/features/ticket-new.tsx:153
+#: src/features/ticket-new.tsx:160
+msgid "New ticket"
+msgstr "新工单"
+
+#: src/features/ticket-new.tsx:49
+msgid "New ticket (n)"
+msgstr "新工单（n）"
 
 #: src/features/session-todos.tsx:116
 msgid "New to-do"
@@ -1138,7 +1165,7 @@ msgstr "还没有写计划"
 msgid "No repositories in this workspace."
 msgstr "这个工作区里没有仓库。"
 
-#: src/features/tickets-view.tsx:278
+#: src/features/tickets-view.tsx:284
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -1407,7 +1434,7 @@ msgstr "原因"
 #~ msgid "Recently active"
 #~ msgstr "最近活跃"
 
-#: src/features/tickets-view.tsx:79
+#: src/features/tickets-view.tsx:80
 msgid "rejected"
 msgstr "已拒绝"
 
@@ -1480,7 +1507,7 @@ msgid "Repositories"
 msgstr "仓库"
 
 #: src/features/session-info.tsx:52
-#: src/features/session-new.tsx:191
+#: src/features/session-new.tsx:193
 msgid "Repository"
 msgstr "仓库"
 
@@ -1577,7 +1604,7 @@ msgstr "运行结束"
 
 #: src/features/console-collab.tsx:467
 #: src/features/landing-example.tsx:50
-#: src/features/tickets-view.tsx:84
+#: src/features/tickets-view.tsx:85
 msgid "running"
 msgstr "运行中"
 
@@ -1689,7 +1716,7 @@ msgstr "发送"
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
-#: src/features/session-new.tsx:40
+#: src/features/session-new.tsx:41
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -1742,7 +1769,7 @@ msgstr "会话"
 msgid "Settings"
 msgstr "我的"
 
-#: src/features/tickets-view.tsx:77
+#: src/features/tickets-view.tsx:78
 msgid "shipped"
 msgstr "已交付"
 
@@ -1790,6 +1817,10 @@ msgstr "来源"
 msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 msgstr "从键盘优先的控制平面开始，在需要时再打开浏览器视图。"
 
+#: src/features/ticket-new.tsx:221
+msgid "Start working on it now (a headless run on the host)"
+msgstr "创建后立即开始处理（在电脑上后台运行）"
+
 #: src/features/console-activity.tsx:91
 msgid "started researching"
 msgstr "开始调研"
@@ -1798,11 +1829,11 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:42
+#: src/features/session-new.tsx:43
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:38
+#: src/features/session-new.tsx:39
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -1820,7 +1851,7 @@ msgstr "状态"
 #: src/features/landing-example.tsx:120
 #: src/features/session-info.tsx:70
 #: src/features/session-list.tsx:170
-#: src/features/tickets-view.tsx:170
+#: src/features/tickets-view.tsx:171
 msgid "Status"
 msgstr "状态"
 
@@ -1828,7 +1859,7 @@ msgstr "状态"
 msgid "Status updated"
 msgstr "状态更新于"
 
-#: src/features/session-new.tsx:219
+#: src/features/session-new.tsx:221
 msgid "Subject"
 msgstr "主题"
 
@@ -1836,7 +1867,7 @@ msgstr "主题"
 msgid "Submit answers"
 msgstr "提交答案"
 
-#: src/features/tickets-view.tsx:73
+#: src/features/tickets-view.tsx:74
 msgid "submitted"
 msgstr "已提交"
 
@@ -1873,7 +1904,7 @@ msgstr "点一下就会发到 Agent 窗格"
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
-#: src/features/session-new.tsx:160
+#: src/features/session-new.tsx:162
 msgid "task: a short focused change, reclaimed after delivery"
 msgstr "task：短期聚焦的改动，交付后回收"
 
@@ -1905,6 +1936,14 @@ msgstr "Agent 正在处理"
 #: src/features/console-sessions.tsx:299
 #~ msgid "The agent is working. You can send once it stops."
 #~ msgstr "Agent 正在运行，等它停下后才能发送。"
+
+#: src/features/ticket-new.tsx:198
+msgid "The behaviour, error or data you actually observed"
+msgstr "实际观察到的行为、报错或数据"
+
+#: src/features/ticket-new.tsx:209
+msgid "The contract or behaviour you expect from it — the target checks this first"
+msgstr "你期望对方提供的约定或行为——对方会先核实这一点"
 
 #: src/features/console-shared.tsx:354
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
@@ -1959,7 +1998,7 @@ msgstr "工单不可用"
 msgid "Tickets"
 msgstr "工单"
 
-#: src/features/tickets-view.tsx:279
+#: src/features/tickets-view.tsx:285
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -1968,6 +2007,7 @@ msgid "Time counts only while the relay is busy (128 MB × seconds); between mes
 msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，手机一直连着也一样。"
 
 #: src/features/session-info.tsx:47
+#: src/features/ticket-new.tsx:181
 msgid "Title"
 msgstr "标题"
 
@@ -1990,6 +2030,10 @@ msgstr "tmux 窗口"
 #: src/features/console-development.tsx:414
 msgid "Tmux window"
 msgstr "tmux 窗口"
+
+#: src/features/ticket-new.tsx:173
+msgid "To"
+msgstr "目标仓库"
 
 #: src/features/session-todos.tsx:244
 msgid "To follow up"
@@ -2079,7 +2123,7 @@ msgstr "不可用"
 msgid "Up to date, {at}"
 msgstr "已同步到最新，{at}"
 
-#: src/features/tickets-view.tsx:125
+#: src/features/tickets-view.tsx:126
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
@@ -2152,11 +2196,11 @@ msgstr "在等你确认"
 msgid "Waiting on human"
 msgstr "等人处理"
 
-#: src/features/tickets-view.tsx:76
+#: src/features/tickets-view.tsx:77
 msgid "waiting on target"
 msgstr "等对方"
 
-#: src/features/tickets-view.tsx:75
+#: src/features/tickets-view.tsx:76
 msgid "waiting on you"
 msgstr "等你回复"
 
@@ -2164,7 +2208,7 @@ msgstr "等你回复"
 msgid "Waiting on you"
 msgstr "等你处理"
 
-#: src/features/tickets-view.tsx:176
+#: src/features/tickets-view.tsx:177
 msgid "Waiting on you {mine}"
 msgstr "等你 {mine}"
 
@@ -2215,13 +2259,25 @@ msgstr "WezDeck 把 workspace、git worktree 和 Agent 会话组织成一个键�
 msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
 
-#: src/features/session-new.tsx:241
+#: src/features/session-new.tsx:243
 msgid "What should it work on?"
 msgstr "要它做什么？"
+
+#: src/features/ticket-new.tsx:187
+msgid "What the other repository should do"
+msgstr "要对方仓库做什么"
 
 #: src/features/session-ask-claude.tsx:156
 msgid "What the terminal shows"
 msgstr "终端画面"
+
+#: src/features/ticket-new.tsx:203
+msgid "What you assume"
+msgstr "你的假设"
+
+#: src/features/ticket-new.tsx:192
+msgid "What you saw"
+msgstr "你看到的现象"
 
 #: src/features/session-info.tsx:38
 msgid "Where it runs"
@@ -2269,7 +2325,7 @@ msgstr "工作区"
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/session-new.tsx:230
+#: src/features/session-new.tsx:232
 msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑生成，重名会加 -2）"
 

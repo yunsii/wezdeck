@@ -72,6 +72,18 @@ echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$kind-\$sub
 echo "tmux_socket=$STATE/new.sock"
 FAKE
   chmod +x "$STATE/fake-open-task-window"
+  # a private copy of the ticket store: reads stay realistic (the tickets
+  # page shows real tickets) while 新工单 / replies only write the copy; a
+  # ticket run is recorded, never started
+  rm -rf "$STATE/tickets"
+  if [[ -d "${TICKETS_ROOT:-$HOME/.agent/tickets}" ]]; then
+    cp -a "${TICKETS_ROOT:-$HOME/.agent/tickets}" "$STATE/tickets"
+  else
+    mkdir -p "$STATE/tickets"
+  fi
+  chmod 700 "$STATE/tickets"
+  printf '#!/usr/bin/env bash\necho "$1" >>"%s/ticket-runs"\n' "$STATE" >"$STATE/fake-ticket-run"
+  chmod +x "$STATE/fake-ticket-run"
   PATH="$HOME/.local/go/bin:$PATH" "$REPO/native/wezdeck-wsl/build.sh" >/dev/null 2>&1
   # build id = web/ source fingerprint: the cdp tests compare it with the
   # sources they test (web/tests/version.setup.ts) and refuse a stale stack
@@ -99,6 +111,8 @@ FAKE
     WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
     WEZDECK_TODO_DB="$STATE/todo.db" \
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
+    TICKETS_ROOT="$STATE/tickets" \
+    WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
     "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
     >"$STATE/relay.out" 2>&1 </dev/null &
   echo $! >"$STATE/relay.pid"

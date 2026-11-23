@@ -15,6 +15,11 @@ export const JUMP_KEYS: Partial<Record<string, Section>> = {
   m: 'me',
 }
 
+let armedAt = 0
+
+/** `g` was just pressed: the next key is a jump, not a page's own shortcut */
+export const jumpPending = () => Date.now() - armedAt < 1200
+
 export function useJumpKeys(go: (section: Section) => void) {
   useEffect(() => {
     let armed = 0
@@ -37,6 +42,7 @@ export function useJumpKeys(go: (section: Section) => void) {
       }
       if (event.key === 'g') {
         armed = Date.now()
+        armedAt = armed
         return
       }
       const section = JUMP_KEYS[event.key]
@@ -45,6 +51,8 @@ export function useJumpKeys(go: (section: Section) => void) {
         go(section)
       }
       armed = 0
+      // let page shortcuts (c / n) see the key first, then disarm
+      setTimeout(() => (armedAt = 0))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

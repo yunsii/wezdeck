@@ -23,6 +23,7 @@ import { TicketReading, ticketTone } from './console-collab'
 import { useRemoteState } from './console-mode'
 import { Inspector, Reading } from './inspector'
 import type { InspectorItem } from './inspector'
+import { NewTicketButton } from './ticket-new'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
@@ -245,7 +246,12 @@ export function TicketsView({
     <Freshness updatedAt={list.dataUpdatedAt} failed={list.isError} />
   )
   const keys = fixedFilter ? null : (
-    <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
+    <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1">
+        <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
+      </div>
+      <NewTicketButton />
+    </div>
   )
 
   if (wide) {

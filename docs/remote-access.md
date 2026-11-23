@@ -93,6 +93,8 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `repos` | read | repositories a phone may create a session in: main checkouts of visited worktrees (access ledger) and of running sessions, newest visit first (`session_new.go`) |
 | `session.new {repo, type, subject, prompt}` | write | 新会话 — Ctrl+k g d/t/h: `open-task-window --no-attach --type dev\|task\|hotfix -- <subject>` in `repo` (must be one of `repos`; subject one line ≤ 60, message 1–8000), then the message is pasted into the new agent once its pane runs a non-shell and the screen holds still 1.5 s. Answers `{job}` at once — git fetch + agent start outlast an RPC. The message is required: a session is listed only from its first prompt's attention entry. `WEZDECK_SESSION_NEW_CMD` replaces open-task-window (test stack stand-in) |
 | `session.new.job {job}` | read | that job: `stage` creating → starting → sending → done, or failed with `error`; `worktree`, `branch` (kept an hour) |
+| `ticket.targets` | read | the ticket config's targets `[{key, path}]` (`$TICKETS_ROOT/config.yml`, the subset the CLI parses) |
+| `ticket.new {from, to, title, observed, assumed, run}` | write | 新工单: `ticket create` between two configured targets (title one line ≤ 120; the assumption gate's observed / assumed 1–8000). `run` starts `ticket run --phase auto` in its own transient unit (`systemd-run --user --unit wezdeck-ticket-<id>`), so a relay restart does not kill it; `WEZDECK_TICKET_RUN_CMD` replaces that launch (`ticket_new.go`) |
 | `clear {id}` | write | mark a session read — Ctrl+X in `Alt+/`: `attention-jump.sh --forget <id> --only-if-ts <ts>` archives the live entry into `recent[]` and nudges the counters; only a listed session, and only while its entry still has the ts just read (a fresh question is never swallowed). A relay with `WEZDECK_ATTENTION_FILE` clears there (`WEZDECK_ATTENTION_STATE_PATH`), never in the live state (`remote_clear.go`). The phone: swipe a running / waiting / done row left → 标为已读, or the button in 会话信息 |
 | `device.register` | read-ish | records a phone's public key as pending |
 
@@ -425,7 +427,9 @@ phone's client token (401 otherwise) and never wakes the relay object.
 `scripts/dev/remote-test-stack.sh start [--home DIR]` builds the web app,
 serves the production build with the Worker + `HostRelay` on `:3018`
 (`vite preview`) and starts a throwaway host relay whose attention file,
-device approvals, uploads and Claude status snapshots all live in a temp dir
+device approvals, uploads, Claude status snapshots and a private copy of the
+ticket store (new tickets / replies write only the copy; a ticket run and a
+new session's open-task-window are stand-ins) all live in a temp dir
 (`--home` also points it at fixture transcripts); it prints the `export`
 lines the cdp tests need (`WEZDECK_TEST_ATTENTION`, `WEZDECK_TEST_DEVICES`,
 `WEZDECK_TEST_UPLOADS`). `stop` ends it; the systemd relay is never touched.
