@@ -193,8 +193,15 @@ function ConnectionPage() {
   const since = remote.hostSince
     ? new Date(remote.hostSince).toLocaleString()
     : '—'
-  if (consoleMode === 'local')
-    return <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
+  if (consoleMode === 'local' && remote.mode === 'unpaired')
+    return (
+      <>
+        <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
+        <p className="text-sm text-brand-muted">
+          {t`Tickets read from the local Runtime. Sessions and writing go over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`}
+        </p>
+      </>
+    )
   if (remote.mode === 'unpaired')
     return (
       <p className="text-sm text-brand-muted">
@@ -335,7 +342,11 @@ function MeIndex({ active }: { active?: MePage }) {
           title={titles.connection}
           value={
             consoleMode === 'local' ? (
-              t`This computer`
+              remote.mode === 'unpaired' ? (
+                t`This computer, not paired`
+              ) : (
+                t`This computer`
+              )
             ) : remote.mode === 'unpaired' ? (
               t`Not paired`
             ) : (

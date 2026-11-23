@@ -183,6 +183,8 @@ async function selectedPath(
   }
 }
 
+export const NOT_PAIRED = 'this device is not paired'
+
 class RemoteLink {
   state: RemoteState = {
     mode: 'unpaired',
@@ -434,6 +436,10 @@ class RemoteLink {
 
   async rpc(action: string, args: Record<string, unknown>): Promise<unknown> {
     this.start()
+    // no token: nothing will ever connect, so say why now instead of after
+    // the timeout (a browser on the host itself reads tickets through the
+    // local Runtime and never got paired)
+    if (!this.token()) throw new Error(NOT_PAIRED)
     if (!(await this.ready(RPC_TIMEOUT_MS))) {
       throw new Error(
         this.state.mode === 'host-offline'

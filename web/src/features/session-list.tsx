@@ -13,6 +13,7 @@ import { useLocale } from '#/lib/locale-context'
 import { phoneVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
+import { NOT_PAIRED } from '#/lib/remote-link'
 import { OpenTodos } from './session-todos'
 import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton } from './session-new'
@@ -216,7 +217,9 @@ export function SessionList({ selected }: { selected?: string } = {}) {
           role="status"
           className="rounded-[12px] bg-brand-waiting/10 px-3 py-2 text-sm"
         >
-          {String(sessions.error.message)}
+          {sessions.error.message === NOT_PAIRED
+            ? t`Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`
+            : String(sessions.error.message)}
         </p>
       ) : null}
       {filter === 'all' && waiting.length ? (

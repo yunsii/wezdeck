@@ -186,4 +186,12 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await expect.poll(() => page.url().split('/').at(-1)).not.toBe('nav-c')
     await context.close()
   })
+  it('an unpaired browser says so at once instead of timing out', async () => {
+    const context = await browser.newContext({ locale: 'zh-CN' })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/sessions?remote=1`)
+    // well under the 10 s RPC timeout: the missing token is known up front
+    await page.getByText(/这台设备还没配对/).waitFor({ timeout: 4_000 })
+    await context.close()
+  })
 })
