@@ -346,7 +346,16 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   finger, wheel or key can unpin it, never the
   page's own scrolling; a finger dragging the history down unpins at once
   and nothing auto-scrolls while a finger is down; back near the bottom
-  re-pins; while unpinned a "回到最新 / N 条新消息" button jumps back)
+  re-pins; while unpinned a "回到最新 / N 条新消息" button jumps back;
+  tapping a tool run open or closed is reading — it unpins and holds the
+  tapped row on screen through the animation (`panelToggled`: the browser's
+  scroll anchoring off meanwhile; closing first lends the end sentinel the
+  room the panel gives up, so the thread is never pulled down to a shorter
+  end, and "the bottom" means the real end, not that borrowed room, which
+  goes once off screen; a run scrolled past closes onto its row at the top).
+  Each toggle traces `panel-toggle` (row drift, scrollTop) — headless touch
+  emulation moved the row 24 px on close where mouse and scripted clicks
+  moved it 0, so the phone's numbers decide)
   (tables and code scroll in their own box); messages run full width and
   are told apart by background alone (user: ink `brand-text` with deck text,
   reply: `brand-surface`); runs of tool calls collapse into one line (`chat-tools.tsx`), each call
