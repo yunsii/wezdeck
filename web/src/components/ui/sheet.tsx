@@ -49,7 +49,7 @@ export function Sheet({
               // the header holds still; only the body below it scrolls, so the
               // scrollbar starts under the title and never runs into a corner
               'flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-[20px] border-t border-brand-edge bg-brand-deck text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none md:max-w-xl',
-              // motion tokens (styles.css): in slower and decelerating, out
+              // motion tokens (styles/motion.css): in slower and decelerating, out
               // faster and accelerating; a finger on it moves it 1:1
               '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity,scale] duration-[var(--motion-medium)] ease-[var(--ease-enter)] data-[ending-style]:duration-[var(--motion-short)] data-[ending-style]:ease-[var(--ease-exit)] data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full starting:translate-y-full',
               // @starting-style too: the popup mounts and loses data-starting-style

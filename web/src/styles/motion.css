@@ -1,0 +1,275 @@
+/* Motion: view transitions between pages and panes, overlay pop / fade, folding panels. */
+
+/*
+ * The canvas under the page: the console's deck color, per resolved theme.
+ * A page transition slides and fades the page snapshots, which uncovers the
+ * root; with no background there the browser painted white edges in dark
+ * mode (seen on Android Firefox).
+ */
+html {
+  background: #f6f7f9;
+  color-scheme: light;
+}
+html[data-theme='dark'] {
+  background: #14181f;
+  color-scheme: dark;
+}
+::view-transition {
+  background: inherit;
+}
+
+/*
+ * Motion tokens: every transition and animation takes its timing from here.
+ * Enter slower and decelerating, leave faster and accelerating (Material 3
+ * emphasized curves); one thing moves at a time; two whole pages never show
+ * half-transparent on top of each other. Reduced motion: opacity only.
+ */
+:root {
+  --motion-exit: 90ms;
+  --motion-short: 150ms;
+  --motion-medium: 240ms;
+  --motion-long: 340ms;
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/*
+ * Page transitions (lib/view-transition.ts), in layers:
+ *   shell   status band, sidebar, tab bar: never move (old hidden, new as is)
+ *   page    the content column: a section switch has no transition at all;
+ *           within a section a phone pushes (iOS: the new page slides in
+ *           whole and opaque, the old one steps back a quarter), a wide
+ *           screen fades out, then nudges the new page in
+ *   split   within one section on a wide screen the list stays still and
+ *           only the pane beside it fades through
+ * The root keeps only the background. Snapshots stack opaque: the content
+ * column has its own background (vt-page) and no plus-lighter blend — two
+ * pages added together read as a ghost. Toasts never move with a page.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+.vt-band {
+  view-transition-name: band;
+}
+.vt-sidebar {
+  view-transition-name: sidebar;
+}
+.vt-page {
+  view-transition-name: page;
+}
+html:active-view-transition-type(within) .vt-split-list {
+  view-transition-name: split-list;
+}
+html:active-view-transition-type(within) .vt-split-pane {
+  view-transition-name: split-pane;
+}
+::view-transition-group(band),
+::view-transition-group(sidebar),
+::view-transition-group(split-list),
+::view-transition-group(page),
+::view-transition-group(split-pane) {
+  animation: none;
+}
+/* a named element's snapshot is not clipped by the scroller it sits in: the
+   split pane's messages scrolled above the view would paint over the status
+   band mid-switch. The shell stays on top of every content layer. */
+::view-transition-group(band),
+::view-transition-group(sidebar) {
+  z-index: 2;
+}
+::view-transition-old(band),
+::view-transition-old(sidebar),
+::view-transition-old(split-list) {
+  display: none;
+}
+::view-transition-new(band),
+::view-transition-new(sidebar),
+::view-transition-new(split-list) {
+  animation: none;
+}
+::view-transition-old(page),
+::view-transition-new(page),
+::view-transition-old(split-pane),
+::view-transition-new(split-pane) {
+  mix-blend-mode: normal;
+}
+.toast-layer {
+  view-transition-name: toasts;
+}
+.toast-layer [data-sonner-toast] {
+  pointer-events: auto;
+}
+::view-transition-group(toasts) {
+  z-index: 1;
+}
+::view-transition-old(toasts) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(toasts) {
+  animation: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* same-depth hop (one session to another): fade through */
+  ::view-transition-old(page),
+  ::view-transition-old(split-pane) {
+    animation: var(--motion-exit) var(--ease-exit) both vt-fade-out;
+  }
+  ::view-transition-new(page),
+  ::view-transition-new(split-pane) {
+    animation: var(--motion-medium) var(--ease-enter) var(--motion-exit) both
+      vt-rise-in;
+  }
+  /* phone, deeper: the new page slides in over the old one */
+  html:active-view-transition-type(forward)::view-transition-old(page) {
+    animation: var(--motion-long) var(--ease-enter) both vt-step-back;
+  }
+  html:active-view-transition-type(forward)::view-transition-new(page) {
+    animation: var(--motion-long) var(--ease-enter) both vt-push-in;
+    box-shadow: -10px 0 28px rgb(0 0 0 / 0.14);
+  }
+  /* phone, back: the leaving page slides off on top */
+  html:active-view-transition-type(back)::view-transition-old(page) {
+    z-index: 1;
+    animation: var(--motion-medium) var(--ease-standard) both vt-push-out;
+    box-shadow: -10px 0 28px rgb(0 0 0 / 0.14);
+  }
+  html:active-view-transition-type(back)::view-transition-new(page) {
+    animation: var(--motion-medium) var(--ease-standard) both vt-step-forward;
+  }
+  /* wide: the sidebar is the map, a push across the whole column is too much */
+  @media (min-width: 768px) {
+    /* a split: the list stays, the pane fades; the column itself holds */
+    html:active-view-transition-type(within):has(
+        .vt-split-list
+      )::view-transition-old(page) {
+      animation: none;
+      display: none;
+    }
+    html:active-view-transition-type(within):has(
+        .vt-split-list
+      )::view-transition-new(page) {
+      animation: none;
+    }
+    html:active-view-transition-type(forward)::view-transition-old(page),
+    html:active-view-transition-type(back)::view-transition-old(page) {
+      z-index: auto;
+      box-shadow: none;
+      animation: var(--motion-exit) var(--ease-exit) both vt-fade-out;
+    }
+    html:active-view-transition-type(forward)::view-transition-new(page) {
+      box-shadow: none;
+      animation: var(--motion-medium) var(--ease-enter) var(--motion-exit) both
+        vt-nudge-right;
+    }
+    html:active-view-transition-type(back)::view-transition-new(page) {
+      animation: var(--motion-medium) var(--ease-enter) var(--motion-exit) both
+        vt-nudge-left;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(page),
+  ::view-transition-new(page),
+  ::view-transition-old(split-pane),
+  ::view-transition-new(split-pane) {
+    animation: none;
+  }
+  /* overlays: opacity only, no slide or scale */
+  :root {
+    --motion-medium: 100ms;
+    --motion-long: 100ms;
+  }
+  .motion-pop[data-starting-style],
+  .motion-pop[data-ending-style] {
+    scale: 1;
+  }
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes vt-nudge-right {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+@keyframes vt-nudge-left {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+}
+@keyframes vt-push-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-push-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-step-back {
+  to {
+    transform: translateX(-28%);
+  }
+}
+@keyframes vt-step-forward {
+  from {
+    transform: translateX(-28%);
+  }
+}
+
+/*
+ * Overlays (Base UI popups: data-starting-style / data-ending-style mark the
+ * frames before enter and after exit). `motion-pop`: menus, select lists,
+ * popovers — grow from the trigger (--transform-origin). `motion-fade`:
+ * tooltips. The sheet and its backdrop are styled in components/ui/sheet.
+ */
+.motion-pop {
+  transform-origin: var(--transform-origin, top);
+  transition:
+    opacity var(--motion-short) var(--ease-enter),
+    scale var(--motion-short) var(--ease-enter);
+}
+.motion-pop[data-starting-style],
+.motion-pop[data-ending-style] {
+  opacity: 0;
+  scale: 0.96;
+}
+.motion-pop[data-ending-style] {
+  transition-duration: var(--motion-exit);
+  transition-timing-function: var(--ease-exit);
+}
+.motion-fade {
+  transition: opacity var(--motion-short) var(--ease-standard);
+}
+.motion-fade[data-starting-style],
+.motion-fade[data-ending-style] {
+  opacity: 0;
+}
+.motion-fade[data-ending-style] {
+  transition-duration: var(--motion-exit);
+}
+/* a folding panel (Disclosure): the height follows Base UI's measured size */
+.motion-collapse {
+  height: var(--collapsible-panel-height);
+  overflow: hidden;
+  transition: height var(--motion-medium) var(--ease-standard);
+}
+.motion-collapse[data-starting-style],
+.motion-collapse[data-ending-style] {
+  height: 0;
+}

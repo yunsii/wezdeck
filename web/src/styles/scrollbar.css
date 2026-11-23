@@ -1,0 +1,25 @@
+/* Scrollbars, site-wide. */
+
+/*
+ * Scrollbars, site-wide: the standard thin scrollbar with a transparent
+ * thumb, shown only while the pointer is over that scroll area or focus is
+ * inside it — a scroll area keeps its shape instead of a grey OS gutter.
+ * A desktop classic scrollbar always takes its width (Chrome dropped
+ * overflow: overlay); phones use overlay scrollbars and take none. Not
+ * ::-webkit-scrollbar: it could be narrower (8 px), but Chrome does not
+ * repaint its thumb on :hover, so a hover-only thumb never appeared
+ * (measured). `[scrollbar-width:none]` still hides one where needed.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover,
+*:focus-within {
+  scrollbar-color: color-mix(
+      in oklab,
+      var(--brand-label, #6f7887) 45%,
+      transparent
+    )
+    transparent;
+}

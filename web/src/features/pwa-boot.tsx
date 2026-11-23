@@ -20,7 +20,7 @@ export function PwaBoot() {
     })
   }, [update, t])
   return (
-    // its own transition layer that never moves with a page (styles.css)
+    // its own transition layer that never moves with a page (styles/motion.css)
     <div className="toast-layer pointer-events-none fixed inset-0 z-[70]">
       <Toaster
         position="top-center"

@@ -157,9 +157,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`web/public/brand-icon.svg`; the favicon uses heavier strokes for 16 px).
   Repo brand assets (`assets/brand/`, README banner) still use the old deck
   icon.
-- Tokens: `[data-deck]` in `web/src/styles.css` (light `#f6f7f9` paper /
+- Tokens: `[data-deck]` in `web/src/styles/deck.css` (light `#f6f7f9` paper /
   `#ffffff` surface / `#11151c` ink; dark `#14181f` / `#1e232c` / `#f1f3f6`),
-  console only. System font (PingFang / Noto Sans SC / Segoe UI), tabular
+  console only. `web/src/styles.css` only imports `web/src/styles/*.css`
+  (tokens, base, deck, chat, motion, scrollbar, architecture, code) in
+  cascade order; add a rule to the file of its domain. System font (PingFang / Noto Sans SC / Segoe UI), tabular
   numbers.
 - **Controls come from `web/src/components/ui`, never a native element**
   (2026-11-23). Business code may not write `<button>`, `<input>`,
@@ -232,7 +234,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   request to `/zh/…` when it says zh — or, with no cookie yet, when
   `Accept-Language` prefers zh. The hash (a `#pair=` token) survives the
   redirect; the service worker caches `/zh/console` pages too.
-- Motion (`styles.css` "Motion tokens"): every transition takes its timing
+- Motion (`styles/motion.css` "Motion tokens"): every transition takes its timing
   from `--motion-exit` 90 ms / `--motion-short` 150 / `--motion-medium` 240 /
   `--motion-long` 340 and `--ease-enter` / `--ease-exit` / `--ease-standard`
   (Material 3 emphasized curves): enter slower and decelerating, leave faster
@@ -247,7 +249,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   animate their height (`motion-collapse`); `Select` animates in only — Base
   UI keeps a closed select popup mounted and an exit transition left it in
   the DOM, unhidden.
-- Page transitions (`lib/view-transition.ts`, styles.css): View Transitions
+- Page transitions (`lib/view-transition.ts`, `styles/motion.css`): View Transitions
   through the router's `defaultViewTransition`, in layers. The shell — status
   band (`vt-band`), sidebar (`vt-sidebar`), tab bar — never moves; the root
   snapshot keeps only the background. A switch to another section (sidebar,

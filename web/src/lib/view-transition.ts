@@ -1,5 +1,5 @@
 // Page transitions: the browser's View Transitions through TanStack Router,
-// in layers (styles.css). The shell — status band, sidebar, tab bar — never
+// in layers (styles/motion.css). The shell — status band, sidebar, tab bar — never
 // moves. A section switch (sidebar / tab / palette) is instant, no
 // transition at all: a view transition first snapshots the page, which only
 // delays the switch, and the section's data is already warm (console-shell
