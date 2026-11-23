@@ -8,6 +8,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
 import { cn } from '#/lib/utils'
+import { Led } from '#/components/deck/led'
 import { ChatMarkdown } from './chat-markdown'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup } from './chat-tools'
@@ -230,12 +231,6 @@ export function settleCursor(
   return cursor
 }
 
-/** The newest item is a run of tool calls with one still out: its light says "working". */
-const callInFlight = (items: Array<Item>) => {
-  const last = items.at(-1)
-  return last?.kind === 'tools' && last.tools.some((tool) => tool.pending)
-}
-
 /** Consecutive tool calls collapse into one expandable line. */
 export function group(messages: Array<Message>) {
   const out: Array<Item> = []
@@ -260,27 +255,18 @@ export type Activity = {
 }
 
 /**
- * The agent is working: typing dots, then "Working… 4m 39s · ↓ 19.1k
- * tokens", or "Compacting conversation… 36s" in amber while the context is
- * compacted. While a tool call is out its row already has a light, so only
- * the words.
+ * The agent is working: one quiet row — the running light, then "Working…
+ * 4m 39s · ↓ 19.1k tokens", or "Compacting conversation… 36s" in amber while
+ * the context is compacted. Always the same shape, whether or not a tool
+ * call is out (it used to swap between a dots bubble and a bare line on
+ * every tool call).
  */
-function Typing({
-  activity,
-  dots = true,
-}: {
-  activity?: Activity
-  dots?: boolean
-}) {
+function Typing({ activity }: { activity?: Activity }) {
   const { t } = useLingui()
   const compacting = activity?.compactSince !== undefined
   const from = activity?.compactSince ?? activity?.since
   const now = useNow(from !== undefined)
-  const label = compacting
-    ? t`Compacting conversation`
-    : from !== undefined
-      ? t`Working`
-      : ''
+  const label = compacting ? t`Compacting conversation` : t`Working`
   const tokens =
     !compacting && activity?.tokens ? formatTokens(activity.tokens) : ''
   const detail = [
@@ -289,39 +275,29 @@ function Typing({
   ]
     .filter(Boolean)
     .join(' · ')
-  if (!dots && !label) return null
   return (
     <div
       className="chat-in flex justify-start"
       role="status"
-      aria-label={label ? `${label} ${detail}` : t`The agent is working`}
-      data-activity={compacting ? 'compacting' : label ? 'working' : undefined}
+      aria-label={detail ? `${label} ${detail}` : t`The agent is working`}
+      data-activity={compacting ? 'compacting' : 'working'}
     >
-      <div
-        className={cn(
-          'flex min-w-0 items-center gap-2.5 rounded-[14px]',
-          dots ? 'bg-brand-surface px-3.5 py-2.5' : 'px-1 py-0.5',
-        )}
-      >
-        {dots ? (
-          <span className="flex shrink-0 gap-1">
-            <span className="typing-dot" />
-            <span className="typing-dot [animation-delay:150ms]" />
-            <span className="typing-dot [animation-delay:300ms]" />
+      <div className="flex min-w-0 items-center gap-2 px-1 py-0.5">
+        <Led
+          tone={compacting ? 'waiting' : 'running'}
+          size={9}
+          className="led-running"
+        />
+        <span className="min-w-0 truncate text-[13px] text-brand-muted">
+          <span className={cn(compacting && 'text-brand-waiting')}>
+            {label}…
           </span>
-        ) : null}
-        {label ? (
-          <span className="min-w-0 truncate text-[13px] text-brand-muted">
-            <span className={cn(compacting && 'text-brand-waiting')}>
-              {label}…
+          {detail ? (
+            <span className="ml-1.5 text-brand-label tabular-nums">
+              {detail}
             </span>
-            {detail ? (
-              <span className="ml-1.5 text-brand-label tabular-nums">
-                {detail}
-              </span>
-            ) : null}
-          </span>
-        ) : null}
+          ) : null}
+        </span>
       </div>
     </div>
   )
@@ -412,9 +388,7 @@ export function ChatThread({
           />
         )
       })}
-      {busy && effective >= end ? (
-        <Typing activity={activity} dots={!callInFlight(items)} />
-      ) : null}
+      {busy && effective >= end ? <Typing activity={activity} /> : null}
     </SessionIdContext.Provider>
   )
 }

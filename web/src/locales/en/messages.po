@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:464
+#: src/features/chat-thread.tsx:438
 msgid "· summary"
 msgstr "· summary"
 
@@ -23,7 +23,7 @@ msgstr "(pick any)"
 msgid "{bg} background tasks running"
 msgstr "{bg} background tasks running"
 
-#: src/features/chat-thread.tsx:497
+#: src/features/chat-thread.tsx:471
 msgid "{count} delivered, waiting for the agent"
 msgstr "{count} delivered, waiting for the agent"
 
@@ -35,7 +35,7 @@ msgstr "{count} images"
 msgid "{count} more need you"
 msgstr "{count} more need you"
 
-#: src/features/chat-thread.tsx:496
+#: src/features/chat-thread.tsx:470
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} queued, the agent takes them when it is ready"
 
@@ -115,7 +115,7 @@ msgstr "{unread} new"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/chat-thread.tsx:288
+#: src/features/chat-thread.tsx:274
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -521,7 +521,7 @@ msgstr "Command sent: {command}"
 msgid "Commands"
 msgstr "Commands"
 
-#: src/features/chat-thread.tsx:280
+#: src/features/chat-thread.tsx:269
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -567,11 +567,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:448
+#: src/features/chat-thread.tsx:422
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:449
+#: src/features/chat-thread.tsx:423
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1711,7 +1711,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/chat-thread.tsx:493
+#: src/features/chat-thread.tsx:467
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -2286,7 +2286,7 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:297
+#: src/features/chat-thread.tsx:282
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -2761,7 +2761,7 @@ msgstr "Worker requests"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-thread.tsx:282
+#: src/features/chat-thread.tsx:269
 msgid "Working"
 msgstr "Working"
 

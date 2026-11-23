@@ -203,7 +203,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
   back, session title (tap to `/rename`) over an agent chip + branch, a
   「需要你处理」 chip only while the agent waits for the human (running and
-  done are visible in the thread itself: typing dots, the reply), and **ⓘ
+  done are visible in the thread itself: the working line, the reply), and **ⓘ
   会话信息** at the far right; then meters, each shown only once it is close
   to full (≥ 75 %, `NEAR_FULL`) — context, Claude 5 h / 7 d limits with
   reset time ([`remote-sessions.md` Account limits](remote-sessions.md#account-limits));
@@ -305,7 +305,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   over (a tap still opens it in full); "N messages, showing M" with 加载更早 keeping the reading
   position; messages sent from the phone queue above the composer until the
   transcript shows them; motion only for what just arrived (slide-in, a new
-  reply unfolds over ≤ 500 ms, typing dots while the agent works, smooth
+  reply unfolds over ≤ 500 ms, one working line (running light + 运行中… elapsed · tokens) while the agent works, the same shape whether or not a tool call is out, smooth
   follow at the bottom), all off under reduced motion; polling 1 s while the
   agent works. Keyboard: `interactive-widget=resizes-content` keeps the
   composer above it, and a pinned thread follows the shrinking scroller

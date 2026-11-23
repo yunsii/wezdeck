@@ -211,7 +211,7 @@ export function SessionHeader({
         metaValue(data, 'cwd').split('/').filter(Boolean).at(-1) ||
         data.id.slice(0, 8))) ||
     ''
-  // the page shows running (typing dots) and done (the reply) by itself;
+  // the page shows running (the working line) and done (the reply) by itself;
   // the header only speaks up when the agent needs the human
   const long = data
     ? statusText(
