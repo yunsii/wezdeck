@@ -6,8 +6,9 @@
 // are, and the background tasks (counted in the meter row). The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { ChevronDown, ChevronLeft, Info } from 'lucide-react'
+import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { BackButton } from '#/components/deck/back-button'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -228,16 +229,12 @@ export function SessionHeader({
       className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck/95 px-2.5 pt-1 pb-2 backdrop-blur"
     >
       <div className="flex min-w-0 items-center gap-1">
-        <Button
-          variant="plain"
-          type="button"
+        {/* the list sits beside the conversation on a wide screen */}
+        <BackButton
           onClick={onBack}
-          aria-label={t({ message: 'Sessions', context: 'nav' })}
-          // the list sits beside the conversation on a wide screen
-          className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-brand-muted md:hidden"
-        >
-          <ChevronLeft size={22} aria-hidden />
-        </Button>
+          label={t({ message: 'Sessions', context: 'nav' })}
+          className="-ml-2 md:hidden"
+        />
         <div className="grid min-w-0 flex-1">
           {/* Alt+g / Alt+x at the desk: pick another session */}
           <Button

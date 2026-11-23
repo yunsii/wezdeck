@@ -7,8 +7,10 @@
 // switching tabs costs no request and the status keys can show counts.
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { ChevronLeft, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { BackButton } from '#/components/deck/back-button'
+import { RemoteBadge } from './remote-badge'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
@@ -359,15 +361,15 @@ export function TicketsView({
   if (id) {
     return (
       <div className="grid content-start gap-3">
-        <Button
-          variant="plain"
-          type="button"
-          onClick={back}
-          className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 px-2 text-body text-brand-muted"
-        >
-          <ChevronLeft size={20} aria-hidden />
-          {t`Back`}
-        </Button>
+        {/* the header of every pushed page: ‹, the page name, the link chip
+            (it was a lone 「‹ 返回」 line above the ticket) */}
+        <div className="-ml-2 flex items-center gap-1 pt-1">
+          <BackButton onClick={back} label={t`Back`} />
+          <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
+            {t`Tickets`}
+          </h1>
+          <RemoteBadge compact />
+        </div>
         <TicketReading id={id} poll={poll} onOpen={open} />
       </div>
     )

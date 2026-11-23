@@ -3,7 +3,8 @@
 // back returns to the index, the tab bar stays). On the host, local links too.
 import { useLingui } from '@lingui/react/macro'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { BackButton } from '#/components/deck/back-button'
 
 import { Button } from '#/components/ui/button'
 import { Field, FieldList } from '#/components/ui/field'
@@ -396,16 +397,8 @@ function MeSubPage({ page }: { page: MePage }) {
       data-me-page={page}
     >
       <div className="-ml-2 flex items-center gap-1 pt-1 md:ml-0 md:min-h-11">
-        <Button
-          variant="plain"
-          type="button"
-          onClick={back}
-          aria-label={t`Back`}
-          // beside the list on a wide screen there is nothing to go back to
-          className="inline-flex size-11 shrink-0 items-center justify-center text-brand-muted md:hidden"
-        >
-          <ChevronLeft size={22} aria-hidden />
-        </Button>
+        {/* beside the list on a wide screen there is nothing to go back to */}
+        <BackButton onClick={back} label={t`Back`} className="md:hidden" />
         <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
           {titles[page]}
         </h1>

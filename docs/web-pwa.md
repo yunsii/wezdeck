@@ -177,6 +177,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   `size-adjust` / ascent / descent overrides for Inter — stands in until it
   loads, so the swap does not shift the layout. CJK slices are not preloaded
   (which ones depends on the page) and need no metric fallback.
+- Back (2026-11-23): every pushed page (a session, a 我的 group, a ticket)
+  backs out with `components/deck/back-button.tsx` — a bare ‹ on a 44 px
+  target, then the page name (or the session title) and, on the phone, the
+  link chip; the ticket page had a lone 「‹ 返回」 line of its own.
 - Scale (2026-11-23): six named sizes with their line heights in
   `web/src/styles/tokens.css` — `text-meta` 12 · `caption` 13 · `body` 15 ·
   `title` 17 · `heading` 20 · `display` 26 — replaced ~20 pixel sizes
@@ -372,9 +376,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   set off from the thread by a
   full-width hairline and an upward shadow, and the chat page uses 10 px
   side gutters (other pages 16 px). Reading back, the user's message that
-  owns the content at the top of the screen pins there as one truncated
-  line once it has scrolled out (`chat-sticky.tsx`, zero-height sticky box
-  so it never moves the thread); tapping it glides back to that message,
+  owns the content at the top of the screen pins there once it has
+  scrolled out — the user bubble itself folded to one line (same fill, ink,
+  radius and size; it was a dark bordered strip that read as another thing)
+  (`chat-sticky.tsx`, zero-height sticky box so it never moves the thread); tapping it glides back to that message,
   shown in full with a short highlight (`chat-jump-prompt` trace). Unsent
   composer text is kept per session in `localStorage`
   (`wezdeck.draft.<id>`, cleared on a successful send); errors have a

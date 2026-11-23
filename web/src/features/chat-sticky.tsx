@@ -99,13 +99,12 @@ export function StickyPrompt({
           data-testid="sticky-prompt"
           onClick={jump}
           aria-label={t`Jump to your message: ${text}`}
-          className="chat-in absolute inset-x-0 top-1 flex h-10 items-center gap-2 rounded-xl border border-brand-edge bg-brand-deck/95 px-3 text-left text-caption text-brand-text shadow-[0_8px_20px_-14px_rgb(0_0_0/0.35)] backdrop-blur"
+          // the user's own bubble, folded to one line (same fill, ink, radius
+          // and size): it used to be a dark bordered strip that read as a
+          // different thing from the message it points back to
+          className="chat-in absolute inset-x-0 top-1 flex h-10 items-center gap-2 rounded-xl bg-brand-text px-3.5 text-left text-body text-brand-deck shadow-[0_8px_20px_-12px_rgb(0_0_0/0.45)]"
         >
-          <CornerLeftUp
-            size={14}
-            aria-hidden
-            className="shrink-0 text-brand-label"
-          />
+          <CornerLeftUp size={15} aria-hidden className="shrink-0 opacity-60" />
           <span className="min-w-0 flex-1 truncate">{text}</span>
         </Button>
       ) : null}
