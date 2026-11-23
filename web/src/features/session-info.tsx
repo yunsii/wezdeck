@@ -8,6 +8,7 @@ import { useLingui } from '@lingui/react/macro'
 import { Check, Code2, Copy, Pencil } from 'lucide-react'
 import { useState } from 'react'
 
+import { useStatusText } from './console-sessions'
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { Button } from '#/components/ui/button'
@@ -176,6 +177,7 @@ export function SessionInfo({
   // hook is not a macro any more and renders empty strings
   const { t } = useLingui()
   const { groups: groupLabels, keys, yes, no } = useLabels()
+  const statusText = useStatusText()
   const [copiedRef, setCopiedRef] = useState(false)
   // stays mounted while closed: the sheet plays its exit before it unmounts
   if (typeof document === 'undefined') return null
@@ -257,7 +259,18 @@ export function SessionInfo({
                 <Field
                   key={row.key}
                   label={keys[row.key] ?? row.key}
-                  value={format(row.key, row.value)}
+                  // the state in words, as on the list (it showed the raw
+                  // `done`); the kinds below stay raw for debugging
+                  value={
+                    row.key === 'status'
+                      ? statusText(
+                          row.value,
+                          data.waiting_kind,
+                          data.running_kind,
+                          data.background?.length ?? 0,
+                        )
+                      : format(row.key, row.value)
+                  }
                   mono
                 />
               ))}
