@@ -168,8 +168,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '一条会话的对话：首屏 / since 增量 / before 更早',
         'One conversation: first page / since / before',
       ),
-      c('session.image', '对话里的一张图片', 'An image from a conversation'),
-      c('upload.get', '已上传文件的分片', 'A chunk of an uploaded file'),
+      c(
+        'session.image',
+        '转录里的一张图片：原图分块（缩略图由页面生成）',
+        'A transcript image: the original in chunks (the page makes the thumbnail)',
+      ),
+      c(
+        'upload.get',
+        '已上传图片的原图分块',
+        'A chunk of an uploaded image’s original',
+      ),
       c('todos', '仓库待办', 'Repository to-dos'),
       c('repos', '可以新开会话的仓库', 'Repositories a session can start in'),
       c(

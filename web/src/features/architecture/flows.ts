@@ -1,7 +1,8 @@
-// The four flows on the architecture page, each a numbered story across
+// The flows on the architecture page, each a numbered story across
 // lanes. Same rules as overview.ts: concepts on the cards, files and fields
 // in `impl`.
 import type { Diagram } from './model'
+import { imageFlow } from './flows-media'
 import { ticketLife, waitingSignal } from './flows-work'
 import { CLOUD, DEVICE, WINDOWS, WSL } from './lanes'
 
@@ -303,4 +304,5 @@ export const flows: Array<Diagram> = [
   sendMessage,
   ticketLife,
   waitingSignal,
+  imageFlow,
 ]

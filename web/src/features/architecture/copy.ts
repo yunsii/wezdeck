@@ -7,8 +7,8 @@ export const SOURCE = 'https://github.com/yunsii/wezterm-config'
 export const COPY = {
   title: { zh: 'WezDeck 是怎么搭起来的', en: 'How WezDeck fits together' },
   lead: {
-    zh: 'AI Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载；Windows 上的本地服务替它们做主机操作；手机经 Cloudflare 找到这台电脑，再尽量直连。下面先看全景，再走四条最常用的流程，最后列出本地服务提供的全部能力。',
-    en: 'AI agents run in tmux inside WSL, hosted by WezTerm on the desktop; a local Windows service does the host work for them; a phone finds the computer through Cloudflare and then connects directly when it can. First the whole picture, then the four flows you use most, then everything the local services offer.',
+    zh: 'AI Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载；Windows 上的本地服务替它们做主机操作；手机经 Cloudflare 找到这台电脑，再尽量直连。下面先看全景，再走五条最常用的流程，最后列出本地服务提供的全部能力。',
+    en: 'AI agents run in tmux inside WSL, hosted by WezTerm on the desktop; a local Windows service does the host work for them; a phone finds the computer through Cloudflare and then connects directly when it can. First the whole picture, then the five flows you use most, then everything the local services offer.',
   },
   concepts: { zh: '几个概念', en: 'A few concepts' },
   flows: { zh: '流程', en: 'Flows' },
