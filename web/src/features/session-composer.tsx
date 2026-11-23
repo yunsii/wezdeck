@@ -358,12 +358,14 @@ function Toolbar({
           </Button>
           <Button
             variant="solid"
+            // no side padding: the default size squeezed the × out of a 16 px dot
+            size="none"
             type="button"
             aria-label={t`Remove image`}
             onClick={() => composer.remove(image.key)}
-            className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full"
+            className="absolute -top-1.5 -right-1.5 inline-flex size-5 items-center justify-center rounded-full"
           >
-            <X size={10} aria-hidden />
+            <X size={12} strokeWidth={2.5} aria-hidden className="shrink-0" />
           </Button>
         </span>
       ))}
@@ -455,13 +457,20 @@ export function ComposerBox({
         />
         <Button
           variant="solid"
+          // round: no side padding — the default size's px-4 left 8 px of a
+          // 40 px circle for the icon, which shrank to fit whatever size it had
+          size="round"
           type="submit"
           aria-label={t`Send`}
           disabled={Boolean(composer.progress) || !composer.ready || blocked}
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-full disabled:opacity-30"
         >
-          {/* 18 px in a 40 px circle read as a speck: larger, a bolder stroke */}
-          <SendHorizontal size={21} strokeWidth={2.25} aria-hidden />
+          <SendHorizontal
+            size={20}
+            strokeWidth={2.25}
+            aria-hidden
+            className="shrink-0"
+          />
         </Button>
       </div>
     </>

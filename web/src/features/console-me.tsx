@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
+import { Field, FieldList } from '#/components/ui/field'
 import { rememberLocale } from '#/lib/locale-pref'
 import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
@@ -204,12 +205,27 @@ function ConnectionPage() {
     : '—'
   if (consoleMode === 'local' && remote.mode === 'unpaired')
     return (
-      <>
+      <div className="grid gap-4">
         <Row label={t`Mode`} value={t`This computer (local Runtime)`} />
         <p className="text-sm text-brand-muted">
-          {t`Tickets and sessions are read and written through the local Runtime: nothing to pair here. To use a phone or tablet, run scripts/dev/install-remote-relay.sh --pair on the host and open the link there.`}
+          {t`This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here.`}
         </p>
-      </>
+        <section className="grid gap-1.5">
+          <h2 className="text-[13px] font-semibold text-brand-muted">
+            {t`Phone or tablet`}
+          </h2>
+          <p className="text-[13px] text-brand-muted">
+            {t`Run this on the host, then open the link it prints on that device:`}
+          </p>
+          <FieldList>
+            <Field
+              label={t`Pairing command`}
+              value="scripts/dev/install-remote-relay.sh --pair"
+              mono
+            />
+          </FieldList>
+        </section>
+      </div>
     )
   if (remote.mode === 'unpaired')
     return (
@@ -353,12 +369,9 @@ function MeIndex({ active }: { active?: MePage }) {
           active={active === 'connection'}
           title={titles.connection}
           value={
+            // on this computer pairing is beside the point: no "not paired"
             consoleMode === 'local' ? (
-              remote.mode === 'unpaired' ? (
-                t`This computer, not paired`
-              ) : (
-                t`This computer`
-              )
+              t`This computer`
             ) : remote.mode === 'unpaired' ? (
               t`Not paired`
             ) : (
