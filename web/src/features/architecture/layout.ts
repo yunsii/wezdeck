@@ -6,7 +6,8 @@ import type { Card, Diagram } from './model'
 export const CARD_W = 232
 export const CARD_H = 96
 export const LANE_GAP = 40
-export const ROW_H = 128
+// the gap between rows (ROW_H - CARD_H) carries link labels such as 命名管道
+export const ROW_H = 152
 export const HEAD_H = 52
 const PAD = 14
 

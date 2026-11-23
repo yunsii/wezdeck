@@ -17,7 +17,7 @@ import {
   ReactFlowProvider,
 } from '@xyflow/react'
 import type { Edge, Node, NodeProps } from '@xyflow/react'
-import { memo, useMemo, useState } from 'react'
+import { createContext, memo, use, useMemo, useState } from 'react'
 
 import { cn } from '#/lib/utils'
 import { CARD_H, CARD_W, layout, sides } from './layout'
@@ -40,11 +40,21 @@ const SIDES = {
   b: Position.Bottom,
 }
 
+/**
+ * Hover goes through the card's own element, not React Flow's node mouse
+ * callbacks: those fired leave / enter on every pointer move once the
+ * highlight re-rendered the nodes, and the dimming flickered.
+ */
+const HoverContext = createContext<(id: string | null) => void>(() => {})
+
 const CardNode = memo(function CardView({ data }: NodeProps<Node<CardData>>) {
+  const setHover = use(HoverContext)
   const { placed, lang, numbered, state } = data
   const { card, index } = placed
   return (
     <div
+      onPointerEnter={() => setHover(data.placed.card.id)}
+      onPointerLeave={() => setHover(null)}
       style={{ width: CARD_W, height: CARD_H }}
       className={cn(
         'grid cursor-pointer content-start gap-1 rounded-[14px] border bg-brand-surface px-3.5 py-3 text-left shadow-[0_1px_0_var(--brand-border)] transition-[opacity,border-color,box-shadow] duration-[var(--motion-short)]',
@@ -153,11 +163,18 @@ export function FlowCanvas({
       selectable: false,
       focusable: false,
       zIndex: -1,
+      width: box.w,
+      height: box.h,
     }))
     const cards: Array<Node<CardData>> = geo.placed.map((placed) => ({
       id: placed.card.id,
       type: 'card',
       position: { x: placed.x, y: placed.y },
+      // known sizes: without them every rebuilt node counts as unmeasured
+      // and is hidden for a frame, the pointer fell through to the pane,
+      // hover left, and the highlight flickered on every move
+      width: CARD_W,
+      height: CARD_H,
       data: {
         placed,
         lang,
@@ -223,44 +240,42 @@ export function FlowCanvas({
   }, [geo, diagram, lang, focus])
 
   return (
-    <ReactFlowProvider>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.06 }}
-        minZoom={0.35}
-        maxZoom={1.6}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        edgesFocusable={false}
-        zoomOnScroll={false}
-        zoomOnPinch
-        panOnScroll={false}
-        preventScrolling={false}
-        zoomOnDoubleClick={false}
-        onNodeClick={(_, node) =>
-          node.type === 'card' &&
-          onSelect(node.id === selected ? null : node.id)
-        }
-        onNodeMouseEnter={(_, node) =>
-          node.type === 'card' && setHover(node.id)
-        }
-        onNodeMouseLeave={() => setHover(null)}
-        onPaneClick={() => onSelect(null)}
-        className="arch-flow"
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={22}
-          size={1}
-          color="var(--brand-border)"
-        />
-        <Controls showInteractive={false} position="bottom-left" />
-      </ReactFlow>
-    </ReactFlowProvider>
+    <HoverContext value={setHover}>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          fitViewOptions={{ padding: 0.06 }}
+          minZoom={0.35}
+          maxZoom={1.6}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          edgesFocusable={false}
+          zoomOnScroll={false}
+          zoomOnPinch
+          panOnScroll={false}
+          preventScrolling={false}
+          zoomOnDoubleClick={false}
+          onNodeClick={(_, node) =>
+            node.type === 'card' &&
+            onSelect(node.id === selected ? null : node.id)
+          }
+          onPaneClick={() => onSelect(null)}
+          className="arch-flow"
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={22}
+            size={1}
+            color="var(--brand-border)"
+          />
+          <Controls showInteractive={false} position="bottom-left" />
+        </ReactFlow>
+      </ReactFlowProvider>
+    </HoverContext>
   )
 }
 

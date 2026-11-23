@@ -13,7 +13,7 @@ import {
 
 export const ticketLife: Diagram = {
   id: 'ticket',
-  title: { zh: '一张工单的一生', en: 'The life of a ticket' },
+  title: { zh: '工单的生命周期', en: 'The ticket lifecycle' },
   summary: {
     zh: '在一个仓库里把活儿交给另一个仓库，后台 Agent 完成，需要你时停下来问。',
     en: 'Work handed from one repository to another, done by a headless agent that stops to ask when it needs you.',
