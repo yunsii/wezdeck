@@ -73,16 +73,21 @@ const components: Components = {
       </table>
     </div>
   ),
+  // the row draws the rule, in the edge colour, none under the last row:
+  // Streamdown's own row border has no colour (currentColor, black), and it
+  // showed through wherever a cell dropped its border — `last:` on a cell
+  // meant the last column, so a black line ran under every last cell
+  tr: ({ children }) => (
+    <tr className="border-b border-brand-edge [tbody>&:last-child]:border-b-0">
+      {children}
+    </tr>
+  ),
   th: ({ children }) => (
-    <th className="border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 text-left font-semibold">
+    <th className="bg-brand-deck px-2.5 py-1.5 text-left font-semibold">
       {children}
     </th>
   ),
-  td: ({ children }) => (
-    <td className="border-b border-brand-edge px-2.5 py-1.5 align-top last:border-b-0">
-      {children}
-    </td>
-  ),
+  td: ({ children }) => <td className="px-2.5 py-1.5 align-top">{children}</td>,
 }
 
 /**
