@@ -68,6 +68,12 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
     // g c on the session list jumps to 工单 and opens nothing
     await page.goto(`${base}/zh/console/sessions`)
     await page.getByTestId('new-session').waitFor({ timeout: 15_000 })
+    // the button is server-rendered; the jump keys listen only after
+    // hydration, which the link badge marks (a loaded suite flaked here)
+    await page
+      .locator('[data-testid=remote-badge-compact], [data-testid=remote-badge]')
+      .first()
+      .waitFor({ timeout: 20_000 })
     await page.keyboard.press('g')
     await page.keyboard.press('c')
     await page.waitForURL(/\/console\/collab$/)
