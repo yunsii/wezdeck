@@ -1,6 +1,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
+import { Field, FieldList } from '#/components/ui/field'
 import { Select } from '#/components/ui/select'
 import { useCollab } from '#/lib/collab-query'
 import { useIsWide } from '#/lib/use-media'
@@ -15,12 +16,7 @@ import { RunDetail } from './console-collab-run'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { InspectorItem } from './inspector'
-import {
-  RepoRoute,
-  TicketsView,
-  useOwnerLabel,
-  useStatusLabel,
-} from './tickets-view'
+import { TicketsView, useOwnerLabel, useStatusLabel } from './tickets-view'
 import { CollabTopBar } from './collab-top-bar'
 import {
   TicketAttach,
@@ -34,10 +30,13 @@ import { Button } from '#/components/ui/button'
 export function ticketTone(ticket: CollabTicket): InspectorItem['tone'] {
   if (ticket.running.length > 0) return 'running'
   switch (ticket.status) {
+    // ▲ only where you are the one to act; waiting on the other side is a
+    // calm ○, or 已提交 and 等你 looked the same at a glance
     case 'waiting_initiator':
+      return 'waiting'
     case 'waiting_target':
     case 'submitted':
-      return 'waiting'
+      return 'muted'
     case 'failed':
     case 'rejected':
       return 'error'
@@ -164,6 +163,9 @@ export function TicketReading({
   const { t } = useLingui()
   const show = useCollab('show', { id }, { refetchInterval: poll })
   const statusLabel = useStatusLabel()
+  // every hook before the early returns below (it sat after them: the
+  // loading render and the loaded one ran a different number of hooks)
+  const ownerLabel = useOwnerLabel()
   const [run, setRun] = useState('')
   const data = show.data
   if (!data) return <Reading title={t`Loading…`} />
@@ -174,7 +176,6 @@ export function TicketReading({
   }
   const ticket = data.ticket
   const runs = data.runs
-  const ownerLabel = useOwnerLabel()
   const currentRun = runs.find((item) => item.run === run) ?? runs.at(-1)
   return (
     <Reading
@@ -188,20 +189,16 @@ export function TicketReading({
         </span>
       }
       title={ticket.title || ticket.id}
-      facts={[
-        {
-          label: t`Route`,
-          value: <RepoRoute from={ticket.from} to={ticket.to} />,
-          wide: true,
-        },
-        {
-          label: t`Owner`,
-          value: ownerLabel(ticket.owner),
-        },
-        { label: t`Progress`, value: ticket.progress?.message ?? '—' },
-        { label: t`Worktree`, value: ticket.branch ?? ticket.worktree ?? '—' },
-      ]}
     >
+      <TicketFields
+        fields={[
+          [t`Route`, `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`],
+          [t`Owner`, ownerLabel(ticket.owner)],
+          [t`Progress`, ticket.progress?.message ?? ''],
+          [t`Worktree`, ticket.branch ?? ticket.worktree ?? ''],
+          [t`Ticket`, ticket.id],
+        ]}
+      />
       {ticket.status === 'waiting_initiator' ? (
         <TicketReply
           id={ticket.id}
@@ -228,6 +225,19 @@ export function TicketReading({
       />
       {currentRun ? <RunDetail run={currentRun.run} poll={poll} /> : null}
     </Reading>
+  )
+}
+
+/** the ticket's facts as Field rows (tap to copy, like 会话信息); empty ones say nothing */
+function TicketFields({ fields }: { fields: Array<[string, string]> }) {
+  const shown = fields.filter(([, value]) => value && value !== '—')
+  if (shown.length === 0) return null
+  return (
+    <FieldList>
+      {shown.map(([label, value]) => (
+        <Field key={label} label={label} value={value} />
+      ))}
+    </FieldList>
   )
 }
 

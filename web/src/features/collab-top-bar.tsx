@@ -1,6 +1,6 @@
 // Top of 工单: the run / cache / cost band, folded — eleven cells, mostly —
-// between runs, held the list half a screen down. On a phone it shares a row
-// with ticket activity (no sidebar there); on a wide screen it is one
+// between runs, held the list half a screen down. On a phone it is a text
+// link next to ticket activity (no sidebar there); on a wide screen it is one
 // Disclosure (the sidebar links activity).
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
@@ -29,22 +29,26 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
         </Disclosure>
       </div>
     )
+  // phone: one quiet line of two text links, not two cards — the list
+  // starts higher (it held the first screen to three tickets)
+  const link =
+    'inline-flex min-h-9 items-center gap-1 text-[13px] text-brand-muted'
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
+      <div className="-mt-2 flex items-center gap-5">
         <Button
           variant="plain"
           type="button"
           aria-expanded={open}
           onClick={() => setOpen(!open)}
-          className="key flex min-h-11 min-w-0 items-center justify-between gap-1 rounded-[14px] px-3.5 text-sm text-brand-muted"
+          className={link}
         >
-          <span className="truncate">{t`Runs and cost`}</span>
+          {t`Runs and cost`}
           <span aria-hidden className={cn('transition', open && 'rotate-90')}>
             ›
           </span>
         </Button>
-        <ActivityLink />
+        <ActivityLink className={link} />
       </div>
       {open ? <div className="key rounded-[14px] p-2">{band}</div> : null}
     </div>

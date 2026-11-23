@@ -329,6 +329,8 @@ export function TicketSections({
       {shown.map((section) => (
         <Disclosure
           key={section.title}
+          // the summary is what you came for: open; the rest one tap away
+          defaultOpen={section.title === 'Summary'}
           className="border-b border-brand-edge last:border-b-0"
           triggerClassName="min-h-12 px-4 text-[15px] font-medium"
           title={names[section.title] ?? section.title}

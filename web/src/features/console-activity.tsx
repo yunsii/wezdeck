@@ -278,14 +278,17 @@ export function ConsoleActivityPage() {
 }
 
 /** the phone has no sidebar: 工单 links to ticket activity instead */
-export function ActivityLink() {
+export function ActivityLink({ className }: { className?: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   return (
     <Link
       to="/{-$locale}/console/activity"
       params={{ locale: locale === 'en' ? undefined : locale }}
-      className="key flex min-h-11 min-w-0 items-center justify-between gap-1 rounded-[14px] px-3.5 text-sm text-brand-muted"
+      className={
+        className ??
+        'key flex min-h-11 min-w-0 items-center justify-between gap-1 rounded-[14px] px-3.5 text-sm text-brand-muted'
+      }
     >
       <span className="truncate">{t`Ticket activity`}</span>
       <span aria-hidden>›</span>

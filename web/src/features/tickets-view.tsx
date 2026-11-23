@@ -12,7 +12,6 @@ import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
-import type { LedTone } from '#/components/deck/led'
 import { useGoBack } from '#/lib/go-back'
 import { useCollab } from '#/lib/collab-query'
 import { useLocale } from '#/lib/locale-context'
@@ -24,6 +23,7 @@ import { useRemoteState } from './console-mode'
 import { Inspector, Reading } from './inspector'
 import type { InspectorItem } from './inspector'
 import { NewTicketButton } from './ticket-new'
+import { TicketKeys } from './ticket-keys'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 
@@ -42,6 +42,29 @@ const FILTERS: Record<TicketFilter, (t: CollabTicket) => boolean> = {
   mine: (t) => t.status === 'waiting_initiator',
   ended: (t) => t.running.length === 0 && ENDED.has(t.status ?? ''),
   inbox: (t) => t.status === 'waiting_initiator' || t.status === 'failed',
+}
+
+/** newest activity first */
+const byUpdated = (a: CollabTicket, b: CollabTicket) =>
+  Date.parse(b.updated_at ?? '') - Date.parse(a.updated_at ?? '')
+
+const QUIET_DAYS = 7
+
+/**
+ * 进行中 lists what is moving: a ticket nobody touched for QUIET_DAYS (not
+ * running, not waiting on you) folds into 较早 at the end — 19- to 62-day-old
+ * 已提交 tickets used to push the live ones down.
+ */
+export function splitQuiet(tickets: Array<CollabTicket>, now = Date.now()) {
+  const cutoff = now - QUIET_DAYS * 86_400_000
+  const quiet = (ticket: CollabTicket) =>
+    ticket.running.length === 0 &&
+    ticket.status !== 'waiting_initiator' &&
+    Date.parse(ticket.updated_at ?? '') < cutoff
+  return {
+    recent: tickets.filter((ticket) => !quiet(ticket)),
+    older: tickets.filter(quiet),
+  }
 }
 
 function clock(ms: number) {
@@ -88,14 +111,6 @@ export function useStatusLabel() {
       : (labels[ticket.status ?? ''] ?? ticket.status ?? '')
 }
 
-const toneText: Record<LedTone, string> = {
-  running: 'text-brand-running',
-  waiting: 'text-brand-waiting',
-  done: 'text-brand-done',
-  error: 'text-brand-error',
-  muted: 'text-brand-label',
-}
-
 /** "Updated HH:MM", or a warning strip when the host / link is down and the list is cached. */
 function Freshness({
   updatedAt,
@@ -133,9 +148,11 @@ function Freshness({
 function SearchBox({
   value,
   onChange,
+  autoFocus = false,
 }: {
   value: string
   onChange: (value: string) => void
+  autoFocus?: boolean
 }) {
   const { t } = useLingui()
   return (
@@ -144,6 +161,7 @@ function SearchBox({
       <Input
         variant="bare"
         data-search
+        autoFocus={autoFocus}
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -230,10 +248,13 @@ export function TicketsView({
   const [chosen, setChosen] = useState<TicketFilter>('active')
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')
+  // phone: the search field opens from an icon instead of taking a row
+  const [searching, setSearching] = useState(false)
   const needle = query.trim().toLowerCase()
   const all: Array<CollabTicket> = list.data?.ok ? list.data.tickets : []
   const tickets = all
     .filter(FILTERS[filter])
+    .sort(byUpdated)
     .filter(
       (ticket) =>
         !needle ||
@@ -265,6 +286,22 @@ export function TicketsView({
       <div className="min-w-0 flex-1">
         <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
       </div>
+      {wide ? null : (
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          aria-label={t`Filter tickets`}
+          aria-pressed={searching}
+          onClick={() => {
+            setSearching(!searching)
+            if (searching) setQuery('')
+          }}
+          className="size-11 shrink-0 rounded-[12px]"
+        >
+          <Search size={18} aria-hidden />
+        </Button>
+      )}
       <NewTicketButton />
     </div>
   )
@@ -323,13 +360,25 @@ export function TicketsView({
     )
   }
 
+  const { recent, older } =
+    filter === 'active' && !needle
+      ? splitQuiet(tickets)
+      : { recent: tickets, older: [] }
   return (
     <div className="grid content-start gap-3">
       {top}
       {keys}
-      <SearchBox value={query} onChange={setQuery} />
-      {freshness}
-      <TicketKeys tickets={tickets} empty={emptyText} onOpen={open} />
+      {searching || query || fixedFilter ? (
+        <SearchBox value={query} onChange={setQuery} autoFocus={searching} />
+      ) : null}
+      {/* "updated HH:MM" only when it matters: the host is unreachable */}
+      {list.isError ? freshness : null}
+      <TicketKeys
+        tickets={recent}
+        older={older}
+        empty={emptyText}
+        base={base}
+      />
     </div>
   )
 }
@@ -362,68 +411,6 @@ export function RepoRoute({
       </span>
       <span className={tag}>{to ?? '?'}</span>
     </span>
-  )
-}
-
-/** Phone list: one key per ticket. */
-function TicketKeys({
-  tickets,
-  empty,
-  onOpen,
-}: {
-  tickets: Array<CollabTicket>
-  empty: string
-  onOpen: (id: string) => void
-}) {
-  const { t } = useLingui()
-  const ago = useAgo()
-  const statusLabel = useStatusLabel()
-  if (tickets.length === 0) {
-    return (
-      <p className="rounded-[16px] bg-brand-surface px-4 py-10 text-center text-sm text-brand-muted">
-        {empty}
-      </p>
-    )
-  }
-  return (
-    <ul
-      aria-label={t`Collab tickets`}
-      className="overflow-hidden rounded-[16px] bg-brand-surface"
-    >
-      {tickets.map((ticket) => {
-        const tone = ticketTone(ticket) ?? 'muted'
-        return (
-          <li
-            key={ticket.id}
-            className="border-b border-brand-edge last:border-b-0"
-          >
-            <Button
-              variant="plain"
-              type="button"
-              data-ticket={ticket.id}
-              onClick={() => onOpen(ticket.id)}
-              className="key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
-            >
-              <span className="pt-1">
-                <Led tone={tone} size={13} />
-              </span>
-              <span className="line-clamp-2 text-[16px] leading-snug font-semibold text-brand-text">
-                {ticket.title || ticket.id}
-              </span>
-              <span className="pt-0.5 text-xs text-brand-label">
-                {ago(ticket.updated_at)}
-              </span>
-              <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <span className={cn('text-xs font-medium', toneText[tone])}>
-                  {statusLabel(ticket)}
-                </span>
-                <RepoRoute from={ticket.from} to={ticket.to} />
-              </span>
-            </Button>
-          </li>
-        )
-      })}
-    </ul>
   )
 }
 
