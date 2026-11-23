@@ -66,7 +66,8 @@ describe('PWA shell on phone and desktop', () => {
     await page.getByRole('link', { name: '工单动态' }).click()
     await page.waitForURL(/\/console\/activity$/)
     await page
-      .getByText('跨仓工单最近在做什么', { exact: false })
+      .getByRole('heading', { name: '工单动态' })
+      .first()
       .waitFor({ timeout: 15_000 })
     await page.close()
   }, 60_000)

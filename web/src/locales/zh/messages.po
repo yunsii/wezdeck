@@ -870,7 +870,7 @@ msgstr "主机离线"
 msgid "Host signals"
 msgstr "主机信号"
 
-#: src/features/console-activity.tsx:211
+#: src/features/console-activity.tsx:210
 #: src/features/tickets-view.tsx:129
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
@@ -1097,7 +1097,7 @@ msgstr "本页已加载"
 msgid "Loading original…"
 msgstr "正在加载原图…"
 
-#: src/features/console-activity.tsx:217
+#: src/features/console-activity.tsx:216
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
@@ -1249,7 +1249,7 @@ msgstr "否"
 msgid "No activity for a while"
 msgstr "有一阵子没动静了"
 
-#: src/features/console-activity.tsx:218
+#: src/features/console-activity.tsx:217
 msgid "No activity yet"
 msgstr "还没有动态"
 
@@ -1942,7 +1942,7 @@ msgstr "查看压缩前的记录"
 msgid "Show initial prompt"
 msgstr "查看初始消息"
 
-#: src/features/console-activity.tsx:211
+#: src/features/console-activity.tsx:210
 msgid "showing the last copy"
 msgstr "显示的是上次的数据"
 
@@ -2167,8 +2167,8 @@ msgstr "讨论"
 msgid "Ticket"
 msgstr "工单编号"
 
-#: src/features/console-activity.tsx:204
-#: src/features/console-activity.tsx:293
+#: src/features/console-activity.tsx:206
+#: src/features/console-activity.tsx:292
 #: src/features/console-shell.tsx:93
 msgid "Ticket activity"
 msgstr "工单动态"
@@ -2250,7 +2250,7 @@ msgstr "{repo} 的待办：跟着仓库走，任何会话都能接着做"
 msgid "To-dos of this repo"
 msgstr "这个仓库的待办"
 
-#: src/features/console-activity.tsx:163
+#: src/features/console-activity.tsx:165
 #: src/features/me-host.tsx:109
 msgid "Today"
 msgstr "今日"
@@ -2482,8 +2482,8 @@ msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one 
 msgstr "WezDeck 把 workspace、git worktree 和 Agent 会话组织成一个键盘优先的本地控制平面。"
 
 #: src/features/console-activity.tsx:207
-msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
-msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
+#~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
+#~ msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
 
 #: src/features/session-new.tsx:243
 msgid "What should it work on?"
@@ -2600,7 +2600,7 @@ msgstr "WSL 通道"
 msgid "yes"
 msgstr "是"
 
-#: src/features/console-activity.tsx:164
+#: src/features/console-activity.tsx:166
 msgid "Yesterday"
 msgstr "昨天"
 

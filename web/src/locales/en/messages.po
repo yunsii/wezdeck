@@ -870,7 +870,7 @@ msgstr "Host offline"
 msgid "Host signals"
 msgstr "Host signals"
 
-#: src/features/console-activity.tsx:211
+#: src/features/console-activity.tsx:210
 #: src/features/tickets-view.tsx:129
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
@@ -1097,7 +1097,7 @@ msgstr "Loaded on this page"
 msgid "Loading original…"
 msgstr "Loading original…"
 
-#: src/features/console-activity.tsx:217
+#: src/features/console-activity.tsx:216
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
@@ -1249,7 +1249,7 @@ msgstr "no"
 msgid "No activity for a while"
 msgstr "No activity for a while"
 
-#: src/features/console-activity.tsx:218
+#: src/features/console-activity.tsx:217
 msgid "No activity yet"
 msgstr "No activity yet"
 
@@ -1942,7 +1942,7 @@ msgstr "Show history before compaction"
 msgid "Show initial prompt"
 msgstr "Show initial prompt"
 
-#: src/features/console-activity.tsx:211
+#: src/features/console-activity.tsx:210
 msgid "showing the last copy"
 msgstr "showing the last copy"
 
@@ -2167,8 +2167,8 @@ msgstr "Thread"
 msgid "Ticket"
 msgstr "Ticket"
 
-#: src/features/console-activity.tsx:204
-#: src/features/console-activity.tsx:293
+#: src/features/console-activity.tsx:206
+#: src/features/console-activity.tsx:292
 #: src/features/console-shell.tsx:93
 msgid "Ticket activity"
 msgstr "Ticket activity"
@@ -2250,7 +2250,7 @@ msgstr "To-dos of {repo}: they stay with the repo, any session can pick them up"
 msgid "To-dos of this repo"
 msgstr "To-dos of this repo"
 
-#: src/features/console-activity.tsx:163
+#: src/features/console-activity.tsx:165
 #: src/features/me-host.tsx:109
 msgid "Today"
 msgstr "Today"
@@ -2482,8 +2482,8 @@ msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one 
 msgstr "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 
 #: src/features/console-activity.tsx:207
-msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
-msgstr "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
+#~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
+#~ msgstr "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 
 #: src/features/session-new.tsx:243
 msgid "What should it work on?"
@@ -2600,7 +2600,7 @@ msgstr "WSL bridge"
 msgid "yes"
 msgstr "yes"
 
-#: src/features/console-activity.tsx:164
+#: src/features/console-activity.tsx:166
 msgid "Yesterday"
 msgstr "Yesterday"
 

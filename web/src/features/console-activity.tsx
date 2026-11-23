@@ -114,20 +114,22 @@ function useSentence() {
   }
 }
 
-function toneOf(event: Event): LedTone {
+export function toneOf(event: Event): LedTone {
   if (event.kind === 'run_start') return 'running'
   if (event.kind === 'run_end')
     return event.exit === 0 || event.exit === undefined ? 'done' : 'error'
   if (event.kind === 'research_done')
     return event.ok === false ? 'error' : 'done'
+  // the same lights as the ticket list (ticketTone): ▲ only where you are
+  // the one to act; opening a ticket or waiting on the other side is a ○
   if (event.kind === 'status') {
     const status = text(event.status)
-    if (status.startsWith('waiting')) return 'waiting'
+    if (status === 'waiting_initiator') return 'waiting'
     if (status === 'failed' || status === 'rejected') return 'error'
-    if (status === 'shipped' || status === 'closed') return 'done'
-    return 'running'
+    if (status === 'shipped') return 'done'
+    if (status === 'in_progress') return 'running'
+    return 'muted'
   }
-  if (event.kind === 'created') return 'waiting'
   return 'muted'
 }
 
@@ -203,9 +205,6 @@ export function ConsoleActivityPage() {
       <h1 className="hidden text-base font-semibold md:block">
         {t`Ticket activity`}
       </h1>
-      <p className="text-sm text-brand-muted">
-        {t`What cross-repo tickets have been doing. Sessions are on the Sessions tab.`}
-      </p>
       {events.isError ? (
         <p role="status" className="text-xs text-brand-waiting">
           {t`Host unreachable right now`}，{t`showing the last copy`}

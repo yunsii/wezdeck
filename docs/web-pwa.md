@@ -57,7 +57,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    waits on you badges its own tab: 会话 counts sessions waiting on you,
    工单 the tickets (`waiting_human`). `/console/now` stays as a redirect
    to 会话 for installed apps whose manifest still starts there. 工单
-   links 工单动态: cross-repo ticket events as sentences — one card per
+   links 工单动态 (lights as in the ticket list: ▲ only 等你, opening a
+   ticket or waiting on the other side ○): cross-repo ticket events as sentences — one card per
    ticket run of events under its title and from → to repo, day headings,
    a clock time per line; tool calls, checkouts, session init and worktree
    moves left out; sessions are not in it. 会话 rows: repo →
@@ -78,6 +79,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    writes it newest first; the initiator on the right, the newest question
    ringed while it waits on you; a note when the API cut the oldest off at
    8000 characters); the reply box keeps a draft and sends with Ctrl+Enter.
+   诊断 (local Runtime) is the same split too (console-diagnostics.tsx):
+   levels with counts, search, a category select; an entry's facts as Field
+   rows, copy raw line, only this trace; entry ids are stable, so the 5 s
+   refresh does not move the selection; a phone opens an entry in a sheet.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): the
    list sticky on the left (search above it), the ticket beside it in the
    page scroll, j / k move through the list (not while typing or a sheet is
