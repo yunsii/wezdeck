@@ -13,6 +13,7 @@ import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { hostRead } from '#/lib/runtime-client'
+import { PAGE, mergeReply, pollArgs } from '#/lib/session-cache'
 import { useScreenWakeLock } from '#/lib/wake-lock'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
@@ -272,32 +273,54 @@ function SyncStatus({
 }
 
 /**
- * The conversation, polled. `data` is the last good reply: a failed refetch
- * (a page of earlier messages timing out, the link dropping) keeps the
- * conversation on screen with a stale note instead of blanking it —
- * placeholderData only bridges the pending state, an error used to leave
- * nothing to render.
+ * The conversation, polled — one cache entry per session (lib/session-cache):
+ * each poll asks only for the tail it lacks and merges it by index, so a
+ * poll is a few KB instead of the whole page, and reopening a session shows
+ * the cached conversation at once. 加载更早 fetches just the earlier page.
+ * A failed refetch keeps the cached data on screen (same key), with a stale
+ * note below.
  */
-function useSessionDetail(id: string, limit: number) {
+function useSessionDetail(id: string) {
+  const client = useQueryClient()
+  const key = ['remote', 'session', id] as const
   const detail = useQuery({
-    queryKey: ['remote', 'session', id, limit],
-    placeholderData: (previous) => previous,
+    queryKey: key,
     enabled: typeof window !== 'undefined',
     refetchInterval: (query) =>
       query.state.data && isBusy(query.state.data) ? 1_000 : 2_500,
-    queryFn: async () => (await hostRead('session', { id, limit })) as Detail,
+    queryFn: async () => {
+      const reply = (await hostRead(
+        'session',
+        pollArgs(id, client.getQueryData<Detail>(key)),
+      )) as Detail
+      // merge into what is there now: an earlier page may have landed meanwhile
+      return mergeReply(client.getQueryData<Detail>(key), reply)
+    },
   })
-  const lastGood = useRef<Detail | undefined>(undefined)
-  if (detail.data) lastGood.current = detail.data
-  return { detail, data: detail.data ?? lastGood.current }
+  const [pagingIn, setPagingIn] = useState(false)
+  const loadEarlier = async (count: number) => {
+    const have = client.getQueryData<Detail>(key)
+    if (!have || pagingIn) return
+    setPagingIn(true)
+    try {
+      const reply = (await hostRead('session', {
+        id,
+        before: have.start ?? 0,
+        limit: count,
+      })) as Detail
+      client.setQueryData<Detail>(key, (now) => mergeReply(now, reply))
+    } finally {
+      setPagingIn(false)
+    }
+  }
+  return { detail, data: detail.data, pagingIn, loadEarlier }
 }
 
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const device = useDeviceState()
-  const [limit, setLimit] = useState(60)
-  const { detail, data } = useSessionDetail(id, limit)
+  const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id)
   const { sending, error, setError, retryIn, pendingRaw, send, run } =
     useSessionWrites(id)
   const end = useRef<HTMLDivElement>(null)
@@ -322,9 +345,6 @@ export function SessionDetail({ id }: { id: string }) {
   // reached the latest compaction marker: what is above is the old context
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
-  // only a requested page shows 加载中: the 1–2.5 s polls refetch the same
-  // key and must not flip the button (isFetching is true on every poll)
-  const pagingIn = detail.isPlaceholderData
   const keepPlace = useKeepPlace(end, start)
   const sync = useResumeSync(id, detail.isFetching, detail.dataUpdatedAt)
   // the phone often sits on the desk following the agent: keep it awake
@@ -392,11 +412,13 @@ export function SessionDetail({ id }: { id: string }) {
                     onClick={() => {
                       keepPlace()
                       // page back to the compaction marker first; past it only on request
-                      setLimit((n) =>
+                      const count =
                         atCompaction || compactedAt === undefined
-                          ? n + 60
-                          : Math.min(n + 60, total - compactedAt),
-                      )
+                          ? PAGE
+                          : Math.min(PAGE, start - compactedAt)
+                      loadEarlier(count).catch((e: unknown) => {
+                        setError((e as Error).message)
+                      })
                     }}
                     className="min-h-9 rounded-full bg-brand-surface px-3 text-brand-text"
                   >

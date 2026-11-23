@@ -9,6 +9,33 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createStore, del, get, set } from 'idb-keyval'
 import { useState } from 'react'
+import type { PersistedClient } from '@tanstack/react-query-persist-client'
+
+import { trimForDisk } from './session-cache'
+
+function trimSessions(client: PersistedClient): PersistedClient {
+  return {
+    ...client,
+    clientState: {
+      ...client.clientState,
+      queries: client.clientState.queries.map((query) =>
+        query.queryKey[0] === 'remote' &&
+        query.queryKey[1] === 'session' &&
+        query.state.data
+          ? {
+              ...query,
+              state: {
+                ...query.state,
+                data: trimForDisk(
+                  query.state.data as { messages?: Array<unknown> },
+                ),
+              },
+            }
+          : query,
+      ),
+    },
+  }
+}
 
 const MAX_AGE = 7 * 24 * 3600 * 1000
 
@@ -19,6 +46,9 @@ function createPersister() {
     return createAsyncStoragePersister({
       key: 'wezdeck-query-cache',
       throttleTime: 1000,
+      // a session's conversation grows with every 加载更早: only its newest
+      // DISK_KEEP messages go to disk (lib/session-cache)
+      serialize: (client) => JSON.stringify(trimSessions(client)),
       storage: {
         getItem: (key) =>
           get<string>(key, store).then(

@@ -3,7 +3,7 @@
 // expandable to its diff / preview / command and result. The newest run while
 // the agent works is open, shows its last calls and a light per call.
 import { useLingui } from '@lingui/react/macro'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -138,7 +138,7 @@ function ToolRow({
 /** a live run shows only its newest calls */
 const LIVE_ROWS = 3
 
-export function ToolGroup({
+function ToolGroupView({
   tools,
   fresh,
   stream,
@@ -279,3 +279,21 @@ function toolDigest(tools: Array<Message>) {
     reads,
   }
 }
+
+type ToolGroupProps = Parameters<typeof ToolGroupView>[0]
+
+/**
+ * A run re-renders only when one of its calls changed (a result came in):
+ * the thread builds a new `tools` array on every poll, but merged messages
+ * keep their identity (lib/session-cache), so compare the calls one by one.
+ */
+export const ToolGroup = memo(
+  ToolGroupView,
+  (a: ToolGroupProps, b: ToolGroupProps) =>
+    a.fresh === b.fresh &&
+    a.stream === b.stream &&
+    a.live === b.live &&
+    a.onShown === b.onShown &&
+    a.tools.length === b.tools.length &&
+    a.tools.every((tool, i) => tool === b.tools[i]),
+)

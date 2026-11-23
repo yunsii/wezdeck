@@ -156,6 +156,9 @@ Host keepalive is the literal text `ping`, answered by
 hibernation API, so an idle link costs no DO duration; usage stays far
 inside the Workers Free allowance.
 
+
+A reply over 200 KB goes over the DataChannel as `part` frames (`{t:"part", id, seq, total, data}`, 60 KB slices of its JSON text cut on UTF-8 boundaries; `relay_parts.go` → `web/src/lib/reply-parts.ts`): Chrome takes at most 256 KiB per DataChannel message, and a bigger send used to fail silently, leaving the phone to time out. A failed send logs `rtc_send_error`.
+
 ## Auth (MVP)
 
 Two random tokens in `~/.config/shell-env.d/wezdeck-remote.env` (0600),

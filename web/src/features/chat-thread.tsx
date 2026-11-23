@@ -4,7 +4,7 @@
 // word by word, each word blurring in; nothing animates under
 // prefers-reduced-motion.
 import { useLingui } from '@lingui/react/macro'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
@@ -156,7 +156,11 @@ function useStream(text: string, active: boolean, onDone?: () => void) {
   }
 }
 
-function Bubble({
+/**
+ * Memoised: a poll that appends a message leaves the others alone — merged
+ * messages keep their identity, so a settled bubble skips its markdown parse.
+ */
+const Bubble = memo(function BubbleView({
   message,
   at,
   fresh,
@@ -199,7 +203,7 @@ function Bubble({
       </div>
     </div>
   )
-}
+})
 
 export type Item =
   | { kind: 'message'; message: Message; index: number }

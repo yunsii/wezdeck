@@ -713,10 +713,7 @@ func parseClaudeTranscript(data []byte, limit int) []chatMessage {
 }
 
 func sessionDetail(args json.RawMessage) (any, error) {
-	var a struct {
-		ID    string `json:"id"`
-		Limit int    `json:"limit"`
-	}
+	var a sessionArgs
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
 		return nil, errors.New("invalid session id")
 	}
@@ -768,15 +765,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		out["meta"] = sessionMeta(e, path, agent, t)
 		transcriptsMu.Lock()
 		total := len(t.messages)
-		start := total - a.Limit
-		if start < 0 {
-			start = 0
-		}
-		out["messages"] = append([]chatMessage(nil), t.messages[start:]...)
+		start, end, span := sessionWindow(t.messages, a)
+		out["messages"] = append([]chatMessage(nil), t.messages[start:end]...)
 		compactions, lastCompact := t.compactions()
 		transcriptsMu.Unlock()
 		out["total"] = total
 		out["start"] = start
+		out["span"] = span
 		if compactions > 0 {
 			// the phone pages back to here by default; earlier is pre-compaction history
 			out["compacted_at"] = lastCompact
