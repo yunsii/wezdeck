@@ -1,9 +1,10 @@
 // What a Claude session's subagents are doing (Agent tool, forked skills such
 // as /code-review): the parent transcript only shows a launch line, so the
 // host reads each subagent's own transcript (native agent_subagents.go) and
-// the session reply carries `subagents`. Running ones show by default with
-// their latest tool, call count and run time. Folded to one line (count +
-// what the first one is doing); tap for the list, finished ones included.
+// the session reply carries `subagents`: the running ones (plus stale ones —
+// silent, never finished). Like Claude Code's own panel, a subagent leaves
+// once it is done; its report is the Agent call's result in the transcript.
+// Folded to one line (count + what the first one is doing); tap for the list.
 import { useLingui } from '@lingui/react/macro'
 import { useEffect, useState } from 'react'
 
@@ -90,13 +91,14 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
   // folded to one line by default: above the composer a full list pushed the
   // conversation off a small screen
   const [open, setOpen] = useState(false)
-  const list = agents ?? []
+  // an older relay still lists finished ones: they leave here too
+  const list = (agents ?? []).filter((agent) => agent.state !== 'done')
   const running = list.filter((agent) => agent.state === 'running')
-  const rest = list.filter((agent) => agent.state !== 'running')
+  const rest = list.filter((agent) => agent.state === 'stale')
   const now = useNow(running.length > 0)
   if (list.length === 0) return null
   const runningCount = running.length
-  const doneCount = rest.length
+  const staleCount = rest.length
   const lead = running.at(0)
   const doing = lead ? lead.last_tool || lead.description : ''
   return (
@@ -111,11 +113,11 @@ export function SessionSubagents({ agents }: { agents?: Array<Subagent> }) {
         onClick={() => setOpen(!open)}
         className="flex min-h-10 w-full min-w-0 items-center gap-2 px-3 text-left text-[12.5px]"
       >
-        <Led tone={runningCount ? 'running' : 'done'} size={9} />
+        <Led tone={runningCount ? 'running' : 'waiting'} size={9} />
         <span className="shrink-0 font-medium text-brand-muted">
           {runningCount
             ? t`${runningCount} subagents running`
-            : t`Finished (${doneCount})`}
+            : t`${staleCount} subagents silent for a while`}
         </span>
         {doing ? (
           <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-brand-label">

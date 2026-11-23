@@ -21,21 +21,25 @@ func TestSubagentsOfReadsMetaAndTranscript(t *testing.T) {
 `)
 	write("agent-bbb.meta.json", `{"agentType":"web-fetch","description":"Read docs","requestShape":"foreground","finished":true}`)
 	write("agent-bbb.jsonl", `{"type":"user","timestamp":"2026-11-23T00:50:00Z","message":{"content":"x"}}`+"\n")
-	// an old finished one drops out
-	write("agent-ccc.meta.json", `{"agentType":"Explore","description":"old","finished":true}`)
+	// silent for an hour, never finished: still listed, as stale
+	write("agent-ccc.meta.json", `{"agentType":"Explore","description":"hung"}`)
+	hour := time.Now().Add(-time.Hour)
+	_ = os.Chtimes(filepath.Join(sub, "agent-ccc.meta.json"), hour, hour)
+	// stale past the keep window: gone
+	write("agent-ddd.meta.json", `{"agentType":"Explore","description":"long gone"}`)
 	old := time.Now().Add(-3 * time.Hour)
-	_ = os.Chtimes(filepath.Join(sub, "agent-ccc.meta.json"), old, old)
+	_ = os.Chtimes(filepath.Join(sub, "agent-ddd.meta.json"), old, old)
 
 	got := subagentsOf(parent)
 	if len(got) != 2 {
-		t.Fatalf("want 2 subagents, got %+v", got)
+		t.Fatalf("want running + stale only (finished ones leave), got %+v", got)
 	}
 	a := got[0]
 	if a.ID != "aaa" || a.State != "running" || !a.Background || a.Tools != 2 || a.Name != "code-review" ||
 		a.LastTool == "" || a.StartedAt != "2026-11-23T01:00:00Z" {
 		t.Fatalf("running subagent wrong: %+v", a)
 	}
-	if got[1].ID != "bbb" || got[1].State != "done" || got[1].Background {
-		t.Fatalf("finished subagent wrong: %+v", got[1])
+	if got[1].ID != "ccc" || got[1].State != "stale" {
+		t.Fatalf("stale subagent wrong: %+v", got[1])
 	}
 }

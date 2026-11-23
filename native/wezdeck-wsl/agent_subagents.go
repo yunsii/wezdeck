@@ -29,7 +29,9 @@ type subagent struct {
 	Description string `json:"description"`
 	Type        string `json:"type"` // agentType: Explore, general-purpose, web-fetch …
 	Background  bool   `json:"background"`
-	// State: running | done | stale (not finished, but silent for a long time)
+	// State: running | stale (not finished, but silent for a long time).
+	// Finished ones are not listed: like Claude Code's own panel, a subagent
+	// leaves when it is done; its report is the Agent call's result.
 	State     string `json:"state"`
 	Tools     int    `json:"tools"`               // tool calls so far
 	LastTool  string `json:"last_tool,omitempty"` // "Bash go test ./…"
@@ -39,7 +41,7 @@ type subagent struct {
 
 const (
 	subagentStaleAfter = 30 * time.Minute
-	subagentKeepDone   = 2 * time.Hour
+	subagentKeepStale  = 2 * time.Hour // a stale one that never finishes leaves after this
 	subagentsMax       = 8
 )
 
@@ -118,7 +120,8 @@ func scanSubagentTranscript(path string, size int64) subagentScan {
 }
 
 // subagentsOf lists the subagents of the Claude session whose transcript is
-// at path: running ones first, then those finished within subagentKeepDone.
+// at path: running ones first, then stale ones (silent, never finished)
+// within subagentKeepStale. Finished ones are left out.
 func subagentsOf(path string) []subagent {
 	dir := filepath.Join(strings.TrimSuffix(path, ".jsonl"), "subagents")
 	metas, _ := filepath.Glob(filepath.Join(dir, "agent-*.meta.json"))
@@ -149,14 +152,14 @@ func subagentsOf(path string) []subagent {
 		} else if info, err := os.Stat(m); err == nil {
 			active = info.ModTime()
 		}
+		if meta.Finished {
+			continue
+		}
 		state := "running"
-		switch {
-		case meta.Finished:
-			state = "done"
-		case now.Sub(active) > subagentStaleAfter:
+		if now.Sub(active) > subagentStaleAfter {
 			state = "stale"
 		}
-		if state != "running" && now.Sub(active) > subagentKeepDone {
+		if state == "stale" && now.Sub(active) > subagentKeepStale {
 			continue
 		}
 		out = append(out, subagent{

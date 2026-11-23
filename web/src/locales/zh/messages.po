@@ -59,15 +59,19 @@ msgstr "还有 {earlier} 个更早的调用"
 msgid "{runningCount} running"
 msgstr "{runningCount} 个运行中"
 
-#: src/features/session-subagents.tsx:117
+#: src/features/session-subagents.tsx:119
 msgid "{runningCount} subagents running"
 msgstr "{runningCount} 个子 agent 运行中"
+
+#: src/features/session-subagents.tsx:120
+msgid "{staleCount} subagents silent for a while"
+msgstr "{staleCount} 个子 agent 很久没动静"
 
 #: src/features/session-header.tsx:138
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
-#: src/features/session-subagents.tsx:81
+#: src/features/session-subagents.tsx:82
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
@@ -271,7 +275,7 @@ msgstr "回到页面，正在拉取最新消息（上次 {at}）…"
 msgid "Backend"
 msgstr "后端"
 
-#: src/features/session-subagents.tsx:80
+#: src/features/session-subagents.tsx:81
 msgid "background"
 msgstr "后台"
 
@@ -754,13 +758,13 @@ msgstr "筛选工单"
 msgid "Final output"
 msgstr "最终输出"
 
-#: src/features/session-subagents.tsx:76
+#: src/features/session-subagents.tsx:77
 msgid "Finished"
 msgstr "已结束"
 
 #: src/features/session-subagents.tsx:118
-msgid "Finished ({doneCount})"
-msgstr "已完成（{doneCount}）"
+#~ msgid "Finished ({doneCount})"
+#~ msgstr "已完成（{doneCount}）"
 
 #: src/features/console-sessions.tsx:160
 msgid "finished its turn"
@@ -1198,7 +1202,7 @@ msgstr "否"
 msgid "No active agent sessions"
 msgstr "没有活动 Agent 会话"
 
-#: src/features/session-subagents.tsx:74
+#: src/features/session-subagents.tsx:75
 msgid "No activity for a while"
 msgstr "有一阵子没动静了"
 
@@ -1943,7 +1947,7 @@ msgstr "已启动，agent 接手后会自动打开会话…"
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
-#: src/features/session-subagents.tsx:76
+#: src/features/session-subagents.tsx:77
 msgid "Starting…"
 msgstr "正在启动…"
 

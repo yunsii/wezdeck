@@ -59,15 +59,19 @@ msgstr "{earlier} earlier calls"
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
 
-#: src/features/session-subagents.tsx:117
+#: src/features/session-subagents.tsx:119
 msgid "{runningCount} subagents running"
 msgstr "{runningCount} subagents running"
+
+#: src/features/session-subagents.tsx:120
+msgid "{staleCount} subagents silent for a while"
+msgstr "{staleCount} subagents silent for a while"
 
 #: src/features/session-header.tsx:138
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
-#: src/features/session-subagents.tsx:81
+#: src/features/session-subagents.tsx:82
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
@@ -271,7 +275,7 @@ msgstr "Back on the page, fetching the latest (last {at})…"
 msgid "Backend"
 msgstr "Backend"
 
-#: src/features/session-subagents.tsx:80
+#: src/features/session-subagents.tsx:81
 msgid "background"
 msgstr "background"
 
@@ -754,13 +758,13 @@ msgstr "Filter tickets"
 msgid "Final output"
 msgstr "Final output"
 
-#: src/features/session-subagents.tsx:76
+#: src/features/session-subagents.tsx:77
 msgid "Finished"
 msgstr "Finished"
 
 #: src/features/session-subagents.tsx:118
-msgid "Finished ({doneCount})"
-msgstr "Finished ({doneCount})"
+#~ msgid "Finished ({doneCount})"
+#~ msgstr "Finished ({doneCount})"
 
 #: src/features/console-sessions.tsx:160
 msgid "finished its turn"
@@ -1198,7 +1202,7 @@ msgstr "no"
 msgid "No active agent sessions"
 msgstr "No active agent sessions"
 
-#: src/features/session-subagents.tsx:74
+#: src/features/session-subagents.tsx:75
 msgid "No activity for a while"
 msgstr "No activity for a while"
 
@@ -1943,7 +1947,7 @@ msgstr "Started. Opening the session when the agent picks it up…"
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
-#: src/features/session-subagents.tsx:76
+#: src/features/session-subagents.tsx:77
 msgid "Starting…"
 msgstr "Starting…"
 
