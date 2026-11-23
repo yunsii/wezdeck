@@ -1,6 +1,6 @@
 package main
 
-// Phone attachments (docs/remote-access.md "Attachments"): a screenshot or the
+// Phone attachments (docs/remote-sessions.md "Attachments"): a screenshot or the
 // client's diagnostics snapshot travels as signed `upload` chunks (a relay
 // frame stays small enough for a DataChannel message), lands as one file
 // under the uploads dir, and a later `send` names it so the agent gets the

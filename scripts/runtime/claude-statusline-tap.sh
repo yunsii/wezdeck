@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code statusLine tap (docs/remote-access.md "Account limits").
+# Claude Code statusLine tap (docs/remote-sessions.md "Account limits").
 #
 # Claude Code pipes a JSON snapshot to its statusLine command on every
 # refresh, including the account's rate limits (rate_limits.five_hour /

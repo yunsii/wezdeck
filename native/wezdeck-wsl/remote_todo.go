@@ -1,6 +1,6 @@
 package main
 
-// Repo follow-ups (待办) for the phone (docs/remote-access.md "Repo to-dos"):
+// Repo follow-ups (待办) for the phone (docs/remote-sessions.md "Repo to-dos"):
 // a to-do belongs to the repository a session runs in, so it outlives the
 // conversation and any later session there can pick it up. Storage and repo
 // resolution live in scripts/runtime/todo.py (SQLite table `todos`, keyed by

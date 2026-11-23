@@ -1,6 +1,6 @@
 package main
 
-// Remote interaction with agent sessions (docs/remote-access.md "Sessions"):
+// Remote interaction with agent sessions (docs/remote-sessions.md):
 // read the live agents from attention.json, render a Claude transcript (or
 // a tmux screen tail), and write into a session under guards:
 //

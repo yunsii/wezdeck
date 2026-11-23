@@ -1,6 +1,6 @@
 package main
 
-// Claude account limits for the phone (docs/remote-access.md "Account
+// Claude account limits for the phone (docs/remote-sessions.md "Account
 // limits"): Claude Code hands its statusLine command the account's rate
 // limits on every refresh; scripts/runtime/claude-statusline-tap.sh keeps
 // that snapshot per session. Limits are account-wide, so the newest snapshot

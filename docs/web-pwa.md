@@ -170,7 +170,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   done are visible in the thread itself: typing dots, the reply), and **ⓘ
   会话信息** at the far right; then meters, each shown only once it is close
   to full (≥ 75 %, `NEAR_FULL`) — context, Claude 5 h / 7 d limits with
-  reset time ([`remote-access.md` Account limits](remote-access.md#account-limits));
+  reset time ([`remote-sessions.md` Account limits](remote-sessions.md#account-limits));
   a limit snapshot whose reset time has passed is ignored — plus background
   tasks when there are any; the row disappears when nothing qualifies (all
   numbers stay in 会话信息). Fill is amber from 75 %, red from 90 %; tapping
@@ -268,7 +268,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
   `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
   closes once a key is sent (diagnostics are pulled by the host, see
-  remote-access.md "Diagnostics on demand"). Choices (digits,
+  remote-sessions.md "Diagnostics on demand"). Choices (digits,
   arrows, `Tab`) are deliberately not keys: questions, plans and
   permission prompts get their own tap targets on the page
   (`session-elicitation.tsx`, the confirmation strip). The composer is
@@ -283,7 +283,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`wezdeck.draft.<id>`, cleared on a successful send); errors have a
   one-tap copy; a "desk was just used" refusal counts down and resends
   (`session-send.ts`)
-  ([`remote-access.md` Attachments](remote-access.md#attachments)). The sticky composer rests flush with the scroller
+  ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
   that padding the moment a drag starts. Back from the background the page
   refetches at once and shows 正在拉取最新消息（上次 HH:MM:SS）→ 已同步

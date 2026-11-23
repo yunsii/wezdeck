@@ -1,6 +1,6 @@
 package main
 
-// Agent adapters (docs/remote-access.md "Agent adapters and the session
+// Agent adapters (docs/remote-sessions.md "Agent adapters and the session
 // contract"): everything that differs between agent CLIs lives behind this
 // interface — where a session's transcript is, how one line of it becomes
 // the shared chat model (chatMessage + sessionUsage), and its display title.

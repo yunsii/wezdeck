@@ -1,6 +1,6 @@
 package main
 
-// Pulling the phone's diagnostics from the host (docs/remote-access.md
+// Pulling the phone's diagnostics from the host (docs/remote-sessions.md
 // "Diagnostics on demand"): instead of asking the human to tap 诊断 and send,
 // an agent runs
 //

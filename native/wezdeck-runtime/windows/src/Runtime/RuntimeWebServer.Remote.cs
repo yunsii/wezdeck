@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 namespace WezDeck.Runtime;
 
 // Read-only session passthrough for a browser on this computer
-// (docs/remote-access.md "Local reads"): GET /api/v1/remote/<action>?args=<json>
+// (docs/remote-sessions.md "Local reads"): GET /api/v1/remote/<action>?args=<json>
 // → WSL bridge `remote.<action>`, the relay's read set (wezdeck-wsl readRPC).
 // Writes are never proxied here; they need an approved device's signature
 // and go over the paired remote link.

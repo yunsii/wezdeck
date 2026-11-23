@@ -1,6 +1,6 @@
 package main
 
-// Reading phone attachments back (docs/remote-access.md "Attachments"): the
+// Reading phone attachments back (docs/remote-sessions.md "Attachments"): the
 // conversation shows an image the phone sent as a thumbnail, and opens the
 // original on tap. `upload.get {name, thumb}` answers one relay frame:
 //

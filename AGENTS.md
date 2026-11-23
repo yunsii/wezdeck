@@ -115,13 +115,14 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   palette), capability-aware navigation, Web Push:
   Read [`docs/web-pwa.md`](docs/web-pwa.md).
 - Repo to-dos / follow-ups (`scripts/runtime/todo.py`, SQLite `todos`, phone 待办 panel):
-  Read [`docs/remote-access.md#repo-to-dos`](docs/remote-access.md#repo-to-dos).
+  Read [`docs/remote-sessions.md#repo-to-dos`](docs/remote-sessions.md#repo-to-dos).
 - Viewing collab tickets from a phone / tablet anywhere (`wezdeck.yuns.love`
   on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
   DataChannel first / WebSocket relay fallback, link badge + latency,
   pairing tokens, `install-remote-relay.sh`, shipping a round with
   `wezdeck-release.sh`, the cdp tests' source-version precheck):
-  Read [`docs/remote-access.md`](docs/remote-access.md).
+  Read [`docs/remote-access.md`](docs/remote-access.md); what the phone sees
+  and does in agent sessions: [`docs/remote-sessions.md`](docs/remote-sessions.md).
 - Driving this PC from a Pad / phone remote client feels laggy (layered
   triage: remote link → office side → home router / client Wi‑Fi → host;
   incident history, home-router and long-uptime lessons). Remote clients are
