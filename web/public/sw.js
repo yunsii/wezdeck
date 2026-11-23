@@ -12,10 +12,14 @@
 //   the same path, else the cached console shell;
 // - /assets/*: content-hashed, cache first across the current and previous
 //   build (ignoreVary), never caching an HTML fallback as a chunk;
+// - fonts (/assets/*.woff2): cache first in their own cache that outlives
+//   builds — the files are content-hashed and almost never change, and the
+//   CJK font is ~100 slices a page fetches only as its characters need;
 // - other same-origin files (icons, manifest): stale-while-revalidate.
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev'
 const PREFIX = 'wezdeck-'
 const CACHE = `${PREFIX}${VERSION}`
+const FONTS = `${PREFIX}fonts`
 const SHELL = ['/console/sessions', '/console/collab']
 const CONCURRENCY = 4
 
@@ -70,7 +74,9 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      const old = (await caches.keys()).filter((key) => key !== CACHE)
+      const old = (await caches.keys()).filter(
+        (key) => key !== CACHE && key !== FONTS,
+      )
       const keep = old.filter((key) => key.startsWith(PREFIX)).at(-1)
       for (const key of old) if (key !== keep) await caches.delete(key)
       await self.clients.claim()
@@ -109,6 +115,20 @@ self.addEventListener('fetch', (event) => {
             Response.error()
           )
         }
+      })(),
+    )
+    return
+  }
+
+  if (url.pathname.startsWith('/assets/') && url.pathname.endsWith('.woff2')) {
+    event.respondWith(
+      (async () => {
+        const fonts = await caches.open(FONTS)
+        const hit = await fonts.match(request)
+        if (hit) return hit
+        const res = await fetch(request)
+        if (isAsset(res)) event.waitUntil(fonts.put(request, res.clone()))
+        return res
       })(),
     )
     return

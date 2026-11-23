@@ -23,10 +23,6 @@
   --segment-track: #e9ecf0;
   --segment-thumb: #ffffff;
   --bar-bg: rgba(255, 255, 255, 0.92);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
-    'Noto Sans SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
-  font-feature-settings: 'tnum' 1;
   -webkit-tap-highlight-color: transparent;
 }
 

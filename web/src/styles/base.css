@@ -13,14 +13,14 @@ body,
 }
 
 html {
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-sans);
   font-synthesis: none;
+  /* CJK typography: trim the blank half of full-width punctuation at line
+     start and between adjacent marks (「（单题）」), and add a small gap where
+     Chinese meets Latin without a typed space */
+  text-spacing-trim: trim-start;
+  text-autospace: normal;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {

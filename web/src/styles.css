@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 @import 'streamdown/styles.css';
+/* self-hosted open fonts (OFL): Inter for Latin, Noto Sans SC for CJK, JetBrains
+   Mono for code — the same everywhere instead of each OS's system font.
+   Noto Sans SC is ~100 unicode-range slices: a page loads only the ones its
+   characters need (docs/web-pwa.md). */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/noto-sans-sc';
+@import '@fontsource-variable/jetbrains-mono';
 /* the site's own styles, by domain; the order is the cascade order */
 @import './styles/tokens.css';
 @import './styles/base.css';

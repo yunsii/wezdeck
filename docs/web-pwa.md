@@ -159,6 +159,19 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`web/public/brand-icon.svg`; the favicon uses heavier strokes for 16 px).
   Repo brand assets (`assets/brand/`, README banner) still use the old deck
   icon.
+- Type (2026-11-23): one font stack everywhere — **Inter** (Latin),
+  **Noto Sans SC** (CJK, full-width punctuation), **JetBrains Mono** (code),
+  self-hosted from `@fontsource-variable/*` (OFL), not the Google Fonts CDN
+  (unreliable from mainland China, unusable offline). `--font-sans` /
+  `--font-mono` in `web/src/styles/tokens.css` feed Tailwind's preflight and
+  `font-mono`; before, each OS rendered its own system pair (Segoe UI + 微软雅黑,
+  Roboto + Noto CJK…) with mismatched weights and x-heights. Noto Sans SC is
+  ~100 unicode-range slices: a first visit across the 我的 pages fetched 13–16
+  slices, 0.7–0.9 MB; the service worker keeps fonts in `wezdeck-fonts`, a
+  cache that outlives builds, so later visits fetch none. `text-spacing-trim`
+  + `text-autospace` tighten full-width punctuation and space Chinese from
+  Latin; tabular digits only where numbers line up (`tabular-nums`), no longer
+  page-wide.
 - Tokens: `[data-deck]` in `web/src/styles/deck.css` (light `#f6f7f9` paper /
   `#ffffff` surface / `#11151c` ink; dark `#14181f` / `#1e232c` / `#f1f3f6`),
   console only. `web/src/styles.css` only imports `web/src/styles/*.css`

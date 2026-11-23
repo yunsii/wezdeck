@@ -17,7 +17,7 @@ import { themeBootstrapScript, ThemeProvider } from '#/lib/theme-provider'
 
 const fontBootstrapStyle = `
 html {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter Variable", "Noto Sans SC Variable", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   font-synthesis: none;
 }
 body {

@@ -1,5 +1,17 @@
 /* Design tokens: the Tailwind theme mapping, the ink palette (dark by default) and its light override. */
 
+/* One font stack for the whole site: Tailwind's preflight, font-sans and
+   font-mono all read these. Inter has no CJK, so Chinese characters and
+   full-width punctuation fall through to Noto Sans SC; the system fonts after
+   them only cover the moment before the web fonts load. */
+@theme {
+  --font-sans:
+    'Inter Variable', 'Noto Sans SC Variable', 'PingFang SC', 'Microsoft YaHei',
+    system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'Noto Sans SC Variable', ui-monospace, monospace;
+}
+
 @theme inline {
   --color-brand-deck: var(--brand-deck);
   --color-brand-surface: var(--brand-surface);
