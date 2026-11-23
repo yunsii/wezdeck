@@ -79,7 +79,7 @@ msgstr "{tasks} background tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:373
+#: src/features/console-sessions.tsx:386
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -317,7 +317,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:473
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -1055,7 +1055,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:394
+#: src/features/console-sessions.tsx:407
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1072,7 +1072,7 @@ msgstr "Loading original…"
 #: src/features/console-collab.tsx:169
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-sessions.tsx:391
+#: src/features/console-sessions.tsx:404
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
@@ -1358,7 +1358,7 @@ msgstr "Open image"
 msgid "Open Runtime Console"
 msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:484
+#: src/features/console-sessions.tsx:497
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1892,7 +1892,7 @@ msgstr "shipped"
 #~ msgid "Shipped"
 #~ msgstr "Shipped"
 
-#: src/features/console-sessions.tsx:393
+#: src/features/console-sessions.tsx:406
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -1924,7 +1924,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:468
+#: src/features/console-sessions.tsx:481
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -2039,7 +2039,7 @@ msgstr "task: a short focused change, reclaimed after delivery"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:330
+#: src/features/console-sessions.tsx:343
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -2103,7 +2103,7 @@ msgstr "This computer, not paired"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:461
+#: src/features/console-sessions.tsx:474
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -2510,7 +2510,7 @@ msgstr "Worktrees"
 msgid "Write access"
 msgstr "Write access"
 
-#: src/features/console-sessions.tsx:328
+#: src/features/console-sessions.tsx:341
 #: src/features/ticket-reply.tsx:197
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "Writing is not enabled on this device yet (Settings › Write access)."

@@ -384,7 +384,9 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 					res := handleRPC(f, "webrtc", r)
 					res.Cid = ""
 					body, _ := json.Marshal(res)
-					_ = dc.SendText(string(body))
+					if err := sendOverDC(dc, f.ID, body); err != nil {
+						r.logf("rtc_send_error", "cid=%s action=%q bytes=%d err=%q", cid, f.Action, len(body), err)
+					}
 				}()
 			}
 		})

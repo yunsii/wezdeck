@@ -1,5 +1,7 @@
 import type { UsageReply } from '#/lib/usage-contract'
 import { loadDeviceKey, signPayload } from './device-key'
+import { ReplyParts } from './reply-parts'
+import { median, selectedPath } from './rtc-path'
 
 // Remote access to the home host when the loopback Runtime is unreachable
 // (phone / tablet on wezdeck.yuns.love). One WebSocket to the HostRelay
@@ -144,45 +146,6 @@ function relayBase() {
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
 }
 
-function median(values: Array<number>) {
-  const sorted = [...values].sort((a, b) => a - b)
-  return sorted[Math.floor(sorted.length / 2)]
-}
-
-const PRIVATE_ADDRESS =
-  /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|fe80:|fc|fd|::1$)/i
-
-/**
- * stats → which candidate pair carried the DataChannel. Chrome hides its own
- * host address behind mDNS, so the host side often sees a peer-reflexive
- * candidate even on one LAN; the remote (host-side) address decides instead.
- */
-async function selectedPath(
-  pc: RTCPeerConnection,
-): Promise<{ path: RemotePath; detail: string }> {
-  const stats = await pc.getStats()
-  let pair:
-    { localCandidateId?: string; remoteCandidateId?: string } | undefined
-  stats.forEach((s: { type: string; nominated?: boolean; state?: string }) => {
-    if (s.type === 'candidate-pair' && s.nominated && s.state === 'succeeded')
-      pair = s as typeof pair
-  })
-  const candidate = (id?: string) =>
-    id
-      ? (stats.get(id) as
-          { candidateType?: string; address?: string } | undefined)
-      : undefined
-  const local = candidate(pair?.localCandidateId)
-  const remote = candidate(pair?.remoteCandidateId)
-  const detail = `local=${local?.candidateType ?? '?'} remote=${remote?.candidateType ?? '?'} ${remote?.address ?? ''}`
-  if (local?.candidateType === 'relay' || remote?.candidateType === 'relay')
-    return { path: 'turn', detail }
-  return {
-    path: PRIVATE_ADDRESS.test(remote?.address ?? '') ? 'lan' : 'internet',
-    detail,
-  }
-}
-
 export const NOT_PAIRED = 'this device is not paired'
 
 class RemoteLink {
@@ -195,6 +158,7 @@ class RemoteLink {
   private pc?: RTCPeerConnection
   private dc?: RTCDataChannel
   private pending = new Map<string, Pending>()
+  private parts = new ReplyParts()
   private pings = new Map<string, number>()
   private samples: Array<number> = []
   private seq = 0
@@ -320,6 +284,13 @@ class RemoteLink {
       return
     }
     switch (frame.t) {
+      case 'part': {
+        // a big reply in slices (lib/reply-parts.ts)
+        if (!this.pending.has(String(frame.id ?? ''))) return
+        const joined = this.parts.add(frame)
+        if (joined !== null) this.onFrame(joined, via)
+        return
+      }
       case 'host': {
         const online = Boolean(frame.online)
         this.set({
@@ -453,6 +424,7 @@ class RemoteLink {
       const id = `r${++this.seq}`
       const timer = setTimeout(() => {
         this.pending.delete(id)
+        this.parts.drop(id)
         reject(new Error('remote host did not answer in time'))
       }, RPC_TIMEOUT_MS)
       this.pending.set(id, { resolve, reject, timer })

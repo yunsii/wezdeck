@@ -271,11 +271,14 @@ function SyncStatus({
   )
 }
 
-export function SessionDetail({ id }: { id: string }) {
-  const { t } = useLingui()
-  const { locale } = useLocale()
-  const device = useDeviceState()
-  const [limit, setLimit] = useState(60)
+/**
+ * The conversation, polled. `data` is the last good reply: a failed refetch
+ * (a page of earlier messages timing out, the link dropping) keeps the
+ * conversation on screen with a stale note instead of blanking it —
+ * placeholderData only bridges the pending state, an error used to leave
+ * nothing to render.
+ */
+function useSessionDetail(id: string, limit: number) {
   const detail = useQuery({
     queryKey: ['remote', 'session', id, limit],
     placeholderData: (previous) => previous,
@@ -284,10 +287,20 @@ export function SessionDetail({ id }: { id: string }) {
       query.state.data && isBusy(query.state.data) ? 1_000 : 2_500,
     queryFn: async () => (await hostRead('session', { id, limit })) as Detail,
   })
+  const lastGood = useRef<Detail | undefined>(undefined)
+  if (detail.data) lastGood.current = detail.data
+  return { detail, data: detail.data ?? lastGood.current }
+}
+
+export function SessionDetail({ id }: { id: string }) {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  const device = useDeviceState()
+  const [limit, setLimit] = useState(60)
+  const { detail, data } = useSessionDetail(id, limit)
   const { sending, error, setError, retryIn, pendingRaw, send, run } =
     useSessionWrites(id)
   const end = useRef<HTMLDivElement>(null)
-  const data = detail.data
   const messages: Array<Message> = data?.messages ?? []
   const pending = settle(pendingRaw, messages)
   const busy = Boolean(data && isBusy(data))

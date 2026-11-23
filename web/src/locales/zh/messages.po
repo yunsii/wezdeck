@@ -79,7 +79,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:373
+#: src/features/console-sessions.tsx:386
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -317,7 +317,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:473
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -1055,7 +1055,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:394
+#: src/features/console-sessions.tsx:407
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1072,7 +1072,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab.tsx:169
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-sessions.tsx:391
+#: src/features/console-sessions.tsx:404
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:71
 #: src/features/session-header.tsx:248
@@ -1358,7 +1358,7 @@ msgstr "查看图片"
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:484
+#: src/features/console-sessions.tsx:497
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1892,7 +1892,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-sessions.tsx:393
+#: src/features/console-sessions.tsx:406
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -1924,7 +1924,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:468
+#: src/features/console-sessions.tsx:481
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -2039,7 +2039,7 @@ msgstr "task：短期聚焦的改动，交付后回收"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:330
+#: src/features/console-sessions.tsx:343
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -2103,7 +2103,7 @@ msgstr "本机，未配对"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:461
+#: src/features/console-sessions.tsx:474
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -2510,7 +2510,7 @@ msgstr "Worktree"
 msgid "Write access"
 msgstr "写入权限"
 
-#: src/features/console-sessions.tsx:328
+#: src/features/console-sessions.tsx:341
 #: src/features/ticket-reply.tsx:197
 msgid "Writing is not enabled on this device yet (Settings › Write access)."
 msgstr "这台设备还没启用写入（我的 › 写入权限）。"
