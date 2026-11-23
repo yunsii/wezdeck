@@ -1397,53 +1397,25 @@ html:active-view-transition-type(within) .vt-split-pane {
 }
 
 /*
- * Scrollbars, site-wide: a thin rounded thumb on no track, inset from the
- * edge (transparent border + padding-box), so a scroll area — a sheet with
- * round corners especially — keeps its shape instead of a grey OS gutter.
- * Chrome / Safari take ::-webkit-scrollbar; Firefox, which has no such
- * pseudo-elements, the standard thin + colour. Do not set scrollbar-color /
- * scrollbar-width elsewhere for the same element: Chrome then ignores the
- * ::-webkit-scrollbar rules (`[scrollbar-width:none]` to hide one is fine).
+ * Scrollbars, site-wide: the standard thin scrollbar with a transparent
+ * thumb, shown only while the pointer is over that scroll area or focus is
+ * inside it — a scroll area keeps its shape instead of a grey OS gutter.
+ * A desktop classic scrollbar always takes its width (Chrome dropped
+ * overflow: overlay); phones use overlay scrollbars and take none. Not
+ * ::-webkit-scrollbar: it could be narrower (8 px), but Chrome does not
+ * repaint its thumb on :hover, so a hover-only thumb never appeared
+ * (measured). `[scrollbar-width:none]` still hides one where needed.
  */
-@supports selector(::-webkit-scrollbar) {
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    border: 3px solid transparent;
-    border-radius: 999px;
-    background: color-mix(
-        in oklab,
-        var(--brand-label, #6f7887) 38%,
-        transparent
-      )
-      padding-box;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: color-mix(
-        in oklab,
-        var(--brand-label, #6f7887) 60%,
-        transparent
-      )
-      padding-box;
-  }
-  ::-webkit-scrollbar-button {
-    display: none;
-  }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
-@supports not selector(::-webkit-scrollbar) {
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(
-        in oklab,
-        var(--brand-label, #6f7887) 45%,
-        transparent
-      )
-      transparent;
-  }
+*:hover,
+*:focus-within {
+  scrollbar-color: color-mix(
+      in oklab,
+      var(--brand-label, #6f7887) 45%,
+      transparent
+    )
+    transparent;
 }
