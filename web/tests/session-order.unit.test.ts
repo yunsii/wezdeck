@@ -91,3 +91,39 @@ describe('Alt+j style cycling', () => {
     expect(nextInCycle(['a'], 'a')).toBeUndefined()
   })
 })
+
+describe('repo names follow the desk aliases', () => {
+  it('the repo and its main checkout show the alias; other worktrees keep theirs', () => {
+    const tree = buildSessionTree([
+      card({
+        id: 'm',
+        repo: 'wezterm-config',
+        repo_label: 'wezdeck',
+        repo_root: '/g/wezterm-config',
+        worktree: '/g/wezterm-config',
+        cwd: '/g/wezterm-config',
+      }),
+      card({
+        id: 'w',
+        repo: 'wezterm-config',
+        repo_label: 'wezdeck',
+        repo_root: '/g/wezterm-config',
+        worktree: '/g/wt/dev-ui',
+        cwd: '/g/wt/dev-ui',
+      }),
+    ])
+    expect(tree).toHaveLength(1)
+    expect(tree[0]?.label).toBe('wezdeck')
+    expect(tree[0]?.worktrees.map((wt) => wt.label).sort()).toEqual([
+      'dev-ui',
+      'wezdeck',
+    ])
+  })
+
+  it('no alias: the basename as before', () => {
+    const tree = buildSessionTree([
+      card({ id: 'a', repo: 'fe1', repo_root: '/g/fe1', worktree: '/g/fe1' }),
+    ])
+    expect(tree[0]?.label).toBe('fe1')
+  })
+})

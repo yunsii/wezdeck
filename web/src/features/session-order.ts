@@ -26,6 +26,10 @@ export function visitOf(row: SessionCard, phone: Record<string, number>) {
   return Math.max(row.visited ?? 0, phone[worktreeKey(row)] ?? 0)
 }
 
+/** the repo as the desk names it: its alias when one is set */
+export const repoName = (row: { repo?: string; repo_label?: string }) =>
+  row.repo_label || row.repo || ''
+
 /**
  * Group by repo family → worktree path. Groups sort by the latest visit;
  * never-visited ones (ticket agents) sink and order by name, so nothing
@@ -42,13 +46,14 @@ export function buildSessionTree(
   for (const row of rows) {
     const repoKey = row.repo_root || row.repo || row.cwd || row.id
     const repoLabel =
-      row.repo ||
+      repoName(row) ||
       row.repo_root?.split('/').filter(Boolean).at(-1) ||
       row.cwd.split('/').filter(Boolean).at(-1) ||
       row.id.slice(0, 8)
     const wtKey = worktreeKey(row)
-    const wtLabel =
-      (row.worktree || row.cwd).split('/').filter(Boolean).at(-1) || wtKey
+    const base = (row.worktree || row.cwd).split('/').filter(Boolean).at(-1)
+    // the main checkout is named after the repo: show it by its alias too
+    const wtLabel = (base && base === row.repo ? repoName(row) : base) || wtKey
     const visit = visitOf(row, phone)
     let repo = repos.get(repoKey)
     if (!repo) {

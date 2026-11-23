@@ -10,32 +10,7 @@ import { cn } from '#/lib/utils'
 import { TranscriptImages } from './chat-images'
 import type { Message } from './chat-thread'
 import { Disclosure } from '#/components/ui/disclosure'
-
-/** A diff (lines starting "- " / "+ ") gets red / green rows; anything else is plain. */
-function ToolBody({ text }: { text: string }) {
-  const lines = text.split('\n')
-  const isDiff = lines.some((l) => l.startsWith('- ') || l.startsWith('+ '))
-  return (
-    <pre className="max-h-72 max-w-full min-w-0 overflow-auto rounded-[8px] bg-brand-deck py-1.5 font-mono text-[11.5px] leading-snug">
-      {lines.map((line, index) => (
-        <div
-          key={index}
-          className={cn(
-            'px-2 break-all whitespace-pre-wrap',
-            isDiff &&
-              line.startsWith('- ') &&
-              'bg-brand-error/10 text-brand-error',
-            isDiff &&
-              line.startsWith('+ ') &&
-              'bg-brand-done/10 text-brand-done',
-          )}
-        >
-          {line || ' '}
-        </div>
-      ))}
-    </pre>
-  )
-}
+import { ToolBody } from './chat-diff'
 
 /** While a run is live: a breathing light for the call in flight, a check once it returned. */
 /**
@@ -121,7 +96,7 @@ function ToolRow({
     >
       {details ? (
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 py-1.5 pl-3">
-          {tool.body ? <ToolBody text={tool.body} /> : null}
+          {tool.body ? <ToolBody text={tool.body} file={tool.file} /> : null}
           {tool.result ? (
             <div className="grid gap-0.5">
               <span className="text-[11px] text-brand-label">{t`Result`}</span>

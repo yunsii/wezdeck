@@ -17,7 +17,12 @@ import { NOT_PAIRED } from '#/lib/remote-link'
 import { OpenTodos } from './session-todos'
 import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton } from './session-new'
-import { buildSessionTree, visitOf, worktreeKey } from './session-order'
+import {
+  buildSessionTree,
+  repoName,
+  visitOf,
+  worktreeKey,
+} from './session-order'
 import { useAgo } from './tickets-view'
 import {
   humanPrompt,
@@ -125,7 +130,7 @@ function SessionRow({
             {prompt || t`No human message yet`}
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-1">
-            {showRepo && row.repo ? tag(row.repo) : null}
+            {showRepo && repoName(row) ? tag(repoName(row)) : null}
             {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
             {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
             {row.name && row.name !== row.agent ? tag(row.name) : null}

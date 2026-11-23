@@ -111,6 +111,9 @@ func (t *transcript) feedLine(raw []byte) {
 			HandbackReport struct {
 				Text string `json:"text"`
 			} `json:"handbackReport"`
+			// Edit / Write: the real hunks with line numbers (the call's
+			// input only has old / new strings)
+			StructuredPatch []patchHunk `json:"structuredPatch"`
 		} `json:"toolUseResult"`
 	}
 	if json.Unmarshal(raw, &line) != nil || line.IsMeta {
@@ -263,6 +266,9 @@ func (t *transcript) feedLine(raw []byte) {
 			}
 			t.messages[idx].Result = clipLines(clip(out, 3000), 40)
 			t.messages[idx].Pending = false
+			if body := patchBody(line.ToolUseResult.StructuredPatch); body != "" {
+				t.messages[idx].Body = body
+			}
 			delete(t.tools, b.ToolUseID)
 		}
 	}

@@ -16,6 +16,7 @@ import { cn } from '#/lib/utils'
 import { isBusy, needsYou, sessionTone, useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import {
+  repoName,
   buildSessionTree,
   nextInCycle,
   visitOf,
@@ -197,7 +198,9 @@ export function SessionSwitcher({
             <h3 className="px-4 pt-2 text-[12.5px] font-semibold text-brand-muted">
               {t`Needs you`}
             </h3>
-            <ul>{nav.waiting.map((session) => row(session, session.repo))}</ul>
+            <ul>
+              {nav.waiting.map((session) => row(session, repoName(session)))}
+            </ul>
           </section>
         ) : null}
         {nav.tree.map((repo) => (

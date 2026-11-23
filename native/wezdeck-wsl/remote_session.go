@@ -305,6 +305,7 @@ type sessionCard struct {
 	// Tree grouping (repo family → worktree → pane). tmux fields are optional
 	// mount info so ticket agents on the same worktree can join later.
 	Repo        string `json:"repo,omitempty"`
+	RepoLabel   string `json:"repo_label,omitempty"` // Repo through WEZDECK_REPO_ALIASES (repo_alias.go)
 	RepoRoot    string `json:"repo_root,omitempty"`
 	Worktree    string `json:"worktree,omitempty"`
 	TmuxSession string `json:"tmux_session,omitempty"`
@@ -327,6 +328,7 @@ func listSessions() (any, error) {
 	cards := []sessionCard{}
 	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
 	visits := worktreeVisits()
+	aliases := parseRepoAliases(repoAliasSpec())
 	for id, e := range entries {
 		if e.TmuxPane == "" {
 			continue
@@ -345,6 +347,9 @@ func listSessions() (any, error) {
 			repo, root, wt := gitRepoMeta(cwd)
 			gitCache[cwd] = [3]string{repo, root, wt}
 			card.Repo, card.RepoRoot, card.Worktree = repo, root, wt
+		}
+		if label := aliases[card.Repo]; label != "" {
+			card.RepoLabel = label
 		}
 		card.Visited = visitOf(visits, card.Worktree, cwd)
 		// Activity = when the conversation last moved: the newest turn in the
@@ -802,6 +807,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {
 		out["screen"] = strings.TrimRight(string(screen), "\n ")
+		// what the TUI says it is doing (agent_activity.go): only mid-turn,
+		// a spinner left on an idle screen is stale
+		if e.Status == "running" {
+			if a := parseActivity(agent, string(screen)); a != nil {
+				out["activity"] = a
+			}
+		}
 	}
 	if agent == "claude" && path != "" {
 		if el := pendingClaudeElicitation(path); el != nil {

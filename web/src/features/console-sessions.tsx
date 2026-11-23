@@ -27,7 +27,7 @@ import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { AskCard } from './session-ask-claude'
 import { useSessionWrites } from './session-send'
-import type { Message } from './chat-thread'
+import type { Activity, Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 
 export type SessionCard = {
@@ -49,6 +49,8 @@ export type SessionCard = {
   background?: Array<BgTask>
   /** Repo family label (git main checkout basename). */
   repo?: string
+  /** repo through WEZDECK_REPO_ALIASES, as on the desk (wezterm-config → wezdeck) */
+  repo_label?: string
   /** Absolute path of the git main checkout when known. */
   repo_root?: string
   /** Absolute path of this worktree (grouping key with repo_root). */
@@ -132,6 +134,8 @@ export type Detail = {
   background?: Array<BgTask>
   messages?: Array<Message>
   screen?: string
+  /** what the TUI's status line says mid-turn (agent_activity.go) */
+  activity?: Activity
   elicitation?: Elicitation
   plan?: { excerpt?: string; awaiting_approval?: boolean }
 }
@@ -438,6 +442,7 @@ export function SessionDetail({ id }: { id: string }) {
               messages={messages}
               start={start}
               busy={busy}
+              activity={busy ? data?.activity : undefined}
               sessionId={id}
             />
           </>

@@ -8,5 +8,6 @@
 @import './styles/motion.css';
 @import './styles/scrollbar.css';
 @import './styles/architecture.css';
+@import './styles/code.css';
 /* Streamdown's renderers use Tailwind classes from its build output. */
 @source '../node_modules/streamdown/dist/*.js';

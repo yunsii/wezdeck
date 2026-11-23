@@ -1,0 +1,12 @@
+/* Syntax colours in tool calls. */
+
+/* Code in tool calls (lib/highlight.ts): shiki hands each token both
+   themes' colours; the page theme picks one. Dark is the default. */
+.code-token {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style);
+}
+html[data-theme='light'] .code-token {
+  color: var(--shiki-light);
+  font-style: var(--shiki-light-font-style);
+}

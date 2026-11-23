@@ -247,17 +247,69 @@ export function group(messages: Array<Message>) {
   return out
 }
 
-function Typing() {
+/** The host's reading of the TUI status line (agent_activity.go). */
+export type Activity = {
+  text: string
+  elapsed?: string
+  tokens?: string
+  compacting?: boolean
+}
+
+/**
+ * The agent is working: typing dots, and what the desk's status line says —
+ * "Compacting conversation 36s", "Gesticulating 4m 39s · ↓ 19.1k tokens".
+ * While a tool call is out its row already has a light, so only the words.
+ */
+function Typing({
+  activity,
+  dots = true,
+}: {
+  activity?: Activity
+  dots?: boolean
+}) {
   const { t } = useLingui()
+  const label = activity?.compacting
+    ? t`Compacting conversation`
+    : activity?.text
+  const tokens = activity?.tokens
+  const detail = [activity?.elapsed, tokens ? t`${tokens} tokens` : '']
+    .filter(Boolean)
+    .join(' · ')
+  if (!dots && !label) return null
   return (
     <div
       className="chat-in flex justify-start"
-      aria-label={t`The agent is working`}
+      role="status"
+      aria-label={label ? `${label} ${detail}` : t`The agent is working`}
+      data-activity={
+        activity?.compacting ? 'compacting' : activity ? 'working' : undefined
+      }
     >
-      <div className="flex gap-1 rounded-[14px] bg-brand-surface px-3.5 py-3">
-        <span className="typing-dot" />
-        <span className="typing-dot [animation-delay:150ms]" />
-        <span className="typing-dot [animation-delay:300ms]" />
+      <div
+        className={cn(
+          'flex min-w-0 items-center gap-2.5 rounded-[14px]',
+          dots ? 'bg-brand-surface px-3.5 py-2.5' : 'px-1 py-0.5',
+        )}
+      >
+        {dots ? (
+          <span className="flex shrink-0 gap-1">
+            <span className="typing-dot" />
+            <span className="typing-dot [animation-delay:150ms]" />
+            <span className="typing-dot [animation-delay:300ms]" />
+          </span>
+        ) : null}
+        {label ? (
+          <span className="min-w-0 truncate text-[13px] text-brand-muted">
+            <span className={cn(activity?.compacting && 'text-brand-waiting')}>
+              {label}…
+            </span>
+            {detail ? (
+              <span className="ml-1.5 text-brand-label tabular-nums">
+                {detail}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
       </div>
     </div>
   )
@@ -267,9 +319,12 @@ export function ChatThread({
   messages,
   start,
   busy,
+  activity,
   sessionId = '',
 }: {
   messages: Array<Message>
+  /** the TUI status line while busy (compacting, elapsed, tokens) */
+  activity?: Activity
   /** resolves transcript image refs (session.image) */
   sessionId?: string
   /** absolute index of messages[0] in the whole transcript (pagination) */
@@ -337,7 +392,9 @@ export function ChatThread({
           />
         )
       })}
-      {busy && effective >= end && !callInFlight(items) ? <Typing /> : null}
+      {busy && effective >= end ? (
+        <Typing activity={activity} dots={!callInFlight(items)} />
+      ) : null}
     </SessionIdContext.Provider>
   )
 }
