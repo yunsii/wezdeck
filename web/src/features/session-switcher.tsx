@@ -143,7 +143,8 @@ export function SessionSwitcher({
 }) {
   const { t } = useLingui()
   const nav = useSessionNav(current)
-  if (!open || typeof document === 'undefined') return null
+  // stays mounted while closed: the sheet plays its exit before it unmounts
+  if (typeof document === 'undefined') return null
   const row = (session: SessionCard, repo?: string) => (
     <li key={session.id}>
       <Button

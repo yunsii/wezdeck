@@ -54,6 +54,13 @@ export function NewSessionButton() {
   const { t } = useLingui()
   const device = useDeviceState()
   const [open, setOpen] = useState(false)
+  // a fresh form per opening (key), while the sheet stays mounted on close
+  // so it can play its exit
+  const [round, setRound] = useState(0)
+  const show = () => {
+    setRound((n) => n + 1)
+    setOpen(true)
+  }
   // `c` on the list: Ctrl+k g at the desk
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -68,7 +75,7 @@ export function NewSessionButton() {
       )
         return
       event.preventDefault()
-      setOpen(true)
+      show()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -79,7 +86,7 @@ export function NewSessionButton() {
       <Button
         variant="solid"
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={show}
         data-testid="new-session"
         title={t`New session (c)`}
         className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[14px] md:min-h-9"
@@ -87,12 +94,24 @@ export function NewSessionButton() {
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New session`}</span>
       </Button>
-      {open ? <NewSessionSheet onClose={() => setOpen(false)} /> : null}
+      {round > 0 ? (
+        <NewSessionSheet
+          key={round}
+          open={open}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </>
   )
 }
 
-function NewSessionSheet({ onClose }: { onClose: () => void }) {
+function NewSessionSheet({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const navigate = useNavigate()
@@ -163,7 +182,7 @@ function NewSessionSheet({ onClose }: { onClose: () => void }) {
   }
   return (
     <Sheet
-      open={true}
+      open={open}
       onOpenChange={(next) => {
         if (!next) onClose()
       }}

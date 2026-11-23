@@ -15,9 +15,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   Link,
   Outlet,
-  useLocation,
   useNavigate,
   useRouter,
+  useRouterState,
 } from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
@@ -140,11 +140,42 @@ function useSections() {
   }
 }
 
+/**
+ * Section switches have no transition, so the next section must be ready:
+ * keep the ticket list warm (the shell's sessions list already is; both
+ * persist to IndexedDB) and load every section's route code once idle.
+ */
+function useWarmSections(
+  sections: Array<Section>,
+  locale: 'en' | 'zh' | undefined,
+) {
+  const router = useRouter()
+  useCollab('list', { limit: 200 }, { refetchInterval: 60_000 })
+  const key = sections.join(' ')
+  useEffect(() => {
+    const preload = () => {
+      for (const section of key.split(' ') as Array<Section>)
+        void router
+          .preloadRoute({ to: SECTION_PATH[section], params: { locale } })
+          .catch(() => undefined)
+    }
+    const idle = window.requestIdleCallback as
+      ((cb: () => void) => number) | undefined
+    if (idle) idle(preload)
+    else setTimeout(preload, 1_000)
+  }, [router, locale, key])
+}
+
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const { mode: theme, setMode } = useTheme()
-  const location = useLocation().pathname
+  // the resolved location, not the pending one: on back the title and back
+  // bar must not switch before the page does, or the leaving page's
+  // transition snapshot carries the next page's header
+  const location = useRouterState({
+    select: (state) => (state.resolvedLocation ?? state.location).pathname,
+  })
   const navigate = useNavigate()
   const client = useQueryClient()
   const current = sectionOf(location)
@@ -174,6 +205,10 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
     [goToTab, hrefOf],
   )
   useJumpKeys(go)
+  useWarmSections(
+    [...sidebar, ...tabs].map((item) => item.id),
+    localeParam,
+  )
   const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
   // Start the remote link (adopts a #pair= token) on every console page, not
   // only when a collab read happens: settings and sessions need it too.
@@ -282,7 +317,9 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         </aside>
         <div
           ref={scroller}
-          className="vt-page min-h-0 min-w-0 overflow-y-auto overscroll-contain"
+          // its own background: the transition snapshot of this column must be
+          // opaque, or the page underneath shows through mid-push
+          className="vt-page min-h-0 min-w-0 overflow-y-auto overscroll-contain bg-brand-deck"
         >
           <a
             href="#console-main"

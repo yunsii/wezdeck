@@ -139,7 +139,7 @@ msgstr "运行中发来的消息"
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
-#: src/features/ticket-new.tsx:154
+#: src/features/ticket-new.tsx:173
 msgid "A ticket goes to another repository."
 msgstr "工单要发给另一个仓库。"
 
@@ -288,7 +288,7 @@ msgstr "后台任务"
 msgid "Base commit"
 msgstr "基线提交"
 
-#: src/features/session-new.tsx:214
+#: src/features/session-new.tsx:233
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
 
@@ -372,7 +372,7 @@ msgstr "认领"
 msgid "Clearing…"
 msgstr "处理中…"
 
-#: src/components/ui/sheet.tsx:70
+#: src/components/ui/sheet.tsx:76
 #: src/features/image-viewer.tsx:127
 msgid "Close"
 msgstr "关闭"
@@ -450,11 +450,11 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:308
+#: src/features/console-shell.tsx:345
 msgid "Connection details"
 msgstr "连接详情"
 
-#: src/features/console-shell.tsx:227
+#: src/features/console-shell.tsx:262
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -484,7 +484,7 @@ msgid "Control"
 msgstr "控制"
 
 #: src/features/session-composer.tsx:102
-#: src/features/session-info.tsx:216
+#: src/features/session-info.tsx:217
 msgid "Copied"
 msgstr "已复制"
 
@@ -513,7 +513,7 @@ msgstr "复制命令"
 msgid "Copy error"
 msgstr "复制错误信息"
 
-#: src/features/session-info.tsx:216
+#: src/features/session-info.tsx:217
 msgid "Copy session reference for an agent"
 msgstr "复制会话引用（给 agent 用）"
 
@@ -535,11 +535,11 @@ msgstr "创建失败：{reason}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:258
+#: src/features/session-new.tsx:277
 msgid "Create session"
 msgstr "创建会话"
 
-#: src/features/ticket-new.tsx:204
+#: src/features/ticket-new.tsx:223
 msgid "Create ticket"
 msgstr "创建工单"
 
@@ -547,7 +547,7 @@ msgstr "创建工单"
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
 
-#: src/features/ticket-new.tsx:204
+#: src/features/ticket-new.tsx:223
 msgid "Creating…"
 msgstr "创建中…"
 
@@ -586,7 +586,7 @@ msgstr "数据截至 {time}"
 msgid "Decision"
 msgstr "决定"
 
-#: src/features/console-shell.tsx:274
+#: src/features/console-shell.tsx:309
 msgid "Deck"
 msgstr "工作台"
 
@@ -606,7 +606,7 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "电脑前空闲"
 
-#: src/features/session-new.tsx:160
+#: src/features/session-new.tsx:179
 msgid "dev: a long-lived workstation for parallel work"
 msgstr "dev：长期并行开发的工作站"
 
@@ -645,7 +645,7 @@ msgstr "已完成"
 msgid "Done ({doneCount})"
 msgstr "已完成（{doneCount}）"
 
-#: src/features/session-new.tsx:209
+#: src/features/session-new.tsx:228
 msgid "e.g. phone-create"
 msgstr "例如 phone-create"
 
@@ -770,7 +770,7 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new.tsx:218
+#: src/features/session-new.tsx:237
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -786,7 +786,7 @@ msgstr "跟随系统主题"
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
 
-#: src/features/ticket-new.tsx:149
+#: src/features/ticket-new.tsx:168
 msgid "From"
 msgstr "发起仓库"
 
@@ -847,7 +847,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/session-new.tsx:162
+#: src/features/session-new.tsx:181
 msgid "hotfix: an urgent fix"
 msgstr "hotfix：紧急修复"
 
@@ -943,11 +943,11 @@ msgstr "公网"
 msgid "interrupt"
 msgstr "打断"
 
-#: src/features/session-info.tsx:187
+#: src/features/session-info.tsx:188
 msgid "is queued"
 msgstr "排队等这一轮结束"
 
-#: src/features/session-info.tsx:187
+#: src/features/session-info.tsx:188
 msgid "joins the current turn"
 msgstr "插入当前这一轮"
 
@@ -975,7 +975,7 @@ msgstr "键盘优先"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/session-new.tsx:190
+#: src/features/session-new.tsx:209
 msgid "Kind"
 msgstr "类型"
 
@@ -996,7 +996,7 @@ msgstr "上次直连"
 
 #: src/features/console-overview.tsx:56
 #: src/features/console-shared.tsx:110
-#: src/features/console-shell.tsx:419
+#: src/features/console-shell.tsx:456
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -1143,7 +1143,7 @@ msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:283
 #: src/features/session-list.tsx:231
-#: src/features/session-switcher.tsx:197
+#: src/features/session-switcher.tsx:198
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -1156,25 +1156,25 @@ msgstr "等你"
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "等你 {waitingCount}"
 
-#: src/features/session-new.tsx:88
-#: src/features/session-new.tsx:170
+#: src/features/session-new.tsx:95
+#: src/features/session-new.tsx:189
 msgid "New session"
 msgstr "新会话"
 
-#: src/features/session-new.tsx:84
+#: src/features/session-new.tsx:91
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-info.tsx:232
+#: src/features/session-info.tsx:233
 msgid "New session title"
 msgstr "新的会话标题"
 
-#: src/features/ticket-new.tsx:60
-#: src/features/ticket-new.tsx:143
+#: src/features/ticket-new.tsx:67
+#: src/features/ticket-new.tsx:162
 msgid "New ticket"
 msgstr "新工单"
 
-#: src/features/ticket-new.tsx:56
+#: src/features/ticket-new.tsx:63
 msgid "New ticket (n)"
 msgstr "新工单（n）"
 
@@ -1321,7 +1321,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:225
+#: src/features/session-switcher.tsx:226
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -1519,7 +1519,7 @@ msgstr "读了 {reads} 个文件"
 
 #: src/features/console-overview.tsx:83
 #: src/features/console-shared.tsx:213
-#: src/features/console-shell.tsx:446
+#: src/features/console-shell.tsx:483
 #: src/features/landing-example.tsx:147
 #: src/features/landing-example.tsx:148
 msgid "Ready"
@@ -1553,11 +1553,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:221
+#: src/features/console-shell.tsx:256
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:382
+#: src/features/console-shell.tsx:419
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -1565,7 +1565,7 @@ msgstr "远程访问"
 msgid "Remove image"
 msgstr "移除图片"
 
-#: src/features/session-info.tsx:238
+#: src/features/session-info.tsx:239
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
@@ -1606,7 +1606,7 @@ msgid "Repositories"
 msgstr "仓库"
 
 #: src/features/session-info.tsx:41
-#: src/features/session-new.tsx:176
+#: src/features/session-new.tsx:195
 msgid "Repository"
 msgstr "仓库"
 
@@ -1660,7 +1660,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 
 #: src/features/chat-images.tsx:49
 #: src/features/console-overview.tsx:104
-#: src/features/console-shell.tsx:492
+#: src/features/console-shell.tsx:529
 msgid "Retry"
 msgstr "重试"
 
@@ -1754,7 +1754,7 @@ msgstr "Runtime 操作失败"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-shell.tsx:221
+#: src/features/console-shell.tsx:256
 #: src/features/landing-page.tsx:47
 msgid "Runtime Console"
 msgstr "运行时控制台"
@@ -1795,7 +1795,7 @@ msgstr "改动范围"
 msgid "Secondary"
 msgstr "副"
 
-#: src/features/console-shell.tsx:320
+#: src/features/console-shell.tsx:357
 msgid "Sections"
 msgstr "栏目"
 
@@ -1842,7 +1842,7 @@ msgid "Session id"
 msgstr "会话 ID"
 
 #: src/features/session-header.tsx:296
-#: src/features/session-info.tsx:195
+#: src/features/session-info.tsx:196
 msgid "Session info"
 msgstr "会话信息"
 
@@ -1899,7 +1899,7 @@ msgstr "显示的是上次的数据"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/console-shell.tsx:291
+#: src/features/console-shell.tsx:328
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -1927,7 +1927,7 @@ msgstr "来源"
 msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 msgstr "从键盘优先的控制平面开始，在需要时再打开浏览器视图。"
 
-#: src/features/ticket-new.tsx:190
+#: src/features/ticket-new.tsx:209
 msgid "Start working on it now (a headless run on the host)"
 msgstr "创建后立即开始处理（在电脑上后台运行）"
 
@@ -1969,7 +1969,7 @@ msgstr "状态"
 msgid "Status updated"
 msgstr "状态更新于"
 
-#: src/features/session-new.tsx:202
+#: src/features/session-new.tsx:221
 msgid "Subject"
 msgstr "主题"
 
@@ -1985,7 +1985,7 @@ msgstr "已提交"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/session-switcher.tsx:190
+#: src/features/session-switcher.tsx:191
 msgid "Switch session"
 msgstr "切换会话"
 
@@ -2002,7 +2002,7 @@ msgstr "跟随系统"
 msgid "Take over in tmux"
 msgstr "接管到 tmux"
 
-#: src/features/session-info.tsx:242
+#: src/features/session-info.tsx:243
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 
@@ -2022,7 +2022,7 @@ msgstr "点一下就会发到 Agent 窗格"
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
-#: src/features/session-new.tsx:161
+#: src/features/session-new.tsx:180
 msgid "task: a short focused change, reclaimed after delivery"
 msgstr "task：短期聚焦的改动，交付后回收"
 
@@ -2055,11 +2055,11 @@ msgstr "Agent 正在处理"
 #~ msgid "The agent is working. You can send once it stops."
 #~ msgstr "Agent 正在运行，等它停下后才能发送。"
 
-#: src/features/ticket-new.tsx:175
+#: src/features/ticket-new.tsx:194
 msgid "The behaviour, error or data you actually observed"
 msgstr "实际观察到的行为、报错或数据"
 
-#: src/features/ticket-new.tsx:185
+#: src/features/ticket-new.tsx:204
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "你期望对方提供的约定或行为——对方会先核实这一点"
 
@@ -2098,7 +2098,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-shell.tsx:489
+#: src/features/console-shell.tsx:526
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -2145,7 +2145,7 @@ msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息�
 #~ msgstr "只有中转在处理消息时才计时长（128 MB × 秒）；消息之间它会休眠、不计费，手机一直连着也一样。"
 
 #: src/features/session-info.tsx:36
-#: src/features/ticket-new.tsx:158
+#: src/features/ticket-new.tsx:177
 msgid "Title"
 msgstr "标题"
 
@@ -2169,7 +2169,7 @@ msgstr "tmux 窗口"
 msgid "Tmux window"
 msgstr "tmux 窗口"
 
-#: src/features/ticket-new.tsx:150
+#: src/features/ticket-new.tsx:169
 msgid "To"
 msgstr "目标仓库"
 
@@ -2275,7 +2275,7 @@ msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-overview.tsx:55
 #: src/features/console-shared.tsx:116
-#: src/features/console-shell.tsx:425
+#: src/features/console-shell.tsx:462
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -2318,7 +2318,7 @@ msgstr "查看源码"
 msgid "waiting"
 msgstr "等待中"
 
-#: src/features/console-shell.tsx:446
+#: src/features/console-shell.tsx:483
 msgid "Waiting"
 msgstr "等待中"
 
@@ -2375,7 +2375,7 @@ msgstr "等你"
 msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:394
+#: src/features/console-shell.tsx:431
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -2404,8 +2404,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:219
-#: src/features/console-shell.tsx:303
+#: src/features/console-shell.tsx:254
+#: src/features/console-shell.tsx:340
 #: src/features/landing-page.tsx:63
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -2418,11 +2418,11 @@ msgstr "WezDeck 把 workspace、git worktree 和 Agent 会话组织成一个键�
 msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
 
-#: src/features/session-new.tsx:224
+#: src/features/session-new.tsx:243
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
-#: src/features/ticket-new.tsx:165
+#: src/features/ticket-new.tsx:184
 msgid "What the other repository should do"
 msgstr "要对方仓库做什么"
 
@@ -2430,11 +2430,11 @@ msgstr "要对方仓库做什么"
 msgid "What the terminal shows"
 msgstr "终端画面"
 
-#: src/features/ticket-new.tsx:179
+#: src/features/ticket-new.tsx:198
 msgid "What you assume"
 msgstr "你的假设"
 
-#: src/features/ticket-new.tsx:169
+#: src/features/ticket-new.tsx:188
 msgid "What you saw"
 msgstr "你看到的现象"
 
@@ -2489,7 +2489,7 @@ msgstr "工作区"
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/session-new.tsx:213
+#: src/features/session-new.tsx:232
 msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑生成，重名会加 -2）"
 

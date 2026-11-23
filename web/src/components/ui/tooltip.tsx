@@ -17,7 +17,7 @@ export function Tooltip({
       </BaseTooltip.Trigger>
       <BaseTooltip.Portal>
         <BaseTooltip.Positioner side="top" sideOffset={8}>
-          <BaseTooltip.Popup className="z-20 w-[min(calc(var(--spacing)*70),70vw)] rounded-md border border-brand-border bg-brand-surface px-2.5 py-2 text-xs leading-snug font-normal text-brand-text shadow-lg">
+          <BaseTooltip.Popup className="motion-fade z-20 w-[min(calc(var(--spacing)*70),70vw)] rounded-md border border-brand-border bg-brand-surface px-2.5 py-2 text-xs leading-snug font-normal text-brand-text shadow-lg">
             {content}
           </BaseTooltip.Popup>
         </BaseTooltip.Positioner>

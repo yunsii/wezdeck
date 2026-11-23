@@ -100,7 +100,7 @@ export function Field({
           <ContextMenu.Popup
             // portalled out of the console: bring its colour tokens along
             data-deck
-            className="min-w-40 rounded-[12px] border border-brand-edge bg-brand-surface p-1 text-[14px] text-brand-text shadow-lg outline-none"
+            className="motion-pop min-w-40 rounded-[12px] border border-brand-edge bg-brand-surface p-1 text-[14px] text-brand-text shadow-lg outline-none"
           >
             <ContextMenu.Item
               onClick={() => copy(value, label)}

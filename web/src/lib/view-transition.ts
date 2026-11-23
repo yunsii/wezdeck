@@ -1,9 +1,11 @@
 // Page transitions: the browser's View Transitions through TanStack Router,
 // in layers (styles.css). The shell — status band, sidebar, tab bar — never
-// moves. The content layer cross-fades on a section switch (sidebar / tab),
-// pushes in from the right going deeper (forward) and back from the left
-// (back). Within one section on a wide screen the split list stays and only
-// the pane beside it changes (within).
+// moves. A section switch (sidebar / tab / palette) is instant, no
+// transition at all: a view transition first snapshots the page, which only
+// delays the switch, and the section's data is already warm (console-shell
+// prefetch + the persisted cache). Within a section a phone pushes the new
+// page in from the right (forward) and back (back); on a wide screen the
+// split list stays and only the pane beside it changes (within).
 
 /** console path without the locale prefix, or null outside the console */
 export function consolePath(pathname: string): string | null {
@@ -49,8 +51,7 @@ function sectionOf(pathname: string) {
 
 /**
  * false = no transition (first load, only search / hash changed, leaving the
- * console). Another section (sidebar, tabs, palette): `section`, a fade and
- * never a slide. Within one section (`within`, so a wide split keeps its
+ * console, another section: sidebar, tabs, palette). Within one section (`within`, so a wide split keeps its
  * list still) the direction follows the history position first — returning
  * to an earlier entry is always "back" — and the depth only when the
  * position does not change.
@@ -64,9 +65,9 @@ export function transitionTypes({
   const from = routeRank(fromLocation.pathname)
   const to = routeRank(toLocation.pathname)
   if (from < 0 || to < 0) return false
-  // another section (sidebar, tabs, palette): fade, whatever the depths
+  // another section (sidebar, tabs, palette): instant, whatever the depths
   if (sectionOf(fromLocation.pathname) !== sectionOf(toLocation.pathname))
-    return ['section']
+    return false
   if (from === to) return ['fade', 'within']
   const fromIndex = fromLocation.state?.__TSR_index
   const toIndex = toLocation.state?.__TSR_index

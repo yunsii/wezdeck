@@ -41,12 +41,12 @@ export function Disclosure({
           <ChevronRight
             size={16}
             aria-hidden
-            className="shrink-0 text-brand-label transition group-data-[panel-open]:rotate-90"
+            className="shrink-0 text-brand-label transition-transform duration-[var(--motion-medium)] ease-[var(--ease-standard)] group-data-[panel-open]:rotate-90"
           />
         ) : null}
       </BaseCollapsible.Trigger>
-      <BaseCollapsible.Panel className={panelClassName}>
-        {children}
+      <BaseCollapsible.Panel className="motion-collapse">
+        <div className={panelClassName}>{children}</div>
       </BaseCollapsible.Panel>
     </BaseCollapsible.Root>
   )

@@ -38,7 +38,7 @@ export function Sheet({
       <Drawer.Portal>
         <Drawer.Backdrop
           data-deck
-          className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0"
+          className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-[var(--motion-medium)] ease-[var(--ease-standard)] data-[ending-style]:opacity-0 data-[ending-style]:duration-[var(--motion-short)] data-[starting-style]:opacity-0 starting:opacity-0"
         />
         <Drawer.Viewport className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
           <Drawer.Popup
@@ -49,10 +49,16 @@ export function Sheet({
               // the header holds still; only the body below it scrolls, so the
               // scrollbar starts under the title and never runs into a corner
               'flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-[20px] border-t border-brand-edge bg-brand-deck text-brand-text shadow-[0_-10px_40px_rgba(0,0,0,0.28)] outline-none md:max-w-xl',
-              '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity,scale] duration-200 ease-out data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full',
+              // motion tokens (styles.css): in slower and decelerating, out
+              // faster and accelerating; a finger on it moves it 1:1
+              '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity,scale] duration-[var(--motion-medium)] ease-[var(--ease-enter)] data-[ending-style]:duration-[var(--motion-short)] data-[ending-style]:ease-[var(--ease-exit)] data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full starting:translate-y-full',
+              // @starting-style too: the popup mounts and loses data-starting-style
+              // before its first style resolution, so that alone never animated
+              // reduced motion: it fades, it does not travel
+              'motion-reduce:data-[ending-style]:translate-y-0 motion-reduce:data-[ending-style]:opacity-0 motion-reduce:data-[starting-style]:translate-y-0 motion-reduce:data-[starting-style]:opacity-0 motion-reduce:starting:translate-y-0 motion-reduce:starting:opacity-0',
               // a desk-sized window: a centred dialog (fade + scale), not a
               // strip stuck to the bottom with a phone's grab handle
-              'md:max-h-[85dvh] md:rounded-[20px] md:border md:data-[ending-style]:translate-y-0 md:data-[ending-style]:scale-95 md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-0 md:data-[starting-style]:scale-95 md:data-[starting-style]:opacity-0',
+              'md:max-h-[85dvh] md:rounded-[20px] md:border md:data-[ending-style]:translate-y-0 md:data-[ending-style]:scale-[0.96] md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-0 md:data-[starting-style]:scale-[0.96] md:data-[starting-style]:opacity-0 md:starting:translate-y-0 md:starting:scale-[0.96] md:starting:opacity-0',
               className,
             )}
           >

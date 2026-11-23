@@ -55,7 +55,9 @@ export function Select({
       <BaseSelect.Portal>
         {/* above the z-50 bottom sheets a select can sit in */}
         <BaseSelect.Positioner sideOffset={4} className="z-[60]">
-          <BaseSelect.Popup className="z-30 min-w-40 overflow-hidden rounded-md border border-brand-border bg-brand-deck p-1 text-brand-text shadow-lg">
+          {/* enter only (@starting-style): Base UI keeps a closed select popup
+              mounted, and an exit transition left it in the DOM, unhidden */}
+          <BaseSelect.Popup className="origin-[var(--transform-origin)] transition-[opacity,scale] duration-[var(--motion-short)] ease-[var(--ease-enter)] starting:scale-[0.96] starting:opacity-0 motion-reduce:starting:scale-100 z-30 min-w-40 overflow-hidden rounded-md border border-brand-border bg-brand-deck p-1 text-brand-text shadow-lg">
             <BaseSelect.List>
               {options.map((option) => (
                 <BaseSelect.Item

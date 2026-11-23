@@ -1068,7 +1068,7 @@ html[data-theme='dark'] [data-deck] {
 }
 
 .chat-in {
-  animation: chat-in 180ms ease-out;
+  animation: chat-in var(--motion-medium) var(--ease-enter);
 }
 
 /* Jumped-to message (sticky prompt): a ring that fades out. */
@@ -1148,14 +1148,33 @@ html[data-theme='dark'] {
 }
 
 /*
+ * Motion tokens: every transition and animation takes its timing from here.
+ * Enter slower and decelerating, leave faster and accelerating (Material 3
+ * emphasized curves); one thing moves at a time; two whole pages never show
+ * half-transparent on top of each other. Reduced motion: opacity only.
+ */
+:root {
+  --motion-exit: 90ms;
+  --motion-short: 150ms;
+  --motion-medium: 240ms;
+  --motion-long: 340ms;
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/*
  * Page transitions (lib/view-transition.ts), in layers:
  *   shell   status band, sidebar, tab bar: never move (old hidden, new as is)
- *   page    the content column: a section switch fades; forward / back push
- *           on a phone, a short shift + fade on a wide screen
+ *   page    the content column: a section switch has no transition at all;
+ *           within a section a phone pushes (iOS: the new page slides in
+ *           whole and opaque, the old one steps back a quarter), a wide
+ *           screen fades out, then nudges the new page in
  *   split   within one section on a wide screen the list stays still and
- *           only the pane beside it fades
- * The root keeps only the background, so nothing outside a layer moves.
- * Toasts never move with a page (they belong to no page).
+ *           only the pane beside it fades through
+ * The root keeps only the background. Snapshots stack opaque: the content
+ * column has its own background (vt-page) and no plus-lighter blend — two
+ * pages added together read as a ghost. Toasts never move with a page.
  */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -1166,9 +1185,6 @@ html[data-theme='dark'] {
 }
 .vt-sidebar {
   view-transition-name: sidebar;
-}
-html:active-view-transition-type(section) .tabbar-vt {
-  view-transition-name: tabbar;
 }
 .vt-page {
   view-transition-name: page;
@@ -1181,25 +1197,26 @@ html:active-view-transition-type(within) .vt-split-pane {
 }
 ::view-transition-group(band),
 ::view-transition-group(sidebar),
-::view-transition-group(tabbar),
-::view-transition-group(split-list) {
+::view-transition-group(split-list),
+::view-transition-group(page),
+::view-transition-group(split-pane) {
   animation: none;
 }
 ::view-transition-old(band),
 ::view-transition-old(sidebar),
-::view-transition-old(tabbar),
 ::view-transition-old(split-list) {
   display: none;
 }
 ::view-transition-new(band),
 ::view-transition-new(sidebar),
-::view-transition-new(tabbar),
 ::view-transition-new(split-list) {
   animation: none;
 }
-::view-transition-group(page),
-::view-transition-group(split-pane) {
-  animation: none;
+::view-transition-old(page),
+::view-transition-new(page),
+::view-transition-old(split-pane),
+::view-transition-new(split-pane) {
+  mix-blend-mode: normal;
 }
 .toast-layer {
   view-transition-name: toasts;
@@ -1218,27 +1235,32 @@ html:active-view-transition-type(within) .vt-split-pane {
   animation: none;
 }
 @media (prefers-reduced-motion: no-preference) {
-  /* a section switch / same-depth hop: the content fades, nothing slides */
+  /* same-depth hop (one session to another): fade through */
   ::view-transition-old(page),
   ::view-transition-old(split-pane) {
-    animation: 110ms ease-out both vt-fade-out;
+    animation: var(--motion-exit) var(--ease-exit) both vt-fade-out;
   }
   ::view-transition-new(page),
   ::view-transition-new(split-pane) {
-    animation: 190ms ease-out both vt-fade-in;
+    animation: var(--motion-medium) var(--ease-enter) var(--motion-exit) both
+      vt-rise-in;
   }
-  /* deeper / back on a phone: the content layer pushes */
+  /* phone, deeper: the new page slides in over the old one */
   html:active-view-transition-type(forward)::view-transition-old(page) {
-    animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-out-left;
+    animation: var(--motion-long) var(--ease-enter) both vt-step-back;
   }
   html:active-view-transition-type(forward)::view-transition-new(page) {
-    animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in-right;
+    animation: var(--motion-long) var(--ease-enter) both vt-push-in;
+    box-shadow: -10px 0 28px rgb(0 0 0 / 0.14);
   }
+  /* phone, back: the leaving page slides off on top */
   html:active-view-transition-type(back)::view-transition-old(page) {
-    animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-out-right;
+    z-index: 1;
+    animation: var(--motion-medium) var(--ease-standard) both vt-push-out;
+    box-shadow: -10px 0 28px rgb(0 0 0 / 0.14);
   }
   html:active-view-transition-type(back)::view-transition-new(page) {
-    animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in-left;
+    animation: var(--motion-medium) var(--ease-standard) both vt-step-forward;
   }
   /* wide: the sidebar is the map, a push across the whole column is too much */
   @media (min-width: 768px) {
@@ -1256,13 +1278,18 @@ html:active-view-transition-type(within) .vt-split-pane {
     }
     html:active-view-transition-type(forward)::view-transition-old(page),
     html:active-view-transition-type(back)::view-transition-old(page) {
-      animation: 110ms ease-out both vt-fade-out;
+      z-index: auto;
+      box-shadow: none;
+      animation: var(--motion-exit) var(--ease-exit) both vt-fade-out;
     }
     html:active-view-transition-type(forward)::view-transition-new(page) {
-      animation: 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-nudge-right;
+      box-shadow: none;
+      animation: var(--motion-medium) var(--ease-enter) var(--motion-exit) both
+        vt-nudge-right;
     }
     html:active-view-transition-type(back)::view-transition-new(page) {
-      animation: 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-nudge-left;
+      animation: var(--motion-medium) var(--ease-enter) var(--motion-exit) both
+        vt-nudge-left;
     }
   }
 }
@@ -1273,15 +1300,25 @@ html:active-view-transition-type(within) .vt-split-pane {
   ::view-transition-new(split-pane) {
     animation: none;
   }
-}
-@keyframes vt-fade-in {
-  from {
-    opacity: 0;
+  /* overlays: opacity only, no slide or scale */
+  :root {
+    --motion-medium: 100ms;
+    --motion-long: 100ms;
+  }
+  .motion-pop[data-starting-style],
+  .motion-pop[data-ending-style] {
+    scale: 1;
   }
 }
 @keyframes vt-fade-out {
   to {
     opacity: 0;
+  }
+}
+@keyframes vt-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
 @keyframes vt-nudge-right {
@@ -1296,29 +1333,67 @@ html:active-view-transition-type(within) .vt-split-pane {
     opacity: 0;
   }
 }
-@keyframes vt-in-right {
+@keyframes vt-push-in {
   from {
-    transform: translateX(24%);
-    opacity: 0;
+    transform: translateX(100%);
   }
 }
-@keyframes vt-in-left {
+@keyframes vt-push-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-step-back {
+  to {
+    transform: translateX(-28%);
+  }
+}
+@keyframes vt-step-forward {
   from {
-    transform: translateX(-24%);
-    opacity: 0;
+    transform: translateX(-28%);
   }
 }
-@keyframes vt-out-left {
-  to {
-    transform: translateX(-12%);
-    opacity: 0;
-  }
+
+/*
+ * Overlays (Base UI popups: data-starting-style / data-ending-style mark the
+ * frames before enter and after exit). `motion-pop`: menus, select lists,
+ * popovers — grow from the trigger (--transform-origin). `motion-fade`:
+ * tooltips. The sheet and its backdrop are styled in components/ui/sheet.
+ */
+.motion-pop {
+  transform-origin: var(--transform-origin, top);
+  transition:
+    opacity var(--motion-short) var(--ease-enter),
+    scale var(--motion-short) var(--ease-enter);
 }
-@keyframes vt-out-right {
-  to {
-    transform: translateX(12%);
-    opacity: 0;
-  }
+.motion-pop[data-starting-style],
+.motion-pop[data-ending-style] {
+  opacity: 0;
+  scale: 0.96;
+}
+.motion-pop[data-ending-style] {
+  transition-duration: var(--motion-exit);
+  transition-timing-function: var(--ease-exit);
+}
+.motion-fade {
+  transition: opacity var(--motion-short) var(--ease-standard);
+}
+.motion-fade[data-starting-style],
+.motion-fade[data-ending-style] {
+  opacity: 0;
+}
+.motion-fade[data-ending-style] {
+  transition-duration: var(--motion-exit);
+}
+/* a folding panel (Disclosure): the height follows Base UI's measured size */
+.motion-collapse {
+  height: var(--collapsible-panel-height);
+  overflow: hidden;
+  transition: height var(--motion-medium) var(--ease-standard);
+}
+.motion-collapse[data-starting-style],
+.motion-collapse[data-ending-style] {
+  height: 0;
 }
 
 /*

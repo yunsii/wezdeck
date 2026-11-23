@@ -199,19 +199,41 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   request to `/zh/…` when it says zh — or, with no cookie yet, when
   `Accept-Language` prefers zh. The hash (a `#pair=` token) survives the
   redirect; the service worker caches `/zh/console` pages too.
+- Motion (`styles.css` "Motion tokens"): every transition takes its timing
+  from `--motion-exit` 90 ms / `--motion-short` 150 / `--motion-medium` 240 /
+  `--motion-long` 340 and `--ease-enter` / `--ease-exit` / `--ease-standard`
+  (Material 3 emphasized curves): enter slower and decelerating, leave faster
+  and accelerating, one thing moving at a time, never two whole pages
+  half-transparent on top of each other; reduced motion keeps short fades
+  only. Overlays: `Sheet` slides up (phone) or fades and scales in (desk) —
+  its enter states are `@starting-style` (Tailwind `starting:`), because the
+  popup loses `data-starting-style` before its first style resolution, and
+  callers keep it mounted with `open` (a `{open ? <Sheet/> : null}` or an
+  early `return null` skipped the exit); menus / popovers grow from the
+  trigger (`motion-pop`), tooltips fade (`motion-fade`), `Disclosure` panels
+  animate their height (`motion-collapse`); `Select` animates in only — Base
+  UI keeps a closed select popup mounted and an exit transition left it in
+  the DOM, unhidden.
 - Page transitions (`lib/view-transition.ts`, styles.css): View Transitions
   through the router's `defaultViewTransition`, in layers. The shell — status
   band (`vt-band`), sidebar (`vt-sidebar`), tab bar — never moves; the root
-  snapshot keeps only the background. The content column (`vt-page`)
-  cross-fades on any switch to another section (sidebar, tabs, palette:
-  type `section`, never a slide). Within a section (`within`) a phone pushes
-  the column — into a detail from the right, back from the left, direction
-  from the history position first, depth when it does not change — and a
-  wide screen only nudges it 16 px with a fade; in a wide split (会话, 我的)
-  the list (`vt-split-list`) holds still and only the pane beside it
-  (`vt-split-pane`) fades. Toasts sit in a `toast-layer` that never moves;
-  nothing animates under reduced motion, and browsers without
-  `:active-view-transition-type` fall back to the default cross-fade.
+  snapshot keeps only the background. A switch to another section (sidebar,
+  tabs, palette) has no transition at all — a view transition snapshots the
+  page first and only delays the switch (measured on a phone: about 300 ms
+  with the old cross-fade, 7–35 ms without); the section is ready instead:
+  the shell keeps the ticket list and the session list warm, both persist to
+  IndexedDB, and every section's route code is preloaded once idle
+  (`useWarmSections`). Within a section (`within`) a phone pushes like iOS —
+  the new page slides in whole and opaque with a shadow, the old one steps
+  back 28 %; back reverses it with the leaving page on top — and a wide
+  screen fades out, then nudges the new page in 16 px; in a wide split
+  (会话, 我的) the list (`vt-split-list`) holds still and only the pane
+  (`vt-split-pane`) fades through. The content column (`vt-page`) has its own
+  background and the snapshots no plus-lighter blend: a transparent snapshot
+  of two pages blended together was the ghost on push. The shell reads the
+  resolved location, so on back its title does not switch before the page
+  (it used to end up in the leaving page's snapshot). Toasts sit in a
+  `toast-layer` that never moves.
 - 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
   header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
   host-built `reference` block for another agent: id, transcript path, cwd,

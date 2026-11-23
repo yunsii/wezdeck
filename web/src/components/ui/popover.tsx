@@ -26,7 +26,7 @@ function PopoverContent({
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={
-            'rounded-md border border-brand-border bg-brand-surface p-1 text-brand-text shadow-lg focus-visible:ring-2 focus-visible:ring-brand-running ' +
+            'motion-pop rounded-md border border-brand-border bg-brand-surface p-1 text-brand-text shadow-lg focus-visible:ring-2 focus-visible:ring-brand-running ' +
             (className ?? '')
           }
           {...props}

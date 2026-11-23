@@ -27,6 +27,13 @@ export function NewTicketButton() {
   const { t } = useLingui()
   const device = useDeviceState()
   const [open, setOpen] = useState(false)
+  // a fresh form per opening (key), while the sheet stays mounted on close
+  // so it can play its exit
+  const [round, setRound] = useState(0)
+  const show = () => {
+    setRound((n) => n + 1)
+    setOpen(true)
+  }
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -40,7 +47,7 @@ export function NewTicketButton() {
       )
         return
       event.preventDefault()
-      setOpen(true)
+      show()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -51,7 +58,7 @@ export function NewTicketButton() {
       <Button
         variant="solid"
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={show}
         data-testid="new-ticket"
         title={t`New ticket (n)`}
         className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-[14px] md:min-h-9"
@@ -59,12 +66,24 @@ export function NewTicketButton() {
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New ticket`}</span>
       </Button>
-      {open ? <NewTicketSheet onClose={() => setOpen(false)} /> : null}
+      {round > 0 ? (
+        <NewTicketSheet
+          key={round}
+          open={open}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </>
   )
 }
 
-function NewTicketSheet({ onClose }: { onClose: () => void }) {
+function NewTicketSheet({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const navigate = useNavigate()
@@ -136,7 +155,7 @@ function NewTicketSheet({ onClose }: { onClose: () => void }) {
   )
   return (
     <Sheet
-      open={true}
+      open={open}
       onOpenChange={(next) => {
         if (!next) onClose()
       }}

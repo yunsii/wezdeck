@@ -61,16 +61,16 @@ describe('transition direction', () => {
       transitionTypes(nav('/zh/console/sessions/s1', '/zh/console/sessions')),
     ).toEqual(['back', 'within'])
   })
-  it('switching sections (sidebar / tabs) is a section fade, never a slide', () => {
+  it('switching sections (sidebar / tabs) is instant: no transition', () => {
     expect(
       transitionTypes(nav('/zh/console/sessions', '/zh/console/collab')),
-    ).toEqual(['section'])
-    expect(
-      transitionTypes(nav('/zh/console/me', '/zh/console/sessions')),
-    ).toEqual(['section'])
+    ).toBe(false)
+    expect(transitionTypes(nav('/zh/console/me', '/zh/console/sessions'))).toBe(
+      false,
+    )
     expect(
       transitionTypes(nav('/console/diagnostics', '/console/development')),
-    ).toEqual(['section'])
+    ).toBe(false)
   })
   it('one session to another keeps the split list (within)', () => {
     expect(
@@ -78,18 +78,18 @@ describe('transition direction', () => {
     ).toEqual(['fade', 'within'])
     expect(
       transitionTypes(nav('/console/sessions/a', '/console/collab/t1')),
-    ).toEqual(['section'])
+    ).toBe(false)
   })
   it('the history position wins over depth', () => {
     expect(
       transitionTypes(navAt('/console/sessions/s1', 1, '/console/sessions', 0)),
     ).toEqual(['back', 'within'])
-    // another section is a fade, back in history or not
+    // another section is instant, back in history or not
     expect(
       transitionTypes(
         navAt('/console/me/appearance', 1, '/console/sessions', 0),
       ),
-    ).toEqual(['section'])
+    ).toBe(false)
     expect(
       transitionTypes(navAt('/console/sessions', 0, '/console/sessions/s1', 0)),
     ).toEqual(['forward', 'within'])
