@@ -298,8 +298,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new
-  reply writes itself in phrase-sized batches every 120 ms at ~350 chars/s
-  (0.6–3 s), each batch ending at punctuation or a space and fading in by
+  reply writes itself in phrase-sized batches every 120 ms at reading pace —
+  ~60 chars/s with no time cap (it used to squeeze any reply into 3 s, so a
+  long one flashed past), ~180 chars/s while two or more messages wait behind
+  it, still jumping once 8 behind (`web/src/features/chat-stream.ts`) — each batch ending at punctuation or a space and fading in by
   opacity alone (Streamdown `animated` fadeIn 650 ms, stagger 6 ms capped at
   260 ms; a per-word blur + lift made the leading edge shimmer), kept
   animating 700 ms after the last batch so the tail never pops; a backlog

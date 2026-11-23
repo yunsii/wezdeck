@@ -11,6 +11,7 @@ import { cn } from '#/lib/utils'
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { ChatMarkdown } from './chat-markdown'
+import { useStream } from './chat-stream'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
@@ -100,77 +101,6 @@ function SentAttachments({ text }: { text: string }) {
   )
 }
 
-const reducedMotion = () =>
-  typeof matchMedia !== 'undefined' &&
-  matchMedia('(prefers-reduced-motion: reduce)').matches
-
-/** a new batch every 120 ms: calm, phrase-sized steps rather than a ticker */
-const TICK_MS = 120
-/** let the last batch finish fading in (reveal duration in chat-markdown.tsx) */
-const SETTLE_MS = 700
-const BREAK = /[\s，。！？；：、,.!?;:）)\]】」』]/
-
-/**
- * Where the next batch ends: at least `step` chars on, then on to the next
- * phrase break (punctuation or space) if one is near, else the end of the
- * word; a batch reads as a phrase appearing, not letters ticking in.
- */
-function batchEnd(text: string, from: number, step: number) {
-  let end = Math.min(text.length, from + step)
-  const reach = Math.min(text.length, end + step)
-  for (let at = end; at < reach; at++)
-    if (BREAK.test(text[at] ?? '')) return at + 1
-  while (end < text.length && /[\w\-./:@#%&+=~]/.test(text[end] ?? '')) end++
-  return end
-}
-
-/**
- * Stream a just-arrived reply in the way Gemini's feels: a phrase-sized
- * batch every 120 ms at a reading pace (about 350 chars/s, the whole
- * message in 0.6–3 s), each batch fading in softly (chat-markdown.tsx) while
- * the thread glides down after it (chat-scroll.ts). Text that grows
- * mid-stream continues from where it is, never from the start.
- */
-function useStream(text: string, active: boolean, onDone?: () => void) {
-  const [shown, setShown] = useState(active ? 0 : text.length)
-  // the last words are still blurring in when the text is complete
-  const [settling, setSettling] = useState(false)
-  const at = useRef(shown)
-  const done = useRef(onDone)
-  done.current = onDone
-  useEffect(() => {
-    if (!active || reducedMotion() || document.hidden) {
-      at.current = text.length
-      setShown(text.length)
-      done.current?.()
-      return
-    }
-    const total = Math.min(3000, Math.max(600, (text.length / 350) * 1000))
-    const step = Math.max(2, Math.ceil(text.length / (total / TICK_MS)))
-    let tail: ReturnType<typeof setTimeout> | undefined
-    const timer = setInterval(() => {
-      at.current = batchEnd(text, at.current, step)
-      setShown(at.current)
-      if (at.current >= text.length) {
-        clearInterval(timer)
-        setSettling(true)
-        tail = setTimeout(() => {
-          setSettling(false)
-          done.current?.()
-        }, SETTLE_MS)
-      }
-    }, TICK_MS)
-    return () => {
-      clearInterval(timer)
-      clearTimeout(tail)
-    }
-  }, [text, active])
-  return {
-    text: text.slice(0, shown),
-    streaming: active && (shown < text.length || settling),
-  }
-}
-
 /**
  * Memoised: a poll that appends a message leaves the others alone — merged
  * messages keep their identity, so a settled bubble skips its markdown parse.
@@ -180,6 +110,7 @@ const Bubble = memo(function BubbleView({
   at,
   fresh,
   stream,
+  rush = false,
   onShown,
 }: {
   message: Message
@@ -188,10 +119,12 @@ const Bubble = memo(function BubbleView({
   fresh: boolean
   /** this is the reply being streamed in right now */
   stream: boolean
+  /** messages are queued behind this one: stream faster to catch up */
+  rush?: boolean
   onShown?: () => void
 }) {
   const mine = message.role === 'user'
-  const live = useStream(message.text, stream && !mine, onShown)
+  const live = useStream(message.text, stream && !mine, onShown, rush)
   useEffect(() => {
     if (stream && mine) onShown?.()
   }, [stream, mine, onShown])
@@ -399,6 +332,8 @@ export function ChatThread({
   )
   const isFresh = (index: number) =>
     baseline.current !== null && start + index >= baseline.current
+  // items waiting behind the one streaming now: two or more → catch up
+  const queued = items.filter((item) => start + item.index > effective).length
   const renderItem = (item: Item, position: number, at: number) => {
     const stream = at === effective
     if (item.kind === 'tools') {
@@ -447,6 +382,7 @@ export function ChatThread({
         at={at}
         fresh={isFresh(item.index)}
         stream={stream}
+        rush={queued >= 2}
         onShown={stream ? () => advance(at + 1) : undefined}
       />
     )
