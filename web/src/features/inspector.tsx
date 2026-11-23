@@ -1,6 +1,10 @@
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
+import { useLingui } from '@lingui/react/macro'
+import { toast } from 'sonner'
+
 import { Button } from '#/components/ui/button'
+import { copyText } from '#/lib/clipboard'
 
 export type InspectorItem = {
   id: string
@@ -154,27 +158,59 @@ export function Reading({
       {shownFacts.length ? (
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-brand-edge bg-brand-edge">
           {shownFacts.map((fact) => (
-            <div
+            <FactCell
               key={fact.label}
-              className={cn(
-                'bg-brand-key px-3 py-2.5',
-                (fact.wide || fact === lonely) && 'col-span-2',
-              )}
-            >
-              <dt className="text-xs text-brand-label">{fact.label}</dt>
-              <dd
-                className={cn(
-                  'mt-1 text-sm text-brand-text',
-                  fact.wide ? 'break-words' : 'truncate',
-                )}
-              >
-                {fact.value}
-              </dd>
-            </div>
+              fact={fact}
+              span={fact.wide || fact === lonely}
+            />
           ))}
         </dl>
       ) : null}
       {children}
     </div>
+  )
+}
+
+/** one fact; a plain-text value copies on click like a Field row */
+function FactCell({
+  fact,
+  span,
+}: {
+  fact: { label: string; value: React.ReactNode; wide?: boolean }
+  span: boolean | undefined
+}) {
+  const { t } = useLingui()
+  const text = typeof fact.value === 'string' ? fact.value : null
+  const label = fact.label
+  const body = (
+    <>
+      <dt className="text-xs text-brand-label">{fact.label}</dt>
+      <dd
+        className={cn(
+          'mt-1 text-sm text-brand-text',
+          fact.wide ? 'break-words' : 'truncate',
+        )}
+      >
+        {fact.value}
+      </dd>
+    </>
+  )
+  const cell = cn('bg-brand-key px-3 py-2.5', span && 'col-span-2')
+  if (text === null) return <div className={cell}>{body}</div>
+  return (
+    <Button
+      variant="plain"
+      type="button"
+      title={t`Copy`}
+      onClick={() => {
+        void copyText(text).then(() => toast(t`Copied ${label}`))
+      }}
+      className={cn(
+        cell,
+        'block text-left transition-colors hover:bg-brand-soft active:bg-brand-soft',
+      )}
+    >
+      {body}
+    </Button>
   )
 }

@@ -145,7 +145,12 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   drag scrolls first), focus trap, Esc, backdrop tap, scroll lock; the swipe
   moves it through `--drawer-swipe-movement-y`; paper colour kept, set apart from the
   page by a 50 % backdrop, a top edge with a shadow and a grab handle: the
-  old sheet had no visible edge on the dark theme), plus `Segmented`,
+  old sheet had no visible edge on the dark theme; only the body under the
+  title scrolls), `Field` / `FieldList` (label / value rows to read and copy,
+  the Telegram profile way: tap or click copies the value, long-press or
+  right-click opens copy value / copy "label: value"; a phone stacks the
+  value over a small label, a wide screen keeps two columns sharing one
+  label width via subgrid and lights the row on hover), plus `Segmented`,
   `Toggle`, `Popover`, `Tooltip`. A
   missing control is added there first, then used. Tests address them by
   role: a Select is `combobox` + `option` (the popup is portalled to body),

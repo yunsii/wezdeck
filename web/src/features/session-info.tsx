@@ -12,24 +12,12 @@ import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
+import { Field, FieldList } from '#/components/ui/field'
+import { copyText } from '#/lib/clipboard'
 
 export type MetaGroup = {
   name: string
   rows: Array<{ key: string; value: string }>
-}
-
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-  } catch {
-    const area = document.createElement('textarea')
-    area.value = text
-    area.style.cssText = 'position:fixed;opacity:0'
-    document.body.append(area)
-    area.select()
-    document.execCommand('copy')
-    area.remove()
-  }
 }
 
 function useLabels() {
@@ -166,33 +154,6 @@ function extraGroups(
   return groups
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      onClick={() => {
-        void copyText(value).then(() => {
-          setCopied(true)
-          setTimeout(() => setCopied(false), 1_200)
-        })
-      }}
-      className="grid w-full grid-cols-[7.5rem_minmax(0,1fr)_1rem] items-start gap-2 px-3 py-2 text-left text-[13px] active:bg-brand-deck"
-    >
-      <span className="text-brand-label">{label}</span>
-      <span className="font-mono text-[12px] break-all text-brand-text">
-        {value}
-      </span>
-      <span className="pt-0.5 text-brand-label">
-        {copied ? (
-          <Check size={13} aria-hidden className="text-brand-done" />
-        ) : null}
-      </span>
-    </Button>
-  )
-}
-
 export function SessionInfo({
   data,
   open,
@@ -278,22 +239,23 @@ export function SessionInfo({
           </Button>
         ) : null}
         <p className="px-1 text-[11.5px] text-brand-label">
-          {t`Tap a row to copy its value.`}
+          {t`Tap a row to copy its value; long-press or right-click for more.`}
         </p>
         {groups.map((group) => (
           <section key={group.name} className="grid gap-1">
             <h3 className="px-1 text-[12.5px] font-semibold text-brand-muted">
               {groupLabels[group.name] ?? group.name}
             </h3>
-            <div className="overflow-hidden rounded-[14px] bg-brand-surface">
+            <FieldList>
               {group.rows.map((row) => (
-                <Row
+                <Field
                   key={row.key}
                   label={keys[row.key] ?? row.key}
                   value={format(row.key, row.value)}
+                  mono
                 />
               ))}
-            </div>
+            </FieldList>
           </section>
         ))}
       </div>
