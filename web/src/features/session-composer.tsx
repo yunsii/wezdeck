@@ -460,7 +460,8 @@ export function ComposerBox({
           disabled={Boolean(composer.progress) || !composer.ready || blocked}
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-full disabled:opacity-30"
         >
-          <SendHorizontal size={18} aria-hidden />
+          {/* 18 px in a 40 px circle read as a speck: larger, a bolder stroke */}
+          <SendHorizontal size={21} strokeWidth={2.25} aria-hidden />
         </Button>
       </div>
     </>
