@@ -89,3 +89,16 @@ export function buildSessionTree(
     }))
     .sort(byVisit)
 }
+
+/** Alt+j / Alt+k / Alt+l: the cycle after `current` (wrapping); the first one when it is elsewhere */
+export function nextInCycle(
+  ids: Array<string>,
+  current: string,
+  step = 1,
+): string | undefined {
+  const others = ids.filter((id) => id !== current)
+  if (!others.length) return undefined
+  const at = ids.indexOf(current)
+  if (at < 0) return step > 0 ? ids[0] : ids.at(-1)
+  return ids[(at + step + ids.length) % ids.length]
+}

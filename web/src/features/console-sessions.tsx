@@ -345,6 +345,7 @@ function SessionDetail({ id }: { id: string }) {
   return (
     <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
       <SessionHeader
+        id={id}
         data={data}
         onBack={back}
         renameDisabled={sending || device.state !== 'approved'}

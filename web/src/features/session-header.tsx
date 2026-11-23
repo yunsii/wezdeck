@@ -6,8 +6,8 @@
 // are, and the background tasks (counted in the meter row). The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { ChevronLeft, Info } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, ChevronLeft, Info } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -21,6 +21,12 @@ import type {
 } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
+import {
+  NextWaitingChip,
+  SessionSwitcher,
+  useSessionKeys,
+  useSessionNav,
+} from './session-switcher'
 
 /** a meter appears once its share reaches this (amber from here on) */
 const NEAR_FULL = 75
@@ -163,11 +169,13 @@ function Meters({
 }
 
 export function SessionHeader({
+  id,
   data,
   onBack,
   onRename,
   renameDisabled,
 }: {
+  id: string
   data: Detail | undefined
   onBack: () => void
   /** Paste `/rename <title>` into the agent TUI (Claude and Grok both honor it). */
@@ -177,6 +185,10 @@ export function SessionHeader({
   const { t } = useLingui()
   const statusText = useStatusText()
   const [infoOpen, setInfoOpen] = useState(false)
+  const [switcherOpen, setSwitcherOpen] = useState(false)
+  const openSwitcher = useCallback(() => setSwitcherOpen(true), [])
+  const nav = useSessionNav(id)
+  useSessionKeys(nav.jump, openSwitcher)
   const head = useRef<HTMLElement>(null)
   useEffect(() => {
     const el = head.current
@@ -192,7 +204,7 @@ export function SessionHeader({
     }
   }, [])
   const title =
-    data?.title || data?.name || data?.window || data?.id.slice(0, 8) || ''
+    data?.title || data?.window || data?.name || data?.id.slice(0, 8) || ''
   // the page shows running (typing dots) and done (the reply) by itself;
   // the header only speaks up when the agent needs the human
   const long = data
@@ -203,13 +215,6 @@ export function SessionHeader({
         data.background?.length ?? 0,
       )
     : undefined
-  const rename = () => {
-    if (!onRename || renameDisabled) return
-    const next = window.prompt(t`New session title`, title)
-    const trimmed = next?.trim()
-    if (!trimmed || trimmed === title) return
-    onRename(trimmed)
-  }
   return (
     <header
       ref={head}
@@ -226,17 +231,21 @@ export function SessionHeader({
           <ChevronLeft size={22} aria-hidden />
         </button>
         <div className="grid min-w-0 flex-1">
+          {/* Alt+g / Alt+x at the desk: pick another session */}
           <button
             type="button"
-            data-write
-            disabled={!onRename || renameDisabled}
-            onClick={rename}
-            title={
-              onRename ? t`Rename via /rename in the agent pane` : undefined
-            }
-            className="truncate text-left text-[16px] leading-tight font-semibold disabled:opacity-100"
+            onClick={openSwitcher}
+            aria-haspopup="dialog"
+            data-testid="session-title"
+            title={t`Switch session (Alt+g)`}
+            className="flex min-w-0 items-center gap-1 text-left text-[16px] leading-tight font-semibold"
           >
-            {title || t`Loading…`}
+            <span className="truncate">{title || t`Loading…`}</span>
+            <ChevronDown
+              size={15}
+              aria-hidden
+              className="shrink-0 text-brand-label"
+            />
           </button>
           {data?.agent || data?.branch ? (
             <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-brand-label">
@@ -259,7 +268,12 @@ export function SessionHeader({
             <Led tone="waiting" size={10} />
             {t`Needs you`}
           </span>
-        ) : null}
+        ) : (
+          <NextWaitingChip
+            count={nav.otherWaiting.length}
+            onNext={() => nav.jump('waiting')}
+          />
+        )}
         {data ? (
           <button
             type="button"
@@ -283,8 +297,15 @@ export function SessionHeader({
           data={data}
           open={infoOpen}
           onClose={() => setInfoOpen(false)}
+          onRename={onRename}
+          renameDisabled={renameDisabled}
         />
       ) : null}
+      <SessionSwitcher
+        current={id}
+        open={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+      />
     </header>
   )
 }

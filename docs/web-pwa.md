@@ -37,7 +37,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    later of the desk visit (`visited`, the access ledger behind `Alt+g` /
    `Alt+x`, `session_visits.go`) and a visit from this phone
    (`lib/session-visits.ts`); never-visited groups (ticket agents) sink by
-   name (`features/session-order.ts`); 待跟进 to-dos at the bottom. What
+   name (`features/session-order.ts`); 待跟进 to-dos at the bottom. In a
+   session, wezdeck's session keys carry over (`session-switcher.tsx`):
+   `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
+   session waiting on you / finished / running in the list's order — on the
+   phone a 「还有 N 个等你 ›」 chip in the header when another one waits;
+   `Alt+g` / `Alt+x` or tapping the title opens a switcher sheet grouped
+   like the list. Switching replaces the history entry, so back returns to
+   the list. Rename (`/rename`) moved into 会话信息 (ⓘ). What
    waits on you badges its own tab: 会话 counts sessions waiting on you,
    工单 the tickets (`waiting_human`). `/console/now` stays as a redirect
    to 会话 for installed apps whose manifest still starts there. 工单

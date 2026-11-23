@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildSessionTree } from '#/features/session-order'
+import { buildSessionTree, nextInCycle } from '#/features/session-order'
 import type { SessionCard } from '#/features/console-sessions'
 
 const card = (over: Partial<SessionCard>): SessionCard => ({
@@ -73,5 +73,21 @@ describe('session order follows visits, not output', () => {
       card({ id: 'p', worktree: '/r/a', pane_role: 'primary', pane_index: 1 }),
     ])
     expect(tree[0].worktrees[0].rows.map((row) => row.id)).toEqual(['p', 's'])
+  })
+})
+
+describe('Alt+j style cycling', () => {
+  it('goes to the next one after the current, wrapping', () => {
+    expect(nextInCycle(['a', 'b', 'c'], 'b')).toBe('c')
+    expect(nextInCycle(['a', 'b', 'c'], 'c')).toBe('a')
+    expect(nextInCycle(['a', 'b', 'c'], 'a', -1)).toBe('c')
+  })
+  it('from a session outside the set: the first (or last going back)', () => {
+    expect(nextInCycle(['a', 'b'], 'z')).toBe('a')
+    expect(nextInCycle(['a', 'b'], 'z', -1)).toBe('b')
+  })
+  it('nothing else to go to: silent, like Alt+j with none waiting', () => {
+    expect(nextInCycle([], 'a')).toBeUndefined()
+    expect(nextInCycle(['a'], 'a')).toBeUndefined()
   })
 })

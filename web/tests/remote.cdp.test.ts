@@ -125,9 +125,14 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
   })
 
   it('shows a rejected token instead of connecting forever', async () => {
+    // well formed (16+ chars of [A-Za-z0-9_-]): a malformed link is ignored
+    // outright (lib/remote-link.ts adoptPairingHash), never sent
     const context = await browser.newContext()
     const page = await context.newPage()
-    await open(page, `${base}/console/collab?remote=1#pair=not-the-token`)
+    await open(
+      page,
+      `${base}/console/collab?remote=1#pair=well-formed-but-wrong-token`,
+    )
     await page.waitForFunction(
       () =>
         document

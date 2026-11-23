@@ -27,6 +27,10 @@ msgstr "{count} 条已送达，等 Agent 处理"
 msgid "{count} images"
 msgstr "{count} 张图片"
 
+#: src/features/session-switcher.tsx:129
+msgid "{count} more need you"
+msgstr "还有 {count} 个等你"
+
 #: src/features/chat-thread.tsx:407
 msgid "{count} queued, the agent takes them when it is ready"
 msgstr "{count} 条排队中，Agent 空出手后处理"
@@ -59,7 +63,7 @@ msgstr "{runningCount} 个运行中"
 msgid "{runningCount} subagents running"
 msgstr "{runningCount} 个子 agent 运行中"
 
-#: src/features/session-header.tsx:130
+#: src/features/session-header.tsx:136
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
@@ -67,7 +71,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:377
+#: src/features/console-sessions.tsx:378
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -87,7 +91,7 @@ msgstr "{waitingCount} 个等待中"
 msgid "128 today"
 msgstr "今日 128"
 
-#: src/features/session-header.tsx:115
+#: src/features/session-header.tsx:121
 msgid "5 h"
 msgstr "5 小时"
 
@@ -95,7 +99,7 @@ msgstr "5 小时"
 msgid "5-hour limit"
 msgstr "5 小时额度"
 
-#: src/features/session-header.tsx:122
+#: src/features/session-header.tsx:128
 msgid "7 d"
 msgstr "7 天"
 
@@ -252,7 +256,7 @@ msgstr "后端"
 msgid "background"
 msgstr "后台"
 
-#: src/features/session-header.tsx:147
+#: src/features/session-header.tsx:153
 #: src/features/session-info.tsx:75
 msgid "Background tasks"
 msgstr "后台任务"
@@ -278,11 +282,11 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:141
+#: src/features/session-header.tsx:147
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:463
+#: src/features/console-sessions.tsx:464
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -337,7 +341,8 @@ msgstr "认领"
 #~ msgstr "Claude 正在运行，消息会进入它的队列，由它自己安排什么时候处理。"
 
 #: src/features/image-viewer.tsx:125
-#: src/features/session-info.tsx:246
+#: src/features/session-info.tsx:251
+#: src/features/session-switcher.tsx:203
 msgid "Close"
 msgstr "关闭"
 
@@ -422,12 +427,12 @@ msgstr "连接详情"
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/session-header.tsx:112
+#: src/features/session-header.tsx:118
 #: src/features/session-info.tsx:76
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:138
+#: src/features/session-header.tsx:144
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -448,7 +453,7 @@ msgid "Control"
 msgstr "控制"
 
 #: src/features/session-composer.tsx:89
-#: src/features/session-info.tsx:269
+#: src/features/session-info.tsx:274
 msgid "Copied"
 msgstr "已复制"
 
@@ -464,7 +469,7 @@ msgstr "复制命令"
 msgid "Copy error"
 msgstr "复制错误信息"
 
-#: src/features/session-info.tsx:269
+#: src/features/session-info.tsx:274
 msgid "Copy session reference for an agent"
 msgstr "复制会话引用（给 agent 用）"
 
@@ -809,11 +814,11 @@ msgstr "公网"
 msgid "interrupt"
 msgstr "打断"
 
-#: src/features/session-info.tsx:226
+#: src/features/session-info.tsx:231
 msgid "is queued"
 msgstr "排队等这一轮结束"
 
-#: src/features/session-info.tsx:226
+#: src/features/session-info.tsx:231
 msgid "joins the current turn"
 msgstr "插入当前这一轮"
 
@@ -891,7 +896,7 @@ msgstr "浅色"
 msgid "Light theme"
 msgstr "亮色主题"
 
-#: src/features/session-header.tsx:142
+#: src/features/session-header.tsx:148
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -899,7 +904,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:397
+#: src/features/console-sessions.tsx:398
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -916,10 +921,10 @@ msgstr "正在加载原图…"
 #: src/features/console-collab.tsx:197
 #: src/features/console-development.tsx:130
 #: src/features/console-diagnostics.tsx:53
-#: src/features/console-sessions.tsx:394
+#: src/features/console-sessions.tsx:395
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:70
-#: src/features/session-header.tsx:239
+#: src/features/session-header.tsx:243
 #: src/features/session-list.tsx:204
 #: src/features/tickets-view.tsx:231
 msgid "Loading…"
@@ -985,8 +990,9 @@ msgstr "多选：每点一次切换一个选项，对照下面的终端画面确
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:260
+#: src/features/session-header.tsx:269
 #: src/features/session-list.tsx:187
+#: src/features/session-switcher.tsx:213
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -994,7 +1000,7 @@ msgstr "需要你处理"
 msgid "Needs you {waitingCount}"
 msgstr "等你 {waitingCount}"
 
-#: src/features/session-header.tsx:208
+#: src/features/session-info.tsx:284
 msgid "New session title"
 msgstr "新的会话标题"
 
@@ -1133,6 +1139,10 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
+#: src/features/session-switcher.tsx:243
+msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
+msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
+
 #: src/features/landing-page.tsx:84
 msgid "One home for every repo"
 msgstr "每个仓库都有自己的位置"
@@ -1157,7 +1167,7 @@ msgstr "查看图片"
 msgid "Open Runtime Console"
 msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:484
+#: src/features/console-sessions.tsx:485
 msgid "Open settings"
 msgstr "去设置"
 
@@ -1207,7 +1217,7 @@ msgstr "可选的浏览器伴侣"
 msgid "Origin session"
 msgstr "发起会话"
 
-#: src/features/session-header.tsx:140
+#: src/features/session-header.tsx:146
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -1369,7 +1379,7 @@ msgstr "远程访问"
 msgid "Remove image"
 msgstr "移除图片"
 
-#: src/features/session-header.tsx:235
+#: src/features/session-info.tsx:290
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
@@ -1433,11 +1443,11 @@ msgstr "调研完成"
 msgid "research failed"
 msgstr "调研失败"
 
-#: src/features/session-header.tsx:117
+#: src/features/session-header.tsx:123
 msgid "resets {fiveReset}"
 msgstr "{fiveReset}重置"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:130
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
@@ -1632,9 +1642,9 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:267
-#: src/features/session-info.tsx:236
-#: src/features/session-info.tsx:242
+#: src/features/session-header.tsx:281
+#: src/features/session-info.tsx:241
+#: src/features/session-info.tsx:247
 msgid "Session info"
 msgstr "会话信息"
 
@@ -1648,7 +1658,7 @@ msgid "Sessions"
 msgstr "会话数"
 
 #: src/features/console-shell.tsx:123
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:228
 #: src/features/session-list.tsx:159
 msgctxt "nav"
 msgid "Sessions"
@@ -1671,7 +1681,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-sessions.tsx:396
+#: src/features/console-sessions.tsx:397
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -1699,7 +1709,7 @@ msgstr "套接字"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:471
+#: src/features/console-sessions.tsx:472
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -1749,6 +1759,15 @@ msgstr "提交答案"
 msgid "submitted"
 msgstr "已提交"
 
+#: src/features/session-switcher.tsx:193
+#: src/features/session-switcher.tsx:199
+msgid "Switch session"
+msgstr "切换会话"
+
+#: src/features/session-header.tsx:240
+msgid "Switch session (Alt+g)"
+msgstr "切换会话（Alt+g）"
+
 #: src/features/console-me.tsx:242
 msgid "System"
 msgstr "跟随系统"
@@ -1757,7 +1776,7 @@ msgstr "跟随系统"
 msgid "Take over in tmux"
 msgstr "接管到 tmux"
 
-#: src/features/session-info.tsx:273
+#: src/features/session-info.tsx:294
 msgid "Tap a row to copy its value."
 msgstr "点任意一行即可复制它的值。"
 
@@ -1829,7 +1848,7 @@ msgstr "本机（本地运行时）"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:464
+#: src/features/console-sessions.tsx:465
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 

@@ -5,7 +5,7 @@
 // backdrop or × closes it. Portalled to <body>: the header's backdrop blur
 // would otherwise become the containing block of a fixed sheet.
 import { useLingui } from '@lingui/react/macro'
-import { Check, Copy, X } from 'lucide-react'
+import { Check, Copy, Pencil, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -194,10 +194,15 @@ export function SessionInfo({
   data,
   open,
   onClose,
+  onRename,
+  renameDisabled,
 }: {
   data: Detail
   open: boolean
   onClose: () => void
+  /** paste `/rename <title>` into the agent TUI (Claude and Grok honor it) */
+  onRename?: (title: string) => void
+  renameDisabled?: boolean
 }) {
   // t must come straight from useLingui() here: a t handed out of another
   // hook is not a macro any more and renders empty strings
@@ -267,6 +272,22 @@ export function SessionInfo({
                 <Copy size={16} aria-hidden />
               )}
               {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
+            </button>
+          ) : null}
+          {onRename ? (
+            <button
+              type="button"
+              data-write
+              disabled={renameDisabled}
+              onClick={() => {
+                const title = data.title || data.window || data.name || ''
+                const next = window.prompt(t`New session title`, title)?.trim()
+                if (next && next !== title) onRename(next)
+              }}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-brand-edge px-3 text-[14px] font-medium disabled:opacity-40"
+            >
+              <Pencil size={15} aria-hidden />
+              {t`Rename via /rename in the agent pane`}
             </button>
           ) : null}
           <p className="px-1 text-[11.5px] text-brand-label">
