@@ -305,7 +305,7 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 // diag.submit. Reads (`ticket api` actions from the Runtime bridge's
 // allowlist, sessions, …) need a connection that said hello as an approved
 // device (relay_auth.go); writes (send / key / reply / attach / upload …)
-// carry their own signature from an approved device (remote_session.go).
+// carry their own signature from an approved device (remote_device_keys.go).
 func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	switch f.Action {
 	case "device.register":
