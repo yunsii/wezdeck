@@ -73,6 +73,13 @@ current() {
   served="$(curl -sf -m 3 "http://127.0.0.1:$PORT/build.json?t=$(date +%s%N)" |
     sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p')"
   [[ "$served" == "$("$REPO/scripts/dev/source-fingerprint.sh" web)" ]] || return 1
+  # the page's own script must load: wezdeck-release.sh rebuilds web/dist in
+  # place (same fingerprint), and a running preview kept rendering the old
+  # bundle's script name — a 500 on every page until restarted (2026-11-24)
+  local script
+  script="$(curl -sf -m 3 "http://127.0.0.1:$PORT/console/sessions" |
+    grep -ao '/assets/[^"]*\.js' | head -1)"
+  [[ -n "$script" ]] && curl -sf -m 3 -o /dev/null "http://127.0.0.1:$PORT$script" || return 1
   running="$(grep -o 'event=connected .*version=[^ ]*' "$STATE/relay.out" 2>/dev/null |
     tail -1 | sed 's/.*version=//')"
   [[ "$running" == "$("$REPO/scripts/dev/source-fingerprint.sh" native/wezdeck-wsl)" ]]

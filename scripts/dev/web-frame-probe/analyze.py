@@ -98,7 +98,9 @@ def main() -> int:
 
     for i, mark in enumerate(marks):
         t0 = mark["t"]
-        t1 = marks[i + 1]["t"] if i + 1 < len(marks) else 10**9
+        # up to the next press, at most 1.5 s: the end of the run (Tracing.end
+        # flushing screenshots) stalls the page and is not the app
+        t1 = min(marks[i + 1]["t"] if i + 1 < len(marks) else 10**9, t0 + 1500)
         window = [f for f in frames if t0 <= f["t"] < t1]
         if not window:
             continue

@@ -312,6 +312,10 @@ was started with (`$STATE/home`: a stack the release gate restarted without
 `--home` once served fixture screenshots from the real HOME) — and keeps a
 current stack instead of rebuilding it; `start` skips `vite build` when `web/dist/client/build.json`
 already carries the fingerprint (and `build.sh` skips a current relay).
+`ensure` also loads the served page's own script: `wezdeck-release.sh`
+rebuilds `web/dist` in place under the same fingerprint, and a running
+preview kept rendering the old bundle's script name — a 500 on every page
+until restarted.
 
 **Run what the change can break, not every suite**:
 `scripts/dev/web-affected-tests.sh [--run] [--base REF] [FILE...]` takes the
