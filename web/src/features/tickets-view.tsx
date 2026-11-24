@@ -232,6 +232,9 @@ function StatusSegments({
       value={value}
       onChange={onChange}
       className="md:max-w-md"
+      // four segments beside two buttons on a phone (as 会话's filter):
+      // without it the row outgrew a 360 px screen
+      dense
       options={[
         {
           value: 'all',
@@ -438,7 +441,7 @@ export function TicketsView({
 
   if (id) {
     return (
-      <div className="grid content-start gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
         {/* the header of every pushed page: ‹, the page name, the link chip
             (it was a lone 「‹ 返回」 line above the ticket) */}
         <div className="-ml-2 flex items-center gap-1 pt-1">
@@ -454,7 +457,7 @@ export function TicketsView({
   }
 
   return (
-    <div className="grid content-start gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
       {top}
       <StickyBar>
         {keys}

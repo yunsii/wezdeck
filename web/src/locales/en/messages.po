@@ -203,7 +203,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:523
+#: src/features/tickets-view.tsx:526
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -269,7 +269,7 @@ msgid "All"
 msgstr "All"
 
 #: src/features/session-list.tsx:235
-#: src/features/tickets-view.tsx:238
+#: src/features/tickets-view.tsx:241
 msgctxt "filter"
 msgid "All"
 msgstr "All"
@@ -388,7 +388,7 @@ msgstr "At the desk: {host}"
 #~ msgstr "At the desk: {keys}"
 
 #: src/features/console-me.tsx:436
-#: src/features/tickets-view.tsx:445
+#: src/features/tickets-view.tsx:448
 msgid "Back"
 msgstr "Back"
 
@@ -616,7 +616,7 @@ msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. 
 #~ msgid "Collab"
 #~ msgstr "Collab"
 
-#: src/features/tickets-view.tsx:319
+#: src/features/tickets-view.tsx:322
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -625,7 +625,7 @@ msgid "Collab metrics"
 msgstr "Collab metrics"
 
 #: src/features/ticket-keys.tsx:60
-#: src/features/tickets-view.tsx:403
+#: src/features/tickets-view.tsx:406
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -1004,7 +1004,7 @@ msgstr "Enabled on this computer: writes go through the local Runtime, with no d
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
-#: src/features/tickets-view.tsx:253
+#: src/features/tickets-view.tsx:256
 msgctxt "filter"
 msgid "Ended"
 msgstr "Ended"
@@ -1093,7 +1093,7 @@ msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
 
 #: src/features/tickets-view.tsx:207
-#: src/features/tickets-view.tsx:343
+#: src/features/tickets-view.tsx:346
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
@@ -1166,7 +1166,7 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/tickets-view.tsx:522
+#: src/features/tickets-view.tsx:525
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1265,7 +1265,7 @@ msgstr "IME state is unavailable because Runtime is offline."
 msgid "in progress"
 msgstr "in progress"
 
-#: src/features/tickets-view.tsx:243
+#: src/features/tickets-view.tsx:246
 msgctxt "filter"
 msgid "In progress"
 msgstr "In progress"
@@ -1290,7 +1290,7 @@ msgstr "Initial prompt"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:521
+#: src/features/tickets-view.tsx:524
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -1487,7 +1487,7 @@ msgstr "Loading original…"
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:250
 #: src/features/session-skeleton.tsx:14
-#: src/features/tickets-view.tsx:317
+#: src/features/tickets-view.tsx:320
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -1724,7 +1724,7 @@ msgstr "No plan written yet"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:430
+#: src/features/tickets-view.tsx:433
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1764,7 +1764,7 @@ msgstr "Not running"
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:555
+#: src/features/tickets-view.tsx:558
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -2829,7 +2829,7 @@ msgstr "Ticket unavailable"
 
 #: src/features/console-shell.tsx:83
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:447
+#: src/features/tickets-view.tsx:450
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2841,7 +2841,7 @@ msgstr "Tickets"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/tickets-view.tsx:431
+#: src/features/tickets-view.tsx:434
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -3116,11 +3116,11 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/tickets-view.tsx:558
+#: src/features/tickets-view.tsx:561
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/tickets-view.tsx:248
+#: src/features/tickets-view.tsx:251
 msgctxt "filter"
 msgid "Waiting on you"
 msgstr "Waiting on you"

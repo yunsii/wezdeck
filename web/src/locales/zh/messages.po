@@ -203,7 +203,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:523
+#: src/features/tickets-view.tsx:526
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -269,7 +269,7 @@ msgid "All"
 msgstr "全部"
 
 #: src/features/session-list.tsx:235
-#: src/features/tickets-view.tsx:238
+#: src/features/tickets-view.tsx:241
 msgctxt "filter"
 msgid "All"
 msgstr "全部"
@@ -388,7 +388,7 @@ msgstr "终端：{host}"
 #~ msgstr "主机上：{keys}"
 
 #: src/features/console-me.tsx:436
-#: src/features/tickets-view.tsx:445
+#: src/features/tickets-view.tsx:448
 msgid "Back"
 msgstr "返回"
 
@@ -616,7 +616,7 @@ msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒�
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
 
-#: src/features/tickets-view.tsx:319
+#: src/features/tickets-view.tsx:322
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
@@ -625,7 +625,7 @@ msgid "Collab metrics"
 msgstr "协作指标"
 
 #: src/features/ticket-keys.tsx:60
-#: src/features/tickets-view.tsx:403
+#: src/features/tickets-view.tsx:406
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -1004,7 +1004,7 @@ msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备�
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "已启用。这台手机可以给会话发消息、回复工单。"
 
-#: src/features/tickets-view.tsx:253
+#: src/features/tickets-view.tsx:256
 msgctxt "filter"
 msgid "Ended"
 msgstr "已结束"
@@ -1093,7 +1093,7 @@ msgid "Filter by title, repo or id"
 msgstr "按标题、仓库或编号筛选"
 
 #: src/features/tickets-view.tsx:207
-#: src/features/tickets-view.tsx:343
+#: src/features/tickets-view.tsx:346
 msgid "Filter tickets"
 msgstr "筛选工单"
 
@@ -1166,7 +1166,7 @@ msgstr "授权失败（{micError}），点此重试"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/tickets-view.tsx:522
+#: src/features/tickets-view.tsx:525
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1265,7 +1265,7 @@ msgstr "Runtime 离线，暂时没有输入法状态。"
 msgid "in progress"
 msgstr "进行中"
 
-#: src/features/tickets-view.tsx:243
+#: src/features/tickets-view.tsx:246
 msgctxt "filter"
 msgid "In progress"
 msgstr "进行中"
@@ -1290,7 +1290,7 @@ msgstr "初始消息"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:521
+#: src/features/tickets-view.tsx:524
 msgid "Initiator"
 msgstr "发起方"
 
@@ -1487,7 +1487,7 @@ msgstr "正在加载原图…"
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:250
 #: src/features/session-skeleton.tsx:14
-#: src/features/tickets-view.tsx:317
+#: src/features/tickets-view.tsx:320
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -1724,7 +1724,7 @@ msgstr "还没有写计划"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "这个工作区里没有仓库。"
 
-#: src/features/tickets-view.tsx:430
+#: src/features/tickets-view.tsx:433
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -1764,7 +1764,7 @@ msgstr "未运行"
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:555
+#: src/features/tickets-view.tsx:558
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -2829,7 +2829,7 @@ msgstr "工单不可用"
 
 #: src/features/console-shell.tsx:83
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:447
+#: src/features/tickets-view.tsx:450
 msgid "Tickets"
 msgstr "工单"
 
@@ -2841,7 +2841,7 @@ msgstr "工单"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "工单和会话从本地 Runtime 读取；写入走远程链接，这个浏览器还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/tickets-view.tsx:431
+#: src/features/tickets-view.tsx:434
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -3116,11 +3116,11 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/tickets-view.tsx:558
+#: src/features/tickets-view.tsx:561
 msgid "Waiting on you"
 msgstr "等你处理"
 
-#: src/features/tickets-view.tsx:248
+#: src/features/tickets-view.tsx:251
 msgctxt "filter"
 msgid "Waiting on you"
 msgstr "等你"

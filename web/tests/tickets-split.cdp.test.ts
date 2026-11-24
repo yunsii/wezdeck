@@ -65,4 +65,34 @@ describe.runIf(stack)('Tickets split on a wide screen', () => {
       .toBeGreaterThan(0)
     await context.close()
   })
+
+  // 2026-11-24: the filter row (four counted segments + 搜索 + 新建) set the
+  // page grid's width on a 360 px phone and every row ran off the right edge
+  it('fits a narrow phone: nothing runs past the screen edge', async () => {
+    for (const width of [320, 360]) {
+      const context = await browser.newContext({
+        viewport: { width, height: 760 },
+        locale: 'zh-CN',
+        isMobile: true,
+        hasTouch: true,
+      })
+      const page = await context.newPage()
+      await page.goto(`${base}/zh/console/collab?remote=1#pair=${token}`)
+      await page.locator('a[data-ticket]').first().waitFor({ timeout: 20_000 })
+      for (const filter of ['active', 'all']) {
+        await page.locator(`[role=radio][data-value=${filter}]`).click()
+        const past = await page.evaluate(() =>
+          [...document.querySelectorAll('main *')]
+            .filter((el) => el.getBoundingClientRect().right > innerWidth + 1)
+            // the sticky bar itself bleeds into the page gutters on purpose;
+            // what it holds must fit
+            .filter((el) => !el.matches('.sticky'))
+            .map((el) => `${el.tagName}.${String(el.className).slice(0, 60)}`)
+            .slice(0, 3),
+        )
+        expect(past, `${width}px, ${filter}`).toEqual([])
+      }
+      await context.close()
+    }
+  })
 })
