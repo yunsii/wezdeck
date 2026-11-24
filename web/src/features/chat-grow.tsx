@@ -1,17 +1,22 @@
-// A streaming reply's box grows smoothly: the text lays out a line at a time
-// (each batch that wraps adds a whole line at once), so the box eases its
-// height toward the text's every frame — a quarter of what is left — and
-// marks itself `data-growing` meanwhile. A pinned thread then holds its end
-// each frame instead of gliding after it (chat-scroll.ts), so the turn line
-// under the reply stays put while the text above moves up smoothly.
+// The live thread grows smoothly: a streaming reply lays out a line at a
+// time, a new run of tool calls adds its whole block at once (measured: the
+// turn line dropped 128 px and glided back). The box around the thread's
+// items eases its height toward theirs every frame — a quarter of what is
+// left — and marks itself `data-growing` meanwhile; a pinned thread then
+// holds its end each frame instead of gliding after it (chat-scroll.ts), so
+// the turn line under it stays put while everything above moves up smoothly.
+// Shrinking is immediate.
 import { useLayoutEffect, useRef } from 'react'
 
 export function SmoothGrow({
   active,
+  className,
   children,
 }: {
-  /** the reply is streaming (or its last batch settling) */
+  /** the session is live (working, or messages still being revealed) */
   active: boolean
+  /** the items' own layout (the thread's grid and gap) */
+  className?: string
   children: React.ReactNode
 }) {
   const outer = useRef<HTMLDivElement>(null)
@@ -60,7 +65,9 @@ export function SmoothGrow({
   }, [active])
   return (
     <div ref={outer} className="min-w-0">
-      <div ref={inner}>{children}</div>
+      <div ref={inner} className={className}>
+        {children}
+      </div>
     </div>
   )
 }

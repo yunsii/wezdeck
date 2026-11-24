@@ -54,7 +54,10 @@ describe('Streaming reply', () => {
                 line:
                   line.getBoundingClientRect().top -
                   el.getBoundingClientRect().top,
-                reply: reply.getBoundingClientRect().height,
+                // what shows: the easing box around the thread's items
+                reply: (
+                  reply.parentElement?.parentElement ?? reply
+                ).getBoundingClientRect().height,
               })
             }
             if (!start || now - start < 3_500) requestAnimationFrame(tick)
@@ -89,6 +92,49 @@ describe('Streaming reply', () => {
         { timeout: 5_000 },
       )
       .toBe(true)
+    await context.close()
+  })
+
+  it('tool calls arriving leave the turn line where it is', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#tools-arriving`)
+    const demo = page.getByTestId('tools-demo')
+    await demo.waitFor({ timeout: 20_000 })
+    // every frame while the calls arrive (8 × 700 ms)
+    const lines = await demo.evaluate(
+      (root) =>
+        new Promise<Array<number>>((done) => {
+          const el = root.querySelector<HTMLElement>('.overflow-y-auto')!
+          const out: Array<number> = []
+          const begin = performance.now()
+          const tick = (now: number) => {
+            const line = root.querySelector('[data-activity]')
+            if (line)
+              out.push(
+                line.getBoundingClientRect().top -
+                  el.getBoundingClientRect().top,
+              )
+            if (now - begin < 6_500) requestAnimationFrame(tick)
+            else done(out)
+          }
+          requestAnimationFrame(tick)
+        }),
+    )
+    // after the first call pushed the thread past the screen
+    const settled = lines.slice(Math.floor(lines.length / 4))
+    const spread = Math.max(...settled) - Math.min(...settled)
+    console.log(
+      `tools: frames=${lines.length} turn-line spread=${spread.toFixed(1)}px`,
+      lines
+        .map((v) => Math.round(v))
+        .filter((v, i, a) => v !== a[i - 1])
+        .join(','),
+    )
+    expect(spread).toBeLessThan(2)
     await context.close()
   })
 })

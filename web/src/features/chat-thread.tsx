@@ -117,9 +117,7 @@ const Bubble = memo(function BubbleView({
             <TranscriptImages refs={message.images} />
           </>
         ) : (
-          <SmoothGrow active={stream && live.streaming}>
-            <ChatMarkdown text={live.text} streaming={live.streaming} />
-          </SmoothGrow>
+          <ChatMarkdown text={live.text} streaming={live.streaming} />
         )}
       </div>
     </div>
@@ -337,24 +335,30 @@ export function ChatThread({
           transcript index and role, to compare with the host transcript
           when a message seems lost */}
       <span hidden data-chat-reveal={effective} data-chat-end={end} />
-      {items.map((item, position) => {
-        const at = start + item.index
-        if (at > effective || at < floor) return null
-        return (
-          // a block, not `contents`: content-visibility lets the browser
-          // skip style / layout / paint of the messages off screen (a
-          // switch laid out the whole conversation: ~120 ms of native work)
-          <div
-            key={`${item.kind}${at}`}
-            data-msg={at}
-            data-role={item.kind === 'tools' ? 'tool' : item.message.role}
-            className="chat-item"
-          >
-            {renderItem(item, position, at)}
-          </div>
-        )
-      })}
-      <PendingBubbles pending={queue.left} />
+      {/* the thread's own grid inside the easing box (chat-grow.tsx) */}
+      <SmoothGrow
+        active={busy || effective < end}
+        className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+      >
+        {items.map((item, position) => {
+          const at = start + item.index
+          if (at > effective || at < floor) return null
+          return (
+            // a block, not `contents`: content-visibility lets the browser
+            // skip style / layout / paint of the messages off screen (a
+            // switch laid out the whole conversation: ~120 ms of native work)
+            <div
+              key={`${item.kind}${at}`}
+              data-msg={at}
+              data-role={item.kind === 'tools' ? 'tool' : item.message.role}
+              className="chat-item"
+            >
+              {renderItem(item, position, at)}
+            </div>
+          )
+        })}
+        <PendingBubbles pending={queue.left} />
+      </SmoothGrow>
       {/* last: the turn line says what the agent does now (working, or
           how long the last turn took), below everything in the thread —
           queued messages included. One element in one place, its text

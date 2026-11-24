@@ -8,7 +8,11 @@ import { ChatThread } from './chat-thread'
 import { AskCard } from './session-ask-claude'
 import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import { PermissionCard } from './session-permission'
-import { StreamDemo, SubagentsDemo } from './console-interactions-demos'
+import {
+  StreamDemo,
+  SubagentsDemo,
+  ToolsDemo,
+} from './console-interactions-demos'
 import { BackgroundTasks } from './session-background'
 import {
   ASK_ONE,
@@ -289,6 +293,17 @@ function streamSections(
       },
       keys: { zh: '无（重放可再看一次）', en: 'None (Replay runs it again)' },
       demo: <StreamDemo />,
+    },
+    {
+      id: 'tools-arriving',
+      tags: ['common'],
+      title: { zh: '工具调用陆续插入', en: 'Tool calls arriving' },
+      source: {
+        zh: '运行中新的工具调用逐个出现；对话内容平滑长高，运行中状态行不动（chat-grow.tsx / chat-scroll.ts）',
+        en: 'new tool calls appear one by one while working; the thread grows smoothly and the turn line stays put (chat-grow.tsx / chat-scroll.ts)',
+      },
+      keys: { zh: '无（重放可再看一次）', en: 'None (Replay runs it again)' },
+      demo: <ToolsDemo />,
     },
     {
       id: 'background',

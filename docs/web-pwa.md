@@ -404,9 +404,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   animating 700 ms after the last batch so the tail never pops; a backlog
   over 8 jumps to the newest; the page stays pinned to the bottom while a reply grows
   (`chat-scroll.ts`: growth glides a fifth of what is left per frame, a
-  keyboard resize jumps, a streaming reply eases its own box
-  (`chat-grow.tsx`, `data-growing`) while the end is held each frame so the
-  turn line stays put — 交互调试 › 长回复流式写出, `chat-stream.cdp`; only a
+  keyboard resize jumps, a live thread eases its items' box (`chat-grow.tsx`,
+  `data-growing`) while the end is held each frame so the turn line stays put
+  — 交互调试 › 长回复流式写出 / 工具调用陆续插入, `chat-stream.cdp`; only a
   finger, wheel or key can unpin it, never the
   page's own scrolling; a finger dragging the history down unpins at once
   and nothing auto-scrolls while a finger is down; back near the bottom

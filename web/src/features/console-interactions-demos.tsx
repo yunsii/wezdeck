@@ -163,3 +163,82 @@ function StreamRound({ round }: { round: number }) {
     />
   )
 }
+
+const CALLS = [
+  'Read web/src/features/chat-scroll.ts',
+  'Grep useChatScroll',
+  'Bash pnpm exec tsc --noEmit',
+  'Edit web/src/features/chat-grow.tsx',
+  'Read web/src/features/chat-thread.tsx',
+  'Bash scripts/dev/web-affected-tests.sh --run',
+  'Grep data-growing',
+  'Read docs/web-pwa.md',
+]
+
+/**
+ * Tool calls arriving one by one while the agent works (a new call every
+ * 700 ms, a short reply between runs): the turn line under them stays put.
+ */
+export function ToolsDemo() {
+  const [round, setRound] = useState(0)
+  return (
+    <div className="grid gap-2">
+      <Button
+        variant="plain"
+        type="button"
+        data-testid="tools-replay"
+        onClick={() => setRound((n) => n + 1)}
+        className="justify-self-start rounded-full bg-brand-surface px-3 py-1 text-caption"
+      >
+        重放 / Replay
+      </Button>
+      <ToolsRound key={round} />
+    </div>
+  )
+}
+
+function ToolsRound() {
+  // a full screen already: the turn line starts at the bottom
+  const [messages, setMessages] = useState<Array<Message>>(() => THREAD)
+  useEffect(() => {
+    let n = 0
+    const timer = setInterval(() => {
+      const text = CALLS[n % CALLS.length] ?? ''
+      const tool = text.split(' ')[0] ?? 'Bash'
+      setMessages((list) => [
+        ...list,
+        ...(n === 4
+          ? [
+              {
+                role: 'assistant' as const,
+                text: '先看一下测试结果，再继续改。',
+              },
+            ]
+          : []),
+        { role: 'tool', tool, text, kind: 'other' },
+      ])
+      n += 1
+      if (n >= CALLS.length) clearInterval(timer)
+    }, 700)
+    return () => clearInterval(timer)
+  }, [])
+  return (
+    <SessionFrame
+      testId="tools-demo"
+      count={messages.length}
+      thread={
+        <ChatThread
+          messages={messages}
+          start={0}
+          busy
+          activity={{ since: Date.now() - 42_000, tokens: 1_830 }}
+        />
+      }
+      footer={
+        <p className="px-1 text-meta text-brand-label">
+          （输入框位置 / composer）
+        </p>
+      }
+    />
+  )
+}
