@@ -6,17 +6,17 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { hostRead } from '#/lib/runtime-client'
 import { PAGE, mergeReply, pollArgs } from '#/lib/session-cache'
-import { useScreenWakeLock } from '#/lib/wake-lock'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
+import { useWhileShown } from './session-while-shown'
 import { ChatThread, settle } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
@@ -131,6 +131,8 @@ export type Detail = {
   compactions?: number
   agent?: string
   status: string
+  /** the attention entry's last change (ms): seen-ack clears this state only */
+  ts?: number
   waiting_kind?: string
   running_kind?: string
   background?: Array<BgTask>
@@ -238,24 +240,6 @@ function useKeepPlace(
     if (scroller)
       fromBottom.current = scroller.scrollHeight - scroller.scrollTop
   }
-}
-
-/**
- * Back from the background (phone unlocked, tab shown): refetch at once
- * instead of waiting for the next poll. Silent — a status line saying "up
- * to date" on every return was noise; only repeated failures speak up
- * (useFailedPolls).
- */
-function useResumeRefetch(id: string) {
-  const client = useQueryClient()
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState !== 'visible') return
-      void client.invalidateQueries({ queryKey: ['remote', 'session', id] })
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [client, id])
 }
 
 /** consecutive failed polls before the page says it can't get the latest */
@@ -394,10 +378,8 @@ export function SessionDetail({ id }: { id: string }) {
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
   const keepPlace = useKeepPlace(end, start)
-  useResumeRefetch(id)
+  useWhileShown(id, data, device.state === 'approved')
   const failed = useFailedPolls(detail.errorUpdateCount, detail.dataUpdatedAt)
-  // the phone often sits on the desk following the agent: keep it awake
-  useScreenWakeLock(true)
   const back = useGoBack({
     to: '/{-$locale}/console/sessions',
     params: { locale: locale === 'en' ? undefined : locale },

@@ -102,6 +102,19 @@ store lock like `install-remote-relay.sh` and log `event=device_approve` /
 phone can neither list nor change the others. The relay re-reads the store
 on every read and write, so a revoke cuts the device at once.
 
+## Seen on the web
+
+A `done` session open on the session page (phone or host browser) in the
+foreground for 1.5 s — the desk's focus-ack floor — is cleared at the desk
+too: the page sends `clear` with the `ts` and `status` it saw (`useSeenAck`
+in `session-clear.tsx`, run by `session-while-shown.ts`), the host runs
+`attention-jump.sh --forget --only-if-ts` (`remote_clear.go`) and the ✓
+badge and counter drop. An entry that moved on meanwhile (the next turn, a
+question) answers `skipped: "changed"` and stays; `waiting` is never
+seen-acked, as at the desk. One send per `id:ts`; a failed one is retried
+the next time the session is on screen. Signals: `event=write
+action="clear"` in `relay.log`, `session-seen-ack` in the client trace.
+
 ## Attachments
 
 Composer keys (`session-composer.tsx`): with a mouse and keyboard Enter

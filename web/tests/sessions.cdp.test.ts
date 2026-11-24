@@ -42,6 +42,12 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-tmux-')), 'sock')
   const tmux = (...args: Array<string>) =>
     execFileSync('tmux', ['-S', socket, ...args]).toString()
+  /** the second pane (split -d), never the active one */
+  const otherPane = () =>
+    tmux('list-panes', '-t', 'demo', '-F', '#{pane_active} #{pane_id}')
+      .split('\n')
+      .find((line) => line.startsWith('0 '))
+      ?.slice(2) ?? ''
   const setStatus = (status: string) => {
     const pane = tmux(
       'display-message',
@@ -70,7 +76,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
             session_id: 'other-session',
             tmux_socket: socket,
             tmux_session: 'demo',
-            tmux_pane: pane,
+            tmux_pane: otherPane(),
             status: 'done',
             agent_name: 'other-agent',
             last_user_prompt: '另一个会话',
@@ -100,6 +106,10 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       '20',
       join(bin, 'claude'),
     )
+    // the other session gets a pane of its own (-d: the demo pane stays the
+    // active one the steps below type into): one pane hosts one session, and
+    // once demo's done is seen-acked it must stay listed (idle, from recent)
+    tmux('split-window', '-d', '-t', 'demo', join(bin, 'claude'))
     writeFileSync(devicesFile, JSON.stringify({ approved: [], pending: [] }))
     setStatus('done')
     browser = await chromium.launch()

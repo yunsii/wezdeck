@@ -19,7 +19,7 @@ msgstr "· 摘要"
 msgid "(pick any)"
 msgstr "（可多选）"
 
-#: src/features/console-sessions.tsx:167
+#: src/features/console-sessions.tsx:169
 msgid "{bg} background tasks running"
 msgstr "{bg} 个后台任务在跑"
 
@@ -115,7 +115,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:462
+#: src/features/console-sessions.tsx:444
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -123,7 +123,7 @@ msgstr "共 {total} 条，已显示 {shown} 条"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
-#: src/features/console-sessions.tsx:216
+#: src/features/console-sessions.tsx:218
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -424,7 +424,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:543
+#: src/features/console-sessions.tsx:525
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -497,7 +497,7 @@ msgstr "Claude 命令，发进窗格执行"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
-#: src/features/session-clear.tsx:76
+#: src/features/session-clear.tsx:130
 msgid "Clearing…"
 msgstr "处理中…"
 
@@ -595,7 +595,7 @@ msgstr "命令"
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
 
-#: src/features/console-sessions.tsx:169
+#: src/features/console-sessions.tsx:171
 msgid "compacting the context"
 msgstr "正在压缩上下文"
 
@@ -1017,7 +1017,7 @@ msgstr "已结束"
 #~ msgid "Finished ({doneCount})"
 #~ msgstr "已完成（{doneCount}）"
 
-#: src/features/console-sessions.tsx:177
+#: src/features/console-sessions.tsx:179
 #: src/features/landing-page.tsx:156
 msgid "finished its turn"
 msgstr "这一轮已结束"
@@ -1132,7 +1132,7 @@ msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
 
-#: src/features/console-sessions.tsx:171
+#: src/features/console-sessions.tsx:173
 msgctxt "session status"
 msgid "Idle"
 msgstr "空闲"
@@ -1309,7 +1309,7 @@ msgstr "最近采样"
 msgid "Last turn"
 msgstr "最后一轮"
 
-#: src/features/console-sessions.tsx:216
+#: src/features/console-sessions.tsx:218
 #: src/features/me-host.tsx:118
 msgid "Latest"
 msgstr "回到最新"
@@ -1365,7 +1365,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:485
+#: src/features/console-sessions.tsx:467
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1381,7 +1381,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:172
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:482
+#: src/features/console-sessions.tsx:464
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
@@ -1412,12 +1412,12 @@ msgstr "有进展"
 msgid "Mark done"
 msgstr "标为完成"
 
-#: src/features/session-clear.tsx:76
-#: src/features/session-clear.tsx:161
+#: src/features/session-clear.tsx:130
+#: src/features/session-clear.tsx:215
 msgid "Mark read"
 msgstr "标为已读"
 
-#: src/features/session-clear.tsx:161
+#: src/features/session-clear.tsx:215
 msgid "Marked read"
 msgstr "已标为已读"
 
@@ -1736,7 +1736,7 @@ msgstr "在线"
 #~ msgid "Open Runtime Console"
 #~ msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:566
+#: src/features/console-sessions.tsx:548
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2234,7 +2234,7 @@ msgstr "Runtime 离线时无法获取诊断数据。"
 msgid "Runtime reported reason:"
 msgstr "Runtime 报告的原因："
 
-#: src/features/session-clear.tsx:157
+#: src/features/session-clear.tsx:211
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 
@@ -2376,7 +2376,7 @@ msgstr "已交付"
 msgid "Shortcuts"
 msgstr "键盘快捷键"
 
-#: src/features/console-sessions.tsx:484
+#: src/features/console-sessions.tsx:466
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -2412,7 +2412,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:550
+#: src/features/console-sessions.tsx:532
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 
@@ -2543,7 +2543,7 @@ msgstr "终端画面"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:412
+#: src/features/console-sessions.tsx:394
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -2617,7 +2617,7 @@ msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要
 #~ msgid "This computer, not paired"
 #~ msgstr "本机，未配对"
 
-#: src/features/console-sessions.tsx:410
+#: src/features/console-sessions.tsx:392
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "这台设备还没获批（我的 › 设备授权）。"
@@ -2626,7 +2626,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:544
+#: src/features/console-sessions.tsx:526
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -2923,7 +2923,7 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 #~ msgid "Waiting for the host to approve this phone. On the host run:"
 #~ msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:175
+#: src/features/console-sessions.tsx:177
 msgid "waiting for you"
 msgstr "在等你"
 
@@ -2931,7 +2931,7 @@ msgstr "在等你"
 msgid "Waiting for your answer"
 msgstr "等你回答"
 
-#: src/features/console-sessions.tsx:165
+#: src/features/console-sessions.tsx:167
 #: src/features/landing-page.tsx:142
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
@@ -3072,7 +3072,7 @@ msgstr "执行方提问"
 msgid "Worker requests"
 msgstr "Worker 请求"
 
-#: src/features/console-sessions.tsx:173
+#: src/features/console-sessions.tsx:175
 #: src/features/landing-page.tsx:149
 msgid "working"
 msgstr "运行中"

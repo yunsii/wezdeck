@@ -785,7 +785,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		}
 		return nil, errors.New("session not found (ended or not tracked)")
 	}
-	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "waiting_kind": e.WaitingKind,
+	// ts: the entry's last change, so the page's seen-ack (clear with ts)
+	// clears this state only, not a newer one
+	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "ts": e.TS, "waiting_kind": e.WaitingKind,
 		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent",
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
 	// mid-turn progress from hooks, not the screen: when the turn / the
