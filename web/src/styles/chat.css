@@ -23,6 +23,17 @@
   animation: chat-in var(--motion-medium) var(--ease-enter);
 }
 
+/* One thread item (chat-thread.tsx). Off screen the browser skips its style,
+   layout and paint (content-visibility), sized by its last rendered height
+   (auto) or a guess until then: opening a conversation laid out every
+   message of the page, ~120 ms of native work per switch. min-width: 0 keeps
+   long code from widening a grid track. */
+.chat-item {
+  min-width: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+}
+
 /* A queued message the agent took: the faded bubble (opacity-55) becomes
    the normal one in place — it solidifies, it does not enter again. */
 @keyframes chat-settle {

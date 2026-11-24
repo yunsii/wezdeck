@@ -82,6 +82,21 @@ function clock(ms: number) {
     : '—'
 }
 
+// one formatter per locale: building an Intl.RelativeTimeFormat per row was
+// the top app cost of a ticket switch (every row re-renders) in a profile
+const formats = new Map<string, Intl.RelativeTimeFormat>()
+const relativeFormat = (locale: string) => {
+  let format = formats.get(locale)
+  if (!format) {
+    format = new Intl.RelativeTimeFormat(locale === 'zh' ? 'zh-CN' : 'en', {
+      numeric: 'auto',
+      style: 'short',
+    })
+    formats.set(locale, format)
+  }
+  return format
+}
+
 /**
  * "now" under a minute, then minutes / hours / days: a seconds count
  * re-rendered with every poll (1–2.5 s) and shifted the rest of its line
@@ -93,10 +108,7 @@ export function formatAgo(
   locale: string,
 ) {
   if (!iso) return ''
-  const format = new Intl.RelativeTimeFormat(locale === 'zh' ? 'zh-CN' : 'en', {
-    numeric: 'auto',
-    style: 'short',
-  })
+  const format = relativeFormat(locale)
   const seconds = (Date.parse(iso) - now) / 1000
   const abs = Math.abs(seconds)
   if (abs < 60) return format.format(0, 'second')

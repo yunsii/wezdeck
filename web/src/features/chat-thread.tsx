@@ -4,7 +4,14 @@
 // word by word, each word blurring in; nothing animates under
 // prefers-reduced-motion.
 import { useLingui } from '@lingui/react/macro'
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  memo,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import { SentAttachments, endsWithNote } from './chat-attachments'
 import { TurnLine, turnState } from './chat-turn'
@@ -156,6 +163,51 @@ export function group(messages: Array<Message>) {
   return out
 }
 
+/** items rendered at once when a conversation opens; the rest follow */
+const FIRST_ITEMS = 12
+/** items added per idle slice after that */
+const ITEM_CHUNK = 20
+
+/**
+ * The first item index to render. A conversation opens with its newest
+ * FIRST_ITEMS (it lands at its bottom, so that is the screen), then the
+ * earlier ones are added ITEM_CHUNK at a time when the browser is idle, as a
+ * transition (never blocking input); the browser's scroll anchoring keeps
+ * the view still as they land above. Rendering and parsing the markdown of
+ * a whole page at once held the main thread ~80 ms on every switch. Once
+ * everything is in, it stays -Infinity: 加载更早 and new messages render as
+ * before.
+ */
+function useProgressiveFloor(items: Array<Item>, start: number) {
+  const first =
+    items.length > FIRST_ITEMS
+      ? start + items[items.length - FIRST_ITEMS].index
+      : -Infinity
+  const [floor, setFloor] = useState<number | null>(null)
+  const current = floor ?? first
+  useEffect(() => {
+    if (current === -Infinity) return
+    const step = () =>
+      startTransition(() =>
+        setFloor((was) => {
+          const at = was ?? first
+          const pos = items.findIndex((item) => start + item.index >= at)
+          return pos <= ITEM_CHUNK
+            ? -Infinity
+            : start + items[pos - ITEM_CHUNK].index
+        }),
+      )
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(step, { timeout: 300 })
+      return () => cancelIdleCallback(id)
+    }
+    const id = setTimeout(step, 50)
+    return () => clearTimeout(id)
+    // items read at call time; the floor moving is what re-arms
+  }, [current, start])
+  return current
+}
+
 export function ChatThread({
   messages,
   start,
@@ -220,6 +272,7 @@ export function ChatThread({
   )
   // items waiting behind the one streaming now: two or more → catch up
   const queued = items.filter((item) => start + item.index > effective).length
+  const floor = useProgressiveFloor(items, start)
   const renderItem = (item: Item, position: number, at: number) => {
     const stream = at === effective
     if (item.kind === 'tools') {
@@ -277,13 +330,16 @@ export function ChatThread({
       <span hidden data-chat-reveal={effective} data-chat-end={end} />
       {items.map((item, position) => {
         const at = start + item.index
-        if (at > effective) return null
+        if (at > effective || at < floor) return null
         return (
+          // a block, not `contents`: content-visibility lets the browser
+          // skip style / layout / paint of the messages off screen (a
+          // switch laid out the whole conversation: ~120 ms of native work)
           <div
             key={`${item.kind}${at}`}
             data-msg={at}
             data-role={item.kind === 'tools' ? 'tool' : item.message.role}
-            className="contents"
+            className="chat-item"
           >
             {renderItem(item, position, at)}
           </div>

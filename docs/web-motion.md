@@ -48,3 +48,20 @@ frame with the page collapsed); and hold the previous ticket, inert,
 until the next arrives (`keepPrevious`, no Loading… between tickets),
 scrolled to its top. `split-switch.cdp.test.ts` samples every frame
 after a switch.
+
+Rendering cost of a switch (2026-11-24, CPU profile of a real conversation,
+symbolized against a source-mapped build): one ~76 ms long task — React
+render ~30 ms, markdown (streamdown → remark / rehype) ~25 ms, the forced
+layout of landing ~15 ms — plus ~120 ms of native style / layout / paint for
+the whole page of messages. Now a conversation opens with its newest 12
+items and adds the earlier ones 20 at a time on idle callbacks, as a
+transition (`useProgressiveFloor`, `chat-thread.tsx`; the browser's scroll
+anchoring keeps the view still as they land above; once complete, 加载更早
+renders at once as before), and each item is a `.chat-item` block with
+`content-visibility: auto` (`contain-intrinsic-size: auto 120px`) so off-screen
+messages skip style / layout / paint. Result: no long task in three profiled
+switches (was 76 ms); web-frame-probe's worst main-thread stall per press
+went from 109–124 ms to 0–56 ms. The relative-time formatter
+(`formatAgo`) is cached per locale — building one per row was the top app
+cost of a ticket switch, where every row re-renders.
+
