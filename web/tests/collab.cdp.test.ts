@@ -2,6 +2,7 @@
 // covers: web/src/features/tickets-view.tsx
 // covers: web/src/features/ticket-thread-view.tsx
 // covers: web/src/features/ticket-reply.tsx native/wezdeck-wsl/collab.go
+// covers: web/src/features/ticket-copy-reference.tsx skills/agent-collab/lib/reference.py
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
@@ -59,6 +60,7 @@ describe.runIf(stack)('工单 over the remote link', () => {
   it('wide: the metrics band unfolds, a run shows its record', async () => {
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
+      permissions: ['clipboard-read', 'clipboard-write'],
     })
     const page = await context.newPage()
     await open(page, '/console/collab')
@@ -89,6 +91,14 @@ describe.runIf(stack)('工单 over the remote link', () => {
     await detail.getByText('Origin session').waitFor()
     await detail.getByRole('button', { name: 'Show initial prompt' }).click()
     await detail.getByRole('button', { name: 'Hide initial prompt' }).waitFor()
+    // 复制引用: the reference.py block, ids and run metadata included
+    await pane.getByTestId('ticket-copy-reference').click()
+    await pane.getByRole('button', { name: 'Copied' }).waitFor()
+    const copied = await page.evaluate(() => navigator.clipboard.readText())
+    expect(copied).toMatch(/^\[wezdeck 工单\] /)
+    expect(copied).toContain(`id: ${withRun}`)
+    expect(copied).toContain('运行合计: ')
+    expect(copied).toContain(`ticket api show --id ${withRun}`)
     await context.close()
   }, 90_000)
 

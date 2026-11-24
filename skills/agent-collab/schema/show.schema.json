@@ -10,6 +10,7 @@
         "ok",
         "command",
         "ticket",
+        "reference",
         "sections",
         "children",
         "runs"
@@ -242,6 +243,10 @@
               ]
             }
           }
+        },
+        "reference": {
+          "type": "string",
+          "description": "text block for another agent (web 复制引用); reference.py"
         },
         "meta": {
           "type": "object"

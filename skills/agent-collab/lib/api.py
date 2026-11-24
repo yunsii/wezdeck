@@ -27,6 +27,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ticket_fs  # noqa: E402
+import reference  # noqa: E402
 
 V = 1
 CAPABILITIES = ["health", "list", "show", "events", "run", "prompt", "transcript", "metrics"]
@@ -245,24 +246,30 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
             launches[lj.get("run")] = lj
         except json.JSONDecodeError:
             pass
+    recs = run_records(tid)
     runs = []
-    for rec in run_records(tid):
+    for rec in recs:
         r = run_summary(rec)
         lj = launches.get(rec.get("run")) or {}
         r["trigger"] = (lj.get("trigger") or {}).get("source")
         r["prompt_sha256"] = (lj.get("prompt") or {}).get("store_sha256")
         runs.append(r)
+    ticket = summary(tid)
+    children_detail = [
+        {**summary(c), "depends_on": ticket_fs.read_meta_json(c).get("depends_on") or [],
+         "scope": ticket_fs.read_meta_json(c).get("scope") or []}
+        for c in children
+    ]
     return {
-        "ticket": summary(tid),
+        "ticket": ticket,
+        # a block for another agent (the web console's 复制引用): reference.py
+        "reference": reference.build(tid, root() / "_data" / tid, meta, mj, ticket, recs, launches,
+                                     children_detail),
         "meta": {k: v for k, v in meta.items() if k not in ("lease_until",)},
         "sessions": mj.get("sessions") or {},
         "sections": sections,
         "children": children,
-        "children_detail": [
-            {**summary(c), "depends_on": ticket_fs.read_meta_json(c).get("depends_on") or [],
-             "scope": ticket_fs.read_meta_json(c).get("scope") or []}
-            for c in children
-        ],
+        "children_detail": children_detail,
         "collab": {"kind": mj.get("kind"), "contract_sha256": mj.get("contract_sha256"),
                    "integration": mj.get("integration")} if mj.get("kind") == "parent" else None,
         "runs": runs,

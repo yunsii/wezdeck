@@ -304,12 +304,29 @@ nothing is stored twice:
 | --- | --- |
 | `api health` | `{v, store, tickets, running, queued, waiting_human, seq_head, capabilities[]}` |
 | `api list [--status] [--repo] [--parent] [--since] [--limit]` | ticket summaries + last progress + child counts |
-| `api show --id` | meta, sections (sans prompts), children, `contract.md` sha, runs (summaries), `questions` (structured challenge options while `waiting_initiator`, else null — see `SKILL.md` D) |
+| `api show --id` | meta, sections (sans prompts), children, `contract.md` sha, runs (summaries), `questions` (structured challenge options while `waiting_initiator`, else null — see `SKILL.md` D), `reference` (below) |
 | `api events --after <seq> [--ticket] [--limit 500]` | `{events[], next}`. This is the poll cursor |
 | `api run --run <run>` | launch record + run record |
 | `api prompt --sha <sha256>` | redacted prompt / continuation body |
 | `api transcript --run <run> [--tail n]` | compressed stream: tool lines, milestones, final text |
 | `api metrics [--window] [--parent]` | §8 metrics |
+
+**Ticket reference** (`reference` in `api show`, `lib/reference.py`): a text
+block for another agent, sibling of the session reference
+([`remote-sessions.md`](remote-sessions.md)). It opens with `[wezdeck 工单]
+<title>` and lists, leaving out empty lines: id / kind / parent; route,
+status + phase, owner, claimer and claim generation; origin (`meta.json`
+`origin`, e.g. fe1-flows flow / step); created / updated; progress; summary /
+solution doc / source PR; repos with the checkout base `@head` (from
+`checkout` events); worktree + branch; the store dir; contract sha and
+integration branches (parents); run totals (count, failures, turns, token
+split, cache hit, cost, wall) and the last run (phase/role, backend/model,
+exit, session reuse/reason, trigger, start) with its record files and the
+`ticket api prompt --sha` of its initial message; each role session (backend,
+id, history tokens, cache TTL); children with status; and the `ticket api`
+commands that read the rest. The web console's ticket page copies it with
+复制引用 (`ticket-copy-reference.tsx`); in a terminal: `ticket api show --id
+<id> | jq -r .reference`.
 
 ## 10. Observation surfaces
 

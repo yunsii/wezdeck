@@ -316,6 +316,8 @@ export type TicketQuestions = z.infer<typeof ticketQuestionsSchema>
 
 export const collabShowSchema = collabEnvelope({
   ticket: collabTicketSchema.optional(),
+  /** a text block for another agent (复制引用): skills/agent-collab/lib/reference.py */
+  reference: z.string().optional(),
   sessions: z.record(z.string(), z.unknown()).default({}),
   questions: ticketQuestionsSchema.nullable().optional(),
   sections: z

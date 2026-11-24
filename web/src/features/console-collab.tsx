@@ -14,6 +14,7 @@ import type {
 } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
 import { RunDetail } from './console-collab-run'
+import { CopyReference } from './ticket-copy-reference'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { LedTone } from '#/components/deck/led'
@@ -187,6 +188,7 @@ export function TicketReading({
           <span className="font-medium" title={ticket.phase ?? undefined}>
             {statusLabel(ticket)}
           </span>
+          {data.reference ? <CopyReference text={data.reference} /> : null}
         </span>
       }
       title={ticket.title || ticket.id}

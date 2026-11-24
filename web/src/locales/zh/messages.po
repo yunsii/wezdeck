@@ -428,10 +428,10 @@ msgstr "本次 Runtime 启动以来访问过它的浏览器和脚本。它们读
 msgid "Bytes"
 msgstr "字节"
 
-#: src/features/console-collab.tsx:97
-#: src/features/console-collab.tsx:292
-#: src/features/console-collab.tsx:343
-#: src/features/console-collab.tsx:427
+#: src/features/console-collab.tsx:98
+#: src/features/console-collab.tsx:294
+#: src/features/console-collab.tsx:345
+#: src/features/console-collab.tsx:429
 #: src/features/session-info.tsx:73
 msgid "Cache hit"
 msgstr "缓存命中"
@@ -485,11 +485,11 @@ msgstr "检查更新"
 msgid "Checking…"
 msgstr "检查中…"
 
-#: src/features/console-collab.tsx:422
+#: src/features/console-collab.tsx:424
 msgid "Child"
 msgstr "子单"
 
-#: src/features/console-collab.tsx:417
+#: src/features/console-collab.tsx:419
 msgid "Children"
 msgstr "子单"
 
@@ -581,7 +581,7 @@ msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒�
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
-#: src/features/console-collab.tsx:115
+#: src/features/console-collab.tsx:116
 msgid "Collab metrics"
 msgstr "协作指标"
 
@@ -631,7 +631,7 @@ msgstr "确认"
 msgid "Confirm revoke"
 msgstr "确认撤销"
 
-#: src/features/console-collab.tsx:492
+#: src/features/console-collab.tsx:494
 msgid "conflict"
 msgstr "冲突"
 
@@ -687,6 +687,7 @@ msgstr "上下文占用"
 
 #: src/features/session-composer.tsx:80
 #: src/features/session-info.tsx:233
+#: src/features/ticket-copy-reference.tsx:31
 msgid "Copied"
 msgstr "已复制"
 
@@ -727,6 +728,10 @@ msgstr "复制错误信息"
 msgid "Copy raw line"
 msgstr "复制原始日志"
 
+#: src/features/ticket-copy-reference.tsx:31
+msgid "Copy reference"
+msgstr "复制引用"
+
 #: src/features/session-info.tsx:233
 msgid "Copy session reference for an agent"
 msgstr "复制会话引用（给 agent 用）"
@@ -735,9 +740,9 @@ msgstr "复制会话引用（给 agent 用）"
 msgid "Copy value"
 msgstr "复制值"
 
-#: src/features/console-collab.tsx:102
-#: src/features/console-collab.tsx:293
-#: src/features/console-collab.tsx:344
+#: src/features/console-collab.tsx:103
+#: src/features/console-collab.tsx:295
+#: src/features/console-collab.tsx:346
 msgid "Cost"
 msgstr "花费"
 
@@ -782,7 +787,7 @@ msgid "Creating…"
 msgstr "创建中…"
 
 #: src/features/collab-top-bar.tsx:22
-#: src/features/console-collab.tsx:119
+#: src/features/console-collab.tsx:120
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
@@ -833,7 +838,7 @@ msgstr "受限"
 msgid "Deny"
 msgstr "拒绝"
 
-#: src/features/console-collab.tsx:425
+#: src/features/console-collab.tsx:427
 msgid "Depends on"
 msgstr "依赖"
 
@@ -997,7 +1002,7 @@ msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终�
 #~ msgid "Example agent sessions"
 #~ msgstr "示例 Agent 会话"
 
-#: src/features/console-collab.tsx:347
+#: src/features/console-collab.tsx:349
 msgid "Exit"
 msgstr "退出码"
 
@@ -1232,8 +1237,8 @@ msgstr "已安装"
 msgid "Instance"
 msgstr "实例"
 
-#: src/features/console-collab.tsx:485
-#: src/features/console-collab.tsx:486
+#: src/features/console-collab.tsx:487
+#: src/features/console-collab.tsx:488
 msgid "Integration"
 msgstr "集成"
 
@@ -1400,7 +1405,7 @@ msgstr "正在加载原图…"
 
 #: src/features/console-activity.tsx:216
 #: src/features/console-collab-run.tsx:197
-#: src/features/console-collab.tsx:172
+#: src/features/console-collab.tsx:173
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:471
 #: src/features/console-shared.tsx:210
@@ -1442,7 +1447,7 @@ msgstr "标为已读"
 msgid "Marked read"
 msgstr "已标为已读"
 
-#: src/features/console-collab.tsx:497
+#: src/features/console-collab.tsx:499
 msgid "merged"
 msgstr "已合并"
 
@@ -1462,7 +1467,7 @@ msgstr "消息数"
 #~ msgid "Metrics"
 #~ msgstr "指标"
 
-#: src/features/console-collab.tsx:124
+#: src/features/console-collab.tsx:125
 msgid "Metrics window"
 msgstr "统计窗口"
 
@@ -1608,7 +1613,7 @@ msgstr "这个项目里没有更早的会话"
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 
-#: src/features/console-collab.tsx:325
+#: src/features/console-collab.tsx:327
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
@@ -1644,7 +1649,7 @@ msgstr "还没有写计划"
 msgid "No ticket selected"
 msgstr "未选中工单"
 
-#: src/features/console-collab.tsx:70
+#: src/features/console-collab.tsx:71
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
@@ -1824,7 +1829,7 @@ msgstr "输出 token"
 #~ msgid "Overview"
 #~ msgstr "总览"
 
-#: src/features/console-collab.tsx:197
+#: src/features/console-collab.tsx:199
 msgid "Owner"
 msgstr "负责方"
 
@@ -1848,7 +1853,7 @@ msgstr "窗格"
 msgid "Pane role"
 msgstr "窗格角色"
 
-#: src/features/console-collab.tsx:104
+#: src/features/console-collab.tsx:105
 msgid "Parallelism"
 msgstr "实际并行度"
 
@@ -1856,7 +1861,7 @@ msgstr "实际并行度"
 msgid "Part"
 msgstr "组成"
 
-#: src/features/console-collab.tsx:111
+#: src/features/console-collab.tsx:112
 msgid "Peak RSS"
 msgstr "内存峰值"
 
@@ -1864,7 +1869,7 @@ msgstr "内存峰值"
 msgid "Pending"
 msgstr "待批准"
 
-#: src/features/console-collab.tsx:340
+#: src/features/console-collab.tsx:342
 msgid "Phase"
 msgstr "阶段"
 
@@ -1920,7 +1925,7 @@ msgstr "主"
 msgid "Process"
 msgstr "进程"
 
-#: src/features/console-collab.tsx:198
+#: src/features/console-collab.tsx:200
 msgid "Progress"
 msgstr "进展"
 
@@ -2064,7 +2069,7 @@ msgstr "回复"
 msgid "Reply and continue"
 msgstr "回复并继续"
 
-#: src/features/console-collab.tsx:423
+#: src/features/console-collab.tsx:425
 msgid "Repo"
 msgstr "仓库"
 
@@ -2113,7 +2118,7 @@ msgstr "{weekReset}重置"
 msgid "Result"
 msgstr "结果"
 
-#: src/features/console-collab.tsx:99
+#: src/features/console-collab.tsx:100
 msgid "Resume / fresh hit"
 msgstr "续接 / 新开命中"
 
@@ -2139,7 +2144,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 msgid "Retry"
 msgstr "重试"
 
-#: src/features/console-collab.tsx:145
+#: src/features/console-collab.tsx:146
 msgid "reuse reasons"
 msgstr "复用理由"
 
@@ -2159,15 +2164,15 @@ msgstr "撤销立即生效：该设备的下一次读取或写入就会被拒绝
 msgid "Rime collector"
 msgstr "Rime 采集器"
 
-#: src/features/console-collab.tsx:196
+#: src/features/console-collab.tsx:198
 msgid "Route"
 msgstr "流向"
 
-#: src/features/console-collab.tsx:346
+#: src/features/console-collab.tsx:348
 msgid "RSS"
 msgstr "内存"
 
-#: src/features/console-collab.tsx:339
+#: src/features/console-collab.tsx:341
 msgid "Run"
 msgstr "运行"
 
@@ -2191,13 +2196,13 @@ msgstr "转到后台"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
-#: src/features/console-collab.tsx:459
+#: src/features/console-collab.tsx:461
 #: src/features/tickets-view.tsx:123
 msgid "running"
 msgstr "运行中"
 
 #: src/features/chat-tools.tsx:80
-#: src/features/console-collab.tsx:92
+#: src/features/console-collab.tsx:93
 #: src/features/console-shell.tsx:406
 msgid "Running"
 msgstr "运行中"
@@ -2214,9 +2219,9 @@ msgstr "窗格里在跑"
 msgid "Running substate"
 msgstr "运行子状态"
 
-#: src/features/console-collab.tsx:94
-#: src/features/console-collab.tsx:260
-#: src/features/console-collab.tsx:334
+#: src/features/console-collab.tsx:95
+#: src/features/console-collab.tsx:262
+#: src/features/console-collab.tsx:336
 msgid "Runs"
 msgstr "运行次数"
 
@@ -2274,7 +2279,7 @@ msgstr "终端同键"
 #~ msgid "Sample signals. The live console reads your local Runtime."
 #~ msgstr "示例信号。真正的控制台读取你本机的 Runtime。"
 
-#: src/features/console-collab.tsx:426
+#: src/features/console-collab.tsx:428
 msgid "Scope"
 msgstr "改动范围"
 
@@ -2344,7 +2349,7 @@ msgstr "正在发送第一条消息…"
 #~ msgstr "已发送到会话"
 
 #: src/features/console-collab-run.tsx:116
-#: src/features/console-collab.tsx:341
+#: src/features/console-collab.tsx:343
 #: src/features/session-info.tsx:31
 msgid "Session"
 msgstr "会话"
@@ -2367,7 +2372,7 @@ msgstr "会话信息"
 msgid "Session pages"
 msgstr "会话"
 
-#: src/features/console-collab.tsx:95
+#: src/features/console-collab.tsx:96
 msgid "Sessions"
 msgstr "会话数"
 
@@ -2489,7 +2494,7 @@ msgstr "正在启动…"
 msgid "State"
 msgstr "状态"
 
-#: src/features/console-collab.tsx:424
+#: src/features/console-collab.tsx:426
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
 #: src/features/session-list.tsx:190
@@ -2688,7 +2693,7 @@ msgstr "这个窗格已开始新会话，已切换过去"
 msgid "Thread"
 msgstr "讨论"
 
-#: src/features/console-collab.tsx:200
+#: src/features/console-collab.tsx:202
 msgid "Ticket"
 msgstr "工单编号"
 
@@ -2702,7 +2707,7 @@ msgstr "工单动态"
 msgid "Ticket pages"
 msgstr "工单"
 
-#: src/features/console-collab.tsx:175
+#: src/features/console-collab.tsx:176
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
@@ -2869,9 +2874,9 @@ msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 msgid "TURN relay"
 msgstr "TURN 中继"
 
-#: src/features/console-collab.tsx:96
-#: src/features/console-collab.tsx:291
-#: src/features/console-collab.tsx:342
+#: src/features/console-collab.tsx:97
+#: src/features/console-collab.tsx:293
+#: src/features/console-collab.tsx:344
 msgid "Turns"
 msgstr "轮数"
 
@@ -2977,7 +2982,7 @@ msgstr "等你回答"
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
-#: src/features/console-collab.tsx:93
+#: src/features/console-collab.tsx:94
 msgid "Waiting on human"
 msgstr "等人处理"
 
@@ -3010,12 +3015,12 @@ msgstr "等你"
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:294
-#: src/features/console-collab.tsx:345
+#: src/features/console-collab.tsx:296
+#: src/features/console-collab.tsx:347
 msgid "Wall"
 msgstr "耗时"
 
-#: src/features/console-collab.tsx:110
+#: src/features/console-collab.tsx:111
 msgid "Wall p50"
 msgstr "耗时 p50"
 
@@ -3143,7 +3148,7 @@ msgstr "运行中"
 #~ msgid "Workspaces"
 #~ msgstr "工作区"
 
-#: src/features/console-collab.tsx:199
+#: src/features/console-collab.tsx:201
 #: src/features/session-info.tsx:48
 msgid "Worktree"
 msgstr "工作树"
