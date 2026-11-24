@@ -6,7 +6,7 @@
 # succeeds is done — the version check belongs before the tests
 # (web/tests/version.setup.ts), not after the deploy.
 #
-#   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force] [--no-test] [--no-reload]
+#   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force] [--gate | --no-test] [--no-reload]
 #
 # --commit MSGFILE commits the staged changes first, after fixing what the
 # pre-commit gate only reports: prettier on the staged web files and the
@@ -15,10 +15,18 @@
 # Everything to ship must be staged (no unstaged tracked edits): the web is
 # built from the working tree, so it would ship code the commit lacks.
 #
-# Test gate (before any job): scripts/dev/web-affected-tests.sh --base @{u}
+# Tests: scripts/dev/web-affected-tests.sh --base <upstream before the push>
 # --run — the go / unit / cdp tests the unpushed commits can break, cdp on
-# the local test stack; a failure ships nothing. --no-test skips it
-# (emergencies only, like --no-verify).
+# the local test stack. They run alongside push / relay / web (a failure is
+# fixed next round, not a reason to hold the deploy): the release still ships,
+# reports ✗ test last and exits 3. --gate runs them first and ships nothing
+# on a failure (the old order: ~40–100 s before anything moves); --no-test
+# skips them.
+#
+# Shared builds first (build): the relay binary (build.sh) and web/dist
+# (vite, build id = web source fingerprint), each skipped when current. The
+# test stack, the relay job and the web job all reuse them — run in parallel,
+# each would otherwise build into the same output at once.
 #
 # After a web deploy, every web console seen in the last 3 min is moved onto the new
 # build: `wezdeck-wsl diag --reload` (the page answers, then reloads; a draft
@@ -45,7 +53,7 @@ STATE="$HOME/.local/state/wezdeck"
 RUN="$STATE/release/$(date +%Y%m%d-%H%M%S)"
 only=()
 force=0
-test_gate=1
+test_mode=parallel # parallel | gate | off
 reload_clients=1
 commit_msg=''
 while (($#)); do
@@ -53,9 +61,10 @@ while (($#)); do
     --commit) commit_msg="$2"; shift 2 ;;
     --only) only+=("$2"); shift 2 ;;
     --force) force=1; shift ;;
-    --no-test) test_gate=0; shift ;;
+    --no-test) test_mode=off; shift ;;
+    --gate) test_mode=gate; shift ;;
     --no-reload) reload_clients=0; shift ;;
-    -h | --help) sed -n '2,20p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -126,18 +135,25 @@ progress_lines() {
     -e 's/^(cdp|go|unit): (.*)$/plan \1: \2/p' \
     -e 's/.*Test Files +(.*)$/tests: \1/p'
 }
-# watch background jobs (name → pid in `pids`, log `$RUN/<name>.log`) until
-# each exits, printing their progress as it lands. A job's exit status and
-# own duration land in `rcs` / `durs` the moment it exits; with
-# WATCH_ANNOUNCE=1 its ✓/✗ line prints right then, not after the slowest job.
-watch_jobs() {
-  declare -A seen quiet
-  local name n line busy=1 rc
-  for name in "$@"; do seen[$name]=0; quiet[$name]=$SECONDS; done
-  while ((busy)); do
-    busy=0
-    for name in "$@"; do
-      [[ -n "${pids[$name]:-}" ]] || continue
+# Background jobs: name → pid in `pids`, log `$RUN/<name>.log`, last log
+# line = its result. watch_until streams every started job's progress and
+# prints each one's ✓/✗ line with its own duration the moment it exits (exit
+# status / seconds into `rcs` / `durs`), returning once the named jobs are
+# done; the others keep running and are picked up by a later call.
+declare -A pids starts rcs durs seen quiet
+jobs_all=()
+start_job() { # NAME DESCRIPTION FUNCTION
+  starts[$1]=$SECONDS seen[$1]=0 quiet[$1]=$SECONDS
+  say '▶' "$1" "$2"
+  ("$3" >"$RUN/$1.log" 2>&1) &
+  pids[$1]=$!
+  jobs_all+=("$1")
+}
+watch_until() {
+  local name n line rc pending=1
+  while ((pending)); do
+    for name in "${jobs_all[@]}"; do
+      [[ -n "${rcs[$name]:-}" ]] && continue
       n="$(wc -l <"$RUN/$name.log" 2>/dev/null || echo 0)"
       if ((n > seen[$name])); then
         while IFS= read -r line; do
@@ -147,44 +163,71 @@ watch_jobs() {
         quiet[$name]=$SECONDS
       fi
       if kill -0 "${pids[$name]}" 2>/dev/null; then
-        busy=1
         if ((SECONDS - quiet[$name] >= 10)); then
           say '…' "$name" "still running ($((SECONDS - starts[$name]))s)"
           quiet[$name]=$SECONDS
         fi
-      elif [[ -z "${rcs[$name]:-}" ]]; then
+      else
         rc=0; wait "${pids[$name]}" || rc=$?
         rcs[$name]=$rc
         durs[$name]=$((SECONDS - starts[$name]))
-        if ((${WATCH_ANNOUNCE:-0})); then
-          say "$( ((rc == 0)) && echo '✓' || echo '✗')" "$name" "$(tail -1 "$RUN/$name.log") (${durs[$name]}s)"
-          ((rc == 0)) || sed 's/^/      /' "$RUN/$name.log" | tail -15
-        fi
+        say "$( ((rc == 0)) && echo '✓' || echo '✗')" "$name" "$(tail -1 "$RUN/$name.log") (${durs[$name]}s)"
+        ((rc == 0)) || sed 's/^/      /' "$RUN/$name.log" | tail -30
       fi
     done
-    ((busy)) && sleep 1
+    pending=0
+    for name in "$@"; do [[ -z "${rcs[$name]:-}" ]] && pending=1; done
+    ((pending)) && sleep 1
   done
   return 0
 }
 
-declare -A pids starts rcs durs
-if ((test_gate)); then
-  t0=$SECONDS
-  say '▶' test 'affected tests (go / unit / cdp on the test stack)'
-  starts[test]=$SECONDS
-  (scripts/dev/web-affected-tests.sh --base '@{u}' --run >"$RUN/test.log" 2>&1) &
-  pids[test]=$!
-  watch_jobs test
+# fixed before the push moves @{u}: the tests compare against what origin had
+test_base="$(git rev-parse '@{u}')"
+job_test() {
+  scripts/dev/web-affected-tests.sh --base "$test_base" --run || {
+    echo "FAIL: affected tests (log $RUN/test.log)"
+    return 1
+  }
+  echo "ok: $(grep -m1 '^cdp:' "$RUN/test.log" | sed 's/^cdp: *//')"
+}
+job_build() {
+  if wanted relay || [[ $test_mode != off ]]; then
+    phase "relay binary (skipped when current)"
+    PATH="$HOME/.local/go/bin:$PATH" native/wezdeck-wsl/build.sh || return 1
+  fi
+  if wanted web || [[ $test_mode != off ]]; then
+    local want built
+    want="$(scripts/dev/source-fingerprint.sh web)"
+    built="$(sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' web/dist/client/build.json 2>/dev/null)"
+    if [[ "$built" != "$want" || $force == 1 ]]; then
+      phase "vite build $want"
+      (cd web && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
+    else
+      phase "web/dist already at $want"
+    fi
+  fi
+  echo "ok: builds current"
+}
+start_job build 'shared builds (relay binary, web/dist) when stale' job_build
+watch_until build
+if ((rcs[build] != 0)); then
+  say '✗' done "build failed; nothing pushed or deployed (log $RUN/build.log)"
+  printf '%s head=%s build=FAIL logs=%s\n' "$(date -Iseconds)" "$head" "$RUN" >>"$STATE/release.log"
+  exit 1
+fi
+if [[ $test_mode != off ]]; then
+  start_job test 'affected tests (go / unit / cdp on the test stack)' job_test
+fi
+if [[ $test_mode == gate ]]; then
+  watch_until test
   if ((rcs[test] != 0)); then
-    tail -30 "$RUN/test.log" | sed 's/^/      /'
-    say '✗' test "failed in $((SECONDS - t0))s (log $RUN/test.log); nothing pushed or deployed"
+    say '✗' done "tests failed; nothing pushed or deployed"
     [[ -n "$commit_msg" ]] &&
       echo "release: the commit $(git log -1 --format=%h) stays local — fix, then commit the fix and rerun without --commit (or amend it: not pushed yet)" >&2
-    printf '%s head=%s test=FAIL/%ss logs=%s\n' "$(date -Iseconds)" "$head" "$((SECONDS - t0))" "$RUN" >>"$STATE/release.log"
+    printf '%s head=%s test=FAIL/%ss logs=%s\n' "$(date -Iseconds)" "$head" "${durs[test]}" "$RUN" >>"$STATE/release.log"
     exit 1
   fi
-  say '✓' test "$(grep -m1 '^cdp:' "$RUN/test.log") ($((SECONDS - t0))s)"
-  unset 'pids[test]'
 fi
 
 # each job prints its last line as the result; exit 0 = verified or skipped
@@ -248,16 +291,13 @@ job_web() {
   echo "ok: deployed web $want$reused (was ${deployed:-?})"
 }
 
+running=()
 for name in push relay web; do
   wanted "$name" || continue
-  starts[$name]=$SECONDS
-  say '▶' "$name" "$(case $name in push) echo 'git push to origin' ;; relay) echo 'build + restart the host relay if changed' ;; web) echo 'build + deploy the web console if changed' ;; esac)"
-  ("job_$name" >"$RUN/$name.log" 2>&1) &
-  pids[$name]=$!
+  start_job "$name" "$(case $name in push) echo 'git push to origin' ;; relay) echo 'restart the host relay if changed' ;; web) echo 'deploy the web console if changed' ;; esac)" "job_$name"
+  running+=("$name")
 done
-running=()
-for name in push relay web; do [[ -n "${pids[$name]:-}" ]] && running+=("$name"); done
-((${#running[@]})) && WATCH_ANNOUNCE=1 watch_jobs "${running[@]}"
+((${#running[@]})) && watch_until "${running[@]}"
 
 failed=0
 summary=()
@@ -286,6 +326,19 @@ if ((reload_clients && !failed)) && grep -q '^ok: deployed' "$RUN/web.log" 2>/de
   say '✓' pages "$( ((${clients:-0} > 0)) && echo "reloaded ${clients} web console(s) onto $head" || echo 'skip: no web console connected') ($((SECONDS - t0))s)"
   summary+=("clients=${clients:-0}")
 fi
-say '■' done "release $head in $((SECONDS - T0))s"
+# parallel tests: the deploy is out; their verdict comes last
+if [[ $test_mode == parallel ]]; then
+  watch_until test
+  summary+=("test=$( ((rcs[test] == 0)) && echo ok || echo FAIL)/${durs[test]}s")
+fi
 printf '%s head=%s %s logs=%s\n' "$(date -Iseconds)" "$head" "${summary[*]}" "$RUN" >>"$STATE/release.log"
-exit $failed
+if ((failed)); then
+  say '✗' done "release $head failed in $((SECONDS - T0))s"
+  exit 1
+fi
+if [[ $test_mode == parallel ]] && ((rcs[test] != 0)); then
+  say '✗' done "release $head shipped in $((SECONDS - T0))s, but tests FAILED — fix next round (log $RUN/test.log)"
+  exit 3
+fi
+say '■' done "release $head in $((SECONDS - T0))s"
+exit 0

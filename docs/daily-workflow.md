@@ -156,7 +156,7 @@ scripts/dev/reload-tmux.sh
 ## Verification
 
 - If only documentation changed, runtime sync and reload are not required.
-- Web console / relay (`web/`, `native/wezdeck-wsl/`): run `scripts/dev/web-affected-tests.sh --run` — only the go / unit / cdp tests the change can reach, on a reused test stack — rather than every suite; `wezdeck-release.sh` runs the same gate on the unpushed commits. Details: [`remote-access.md#testing-locally`](./remote-access.md#testing-locally).
+- Web console / relay (`web/`, `native/wezdeck-wsl/`): run `scripts/dev/web-affected-tests.sh --run` — only the go / unit / cdp tests the change can reach, on a reused test stack — rather than every suite; `wezdeck-release.sh` runs the same tests on the unpushed commits, alongside the deploy (`--gate` to block on them). Details: [`remote-access.md#testing-locally`](./remote-access.md#testing-locally).
 - Verify workspace shortcuts still match [`keybindings.md`](./keybindings.md).
 - If workspace behavior changed, verify it still matches [`workspaces.md`](./workspaces.md).
 - If tmux styling or status changed, verify it still matches [`tmux-ui.md`](./tmux-ui.md).
@@ -226,7 +226,7 @@ After a coherent task round is **done and verified** on this repo:
 1. **Commit** via `coco-commit` (Conventional Commits; hygiene hook on).
 2. **Push** to `origin` on the default branch (`master` / resolved `origin/HEAD`) — no PR; see Default-branch delivery in `CLAUDE.md` / `AGENTS.md`.
 3. **Sync** with `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` when the round touched runtime config, platform skills under `skills/`, `scripts/runtime/`, tmux/WezTerm sync surfaces, or anything else the Default Flow says must reach the live tree.
-4. **Release** with `scripts/dev/wezdeck-release.sh` when the round touched `web/` or `native/wezdeck-wsl/` (the web console on Cloudflare and the host relay): it runs the affected tests, pushes, then deploys only the parts whose running version is behind. Same auto-decide rule as push — a verified round does not wait for 「上线」. Details: [`remote-access.md`](./remote-access.md).
+4. **Release** with `scripts/dev/wezdeck-release.sh` when the round touched `web/` or `native/wezdeck-wsl/` (the web console on Cloudflare and the host relay): it builds once, then pushes, deploys only the parts whose running version is behind, and runs the affected tests at the same time — a test failure does not hold the deploy: it is reported last (exit 3) and fixed next round; `--gate` restores test-first for a risky round. Same auto-decide rule as push — a verified round does not wait for 「上线」. Details: [`remote-access.md`](./remote-access.md).
 
 **Auto-decide** (do not wait for 「提交 / 推送 / sync」) when **all** hold:
 
