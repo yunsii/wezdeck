@@ -7,12 +7,12 @@ import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { FolderGit2, GitFork } from 'lucide-react'
-import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
+import { readStoredChoice, useStoredChoice } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -45,7 +45,10 @@ export type SessionFilter = 'all' | 'waiting' | 'running' | 'idle'
 
 // wrapped, not `waiting: needsYou`: console-sessions imports this module, so
 // its exports are not initialised yet while this object is built
-const FILTERS: Record<SessionFilter, (row: SessionCard) => boolean> = {
+export const SESSION_FILTERS: Record<
+  SessionFilter,
+  (row: SessionCard) => boolean
+> = {
   all: () => true,
   waiting: (row) => needsYou(row),
   // a turn that just ended stays 运行中 for a few minutes (inRunning)
@@ -54,15 +57,15 @@ const FILTERS: Record<SessionFilter, (row: SessionCard) => boolean> = {
 }
 
 const FILTER_KEY = 'wezdeck-session-filter'
+const validFilter = (value: string) => value in SESSION_FILTERS
 
-function storedFilter(): SessionFilter {
-  try {
-    const value = localStorage.getItem(FILTER_KEY)
-    return value && value in FILTERS ? (value as SessionFilter) : 'all'
-  } catch {
-    return 'all'
-  }
-}
+/** the status filter, shared with the split (it picks for this list) */
+export const useSessionFilter = () =>
+  useStoredChoice<SessionFilter>(FILTER_KEY, 'all', validFilter)
+
+/** the filter now, for an effect / a pick (readStoredChoice) */
+export const readSessionFilter = () =>
+  readStoredChoice<SessionFilter>(FILTER_KEY, 'all', validFilter)
 
 const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
 
@@ -168,15 +171,7 @@ export function SessionList({
 }: { selected?: string; split?: boolean } = {}) {
   const { t } = useLingui()
   const sessions = useSessions()
-  const [filter, setFilterState] = useState<SessionFilter>(storedFilter)
-  const setFilter = (value: SessionFilter) => {
-    setFilterState(value)
-    try {
-      localStorage.setItem(FILTER_KEY, value)
-    } catch {
-      // the choice just won't be remembered
-    }
-  }
+  const [filter, setFilter] = useSessionFilter()
   // visits pinned once seen and rows kept once shown (session-stable.ts):
   // the list does not reshuffle or empty itself while you work through it
   const rows = useFrozenVisits(sessions.data?.sessions ?? [], consoleVisits())
@@ -185,7 +180,7 @@ export function SessionList({
     .sort((a, b) => visitOf(b, {}) - visitOf(a, {}))
   const kept = useStickyMembers(
     filter,
-    rows.filter(FILTERS[filter]).map((row) => row.id),
+    rows.filter(SESSION_FILTERS[filter]).map((row) => row.id),
   )
   // 全部: the waiting band on top, the tree holds the rest
   const treeRows =
@@ -193,7 +188,8 @@ export function SessionList({
       ? rows.filter((row) => !needsYou(row))
       : rows.filter((row) => kept.has(row.id))
   const tree = buildSessionTree(treeRows, {})
-  const count = (value: SessionFilter) => rows.filter(FILTERS[value]).length
+  const count = (value: SessionFilter) =>
+    rows.filter(SESSION_FILTERS[value]).length
   const waitingCount = count('waiting')
   const runningCount = count('running')
   const idleCount = count('idle')

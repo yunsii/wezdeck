@@ -15,7 +15,12 @@ import { RemoteBadge } from './remote-badge'
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { useGoBack } from '#/lib/go-back'
-import { RememberOpened, idInUrl, lastOpened } from '#/lib/last-opened'
+import {
+  RememberOpened,
+  idInUrl,
+  pickLast,
+  useStoredChoice,
+} from '#/lib/last-opened'
 import { useTicketHealth, useTicketList } from '#/lib/ticket-sync'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
@@ -37,11 +42,12 @@ const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
 
 /** Segments on the tickets page; `inbox` is the old 待处理 route's fixed filter. */
-export type TicketFilter = 'active' | 'mine' | 'ended' | 'inbox'
+export type TicketFilter = 'all' | 'active' | 'mine' | 'ended' | 'inbox'
 
 const ENDED = new Set(['shipped', 'closed', 'failed', 'rejected'])
 
 const FILTERS: Record<TicketFilter, (t: CollabTicket) => boolean> = {
+  all: () => true,
   active: (t) =>
     t.running.length > 0 ||
     (!ENDED.has(t.status ?? '') && t.status !== 'waiting_initiator'),
@@ -216,6 +222,7 @@ function StatusSegments({
 }) {
   const { t } = useLingui()
   const count = (filter: TicketFilter) => tickets.filter(FILTERS[filter]).length
+  const everything = count('all')
   const active = count('active')
   const mine = count('mine')
   const ended = count('ended')
@@ -226,6 +233,11 @@ function StatusSegments({
       onChange={onChange}
       className="md:max-w-md"
       options={[
+        {
+          value: 'all',
+          label: t({ message: 'All', context: 'filter' }),
+          count: everything,
+        },
         {
           value: 'active',
           label: t({ message: 'In progress', context: 'filter' }),
@@ -277,7 +289,12 @@ export function TicketsView({
   const poll = (health.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS
   const list = useTicketList()
   const copyReference = useCopyTicketReference()
-  const [chosen, setChosen] = useState<TicketFilter>('active')
+  // kept per browser like 会话's (lib/last-opened.ts)
+  const [chosen, setChosen] = useStoredChoice<TicketFilter>(
+    `wezdeck-ticket-filter-${base}`,
+    'active',
+    (value) => value in FILTERS && value !== 'inbox',
+  )
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')
   // phone: the search field opens from an icon instead of taking a row
@@ -339,23 +356,39 @@ export function TicketsView({
   )
 
   const { recent, older } =
-    filter === 'active' && !needle
+    (filter === 'active' || filter === 'all') && !needle
       ? splitQuiet(tickets)
       : { recent: tickets, older: [] }
+
+  // no ticket in the URL (wide): the one last opened under this filter, else
+  // the one last opened at all if it still exists (switching to 全部), else
+  // the top of the list (lib/last-opened.ts pickLast)
+  const lastKey = `wezdeck-last-ticket-${base}`
+  const pick =
+    id || !all.length
+      ? {}
+      : pickLast(
+          lastKey,
+          filter,
+          tickets.map((ticket) => ticket.id),
+          all.map((ticket) => ticket.id),
+        )
+  const toAll = wide && Boolean(pick.all) && !fixedFilter && chosen !== 'all'
+  // held once picked (until a ticket is in the URL): switching to 全部 must
+  // not re-pick 全部's own last
+  const held = useRef<string | undefined>(undefined)
+  if (id) held.current = undefined
+  else if (pick.id && !held.current) held.current = pick.id
+  useEffect(() => {
+    if (toAll) setChosen('all')
+    // setChosen is a fresh closure; toAll decides
+  }, [toAll])
 
   if (wide) {
     // a split like 会话 (session-split.tsx): the list sticky on the left, the
     // ticket beside it in the page scroll, j / k move through the list
-    // no ticket in the URL: the one this browser showed last (still listed,
-    // under any filter), else the top of the list
-    const lastKey = `wezdeck-last-ticket-${base}`
-    const last = lastOpened(lastKey)
     const current =
-      id ??
-      (all.some((ticket) => ticket.id === last) ? last : undefined) ??
-      recent.at(0)?.id ??
-      older.at(0)?.id ??
-      ''
+      id ?? held.current ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
     return (
       <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
         <TicketListKeys
@@ -364,7 +397,7 @@ export function TicketsView({
           onGo={(next) => open(next, true)}
         />
         <CopyKey id={current} copy={copyReference} />
-        <RememberOpened storageKey={lastKey} id={current} />
+        <RememberOpened storageKey={lastKey} id={current} filter={filter} />
         <SplitColumn
           label={t`Collab tickets`}
           head={

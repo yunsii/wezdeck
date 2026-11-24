@@ -128,10 +128,12 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    pane beside is flat with the column divider as its left edge (no card).
    工单's run / cache / cost band opens from the head in a dialog. Session
    groups carry icons: repo `FolderGit2`, worktree `GitFork`.
-   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx) and,
-   like 会话, opens the ticket this browser showed last when the URL names
-   none (`lib/last-opened.tsx`, per page: 工单 / 待处理; else the top of the
-   list): the
+   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx). Both
+   remember their status filter (工单 gained 全部) and, with no item in the
+   URL, open: the item last opened under the current filter if still listed
+   there; else the item last opened at all if it still exists, switching to
+   全部; else the top of the list (`lib/last-opened.tsx` `pickLast`, chosen
+   once per visit — switching to 全部 must not re-pick 全部's own last). The
    list sticky on the left, the ticket beside it in the
    page scroll, j / k move through the list and y copies the open ticket's
    reference (not while typing or a sheet is open), rows replace instead of

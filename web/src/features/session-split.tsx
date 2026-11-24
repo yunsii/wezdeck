@@ -11,11 +11,16 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
-import { idInUrl } from '#/lib/last-opened'
+import { idInUrl, pickLast, rememberOpened } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { SessionDetail, prefetchSession } from './console-sessions'
-import { SessionList } from './session-list'
+import {
+  SESSION_FILTERS,
+  SessionList,
+  readSessionFilter,
+  useSessionFilter,
+} from './session-list'
 import { nextInCycle } from './session-order'
 import { useSessionNav } from './session-switcher'
 import { CopyKey, useCopySessionReference } from './copy-reference'
@@ -70,42 +75,47 @@ function useListKeys(current: string) {
 
 const LAST_KEY = 'wezdeck-last-session'
 
-function lastSession() {
-  try {
-    return localStorage.getItem(LAST_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-function rememberSession(id: string) {
-  try {
-    localStorage.setItem(LAST_KEY, id)
-  } catch {
-    // blocked storage: the list's top session is the fallback
-  }
-}
-
-/** no session in the URL: open the last one (still listed) or the top one */
+/**
+ * No session in the URL: the one last opened under the current filter, else
+ * the one last opened at all if it still exists (the list switches to 全部
+ * to show it), else the top of the current list (lib/last-opened.ts).
+ */
 function usePickDefault(id: string | undefined) {
   const nav = useSessionNav(id ?? '')
   const navigate = useNavigate()
   const { locale } = useLocale()
-  const last = lastSession()
+  const [, setFilter] = useSessionFilter()
+  const filter = readSessionFilter()
+  const listed = nav.ordered.filter(SESSION_FILTERS[filter])
+  const pick = id
+    ? {}
+    : pickLast(
+        LAST_KEY,
+        filter,
+        listed.map((row) => row.id),
+        nav.rows.map((row) => row.id),
+      )
+  // chosen once per visit with no id: switching to 全部 re-renders before
+  // the navigation lands, and a re-pick took 全部's own last instead
+  const chosen = useRef('')
+  if (id) chosen.current = ''
   const target = id
     ? ''
-    : (nav.rows.find((row) => row.id === last)?.id ??
-      nav.ordered.at(0)?.id ??
-      '')
+    : chosen.current ||
+      (pick.id ?? listed.at(0)?.id ?? nav.ordered.at(0)?.id ?? '')
+  const toAll = Boolean(pick.all) && filter !== 'all'
   useEffect(() => {
     if (!target) return
+    chosen.current = target
+    if (toAll) setFilter('all')
     // not nav.go: picking for you is not a visit, the list order stays
     void navigate({
       to: '/{-$locale}/console/sessions/$id',
       params: { locale: locale === 'en' ? undefined : locale, id: target },
       replace: true,
     })
-  }, [target, navigate, locale])
+    // setFilter is a fresh closure each render; target / toAll decide
+  }, [target, toAll, navigate, locale])
 }
 
 function SplitView({ id }: { id?: string }) {
@@ -139,8 +149,10 @@ function SplitView({ id }: { id?: string }) {
 export function ConsoleSessionsPage() {
   const { id } = useParams({ strict: false })
   const wide = useIsWidePhoneFirst()
+  // on opening a session only (switching the filter with one open must not
+  // file it under the new filter), with the filter read now
   useEffect(() => {
-    if (id) rememberSession(id)
+    if (id) rememberOpened(LAST_KEY, id, readSessionFilter())
   }, [id])
   if (wide) return <SplitView id={id} />
   return id ? <SessionDetail id={id} /> : <SessionList />
