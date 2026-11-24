@@ -65,10 +65,12 @@ export function InteractionsPage() {
   const list = (
     <nav
       aria-label={p({ zh: '交互列表', en: 'Interactions' })}
-      className="grid content-start gap-4"
+      // minmax(0,1fr) all the way down: a long title truncates instead of
+      // widening the sidebar over the detail (the tags pushed it there)
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-4"
     >
       {GROUPS.map((group) => (
-        <div key={group.id} className="grid gap-1">
+        <div key={group.id} className="grid grid-cols-[minmax(0,1fr)] gap-1">
           {/* the phone list sits on a .key card, the wide sidebar on the page */}
           <SectionHeading
             as="h2"
@@ -81,7 +83,12 @@ export function InteractionsPage() {
           </SectionHeading>
           {/* a phone gets the 我的 list row (ink, a rule between rows); a
               wide screen keeps the sidebar look beside the detail */}
-          <ul className={cn('grid', wide ? 'gap-0.5' : '')}>
+          <ul
+            className={cn(
+              'grid grid-cols-[minmax(0,1fr)]',
+              wide ? 'gap-0.5' : '',
+            )}
+          >
             {sections
               .filter((s) => s.group === group.id)
               .map((s) => (
@@ -100,7 +107,7 @@ export function InteractionsPage() {
                     aria-current={current?.id === s.id ? 'true' : undefined}
                     onClick={() => pick(s.id)}
                     className={cn(
-                      'flex w-full items-center justify-between gap-2 px-2.5 text-left text-body',
+                      'flex w-full min-w-0 items-center justify-between gap-2 overflow-hidden px-2.5 text-left text-body',
                       !wide
                         ? 'key-press min-h-13 text-brand-text'
                         : current?.id === s.id
@@ -129,18 +136,21 @@ export function InteractionsPage() {
       ))}
     </nav>
   )
+  // the description is a card; the demo renders on the page's own ground,
+  // like the session page it copies, under its own heading — the two used
+  // to run together (a diff read as part of the copy)
   const detail = current ? (
     <section
       key={current.id}
       data-testid="interaction-detail"
       data-interaction={current.id}
-      className="grid min-w-0 content-start gap-3"
+      className="grid min-w-0 content-start gap-4"
     >
       <h2 className="flex flex-wrap items-center gap-2 text-title font-semibold">
         {p(current.title)}
         {tagChips(current.tags)}
       </h2>
-      <dl className="grid gap-1.5 text-caption">
+      <dl className="grid gap-2 rounded-2xl bg-brand-surface px-3.5 py-3 text-caption">
         <div className="grid gap-0.5">
           <dt className="text-meta text-brand-label">
             {p({ zh: '怎么识别', en: 'Where it comes from' })}
@@ -158,10 +168,16 @@ export function InteractionsPage() {
           </dd>
         </div>
       </dl>
-      {current.demo}
+      <div data-testid="interaction-stage" className="grid min-w-0 gap-2">
+        <h3 className="flex items-center gap-2 px-1 text-meta font-semibold text-brand-label">
+          {p({ zh: '演示', en: 'Demo' })}
+          <span className="h-px flex-1 bg-brand-edge" />
+        </h3>
+        {current.demo}
+      </div>
       <div
         data-testid="interaction-log"
-        className="grid gap-0.5 border-t border-brand-edge pt-2"
+        className="grid gap-1 border-t border-brand-edge pt-2"
       >
         <span className="text-meta text-brand-label">
           {p({
@@ -180,8 +196,8 @@ export function InteractionsPage() {
   if (!wide)
     return detail ?? <div className="key rounded-2xl px-2 py-3">{list}</div>
   return (
-    <div className="grid grid-cols-[12.5rem_minmax(0,1fr)] gap-6">
-      <div className="border-r border-brand-edge pr-3">{list}</div>
+    <div className="grid grid-cols-[16rem_minmax(0,1fr)] gap-6">
+      <div className="min-w-0 border-r border-brand-edge pr-3">{list}</div>
       {detail}
     </div>
   )

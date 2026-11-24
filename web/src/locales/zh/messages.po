@@ -730,6 +730,11 @@ msgid "conflict"
 msgstr "冲突"
 
 #: src/features/session-git.tsx:106
+#~ msgid "Conflicts"
+#~ msgstr "冲突"
+
+#: src/features/session-git.tsx:106
+msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
 
@@ -1564,7 +1569,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:211
+#: src/features/session-git.tsx:213
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1634,10 +1639,14 @@ msgstr "模式"
 msgid "Model"
 msgstr "模型"
 
-#: src/features/session-git.tsx:108
 #: src/features/session-info.tsx:59
 msgid "Modified"
 msgstr "修改时间"
+
+#: src/features/session-git.tsx:108
+msgctxt "git"
+msgid "Modified"
+msgstr "已修改"
 
 #: src/features/session-git.tsx:150
 msgid "More files changed than listed here."
@@ -2686,6 +2695,11 @@ msgid "Sources on this computer"
 msgstr "本机来源"
 
 #: src/features/session-git.tsx:107
+#~ msgid "Staged"
+#~ msgstr "已暂存"
+
+#: src/features/session-git.tsx:107
+msgctxt "git"
 msgid "Staged"
 msgstr "已暂存"
 
@@ -3149,6 +3163,11 @@ msgid "Untitled session"
 msgstr "未命名会话"
 
 #: src/features/session-git.tsx:109
+#~ msgid "Untracked"
+#~ msgstr "未跟踪"
+
+#: src/features/session-git.tsx:109
+msgctxt "git"
 msgid "Untracked"
 msgstr "未跟踪"
 

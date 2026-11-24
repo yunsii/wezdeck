@@ -45,11 +45,36 @@ describe('Git status panel', () => {
         await detail.locator(`[data-git-group=${group}] li`).count(),
         group,
       ).toBe(n)
+    expect(text).toContain('已修改 · 2')
     expect(text).toContain('未推送 · 2')
     expect(text).toContain('未拉取 · 1')
     expect(text).toContain('最近提交 · 3')
     await page.keyboard.press('Escape')
     await page.getByTestId('git-sheet').waitFor({ state: 'hidden' })
+    await context.close()
+  })
+
+  it('wide: the list never runs over the detail', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#claude-ask-review`)
+    const detail = page.getByTestId('interaction-detail')
+    await detail.waitFor({ timeout: 20_000 })
+    const [list, box] = await Promise.all([
+      page.locator('nav[aria-label=交互列表]').boundingBox(),
+      detail.boundingBox(),
+    ])
+    expect(list && box && list.x + list.width <= box.x).toBe(true)
+    // every row's tag stays inside the list
+    const overflow = await page
+      .locator('nav[aria-label=交互列表] button[data-interaction]')
+      .evaluateAll((rows) =>
+        rows.some((row) => row.scrollWidth > row.clientWidth + 1),
+      )
+    expect(overflow).toBe(false)
     await context.close()
   })
 })

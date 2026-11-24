@@ -80,7 +80,7 @@ function Commits({
         {commits.map((commit) => (
           <li
             key={commit.sha}
-            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 rounded-lg px-2 py-1"
+            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 px-1 py-1"
           >
             <span className="font-mono text-meta text-brand-label">
               {commit.sha}
@@ -103,10 +103,10 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
   const { t } = useLingui()
   const sentence = useGitSentence()
   const groups: Array<{ state: GitFile['state']; title: string }> = [
-    { state: 'conflict', title: t`Conflicts` },
-    { state: 'staged', title: t`Staged` },
-    { state: 'modified', title: t`Modified` },
-    { state: 'untracked', title: t`Untracked` },
+    { state: 'conflict', title: t({ message: 'Conflicts', context: 'git' }) },
+    { state: 'staged', title: t({ message: 'Staged', context: 'git' }) },
+    { state: 'modified', title: t({ message: 'Modified', context: 'git' }) },
+    { state: 'untracked', title: t({ message: 'Untracked', context: 'git' }) },
   ]
   return (
     <div data-testid="git-detail" className="grid gap-3">
@@ -131,7 +131,7 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
               {files.map((file) => (
                 <li
                   key={`${state}:${file.path}`}
-                  className="flex min-w-0 items-baseline gap-2 px-2 font-mono text-meta"
+                  className="flex min-w-0 items-baseline gap-2 px-1 font-mono text-meta"
                 >
                   <span className="w-3 shrink-0 text-brand-label">
                     {file.code}
@@ -200,17 +200,20 @@ export function GitStatusButton({
         title={t`Git status`}
         testId="git-sheet"
       >
-        {detail.data ? (
-          <GitDetailView detail={detail.data} />
-        ) : detail.isError ? (
-          <p className="py-6 text-center text-caption text-brand-muted">
-            {String(detail.error.message)}
-          </p>
-        ) : (
-          <p className="py-6 text-center text-caption text-brand-muted">
-            {t`Loading…`}
-          </p>
-        )}
+        {/* px-3 + the rows' own px-1: in line with the title's px-4 */}
+        <div className="px-3">
+          {detail.data ? (
+            <GitDetailView detail={detail.data} />
+          ) : detail.isError ? (
+            <p className="py-6 text-center text-caption text-brand-muted">
+              {String(detail.error.message)}
+            </p>
+          ) : (
+            <p className="py-6 text-center text-caption text-brand-muted">
+              {t`Loading…`}
+            </p>
+          )}
+        </div>
       </Sheet>
     </>
   )

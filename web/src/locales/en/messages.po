@@ -730,6 +730,11 @@ msgid "conflict"
 msgstr "conflict"
 
 #: src/features/session-git.tsx:106
+#~ msgid "Conflicts"
+#~ msgstr "Conflicts"
+
+#: src/features/session-git.tsx:106
+msgctxt "git"
 msgid "Conflicts"
 msgstr "Conflicts"
 
@@ -1564,7 +1569,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:211
+#: src/features/session-git.tsx:213
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1634,8 +1639,12 @@ msgstr "Mode"
 msgid "Model"
 msgstr "Model"
 
-#: src/features/session-git.tsx:108
 #: src/features/session-info.tsx:59
+msgid "Modified"
+msgstr "Modified"
+
+#: src/features/session-git.tsx:108
+msgctxt "git"
 msgid "Modified"
 msgstr "Modified"
 
@@ -2686,6 +2695,11 @@ msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
 #: src/features/session-git.tsx:107
+#~ msgid "Staged"
+#~ msgstr "Staged"
+
+#: src/features/session-git.tsx:107
+msgctxt "git"
 msgid "Staged"
 msgstr "Staged"
 
@@ -3149,6 +3163,11 @@ msgid "Untitled session"
 msgstr "Untitled session"
 
 #: src/features/session-git.tsx:109
+#~ msgid "Untracked"
+#~ msgstr "Untracked"
+
+#: src/features/session-git.tsx:109
+msgctxt "git"
 msgid "Untracked"
 msgstr "Untracked"
 
