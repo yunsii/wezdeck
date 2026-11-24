@@ -28,6 +28,9 @@ import {
   SCREEN,
   COMPACT,
   SLASH,
+  RUNNING,
+  RUNNING_SHORT,
+  RUNNING_LONG,
 } from './console-interactions-samples'
 
 type Text = { zh: string; en: string }
@@ -237,7 +240,10 @@ function buildSections(
 ): Array<Section> {
   return [
     ...promptSections(keyFor).map((s) => ({ ...s, group: 'prompt' as const })),
-    ...streamSections(now).map((s) => ({ ...s, group: 'stream' as const })),
+    ...streamSections(now, keyFor).map((s) => ({
+      ...s,
+      group: 'stream' as const,
+    })),
   ]
 }
 
@@ -410,7 +416,10 @@ function promptSections(
 }
 
 /** what shows in the conversation itself: progress, compaction, commands, diffs */
-function streamSections(now: number): Array<Omit<Section, 'group'>> {
+function streamSections(
+  now: number,
+  keyFor: (name: string) => (key: string) => Promise<void>,
+): Array<Omit<Section, 'group'>> {
   return [
     {
       id: 'progress',
@@ -437,6 +446,31 @@ function streamSections(now: number): Array<Omit<Section, 'group'>> {
             busy
             activity={{ since: now - 300_000, compactSince: now - 36_000 }}
           />
+        </div>
+      ),
+    },
+    {
+      id: 'to-background',
+      title: { zh: '转到后台', en: 'Run in background' },
+      source: {
+        zh: '本轮最新一条是未返回的前台 Bash / Agent（foregroundCall）',
+        en: 'the newest call is a pending foreground Bash / Agent (foregroundCall)',
+      },
+      keys: {
+        zh: 'C-b（Claude Code 的转后台键）',
+        en: 'C-b (Claude Code’s background key)',
+      },
+      demo: (
+        <div className="grid gap-2">
+          {[RUNNING_SHORT, RUNNING_LONG].map((command) => (
+            <ChatThread
+              key={command}
+              messages={RUNNING(command)}
+              start={0}
+              busy
+              onBackground={() => void keyFor('to-background')('C-b')}
+            />
+          ))}
         </div>
       ),
     },

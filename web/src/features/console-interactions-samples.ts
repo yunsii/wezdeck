@@ -71,3 +71,16 @@ export const SLASH: Array<Message> = [
     body: 'Context usage\n  System prompt   3.1k\n  Messages       48.2k\n  Free           120k',
   },
 ]
+/** a running foreground Bash: its row offers 转到后台 (short and long command) */
+export const RUNNING = (command: string): Array<Message> => [
+  {
+    role: 'tool',
+    tool: 'Bash',
+    kind: 'command',
+    text: `Bash ${command}`,
+    pending: true,
+  },
+]
+export const RUNNING_SHORT = 'pnpm test'
+export const RUNNING_LONG =
+  'cd /home/yuns/github/wezterm-config/web && corepack pnpm exec lingui extract >/dev/null 2>&1; cd .. && scripts/dev/check-web.sh 2>&1 | tail -2'

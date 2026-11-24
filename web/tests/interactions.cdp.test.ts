@@ -3,6 +3,8 @@
 // covers: web/src/features/session-elicitation.tsx
 // covers: web/src/features/session-ask-claude.tsx
 // covers: web/src/features/console-me.tsx
+// covers: web/src/components/ui/disclosure.tsx
+// covers: web/src/features/chat-tools.tsx
 import { chromium } from '@playwright/test'
 import type { Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -31,6 +33,7 @@ describe('Interaction debugging page', () => {
     'grok-plan',
     'generic-keys',
     'progress',
+    'to-background',
     'compaction',
     'slash',
     'diff',
@@ -111,6 +114,46 @@ describe('Interaction debugging page', () => {
       .poll(() => page.getByTestId('interaction-detail').count())
       .toBe(0)
     expect(await page.locator('[data-me-page=interactions]').count()).toBe(1)
+    await context.close()
+  })
+
+  it('转到后台 follows a short command and wraps under a long one', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#to-background`)
+    const detail = page.getByTestId('interaction-detail')
+    await detail.waitFor({ timeout: 20_000 })
+    const buttons = detail.getByTestId('to-background')
+    await expect.poll(() => buttons.count()).toBe(2)
+    const layout = await detail.evaluate((root) =>
+      [...root.querySelectorAll('[data-testid=to-background]')].map((b) => {
+        const row = b.parentElement!
+        const title = row.firstElementChild!.getBoundingClientRect()
+        const button = b.getBoundingClientRect()
+        return {
+          sameLine: Math.abs(button.top - title.top) < 4,
+          gap: button.left - title.right,
+          below: button.top >= title.bottom - 1,
+          titleWidth: title.width,
+          rowWidth: row.getBoundingClientRect().width,
+        }
+      }),
+    )
+    const [short, long] = layout
+    // short: right after the command, not pushed to the row's far end
+    expect(short.sameLine).toBe(true)
+    expect(short.gap).toBeGreaterThanOrEqual(0)
+    expect(short.gap).toBeLessThan(16)
+    // long: the command keeps the whole row, the button goes under it
+    expect(long.below).toBe(true)
+    expect(long.titleWidth).toBeGreaterThan(long.rowWidth - 2)
+    await buttons.first().click()
+    await expect
+      .poll(() => page.getByTestId('interaction-log').textContent())
+      .toContain('to-background → C-b')
     await context.close()
   })
 })
