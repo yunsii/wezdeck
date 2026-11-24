@@ -1,6 +1,7 @@
 // covers: web/src/features/chat-scroll.ts web/src/features/chat-sticky.tsx
 // covers: web/src/lib/view-transition.ts web/src/router.tsx
 // covers: web/src/features/console-collab.tsx web/src/lib/collab-query.ts
+// covers: web/src/components/deck/split-column.tsx
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -187,6 +188,41 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       expect(f.some((x) => x.key.startsWith('Loading'))).toBe(false)
       expect(after.every((x) => x.scroll === 0)).toBe(true)
       expect(f.every((x) => x.vt === 0)).toBe(true)
+    },
+    60_000,
+  )
+
+  it.runIf(stack)(
+    "wheeling past the list's top leaves the pane where it is",
+    async () => {
+      const page = await (
+        await browser.newContext({ viewport: { width: 1280, height: 480 } })
+      ).newPage()
+      // a ticket with runs: its pane is taller than the window
+      await page.goto(
+        `${base}/console/collab/req-20261123-090146-a3af56?remote=1#pair=${token}`,
+      )
+      await page.locator('[data-ticket]').first().waitFor({ timeout: 20_000 })
+      await page.getByTestId('ticket-pane').locator('h1').first().waitFor()
+      await page.waitForTimeout(1500)
+      const pageScroll = () =>
+        page.evaluate(() => document.querySelector('.vt-page')?.scrollTop ?? -1)
+      await page.evaluate(() => {
+        const el = document.querySelector('.vt-page')
+        if (el) el.scrollTop = 300
+      })
+      const before = await pageScroll()
+      expect(before).toBeGreaterThan(0)
+      // the list column's own scroller sits at its top: wheel up over it
+      const box = await page.locator('[data-ticket]').first().boundingBox()
+      if (!box) throw new Error('no ticket row')
+      await page.mouse.move(box.x + 40, box.y + 10)
+      for (let i = 0; i < 5; i++) {
+        await page.mouse.wheel(0, -400)
+        await page.waitForTimeout(60)
+      }
+      await page.waitForTimeout(300)
+      expect(await pageScroll()).toBe(before)
     },
     60_000,
   )

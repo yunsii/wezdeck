@@ -31,7 +31,9 @@ export function SplitColumn({
       >
         {head}
       </div>
-      <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto pt-3 pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable]">
+      {/* overscroll contained: past its top or end the list used to chain
+          the wheel into the page, scrolling the pane beside it */}
+      <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto overscroll-contain pt-3 pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable]">
         {children}
       </div>
     </aside>
