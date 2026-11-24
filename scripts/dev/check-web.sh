@@ -16,6 +16,25 @@ logs="$(mktemp -d)"
 trap 'rm -rf "$logs"' EXIT
 cd "$web_root" || exit 1
 
+# --fix-catalogs (the pre-commit gate): re-extract the Lingui catalogs first
+# and stage them when they changed — usually only source line refs moved,
+# which used to fail the commit (`i18n:check` sync) and cost a second commit
+# or a blocked release. A new message still fails below until translated.
+if [[ "${1:-}" == --fix-catalogs ]]; then
+  catalogs=(src/locales/*/messages.po)
+  before="$(cat "${catalogs[@]}" | sha1sum)"
+  if corepack pnpm exec lingui extract >"$logs/extract.log" 2>&1; then
+    if [[ "$(cat "${catalogs[@]}" | sha1sum)" != "$before" ]]; then
+      git add -- "${catalogs[@]}"
+      printf '[web-check] i18n catalogs refreshed and staged\n'
+    fi
+  else
+    printf '[web-check] lingui extract FAILED\n' >&2
+    sed 's/^/  /' "$logs/extract.log" >&2
+    exit 1
+  fi
+fi
+
 declare -A checks=(
   [formatting]='corepack pnpm exec prettier --check .'
   [lint]='corepack pnpm exec eslint'

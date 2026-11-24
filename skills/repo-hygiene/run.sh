@@ -147,7 +147,10 @@ run_web_check_if_needed() {
         hygiene_err "web staged but check-web.sh is missing"
         return 1
       fi
-      "$checker"
+      # catalogs are derived: refresh and stage them rather than fail on
+      # moved line refs (a commit, then a follow-up commit, then a release
+      # blocked by "uncommitted tracked changes" — every web round)
+      "$checker" --fix-catalogs
       return $?
     fi
   done
