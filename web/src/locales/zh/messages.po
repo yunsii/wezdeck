@@ -191,7 +191,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:476
+#: src/features/tickets-view.tsx:477
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -239,8 +239,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:274
-#: src/features/session-list.tsx:322
+#: src/features/session-list.tsx:281
+#: src/features/session-list.tsx:329
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -256,7 +256,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:211
+#: src/features/session-list.tsx:218
 msgctxt "filter"
 msgid "All"
 msgstr "全部"
@@ -1151,7 +1151,7 @@ msgstr "授权失败（{micError}），点此重试"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/tickets-view.tsx:475
+#: src/features/tickets-view.tsx:476
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1204,7 +1204,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:226
+#: src/features/session-list.tsx:233
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1271,7 +1271,7 @@ msgstr "初始消息"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:474
+#: src/features/tickets-view.tsx:475
 msgid "Initiator"
 msgstr "发起方"
 
@@ -1467,7 +1467,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:269
+#: src/features/session-list.tsx:276
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
@@ -1551,12 +1551,12 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:252
+#: src/features/session-list.tsx:259
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:216
+#: src/features/session-list.tsx:223
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1648,11 +1648,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:190
+#: src/features/session-list.tsx:197
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:193
+#: src/features/session-list.tsx:200
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1676,11 +1676,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:137
+#: src/features/session-list.tsx:139
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:192
+#: src/features/session-list.tsx:199
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1740,11 +1740,11 @@ msgstr "未配对"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:188
+#: src/features/session-list.tsx:195
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:508
+#: src/features/tickets-view.tsx:509
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -1945,7 +1945,7 @@ msgstr "手机或平板"
 msgid "Pick a session (grouped by repository)"
 msgstr "选择会话（按仓库分组）"
 
-#: src/features/session-split.tsx:105
+#: src/features/session-split.tsx:121
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
@@ -1977,7 +1977,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/session-list.tsx:84
+#: src/features/session-list.tsx:86
 msgid "Primary"
 msgstr "主"
 
@@ -2363,7 +2363,7 @@ msgstr "改动范围"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:84
+#: src/features/session-list.tsx:86
 msgid "Secondary"
 msgstr "副"
 
@@ -2451,12 +2451,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:77
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:197
+#: src/features/session-list.tsx:204
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:242
+#: src/features/session-list.tsx:249
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2569,7 +2569,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:334
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:203
+#: src/features/session-list.tsx:210
 #: src/features/tickets-view.tsx:212
 msgid "Status"
 msgstr "状态"
@@ -3072,7 +3072,7 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/tickets-view.tsx:511
+#: src/features/tickets-view.tsx:512
 msgid "Waiting on you"
 msgstr "等你处理"
 
@@ -3213,7 +3213,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:221
+#: src/features/session-list.tsx:228
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"

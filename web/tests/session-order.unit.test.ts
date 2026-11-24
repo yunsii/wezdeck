@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildSessionTree, nextInCycle } from '#/features/session-order'
+import {
+  RECENT_MS,
+  buildSessionTree,
+  inRunning,
+  nextInCycle,
+} from '#/features/session-order'
 import type { SessionCard } from '#/features/console-sessions'
 
 const card = (over: Partial<SessionCard>): SessionCard => ({
@@ -125,5 +130,33 @@ describe('repo names follow the desk aliases', () => {
       card({ id: 'a', repo: 'fe1', repo_root: '/g/fe1', worktree: '/g/fe1' }),
     ])
     expect(tree[0]?.label).toBe('fe1')
+  })
+})
+
+describe('inRunning (运行中)', () => {
+  const now = 10_000_000
+  it('mid-turn is running; background-only is not', () => {
+    expect(inRunning(card({ status: 'running', ts: 0 }), now)).toBe(true)
+    expect(
+      inRunning(
+        card({ status: 'running', running_kind: 'background', ts: 0 }),
+        now,
+      ),
+    ).toBe(false)
+  })
+  it('keeps a turn that ended under RECENT_MS ago, then lets it go', () => {
+    expect(inRunning(card({ status: 'idle', ts: now - 1_000 }), now)).toBe(true)
+    expect(
+      inRunning(card({ status: 'idle', ts: now - RECENT_MS - 1 }), now),
+    ).toBe(false)
+  })
+  it('waiting on you is never running, however recent', () => {
+    expect(inRunning(card({ status: 'waiting', ts: now }), now)).toBe(false)
+    expect(
+      inRunning(
+        card({ status: 'running', waiting_kind: 'question', ts: now }),
+        now,
+      ),
+    ).toBe(false)
   })
 })

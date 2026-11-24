@@ -92,6 +92,12 @@ html[data-theme='dark'] .key-press:active {
   box-shadow: inset 3px 0 0 var(--brand-running);
 }
 
+/* pressed while selected: no veil — the item is already open, so a tap does
+   nothing, and the veil (a box-shadow like the bar) wiped the bar: a flash */
+.row-selected.key-press:active {
+  box-shadow: inset 3px 0 0 var(--brand-running);
+}
+
 html[data-theme='dark'] .row-selected {
   background: color-mix(
     in srgb,

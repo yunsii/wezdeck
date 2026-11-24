@@ -2,14 +2,15 @@
 // beside it (like 工单's inspector) — no trip back to the list to switch.
 // The list is sticky with its own scroll; the conversation keeps the page
 // scroll, so the chat's pin-to-bottom and jump-to-latest work unchanged.
-// j / k move to the next / previous session in the list's order, the URL
-// follows (replace). Opening 会话 with no session picked goes to the last one
+// j / k move to the next / previous session as the list shows it (its
+// filter and held order), the URL follows (replace). Opening 会话 with no session picked goes to the last one
 // this browser opened (else the top of the list), so the pane is never an
 // empty hint while sessions exist. A phone keeps list → pushed detail.
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
+import { idInUrl } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { SessionDetail } from './console-sessions'
@@ -18,9 +19,20 @@ import { nextInCycle } from './session-order'
 import { useSessionNav } from './session-switcher'
 import { CopyKey, useCopySessionReference } from './copy-reference'
 
+/** j / k: the rows as the list shows them — its filter and its held order */
+function listedIds() {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>('.vt-split-list [data-session]'),
+    (el) => el.dataset.session ?? '',
+  ).filter(Boolean)
+}
+
 function useListKeys(current: string) {
   const nav = useSessionNav(current)
-  const ids = nav.ordered.map((row) => row.id)
+  // read at the keypress, not captured: the URL first (idInUrl), since the
+  // page re-renders only after the switch's view transition
+  const now = useRef({ current, nav })
+  now.current = { current, nav }
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -32,14 +44,18 @@ function useListKeys(current: string) {
         target?.closest('input, textarea, select, [contenteditable="true"]')
       )
         return
-      const next = nextInCycle(ids, current, event.key === 'j' ? 1 : -1)
+      const next = nextInCycle(
+        listedIds(),
+        idInUrl('sessions') || now.current.current,
+        event.key === 'j' ? 1 : -1,
+      )
       if (!next) return
       event.preventDefault()
-      nav.go(next)
+      now.current.nav.go(next)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [ids.join(' '), current, nav])
+  }, [])
 }
 
 const LAST_KEY = 'wezdeck-last-session'

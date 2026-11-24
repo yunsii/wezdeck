@@ -30,3 +30,15 @@ export function RememberOpened({
   }, [storageKey, id])
   return null
 }
+
+/**
+ * The id in the URL after `/console/<section>/`, read at a keypress: the URL
+ * moves at once, the page re-renders only when the view transition ends, so
+ * a j pressed in between used the previous item and went nowhere.
+ */
+export function idInUrl(section: string) {
+  const match = new RegExp(`/console/${section}/([^/?#]+)`).exec(
+    window.location.pathname,
+  )
+  return match ? decodeURIComponent(match[1]) : ''
+}

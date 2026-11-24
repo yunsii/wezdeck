@@ -8,14 +8,14 @@
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 import { RemoteBadge } from './remote-badge'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { useGoBack } from '#/lib/go-back'
-import { RememberOpened, lastOpened } from '#/lib/last-opened'
+import { RememberOpened, idInUrl, lastOpened } from '#/lib/last-opened'
 import { useTicketHealth, useTicketList } from '#/lib/ticket-sync'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
@@ -438,7 +438,10 @@ function TicketListKeys({
   current: string
   onGo: (id: string) => void
 }) {
-  const key = ids.join(' ')
+  // read at the keypress, the URL first (idInUrl): the page re-renders only
+  // after the switch's view transition
+  const now = useRef({ ids, current, onGo })
+  now.current = { ids, current, onGo }
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -452,18 +455,16 @@ function TicketListKeys({
         document.querySelector('[role="dialog"]')
       )
         return
-      const next = nextInCycle(
-        key.split(' '),
-        current,
-        event.key === 'j' ? 1 : -1,
-      )
+      const { ids: list, current: at, onGo: go } = now.current
+      const fromUrl = idInUrl('collab') || idInUrl('inbox')
+      const next = nextInCycle(list, fromUrl || at, event.key === 'j' ? 1 : -1)
       if (!next) return
       event.preventDefault()
-      onGo(next)
+      go(next)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [key, current, onGo])
+  }, [])
   return null
 }
 

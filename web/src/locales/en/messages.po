@@ -191,7 +191,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:476
+#: src/features/tickets-view.tsx:477
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -239,8 +239,8 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:274
-#: src/features/session-list.tsx:322
+#: src/features/session-list.tsx:281
+#: src/features/session-list.tsx:329
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -256,7 +256,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:211
+#: src/features/session-list.tsx:218
 msgctxt "filter"
 msgid "All"
 msgstr "All"
@@ -1151,7 +1151,7 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/tickets-view.tsx:475
+#: src/features/tickets-view.tsx:476
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1204,7 +1204,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:226
+#: src/features/session-list.tsx:233
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1271,7 +1271,7 @@ msgstr "Initial prompt"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:474
+#: src/features/tickets-view.tsx:475
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -1467,7 +1467,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:269
+#: src/features/session-list.tsx:276
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "Loading…"
@@ -1551,12 +1551,12 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:252
+#: src/features/session-list.tsx:259
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:216
+#: src/features/session-list.tsx:223
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1648,11 +1648,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:190
+#: src/features/session-list.tsx:197
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:193
+#: src/features/session-list.tsx:200
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1676,11 +1676,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:137
+#: src/features/session-list.tsx:139
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:192
+#: src/features/session-list.tsx:199
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1740,11 +1740,11 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:188
+#: src/features/session-list.tsx:195
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:508
+#: src/features/tickets-view.tsx:509
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -1945,7 +1945,7 @@ msgstr "Phone or tablet"
 msgid "Pick a session (grouped by repository)"
 msgstr "Pick a session (grouped by repository)"
 
-#: src/features/session-split.tsx:105
+#: src/features/session-split.tsx:121
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "Pick a session on the left. j / k move through the list."
 
@@ -1977,7 +1977,7 @@ msgstr "Previous / next image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/session-list.tsx:84
+#: src/features/session-list.tsx:86
 msgid "Primary"
 msgstr "Primary"
 
@@ -2363,7 +2363,7 @@ msgstr "Scope"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:84
+#: src/features/session-list.tsx:86
 msgid "Secondary"
 msgstr "Secondary"
 
@@ -2451,12 +2451,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:77
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:197
+#: src/features/session-list.tsx:204
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:242
+#: src/features/session-list.tsx:249
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2569,7 +2569,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:334
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:203
+#: src/features/session-list.tsx:210
 #: src/features/tickets-view.tsx:212
 msgid "Status"
 msgstr "Status"
@@ -3072,7 +3072,7 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/tickets-view.tsx:511
+#: src/features/tickets-view.tsx:512
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
@@ -3213,7 +3213,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:221
+#: src/features/session-list.tsx:228
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"

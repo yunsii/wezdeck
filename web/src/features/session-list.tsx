@@ -22,15 +22,16 @@ import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton } from './session-new'
 import {
   buildSessionTree,
+  inRunning,
   repoName,
   visitOf,
   worktreeKey,
 } from './session-order'
+import { useFrozenVisits, useStickyMembers } from './session-stable'
 import { useAgo } from './tickets-view'
 import { RowCopyButton, useCopySessionReference } from './copy-reference'
 import {
   humanPrompt,
-  isBusy,
   needsYou,
   sessionTone,
   useSessions,
@@ -45,8 +46,9 @@ export type SessionFilter = 'all' | 'waiting' | 'running' | 'idle'
 const FILTERS: Record<SessionFilter, (row: SessionCard) => boolean> = {
   all: () => true,
   waiting: (row) => needsYou(row),
-  running: (row) => !needsYou(row) && isBusy(row),
-  idle: (row) => !needsYou(row) && !isBusy(row),
+  // a turn that just ended stays 运行中 for a few minutes (inRunning)
+  running: (row) => inRunning(row, Date.now()),
+  idle: (row) => !needsYou(row) && !inRunning(row, Date.now()),
 }
 
 const FILTER_KEY = 'wezdeck-session-filter'
@@ -167,17 +169,22 @@ export function SessionList({
       // the choice just won't be remembered
     }
   }
-  const rows = sessions.data?.sessions ?? []
-  const phone = consoleVisits()
+  // visits pinned once seen and rows kept once shown (session-stable.ts):
+  // the list does not reshuffle or empty itself while you work through it
+  const rows = useFrozenVisits(sessions.data?.sessions ?? [], consoleVisits())
   const waiting = rows
     .filter(needsYou)
-    .sort((a, b) => visitOf(b, phone) - visitOf(a, phone))
+    .sort((a, b) => visitOf(b, {}) - visitOf(a, {}))
+  const kept = useStickyMembers(
+    filter,
+    rows.filter(FILTERS[filter]).map((row) => row.id),
+  )
   // 全部: the waiting band on top, the tree holds the rest
   const treeRows =
     filter === 'all'
       ? rows.filter((row) => !needsYou(row))
-      : rows.filter(FILTERS[filter])
-  const tree = buildSessionTree(treeRows, phone)
+      : rows.filter((row) => kept.has(row.id))
+  const tree = buildSessionTree(treeRows, {})
   const count = (value: SessionFilter) => rows.filter(FILTERS[value]).length
   const waitingCount = count('waiting')
   const runningCount = count('running')

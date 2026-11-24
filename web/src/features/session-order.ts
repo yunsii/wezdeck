@@ -107,3 +107,20 @@ export function nextInCycle(
   if (at < 0) return step > 0 ? ids[0] : ids.at(-1)
   return ids[(at + step + ids.length) % ids.length]
 }
+
+/** how long 运行中 keeps a session after its turn ends */
+export const RECENT_MS = 3 * 60_000
+
+/**
+ * 运行中: mid-turn, or a turn that ended under RECENT_MS ago (`ts` is the
+ * newest turn) — a session that just finished used to drop out of the
+ * filter the moment it stopped. Waiting on you is 等你, never this.
+ */
+export function inRunning(
+  row: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
+  now: number,
+) {
+  if (row.waiting_kind || row.status === 'waiting') return false
+  const busy = row.status === 'running' && row.running_kind !== 'background'
+  return busy || now - row.ts < RECENT_MS
+}

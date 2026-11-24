@@ -53,7 +53,19 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
    `Alt+x`, `session_visits.go`) and a visit from this web console
    (`lib/session-visits.ts`); never-visited groups (ticket agents) sink by
-   name (`features/session-order.ts`); 待跟进 to-dos at the bottom. In a
+   name (`features/session-order.ts`); 待跟进 to-dos at the bottom. The
+   list holds still while you use it (`session-stable.ts`, 2026-11-24): a
+   worktree's visit is read once, when the list first sees it, so opening a
+   session no longer lifts its group under the cursor (leaving 会话 and
+   coming back re-reads); a row shown under the current filter stays until
+   the filter changes; 运行中 also keeps a session for 3 min after its turn
+   ends (`inRunning`, the card's newest-turn `ts`), so a finished one no
+   longer vanishes the moment it stops. Wide, j / k walk the rows the list
+   shows (its filter, its held order) and read the current item from the
+   URL at the keypress — the page re-renders only after the switch's view
+   transition, and a quick j used the previous item and went nowhere. The
+   open row is an accent tint + bar (`.row-selected`); pressing it adds no
+   veil, which used to wipe the bar for a frame. In a
    session, wezdeck's session keys carry over (`session-switcher.tsx`):
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
    session waiting on you / finished / running in the list's order — on the
