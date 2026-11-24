@@ -169,7 +169,7 @@ export function ConsoleDiagnosticsPage() {
         <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-5">
           <aside
             aria-label={t`Log stream`}
-            className="sticky top-0 grid max-h-[calc(100dvh-6rem)] content-start gap-3 overflow-y-auto pr-1"
+            className="sticky top-4 grid max-h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto pr-1"
           >
             {filters}
             {list}
