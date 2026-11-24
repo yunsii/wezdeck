@@ -5,7 +5,7 @@
 // delays the switch, and the section's data is already warm (console-shell
 // prefetch + the persisted cache). Within a section a phone pushes the new
 // page in from the right (forward) and back (back); on a wide screen the
-// split list stays and only the pane beside it changes (within).
+// split swaps its pane at once, no transition (it read as a flash).
 
 /** console path without the locale prefix, or null outside the console */
 export function consolePath(pathname: string): string | null {
@@ -37,6 +37,12 @@ export const isFirstLevel = (pathname: string) => {
   return rank >= 0 && rank < 10
 }
 
+/** the split layout's breakpoint (useIsWide); false outside a browser */
+const isWideNow = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(min-width: 768px)').matches
+
 type Loc = { pathname: string; state?: { __TSR_index?: number } }
 type ChangeInfo = { fromLocation?: Loc; toLocation: Loc; pathChanged: boolean }
 
@@ -54,11 +60,10 @@ function sectionOf(pathname: string) {
  * to an earlier entry is always "back" — and the depth only when the
  * position does not change.
  */
-export function transitionTypes({
-  fromLocation,
-  toLocation,
-  pathChanged,
-}: ChangeInfo): Array<string> | false {
+export function transitionTypes(
+  { fromLocation, toLocation, pathChanged }: ChangeInfo,
+  wide = isWideNow(),
+): Array<string> | false {
   if (!fromLocation || !pathChanged) return false
   const from = routeRank(fromLocation.pathname)
   const to = routeRank(toLocation.pathname)
@@ -66,6 +71,10 @@ export function transitionTypes({
   // another section (sidebar, tabs, palette): instant, whatever the depths
   if (sectionOf(fromLocation.pathname) !== sectionOf(toLocation.pathname))
     return false
+  // a wide split: the list stays and the pane swaps at once — the fade
+  // through blanked the pane for ~100 ms on every switch (a flash with j / k
+  // and every click), and the snapshot held the re-render back meanwhile
+  if (wide) return false
   if (from === to) return ['fade', 'within']
   const fromIndex = fromLocation.state?.__TSR_index
   const toIndex = toLocation.state?.__TSR_index

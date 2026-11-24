@@ -100,3 +100,19 @@ describe('transition direction', () => {
     expect(transitionTypes(nav('/zh', '/zh/console/sessions'))).toBe(false)
   })
 })
+
+describe('wide split', () => {
+  it('switching within a section is instant: no fade through the pane', () => {
+    expect(
+      transitionTypes(nav('/console/sessions/a', '/console/sessions/b'), true),
+    ).toBe(false)
+    expect(
+      transitionTypes(nav('/console/collab', '/console/collab/t1'), true),
+    ).toBe(false)
+  })
+  it('a phone still pushes and fades', () => {
+    expect(
+      transitionTypes(nav('/console/sessions/a', '/console/sessions/b'), false),
+    ).toEqual(['fade', 'within'])
+  })
+})

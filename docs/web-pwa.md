@@ -361,10 +361,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   IndexedDB, and every section's route code is preloaded once idle
   (`useWarmSections`). Within a section (`within`) mobile pushes like iOS —
   the new page slides in whole and opaque with a shadow, the old one steps
-  back 28 %; back reverses it with the leaving page on top — and a wide
-  screen fades out, then nudges the new page in 16 px; in a wide split
-  (会话, 我的) the list (`vt-split-list`) holds still and only the pane
-  (`vt-split-pane`) fades through. The content column (`vt-page`) has its own
+  back 28 %; back reverses it with the leaving page on top. A wide screen
+  has no transition within a section (2026-11-24): the split (会话, 工单,
+  诊断, 我的) swaps its pane at once — the pane's fade-through blanked it
+  for ~100 ms on every switch, a flash with j / k and every click, and the
+  snapshot held the re-render back. The content column (`vt-page`) has its own
   background and the snapshots no plus-lighter blend: a transparent snapshot
   of two pages blended together was the ghost on push. The shell reads the
   resolved location, so on back its title does not switch before the page

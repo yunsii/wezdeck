@@ -39,10 +39,11 @@ html[data-theme='dark'] {
  *   shell   status band, sidebar, tab bar: never move (old hidden, new as is)
  *   page    the content column: a section switch has no transition at all;
  *           within a section a phone pushes (iOS: the new page slides in
- *           whole and opaque, the old one steps back a quarter), a wide
- *           screen fades out, then nudges the new page in
- *   split   within one section on a wide screen the list stays still and
- *           only the pane beside it fades through
+ *           whole and opaque, the old one steps back a quarter); a wide
+ *           screen has none within a section either — its split swaps the
+ *           pane at once (the fade-through read as a flash)
+ *   split   the split-list / split-pane names below only matter if a wide
+ *           transition comes back (transitionTypes returns false there)
  * The root keeps only the background. Snapshots stack opaque: the content
  * column has its own background (vt-page) and no plus-lighter blend — two
  * pages added together read as a ghost. Toasts never move with a page.
