@@ -148,8 +148,7 @@ function TicketKey({
         <span className="pt-0.5 text-meta text-brand-label">
           {ago(ticket.updated_at)}
         </span>
-        {/* pr: room for the copy key, a sibling of the link (no button in an a) */}
-        <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-9 md:pr-7">
+        <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn('text-meta font-medium', toneText[tone])}>
             {statusLabel(ticket)}
           </span>

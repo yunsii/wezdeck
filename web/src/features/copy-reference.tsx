@@ -75,7 +75,8 @@ export function useCopySessionReference(): CopyFn {
  * The row's copy key — # for "reference", not the generic copy glyph — a
  * sibling of the row link (no button inside an a): on a phone always shown,
  * wide on hover / focus. The row's container needs
- * `group/row relative` and room at its bottom-right.
+ * `group/row relative`; the key sits in the status dot's column, under it
+ * (the row's px-4 keeps that column empty below the dot).
  */
 export function RowCopyButton({ id, copy }: { id: string; copy: CopyFn }) {
   const { t } = useLingui()
@@ -95,16 +96,16 @@ export function RowCopyButton({ id, copy }: { id: string; copy: CopyFn }) {
         })
       }}
       className={cn(
-        // under the time, right edges lined up (the row's px-4)
-        'absolute right-1 bottom-1 grid size-10 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running md:right-2 md:size-7',
+        // centred on the dot's column (px-4 + half a 12 px dot ≈ 22 px)
+        'absolute bottom-1 left-0.5 grid size-10 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running md:bottom-1.5 md:left-2.5 md:size-6',
         !copied &&
           'md:opacity-0 md:group-hover/row:opacity-100 md:focus-visible:opacity-100',
       )}
     >
       {copied ? (
-        <Check size={14} className="text-brand-done" aria-hidden />
+        <Check size={13} className="text-brand-done" aria-hidden />
       ) : (
-        <Hash size={14} aria-hidden />
+        <Hash size={13} aria-hidden />
       )}
     </Button>
   )

@@ -761,8 +761,8 @@ msgstr "Copy error"
 msgid "Copy raw line"
 msgstr "Copy raw line"
 
-#: src/features/copy-reference.tsx:87
 #: src/features/copy-reference.tsx:88
+#: src/features/copy-reference.tsx:89
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "Copy reference"

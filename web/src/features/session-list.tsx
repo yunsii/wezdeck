@@ -134,7 +134,7 @@ function SessionRow({
             <span className="truncate text-caption text-brand-muted">
               {prompt || t`No human message yet`}
             </span>
-            <span className="flex min-w-0 flex-wrap items-center gap-1 pr-8 md:pr-6">
+            <span className="flex min-w-0 flex-wrap items-center gap-1">
               {showRepo && repoName(row) ? tag(repoName(row)) : null}
               {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
               {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}

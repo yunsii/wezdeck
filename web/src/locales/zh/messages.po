@@ -761,8 +761,8 @@ msgstr "复制错误信息"
 msgid "Copy raw line"
 msgstr "复制原始日志"
 
-#: src/features/copy-reference.tsx:87
 #: src/features/copy-reference.tsx:88
+#: src/features/copy-reference.tsx:89
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "复制引用"
