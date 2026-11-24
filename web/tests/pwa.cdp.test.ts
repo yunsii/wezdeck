@@ -72,6 +72,13 @@ describe('PWA shell on phone and desktop', () => {
       .getByRole('heading', { name: '工单动态' })
       .first()
       .waitFor({ timeout: 15_000 })
+    // a page under 工单 on a phone, not a tab: back returns to 工单 (it was
+    // collapsed onto the first entry and back left the PWA)
+    await page.goBack()
+    await page.waitForURL(/\/console\/collab$/)
+    // 运行与花费 opens in a sheet
+    await page.getByRole('button', { name: /运行与花费/ }).click()
+    await page.getByRole('dialog').waitFor({ timeout: 5_000 })
     await page.close()
   }, 60_000)
 

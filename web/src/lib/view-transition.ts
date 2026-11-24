@@ -32,9 +32,18 @@ export function routeRank(pathname: string): number {
   return at >= 0 ? at : 10
 }
 
+/** how many FIRST_LEVEL entries are the phone's bottom tabs */
+const PHONE_TABS = 3
+
+/**
+ * A first-level page holds the first history entry (go-to-tab.ts). On a
+ * phone only the bottom tabs are: 工单动态 / 待处理 / 诊断 are opened from a
+ * page there, and collapsing them onto the first entry dropped that page —
+ * back from 工单动态 left the PWA instead of returning to 工单.
+ */
 export const isFirstLevel = (pathname: string) => {
   const rank = routeRank(pathname)
-  return rank >= 0 && rank < 10
+  return rank >= 0 && rank < (isWideNow() ? 10 : PHONE_TABS)
 }
 
 /** the split layout's breakpoint (useIsWide); false outside a browser */

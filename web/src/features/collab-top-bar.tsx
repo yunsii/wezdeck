@@ -9,7 +9,6 @@ import { useState } from 'react'
 
 import { Sheet } from '#/components/ui/sheet'
 import { useIsWide } from '#/lib/use-media'
-import { cn } from '#/lib/utils'
 import { ActivityLink } from './console-activity'
 import { useMetricsSummary } from './collab-metrics'
 import { NewTicketButton } from './ticket-new'
@@ -63,32 +62,35 @@ export function CollabTopBar({
       </div>
     )
   // phone: one quiet line of two text links, not two cards — the list
-  // starts higher (it held the first screen to three tickets)
+  // starts higher (it held the first screen to three tickets). The band opens
+  // in a sheet like on a wide screen: unfolded inline it pushed the list down
   const link =
     'inline-flex min-h-9 items-center gap-1 text-caption text-brand-muted'
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-      <div className="-mt-2 flex items-center gap-5">
-        <Button
-          variant="plain"
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-          className={link}
-        >
-          {t`Runs and cost`}
-          <span aria-hidden className={cn('transition', open && 'rotate-90')}>
-            ›
-          </span>
-        </Button>
-        <ActivityLink className={link} />
-        {actions ? (
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            {actions}
-          </div>
-        ) : null}
-      </div>
-      {open ? <div className="key rounded-xl p-2">{band}</div> : null}
+    <div className="-mt-2 flex items-center gap-5">
+      <Button
+        variant="plain"
+        type="button"
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+        className={link}
+      >
+        {t`Runs and cost`}
+        <span aria-hidden>›</span>
+      </Button>
+      <ActivityLink className={link} />
+      {actions ? (
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {actions}
+        </div>
+      ) : null}
+      <Sheet
+        open={open}
+        onOpenChange={setOpen}
+        title={t`Runs, cache hit and cost`}
+      >
+        <div className="px-3 pb-3">{band}</div>
+      </Sheet>
     </div>
   )
 }

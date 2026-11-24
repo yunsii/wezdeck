@@ -848,7 +848,7 @@ msgstr "正在创建工作树…"
 msgid "Creating…"
 msgstr "创建中…"
 
-#: src/features/collab-top-bar.tsx:36
+#: src/features/collab-top-bar.tsx:35
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
@@ -2320,13 +2320,14 @@ msgstr "运行子状态"
 msgid "Runs"
 msgstr "运行次数"
 
-#: src/features/collab-top-bar.tsx:79
+#: src/features/collab-top-bar.tsx:78
 msgid "Runs and cost"
 msgstr "运行与花费"
 
+#: src/features/collab-top-bar.tsx:45
 #: src/features/collab-top-bar.tsx:46
-#: src/features/collab-top-bar.tsx:47
-#: src/features/collab-top-bar.tsx:58
+#: src/features/collab-top-bar.tsx:57
+#: src/features/collab-top-bar.tsx:90
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 

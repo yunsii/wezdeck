@@ -39,6 +39,24 @@ describe('page levels', () => {
     ])
       expect(isFirstLevel(p)).toBe(false)
   })
+  // back from 工单动态 left the PWA: a phone collapsed it onto the first
+  // history entry like a bottom tab, dropping the 工单 page it came from
+  it('desktop-only sections are first level only on a wide screen', () => {
+    const extra = [
+      '/zh/console/activity',
+      '/console/inbox',
+      '/console/diagnostics',
+    ]
+    for (const p of extra) expect(isFirstLevel(p)).toBe(false) // phone
+    const media = globalThis.window
+    // @ts-expect-error a minimal window for isWideNow
+    globalThis.window = { matchMedia: () => ({ matches: true }) }
+    try {
+      for (const p of extra) expect(isFirstLevel(p)).toBe(true)
+    } finally {
+      globalThis.window = media
+    }
+  })
   it('phone tabs rank left to right: sessions, tickets, me', () => {
     expect(routeRank('/zh/console/sessions')).toBeLessThan(
       routeRank('/zh/console/collab'),

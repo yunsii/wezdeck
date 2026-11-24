@@ -848,7 +848,7 @@ msgstr "Creating the worktree…"
 msgid "Creating…"
 msgstr "Creating…"
 
-#: src/features/collab-top-bar.tsx:36
+#: src/features/collab-top-bar.tsx:35
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -2320,13 +2320,14 @@ msgstr "Running substate"
 msgid "Runs"
 msgstr "Runs"
 
-#: src/features/collab-top-bar.tsx:79
+#: src/features/collab-top-bar.tsx:78
 msgid "Runs and cost"
 msgstr "Runs and cost"
 
+#: src/features/collab-top-bar.tsx:45
 #: src/features/collab-top-bar.tsx:46
-#: src/features/collab-top-bar.tsx:47
-#: src/features/collab-top-bar.tsx:58
+#: src/features/collab-top-bar.tsx:57
+#: src/features/collab-top-bar.tsx:90
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 

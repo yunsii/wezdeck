@@ -332,8 +332,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   It reads TanStack Router's `useCanGoBack` (the in-app index in each
   entry's state), never `window.history.length`, which counts pages from
   before the app — "back" used to leave the app from a directly opened page.
-- First-level pages (the bottom tabs and the desktop sections) only ever
-  hold the first history entry, forge's rule (`lib/go-to-tab.ts`, Android
+- First-level pages (the bottom tabs; on a wide screen also the sidebar's
+  工单动态 / 待处理 / 诊断 — on a phone those are pages pushed from a tab, and
+  collapsing them dropped the tab page so back left the PWA,
+  `isFirstLevel`) only ever hold the first history entry, forge's rule (`lib/go-to-tab.ts`, Android
   Navigation's `popUpTo(start)`): back on one leaves the app. Tabs, sidebar
   links and `g`+letter go back to entry 0 in one step, then replace it;
   `keepTabsFirst` collapses any first-level page found at index > 0 (entries
