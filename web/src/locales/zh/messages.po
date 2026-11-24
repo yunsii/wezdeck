@@ -362,7 +362,7 @@ msgstr "对前提提出了质疑"
 #~ msgid "At the desk"
 #~ msgstr "主机上"
 
-#: src/features/console-keys.tsx:136
+#: src/features/console-keys.tsx:162
 msgid "At the desk: {host}"
 msgstr "主机上：{host}"
 
@@ -507,8 +507,12 @@ msgid "Close"
 msgstr "关闭"
 
 #: src/features/console-keys.tsx:30
-msgid "Close a sheet or dialog"
-msgstr "关闭面板或对话框"
+#~ msgid "Close a sheet or dialog"
+#~ msgstr "关闭面板或对话框"
+
+#: src/features/console-keys.tsx:32
+msgid "Close a sheet, or let go of a focused button"
+msgstr "关闭面板；或让按钮、链接失去焦点"
 
 #: src/features/session-commands.tsx:208
 msgid "Close commands"
@@ -522,7 +526,7 @@ msgstr "收起按键"
 #~ msgid "Close requested"
 #~ msgstr "已请求关闭"
 
-#: src/features/console-keys.tsx:83
+#: src/features/console-keys.tsx:86
 msgid "Close the viewer"
 msgstr "关闭图片查看"
 
@@ -595,7 +599,7 @@ msgstr "正在压缩上下文"
 msgid "compacting the context"
 msgstr "正在压缩上下文"
 
-#: src/features/console-keys.tsx:61
+#: src/features/console-keys.tsx:64
 msgid "Composer"
 msgstr "输入框"
 
@@ -1149,7 +1153,7 @@ msgstr "图片"
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/console-keys.tsx:80
+#: src/features/console-keys.tsx:83
 msgid "Image viewer"
 msgstr "图片查看"
 
@@ -1264,7 +1268,7 @@ msgstr "继续规划"
 #~ msgid "Keyboard first"
 #~ msgstr "键盘优先"
 
-#: src/features/console-keys.tsx:154
+#: src/features/console-keys.tsx:180
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
@@ -1334,7 +1338,7 @@ msgstr "字母"
 #~ msgid "Letter keys work when no text box has the caret. \"At the desk\" is the same action in WezTerm on the host. Chrome may keep Ctrl+N for a new window; c does the same."
 #~ msgstr "字母键只在光标不在输入框里时生效。「主机上」是 WezTerm 里做同一件事的按键。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
-#: src/features/console-keys.tsx:160
+#: src/features/console-keys.tsx:186
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
@@ -1476,7 +1480,7 @@ msgstr "等你"
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "等你 {waitingCount}"
 
-#: src/features/console-keys.tsx:65
+#: src/features/console-keys.tsx:68
 msgid "New line"
 msgstr "换行"
 
@@ -1485,7 +1489,7 @@ msgstr "换行"
 msgid "New session"
 msgstr "新会话"
 
-#: src/features/console-keys.tsx:55
+#: src/features/console-keys.tsx:58
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
@@ -1497,7 +1501,7 @@ msgstr "新会话（c）"
 msgid "New session title"
 msgstr "新的会话标题"
 
-#: src/features/console-keys.tsx:76
+#: src/features/console-keys.tsx:79
 #: src/features/ticket-new.tsx:66
 #: src/features/ticket-new.tsx:161
 msgid "New ticket"
@@ -1519,19 +1523,19 @@ msgstr "有新版本"
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
 
-#: src/features/console-keys.tsx:45
+#: src/features/console-keys.tsx:48
 msgid "Next / previous running session"
 msgstr "下一个 / 上一个运行中的会话"
 
-#: src/features/console-keys.tsx:36
+#: src/features/console-keys.tsx:39
 msgid "Next / previous session in the list"
 msgstr "列表里的下一个 / 上一个会话"
 
-#: src/features/console-keys.tsx:75
+#: src/features/console-keys.tsx:78
 msgid "Next / previous ticket"
 msgstr "下一张 / 上一张工单"
 
-#: src/features/console-keys.tsx:42
+#: src/features/console-keys.tsx:45
 msgid "Next finished session"
 msgstr "下一个已完成的会话"
 
@@ -1539,7 +1543,7 @@ msgstr "下一个已完成的会话"
 msgid "Next image"
 msgstr "下一张"
 
-#: src/features/console-keys.tsx:39
+#: src/features/console-keys.tsx:42
 msgid "Next session waiting on you"
 msgstr "下一个等你处理的会话"
 
@@ -1851,7 +1855,7 @@ msgstr "手机或平板"
 #~ msgid "Phone writing"
 #~ msgstr "手机写入"
 
-#: src/features/console-keys.tsx:50
+#: src/features/console-keys.tsx:53
 msgid "Pick a session (grouped by repository)"
 msgstr "选择会话（按仓库分组）"
 
@@ -1875,7 +1879,7 @@ msgstr "计划确认"
 msgid "Preview image"
 msgstr "预览图片"
 
-#: src/features/console-keys.tsx:82
+#: src/features/console-keys.tsx:85
 msgid "Previous / next image"
 msgstr "上一张 / 下一张图片"
 
@@ -1907,7 +1911,7 @@ msgstr "填进消息"
 msgid "Put into the message for this agent"
 msgstr "填进消息，交给这个 agent"
 
-#: src/features/console-keys.tsx:63
+#: src/features/console-keys.tsx:66
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
@@ -2234,7 +2238,7 @@ msgstr "Runtime 报告的原因："
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 
-#: src/features/console-keys.tsx:131
+#: src/features/console-keys.tsx:157
 msgid "Same at the desk"
 msgstr "主机同键"
 
@@ -2278,12 +2282,12 @@ msgstr "最近活动"
 #~ msgid "Select a worktree to see its agent status."
 #~ msgstr "选一个 worktree，查看它的 Agent 状态。"
 
-#: src/features/console-keys.tsx:64
+#: src/features/console-keys.tsx:67
 #: src/features/session-composer.tsx:544
 msgid "Send"
 msgstr "发送"
 
-#: src/features/console-keys.tsx:68
+#: src/features/console-keys.tsx:71
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "发送（触屏上回车是换行，这个键也能发送）"
 
@@ -2331,7 +2335,7 @@ msgstr "会话信息"
 #~ msgid "Session jump failed"
 #~ msgstr "会话跳转失败"
 
-#: src/features/console-keys.tsx:34
+#: src/features/console-keys.tsx:37
 msgid "Session pages"
 msgstr "会话"
 
@@ -2368,7 +2372,7 @@ msgstr "已交付"
 #~ msgid "Shipped"
 #~ msgstr "已交付"
 
-#: src/features/console-keys.tsx:213
+#: src/features/console-keys.tsx:241
 msgid "Shortcuts"
 msgstr "键盘快捷键"
 
@@ -2661,7 +2665,7 @@ msgstr "工单编号"
 msgid "Ticket activity"
 msgstr "工单动态"
 
-#: src/features/console-keys.tsx:73
+#: src/features/console-keys.tsx:76
 msgid "Ticket pages"
 msgstr "工单"
 

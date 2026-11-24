@@ -198,6 +198,15 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await keysSheet.waitFor({ timeout: 2_000 })
     await page.keyboard.press('Escape')
     await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+    // focus came back to the entry; Esc lets go of it, then Space reaches
+    // the composer instead of pressing the entry again
+    await page.keyboard.press('Escape')
+    expect(
+      await page.evaluate(() => document.activeElement === document.body),
+    ).toBe(true)
+    await page.keyboard.press('Space')
+    expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
+    expect(await keysSheet.isVisible()).toBe(false)
 
     // Ctrl+N from inside the composer opens 新会话
     await box.click()

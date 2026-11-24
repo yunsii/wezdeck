@@ -123,8 +123,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    beside them (default 连接; group links replace). Sheets become a centred
    dialog (fade + scale, no grab handle). 工单's run / cache / cost band is
    folded into one Disclosure (the sidebar links 工单动态).
-6. **Desktop keyboard**: `j`/`k` move, `Esc` back, `/` filter, `g`+letter
-   section jump; on a session page `Space` puts the caret in the composer
+6. **Desktop keyboard**: `j`/`k` move, `Esc` closes a sheet and, with none
+   open, lets go of a focused button / link (closing a sheet hands focus
+   back to its trigger, which kept Space pressing it), `/` filter,
+   `g`+letter section jump; on a session page `Space` puts the caret in the composer
    (`composer-keys.ts`; not while typing, on a button / link, or with a
    sheet open), `Ctrl/⌘+N` (even from the composer) or `c` opens 新会话,
    `Alt+J/K/L` jump like the desk and `Alt+G` / `Alt+X` / `Alt+/` open the

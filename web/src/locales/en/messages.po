@@ -362,7 +362,7 @@ msgstr "assumptions challenged"
 #~ msgid "At the desk"
 #~ msgstr "At the desk"
 
-#: src/features/console-keys.tsx:136
+#: src/features/console-keys.tsx:162
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
@@ -507,8 +507,12 @@ msgid "Close"
 msgstr "Close"
 
 #: src/features/console-keys.tsx:30
-msgid "Close a sheet or dialog"
-msgstr "Close a sheet or dialog"
+#~ msgid "Close a sheet or dialog"
+#~ msgstr "Close a sheet or dialog"
+
+#: src/features/console-keys.tsx:32
+msgid "Close a sheet, or let go of a focused button"
+msgstr "Close a sheet, or let go of a focused button"
 
 #: src/features/session-commands.tsx:208
 msgid "Close commands"
@@ -522,7 +526,7 @@ msgstr "Close keys"
 #~ msgid "Close requested"
 #~ msgstr "Close requested"
 
-#: src/features/console-keys.tsx:83
+#: src/features/console-keys.tsx:86
 msgid "Close the viewer"
 msgstr "Close the viewer"
 
@@ -595,7 +599,7 @@ msgstr "Compacting conversation"
 msgid "compacting the context"
 msgstr "compacting the context"
 
-#: src/features/console-keys.tsx:61
+#: src/features/console-keys.tsx:64
 msgid "Composer"
 msgstr "Composer"
 
@@ -1149,7 +1153,7 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/console-keys.tsx:80
+#: src/features/console-keys.tsx:83
 msgid "Image viewer"
 msgstr "Image viewer"
 
@@ -1264,7 +1268,7 @@ msgstr "Keep planning"
 #~ msgid "Keyboard first"
 #~ msgstr "Keyboard first"
 
-#: src/features/console-keys.tsx:154
+#: src/features/console-keys.tsx:180
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
@@ -1334,7 +1338,7 @@ msgstr "letter"
 #~ msgid "Letter keys work when no text box has the caret. \"At the desk\" is the same action in WezTerm on the host. Chrome may keep Ctrl+N for a new window; c does the same."
 #~ msgstr "Letter keys work when no text box has the caret. \"At the desk\" is the same action in WezTerm on the host. Chrome may keep Ctrl+N for a new window; c does the same."
 
-#: src/features/console-keys.tsx:160
+#: src/features/console-keys.tsx:186
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 
@@ -1476,7 +1480,7 @@ msgstr "Needs you"
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "Needs you {waitingCount}"
 
-#: src/features/console-keys.tsx:65
+#: src/features/console-keys.tsx:68
 msgid "New line"
 msgstr "New line"
 
@@ -1485,7 +1489,7 @@ msgstr "New line"
 msgid "New session"
 msgstr "New session"
 
-#: src/features/console-keys.tsx:55
+#: src/features/console-keys.tsx:58
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
@@ -1497,7 +1501,7 @@ msgstr "New session (c)"
 msgid "New session title"
 msgstr "New session title"
 
-#: src/features/console-keys.tsx:76
+#: src/features/console-keys.tsx:79
 #: src/features/ticket-new.tsx:66
 #: src/features/ticket-new.tsx:161
 msgid "New ticket"
@@ -1519,19 +1523,19 @@ msgstr "New version available"
 msgid "New version ready, reload to use it"
 msgstr "New version ready, reload to use it"
 
-#: src/features/console-keys.tsx:45
+#: src/features/console-keys.tsx:48
 msgid "Next / previous running session"
 msgstr "Next / previous running session"
 
-#: src/features/console-keys.tsx:36
+#: src/features/console-keys.tsx:39
 msgid "Next / previous session in the list"
 msgstr "Next / previous session in the list"
 
-#: src/features/console-keys.tsx:75
+#: src/features/console-keys.tsx:78
 msgid "Next / previous ticket"
 msgstr "Next / previous ticket"
 
-#: src/features/console-keys.tsx:42
+#: src/features/console-keys.tsx:45
 msgid "Next finished session"
 msgstr "Next finished session"
 
@@ -1539,7 +1543,7 @@ msgstr "Next finished session"
 msgid "Next image"
 msgstr "Next image"
 
-#: src/features/console-keys.tsx:39
+#: src/features/console-keys.tsx:42
 msgid "Next session waiting on you"
 msgstr "Next session waiting on you"
 
@@ -1851,7 +1855,7 @@ msgstr "Phone or tablet"
 #~ msgid "Phone writing"
 #~ msgstr "Phone writing"
 
-#: src/features/console-keys.tsx:50
+#: src/features/console-keys.tsx:53
 msgid "Pick a session (grouped by repository)"
 msgstr "Pick a session (grouped by repository)"
 
@@ -1875,7 +1879,7 @@ msgstr "Plan review"
 msgid "Preview image"
 msgstr "Preview image"
 
-#: src/features/console-keys.tsx:82
+#: src/features/console-keys.tsx:85
 msgid "Previous / next image"
 msgstr "Previous / next image"
 
@@ -1907,7 +1911,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/console-keys.tsx:63
+#: src/features/console-keys.tsx:66
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
@@ -2234,7 +2238,7 @@ msgstr "Runtime reported reason:"
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "Same as Ctrl+X in the Alt+/ picker"
 
-#: src/features/console-keys.tsx:131
+#: src/features/console-keys.tsx:157
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
@@ -2278,12 +2282,12 @@ msgstr "seen"
 #~ msgid "Select a worktree to see its agent status."
 #~ msgstr "Select a worktree to see its agent status."
 
-#: src/features/console-keys.tsx:64
+#: src/features/console-keys.tsx:67
 #: src/features/session-composer.tsx:544
 msgid "Send"
 msgstr "Send"
 
-#: src/features/console-keys.tsx:68
+#: src/features/console-keys.tsx:71
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "Send (also on a touch screen, where Enter is a new line)"
 
@@ -2331,7 +2335,7 @@ msgstr "Session info"
 #~ msgid "Session jump failed"
 #~ msgstr "Session jump failed"
 
-#: src/features/console-keys.tsx:34
+#: src/features/console-keys.tsx:37
 msgid "Session pages"
 msgstr "Session pages"
 
@@ -2368,7 +2372,7 @@ msgstr "shipped"
 #~ msgid "Shipped"
 #~ msgstr "Shipped"
 
-#: src/features/console-keys.tsx:213
+#: src/features/console-keys.tsx:241
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
@@ -2661,7 +2665,7 @@ msgstr "Ticket"
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
-#: src/features/console-keys.tsx:73
+#: src/features/console-keys.tsx:76
 msgid "Ticket pages"
 msgstr "Ticket pages"
 

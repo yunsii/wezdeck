@@ -27,7 +27,10 @@ function useKeyGroups(): Array<Group> {
         },
         { keys: ['/'], what: t`Search or filter the list` },
         { keys: ['?'], what: t`This list of shortcuts` },
-        { keys: ['Esc'], what: t`Close a sheet or dialog` },
+        {
+          keys: ['Esc'],
+          what: t`Close a sheet, or let go of a focused button`,
+        },
       ],
     },
     {
@@ -84,6 +87,29 @@ function useKeyGroups(): Array<Group> {
       ],
     },
   ]
+}
+
+/**
+ * Esc lets go of a focused button or link (no sheet open): closing a sheet
+ * hands focus back to what opened it, which then stayed lit and kept Space
+ * (it pressed the button again) from reaching the composer.
+ */
+function useEscBlur() {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      if (document.querySelector('[role=dialog], [role=alertdialog]')) return
+      const active = document.activeElement
+      if (
+        active instanceof HTMLElement &&
+        active !== document.body &&
+        !active.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        active.blur()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 }
 
 /** `?` (not while typing) opens the list */
@@ -166,7 +192,8 @@ function KeysSheet({
               key={group.title}
               className="mb-4 grid break-inside-avoid gap-1.5 last:mb-0"
             >
-              <h3 className="px-1 text-caption font-semibold text-brand-muted">
+              {/* stays on top while its group scrolls under it (phone) */}
+              <h3 className="sticky top-0 z-10 bg-brand-deck px-1 py-1 text-caption font-semibold text-brand-muted">
                 {group.title}
               </h3>
               <ul className="overflow-hidden rounded-xl bg-brand-surface">
@@ -200,6 +227,7 @@ export function KeysEntry() {
   const [open, setOpen] = useState(false)
   const show = useCallback(() => setOpen(true), [])
   useHelpKey(show)
+  useEscBlur()
   return (
     <>
       <Button
