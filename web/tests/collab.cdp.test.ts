@@ -5,6 +5,7 @@
 // covers: web/src/features/ticket-reply.tsx native/wezdeck-wsl/collab.go
 // covers: web/src/features/ticket-copy-reference.tsx skills/agent-collab/lib/reference.py
 // covers: web/src/features/ticket-keys.tsx web/src/features/copy-reference.tsx
+// covers: web/src/lib/last-opened.tsx
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
@@ -170,6 +171,16 @@ describe.runIf(stack)('工单 over the remote link', () => {
       // copying does not switch the open ticket
       expect(page.url()).toContain(withRun)
     }
+    // 工单 with no ticket in the URL opens the last one shown (y copies it;
+    // pressed until the list is in and the ticket picked)
+    await open(page, '/console/collab')
+    await page.evaluate(() => navigator.clipboard.writeText(''))
+    await expect
+      .poll(async () => {
+        await page.keyboard.press('y')
+        return page.evaluate(() => navigator.clipboard.readText())
+      })
+      .toContain(`id: ${withRun}`)
     await context.close()
   }, 90_000)
 

@@ -15,6 +15,7 @@ import { RemoteBadge } from './remote-badge'
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { useGoBack } from '#/lib/go-back'
+import { RememberOpened, lastOpened } from '#/lib/last-opened'
 import { useTicketHealth, useTicketList } from '#/lib/ticket-sync'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
@@ -333,7 +334,16 @@ export function TicketsView({
   if (wide) {
     // a split like 会话 (session-split.tsx): the list sticky on the left, the
     // ticket beside it in the page scroll, j / k move through the list
-    const current = id ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
+    // no ticket in the URL: the one this browser showed last (still listed,
+    // under any filter), else the top of the list
+    const lastKey = `wezdeck-last-ticket-${base}`
+    const last = lastOpened(lastKey)
+    const current =
+      id ??
+      (all.some((ticket) => ticket.id === last) ? last : undefined) ??
+      recent.at(0)?.id ??
+      older.at(0)?.id ??
+      ''
     return (
       <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
         <TicketListKeys
@@ -342,6 +352,7 @@ export function TicketsView({
           onGo={(next) => open(next, true)}
         />
         <CopyKey id={current} copy={copyReference} />
+        <RememberOpened storageKey={lastKey} id={current} />
         <SplitColumn
           label={t`Collab tickets`}
           head={
