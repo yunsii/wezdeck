@@ -59,7 +59,7 @@ load_git_snapshot() {
   git_inside_repo=1
   git_repo_label="$(basename "$repo_root")"
 
-  if ! status_output="$(git -C "$normalized_cwd" status --porcelain=v2 --branch 2>/dev/null)"; then
+  if ! status_output="$(git -C "$normalized_cwd" status --porcelain=v2 --branch --untracked-files=all 2>/dev/null)"; then
     return
   fi
 

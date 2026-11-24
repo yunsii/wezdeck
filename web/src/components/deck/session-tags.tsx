@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { useLingui } from '@lingui/react/macro'
 
 import type { LedTone } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -24,19 +25,22 @@ export function SessionTag({
   tone = 'neutral',
   icon: Icon,
   mono = false,
+  hint,
   className,
   children,
 }: {
   tone?: Tone
   icon?: LucideIcon
   mono?: boolean
+  /** hover text when the tag itself is shorthand */
+  hint?: string
   className?: string
   children: string
 }) {
   return (
     <span
       data-tone={tone}
-      title={children}
+      title={hint ?? children}
       className={cn('session-tag text-meta', mono && 'font-mono', className)}
     >
       {Icon ? <Icon size={11} aria-hidden className="shrink-0" /> : null}
@@ -85,6 +89,48 @@ export function BranchTag({ branch }: { branch: string }) {
   return (
     <SessionTag icon={GitBranch} mono>
       {branch}
+    </SessionTag>
+  )
+}
+
+export type GitStatus = {
+  staged: number
+  unstaged: number
+  untracked: number
+  upstream: boolean
+  ahead: number
+  behind: number
+}
+
+/**
+ * Working-tree status beside the branch, the tmux status line's counts
+ * (+staged ~unstaged ?untracked, by file) with ↑ahead ↓behind; ✓ when clean
+ * and level with upstream. The hover spells it out.
+ */
+export function GitStatusTag({ git }: { git: GitStatus }) {
+  const { t } = useLingui()
+  const { staged, unstaged, untracked, ahead, behind } = git
+  const parts = [
+    git.staged ? `+${git.staged}` : '',
+    git.unstaged ? `~${git.unstaged}` : '',
+    git.untracked ? `?${git.untracked}` : '',
+    git.ahead ? `↑${git.ahead}` : '',
+    git.behind ? `↓${git.behind}` : '',
+  ].filter(Boolean)
+  const hint = [
+    t`${staged} staged, ${unstaged} modified, ${untracked} untracked`,
+    git.upstream
+      ? t`${ahead} ahead, ${behind} behind upstream`
+      : t`no upstream`,
+  ].join(' · ')
+  return (
+    <SessionTag
+      tone={parts.length ? 'accent' : 'neutral'}
+      mono
+      hint={hint}
+      className="shrink-0"
+    >
+      {parts.join(' ') || '✓'}
     </SessionTag>
   )
 }

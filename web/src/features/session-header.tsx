@@ -9,7 +9,11 @@ import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
-import { AgentTag, BranchTag } from '#/components/deck/session-tags'
+import {
+  AgentTag,
+  BranchTag,
+  GitStatusTag,
+} from '#/components/deck/session-tags'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -263,6 +267,7 @@ export function SessionHeader({
                 <AgentTag agent={data.agent} />
               ) : null}
               {data.branch ? <BranchTag branch={data.branch} /> : null}
+              {data.git ? <GitStatusTag git={data.git} /> : null}
             </span>
           ) : null}
         </div>

@@ -473,6 +473,11 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			out["agent"] = strings.TrimSuffix(cmd, ".real")
 		}
 	}
+	if cwd, alive := paneInfo(e); alive {
+		if git := worktreeGitStatus(cwd); git != nil {
+			out["git"] = git
+		}
+	}
 	out["reference"] = sessionReference(e, path, agent)
 	out["focus"] = sessionFocus(a.ID, e)
 	out["meta"] = sessionMeta(e, path, agent, nil)

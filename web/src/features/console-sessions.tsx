@@ -10,6 +10,7 @@ import { ArrowDown } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
+import type { GitStatus } from '#/components/deck/session-tags'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { hostRead } from '#/lib/runtime-client'
@@ -117,6 +118,8 @@ export type Detail = {
   title?: string
   window?: string
   branch?: string
+  /** working-tree status of the pane's cwd (git_status.go) */
+  git?: GitStatus
   usage?: Usage
   account?: AccountLimits
   /** host-built block an agent can act on (remote_reference.go) */
