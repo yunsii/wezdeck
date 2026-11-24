@@ -98,6 +98,7 @@ export function useComposer({
   const [text, setText] = useDraft(draftKey(id))
   const [progress, setProgress] = useState('')
   const { images, setImages, pick, remove, insertToken } = usePickedImages(
+    id,
     text,
     setText,
   )

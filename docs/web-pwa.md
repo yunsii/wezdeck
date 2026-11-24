@@ -444,7 +444,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 
 Flat: cards and text fields draw no lines of their own; the page tone and
 the surface fill tell them apart. Lines stay only between functional
-regions: the split pages' list / detail divider (会话: the pane's left edge,
+regions: the split pages' list / detail divider (sized in `cqh` of the page
+column, a size container — `100dvh` ran taller in the installed app and cut
+the list's foot; 会话: the pane's left edge,
 top band to window bottom, the composer resting on the bottom), the sidebar,
 the composer's top edge. A focused text field (`data-text-field`: `Input` /
 `Textarea` field variants, the composer, the ticket search) shows the
@@ -458,8 +460,8 @@ Field row's own attribute.
 ### Text caret (2026-11-24)
 
 Every text box draws its caret in the accent colour and in the shape picked
-in 我的 › 外观 › 输入光标 — block (default, like the desk's blinking block
-cursor), bar or underscore — via CSS `caret-shape` (Chrome 144+; Firefox and
+in 我的 › 外观 › 输入光标 — bar (the browser's, default), block or
+underscore — via CSS `caret-shape` (Chrome 144+; Firefox and
 Safari keep their thin bar). Per device like the theme: `lib/caret-pref.ts`,
 `localStorage` `wezdeck-caret`, set on `<html data-caret>` before first
 paint by the theme bootstrap script.

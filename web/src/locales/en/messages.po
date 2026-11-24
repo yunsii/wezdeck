@@ -27,7 +27,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:126
+#: src/features/session-composer.tsx:127
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -87,7 +87,7 @@ msgstr "{n} s"
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/me-devices.tsx:139
+#: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
@@ -219,7 +219,7 @@ msgstr "Add"
 msgid "Add test ids to the error pages"
 msgstr "Add test ids to the error pages"
 
-#: src/features/me-devices.tsx:265
+#: src/features/me-devices.tsx:279
 msgid "added"
 msgstr "added"
 
@@ -322,7 +322,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/me-devices.tsx:174
+#: src/features/me-devices.tsx:195
 msgid "Approve"
 msgstr "Approve"
 
@@ -342,7 +342,7 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/me-devices.tsx:259
+#: src/features/me-devices.tsx:273
 msgid "Approved"
 msgstr "Approved"
 
@@ -392,7 +392,7 @@ msgstr "background"
 msgid "Background tasks"
 msgstr "Background tasks"
 
-#: src/features/console-me.tsx:228
+#: src/features/console-me.tsx:227
 msgid "Bar"
 msgstr "Bar"
 
@@ -404,19 +404,23 @@ msgstr "Base commit"
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 
-#: src/features/console-me.tsx:227
+#: src/features/console-me.tsx:228
 msgid "Block"
 msgstr "Block"
 
 #: src/features/console-me.tsx:233
-msgid "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
-msgstr "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
+msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
+msgstr "Block and underscore need Chrome 144 or later; other browsers keep the bar."
+
+#: src/features/console-me.tsx:233
+#~ msgid "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
+#~ msgstr "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
 
 #: src/features/session-info.tsx:49
 msgid "Branch"
 msgstr "Branch"
 
-#: src/features/me-devices.tsx:97
+#: src/features/me-devices.tsx:91
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 
@@ -440,7 +444,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:169
+#: src/features/session-composer.tsx:170
 msgid "cancel"
 msgstr "cancel"
 
@@ -475,8 +479,8 @@ msgstr "Check for updates"
 
 #: src/features/console-me.tsx:34
 #: src/features/me-app.tsx:87
-#: src/features/me-devices.tsx:100
-#: src/features/me-devices.tsx:284
+#: src/features/me-devices.tsx:94
+#: src/features/me-devices.tsx:298
 #: src/features/me-host.tsx:56
 msgid "Checking…"
 msgstr "Checking…"
@@ -530,7 +534,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:202
+#: src/features/session-composer.tsx:203
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -599,7 +603,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:298
+#: src/features/session-composer.tsx:299
 msgid "Commands"
 msgstr "Commands"
 
@@ -615,15 +619,15 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:272
+#: src/features/session-composer.tsx:273
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:168
+#: src/features/session-composer.tsx:169
 msgid "confirm"
 msgstr "confirm"
 
-#: src/features/me-devices.tsx:189
+#: src/features/me-devices.tsx:210
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
@@ -640,11 +644,11 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:303
+#: src/features/console-shell.tsx:308
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/me-devices.tsx:52
+#: src/features/me-devices.tsx:53
 msgid "Console ({origin})"
 msgstr "Console ({origin})"
 
@@ -741,7 +745,7 @@ msgstr "Cost"
 msgid "cost and limits"
 msgstr "cost and limits"
 
-#: src/features/me-devices.tsx:293
+#: src/features/me-devices.tsx:307
 msgid "Could not change the device: {changeError}"
 msgstr "Could not change the device: {changeError}"
 
@@ -749,11 +753,11 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/me-devices.tsx:286
+#: src/features/me-devices.tsx:300
 msgid "Could not read the device list: {errorText}"
 msgstr "Could not read the device list: {errorText}"
 
-#: src/features/me-devices.tsx:102
+#: src/features/me-devices.tsx:96
 msgid "Could not read the sources: {errorText}"
 msgstr "Could not read the sources: {errorText}"
 
@@ -1051,7 +1055,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:306
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1174,7 +1178,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:323
+#: src/features/session-composer.tsx:324
 msgid "Images"
 msgstr "Images"
 
@@ -1241,7 +1245,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:170
+#: src/features/session-composer.tsx:171
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1289,7 +1293,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:286
+#: src/features/session-composer.tsx:287
 msgid "Keys"
 msgstr "Keys"
 
@@ -1308,7 +1312,7 @@ msgstr "LAN"
 msgid "Language"
 msgstr "Language"
 
-#: src/features/me-devices.tsx:138
+#: src/features/me-devices.tsx:132
 msgid "last {lastSeen}"
 msgstr "last {lastSeen}"
 
@@ -1317,7 +1321,7 @@ msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:450
+#: src/features/console-shell.tsx:455
 #: src/features/me-host.tsx:104
 msgid "Last sample"
 msgstr "Last sample"
@@ -1442,11 +1446,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:464
+#: src/features/session-composer.tsx:465
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:422
+#: src/features/session-composer.tsx:423
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1592,7 +1596,7 @@ msgstr "No agent sessions are running."
 #~ msgid "No collab tickets yet"
 #~ msgstr "No collab tickets yet"
 
-#: src/features/me-devices.tsx:289
+#: src/features/me-devices.tsx:303
 msgid "No device has asked for access yet."
 msgstr "No device has asked for access yet."
 
@@ -1620,7 +1624,7 @@ msgstr "No idle sessions."
 msgid "No matching log entries"
 msgstr "No matching log entries"
 
-#: src/features/me-devices.tsx:51
+#: src/features/me-devices.tsx:52
 msgid "No Origin (script, curl, another app)"
 msgstr "No Origin (script, curl, another app)"
 
@@ -1668,7 +1672,7 @@ msgstr "Not on this Runtime"
 msgid "Not paired"
 msgstr "Not paired"
 
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:406
 msgid "Not running"
 msgstr "Not running"
 
@@ -1745,7 +1749,7 @@ msgstr "open in a pane"
 msgid "Open in VS Code"
 msgstr "Open in VS Code"
 
-#: src/features/me-devices.tsx:128
+#: src/features/me-devices.tsx:122
 msgid "Open now"
 msgstr "Open now"
 
@@ -1856,7 +1860,7 @@ msgstr "Part"
 msgid "Peak RSS"
 msgstr "Peak RSS"
 
-#: src/features/me-devices.tsx:259
+#: src/features/me-devices.tsx:273
 msgid "Pending"
 msgstr "Pending"
 
@@ -1948,8 +1952,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:210
-#: src/features/session-composer.tsx:280
+#: src/features/session-composer.tsx:211
+#: src/features/session-composer.tsx:281
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1970,7 +1974,7 @@ msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:414
+#: src/features/console-shell.tsx:419
 #: src/features/me-host.tsx:57
 #: src/features/me-host.tsx:130
 msgid "Ready"
@@ -1984,8 +1988,7 @@ msgstr "Reason"
 #~ msgid "Recently active"
 #~ msgstr "Recently active"
 
-#: src/features/me-devices.tsx:93
-#: src/features/me-devices.tsx:232
+#: src/features/me-devices.tsx:165
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -2017,11 +2020,11 @@ msgstr "Reload"
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:377
+#: src/features/console-shell.tsx:382
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/me-devices.tsx:225
+#: src/features/me-devices.tsx:246
 msgid "Remote devices"
 msgstr "Remote devices"
 
@@ -2131,7 +2134,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:508
+#: src/features/console-shell.tsx:513
 #: src/features/me-host.tsx:88
 msgid "Retry"
 msgstr "Retry"
@@ -2140,11 +2143,11 @@ msgstr "Retry"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/me-devices.tsx:189
+#: src/features/me-devices.tsx:210
 msgid "Revoke"
 msgstr "Revoke"
 
-#: src/features/me-devices.tsx:296
+#: src/features/me-devices.tsx:310
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 
@@ -2195,7 +2198,7 @@ msgstr "running"
 
 #: src/features/chat-tools.tsx:80
 #: src/features/console-collab.tsx:92
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:406
 msgid "Running"
 msgstr "Running"
 
@@ -2287,7 +2290,7 @@ msgstr "Search or filter the list"
 msgid "Secondary"
 msgstr "Secondary"
 
-#: src/features/console-shell.tsx:315
+#: src/features/console-shell.tsx:320
 msgid "Sections"
 msgstr "Sections"
 
@@ -2299,7 +2302,7 @@ msgstr "Sections"
 #~ msgid "See who needs you"
 #~ msgstr "See who needs you"
 
-#: src/features/me-devices.tsx:270
+#: src/features/me-devices.tsx:284
 msgid "seen"
 msgstr "seen"
 
@@ -2308,7 +2311,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:67
-#: src/features/session-composer.tsx:473
+#: src/features/session-composer.tsx:474
 msgid "Send"
 msgstr "Send"
 
@@ -2320,7 +2323,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:281
+#: src/features/session-composer.tsx:282
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2417,11 +2420,11 @@ msgstr "showing the last copy"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/console-shell.tsx:286
+#: src/features/console-shell.tsx:291
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:293
+#: src/features/session-composer.tsx:294
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2446,7 +2449,7 @@ msgstr "Someone just used the desk; sending in {retryIn}s…"
 msgid "Source"
 msgstr "Source"
 
-#: src/features/me-devices.tsx:86
+#: src/features/me-devices.tsx:87
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
@@ -2548,7 +2551,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:196
+#: src/features/session-composer.tsx:197
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2621,7 +2624,7 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/me-devices.tsx:126
+#: src/features/me-devices.tsx:120
 msgid "This browser"
 msgstr "This browser"
 
@@ -2668,7 +2671,7 @@ msgstr "This device sees nothing from the host until it is approved — the pair
 msgid "This list of shortcuts"
 msgstr "This list of shortcuts"
 
-#: src/features/console-shell.tsx:503
+#: src/features/console-shell.tsx:508
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -2790,7 +2793,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:310
+#: src/features/session-composer.tsx:311
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2858,7 +2861,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:195
+#: src/features/session-composer.tsx:196
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2888,12 +2891,12 @@ msgstr "Underscore"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:116
+#: src/features/session-composer.tsx:117
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:456
+#: src/features/console-shell.tsx:461
 #: src/features/me-host.tsx:103
 msgid "Uptime"
 msgstr "Uptime"
@@ -3003,7 +3006,7 @@ msgstr "Waiting on you"
 #~ msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 #~ msgstr "Waiting, running, and done stay visible, so the next jump is obvious."
 
-#: src/features/console-shell.tsx:425
+#: src/features/console-shell.tsx:430
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3037,7 +3040,7 @@ msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
 #: src/features/console-shell.tsx:219
-#: src/features/console-shell.tsx:298
+#: src/features/console-shell.tsx:303
 msgid "WezDeck"
 msgstr "WezDeck"
 

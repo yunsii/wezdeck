@@ -11,6 +11,7 @@ import { Led } from '#/components/deck/led'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { SectionHeading } from '#/components/ui/section-heading'
+import { cn } from '#/lib/utils'
 import { hostRead, hostWrite, readLocalClients } from '#/lib/runtime-client'
 import type { LocalClient } from '#/lib/runtime-client'
 import { uaFallback } from './device-state'
@@ -82,18 +83,11 @@ function LocalSources() {
   )
   return (
     <section className="grid gap-2" data-testid="local-sources">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 px-3">
         <SectionHeading>{t`Sources on this computer`}</SectionHeading>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void sources.refetch()}
-          disabled={sources.isFetching}
-        >
-          {t`Refresh`}
-        </Button>
+        <RefreshButton onRefresh={() => sources.refetch()} />
       </div>
-      <p className="text-meta text-brand-label">
+      <p className="px-3 text-meta text-brand-label">
         {t`Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here.`}
       </p>
       {sources.isPending ? (
@@ -147,6 +141,32 @@ function LocalSources() {
   )
 }
 
+/** the right-hand buttons share one width, so their right edges line up */
+const ACTION = 'min-w-16 justify-center'
+
+/**
+ * Disabled only while its own click is fetching: tied to the query's
+ * isFetching it flickered with every background refresh (1–2 s).
+ */
+function RefreshButton({ onRefresh }: { onRefresh: () => Promise<unknown> }) {
+  const { t } = useLingui()
+  const [busy, setBusy] = useState(false)
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={busy}
+      className={ACTION}
+      onClick={() => {
+        setBusy(true)
+        void onRefresh().finally(() => setBusy(false))
+      }}
+    >
+      {t`Refresh`}
+    </Button>
+  )
+}
+
 /** 批准 at once; 撤销 asks a second tap (it cuts the device off) */
 function RowAction({
   device,
@@ -170,6 +190,7 @@ function RowAction({
         size="sm"
         disabled={busy}
         onClick={() => onAction('device.approve')}
+        className={ACTION}
       >
         {t`Approve`}
       </Button>
@@ -179,7 +200,7 @@ function RowAction({
       size="sm"
       variant={confirming ? 'default' : 'outline'}
       disabled={busy}
-      className={confirming ? 'bg-brand-error text-white' : undefined}
+      className={cn(ACTION, confirming && 'bg-brand-error text-white')}
       onClick={() => {
         if (!confirming) return setConfirming(true)
         setConfirming(false)
@@ -221,16 +242,9 @@ function RemoteDevices() {
   const changeError = change.error?.message ?? ''
   return (
     <section className="grid gap-2" data-testid="device-list">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 px-3">
         <SectionHeading>{t`Remote devices`}</SectionHeading>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void devices.refetch()}
-          disabled={devices.isFetching}
-        >
-          {t`Refresh`}
-        </Button>
+        <RefreshButton onRefresh={() => devices.refetch()} />
       </div>
       <ul className="grid gap-2">
         {list.map((device) => (

@@ -275,9 +275,14 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         </aside>
         <div
           ref={scroller}
+          // a size container: the split pages size their list and pane in
+          // cqh, this column's real height — 100dvh could run taller in the
+          // installed app (see the shell's fixed inset-0 note) and cut the
+          // list's foot. Fixed overlays are portalled, so the containing
+          // block this makes for them does not matter.
           // its own background: the transition snapshot of this column must be
           // opaque, or the page underneath shows through mid-push
-          className="vt-page min-h-0 min-w-0 overflow-y-auto overscroll-contain bg-brand-deck"
+          className="vt-page min-h-0 min-w-0 overflow-y-auto overscroll-contain bg-brand-deck [container-type:size]"
         >
           <a
             href="#console-main"

@@ -177,6 +177,7 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
       .toBe(1)
     // the image leaves [图片1] at the caret; removing it takes the token too
     await expect.poll(() => box.inputValue()).toBe('第一行\n第二行 [图片1] ')
+    await pickSurvivesReload(page)
     // the thumbnail is labelled 图片1; its label puts the token in again
     const label = page
       .getByTestId('composer-images')
@@ -206,27 +207,7 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
       await page.waitForTimeout(200)
     }
 
-    // shortcuts: `?` and the sidebar entry open the list
-    await page.evaluate(() => (document.activeElement as HTMLElement).blur())
-    await page.keyboard.press('Shift+Slash')
-    const keysSheet = page.getByTestId('keys-sheet')
-    await keysSheet.waitFor({ timeout: 2_000 })
-    expect(await keysSheet.innerText()).toContain('Alt+J')
-    await page.keyboard.press('Escape')
-    await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
-    await page.getByTestId('keys-entry').click()
-    await keysSheet.waitFor({ timeout: 2_000 })
-    await page.keyboard.press('Escape')
-    await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
-    // focus came back to the entry; Esc lets go of it, then Space reaches
-    // the composer instead of pressing the entry again
-    await page.keyboard.press('Escape')
-    expect(
-      await page.evaluate(() => document.activeElement === document.body),
-    ).toBe(true)
-    await page.keyboard.press('Space')
-    expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
-    expect(await keysSheet.isVisible()).toBe(false)
+    await shortcutsSheet(page)
 
     // Ctrl+N from inside the composer opens 新会话
     await box.click()
@@ -268,22 +249,22 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
 })
 
 /**
- * The caret: a block by default (the desk's terminal), a bar once picked in
- * 我的 › 外观, kept across a reload.
+ * The caret: the browser's bar by default, a block once picked in 我的 › 外观,
+ * kept across a reload.
  */
 async function caretFollowsPreference(page: Page) {
   const box = page.getByLabel('发给 Agent 的消息')
   const caret = () =>
     box.evaluate((el) => getComputedStyle(el).getPropertyValue('caret-shape'))
-  expect(await caret()).toBe('block')
+  expect(await caret()).toBe('bar')
   await page.goto(`${base}/zh/console/me/appearance`)
   await page
     .getByRole('radiogroup', { name: '输入光标' })
-    .getByRole('radio', { name: '细线' })
+    .getByRole('radio', { name: '方块' })
     .click()
   await page.goto(`${base}/zh/console/sessions/fresh-session`)
   await box.waitFor({ timeout: 15_000 })
-  expect(await caret()).toBe('bar')
+  expect(await caret()).toBe('block')
 }
 
 /**
@@ -300,4 +281,47 @@ async function caretAtEnd(box: Locator) {
       ),
     )
     .toBe(true)
+}
+
+/** a reload keeps the picture with the draft, not only its [图片1] */
+async function pickSurvivesReload(page: Page) {
+  const box = page.getByLabel('发给 Agent 的消息')
+  await page.reload()
+  await box.waitFor({ timeout: 15_000 })
+  await expect
+    .poll(() => page.locator('[data-testid=composer-images] img').count(), {
+      timeout: 5_000,
+    })
+    .toBe(1)
+  expect(await box.inputValue()).toBe('第一行\n第二行 [图片1] ')
+  await box.click()
+}
+
+/**
+ * `?` and the sidebar entry open the shortcut list; Esc closes it, a second
+ * Esc lets go of the entry, and Space then reaches the composer.
+ */
+async function shortcutsSheet(page: Page) {
+  const box = page.getByLabel('发给 Agent 的消息')
+  // shortcuts: `?` and the sidebar entry open the list
+  await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+  await page.keyboard.press('Shift+Slash')
+  const keysSheet = page.getByTestId('keys-sheet')
+  await keysSheet.waitFor({ timeout: 2_000 })
+  expect(await keysSheet.innerText()).toContain('Alt+J')
+  await page.keyboard.press('Escape')
+  await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+  await page.getByTestId('keys-entry').click()
+  await keysSheet.waitFor({ timeout: 2_000 })
+  await page.keyboard.press('Escape')
+  await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+  // focus came back to the entry; Esc lets go of it, then Space reaches
+  // the composer instead of pressing the entry again
+  await page.keyboard.press('Escape')
+  expect(
+    await page.evaluate(() => document.activeElement === document.body),
+  ).toBe(true)
+  await page.keyboard.press('Space')
+  expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
+  expect(await keysSheet.isVisible()).toBe(false)
 }

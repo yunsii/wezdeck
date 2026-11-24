@@ -27,7 +27,7 @@ msgstr "{bg} 个后台任务在跑"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} 条已送达，等 Agent 处理"
 
-#: src/features/session-composer.tsx:126
+#: src/features/session-composer.tsx:127
 msgid "{count} images"
 msgstr "{count} 张图片"
 
@@ -87,7 +87,7 @@ msgstr "{n} 秒"
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
-#: src/features/me-devices.tsx:139
+#: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
 msgstr "请求 {requests} 次，写入 {writes} 次"
 
@@ -219,7 +219,7 @@ msgstr "添加"
 msgid "Add test ids to the error pages"
 msgstr "给错误页补 test id"
 
-#: src/features/me-devices.tsx:265
+#: src/features/me-devices.tsx:279
 msgid "added"
 msgstr "登记于"
 
@@ -322,7 +322,7 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
-#: src/features/me-devices.tsx:174
+#: src/features/me-devices.tsx:195
 msgid "Approve"
 msgstr "批准"
 
@@ -342,7 +342,7 @@ msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。�
 msgid "Approve the plan"
 msgstr "批准计划"
 
-#: src/features/me-devices.tsx:259
+#: src/features/me-devices.tsx:273
 msgid "Approved"
 msgstr "已批准"
 
@@ -392,7 +392,7 @@ msgstr "后台"
 msgid "Background tasks"
 msgstr "后台任务"
 
-#: src/features/console-me.tsx:228
+#: src/features/console-me.tsx:227
 msgid "Bar"
 msgstr "细线"
 
@@ -404,19 +404,23 @@ msgstr "基线提交"
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
 
-#: src/features/console-me.tsx:227
+#: src/features/console-me.tsx:228
 msgid "Block"
 msgstr "方块"
 
 #: src/features/console-me.tsx:233
-msgid "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
-msgstr "方块和主机终端一致。Chrome 144 及以上支持；其他浏览器仍显示细线。"
+msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
+msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
+
+#: src/features/console-me.tsx:233
+#~ msgid "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
+#~ msgstr "方块和主机终端一致。Chrome 144 及以上支持；其他浏览器仍显示细线。"
 
 #: src/features/session-info.tsx:49
 msgid "Branch"
 msgstr "分支"
 
-#: src/features/me-devices.tsx:97
+#: src/features/me-devices.tsx:91
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "本次 Runtime 启动以来访问过它的浏览器和脚本。它们读写都不需要设备密钥，这里没有需要批准的。"
 
@@ -440,7 +444,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-composer.tsx:169
+#: src/features/session-composer.tsx:170
 msgid "cancel"
 msgstr "取消"
 
@@ -475,8 +479,8 @@ msgstr "检查更新"
 
 #: src/features/console-me.tsx:34
 #: src/features/me-app.tsx:87
-#: src/features/me-devices.tsx:100
-#: src/features/me-devices.tsx:284
+#: src/features/me-devices.tsx:94
+#: src/features/me-devices.tsx:298
 #: src/features/me-host.tsx:56
 msgid "Checking…"
 msgstr "检查中…"
@@ -530,7 +534,7 @@ msgstr "关闭面板；或让按钮、链接失去焦点"
 msgid "Close commands"
 msgstr "关闭命令"
 
-#: src/features/session-composer.tsx:202
+#: src/features/session-composer.tsx:203
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -599,7 +603,7 @@ msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:298
+#: src/features/session-composer.tsx:299
 msgid "Commands"
 msgstr "命令"
 
@@ -615,15 +619,15 @@ msgstr "正在压缩上下文"
 msgid "Composer"
 msgstr "输入框"
 
-#: src/features/session-composer.tsx:272
+#: src/features/session-composer.tsx:273
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/session-composer.tsx:168
+#: src/features/session-composer.tsx:169
 msgid "confirm"
 msgstr "确认"
 
-#: src/features/me-devices.tsx:189
+#: src/features/me-devices.tsx:210
 msgid "Confirm revoke"
 msgstr "确认撤销"
 
@@ -640,11 +644,11 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:303
+#: src/features/console-shell.tsx:308
 msgid "Connection details"
 msgstr "连接详情"
 
-#: src/features/me-devices.tsx:52
+#: src/features/me-devices.tsx:53
 msgid "Console ({origin})"
 msgstr "控制台（{origin}）"
 
@@ -741,7 +745,7 @@ msgstr "花费"
 msgid "cost and limits"
 msgstr "费用与额度"
 
-#: src/features/me-devices.tsx:293
+#: src/features/me-devices.tsx:307
 msgid "Could not change the device: {changeError}"
 msgstr "操作失败：{changeError}"
 
@@ -749,11 +753,11 @@ msgstr "操作失败：{changeError}"
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/me-devices.tsx:286
+#: src/features/me-devices.tsx:300
 msgid "Could not read the device list: {errorText}"
 msgstr "读不到设备列表：{errorText}"
 
-#: src/features/me-devices.tsx:102
+#: src/features/me-devices.tsx:96
 msgid "Could not read the sources: {errorText}"
 msgstr "读不到本机来源：{errorText}"
 
@@ -1051,7 +1055,7 @@ msgstr "第一轮"
 #~ msgid "Follow system theme"
 #~ msgstr "跟随系统主题"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:306
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
 
@@ -1174,7 +1178,7 @@ msgstr "图片预览"
 msgid "Image viewer"
 msgstr "图片查看"
 
-#: src/features/session-composer.tsx:323
+#: src/features/session-composer.tsx:324
 msgid "Images"
 msgstr "图片"
 
@@ -1241,7 +1245,7 @@ msgstr "交互调试"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-composer.tsx:170
+#: src/features/session-composer.tsx:171
 msgid "interrupt"
 msgstr "打断"
 
@@ -1289,7 +1293,7 @@ msgstr "继续规划"
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-#: src/features/session-composer.tsx:286
+#: src/features/session-composer.tsx:287
 msgid "Keys"
 msgstr "快捷"
 
@@ -1308,7 +1312,7 @@ msgstr "局域网"
 msgid "Language"
 msgstr "语言"
 
-#: src/features/me-devices.tsx:138
+#: src/features/me-devices.tsx:132
 msgid "last {lastSeen}"
 msgstr "最近 {lastSeen}"
 
@@ -1317,7 +1321,7 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:450
+#: src/features/console-shell.tsx:455
 #: src/features/me-host.tsx:104
 msgid "Last sample"
 msgstr "最近采样"
@@ -1442,11 +1446,11 @@ msgstr "已标为已读"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:464
+#: src/features/session-composer.tsx:465
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:422
+#: src/features/session-composer.tsx:423
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -1592,7 +1596,7 @@ msgstr "现在没有正在运行的 Agent 会话。"
 #~ msgid "No collab tickets yet"
 #~ msgstr "还没有协作工单"
 
-#: src/features/me-devices.tsx:289
+#: src/features/me-devices.tsx:303
 msgid "No device has asked for access yet."
 msgstr "还没有设备申请授权。"
 
@@ -1620,7 +1624,7 @@ msgstr "没有空闲的会话。"
 msgid "No matching log entries"
 msgstr "没有匹配的日志条目"
 
-#: src/features/me-devices.tsx:51
+#: src/features/me-devices.tsx:52
 msgid "No Origin (script, curl, another app)"
 msgstr "无 Origin（脚本、curl 或其他程序）"
 
@@ -1668,7 +1672,7 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Not paired"
 msgstr "未配对"
 
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:406
 msgid "Not running"
 msgstr "未运行"
 
@@ -1745,7 +1749,7 @@ msgstr "已在窗格中打开"
 msgid "Open in VS Code"
 msgstr "在 VS Code 中打开"
 
-#: src/features/me-devices.tsx:128
+#: src/features/me-devices.tsx:122
 msgid "Open now"
 msgstr "在线"
 
@@ -1856,7 +1860,7 @@ msgstr "组成"
 msgid "Peak RSS"
 msgstr "内存峰值"
 
-#: src/features/me-devices.tsx:259
+#: src/features/me-devices.tsx:273
 msgid "Pending"
 msgstr "待批准"
 
@@ -1948,8 +1952,8 @@ msgstr "排队中的消息"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "排队中，Agent 空下来会处理"
 
-#: src/features/session-composer.tsx:210
-#: src/features/session-composer.tsx:280
+#: src/features/session-composer.tsx:211
+#: src/features/session-composer.tsx:281
 msgid "Quick keys"
 msgstr "快捷键"
 
@@ -1970,7 +1974,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:414
+#: src/features/console-shell.tsx:419
 #: src/features/me-host.tsx:57
 #: src/features/me-host.tsx:130
 msgid "Ready"
@@ -1984,8 +1988,7 @@ msgstr "原因"
 #~ msgid "Recently active"
 #~ msgstr "最近活跃"
 
-#: src/features/me-devices.tsx:93
-#: src/features/me-devices.tsx:232
+#: src/features/me-devices.tsx:165
 msgid "Refresh"
 msgstr "刷新"
 
@@ -2017,11 +2020,11 @@ msgstr "刷新"
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:377
+#: src/features/console-shell.tsx:382
 msgid "Remote access"
 msgstr "远程访问"
 
-#: src/features/me-devices.tsx:225
+#: src/features/me-devices.tsx:246
 msgid "Remote devices"
 msgstr "远程设备"
 
@@ -2131,7 +2134,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:508
+#: src/features/console-shell.tsx:513
 #: src/features/me-host.tsx:88
 msgid "Retry"
 msgstr "重试"
@@ -2140,11 +2143,11 @@ msgstr "重试"
 msgid "reuse reasons"
 msgstr "复用理由"
 
-#: src/features/me-devices.tsx:189
+#: src/features/me-devices.tsx:210
 msgid "Revoke"
 msgstr "撤销"
 
-#: src/features/me-devices.tsx:296
+#: src/features/me-devices.tsx:310
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "撤销立即生效：该设备的下一次读取或写入就会被拒绝。主机命令行也能做同样的事：scripts/dev/install-remote-relay.sh --approve / --revoke <id>。"
 
@@ -2195,7 +2198,7 @@ msgstr "运行中"
 
 #: src/features/chat-tools.tsx:80
 #: src/features/console-collab.tsx:92
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:406
 msgid "Running"
 msgstr "运行中"
 
@@ -2287,7 +2290,7 @@ msgstr "搜索或筛选列表"
 msgid "Secondary"
 msgstr "副"
 
-#: src/features/console-shell.tsx:315
+#: src/features/console-shell.tsx:320
 msgid "Sections"
 msgstr "栏目"
 
@@ -2299,7 +2302,7 @@ msgstr "栏目"
 #~ msgid "See who needs you"
 #~ msgstr "看谁需要你"
 
-#: src/features/me-devices.tsx:270
+#: src/features/me-devices.tsx:284
 msgid "seen"
 msgstr "最近活动"
 
@@ -2308,7 +2311,7 @@ msgstr "最近活动"
 #~ msgstr "选一个 worktree，查看它的 Agent 状态。"
 
 #: src/features/console-keys.tsx:67
-#: src/features/session-composer.tsx:473
+#: src/features/session-composer.tsx:474
 msgid "Send"
 msgstr "发送"
 
@@ -2320,7 +2323,7 @@ msgstr "发送（触屏上回车是换行，这个键也能发送）"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "发送 Ctrl+B：正在跑的命令转到后台继续执行，Agent 接着往下做"
 
-#: src/features/session-composer.tsx:281
+#: src/features/session-composer.tsx:282
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
@@ -2417,11 +2420,11 @@ msgstr "显示的是上次的数据"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/console-shell.tsx:286
+#: src/features/console-shell.tsx:291
 msgid "Skip to content"
 msgstr "跳到内容"
 
-#: src/features/session-composer.tsx:293
+#: src/features/session-composer.tsx:294
 msgid "Slash commands for Claude"
 msgstr "Claude 斜杠命令"
 
@@ -2446,7 +2449,7 @@ msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 msgid "Source"
 msgstr "来源"
 
-#: src/features/me-devices.tsx:86
+#: src/features/me-devices.tsx:87
 msgid "Sources on this computer"
 msgstr "本机来源"
 
@@ -2548,7 +2551,7 @@ msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-composer.tsx:196
+#: src/features/session-composer.tsx:197
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -2621,7 +2624,7 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/me-devices.tsx:126
+#: src/features/me-devices.tsx:120
 msgid "This browser"
 msgstr "当前浏览器"
 
@@ -2668,7 +2671,7 @@ msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对
 msgid "This list of shortcuts"
 msgstr "打开这份快捷键说明"
 
-#: src/features/console-shell.tsx:503
+#: src/features/console-shell.tsx:508
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -2790,7 +2793,7 @@ msgstr "目标仓库"
 msgid "To follow up"
 msgstr "待跟进"
 
-#: src/features/session-composer.tsx:310
+#: src/features/session-composer.tsx:311
 msgid "To-dos"
 msgstr "待办"
 
@@ -2858,7 +2861,7 @@ msgstr "触发来源"
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
 
-#: src/features/session-composer.tsx:195
+#: src/features/session-composer.tsx:196
 msgid "Turn on write access in Settings to send these keys"
 msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 
@@ -2888,12 +2891,12 @@ msgstr "下划线"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/session-composer.tsx:116
+#: src/features/session-composer.tsx:117
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:456
+#: src/features/console-shell.tsx:461
 #: src/features/me-host.tsx:103
 msgid "Uptime"
 msgstr "运行时长"
@@ -3003,7 +3006,7 @@ msgstr "等你"
 #~ msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 #~ msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:425
+#: src/features/console-shell.tsx:430
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3037,7 +3040,7 @@ msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
 #: src/features/console-shell.tsx:219
-#: src/features/console-shell.tsx:298
+#: src/features/console-shell.tsx:303
 msgid "WezDeck"
 msgstr "WezDeck"
 

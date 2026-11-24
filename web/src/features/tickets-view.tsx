@@ -343,7 +343,7 @@ export function TicketsView({
         <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Collab tickets`}
-            className="vt-split-list sticky top-4 grid h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
+            className="vt-split-list sticky top-4 grid h-[calc(100cqh-2rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
           >
             <SearchBox value={query} onChange={setQuery} />
             <TicketKeys

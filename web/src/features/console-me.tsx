@@ -224,13 +224,13 @@ function AppearancePage() {
           value={caret}
           onChange={setCaret}
           options={[
-            { value: 'block', label: t`Block` },
             { value: 'bar', label: t`Bar` },
+            { value: 'block', label: t`Block` },
             { value: 'underscore', label: t`Underscore` },
           ]}
         />
         <span className="text-meta text-brand-label">
-          {t`Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar.`}
+          {t`Block and underscore need Chrome 144 or later; other browsers keep the bar.`}
         </span>
       </div>
     </div>
