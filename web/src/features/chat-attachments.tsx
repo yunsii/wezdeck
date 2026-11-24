@@ -50,7 +50,7 @@ function splitAttachments(text: string) {
   return { typed: text.slice(0, at).trim(), files }
 }
 
-const isPhoneImage = (name: string) =>
+const isUploadedImage = (name: string) =>
   /^img-.*\.(jpe?g|png|gif|webp)$/i.test(name)
 
 /**
@@ -104,8 +104,8 @@ function TypedWithTokens({
 
 export function SentAttachments({ text }: { text: string }) {
   const { typed, files } = splitAttachments(text)
-  const images = files.filter((file) => isPhoneImage(file.name))
-  const others = files.filter((file) => !isPhoneImage(file.name))
+  const images = files.filter((file) => isUploadedImage(file.name))
+  const others = files.filter((file) => !isUploadedImage(file.name))
   const [open, setOpen] = useState<number | null>(null)
   const labels = images.map((file) => file.label)
   return (

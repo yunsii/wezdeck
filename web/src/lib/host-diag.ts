@@ -40,9 +40,9 @@ const MAX_STEPS = 30
 // one id per page load: the host files answers per phone. Made on first use —
 // Workers refuse random values in global scope (this module is in the SSR
 // bundle too)
-let phoneId = ''
-const phone = () =>
-  (phoneId ||= Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) =>
+let clientId = ''
+const pageId = () =>
+  (clientId ||= Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) =>
     b.toString(16).padStart(2, '0'),
   ).join(''))
 
@@ -212,7 +212,7 @@ async function answer(
   for (let seq = 0; seq < total; seq++)
     await remoteLink.rpc('diag.submit', {
       id,
-      phone: phone(),
+      phone: pageId(), // the wire name stays "phone" (relay_diag.go)
       seq,
       total,
       data: json.slice(seq * CHUNK, (seq + 1) * CHUNK),

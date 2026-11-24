@@ -66,8 +66,9 @@ type relay struct {
 	mu    sync.Mutex
 	conn  *websocket.Conn
 	peers map[string]*webrtc.PeerConnection
-	// phones: pages seen recently, for host → phone pushes (relay_diag.go)
-	phones map[string]*phoneChan
+	// clients: web console pages seen recently, for host → page pushes
+	// (relay_diag.go; the wire and log names stay "phone(s)")
+	clients map[string]*clientChan
 	// authed: cid → the approved device that said hello on it (relay_auth.go)
 	authed map[string]string
 	log    *os.File
@@ -131,7 +132,7 @@ func runRelay() error {
 		return errors.New("WEZDECK_RELAY_HOST_TOKEN is empty (see docs/remote-access.md)")
 	}
 	url := relayURL()
-	r := &relay{peers: map[string]*webrtc.PeerConnection{}, phones: map[string]*phoneChan{}}
+	r := &relay{peers: map[string]*webrtc.PeerConnection{}, clients: map[string]*clientChan{}}
 	activeRelay = r
 	if path := relayLogPath(); path != "" {
 		if f, err := openRelayLog(path); err == nil {
@@ -235,20 +236,20 @@ func (r *relay) session(url, token string) error {
 		}
 		switch f.T {
 		case "rpc":
-			r.touchPhone(f.Cid)
+			r.touchClient(f.Cid)
 			go func(f relayFrame) {
 				res := handleRPC(f, "websocket", r)
 				res.Cid = f.Cid
 				r.send(res)
 			}(f)
 		case "ping":
-			r.touchPhone(f.Cid)
+			r.touchClient(f.Cid)
 			r.send(relayFrame{T: "pong", Cid: f.Cid, ID: f.ID})
 		case "sig":
 			go r.answer(f.Cid, f.Data)
 		case "bye":
 			r.dropPeer(f.Cid)
-			r.forgetPhone(f.Cid)
+			r.forgetClient(f.Cid)
 		}
 	}
 }
@@ -397,7 +398,7 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 			if json.Unmarshal(msg.Data, &f) != nil {
 				return
 			}
-			r.touchPhone(cid)
+			r.touchClient(cid)
 			switch f.T {
 			case "ping":
 				body, _ := json.Marshal(relayFrame{T: "pong", ID: f.ID})

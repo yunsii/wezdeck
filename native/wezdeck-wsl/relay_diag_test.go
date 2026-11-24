@@ -10,7 +10,7 @@ import (
 func TestDiagRequestRoundTrip(t *testing.T) {
 	t.Setenv("WEZDECK_REMOTE_UPLOADS", t.TempDir())
 	r := &relay{}
-	r.touchPhone("cid-1")
+	r.touchClient("cid-1")
 
 	if _, err := diagSubmit(json.RawMessage(`{"id":"nope","phone":"abcdef0123456789","seq":0,"total":1,"data":"{}"}`), "cid-1", r); err == nil {
 		t.Fatal("chunk for an unknown request must be refused")

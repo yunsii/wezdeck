@@ -26,7 +26,7 @@ import { HostPage, useHostSummary } from './me-host'
 import { InstallEntry, Row, UpdateCheck } from './me-app'
 import { InteractionsPage, useInteractionsBack } from './console-interactions'
 
-function PhoneWriting() {
+function DeviceAccess() {
   const { t } = useLingui()
   const device = useDeviceState()
   const command = `scripts/dev/install-remote-relay.sh --approve ${device.id ?? ''}`
@@ -410,7 +410,7 @@ function MeSubPage({ page }: { page: MePage }) {
   const back = useInteractionsBack(page === 'interactions', leave)
   const body = {
     connection: <ConnectionPage />,
-    writing: <PhoneWriting />,
+    writing: <DeviceAccess />,
     usage: <UsageCard />,
     appearance: <AppearancePage />,
     app: (

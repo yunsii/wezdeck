@@ -97,7 +97,7 @@ func TestReadsNeedAnApprovedDevice(t *testing.T) {
 	// the connection ends: its binding goes
 	writeDevices(t, path, phone)
 	_, _ = r.deviceHello(phone.hello(t, "n-phone-2"), "c1", "test")
-	r.forgetPhone("c1")
+	r.forgetClient("c1")
 	if r.readAllowed("c1") == nil {
 		t.Fatal("a closed connection's hello survived")
 	}

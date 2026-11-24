@@ -17,7 +17,7 @@ function read(): Visits {
   }
 }
 
-export function phoneVisits(): Visits {
+export function consoleVisits(): Visits {
   return read()
 }
 

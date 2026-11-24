@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
-import { phoneVisits, recordVisit } from '#/lib/session-visits'
+import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { NOT_PAIRED } from '#/lib/remote-link'
@@ -156,7 +156,7 @@ export function SessionList({ selected }: { selected?: string } = {}) {
     }
   }
   const rows = sessions.data?.sessions ?? []
-  const phone = phoneVisits()
+  const phone = consoleVisits()
   const waiting = rows
     .filter(needsYou)
     .sort((a, b) => visitOf(b, phone) - visitOf(a, phone))

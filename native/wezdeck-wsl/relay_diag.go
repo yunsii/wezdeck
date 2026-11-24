@@ -46,74 +46,74 @@ import (
 )
 
 const (
-	phoneSeenWindow = 3 * time.Minute
-	diagChunkMax    = 48 << 10
-	diagChunksMax   = 64
-	diagWaitMax     = 60 * time.Second
+	clientSeenWindow = 3 * time.Minute
+	diagChunkMax     = 48 << 10
+	diagChunksMax    = 64
+	diagWaitMax      = 60 * time.Second
 )
 
-// phoneChan: one connected page (cid = its relay client id; the same id names
+// clientChan: one connected page (cid = its relay client id; the same id names
 // its WebRTC peer, so one entry per phone tab).
-type phoneChan struct {
+type clientChan struct {
 	dc   *webrtc.DataChannel
 	seen time.Time
 }
 
-func (r *relay) touchPhone(cid string) {
+func (r *relay) touchClient(cid string) {
 	if cid == "" {
 		return
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.phones == nil {
-		r.phones = map[string]*phoneChan{}
+	if r.clients == nil {
+		r.clients = map[string]*clientChan{}
 	}
-	p := r.phones[cid]
+	p := r.clients[cid]
 	if p == nil {
-		p = &phoneChan{}
-		r.phones[cid] = p
+		p = &clientChan{}
+		r.clients[cid] = p
 	}
 	p.seen = time.Now()
 }
 
 func (r *relay) attachDataChannel(cid string, dc *webrtc.DataChannel) {
-	r.touchPhone(cid)
+	r.touchClient(cid)
 	r.mu.Lock()
-	r.phones[cid].dc = dc
+	r.clients[cid].dc = dc
 	r.mu.Unlock()
 }
 
-func (r *relay) forgetPhone(cid string) {
+func (r *relay) forgetClient(cid string) {
 	r.forgetAuth(cid)
 	r.mu.Lock()
-	delete(r.phones, cid)
+	delete(r.clients, cid)
 	r.mu.Unlock()
 }
 
-// recentPhones: cids seen within phoneSeenWindow.
-func (r *relay) recentPhones() []string {
+// recentClients: cids seen within clientSeenWindow.
+func (r *relay) recentClients() []string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var out []string
-	for cid, p := range r.phones {
-		if time.Since(p.seen) <= phoneSeenWindow {
+	for cid, p := range r.clients {
+		if time.Since(p.seen) <= clientSeenWindow {
 			out = append(out, cid)
 		}
 	}
 	return out
 }
 
-// pushToPhones sends f to every phone seen recently; returns their cids.
-func (r *relay) pushToPhones(f relayFrame) []string {
+// pushToClients sends f to every phone seen recently; returns their cids.
+func (r *relay) pushToClients(f relayFrame) []string {
 	r.mu.Lock()
 	type target struct {
 		cid string
 		dc  *webrtc.DataChannel
 	}
 	var targets []target
-	for cid, p := range r.phones {
-		if time.Since(p.seen) > phoneSeenWindow {
-			delete(r.phones, cid)
+	for cid, p := range r.clients {
+		if time.Since(p.seen) > clientSeenWindow {
+			delete(r.clients, cid)
 			continue
 		}
 		targets = append(targets, target{cid, p.dc})
@@ -237,7 +237,7 @@ func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
 	return map[string]any{"stored": name}, nil
 }
 
-// requestDiagnostics pushes a request and waits for the phones' answers.
+// requestDiagnostics pushes a request and waits for the web consoles' answers.
 func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json.RawMessage) map[string]any {
 	id := newDiagID()
 	req := &diagRequest{deadline: time.Now().Add(wait + 10*time.Second), targets: map[string]bool{},
@@ -255,22 +255,22 @@ func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json
 	}
 	args, _ := json.Marshal(map[string]any{"reason": reason, "steps": steps})
 	// register the targets before pushing: a fast phone may answer at once
-	targets := r.recentPhones()
+	targets := r.recentClients()
 	for _, cid := range targets {
 		req.targets[cid] = true
 	}
 	diagMu.Lock()
 	diagRequests[id] = req
 	diagMu.Unlock()
-	phones := r.pushToPhones(relayFrame{T: "diag.request", ID: id, Data: args})
-	r.logf("diag_request", "id=%s phones=%d reason=%q", id, len(phones), reason)
+	clients := r.pushToClients(relayFrame{T: "diag.request", ID: id, Data: args})
+	r.logf("diag_request", "id=%s phones=%d reason=%q", id, len(clients), reason)
 	timer := time.NewTimer(wait)
 	defer timer.Stop()
-	for len(phones) > 0 {
+	for len(clients) > 0 {
 		diagMu.Lock()
 		got := len(req.results)
 		diagMu.Unlock()
-		if got >= len(phones) {
+		if got >= len(clients) {
 			break
 		}
 		select {
@@ -283,9 +283,9 @@ done:
 	diagMu.Lock()
 	results := append([]diagResult(nil), req.results...)
 	diagMu.Unlock()
-	r.logf("diag_done", "id=%s phones=%d got=%d", id, len(phones), len(results))
-	out := map[string]any{"id": id, "phones": len(phones), "results": results}
-	if len(phones) == 0 {
+	r.logf("diag_done", "id=%s phones=%d got=%d", id, len(clients), len(results))
+	out := map[string]any{"id": id, "phones": len(clients), "results": results}
+	if len(clients) == 0 {
 		out["hint"] = "no phone connected in the last 3 minutes: open the web console on the phone"
 	}
 	return out

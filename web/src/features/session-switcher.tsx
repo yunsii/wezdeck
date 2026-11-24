@@ -11,7 +11,7 @@ import { useCallback, useEffect } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
-import { phoneVisits, recordVisit } from '#/lib/session-visits'
+import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { cn } from '#/lib/utils'
 import { isBusy, needsYou, sessionTone, useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
@@ -43,7 +43,7 @@ export function useSessionNav(current: string) {
   const navigate = useNavigate()
   const { locale } = useLocale()
   const rows = sessions.data?.sessions ?? []
-  const phone = phoneVisits()
+  const phone = consoleVisits()
   // the list's own order: waiting band (by visit), then the tree
   const waiting = rows
     .filter(needsYou)
