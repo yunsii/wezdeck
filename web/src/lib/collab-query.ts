@@ -2,7 +2,11 @@
 // throws instead of returning the {ok:false} envelope whenever good data is
 // already cached, so TanStack keeps showing the last tickets (persisted to
 // IndexedDB) and the page can say "as of HH:MM" instead of going blank.
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
 import { getCollab } from './runtime-client'
 import type { CollabCommand } from './runtime-client'
@@ -20,6 +24,8 @@ export function useCollab<TCommand extends CollabCommand>(
     refetchInterval?: number
     enabled?: boolean
     staleTime?: number
+    /** while a new key loads, keep returning the last data (isPlaceholderData) */
+    keepPrevious?: boolean
   } = {},
 ) {
   const client = useQueryClient()
@@ -36,5 +42,6 @@ export function useCollab<TCommand extends CollabCommand>(
     enabled: options.enabled ?? typeof window !== 'undefined',
     refetchInterval: options.refetchInterval,
     staleTime: options.staleTime,
+    placeholderData: options.keepPrevious ? keepPreviousData : undefined,
   })
 }

@@ -26,15 +26,25 @@ export function StickyPrompt({
   end,
   messages,
   start,
+  following,
 }: {
   end: React.RefObject<HTMLDivElement | null>
   messages: Array<Message>
   /** absolute index of messages[0] */
   start: number
+  /**
+   * the thread is pinned to its bottom (chat-scroll): no bar. Geometry alone
+   * flashed it — content landing under a pinned thread (a session switch,
+   * a streaming reply) puts the bottom > NEAR_BOTTOM away for the few frames
+   * the glide takes to catch up.
+   */
+  following: boolean
 }) {
   const { t } = useLingui()
   const [owner, setOwner] = useState<number | null>(null)
   const box = useRef<HTMLDivElement>(null)
+  const followingRef = useRef(following)
+  followingRef.current = following
   const scroller = () =>
     end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
 
@@ -44,7 +54,10 @@ export function StickyPrompt({
     let frame = 0
     const measure = () => {
       frame = 0
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM) {
+      if (
+        followingRef.current ||
+        el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM
+      ) {
         setOwner(null)
         return
       }
@@ -69,7 +82,8 @@ export function StickyPrompt({
     // re-measure when the thread changes under the reader
   }, [end, messages.length, start])
 
-  const message = owner === null ? undefined : messages[owner - start]
+  const message =
+    owner === null || following ? undefined : messages[owner - start]
   const text = message ? typedText(message.text).replace(/\s+/g, ' ') : ''
 
   const jump = () => {

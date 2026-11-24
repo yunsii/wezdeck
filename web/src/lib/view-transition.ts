@@ -84,3 +84,17 @@ export function transitionTypes(
       : to > from
   return [forward ? 'forward' : 'back', 'within']
 }
+
+/**
+ * Router scroll restoration, off on a detail page (a session, a ticket): the
+ * router carries the previous page's offset onto a location it has no entry
+ * for and applies it after render, so a switch in the wide split drew the
+ * new conversation at the old one's offset — its middle — and the sticky
+ * prompt flashed. A conversation lands at its bottom (chat-scroll), a
+ * ticket at its top (tickets-view); lists keep restoration, so back on a
+ * phone returns to the same place.
+ */
+export function restoresScroll(pathname: string) {
+  const path = consolePath(pathname)
+  return !(path && /^\/console\/(sessions|collab|inbox)\/[^/]+$/.test(path))
+}

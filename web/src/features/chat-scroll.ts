@@ -9,7 +9,13 @@
 // thread is held on its newest message every frame, whatever order the
 // browser resizes and scrolls in. Pin changes and holds go to the client
 // trace (lib/client-trace.ts) so a phone can report what happened.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import { trace } from '#/lib/client-trace'
 import { CATCH_UP_EVENT } from './chat-catchup'
@@ -138,6 +144,25 @@ function useStopAtUnread(
     el.addEventListener(CATCH_UP_EVENT, onCatchUp)
     return () => el.removeEventListener(CATCH_UP_EVENT, onCatchUp)
   }, [end, pinnedRef, pin])
+}
+
+/**
+ * Land at the bottom before the first paint: a wide-split switch keeps the
+ * page scroller, so the new thread showed at the old offset for a frame (a
+ * content jump, the sticky prompt flashing). The rAF landing in
+ * useChatScroll still settles late layout (images, fonts).
+ */
+function useLandBeforePaint(
+  end: React.RefObject<HTMLDivElement | null>,
+  count: number,
+  landed: React.RefObject<boolean>,
+  pinned: React.RefObject<boolean>,
+) {
+  useLayoutEffect(() => {
+    if (!count || landed.current || !pinned.current) return
+    const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
+    if (el) el.scrollTop = endTop(el, end.current)
+  }, [count, end, landed, pinned])
 }
 
 export function useChatScroll(
@@ -277,7 +302,9 @@ export function useChatScroll(
     }
   }, [pin, end])
 
-  // first landing (after the router's scroll restoration) and new messages
+  useLandBeforePaint(end, count, landed, pinnedRef)
+
+  // first landing settles late layout (images, fonts), and new messages
   useEffect(() => {
     if (!count) return
     const added = count - seen.current

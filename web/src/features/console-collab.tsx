@@ -1,5 +1,5 @@
 import { useLingui } from '@lingui/react/macro'
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 
 import { Field, FieldList } from '#/components/ui/field'
 import { useCollab } from '#/lib/collab-query'
@@ -71,12 +71,23 @@ export function TicketReading({
   onOpen: (id: string) => void
 }) {
   const { t } = useLingui()
-  const show = useCollab('show', { id }, { refetchInterval: poll })
+  // switching tickets keeps the last one on screen until the next arrives:
+  // a Loading… heading for ~50 ms between them read as a flash
+  const show = useCollab(
+    'show',
+    { id },
+    { refetchInterval: poll, keepPrevious: true },
+  )
   const statusLabel = useStatusLabel()
   // every hook before the early returns below (it sat after them: the
   // loading render and the loaded one ran a different number of hooks)
   const ownerLabel = useOwnerLabel()
   const [run, setRun] = useState('')
+  // another ticket starts at its top, before it paints (the router no
+  // longer restores a detail page's scroll: view-transition.ts)
+  useLayoutEffect(() => {
+    document.querySelector('.vt-page')?.scrollTo({ top: 0 })
+  }, [id])
   const data = show.data
   if (!data) return <Reading title={t`Loading…`} />
   if (!data.ok || !data.ticket) {
@@ -88,57 +99,60 @@ export function TicketReading({
   const runs = data.runs
   const currentRun = runs.find((item) => item.run === run) ?? runs.at(-1)
   return (
-    <Reading
-      kicker={
-        <span className="flex flex-wrap items-center gap-2">
-          <Led tone={ticketTone(ticket)} size={13} />
-          {/* the phase code (research_done …) only as a hint: the label says it */}
-          <span className="font-medium" title={ticket.phase ?? undefined}>
-            {statusLabel(ticket)}
+    // the previous ticket, held while this one loads: not actionable
+    <div inert={show.isPlaceholderData} aria-busy={show.isPlaceholderData}>
+      <Reading
+        kicker={
+          <span className="flex flex-wrap items-center gap-2">
+            <Led tone={ticketTone(ticket)} size={13} />
+            {/* the phase code (research_done …) only as a hint: the label says it */}
+            <span className="font-medium" title={ticket.phase ?? undefined}>
+              {statusLabel(ticket)}
+            </span>
+            {data.reference ? <CopyReference text={data.reference} /> : null}
           </span>
-          {data.reference ? <CopyReference text={data.reference} /> : null}
-        </span>
-      }
-      title={ticket.title || ticket.id}
-    >
-      <TicketFields
-        fields={[
-          [t`Route`, `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`],
-          [t`Owner`, ownerLabel(ticket.owner)],
-          [t`Progress`, ticket.progress?.message ?? ''],
-          [t`Worktree`, ticket.branch ?? ticket.worktree ?? ''],
-          [t`Ticket`, ticket.id],
-        ]}
-      />
-      {ticket.status === 'waiting_initiator' ? (
-        <TicketReply
-          id={ticket.id}
-          question={openQuestion(data.sections)}
-          questions={data.questions}
+        }
+        title={ticket.title || ticket.id}
+      >
+        <TicketFields
+          fields={[
+            [t`Route`, `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`],
+            [t`Owner`, ownerLabel(ticket.owner)],
+            [t`Progress`, ticket.progress?.message ?? ''],
+            [t`Worktree`, ticket.branch ?? ticket.worktree ?? ''],
+            [t`Ticket`, ticket.id],
+          ]}
         />
-      ) : null}
-      <TicketAttach
-        id={ticket.id}
-        sessions={data.sessions}
-        running={ticket.running.length > 0}
-      />
-      <TicketSections
-        sections={data.sections}
-        waiting={ticket.status === 'waiting_initiator'}
-      />
-      {data.children_detail.length > 0 ? (
-        <ChildrenTable children={data.children_detail} onOpen={onOpen} />
-      ) : null}
-      {data.collab?.integration ? (
-        <IntegrationSummary integration={data.collab.integration} />
-      ) : null}
-      <RunTable
-        runs={runs}
-        selected={currentRun?.run ?? ''}
-        onSelect={setRun}
-      />
-      {currentRun ? <RunDetail run={currentRun.run} poll={poll} /> : null}
-    </Reading>
+        {ticket.status === 'waiting_initiator' ? (
+          <TicketReply
+            id={ticket.id}
+            question={openQuestion(data.sections)}
+            questions={data.questions}
+          />
+        ) : null}
+        <TicketAttach
+          id={ticket.id}
+          sessions={data.sessions}
+          running={ticket.running.length > 0}
+        />
+        <TicketSections
+          sections={data.sections}
+          waiting={ticket.status === 'waiting_initiator'}
+        />
+        {data.children_detail.length > 0 ? (
+          <ChildrenTable children={data.children_detail} onOpen={onOpen} />
+        ) : null}
+        {data.collab?.integration ? (
+          <IntegrationSummary integration={data.collab.integration} />
+        ) : null}
+        <RunTable
+          runs={runs}
+          selected={currentRun?.run ?? ''}
+          onSelect={setRun}
+        />
+        {currentRun ? <RunDetail run={currentRun.run} poll={poll} /> : null}
+      </Reading>
+    </div>
   )
 }
 

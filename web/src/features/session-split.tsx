@@ -7,13 +7,14 @@
 // this browser opened (else the top of the list), so the pane is never an
 // empty hint while sessions exist. A phone keeps list → pushed detail.
 import { useLingui } from '@lingui/react/macro'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
 import { idInUrl } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
-import { SessionDetail } from './console-sessions'
+import { SessionDetail, prefetchSession } from './console-sessions'
 import { SessionList } from './session-list'
 import { nextInCycle } from './session-order'
 import { useSessionNav } from './session-switcher'
@@ -29,6 +30,15 @@ function listedIds() {
 
 function useListKeys(current: string) {
   const nav = useSessionNav(current)
+  const client = useQueryClient()
+  // j / k's next stops, warmed once the list shows: no Loading… frame
+  useEffect(() => {
+    const ids = listedIds()
+    for (const step of [1, -1]) {
+      const next = nextInCycle(ids, current, step)
+      if (next) prefetchSession(client, next)
+    }
+  }, [current, client])
   // read at the keypress, not captured: the URL first (idInUrl), since the
   // page re-renders only after the switch's view transition
   const now = useRef({ current, nav })

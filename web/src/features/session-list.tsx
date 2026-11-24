@@ -4,6 +4,7 @@
 // output, so the list holds still while agents work. Sessions waiting on you
 // sit in a band on top; the filter mirrors Alt+/ (Tab cycles the status).
 import { useLingui } from '@lingui/react/macro'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { FolderGit2, GitFork } from 'lucide-react'
 import { useState } from 'react'
@@ -33,6 +34,7 @@ import { RowCopyButton, useCopySessionReference } from './copy-reference'
 import {
   humanPrompt,
   needsYou,
+  prefetchSession,
   sessionTone,
   useSessions,
   useStatusText,
@@ -82,6 +84,8 @@ function SessionRow({
   const statusText = useStatusText()
   const wide = useIsWide()
   const copyReference = useCopySessionReference()
+  const client = useQueryClient()
+  const warm = () => prefetchSession(client, row.id)
   const paneLabel = (role?: string) =>
     role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
@@ -119,6 +123,10 @@ function SessionRow({
           replace={wide && Boolean(selected)}
           aria-current={row.id === selected ? 'page' : undefined}
           onClick={() => recordVisit(worktreeKey(row))}
+          // warm it before it opens: no Loading… frame between two sessions
+          onPointerEnter={warm}
+          onPointerDown={warm}
+          onFocus={warm}
           className={cn(
             'key-press flex min-h-14 items-start gap-3 px-4 py-3',
             // the selected row as in 工单 / 诊断 (.row-selected, deck.css)

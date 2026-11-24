@@ -2,13 +2,13 @@ import { createRouter as createTanStackRouter } from '@tanstack/react-router'
 
 import { keepTabsFirst } from './lib/go-to-tab'
 import { installHostDiag } from './lib/host-diag'
-import { transitionTypes } from './lib/view-transition'
+import { restoresScroll, transitionTypes } from './lib/view-transition'
 import { routeTree } from './route-tree'
 
 export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
-    scrollRestoration: true,
+    scrollRestoration: ({ location }) => restoresScroll(location.pathname),
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     defaultViewTransition: { types: transitionTypes },

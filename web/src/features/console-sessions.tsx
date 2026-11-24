@@ -4,6 +4,7 @@
 // (remote_session.go); the page explains them before the user hits them.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -269,22 +270,41 @@ function useFailedPolls(errorUpdateCount: number, dataUpdatedAt: number) {
  * A failed refetch keeps the cached data on screen (same key), with a stale
  * note below.
  */
+const detailKey = (id: string) => ['remote', 'session', id] as const
+
+/** one poll of a conversation, merged into what the cache holds */
+async function readDetail(client: QueryClient, id: string) {
+  const key = detailKey(id)
+  const reply = (await hostRead(
+    'session',
+    pollArgs(id, client.getQueryData<Detail>(key)),
+  )) as Detail
+  // merge into what is there now: an earlier page may have landed meanwhile
+  return mergeReply(client.getQueryData<Detail>(key), reply)
+}
+
+/**
+ * Warm a conversation before it opens (a row hovered, focused or pressed;
+ * j / k's neighbours): a session not yet in this browser's cache showed a
+ * Loading… frame with the page collapsed to nothing between two sessions.
+ */
+export function prefetchSession(client: QueryClient, id: string) {
+  void client.prefetchQuery({
+    queryKey: detailKey(id),
+    queryFn: () => readDetail(client, id),
+    staleTime: 10_000,
+  })
+}
+
 function useSessionDetail(id: string) {
   const client = useQueryClient()
-  const key = ['remote', 'session', id] as const
+  const key = detailKey(id)
   const detail = useQuery({
     queryKey: key,
     enabled: typeof window !== 'undefined',
     refetchInterval: (query) =>
       query.state.data && isBusy(query.state.data) ? 1_000 : 2_500,
-    queryFn: async () => {
-      const reply = (await hostRead(
-        'session',
-        pollArgs(id, client.getQueryData<Detail>(key)),
-      )) as Detail
-      // merge into what is there now: an earlier page may have landed meanwhile
-      return mergeReply(client.getQueryData<Detail>(key), reply)
-    },
+    queryFn: () => readDetail(client, id),
   })
   const [pagingIn, setPagingIn] = useState(false)
   const loadEarlier = async (count: number) => {
@@ -445,7 +465,12 @@ export function SessionDetail({ id }: { id: string }) {
         ) : null}
         {messages.length || pending.length ? (
           <>
-            <StickyPrompt end={end} messages={messages} start={start} />
+            <StickyPrompt
+              end={end}
+              messages={messages}
+              start={start}
+              following={follow.pinned}
+            />
             {total > 0 ? (
               <div className="flex items-center justify-between gap-2 px-1 text-meta text-brand-label">
                 <span>{t`${total} messages, showing ${shown}`}</span>
