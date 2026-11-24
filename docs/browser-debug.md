@@ -96,10 +96,10 @@ Tests: `scripts/dev/browser-profile/test.sh` (temp HOME + config).
 
 Host agents and OpenClaw share one explicit switch (no `auto`):
 
-| Value | Agent path | OpenClaw after apply |
-| --- | --- | --- |
-| `ego` | WSL `ego-browser` → Windows ego (lite) Space / Page API | vendor `ego-browser` skill linked; **no** resident `chrome-devtools` MCP |
-| `cdp` | `chrome-devtools-mcp` → WezDeck debug Chrome `:9222` | resident `mcp.servers.chrome-devtools` |
+| Value | Agent path | OpenClaw after apply | Host chrome-devtools skill |
+| --- | --- | --- | --- |
+| `ego` | WSL `ego-browser` → Windows ego (lite) Space / Page API | vendor `ego-browser` skill linked; **no** resident `chrome-devtools` MCP | body parked at `~/.agents/skills-parked/chrome-devtools-mcp-skill`; Claude/Codex discovery links removed; live `uxc` `chrome-devtools-mcp-cli` sessions killed |
+| `cdp` | `chrome-devtools-mcp` / uxc → WezDeck debug Chrome `:9222` | resident `mcp.servers.chrome-devtools` | body restored to `~/.agents/skills/…`; Claude/Codex links recreated |
 
 ```bash
 # Switch + write OpenClaw MCP/skill links (single write entry)
@@ -120,14 +120,23 @@ Ego is a visible Chromium with Spaces (human can take over). CDP remains the
 headless, no-focus-steal path for UI verify / Network / Console. Do not point
 `--browserUrl` at Ego — it does not expose a public CDP port.
 
+**Why park the skill body (not only unlink):** Grok scans
+`~/.agents/skills/` directly, so leaving `chrome-devtools-mcp-skill` there
+keeps offering CDP tools after `--set ego`. Parking under
+`~/.agents/skills-parked/` (outside the scan root) drops discovery for Grok /
+Claude / Codex together; `--set cdp` moves it back. The global
+`chrome-devtools-mcp` package and `chrome-devtools-mcp-cli` uxc link stay so
+restore is fast. Reopen agent sessions after a park so stale skill lists
+clear.
+
 **Slot exclusivity:** the browser slot holds one backend at a time.
 `apply-browser-backend --set ego|cdp` prepares the selected side, then stops
 the other (`scripts/runtime/browser-slot-mutex-lib.sh`):
 
 | Selected | Prepare | Teardown other |
 | --- | --- | --- |
-| `ego` | (probe Ego) | `chromeDebugAutoStart.enabled=false` + stop `chrome-debug` processes |
-| `cdp` | `auto_start=true` + wait `:9222` | stop Ego processes |
+| `ego` | (probe Ego) | `chromeDebugAutoStart.enabled=false` + stop `chrome-debug` processes + park chrome-devtools skill + kill uxc chrome-devtools sessions |
+| `cdp` | `auto_start=true` + wait `:9222` + restore chrome-devtools skill | stop Ego processes |
 
 Everyday browsers (`chrome` / `edge` / `brave`) are never touched.
 

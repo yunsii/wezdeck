@@ -54,8 +54,8 @@ everyday browsers are untouched. Detail:
 
 | `backend` | Host path | OpenClaw capability (after apply) |
 | --- | --- | --- |
-| `ego` | `ego-browser` CLI (WSL wrapper → Windows exe) + vendor `ego-browser` skill | `ego-browser` skill; **no** resident `chrome-devtools` MCP |
-| `cdp` | `chrome-devtools-mcp-cli` / uxc → `http://127.0.0.1:9222` | resident `mcp.servers.chrome-devtools` |
+| `ego` | `ego-browser` CLI (WSL wrapper → Windows exe) + vendor `ego-browser` skill | `ego-browser` skill; **no** resident `chrome-devtools` MCP; host `chrome-devtools-mcp-skill` parked under `~/.agents/skills-parked/` |
+| `cdp` | `chrome-devtools-mcp-cli` / uxc → `http://127.0.0.1:9222` | resident `mcp.servers.chrome-devtools`; host skill restored + Claude/Codex links |
 
 Detail: repo [`docs/browser-debug.md`](../../docs/browser-debug.md).
 
@@ -118,8 +118,9 @@ Config: `wezterm-x/local/browser-profiles.json` (template
 
 ### When backend is `cdp`
 
-1. Use existing `chrome-devtools-mcp-skill` / OpenClaw `chrome-devtools`
-   habits (snapshot before click, etc.).
+1. Use restored `chrome-devtools-mcp-skill` / OpenClaw `chrome-devtools`
+   habits (snapshot before click, etc.). If the skill is missing, re-run
+   `apply-browser-backend --set cdp` (or reinstall from holon-run/uxc).
 2. Prefer live debug Chrome on `:9222` (WezDeck auto-start).
 
 ## Naming

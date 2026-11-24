@@ -4,6 +4,11 @@
 # OpenClaw chrome-devtools / ego skill links after this script owns them.
 # Also enforces browser-slot exclusivity (stop the non-selected side).
 #
+# When backend=ego this also parks the host chrome-devtools-mcp-skill body
+# (Grok reads ~/.agents/skills directly), drops Claude/Codex discovery
+# links, and kills live uxc chrome-devtools-mcp-cli sessions. backend=cdp
+# restores the parked body and re-links discovery.
+#
 # Usage:
 #   apply-browser-backend.sh                 # apply current env/config
 #   apply-browser-backend.sh --set ego|cdp   # write shell-env.d then apply
@@ -12,8 +17,8 @@
 #   apply-browser-backend.sh --skip-reload   # skip openclaw mcp reload
 #
 # Slot mutex: docs/browser-debug.md#browser-backends-ego--cdp
-#   ego → auto_start off + stop chrome-debug
-#   cdp → auto_start on + wait :port + stop ego
+#   ego → auto_start off + stop chrome-debug + park chrome-devtools skill
+#   cdp → auto_start on + wait :port + stop ego + restore chrome-devtools skill
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -206,6 +211,147 @@ link_skill() {
   printf '  linked %s → %s\n' "$dst" "$src"
 }
 
+unlink_skill() {
+  local dst=$1
+  if [[ ! -e "$dst" && ! -L "$dst" ]]; then
+    printf '  ok absent %s\n' "$dst"
+    return 0
+  fi
+  if ((dry_run)); then
+    printf '  dry-run unlink %s\n' "$dst"
+    return 0
+  fi
+  rm -rf "$dst"
+  printf '  unlinked %s\n' "$dst"
+}
+
+# Host chrome-devtools skill: body under ~/.agents/skills (Grok scans that
+# dir). Claude/Codex only see discovery symlinks. Park the body outside the
+# scan root so ego sessions stop offering CDP; restore on --set cdp.
+CDP_SKILL_NAME="chrome-devtools-mcp-skill"
+CDP_SKILL_ACTIVE="$HOME/.agents/skills/$CDP_SKILL_NAME"
+CDP_SKILL_PARKED="$HOME/.agents/skills-parked/$CDP_SKILL_NAME"
+
+park_chrome_devtools_skill() {
+  printf 'chrome-devtools skill (park for ego):\n'
+  unlink_skill "$HOME/.claude/skills/$CDP_SKILL_NAME"
+  unlink_skill "$HOME/.codex/skills/$CDP_SKILL_NAME"
+
+  if [[ ! -e "$CDP_SKILL_ACTIVE" && ! -L "$CDP_SKILL_ACTIVE" ]]; then
+    if [[ -e "$CDP_SKILL_PARKED" || -L "$CDP_SKILL_PARKED" ]]; then
+      printf '  already parked at %s\n' "$CDP_SKILL_PARKED"
+    else
+      printf '  no active body at %s (nothing to park)\n' "$CDP_SKILL_ACTIVE"
+    fi
+    return 0
+  fi
+
+  if ((dry_run)); then
+    printf '  dry-run park %s → %s\n' "$CDP_SKILL_ACTIVE" "$CDP_SKILL_PARKED"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$CDP_SKILL_PARKED")"
+  if [[ -e "$CDP_SKILL_PARKED" || -L "$CDP_SKILL_PARKED" ]]; then
+    rm -rf "$CDP_SKILL_PARKED"
+  fi
+  mv "$CDP_SKILL_ACTIVE" "$CDP_SKILL_PARKED"
+  printf '  parked %s → %s\n' "$CDP_SKILL_ACTIVE" "$CDP_SKILL_PARKED"
+}
+
+restore_chrome_devtools_skill() {
+  printf 'chrome-devtools skill (restore for cdp):\n'
+  if [[ -e "$CDP_SKILL_PARKED" || -L "$CDP_SKILL_PARKED" ]]; then
+    if ((dry_run)); then
+      printf '  dry-run restore %s → %s\n' "$CDP_SKILL_PARKED" "$CDP_SKILL_ACTIVE"
+    else
+      mkdir -p "$(dirname "$CDP_SKILL_ACTIVE")"
+      if [[ -e "$CDP_SKILL_ACTIVE" || -L "$CDP_SKILL_ACTIVE" ]]; then
+        rm -rf "$CDP_SKILL_ACTIVE"
+      fi
+      mv "$CDP_SKILL_PARKED" "$CDP_SKILL_ACTIVE"
+      printf '  restored %s → %s\n' "$CDP_SKILL_PARKED" "$CDP_SKILL_ACTIVE"
+    fi
+  elif [[ -e "$CDP_SKILL_ACTIVE" || -L "$CDP_SKILL_ACTIVE" ]]; then
+    printf '  active body already at %s\n' "$CDP_SKILL_ACTIVE"
+  else
+    printf '  warn: no parked or active %s — reinstall from holon-run/uxc if CDP agents need it\n' \
+      "$CDP_SKILL_NAME"
+    return 0
+  fi
+
+  if [[ -d "$HOME/.claude/skills" || -L "$HOME/.claude/skills" ]]; then
+    link_skill "$CDP_SKILL_ACTIVE" "$HOME/.claude/skills/$CDP_SKILL_NAME" || true
+  fi
+  if [[ -d "$HOME/.codex/skills" || -L "$HOME/.codex/skills" ]]; then
+    link_skill "$CDP_SKILL_ACTIVE" "$HOME/.codex/skills/$CDP_SKILL_NAME" || true
+  fi
+}
+
+# Kill live uxc stdio sessions for chrome-devtools-mcp-cli (ego no longer
+# needs them; leaving them attached to a stopped :9222 wastes guest RAM).
+# Prefer `uxc daemon session kill` over signalling child_pid (registry stays
+# consistent). Do not stop the whole daemon — other MCP links may be live.
+kill_uxc_chrome_devtools_sessions() {
+  local uxc_bin
+  uxc_bin="$(command -v uxc 2>/dev/null || true)"
+  if [[ -z "$uxc_bin" && -x "$HOME/.local/bin/uxc" ]]; then
+    uxc_bin="$HOME/.local/bin/uxc"
+  fi
+  if [[ -z "$uxc_bin" ]]; then
+    printf 'uxc chrome-devtools sessions: uxc not on PATH — skip\n'
+    return 0
+  fi
+
+  printf 'uxc chrome-devtools sessions:\n'
+  local sessions_json keys
+  sessions_json="$("$uxc_bin" daemon sessions 2>/dev/null || true)"
+  if [[ -z "$sessions_json" ]]; then
+    printf '  could not read daemon sessions (daemon down?) — skip\n'
+    return 0
+  fi
+
+  keys="$(printf '%s' "$sessions_json" | python3 -c '
+import json, sys
+try:
+    payload = json.loads(sys.stdin.read(), strict=False)
+except Exception:
+    raise SystemExit
+data = payload.get("data") or []
+if not isinstance(data, list):
+    raise SystemExit
+for row in data:
+    if not isinstance(row, dict):
+        continue
+    link = str(row.get("link_name") or "")
+    endpoint = str(row.get("endpoint") or "")
+    key = str(row.get("session_key") or "")
+    if not key:
+        continue
+    if "chrome-devtools" in link or "chrome-devtools-mcp" in endpoint:
+        print(key)
+' 2>/dev/null || true)"
+
+  if [[ -z "$keys" ]]; then
+    printf '  none\n'
+    return 0
+  fi
+
+  local key
+  while IFS= read -r key; do
+    [[ -z "$key" ]] && continue
+    if ((dry_run)); then
+      printf '  dry-run kill %s\n' "$key"
+    else
+      if "$uxc_bin" daemon session kill "$key" >/dev/null 2>&1; then
+        printf '  killed %s\n' "$key"
+      else
+        printf '  warn: failed to kill %s\n' "$key"
+      fi
+    fi
+  done <<<"$keys"
+}
+
 # --- skill discovery ---
 # Install ego-window.ps1 into the Windows runtime home so WezTerm Lua Alt+b
 # can invoke it without a \\wsl$ path.
@@ -277,6 +423,14 @@ if [[ -d "$REPO_ROOT/skills/browser-agent" ]]; then
   fi
 fi
 
+# Host chrome-devtools-mcp-skill discovery follows backend (body park / restore).
+if [[ "$backend" == "ego" ]]; then
+  park_chrome_devtools_skill
+  kill_uxc_chrome_devtools_sessions
+else
+  restore_chrome_devtools_skill
+fi
+
 # --- OpenClaw MCP ---
 if ! command -v openclaw >/dev/null 2>&1; then
   printf 'openclaw: CLI not on PATH — skipped mcp.servers write\n'
@@ -334,3 +488,6 @@ fi
 printf 'done: backend=%s\n' "$backend"
 printf 'Agents: export WEZDECK_BROWSER_BACKEND=%s (or rely on %s)\n' \
   "$backend" "$ENV_FILE"
+if [[ "$backend" == "ego" ]]; then
+  printf 'Note: chrome-devtools-mcp-skill parked under ~/.agents/skills-parked/; reopen agent sessions to drop stale skill discovery.\n'
+fi
