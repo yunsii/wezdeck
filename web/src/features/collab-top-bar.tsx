@@ -11,28 +11,39 @@ import { Sheet } from '#/components/ui/sheet'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { ActivityLink } from './console-activity'
+import { useMetricsSummary } from './collab-metrics'
+import { NewTicketButton } from './ticket-new'
 import { Button } from '#/components/ui/button'
 
 export function CollabTopBar({ band }: { band: React.ReactNode }) {
   const { t } = useLingui()
   const [open, setOpen] = useState(false)
   const wide = useIsWide()
+  const summary = useMetricsSummary()
   if (wide)
     // the split column's head: the title and the band one click away in a
     // dialog — unfolded inline it pushed the list half a column down
     return (
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-body font-semibold">{t`Cross-repo collab`}</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={() => setOpen(true)}
-          className="gap-1 text-caption text-brand-muted"
-        >
-          <ChartColumn size={14} aria-hidden />
-          {t`Runs, cache hit and cost`}
-        </Button>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {/* the band in short (24h): runs · cache hit · cost; the full one
+              opens in a dialog. The long 「运行、缓存命中与花费」 crowded the
+              title row once the new-ticket button moved up here */}
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            onClick={() => setOpen(true)}
+            title={t`Runs, cache hit and cost`}
+            aria-label={t`Runs, cache hit and cost`}
+            className="min-w-0 gap-1 text-caption text-brand-muted"
+          >
+            <ChartColumn size={14} aria-hidden className="shrink-0" />
+            <span className="truncate tabular-nums">{summary}</span>
+          </Button>
+          <NewTicketButton />
+        </div>
         <Sheet
           open={open}
           onOpenChange={setOpen}

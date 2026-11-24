@@ -103,6 +103,10 @@ msgstr "{requests} requests, {writes} writes"
 msgid "{runningCount} subagents running"
 msgstr "{runningCount} subagents running"
 
+#: src/features/collab-metrics.tsx:59
+msgid "{runs} runs"
+msgstr "{runs} runs"
+
 #: src/features/session-subagents.tsx:123
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
@@ -142,6 +146,10 @@ msgstr "↓ {tokens} tokens"
 #: src/features/landing-example.tsx:150
 #~ msgid "128 today"
 #~ msgstr "128 today"
+
+#: src/features/collab-metrics.tsx:52
+msgid "24h · no runs"
+msgstr "24h · no runs"
 
 #: src/features/session-header.tsx:124
 msgid "5 h"
@@ -195,7 +203,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:522
+#: src/features/tickets-view.tsx:523
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -243,8 +251,8 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:285
-#: src/features/session-list.tsx:333
+#: src/features/session-list.tsx:286
+#: src/features/session-list.tsx:334
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -282,7 +290,7 @@ msgstr "All categories"
 msgid "All questions answered. The agent waits until you submit."
 msgstr "All questions answered. The agent waits until you submit."
 
-#: src/features/collab-metrics.tsx:75
+#: src/features/collab-metrics.tsx:100
 msgid "All repos"
 msgstr "All repos"
 
@@ -380,7 +388,7 @@ msgstr "At the desk: {host}"
 #~ msgstr "At the desk: {keys}"
 
 #: src/features/console-me.tsx:436
-#: src/features/tickets-view.tsx:444
+#: src/features/tickets-view.tsx:445
 msgid "Back"
 msgstr "Back"
 
@@ -430,7 +438,7 @@ msgstr "Block and underscore need Chrome 144 or later; other browsers keep the b
 msgid "Branch"
 msgstr "Branch"
 
-#: src/features/collab-metrics.tsx:190
+#: src/features/collab-metrics.tsx:215
 msgid "Breakdowns"
 msgstr "Breakdowns"
 
@@ -438,19 +446,19 @@ msgstr "Breakdowns"
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 
-#: src/features/collab-metrics.tsx:194
+#: src/features/collab-metrics.tsx:219
 msgid "By backend"
 msgstr "By backend"
 
-#: src/features/collab-metrics.tsx:195
+#: src/features/collab-metrics.tsx:220
 msgid "By session reuse"
 msgstr "By session reuse"
 
-#: src/features/collab-metrics.tsx:193
+#: src/features/collab-metrics.tsx:218
 msgid "By target repo"
 msgstr "By target repo"
 
-#: src/features/collab-metrics.tsx:198
+#: src/features/collab-metrics.tsx:223
 msgid "By trigger"
 msgstr "By trigger"
 
@@ -458,8 +466,8 @@ msgstr "By trigger"
 msgid "Bytes"
 msgstr "Bytes"
 
-#: src/features/collab-metrics.tsx:132
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:157
+#: src/features/collab-metrics.tsx:252
 #: src/features/console-collab.tsx:216
 #: src/features/console-collab.tsx:267
 #: src/features/console-collab.tsx:351
@@ -612,12 +620,12 @@ msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. 
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
-#: src/features/collab-metrics.tsx:63
+#: src/features/collab-metrics.tsx:88
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
 #: src/features/ticket-keys.tsx:60
-#: src/features/tickets-view.tsx:402
+#: src/features/tickets-view.tsx:403
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -789,8 +797,8 @@ msgstr "Copy the open ticket's reference"
 msgid "Copy value"
 msgstr "Copy value"
 
-#: src/features/collab-metrics.tsx:137
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:162
+#: src/features/collab-metrics.tsx:252
 #: src/features/console-collab.tsx:217
 #: src/features/console-collab.tsx:268
 msgid "Cost"
@@ -840,7 +848,7 @@ msgstr "Creating the worktree…"
 msgid "Creating…"
 msgstr "Creating…"
 
-#: src/features/collab-top-bar.tsx:25
+#: src/features/collab-top-bar.tsx:28
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -1072,7 +1080,7 @@ msgstr "failed"
 #~ msgid "Failed"
 #~ msgstr "Failed"
 
-#: src/features/collab-metrics.tsx:128
+#: src/features/collab-metrics.tsx:153
 msgid "Failed runs"
 msgstr "Failed runs"
 
@@ -1158,7 +1166,7 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/tickets-view.tsx:521
+#: src/features/tickets-view.tsx:522
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1173,6 +1181,10 @@ msgstr "Hide done"
 #: src/features/console-collab-run.tsx:191
 msgid "Hide initial prompt"
 msgstr "Hide initial prompt"
+
+#: src/features/collab-metrics.tsx:60
+msgid "hit {hit}%"
+msgstr "hit {hit}%"
 
 #: src/features/remote-badge.tsx:81
 #: src/features/remote-badge.tsx:88
@@ -1274,11 +1286,11 @@ msgstr "In Safari tap Share, then “Add to Home Screen”."
 msgid "Initial prompt"
 msgstr "Initial prompt"
 
-#: src/features/collab-metrics.tsx:205
+#: src/features/collab-metrics.tsx:230
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:520
+#: src/features/tickets-view.tsx:521
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -1474,7 +1486,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:280
+#: src/features/session-list.tsx:281
 #: src/features/tickets-view.tsx:317
 msgid "Loading…"
 msgstr "Loading…"
@@ -1529,7 +1541,7 @@ msgstr "Messages"
 #~ msgid "Metrics"
 #~ msgstr "Metrics"
 
-#: src/features/collab-metrics.tsx:84
+#: src/features/collab-metrics.tsx:109
 msgid "Metrics window"
 msgstr "Metrics window"
 
@@ -1550,7 +1562,7 @@ msgstr "Modified"
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:252
 msgid "Name"
 msgstr "Name"
 
@@ -1559,7 +1571,7 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:263
+#: src/features/session-list.tsx:264
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
@@ -1712,7 +1724,7 @@ msgstr "No plan written yet"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:429
+#: src/features/tickets-view.tsx:430
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1752,7 +1764,7 @@ msgstr "Not running"
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:554
+#: src/features/tickets-view.tsx:555
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -1920,7 +1932,7 @@ msgstr "Pane"
 msgid "Pane role"
 msgstr "Pane role"
 
-#: src/features/collab-metrics.tsx:139
+#: src/features/collab-metrics.tsx:164
 msgid "Parallelism"
 msgstr "Parallelism"
 
@@ -1936,7 +1948,7 @@ msgstr "Part"
 msgid "Pending"
 msgstr "Pending"
 
-#: src/features/collab-metrics.tsx:206
+#: src/features/collab-metrics.tsx:231
 #: src/features/console-collab.tsx:264
 msgid "Phase"
 msgstr "Phase"
@@ -2141,7 +2153,7 @@ msgstr "Reply and continue"
 msgid "Repo"
 msgstr "Repo"
 
-#: src/features/collab-metrics.tsx:73
+#: src/features/collab-metrics.tsx:98
 msgid "Repo filter"
 msgstr "Repo filter"
 
@@ -2190,7 +2202,7 @@ msgstr "resets {weekReset}"
 msgid "Result"
 msgstr "Result"
 
-#: src/features/collab-metrics.tsx:134
+#: src/features/collab-metrics.tsx:159
 msgid "Resume / fresh hit"
 msgstr "Resume / fresh hit"
 
@@ -2216,7 +2228,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/collab-metrics.tsx:96
+#: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
@@ -2244,7 +2256,7 @@ msgstr "Route"
 msgid "RSS"
 msgstr "RSS"
 
-#: src/features/collab-metrics.tsx:151
+#: src/features/collab-metrics.tsx:176
 msgid "RSS p95 / peak"
 msgstr "RSS p95 / peak"
 
@@ -2278,7 +2290,7 @@ msgid "running"
 msgstr "running"
 
 #: src/features/chat-tools.tsx:80
-#: src/features/collab-metrics.tsx:125
+#: src/features/collab-metrics.tsx:150
 #: src/features/console-shell.tsx:414
 msgid "Running"
 msgstr "Running"
@@ -2295,21 +2307,22 @@ msgstr "Running in pane"
 msgid "Running substate"
 msgstr "Running substate"
 
-#: src/features/collab-metrics.tsx:127
-#: src/features/collab-metrics.tsx:199
-#: src/features/collab-metrics.tsx:206
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:152
+#: src/features/collab-metrics.tsx:224
+#: src/features/collab-metrics.tsx:231
+#: src/features/collab-metrics.tsx:252
 #: src/features/console-collab.tsx:184
 #: src/features/console-collab.tsx:258
 msgid "Runs"
 msgstr "Runs"
 
-#: src/features/collab-top-bar.tsx:60
+#: src/features/collab-top-bar.tsx:71
 msgid "Runs and cost"
 msgstr "Runs and cost"
 
-#: src/features/collab-top-bar.tsx:34
+#: src/features/collab-top-bar.tsx:38
 #: src/features/collab-top-bar.tsx:39
+#: src/features/collab-top-bar.tsx:50
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
@@ -2457,7 +2470,7 @@ msgstr "Session info"
 msgid "Session pages"
 msgstr "Session pages"
 
-#: src/features/collab-metrics.tsx:129
+#: src/features/collab-metrics.tsx:154
 msgid "Sessions"
 msgstr "Sessions"
 
@@ -2469,7 +2482,7 @@ msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:253
+#: src/features/session-list.tsx:254
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2802,7 +2815,7 @@ msgstr "Ticket unavailable"
 
 #: src/features/console-shell.tsx:83
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:446
+#: src/features/tickets-view.tsx:447
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2814,7 +2827,7 @@ msgstr "Tickets"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/tickets-view.tsx:430
+#: src/features/tickets-view.tsx:431
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -2916,11 +2929,11 @@ msgstr "Today events"
 msgid "Token rejected — pair again"
 msgstr "Token rejected — pair again"
 
-#: src/features/collab-metrics.tsx:131
+#: src/features/collab-metrics.tsx:156
 msgid "Tokens"
 msgstr "Tokens"
 
-#: src/features/collab-metrics.tsx:155
+#: src/features/collab-metrics.tsx:180
 #: src/features/console-collab-run.tsx:140
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
@@ -2944,7 +2957,7 @@ msgstr "Trace ID or text"
 msgid "Transcript"
 msgstr "Transcript"
 
-#: src/features/collab-metrics.tsx:199
+#: src/features/collab-metrics.tsx:224
 #: src/features/console-collab-run.tsx:107
 msgid "Trigger"
 msgstr "Trigger"
@@ -2969,7 +2982,7 @@ msgstr "Turn on write access in Settings to send these keys"
 msgid "TURN relay"
 msgstr "TURN relay"
 
-#: src/features/collab-metrics.tsx:130
+#: src/features/collab-metrics.tsx:155
 #: src/features/console-collab.tsx:215
 #: src/features/console-collab.tsx:266
 msgid "Turns"
@@ -3077,7 +3090,7 @@ msgstr "Waiting for your answer"
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
-#: src/features/collab-metrics.tsx:126
+#: src/features/collab-metrics.tsx:151
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
@@ -3089,7 +3102,7 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/tickets-view.tsx:557
+#: src/features/tickets-view.tsx:558
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
@@ -3119,11 +3132,11 @@ msgstr "Wall"
 #~ msgid "Wall p50"
 #~ msgstr "Wall p50"
 
-#: src/features/collab-metrics.tsx:146
+#: src/features/collab-metrics.tsx:171
 msgid "Wall p50 / p95"
 msgstr "Wall p50 / p95"
 
-#: src/features/collab-metrics.tsx:149
+#: src/features/collab-metrics.tsx:174
 msgid "Wall total"
 msgstr "Wall total"
 

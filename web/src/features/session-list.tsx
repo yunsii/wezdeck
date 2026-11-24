@@ -239,7 +239,8 @@ export function SessionList({
           },
         ]}
       />
-      <NewSessionButton />
+      {/* wide: the button sits on the title row (more room for the filter) */}
+      {split ? null : <NewSessionButton />}
     </div>
   )
   const body = (
@@ -333,7 +334,10 @@ export function SessionList({
         label={t`Agent sessions`}
         head={
           <>
-            {title}
+            <div className="flex items-center justify-between gap-2">
+              {title}
+              <NewSessionButton />
+            </div>
             {filterRow}
           </>
         }

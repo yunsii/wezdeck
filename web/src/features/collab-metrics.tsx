@@ -40,6 +40,31 @@ function useRepos() {
   return [...seen].sort()
 }
 
+/** the band in one short line for a title row: 24h runs · cache hit · cost
+ * (shares the band's default query) */
+export function useMetricsSummary() {
+  const { t } = useLingui()
+  const metrics = useCollab(
+    'metrics',
+    { window: '24h', repo: undefined },
+    { refetchInterval: 30_000 },
+  ).data
+  if (!metrics || !metrics.runs) return t`24h · no runs`
+  const runs = metrics.runs
+  const hit =
+    typeof metrics.cache_hit_rate === 'number'
+      ? Math.round(metrics.cache_hit_rate * 100)
+      : null
+  const parts = [
+    t`${runs} runs`,
+    hit === null ? '' : t`hit ${hit}%`,
+    typeof metrics.cost_usd === 'number'
+      ? `$${metrics.cost_usd.toFixed(2)}`
+      : '',
+  ]
+  return parts.filter(Boolean).join(' · ')
+}
+
 export function CollabMetricsBand() {
   const { t } = useLingui()
   const [window, setWindow] = useState('24h')

@@ -103,6 +103,10 @@ msgstr "请求 {requests} 次，写入 {writes} 次"
 msgid "{runningCount} subagents running"
 msgstr "{runningCount} 个子 agent 运行中"
 
+#: src/features/collab-metrics.tsx:59
+msgid "{runs} runs"
+msgstr "{runs} 次"
+
 #: src/features/session-subagents.tsx:123
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} 个子 agent 很久没动静"
@@ -142,6 +146,10 @@ msgstr "↓ {tokens} tokens"
 #: src/features/landing-example.tsx:150
 #~ msgid "128 today"
 #~ msgstr "今日 128"
+
+#: src/features/collab-metrics.tsx:52
+msgid "24h · no runs"
+msgstr "24 小时 · 无运行"
 
 #: src/features/session-header.tsx:124
 msgid "5 h"
@@ -195,7 +203,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:522
+#: src/features/tickets-view.tsx:523
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -243,8 +251,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:285
-#: src/features/session-list.tsx:333
+#: src/features/session-list.tsx:286
+#: src/features/session-list.tsx:334
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -282,7 +290,7 @@ msgstr "全部分类"
 msgid "All questions answered. The agent waits until you submit."
 msgstr "都答完了，提交后 agent 才会继续。"
 
-#: src/features/collab-metrics.tsx:75
+#: src/features/collab-metrics.tsx:100
 msgid "All repos"
 msgstr "全部仓库"
 
@@ -380,7 +388,7 @@ msgstr "终端：{host}"
 #~ msgstr "主机上：{keys}"
 
 #: src/features/console-me.tsx:436
-#: src/features/tickets-view.tsx:444
+#: src/features/tickets-view.tsx:445
 msgid "Back"
 msgstr "返回"
 
@@ -430,7 +438,7 @@ msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示
 msgid "Branch"
 msgstr "分支"
 
-#: src/features/collab-metrics.tsx:190
+#: src/features/collab-metrics.tsx:215
 msgid "Breakdowns"
 msgstr "分组明细"
 
@@ -438,19 +446,19 @@ msgstr "分组明细"
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "本次 Runtime 启动以来访问过它的浏览器和脚本。它们读写都不需要设备密钥，这里没有需要批准的。"
 
-#: src/features/collab-metrics.tsx:194
+#: src/features/collab-metrics.tsx:219
 msgid "By backend"
 msgstr "按后端"
 
-#: src/features/collab-metrics.tsx:195
+#: src/features/collab-metrics.tsx:220
 msgid "By session reuse"
 msgstr "按会话复用"
 
-#: src/features/collab-metrics.tsx:193
+#: src/features/collab-metrics.tsx:218
 msgid "By target repo"
 msgstr "按目标仓库"
 
-#: src/features/collab-metrics.tsx:198
+#: src/features/collab-metrics.tsx:223
 msgid "By trigger"
 msgstr "按触发来源"
 
@@ -458,8 +466,8 @@ msgstr "按触发来源"
 msgid "Bytes"
 msgstr "字节"
 
-#: src/features/collab-metrics.tsx:132
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:157
+#: src/features/collab-metrics.tsx:252
 #: src/features/console-collab.tsx:216
 #: src/features/console-collab.tsx:267
 #: src/features/console-collab.tsx:351
@@ -612,12 +620,12 @@ msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒�
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
-#: src/features/collab-metrics.tsx:63
+#: src/features/collab-metrics.tsx:88
 msgid "Collab metrics"
 msgstr "协作指标"
 
 #: src/features/ticket-keys.tsx:60
-#: src/features/tickets-view.tsx:402
+#: src/features/tickets-view.tsx:403
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -789,8 +797,8 @@ msgstr "复制当前工单的引用"
 msgid "Copy value"
 msgstr "复制值"
 
-#: src/features/collab-metrics.tsx:137
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:162
+#: src/features/collab-metrics.tsx:252
 #: src/features/console-collab.tsx:217
 #: src/features/console-collab.tsx:268
 msgid "Cost"
@@ -840,7 +848,7 @@ msgstr "正在创建工作树…"
 msgid "Creating…"
 msgstr "创建中…"
 
-#: src/features/collab-top-bar.tsx:25
+#: src/features/collab-top-bar.tsx:28
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
@@ -1072,7 +1080,7 @@ msgstr "失败"
 #~ msgid "Failed"
 #~ msgstr "失败"
 
-#: src/features/collab-metrics.tsx:128
+#: src/features/collab-metrics.tsx:153
 msgid "Failed runs"
 msgstr "失败次数"
 
@@ -1158,7 +1166,7 @@ msgstr "授权失败（{micError}），点此重试"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/tickets-view.tsx:521
+#: src/features/tickets-view.tsx:522
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1173,6 +1181,10 @@ msgstr "收起已完成"
 #: src/features/console-collab-run.tsx:191
 msgid "Hide initial prompt"
 msgstr "收起初始消息"
+
+#: src/features/collab-metrics.tsx:60
+msgid "hit {hit}%"
+msgstr "命中 {hit}%"
 
 #: src/features/remote-badge.tsx:81
 #: src/features/remote-badge.tsx:88
@@ -1274,11 +1286,11 @@ msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
 msgid "Initial prompt"
 msgstr "初始消息"
 
-#: src/features/collab-metrics.tsx:205
+#: src/features/collab-metrics.tsx:230
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:520
+#: src/features/tickets-view.tsx:521
 msgid "Initiator"
 msgstr "发起方"
 
@@ -1474,7 +1486,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:280
+#: src/features/session-list.tsx:281
 #: src/features/tickets-view.tsx:317
 msgid "Loading…"
 msgstr "加载中…"
@@ -1529,7 +1541,7 @@ msgstr "消息数"
 #~ msgid "Metrics"
 #~ msgstr "指标"
 
-#: src/features/collab-metrics.tsx:84
+#: src/features/collab-metrics.tsx:109
 msgid "Metrics window"
 msgstr "统计窗口"
 
@@ -1550,7 +1562,7 @@ msgstr "修改时间"
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "多选：每点一次切换一个选项，对照下面的终端画面确认后按回车。"
 
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:252
 msgid "Name"
 msgstr "名称"
 
@@ -1559,7 +1571,7 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:263
+#: src/features/session-list.tsx:264
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
@@ -1712,7 +1724,7 @@ msgstr "还没有写计划"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "这个工作区里没有仓库。"
 
-#: src/features/tickets-view.tsx:429
+#: src/features/tickets-view.tsx:430
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -1752,7 +1764,7 @@ msgstr "未运行"
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:554
+#: src/features/tickets-view.tsx:555
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -1920,7 +1932,7 @@ msgstr "窗格"
 msgid "Pane role"
 msgstr "窗格角色"
 
-#: src/features/collab-metrics.tsx:139
+#: src/features/collab-metrics.tsx:164
 msgid "Parallelism"
 msgstr "实际并行度"
 
@@ -1936,7 +1948,7 @@ msgstr "组成"
 msgid "Pending"
 msgstr "待批准"
 
-#: src/features/collab-metrics.tsx:206
+#: src/features/collab-metrics.tsx:231
 #: src/features/console-collab.tsx:264
 msgid "Phase"
 msgstr "阶段"
@@ -2141,7 +2153,7 @@ msgstr "回复并继续"
 msgid "Repo"
 msgstr "仓库"
 
-#: src/features/collab-metrics.tsx:73
+#: src/features/collab-metrics.tsx:98
 msgid "Repo filter"
 msgstr "仓库筛选"
 
@@ -2190,7 +2202,7 @@ msgstr "{weekReset}重置"
 msgid "Result"
 msgstr "结果"
 
-#: src/features/collab-metrics.tsx:134
+#: src/features/collab-metrics.tsx:159
 msgid "Resume / fresh hit"
 msgstr "续接 / 新开命中"
 
@@ -2216,7 +2228,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 msgid "Retry"
 msgstr "重试"
 
-#: src/features/collab-metrics.tsx:96
+#: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "复用理由"
 
@@ -2244,7 +2256,7 @@ msgstr "流向"
 msgid "RSS"
 msgstr "内存"
 
-#: src/features/collab-metrics.tsx:151
+#: src/features/collab-metrics.tsx:176
 msgid "RSS p95 / peak"
 msgstr "内存 p95 / 峰值"
 
@@ -2278,7 +2290,7 @@ msgid "running"
 msgstr "运行中"
 
 #: src/features/chat-tools.tsx:80
-#: src/features/collab-metrics.tsx:125
+#: src/features/collab-metrics.tsx:150
 #: src/features/console-shell.tsx:414
 msgid "Running"
 msgstr "运行中"
@@ -2295,21 +2307,22 @@ msgstr "窗格里在跑"
 msgid "Running substate"
 msgstr "运行子状态"
 
-#: src/features/collab-metrics.tsx:127
-#: src/features/collab-metrics.tsx:199
-#: src/features/collab-metrics.tsx:206
-#: src/features/collab-metrics.tsx:227
+#: src/features/collab-metrics.tsx:152
+#: src/features/collab-metrics.tsx:224
+#: src/features/collab-metrics.tsx:231
+#: src/features/collab-metrics.tsx:252
 #: src/features/console-collab.tsx:184
 #: src/features/console-collab.tsx:258
 msgid "Runs"
 msgstr "运行次数"
 
-#: src/features/collab-top-bar.tsx:60
+#: src/features/collab-top-bar.tsx:71
 msgid "Runs and cost"
 msgstr "运行与花费"
 
-#: src/features/collab-top-bar.tsx:34
+#: src/features/collab-top-bar.tsx:38
 #: src/features/collab-top-bar.tsx:39
+#: src/features/collab-top-bar.tsx:50
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 
@@ -2457,7 +2470,7 @@ msgstr "会话信息"
 msgid "Session pages"
 msgstr "会话"
 
-#: src/features/collab-metrics.tsx:129
+#: src/features/collab-metrics.tsx:154
 msgid "Sessions"
 msgstr "会话数"
 
@@ -2469,7 +2482,7 @@ msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:253
+#: src/features/session-list.tsx:254
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2802,7 +2815,7 @@ msgstr "工单不可用"
 
 #: src/features/console-shell.tsx:83
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:446
+#: src/features/tickets-view.tsx:447
 msgid "Tickets"
 msgstr "工单"
 
@@ -2814,7 +2827,7 @@ msgstr "工单"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "工单和会话从本地 Runtime 读取；写入走远程链接，这个浏览器还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/tickets-view.tsx:430
+#: src/features/tickets-view.tsx:431
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -2916,11 +2929,11 @@ msgstr "今日事件"
 msgid "Token rejected — pair again"
 msgstr "令牌无效，请重新配对"
 
-#: src/features/collab-metrics.tsx:131
+#: src/features/collab-metrics.tsx:156
 msgid "Tokens"
 msgstr "token 总量"
 
-#: src/features/collab-metrics.tsx:155
+#: src/features/collab-metrics.tsx:180
 #: src/features/console-collab-run.tsx:140
 msgid "Tokens in / cache r / cache w / out"
 msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
@@ -2944,7 +2957,7 @@ msgstr "Trace ID 或文本"
 msgid "Transcript"
 msgstr "过程记录"
 
-#: src/features/collab-metrics.tsx:199
+#: src/features/collab-metrics.tsx:224
 #: src/features/console-collab-run.tsx:107
 msgid "Trigger"
 msgstr "触发来源"
@@ -2969,7 +2982,7 @@ msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 msgid "TURN relay"
 msgstr "TURN 中继"
 
-#: src/features/collab-metrics.tsx:130
+#: src/features/collab-metrics.tsx:155
 #: src/features/console-collab.tsx:215
 #: src/features/console-collab.tsx:266
 msgid "Turns"
@@ -3077,7 +3090,7 @@ msgstr "等你回答"
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
-#: src/features/collab-metrics.tsx:126
+#: src/features/collab-metrics.tsx:151
 msgid "Waiting on human"
 msgstr "等人处理"
 
@@ -3089,7 +3102,7 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/tickets-view.tsx:557
+#: src/features/tickets-view.tsx:558
 msgid "Waiting on you"
 msgstr "等你处理"
 
@@ -3119,11 +3132,11 @@ msgstr "耗时"
 #~ msgid "Wall p50"
 #~ msgstr "耗时 p50"
 
-#: src/features/collab-metrics.tsx:146
+#: src/features/collab-metrics.tsx:171
 msgid "Wall p50 / p95"
 msgstr "耗时 p50 / p95"
 
-#: src/features/collab-metrics.tsx:149
+#: src/features/collab-metrics.tsx:174
 msgid "Wall total"
 msgstr "总耗时"
 

@@ -351,7 +351,8 @@ export function TicketsView({
           <Search size={18} aria-hidden />
         </Button>
       )}
-      <NewTicketButton />
+      {/* wide: on the title row, beside the metrics (collab-top-bar) */}
+      {wide ? null : <NewTicketButton />}
     </div>
   )
 
