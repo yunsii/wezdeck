@@ -100,8 +100,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    levels with counts, search, a category select; an entry's facts as Field
    rows, copy raw line, only this trace; entry ids are stable, so the 5 s
    refresh does not move the selection; mobile opens an entry in a sheet.
+   The status filter row of 会话 / 工单 (with 工单's search) is a
+   `StickyBar` (`components/deck/sticky-bar.tsx`): it stays at the top of
+   the page scroll on a phone, of the list column's own scroll when wide.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): the
-   list sticky on the left (search above it), the ticket beside it in the
+   list sticky on the left (status filter and search above it), the ticket beside it in the
    page scroll, j / k move through the list and y copies the open ticket's
    reference (not while typing or a sheet is open), rows replace instead of
    push. Every ticket and session row has a copy key beside its link

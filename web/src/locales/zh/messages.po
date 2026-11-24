@@ -191,7 +191,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:459
+#: src/features/tickets-view.tsx:464
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -239,7 +239,7 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:264
+#: src/features/session-list.tsx:267
 #: src/features/session-split.tsx:94
 msgid "Agent sessions"
 msgstr "Agent 会话"
@@ -256,7 +256,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:204
+#: src/features/session-list.tsx:206
 msgctxt "filter"
 msgid "All"
 msgstr "全部"
@@ -375,7 +375,7 @@ msgstr "终端：{host}"
 #~ msgstr "主机上：{keys}"
 
 #: src/features/console-me.tsx:436
-#: src/features/tickets-view.tsx:384
+#: src/features/tickets-view.tsx:387
 msgid "Back"
 msgstr "返回"
 
@@ -584,7 +584,7 @@ msgstr "关闭待办"
 #~ msgstr "关闭 VS Code 窗口"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:118
+#: src/features/tickets-view.tsx:119
 msgctxt "ticket status"
 msgid "closed"
 msgstr "已关闭"
@@ -602,7 +602,7 @@ msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒�
 #~ msgid "Collab"
 #~ msgstr "跨仓协作"
 
-#: src/features/tickets-view.tsx:287
+#: src/features/tickets-view.tsx:288
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
@@ -862,7 +862,7 @@ msgstr "深色"
 #~ msgid "Dark theme"
 #~ msgstr "暗色主题"
 
-#: src/features/tickets-view.tsx:157
+#: src/features/tickets-view.tsx:158
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
@@ -990,7 +990,7 @@ msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备�
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "已启用。这台手机可以给会话发消息、回复工单。"
 
-#: src/features/tickets-view.tsx:226
+#: src/features/tickets-view.tsx:227
 msgctxt "filter"
 msgid "Ended"
 msgstr "已结束"
@@ -1058,7 +1058,7 @@ msgstr "退出码"
 msgid "Expired"
 msgstr "已过期"
 
-#: src/features/tickets-view.tsx:120
+#: src/features/tickets-view.tsx:121
 msgid "failed"
 msgstr "失败"
 
@@ -1074,12 +1074,12 @@ msgstr "失败次数"
 msgid "File"
 msgstr "文件"
 
-#: src/features/tickets-view.tsx:185
+#: src/features/tickets-view.tsx:186
 msgid "Filter by title, repo or id"
 msgstr "按标题、仓库或编号筛选"
 
-#: src/features/tickets-view.tsx:186
-#: src/features/tickets-view.tsx:311
+#: src/features/tickets-view.tsx:187
+#: src/features/tickets-view.tsx:312
 msgid "Filter tickets"
 msgstr "筛选工单"
 
@@ -1152,7 +1152,7 @@ msgstr "授权失败（{micError}），点此重试"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/tickets-view.tsx:458
+#: src/features/tickets-view.tsx:463
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1170,7 +1170,7 @@ msgstr "收起初始消息"
 
 #: src/features/remote-badge.tsx:81
 #: src/features/remote-badge.tsx:88
-#: src/features/tickets-view.tsx:142
+#: src/features/tickets-view.tsx:143
 msgid "Host offline"
 msgstr "主机离线"
 
@@ -1183,7 +1183,7 @@ msgid "Host signals"
 msgstr "主机信号"
 
 #: src/features/console-activity.tsx:210
-#: src/features/tickets-view.tsx:143
+#: src/features/tickets-view.tsx:144
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
@@ -1205,7 +1205,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:219
+#: src/features/session-list.tsx:221
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1243,11 +1243,11 @@ msgstr "图片"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
-#: src/features/tickets-view.tsx:114
+#: src/features/tickets-view.tsx:115
 msgid "in progress"
 msgstr "进行中"
 
-#: src/features/tickets-view.tsx:216
+#: src/features/tickets-view.tsx:217
 msgctxt "filter"
 msgid "In progress"
 msgstr "进行中"
@@ -1272,7 +1272,7 @@ msgstr "初始消息"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:457
+#: src/features/tickets-view.tsx:462
 msgid "Initiator"
 msgstr "发起方"
 
@@ -1468,8 +1468,8 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:259
-#: src/features/tickets-view.tsx:285
+#: src/features/session-list.tsx:262
+#: src/features/tickets-view.tsx:286
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -1552,12 +1552,12 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:242
+#: src/features/session-list.tsx:245
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:209
+#: src/features/session-list.tsx:211
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1649,11 +1649,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:184
+#: src/features/session-list.tsx:185
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:187
+#: src/features/session-list.tsx:188
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1677,11 +1677,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:135
+#: src/features/session-list.tsx:136
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:186
+#: src/features/session-list.tsx:187
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1705,7 +1705,7 @@ msgstr "还没有写计划"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "这个工作区里没有仓库。"
 
-#: src/features/tickets-view.tsx:368
+#: src/features/tickets-view.tsx:371
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -1741,11 +1741,11 @@ msgstr "未配对"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:182
+#: src/features/session-list.tsx:183
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:491
+#: src/features/tickets-view.tsx:496
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -1978,7 +1978,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/session-list.tsx:81
+#: src/features/session-list.tsx:82
 msgid "Primary"
 msgstr "主"
 
@@ -2062,7 +2062,7 @@ msgstr "刷新"
 #~ msgid "Registered devices"
 #~ msgstr "已登记的设备"
 
-#: src/features/tickets-view.tsx:119
+#: src/features/tickets-view.tsx:120
 msgid "rejected"
 msgstr "已拒绝"
 
@@ -2266,7 +2266,7 @@ msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
 #: src/features/console-collab.tsx:369
-#: src/features/tickets-view.tsx:124
+#: src/features/tickets-view.tsx:125
 msgid "running"
 msgstr "运行中"
 
@@ -2363,7 +2363,7 @@ msgstr "改动范围"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:81
+#: src/features/session-list.tsx:82
 msgid "Secondary"
 msgstr "副"
 
@@ -2451,12 +2451,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:77
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:192
+#: src/features/session-list.tsx:193
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:232
+#: src/features/session-list.tsx:235
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2469,7 +2469,7 @@ msgstr "会话通过远程链接读取，这台设备还没配对。在主机上
 msgid "Settings"
 msgstr "我的"
 
-#: src/features/tickets-view.tsx:117
+#: src/features/tickets-view.tsx:118
 msgid "shipped"
 msgstr "已交付"
 
@@ -2569,8 +2569,8 @@ msgstr "状态"
 #: src/features/console-collab.tsx:334
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:196
-#: src/features/tickets-view.tsx:209
+#: src/features/session-list.tsx:198
+#: src/features/tickets-view.tsx:210
 msgid "Status"
 msgstr "状态"
 
@@ -2586,7 +2586,7 @@ msgstr "主题"
 msgid "Submit answers"
 msgstr "提交答案"
 
-#: src/features/tickets-view.tsx:113
+#: src/features/tickets-view.tsx:114
 msgid "submitted"
 msgstr "已提交"
 
@@ -2785,7 +2785,7 @@ msgstr "工单不可用"
 
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:386
+#: src/features/tickets-view.tsx:389
 msgid "Tickets"
 msgstr "工单"
 
@@ -2797,7 +2797,7 @@ msgstr "工单"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "工单和会话从本地 Runtime 读取；写入走远程链接，这个浏览器还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/tickets-view.tsx:369
+#: src/features/tickets-view.tsx:372
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -2970,7 +2970,7 @@ msgstr "下划线"
 #~ msgid "Up to date, {at}"
 #~ msgstr "已同步到最新，{at}"
 
-#: src/features/tickets-view.tsx:157
+#: src/features/tickets-view.tsx:158
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
@@ -3064,19 +3064,19 @@ msgstr "在等你确认"
 msgid "Waiting on human"
 msgstr "等人处理"
 
-#: src/features/tickets-view.tsx:116
+#: src/features/tickets-view.tsx:117
 msgid "waiting on target"
 msgstr "等对方"
 
-#: src/features/tickets-view.tsx:115
+#: src/features/tickets-view.tsx:116
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/tickets-view.tsx:494
+#: src/features/tickets-view.tsx:499
 msgid "Waiting on you"
 msgstr "等你处理"
 
-#: src/features/tickets-view.tsx:221
+#: src/features/tickets-view.tsx:222
 msgctxt "filter"
 msgid "Waiting on you"
 msgstr "等你"
@@ -3213,7 +3213,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:216
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"

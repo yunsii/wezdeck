@@ -28,6 +28,7 @@ import { NewTicketButton } from './ticket-new'
 import { TicketKeys } from './ticket-keys'
 import { CopyKey, useCopyTicketReference } from './copy-reference'
 import { Button } from '#/components/ui/button'
+import { StickyBar } from '#/components/deck/sticky-bar'
 import { Input } from '#/components/ui/input'
 
 const ACTIVE_POLL_MS = 2_000
@@ -335,7 +336,6 @@ export function TicketsView({
     return (
       <div className="grid content-start gap-3">
         {top}
-        {keys}
         {list.isError ? freshness : null}
         <TicketListKeys
           ids={[...recent, ...older].map((ticket) => ticket.id)}
@@ -348,7 +348,10 @@ export function TicketsView({
             aria-label={t`Collab tickets`}
             className="vt-split-list sticky top-4 grid h-[calc(100cqh-2rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
           >
-            <SearchBox value={query} onChange={setQuery} />
+            <StickyBar>
+              {keys}
+              <SearchBox value={query} onChange={setQuery} />
+            </StickyBar>
             <TicketKeys
               tickets={recent}
               older={older}
@@ -395,10 +398,12 @@ export function TicketsView({
   return (
     <div className="grid content-start gap-3">
       {top}
-      {keys}
-      {searching || query || fixedFilter ? (
-        <SearchBox value={query} onChange={setQuery} autoFocus={searching} />
-      ) : null}
+      <StickyBar>
+        {keys}
+        {searching || query || fixedFilter ? (
+          <SearchBox value={query} onChange={setQuery} autoFocus={searching} />
+        ) : null}
+      </StickyBar>
       {/* "updated HH:MM" only when it matters: the host is unreachable */}
       {list.isError ? freshness : null}
       <TicketKeys

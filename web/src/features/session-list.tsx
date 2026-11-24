@@ -9,6 +9,7 @@ import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
+import { StickyBar } from '#/components/deck/sticky-bar'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -191,38 +192,40 @@ export function SessionList({ selected }: { selected?: string } = {}) {
       <h1 className="hidden text-body font-semibold md:block">
         {t({ message: 'Sessions', context: 'nav' })}
       </h1>
-      <div className="flex items-center gap-2">
-        <Segmented
-          label={t`Status`}
-          value={filter}
-          onChange={setFilter}
-          className="min-w-0 flex-1 md:max-w-md"
-          dense
-          options={[
-            {
-              value: 'all',
-              label: t({ message: 'All', context: 'filter' }),
-              count: allCount,
-            },
-            {
-              value: 'waiting',
-              label: t({ message: 'Needs you', context: 'filter' }),
-              count: waitingCount,
-            },
-            {
-              value: 'running',
-              label: t({ message: 'Working', context: 'filter' }),
-              count: runningCount,
-            },
-            {
-              value: 'idle',
-              label: t({ message: 'Idle', context: 'filter' }),
-              count: idleCount,
-            },
-          ]}
-        />
-        <NewSessionButton />
-      </div>
+      <StickyBar>
+        <div className="flex items-center gap-2">
+          <Segmented
+            label={t`Status`}
+            value={filter}
+            onChange={setFilter}
+            className="min-w-0 flex-1 md:max-w-md"
+            dense
+            options={[
+              {
+                value: 'all',
+                label: t({ message: 'All', context: 'filter' }),
+                count: allCount,
+              },
+              {
+                value: 'waiting',
+                label: t({ message: 'Needs you', context: 'filter' }),
+                count: waitingCount,
+              },
+              {
+                value: 'running',
+                label: t({ message: 'Working', context: 'filter' }),
+                count: runningCount,
+              },
+              {
+                value: 'idle',
+                label: t({ message: 'Idle', context: 'filter' }),
+                count: idleCount,
+              },
+            ]}
+          />
+          <NewSessionButton />
+        </div>
+      </StickyBar>
       {sessions.isError ? (
         <p
           role="status"
