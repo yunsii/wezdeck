@@ -65,3 +65,13 @@ went from 109–124 ms to 0–56 ms. The relative-time formatter
 (`formatAgo`) is cached per locale — building one per row was the top app
 cost of a ticket switch, where every row re-renders.
 
+Opening a conversation never scrolls with animation: after it lands, the
+thread keeps growing for a moment (markdown laid out, the progressive
+render adding earlier items), and a pinned thread used to glide after it —
+a scroll animation on every switch (1910 → 2694 over ~150 ms). For
+`LANDING_MS` after landing (extended while it grows) growth jumps to the
+bottom inside the ResizeObserver callback, which runs before paint
+(`useLandBeforePaint` / `grewWhileLanding`, `chat-scroll.ts`); the glide is
+kept for a streaming reply. web-frame-probe's `glide` finding checks it on
+painted frames.
+

@@ -146,11 +146,19 @@ function useStopAtUnread(
   }, [end, pinnedRef, pin])
 }
 
+/** after a conversation opens, growth jumps instead of gliding for this long
+ * (extended while it keeps growing) */
+const LANDING_MS = 1500
+
 /**
  * Land at the bottom before the first paint: a wide-split switch keeps the
  * page scroller, so the new thread showed at the old offset for a frame (a
  * content jump, the sticky prompt flashing). The rAF landing in
- * useChatScroll still settles late layout (images, fonts).
+ * useChatScroll still settles late layout (images, fonts). Returns the end
+ * of the landing window: until then the thread is still settling (markdown
+ * laid out, earlier items added by the progressive render) and growth
+ * jumps to the bottom — gliding there played a scroll animation on every
+ * switch (measured: 1910 → 2694 over ~150 ms).
  */
 function useLandBeforePaint(
   end: React.RefObject<HTMLDivElement | null>,
@@ -158,11 +166,22 @@ function useLandBeforePaint(
   landed: React.RefObject<boolean>,
   pinned: React.RefObject<boolean>,
 ) {
+  const landingUntil = useRef(0)
   useLayoutEffect(() => {
     if (!count || landed.current || !pinned.current) return
     const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
     if (el) el.scrollTop = endTop(el, end.current)
+    landingUntil.current = performance.now() + LANDING_MS
   }, [count, end, landed, pinned])
+  return landingUntil
+}
+
+/** still settling after it opened? Growth then keeps the window open a while */
+function grewWhileLanding(landing: React.RefObject<number>) {
+  const now = performance.now()
+  if (now >= landing.current) return false
+  landing.current = Math.max(landing.current, now + 600)
+  return true
 }
 
 export function useChatScroll(
@@ -302,7 +321,7 @@ export function useChatScroll(
     }
   }, [pin, end])
 
-  useLandBeforePaint(end, count, landed, pinnedRef)
+  const landing = useLandBeforePaint(end, count, landed, pinnedRef)
 
   // first landing settles late layout (images, fonts), and new messages
   useEffect(() => {
@@ -336,8 +355,8 @@ export function useChatScroll(
     // the toolbar, thumbnails or a multi-line draft)
     const thread = document.getElementById('console-main')
     if (!el || !thread || typeof ResizeObserver === 'undefined') return
-    const following = () =>
-      pinnedRef.current && landed.current && !touching.current
+    const live = () => landed.current || performance.now() < landing.current
+    const following = () => pinnedRef.current && live() && !touching.current
     const jumpDown = () => {
       if (following()) el.scrollTop = endTop(el, end.current)
     }
@@ -360,8 +379,9 @@ export function useChatScroll(
     }
     const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
     const observer = new ResizeObserver((entries) => {
-      // the scroller itself resized (keyboard): be at the bottom right away
-      if (!smooth || entries.some((entry) => entry.target === el)) jumpDown()
+      // keyboard resize, or still settling after it opened: bottom at once
+      const now = !smooth || grewWhileLanding(landing)
+      if (now || entries.some((e) => e.target === el)) jumpDown()
       else glideDown()
     })
     observer.observe(thread)
