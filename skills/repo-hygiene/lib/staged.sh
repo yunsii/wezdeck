@@ -18,7 +18,7 @@ hygiene_list_targets() {
       ;;
     audit)
       git -C "$root" ls-files \
-        -z -- '*.md' '*.lua' '*.sh' 'AGENTS.md' 'CLAUDE.md' 'README.md' \
+        -z -- '*.md' '*.lua' '*.sh' '*.cs' '*.go' '*.py' 'AGENTS.md' 'CLAUDE.md' 'README.md' \
         | tr '\0' '\n' \
         | sed '/^$/d'
       ;;

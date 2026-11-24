@@ -256,7 +256,7 @@ cmd_audit() {
       | tr '\0' '\n' | sed '/^$/d'
   )
   mapfile -t code_all < <(
-    git -C "$root" ls-files -z -- '*.lua' '*.sh' \
+    git -C "$root" ls-files -z -- '*.lua' '*.sh' '*.cs' '*.go' '*.py' \
       | tr '\0' '\n' | sed '/^$/d'
   )
 
@@ -384,7 +384,7 @@ for n, rel in sorted(rows)[-15:]:
 PY
   echo
 
-  echo "--- top lua/sh by lines ---"
+  echo "--- top code (lua/sh/cs/go/py) by lines ---"
   python3 - "$root" "${code_all[@]}" <<'PY' | tail -n 15
 import sys
 from pathlib import Path
