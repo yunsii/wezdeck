@@ -15,11 +15,14 @@ import (
 	"time"
 )
 
-// lastClaudeAITitle: the session's display title, as Claude Code itself
-// picks it — a /rename (`custom-title`, re-appended every turn and carried
-// across /clear) wins over the generated `ai-title`; Claude stops generating
-// ai-title once a custom title exists, so reading ai-title alone left such
-// sessions untitled.
+// lastClaudeAITitle: the session's display title. A /rename (`custom-title`,
+// re-appended every turn) wins over the generated `ai-title`; Claude stops
+// generating ai-title once a custom title exists, so reading ai-title alone
+// left such sessions untitled. Unlike Claude, the web drops a custom title
+// inherited across /clear (/new): Claude writes it as the new transcript's
+// first line, and on a page that shows titles a previous conversation's name
+// misleads — the card falls back to the worktree / cwd basename until the
+// session is renamed to something else (the terminal keeps the old name).
 func lastClaudeAITitle(path string) string {
 	f, err := os.Open(path)
 	if err != nil {
@@ -49,6 +52,7 @@ func lastClaudeAITitle(path string) string {
 		}
 	}
 	lines := strings.Split(text, "\n")
+	inherited := inheritedClaudeTitle(f)
 	aiTitle := ""
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := strings.TrimSpace(lines[i])
@@ -64,6 +68,9 @@ func lastClaudeAITitle(path string) string {
 			continue
 		}
 		if row.Type == "custom-title" && row.CustomTitle != "" {
+			if row.CustomTitle == inherited {
+				continue
+			}
 			return row.CustomTitle
 		}
 		if row.Type == "ai-title" && row.AITitle != "" && aiTitle == "" {
@@ -71,6 +78,26 @@ func lastClaudeAITitle(path string) string {
 		}
 	}
 	return aiTitle
+}
+
+// inheritedClaudeTitle: the custom title carried in from the previous
+// conversation by /clear — the transcript's first line when it is a
+// custom-title row (a session renamed later never starts with one).
+func inheritedClaudeTitle(f *os.File) string {
+	head := make([]byte, 64<<10)
+	n, _ := f.ReadAt(head, 0)
+	line := head[:n]
+	if i := strings.IndexByte(string(line), '\n'); i >= 0 {
+		line = line[:i]
+	}
+	var row struct {
+		Type        string `json:"type"`
+		CustomTitle string `json:"customTitle"`
+	}
+	if json.Unmarshal(line, &row) != nil || row.Type != "custom-title" {
+		return ""
+	}
+	return row.CustomTitle
 }
 
 // pastedTag: Claude Code wraps a multi-line paste — every phone message with
