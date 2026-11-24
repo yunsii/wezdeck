@@ -251,8 +251,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:298
-#: src/features/session-list.tsx:346
+#: src/features/session-list.tsx:301
+#: src/features/session-list.tsx:349
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -268,7 +268,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:234
+#: src/features/session-list.tsx:235
 #: src/features/tickets-view.tsx:238
 msgctxt "filter"
 msgid "All"
@@ -1223,7 +1223,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:249
+#: src/features/session-list.tsx:250
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1486,7 +1486,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:250
-#: src/features/session-list.tsx:293
+#: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:317
 msgid "Loading…"
 msgstr "加载中…"
@@ -1571,12 +1571,12 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:272
-#: src/features/session-list.tsx:276
+#: src/features/session-list.tsx:277
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:239
+#: src/features/session-list.tsx:240
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1668,11 +1668,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:213
+#: src/features/session-list.tsx:214
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:216
+#: src/features/session-list.tsx:217
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1696,11 +1696,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:148
+#: src/features/session-list.tsx:149
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:215
+#: src/features/session-list.tsx:216
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1760,7 +1760,7 @@ msgstr "未配对"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:211
+#: src/features/session-list.tsx:212
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
@@ -1997,7 +1997,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/session-list.tsx:100
+#: src/features/session-list.tsx:101
 msgid "Primary"
 msgstr "主"
 
@@ -2384,7 +2384,7 @@ msgstr "改动范围"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:100
+#: src/features/session-list.tsx:101
 msgid "Secondary"
 msgstr "副"
 
@@ -2477,12 +2477,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:236
-#: src/features/session-list.tsx:220
+#: src/features/session-list.tsx:221
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:266
+#: src/features/session-list.tsx:267
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2595,7 +2595,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:348
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:226
+#: src/features/session-list.tsx:227
 #: src/features/tickets-view.tsx:231
 msgid "Status"
 msgstr "状态"
@@ -3243,7 +3243,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:244
+#: src/features/session-list.tsx:245
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"

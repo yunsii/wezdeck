@@ -26,6 +26,7 @@ import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { NOT_PAIRED } from '#/lib/remote-link'
 import { OpenTodos } from './session-todos'
+import { SessionListSkeleton } from './session-skeleton'
 import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton } from './session-new'
 import {
@@ -288,9 +289,11 @@ export function SessionList({
         </section>
       ) : null}
       {tree.length === 0 && !(filter === 'all' && waiting.length) ? (
-        sessions.isError ? null : (
+        sessions.isError ? null : sessions.isPending ? (
+          <SessionListSkeleton />
+        ) : (
           <p className="rounded-xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
-            {sessions.isPending ? t`Loading…` : emptyText}
+            {emptyText}
           </p>
         )
       ) : (

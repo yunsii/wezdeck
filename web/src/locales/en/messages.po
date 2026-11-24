@@ -251,8 +251,8 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:298
-#: src/features/session-list.tsx:346
+#: src/features/session-list.tsx:301
+#: src/features/session-list.tsx:349
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -268,7 +268,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:234
+#: src/features/session-list.tsx:235
 #: src/features/tickets-view.tsx:238
 msgctxt "filter"
 msgid "All"
@@ -1223,7 +1223,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:249
+#: src/features/session-list.tsx:250
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1486,7 +1486,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:250
-#: src/features/session-list.tsx:293
+#: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:317
 msgid "Loading…"
 msgstr "Loading…"
@@ -1571,12 +1571,12 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/session-header.tsx:272
-#: src/features/session-list.tsx:276
+#: src/features/session-list.tsx:277
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:239
+#: src/features/session-list.tsx:240
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1668,11 +1668,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:213
+#: src/features/session-list.tsx:214
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:216
+#: src/features/session-list.tsx:217
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1696,11 +1696,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:148
+#: src/features/session-list.tsx:149
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:215
+#: src/features/session-list.tsx:216
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1760,7 +1760,7 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:211
+#: src/features/session-list.tsx:212
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
@@ -1997,7 +1997,7 @@ msgstr "Previous / next image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/session-list.tsx:100
+#: src/features/session-list.tsx:101
 msgid "Primary"
 msgstr "Primary"
 
@@ -2384,7 +2384,7 @@ msgstr "Scope"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:100
+#: src/features/session-list.tsx:101
 msgid "Secondary"
 msgstr "Secondary"
 
@@ -2477,12 +2477,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:236
-#: src/features/session-list.tsx:220
+#: src/features/session-list.tsx:221
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:266
+#: src/features/session-list.tsx:267
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2595,7 +2595,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:348
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:226
+#: src/features/session-list.tsx:227
 #: src/features/tickets-view.tsx:231
 msgid "Status"
 msgstr "Status"
@@ -3243,7 +3243,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:244
+#: src/features/session-list.tsx:245
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"

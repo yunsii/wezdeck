@@ -21,8 +21,8 @@ and `MotionConfig reducedMotion="user"` (opacity only under reduced motion).
 | an element arrives / leaves (sticky prompt, a chip, a hint) | `AnimatePresence` + `m.div` with a preset; the leaving element keeps its last content | enter medium + enter curve; leave exit + exit curve |
 | a page / pane | View Transitions (`lib/view-transition.ts`); none within a wide split | — |
 
-Rules: states move one way (a list row is hover 7 % → pressed 10 % → open
-13 % of the accent, `.list-row`, never white → grey → blue); never ease
+Rules: states move one way (a list row is hover 9 % → pressed 12 % → open
+15 % of the accent, `.list-row`, never white → grey → blue); never ease
 between two unrelated `box-shadow`s (a 999 px veil into a 3 px bar painted
 the row solid blue); prefer `opacity` / `transform` over `background-color`
 for anything that changes while content renders (a background transition

@@ -88,8 +88,8 @@ html[data-theme='dark'] .key-press:active {
 }
 
 /* A row of a split list (会话 / 工单 / 诊断) and the open one. States go one
-   way, in the accent: hover 7 %, pressed 10 %, open 13 % (dark 10 / 15 / 22;
-   hover was 4 %, too close to the card to read, 2026-11-24).
+   way, in the accent: hover 9 %, pressed 12 %, open 15 % (dark 12 / 17 / 24;
+   hover was 4 % then 7 %, still too close to the card, 2026-11-24).
    It used to press a grey veil (.key-press) and snap to the tint: white,
    grey, blue in three steps, a flicker.
    Both the tint and the 3 px bar are pseudo-elements that change only
@@ -125,23 +125,23 @@ html[data-theme='dark'] .key-press:active {
 }
 @media (hover: hover) {
   .list-row:hover::after {
-    opacity: 0.07;
+    opacity: 0.09;
   }
   html[data-theme='dark'] .list-row:hover::after {
-    opacity: 0.1;
+    opacity: 0.12;
   }
 }
 .list-row:active::after {
-  opacity: 0.1;
+  opacity: 0.12;
 }
 html[data-theme='dark'] .list-row:active::after {
-  opacity: 0.15;
+  opacity: 0.17;
 }
 .list-row.row-selected::after {
-  opacity: 0.13;
+  opacity: 0.15;
 }
 html[data-theme='dark'] .list-row.row-selected::after {
-  opacity: 0.22;
+  opacity: 0.24;
 }
 .list-row.row-selected::before {
   opacity: 1;
