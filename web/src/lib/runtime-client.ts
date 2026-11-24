@@ -378,6 +378,7 @@ export type HostReadAction =
   | 'session.new.job'
   | 'session.image'
   | 'session.history'
+  | 'session.git'
   /** local Runtime only (serve.go): the relay does not list devices */
   | 'devices'
 

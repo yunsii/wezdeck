@@ -200,6 +200,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '同一项目里更早的 Claude 会话，供「恢复会话」选择',
         'Earlier Claude conversations of the project, for 恢复会话',
       ),
+      c(
+        'session.git',
+        '会话所在检出的改动文件、未推送 / 未拉取与最近提交（点 git 标签时）',
+        'Changed files, unpushed / unpulled and recent commits of the checkout (on tapping the git tag)',
+      ),
     ],
   },
   {

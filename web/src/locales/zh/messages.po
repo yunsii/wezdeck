@@ -11,6 +11,11 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr "、"
 
+#: src/features/session-git.tsx:50
+msgctxt "list separator"
+msgid ", "
+msgstr "，"
+
 #: src/features/chat-thread.tsx:427
 msgid "· summary"
 msgstr "· 摘要"
@@ -35,6 +40,18 @@ msgstr "（可多选）"
 #: src/components/deck/session-tags.tsx:123
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
+
+#: src/features/session-git.tsx:57
+msgid "{ahead} commits not pushed yet."
+msgstr "有 {ahead} 个提交还没推送。"
+
+#: src/features/session-git.tsx:55
+msgid "{ahead} commits to push, {behind} to pull."
+msgstr "有 {ahead} 个提交待推送，{behind} 个待拉取。"
+
+#: src/features/session-git.tsx:59
+msgid "{behind} commits to pull."
+msgstr "有 {behind} 个提交待拉取。"
 
 #: src/features/console-sessions.tsx:177
 msgid "{bg} background tasks running"
@@ -124,6 +141,10 @@ msgstr "{runningCount} 个子 agent 运行中"
 msgid "{runs} runs"
 msgstr "{runs} 次"
 
+#: src/features/session-git.tsx:46
+msgid "{staged} staged"
+msgstr "已暂存 {staged} 个"
+
 #: src/components/deck/session-tags.tsx:121
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
@@ -132,7 +153,7 @@ msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} 个子 agent 很久没动静"
 
-#: src/features/session-header.tsx:145
+#: src/features/session-header.tsx:142
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
@@ -156,6 +177,14 @@ msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
+#: src/features/session-git.tsx:47
+msgid "{unstaged} modified"
+msgstr "已修改 {unstaged} 个"
+
+#: src/features/session-git.tsx:48
+msgid "{untracked} untracked"
+msgstr "未跟踪 {untracked} 个"
+
 #: src/features/landing-example.tsx:71
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} 个等待中"
@@ -172,7 +201,7 @@ msgstr "↓ {tokens} tokens"
 msgid "24h · no runs"
 msgstr "24 小时 · 无运行"
 
-#: src/features/session-header.tsx:130
+#: src/features/session-header.tsx:127
 msgid "5 h"
 msgstr "5 小时"
 
@@ -180,7 +209,7 @@ msgstr "5 小时"
 msgid "5-hour limit"
 msgstr "5 小时额度"
 
-#: src/features/session-header.tsx:137
+#: src/features/session-header.tsx:134
 msgid "7 d"
 msgstr "7 天"
 
@@ -496,7 +525,7 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:156
+#: src/features/session-header.tsx:153
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -700,6 +729,10 @@ msgstr "确认撤销"
 msgid "conflict"
 msgstr "冲突"
 
+#: src/features/session-git.tsx:106
+msgid "Conflicts"
+msgstr "冲突"
+
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
 msgid "Connecting…"
@@ -721,12 +754,12 @@ msgstr "控制台（{origin}）"
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/session-header.tsx:127
+#: src/features/session-header.tsx:124
 #: src/features/session-info.tsx:72
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:153
+#: src/features/session-header.tsx:150
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -1114,6 +1147,10 @@ msgstr "失败次数"
 msgid "File"
 msgstr "文件"
 
+#: src/features/session-git.tsx:51
+msgid "Files: {list}."
+msgstr "文件：{list}。"
+
 #: src/features/ticket-search.tsx:62
 msgid "Filter by title, repo or id"
 msgstr "按标题、仓库或编号筛选"
@@ -1167,6 +1204,10 @@ msgstr "随处可用"
 #: src/features/console-development.tsx:406
 #~ msgid "Git"
 #~ msgstr "Git"
+
+#: src/features/session-git.tsx:188
+msgid "Git status"
+msgstr "Git 状态"
 
 #: src/features/console-keys.tsx:26
 msgid "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
@@ -1481,6 +1522,10 @@ msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl
 msgid "Level"
 msgstr "级别"
 
+#: src/features/session-git.tsx:60
+msgid "Level with upstream."
+msgstr "与上游一致。"
+
 #: src/features/console-me.tsx:215
 #: src/features/console-me.tsx:304
 #: src/features/console-shared.tsx:385
@@ -1491,7 +1536,7 @@ msgstr "浅色"
 #~ msgid "Light theme"
 #~ msgstr "亮色主题"
 
-#: src/features/session-header.tsx:157
+#: src/features/session-header.tsx:154
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -1519,7 +1564,8 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-header.tsx:244
+#: src/features/session-git.tsx:199
+#: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1588,9 +1634,14 @@ msgstr "模式"
 msgid "Model"
 msgstr "模型"
 
+#: src/features/session-git.tsx:108
 #: src/features/session-info.tsx:59
 msgid "Modified"
 msgstr "修改时间"
+
+#: src/features/session-git.tsx:150
+msgid "More files changed than listed here."
+msgstr "改动的文件比这里列出的更多。"
 
 #: src/features/session-ask-claude.tsx:103
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
@@ -1604,7 +1655,7 @@ msgstr "名称"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:268
+#: src/features/session-header.tsx:265
 #: src/features/session-list.tsx:281
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -1770,9 +1821,17 @@ msgstr "未选中工单"
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
+#: src/features/session-git.tsx:51
+msgid "No uncommitted changes."
+msgstr "没有未提交的改动。"
+
 #: src/components/deck/session-tags.tsx:124
 msgid "no upstream"
 msgstr "无上游"
+
+#: src/features/session-git.tsx:53
+msgid "No upstream branch: nothing to compare with."
+msgstr "没有上游分支，无法比较。"
 
 #: src/features/console-development.tsx:134
 #~ msgid "No workspaces in the local catalog."
@@ -1797,6 +1856,14 @@ msgstr "当前 Runtime 还没有这条通道"
 #: src/features/console-me.tsx:319
 msgid "Not paired"
 msgstr "未配对"
+
+#: src/features/session-git.tsx:154
+msgid "Not pulled"
+msgstr "未拉取"
+
+#: src/features/session-git.tsx:153
+msgid "Not pushed"
+msgstr "未推送"
 
 #: src/features/console-shell.tsx:414
 msgid "Not running"
@@ -1941,7 +2008,7 @@ msgstr "正在打开…"
 msgid "Origin session"
 msgstr "发起会话"
 
-#: src/features/session-header.tsx:155
+#: src/features/session-header.tsx:152
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -2115,6 +2182,10 @@ msgstr "就绪"
 msgid "Reason"
 msgstr "原因"
 
+#: src/features/session-git.tsx:155
+msgid "Recent commits"
+msgstr "最近提交"
+
 #: src/features/console-now.tsx:212
 #~ msgid "Recently active"
 #~ msgstr "最近活跃"
@@ -2236,11 +2307,11 @@ msgstr "调研完成"
 msgid "research failed"
 msgstr "调研失败"
 
-#: src/features/session-header.tsx:132
+#: src/features/session-header.tsx:129
 msgid "resets {fiveReset}"
 msgstr "{fiveReset}重置"
 
-#: src/features/session-header.tsx:139
+#: src/features/session-header.tsx:136
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
@@ -2510,7 +2581,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:281
+#: src/features/session-header.tsx:278
 #: src/features/session-info.tsx:214
 msgid "Session info"
 msgstr "会话信息"
@@ -2530,7 +2601,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:220
 #: src/features/session-list.tsx:225
 msgctxt "nav"
 msgid "Sessions"
@@ -2614,6 +2685,10 @@ msgstr "来源"
 msgid "Sources on this computer"
 msgstr "本机来源"
 
+#: src/features/session-git.tsx:107
+msgid "Staged"
+msgstr "已暂存"
+
 #: src/features/session-commands.tsx:214
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
@@ -2686,7 +2761,7 @@ msgstr "摘要"
 msgid "Switch session"
 msgstr "切换会话"
 
-#: src/features/session-header.tsx:235
+#: src/features/session-header.tsx:232
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -3067,11 +3142,15 @@ msgid "Undo"
 msgstr "撤销"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:202
+#: src/features/session-header.tsx:199
 #: src/features/session-list.tsx:104
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "未命名会话"
+
+#: src/features/session-git.tsx:109
+msgid "Untracked"
+msgstr "未跟踪"
 
 #: src/features/console-sessions.tsx:288
 #~ msgid "Up to date, {at}"

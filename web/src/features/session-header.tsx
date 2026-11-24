@@ -9,11 +9,7 @@ import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
-import {
-  AgentTag,
-  BranchTag,
-  GitStatusTag,
-} from '#/components/deck/session-tags'
+import { AgentTag, BranchTag } from '#/components/deck/session-tags'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -28,6 +24,7 @@ import type {
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
 import { BackgroundTasks } from './session-background'
+import { GitStatusButton } from './session-git'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -255,7 +252,7 @@ export function SessionHeader({
                 <AgentTag agent={data.agent} />
               ) : null}
               {data.branch ? <BranchTag branch={data.branch} /> : null}
-              {data.git ? <GitStatusTag git={data.git} /> : null}
+              {data.git ? <GitStatusButton id={id} git={data.git} /> : null}
             </span>
           ) : null}
         </div>

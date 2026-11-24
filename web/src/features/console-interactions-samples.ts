@@ -4,6 +4,7 @@ import type { Message } from './chat-thread'
 import type { Elicitation } from './session-elicitation'
 import type { PendingCall } from './session-permission'
 import type { BgTask } from './session-background'
+import type { GitDetail } from './session-git'
 
 export const ASK_ONE: Elicitation = {
   questions: [
@@ -114,3 +115,74 @@ export const BACKGROUND: Array<BgTask> = [
   },
   { id: 'q93hz0', type: 'shell', summary: 'task:q93hz0' },
 ]
+/** git status of a checkout: staged / modified / untracked, 2 ahead, 1 behind */
+export const GIT: GitDetail = {
+  status: {
+    staged: 1,
+    unstaged: 2,
+    untracked: 3,
+    upstream: true,
+    ahead: 2,
+    behind: 1,
+  },
+  branch: 'master',
+  upstream: 'origin/master',
+  files: [
+    { path: 'web/src/features/session-git.tsx', state: 'staged', code: 'A' },
+    { path: 'native/wezdeck-wsl/session_git.go', state: 'modified', code: 'M' },
+    { path: 'docs/remote-sessions.md', state: 'modified', code: 'M' },
+    {
+      path: 'web/tests/session-git.cdp.test.ts',
+      state: 'untracked',
+      code: '?',
+    },
+    {
+      path: 'native/wezdeck-wsl/session_git_test.go',
+      state: 'untracked',
+      code: '?',
+    },
+    { path: 'tmp/notes.md', state: 'untracked', code: '?' },
+  ],
+  ahead: [
+    {
+      sha: '2f44707',
+      subject: 'fix(web): 运行中插入新工具调用时状态栏不再跳动',
+      author: 'Yuns',
+      at: Date.now() - 20 * 60_000,
+    },
+    {
+      sha: '8b26f35',
+      subject: 'feat(web): 后台任务显示说明、命令、运行时长与最新输出',
+      author: 'Yuns',
+      at: Date.now() - 50 * 60_000,
+    },
+  ],
+  behind: [
+    {
+      sha: '9c1e0aa',
+      subject: 'docs: split web-pwa.md by decision domain',
+      author: 'Yuns',
+      at: Date.now() - 5 * 60_000,
+    },
+  ],
+  recent: [
+    {
+      sha: '2f44707',
+      subject: 'fix(web): 运行中插入新工具调用时状态栏不再跳动',
+      author: 'Yuns',
+      at: Date.now() - 20 * 60_000,
+    },
+    {
+      sha: '8b26f35',
+      subject: 'feat(web): 后台任务显示说明、命令、运行时长与最新输出',
+      author: 'Yuns',
+      at: Date.now() - 50 * 60_000,
+    },
+    {
+      sha: '3d99814',
+      subject: 'fix(web): 长回复流式写出时回复容器平滑长高',
+      author: 'Yuns',
+      at: Date.now() - 90 * 60_000,
+    },
+  ],
+}

@@ -14,6 +14,7 @@ import {
   ToolsDemo,
 } from './console-interactions-demos'
 import { BackgroundTasks } from './session-background'
+import { GitDetailView } from './session-git'
 import {
   ASK_ONE,
   ASK_MANY,
@@ -27,6 +28,7 @@ import {
   RUNNING_SHORT,
   RUNNING_LONG,
   BACKGROUND,
+  GIT,
 } from './console-interactions-samples'
 
 export type Text = { zh: string; en: string }
@@ -304,6 +306,17 @@ function streamSections(
       },
       keys: { zh: '无（重放可再看一次）', en: 'None (Replay runs it again)' },
       demo: <ToolsDemo />,
+    },
+    {
+      id: 'git-status',
+      tags: ['common'],
+      title: { zh: 'git 状态面板', en: 'Git status panel' },
+      source: {
+        zh: '头部分支旁的 +S ~U ?T ↑A ↓B 标签（git_status.go 随轮询）；点开读 session.git：改动文件、未推送 / 未拉取与最近提交（session_git.go）',
+        en: 'the +S ~U ?T ↑A ↓B tag beside the branch (git_status.go, on the poll); tapping it reads session.git: changed files, unpushed / unpulled and recent commits (session_git.go)',
+      },
+      keys: { zh: '无（只读）', en: 'None (read only)' },
+      demo: <GitDetailView detail={GIT} />,
     },
     {
       id: 'background',

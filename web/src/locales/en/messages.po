@@ -11,6 +11,11 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
+#: src/features/session-git.tsx:50
+msgctxt "list separator"
+msgid ", "
+msgstr ", "
+
 #: src/features/chat-thread.tsx:427
 msgid "· summary"
 msgstr "· summary"
@@ -35,6 +40,18 @@ msgstr "(pick any)"
 #: src/components/deck/session-tags.tsx:123
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
+
+#: src/features/session-git.tsx:57
+msgid "{ahead} commits not pushed yet."
+msgstr "{ahead} commits not pushed yet."
+
+#: src/features/session-git.tsx:55
+msgid "{ahead} commits to push, {behind} to pull."
+msgstr "{ahead} commits to push, {behind} to pull."
+
+#: src/features/session-git.tsx:59
+msgid "{behind} commits to pull."
+msgstr "{behind} commits to pull."
 
 #: src/features/console-sessions.tsx:177
 msgid "{bg} background tasks running"
@@ -124,6 +141,10 @@ msgstr "{runningCount} subagents running"
 msgid "{runs} runs"
 msgstr "{runs} runs"
 
+#: src/features/session-git.tsx:46
+msgid "{staged} staged"
+msgstr "{staged} staged"
+
 #: src/components/deck/session-tags.tsx:121
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
@@ -132,7 +153,7 @@ msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
 
-#: src/features/session-header.tsx:145
+#: src/features/session-header.tsx:142
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
@@ -156,6 +177,14 @@ msgstr "{unanswered} question(s) still unanswered; the agent sees only what you 
 msgid "{unread} new"
 msgstr "{unread} new"
 
+#: src/features/session-git.tsx:47
+msgid "{unstaged} modified"
+msgstr "{unstaged} modified"
+
+#: src/features/session-git.tsx:48
+msgid "{untracked} untracked"
+msgstr "{untracked} untracked"
+
 #: src/features/landing-example.tsx:71
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
@@ -172,7 +201,7 @@ msgstr "↓ {tokens} tokens"
 msgid "24h · no runs"
 msgstr "24h · no runs"
 
-#: src/features/session-header.tsx:130
+#: src/features/session-header.tsx:127
 msgid "5 h"
 msgstr "5 h"
 
@@ -180,7 +209,7 @@ msgstr "5 h"
 msgid "5-hour limit"
 msgstr "5-hour limit"
 
-#: src/features/session-header.tsx:137
+#: src/features/session-header.tsx:134
 msgid "7 d"
 msgstr "7 d"
 
@@ -496,7 +525,7 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:156
+#: src/features/session-header.tsx:153
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -700,6 +729,10 @@ msgstr "Confirm revoke"
 msgid "conflict"
 msgstr "conflict"
 
+#: src/features/session-git.tsx:106
+msgid "Conflicts"
+msgstr "Conflicts"
+
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
 msgid "Connecting…"
@@ -721,12 +754,12 @@ msgstr "Console ({origin})"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/session-header.tsx:127
+#: src/features/session-header.tsx:124
 #: src/features/session-info.tsx:72
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:153
+#: src/features/session-header.tsx:150
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1114,6 +1147,10 @@ msgstr "Failed runs"
 msgid "File"
 msgstr "File"
 
+#: src/features/session-git.tsx:51
+msgid "Files: {list}."
+msgstr "Files: {list}."
+
 #: src/features/ticket-search.tsx:62
 msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
@@ -1167,6 +1204,10 @@ msgstr "From anywhere"
 #: src/features/console-development.tsx:406
 #~ msgid "Git"
 #~ msgstr "Git"
+
+#: src/features/session-git.tsx:188
+msgid "Git status"
+msgstr "Git status"
 
 #: src/features/console-keys.tsx:26
 msgid "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
@@ -1481,6 +1522,10 @@ msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ct
 msgid "Level"
 msgstr "Level"
 
+#: src/features/session-git.tsx:60
+msgid "Level with upstream."
+msgstr "Level with upstream."
+
 #: src/features/console-me.tsx:215
 #: src/features/console-me.tsx:304
 #: src/features/console-shared.tsx:385
@@ -1491,7 +1536,7 @@ msgstr "Light"
 #~ msgid "Light theme"
 #~ msgstr "Light theme"
 
-#: src/features/session-header.tsx:157
+#: src/features/session-header.tsx:154
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1519,7 +1564,8 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-header.tsx:244
+#: src/features/session-git.tsx:199
+#: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1588,9 +1634,14 @@ msgstr "Mode"
 msgid "Model"
 msgstr "Model"
 
+#: src/features/session-git.tsx:108
 #: src/features/session-info.tsx:59
 msgid "Modified"
 msgstr "Modified"
+
+#: src/features/session-git.tsx:150
+msgid "More files changed than listed here."
+msgstr "More files changed than listed here."
 
 #: src/features/session-ask-claude.tsx:103
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
@@ -1604,7 +1655,7 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:268
+#: src/features/session-header.tsx:265
 #: src/features/session-list.tsx:281
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -1770,9 +1821,17 @@ msgstr "No ticket selected"
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
+#: src/features/session-git.tsx:51
+msgid "No uncommitted changes."
+msgstr "No uncommitted changes."
+
 #: src/components/deck/session-tags.tsx:124
 msgid "no upstream"
 msgstr "no upstream"
+
+#: src/features/session-git.tsx:53
+msgid "No upstream branch: nothing to compare with."
+msgstr "No upstream branch: nothing to compare with."
 
 #: src/features/console-development.tsx:134
 #~ msgid "No workspaces in the local catalog."
@@ -1797,6 +1856,14 @@ msgstr "Not on this Runtime"
 #: src/features/console-me.tsx:319
 msgid "Not paired"
 msgstr "Not paired"
+
+#: src/features/session-git.tsx:154
+msgid "Not pulled"
+msgstr "Not pulled"
+
+#: src/features/session-git.tsx:153
+msgid "Not pushed"
+msgstr "Not pushed"
 
 #: src/features/console-shell.tsx:414
 msgid "Not running"
@@ -1941,7 +2008,7 @@ msgstr "Opening…"
 msgid "Origin session"
 msgstr "Origin session"
 
-#: src/features/session-header.tsx:155
+#: src/features/session-header.tsx:152
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -2115,6 +2182,10 @@ msgstr "Ready"
 msgid "Reason"
 msgstr "Reason"
 
+#: src/features/session-git.tsx:155
+msgid "Recent commits"
+msgstr "Recent commits"
+
 #: src/features/console-now.tsx:212
 #~ msgid "Recently active"
 #~ msgstr "Recently active"
@@ -2236,11 +2307,11 @@ msgstr "research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/session-header.tsx:132
+#: src/features/session-header.tsx:129
 msgid "resets {fiveReset}"
 msgstr "resets {fiveReset}"
 
-#: src/features/session-header.tsx:139
+#: src/features/session-header.tsx:136
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
 
@@ -2510,7 +2581,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:281
+#: src/features/session-header.tsx:278
 #: src/features/session-info.tsx:214
 msgid "Session info"
 msgstr "Session info"
@@ -2530,7 +2601,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:220
 #: src/features/session-list.tsx:225
 msgctxt "nav"
 msgid "Sessions"
@@ -2614,6 +2685,10 @@ msgstr "Source"
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
+#: src/features/session-git.tsx:107
+msgid "Staged"
+msgstr "Staged"
+
 #: src/features/session-commands.tsx:214
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
@@ -2686,7 +2761,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:235
+#: src/features/session-header.tsx:232
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3067,11 +3142,15 @@ msgid "Undo"
 msgstr "Undo"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:202
+#: src/features/session-header.tsx:199
 #: src/features/session-list.tsx:104
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "Untitled session"
+
+#: src/features/session-git.tsx:109
+msgid "Untracked"
+msgstr "Untracked"
 
 #: src/features/console-sessions.tsx:288
 #~ msgid "Up to date, {at}"

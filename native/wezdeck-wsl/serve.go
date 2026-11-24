@@ -104,7 +104,7 @@ func dispatch(req request) response {
 		res.Result, err = runCollab(req.Action, req.Payload)
 	case "remote.sessions", "remote.session", "remote.upload.get", "remote.todos",
 		"remote.repos", "remote.ticket.targets", "remote.session.new.job", "remote.session.image",
-		"remote.session.history":
+		"remote.session.history", "remote.session.git":
 		// the relay's read-only actions for a browser on the host (readRPC)
 		payload := req.Payload
 		if len(payload) == 0 || string(payload) == "null" {
