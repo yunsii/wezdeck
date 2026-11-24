@@ -203,7 +203,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:526
+#: src/features/tickets-view.tsx:491
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -269,7 +269,7 @@ msgid "All"
 msgstr "All"
 
 #: src/features/session-list.tsx:235
-#: src/features/tickets-view.tsx:241
+#: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
 msgstr "All"
@@ -388,7 +388,7 @@ msgstr "At the desk: {host}"
 #~ msgstr "At the desk: {keys}"
 
 #: src/features/console-me.tsx:436
-#: src/features/tickets-view.tsx:448
+#: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "Back"
 
@@ -468,9 +468,9 @@ msgstr "Bytes"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:216
-#: src/features/console-collab.tsx:267
-#: src/features/console-collab.tsx:351
+#: src/features/console-collab.tsx:218
+#: src/features/console-collab.tsx:269
+#: src/features/console-collab.tsx:353
 #: src/features/session-info.tsx:74
 msgid "Cache hit"
 msgstr "Cache hit"
@@ -524,11 +524,11 @@ msgstr "Check for updates"
 msgid "Checking…"
 msgstr "Checking…"
 
-#: src/features/console-collab.tsx:346
+#: src/features/console-collab.tsx:348
 msgid "Child"
 msgstr "Child"
 
-#: src/features/console-collab.tsx:341
+#: src/features/console-collab.tsx:343
 msgid "Children"
 msgstr "Children"
 
@@ -598,7 +598,7 @@ msgstr "Close to-dos"
 #~ msgstr "Close VS Code window"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:139
+#: src/features/tickets-view.tsx:136
 msgctxt "ticket status"
 msgid "closed"
 msgstr "closed"
@@ -616,7 +616,7 @@ msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. 
 #~ msgid "Collab"
 #~ msgstr "Collab"
 
-#: src/features/tickets-view.tsx:322
+#: src/features/tickets-view.tsx:290
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -625,7 +625,7 @@ msgid "Collab metrics"
 msgstr "Collab metrics"
 
 #: src/features/ticket-keys.tsx:60
-#: src/features/tickets-view.tsx:406
+#: src/features/tickets-view.tsx:371
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -670,7 +670,7 @@ msgstr "confirm"
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
-#: src/features/console-collab.tsx:416
+#: src/features/console-collab.tsx:418
 msgid "conflict"
 msgstr "conflict"
 
@@ -799,8 +799,8 @@ msgstr "Copy value"
 
 #: src/features/collab-metrics.tsx:162
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:217
-#: src/features/console-collab.tsx:268
+#: src/features/console-collab.tsx:219
+#: src/features/console-collab.tsx:270
 msgid "Cost"
 msgstr "Cost"
 
@@ -848,7 +848,7 @@ msgstr "Creating the worktree…"
 msgid "Creating…"
 msgstr "Creating…"
 
-#: src/features/collab-top-bar.tsx:28
+#: src/features/collab-top-bar.tsx:36
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -875,7 +875,7 @@ msgstr "Dark"
 #~ msgid "Dark theme"
 #~ msgstr "Dark theme"
 
-#: src/features/tickets-view.tsx:178
+#: src/features/tickets-view.tsx:175
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
@@ -899,7 +899,7 @@ msgstr "Degraded"
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:349
+#: src/features/console-collab.tsx:351
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -1004,7 +1004,7 @@ msgstr "Enabled on this computer: writes go through the local Runtime, with no d
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
-#: src/features/tickets-view.tsx:256
+#: src/features/tickets-view.tsx:222
 msgctxt "filter"
 msgid "Ended"
 msgstr "Ended"
@@ -1064,7 +1064,7 @@ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jum
 #~ msgid "Example agent sessions"
 #~ msgstr "Example agent sessions"
 
-#: src/features/console-collab.tsx:271
+#: src/features/console-collab.tsx:273
 msgid "Exit"
 msgstr "Exit"
 
@@ -1072,7 +1072,7 @@ msgstr "Exit"
 msgid "Expired"
 msgstr "Expired"
 
-#: src/features/tickets-view.tsx:141
+#: src/features/tickets-view.tsx:138
 msgid "failed"
 msgstr "failed"
 
@@ -1088,12 +1088,12 @@ msgstr "Failed runs"
 msgid "File"
 msgstr "File"
 
-#: src/features/tickets-view.tsx:206
+#: src/features/ticket-search.tsx:62
 msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
 
-#: src/features/tickets-view.tsx:207
-#: src/features/tickets-view.tsx:346
+#: src/features/ticket-search.tsx:27
+#: src/features/ticket-search.tsx:63
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
@@ -1166,7 +1166,7 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/tickets-view.tsx:525
+#: src/features/tickets-view.tsx:490
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1188,7 +1188,7 @@ msgstr "hit {hit}%"
 
 #: src/features/remote-badge.tsx:81
 #: src/features/remote-badge.tsx:88
-#: src/features/tickets-view.tsx:163
+#: src/features/tickets-view.tsx:160
 msgid "Host offline"
 msgstr "Host offline"
 
@@ -1201,7 +1201,7 @@ msgid "Host signals"
 msgstr "Host signals"
 
 #: src/features/console-activity.tsx:210
-#: src/features/tickets-view.tsx:164
+#: src/features/tickets-view.tsx:161
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
@@ -1261,11 +1261,11 @@ msgstr "Images"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
-#: src/features/tickets-view.tsx:135
+#: src/features/tickets-view.tsx:132
 msgid "in progress"
 msgstr "in progress"
 
-#: src/features/tickets-view.tsx:246
+#: src/features/tickets-view.tsx:212
 msgctxt "filter"
 msgid "In progress"
 msgstr "In progress"
@@ -1290,7 +1290,7 @@ msgstr "Initial prompt"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:524
+#: src/features/tickets-view.tsx:489
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -1311,8 +1311,8 @@ msgstr "Installed"
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/console-collab.tsx:409
-#: src/features/console-collab.tsx:410
+#: src/features/console-collab.tsx:411
+#: src/features/console-collab.tsx:412
 msgid "Integration"
 msgstr "Integration"
 
@@ -1479,7 +1479,7 @@ msgstr "Loading original…"
 
 #: src/features/console-activity.tsx:216
 #: src/features/console-collab-run.tsx:197
-#: src/features/console-collab.tsx:92
+#: src/features/console-collab.tsx:94
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:499
 #: src/features/console-shared.tsx:210
@@ -1487,7 +1487,7 @@ msgstr "Loading original…"
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:250
 #: src/features/session-skeleton.tsx:14
-#: src/features/tickets-view.tsx:320
+#: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -1521,7 +1521,7 @@ msgstr "Mark read"
 msgid "Marked read"
 msgstr "Marked read"
 
-#: src/features/console-collab.tsx:421
+#: src/features/console-collab.tsx:423
 msgid "merged"
 msgstr "merged"
 
@@ -1692,7 +1692,7 @@ msgstr "No earlier conversations in this project"
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
-#: src/features/console-collab.tsx:249
+#: src/features/console-collab.tsx:251
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
@@ -1724,7 +1724,7 @@ msgstr "No plan written yet"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:433
+#: src/features/tickets-view.tsx:398
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1764,7 +1764,7 @@ msgstr "Not running"
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:558
+#: src/features/tickets-view.tsx:523
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -1912,7 +1912,7 @@ msgstr "Output tokens"
 #~ msgid "Overview"
 #~ msgstr "Overview"
 
-#: src/features/console-collab.tsx:120
+#: src/features/console-collab.tsx:122
 msgid "Owner"
 msgstr "Owner"
 
@@ -1953,7 +1953,7 @@ msgid "Pending"
 msgstr "Pending"
 
 #: src/features/collab-metrics.tsx:231
-#: src/features/console-collab.tsx:264
+#: src/features/console-collab.tsx:266
 msgid "Phase"
 msgstr "Phase"
 
@@ -2009,7 +2009,7 @@ msgstr "Primary"
 msgid "Process"
 msgstr "Process"
 
-#: src/features/console-collab.tsx:121
+#: src/features/console-collab.tsx:123
 msgid "Progress"
 msgstr "Progress"
 
@@ -2085,7 +2085,7 @@ msgstr "Refresh"
 #~ msgid "Registered devices"
 #~ msgstr "Registered devices"
 
-#: src/features/tickets-view.tsx:140
+#: src/features/tickets-view.tsx:137
 msgid "rejected"
 msgstr "rejected"
 
@@ -2153,7 +2153,7 @@ msgstr "Reply"
 msgid "Reply and continue"
 msgstr "Reply and continue"
 
-#: src/features/console-collab.tsx:347
+#: src/features/console-collab.tsx:349
 msgid "Repo"
 msgstr "Repo"
 
@@ -2252,11 +2252,11 @@ msgstr "Revoking takes effect at once: the device's next read or write is refuse
 msgid "Rime collector"
 msgstr "Rime collector"
 
-#: src/features/console-collab.tsx:119
+#: src/features/console-collab.tsx:121
 msgid "Route"
 msgstr "Route"
 
-#: src/features/console-collab.tsx:270
+#: src/features/console-collab.tsx:272
 msgid "RSS"
 msgstr "RSS"
 
@@ -2264,7 +2264,7 @@ msgstr "RSS"
 msgid "RSS p95 / peak"
 msgstr "RSS p95 / peak"
 
-#: src/features/console-collab.tsx:263
+#: src/features/console-collab.tsx:265
 msgid "Run"
 msgstr "Run"
 
@@ -2288,8 +2288,8 @@ msgstr "Run in background"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:383
-#: src/features/tickets-view.tsx:145
+#: src/features/console-collab.tsx:385
+#: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "running"
 
@@ -2315,18 +2315,18 @@ msgstr "Running substate"
 #: src/features/collab-metrics.tsx:224
 #: src/features/collab-metrics.tsx:231
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:184
-#: src/features/console-collab.tsx:258
+#: src/features/console-collab.tsx:186
+#: src/features/console-collab.tsx:260
 msgid "Runs"
 msgstr "Runs"
 
-#: src/features/collab-top-bar.tsx:71
+#: src/features/collab-top-bar.tsx:79
 msgid "Runs and cost"
 msgstr "Runs and cost"
 
-#: src/features/collab-top-bar.tsx:38
-#: src/features/collab-top-bar.tsx:39
-#: src/features/collab-top-bar.tsx:50
+#: src/features/collab-top-bar.tsx:46
+#: src/features/collab-top-bar.tsx:47
+#: src/features/collab-top-bar.tsx:58
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
@@ -2382,7 +2382,7 @@ msgstr "Same at the desk"
 #~ msgid "Sample signals. The live console reads your local Runtime."
 #~ msgstr "Sample signals. The live console reads your local Runtime."
 
-#: src/features/console-collab.tsx:350
+#: src/features/console-collab.tsx:352
 msgid "Scope"
 msgstr "Scope"
 
@@ -2456,7 +2456,7 @@ msgstr "Sending the first message…"
 #~ msgstr "Sent to the session"
 
 #: src/features/console-collab-run.tsx:116
-#: src/features/console-collab.tsx:265
+#: src/features/console-collab.tsx:267
 #: src/features/session-empty.tsx:45
 #: src/features/session-info.tsx:32
 msgid "Session"
@@ -2505,7 +2505,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/tickets-view.tsx:138
+#: src/features/tickets-view.tsx:135
 msgid "shipped"
 msgstr "shipped"
 
@@ -2602,11 +2602,11 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:348
+#: src/features/console-collab.tsx:350
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:65
 #: src/features/session-list.tsx:227
-#: src/features/tickets-view.tsx:231
+#: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "Status"
 
@@ -2622,7 +2622,7 @@ msgstr "Subject"
 msgid "Submit answers"
 msgstr "Submit answers"
 
-#: src/features/tickets-view.tsx:134
+#: src/features/tickets-view.tsx:131
 msgid "submitted"
 msgstr "submitted"
 
@@ -2809,7 +2809,7 @@ msgstr "This pane started a new session"
 msgid "Thread"
 msgstr "Thread"
 
-#: src/features/console-collab.tsx:123
+#: src/features/console-collab.tsx:125
 msgid "Ticket"
 msgstr "Ticket"
 
@@ -2823,13 +2823,13 @@ msgstr "Ticket activity"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:95
+#: src/features/console-collab.tsx:97
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
 #: src/features/console-shell.tsx:83
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:450
+#: src/features/tickets-view.tsx:415
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2841,7 +2841,7 @@ msgstr "Tickets"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/tickets-view.tsx:434
+#: src/features/tickets-view.tsx:399
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -2997,8 +2997,8 @@ msgid "TURN relay"
 msgstr "TURN relay"
 
 #: src/features/collab-metrics.tsx:155
-#: src/features/console-collab.tsx:215
-#: src/features/console-collab.tsx:266
+#: src/features/console-collab.tsx:217
+#: src/features/console-collab.tsx:268
 msgid "Turns"
 msgstr "Turns"
 
@@ -3014,7 +3014,7 @@ msgstr "Underscore"
 #~ msgid "Up to date, {at}"
 #~ msgstr "Up to date, {at}"
 
-#: src/features/tickets-view.tsx:178
+#: src/features/tickets-view.tsx:175
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
@@ -3108,19 +3108,19 @@ msgstr "waiting for your confirmation"
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
-#: src/features/tickets-view.tsx:137
+#: src/features/tickets-view.tsx:134
 msgid "waiting on target"
 msgstr "waiting on target"
 
-#: src/features/tickets-view.tsx:136
+#: src/features/tickets-view.tsx:133
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/tickets-view.tsx:561
+#: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/tickets-view.tsx:251
+#: src/features/tickets-view.tsx:217
 msgctxt "filter"
 msgid "Waiting on you"
 msgstr "Waiting on you"
@@ -3137,8 +3137,8 @@ msgstr "Waiting on you"
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:218
-#: src/features/console-collab.tsx:269
+#: src/features/console-collab.tsx:220
+#: src/features/console-collab.tsx:271
 msgid "Wall"
 msgstr "Wall"
 
@@ -3278,7 +3278,7 @@ msgstr "Working"
 #~ msgid "Workspaces"
 #~ msgstr "Workspaces"
 
-#: src/features/console-collab.tsx:122
+#: src/features/console-collab.tsx:124
 #: src/features/session-info.tsx:49
 msgid "Worktree"
 msgstr "Worktree"

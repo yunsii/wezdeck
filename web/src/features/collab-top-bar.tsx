@@ -15,7 +15,15 @@ import { useMetricsSummary } from './collab-metrics'
 import { NewTicketButton } from './ticket-new'
 import { Button } from '#/components/ui/button'
 
-export function CollabTopBar({ band }: { band: React.ReactNode }) {
+export function CollabTopBar({
+  band,
+  actions,
+}: {
+  band: React.ReactNode
+  /** phone: the list's search and new-ticket buttons, at the end of the link
+   * row (they crowded the filter row past a narrow screen's edge) */
+  actions?: React.ReactNode
+}) {
   const { t } = useLingui()
   const [open, setOpen] = useState(false)
   const wide = useIsWide()
@@ -74,6 +82,11 @@ export function CollabTopBar({ band }: { band: React.ReactNode }) {
           </span>
         </Button>
         <ActivityLink className={link} />
+        {actions ? (
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {actions}
+          </div>
+        ) : null}
       </div>
       {open ? <div className="key rounded-xl p-2">{band}</div> : null}
     </div>

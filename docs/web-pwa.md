@@ -108,7 +108,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    another browser each get their own key). Filters with counts never wrap:
    the count is a smaller figure and segments size by their text, so four
    statuses plus + fit a 320 px mobile screen; 工单's band and 工单动态 are one line
-   of text links, search opens from an icon. 进行中 sorts by last activity and
+   of text links; on a phone search (an icon) and 新建 sit at the end of that
+   line (`ticket-search.tsx`), so the filter has its row to itself — beside
+   it they ran past a 360 px screen. 进行中 sorts by last activity and
    folds tickets quiet for over a week (not running, not waiting on you) into
    一周以上没动静 (`splitQuiet`); ▲ marks only 等你, waiting on the other side is
    ○; rows are real links. Ticket detail is a pushed page: facts as Field
@@ -120,7 +122,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    levels with counts, search, a category select; an entry's facts as Field
    rows, copy raw line, only this trace; entry ids are stable, so the 5 s
    refresh does not move the selection; mobile opens an entry in a sheet.
-   On a phone the status filter row of 会话 / 工单 (with 工单's search) is
+   On a phone the status filter row of 会话 / 工单 (with 工单's opened search) is
    a `StickyBar` (`components/deck/sticky-bar.tsx`) at the top of the page
    scroll. Wide, both lists are a `SplitColumn`
    (`components/deck/split-column.tsx`): the title, status filter and search

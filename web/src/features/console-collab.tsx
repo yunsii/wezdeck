@@ -56,7 +56,9 @@ export function ConsoleCollabPage() {
     <TicketsView
       base="collab"
       empty={t`No tickets match this filter.`}
-      top={<CollabTopBar band={<CollabMetricsBand />} />}
+      top={(actions) => (
+        <CollabTopBar band={<CollabMetricsBand />} actions={actions} />
+      )}
     />
   )
 }

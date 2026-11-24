@@ -7,7 +7,6 @@
 // switching tabs costs no request and the status keys can show counts.
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 import { RemoteBadge } from './remote-badge'
@@ -30,13 +29,11 @@ import { TicketReading } from './console-collab'
 import { useRemoteState } from './console-mode'
 import { Reading } from './inspector'
 import { nextInCycle } from './session-order'
-import { NewTicketButton } from './ticket-new'
+import { SearchBox, TicketListActions } from './ticket-search'
 import { TicketKeys } from './ticket-keys'
 import { CopyKey, useCopyTicketReference } from './copy-reference'
-import { Button } from '#/components/ui/button'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
-import { Input } from '#/components/ui/input'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
@@ -180,37 +177,6 @@ function Freshness({
   )
 }
 
-function SearchBox({
-  value,
-  onChange,
-  autoFocus = false,
-}: {
-  value: string
-  onChange: (value: string) => void
-  autoFocus?: boolean
-}) {
-  const { t } = useLingui()
-  return (
-    <label
-      data-text-field
-      className="flex min-h-11 flex-1 items-center gap-2 rounded-xl bg-brand-deck px-3 text-body md:min-h-9 md:text-body"
-    >
-      <Search size={15} aria-hidden className="text-brand-label" />
-      <Input
-        variant="bare"
-        data-search
-        autoFocus={autoFocus}
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={t`Filter by title, repo or id`}
-        aria-label={t`Filter tickets`}
-        className="min-w-0 flex-1 bg-transparent py-1.5 outline-none placeholder:text-brand-label"
-      />
-    </label>
-  )
-}
-
 function StatusSegments({
   tickets,
   value,
@@ -264,13 +230,15 @@ function StatusSegments({
 export function TicketsView({
   base,
   filter: fixedFilter,
-  top,
+  top: topSlot,
   empty,
 }: {
   base: 'collab' | 'inbox'
   /** fixed filter (inbox); omitted = status keys */
   filter?: TicketFilter
-  top?: React.ReactNode
+  /** the page head; a function gets the phone's list actions (search,
+   * new ticket) to place in it, else they sit beside the filter */
+  top?: React.ReactNode | ((actions: React.ReactNode) => React.ReactNode)
   empty: string
 }) {
   const { t } = useLingui()
@@ -333,29 +301,26 @@ export function TicketsView({
   const freshness = (
     <Freshness updatedAt={list.dataUpdatedAt} failed={list.isError} />
   )
+  // phone: search opens from an icon; with new-ticket it goes to the head's
+  // link row when the head takes it, so the filter has the row to itself
+  const actions = wide ? null : (
+    <TicketListActions
+      searching={searching}
+      onSearching={(next) => {
+        setSearching(next)
+        if (!next) setQuery('')
+      }}
+    />
+  )
+  const actionsInHead = typeof topSlot === 'function'
+  const top = actionsInHead ? topSlot(actions) : topSlot
   const keys = fixedFilter ? null : (
     <div className="flex items-center gap-2">
       <div className="min-w-0 flex-1">
         <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
       </div>
-      {wide ? null : (
-        <Button
-          variant="ghost"
-          size="icon"
-          type="button"
-          aria-label={t`Filter tickets`}
-          aria-pressed={searching}
-          onClick={() => {
-            setSearching(!searching)
-            if (searching) setQuery('')
-          }}
-          className="size-11 shrink-0 rounded-xl"
-        >
-          <Search size={18} aria-hidden />
-        </Button>
-      )}
       {/* wide: on the title row, beside the metrics (collab-top-bar) */}
-      {wide ? null : <NewTicketButton />}
+      {actionsInHead ? null : actions}
     </div>
   )
 
