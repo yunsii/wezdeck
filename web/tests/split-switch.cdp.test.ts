@@ -22,6 +22,7 @@ const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 const stack = process.env.WEZDECK_TEST_STACK_DIR ?? ''
 
 type Frame = {
+  rowShadow: string
   t: number
   key: string
   scroll: number
@@ -53,6 +54,10 @@ async function frames(page: Page, title: string, act: () => Promise<void>) {
         busy: document.querySelector('[aria-busy=true]') ? 1 : 0,
         sticky: document.querySelector('[data-testid=sticky-prompt]') ? 1 : 0,
         vt: w.vt,
+        rowShadow: getComputedStyle(
+          document.querySelector('.vt-split-list .row-selected') ??
+            document.body,
+        ).boxShadow,
       })
       if (performance.now() - t0 < 1500) requestAnimationFrame(tick)
     }
@@ -135,15 +140,25 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       // no Loading… frame, no transition, no sticky prompt flashing by
       expect(f.some((x) => x.key.startsWith('Loading'))).toBe(false)
       expect(f.every((x) => x.vt === 0 && x.sticky === 0)).toBe(true)
+      // the open row never paints an accent box-shadow: easing from the
+      // press veil (999 px spread) into one filled the row solid blue
+      expect(f.filter((x) => /rgb\(31, 127, 230/.test(x.rowShadow))).toEqual([])
     }
     // never opened here: hovering the row warms it, so no Loading… frame
     await tall.hover()
     await page.waitForTimeout(800)
-    check(await frames(page, '[data-testid=session-title]', () => tall.click()))
+    // a real press (down, a beat, up): the veil is on while it is held
+    const press = async () => {
+      await page.mouse.down()
+      await page.waitForTimeout(120)
+      await page.mouse.up()
+    }
+    check(await frames(page, '[data-testid=session-title]', press))
     // cached now: the router used to carry sw-short's offset onto it
     await short.click()
     await page.waitForTimeout(1500)
-    check(await frames(page, '[data-testid=session-title]', () => tall.click()))
+    await tall.hover()
+    check(await frames(page, '[data-testid=session-title]', press))
   }, 60_000)
 
   it.runIf(stack)(

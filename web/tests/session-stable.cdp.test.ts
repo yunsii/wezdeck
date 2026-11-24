@@ -113,7 +113,7 @@ describe.runIf(attention)('A session list that holds still', () => {
     await page.waitForURL(`**/console/sessions/${last}`)
     await page.waitForTimeout(500)
     expect(await listed(page)).toEqual(before)
-    // pressing the open row (running, as reported; a waiting row is swipe-
+    // pressing the open row: no veil, the bar stays (running, as reported; a waiting row is swipe-
     // to-clear, whose pointer handling keeps :active off): the bar stays, no veil (it flashed)
     const row = page.locator('[data-session=st-d]')
     await expect.poll(() => row.getAttribute('class')).toContain('row-selected')
@@ -124,9 +124,13 @@ describe.runIf(attention)('A session list that holds still', () => {
       await page.mouse.move(box.x + 80, box.y + 16)
       await page.mouse.down()
       await page.waitForTimeout(300)
+      // the bar is ::before (not a box-shadow the press veil eases into)
+      expect(await row.evaluate((el) => getComputedStyle(el).boxShadow)).toBe(
+        'none',
+      )
       expect(
-        await row.evaluate((el) => getComputedStyle(el).boxShadow),
-      ).toMatch(/^rgb\(\d+, \d+, \d+\) 3px 0px 0px 0px inset$/)
+        await row.evaluate((el) => getComputedStyle(el, '::before').width),
+      ).toBe('3px')
       await page.mouse.up()
     }
 

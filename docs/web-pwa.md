@@ -64,8 +64,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    shows (its filter, its held order) and read the current item from the
    URL at the keypress — the page re-renders only after the switch's view
    transition, and a quick j used the previous item and went nowhere. The
-   open row is an accent tint + bar (`.row-selected`); pressing it adds no
-   veil, which used to wipe the bar for a frame. In a
+   open row is an accent tint + bar (`.row-selected`); the bar is a
+   `::before`, not a box-shadow — `.key-press` eases box-shadow, and a click
+   eased from the press veil (999 px spread) into the bar through frames of
+   a huge accent spread: the whole row flashed solid blue (~70 ms, found
+   with a CDP screencast). Pressing the open row adds no veil. In a
    session, wezdeck's session keys carry over (`session-switcher.tsx`):
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
    session waiting on you / finished / running in the list's order — on the

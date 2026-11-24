@@ -82,20 +82,33 @@ html[data-theme='dark'] .key-press:active {
 /* The open item in a split list (会话 / 工单 / 诊断): an accent tint and a
    3 px accent bar. It was the page tone, which read as a hole in the card
    once cards lost their outline (f353a40), and the row's chips (page tone
-   too) vanished inside it. */
+   too) vanished inside it. The bar is a pseudo-element, not a box-shadow:
+   .key-press eases box-shadow, and a click went from the press veil (a
+   999 px spread) to the bar (opaque accent) through frames of a huge
+   accent spread — the whole row flashed solid blue (caught in a CDP
+   screencast, ~70 ms). */
 .row-selected {
+  position: relative;
   background: color-mix(
     in srgb,
     var(--brand-running) 10%,
     var(--brand-surface)
   );
-  box-shadow: inset 3px 0 0 var(--brand-running);
+}
+.row-selected::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--brand-running);
+  pointer-events: none;
 }
 
-/* pressed while selected: no veil — the item is already open, so a tap does
-   nothing, and the veil (a box-shadow like the bar) wiped the bar: a flash */
+/* pressed while selected: no veil — the item is already open, a tap does
+   nothing */
 .row-selected.key-press:active {
-  box-shadow: inset 3px 0 0 var(--brand-running);
+  box-shadow: none;
 }
 
 html[data-theme='dark'] .row-selected {
