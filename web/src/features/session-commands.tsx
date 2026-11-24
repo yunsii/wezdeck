@@ -121,14 +121,19 @@ function ResumeSheet({
                 className="grid w-full gap-0.5 rounded-xl bg-brand-surface px-3.5 py-2.5 text-left disabled:opacity-50"
               >
                 <span className="flex min-w-0 items-baseline justify-between gap-3">
-                  <span className="truncate text-body font-medium">
-                    {item.title || item.prompt || item.id.slice(0, 8)}
+                  <span
+                    className={cn(
+                      'truncate text-body font-medium',
+                      !item.title && 'text-brand-label',
+                    )}
+                  >
+                    {item.title || t`Untitled session`}
                   </span>
                   <span className="shrink-0 text-meta text-brand-label">
                     {item.open ? t`open in a pane` : ago(item.at)}
                   </span>
                 </span>
-                {item.title && item.prompt ? (
+                {item.prompt ? (
                   <span className="line-clamp-2 text-caption text-brand-muted">
                     {item.prompt}
                   </span>

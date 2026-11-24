@@ -33,11 +33,6 @@ const KINDS: Record<JumpKind, (row: SessionCard) => boolean> = {
   running: (row) => !needsYou(row) && isBusy(row),
 }
 
-const titleOf = (row: SessionCard) =>
-  row.title ||
-  (row.worktree || row.cwd).split('/').filter(Boolean).at(-1) ||
-  row.id.slice(0, 8)
-
 export function useSessionNav(current: string) {
   const sessions = useSessions()
   const navigate = useNavigate()
@@ -168,8 +163,13 @@ export function SessionSwitcher({
           size={10}
         />
         <span className="grid min-w-0 flex-1">
-          <span className="truncate text-body font-medium">
-            {titleOf(session)}
+          <span
+            className={cn(
+              'truncate text-body font-medium',
+              !session.title && 'text-brand-label',
+            )}
+          >
+            {session.title || t`Untitled session`}
           </span>
           <span className="flex min-w-0 gap-1.5 text-meta text-brand-label">
             {session.agent !== 'agent' || session.name ? (

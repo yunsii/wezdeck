@@ -100,11 +100,8 @@ function SessionRow({
   const paneLabel = (role?: string) =>
     role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
-  const title =
-    row.title ||
-    row.worktree?.split('/').filter(Boolean).at(-1) ||
-    row.cwd.split('/').filter(Boolean).at(-1) ||
-    row.id.slice(0, 8)
+  // untitled until the agent names it (or a /clear dropped the old name)
+  const title = row.title || t`Untitled session`
 
   const prompt = humanPrompt(row.last_prompt)
   const status = statusText(
@@ -140,7 +137,14 @@ function SessionRow({
           </span>
           <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
             <span className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-title font-medium">{title}</span>
+              <span
+                className={cn(
+                  'truncate text-title font-medium',
+                  !row.title && 'text-brand-label',
+                )}
+              >
+                {title}
+              </span>
               <span className="shrink-0 text-meta text-brand-label">
                 {ago(ts(row.ts))}
               </span>

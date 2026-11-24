@@ -31,7 +31,7 @@ msgstr "{bg} background tasks running"
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/session-switcher.tsx:133
+#: src/features/session-switcher.tsx:128
 msgid "{count} more need you"
 msgstr "{count} more need you"
 
@@ -251,8 +251,8 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:301
-#: src/features/session-list.tsx:349
+#: src/features/session-list.tsx:305
+#: src/features/session-list.tsx:353
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -268,7 +268,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:235
+#: src/features/session-list.tsx:239
 #: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
@@ -540,7 +540,7 @@ msgstr "claimed"
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
-#: src/features/session-commands.tsx:202
+#: src/features/session-commands.tsx:207
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
@@ -569,7 +569,7 @@ msgstr "Close"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "Close a sheet, or let go of a focused button"
 
-#: src/features/session-commands.tsx:208
+#: src/features/session-commands.tsx:213
 msgid "Close commands"
 msgstr "Close commands"
 
@@ -641,7 +641,7 @@ msgstr "Command output"
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
-#: src/features/session-commands.tsx:216
+#: src/features/session-commands.tsx:221
 #: src/features/session-composer.tsx:303
 msgid "Commands"
 msgstr "Commands"
@@ -716,7 +716,7 @@ msgstr "Context compacted automatically"
 msgid "Context compactions"
 msgstr "Context compactions"
 
-#: src/features/session-commands.tsx:184
+#: src/features/session-commands.tsx:189
 msgid "context usage"
 msgstr "context usage"
 
@@ -804,7 +804,7 @@ msgstr "Copy value"
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/session-commands.tsx:189
+#: src/features/session-commands.tsx:194
 msgid "cost and limits"
 msgstr "cost and limits"
 
@@ -1223,7 +1223,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:250
+#: src/features/session-list.tsx:254
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1485,7 +1485,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
-#: src/features/session-header.tsx:250
+#: src/features/session-header.tsx:251
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1570,13 +1570,13 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:272
-#: src/features/session-list.tsx:277
+#: src/features/session-header.tsx:274
+#: src/features/session-list.tsx:281
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:240
+#: src/features/session-list.tsx:244
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1668,11 +1668,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:218
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:217
+#: src/features/session-list.tsx:221
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1696,11 +1696,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:149
+#: src/features/session-list.tsx:153
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:216
+#: src/features/session-list.tsx:220
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1760,7 +1760,7 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:212
+#: src/features/session-list.tsx:216
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
@@ -1825,7 +1825,7 @@ msgstr "Only this trace"
 msgid "Open image"
 msgstr "Open image"
 
-#: src/features/session-commands.tsx:128
+#: src/features/session-commands.tsx:133
 msgid "open in a pane"
 msgstr "open in a pane"
 
@@ -1973,7 +1973,7 @@ msgstr "Pick a session (grouped by repository)"
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "Pick a session on the left. j / k move through the list."
 
-#: src/features/session-commands.tsx:181
+#: src/features/session-commands.tsx:186
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
@@ -2467,7 +2467,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:285
+#: src/features/session-header.tsx:287
 #: src/features/session-info.tsx:214
 msgid "Session info"
 msgstr "Session info"
@@ -2487,13 +2487,13 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:236
-#: src/features/session-list.tsx:221
+#: src/features/session-header.tsx:231
+#: src/features/session-list.tsx:225
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:267
+#: src/features/session-list.tsx:271
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2567,7 +2567,7 @@ msgstr "Source"
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
-#: src/features/session-commands.tsx:178
+#: src/features/session-commands.tsx:183
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
@@ -2606,7 +2606,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:350
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:65
-#: src/features/session-list.tsx:227
+#: src/features/session-list.tsx:231
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "Status"
@@ -2627,7 +2627,7 @@ msgstr "Submit answers"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/session-commands.tsx:168
+#: src/features/session-commands.tsx:173
 msgid "summarise the context"
 msgstr "summarise the context"
 
@@ -2639,7 +2639,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:247
+#: src/features/session-header.tsx:242
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -2985,7 +2985,7 @@ msgstr "Trigger"
 #~ msgid "turn finished, {bg} background tasks running; you can send"
 #~ msgstr "turn finished, {bg} background tasks running; you can send"
 
-#: src/features/session-commands.tsx:201
+#: src/features/session-commands.tsx:206
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
@@ -3010,6 +3010,13 @@ msgstr "Unavailable"
 #: src/features/console-me.tsx:229
 msgid "Underscore"
 msgstr "Underscore"
+
+#: src/features/session-commands.tsx:130
+#: src/features/session-header.tsx:210
+#: src/features/session-list.tsx:104
+#: src/features/session-switcher.tsx:172
+msgid "Untitled session"
+msgstr "Untitled session"
 
 #: src/features/console-sessions.tsx:288
 #~ msgid "Up to date, {at}"
@@ -3221,7 +3228,7 @@ msgstr "Which table should the weekly report read?"
 #~ msgid "Window focused"
 #~ msgstr "Window focused"
 
-#: src/features/session-commands.tsx:173
+#: src/features/session-commands.tsx:178
 msgid "with what to keep"
 msgstr "with what to keep"
 
@@ -3258,7 +3265,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:245
+#: src/features/session-list.tsx:249
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"

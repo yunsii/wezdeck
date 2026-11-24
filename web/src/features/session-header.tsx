@@ -22,7 +22,7 @@ import type {
   Usage,
 } from './console-sessions'
 import { useAgo } from './tickets-view'
-import { SessionInfo, metaValue } from './session-info'
+import { SessionInfo } from './session-info'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -207,12 +207,7 @@ export function SessionHeader({
       page.style.removeProperty('--session-head')
     }
   }, [])
-  const title =
-    (data &&
-      (data.title ||
-        metaValue(data, 'cwd').split('/').filter(Boolean).at(-1) ||
-        data.id.slice(0, 8))) ||
-    ''
+  const title = data ? data.title || t`Untitled session` : ''
   // the page shows running (the working line) and done (the reply) by itself;
   // the header only speaks up when the agent needs the human
   const long = data
@@ -247,7 +242,14 @@ export function SessionHeader({
             title={t`Switch session (Alt+g)`}
             className="flex min-w-0 items-center gap-1 text-left text-title leading-tight font-semibold"
           >
-            <span className="truncate">{title || t`Loading…`}</span>
+            <span
+              className={cn(
+                'truncate',
+                data && !data.title && 'text-brand-label',
+              )}
+            >
+              {title || t`Loading…`}
+            </span>
             <ChevronDown
               size={15}
               aria-hidden

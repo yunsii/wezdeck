@@ -31,7 +31,7 @@ msgstr "{bg} 个后台任务在跑"
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/session-switcher.tsx:133
+#: src/features/session-switcher.tsx:128
 msgid "{count} more need you"
 msgstr "还有 {count} 个等你"
 
@@ -251,8 +251,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:301
-#: src/features/session-list.tsx:349
+#: src/features/session-list.tsx:305
+#: src/features/session-list.tsx:353
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -268,7 +268,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:235
+#: src/features/session-list.tsx:239
 #: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
@@ -540,7 +540,7 @@ msgstr "认领"
 msgid "Claude asks to run this"
 msgstr "Claude 请求执行"
 
-#: src/features/session-commands.tsx:202
+#: src/features/session-commands.tsx:207
 msgid "Claude commands, sent into the pane"
 msgstr "Claude 命令，发进窗格执行"
 
@@ -569,7 +569,7 @@ msgstr "关闭"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "关闭面板；或让按钮、链接失去焦点"
 
-#: src/features/session-commands.tsx:208
+#: src/features/session-commands.tsx:213
 msgid "Close commands"
 msgstr "关闭命令"
 
@@ -641,7 +641,7 @@ msgstr "命令输出"
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
-#: src/features/session-commands.tsx:216
+#: src/features/session-commands.tsx:221
 #: src/features/session-composer.tsx:303
 msgid "Commands"
 msgstr "命令"
@@ -716,7 +716,7 @@ msgstr "上下文已自动压缩"
 msgid "Context compactions"
 msgstr "上下文压缩次数"
 
-#: src/features/session-commands.tsx:184
+#: src/features/session-commands.tsx:189
 msgid "context usage"
 msgstr "上下文占用"
 
@@ -804,7 +804,7 @@ msgstr "复制值"
 msgid "Cost"
 msgstr "花费"
 
-#: src/features/session-commands.tsx:189
+#: src/features/session-commands.tsx:194
 msgid "cost and limits"
 msgstr "费用与额度"
 
@@ -1223,7 +1223,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:250
+#: src/features/session-list.tsx:254
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1485,7 +1485,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
-#: src/features/session-header.tsx:250
+#: src/features/session-header.tsx:251
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1570,13 +1570,13 @@ msgstr "名称"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:272
-#: src/features/session-list.tsx:277
+#: src/features/session-header.tsx:274
+#: src/features/session-list.tsx:281
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:240
+#: src/features/session-list.tsx:244
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1668,11 +1668,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:218
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:217
+#: src/features/session-list.tsx:221
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1696,11 +1696,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:149
+#: src/features/session-list.tsx:153
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:216
+#: src/features/session-list.tsx:220
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1760,7 +1760,7 @@ msgstr "未配对"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:212
+#: src/features/session-list.tsx:216
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
@@ -1825,7 +1825,7 @@ msgstr "只看这个 trace"
 msgid "Open image"
 msgstr "查看图片"
 
-#: src/features/session-commands.tsx:128
+#: src/features/session-commands.tsx:133
 msgid "open in a pane"
 msgstr "已在窗格中打开"
 
@@ -1973,7 +1973,7 @@ msgstr "选择会话（按仓库分组）"
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
-#: src/features/session-commands.tsx:181
+#: src/features/session-commands.tsx:186
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
@@ -2467,7 +2467,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:285
+#: src/features/session-header.tsx:287
 #: src/features/session-info.tsx:214
 msgid "Session info"
 msgstr "会话信息"
@@ -2487,13 +2487,13 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:236
-#: src/features/session-list.tsx:221
+#: src/features/session-header.tsx:231
+#: src/features/session-list.tsx:225
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:267
+#: src/features/session-list.tsx:271
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2567,7 +2567,7 @@ msgstr "来源"
 msgid "Sources on this computer"
 msgstr "本机来源"
 
-#: src/features/session-commands.tsx:178
+#: src/features/session-commands.tsx:183
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
@@ -2606,7 +2606,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:350
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:65
-#: src/features/session-list.tsx:227
+#: src/features/session-list.tsx:231
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "状态"
@@ -2627,7 +2627,7 @@ msgstr "提交答案"
 msgid "submitted"
 msgstr "已提交"
 
-#: src/features/session-commands.tsx:168
+#: src/features/session-commands.tsx:173
 msgid "summarise the context"
 msgstr "压缩上下文"
 
@@ -2639,7 +2639,7 @@ msgstr "摘要"
 msgid "Switch session"
 msgstr "切换会话"
 
-#: src/features/session-header.tsx:247
+#: src/features/session-header.tsx:242
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -2985,7 +2985,7 @@ msgstr "触发来源"
 #~ msgid "turn finished, {bg} background tasks running; you can send"
 #~ msgstr "这一轮已结束，{bg} 个后台任务在跑，可以发消息"
 
-#: src/features/session-commands.tsx:201
+#: src/features/session-commands.tsx:206
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
 
@@ -3010,6 +3010,13 @@ msgstr "不可用"
 #: src/features/console-me.tsx:229
 msgid "Underscore"
 msgstr "下划线"
+
+#: src/features/session-commands.tsx:130
+#: src/features/session-header.tsx:210
+#: src/features/session-list.tsx:104
+#: src/features/session-switcher.tsx:172
+msgid "Untitled session"
+msgstr "未命名会话"
 
 #: src/features/console-sessions.tsx:288
 #~ msgid "Up to date, {at}"
@@ -3221,7 +3228,7 @@ msgstr "周报该读哪张表？"
 #~ msgid "Window focused"
 #~ msgstr "窗口已聚焦"
 
-#: src/features/session-commands.tsx:173
+#: src/features/session-commands.tsx:178
 msgid "with what to keep"
 msgstr "说明要保留什么"
 
@@ -3258,7 +3265,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:245
+#: src/features/session-list.tsx:249
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"
