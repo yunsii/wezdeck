@@ -52,3 +52,45 @@ func TestRelayDoesNotServeDeviceList(t *testing.T) {
 		t.Fatal("devices must stay local (serve.go), not a relay read")
 	}
 }
+
+func TestSetDeviceStateApproveRevoke(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "remote-devices.json")
+	t.Setenv("WEZDECK_REMOTE_DEVICES", path)
+	data, _ := json.Marshal(deviceStore{Pending: []deviceRecord{{ID: "cccc", PublicKey: "K"}}})
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := setDeviceState("device.revoke", json.RawMessage(`{"id":"cccc"}`)); err == nil {
+		t.Fatal("revoking a pending device should fail")
+	}
+	if _, err := setDeviceState("device.approve", json.RawMessage(`{"id":"cccc"}`)); err != nil {
+		t.Fatal(err)
+	}
+	s := loadDevices()
+	if len(s.Pending) != 0 || len(s.Approved) != 1 || s.Approved[0].PublicKey != "K" {
+		t.Fatalf("approve: %+v", s)
+	}
+	if _, err := setDeviceState("device.approve", json.RawMessage(`{"id":"cccc"}`)); err == nil {
+		t.Fatal("approving twice should fail")
+	}
+	if _, err := setDeviceState("device.revoke", json.RawMessage(`{"id":"cccc"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if s := loadDevices(); len(s.Approved) != 0 {
+		t.Fatalf("revoke: %+v", s)
+	}
+	if _, err := setDeviceState("device.approve", json.RawMessage(`{}`)); err == nil {
+		t.Fatal("missing id should fail")
+	}
+}
+
+func TestRelayDoesNotChangeDevices(t *testing.T) {
+	for _, action := range []string{"device.approve", "device.revoke"} {
+		if _, ok, _ := readRPC(action, json.RawMessage("{}")); ok {
+			t.Fatalf("%s must stay local", action)
+		}
+		if signedActions[action] {
+			t.Fatalf("%s must not be a relay write", action)
+		}
+	}
+}

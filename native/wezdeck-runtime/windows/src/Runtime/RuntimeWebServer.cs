@@ -154,9 +154,21 @@ internal sealed partial class RuntimeWebServer : IDisposable
             return;
         }
 
+        // every source that got past the host / origin checks (设备授权 › 本机来源)
+        var client = TrackClient(context);
+        context.Items[ClientItem] = client;
+
         if (context.Request.Path.Equals("/events", StringComparison.OrdinalIgnoreCase))
         {
-            await HandleWebSocketAsync(context);
+            Interlocked.Increment(ref client.Live);
+            try
+            {
+                await HandleWebSocketAsync(context);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref client.Live);
+            }
             return;
         }
 
@@ -192,7 +204,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                 {
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
                     "vscode.windows", "vscode.focus", "vscode.focus_or_open", "vscode.close",
-                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot",
+                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot", "clients.read",
                 },
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             },
@@ -212,6 +224,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
             "/api/v1/wakatime" => ReadBridge("status", "wakatime", new { }),
             "/api/v1/wsl" => ReadBridge("bridge", "status", new { }),
             "/api/v1/diagnostics" => ReadDiagnostics(context.Request.Query),
+            "/api/v1/clients" => ReadClients(),
             _ => null,
         };
 
@@ -239,6 +252,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
             return;
         }
 
+        CountWrite(context);
         var payload = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted);
         var requestJson = JsonSerializer.Serialize(new RuntimeRequest
         {

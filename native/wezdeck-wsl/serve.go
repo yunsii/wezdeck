@@ -114,6 +114,13 @@ func dispatch(req request) response {
 	case "remote.devices":
 		// local only: the relay never lists devices to a paired phone
 		res.Result, err = listDevices()
+	case "remote.device.approve", "remote.device.revoke":
+		// local only, like remote.devices: 批准 / 撤销 from the host console
+		payload := req.Payload
+		if len(payload) == 0 || string(payload) == "null" {
+			payload = json.RawMessage("{}")
+		}
+		res.Result, err = setDeviceState(req.Action, payload)
 	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
 		"remote.todo", "remote.clear", "remote.session.new", "remote.ticket.new":
 		// a browser on this computer through the local Runtime (remote_write.go)

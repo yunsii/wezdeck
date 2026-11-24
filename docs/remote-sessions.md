@@ -86,12 +86,21 @@ Each write leaves `event=write via=local device=local` in `relay.log` (the
 bridge process appends there; `relayLogf`). The web's `hostRead` /
 `hostWrite` try the Runtime first and fall back to the remote link
 (`?remote=1` forces it); on the host 写入权限 reads 本机，已启用. Device
-registration stays relay-only. Below it the host lists the registered
-devices (`me-devices.tsx`): read action `devices`, local only — the bridge
-answers `remote.devices` (`remote_devices.go`: id, state, name, info,
-added, last seen; never the public key) but `readRPC` does not, so a paired
-phone cannot list the others. Approve / revoke stay on
-`install-remote-relay.sh` (each row shows the id to pass).
+registration stays relay-only. Below it (`me-devices.tsx`) the host shows
+two lists. 本机来源: every browser or script that used the Runtime since it
+started, one row per Origin + User-Agent with last seen, requests, writes
+that passed the checks (a refused one is not counted) and open `/events`
+sockets — `GET /api/v1/clients` (capability `clients.read`,
+`RuntimeWebServer.Clients.cs`, in memory, at most 50, the longest unseen
+dropped); this browser is marked. 远程设备: the device store, read action
+`devices`, with 批准 / 撤销 as writes `device.approve` / `device.revoke`
+(撤销 takes a second tap). All three are local only: the bridge answers
+`remote.devices` / `remote.device.*` (`remote_devices.go`: id, state, name,
+info, added, last seen, never the public key; approve / revoke take the
+store lock like `install-remote-relay.sh` and log `event=device_approve` /
+`device_revoke via=local`), `readRPC` and the relay do not, so a paired
+phone can neither list nor change the others. The relay re-reads the store
+on every read and write, so a revoke cuts the device at once.
 
 ## Attachments
 

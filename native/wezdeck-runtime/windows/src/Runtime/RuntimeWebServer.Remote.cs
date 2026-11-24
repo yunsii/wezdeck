@@ -28,6 +28,8 @@ internal sealed partial class RuntimeWebServer
     private static readonly HashSet<string> RemoteWriteActions = new(StringComparer.Ordinal)
     {
         "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "ticket.new",
+        // local only (serve.go): 批准 / 撤销 from the console on the host
+        "device.approve", "device.revoke",
     };
 
     private async Task<bool> TryHandleRemoteWriteAsync(HttpContext context)
@@ -88,6 +90,7 @@ internal sealed partial class RuntimeWebServer
             return true;
         }
 
+        CountWrite(context);
         await WriteJsonAsync(context, ReadBridge("remote", remoteAction, remoteArgs, write: true));
         return true;
     }

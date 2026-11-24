@@ -458,3 +458,32 @@ export async function hostWrite(
   }
   return result
 }
+
+export type LocalClient = {
+  origin: string
+  user_agent: string
+  first_seen: string
+  last_seen: string
+  requests: number
+  writes: number
+  /** open /events sockets: a tab that is open right now */
+  live: number
+}
+
+/**
+ * Every source on the host that used the local Runtime (Origin + browser),
+ * kept in the Runtime's memory since it started (RuntimeWebServer.Clients.cs).
+ * Local only: there is no relay equivalent.
+ */
+export async function readLocalClients() {
+  const local = await probeRuntimeCached()
+  if (!local?.health.capabilities.includes('clients.read'))
+    throw new Error('the local Runtime does not list clients yet (sync it)')
+  return requestJson(
+    local.baseUrl,
+    '/api/v1/clients',
+    (value) => value as { since_ms: number; clients: Array<LocalClient> },
+    {},
+    5_000,
+  )
+}

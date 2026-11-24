@@ -87,6 +87,10 @@ msgstr "{n} 秒"
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
+#: src/features/me-devices.tsx:129
+msgid "{requests} requests, {writes} writes"
+msgstr "请求 {requests} 次，写入 {writes} 次"
+
 #: src/features/landing-example.tsx:71
 #~ msgid "{runningCount} running"
 #~ msgstr "{runningCount} 个运行中"
@@ -215,7 +219,7 @@ msgstr "添加"
 msgid "Add test ids to the error pages"
 msgstr "给错误页补 test id"
 
-#: src/features/me-devices.tsx:94
+#: src/features/me-devices.tsx:247
 msgid "added"
 msgstr "登记于"
 
@@ -314,7 +318,7 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
-#: src/features/me-devices.tsx:103
+#: src/features/me-devices.tsx:164
 msgid "Approve"
 msgstr "批准"
 
@@ -334,7 +338,7 @@ msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。�
 msgid "Approve the plan"
 msgstr "批准计划"
 
-#: src/features/me-devices.tsx:89
+#: src/features/me-devices.tsx:241
 msgid "Approved"
 msgstr "已批准"
 
@@ -383,6 +387,10 @@ msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
 #: src/features/session-info.tsx:49
 msgid "Branch"
 msgstr "分支"
+
+#: src/features/me-devices.tsx:90
+msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
+msgstr "本次 Runtime 启动以来访问过它的浏览器和脚本。它们读写都不需要设备密钥，这里没有需要批准的。"
 
 #: src/features/console-collab-run.tsx:162
 msgid "Bytes"
@@ -439,7 +447,8 @@ msgstr "检查更新"
 
 #: src/features/console-me.tsx:33
 #: src/features/me-app.tsx:87
-#: src/features/me-devices.tsx:66
+#: src/features/me-devices.tsx:93
+#: src/features/me-devices.tsx:260
 #: src/features/me-host.tsx:56
 msgid "Checking…"
 msgstr "检查中…"
@@ -570,6 +579,10 @@ msgstr "输入工具"
 msgid "confirm"
 msgstr "确认"
 
+#: src/features/me-devices.tsx:179
+msgid "Confirm revoke"
+msgstr "确认撤销"
+
 #: src/features/console-collab.tsx:492
 msgid "conflict"
 msgstr "冲突"
@@ -586,6 +599,10 @@ msgstr "连接"
 #: src/features/console-shell.tsx:301
 msgid "Connection details"
 msgstr "连接详情"
+
+#: src/features/me-devices.tsx:51
+msgid "Console ({origin})"
+msgstr "控制台（{origin}）"
 
 #: src/features/console-shell.tsx:230
 msgid "Console navigation"
@@ -680,13 +697,21 @@ msgstr "花费"
 msgid "cost and limits"
 msgstr "费用与额度"
 
+#: src/features/me-devices.tsx:269
+msgid "Could not change the device: {changeError}"
+msgstr "操作失败：{changeError}"
+
 #: src/features/session-new.tsx:48
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/me-devices.tsx:68
+#: src/features/me-devices.tsx:262
 msgid "Could not read the device list: {errorText}"
 msgstr "读不到设备列表：{errorText}"
+
+#: src/features/me-devices.tsx:95
+msgid "Could not read the sources: {errorText}"
+msgstr "读不到本机来源：{errorText}"
 
 #: src/features/console-usage.tsx:147
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
@@ -780,6 +805,10 @@ msgstr "dev：长期并行开发的工作站"
 #: src/features/console-me.tsx:115
 msgid "Device access"
 msgstr "设备授权"
+
+#: src/features/me-devices.tsx:139
+#~ msgid "Devices"
+#~ msgstr "设备"
 
 #: src/features/session-composer.tsx:165
 #~ msgid "diagnostics"
@@ -1214,6 +1243,10 @@ msgstr "局域网"
 msgid "Language"
 msgstr "语言"
 
+#: src/features/me-devices.tsx:128
+msgid "last {lastSeen}"
+msgstr "最近 {lastSeen}"
+
 #: src/features/console-me.tsx:171
 msgid "Last direct attempt"
 msgstr "上次直连"
@@ -1453,7 +1486,7 @@ msgstr "现在没有正在运行的 Agent 会话。"
 #~ msgid "No collab tickets yet"
 #~ msgstr "还没有协作工单"
 
-#: src/features/me-devices.tsx:71
+#: src/features/me-devices.tsx:265
 msgid "No device has asked for access yet."
 msgstr "还没有设备申请授权。"
 
@@ -1480,6 +1513,14 @@ msgstr "没有空闲的会话。"
 #: src/features/console-diagnostics.tsx:102
 msgid "No matching log entries"
 msgstr "没有匹配的日志条目"
+
+#: src/features/me-devices.tsx:50
+msgid "No Origin (script, curl, another app)"
+msgstr "无 Origin（脚本、curl 或其他程序）"
+
+#: src/features/me-devices.tsx:190
+#~ msgid "No other device has asked for access yet."
+#~ msgstr "还没有其他设备申请授权。"
 
 #: src/features/session-elicitation.tsx:196
 msgid "No plan written yet"
@@ -1598,6 +1639,10 @@ msgstr "已在窗格中打开"
 msgid "Open in VS Code"
 msgstr "在 VS Code 中打开"
 
+#: src/features/me-devices.tsx:121
+msgid "Open now"
+msgstr "在线"
+
 #: src/features/landing-page.tsx:140
 #~ msgid "Open Runtime Console"
 #~ msgstr "打开 Runtime 控制台"
@@ -1705,7 +1750,7 @@ msgstr "组成"
 msgid "Peak RSS"
 msgstr "内存峰值"
 
-#: src/features/me-devices.tsx:89
+#: src/features/me-devices.tsx:241
 msgid "Pending"
 msgstr "待批准"
 
@@ -1813,13 +1858,14 @@ msgstr "原因"
 #~ msgid "Recently active"
 #~ msgstr "最近活跃"
 
-#: src/features/me-devices.tsx:62
+#: src/features/me-devices.tsx:86
+#: src/features/me-devices.tsx:222
 msgid "Refresh"
 msgstr "刷新"
 
 #: src/features/me-devices.tsx:55
-msgid "Registered devices"
-msgstr "已登记的设备"
+#~ msgid "Registered devices"
+#~ msgstr "已登记的设备"
 
 #: src/features/tickets-view.tsx:107
 msgid "rejected"
@@ -1848,6 +1894,10 @@ msgstr "远程"
 #: src/features/console-shell.tsx:375
 msgid "Remote access"
 msgstr "远程访问"
+
+#: src/features/me-devices.tsx:215
+msgid "Remote devices"
+msgstr "远程设备"
 
 #: src/features/session-composer.tsx:397
 msgid "Remove image"
@@ -1964,9 +2014,13 @@ msgstr "重试"
 msgid "reuse reasons"
 msgstr "复用理由"
 
-#: src/features/me-devices.tsx:108
+#: src/features/me-devices.tsx:179
 msgid "Revoke"
 msgstr "撤销"
+
+#: src/features/me-devices.tsx:272
+msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
+msgstr "撤销立即生效：该设备的下一次读取或写入就会被拒绝。主机命令行也能做同样的事：scripts/dev/install-remote-relay.sh --approve / --revoke <id>。"
 
 #: src/features/landing-example.tsx:144
 #~ msgid "Rime"
@@ -2111,7 +2165,7 @@ msgstr "栏目"
 #~ msgid "See who needs you"
 #~ msgstr "看谁需要你"
 
-#: src/features/me-devices.tsx:95
+#: src/features/me-devices.tsx:248
 msgid "seen"
 msgstr "最近活动"
 
@@ -2244,6 +2298,10 @@ msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
 #: src/features/console-diagnostics.tsx:319
 msgid "Source"
 msgstr "来源"
+
+#: src/features/me-devices.tsx:79
+msgid "Sources on this computer"
+msgstr "本机来源"
 
 #: src/features/session-commands.tsx:178
 msgid "start a fresh conversation"
@@ -2410,6 +2468,14 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 #: src/features/console-shared.tsx:379
 msgid "Theme"
 msgstr "主题"
+
+#: src/features/me-devices.tsx:119
+msgid "This browser"
+msgstr "当前浏览器"
+
+#: src/features/me-devices.tsx:67
+#~ msgid "This browser · writes through the local Runtime, nothing to approve"
+#~ msgstr "当前浏览器 · 写入直接走本地 Runtime，无需批准"
 
 #: src/features/console-me.tsx:119
 #: src/features/console-me.tsx:299

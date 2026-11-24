@@ -87,6 +87,10 @@ msgstr "{n} s"
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
+#: src/features/me-devices.tsx:129
+msgid "{requests} requests, {writes} writes"
+msgstr "{requests} requests, {writes} writes"
+
 #: src/features/landing-example.tsx:71
 #~ msgid "{runningCount} running"
 #~ msgstr "{runningCount} running"
@@ -215,7 +219,7 @@ msgstr "Add"
 msgid "Add test ids to the error pages"
 msgstr "Add test ids to the error pages"
 
-#: src/features/me-devices.tsx:94
+#: src/features/me-devices.tsx:247
 msgid "added"
 msgstr "added"
 
@@ -314,7 +318,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/me-devices.tsx:103
+#: src/features/me-devices.tsx:164
 msgid "Approve"
 msgstr "Approve"
 
@@ -334,7 +338,7 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/me-devices.tsx:89
+#: src/features/me-devices.tsx:241
 msgid "Approved"
 msgstr "Approved"
 
@@ -383,6 +387,10 @@ msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 #: src/features/session-info.tsx:49
 msgid "Branch"
 msgstr "Branch"
+
+#: src/features/me-devices.tsx:90
+msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
+msgstr "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 
 #: src/features/console-collab-run.tsx:162
 msgid "Bytes"
@@ -439,7 +447,8 @@ msgstr "Check for updates"
 
 #: src/features/console-me.tsx:33
 #: src/features/me-app.tsx:87
-#: src/features/me-devices.tsx:66
+#: src/features/me-devices.tsx:93
+#: src/features/me-devices.tsx:260
 #: src/features/me-host.tsx:56
 msgid "Checking…"
 msgstr "Checking…"
@@ -570,6 +579,10 @@ msgstr "Composer tools"
 msgid "confirm"
 msgstr "confirm"
 
+#: src/features/me-devices.tsx:179
+msgid "Confirm revoke"
+msgstr "Confirm revoke"
+
 #: src/features/console-collab.tsx:492
 msgid "conflict"
 msgstr "conflict"
@@ -586,6 +599,10 @@ msgstr "Connection"
 #: src/features/console-shell.tsx:301
 msgid "Connection details"
 msgstr "Connection details"
+
+#: src/features/me-devices.tsx:51
+msgid "Console ({origin})"
+msgstr "Console ({origin})"
 
 #: src/features/console-shell.tsx:230
 msgid "Console navigation"
@@ -680,13 +697,21 @@ msgstr "Cost"
 msgid "cost and limits"
 msgstr "cost and limits"
 
+#: src/features/me-devices.tsx:269
+msgid "Could not change the device: {changeError}"
+msgstr "Could not change the device: {changeError}"
+
 #: src/features/session-new.tsx:48
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/me-devices.tsx:68
+#: src/features/me-devices.tsx:262
 msgid "Could not read the device list: {errorText}"
 msgstr "Could not read the device list: {errorText}"
+
+#: src/features/me-devices.tsx:95
+msgid "Could not read the sources: {errorText}"
+msgstr "Could not read the sources: {errorText}"
 
 #: src/features/console-usage.tsx:147
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
@@ -780,6 +805,10 @@ msgstr "dev: a long-lived workstation for parallel work"
 #: src/features/console-me.tsx:115
 msgid "Device access"
 msgstr "Device access"
+
+#: src/features/me-devices.tsx:139
+#~ msgid "Devices"
+#~ msgstr "Devices"
 
 #: src/features/session-composer.tsx:165
 #~ msgid "diagnostics"
@@ -1214,6 +1243,10 @@ msgstr "LAN"
 msgid "Language"
 msgstr "Language"
 
+#: src/features/me-devices.tsx:128
+msgid "last {lastSeen}"
+msgstr "last {lastSeen}"
+
 #: src/features/console-me.tsx:171
 msgid "Last direct attempt"
 msgstr "Last direct attempt"
@@ -1453,7 +1486,7 @@ msgstr "No agent sessions are running."
 #~ msgid "No collab tickets yet"
 #~ msgstr "No collab tickets yet"
 
-#: src/features/me-devices.tsx:71
+#: src/features/me-devices.tsx:265
 msgid "No device has asked for access yet."
 msgstr "No device has asked for access yet."
 
@@ -1480,6 +1513,14 @@ msgstr "No idle sessions."
 #: src/features/console-diagnostics.tsx:102
 msgid "No matching log entries"
 msgstr "No matching log entries"
+
+#: src/features/me-devices.tsx:50
+msgid "No Origin (script, curl, another app)"
+msgstr "No Origin (script, curl, another app)"
+
+#: src/features/me-devices.tsx:190
+#~ msgid "No other device has asked for access yet."
+#~ msgstr "No other device has asked for access yet."
 
 #: src/features/session-elicitation.tsx:196
 msgid "No plan written yet"
@@ -1598,6 +1639,10 @@ msgstr "open in a pane"
 msgid "Open in VS Code"
 msgstr "Open in VS Code"
 
+#: src/features/me-devices.tsx:121
+msgid "Open now"
+msgstr "Open now"
+
 #: src/features/landing-page.tsx:140
 #~ msgid "Open Runtime Console"
 #~ msgstr "Open Runtime Console"
@@ -1705,7 +1750,7 @@ msgstr "Part"
 msgid "Peak RSS"
 msgstr "Peak RSS"
 
-#: src/features/me-devices.tsx:89
+#: src/features/me-devices.tsx:241
 msgid "Pending"
 msgstr "Pending"
 
@@ -1813,13 +1858,14 @@ msgstr "Reason"
 #~ msgid "Recently active"
 #~ msgstr "Recently active"
 
-#: src/features/me-devices.tsx:62
+#: src/features/me-devices.tsx:86
+#: src/features/me-devices.tsx:222
 msgid "Refresh"
 msgstr "Refresh"
 
 #: src/features/me-devices.tsx:55
-msgid "Registered devices"
-msgstr "Registered devices"
+#~ msgid "Registered devices"
+#~ msgstr "Registered devices"
 
 #: src/features/tickets-view.tsx:107
 msgid "rejected"
@@ -1848,6 +1894,10 @@ msgstr "Remote"
 #: src/features/console-shell.tsx:375
 msgid "Remote access"
 msgstr "Remote access"
+
+#: src/features/me-devices.tsx:215
+msgid "Remote devices"
+msgstr "Remote devices"
 
 #: src/features/session-composer.tsx:397
 msgid "Remove image"
@@ -1964,9 +2014,13 @@ msgstr "Retry"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/me-devices.tsx:108
+#: src/features/me-devices.tsx:179
 msgid "Revoke"
 msgstr "Revoke"
+
+#: src/features/me-devices.tsx:272
+msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
+msgstr "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 
 #: src/features/landing-example.tsx:144
 #~ msgid "Rime"
@@ -2111,7 +2165,7 @@ msgstr "Sections"
 #~ msgid "See who needs you"
 #~ msgstr "See who needs you"
 
-#: src/features/me-devices.tsx:95
+#: src/features/me-devices.tsx:248
 msgid "seen"
 msgstr "seen"
 
@@ -2244,6 +2298,10 @@ msgstr "Someone just used the desk; sending in {retryIn}s…"
 #: src/features/console-diagnostics.tsx:319
 msgid "Source"
 msgstr "Source"
+
+#: src/features/me-devices.tsx:79
+msgid "Sources on this computer"
+msgstr "Sources on this computer"
 
 #: src/features/session-commands.tsx:178
 msgid "start a fresh conversation"
@@ -2410,6 +2468,14 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 #: src/features/console-shared.tsx:379
 msgid "Theme"
 msgstr "Theme"
+
+#: src/features/me-devices.tsx:119
+msgid "This browser"
+msgstr "This browser"
+
+#: src/features/me-devices.tsx:67
+#~ msgid "This browser · writes through the local Runtime, nothing to approve"
+#~ msgstr "This browser · writes through the local Runtime, nothing to approve"
 
 #: src/features/console-me.tsx:119
 #: src/features/console-me.tsx:299

@@ -126,15 +126,25 @@ describe('architecture page: capabilities match the source', () => {
       )
       return new Set([...block.matchAll(/"([a-z.]+)"/g)].map((m) => m[1]))
     }
-    // plus the bridge's local-only reads (remote.devices): not relay reads
+    // plus the bridge's local-only actions (remote.devices,
+    // remote.device.approve / revoke): neither relay reads nor writes
     const localOnly = [...names('bridge')]
       .filter((n) => /^remote\.[a-z.]+$/.test(n))
       .map((n) => n.slice('remote.'.length))
-    expect(sorted(set('RemoteReadActions'))).toEqual(
-      sorted(new Set([...names('relay-reads'), ...localOnly])),
-    )
-    expect(sorted(set('RemoteWriteActions'))).toEqual(
-      sorted(names('relay-writes')),
+    const reads = set('RemoteReadActions')
+    const writes = set('RemoteWriteActions')
+    for (const action of names('relay-reads'))
+      expect(reads.has(action), action).toBe(true)
+    for (const action of names('relay-writes'))
+      expect(writes.has(action), action).toBe(true)
+    expect(sorted(new Set([...reads, ...writes]))).toEqual(
+      sorted(
+        new Set([
+          ...names('relay-reads'),
+          ...names('relay-writes'),
+          ...localOnly,
+        ]),
+      ),
     )
   })
 

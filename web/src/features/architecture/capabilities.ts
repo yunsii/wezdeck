@@ -85,6 +85,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Logs, latencies and counters by category',
       ),
       c(
+        '/api/v1/clients',
+        '本机访问过 Runtime 的来源（Origin + 浏览器，请求 / 写入次数，实时连接），存在内存里',
+        'Sources on the host that used the Runtime (Origin + browser, requests / writes, live sockets), kept in memory',
+      ),
+      c(
         '/api/v1/collab/<命令>',
         '工单：health / list / show / events / run / prompt / transcript / metrics',
         'Tickets: health / list / show / events / run / prompt / transcript / metrics',
@@ -297,6 +302,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'remote.devices',
         '已登记的设备（待批准 / 已批准，不含公钥）：只给本机浏览器，relay 不提供',
         'Registered devices (pending / approved, no keys): for the host browser only, not over the relay',
+      ),
+      c(
+        'remote.device.approve',
+        '批准一台待批准的设备：只给本机浏览器，relay 不提供',
+        'Approve a pending device: for the host browser only, not over the relay',
+      ),
+      c(
+        'remote.device.revoke',
+        '撤销一台已批准的设备，relay 下一次读写即拒绝：只给本机浏览器',
+        'Revoke an approved device; the relay refuses its next read or write: for the host browser only',
       ),
       c(
         'remote.<写入>',
