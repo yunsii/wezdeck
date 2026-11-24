@@ -138,24 +138,16 @@ textarea,
   caret-shape: var(--caret-shape, bar);
 }
 
-/* Edges. A card (a rounded surface) on the page was white on near-white
-   (1.08:1) and dark on darker: it gets a hairline. A text field gets an
-   edge of 3:1 (WCAG 1.4.11; marked data-text-field — data-field is the
-   Field row's own label attribute) and, while focused, the accent and a soft halo.
-   Outlines and shadows only: neither takes layout room, so nothing moves
-   when they change (docs/web-pwa.md "Layout stability"). Unlayered, so a
-   utility's outline-none does not drop them. */
-.bg-brand-surface:where([class*='rounded']) {
-  outline: 1px solid var(--brand-card-edge);
-  /* outside the box: inside, a row's own background (a selected session,
-     the swipe-to-clear layer) painted over it and the card lost its sides.
-     A scroll container clips what is outside its children: one holding
-     cards at its edge needs 1 px+ of padding there (the sidebar nav, the
-     split lists' foot) */
-  outline-offset: 0;
-}
+/* Edges: flat. Cards and text fields have no lines of their own — the
+   page tone and the surface fill tell them apart; lines are kept only
+   between functional regions (the split list / detail divider, the sidebar,
+   the composer's top edge). A text field (data-text-field — data-field is
+   the Field row's own label attribute) shows the accent and a soft halo
+   while focused: a state, not a frame. Outline and shadow only, so focus
+   never changes a size (docs/web-pwa.md "Layout stability"). Unlayered, so
+   a utility's outline-none does not drop it. */
 [data-text-field] {
-  outline: 1px solid var(--brand-field-edge);
+  outline: 1px solid transparent;
   outline-offset: -1px;
   transition:
     outline-color var(--motion-short, 120ms),

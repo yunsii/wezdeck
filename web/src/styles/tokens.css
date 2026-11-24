@@ -57,10 +57,6 @@
   --brand-muted: #9fb0c8;
   --brand-label: #7f93ad;
   --brand-border: rgba(159, 176, 200, 0.2);
-  /* card / field edges (base.css "Edges"): a card reads apart from the page,
-     a text field's edge reaches 3:1 against it (WCAG 1.4.11) */
-  --brand-card-edge: rgba(159, 176, 200, 0.18);
-  --brand-field-edge: rgba(159, 176, 200, 0.5);
   --brand-soft: rgba(159, 176, 200, 0.08);
   --brand-running: #38bdf8;
   --brand-waiting: #fbbf24;
@@ -93,8 +89,6 @@ html[data-theme='light'] {
   --brand-muted: #5b6e82;
   --brand-label: #687b91;
   --brand-border: rgba(20, 46, 75, 0.16);
-  --brand-card-edge: rgba(20, 46, 75, 0.18);
-  --brand-field-edge: rgba(20, 46, 75, 0.55);
   --brand-soft: rgba(20, 46, 75, 0.05);
   --brand-running: #0878b5;
   --brand-waiting: #b77900;

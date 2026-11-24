@@ -440,16 +440,19 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   line on every return was noise) — the stale note above covers a refetch
   that keeps failing.
 
-### Edges (2026-11-24)
+### Edges (2026-11-24, flat)
 
-A card (rounded `bg-brand-surface`) on the page read 1.08:1 against it in
-the light theme: every card gets a hairline (`--brand-card-edge`), every
-text field (`data-text-field`: `Input` / `Textarea` field variants, the
-composer, the ticket search) an edge of about 3.3:1 (`--brand-field-edge`,
-WCAG 1.4.11) and, focused, the accent with a soft halo. Outlines and
-shadows only (`base.css` "Edges"), so focus never changes a size. The split
-pages (会话 / 工单 / 诊断) draw a full-height line between the list and the
-detail.
+Flat: cards and text fields draw no lines of their own; the page tone and
+the surface fill tell them apart. Lines stay only between functional
+regions: the split pages' list / detail divider (full height), the sidebar,
+the composer's top edge. A focused text field (`data-text-field`: `Input` /
+`Textarea` field variants, the composer, the ticket search) shows the
+accent and a soft halo — a state, not a frame; outline and shadow only, so
+focus never changes a size (`base.css` "Edges"). The selected row's accent
+bar is a marker, not a frame. Tried and dropped the same day: a hairline on
+every rounded surface — it read as wireframes, a scroll container clipped
+it (sidebar items, the 转到后台 pill), and `data-field` collided with the
+Field row's own attribute.
 
 ### Text caret (2026-11-24)
 
