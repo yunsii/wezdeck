@@ -277,6 +277,10 @@ msgstr "All categories"
 msgid "All questions answered. The agent waits until you submit."
 msgstr "All questions answered. The agent waits until you submit."
 
+#: src/features/collab-metrics.tsx:75
+msgid "All repos"
+msgstr "All repos"
+
 #: src/features/console-now.tsx:219
 #~ msgid "All sessions"
 #~ msgstr "All sessions"
@@ -420,18 +424,39 @@ msgstr "Block and underscore need Chrome 144 or later; other browsers keep the b
 msgid "Branch"
 msgstr "Branch"
 
+#: src/features/collab-metrics.tsx:190
+msgid "Breakdowns"
+msgstr "Breakdowns"
+
 #: src/features/me-devices.tsx:91
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
+
+#: src/features/collab-metrics.tsx:194
+msgid "By backend"
+msgstr "By backend"
+
+#: src/features/collab-metrics.tsx:195
+msgid "By session reuse"
+msgstr "By session reuse"
+
+#: src/features/collab-metrics.tsx:193
+msgid "By target repo"
+msgstr "By target repo"
+
+#: src/features/collab-metrics.tsx:198
+msgid "By trigger"
+msgstr "By trigger"
 
 #: src/features/console-collab-run.tsx:162
 msgid "Bytes"
 msgstr "Bytes"
 
-#: src/features/console-collab.tsx:98
-#: src/features/console-collab.tsx:294
-#: src/features/console-collab.tsx:345
-#: src/features/console-collab.tsx:429
+#: src/features/collab-metrics.tsx:132
+#: src/features/collab-metrics.tsx:227
+#: src/features/console-collab.tsx:202
+#: src/features/console-collab.tsx:253
+#: src/features/console-collab.tsx:337
 #: src/features/session-info.tsx:73
 msgid "Cache hit"
 msgstr "Cache hit"
@@ -485,11 +510,11 @@ msgstr "Check for updates"
 msgid "Checking…"
 msgstr "Checking…"
 
-#: src/features/console-collab.tsx:424
+#: src/features/console-collab.tsx:332
 msgid "Child"
 msgstr "Child"
 
-#: src/features/console-collab.tsx:419
+#: src/features/console-collab.tsx:327
 msgid "Children"
 msgstr "Children"
 
@@ -581,7 +606,7 @@ msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. 
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
-#: src/features/console-collab.tsx:116
+#: src/features/collab-metrics.tsx:63
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
@@ -631,7 +656,7 @@ msgstr "confirm"
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
-#: src/features/console-collab.tsx:494
+#: src/features/console-collab.tsx:402
 msgid "conflict"
 msgstr "conflict"
 
@@ -740,9 +765,10 @@ msgstr "Copy session reference for an agent"
 msgid "Copy value"
 msgstr "Copy value"
 
-#: src/features/console-collab.tsx:103
-#: src/features/console-collab.tsx:295
-#: src/features/console-collab.tsx:346
+#: src/features/collab-metrics.tsx:137
+#: src/features/collab-metrics.tsx:227
+#: src/features/console-collab.tsx:203
+#: src/features/console-collab.tsx:254
 msgid "Cost"
 msgstr "Cost"
 
@@ -786,8 +812,8 @@ msgstr "Creating the worktree…"
 msgid "Creating…"
 msgstr "Creating…"
 
+#: src/features/collab-metrics.tsx:67
 #: src/features/collab-top-bar.tsx:22
-#: src/features/console-collab.tsx:120
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -838,7 +864,7 @@ msgstr "Degraded"
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:427
+#: src/features/console-collab.tsx:335
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -1002,7 +1028,7 @@ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jum
 #~ msgid "Example agent sessions"
 #~ msgstr "Example agent sessions"
 
-#: src/features/console-collab.tsx:349
+#: src/features/console-collab.tsx:257
 msgid "Exit"
 msgstr "Exit"
 
@@ -1017,6 +1043,10 @@ msgstr "failed"
 #: src/features/tickets-view.tsx:170
 #~ msgid "Failed"
 #~ msgstr "Failed"
+
+#: src/features/collab-metrics.tsx:128
+msgid "Failed runs"
+msgstr "Failed runs"
 
 #: src/features/session-info.tsx:56
 msgid "File"
@@ -1216,6 +1246,10 @@ msgstr "In Safari tap Share, then “Add to Home Screen”."
 msgid "Initial prompt"
 msgstr "Initial prompt"
 
+#: src/features/collab-metrics.tsx:205
+msgid "Initial prompt by phase (est. tokens)"
+msgstr "Initial prompt by phase (est. tokens)"
+
 #: src/features/tickets-view.tsx:454
 msgid "Initiator"
 msgstr "Initiator"
@@ -1237,8 +1271,8 @@ msgstr "Installed"
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/console-collab.tsx:487
-#: src/features/console-collab.tsx:488
+#: src/features/console-collab.tsx:395
+#: src/features/console-collab.tsx:396
 msgid "Integration"
 msgstr "Integration"
 
@@ -1405,7 +1439,7 @@ msgstr "Loading original…"
 
 #: src/features/console-activity.tsx:216
 #: src/features/console-collab-run.tsx:197
-#: src/features/console-collab.tsx:173
+#: src/features/console-collab.tsx:81
 #: src/features/console-diagnostics.tsx:100
 #: src/features/console-sessions.tsx:471
 #: src/features/console-shared.tsx:210
@@ -1447,7 +1481,7 @@ msgstr "Mark read"
 msgid "Marked read"
 msgstr "Marked read"
 
-#: src/features/console-collab.tsx:499
+#: src/features/console-collab.tsx:407
 msgid "merged"
 msgstr "merged"
 
@@ -1467,7 +1501,7 @@ msgstr "Messages"
 #~ msgid "Metrics"
 #~ msgstr "Metrics"
 
-#: src/features/console-collab.tsx:125
+#: src/features/collab-metrics.tsx:84
 msgid "Metrics window"
 msgstr "Metrics window"
 
@@ -1486,6 +1520,10 @@ msgstr "Modified"
 #: src/features/session-ask-claude.tsx:103
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
+
+#: src/features/collab-metrics.tsx:227
+msgid "Name"
+msgstr "Name"
 
 #: src/features/session-info.tsx:81
 msgid "Names sessions"
@@ -1613,7 +1651,7 @@ msgstr "No earlier conversations in this project"
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
-#: src/features/console-collab.tsx:327
+#: src/features/console-collab.tsx:235
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
@@ -1649,7 +1687,7 @@ msgstr "No plan written yet"
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
-#: src/features/console-collab.tsx:71
+#: src/features/console-collab.tsx:58
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
@@ -1829,7 +1867,7 @@ msgstr "Output tokens"
 #~ msgid "Overview"
 #~ msgstr "Overview"
 
-#: src/features/console-collab.tsx:199
+#: src/features/console-collab.tsx:107
 msgid "Owner"
 msgstr "Owner"
 
@@ -1853,7 +1891,7 @@ msgstr "Pane"
 msgid "Pane role"
 msgstr "Pane role"
 
-#: src/features/console-collab.tsx:105
+#: src/features/collab-metrics.tsx:139
 msgid "Parallelism"
 msgstr "Parallelism"
 
@@ -1862,14 +1900,15 @@ msgid "Part"
 msgstr "Part"
 
 #: src/features/console-collab.tsx:112
-msgid "Peak RSS"
-msgstr "Peak RSS"
+#~ msgid "Peak RSS"
+#~ msgstr "Peak RSS"
 
 #: src/features/me-devices.tsx:273
 msgid "Pending"
 msgstr "Pending"
 
-#: src/features/console-collab.tsx:342
+#: src/features/collab-metrics.tsx:206
+#: src/features/console-collab.tsx:250
 msgid "Phase"
 msgstr "Phase"
 
@@ -1925,7 +1964,7 @@ msgstr "Primary"
 msgid "Process"
 msgstr "Process"
 
-#: src/features/console-collab.tsx:200
+#: src/features/console-collab.tsx:108
 msgid "Progress"
 msgstr "Progress"
 
@@ -2069,9 +2108,13 @@ msgstr "Reply"
 msgid "Reply and continue"
 msgstr "Reply and continue"
 
-#: src/features/console-collab.tsx:425
+#: src/features/console-collab.tsx:333
 msgid "Repo"
 msgstr "Repo"
+
+#: src/features/collab-metrics.tsx:73
+msgid "Repo filter"
+msgstr "Repo filter"
 
 #: src/features/console-development.tsx:181
 #~ msgid "Repositories"
@@ -2118,7 +2161,7 @@ msgstr "resets {weekReset}"
 msgid "Result"
 msgstr "Result"
 
-#: src/features/console-collab.tsx:100
+#: src/features/collab-metrics.tsx:134
 msgid "Resume / fresh hit"
 msgstr "Resume / fresh hit"
 
@@ -2144,7 +2187,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/console-collab.tsx:146
+#: src/features/collab-metrics.tsx:96
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
@@ -2164,15 +2207,19 @@ msgstr "Revoking takes effect at once: the device's next read or write is refuse
 msgid "Rime collector"
 msgstr "Rime collector"
 
-#: src/features/console-collab.tsx:198
+#: src/features/console-collab.tsx:106
 msgid "Route"
 msgstr "Route"
 
-#: src/features/console-collab.tsx:348
+#: src/features/console-collab.tsx:256
 msgid "RSS"
 msgstr "RSS"
 
-#: src/features/console-collab.tsx:341
+#: src/features/collab-metrics.tsx:151
+msgid "RSS p95 / peak"
+msgstr "RSS p95 / peak"
+
+#: src/features/console-collab.tsx:249
 msgid "Run"
 msgstr "Run"
 
@@ -2196,13 +2243,13 @@ msgstr "Run in background"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:461
+#: src/features/console-collab.tsx:369
 #: src/features/tickets-view.tsx:123
 msgid "running"
 msgstr "running"
 
 #: src/features/chat-tools.tsx:80
-#: src/features/console-collab.tsx:93
+#: src/features/collab-metrics.tsx:125
 #: src/features/console-shell.tsx:406
 msgid "Running"
 msgstr "Running"
@@ -2219,9 +2266,12 @@ msgstr "Running in pane"
 msgid "Running substate"
 msgstr "Running substate"
 
-#: src/features/console-collab.tsx:95
-#: src/features/console-collab.tsx:262
-#: src/features/console-collab.tsx:336
+#: src/features/collab-metrics.tsx:127
+#: src/features/collab-metrics.tsx:199
+#: src/features/collab-metrics.tsx:206
+#: src/features/collab-metrics.tsx:227
+#: src/features/console-collab.tsx:170
+#: src/features/console-collab.tsx:244
 msgid "Runs"
 msgstr "Runs"
 
@@ -2279,7 +2329,7 @@ msgstr "Same at the desk"
 #~ msgid "Sample signals. The live console reads your local Runtime."
 #~ msgstr "Sample signals. The live console reads your local Runtime."
 
-#: src/features/console-collab.tsx:428
+#: src/features/console-collab.tsx:336
 msgid "Scope"
 msgstr "Scope"
 
@@ -2349,7 +2399,7 @@ msgstr "Sending the first message…"
 #~ msgstr "Sent to the session"
 
 #: src/features/console-collab-run.tsx:116
-#: src/features/console-collab.tsx:343
+#: src/features/console-collab.tsx:251
 #: src/features/session-info.tsx:31
 msgid "Session"
 msgstr "Session"
@@ -2372,7 +2422,7 @@ msgstr "Session info"
 msgid "Session pages"
 msgstr "Session pages"
 
-#: src/features/console-collab.tsx:96
+#: src/features/collab-metrics.tsx:129
 msgid "Sessions"
 msgstr "Sessions"
 
@@ -2494,7 +2544,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:426
+#: src/features/console-collab.tsx:334
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
 #: src/features/session-list.tsx:190
@@ -2693,7 +2743,7 @@ msgstr "This pane started a new session"
 msgid "Thread"
 msgstr "Thread"
 
-#: src/features/console-collab.tsx:202
+#: src/features/console-collab.tsx:110
 msgid "Ticket"
 msgstr "Ticket"
 
@@ -2707,7 +2757,7 @@ msgstr "Ticket activity"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:176
+#: src/features/console-collab.tsx:84
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
@@ -2827,6 +2877,11 @@ msgstr "Today events"
 msgid "Token rejected — pair again"
 msgstr "Token rejected — pair again"
 
+#: src/features/collab-metrics.tsx:131
+msgid "Tokens"
+msgstr "Tokens"
+
+#: src/features/collab-metrics.tsx:155
 #: src/features/console-collab-run.tsx:140
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
@@ -2850,6 +2905,7 @@ msgstr "Trace ID or text"
 msgid "Transcript"
 msgstr "Transcript"
 
+#: src/features/collab-metrics.tsx:199
 #: src/features/console-collab-run.tsx:107
 msgid "Trigger"
 msgstr "Trigger"
@@ -2874,9 +2930,9 @@ msgstr "Turn on write access in Settings to send these keys"
 msgid "TURN relay"
 msgstr "TURN relay"
 
-#: src/features/console-collab.tsx:97
-#: src/features/console-collab.tsx:293
-#: src/features/console-collab.tsx:344
+#: src/features/collab-metrics.tsx:130
+#: src/features/console-collab.tsx:201
+#: src/features/console-collab.tsx:252
 msgid "Turns"
 msgstr "Turns"
 
@@ -2982,7 +3038,7 @@ msgstr "Waiting for your answer"
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
-#: src/features/console-collab.tsx:94
+#: src/features/collab-metrics.tsx:126
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
@@ -3015,14 +3071,22 @@ msgstr "Waiting on you"
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/console-collab.tsx:296
-#: src/features/console-collab.tsx:347
+#: src/features/console-collab.tsx:204
+#: src/features/console-collab.tsx:255
 msgid "Wall"
 msgstr "Wall"
 
 #: src/features/console-collab.tsx:111
-msgid "Wall p50"
-msgstr "Wall p50"
+#~ msgid "Wall p50"
+#~ msgstr "Wall p50"
+
+#: src/features/collab-metrics.tsx:146
+msgid "Wall p50 / p95"
+msgstr "Wall p50 / p95"
+
+#: src/features/collab-metrics.tsx:149
+msgid "Wall total"
+msgstr "Wall total"
 
 #: src/features/console-diagnostics.tsx:132
 msgid "Warnings"
@@ -3148,7 +3212,7 @@ msgstr "Working"
 #~ msgid "Workspaces"
 #~ msgstr "Workspaces"
 
-#: src/features/console-collab.tsx:201
+#: src/features/console-collab.tsx:109
 #: src/features/session-info.tsx:48
 msgid "Worktree"
 msgstr "Worktree"

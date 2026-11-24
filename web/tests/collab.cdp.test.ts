@@ -1,4 +1,5 @@
 // covers: web/src/features/console-collab* web/src/features/collab-top-bar.tsx
+// covers: web/src/features/collab-metrics.tsx
 // covers: web/src/features/tickets-view.tsx
 // covers: web/src/features/ticket-thread-view.tsx
 // covers: web/src/features/ticket-reply.tsx native/wezdeck-wsl/collab.go
@@ -6,7 +7,7 @@
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type { Browser, Page } from '@playwright/test'
+import type { Browser, Locator, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // 工单 against the remote-access test stack (scripts/dev/remote-test-stack.sh):
@@ -35,6 +36,40 @@ function ticketWithRun(): string {
       return ticket.id
   }
   return ''
+}
+
+/** the repo (from / to) with the most runs in the store copy, all time */
+function busiestRepo(): { name: string; runs: number } | null {
+  const api = join(repo, 'skills/agent-collab/lib/api.py')
+  const env = { ...process.env, TICKETS_ROOT: join(stack, 'tickets') }
+  const metrics = (args: Array<string>) =>
+    JSON.parse(
+      execFileSync('python3', [api, 'metrics', ...args], { env }).toString(),
+    ) as {
+      runs: number
+      by_repo: Record<string, { runs: number }>
+    }
+  const top = Object.entries(metrics(['--window', 'all']).by_repo)
+    .sort((a, b) => b[1].runs - a[1].runs)
+    .at(0)
+  if (!top) return null
+  return {
+    name: top[0],
+    runs: metrics(['--window', 'all', '--repo', top[0]]).runs,
+  }
+}
+
+/** the headline Runs cell's value */
+async function runsCell(metrics: Locator) {
+  return (
+    (await metrics
+      .locator('div', {
+        has: metrics.page().getByText('Runs', { exact: true }),
+      })
+      .last()
+      .locator('dd')
+      .textContent()) ?? ''
+  )
 }
 
 async function open(page: Page, path: string) {
@@ -73,6 +108,20 @@ describe.runIf(stack)('工单 over the remote link', () => {
     expect(await metrics.count()).toBe(0)
     await page.getByRole('button', { name: 'Runs, cache hit and cost' }).click()
     await metrics.getByText('Cache hit', { exact: true }).waitFor()
+    // repo filter + window: the Runs cell follows `api metrics --repo`
+    const pick = busiestRepo()
+    if (pick) {
+      await metrics.getByRole('combobox', { name: 'Metrics window' }).click()
+      await page.getByRole('option', { name: 'all', exact: true }).click()
+      await metrics.getByRole('combobox', { name: 'Repo filter' }).click()
+      await page.getByRole('option', { name: pick.name, exact: true }).click()
+      await expect
+        .poll(() => runsCell(metrics), { timeout: 15_000 })
+        .toBe(pick.runs.toLocaleString('en-US'))
+      await metrics.getByRole('button', { name: 'Breakdowns' }).click()
+      await metrics.getByRole('table', { name: 'By target repo' }).waitFor()
+      await metrics.getByRole('table', { name: 'By backend' }).waitFor()
+    }
 
     if (!withRun) return
     await open(page, `/console/collab/${withRun}`)

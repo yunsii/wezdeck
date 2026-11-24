@@ -21,6 +21,13 @@ func TestCollabArgsAllowlist(t *testing.T) {
 			t.Fatalf("args=%v want %v", args, want)
 		}
 	}
+	// the 工单 metrics band's repo filter reaches metrics and health
+	for _, action := range []string{"metrics", "health"} {
+		args, err := collabArgs(action, json.RawMessage(`{"repo":"fe1"}`))
+		if err != nil || len(args) != 3 || args[1] != "--repo" || args[2] != "fe1" {
+			t.Fatalf("%s repo: args=%v err=%v", action, args, err)
+		}
+	}
 	if _, err := collabArgs("close", nil); err == nil {
 		t.Fatal("write verb must be rejected")
 	}

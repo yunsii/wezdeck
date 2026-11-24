@@ -2,13 +2,10 @@ import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
 import { Field, FieldList } from '#/components/ui/field'
-import { Select } from '#/components/ui/select'
 import { useCollab } from '#/lib/collab-query'
-import { useTicketHealth } from '#/lib/ticket-sync'
 import { useIsWide } from '#/lib/use-media'
 import type {
   CollabShow,
-  CollabMetrics,
   CollabRunSummary,
   CollabTicket,
 } from '#/lib/runtime-contract'
@@ -20,6 +17,7 @@ import { Reading } from './inspector'
 import type { LedTone } from '#/components/deck/led'
 import { TicketsView, useOwnerLabel, useStatusLabel } from './tickets-view'
 import { CollabTopBar } from './collab-top-bar'
+import { CollabMetricsBand } from './collab-metrics'
 import {
   TicketAttach,
   TicketReply,
@@ -54,102 +52,12 @@ export function ticketTone(ticket: CollabTicket): LedTone {
 
 export function ConsoleCollabPage() {
   const { t } = useLingui()
-  const [window, setWindow] = useState('24h')
-  const health = useTicketHealth()
-  const metrics = useCollab('metrics', { window }, { refetchInterval: 30_000 })
-  const band = (
-    <MetricsBand
-      metrics={metrics.data}
-      health={health.data}
-      window={window}
-      onWindow={setWindow}
-    />
-  )
   return (
     <TicketsView
       base="collab"
       empty={t`No tickets match this filter.`}
-      top={<CollabTopBar band={band} />}
+      top={<CollabTopBar band={<CollabMetricsBand />} />}
     />
-  )
-}
-
-export function MetricsBand({
-  metrics,
-  health,
-  window,
-  onWindow,
-}: {
-  metrics: CollabMetrics | undefined
-  health:
-    { running?: number; waiting_human?: number; tickets?: number } | undefined
-  window: string
-  onWindow: (value: string) => void
-}) {
-  const { t } = useLingui()
-  const reuse: Partial<Record<string, { cache_hit_rate?: number | null }>> =
-    metrics?.by_reuse ?? {}
-  const facts = [
-    { label: t`Running`, value: num(health?.running) },
-    { label: t`Waiting on human`, value: num(health?.waiting_human) },
-    { label: t`Runs`, value: num(metrics?.runs) },
-    { label: t`Sessions`, value: num(metrics?.sessions) },
-    { label: t`Turns`, value: num(metrics?.turns) },
-    { label: t`Cache hit`, value: pct(metrics?.cache_hit_rate) },
-    {
-      label: t`Resume / fresh hit`,
-      value: `${pct(reuse.resume?.cache_hit_rate)} / ${pct(reuse.fresh?.cache_hit_rate)}`,
-    },
-    { label: t`Cost`, value: usd(metrics?.cost_usd) },
-    {
-      label: t`Parallelism`,
-      value:
-        typeof metrics?.realized_parallelism === 'number'
-          ? `${metrics.realized_parallelism}×`
-          : '—',
-    },
-    { label: t`Wall p50`, value: secs(metrics?.wall_ms?.p50) },
-    { label: t`Peak RSS`, value: `${num(metrics?.rss_peak_mb?.max, 1)} MB` },
-  ]
-  return (
-    <section
-      aria-label={t`Collab metrics`}
-      className="grid gap-2 rounded-2xl border border-brand-edge bg-brand-surface p-3"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-body font-semibold">{t`Cross-repo collab`}</h1>
-        <div className="w-32 shrink-0">
-          <Select
-            value={window}
-            onValueChange={onWindow}
-            aria-label={t`Metrics window`}
-            options={['1h', '24h', '7d', '30d', 'all'].map((value) => ({
-              value,
-              label: value,
-            }))}
-          />
-        </div>
-      </div>
-      <dl className="grid grid-cols-2 overflow-hidden rounded-xl border-t border-l border-brand-edge sm:grid-cols-5">
-        {facts.map((fact) => (
-          <div
-            key={fact.label}
-            className="border-r border-b border-brand-edge bg-brand-key px-3 py-2"
-          >
-            <dt className="text-meta text-brand-label">{fact.label}</dt>
-            <dd className="mt-1 truncate text-body">{fact.value}</dd>
-          </div>
-        ))}
-      </dl>
-      {metrics && Object.keys(metrics.reuse_reasons).length > 0 ? (
-        <p className="font-mono text-meta text-brand-muted">
-          {t`reuse reasons`}:{' '}
-          {Object.entries(metrics.reuse_reasons)
-            .map(([key, value]) => `${key} ${value}`)
-            .join(' · ')}
-        </p>
-      ) : null}
-    </section>
   )
 }
 

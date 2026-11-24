@@ -343,6 +343,15 @@ commands that read the rest. The web console's ticket page copies it with
    - Add the capability `collab.read`.
 3. `web/src/lib/runtime-contract.ts`: zod schemas mirroring `schema/*.json`.
    `runtime-client.ts`: `getCollab*()`, gated on capability.
+4. 工单 › 运行、缓存与花费 (`web/src/features/collab-metrics.tsx`): the
+   `api metrics` band with a window (1h…all) and a repo filter (from / to,
+   repos taken from the ticket list; `health` and `metrics` take `--repo`
+   through the bridge). Headline cells: running, waiting on human, runs,
+   failed runs, sessions, turns, tokens, cache hit, resume / fresh hit, cost,
+   parallelism, wall p50 / p95 and total, RSS p95 / peak, token split.
+   分组明细 (folded): by target repo, backend and session reuse (runs, cache
+   hit, cost), by trigger, and initial-prompt est. tokens per phase. fe1's
+   /collab shows a subset of the same `api metrics` fields.
 4. A new `web/src/features/console-collab.tsx` plus a nav entry:
    - **Board:** columns by status; parents show child progress.
    - **Parent swimlanes:** one lane per repo / worktree; run bars on a time

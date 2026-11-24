@@ -16,6 +16,8 @@ export type SelectProps = Omit<
   onValueChange: (value: string) => void
   /** lg: a phone form field (15 px, 44 px tall) instead of the dense desktop one */
   size?: 'sm' | 'lg'
+  /** names the trigger (the combobox); on Root it named nothing */
+  'aria-label'?: string
 }
 
 export function Select({
@@ -24,6 +26,7 @@ export function Select({
   onValueChange,
   className,
   size = 'sm',
+  'aria-label': ariaLabel,
   ...props
 }: SelectProps) {
   const lg = size === 'lg'
@@ -34,6 +37,7 @@ export function Select({
       onValueChange={(next) => onValueChange(next ?? '')}
     >
       <BaseSelect.Trigger
+        aria-label={ariaLabel}
         className={cn(
           'inline-flex w-full items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-soft px-2.5 text-left text-brand-text outline-none transition hover:border-brand-running focus:border-brand-running focus:ring-2 focus:ring-brand-running/20',
           // lg matches the phone fields beside it: borderless, on the surface

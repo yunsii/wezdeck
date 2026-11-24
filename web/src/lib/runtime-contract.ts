@@ -475,6 +475,9 @@ export const collabMetricsSchema = collabEnvelope({
   reuse_reasons: z.record(z.string(), z.number()).default({}),
   by_repo: collabGroup.default({}),
   by_trigger: z.record(z.string(), z.number()).default({}),
+  prompt_est_tokens_by_phase: z
+    .record(z.string(), z.object({ p50: nnum, max: nnum, n: z.number() }))
+    .default({}),
 })
 
 export type CollabHealth = z.infer<typeof collabHealthSchema>

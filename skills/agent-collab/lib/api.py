@@ -465,9 +465,12 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
             bump(by_backend, backend, "cache_den", den)
             bump(by_reuse, reuse, "cache_read", t["cache_read"])
             bump(by_reuse, reuse, "cache_den", den)
+            bump(by_repo, rec.get("_repo"), "cache_read", t["cache_read"])
+            bump(by_repo, rec.get("_repo"), "cache_den", den)
         if isinstance(rec.get("cost_usd"), (int, float)):
             bump(by_backend, backend, "cost_usd", rec["cost_usd"])
             bump(by_repo, rec.get("_repo"), "cost_usd", rec["cost_usd"])
+            bump(by_reuse, reuse, "cost_usd", rec["cost_usd"])
         bump(by_repo, rec.get("_repo"), "runs")
         by_reason[str(s.get("reason") or "unknown")] = by_reason.get(str(s.get("reason") or "unknown"), 0) + 1
         trig = (lj.get("trigger") or {}).get("source") or "unknown"

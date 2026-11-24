@@ -17,16 +17,16 @@ import (
 // collabFlags is the allowlist of `ticket api <action>` commands the bridge
 // exposes, with the payload keys each one may forward as `--<key> <value>`.
 // Read-only by construction: api.py has no write verbs. Keep in lockstep with
-// RuntimeWebServer.cs CollabActions and skills/agent-collab/schema/.
+// skills/agent-collab/schema/.
 var collabFlags = map[string][]string{
-	"health":     {},
+	"health":     {"repo"},
 	"list":       {"status", "repo", "parent", "since", "limit"},
 	"show":       {"id"},
 	"events":     {"after", "ticket", "limit"},
 	"run":        {"run"},
 	"prompt":     {"sha"},
 	"transcript": {"run", "tail"},
-	"metrics":    {"window", "ticket", "parent"},
+	"metrics":    {"window", "ticket", "parent", "repo"},
 }
 
 var collabValue = regexp.MustCompile(`^[A-Za-z0-9_.:,+-]{1,128}$`)
