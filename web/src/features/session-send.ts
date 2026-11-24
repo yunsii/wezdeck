@@ -4,7 +4,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
 import { useLocale } from '#/lib/locale-context'
@@ -70,11 +70,46 @@ const IDLE: WriteState = { sending: false, error: '', retryIn: 0 }
 const NONE: Array<Pending> = []
 
 /**
- * Per session, not per page: the session page stays mounted while you move
- * to another session (Alt+j, the switcher, the split list), so queued
- * bubbles, the sending state, an error or a countdown kept in plain state
- * showed up under the next session. Everything is keyed by the session id
- * the write was for, which also keeps a late reply from landing elsewhere.
+ * Sent messages not in the transcript yet, per session, for the page's life
+ * (not the component's): the session page remounts on every switch (the
+ * split keys it by id, a phone pushes it), and a message the host had queued
+ * — not written to the transcript until the agent takes it — vanished from
+ * the web console after switching away and back (2026-11-24).
+ */
+const pendingStore = new Map<string, Array<Pending>>()
+const pendingListeners = new Set<() => void>()
+const PENDING_KEEP_MS = 6 * 60 * 60_000
+
+function updatePending(
+  target: string,
+  next: (list: Array<Pending>) => Array<Pending>,
+) {
+  const now = Date.now()
+  // an old one the transcript never matched (a refused or lost send) goes
+  const list = next(pendingStore.get(target) ?? NONE).filter(
+    (item) => now - item.at < PENDING_KEEP_MS,
+  )
+  if (list.length) pendingStore.set(target, list)
+  else pendingStore.delete(target)
+  for (const listener of pendingListeners) listener()
+}
+
+function usePending(id: string) {
+  return useSyncExternalStore(
+    (listener) => {
+      pendingListeners.add(listener)
+      return () => pendingListeners.delete(listener)
+    },
+    () => pendingStore.get(id) ?? NONE,
+    () => NONE,
+  )
+}
+
+/**
+ * Per session, not per page: queued bubbles (above, page-wide), the sending
+ * state, an error or a countdown are keyed by the session id the write was
+ * for, so none shows under another session and a late reply never lands
+ * elsewhere.
  */
 export function useSessionWrites(id: string, transcriptEnd = 0) {
   const { t } = useLingui()
@@ -83,7 +118,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
   const endRef = useRef(transcriptEnd)
   endRef.current = transcriptEnd
   const client = useQueryClient()
-  const [pendingBy, setPendingBy] = useState<Record<string, Array<Pending>>>({})
+  const pendingRaw = usePending(id)
   const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
   const state = stateBy[id] ?? IDLE
   const patch = (target: string, next: Partial<WriteState>) =>
@@ -123,31 +158,24 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     // host took it, and leaves when the transcript shows the message
     const at = Date.now()
     const mark = (next?: Pending['state']) =>
-      setPendingBy((all) => {
-        const list = all[target] ?? []
-        return {
-          ...all,
-          [target]: next
-            ? list.map((item) =>
-                item.at === at ? { ...item, state: next } : item,
-              )
-            : list.filter((item) => item.at !== at),
-        }
-      })
+      updatePending(target, (list) =>
+        next
+          ? list.map((item) =>
+              item.at === at ? { ...item, state: next } : item,
+            )
+          : list.filter((item) => item.at !== at),
+      )
     if (!command)
-      setPendingBy((all) => ({
-        ...all,
-        [target]: [
-          ...(all[target] ?? []),
-          {
-            text: message.text,
-            note: message.note,
-            at,
-            after: endRef.current,
-            state: 'sending',
-          },
-        ],
-      }))
+      updatePending(target, (list) => [
+        ...list,
+        {
+          text: message.text,
+          note: message.note,
+          at,
+          after: endRef.current,
+          state: 'sending',
+        },
+      ])
     return write(target, async () => {
       try {
         await withDeskRetry(
@@ -174,7 +202,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     error: state.error,
     setError,
     retryIn: state.retryIn,
-    pendingRaw: pendingBy[id] ?? NONE,
+    pendingRaw,
     send,
     run,
   }

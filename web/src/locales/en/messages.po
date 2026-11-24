@@ -628,7 +628,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:167
+#: src/features/session-send.ts:195
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
