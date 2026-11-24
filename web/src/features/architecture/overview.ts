@@ -9,19 +9,19 @@ export const overview: Diagram = {
   id: 'overview',
   title: { zh: '全景', en: 'At a glance' },
   summary: {
-    zh: 'Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载。手机经 Cloudflare 找到主机，再尽量直连；本机浏览器直接问本地 Runtime。',
-    en: 'Agents run in tmux inside WSL, hosted by WezTerm on the desktop. A phone finds the host through Cloudflare, then connects directly when it can; a browser on the host asks the local Runtime.',
+    zh: 'Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载。网页端在别的设备上打开时经 Cloudflare 找到主机，再尽量直连；在主机上打开时直接问本地 Runtime。',
+    en: 'Agents run in tmux inside WSL, hosted by WezTerm on the desktop. The web console on another device finds the host through Cloudflare, then connects directly when it can; on the host it asks the local Runtime.',
   },
   lanes: [DEVICE, CLOUD, WINDOWS, WSL],
   cards: [
     {
-      id: 'phone',
+      id: 'remoteweb',
       lane: 'device',
       row: 0,
-      title: { zh: '手机 / 平板', en: 'Phone / tablet' },
+      title: { zh: '远程网页端', en: 'Remote web console' },
       sub: {
-        zh: '可安装的 Web 应用：会话、工单、我的',
-        en: 'An installable web app: sessions, tickets, settings',
+        zh: '手机、平板或其他电脑上的同一个控制台，经 relay',
+        en: 'The same console on a phone, tablet or another computer, through the relay',
       },
       body: {
         zh: '配对后可在任何网络下查看与驱动主机上的 Agent 会话、处理工单。界面先显示本地缓存，再增量补新内容；写入需要主机批准过这台设备。',
@@ -33,10 +33,10 @@ export const overview: Diagram = {
       },
     },
     {
-      id: 'hostbrowser',
+      id: 'localweb',
       lane: 'device',
       row: 2,
-      title: { zh: '本机浏览器', en: 'Browser on the host' },
+      title: { zh: '本机网页端', en: 'Local web console' },
       sub: {
         zh: '同一个控制台，走本地 Runtime',
         en: 'The same console, through the local Runtime',
@@ -78,8 +78,8 @@ export const overview: Diagram = {
         en: 'Pairing check, signaling, fallback relay',
       },
       body: {
-        zh: '一个 Durable Object 守着主机的长连接。手机带配对令牌接入，它负责交换建立直连所需的信令；直连打不通时，请求经它的 WebSocket 中转。',
-        en: 'A Durable Object holds the host’s long-lived socket. Phones join with a pairing token; it exchanges the signaling for a direct connection and relays requests over WebSocket when that fails.',
+        zh: '一个 Durable Object 守着主机的长连接。远程网页端带配对令牌接入，它负责交换建立直连所需的信令；直连打不通时，请求经它的 WebSocket 中转。',
+        en: 'A Durable Object holds the host’s long-lived socket. Remote web consoles join with a pairing token; it exchanges the signaling for a direct connection and relays requests over WebSocket when that fails.',
       },
       impl: {
         zh: 'web/src/relay/host-relay.ts；令牌由 scripts/dev/install-remote-relay.sh 生成与轮换。',
@@ -150,8 +150,8 @@ export const overview: Diagram = {
         en: 'Claude / Codex / Grok, each in its pane',
       },
       body: {
-        zh: '每个仓库或工作树一个 tmux 会话，Agent 跑在窗格里。手机发的消息就是粘贴进这个窗格。',
-        en: 'A tmux session per repository or worktree, agents in its panes. A message from the phone is pasted into that pane.',
+        zh: '每个仓库或工作树一个 tmux 会话，Agent 跑在窗格里。网页端发的消息就是粘贴进这个窗格。',
+        en: 'A tmux session per repository or worktree, agents in its panes. A message from the web console is pasted into that pane.',
       },
       impl: {
         zh: '启动统一经 scripts/runtime/agent-launcher.sh；工作树由 open-task-window 创建。',
@@ -204,8 +204,8 @@ export const overview: Diagram = {
         en: 'attention.json: who runs, who waits on you',
       },
       body: {
-        zh: 'Agent 的 hook 把每个会话的窗格、状态（运行中、等你、本轮结束）写到这里，桌面徽标和手机列表都从它读。',
-        en: 'Agent hooks record each session’s pane and status (running, waiting on you, finished its turn); desktop badges and the phone list both read it.',
+        zh: 'Agent 的 hook 把每个会话的窗格、状态（运行中、等你、本轮结束）写到这里，桌面徽标和网页端的会话列表都从它读。',
+        en: 'Agent hooks record each session’s pane and status (running, waiting on you, finished its turn); desktop badges and the web console’s session list both read it.',
       },
       impl: {
         zh: '见 docs/agent-attention.md。',
@@ -233,25 +233,25 @@ export const overview: Diagram = {
   ],
   links: [
     {
-      from: 'phone',
+      from: 'remoteweb',
       to: 'worker',
       kind: 'data',
       label: { zh: '页面', en: 'app' },
     },
     {
-      from: 'phone',
+      from: 'remoteweb',
       to: 'do',
       label: { zh: '配对 · 信令', en: 'pairing · signaling' },
     },
     { from: 'do', to: 'relay', label: { zh: '主机长连接', en: 'host socket' } },
     {
-      from: 'phone',
+      from: 'remoteweb',
       to: 'relay',
       kind: 'fallback',
       label: { zh: 'WebRTC 直连', en: 'WebRTC direct' },
     },
     {
-      from: 'hostbrowser',
+      from: 'localweb',
       to: 'runtime',
       label: { zh: '127.0.0.1', en: '127.0.0.1' },
     },

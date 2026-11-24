@@ -314,7 +314,7 @@ function promptSections(
         en: 'While attention is waiting / permission_prompt: the newest tool call without a result (permission.go)',
       },
       keys: {
-        zh: '允许 = 1（第一个 Yes）；拒绝 = Esc。「不再询问」等中间选项因工具而异，不在手机上提供',
+        zh: '允许 = 1（第一个 Yes）；拒绝 = Esc。「不再询问」等中间选项因工具而异，不在网页端提供',
         en: 'Allow = 1 (the first Yes); Deny = Esc. Middle options vary by tool and are not offered',
       },
       demo: (

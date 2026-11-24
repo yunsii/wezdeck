@@ -7,18 +7,39 @@ import { useState } from 'react'
 import { Button } from '#/components/ui/button'
 import { ImageStrip } from './chat-images'
 
-/** First line of the note the host appends for phone attachments (remote_upload.go). */
-export const ATTACHMENT_MARK = '[手机附件]'
+/**
+ * First line of the note the host appends for attachments sent from the web
+ * console (remote_upload.go): "[网页附件]"; older transcripts have
+ * "[手机附件]", read the same.
+ */
+const ATTACHMENT_MARKS = ['[网页附件]', '[手机附件]']
+
+/** where the host's attachment note starts in a sent message, if any */
+export function noteAt(text: string) {
+  for (const mark of ATTACHMENT_MARKS) {
+    const at = text.indexOf(mark)
+    if (at >= 0) return { at, mark }
+  }
+  return null
+}
+
+/** the message is the typed text (if any) followed by an attachment note */
+export const endsWithNote = (text: string, typed: string) => {
+  const note = noteAt(text)
+  if (!note) return false
+  return typed ? text.slice(0, note.at) === `${typed}\n\n` : note.at === 0
+}
 
 /** What the user typed, without the host's attachment note. */
 export const typedText = (text: string) => splitAttachments(text).typed
 
 /** Split a sent message into what was typed and its attachment lines. */
 function splitAttachments(text: string) {
-  const at = text.indexOf(ATTACHMENT_MARK)
-  if (at < 0) return { typed: text, files: [] }
+  const note = noteAt(text)
+  if (!note) return { typed: text, files: [] }
+  const { at, mark } = note
   const files = text
-    .slice(at + ATTACHMENT_MARK.length)
+    .slice(at + mark.length)
     .split('\n')
     .map((line) => line.replace(/^- /, '').trim())
     .filter(Boolean)

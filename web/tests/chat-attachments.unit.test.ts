@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { splitTokens, typedText } from '#/features/chat-attachments'
+import {
+  endsWithNote,
+  splitTokens,
+  typedText,
+} from '#/features/chat-attachments'
 
 describe('sent attachments', () => {
   it('cuts [图片N] out as chips for the images that were sent', () => {
@@ -19,6 +23,17 @@ describe('sent attachments', () => {
       ' 不存在',
     ])
     expect(splitTokens('没有图片', [])).toEqual(['没有图片'])
+  })
+
+  it('reads the note under its new name and the old one', () => {
+    expect(typedText('看 [图片1]\n\n[网页附件]\n- 图片1: /x/img-1-a.jpg')).toBe(
+      '看 [图片1]',
+    )
+    expect(endsWithNote('看\n\n[网页附件]\n- 图片1: /x/a.jpg', '看')).toBe(true)
+    expect(endsWithNote('[手机附件]\n- 图片: /x/a.jpg', '')).toBe(true)
+    expect(endsWithNote('看别的\n\n[网页附件]\n- 图片1: /x/a.jpg', '看')).toBe(
+      false,
+    )
   })
 
   it('drops the host note from the typed text', () => {

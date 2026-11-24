@@ -66,8 +66,8 @@ export const accessFlow: Diagram = {
       title: { zh: '扫码配对', en: 'Pair by QR code' },
       sub: { zh: '连得上，但什么也看不到', en: 'Connected, nothing to see' },
       body: {
-        zh: '在主机上打印配对链接和二维码，手机打开后把配对令牌存在本机。它只能连上中转：所有配对过的浏览器共用这一枚令牌，它不代表任何一台设备。',
-        en: 'The host prints a pairing link and QR code; the phone keeps the pairing token. It only reaches the relay: every paired browser shares it, so it names no device.',
+        zh: '在主机上打印配对链接和二维码，远程网页端打开后把配对令牌存在本机。它只能连上中转：所有配对过的浏览器共用这一枚令牌，它不代表任何一台设备。',
+        en: 'The host prints a pairing link and QR code; the remote web console keeps the pairing token. It only reaches the relay: every paired browser shares it, so it names no device.',
       },
       impl: {
         zh: 'install-remote-relay.sh --pair；链接带 #pair=<token>（不进服务器日志）。',

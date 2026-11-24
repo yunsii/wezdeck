@@ -158,8 +158,8 @@ export const capabilityGroups: Array<CapabilityGroup> = [
     id: 'relay-reads',
     title: { zh: 'relay：读取', en: 'relay: reads' },
     summary: {
-      zh: '手机经 relay、本机浏览器经 Runtime → bridge 调用，两边跑的是同一个 readRPC。读取不需要设备签名，只需要配对令牌（或本机信任）。',
-      en: 'Called by the phone through the relay and by the host browser through Runtime → bridge; both run the same readRPC. Reads need the pairing token (or local trust), not a device signature.',
+      zh: '远程网页端经 relay、本机网页端经 Runtime → bridge 调用，两边跑的是同一个 readRPC。读取不需要设备签名，只需要配对令牌（或本机信任）。',
+      en: 'Called by the remote web console through the relay and by the local one through Runtime → bridge; both run the same readRPC. Reads need the pairing token (or local trust), not a device signature.',
     },
     source: 'native/wezdeck-wsl/relay.go (readRPC)',
     items: [
@@ -284,8 +284,8 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       en: 'bridge: what the Runtime may ask WSL',
     },
     summary: {
-      zh: '白名单之外一律拒绝。remote.* 直接复用 relay 的读写函数，所以本机与手机看到的永远一致。',
-      en: 'Anything off the list is refused. remote.* reuses the relay’s read and write functions, so the host and the phone always agree.',
+      zh: '白名单之外一律拒绝。remote.* 直接复用 relay 的读写函数，所以本机网页端与远程网页端看到的永远一致。',
+      en: 'Anything off the list is refused. remote.* reuses the relay’s read and write functions, so the local and remote web console always agree.',
     },
     source: 'native/wezdeck-wsl/serve.go',
     items: [
@@ -356,8 +356,8 @@ export const decisions: Array<Decision> = [
   {
     title: { zh: '一个窗格一个写者', en: 'One writer per pane' },
     body: {
-      zh: '手机不另起 Agent 进程，只往会话已有的窗格里粘贴。电脑前有人在打字时，手机等一下再发，不会把两边的输入搅在一起。',
-      en: 'The phone never starts a second agent process; it pastes into the pane the session already has. While someone types at the desk, the phone waits rather than mixing the two.',
+      zh: '网页端不另起 Agent 进程，只往会话已有的窗格里粘贴。电脑前有人在打字时，网页端等一下再发，不会把两边的输入搅在一起。',
+      en: 'The web console never starts a second agent process; it pastes into the pane the session already has. While someone types at the desk, it waits rather than mixing the two.',
     },
   },
   {

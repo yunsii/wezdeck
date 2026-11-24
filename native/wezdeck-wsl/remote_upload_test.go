@@ -105,7 +105,7 @@ func TestAttachmentNoteNumbersImages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "[手机附件]\n- 图片1: " + filepath.Join(dir, names[0]) +
+	want := "[网页附件]\n- 图片1: " + filepath.Join(dir, names[0]) +
 		"\n- 客户端诊断: " + filepath.Join(dir, names[1]) +
 		"\n- 图片2: " + filepath.Join(dir, names[2])
 	if note != want {

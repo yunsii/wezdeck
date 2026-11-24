@@ -1,5 +1,5 @@
 // The image flow on the architecture page (see flows.ts for the rules):
-// images go to the host compressed by the phone, come back as original bytes,
+// images go to the host compressed by the browser, come back as original bytes,
 // and the page makes its own thumbnails — the host never decodes an image.
 import type { Diagram } from './model'
 import { DEVICE, WSL } from './lanes'
@@ -8,8 +8,8 @@ export const imageFlow: Diagram = {
   id: 'images',
   title: { zh: '图片的来回', en: 'Images, both ways' },
   summary: {
-    zh: '图片在手机上压缩后上传，回看时主机只发原图字节，缩略图由页面自己生成；主机不解码任何图片。',
-    en: 'Images are compressed on the phone before upload; to show them the host sends only the original bytes and the page makes its own thumbnails. The host never decodes an image.',
+    zh: '图片在网页端压缩后上传，回看时主机只发原图字节，缩略图由页面自己生成；主机不解码任何图片。',
+    en: 'Images are compressed in the web console before upload; to show them the host sends only the original bytes and the page makes its own thumbnails. The host never decodes an image.',
   },
   numbered: true,
   lanes: [DEVICE, WSL],
@@ -19,10 +19,10 @@ export const imageFlow: Diagram = {
       lane: 'device',
       row: 0,
       title: { zh: '选图或粘贴', en: 'Pick or paste' },
-      sub: { zh: '先在手机上压缩', en: 'Compressed on the phone first' },
+      sub: { zh: '先在浏览器里压缩', en: 'Compressed in the browser first' },
       body: {
-        zh: '手机截图动辄几 MB 的 PNG，上传前在浏览器里缩到长边 1600 px 的 JPEG，Agent 照样看得清。',
-        en: 'A phone screenshot is megabytes of PNG; the browser shrinks it to a 1600 px JPEG first, which the agent reads just as well.',
+        zh: '截图动辄几 MB 的 PNG，上传前在浏览器里缩到长边 1600 px 的 JPEG，Agent 照样看得清。',
+        en: 'A screenshot is megabytes of PNG; the browser shrinks it to a 1600 px JPEG first, which the agent reads just as well.',
       },
       impl: {
         zh: 'web/src/lib/upload.ts（shrinkImage）。',
@@ -69,8 +69,8 @@ export const imageFlow: Diagram = {
       title: { zh: '随消息交给 Agent', en: 'Handed to the agent' },
       sub: { zh: '附上文件路径', en: 'With the file path' },
       body: {
-        zh: '发送时消息末尾加一段「[手机附件]」和文件路径，Agent 自己去读这个文件。',
-        en: 'The message gets a “[手机附件]” block with the file path, and the agent reads the file itself.',
+        zh: '发送时消息末尾加一段「[网页附件]」和编号的文件路径（图片1、图片2…，正文里的 [图片N] 对应它们），Agent 自己去读这个文件。',
+        en: 'The message gets a “[网页附件]” block with numbered file paths (图片1, 图片2 … matching [图片N] in the text), and the agent reads the file itself.',
       },
       impl: {
         zh: 'remote_upload.go attachmentNote。',

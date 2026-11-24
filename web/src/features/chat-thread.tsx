@@ -6,7 +6,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
-import { ATTACHMENT_MARK, SentAttachments } from './chat-attachments'
+import { SentAttachments, endsWithNote } from './chat-attachments'
 import { TurnLine, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
@@ -432,9 +432,7 @@ export function settleMatches(
   const used = new Set<number>()
   // the host appends an attachment note after a blank line
   const matches = (typed: string, text: string) =>
-    typed
-      ? text === typed || text.startsWith(`${typed}\n\n${ATTACHMENT_MARK}`)
-      : text.startsWith(ATTACHMENT_MARK)
+    typed ? text === typed || endsWithNote(text, typed) : endsWithNote(text, '')
   const left = pending.filter((item) => {
     const typed = item.text.trim()
     const line = users.find(

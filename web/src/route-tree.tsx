@@ -108,8 +108,8 @@ const architectureRoute = createRoute({
           : 'WezDeck architecture: sessions, tickets and local services',
       description:
         params.locale === 'zh'
-          ? 'WezDeck 的整体架构、手机打开会话与发消息的流程、工单生命周期，以及本地 Runtime、relay、bridge 提供的全部能力。'
-          : 'How WezDeck fits together: opening and writing to sessions from a phone, the ticket lifecycle, and everything the local Runtime, relay and bridge offer.',
+          ? 'WezDeck 的整体架构、网页端打开会话与发消息的流程、工单生命周期，以及本地 Runtime、relay、bridge 提供的全部能力。'
+          : 'How WezDeck fits together: opening and writing to sessions from the web console, the ticket lifecycle, and everything the local Runtime, relay and bridge offer.',
       path: '/architecture',
     }),
 })

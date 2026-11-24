@@ -331,12 +331,12 @@ export const threats: Array<Threat> = [
   },
   {
     threat: {
-      zh: '手机和电脑前同时输入',
-      en: 'The phone and the desk type at once',
+      zh: '网页端和电脑前同时输入',
+      en: 'The web console and the desk type at once',
     },
     guard: {
-      zh: '只写会话自己的窗格，不另起进程；电脑前 10 秒内有输入，手机倒计时后再发。',
-      en: 'Only the session’s own pane, never a second process; after input at the desk in the last 10 s the phone counts down and retries.',
+      zh: '只写会话自己的窗格，不另起进程；电脑前 10 秒内有输入，网页端倒计时后再发。',
+      en: 'Only the session’s own pane, never a second process; after input at the desk in the last 10 s the web console counts down and retries.',
     },
     impl: {
       zh: 'remote_write.go runWrite（deskIdle）。',

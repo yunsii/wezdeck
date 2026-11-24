@@ -184,7 +184,9 @@ func attachmentNote(names []string) (string, error) {
 	}
 	// images are numbered in the order sent: the page puts [图片N] where
 	// the user wrote about it, so the text can say which picture it means
-	lines := []string{"[手机附件]"}
+	// "网页附件": what the web console sent, from a phone or a desk browser
+	// alike (was "[手机附件]"; the page still reads that in old transcripts)
+	lines := []string{"[网页附件]"}
 	image := 0
 	for _, n := range names {
 		base := filepath.Base(n)

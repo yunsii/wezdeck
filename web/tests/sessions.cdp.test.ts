@@ -270,7 +270,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
           throw new Error(`attachments never reached the pane:\n${screen}`)
         await page.waitForTimeout(250)
       }
-      expect(screen).toContain('[手机附件]')
+      expect(screen).toContain('[网页附件]')
       const files = readdirSync(uploadsDir)
       expect(files.some((name) => /^img-.*\.jpg$/.test(name))).toBe(true)
     }

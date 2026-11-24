@@ -30,12 +30,12 @@ export const ticketLife: Diagram = {
         en: 'From / to, what you saw, what you assume',
       },
       body: {
-        zh: '在发起仓库里（或手机上）开单：目标仓库必须在白名单里，并写清看到的现象和假设，方便对方先核实。',
-        en: 'Filed from the initiating repository (or the phone): the target must be allowlisted, and the ticket states what was seen and assumed so the other side checks it first.',
+        zh: '在发起仓库里（或网页端）开单：目标仓库必须在白名单里，并写清看到的现象和假设，方便对方先核实。',
+        en: 'Filed from the initiating repository (or the web console): the target must be allowlisted, and the ticket states what was seen and assumed so the other side checks it first.',
       },
       impl: {
-        zh: 'ticket create；手机上是 ticket.new（ticket_new.go）。',
-        en: 'ticket create; from the phone, ticket.new (ticket_new.go).',
+        zh: 'ticket create；网页端是 ticket.new（ticket_new.go）。',
+        en: 'ticket create; from the web console, ticket.new (ticket_new.go).',
       },
     },
     {
@@ -96,10 +96,10 @@ export const ticketLife: Diagram = {
       id: 'reply',
       lane: 'you',
       title: { zh: '回复', en: 'Reply' },
-      sub: { zh: '手机上点选项或写一句', en: 'Tap an option or write a line' },
+      sub: { zh: '网页端点选项或写一句', en: 'Tap an option or write a line' },
       body: {
-        zh: '在手机上回复，选择「回复并继续」，后台 Agent 接着干。',
-        en: 'Reply from the phone and choose Reply and continue; the headless agent carries on.',
+        zh: '在网页端回复，选择「回复并继续」，后台 Agent 接着干。',
+        en: 'Reply from the web console and choose Reply and continue; the headless agent carries on.',
       },
       impl: {
         zh: 'reply（签名写入）→ ticket reply --continue。',
@@ -137,8 +137,8 @@ export const waitingSignal: Diagram = {
   id: 'waiting',
   title: { zh: '「等你」信号怎么传开', en: 'How “waiting on you” spreads' },
   summary: {
-    zh: '一个 hook 写下状态，桌面和手机都从同一份状态读。',
-    en: 'One hook records the state; the desk and the phone read the same record.',
+    zh: '一个 hook 写下状态，桌面和网页端都从同一份状态读。',
+    en: 'One hook records the state; the desk and the web console read the same record.',
   },
   numbered: true,
   lanes: [AGENT, WSL, WINDOWS, DEVICE],
@@ -186,14 +186,14 @@ export const waitingSignal: Diagram = {
       title: { zh: '会话列表', en: 'Session list' },
       sub: { zh: '等你的排最前', en: 'Waiting ones first' },
       body: {
-        zh: 'relay 读同一份状态，手机列表把等你的会话放在最上面。',
-        en: 'The relay reads the same record; the phone lists sessions that wait on you first.',
+        zh: 'relay 读同一份状态，网页端的会话列表把等你的会话放在最上面。',
+        en: 'The relay reads the same record; the web console lists sessions that wait on you first.',
       },
     },
     {
-      id: 'phone',
+      id: 'webseen',
       lane: 'device',
-      title: { zh: '手机上看到', en: 'Seen on the phone' },
+      title: { zh: '网页端看到', en: 'Seen in the web console' },
       sub: { zh: '会话标签计数', en: 'A count on the Sessions tab' },
       body: {
         zh: '会话标签上出现计数，打开就是那条会话；可以直接回答选项或按键。',
@@ -207,8 +207,8 @@ export const waitingSignal: Diagram = {
       title: { zh: '推送提醒', en: 'Push notification' },
       sub: { zh: '规划中', en: 'Planned' },
       body: {
-        zh: '计划用 Web Push 在手机锁屏时提醒「等你」与失败。',
-        en: 'Planned: Web Push for waiting-on-you and failures while the phone is locked.',
+        zh: '计划用 Web Push 在手机、平板锁屏时提醒「等你」与失败。',
+        en: 'Planned: Web Push for waiting-on-you and failures while a phone or tablet is locked.',
       },
     },
   ],
@@ -216,7 +216,7 @@ export const waitingSignal: Diagram = {
     { from: 'hook', to: 'state' },
     { from: 'state', to: 'badge', kind: 'data' },
     { from: 'state', to: 'list', kind: 'data' },
-    { from: 'list', to: 'phone' },
+    { from: 'list', to: 'webseen' },
     { from: 'list', to: 'push', kind: 'fallback' },
   ],
 }

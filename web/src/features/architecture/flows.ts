@@ -9,7 +9,7 @@ import { CLOUD, DEVICE, WINDOWS, WSL } from './lanes'
 
 export const openSession: Diagram = {
   id: 'open-session',
-  title: { zh: '在手机上打开会话', en: 'Opening a session on the phone' },
+  title: { zh: '在网页端打开会话', en: 'Opening a session in the web console' },
   summary: {
     zh: '先显示缓存，再建立最快的连接，只取缺的那部分。',
     en: 'Cache first, then the fastest link, then only what is missing.',
@@ -185,7 +185,7 @@ export const sendMessage: Diagram = {
       lane: 'device',
       row: 1,
       title: { zh: '设备签名', en: 'Device signature' },
-      sub: { zh: '手机 / 平板', en: 'Phone / tablet' },
+      sub: { zh: '远程网页端', en: 'Remote web console' },
       body: {
         zh: '每台设备在浏览器里生成一把不可导出的密钥，主机批准一次后，写入都要带它的签名。',
         en: 'Each device creates a non-extractable key in its browser; once the host approves it, every write carries its signature.',
@@ -241,8 +241,8 @@ export const sendMessage: Diagram = {
         en: 'One writer, wait while the desk is busy',
       },
       body: {
-        zh: '只往会话自己的窗格里写，不另起进程；电脑前 10 秒内有人操作，就稍后再发，手机会倒计时自动重试。',
-        en: 'Only the session’s own pane is written, never a second process; if someone typed at the desk in the last 10 s the phone counts down and retries.',
+        zh: '只往会话自己的窗格里写，不另起进程；电脑前 10 秒内有人操作，就稍后再发，网页端会倒计时自动重试。',
+        en: 'Only the session’s own pane is written, never a second process; if someone typed at the desk in the last 10 s the web console counts down and retries.',
       },
       impl: {
         zh: 'remote_write.go runWrite（relay 与 bridge 共用），每次写入记一行 event=write。',
@@ -256,7 +256,7 @@ export const sendMessage: Diagram = {
       title: { zh: '粘贴进 TUI', en: 'Paste into the TUI' },
       sub: { zh: 'tmux paste-buffer + Enter', en: 'tmux paste-buffer + Enter' },
       body: {
-        zh: '和你在电脑前打字一样进入 Agent 的输入框；窗格里会提示「手机发来一条消息」。',
+        zh: '和你在电脑前打字一样进入 Agent 的输入框；窗格里会提示「网页端发来一条消息」。',
         en: 'It reaches the agent like typing at the desk; the pane shows a short notice.',
       },
     },

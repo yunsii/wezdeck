@@ -7,8 +7,8 @@ export const SOURCE = 'https://github.com/yunsii/wezterm-config'
 export const COPY = {
   title: { zh: 'WezDeck 是怎么搭起来的', en: 'How WezDeck fits together' },
   lead: {
-    zh: 'AI Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载；Windows 上的本地服务替它们做主机操作；手机经 Cloudflare 找到这台电脑，再尽量直连。下面先看全景，再走五条最常用的流程，最后列出本地服务提供的全部能力。',
-    en: 'AI agents run in tmux inside WSL, hosted by WezTerm on the desktop; a local Windows service does the host work for them; a phone finds the computer through Cloudflare and then connects directly when it can. First the whole picture, then the five flows you use most, then everything the local services offer.',
+    zh: 'AI Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载；Windows 上的本地服务替它们做主机操作；网页端在别的设备上经 Cloudflare 找到这台电脑，再尽量直连。下面先看全景，再走五条最常用的流程，最后列出本地服务提供的全部能力。',
+    en: 'AI agents run in tmux inside WSL, hosted by WezTerm on the desktop; a local Windows service does the host work for them; the web console on another device finds the computer through Cloudflare and then connects directly when it can. First the whole picture, then the five flows you use most, then everything the local services offer.',
   },
   concepts: { zh: '几个概念', en: 'A few concepts' },
   flows: { zh: '流程', en: 'Flows' },
@@ -56,15 +56,15 @@ export const CONCEPTS: Array<{ term: Text; body: Text }> = [
   {
     term: { zh: '会话', en: 'Session' },
     body: {
-      zh: '一个 Agent（Claude、Codex 或 Grok）在某个仓库或工作树里的一段对话，住在一个 tmux 窗格里。桌面和手机看到的是同一个会话。',
-      en: 'One agent (Claude, Codex or Grok) in conversation inside a repository or worktree, living in one tmux pane. The desk and the phone see the same session.',
+      zh: '一个 Agent（Claude、Codex 或 Grok）在某个仓库或工作树里的一段对话，住在一个 tmux 窗格里。桌面和网页端看到的是同一个会话。',
+      en: 'One agent (Claude, Codex or Grok) in conversation inside a repository or worktree, living in one tmux pane. The desk and the web console see the same session.',
     },
   },
   {
     term: { zh: '等你', en: 'Waiting on you' },
     body: {
-      zh: 'Agent 停下来要你回答、确认，或本轮做完了。这是整个系统最重要的信号：桌面徽标、Alt+j、手机列表都围绕它。',
-      en: 'The agent stopped for an answer, a confirmation, or the end of its turn. The most important signal in the system: desk badges, Alt+j and the phone list all revolve around it.',
+      zh: 'Agent 停下来要你回答、确认，或本轮做完了。这是整个系统最重要的信号：桌面徽标、Alt+j、网页端的会话列表都围绕它。',
+      en: 'The agent stopped for an answer, a confirmation, or the end of its turn. The most important signal in the system: desk badges, Alt+j and the web console’s session list all revolve around it.',
     },
   },
   {

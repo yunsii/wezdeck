@@ -3,7 +3,7 @@ import type { Lane } from './model'
 
 export const DEVICE: Lane = {
   key: 'device',
-  label: { zh: '设备', en: 'Devices' },
+  label: { zh: '网页端', en: 'Web console' },
 }
 export const CLOUD: Lane = {
   key: 'cloud',
