@@ -444,7 +444,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 
 Flat: cards and text fields draw no lines of their own; the page tone and
 the surface fill tell them apart. Lines stay only between functional
-regions: the split pages' list / detail divider (full height), the sidebar,
+regions: the split pages' list / detail divider (会话: the pane's left edge,
+top band to window bottom, the composer resting on the bottom), the sidebar,
 the composer's top edge. A focused text field (`data-text-field`: `Input` /
 `Textarea` field variants, the composer, the ticket search) shows the
 accent and a soft halo — a state, not a frame; outline and shadow only, so

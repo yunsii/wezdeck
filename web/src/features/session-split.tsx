@@ -89,12 +89,15 @@ function SplitView({ id }: { id?: string }) {
     <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
       <aside
         aria-label={t`Agent sessions`}
-        className="vt-split-list sticky top-4 h-[calc(100dvh-4.25rem)] overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
+        className="vt-split-list sticky top-4 h-[calc(100dvh-4.25rem)] overflow-y-auto pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
       >
         <SessionList selected={id ?? ''} />
       </aside>
       <div
-        className="vt-split-pane min-w-0 pl-[var(--page-x)]"
+        // the divider is the pane's left edge, top to bottom of the page: the
+        // pane steps over the page's own padding (-my-4 / py-4) and is at
+        // least the window tall, whatever the conversation's length
+        className="vt-split-pane -my-4 flex min-h-[calc(100dvh-2.25rem)] min-w-0 flex-col border-l border-brand-edge py-4 pl-[var(--page-x)]"
         data-testid="session-pane"
       >
         {id ? (
