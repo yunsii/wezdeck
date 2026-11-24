@@ -327,6 +327,26 @@ and unit test files alone select no cdp test. `--run` executes the plan on
 a new source file belongs in some test's header. The full suites stay for
 when the script says `all`.
 
+**Did a switch flash? Measure it frame by frame**:
+`scripts/dev/web-frame-probe.sh [sessions|tickets]` drives the test stack in
+an ego task space (the agent browser, anonymous profile, the space id kept
+under `~/.local/state/wezdeck/web-frame-probe/space` for reuse), presses
+rows like a person (down, 120 ms, up) and records every animation frame's
+DOM state (title, scroll, the open row's background and box-shadow, sticky
+prompt, Loading…, view transitions) plus every painted frame (trace
+screenshots — `Page.screencastFrameAck` needs a `sessionId` that ego's
+`page.cdp` refuses; they come ~500 px wide, so a 3 px bar is below their
+resolution while a filled row is not). `sessions` uses the two newest real
+Claude transcripts on throwaway tmux panes (the stack's relay reads the real
+HOME), `tickets` two tickets of the store copy. It reports `loading`,
+`transition`, `sticky`, `row-fill`, `landing` (a conversation's first frame
+not at its bottom / a ticket's not at its top) and `pixels` findings, keeps
+`frames/*.jpg`, `samples.json` and `summary.json`, exits 1 on a finding and
+logs one `category=web_probe` row. Run it before saying a visual flash is
+fixed: screenshots and single assertions missed a 70 ms solid-blue row, a
+frame at the old scroll offset and a Loading… frame (2026-11-24); reverting
+the bar fix makes it report `row-fill` and `pixels` on every press.
+
 ## Operate
 
 ```bash

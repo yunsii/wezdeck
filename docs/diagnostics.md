@@ -438,6 +438,7 @@ constants so the helper picks up a new `configHash`.
 - The Windows host smoke test validates both text and image clipboard IPC, including the tracked [`copy-test.png`](../scripts/dev/windows-runtime-host/cases/fixtures/copy-test.png) fixture.
 - For the repo-local agent clipboard wrapper, run [`scripts/dev/check-agent-clipboard.sh`](../scripts/dev/check-agent-clipboard.sh) from WSL. It writes text through `scripts/runtime/agent-clipboard.sh`, reads it back through `resolve_for_paste`, then repeats the flow for the tracked image asset.
 - For dependency drift (wezterm / tmux / go) against upstream latest and the repo's declared floors (tmux 3.7 in `scripts/runtime/tmux-version-lib.sh`, go 1.21 in `native/picker/go.mod`; wezterm has no floor), run [`scripts/dev/check-deps-updates.sh`](../scripts/dev/check-deps-updates.sh) from WSL. Read-only; skips `go` when no `go` binary is on PATH; degrades to `offline?` when GitHub or `go.dev` are unreachable. Exits non-zero on floor violation or "update available". Also runs automatically as the last `sync-runtime.sh` step in advisory mode (`--advisory --no-color --timeout 4 --prefix '[sync] '`); set `WEZTERM_SYNC_SKIP_DEPS_CHECK=1` to skip it during sync.
+- For a visual flash in the web console's split (switching sessions / tickets), run `scripts/dev/web-frame-probe.sh sessions|tickets` (ego, frame by frame): [`remote-access.md#testing-locally`](./remote-access.md#testing-locally).
 - For tmux reset regressions, prefer the isolated repo test suite:
 
 ```bash
