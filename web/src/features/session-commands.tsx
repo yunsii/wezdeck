@@ -15,6 +15,7 @@ import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
+import type { Outgoing } from './session-composer'
 
 type HistoryItem = {
   id: string
@@ -28,12 +29,42 @@ type HistoryItem = {
 export const isBareResume = (text: string) =>
   /^\/(resume|continue)$/i.test(text.trim())
 
+/**
+ * `/new` / `/clear` with text after it: Claude names the new session with that
+ * text, and the name then rides every later /clear in the pane, so Claude never
+ * generates a title again. The composer asks before sending one.
+ */
+export const namedClear = (text: string) =>
+  /^\/(new|clear)\s+(\S[\s\S]*)$/i.exec(text.trim())?.[2]?.trim() ?? ''
+
+/**
+ * The 恢复会话 sheet, and `onSend` for the composer: a bare /resume opens the
+ * sheet instead of the TUI picker; a Claude /new or /clear with text asks first.
+ */
 export function useResumeSheet(
   id: string,
-  send: (text: string) => Promise<boolean>,
+  send: (message: Outgoing) => Promise<boolean>,
+  agent?: string,
 ) {
+  const { t } = useLingui()
   const [open, setOpen] = useState(false)
+  const onSend = (message: Outgoing) => {
+    if (isBareResume(message.text)) {
+      setOpen(true)
+      return Promise.resolve(true)
+    }
+    const name = agent === 'claude' ? namedClear(message.text) : ''
+    if (
+      name &&
+      !window.confirm(
+        t`The text after the command becomes the new session's name ("${name}"), carried across every later /clear, and Claude stops generating titles. Send anyway?`,
+      )
+    )
+      return Promise.resolve(false)
+    return send(message)
+  }
   return {
+    onSend,
     open: () => setOpen(true),
     element: (
       <ResumeSheet
@@ -42,7 +73,7 @@ export function useResumeSheet(
         onOpenChange={setOpen}
         onPick={(target) => {
           setOpen(false)
-          void send(`/resume ${target}`)
+          void send({ text: `/resume ${target}`, attachments: [], note: '' })
         }}
       />
     ),

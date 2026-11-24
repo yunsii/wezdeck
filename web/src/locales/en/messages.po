@@ -43,7 +43,7 @@ msgstr "{count} more need you"
 msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
-#: src/features/session-commands.tsx:61
+#: src/features/session-commands.tsx:92
 msgid "{days} d ago"
 msgstr "{days} d ago"
 
@@ -55,11 +55,11 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
-#: src/features/session-commands.tsx:59
+#: src/features/session-commands.tsx:90
 msgid "{hours} h ago"
 msgstr "{hours} h ago"
 
-#: src/features/session-commands.tsx:57
+#: src/features/session-commands.tsx:88
 msgid "{minutes} min ago"
 msgstr "{minutes} min ago"
 
@@ -123,7 +123,7 @@ msgstr "{tasks} background tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:479
+#: src/features/console-sessions.tsx:473
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -479,7 +479,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:552
+#: src/features/console-sessions.tsx:546
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -540,7 +540,7 @@ msgstr "claimed"
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
-#: src/features/session-commands.tsx:207
+#: src/features/session-commands.tsx:238
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
@@ -569,7 +569,7 @@ msgstr "Close"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "Close a sheet, or let go of a focused button"
 
-#: src/features/session-commands.tsx:213
+#: src/features/session-commands.tsx:244
 msgid "Close commands"
 msgstr "Close commands"
 
@@ -641,7 +641,7 @@ msgstr "Command output"
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
-#: src/features/session-commands.tsx:221
+#: src/features/session-commands.tsx:252
 #: src/features/session-composer.tsx:303
 msgid "Commands"
 msgstr "Commands"
@@ -716,7 +716,7 @@ msgstr "Context compacted automatically"
 msgid "Context compactions"
 msgstr "Context compactions"
 
-#: src/features/session-commands.tsx:189
+#: src/features/session-commands.tsx:220
 msgid "context usage"
 msgstr "context usage"
 
@@ -804,7 +804,7 @@ msgstr "Copy value"
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/session-commands.tsx:194
+#: src/features/session-commands.tsx:225
 msgid "cost and limits"
 msgstr "cost and limits"
 
@@ -968,7 +968,7 @@ msgstr "e.g. phone-create"
 #~ msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 #~ msgstr "Each repository, linked worktree, and agent session keeps a place you can jump back to."
 
-#: src/features/session-commands.tsx:99
+#: src/features/session-commands.tsx:130
 msgid "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
 msgstr "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
 
@@ -1352,7 +1352,7 @@ msgstr "Jump to your message: {text}"
 msgid "Just compacted; updates after the next reply"
 msgstr "Just compacted; updates after the next reply"
 
-#: src/features/session-commands.tsx:56
+#: src/features/session-commands.tsx:87
 msgid "just now"
 msgstr "just now"
 
@@ -1465,7 +1465,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:502
+#: src/features/console-sessions.tsx:496
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1481,10 +1481,10 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:94
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:499
+#: src/features/console-sessions.tsx:493
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/session-commands.tsx:102
+#: src/features/session-commands.tsx:133
 #: src/features/session-header.tsx:252
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1684,7 +1684,7 @@ msgstr "No agent sessions are running."
 msgid "No device has asked for access yet."
 msgstr "No device has asked for access yet."
 
-#: src/features/session-commands.tsx:109
+#: src/features/session-commands.tsx:140
 msgid "No earlier conversations in this project"
 msgstr "No earlier conversations in this project"
 
@@ -1825,7 +1825,7 @@ msgstr "Only this trace"
 msgid "Open image"
 msgstr "Open image"
 
-#: src/features/session-commands.tsx:133
+#: src/features/session-commands.tsx:164
 msgid "open in a pane"
 msgstr "open in a pane"
 
@@ -1845,7 +1845,7 @@ msgstr "Open now"
 #~ msgid "Open Runtime Console"
 #~ msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:575
+#: src/features/console-sessions.tsx:569
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -1973,7 +1973,7 @@ msgstr "Pick a session (grouped by repository)"
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "Pick a session on the left. j / k move through the list."
 
-#: src/features/session-commands.tsx:186
+#: src/features/session-commands.tsx:217
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
@@ -2210,7 +2210,7 @@ msgstr "Result"
 msgid "Resume / fresh hit"
 msgstr "Resume / fresh hit"
 
-#: src/features/session-commands.tsx:94
+#: src/features/session-commands.tsx:125
 msgid "Resume a conversation"
 msgstr "Resume a conversation"
 
@@ -2518,7 +2518,7 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/features/console-sessions.tsx:501
+#: src/features/console-sessions.tsx:495
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -2554,7 +2554,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:559
+#: src/features/console-sessions.tsx:553
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -2567,7 +2567,7 @@ msgstr "Source"
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
-#: src/features/session-commands.tsx:183
+#: src/features/session-commands.tsx:214
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
@@ -2627,7 +2627,7 @@ msgstr "Submit answers"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/session-commands.tsx:173
+#: src/features/session-commands.tsx:204
 msgid "summarise the context"
 msgstr "summarise the context"
 
@@ -2735,6 +2735,10 @@ msgstr "The contract or behaviour you expect from it — the target checks this 
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
+#: src/features/session-commands.tsx:60
+msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
+msgstr "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
+
 #: src/features/landing-page.tsx:102
 #~ msgid "The workbench"
 #~ msgstr "The workbench"
@@ -2781,7 +2785,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:553
+#: src/features/console-sessions.tsx:547
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -2985,7 +2989,7 @@ msgstr "Trigger"
 #~ msgid "turn finished, {bg} background tasks running; you can send"
 #~ msgstr "turn finished, {bg} background tasks running; you can send"
 
-#: src/features/session-commands.tsx:206
+#: src/features/session-commands.tsx:237
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
@@ -3011,7 +3015,7 @@ msgstr "Unavailable"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/session-commands.tsx:130
+#: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:210
 #: src/features/session-list.tsx:104
 #: src/features/session-switcher.tsx:173
@@ -3228,7 +3232,7 @@ msgstr "Which table should the weekly report read?"
 #~ msgid "Window focused"
 #~ msgstr "Window focused"
 
-#: src/features/session-commands.tsx:178
+#: src/features/session-commands.tsx:209
 msgid "with what to keep"
 msgstr "with what to keep"
 

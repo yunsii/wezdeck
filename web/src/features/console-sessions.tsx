@@ -27,7 +27,7 @@ import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
-import { isBareResume, useResumeSheet } from './session-commands'
+import { useResumeSheet } from './session-commands'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 import type { PendingCall } from './session-permission'
@@ -423,16 +423,10 @@ export function SessionDetail({ id }: { id: string }) {
       : data?.waiting_kind && !asking && !planReview
         ? t`The agent is asking for a confirmation: answer it with the keys above.`
         : ''
-  const resume = useResumeSheet(id, (text) =>
-    send({ text, attachments: [], note: '' }),
-  )
+  const resume = useResumeSheet(id, send, data?.agent)
   const composer = useComposer({
     id,
-    // a bare /resume opens 恢复会话 instead of the TUI picker
-    onSend: (message) =>
-      isBareResume(message.text)
-        ? (resume.open(), Promise.resolve(true))
-        : send(message),
+    onSend: resume.onSend,
     diagnostics: () => ({
       session: { id, agent: data?.agent, status: data?.status, busy },
       chat: chatDiag(follow, messages, start, total),

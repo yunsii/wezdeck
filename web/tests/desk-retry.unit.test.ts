@@ -70,3 +70,18 @@ describe('slash commands', () => {
     expect(commandOf('/')).toBe('')
   })
 })
+
+describe('namedClear', () => {
+  it('finds the name Claude would give the new session', async () => {
+    const { namedClear } = await import('#/features/session-commands')
+    expect(namedClear('/new')).toBe('')
+    expect(namedClear(' /clear ')).toBe('')
+    expect(namedClear('/new 都支持了，那 /resume 呢')).toBe(
+      '都支持了，那 /resume 呢',
+    )
+    expect(namedClear('/CLEAR web titles')).toBe('web titles')
+    expect(namedClear('/newer x')).toBe('')
+    expect(namedClear('既然 /new 都支持了')).toBe('')
+    expect(namedClear('/compact keep it')).toBe('')
+  })
+})
