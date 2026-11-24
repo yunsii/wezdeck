@@ -137,6 +137,12 @@ func (t *transcript) feedLine(raw []byte) {
 	// queued and lands as an attachment, not a user line. Keep the human
 	// ones; task notifications, subagent hand-backs and auto-continuations
 	// are harness traffic.
+	// A background task's notification (a Monitor event, a background
+	// command or a Monitor ending): onto the call that started it
+	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "task-notification" {
+		t.taskNotification(a.Prompt)
+		return
+	}
 	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "prompt" {
 		prompt := unwrapPasted(a.Prompt)
 		// a subagent's hand-back (background ones report only this way):
@@ -287,6 +293,7 @@ func (t *transcript) feedLine(raw []byte) {
 			}
 			t.messages[idx].Result = clipLines(clip(out, 3000), 40)
 			t.messages[idx].Pending = false
+			t.trackTask(idx, out)
 			if body := patchBody(line.ToolUseResult.StructuredPatch); body != "" {
 				t.messages[idx].Body = body
 			}
@@ -381,4 +388,78 @@ func handbackReport(body string) string {
 		lines[j] = strings.TrimPrefix(l, "  ")
 	}
 	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
+// Background tasks (Monitor, Bash run_in_background): the call's result names
+// the task; its events and its end arrive later as task-notification
+// attachments, which used to be dropped as harness traffic — a Monitor showed
+// as a call that never said anything, a background command never finished.
+var (
+	// only the start of the starting call's own result: a command whose
+	// output merely quotes such a line (a grep of a transcript) is no task
+	taskIDPattern = regexp.MustCompile(`^(?:Monitor started \(task |Command running in background with ID: )([A-Za-z0-9_-]+)`)
+	taskTag       = func(name string) *regexp.Regexp {
+		return regexp.MustCompile(`(?s)<` + name + `>(.*?)</` + name + `>`)
+	}
+	taskIDTag      = taskTag("task-id")
+	taskEventTag   = taskTag("event")
+	taskStatusTag  = taskTag("status")
+	taskSummaryTag = taskTag("summary")
+)
+
+// monitorEventsKept: a Monitor's result keeps its newest events
+const monitorEventsKept = 40
+
+func (t *transcript) trackTask(idx int, out string) {
+	if msg := t.messages[idx]; msg.Tool != "Monitor" && !msg.Background {
+		return
+	}
+	m := taskIDPattern.FindStringSubmatch(strings.TrimSpace(out))
+	if m == nil {
+		return
+	}
+	if t.tasks == nil {
+		t.tasks = map[string]int{}
+	}
+	t.tasks[m[1]] = idx
+	if t.messages[idx].Tool == "Monitor" {
+		// live until its stream ends; its events become the result
+		t.messages[idx].Result = ""
+		t.messages[idx].Pending = true
+	}
+}
+
+func (t *transcript) taskNotification(prompt string) {
+	id := firstGroup(taskIDTag, prompt)
+	idx, ok := t.tasks[id]
+	if !ok || idx >= len(t.messages) {
+		return
+	}
+	msg := &t.messages[idx]
+	if event := strings.TrimSpace(firstGroup(taskEventTag, prompt)); event != "" {
+		lines := strings.Split(strings.TrimRight(msg.Result+event, "\n"), "\n")
+		if len(lines) > monitorEventsKept {
+			lines = lines[len(lines)-monitorEventsKept:]
+		}
+		msg.Result = clip(strings.Join(lines, "\n"), 3000) + "\n"
+		return
+	}
+	if status := firstGroup(taskStatusTag, prompt); status != "" {
+		msg.Pending = false
+		if summary := strings.TrimSpace(firstGroup(taskSummaryTag, prompt)); summary != "" {
+			msg.Result = strings.TrimRight(msg.Result, "\n")
+			if msg.Result != "" {
+				msg.Result += "\n"
+			}
+			msg.Result += "— " + summary
+		}
+		delete(t.tasks, id)
+	}
+}
+
+func firstGroup(re *regexp.Regexp, s string) string {
+	if m := re.FindStringSubmatch(s); m != nil {
+		return m[1]
+	}
+	return ""
 }

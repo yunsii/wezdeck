@@ -180,6 +180,7 @@ type transcript struct {
 	messages []chatMessage
 	tools    map[string]int // tool_use_id → index in messages
 	agents   map[string]int // Claude subagent id → its Agent call's index (hand-back reports)
+	tasks    map[string]int // background task id (Monitor, Bash run_in_background) → its call's index
 	usage    sessionUsage
 	lastMsg  string       // message id whose usage was counted (one reply spans several lines)
 	outputs  []outputMark // per reply: when, how many output tokens (turnOutput)
