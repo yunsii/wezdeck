@@ -30,6 +30,26 @@ export const endsWithNote = (text: string, typed: string) => {
   return typed ? text.slice(0, note.at) === `${typed}\n\n` : note.at === 0
 }
 
+/**
+ * The text the host will put into the pane for a send: what was typed, then
+ * the attachment note exactly as the relay writes it (remote_upload.go
+ * attachmentNote: images numbered in order, a diagnostics file labelled
+ * 客户端诊断; bare names suffice — the page reads only the base name). The
+ * queued bubble renders it, so it looks like the message it becomes.
+ */
+export function withAttachmentNote(typed: string, names: Array<string> = []) {
+  if (!names.length) return typed
+  let image = 0
+  const lines = names.map((name) => {
+    const label = name.startsWith('diagnostics-')
+      ? '客户端诊断'
+      : `图片${(image += 1)}`
+    return `- ${label}: ${name}`
+  })
+  const note = [ATTACHMENT_MARKS[0], ...lines].join('\n')
+  return typed.trim() ? `${typed.trim()}\n\n${note}` : note
+}
+
 /** What the user typed, without the host's attachment note. */
 export const typedText = (text: string) => splitAttachments(text).typed
 

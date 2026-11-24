@@ -13,7 +13,11 @@ import {
   useState,
 } from 'react'
 
-import { SentAttachments, endsWithNote } from './chat-attachments'
+import {
+  SentAttachments,
+  endsWithNote,
+  withAttachmentNote,
+} from './chat-attachments'
 import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
@@ -51,6 +55,8 @@ export type Pending = {
   /** ms when sent; also the key */
   at: number
   note?: string
+  /** uploaded names sent with it: the bubble shows them as the message will */
+  attachments?: Array<string>
   /** absolute transcript index where the transcript ended when it was sent */
   after?: number
   /** sending: the host has not taken it yet; queued: in the pane, not yet in the transcript */
@@ -440,15 +446,18 @@ function PendingBubbles({ pending }: { pending: Array<Pending> }) {
   return (
     <div aria-label={t`Queued messages`} className="grid gap-1.5">
       {pending.map((item) => (
-        // the user bubble itself, faded (like Claude Code's queued input);
-        // it turns solid once the agent takes the message
+        // the user bubble itself — same box, same text and image strip as
+        // the message it becomes (Bubble), faded like Claude Code's queued
+        // input; it turns solid once the agent takes the message
         <div
           key={item.at}
           data-pending={item.state ?? 'queued'}
           className="chat-in min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55"
         >
-          {item.text}
-          {item.note ? (
+          <SentAttachments
+            text={withAttachmentNote(item.text, item.attachments)}
+          />
+          {item.note && !item.attachments?.length ? (
             <span className="opacity-70">
               {item.text ? ' ' : ''}({item.note})
             </span>

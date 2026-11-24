@@ -4,6 +4,7 @@ import {
   endsWithNote,
   splitTokens,
   typedText,
+  withAttachmentNote,
 } from '#/features/chat-attachments'
 
 describe('sent attachments', () => {
@@ -40,5 +41,31 @@ describe('sent attachments', () => {
     expect(typedText('看 [图片1]\n\n[手机附件]\n- 图片1: /x/img-1-a.jpg')).toBe(
       '看 [图片1]',
     )
+  })
+})
+
+describe('withAttachmentNote (the queued bubble shows what the message becomes)', () => {
+  it('numbers images and labels diagnostics like the relay does', () => {
+    expect(
+      withAttachmentNote('看这里', [
+        'img-1-a.jpg',
+        'diagnostics-2-b.json',
+        'img-3-c.png',
+      ]),
+    ).toBe(
+      '看这里\n\n[网页附件]\n- 图片1: img-1-a.jpg\n- 客户端诊断: diagnostics-2-b.json\n- 图片2: img-3-c.png',
+    )
+  })
+  it('only a note when nothing was typed; the text alone when nothing is attached', () => {
+    expect(withAttachmentNote('  ', ['img-1-a.jpg'])).toBe(
+      '[网页附件]\n- 图片1: img-1-a.jpg',
+    )
+    expect(withAttachmentNote('hi', [])).toBe('hi')
+    expect(withAttachmentNote('hi')).toBe('hi')
+  })
+  it('reads back as typed text plus an image, the way a sent message does', () => {
+    const text = withAttachmentNote('看这里', ['img-1-a.jpg'])
+    expect(endsWithNote(text, '看这里')).toBe(true)
+    expect(typedText(text)).toBe('看这里')
   })
 })

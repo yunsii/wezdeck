@@ -125,15 +125,19 @@ export function useComposer({
     setProgress('')
     const count = images.length
     const note = count ? t`${count} images` : ''
-    // clear right away, like a chat app: the message shows in the queue
-    // above; if the host refuses it, the text comes back with the error
+    // clear right away, like a chat app — text and images both: the message
+    // shows in the queue above; if the host refuses it, both come back with
+    // the error. Images used to wait for the host's answer, and a switch to
+    // another session meanwhile left them (saved picks) in the composer
     const typed = text
+    const picked = images
     setText('')
+    setImages([])
     if (await onSend({ text: typed.trim(), attachments, note })) {
-      images.forEach((image) => URL.revokeObjectURL(image.url))
-      setImages([])
+      picked.forEach((image) => URL.revokeObjectURL(image.url))
     } else {
       setText((current) => current || typed)
+      setImages((current) => (current.length ? current : picked))
     }
   }
   return {

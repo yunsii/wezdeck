@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:414
+#: src/features/chat-thread.tsx:420
 msgid "· summary"
 msgstr "· summary"
 
@@ -483,7 +483,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:170
+#: src/features/session-composer.tsx:174
 msgid "cancel"
 msgstr "cancel"
 
@@ -573,7 +573,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:203
+#: src/features/session-composer.tsx:207
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -637,12 +637,12 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:195
+#: src/features/session-send.ts:196
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:299
+#: src/features/session-composer.tsx:303
 msgid "Commands"
 msgstr "Commands"
 
@@ -658,11 +658,11 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:273
+#: src/features/session-composer.tsx:277
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:169
+#: src/features/session-composer.tsx:173
 msgid "confirm"
 msgstr "confirm"
 
@@ -704,11 +704,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:398
+#: src/features/chat-thread.tsx:404
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:399
+#: src/features/chat-thread.tsx:405
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1126,7 +1126,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:306
+#: src/features/session-composer.tsx:310
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1253,7 +1253,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:324
+#: src/features/session-composer.tsx:328
 msgid "Images"
 msgstr "Images"
 
@@ -1324,7 +1324,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:171
+#: src/features/session-composer.tsx:175
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1372,7 +1372,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:287
+#: src/features/session-composer.tsx:291
 msgid "Keys"
 msgstr "Keys"
 
@@ -1525,11 +1525,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:465
+#: src/features/session-composer.tsx:469
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:423
+#: src/features/session-composer.tsx:427
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2029,7 +2029,7 @@ msgstr "Put into the message for this agent"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/chat-thread.tsx:441
+#: src/features/chat-thread.tsx:447
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -2037,8 +2037,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:211
-#: src/features/session-composer.tsx:281
+#: src/features/session-composer.tsx:215
+#: src/features/session-composer.tsx:285
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -2409,7 +2409,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:68
-#: src/features/session-composer.tsx:474
+#: src/features/session-composer.tsx:478
 msgid "Send"
 msgstr "Send"
 
@@ -2421,7 +2421,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:282
+#: src/features/session-composer.tsx:286
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2527,7 +2527,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:294
+#: src/features/session-composer.tsx:298
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2654,7 +2654,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:197
+#: src/features/session-composer.tsx:201
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2900,7 +2900,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:311
+#: src/features/session-composer.tsx:315
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2974,7 +2974,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:196
+#: src/features/session-composer.tsx:200
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 

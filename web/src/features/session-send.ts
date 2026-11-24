@@ -171,6 +171,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         {
           text: message.text,
           note: message.note,
+          attachments: message.attachments,
           at,
           after: endRef.current,
           state: 'sending',
