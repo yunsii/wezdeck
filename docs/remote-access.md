@@ -339,8 +339,11 @@ screenshots — `Page.screencastFrameAck` needs a `sessionId` that ego's
 resolution while a filled row is not). `sessions` uses the two newest real
 Claude transcripts on throwaway tmux panes (the stack's relay reads the real
 HOME), `tickets` two tickets of the store copy. It reports `loading`,
-`transition`, `sticky`, `row-fill`, `landing` (a conversation's first frame
-not at its bottom / a ticket's not at its top) and `pixels` findings, keeps
+`transition`, `sticky`, `row-fill`, `grey-step` (a dark press veil: white →
+grey → blue), `snap` (the pressed row's fill or tint layer stepping instead
+of easing), `landing` (a conversation's first frame not at its bottom / a
+ticket's not at its top) and `pixels` findings, plus `jank` warnings
+(main-thread stalls; compositor-run opacity still moves), keeps
 `frames/*.jpg`, `samples.json` and `summary.json`, exits 1 on a finding and
 logs one `category=web_probe` row. Run it before saying a visual flash is
 fixed: screenshots and single assertions missed a 70 ms solid-blue row, a

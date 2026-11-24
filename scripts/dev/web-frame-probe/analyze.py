@@ -11,6 +11,12 @@ Checks, per press (marks in samples.json):
   sticky     the sticky prompt showed within 800 ms of the press
   row-fill   the open row painted a saturated background or an opaque
              box-shadow wider than the 3 px bar (the solid-blue flash)
+  grey-step  the pressed row showed a dark press veil (white → grey → blue)
+  snap       the pressed row's fill (over white) moved > 20 (sum of RGB)
+             between two sampled frames, or its tint layer's opacity > 0.035
+             between two adjacent ones, instead of easing
+Warning (not a flash): jank — the main thread skipped > 50 ms of frames after
+a press (opacity / transform transitions still run on the compositor).
   landing    sessions: the first frame of the new item is not at its
              bottom; tickets: not at its top
   pixels     painted frames whose accent-coloured area in the list
@@ -28,14 +34,26 @@ import statistics
 import sys
 
 RGB = re.compile(r"rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)")
+SRGB = re.compile(r"color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: / ([\d.]+))?\)")
+
+
+def rgba(css: str) -> tuple[float, float, float, float] | None:
+    """0..255 channels + alpha from rgb()/rgba()/color(srgb …) (color-mix)."""
+    m = RGB.search(css or "")
+    if m:
+        return (*(float(m.group(i)) for i in (1, 2, 3)), float(m.group(4) or 1))
+    m = SRGB.search(css or "")
+    if m:
+        return (*(float(m.group(i)) * 255 for i in (1, 2, 3)), float(m.group(4) or 1))
+    return None
 
 
 def saturated(css: str) -> bool:
-    m = RGB.search(css or "")
-    if not m:
+    c = rgba(css)
+    if not c:
         return False
-    r, g, b = (int(m.group(i)) / 255 for i in (1, 2, 3))
-    a = float(m.group(4)) if m.group(4) else 1.0
+    r, g, b = (x / 255 for x in c[:3])
+    a = c[3]
     _h, s, v = colorsys.rgb_to_hsv(r, g, b)
     return a > 0.5 and s > 0.45 and v > 0.4
 
@@ -73,6 +91,7 @@ def main() -> int:
     samples = json.load(open(os.path.join(args.out, "samples.json")))
     frames, marks = samples["frames"], samples["marks"]
     findings: list[dict] = []
+    warns: list[dict] = []
 
     def add(kind: str, mark: int, t: int, detail: str) -> None:
         findings.append({"kind": kind, "press": mark, "t": t, "detail": detail})
@@ -98,6 +117,42 @@ def main() -> int:
             if saturated(f["rowBg"]) or wide_opaque_shadow(f["rowShadow"]):
                 add("row-fill", i, f["t"], f"bg={f['rowBg']} shadow={f['rowShadow']}")
                 break
+        # the pressed row's own fill, hover → press → open: no grey step
+        # (the old .key-press veil) and no snap between two frames — a state
+        # change eases over several frames (motion short, 150 ms)
+        for f in window:
+            sh = f.get("targetShadow") or ""
+            veil = re.search(r"rgba\(0, 0, 0, ([\d.]+)\)", sh)
+            if veil and float(veil.group(1)) >= 0.03:
+                add("grey-step", i, f["t"], f"press veil {sh}")
+                break
+        # a step between two sampled frames: the fill composited over white
+        # (any gap), and the tint layer's opacity (.list-row::after, adjacent
+        # frames only)
+        def over_white(c):
+            return tuple(x * c[3] + 255 * (1 - c[3]) for x in c[:3])
+        prev = None
+        for f in window:
+            c = rgba(f.get("targetBg", ""))
+            cur = (over_white(c) if c else None, f.get("targetTint", -1))
+            if prev and prev[2] != f.get("tgt"):
+                prev = None  # the probe moved on to the next row
+            if prev:
+                (pc, pt), (cc, ct) = prev[1], cur
+                adjacent = f["t"] - prev[0] <= 34
+                # a background is painted by the main thread: a jump across a
+                # stall is what the eye sees too; the tint layer's opacity
+                # runs on the compositor, so only adjacent frames count
+                jump = sum(abs(x - y) for x, y in zip(pc, cc)) if pc and cc else 0
+                tint = abs(ct - pt) if adjacent and ct >= 0 and pt >= 0 else 0
+                if jump > 20 or tint > 0.035:
+                    add("snap", i, f["t"], f"fill moved {jump:.0f} / tint {tint:.3f} in one frame")
+                    break
+            prev = (f["t"], cur, f.get("tgt"))
+        gaps = [(b["t"], b["t"] - a["t"]) for a, b in zip(window, window[1:]) if b["t"] - a["t"] > 50]
+        if gaps:
+            t, g = max(gaps, key=lambda x: x[1])
+            warns.append({"kind": "jank", "press": i, "t": t, "detail": f"main thread blocked {g} ms (CSS on the compositor still moves)"})
         new = next((f for f in window if f["title"] and f["title"] != before and not f["loading"]), None)
         if new:
             if args.scenario == "sessions" and new["bottom"] - new["scroll"] > 4:
@@ -126,12 +181,15 @@ def main() -> int:
         "accent_median": statistics.median(c for _p, c in pix) if pix else None,
         "accent_max": max((c for _p, c in pix), default=None),
         "findings": findings,
+        "warnings": warns,
     }
     json.dump(summary, open(os.path.join(args.out, "summary.json"), "w"), ensure_ascii=False, indent=1)
     print(f"{args.scenario}: {len(marks)} presses, {len(frames)} DOM frames, {len(pix)} painted frames,"
           f" accent px median {summary['accent_median']} max {summary['accent_max']}")
     for f in findings:
         print(f"  FLASH {f['kind']:10} press {f['press']} t={f['t']}ms  {f['detail']}")
+    for w in warns:
+        print(f"  warn  {w['kind']:10} press {w['press']} t={w['t']}ms  {w['detail']}")
     print("  no flash" if not findings else f"  {len(findings)} finding(s)")
     return 1 if findings else 0
 

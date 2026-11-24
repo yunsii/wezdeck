@@ -47,6 +47,9 @@ await page.evaluate((cfg) => {
     const el = document.querySelector(cfg.scroller)
     const row = document.querySelector(cfg.selectedSelector)
     const cs = row ? getComputedStyle(row) : null
+    // the row being pressed, before and after it becomes the open one
+    const target = w.__probe.target ? document.querySelector(w.__probe.target) : null
+    const ts = target ? getComputedStyle(target) : null
     w.__probe.frames.push({
       t: Math.round(performance.now() - t0),
       title: (document.querySelector(cfg.titleSelector)?.textContent ?? '').slice(0, 40),
@@ -55,6 +58,11 @@ await page.evaluate((cfg) => {
       sel: row?.getAttribute(cfg.idAttr) ?? '',
       rowBg: cs?.backgroundColor ?? '',
       rowShadow: cs?.boxShadow ?? '',
+      tgt: w.__probe.target ?? '',
+      targetBg: ts?.backgroundColor ?? '',
+      // the row's tint layer (deck.css .list-row::after): its opacity
+      targetTint: target ? Number(getComputedStyle(target, '::after').opacity) : -1,
+      targetShadow: ts?.boxShadow ?? '',
       sticky: document.querySelector('[data-testid=sticky-prompt]') ? 1 : 0,
       loading: /^(Loading|加载中)/.test(document.querySelector(cfg.titleSelector)?.textContent ?? '') ? 1 : 0,
       vt: w.__probe.vt,
@@ -82,11 +90,15 @@ for (const target of CFG.presses) {
     return r ? { x: r.x + Math.min(120, r.width / 2), y: r.y + Math.min(20, r.height / 2) } : null
   }, target)
   if (!box) throw new Error('target not on screen: ' + target)
+  await page.evaluate((sel) => {
+    window.__probe.target = sel
+  }, target)
   await page.mouse.move(box.x, box.y)
   await page.waitForTimeout(150)
   await page.evaluate((sel) => {
     const p = window.__probe
     p.marks.push({ t: Math.round(performance.now() - p.t0), target: sel })
+    p.target = sel
   }, target)
   await page.mouse.down()
   await page.waitForTimeout(120)
