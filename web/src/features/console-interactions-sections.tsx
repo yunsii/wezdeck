@@ -15,7 +15,7 @@ import {
   ToolsDemo,
 } from './console-interactions-demos'
 import { BackgroundTasks } from './session-background'
-import { GitDetailView } from './session-git'
+import { GitStatusButton } from './session-git'
 import {
   ASK_ONE,
   ASK_MANY,
@@ -328,7 +328,13 @@ function streamSections(
         en: 'the +S ~U ?T ↑A ↓B tag beside the branch (git_status.go, on the poll); tapping it reads session.git: changed files, unpushed / unpulled and recent commits (session_git.go)',
       },
       keys: { zh: '无（只读）', en: 'None (read only)' },
-      demo: <GitDetailView detail={GIT} />,
+      demo: (
+        <div className="flex items-center gap-2 text-meta text-brand-label">
+          {/* the header's tag itself: tap it (or Enter / Space) */}
+          点标签打开 →
+          <GitStatusButton id="sample" git={GIT.status} sample={GIT} />
+        </div>
+      ),
     },
     {
       id: 'background',

@@ -158,15 +158,27 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
 }
 
 /** the tag in the header: a button that opens the sheet */
-export function GitStatusButton({ id, git }: { id: string; git: GitStatus }) {
+export function GitStatusButton({
+  id,
+  git,
+  sample,
+}: {
+  id: string
+  git: GitStatus
+  /** 交互调试: show this instead of reading the host */
+  sample?: GitDetail
+}) {
   const { t } = useLingui()
   const [open, setOpen] = useState(false)
-  const detail = useQuery({
+  const read = useQuery({
     queryKey: ['remote', 'session-git', id],
-    enabled: open,
+    enabled: open && !sample,
     staleTime: 5_000,
     queryFn: async () => (await hostRead('session.git', { id })) as GitDetail,
   })
+  const detail = sample
+    ? { data: sample, isError: false as const, error: null }
+    : read
   return (
     <>
       <Button

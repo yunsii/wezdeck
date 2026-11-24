@@ -1205,7 +1205,7 @@ msgstr "From anywhere"
 #~ msgid "Git"
 #~ msgstr "Git"
 
-#: src/features/session-git.tsx:188
+#: src/features/session-git.tsx:200
 msgid "Git status"
 msgstr "Git status"
 
@@ -1564,7 +1564,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:199
+#: src/features/session-git.tsx:211
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
