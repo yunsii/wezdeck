@@ -20,5 +20,12 @@ export function Textarea({
   variant = 'field',
   ...props
 }: TextareaProps) {
-  return <textarea className={cn(looks[variant], className)} {...props} />
+  return (
+    <textarea
+      // a form field draws the shared field edge (base.css "Edges")
+      data-field={variant === 'field' ? '' : undefined}
+      className={cn(looks[variant], className)}
+      {...props}
+    />
+  )
 }

@@ -6,10 +6,10 @@
 import { useLingui } from '@lingui/react/macro'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
-import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
 import { ATTACHMENT_MARK, SentAttachments } from './chat-attachments'
+import { TurnLine, turnState } from './chat-turn'
+import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
-import { Led } from '#/components/deck/led'
 import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
 import { catchUp, useCatchUpSignal } from './chat-catchup'
@@ -156,71 +156,14 @@ export function group(messages: Array<Message>) {
   return out
 }
 
-/** The running turn, from hooks (lib/turn-progress.ts). */
-export type Activity = {
-  /** ms: when the turn began (attention turn_started) */
-  since?: number
-  /** ms: when a context compaction began; set only while it runs */
-  compactSince?: number
-  /** output tokens of the turn so far */
-  tokens?: number
-}
-
-/**
- * The agent is working: one quiet row — the running light, then "Working…
- * 4m 39s · ↓ 19.1k tokens", or "Compacting conversation… 36s" in amber while
- * the context is compacted. Always the same shape, whether or not a tool
- * call is out (it used to swap between a dots bubble and a bare line on
- * every tool call).
- */
-function Typing({ activity }: { activity?: Activity }) {
-  const { t } = useLingui()
-  const compacting = activity?.compactSince !== undefined
-  const from = activity?.compactSince ?? activity?.since
-  const now = useNow(from !== undefined)
-  const label = compacting ? t`Compacting conversation` : t`Working`
-  const tokens =
-    !compacting && activity?.tokens ? formatTokens(activity.tokens) : ''
-  const detail = [
-    from !== undefined ? formatElapsed(now - from) : '',
-    tokens ? t`↓ ${tokens} tokens` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ')
-  return (
-    <div className="chat-in flex min-w-0 items-center gap-2">
-      <div
-        role="status"
-        aria-label={detail ? `${label} ${detail}` : t`The agent is working`}
-        data-activity={compacting ? 'compacting' : 'working'}
-        className="flex min-w-0 flex-1 items-center gap-2 px-1 py-0.5"
-      >
-        <Led
-          tone={compacting ? 'waiting' : 'running'}
-          size={9}
-          className="led-running"
-        />
-        <span className="min-w-0 truncate text-caption text-brand-muted">
-          <span className={cn(compacting && 'text-brand-waiting')}>
-            {label}…
-          </span>
-          {detail ? (
-            <span data-live className="ml-1.5 text-brand-label tabular-nums">
-              {detail}
-            </span>
-          ) : null}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 export function ChatThread({
   messages,
   start,
   busy,
   activity,
   pending = [],
+  status,
+  statusTs,
   onBackground,
   sessionId = '',
 }: {
@@ -231,6 +174,9 @@ export function ChatThread({
   pending?: Array<Pending>
   /** the TUI status line while busy (compacting, elapsed, tokens) */
   activity?: Activity
+  /** the entry's status and its last change (ms), for the turn line */
+  status?: string
+  statusTs?: number
   /** resolves transcript image refs (session.image) */
   sessionId?: string
   /** absolute index of messages[0] in the whole transcript (pagination) */
@@ -344,9 +290,22 @@ export function ChatThread({
         )
       })}
       <PendingBubbles pending={queue.left} />
-      {/* last: the working line says what the agent does now, below
-          everything in the thread — queued messages included */}
-      {busy && effective >= end ? <Typing activity={activity} /> : null}
+      {/* last: the turn line says what the agent does now (working, or
+          how long the last turn took), below everything in the thread —
+          queued messages included. One element in one place, its text
+          changing: it used to appear and vanish with each turn */}
+      {effective >= end ? (
+        <TurnLine
+          state={turnState({
+            messages,
+            left: queue.left,
+            busy,
+            status,
+            statusTs,
+            activity,
+          })}
+        />
+      ) : null}
     </SessionIdContext.Provider>
   )
 }

@@ -24,5 +24,12 @@ export function Input({
   variant = 'default',
   ...props
 }: InputProps) {
-  return <BaseInput className={cn(looks[variant], className)} {...props} />
+  return (
+    <BaseInput
+      // a phone form field draws the shared field edge (base.css "Edges")
+      data-field={variant === 'field' ? '' : undefined}
+      className={cn(looks[variant], className)}
+      {...props}
+    />
+  )
 }

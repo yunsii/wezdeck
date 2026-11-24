@@ -102,6 +102,18 @@ store lock like `install-remote-relay.sh` and log `event=device_approve` /
 phone can neither list nor change the others. The relay re-reads the store
 on every read and write, so a revoke cuts the device at once.
 
+## Turn line
+
+The foot of the thread is one row whose text changes (`chat-turn.tsx`):
+运行中… with the elapsed time (and tokens) while the host says running; the
+same at once after a send, timed from the send, before the host's next
+poll (optimistic) and while the prompt is in the transcript but the hook
+has not flipped to running yet (≤ 2 min); 用时 36s · 13:42 完成 once the turn
+is over, from its prompt to its last line (the entry's last change when the
+transcript has no times, Grok); nothing while a question waits on you. It
+used to appear only after the host said running and vanish at the end, so
+the thread jumped twice per turn.
+
 ## Seen on the web
 
 A `done` session open on the session page (phone or host browser) in the

@@ -341,6 +341,13 @@ const chatDiag = (
     .map((m) => ({ at: m.at, text: m.text.slice(0, 40) })),
 })
 
+/** the running turn's progress from the host's hooks (chat-turn.tsx) */
+const activityOf = (data?: Detail) => ({
+  since: data?.turn_started,
+  compactSince: data?.compact_started,
+  tokens: data?.turn_output,
+})
+
 /** absolute index just past the newest message the page has */
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
@@ -473,16 +480,10 @@ export function SessionDetail({ id }: { id: string }) {
               messages={messages}
               start={start}
               busy={busy}
-              activity={
-                busy
-                  ? {
-                      since: data?.turn_started,
-                      compactSince: data?.compact_started,
-                      tokens: data?.turn_output,
-                    }
-                  : undefined
-              }
+              activity={busy ? activityOf(data) : undefined}
               pending={pendingRaw}
+              status={data?.status}
+              statusTs={data?.ts}
               onBackground={toBackground(data, device.state, run)}
               sessionId={id}
             />

@@ -5,7 +5,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type { Browser, Page } from '@playwright/test'
+import type { Browser, Locator, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // The composer and thread on a desktop browser: a new session with no
@@ -185,12 +185,15 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await expect
       .poll(() => box.inputValue())
       .toBe('第一行\n第二行 [图片1] [图片1] ')
+    await caretAtEnd(box)
     await box.fill('第一行\n第二行 [图片1] ')
     await page.getByRole('button', { name: '移除图片' }).click()
     await expect.poll(() => box.inputValue()).toBe('第一行\n第二行')
 
     await box.press('Enter')
     await expect.poll(() => box.inputValue(), { timeout: 2_000 }).toBe('')
+    // working shows at once (optimistic), not after the host's next poll
+    await page.locator('[data-activity=working]').waitFor({ timeout: 1_500 })
     const deadline = Date.now() + 8_000
     while (!tmux('capture-pane', '-p', '-t', 'fresh').includes('第二行')) {
       if (Date.now() > deadline)
@@ -276,4 +279,20 @@ async function caretFollowsPreference(page: Page) {
   await page.goto(`${base}/zh/console/sessions/fresh-session`)
   await box.waitFor({ timeout: 15_000 })
   expect(await caret()).toBe('bar')
+}
+
+/**
+ * The caret lands after an inserted token on the next frame: wait for it,
+ * or a following fill's select-all is undone by it and the text doubles.
+ */
+async function caretAtEnd(box: Locator) {
+  await expect
+    .poll(() =>
+      box.evaluate(
+        (el: HTMLTextAreaElement) =>
+          el === document.activeElement &&
+          el.selectionStart === el.value.length,
+      ),
+    )
+    .toBe(true)
 }

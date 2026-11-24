@@ -137,3 +137,27 @@ textarea,
   caret-color: var(--color-brand-running);
   caret-shape: var(--caret-shape, bar);
 }
+
+/* Edges. A card (a rounded surface) on the page was white on near-white
+   (1.08:1) and dark on darker: it gets a hairline. A text field gets an
+   edge of 3:1 (WCAG 1.4.11) and, while focused, the accent and a soft halo.
+   Outlines and shadows only: neither takes layout room, so nothing moves
+   when they change (docs/web-pwa.md "Layout stability"). Unlayered, so a
+   utility's outline-none does not drop them. */
+.bg-brand-surface:where([class*='rounded']) {
+  outline: 1px solid var(--brand-card-edge);
+  outline-offset: -1px;
+}
+[data-field] {
+  outline: 1px solid var(--brand-field-edge);
+  outline-offset: -1px;
+  transition:
+    outline-color var(--motion-short, 120ms),
+    box-shadow var(--motion-short, 120ms);
+}
+[data-field]:focus-within,
+[data-field]:focus {
+  outline-color: var(--color-brand-running);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-brand-running) 22%, transparent);
+}

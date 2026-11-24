@@ -169,7 +169,10 @@ function SearchBox({
 }) {
   const { t } = useLingui()
   return (
-    <label className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-brand-edge bg-brand-deck px-3 text-body focus-within:ring-2 focus-within:ring-brand-running md:min-h-9 md:text-body">
+    <label
+      data-field
+      className="flex min-h-11 flex-1 items-center gap-2 rounded-xl bg-brand-deck px-3 text-body md:min-h-9 md:text-body"
+    >
       <Search size={15} aria-hidden className="text-brand-label" />
       <Input
         variant="bare"
@@ -340,7 +343,7 @@ export function TicketsView({
         <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start gap-5">
           <aside
             aria-label={t`Collab tickets`}
-            className="vt-split-list sticky top-4 grid max-h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto pr-1"
+            className="vt-split-list sticky top-4 grid h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-3"
           >
             <SearchBox value={query} onChange={setQuery} />
             <TicketKeys

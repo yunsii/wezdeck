@@ -413,7 +413,10 @@ export function ComposerBox({
           {composer.progress}
         </p>
       ) : null}
-      <div className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5">
+      <div
+        data-field
+        className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5"
+      >
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
         </label>

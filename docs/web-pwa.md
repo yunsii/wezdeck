@@ -439,6 +439,17 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   line on every return was noise) — the stale note above covers a refetch
   that keeps failing.
 
+### Edges (2026-11-24)
+
+A card (rounded `bg-brand-surface`) on the page read 1.08:1 against it in
+the light theme: every card gets a hairline (`--brand-card-edge`), every
+text field (`data-field`: `Input` / `Textarea` field variants, the
+composer, the ticket search) an edge of about 3.3:1 (`--brand-field-edge`,
+WCAG 1.4.11) and, focused, the accent with a soft halo. Outlines and
+shadows only (`base.css` "Edges"), so focus never changes a size. The split
+pages (会话 / 工单 / 诊断) draw a full-height line between the list and the
+detail.
+
 ### Text caret (2026-11-24)
 
 Every text box draws its caret in the accent colour and in the shape picked
