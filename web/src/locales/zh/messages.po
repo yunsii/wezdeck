@@ -37,7 +37,7 @@ msgstr "（可多选）"
 #~ msgid "{0} staged, {1} modified, {2} untracked"
 #~ msgstr ""
 
-#: src/components/deck/session-tags.tsx:123
+#: src/components/deck/session-tags.tsx:124
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
@@ -145,7 +145,7 @@ msgstr "{runs} 次"
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
-#: src/components/deck/session-tags.tsx:121
+#: src/components/deck/session-tags.tsx:122
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 
@@ -1221,7 +1221,7 @@ msgstr "随处可用"
 #~ msgstr "Git"
 
 #: src/features/session-git.tsx:168
-#: src/features/session-git.tsx:291
+#: src/features/session-git.tsx:302
 msgid "Git status"
 msgstr "Git 状态"
 
@@ -1580,7 +1580,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:304
+#: src/features/session-git.tsx:315
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1659,7 +1659,7 @@ msgctxt "git"
 msgid "Modified"
 msgstr "已修改"
 
-#: src/features/session-git.tsx:231
+#: src/features/session-git.tsx:237
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
 
@@ -1781,6 +1781,11 @@ msgstr "没有正在干活的 agent。"
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
+#: src/components/deck/session-tags.tsx:144
+msgctxt "git"
+msgid "No changes"
+msgstr "无改动"
+
 #: src/features/console-collab.tsx:57
 #~ msgid "No collab tickets yet"
 #~ msgstr "还没有协作工单"
@@ -1842,11 +1847,11 @@ msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
 #: src/features/session-git.tsx:55
-#: src/features/session-git.tsx:226
+#: src/features/session-git.tsx:232
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
-#: src/components/deck/session-tags.tsx:124
+#: src/components/deck/session-tags.tsx:125
 msgid "no upstream"
 msgstr "无上游"
 
@@ -1878,11 +1883,11 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Not paired"
 msgstr "未配对"
 
-#: src/features/session-git.tsx:240
+#: src/features/session-git.tsx:250
 msgid "Not pulled"
 msgstr "未拉取"
 
-#: src/features/session-git.tsx:238
+#: src/features/session-git.tsx:245
 msgid "Not pushed"
 msgstr "未推送"
 
@@ -2203,7 +2208,7 @@ msgstr "就绪"
 msgid "Reason"
 msgstr "原因"
 
-#: src/features/session-git.tsx:244
+#: src/features/session-git.tsx:254
 msgid "Recent commits"
 msgstr "最近提交"
 
@@ -2794,6 +2799,11 @@ msgstr "切换会话（Alt+g）"
 #: src/features/session-focus.tsx:42
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
+
+#: src/components/deck/session-tags.tsx:143
+msgctxt "git"
+msgid "Synced"
+msgstr "已同步"
 
 #: src/features/console-me.tsx:214
 #: src/features/console-me.tsx:304

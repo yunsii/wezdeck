@@ -16,6 +16,7 @@ import {
 } from './console-interactions-demos'
 import { BackgroundTasks } from './session-background'
 import { GitStatusButton } from './session-git'
+import { GitStatusTag } from '#/components/deck/session-tags'
 import {
   ASK_ONE,
   ASK_MANY,
@@ -33,6 +34,16 @@ import {
 } from './console-interactions-samples'
 
 export type Text = { zh: string; en: string }
+
+/** a clean checkout, no upstream (the synced one adds upstream) */
+const CLEAN = {
+  staged: 0,
+  unstaged: 0,
+  untracked: 0,
+  upstream: false,
+  ahead: 0,
+  behind: 0,
+}
 
 /** tag priority: the list sorts each group by an entry's first tag */
 export const TAGS = [
@@ -329,10 +340,20 @@ function streamSections(
       },
       keys: { zh: '无（只读）', en: 'None (read only)' },
       demo: (
-        <div className="flex items-center gap-2 text-meta text-brand-label">
-          {/* the header's tag itself: tap it (or Enter / Space) */}
-          点标签打开 →
-          <GitStatusButton id="sample" git={GIT.status} sample={GIT} />
+        <div className="grid gap-2 text-meta text-brand-label">
+          <span className="flex items-center gap-2">
+            {/* the header's tag itself: tap it (or Enter / Space) */}
+            点标签打开 →
+            <GitStatusButton id="sample" git={GIT.status} sample={GIT} />
+          </span>
+          <span
+            data-testid="git-clean-tags"
+            className="flex items-center gap-2"
+          >
+            没有改动时 →
+            <GitStatusTag git={{ ...CLEAN, upstream: true }} />
+            <GitStatusTag git={CLEAN} />
+          </span>
         </div>
       ),
     },

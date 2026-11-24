@@ -6,6 +6,7 @@
 // neutral with their git icons. They all used to be the same grey pill.
 import {
   Asterisk,
+  Check,
   Bot,
   FolderGit2,
   GitBranch,
@@ -123,14 +124,24 @@ export function GitStatusTag({ git }: { git: GitStatus }) {
       ? t`${ahead} ahead, ${behind} behind upstream`
       : t`no upstream`,
   ].join(' · ')
+  if (parts.length)
+    return (
+      <SessionTag tone="accent" mono hint={hint} className="shrink-0">
+        {parts.join(' ')}
+      </SessionTag>
+    )
+  // nothing to commit: a word, not a lone ✓ (too small to read as a state);
+  // "synced" only with an upstream to be level with
   return (
     <SessionTag
-      tone={parts.length ? 'accent' : 'neutral'}
-      mono
+      tone={git.upstream ? 'done' : 'neutral'}
+      icon={Check}
       hint={hint}
       className="shrink-0"
     >
-      {parts.join(' ') || '✓'}
+      {git.upstream
+        ? t({ message: 'Synced', context: 'git' })
+        : t({ message: 'No changes', context: 'git' })}
     </SessionTag>
   )
 }

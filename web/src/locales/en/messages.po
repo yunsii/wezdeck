@@ -37,7 +37,7 @@ msgstr "(pick any)"
 #~ msgid "{0} staged, {1} modified, {2} untracked"
 #~ msgstr "{0} staged, {1} modified, {2} untracked"
 
-#: src/components/deck/session-tags.tsx:123
+#: src/components/deck/session-tags.tsx:124
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
@@ -145,7 +145,7 @@ msgstr "{runs} runs"
 msgid "{staged} staged"
 msgstr "{staged} staged"
 
-#: src/components/deck/session-tags.tsx:121
+#: src/components/deck/session-tags.tsx:122
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 
@@ -1221,7 +1221,7 @@ msgstr "From anywhere"
 #~ msgstr "Git"
 
 #: src/features/session-git.tsx:168
-#: src/features/session-git.tsx:291
+#: src/features/session-git.tsx:302
 msgid "Git status"
 msgstr "Git status"
 
@@ -1580,7 +1580,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:304
+#: src/features/session-git.tsx:315
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1659,7 +1659,7 @@ msgctxt "git"
 msgid "Modified"
 msgstr "Modified"
 
-#: src/features/session-git.tsx:231
+#: src/features/session-git.tsx:237
 msgid "More files changed than listed here."
 msgstr "More files changed than listed here."
 
@@ -1781,6 +1781,11 @@ msgstr "No agent is working right now."
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
+#: src/components/deck/session-tags.tsx:144
+msgctxt "git"
+msgid "No changes"
+msgstr "No changes"
+
 #: src/features/console-collab.tsx:57
 #~ msgid "No collab tickets yet"
 #~ msgstr "No collab tickets yet"
@@ -1842,11 +1847,11 @@ msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
 #: src/features/session-git.tsx:55
-#: src/features/session-git.tsx:226
+#: src/features/session-git.tsx:232
 msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
-#: src/components/deck/session-tags.tsx:124
+#: src/components/deck/session-tags.tsx:125
 msgid "no upstream"
 msgstr "no upstream"
 
@@ -1878,11 +1883,11 @@ msgstr "Not on this Runtime"
 msgid "Not paired"
 msgstr "Not paired"
 
-#: src/features/session-git.tsx:240
+#: src/features/session-git.tsx:250
 msgid "Not pulled"
 msgstr "Not pulled"
 
-#: src/features/session-git.tsx:238
+#: src/features/session-git.tsx:245
 msgid "Not pushed"
 msgstr "Not pushed"
 
@@ -2203,7 +2208,7 @@ msgstr "Ready"
 msgid "Reason"
 msgstr "Reason"
 
-#: src/features/session-git.tsx:244
+#: src/features/session-git.tsx:254
 msgid "Recent commits"
 msgstr "Recent commits"
 
@@ -2794,6 +2799,11 @@ msgstr "Switch session (Alt+g)"
 #: src/features/session-focus.tsx:42
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
+
+#: src/components/deck/session-tags.tsx:143
+msgctxt "git"
+msgid "Synced"
+msgstr "Synced"
 
 #: src/features/console-me.tsx:214
 #: src/features/console-me.tsx:304

@@ -189,61 +189,72 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
           },
         ]}
       />
-      {tab === 'changes' ? (
-        <div className="grid gap-3">
-          {groups.map(({ state, title }) => {
-            const files = detail.files.filter((file) => file.state === state)
-            if (!files.length) return null
-            return (
-              <section
-                key={state}
-                data-git-group={state}
-                className="grid gap-1"
-              >
-                <h3 className="px-1 text-meta text-brand-label">
-                  {title} · {files.length}
-                </h3>
-                <ul className="grid gap-0.5">
-                  {files.map((file) => (
-                    <li
-                      key={`${state}:${file.path}`}
-                      className="flex min-w-0 items-baseline gap-2 px-1 font-mono text-meta"
-                    >
-                      <span className="w-3 shrink-0 text-brand-label">
-                        {file.code}
-                      </span>
-                      <span className="min-w-0 truncate text-brand-text">
-                        {file.path}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
-          {detail.files.length ? null : (
-            <p className="px-1 py-4 text-center text-caption text-brand-muted">
-              {t`No uncommitted changes.`}
-            </p>
-          )}
-          {detail.truncated ? (
-            <p className="px-1 text-meta text-brand-label">
-              {t`More files changed than listed here.`}
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {/* what needs you first, in colour; the recent ones for reference */}
-          <Commits title={t`Not pushed`} commits={detail.ahead} tone="ahead" />
-          <Commits
-            title={t`Not pulled`}
-            commits={detail.behind}
-            tone="behind"
-          />
-          <Commits title={t`Recent commits`} commits={detail.recent} />
-        </div>
-      )}
+      {/* one height for both tabs (the sheet held still while switching);
+          a long list scrolls inside */}
+      <div
+        data-testid="git-tab-body"
+        className="h-[min(50dvh,24rem)] overflow-y-auto overscroll-contain"
+      >
+        {tab === 'changes' ? (
+          <div className="grid content-start gap-3">
+            {groups.map(({ state, title }) => {
+              const files = detail.files.filter((file) => file.state === state)
+              if (!files.length) return null
+              return (
+                <section
+                  key={state}
+                  data-git-group={state}
+                  className="grid gap-1"
+                >
+                  <h3 className="px-1 text-meta text-brand-label">
+                    {title} · {files.length}
+                  </h3>
+                  <ul className="grid gap-0.5">
+                    {files.map((file) => (
+                      <li
+                        key={`${state}:${file.path}`}
+                        className="flex min-w-0 items-baseline gap-2 px-1 font-mono text-meta"
+                      >
+                        <span className="w-3 shrink-0 text-brand-label">
+                          {file.code}
+                        </span>
+                        <span className="min-w-0 truncate text-brand-text">
+                          {file.path}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
+            })}
+            {detail.files.length ? null : (
+              <p className="px-1 py-4 text-center text-caption text-brand-muted">
+                {t`No uncommitted changes.`}
+              </p>
+            )}
+            {detail.truncated ? (
+              <p className="px-1 text-meta text-brand-label">
+                {t`More files changed than listed here.`}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="grid content-start gap-3">
+            {/* what needs you first, in colour; the recent ones for reference */}
+            <Commits
+              title={t`Not pushed`}
+              commits={detail.ahead}
+              tone="ahead"
+            />
+            <Commits
+              title={t`Not pulled`}
+              commits={detail.behind}
+              tone="behind"
+            />
+            <Commits title={t`Recent commits`} commits={detail.recent} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

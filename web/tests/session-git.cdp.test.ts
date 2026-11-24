@@ -24,6 +24,13 @@ describe('Git status panel', () => {
     })
     const page = await context.newPage()
     await page.goto(`${base}/zh/console/me/interactions#git-status`)
+    // nothing to commit reads as a word, not a lone ✓
+    expect(
+      (await page.getByTestId('git-clean-tags').innerText()).replace(
+        /\s+/g,
+        ' ',
+      ),
+    ).toContain('已同步 无改动')
     // the header's tag is a button: it opens the sheet
     const tag = page.getByTestId('git-status-button')
     await tag.waitFor({ timeout: 20_000 })
@@ -51,10 +58,15 @@ describe('Git status panel', () => {
     expect(text).toContain('变更6')
     expect(text).toContain('提交↑2 ↓1')
     expect(await detail.locator('[data-git-commits]').count()).toBe(0)
-    // → switches to 提交: not pushed / not pulled first, then recent
+    // → switches to 提交: not pushed / not pulled first, then recent; the
+    // tab body keeps its height (the sheet holds still)
+    const body = page.getByTestId('git-tab-body')
+    const before = (await body.boundingBox())?.height
     await detail.locator('[role=radio][data-value=changes]').focus()
     await page.keyboard.press('ArrowRight')
     await expect.poll(() => detail.getAttribute('data-tab')).toBe('commits')
+    const after = (await body.boundingBox())?.height ?? 0
+    expect(Math.abs(after - (before ?? 0))).toBeLessThan(1)
     const order = await detail
       .locator('[data-git-commits]')
       .evaluateAll((els) =>
