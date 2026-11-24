@@ -238,7 +238,10 @@ web console seen in the last 3 min (DataChannel when open, else the DO by cid;
 `selector`, `scroll`, `wait`, `reload` — run after the snapshot is sent, the
 page reloads onto the newest deploy; `--reload` appends it, so after a
 release `wezdeck-wsl diag --reload` puts every connected web console on the new
-build (a build older than this step ignores it: get it there once through
+build — no toast before it (it vanished half-read); while a text field
+with text has focus the reload waits for it to blur (≤ 1 min, `host-reload`
+trace), and the new page says 已更新到新版本 once (`wezdeck.updated-from`,
+`pwa-boot.tsx`) (a build older than this step ignores it: get it there once through
 我的 › 应用 › 检查更新 and the toast's 刷新); never a control inside a form or under
 `[data-write]` — send, reply, take over, keys, options, rename), recording
 each step's frames (count, fps, longest gap, gaps > 50 ms). It answers with

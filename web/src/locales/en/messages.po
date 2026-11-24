@@ -1725,7 +1725,7 @@ msgstr "New ticket (n)"
 msgid "New to-do"
 msgstr "New to-do"
 
-#: src/features/pwa-boot.tsx:16
+#: src/features/pwa-boot.tsx:30
 msgid "New version available"
 msgstr "New version available"
 
@@ -2240,7 +2240,7 @@ msgstr "Relay duration"
 msgid "Relay requests (Durable Object)"
 msgstr "Relay requests (Durable Object)"
 
-#: src/features/pwa-boot.tsx:19
+#: src/features/pwa-boot.tsx:33
 msgid "Reload"
 msgstr "Reload"
 
@@ -3200,6 +3200,10 @@ msgstr "Untracked"
 #: src/features/tickets-view.tsx:175
 msgid "Updated {time}"
 msgstr "Updated {time}"
+
+#: src/features/pwa-boot.tsx:26
+msgid "Updated to the new version"
+msgstr "Updated to the new version"
 
 #: src/features/session-composer.tsx:140
 msgid "Uploading {step}/{steps}…"

@@ -17,6 +17,7 @@
 // (default 700).
 import type { AnyRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { buildId } from '#/lib/pwa'
 
 import {
   diagnosticsSnapshot,
@@ -173,20 +174,19 @@ async function answer(
   // outside React (no Lingui provider here): pick the page language
   const zh = document.documentElement.lang.startsWith('zh')
   const reloadOnly = steps.length === 1 && steps[0].do === 'reload'
-  toast(
-    reloadOnly
-      ? zh
-        ? '电脑发布了新版本，正在更新'
-        : 'The host shipped a new version, updating'
-      : steps.length
+  // a release reloading the page says so after the reload, on the new page
+  // (pwa-boot.tsx): a toast here vanished with the reload half-read
+  if (!reloadOnly)
+    toast(
+      steps.length
         ? zh
           ? `电脑正在复现问题并读取诊断（${steps.length} 步）`
           : `The host is reproducing a problem and reading diagnostics (${steps.length} steps)`
         : zh
           ? '电脑读取了这台设备的诊断信息'
           : 'The host read this device’s diagnostics',
-    { id: 'host-diag', duration: 4000 },
-  )
+      { id: 'host-diag', duration: 4000 },
+    )
   const results: Array<Record<string, unknown>> = []
   for (const step of steps) {
     const frames = sampleFrames(Math.min(step.sample ?? 700, 5000))
@@ -220,7 +220,43 @@ async function answer(
   // `reload` step (`wezdeck-wsl diag --reload`): the host just shipped and
   // wants this phone on the new build without anyone tapping 刷新 — the
   // snapshot above still reports the build it ran
-  if (steps.some((step) => step.do === 'reload')) location.reload()
+  if (steps.some((step) => step.do === 'reload')) reloadWhenIdle()
+}
+
+export const UPDATED_KEY = 'wezdeck.updated-from'
+
+/** typing in a text field (the composer, a reply box) */
+const typing = () => {
+  const el = document.activeElement
+  return (
+    (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) &&
+    el.value.length > 0
+  )
+}
+
+/**
+ * Onto the new build — but not under someone's fingers: while a text field
+ * with text in it has focus, wait for it to blur (at most a minute; drafts
+ * are kept anyway). The new page then says 已更新到新版本 once.
+ */
+function reloadWhenIdle() {
+  const go = () => {
+    try {
+      sessionStorage.setItem(UPDATED_KEY, buildId)
+    } catch {
+      // storage blocked: the reload still happens, just unannounced
+    }
+    trace('host-reload', { deferred: Date.now() - asked })
+    location.reload()
+  }
+  const asked = Date.now()
+  if (!typing()) return go()
+  const check = setInterval(() => {
+    if (!typing() || Date.now() - asked > 60_000) {
+      clearInterval(check)
+      go()
+    }
+  }, 1_000)
 }
 
 let installed = false
