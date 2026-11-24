@@ -18,7 +18,8 @@ type pendingCall struct {
 	Plan bool   `json:"plan,omitempty"` // ExitPlanMode: the body is the plan
 }
 
-func pendingPermission(messages []chatMessage) *pendingCall {
+// planTool: the agent's plan-approving tool (planReader.PlanTool), "" none.
+func pendingPermission(messages []chatMessage, planTool string) *pendingCall {
 	for i := len(messages) - 1; i >= 0; i-- {
 		m := messages[i]
 		if m.Role != "tool" || !m.Pending {
@@ -27,7 +28,7 @@ func pendingPermission(messages []chatMessage) *pendingCall {
 		if m.Tool == "AskUserQuestion" {
 			return nil // a question, answered by the elicitation card
 		}
-		return &pendingCall{Tool: m.Tool, Text: m.Text, Body: m.Body, File: m.File, Plan: m.Tool == "ExitPlanMode"}
+		return &pendingCall{Tool: m.Tool, Text: m.Text, Body: m.Body, File: m.File, Plan: planTool != "" && m.Tool == planTool}
 	}
 	return nil
 }

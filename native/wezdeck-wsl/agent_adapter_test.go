@@ -48,15 +48,23 @@ func TestEveryAdapterDeclaresCapabilities(t *testing.T) {
 			t.Errorf("%s: capabilities must say usage and mid-turn input: %+v", a.Name(), caps)
 		}
 	}
-	// both answer Ask questions and plan approvals from the phone
-	// (session-ask-claude.tsx, session-permission.tsx); codex does neither yet
-	for _, name := range []string{"claude", "grok"} {
-		if c := adapterFor(name).Capabilities(); !c.AskOptions || !c.PlanReview {
-			t.Errorf("%s: Ask options and plan review are on the phone: %+v", name, c)
+	// derived, never declared: the hand-written part leaves them alone
+	for _, a := range agentAdapters {
+		if c := a.Capabilities(); c.AskOptions || c.PlanReview {
+			t.Errorf("%s declares a derived capability: %+v", a.Name(), c)
 		}
 	}
-	if c := adapterFor("codex").Capabilities(); c.AskOptions || c.PlanReview {
-		t.Errorf("codex claims Ask options / plan review: %+v", c)
+	// claude and grok wire Ask and plan review (session-ask-claude.tsx,
+	// session-permission.tsx); codex neither yet
+	want := map[string]bool{"claude": true, "grok": true, "codex": false}
+	for name, on := range want {
+		c := capabilitiesOf(adapterFor(name))
+		if c.AskOptions != on || c.PlanReview != on {
+			t.Errorf("%s: ask_options=%v plan_review=%v, want %v", name, c.AskOptions, c.PlanReview, on)
+		}
+	}
+	if planToolOf("claude") != "ExitPlanMode" || planToolOf("grok") != "" || planToolOf("codex") != "" || planToolOf("nope") != "" {
+		t.Error("plan tools")
 	}
 }
 

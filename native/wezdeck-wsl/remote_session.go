@@ -813,19 +813,8 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		if title := readSessionTitle(path, agent); title != "" {
 			out["title"] = title
 		}
-		if agent == "grok" {
-			// Prefer disk truth: an unanswered Ask may outlive a flaky waiting flag.
-			if el := pendingGrokElicitation(path); el != nil {
-				out["elicitation"] = el
-			}
-			plan := map[string]any{}
-			if excerpt := grokPlanExcerpt(path, 2500); excerpt != "" {
-				plan["excerpt"] = excerpt
-			}
-			if pendingGrokPlanApproval(path) {
-				plan["awaiting_approval"] = true
-			}
-			if len(plan) > 0 {
+		if p, ok := adapterFor(agent).(planReader); ok {
+			if plan := p.PendingPlan(path); plan != nil {
 				out["plan"] = plan
 			}
 		}
@@ -843,7 +832,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			out["turn_output"] = t.turnOutput(e.TurnStarted)
 		}
 		if e.Status == "waiting" && e.WaitingKind == "permission_prompt" {
-			if p := pendingPermission(t.messages); p != nil {
+			if p := pendingPermission(t.messages, planToolOf(agent)); p != nil {
 				out["permission"] = p
 			}
 		}
@@ -862,7 +851,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		}
 		out["usage"] = usage
 		if a := adapterFor(agent); a != nil {
-			out["capabilities"] = a.Capabilities()
+			out["capabilities"] = capabilitiesOf(a)
 		}
 		if agent == "claude" {
 			// what its subagents (Agent tool, forked skills) are doing
@@ -882,9 +871,8 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	if err == nil {
 		out["screen"] = strings.TrimRight(string(screen), "\n ")
 	}
-	if agent == "claude" && path != "" {
-		if el := pendingClaudeElicitation(path); el != nil {
-			el.Review = askReviewing(string(screen))
+	if r, ok := adapterFor(agent).(askReader); ok && path != "" {
+		if el := r.PendingAsk(path, string(screen)); el != nil {
 			out["elicitation"] = el
 		}
 	}

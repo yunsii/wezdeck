@@ -285,3 +285,22 @@ func (t *transcript) feedGrok(raw []byte) {
 		t.setResult(line.ToolCallID, text())
 	}
 }
+
+// Grok's askReader / planReader parts (agent_adapter.go): questions and the
+// plan file live beside chat_history.jsonl; disk is the truth, since an
+// unanswered Ask may outlive a flaky waiting flag.
+func (grokAdapter) PendingAsk(path, _ string) *elicitation { return pendingGrokElicitation(path) }
+func (grokAdapter) PendingPlan(path string) map[string]any {
+	plan := map[string]any{}
+	if excerpt := grokPlanExcerpt(path, 2500); excerpt != "" {
+		plan["excerpt"] = excerpt
+	}
+	if pendingGrokPlanApproval(path) {
+		plan["awaiting_approval"] = true
+	}
+	if len(plan) == 0 {
+		return nil
+	}
+	return plan
+}
+func (grokAdapter) PlanTool() string { return "" }

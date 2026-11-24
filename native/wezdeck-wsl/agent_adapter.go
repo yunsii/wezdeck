@@ -25,8 +25,49 @@ type agentAdapter interface {
 	// ToolKind maps one of the agent's tool calls to a shared kind (toolKind*)
 	// so the phone summarises runs without knowing tool names.
 	ToolKind(name string, input map[string]any) string
-	// Capabilities tells the phone which agent-specific features apply.
+	// Capabilities declares what has no code of its own here (usage source,
+	// account limits, mid-turn input, titles). Features this package wires
+	// per agent are derived instead — see capabilitiesOf.
 	Capabilities() agentCaps
+}
+
+// Optional adapter parts. The session reply calls them through these
+// interfaces (never `if agent == "claude"`), and capabilitiesOf reports a
+// feature exactly when its part is implemented: a declaration can no longer
+// say "no" for a feature that works (2026-11-24: Claude showed 否 for Ask
+// options and plan review long after both reached the phone).
+
+// askReader: the agent's unanswered structured question (session.elicitation).
+type askReader interface {
+	// PendingAsk reads it from disk; screen is the pane's last lines (Claude
+	// marks a multi-question Ask that is on its review step).
+	PendingAsk(transcriptPath, screen string) *elicitation
+}
+
+// planReader: a plan waiting for approve / revise / exit, in either shape an
+// agent uses.
+type planReader interface {
+	// PendingPlan: plan state shown beside the thread (session.plan), or nil.
+	PendingPlan(transcriptPath string) map[string]any
+	// PlanTool: the tool whose permission prompt approves a plan, so the
+	// permission card shows it as a plan; "" when plans do not arrive that way.
+	PlanTool() string
+}
+
+// capabilitiesOf: the declared capabilities plus the derived ones.
+func capabilitiesOf(a agentAdapter) agentCaps {
+	caps := a.Capabilities()
+	_, caps.AskOptions = a.(askReader)
+	_, caps.PlanReview = a.(planReader)
+	return caps
+}
+
+// planToolOf: the plan-approving tool for this agent, or "".
+func planToolOf(agent string) string {
+	if p, ok := adapterFor(agent).(planReader); ok {
+		return p.PlanTool()
+	}
+	return ""
 }
 
 // Shared tool kinds (chatMessage.Kind).
@@ -46,9 +87,11 @@ const (
 // agentCaps: what the phone may offer for this agent (the session reply's
 // `capabilities`). New features add fields; old pages ignore them.
 type agentCaps struct {
-	// AskOptions: structured questions with tappable options (session.elicitation).
+	// AskOptions: structured questions with tappable options
+	// (session.elicitation). Derived: the adapter is an askReader.
 	AskOptions bool `json:"ask_options"`
-	// PlanReview: a plan waiting for approve / revise / exit.
+	// PlanReview: a plan waiting for approve / revise / exit. Derived: the
+	// adapter is a planReader.
 	PlanReview bool `json:"plan_review"`
 	// Usage: where context / spend comes from — "transcript" (per-reply usage),
 	// "token_count" (Codex events) or "none".
@@ -167,7 +210,7 @@ func (claudeAdapter) ToolKind(name string, input map[string]any) string {
 	return toolKindByName(claudeToolKinds, name, input)
 }
 func (claudeAdapter) Capabilities() agentCaps {
-	return agentCaps{AskOptions: true, PlanReview: true, Usage: "transcript", AccountLimits: true, MidTurnInput: "queue", Title: true}
+	return agentCaps{Usage: "transcript", AccountLimits: true, MidTurnInput: "queue", Title: true}
 }
 
 // Grok: ~/.grok/sessions/*/<id>/chat_history.jsonl; title from summary.json.
@@ -183,7 +226,7 @@ func (grokAdapter) ToolKind(name string, input map[string]any) string {
 	return toolKindByName(grokToolKinds, name, input)
 }
 func (grokAdapter) Capabilities() agentCaps {
-	return agentCaps{AskOptions: true, PlanReview: true, Usage: "none", MidTurnInput: "queue", Title: true}
+	return agentCaps{Usage: "none", MidTurnInput: "queue", Title: true}
 }
 
 // Codex: ~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl; no title yet.

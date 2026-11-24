@@ -65,3 +65,16 @@ func askReviewing(screen string) bool {
 	}
 	return strings.Contains(tail, "Submit answers")
 }
+
+// Claude's askReader / planReader parts (agent_adapter.go). Its plans arrive
+// as the ExitPlanMode permission prompt, so there is no plan state beside
+// the thread.
+func (claudeAdapter) PendingAsk(path, screen string) *elicitation {
+	el := pendingClaudeElicitation(path)
+	if el != nil {
+		el.Review = askReviewing(screen)
+	}
+	return el
+}
+func (claudeAdapter) PendingPlan(string) map[string]any { return nil }
+func (claudeAdapter) PlanTool() string                  { return "ExitPlanMode" }

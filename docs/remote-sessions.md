@@ -221,7 +221,14 @@ and the web page only see the shared contract. Each agent is one file —
 | `Feed(t, line)` | one transcript line → shared messages / usage |
 | `Title(path)` | agent-generated or `/rename`'d title |
 | `ToolKind(name, input)` | the shared kind of a tool call (below) |
-| `Capabilities()` | which agent-specific features the phone may offer |
+| `Capabilities()` | declared features with no code here (usage source, account limits, mid-turn input, titles) |
+
+Optional parts, called through their interface (never `if agent == …`):
+`askReader.PendingAsk(path, screen)` (the unanswered Ask) and
+`planReader` (`PendingPlan(path)`: plan state beside the thread;
+`PlanTool()`: the tool whose permission prompt approves a plan, Claude's
+`ExitPlanMode`). `ask_options` / `plan_review` are derived from them
+(`capabilitiesOf`), so 会话信息 cannot say 否 for a feature that works.
 
 A new agent is one more file plus an entry in `agentAdapters`.
 
@@ -238,8 +245,8 @@ knows, grouped `session` / `location` / `transcript` / `state` as
 
 | Field | Meaning | claude / grok / codex |
 |---|---|---|
-| `ask_options` | structured questions with tappable options | ✓ / ✓ / – |
-| `plan_review` | a plan waiting for approve / revise / exit | ✓ / ✓ / – |
+| `ask_options` | structured questions with tappable options (derived: `askReader`) | ✓ / ✓ / – |
+| `plan_review` | a plan waiting for approve / revise / exit (derived: `planReader`) | ✓ / ✓ / – |
 | `usage` | where context / spend comes from | `transcript` / `none` / `token_count` |
 | `account_limits` | 5 h / 7 d limits from the status line | ✓ / – / – |
 | `mid_turn_input` | what a message sent mid-turn does | `queue` / `queue` / `steer` |
