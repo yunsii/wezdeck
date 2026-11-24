@@ -160,7 +160,9 @@ drops its token and renumbers the rest (`composer-images.ts`,
 `composer-tokens.ts`). Thumbnails carry their 图片N, in the composer (a
 tap on the number puts the token at the caret again, `composer-picked.tsx`)
 and on the sent message, where each `[图片N]` in the text is a chip that
-opens that picture (`chat-attachments.tsx`). Not Claude Code's own `[Image #N]`: that numbering
+opens that picture (`chat-attachments.tsx`). In the composer a token is
+one unit: Backspace / Delete next to it removes all of it, ← / → step over
+it (`tokenKey`); the image stays (its × removes both). Not Claude Code's own `[Image #N]`: that numbering
 runs per conversation at the desk, and the same spelling could be read as
 one of its pasted images; `图片N` is per message, mapped by the list
 above. Host side (`remote_upload.go`): types limited to

@@ -29,6 +29,7 @@ import { CommandPanel } from './session-commands'
 import { useSpaceToFocus } from './composer-keys'
 import { MAX_IMAGES, usePickedImages } from './composer-images'
 import { PickedImages } from './composer-picked'
+import { tokenKey } from './composer-tokens'
 
 export type Outgoing = {
   text: string
@@ -414,7 +415,7 @@ export function ComposerBox({
         </p>
       ) : null}
       <div
-        data-field
+        data-text-field
         className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5"
       >
         <label htmlFor="session-composer" className="sr-only">
@@ -431,6 +432,7 @@ export function ComposerBox({
           }}
           onChange={(event) => composer.setText(event.target.value)}
           onKeyDown={(event) => {
+            if (tokenKey(event, composer.setText)) return
             if (event.key !== 'Enter') return
             // the IME's Enter picks a candidate (拼音 → 汉字), it is not a send
             if (event.nativeEvent.isComposing || event.keyCode === 229) return

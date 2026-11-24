@@ -170,7 +170,7 @@ function SearchBox({
   const { t } = useLingui()
   return (
     <label
-      data-field
+      data-text-field
       className="flex min-h-11 flex-1 items-center gap-2 rounded-xl bg-brand-deck px-3 text-body md:min-h-9 md:text-body"
     >
       <Search size={15} aria-hidden className="text-brand-label" />

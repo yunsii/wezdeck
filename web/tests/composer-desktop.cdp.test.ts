@@ -187,6 +187,11 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
       .toBe('第一行\n第二行 [图片1] [图片1] ')
     await caretAtEnd(box)
     await box.fill('第一行\n第二行 [图片1] ')
+    // Backspace takes the space, then the whole token in one press
+    await page.keyboard.press('Backspace')
+    await page.keyboard.press('Backspace')
+    expect(await box.inputValue()).toBe('第一行\n第二行 ')
+    await box.fill('第一行\n第二行 [图片1] ')
     await page.getByRole('button', { name: '移除图片' }).click()
     await expect.poll(() => box.inputValue()).toBe('第一行\n第二行')
 

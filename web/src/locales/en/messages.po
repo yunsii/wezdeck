@@ -27,7 +27,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:125
+#: src/features/session-composer.tsx:126
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -239,7 +239,7 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:256
+#: src/features/session-list.tsx:258
 #: src/features/session-split.tsx:91
 msgid "Agent sessions"
 msgstr "Agent sessions"
@@ -256,7 +256,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:196
+#: src/features/session-list.tsx:198
 msgctxt "filter"
 msgid "All"
 msgstr "All"
@@ -440,7 +440,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:168
+#: src/features/session-composer.tsx:169
 msgid "cancel"
 msgstr "cancel"
 
@@ -530,7 +530,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:201
+#: src/features/session-composer.tsx:202
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -599,7 +599,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:297
+#: src/features/session-composer.tsx:298
 msgid "Commands"
 msgstr "Commands"
 
@@ -615,11 +615,11 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:271
+#: src/features/session-composer.tsx:272
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:167
+#: src/features/session-composer.tsx:168
 msgid "confirm"
 msgstr "confirm"
 
@@ -681,7 +681,7 @@ msgstr "context usage"
 #~ msgid "Control"
 #~ msgstr "Control"
 
-#: src/features/session-composer.tsx:79
+#: src/features/session-composer.tsx:80
 #: src/features/session-info.tsx:233
 msgid "Copied"
 msgstr "Copied"
@@ -703,7 +703,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:79
+#: src/features/session-composer.tsx:80
 msgid "Copy"
 msgstr "Copy"
 
@@ -715,7 +715,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:71
+#: src/features/session-composer.tsx:72
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1051,7 +1051,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:304
+#: src/features/session-composer.tsx:305
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1144,7 +1144,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:211
+#: src/features/session-list.tsx:213
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1174,7 +1174,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:322
+#: src/features/session-composer.tsx:323
 msgid "Images"
 msgstr "Images"
 
@@ -1241,7 +1241,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:169
+#: src/features/session-composer.tsx:170
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1289,7 +1289,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:285
+#: src/features/session-composer.tsx:286
 msgid "Keys"
 msgstr "Keys"
 
@@ -1403,7 +1403,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:251
+#: src/features/session-list.tsx:253
 #: src/features/tickets-view.tsx:283
 msgid "Loading…"
 msgstr "Loading…"
@@ -1442,11 +1442,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:462
+#: src/features/session-composer.tsx:464
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:421
+#: src/features/session-composer.tsx:422
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1483,12 +1483,12 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:234
+#: src/features/session-list.tsx:236
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:201
+#: src/features/session-list.tsx:203
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1580,11 +1580,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:176
+#: src/features/session-list.tsx:178
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:179
+#: src/features/session-list.tsx:181
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1608,11 +1608,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:129
+#: src/features/session-list.tsx:131
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:178
+#: src/features/session-list.tsx:180
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1672,7 +1672,7 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:174
+#: src/features/session-list.tsx:176
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
@@ -1948,8 +1948,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:209
-#: src/features/session-composer.tsx:279
+#: src/features/session-composer.tsx:210
+#: src/features/session-composer.tsx:280
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -2308,7 +2308,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:67
-#: src/features/session-composer.tsx:471
+#: src/features/session-composer.tsx:473
 msgid "Send"
 msgstr "Send"
 
@@ -2320,7 +2320,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:280
+#: src/features/session-composer.tsx:281
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2371,12 +2371,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:77
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:184
+#: src/features/session-list.tsx:186
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:224
+#: src/features/session-list.tsx:226
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2421,7 +2421,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:292
+#: src/features/session-composer.tsx:293
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2489,7 +2489,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:424
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:188
+#: src/features/session-list.tsx:190
 #: src/features/tickets-view.tsx:208
 msgid "Status"
 msgstr "Status"
@@ -2548,7 +2548,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:195
+#: src/features/session-composer.tsx:196
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2790,7 +2790,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:309
+#: src/features/session-composer.tsx:310
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2858,7 +2858,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:194
+#: src/features/session-composer.tsx:195
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2888,7 +2888,7 @@ msgstr "Underscore"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:115
+#: src/features/session-composer.tsx:116
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
@@ -3119,7 +3119,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:206
+#: src/features/session-list.tsx:208
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"

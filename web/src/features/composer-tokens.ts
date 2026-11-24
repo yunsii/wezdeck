@@ -44,3 +44,64 @@ export function dropToken(text: string, n: number) {
     })
   return gone
 }
+
+const TOKEN = /\[图片\d+\]/g
+
+/**
+ * The [图片N] token the caret touches: ending at `pos` (Backspace, ←) or
+ * starting at it (Delete, →); [start, end) or null. Tokens act as one unit
+ * like a chat app's mention: one key removes or steps over the whole of it
+ * instead of a character at a time.
+ */
+export function tokenAt(text: string, pos: number, side: 'before' | 'after') {
+  for (const match of text.matchAll(TOKEN)) {
+    const start = match.index
+    const end = start + match[0].length
+    if (side === 'before' ? end === pos : start === pos)
+      return [start, end] as const
+    // the caret inside a token (a click landed there): the whole token
+    if (start < pos && pos < end) return [start, end] as const
+  }
+  return null
+}
+
+/**
+ * Backspace / Delete next to a [图片N] removes the whole token, ← / → step
+ * over it (the composer's keydown). The image stays: its thumbnail's number
+ * puts the token back, its × removes both. Returns whether it handled the
+ * key.
+ */
+export function tokenKey(
+  event: {
+    key: string
+    shiftKey: boolean
+    altKey: boolean
+    ctrlKey: boolean
+    metaKey: boolean
+    nativeEvent: { isComposing: boolean }
+    currentTarget: HTMLTextAreaElement
+    preventDefault: () => void
+  },
+  setText: (text: string) => void,
+) {
+  const keys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight']
+  if (!keys.includes(event.key) || event.nativeEvent.isComposing) return false
+  if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey)
+    return false
+  const box = event.currentTarget
+  if (box.selectionStart !== box.selectionEnd) return false
+  const pos = box.selectionStart
+  const back = event.key === 'Backspace' || event.key === 'ArrowLeft'
+  const hit = tokenAt(box.value, pos, back ? 'before' : 'after')
+  if (!hit) return false
+  const [start, end] = hit
+  event.preventDefault()
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    const to = event.key === 'ArrowLeft' ? start : end
+    box.setSelectionRange(to, to)
+    return true
+  }
+  setText(box.value.slice(0, start) + box.value.slice(end))
+  requestAnimationFrame(() => box.setSelectionRange(start, start))
+  return true
+}

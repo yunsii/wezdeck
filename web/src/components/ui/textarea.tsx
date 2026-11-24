@@ -23,7 +23,7 @@ export function Textarea({
   return (
     <textarea
       // a form field draws the shared field edge (base.css "Edges")
-      data-field={variant === 'field' ? '' : undefined}
+      data-text-field={variant === 'field' ? '' : undefined}
       className={cn(looks[variant], className)}
       {...props}
     />
