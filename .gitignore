@@ -12,6 +12,8 @@ wezterm-x/plugins/.external/
 native/picker/bin/
 native/picker/picker
 native/wezdeck-wsl/bin/
+# `go build ./...` run inside the package writes its binary here
+native/wezdeck-wsl/wezdeck-wsl
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 
