@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr "、"
 
-#: src/features/chat-thread.tsx:411
+#: src/features/chat-thread.tsx:414
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -135,7 +135,7 @@ msgstr "{unread} 条新消息"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} 个等待中"
 
-#: src/features/chat-turn.tsx:121
+#: src/features/chat-turn.tsx:137
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -637,7 +637,7 @@ msgstr "已发送命令 {command}"
 msgid "Commands"
 msgstr "命令"
 
-#: src/features/chat-turn.tsx:116
+#: src/features/chat-turn.tsx:132
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
 
@@ -695,11 +695,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:395
+#: src/features/chat-thread.tsx:398
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:396
+#: src/features/chat-thread.tsx:399
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -939,7 +939,7 @@ msgstr "目录"
 #~ msgstr "已完成"
 
 #: src/features/chat-tools.tsx:83
-#: src/features/chat-turn.tsx:130
+#: src/features/chat-turn.tsx:146
 msgid "Done"
 msgstr "已完成"
 
@@ -947,7 +947,7 @@ msgstr "已完成"
 msgid "Done ({doneCount})"
 msgstr "已完成（{doneCount}）"
 
-#: src/features/chat-turn.tsx:131
+#: src/features/chat-turn.tsx:147
 msgid "done {when}"
 msgstr "{when} 完成"
 
@@ -2016,7 +2016,7 @@ msgstr "填进消息，交给这个 agent"
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
-#: src/features/chat-thread.tsx:438
+#: src/features/chat-thread.tsx:441
 msgid "Queued messages"
 msgstr "排队中的消息"
 
@@ -2924,7 +2924,7 @@ msgstr "token 总量"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
 
-#: src/features/chat-turn.tsx:130
+#: src/features/chat-turn.tsx:146
 msgid "Took {took}"
 msgstr "用时 {took}"
 
@@ -3225,7 +3225,7 @@ msgstr "Worker 请求"
 msgid "working"
 msgstr "运行中"
 
-#: src/features/chat-turn.tsx:116
+#: src/features/chat-turn.tsx:132
 msgid "Working"
 msgstr "运行中"
 

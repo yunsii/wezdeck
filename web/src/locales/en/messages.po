@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:411
+#: src/features/chat-thread.tsx:414
 msgid "· summary"
 msgstr "· summary"
 
@@ -135,7 +135,7 @@ msgstr "{unread} new"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/chat-turn.tsx:121
+#: src/features/chat-turn.tsx:137
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -637,7 +637,7 @@ msgstr "Command sent: {command}"
 msgid "Commands"
 msgstr "Commands"
 
-#: src/features/chat-turn.tsx:116
+#: src/features/chat-turn.tsx:132
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -695,11 +695,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:395
+#: src/features/chat-thread.tsx:398
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:396
+#: src/features/chat-thread.tsx:399
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -939,7 +939,7 @@ msgstr "Directory"
 #~ msgstr "done"
 
 #: src/features/chat-tools.tsx:83
-#: src/features/chat-turn.tsx:130
+#: src/features/chat-turn.tsx:146
 msgid "Done"
 msgstr "Done"
 
@@ -947,7 +947,7 @@ msgstr "Done"
 msgid "Done ({doneCount})"
 msgstr "Done ({doneCount})"
 
-#: src/features/chat-turn.tsx:131
+#: src/features/chat-turn.tsx:147
 msgid "done {when}"
 msgstr "done {when}"
 
@@ -2016,7 +2016,7 @@ msgstr "Put into the message for this agent"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/chat-thread.tsx:438
+#: src/features/chat-thread.tsx:441
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -2924,7 +2924,7 @@ msgstr "Tokens"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
 
-#: src/features/chat-turn.tsx:130
+#: src/features/chat-turn.tsx:146
 msgid "Took {took}"
 msgstr "Took {took}"
 
@@ -3225,7 +3225,7 @@ msgstr "Worker requests"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-turn.tsx:116
+#: src/features/chat-turn.tsx:132
 msgid "Working"
 msgstr "Working"
 
