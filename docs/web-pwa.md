@@ -116,8 +116,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 5. **Wide screens (≥ 768 px, 2026-11-23)**: no phone layout blown up.
    会话 and 工单 are the same split (`session-split.tsx`): the list
    sticky on the left with its own scroll, the open conversation beside it
-   on the page scroll (so the chat's pin-to-bottom is unchanged), capped at
-   900 px; the current row is highlighted, picking another replaces the
+   on the page scroll (so the chat's pin-to-bottom is unchanged), filling
+   the rest of the width (no 900 px cap since the list has its own divider,
+   2026-11-24); the current row is highlighted, picking another replaces the
    history entry, j / k move through the list's order and the URL follows;
    no back button. 我的 shows its groups on the left and the chosen one
    beside them (default 连接; group links replace). Sheets become a centred

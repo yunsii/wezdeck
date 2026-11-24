@@ -227,7 +227,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             </div>
           </Link>
           <nav
-            className="grid min-h-0 content-start gap-1.5 overflow-y-auto px-2.5"
+            className="grid min-h-0 content-start gap-1.5 overflow-y-auto px-2.5 py-1"
             aria-label={t`Console navigation`}
           >
             {sidebar.map((item) => {

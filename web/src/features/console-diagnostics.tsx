@@ -166,17 +166,17 @@ export function ConsoleDiagnosticsPage() {
     return (
       <div className="grid content-start gap-3">
         <h1 className="text-body font-semibold">{t`Diagnostics`}</h1>
-        <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-5">
+        <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Log stream`}
-            className="sticky top-4 grid h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] [scrollbar-gutter:stable_both-edges]"
+            className="sticky top-4 grid h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
           >
             {filters}
             {list}
           </aside>
           <div
             data-testid="diagnostics-pane"
-            className="max-w-[900px] min-w-0 rounded-2xl bg-brand-surface p-5"
+            className="ml-[var(--page-x)] min-w-0 rounded-2xl bg-brand-surface p-5"
           >
             {detail ?? (
               <p className="py-10 text-center text-caption text-brand-muted">

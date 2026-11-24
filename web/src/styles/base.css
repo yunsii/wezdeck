@@ -148,7 +148,10 @@ textarea,
 .bg-brand-surface:where([class*='rounded']) {
   outline: 1px solid var(--brand-card-edge);
   /* outside the box: inside, a row's own background (a selected session,
-     the swipe-to-clear layer) painted over it and the card lost its sides */
+     the swipe-to-clear layer) painted over it and the card lost its sides.
+     A scroll container clips what is outside its children: one holding
+     cards at its edge needs 1 px+ of padding there (the sidebar nav, the
+     split lists' foot) */
   outline-offset: 0;
 }
 [data-text-field] {

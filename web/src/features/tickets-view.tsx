@@ -340,10 +340,10 @@ export function TicketsView({
           current={current}
           onGo={(next) => open(next, true)}
         />
-        <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start gap-5">
+        <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Collab tickets`}
-            className="vt-split-list sticky top-4 grid h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] [scrollbar-gutter:stable_both-edges]"
+            className="vt-split-list sticky top-4 grid h-[calc(100dvh-4.25rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
           >
             <SearchBox value={query} onChange={setQuery} />
             <TicketKeys
@@ -355,7 +355,7 @@ export function TicketsView({
             />
           </aside>
           <div
-            className="vt-split-pane max-w-[900px] min-w-0 rounded-2xl bg-brand-surface p-5"
+            className="vt-split-pane ml-[var(--page-x)] min-w-0 rounded-2xl bg-brand-surface p-5"
             data-testid="ticket-pane"
           >
             {current ? (

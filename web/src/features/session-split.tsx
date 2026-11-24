@@ -86,15 +86,15 @@ function SplitView({ id }: { id?: string }) {
   useListKeys(id ?? '')
   usePickDefault(id)
   return (
-    <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start gap-5">
+    <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
       <aside
         aria-label={t`Agent sessions`}
-        className="vt-split-list sticky top-4 h-[calc(100dvh-4.25rem)] overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] [scrollbar-gutter:stable_both-edges]"
+        className="vt-split-list sticky top-4 h-[calc(100dvh-4.25rem)] overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
       >
         <SessionList selected={id ?? ''} />
       </aside>
       <div
-        className="vt-split-pane min-w-0 max-w-[900px]"
+        className="vt-split-pane min-w-0 pl-[var(--page-x)]"
         data-testid="session-pane"
       >
         {id ? (
