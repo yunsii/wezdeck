@@ -47,11 +47,28 @@ function ToBackground({ onClick }: { onClick: () => void }) {
       data-testid="to-background"
       title={t`Send Ctrl+B: the running command keeps going in the background and the agent carries on`}
       onClick={onClick}
-      // the row is h-5 (leading-5) and its panel clips: stay within it
-      className="inline-flex h-5 shrink-0 items-center rounded-full bg-brand-surface px-2 text-meta leading-none text-brand-text"
+      className={BG_PILL}
     >
       {t`Run in background`}
     </Button>
+  )
+}
+
+// the row is h-5 (leading-5) and its panel clips: stay within it
+const BG_PILL =
+  'inline-flex h-5 shrink-0 items-center rounded-full bg-brand-surface px-2 font-sans text-meta leading-none text-brand-text'
+
+/**
+ * The corner 转到后台 sits on (Disclosure pins it top-right): an invisible
+ * float of the same size inside the command text, so the first line stops
+ * short of it and later lines run the full width.
+ */
+function BackgroundSpace() {
+  const { t } = useLingui()
+  return (
+    <span aria-hidden className={cn(BG_PILL, 'invisible float-right ml-2')}>
+      {t`Run in background`}
+    </span>
   )
 }
 
@@ -106,7 +123,7 @@ function ToolRow({
       className="min-w-0 rounded-lg"
       onOpenChange={setOpened}
       chevron={false}
-      // 转到后台 on this call's own line, beside its trigger
+      // 转到后台 pinned top-right; the command text flows around it
       aside={onBackground ? <ToBackground onClick={onBackground} /> : undefined}
       triggerClassName="flex min-w-0 items-start gap-1 px-1 font-mono text-meta leading-5 text-brand-muted"
       title={
@@ -123,12 +140,14 @@ function ToolRow({
               <span aria-hidden className={cn(LINE, 'px-1')}>
                 <span className="h-3.5 w-px bg-brand-label/50" />
               </span>
-              <span className="min-w-0 truncate text-brand-text group-data-[panel-open]:break-all group-data-[panel-open]:whitespace-pre-wrap">
+              <span className="min-w-0 flex-1 truncate text-brand-text group-data-[panel-open]:break-all group-data-[panel-open]:whitespace-pre-wrap">
+                {onBackground ? <BackgroundSpace /> : null}
                 {target}
               </span>
             </>
           ) : (
-            <span className="min-w-0 truncate group-data-[panel-open]:break-all group-data-[panel-open]:whitespace-pre-wrap">
+            <span className="min-w-0 flex-1 truncate group-data-[panel-open]:break-all group-data-[panel-open]:whitespace-pre-wrap">
+              {onBackground ? <BackgroundSpace /> : null}
               {tool.text}
             </span>
           )}

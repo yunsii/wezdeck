@@ -8,8 +8,9 @@ import { cn } from '#/lib/utils'
  * A titled section that folds (instead of a bare <details>, which eslint
  * forbids outside components/): the title row with a › that turns, the
  * content below while open. The trigger is a `group`, so the title can react
- * to the state with `group-data-[panel-open]:…`. `aside` follows the title
- * (wrapping under a title that fills the row), outside the trigger (a control there would otherwise be a
+ * to the state with `group-data-[panel-open]:…`. `aside` is pinned to the
+ * title row's top-right (the title floats a same-size spacer there so its
+ * text flows around it), outside the trigger (a control there would otherwise be a
  * button inside a button); the panel below keeps the full width.
  */
 export function Disclosure({
@@ -23,7 +24,8 @@ export function Disclosure({
   ...props
 }: Omit<ComponentProps<typeof BaseCollapsible.Root>, 'title' | 'children'> & {
   title: React.ReactNode
-  /** a control at the title row's end, beside (not inside) the trigger */
+  /** a control pinned at the title row's top-right, outside the trigger; the
+   * title must float a same-size spacer (`float-right`) to keep text off it */
   aside?: React.ReactNode
   /** false: the title lays out its own row (a divider line, say) */
   chevron?: boolean
@@ -53,11 +55,12 @@ export function Disclosure({
   return (
     <BaseCollapsible.Root className={className} {...props}>
       {aside ? (
-        // flows: the aside follows the title, and wraps under it when the
-        // title needs the whole row (a long command) instead of squeezing it
-        <div className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1">
-          <div className="max-w-full min-w-0 flex-initial">{trigger}</div>
-          {aside}
+        // pinned to the row's top-right; the title keeps the full width and
+        // reserves the corner itself (a float spacer), so long text flows
+        // around it and uses the whole row from its second line
+        <div className="relative min-w-0">
+          {trigger}
+          <div className="absolute top-0 right-0 flex">{aside}</div>
         </div>
       ) : (
         trigger

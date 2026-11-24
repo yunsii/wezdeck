@@ -56,7 +56,7 @@ msgstr "还有 {count} 个等你"
 #~ msgid "{count} queued, the agent takes them when it is ready"
 #~ msgstr "{count} 条排队中，Agent 空出手后处理"
 
-#: src/features/chat-tools.tsx:186
+#: src/features/chat-tools.tsx:205
 msgid "{count} tool calls"
 msgstr "共 {count} 次工具调用"
 
@@ -68,7 +68,7 @@ msgstr "{days} 天前"
 #~ msgid "{doneCount} done"
 #~ msgstr "{doneCount} 个已完成"
 
-#: src/features/chat-tools.tsx:239
+#: src/features/chat-tools.tsx:258
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
@@ -525,7 +525,7 @@ msgstr "能力（{capabilityCount}）"
 msgid "Category"
 msgstr "分类"
 
-#: src/features/chat-tools.tsx:183
+#: src/features/chat-tools.tsx:202
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
@@ -968,7 +968,7 @@ msgstr "目录"
 #~ msgid "done"
 #~ msgstr "已完成"
 
-#: src/features/chat-tools.tsx:83
+#: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:146
 msgid "Done"
 msgstr "已完成"
@@ -2079,11 +2079,11 @@ msgstr "一周以上没动静（{count}）"
 msgid "Quit plan"
 msgstr "退出计划"
 
-#: src/features/chat-tools.tsx:184
+#: src/features/chat-tools.tsx:203
 msgid "ran {commands} commands"
 msgstr "运行 {commands} 条命令"
 
-#: src/features/chat-tools.tsx:185
+#: src/features/chat-tools.tsx:204
 msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
@@ -2227,7 +2227,7 @@ msgstr "{fiveReset}重置"
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
-#: src/features/chat-tools.tsx:143
+#: src/features/chat-tools.tsx:162
 msgid "Result"
 msgstr "结果"
 
@@ -2305,7 +2305,8 @@ msgstr "运行失败"
 msgid "run finished"
 msgstr "运行结束"
 
-#: src/features/chat-tools.tsx:53
+#: src/features/chat-tools.tsx:52
+#: src/features/chat-tools.tsx:70
 msgid "Run in background"
 msgstr "转到后台"
 
@@ -2318,7 +2319,7 @@ msgstr "在主机上运行下面的命令，再到那台设备上打开它生成
 msgid "running"
 msgstr "运行中"
 
-#: src/features/chat-tools.tsx:80
+#: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
 #: src/features/console-shell.tsx:414
 msgid "Running"

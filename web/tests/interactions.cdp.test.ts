@@ -117,7 +117,7 @@ describe('Interaction debugging page', () => {
     await context.close()
   })
 
-  it('转到后台 follows a short command and wraps under a long one', async () => {
+  it('转到后台 sits top-right; the command flows around it', async () => {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
       locale: 'zh-CN',
@@ -128,28 +128,62 @@ describe('Interaction debugging page', () => {
     await detail.waitFor({ timeout: 20_000 })
     const buttons = detail.getByTestId('to-background')
     await expect.poll(() => buttons.count()).toBe(2)
+    // open the long command: its text wraps (pre-wrap) under the button
+    const long = detail.locator('button[aria-expanded]', {
+      hasText: 'lingui extract',
+    })
+    await expect
+      .poll(async () => {
+        await long.click()
+        return long.getAttribute('aria-expanded')
+      })
+      .toBe('true')
     const layout = await detail.evaluate((root) =>
       [...root.querySelectorAll('[data-testid=to-background]')].map((b) => {
-        const row = b.parentElement!
-        const title = row.firstElementChild!.getBoundingClientRect()
+        const row = b.parentElement!.parentElement!.getBoundingClientRect()
         const button = b.getBoundingClientRect()
+        const trigger = b.parentElement!.parentElement!.querySelector(
+          'button[aria-expanded]',
+        )!
+        const spacer = trigger.querySelector('.float-right')!
+        // the command's own text, not the invisible spacer's
+        const walker = document.createTreeWalker(trigger, NodeFilter.SHOW_TEXT)
+        const lines: Array<DOMRect> = []
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          if (spacer.contains(n)) continue
+          const range = document.createRange()
+          range.selectNodeContents(n)
+          lines.push(...range.getClientRects())
+        }
+        const hits = (r: DOMRect) =>
+          r.width > 0 &&
+          r.top < button.bottom - 1 &&
+          r.bottom > button.top + 1 &&
+          r.right > button.left + 1 &&
+          r.left < button.right - 1
         return {
-          sameLine: Math.abs(button.top - title.top) < 4,
-          gap: button.left - title.right,
-          below: button.top >= title.bottom - 1,
-          titleWidth: title.width,
-          rowWidth: row.getBoundingClientRect().width,
+          corner:
+            Math.abs(button.top - row.top) < 2 &&
+            Math.abs(button.right - row.right) < 2,
+          spacerMatches:
+            Math.abs(spacer.getBoundingClientRect().width - button.width) < 1,
+          // some text runs under the button, past its left edge
+          flowsUnder: lines.some(
+            (r) => r.top >= button.bottom - 1 && r.right > button.left + 8,
+          ),
+          // nothing overlaps the button
+          clear: !lines.some(hits),
         }
       }),
     )
-    const [short, long] = layout
-    // short: right after the command, not pushed to the row's far end
-    expect(short.sameLine).toBe(true)
-    expect(short.gap).toBeGreaterThanOrEqual(0)
-    expect(short.gap).toBeLessThan(16)
-    // long: the command keeps the whole row, the button goes under it
-    expect(long.below).toBe(true)
-    expect(long.titleWidth).toBeGreaterThan(long.rowWidth - 2)
+    const [short, longRow] = layout
+    expect(short.corner).toBe(true)
+    expect(short.spacerMatches).toBe(true)
+    expect(short.clear).toBe(true)
+    expect(longRow.corner).toBe(true)
+    expect(longRow.spacerMatches).toBe(true)
+    expect(longRow.clear).toBe(true)
+    expect(longRow.flowsUnder).toBe(true)
     await buttons.first().click()
     await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
