@@ -5,7 +5,7 @@
 // (copyTextLater). One toast says what landed or why not.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, Copy } from 'lucide-react'
+import { Check, Hash } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -72,8 +72,9 @@ export function useCopySessionReference(): CopyFn {
 }
 
 /**
- * The row's copy key, a sibling of the row link (no button inside an a): on
- * a phone always shown, wide on hover / focus. The row's container needs
+ * The row's copy key — # for "reference", not the generic copy glyph — a
+ * sibling of the row link (no button inside an a): on a phone always shown,
+ * wide on hover / focus. The row's container needs
  * `group/row relative` and room at its bottom-right.
  */
 export function RowCopyButton({ id, copy }: { id: string; copy: CopyFn }) {
@@ -94,15 +95,16 @@ export function RowCopyButton({ id, copy }: { id: string; copy: CopyFn }) {
         })
       }}
       className={cn(
-        'absolute right-1 bottom-1 grid size-10 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running md:size-8',
+        // under the time, right edges lined up (the row's px-4)
+        'absolute right-1 bottom-1 grid size-10 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running md:right-2 md:size-7',
         !copied &&
           'md:opacity-0 md:group-hover/row:opacity-100 md:focus-visible:opacity-100',
       )}
     >
       {copied ? (
-        <Check size={15} className="text-brand-done" aria-hidden />
+        <Check size={14} className="text-brand-done" aria-hidden />
       ) : (
-        <Copy size={15} aria-hidden />
+        <Hash size={14} aria-hidden />
       )}
     </Button>
   )
