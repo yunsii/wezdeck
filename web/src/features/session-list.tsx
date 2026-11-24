@@ -5,11 +5,13 @@
 // sit in a band on top; the filter mirrors Alt+/ (Tab cycles the status).
 import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
+import { FolderGit2, GitFork } from 'lucide-react'
 import { useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { StickyBar } from '#/components/deck/sticky-bar'
+import { SplitColumn } from '#/components/deck/split-column'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -150,7 +152,11 @@ function SessionRow({
   )
 }
 
-export function SessionList({ selected }: { selected?: string } = {}) {
+/** split: the wide list column — title and filter in a fixed head (SplitColumn) */
+export function SessionList({
+  selected,
+  split = false,
+}: { selected?: string; split?: boolean } = {}) {
   const { t } = useLingui()
   const sessions = useSessions()
   const [filter, setFilterState] = useState<SessionFilter>(storedFilter)
@@ -187,45 +193,47 @@ export function SessionList({ selected }: { selected?: string } = {}) {
           ? t`No idle sessions.`
           : t`No agent sessions are running.`
 
-  return (
-    <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
-      <h1 className="hidden text-body font-semibold md:block">
-        {t({ message: 'Sessions', context: 'nav' })}
-      </h1>
-      <StickyBar>
-        <div className="flex items-center gap-2">
-          <Segmented
-            label={t`Status`}
-            value={filter}
-            onChange={setFilter}
-            className="min-w-0 flex-1 md:max-w-md"
-            dense
-            options={[
-              {
-                value: 'all',
-                label: t({ message: 'All', context: 'filter' }),
-                count: allCount,
-              },
-              {
-                value: 'waiting',
-                label: t({ message: 'Needs you', context: 'filter' }),
-                count: waitingCount,
-              },
-              {
-                value: 'running',
-                label: t({ message: 'Working', context: 'filter' }),
-                count: runningCount,
-              },
-              {
-                value: 'idle',
-                label: t({ message: 'Idle', context: 'filter' }),
-                count: idleCount,
-              },
-            ]}
-          />
-          <NewSessionButton />
-        </div>
-      </StickyBar>
+  const title = (
+    <h1 className="hidden text-body font-semibold md:block">
+      {t({ message: 'Sessions', context: 'nav' })}
+    </h1>
+  )
+  const filterRow = (
+    <div className="flex items-center gap-2">
+      <Segmented
+        label={t`Status`}
+        value={filter}
+        onChange={setFilter}
+        className="min-w-0 flex-1 md:max-w-md"
+        dense
+        options={[
+          {
+            value: 'all',
+            label: t({ message: 'All', context: 'filter' }),
+            count: allCount,
+          },
+          {
+            value: 'waiting',
+            label: t({ message: 'Needs you', context: 'filter' }),
+            count: waitingCount,
+          },
+          {
+            value: 'running',
+            label: t({ message: 'Working', context: 'filter' }),
+            count: runningCount,
+          },
+          {
+            value: 'idle',
+            label: t({ message: 'Idle', context: 'filter' }),
+            count: idleCount,
+          },
+        ]}
+      />
+      <NewSessionButton />
+    </div>
+  )
+  const body = (
+    <>
       {sessions.isError ? (
         <p
           role="status"
@@ -273,7 +281,9 @@ export function SessionList({ selected }: { selected?: string } = {}) {
               className="overflow-hidden rounded-2xl bg-brand-surface"
               data-repo={repo.label}
             >
-              <h2 className="border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label">
+              {/* repo: a git folder; worktree: a fork of that checkout */}
+              <h2 className="flex items-center gap-1.5 border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label">
+                <FolderGit2 size={14} aria-hidden className="shrink-0" />
                 {repo.label}
               </h2>
               {repo.worktrees.map((wt) => {
@@ -282,7 +292,8 @@ export function SessionList({ selected }: { selected?: string } = {}) {
                 return (
                   <div key={wt.key} data-worktree={wt.label}>
                     {showWt ? (
-                      <p className="border-b border-brand-edge px-4 py-1.5 text-meta text-brand-label">
+                      <p className="flex items-center gap-1.5 border-b border-brand-edge py-1.5 pr-4 pl-5 text-meta text-brand-label">
+                        <GitFork size={12} aria-hidden className="shrink-0" />
                         {wt.label}
                       </p>
                     ) : null}
@@ -304,6 +315,27 @@ export function SessionList({ selected }: { selected?: string } = {}) {
         </div>
       )}
       {filter === 'all' ? <OpenTodos /> : null}
+    </>
+  )
+  if (split)
+    return (
+      <SplitColumn
+        label={t`Agent sessions`}
+        head={
+          <>
+            {title}
+            {filterRow}
+          </>
+        }
+      >
+        {body}
+      </SplitColumn>
+    )
+  return (
+    <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
+      {title}
+      <StickyBar>{filterRow}</StickyBar>
+      {body}
     </div>
   )
 }

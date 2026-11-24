@@ -29,6 +29,7 @@ import { TicketKeys } from './ticket-keys'
 import { CopyKey, useCopyTicketReference } from './copy-reference'
 import { Button } from '#/components/ui/button'
 import { StickyBar } from '#/components/deck/sticky-bar'
+import { SplitColumn } from '#/components/deck/split-column'
 import { Input } from '#/components/ui/input'
 
 const ACTIVE_POLL_MS = 2_000
@@ -334,45 +335,45 @@ export function TicketsView({
     // ticket beside it in the page scroll, j / k move through the list
     const current = id ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
     return (
-      <div className="grid content-start gap-3">
-        {top}
-        {list.isError ? freshness : null}
+      <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
         <TicketListKeys
           ids={[...recent, ...older].map((ticket) => ticket.id)}
           current={current}
           onGo={(next) => open(next, true)}
         />
         <CopyKey id={current} copy={copyReference} />
-        <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
-          <aside
-            aria-label={t`Collab tickets`}
-            className="vt-split-list sticky top-4 grid h-[calc(100cqh-2rem)] content-start gap-3 overflow-y-auto border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
-          >
-            <StickyBar>
+        <SplitColumn
+          label={t`Collab tickets`}
+          head={
+            <>
+              {top}
+              {list.isError ? freshness : null}
               {keys}
               <SearchBox value={query} onChange={setQuery} />
-            </StickyBar>
-            <TicketKeys
-              tickets={recent}
-              older={older}
-              empty={emptyText}
-              base={base}
-              selected={current}
+            </>
+          }
+        >
+          <TicketKeys
+            tickets={recent}
+            older={older}
+            empty={emptyText}
+            base={base}
+            selected={current}
+          />
+        </SplitColumn>
+        {/* flat like 会话's pane: the divider is its left edge, page tall */}
+        <div
+          className="vt-split-pane -my-4 min-h-[100cqh] min-w-0 border-l border-brand-edge py-4 pl-[calc(var(--page-x)*1.5)]"
+          data-testid="ticket-pane"
+        >
+          {current ? (
+            <TicketReading id={current} poll={poll} onOpen={open} />
+          ) : (
+            <Reading
+              title={t`No ticket selected`}
+              body={t`Tickets appear here when ticket files or runs cross-repo work.`}
             />
-          </aside>
-          <div
-            className="vt-split-pane ml-[var(--page-x)] min-w-0 rounded-2xl bg-brand-surface p-5"
-            data-testid="ticket-pane"
-          >
-            {current ? (
-              <TicketReading id={current} poll={poll} onOpen={open} />
-            ) : (
-              <Reading
-                title={t`No ticket selected`}
-                body={t`Tickets appear here when ticket files or runs cross-repo work.`}
-              />
-            )}
-          </div>
+          )}
         </div>
       </div>
     )

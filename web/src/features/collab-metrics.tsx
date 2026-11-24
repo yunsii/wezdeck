@@ -63,8 +63,8 @@ export function CollabMetricsBand() {
       aria-label={t`Collab metrics`}
       className="grid gap-2 rounded-2xl border border-brand-edge bg-brand-surface p-3"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-body font-semibold">{t`Cross-repo collab`}</h1>
+      {/* no title of its own: the page / the dialog around it names it */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex gap-2">
           <div className="w-36 shrink-0">
             <Select

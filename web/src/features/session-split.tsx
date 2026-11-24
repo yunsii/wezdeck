@@ -90,12 +90,7 @@ function SplitView({ id }: { id?: string }) {
   return (
     <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
       <CopyKey id={id ?? ''} copy={copyReference} />
-      <aside
-        aria-label={t`Agent sessions`}
-        className="vt-split-list sticky top-4 h-[calc(100cqh-2rem)] overflow-y-auto pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
-      >
-        <SessionList selected={id ?? ''} />
-      </aside>
+      <SessionList selected={id ?? ''} split />
       <div
         // the divider is the pane's left edge, top to bottom of the page: the
         // pane steps over the page's own padding (-my-4 / py-4) and is at
