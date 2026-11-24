@@ -175,7 +175,10 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await expect
       .poll(() => page.locator('[data-testid=composer-images] img').count())
       .toBe(1)
+    // the image leaves [图片1] at the caret; removing it takes the token too
+    await expect.poll(() => box.inputValue()).toBe('第一行\n第二行 [图片1] ')
     await page.getByRole('button', { name: '移除图片' }).click()
+    await expect.poll(() => box.inputValue()).toBe('第一行\n第二行')
 
     await box.press('Enter')
     await expect.poll(() => box.inputValue(), { timeout: 2_000 }).toBe('')

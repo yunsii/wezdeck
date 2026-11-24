@@ -28,10 +28,7 @@ import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { CommandPanel } from './session-commands'
 import { useSpaceToFocus } from './composer-keys'
-
-const MAX_IMAGES = 5
-
-type Picked = { key: string; file: File; url: string }
+import { MAX_IMAGES, usePickedImages } from './composer-images'
 
 export type Outgoing = {
   text: string
@@ -98,37 +95,11 @@ export function useComposer({
 }) {
   const { t } = useLingui()
   const [text, setText] = useDraft(draftKey(id))
-  const [images, setImages] = useState<Array<Picked>>([])
   const [progress, setProgress] = useState('')
-  const urls = useRef(images)
+  const { images, setImages, pick, remove } = usePickedImages(text, setText)
   const pageState = useRef(diagnostics)
   pageState.current = diagnostics
   useEffect(() => setDiagnosticsPage(() => pageState.current()), [])
-  urls.current = images
-  useEffect(
-    () => () => urls.current.forEach((image) => URL.revokeObjectURL(image.url)),
-    [],
-  )
-
-  const pick = (files: Iterable<File> | null) => {
-    const room = MAX_IMAGES - images.length
-    const added = [...(files ?? [])]
-      .filter((file) => file.type.startsWith('image/'))
-      .slice(0, room)
-      .map((file) => ({
-        key: crypto.randomUUID(),
-        file,
-        url: URL.createObjectURL(file),
-      }))
-    setImages((current) => [...current, ...added])
-  }
-  const remove = (key: string) => {
-    setImages((current) => {
-      const gone = current.find((image) => image.key === key)
-      if (gone) URL.revokeObjectURL(gone.url)
-      return current.filter((image) => image.key !== key)
-    })
-  }
 
   const ready = Boolean(text.trim() || images.length)
   const submit = async () => {
@@ -526,9 +497,14 @@ export function ComposerBox({
               file.type.startsWith('image/'),
             )
             if (files.length === 0) return
-            if (!event.clipboardData.types.includes('text/plain'))
+            // text pasted with the image lands first (the browser inserts
+            // it after this handler), then the token goes after it
+            if (event.clipboardData.types.includes('text/plain'))
+              setTimeout(() => composer.pick(files))
+            else {
               event.preventDefault()
-            composer.pick(files)
+              composer.pick(files)
+            }
           }}
           enterKeyHint={touch ? 'enter' : 'send'}
           rows={1}

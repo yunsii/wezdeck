@@ -182,7 +182,10 @@ func attachmentNote(names []string) (string, error) {
 	if len(names) > attachmentsMax {
 		return "", fmt.Errorf("at most %d attachments", attachmentsMax)
 	}
+	// images are numbered in the order sent: the page puts [图片N] where
+	// the user wrote about it, so the text can say which picture it means
 	lines := []string{"[手机附件]"}
+	image := 0
 	for _, n := range names {
 		base := filepath.Base(n)
 		path := filepath.Join(uploadDir(), base)
@@ -192,9 +195,10 @@ func attachmentNote(names []string) (string, error) {
 		if _, err := os.Stat(path); err != nil {
 			return "", fmt.Errorf("attachment %q is not on the host (upload it again)", n)
 		}
-		label := "图片"
-		if strings.HasPrefix(base, "diagnostics-") {
-			label = "客户端诊断"
+		label := "客户端诊断"
+		if !strings.HasPrefix(base, "diagnostics-") {
+			image++
+			label = fmt.Sprintf("图片%d", image)
 		}
 		lines = append(lines, fmt.Sprintf("- %s: %s", label, path))
 	}

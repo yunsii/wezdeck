@@ -40,7 +40,7 @@ func TestUploadChunksAssembleOutOfOrder(t *testing.T) {
 	}
 
 	note, err := attachmentNote([]string{name})
-	if err != nil || !strings.Contains(note, "图片: "+filepath.Join(dir, name)) {
+	if err != nil || !strings.Contains(note, "图片1: "+filepath.Join(dir, name)) {
 		t.Fatalf("note %q %v", note, err)
 	}
 }
@@ -87,5 +87,28 @@ func TestUploadDiagnosticsAndPrune(t *testing.T) {
 	}
 	if _, err := os.Stat(old); !os.IsNotExist(err) {
 		t.Fatal("uploads older than 30 days must be pruned")
+	}
+}
+
+// images are numbered in order ([图片N] in the text refers to them);
+// a diagnostics file is not an image and takes no number
+func TestAttachmentNoteNumbersImages(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("WEZDECK_REMOTE_UPLOADS", dir)
+	names := []string{"img-1-a.jpg", "diagnostics-1-b.json", "img-2-c.jpg"}
+	for _, n := range names {
+		if err := os.WriteFile(filepath.Join(dir, n), []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	note, err := attachmentNote(names)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "[手机附件]\n- 图片1: " + filepath.Join(dir, names[0]) +
+		"\n- 客户端诊断: " + filepath.Join(dir, names[1]) +
+		"\n- 图片2: " + filepath.Join(dir, names[2])
+	if note != want {
+		t.Fatalf("note:\n%s\nwant:\n%s", note, want)
 	}
 }

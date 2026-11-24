@@ -7,6 +7,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
+import { Led } from '#/components/deck/led'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { SectionHeading } from '#/components/ui/section-heading'
@@ -68,11 +69,17 @@ function LocalSources() {
     refetchInterval: 15_000,
     queryFn: readLocalClients,
   })
-  const list = sources.data?.clients ?? []
   const errorText = sources.error?.message ?? ''
   const here = (client: LocalClient) =>
     client.origin === location.origin &&
     client.user_agent === navigator.userAgent.slice(0, 300)
+  // a fixed order: this browser first, then by first seen. Sorting by last
+  // seen swapped the rows on every 15 s refresh (each one had just polled)
+  const list = [...(sources.data?.clients ?? [])].sort(
+    (a, b) =>
+      Number(here(b)) - Number(here(a)) ||
+      a.first_seen.localeCompare(b.first_seen),
+  )
   return (
     <section className="grid gap-2" data-testid="local-sources">
       <div className="flex items-center justify-between gap-2">
@@ -124,7 +131,7 @@ function LocalSources() {
                 <span className="truncate text-meta text-brand-label">
                   {originLabel(client.origin)}
                 </span>
-                <span className="text-meta text-brand-label">
+                <span className="text-meta text-brand-label tabular-nums">
                   {t`last ${lastSeen}`} ·{' '}
                   {t`${requests} requests, ${writes} writes`}
                 </span>
@@ -228,31 +235,45 @@ function RemoteDevices() {
             key={device.id}
             data-testid="device-row"
             data-device={device.id}
-            className="grid gap-1 rounded-xl bg-brand-surface px-3 py-2"
+            className="flex items-center gap-3 rounded-xl bg-brand-surface px-3 py-2.5"
           >
-            <div className="flex items-center gap-2">
-              <span className="min-w-0 flex-1 truncate text-body">
-                {describe(device)}
-              </span>
-              <Badge
-                size="sm"
-                variant={device.state === 'approved' ? 'ready' : 'warning'}
-              >
-                {device.state === 'approved' ? t`Approved` : t`Pending`}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="min-w-0 flex-1 text-meta text-brand-label">
+            {/* what it is, then its state and facts on one quiet line; the
+                one action sits on the right, centred on both lines */}
+            <div className="grid min-w-0 flex-1 gap-0.5">
+              <span className="truncate text-body">{describe(device)}</span>
+              <span className="flex flex-wrap items-center gap-x-1.5 text-meta text-brand-label tabular-nums">
+                <span
+                  className={
+                    device.state === 'approved'
+                      ? 'inline-flex items-center gap-1 text-brand-done'
+                      : 'inline-flex items-center gap-1 text-brand-waiting'
+                  }
+                >
+                  <Led
+                    tone={device.state === 'approved' ? 'done' : 'waiting'}
+                    size={8}
+                  />
+                  {device.state === 'approved' ? t`Approved` : t`Pending`}
+                </span>
+                <span aria-hidden>·</span>
                 <span className="font-mono select-all">{device.id}</span>
-                {device.at ? ` · ${t`added`} ${ago(device.at)}` : ''}
-                {device.seen_at ? ` · ${t`seen`} ${ago(device.seen_at)}` : ''}
+                {device.at ? (
+                  <span>
+                    · {t`added`} {ago(device.at)}
+                  </span>
+                ) : null}
+                {device.seen_at ? (
+                  <span>
+                    · {t`seen`} {ago(device.seen_at)}
+                  </span>
+                ) : null}
               </span>
-              <RowAction
-                device={device}
-                busy={change.isPending}
-                onAction={(action) => change.mutate({ action, id: device.id })}
-              />
             </div>
+            <RowAction
+              device={device}
+              busy={change.isPending}
+              onAction={(action) => change.mutate({ action, id: device.id })}
+            />
           </li>
         ))}
       </ul>

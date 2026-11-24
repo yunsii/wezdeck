@@ -264,7 +264,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
           '-60',
           '-t',
           'demo',
-        )).includes('图片: ')
+        )).includes('图片1: ')
       ) {
         if (Date.now() > fileDeadline)
           throw new Error(`attachments never reached the pane:\n${screen}`)

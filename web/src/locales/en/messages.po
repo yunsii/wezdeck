@@ -27,7 +27,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:151
+#: src/features/session-composer.tsx:122
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -87,7 +87,7 @@ msgstr "{n} s"
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/me-devices.tsx:129
+#: src/features/me-devices.tsx:136
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
@@ -219,7 +219,7 @@ msgstr "Add"
 msgid "Add test ids to the error pages"
 msgstr "Add test ids to the error pages"
 
-#: src/features/me-devices.tsx:247
+#: src/features/me-devices.tsx:262
 msgid "added"
 msgstr "added"
 
@@ -322,7 +322,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/me-devices.tsx:164
+#: src/features/me-devices.tsx:171
 msgid "Approve"
 msgstr "Approve"
 
@@ -342,7 +342,7 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/me-devices.tsx:241
+#: src/features/me-devices.tsx:256
 msgid "Approved"
 msgstr "Approved"
 
@@ -404,7 +404,7 @@ msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgid "Branch"
 msgstr "Branch"
 
-#: src/features/me-devices.tsx:90
+#: src/features/me-devices.tsx:97
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 
@@ -428,7 +428,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:193
+#: src/features/session-composer.tsx:164
 msgid "cancel"
 msgstr "cancel"
 
@@ -463,8 +463,8 @@ msgstr "Check for updates"
 
 #: src/features/console-me.tsx:33
 #: src/features/me-app.tsx:87
-#: src/features/me-devices.tsx:93
-#: src/features/me-devices.tsx:260
+#: src/features/me-devices.tsx:100
+#: src/features/me-devices.tsx:281
 #: src/features/me-host.tsx:56
 msgid "Checking…"
 msgstr "Checking…"
@@ -518,7 +518,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:226
+#: src/features/session-composer.tsx:197
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -587,7 +587,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:322
+#: src/features/session-composer.tsx:293
 msgid "Commands"
 msgstr "Commands"
 
@@ -603,15 +603,15 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:296
+#: src/features/session-composer.tsx:267
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:192
+#: src/features/session-composer.tsx:163
 msgid "confirm"
 msgstr "confirm"
 
-#: src/features/me-devices.tsx:179
+#: src/features/me-devices.tsx:186
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
@@ -632,7 +632,7 @@ msgstr "Connection"
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/me-devices.tsx:51
+#: src/features/me-devices.tsx:52
 msgid "Console ({origin})"
 msgstr "Console ({origin})"
 
@@ -669,7 +669,7 @@ msgstr "context usage"
 #~ msgid "Control"
 #~ msgstr "Control"
 
-#: src/features/session-composer.tsx:82
+#: src/features/session-composer.tsx:79
 #: src/features/session-info.tsx:233
 msgid "Copied"
 msgstr "Copied"
@@ -691,7 +691,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:82
+#: src/features/session-composer.tsx:79
 msgid "Copy"
 msgstr "Copy"
 
@@ -703,7 +703,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:74
+#: src/features/session-composer.tsx:71
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -729,7 +729,7 @@ msgstr "Cost"
 msgid "cost and limits"
 msgstr "cost and limits"
 
-#: src/features/me-devices.tsx:269
+#: src/features/me-devices.tsx:290
 msgid "Could not change the device: {changeError}"
 msgstr "Could not change the device: {changeError}"
 
@@ -737,11 +737,11 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/me-devices.tsx:262
+#: src/features/me-devices.tsx:283
 msgid "Could not read the device list: {errorText}"
 msgstr "Could not read the device list: {errorText}"
 
-#: src/features/me-devices.tsx:95
+#: src/features/me-devices.tsx:102
 msgid "Could not read the sources: {errorText}"
 msgstr "Could not read the sources: {errorText}"
 
@@ -1034,7 +1034,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:329
+#: src/features/session-composer.tsx:300
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1157,7 +1157,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:347
+#: src/features/session-composer.tsx:318
 msgid "Images"
 msgstr "Images"
 
@@ -1224,7 +1224,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:194
+#: src/features/session-composer.tsx:165
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1272,7 +1272,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:310
+#: src/features/session-composer.tsx:281
 msgid "Keys"
 msgstr "Keys"
 
@@ -1291,7 +1291,7 @@ msgstr "LAN"
 msgid "Language"
 msgstr "Language"
 
-#: src/features/me-devices.tsx:128
+#: src/features/me-devices.tsx:135
 msgid "last {lastSeen}"
 msgstr "last {lastSeen}"
 
@@ -1425,11 +1425,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:535
+#: src/features/session-composer.tsx:511
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:499
+#: src/features/session-composer.tsx:470
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1575,7 +1575,7 @@ msgstr "No agent sessions are running."
 #~ msgid "No collab tickets yet"
 #~ msgstr "No collab tickets yet"
 
-#: src/features/me-devices.tsx:265
+#: src/features/me-devices.tsx:286
 msgid "No device has asked for access yet."
 msgstr "No device has asked for access yet."
 
@@ -1603,7 +1603,7 @@ msgstr "No idle sessions."
 msgid "No matching log entries"
 msgstr "No matching log entries"
 
-#: src/features/me-devices.tsx:50
+#: src/features/me-devices.tsx:51
 msgid "No Origin (script, curl, another app)"
 msgstr "No Origin (script, curl, another app)"
 
@@ -1728,7 +1728,7 @@ msgstr "open in a pane"
 msgid "Open in VS Code"
 msgstr "Open in VS Code"
 
-#: src/features/me-devices.tsx:121
+#: src/features/me-devices.tsx:128
 msgid "Open now"
 msgstr "Open now"
 
@@ -1839,7 +1839,7 @@ msgstr "Part"
 msgid "Peak RSS"
 msgstr "Peak RSS"
 
-#: src/features/me-devices.tsx:241
+#: src/features/me-devices.tsx:256
 msgid "Pending"
 msgstr "Pending"
 
@@ -1875,7 +1875,7 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
-#: src/features/session-composer.tsx:384
+#: src/features/session-composer.tsx:355
 msgid "Preview image"
 msgstr "Preview image"
 
@@ -1923,8 +1923,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:234
-#: src/features/session-composer.tsx:304
+#: src/features/session-composer.tsx:205
+#: src/features/session-composer.tsx:275
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1959,8 +1959,8 @@ msgstr "Reason"
 #~ msgid "Recently active"
 #~ msgstr "Recently active"
 
-#: src/features/me-devices.tsx:86
-#: src/features/me-devices.tsx:222
+#: src/features/me-devices.tsx:93
+#: src/features/me-devices.tsx:229
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -1996,11 +1996,11 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/me-devices.tsx:215
+#: src/features/me-devices.tsx:222
 msgid "Remote devices"
 msgstr "Remote devices"
 
-#: src/features/session-composer.tsx:398
+#: src/features/session-composer.tsx:369
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -2115,11 +2115,11 @@ msgstr "Retry"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/me-devices.tsx:179
+#: src/features/me-devices.tsx:186
 msgid "Revoke"
 msgstr "Revoke"
 
-#: src/features/me-devices.tsx:272
+#: src/features/me-devices.tsx:293
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 
@@ -2274,7 +2274,7 @@ msgstr "Sections"
 #~ msgid "See who needs you"
 #~ msgstr "See who needs you"
 
-#: src/features/me-devices.tsx:248
+#: src/features/me-devices.tsx:267
 msgid "seen"
 msgstr "seen"
 
@@ -2283,7 +2283,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:67
-#: src/features/session-composer.tsx:544
+#: src/features/session-composer.tsx:520
 msgid "Send"
 msgstr "Send"
 
@@ -2295,7 +2295,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:276
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2396,7 +2396,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:317
+#: src/features/session-composer.tsx:288
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2421,7 +2421,7 @@ msgstr "Someone just used the desk; sending in {retryIn}s…"
 msgid "Source"
 msgstr "Source"
 
-#: src/features/me-devices.tsx:79
+#: src/features/me-devices.tsx:86
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
@@ -2523,7 +2523,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:220
+#: src/features/session-composer.tsx:191
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2591,7 +2591,7 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/me-devices.tsx:119
+#: src/features/me-devices.tsx:126
 msgid "This browser"
 msgstr "This browser"
 
@@ -2760,7 +2760,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:334
+#: src/features/session-composer.tsx:305
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2824,7 +2824,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:219
+#: src/features/session-composer.tsx:190
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2850,7 +2850,7 @@ msgstr "Unavailable"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:141
+#: src/features/session-composer.tsx:112
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 

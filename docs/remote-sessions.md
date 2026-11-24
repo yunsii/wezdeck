@@ -137,10 +137,18 @@ message), then `send` names the stored files and the host appends
 
 ```
 [手机附件]
-- 图片: ~/.local/state/wezdeck/remote-uploads/img-<ts>-<id>.jpg
+- 图片1: ~/.local/state/wezdeck/remote-uploads/img-<ts>-<id>.jpg
+- 图片2: …
 ```
 
-so the agent can open them. Host side (`remote_upload.go`): types limited to
+so the agent can open them. Images are numbered in the order sent, and
+each pick (or paste) leaves `[图片N]` at the caret, so the text says which
+picture is which ("把 [图片1] 的按钮改成 [图片2] 那样"); removing an image
+drops its token and renumbers the rest (`composer-images.ts`,
+`composer-tokens.ts`). Not Claude Code's own `[Image #N]`: that numbering
+runs per conversation at the desk, and the same spelling could be read as
+one of its pasted images; `图片N` is per message, mapped by the list
+above. Host side (`remote_upload.go`): types limited to
 JPEG / PNG / WebP / GIF / JSON and checked by magic bytes (JSON must parse),
 8 MB per file, 6 attachments per message, `send` only resolves bare names
 inside the uploads dir (`WEZDECK_REMOTE_UPLOADS` overrides it), half-done
