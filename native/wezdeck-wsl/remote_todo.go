@@ -99,7 +99,7 @@ func writeTodo(args json.RawMessage) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		return runTodoCLI("add", "--cwd", cwd, "--session", a.Session, "--source", "phone", "--", text)
+		return runTodoCLI("add", "--cwd", cwd, "--session", a.Session, "--source", "web", "--", text)
 	case "done", "reopen", "delete":
 		if a.ID <= 0 {
 			return nil, errors.New("to-do id missing")

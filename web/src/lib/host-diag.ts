@@ -212,7 +212,7 @@ async function answer(
   for (let seq = 0; seq < total; seq++)
     await remoteLink.rpc('diag.submit', {
       id,
-      phone: pageId(), // the wire name stays "phone" (relay_diag.go)
+      client: pageId(),
       seq,
       total,
       data: json.slice(seq * CHUNK, (seq + 1) * CHUNK),

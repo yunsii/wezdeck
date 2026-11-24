@@ -67,7 +67,7 @@ type relay struct {
 	conn  *websocket.Conn
 	peers map[string]*webrtc.PeerConnection
 	// clients: web console pages seen recently, for host → page pushes
-	// (relay_diag.go; the wire and log names stay "phone(s)")
+	// (relay_diag.go)
 	clients map[string]*clientChan
 	// authed: cid → the approved device that said hello on it (relay_auth.go)
 	authed map[string]string

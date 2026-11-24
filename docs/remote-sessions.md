@@ -23,7 +23,7 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `reply {id,text,continue}` | write | `ticket reply` with `TICKET_TRIGGER_SOURCE=mobile` |
 | `attach {id}` | write | `ticket attach --id` (skills/agent-collab/lib/attach.py): the ticket's agent conversation opens in a new window of the target repo's tmux session through `agent-launcher.sh` with `WEZDECK_RESUME_SESSION_ID`, and an open ticket is session-claimed so headless runs stop writing to it — the web console's 接管到 tmux |
 | `todos {session? \| all}` | read | the repo to-dos of the session's repo, or every open one (`scripts/runtime/todo.py list --json`) |
-| `todo {op, session, text?, id?}` | write | `add` (to the session's repo, source `phone`) / `done` / `reopen` / `delete` a repo to-do |
+| `todo {op, session, text?, id?}` | write | `add` (to the session's repo, source `web`; rows from before 2026-11-24 were migrated from `phone` by `todo.py`) / `done` / `reopen` / `delete` a repo to-do |
 | `repos` | read | repositories a remote web console may create a session in: main checkouts of visited worktrees (access ledger) and of running sessions, newest visit first (`session_new.go`) |
 | `session.new {repo, type, subject, prompt}` | write | 新会话 — Ctrl+k g d/t/h: `open-task-window --no-attach --type dev\|task\|hotfix -- <subject>` in `repo` (must be one of `repos`; subject one line ≤ 60, message 1–8000), then the message is pasted into the new agent once its pane runs a non-shell and the screen holds still 1.5 s. Answers `{job}` at once — git fetch + agent start outlast an RPC. The message is required: a session is listed only from its first prompt's attention entry. `WEZDECK_SESSION_NEW_CMD` replaces open-task-window (test stack stand-in) |
 | `session.new.job {job}` | read | that job: `stage` creating → starting → sending → done, or failed with `error`; `worktree`, `branch` (kept an hour) |
@@ -227,7 +227,7 @@ build (a build older than this step ignores it: get it there once through
 `[data-write]` — send, reply, take over, keys, options, rename), recording
 each step's frames (count, fps, longest gap, gaps > 50 ms). It answers with
 the snapshot as `diag.submit` chunks — accepted only for a live request id —
-stored as `diagnostics-<ts>-<id>-<phone>.json` in the uploads dir; the CLI
+stored as `diagnostics-<ts>-<id>-<client>.json` in the uploads dir; the CLI
 prints the paths. The web console shows a toast that the host read diagnostics;
 relay log rows `diag_request` / `diag_received` / `diag_done`.
 

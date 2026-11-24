@@ -20,7 +20,7 @@ export type Todo = {
   repo_root: string
   text: string
   done: boolean
-  source: 'agent' | 'phone'
+  source: 'agent' | 'web'
   session_id: string | null
   created_at: number
   done_at: number | null

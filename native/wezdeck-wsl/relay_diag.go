@@ -1,24 +1,24 @@
 package main
 
-// Pulling the phone's diagnostics from the host (docs/remote-sessions.md
+// Pulling a web console page's diagnostics from the host (docs/remote-sessions.md
 // "Diagnostics on demand"): instead of asking the human to tap 诊断 and send,
 // an agent runs
 //
 //	wezdeck-wsl diag [--wait 15] [--reason TEXT] [--steps JSON | --steps-file F] [--reload]
 //
-// --reload appends the `reload` step: the phone sends its snapshot (still the
+// --reload appends the `reload` step: the page sends its snapshot (still the
 // old build id), then reloads onto the newest deploy — no one taps 刷新.
 //
 // which asks the running relay over its local control socket to push
-// {t:"diag.request", id, reason} to every phone seen in the last few minutes
+// {t:"diag.request", id, reason} to every web console page seen in the last few minutes
 // (over its DataChannel when open, else through the Durable Object by cid).
-// Each phone answers with the same snapshot the 诊断 toggle attaches (no
+// Each page answers with the same snapshot the 诊断 toggle attaches (no
 // tokens, no message text; lib/client-trace.ts) as `diag.submit` chunks; the
 // host accepts chunks only for a request it issued and that has not expired,
-// stores diagnostics-<ts>-<id>-<phone>.json in the uploads dir and the CLI
-// prints the paths. The phone shows a toast that the host read diagnostics.
+// stores diagnostics-<ts>-<id>-<client>.json in the uploads dir and the CLI
+// prints the paths. The page shows a toast that the host read diagnostics.
 //
-// --steps first drives the phone's UI so a problem can be reproduced while it
+// --steps first drives the page's UI so a problem can be reproduced while it
 // records (web lib/host-diag.ts): [{"do":"navigate","to":"/zh/console/now"},
 // {"do":"click","text":"会话"}, {"do":"scroll","to":"bottom"}, {"do":"back"},
 // {"do":"wait","ms":800}] — each step's frame timing (frames, longest gap,
@@ -53,7 +53,7 @@ const (
 )
 
 // clientChan: one connected page (cid = its relay client id; the same id names
-// its WebRTC peer, so one entry per phone tab).
+// its WebRTC peer, so one entry per browser tab).
 type clientChan struct {
 	dc   *webrtc.DataChannel
 	seen time.Time
@@ -103,7 +103,7 @@ func (r *relay) recentClients() []string {
 	return out
 }
 
-// pushToClients sends f to every phone seen recently; returns their cids.
+// pushToClients sends f to every web console page seen recently; returns their cids.
 func (r *relay) pushToClients(f relayFrame) []string {
 	r.mu.Lock()
 	type target struct {
@@ -137,9 +137,9 @@ func (r *relay) pushToClients(f relayFrame) []string {
 }
 
 type diagResult struct {
-	Phone string `json:"phone"`
-	File  string `json:"file"`
-	Bytes int    `json:"bytes"`
+	Client string `json:"client"`
+	File   string `json:"file"`
+	Bytes  int    `json:"bytes"`
 }
 
 type diagRequest struct {
@@ -162,20 +162,35 @@ func newDiagID() string {
 	return hex.EncodeToString(b)
 }
 
-// diagSubmit: one chunk of a phone's answer (rpc `diag.submit`). Unsigned,
+// diagSubmit: one chunk of a web console page's answer (rpc `diag.submit`). Unsigned,
 // so it is held to what the host itself asked: a live request id, from a cid
 // that request was pushed to, one answer per cid. Another client holding the
 // pairing token can neither inject a snapshot (an agent reads it) nor fill
-// memory or the uploads dir under made-up phone ids.
+// memory or the uploads dir under made-up page ids.
 func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
 	var a struct {
-		ID    string `json:"id"`
+		ID     string `json:"id"`
+		Client string `json:"client"`
+		// Phone: the page id's old name (until 2026-11-24). A page still
+		// open from an older build answers with it — the release's own
+		// reload asks those pages — so it is taken, with a warning row;
+		// remove once diag_legacy_field stops appearing in relay.log
+		// (docs/diagnostics.md open questions).
 		Phone string `json:"phone"`
 		Seq   int    `json:"seq"`
 		Total int    `json:"total"`
 		Data  string `json:"data"`
 	}
-	if json.Unmarshal(args, &a) != nil || !uploadIDPattern.MatchString(a.Phone) {
+	if json.Unmarshal(args, &a) != nil {
+		return nil, errors.New("bad diagnostics chunk")
+	}
+	if a.Client == "" && a.Phone != "" {
+		if a.Seq == 0 {
+			r.logf("diag_legacy_field", "id=%s field=phone want=client cid=%s", a.ID, cid)
+		}
+		a.Client = a.Phone
+	}
+	if !uploadIDPattern.MatchString(a.Client) {
 		return nil, errors.New("bad diagnostics chunk")
 	}
 	if a.Total < 1 || a.Total > diagChunksMax || a.Seq < 0 || a.Seq >= a.Total || len(a.Data) > diagChunkMax {
@@ -221,14 +236,14 @@ func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
 		return nil, err
 	}
 	pruneUploads(dir)
-	name := fmt.Sprintf("diagnostics-%s-%s-%s.json", time.Now().Format("20060102-150405"), a.ID[:8], a.Phone[:8])
+	name := fmt.Sprintf("diagnostics-%s-%s-%s.json", time.Now().Format("20060102-150405"), a.ID[:8], a.Client[:8])
 	path := filepath.Join(dir, name)
 	if err := os.WriteFile(path, body, 0o600); err != nil {
 		return nil, err
 	}
-	r.logf("diag_received", "id=%s phone=%s bytes=%d", a.ID, a.Phone[:8], len(body))
+	r.logf("diag_received", "id=%s client=%s bytes=%d", a.ID, a.Client[:8], len(body))
 	diagMu.Lock()
-	req.results = append(req.results, diagResult{Phone: a.Phone[:8], File: path, Bytes: len(body)})
+	req.results = append(req.results, diagResult{Client: a.Client[:8], File: path, Bytes: len(body)})
 	select {
 	case req.notify <- struct{}{}:
 	default:
@@ -254,7 +269,7 @@ func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json
 		steps = json.RawMessage("[]")
 	}
 	args, _ := json.Marshal(map[string]any{"reason": reason, "steps": steps})
-	// register the targets before pushing: a fast phone may answer at once
+	// register the targets before pushing: a fast page may answer at once
 	targets := r.recentClients()
 	for _, cid := range targets {
 		req.targets[cid] = true
@@ -263,7 +278,7 @@ func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json
 	diagRequests[id] = req
 	diagMu.Unlock()
 	clients := r.pushToClients(relayFrame{T: "diag.request", ID: id, Data: args})
-	r.logf("diag_request", "id=%s phones=%d reason=%q", id, len(clients), reason)
+	r.logf("diag_request", "id=%s clients=%d reason=%q", id, len(clients), reason)
 	timer := time.NewTimer(wait)
 	defer timer.Stop()
 	for len(clients) > 0 {
@@ -283,10 +298,10 @@ done:
 	diagMu.Lock()
 	results := append([]diagResult(nil), req.results...)
 	diagMu.Unlock()
-	r.logf("diag_done", "id=%s phones=%d got=%d", id, len(clients), len(results))
-	out := map[string]any{"id": id, "phones": len(clients), "results": results}
+	r.logf("diag_done", "id=%s clients=%d got=%d", id, len(clients), len(results))
+	out := map[string]any{"id": id, "clients": len(clients), "results": results}
 	if len(clients) == 0 {
-		out["hint"] = "no phone connected in the last 3 minutes: open the web console on the phone"
+		out["hint"] = "no web console connected in the last 3 minutes: open it on the device"
 	}
 	return out
 }
@@ -373,7 +388,7 @@ func runDiag(args []string) error {
 		return errors.New("--steps is not valid JSON")
 	}
 	if reload {
-		// last step: the phone answers first, then reloads onto the new build
+		// last step: the page answers first, then reloads onto the new build
 		var steps []json.RawMessage
 		if len(body.Steps) > 0 && json.Unmarshal(body.Steps, &steps) != nil {
 			return errors.New("--steps must be a JSON array to add --reload")

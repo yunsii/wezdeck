@@ -9,12 +9,12 @@ import (
 func TestTodoCLIThroughRelay(t *testing.T) {
 	t.Setenv("WEZDECK_TODO_DB", filepath.Join(t.TempDir(), "t.db"))
 	// this package lives in a git repo, so its directory resolves to one
-	added, err := runTodoCLI("add", "--cwd", ".", "--source", "phone", "--", "--follow up on the relay")
+	added, err := runTodoCLI("add", "--cwd", ".", "--source", "web", "--", "--follow up on the relay")
 	if err != nil {
 		t.Fatal(err)
 	}
 	todo := added.(map[string]any)["todo"].(map[string]any)
-	if todo["text"] != "--follow up on the relay" || todo["source"] != "phone" {
+	if todo["text"] != "--follow up on the relay" || todo["source"] != "web" {
 		t.Fatalf("added %+v", todo)
 	}
 	id := int64(todo["id"].(float64))

@@ -8,7 +8,7 @@ common dir, so every worktree of one repo shares one list. The phone reads and
 writes through the relay (native/wezdeck-wsl, `todos` / signed `todo`); agents
 call this CLI from the repo.
 
-  todo.py add [--cwd PATH] [--session ID] [--source agent|phone] [--] TEXT...
+  todo.py add [--cwd PATH] [--session ID] [--source agent|web] [--] TEXT...
   todo.py list [--cwd PATH | --all] [--open | --done] [--json]
   todo.py done ID | reopen ID | delete ID
   todo.py edit ID TEXT...
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS todos (
   repo_root   TEXT NOT NULL,   -- main checkout, for opening a session there
   text        TEXT NOT NULL,
   done        INTEGER NOT NULL DEFAULT 0,
-  source      TEXT NOT NULL DEFAULT 'agent',  -- agent | phone
+  source      TEXT NOT NULL DEFAULT 'agent',  -- agent | web
   session_id  TEXT,            -- the conversation it was written in (may be gone)
   worktree    TEXT,            -- the checkout it was written in
   created_at  INTEGER NOT NULL,
@@ -63,7 +63,23 @@ def connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(SCHEMA)
+    migrate(conn)
     return conn
+
+
+def migrate(conn: sqlite3.Connection) -> None:
+    """Versioned data fixes, each run once (PRAGMA user_version).
+
+    1 (2026-11-24): source 'phone' → 'web' — to-dos added from the web
+    console, on any device (docs/architecture.md "Terms").
+    """
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    if version < 1:
+        moved = conn.execute("UPDATE todos SET source = 'web' WHERE source = 'phone'").rowcount
+        conn.execute("PRAGMA user_version = 1")
+        conn.commit()
+        if moved:
+            print(f"todo: migrated {moved} to-do(s) from source 'phone' to 'web'", file=sys.stderr)
 
 
 def git(cwd: str, *args: str) -> str:
@@ -134,8 +150,8 @@ def cmd(argv: list[str]) -> dict[str, Any]:
         cwd = opt(argv, "--cwd") or os.getcwd()
         session = opt(argv, "--session")
         source = opt(argv, "--source") or "agent"
-        if source not in ("agent", "phone"):
-            raise TodoError("--source is agent or phone")
+        if source not in ("agent", "web"):
+            raise TodoError("--source is agent or web")
         text = " ".join(argv + text_args).strip()
         if not text:
             raise TodoError("empty to-do")
