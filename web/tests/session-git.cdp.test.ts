@@ -36,6 +36,8 @@ describe('Git status panel', () => {
     expect(text).toContain('master → origin/master')
     expect(text).toContain('已暂存 1 个，已修改 2 个，未跟踪 3 个')
     expect(text).toContain('有 2 个提交待推送，1 个待拉取')
+    // changes first (there are some): files by state, commits a tab away
+    expect(await detail.getAttribute('data-tab')).toBe('changes')
     for (const [group, n] of [
       ['staged', 1],
       ['modified', 2],
@@ -46,9 +48,23 @@ describe('Git status panel', () => {
         group,
       ).toBe(n)
     expect(text).toContain('已修改 · 2')
-    expect(text).toContain('未推送 · 2')
-    expect(text).toContain('未拉取 · 1')
-    expect(text).toContain('最近提交 · 3')
+    expect(text).toContain('变更6')
+    expect(text).toContain('提交↑2 ↓1')
+    expect(await detail.locator('[data-git-commits]').count()).toBe(0)
+    // → switches to 提交: not pushed / not pulled first, then recent
+    await detail.locator('[role=radio][data-value=changes]').focus()
+    await page.keyboard.press('ArrowRight')
+    await expect.poll(() => detail.getAttribute('data-tab')).toBe('commits')
+    const order = await detail
+      .locator('[data-git-commits]')
+      .evaluateAll((els) =>
+        els.map((el) => el.getAttribute('data-git-commits')),
+      )
+    expect(order).toEqual(['ahead', 'behind', 'recent'])
+    const commits = (await detail.innerText()).replace(/\s+/g, ' ')
+    expect(commits).toContain('未推送 · 2')
+    expect(commits).toContain('未拉取 · 1')
+    expect(commits).toContain('最近提交 · 3')
     await page.keyboard.press('Escape')
     await page.getByTestId('git-sheet').waitFor({ state: 'hidden' })
     await context.close()

@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/session-git.tsx:50
+#: src/features/session-git.tsx:54
 msgctxt "list separator"
 msgid ", "
 msgstr ", "
@@ -41,15 +41,15 @@ msgstr "(pick any)"
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
-#: src/features/session-git.tsx:57
+#: src/features/session-git.tsx:61
 msgid "{ahead} commits not pushed yet."
 msgstr "{ahead} commits not pushed yet."
 
-#: src/features/session-git.tsx:55
+#: src/features/session-git.tsx:59
 msgid "{ahead} commits to push, {behind} to pull."
 msgstr "{ahead} commits to push, {behind} to pull."
 
-#: src/features/session-git.tsx:59
+#: src/features/session-git.tsx:63
 msgid "{behind} commits to pull."
 msgstr "{behind} commits to pull."
 
@@ -141,7 +141,7 @@ msgstr "{runningCount} subagents running"
 msgid "{runs} runs"
 msgstr "{runs} runs"
 
-#: src/features/session-git.tsx:46
+#: src/features/session-git.tsx:50
 msgid "{staged} staged"
 msgstr "{staged} staged"
 
@@ -177,11 +177,11 @@ msgstr "{unanswered} question(s) still unanswered; the agent sees only what you 
 msgid "{unread} new"
 msgstr "{unread} new"
 
-#: src/features/session-git.tsx:47
+#: src/features/session-git.tsx:51
 msgid "{unstaged} modified"
 msgstr "{unstaged} modified"
 
-#: src/features/session-git.tsx:48
+#: src/features/session-git.tsx:52
 msgid "{untracked} untracked"
 msgstr "{untracked} untracked"
 
@@ -558,6 +558,11 @@ msgstr "Category"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
 
+#: src/features/session-git.tsx:174
+msgctxt "git"
+msgid "Changes"
+msgstr "Changes"
+
 #: src/features/console-me.tsx:88
 msgid "Check again"
 msgstr "Check again"
@@ -701,6 +706,11 @@ msgstr "Command sent: {command}"
 msgid "Commands"
 msgstr "Commands"
 
+#: src/features/session-git.tsx:181
+msgctxt "git"
+msgid "Commits"
+msgstr "Commits"
+
 #: src/features/chat-turn.tsx:132
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
@@ -733,7 +743,7 @@ msgstr "conflict"
 #~ msgid "Conflicts"
 #~ msgstr "Conflicts"
 
-#: src/features/session-git.tsx:106
+#: src/features/session-git.tsx:131
 msgctxt "git"
 msgid "Conflicts"
 msgstr "Conflicts"
@@ -1152,7 +1162,7 @@ msgstr "Failed runs"
 msgid "File"
 msgstr "File"
 
-#: src/features/session-git.tsx:51
+#: src/features/session-git.tsx:55
 msgid "Files: {list}."
 msgstr "Files: {list}."
 
@@ -1210,7 +1220,8 @@ msgstr "From anywhere"
 #~ msgid "Git"
 #~ msgstr "Git"
 
-#: src/features/session-git.tsx:200
+#: src/features/session-git.tsx:168
+#: src/features/session-git.tsx:291
 msgid "Git status"
 msgstr "Git status"
 
@@ -1527,7 +1538,7 @@ msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ct
 msgid "Level"
 msgstr "Level"
 
-#: src/features/session-git.tsx:60
+#: src/features/session-git.tsx:64
 msgid "Level with upstream."
 msgstr "Level with upstream."
 
@@ -1569,7 +1580,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:213
+#: src/features/session-git.tsx:304
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1643,12 +1654,12 @@ msgstr "Model"
 msgid "Modified"
 msgstr "Modified"
 
-#: src/features/session-git.tsx:108
+#: src/features/session-git.tsx:133
 msgctxt "git"
 msgid "Modified"
 msgstr "Modified"
 
-#: src/features/session-git.tsx:150
+#: src/features/session-git.tsx:231
 msgid "More files changed than listed here."
 msgstr "More files changed than listed here."
 
@@ -1830,7 +1841,8 @@ msgstr "No ticket selected"
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
-#: src/features/session-git.tsx:51
+#: src/features/session-git.tsx:55
+#: src/features/session-git.tsx:226
 msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
@@ -1838,7 +1850,7 @@ msgstr "No uncommitted changes."
 msgid "no upstream"
 msgstr "no upstream"
 
-#: src/features/session-git.tsx:53
+#: src/features/session-git.tsx:57
 msgid "No upstream branch: nothing to compare with."
 msgstr "No upstream branch: nothing to compare with."
 
@@ -1866,11 +1878,11 @@ msgstr "Not on this Runtime"
 msgid "Not paired"
 msgstr "Not paired"
 
-#: src/features/session-git.tsx:154
+#: src/features/session-git.tsx:240
 msgid "Not pulled"
 msgstr "Not pulled"
 
-#: src/features/session-git.tsx:153
+#: src/features/session-git.tsx:238
 msgid "Not pushed"
 msgstr "Not pushed"
 
@@ -2191,7 +2203,7 @@ msgstr "Ready"
 msgid "Reason"
 msgstr "Reason"
 
-#: src/features/session-git.tsx:155
+#: src/features/session-git.tsx:244
 msgid "Recent commits"
 msgstr "Recent commits"
 
@@ -2698,7 +2710,7 @@ msgstr "Sources on this computer"
 #~ msgid "Staged"
 #~ msgstr "Staged"
 
-#: src/features/session-git.tsx:107
+#: src/features/session-git.tsx:132
 msgctxt "git"
 msgid "Staged"
 msgstr "Staged"
@@ -3166,7 +3178,7 @@ msgstr "Untitled session"
 #~ msgid "Untracked"
 #~ msgstr "Untracked"
 
-#: src/features/session-git.tsx:109
+#: src/features/session-git.tsx:134
 msgctxt "git"
 msgid "Untracked"
 msgstr "Untracked"

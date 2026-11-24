@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr "、"
 
-#: src/features/session-git.tsx:50
+#: src/features/session-git.tsx:54
 msgctxt "list separator"
 msgid ", "
 msgstr "，"
@@ -41,15 +41,15 @@ msgstr "（可多选）"
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
-#: src/features/session-git.tsx:57
+#: src/features/session-git.tsx:61
 msgid "{ahead} commits not pushed yet."
 msgstr "有 {ahead} 个提交还没推送。"
 
-#: src/features/session-git.tsx:55
+#: src/features/session-git.tsx:59
 msgid "{ahead} commits to push, {behind} to pull."
 msgstr "有 {ahead} 个提交待推送，{behind} 个待拉取。"
 
-#: src/features/session-git.tsx:59
+#: src/features/session-git.tsx:63
 msgid "{behind} commits to pull."
 msgstr "有 {behind} 个提交待拉取。"
 
@@ -141,7 +141,7 @@ msgstr "{runningCount} 个子 agent 运行中"
 msgid "{runs} runs"
 msgstr "{runs} 次"
 
-#: src/features/session-git.tsx:46
+#: src/features/session-git.tsx:50
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
@@ -177,11 +177,11 @@ msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
-#: src/features/session-git.tsx:47
+#: src/features/session-git.tsx:51
 msgid "{unstaged} modified"
 msgstr "已修改 {unstaged} 个"
 
-#: src/features/session-git.tsx:48
+#: src/features/session-git.tsx:52
 msgid "{untracked} untracked"
 msgstr "未跟踪 {untracked} 个"
 
@@ -558,6 +558,11 @@ msgstr "分类"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
+#: src/features/session-git.tsx:174
+msgctxt "git"
+msgid "Changes"
+msgstr "变更"
+
 #: src/features/console-me.tsx:88
 msgid "Check again"
 msgstr "重新检查"
@@ -701,6 +706,11 @@ msgstr "已发送命令 {command}"
 msgid "Commands"
 msgstr "命令"
 
+#: src/features/session-git.tsx:181
+msgctxt "git"
+msgid "Commits"
+msgstr "提交"
+
 #: src/features/chat-turn.tsx:132
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
@@ -733,7 +743,7 @@ msgstr "冲突"
 #~ msgid "Conflicts"
 #~ msgstr "冲突"
 
-#: src/features/session-git.tsx:106
+#: src/features/session-git.tsx:131
 msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
@@ -1152,7 +1162,7 @@ msgstr "失败次数"
 msgid "File"
 msgstr "文件"
 
-#: src/features/session-git.tsx:51
+#: src/features/session-git.tsx:55
 msgid "Files: {list}."
 msgstr "文件：{list}。"
 
@@ -1210,7 +1220,8 @@ msgstr "随处可用"
 #~ msgid "Git"
 #~ msgstr "Git"
 
-#: src/features/session-git.tsx:200
+#: src/features/session-git.tsx:168
+#: src/features/session-git.tsx:291
 msgid "Git status"
 msgstr "Git 状态"
 
@@ -1527,7 +1538,7 @@ msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl
 msgid "Level"
 msgstr "级别"
 
-#: src/features/session-git.tsx:60
+#: src/features/session-git.tsx:64
 msgid "Level with upstream."
 msgstr "与上游一致。"
 
@@ -1569,7 +1580,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:213
+#: src/features/session-git.tsx:304
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1643,12 +1654,12 @@ msgstr "模型"
 msgid "Modified"
 msgstr "修改时间"
 
-#: src/features/session-git.tsx:108
+#: src/features/session-git.tsx:133
 msgctxt "git"
 msgid "Modified"
 msgstr "已修改"
 
-#: src/features/session-git.tsx:150
+#: src/features/session-git.tsx:231
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
 
@@ -1830,7 +1841,8 @@ msgstr "未选中工单"
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
-#: src/features/session-git.tsx:51
+#: src/features/session-git.tsx:55
+#: src/features/session-git.tsx:226
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
@@ -1838,7 +1850,7 @@ msgstr "没有未提交的改动。"
 msgid "no upstream"
 msgstr "无上游"
 
-#: src/features/session-git.tsx:53
+#: src/features/session-git.tsx:57
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
@@ -1866,11 +1878,11 @@ msgstr "当前 Runtime 还没有这条通道"
 msgid "Not paired"
 msgstr "未配对"
 
-#: src/features/session-git.tsx:154
+#: src/features/session-git.tsx:240
 msgid "Not pulled"
 msgstr "未拉取"
 
-#: src/features/session-git.tsx:153
+#: src/features/session-git.tsx:238
 msgid "Not pushed"
 msgstr "未推送"
 
@@ -2191,7 +2203,7 @@ msgstr "就绪"
 msgid "Reason"
 msgstr "原因"
 
-#: src/features/session-git.tsx:155
+#: src/features/session-git.tsx:244
 msgid "Recent commits"
 msgstr "最近提交"
 
@@ -2698,7 +2710,7 @@ msgstr "本机来源"
 #~ msgid "Staged"
 #~ msgstr "已暂存"
 
-#: src/features/session-git.tsx:107
+#: src/features/session-git.tsx:132
 msgctxt "git"
 msgid "Staged"
 msgstr "已暂存"
@@ -3166,7 +3178,7 @@ msgstr "未命名会话"
 #~ msgid "Untracked"
 #~ msgstr "未跟踪"
 
-#: src/features/session-git.tsx:109
+#: src/features/session-git.tsx:134
 msgctxt "git"
 msgid "Untracked"
 msgstr "未跟踪"

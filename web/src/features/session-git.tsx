@@ -9,11 +9,15 @@ import { useState } from 'react'
 
 import { GitStatusTag } from '#/components/deck/session-tags'
 import type { GitStatus } from '#/components/deck/session-tags'
+import { Segmented } from '#/components/deck/segmented'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { hostRead } from '#/lib/runtime-client'
 import { trace } from '#/lib/client-trace'
+import { cn } from '#/lib/utils'
 import { useAgo } from './tickets-view'
+import { defaultGitTab } from './git-tab'
+import type { GitTab } from './git-tab'
 
 export type GitFile = {
   path: string
@@ -65,15 +69,27 @@ export function useGitSentence() {
 function Commits({
   title,
   commits,
+  tone,
 }: {
   title: string
   commits: Array<GitCommit>
+  /** needs you: not pushed (accent) / not pulled (waiting) */
+  tone?: 'ahead' | 'behind'
 }) {
   const ago = useAgo()
   if (!commits.length) return null
   return (
-    <section className="grid gap-1">
-      <h3 className="px-1 text-meta text-brand-label">
+    <section data-git-commits={tone ?? 'recent'} className="grid gap-1">
+      <h3
+        className={cn(
+          'px-1 text-meta',
+          tone === 'ahead'
+            ? 'font-semibold text-brand-running'
+            : tone === 'behind'
+              ? 'font-semibold text-brand-waiting'
+              : 'text-brand-label',
+        )}
+      >
         {title} · {commits.length}
       </h3>
       <ul className="grid gap-0.5">
@@ -98,18 +114,47 @@ function Commits({
   )
 }
 
-/** the lists (also what 交互调试 › git 状态 shows from sample data) */
+/** distinct paths (a file staged and modified is listed twice) */
+const changedPaths = (detail: GitDetail) =>
+  new Set(detail.files.map((file) => file.path)).size
+
+/**
+ * The lists (also what 交互调试 › git 状态 shows from sample data): the
+ * sentence over two tabs — 变更 (files by state) and 提交 (not pushed, not
+ * pulled, then recent) — opening on whichever explains the tag; ← → switch.
+ */
 export function GitDetailView({ detail }: { detail: GitDetail }) {
   const { t } = useLingui()
   const sentence = useGitSentence()
+  const [tab, setTab] = useState<GitTab>(() => defaultGitTab(detail))
   const groups: Array<{ state: GitFile['state']; title: string }> = [
     { state: 'conflict', title: t({ message: 'Conflicts', context: 'git' }) },
     { state: 'staged', title: t({ message: 'Staged', context: 'git' }) },
     { state: 'modified', title: t({ message: 'Modified', context: 'git' }) },
     { state: 'untracked', title: t({ message: 'Untracked', context: 'git' }) },
   ]
+  const { ahead, behind } = detail.status
+  const sync = [ahead ? `↑${ahead}` : '', behind ? `↓${behind}` : '']
+    .filter(Boolean)
+    .join(' ')
   return (
-    <div data-testid="git-detail" className="grid gap-3">
+    <div
+      data-testid="git-detail"
+      data-tab={tab}
+      className="grid gap-3"
+      onKeyDown={(event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+        event.preventDefault()
+        const next = tab === 'changes' ? 'commits' : 'changes'
+        setTab(next)
+        // keep focus on the switch, now on the other segment
+        requestAnimationFrame(() =>
+          event.currentTarget
+            .querySelector<HTMLElement>(`[role=radio][data-value=${next}]`)
+            ?.focus(),
+        )
+      }}
+    >
       <p className="px-1 text-caption leading-relaxed text-brand-muted">
         {detail.branch ? (
           <span className="mr-1 font-mono text-brand-text">
@@ -119,40 +164,86 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
         ) : null}
         {sentence(detail.status)}
       </p>
-      {groups.map(({ state, title }) => {
-        const files = detail.files.filter((file) => file.state === state)
-        if (!files.length) return null
-        return (
-          <section key={state} data-git-group={state} className="grid gap-1">
-            <h3 className="px-1 text-meta text-brand-label">
-              {title} · {files.length}
-            </h3>
-            <ul className="grid gap-0.5">
-              {files.map((file) => (
-                <li
-                  key={`${state}:${file.path}`}
-                  className="flex min-w-0 items-baseline gap-2 px-1 font-mono text-meta"
-                >
-                  <span className="w-3 shrink-0 text-brand-label">
-                    {file.code}
+      <Segmented
+        label={t`Git status`}
+        value={tab}
+        onChange={setTab}
+        options={[
+          {
+            value: 'changes',
+            label: t({ message: 'Changes', context: 'git' }),
+            count: changedPaths(detail),
+          },
+          {
+            value: 'commits',
+            label: (
+              <>
+                {t({ message: 'Commits', context: 'git' })}
+                {sync ? (
+                  <span className="ml-1 text-[0.85em] tabular-nums opacity-70">
+                    {sync}
                   </span>
-                  <span className="min-w-0 truncate text-brand-text">
-                    {file.path}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      })}
-      {detail.truncated ? (
-        <p className="px-1 text-meta text-brand-label">
-          {t`More files changed than listed here.`}
-        </p>
-      ) : null}
-      <Commits title={t`Not pushed`} commits={detail.ahead} />
-      <Commits title={t`Not pulled`} commits={detail.behind} />
-      <Commits title={t`Recent commits`} commits={detail.recent} />
+                ) : null}
+              </>
+            ),
+          },
+        ]}
+      />
+      {tab === 'changes' ? (
+        <div className="grid gap-3">
+          {groups.map(({ state, title }) => {
+            const files = detail.files.filter((file) => file.state === state)
+            if (!files.length) return null
+            return (
+              <section
+                key={state}
+                data-git-group={state}
+                className="grid gap-1"
+              >
+                <h3 className="px-1 text-meta text-brand-label">
+                  {title} · {files.length}
+                </h3>
+                <ul className="grid gap-0.5">
+                  {files.map((file) => (
+                    <li
+                      key={`${state}:${file.path}`}
+                      className="flex min-w-0 items-baseline gap-2 px-1 font-mono text-meta"
+                    >
+                      <span className="w-3 shrink-0 text-brand-label">
+                        {file.code}
+                      </span>
+                      <span className="min-w-0 truncate text-brand-text">
+                        {file.path}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
+          })}
+          {detail.files.length ? null : (
+            <p className="px-1 py-4 text-center text-caption text-brand-muted">
+              {t`No uncommitted changes.`}
+            </p>
+          )}
+          {detail.truncated ? (
+            <p className="px-1 text-meta text-brand-label">
+              {t`More files changed than listed here.`}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {/* what needs you first, in colour; the recent ones for reference */}
+          <Commits title={t`Not pushed`} commits={detail.ahead} tone="ahead" />
+          <Commits
+            title={t`Not pulled`}
+            commits={detail.behind}
+            tone="behind"
+          />
+          <Commits title={t`Recent commits`} commits={detail.recent} />
+        </div>
+      )}
     </div>
   )
 }
