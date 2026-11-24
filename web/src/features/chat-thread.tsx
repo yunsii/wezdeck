@@ -11,6 +11,7 @@ import { cn } from '#/lib/utils'
 import { Led } from '#/components/deck/led'
 import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
+import { catchUp, useCatchUpSignal } from './chat-catchup'
 import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup, canBackground } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
@@ -296,13 +297,17 @@ export function ChatThread({
   const baseline = useRef<number | null>(null)
   const [cursor, setCursor] = useState<number | null>(null)
   if (baseline.current === null && messages.length > 0) baseline.current = end
-  // a long backlog (phone was away) jumps to the newest instead of replaying
   const items = group(messages)
-  const effective = settleCursor(
-    items,
-    start,
-    cursor === null ? (baseline.current ?? end) : Math.max(cursor, end - 8),
-  )
+  // the first message not shown yet; a backlog (page was hidden, phone
+  // locked) shows all but its newest reply at once (chat-catchup.ts)
+  const from = cursor === null ? (baseline.current ?? end) : cursor
+  const caught = catchUp(items, start, from)
+  const effective = settleCursor(items, start, caught)
+  const skippedFrom = caught > from ? from : null
+  useCatchUpSignal(skippedFrom)
+  // shown at once by a catch-up: no entrance, they were not watched arriving
+  const skipped = (at: number) =>
+    skippedFrom !== null && at >= skippedFrom && at < effective
   const advance = useCallback(
     (to: number) => setCursor((current) => Math.max(current ?? 0, to)),
     [],
@@ -328,7 +333,7 @@ export function ChatThread({
         <ToolGroup
           key={`t${at}`}
           tools={item.tools}
-          fresh={isFresh(item.index)}
+          fresh={isFresh(item.index) && !skipped(at)}
           stream={stream}
           live={live}
           onBackground={
@@ -360,7 +365,7 @@ export function ChatThread({
         key={`m${at}`}
         message={item.message}
         at={at}
-        fresh={isFresh(item.index)}
+        fresh={isFresh(item.index) && !skipped(at)}
         stream={stream}
         rush={queued >= 2}
         settles={queue.took.has(at)}

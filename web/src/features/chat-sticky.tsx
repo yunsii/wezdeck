@@ -15,7 +15,8 @@ import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 
 /** room the bar takes at the top (its height plus a little air) */
-const BAR = 52
+/** the sticky prompt's height (also the room chat-scroll leaves above a jump) */
+export const BAR = 52
 const NEAR_BOTTOM = 48
 
 const reducedMotion = () =>
@@ -90,6 +91,8 @@ export function StickyPrompt({
   return (
     <div
       ref={box}
+      // the thread's visible top under the header: chat-scroll aligns to it
+      data-chat-top
       className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0"
     >
       {text ? (

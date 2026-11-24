@@ -380,7 +380,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   line after the send settles one bubble (`settle`, `chat-thread.tsx`), and
   a bubble is never dropped while the agent works, only a minute after it is
   idle; motion only for what just arrived (slide-in, a new
-  reply unfolds over ≤ 500 ms, one working line (running light + 运行中… elapsed · tokens) while the agent works, the same shape whether or not a tool call is out, smooth
+  reply unfolds at reading pace, ~60 chars/s, tripled while two or more
+  wait; more than two replies behind — the page was hidden, the phone
+  locked — everything before the newest reply shows at once and a reader
+  at the bottom stops at the first unseen message with the jump button
+  counting the rest (`chat-catchup.ts`, trace `chat-catch-up`), one working line (running light + 运行中… elapsed · tokens) while the agent works, the same shape whether or not a tool call is out, smooth
   follow at the bottom), all off under reduced motion; polling 1 s while the
   agent works. Keyboard: `interactive-widget=resizes-content` keeps the
   composer above it, and a pinned thread follows the shrinking scroller

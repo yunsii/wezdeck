@@ -15,7 +15,8 @@ const SETTLE_MS = 700
  * Reading pace, not a fixed duration: ~60 chars a second, however long the
  * reply (it used to fit any reply into 3 s, so a long one flashed past); the
  * next messages wait their turn. With two or more queued behind it the pace
- * triples to catch up — and the thread still jumps once it is 8 behind.
+ * triples to catch up — and with more than two replies waiting the thread
+ * shows all but the newest at once (chat-catchup.ts).
  */
 const READ_CPS = 60
 const RUSH_CPS = 180
@@ -37,8 +38,8 @@ function batchEnd(text: string, from: number, step: number) {
 
 /**
  * Stream a just-arrived reply in the way Gemini's feels: a phrase-sized
- * batch every 120 ms at a reading pace (about 350 chars/s, the whole
- * message in 0.6–3 s), each batch fading in softly (chat-markdown.tsx) while
+ * batch every 120 ms at reading pace (READ_CPS; at least 0.6 s), each
+ * batch fading in softly (chat-markdown.tsx) while
  * the thread glides down after it (chat-scroll.ts). Text that grows
  * mid-stream continues from where it is, never from the start.
  */

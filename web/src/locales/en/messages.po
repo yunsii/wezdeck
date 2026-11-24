@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:442
+#: src/features/chat-thread.tsx:447
 msgid "· summary"
 msgstr "· summary"
 
@@ -127,7 +127,7 @@ msgstr "{unread} new"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/chat-thread.tsx:236
+#: src/features/chat-thread.tsx:237
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -541,7 +541,7 @@ msgstr "Command sent: {command}"
 msgid "Commands"
 msgstr "Commands"
 
-#: src/features/chat-thread.tsx:231
+#: src/features/chat-thread.tsx:232
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -587,11 +587,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:426
+#: src/features/chat-thread.tsx:431
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:427
+#: src/features/chat-thread.tsx:432
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1154,7 +1154,7 @@ msgstr "joins the current turn"
 #~ msgid "Jump to pane"
 #~ msgstr "Jump to pane"
 
-#: src/features/chat-sticky.tsx:101
+#: src/features/chat-sticky.tsx:104
 msgid "Jump to your message: {text}"
 msgstr "Jump to your message: {text}"
 
@@ -1744,7 +1744,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/chat-thread.tsx:469
+#: src/features/chat-thread.tsx:474
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -2339,7 +2339,7 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:244
+#: src/features/chat-thread.tsx:245
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -2840,7 +2840,7 @@ msgstr "Worker requests"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-thread.tsx:231
+#: src/features/chat-thread.tsx:232
 msgid "Working"
 msgstr "Working"
 

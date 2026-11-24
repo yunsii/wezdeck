@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { trace } from '#/lib/client-trace'
+import { CATCH_UP_EVENT } from './chat-catchup'
+import { BAR } from './chat-sticky'
 
 /** a panel's open / close animation (motion-collapse) and a margin */
 const TOGGLE_HOLD_MS = 450
@@ -106,6 +108,38 @@ function panelToggled(
   }, TOGGLE_HOLD_MS + 100)
 }
 
+/**
+ * A backlog was shown at once (chat-catchup.ts): a reader following the
+ * bottom stops at the first message they have not seen, not past it, and
+ * leaves the bottom — the jump button then counts what is below.
+ */
+function useStopAtUnread(
+  end: React.RefObject<HTMLDivElement | null>,
+  pinnedRef: React.RefObject<boolean>,
+  pin: (value: boolean) => void,
+) {
+  useEffect(() => {
+    const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
+    if (!el) return
+    const onCatchUp = (event: Event) => {
+      if (!pinnedRef.current || !(event.target instanceof HTMLElement)) return
+      pin(false)
+      // below the header and the sticky prompt that will show over it
+      const anchor = el.querySelector('[data-chat-top]')
+      const line = anchor
+        ? anchor.getBoundingClientRect().top + BAR + 8
+        : el.getBoundingClientRect().top + 8
+      el.scrollTop += event.target.getBoundingClientRect().top - line
+      trace('chat-catch-up', {
+        from: (event as CustomEvent<{ from: number }>).detail.from,
+        scrollTop: Math.round(el.scrollTop),
+      })
+    }
+    el.addEventListener(CATCH_UP_EVENT, onCatchUp)
+    return () => el.removeEventListener(CATCH_UP_EVENT, onCatchUp)
+  }, [end, pinnedRef, pin])
+}
+
 export function useChatScroll(
   end: React.RefObject<HTMLDivElement | null>,
   count: number,
@@ -139,6 +173,8 @@ export function useChatScroll(
     },
     [end],
   )
+
+  useStopAtUnread(end, pinnedRef, pin)
 
   // reader intent: only real input may unpin
   useEffect(() => {
