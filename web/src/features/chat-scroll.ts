@@ -146,6 +146,9 @@ function useStopAtUnread(
   }, [end, pinnedRef, pin])
 }
 
+/** a streaming reply easing its height (chat-grow.tsx) */
+const easing = (el: HTMLElement) => el.querySelector('[data-growing]') !== null
+
 /** after a conversation opens, growth jumps instead of gliding for this long
  * (extended while it keeps growing) */
 const LANDING_MS = 1500
@@ -384,7 +387,8 @@ export function useChatScroll(
     const observer = new ResizeObserver((entries) => {
       // keyboard resize, or still settling after it opened: bottom at once
       const now = !smooth || grewWhileLanding(landing)
-      if (now || entries.some((e) => e.target === el)) jumpDown()
+      // a streaming reply eases its own height (chat-grow.tsx): hold the end
+      if (now || easing(el) || entries.some((e) => e.target === el)) jumpDown()
       else glideDown()
     })
     content.forEach((child) => observer.observe(child))

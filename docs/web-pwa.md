@@ -403,8 +403,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   260 ms; a per-word blur + lift made the leading edge shimmer), kept
   animating 700 ms after the last batch so the tail never pops; a backlog
   over 8 jumps to the newest; the page stays pinned to the bottom while a reply grows
-  (`chat-scroll.ts`: content growth glides — each frame covers a fifth of
-  the distance left — while a scroller resize (keyboard) jumps; only a
+  (`chat-scroll.ts`: growth glides a fifth of what is left per frame, a
+  keyboard resize jumps, a streaming reply eases its own box
+  (`chat-grow.tsx`, `data-growing`) while the end is held each frame so the
+  turn line stays put — 交互调试 › 长回复流式写出, `chat-stream.cdp`; only a
   finger, wheel or key can unpin it, never the
   page's own scrolling; a finger dragging the history down unpins at once
   and nothing auto-scrolls while a finger is down; back near the bottom
@@ -417,9 +419,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   goes once off screen; a run scrolled past closes onto its row at the top).
   Each toggle traces `panel-toggle` (row drift, scrollTop) — headless touch
   emulation moved the row 24 px on close where mouse and scripted clicks
-  moved it 0, so the phone's numbers decide); only thread toggles count —
-  the footer's subagents panel scrolled the thread (交互调试 › 子 agent 面板);
-  growth is watched on the scroller's children (`#console-main`))
+  moved it 0, so the phone's numbers decide); only thread toggles count (交互调试 › 子 agent 面板); growth is watched on the scroller's children)
   (tables and code scroll in their own box); messages run full width and
   are told apart by background alone (user: ink `brand-text` with deck text,
   reply: `brand-surface`); runs of tool calls collapse into one line (`chat-tools.tsx`), each call

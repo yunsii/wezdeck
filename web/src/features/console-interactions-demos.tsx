@@ -1,8 +1,9 @@
 // 交互调试 demos that need the session page's own layout to show their
 // behaviour: a scroller with the thread, its end sentinel and the sticky
 // footer, driven by the real useChatScroll.
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { Button } from '#/components/ui/button'
 import { useChatScroll } from './chat-scroll'
 import { ChatThread } from './chat-thread'
 import type { Message } from './chat-thread'
@@ -43,28 +44,114 @@ const AGENTS: Array<Subagent> = [
   },
 ]
 
+/** a session-shaped scroller: thread + end sentinel, then a sticky footer */
+function SessionFrame({
+  testId,
+  thread,
+  count,
+  footer,
+}: {
+  testId: string
+  thread: React.ReactNode
+  count: number
+  footer: React.ReactNode
+}) {
+  const end = useRef<HTMLDivElement>(null)
+  useChatScroll(end, count)
+  return (
+    <div
+      data-testid={testId}
+      className="grid h-[26rem] grid-rows-[minmax(0,1fr)] overflow-hidden rounded-xl border border-brand-edge"
+    >
+      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-start overflow-y-auto px-2.5">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 py-2">
+          {thread}
+          <div ref={end} data-testid={`${testId}-end`} />
+        </div>
+        <div className="sticky bottom-0 -mx-2.5 border-t border-brand-edge bg-brand-deck px-2.5 py-2">
+          {footer}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * The subagents panel in a session-shaped scroller: folding it (it lives in
  * the sticky footer) must leave the thread where it is — pinned to its last
  * message — and lend no blank room under it.
  */
 export function SubagentsDemo() {
-  const end = useRef<HTMLDivElement>(null)
-  useChatScroll(end, THREAD.length)
   return (
-    <div
-      data-testid="subagents-demo"
-      className="grid h-[26rem] grid-rows-[minmax(0,1fr)] overflow-hidden rounded-xl border border-brand-edge"
-    >
-      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-start overflow-y-auto px-2.5">
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 py-2">
-          <ChatThread messages={THREAD} start={0} busy={false} />
-          <div ref={end} data-testid="subagents-demo-end" />
-        </div>
-        <div className="sticky bottom-0 -mx-2.5 border-t border-brand-edge bg-brand-deck px-2.5 py-2">
-          <SessionSubagents agents={AGENTS} />
-        </div>
-      </div>
+    <SessionFrame
+      testId="subagents-demo"
+      count={THREAD.length}
+      thread={<ChatThread messages={THREAD} start={0} busy={false} />}
+      footer={<SessionAgentsFooter />}
+    />
+  )
+}
+
+function SessionAgentsFooter() {
+  return <SessionSubagents agents={AGENTS} />
+}
+
+const LONG_REPLY = Array.from(
+  { length: 14 },
+  (_, i) =>
+    `${i + 1}. 这是一段很长的回复，按阅读速度逐段写出：每一批文字换行时，回复的容器应当平滑长高，下面的运行中状态行停在原处不跟着跳。`,
+).join('\n\n')
+
+/**
+ * A long reply streaming in while the agent works: the reply grows, the turn
+ * line under it (运行中) stays put on screen. 重放 streams it again.
+ */
+export function StreamDemo() {
+  const [round, setRound] = useState(0)
+  const [messages, setMessages] = useState<Array<Message>>(THREAD.slice(0, 4))
+  useEffect(() => {
+    setMessages(THREAD.slice(0, 4))
+    // arrives after the page settled: a new reply streams, an old one does not
+    const timer = setTimeout(
+      () =>
+        setMessages((list) => [
+          ...list,
+          { role: 'user', text: `重放 ${round + 1}` },
+          { role: 'assistant', text: LONG_REPLY },
+        ]),
+      600,
+    )
+    return () => clearTimeout(timer)
+  }, [round])
+  return (
+    <div className="grid gap-2">
+      <Button
+        variant="plain"
+        type="button"
+        data-testid="stream-replay"
+        onClick={() => setRound((n) => n + 1)}
+        className="justify-self-start rounded-full bg-brand-surface px-3 py-1 text-caption"
+      >
+        重放 / Replay
+      </Button>
+      <SessionFrame
+        key={round}
+        testId="stream-demo"
+        count={messages.length}
+        thread={
+          <ChatThread
+            messages={messages}
+            start={0}
+            busy
+            activity={{ since: Date.now() - 42_000, tokens: 1_830 }}
+          />
+        }
+        footer={
+          <p className="px-1 text-meta text-brand-label">
+            （输入框位置 / composer）
+          </p>
+        }
+      />
     </div>
   )
 }

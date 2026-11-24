@@ -8,7 +8,7 @@ import { ChatThread } from './chat-thread'
 import { AskCard } from './session-ask-claude'
 import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import { PermissionCard } from './session-permission'
-import { SubagentsDemo } from './console-interactions-demos'
+import { StreamDemo, SubagentsDemo } from './console-interactions-demos'
 import {
   ASK_ONE,
   ASK_MANY,
@@ -276,6 +276,17 @@ function streamSections(
           />
         </div>
       ),
+    },
+    {
+      id: 'stream',
+      tags: ['common'],
+      title: { zh: '长回复流式写出', en: 'Long reply streaming in' },
+      source: {
+        zh: '新到的回复按阅读速度逐批显示（chat-stream.ts）；回复容器平滑长高，运行中状态行不动（chat-scroll.ts）',
+        en: 'a new reply is revealed in reading-pace batches (chat-stream.ts); its box grows smoothly while the turn line stays put (chat-scroll.ts)',
+      },
+      keys: { zh: '无（重放可再看一次）', en: 'None (Replay runs it again)' },
+      demo: <StreamDemo />,
     },
     {
       id: 'subagents',

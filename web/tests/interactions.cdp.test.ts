@@ -35,6 +35,7 @@ describe('Interaction debugging page', () => {
     'grok-plan',
     'generic-keys',
     'progress',
+    'stream',
     'subagents',
     'to-background',
     'compaction',

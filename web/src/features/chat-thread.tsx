@@ -23,6 +23,7 @@ import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
+import { SmoothGrow } from './chat-grow'
 import { catchUp, useCatchUpSignal } from './chat-catchup'
 import { SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup, canBackground } from './chat-tools'
@@ -116,7 +117,9 @@ const Bubble = memo(function BubbleView({
             <TranscriptImages refs={message.images} />
           </>
         ) : (
-          <ChatMarkdown text={live.text} streaming={live.streaming} />
+          <SmoothGrow active={stream && live.streaming}>
+            <ChatMarkdown text={live.text} streaming={live.streaming} />
+          </SmoothGrow>
         )}
       </div>
     </div>
