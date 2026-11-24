@@ -127,10 +127,12 @@ progress_lines() {
     -e 's/.*Test Files +(.*)$/tests: \1/p'
 }
 # watch background jobs (name → pid in `pids`, log `$RUN/<name>.log`) until
-# each exits, printing their progress as it lands
+# each exits, printing their progress as it lands. A job's exit status and
+# own duration land in `rcs` / `durs` the moment it exits; with
+# WATCH_ANNOUNCE=1 its ✓/✗ line prints right then, not after the slowest job.
 watch_jobs() {
   declare -A seen quiet
-  local name n line busy=1
+  local name n line busy=1 rc
   for name in "$@"; do seen[$name]=0; quiet[$name]=$SECONDS; done
   while ((busy)); do
     busy=0
@@ -150,13 +152,22 @@ watch_jobs() {
           say '…' "$name" "still running ($((SECONDS - starts[$name]))s)"
           quiet[$name]=$SECONDS
         fi
+      elif [[ -z "${rcs[$name]:-}" ]]; then
+        rc=0; wait "${pids[$name]}" || rc=$?
+        rcs[$name]=$rc
+        durs[$name]=$((SECONDS - starts[$name]))
+        if ((${WATCH_ANNOUNCE:-0})); then
+          say "$( ((rc == 0)) && echo '✓' || echo '✗')" "$name" "$(tail -1 "$RUN/$name.log") (${durs[$name]}s)"
+          ((rc == 0)) || sed 's/^/      /' "$RUN/$name.log" | tail -15
+        fi
       fi
     done
     ((busy)) && sleep 1
   done
+  return 0
 }
 
-declare -A pids starts
+declare -A pids starts rcs durs
 if ((test_gate)); then
   t0=$SECONDS
   say '▶' test 'affected tests (go / unit / cdp on the test stack)'
@@ -164,7 +175,7 @@ if ((test_gate)); then
   (scripts/dev/web-affected-tests.sh --base '@{u}' --run >"$RUN/test.log" 2>&1) &
   pids[test]=$!
   watch_jobs test
-  if ! wait "${pids[test]}"; then
+  if ((rcs[test] != 0)); then
     tail -30 "$RUN/test.log" | sed 's/^/      /'
     say '✗' test "failed in $((SECONDS - t0))s (log $RUN/test.log); nothing pushed or deployed"
     [[ -n "$commit_msg" ]] &&
@@ -246,17 +257,14 @@ for name in push relay web; do
 done
 running=()
 for name in push relay web; do [[ -n "${pids[$name]:-}" ]] && running+=("$name"); done
-((${#running[@]})) && watch_jobs "${running[@]}"
+((${#running[@]})) && WATCH_ANNOUNCE=1 watch_jobs "${running[@]}"
 
 failed=0
 summary=()
 for name in push relay web; do
   [[ -n "${pids[$name]:-}" ]] || continue
-  if wait "${pids[$name]}"; then status=ok; else status=FAIL; failed=1; fi
-  secs=$((SECONDS - starts[$name]))
-  result="$(tail -1 "$RUN/$name.log")"
-  say "$( [[ $status == ok ]] && echo '✓' || echo '✗')" "$name" "$result (${secs}s)"
-  [[ $status == FAIL ]] && sed 's/^/      /' "$RUN/$name.log" | tail -15
+  if ((rcs[$name] == 0)); then status=ok; else status=FAIL; failed=1; fi
+  secs=${durs[$name]}
   summary+=("$name=$status/${secs}s")
 done
 # the web consoles onto the build just deployed (not when web was skipped)
