@@ -55,9 +55,14 @@ type attentionEntry struct {
 	// attention-state-lib.sh): the phone counts elapsed time from them
 	// set on a session listed in place of an archived one whose pane was
 	// cleared (/new, /clear): the id it replaced (liveSessions)
-	ReplacedFrom   string `json:"-"`
-	TurnStarted    int64  `json:"turn_started"`
-	CompactStarted int64  `json:"compact_started"`
+	ReplacedFrom string `json:"-"`
+	// set on a session listed from recent[]: the archived row it came from
+	// (session id + archived_ts), which is how the desk's sessions/focus
+	// finds it (sessionFocus)
+	archivedID     string
+	archivedTS     int64
+	TurnStarted    int64 `json:"turn_started"`
+	CompactStarted int64 `json:"compact_started"`
 	Bg             struct {
 		Tasks []bgTask `json:"tasks"`
 	} `json:"bg"`
@@ -93,6 +98,18 @@ type recentEntry struct {
 	// set by the SessionStart clear hook (/new, /clear): the session that
 	// took this pane over (agent-attention/turn-lib.sh attention_mark_cleared)
 	ClearedTo string `json:"cleared_to"`
+}
+
+// sessionFocus: the payload for the local Runtime's sessions/focus (the web
+// console's 在终端中打开, this computer only) — the attention row that
+// action looks up: the live entry, or the archived one by id + archived_ts
+// (also for a session that took over a cleared pane, which has no row of its
+// own yet).
+func sessionFocus(id string, e attentionEntry) map[string]any {
+	if e.archivedID != "" {
+		return map[string]any{"session_id": e.archivedID, "recent": true, "archived_ts": e.archivedTS}
+	}
+	return map[string]any{"session_id": id}
 }
 
 func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
@@ -166,6 +183,7 @@ func liveSessions() (map[string]attentionEntry, error) {
 		e.WaitingKind = ""
 		e.RunningKind = ""
 		e.TS = r.ArchivedTS
+		e.archivedID, e.archivedTS = r.SessionID, r.ArchivedTS
 		// /new or /clear in this pane: the hook archived the old session and
 		// marked it cleared_to the new one, which has no entry until its
 		// first prompt. List the new session in its place (idle, empty,
@@ -456,6 +474,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		}
 	}
 	out["reference"] = sessionReference(e, path, agent)
+	out["focus"] = sessionFocus(a.ID, e)
 	out["meta"] = sessionMeta(e, path, agent, nil)
 	if path != "" {
 		out["agent"] = agent

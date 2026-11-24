@@ -82,6 +82,16 @@ server (`localhost:3000`, any project's) only reads (`IsWriteOriginAllowed`).
 the body is read. Writes use their own bridge connection with a 75 s timeout
 (the page waits 80 s), so a slow `ticket.new` neither blocks reads nor is
 reported failed and retried into a duplicate.
+On the host, 会话信息 also offers 在终端中打开 (key `o` on the session
+page): `POST /api/v1/actions/sessions/focus` (capability `sessions.focus`,
+`SessionRequestHandler.cs`) drops the same `attention.jump` event as Enter in
+`Alt+/` — workspace, tab, pane, then tmux `select-window` / `select-pane`.
+The detail's `focus` (`sessionFocus`, `remote_session.go`) names the
+attention row to look up: the live entry, or an archived one by id +
+`archived_ts` (also for a session that took over a cleared pane). Over the
+remote link it is not offered. Trail: client trace `session-focus`, then
+`web session focus dispatched` and `jump dispatched` (`activated`) share the
+Runtime's `http-…` trace id.
 Each write leaves `event=write via=local device=local` in `relay.log` (the
 bridge process appends there; `relayLogf`). The web's `hostRead` /
 `hostWrite` try the Runtime first and fall back to the remote link

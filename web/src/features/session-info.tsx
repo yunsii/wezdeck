@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { useStatusText } from './console-sessions'
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
+import { FocusInTerminal, useFocusKey } from './session-focus'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { SectionHeading } from '#/components/ui/section-heading'
@@ -182,6 +183,7 @@ export function SessionInfo({
   const { groups: groupLabels, keys, yes, no } = useLabels()
   const statusText = useStatusText()
   const [copiedRef, setCopiedRef] = useState(false)
+  useFocusKey(data.focus)
   // stays mounted while closed: the sheet plays its exit before it unmounts
   if (typeof document === 'undefined') return null
   const loaded = {
@@ -255,6 +257,7 @@ export function SessionInfo({
             {t`Rename via /rename in the agent pane`}
           </Button>
         ) : null}
+        <FocusInTerminal focus={data.focus} />
         <OpenInVsCode cwd={metaValue(data, 'cwd')} />
         <p className="px-1 text-meta text-brand-label">
           {t`Tap a row to copy its value; long-press or right-click for more.`}

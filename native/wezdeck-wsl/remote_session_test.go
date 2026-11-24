@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -280,6 +281,14 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	if _, err := sendToSession(json.RawMessage(`{"id":"old-1","text":"back again"}`)); err != nil {
 		t.Fatalf("idle archived session must take input: %v", err)
 	}
+	// 在终端中打开: the desk's sessions/focus finds it in recent[] by id + archived_ts
+	detail, err := sessionDetail(json.RawMessage(`{"id":"old-1"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "old-1", "recent": true, "archived_ts": int64(100)}) {
+		t.Fatalf("archived focus: %#v", got)
+	}
 }
 
 // /new or /clear: the hook marked the archived session cleared_to a new
@@ -325,6 +334,20 @@ func TestClearedPaneListsTheNewSession(t *testing.T) {
 	}
 	if _, err := sendToSession(json.RawMessage(`{"id":"new-after-clear","text":"first message"}`)); err != nil {
 		t.Fatalf("the new session must take input: %v", err)
+	}
+	// it has no attention row yet: focus goes through the cleared one's
+	detail, err := sessionDetail(json.RawMessage(`{"id":"new-after-clear"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "before-clear", "recent": true, "archived_ts": int64(100)}) {
+		t.Fatalf("cleared-pane focus: %#v", got)
+	}
+}
+
+func TestSessionFocusLiveEntry(t *testing.T) {
+	if got := sessionFocus("live-1", attentionEntry{SessionID: "live-1", Status: "running"}); !reflect.DeepEqual(got, map[string]any{"session_id": "live-1"}) {
+		t.Fatalf("live focus: %#v", got)
 	}
 }
 

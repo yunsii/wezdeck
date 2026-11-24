@@ -560,7 +560,7 @@ Android app. Open question: [`diagnostics.md`](diagnostics.md#open-questions).
 | Acceptance | `web/tests/pwa.cdp.test.ts` (`WEZDECK_PWA_PROD=1` adds worker + offline) |
 
 Deviations from the plan: the run detail stays inline on the pushed ticket
-page (no sheet yet); jump keys are `g x/i/c/a/m` (总览 / `g o` is gone too: its Runtime, IME and WSL facts are 我的 › 本机 on this computer, `/console` opens 会话 on every device; 开发 and its `g d` are gone — 会话's worktree tree covers it, 在 VS Code 中打开 lives in 会话信息 on this computer, `/console/development` redirects to 会话); `?remote=1` is sticky
+page (no sheet yet); jump keys are `g x/i/c/a/m` (总览 / `g o` is gone too: its Runtime, IME and WSL facts are 我的 › 本机 on this computer, `/console` opens 会话 on every device; 开发 and its `g d` are gone — 会话's worktree tree covers it, 在 VS Code 中打开 and 在终端中打开 (`o`, [remote-sessions](./remote-sessions.md#local-reads-and-writes)) live in 会话信息 on this computer, `/console/development` redirects to 会话); `?remote=1` is sticky
 per tab (sessionStorage) so in-app navigation keeps the remote path.
 
 ## Observability

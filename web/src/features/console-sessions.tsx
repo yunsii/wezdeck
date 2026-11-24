@@ -152,6 +152,8 @@ export type Detail = {
   permission?: PendingCall
   /** cleared in its pane (/new, /clear): the session that took its place */
   replaced_by?: string
+  /** the local Runtime's sessions/focus payload (在终端中打开, session-focus.tsx) */
+  focus?: { session_id: string; recent?: boolean; archived_ts?: number }
 }
 
 export function sessionTone(status: string, kind?: string): LedTone {
