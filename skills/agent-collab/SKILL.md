@@ -208,7 +208,7 @@ Session-claimed tickets: after `reply`, the **claiming TUI** continues implement
 
 **Structured questions.** When the decision is a choice between concrete options, pass
 `--questions` (≤4 questions, 2–6 options each, recommended first; research workers put the same
-array in `worker-result.json` `questions`). The initiator taps them on the phone (ticket detail)
+array in `worker-result.json` `questions`). The initiator taps them in the web console (ticket detail)
 and the picks arrive as an ordinary `reply` decision (`问题 → 选项`); `reply` archives them to
 `questions-history.jsonl`. `ticket api show` exposes them as `questions` while
 `waiting_initiator`. Keep `--needs` as the plain-text version. Open-ended asks: no `--questions`.

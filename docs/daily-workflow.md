@@ -226,7 +226,7 @@ After a coherent task round is **done and verified** on this repo:
 1. **Commit** via `coco-commit` (Conventional Commits; hygiene hook on).
 2. **Push** to `origin` on the default branch (`master` / resolved `origin/HEAD`) — no PR; see Default-branch delivery in `CLAUDE.md` / `AGENTS.md`.
 3. **Sync** with `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` when the round touched runtime config, platform skills under `skills/`, `scripts/runtime/`, tmux/WezTerm sync surfaces, or anything else the Default Flow says must reach the live tree.
-4. **Release** with `scripts/dev/wezdeck-release.sh` when the round touched `web/` or `native/wezdeck-wsl/` (the phone / browser console on Cloudflare and the host relay): it runs the affected tests, pushes, then deploys only the parts whose running version is behind. Same auto-decide rule as push — a verified round does not wait for 「上线」. Details: [`remote-access.md`](./remote-access.md).
+4. **Release** with `scripts/dev/wezdeck-release.sh` when the round touched `web/` or `native/wezdeck-wsl/` (the web console on Cloudflare and the host relay): it runs the affected tests, pushes, then deploys only the parts whose running version is behind. Same auto-decide rule as push — a verified round does not wait for 「上线」. Details: [`remote-access.md`](./remote-access.md).
 
 **Auto-decide** (do not wait for 「提交 / 推送 / sync」) when **all** hold:
 

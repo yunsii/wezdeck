@@ -109,19 +109,19 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   shell retired 2026-07), tmux window-size limits, Termux IME notes:
   Read [`docs/mobile-access.md`](docs/mobile-access.md).
 - Web console as an installable PWA (manifest, hand-written service worker,
-  update toast, persisted query cache, safe area, why the phone app is
-  installed from Chrome — Firefox PWA blank window on back), phone vs desktop layouts
+  update toast, persisted query cache, safe area, why the mobile app is
+  installed from Chrome — Firefox PWA blank window on back), mobile vs desktop layouts
   (bottom tabs / pushed detail / sheets vs split view + keyboard / command
   palette), capability-aware navigation, Web Push:
   Read [`docs/web-pwa.md`](docs/web-pwa.md).
-- Repo to-dos / follow-ups (`scripts/runtime/todo.py`, SQLite `todos`, phone 待办 panel):
+- Repo to-dos / follow-ups (`scripts/runtime/todo.py`, SQLite `todos`, web console 待办 panel):
   Read [`docs/remote-sessions.md#repo-to-dos`](docs/remote-sessions.md#repo-to-dos).
-- Viewing collab tickets from a phone / tablet anywhere (`wezdeck.yuns.love`
+- Viewing collab tickets from a remote web console anywhere (phone, tablet, another computer) (`wezdeck.yuns.love`
   on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
   DataChannel first / WebSocket relay fallback, link badge + latency,
   pairing tokens, `install-remote-relay.sh`, shipping a round with
   `wezdeck-release.sh`, the cdp tests' source-version precheck):
-  Read [`docs/remote-access.md`](docs/remote-access.md); what the phone sees
+  Read [`docs/remote-access.md`](docs/remote-access.md); what the web console sees
   and does in agent sessions: [`docs/remote-sessions.md`](docs/remote-sessions.md).
 - Driving this PC from a Pad / phone remote client feels laggy (layered
   triage: remote link → office side → home router / client Wi‑Fi → host;

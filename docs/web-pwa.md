@@ -1,6 +1,6 @@
-# Web console as a PWA (phone + desktop)
+# Web console as a PWA (mobile + desktop)
 
-Status: **live 2026-11-22**: ink theme, WD icon, three phone tabs (会话 / 工单 / 我的; 现在 retired 2026-11-23), sessions with phone writes ([`remote-access.md`](./remote-access.md)). Command palette and Web Push are next. Remote transport
+Status: **live 2026-11-22**: ink theme, WD icon, three mobile tabs (会话 / 工单 / 我的; 现在 retired 2026-11-23), sessions with web console writes ([`remote-access.md`](./remote-access.md)). Command palette and Web Push are next. Remote transport
 (WebRTC / WebSocket relay) is [`remote-access.md`](./remote-access.md); this
 doc is the app shell, layout and interaction on top of it.
 
@@ -14,8 +14,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 | Service worker | hand-written, shell-only, build-id update toast | same; explicitly no API caching | **adopt** both |
 | Offline data | TanStack Query persisted to IndexedDB (7 d) | none | **adopt forge**: show last tickets "as of HH:MM" |
 | Safe area / touch | `viewport-fit=cover`, `env(safe-area-*)`, 44 px targets, hover only on `(hover: hover)` | missing; ~32 px buttons | adopt forge |
-| Phone navigation | bottom tab bar, pushed second-level pages, sheets | header dropdown | adopt forge |
-| Desktop | none (phone only) | split list/detail | adopt fe1 split **plus** keyboard (repo stance) |
+| Mobile navigation | bottom tab bar, pushed second-level pages, sheets | header dropdown | adopt forge |
+| Desktop | none (mobile only) | split list/detail | adopt fe1 split **plus** keyboard (repo stance) |
 | Install entry | settings page; iOS / WeChat text guidance | ⚙ menu, same guidance | adopt |
 | Notifications | none | Feishu bot | **new: Web Push** |
 
@@ -34,30 +34,30 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    public explainer: concepts and flows in prose (设备授权 `flows-access.ts`:
    host tokens and relay join, pairing, device registration, approval,
    signed hello, per-request checks, revoke), files / endpoints folded. Each
-   diagram is a React Flow canvas (`@xyflow/react`, lazy chunk; desk only)
+   diagram is a React Flow canvas (`@xyflow/react`, lazy chunk; desktop only)
    above its step list, which is the keyboard path and the whole diagram on
-   a phone. Data lives in `web/src/features/architecture/` (`overview.ts`,
+   mobile. Data lives in `web/src/features/architecture/` (`overview.ts`,
    `flows*.ts`, `capabilities.ts`); `tests/architecture.unit.test.ts` reads
    the Runtime routes / actions, the bridge switch and the relay's
    `readRPC` / `runWrite` and fails until a new entry point is described.
-2. **One route tree, layouts by width**: `<768px` phone, `768–1279px` tablet
+2. **One route tree, layouts by width**: `<768px` mobile, `768–1279px` tablet
    (split, collapsible list), `≥1280px` desktop. Fixes today's gap at
    900–1023 px (neither `max-[899px]` nor `lg:` applies).
 3. **Capability-aware navigation**: loopback Runtime → every section; remote
    link only → collab sections only (no "Runtime offline" pages).
-4. **Phone IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
+4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
    会话 is the home: a status filter like `Alt+/` (全部 / 等你 / 运行中 /
    空闲, remembered per device), a 等你 band on top under 全部, then the
    repo → worktree → pane tree ordered by **visits**, never output — the
-   later of the desk visit (`visited`, the access ledger behind `Alt+g` /
-   `Alt+x`, `session_visits.go`) and a visit from this phone
+   later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
+   `Alt+x`, `session_visits.go`) and a visit from this web console
    (`lib/session-visits.ts`); never-visited groups (ticket agents) sink by
    name (`features/session-order.ts`); 待跟进 to-dos at the bottom. In a
    session, wezdeck's session keys carry over (`session-switcher.tsx`):
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
    session waiting on you / finished / running in the list's order — on the
-   phone a 「还有 N 个等你 ›」 chip in the header when another one waits;
+   mobile a 「还有 N 个等你 ›」 chip in the header when another one waits;
    `Alt+g` / `Alt+x` or tapping the title opens a switcher sheet grouped
    like the list. Switching replaces the history entry, so back returns to
    the list. Swiping a running / waiting / done row left offers 标为已读
@@ -87,7 +87,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    我的 returns to the index; write access is per device: phone, tablet or
    another browser each get their own key). Filters with counts never wrap:
    the count is a smaller figure and segments size by their text, so four
-   statuses plus + fit a 320 px phone; 工单's band and 工单动态 are one line
+   statuses plus + fit a 320 px mobile screen; 工单's band and 工单动态 are one line
    of text links, search opens from an icon. 进行中 sorts by last activity and
    folds tickets quiet for over a week (not running, not waiting on you) into
    一周以上没动静 (`splitQuiet`); ▲ marks only 等你, waiting on the other side is
@@ -99,7 +99,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    诊断 (local Runtime) is the same split too (console-diagnostics.tsx):
    levels with counts, search, a category select; an entry's facts as Field
    rows, copy raw line, only this trace; entry ids are stable, so the 5 s
-   refresh does not move the selection; a phone opens an entry in a sheet.
+   refresh does not move the selection; mobile opens an entry in a sheet.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): the
    list sticky on the left (search above it), the ticket beside it in the
    page scroll, j / k move through the list (not while typing or a sheet is
@@ -113,7 +113,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    sheet (mode, path, RTT, last direct failure, host since, mic grant).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
-5. **Wide screens (≥ 768 px, 2026-11-23)**: no phone layout blown up.
+5. **Wide screens (≥ 768 px, 2026-11-23)**: no mobile layout blown up.
    会话 and 工单 are the same split (`session-split.tsx`): the list
    sticky on the left with its own scroll, the open conversation beside it
    on the page scroll (so the chat's pin-to-bottom is unchanged), filling
@@ -130,13 +130,13 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    `g`+letter section jump; on a session page `Space` puts the caret in the composer
    (`composer-keys.ts`; not while typing, on a button / link, or with a
    sheet open), `Ctrl/⌘+N` (even from the composer) or `c` opens 新会话,
-   `Alt+J/K/L` jump like the desk and `Alt+G` / `Alt+X` / `Alt+/` open the
+   `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
-   `?` or the sidebar's 键盘快捷键 entry with the desk's key for the same
+   `?` or the sidebar's 键盘快捷键 entry with the terminal's key for the same
    action (from `wezterm-x/commands/manifest.json`); a key added to a page
    is added there too. Chrome may keep `Ctrl+N` for a new window in a plain
    tab (an installed app window can hand it to the page), hence `c`. The
-   desk's `Ctrl+N` is `/new` in the focused agent, not a new worktree: the
+   terminal's `Ctrl+N` is `/new` in the focused agent, not a new worktree: the
    web's equivalent is 命令 › /new. No command palette yet.
 7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
@@ -202,7 +202,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   its section, so the next heading pushes it off; `className` carries the
   surface's fill, which `.section-cover` (`styles/deck.css`) repeats past
   the box — to the sides, 8 px up in place, 32 px up once stuck via
-  `@container scroll-state(stuck: top)` — on its own layer: on a phone's
+  `@container scroll-state(stuck: top)` — on its own layer: on a mobile screen's
   fast fling the sticky box can trail the content by a frame and rows
   flashed through the gaps). A tap on either brings what it names into view:
   the user's message, or the heading's section — `scrollBy` on the heading's
@@ -213,7 +213,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   heading and its scroller, or sticky silently stops.
 - Back (2026-11-23): every pushed page (a session, a 我的 group, a ticket)
   backs out with `components/deck/back-button.tsx` — a bare ‹ on a 44 px
-  target, then the page name (or the session title) and, on the phone, the
+  target, then the page name (or the session title) and, on mobile, the
   link chip; the ticket page had a lone 「‹ 返回」 line of its own.
 - Scale (2026-11-23): six named sizes with their line heights in
   `web/src/styles/tokens.css` — `text-meta` 12 · `caption` 13 · `body` 15 ·
@@ -240,11 +240,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   UI underneath): `Button` (variants `solid` dark call to action, `key`
   surface key, `link` quiet text action, `ghost`, `outline`, `plain` for
   rows that lay themselves out; sizes `lg` / `md` touch targets, `round`
-  icon), `Input` (`field` phone form field, `bare` inside a styled box,
+  icon), `Input` (`field` mobile form field, `bare` inside a styled box,
   `default` dense desktop), `Textarea` (`field` / `bare`), `Select`
-  (`size="lg"` on phones; popup above the z-50 sheets), `Checkbox`,
+  (`size="lg"` on mobile; popup above the z-50 sheets), `Checkbox`,
   `Disclosure` (a folding section: title + turning ›, `chevron={false}` for
-  a custom row), `Sheet` (the phone's bottom sheet on Base UI Drawer — swipe
+  a custom row), `Sheet` (the mobile bottom sheet on Base UI Drawer — swipe
   down to dismiss (a short drag springs back; inside scrolled content the
   drag scrolls first), focus trap, Esc, backdrop tap, scroll lock; the swipe
   moves it through `--drawer-swipe-movement-y`; paper colour kept, set apart from the
@@ -252,7 +252,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   old sheet had no visible edge on the dark theme; only the body under the
   title scrolls), `Field` / `FieldList` (label / value rows to read and copy,
   the Telegram profile way: tap or click copies the value, long-press or
-  right-click opens copy value / copy "label: value"; on a phone a short
+  right-click opens copy value / copy "label: value"; on mobile a short
   value (≤ 16 chars) sits on the label's line like a 我的 row — name in ink,
   value secondary, as `Row` in `me-app.tsx` — and a longer one (URL, path,
   id) stacks over a small label, a wide screen keeps two columns sharing one
@@ -261,7 +261,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   missing control is added there first, then used. Tests address them by
   role: a Select is `combobox` + `option` (the popup is portalled to body),
   a Checkbox is `checkbox`.
-- Phone patterns: large title that scrolls with the page, grouped inset
+- Mobile patterns: large title that scrolls with the page, grouped inset
   lists, a three-way segmented control on 工单 (进行中 / 等你 / 已结束),
   settings as segmented rows instead of popovers, a translucent bottom bar
   with four tabs (hidden on detail pages, which are full screen).
@@ -311,7 +311,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (Material 3 emphasized curves): enter slower and decelerating, leave faster
   and accelerating, one thing moving at a time, never two whole pages
   half-transparent on top of each other; reduced motion keeps short fades
-  only. Overlays: `Sheet` slides up (phone) or fades and scales in (desk) —
+  only. Overlays: `Sheet` slides up (mobile) or fades and scales in (desktop) —
   its enter states are `@starting-style` (Tailwind `starting:`), because the
   popup loses `data-starting-style` before its first style resolution, and
   callers keep it mounted with `open` (a `{open ? <Sheet/> : null}` or an
@@ -329,7 +329,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   with the old cross-fade, 7–35 ms without); the section is ready instead:
   the shell keeps the ticket list and the session list warm, both persist to
   IndexedDB, and every section's route code is preloaded once idle
-  (`useWarmSections`). Within a section (`within`) a phone pushes like iOS —
+  (`useWarmSections`). Within a section (`within`) mobile pushes like iOS —
   the new page slides in whole and opaque with a shadow, the old one steps
   back 28 %; back reverses it with the leaving page on top — and a wide
   screen fades out, then nudges the new page in 16 px; in a wide split
@@ -384,7 +384,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   with a breathing light on the call in flight (host `pending`: sent, no
   result yet) and a check on finished ones, and collapses once the run is
   over (a tap still opens it in full); "N messages, showing M" with 加载更早 keeping the reading
-  position; a message sent from the phone shows at once at the end of the
+  position; a message sent from the web console shows at once at the end of the
   thread as the user bubble faded (like Claude Code's queued input) and
   becomes a normal user bubble only when the transcript shows it — in
   place, solidifying from the faded opacity (`chat-settle`), never a
@@ -412,7 +412,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. One toolbar row above the composer holds every tool:
   快捷 (always shown; disabled with a hint until write access is enabled on this device),
-  then 图片 once the phone may write, then the picked thumbnails.
+  then 图片 once this device may write, then the picked thumbnails.
   What a tool opens renders above the row in one card style, never as a
   popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
   `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
@@ -431,7 +431,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   shown in full with a short highlight (`chat-jump-prompt` trace). Unsent
   composer text is kept per session in `localStorage`
   (`wezdeck.draft.<id>`, cleared on a successful send); errors have a
-  one-tap copy; a "desk was just used" refusal counts down and resends
+  one-tap copy; a "terminal was just used" refusal counts down and resends
   (`session-send.ts`)
   ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller
   bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
@@ -486,7 +486,7 @@ the layout:
 
 ## Supported browser (2026-11-23)
 
-Install the phone app from **Chrome** (Android). Firefox for Android 162 as
+Install the mobile app from **Chrome** (Android). Firefox for Android 162 as
 an installed PWA mishandles the back gesture on the app's first history
 entry: the page is unloaded (`visibilitychange → hidden`, `pagehide`, **no**
 `popstate`) and the window stays open on a blank gray shell; only a second
@@ -507,7 +507,7 @@ Android app. Open question: [`diagnostics.md`](diagnostics.md#open-questions).
 | Build id, precache list | `pwaBuildInfo` in `web/vite.config.ts` → `dist/client/build.json`, `precache.json` |
 | Registration, update toast, install state | `web/src/lib/pwa.ts`, `web/src/features/pwa-boot.tsx` |
 | Persisted query cache (collab reads only) | `web/src/lib/query-provider.tsx`; keep-last-good reads `web/src/lib/collab-query.ts` |
-| Shell: sidebar / phone top bar + tabs, `g`+letter, `/` | `web/src/features/console-shell.tsx`; mode `console-mode.ts` |
+| Shell: sidebar / mobile top bar + tabs, `g`+letter, `/` | `web/src/features/console-shell.tsx`; mode `console-mode.ts` |
 | Inbox / tickets (split vs pushed detail) | `web/src/features/tickets-view.tsx`, `console-collab.tsx` |
 | Activity, Settings | `console-activity.tsx`, `console-me.tsx` |
 | Acceptance | `web/tests/pwa.cdp.test.ts` (`WEZDECK_PWA_PROD=1` adds worker + offline) |
@@ -537,7 +537,7 @@ per tab (sessionStorage) so in-app navigation keeps the remote path.
 | Phase | Scope | Verified by |
 | --- | --- | --- |
 | 1 PWA shell | manifest + icons, SW, update toast, safe area, install entry, persisted cache, capability-aware nav, breakpoint fix | installability check in Chrome; offline reopen shows "as of" in headless CDP; real phone install |
-| 2 Phone shell | bottom tabs, inbox, pushed detail, run sheet, connection sheet | CDP at 390×844 with touch emulation |
+| 2 Mobile shell | bottom tabs, inbox, pushed detail, run sheet, connection sheet | CDP at 390×844 with touch emulation |
 | 3 Desktop keyboard | list keys, command palette, hints | keyboard-only CDP flows |
 | 4 Writes | deferred (decision 6) | — |
 | 5 Push | Web Push + app badge | real phone notification opens the ticket |

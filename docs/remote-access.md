@@ -1,6 +1,6 @@
 # Remote access (remote web console → sessions and tickets)
 
-Status: **live** (2026-11-22). A paired phone opens
+Status: **live** (2026-11-22). A paired remote web console opens
 `https://wezdeck.yuns.love/console/sessions` from anywhere: collab tickets, runs and
 transcripts, every live agent session on the host (read its conversation,
 send it a message, answer its confirmation dialog), and replies to tickets
@@ -61,7 +61,7 @@ microphone grant makes the browser offer its real address (stream closed
 immediately, nothing recorded — fe1's meeting-link trick), the host then dials
 out and the stateful firewall lets the replies in. It only helps on the same
 LAN; across networks direct needs hole punching or TURN. The host's answer
-carries `samePublic`, so the button is hidden when the phone is on another
+carries `samePublic`, so the button is hidden when the device is on another
 network and the badge tooltip says hole punching failed.
 
 `rtc_answer` log rows carry `offer_cands` / `answer_cands` (counts per
@@ -86,13 +86,13 @@ as described next.
 
 ## Writes: device keys
 
-The phone creates an ECDSA P-256 key in the browser (non-extractable,
+The remote web console creates an ECDSA P-256 key in the browser (non-extractable,
 IndexedDB `wezdeck-device`) and registers its public half; the host approves
 it once:
 
 ```bash
 scripts/dev/install-remote-relay.sh --devices          # pending / approved
-scripts/dev/install-remote-relay.sh --approve <id>     # id = sha256(pub)[:8] hex, shown on the phone
+scripts/dev/install-remote-relay.sh --approve <id>     # id = sha256(pub)[:8] hex, shown in the web console
 scripts/dev/install-remote-relay.sh --revoke <id>
 ```
 
@@ -172,7 +172,7 @@ hibernation API, so an idle link costs no DO duration; usage stays far
 inside the Workers Free allowance.
 
 
-A reply over 200 KB goes over the DataChannel as `part` frames (`{t:"part", id, seq, total, data}`, 60 KB slices of its JSON text cut on UTF-8 boundaries; `relay_parts.go` → `web/src/lib/reply-parts.ts`): Chrome takes at most 256 KiB per DataChannel message, and a bigger send used to fail silently, leaving the phone to time out. A failed send logs `rtc_send_error`.
+A reply over 200 KB goes over the DataChannel as `part` frames (`{t:"part", id, seq, total, data}`, 60 KB slices of its JSON text cut on UTF-8 boundaries; `relay_parts.go` → `web/src/lib/reply-parts.ts`): Chrome takes at most 256 KiB per DataChannel message, and a bigger send used to fail silently, leaving the web console to time out. A failed send logs `rtc_send_error`.
 
 ## Auth (MVP)
 
@@ -236,10 +236,10 @@ in 2026-11:
 
 Why WebSocket stays cheap here: `HostRelay` uses the hibernation API
 (`ctx.acceptWebSocket`), so between messages it is hibernation-eligible and
-bills no duration even with phone and host connected all day; the host's
+bills no duration even with a web console and the host connected all day; the host's
 keepalive `ping` is answered by `setWebSocketAutoResponse` (no wake, no
-time). What is billed is the incoming messages: every RPC is two (phone →
-relay, host → relay) and the phone's RTT ping every 2 s is two more. The
+time). What is billed is the incoming messages: every RPC is two (web console →
+relay, host → relay) and the web console's RTT ping every 2 s is two more. The
 busiest hour in the relay log (2026-11-22) had 810 WebSocket RPCs: ≈ 1,620
 + 3,600 ping messages ≈ 5,400 incoming / h ≈ 270 requests / h — a full day
 at that rate is ≈ 6,500 of the 100,000 Durable Object requests. A direct
@@ -332,7 +332,7 @@ when the script says `all`.
 ```bash
 scripts/dev/install-remote-relay.sh               # tokens (once) + build + user unit wezdeck-relay.service
 scripts/dev/install-remote-relay.sh --push-secrets  # after creating / rotating tokens
-scripts/dev/install-remote-relay.sh --pair        # pairing link + QR for the phone
+scripts/dev/install-remote-relay.sh --pair        # pairing link + QR for the remote device
 scripts/dev/install-remote-relay.sh --check       # unit state + /relay/health presence
 scripts/dev/wezdeck-release.sh                    # ship a committed round (below)
 ```
@@ -340,12 +340,12 @@ scripts/dev/wezdeck-release.sh                    # ship a committed round (belo
 `wezdeck-release.sh` runs push, relay and web **in parallel** (logs under
 `~/.local/state/wezdeck/release/<stamp>/`, one summary row per run in
 `release.log`). A part whose running version already equals its fingerprint
-is skipped — a web-only round does not restart the relay and drop phone
+is skipped — a web-only round does not restart the relay and drop web console
 links; `--only push|relay|web`, `--force`. It refuses uncommitted tracked
-changes. After a web deploy it moves every phone seen in the last 3 min onto
-the new build (`wezdeck-wsl diag --reload`: the phone answers, then reloads —
+changes. After a web deploy it moves every web console seen in the last 3 min onto
+the new build (`wezdeck-wsl diag --reload`: the page answers, then reloads —
 a draft survives; retried while a relay restarted in the same release has
-not seen the phones reconnect yet; `--no-reload` skips), so nobody taps 刷新.
+not seen the web consoles reconnect yet; `--no-reload` skips), so nobody taps 刷新.
 Before any job it runs the test gate —
 `web-affected-tests.sh --base @{u} --run`, the tests the unpushed commits
 can break — and ships nothing when it fails (`--no-test` skips it, for

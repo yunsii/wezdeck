@@ -30,7 +30,11 @@ desktop; another computer a remote console on desktop. In code, "phone" is
 the mobile form factor (`useIsWidePhoneFirst`, `(pointer: coarse)`); the
 remote console is "client" (relay `clientChan`) — wire and log names
 (`phone`, `phones=`) stay as they are. Attachments sent from the web
-console arrive as `[网页附件]`.
+console arrive as `[网页附件]`. The docs use these terms throughout
+(2026-11-24); "phone" stays where it means an actual handset — OpenClaw
+on Android, the retired Happy / Tailscale phone shell, mobile networks,
+measurements on a real phone — and `docs/presentations/` keeps its dated
+wording.
 
 ## Interaction Layers
 

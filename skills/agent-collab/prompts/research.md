@@ -42,7 +42,7 @@ Write exactly one JSON object to `{{RESULT_PATH}}`:
 `questions` is optional and only read for `challenge` / `need_input`. When
 the decision is a choice between concrete options, list them here (≤4
 questions, 2–6 options each, recommended option first): the initiator taps one
-on the phone instead of typing an answer. Keep `needs_initiator_decision` as
+in the web console instead of typing an answer. Keep `needs_initiator_decision` as
 the plain-text version of the same question. Leave `questions` out for
 open-ended asks.
 
