@@ -43,9 +43,20 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 	session.add("title", readSessionTitle(path, agent))
 	session.add("agent_name", e.AgentName)
 	session.add("window", e.WindowName)
+	model, effort := "", ""
 	if t != nil {
-		session.add("model", t.usage.Model)
+		model = t.usage.Model
 	}
+	if agent == "grok" {
+		// no reply yet, no model in the transcript: Grok's summary.json
+		var summaryModel string
+		summaryModel, effort = grokSummaryModel(path)
+		if model == "" {
+			model = summaryModel
+		}
+	}
+	session.add("model", model)
+	session.add("effort", effort)
 
 	location := metaGroup{Name: "location"}
 	_, cwd, cmd, index, alive := paneState(e)

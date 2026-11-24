@@ -304,3 +304,25 @@ func (grokAdapter) PendingPlan(path string) map[string]any {
 	return plan
 }
 func (grokAdapter) PlanTool() string { return "" }
+
+// grokSummaryModel reads the model and reasoning effort Grok keeps in
+// summary.json beside chat_history.jsonl. A session with no reply yet has no
+// model in its transcript; the web console's empty state names it from this
+// (structured data, not the TUI's screen).
+func grokSummaryModel(chatHistoryPath string) (model, effort string) {
+	if chatHistoryPath == "" {
+		return "", ""
+	}
+	raw, err := os.ReadFile(filepath.Join(filepath.Dir(chatHistoryPath), "summary.json"))
+	if err != nil {
+		return "", ""
+	}
+	var s struct {
+		Model  string `json:"current_model_id"`
+		Effort string `json:"reasoning_effort"`
+	}
+	if json.Unmarshal(raw, &s) != nil {
+		return "", ""
+	}
+	return s.Model, s.Effort
+}

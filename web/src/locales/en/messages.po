@@ -19,7 +19,7 @@ msgstr "· summary"
 msgid "(pick any)"
 msgstr "(pick any)"
 
-#: src/features/console-sessions.tsx:170
+#: src/features/console-sessions.tsx:171
 msgid "{bg} background tasks running"
 msgstr "{bg} background tasks running"
 
@@ -75,6 +75,10 @@ msgstr "{n} min"
 msgid "{n} s"
 msgstr "{n} s"
 
+#: src/features/session-empty.tsx:52
+msgid "{name} is ready, no conversation yet."
+msgstr "{name} is ready, no conversation yet."
+
 #: src/features/console-now.tsx:87
 #~ msgid "{needCount} need you, {runCount} running, {recentCount} recent"
 #~ msgstr "{needCount} need you, {runCount} running, {recentCount} recent"
@@ -115,7 +119,7 @@ msgstr "{tasks} background tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:476
+#: src/features/console-sessions.tsx:477
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -123,7 +127,7 @@ msgstr "{total} messages, showing {shown}"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 
-#: src/features/console-sessions.tsx:219
+#: src/features/console-sessions.tsx:220
 msgid "{unread} new"
 msgstr "{unread} new"
 
@@ -420,6 +424,7 @@ msgstr "Block and underscore need Chrome 144 or later; other browsers keep the b
 #~ msgid "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
 #~ msgstr "Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar."
 
+#: src/features/session-empty.tsx:44
 #: src/features/session-info.tsx:49
 msgid "Branch"
 msgstr "Branch"
@@ -465,7 +470,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:551
+#: src/features/console-sessions.tsx:550
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -636,7 +641,7 @@ msgstr "Commands"
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
-#: src/features/console-sessions.tsx:172
+#: src/features/console-sessions.tsx:173
 msgid "compacting the context"
 msgstr "compacting the context"
 
@@ -924,6 +929,7 @@ msgstr "Diagnostics"
 msgid "Direct"
 msgstr "Direct"
 
+#: src/features/session-empty.tsx:43
 #: src/features/session-info.tsx:45
 msgid "Directory"
 msgstr "Directory"
@@ -1094,7 +1100,7 @@ msgstr "Finished"
 #~ msgid "Finished ({doneCount})"
 #~ msgstr "Finished ({doneCount})"
 
-#: src/features/console-sessions.tsx:180
+#: src/features/console-sessions.tsx:181
 #: src/features/landing-page.tsx:156
 msgid "finished its turn"
 msgstr "finished its turn"
@@ -1209,7 +1215,7 @@ msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
 
-#: src/features/console-sessions.tsx:174
+#: src/features/console-sessions.tsx:175
 msgctxt "session status"
 msgid "Idle"
 msgstr "Idle"
@@ -1390,7 +1396,7 @@ msgstr "Last sample"
 msgid "Last turn"
 msgstr "Last turn"
 
-#: src/features/console-sessions.tsx:219
+#: src/features/console-sessions.tsx:220
 #: src/features/me-host.tsx:118
 msgid "Latest"
 msgstr "Latest"
@@ -1446,7 +1452,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:499
+#: src/features/console-sessions.tsx:500
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1462,7 +1468,7 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:92
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:496
+#: src/features/console-sessions.tsx:497
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
@@ -1530,6 +1536,7 @@ msgstr "Metrics window"
 msgid "Mode"
 msgstr "Mode"
 
+#: src/features/session-empty.tsx:42
 #: src/features/session-info.tsx:44
 msgid "Model"
 msgstr "Model"
@@ -1821,7 +1828,7 @@ msgstr "Open now"
 #~ msgid "Open Runtime Console"
 #~ msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:574
+#: src/features/console-sessions.tsx:573
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2404,6 +2411,10 @@ msgstr "Send Ctrl+B: the running command keeps going in the background and the a
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
+#: src/features/session-empty.tsx:55
+msgid "Send the first message below."
+msgstr "Send the first message below."
+
 #: src/features/session-new.tsx:45
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
@@ -2422,6 +2433,7 @@ msgstr "Sending the first message…"
 
 #: src/features/console-collab-run.tsx:116
 #: src/features/console-collab.tsx:265
+#: src/features/session-empty.tsx:45
 #: src/features/session-info.tsx:31
 msgid "Session"
 msgstr "Session"
@@ -2481,7 +2493,7 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/features/console-sessions.tsx:498
+#: src/features/console-sessions.tsx:499
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -2517,7 +2529,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:558
+#: src/features/console-sessions.tsx:557
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -2644,6 +2656,10 @@ msgstr "task: a short focused change, reclaimed after delivery"
 msgid "Terminal"
 msgstr "Terminal"
 
+#: src/features/session-empty.tsx:67
+msgid "Terminal screen"
+msgstr "Terminal screen"
+
 #: src/features/console-me.tsx:221
 #: src/features/console-me.tsx:223
 msgid "Text caret"
@@ -2653,7 +2669,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:421
+#: src/features/console-sessions.tsx:422
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -2727,7 +2743,7 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 #~ msgid "This computer, not paired"
 #~ msgstr "This computer, not paired"
 
-#: src/features/console-sessions.tsx:419
+#: src/features/console-sessions.tsx:420
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "This device is not approved yet (Settings › Device access)."
@@ -2736,7 +2752,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:552
+#: src/features/console-sessions.tsx:551
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -3047,7 +3063,7 @@ msgstr "Waiting for the host to approve this device. On the host run:"
 #~ msgid "Waiting for the host to approve this phone. On the host run:"
 #~ msgstr "Waiting for the host to approve this phone. On the host run:"
 
-#: src/features/console-sessions.tsx:178
+#: src/features/console-sessions.tsx:179
 msgid "waiting for you"
 msgstr "waiting for you"
 
@@ -3055,7 +3071,7 @@ msgstr "waiting for you"
 msgid "Waiting for your answer"
 msgstr "Waiting for your answer"
 
-#: src/features/console-sessions.tsx:168
+#: src/features/console-sessions.tsx:169
 #: src/features/landing-page.tsx:142
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
@@ -3204,7 +3220,7 @@ msgstr "Worker question"
 msgid "Worker requests"
 msgstr "Worker requests"
 
-#: src/features/console-sessions.tsx:176
+#: src/features/console-sessions.tsx:177
 #: src/features/landing-page.tsx:149
 msgid "working"
 msgstr "working"

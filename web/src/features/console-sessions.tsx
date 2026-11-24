@@ -22,6 +22,7 @@ import { ChatThread, settle } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
+import { EmptySession } from './session-empty'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
@@ -513,10 +514,8 @@ export function SessionDetail({ id }: { id: string }) {
               sessionId={id}
             />
           </>
-        ) : data?.screen ? (
-          <pre className="overflow-x-auto rounded-xl bg-brand-surface p-3 font-mono text-meta leading-snug">
-            {data.screen}
-          </pre>
+        ) : data ? (
+          <EmptySession data={data} />
         ) : null}
         <PromptPanels
           data={data}

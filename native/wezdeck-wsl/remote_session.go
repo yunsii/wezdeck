@@ -848,6 +848,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			out["compactions"] = compactions
 		}
 		usage := t.usage
+		if usage.Model == "" && agent == "grok" {
+			usage.Model, _ = grokSummaryModel(path)
+		}
 		if usage.ContextLimit == 0 {
 			usage.ContextLimit = contextLimit(usage.Model)
 		}

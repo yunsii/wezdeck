@@ -135,8 +135,14 @@ sends and Shift+Enter breaks the line; on a touch screen (`(hover: none) and
 keyboard has no Shift+Enter. Ctrl/⌘+Enter sends on both; an IME's Enter
 (`isComposing`) only picks the candidate. Space anywhere else on the page
 focuses the composer (`composer-keys.ts`). A new session with no messages yet
-(the pane's screen only) still lands at the bottom (`chat-scroll.ts` counts
-the loaded detail).
+shows an empty state from structured data (`session-empty.tsx`): which agent
+is ready, then its model and effort, directory, branch and session id from
+the reply's session meta — a Grok's model and effort from its `summary.json`
+(`grokSummaryModel`), since the transcript names a model only once a reply
+exists. The pane's screen (blank rows folded) is only the fallback when the
+agent itself is unknown: the raw screen of a fullscreen TUI was a status
+line, forty blank rows and an input box. It still lands at the bottom
+(`chat-scroll.ts` counts the loaded detail).
 
 Reporting a problem from the web console (the toolbar above the composer,
 `session-composer.tsx`): add up to 5 images with 图片 or by pasting a
