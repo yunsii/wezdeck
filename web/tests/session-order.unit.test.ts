@@ -135,14 +135,14 @@ describe('repo names follow the desk aliases', () => {
 
 describe('inRunning (运行中)', () => {
   const now = 10_000_000
-  it('mid-turn is running; background-only is not', () => {
+  it('mid-turn and background-only are both running (not finished)', () => {
     expect(inRunning(card({ status: 'running', ts: 0 }), now)).toBe(true)
     expect(
       inRunning(
         card({ status: 'running', running_kind: 'background', ts: 0 }),
         now,
       ),
-    ).toBe(false)
+    ).toBe(true)
   })
   it('keeps a turn that ended under RECENT_MS ago, then lets it go', () => {
     expect(inRunning(card({ status: 'idle', ts: now - 1_000 }), now)).toBe(true)

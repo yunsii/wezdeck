@@ -14,7 +14,7 @@ import {
 } from 'react'
 
 import { SentAttachments, endsWithNote } from './chat-attachments'
-import { TurnLine, turnState } from './chat-turn'
+import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
@@ -350,18 +350,21 @@ export function ChatThread({
           how long the last turn took), below everything in the thread —
           queued messages included. One element in one place, its text
           changing: it used to appear and vanish with each turn */}
-      {effective >= end ? (
-        <TurnLine
-          state={turnState({
+      {/* always mounted (revealingTurnState): it used to drop out while new
+          messages were revealed, then come back with its entrance */}
+      <TurnLine
+        state={revealingTurnState(
+          turnState({
             messages,
             left: queue.left,
             busy,
             status,
             statusTs,
             activity,
-          })}
-        />
-      ) : null}
+          }),
+          effective < end,
+        )}
+      />
     </SessionIdContext.Provider>
   )
 }

@@ -21,8 +21,8 @@ and `MotionConfig reducedMotion="user"` (opacity only under reduced motion).
 | an element arrives / leaves (sticky prompt, a chip, a hint) | `AnimatePresence` + `m.div` with a preset; the leaving element keeps its last content | enter medium + enter curve; leave exit + exit curve |
 | a page / pane | View Transitions (`lib/view-transition.ts`); none within a wide split | — |
 
-Rules: states move one way (a list row is hover 4 % → pressed 8 % → open
-10 % of the accent, `.list-row`, never white → grey → blue); never ease
+Rules: states move one way (a list row is hover 7 % → pressed 10 % → open
+13 % of the accent, `.list-row`, never white → grey → blue); never ease
 between two unrelated `box-shadow`s (a 999 px veil into a 3 px bar painted
 the row solid blue); prefer `opacity` / `transform` over `background-color`
 for anything that changes while content renders (a background transition
@@ -74,4 +74,12 @@ bottom inside the ResizeObserver callback, which runs before paint
 (`useLandBeforePaint` / `grewWhileLanding`, `chat-scroll.ts`); the glide is
 kept for a streaming reply. web-frame-probe's `glide` finding checks it on
 painted frames.
+
+The turn line (运行中… / 用时) at the thread's end stays mounted: it used to
+render only once every new message was revealed, so each poll of a running
+turn that brought a reply unmounted it and brought it back with its
+entrance — a jitter every second or two, and 运行中 gone mid-turn. While
+messages are still being revealed a turn the host calls done reads working
+(`revealingTurnState`, `chat-turn.tsx`), so 完成 never shows above text still
+unfolding.
 

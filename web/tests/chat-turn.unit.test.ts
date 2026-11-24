@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { turnState } from '#/features/chat-turn'
+import { turnState, revealingTurnState } from '#/features/chat-turn'
 import type { Message } from '#/features/chat-thread'
 
 const at = (s: number) =>
@@ -92,5 +92,18 @@ describe('turn line', () => {
         status: 'waiting',
       }),
     ).toBeNull()
+  })
+})
+
+describe('revealingTurnState (the turn line never leaves mid-reveal)', () => {
+  it('a done turn reads working until its last reply is revealed', () => {
+    const done = { kind: 'done' as const, took: 1000, at: 5 }
+    expect(revealingTurnState(done, true)).toEqual({ kind: 'working' })
+    expect(revealingTurnState(done, false)).toBe(done)
+  })
+  it('working and nothing pass through', () => {
+    const working = { kind: 'working' as const, activity: { since: 1 } }
+    expect(revealingTurnState(working, true)).toBe(working)
+    expect(revealingTurnState(null, true)).toBeNull()
   })
 })

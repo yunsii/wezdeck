@@ -61,8 +61,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    a worktree's visit is read once, when the list first sees it, so
    opening a session no longer moves its group; a row shown under the
    current filter stays until the filter changes; re-tapping 会话 (tab, or
-   the sidebar entry while on it) or reloading re-reads both; 运行中 also keeps a session for 3 min after its turn
-   ends (`inRunning`, the card's newest-turn `ts`), so a finished one no
+   the sidebar entry while on it) or reloading re-reads both; 运行中 holds every session the host calls
+   running — background tasks included (a dev server is not finished) — and
+   keeps one 3 min after its turn ends (`inRunning`, the card's newest-turn
+   `ts`), so a finished one no
    longer vanishes the moment it stops. Wide, j / k walk the rows the list
    shows (its filter, its held order) and read the current item from the
    URL at the keypress — the page re-renders only after the switch's view

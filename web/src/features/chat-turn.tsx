@@ -90,6 +90,22 @@ export function turnState({
   }
 }
 
+/**
+ * The turn line while new messages are still being revealed one by one: a
+ * turn the host already calls done stays "working" until its last reply is
+ * on screen, so 完成 never shows above text still unfolding. The line itself
+ * stays mounted throughout (chat-thread.tsx) — it used to unmount during
+ * every reveal, vanishing and replaying its entrance each poll of a running
+ * turn: a jitter every second or two, and 运行中 gone mid-turn.
+ */
+export function revealingTurnState(
+  state: TurnState | null,
+  revealing: boolean,
+): TurnState | null {
+  if (!revealing || state?.kind !== 'done') return state
+  return { kind: 'working' }
+}
+
 /** 13:42 today, 11/23 13:42 another day */
 function clock(ms: number) {
   const date = new Date(ms)

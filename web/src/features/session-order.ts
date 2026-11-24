@@ -112,15 +112,17 @@ export function nextInCycle(
 export const RECENT_MS = 3 * 60_000
 
 /**
- * 运行中: mid-turn, or a turn that ended under RECENT_MS ago (`ts` is the
- * newest turn) — a session that just finished used to drop out of the
- * filter the moment it stopped. Waiting on you is 等你, never this.
+ * 运行中: the host says running — mid-turn or with background tasks still
+ * going (a dev server, a background build: not finished, though it takes
+ * input; it used to count as 空闲 and leave 运行中 after RECENT_MS) — or a
+ * turn that ended under RECENT_MS ago (`ts` is the newest turn), so a session
+ * that just finished does not drop out the moment it stops. Waiting on you
+ * is 等你, never this.
  */
 export function inRunning(
   row: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
   now: number,
 ) {
   if (row.waiting_kind || row.status === 'waiting') return false
-  const busy = row.status === 'running' && row.running_kind !== 'background'
-  return busy || now - row.ts < RECENT_MS
+  return row.status === 'running' || now - row.ts < RECENT_MS
 }
