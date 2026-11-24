@@ -20,7 +20,31 @@ type SetText = (next: string | ((current: string) => string)) => void
 // its database)
 const store = () => createStore('wezdeck-draft-images', 'images')
 const draftKey = (id: string) => `draft:${id}`
-type Saved = Array<{ key: string; file: File }>
+export type Saved = Array<{ key: string; file: File }>
+
+const EVENT = 'wezdeck:draft-picks'
+
+/** drop a session's saved picks now, not when the state effect would run
+ * (it never does once the page is gone) */
+export const forgetPicks = (id: string) =>
+  del(draftKey(id), store()).catch(() => undefined)
+
+/**
+ * Put picks back after a failed send unless new ones were picked since; a
+ * mounted composer of that session reloads them (the page may be gone or
+ * opened again meanwhile).
+ */
+export async function restorePicks(id: string, picks: Saved) {
+  if (!picks.length) return
+  try {
+    const current = await get<Saved>(draftKey(id), store())
+    if (current?.length) return
+    await set(draftKey(id), picks, store())
+  } catch {
+    // storage blocked: the mounted composer still hears about them
+  }
+  window.dispatchEvent(new CustomEvent(EVENT, { detail: { id, picks } }))
+}
 
 export function usePickedImages(id: string, text: string, setText: SetText) {
   const [images, setImages] = useState<Array<Picked>>([])
@@ -49,8 +73,23 @@ export function usePickedImages(id: string, text: string, setText: SetText) {
           })),
         )
       })
+    const onRestore = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string; picks: Saved }>).detail
+      if (detail.id !== id) return
+      setImages((current) =>
+        current.length
+          ? current
+          : detail.picks.map((item) => ({
+              key: item.key,
+              file: item.file,
+              url: URL.createObjectURL(item.file),
+            })),
+      )
+    }
+    window.addEventListener(EVENT, onRestore)
     return () => {
       live = false
+      window.removeEventListener(EVENT, onRestore)
     }
   }, [id])
   useEffect(() => {

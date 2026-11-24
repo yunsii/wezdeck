@@ -4,7 +4,7 @@
 // this page only registers its state for that snapshot. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
-import { useDraft } from '#/lib/use-draft'
+import { restoreDraft, useDraft } from '#/lib/use-draft'
 import {
   Check,
   Copy,
@@ -17,7 +17,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { setDiagnosticsPage } from '#/lib/client-trace'
+import { toast } from 'sonner'
+import { setDiagnosticsPage, trace } from '#/lib/client-trace'
 import { useMediaQuery } from '#/lib/use-media'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
@@ -27,7 +28,12 @@ import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { CommandPanel } from './session-commands'
 import { useSpaceToFocus } from './composer-keys'
-import { MAX_IMAGES, usePickedImages } from './composer-images'
+import {
+  MAX_IMAGES,
+  forgetPicks,
+  restorePicks,
+  usePickedImages,
+} from './composer-images'
 import { PickedImages } from './composer-picked'
 import { tokenKey } from './composer-tokens'
 
@@ -109,10 +115,27 @@ export function useComposer({
   const ready = Boolean(text.trim() || images.length)
   const submit = async () => {
     if (!ready || progress) return
-    const steps = images.length
+    // clear at once, like a chat app — text, images and their saved copies:
+    // the page left and opened again while images were still uploading
+    // used to load the stored draft back next to the sent message. A failed
+    // upload or a refused send puts both back (into storage, so that works
+    // with the page gone too, unless something new was typed meanwhile)
+    const typed = text
+    const picked = images
+    setText('')
+    setImages([])
+    void forgetPicks(id)
+    const giveBack = () => {
+      restoreDraft(draftKey(id), typed)
+      void restorePicks(
+        id,
+        picked.map(({ key, file }) => ({ key, file })),
+      )
+    }
+    const steps = picked.length
     const attachments: Array<string> = []
     try {
-      for (const image of images) {
+      for (const image of picked) {
         const step = attachments.length + 1
         setProgress(t`Uploading ${step}/${steps}…`)
         const small = await shrinkImage(image.file)
@@ -120,30 +143,39 @@ export function useComposer({
       }
     } catch (error) {
       setProgress('')
+      giveBack()
       throw error
     }
     setProgress('')
-    const count = images.length
+    const count = picked.length
     const note = count ? t`${count} images` : ''
-    // clear right away, like a chat app — text and images both: the message
-    // shows in the queue above; if the host refuses it, both come back with
-    // the error. Images used to wait for the host's answer, and a switch to
-    // another session meanwhile left them (saved picks) in the composer
+    if (!(await onSend({ text: typed.trim(), attachments, note }))) giveBack()
+    picked.forEach((image) => URL.revokeObjectURL(image.url))
+  }
+  /** empty the composer (× or Esc Esc), with an undo */
+  const clear = (via: string) => {
     const typed = text
     const picked = images
+    if (!typed && !picked.length) return
     setText('')
     setImages([])
-    if (await onSend({ text: typed.trim(), attachments, note })) {
-      picked.forEach((image) => URL.revokeObjectURL(image.url))
-    } else {
-      setText((current) => current || typed)
-      setImages((current) => (current.length ? current : picked))
-    }
+    void forgetPicks(id)
+    trace('composer-clear', { via, chars: typed.length, images: picked.length })
+    toast(t`Input cleared`, {
+      action: {
+        label: t`Undo`,
+        onClick: () => {
+          setText((current) => current || typed)
+          setImages((current) => (current.length ? current : picked))
+        },
+      },
+    })
   }
   return {
     id,
     text,
     setText,
+    clear,
     images,
     pick,
     remove,
@@ -370,6 +402,7 @@ export function ComposerBox({
   // mouse and keyboard Enter sends, Shift+Enter breaks the line
   const touch = useMediaQuery('(hover: none) and (pointer: coarse)', false)
   const canSend = !composer.progress && composer.ready && !blocked
+  const lastEsc = useRef(0)
   useSpaceToFocus()
   return (
     <>
@@ -438,6 +471,16 @@ export function ComposerBox({
           onChange={(event) => composer.setText(event.target.value)}
           onKeyDown={(event) => {
             if (tokenKey(event, composer.setText)) return
+            // Esc Esc empties the composer, as in Claude Code's own prompt
+            if (event.key === 'Escape') {
+              const now = performance.now()
+              if (now - lastEsc.current < 600) {
+                event.preventDefault()
+                lastEsc.current = 0
+                composer.clear('esc-esc')
+              } else lastEsc.current = now
+              return
+            }
             if (event.key !== 'Enter') return
             // the IME's Enter picks a candidate (拼音 → 汉字), it is not a send
             if (event.nativeEvent.isComposing || event.keyCode === 229) return
@@ -469,6 +512,19 @@ export function ComposerBox({
           placeholder={t`Message`}
           className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
+        {composer.text || composer.images.length ? (
+          <Button
+            variant="plain"
+            type="button"
+            data-testid="composer-clear"
+            aria-label={t`Clear input (Esc Esc)`}
+            title={t`Clear input (Esc Esc)`}
+            onClick={() => composer.clear('button')}
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-label"
+          >
+            <X size={18} aria-hidden />
+          </Button>
+        ) : null}
         <Button
           variant="solid"
           // round: no side padding — the default size's px-4 left 8 px of a

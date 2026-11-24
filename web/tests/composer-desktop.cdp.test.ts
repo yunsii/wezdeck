@@ -1,11 +1,12 @@
 // covers: web/src/features/session-composer.tsx web/src/features/chat-scroll.ts
 // covers: web/src/features/console-sessions.tsx
+// covers: web/src/lib/use-draft.ts web/src/features/composer-images.ts
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type { Browser, Locator, Page } from '@playwright/test'
+import type { Browser, BrowserContext, Locator, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // The composer and thread on a desktop browser: a new session with no
@@ -25,6 +26,8 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-tmux-')), 'sock')
   const tmux = (...args: Array<string>) =>
     execFileSync('tmux', ['-S', socket, ...args]).toString()
+  /** (re)register the fresh session; viewing a done one acks it into recent */
+  let seed = (_status = 'done') => {}
 
   beforeAll(async () => {
     // a tall screen and no transcript: the page shows the screen only
@@ -38,22 +41,24 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
       'fresh',
       '#{pane_id}',
     ).trim()
-    writeFileSync(
-      attention,
-      JSON.stringify({
-        entries: {
-          'fresh-session': {
-            session_id: 'fresh-session',
-            tmux_socket: socket,
-            tmux_session: 'fresh',
-            tmux_pane: pane,
-            status: 'done',
-            agent_name: 'fresh-agent',
-            ts: Date.now(),
+    seed = (status = 'done') =>
+      writeFileSync(
+        attention,
+        JSON.stringify({
+          entries: {
+            'fresh-session': {
+              session_id: 'fresh-session',
+              tmux_socket: socket,
+              tmux_session: 'fresh',
+              tmux_pane: pane,
+              status,
+              agent_name: 'fresh-agent',
+              ts: Date.now(),
+            },
           },
-        },
-      }),
-    )
+        }),
+      )
+    seed()
     writeFileSync(devicesFile, JSON.stringify({ approved: [], pending: [] }))
     browser = await chromium.launch()
   })
@@ -228,6 +233,19 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await context.close()
   })
 
+  it('clear: × with undo, Esc Esc; a send left mid-upload keeps no draft', async () => {
+    const context = await browser.newContext({
+      ...devices['iPhone 13'],
+      locale: 'zh-CN',
+    })
+    await holdUploads(context)
+    seed('running') // not acked away while the page shows it
+    const page = await context.newPage()
+    await approve(page)
+    await clearThenLeaveMidUpload(page)
+    await context.close()
+  }, 45_000)
+
   it('on a touch phone Enter is a new line', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
@@ -324,4 +342,106 @@ async function shortcutsSheet(page: Page) {
   await page.keyboard.press('Space')
   expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
   expect(await keysSheet.isVisible()).toBe(false)
+}
+
+/**
+ * × clears with an undo, Esc Esc clears; a send with an image left at once
+ * (upload still running) keeps no draft — the composer cleared through a
+ * state updater that never ran once the page was gone.
+ */
+async function clearThenLeaveMidUpload(page: Page) {
+  await page.goto(`${base}/zh/console/sessions/fresh-session`)
+  const box = page.getByLabel('发给 Agent 的消息')
+  await box.waitFor({ timeout: 15_000 })
+  const clear = page.getByTestId('composer-clear')
+  expect(await clear.count()).toBe(0)
+  await box.fill('要清掉的草稿')
+  await clear.click()
+  expect(await box.inputValue()).toBe('')
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem('wezdeck.draft.fresh-session'),
+    ),
+  ).toBeNull()
+  await page.getByRole('button', { name: '撤销' }).click()
+  await expect.poll(() => box.inputValue()).toBe('要清掉的草稿')
+  // Esc Esc (a keyboard on the phone): one Esc keeps it, two clear it
+  await box.press('Escape')
+  expect(await box.inputValue()).toBe('要清掉的草稿')
+  await box.press('Escape')
+  await expect.poll(() => box.inputValue()).toBe('')
+
+  // send with an image and leave at once (the upload still running):
+  // coming back finds an empty composer, not the sent message
+  await box.fill('带图的消息 ')
+  await box.evaluate((el) => {
+    const png = Uint8Array.from(
+      atob(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      ),
+      (c) => c.charCodeAt(0),
+    )
+    const data = new DataTransfer()
+    data.items.add(new File([png], 'shot.png', { type: 'image/png' }))
+    el.dispatchEvent(
+      new ClipboardEvent('paste', {
+        clipboardData: data,
+        bubbles: true,
+        cancelable: true,
+      }),
+    )
+  })
+  await expect
+    .poll(() => page.locator('[data-testid=composer-images] img').count())
+    .toBe(1)
+  const back = page.getByRole('button', { name: '会话', exact: true })
+  await page.evaluate(() => {
+    const send = document.querySelector<HTMLButtonElement>(
+      'button[type=submit][aria-label="发送"]',
+    )
+    send?.click()
+  })
+  await back.click()
+  // and straight back in while the upload is still held (in-app, no reload)
+  await page.locator('[data-session=fresh-session]').click()
+  await page.waitForURL('**/console/sessions/fresh-session')
+  await box.waitFor({ timeout: 15_000 })
+  await page.waitForTimeout(500) // saved picks load from IndexedDB
+  const empty = async (when: string) => {
+    expect(await box.inputValue(), when).toBe('')
+    expect(
+      await page.locator('[data-testid=composer-images] img').count(),
+      when,
+    ).toBe(0)
+    expect(
+      await page.evaluate(() =>
+        localStorage.getItem('wezdeck.draft.fresh-session'),
+      ),
+      when,
+    ).toBeNull()
+  }
+  await empty('back in mid-upload')
+  await page.waitForTimeout(3_000) // the upload and send finish meanwhile
+  await empty('after the send')
+  // a fresh load reads only what was stored
+  await page.reload()
+  await box.waitFor({ timeout: 15_000 })
+  await page.waitForTimeout(800)
+  await empty('after a reload')
+}
+
+/** hold every upload frame 1.5 s, so the page can be left while one runs */
+async function holdUploads(context: BrowserContext) {
+  await context.addInitScript(() => {
+    type Send = (this: unknown, data: unknown) => void
+    for (const proto of [WebSocket.prototype, RTCDataChannel.prototype]) {
+      const target = proto as unknown as { send: Send }
+      const send = target.send
+      target.send = function (data) {
+        if (typeof data === 'string' && data.includes('"upload"'))
+          setTimeout(() => send.call(this, data), 1_500)
+        else send.call(this, data)
+      }
+    }
+  })
 }

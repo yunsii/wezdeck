@@ -478,7 +478,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`chat-sticky.tsx`, zero-height sticky box so it never moves the thread); tapping it glides back to that message,
   shown in full with a short highlight (`chat-jump-prompt` trace). Unsent
   composer text is kept per session in `localStorage`
-  (`wezdeck.draft.<id>`, cleared on a successful send); errors have a
+  (`wezdeck.draft.<id>`, picks in IndexedDB) — cleared the moment send is
+  tapped (back in mid-upload found the sent draft), put back on a failed
+  upload / send, synced across mounted copies (`use-draft.ts` events); ×
+  or Esc Esc clears with an undo (`composer-clear` trace); errors have a
   one-tap copy; a "terminal was just used" refusal counts down and resends
   (`session-send.ts`)
   ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller

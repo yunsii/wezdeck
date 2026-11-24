@@ -44,7 +44,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:127
+#: src/features/session-composer.tsx:151
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -504,7 +504,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:174
+#: src/features/session-composer.tsx:206
 msgid "cancel"
 msgstr "cancel"
 
@@ -573,6 +573,11 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
+#: src/features/session-composer.tsx:520
+#: src/features/session-composer.tsx:521
+msgid "Clear input (Esc Esc)"
+msgstr "Clear input (Esc Esc)"
+
 #: src/features/session-clear.tsx:130
 msgid "Clearing…"
 msgstr "Clearing…"
@@ -594,7 +599,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:207
+#: src/features/session-composer.tsx:239
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -663,7 +668,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:252
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:335
 msgid "Commands"
 msgstr "Commands"
 
@@ -679,11 +684,11 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:277
+#: src/features/session-composer.tsx:309
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:173
+#: src/features/session-composer.tsx:205
 msgid "confirm"
 msgstr "confirm"
 
@@ -745,7 +750,7 @@ msgstr "context usage"
 #~ msgid "Control"
 #~ msgstr "Control"
 
-#: src/features/session-composer.tsx:80
+#: src/features/session-composer.tsx:86
 #: src/features/session-info.tsx:235
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copied"
@@ -776,7 +781,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:80
+#: src/features/session-composer.tsx:86
 msgid "Copy"
 msgstr "Copy"
 
@@ -788,7 +793,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:72
+#: src/features/session-composer.tsx:78
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1147,7 +1152,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:310
+#: src/features/session-composer.tsx:342
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1274,7 +1279,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:328
+#: src/features/session-composer.tsx:360
 msgid "Images"
 msgstr "Images"
 
@@ -1315,6 +1320,10 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
+#: src/features/session-composer.tsx:164
+msgid "Input cleared"
+msgstr "Input cleared"
+
 #: src/features/me-host.tsx:107
 #: src/features/me-host.tsx:108
 msgid "Input method"
@@ -1345,7 +1354,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:175
+#: src/features/session-composer.tsx:207
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1393,7 +1402,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:291
+#: src/features/session-composer.tsx:323
 msgid "Keys"
 msgstr "Keys"
 
@@ -1546,11 +1555,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:469
+#: src/features/session-composer.tsx:512
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:427
+#: src/features/session-composer.tsx:460
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2066,8 +2075,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:215
-#: src/features/session-composer.tsx:285
+#: src/features/session-composer.tsx:247
+#: src/features/session-composer.tsx:317
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -2446,7 +2455,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:68
-#: src/features/session-composer.tsx:478
+#: src/features/session-composer.tsx:534
 msgid "Send"
 msgstr "Send"
 
@@ -2458,7 +2467,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:286
+#: src/features/session-composer.tsx:318
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2564,7 +2573,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:298
+#: src/features/session-composer.tsx:330
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2695,7 +2704,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:201
+#: src/features/session-composer.tsx:233
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2945,7 +2954,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:315
+#: src/features/session-composer.tsx:347
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -3019,7 +3028,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:200
+#: src/features/session-composer.tsx:232
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -3041,6 +3050,10 @@ msgstr "Unavailable"
 msgid "Underscore"
 msgstr "Underscore"
 
+#: src/features/session-composer.tsx:166
+msgid "Undo"
+msgstr "Undo"
+
 #: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:214
 #: src/features/session-list.tsx:104
@@ -3056,7 +3069,7 @@ msgstr "Untitled session"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:117
+#: src/features/session-composer.tsx:140
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
