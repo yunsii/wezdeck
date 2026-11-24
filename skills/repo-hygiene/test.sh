@@ -129,6 +129,29 @@ assert_exit 1 "new over hard" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
 git -C "$fx" reset -q HEAD -- docs/huge.md
 rm -f "$fx/docs/huge.md"
 
+# 4b) a file already over hard at HEAD may only shrink, listed or not
+python3 - <<PY
+from pathlib import Path
+Path("$fx/docs/debt.md").write_text("# Debt\n\n" + ("line\n" * 40))
+PY
+git -C "$fx" add docs/debt.md
+git -C "$fx" commit -q --no-verify -m "seed debt"
+printf 'more\n' >>"$fx/docs/debt.md"
+git -C "$fx" add docs/debt.md
+assert_exit 1 "over-hard file grew" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+assert_grep "already over hard and grew" "$tmp/out" "growth message"
+printf 'allow docs/debt.md\n' >>"$fx/skills/repo-hygiene/budgets.conf"
+assert_exit 1 "listed over-hard file grew" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+python3 - <<PY
+from pathlib import Path
+Path("$fx/docs/debt.md").write_text("# Debt\n\n" + ("line\n" * 35))
+PY
+git -C "$fx" add docs/debt.md
+assert_exit 0 "over-hard file shrank" env HYGIENE_REPO_ROOT="$fx" "$runner" pre-commit
+git -C "$fx" reset -q HEAD~1
+rm -f "$fx/docs/debt.md"
+sed -i '/^allow docs\/debt.md$/d' "$fx/skills/repo-hygiene/budgets.conf"
+
 # 5) skip bypass
 cat >"$fx/docs/ok.md" <<'EOF'
 # Ok

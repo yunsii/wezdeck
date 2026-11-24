@@ -112,25 +112,22 @@ for rel in files:
         print(f"OVER-HARD {rel}: {n} lines > hard {hard}{tag}")
         continue
 
-    # pre-commit
-    if allowed:
-        print(f"ADVISORY {rel}: {n} lines > hard {hard} [allowlisted; growth still watched]")
-        head_n = head_line_count(rel)
-        if head_n is not None and head_n > hard and n > head_n:
-            print(f"FAIL {rel}: allowlisted but grew past hard ({head_n} -> {n}; hard {hard})")
-            fails += 1
-        continue
-
+    # pre-commit. Over hard at HEAD (known debt, listed or not): it may
+    # only shrink — any growth fails. It used to pass an unlisted one even
+    # as it grew (AGENTS.md went 304 → 307 lines past a hard 240), so the
+    # list is now only a label for known debt, not what holds it.
     head_n = head_line_count(rel)
     if head_n is None:
         print(f"FAIL {rel}: new file {n} lines > hard {hard}")
         fails += 1
-        continue
-    if head_n <= hard < n:
+    elif head_n <= hard:
         print(f"FAIL {rel}: crossed hard budget this commit ({head_n} -> {n}; hard {hard})")
         fails += 1
+    elif n > head_n:
+        print(f"FAIL {rel}: already over hard and grew ({head_n} -> {n}; hard {hard}) — split it first{tag}")
+        fails += 1
     else:
-        print(f"ADVISORY {rel}: already over hard ({n} lines; hard {hard}) — split when touching domain")
+        print(f"ADVISORY {rel}: over hard ({n} lines; hard {hard}), may only shrink — split when touching it{tag}")
 
 print(f"__FAILS__={fails}")
 PY
