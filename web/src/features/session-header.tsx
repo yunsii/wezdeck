@@ -239,6 +239,7 @@ export function SessionHeader({
             onClick={openSwitcher}
             aria-haspopup="dialog"
             data-testid="session-title"
+            data-session-id={data?.id}
             title={t`Switch session (Alt+g)`}
             className="flex min-w-0 items-center gap-1 text-left text-title leading-tight font-semibold"
           >

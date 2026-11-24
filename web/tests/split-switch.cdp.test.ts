@@ -33,7 +33,7 @@ type Frame = {
   vt: number
 }
 
-/** sample every frame for `ms` after `act`; key = the pane's title */
+/** sample every frame for `ms` after `act`; key = the pane's session id, else its title */
 async function frames(page: Page, title: string, act: () => Promise<void>) {
   await page.evaluate((sel) => {
     const w = window as unknown as { f: Array<Frame>; vt: number }
@@ -49,7 +49,10 @@ async function frames(page: Page, title: string, act: () => Promise<void>) {
       const el = document.querySelector<HTMLElement>('.vt-page')
       w.f.push({
         t: performance.now() - t0,
-        key: document.querySelector(sel)?.textContent ?? '',
+        key:
+          document.querySelector(sel)?.getAttribute('data-session-id') ??
+          document.querySelector(sel)?.textContent ??
+          '',
         scroll: el?.scrollTop ?? -1,
         bottom: el ? el.scrollHeight - el.clientHeight : -1,
         busy: document.querySelector('[aria-busy=true]') ? 1 : 0,
@@ -86,7 +89,6 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       'sw-tall': 'sh -c "seq 1 400; exec cat"',
     }
     for (const [id, cmd] of Object.entries(panes)) {
-      // the title is the cwd basename: one directory each
       const cwd = join(dirname(socket), id)
       mkdirSync(cwd)
       tmux(

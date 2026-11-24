@@ -36,7 +36,6 @@ describe.runIf(attention)('Session keys on the phone', () => {
     }
     const entries: Record<string, unknown> = {}
     for (const [id, [status, waiting]] of Object.entries(sessions)) {
-      // untitled cards fall back to the cwd basename (not the window name)
       const cwd = join(dirname(socket), id)
       mkdirSync(cwd)
       tmux(
@@ -101,8 +100,10 @@ describe.runIf(attention)('Session keys on the phone', () => {
     // the page swaps in after the URL (view transition): press once the
     // header shows the new session, as a person would
     await expect
-      .poll(() => page.getByTestId('session-title').textContent())
-      .toContain(first)
+      .poll(() =>
+        page.getByTestId('session-title').getAttribute('data-session-id'),
+      )
+      .toBe(first)
     await page.keyboard.press('Alt+j')
     await expect
       .poll(() => page.url().split('/').at(-1))
@@ -126,9 +127,11 @@ describe.runIf(attention)('Session keys on the phone', () => {
     const sheet = page.getByTestId('session-switcher')
     await sheet.waitFor()
     await expect
-      .poll(() => sheet.locator('[aria-current=page]').textContent())
-      .toContain('nav-a')
-    await sheet.getByRole('button', { name: /nav-c/ }).click()
+      .poll(() =>
+        sheet.locator('[aria-current=page]').getAttribute('data-session-id'),
+      )
+      .toBe('nav-a')
+    await sheet.locator('[data-session-id=nav-c]').click()
     await page.waitForURL('**/console/sessions/nav-c')
     await expect.poll(() => sheet.count()).toBe(0)
     await context.close()
@@ -200,8 +203,10 @@ describe.runIf(attention)('Session keys on the phone', () => {
       .toBe('page')
     expect(await page.getByTestId('session-pane').count()).toBe(1)
     await expect
-      .poll(() => page.getByTestId('session-title').textContent())
-      .toContain('nav-c')
+      .poll(() =>
+        page.getByTestId('session-title').getAttribute('data-session-id'),
+      )
+      .toBe('nav-c')
     await page.keyboard.press('j')
     await expect.poll(() => page.url().split('/').at(-1)).not.toBe('nav-c')
     await context.close()

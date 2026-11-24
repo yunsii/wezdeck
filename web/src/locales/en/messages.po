@@ -1485,7 +1485,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
-#: src/features/session-header.tsx:251
+#: src/features/session-header.tsx:252
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1570,9 +1570,9 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:274
+#: src/features/session-header.tsx:275
 #: src/features/session-list.tsx:281
-#: src/features/session-switcher.tsx:201
+#: src/features/session-switcher.tsx:202
 msgid "Needs you"
 msgstr "Needs you"
 
@@ -1797,7 +1797,7 @@ msgstr "Offline"
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
-#: src/features/session-switcher.tsx:231
+#: src/features/session-switcher.tsx:232
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 
@@ -2467,7 +2467,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:287
+#: src/features/session-header.tsx:288
 #: src/features/session-info.tsx:214
 msgid "Session info"
 msgstr "Session info"
@@ -2635,11 +2635,11 @@ msgstr "summarise the context"
 msgid "Summary"
 msgstr "Summary"
 
-#: src/features/session-switcher.tsx:194
+#: src/features/session-switcher.tsx:195
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:242
+#: src/features/session-header.tsx:243
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3014,7 +3014,7 @@ msgstr "Underscore"
 #: src/features/session-commands.tsx:130
 #: src/features/session-header.tsx:210
 #: src/features/session-list.tsx:104
-#: src/features/session-switcher.tsx:172
+#: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "Untitled session"
 

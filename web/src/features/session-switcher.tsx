@@ -149,6 +149,7 @@ export function SessionSwitcher({
         variant="plain"
         type="button"
         aria-current={session.id === current ? 'page' : undefined}
+        data-session-id={session.id}
         onClick={() => {
           onClose()
           if (session.id !== current) nav.go(session)

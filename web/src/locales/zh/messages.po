@@ -1485,7 +1485,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
-#: src/features/session-header.tsx:251
+#: src/features/session-header.tsx:252
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1570,9 +1570,9 @@ msgstr "名称"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:274
+#: src/features/session-header.tsx:275
 #: src/features/session-list.tsx:281
-#: src/features/session-switcher.tsx:201
+#: src/features/session-switcher.tsx:202
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -1797,7 +1797,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:231
+#: src/features/session-switcher.tsx:232
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -2467,7 +2467,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:287
+#: src/features/session-header.tsx:288
 #: src/features/session-info.tsx:214
 msgid "Session info"
 msgstr "会话信息"
@@ -2635,11 +2635,11 @@ msgstr "压缩上下文"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/session-switcher.tsx:194
+#: src/features/session-switcher.tsx:195
 msgid "Switch session"
 msgstr "切换会话"
 
-#: src/features/session-header.tsx:242
+#: src/features/session-header.tsx:243
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -3014,7 +3014,7 @@ msgstr "下划线"
 #: src/features/session-commands.tsx:130
 #: src/features/session-header.tsx:210
 #: src/features/session-list.tsx:104
-#: src/features/session-switcher.tsx:172
+#: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "未命名会话"
 
