@@ -128,7 +128,7 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
     expect(await box.inputValue()).toBe('')
     // on a button Space still presses it (opens 快捷), focus stays there
-    const keys = page.getByRole('button', { name: '快捷键' })
+    const keys = page.getByRole('button', { name: '快捷键', exact: true })
     await keys.focus()
     await page.keyboard.press('Space')
     await page.getByTestId('session-quick-keys').waitFor({ timeout: 2_000 })
@@ -185,6 +185,34 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
         throw new Error('message never reached the pane')
       await page.waitForTimeout(200)
     }
+
+    // shortcuts: `?` and the sidebar entry open the list
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+    await page.keyboard.press('Shift+Slash')
+    const keysSheet = page.getByTestId('keys-sheet')
+    await keysSheet.waitFor({ timeout: 2_000 })
+    expect(await keysSheet.innerText()).toContain('Alt+J')
+    await page.keyboard.press('Escape')
+    await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+    await page.getByTestId('keys-entry').click()
+    await keysSheet.waitFor({ timeout: 2_000 })
+    await page.keyboard.press('Escape')
+    await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+
+    // Ctrl+N from inside the composer opens 新会话
+    await box.click()
+    await page.keyboard.press('Control+KeyN')
+    const newSheet = page.getByTestId('new-session-sheet')
+    await newSheet.waitFor({ timeout: 2_000 })
+    await page.keyboard.press('Escape')
+    await newSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+
+    // Alt+/ (the desk's pending overlay) opens the session picker
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+    await page.keyboard.press('Alt+Slash')
+    const picker = page.getByTestId('session-switcher')
+    await picker.waitFor({ timeout: 2_000 })
+    await page.keyboard.press('Escape')
     await context.close()
   })
 

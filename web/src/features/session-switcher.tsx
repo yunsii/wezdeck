@@ -80,7 +80,10 @@ export function useSessionNav(current: string) {
   return { rows, waiting, tree, ordered, otherWaiting, jump, go }
 }
 
-/** Alt+j / Alt+k / Alt+l / Alt+Shift+l, and Alt+g or Alt+x for the sheet */
+/**
+ * Alt+j / Alt+k / Alt+l / Alt+Shift+l, and Alt+g, Alt+x or Alt+/ (the
+ * desk's pending-task overlay) for the sheet
+ */
 export function useSessionKeys(
   jump: (kind: JumpKind, step?: number) => void,
   openSwitcher: () => void,
@@ -96,7 +99,7 @@ export function useSessionKeys(
             ? () => jump('done')
             : key === 'l'
               ? () => jump('running', event.shiftKey ? -1 : 1)
-              : key === 'g' || key === 'x'
+              : key === 'g' || key === 'x' || event.code === 'Slash'
                 ? openSwitcher
                 : null
       if (!action) return

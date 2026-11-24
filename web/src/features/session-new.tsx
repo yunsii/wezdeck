@@ -60,10 +60,22 @@ export function NewSessionButton() {
     setRound((n) => n + 1)
     setOpen(true)
   }
-  // `c` on the list: Ctrl+k g at the desk
+  // `c` on the list: Ctrl+k g at the desk. Ctrl/⌘+N too, even from the
+  // composer — where the browser lets the page have it (an installed app
+  // window); a plain tab may keep it for a new window, `c` still works.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.shiftKey &&
+        !event.altKey &&
+        event.code === 'KeyN'
+      ) {
+        event.preventDefault()
+        show()
+        return
+      }
       if (
         event.key !== 'c' ||
         event.metaKey ||

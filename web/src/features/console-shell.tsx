@@ -24,6 +24,7 @@ import {
 import { StatusPill, formatDuration, formatTime } from './console-shared'
 import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
+import { KeysEntry } from './console-keys'
 import { RemoteBadge } from './remote-badge'
 import { needsYou, useSessions } from './console-sessions'
 import { installClientTrace } from '#/lib/client-trace'
@@ -270,6 +271,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               )
             })}
           </nav>
+          <KeysEntry />
         </aside>
         <div
           ref={scroller}

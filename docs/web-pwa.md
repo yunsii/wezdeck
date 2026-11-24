@@ -123,10 +123,18 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    beside them (default 连接; group links replace). Sheets become a centred
    dialog (fade + scale, no grab handle). 工单's run / cache / cost band is
    folded into one Disclosure (the sidebar links 工单动态).
-6. **Desktop keyboard**: `j`/`k` move, `Enter` open, `Esc` back, `/` filter,
-   `g`+letter section jump, `Ctrl+K` command palette; on a session page
-   `Space` puts the caret in the composer (`composer-keys.ts`; not while
-   typing, on a button / link, or with a sheet open); hints in the UI.
+6. **Desktop keyboard**: `j`/`k` move, `Esc` back, `/` filter, `g`+letter
+   section jump; on a session page `Space` puts the caret in the composer
+   (`composer-keys.ts`; not while typing, on a button / link, or with a
+   sheet open), `Ctrl/⌘+N` (even from the composer) or `c` opens 新会话,
+   `Alt+J/K/L` jump like the desk and `Alt+G` / `Alt+X` / `Alt+/` open the
+   picker. Every key is listed in one place, `console-keys.tsx`, shown by
+   `?` or the sidebar's 键盘快捷键 entry with the desk's key for the same
+   action (from `wezterm-x/commands/manifest.json`); a key added to a page
+   is added there too. Chrome may keep `Ctrl+N` for a new window in a plain
+   tab (an installed app window can hand it to the page), hence `c`. The
+   desk's `Ctrl+N` is `/new` in the focused agent, not a new worktree: the
+   web's equivalent is 命令 › /new. No command palette yet.
 7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
    deferred.
