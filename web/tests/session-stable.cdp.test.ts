@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { chromium } from '@playwright/test'
+import { chromium, devices } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -163,6 +163,38 @@ describe.runIf(attention)('A session list that holds still', () => {
     await page.getByRole('radio', { name: /^全部/ }).click()
     await page.getByRole('radio', { name: /^等你/ }).click()
     await expect.poll(() => listed(page)).toEqual(['st-a'])
+    await context.close()
+  }, 60_000)
+  it('phone: back from a session keeps the order; re-tapping 会话 re-reads it', async () => {
+    const context = await browser.newContext({
+      ...devices['Pixel 7'],
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/sessions?remote=1#pair=${token}`)
+    await page.locator('[data-session=st-c]').waitFor({ timeout: 20_000 })
+    await page.getByRole('radio', { name: /^全部/ }).click()
+    // the tree under the waiting band: st-c, st-d by name (no visits yet)
+    const tree = () =>
+      page
+        .locator('[aria-label] section[data-repo] [data-session]')
+        .evaluateAll((els) =>
+          els
+            .map((el) => (el as HTMLElement).dataset.session)
+            // st-b may be here too (answered in the test above)
+            .filter((id) => id === 'st-c' || id === 'st-d'),
+        )
+    await expect.poll(tree).toEqual(['st-c', 'st-d'])
+    // open st-d (a visit from this phone), then back to the list
+    await page.locator('[data-session=st-d]').click()
+    await page.waitForURL('**/console/sessions/st-d')
+    await page.goBack()
+    await page.locator('[data-session=st-c]').waitFor()
+    await page.waitForTimeout(500)
+    expect(await tree()).toEqual(['st-c', 'st-d'])
+    // re-tap the 会话 tab: an explicit refresh re-reads the visits
+    await page.getByRole('link', { name: '会话' }).last().click()
+    await expect.poll(tree).toEqual(['st-d', 'st-c'])
     await context.close()
   }, 60_000)
 })

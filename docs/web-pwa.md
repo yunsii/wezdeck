@@ -54,11 +54,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    `Alt+x`, `session_visits.go`) and a visit from this web console
    (`lib/session-visits.ts`); never-visited groups (ticket agents) sink by
    name (`features/session-order.ts`); 待跟进 to-dos at the bottom. The
-   list holds still while you use it (`session-stable.ts`, 2026-11-24): a
-   worktree's visit is read once, when the list first sees it, so opening a
-   session no longer lifts its group under the cursor (leaving 会话 and
-   coming back re-reads); a row shown under the current filter stays until
-   the filter changes; 运行中 also keeps a session for 3 min after its turn
+   list holds still while you use it (`session-stable.ts`, 2026-11-24), the
+   same on a phone and a wide screen — both records live for the page, not
+   the list component (a phone remounts the list on every way back from a
+   session, which re-read the visits and lifted the session just opened):
+   a worktree's visit is read once, when the list first sees it, so
+   opening a session no longer moves its group; a row shown under the
+   current filter stays until the filter changes; re-tapping 会话 (tab, or
+   the sidebar entry while on it) or reloading re-reads both; 运行中 also keeps a session for 3 min after its turn
    ends (`inRunning`, the card's newest-turn `ts`), so a finished one no
    longer vanishes the moment it stops. Wide, j / k walk the rows the list
    shows (its filter, its held order) and read the current item from the

@@ -22,6 +22,7 @@ import {
   useRuntimeData,
 } from './console-data'
 import { StatusPill, formatDuration, formatTime } from './console-shared'
+import { resetSessionOrder } from './session-stable'
 import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { KeysEntry } from './console-keys'
@@ -252,6 +253,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                       return
                     event.preventDefault()
                     if (!active) go(item.id)
+                    // clicking 会话 while on it: re-read the held order
+                    else if (item.id === 'sessions') {
+                      resetSessionOrder()
+                      void client.invalidateQueries({ queryKey: ['remote'] })
+                    }
                   }}
                   className={cn(
                     'flex min-h-9 items-center gap-2.5 rounded-xl px-3 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
@@ -340,7 +346,9 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                   go(item.id)
                   return
                 }
-                // Re-tap the current tab: back to top + refresh (no pull-to-refresh).
+                // Re-tap the current tab: back to top + refresh (no pull-to-refresh);
+                // on 会话 that re-reads the held order too (session-stable.ts)
+                if (item.id === 'sessions') resetSessionOrder()
                 scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
                 void client.invalidateQueries({
                   queryKey: ['runtime', 'collab'],
