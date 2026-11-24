@@ -9,7 +9,7 @@ export const overview: Diagram = {
   id: 'overview',
   title: { zh: '全景', en: 'At a glance' },
   summary: {
-    zh: 'Agent 跑在 WSL 的 tmux 里，桌面上由 WezTerm 承载。网页端在别的设备上打开时经 Cloudflare 找到主机，再尽量直连；在主机上打开时直接问本地 Runtime。',
+    zh: 'Agent 跑在 WSL 的 tmux 里，终端由 WezTerm 承载。网页端在别的设备上打开时经 Cloudflare 找到主机，再尽量直连；在主机上打开时直接问本地 Runtime。',
     en: 'Agents run in tmux inside WSL, hosted by WezTerm on the desktop. The web console on another device finds the host through Cloudflare, then connects directly when it can; on the host it asks the local Runtime.',
   },
   lanes: [DEVICE, CLOUD, WINDOWS, WSL],
@@ -96,7 +96,7 @@ export const overview: Diagram = {
         en: 'A tab per repository, badges and keys',
       },
       body: {
-        zh: '桌面的入口：工作区、标签页、「等你」徽标，以及 Alt+j 跳到等你的会话等键盘操作。',
+        zh: '终端的入口：工作区、标签页、「等你」徽标，以及 Alt+j 跳到等你的会话等键盘操作。',
         en: 'The desktop entry: workspaces, tabs, the waiting-on-you badges, and keys such as Alt+j to jump to a session that waits on you.',
       },
       impl: {
@@ -204,7 +204,7 @@ export const overview: Diagram = {
         en: 'attention.json: who runs, who waits on you',
       },
       body: {
-        zh: 'Agent 的 hook 把每个会话的窗格、状态（运行中、等你、本轮结束）写到这里，桌面徽标和网页端的会话列表都从它读。',
+        zh: 'Agent 的 hook 把每个会话的窗格、状态（运行中、等你、本轮结束）写到这里，终端徽标和网页端的会话列表都从它读。',
         en: 'Agent hooks record each session’s pane and status (running, waiting on you, finished its turn); desktop badges and the web console’s session list both read it.',
       },
       impl: {

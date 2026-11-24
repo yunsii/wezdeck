@@ -237,11 +237,11 @@ export const sendMessage: Diagram = {
       row: 2,
       title: { zh: '同一组保护', en: 'The same guards' },
       sub: {
-        zh: '一个写者、电脑前有人就等',
+        zh: '一个写者、终端有人就等',
         en: 'One writer, wait while the desk is busy',
       },
       body: {
-        zh: '只往会话自己的窗格里写，不另起进程；电脑前 10 秒内有人操作，就稍后再发，网页端会倒计时自动重试。',
+        zh: '只往会话自己的窗格里写，不另起进程；终端 10 秒内有人操作，就稍后再发，网页端会倒计时自动重试。',
         en: 'Only the session’s own pane is written, never a second process; if someone typed at the desk in the last 10 s the web console counts down and retries.',
       },
       impl: {
@@ -256,7 +256,7 @@ export const sendMessage: Diagram = {
       title: { zh: '粘贴进 TUI', en: 'Paste into the TUI' },
       sub: { zh: 'tmux paste-buffer + Enter', en: 'tmux paste-buffer + Enter' },
       body: {
-        zh: '和你在电脑前打字一样进入 Agent 的输入框；窗格里会提示「网页端发来一条消息」。',
+        zh: '和你在终端打字一样进入 Agent 的输入框；窗格里会提示「网页端发来一条消息」。',
         en: 'It reaches the agent like typing at the desk; the pane shows a short notice.',
       },
     },

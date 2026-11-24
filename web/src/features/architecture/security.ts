@@ -152,7 +152,7 @@ export const securityDiagram: Diagram = {
       title: { zh: '写入保护', en: 'Write guards' },
       sub: { zh: '两条路进同一组保护', en: 'Both ways in, one set of guards' },
       body: {
-        zh: '按键只走白名单（Enter、Esc、方向、数字、Ctrl+C 等）；消息粘贴前去掉控制字符，不能借粘贴按键；只写会话自己的窗格；电脑前 10 秒内有人输入就等一等。',
+        zh: '按键只走白名单（Enter、Esc、方向、数字、Ctrl+C 等）；消息粘贴前去掉控制字符，不能借粘贴按键；只写会话自己的窗格；终端 10 秒内有人输入就等一等。',
         en: 'Keys come from an allowlist (Enter, Esc, arrows, digits, Ctrl+C…); message text loses its control characters before the paste, so it cannot press keys; only the session’s own pane is written; a write waits while the desk was used in the last 10 s.',
       },
       impl: {
@@ -331,11 +331,11 @@ export const threats: Array<Threat> = [
   },
   {
     threat: {
-      zh: '网页端和电脑前同时输入',
+      zh: '网页端和终端同时输入',
       en: 'The web console and the desk type at once',
     },
     guard: {
-      zh: '只写会话自己的窗格，不另起进程；电脑前 10 秒内有输入，网页端倒计时后再发。',
+      zh: '只写会话自己的窗格，不另起进程；终端 10 秒内有输入，网页端倒计时后再发。',
       en: 'Only the session’s own pane, never a second process; after input at the desk in the last 10 s the web console counts down and retries.',
     },
     impl: {

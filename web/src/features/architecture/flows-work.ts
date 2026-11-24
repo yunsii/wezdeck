@@ -137,7 +137,7 @@ export const waitingSignal: Diagram = {
   id: 'waiting',
   title: { zh: '「等你」信号怎么传开', en: 'How “waiting on you” spreads' },
   summary: {
-    zh: '一个 hook 写下状态，桌面和网页端都从同一份状态读。',
+    zh: '一个 hook 写下状态，终端和网页端都从同一份状态读。',
     en: 'One hook records the state; the desk and the web console read the same record.',
   },
   numbered: true,
@@ -173,7 +173,7 @@ export const waitingSignal: Diagram = {
     {
       id: 'badge',
       lane: 'windows',
-      title: { zh: '桌面徽标', en: 'Desk badges' },
+      title: { zh: '终端徽标', en: 'Desk badges' },
       sub: { zh: '标签徽标、右侧计数', en: 'Tab badges, counters' },
       body: {
         zh: 'WezTerm 的标签和状态栏亮起，Alt+j 直接跳到等你的会话。',

@@ -10,6 +10,28 @@ Use this doc when you need ownership boundaries, entry points, or runtime design
   - Windows-side (consumed by `wezterm.exe`): `%USERPROFILE%\.wezterm.lua`, `%USERPROFILE%\.wezterm-x\...`, `%USERPROFILE%\.wezterm-native\...`.
   - WSL-side (consumed by WSL-resident agents — Claude Code, Codex CLI, etc.): `$HOME/.wezterm-x/agent-tools.env`. This is the host-effects discovery marker; schema and contract live in [`setup.md#agent-toolsenv-schema`](./setup.md#agent-toolsenv-schema).
 
+## Terms
+
+One vocabulary for docs, UI text and code (2026-11-24; the architecture
+page's 概念 list, `web/src/features/architecture/copy.ts` `CONCEPTS`, shows
+the same):
+
+| Term | Meaning |
+| --- | --- |
+| **Host** (主机) | The computer the agents run on (Windows + WSL): terminal, local services (Runtime, relay, bridge), tmux sessions. |
+| **Terminal** (终端) | WezTerm + tmux on the host, where you type directly. Older text: "desk", 桌面, 电脑前. |
+| **Web console** (网页端) | The WezDeck web app in a browser. Two independent axes ↓ |
+| — by the way in | **local** (本机网页端): on the host, loopback Runtime, nothing to pair · **remote** (远程网页端): anywhere else, through the relay, paired and approved |
+| — by form factor | **desktop** (桌面端): ≥ 768 px, keyboard + mouse, split views, shortcuts · **mobile** (移动端): narrow, touch, bottom tabs, pushed detail, sheets |
+| **Device** (设备) | A remote web console with an approved device key. |
+
+A phone is a remote console on mobile; the host's browser a local console on
+desktop; another computer a remote console on desktop. In code, "phone" is
+the mobile form factor (`useIsWidePhoneFirst`, `(pointer: coarse)`); the
+remote console is "client" (relay `clientChan`) — wire and log names
+(`phone`, `phones=`) stay as they are. Attachments sent from the web
+console arrive as `[网页附件]`.
+
 ## Interaction Layers
 
 This config nests two terminal multiplexers — WezTerm outside, tmux inside a single pane of each managed project tab — and several concept names collide between the two layers. Keep the ownership split below in mind when routing a new binding, script, or diagnostic.

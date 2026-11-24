@@ -235,7 +235,7 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       c('todo', '增改仓库待办', 'Add or change a to-do'),
       c(
         'clear',
-        '把一条会话标为已读（等同桌面 Alt+/ 里的 Ctrl+X）',
+        '把一条会话标为已读（等同终端 Alt+/ 里的 Ctrl+X）',
         'Mark a session as read (Ctrl+X in the desk’s Alt+/ picker)',
       ),
       c(
@@ -356,7 +356,7 @@ export const decisions: Array<Decision> = [
   {
     title: { zh: '一个窗格一个写者', en: 'One writer per pane' },
     body: {
-      zh: '网页端不另起 Agent 进程，只往会话已有的窗格里粘贴。电脑前有人在打字时，网页端等一下再发，不会把两边的输入搅在一起。',
+      zh: '网页端不另起 Agent 进程，只往会话已有的窗格里粘贴。终端有人在打字时，网页端等一下再发，不会把两边的输入搅在一起。',
       en: 'The web console never starts a second agent process; it pastes into the pane the session already has. While someone types at the desk, it waits rather than mixing the two.',
     },
   },

@@ -185,7 +185,7 @@ msgstr "运行中发来的消息"
 
 #: src/features/landing-page.tsx:93
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
-msgstr "配对过的手机或平板经 WebRTC 直连主机，连不上时走中转。要写入，必须是你在主机上批准过的设备。"
+msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRTC 直连主机，连不上时走中转。要写入，必须是你在主机上批准过的设备。"
 
 #: src/features/ticket-thread-view.tsx:17
 msgid "A person"
@@ -364,7 +364,7 @@ msgstr "对前提提出了质疑"
 
 #: src/features/console-keys.tsx:162
 msgid "At the desk: {host}"
-msgstr "主机上：{host}"
+msgstr "终端：{host}"
 
 #: src/features/console-keys.tsx:129
 #~ msgid "At the desk: {keys}"
@@ -839,7 +839,7 @@ msgstr "依赖"
 
 #: src/features/session-info.tsx:69
 msgid "Desk idle for"
-msgstr "电脑前空闲"
+msgstr "终端空闲"
 
 #: src/features/session-new.tsx:190
 msgid "dev: a long-lived workstation for parallel work"
@@ -986,7 +986,7 @@ msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协�
 
 #: src/features/landing-page.tsx:85
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
-msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在电脑前按 Alt+j 直接跳过去，离开了就在手机上接着聊。"
+msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终端按 Alt+j 直接跳过去，离开电脑就在移动端接着聊。"
 
 #: src/features/landing-example.tsx:68
 #: src/features/landing-example.tsx:159
@@ -2268,7 +2268,7 @@ msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 
 #: src/features/console-keys.tsx:157
 msgid "Same at the desk"
-msgstr "主机同键"
+msgstr "终端同键"
 
 #: src/features/landing-example.tsx:170
 #~ msgid "Sample signals. The live console reads your local Runtime."
@@ -2442,7 +2442,7 @@ msgstr "部分数据没拿到：{missing}"
 
 #: src/features/console-sessions.tsx:533
 msgid "Someone just used the desk; sending in {retryIn}s…"
-msgstr "电脑前刚有输入，{retryIn} 秒后自动重发…"
+msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
 #: src/features/console-collab-run.tsx:160
 #: src/features/console-diagnostics.tsx:319

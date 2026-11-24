@@ -9,22 +9,8 @@ waiting on you. Writes need a device key the host approved once.
 Agent coding from the phone is still OpenClaw ([`mobile-access.md`](./mobile-access.md));
 this doc covers the structured ticket view.
 
-## Terms (2026-11-24)
-
-- **Desk** — WezTerm + tmux on the host, where you work directly.
-- **Web console** (网页端) — the WezDeck web app in any browser: a phone, a
-  tablet, a desk browser. Two ways in:
-  - **local web console** (本机网页端): on the host itself, through the
-    loopback Runtime, nothing to pair;
-  - **remote web console** (远程网页端): anywhere else, through the relay,
-    paired and approved per device.
-- **Device** — a remote web console with an approved device key.
-
-"Phone" in older text (and in identifiers not renamed yet) means the remote
-web console; it still means the narrow / touch layout where it is about
-screens (`useIsWidePhoneFirst`, `(pointer: coarse)`). Attachments sent from
-the web console arrive as `[网页附件]` (was `[手机附件]`; the page reads
-both), and the pane notice reads 网页端发来一条消息.
+Terms (host, terminal, local / remote web console, desktop / mobile,
+device): [`architecture.md#terms`](./architecture.md#terms).
 
 ## Shape
 
