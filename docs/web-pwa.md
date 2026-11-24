@@ -371,21 +371,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   has no transition within a section (2026-11-24): the split (会话, 工单,
   诊断, 我的) swaps its pane at once — the pane's fade-through blanked it
   for ~100 ms on every switch, a flash with j / k and every click, and the
-  snapshot held the re-render back. Measured frame by frame on real
-  conversations, a switch also had to: skip router scroll restoration on a
-  detail page (`restoresScroll`: the router carried the old item's offset
-  onto a location it had no entry for and applied it after render, so the
-  new conversation showed its middle and the sticky prompt flashed); land
-  a conversation at its bottom before the first paint (`chat-scroll.ts`,
-  a layout effect; the rAF landing stays for late layout); hide the sticky
-  prompt while the thread is pinned (`following`; content landing under a
-  pinned thread put the bottom > 48 px away for the glide's few frames);
-  warm a conversation before it opens (`prefetchSession` on row hover /
-  focus / press and j / k's neighbours: an uncached one drew a Loading…
-  frame with the page collapsed); and hold the previous ticket, inert,
-  until the next arrives (`keepPrevious`, no Loading… between tickets),
-  scrolled to its top. `split-switch.cdp.test.ts` samples every frame
-  after a switch. The content column (`vt-page`) has its own
+  snapshot held the re-render back (what else a switch must do, measured
+  frame by frame: [`web-motion.md`](web-motion.md#split-switches)). The content column (`vt-page`) has its own
   background and the snapshots no plus-lighter blend: a transparent snapshot
   of two pages blended together was the ghost on push. The shell reads the
   resolved location, so on back its title does not switch before the page
@@ -516,6 +503,11 @@ underscore — via CSS `caret-shape` (Chrome 144+; Firefox and
 Safari keep their thin bar). Per device like the theme: `lib/caret-pref.ts`,
 `localStorage` `wezdeck-caret`, set on `<html data-caret>` before first
 paint by the theme bootstrap script.
+
+### Motion (2026-11-24)
+
+The motion spec (tokens, what animates how, rules, how to verify) lives in
+[`web-motion.md`](web-motion.md).
 
 ### Layout stability (2026-11-24)
 

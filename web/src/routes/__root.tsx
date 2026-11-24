@@ -15,6 +15,7 @@ import appCss from '../styles.css?url'
 // the page's characters, so they are left to unicode-range.
 import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
 import { AppI18nProvider } from '#/lib/i18n'
+import { MotionProvider } from '#/lib/motion'
 import { locales } from '#/route-tree'
 import { QueryProvider } from '#/lib/query-provider'
 import { PwaBoot } from '#/features/pwa-boot'
@@ -110,7 +111,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
           <AppI18nProvider>
             <QueryProvider>
-              {children}
+              <MotionProvider>{children}</MotionProvider>
               <PwaBoot />
             </QueryProvider>
           </AppI18nProvider>

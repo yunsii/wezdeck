@@ -1325,7 +1325,7 @@ msgstr "插入当前这一轮"
 #~ msgid "Jump to pane"
 #~ msgstr "跳到窗格"
 
-#: src/features/chat-sticky.tsx:118
+#: src/features/chat-sticky.tsx:124
 msgid "Jump to your message: {text}"
 msgstr "跳到你的消息：{text}"
 

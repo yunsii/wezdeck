@@ -113,7 +113,9 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
   installed from Chrome — Firefox PWA blank window on back), mobile vs desktop layouts
   (bottom tabs / pushed detail / sheets vs split view + keyboard / command
   palette), capability-aware navigation, Web Push:
-  Read [`docs/web-pwa.md`](docs/web-pwa.md).
+  Read [`docs/web-pwa.md`](docs/web-pwa.md); the motion spec (motion 12
+  tokens, `.list-row` states, sticky prompt, what a split switch must do):
+  [`docs/web-motion.md`](docs/web-motion.md).
 - Repo to-dos / follow-ups (`scripts/runtime/todo.py`, SQLite `todos`, web console 待办 panel):
   Read [`docs/remote-sessions.md#repo-to-dos`](docs/remote-sessions.md#repo-to-dos).
 - Viewing collab tickets from a remote web console anywhere (phone, tablet, another computer) (`wezdeck.yuns.love`

@@ -128,7 +128,7 @@ function SessionRow({
           onPointerDown={warm}
           onFocus={warm}
           className={cn(
-            'key-press flex min-h-14 items-start gap-3 px-4 py-3',
+            'list-row flex min-h-14 items-start gap-3 px-4 py-3',
             // the selected row as in 工单 / 诊断 (.row-selected, deck.css)
             row.id === selected && 'row-selected',
           )}

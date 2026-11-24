@@ -7,9 +7,11 @@
 // it never moves the thread.
 import { useLingui } from '@lingui/react/macro'
 import { CornerLeftUp } from 'lucide-react'
+import { AnimatePresence, m } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
 import { trace } from '#/lib/client-trace'
+import { dropIn } from '#/lib/motion'
 import { typedText } from './chat-attachments'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
@@ -109,22 +111,32 @@ export function StickyPrompt({
       data-chat-top
       className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0"
     >
-      {text ? (
-        <Button
-          variant="plain"
-          type="button"
-          data-testid="sticky-prompt"
-          onClick={jump}
-          aria-label={t`Jump to your message: ${text}`}
-          // the user's own bubble, folded to one line (same fill, ink, radius
-          // and size): it used to be a dark bordered strip that read as a
-          // different thing from the message it points back to
-          className="chat-in absolute inset-x-0 top-1 flex h-10 items-center gap-2 rounded-xl bg-brand-text px-3.5 text-left text-body text-brand-deck shadow-[0_8px_20px_-12px_rgb(0_0_0/0.45)]"
-        >
-          <CornerLeftUp size={15} aria-hidden className="shrink-0 opacity-60" />
-          <span className="min-w-0 flex-1 truncate">{text}</span>
-        </Button>
-      ) : null}
+      {/* in from above, out with a fade (lib/motion.ts): it used to pop;
+          the leaving bar keeps its last text while it fades */}
+      <AnimatePresence>
+        {text ? (
+          <m.div key="sticky" {...dropIn} className="absolute inset-x-0 top-1">
+            <Button
+              variant="plain"
+              type="button"
+              data-testid="sticky-prompt"
+              onClick={jump}
+              aria-label={t`Jump to your message: ${text}`}
+              // the user's own bubble, folded to one line (same fill, ink,
+              // radius and size): it used to be a dark bordered strip that
+              // read as a different thing from the message it points back to
+              className="flex h-10 w-full items-center gap-2 rounded-xl bg-brand-text px-3.5 text-left text-body text-brand-deck shadow-[0_8px_20px_-12px_rgb(0_0_0/0.45)]"
+            >
+              <CornerLeftUp
+                size={15}
+                aria-hidden
+                className="shrink-0 opacity-60"
+              />
+              <span className="min-w-0 flex-1 truncate">{text}</span>
+            </Button>
+          </m.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }

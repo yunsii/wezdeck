@@ -277,7 +277,7 @@ function EntryList({
               aria-current={active ? 'true' : undefined}
               onClick={() => onPick(entry.id)}
               className={cn(
-                'key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset',
+                'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset',
                 active && 'row-selected',
               )}
             >

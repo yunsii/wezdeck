@@ -79,44 +79,63 @@ html[data-theme='dark'] .key-press:active {
   box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.1);
 }
 
-/* The open item in a split list (会话 / 工单 / 诊断): an accent tint and a
-   3 px accent bar. It was the page tone, which read as a hole in the card
-   once cards lost their outline (f353a40), and the row's chips (page tone
-   too) vanished inside it. The bar is a pseudo-element, not a box-shadow:
-   .key-press eases box-shadow, and a click went from the press veil (a
-   999 px spread) to the bar (opaque accent) through frames of a huge
-   accent spread — the whole row flashed solid blue (caught in a CDP
-   screencast, ~70 ms). */
-.row-selected {
+/* A row of a split list (会话 / 工单 / 诊断) and the open one. States go one
+   way, in the accent: hover 4 %, pressed 8 %, open 10 % (dark 7 / 13 / 18).
+   It used to press a grey veil (.key-press) and snap to the tint: white,
+   grey, blue in three steps, a flicker.
+   Both the tint and the 3 px bar are pseudo-elements that change only
+   opacity: an opacity transition runs on the compositor, so it stays smooth
+   while the main thread renders the conversation just opened (~140 ms,
+   measured by web-frame-probe) — a background-color transition froze there
+   and jumped. Never a box-shadow: easing from a 999 px veil into an accent
+   shadow filled the row solid blue for ~70 ms. The tint sits under the
+   content (isolation + z-index -1), over the card's own surface. */
+.list-row {
   position: relative;
-  background: color-mix(
-    in srgb,
-    var(--brand-running) 10%,
-    var(--brand-surface)
-  );
+  isolation: isolate;
 }
-.row-selected::before {
+.list-row::before,
+.list-row::after {
   content: '';
   position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-short) var(--ease-standard);
+}
+.list-row::before {
   inset-block: 0;
   inset-inline-start: 0;
   width: 3px;
+  z-index: 1;
   background: var(--brand-running);
-  pointer-events: none;
 }
-
-/* pressed while selected: no veil — the item is already open, a tap does
-   nothing */
-.row-selected.key-press:active {
-  box-shadow: none;
+.list-row::after {
+  inset: 0;
+  z-index: -1;
+  background: var(--brand-running);
 }
-
-html[data-theme='dark'] .row-selected {
-  background: color-mix(
-    in srgb,
-    var(--brand-running) 18%,
-    var(--brand-surface)
-  );
+@media (hover: hover) {
+  .list-row:hover::after {
+    opacity: 0.04;
+  }
+  html[data-theme='dark'] .list-row:hover::after {
+    opacity: 0.07;
+  }
+}
+.list-row:active::after {
+  opacity: 0.08;
+}
+html[data-theme='dark'] .list-row:active::after {
+  opacity: 0.13;
+}
+.list-row.row-selected::after {
+  opacity: 0.1;
+}
+html[data-theme='dark'] .list-row.row-selected::after {
+  opacity: 0.18;
+}
+.list-row.row-selected::before {
+  opacity: 1;
 }
 
 /* SectionHeading (components/ui/section-heading.tsx): the heading's fill,
