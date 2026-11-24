@@ -48,7 +48,7 @@ func TestGitLogRealRepo(t *testing.T) {
 		}
 	}
 	run("init", "-q")
-	for _, msg := range []string{"first", "second: with | pipes"} {
+	for _, msg := range []string{"first", "second: with | pipes\n\n- why: a body\n- line two"} {
 		if err := os.WriteFile(filepath.Join(dir, msg[:3]), []byte(msg), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -58,6 +58,9 @@ func TestGitLogRealRepo(t *testing.T) {
 	got := gitLog(dir, "HEAD", 10)
 	if len(got) != 2 || got[0].Subject != "second: with | pipes" || got[1].Subject != "first" || got[0].At == 0 || got[0].SHA == "" {
 		t.Fatalf("log %+v", got)
+	}
+	if got[0].Body != "- why: a body\n- line two" || got[1].Body != "" {
+		t.Fatalf("bodies %q / %q", got[0].Body, got[1].Body)
 	}
 	if bad := gitLog(dir, "@{u}..HEAD", 10); len(bad) != 0 {
 		t.Fatalf("no upstream: %+v", bad)

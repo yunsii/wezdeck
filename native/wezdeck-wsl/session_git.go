@@ -31,9 +31,12 @@ type gitFile struct {
 type gitCommit struct {
 	SHA     string `json:"sha"`
 	Subject string `json:"subject"`
+	Body    string `json:"body,omitempty"` // the message after the subject (clipped)
 	Author  string `json:"author"`
 	At      int64  `json:"at"` // ms
 }
+
+const gitBodyMax = 500
 
 type gitDetail struct {
 	Status    *gitStatus  `json:"status"`
@@ -89,18 +92,20 @@ func gitOutput(cwd string, args ...string) (string, error) {
 
 // gitLog: commits of a range, newest first; empty when the range fails.
 func gitLog(cwd, rng string, n int) []gitCommit {
-	out, err := gitOutput(cwd, "log", "-n", strconv.Itoa(n), "--format=%h%x1f%s%x1f%an%x1f%ct", rng, "--")
+	// the body spans lines: one record per commit (RS), fields by US
+	out, err := gitOutput(cwd, "log", "-n", strconv.Itoa(n), "--format=%h%x1f%s%x1f%an%x1f%ct%x1f%b%x1e", rng, "--")
 	commits := []gitCommit{}
 	if err != nil {
 		return commits
 	}
-	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
-		f := strings.Split(line, "\x1f")
-		if len(f) != 4 {
+	for _, record := range strings.Split(out, "\x1e") {
+		f := strings.SplitN(strings.TrimLeft(record, "\n"), "\x1f", 5)
+		if len(f) != 5 {
 			continue
 		}
 		at, _ := strconv.ParseInt(f[3], 10, 64)
-		commits = append(commits, gitCommit{SHA: f[0], Subject: f[1], Author: f[2], At: at * 1000})
+		body := clip(strings.TrimSpace(f[4]), gitBodyMax)
+		commits = append(commits, gitCommit{SHA: f[0], Subject: f[1], Body: body, Author: f[2], At: at * 1000})
 	}
 	return commits
 }

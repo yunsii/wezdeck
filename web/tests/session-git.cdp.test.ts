@@ -77,6 +77,14 @@ describe('Git status panel', () => {
     expect(commits).toContain('未推送 · 2')
     expect(commits).toContain('未拉取 · 1')
     expect(commits).toContain('最近提交 · 3')
+    // the subject wraps whole (no ellipsis); a commit with a body opens to it
+    const first = detail.locator(
+      '[data-git-commits=ahead] [data-commit="2f44707"]',
+    )
+    expect(await first.innerText()).toContain('整段对话平滑长高')
+    expect(await first.innerText()).not.toContain('逐帧测得')
+    await first.locator('button[aria-expanded]').click()
+    await expect.poll(() => first.innerText()).toContain('逐帧测得')
     await page.keyboard.press('Escape')
     await page.getByTestId('git-sheet').waitFor({ state: 'hidden' })
     await context.close()

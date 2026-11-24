@@ -27,6 +27,8 @@ export type GitFile = {
 export type GitCommit = {
   sha: string
   subject: string
+  /** the message after the subject (clipped by the host) */
+  body?: string
   author: string
   at: number
 }
@@ -66,6 +68,64 @@ export function useGitSentence() {
   }
 }
 
+/**
+ * One commit on two lines — the subject with the whole row to wrap in (up
+ * to three lines), then sha · author · time — so a phone reads it whole; one
+ * with a body opens in place to it.
+ */
+function CommitRow({ commit, when }: { commit: GitCommit; when: string }) {
+  const [open, setOpen] = useState(false)
+  const lines = (
+    <>
+      <span
+        className={cn(
+          'text-caption leading-snug text-brand-text',
+          !open && 'line-clamp-3',
+        )}
+      >
+        {commit.subject}
+      </span>
+      <span className="flex min-w-0 items-center gap-1.5 text-meta text-brand-label">
+        <span className="font-mono">{commit.sha}</span>
+        <span aria-hidden>·</span>
+        <span className="truncate">{commit.author}</span>
+        <span aria-hidden>·</span>
+        <span className="shrink-0">{when}</span>
+        {commit.body ? (
+          <span
+            aria-hidden
+            className={cn('ml-auto shrink-0 transition', open && 'rotate-90')}
+          >
+            ›
+          </span>
+        ) : null}
+      </span>
+    </>
+  )
+  return (
+    <li data-commit={commit.sha}>
+      {commit.body ? (
+        <Button
+          variant="plain"
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+          className="grid w-full min-w-0 gap-0.5 rounded-lg px-1 py-1.5 text-left"
+        >
+          {lines}
+        </Button>
+      ) : (
+        <div className="grid min-w-0 gap-0.5 px-1 py-1.5">{lines}</div>
+      )}
+      {open && commit.body ? (
+        <p className="mx-1 mb-1.5 rounded-lg bg-brand-surface px-2.5 py-2 text-meta leading-relaxed whitespace-pre-wrap text-brand-muted">
+          {commit.body}
+        </p>
+      ) : null}
+    </li>
+  )
+}
+
 function Commits({
   title,
   commits,
@@ -94,20 +154,11 @@ function Commits({
       </h3>
       <ul className="grid gap-0.5">
         {commits.map((commit) => (
-          <li
+          <CommitRow
             key={commit.sha}
-            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 px-1 py-1"
-          >
-            <span className="font-mono text-meta text-brand-label">
-              {commit.sha}
-            </span>
-            <span className="truncate text-caption text-brand-text">
-              {commit.subject}
-            </span>
-            <span className="text-meta text-brand-label">
-              {ago(new Date(commit.at).toISOString())}
-            </span>
-          </li>
+            commit={commit}
+            when={ago(new Date(commit.at).toISOString())}
+          />
         ))}
       </ul>
     </section>
