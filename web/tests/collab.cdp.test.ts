@@ -4,6 +4,7 @@
 // covers: web/src/features/ticket-thread-view.tsx
 // covers: web/src/features/ticket-reply.tsx native/wezdeck-wsl/collab.go
 // covers: web/src/features/ticket-copy-reference.tsx skills/agent-collab/lib/reference.py
+// covers: web/src/features/ticket-keys.tsx web/src/features/copy-reference.tsx
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
@@ -148,6 +149,27 @@ describe.runIf(stack)('工单 over the remote link', () => {
     expect(copied).toContain(`id: ${withRun}`)
     expect(copied).toContain('运行合计: ')
     expect(copied).toContain(`ticket api show --id ${withRun}`)
+    // the list: y copies the open ticket; a row's key copies that row's
+    await page.evaluate(() => navigator.clipboard.writeText(''))
+    await page.evaluate(() =>
+      (document.activeElement as HTMLElement | null)?.blur(),
+    )
+    await page.keyboard.press('y')
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toContain(`id: ${withRun}`)
+    const other = page.locator(`[data-ticket]:not([data-ticket="${withRun}"])`)
+    if ((await other.count()) > 0) {
+      const row = other.first()
+      const otherId = (await row.getAttribute('data-ticket')) ?? ''
+      await row.hover()
+      await row.locator('..').getByTestId('row-copy-reference').click()
+      await expect
+        .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+        .toContain(`id: ${otherId}`)
+      // copying does not switch the open ticket
+      expect(page.url()).toContain(withRun)
+    }
     await context.close()
   }, 90_000)
 

@@ -24,6 +24,7 @@ import {
   worktreeKey,
 } from './session-order'
 import { useAgo } from './tickets-view'
+import { RowCopyButton, useCopySessionReference } from './copy-reference'
 import {
   humanPrompt,
   isBusy,
@@ -75,6 +76,7 @@ function SessionRow({
   const ago = useAgo()
   const statusText = useStatusText()
   const wide = useIsWide()
+  const copyReference = useCopySessionReference()
   const paneLabel = (role?: string) =>
     role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
@@ -102,43 +104,47 @@ function SessionRow({
   )
   return (
     <SwipeToClear id={row.id} enabled={clearable(row.status, row.waiting_kind)}>
-      <Link
-        to="/{-$locale}/console/sessions/$id"
-        params={{ locale: localeParam, id: row.id }}
-        data-session={row.id}
-        data-pane-role={row.pane_role || undefined}
-        replace={wide && Boolean(selected)}
-        aria-current={row.id === selected ? 'page' : undefined}
-        onClick={() => recordVisit(worktreeKey(row))}
-        className={cn(
-          'key-press flex min-h-14 items-start gap-3 px-4 py-3',
-          // the selected row as in 工单 / 诊断: page tone + accent bar
-          row.id === selected &&
-            'bg-brand-deck shadow-[inset_3px_0_0_var(--brand-running)]',
-        )}
-      >
-        <span className="pt-1.5">
-          <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
-        </span>
-        <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
-          <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-title font-medium">{title}</span>
-            <span className="shrink-0 text-meta text-brand-label">
-              {ago(ts(row.ts))}
+      {/* the copy key sits beside the link (no button inside an a) */}
+      <div className="group/row relative">
+        <Link
+          to="/{-$locale}/console/sessions/$id"
+          params={{ locale: localeParam, id: row.id }}
+          data-session={row.id}
+          data-pane-role={row.pane_role || undefined}
+          replace={wide && Boolean(selected)}
+          aria-current={row.id === selected ? 'page' : undefined}
+          onClick={() => recordVisit(worktreeKey(row))}
+          className={cn(
+            'key-press flex min-h-14 items-start gap-3 px-4 py-3',
+            // the selected row as in 工单 / 诊断: page tone + accent bar
+            row.id === selected &&
+              'bg-brand-deck shadow-[inset_3px_0_0_var(--brand-running)]',
+          )}
+        >
+          <span className="pt-1.5">
+            <Led tone={sessionTone(row.status, row.waiting_kind)} size={12} />
+          </span>
+          <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="truncate text-title font-medium">{title}</span>
+              <span className="shrink-0 text-meta text-brand-label">
+                {ago(ts(row.ts))}
+              </span>
+            </span>
+            <span className="truncate text-caption text-brand-muted">
+              {prompt || t`No human message yet`}
+            </span>
+            <span className="flex min-w-0 flex-wrap items-center gap-1 pr-8 md:pr-6">
+              {showRepo && repoName(row) ? tag(repoName(row)) : null}
+              {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
+              {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
+              {status ? tag(status) : null}
+              {row.branch ? tag(row.branch) : null}
             </span>
           </span>
-          <span className="truncate text-caption text-brand-muted">
-            {prompt || t`No human message yet`}
-          </span>
-          <span className="flex min-w-0 flex-wrap items-center gap-1">
-            {showRepo && repoName(row) ? tag(repoName(row)) : null}
-            {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
-            {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
-            {status ? tag(status) : null}
-            {row.branch ? tag(row.branch) : null}
-          </span>
-        </span>
-      </Link>
+        </Link>
+        <RowCopyButton id={row.id} copy={copyReference} />
+      </div>
     </SwipeToClear>
   )
 }

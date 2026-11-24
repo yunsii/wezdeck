@@ -12,6 +12,7 @@ import type { CollabTicket } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
 import { ticketTone } from './console-collab'
 import { RepoRoute, useAgo, useStatusLabel } from './tickets-view'
+import { RowCopyButton, useCopyTicketReference } from './copy-reference'
 
 const toneText: Record<LedTone, string> = {
   running: 'text-brand-running',
@@ -119,8 +120,9 @@ function TicketKey({
   const ago = useAgo()
   const statusLabel = useStatusLabel()
   const tone = ticketTone(ticket)
+  const copyReference = useCopyTicketReference()
   return (
-    <li className="border-b border-brand-edge last:border-b-0">
+    <li className="group/row relative border-b border-brand-edge last:border-b-0">
       <Link
         to={
           base === 'inbox'
@@ -146,13 +148,15 @@ function TicketKey({
         <span className="pt-0.5 text-meta text-brand-label">
           {ago(ticket.updated_at)}
         </span>
-        <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        {/* pr: room for the copy key, a sibling of the link (no button in an a) */}
+        <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-9 md:pr-7">
           <span className={cn('text-meta font-medium', toneText[tone])}>
             {statusLabel(ticket)}
           </span>
           <RepoRoute from={ticket.from} to={ticket.to} />
         </span>
       </Link>
+      <RowCopyButton id={ticket.id} copy={copyReference} />
     </li>
   )
 }

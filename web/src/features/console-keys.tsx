@@ -37,6 +37,7 @@ function useKeyGroups(): Array<Group> {
       title: t`Session pages`,
       items: [
         { keys: ['j', 'k'], what: t`Next / previous session in the list` },
+        { keys: ['y'], what: t`Copy the open session's reference` },
         {
           keys: ['Alt+J'],
           what: t`Next session waiting on you`,
@@ -76,6 +77,7 @@ function useKeyGroups(): Array<Group> {
       title: t`Ticket pages`,
       items: [
         { keys: ['j', 'k'], what: t`Next / previous ticket` },
+        { keys: ['y'], what: t`Copy the open ticket's reference` },
         { keys: ['n'], what: t`New ticket` },
       ],
     },

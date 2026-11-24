@@ -102,8 +102,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    refresh does not move the selection; mobile opens an entry in a sheet.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): the
    list sticky on the left (search above it), the ticket beside it in the
-   page scroll, j / k move through the list (not while typing or a sheet is
-   open), rows replace instead of push. The ticket list syncs on change
+   page scroll, j / k move through the list and y copies the open ticket's
+   reference (not while typing or a sheet is open), rows replace instead of
+   push. Every ticket and session row has a copy key beside its link
+   (`copy-reference.tsx`; always shown on a phone, on hover / focus when
+   wide) that copies the item's reference without opening it: a ticket's
+   `ticket api show` block, a session's relay block (from the open session's
+   cache, else a one-message `session` read); the click's gesture is kept
+   across the fetch with a promised `ClipboardItem` (`copyTextLater`). The ticket list syncs on change
    (`lib/ticket-sync.ts`): the shell polls collab health (~380 B; 3 s while a
    run is in flight, 15 s otherwise) and refetches the list (~45 KB) when its
    events head, counts or runs move, with a backstop of 10 s while running /
@@ -119,7 +125,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    on the page scroll (so the chat's pin-to-bottom is unchanged), filling
    the rest of the width (no 900 px cap since the list has its own divider,
    2026-11-24); the current row is highlighted, picking another replaces the
-   history entry, j / k move through the list's order and the URL follows;
+   history entry, j / k move through the list's order and the URL follows,
+   y copies the open session's reference;
    no back button. 我的 shows its groups on the left and the chosen one
    beside them (default 连接; group links replace). Sheets become a centred
    dialog (fade + scale, no grab handle). 工单's run / cache / cost band is

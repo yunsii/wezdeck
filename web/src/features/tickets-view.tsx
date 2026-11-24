@@ -26,6 +26,7 @@ import { Reading } from './inspector'
 import { nextInCycle } from './session-order'
 import { NewTicketButton } from './ticket-new'
 import { TicketKeys } from './ticket-keys'
+import { CopyKey, useCopyTicketReference } from './copy-reference'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 
@@ -260,6 +261,7 @@ export function TicketsView({
   const health = useTicketHealth()
   const poll = (health.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS
   const list = useTicketList()
+  const copyReference = useCopyTicketReference()
   const [chosen, setChosen] = useState<TicketFilter>('active')
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')
@@ -340,6 +342,7 @@ export function TicketsView({
           current={current}
           onGo={(next) => open(next, true)}
         />
+        <CopyKey id={current} copy={copyReference} />
         <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Collab tickets`}
