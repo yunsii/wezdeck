@@ -19,249 +19,91 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 
 ## Task Routing
 
-- Setup, local prerequisites, or machine-local config:
-  Read [`docs/setup.md`](docs/setup.md).
-- Human-only script handoff (`wd-run` / `x`), staged propose→ready(peek header)→wait,
-  handoff audit / retention, or “do not paste multi-line scripts for the human to run”:
-  Read [`docs/agent-run.md`](docs/agent-run.md). Agent self-exec is out of scope.
-- Sync, reload, verification, day-to-day maintenance, or **落地上线** (auto
-  commit / push / sync-runtime after a finished round):
-  Read [`docs/daily-workflow.md`](docs/daily-workflow.md)
-  ([Commit / land](docs/daily-workflow.md#commit--land-wezdeck-standing-policy)).
-- Repository-owned config/skill/script renames, compatibility layers, migration
-  warnings, or deciding whether to keep an old interface:
-  Read [`docs/compatibility-policy.md`](docs/compatibility-policy.md).
-- External capability source ownership, user-level links, agent profiles,
-  shell injection, `WEZDECK_REPO`, upstream agent skills, or path resolution:
-  Read [`docs/skill-sources.md`](docs/skill-sources.md).
-- Repo hygiene (doc/code size budgets, broken relative links, pre-commit gate, `run.sh audit`):
-  Read [`docs/daily-workflow.md#repo-hygiene`](docs/daily-workflow.md#repo-hygiene); run `skills/repo-hygiene/`.
-- Resetting a primary checkout or long-lived `dev-*` workstation / 「重置开发分支」 /
-  recycle onto `origin/HEAD` / closing a round then starting the next task:
-  Load platform skill [`skills/worktree-recycle/SKILL.md`](skills/worktree-recycle/SKILL.md)
-  (linked as `worktree-recycle`); do **not** hand-roll `git reset` or ask the
-  human to run CLI. Fast path: fetch + dirty check + hard-reset + remote sync;
-  delivery gate and project init are off by default. For a blank next round
-  pass `--fresh-agent` (unpin + cold-respawn; replaces manual `Ctrl+Shift+n`).
-  Docs:
-  [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-long-lived-dev--round-reset).
-  **Standing policy:** after a worktree round is delivered onto mainline, always
-  recycle the `dev-*` tree so the next round starts from `origin/HEAD`; keep
-  primary `master` / `WEZDECK_REPO` as the machine source of truth
-  ([Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy)).
-- Workspace definitions or workspace behavior:
-  Read [`docs/workspaces.md`](docs/workspaces.md).
-- Keybindings:
-  Read [`docs/keybindings.md`](docs/keybindings.md).
-- tmux UI, tab titles, status rendering, copy-mode, or visible terminal behavior:
-  Read [`docs/tmux-ui.md`](docs/tmux-ui.md).
-- Terminal Vim inside tmux: scroll that feels like page-skips, windows full of
-  `@` rows, `'termsync'` / DEC 2026 under tmux DA2, or `Shift+drag` jumping
-  into copy-mode while editing:
-  Read [`docs/tmux-ui.md#vim-in-tmux`](docs/tmux-ui.md#vim-in-tmux)
-  (install / vimrc: [`docs/setup.md#vim-92-optional`](docs/setup.md#vim-92-optional)).
-- Grok Build fullscreen TUI: whole-transcript flash on `Alt+o` / pane focus,
-  FocusGained `terminal.clear()`, cream `#eeeeee` vs pane `bg_base`, the
-  PATH focus-filter (`grok-with-focus-filter.sh --install` / `--check` /
-  launch `--ensure`; `~/.grok/bin/grok` → wrapper, `grok.real` = ELF; zshrc
-  prepends `~/.grok/bin`), **interactive `grok` after `grok update`**
-  (updater clobbers `~/.grok/bin/grok`; heal = shell-env `grok()` absolute
-  wrap + launch ensure reseats PATH **and** re-applies GrokDay cream/`Reset`
-  theme patch, then exit/`--resume` live panes — do not redesign
-  focus-events), why managed `agent-launcher.sh grok` can look fine while a
-  bare-PATH `grok` flashes (launcher uses wrapper absolute path), why
-  macOS WezTerm+tmux can look fine with the same heal (sub-frame client
-  burst, not OS-exempt), why WSL→Windows still flashes even on a tiny pane,
-  `scripts/dev/repro-grok-focus-flash.sh`, mouse-wheel feel under tmux
-  (`scroll_lines` / `scroll_mode=wheel` / `scroll_speed` in `~/.grok/config.toml`),
-  or Grok follow ▼ click dead while a stock-tmux macOS box works
-  (`MouseDown1Pane` must `send-keys -M` when `alternate_on` / `mouse_any_flag`):
-  Read [`docs/tmux-ui.md#grok-build-in-tmux`](docs/tmux-ui.md#grok-build-in-tmux).
-- Claude Code fullscreen TUI (`tui: fullscreen` in `~/.claude/settings.json`),
-  mouse-wheel feel under WezTerm→tmux (`CLAUDE_CODE_SCROLL_SPEED`,
-  `/scroll-speed`, `wheelScrollAccelerationEnabled`), or why background /
-  agent-view attach stays fullscreen even after `/tui default`:
-  Read [`docs/tmux-ui.md#claude-code-in-tmux`](docs/tmux-ui.md#claude-code-in-tmux).
-- Window appearance presets (`opaque` / `frosted`), transparency /
-  frosted-glass, `win32_system_backdrop`, `window_background_opacity`, the
-  `WEZTERM_APPEARANCE_PRESET` selector, `render-tmux-appearance.sh`, or the
-  tab-bar / pane / status background colors that make the frosted look cohere:
-  Read [`docs/appearance-presets.md`](docs/appearance-presets.md).
-- Choosing or revisiting the inner multiplexer (tmux vs herdr), or planning
-  feature work that a tmux upgrade could absorb — the tmux 3.8 borrow list
-  (OSC 133 pane events, floating / modal panes, `set-hook -B` monitors, theme
-  reporting, `#{A/count:frames}`), WezTerm mux / `tmux -CC` control mode
-  (option D, parked), the measured herdr 0.8.0 numbers
-  (per-session server memory, session-level focus, sidebar limits, no
-  `#(shell)` equivalent, no ad-hoc popup CLI), and why the 2026-08-18
-  evaluation ended with tmux staying:
-  Read [`docs/multiplexer-comparison.md`](docs/multiplexer-comparison.md).
-- Agent-attention pipeline: Claude hook install / upgrade, attention.json
-  schema and transitions, tab badges + right-status counters, focus-based
-  auto-ack, the `Alt+j` / `Alt+k` / `Alt+l` / `Alt+Shift+l` / `Alt+/` keyboard entry points, or
-  Codex integration:
-  Read [`docs/agent-attention.md`](docs/agent-attention.md).
-- Timed reminders (cron-driven tmux popups), the `reminder.sh` /
-  `tmux-popup-active.sh` wrappers, or the
-  `wezterm-x/local/crontab` install workflow:
-  Read [`docs/reminders.md`](docs/reminders.md).
-- Phone / Android remote work (OpenClaw only; Happy + Tailscale phone
-  shell retired 2026-07), tmux window-size limits, Termux IME notes:
-  Read [`docs/mobile-access.md`](docs/mobile-access.md).
-- Web console as an installable PWA (manifest, hand-written service worker,
-  update toast, persisted query cache, safe area, why the mobile app is
-  installed from Chrome — Firefox PWA blank window on back), mobile vs desktop layouts
-  (bottom tabs / pushed detail / sheets vs split view + keyboard / command
-  palette), capability-aware navigation, Web Push:
-  Read [`docs/web-pwa.md`](docs/web-pwa.md); the motion spec (motion 12
-  tokens, `.list-row` states, sticky prompt, what a split switch must do):
-  [`docs/web-motion.md`](docs/web-motion.md).
-- Repo to-dos / follow-ups (`scripts/runtime/todo.py`, SQLite `todos`, web console 待办 panel):
-  Read [`docs/remote-sessions.md#repo-to-dos`](docs/remote-sessions.md#repo-to-dos).
-- Viewing collab tickets from a remote web console anywhere (phone, tablet, another computer) (`wezdeck.yuns.love`
-  on Cloudflare, HostRelay Durable Object, `wezdeck-wsl relay`, WebRTC
-  DataChannel first / WebSocket relay fallback, link badge + latency,
-  pairing tokens, `install-remote-relay.sh`, shipping a round with
-  `wezdeck-release.sh`, the cdp tests' source-version precheck):
-  Read [`docs/remote-access.md`](docs/remote-access.md); what the web console sees
-  and does in agent sessions: [`docs/remote-sessions.md`](docs/remote-sessions.md).
-- Driving this PC from a Pad / phone remote client feels laggy (layered
-  triage: remote link → office side → home router / client Wi‑Fi → host;
-  incident history, home-router and long-uptime lessons). Remote clients are
-  optional contrib plugins, not core (OPPO 互联:
-  `contrib/plugins/oppo-remote`, its own `docs/oppo.md`):
-  Read [`docs/remote-input-stickiness.md`](docs/remote-input-stickiness.md).
-- Browser glossary (slot / backend / everyday / system), headless Chrome
-  debug instance, auto-start, `Alt+b` / `Alt+Shift+b`, `chrome://inspect`,
-  the right-status browser-slot badge, link open target, history-purge
-  profile ids, personal vs work browser identity (scenes / profiles,
-  `browser-profile.sh`), or switching the agent browser backend (`ego` \| `cdp` via
-  `apply-browser-backend` / `WEZDECK_BROWSER_BACKEND`):
-  Read [`docs/browser-debug.md`](docs/browser-debug.md)
-  ([glossary](docs/browser-debug.md#browser-glossary);
-  [backends](docs/browser-debug.md#browser-backends-ego--cdp)).
-- Cutting a Windows wezdeck-runtime release, updating
-  `release-manifest.json`, forcing the release-install branch, or
-  side-loading the release zip:
-  Read [`docs/wezdeck-runtime-release.md`](docs/wezdeck-runtime-release.md).
-- Cutting a Go picker (`native/picker/`) release, updating its
-  multi-asset `release-manifest.json`, or the install-side fetcher
-  (`WEZTERM_PICKER_INSTALL_SOURCE=auto|local|release`) that lets end
-  users without Go consume the prebuilt tarball:
-  Read [`docs/picker-release.md`](docs/picker-release.md).
-- Diagnostics, logs, smoke tests, latency / hotkey counters, or operator
-  troubleshooting (env knobs, file paths):
-  Read [`docs/diagnostics.md`](docs/diagnostics.md).
-- Personal development-habit weekly report（开发习惯周报 / habit weekly）:
-  Load repo-local skill [`skills/habit-weekly/SKILL.md`](skills/habit-weekly/SKILL.md)
-  (`habit-weekly`; not linked to `~/.agents/skills`); collector is
-  `scripts/dev/habit-report.sh`. Not `coco-weekly-report` (business delivery).
-- Guest OOM hardening (distro restart loop, reclaim livelock, high-order
-  allocation / VM reboot; `wsl-oom-guard.sh`, `Memory·…` / earlyoom; standing
-  memory consumers including MCP/`uxc` and IDE `tsgo` / `goMemLimit`;
-  guest `free` calm while Windows `VmmemWSL` still large /
-  `scripts/dev/wsl-host-mem.sh`) or guest CPU-load glanceable badge
-  (`LoadAvg·…`, typing-stickiness early warning from the same status.json):
-  Read [`docs/guest-oom.md`](docs/guest-oom.md)
-  ([Guest vs host memory meters](docs/guest-oom.md#guest-vs-host-memory-meters);
-  [`LoadAvg·` badge](docs/guest-oom.md#the-loadavg-badge-cpu-load) /
-  [`diagnostics.md` Guest load badge](docs/diagnostics.md#guest-load-badge-loadavg)).
+One line per topic: the trigger words, then the doc. Details live in the doc.
 
-- Host disk space (host volume full, `ext4.vhdx` never shrinking, sparse-VHD
-  trap, trim→shutdown→Optimize-VHD / compact, OEM preinstalls, system + WSL
-  `SystemDisk·…` / `WslDisk·…` badges, `history` sparklines, C: triage /
-  `scripts/dev/host-disk-triage.sh`):
-  Read [`docs/host-disk.md`](docs/host-disk.md)
-  ([system disk triage](docs/host-disk.md#system-disk-c-triage)).
-- Unverified claims, deferred decisions, or "what still needs following up" on
-  any of the above — dated, each with how to close it:
-  Read [`docs/diagnostics.md#open-questions`](docs/diagnostics.md#open-questions).
-  Record new ones there rather than only in a commit body, which is not
-  reviewable day to day.
-- Cross-host failures (Windows, WSL, DNS, VPN/proxy, shells, agent CLIs);
-  WezTerm silent exit / distro vanish; `Failed to translate 'C:\…'` / fake
-  `/mnt/c` / unread image-path paste:
-  Read [`docs/development-environment-troubleshooting.md`](docs/development-environment-troubleshooting.md).
-- Adding or modifying a logger callsite, choosing a category, deciding
-  log level / required fields, or moving a log file across the WSL
-  boundary (author surface):
-  Read [`docs/logging-conventions.md`](docs/logging-conventions.md).
-- Performance work on the Alt+/ popup, the cross-FS routing rule for
-  state files, the bench harnesses, or the sync-runtime hot path
-  (skip-if-current gates, rsync-vs-cp tradeoff, mtime-based change
-  detection):
-  Read [`docs/performance.md`](docs/performance.md).
-- IME candidate-window stability, DEC mode 2026 (synchronized output),
-  why tmux 3.7+ is required, or agent-CLI render flicker investigation:
-  Read [`docs/ime-flicker-and-sync-output.md`](docs/ime-flicker-and-sync-output.md).
-- Sending a signal from a hook / picker / external helper into the
-  WezTerm Lua process, picking between OSC and file transports, adding
-  a new event, or migrating producers/consumers when upstream tmux or
-  wezterm fix popup OSC pass-through:
-  Read [`docs/event-bus.md`](docs/event-bus.md).
-- Per-workspace tmux-session focus statistics, the `tab-stats-bump.sh`
-  hook chain, the on-disk `<workspace>.json` schema, weight decay /
-  normalization formula, or planning the top-N tab bar slots / overflow
-  tab / warm preheat layer:
-  Read [`docs/tab-visibility.md`](docs/tab-visibility.md).
-- Plugins: `wezterm-x/plugins/<id>/plugin.json`, enabling / disabling /
-  configuring a capability per machine (`wezterm-x/local/plugins.json`),
-  adding a right-status badge or background sampler, `render-plugins.sh`,
-  `wezdeck-plugin.sh`, agent-provider discovery:
-  Read [`docs/plugin-architecture.md`](docs/plugin-architecture.md).
-- Ownership boundaries, runtime architecture, or entry points:
-  Read [`docs/architecture.md`](docs/architecture.md).
-- Agent 执行通道调度（人工 TUI / 跨仓工单 Ticket-headless / OpenClaw ACP·Main /
-  审查 headless）、`host-agent-invoke` 读写分档、「统一什么 / 刻意不合什么」、
-  或跨仓 **票仓协议 vs 多目录挂载（战术）**:
-  Read [`docs/agent-scheduling.md`](docs/agent-scheduling.md)（含
-  [`#ticket-vs-multi-dir-mount`](docs/agent-scheduling.md#ticket-vs-multi-dir-mount)；
-  平台知识；**不**放 `openclaw/docs/`）。
-- Env loading, secret placement, the `~/.config/shell-env.d/`
-  convention, `runtime-env-lib.sh::runtime_env_load_managed`, or
-  deciding whether a value belongs in `wezterm-x/local/shared.env`
-  vs `~/.config/shell-env.d/`:
-  Read [`docs/setup.md#env-loading-model`](docs/setup.md#env-loading-model).
-- Agent-CLI launch chain, `agent-launcher.sh`, the `${WEZDECK_REPO}`
-  placeholder used in `config/worktree-task.env`, or any path that
-  spawns `claude` / `codex`:
-  Read [`docs/architecture.md#startup-invariants`](docs/architecture.md#startup-invariants).
-- Cross-repo collaboration as a core CLI (`ticket api`, launch/run records,
-  initial-prompt store, session reuse / cache-hit metrics, `collab` log rows,
-  planned parent/child scheduler + wezdeck/fe1 web views):
-  Read [`docs/collab.md`](docs/collab.md).
-- Adversarial code review skill (find→refute→repro), cross-agent backend
-  selection, the shared `lib/provider.sh` layer, per-stage reasoning effort,
-  the no-session-resume rationale, or offline mock testing:
-  Read [`docs/adversarial-review.md`](docs/adversarial-review.md).
-- Multi-persona brainstorm skill (diverge→challenge→converge), persona/provider
-  selection, per-stage effort, the no-resume design, or the offline mock harness:
-  Read [`docs/brainstorm.md`](docs/brainstorm.md).
-- Host-CLI invoke layers (one-way dependency):
-  - **Single-shot:** `adversarial-review/lib/provider.sh` → `run_agent` /
-    `agent_text` → plugin `__invoke` (no temp dir).
-  - **Multi-shot / parallel:** `agent-fanout/lib/fanout-lib.sh`
-    (`fanout_call` / `fanout_run` / `fanout_run_jobs`) + CLI `run.sh`.
-  Fanout sources provider; provider never loads fanout. Do **not** hand-roll
-  `claude & wait` or call `__invoke` from feature code. Offline smoke:
-  `scripts/dev/agent-fanout/test.sh`. Notes:
-  [`docs/adversarial-review.md`](docs/adversarial-review.md) /
-  [`docs/brainstorm.md`](docs/brainstorm.md).
-- Design proposal / RFC / ADR / 方案评审 (no runtime diff — **not** a dedicated
-  skill): structured 设计评审 checklist and intent routing live in the
-  user-level profile
-  [`agent-profiles/v1/en/validation.md`](agent-profiles/v1/en/validation.md)
-  (`Design proposal review`); also summarized under
-  [`docs/adversarial-review.md`](docs/adversarial-review.md) (out of scope) and
-  [`docs/brainstorm.md`](docs/brainstorm.md) (when alternatives are still needed).
-- Host↔Claw session interop (Session Adapter Kit / `session-bridge`: list/read
-  host tmux + claw sessions, gated `poke` / `host-send-keys` under lease, panic
-  freeze, `bot-send` / `say-as-me` identities, attention merge, tmux side-load
-  safety):
-  Read [`openclaw/docs/session-bridge.md`](openclaw/docs/session-bridge.md).
-- Personal OpenClaw control plane (Feishu gateway templates, main-agent
-  protocol, link/smoke scripts — **not** the WezTerm/tmux execution hot path):
-  Read [`openclaw/README.md`](openclaw/README.md) and
+- Setup, prerequisites, machine-local config → [`docs/setup.md`](docs/setup.md);
+  env loading / secrets (`~/.config/shell-env.d/`, `runtime_env_load_managed`,
+  `shared.env`) → [`docs/setup.md#env-loading-model`](docs/setup.md#env-loading-model).
+- Human-only script handoff (`wd-run` / `x`, propose → ready → wait, no
+  multi-line paste; agent self-exec is out of scope) →
+  [`docs/agent-run.md`](docs/agent-run.md).
+- Sync, reload, verification, maintenance, **落地上线** →
+  [`docs/daily-workflow.md`](docs/daily-workflow.md)
+  ([Commit / land](docs/daily-workflow.md#commit--land-wezdeck-standing-policy));
+  repo hygiene (budgets, links, pre-commit, `run.sh audit`) →
+  [`#repo-hygiene`](docs/daily-workflow.md#repo-hygiene).
+- Renames, compatibility layers, keeping an old interface →
+  [`docs/compatibility-policy.md`](docs/compatibility-policy.md).
+- Capability sources, user-level links, agent profiles, `WEZDECK_REPO`, upstream
+  skills → [`docs/skill-sources.md`](docs/skill-sources.md).
+- 「重置开发分支」 / recycle a checkout or `dev-*` onto `origin/HEAD` / next round →
+  skill [`worktree-recycle`](skills/worktree-recycle/SKILL.md) (not hand-rolled
+  `git reset`; `--fresh-agent` for a blank round) —
+  [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-long-lived-dev--round-reset).
+- Workspaces → [`docs/workspaces.md`](docs/workspaces.md); keybindings →
+  [`docs/keybindings.md`](docs/keybindings.md).
+- tmux UI, titles, status, copy-mode → [`docs/tmux-ui.md`](docs/tmux-ui.md):
+  Vim in tmux (page-skip scroll, `@` rows, `'termsync'`, `Shift+drag`) →
+  [`#vim-in-tmux`](docs/tmux-ui.md#vim-in-tmux); Grok Build TUI (focus flash,
+  focus-filter wrapper, `grok update` heal, wheel feel, follow ▼ click) →
+  [`#grok-build-in-tmux`](docs/tmux-ui.md#grok-build-in-tmux); Claude Code
+  fullscreen TUI and wheel speed → [`#claude-code-in-tmux`](docs/tmux-ui.md#claude-code-in-tmux).
+- Appearance presets (`opaque` / `frosted`, backdrop, opacity) →
+  [`docs/appearance-presets.md`](docs/appearance-presets.md).
+- tmux vs herdr, tmux 3.8 borrow list, control mode →
+  [`docs/multiplexer-comparison.md`](docs/multiplexer-comparison.md).
+- Agent attention (hooks, attention.json, badges, auto-ack, `Alt+j` / `Alt+k`
+  / `Alt+l` / `Alt+/`, Codex) → [`docs/agent-attention.md`](docs/agent-attention.md).
+- Reminders (cron tmux popups, `reminder.sh`, crontab) →
+  [`docs/reminders.md`](docs/reminders.md).
+- Phone / Android via OpenClaw, Termux → [`docs/mobile-access.md`](docs/mobile-access.md).
+- Web console PWA (service worker, layouts, navigation, Web Push) →
+  [`docs/web-pwa.md`](docs/web-pwa.md); motion spec (tokens, `.list-row`,
+  sticky prompt, split switches) → [`docs/web-motion.md`](docs/web-motion.md).
+- Remote web console (`wezdeck.yuns.love`, HostRelay, `wezdeck-wsl relay`,
+  WebRTC / WebSocket, pairing, `wezdeck-release.sh`, test stack, frame probe) →
+  [`docs/remote-access.md`](docs/remote-access.md); what it sees and does in
+  sessions, repo to-dos → [`docs/remote-sessions.md`](docs/remote-sessions.md).
+- Laggy Pad / phone remote control (link → office → router → host; OPPO 互联
+  is a contrib plugin, `contrib/plugins/oppo-remote`, its own `docs/oppo.md`) → [`docs/remote-input-stickiness.md`](docs/remote-input-stickiness.md).
+- Browsers (slot / backend / everyday, debug Chrome, `Alt+b`, profiles,
+  `ego` \| `cdp` backend) → [`docs/browser-debug.md`](docs/browser-debug.md).
+- Releases: Windows runtime → [`docs/wezdeck-runtime-release.md`](docs/wezdeck-runtime-release.md);
+  Go picker → [`docs/picker-release.md`](docs/picker-release.md).
+- Diagnostics, logs, smoke tests, counters → [`docs/diagnostics.md`](docs/diagnostics.md);
+  open questions (record new ones there, not only in a commit body) →
+  [`#open-questions`](docs/diagnostics.md#open-questions); adding a log callsite →
+  [`docs/logging-conventions.md`](docs/logging-conventions.md).
+- 开发习惯周报 → repo skill [`habit-weekly`](skills/habit-weekly/SKILL.md)
+  (`scripts/dev/habit-report.sh`; not `coco-weekly-report`).
+- Guest OOM, reclaim livelock, `Memory·` / `LoadAvg·` badges, host vs guest
+  memory → [`docs/guest-oom.md`](docs/guest-oom.md); host disk, `ext4.vhdx`
+  compaction, `SystemDisk·` / `WslDisk·` → [`docs/host-disk.md`](docs/host-disk.md).
+- Cross-host failures (Windows, WSL, DNS, VPN, shells, agent CLIs, silent exit,
+  `Failed to translate`) →
+  [`docs/development-environment-troubleshooting.md`](docs/development-environment-troubleshooting.md).
+- Performance (Alt+/ popup, state-file routing, benches, sync hot path) →
+  [`docs/performance.md`](docs/performance.md); IME / DEC 2026 / tmux 3.7+ /
+  render flicker → [`docs/ime-flicker-and-sync-output.md`](docs/ime-flicker-and-sync-output.md).
+- Signals into WezTerm Lua (OSC vs file, new events) → [`docs/event-bus.md`](docs/event-bus.md);
+  tab focus stats / top-N slots → [`docs/tab-visibility.md`](docs/tab-visibility.md);
+  plugins (`plugin.json`, badges, samplers) → [`docs/plugin-architecture.md`](docs/plugin-architecture.md).
+- Architecture, ownership, entry points → [`docs/architecture.md`](docs/architecture.md);
+  agent-CLI launch chain (`agent-launcher.sh`, `${WEZDECK_REPO}`) →
+  [`#startup-invariants`](docs/architecture.md#startup-invariants).
+- Agent 执行通道调度、`host-agent-invoke` 读写分档、票仓协议 vs 多目录挂载 →
+  [`docs/agent-scheduling.md`](docs/agent-scheduling.md); cross-repo tickets
+  (`ticket api`, runs, metrics) → [`docs/collab.md`](docs/collab.md).
+- Adversarial review → [`docs/adversarial-review.md`](docs/adversarial-review.md);
+  brainstorm → [`docs/brainstorm.md`](docs/brainstorm.md). Host-CLI invoke is
+  one-way: single-shot `adversarial-review/lib/provider.sh`, multi-shot
+  `agent-fanout/lib/fanout-lib.sh` (sources provider, never the reverse); no
+  hand-rolled `claude & wait`, no `__invoke` from feature code.
+- Design proposal / RFC / ADR / 方案评审 → `Design proposal review` in
+  [`agent-profiles/v1/en/validation.md`](agent-profiles/v1/en/validation.md).
+- Host↔Claw session interop (`session-bridge`) →
+  [`openclaw/docs/session-bridge.md`](openclaw/docs/session-bridge.md); OpenClaw
+  control plane → [`openclaw/README.md`](openclaw/README.md),
   [`openclaw/workspace/AGENTS.md`](openclaw/workspace/AGENTS.md).
 
 ## Hard Rules
