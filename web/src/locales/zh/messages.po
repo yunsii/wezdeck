@@ -111,7 +111,7 @@ msgstr "{runs} 次"
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} 个子 agent 很久没动静"
 
-#: src/features/session-header.tsx:139
+#: src/features/session-header.tsx:140
 msgid "{tasks} background tasks"
 msgstr "{tasks} 个后台任务"
 
@@ -151,7 +151,7 @@ msgstr "↓ {tokens} tokens"
 msgid "24h · no runs"
 msgstr "24 小时 · 无运行"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:125
 msgid "5 h"
 msgstr "5 小时"
 
@@ -159,7 +159,7 @@ msgstr "5 小时"
 msgid "5-hour limit"
 msgstr "5 小时额度"
 
-#: src/features/session-header.tsx:131
+#: src/features/session-header.tsx:132
 msgid "7 d"
 msgstr "7 天"
 
@@ -251,8 +251,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:286
-#: src/features/session-list.tsx:334
+#: src/features/session-list.tsx:298
+#: src/features/session-list.tsx:346
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -268,7 +268,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:234
 #: src/features/tickets-view.tsx:238
 msgctxt "filter"
 msgid "All"
@@ -404,7 +404,7 @@ msgstr "后端"
 msgid "background"
 msgstr "后台"
 
-#: src/features/session-header.tsx:156
+#: src/features/session-header.tsx:157
 #: src/features/session-info.tsx:70
 msgid "Background tasks"
 msgstr "后台任务"
@@ -475,7 +475,7 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:150
+#: src/features/session-header.tsx:151
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -695,12 +695,12 @@ msgstr "控制台（{origin}）"
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/session-header.tsx:121
+#: src/features/session-header.tsx:122
 #: src/features/session-info.tsx:71
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:147
+#: src/features/session-header.tsx:148
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -1223,7 +1223,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:237
+#: src/features/session-list.tsx:249
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1457,7 +1457,7 @@ msgstr "浅色"
 #~ msgid "Light theme"
 #~ msgstr "亮色主题"
 
-#: src/features/session-header.tsx:151
+#: src/features/session-header.tsx:152
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -1485,8 +1485,8 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
-#: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:281
+#: src/features/session-header.tsx:250
+#: src/features/session-list.tsx:293
 #: src/features/tickets-view.tsx:317
 msgid "Loading…"
 msgstr "加载中…"
@@ -1570,13 +1570,13 @@ msgstr "名称"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:264
+#: src/features/session-header.tsx:272
+#: src/features/session-list.tsx:276
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:227
+#: src/features/session-list.tsx:239
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1668,11 +1668,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:201
+#: src/features/session-list.tsx:213
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:204
+#: src/features/session-list.tsx:216
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1696,11 +1696,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:150
+#: src/features/session-list.tsx:148
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:203
+#: src/features/session-list.tsx:215
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1760,7 +1760,7 @@ msgstr "未配对"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:199
+#: src/features/session-list.tsx:211
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
@@ -1895,7 +1895,7 @@ msgstr "正在打开…"
 msgid "Origin session"
 msgstr "发起会话"
 
-#: src/features/session-header.tsx:149
+#: src/features/session-header.tsx:150
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -1997,7 +1997,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/session-list.tsx:93
+#: src/features/session-list.tsx:100
 msgid "Primary"
 msgstr "主"
 
@@ -2190,11 +2190,11 @@ msgstr "调研完成"
 msgid "research failed"
 msgstr "调研失败"
 
-#: src/features/session-header.tsx:126
+#: src/features/session-header.tsx:127
 msgid "resets {fiveReset}"
 msgstr "{fiveReset}重置"
 
-#: src/features/session-header.tsx:133
+#: src/features/session-header.tsx:134
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
@@ -2384,7 +2384,7 @@ msgstr "改动范围"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:93
+#: src/features/session-list.tsx:100
 msgid "Secondary"
 msgstr "副"
 
@@ -2456,7 +2456,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:288
+#: src/features/session-header.tsx:285
 #: src/features/session-info.tsx:212
 msgid "Session info"
 msgstr "会话信息"
@@ -2476,13 +2476,13 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:208
+#: src/features/session-header.tsx:236
+#: src/features/session-list.tsx:220
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:254
+#: src/features/session-list.tsx:266
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2595,7 +2595,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:348
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:226
 #: src/features/tickets-view.tsx:231
 msgid "Status"
 msgstr "状态"
@@ -2628,7 +2628,7 @@ msgstr "摘要"
 msgid "Switch session"
 msgstr "切换会话"
 
-#: src/features/session-header.tsx:246
+#: src/features/session-header.tsx:247
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -3243,7 +3243,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:232
+#: src/features/session-list.tsx:244
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"

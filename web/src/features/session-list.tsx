@@ -10,6 +10,13 @@ import { FolderGit2, GitFork } from 'lucide-react'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
+import {
+  AgentTag,
+  BranchTag,
+  RepoTag,
+  RoleTag,
+  StatusTag,
+} from '#/components/deck/session-tags'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { readStoredChoice, useStoredChoice } from '#/lib/last-opened'
@@ -98,15 +105,6 @@ function SessionRow({
     row.cwd.split('/').filter(Boolean).at(-1) ||
     row.id.slice(0, 8)
 
-  const tag = (text: string) => (
-    <span
-      title={text}
-      className="max-w-full min-w-0 truncate rounded-full bg-brand-deck px-1.5 py-0.5 text-meta text-brand-label"
-    >
-      {text}
-    </span>
-  )
-
   const prompt = humanPrompt(row.last_prompt)
   const status = statusText(
     row.status,
@@ -150,11 +148,25 @@ function SessionRow({
               {prompt || t`No human message yet`}
             </span>
             <span className="flex min-w-0 flex-wrap items-center gap-1">
-              {showRepo && repoName(row) ? tag(repoName(row)) : null}
-              {row.pane_role ? tag(paneLabel(row.pane_role)) : null}
-              {row.agent && row.agent !== 'agent' ? tag(row.agent) : null}
-              {status ? tag(status) : null}
-              {row.branch ? tag(row.branch) : null}
+              {showRepo && repoName(row) ? (
+                <RepoTag repo={repoName(row)} />
+              ) : null}
+              {row.pane_role ? (
+                <RoleTag
+                  role={row.pane_role}
+                  label={paneLabel(row.pane_role)}
+                />
+              ) : null}
+              {row.agent && row.agent !== 'agent' ? (
+                <AgentTag agent={row.agent} />
+              ) : null}
+              {status ? (
+                <StatusTag
+                  tone={sessionTone(row.status, row.waiting_kind)}
+                  label={status}
+                />
+              ) : null}
+              {row.branch ? <BranchTag branch={row.branch} /> : null}
             </span>
           </span>
         </Link>

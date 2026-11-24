@@ -83,3 +83,11 @@ messages are still being revealed a turn the host calls done reads working
 (`revealingTurnState`, `chat-turn.tsx`), so 完成 never shows above text still
 unfolding.
 
+Session tags (`components/deck/session-tags.tsx`, `.session-tag` in
+`deck.css`) are coloured by meaning, a translucent fill of their tone (so an
+accent tag still shows on the open row's accent tint): an agent wears its
+own colour and mark (Claude clay + starburst, Codex green + terminal, Grok
+ink + bolt; `--agent-*` per theme), 主 the accent and 副 neutral, a status its
+tone (running / waiting / done), a branch and a repo neutral with their git
+icons. The list rows and the session header share them.
+

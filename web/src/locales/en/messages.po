@@ -111,7 +111,7 @@ msgstr "{runs} runs"
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
 
-#: src/features/session-header.tsx:139
+#: src/features/session-header.tsx:140
 msgid "{tasks} background tasks"
 msgstr "{tasks} background tasks"
 
@@ -151,7 +151,7 @@ msgstr "↓ {tokens} tokens"
 msgid "24h · no runs"
 msgstr "24h · no runs"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:125
 msgid "5 h"
 msgstr "5 h"
 
@@ -159,7 +159,7 @@ msgstr "5 h"
 msgid "5-hour limit"
 msgstr "5-hour limit"
 
-#: src/features/session-header.tsx:131
+#: src/features/session-header.tsx:132
 msgid "7 d"
 msgstr "7 d"
 
@@ -251,8 +251,8 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:286
-#: src/features/session-list.tsx:334
+#: src/features/session-list.tsx:298
+#: src/features/session-list.tsx:346
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -268,7 +268,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:234
 #: src/features/tickets-view.tsx:238
 msgctxt "filter"
 msgid "All"
@@ -404,7 +404,7 @@ msgstr "Backend"
 msgid "background"
 msgstr "background"
 
-#: src/features/session-header.tsx:156
+#: src/features/session-header.tsx:157
 #: src/features/session-info.tsx:70
 msgid "Background tasks"
 msgstr "Background tasks"
@@ -475,7 +475,7 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:150
+#: src/features/session-header.tsx:151
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -695,12 +695,12 @@ msgstr "Console ({origin})"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/session-header.tsx:121
+#: src/features/session-header.tsx:122
 #: src/features/session-info.tsx:71
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:147
+#: src/features/session-header.tsx:148
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1223,7 +1223,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:237
+#: src/features/session-list.tsx:249
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1457,7 +1457,7 @@ msgstr "Light"
 #~ msgid "Light theme"
 #~ msgstr "Light theme"
 
-#: src/features/session-header.tsx:151
+#: src/features/session-header.tsx:152
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1485,8 +1485,8 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
-#: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:281
+#: src/features/session-header.tsx:250
+#: src/features/session-list.tsx:293
 #: src/features/tickets-view.tsx:317
 msgid "Loading…"
 msgstr "Loading…"
@@ -1570,13 +1570,13 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:264
+#: src/features/session-header.tsx:272
+#: src/features/session-list.tsx:276
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:227
+#: src/features/session-list.tsx:239
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1668,11 +1668,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:201
+#: src/features/session-list.tsx:213
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:204
+#: src/features/session-list.tsx:216
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1696,11 +1696,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:150
+#: src/features/session-list.tsx:148
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:203
+#: src/features/session-list.tsx:215
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1760,7 +1760,7 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:199
+#: src/features/session-list.tsx:211
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
@@ -1895,7 +1895,7 @@ msgstr "Opening…"
 msgid "Origin session"
 msgstr "Origin session"
 
-#: src/features/session-header.tsx:149
+#: src/features/session-header.tsx:150
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -1997,7 +1997,7 @@ msgstr "Previous / next image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/session-list.tsx:93
+#: src/features/session-list.tsx:100
 msgid "Primary"
 msgstr "Primary"
 
@@ -2190,11 +2190,11 @@ msgstr "research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/session-header.tsx:126
+#: src/features/session-header.tsx:127
 msgid "resets {fiveReset}"
 msgstr "resets {fiveReset}"
 
-#: src/features/session-header.tsx:133
+#: src/features/session-header.tsx:134
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
 
@@ -2384,7 +2384,7 @@ msgstr "Scope"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:93
+#: src/features/session-list.tsx:100
 msgid "Secondary"
 msgstr "Secondary"
 
@@ -2456,7 +2456,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:288
+#: src/features/session-header.tsx:285
 #: src/features/session-info.tsx:212
 msgid "Session info"
 msgstr "Session info"
@@ -2476,13 +2476,13 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:208
+#: src/features/session-header.tsx:236
+#: src/features/session-list.tsx:220
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:254
+#: src/features/session-list.tsx:266
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2595,7 +2595,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:348
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:226
 #: src/features/tickets-view.tsx:231
 msgid "Status"
 msgstr "Status"
@@ -2628,7 +2628,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:246
+#: src/features/session-header.tsx:247
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3243,7 +3243,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:232
+#: src/features/session-list.tsx:244
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"

@@ -9,6 +9,7 @@ import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
+import { AgentTag, BranchTag } from '#/components/deck/session-tags'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -256,13 +257,9 @@ export function SessionHeader({
           {data?.agent || data?.branch ? (
             <span className="flex min-w-0 items-center gap-1.5 text-meta text-brand-label">
               {data.agent && data.agent !== 'agent' ? (
-                <span className="shrink-0 rounded-lg bg-brand-surface px-1.5 font-mono leading-[1.35rem]">
-                  {data.agent}
-                </span>
+                <AgentTag agent={data.agent} />
               ) : null}
-              {data.branch ? (
-                <span className="truncate font-mono">{data.branch}</span>
-              ) : null}
+              {data.branch ? <BranchTag branch={data.branch} /> : null}
             </span>
           ) : null}
         </div>

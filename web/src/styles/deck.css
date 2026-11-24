@@ -23,6 +23,11 @@
   --segment-track: #e9ecf0;
   --segment-thumb: #ffffff;
   --bar-bg: rgba(255, 255, 255, 0.92);
+  /* agents' own colours (session tags): Claude's clay, OpenAI's green, xAI's
+     ink — black on light, white on dark */
+  --agent-claude: #d97757;
+  --agent-codex: #10a37f;
+  --agent-grok: #0f1419;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -43,6 +48,9 @@ html[data-theme='dark'] [data-deck] {
   --segment-track: #232933;
   --segment-thumb: #3a4250;
   --bar-bg: rgba(30, 35, 44, 0.92);
+  --agent-claude: #e08a6c;
+  --agent-codex: #2fbf95;
+  --agent-grok: #e7e9ea;
 }
 
 /* Streamdown (chat Markdown) reads shadcn-style tokens: map them onto ink. */
@@ -137,6 +145,46 @@ html[data-theme='dark'] .list-row.row-selected::after {
 }
 .list-row.row-selected::before {
   opacity: 1;
+}
+
+/* A session tag (components/deck/session-tags.tsx): a light fill of its
+   tone and ink leaning to that tone, readable in both themes. Tones: an
+   agent's own colour, the accent (主, running), waiting, done, neutral. */
+.session-tag {
+  --tone: var(--brand-label);
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.375rem;
+  /* translucent, not mixed with white: on the open row's accent tint an
+     accent tag mixed with the surface matched the row and lost its fill */
+  background: color-mix(in srgb, var(--tone) 16%, transparent);
+  color: color-mix(in srgb, var(--tone) 78%, var(--brand-text));
+}
+.session-tag[data-tone='neutral'] {
+  background: var(--brand-deck);
+  color: var(--brand-label);
+}
+.session-tag[data-tone='accent'] {
+  --tone: var(--brand-running);
+}
+.session-tag[data-tone='waiting'] {
+  --tone: var(--brand-waiting);
+}
+.session-tag[data-tone='done'] {
+  --tone: var(--brand-done);
+}
+.session-tag[data-tone='claude'] {
+  --tone: var(--agent-claude);
+}
+.session-tag[data-tone='codex'] {
+  --tone: var(--agent-codex);
+}
+.session-tag[data-tone='grok'] {
+  --tone: var(--agent-grok);
 }
 
 /* SectionHeading (components/ui/section-heading.tsx): the heading's fill,
