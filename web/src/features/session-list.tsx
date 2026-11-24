@@ -119,9 +119,8 @@ function SessionRow({
           onClick={() => recordVisit(worktreeKey(row))}
           className={cn(
             'key-press flex min-h-14 items-start gap-3 px-4 py-3',
-            // the selected row as in 工单 / 诊断: page tone + accent bar
-            row.id === selected &&
-              'bg-brand-deck shadow-[inset_3px_0_0_var(--brand-running)]',
+            // the selected row as in 工单 / 诊断 (.row-selected, deck.css)
+            row.id === selected && 'row-selected',
           )}
         >
           <span className="pt-1.5">

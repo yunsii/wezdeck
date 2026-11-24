@@ -79,6 +79,27 @@ html[data-theme='dark'] .key-press:active {
   box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.1);
 }
 
+/* The open item in a split list (会话 / 工单 / 诊断): an accent tint and a
+   3 px accent bar. It was the page tone, which read as a hole in the card
+   once cards lost their outline (f353a40), and the row's chips (page tone
+   too) vanished inside it. */
+.row-selected {
+  background: color-mix(
+    in srgb,
+    var(--brand-running) 10%,
+    var(--brand-surface)
+  );
+  box-shadow: inset 3px 0 0 var(--brand-running);
+}
+
+html[data-theme='dark'] .row-selected {
+  background: color-mix(
+    in srgb,
+    var(--brand-running) 18%,
+    var(--brand-surface)
+  );
+}
+
 /* SectionHeading (components/ui/section-heading.tsx): the heading's fill,
    carried past its box so a fast fling never shows rows around a sticky
    box that trails by a frame — wider always, higher only once stuck (in

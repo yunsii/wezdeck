@@ -239,8 +239,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:275
-#: src/features/session-list.tsx:323
+#: src/features/session-list.tsx:274
+#: src/features/session-list.tsx:322
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -256,7 +256,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:212
+#: src/features/session-list.tsx:211
 msgctxt "filter"
 msgid "All"
 msgstr "全部"
@@ -486,7 +486,7 @@ msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
 #: src/features/console-diagnostics.tsx:140
-#: src/features/console-diagnostics.tsx:318
+#: src/features/console-diagnostics.tsx:317
 msgid "Category"
 msgstr "分类"
 
@@ -728,7 +728,7 @@ msgstr "已复制 {label}"
 msgid "Copied reference"
 msgstr "已复制引用"
 
-#: src/features/console-diagnostics.tsx:345
+#: src/features/console-diagnostics.tsx:344
 msgid "Copied the raw line"
 msgstr "已复制原始日志"
 
@@ -757,7 +757,7 @@ msgstr "复制命令"
 msgid "Copy error"
 msgstr "复制错误信息"
 
-#: src/features/console-diagnostics.tsx:349
+#: src/features/console-diagnostics.tsx:348
 msgid "Copy raw line"
 msgstr "复制原始日志"
 
@@ -1204,7 +1204,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:227
+#: src/features/session-list.tsx:226
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1424,7 +1424,7 @@ msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctr
 msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
 #: src/features/console-diagnostics.tsx:126
-#: src/features/console-diagnostics.tsx:317
+#: src/features/console-diagnostics.tsx:316
 msgid "Level"
 msgstr "级别"
 
@@ -1467,7 +1467,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:270
+#: src/features/session-list.tsx:269
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
@@ -1551,12 +1551,12 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:253
+#: src/features/session-list.tsx:252
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:217
+#: src/features/session-list.tsx:216
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1648,11 +1648,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:191
+#: src/features/session-list.tsx:190
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:194
+#: src/features/session-list.tsx:193
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1676,11 +1676,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:138
+#: src/features/session-list.tsx:137
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:193
+#: src/features/session-list.tsx:192
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1740,7 +1740,7 @@ msgstr "未配对"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:189
+#: src/features/session-list.tsx:188
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
@@ -1793,7 +1793,7 @@ msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
 
-#: src/features/console-diagnostics.tsx:359
+#: src/features/console-diagnostics.tsx:358
 msgid "Only this trace"
 msgstr "只看这个 trace"
 
@@ -2451,12 +2451,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:77
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:198
+#: src/features/session-list.tsx:197
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:243
+#: src/features/session-list.tsx:242
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2522,7 +2522,7 @@ msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
 #: src/features/console-collab-run.tsx:160
-#: src/features/console-diagnostics.tsx:319
+#: src/features/console-diagnostics.tsx:318
 msgid "Source"
 msgstr "来源"
 
@@ -2569,7 +2569,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:334
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:204
+#: src/features/session-list.tsx:203
 #: src/features/tickets-view.tsx:212
 msgid "Status"
 msgstr "状态"
@@ -2809,7 +2809,7 @@ msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 msgid "Tidy up the phone interactions"
 msgstr "整理手机端交互"
 
-#: src/features/console-diagnostics.tsx:316
+#: src/features/console-diagnostics.tsx:315
 msgid "Time"
 msgstr "时间"
 
@@ -2912,7 +2912,7 @@ msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
 msgid "Took {took}"
 msgstr "用时 {took}"
 
-#: src/features/console-diagnostics.tsx:320
+#: src/features/console-diagnostics.tsx:319
 msgid "Trace"
 msgstr "Trace"
 
@@ -3213,7 +3213,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:221
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"

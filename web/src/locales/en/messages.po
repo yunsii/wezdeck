@@ -239,8 +239,8 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:275
-#: src/features/session-list.tsx:323
+#: src/features/session-list.tsx:274
+#: src/features/session-list.tsx:322
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -256,7 +256,7 @@ msgstr "Agent sessions"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:212
+#: src/features/session-list.tsx:211
 msgctxt "filter"
 msgid "All"
 msgstr "All"
@@ -486,7 +486,7 @@ msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
 
 #: src/features/console-diagnostics.tsx:140
-#: src/features/console-diagnostics.tsx:318
+#: src/features/console-diagnostics.tsx:317
 msgid "Category"
 msgstr "Category"
 
@@ -728,7 +728,7 @@ msgstr "Copied {label}"
 msgid "Copied reference"
 msgstr "Copied reference"
 
-#: src/features/console-diagnostics.tsx:345
+#: src/features/console-diagnostics.tsx:344
 msgid "Copied the raw line"
 msgstr "Copied the raw line"
 
@@ -757,7 +757,7 @@ msgstr "Copy command"
 msgid "Copy error"
 msgstr "Copy error"
 
-#: src/features/console-diagnostics.tsx:349
+#: src/features/console-diagnostics.tsx:348
 msgid "Copy raw line"
 msgstr "Copy raw line"
 
@@ -1204,7 +1204,7 @@ msgstr "How it fits together"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-list.tsx:227
+#: src/features/session-list.tsx:226
 msgctxt "filter"
 msgid "Idle"
 msgstr "Idle"
@@ -1424,7 +1424,7 @@ msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctr
 msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 
 #: src/features/console-diagnostics.tsx:126
-#: src/features/console-diagnostics.tsx:317
+#: src/features/console-diagnostics.tsx:316
 msgid "Level"
 msgstr "Level"
 
@@ -1467,7 +1467,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
-#: src/features/session-list.tsx:270
+#: src/features/session-list.tsx:269
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "Loading…"
@@ -1551,12 +1551,12 @@ msgid "Names sessions"
 msgstr "Names sessions"
 
 #: src/features/session-header.tsx:275
-#: src/features/session-list.tsx:253
+#: src/features/session-list.tsx:252
 #: src/features/session-switcher.tsx:201
 msgid "Needs you"
 msgstr "Needs you"
 
-#: src/features/session-list.tsx:217
+#: src/features/session-list.tsx:216
 msgctxt "filter"
 msgid "Needs you"
 msgstr "Needs you"
@@ -1648,11 +1648,11 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:191
+#: src/features/session-list.tsx:190
 msgid "No agent is working right now."
 msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:194
+#: src/features/session-list.tsx:193
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1676,11 +1676,11 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:138
+#: src/features/session-list.tsx:137
 msgid "No human message yet"
 msgstr "No human message yet"
 
-#: src/features/session-list.tsx:193
+#: src/features/session-list.tsx:192
 msgid "No idle sessions."
 msgstr "No idle sessions."
 
@@ -1740,7 +1740,7 @@ msgstr "Not paired"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/session-list.tsx:189
+#: src/features/session-list.tsx:188
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
@@ -1793,7 +1793,7 @@ msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next runni
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 
-#: src/features/console-diagnostics.tsx:359
+#: src/features/console-diagnostics.tsx:358
 msgid "Only this trace"
 msgstr "Only this trace"
 
@@ -2451,12 +2451,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:77
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:235
-#: src/features/session-list.tsx:198
+#: src/features/session-list.tsx:197
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:243
+#: src/features/session-list.tsx:242
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2522,7 +2522,7 @@ msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
 #: src/features/console-collab-run.tsx:160
-#: src/features/console-diagnostics.tsx:319
+#: src/features/console-diagnostics.tsx:318
 msgid "Source"
 msgstr "Source"
 
@@ -2569,7 +2569,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:334
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
-#: src/features/session-list.tsx:204
+#: src/features/session-list.tsx:203
 #: src/features/tickets-view.tsx:212
 msgid "Status"
 msgstr "Status"
@@ -2809,7 +2809,7 @@ msgstr "Tickets appear here when ticket files or runs cross-repo work."
 msgid "Tidy up the phone interactions"
 msgstr "Tidy up the phone interactions"
 
-#: src/features/console-diagnostics.tsx:316
+#: src/features/console-diagnostics.tsx:315
 msgid "Time"
 msgstr "Time"
 
@@ -2912,7 +2912,7 @@ msgstr "Tokens in / cache r / cache w / out"
 msgid "Took {took}"
 msgstr "Took {took}"
 
-#: src/features/console-diagnostics.tsx:320
+#: src/features/console-diagnostics.tsx:319
 msgid "Trace"
 msgstr "Trace"
 
@@ -3213,7 +3213,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:221
 msgctxt "filter"
 msgid "Working"
 msgstr "Working"

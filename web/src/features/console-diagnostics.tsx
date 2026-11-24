@@ -278,8 +278,7 @@ function EntryList({
               onClick={() => onPick(entry.id)}
               className={cn(
                 'key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset',
-                active &&
-                  'bg-brand-deck shadow-[inset_3px_0_0_var(--brand-running)]',
+                active && 'row-selected',
               )}
             >
               <span className="pt-1">

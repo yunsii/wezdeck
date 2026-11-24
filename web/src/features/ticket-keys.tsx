@@ -135,7 +135,7 @@ function TicketKey({
         replace={selected !== undefined}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          active && 'bg-brand-deck shadow-[inset_3px_0_0_var(--brand-running)]',
+          active && 'row-selected',
           'key-press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:py-2.5',
         )}
       >
