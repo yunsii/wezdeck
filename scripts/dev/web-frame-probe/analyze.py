@@ -17,6 +17,8 @@ Checks, per press (marks in samples.json):
              between two adjacent ones, instead of easing
 Warning (not a flash): jank — the main thread skipped > 50 ms of frames after
 a press (opacity / transform transitions still run on the compositor).
+  glide      sessions: after the switch, two or more painted frames in a row
+             not at the bottom (a scroll animation to the bottom)
   landing    sessions: the first frame of the new item is not at its
              bottom; tickets: not at its top
   pixels     painted frames whose accent-coloured area in the list
@@ -155,6 +157,17 @@ def main() -> int:
         if gaps:
             t, g = max(gaps, key=lambda x: x[1])
             warns.append({"kind": "jank", "press": i, "t": t, "detail": f"main thread blocked {g} ms (CSS on the compositor still moves)"})
+        # sessions: once the new conversation shows, every painted frame
+        # stays at its bottom — a glide there is a scroll animation on switch
+        if args.scenario == "sessions":
+            first = next((k for k, f in enumerate(window) if f["title"] and f["title"] != window[0]["title"] and not f["loading"]), None)
+            off = 0
+            for f in window[first:] if first is not None else []:
+                gap = f.get("bottomPost", 0) - f.get("scrollPost", 0)
+                off = off + 1 if "scrollPost" in f and gap > 4 else 0
+                if off >= 2:
+                    add("glide", i, f["t"], f"painted {gap}px above the bottom for {off} frames after the switch")
+                    break
         new = next((f for f in window if f["title"] and f["title"] != before and not f["loading"]), None)
         if new:
             if args.scenario == "sessions" and new["bottom"] - new["scroll"] > 4:

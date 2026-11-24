@@ -67,6 +67,14 @@ await page.evaluate((cfg) => {
       loading: /^(Loading|加载中)/.test(document.querySelector(cfg.titleSelector)?.textContent ?? '') ? 1 : 0,
       vt: w.__probe.vt,
     })
+    // and once the frame is painted (a task after the rAF): what the eye saw,
+    // after layout and ResizeObserver corrections
+    setTimeout(() => {
+      const f = w.__probe.frames.at(-1)
+      if (!f || !el) return
+      f.scrollPost = Math.round(el.scrollTop)
+      f.bottomPost = Math.round(el.scrollHeight - el.clientHeight)
+    }, 0)
     if (!w.__probe.stop) requestAnimationFrame(tick)
   }
   requestAnimationFrame(tick)
