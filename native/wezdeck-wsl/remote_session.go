@@ -453,7 +453,7 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	// ts: the entry's last change, so the page's seen-ack (clear with ts)
 	// clears this state only, not a newer one
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "ts": e.TS, "waiting_kind": e.WaitingKind,
-		"running_kind": e.RunningKind, "background": backgroundOf(e), "agent": "agent",
+		"running_kind": e.RunningKind, "background": enrichBackground(backgroundOf(e), nil, e.SessionID), "agent": "agent",
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
 	// mid-turn progress from hooks, not the screen: when the turn / the
 	// compaction began (the phone ticks the elapsed time itself)
@@ -508,6 +508,10 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			if p := pendingPermission(t.messages, planToolOf(agent)); p != nil {
 				out["permission"] = p
 			}
+		}
+		// what each background task is: the call that started it
+		if bg := backgroundOf(e); len(bg) > 0 {
+			out["background"] = enrichBackground(bg, t, e.SessionID)
 		}
 		transcriptsMu.Unlock()
 		out["total"] = total

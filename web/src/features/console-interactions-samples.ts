@@ -3,6 +3,7 @@
 import type { Message } from './chat-thread'
 import type { Elicitation } from './session-elicitation'
 import type { PendingCall } from './session-permission'
+import type { BgTask } from './session-background'
 
 export const ASK_ONE: Elicitation = {
   questions: [
@@ -84,3 +85,32 @@ export const RUNNING = (command: string): Array<Message> => [
 export const RUNNING_SHORT = 'pnpm test'
 export const RUNNING_LONG =
   'cd /home/yuns/github/wezterm-config/web && corepack pnpm exec lingui extract >/dev/null 2>&1; cd .. && scripts/dev/check-web.sh 2>&1 | tail -2'
+/** background tasks: a described Bash with output, a long Monitor, an id only */
+export const BACKGROUND: Array<BgTask> = [
+  {
+    id: 'b7k2m9',
+    type: 'shell',
+    summary: 'task:b7k2m9',
+    tool: 'Bash',
+    label: 'Run the web cdp tests',
+    command:
+      'scripts/dev/web-affected-tests.sh --run web/tests/chat-stream.cdp.test.ts',
+    started: new Date(Date.now() - 95_000).toISOString(),
+    at: 3,
+    tail: [
+      '✓ tests/chat-stream.cdp.test.ts (1 test) 4446ms',
+      ' Test Files  1 passed (1)',
+    ],
+  },
+  {
+    id: 'mon4x1',
+    type: 'monitor',
+    summary: 'task:mon4x1',
+    tool: 'Monitor',
+    label: 'Watch the relay log for git_status rows slower than 300 ms',
+    command:
+      'tail -F ~/.local/state/wezterm-runtime/logs/relay.log | grep --line-buffered git_status',
+    started: new Date(Date.now() - 12 * 60_000).toISOString(),
+  },
+  { id: 'q93hz0', type: 'shell', summary: 'task:q93hz0' },
+]

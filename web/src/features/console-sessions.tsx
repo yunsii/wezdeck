@@ -29,6 +29,7 @@ import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
 import { useResumeSheet } from './session-commands'
+import type { BgTask } from './session-background'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 import type { PendingCall } from './session-permission'
@@ -75,7 +76,7 @@ export const needsYou = (row: { status: string; waiting_kind?: string }) =>
 export const humanPrompt = (prompt?: string) =>
   prompt && !prompt.trim().startsWith('<') ? prompt : ''
 
-export type BgTask = { id: string; type: string; summary: string }
+export type { BgTask }
 
 /** Mid-turn. A session that only waits on background tasks takes input. */
 export const isBusy = (row: { status: string; running_kind?: string }) =>

@@ -26,7 +26,7 @@ export function SmoothGrow({
     let frame = 0
     const release = () => {
       box.style.removeProperty('height')
-      box.style.removeProperty('overflow')
+      box.style.removeProperty('overflow-y')
       box.removeAttribute('data-growing')
     }
     const step = () => {
@@ -44,7 +44,9 @@ export function SmoothGrow({
       box.setAttribute('data-growing', '')
       frame = requestAnimationFrame(step)
     }
-    box.style.overflow = 'hidden'
+    // clip the bottom only: a list's two-digit marker (11.) hangs left of
+    // the box, and overflow: hidden cut its first digit down to a dot
+    box.style.overflowY = 'clip'
     box.style.height = `${shown}px`
     const observer = new ResizeObserver(() => {
       if (!frame) frame = requestAnimationFrame(step)

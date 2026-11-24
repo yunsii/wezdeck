@@ -28,6 +28,15 @@ describe('Streaming reply', () => {
     await page.goto(`${base}/zh/console/me/interactions#stream`)
     const demo = page.getByTestId('stream-demo')
     await demo.waitFor({ timeout: 20_000 })
+    // the growing box clips only its bottom: list markers hang to its left
+    await expect
+      .poll(() =>
+        demo.evaluate((root) => {
+          const box = root.querySelector<HTMLElement>('[data-growing]')
+          return box ? getComputedStyle(box).overflowX : 'none yet'
+        }),
+      )
+      .toBe('visible')
     // every frame for 3.5 s from the reply's arrival: where the turn line
     // sits in the scroller, and how much of the reply is laid out
     const frames = await demo.evaluate(
@@ -69,6 +78,17 @@ describe('Streaming reply', () => {
       .slice(1)
       .map((f, i) => f.reply - (settled[i]?.reply ?? 0))
     expect(Math.max(...steps)).toBeLessThan(14)
+    // 重放 streams it again (a remounted thread used to show it whole)
+    await page.getByTestId('stream-replay').click()
+    await expect
+      .poll(
+        () =>
+          page
+            .getByTestId('stream-demo')
+            .evaluate((root) => root.querySelector('[data-growing]') !== null),
+        { timeout: 5_000 },
+      )
+      .toBe(true)
     await context.close()
   })
 })

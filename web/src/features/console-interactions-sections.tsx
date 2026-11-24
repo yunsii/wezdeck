@@ -9,6 +9,7 @@ import { AskCard } from './session-ask-claude'
 import { SessionPermissionKeys, SessionPlanReview } from './session-elicitation'
 import { PermissionCard } from './session-permission'
 import { StreamDemo, SubagentsDemo } from './console-interactions-demos'
+import { BackgroundTasks } from './session-background'
 import {
   ASK_ONE,
   ASK_MANY,
@@ -21,6 +22,7 @@ import {
   RUNNING,
   RUNNING_SHORT,
   RUNNING_LONG,
+  BACKGROUND,
 } from './console-interactions-samples'
 
 export type Text = { zh: string; en: string }
@@ -287,6 +289,20 @@ function streamSections(
       },
       keys: { zh: '无（重放可再看一次）', en: 'None (Replay runs it again)' },
       demo: <StreamDemo />,
+    },
+    {
+      id: 'background',
+      tags: ['claude'],
+      title: { zh: '后台任务', en: 'Background tasks' },
+      source: {
+        zh: 'attention 的 bg.tasks（hook）+ 转录里发起它的调用（说明、命令、时间）+ 任务输出文件的最后几行（bg_detail.go）',
+        en: 'attention bg.tasks (hook) + the call that started it in the transcript (description, command, time) + the last lines of its output file (bg_detail.go)',
+      },
+      keys: {
+        zh: '无（点开看命令与输出，可跳到发起的调用）',
+        en: 'None (tap for the command and output, jump to the call)',
+      },
+      demo: <BackgroundTasks tasks={BACKGROUND} />,
     },
     {
       id: 'subagents',

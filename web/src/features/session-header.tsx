@@ -27,6 +27,7 @@ import type {
 } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
+import { BackgroundTasks } from './session-background'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -157,20 +158,7 @@ function Meters({
         </p>
       ) : null}
       {open && background.length ? (
-        <ul
-          aria-label={t`Background tasks`}
-          className="grid gap-1 rounded-xl bg-brand-surface px-3 py-2"
-        >
-          {background.map((task) => (
-            <li
-              key={task.id}
-              className="flex items-center gap-2 truncate font-mono text-meta text-brand-muted"
-            >
-              <Led tone="running" size={9} />
-              {task.summary || task.id}
-            </li>
-          ))}
-        </ul>
+        <BackgroundTasks tasks={background} />
       ) : null}
     </div>
   )

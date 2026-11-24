@@ -108,9 +108,29 @@ const LONG_REPLY = Array.from(
  */
 export function StreamDemo() {
   const [round, setRound] = useState(0)
-  const [messages, setMessages] = useState<Array<Message>>(THREAD.slice(0, 4))
+  return (
+    <div className="grid gap-2">
+      <Button
+        variant="plain"
+        type="button"
+        data-testid="stream-replay"
+        onClick={() => setRound((n) => n + 1)}
+        className="justify-self-start rounded-full bg-brand-surface px-3 py-1 text-caption"
+      >
+        重放 / Replay
+      </Button>
+      {/* a fresh thread each round: one that already held the full reply
+          treats it as there when the page opened and shows it still */}
+      <StreamRound key={round} round={round} />
+    </div>
+  )
+}
+
+function StreamRound({ round }: { round: number }) {
+  const [messages, setMessages] = useState<Array<Message>>(() =>
+    THREAD.slice(0, 4),
+  )
   useEffect(() => {
-    setMessages(THREAD.slice(0, 4))
     // arrives after the page settled: a new reply streams, an old one does not
     const timer = setTimeout(
       () =>
@@ -124,34 +144,22 @@ export function StreamDemo() {
     return () => clearTimeout(timer)
   }, [round])
   return (
-    <div className="grid gap-2">
-      <Button
-        variant="plain"
-        type="button"
-        data-testid="stream-replay"
-        onClick={() => setRound((n) => n + 1)}
-        className="justify-self-start rounded-full bg-brand-surface px-3 py-1 text-caption"
-      >
-        重放 / Replay
-      </Button>
-      <SessionFrame
-        key={round}
-        testId="stream-demo"
-        count={messages.length}
-        thread={
-          <ChatThread
-            messages={messages}
-            start={0}
-            busy
-            activity={{ since: Date.now() - 42_000, tokens: 1_830 }}
-          />
-        }
-        footer={
-          <p className="px-1 text-meta text-brand-label">
-            （输入框位置 / composer）
-          </p>
-        }
-      />
-    </div>
+    <SessionFrame
+      testId="stream-demo"
+      count={messages.length}
+      thread={
+        <ChatThread
+          messages={messages}
+          start={0}
+          busy
+          activity={{ since: Date.now() - 42_000, tokens: 1_830 }}
+        />
+      }
+      footer={
+        <p className="px-1 text-meta text-brand-label">
+          （输入框位置 / composer）
+        </p>
+      }
+    />
   )
 }
