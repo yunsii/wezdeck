@@ -10,7 +10,7 @@ import { CornerLeftUp } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { trace } from '#/lib/client-trace'
-import { typedText } from './chat-thread'
+import { typedText } from './chat-attachments'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 

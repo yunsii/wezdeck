@@ -131,7 +131,10 @@ function LocalSources() {
                 <span className="truncate text-meta text-brand-label">
                   {originLabel(client.origin)}
                 </span>
-                <span className="text-meta text-brand-label tabular-nums">
+                <span
+                  data-live
+                  className="text-meta text-brand-label tabular-nums"
+                >
                   {t`last ${lastSeen}`} ·{' '}
                   {t`${requests} requests, ${writes} writes`}
                 </span>

@@ -4,13 +4,19 @@
 // (transcript usage); the page ticks the elapsed time itself.
 import { useEffect, useState } from 'react'
 
-/** 36s · 4m 39s · 1h 2m — the desk TUI's way of writing it */
+const two = (n: number) => String(n).padStart(2, '0')
+
+/**
+ * 36s · 4m 09s · 1h 02m — the desk TUI's units, the smaller one zero-padded
+ * so a ticking line keeps its width from one second to the next
+ * (docs/web-pwa.md "Layout stability")
+ */
 export function formatElapsed(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000))
   if (s < 60) return `${s}s`
   const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m ${s % 60}s`
-  return `${Math.floor(m / 60)}h ${m % 60}m`
+  if (m < 60) return `${m}m ${two(s % 60)}s`
+  return `${Math.floor(m / 60)}h ${two(m % 60)}m`
 }
 
 /** 812 · 19.1k · 1.2M */

@@ -177,6 +177,15 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
       .toBe(1)
     // the image leaves [图片1] at the caret; removing it takes the token too
     await expect.poll(() => box.inputValue()).toBe('第一行\n第二行 [图片1] ')
+    // the thumbnail is labelled 图片1; its label puts the token in again
+    const label = page
+      .getByTestId('composer-images')
+      .getByRole('button', { name: '图片1', exact: true })
+    await label.click()
+    await expect
+      .poll(() => box.inputValue())
+      .toBe('第一行\n第二行 [图片1] [图片1] ')
+    await box.fill('第一行\n第二行 [图片1] ')
     await page.getByRole('button', { name: '移除图片' }).click()
     await expect.poll(() => box.inputValue()).toBe('第一行\n第二行')
 

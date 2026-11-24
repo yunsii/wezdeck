@@ -439,6 +439,24 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   line on every return was noise) — the stale note above covers a refetch
   that keeps failing.
 
+### Layout stability (2026-11-24)
+
+The page must not move under the reader by itself. The shell re-renders on
+every poll (1–2.5 s), so anything that changes on render must not change
+the layout:
+
+- **Relative times** read 现在 / now under a minute, then minutes, hours,
+  days (`formatAgo` in `tickets-view.tsx`); never a seconds count, which
+  rewrote its line on each render and shifted the words after it.
+- **Live values** (a turn timer, request counts) sit at the end of their
+  line, in `tabular-nums`, with the smaller unit zero-padded (`4m 09s`,
+  `formatElapsed`), inside `[data-live]`.
+- **List order** never follows a value that changes on each poll (last
+  seen, request count): sort by something fixed (first seen, name, visit).
+- Guards: `tests/ago.unit.test.ts` (the first minute reads the same),
+  `tests/layout-stable.cdp.test.ts` (no element in the main column changes
+  text or box over several polls, `[data-live]` excepted).
+
 ## Supported browser (2026-11-23)
 
 Install the phone app from **Chrome** (Android). Firefox for Android 162 as

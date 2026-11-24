@@ -7,12 +7,13 @@ import { useLingui } from '@lingui/react/macro'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
+import { ATTACHMENT_MARK, SentAttachments } from './chat-attachments'
 import { cn } from '#/lib/utils'
 import { Led } from '#/components/deck/led'
 import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
 import { catchUp, useCatchUpSignal } from './chat-catchup'
-import { ImageStrip, SessionIdContext, TranscriptImages } from './chat-images'
+import { SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup, canBackground } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
 import { SlashCommandRow } from './chat-command'
@@ -47,58 +48,6 @@ export type Pending = {
   after?: number
   /** sending: the host has not taken it yet; queued: in the pane, not yet in the transcript */
   state?: 'sending' | 'queued'
-}
-
-/** First line of the note the host appends for phone attachments (remote_upload.go). */
-const ATTACHMENT_MARK = '[手机附件]'
-
-/** What the user typed, without the host's attachment note. */
-export const typedText = (text: string) => splitAttachments(text).typed
-
-/** Split a sent message into what was typed and its attachment lines. */
-function splitAttachments(text: string) {
-  const at = text.indexOf(ATTACHMENT_MARK)
-  if (at < 0) return { typed: text, files: [] }
-  const files = text
-    .slice(at + ATTACHMENT_MARK.length)
-    .split('\n')
-    .map((line) => line.replace(/^- /, '').trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [label = '', path = ''] = line.split(/:\s+/, 2)
-      return { label, name: path.split('/').at(-1) ?? path }
-    })
-  return { typed: text.slice(0, at).trim(), files }
-}
-
-const isPhoneImage = (name: string) =>
-  /^img-.*\.(jpe?g|png|gif|webp)$/i.test(name)
-
-function SentAttachments({ text }: { text: string }) {
-  const { typed, files } = splitAttachments(text)
-  const images = files.filter((file) => isPhoneImage(file.name))
-  const others = files.filter((file) => !isPhoneImage(file.name))
-  return (
-    <>
-      {typed}
-      <ImageStrip
-        sources={images.map((file) => ({ kind: 'upload', name: file.name }))}
-      />
-      {others.length ? (
-        <span className="mt-1.5 flex flex-wrap gap-1">
-          {others.map((file) => (
-            <span
-              key={file.name}
-              title={file.name}
-              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-meta"
-            >
-              {file.label}
-            </span>
-          ))}
-        </span>
-      ) : null}
-    </>
-  )
 }
 
 /**
@@ -256,7 +205,7 @@ function Typing({ activity }: { activity?: Activity }) {
             {label}…
           </span>
           {detail ? (
-            <span className="ml-1.5 text-brand-label tabular-nums">
+            <span data-live className="ml-1.5 text-brand-label tabular-nums">
               {detail}
             </span>
           ) : null}

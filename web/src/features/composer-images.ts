@@ -57,5 +57,19 @@ export function usePickedImages(text: string, setText: SetText) {
     })
   }
 
-  return { images, setImages, pick, remove }
+  /** [图片n] again at the caret (its number tapped on the thumbnail) */
+  const insertToken = (n: number) => {
+    const box = document.getElementById('session-composer')
+    const caret =
+      box instanceof HTMLTextAreaElement ? box.selectionStart : text.length
+    const next = insertTokens(text, caret, [imageToken(n)])
+    setText(next.text)
+    requestAnimationFrame(() => {
+      if (!(box instanceof HTMLTextAreaElement)) return
+      box.focus()
+      box.setSelectionRange(next.caret, next.caret)
+    })
+  }
+
+  return { images, setImages, pick, remove, insertToken }
 }

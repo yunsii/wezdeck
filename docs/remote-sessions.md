@@ -145,7 +145,10 @@ so the agent can open them. Images are numbered in the order sent, and
 each pick (or paste) leaves `[图片N]` at the caret, so the text says which
 picture is which ("把 [图片1] 的按钮改成 [图片2] 那样"); removing an image
 drops its token and renumbers the rest (`composer-images.ts`,
-`composer-tokens.ts`). Not Claude Code's own `[Image #N]`: that numbering
+`composer-tokens.ts`). Thumbnails carry their 图片N, in the composer (a
+tap on the number puts the token at the caret again, `composer-picked.tsx`)
+and on the sent message, where each `[图片N]` in the text is a chip that
+opens that picture (`chat-attachments.tsx`). Not Claude Code's own `[Image #N]`: that numbering
 runs per conversation at the desk, and the same spelling could be read as
 one of its pasted images; `图片N` is per message, mapped by the list
 above. Host side (`remote_upload.go`): types limited to

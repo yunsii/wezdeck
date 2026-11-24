@@ -7,7 +7,8 @@ describe('turn progress formatting', () => {
     expect(formatElapsed(0)).toBe('0s')
     expect(formatElapsed(36_400)).toBe('36s')
     expect(formatElapsed(279_000)).toBe('4m 39s')
-    expect(formatElapsed(3_723_000)).toBe('1h 2m')
+    expect(formatElapsed(3_723_000)).toBe('1h 02m')
+    expect(formatElapsed(249_000)).toBe('4m 09s')
     expect(formatElapsed(-500)).toBe('0s') // clock skew between host and phone
   })
 

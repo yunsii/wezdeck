@@ -78,21 +78,32 @@ function clock(ms: number) {
     : '—'
 }
 
-export function useAgo() {
-  const { locale } = useLocale()
+/**
+ * "now" under a minute, then minutes / hours / days: a seconds count
+ * re-rendered with every poll (1–2.5 s) and shifted the rest of its line
+ * each time (docs/web-pwa.md "Layout stability")
+ */
+export function formatAgo(
+  iso: string | null | undefined,
+  now: number,
+  locale: string,
+) {
+  if (!iso) return ''
   const format = new Intl.RelativeTimeFormat(locale === 'zh' ? 'zh-CN' : 'en', {
     numeric: 'auto',
     style: 'short',
   })
-  return (iso?: string | null) => {
-    if (!iso) return ''
-    const seconds = (Date.parse(iso) - Date.now()) / 1000
-    const abs = Math.abs(seconds)
-    if (abs < 60) return format.format(Math.round(seconds), 'second')
-    if (abs < 3600) return format.format(Math.round(seconds / 60), 'minute')
-    if (abs < 86400) return format.format(Math.round(seconds / 3600), 'hour')
-    return format.format(Math.round(seconds / 86400), 'day')
-  }
+  const seconds = (Date.parse(iso) - now) / 1000
+  const abs = Math.abs(seconds)
+  if (abs < 60) return format.format(0, 'second')
+  if (abs < 3600) return format.format(Math.round(seconds / 60), 'minute')
+  if (abs < 86400) return format.format(Math.round(seconds / 3600), 'hour')
+  return format.format(Math.round(seconds / 86400), 'day')
+}
+
+export function useAgo() {
+  const { locale } = useLocale()
+  return (iso?: string | null) => formatAgo(iso, Date.now(), locale)
 }
 
 export function useStatusLabel() {

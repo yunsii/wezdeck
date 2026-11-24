@@ -21,7 +21,6 @@ import { setDiagnosticsPage } from '#/lib/client-trace'
 import { useMediaQuery } from '#/lib/use-media'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
-import { ImageViewer } from './image-viewer'
 import { TodoPanel, useTodos } from './session-todos'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -29,6 +28,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { CommandPanel } from './session-commands'
 import { useSpaceToFocus } from './composer-keys'
 import { MAX_IMAGES, usePickedImages } from './composer-images'
+import { PickedImages } from './composer-picked'
 
 export type Outgoing = {
   text: string
@@ -96,7 +96,10 @@ export function useComposer({
   const { t } = useLingui()
   const [text, setText] = useDraft(draftKey(id))
   const [progress, setProgress] = useState('')
-  const { images, setImages, pick, remove } = usePickedImages(text, setText)
+  const { images, setImages, pick, remove, insertToken } = usePickedImages(
+    text,
+    setText,
+  )
   const pageState = useRef(diagnostics)
   pageState.current = diagnostics
   useEffect(() => setDiagnosticsPage(() => pageState.current()), [])
@@ -138,6 +141,7 @@ export function useComposer({
     images,
     pick,
     remove,
+    insertToken,
     progress,
     ready,
     submit,
@@ -328,62 +332,6 @@ function Toolbar({
             }}
           />
         </label>
-      ) : null}
-    </div>
-  )
-}
-
-/**
- * Picked images, a row of their own above the toolbar (in the toolbar they
- * crowded the tools, and its horizontal scroll clipped the remove buttons):
- * a tap previews, the × inside the corner removes.
- */
-function PickedImages({ composer }: { composer: Composer }) {
-  const { t } = useLingui()
-  const [preview, setPreview] = useState<number | null>(null)
-  if (composer.images.length === 0) return null
-  return (
-    <div
-      data-testid="composer-images"
-      className="flex gap-2 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
-    >
-      {composer.images.map((image, i) => (
-        <span key={image.key} className="relative size-16 shrink-0">
-          <Button
-            variant="plain"
-            type="button"
-            aria-label={t`Preview image`}
-            onClick={() => setPreview(i)}
-            className="block size-16"
-          >
-            <img
-              src={image.url}
-              alt=""
-              className="size-16 rounded-xl object-cover"
-            />
-          </Button>
-          <Button
-            variant="plain"
-            size="none"
-            type="button"
-            aria-label={t`Remove image`}
-            onClick={() => composer.remove(image.key)}
-            className="absolute top-1 right-1 inline-flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
-          >
-            <X size={14} strokeWidth={2.5} aria-hidden className="shrink-0" />
-          </Button>
-        </span>
-      ))}
-      {preview !== null ? (
-        <ImageViewer
-          images={composer.images.map((image) => ({
-            key: image.key,
-            src: image.url,
-          }))}
-          index={Math.min(preview, composer.images.length - 1)}
-          onIndex={setPreview}
-          onClose={() => setPreview(null)}
-        />
       ) : null}
     </div>
   )

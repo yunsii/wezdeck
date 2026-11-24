@@ -11,7 +11,7 @@ msgstr ""
 #~ msgid ", "
 #~ msgstr ", "
 
-#: src/features/chat-thread.tsx:447
+#: src/features/chat-thread.tsx:396
 msgid "· summary"
 msgstr "· summary"
 
@@ -27,7 +27,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:122
+#: src/features/session-composer.tsx:125
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -87,7 +87,7 @@ msgstr "{n} s"
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/me-devices.tsx:136
+#: src/features/me-devices.tsx:139
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
@@ -95,11 +95,11 @@ msgstr "{requests} requests, {writes} writes"
 #~ msgid "{runningCount} running"
 #~ msgstr "{runningCount} running"
 
-#: src/features/session-subagents.tsx:119
+#: src/features/session-subagents.tsx:122
 msgid "{runningCount} subagents running"
 msgstr "{runningCount} subagents running"
 
-#: src/features/session-subagents.tsx:120
+#: src/features/session-subagents.tsx:123
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
 
@@ -111,7 +111,7 @@ msgstr "{tasks} background tasks"
 #~ msgid "{tokens} tokens"
 #~ msgstr "{tokens} tokens"
 
-#: src/features/session-subagents.tsx:82
+#: src/features/session-subagents.tsx:85
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
@@ -131,7 +131,7 @@ msgstr "{unread} new"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/chat-thread.tsx:237
+#: src/features/chat-thread.tsx:186
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -191,7 +191,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:442
+#: src/features/tickets-view.tsx:453
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -219,7 +219,7 @@ msgstr "Add"
 msgid "Add test ids to the error pages"
 msgstr "Add test ids to the error pages"
 
-#: src/features/me-devices.tsx:262
+#: src/features/me-devices.tsx:265
 msgid "added"
 msgstr "added"
 
@@ -322,7 +322,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/me-devices.tsx:171
+#: src/features/me-devices.tsx:174
 msgid "Approve"
 msgstr "Approve"
 
@@ -342,7 +342,7 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/me-devices.tsx:256
+#: src/features/me-devices.tsx:259
 msgid "Approved"
 msgstr "Approved"
 
@@ -371,7 +371,7 @@ msgstr "At the desk: {host}"
 #~ msgstr "At the desk: {keys}"
 
 #: src/features/console-me.tsx:418
-#: src/features/tickets-view.tsx:367
+#: src/features/tickets-view.tsx:378
 msgid "Back"
 msgstr "Back"
 
@@ -383,7 +383,7 @@ msgstr "Back"
 msgid "Backend"
 msgstr "Backend"
 
-#: src/features/session-subagents.tsx:81
+#: src/features/session-subagents.tsx:84
 msgid "background"
 msgstr "background"
 
@@ -428,7 +428,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:164
+#: src/features/session-composer.tsx:168
 msgid "cancel"
 msgstr "cancel"
 
@@ -464,7 +464,7 @@ msgstr "Check for updates"
 #: src/features/console-me.tsx:33
 #: src/features/me-app.tsx:87
 #: src/features/me-devices.tsx:100
-#: src/features/me-devices.tsx:281
+#: src/features/me-devices.tsx:284
 #: src/features/me-host.tsx:56
 msgid "Checking…"
 msgstr "Checking…"
@@ -518,7 +518,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:197
+#: src/features/session-composer.tsx:201
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -543,7 +543,7 @@ msgstr "Close to-dos"
 #~ msgstr "Close VS Code window"
 
 #: src/features/console-activity.tsx:110
-#: src/features/tickets-view.tsx:106
+#: src/features/tickets-view.tsx:117
 msgctxt "ticket status"
 msgid "closed"
 msgstr "closed"
@@ -561,7 +561,7 @@ msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. 
 #~ msgid "Collab"
 #~ msgstr "Collab"
 
-#: src/features/tickets-view.tsx:271
+#: src/features/tickets-view.tsx:282
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -570,7 +570,7 @@ msgid "Collab metrics"
 msgstr "Collab metrics"
 
 #: src/features/ticket-keys.tsx:59
-#: src/features/tickets-view.tsx:331
+#: src/features/tickets-view.tsx:342
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -587,11 +587,11 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:293
+#: src/features/session-composer.tsx:297
 msgid "Commands"
 msgstr "Commands"
 
-#: src/features/chat-thread.tsx:232
+#: src/features/chat-thread.tsx:181
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -603,15 +603,15 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:267
+#: src/features/session-composer.tsx:271
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:163
+#: src/features/session-composer.tsx:167
 msgid "confirm"
 msgstr "confirm"
 
-#: src/features/me-devices.tsx:186
+#: src/features/me-devices.tsx:189
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
@@ -649,11 +649,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:431
+#: src/features/chat-thread.tsx:380
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:432
+#: src/features/chat-thread.tsx:381
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -729,7 +729,7 @@ msgstr "Cost"
 msgid "cost and limits"
 msgstr "cost and limits"
 
-#: src/features/me-devices.tsx:290
+#: src/features/me-devices.tsx:293
 msgid "Could not change the device: {changeError}"
 msgstr "Could not change the device: {changeError}"
 
@@ -737,7 +737,7 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/me-devices.tsx:283
+#: src/features/me-devices.tsx:286
 msgid "Could not read the device list: {errorText}"
 msgstr "Could not read the device list: {errorText}"
 
@@ -793,7 +793,7 @@ msgstr "Dark"
 #~ msgid "Dark theme"
 #~ msgstr "Dark theme"
 
-#: src/features/tickets-view.tsx:145
+#: src/features/tickets-view.tsx:156
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
@@ -916,7 +916,7 @@ msgstr "Enabled on this computer: writes go through the local Runtime, with no d
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
-#: src/features/tickets-view.tsx:211
+#: src/features/tickets-view.tsx:222
 msgctxt "filter"
 msgid "Ended"
 msgstr "Ended"
@@ -980,11 +980,11 @@ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jum
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/chat-images.tsx:49
+#: src/features/chat-images.tsx:58
 msgid "Expired"
 msgstr "Expired"
 
-#: src/features/tickets-view.tsx:108
+#: src/features/tickets-view.tsx:119
 msgid "failed"
 msgstr "failed"
 
@@ -996,12 +996,12 @@ msgstr "failed"
 msgid "File"
 msgstr "File"
 
-#: src/features/tickets-view.tsx:170
+#: src/features/tickets-view.tsx:181
 msgid "Filter by title, repo or id"
 msgstr "Filter by title, repo or id"
 
-#: src/features/tickets-view.tsx:171
-#: src/features/tickets-view.tsx:295
+#: src/features/tickets-view.tsx:182
+#: src/features/tickets-view.tsx:306
 msgid "Filter tickets"
 msgstr "Filter tickets"
 
@@ -1009,7 +1009,7 @@ msgstr "Filter tickets"
 msgid "Final output"
 msgstr "Final output"
 
-#: src/features/session-subagents.tsx:77
+#: src/features/session-subagents.tsx:80
 msgid "Finished"
 msgstr "Finished"
 
@@ -1034,7 +1034,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:300
+#: src/features/session-composer.tsx:304
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1074,7 +1074,7 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/tickets-view.tsx:441
+#: src/features/tickets-view.tsx:452
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1092,7 +1092,7 @@ msgstr "Hide initial prompt"
 
 #: src/features/remote-badge.tsx:81
 #: src/features/remote-badge.tsx:88
-#: src/features/tickets-view.tsx:130
+#: src/features/tickets-view.tsx:141
 msgid "Host offline"
 msgstr "Host offline"
 
@@ -1105,7 +1105,7 @@ msgid "Host signals"
 msgstr "Host signals"
 
 #: src/features/console-activity.tsx:210
-#: src/features/tickets-view.tsx:131
+#: src/features/tickets-view.tsx:142
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
@@ -1145,7 +1145,7 @@ msgstr "Idle"
 #~ msgid "idle, you can send"
 #~ msgstr "idle, you can send"
 
-#: src/features/chat-images.tsx:49
+#: src/features/chat-images.tsx:58
 msgid "Image"
 msgstr "Image"
 
@@ -1157,7 +1157,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:318
+#: src/features/session-composer.tsx:322
 msgid "Images"
 msgstr "Images"
 
@@ -1165,11 +1165,11 @@ msgstr "Images"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
-#: src/features/tickets-view.tsx:102
+#: src/features/tickets-view.tsx:113
 msgid "in progress"
 msgstr "in progress"
 
-#: src/features/tickets-view.tsx:201
+#: src/features/tickets-view.tsx:212
 msgctxt "filter"
 msgid "In progress"
 msgstr "In progress"
@@ -1190,7 +1190,7 @@ msgstr "In Safari tap Share, then “Add to Home Screen”."
 msgid "Initial prompt"
 msgstr "Initial prompt"
 
-#: src/features/tickets-view.tsx:440
+#: src/features/tickets-view.tsx:451
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -1224,7 +1224,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:165
+#: src/features/session-composer.tsx:169
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1272,7 +1272,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:281
+#: src/features/session-composer.tsx:285
 msgid "Keys"
 msgstr "Keys"
 
@@ -1291,7 +1291,7 @@ msgstr "LAN"
 msgid "Language"
 msgstr "Language"
 
-#: src/features/me-devices.tsx:135
+#: src/features/me-devices.tsx:138
 msgid "last {lastSeen}"
 msgstr "last {lastSeen}"
 
@@ -1387,7 +1387,7 @@ msgstr "Loading original…"
 #: src/features/session-commands.tsx:102
 #: src/features/session-header.tsx:249
 #: src/features/session-list.tsx:251
-#: src/features/tickets-view.tsx:269
+#: src/features/tickets-view.tsx:280
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -1425,11 +1425,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:511
+#: src/features/session-composer.tsx:459
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:470
+#: src/features/session-composer.tsx:418
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1555,7 +1555,7 @@ msgstr "no"
 #~ msgid "No active agent sessions"
 #~ msgstr "No active agent sessions"
 
-#: src/features/session-subagents.tsx:75
+#: src/features/session-subagents.tsx:78
 msgid "No activity for a while"
 msgstr "No activity for a while"
 
@@ -1575,7 +1575,7 @@ msgstr "No agent sessions are running."
 #~ msgid "No collab tickets yet"
 #~ msgstr "No collab tickets yet"
 
-#: src/features/me-devices.tsx:286
+#: src/features/me-devices.tsx:289
 msgid "No device has asked for access yet."
 msgstr "No device has asked for access yet."
 
@@ -1619,7 +1619,7 @@ msgstr "No plan written yet"
 #~ msgid "No repositories in this workspace."
 #~ msgstr "No repositories in this workspace."
 
-#: src/features/tickets-view.tsx:351
+#: src/features/tickets-view.tsx:362
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -1659,7 +1659,7 @@ msgstr "Not running"
 msgid "Nothing is waiting on you."
 msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:474
+#: src/features/tickets-view.tsx:485
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -1716,7 +1716,7 @@ msgstr "Only this trace"
 #~ msgid "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 #~ msgstr "Open a browser when you want Runtime health, IME state, Chrome debug, and Rime statistics. The console observes the workbench. The work stays in the terminal."
 
-#: src/features/chat-images.tsx:42
+#: src/features/chat-images.tsx:51
 msgid "Open image"
 msgstr "Open image"
 
@@ -1839,7 +1839,7 @@ msgstr "Part"
 msgid "Peak RSS"
 msgstr "Peak RSS"
 
-#: src/features/me-devices.tsx:256
+#: src/features/me-devices.tsx:259
 msgid "Pending"
 msgstr "Pending"
 
@@ -1875,9 +1875,13 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
+#: src/features/composer-picked.tsx:38
+msgid "Preview {label}"
+msgstr "Preview {label}"
+
 #: src/features/session-composer.tsx:355
-msgid "Preview image"
-msgstr "Preview image"
+#~ msgid "Preview image"
+#~ msgstr "Preview image"
 
 #: src/features/console-keys.tsx:85
 msgid "Previous / next image"
@@ -1903,6 +1907,10 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
+#: src/features/composer-picked.tsx:52
+msgid "Put [{label}] at the caret"
+msgstr "Put [{label}] at the caret"
+
 #: src/features/session-todos.tsx:174
 msgid "Put into the message"
 msgstr "Put into the message"
@@ -1915,7 +1923,7 @@ msgstr "Put into the message for this agent"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/chat-thread.tsx:474
+#: src/features/chat-thread.tsx:423
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -1923,8 +1931,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:205
-#: src/features/session-composer.tsx:275
+#: src/features/session-composer.tsx:209
+#: src/features/session-composer.tsx:279
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1960,7 +1968,7 @@ msgstr "Reason"
 #~ msgstr "Recently active"
 
 #: src/features/me-devices.tsx:93
-#: src/features/me-devices.tsx:229
+#: src/features/me-devices.tsx:232
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -1968,7 +1976,7 @@ msgstr "Refresh"
 #~ msgid "Registered devices"
 #~ msgstr "Registered devices"
 
-#: src/features/tickets-view.tsx:107
+#: src/features/tickets-view.tsx:118
 msgid "rejected"
 msgstr "rejected"
 
@@ -1996,11 +2004,11 @@ msgstr "Remote"
 msgid "Remote access"
 msgstr "Remote access"
 
-#: src/features/me-devices.tsx:222
+#: src/features/me-devices.tsx:225
 msgid "Remote devices"
 msgstr "Remote devices"
 
-#: src/features/session-composer.tsx:369
+#: src/features/composer-picked.tsx:62
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -2105,7 +2113,7 @@ msgstr "Resume a conversation"
 msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
-#: src/features/chat-images.tsx:49
+#: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:508
 #: src/features/me-host.tsx:88
 msgid "Retry"
@@ -2115,11 +2123,11 @@ msgstr "Retry"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/me-devices.tsx:186
+#: src/features/me-devices.tsx:189
 msgid "Revoke"
 msgstr "Revoke"
 
-#: src/features/me-devices.tsx:293
+#: src/features/me-devices.tsx:296
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 
@@ -2164,7 +2172,7 @@ msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
 #: src/features/console-collab.tsx:459
-#: src/features/tickets-view.tsx:112
+#: src/features/tickets-view.tsx:123
 msgid "running"
 msgstr "running"
 
@@ -2274,7 +2282,7 @@ msgstr "Sections"
 #~ msgid "See who needs you"
 #~ msgstr "See who needs you"
 
-#: src/features/me-devices.tsx:267
+#: src/features/me-devices.tsx:270
 msgid "seen"
 msgstr "seen"
 
@@ -2283,7 +2291,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:67
-#: src/features/session-composer.tsx:520
+#: src/features/session-composer.tsx:468
 msgid "Send"
 msgstr "Send"
 
@@ -2295,7 +2303,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:276
+#: src/features/session-composer.tsx:280
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2364,7 +2372,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/tickets-view.tsx:105
+#: src/features/tickets-view.tsx:116
 msgid "shipped"
 msgstr "shipped"
 
@@ -2396,7 +2404,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:288
+#: src/features/session-composer.tsx:292
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2453,7 +2461,7 @@ msgstr "Started. Opening the session when the agent picks it up…"
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
-#: src/features/session-subagents.tsx:77
+#: src/features/session-subagents.tsx:80
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -2465,7 +2473,7 @@ msgstr "State"
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:64
 #: src/features/session-list.tsx:188
-#: src/features/tickets-view.tsx:194
+#: src/features/tickets-view.tsx:205
 msgid "Status"
 msgstr "Status"
 
@@ -2481,7 +2489,7 @@ msgstr "Subject"
 msgid "Submit answers"
 msgstr "Submit answers"
 
-#: src/features/tickets-view.tsx:101
+#: src/features/tickets-view.tsx:112
 msgid "submitted"
 msgstr "submitted"
 
@@ -2523,7 +2531,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:191
+#: src/features/session-composer.tsx:195
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2560,7 +2568,7 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/chat-thread.tsx:245
+#: src/features/chat-thread.tsx:194
 msgid "The agent is working"
 msgstr "The agent is working"
 
@@ -2675,7 +2683,7 @@ msgstr "Ticket unavailable"
 
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:88
-#: src/features/tickets-view.tsx:369
+#: src/features/tickets-view.tsx:380
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -2687,7 +2695,7 @@ msgstr "Tickets"
 #~ msgid "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 #~ msgstr "Tickets and sessions are read from the local Runtime. Writing goes over the remote link, which this browser has not paired: on the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/tickets-view.tsx:352
+#: src/features/tickets-view.tsx:363
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -2760,7 +2768,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:309
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2824,7 +2832,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:190
+#: src/features/session-composer.tsx:194
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2846,11 +2854,11 @@ msgstr "Unavailable"
 #~ msgid "Up to date, {at}"
 #~ msgstr "Up to date, {at}"
 
-#: src/features/tickets-view.tsx:145
+#: src/features/tickets-view.tsx:156
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:112
+#: src/features/session-composer.tsx:115
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
@@ -2940,19 +2948,19 @@ msgstr "waiting for your confirmation"
 msgid "Waiting on human"
 msgstr "Waiting on human"
 
-#: src/features/tickets-view.tsx:104
+#: src/features/tickets-view.tsx:115
 msgid "waiting on target"
 msgstr "waiting on target"
 
-#: src/features/tickets-view.tsx:103
+#: src/features/tickets-view.tsx:114
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/tickets-view.tsx:477
+#: src/features/tickets-view.tsx:488
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/tickets-view.tsx:206
+#: src/features/tickets-view.tsx:217
 msgctxt "filter"
 msgid "Waiting on you"
 msgstr "Waiting on you"
@@ -3077,7 +3085,7 @@ msgstr "Worker requests"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-thread.tsx:232
+#: src/features/chat-thread.tsx:181
 msgid "Working"
 msgstr "Working"
 

@@ -66,7 +66,10 @@ function Row({ agent, now }: { agent: Subagent; now: number }) {
       <span className="grid min-w-0 gap-0.5">
         <span className="flex min-w-0 items-baseline justify-between gap-2">
           <span className="truncate text-body font-medium">{title}</span>
-          <span className="shrink-0 text-meta text-brand-label tabular-nums">
+          <span
+            data-live
+            className="shrink-0 text-meta text-brand-label tabular-nums"
+          >
             {ran}
           </span>
         </span>
