@@ -5,6 +5,8 @@
 // covers: web/src/features/console-me.tsx
 // covers: web/src/components/ui/disclosure.tsx
 // covers: web/src/features/chat-tools.tsx
+// covers: web/src/features/chat-scroll.ts
+// covers: web/src/features/session-subagents.tsx
 import { chromium } from '@playwright/test'
 import type { Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -33,6 +35,7 @@ describe('Interaction debugging page', () => {
     'grok-plan',
     'generic-keys',
     'progress',
+    'subagents',
     'to-background',
     'compaction',
     'slash',
@@ -188,6 +191,45 @@ describe('Interaction debugging page', () => {
     await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('to-background → C-b')
+    await context.close()
+  })
+
+  it('folding the subagents panel leaves the thread pinned, no blank room', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#subagents`)
+    const demo = page.getByTestId('subagents-demo')
+    await demo.waitFor({ timeout: 20_000 })
+    const state = () =>
+      demo.evaluate((root) => {
+        const el = root.querySelector<HTMLElement>('.overflow-y-auto')!
+        const end = root.querySelector<HTMLElement>(
+          '[data-testid=subagents-demo-end]',
+        )!
+        return {
+          // how far from the real end (the borrowed spacer is not content)
+          left: Math.round(
+            el.scrollHeight -
+              (parseFloat(end.style.height) || 0) -
+              el.clientHeight -
+              el.scrollTop,
+          ),
+          borrowed: parseFloat(end.style.height) || 0,
+        }
+      })
+    await expect.poll(async () => (await state()).left).toBeLessThan(2)
+    const toggle = demo.locator('[data-testid=session-subagents] > button')
+    for (const step of ['open', 'close', 'open', 'close']) {
+      await toggle.click()
+      await page.waitForTimeout(800)
+      const now = await state()
+      expect(now.left, `${step}: pinned to the last message`).toBeLessThan(2)
+      expect(now.borrowed, `${step}: no blank room lent`).toBe(0)
+    }
+    expect(await page.getByText('回到最新').count()).toBe(0)
     await context.close()
   })
 })

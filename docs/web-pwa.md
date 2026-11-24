@@ -239,7 +239,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   content the reader always sees what the part under the top edge belongs
   to. A conversation pins the user's message that owns it (`chat-sticky.tsx`,
   the user bubble folded to one line); sectioned content — 会话信息, 本机,
-  交互调试, any new page of titled groups — pins the nearest section heading
+  交互调试 (tagged Claude / Grok / 通用, sorted by tag — `TAGS`), any new page of titled groups — pins the nearest section heading
   with `components/ui/section-heading.tsx` (`position: sticky; top: 0` inside
   its section, so the next heading pushes it off; `className` carries the
   surface's fill, which `.section-cover` (`styles/deck.css`) repeats past
@@ -417,7 +417,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   goes once off screen; a run scrolled past closes onto its row at the top).
   Each toggle traces `panel-toggle` (row drift, scrollTop) — headless touch
   emulation moved the row 24 px on close where mouse and scripted clicks
-  moved it 0, so the phone's numbers decide)
+  moved it 0, so the phone's numbers decide); only thread toggles count —
+  the footer's subagents panel scrolled the thread (交互调试 › 子 agent 面板);
+  growth is watched on the scroller's children (`#console-main`))
   (tables and code scroll in their own box); messages run full width and
   are told apart by background alone (user: ink `brand-text` with deck text,
   reply: `brand-surface`); runs of tool calls collapse into one line (`chat-tools.tsx`), each call

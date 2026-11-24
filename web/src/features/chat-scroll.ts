@@ -295,7 +295,9 @@ export function useChatScroll(
     const onToggle = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null
       const trigger = target?.closest<HTMLElement>('[aria-expanded]')
-      if (!trigger || !el.contains(trigger)) return
+      // the thread's own panels only: holding a footer toggle (subagents)
+      // scrolled the whole conversation and lent blank room on close
+      if (!trigger || !end.current?.parentElement?.contains(trigger)) return
       intent()
       if (pinnedRef.current) pin(false)
       toggleUntil = performance.now() + TOGGLE_HOLD_MS + 150
@@ -351,10 +353,11 @@ export function useChatScroll(
   // shrinks the scroller: either way a pinned thread follows its newest line
   useEffect(() => {
     const el = scroller()
-    // the whole page content: the thread and the composer (which grows with
-    // the toolbar, thumbnails or a multi-line draft)
-    const thread = document.getElementById('console-main')
-    if (!el || !thread || typeof ResizeObserver === 'undefined') return
+    // the scroller's content — on the session page #console-main: the thread
+    // and the composer (which grows with the toolbar, thumbnails, a
+    // multi-line draft or the subagents panel); 交互调试 demos bring their own
+    const content = el ? [...el.children] : []
+    if (!el || !content.length || typeof ResizeObserver === 'undefined') return
     const live = () => landed.current || performance.now() < landing.current
     const following = () => pinnedRef.current && live() && !touching.current
     const jumpDown = () => {
@@ -384,7 +387,7 @@ export function useChatScroll(
       if (now || entries.some((e) => e.target === el)) jumpDown()
       else glideDown()
     })
-    observer.observe(thread)
+    content.forEach((child) => observer.observe(child))
     observer.observe(el)
     const viewport = window.visualViewport
     viewport?.addEventListener('resize', jumpDown)
