@@ -146,6 +146,33 @@ export function GitStatusTag({ git }: { git: GitStatus }) {
   )
 }
 
+/**
+ * The tag line, the same in the session list row and the session header:
+ * it wraps, and one tag takes at most a whole line (then truncates, the full
+ * text on hover) — the header used to squeeze them into one line (「* c…」).
+ */
+export function TagLine({
+  children,
+  className,
+  testId,
+}: {
+  children: React.ReactNode
+  className?: string
+  testId?: string
+}) {
+  return (
+    <span
+      data-testid={testId}
+      className={cn(
+        'flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
+        className,
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
 export function RepoTag({ repo }: { repo: string }) {
   return <SessionTag icon={FolderGit2}>{repo}</SessionTag>
 }

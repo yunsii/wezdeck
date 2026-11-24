@@ -13,6 +13,7 @@ import { Segmented } from '#/components/deck/segmented'
 import {
   AgentTag,
   BranchTag,
+  TagLine,
   RepoTag,
   RoleTag,
   StatusTag,
@@ -152,7 +153,7 @@ function SessionRow({
             <span className="truncate text-caption text-brand-muted">
               {prompt || t`No human message yet`}
             </span>
-            <span className="flex min-w-0 flex-wrap items-center gap-1">
+            <TagLine>
               {showRepo && repoName(row) ? (
                 <RepoTag repo={repoName(row)} />
               ) : null}
@@ -172,7 +173,7 @@ function SessionRow({
                 />
               ) : null}
               {row.branch ? <BranchTag branch={row.branch} /> : null}
-            </span>
+            </TagLine>
           </span>
         </Link>
         <RowCopyButton id={row.id} copy={copyReference} />

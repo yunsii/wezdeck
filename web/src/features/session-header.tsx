@@ -9,7 +9,7 @@ import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
-import { AgentTag, BranchTag } from '#/components/deck/session-tags'
+import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -247,13 +247,13 @@ export function SessionHeader({
             />
           </Button>
           {data?.agent || data?.branch ? (
-            <span className="flex min-w-0 items-center gap-1.5 text-meta text-brand-label">
+            <TagLine testId="session-tags">
               {data.agent && data.agent !== 'agent' ? (
                 <AgentTag agent={data.agent} />
               ) : null}
               {data.branch ? <BranchTag branch={data.branch} /> : null}
               {data.git ? <GitStatusButton id={id} git={data.git} /> : null}
-            </span>
+            </TagLine>
           ) : null}
         </div>
         {data?.waiting_kind ? (

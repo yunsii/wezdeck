@@ -165,7 +165,9 @@ html[data-theme='dark'] .list-row.row-selected::after {
   color: color-mix(in srgb, var(--tone) 78%, var(--brand-text));
 }
 .session-tag[data-tone='neutral'] {
-  background: var(--brand-deck);
+  /* translucent like the other tones: the deck fill vanished on the deck
+     itself (the session header) while it showed on a list row's surface */
+  background: color-mix(in srgb, var(--brand-label) 14%, transparent);
   color: var(--brand-label);
 }
 .session-tag[data-tone='accent'] {

@@ -11,6 +11,7 @@ import { PermissionCard } from './session-permission'
 import {
   StreamDemo,
   SubagentsDemo,
+  TagsDemo,
   ToggleDemo,
   ToolsDemo,
 } from './console-interactions-demos'
@@ -329,6 +330,17 @@ function streamSections(
       },
       keys: { zh: '无（点工具行）', en: 'None (tap a call)' },
       demo: <ToggleDemo />,
+    },
+    {
+      id: 'session-tags',
+      tags: ['common'],
+      title: { zh: '会话标签', en: 'Session tags' },
+      source: {
+        zh: '会话列表的行与详情顶部共用同一个标签行（TagLine）：可换行，单个标签最长占满一整行，再长截断、悬停看全文；中性色标签用半透明底色，在两种底色上看起来一样',
+        en: 'the list row and the header share one tag line (TagLine): it wraps, one tag takes at most a whole line (then truncates, full text on hover); neutral tags use a translucent fill that reads the same on both grounds',
+      },
+      keys: { zh: '无', en: 'None' },
+      demo: <TagsDemo />,
     },
     {
       id: 'git-status',

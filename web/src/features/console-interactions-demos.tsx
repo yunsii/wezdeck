@@ -3,6 +3,14 @@
 // footer, driven by the real useChatScroll.
 import { useEffect, useRef, useState } from 'react'
 
+import {
+  AgentTag,
+  BranchTag,
+  GitStatusTag,
+  RoleTag,
+  StatusTag,
+  TagLine,
+} from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
 import { useChatScroll } from './chat-scroll'
 import { ChatThread } from './chat-thread'
@@ -293,5 +301,56 @@ export function ToggleDemo() {
         </p>
       }
     />
+  )
+}
+
+const LONG_BRANCH =
+  'feat/cli-secret-stdin-for-webhooks-and-env-import-long-branch-name'
+
+/** the tags of one session, as the list row and the header both show them */
+function SampleTags({ withList }: { withList: boolean }) {
+  return (
+    <TagLine testId={withList ? 'tags-list' : 'tags-head'}>
+      {withList ? <RoleTag role="primary" label="主" /> : null}
+      <AgentTag agent="claude" />
+      {withList ? <StatusTag tone="running" label="运行中" /> : null}
+      <BranchTag branch={LONG_BRANCH} />
+      <GitStatusTag
+        git={{
+          staged: 1,
+          unstaged: 2,
+          untracked: 0,
+          upstream: true,
+          ahead: 1,
+          behind: 0,
+        }}
+      />
+    </TagLine>
+  )
+}
+
+/**
+ * Session tags in both places with a long branch: the same tag line (wraps,
+ * one tag at most a whole line) on a list row's surface and on the header's
+ * deck, where a neutral tag used to lose its fill.
+ */
+export function TagsDemo() {
+  return (
+    <div className="grid gap-3">
+      <div className="grid gap-1">
+        <span className="px-1 text-meta text-brand-label">会话列表的一行</span>
+        <div className="grid gap-1 rounded-2xl bg-brand-surface px-3.5 py-3">
+          <span className="text-title font-medium">Gavin 最新消息排查</span>
+          <SampleTags withList />
+        </div>
+      </div>
+      <div className="grid gap-1">
+        <span className="px-1 text-meta text-brand-label">会话详情顶部</span>
+        <div className="grid gap-1 border-b border-brand-edge px-1 pb-2">
+          <span className="text-title font-semibold">Gavin 最新消息排查</span>
+          <SampleTags withList={false} />
+        </div>
+      </div>
+    </div>
   )
 }
