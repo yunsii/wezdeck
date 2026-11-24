@@ -439,6 +439,15 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   line on every return was noise) — the stale note above covers a refetch
   that keeps failing.
 
+### Text caret (2026-11-24)
+
+Every text box draws its caret in the accent colour and in the shape picked
+in 我的 › 外观 › 输入光标 — block (default, like the desk's blinking block
+cursor), bar or underscore — via CSS `caret-shape` (Chrome 144+; Firefox and
+Safari keep their thin bar). Per device like the theme: `lib/caret-pref.ts`,
+`localStorage` `wezdeck-caret`, set on `<html data-caret>` before first
+paint by the theme bootstrap script.
+
 ### Layout stability (2026-11-24)
 
 The page must not move under the reader by itself. The shell re-renders on

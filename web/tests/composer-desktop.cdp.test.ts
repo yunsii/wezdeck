@@ -234,6 +234,8 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     const picker = page.getByTestId('session-switcher')
     await picker.waitFor({ timeout: 2_000 })
     await page.keyboard.press('Escape')
+
+    await caretFollowsPreference(page)
     await context.close()
   })
 
@@ -256,3 +258,22 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await context.close()
   })
 })
+
+/**
+ * The caret: a block by default (the desk's terminal), a bar once picked in
+ * 我的 › 外观, kept across a reload.
+ */
+async function caretFollowsPreference(page: Page) {
+  const box = page.getByLabel('发给 Agent 的消息')
+  const caret = () =>
+    box.evaluate((el) => getComputedStyle(el).getPropertyValue('caret-shape'))
+  expect(await caret()).toBe('block')
+  await page.goto(`${base}/zh/console/me/appearance`)
+  await page
+    .getByRole('radiogroup', { name: '输入光标' })
+    .getByRole('radio', { name: '细线' })
+    .click()
+  await page.goto(`${base}/zh/console/sessions/fresh-session`)
+  await box.waitFor({ timeout: 15_000 })
+  expect(await caret()).toBe('bar')
+}

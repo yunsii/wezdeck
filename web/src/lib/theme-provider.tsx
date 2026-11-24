@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
+import { caretBootstrap } from './caret-pref'
+
 export type ThemeMode = 'light' | 'dark' | 'system'
 
-export const themeBootstrapScript = `(function(){try{var k='wezdeck-theme',m=localStorage.getItem(k);if(m!=='light'&&m!=='dark'&&m!=='system')m='system';var t=m==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):m;document.documentElement.dataset.theme=t;document.documentElement.dataset.themeMode=m;}catch(e){document.documentElement.dataset.theme='dark';document.documentElement.dataset.themeMode='system';}})()`
+export const themeBootstrapScript = `(function(){try{var k='wezdeck-theme',m=localStorage.getItem(k);if(m!=='light'&&m!=='dark'&&m!=='system')m='system';var t=m==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):m;document.documentElement.dataset.theme=t;document.documentElement.dataset.themeMode=m;${caretBootstrap}}catch(e){document.documentElement.dataset.theme='dark';document.documentElement.dataset.themeMode='system';}})()`
 
 function resolveTheme(mode: ThemeMode) {
   if (mode !== 'system') return mode

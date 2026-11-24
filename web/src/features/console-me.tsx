@@ -15,6 +15,7 @@ import { useIsWide, useIsWidePhoneFirst } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { buildId } from '#/lib/pwa'
 import { useTheme } from '#/lib/theme-provider'
+import { useCaretShape } from '#/lib/caret-pref'
 import { useConsoleMode, useRemoteState } from './console-mode'
 import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
@@ -179,6 +180,7 @@ function AppearancePage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const { mode, setMode } = useTheme()
+  const [caret, setCaret] = useCaretShape()
   const navigate = useNavigate()
   const params = useParams({ strict: false })
   return (
@@ -214,6 +216,22 @@ function AppearancePage() {
             { value: 'dark', label: t`Dark` },
           ]}
         />
+      </div>
+      <div className="grid gap-1.5">
+        <span className="text-caption text-brand-muted">{t`Text caret`}</span>
+        <Segmented
+          label={t`Text caret`}
+          value={caret}
+          onChange={setCaret}
+          options={[
+            { value: 'block', label: t`Block` },
+            { value: 'bar', label: t`Bar` },
+            { value: 'underscore', label: t`Underscore` },
+          ]}
+        />
+        <span className="text-meta text-brand-label">
+          {t`Block matches the desk's terminal. Chrome 144 and later draw it; other browsers keep a thin bar.`}
+        </span>
       </div>
     </div>
   )

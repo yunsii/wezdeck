@@ -122,3 +122,18 @@ body {
     grid-template-columns: calc(var(--spacing) * 18) minmax(0, 1fr);
   }
 }
+
+/* The text caret (我的 › 外观 › 输入光标, lib/caret-pref.ts): caret-shape
+   where the browser has it (Chrome 144+), the accent colour everywhere. */
+:root[data-caret='block'] {
+  --caret-shape: block;
+}
+:root[data-caret='underscore'] {
+  --caret-shape: underscore;
+}
+input,
+textarea,
+[contenteditable='true'] {
+  caret-color: var(--color-brand-running);
+  caret-shape: var(--caret-shape, bar);
+}
