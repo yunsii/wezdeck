@@ -289,7 +289,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             id="console-main"
             className={cn(
               'flex min-h-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4',
-              chat ? 'px-2.5' : 'px-4',
+              chat ? 'px-2.5 [--page-x:0.625rem]' : 'px-4 [--page-x:1rem]',
             )}
           >
             {detail || subPage ? null : (
