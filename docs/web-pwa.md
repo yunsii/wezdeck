@@ -405,8 +405,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   over 8 jumps to the newest; the page stays pinned to the bottom while a reply grows
   (`chat-scroll.ts`: growth glides a fifth of what is left per frame, a
   keyboard resize jumps, a live thread eases its items' box (`chat-grow.tsx`,
-  `data-growing`) while the end is held each frame so the turn line stays put
-  — 交互调试 › 长回复流式写出 / 工具调用陆续插入, `chat-stream.cdp`; only a
+  `data-growing`; not in the first 1.5 s) while the end is held so the turn
+  line stays put — 交互调试 › 长回复 / 工具调用, `chat-stream.cdp`; only a
   finger, wheel or key can unpin it, never the
   page's own scrolling; a finger dragging the history down unpins at once
   and nothing auto-scrolls while a finger is down; back near the bottom
@@ -419,7 +419,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   goes once off screen; a run scrolled past closes onto its row at the top).
   Each toggle traces `panel-toggle` (row drift, scrollTop) — headless touch
   emulation moved the row 24 px on close where mouse and scripted clicks
-  moved it 0, so the phone's numbers decide); only thread toggles count (交互调试 › 子 agent 面板); growth is watched on the scroller's children)
+  moved it 0, so the phone's numbers decide); only thread toggles count (交互调试 › 子 agent 面板); growth is watched on the scroller's children; a close keeps at most half a screen of lent room and stays pinned (no 回到最新), more glides away with the row on screen, and growth fills that room first (`fitSpacer`, 交互调试 › 展开收起工具调用, `chat-toggle.cdp`))
   (tables and code scroll in their own box); messages run full width and
   are told apart by background alone (user: ink `brand-text` with deck text,
   reply: `brand-surface`); runs of tool calls collapse into one line (`chat-tools.tsx`), each call

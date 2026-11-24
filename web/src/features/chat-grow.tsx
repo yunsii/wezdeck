@@ -6,7 +6,15 @@
 // holds its end each frame instead of gliding after it (chat-scroll.ts), so
 // the turn line under it stays put while everything above moves up smoothly.
 // Shrinking is immediate.
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+
+/**
+ * The first screen does not ease: the conversation lays out its earlier
+ * messages and markdown for a while after it opens (measured on a running
+ * session: 38 easing frames 0.8–1.45 s in, the bottom clipped and revealed
+ * like a scroll down). Growth snaps until then.
+ */
+const LANDING_MS = 1500
 
 export function SmoothGrow({
   active,
@@ -21,6 +29,7 @@ export function SmoothGrow({
 }) {
   const outer = useRef<HTMLDivElement>(null)
   const inner = useRef<HTMLDivElement>(null)
+  const [armedAt] = useState(() => performance.now() + LANDING_MS)
   useLayoutEffect(() => {
     const box = outer.current
     const content = inner.current
@@ -37,7 +46,7 @@ export function SmoothGrow({
     const step = () => {
       const target = content.getBoundingClientRect().height
       const left = target - shown
-      if (Math.abs(left) <= 0.5) {
+      if (Math.abs(left) <= 0.5 || performance.now() < armedAt) {
         shown = target
         frame = 0
         box.style.height = `${shown}px`
@@ -62,7 +71,7 @@ export function SmoothGrow({
       cancelAnimationFrame(frame)
       release()
     }
-  }, [active])
+  }, [active, armedAt])
   return (
     <div ref={outer} className="min-w-0">
       <div ref={inner} className={className}>

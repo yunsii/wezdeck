@@ -11,6 +11,7 @@ import { PermissionCard } from './session-permission'
 import {
   StreamDemo,
   SubagentsDemo,
+  ToggleDemo,
   ToolsDemo,
 } from './console-interactions-demos'
 import { BackgroundTasks } from './session-background'
@@ -306,6 +307,17 @@ function streamSections(
       },
       keys: { zh: '无（重放可再看一次）', en: 'None (Replay runs it again)' },
       demo: <ToolsDemo />,
+    },
+    {
+      id: 'tool-toggle',
+      tags: ['common'],
+      title: { zh: '展开收起工具调用', en: 'Opening and closing a call' },
+      source: {
+        zh: '点开 / 收起对话里的工具行：被点的行不动；收起让出的空间半屏内保留且不离开底部（不出现回到最新），超出部分带动画滚走并保持该行可见（chat-scroll.ts）',
+        en: 'tapping a call open / closed: the row stays put; closing keeps the room it gave up (up to half a screen) without leaving the bottom, the rest glides away with the row kept on screen (chat-scroll.ts)',
+      },
+      keys: { zh: '无（点工具行）', en: 'None (tap a call)' },
+      demo: <ToggleDemo />,
     },
     {
       id: 'git-status',

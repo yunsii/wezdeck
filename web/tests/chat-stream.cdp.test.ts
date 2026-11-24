@@ -30,11 +30,13 @@ describe('Streaming reply', () => {
     await demo.waitFor({ timeout: 20_000 })
     // the growing box clips only its bottom: list markers hang to its left
     await expect
-      .poll(() =>
-        demo.evaluate((root) => {
-          const box = root.querySelector<HTMLElement>('[data-growing]')
-          return box ? getComputedStyle(box).overflowX : 'none yet'
-        }),
+      .poll(
+        () =>
+          demo.evaluate((root) => {
+            const box = root.querySelector<HTMLElement>('[data-growing]')
+            return box ? getComputedStyle(box).overflowX : 'none yet'
+          }),
+        { timeout: 5_000 }, // the reply arrives 1.8 s in, after the landing
       )
       .toBe('visible')
     // every frame for 3.5 s from the reply's arrival: where the turn line
@@ -104,6 +106,21 @@ describe('Streaming reply', () => {
     await page.goto(`${base}/zh/console/me/interactions#tools-arriving`)
     const demo = page.getByTestId('tools-demo')
     await demo.waitFor({ timeout: 20_000 })
+    // the first screen lands without easing (a call arrives 0.7 s in): the
+    // open used to reveal the bottom of a running session like a scroll
+    const easedEarly = await demo.evaluate(
+      (root) =>
+        new Promise<boolean>((done) => {
+          const begin = performance.now()
+          const tick = (now: number) => {
+            if (root.querySelector('[data-growing]')) return done(true)
+            if (now - begin < 1_200) requestAnimationFrame(tick)
+            else done(false)
+          }
+          requestAnimationFrame(tick)
+        }),
+    )
+    expect(easedEarly, 'no easing while the first screen lands').toBe(false)
     // every frame while the calls arrive (8 × 700 ms)
     const lines = await demo.evaluate(
       (root) =>

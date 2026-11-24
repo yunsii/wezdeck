@@ -36,6 +36,53 @@ const endTop = (el: HTMLElement, spacer: HTMLElement | null) =>
   el.scrollHeight - borrowed(spacer) - el.clientHeight
 
 /**
+ * Keep only the borrowed room still on screen: what scrolled off, or what
+ * new content now fills, goes — nothing that shows moves. Returns what is
+ * left (0: the thread reaches the bottom of the screen by itself).
+ */
+function fitSpacer(el: HTMLElement, spacer: HTMLElement | null) {
+  const lent = borrowed(spacer)
+  if (!spacer || !lent) return 0
+  const need = Math.max(
+    0,
+    Math.min(lent, el.scrollTop + el.clientHeight - (el.scrollHeight - lent)),
+  )
+  if (need < 0.5) spacer.style.removeProperty('height')
+  else if (Math.abs(need - lent) >= 0.5) spacer.style.height = `${need}px`
+  return need < 0.5 ? 0 : need
+}
+
+/**
+ * After a close: keep at most half a screen of the room it gave up. More
+ * glides away (the thread moves down into it), never so far that the tapped
+ * row leaves the screen. Then `settled` decides about the bottom.
+ */
+function trimBorrowed(
+  el: HTMLElement,
+  trigger: HTMLElement,
+  spacer: HTMLElement | null,
+  settled: () => void,
+) {
+  const lent = fitSpacer(el, spacer)
+  const box = el.getBoundingClientRect()
+  const room = box.bottom - 8 - trigger.getBoundingClientRect().bottom
+  const move = Math.max(0, Math.min(lent - el.clientHeight / 2, room))
+  if (move < 1) return settled()
+  const from = el.scrollTop
+  const begin = performance.now()
+  const frame = (now: number) => {
+    const p = Math.min(1, (now - begin) / 260)
+    el.scrollTop = from - move * (1 - (1 - p) ** 3)
+    if (p < 1) requestAnimationFrame(frame)
+    else {
+      fitSpacer(el, spacer)
+      settled()
+    }
+  }
+  requestAnimationFrame(frame)
+}
+
+/**
  * Keep a tapped panel trigger at its screen position through the panel's
  * open / close animation; when closing leaves no room below to scroll to,
  * grow `spacer` (the thread's end sentinel) by what is missing.
@@ -71,6 +118,7 @@ function panelToggled(
   el: HTMLElement,
   trigger: HTMLElement,
   spacer: HTMLElement | null,
+  settled: () => void,
 ) {
   // the browser's scroll anchoring re-picks an anchor below the panel and
   // shifts the page as it changes height (measured: no script wrote
@@ -96,7 +144,15 @@ function panelToggled(
       el.scrollTop +=
         trigger.getBoundingClientRect().top - el.getBoundingClientRect().top - 8
     }, TOGGLE_HOLD_MS)
-  else holdRow(el, trigger, spacer)
+  else {
+    holdRow(el, trigger, spacer)
+    // closing near the bottom: the lent room stays up to half a screen
+    if (closing)
+      setTimeout(
+        () => trimBorrowed(el, trigger, spacer, settled),
+        TOGGLE_HOLD_MS,
+      )
+  }
   // what the row actually did, for `wezdeck-wsl diag`: headless touch
   // emulation moved it where mouse / scripted clicks did not (2026-11-24),
   // so a phone's own numbers settle it
@@ -241,15 +297,9 @@ export function useChatScroll(
     let toggleUntil = 0
     const nearBottom = () =>
       endTop(el, end.current) - el.scrollTop < NEAR_BOTTOM
-    // the borrowed room goes once it is off screen: no longer reachable
-    // by eye, dropping it cannot move what is shown
-    const release = () => {
-      const spacer = end.current
-      if (borrowed(spacer) && el.scrollTop <= endTop(el, spacer) + 1)
-        spacer?.style.removeProperty('height')
-    }
     const onScroll = () => {
-      if (performance.now() > toggleUntil) release()
+      // the borrowed room keeps only what is still on screen
+      if (performance.now() > toggleUntil) fitSpacer(el, end.current)
       if (nearBottom()) {
         if (
           !pinnedRef.current &&
@@ -303,8 +353,12 @@ export function useChatScroll(
       if (!trigger || !end.current?.parentElement?.contains(trigger)) return
       intent()
       if (pinnedRef.current) pin(false)
-      toggleUntil = performance.now() + TOGGLE_HOLD_MS + 150
-      panelToggled(el, trigger, end.current)
+      toggleUntil = performance.now() + TOGGLE_HOLD_MS + 450
+      // closed with the thread's real end still on screen: that is the
+      // bottom — stay pinned, no 回到最新
+      panelToggled(el, trigger, end.current, () => {
+        if (nearBottom() || el.scrollTop >= endTop(el, end.current)) pin(true)
+      })
     }
     el.addEventListener('click', onToggle, true)
     el.addEventListener('wheel', intent, { passive: true })
@@ -364,7 +418,9 @@ export function useChatScroll(
     const live = () => landed.current || performance.now() < landing.current
     const following = () => pinnedRef.current && live() && !touching.current
     const jumpDown = () => {
-      if (following()) el.scrollTop = endTop(el, end.current)
+      // new content fills the borrowed room first: nothing on screen moves
+      if (following() && !fitSpacer(el, end.current))
+        el.scrollTop = endTop(el, end.current)
     }
     // content growth (a reply writing itself line by line) glides: each frame
     // covers a fifth of what is left, so new lines push the thread up
@@ -385,6 +441,8 @@ export function useChatScroll(
     }
     const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
     const observer = new ResizeObserver((entries) => {
+      // growth fills the borrowed room first (gliding would not consume it)
+      fitSpacer(el, end.current)
       // keyboard resize, or still settling after it opened: bottom at once
       const now = !smooth || grewWhileLanding(landing)
       // a streaming reply eases its own height (chat-grow.tsx): hold the end

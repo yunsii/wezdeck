@@ -57,10 +57,12 @@ function SessionFrame({
   footer: React.ReactNode
 }) {
   const end = useRef<HTMLDivElement>(null)
-  useChatScroll(end, count)
+  // pinned = the session page would show no 回到最新
+  const { pinned } = useChatScroll(end, count)
   return (
     <div
       data-testid={testId}
+      data-pinned={pinned}
       className="grid h-[26rem] grid-rows-[minmax(0,1fr)] overflow-hidden rounded-xl border border-brand-edge"
     >
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-start overflow-y-auto px-2.5">
@@ -131,7 +133,8 @@ function StreamRound({ round }: { round: number }) {
     THREAD.slice(0, 4),
   )
   useEffect(() => {
-    // arrives after the page settled: a new reply streams, an old one does not
+    // arrives after the page settled (the first 1.5 s land without easing,
+    // chat-grow.tsx): a new reply streams, an old one does not
     const timer = setTimeout(
       () =>
         setMessages((list) => [
@@ -139,7 +142,7 @@ function StreamRound({ round }: { round: number }) {
           { role: 'user', text: `重放 ${round + 1}` },
           { role: 'assistant', text: LONG_REPLY },
         ]),
-      600,
+      1_800,
     )
     return () => clearTimeout(timer)
   }, [round])
@@ -225,6 +228,56 @@ function ToolsRound() {
   return (
     <SessionFrame
       testId="tools-demo"
+      count={messages.length}
+      thread={
+        <ChatThread
+          messages={messages}
+          start={0}
+          busy
+          activity={{ since: Date.now() - 42_000, tokens: 1_830 }}
+        />
+      }
+      footer={
+        <p className="px-1 text-meta text-brand-label">
+          （输入框位置 / composer）
+        </p>
+      }
+    />
+  )
+}
+
+const LONG_RESULT = Array.from(
+  { length: 40 },
+  (_, i) => `line ${i + 1}: ok  web/tests/case-${i + 1}.cdp.test.ts`,
+).join('\n')
+
+/**
+ * Opening and closing a call's details at the bottom of a live thread: the
+ * tapped row stays where it is, closing keeps the room it gave up (up to
+ * half a screen) without leaving the bottom — no 回到最新 — and anything
+ * more glides away with the row kept on screen.
+ */
+export function ToggleDemo() {
+  const messages: Array<Message> = [
+    ...THREAD,
+    {
+      role: 'tool',
+      tool: 'Read',
+      text: 'Read web/src/features/chat-scroll.ts',
+      kind: 'read',
+    },
+    {
+      role: 'tool',
+      tool: 'Bash',
+      text: 'Bash scripts/dev/web-affected-tests.sh --run',
+      body: 'scripts/dev/web-affected-tests.sh --run',
+      result: LONG_RESULT,
+      kind: 'command',
+    },
+  ]
+  return (
+    <SessionFrame
+      testId="toggle-demo"
       count={messages.length}
       thread={
         <ChatThread
