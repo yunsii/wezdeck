@@ -108,7 +108,8 @@ Composer keys (`session-composer.tsx`): with a mouse and keyboard Enter
 sends and Shift+Enter breaks the line; on a touch screen (`(hover: none) and
 (pointer: coarse)`) Enter is a new line and the send button sends — a touch
 keyboard has no Shift+Enter. Ctrl/⌘+Enter sends on both; an IME's Enter
-(`isComposing`) only picks the candidate. A new session with no messages yet
+(`isComposing`) only picks the candidate. Space anywhere else on the page
+focuses the composer (`composer-keys.ts`). A new session with no messages yet
 (the pane's screen only) still lands at the bottom (`chat-scroll.ts` counts
 the loaded detail).
 

@@ -122,6 +122,20 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
       .toBeLessThan(4)
 
     const box = page.getByLabel('发给 Agent 的消息')
+    // Space anywhere on the page puts the caret in the composer, no space typed
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+    await page.keyboard.press('Space')
+    expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
+    expect(await box.inputValue()).toBe('')
+    // on a button Space still presses it (opens 快捷), focus stays there
+    const keys = page.getByRole('button', { name: '快捷键' })
+    await keys.focus()
+    await page.keyboard.press('Space')
+    await page.getByTestId('session-quick-keys').waitFor({ timeout: 2_000 })
+    expect(await box.evaluate((el) => el === document.activeElement)).toBe(
+      false,
+    )
+    await keys.click()
     await box.click()
     await box.pressSequentially('第一行')
     await page.keyboard.press('Shift+Enter')

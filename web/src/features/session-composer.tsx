@@ -27,6 +27,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { CommandPanel } from './session-commands'
+import { useSpaceToFocus } from './composer-keys'
 
 const MAX_IMAGES = 5
 
@@ -444,6 +445,7 @@ export function ComposerBox({
   // mouse and keyboard Enter sends, Shift+Enter breaks the line
   const touch = useMediaQuery('(hover: none) and (pointer: coarse)', false)
   const canSend = !composer.progress && composer.ready && !blocked
+  useSpaceToFocus()
   return (
     <>
       {panel === 'keys' ? (

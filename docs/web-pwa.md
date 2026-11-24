@@ -124,8 +124,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    dialog (fade + scale, no grab handle). 工单's run / cache / cost band is
    folded into one Disclosure (the sidebar links 工单动态).
 6. **Desktop keyboard**: `j`/`k` move, `Enter` open, `Esc` back, `/` filter,
-   `g`+letter section jump, `Ctrl+K` command palette; one registry, hints in
-   the UI.
+   `g`+letter section jump, `Ctrl+K` command palette; on a session page
+   `Space` puts the caret in the composer (`composer-keys.ts`; not while
+   typing, on a button / link, or with a sheet open); hints in the UI.
 7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
    deferred.

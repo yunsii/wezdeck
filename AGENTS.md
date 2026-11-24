@@ -285,7 +285,7 @@ log·latency / timeline·habit). **Blind features are incomplete.** Summary:
 
 - After runtime config changes, run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (Bash, not the `Skill` tool — see the note above). **Default sync stages a canary tree, auto-launches an isolated WezTerm probe, and promotes to live only if `healthy.stamp` appears** (otherwise live is left untouched). Use `--live` to skip the gate; `WEZTERM_SYNC_SKIP_CANARY_AUTO=1` to stage without probing. Full flow: [`docs/daily-workflow.md`](docs/daily-workflow.md).
 - Do not run Git commands that can contend on the index lock in parallel.
-- **落地上线（本仓 standing）：** 一轮可交付改动做完且验证过、用户未要求「先别提交 / 分步实现 / 等我确认」时，agent **自行** `coco-commit` → push 到 `origin` 默认分支 → 若触及 runtime/skill/CLI/同步面则跑 `sync-runtime.sh`。例外与细节：[`docs/daily-workflow.md#commit--land-wezdeck-standing-policy`](docs/daily-workflow.md#commit--land-wezdeck-standing-policy)。用户明确叫停或仍处 plan/分步未收口时，不要自动提交推送。
+- **落地上线（本仓 standing）：** 一轮可交付改动做完且验证过、用户未要求「先别提交 / 分步实现 / 等我确认」时，agent **自行** `coco-commit` → push 到 `origin` 默认分支 → 若触及 runtime/skill/CLI/同步面则跑 `sync-runtime.sh` → 若触及 `web/` 或 `native/wezdeck-wsl/` 则跑 `scripts/dev/wezdeck-release.sh` 发布网页与 relay（同样不等「上线」）。例外与细节：[`docs/daily-workflow.md#commit--land-wezdeck-standing-policy`](docs/daily-workflow.md#commit--land-wezdeck-standing-policy)。用户明确叫停或仍处 plan/分步未收口时，不要自动提交推送。
 - **Default-branch delivery:** this repo develops on primary `master`. When
   committing and/or pushing and HEAD is already `master`/`main` (or the
   resolved default), **do it there** — do **not** ask whether to create a

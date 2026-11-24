@@ -27,7 +27,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:150
+#: src/features/session-composer.tsx:151
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -412,7 +412,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:192
+#: src/features/session-composer.tsx:193
 msgid "cancel"
 msgstr "cancel"
 
@@ -494,7 +494,7 @@ msgstr "Close"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:225
+#: src/features/session-composer.tsx:226
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -559,7 +559,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:216
-#: src/features/session-composer.tsx:321
+#: src/features/session-composer.tsx:322
 msgid "Commands"
 msgstr "Commands"
 
@@ -571,11 +571,11 @@ msgstr "Compacting conversation"
 msgid "compacting the context"
 msgstr "compacting the context"
 
-#: src/features/session-composer.tsx:295
+#: src/features/session-composer.tsx:296
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:191
+#: src/features/session-composer.tsx:192
 msgid "confirm"
 msgstr "confirm"
 
@@ -637,7 +637,7 @@ msgstr "context usage"
 #~ msgid "Control"
 #~ msgstr "Control"
 
-#: src/features/session-composer.tsx:81
+#: src/features/session-composer.tsx:82
 #: src/features/session-info.tsx:233
 msgid "Copied"
 msgstr "Copied"
@@ -659,7 +659,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:81
+#: src/features/session-composer.tsx:82
 msgid "Copy"
 msgstr "Copy"
 
@@ -671,7 +671,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:73
+#: src/features/session-composer.tsx:74
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1002,7 +1002,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:328
+#: src/features/session-composer.tsx:329
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1113,7 +1113,7 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/session-composer.tsx:346
+#: src/features/session-composer.tsx:347
 msgid "Images"
 msgstr "Images"
 
@@ -1180,7 +1180,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:193
+#: src/features/session-composer.tsx:194
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1224,7 +1224,7 @@ msgstr "Keep planning"
 #~ msgid "Keyboard first"
 #~ msgstr "Keyboard first"
 
-#: src/features/session-composer.tsx:309
+#: src/features/session-composer.tsx:310
 msgid "Keys"
 msgstr "Keys"
 
@@ -1365,11 +1365,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:533
+#: src/features/session-composer.tsx:535
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:497
+#: src/features/session-composer.tsx:499
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1782,7 +1782,7 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
-#: src/features/session-composer.tsx:383
+#: src/features/session-composer.tsx:384
 msgid "Preview image"
 msgstr "Preview image"
 
@@ -1822,8 +1822,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:233
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:304
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -1899,7 +1899,7 @@ msgstr "Remote access"
 msgid "Remote devices"
 msgstr "Remote devices"
 
-#: src/features/session-composer.tsx:397
+#: src/features/session-composer.tsx:398
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -2173,7 +2173,7 @@ msgstr "seen"
 #~ msgid "Select a worktree to see its agent status."
 #~ msgstr "Select a worktree to see its agent status."
 
-#: src/features/session-composer.tsx:542
+#: src/features/session-composer.tsx:544
 msgid "Send"
 msgstr "Send"
 
@@ -2181,7 +2181,7 @@ msgstr "Send"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:304
+#: src/features/session-composer.tsx:305
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2274,7 +2274,7 @@ msgstr "Size"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:316
+#: src/features/session-composer.tsx:317
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2401,7 +2401,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:219
+#: src/features/session-composer.tsx:220
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -2630,7 +2630,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:333
+#: src/features/session-composer.tsx:334
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2694,7 +2694,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:218
+#: src/features/session-composer.tsx:219
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -2720,7 +2720,7 @@ msgstr "Unavailable"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/session-composer.tsx:140
+#: src/features/session-composer.tsx:141
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
