@@ -378,6 +378,8 @@ export type HostReadAction =
   | 'session.new.job'
   | 'session.image'
   | 'session.history'
+  /** local Runtime only (serve.go): the relay does not list devices */
+  | 'devices'
 
 /**
  * Session reads, the same way collab reads go: a browser on the host asks

@@ -126,8 +126,12 @@ describe('architecture page: capabilities match the source', () => {
       )
       return new Set([...block.matchAll(/"([a-z.]+)"/g)].map((m) => m[1]))
     }
+    // plus the bridge's local-only reads (remote.devices): not relay reads
+    const localOnly = [...names('bridge')]
+      .filter((n) => /^remote\.[a-z.]+$/.test(n))
+      .map((n) => n.slice('remote.'.length))
     expect(sorted(set('RemoteReadActions'))).toEqual(
-      sorted(names('relay-reads')),
+      sorted(new Set([...names('relay-reads'), ...localOnly])),
     )
     expect(sorted(set('RemoteWriteActions'))).toEqual(
       sorted(names('relay-writes')),
@@ -166,7 +170,10 @@ describe('architecture page: capabilities match the source', () => {
         expect(page.has('collab.*'), action).toBe(true)
       else if (action.startsWith('remote.')) {
         const rest = action.slice('remote.'.length)
-        expect(reads.has(rest) || writes.has(rest), action).toBe(true)
+        expect(
+          reads.has(rest) || writes.has(rest) || page.has(action),
+          action,
+        ).toBe(true)
       } else expect(page.has(action), action).toBe(true)
     }
   })

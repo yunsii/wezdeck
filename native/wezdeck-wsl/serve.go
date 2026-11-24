@@ -111,6 +111,9 @@ func dispatch(req request) response {
 			payload = json.RawMessage("{}")
 		}
 		res.Result, _, err = readRPC(req.Action, payload)
+	case "remote.devices":
+		// local only: the relay never lists devices to a paired phone
+		res.Result, err = listDevices()
 	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
 		"remote.todo", "remote.clear", "remote.session.new", "remote.ticket.new":
 		// a browser on this computer through the local Runtime (remote_write.go)

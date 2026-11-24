@@ -20,7 +20,7 @@ internal sealed partial class RuntimeWebServer
     private static readonly HashSet<string> RemoteReadActions = new(StringComparer.Ordinal)
     {
         "sessions", "session", "upload.get", "todos", "repos", "ticket.targets",
-        "session.new.job", "session.image", "session.history",
+        "session.new.job", "session.image", "session.history", "devices",
     };
 
     private const int RemoteWriteMaxBytes = 256 * 1024; // an upload chunk is ≤ 64 KB decoded

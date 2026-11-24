@@ -18,6 +18,7 @@ import { useTheme } from '#/lib/theme-provider'
 import { useConsoleMode, useRemoteState } from './console-mode'
 import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
+import { DeviceList } from './me-devices'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
 import { HostPage, useHostSummary } from './me-host'
@@ -32,9 +33,12 @@ function PhoneWriting() {
     return <p className="text-caption text-brand-muted">{t`Checking…`}</p>
   if (device.state === 'approved' && device.id === 'local')
     return (
-      <p className="text-body">
-        {t`Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own.`}
-      </p>
+      <div className="grid gap-4">
+        <p className="text-body">
+          {t`Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own.`}
+        </p>
+        <DeviceList />
+      </div>
     )
   if (device.state === 'approved')
     return (

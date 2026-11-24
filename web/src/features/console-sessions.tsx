@@ -373,9 +373,11 @@ export function SessionDetail({ id }: { id: string }) {
   const messages: Array<Message> = data?.messages ?? []
   const busy = Boolean(data && isBusy(data))
   const pending = settle(pendingRaw, messages, data?.start ?? 0, busy)
+  // +1 once the detail has loaded: a new session with no messages yet shows
+  // only the pane's screen, and a count of 0 never landed at the bottom
   const follow = useChatScroll(
     end,
-    messages.length + pending.length + (busy ? 1 : 0),
+    (data ? 1 : 0) + messages.length + pending.length + (busy ? 1 : 0),
   )
   const staleAt = detail.dataUpdatedAt
     ? new Date(detail.dataUpdatedAt).toLocaleTimeString([], {

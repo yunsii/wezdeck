@@ -294,6 +294,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       ),
       c('remote.<读取>', 'relay 的全部读取', 'Every relay read'),
       c(
+        'remote.devices',
+        '已登记的设备（待批准 / 已批准，不含公钥）：只给本机浏览器，relay 不提供',
+        'Registered devices (pending / approved, no keys): for the host browser only, not over the relay',
+      ),
+      c(
         'remote.<写入>',
         'relay 的全部写入，记为 local',
         'Every relay write, marked local',

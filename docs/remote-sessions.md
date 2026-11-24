@@ -86,12 +86,27 @@ Each write leaves `event=write via=local device=local` in `relay.log` (the
 bridge process appends there; `relayLogf`). The web's `hostRead` /
 `hostWrite` try the Runtime first and fall back to the remote link
 (`?remote=1` forces it); on the host 写入权限 reads 本机，已启用. Device
-registration stays relay-only.
+registration stays relay-only. Below it the host lists the registered
+devices (`me-devices.tsx`): read action `devices`, local only — the bridge
+answers `remote.devices` (`remote_devices.go`: id, state, name, info,
+added, last seen; never the public key) but `readRPC` does not, so a paired
+phone cannot list the others. Approve / revoke stay on
+`install-remote-relay.sh` (each row shows the id to pass).
 
 ## Attachments
 
+Composer keys (`session-composer.tsx`): with a mouse and keyboard Enter
+sends and Shift+Enter breaks the line; on a touch screen (`(hover: none) and
+(pointer: coarse)`) Enter is a new line and the send button sends — a touch
+keyboard has no Shift+Enter. Ctrl/⌘+Enter sends on both; an IME's Enter
+(`isComposing`) only picks the candidate. A new session with no messages yet
+(the pane's screen only) still lands at the bottom (`chat-scroll.ts` counts
+the loaded detail).
+
 Reporting a problem from the phone (the toolbar above the composer,
-`session-composer.tsx`): add up to 5 images with 图片
+`session-composer.tsx`): add up to 5 images with 图片 or by pasting a
+screenshot into the focused input (text copied alongside an image still
+pastes as text)
 (thumbnails sit in the same row; the toolbar shows only on an approved phone). Images are shrunk on the
 phone (long edge ≤ 1600 px, JPEG 0.82, `lib/upload.ts`); every file goes up
 as signed `upload` chunks of 36 KB (small enough for one DataChannel

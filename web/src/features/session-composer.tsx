@@ -18,6 +18,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 
 import { setDiagnosticsPage } from '#/lib/client-trace'
+import { useMediaQuery } from '#/lib/use-media'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
 import { ImageViewer } from './image-viewer'
@@ -108,7 +109,7 @@ export function useComposer({
     [],
   )
 
-  const pick = (files: FileList | null) => {
+  const pick = (files: Iterable<File> | null) => {
     const room = MAX_IMAGES - images.length
     const added = [...(files ?? [])]
       .filter((file) => file.type.startsWith('image/'))
@@ -438,6 +439,11 @@ export function ComposerBox({
   const { t } = useLingui()
   // one tool panel at a time, above the toolbar
   const [panel, setPanel] = useState<Panel>(null)
+  // a touch keyboard has one Enter key and no Shift+Enter: there Enter is
+  // a new line and the button sends (as in Telegram / WhatsApp); with a
+  // mouse and keyboard Enter sends, Shift+Enter breaks the line
+  const touch = useMediaQuery('(hover: none) and (pointer: coarse)', false)
+  const canSend = !composer.progress && composer.ready && !blocked
   return (
     <>
       {panel === 'keys' ? (
@@ -500,6 +506,29 @@ export function ComposerBox({
             setTimeout(() => form?.scrollIntoView({ block: 'end' }), 300)
           }}
           onChange={(event) => composer.setText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return
+            // the IME's Enter picks a candidate (拼音 → 汉字), it is not a send
+            if (event.nativeEvent.isComposing || event.keyCode === 229) return
+            if (event.shiftKey || event.altKey) return
+            // Ctrl/⌘+Enter sends everywhere, plain Enter only off touch
+            if (touch && !(event.ctrlKey || event.metaKey)) return
+            event.preventDefault()
+            if (canSend) event.currentTarget.form?.requestSubmit()
+          }}
+          onPaste={(event) => {
+            // a screenshot on the clipboard joins the picked images; text
+            // copied together with an image (a document) still pastes as text
+            if (!writable) return
+            const files = [...event.clipboardData.files].filter((file) =>
+              file.type.startsWith('image/'),
+            )
+            if (files.length === 0) return
+            if (!event.clipboardData.types.includes('text/plain'))
+              event.preventDefault()
+            composer.pick(files)
+          }}
+          enterKeyHint={touch ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
           className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
@@ -511,7 +540,7 @@ export function ComposerBox({
           size="round"
           type="submit"
           aria-label={t`Send`}
-          disabled={Boolean(composer.progress) || !composer.ready || blocked}
+          disabled={!canSend}
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-full disabled:opacity-30"
         >
           <SendHorizontal
