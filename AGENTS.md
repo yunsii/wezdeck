@@ -28,7 +28,9 @@ One line per topic: the trigger words, then the doc. Details live in the doc.
   multi-line paste; agent self-exec is out of scope) →
   [`docs/agent-run.md`](docs/agent-run.md).
 - Sync, reload, verification, maintenance, **落地上线** →
-  [`docs/daily-workflow.md`](docs/daily-workflow.md)
+  [`docs/daily-workflow.md`](docs/daily-workflow.md); web UI bug loop (reproduce on
+  the device with `wezdeck-wsl diag`, `red-green.sh`, check `current` before a
+  retest) → [`#verification`](docs/daily-workflow.md#verification)
   ([Commit / land](docs/daily-workflow.md#commit--land-wezdeck-standing-policy));
   repo hygiene (budgets, links, pre-commit, `run.sh audit`) →
   [`#repo-hygiene`](docs/daily-workflow.md#repo-hygiene).

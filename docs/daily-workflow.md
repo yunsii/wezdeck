@@ -157,6 +157,12 @@ scripts/dev/reload-tmux.sh
 
 - If only documentation changed, runtime sync and reload are not required.
 - Web console / relay (`web/`, `native/wezdeck-wsl/`): run `scripts/dev/web-affected-tests.sh --run` — only the go / unit / cdp tests the change can reach, on a reused test stack — rather than every suite; `wezdeck-release.sh` runs the same tests on the unpushed commits, alongside the deploy (`--gate` to block on them). Details: [`remote-access.md#testing-locally`](./remote-access.md#testing-locally).
+- Web UI bug fixes (born from a day that took several rounds per bug, 2026-11-25):
+  1. **Reproduce where the person saw it.** A phone report starts on the person's device: `native/wezdeck-wsl/bin/wezdeck-wsl diag --steps '[…]'` drives their open page (`navigate`, `click`, `query` with `selector` + `attrs`) and reads back what it shows ([`remote-sessions.md`](./remote-sessions.md) diagnostics). An emulated phone, a sample page or an idle session is a second-best (it missed the "+1" on a two-row header and the scroll-in on a running session). `unanswered` means the page is locked or in the background.
+  2. **Measure, do not assume.** Read sizes, positions and frames (an element "of zero size" was 1×1; a toast was measured mid slide-in); flashes and jumps go through frame-by-frame measurement (`web-frame-probe.sh`, rAF sampling in the cdp test).
+  3. **Red, then green.** `scripts/dev/red-green.sh --test web/tests/x.cdp.test.ts FILE…` reverts the fix, the new test must fail, then pass with it; cover the boundary state (exactly full, one over), not only the common one.
+  4. **Ship, then check the device runs it.** `diag` answers carry `build` / `deployed` / `current`: ask for a retest only once `current` is true (a backgrounded release had not deployed yet).
+  5. **Ambiguous interaction wording** ("流式", "展开"): show two or three ASCII sketches and let the person pick before building.
 - Verify workspace shortcuts still match [`keybindings.md`](./keybindings.md).
 - If workspace behavior changed, verify it still matches [`workspaces.md`](./workspaces.md).
 - If tmux styling or status changed, verify it still matches [`tmux-ui.md`](./tmux-ui.md).
