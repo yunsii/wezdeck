@@ -385,7 +385,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   of two pages blended together was the ghost on push. The shell reads the
   resolved location, so on back its title does not switch before the page
   (it used to end up in the leaving page's snapshot). Toasts sit in a
-  `toast-layer` that never moves.
+  `toast-layer` that never moves; toasts are the deck's ink card (`.deck-toast`, sonner unstyled, under the session bar via `--toast-top`; 交互调试 › 消息提示).
 - 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
   header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
   host-built `reference` block for another agent: id, transcript path, cwd,

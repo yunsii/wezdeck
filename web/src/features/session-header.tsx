@@ -187,13 +187,20 @@ export function SessionHeader({
     const el = head.current
     const page = document.getElementById('console-main')
     if (!el || !page || typeof ResizeObserver === 'undefined') return
+    const root = document.documentElement
     const observer = new ResizeObserver(() => {
       page.style.setProperty('--session-head', `${el.offsetHeight}px`)
+      // toasts drop in under this bar, not over its back button (pwa-boot)
+      root.style.setProperty(
+        '--toast-top',
+        `${Math.round(el.getBoundingClientRect().bottom)}px`,
+      )
     })
     observer.observe(el)
     return () => {
       observer.disconnect()
       page.style.removeProperty('--session-head')
+      root.style.removeProperty('--toast-top')
     }
   }, [])
   const title = data ? data.title || t`Untitled session` : ''

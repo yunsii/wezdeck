@@ -97,6 +97,9 @@ describe('Session tags', () => {
     await tip.waitFor({ timeout: 3_000 })
     expect(await tip.innerText()).toContain('long-branch-name')
     expect(Math.abs((await lineHeight()) - before)).toBeLessThan(1)
+    // the tip's focus guards are no row of their own: no +N appears
+    await page.waitForTimeout(200)
+    expect(await head.getAttribute('data-folded')).toBe(null)
     await page.keyboard.press('Escape')
     await tip.waitFor({ state: 'hidden' })
     // the list row (a link) has no tag buttons

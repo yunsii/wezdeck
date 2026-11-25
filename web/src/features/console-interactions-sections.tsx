@@ -12,6 +12,7 @@ import {
   StreamDemo,
   SubagentsDemo,
   TagsDemo,
+  ToastDemo,
   ToggleDemo,
   ToolsDemo,
 } from './console-interactions-demos'
@@ -330,6 +331,20 @@ function streamSections(
       },
       keys: { zh: '无（点工具行）', en: 'None (tap a call)' },
       demo: <ToggleDemo />,
+    },
+    {
+      id: 'toasts',
+      tags: ['common'],
+      title: { zh: '消息提示', en: 'Toasts' },
+      source: {
+        zh: '复制、发送命令、清空输入、错误、新版本等操作的结果提示（sonner，样式见 deck.css .deck-toast）；会话页里从顶部栏下方弹出，不挡返回按钮',
+        en: 'results of copy, commands, clearing, errors, a new version… (sonner, styled by deck.css .deck-toast); on the session page they drop in under the top bar, never over its back button',
+      },
+      keys: {
+        zh: '无（点按钮弹出对应提示）',
+        en: 'None (each button shows that toast)',
+      },
+      demo: <ToastDemo />,
     },
     {
       id: 'session-tags',

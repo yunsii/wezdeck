@@ -275,8 +275,11 @@ export function TagLine({
     const el = line.current
     if (!maxLines || !el || typeof ResizeObserver === 'undefined') return
     const measure = () => {
+      // tags only: an open tip's popover drops zero-size focus guards in
+      // beside its trigger, which counted as a row of their own (+1)
       const tags = [...el.children].filter(
-        (c): c is HTMLElement => c instanceof HTMLElement,
+        (c): c is HTMLElement =>
+          c instanceof HTMLElement && c.offsetWidth > 0 && c.offsetHeight > 0,
       )
       const tops = [...new Set(tags.map((tag) => tag.offsetTop))].sort(
         (a, b) => a - b,
@@ -297,7 +300,13 @@ export function TagLine({
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
-    return () => observer.disconnect()
+    // children come and go without a resize (those guards): measure again
+    const added = new MutationObserver(measure)
+    added.observe(el, { childList: true })
+    return () => {
+      observer.disconnect()
+      added.disconnect()
+    }
   }, [maxLines, children])
   useEffect(() => {
     if (!panel) return

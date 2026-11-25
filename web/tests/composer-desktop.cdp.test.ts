@@ -363,6 +363,20 @@ async function clearThenLeaveMidUpload(page: Page) {
       localStorage.getItem('wezdeck.draft.fresh-session'),
     ),
   ).toBeNull()
+  // the toast drops in under the session's top bar, not over its back
+  // button (polled: it slides in from above)
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const toast = document.querySelector('[data-sonner-toast]')
+        const head = document.querySelector('[data-testid=session-header]')
+        return toast && head
+          ? toast.getBoundingClientRect().top >=
+              head.getBoundingClientRect().bottom - 1
+          : null
+      }),
+    )
+    .toBe(true)
   await page.getByRole('button', { name: '撤销' }).click()
   await expect.poll(() => box.inputValue()).toBe('要清掉的草稿')
   // Esc Esc (a keyboard on the phone): one Esc keeps it, two clear it

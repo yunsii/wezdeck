@@ -2,6 +2,7 @@
 // behaviour: a scroller with the thread, its end sentinel and the sticky
 // footer, driven by the real useChatScroll.
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 import {
   AgentTag,
@@ -393,6 +394,63 @@ export function TagsDemo() {
       >
         <SampleTags place="info" />
       </TagPlaceFrame>
+    </div>
+  )
+}
+
+const TOASTS: Array<{ id: string; label: string; show: () => void }> = [
+  { id: 'plain', label: '普通', show: () => toast('已复制引用') },
+  {
+    id: 'action',
+    label: '带撤销',
+    show: () =>
+      toast('已清空输入', { action: { label: '撤销', onClick: () => {} } }),
+  },
+  {
+    id: 'error',
+    label: '错误',
+    show: () => toast.error('复制引用失败：剪贴板不可用'),
+  },
+  {
+    id: 'sticky',
+    label: '常驻（新版本）',
+    show: () =>
+      toast('有新版本', {
+        id: 'demo-sticky',
+        duration: Infinity,
+        action: { label: '刷新', onClick: () => {} },
+      }),
+  },
+  {
+    id: 'long',
+    label: '长文本',
+    show: () =>
+      toast(
+        '已在 tmux 中打开：wezterm-config / dev-agent（会话 primary），终端窗口已切到前台',
+      ),
+  },
+]
+
+/**
+ * Every kind of toast the console shows, from the real Toaster: an ink card
+ * like the user's message, its action a pill, an error with its icon. On the
+ * session page they drop in under the top bar (--toast-top), never over it.
+ */
+export function ToastDemo() {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TOASTS.map((kind) => (
+        <Button
+          key={kind.id}
+          variant="plain"
+          type="button"
+          data-toast-kind={kind.id}
+          onClick={kind.show}
+          className="rounded-full bg-brand-surface px-3 py-1.5 text-caption"
+        >
+          {kind.label}
+        </Button>
+      ))}
     </div>
   )
 }

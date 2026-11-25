@@ -352,7 +352,7 @@ msgstr "All repos"
 #~ msgid "All statuses"
 #~ msgstr "All statuses"
 
-#: src/components/deck/session-tags.tsx:361
+#: src/components/deck/session-tags.tsx:370
 msgid "All tags"
 msgstr "All tags"
 
@@ -1585,7 +1585,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:368
-#: src/features/session-header.tsx:241
+#: src/features/session-header.tsx:248
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1679,7 +1679,7 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:265
+#: src/features/session-header.tsx:272
 #: src/features/session-list.tsx:283
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -1729,7 +1729,7 @@ msgstr "New ticket (n)"
 msgid "New to-do"
 msgstr "New to-do"
 
-#: src/features/pwa-boot.tsx:30
+#: src/features/pwa-boot.tsx:35
 msgid "New version available"
 msgstr "New version available"
 
@@ -2244,7 +2244,7 @@ msgstr "Relay duration"
 msgid "Relay requests (Durable Object)"
 msgstr "Relay requests (Durable Object)"
 
-#: src/features/pwa-boot.tsx:33
+#: src/features/pwa-boot.tsx:38
 msgid "Reload"
 msgstr "Reload"
 
@@ -2611,7 +2611,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:278
+#: src/features/session-header.tsx:285
 #: src/features/session-info.tsx:220
 msgid "Session info"
 msgstr "Session info"
@@ -2631,7 +2631,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:220
+#: src/features/session-header.tsx:227
 #: src/features/session-list.tsx:227
 msgctxt "nav"
 msgid "Sessions"
@@ -2662,7 +2662,7 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/components/deck/session-tags.tsx:349
+#: src/components/deck/session-tags.tsx:358
 msgid "Show all tags"
 msgstr "Show all tags"
 
@@ -2800,7 +2800,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:232
+#: src/features/session-header.tsx:239
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3186,7 +3186,7 @@ msgid "Undo"
 msgstr "Undo"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:199
+#: src/features/session-header.tsx:206
 #: src/features/session-list.tsx:105
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
@@ -3209,7 +3209,7 @@ msgstr "Untracked"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/pwa-boot.tsx:26
+#: src/features/pwa-boot.tsx:31
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 

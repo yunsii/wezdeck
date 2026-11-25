@@ -352,7 +352,7 @@ msgstr "全部仓库"
 #~ msgid "All statuses"
 #~ msgstr "全部状态"
 
-#: src/components/deck/session-tags.tsx:361
+#: src/components/deck/session-tags.tsx:370
 msgid "All tags"
 msgstr "全部标签"
 
@@ -1585,7 +1585,7 @@ msgstr "正在加载原图…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:368
-#: src/features/session-header.tsx:241
+#: src/features/session-header.tsx:248
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1679,7 +1679,7 @@ msgstr "名称"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-header.tsx:265
+#: src/features/session-header.tsx:272
 #: src/features/session-list.tsx:283
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -1729,7 +1729,7 @@ msgstr "新工单（n）"
 msgid "New to-do"
 msgstr "新待办"
 
-#: src/features/pwa-boot.tsx:30
+#: src/features/pwa-boot.tsx:35
 msgid "New version available"
 msgstr "有新版本"
 
@@ -2244,7 +2244,7 @@ msgstr "中转时长"
 msgid "Relay requests (Durable Object)"
 msgstr "中转请求（Durable Object）"
 
-#: src/features/pwa-boot.tsx:33
+#: src/features/pwa-boot.tsx:38
 msgid "Reload"
 msgstr "刷新"
 
@@ -2611,7 +2611,7 @@ msgstr "会话"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:278
+#: src/features/session-header.tsx:285
 #: src/features/session-info.tsx:220
 msgid "Session info"
 msgstr "会话信息"
@@ -2631,7 +2631,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:220
+#: src/features/session-header.tsx:227
 #: src/features/session-list.tsx:227
 msgctxt "nav"
 msgid "Sessions"
@@ -2662,7 +2662,7 @@ msgstr "已交付"
 msgid "Shortcuts"
 msgstr "键盘快捷键"
 
-#: src/components/deck/session-tags.tsx:349
+#: src/components/deck/session-tags.tsx:358
 msgid "Show all tags"
 msgstr "显示全部标签"
 
@@ -2800,7 +2800,7 @@ msgstr "摘要"
 msgid "Switch session"
 msgstr "切换会话"
 
-#: src/features/session-header.tsx:232
+#: src/features/session-header.tsx:239
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -3186,7 +3186,7 @@ msgid "Undo"
 msgstr "撤销"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:199
+#: src/features/session-header.tsx:206
 #: src/features/session-list.tsx:105
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
@@ -3209,7 +3209,7 @@ msgstr "未跟踪"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/pwa-boot.tsx:26
+#: src/features/pwa-boot.tsx:31
 msgid "Updated to the new version"
 msgstr "已更新到新版本"
 

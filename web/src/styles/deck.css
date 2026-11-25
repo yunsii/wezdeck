@@ -230,3 +230,47 @@ html[data-theme='dark'] .list-row.row-selected::after {
     top: -32px;
   }
 }
+
+/* Toasts (pwa-boot.tsx, sonner unstyled): an ink card like the user's
+   message bubble — no border, a soft shadow to lift it off the page — with
+   the action as a pill and an error's icon in the error colour. */
+.deck-toast {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 1rem;
+  background: var(--brand-text);
+  color: var(--brand-deck);
+  padding: 0.625rem 0.75rem 0.625rem 1rem;
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.45);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+}
+/* sonner wraps the title in [data-content]: that box takes the room, so the
+   action sits at the card's end */
+.deck-toast [data-content] {
+  min-width: 0;
+  flex: 1;
+}
+.deck-toast-title {
+  min-width: 0;
+  flex: 1;
+  font-weight: 500;
+}
+.deck-toast-description {
+  opacity: 0.75;
+}
+.deck-toast-icon {
+  display: flex;
+  flex-shrink: 0;
+}
+.deck-toast-action {
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--brand-deck) 18%, transparent);
+  padding: 0.25rem 0.75rem;
+  font-weight: 600;
+  color: var(--brand-deck);
+}
