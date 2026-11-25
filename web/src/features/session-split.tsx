@@ -11,6 +11,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
+import { cn } from '#/lib/utils'
+
 import { idInUrl, pickLast, rememberOpened } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
@@ -118,20 +120,42 @@ function usePickDefault(id: string | undefined) {
   }, [target, toAll, navigate, locale])
 }
 
-function SplitView({ id }: { id?: string }) {
-  const { t } = useLingui()
+/** j / k and the default pick: a desk's split only (a phone pushes pages) */
+function DeskKeys({ id }: { id?: string }) {
   useListKeys(id ?? '')
   usePickDefault(id)
   const copyReference = useCopySessionReference()
+  return <CopyKey id={id ?? ''} copy={copyReference} />
+}
+
+/**
+ * One tree for every width, laid out by CSS: on a desk the list column and
+ * the conversation side by side; on a phone the list alone, or the open
+ * conversation alone (the other column hidden). The server paints it before
+ * any script knows the width — it used to paint the phone tree and swap in
+ * the split after hydration, so a refresh on a desk showed the conversation
+ * without its list until then. The list's own split look and the desk-only
+ * keys still wait for the measured width (phone first: no flash on phones).
+ */
+function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
+  const { t } = useLingui()
   return (
-    <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
-      <CopyKey id={id ?? ''} copy={copyReference} />
-      <SessionList selected={id ?? ''} split />
+    <div className="max-md:contents md:grid md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] md:items-start">
+      {wide ? <DeskKeys id={id} /> : null}
+      <div
+        data-testid="session-list-column"
+        className={cn('max-md:contents', id && 'max-md:hidden')}
+      >
+        <SessionList selected={id ?? ''} split={wide} />
+      </div>
       <div
         // the divider is the pane's left edge, top to bottom of the page: the
         // pane steps over the page's own padding (-my-4 / py-4) and is at
         // least the window tall, whatever the conversation's length
-        className="vt-split-pane -my-4 flex min-h-[100cqh] min-w-0 flex-col border-l border-brand-edge py-4 pl-[var(--page-x)]"
+        className={cn(
+          'vt-split-pane max-md:contents md:-my-4 md:flex md:min-h-[100cqh] md:min-w-0 md:flex-col md:border-l md:border-brand-edge md:py-4 md:pl-[var(--page-x)]',
+          !id && 'max-md:hidden',
+        )}
         data-testid="session-pane"
       >
         {id ? (
@@ -154,6 +178,5 @@ export function ConsoleSessionsPage() {
   useEffect(() => {
     if (id) rememberOpened(LAST_KEY, id, readSessionFilter())
   }, [id])
-  if (wide) return <SplitView id={id} />
-  return id ? <SessionDetail id={id} /> : <SessionList />
+  return <SessionsLayout id={id} wide={wide} />
 }
