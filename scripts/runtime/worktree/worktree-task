@@ -50,6 +50,9 @@ case "$command" in
   describe)
     wt_core_describe "$@"
     ;;
+  idle)
+    wt_core_idle "$@"
+    ;;
   -h|--help|help|'')
     wt_core_usage
     ;;

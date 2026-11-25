@@ -105,6 +105,11 @@ if ! wt_workstation_plan "$raw"; then
 fi
 task_slug="$WT_PLAN_SLUG"
 branch_name="$WT_PLAN_BRANCH"
+# the name is an existing workstation's: open a parallel slot of its
+# direction, inheriting the purpose unless another one was given
+if [[ -n "$WT_PLAN_PARALLEL_OF" && -z "$description" ]]; then
+  description="$WT_PLAN_PARALLEL_DESCRIPTION"
+fi
 
 # Profile selection. Prefer per-repo launcher from workspace-agent-map.tsv
 # (derived from workspaces.lua), then MANAGED_AGENT_PROFILE / shared.env.
@@ -132,6 +137,7 @@ fi
 
 runtime_log_info worktree "dispatching to worktree-task launch" \
   "raw=$raw" "task_slug=$task_slug" "branch=$branch_name" "bumped=$WT_PLAN_BUMPED" \
+  "parallel_of=$WT_PLAN_PARALLEL_OF" \
   "described=$([[ -n "$description" ]] && echo 1 || echo 0)" "profile=${selected_profile:-<inherit>}"
 
 # Immediate feedback so the user sees the chord registered before any
@@ -159,6 +165,9 @@ if [[ -n "${WT_QUICK_CREATE_BASE_REF:-}" ]]; then
 fi
 if [[ -n "$description" ]]; then
   launch_args+=(--description "$description")
+fi
+if [[ -n "$WT_PLAN_PARALLEL_OF" ]]; then
+  launch_args+=(--direction "$WT_PLAN_PARALLEL_OF")
 fi
 if (( no_attach )); then
   launch_args+=(--no-attach)

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# reuse-workstation — start a new round on an existing workstation: the web
+# console's 新会话 on a direction that has an idle slot (native/wezdeck-wsl
+# session_new.go). Same directory, branch and purpose; the code goes to the
+# latest origin/HEAD and a blank agent starts in the workstation's window.
+#
+#   1. idle check with a fresh fetch (worktree-task idle --fetch): clean and
+#      delivered into origin/HEAD, else refuse with the reason (exit 3) —
+#      recycle itself skips the delivery gate, so this is what keeps
+#      unmerged work (also pushed-only work: recycle rewrites
+#      origin/<branch>) from being reset away
+#   2. worktree-task launch on the existing path: makes sure the tmux window
+#      exists (a window already there is left as is) and reports its id
+#   3. worktree-task recycle --fresh-agent: reset onto origin/HEAD, unpin
+#      typed resume, cold-respawn the agent pane blank
+#
+# Whether the slot's agent is mid-turn or waiting on you is the caller's
+# check (relay: attention.json) — this script never reads attention.
+#
+# Prints the launch keys open-task-window prints (branch_name, worktree_path,
+# window_id, session_name …), so the caller hands the first message over the
+# same way.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WEZTERM_CONFIG_REPO_DEFAULT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+WORKTREE_TASK_CLI="$SCRIPT_DIR/worktree-task"
+RUNTIME_LIB_DIR="$WEZTERM_CONFIG_REPO_DEFAULT/scripts/runtime"
+
+# shellcheck disable=SC1091
+source "$RUNTIME_LIB_DIR/runtime-log-lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/helpers.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/git.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/config.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/core.sh"
+
+export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.reuse"
+
+usage() {
+  cat <<'USAGE'
+usage: reuse-workstation [--no-attach] <workstation-path>
+
+Start a new round on an idle workstation: reset onto the latest origin/HEAD
+and start a blank agent in its window. Refuses (exit 3) when it is not idle.
+USAGE
+}
+
+die() {
+  printf 'reuse-workstation: %s\n' "$1" >&2
+  exit "${2:-1}"
+}
+
+path=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help) usage; exit 0 ;;
+    --no-attach) shift ;; # the only mode: it never switches the desk
+    -*) die "unknown flag: $1" ;;
+    *)
+      [[ -z "$path" ]] || die "expected one workstation path"
+      path="$1"
+      shift
+      ;;
+  esac
+done
+[[ -n "$path" && -d "$path" ]] || { usage >&2; exit 1; }
+
+start_ms="$(runtime_log_now_ms)"
+path="$(cd "$path" && pwd -P)"
+wt_core_resolve_repo_context "$path"
+wt_config_load
+wt_core_resolve_policy_paths
+
+idle_out=""
+if ! idle_out="$("$WORKTREE_TASK_CLI" idle --cwd "$path" --fetch)"; then
+  state="$(sed -n 's/^state=//p' <<<"$idle_out")"
+  reason="$(sed -n 's/^reason=//p' <<<"$idle_out")"
+  runtime_log_info worktree "workstation reuse refused" "worktree=$path" "state=$state" "reason=$reason"
+  die "not idle ($state): $reason" 3
+fi
+slug="$(basename "$path")"
+branch="$(sed -n 's/^branch=//p' <<<"$idle_out")"
+name="$(sed -n 's/^name=//p' <<<"$idle_out")"
+
+# shellcheck disable=SC1091
+source "$RUNTIME_LIB_DIR/worktree/lib/resume-command.sh"
+base_profile="$(resume_command_active_profile "${WEZTERM_CONFIG_REPO:-$WEZTERM_CONFIG_REPO_DEFAULT}" "$path")"
+base_profile="${base_profile:-claude}"
+
+launch_out="$(env MANAGED_AGENT_PROFILE="${base_profile}-resume" \
+  "$WORKTREE_TASK_CLI" launch \
+  --cwd "$WT_MAIN_WORKTREE_ROOT" \
+  --title "$name" \
+  --task-slug "$slug" \
+  --branch "$branch" \
+  --existing \
+  --provider "${WT_QUICK_CREATE_PROVIDER:-tmux-agent}" \
+  --provider-mode "${WT_QUICK_CREATE_PROVIDER_MODE:-auto}" \
+  --no-attach)" || die "opening the workstation's window failed"
+
+recycle_out="$("$WORKTREE_TASK_CLI" recycle --worktree-root "$path" -y --fresh-agent 2>&1)" \
+  || die "recycle failed: $(tail -n 3 <<<"$recycle_out" | tr '\n' ' ')"
+
+runtime_log_info worktree "workstation reused" \
+  "worktree=$path" "branch=$branch" \
+  "fresh_agent=$(grep -o 'fresh-agent: [a-z -]*' <<<"$recycle_out" | head -n 1)" \
+  "duration_ms=$(runtime_log_duration_ms "$start_ms")"
+printf '%s\n' "$launch_out"
+printf 'reused=1\n'

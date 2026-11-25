@@ -9,6 +9,8 @@ wt_core_launch() {
   local branch_name=""
   local base_ref=""
   local description=""
+  local direction=""
+  local existing=0
   local provider_override=""
   local provider_mode_override=""
   local workspace_override=""
@@ -56,6 +58,15 @@ wt_core_launch() {
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
         description="$2"
         shift 2
+        ;;
+      --direction)
+        [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
+        direction="$2"
+        shift 2
+        ;;
+      --existing)
+        existing=1
+        shift
         ;;
       --provider)
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
@@ -136,7 +147,16 @@ wt_core_launch() {
   base_slug="$(wt_slugify "${task_slug:-$task_title}" "$WT_POLICY_SLUG_FALLBACK")"
   resolved_slug="$base_slug"
 
-  if [[ -z "$branch_name" ]]; then
+  if (( existing )); then
+    # reuse-workstation: the worktree is already there; open its window
+    # instead of bumping to <slug>-2
+    [[ -n "$task_slug" && -n "$branch_name" ]] || wt_die "--existing needs --task-slug and --branch"
+    [[ -d "$WT_POLICY_WORKTREE_DIR_ABS/$resolved_slug" ]] \
+      || wt_die "--existing: no worktree at $WT_POLICY_WORKTREE_DIR_ABS/$resolved_slug"
+    [[ "$(git -C "$WT_POLICY_WORKTREE_DIR_ABS/$resolved_slug" symbolic-ref --quiet --short HEAD 2>/dev/null)" == "$branch_name" ]] \
+      || wt_die "--existing: $resolved_slug is not on $branch_name"
+    WT_BRANCH_NAME="$branch_name"
+  elif [[ -z "$branch_name" ]]; then
     while [[ -e "$WT_POLICY_WORKTREE_DIR_ABS/$resolved_slug" ]] || wt_git_branch_exists "$WT_MAIN_WORKTREE_ROOT" "${WT_POLICY_BRANCH_PREFIX}${resolved_slug}"; do
       suffix=$((suffix + 1))
       resolved_slug="${base_slug}-${suffix}"
@@ -190,6 +210,11 @@ wt_core_launch() {
       "branch_created=$branch_created"
   fi
 
+  if [[ -n "$direction" ]]; then
+    wt_workstation_set_direction "$WT_MAIN_WORKTREE_ROOT" "$WT_BRANCH_NAME" "$direction"
+    runtime_log_info task "workstation joined a direction" \
+      "branch_name=$WT_BRANCH_NAME" "direction=$direction"
+  fi
   if [[ -n "$description" ]]; then
     wt_workstation_set_description "$WT_MAIN_WORKTREE_ROOT" "$WT_BRANCH_NAME" "$description"
     runtime_log_info task "workstation described" \

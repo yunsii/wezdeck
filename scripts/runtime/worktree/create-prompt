@@ -79,6 +79,7 @@ compute_preview() {
   printf 'worktree=%s\n' "${WT_PLAN_SLUG:+$WT_POLICY_WORKTREE_DIR_ABS/$WT_PLAN_SLUG}"
   printf 'branch=%s\n' "$WT_PLAN_BRANCH"
   printf 'taken=%s\n' "$WT_PLAN_TAKEN"
+  printf 'parallel_of=%s\n' "$WT_PLAN_PARALLEL_OF"
   printf 'status=%s\n' "$status"
   printf 'error=%s\n' "$WT_PLAN_ERROR"
 }
@@ -112,7 +113,14 @@ render() {
   else
     printf 'worktree: %s\n' "$WT_POLICY_WORKTREE_DIR_ABS/$WT_PLAN_SLUG"
     printf 'branch:   %s\n' "$WT_PLAN_BRANCH"
-    if [[ "$WT_PLAN_BUMPED" == 1 && -n "$WT_PLAN_TAKEN" ]]; then
+    if [[ -n "$WT_PLAN_PARALLEL_OF" ]]; then
+      local slots
+      slots="$(wt_workstation_slots "$WT_MAIN_WORKTREE_ROOT" "$WT_PLAN_PARALLEL_OF" | grep -c . || true)"
+      printf '\033[36m%s already has %s workstation(s): Enter opens %s in parallel (Alt+g opens an existing one)\033[0m\n' \
+        "$WT_PLAN_PARALLEL_OF" "$slots" "$WT_PLAN_SLUG"
+      [[ -n "$description" || -z "$WT_PLAN_PARALLEL_DESCRIPTION" ]] \
+        || printf '\033[2mpurpose (inherited unless you type one): %s\033[0m\n' "$WT_PLAN_PARALLEL_DESCRIPTION"
+    elif [[ "$WT_PLAN_BUMPED" == 1 && -n "$WT_PLAN_TAKEN" ]]; then
       printf '\033[33m%s is taken by %s — Alt+g opens it; this creates %s\033[0m\n' \
         "$WT_PLAN_NAME" "${WT_PLAN_TAKEN##*/}" "$WT_PLAN_SLUG"
     elif [[ "$WT_PLAN_BUMPED" == 1 ]]; then

@@ -22,3 +22,5 @@ __WT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$__WT_CORE_DIR/core-recycle.sh"
 # shellcheck disable=SC1091
 . "$__WT_CORE_DIR/core-describe.sh"
+# shellcheck disable=SC1091
+. "$__WT_CORE_DIR/core-idle.sh"

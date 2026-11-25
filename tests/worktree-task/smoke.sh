@@ -29,6 +29,7 @@
 #  11. recycle accepts squash-merged tip (content absorbed) and force-with-lease
 #      syncs a stale origin/<branch>.
 #  12. describe: set / get / clear the purpose, shared by every worktree.
+#  Workstation directions, idle and reuse: tests/worktree-task/workstations.sh.
 #
 # Exit non-zero on any failure with a short trace.
 

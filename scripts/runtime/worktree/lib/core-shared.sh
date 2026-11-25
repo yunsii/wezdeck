@@ -14,6 +14,7 @@ commands:
   reclaim   Remove a workstation whose direction is done (clean + delivered)
   recycle   Fast reset the primary checkout or a workstation onto origin/HEAD (skip delivery by default)
   describe  Show or set a workstation's one-line purpose (git branch description)
+  idle      Can this workstation start a new round now? (clean + delivered; exit 0 / 3)
 
 environment:
   WEZDECK_REPO  Required wezdeck checkout root (legacy WEZTERM_CONFIG_REPO still accepted); if missing, run worktree-task configure --repo /absolute/path
@@ -30,6 +31,8 @@ options:
   --task-slug VALUE     Directory name (the direction). Default: slug of TITLE
   --branch VALUE        Explicit branch name. Default: WT_POLICY_BRANCH_PREFIX + slug
   --description TEXT    One-line purpose, stored as the branch description
+  --direction NAME      Mark it a parallel slot of direction NAME (branch.<b>.workstationDirection)
+  --existing            Open the window of the worktree already at --task-slug on --branch (no bump)
   --base-ref VALUE      Base ref for the new branch. Default: primary worktree HEAD
   --provider VALUE      Provider name or path. Builtins: none, tmux-agent
   --provider-mode MODE  off, auto, or required
