@@ -146,7 +146,7 @@ export function InteractionsPage() {
       data-interaction={current.id}
       className="grid min-w-0 content-start gap-4"
     >
-      <h2 className="flex flex-wrap items-center gap-2 text-title font-semibold">
+      <h2 className="sticky top-0 z-10 flex flex-wrap items-center gap-2 bg-brand-deck py-1 text-title font-semibold">
         {p(current.title)}
         {tagChips(current.tags)}
       </h2>
@@ -196,9 +196,22 @@ export function InteractionsPage() {
   if (!wide)
     return detail ?? <div className="key rounded-2xl px-2 py-3">{list}</div>
   return (
-    <div className="grid grid-cols-[16rem_minmax(0,1fr)] gap-6">
-      <div className="min-w-0 border-r border-brand-edge pr-3">{list}</div>
-      {detail}
+    // each column scrolls on its own, pinned in view: the list's group
+    // headings and the detail's title stay put while their column moves
+    // (the whole page used to scroll, list and demo together)
+    <div className="grid grid-cols-[16rem_minmax(0,1fr)] items-start gap-6">
+      <div
+        data-testid="interaction-list-scroll"
+        className="sticky top-0 max-h-[100cqh] min-w-0 overflow-y-auto overscroll-contain border-r border-brand-edge pr-3 pb-4"
+      >
+        {list}
+      </div>
+      <div
+        data-testid="interaction-detail-scroll"
+        className="sticky top-0 max-h-[100cqh] min-w-0 overflow-y-auto overscroll-contain pb-4"
+      >
+        {detail}
+      </div>
     </div>
   )
 }
