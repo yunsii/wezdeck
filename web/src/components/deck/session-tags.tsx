@@ -15,6 +15,13 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useLingui } from '@lingui/react/macro'
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import type { LedTone } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -38,16 +45,66 @@ export function SessionTag({
   className?: string
   children: string
 }) {
-  return (
-    <span
-      data-tone={tone}
-      title={hint ?? children}
-      className={cn('session-tag text-meta', mono && 'font-mono', className)}
-    >
+  const expandable = useContext(Expandable)
+  const text = useRef<HTMLSpanElement>(null)
+  // cut: the text is truncated right now; open: shown whole (a tap)
+  const [cut, setCut] = useState(false)
+  const [open, setOpen] = useState(false)
+  useLayoutEffect(() => {
+    const el = text.current
+    if (!expandable || open || !el || typeof ResizeObserver === 'undefined')
+      return
+    const measure = () => setCut(el.scrollWidth > el.clientWidth + 1)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+    // cut swaps <span> for <button>: the text node is a new element, so
+    // observe that one (the detached old one measured 0 and flipped it back)
+  }, [expandable, open, cut, children])
+  const body = (
+    <>
       {Icon ? <Icon size={11} aria-hidden className="shrink-0" /> : null}
-      <span className="min-w-0 truncate">{children}</span>
+      <span
+        ref={text}
+        className={cn('min-w-0', open ? 'break-all' : 'truncate')}
+      >
+        {children}
+      </span>
+    </>
+  )
+  const classes = cn('session-tag text-meta', mono && 'font-mono', className)
+  // a truncated tag opens to its whole text in place (a phone has no hover)
+  if (expandable && (cut || open))
+    return (
+      <button
+        type="button"
+        data-tone={tone}
+        data-expanded={open ? '' : undefined}
+        aria-expanded={open}
+        title={hint ?? children}
+        onClick={() => setOpen(!open)}
+        className={cn(
+          classes,
+          'cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+        )}
+      >
+        {body}
+      </button>
+    )
+  return (
+    <span data-tone={tone} title={hint ?? children} className={classes}>
+      {body}
     </span>
   )
+}
+
+/** false inside a link (a session list row): no button within it */
+const Expandable = createContext(true)
+
+/** tags inside another control (the git tag's button) never open */
+export function NoExpand({ children }: { children: React.ReactNode }) {
+  return <Expandable.Provider value={false}>{children}</Expandable.Provider>
 }
 
 const AGENTS: Partial<Record<string, { tone: Tone; icon: LucideIcon }>> = {
@@ -86,9 +143,21 @@ export function StatusTag({ tone, label }: { tone: LedTone; label: string }) {
   return <SessionTag tone={STATUS_TONE[tone]}>{label}</SessionTag>
 }
 
+/** about the width .session-tag-fill keeps before the tag wraps (7rem) */
+const FILL_CHARS = 14
+
+/**
+ * A long branch shares the line and truncates (`.session-tag-fill`): it
+ * only drops to a line of its own when less than ~7rem is left for it. A
+ * short one keeps its own width.
+ */
 export function BranchTag({ branch }: { branch: string }) {
   return (
-    <SessionTag icon={GitBranch} mono>
+    <SessionTag
+      icon={GitBranch}
+      mono
+      className={branch.length > FILL_CHARS ? 'session-tag-fill' : undefined}
+    >
       {branch}
     </SessionTag>
   )
@@ -148,28 +217,35 @@ export function GitStatusTag({ git }: { git: GitStatus }) {
 
 /**
  * The tag line, the same in the session list row and the session header:
- * it wraps, and one tag takes at most a whole line (then truncates, the full
- * text on hover) — the header used to squeeze them into one line (「* c…」).
+ * one line first — a long tag (a branch) truncates to fit beside the others,
+ * which keep their size — and it wraps only when the long one would get
+ * less than ~7rem; a tag never exceeds a whole line (full text on hover).
+ * The header used to squeeze the agent to 「* c…」, then to stack every tag.
  */
 export function TagLine({
   children,
   className,
   testId,
+  expandable = true,
 }: {
   children: React.ReactNode
   className?: string
   testId?: string
+  /** tap a truncated tag to see it whole; off inside a link (list rows) */
+  expandable?: boolean
 }) {
   return (
-    <span
-      data-testid={testId}
-      className={cn(
-        'flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
-        className,
-      )}
-    >
-      {children}
-    </span>
+    <Expandable.Provider value={expandable}>
+      <span
+        data-testid={testId}
+        className={cn(
+          'flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
+          className,
+        )}
+      >
+        {children}
+      </span>
+    </Expandable.Provider>
   )
 }
 

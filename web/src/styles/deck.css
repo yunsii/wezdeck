@@ -164,6 +164,23 @@ html[data-theme='dark'] .list-row.row-selected::after {
   background: color-mix(in srgb, var(--tone) 16%, transparent);
   color: color-mix(in srgb, var(--tone) 78%, var(--brand-text));
 }
+.session-tag:not(.session-tag-fill) {
+  flex-shrink: 0;
+}
+/* the long one (BranchTag): a zero basis, so the line breaks only when less
+   than its min-width is left; it then grows up to its own text and
+   truncates beyond the room there is */
+.session-tag-fill {
+  flex: 1 1 0;
+  min-width: min(7rem, 100%);
+  max-width: max-content;
+}
+.session-tag[data-expanded] {
+  /* opened to its whole text: a line of its own, wrapping inside */
+  flex-basis: 100%;
+  max-width: 100%;
+  border-radius: 0.75rem;
+}
 .session-tag[data-tone='neutral'] {
   /* translucent like the other tones: the deck fill vanished on the deck
      itself (the session header) while it showed on a list row's surface */

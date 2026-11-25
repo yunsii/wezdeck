@@ -153,7 +153,8 @@ function SessionRow({
             <span className="truncate text-caption text-brand-muted">
               {prompt || t`No human message yet`}
             </span>
-            <TagLine>
+            {/* the row is a link: its tags do not open (the header's do) */}
+            <TagLine expandable={false}>
               {showRepo && repoName(row) ? (
                 <RepoTag repo={repoName(row)} />
               ) : null}

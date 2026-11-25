@@ -310,7 +310,10 @@ const LONG_BRANCH =
 /** the tags of one session, as the list row and the header both show them */
 function SampleTags({ withList }: { withList: boolean }) {
   return (
-    <TagLine testId={withList ? 'tags-list' : 'tags-head'}>
+    <TagLine
+      testId={withList ? 'tags-list' : 'tags-head'}
+      expandable={!withList}
+    >
       {withList ? <RoleTag role="primary" label="主" /> : null}
       <AgentTag agent="claude" />
       {withList ? <StatusTag tone="running" label="运行中" /> : null}

@@ -37,7 +37,7 @@ msgstr "（可多选）"
 #~ msgid "{0} staged, {1} modified, {2} untracked"
 #~ msgstr ""
 
-#: src/components/deck/session-tags.tsx:124
+#: src/components/deck/session-tags.tsx:193
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
@@ -145,7 +145,7 @@ msgstr "{runs} 次"
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
-#: src/components/deck/session-tags.tsx:122
+#: src/components/deck/session-tags.tsx:191
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 
@@ -301,8 +301,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:306
-#: src/features/session-list.tsx:354
+#: src/features/session-list.tsx:307
+#: src/features/session-list.tsx:355
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -318,7 +318,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:240
+#: src/features/session-list.tsx:241
 #: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
@@ -1221,7 +1221,7 @@ msgstr "随处可用"
 #~ msgstr "Git"
 
 #: src/features/session-git.tsx:219
-#: src/features/session-git.tsx:353
+#: src/features/session-git.tsx:355
 msgid "Git status"
 msgstr "Git 状态"
 
@@ -1306,7 +1306,7 @@ msgstr "架构解析"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-list.tsx:255
+#: src/features/session-list.tsx:256
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1580,7 +1580,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:366
+#: src/features/session-git.tsx:368
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
@@ -1676,12 +1676,12 @@ msgid "Names sessions"
 msgstr "自动命名会话"
 
 #: src/features/session-header.tsx:265
-#: src/features/session-list.tsx:282
+#: src/features/session-list.tsx:283
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:245
+#: src/features/session-list.tsx:246
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1773,15 +1773,15 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:219
+#: src/features/session-list.tsx:220
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:223
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
-#: src/components/deck/session-tags.tsx:144
+#: src/components/deck/session-tags.tsx:213
 msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
@@ -1810,7 +1810,7 @@ msgstr "这张工单还没有后台运行记录。"
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:221
+#: src/features/session-list.tsx:222
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -1851,7 +1851,7 @@ msgstr "没有符合这个筛选的工单。"
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
-#: src/components/deck/session-tags.tsx:125
+#: src/components/deck/session-tags.tsx:194
 msgid "no upstream"
 msgstr "无上游"
 
@@ -1895,7 +1895,7 @@ msgstr "未推送"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/session-list.tsx:217
+#: src/features/session-list.tsx:218
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
@@ -2628,12 +2628,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:220
-#: src/features/session-list.tsx:226
+#: src/features/session-list.tsx:227
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:272
+#: src/features/session-list.tsx:273
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2759,7 +2759,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:350
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:65
-#: src/features/session-list.tsx:232
+#: src/features/session-list.tsx:233
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "状态"
@@ -2800,7 +2800,7 @@ msgstr "切换会话（Alt+g）"
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
 
-#: src/components/deck/session-tags.tsx:143
+#: src/components/deck/session-tags.tsx:212
 msgctxt "git"
 msgid "Synced"
 msgstr "已同步"
@@ -3444,7 +3444,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:250
+#: src/features/session-list.tsx:251
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"

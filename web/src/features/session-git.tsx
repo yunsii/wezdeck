@@ -7,7 +7,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
-import { GitStatusTag } from '#/components/deck/session-tags'
+import { GitStatusTag, NoExpand } from '#/components/deck/session-tags'
 import type { GitStatus } from '#/components/deck/session-tags'
 import { Segmented } from '#/components/deck/segmented'
 import { Button } from '#/components/ui/button'
@@ -345,7 +345,9 @@ export function GitStatusButton({
         }}
         className="inline-flex shrink-0 rounded-full"
       >
-        <GitStatusTag git={git} />
+        <NoExpand>
+          <GitStatusTag git={git} />
+        </NoExpand>
       </Button>
       <Sheet
         open={open}
