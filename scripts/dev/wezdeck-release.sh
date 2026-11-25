@@ -6,6 +6,9 @@
 # succeeds is done — the version check belongs before the tests
 # (web/tests/version.setup.ts), not after the deploy.
 #
+# After the reload, scripts/dev/device-check.sh confirms the person's pages
+# (phones and the host's own browser) run the new build before any retest.
+#
 #   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force] [--gate | --no-test] [--no-reload]
 #
 # --commit MSGFILE commits the staged changes first, after fixing what the
@@ -325,6 +328,18 @@ if ((reload_clients && !failed)) && grep -q '^ok: deployed' "$RUN/web.log" 2>/de
   done
   say '✓' pages "$( ((${clients:-0} > 0)) && echo "reloaded ${clients} web console(s) onto $head" || echo 'skip: no web console connected') ($((SECONDS - t0))s)"
   summary+=("clients=${clients:-0}")
+  # the person's pages on the new build? (device-check.sh: ask until every
+  # answering page is current) — a retest before that sees the old code
+  if ((${clients:-0} > 0)); then
+    t0=$SECONDS
+    if dc="$(scripts/dev/device-check.sh --wait-current 30 --reason "verify $head" 2>/dev/null)"; then
+      say '✓' devices "$(grep -c '  current  ' <<<"$dc") page(s) on $head ($((SECONDS - t0))s)"
+      summary+=("devices=current")
+    else
+      say '!' devices "not every page is on $head yet: $(head -2 <<<"$dc" | tr '\n' ' ')"
+      summary+=("devices=stale")
+    fi
+  fi
 fi
 # parallel tests: the deploy is out; their verdict comes last
 if [[ $test_mode == parallel ]]; then
