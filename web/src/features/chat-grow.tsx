@@ -38,6 +38,7 @@ export function SmoothGrow({
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let shown = content.getBoundingClientRect().height
     let frame = 0
+    let held = false
     const release = () => {
       box.style.removeProperty('height')
       box.style.removeProperty('overflow-y')
@@ -46,7 +47,7 @@ export function SmoothGrow({
     const step = () => {
       const target = content.getBoundingClientRect().height
       const left = target - shown
-      if (Math.abs(left) <= 0.5 || performance.now() < armedAt) {
+      if (Math.abs(left) <= 0.5) {
         shown = target
         frame = 0
         box.style.height = `${shown}px`
@@ -58,16 +59,30 @@ export function SmoothGrow({
       box.setAttribute('data-growing', '')
       frame = requestAnimationFrame(step)
     }
-    // clip the bottom only: a list's two-digit marker (11.) hangs left of
-    // the box, and overflow: hidden cut its first digit down to a dot
-    box.style.overflowY = 'clip'
-    box.style.height = `${shown}px`
+    // Until landing ends the box follows its content (no height): it used
+    // to hold from the start and snap a frame later (rAF), so each growth
+    // while a running session opened painted a frame cut off at the old
+    // height — the pane blank, content, blank again (web-frame-probe
+    // --status running, 2026-11-25). Held from then on, so a pinned thread
+    // keeps its end while the box eases (chat-scroll.ts).
+    const hold = () => {
+      held = true
+      shown = content.getBoundingClientRect().height
+      // clip the bottom only: a list's two-digit marker (11.) hangs left of
+      // the box, and overflow: hidden cut its first digit down to a dot
+      box.style.overflowY = 'clip'
+      box.style.height = `${shown}px`
+    }
+    const wait = armedAt - performance.now()
+    const timer = wait > 0 ? setTimeout(hold, wait) : 0
+    if (wait <= 0) hold()
     const observer = new ResizeObserver(() => {
-      if (!frame) frame = requestAnimationFrame(step)
+      if (held && !frame) frame = requestAnimationFrame(step)
     })
     observer.observe(content)
     return () => {
       observer.disconnect()
+      clearTimeout(timer)
       cancelAnimationFrame(frame)
       release()
     }

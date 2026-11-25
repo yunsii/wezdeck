@@ -81,7 +81,17 @@ turn that brought a reply unmounted it and brought it back with its
 entrance — a jitter every second or two, and 运行中 gone mid-turn. While
 messages are still being revealed a turn the host calls done reads working
 (`revealingTurnState`, `chat-turn.tsx`), so 完成 never shows above text still
-unfolding.
+unfolding. It and the queued bubbles enter only when they appear in an
+open conversation: switching to a running session slid the turn line in on
+its own (2026-11-25).
+
+Switching to a running session also jittered: the thread's easing box
+(`SmoothGrow`, `chat-grow.tsx`) held its height from mount and caught up a
+frame later, so every growth while the conversation landed painted a frame
+cut off at the old height — blank, content, blank. Until `LANDING_MS` it now
+follows its content (no height) and holds from then on. Check it with
+`web-frame-probe.sh sessions --ids A,B --status running` (20 changed pane
+frames per run → 8, the swap plus the list row's tint).
 
 Session tags (`components/deck/session-tags.tsx`, `.session-tag` in
 `deck.css`) are coloured by meaning, a translucent fill of their tone (so an

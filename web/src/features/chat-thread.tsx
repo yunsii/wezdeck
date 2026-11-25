@@ -457,6 +457,8 @@ function CompactDivider({
  */
 function PendingBubbles({ pending }: { pending: Array<Pending> }) {
   const { t } = useLingui()
+  // queued before the conversation opened: shown still, like its messages
+  const atMount = useRef(new Set(pending.map((item) => item.at)))
   if (pending.length === 0) return null
   return (
     <div aria-label={t`Queued messages`} className="grid gap-1.5">
@@ -467,7 +469,10 @@ function PendingBubbles({ pending }: { pending: Array<Pending> }) {
         <div
           key={item.at}
           data-pending={item.state ?? 'queued'}
-          className="chat-in min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55"
+          className={cn(
+            'min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55',
+            !atMount.current.has(item.at) && 'chat-in',
+          )}
         >
           <SentAttachments
             text={withAttachmentNote(item.text, item.attachments)}

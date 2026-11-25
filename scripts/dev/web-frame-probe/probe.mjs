@@ -4,9 +4,21 @@
 // rows like a person (down, a beat, up). Prints `FRAME <n> <trace ts µs> <base64>`
 // lines, one `SAMPLES <json>` line and one `SPACE <id>` line.
 // Uses only the ego API (taskSpace / page.cdp / page.events / page.mouse).
-const task = CFG.space
-  ? await taskSpace(CFG.space)
-  : await taskSpace(CFG.spaceName, { profileId: CFG.profile })
+// the cached id goes stale when ego restarts; the named space may already
+// exist (a profile is only accepted when creating one)
+async function openSpace() {
+  if (CFG.space) {
+    try {
+      return await taskSpace(CFG.space)
+    } catch {}
+  }
+  try {
+    return await taskSpace(CFG.spaceName, { profileId: CFG.profile })
+  } catch {
+    return await taskSpace(CFG.spaceName)
+  }
+}
+const task = await openSpace()
 console.log('SPACE ' + task.spaceId)
 const page = task.page('p1')
 await page.cdp('Emulation.setDeviceMetricsOverride', {

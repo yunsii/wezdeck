@@ -218,7 +218,7 @@ msgstr "{untracked} untracked"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/chat-turn.tsx:137
+#: src/features/chat-turn.tsx:141
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -744,7 +744,7 @@ msgctxt "git"
 msgid "Commits"
 msgstr "Commits"
 
-#: src/features/chat-turn.tsx:132
+#: src/features/chat-turn.tsx:136
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -1055,7 +1055,7 @@ msgstr "Directory"
 #~ msgstr "done"
 
 #: src/features/chat-tools.tsx:100
-#: src/features/chat-turn.tsx:146
+#: src/features/chat-turn.tsx:150
 msgid "Done"
 msgstr "Done"
 
@@ -1063,7 +1063,7 @@ msgstr "Done"
 msgid "Done ({doneCount})"
 msgstr "Done ({doneCount})"
 
-#: src/features/chat-turn.tsx:147
+#: src/features/chat-turn.tsx:151
 msgid "done {when}"
 msgstr "done {when}"
 
@@ -2214,7 +2214,7 @@ msgstr "Put into the message for this agent"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/chat-thread.tsx:462
+#: src/features/chat-thread.tsx:464
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -3165,7 +3165,7 @@ msgstr "Tokens"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
 
-#: src/features/chat-turn.tsx:146
+#: src/features/chat-turn.tsx:150
 msgid "Took {took}"
 msgstr "Took {took}"
 
@@ -3490,7 +3490,7 @@ msgstr "Worker requests"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-turn.tsx:132
+#: src/features/chat-turn.tsx:136
 msgid "Working"
 msgstr "Working"
 

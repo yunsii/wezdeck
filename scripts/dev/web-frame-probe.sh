@@ -7,10 +7,14 @@
 # 70 ms solid-blue row, a frame at the old scroll offset and a Loading… frame.
 #
 #   scripts/dev/web-frame-probe.sh [sessions|tickets] [--out DIR] [--after MS]
+#                                  [--ids SID,SID] [--status idle|running]
 #
 # sessions  two real Claude conversations (the newest transcripts under
 #           ~/.claude/projects, read through the stack's relay) on throwaway
-#           tmux panes; presses B, A, B after warming both
+#           tmux panes; presses B, A, B after warming both. --ids picks
+#           the two transcripts (session ids); --status running shows them
+#           running (turn line, live polling): switching to a running
+#           session jittered where idle ones did not (2026-11-25)
 # tickets   two tickets from the stack's store copy; presses 2, 1, 2
 #
 # Exit 0 = no flash, 1 = findings (printed, and in OUT/summary.json), 2 = setup.
@@ -25,11 +29,15 @@ repo="$(cd "$here/../.." && pwd)"
 scenario=sessions
 out=''
 after=900
+pick=''
+status=idle
 while [[ $# -gt 0 ]]; do
   case "$1" in
     sessions|tickets) scenario=$1; shift ;;
     --out) out=$2; shift 2 ;;
     --after) after=$2; shift 2 ;;
+    --ids) pick=$2; shift 2 ;;
+    --status) status=$2; shift 2 ;;
     -h|--help) sed -n '2,21p' "$0"; exit 0 ;;
     *) echo "web-frame-probe: unknown argument $1" >&2; exit 2 ;;
   esac
@@ -51,8 +59,12 @@ cleanup() { [[ -n "$sock" ]] && tmux -S "$sock" kill-server 2>/dev/null; true; }
 trap cleanup EXIT
 
 if [[ "$scenario" == sessions ]]; then
-  mapfile -t ids < <(ls -t "$HOME"/.claude/projects/*/*.jsonl 2>/dev/null \
-    | while read -r f; do [[ $(stat -c %s "$f") -gt 200000 ]] && basename "$f" .jsonl; done | head -2)
+  if [[ -n "$pick" ]]; then
+    IFS=, read -r -a ids <<<"$pick"
+  else
+    mapfile -t ids < <(ls -t "$HOME"/.claude/projects/*/*.jsonl 2>/dev/null \
+      | while read -r f; do [[ $(stat -c %s "$f") -gt 200000 ]] && basename "$f" .jsonl; done | head -2)
+  fi
   [[ ${#ids[@]} -eq 2 ]] || { echo "web-frame-probe: need two Claude transcripts > 200 KB" >&2; exit 2; }
   dir="$(mktemp -d /tmp/wfp-XXXX)"
   sock="$dir/s"
@@ -61,11 +73,11 @@ if [[ "$scenario" == sessions ]]; then
     mkdir -p "$dir/w$i"
     tmux -S "$sock" new-session -d -s "p$i" -c "$dir/w$i" -x 100 -y 20 cat
     pane="$(tmux -S "$sock" display-message -p -t "p$i" '#{pane_id}')"
-    entries="$(python3 - "$entries" "${ids[$i]}" "$sock" "p$i" "$pane" <<'PY'
+    entries="$(python3 - "$entries" "${ids[$i]}" "$sock" "p$i" "$pane" "$status" <<'PY'
 import json, sys, time
-e = json.loads(sys.argv[1]); sid, sock, name, pane = sys.argv[2:]
+e = json.loads(sys.argv[1]); sid, sock, name, pane, status = sys.argv[2:]
 e[sid] = dict(session_id=sid, tmux_socket=sock, tmux_session=name, tmux_pane=pane,
-              status="idle", agent_name="claude", tmux_window_name=name,
+              status=status, agent_name="claude", tmux_window_name=name,
               last_user_prompt="probe", ts=int(time.time() * 1000))
 print(json.dumps(e))
 PY

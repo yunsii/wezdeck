@@ -7,6 +7,7 @@
 // Working shows at once after a send (optimistic), timed from the send,
 // until the host's own turn_started takes over.
 import { useLingui } from '@lingui/react/macro'
+import { useRef } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
@@ -125,6 +126,9 @@ export function TurnLine({ state }: { state: TurnState | null }) {
   const compacting = activity?.compactSince !== undefined
   const from = activity?.compactSince ?? activity?.since
   const now = useNow(working !== null && from !== undefined)
+  // enters only when it appears in an open conversation: switching to a
+  // running session mounted it with the thread and slid it in alone
+  const absentAtMount = useRef(state === null)
   if (!state) return null
   let label: string
   let detail: string
@@ -147,7 +151,12 @@ export function TurnLine({ state }: { state: TurnState | null }) {
     detail = when ? t`done ${when}` : ''
   }
   return (
-    <div className="chat-in flex min-w-0 items-center gap-2">
+    <div
+      className={cn(
+        'flex min-w-0 items-center gap-2',
+        absentAtMount.current && 'chat-in',
+      )}
+    >
       <div
         role="status"
         aria-label={detail ? `${label} ${detail}` : label}

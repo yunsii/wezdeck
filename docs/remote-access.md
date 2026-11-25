@@ -342,7 +342,10 @@ screenshots — `Page.screencastFrameAck` needs a `sessionId` that ego's
 `page.cdp` refuses; they come ~500 px wide, so a 3 px bar is below their
 resolution while a filled row is not). `sessions` uses the two newest real
 Claude transcripts on throwaway tmux panes (the stack's relay reads the real
-HOME), `tickets` two tickets of the store copy. It reports `loading`,
+HOME; `--ids A,B` picks them, `--status running` shows them running — a
+running session's switch jittered where idle ones did not), `tickets` two
+tickets of the store copy. A stale cached space id falls back to the named
+space. It reports `loading`,
 `transition`, `sticky`, `row-fill`, `grey-step` (a dark press veil: white →
 grey → blue), `snap` (the pressed row's fill or tint layer stepping instead
 of easing), `glide` (painted frames not at the bottom after a session
