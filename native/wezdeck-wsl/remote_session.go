@@ -105,11 +105,31 @@ type recentEntry struct {
 // action looks up: the live entry, or the archived one by id + archived_ts
 // (also for a session that took over a cleared pane, which has no row of its
 // own yet).
+//
+// detached: no tmux client shows the session (a phone-started session made
+// before open-task-window learned to join the repo's WezTerm session), so
+// the jump would only raise WezTerm on some other pane — the page says so
+// instead of claiming a switch.
 func sessionFocus(id string, e attentionEntry) map[string]any {
+	out := map[string]any{"session_id": id}
 	if e.archivedID != "" {
-		return map[string]any{"session_id": e.archivedID, "recent": true, "archived_ts": e.archivedTS}
+		out = map[string]any{"session_id": e.archivedID, "recent": true, "archived_ts": e.archivedTS}
 	}
-	return map[string]any{"session_id": id}
+	if e.TmuxSession != "" && !tmuxSessionAttached(e.TmuxSocket, e.TmuxSession) {
+		out["detached"] = true
+		out["tmux_session"] = e.TmuxSession
+	}
+	return out
+}
+
+// tmuxSessionAttached: a client shows the session; unknown (tmux failed)
+// counts as attached so a hiccup never blocks the jump.
+func tmuxSessionAttached(socket, session string) bool {
+	out, err := tmuxCmd(socket, "display-message", "-p", "-t", "="+session+":", "#{session_attached}").Output()
+	if err != nil {
+		return true
+	}
+	return strings.TrimSpace(string(out)) != "0"
 }
 
 func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {

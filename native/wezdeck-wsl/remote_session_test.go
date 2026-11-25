@@ -286,7 +286,7 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "old-1", "recent": true, "archived_ts": int64(100)}) {
+	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "old-1", "recent": true, "archived_ts": int64(100), "detached": true, "tmux_session": "agent"}) {
 		t.Fatalf("archived focus: %#v", got)
 	}
 }
@@ -340,7 +340,7 @@ func TestClearedPaneListsTheNewSession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "before-clear", "recent": true, "archived_ts": int64(100)}) {
+	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "before-clear", "recent": true, "archived_ts": int64(100), "detached": true, "tmux_session": "agent"}) {
 		t.Fatalf("cleared-pane focus: %#v", got)
 	}
 }
@@ -661,5 +661,36 @@ func TestClaudeCompactionWithholdsStaleContext(t *testing.T) {
 	tr.feedLine([]byte(`{"type":"assistant","timestamp":"t3","message":{"id":"a2","model":"claude-opus-5-5","content":"y","usage":{"input_tokens":2,"cache_creation_input_tokens":500,"cache_read_input_tokens":90000,"output_tokens":5}}}`))
 	if tr.usage.Context != 90502 || tr.usage.ContextPending {
 		t.Fatalf("after the next reply: %+v", tr.usage)
+	}
+}
+
+// 在终端中打开: a session no tmux client shows (a phone-started one in its own
+// detached tmux session) is marked detached; once a client attaches it is not.
+func TestSessionFocusMarksDetachedTmuxSession(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	socket := filepath.Join(t.TempDir(), "s")
+	if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", "lonely", "cat").CombinedOutput(); err != nil {
+		t.Fatalf("tmux: %s", out)
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	e := attentionEntry{TmuxSocket: socket, TmuxSession: "lonely"}
+	if got := sessionFocus("s1", e); !reflect.DeepEqual(got, map[string]any{"session_id": "s1", "detached": true, "tmux_session": "lonely"}) {
+		t.Fatalf("detached focus: %#v", got)
+	}
+	// a control-mode client counts as attached, like WezTerm's tmux client
+	client := exec.Command("tmux", "-S", socket, "-C", "attach", "-t", "lonely")
+	stdin, _ := client.StdinPipe()
+	if err := client.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = stdin.Close(); _ = client.Wait() }()
+	deadline := time.Now().Add(3 * time.Second)
+	for !tmuxSessionAttached(socket, "lonely") && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+	}
+	if got := sessionFocus("s1", e); !reflect.DeepEqual(got, map[string]any{"session_id": "s1"}) {
+		t.Fatalf("attached focus: %#v", got)
 	}
 }

@@ -8,6 +8,7 @@ import { useLingui } from '@lingui/react/macro'
 import { Keyboard } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { useConsoleMode } from './console-mode'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 
@@ -17,6 +18,8 @@ type Group = { title: string; items: Array<Key> }
 
 function useKeyGroups(): Array<Group> {
   const { t } = useLingui()
+  // `o` reaches the loopback Runtime (session-focus.tsx): this computer only
+  const local = useConsoleMode() === 'local'
   return [
     {
       title: t`Anywhere`,
@@ -38,6 +41,15 @@ function useKeyGroups(): Array<Group> {
       items: [
         { keys: ['j', 'k'], what: t`Next / previous session in the list` },
         { keys: ['y'], what: t`Copy the open session's reference` },
+        ...(local
+          ? [
+              {
+                keys: ['o'],
+                what: t`Open in terminal: switch WezTerm to this session's tmux window`,
+                host: 'Alt+/ Enter',
+              },
+            ]
+          : []),
         {
           keys: ['Alt+J'],
           what: t`Next session waiting on you`,

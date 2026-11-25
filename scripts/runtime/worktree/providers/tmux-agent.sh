@@ -140,6 +140,28 @@ provider_session_name_for_repo_family() {
     "$(wt_hash "$repo_common_dir")"
 }
 
+# provider_attached_family_session: launched outside tmux (the web console's
+# 新开会话 runs open-task-window --no-attach from the relay), a window put
+# in its own worktree_task_* session is shown by no WezTerm tab — the
+# attention jump (Alt+/ Enter, the page's `o`) then has nowhere to land.
+# Prefer the repo's workspace session WezTerm already shows
+# (wezterm_<workspace>_<label>_<hash of the common dir>, tmux-worktree/
+# git.sh), most recently used first; its WEZTERM_PANE then names the right
+# tab for the new agent.
+provider_attached_family_session() {
+  local suffix="_$(wt_hash "$WT_REPO_COMMON_DIR")"
+  local activity="" attached="" name="" common_dir=""
+
+  while IFS=$'\t' read -r activity attached name; do
+    [[ "$name" == wezterm_*"$suffix" && "$attached" != "0" ]] || continue
+    common_dir="$(provider_session_common_dir "$name" 2>/dev/null)" || continue
+    [[ -z "$common_dir" || "$common_dir" == "$WT_REPO_COMMON_DIR" ]] || continue
+    printf '%s\n' "$name"
+    return 0
+  done < <(tmux list-sessions -F '#{session_activity}	#{session_attached}	#{session_name}' 2>/dev/null | sort -rn)
+  return 1
+}
+
 provider_session_common_dir() {
   local session_name="${1:?missing session name}"
   local window_id=""
@@ -528,6 +550,11 @@ provider_launch() {
         session_name="$current_session_name"
       fi
     fi
+  fi
+
+  if [[ -z "$session_name" && -z "${TMUX:-}" ]]; then
+    session_name="$(provider_attached_family_session || true)"
+    [[ -z "$session_name" ]] || runtime_log_info provider "joined the repo's attached workspace session" "session_name=$session_name"
   fi
 
   if [[ -z "$session_name" ]]; then

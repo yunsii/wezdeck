@@ -90,8 +90,16 @@ page): `POST /api/v1/actions/sessions/focus` (capability `sessions.focus`,
 `Alt+/` — workspace, tab, pane, then tmux `select-window` / `select-pane`.
 The detail's `focus` (`sessionFocus`, `remote_session.go`) names the
 attention row to look up: the live entry, or an archived one by id +
-`archived_ts` (also for a session that took over a cleared pane). Over the
-remote link it is not offered. Trail: client trace `session-focus`, then
+`archived_ts` (also for a session that took over a cleared pane). It also
+carries `detached` + `tmux_session` when no tmux client shows that tmux
+session: the jump would only raise WezTerm on another pane, so the page
+says so and sends nothing (client trace `session-focus` with `detached`).
+`session.new` avoids making such sessions: `open-task-window` run outside
+tmux joins the repo's attached `wezterm_<workspace>_<label>_<hash>` session
+(`provider_attached_family_session`, `tmux-agent.sh`) before falling back
+to a detached `worktree_task_*` one. The 快捷键 list shows `o` only on this
+computer. Over the remote link it is not offered. Trail: client trace
+`session-focus`, then
 `web session focus dispatched` and `jump dispatched` (`activated`) share the
 Runtime's `http-…` trace id.
 Each write leaves `event=write via=local device=local` in `relay.log` (the

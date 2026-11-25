@@ -1,5 +1,5 @@
 // covers: web/src/features/session-composer.tsx web/src/features/chat-scroll.ts
-// covers: web/src/features/console-sessions.tsx
+// covers: web/src/features/console-sessions.tsx web/src/features/console-keys.tsx
 // covers: web/src/lib/use-draft.ts web/src/features/composer-images.ts
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
@@ -329,6 +329,8 @@ async function shortcutsSheet(page: Page) {
   const keysSheet = page.getByTestId('keys-sheet')
   await keysSheet.waitFor({ timeout: 2_000 })
   expect(await keysSheet.innerText()).toContain('Alt+J')
+  // `o` (在终端中打开) needs the local Runtime: not listed over the remote link
+  expect(await keysSheet.innerText()).not.toContain('在终端中打开')
   await page.keyboard.press('Escape')
   await keysSheet.waitFor({ state: 'hidden', timeout: 2_000 })
   await page.getByTestId('keys-entry').click()

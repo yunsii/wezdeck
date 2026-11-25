@@ -5,6 +5,9 @@
 // tab, pane, then tmux select-window / select-pane). The host says which
 // attention row to name (detail `focus`, remote_session.go sessionFocus):
 // the live entry, or an archived one by id + archived_ts. Keyboard: `o`.
+// `detached`: no tmux client shows the session (a phone-started one made
+// before open-task-window joined the repo's WezTerm session); the jump
+// would only raise WezTerm on another pane, so the page says so instead.
 import { useLingui } from '@lingui/react/macro'
 import { SquareTerminal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -12,12 +15,19 @@ import { toast } from 'sonner'
 
 import { useConsoleMode } from './console-mode'
 import { jumpPending } from './console-jump-keys'
-import type { Detail } from './console-sessions'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
 import { postRuntimeAction } from '#/lib/runtime-client'
 
-export type FocusTarget = NonNullable<Detail['focus']>
+/** Detail.focus (the local Runtime's sessions/focus payload, relay sessionFocus) plus the relay's detached mark */
+export type FocusTarget = {
+  session_id: string
+  recent?: boolean
+  archived_ts?: number
+  /** no tmux client shows its tmux session: a jump has nowhere to land */
+  detached?: boolean
+  tmux_session?: string
+}
 
 function useFocusInTerminal(focus: FocusTarget | undefined) {
   const { t } = useLingui()
@@ -26,10 +36,23 @@ function useFocusInTerminal(focus: FocusTarget | undefined) {
   const available = mode === 'local' && Boolean(focus?.session_id)
   const run = async () => {
     if (!available || !focus || busy) return
+    if (focus.detached) {
+      trace('session-focus', { id: focus.session_id, detached: true })
+      const name = focus.tmux_session ?? ''
+      toast(
+        t`This session's tmux session (${name}) is not shown in any WezTerm tab, so there is nowhere to switch to`,
+      )
+      return
+    }
     setBusy(true)
     const started = performance.now()
     try {
-      const response = await postRuntimeAction('sessions', 'focus', focus)
+      const { session_id, recent, archived_ts } = focus
+      const response = await postRuntimeAction('sessions', 'focus', {
+        session_id,
+        recent,
+        archived_ts,
+      })
       trace('session-focus', {
         id: focus.session_id,
         recent: Boolean(focus.recent),
