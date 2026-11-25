@@ -250,8 +250,13 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       ),
       c(
         'session.new',
-        '在某仓库新开一个会话（可选新工作树）',
-        'Start a session in a repository (optionally a new worktree)',
+        '在某仓库新开一个会话：新建一个方向的工作站（方向名 + 一行描述）',
+        'Start a session in a repository: a new workstation for one direction (name + one-line purpose)',
+      ),
+      c(
+        'worktree.describe',
+        '改工作站的一行描述（git 分支描述，等同终端 Alt+g 里的 Ctrl+e）',
+        'Set a workstation’s one-line purpose (its git branch description; Ctrl+e in the desk’s Alt+g)',
       ),
       c(
         'session.restart',

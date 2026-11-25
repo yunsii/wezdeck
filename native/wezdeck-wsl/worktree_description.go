@@ -9,10 +9,16 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 const worktreeDescriptionTTL = 30 * time.Second
@@ -76,4 +82,58 @@ func readBranchDescriptions(repoRoot string) map[string]string {
 		}
 	}
 	return byKey
+}
+
+// `worktree.describe {worktree, text}` (signed write): set — or with empty
+// text, clear — a workstation's purpose from the web console, through the
+// same `worktree-task describe` the CLI and the Alt+g editor run. The
+// worktree must be a linked worktree of a repository you work in (one of
+// knownRepos), not its primary checkout and not an agent-collab ticket-* /
+// OpenClaw claw-* one.
+func describeWorktree(args json.RawMessage) (any, error) {
+	var a struct {
+		Worktree string `json:"worktree"`
+		Text     string `json:"text"`
+	}
+	if json.Unmarshal(args, &a) != nil || a.Worktree == "" {
+		return nil, errors.New("worktree.describe: bad arguments")
+	}
+	a.Text = strings.TrimSpace(a.Text)
+	if utf8.RuneCountInString(a.Text) > descriptionMax || strings.ContainsAny(a.Text, "\r\n") {
+		return nil, fmt.Errorf("worktree.describe: the purpose is one line of at most %d characters", descriptionMax)
+	}
+	_, root, wt := gitRepoMeta(a.Worktree)
+	if wt == "" || filepath.Clean(wt) != filepath.Clean(a.Worktree) || root == "" || root == wt {
+		return nil, errors.New("worktree.describe: not a workstation (a linked worktree)")
+	}
+	if base := filepath.Base(wt); strings.HasPrefix(base, "ticket-") || strings.HasPrefix(base, "claw-") {
+		return nil, errors.New("worktree.describe: ticket-* / claw-* worktrees belong to agent-collab / OpenClaw")
+	}
+	known := false
+	for _, r := range knownRepos() {
+		known = known || r.Root == root
+	}
+	if !known {
+		return nil, errors.New("worktree.describe: not a repository you work in")
+	}
+	cmdPath := os.Getenv("WEZDECK_WORKTREE_TASK_CMD") // the test stack's stand-in
+	if cmdPath == "" {
+		cmdPath = filepath.Join(repoRoot(), "scripts", "runtime", "worktree", "worktree-task")
+	}
+	cmdArgs := []string{"describe", "--cwd", wt}
+	if a.Text == "" {
+		cmdArgs = append(cmdArgs, "--clear")
+	} else {
+		cmdArgs = append(cmdArgs, "--set", a.Text)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if out, err := exec.CommandContext(ctx, cmdPath, cmdArgs...).CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("worktree.describe: %s", clip(strings.TrimSpace(string(out)), 300))
+	}
+	worktreeDescMu.Lock()
+	delete(worktreeDescCache, root) // the next sessions poll reads it fresh
+	worktreeDescMu.Unlock()
+	relayLogf("worktree_describe", "worktree=%q chars=%d", wt, utf8.RuneCountInString(a.Text))
+	return map[string]any{"v": 1, "ok": true, "description": a.Text}, nil
 }

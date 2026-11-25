@@ -134,7 +134,8 @@ func dispatch(req request) response {
 		// …and handing its snapshot back, chunk by chunk
 		res.Result, err = relayControlCall("POST", "/diag/submit", req.Payload)
 	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
-		"remote.todo", "remote.clear", "remote.session.new", "remote.session.restart", "remote.ticket.new":
+		"remote.todo", "remote.clear", "remote.session.new", "remote.session.restart", "remote.ticket.new",
+		"remote.worktree.describe":
 		// a browser on this computer through the local Runtime (remote_write.go)
 		payload := req.Payload
 		if len(payload) == 0 || string(payload) == "null" {

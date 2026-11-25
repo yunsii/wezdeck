@@ -17,6 +17,7 @@ export const OPEN_ACTIONS = new Set([
   'session.new',
   'session.restart',
   'ticket.new',
+  'worktree.describe',
 ])
 
 /**
