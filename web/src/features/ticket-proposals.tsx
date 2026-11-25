@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { hostWrite } from '#/lib/runtime-client'
+import { cn } from '#/lib/utils'
 import type { TicketProposal } from '#/lib/runtime-contract'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
@@ -112,48 +113,72 @@ function ProposalCard({
           {t`Nothing is created until you confirm.`}
         </p>
       </header>
-      {proposal.reason ? (
+      <Part title={t`What it solves`}>
         <p className="text-caption leading-relaxed whitespace-pre-wrap">
-          {proposal.reason}
+          {proposal.summary?.problem ?? proposal.reason ?? ''}
         </p>
+      </Part>
+      {(proposal.status_check ?? []).length > 0 ? (
+        <Part title={t`What already exists`}>
+          <StatusCheck checks={proposal.status_check ?? []} />
+        </Part>
+      ) : null}
+      <Part title={t`How it will be done`}>
+        {proposal.summary?.approach ? (
+          <p className="text-caption leading-relaxed whitespace-pre-wrap">
+            {proposal.summary.approach}
+          </p>
+        ) : null}
+        <ol className="grid">
+          {proposal.items.map((item) => (
+            <li
+              key={item.key}
+              className="grid gap-0.5 border-b border-brand-edge py-2 last:border-b-0"
+            >
+              <span className="text-caption font-medium">{item.title}</span>
+              {item.effect ? (
+                <span className="text-caption leading-relaxed">
+                  {item.effect}
+                </span>
+              ) : null}
+              <span className="font-mono text-meta text-brand-muted">
+                {item.to} · {item.scope.join(', ') || '*'}
+                {item.depends_on.length > 0
+                  ? ` · ${t`after`} ${dependsLabel(item.depends_on, proposal.items, childTitle)}`
+                  : ''}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </Part>
+      {proposal.outcome ? (
+        <Part title={t`What confirming starts`}>
+          <Outcome outcome={proposal.outcome} risks={proposal.risks ?? []} />
+        </Part>
       ) : null}
       {(proposal.warnings ?? []).map((warning) => (
         <p key={warning} className="text-meta text-brand-waiting">
           {warning}
         </p>
       ))}
-      {proposal.contract ? (
-        <Disclosure
-          className="border-y border-brand-edge"
-          triggerClassName="min-h-11 text-caption font-medium"
-          title={t`Contract`}
-        >
-          <p className="pb-3 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
-            {proposal.contract}
-          </p>
-        </Disclosure>
-      ) : null}
-      <ol className="grid">
-        {proposal.items.map((item) => (
-          <li
-            key={item.key}
-            className="grid gap-0.5 border-b border-brand-edge py-2 last:border-b-0"
-          >
-            <span className="text-caption font-medium">{item.title}</span>
-            <span className="font-mono text-meta text-brand-muted">
-              {item.to} · {item.scope.join(', ') || '*'}
-              {item.depends_on.length > 0
-                ? ` · ${t`after`} ${dependsLabel(item.depends_on, proposal.items, childTitle)}`
-                : ''}
-            </span>
-            {item.assumed ? (
-              <span className="text-meta leading-relaxed text-brand-muted">
+      <Disclosure
+        className="border-y border-brand-edge"
+        triggerClassName="min-h-11 text-caption font-medium"
+        title={t`Technical details`}
+      >
+        <div className="grid gap-2 pb-3 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
+          {proposal.contract ? <p>{proposal.contract}</p> : null}
+          {proposal.items.map((item) =>
+            item.assumed ? (
+              <p key={item.key}>
+                <span className="font-medium">{item.title}</span>
+                {': '}
                 {item.assumed}
-              </span>
-            ) : null}
-          </li>
-        ))}
-      </ol>
+              </p>
+            ) : null,
+          )}
+        </div>
+      </Disclosure>
       {!approved ? (
         <p className="text-meta text-brand-muted">
           {t`This device is not approved yet (Settings › Device access).`}
@@ -239,5 +264,102 @@ function ProposalCard({
         )}
       </div>
     </section>
+  )
+}
+
+function Part({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="grid gap-1.5 border-t border-brand-edge pt-3">
+      <h3 className="text-meta font-medium text-brand-label">{title}</h3>
+      {children}
+    </div>
+  )
+}
+
+/** what confirming starts: computed by split.py from this machine's records */
+function Outcome({
+  outcome,
+  risks,
+}: {
+  outcome: NonNullable<TicketProposal['outcome']>
+  risks: Array<string>
+}) {
+  const { t } = useLingui()
+  const workers = outcome.workers
+  const parallel = outcome.max_parallel
+  const stages = outcome.stages
+  const usdLow = outcome.usd[0] ?? 0
+  const usdHigh = outcome.usd[1] ?? usdLow
+  const minLow = outcome.minutes_each[0] ?? 0
+  const minHigh = outcome.minutes_each[1] ?? minLow
+  const gb = (outcome.mem_peak_mb / 1024).toFixed(1)
+  const where = Object.entries(outcome.delivery)
+    .map(([repo, branch]) => `${repo} · ${branch}`)
+    .join('; ')
+  return (
+    <ul className="grid gap-1 text-caption leading-relaxed">
+      <li>{t`${workers} background worker(s), at most ${parallel} at once, in ${stages} stage(s)`}</li>
+      <li>{t`About $${usdLow}–${usdHigh} in total, ${minLow}–${minHigh} min each, memory peak about ${gb} GB`}</li>
+      <li>{t`Lands on ${where}; nothing is pushed and no MR is opened`}</li>
+      {risks.map((risk) => (
+        <li key={risk} className="text-brand-waiting">
+          {t`May stop to ask you:`} {risk}
+        </li>
+      ))}
+      <li className="text-meta text-brand-muted">
+        {t`Estimated from this machine's past runs, not by the planner.`}
+      </li>
+    </ul>
+  )
+}
+
+/** each goal item vs the target's default branch, with the planner's evidence */
+function StatusCheck({
+  checks,
+}: {
+  checks: NonNullable<TicketProposal['status_check']>
+}) {
+  const { t } = useLingui()
+  const label = {
+    missing: t`not done`,
+    partial: t`partly done`,
+    done: t`already done`,
+  }
+  const mark = { missing: '✗', partial: '~', done: '✓' }
+  return (
+    <ul className="grid gap-1.5">
+      {checks.map((check) => (
+        <li key={check.item} className="grid gap-0.5">
+          <span className="text-caption">
+            <span
+              aria-hidden
+              className={cn(
+                'mr-1.5 font-mono',
+                check.status === 'done' && 'text-brand-running',
+                check.status === 'partial' && 'text-brand-waiting',
+                check.status === 'missing' && 'text-brand-muted',
+              )}
+            >
+              {mark[check.status]}
+            </span>
+            {label[check.status]} · {check.item}
+          </span>
+          <span className="font-mono text-meta break-all text-brand-muted">
+            {check.evidence}
+          </span>
+          {check.reuse ? (
+            <span className="text-meta text-brand-muted">
+              {t`Reuses`} {check.reuse}
+            </span>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   )
 }

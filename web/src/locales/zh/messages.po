@@ -58,7 +58,7 @@ msgstr "有 {behind} 个提交待拉取。"
 msgid "{bg} background tasks running"
 msgstr "{bg} 个后台任务在跑"
 
-#: src/features/ticket-proposals.tsx:109
+#: src/features/ticket-proposals.tsx:110
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} 提议拆出一张单"
 
@@ -222,6 +222,10 @@ msgstr "未跟踪 {untracked} 个"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} 个等待中"
 
+#: src/features/ticket-proposals.tsx:307
+msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
+msgstr "起 {workers} 个后台工人，最多同时 {parallel} 个，分 {stages} 批"
+
 #: src/features/chat-turn.tsx:141
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
@@ -310,6 +314,10 @@ msgstr "已由人接管"
 msgid "A ticket goes to another repository."
 msgstr "工单要发给另一个仓库。"
 
+#: src/features/ticket-proposals.tsx:308
+msgid "About ${usdLow}–{usdHigh} in total, {minLow}–{minHigh} min each, memory peak about {gb} GB"
+msgstr "预计共 ${usdLow}–{usdHigh}，每个 {minLow}–{minHigh} 分钟，内存峰值约 {gb} GB"
+
 #: src/features/session-info.tsx:86
 msgid "Account limits"
 msgstr "账号额度"
@@ -334,7 +342,7 @@ msgstr "给错误页补 test id"
 msgid "added"
 msgstr "登记于"
 
-#: src/features/ticket-proposals.tsx:146
+#: src/features/ticket-proposals.tsx:147
 msgid "after"
 msgstr "依赖"
 
@@ -420,6 +428,10 @@ msgstr "允许"
 #: src/features/remote-badge.tsx:135
 msgid "Allow LAN direct"
 msgstr "授权以局域网直连"
+
+#: src/features/ticket-proposals.tsx:332
+msgid "already done"
+msgstr "已实现"
 
 #: src/features/me-app.tsx:64
 msgid "Already the latest"
@@ -599,7 +611,7 @@ msgid "cancel"
 msgstr "取消"
 
 #: src/features/session-restart.tsx:78
-#: src/features/ticket-proposals.tsx:206
+#: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "取消"
 
@@ -802,7 +814,7 @@ msgstr "输入工具"
 msgid "confirm"
 msgstr "确认"
 
-#: src/features/ticket-proposals.tsx:236
+#: src/features/ticket-proposals.tsx:261
 msgid "Confirm and start"
 msgstr "确认并开始"
 
@@ -810,7 +822,7 @@ msgstr "确认并开始"
 msgid "Confirm revoke"
 msgstr "确认撤销"
 
-#: src/features/ticket-proposals.tsx:90
+#: src/features/ticket-proposals.tsx:91
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "已确认：建了 {n} 张子单，调度已启动"
 
@@ -873,10 +885,6 @@ msgstr "上下文压缩次数"
 #: src/features/session-skills.tsx:62
 msgid "context usage"
 msgstr "上下文占用"
-
-#: src/features/ticket-proposals.tsx:129
-msgid "Contract"
-msgstr "契约"
 
 #: src/features/landing-page.tsx:91
 #~ msgid "Control"
@@ -1226,6 +1234,10 @@ msgstr "错误"
 msgid "Esc"
 msgstr "Esc"
 
+#: src/features/ticket-proposals.tsx:316
+msgid "Estimated from this machine's past runs, not by the planner."
+msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
+
 #: src/features/me-host.tsx:34
 msgid "Event stream"
 msgstr "事件流"
@@ -1411,6 +1423,10 @@ msgstr "主机上线于"
 msgid "How it fits together"
 msgstr "架构解析"
 
+#: src/features/ticket-proposals.tsx:126
+msgid "How it will be done"
+msgstr "打算怎么做"
+
 #: src/features/console-usage.tsx:163
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
@@ -1584,6 +1600,10 @@ msgstr "快捷"
 msgid "LAN"
 msgstr "局域网"
 
+#: src/features/ticket-proposals.tsx:309
+msgid "Lands on {where}; nothing is pushed and no MR is opened"
+msgstr "改动落在 {where}；不推送、不提 MR"
+
 #: src/features/console-me.tsx:189
 #: src/features/console-me.tsx:191
 #: src/features/console-shared.tsx:404
@@ -1734,6 +1754,10 @@ msgstr "标为已读"
 #: src/features/session-clear.tsx:215
 msgid "Marked read"
 msgstr "已标为已读"
+
+#: src/features/ticket-proposals.tsx:312
+msgid "May stop to ask you:"
+msgstr "可能停下来问你："
 
 #: src/features/console-collab.tsx:434
 msgid "merged"
@@ -2011,6 +2035,10 @@ msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（�
 msgid "Not delivered: the agent went idle without it"
 msgstr "未送达：agent 已空闲，没收到这条"
 
+#: src/features/ticket-proposals.tsx:330
+msgid "not done"
+msgstr "未实现"
+
 #: src/features/me-host.tsx:128
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
@@ -2031,7 +2059,7 @@ msgstr "未推送"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/ticket-proposals.tsx:112
+#: src/features/ticket-proposals.tsx:113
 msgid "Nothing is created until you confirm."
 msgstr "确认之前不会建任何单。"
 
@@ -2231,6 +2259,10 @@ msgstr "实际并行度"
 msgid "Part"
 msgstr "组成"
 
+#: src/features/ticket-proposals.tsx:331
+msgid "partly done"
+msgstr "部分实现"
+
 #: src/features/console-collab.tsx:112
 #~ msgid "Peak RSS"
 #~ msgstr "内存峰值"
@@ -2313,11 +2345,11 @@ msgstr "进展"
 msgid "Prompt composition"
 msgstr "初始消息组成"
 
-#: src/features/ticket-proposals.tsx:91
+#: src/features/ticket-proposals.tsx:92
 msgid "Proposal rejected"
 msgstr "已驳回提案"
 
-#: src/features/ticket-proposals.tsx:108
+#: src/features/ticket-proposals.tsx:109
 msgid "Proposed plan: {n} child ticket(s)"
 msgstr "拆分方案：{n} 张子单"
 
@@ -2393,11 +2425,11 @@ msgstr "刷新"
 #~ msgid "Registered devices"
 #~ msgstr "已登记的设备"
 
-#: src/features/ticket-proposals.tsx:215
+#: src/features/ticket-proposals.tsx:240
 msgid "Reject"
 msgstr "驳回"
 
-#: src/features/ticket-proposals.tsx:227
+#: src/features/ticket-proposals.tsx:252
 msgid "Reject…"
 msgstr "驳回…"
 
@@ -2581,6 +2613,10 @@ msgstr "重试"
 #: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "复用理由"
+
+#: src/features/ticket-proposals.tsx:358
+msgid "Reuses"
+msgstr "复用"
 
 #: src/features/me-devices.tsx:210
 msgid "Revoke"
@@ -2942,7 +2978,7 @@ msgstr "来源"
 msgid "Sources on this computer"
 msgstr "本机来源"
 
-#: src/features/ticket-proposals.tsx:102
+#: src/features/ticket-proposals.tsx:103
 msgid "Split proposal {pid}"
 msgstr "拆分提案 {pid}"
 
@@ -3085,6 +3121,10 @@ msgstr "问答可点选项"
 #~ msgid "task: a short focused change, reclaimed after delivery"
 #~ msgstr "task：短期聚焦的改动，交付后回收"
 
+#: src/features/ticket-proposals.tsx:167
+msgid "Technical details"
+msgstr "技术细节"
+
 #: src/features/session-permission.tsx:97
 msgid "Terminal"
 msgstr "终端画面"
@@ -3197,7 +3237,7 @@ msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要
 #~ msgstr "本机，未配对"
 
 #: src/features/console-sessions.tsx:397
-#: src/features/ticket-proposals.tsx:159
+#: src/features/ticket-proposals.tsx:184
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "这台设备还没获批（我的 › 设备授权）。"
@@ -3646,9 +3686,21 @@ msgstr "WezDeck"
 #~ msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 #~ msgstr "WezDeck 把 workspace、git worktree 和 Agent 会话组织成一个键盘优先的本地控制平面。"
 
+#: src/features/ticket-proposals.tsx:122
+msgid "What already exists"
+msgstr "现状核对"
+
+#: src/features/ticket-proposals.tsx:155
+msgid "What confirming starts"
+msgstr "确认后会发生什么"
+
 #: src/features/console-activity.tsx:207
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 #~ msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
+
+#: src/features/ticket-proposals.tsx:116
+msgid "What it solves"
+msgstr "要解决什么"
 
 #: src/features/session-new.tsx:276
 msgid "What should it work on?"
@@ -3687,11 +3739,11 @@ msgstr "运行位置"
 msgid "Which table should the weekly report read?"
 msgstr "周报该读哪张表？"
 
-#: src/features/ticket-proposals.tsx:186
+#: src/features/ticket-proposals.tsx:211
 msgid "Why — the planner reads this (required)"
 msgstr "理由（必填，提议方会看到）"
 
-#: src/features/ticket-proposals.tsx:165
+#: src/features/ticket-proposals.tsx:190
 msgid "Why reject"
 msgstr "驳回理由"
 

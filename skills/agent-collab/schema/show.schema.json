@@ -593,6 +593,9 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "effect": {
+                      "type": "string"
                     }
                   }
                 }
@@ -600,6 +603,120 @@
               "contract": {
                 "type": "string",
                 "description": "draft only: the parent contract under review (≤8000 chars)"
+              },
+              "summary": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "description": "draft only: plain words for the approver",
+                "properties": {
+                  "problem": {
+                    "type": "string"
+                  },
+                  "approach": {
+                    "type": "string"
+                  }
+                }
+              },
+              "status_check": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "description": "draft only: each goal item vs the target's default branch",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "item",
+                    "status",
+                    "evidence"
+                  ],
+                  "properties": {
+                    "item": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "missing",
+                        "partial",
+                        "done"
+                      ]
+                    },
+                    "evidence": {
+                      "type": "string"
+                    },
+                    "reuse": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "risks": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "outcome": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "description": "computed by split.py (not the model): what confirming starts",
+                "properties": {
+                  "workers": {
+                    "type": "integer"
+                  },
+                  "max_parallel": {
+                    "type": "integer"
+                  },
+                  "stages": {
+                    "type": "integer"
+                  },
+                  "repos": {
+                    "type": "object"
+                  },
+                  "backend": {
+                    "type": "string"
+                  },
+                  "mem_peak_mb": {
+                    "type": "integer"
+                  },
+                  "est_mb_each": {
+                    "type": "integer"
+                  },
+                  "est_source": {
+                    "type": "string"
+                  },
+                  "usd": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "minutes_each": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "samples": {
+                    "type": "object"
+                  },
+                  "delivery": {
+                    "type": "object"
+                  },
+                  "pushes": {
+                    "type": "boolean"
+                  },
+                  "estimated_at": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }

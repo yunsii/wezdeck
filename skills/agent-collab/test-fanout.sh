@@ -70,7 +70,12 @@ E="$(c add --parent "$P" --to ry --title E --scope 'docs/**' | jq -r .id)"
 echo fail-once >"$beh/$E"
 check "add rejects deps outside the parent" bash -c "! '$run' collab add --parent '$P' --to rx --title X --depends-on req-nope >/dev/null"
 view="$(python3 "$here/lib/ticket_fs.py" phase-view "$A" research)"
-check "child phase view embeds parent contract + scope" bash -c "grep -q 'Parent contract' <<<'$view' && grep -q 'src/a/\*\*' <<<'$view' && grep -q 'consume a/' <<<'$view'"
+# no bash -c '…$view…': the view itself holds quotes and <…> (the propose hint)
+if grep -q 'Parent contract' <<<"$view" && grep -q 'src/a/\*\*' <<<"$view" && grep -q 'consume a/' <<<"$view"; then
+  ok "child phase view embeds parent contract + scope"
+else
+  bad "child phase view embeds parent contract + scope"
+fi
 
 res="$(timeout 120 "$run" fanout run --parent "$P" --mock --max-parallel 3)"
 check "scheduler finishes; no branches → done_unmerged, verify skipped (not pass)" \
@@ -216,9 +221,15 @@ assert c.tree_rss_mb(os.getpid()) > 0"
 # draft: a plan agent proposes contract + children; nothing exists until the user approves
 mkplan() {  # out-file children-json
   python3 - "$1" "$2" <<'PY'
-import json, sys
+import json, os, sys
 out, kids = sys.argv[1], json.loads(sys.argv[2])
 plan = {"contract": "# Contract\n\n- a/ exports f()\n", "children": kids}
+if os.environ.get("BRIEF", "1") == "1":
+    plan["summary"] = {"problem": "ry 用不了 a 里的 f", "approach": "先在 rx 加 f，再并行接入"}
+    plan["status_check"] = [{"item": "f 存在", "status": "missing", "evidence": "src/a/ 无 f"}]
+    plan["risks"] = ["需要迁移"]
+    for k in kids:
+        k.setdefault("effect", "做完后 " + k["title"] + " 可用")
 rows = [{"type": "system", "subtype": "init", "session_id": "sess-plan", "model": "m", "claude_code_version": "t",
          "tools": ["Read"], "mcp_servers": [], "permissionMode": "plan", "cwd": "/x"},
         {"type": "result", "subtype": "success", "session_id": "sess-plan", "num_turns": 2, "total_cost_usd": 0.01,
@@ -236,11 +247,15 @@ DP="$(jq -r .parent <<<"$dr")"
 check "draft: parent in plan_review, proposal pending, no children yet" \
   bash -c "jq -e '.ok and .proposal.status==\"pending\" and .proposal.origin==\"draft\" and (.proposal.items|length==3)' <<<'$dr' >/dev/null && grep -q 'phase: plan_review' '$TICKETS_ROOT/_data/$DP/ticket.md' && [ \"\$('$run' fanout status --parent '$DP' | jq '.children|length')\" = 0 ]"
 check "draft: overlapping scopes in one repo flagged as a warning" jq -e '.proposal.warnings|length==1 and (.[0]|test("serially"))' <<<"$dr"
+check "draft: brief stored (problem/approach, status check, risks, effect per child)" \
+  jq -e '.proposal.summary.approach and (.proposal.status_check[0].status=="missing") and .proposal.risks==["需要迁移"] and (.proposal.items|all(.effect))' <<<"$dr"
+check "draft: outcome computed, not modelled (3 workers, 2 stages, 2 at once, branch, no push)" \
+  jq -e --arg p "$DP" '.proposal.outcome|.workers==3 and .stages==2 and .max_parallel==2 and .pushes==false and .delivery.rx==("ticket/"+$p+"-integration") and (.usd|length==2) and .est_mb_each>0' <<<"$dr"
 check "draft: contract stored on the parent" grep -q 'exports f()' "$TICKETS_ROOT/_data/$DP/contract.md"
 check "run refuses while the draft awaits confirmation" bash -c "'$run' fanout run --parent '$DP' --mock | jq -e '.ok==false and (.error|test(\"awaits user confirmation\"))'"
 shp="$("$run" api show --id "$DP")"
-check "api show exposes the pending draft + its contract (schema-valid) for the web console" \
-  bash -c "jq -e '.proposals|length==1 and .[0].id==\"p1\" and .[0].origin==\"draft\" and (.[0].items|length==3) and (.[0].contract|test(\"exports f\"))' <<<'$shp' >/dev/null && python3 '$here/lib/validate_api.py' show <<<'$shp'"
+check "api show exposes the pending draft + contract + brief + outcome (schema-valid) for the web console" \
+  bash -c "jq -e '.proposals|length==1 and .[0].id==\"p1\" and .[0].origin==\"draft\" and (.[0].items|length==3) and (.[0].contract|test(\"exports f\")) and .[0].summary.problem and .[0].status_check[0].evidence and .[0].outcome.workers==3 and .[0].items[0].effect' <<<'$shp' >/dev/null && python3 '$here/lib/validate_api.py' show <<<'$shp'"
 ap="$("$run" fanout approve --parent "$DP" --proposal p1)"
 CA="$(jq -r .created.a <<<"$ap")"; CC="$(jq -r .created.c <<<"$ap")"
 check "approve creates children with deps mapped to real ids; parent back to planning" \
@@ -251,6 +266,10 @@ mkplan "$tmp/bad.stream.jsonl" '[{"key":"x","to":"nope","title":"t","observed":"
 bad="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/bad.stream.jsonl" "$run" fanout draft --from src --repos rx --title "bad" --goal-file "$tmp/goal.md")"
 check "invalid draft (unknown target, unknown dep) rejected before review, no parent" \
   jq -e '.ok==false and (.error|test("not in the allowlist")) and (.error|test("unknown depends_on"))' <<<"$bad"
+BRIEF=0 mkplan "$tmp/nobrief.stream.jsonl" '[{"key":"n","to":"rx","title":"t","observed":"o","assumed":"a"}]'
+nb="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/nobrief.stream.jsonl" "$run" fanout draft --from src --repos rx --title "nobrief" --goal-file "$tmp/goal.md")"
+check "draft without plain-words brief / status check / effect is rejected before review" \
+  jq -e '.ok==false and (.error|test("summary.problem")) and (.error|test("status_check missing")) and (.error|test("missing effect"))' <<<"$nb"
 mkplan "$tmp/rej.stream.jsonl" '[{"key":"r","to":"rx","title":"t","observed":"o","assumed":"a"}]'
 RP="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/rej.stream.jsonl" "$run" fanout draft --from src --repos rx --title "rej" --goal-file "$tmp/goal.md" | jq -r .parent)"
 check "reject: draft rejected, parent plan_rejected, still no children" \
@@ -260,10 +279,12 @@ check "reject: draft rejected, parent plan_rejected, still no children" \
 P11="$(c plan --from src --title "split" --contract "$tmp/contract.md" | jq -r .id)"
 SA="$(c add --parent "$P11" --to rx --title SA --scope 'src/sa/**' | jq -r .id)"
 check "propose outside the proposer's scope refused" \
-  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --observed o --assumed a --scope 'src/other/**' | jq -e '.ok==false and (.error|test(\"not inside\"))'"
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --effect e --observed o --assumed a --scope 'src/other/**' | jq -e '.ok==false and (.error|test(\"not inside\"))'"
+check "propose without --effect refused (the user must read what it gives them)" \
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --observed o --assumed a --scope 'src/sa/x/**' | jq -e '.ok==false and (.error|test(\"--effect\"))'"
 check "propose without scope (whole repo) from a scoped child refused" \
-  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --observed o --assumed a | jq -e '.ok==false'"
-pr="$("$run" fanout propose --parent "$P11" --by-child "$SA" --title "sa tests" --observed o --assumed a --scope 'src/sa/tests/**' --reason "independent")"
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --effect e --observed o --assumed a | jq -e '.ok==false'"
+pr="$("$run" fanout propose --parent "$P11" --by-child "$SA" --title "sa tests" --effect "sa 有测试" --observed o --assumed a --scope 'src/sa/tests/**' --reason "independent")"
 check "propose inside scope → pending split proposal + progress row" \
   bash -c "jq -e '.ok and .proposal.origin==\"split\" and .proposal.by==\"$SA\" and .proposal.items[0].to==\"rx\"' <<<'$pr' >/dev/null && jq -e '.step==\"split_proposed\"' '$TICKETS_ROOT/_data/$P11/progress.json' >/dev/null"
 check "phase view tells unsplit children how to propose (never approve)" \
@@ -277,7 +298,7 @@ SB="$(jq -r .created.s1 <<<"$ap11")"
 check "approved split → sibling with split_from; parent leaves split_review" \
   bash -c "jq -e --arg a '$SA' '.split_from==\$a and .scope==[\"src/sa/tests/**\"]' '$TICKETS_ROOT/_data/$SB/meta.json' >/dev/null && ! grep -q 'phase: split_review' '$TICKETS_ROOT/_data/$P11/ticket.md'"
 check "split-born child cannot split again" \
-  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SB' --title x --observed o --assumed a --scope 'src/sa/tests/x/**' | jq -e '.ok==false and (.error|test(\"cannot split again\"))'"
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SB' --title x --effect e --observed o --assumed a --scope 'src/sa/tests/x/**' | jq -e '.ok==false and (.error|test(\"cannot split again\"))'"
 check "split-born phase view says no further splits" \
   bash -c "python3 '$here/lib/ticket_fs.py' phase-view '$SB' implement | grep -q 'cannot propose further splits'"
 check "approve --run detaches the scheduler, which ships the new sibling" \
@@ -285,8 +306,8 @@ check "approve --run detaches the scheduler, which ships the new sibling" \
 check "children cap counts pending proposals" bash -c "
   P='$(c plan --from src --title cap --contract "$tmp/contract.md" | jq -r .id)'
   X=\$('$run' fanout add --parent \$P --to rx --title X --scope 'src/x/**' | jq -r .id)
-  TICKET_MAX_CHILDREN=2 '$run' fanout propose --parent \$P --by-child \$X --title a --observed o --assumed a --scope 'src/x/a/**' | jq -e .ok >/dev/null &&
-  TICKET_MAX_CHILDREN=2 '$run' fanout propose --parent \$P --by-child \$X --title b --observed o --assumed a --scope 'src/x/b/**' | jq -e '.ok==false and (.error|test(\"already has 2\"))'"
+  TICKET_MAX_CHILDREN=2 '$run' fanout propose --parent \$P --by-child \$X --title a --effect e --observed o --assumed a --scope 'src/x/a/**' | jq -e .ok >/dev/null &&
+  TICKET_MAX_CHILDREN=2 '$run' fanout propose --parent \$P --by-child \$X --title b --effect e --observed o --assumed a --scope 'src/x/b/**' | jq -e '.ok==false and (.error|test(\"already has 2\"))'"
 
 # integration: real branches merge into ticket/<parent>-integration
 P4="$(c plan --from src --title "integrate" --contract "$tmp/contract.md" | jq -r .id)"

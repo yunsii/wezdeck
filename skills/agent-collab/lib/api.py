@@ -287,7 +287,8 @@ def pending_proposals(tid: str) -> list[dict[str, Any]]:
         props = json.loads(p.read_text(encoding="utf-8")) if p.is_file() else []
     except (OSError, ValueError):
         return []
-    keep = ("id", "origin", "by", "reason", "warnings", "created_at", "items")
+    keep = ("id", "origin", "by", "reason", "warnings", "created_at", "items",
+            "summary", "status_check", "risks", "outcome")
     out = [{k: x.get(k) for k in keep} for x in props if x.get("status") == "pending"]
     contract = root() / "_data" / tid / "contract.md"
     for x in out:

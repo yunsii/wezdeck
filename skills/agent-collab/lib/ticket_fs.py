@@ -622,7 +622,8 @@ def render_parent_contract(tid: str) -> str:
         run_sh = Path(__file__).resolve().parent.parent / "run.sh"
         lines.append(
             "- Found an independent sub-task **inside your scope** that could run in parallel? Do not implement it: "
-            f"`{run_sh} fanout propose --parent {parent} --by-child {tid} --title '…' --observed '…' "
+            f"`{run_sh} fanout propose --parent {parent} --by-child {tid} --title '…' "
+            "--effect '<one plain sentence: what the user gets>' --observed '…' "
             "--assumed '…' --scope 'sub/path/**' --reason '…'`, then finish your own part. The user confirms "
             "before it becomes a sibling; never approve it yourself.")
     lines.append("")

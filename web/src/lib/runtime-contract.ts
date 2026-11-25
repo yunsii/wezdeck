@@ -1,5 +1,10 @@
 import { z } from 'zod'
 
+import { ticketProposalSchema } from './ticket-proposal-contract'
+
+export { ticketProposalSchema } from './ticket-proposal-contract'
+export type { TicketProposal } from './ticket-proposal-contract'
+
 export const worktreeStatusSchema = z.object({
   available: z.boolean().default(false),
   branch: z.string().default(''),
@@ -313,31 +318,6 @@ export const ticketQuestionsSchema = z.object({
     .default([]),
 })
 export type TicketQuestions = z.infer<typeof ticketQuestionsSchema>
-
-/** a pending split: origin draft (plan agent, with its contract) or split (a running child) */
-export const ticketProposalSchema = z.object({
-  id: z.string(),
-  origin: z.enum(['draft', 'split']),
-  by: nstr,
-  reason: nstr,
-  warnings: z.array(z.string()).nullable().default([]),
-  created_at: nstr,
-  contract: z.string().optional(),
-  items: z
-    .array(
-      z.object({
-        key: z.string(),
-        to: z.string(),
-        title: z.string(),
-        observed: z.string().optional(),
-        assumed: z.string().optional(),
-        scope: z.array(z.string()).default([]),
-        depends_on: z.array(z.string()).default([]),
-      }),
-    )
-    .default([]),
-})
-export type TicketProposal = z.infer<typeof ticketProposalSchema>
 
 export const collabShowSchema = collabEnvelope({
   ticket: collabTicketSchema.optional(),

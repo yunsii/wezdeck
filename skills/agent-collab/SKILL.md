@@ -32,6 +32,30 @@ Skill id: **`agent-collab`**. Short CLI on PATH (optional): **`ticket`**.
 
 Concrete repo names live only in `~/.agent/tickets/config.yml` (and the user’s words), not in this skill’s trigger text.
 
+## Say it before doing it (hard rule)
+
+Before any step that spends money or leaves state — `create`, `create --run` / `run` (starts a
+worker), `fanout draft` (a real model run + a parent ticket), `approve` (starts workers), `close`,
+`gc --execute` — tell the user in one or two plain sentences: **what you will do, what it leaves
+behind** (which tickets / worktrees / branches), **roughly what it costs** (time, money: `api
+metrics` has this machine's real numbers) **and what you will not do**. After it, report what it
+actually left (ids, status). For anything with several steps, use "I will 1 / 2 / 3; I will not X;
+starting when you say yes".
+
+**Relaying a split proposal** (draft or a worker's `propose`) to the user always covers, in this
+order and in their language, never as a bare child list or the contract alone:
+
+1. **要解决什么** — `summary.problem`
+2. **现状核对** — `status_check`: each goal item missing / partial / done with its evidence;
+   say plainly when something already exists and what will be reused
+3. **打算怎么做** — `summary.approach`, then one line per child: title + `effect`
+   (+ order: what runs first, what in parallel)
+4. **确认后会发生什么** — from `outcome` (computed, not the model's word): workers, at most N at
+   once, cost / minutes range, memory peak, which repo and branch it lands on, **no push / no
+   MR**, plus `risks` (migrations, credentials …) where a child may come back with a question
+
+Then ask: 确认并开始 / 驳回（理由）/ 先放着. The web console's ticket page shows the same four parts.
+
 ## Routing: ticket vs multi-dir mount
 
 **Default for 跨仓委托 / 认领 / 挑战 / 关单:** this skill (Modes 1–3).  
@@ -101,12 +125,15 @@ A=$("$D" fanout add --parent "$P" --to <repo> --title "…" --observed "…" --a
 
 ```bash
 P=$("$D" fanout draft --from . --repos <repo>[,<repo2>] --title "…" --goal-file /tmp/goal.md | jq -r .parent)
-"$D" fanout proposals --parent "$P" --pending   # show contract + children (+ warnings) to the user
+"$D" fanout proposals --parent "$P" --pending   # relay the four parts (see "Say it before doing it")
 # only after the user says yes in chat:
 "$D" fanout approve --parent "$P" --proposal p1 [--only k1,k2]   # or: reject --reason "…"
 ```
 
-Workers may `fanout propose` one extra sibling inside their own scope (one level, ≤12 children);
+The plan agent must check the goal against the target's default branch first (`status_check`, with
+evidence) — a draft without it, or without `summary` / per-child `effect`, is refused before review.
+Workers may `fanout propose` one extra sibling inside their own scope (one level, ≤12 children,
+`--effect` required);
 `fanout status` / parent `progress.json` / the web console's ticket page (确认并开始 / 驳回) show
 `split_proposed`. Relay each proposal to the user and
 approve/reject on their answer — **never approve on an agent's own judgment**. A parent in
@@ -311,6 +338,9 @@ Update/create the **topic solution doc** in the target repo yourself; never comm
 Use `"$D" next --id <id>` when unsure whose turn it is.
 
 ## Don't
+
+- Don't run a paid or state-leaving command before saying what it does, leaves and costs
+- Don't relay a split as a bare child list / contract — always the four parts above
 
 - Don’t ask the human to run CLI as the main path
 - Don’t commit tickets into project git / `docs/decisions/`

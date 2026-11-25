@@ -2,7 +2,12 @@
 """ticket fanout draft|propose|approve|reject|proposals — splits wait on a human.
 
 Every split is a *proposal* until a human confirms it: agents run ``approve``
-only after the user said yes in chat. Two origins:
+only after the user said yes in chat. A proposal carries what the approver
+needs in plain words — a draft's ``summary`` (problem / approach),
+``status_check`` (each goal item missing / partial / done with evidence) and
+``risks`` from the plan agent; each child's ``effect``; and ``outcome``, which
+is computed here, not by a model: workers, max parallel, stages, memory peak,
+cost and time ranges from this machine's run records, delivery branch, no push. Two origins:
 
   draft  — a read-only plan agent (``research``) drafts contract + children for
            a new parent. The parent waits in phase ``plan_review``; ``fanout run``
@@ -14,7 +19,7 @@ only after the user said yes in chat. Two origins:
            integrating while a split is pending.
 
   fanout draft --from KEY --repos A[,B…] --title T --goal-file F [--backend B]
-  fanout propose --parent P --by-child C --title T --observed O --assumed A
+  fanout propose --parent P --by-child C --title T --effect E --observed O --assumed A
                  [--scope G,G] [--depends-on ID,ID] [--reason R]
   fanout approve --parent P --proposal ID [--only KEY,KEY] [--run [--mock] [--backend B]]
   fanout reject  --parent P --proposal ID --reason R
@@ -84,6 +89,84 @@ def validate(items: list[dict[str, Any]], known: set[str]) -> list[str]:
     return errs
 
 
+def validate_brief(plan: dict[str, Any], items: list[dict[str, Any]]) -> list[str]:
+    """A draft must say, in plain words, what it is for and what already exists."""
+    errs: list[str] = []
+    summary = plan.get("summary") if isinstance(plan.get("summary"), dict) else {}
+    for f in ("problem", "approach"):
+        if not str(summary.get(f) or "").strip():
+            errs.append(f"summary.{f} missing")
+    checks = plan.get("status_check")
+    if not isinstance(checks, list) or not checks:
+        errs.append("status_check missing: every goal item needs missing/partial/done + evidence")
+    else:
+        for c in checks:
+            if not isinstance(c, dict) or c.get("status") not in ("missing", "partial", "done") \
+                    or not str(c.get("evidence") or "").strip():
+                errs.append(f"status_check {c!r}: needs status missing|partial|done and evidence")
+    errs += [f"{i.get('key')}: missing effect" for i in items if not str(i.get("effect") or "").strip()]
+    return errs
+
+
+def run_stats(backend: str) -> dict[str, Any]:
+    """p50 / p90 cost and wall per child (research + implement) from real run records."""
+    by_phase: dict[str, list[tuple[float, float]]] = {"research": [], "implement": []}
+    for f in (ticket_fs.tickets_root() / "_data").glob("*/runs/run-*.json"):
+        if f.name.endswith((".launch.json", ".final.json")):
+            continue
+        try:
+            rec = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        ph = rec.get("phase")
+        if rec.get("backend") != backend or rec.get("mock") or ph not in by_phase:
+            continue
+        if isinstance(rec.get("cost_usd"), (int, float)) and isinstance(rec.get("wall_ms"), (int, float)):
+            by_phase[ph].append((float(rec["cost_usd"]), float(rec["wall_ms"])))
+
+    def pct(vals: list[float], q: float) -> float:
+        vals = sorted(vals)
+        return vals[min(len(vals) - 1, int(q * len(vals)))] if vals else 0.0
+
+    out: dict[str, Any] = {"samples": {k: len(v) for k, v in by_phase.items()}}
+    for q, name in ((0.5, "p50"), (0.9, "p90")):
+        out[name] = {
+            "usd": round(sum(pct([c for c, _ in v], q) for v in by_phase.values()), 2),
+            "min": round(sum(pct([w for _, w in v], q) for v in by_phase.values()) / 60000),
+        }
+    return out
+
+
+def outcome(pid: str, items: list[dict[str, Any]], backend: str) -> dict[str, Any]:
+    """What confirming starts — computed from the plan and this machine's records, not the model."""
+    keys = {i["key"] for i in items}
+    deps = {i["key"]: [d for d in i.get("depends_on") or [] if d in keys] for i in items}
+    level: dict[str, int] = {}
+    for k in collab.topo_order(list(keys), deps):
+        level[k] = 1 + max((level[d] for d in deps[k]), default=0)
+    width = max((sum(1 for k in keys if level[k] == n) for n in set(level.values())), default=0)
+    per_repo = int(os.environ.get("TICKET_MAX_PER_REPO", "4"))
+    repos: dict[str, int] = {}
+    for i in items:
+        repos[i["to"]] = repos.get(i["to"], 0) + 1
+    est = collab.mem_estimate_mb(backend)
+    floor = int(os.environ.get("TICKET_MEM_FLOOR_MB", "2048"))
+    avail = collab.mem_available_mb()
+    fits = max(1, (avail - floor) // est["mb"]) if avail else None
+    caps = [width, int(os.environ.get("TICKET_MAX_PARALLEL", "8")), sum(min(n, per_repo) for n in repos.values())]
+    parallel = min(caps + ([fits] if fits else []))
+    stats = run_stats(backend)
+    return {
+        "workers": len(items), "max_parallel": parallel, "stages": max(level.values(), default=0),
+        "repos": repos, "backend": backend,
+        "mem_peak_mb": parallel * est["mb"], "est_mb_each": est["mb"], "est_source": est["source"],
+        "usd": [round(stats["p50"]["usd"] * len(items), 1), round(stats["p90"]["usd"] * len(items), 1)],
+        "minutes_each": [stats["p50"]["min"], stats["p90"]["min"]], "samples": stats["samples"],
+        "delivery": {r: f"ticket/{pid}-integration" for r in repos}, "pushes": False,
+        "estimated_at": ticket_fs.now_iso(),
+    }
+
+
 def warnings(items: list[dict[str, Any]]) -> list[str]:
     out = []
     for n, a in enumerate(items):
@@ -122,7 +205,8 @@ def cmd_draft(argv: list[str]) -> dict[str, Any]:
     items = plan.get("children") if isinstance(plan, dict) else None
     if not r.get("ok_result") or not isinstance(items, list) or not plan.get("contract"):
         raise collab.CollabError(f"plan agent returned no usable plan (research {r.get('id')})")
-    errs = validate(items, set()) + ([f"{len(items)} children > {MAX_CHILDREN}"] if len(items) > MAX_CHILDREN else [])
+    errs = validate(items, set()) + validate_brief(plan, items) \
+        + ([f"{len(items)} children > {MAX_CHILDREN}"] if len(items) > MAX_CHILDREN else [])
     if errs:
         raise collab.CollabError(f"plan rejected before review (research {r.get('id')}): " + "; ".join(errs))
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as fh:
@@ -131,7 +215,11 @@ def cmd_draft(argv: list[str]) -> dict[str, Any]:
         pid = collab.cmd_plan(["--from", src, "--title", title, "--contract", fh.name])["id"]
     finally:
         os.unlink(fh.name)
-    prop = record(pid, {"origin": "draft", "research": r.get("id"), "items": items, "warnings": warnings(items)})
+    backend = collab.opt(argv, "--backend") or "claude"
+    prop = record(pid, {"origin": "draft", "research": r.get("id"), "items": items, "warnings": warnings(items),
+                        "summary": plan["summary"], "status_check": plan["status_check"],
+                        "risks": [str(x) for x in plan.get("risks") or []],
+                        "outcome": outcome(pid, items, backend)})
     collab.set_status(pid, "waiting_initiator", owner="human", phase="plan_review")
     collab.progress(pid, "plan_review", f"draft {prop['id']}: {len(items)} children — confirm with the user, "
                     f"then `ticket fanout approve --parent {pid} --proposal {prop['id']}`")
@@ -153,13 +241,17 @@ def cmd_propose(argv: list[str]) -> dict[str, Any]:
     queued = sum(len(p["items"]) for p in pending(pid))
     if len(collab.children_of(pid)) + queued >= MAX_CHILDREN:
         raise collab.CollabError(f"{pid} already has {MAX_CHILDREN} children (incl. pending proposals)")
+    if not (collab.opt(argv, "--effect") or "").strip():
+        raise collab.CollabError("propose needs --effect: one plain sentence the user will see once it ships")
     item = {"key": "s1", "to": bmeta.get("to"), "title": collab.opt(argv, "--title"),
+            "effect": collab.opt(argv, "--effect"),
             "observed": collab.opt(argv, "--observed"), "assumed": collab.opt(argv, "--assumed"),
             "scope": scope, "depends_on": collab.csv(collab.opt(argv, "--depends-on"))}
     errs = validate([item], set(collab.children_of(pid)))
     if errs:
         raise collab.CollabError("; ".join(errs))
-    prop = record(pid, {"origin": "split", "by": by, "reason": collab.opt(argv, "--reason"), "items": [item]})
+    prop = record(pid, {"origin": "split", "by": by, "reason": collab.opt(argv, "--reason"), "items": [item],
+                        "outcome": outcome(pid, [item], collab.opt(argv, "--backend") or "claude")})
     collab.progress(pid, "split_proposed", f"{by} proposes '{item['title']}' — needs user confirmation "
                     f"(`ticket fanout approve --parent {pid} --proposal {prop['id']}`)")
     return {"parent": pid, "proposal": prop}

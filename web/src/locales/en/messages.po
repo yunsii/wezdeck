@@ -58,7 +58,7 @@ msgstr "{behind} commits to pull."
 msgid "{bg} background tasks running"
 msgstr "{bg} background tasks running"
 
-#: src/features/ticket-proposals.tsx:109
+#: src/features/ticket-proposals.tsx:110
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
@@ -222,6 +222,10 @@ msgstr "{untracked} untracked"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
+#: src/features/ticket-proposals.tsx:307
+msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
+msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
+
 #: src/features/chat-turn.tsx:141
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
@@ -310,6 +314,10 @@ msgstr "A person (taken over)"
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
+#: src/features/ticket-proposals.tsx:308
+msgid "About ${usdLow}–{usdHigh} in total, {minLow}–{minHigh} min each, memory peak about {gb} GB"
+msgstr "About ${usdLow}–{usdHigh} in total, {minLow}–{minHigh} min each, memory peak about {gb} GB"
+
 #: src/features/session-info.tsx:86
 msgid "Account limits"
 msgstr "Account limits"
@@ -334,7 +342,7 @@ msgstr "Add test ids to the error pages"
 msgid "added"
 msgstr "added"
 
-#: src/features/ticket-proposals.tsx:146
+#: src/features/ticket-proposals.tsx:147
 msgid "after"
 msgstr "after"
 
@@ -420,6 +428,10 @@ msgstr "Allow"
 #: src/features/remote-badge.tsx:135
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
+
+#: src/features/ticket-proposals.tsx:332
+msgid "already done"
+msgstr "already done"
 
 #: src/features/me-app.tsx:64
 msgid "Already the latest"
@@ -599,7 +611,7 @@ msgid "cancel"
 msgstr "cancel"
 
 #: src/features/session-restart.tsx:78
-#: src/features/ticket-proposals.tsx:206
+#: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -802,7 +814,7 @@ msgstr "Composer tools"
 msgid "confirm"
 msgstr "confirm"
 
-#: src/features/ticket-proposals.tsx:236
+#: src/features/ticket-proposals.tsx:261
 msgid "Confirm and start"
 msgstr "Confirm and start"
 
@@ -810,7 +822,7 @@ msgstr "Confirm and start"
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
-#: src/features/ticket-proposals.tsx:90
+#: src/features/ticket-proposals.tsx:91
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "Confirmed: {n} child ticket(s) created, scheduler started"
 
@@ -873,10 +885,6 @@ msgstr "Context compactions"
 #: src/features/session-skills.tsx:62
 msgid "context usage"
 msgstr "context usage"
-
-#: src/features/ticket-proposals.tsx:129
-msgid "Contract"
-msgstr "Contract"
 
 #: src/features/landing-page.tsx:91
 #~ msgid "Control"
@@ -1226,6 +1234,10 @@ msgstr "Errors"
 msgid "Esc"
 msgstr "Esc"
 
+#: src/features/ticket-proposals.tsx:316
+msgid "Estimated from this machine's past runs, not by the planner."
+msgstr "Estimated from this machine's past runs, not by the planner."
+
 #: src/features/me-host.tsx:34
 msgid "Event stream"
 msgstr "Event stream"
@@ -1411,6 +1423,10 @@ msgstr "Host up since"
 msgid "How it fits together"
 msgstr "How it fits together"
 
+#: src/features/ticket-proposals.tsx:126
+msgid "How it will be done"
+msgstr "How it will be done"
+
 #: src/features/console-usage.tsx:163
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
@@ -1584,6 +1600,10 @@ msgstr "Keys"
 msgid "LAN"
 msgstr "LAN"
 
+#: src/features/ticket-proposals.tsx:309
+msgid "Lands on {where}; nothing is pushed and no MR is opened"
+msgstr "Lands on {where}; nothing is pushed and no MR is opened"
+
 #: src/features/console-me.tsx:189
 #: src/features/console-me.tsx:191
 #: src/features/console-shared.tsx:404
@@ -1734,6 +1754,10 @@ msgstr "Mark read"
 #: src/features/session-clear.tsx:215
 msgid "Marked read"
 msgstr "Marked read"
+
+#: src/features/ticket-proposals.tsx:312
+msgid "May stop to ask you:"
+msgstr "May stop to ask you:"
 
 #: src/features/console-collab.tsx:434
 msgid "merged"
@@ -2011,6 +2035,10 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
+#: src/features/ticket-proposals.tsx:330
+msgid "not done"
+msgstr "not done"
+
 #: src/features/me-host.tsx:128
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
@@ -2031,7 +2059,7 @@ msgstr "Not pushed"
 msgid "Not running"
 msgstr "Not running"
 
-#: src/features/ticket-proposals.tsx:112
+#: src/features/ticket-proposals.tsx:113
 msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
@@ -2231,6 +2259,10 @@ msgstr "Parallelism"
 msgid "Part"
 msgstr "Part"
 
+#: src/features/ticket-proposals.tsx:331
+msgid "partly done"
+msgstr "partly done"
+
 #: src/features/console-collab.tsx:112
 #~ msgid "Peak RSS"
 #~ msgstr "Peak RSS"
@@ -2313,11 +2345,11 @@ msgstr "Progress"
 msgid "Prompt composition"
 msgstr "Prompt composition"
 
-#: src/features/ticket-proposals.tsx:91
+#: src/features/ticket-proposals.tsx:92
 msgid "Proposal rejected"
 msgstr "Proposal rejected"
 
-#: src/features/ticket-proposals.tsx:108
+#: src/features/ticket-proposals.tsx:109
 msgid "Proposed plan: {n} child ticket(s)"
 msgstr "Proposed plan: {n} child ticket(s)"
 
@@ -2393,11 +2425,11 @@ msgstr "Refresh"
 #~ msgid "Registered devices"
 #~ msgstr "Registered devices"
 
-#: src/features/ticket-proposals.tsx:215
+#: src/features/ticket-proposals.tsx:240
 msgid "Reject"
 msgstr "Reject"
 
-#: src/features/ticket-proposals.tsx:227
+#: src/features/ticket-proposals.tsx:252
 msgid "Reject…"
 msgstr "Reject…"
 
@@ -2581,6 +2613,10 @@ msgstr "Retry"
 #: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "reuse reasons"
+
+#: src/features/ticket-proposals.tsx:358
+msgid "Reuses"
+msgstr "Reuses"
 
 #: src/features/me-devices.tsx:210
 msgid "Revoke"
@@ -2942,7 +2978,7 @@ msgstr "Source"
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
-#: src/features/ticket-proposals.tsx:102
+#: src/features/ticket-proposals.tsx:103
 msgid "Split proposal {pid}"
 msgstr "Split proposal {pid}"
 
@@ -3085,6 +3121,10 @@ msgstr "Tappable Ask options"
 #~ msgid "task: a short focused change, reclaimed after delivery"
 #~ msgstr "task: a short focused change, reclaimed after delivery"
 
+#: src/features/ticket-proposals.tsx:167
+msgid "Technical details"
+msgstr "Technical details"
+
 #: src/features/session-permission.tsx:97
 msgid "Terminal"
 msgstr "Terminal"
@@ -3197,7 +3237,7 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 #~ msgstr "This computer, not paired"
 
 #: src/features/console-sessions.tsx:397
-#: src/features/ticket-proposals.tsx:159
+#: src/features/ticket-proposals.tsx:184
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "This device is not approved yet (Settings › Device access)."
@@ -3646,9 +3686,21 @@ msgstr "WezDeck"
 #~ msgid "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 #~ msgstr "WezDeck organizes workspaces, git worktrees, and agent sessions into one keyboard-first local control plane."
 
+#: src/features/ticket-proposals.tsx:122
+msgid "What already exists"
+msgstr "What already exists"
+
+#: src/features/ticket-proposals.tsx:155
+msgid "What confirming starts"
+msgstr "What confirming starts"
+
 #: src/features/console-activity.tsx:207
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 #~ msgstr "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
+
+#: src/features/ticket-proposals.tsx:116
+msgid "What it solves"
+msgstr "What it solves"
 
 #: src/features/session-new.tsx:276
 msgid "What should it work on?"
@@ -3687,11 +3739,11 @@ msgstr "Where it runs"
 msgid "Which table should the weekly report read?"
 msgstr "Which table should the weekly report read?"
 
-#: src/features/ticket-proposals.tsx:186
+#: src/features/ticket-proposals.tsx:211
 msgid "Why — the planner reads this (required)"
 msgstr "Why — the planner reads this (required)"
 
-#: src/features/ticket-proposals.tsx:165
+#: src/features/ticket-proposals.tsx:190
 msgid "Why reject"
 msgstr "Why reject"
 

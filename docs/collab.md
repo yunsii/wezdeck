@@ -242,6 +242,18 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
     toward the 12-child cap. The scheduler keeps running everything else and,
     once the rest is done, parks the parent in `split_review` (result
     `awaiting_approval`) instead of integrating; approve/reject, then rerun.
+  - **What the approver reads** (2026-11-25, after a draft came back as a
+    bare child list and the user asked "what are you going to do?"): the plan
+    agent must first check every goal item against the default branch
+    (`status_check`: missing / partial / done + evidence; done → no child,
+    partial → the child names what it reuses) and write `summary.problem` /
+    `summary.approach` and a plain `effect` per child — a draft missing any of
+    them is refused before review. `outcome` is computed by `split.py`, not
+    the model: workers, max parallel (dependency width ∩ ceilings ∩ memory),
+    stages, memory peak, cost and minutes from this machine's run records,
+    delivery branch, `pushes: false`. CLI relay (SKILL.md "Say it before doing
+    it") and the web card show the same four parts: 要解决什么 / 现状核对 /
+    打算怎么做 / 确认后会发生什么; contract and `assumed` sit under 技术细节.
   - Agents run `approve` only after the user said yes in chat — never on a
     worker's or plan agent's say-so. The web console's ticket page shows the
     same proposals (`api show` `proposals`, the draft's contract included)
