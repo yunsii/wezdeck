@@ -562,3 +562,20 @@ fires. Making the tool hooks `async` would remove the wait entirely but lets
 `resolved` race `running` / `done` — rejected. What is left in a no-op
 (~120 ms live) is bash startup + lib sourcing and the per-fire bg-entry read
 checks.
+
+## Porthole switch (2026-11-25)
+
+Groundwork for a single agent tab that every jump retargets (an extension of
+the overflow tab, [`tab-visibility.md`](./tab-visibility.md)). Isolated tmux
+server (`-f /dev/null`), two real Claude 2.1 fullscreen sessions resumed with
+`--fork-session` (original transcripts untouched), a real tmux client on a
+200×50 pty switched by `switch-client -c`, 10 rounds each:
+
+| Target | `switch-client` → first repaint byte | settled (no bytes 400 ms) |
+| --- | --- | --- |
+| same size | p50 2.6 ms (max 5.5) | p50 2.6 ms |
+| last sized 120×40 | p50 2.2 ms (tmux paints its grid) | p50 17 ms (max 18, Claude SIGWINCH redraw, ~10 KB) |
+
+The tmux switch is not the limit: both land within one or two 60 Hz frames.
+WezTerm paint and the jump dispatch (`attention.jump` 10–27 ms in `hotkey
+dispatched` rows) add on top.
