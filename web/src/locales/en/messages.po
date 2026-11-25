@@ -1464,7 +1464,7 @@ msgstr "joins the current turn"
 #~ msgid "Jump to pane"
 #~ msgstr "Jump to pane"
 
-#: src/features/chat-sticky.tsx:124
+#: src/features/chat-sticky.tsx:135
 msgid "Jump to your message: {text}"
 msgstr "Jump to your message: {text}"
 
@@ -1614,7 +1614,7 @@ msgstr "Loading original…"
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:371
-#: src/features/session-header.tsx:246
+#: src/features/session-header.tsx:248
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1712,7 +1712,7 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:263
+#: src/features/session-header.tsx:265
 #: src/features/session-list.tsx:283
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -2653,7 +2653,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:276
+#: src/features/session-header.tsx:278
 #: src/features/session-info.tsx:220
 msgid "Session info"
 msgstr "Session info"
@@ -2673,7 +2673,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:225
+#: src/features/session-header.tsx:227
 #: src/features/session-list.tsx:227
 msgctxt "nav"
 msgid "Sessions"
@@ -2842,7 +2842,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:237
+#: src/features/session-header.tsx:239
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 

@@ -213,10 +213,12 @@ export function SessionHeader({
       )
     : undefined
   return (
+    // opaque: at 95 % a dark user bubble scrolling under it greyed the
+    // header (and an image's loading pulse flickered through)
     <header
       ref={head}
       data-testid="session-header"
-      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck/95 px-2.5 pt-1 pb-2 backdrop-blur"
+      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck px-2.5 pt-1 pb-2"
     >
       <div className="flex min-w-0 items-center gap-1">
         {/* the list sits beside the conversation on a wide screen */}

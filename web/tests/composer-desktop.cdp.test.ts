@@ -375,6 +375,17 @@ async function clearThenLeaveMidUpload(page: Page) {
       )
     })
   await expect.poll(gaps, { timeout: 10_000 }).toBeLessThan(1.5)
+  // the header is opaque: content scrolling under it never shows through
+  const headerAlpha = await page
+    .getByTestId('session-header')
+    .evaluate((el) => {
+      const c = getComputedStyle(el).backgroundColor
+      // oklab(… / 0.95) or rgba(…, 0.95): an alpha below 1 shows through
+      const alpha =
+        /\/\s*([\d.]+)\)/.exec(c) ?? /rgba\([^)]*,\s*([\d.]+)\)/.exec(c)
+      return alpha ? Number(alpha[1]) : 1
+    })
+  expect(headerAlpha).toBe(1)
   await box.fill('要清掉的草稿')
   await clear.click()
   expect(await box.inputValue()).toBe('')

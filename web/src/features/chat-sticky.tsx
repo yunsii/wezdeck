@@ -115,7 +115,18 @@ export function StickyPrompt({
           the leaving bar keeps its last text while it fades */}
       <AnimatePresence>
         {text ? (
-          <m.div key="sticky" {...dropIn} className="absolute inset-x-0 top-1">
+          <m.div
+            key="sticky"
+            {...dropIn}
+            className="absolute inset-x-0 top-0 pt-1"
+          >
+            {/* the 4 px between the header and the bar, on the page's own
+                ground: the thread showed through it (a dark user bubble
+                peeking under the header) */}
+            <span
+              aria-hidden
+              className="absolute -inset-x-2.5 top-0 h-1 bg-brand-deck"
+            />
             <Button
               variant="plain"
               type="button"
