@@ -229,15 +229,17 @@ async function answer(
   const reloadOnly = steps.length === 1 && steps[0].do === 'reload'
   // a release reloading the page says so after the reload, on the new page
   // (pwa-boot.tsx): a toast here vanished with the reload half-read
+  // no subject: on the host's own browser 「电脑读取了这台设备」 read as
+  // nonsense (the release toast dropped 「电脑发布了」 the same way)
   if (!reloadOnly)
     toast(
       steps.length
         ? zh
-          ? `电脑正在复现问题并读取诊断（${steps.length} 步）`
-          : `The host is reproducing a problem and reading diagnostics (${steps.length} steps)`
+          ? `调试中：正在这个页面复现问题（${steps.length} 步）`
+          : `Debugging: reproducing a problem on this page (${steps.length} steps)`
         : zh
-          ? '电脑读取了这台设备的诊断信息'
-          : 'The host read this device’s diagnostics',
+          ? '已读取这个页面的诊断信息'
+          : 'Diagnostics read from this page',
       { id: 'host-diag', duration: 4000 },
     )
   const results: Array<Record<string, unknown>> = []

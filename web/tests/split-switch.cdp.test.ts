@@ -241,10 +241,15 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       const page = await (
         await browser.newContext({ viewport: { width: 1280, height: 700 } })
       ).newPage()
-      await page.goto(`${base}/console/collab?remote=1#pair=${token}`)
-      const rows = page.locator('[data-ticket]')
-      await rows.nth(1).waitFor({ timeout: 20_000 })
-      await rows.nth(0).click()
+      // a ticket with runs, taller than the window (the list's first one
+      // changes with the ticket store and may be short)
+      await page.goto(
+        `${base}/console/collab/req-20261123-090146-a3af56?remote=1#pair=${token}`,
+      )
+      const other = page.locator(
+        '[data-ticket]:not([data-ticket=req-20261123-090146-a3af56])',
+      )
+      await other.first().waitFor({ timeout: 20_000 })
       const pane = page.getByTestId('ticket-pane')
       await expect
         .poll(() => pane.locator('h1').first().textContent())
@@ -252,11 +257,13 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       // the ticket's runs load after its title: wait until the page is tall
       // enough to stand 400 px down (scrolling early stopped at 7 px)
       await expect
-        .poll(() =>
-          page.evaluate(() => {
-            const el = document.querySelector('.vt-page')
-            return el ? el.scrollHeight - el.clientHeight : 0
-          }),
+        .poll(
+          () =>
+            page.evaluate(() => {
+              const el = document.querySelector('.vt-page')
+              return el ? el.scrollHeight - el.clientHeight : 0
+            }),
+          { timeout: 15_000 },
         )
         .toBeGreaterThan(400)
       await page.waitForTimeout(800)
@@ -265,7 +272,7 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
         if (el) el.scrollTop = 400
       })
       const f = await frames(page, '[data-testid=ticket-pane] h1', () =>
-        rows.nth(1).click(),
+        other.first().click(),
       )
       const after = f.slice(f.findIndex((x) => x.scroll !== 400 || x.busy))
       expect(f.some((x) => x.key.startsWith('Loading'))).toBe(false)
