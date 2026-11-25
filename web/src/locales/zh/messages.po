@@ -16,7 +16,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:435
+#: src/features/chat-thread.tsx:445
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -820,11 +820,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:419
+#: src/features/chat-thread.tsx:429
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:420
+#: src/features/chat-thread.tsx:430
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -1929,6 +1929,10 @@ msgstr "没有上游分支，无法比较。"
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
 
+#: src/features/chat-pending.tsx:66
+msgid "Not delivered: the agent went idle without it"
+msgstr "未送达：agent 已空闲，没收到这条"
+
 #: src/features/me-host.tsx:128
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
@@ -2239,7 +2243,7 @@ msgstr "填进消息，交给这个 agent"
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
-#: src/features/chat-thread.tsx:464
+#: src/features/chat-pending.tsx:36
 msgid "Queued messages"
 msgstr "排队中的消息"
 
@@ -2327,6 +2331,10 @@ msgstr "远程访问"
 msgid "Remote devices"
 msgstr "远程设备"
 
+#: src/features/chat-pending.tsx:83
+msgid "Remove"
+msgstr "移除"
+
 #: src/features/composer-picked.tsx:62
 msgid "Remove image"
 msgstr "移除图片"
@@ -2403,6 +2411,10 @@ msgstr "调研完成"
 #: src/features/console-activity.tsx:98
 msgid "research failed"
 msgstr "调研失败"
+
+#: src/features/chat-pending.tsx:73
+msgid "Resend"
+msgstr "重发"
 
 #: src/features/session-header.tsx:127
 msgid "resets {fiveReset}"

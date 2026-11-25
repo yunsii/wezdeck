@@ -1,6 +1,6 @@
-// covers: web/src/features/session-send.ts
+// covers: web/src/features/session-send.ts web/src/features/chat-pending.tsx web/src/features/chat-thread.tsx
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { chromium } from '@playwright/test'
@@ -30,6 +30,11 @@ describe.runIf(attention && devicesFile)(
         .trim()
 
     beforeAll(async () => {
+      // `cat` under the name claude: opening a session marks it read, which
+      // archives the entry, and an archived session stays listed (and
+      // writable) only while its pane runs an agent
+      const agent = join(dirname(socket), 'claude')
+      symlinkSync(execFileSync('which', ['cat']).toString().trim(), agent)
       const entries: Record<string, unknown> = {}
       for (const id of ['q-a', 'q-b']) {
         const cwd = join(dirname(socket), id)
@@ -45,7 +50,7 @@ describe.runIf(attention && devicesFile)(
           '100',
           '-y',
           '20',
-          'cat',
+          agent,
         )
         entries[id] = {
           session_id: id,
@@ -114,5 +119,59 @@ describe.runIf(attention && devicesFile)(
       await bubble.waitFor({ timeout: 5_000 })
       await context.close()
     }, 90_000)
+
+    // The pane runs `cat` and the entry is idle: no transcript line ever
+    // settles the bubble. It used to vanish a minute later, so a message the
+    // TUI swallowed looked delivered; now it stays as 未送达 with 重发 / 移除.
+    it('a message the transcript never shows turns 未送达, resend pastes it again', async () => {
+      const context = await browser.newContext({
+        viewport: { width: 1280, height: 720 },
+        locale: 'zh-CN',
+      })
+      const page = await context.newPage()
+      await page.clock.install()
+      await approve(page)
+      await page.goto(`${base}/zh/console/sessions/q-b`)
+      const box = page.getByLabel('发给 Agent 的消息')
+      await box.click()
+      await box.fill('不会进 transcript 的消息')
+      await page.keyboard.press('Enter')
+      const bubble = page.locator('[data-pending]', {
+        hasText: '不会进 transcript 的消息',
+      })
+      await expect
+        .poll(() => bubble.getAttribute('data-pending'), { timeout: 15_000 })
+        .toBe('queued')
+      const notice = page.getByText('未送达：agent 已空闲，没收到这条')
+      // under a minute: still only queued
+      await page.clock.fastForward(45_000)
+      await page.waitForTimeout(1_500)
+      expect(await bubble.getAttribute('data-pending')).toBe('queued')
+      expect(await notice.count()).toBe(0)
+      // past it, agent idle: marked, not dropped
+      await page.clock.fastForward(20_000)
+      await notice.waitFor({ timeout: 10_000 })
+      expect(await bubble.getAttribute('data-pending')).toBe('lost')
+
+      // 重发: one more paste into the pane, a fresh queued bubble
+      const pane = () =>
+        tmux('capture-pane', '-p', '-t', 'q-b')
+          .split('\n')
+          .filter((line) => line.includes('不会进 transcript 的消息')).length
+      const before = pane()
+      await page.getByRole('button', { name: '重发' }).click()
+      await expect.poll(pane, { timeout: 10_000 }).toBeGreaterThan(before)
+      await expect
+        .poll(() => bubble.getAttribute('data-pending'), { timeout: 10_000 })
+        .toBe('queued')
+      expect(await notice.count()).toBe(0)
+
+      // 移除: lost again, then gone
+      await page.clock.fastForward(65_000)
+      await notice.waitFor({ timeout: 10_000 })
+      await page.getByRole('button', { name: '移除' }).click()
+      await expect.poll(() => bubble.count(), { timeout: 5_000 }).toBe(0)
+      await context.close()
+    }, 120_000)
   },
 )

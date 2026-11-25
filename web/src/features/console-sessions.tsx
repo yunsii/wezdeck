@@ -386,8 +386,8 @@ export function SessionDetail({ id }: { id: string }) {
   const { locale } = useLocale()
   const device = useDeviceState()
   const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id)
-  const { sending, error, setError, retryIn, pendingRaw, send, run } =
-    useSessionWrites(id, transcriptEnd(detail.data))
+  const writes = useSessionWrites(id, transcriptEnd(detail.data))
+  const { sending, error, setError, retryIn, pendingRaw, send, run } = writes
   useFollowReplacement(data?.replaced_by)
   const end = useRef<HTMLDivElement>(null)
   const messages: Array<Message> = data?.messages ?? []
@@ -509,7 +509,7 @@ export function SessionDetail({ id }: { id: string }) {
               start={start}
               busy={busy}
               activity={busy ? activityOf(data) : undefined}
-              pending={pendingRaw}
+              {...writes.pendingProps(device.state === 'approved' && !blocked)}
               status={data?.status}
               statusTs={data?.ts}
               onBackground={toBackground(data, device.state, run)}

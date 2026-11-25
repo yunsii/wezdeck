@@ -197,6 +197,18 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
       else mark('queued')
     })
   }
+  /** drop a bubble (a lost one the user gave up on) */
+  const dismiss = (item: Pending) =>
+    updatePending(id, (list) => list.filter((one) => one.at !== item.at))
+  /** a lost bubble, sent again as a new message (new time, new anchor) */
+  const resend = (item: Pending) => {
+    dismiss(item)
+    return send({
+      text: item.text,
+      attachments: item.attachments ?? [],
+      note: item.note ?? '',
+    })
+  }
   const setError = (error: string) => patch(id, { error })
   return {
     sending: state.sending,
@@ -206,5 +218,14 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     pendingRaw,
     send,
     run,
+    /**
+     * ChatThread's bubble props: the queue, and resend / remove on a lost
+     * (未送达) one — resend only while this device may write
+     */
+    pendingProps: (canWrite: boolean) => ({
+      pending: pendingRaw,
+      onResend: canWrite ? (item: Pending) => void resend(item) : undefined,
+      onDismiss: dismiss,
+    }),
   }
 }

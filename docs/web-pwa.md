@@ -438,8 +438,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   place, solidifying from the faded opacity (`chat-settle`), never a
   second slide-in — the agent may take queued ones in any order; each transcript
   line after the send settles one bubble (`settle`, `chat-thread.tsx`), and
-  a bubble is never dropped while the agent works, only a minute after it is
-  idle; motion only for what just arrived (slide-in, a new
+  one never shown a minute after the send, agent idle, stays as **未送达** with
+  重发 / 移除 (was dropped silently; `chat-pending.tsx`, trace `send-lost`, no
+  text) — a later line still settles it; motion only for what just arrived (slide-in, a new
   reply unfolds at reading pace, ~60 chars/s, tripled while two or more
   wait; more than two replies behind — the page was hidden, the phone
   locked — everything before the newest reply shows at once and a reader

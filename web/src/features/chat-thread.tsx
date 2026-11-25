@@ -13,11 +13,8 @@ import {
   useState,
 } from 'react'
 
-import {
-  SentAttachments,
-  endsWithNote,
-  withAttachmentNote,
-} from './chat-attachments'
+import { SentAttachments, endsWithNote } from './chat-attachments'
+import { PendingBubbles } from './chat-pending'
 import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
@@ -60,8 +57,12 @@ export type Pending = {
   attachments?: Array<string>
   /** absolute transcript index where the transcript ended when it was sent */
   after?: number
-  /** sending: the host has not taken it yet; queued: in the pane, not yet in the transcript */
-  state?: 'sending' | 'queued'
+  /**
+   * sending: the host has not taken it yet; queued: in the pane, not yet in
+   * the transcript; lost: derived by settle() — the agent went idle and the
+   * transcript never showed it (未送达, offered for resend)
+   */
+  state?: 'sending' | 'queued' | 'lost'
 }
 
 /**
@@ -224,8 +225,13 @@ export function ChatThread({
   status,
   statusTs,
   onBackground,
+  onResend,
+  onDismiss,
   sessionId = '',
 }: {
+  /** a lost (未送达) bubble: send it again / drop it */
+  onResend?: (item: Pending) => void
+  onDismiss?: (item: Pending) => void
   /** Claude, writable: Ctrl+B into the pane (shown while a foreground call runs) */
   onBackground?: () => void
   messages: Array<Message>
@@ -365,7 +371,11 @@ export function ChatThread({
             </div>
           )
         })}
-        <PendingBubbles pending={queue.left} />
+        <PendingBubbles
+          pending={queue.left}
+          onResend={onResend}
+          onDismiss={onDismiss}
+        />
       </SmoothGrow>
       {/* last: the turn line says what the agent does now (working, or
           how long the last turn took), below everything in the thread —
@@ -450,51 +460,19 @@ function CompactDivider({
 }
 
 /**
- * Messages sent from the phone that the agent has not taken yet: at the end
- * of the thread, the user bubble faded, like Claude Code's queued input. Once the
- * transcript shows one, settle() drops it and the normal user bubble takes
- * its place — in whatever order the agent picks them up.
- */
-function PendingBubbles({ pending }: { pending: Array<Pending> }) {
-  const { t } = useLingui()
-  // queued before the conversation opened: shown still, like its messages
-  const atMount = useRef(new Set(pending.map((item) => item.at)))
-  if (pending.length === 0) return null
-  return (
-    <div aria-label={t`Queued messages`} className="grid gap-1.5">
-      {pending.map((item) => (
-        // the user bubble itself — same box, same text and image strip as
-        // the message it becomes (Bubble), faded like Claude Code's queued
-        // input; it turns solid once the agent takes the message
-        <div
-          key={item.at}
-          data-pending={item.state ?? 'queued'}
-          className={cn(
-            'min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck opacity-55',
-            !atMount.current.has(item.at) && 'chat-in',
-          )}
-        >
-          <SentAttachments
-            text={withAttachmentNote(item.text, item.attachments)}
-          />
-          {item.note && !item.attachments?.length ? (
-            <span className="opacity-70">
-              {item.text ? ' ' : ''}({item.note})
-            </span>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/**
  * Drop optimistic bubbles the transcript now shows: each user line after
  * the point a message was sent settles at most one bubble, so two identical
  * messages need two lines and an earlier identical one never counts. A
- * bubble the transcript never shows goes a minute after the agent is idle
- * (never while it works: a long turn keeps the queue).
+ * bubble the transcript never shows turns lost a minute after it was sent
+ * once the agent is idle (never while it works: a long turn keeps the
+ * queue). It used to vanish silently then, so a paste the TUI swallowed
+ * (a half-typed draft at the desk, an open completion menu) looked
+ * delivered; now it stays as 未送达 until resent or removed, and a later
+ * transcript line still settles it.
  */
+/** how long after sending an unmatched message counts as lost (agent idle) */
+export const LOST_AFTER_MS = 60_000
+
 export function settle(
   pending: Array<Pending>,
   messages: Array<Message>,
@@ -521,7 +499,8 @@ export function settleMatches(
   // the host appends an attachment note after a blank line
   const matches = (typed: string, text: string) =>
     typed ? text === typed || endsWithNote(text, typed) : endsWithNote(text, '')
-  const left = pending.filter((item) => {
+  const left: Array<Pending> = []
+  for (const item of pending) {
     const typed = item.text.trim()
     const line = users.find(
       (user) =>
@@ -531,10 +510,14 @@ export function settleMatches(
     )
     if (line) {
       used.add(line.at)
-      return false
+      continue
     }
-    if (item.state === 'sending' || busy) return true
-    return now - item.at < 60_000
-  })
+    const waiting = item.state === 'sending' || busy
+    left.push(
+      waiting || now - item.at < LOST_AFTER_MS
+        ? item
+        : { ...item, state: 'lost' },
+    )
+  }
   return { left, took: used }
 }

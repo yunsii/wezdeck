@@ -16,7 +16,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:435
+#: src/features/chat-thread.tsx:445
 msgid "· summary"
 msgstr "· summary"
 
@@ -820,11 +820,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:419
+#: src/features/chat-thread.tsx:429
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:420
+#: src/features/chat-thread.tsx:430
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1929,6 +1929,10 @@ msgstr "No upstream branch: nothing to compare with."
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 
+#: src/features/chat-pending.tsx:66
+msgid "Not delivered: the agent went idle without it"
+msgstr "Not delivered: the agent went idle without it"
+
 #: src/features/me-host.tsx:128
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
@@ -2239,7 +2243,7 @@ msgstr "Put into the message for this agent"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/chat-thread.tsx:464
+#: src/features/chat-pending.tsx:36
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -2327,6 +2331,10 @@ msgstr "Remote access"
 msgid "Remote devices"
 msgstr "Remote devices"
 
+#: src/features/chat-pending.tsx:83
+msgid "Remove"
+msgstr "Remove"
+
 #: src/features/composer-picked.tsx:62
 msgid "Remove image"
 msgstr "Remove image"
@@ -2403,6 +2411,10 @@ msgstr "research done"
 #: src/features/console-activity.tsx:98
 msgid "research failed"
 msgstr "research failed"
+
+#: src/features/chat-pending.tsx:73
+msgid "Resend"
+msgstr "Resend"
 
 #: src/features/session-header.tsx:127
 msgid "resets {fiveReset}"

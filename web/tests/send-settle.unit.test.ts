@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { settle, settleMatches } from '#/features/chat-thread'
+import { LOST_AFTER_MS, settle, settleMatches } from '#/features/chat-thread'
 import type { Message, Pending } from '#/features/chat-thread'
 
 const ask = (text: string): Message => ({ role: 'user', text })
@@ -62,12 +62,36 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
     ).toEqual([])
   })
 
-  it('never expires while the agent works; a minute after it is idle', () => {
+  it('never turns lost while the agent works; a minute after, once idle', () => {
     const old = [sent('queued long ago', 0, { at: NOW - 10 * 60_000 })]
-    expect(settle(old, [], 0, true, NOW)).toHaveLength(1)
-    expect(settle(old, [], 0, false, NOW)).toEqual([])
+    expect(settle(old, [], 0, true, NOW)[0].state).toBe('queued')
+    // not dropped silently any more: it stays, marked 未送达
+    const idle = settle(old, [], 0, false, NOW)
+    expect(idle).toHaveLength(1)
+    expect(idle[0].state).toBe('lost')
     const fresh = [sent('just now', 0, { at: NOW - 5_000 })]
-    expect(settle(fresh, [], 0, false, NOW)).toHaveLength(1)
+    expect(settle(fresh, [], 0, false, NOW)[0].state).toBe('queued')
+  })
+
+  it('turns lost exactly at LOST_AFTER_MS', () => {
+    const edge = (age: number) =>
+      settle([sent('x', 0, { at: NOW - age })], [], 0, false, NOW)[0].state
+    expect(edge(LOST_AFTER_MS - 1)).toBe('queued')
+    expect(edge(LOST_AFTER_MS)).toBe('lost')
+  })
+
+  it('a lost message the transcript shows later still settles', () => {
+    const old = [sent('late pickup', 1, { at: NOW - 5 * 60_000 })]
+    expect(settle(old, [say('a')], 0, false, NOW)[0].state).toBe('lost')
+    expect(settle(old, [say('a'), ask('late pickup')], 0, false, NOW)).toEqual(
+      [],
+    )
+  })
+
+  it('does not mutate the stored bubble when marking it lost', () => {
+    const stored = sent('keep me queued', 0, { at: NOW - 5 * 60_000 })
+    settle([stored], [], 0, false, NOW)
+    expect(stored.state).toBe('queued')
   })
 
   it('a message still sending never expires', () => {
