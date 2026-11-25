@@ -218,7 +218,7 @@ def main(argv: list[str]) -> None:
 
     claimed = False
     if meta.get("status") not in TERMINAL:
-        c = run([str(TOOL_ROOT / "run.sh"), "claim", "--id", tid, "--by", f"tmux:{pane_id}", "--steal"])
+        c = run([str(TOOL_ROOT / "run.sh"), "claim", "--id", tid, "--by", f"tmux:{pane_id}", "--steal", "--any-cwd"])
         claimed = c.returncode == 0
     mj = ticket_fs.read_meta_json(tid)
     mj["attached"] = {"tmux_session": tmux_session, "window_id": window_id, "pane_id": pane_id,

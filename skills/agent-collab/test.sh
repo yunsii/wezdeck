@@ -50,6 +50,10 @@ targets:
     aliases: [avc, ai-video-collection]
 EOF
 
+# Session claims must run inside the target repo (cwd check): every ticket below
+# targets wezdeck, so run the suite from the fake wezdeck checkout.
+cd "$fake_wez"
+
 # --- create gate ---
 if "$run" create --to wezdeck --from avc --title "no assumptions" >/dev/null 2>&1; then
   bad "create without assumptions must fail"
@@ -96,6 +100,55 @@ key_wt="$(cd "$fake_wt_parent/task-ticket-resolve" && bash -c '
 ')"
 check "resolve_target_key from linked worktree == wezdeck" test "$key_wt" = "wezdeck"
 
+# --- session identity: two sessions of one $USER must not share a lease ---
+id_ident="$("$run" create --to wezdeck --from avc --title "identity" --observed o --assumed a 2>/dev/null | jq -r .id)"
+c_a="$(env -u TICKET_SESSION_ID -u CLAUDE_CODE_SESSION_ID TMUX_PANE=%1 "$run" claim --id "$id_ident" 2>/dev/null)"
+check "default claim identity = tmux pane" jq -e '.ok == true and .claimed_by == "tmux:%1"' <<<"$c_a"
+c_b="$(env -u TICKET_SESSION_ID -u CLAUDE_CODE_SESSION_ID TMUX_PANE=%2 "$run" claim --id "$id_ident" 2>/dev/null)" || true
+check "other session (same \$USER) blocked by live lease" jq -e '.ok == false and .error == "lease held" and .claimed_by == "tmux:%1"' <<<"$c_b"
+c_a2="$(env -u TICKET_SESSION_ID -u CLAUDE_CODE_SESSION_ID TMUX_PANE=%1 "$run" claim --id "$id_ident" 2>/dev/null)"
+check "same session re-claim is idempotent" jq -e '.ok == true and .claimed_by == "tmux:%1"' <<<"$c_a2"
+c_env="$(env -u TMUX_PANE TICKET_SESSION_ID=custom-x "$run" claim --id "$id_ident" 2>/dev/null)" || true
+check "TICKET_SESSION_ID wins and is a distinct holder" jq -e '.ok == false and .claimed_by == "tmux:%1"' <<<"$c_env"
+c_cc="$(env -u TMUX_PANE -u TICKET_SESSION_ID CLAUDE_CODE_SESSION_ID=abc "$run" renew --id "$id_ident" 2>/dev/null)" || true
+check "claude session id identity is not the tmux holder (renew refused)" jq -e '.ok == false and .by == "claude:abc"' <<<"$c_cc"
+c_user="$(env -u TMUX_PANE -u TICKET_SESSION_ID -u CLAUDE_CODE_SESSION_ID "$run" claim --id "$id_ident" 2>&1)" || true
+check "no identity env falls back to \$USER and warns" grep -q 'falling back to \$USER' <<<"$c_user"
+
+# --- renew / release are holder-only ---
+lease0="$(jq -r .lease_until_epoch "$TICKETS_ROOT/_data/$id_ident/meta.json")"
+r_ok="$(TMUX_PANE=%1 "$run" renew --id "$id_ident" --lease-hours 3 2>/dev/null)"
+lease1="$(jq -r .lease_until_epoch "$TICKETS_ROOT/_data/$id_ident/meta.json")"
+check "holder renew extends lease" bash -c "jq -e '.ok == true' <<<'$r_ok' >/dev/null && [ '$lease1' -gt '$lease0' ]"
+check "renew writes a renewed event" grep -q '"renewed"' "$TICKETS_ROOT/_data/$id_ident/events.jsonl"
+r_bad="$(TMUX_PANE=%2 "$run" renew --id "$id_ident" 2>/dev/null)" || true
+check "non-holder renew refused" jq -e '.ok == false and .error == "not lease holder"' <<<"$r_bad"
+rel_bad="$(TMUX_PANE=%2 "$run" release --id "$id_ident" 2>/dev/null)" || true
+check "non-holder release refused while lease live" jq -e '.ok == false and .error == "lease held"' <<<"$rel_bad"
+rel_ok="$(TMUX_PANE=%1 "$run" release --id "$id_ident" 2>/dev/null)"
+check "holder release frees the ticket" jq -e '.ok == true and .status == "submitted"' <<<"$rel_ok"
+TMUX_PANE=%1 "$run" claim --id "$id_ident" >/dev/null 2>&1
+rel_force="$(TMUX_PANE=%2 "$run" release --id "$id_ident" --force 2>/dev/null)"
+check "release --force overrides another live lease" jq -e '.ok == true' <<<"$rel_force"
+check "forced release is recorded" bash -c "grep '\"released\"' '$TICKETS_ROOT/_data/$id_ident/events.jsonl' | tail -1 | jq -e '.forced == true' >/dev/null"
+# expired lease: anyone may claim
+TMUX_PANE=%1 "$run" claim --id "$id_ident" --lease-hours 0 >/dev/null 2>&1
+c_exp="$(TMUX_PANE=%2 "$run" claim --id "$id_ident" 2>/dev/null)"
+check "expired lease is claimable by another session" jq -e '.ok == true and .claimed_by == "tmux:%2"' <<<"$c_exp"
+TMUX_PANE=%2 "$run" release --id "$id_ident" >/dev/null 2>&1
+
+# --- session claim needs cwd in the target repo ---
+c_cwd="$(cd "$tmp" && TMUX_PANE=%1 "$run" claim --id "$id_ident" 2>&1)" || true
+check "session claim outside target repo refused" grep -q '"error":"wrong cwd"' <<<"$c_cwd"
+c_other="$(cd "$fake_avc" && TMUX_PANE=%1 "$run" claim --id "$id_ident" 2>&1)" || true
+check "session claim from another allowlisted repo refused" grep -q '"cwd_target":"ai-video-collection"' <<<"$c_other"
+c_wt="$(cd "$fake_wt_parent/task-ticket-resolve" && TMUX_PANE=%1 "$run" claim --id "$id_ident" 2>/dev/null)"
+check "session claim from a linked worktree of the target ok" jq -e '.ok == true' <<<"$c_wt"
+TMUX_PANE=%1 "$run" release --id "$id_ident" >/dev/null 2>&1
+c_any="$(cd "$tmp" && TMUX_PANE=%1 "$run" claim --id "$id_ident" --any-cwd 2>/dev/null)"
+check "--any-cwd overrides the cwd check" jq -e '.ok == true' <<<"$c_any"
+TMUX_PANE=%1 "$run" release --id "$id_ident" >/dev/null 2>&1
+
 # --- claim / lease conflict (Mode 2 = session) ---
 claim1="$("$run" claim --id "$id" --by agent-a --lease-hours 2 2>/dev/null)"
 check "claim a ok" jq -e '.ok == true and .claimed_by == "agent-a"' <<<"$claim1"
@@ -126,7 +179,7 @@ else
   printf 'rc=%s out=%s\n' "$rc_steal" "$steal_out" >&2
 fi
 # restore a clean session-claimed ticket for challenge/reply below
-"$run" release --id "$id" >/dev/null 2>&1 || true
+"$run" release --id "$id" --force >/dev/null 2>&1 || true
 "$run" claim --id "$id" --by agent-a >/dev/null 2>&1
 
 # --- challenge / reply ---
@@ -212,7 +265,7 @@ mkdir -p "$TICKETS_ROOT/_data/$id/runs"; : >"$TICKETS_ROOT/_data/$id/runs/run-x.
 PATH="$fakebin:$PATH" "$run" attach --id "$id" --dry-run >/dev/null 2>&1
 check "attach refuses while a headless run is in flight" test $? -eq 3
 rm -f "$TICKETS_ROOT/_data/$id/runs/run-x.launch.json"
-"$run" release --id "$id" >/dev/null 2>&1 || true
+"$run" release --id "$id" --by tmux:%99 >/dev/null 2>&1 || true
 
 # --- re-claim after reply + close ---
 "$run" claim --id "$id" --by agent-a >/dev/null 2>&1

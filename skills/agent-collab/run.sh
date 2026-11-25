@@ -19,10 +19,10 @@
 #   run.sh inbox [--to TARGET|.]
 #   run.sh show --id ID
 #   run.sh next [--to TARGET|.] [--id ID]
-#   run.sh claim --id ID [--by WHO] [--lease-hours N] [--as-worker] [--steal]
-#       default = 主会话认领并开发 (owner=human; 禁止自动 worktree/worker)
+#   run.sh claim --id ID [--by WHO] [--lease-hours N] [--as-worker] [--steal] [--any-cwd]
+#       default = 主会话认领并开发 (owner=human, --by = session identity, cwd in target repo)
 #       --as-worker = headless worker 内部认领 only
-#   run.sh release --id ID
+#   run.sh renew|release --id ID [--by WHO] [--lease-hours N] [--force]  (holder only)
 #   run.sh challenge --id ID --measured T --impact T --recommended T [--original T] [--needs T] [--questions JSON]
 #   run.sh reply --id ID --decision TEXT [--status waiting_target|in_progress]
 #       [--continue] only for worker-owned tickets (headless implement)
@@ -1398,7 +1398,7 @@ EOF
     --snippet-ref "skills/agent-collab/SKILL.md:1")"
   id="$(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')"
   TICKETS_ROOT="$tmp" "$0" inbox --to wezdeck >/dev/null
-  TICKETS_ROOT="$tmp" "$0" claim --id "$id" --by selfcheck >/dev/null
+  TICKETS_ROOT="$tmp" "$0" claim --id "$id" --by selfcheck --any-cwd >/dev/null
   TICKETS_ROOT="$tmp" "$0" set-status --id "$id" --status waiting_initiator >/dev/null
   TICKETS_ROOT="$tmp" "$0" reply --id "$id" --decision "fix in wezdeck docs" >/dev/null
   TICKETS_ROOT="$tmp" "$0" close --id "$id" --doc "docs/example.md" >/dev/null
@@ -1417,7 +1417,7 @@ case "$cmd" in
   show) cmd_show "$@" ;;
   next) cmd_next "$@" ;;
   claim) cmd_claim "$@" ;;
-  release) cmd_release "$@" ;;
+  release|renew) "cmd_$cmd" "$@" ;;
   challenge) cmd_challenge "$@" ;;
   reply) cmd_reply "$@" ;;
   set-status) cmd_set_status "$@" ;;

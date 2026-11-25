@@ -244,7 +244,7 @@ Pre-v1 rows in old tickets have no `seq`; `api events --ticket` returns them as
 
 | kind | data | Producer |
 | --- | --- | --- |
-| `created` `claimed` `released` `challenge` `reply` `status` `closed` `progress` | existing fields | lifecycle |
+| `created` `claimed` `renewed` `released` `challenge` `reply` `status` `closed` `progress` | existing fields | lifecycle |
 | `queued` / `dispatched` | `gate, detail, slot, queue_wait_ms, mem_available_mb` | scheduler |
 | `run_start` | launch-record summary (`trigger.source, prompt.sha256, est_tokens, session.reuse, reason`) | invoke |
 | `session_init` | `cli_init` | stream parser |

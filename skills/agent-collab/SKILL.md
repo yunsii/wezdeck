@@ -177,6 +177,20 @@ Read the **full** ticket, then **edit code in the current worktree/TUI**.
 If claim returns lease held → stop; do not dual-write.  
 **Do not** call `"$D" run` after a successful session claim.
 
+**Lease = this session.** Omit `--by`: the holder defaults to the session identity
+(`$TICKET_SESSION_ID` > `tmux:$TMUX_PANE` > `claude:$CLAUDE_CODE_SESSION_ID` > `$USER`
+with a warning), so another session of the same user gets `lease held` instead of
+silently co-writing. A session claim refuses (`"error":"wrong cwd"`, exit 3) unless cwd
+is the ticket's target repo (primary or a linked worktree) — `cd` there, don't
+`--any-cwd` around it.
+
+```bash
+"$D" renew --id <id> [--lease-hours N]   # holder only; at milestones / before 2h runs out
+"$D" release --id <id>                   # holder only; --force frees another live lease
+```
+
+An expired lease is free for any session to claim.
+
 ### C) Mode 3 — Create and ticket development
 
 Only when the user explicitly wants a background worker:
@@ -276,7 +290,7 @@ Use `"$D" next --id <id>` when unsure whose turn it is.
 - Don’t invent a second OpenClaw-only ticket store — same skill
 - Don’t skip `--observed` / `--assumed` on create
 - Don’t close without `--doc` or `--no-doc`
-- Don’t start a second claim while a lease is active
+- Don’t start a second claim while a lease is active, and don’t pass someone else’s `--by` to dodge `lease held`
 - Don’t treat Ticket-headless as C3 ACP (or the reverse); OpenClaw Main picks **执行通道** — see `openclaw/docs/agent-interaction.md` §6
 - **Don’t** after `claim` (session) call `run` / spawn `ticket-*` worktree / headless worker
 - **Don’t** use `--run` / `run` unless the user asked to 委托 / 后台 / 派工人 (Mode 3)

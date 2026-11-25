@@ -143,8 +143,23 @@ print(json.dumps({"ok": True, "to": os.environ["TO_KEY"], "count": len(out), "ti
 PY
 }
 
+# Session claims develop in cwd, so cwd must belong to the ticket's target repo
+# (primary or any linked worktree). Dies with exit 3 otherwise.
+ticket_require_target_cwd() {
+  local id=$1 root to_key here_key
+  root="$(ticket_store_root)"
+  [[ -f "$root/_data/$id/ticket.md" ]] || return 0  # not-found is reported by the caller
+  to_key="$(awk -F': ' '/^to:/{print $2; exit}' "$root/_data/$id/ticket.md" | tr -d '"')"
+  here_key="$(ticket_resolve_target_key . 2>/dev/null)" || here_key=""
+  if [[ "$here_key" != "$to_key" ]]; then
+    printf '{"ok":false,"error":"wrong cwd","to":"%s","cwd_target":"%s","cwd":"%s","hint":"session claim develops in cwd: cd into %s (primary or a dev-* worktree) or let a Mode 3 worker take it; --any-cwd overrides"}\n' \
+      "$to_key" "${here_key:-none}" "$PWD" "$(ticket_target_path "$to_key" 2>/dev/null || printf '%s' "$to_key")" >&2
+    exit 3
+  fi
+}
+
 cmd_claim() {
-  local id="" by="${USER:-agent}" lease_hours=2 as_worker=0 steal=0
+  local id="" by="" lease_hours=2 as_worker=0 steal=0 any_cwd=0
   while (($#)); do
     case "$1" in
       --id) id=$2; shift 2 ;;
@@ -152,15 +167,18 @@ cmd_claim() {
       --lease-hours) lease_hours=$2; shift 2 ;;
       --as-worker) as_worker=1; shift ;;
       --steal) steal=1; shift ;;
+      --any-cwd) any_cwd=1; shift ;;
       *) ticket_die "unknown claim arg: $1" ;;
     esac
   done
   [[ -n "$id" ]] || ticket_die "claim requires --id"
+  [[ -n "$by" ]] || by="$(ticket_session_identity)"
   # Headless workers always pass --as-worker; bare claim = main-session develop.
   if ((as_worker == 0)) && [[ "$by" == worker-* ]]; then
     as_worker=1
   fi
   ticket_ensure_tree
+  ((as_worker || any_cwd)) || ticket_require_target_cwd "$id"
   local root lock
   root="$(ticket_store_root)"
   lock="$root/.locks/tickets.lock"
@@ -248,43 +266,81 @@ print(json.dumps({
 PY
 }
 
-cmd_release() {
-  local id=""
+# release / renew act on the caller's own lease. Another holder's live lease is
+# refused (exit 3) unless --force; an expired lease is free for anyone.
+cmd_release() { ticket_lease_op release "$@"; }
+cmd_renew() { ticket_lease_op renew "$@"; }
+
+ticket_lease_op() {
+  local op=$1 id="" by="" lease_hours=2 force=0
+  shift
   while (($#)); do
     case "$1" in
       --id) id=$2; shift 2 ;;
-      *) ticket_die "unknown release arg: $1" ;;
+      --by) by=$2; shift 2 ;;
+      --lease-hours) lease_hours=$2; shift 2 ;;
+      --force) force=1; shift ;;
+      *) ticket_die "unknown $op arg: $1" ;;
     esac
   done
-  [[ -n "$id" ]] || ticket_die "release requires --id"
+  [[ -n "$id" ]] || ticket_die "$op requires --id"
+  [[ -n "$by" ]] || by="$(ticket_session_identity)"
   ticket_ensure_tree
   local root lock
   root="$(ticket_store_root)"
   lock="$root/.locks/tickets.lock"
   ticket_with_lock "$lock" -- \
-    env TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" ID="$id" python3 - <<'PY'
-import importlib.util, json, os, sys
+    env TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" ID="$id" OP="$op" BY="$by" \
+      LEASE_HOURS="$lease_hours" FORCE="$force" python3 - <<'PY'
+import importlib.util, json, os, sys, time
 spec = importlib.util.spec_from_file_location(
     "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
 )
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
-tid = os.environ["ID"]
+tid, op, by = os.environ["ID"], os.environ["OP"], os.environ["BY"]
+force = os.environ.get("FORCE") == "1"
 try:
     meta, body = mod.read_ticket(tid)
 except FileNotFoundError as e:
     print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
     sys.exit(2)
+mj = mod.read_meta_json(tid)
+holder = meta.get("claimed_by") or mj.get("claimed_by")
+lease_until = mj.get("lease_until_epoch")
+live = isinstance(lease_until, int) and lease_until > mod.now_epoch()
+
+if op == "renew":
+    # Only the holder extends; an expired lease is renewable only while nobody re-claimed it.
+    if holder != by or meta.get("status") != "in_progress":
+        print(json.dumps({"ok": False, "error": "not lease holder", "claimed_by": holder,
+                          "status": meta.get("status"), "by": by,
+                          "hint": "claim first (or the ticket is not in_progress)"}, ensure_ascii=False))
+        sys.exit(3)
+    until = mod.now_epoch() + int(float(os.environ.get("LEASE_HOURS") or 2) * 3600)
+    meta["lease_until"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(until))
+    mj["lease_until_epoch"] = until
+    mod.write_ticket(tid, meta, body)
+    mod.write_meta_json(tid, mj)
+    mod.append_event(tid, {"type": "renewed", "by": by, "lease_until_epoch": until})
+    mod.reindex()
+    print(json.dumps({"ok": True, "id": tid, "claimed_by": by, "lease_until": meta["lease_until"]}, ensure_ascii=False))
+    sys.exit(0)
+
+if live and holder and holder != by and not force:
+    print(json.dumps({"ok": False, "error": "lease held", "claimed_by": holder, "by": by,
+                      "lease_until_epoch": lease_until,
+                      "hint": "only the holder releases a live lease; --force overrides"}, ensure_ascii=False))
+    sys.exit(3)
 meta["status"] = "submitted"
 meta["owner"] = "worker"
 meta["claimed_by"] = None
 meta["lease_until"] = None
-mj = mod.read_meta_json(tid)
 mj["lease_until_epoch"] = None
 mj["claimed_by"] = None
 mod.write_ticket(tid, meta, body)
 mod.write_meta_json(tid, mj)
-mod.append_event(tid, {"type": "released"})
+mod.append_event(tid, {"type": "released", "by": by, "forced": bool(force and live and holder and holder != by)})
 mod.reindex()
 print(json.dumps({"ok": True, "id": tid, "status": "submitted"}, ensure_ascii=False))
 PY

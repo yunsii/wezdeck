@@ -23,6 +23,23 @@ ticket_store_root() {
   printf '%s' "${TICKETS_ROOT:-$HOME/.agent/tickets}"
 }
 
+# Identity of the calling session, used as the default claim / renew / release
+# holder so two sessions of the same $USER never share one lease. First hit:
+# $TICKET_SESSION_ID → tmux pane (same form `attach` claims with) → Claude Code
+# session id → $USER (legacy; every session collides, so warn).
+ticket_session_identity() {
+  if [[ -n "${TICKET_SESSION_ID:-}" ]]; then
+    printf '%s' "$TICKET_SESSION_ID"
+  elif [[ -n "${TMUX_PANE:-}" ]]; then
+    printf 'tmux:%s' "$TMUX_PANE"
+  elif [[ -n "${CLAUDE_CODE_SESSION_ID:-}" ]]; then
+    printf 'claude:%s' "$CLAUDE_CODE_SESSION_ID"
+  else
+    ticket_log "no session identity (TICKET_SESSION_ID / TMUX_PANE / CLAUDE_CODE_SESSION_ID); falling back to \$USER — sessions of one user share this lease"
+    printf '%s' "${USER:-agent}"
+  fi
+}
+
 ticket_now_iso() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
