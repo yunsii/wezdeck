@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Local remote-access test stack: the production web build (vite preview with
-# the Worker + HostRelay Durable Object on :3018) and a throwaway host relay,
+# the Worker + HostRelay Durable Object on :3018, WEZDECK_TEST_STACK_PORT) and a throwaway host relay,
 # with EVERY path the relay writes or reads pointed into a temp dir — attention
 # file, device approvals, phone uploads, Claude status snapshots. Twice a
 # hand-typed stack missed WEZDECK_REMOTE_UPLOADS and test uploads landed in
@@ -30,7 +30,8 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 STATE="${WEZDECK_TEST_STACK_DIR:-${TMPDIR:-/tmp}/wezdeck-remote-test-stack}"
-PORT=3018
+# a second stack (another worktree / session) needs its own port + state dir
+PORT="${WEZDECK_TEST_STACK_PORT:-3018}"
 
 print_env() {
   cat <<EOF
@@ -40,6 +41,7 @@ export WEZDECK_TEST_UPLOADS=$STATE/uploads
 export WEZDECK_TEST_CLAUDE_STATUS=$STATE/claude-status
 export WEZDECK_RELAY_CONTROL=$STATE/relay.sock
 export WEZDECK_TEST_STACK_DIR=$STATE
+export WEZDECK_REMOTE_URL=http://127.0.0.1:$PORT
 EOF
 }
 
@@ -115,6 +117,8 @@ start_relay() {
     WEZDECK_SESSION_RESTART_CMD="$STATE/fake-session-restart" \
     TICKETS_ROOT="$STATE/tickets" \
     WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
+    TICKET_COLLAB_RUN_CMD="$STATE/fake-ticket-run" \
+    WEZDECK_REPO="$REPO" \
     WEZDECK_RELAY_OPEN_READS="$([[ "$(cat "$STATE/gated" 2>/dev/null)" == 1 ]] && echo 0 || echo 1)" \
     "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" relay) \
     >"$STATE/relay.out" 2>&1 </dev/null &
@@ -149,6 +153,17 @@ start() {
     esac
   done
   stop
+  # unix sockets cap paths at 108 bytes: a long state dir silently loses relay.sock
+  if (( ${#STATE} > 90 )); then
+    echo "state dir too long for unix sockets (${#STATE} > 90): set WEZDECK_TEST_STACK_DIR shorter" >&2
+    exit 1
+  fi
+  # someone else's stack on this port would get our relay as its host
+  # (each replaces the other): refuse instead of sharing it
+  if curl -sf -m 2 "http://127.0.0.1:$PORT/relay/health" >/dev/null 2>&1; then
+    echo "port $PORT already serves another test stack: set WEZDECK_TEST_STACK_PORT (and a separate WEZDECK_TEST_STACK_DIR)" >&2
+    exit 1
+  fi
   mkdir -p "$STATE/uploads" "$STATE/claude-status" "$STATE/relaylog"
   printf '%s' "$home" >"$STATE/home"
   printf '%s' "${WEZDECK_TEST_GATED_READS:-}" >"$STATE/gated"

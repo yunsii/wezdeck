@@ -299,6 +299,20 @@ lines the cdp tests need (`WEZDECK_TEST_ATTENTION`, `WEZDECK_TEST_DEVICES`,
 Hand-typed stacks twice forgot `WEZDECK_REMOTE_UPLOADS` and wrote test
 uploads into the real uploads dir — use the script.
 
+A second stack beside another session's (another worktree) needs its own
+port and a **short** state dir: `WEZDECK_TEST_STACK_PORT=3028
+WEZDECK_TEST_STACK_DIR=/tmp/<short> … start`, then `eval` the printed
+exports (they include `WEZDECK_REMOTE_URL`). `start` refuses a port that
+already answers `/relay/health` — on 2026-11-25 a second stack's relay
+joined the first one's `HostRelay` and the two kept replacing each other —
+and a state dir over 90 bytes (unix socket paths cap at 108, so
+`relay.sock` failed to bind). The relay runs with `WEZDECK_REPO` = the
+stack's checkout (its `ticket` CLI is the code under test, not the primary
+tree's) and `TICKET_COLLAB_RUN_CMD` = the run stand-in, so a fan-out
+approved from the page dispatches nothing real. A worktree also needs
+`web/.dev.vars` (gitignored; the stack's dev tokens) copied from the
+primary checkout before its first build.
+
 Versions are source fingerprints (`scripts/dev/source-fingerprint.sh DIR`:
 the last commit touching it, `-dirty-<hash>` with uncommitted edits; web
 tests excluded): the stack builds the web with it as the build id, and
