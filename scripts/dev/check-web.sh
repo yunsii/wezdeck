@@ -25,7 +25,11 @@ if [[ "${1:-}" == --fix-catalogs ]]; then
   before="$(cat "${catalogs[@]}" | sha1sum)"
   if corepack pnpm exec lingui extract >"$logs/extract.log" 2>&1; then
     if [[ "$(cat "${catalogs[@]}" | sha1sum)" != "$before" ]]; then
-      git add -- "${catalogs[@]}"
+      # from the repo root with web/ paths: a hook in a linked worktree runs
+      # with GIT_DIR set and no GIT_WORK_TREE, so git takes the cwd (web/)
+      # as the top level and a relative add lands at the root —
+      # src/locales/*.po, 3.6k lines each, went into a commit (2026-11-25)
+      git -C "$repo_root" add -- "${catalogs[@]/#/web/}"
       printf '[web-check] i18n catalogs refreshed and staged\n'
     fi
   else
