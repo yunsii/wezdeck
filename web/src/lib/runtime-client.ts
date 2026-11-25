@@ -385,6 +385,7 @@ export type HostReadAction =
   | 'session.image'
   | 'session.history'
   | 'session.git'
+  | 'session.skills'
   /** local Runtime only: the host's diagnostics requests for this page */
   | 'diag.pending'
   /** local Runtime only (serve.go): the relay does not list devices */

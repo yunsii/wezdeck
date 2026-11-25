@@ -188,6 +188,7 @@ type transcript struct {
 	lastMsg   string       // message id whose usage was counted (one reply spans several lines)
 	outputs   []outputMark // per reply: when, how many output tokens (turnOutput)
 	lineOff   int64        // file offset of the line being fed
+	skills    []skillInfo  // the skills the agent was shown (session_skills.go)
 }
 
 // markCompact appends a context-compaction marker (role system, kind compact;

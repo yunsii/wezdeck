@@ -52,10 +52,12 @@ describe('Interaction debugging layout', () => {
       })
       expect(room, `${id}: page room`).toBeLessThanOrEqual(1)
     }
-    // scroll the list: its first group heading stays at the list's top
+    // scroll the list within its first group: that group's heading stays at
+    // the list's top (a fixed 400 px left a shorter first group once the
+    // list grew, and its heading rightly went with it)
     const stuck = await list.evaluate((el) => {
-      el.scrollTop = 400
       const heading = el.querySelector('h2')!
+      el.scrollTop = Math.floor(heading.parentElement!.offsetHeight / 2)
       return Math.abs(
         heading.getBoundingClientRect().top - el.getBoundingClientRect().top,
       )

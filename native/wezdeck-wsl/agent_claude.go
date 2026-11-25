@@ -141,7 +141,12 @@ func (t *transcript) feedLine(raw []byte) {
 			Type        string `json:"type"`
 			Prompt      string `json:"prompt"`
 			CommandMode string `json:"commandMode"`
-			Origin      struct {
+			// skill_listing: content (string), names ([]string), isInitial —
+			// raw, since other attachment types use these keys differently
+			Content   json.RawMessage `json:"content"`
+			Names     json.RawMessage `json:"names"`
+			IsInitial bool            `json:"isInitial"`
+			Origin    struct {
 				Kind string `json:"kind"`
 				From string `json:"from"`
 				Body string `json:"body"`
@@ -173,6 +178,14 @@ func (t *transcript) feedLine(raw []byte) {
 	// are harness traffic.
 	// A background task's notification (a Monitor event, a background
 	// command or a Monitor ending): onto the call that started it
+	if a := line.Attachment; line.Type == "attachment" && a.Type == "skill_listing" {
+		var content string
+		var names []string
+		_ = json.Unmarshal(a.Content, &content)
+		_ = json.Unmarshal(a.Names, &names)
+		t.feedClaudeSkillListing(content, names, a.IsInitial)
+		return
+	}
 	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "task-notification" {
 		t.taskNotification(a.Prompt, line.Timestamp)
 		return

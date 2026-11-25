@@ -205,6 +205,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '会话所在检出的改动文件、未推送 / 未拉取与最近提交（点 git 标签时）',
         'Changed files, unpushed / unpulled and recent commits of the checkout (on tapping the git tag)',
       ),
+      c(
+        'session.skills',
+        '会话 agent 实际加载的 skill（Claude 读会话记录、Codex 读 rollout、Grok 跑 inspect），供「能力」与输入框 / 补全',
+        'Skills the session agent was actually given (Claude transcript, Codex rollout, Grok inspect), for 能力 and the composer / completion',
+      ),
     ],
   },
   {

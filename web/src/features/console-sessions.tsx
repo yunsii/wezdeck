@@ -592,6 +592,7 @@ export function SessionDetail({ id }: { id: string }) {
                 }
               : undefined
           }
+          skills={data}
         />
         <SessionStatusBar data={data} />
         {resume.element}

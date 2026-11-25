@@ -49,6 +49,12 @@ func (t *transcript) feedCodex(raw []byte) {
 	}
 	p := line.Payload
 	switch {
+	case line.Type == "response_item" && p.Type == "message" && p.Role == "developer":
+		for _, c := range p.Content {
+			if t.feedCodexSkills(c.Text) {
+				break
+			}
+		}
 	case line.Type == "response_item" && p.Type == "message" && (p.Role == "user" || p.Role == "assistant"):
 		var parts []string
 		for _, c := range p.Content {

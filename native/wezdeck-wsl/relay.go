@@ -295,6 +295,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = sessionHistory(args)
 	case "session.git":
 		result, err = sessionGit(args)
+	case "session.skills":
+		result, err = sessionSkills(args)
 	case "session.image":
 		result, err = sessionImage(args)
 	default:

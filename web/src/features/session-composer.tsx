@@ -36,6 +36,7 @@ import {
 } from './composer-images'
 import { PickedImages } from './composer-picked'
 import { tokenKey } from './composer-tokens'
+import { useSkillCompletion } from './composer-complete'
 
 export type Outgoing = {
   text: string
@@ -186,7 +187,7 @@ export function useComposer({
   }
 }
 
-type Composer = ReturnType<typeof useComposer>
+export type Composer = ReturnType<typeof useComposer>
 type Panel = 'keys' | 'todos' | 'commands' | null
 
 const tool =
@@ -282,6 +283,7 @@ function Toolbar({
   commands,
   panel,
   onPanel,
+  skills,
 }: {
   composer: Composer
   writable: boolean
@@ -289,6 +291,8 @@ function Toolbar({
   commands: boolean
   panel: Panel
   onPanel: (panel: Panel) => void
+  /** the 能力 chip */
+  skills: React.ReactNode
 }) {
   const { t } = useLingui()
   const todos = useTodos(composer.id)
@@ -349,6 +353,7 @@ function Toolbar({
           <span className="text-meta tabular-nums opacity-80">{openTodos}</span>
         ) : null}
       </Button>
+      {skills}
       {writable && !full ? (
         <label
           className={cn(
@@ -382,6 +387,7 @@ export function ComposerBox({
   writable,
   onKey,
   commands,
+  skills,
 }: {
   composer: Composer
   blocked: boolean
@@ -393,10 +399,13 @@ export function ComposerBox({
   onKey: (key: string) => void
   /** Claude sessions: send a slash command, open 恢复会话 */
   commands?: { send: (text: string) => void; resume: () => void }
+  /** the session reply: its agent and `skills_rev` drive the 能力 chip and `/` completion */
+  skills?: { agent?: string; skills_rev?: string }
 }) {
   const { t } = useLingui()
   // one tool panel at a time, above the toolbar
   const [panel, setPanel] = useState<Panel>(null)
+  const complete = useSkillCompletion(composer, skills)
   // a touch keyboard has one Enter key and no Shift+Enter: there Enter is
   // a new line and the button sends (as in Telegram / WhatsApp); with a
   // mouse and keyboard Enter sends, Shift+Enter breaks the line
@@ -439,6 +448,7 @@ export function ComposerBox({
           onClose={() => setPanel(null)}
         />
       ) : null}
+      {complete.list}
       <PickedImages composer={composer} />
       <Toolbar
         composer={composer}
@@ -446,7 +456,9 @@ export function ComposerBox({
         commands={Boolean(commands)}
         panel={panel}
         onPanel={setPanel}
+        skills={complete.chip}
       />
+      {complete.sheet}
       {composer.progress ? (
         <p role="status" className="px-1 text-meta text-brand-muted">
           {composer.progress}
@@ -462,14 +474,19 @@ export function ComposerBox({
         <Textarea
           variant="bare"
           id="session-composer"
+          {...complete.inputProps}
           value={composer.text}
           onFocus={(event) => {
             // keep the composer above the keyboard once it has opened
             const form = event.currentTarget.form
             setTimeout(() => form?.scrollIntoView({ block: 'end' }), 300)
           }}
-          onChange={(event) => composer.setText(event.target.value)}
+          onChange={(event) => {
+            composer.setText(event.target.value)
+            complete.track(event.target.selectionStart)
+          }}
           onKeyDown={(event) => {
+            if (complete.key(event)) return
             if (tokenKey(event, composer.setText)) return
             // Esc Esc empties the composer, as in Claude Code's own prompt
             if (event.key === 'Escape') {

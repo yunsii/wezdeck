@@ -14,6 +14,7 @@ import {
   ToastDemo,
 } from './console-interactions-demos'
 import { GIT, TASK_NOTES } from './console-interactions-samples'
+import { SkillsDemo } from './console-interactions-skills'
 
 /** a clean checkout, no upstream (the synced one adds upstream) */
 const CLEAN = {
@@ -28,6 +29,20 @@ const CLEAN = {
 /** around the conversation: tags, the status bar, git, toasts */
 export function chromeSections(): Array<Omit<Section, 'group'>> {
   return [
+    {
+      id: 'skills',
+      tags: ['common'],
+      title: { zh: '能力与 / 补全', en: 'Skills and / completion' },
+      source: {
+        zh: '输入框上方「能力 N」：会话 agent 实际加载的 skill（session.skills：Claude 读转录 skill_listing、Codex 读 rollout、Grok 跑 inspect，session_skills.go），按来源分组、可搜索，点一项放进输入框；输入 / （Codex 为 $）弹出命令与能力补全',
+        en: 'the 能力 N chip above the composer: the skills the session agent was actually given (session.skills: Claude transcript skill_listing, Codex rollout, Grok inspect — session_skills.go), grouped by origin and searchable, a tap drafts it; typing / (Codex $) opens command and skill completion',
+      },
+      keys: {
+        zh: '/ 打开补全，↑ ↓ 选择，Tab / Enter 补全，Esc 关闭',
+        en: '/ opens completion, ↑ ↓ move, Tab / Enter pick, Esc closes',
+      },
+      demo: <SkillsDemo />,
+    },
     {
       id: 'task-notes',
       tags: ['claude'],

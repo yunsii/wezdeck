@@ -20,7 +20,7 @@ internal sealed partial class RuntimeWebServer
     private static readonly HashSet<string> RemoteReadActions = new(StringComparer.Ordinal)
     {
         "sessions", "session", "upload.get", "todos", "repos", "ticket.targets",
-        "session.new.job", "session.image", "session.history", "session.git", "devices",
+        "session.new.job", "session.image", "session.history", "session.git", "session.skills", "devices",
         // local only: this browser polling for the host's diagnostics requests
         "diag.pending",
     };

@@ -526,6 +526,10 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		if t.mode != "" {
 			out["mode"] = t.mode
 		}
+		// the page refetches session.skills when this changes
+		if rev := skillsRev(t.skills); rev != "" {
+			out["skills_rev"] = rev
+		}
 		// what each background task is: the call that started it
 		if bg := backgroundOf(e); len(bg) > 0 {
 			out["background"] = enrichBackground(bg, t, e.SessionID)
