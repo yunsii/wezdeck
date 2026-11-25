@@ -102,6 +102,28 @@ describe('Session tags', () => {
     expect(await head.getAttribute('data-folded')).toBe(null)
     await page.keyboard.press('Escape')
     await tip.waitFor({ state: 'hidden' })
+    // even on two full rows (the limit), opening a tip folds nothing
+    await head.evaluate((el) => {
+      el.style.width = '240px'
+    })
+    await expect
+      .poll(() =>
+        head.evaluate(
+          (el) =>
+            new Set(
+              [...el.querySelectorAll('.session-tag')].map((t) =>
+                Math.round(t.getBoundingClientRect().top),
+              ),
+            ).size,
+        ),
+      )
+      .toBe(2)
+    await head.locator('button.session-tag').first().click()
+    await tip.waitFor({ timeout: 3_000 })
+    await page.waitForTimeout(200)
+    expect(await head.getAttribute('data-folded')).toBe(null)
+    await page.keyboard.press('Escape')
+    await tip.waitFor({ state: 'hidden' })
     // the list row (a link) has no tag buttons
     expect(await page.getByTestId('tags-list').locator('button').count()).toBe(
       0,

@@ -290,11 +290,14 @@ export function TagLine({
     const el = line.current
     if (!maxLines || !el || typeof ResizeObserver === 'undefined') return
     const measure = () => {
-      // tags only: an open tip's popover drops zero-size focus guards in
-      // beside its trigger, which counted as a row of their own (+1)
+      // tags only: an open tip's popover drops 1×1 focus guards in beside
+      // its trigger (top -1), which counted as a row of their own (+1)
       const tags = [...el.children].filter(
         (c): c is HTMLElement =>
-          c instanceof HTMLElement && c.offsetWidth > 0 && c.offsetHeight > 0,
+          c instanceof HTMLElement &&
+          !c.hasAttribute('data-base-ui-focus-guard') &&
+          (c.classList.contains('session-tag') ||
+            c.querySelector('.session-tag') !== null),
       )
       const tops = [...new Set(tags.map((tag) => tag.offsetTop))].sort(
         (a, b) => a - b,

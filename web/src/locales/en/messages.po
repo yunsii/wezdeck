@@ -352,7 +352,7 @@ msgstr "All repos"
 #~ msgid "All statuses"
 #~ msgstr "All statuses"
 
-#: src/components/deck/session-tags.tsx:396
+#: src/components/deck/session-tags.tsx:399
 msgid "All tags"
 msgstr "All tags"
 
@@ -2662,7 +2662,7 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/components/deck/session-tags.tsx:384
+#: src/components/deck/session-tags.tsx:387
 msgid "Show all tags"
 msgstr "Show all tags"
 

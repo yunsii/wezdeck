@@ -352,7 +352,7 @@ msgstr "全部仓库"
 #~ msgid "All statuses"
 #~ msgstr "全部状态"
 
-#: src/components/deck/session-tags.tsx:396
+#: src/components/deck/session-tags.tsx:399
 msgid "All tags"
 msgstr "全部标签"
 
@@ -2662,7 +2662,7 @@ msgstr "已交付"
 msgid "Shortcuts"
 msgstr "键盘快捷键"
 
-#: src/components/deck/session-tags.tsx:384
+#: src/components/deck/session-tags.tsx:387
 msgid "Show all tags"
 msgstr "显示全部标签"
 
