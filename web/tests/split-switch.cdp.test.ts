@@ -1,7 +1,7 @@
 // covers: web/src/features/chat-scroll.ts web/src/features/chat-sticky.tsx
 // covers: web/src/lib/view-transition.ts web/src/router.tsx
 // covers: web/src/features/console-collab.tsx web/src/lib/collab-query.ts
-// covers: web/src/components/deck/split-column.tsx
+// covers: web/src/components/deck/split-column.tsx web/src/features/console-me.tsx
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -151,6 +151,51 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     expect(await inView()).toBe(true)
   }, 30_000)
 
+  it('the list cards sit as far from the sidebar as from the divider', async () => {
+    const page = await (
+      await browser.newContext({ viewport: { width: 1280, height: 700 } })
+    ).newPage()
+    await page.goto(`${base}/console/sessions/sw-tall?remote=1#pair=${token}`)
+    await page.locator('[data-session=sw-short]').waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(800)
+    const gaps = await page.evaluate(() => {
+      const r = (sel: string) =>
+        document.querySelector(sel)!.getBoundingClientRect()
+      const main = r('#console-main')
+      const card = r('[data-repo]')
+      const pane = r('[data-testid=session-pane]')
+      return {
+        left: Math.round(card.left - main.left),
+        right: Math.round(pane.left - card.right),
+      }
+    })
+    // the gutter used to come on top of a full right padding: 10 vs 20
+    expect(gaps.left).toBeGreaterThan(0)
+    expect(Math.abs(gaps.left - gaps.right)).toBeLessThanOrEqual(1)
+  }, 30_000)
+
+  it('我的 has the split divider, full window height', async () => {
+    const page = await (
+      await browser.newContext({ viewport: { width: 1280, height: 700 } })
+    ).newPage()
+    await page.goto(`${base}/console/me/connection?remote=1#pair=${token}`)
+    const pane = page.locator('.vt-split-pane')
+    await pane.waitFor({ timeout: 20_000 })
+    const got = await pane.evaluate((el) => {
+      const scroller = el.closest('.vt-page') as HTMLElement
+      const r = el.getBoundingClientRect()
+      const s = scroller.getBoundingClientRect()
+      return {
+        border: getComputedStyle(el).borderLeftWidth,
+        top: r.top - s.top,
+        bottom: s.bottom - r.bottom,
+      }
+    })
+    expect(got.border).toBe('1px')
+    expect(got.top).toBeLessThanOrEqual(1)
+    expect(got.bottom).toBeLessThanOrEqual(1)
+  }, 30_000)
+
   it('a session lands at its bottom on its first frame, no transition', async () => {
     const page = await (
       await browser.newContext({ viewport: { width: 1280, height: 700 } })
@@ -204,6 +249,16 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       await expect
         .poll(() => pane.locator('h1').first().textContent())
         .not.toMatch(/^Loading/)
+      // the ticket's runs load after its title: wait until the page is tall
+      // enough to stand 400 px down (scrolling early stopped at 7 px)
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const el = document.querySelector('.vt-page')
+            return el ? el.scrollHeight - el.clientHeight : 0
+          }),
+        )
+        .toBeGreaterThan(400)
       await page.waitForTimeout(800)
       await page.evaluate(() => {
         const el = document.querySelector('.vt-page')

@@ -162,10 +162,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    2026-11-24); the current row is highlighted, picking another replaces the
    history entry, j / k move through the list's order and the URL follows,
    y copies the open session's reference;
-   no back button. 我的 shows its groups on the left and the chosen one
-   beside them (default 连接; group links replace). Sheets become a centred
-   dialog (fade + scale, no grab handle). 工单's run / cache / cost band
-   opens in a dialog from the list head (the sidebar links 工单动态).
+   no back button. 我的 shows its groups on the left, the chosen one past
+   会话's full-height divider (default 连接; group links replace). Sheets: a
+   centred dialog (fade + scale, no grab handle). 工单's run / cache / cost
+   band opens in a dialog from the list head (sidebar links 工单动态).
 6. **Desktop keyboard**: `j`/`k` move, `Esc` closes a sheet and, with none
    open, lets go of a focused button / link (closing a sheet hands focus
    back to its trigger, which kept Space pressing it), `/` filter,

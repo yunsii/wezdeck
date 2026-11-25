@@ -459,11 +459,15 @@ export function ConsoleMePage() {
   // a desk-sized window: the groups on the left, the chosen one beside them
   if (wide)
     return (
-      <div className="grid max-w-5xl grid-cols-[minmax(240px,300px)_minmax(0,1fr)] items-start gap-6">
-        <div className="vt-split-list">
+      // the divider runs the window's height, as beside 会话 and 工单
+      <div className="grid max-w-5xl grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+        <div className="vt-split-list self-start pr-[var(--page-x)]">
           <MeIndex active={known ?? 'connection'} />
         </div>
-        <div className="vt-split-pane min-w-0">
+        <div
+          data-testid="me-pane"
+          className="vt-split-pane -my-4 min-h-[100cqh] min-w-0 border-l border-brand-edge py-4 pl-[var(--page-x)]"
+        >
           <MeSubPage page={known ?? 'connection'} />
         </div>
       </div>
