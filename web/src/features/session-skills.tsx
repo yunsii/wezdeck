@@ -196,62 +196,66 @@ export function SkillsSheet({
       title={t`Skills · ${count}`}
       testId="skills-sheet"
     >
-      <p className="px-1 pb-2 text-caption text-brand-label">
-        {t`What this session's agent was given, read from its own record. Tap one to put it in the message; type ${trigger} in the message to complete.`}
-      </p>
-      <Input
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={t`Search name or description`}
-        aria-label={t`Search skills`}
-        className="mb-2"
-      />
-      {error ? (
-        <p className="py-6 text-center text-body text-brand-error">{error}</p>
-      ) : !reply ? (
-        <p className="py-6 text-center text-caption text-brand-muted">{t`Loading…`}</p>
-      ) : shown.length === 0 ? (
-        <p className="py-6 text-center text-caption text-brand-muted">
-          {count ? t`Nothing matches` : t`This agent lists no skills yet`}
+      {/* the body has no side padding of its own: px-4 lines the text,
+          search and rows up with the title */}
+      <div data-testid="skills-body" className="px-4">
+        <p className="pb-2 text-caption text-brand-label">
+          {t`What this session's agent was given, read from its own record. Tap one to put it in the message; type ${trigger} in the message to complete.`}
         </p>
-      ) : (
-        <div className="grid gap-3 pb-2">
-          {groups.map((group) => {
-            const rows = shown.filter((item) => item.kind === group)
-            if (!rows.length) return null
-            return (
-              <section key={group} className="grid gap-1.5">
-                <h3 className="px-1 text-meta text-brand-label">
-                  {labels[group]} · {rows.length}
-                </h3>
-                <ul className="grid gap-1.5">
-                  {rows.map((item) => (
-                    <li key={item.insert}>
-                      <Button
-                        variant="plain"
-                        type="button"
-                        data-skill={item.name}
-                        onClick={() => onPick(item.insert)}
-                        className="grid w-full gap-0.5 rounded-xl bg-brand-surface px-3.5 py-2.5 text-left"
-                      >
-                        <span className="truncate font-mono text-caption">
-                          {item.insert}
-                        </span>
-                        {item.description ? (
-                          <span className="line-clamp-3 text-caption text-brand-muted">
-                            {item.description}
+        <Input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t`Search name or description`}
+          aria-label={t`Search skills`}
+          className="mb-2"
+        />
+        {error ? (
+          <p className="py-6 text-center text-body text-brand-error">{error}</p>
+        ) : !reply ? (
+          <p className="py-6 text-center text-caption text-brand-muted">{t`Loading…`}</p>
+        ) : shown.length === 0 ? (
+          <p className="py-6 text-center text-caption text-brand-muted">
+            {count ? t`Nothing matches` : t`This agent lists no skills yet`}
+          </p>
+        ) : (
+          <div className="grid gap-3 pb-2">
+            {groups.map((group) => {
+              const rows = shown.filter((item) => item.kind === group)
+              if (!rows.length) return null
+              return (
+                <section key={group} className="grid gap-1.5">
+                  <h3 className="text-meta text-brand-label">
+                    {labels[group]} · {rows.length}
+                  </h3>
+                  <ul className="grid gap-1.5">
+                    {rows.map((item) => (
+                      <li key={item.insert}>
+                        <Button
+                          variant="plain"
+                          type="button"
+                          data-skill={item.name}
+                          onClick={() => onPick(item.insert)}
+                          className="grid w-full gap-0.5 rounded-xl bg-brand-surface px-3.5 py-2.5 text-left"
+                        >
+                          <span className="truncate font-mono text-caption">
+                            {item.insert}
                           </span>
-                        ) : null}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
-        </div>
-      )}
+                          {item.description ? (
+                            <span className="line-clamp-3 text-caption text-brand-muted">
+                              {item.description}
+                            </span>
+                          ) : null}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </Sheet>
   )
 }

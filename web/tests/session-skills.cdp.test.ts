@@ -77,6 +77,20 @@ describe('Skills and / completion', () => {
     await chip.click()
     const sheet = page.getByTestId('skills-sheet')
     await sheet.waitFor({ timeout: 5_000 })
+    // the body lines up with the title, not with the sheet's edge
+    const edges = await sheet.evaluate((el) => {
+      const left = (q: string) =>
+        el.querySelector(q)!.getBoundingClientRect().left
+      return {
+        sheet: el.getBoundingClientRect().left,
+        title: left('h2'),
+        text: left('[data-testid=skills-body] p'),
+        search: left('[data-testid=skills-body] input'),
+      }
+    })
+    expect(edges.title - edges.sheet).toBeGreaterThan(8)
+    expect(Math.abs(edges.text - edges.title)).toBeLessThan(1)
+    expect(Math.abs(edges.search - edges.title)).toBeLessThan(1)
     const text = (await sheet.innerText()).replace(/\s+/g, ' ')
     for (const group of [
       '命令 · 8',

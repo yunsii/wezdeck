@@ -1627,7 +1627,7 @@ msgstr "正在加载原图…"
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:248
 #: src/features/session-skeleton.tsx:14
-#: src/features/session-skills.tsx:213
+#: src/features/session-skills.tsx:216
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
@@ -1957,7 +1957,7 @@ msgstr "没有等你处理的工单。"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:219
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
@@ -2602,7 +2602,7 @@ msgstr "改动范围"
 #~ msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 #~ msgstr "屏幕与键盘尺寸、滚动位置、连接方式、版本号和最近 150 条页面事件；不含令牌，不含消息内容。"
 
-#: src/features/session-skills.tsx:206
+#: src/features/session-skills.tsx:209
 msgid "Search name or description"
 msgstr "搜索名称或描述"
 
@@ -2610,7 +2610,7 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-skills.tsx:207
+#: src/features/session-skills.tsx:210
 msgid "Search skills"
 msgstr "搜索能力"
 
@@ -3010,7 +3010,7 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:219
 msgid "This agent lists no skills yet"
 msgstr "这个 agent 还没有列出能力"
 
@@ -3501,7 +3501,7 @@ msgstr "要对方仓库做什么"
 msgid "What the terminal shows"
 msgstr "终端画面"
 
-#: src/features/session-skills.tsx:200
+#: src/features/session-skills.tsx:203
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 

@@ -1627,7 +1627,7 @@ msgstr "Loading original…"
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:248
 #: src/features/session-skeleton.tsx:14
-#: src/features/session-skills.tsx:213
+#: src/features/session-skills.tsx:216
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "Loading…"
@@ -1957,7 +1957,7 @@ msgstr "Nothing is waiting on you."
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:219
 msgid "Nothing matches"
 msgstr "Nothing matches"
 
@@ -2602,7 +2602,7 @@ msgstr "Scope"
 #~ msgid "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 #~ msgstr "Screen and keyboard sizes, scroll position, link mode, build, and the last 150 page events. No tokens, no message text."
 
-#: src/features/session-skills.tsx:206
+#: src/features/session-skills.tsx:209
 msgid "Search name or description"
 msgstr "Search name or description"
 
@@ -2610,7 +2610,7 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-skills.tsx:207
+#: src/features/session-skills.tsx:210
 msgid "Search skills"
 msgstr "Search skills"
 
@@ -3010,7 +3010,7 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:219
 msgid "This agent lists no skills yet"
 msgstr "This agent lists no skills yet"
 
@@ -3501,7 +3501,7 @@ msgstr "What the other repository should do"
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
 
-#: src/features/session-skills.tsx:200
+#: src/features/session-skills.tsx:203
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
