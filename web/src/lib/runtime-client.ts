@@ -87,6 +87,12 @@ async function probeRuntimeCached() {
   return value
 }
 
+/** this browser reads through the local Runtime (the host's own page) */
+export async function readsLocally() {
+  const local = await probeRuntimeCached()
+  return Boolean(local?.health.capabilities.includes('remote.read'))
+}
+
 export async function probeRuntime() {
   for (const baseUrl of runtimeCandidates()) {
     try {
@@ -379,6 +385,8 @@ export type HostReadAction =
   | 'session.image'
   | 'session.history'
   | 'session.git'
+  /** local Runtime only: the host's diagnostics requests for this page */
+  | 'diag.pending'
   /** local Runtime only (serve.go): the relay does not list devices */
   | 'devices'
 

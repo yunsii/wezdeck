@@ -244,7 +244,7 @@ trace), and the new page says 已更新到新版本 once (`wezdeck.updated-from`
 `pwa-boot.tsx`) (a build older than this step ignores it: get it there once through
 我的 › 应用 › 检查更新 and the toast's 刷新); never a control inside a form or under
 `[data-write]` — send, reply, take over, keys, options, rename), recording
-each step's frames (count, fps, longest gap, gaps > 50 ms). Each CLI answer carries its gist (`diagGist`): `build` vs `deployed` (`/build.json`; `current` false = the page has not reloaded onto the fix yet — do not ask for a retest), `page` and the step results without frames. It answers with
+each step's frames (count, fps, longest gap, gaps > 50 ms). The host's own browser (local mode: reads and writes through the Runtime, no relay link) cannot be pushed to: while shown it polls `diag.pending` every 3 s (Runtime → bridge `remote.diag.pending` → the relay's control socket `GET /diag/pending`, which also makes it a target for requests from then on; a page that polled in the last 15 s is counted like a relay client) and hands its chunks back through `diag.submit` (`POST /diag/submit`), so `diag` reaches the page the person is looking at on the desktop too. Each CLI answer carries its gist (`diagGist`): `build` vs `deployed` (`/build.json`; `current` false = the page has not reloaded onto the fix yet — do not ask for a retest), `page` and the step results without frames. It answers with
 the snapshot as `diag.submit` chunks — accepted only for a live request id —
 stored as `diagnostics-<ts>-<id>-<client>.json` in the uploads dir; the CLI
 prints the paths. The web console shows a toast that the host read diagnostics;

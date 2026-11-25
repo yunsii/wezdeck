@@ -181,11 +181,60 @@ func diagGist(body []byte) diagResult {
 
 type diagRequest struct {
 	deadline time.Time
+	id       string
+	reason   string
+	steps    json.RawMessage
 	targets  map[string]bool     // cids the request was pushed to: only they may answer
 	parts    map[string][]string // cid → chunks
 	answered map[string]bool     // one stored answer per cid
 	results  []diagResult
 	notify   chan struct{}
+}
+
+// Local-mode pages (the host's own browser: reads and writes through the
+// Runtime, never the relay) cannot be pushed to: they poll the control
+// socket through the bridge (GET /diag/pending, every ~3 s while shown) and
+// submit their chunks back the same way (POST /diag/submit). A page that
+// polled lately counts as a target, like a relay client seen lately.
+const localSeenFor = 15 * time.Second
+
+var (
+	localMu   sync.Mutex
+	localSeen = map[string]time.Time{} // "local-<page id>" → last poll
+)
+
+func recentLocalPages() []string {
+	localMu.Lock()
+	defer localMu.Unlock()
+	var out []string
+	for cid, at := range localSeen {
+		if time.Since(at) < localSeenFor {
+			out = append(out, cid)
+		} else {
+			delete(localSeen, cid)
+		}
+	}
+	return out
+}
+
+// localPending: the open requests this local page has not answered; the
+// poll itself makes it a target of requests issued from now on.
+func localPending(client string) []map[string]any {
+	cid := "local-" + client
+	localMu.Lock()
+	localSeen[cid] = time.Now()
+	localMu.Unlock()
+	diagMu.Lock()
+	defer diagMu.Unlock()
+	out := []map[string]any{}
+	for id, req := range diagRequests {
+		if time.Now().After(req.deadline) || req.answered[cid] {
+			continue
+		}
+		req.targets[cid] = true
+		out = append(out, map[string]any{"id": id, "reason": req.reason, "steps": req.steps})
+	}
+	return out
 }
 
 var (
@@ -294,8 +343,11 @@ func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
 // requestDiagnostics pushes a request and waits for the web consoles' answers.
 func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json.RawMessage) map[string]any {
 	id := newDiagID()
-	req := &diagRequest{deadline: time.Now().Add(wait + 10*time.Second), targets: map[string]bool{},
-		parts: map[string][]string{}, answered: map[string]bool{}, notify: make(chan struct{}, 8)}
+	if len(steps) == 0 || !json.Valid(steps) {
+		steps = json.RawMessage("[]")
+	}
+	req := &diagRequest{deadline: time.Now().Add(wait + 10*time.Second), id: id, reason: reason, steps: steps,
+		targets: map[string]bool{}, parts: map[string][]string{}, answered: map[string]bool{}, notify: make(chan struct{}, 8)}
 	defer func() {
 		// late chunks still land for a few seconds, then the id is dead
 		time.AfterFunc(10*time.Second, func() {
@@ -304,9 +356,6 @@ func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json
 			diagMu.Unlock()
 		})
 	}()
-	if len(steps) == 0 || !json.Valid(steps) {
-		steps = json.RawMessage("[]")
-	}
 	args, _ := json.Marshal(map[string]any{"reason": reason, "steps": steps})
 	// register the targets before pushing: a fast page may answer at once
 	targets := r.recentClients()
@@ -317,7 +366,15 @@ func (r *relay) requestDiagnostics(wait time.Duration, reason string, steps json
 	diagRequests[id] = req
 	diagMu.Unlock()
 	clients := r.pushToClients(relayFrame{T: "diag.request", ID: id, Data: args})
-	r.logf("diag_request", "id=%s clients=%d reason=%q", id, len(clients), reason)
+	// the host's own pages (local mode) pick it up on their next poll
+	locals := recentLocalPages()
+	diagMu.Lock()
+	for _, cid := range locals {
+		req.targets[cid] = true
+	}
+	diagMu.Unlock()
+	clients = append(clients, locals...)
+	r.logf("diag_request", "id=%s clients=%d local=%d reason=%q", id, len(clients), len(locals), reason)
 	timer := time.NewTimer(wait)
 	defer timer.Stop()
 	for len(clients) > 0 {
@@ -373,6 +430,37 @@ func (r *relay) serveControl() {
 	}
 	_ = os.Chmod(path, 0o600)
 	mux := http.NewServeMux()
+	// local-mode pages, through the bridge (serve.go remote.diag.*)
+	mux.HandleFunc("/diag/pending", func(w http.ResponseWriter, req *http.Request) {
+		client := req.URL.Query().Get("client")
+		w.Header().Set("Content-Type", "application/json")
+		if !uploadIDPattern.MatchString(client) {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": "bad client"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"requests": localPending(client)})
+	})
+	mux.HandleFunc("/diag/submit", func(w http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(io.LimitReader(req.Body, diagChunkMax+4096))
+		var head struct {
+			Client string `json:"client"`
+		}
+		_ = json.Unmarshal(body, &head)
+		w.Header().Set("Content-Type", "application/json")
+		if !uploadIDPattern.MatchString(head.Client) {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": "bad client"})
+			return
+		}
+		out, err := diagSubmit(body, "local-"+head.Client, r)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(out)
+	})
 	mux.HandleFunc("/diag", func(w http.ResponseWriter, req *http.Request) {
 		var body struct {
 			Wait   int             `json:"wait"`
@@ -457,4 +545,38 @@ func runDiag(args []string) error {
 	defer res.Body.Close()
 	_, err = io.Copy(os.Stdout, res.Body)
 	return err
+}
+
+// relayControlCall: the bridge asking the running relay over its control
+// socket (local-mode diagnostics: serve.go remote.diag.pending / submit).
+func relayControlCall(method, path string, body []byte) (any, error) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", relayControlPath())
+		}},
+	}
+	req, err := http.NewRequest(method, "http://relay"+path, strings.NewReader(string(body)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("relay control socket: %w (is wezdeck-relay running?)", err)
+	}
+	defer res.Body.Close()
+	var out any
+	if err := json.NewDecoder(io.LimitReader(res.Body, 1<<20)).Decode(&out); err != nil {
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		if m, ok := out.(map[string]any); ok {
+			if msg, ok := m["error"].(string); ok {
+				return nil, errors.New(msg)
+			}
+		}
+		return nil, fmt.Errorf("relay control: %s", res.Status)
+	}
+	return out, nil
 }

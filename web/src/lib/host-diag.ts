@@ -26,6 +26,7 @@ import {
   trace,
 } from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
+import { hostRead, hostWrite, readsLocally } from '#/lib/runtime-client'
 
 type Step = {
   do: string
@@ -210,10 +211,16 @@ async function runStep(
   return { skipped: `unknown step ${step.do}` }
 }
 
+type Submit = (args: Record<string, unknown>) => Promise<unknown>
+
+/** a paired device answers over the relay link */
+const overRelay: Submit = (args) => remoteLink.rpc('diag.submit', args)
+
 async function answer(
   router: AnyRouter,
   id: string,
   data: { reason?: string; steps?: Array<Step> },
+  submit: Submit = overRelay,
 ) {
   const steps = Array.isArray(data.steps) ? data.steps.slice(0, MAX_STEPS) : []
   trace('host-diag', { id, steps: steps.length, reason: data.reason })
@@ -261,7 +268,7 @@ async function answer(
   )
   const total = Math.max(1, Math.ceil(json.length / CHUNK))
   for (let seq = 0; seq < total; seq++)
-    await remoteLink.rpc('diag.submit', {
+    await submit({
       id,
       client: pageId(),
       seq,
@@ -310,6 +317,38 @@ function reloadWhenIdle() {
   }, 1_000)
 }
 
+/**
+ * The host's own browser (local mode: reads and writes through the Runtime)
+ * gets no relay push: while shown it asks every few seconds whether the host
+ * wants diagnostics from it (`diag.pending` → relay_diag.go localPending) and
+ * answers through the Runtime too. Before this an agent could not reach the
+ * page the person was looking at on the desktop (2026-11-25).
+ */
+const LOCAL_POLL_MS = 3_000
+
+function pollLocal(router: AnyRouter, seen: Set<string>) {
+  const tick = async () => {
+    if (document.visibilityState !== 'visible' || !(await readsLocally()))
+      return
+    const reply = (await hostRead('diag.pending', { client: pageId() })) as {
+      requests?: Array<{ id: string; reason?: string; steps?: Array<Step> }>
+    }
+    for (const request of reply.requests ?? []) {
+      if (seen.has(request.id)) continue
+      seen.add(request.id)
+      void answer(router, request.id, request, (args) =>
+        hostWrite('diag.submit', args),
+      ).catch((e: unknown) =>
+        trace('host-diag-error', {
+          id: request.id,
+          error: (e as Error).message,
+        }),
+      )
+    }
+  }
+  setInterval(() => void tick().catch(() => undefined), LOCAL_POLL_MS)
+}
+
 let installed = false
 
 export function installHostDiag(router: AnyRouter) {
@@ -327,6 +366,7 @@ export function installHostDiag(router: AnyRouter) {
       trace('host-diag-error', { id: frame.id, error: (e as Error).message }),
     )
   })
+  pollLocal(router, seen)
   // every page change records its frames: "the animation feels bad" shows up
   // in the next pulled snapshot without a reproduction
   router.subscribe('onBeforeNavigate', ({ toLocation, fromLocation }) => {

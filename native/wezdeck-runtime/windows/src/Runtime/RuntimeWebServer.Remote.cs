@@ -21,6 +21,8 @@ internal sealed partial class RuntimeWebServer
     {
         "sessions", "session", "upload.get", "todos", "repos", "ticket.targets",
         "session.new.job", "session.image", "session.history", "session.git", "devices",
+        // local only: this browser polling for the host's diagnostics requests
+        "diag.pending",
     };
 
     private const int RemoteWriteMaxBytes = 256 * 1024; // an upload chunk is ≤ 64 KB decoded
@@ -30,6 +32,8 @@ internal sealed partial class RuntimeWebServer
         "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "ticket.new",
         // local only (serve.go): 批准 / 撤销 from the console on the host
         "device.approve", "device.revoke",
+        // local only: its diagnostics snapshot back to the relay (relay_diag.go)
+        "diag.submit",
     };
 
     private async Task<bool> TryHandleRemoteWriteAsync(HttpContext context)

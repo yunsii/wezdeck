@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -121,6 +122,17 @@ func dispatch(req request) response {
 			payload = json.RawMessage("{}")
 		}
 		res.Result, err = setDeviceState(req.Action, payload)
+	case "remote.diag.pending":
+		// the host's own page (local mode) asking for diagnostics requests
+		// to answer (relay_diag.go localPending): it cannot be pushed to
+		var a struct {
+			Client string `json:"client"`
+		}
+		_ = json.Unmarshal(req.Payload, &a)
+		res.Result, err = relayControlCall("GET", "/diag/pending?client="+url.QueryEscape(a.Client), nil)
+	case "remote.diag.submit":
+		// …and handing its snapshot back, chunk by chunk
+		res.Result, err = relayControlCall("POST", "/diag/submit", req.Payload)
 	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
 		"remote.todo", "remote.clear", "remote.session.new", "remote.ticket.new":
 		// a browser on this computer through the local Runtime (remote_write.go)

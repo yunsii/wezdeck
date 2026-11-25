@@ -314,6 +314,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Approve a pending device: for the host browser only, not over the relay',
       ),
       c(
+        'remote.diag.pending',
+        '本机浏览器轮询主机发来的诊断请求（本机模式收不到 relay 推送）：只给本机浏览器',
+        'The host browser polling for the host’s diagnostics requests (local mode gets no relay push): host browser only',
+      ),
+      c(
+        'remote.diag.submit',
+        '本机浏览器把诊断快照分块交回 relay：只给本机浏览器',
+        'The host browser handing its diagnostics snapshot back to the relay, in chunks: host browser only',
+      ),
+      c(
         'remote.device.revoke',
         '撤销一台已批准的设备，relay 下一次读写即拒绝：只给本机浏览器',
         'Revoke an approved device; the relay refuses its next read or write: for the host browser only',
