@@ -477,6 +477,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		if git := worktreeGitStatus(cwd); git != nil {
 			out["git"] = git
 		}
+		// the terminal's status line, for the web bottom bar (session_env.go)
+		if list := repoWorktrees(cwd); len(list) > 0 {
+			out["worktrees"] = list
+		}
+	}
+	if node := terminalNodeVersion(); node != "" {
+		out["node"] = node
 	}
 	out["reference"] = sessionReference(e, path, agent)
 	out["focus"] = sessionFocus(a.ID, e)

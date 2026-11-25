@@ -29,6 +29,7 @@ import { PromptPanels } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
 import { useResumeSheet } from './session-commands'
+import { SessionStatusBar } from './session-statusbar'
 import type { BgTask } from './session-background'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
@@ -121,6 +122,9 @@ export type Detail = {
   branch?: string
   /** working-tree status of the pane's cwd (git_status.go) */
   git?: GitStatus
+  /** the terminal status line's node version and the repo's worktrees */
+  node?: string
+  worktrees?: Array<{ path: string; branch?: string; current?: boolean }>
   usage?: Usage
   account?: AccountLimits
   /** host-built block an agent can act on (remote_reference.go) */
@@ -527,7 +531,7 @@ export function SessionDetail({ id }: { id: string }) {
       </div>
 
       <form
-        className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)]"
+        className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)]"
         onSubmit={(event) => {
           event.preventDefault()
           setError('')
@@ -591,6 +595,7 @@ export function SessionDetail({ id }: { id: string }) {
               : undefined
           }
         />
+        <SessionStatusBar data={data} />
         {resume.element}
       </form>
     </div>

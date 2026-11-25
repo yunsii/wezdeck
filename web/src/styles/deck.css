@@ -183,6 +183,16 @@ html[data-theme='dark'] .list-row.row-selected::after {
   max-width: 100%;
   border-radius: 0.75rem;
 }
+.session-tag-icon {
+  /* as tall as the text tags beside it (it has no text line of its own) */
+  align-self: stretch;
+  padding-inline: 0.3125rem;
+}
+/* the status bar under the composer holds six items on a phone: its branch
+   gives way sooner */
+.session-statusbar .session-tag-fill {
+  min-width: min(4.5rem, 100%);
+}
 .session-tag[data-tone='neutral'] {
   /* translucent like the other tones: the deck fill vanished on the deck
      itself (the session header) while it showed on a list row's surface */

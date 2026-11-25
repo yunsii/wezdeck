@@ -18,6 +18,9 @@ import { useChatScroll } from './chat-scroll'
 import { ChatThread } from './chat-thread'
 import type { Message } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
+import { SessionStatusBar } from './session-statusbar'
+import type { Detail } from './console-sessions'
+import { BACKGROUND } from './console-interactions-samples'
 import type { Subagent } from './session-subagents'
 
 const THREAD: Array<Message> = Array.from({ length: 8 }, (_, i) => ({
@@ -451,6 +454,56 @@ export function ToastDemo() {
           {kind.label}
         </Button>
       ))}
+    </div>
+  )
+}
+
+const STATUS_SAMPLE: Detail = {
+  id: 'sample',
+  status: 'running',
+  agent: 'claude',
+  branch: LONG_BRANCH,
+  git: {
+    staged: 1,
+    unstaged: 2,
+    untracked: 0,
+    upstream: true,
+    ahead: 1,
+    behind: 0,
+  },
+  node: 'v22.23.1',
+  worktrees: [
+    {
+      path: '/home/yuns/github/wezterm-config',
+      branch: 'master',
+      current: true,
+    },
+    {
+      path: '/home/yuns/github/.worktrees/wezterm-config/dev-agent',
+      branch: 'dev/agent',
+    },
+    {
+      path: '/home/yuns/github/.worktrees/wezterm-config/task-probe',
+      branch: '(detached)',
+    },
+  ],
+  background: BACKGROUND.slice(0, 2),
+}
+
+/**
+ * The status bar under the composer, as on a phone: agent, branch, git,
+ * node, worktrees, background tasks on one line; worktrees and background
+ * tasks open upward over the conversation.
+ */
+export function StatusBarDemo() {
+  return (
+    <div className="grid gap-1.5 rounded-2xl border-t border-brand-edge px-1 pt-2 pb-3">
+      <div className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5">
+        <span className="min-h-10 flex-1 px-3 py-2 text-body text-brand-label">
+          发消息
+        </span>
+      </div>
+      <SessionStatusBar data={STATUS_SAMPLE} />
     </div>
   )
 }

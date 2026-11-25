@@ -11,6 +11,7 @@ import { PermissionCard } from './session-permission'
 import {
   StreamDemo,
   SubagentsDemo,
+  StatusBarDemo,
   TagsDemo,
   ToastDemo,
   ToggleDemo,
@@ -83,6 +84,7 @@ export function buildSections(
       ...s,
       group: 'stream' as const,
     })),
+    ...chromeSections().map((s) => ({ ...s, group: 'stream' as const })),
   ]
   // stable: within a tag the authored order stays
   return all.sort((a, b) => rank(a.tags) - rank(b.tags))
@@ -333,58 +335,6 @@ function streamSections(
       demo: <ToggleDemo />,
     },
     {
-      id: 'toasts',
-      tags: ['common'],
-      title: { zh: '消息提示', en: 'Toasts' },
-      source: {
-        zh: '复制、发送命令、清空输入、错误、新版本等操作的结果提示（sonner，样式见 deck.css .deck-toast）；会话页里从顶部栏下方弹出，不挡返回按钮',
-        en: 'results of copy, commands, clearing, errors, a new version… (sonner, styled by deck.css .deck-toast); on the session page they drop in under the top bar, never over its back button',
-      },
-      keys: {
-        zh: '无（点按钮弹出对应提示）',
-        en: 'None (each button shows that toast)',
-      },
-      demo: <ToastDemo />,
-    },
-    {
-      id: 'session-tags',
-      tags: ['common'],
-      title: { zh: '会话标签', en: 'Session tags' },
-      source: {
-        zh: '会话列表的行与详情顶部共用同一个标签行（TagLine）：可换行，单个标签最长占满一整行，再长截断、悬停看全文；中性色标签用半透明底色，在两种底色上看起来一样',
-        en: 'the list row and the header share one tag line (TagLine): it wraps, one tag takes at most a whole line (then truncates, full text on hover); neutral tags use a translucent fill that reads the same on both grounds',
-      },
-      keys: { zh: '无', en: 'None' },
-      demo: <TagsDemo />,
-    },
-    {
-      id: 'git-status',
-      tags: ['common'],
-      title: { zh: 'git 状态面板', en: 'Git status panel' },
-      source: {
-        zh: '头部分支旁的 +S ~U ?T ↑A ↓B 标签（git_status.go 随轮询）；点开读 session.git：改动文件、未推送 / 未拉取与最近提交（session_git.go）',
-        en: 'the +S ~U ?T ↑A ↓B tag beside the branch (git_status.go, on the poll); tapping it reads session.git: changed files, unpushed / unpulled and recent commits (session_git.go)',
-      },
-      keys: { zh: '无（只读）', en: 'None (read only)' },
-      demo: (
-        <div className="grid gap-2 text-meta text-brand-label">
-          <span className="flex items-center gap-2">
-            {/* the header's tag itself: tap it (or Enter / Space) */}
-            点标签打开 →
-            <GitStatusButton id="sample" git={GIT.status} sample={GIT} />
-          </span>
-          <span
-            data-testid="git-clean-tags"
-            className="flex items-center gap-2"
-          >
-            没有改动时 →
-            <GitStatusTag git={{ ...CLEAN, upstream: true }} />
-            <GitStatusTag git={CLEAN} />
-          </span>
-        </div>
-      ),
-    },
-    {
       id: 'background',
       tags: ['claude'],
       title: { zh: '后台任务', en: 'Background tasks' },
@@ -476,6 +426,75 @@ function streamSections(
       },
       keys: { zh: '无', en: 'None' },
       demo: <ToolBody text={EDIT.body ?? ''} file={EDIT.file} />,
+    },
+  ]
+}
+
+/** around the conversation: tags, the status bar, git, toasts */
+function chromeSections(): Array<Omit<Section, 'group'>> {
+  return [
+    {
+      id: 'toasts',
+      tags: ['common'],
+      title: { zh: '消息提示', en: 'Toasts' },
+      source: {
+        zh: '复制、发送命令、清空输入、错误、新版本等操作的结果提示（sonner，样式见 deck.css .deck-toast）；会话页里从顶部栏下方弹出，不挡返回按钮',
+        en: 'results of copy, commands, clearing, errors, a new version… (sonner, styled by deck.css .deck-toast); on the session page they drop in under the top bar, never over its back button',
+      },
+      keys: {
+        zh: '无（点按钮弹出对应提示）',
+        en: 'None (each button shows that toast)',
+      },
+      demo: <ToastDemo />,
+    },
+    {
+      id: 'status-bar',
+      tags: ['common'],
+      title: { zh: '底部状态栏', en: 'Status bar' },
+      source: {
+        zh: '输入框下方，像终端 tmux 状态栏：agent、分支与 git 改动、node 版本（读终端缓存）、worktree 数、后台任务（session_env.go / bg_detail.go）；一行放不下时分支省略、其余收进 +N；worktree 与后台任务向上浮出，不推动对话',
+        en: 'under the composer, like the tmux status bar: agent, branch and git changes, node (the terminal’s cache), worktrees, background tasks (session_env.go / bg_detail.go); one line, the branch truncating, the rest behind +N; worktrees and background tasks open upward without moving the thread',
+      },
+      keys: { zh: '无（点各项查看）', en: 'None (tap an item)' },
+      demo: <StatusBarDemo />,
+    },
+    {
+      id: 'session-tags',
+      tags: ['common'],
+      title: { zh: '会话标签', en: 'Session tags' },
+      source: {
+        zh: '会话列表的行与详情顶部共用同一个标签行（TagLine）：可换行，单个标签最长占满一整行，再长截断、悬停看全文；中性色标签用半透明底色，在两种底色上看起来一样',
+        en: 'the list row and the header share one tag line (TagLine): it wraps, one tag takes at most a whole line (then truncates, full text on hover); neutral tags use a translucent fill that reads the same on both grounds',
+      },
+      keys: { zh: '无', en: 'None' },
+      demo: <TagsDemo />,
+    },
+    {
+      id: 'git-status',
+      tags: ['common'],
+      title: { zh: 'git 状态面板', en: 'Git status panel' },
+      source: {
+        zh: '头部分支旁的 +S ~U ?T ↑A ↓B 标签（git_status.go 随轮询）；点开读 session.git：改动文件、未推送 / 未拉取与最近提交（session_git.go）',
+        en: 'the +S ~U ?T ↑A ↓B tag beside the branch (git_status.go, on the poll); tapping it reads session.git: changed files, unpushed / unpulled and recent commits (session_git.go)',
+      },
+      keys: { zh: '无（只读）', en: 'None (read only)' },
+      demo: (
+        <div className="grid gap-2 text-meta text-brand-label">
+          <span className="flex items-center gap-2">
+            {/* the header's tag itself: tap it (or Enter / Space) */}
+            点标签打开 →
+            <GitStatusButton id="sample" git={GIT.status} sample={GIT} />
+          </span>
+          <span
+            data-testid="git-clean-tags"
+            className="flex items-center gap-2"
+          >
+            没有改动时 →
+            <GitStatusTag git={{ ...CLEAN, upstream: true }} />
+            <GitStatusTag git={CLEAN} />
+          </span>
+        </div>
+      ),
     },
   ]
 }

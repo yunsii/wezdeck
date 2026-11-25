@@ -9,7 +9,6 @@ import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
-import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
@@ -24,7 +23,6 @@ import type {
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
 import { BackgroundTasks } from './session-background'
-import { GitStatusButton } from './session-git'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -253,15 +251,8 @@ export function SessionHeader({
               className="shrink-0 text-brand-label"
             />
           </Button>
-          {data?.agent || data?.branch ? (
-            <TagLine testId="session-tags" maxLines={2}>
-              {data.agent && data.agent !== 'agent' ? (
-                <AgentTag agent={data.agent} />
-              ) : null}
-              {data.branch ? <BranchTag branch={data.branch} /> : null}
-              {data.git ? <GitStatusButton id={id} git={data.git} /> : null}
-            </TagLine>
-          ) : null}
+          {/* agent, branch, git, node, worktrees and background tasks
+              live in the status bar under the composer (session-statusbar) */}
         </div>
         {data?.waiting_kind ? (
           <span
@@ -294,7 +285,8 @@ export function SessionHeader({
       <Meters
         usage={data?.usage}
         account={data?.account}
-        background={data?.background ?? []}
+        // background tasks: the status bar under the composer
+        background={[]}
       />
       {data ? (
         <SessionInfo

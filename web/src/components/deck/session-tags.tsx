@@ -40,6 +40,7 @@ export function SessionTag({
   icon: Icon,
   mono = false,
   hint,
+  label,
   className,
   children,
 }: {
@@ -48,6 +49,8 @@ export function SessionTag({
   mono?: boolean
   /** hover text when the tag itself is shorthand */
   hint?: string
+  /** what a reader says when the tag shows only an icon */
+  label?: string
   className?: string
   children: string
 }) {
@@ -112,11 +115,20 @@ export function SessionTag({
       </PopoverPrimitive.Root>
     )
   return (
-    <span data-tone={tone} title={hint ?? children} className={classes}>
+    <span
+      data-tone={tone}
+      title={hint ?? children}
+      aria-label={label}
+      role={label ? 'img' : undefined}
+      className={classes}
+    >
       {body}
     </span>
   )
 }
+
+/** px two tag tops may differ by and still share a row */
+const ROW_SLACK = 6
 
 /** the tags as a list: fragments opened, empty slots dropped */
 function flatChildren(children: React.ReactNode): Array<React.ReactNode> {
@@ -153,11 +165,25 @@ const AGENTS: Partial<Record<string, { tone: Tone; icon: LucideIcon }>> = {
   grok: { tone: 'grok', icon: Zap },
 }
 
-export function AgentTag({ agent }: { agent: string }) {
+/** compact: the agent's mark alone (the status bar), its name on hover */
+export function AgentTag({
+  agent,
+  compact = false,
+}: {
+  agent: string
+  compact?: boolean
+}) {
   const known = AGENTS[agent.replace(/\.real$/, '')]
   return (
-    <SessionTag tone={known?.tone ?? 'neutral'} icon={known?.icon ?? Bot} mono>
-      {agent}
+    <SessionTag
+      tone={known?.tone ?? 'neutral'}
+      icon={known?.icon ?? Bot}
+      mono
+      hint={compact ? agent : undefined}
+      label={compact ? agent : undefined}
+      className={compact ? 'session-tag-icon' : undefined}
+    >
+      {compact ? '' : agent}
     </SessionTag>
   )
 }
@@ -271,6 +297,7 @@ export function TagLine({
   testId,
   expandable = true,
   maxLines,
+  panelSide = 'bottom',
 }: {
   children: React.ReactNode
   className?: string
@@ -278,6 +305,8 @@ export function TagLine({
   /** false inside a link (list rows): no tag opens */
   expandable?: boolean
   maxLines?: number
+  /** where the +N panel opens: under the line, or above it (a bottom bar) */
+  panelSide?: 'top' | 'bottom'
 }) {
   const { t } = useLingui()
   const line = useRef<HTMLSpanElement>(null)
@@ -299,18 +328,30 @@ export function TagLine({
           (c.classList.contains('session-tag') ||
             c.querySelector('.session-tag') !== null),
       )
-      const tops = [...new Set(tags.map((tag) => tag.offsetTop))].sort(
-        (a, b) => a - b,
+      // rows in wrap order, a few px of slack: centred tags of different
+      // heights (an icon-only one) sit 1–2 px apart on the same row, and
+      // counting those as rows hid the whole status bar
+      let row = 0
+      let rowTop = tags[0]?.offsetTop ?? 0
+      const rows = tags.map((tag) => {
+        if (tag.offsetTop > rowTop + ROW_SLACK) {
+          row += 1
+          rowTop = tag.offsetTop
+        }
+        return row
+      })
+      const firstHidden = rows.findIndex((r) => r >= maxLines)
+      const shown = tags.filter((_, k) => rows[k] < maxLines)
+      const bottom = Math.max(
+        ...shown.map((tag) => tag.offsetTop + tag.offsetHeight),
       )
-      const cutAt = tops.length > maxLines ? tops[maxLines] : undefined
-      const firstHidden = tags.findIndex((tag) => tag.offsetTop >= (cutAt ?? 0))
       const next =
-        cutAt === undefined
+        firstHidden < 0
           ? { height: 0, hidden: 0, first: 0 }
           : {
-              // the rows above the cut, without the gap under them
-              height: cutAt - (tops[0] ?? 0) - 4,
-              hidden: tags.filter((tag) => tag.offsetTop >= cutAt).length,
+              // the line's height down to the last shown row's bottom
+              height: bottom,
+              hidden: tags.length - firstHidden,
               // tags wrap in order: the folded ones are a tail
               // one laid-out tag per child (else show them all)
               first:
@@ -398,7 +439,10 @@ export function TagLine({
           role="dialog"
           aria-label={t`All tags`}
           data-testid={testId ? `${testId}-panel` : undefined}
-          className="absolute top-full left-0 z-30 mt-1.5 w-full min-w-56 rounded-xl bg-brand-surface p-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
+          className={cn(
+            'absolute left-0 z-30 w-full min-w-56 rounded-xl bg-brand-surface p-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]',
+            panelSide === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
+          )}
         >
           <Expandable.Provider value={{ mode: 'full' }}>
             {/* only what the line folded away: the rest is in view */}
