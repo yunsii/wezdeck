@@ -150,6 +150,31 @@ export function useDeviceState() {
     started = true
     void ask(false)
   }, [])
+  // A page that asked while the local Runtime was down (it restarts on a
+  // runtime sync) took the remote path and showed 这台设备还没获批 on the
+  // host itself until reloaded (2026-11-25): while not approved, look for
+  // the Runtime again — every 10 s and when the page comes back to the front.
+  const approved = snapshot.state === 'approved'
+  useEffect(() => {
+    if (approved) return
+    const recheck = () => {
+      void hasLocalWrite()
+        .then((local) => {
+          if (local && state.state !== 'approved')
+            set({ state: 'approved', id: 'local' })
+        })
+        .catch(() => {})
+    }
+    const timer = setInterval(recheck, 10_000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') recheck()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [approved])
   return {
     ...snapshot,
     enable: () => ask(true),

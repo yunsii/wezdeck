@@ -17,7 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 // 按键 › 重启会话 / 新开会话 (session-restart.tsx → relay session.restart).
 // The test stack's stand-in for session-restart.sh only records each call
 // (restart.log) and, for a fresh start, names a new conversation; the real
-// script is covered by session_restart_test.go. Both ask first; after a fresh
+// script is covered by session_restart_test.go. Both ask first, in the panel (no browser dialog); after a fresh
 // start the host marks the old entry cleared_to the new id — written here
 // the way the script does — and the page follows.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
@@ -118,18 +118,36 @@ describe.runIf(attention && devicesFile && stack)(
           return []
         }
       }
+      // no browser dialog: the question is asked in the panel
+      let dialogs = 0
+      page.on('dialog', (dialog) => {
+        dialogs++
+        void dialog.dismiss()
+      })
       await openKeys()
-      // declining the question sends nothing
-      page.once('dialog', (dialog) => void dialog.dismiss())
+      const confirm = page.getByTestId('session-restart-confirm')
+      // 取消 sends nothing and brings the pair back
       await page.locator('[data-restart=resume]').click()
-      await page.waitForTimeout(800)
+      await confirm.waitFor({ timeout: 5_000 })
+      expect(await confirm.innerText()).toContain('F5')
+      await page.locator('[data-restart-cancel]').click()
+      await page.getByTestId('session-restart').waitFor({ timeout: 5_000 })
+      // so does Esc; the focus starts on 确认
+      await page.locator('[data-restart=fresh]').click()
+      await confirm.waitFor({ timeout: 5_000 })
+      expect(
+        await page.evaluate(() =>
+          document.activeElement?.hasAttribute('data-restart-confirm'),
+        ),
+      ).toBe(true)
+      await page.keyboard.press('Escape')
+      await page.getByTestId('session-restart').waitFor({ timeout: 5_000 })
+      await page.waitForTimeout(500)
       expect(calls()).toEqual([])
-      // …and leaves the panel open
-      expect(await page.getByTestId('session-restart').isVisible()).toBe(true)
 
       // 重启会话: the pane, its agent, no --fresh
-      page.once('dialog', (dialog) => void dialog.accept())
       await page.locator('[data-restart=resume]').click()
+      await page.locator('[data-restart-confirm]').click()
       await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
       expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
       await page.getByText('窗格正在重启').waitFor({ timeout: 5_000 })
@@ -137,8 +155,8 @@ describe.runIf(attention && devicesFile && stack)(
       // 新开会话: --fresh; the host archives the old entry cleared_to the
       // new conversation and the page goes there
       await openKeys()
-      page.once('dialog', (dialog) => void dialog.accept())
       await page.locator('[data-restart=fresh]').click()
+      await page.locator('[data-restart-confirm]').click()
       await expect.poll(calls, { timeout: 10_000 }).toHaveLength(2)
       expect(calls()[1]).toBe(`--pane ${pane} --agent claude --fresh`)
       writeFileSync(
@@ -151,6 +169,7 @@ describe.runIf(attention && devicesFile && stack)(
       await page.waitForURL(`**/console/sessions/${NEW_ID}`, {
         timeout: 20_000,
       })
+      expect(dialogs).toBe(0)
       await context.close()
     }, 90_000)
   },

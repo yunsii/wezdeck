@@ -250,7 +250,7 @@ msgstr "7-day limit"
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
-#: src/features/session-restart.tsx:71
+#: src/features/session-restart.tsx:119
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 
@@ -258,7 +258,7 @@ msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
 
-#: src/features/session-restart.tsx:41
+#: src/features/session-restart.tsx:47
 msgid "A fresh conversation is starting"
 msgstr "A fresh conversation is starting"
 
@@ -581,6 +581,10 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 #: src/features/session-key-panel.tsx:20
 msgid "cancel"
 msgstr "cancel"
+
+#: src/features/session-restart.tsx:78
+msgid "Cancel"
+msgstr "Cancel"
 
 #: src/features/session-ask-claude.tsx:156
 msgid "Cancel (Esc)"
@@ -1130,9 +1134,13 @@ msgstr "Enabled on this computer: writes go through the local Runtime, with no d
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
+#: src/features/session-restart.tsx:67
+msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
+msgstr "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
+
 #: src/features/session-restart.tsx:33
-msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
-msgstr "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
+#~ msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
+#~ msgstr "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
 
 #: src/features/tickets-view.tsx:222
 msgctxt "filter"
@@ -1755,7 +1763,8 @@ msgstr "Needs you"
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "Needs you {waitingCount}"
 
-#: src/features/session-restart.tsx:76
+#: src/features/session-restart.tsx:54
+#: src/features/session-restart.tsx:124
 msgid "New conversation"
 msgstr "New conversation"
 
@@ -2440,21 +2449,27 @@ msgstr "resets {fiveReset}"
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
 
-#: src/features/session-restart.tsx:59
+#: src/features/session-restart.tsx:107
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "Respawn the pane; the agent resumes this conversation (F5)"
 
-#: src/features/session-restart.tsx:50
+#: src/features/session-restart.tsx:89
+#: src/features/session-restart.tsx:98
 msgid "Restart"
 msgstr "Restart"
 
-#: src/features/session-restart.tsx:64
+#: src/features/session-restart.tsx:54
+#: src/features/session-restart.tsx:112
 msgid "Restart session"
 msgstr "Restart session"
 
+#: src/features/session-restart.tsx:68
+msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
+msgstr "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
+
 #: src/features/session-restart.tsx:34
-msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
-msgstr "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
+#~ msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
+#~ msgstr "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
 
 #: src/features/chat-tools.tsx:162
 msgid "Result"
@@ -2865,6 +2880,10 @@ msgstr "Staged"
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
+#: src/features/session-restart.tsx:89
+msgid "Start fresh"
+msgstr "Start fresh"
+
 #: src/features/landing-page.tsx:155
 #~ msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 #~ msgstr "Start with the keyboard-first control plane and add the browser view when you need it."
@@ -3039,7 +3058,7 @@ msgstr "The contract or behaviour you expect from it — the target checks this 
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
-#: src/features/session-restart.tsx:42
+#: src/features/session-restart.tsx:48
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 

@@ -250,7 +250,7 @@ msgstr "7 天额度"
 msgid "A big change to follow up later…"
 msgstr "记下要后续跟进的大改动…"
 
-#: src/features/session-restart.tsx:71
+#: src/features/session-restart.tsx:119
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "全新的 agent 进程和对话（Ctrl+Shift+n）"
 
@@ -258,7 +258,7 @@ msgstr "全新的 agent 进程和对话（Ctrl+Shift+n）"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
-#: src/features/session-restart.tsx:41
+#: src/features/session-restart.tsx:47
 msgid "A fresh conversation is starting"
 msgstr "正在新开会话"
 
@@ -580,6 +580,10 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
 #: src/features/session-key-panel.tsx:20
 msgid "cancel"
+msgstr "取消"
+
+#: src/features/session-restart.tsx:78
+msgid "Cancel"
 msgstr "取消"
 
 #: src/features/session-ask-claude.tsx:156
@@ -1130,9 +1134,13 @@ msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备�
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "已启用。这台手机可以给会话发消息、回复工单。"
 
+#: src/features/session-restart.tsx:67
+msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
+msgstr "结束当前 agent 进程，在同一窗格新开一个全新会话（等同终端 Ctrl+Shift+n）。当前对话不会删除，可在「恢复会话」里找回。"
+
 #: src/features/session-restart.tsx:33
-msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
-msgstr "结束当前 agent 进程，在同一窗格新开一个全新会话（等同终端 Ctrl+Shift+n）。当前对话不会删除，可在「恢复会话」里找回。继续吗？"
+#~ msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
+#~ msgstr "结束当前 agent 进程，在同一窗格新开一个全新会话（等同终端 Ctrl+Shift+n）。当前对话不会删除，可在「恢复会话」里找回。继续吗？"
 
 #: src/features/tickets-view.tsx:222
 msgctxt "filter"
@@ -1755,7 +1763,8 @@ msgstr "等你"
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "等你 {waitingCount}"
 
-#: src/features/session-restart.tsx:76
+#: src/features/session-restart.tsx:54
+#: src/features/session-restart.tsx:124
 msgid "New conversation"
 msgstr "新开会话"
 
@@ -2440,21 +2449,27 @@ msgstr "{fiveReset}重置"
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
 
-#: src/features/session-restart.tsx:59
+#: src/features/session-restart.tsx:107
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "原地重启窗格，agent 恢复当前对话（F5）"
 
-#: src/features/session-restart.tsx:50
+#: src/features/session-restart.tsx:89
+#: src/features/session-restart.tsx:98
 msgid "Restart"
 msgstr "重启"
 
-#: src/features/session-restart.tsx:64
+#: src/features/session-restart.tsx:54
+#: src/features/session-restart.tsx:112
 msgid "Restart session"
 msgstr "重启会话"
 
+#: src/features/session-restart.tsx:68
+msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
+msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对话（等同终端 F5）。"
+
 #: src/features/session-restart.tsx:34
-msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
-msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对话（等同终端 F5）。继续吗？"
+#~ msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
+#~ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对话（等同终端 F5）。继续吗？"
 
 #: src/features/chat-tools.tsx:162
 msgid "Result"
@@ -2865,6 +2880,10 @@ msgstr "已暂存"
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
+#: src/features/session-restart.tsx:89
+msgid "Start fresh"
+msgstr "新开"
+
 #: src/features/landing-page.tsx:155
 #~ msgid "Start with the keyboard-first control plane and add the browser view when you need it."
 #~ msgstr "从键盘优先的控制平面开始，在需要时再打开浏览器视图。"
@@ -3039,7 +3058,7 @@ msgstr "你期望对方提供的约定或行为——对方会先核实这一点
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTerm 样本。"
 
-#: src/features/session-restart.tsx:42
+#: src/features/session-restart.tsx:48
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
