@@ -186,6 +186,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       c('todos', '仓库待办', 'Repository to-dos'),
       c('repos', '可以新开会话的仓库', 'Repositories a session can start in'),
       c(
+        'workstations',
+        '某仓库按方向分组的工作站与是否空闲，供新会话选方向复用',
+        'A repository’s workstations by direction and whether each is idle, for 新会话 to reuse one',
+      ),
+      c(
         'ticket.targets',
         '可以开单的目标仓库',
         'Repositories a ticket can go to',
