@@ -36,19 +36,27 @@ func (ui *worktreeUI) beginPurposeEdit() {
 		return
 	}
 	r := ui.rows[ui.selected]
-	base := filepath.Base(r.path)
-	switch {
-	case r.label == "primary":
-		ui.flash = "the primary checkout has no purpose; workstations do"
-		return
-	case strings.HasPrefix(base, "ticket-"), strings.HasPrefix(base, "claw-"):
-		ui.flash = base + " belongs to agent-collab / OpenClaw, not a workstation"
-		return
-	case r.branch == "":
-		ui.flash = "detached HEAD: no branch to describe"
+	if why := r.notWorkstation(); why != "" {
+		ui.flash = why
 		return
 	}
 	ui.editing = &purposeEditor{row: ui.selected, text: []rune(r.description)}
+}
+
+// notWorkstation says why a row has no purpose to edit ("" for a
+// workstation): the primary checkout, agent-collab / OpenClaw worktrees,
+// and a detached HEAD (the purpose is a branch description).
+func (r worktreeRow) notWorkstation() string {
+	base := filepath.Base(r.path)
+	switch {
+	case r.label == "primary":
+		return "the primary checkout has no purpose; workstations do"
+	case strings.HasPrefix(base, "ticket-"), strings.HasPrefix(base, "claw-"):
+		return base + " belongs to agent-collab / OpenClaw, not a workstation"
+	case r.branch == "":
+		return "detached HEAD: no branch to describe"
+	}
+	return ""
 }
 
 // purposeKey feeds one read into the editor. Returns done=true when the

@@ -4,6 +4,7 @@ import {
   RECENT_MS,
   buildSessionTree,
   inRunning,
+  isWorkstation,
   nextInCycle,
   workstationLabel,
 } from '#/features/session-order'
@@ -201,5 +202,20 @@ describe('workstations show their direction and purpose', () => {
       tree[0].worktrees.map((wt) => [wt.label, wt.description]),
     )
     expect(byLabel).toEqual({ ux: '网页控制台体验', ci: '' })
+  })
+})
+
+describe('which groups can carry a purpose', () => {
+  const at = (worktree: string) =>
+    card({ repo_root: '/g/repo', worktree, cwd: worktree })
+  it('a linked worktree is a workstation', () => {
+    expect(isWorkstation(at('/g/wt/repo/ux'))).toBe(true)
+    expect(isWorkstation(at('/g/wt/repo/dev-ux'))).toBe(true)
+  })
+  it('the primary checkout, tickets and OpenClaw worktrees are not', () => {
+    expect(isWorkstation(at('/g/repo'))).toBe(false)
+    expect(isWorkstation(at('/g/wt/repo/ticket-req-1'))).toBe(false)
+    expect(isWorkstation(at('/g/wt/repo/claw-task-x'))).toBe(false)
+    expect(isWorkstation(card({ cwd: '/tmp/x' }))).toBe(false)
   })
 })

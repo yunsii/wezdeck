@@ -675,8 +675,15 @@ func (ui *worktreeUI) selectedDetailLine() string {
 		return ""
 	}
 	r := ui.rows[ui.selected]
-	parts := make([]string, 0, 4)
-	for _, p := range []string{r.description, r.path, r.branch, r.reason} {
+	// a workstation without a purpose says so where you pick it (the web
+	// console's list offers 「+ 描述」 the same way) — last, so a narrow
+	// popup clips this nudge before the agent's reason
+	nudge := ""
+	if r.description == "" && r.notWorkstation() == "" {
+		nudge = "no purpose · Ctrl+e to add"
+	}
+	parts := make([]string, 0, 5)
+	for _, p := range []string{r.description, r.path, r.branch, r.reason, nudge} {
 		if p != "" {
 			parts = append(parts, p)
 		}

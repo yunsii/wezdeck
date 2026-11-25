@@ -30,6 +30,7 @@ import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton } from './session-new'
+import { WorktreePurpose } from './session-purpose'
 import {
   buildSessionTree,
   inRunning,
@@ -327,15 +328,11 @@ export function SessionList({
                       <p className="flex min-w-0 items-center gap-1.5 border-b border-brand-edge py-1.5 pr-4 pl-5 text-meta text-brand-label">
                         <GitFork size={12} aria-hidden className="shrink-0" />
                         <span className="shrink-0">{wt.label}</span>
-                        {/* the workstation's purpose (git branch description) */}
-                        {wt.description ? (
-                          <span
-                            className="min-w-0 truncate text-brand-muted"
-                            data-testid="worktree-description"
-                          >
-                            · {wt.description}
-                          </span>
-                        ) : null}
+                        <WorktreePurpose
+                          worktree={wt.key}
+                          description={wt.description}
+                          editable={wt.editable}
+                        />
                       </p>
                     ) : null}
                     <ul>

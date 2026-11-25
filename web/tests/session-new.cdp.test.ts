@@ -1,12 +1,18 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
-// covers: web/src/features/session-order.ts
+// covers: web/src/features/session-order.ts web/src/features/session-purpose.tsx
 // covers: native/wezdeck-wsl/session_new.go native/wezdeck-wsl/worktree_description.go
+// covers: scripts/runtime/worktree/lib/core-describe.sh
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type { Browser, BrowserContextOptions, Page } from '@playwright/test'
+import type {
+  Browser,
+  BrowserContextOptions,
+  Locator,
+  Page,
+} from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // 新会话 from the phone (session-new.tsx → host session_new.go): pick the
@@ -185,8 +191,10 @@ describe.runIf(attention && devicesFile && stack)(
           timeout: 15_000,
         })
         .toContain('手机端体验')
+
+      await editPurposeInList(page, group, worktree)
       await context.close()
-    }, 60_000)
+    }, 90_000)
 
     it('a name without letters or digits is refused before anything runs', async () => {
       const { context, page } = await approvedPage(devices['iPhone 13'])
@@ -252,3 +260,51 @@ describe.runIf(attention && devicesFile && stack)(
     }, 90_000)
   },
 )
+
+/**
+ * The workstation's purpose edited in place from the session list
+ * (session-purpose.tsx → relay worktree.describe → worktree-task describe):
+ * retype, clear (the row then offers 「+ 描述」), add by keyboard, Esc.
+ */
+async function editPurposeInList(page: Page, group: Locator, worktree: string) {
+  const purpose = () =>
+    execFileSync('git', [
+      '-C',
+      worktree,
+      'config',
+      '--default',
+      '',
+      'branch.dev/phone.description',
+    ])
+      .toString()
+      .trim()
+  const input = group.getByTestId('worktree-purpose-input')
+  await group.getByTestId('worktree-description').click()
+  await input.fill('手机端新建与收尾')
+  await input.press('Enter')
+  await expect.poll(purpose, { timeout: 15_000 }).toBe('手机端新建与收尾')
+  await expect
+    .poll(() => group.getByTestId('worktree-description').textContent())
+    .toContain('手机端新建与收尾')
+
+  // emptied → removed, and the row offers 「+ 描述」 instead
+  await group.getByTestId('worktree-description').click()
+  await input.fill('')
+  await input.press('Enter')
+  await expect.poll(purpose, { timeout: 15_000 }).toBe('')
+  const add = group.getByTestId('worktree-purpose-add')
+  await expect.poll(() => add.textContent()).toContain('+ 描述')
+  // keyboard: focus it, Enter opens the field
+  await add.focus()
+  await page.keyboard.press('Enter')
+  await input.fill('再补一句')
+  await input.press('Enter')
+  await expect.poll(purpose, { timeout: 15_000 }).toBe('再补一句')
+
+  // Esc leaves it as it was
+  await group.getByTestId('worktree-description').click()
+  await input.fill('不保存')
+  await input.press('Escape')
+  expect(await input.count()).toBe(0)
+  expect(purpose()).toBe('再补一句')
+}

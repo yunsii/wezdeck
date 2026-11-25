@@ -507,8 +507,20 @@ func TestWorktreeDetailLineLeadsWithPurpose(t *testing.T) {
 		t.Fatalf("with purpose: %q", got)
 	}
 	ui.selected = 1
-	if got := ui.selectedDetailLine(); got != "/wt/ci · dev/ci" {
-		t.Fatalf("without purpose: %q", got)
+	if got := ui.selectedDetailLine(); got != "/wt/ci · dev/ci · no purpose · Ctrl+e to add" {
+		t.Fatalf("workstation without purpose: %q", got)
+	}
+	// the primary checkout and a ticket worktree get no nudge
+	ui.rows = append(ui.rows,
+		worktreeRow{label: "primary", path: "/repo", branch: "master"},
+		worktreeRow{label: "ticket-req-1", path: "/wt/ticket-req-1", branch: "ticket/req-1"})
+	ui.selected = 2
+	if got := ui.selectedDetailLine(); got != "/repo · master" {
+		t.Fatalf("primary: %q", got)
+	}
+	ui.selected = 3
+	if got := ui.selectedDetailLine(); got != "/wt/ticket-req-1 · ticket/req-1" {
+		t.Fatalf("ticket: %q", got)
 	}
 }
 

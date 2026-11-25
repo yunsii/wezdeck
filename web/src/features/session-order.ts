@@ -9,6 +9,11 @@ type WorktreeGroup = {
   label: string
   /** the workstation's purpose (git branch description), "" when unset */
   description: string
+  /**
+   * a workstation, so its purpose can be set: not the primary checkout, not
+   * an agent-collab ticket-* / OpenClaw claw-* worktree
+   */
+  editable: boolean
   visit: number
   rows: Array<SessionCard>
 }
@@ -35,6 +40,14 @@ export function visitOf(row: SessionCard, phone: Record<string, number>) {
  */
 export const workstationLabel = (base: string) =>
   /^dev-./.test(base) ? base.slice(4) : base
+
+/** a linked worktree you work in (not primary, not ticket-* / claw-*) */
+export function isWorkstation(row: SessionCard) {
+  if (!row.worktree || !row.repo_root || row.worktree === row.repo_root)
+    return false
+  const base = row.worktree.split('/').filter(Boolean).at(-1) ?? ''
+  return !/^(ticket|claw)-/.test(base)
+}
 
 /** the repo as the desk names it: its alias when one is set */
 export const repoName = (row: { repo?: string; repo_label?: string }) =>
@@ -75,7 +88,14 @@ export function buildSessionTree(
     }
     let tree = repo.trees.get(wtKey)
     if (!tree) {
-      tree = { key: wtKey, label: wtLabel, description: '', visit: 0, rows: [] }
+      tree = {
+        key: wtKey,
+        label: wtLabel,
+        description: '',
+        editable: isWorkstation(row),
+        visit: 0,
+        rows: [],
+      }
       repo.trees.set(wtKey, tree)
     }
     tree.description ||= row.worktree_description ?? ''
