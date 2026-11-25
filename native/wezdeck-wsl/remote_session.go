@@ -481,6 +481,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		if list := repoWorktrees(cwd); len(list) > 0 {
 			out["worktrees"] = list
 		}
+		if repo, _, _ := gitRepoMeta(cwd); repo != "" {
+			label := repo
+			if alias := parseRepoAliases(repoAliasSpec())[repo]; alias != "" {
+				label = alias
+			}
+			out["repo_label"] = label
+		}
 	}
 	if node := terminalNodeVersion(); node != "" {
 		out["node"] = node
@@ -515,6 +522,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			if p := pendingPermission(t.messages, planToolOf(agent)); p != nil {
 				out["permission"] = p
 			}
+		}
+		if t.mode != "" {
+			out["mode"] = t.mode
 		}
 		// what each background task is: the call that started it
 		if bg := backgroundOf(e); len(bg) > 0 {

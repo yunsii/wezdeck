@@ -159,7 +159,9 @@ export function NoExpand({ children }: { children: React.ReactNode }) {
   )
 }
 
-const AGENTS: Partial<Record<string, { tone: Tone; icon: LucideIcon }>> = {
+export const AGENT_MARKS: Partial<
+  Record<string, { tone: Tone; icon: LucideIcon }>
+> = {
   claude: { tone: 'claude', icon: Asterisk },
   codex: { tone: 'codex', icon: SquareTerminal },
   grok: { tone: 'grok', icon: Zap },
@@ -173,7 +175,7 @@ export function AgentTag({
   agent: string
   compact?: boolean
 }) {
-  const known = AGENTS[agent.replace(/\.real$/, '')]
+  const known = AGENT_MARKS[agent.replace(/\.real$/, '')]
   return (
     <SessionTag
       tone={known?.tone ?? 'neutral'}

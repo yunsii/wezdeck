@@ -33,3 +33,16 @@ func TestParseWorktrees(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
+
+func TestClaudePermissionMode(t *testing.T) {
+	tr := &transcript{}
+	tr.feedLine([]byte(`{"type":"user","permissionMode":"auto","message":{"role":"user","content":"hi"}}`))
+	tr.feedLine([]byte(`{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"ok"}]}}`))
+	if tr.mode != "auto" {
+		t.Fatalf("mode %q", tr.mode)
+	}
+	tr.feedLine([]byte(`{"type":"user","permissionMode":"plan","message":{"role":"user","content":"next"}}`))
+	if tr.mode != "plan" {
+		t.Fatalf("newest wins: %q", tr.mode)
+	}
+}

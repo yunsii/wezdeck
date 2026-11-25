@@ -27,22 +27,33 @@ describe('Status bar', () => {
     await page.goto(`${base}/zh/console/me/interactions#status-bar`)
     const bar = page.getByTestId('session-statusbar')
     await bar.waitFor({ timeout: 20_000 })
-    // the rows that show (inside the line's clip)
-    const rows = await bar.evaluate((el) => {
-      const box = el.getBoundingClientRect()
-      return new Set(
-        [...el.querySelectorAll<HTMLElement>('.session-tag')]
+    // rows that show (inside each line's clip), a few px of slack
+    const rows = (testId: string) =>
+      page.getByTestId(testId).evaluate((el) => {
+        const box = el.getBoundingClientRect()
+        const tops = [...el.querySelectorAll<HTMLElement>('.session-tag')]
           .map((t) => t.getBoundingClientRect())
           .filter((r) => r.bottom <= box.bottom + 1)
-          .map((r) => Math.round(r.top)),
-      ).size
-    })
-    expect(rows).toBe(1)
+          .map((r) => r.top)
+          .sort((a, b) => a - b)
+        return tops.filter((top, k) => k === 0 || top - tops[k - 1] > 6).length
+      })
+    expect(await rows('statusbar-agent')).toBeLessThanOrEqual(2)
+    expect(await rows('statusbar-custom')).toBeLessThanOrEqual(2)
+    const agentText = (
+      await page.getByTestId('statusbar-agent').innerText()
+    ).replace(/\s+/g, ' ')
+    expect(agentText).toContain('Opus 5.5')
+    expect(agentText).toContain('ctx 52%')
+    expect(agentText).toContain('7d 47%')
+    // 5h stays hidden until it is close to full (23% here)
+    expect(agentText).not.toContain('5h')
+    expect(agentText).toContain('auto')
     const opensUp = async (testId: string, list: string) => {
       const button = page.getByTestId(testId)
-      if (!(await button.isVisible())) {
+      if (!(await button.first().isVisible())) {
         // folded away: it lives in the +N panel
-        await page.getByTestId('session-statusbar-more').click()
+        await page.getByTestId('statusbar-agent-more').click()
       }
       const top = (await page.getByTestId(testId).last().boundingBox())?.y ?? 0
       await page.getByTestId(testId).last().click()
@@ -54,6 +65,7 @@ describe('Status bar', () => {
       await popup.waitFor({ state: 'hidden' })
       await page.keyboard.press('Escape')
     }
+    await opensUp('status-context', 'status-context-detail')
     await opensUp('status-worktrees', 'status-worktree-list')
     await opensUp('status-background', 'background-tasks')
     expect(await page.getByTestId('status-worktree-list').count()).toBe(0)

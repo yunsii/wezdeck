@@ -182,6 +182,7 @@ type transcript struct {
 	agents   map[string]int // Claude subagent id → its Agent call's index (hand-back reports)
 	tasks    map[string]int // background task id (Monitor, Bash run_in_background) → its call's index
 	usage    sessionUsage
+	mode     string       // Claude's permission mode, from the newest user line
 	lastMsg  string       // message id whose usage was counted (one reply spans several lines)
 	outputs  []outputMark // per reply: when, how many output tokens (turnOutput)
 	lineOff  int64        // file offset of the line being fed

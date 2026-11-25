@@ -1,9 +1,7 @@
 // Top of a session page, pinned while the thread scrolls under it: back,
-// which session this is, its status, and three meters — context used,
-// the Claude account's 5-hour and 7-day limits (reported by Claude Code to
-// its status line, scripts/runtime/claude-statusline-tap.sh). Tapping the
-// meters shows the spend (model, output, cache hit), how fresh the limits
-// are, and the background tasks (counted in the meter row). The header's height is shared
+// which session this is (the title) and whether it needs you. The model,
+// context, limits, branch, git and background tasks moved to the status bars
+// under the composer (session-statusbar.tsx). The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
@@ -13,16 +11,8 @@ import { BackButton } from '#/components/deck/back-button'
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import { useStatusText } from './console-sessions'
-import type {
-  AccountLimits,
-  BgTask,
-  Detail,
-  RateWindow,
-  Usage,
-} from './console-sessions'
-import { useAgo } from './tickets-view'
+import type { Detail } from './console-sessions'
 import { SessionInfo } from './session-info'
-import { BackgroundTasks } from './session-background'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -30,134 +20,6 @@ import {
   useSessionNav,
 } from './session-switcher'
 import { Button } from '#/components/ui/button'
-
-/** a meter appears once its share reaches this (amber from here on) */
-const NEAR_FULL = 75
-
-const tokens = (n: number) =>
-  n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
-
-const isoOf = (unixSeconds?: number) =>
-  unixSeconds ? new Date(unixSeconds * 1000).toISOString() : undefined
-
-/** One meter: the label, how much is used, and a fill behind it. */
-function Meter({
-  label,
-  percent,
-  note,
-}: {
-  label: string
-  percent: number
-  note?: string
-}) {
-  const used = Math.max(0, Math.min(100, Math.round(percent)))
-  const fill =
-    used >= 90
-      ? 'bg-brand-error'
-      : used >= 75
-        ? 'bg-brand-waiting'
-        : 'bg-brand-running'
-  return (
-    <span className="relative inline-flex h-6 shrink-0 items-center gap-1 overflow-hidden rounded-full bg-brand-surface px-2 text-meta text-brand-muted">
-      <span
-        aria-hidden
-        className={cn('absolute inset-y-0 left-0 opacity-20', fill)}
-        style={{ width: `${used}%` }}
-      />
-      <span className="relative">{label}</span>
-      <span className="relative font-semibold text-brand-text">{used}%</span>
-      {note ? <span className="relative text-brand-label">{note}</span> : null}
-    </span>
-  )
-}
-
-function Meters({
-  usage,
-  account,
-  background,
-}: {
-  usage?: Usage
-  account?: AccountLimits
-  background: Array<BgTask>
-}) {
-  const { t } = useLingui()
-  const ago = useAgo()
-  const [open, setOpen] = useState(false)
-  const context =
-    usage?.context_limit && usage.context
-      ? (usage.context / usage.context_limit) * 100
-      : 0
-  // a snapshot taken before its window reset says nothing about now
-  const current = (w?: RateWindow) =>
-    w && !(w.resets_at && w.resets_at * 1000 < Date.now()) ? w : undefined
-  const five = current(account?.five_hour)
-  const week = current(account?.seven_day)
-  // meters only appear once something is close to full; the numbers are
-  // always in 会话信息 (ⓘ)
-  const showContext = context >= NEAR_FULL
-  const showFive = Boolean(five && five.used_percentage >= NEAR_FULL)
-  const showWeek = Boolean(week && week.used_percentage >= NEAR_FULL)
-  if (!showContext && !showFive && !showWeek && !background.length) return null
-  const fiveReset = ago(isoOf(five?.resets_at))
-  const weekReset = ago(isoOf(week?.resets_at))
-  const tasks = background.length
-  const usedTokens = tokens(usage?.context ?? 0)
-  const limitTokens = tokens(usage?.context_limit ?? 0)
-  const outputTokens = tokens(usage?.output ?? 0)
-  const limitsAt = ago(isoOf(account?.at))
-  const hit =
-    usage && usage.input + usage.cache_read
-      ? Math.round((usage.cache_read / (usage.input + usage.cache_read)) * 100)
-      : 0
-  return (
-    <div className="grid gap-1">
-      <Button
-        variant="plain"
-        type="button"
-        data-testid="session-usage"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className="flex min-w-0 flex-wrap items-center gap-1.5 text-left"
-      >
-        {showContext ? <Meter label={t`Context`} percent={context} /> : null}
-        {showFive && five ? (
-          <Meter
-            label={t`5 h`}
-            percent={five.used_percentage}
-            note={fiveReset ? t`resets ${fiveReset}` : undefined}
-          />
-        ) : null}
-        {showWeek && week ? (
-          <Meter
-            label={t`7 d`}
-            percent={week.used_percentage}
-            note={weekReset ? t`resets ${weekReset}` : undefined}
-          />
-        ) : null}
-        {background.length ? (
-          <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2 text-meta text-brand-muted">
-            <Led tone="running" size={8} className="led-running" />
-            {t`${tasks} background tasks`}
-          </span>
-        ) : null}
-      </Button>
-      {open ? (
-        <p className="flex flex-wrap gap-x-3 px-1 text-meta text-brand-label">
-          {usage?.model ? <span>{usage.model}</span> : null}
-          {usage?.context_limit ? (
-            <span>{t`Context ${usedTokens} / ${limitTokens}`}</span>
-          ) : null}
-          {usage ? <span>{t`output ${outputTokens}`}</span> : null}
-          {usage ? <span>{t`cache hit ${hit}%`}</span> : null}
-          {account ? <span>{t`limits as of ${limitsAt}`}</span> : null}
-        </p>
-      ) : null}
-      {open && background.length ? (
-        <BackgroundTasks tasks={background} />
-      ) : null}
-    </div>
-  )
-}
 
 export function SessionHeader({
   id,
@@ -282,12 +144,8 @@ export function SessionHeader({
           </Button>
         ) : null}
       </div>
-      <Meters
-        usage={data?.usage}
-        account={data?.account}
-        // background tasks: the status bar under the composer
-        background={[]}
-      />
+      {/* model, ctx, limits and background tasks: the agent status bar
+          under the composer (session-statusbar.tsx) */}
       {data ? (
         <SessionInfo
           data={data}

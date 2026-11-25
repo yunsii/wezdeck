@@ -30,6 +30,7 @@ import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
 import { useResumeSheet } from './session-commands'
 import { SessionStatusBar } from './session-statusbar'
+import type { StatusFields } from './session-statusbar'
 import type { BgTask } from './session-background'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
@@ -114,7 +115,7 @@ export type AgentCapabilities = {
   title: boolean
 }
 
-export type Detail = {
+export type Detail = StatusFields & {
   id: string
   name?: string
   title?: string
@@ -122,9 +123,6 @@ export type Detail = {
   branch?: string
   /** working-tree status of the pane's cwd (git_status.go) */
   git?: GitStatus
-  /** the terminal status line's node version and the repo's worktrees */
-  node?: string
-  worktrees?: Array<{ path: string; branch?: string; current?: boolean }>
   usage?: Usage
   account?: AccountLimits
   /** host-built block an agent can act on (remote_reference.go) */

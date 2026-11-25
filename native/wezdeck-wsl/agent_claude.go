@@ -120,7 +120,9 @@ func (t *transcript) feedLine(raw []byte) {
 		Content          json.RawMessage `json:"content"` // system lines (local_command)
 		IsMeta           bool            `json:"isMeta"`
 		IsCompactSummary bool            `json:"isCompactSummary"`
-		CompactMetadata  struct {
+		// on each user line: auto | plan | bypassPermissions | default …
+		PermissionMode  string `json:"permissionMode"`
+		CompactMetadata struct {
 			Trigger string `json:"trigger"`
 		} `json:"compactMetadata"`
 		Message struct {
@@ -159,6 +161,10 @@ func (t *transcript) feedLine(raw []byte) {
 	}
 	if json.Unmarshal(raw, &line) != nil || line.IsMeta {
 		return
+	}
+	// the newest mode wins: the web status bar shows it like Claude's own
+	if line.PermissionMode != "" {
+		t.mode = line.PermissionMode
 	}
 	// A message typed (or sent from the phone) while Claude is mid-turn is
 	// queued and lands as an attachment, not a user line. Keep the human
