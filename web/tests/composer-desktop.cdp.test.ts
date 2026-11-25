@@ -371,6 +371,11 @@ async function clearThenLeaveMidUpload(page: Page) {
   await box.press('Escape')
   await expect.poll(() => box.inputValue()).toBe('')
 
+  // the clear toasts sit over the header: let them go before the send
+  await page.locator('[data-sonner-toast]').first().waitFor({
+    state: 'detached',
+    timeout: 10_000,
+  })
   // send with an image and leave at once (the upload still running):
   // coming back finds an empty composer, not the sent message
   await box.fill('带图的消息 ')
