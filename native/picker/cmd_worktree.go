@@ -5,13 +5,14 @@
 // tears down before the open work starts.
 //
 // Bindings:
-//   Enter    → open selected worktree window
-//   Ctrl+Y   → copy selected worktree path to the Windows clipboard
-//   Ctrl+B   → copy selected branch name to the Windows clipboard
-//   Ctrl+D   → reclaim focused linked worktree (confirm with Enter / y)
-//   Up/Down  → move
-//   1-9,0,a-z → accelerator open
-//   Esc / Ctrl+C / Alt+g → close
+//
+//	Enter    → open selected worktree window
+//	Ctrl+Y   → copy selected worktree path to the Windows clipboard
+//	Ctrl+B   → copy selected branch name to the Windows clipboard
+//	Ctrl+D   → reclaim focused linked worktree (confirm with Enter / y)
+//	Up/Down  → move
+//	1-9,0,a-z → accelerator open
+//	Esc / Ctrl+C / Alt+g → close
 //
 // Clipboard writes go through agent-clipboard.sh / WezDeck Runtime — NOT OSC 52.
 // Why keyboard copy instead of mouse select: plain drag is intentionally
@@ -53,6 +54,9 @@ type worktreeRow struct {
 	status string
 	age    string
 	reason string
+	// description: the workstation's one-line purpose (git branch
+	// description, 8th prefetch column); "" when none is set
+	description string
 }
 
 type worktreeUI struct {
@@ -205,11 +209,11 @@ func loadWorktreeRows(path string) ([]worktreeRow, error) {
 		if line == "" {
 			continue
 		}
-		// 7 fields: label  path  branch  existing_window_id  status  age  reason
-		// Short lines are tolerated so an older menu.sh (or a hand-written
-		// fixture) that only emits the first four still renders — it just
-		// carries no agent status.
-		parts := strings.SplitN(line, "\t", 7)
+		// 8 fields: label  path  branch  existing_window_id  status  age
+		// reason  description. Short lines are tolerated so an older menu.sh
+		// (or a hand-written fixture) that only emits the first four still
+		// renders — it just carries no agent status / purpose.
+		parts := strings.SplitN(line, "\t", 8)
 		if len(parts) < 4 {
 			continue
 		}
@@ -222,6 +226,9 @@ func loadWorktreeRows(path string) ([]worktreeRow, error) {
 		if len(parts) >= 7 {
 			row.status, row.age, row.reason = parts[4], parts[5], parts[6]
 		}
+		if len(parts) >= 8 {
+			row.description = parts[7]
+		}
 		if len(rows) < len(accels) {
 			row.accelerator = accels[len(rows)]
 		}
@@ -231,12 +238,24 @@ func loadWorktreeRows(path string) ([]worktreeRow, error) {
 }
 
 // nameCell is the "<worktree> [<branch>]" part of a row — everything
-// before the agent-status column.
+// before the agent-status column. A workstation made before 2026-11-25
+// keeps its dev- directory (transcripts and resume pins are keyed by the
+// path) but shows as the bare direction, like the ones made since.
 func (r worktreeRow) nameCell() string {
+	label := displayWorktreeLabel(r.label)
 	if r.branch == "" {
-		return r.label
+		return label
 	}
-	return r.label + " [" + r.branch + "]"
+	return label + " [" + r.branch + "]"
+}
+
+// displayWorktreeLabel drops the dev- lifecycle prefix of an older
+// workstation directory (dev-ux → ux); other labels pass through.
+func displayWorktreeLabel(label string) string {
+	if rest, ok := strings.CutPrefix(label, "dev-"); ok && rest != "" {
+		return rest
+	}
+	return label
 }
 
 func worktreeStatusIcon(status string) string {
@@ -514,19 +533,20 @@ func (ui *worktreeUI) beginReclaimConfirm() {
 	}
 	// Heuristic refuse for the primary checkout: linked trees live under
 	// `.worktrees/`; the real gate still lives in tmux-worktree-reclaim.sh.
+	// The menu labels the primary checkout "primary" (tmux_worktree_label_for_root).
 	base := filepath.Base(r.path)
-	if !strings.Contains(r.path, "/.worktrees/") && !strings.HasPrefix(base, "dev-") &&
-		!strings.HasPrefix(base, "task-") && !strings.HasPrefix(base, "hotfix-") &&
-		!strings.HasPrefix(base, "fix-") && !strings.HasPrefix(base, "ticket-") &&
-		!strings.HasPrefix(base, "claw-") {
+	if r.label == "primary" || (!strings.Contains(r.path, "/.worktrees/") &&
+		!strings.HasPrefix(base, "dev-") && !strings.HasPrefix(base, "ticket-") &&
+		!strings.HasPrefix(base, "claw-")) {
 		ui.flash = "refusing primary worktree"
 		return
 	}
-	if strings.HasPrefix(base, "dev-") {
-		ui.pendingReclaim = "Reclaim long-lived " + base + "?"
+	if strings.HasPrefix(base, "ticket-") || strings.HasPrefix(base, "claw-") {
+		ui.pendingReclaim = "Reclaim " + base + "?"
 		return
 	}
-	ui.pendingReclaim = "Reclaim " + base + "?"
+	// a workstation: reclaiming ends its direction (accumulated context goes)
+	ui.pendingReclaim = "Reclaim workstation " + displayWorktreeLabel(base) + " (direction done)?"
 }
 
 // reclaimSelected runs tmux-worktree-reclaim.sh synchronously, removes the
@@ -629,16 +649,18 @@ func runWorktreeReclaimDefault(openScript, sessionName, worktreePath, sourceWind
 }
 
 // selectedDetailLine is the idle detail-row text:
-// "<path> · <branch> · <agent reason>" (each part omitted when empty).
-// The reason is the one piece of agent state that has no room in the row
-// itself, and it is what tells you *why* a worktree is ▲ before you jump.
+// "<purpose> · <path> · <branch> · <agent reason>" (each part omitted when
+// empty). The purpose leads: it says what the workstation is for, the one
+// thing its short name cannot. The reason is the one piece of agent state
+// that has no room in the row itself, and it is what tells you *why* a
+// worktree is ▲ before you jump.
 func (ui *worktreeUI) selectedDetailLine() string {
 	if ui.selected < 0 || ui.selected >= len(ui.rows) {
 		return ""
 	}
 	r := ui.rows[ui.selected]
-	parts := make([]string, 0, 3)
-	for _, p := range []string{r.path, r.branch, r.reason} {
+	parts := make([]string, 0, 4)
+	for _, p := range []string{r.description, r.path, r.branch, r.reason} {
 		if p != "" {
 			parts = append(parts, p)
 		}
@@ -657,20 +679,57 @@ func padRunes(s string, width int) string {
 	return s + strings.Repeat(" ", width-n)
 }
 
-// truncateRunes caps s to at most max cells (1 rune ≈ 1 cell; good enough
-// for path display). Empty max yields empty string.
+// truncateRunes caps s to at most max terminal cells, counting East Asian
+// wide runes (a Chinese purpose in the detail line) as two: counting them
+// as one let the line run past the popup edge and wrap. Empty max yields
+// empty string.
 func truncateRunes(s string, max int) string {
 	if max <= 0 {
 		return ""
 	}
-	runes := []rune(s)
-	if len(runes) <= max {
+	width := 0
+	for _, r := range s {
+		width += runeCells(r)
+	}
+	if width <= max {
 		return s
 	}
 	if max == 1 {
 		return "…"
 	}
-	return string(runes[:max-1]) + "…"
+	var b strings.Builder
+	used := 0
+	for _, r := range s {
+		w := runeCells(r)
+		if used+w > max-1 {
+			break
+		}
+		b.WriteRune(r)
+		used += w
+	}
+	return b.String() + "…"
+}
+
+// runeCells: 2 for East Asian wide / fullwidth runes (CJK, Hangul, kana,
+// fullwidth forms), else 1 — the common ranges, not the full Unicode
+// width table (no dependency for one detail line).
+func runeCells(r rune) int {
+	switch {
+	case r >= 0x1100 && r <= 0x115F,
+		r >= 0x2E80 && r <= 0x303E,
+		r >= 0x3041 && r <= 0x33FF,
+		r >= 0x3400 && r <= 0x4DBF,
+		r >= 0x4E00 && r <= 0x9FFF,
+		r >= 0xA000 && r <= 0xA4CF,
+		r >= 0xAC00 && r <= 0xD7A3,
+		r >= 0xF900 && r <= 0xFAFF,
+		r >= 0xFE30 && r <= 0xFE4F,
+		r >= 0xFF00 && r <= 0xFF60,
+		r >= 0xFFE0 && r <= 0xFFE6,
+		r >= 0x20000 && r <= 0x3FFFD:
+		return 2
+	}
+	return 1
 }
 
 func (ui *worktreeUI) dispatch(fd int, state *term.State) {

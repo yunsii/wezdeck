@@ -76,7 +76,8 @@ func TestWorktreeBeginReclaimConfirm(t *testing.T) {
 		rows: []worktreeRow{
 			{label: "primary", path: "/home/yuns/work/coco-forge", branch: "master", accelerator: "1"},
 			{label: "dev-x", path: "/home/yuns/work/.worktrees/coco-forge/dev-x", branch: "dev/x", accelerator: "2"},
-			{label: "task-y", path: "/home/yuns/work/.worktrees/coco-forge/task-y", branch: "task/y", accelerator: "3"},
+			{label: "ux", path: "/home/yuns/work/.worktrees/coco-forge/ux", branch: "dev/ux", accelerator: "3"},
+			{label: "ticket-req-1", path: "/home/yuns/work/.worktrees/coco-forge/ticket-req-1", branch: "ticket/req-1", accelerator: "4"},
 		},
 		selected: 0,
 	}
@@ -88,15 +89,23 @@ func TestWorktreeBeginReclaimConfirm(t *testing.T) {
 	ui.flash = ""
 	ui.selected = 1
 	ui.beginReclaimConfirm()
-	if ui.pendingReclaim != "Reclaim long-lived dev-x?" {
-		t.Fatalf("dev confirm: got %q", ui.pendingReclaim)
+	// a workstation from before 2026-11-25 reads as its bare direction
+	if ui.pendingReclaim != "Reclaim workstation x (direction done)?" {
+		t.Fatalf("old dev- workstation confirm: got %q", ui.pendingReclaim)
 	}
 
 	ui.pendingReclaim = ""
 	ui.selected = 2
 	ui.beginReclaimConfirm()
-	if ui.pendingReclaim != "Reclaim task-y?" {
-		t.Fatalf("task confirm: got %q", ui.pendingReclaim)
+	if ui.pendingReclaim != "Reclaim workstation ux (direction done)?" {
+		t.Fatalf("workstation confirm: got %q", ui.pendingReclaim)
+	}
+
+	ui.pendingReclaim = ""
+	ui.selected = 3
+	ui.beginReclaimConfirm()
+	if ui.pendingReclaim != "Reclaim ticket-req-1?" {
+		t.Fatalf("ticket confirm: got %q", ui.pendingReclaim)
 	}
 }
 
@@ -426,5 +435,79 @@ func TestTruncateRunes(t *testing.T) {
 	}
 	if got := truncateRunes("ab", 1); got != "…" {
 		t.Fatalf("max=1: %q", got)
+	}
+}
+
+func TestTruncateRunesCountsWideRunesAsTwoCells(t *testing.T) {
+	// 6 CJK runes = 12 cells: fits in 12, not in 11
+	if got := truncateRunes("网页控制台体", 12); got != "网页控制台体" {
+		t.Fatalf("exact fit: %q", got)
+	}
+	// 11 cells: 5 wide runes (10) + "…" (1)
+	if got := truncateRunes("网页控制台体", 11); got != "网页控制台…" {
+		t.Fatalf("one over: %q", got)
+	}
+	// a wide rune never straddles the edge: 10 cells → 4 wide (8) + "…",
+	// the 5th would need cells 9–10 and leave no room for the ellipsis
+	if got := truncateRunes("网页控制台体", 10); got != "网页控制…" {
+		t.Fatalf("no straddle: %q", got)
+	}
+	if got := truncateRunes("ux · 网页", 9); got != "ux · 网页" {
+		t.Fatalf("mixed fits (5 + 4 cells): %q", got)
+	}
+}
+
+func TestLoadWorktreeRowsReadsDescriptionColumn(t *testing.T) {
+	dir := t.TempDir()
+	path := dir + "/rows.tsv"
+	data := "primary\t/repo\tmaster\t@1\t\t\t\t\n" +
+		"dev-ux\t/wt/dev-ux\tdev/ux\t@2\trunning\t3m\tbuilding\t网页控制台体验\n" +
+		"ci\t/wt/ci\tdev/ci\t\t\t\t\n" // 7 columns: an older menu.sh
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := loadWorktreeRows(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("rows: %d", len(rows))
+	}
+	if rows[1].description != "网页控制台体验" || rows[1].reason != "building" {
+		t.Fatalf("row 2: %+v", rows[1])
+	}
+	if rows[2].description != "" {
+		t.Fatalf("7-column row grew a description: %+v", rows[2])
+	}
+}
+
+func TestWorktreeNameCellHidesLegacyDevPrefix(t *testing.T) {
+	cases := map[string]string{
+		"dev-ux":  "ux [dev/ux]",
+		"ux":      "ux [dev/ux]",
+		"dev-":    "dev- [dev/ux]", // nothing after the prefix: keep as is
+		"primary": "primary [dev/ux]",
+	}
+	for label, want := range cases {
+		if got := (worktreeRow{label: label, branch: "dev/ux"}).nameCell(); got != want {
+			t.Fatalf("%s: got %q want %q", label, got, want)
+		}
+	}
+}
+
+func TestWorktreeDetailLineLeadsWithPurpose(t *testing.T) {
+	ui := &worktreeUI{
+		rows: []worktreeRow{
+			{label: "dev-ux", path: "/wt/dev-ux", branch: "dev/ux", reason: "waiting", description: "网页控制台体验"},
+			{label: "ci", path: "/wt/ci", branch: "dev/ci"},
+		},
+		selected: 0,
+	}
+	if got := ui.selectedDetailLine(); got != "网页控制台体验 · /wt/dev-ux · dev/ux · waiting" {
+		t.Fatalf("with purpose: %q", got)
+	}
+	ui.selected = 1
+	if got := ui.selectedDetailLine(); got != "/wt/ci · dev/ci" {
+		t.Fatalf("without purpose: %q", got)
 	}
 }
