@@ -287,6 +287,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = listTodos(args)
 	case "repos":
 		result, err = listRepos()
+	case "workstations":
+		result, err = listWorkstations(args)
 	case "ticket.targets":
 		result, err = listTicketTargets()
 	case "session.new.job":

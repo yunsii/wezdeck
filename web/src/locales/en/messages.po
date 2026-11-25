@@ -157,6 +157,10 @@ msgstr "{name} is ready, no conversation yet."
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
+#: src/features/session-new-direction.tsx:61
+msgid "{reason} · opens one more"
+msgstr "{reason} · opens one more"
+
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
@@ -234,6 +238,10 @@ msgstr "↓ {tokens} tokens"
 msgid "+ Description"
 msgstr "+ Description"
 
+#: src/features/session-new-direction.tsx:139
+msgid "+ New direction"
+msgstr "+ New direction"
+
 #: src/features/landing-example.tsx:150
 #~ msgid "128 today"
 #~ msgstr "128 today"
@@ -294,7 +302,7 @@ msgstr "A local-first workbench for AI coding agents. Every session keeps its We
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
 
-#: src/features/session-new.tsx:252
+#: src/features/session-new.tsx:305
 msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 msgstr "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 
@@ -794,6 +802,10 @@ msgctxt "git"
 msgid "Commits"
 msgstr "Commits"
 
+#: src/features/session-new-direction.tsx:57
+msgid "commits not in main yet"
+msgstr "commits not in main yet"
+
 #: src/features/chat-turn.tsx:136
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
@@ -983,7 +995,7 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "Could not copy the reference: {reason}"
 
-#: src/features/session-new.tsx:63
+#: src/features/session-new.tsx:74
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -999,7 +1011,7 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new.tsx:310
+#: src/features/session-new.tsx:365
 msgid "Create session"
 msgstr "Create session"
 
@@ -1007,7 +1019,7 @@ msgstr "Create session"
 msgid "Create ticket"
 msgstr "Create ticket"
 
-#: src/features/session-new.tsx:56
+#: src/features/session-new.tsx:67
 msgid "Creating the worktree…"
 msgstr "Creating the worktree…"
 
@@ -1070,7 +1082,7 @@ msgstr "Deny"
 msgid "Depends on"
 msgstr "Depends on"
 
-#: src/features/session-new.tsx:259
+#: src/features/session-new.tsx:312
 msgid "Description"
 msgstr "Description"
 
@@ -1109,7 +1121,8 @@ msgstr "Diagnostics"
 msgid "Direct"
 msgstr "Direct"
 
-#: src/features/session-new.tsx:234
+#: src/features/session-new-direction.tsx:108
+#: src/features/session-new.tsx:268
 msgid "Direction"
 msgstr "Direction"
 
@@ -1139,7 +1152,7 @@ msgstr "done {when}"
 #~ msgid "e.g. phone-create"
 #~ msgstr "e.g. phone-create"
 
-#: src/features/session-new.tsx:241
+#: src/features/session-new.tsx:294
 msgid "e.g. ux, ci, i18n"
 msgstr "e.g. ux, ci, i18n"
 
@@ -1242,6 +1255,10 @@ msgstr "Estimated from this machine's past runs, not by the planner."
 msgid "Event stream"
 msgstr "Event stream"
 
+#: src/features/session-new-direction.tsx:155
+msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
+msgstr "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
+
 #: src/features/console-usage.tsx:168
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
@@ -1313,7 +1330,7 @@ msgstr "Finished"
 msgid "finished its turn"
 msgstr "finished its turn"
 
-#: src/features/session-new.tsx:270
+#: src/features/session-new.tsx:325
 msgid "First message to the agent"
 msgstr "First message to the agent"
 
@@ -1431,6 +1448,10 @@ msgstr "How it will be done"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
+#: src/features/session-new-direction.tsx:52
+msgid "idle"
+msgstr "idle"
+
 #: src/features/session-list.tsx:257
 msgctxt "filter"
 msgid "Idle"
@@ -1440,6 +1461,10 @@ msgstr "Idle"
 msgctxt "session status"
 msgid "Idle"
 msgstr "Idle"
+
+#: src/features/session-new-direction.tsx:52
+msgid "idle · {count} workstations"
+msgstr "idle · {count} workstations"
 
 #: src/features/session-list.tsx:178
 #~ msgid "Idle {idleCount}"
@@ -1821,7 +1846,7 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-new.tsx:255
+#: src/features/session-new.tsx:308
 msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 
@@ -1845,12 +1870,16 @@ msgstr "Needs you"
 msgid "New conversation"
 msgstr "New conversation"
 
+#: src/features/session-new.tsx:287
+msgid "New direction"
+msgstr "New direction"
+
 #: src/features/console-keys.tsx:81
 msgid "New line"
 msgstr "New line"
 
-#: src/features/session-new.tsx:121
-#: src/features/session-new.tsx:215
+#: src/features/session-new.tsx:132
+#: src/features/session-new.tsx:249
 msgid "New session"
 msgstr "New session"
 
@@ -1858,7 +1887,7 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:117
+#: src/features/session-new.tsx:128
 msgid "New session (c)"
 msgstr "New session (c)"
 
@@ -2518,7 +2547,7 @@ msgstr "Repo filter"
 #~ msgstr "Repositories"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new.tsx:221
+#: src/features/session-new.tsx:255
 msgid "Repository"
 msgstr "Repository"
 
@@ -2557,6 +2586,10 @@ msgstr "resets {fiveReset}"
 #: src/features/session-header.tsx:134
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
+
+#: src/features/session-new.tsx:66
+msgid "Resetting the workstation onto the latest main branch…"
+msgstr "Resetting the workstation onto the latest main branch…"
 
 #: src/features/session-restart.tsx:107
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
@@ -2618,6 +2651,10 @@ msgstr "reuse reasons"
 msgid "Reuses"
 msgstr "Reuses"
 
+#: src/features/session-new-direction.tsx:154
+msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
+msgstr "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
+
 #: src/features/me-devices.tsx:210
 msgid "Revoke"
 msgstr "Revoke"
@@ -2672,6 +2709,7 @@ msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
 #: src/features/console-collab.tsx:396
+#: src/features/session-new-direction.tsx:54
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "running"
@@ -2831,7 +2869,7 @@ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
-#: src/features/session-new.tsx:60
+#: src/features/session-new.tsx:71
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -3017,11 +3055,11 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new.tsx:62
+#: src/features/session-new.tsx:73
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new.tsx:58
+#: src/features/session-new.tsx:69
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -3480,6 +3518,10 @@ msgstr "Turns"
 msgid "Unavailable"
 msgstr "Unavailable"
 
+#: src/features/session-new-direction.tsx:56
+msgid "uncommitted changes"
+msgstr "uncommitted changes"
+
 #: src/features/console-me.tsx:229
 msgid "Underscore"
 msgstr "Underscore"
@@ -3594,6 +3636,7 @@ msgstr "Waiting for the host to approve this device. On the host run:"
 #~ msgstr "Waiting for the host to approve this phone. On the host run:"
 
 #: src/features/console-sessions.tsx:156
+#: src/features/session-new-direction.tsx:55
 msgid "waiting for you"
 msgstr "waiting for you"
 
@@ -3702,7 +3745,7 @@ msgstr "What confirming starts"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new.tsx:276
+#: src/features/session-new.tsx:331
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -3718,7 +3761,7 @@ msgstr "What the terminal shows"
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
-#: src/features/session-new.tsx:266
+#: src/features/session-new.tsx:319
 #: src/features/session-purpose.tsx:73
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
@@ -3823,7 +3866,7 @@ msgstr "Worktree"
 #~ msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 #~ msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 
-#: src/features/session-new.tsx:254
+#: src/features/session-new.tsx:307
 msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 msgstr "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 

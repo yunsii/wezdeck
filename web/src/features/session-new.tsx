@@ -23,6 +23,13 @@ import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
+import {
+  DirectionPicker,
+  defaultDirection,
+  useDirectionPlan,
+  useDirections,
+} from './session-new-direction'
+import type { DirectionPick } from './session-new-direction'
 
 type Repo = { root: string; label: string; visited?: number }
 
@@ -43,6 +50,8 @@ export function workstationSlug(name: string) {
 type Job = {
   job: string
   stage: 'creating' | 'starting' | 'sending' | 'done' | 'failed'
+  /** new direction, one more parallel slot, or an idle slot reused */
+  mode?: 'new' | 'parallel' | 'reuse'
   worktree?: string
   branch?: string
   error?: string
@@ -53,7 +62,9 @@ function useStageText() {
   return (job: Job) => {
     const reason = job.error ?? ''
     return job.stage === 'creating'
-      ? t`Creating the worktree…`
+      ? job.mode === 'reuse'
+        ? t`Resetting the workstation onto the latest main branch…`
+        : t`Creating the worktree…`
       : job.stage === 'starting'
         ? t`Starting the agent…`
         : job.stage === 'sending'
@@ -150,6 +161,12 @@ function NewSessionSheet({
   const sessions = useSessions()
   const [repo, setRepo] = useState('')
   const [name, setName] = useState('')
+  // the chosen direction: null until picked (then the default applies),
+  // '' for a new one
+  const [picked, setPicked] = useState<DirectionPick | null>(null)
+  // sessions already in the worktree when submitted: a reused one has its
+  // last round listed, which is not the new session
+  const before = useRef<Set<string>>(new Set())
   const [description, setDescription] = useState('')
   const [prompt, setPrompt] = useState('')
   const [error, setError] = useState('')
@@ -168,11 +185,19 @@ function NewSessionSheet({
       },
   })
   const chosen = repo || repos.data?.repos[0]?.root || ''
+  const directions = useDirections(chosen)
+  const dirs = directions.data?.directions ?? []
+  const pick = picked ?? defaultDirection(dirs)
+  const pickedDir = dirs.find((d) => d.name === pick)
+  const plan = useDirectionPlan()
   const current = job.data?.job
   // once listed (the agent answered its first prompt), open the session
   const listed =
     current?.stage === 'done' && current.worktree
-      ? sessions.data?.sessions.find((row) => row.worktree === current.worktree)
+      ? sessions.data?.sessions.find(
+          (row) =>
+            row.worktree === current.worktree && !before.current.has(row.id),
+        )
       : undefined
   // once per job: `listed` is a new row on every sessions poll, and this
   // sheet stays mounted beside the session on a wide window, so without
@@ -191,14 +216,23 @@ function NewSessionSheet({
   }, [listed, jobId, navigate, locale, onClose])
   const busy = Boolean(jobId) && current?.stage !== 'failed'
   const slug = workstationSlug(name)
-  const ready = Boolean(chosen) && Boolean(slug) && Boolean(prompt.trim())
+  const ready =
+    Boolean(chosen) && Boolean(pick || slug) && Boolean(prompt.trim())
   const submit = async () => {
     setError('')
     try {
+      // the workstation a reuse will pick: the most recent idle one (host
+      // workstations.go idleSlot); its listed sessions are not the new one
+      const reused = pickedDir?.slots.find((s) => s.state === 'idle')?.path
+      before.current = new Set(
+        (sessions.data?.sessions ?? [])
+          .filter((row) => reused && row.worktree === reused)
+          .map((row) => row.id),
+      )
       const res = (await hostWrite('session.new', {
         repo: chosen,
-        name: name.trim(),
-        description: description.trim(),
+        name: pick || name.trim(),
+        description: pick ? '' : description.trim(),
         prompt: prompt.trim(),
       })) as { job: string }
       setJobId(res.job)
@@ -230,42 +264,63 @@ function NewSessionSheet({
             }))}
           />
         </label>
-        <label className="grid gap-1 text-caption text-brand-muted">
+        <div className="grid gap-1 text-caption text-brand-muted">
           {t`Direction`}
-          <Input
-            variant="field"
-            value={name}
+          <DirectionPicker
+            directions={dirs}
+            value={pick}
+            onChange={setPicked}
             disabled={busy}
-            maxLength={60}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t`e.g. ux, ci, i18n`}
           />
-          <span
-            className={
-              name.trim() && !slug
-                ? 'px-1 text-meta text-brand-error'
-                : 'px-1 text-meta text-brand-label'
-            }
-            data-testid="new-session-slug"
-          >
-            {!name.trim()
-              ? t`A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk.`
-              : slug
-                ? t`Worktree ${slug}, branch dev/${slug} (a taken name gets -2)`
-                : t`Needs letters or digits: it becomes the directory and branch. Put the rest in the description.`}
-          </span>
-        </label>
-        <label className="grid gap-1 text-caption text-brand-muted">
-          {t`Description`}
-          <Input
-            variant="field"
-            value={description}
-            disabled={busy}
-            maxLength={120}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder={t`What this workstation is for, one line`}
-          />
-        </label>
+          {pickedDir ? (
+            <span
+              className="px-1 text-meta text-brand-label"
+              data-testid="new-session-plan"
+            >
+              {plan(pickedDir)}
+            </span>
+          ) : null}
+        </div>
+        {pick === '' ? (
+          <>
+            <label className="grid gap-1 text-caption text-brand-muted">
+              {t`New direction`}
+              <Input
+                variant="field"
+                value={name}
+                disabled={busy}
+                maxLength={60}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t`e.g. ux, ci, i18n`}
+              />
+              <span
+                className={
+                  name.trim() && !slug
+                    ? 'px-1 text-meta text-brand-error'
+                    : 'px-1 text-meta text-brand-label'
+                }
+                data-testid="new-session-slug"
+              >
+                {!name.trim()
+                  ? t`A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk.`
+                  : slug
+                    ? t`Worktree ${slug}, branch dev/${slug} (a taken name gets -2)`
+                    : t`Needs letters or digits: it becomes the directory and branch. Put the rest in the description.`}
+              </span>
+            </label>
+            <label className="grid gap-1 text-caption text-brand-muted">
+              {t`Description`}
+              <Input
+                variant="field"
+                value={description}
+                disabled={busy}
+                maxLength={120}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder={t`What this workstation is for, one line`}
+              />
+            </label>
+          </>
+        ) : null}
         <label className="grid gap-1 text-caption text-brand-muted">
           {t`First message to the agent`}
           <Textarea

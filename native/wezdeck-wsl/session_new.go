@@ -101,12 +101,18 @@ type newSessionJob struct {
 	Worktree string `json:"worktree,omitempty"`
 	Branch   string `json:"branch,omitempty"`
 	Error    string `json:"error,omitempty"`
-	at       time.Time
+	// Mode: new (a new direction), parallel (one more slot of a direction
+	// whose slots are all busy) or reuse (an idle slot starts a new round)
+	Mode string `json:"mode,omitempty"`
+	at   time.Time
 }
 
 var (
 	newJobsMu sync.Mutex
 	newJobs   = map[string]*newSessionJob{}
+	// reusing: slots a running job is reusing, so a second 新会话 for the
+	// same direction does not pick the same one
+	reusing = map[string]string{}
 )
 
 func setJob(id string, change func(j *newSessionJob)) {
@@ -178,8 +184,36 @@ func startNewSession(args json.RawMessage) (any, error) {
 	if !allowed {
 		return nil, errors.New("session.new: not a repository you work in")
 	}
-	job := &newSessionJob{ID: newDiagID(), Stage: "creating", Repo: a.Repo, at: time.Now()}
+	// the direction the name stands for: reuse its idle slot, else open one
+	// more (open-task-window bumps a taken name into a parallel slot), else
+	// a new direction
+	mode, reuse := "new", ""
+	direction := directionSlug(a.Name)
+	if dirs, err := repoWorkstations(a.Repo); err == nil {
+		newJobsMu.Lock()
+		for _, d := range dirs {
+			if d.Name != direction {
+				continue
+			}
+			mode = "parallel"
+			for _, s := range d.Slots {
+				if s.State == "idle" && reusing[s.Path] == "" {
+					mode, reuse = "reuse", s.Path
+					break
+				}
+			}
+		}
+		newJobsMu.Unlock()
+	}
+	job := &newSessionJob{ID: newDiagID(), Stage: "creating", Repo: a.Repo, Mode: mode, Worktree: reuse, at: time.Now()}
 	newJobsMu.Lock()
+	if reuse != "" {
+		if reusing[reuse] != "" { // taken between the check and here
+			newJobsMu.Unlock()
+			return nil, errors.New("session.new: that workstation was just taken; try again")
+		}
+		reusing[reuse] = job.ID
+	}
 	for id, j := range newJobs { // keep the last hour
 		if time.Since(j.at) > time.Hour {
 			delete(newJobs, id)
@@ -187,7 +221,14 @@ func startNewSession(args json.RawMessage) (any, error) {
 	}
 	newJobs[job.ID] = job
 	newJobsMu.Unlock()
-	go runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt)
+	go func() {
+		runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt, reuse)
+		if reuse != "" {
+			newJobsMu.Lock()
+			delete(reusing, reuse)
+			newJobsMu.Unlock()
+		}
+	}()
 	return map[string]any{"v": 1, "ok": true, "job": job.ID}, nil
 }
 
@@ -205,7 +246,28 @@ func newSessionJobStatus(args json.RawMessage) (any, error) {
 	return map[string]any{"v": 1, "ok": true, "job": *j}, nil
 }
 
-func runNewSession(id, repo, name, description, prompt string) {
+// directionSlug: the direction a typed name stands for, as the host names
+// it (open-task-window → wt_workstation_plan; web workstationSlug).
+func directionSlug(name string) string {
+	name = strings.TrimSpace(name)
+	for _, p := range []string{"dev-", "dev/"} {
+		name = strings.TrimPrefix(name, p)
+	}
+	var b strings.Builder
+	dash := false
+	for _, r := range strings.ToLower(name) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+			dash = false
+		} else if !dash && b.Len() > 0 {
+			b.WriteByte('-')
+			dash = true
+		}
+	}
+	return strings.TrimSuffix(b.String(), "-")
+}
+
+func runNewSession(id, repo, name, description, prompt, reuse string) {
 	fail := func(err error) {
 		setJob(id, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
 		relayLogf("session_new", "job=%s ok=false err=%q", id, err)
@@ -217,6 +279,13 @@ func runNewSession(id, repo, name, description, prompt string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, cmdPath, "--no-attach", "--description", description, "--", name)
+	if reuse != "" {
+		reusePath := os.Getenv("WEZDECK_SESSION_REUSE_CMD") // the test stack's stand-in
+		if reusePath == "" {
+			reusePath = filepath.Join(repoRoot(), "scripts", "runtime", "worktree", "reuse-workstation")
+		}
+		cmd = exec.CommandContext(ctx, reusePath, "--no-attach", reuse)
+	}
 	cmd.Dir = repo
 	out, err := cmd.Output()
 	result := map[string]string{}
@@ -256,7 +325,7 @@ func runNewSession(id, repo, name, description, prompt string) {
 		return
 	}
 	setJob(id, func(j *newSessionJob) { j.Stage = "done" })
-	relayLogf("session_new", "job=%s ok=true worktree=%q branch=%q", id, result["worktree_path"], result["branch_name"])
+	relayLogf("session_new", "job=%s ok=true reuse=%t worktree=%q branch=%q", id, reuse != "", result["worktree_path"], result["branch_name"])
 }
 
 var shells = map[string]bool{"bash": true, "zsh": true, "sh": true, "fish": true, "dash": true}

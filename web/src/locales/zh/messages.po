@@ -157,6 +157,10 @@ msgstr "{name} 已就绪，还没有对话。"
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
+#: src/features/session-new-direction.tsx:61
+msgid "{reason} · opens one more"
+msgstr "{reason} · 将新开一个"
+
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
 msgstr "请求 {requests} 次，写入 {writes} 次"
@@ -234,6 +238,10 @@ msgstr "↓ {tokens} tokens"
 msgid "+ Description"
 msgstr "+ 描述"
 
+#: src/features/session-new-direction.tsx:139
+msgid "+ New direction"
+msgstr "+ 新方向"
+
 #: src/features/landing-example.tsx:150
 #~ msgid "128 today"
 #~ msgstr "今日 128"
@@ -294,7 +302,7 @@ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/session-new.tsx:252
+#: src/features/session-new.tsx:305
 msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
 
@@ -794,6 +802,10 @@ msgctxt "git"
 msgid "Commits"
 msgstr "提交"
 
+#: src/features/session-new-direction.tsx:57
+msgid "commits not in main yet"
+msgstr "有未合入主分支的提交"
+
 #: src/features/chat-turn.tsx:136
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
@@ -983,7 +995,7 @@ msgstr "操作失败：{changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-new.tsx:63
+#: src/features/session-new.tsx:74
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -999,7 +1011,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:310
+#: src/features/session-new.tsx:365
 msgid "Create session"
 msgstr "创建会话"
 
@@ -1007,7 +1019,7 @@ msgstr "创建会话"
 msgid "Create ticket"
 msgstr "创建工单"
 
-#: src/features/session-new.tsx:56
+#: src/features/session-new.tsx:67
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
 
@@ -1070,7 +1082,7 @@ msgstr "拒绝"
 msgid "Depends on"
 msgstr "依赖"
 
-#: src/features/session-new.tsx:259
+#: src/features/session-new.tsx:312
 msgid "Description"
 msgstr "描述"
 
@@ -1109,7 +1121,8 @@ msgstr "诊断"
 msgid "Direct"
 msgstr "直连"
 
-#: src/features/session-new.tsx:234
+#: src/features/session-new-direction.tsx:108
+#: src/features/session-new.tsx:268
 msgid "Direction"
 msgstr "方向"
 
@@ -1139,7 +1152,7 @@ msgstr "{when} 完成"
 #~ msgid "e.g. phone-create"
 #~ msgstr "例如 phone-create"
 
-#: src/features/session-new.tsx:241
+#: src/features/session-new.tsx:294
 msgid "e.g. ux, ci, i18n"
 msgstr "例如 ux、ci、i18n"
 
@@ -1242,6 +1255,10 @@ msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
 msgid "Event stream"
 msgstr "事件流"
 
+#: src/features/session-new-direction.tsx:155
+msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
+msgstr "{direction} 的工作站都在忙：新开一个并行的，描述沿用。"
+
 #: src/features/console-usage.tsx:168
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协议层 ping 免费。"
@@ -1313,7 +1330,7 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new.tsx:270
+#: src/features/session-new.tsx:325
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -1431,6 +1448,10 @@ msgstr "打算怎么做"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
+#: src/features/session-new-direction.tsx:52
+msgid "idle"
+msgstr "空闲"
+
 #: src/features/session-list.tsx:257
 msgctxt "filter"
 msgid "Idle"
@@ -1440,6 +1461,10 @@ msgstr "空闲"
 msgctxt "session status"
 msgid "Idle"
 msgstr "空闲"
+
+#: src/features/session-new-direction.tsx:52
+msgid "idle · {count} workstations"
+msgstr "空闲 · 共 {count} 个工作站"
 
 #: src/features/session-list.tsx:178
 #~ msgid "Idle {idleCount}"
@@ -1821,7 +1846,7 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-new.tsx:255
+#: src/features/session-new.tsx:308
 msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
@@ -1845,12 +1870,16 @@ msgstr "等你"
 msgid "New conversation"
 msgstr "新开会话"
 
+#: src/features/session-new.tsx:287
+msgid "New direction"
+msgstr "新方向"
+
 #: src/features/console-keys.tsx:81
 msgid "New line"
 msgstr "换行"
 
-#: src/features/session-new.tsx:121
-#: src/features/session-new.tsx:215
+#: src/features/session-new.tsx:132
+#: src/features/session-new.tsx:249
 msgid "New session"
 msgstr "新会话"
 
@@ -1858,7 +1887,7 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:117
+#: src/features/session-new.tsx:128
 msgid "New session (c)"
 msgstr "新会话（c）"
 
@@ -2518,7 +2547,7 @@ msgstr "仓库筛选"
 #~ msgstr "仓库"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new.tsx:221
+#: src/features/session-new.tsx:255
 msgid "Repository"
 msgstr "仓库"
 
@@ -2557,6 +2586,10 @@ msgstr "{fiveReset}重置"
 #: src/features/session-header.tsx:134
 msgid "resets {weekReset}"
 msgstr "{weekReset}重置"
+
+#: src/features/session-new.tsx:66
+msgid "Resetting the workstation onto the latest main branch…"
+msgstr "正在把工作站重置到最新主分支…"
 
 #: src/features/session-restart.tsx:107
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
@@ -2618,6 +2651,10 @@ msgstr "复用理由"
 msgid "Reuses"
 msgstr "复用"
 
+#: src/features/session-new-direction.tsx:154
+msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
+msgstr "复用 {slot}：重置到最新主分支，起一个全新的 agent（上一轮对话仍可恢复）。"
+
 #: src/features/me-devices.tsx:210
 msgid "Revoke"
 msgstr "撤销"
@@ -2672,6 +2709,7 @@ msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
 #: src/features/console-collab.tsx:396
+#: src/features/session-new-direction.tsx:54
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "运行中"
@@ -2831,7 +2869,7 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-new.tsx:60
+#: src/features/session-new.tsx:71
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -3017,11 +3055,11 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:62
+#: src/features/session-new.tsx:73
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:58
+#: src/features/session-new.tsx:69
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -3480,6 +3518,10 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
+#: src/features/session-new-direction.tsx:56
+msgid "uncommitted changes"
+msgstr "有未提交的改动"
+
 #: src/features/console-me.tsx:229
 msgid "Underscore"
 msgstr "下划线"
@@ -3594,6 +3636,7 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 #~ msgstr "等待主机确认这台手机。在主机上运行："
 
 #: src/features/console-sessions.tsx:156
+#: src/features/session-new-direction.tsx:55
 msgid "waiting for you"
 msgstr "在等你"
 
@@ -3702,7 +3745,7 @@ msgstr "确认后会发生什么"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new.tsx:276
+#: src/features/session-new.tsx:331
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -3718,7 +3761,7 @@ msgstr "终端画面"
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
-#: src/features/session-new.tsx:266
+#: src/features/session-new.tsx:319
 #: src/features/session-purpose.tsx:73
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
@@ -3823,7 +3866,7 @@ msgstr "工作树"
 #~ msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 #~ msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑生成，重名会加 -2）"
 
-#: src/features/session-new.tsx:254
+#: src/features/session-new.tsx:307
 msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 

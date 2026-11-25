@@ -114,6 +114,7 @@ start_relay() {
     WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
     WEZDECK_TODO_DB="$STATE/todo.db" \
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
+    WEZDECK_SESSION_REUSE_CMD="$STATE/fake-reuse-workstation" \
     WEZDECK_SESSION_RESTART_CMD="$STATE/fake-session-restart" \
     TICKETS_ROOT="$STATE/tickets" \
     WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
@@ -186,6 +187,22 @@ echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$name" '#{w
 echo "tmux_socket=$STATE/new.sock"
 FAKE
   chmod +x "$STATE/fake-open-task-window"
+  # stand-in for reuse-workstation (新会话 on an idle direction): records the
+  # slot, opens a fresh `cat` pane for it — no recycle, no agent
+  cat >"$STATE/fake-reuse-workstation" <<FAKE
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "\$1" == --no-attach && -d "\$2" ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+path="\$2"; s="reuse-\$RANDOM"
+echo "\$path" >>"$STATE/reused"
+tmux -S "$STATE/new.sock" new-session -d -s "\$s" -c "\$path" -x 100 -y 20 "sh -c 'echo ready; exec cat'"
+echo "branch_name=\$(git -C "\$path" branch --show-current)"
+echo "worktree_path=\$path"
+echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$s" '#{window_id}')"
+echo "tmux_socket=$STATE/new.sock"
+echo "session=\$s"
+FAKE
+  chmod +x "$STATE/fake-reuse-workstation"
   # stand-in for session-restart.sh (重启会话 / 新开会话, session_restart.go):
   # records each call in restart.log, never respawns a pane; a fresh start
   # names a new conversation like the real Claude path
