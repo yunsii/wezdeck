@@ -234,6 +234,7 @@ fi
 run_check agent-tools check_agent_tools_marker
 run_check managed-agent-cli check_managed_agent_cli
 run_check agent-launcher bash "$repo_root/tests/agent-launcher/test.sh"
+run_check sync-lock-install-wait bash "$repo_root/tests/sync-runtime/test.sh"
 run_check agent-resume-lockstep bash \
   "$repo_root/tests/tmux-reset/cases/21-managed-primary-command-lockstep.sh"
 run_check workspace-agent-map bash \

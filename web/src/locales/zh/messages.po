@@ -811,7 +811,7 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:314
+#: src/features/console-shell.tsx:315
 msgid "Connection details"
 msgstr "连接详情"
 
@@ -819,7 +819,7 @@ msgstr "连接详情"
 msgid "Console ({origin})"
 msgstr "控制台（{origin}）"
 
-#: src/features/console-shell.tsx:232
+#: src/features/console-shell.tsx:233
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -1060,7 +1060,7 @@ msgstr "设备授权"
 
 #: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:387
-#: src/features/console-shell.tsx:93
+#: src/features/console-shell.tsx:94
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -1507,6 +1507,10 @@ msgstr "刚压缩，下一次回复后更新"
 msgid "just now"
 msgstr "刚刚"
 
+#: src/features/console-shell.tsx:482
+msgid "just restarted"
+msgstr "刚重启"
+
 #: src/features/landing-page.tsx:103
 #~ msgid "Keep every agent in a place you can return to."
 #~ msgstr "每个 Agent 都待在你能回去的位置。"
@@ -1551,7 +1555,7 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:463
+#: src/features/console-shell.tsx:464
 #: src/features/me-host.tsx:104
 msgid "Last sample"
 msgstr "最近采样"
@@ -1974,7 +1978,7 @@ msgstr "未拉取"
 msgid "Not pushed"
 msgstr "未推送"
 
-#: src/features/console-shell.tsx:414
+#: src/features/console-shell.tsx:415
 msgid "Not running"
 msgstr "未运行"
 
@@ -2298,7 +2302,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:427
+#: src/features/console-shell.tsx:428
 #: src/features/me-host.tsx:57
 #: src/features/me-host.tsx:130
 msgid "Ready"
@@ -2344,11 +2348,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:225
+#: src/features/console-shell.tsx:226
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:390
+#: src/features/console-shell.tsx:391
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -2496,7 +2500,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:521
+#: src/features/console-shell.tsx:533
 #: src/features/me-host.tsx:88
 msgid "Retry"
 msgstr "重试"
@@ -2565,7 +2569,7 @@ msgstr "运行中"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-shell.tsx:414
+#: src/features/console-shell.tsx:415
 msgid "Running"
 msgstr "运行中"
 
@@ -2677,7 +2681,7 @@ msgstr "搜索能力"
 msgid "Secondary"
 msgstr "副"
 
-#: src/features/console-shell.tsx:326
+#: src/features/console-shell.tsx:327
 msgid "Sections"
 msgstr "栏目"
 
@@ -2763,7 +2767,7 @@ msgstr "会话"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:78
+#: src/features/console-shell.tsx:79
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:227
 #: src/features/session-list.tsx:227
@@ -2780,7 +2784,7 @@ msgstr "会话通过远程链接读取，这台设备还没配对。在主机上
 #~ msgstr "等你回复的会话"
 
 #: src/features/console-me.tsx:308
-#: src/features/console-shell.tsx:97
+#: src/features/console-shell.tsx:98
 msgid "Settings"
 msgstr "我的"
 
@@ -2832,7 +2836,7 @@ msgstr "能力 · {count}"
 msgid "Skills this agent was given"
 msgstr "这个 agent 加载的能力"
 
-#: src/features/console-shell.tsx:297
+#: src/features/console-shell.tsx:298
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -3058,6 +3062,14 @@ msgstr "你期望对方提供的约定或行为——对方会先核实这一点
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTerm 样本。"
 
+#: src/features/runtime-restart.ts:37
+msgid "The local Runtime restarted (about {gone} s without it)"
+msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
+
+#: src/features/console-shell.tsx:479
+msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
+msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
+
 #: src/features/session-restart.tsx:48
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
@@ -3091,7 +3103,7 @@ msgstr "当前浏览器"
 
 #: src/features/console-me.tsx:120
 #: src/features/console-me.tsx:317
-#: src/features/console-shell.tsx:223
+#: src/features/console-shell.tsx:224
 msgid "This computer"
 msgstr "本机"
 
@@ -3128,7 +3140,7 @@ msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对
 msgid "This list of shortcuts"
 msgstr "打开这份快捷键说明"
 
-#: src/features/console-shell.tsx:516
+#: src/features/console-shell.tsx:528
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -3155,7 +3167,7 @@ msgstr "工单编号"
 
 #: src/features/console-activity.tsx:206
 #: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:88
+#: src/features/console-shell.tsx:89
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -3167,7 +3179,7 @@ msgstr "工单"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:83
+#: src/features/console-shell.tsx:84
 #: src/features/landing-page.tsx:88
 #: src/features/tickets-view.tsx:415
 msgid "Tickets"
@@ -3387,7 +3399,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:469
+#: src/features/console-shell.tsx:470
 #: src/features/me-host.tsx:103
 msgid "Uptime"
 msgstr "运行时长"
@@ -3501,7 +3513,7 @@ msgstr "等你"
 #~ msgid "Waiting, running, and done stay visible, so the next jump is obvious."
 #~ msgstr "等待、运行和完成一直可见，下一步该跳去哪里很清楚。"
 
-#: src/features/console-shell.tsx:438
+#: src/features/console-shell.tsx:439
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3542,8 +3554,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:220
-#: src/features/console-shell.tsx:309
+#: src/features/console-shell.tsx:221
+#: src/features/console-shell.tsx:310
 #: src/features/session-skills.tsx:44
 msgid "WezDeck"
 msgstr "WezDeck"

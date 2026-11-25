@@ -10,6 +10,7 @@ import {
   probeRuntime,
   runtimeEventsUrl,
 } from '#/lib/runtime-client'
+import { useRuntimeRestartNotice } from './runtime-restart'
 
 type RuntimeData = ReturnType<typeof useRuntimeDataQuery>
 
@@ -90,6 +91,7 @@ function useRuntimeDataQuery() {
       browser.refetch(),
     ]).then(() => undefined)
   const data = snapshot.data
+  useRuntimeRestartNotice(data?.health.instance_id, snapshot.dataUpdatedAt)
 
   return {
     data,
@@ -98,7 +100,12 @@ function useRuntimeDataQuery() {
     wsl,
     wakatime,
     browser,
-    connected: Boolean(data?.health.ready),
+    // a failed read keeps the last sample: past a couple of missed polls a
+    // Runtime that went away reads as 离线, not as the old 就绪 (one slow
+    // read alone must not flash it — queries do not retry)
+    connected:
+      Boolean(data?.health.ready) &&
+      !(snapshot.isError && Date.now() - snapshot.dataUpdatedAt > 12_000),
     eventReady: Boolean(probe.data),
     loading: snapshot.isPending || probe.isPending,
     error: snapshot.error instanceof Error ? snapshot.error.message : undefined,

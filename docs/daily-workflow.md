@@ -7,6 +7,8 @@ Use this doc when you need to apply or verify changes.
 1. Edit files in this repo.
 2. If runtime files changed, run `skills/wezdeck-runtime-ops/scripts/sync-runtime.sh` (Bash — not a Claude Code Skill tool).
 
+   **One sync at a time.** Every agent shares one Windows runtime, so sync holds a lock for its whole run (`sync-lock-lib.sh`, `~/.local/state/wezterm-runtime/sync-runtime.lock`; the `.holder` file names pid, checkout and start time). A second sync prints who holds it and waits up to `WEZDECK_SYNC_LOCK_WAIT` s (default 300), then exits 75 having changed nothing — wait for the other agent rather than retrying in a loop. The helper install also takes a Windows mutex (`Local\WezDeckRuntimeInstall`) shared with the on-demand install in `ensure-wezdeck-runtime.ps1`. The installer's wait is bounded (`WEZDECK_HELPER_INSTALL_TIMEOUT`, default 300 s; once it printed `installed_client=` a 10 s grace, then it counts as done even if a leftover child keeps it from exiting), the build disables the SDK's background workers (workload update check, MSBuild node reuse, shared compiler), and whatever the install did the runtime is started again before sync reports. Why: on 2026-11-25 a second sync from another worktree hung after stopping the runtime (a `dotnet nuget verify` child held the installer's output open) and the runtime stayed down 68 s. Tests: `tests/sync-runtime/test.sh` (also in `check-runtime.sh`).
+
    **Default path (auto crash gate):**
 
    1. Stage under `%LOCALAPPDATA%\wezterm-runtime\canary\` (live `~/.wezterm.lua` untouched so far).

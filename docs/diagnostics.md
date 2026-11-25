@@ -227,6 +227,8 @@ Three small artifacts under `$WEZTERM_RUNTIME_STATE_DIR` (i.e. `%LOCALAPPDATA%\w
 - To force-stop a helper during canary cleanup or recovery, run `scripts/dev/stop-wezdeck-runtime.sh --canary` (live helper: no flag; all helper managers: `--all`). The next WezTerm/helper ensure recreates the daemon.
 - `lua-precheck.ok` — empty sentinel touched by `sync-runtime.sh` after each successful Lua precheck. `find -newer` on `~/.wezterm-x/lua/`, `~/.wezterm-x/repo-worktree-task.env`, and the precheck script itself against this file decides whether to re-run the precheck.
 
+`sync-runtime.lock` + `.holder` (WSL `~/.local/state/wezterm-runtime/`) serialize syncs ([`daily-workflow.md`](./daily-workflow.md)); `runtime.log` rows `sync-runtime waiting for the sync lock` / `gave up waiting` / `windows runtime back after install` (`install_to_running_ms`) show contention and how long the runtime was away. The web console's status band reads 离线 once the local Runtime missed a couple of polls, marks a Runtime younger than 5 min 刚重启, and toasts when its `instance_id` changes under an open page (client trace `runtime-restart`, `gone_s`).
+
 `logs/deps-check.log` is a separate artifact: it's both the deps-check output (since the check now runs detached, see daily-workflow.md) AND the daily-rate-limit gate (its mtime date is compared against today's date).
 
 ## Traceability

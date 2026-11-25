@@ -506,12 +506,26 @@ function Install-FromLocalBuild {
   $null = New-Item -ItemType Directory -Force -Path $tempOutput
   $null = New-Item -ItemType Directory -Force -Path $tempClientOutput
 
+  # No background work outliving the build: the SDK's workload update check
+  # (`dotnet nuget verify --all …`), MSBuild node reuse and the shared
+  # compiler server keep running after publish and hold this script's
+  # output open, so the caller in WSL waited forever with the runtime
+  # stopped (2026-11-25).
+  $env:DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE = '1'
+  $env:DOTNET_NOLOGO = '1'
+  $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+  $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+  $env:MSBUILDDISABLENODEREUSE = '1'
+  $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
+
   try {
     & $DotnetPath publish $ResolvedProjectPaths.Manager `
       -c Release `
       -r win-x64 `
       --self-contained false `
       /p:PublishSingleFile=false `
+      /p:UseSharedCompilation=false `
+      /nodeReuse:false `
       -o $tempOutput
 
     if ($LASTEXITCODE -ne 0) {
@@ -523,6 +537,8 @@ function Install-FromLocalBuild {
       -r win-x64 `
       --self-contained false `
       /p:PublishSingleFile=false `
+      /p:UseSharedCompilation=false `
+      /nodeReuse:false `
       -o $tempClientOutput
 
     if ($LASTEXITCODE -ne 0) {
@@ -634,6 +650,22 @@ Write-StructuredLog -Level 'info' -Category 'wezdeck_runtime' -Message 'starting
   release_manifest = $projectPaths.ReleaseManifest
 }
 
+# One install at a time on this machine: a sync from WSL and the on-demand
+# install in ensure-wezdeck-runtime.ps1 (runs when the exe is missing — the
+# install root is emptied for a moment while files are swapped) must not
+# stop, wipe and copy over each other.
+$installMutex = New-Object System.Threading.Mutex($false, 'Local\WezDeckRuntimeInstall')
+$installMutexHeld = $false
+try {
+  $installMutexHeld = $installMutex.WaitOne([TimeSpan]::FromSeconds(300))
+} catch [System.Threading.AbandonedMutexException] {
+  $installMutexHeld = $true
+}
+if (-not $installMutexHeld) {
+  Write-StructuredLog -Level 'error' -Category 'wezdeck_runtime' -Message 'gave up waiting for another helper install' -Fields @{ trigger = $Trigger }
+  throw 'another wezdeck-runtime install is still running after 300 s'
+}
+try {
 if ($resolvedInstallSource -eq 'local') {
   if (-not (Test-Path -LiteralPath $projectPaths.Manager)) {
     throw "helper manager project missing: $($projectPaths.Manager)"
@@ -644,6 +676,10 @@ if ($resolvedInstallSource -eq 'local') {
   Install-FromLocalBuild -DotnetPath $dotnet -ResolvedProjectPaths $projectPaths -ResolvedInstallRoot $InstallRoot -ResolvedRuntimeDir $RuntimeDir
 } else {
   Install-FromRelease -Manifest $releaseManifest -ResolvedInstallRoot $InstallRoot
+}
+} finally {
+  if ($installMutexHeld) { $installMutex.ReleaseMutex() }
+  $installMutex.Dispose()
 }
 
 Write-Output ("[helper-install] installed_source=" + $resolvedInstallSource)

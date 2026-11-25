@@ -53,6 +53,36 @@ helper_install_skip_if_current() {
   return 0
 }
 
+# helper_install_wait PID OUT_FILE TIMEOUT_S → prints "<outcome> <waited s>":
+# exited (the caller waits for its exit code — this may run in a subshell,
+# which cannot wait for the caller's child), done or timeout.
+# The interop proxy itself can outlive the installer while a child the build
+# left behind holds the Windows side of its output (2026-11-25): once the
+# installer has printed its last line (installed_client=), allow 10 s for a
+# clean exit, then stop the proxy and report done.
+helper_install_wait() {
+  local pid="$1" out_file="$2" timeout_s="$3"
+  local waited=0 done_at=-1
+  while kill -0 "$pid" 2>/dev/null; do
+    if ((done_at < 0)) && grep -q '^\[helper-install\] installed_client=' "$out_file" 2>/dev/null; then
+      done_at=$waited
+    fi
+    if ((done_at >= 0 && waited - done_at >= ${WEZDECK_HELPER_INSTALL_GRACE:-10})); then
+      kill "$pid" 2>/dev/null || true
+      printf 'done %s\n' "$waited"
+      return 0
+    fi
+    if ((waited >= timeout_s)); then
+      kill "$pid" 2>/dev/null || true
+      printf 'timeout %s\n' "$waited"
+      return 0
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  printf 'exited %s\n' "$waited"
+}
+
 install_windows_helper_manager() {
   local target_runtime_dir="${1:?missing target runtime dir}"
   local install_script="$target_runtime_dir/scripts/install-wezdeck-runtime.ps1"
@@ -88,23 +118,45 @@ install_windows_helper_manager() {
   [[ -n "$install_script_win" && -n "$runtime_dir_win" && -n "$diagnostics_file_win" ]] || return 0
 
   sync_trace "step=helper-install status=starting target_runtime_dir=$target_runtime_dir runtime_dir_win=$runtime_dir_win install_script_win=$install_script_win install_source=$install_source"
-  if ! install_output="$(
-    windows_run_powershell_script_utf8 "$install_script_win" \
-      -RuntimeDir "$runtime_dir_win" \
-      -InstallSource "$install_source" \
-      -Trigger runtime_sync \
-      -DiagnosticsEnabled 1 \
-      -DiagnosticsCategoryEnabled 1 \
-      -DiagnosticsLevel info \
-      -DiagnosticsFile "$diagnostics_file_win" \
-      -DiagnosticsMaxBytes 5242880 \
-      -DiagnosticsMaxFiles 5 2>&1 | tr -d '\r'
-  )"; then
+  # Output goes to a file, not a pipe, and the wait has a deadline: a child
+  # the build leaves behind (2026-11-25: the SDK's `dotnet nuget verify`
+  # workload check) inherited the pipe and held it open, so `$( … | tr )`
+  # never saw EOF and the sync hung with the runtime already stopped.
+  local out_file="" install_pid="" install_ec=0 waited=0
+  local timeout_s="${WEZDECK_HELPER_INSTALL_TIMEOUT:-300}"
+  out_file="$(mktemp)"
+  windows_run_powershell_script_utf8 "$install_script_win" \
+    -RuntimeDir "$runtime_dir_win" \
+    -InstallSource "$install_source" \
+    -Trigger runtime_sync \
+    -DiagnosticsEnabled 1 \
+    -DiagnosticsCategoryEnabled 1 \
+    -DiagnosticsLevel info \
+    -DiagnosticsFile "$diagnostics_file_win" \
+    -DiagnosticsMaxBytes 5242880 \
+    -DiagnosticsMaxFiles 5 >"$out_file" 2>&1 </dev/null 9>&- &
+  install_pid=$!
+  local outcome=""
+  read -r outcome waited < <(helper_install_wait "$install_pid" "$out_file" "$timeout_s")
+  case "$outcome" in
+    exited) wait "$install_pid" || install_ec=$? ;;
+    done)
+      runtime_log_warn sync "windows helper installer finished but did not exit; stopped waiting" \
+        "target_runtime_dir=$target_runtime_dir" "waited_s=$waited"
+      wait "$install_pid" 2>/dev/null || true
+      ;;
+    *) install_ec=124; wait "$install_pid" 2>/dev/null || true ;;
+  esac
+  install_output="$(tr -d '\r' <"$out_file")"
+  rm -f "$out_file"
+  if ((install_ec != 0)); then
     [[ -n "$install_output" ]] && printf '%s\n' "$install_output" >&2
-    sync_trace "step=helper-install status=failed target_runtime_dir=$target_runtime_dir install_source=$install_source"
+    sync_trace "step=helper-install status=failed exit_code=$install_ec waited_s=$waited target_runtime_dir=$target_runtime_dir install_source=$install_source"
     runtime_log_error sync "failed to install windows helper manager after sync" \
       "target_runtime_dir=$target_runtime_dir" \
-      "install_source=$install_source"
+      "install_source=$install_source" \
+      "exit_code=$install_ec" "waited_s=$waited" \
+      "timed_out=$([[ $install_ec == 124 ]] && echo 1 || echo 0)"
     return 1
   fi
 

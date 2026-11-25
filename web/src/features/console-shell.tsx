@@ -29,6 +29,7 @@ import { KeysEntry } from './console-keys'
 import { RemoteBadge } from './remote-badge'
 import { needsYou, useSessions } from './console-sessions'
 import { installClientTrace } from '#/lib/client-trace'
+import { RECENT_START_MS } from './runtime-restart'
 import { remoteLink } from '#/lib/remote-link'
 
 export function ConsoleRouteLayout() {
@@ -470,6 +471,17 @@ function StatusBand() {
         <strong className="font-mono font-medium text-brand-text">
           {formatDuration(data?.health.uptime_ms)}
         </strong>
+        {connected &&
+        data?.health.uptime_ms !== undefined &&
+        data.health.uptime_ms < RECENT_START_MS ? (
+          <span
+            data-testid="runtime-recent-start"
+            title={t`The local Runtime started a few minutes ago (a runtime sync restarts it)`}
+            className="ml-1.5 text-brand-waiting"
+          >
+            {t`just restarted`}
+          </span>
+        ) : null}
       </span>
       <WakatimeStatus />
       <BrowserSlotStatus />

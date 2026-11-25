@@ -231,6 +231,11 @@ case "$SYNC_PUBLISH_MODE" in
     ;;
 esac
 
+# One sync at a time: sync-lock-lib.sh says why and how.
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/sync-lock-lib.sh"
+acquire_sync_lock "${REPO_ROOT:-}"
+
 TEMP_BOOTSTRAP_FILE="$TARGET_RUNTIME_STATE_DIR/.wezterm.lua.tmp.$$"
 RUNTIME_NATIVE_FLOW_PID=""
 BOOTSTRAP_FLOW_PID=""
@@ -422,8 +427,24 @@ run_runtime_native_flow() {
       rsync -a "$TARGET_RUNTIME_DIR/scripts/" "$helper_runtime_dir/scripts/" || true
     fi
   fi
-  install_windows_helper_manager "$helper_runtime_dir"
+  # Whatever the install did — failed or timed out after it may already have
+  # stopped the runtime — bring the runtime back before reporting it.
+  local install_failed=0 install_started_ms
+  install_started_ms="$(runtime_log_now_ms)"
+  install_windows_helper_manager "$helper_runtime_dir" || install_failed=1
+  if ((install_failed)); then
+    HELPER_INSTALLED_THIS_SYNC=1
+    WEZTERM_SYNC_FORCE_HELPER_ENSURE=1 ensure_windows_helper_running "$helper_runtime_dir" || true
+    return 1
+  fi
   ensure_windows_helper_running "$helper_runtime_dir"
+  if [[ "${HELPER_INSTALLED_THIS_SYNC:-0}" == "1" ]]; then
+    # how long the Windows runtime may have been away: install start →
+    # running again (its own stop/start rows are in helper.log)
+    runtime_log_info sync "windows runtime back after install" \
+      "target_runtime_dir=$helper_runtime_dir" \
+      "install_to_running_ms=$(runtime_log_duration_ms "$install_started_ms")"
+  fi
   sync_trace "flow=runtime-native status=completed target_runtime_dir=$TARGET_RUNTIME_DIR target_native_dir=$TARGET_NATIVE_DIR helper_runtime_dir=$helper_runtime_dir"
 }
 
@@ -474,8 +495,9 @@ if [[ -x "$DEPS_CHECK_SCRIPT" ]] && [[ "${WEZTERM_SYNC_SKIP_DEPS_CHECK:-0}" != "
   else
     sync_trace "step=deps-check status=detached log=$DEPS_CHECK_LOG previous_log_date=${deps_log_date:-none}"
     printf '[sync] deps-check running in background, log: %s\n' "$DEPS_CHECK_LOG"
+    # 9>&-: it outlives the sync and must not keep the sync lock
     nohup "$DEPS_CHECK_SCRIPT" --advisory --no-color --timeout 10 --prefix '[sync] ' \
-      >"$DEPS_CHECK_LOG" 2>&1 </dev/null &
+      >"$DEPS_CHECK_LOG" 2>&1 </dev/null 9>&- &
     disown 2>/dev/null || true
   fi
 fi
