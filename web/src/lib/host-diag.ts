@@ -32,8 +32,52 @@ type Step = {
   to?: string | number
   text?: string
   selector?: string
+  /** query: the attributes to read (besides rect and text) */
+  attrs?: Array<string>
   ms?: number
   sample?: number
+}
+
+const QUERY_MAX = 10
+
+/**
+ * `query` (read only): what the page shows for a selector — up to ten
+ * elements' requested attributes, box and text — so a fix can be checked on
+ * the person's own device and session instead of a sample (e.g.
+ * {"do":"query","selector":"[data-testid=session-tags]","attrs":["data-folded"]}).
+ */
+function query(step: Step) {
+  if (!step.selector) return { skipped: 'query needs a selector' }
+  let found: Array<HTMLElement>
+  try {
+    found = [...document.querySelectorAll<HTMLElement>(step.selector)]
+  } catch {
+    return { skipped: 'bad selector' }
+  }
+  return {
+    count: found.length,
+    items: found.slice(0, QUERY_MAX).map((el) => {
+      const r = el.getBoundingClientRect()
+      return {
+        tag: el.tagName.toLowerCase(),
+        attrs: Object.fromEntries(
+          (step.attrs ?? []).map((name) => [name, el.getAttribute(name)]),
+        ),
+        rect: [r.x, r.y, r.width, r.height].map(Math.round),
+        text: el.textContent.trim().slice(0, 80),
+      }
+    }),
+  }
+}
+
+/** the build the site serves now (the page may still run an older one) */
+async function deployedBuild() {
+  try {
+    const res = await fetch('/build.json', { cache: 'no-store' })
+    return ((await res.json()) as { buildId?: string }).buildId ?? null
+  } catch {
+    return null
+  }
 }
 
 const CHUNK = 36 * 1024
@@ -156,6 +200,8 @@ async function runStep(
       return { ok: true }
     case 'layout':
       return layoutReport()
+    case 'query':
+      return query(step)
     case 'reload':
       // done after the snapshot is sent (answer): reloading here would
       // lose the answer
@@ -205,7 +251,12 @@ async function answer(
   }
   const json = JSON.stringify(
     diagnosticsSnapshot({
-      hostRequest: { id, reason: data.reason, steps: results },
+      hostRequest: {
+        id,
+        reason: data.reason,
+        steps: results,
+        deployed: await deployedBuild(),
+      },
     }),
   )
   const total = Math.max(1, Math.ceil(json.length / CHUNK))

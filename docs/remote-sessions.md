@@ -235,7 +235,7 @@ its control socket (`~/.local/state/wezdeck/relay.sock`, 0600;
 web console seen in the last 3 min (DataChannel when open, else the DO by cid;
 `relay_diag.go`). With `--steps` the web console first drives its own UI
 (`lib/host-diag.ts`: `navigate` in-app paths, `back`, `click` by `text` or
-`selector`, `scroll`, `wait`, `reload` — run after the snapshot is sent, the
+`selector`, `scroll`, `wait`, `query` — read only: `selector` + `attrs` → up to ten elements' attributes, box and text, to check a fix on the person's own device and session — `reload` — run after the snapshot is sent, the
 page reloads onto the newest deploy; `--reload` appends it, so after a
 release `wezdeck-wsl diag --reload` puts every connected web console on the new
 build — no toast before it (it vanished half-read); while a text field
@@ -244,7 +244,7 @@ trace), and the new page says 已更新到新版本 once (`wezdeck.updated-from`
 `pwa-boot.tsx`) (a build older than this step ignores it: get it there once through
 我的 › 应用 › 检查更新 and the toast's 刷新); never a control inside a form or under
 `[data-write]` — send, reply, take over, keys, options, rename), recording
-each step's frames (count, fps, longest gap, gaps > 50 ms). It answers with
+each step's frames (count, fps, longest gap, gaps > 50 ms). Each CLI answer carries its gist (`diagGist`): `build` vs `deployed` (`/build.json`; `current` false = the page has not reloaded onto the fix yet — do not ask for a retest), `page` and the step results without frames. It answers with
 the snapshot as `diag.submit` chunks — accepted only for a live request id —
 stored as `diagnostics-<ts>-<id>-<client>.json` in the uploads dir; the CLI
 prints the paths. The web console shows a toast that the host read diagnostics;

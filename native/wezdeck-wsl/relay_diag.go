@@ -24,6 +24,10 @@ package main
 // {"do":"wait","ms":800}] — each step's frame timing (frames, longest gap,
 // long tasks) lands in the snapshot. Clicks never hit write controls (inside
 // a form or marked data-write) and navigation stays inside the app.
+// {"do":"query","selector":"…","attrs":["data-folded"]} reads what the page
+// shows (up to ten elements: attributes, box, text). Each answer in the CLI
+// output carries its gist — build vs the deployed one (`current`), page and
+// step results — so verifying a fix on the person's own device is one call.
 
 import (
 	"context"
@@ -140,6 +144,39 @@ type diagResult struct {
 	Client string `json:"client"`
 	File   string `json:"file"`
 	Bytes  int    `json:"bytes"`
+	// the gist, so the CLI answer says it without opening the file: the
+	// build the page runs vs the one the site serves (current = it has the
+	// fix), where it is, and each step's result (frames left in the file)
+	Build    string           `json:"build,omitempty"`
+	Deployed string           `json:"deployed,omitempty"`
+	Current  *bool            `json:"current,omitempty"`
+	Page     string           `json:"page,omitempty"`
+	Steps    []map[string]any `json:"steps,omitempty"`
+}
+
+// diagGist: the summary fields of a stored snapshot.
+func diagGist(body []byte) diagResult {
+	var snap struct {
+		Build       string `json:"build"`
+		Page        string `json:"page"`
+		HostRequest struct {
+			Deployed string           `json:"deployed"`
+			Steps    []map[string]any `json:"steps"`
+		} `json:"hostRequest"`
+	}
+	if json.Unmarshal(body, &snap) != nil {
+		return diagResult{}
+	}
+	g := diagResult{Build: snap.Build, Deployed: snap.HostRequest.Deployed, Page: snap.Page}
+	if g.Build != "" && g.Deployed != "" {
+		current := g.Build == g.Deployed
+		g.Current = &current
+	}
+	for _, step := range snap.HostRequest.Steps {
+		delete(step, "frames")
+		g.Steps = append(g.Steps, step)
+	}
+	return g
 }
 
 type diagRequest struct {
@@ -243,7 +280,9 @@ func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
 	}
 	r.logf("diag_received", "id=%s client=%s bytes=%d", a.ID, a.Client[:8], len(body))
 	diagMu.Lock()
-	req.results = append(req.results, diagResult{Client: a.Client[:8], File: path, Bytes: len(body)})
+	gist := diagGist(body)
+	gist.Client, gist.File, gist.Bytes = a.Client[:8], path, len(body)
+	req.results = append(req.results, gist)
 	select {
 	case req.notify <- struct{}{}:
 	default:
