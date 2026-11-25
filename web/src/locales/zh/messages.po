@@ -16,7 +16,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:427
+#: src/features/chat-thread.tsx:435
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -726,7 +726,7 @@ msgstr "协作工单"
 msgid "Command"
 msgstr "命令"
 
-#: src/features/chat-command.tsx:24
+#: src/features/chat-command.tsx:25
 msgid "Command output"
 msgstr "命令输出"
 
@@ -811,11 +811,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:411
+#: src/features/chat-thread.tsx:419
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:412
+#: src/features/chat-thread.tsx:420
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -2214,7 +2214,7 @@ msgstr "填进消息，交给这个 agent"
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
-#: src/features/chat-thread.tsx:454
+#: src/features/chat-thread.tsx:462
 msgid "Queued messages"
 msgstr "排队中的消息"
 

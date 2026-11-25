@@ -6,7 +6,9 @@ import (
 )
 
 // A Monitor's events and a background command's end arrive as
-// task-notification attachments; they land on the call that started the task.
+// task-notification attachments (or, on an idle session, a user line); each
+// shows in the thread as a quiet "task" row where it arrived — as the
+// terminal prints it — and lands on the call that started the task.
 func TestTaskNotificationsLandOnTheirCall(t *testing.T) {
 	note := func(body string) string {
 		return `{"type":"attachment","attachment":{"type":"queued_command","commandMode":"task-notification","origin":{"kind":"task-notification"},"prompt":` + jsonString(body) + `}}`
@@ -19,6 +21,9 @@ func TestTaskNotificationsLandOnTheirCall(t *testing.T) {
 	}
 	msgs := parseClaudeTranscript([]byte(strings.Join(lines, "\n")+"\n"), 100)
 	monitor, bash := msgs[0], msgs[1]
+	if len(msgs) != 4 || msgs[2].Kind != "task" || msgs[2].Text != `Monitor event: "watch the deploy"` || msgs[2].Body != "step 1 built" || msgs[3].Body != "step 2 uploaded" {
+		t.Fatalf("event rows: %+v", msgs[2:])
+	}
 	if !monitor.Pending || monitor.Result != "step 1 built\nstep 2 uploaded\n" {
 		t.Fatalf("live monitor: pending=%v result=%q", monitor.Pending, monitor.Result)
 	}
@@ -43,11 +48,26 @@ func TestTaskNotificationsLandOnTheirCall(t *testing.T) {
 	if !strings.HasSuffix(bash.Result, "— Background command \"make\" completed (exit code 0)") {
 		t.Fatalf("finished bash: %q", bash.Result)
 	}
-	if len(msgs) != 3 {
-		t.Fatalf("notifications must not become messages: %d", len(msgs))
+	// 4 event / end rows + the unknown task's row (no call, still shown)
+	var tasks []chatMessage
+	for _, m := range msgs {
+		if m.Kind == "task" {
+			tasks = append(tasks, m)
+		}
 	}
-	if strings.Contains(msgs[2].Result, "— ") {
-		t.Fatalf("a quoting command took a task: %q", msgs[2].Result)
+	if len(tasks) != 5 || tasks[2].Text != `Monitor "watch the deploy" stream ended` || tasks[3].Text != `Background command "make" completed (exit code 0)` || tasks[4].Body != "ignored" {
+		t.Fatalf("task rows: %+v", tasks)
+	}
+	grep := msgs[len(msgs)-1]
+	if grep.Tool != "Bash" || strings.Contains(grep.Result, "— ") {
+		t.Fatalf("a quoting command took a task: %+v", grep)
+	}
+	// an idle session: the notification is a user line; queued and then
+	// delivered, it shows once
+	idle := `{"type":"user","message":{"role":"user","content":` + jsonString("<task-notification>\n<task-id>mtask9</task-id>\n<summary>Monitor event: \"x\"</summary>\n<event>a &lt; b</event>\n</task-notification>") + `},"origin":{"kind":"task-notification"}}`
+	again := parseClaudeTranscript([]byte(idle+"\n"+note("<task-notification>\n<task-id>mtask9</task-id>\n<summary>Monitor event: \"x\"</summary>\n<event>a &lt; b</event>\n</task-notification>")+"\n"), 100)
+	if len(again) != 1 || again[0].Kind != "task" || again[0].Body != "a < b" {
+		t.Fatalf("idle notification: %+v", again)
 	}
 }
 

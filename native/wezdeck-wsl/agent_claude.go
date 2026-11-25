@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"os"
 	"path/filepath"
@@ -173,7 +174,7 @@ func (t *transcript) feedLine(raw []byte) {
 	// A background task's notification (a Monitor event, a background
 	// command or a Monitor ending): onto the call that started it
 	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "task-notification" {
-		t.taskNotification(a.Prompt)
+		t.taskNotification(a.Prompt, line.Timestamp)
 		return
 	}
 	if a := line.Attachment; line.Type == "attachment" && a.Type == "queued_command" && a.CommandMode == "prompt" {
@@ -240,6 +241,12 @@ func (t *transcript) feedLine(raw []byte) {
 	}
 	var text string
 	if json.Unmarshal(line.Message.Content, &text) == nil {
+		// an idle session gets its task notification as a user line (it
+		// starts the next turn): the same as a queued one
+		if line.Type == "user" && strings.HasPrefix(strings.TrimSpace(text), "<task-notification>") {
+			t.taskNotification(text, line.Timestamp)
+			return
+		}
 		if text = unwrapPasted(text); line.Type == "user" && text != "" && !strings.HasPrefix(text, "<") {
 			t.messages = append(t.messages, chatMessage{Role: "user", Text: clip(text, 8000), TS: line.Timestamp})
 		}
@@ -462,7 +469,30 @@ func (t *transcript) trackTask(idx int, out string) {
 	}
 }
 
-func (t *transcript) taskNotification(prompt string) {
+// taskNotification: a Monitor event, a Monitor ending or a background
+// command's end. It shows in the thread where it arrived, as the terminal
+// prints it (a quiet system row, kind "task": text = the summary, body =
+// the event's lines), and lands on the call that started the task (its
+// result) when that call is known.
+func (t *transcript) taskNotification(prompt, ts string) {
+	if t.seenNotes == nil {
+		t.seenNotes = map[string]bool{}
+	}
+	if t.seenNotes[prompt] {
+		return // queued and then delivered: one row
+	}
+	t.seenNotes[prompt] = true
+	summary := strings.TrimSpace(html.UnescapeString(firstGroup(taskSummaryTag, prompt)))
+	eventText := strings.TrimSpace(html.UnescapeString(firstGroup(taskEventTag, prompt)))
+	if summary != "" || eventText != "" {
+		t.messages = append(t.messages, chatMessage{Role: "system", Kind: "task",
+			Text: clip(summary, 300), Body: clipLines(clip(eventText, 3000), 20), TS: ts})
+	}
+	t.attachTaskNote(prompt)
+}
+
+// attachTaskNote: the notification onto the call that started the task.
+func (t *transcript) attachTaskNote(prompt string) {
 	id := firstGroup(taskIDTag, prompt)
 	idx, ok := t.tasks[id]
 	if !ok || idx >= len(t.messages) {

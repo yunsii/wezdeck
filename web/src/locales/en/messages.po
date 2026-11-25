@@ -16,7 +16,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:427
+#: src/features/chat-thread.tsx:435
 msgid "· summary"
 msgstr "· summary"
 
@@ -726,7 +726,7 @@ msgstr "Collab tickets"
 msgid "Command"
 msgstr "Command"
 
-#: src/features/chat-command.tsx:24
+#: src/features/chat-command.tsx:25
 msgid "Command output"
 msgstr "Command output"
 
@@ -811,11 +811,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:411
+#: src/features/chat-thread.tsx:419
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:412
+#: src/features/chat-thread.tsx:420
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -2214,7 +2214,7 @@ msgstr "Put into the message for this agent"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/chat-thread.tsx:454
+#: src/features/chat-thread.tsx:462
 msgid "Queued messages"
 msgstr "Queued messages"
 

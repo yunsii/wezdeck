@@ -188,3 +188,28 @@ export const GIT: GitDetail = {
     },
   ],
 }
+/** task notifications as the thread shows them (kind "task") */
+export const TASK_NOTES: Array<Message> = [
+  {
+    role: 'system',
+    kind: 'task',
+    text: 'Monitor event: "test 部署 #13241 阶段进度"',
+    body: '[cmdb deploy] #13241 [5.9m] ✓ 推送镜像 30s',
+  },
+  {
+    role: 'system',
+    kind: 'task',
+    text: 'Monitor event: "coco-forge PR #1381 合入与发版进度"',
+    body: '⛔ 平台闸门 blocked_on=status_check\n→ 平台这一关没过，不会自动合入\nci: lint ok · unit ok · e2e failed (2)\nretry in 60s\nlast run: https://ci.example/run/4412',
+  },
+  {
+    role: 'system',
+    kind: 'task',
+    text: 'Monitor "test 部署 #13241 阶段进度" stream ended',
+  },
+  {
+    role: 'system',
+    kind: 'task',
+    text: 'Background command "推送 test 分支并部署 test" completed (exit code 0)',
+  },
+]
