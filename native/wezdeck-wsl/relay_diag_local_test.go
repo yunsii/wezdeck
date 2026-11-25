@@ -26,8 +26,20 @@ func TestLocalPendingDiag(t *testing.T) {
 		delete(localSeen, cid)
 		localMu.Unlock()
 	}()
-	got := localPending(client)
-	if len(got) != 1 || got[0]["id"] != "req1" || got[0]["reason"] != "probe" {
+	// other tests' requests may linger in the global table: look at ours
+	pick := func(list []map[string]any) map[string]any {
+		for _, r := range list {
+			if r["id"] == "req1" {
+				return r
+			}
+			if r["id"] == "old" {
+				t.Fatal("an expired request is never offered")
+			}
+		}
+		return nil
+	}
+	got := pick(localPending(client))
+	if got == nil || got["reason"] != "probe" {
 		t.Fatalf("pending %+v", got)
 	}
 	diagMu.Lock()
@@ -37,8 +49,8 @@ func TestLocalPendingDiag(t *testing.T) {
 	if !ok {
 		t.Fatal("the polling page becomes a target")
 	}
-	if again := localPending(client); len(again) != 0 {
-		t.Fatalf("answered: nothing pending, got %+v", again)
+	if again := pick(localPending(client)); again != nil {
+		t.Fatalf("answered: not offered again, got %+v", again)
 	}
 	found := false
 	for _, seen := range recentLocalPages() {

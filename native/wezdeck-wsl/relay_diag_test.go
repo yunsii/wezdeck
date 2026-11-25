@@ -17,6 +17,13 @@ func TestDiagRequestRoundTrip(t *testing.T) {
 		t.Fatal("chunk for an unknown request must be refused")
 	}
 
+	// requests other tests left in the global table (they linger 10 s)
+	before := map[string]bool{}
+	diagMu.Lock()
+	for k := range diagRequests {
+		before[k] = true
+	}
+	diagMu.Unlock()
 	done := make(chan map[string]any)
 	go func() {
 		done <- r.requestDiagnostics(5*time.Second, "test", json.RawMessage(`[{"do":"wait","ms":10}]`))
@@ -26,7 +33,9 @@ func TestDiagRequestRoundTrip(t *testing.T) {
 	for deadline := time.Now().Add(2 * time.Second); id == "" && time.Now().Before(deadline); {
 		diagMu.Lock()
 		for k := range diagRequests {
-			id = k
+			if !before[k] {
+				id = k
+			}
 		}
 		diagMu.Unlock()
 		time.Sleep(10 * time.Millisecond)
